@@ -11,6 +11,7 @@
   (:require
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
+   [uxbox.common.data :as d]
    [uxbox.common.pages :as cp]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
@@ -102,6 +103,33 @@
 (defn- rename-page
   [conn {:keys [id name] :as params}]
   (-> (db/query-one conn [sql:rename-page id name])
+      (p/then su/constantly-nil)))
+
+
+
+;; --- Mutation: Sort Pages
+
+(s/def ::page-ids (s/every ::us/uuid :kind vector?))
+(s/def ::reorder-pages
+  (s/keys :req-un [::profile-id ::file-id ::page-ids]))
+
+(declare update-page-ordering)
+
+(sm/defmutation ::reorder-pages
+  [{:keys [profile-id file-id page-ids]}]
+  (db/with-atomic [conn db/pool]
+    (p/run! #(update-page-ordering conn file-id %)
+            (d/enumerate page-ids))
+    nil))
+
+(def ^:private sql:update-page-ordering
+  "update page
+      set ordering = $1
+    where id = $2 and file_id = $3")
+
+(defn- update-page-ordering
+  [conn file-id [ordering page-id]]
+  (-> (db/query-one conn [sql:update-page-ordering ordering page-id file-id])
       (p/then su/constantly-nil)))
 
 

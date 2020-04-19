@@ -10,6 +10,7 @@
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]
+   [uxbox.common.data :as d]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.store :as st]
@@ -17,7 +18,7 @@
    [uxbox.main.ui.confirm :refer [confirm-dialog]]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.modal :as modal]
-   [uxbox.util.data :refer [classnames enumerate]]
+   [uxbox.main.ui.hooks :as hooks]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t]]
    [uxbox.util.router :as rt]))
@@ -27,6 +28,7 @@
 (mf/defc page-item
   [{:keys [page index deletable? selected?] :as props}]
   (let [local (mf/use-state {})
+
         on-double-click
         (fn [event]
           (dom/prevent-default event)
@@ -54,22 +56,27 @@
                      (dom/stop-propagation %)
                      (modal/show! confirm-dialog {:on-accept delete-fn}))
 
-        on-drop #(do (prn "TODO"))
-        on-hover #(st/emit! (dw/change-page-order {:id (:id page)
-                                                   :index index}))
-
         navigate-fn #(st/emit! (dw/go-to-page (:id page)))
-        ;; [dprops ref] (use-sortable {:type "page-item"
-        ;;                             :data {:id (:id page)
-        ;;                                    :index index}
-        ;;                             :on-hover on-hover
-        ;;                             :on-drop on-drop})
-        ]
-    [:li {:class (classnames :selected selected?)}
-     [:div.element-list-body {:class (classnames
-                                      :selected selected?
-                                      ;; :dragging (:dragging? dprops)
-                                      )
+
+        on-drop
+        (fn [side {:keys [id name] :as data}]
+          (let [index (if (= :bot side) (inc index) index)]
+            (st/emit! (dw/relocate-page id index))))
+
+        [dprops dref] (hooks/use-sortable
+                       :type "page"
+                       :on-drop on-drop
+                       :data {:id (:id page)
+                              :index index
+                              :name (:name page)})]
+
+    [:li {:class (dom/classnames
+                  :selected selected?
+                  :dnd-over-top (= (:over dprops) :top)
+                  :dnd-over-bot (= (:over dprops) :bot))
+          :ref dref}
+     [:div.element-list-body {:class (dom/classnames
+                                      :selected selected?)
                               :on-click navigate-fn
                               :on-double-click on-double-click}
       [:div.page-icon i/file-html]
@@ -89,16 +96,17 @@
 
 ;; --- Page Item Wrapper
 
-(defn- make-page-ref
+(defn- make-page-iref
   [id]
-  #(-> (l/in [:workspace-pages id])
-       (l/derived st/state)))
+  #(l/derived (fn [state]
+                (let [page (get-in state [:workspace-pages id])]
+                  (select-keys page [:id :name :ordering])))
+              st/state =))
 
 (mf/defc page-item-wrapper
   [{:keys [page-id index deletable? selected?] :as props}]
-  (let [page-iref (mf/use-memo
-                   (mf/deps page-id)
-                   (make-page-ref page-id))
+  (let [page-iref (mf/use-memo (mf/deps page-id)
+                               (make-page-iref page-id))
         page (mf/deref page-iref)]
     [:& page-item {:page page
                    :index index
@@ -109,15 +117,16 @@
 
 (mf/defc pages-list
   [{:keys [file current-page] :as props}]
-  (let [pages (enumerate (:pages file))
+  (let [pages (d/enumerate (:pages file))
         deletable? (> (count pages) 1)]
     [:ul.element-list
      (for [[index page-id] pages]
-       [:& page-item-wrapper {:page-id page-id
-                              :index index
-                              :deletable? deletable?
-                              :selected? (= page-id (:id current-page))
-                              :key page-id}])]))
+       [:& page-item-wrapper
+        {:page-id page-id
+         :index index
+         :deletable? deletable?
+         :selected? (= page-id (:id current-page))
+         :key page-id}])]))
 
 ;; --- Sitemap Toolbox
 

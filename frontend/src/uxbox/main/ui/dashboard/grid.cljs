@@ -1,5 +1,4 @@
 (ns uxbox.main.ui.dashboard.grid
-  (:refer-clojure :exclude [sort-by])
   (:require
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
@@ -11,7 +10,6 @@
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.confirm :refer [confirm-dialog]]
    [uxbox.main.ui.components.context-menu :refer [context-menu]]
-   [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t tr]]
    [uxbox.util.router :as rt]
@@ -75,7 +73,7 @@
                               :default-value (:name file)}]
         [:h3 (:name file)])
       [:& grid-item-metadata {:modified-at (:modified-at file)}]]
-     [:div.project-th-actions {:class (classnames
+     [:div.project-th-actions {:class (dom/classnames
                                        :force-display (:menu-open @local))}
       ;; [:div.project-th-icon.pages
       ;;  i/page
