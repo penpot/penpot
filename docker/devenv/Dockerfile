@@ -32,6 +32,7 @@ RUN set -ex; \
         imagemagick \
         webp \
         jq \
+        redis-tools \
     ; \
     rm -rf /var/lib/apt/lists/*;
 
