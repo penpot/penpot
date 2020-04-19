@@ -20,6 +20,7 @@
 
   ;; TODO: vendorize pgclient under `vertx-clojure/vertx-pgclient`
   io.vertx/vertx-pg-client {:mvn/version "4.0.0-milestone4"}
+  io.lettuce/lettuce-core {:mvn/version "5.2.2.RELEASE"}
 
   vertx-clojure/vertx
   {:local/root "vendor/vertx"

@@ -25,6 +25,8 @@
    :database-uri "postgresql://127.0.0.1/uxbox"
    :database-username "uxbox"
    :database-password "uxbox"
+
+   :redis-uri "redis://redis/0"
    :media-directory "resources/public/media"
    :assets-directory "resources/public/static"
    :media-uri "http://localhost:6060/media/"
@@ -44,6 +46,7 @@
 (s/def ::database-username (s/nilable ::us/string))
 (s/def ::database-password (s/nilable ::us/string))
 (s/def ::database-uri ::us/string)
+(s/def ::redis-uri ::us/string)
 (s/def ::assets-uri ::us/string)
 (s/def ::assets-directory ::us/string)
 (s/def ::media-uri ::us/string)
