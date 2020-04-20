@@ -36,7 +36,6 @@
    :sendmail-reply-to "no-reply@example.com"
    :sendmail-from "no-reply@example.com"
 
-   :smtp-enabled false
    :allow-demo-users true
    :registration-enabled true
    :registration-domain-whitelist ""
@@ -64,7 +63,6 @@
 (s/def ::smtp-password (s/nilable ::us/string))
 (s/def ::smtp-tls ::us/boolean)
 (s/def ::smtp-ssl ::us/boolean)
-(s/def ::smtp-enabled ::us/boolean)
 (s/def ::allow-demo-users ::us/boolean)
 (s/def ::registration-enabled ::us/boolean)
 (s/def ::registration-domain-whitelist ::us/string)
@@ -91,7 +89,6 @@
                    ::smtp-password
                    ::smtp-tls
                    ::smtp-ssl
-                   ::smtp-enabled
                    ::debug-humanize-transit
                    ::allow-demo-users
                    ::registration-enabled]))
