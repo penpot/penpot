@@ -31,8 +31,11 @@
    :assets-directory "resources/public/static"
    :media-uri "http://localhost:6060/media/"
    :assets-uri "http://localhost:6060/static/"
-   :email-reply-to "no-reply@nodomain.com"
-   :email-from "no-reply@nodomain.com"
+
+   :sendmail-backend "console"
+   :sendmail-reply-to "no-reply@example.com"
+   :sendmail-from "no-reply@example.com"
+
    :smtp-enabled false
    :allow-demo-users true
    :registration-enabled true
@@ -51,8 +54,10 @@
 (s/def ::assets-directory ::us/string)
 (s/def ::media-uri ::us/string)
 (s/def ::media-directory ::us/string)
-(s/def ::email-reply-to ::us/email)
-(s/def ::email-from ::us/email)
+(s/def ::sendmail-backend ::us/string)
+(s/def ::sendmail-backend-apikey ::us/string)
+(s/def ::sendmail-reply-to ::us/email)
+(s/def ::sendmail-from ::us/email)
 (s/def ::smtp-host ::us/string)
 (s/def ::smtp-port ::us/integer)
 (s/def ::smtp-user (s/nilable ::us/string))
@@ -76,8 +81,10 @@
                    ::assets-uri
                    ::media-directory
                    ::media-uri
-                   ::email-reply-to
-                   ::email-from
+                   ::sendmail-reply-to
+                   ::sendmail-from
+                   ::sendmail-backend
+                   ::sendmail-backend-apikey
                    ::smtp-host
                    ::smtp-port
                    ::smtp-user

@@ -5,4 +5,15 @@
 ;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.util.http
-  "Http related helpers.")
+  "Http client abstraction layer."
+  (:require
+   [promesa.core :as p]
+   [promesa.exec :as px]
+   [java-http-clj.core :as http]))
+
+(def default-client
+  (delay (http/build-client {:executor @px/default-executor})))
+
+(defn send!
+  [req]
+  (http/send-async req {:client @default-client :as :string}))

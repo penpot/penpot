@@ -5,33 +5,20 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.tasks.sendmail
-  "Email sending jobs."
   (:require
+   [clojure.data.json :as json]
    [clojure.tools.logging :as log]
-   [cuerdas.core :as str]
-   [postal.core :as postal]
-   [vertx.util :as vu]
    [promesa.core :as p]
-   [uxbox.common.exceptions :as ex]
    [uxbox.config :as cfg]
-   [uxbox.core :refer [system]]
-   [uxbox.util.blob :as blob]))
+   [uxbox.util.http :as http]))
 
-(defn- get-smtp-config
-  [config]
-  {:host (:smtp-host config)
-   :port (:smtp-port config)
-   :user (:smtp-user config)
-   :pass (:smtp-password config)
-   :ssl (:smtp-ssl config)
-   :tls (:smtp-tls config)
-   :enabled (:smtp-enabled config)})
+(defmulti sendmail (fn [config email] (:sendmail-backend config)))
 
-(defn- send-email-to-console
-  [email]
+(defmethod sendmail "console"
+  [config email]
   (let [out (with-out-str
               (println "email console dump:")
               (println "******** start email" (:id email) "**********")
@@ -40,28 +27,41 @@
               (println " reply-to: " (:reply-to email))
               (println " subject: " (:subject email))
               (println " content:")
-              (doseq [item (rest (:body email))]
-                (when (str/starts-with? (:type item) "text/plain")
-                  (println (:content item))))
+              (doseq [item (:content email)]
+                (when (= (:type item) "text/plain")
+                  (println (:value item))))
               (println "******** end email "(:id email) "**********"))]
-    (log/info out)
-    {:error :SUCCESS}))
+    (log/info out)))
 
-(defn send-email
-  [email]
-  (vu/blocking
-   (let [config (get-smtp-config cfg/config)
-         result (if (:enabled config)
-                  (postal/send-message config email)
-                  (send-email-to-console email))]
-     (when (not= (:error result) :SUCCESS)
-       (ex/raise :type :sendmail-error
-                 :code :email-not-sent
-                 :context result))
-     nil)))
+(defmethod sendmail "sendgrid"
+  [config email]
+  (let [apikey  (:sendmail-backend-apikey config)
+        dest    (mapv #(array-map :email %) (:to email))
+        params  {:personalizations [{:to dest
+                                     :subject (:subject email)}]
+                 :from {:email (:from email)}
+                 :reply_to {:email (:reply-to email)}
+                 :content (:content email)}
+        headers {"Authorization" (str "Bearer " apikey)
+                 "Content-Type" "application/json"}
+        body    (json/write-str params)]
+    (-> (http/send! {:method :post
+                     :headers headers
+                     :uri "https://api.sendgrid.com/v3/mail/send"
+                     :body body})
+        (p/handle (fn [response error]
+                    (cond
+                      error
+                      (log/error "Error on sending email to sendgrid:" (pr-str error))
+
+                      (= 202 (:status response))
+                      nil
+
+                      :else
+                      (log/error "Unexpected status from sendgrid:" (pr-str response))))))))
 
 (defn handler
   {:uxbox.tasks/name "sendmail"}
   [{:keys [props] :as task}]
-  (send-email props))
+  (sendmail cfg/config props))
 

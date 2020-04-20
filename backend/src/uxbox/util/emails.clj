@@ -30,7 +30,7 @@
        "eol = ('\\n' | '\\r\\n'); "))
 
 (def ^:private parse-fn (insta/parser grammar))
-(def ^:private email-path "emails/%(lang)s/%(id)s.mustache")
+(def ^:private email-path "emails/%(id)s/%(lang)s.mustache")
 
 (defn- parse-template
   [content]
@@ -49,7 +49,8 @@
 (s/def ::body-html string?)
 
 (s/def ::parsed-email
-  (s/keys :req-un [::subject ::body-html ::body-html]))
+  (s/keys :req-un [::subject ::body-text]
+          :opt-un [::body-html]))
 
 (defn- build-base-email
   [data context]
@@ -59,11 +60,11 @@
               :hint "Seems like the email template has invalid data."
               :contex data))
   {:subject (:subject data)
-   :body [:alternative
-          {:type "text/plain; charset=utf-8"
-           :content (:body-text data)}
-          {:type "text/html; charset=utf-8"
-           :content (:body-html data)}]})
+   :content (cond-> []
+              (:body-text data) (conj {:type "text/plain"
+                                       :value (:body-text data)})
+              (:body-html data) (conj {:type "text/html"
+                                       :value (:body-html data)}))})
 
 (defn- impl-build-email
   [id context]
@@ -102,6 +103,6 @@
                    :hint "seems like the template is wrong or does not exists."
                    ::id id))
        (cond-> (assoc email :id (name id))
-         (:to context) (assoc :to (:to context))
+         (:to context) (assoc :to [(:to context)])
          (:from context) (assoc :from (:from context))
          (:reply-to context) (assoc :reply-to (:reply-to context)))))))
