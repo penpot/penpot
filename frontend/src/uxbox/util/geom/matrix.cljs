@@ -79,6 +79,16 @@
               0
               0))))
 
+(defn skew-matrix
+  ([angle-x angle-y point]
+   (multiply (translate-matrix point)
+             (skew-matrix angle-y angle-y)
+             (translate-matrix (gpt/negate point))))
+  ([angle-x angle-y]
+   (let [m1 (mth/tan (mth/radians angle-x))
+         m2 (mth/tan (mth/radians angle-y))]
+     (Matrix. 1 m2 m1 1 0 0))))
+
 (defn rotate
   "Apply rotation transformation to the matrix."
   ([m angle]
@@ -98,6 +108,12 @@
   [m pt]
   (multiply m (translate-matrix pt)))
 
+(defn skew
+  "Apply translate transformation to the matrix."
+  ([m angle-x angle-y]
+   (multiply m (skew-matrix angle-x angle-y)))
+  ([m angle-x angle-y p]
+   (multiply m (skew-matrix angle-x angle-y p))))
 
 ;; --- Transit Adapter
 
@@ -110,23 +126,3 @@
   (t/read-handler
    (fn [value]
      (map->Matrix value))))
-
-;; Calculates the delta vector to move the figure when scaling after rotation
-;; https://math.stackexchange.com/questions/1449672/determine-shift-between-scaled-rotated-object-and-additional-scale-step
-(defn correct-rotation [handler lx ly kx ky angle]
-  (let [[s1 s2 s3]
-        ;; Different sign configurations change the anchor corner
-        (cond
-          (#{:right :bottom :bottom-right} handler) [-1 1 1]
-          (#{:left :top :top-left} handler) [1 -1 1]
-          (#{:bottom-left} handler) [-1 -1 -1]
-          (#{:top-right} handler) [1 1 -1])
-        rad (* (or angle 0) (/ Math/PI 180))
-        kx' (* (/ (- kx 1.) 2.) lx)
-        ky' (* (/ (- ky 1.) 2.) ly)
-        dx (+ (* s3 (* kx' (- 1 (Math/cos rad))))
-              (* ky' (Math/sin rad)))
-        dy (+ (* (- s3) (* ky' (- 1 (Math/cos rad))))
-              (* kx' (Math/sin rad)))]
-    (translate-matrix
-     (gpt/point (* s1 dx) (* s2 dy)))))

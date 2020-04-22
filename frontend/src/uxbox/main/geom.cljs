@@ -11,6 +11,8 @@
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.math :as mth]
+   [uxbox.util.data :as d]
+   [uxbox.util.debug :as debug]
    [uxbox.main.data.helpers :as helpers]))
 
 ;; --- Relative Movement
@@ -148,6 +150,14 @@
         maxx (apply max (map :x segments))
         maxy (apply max (map :y segments))]
     (gpt/point (/ (+ minx maxx) 2) (/ (+ miny maxy) 2))))
+
+(defn center->rect
+  "Creates a rect given a center and a width and height"
+  [center width height]
+  {:x (- (:x center) (/ width 2))
+   :y (- (:y center) (/ height 2))
+   :width width
+   :height height})
 
 ;; --- Proportions
 
@@ -343,7 +353,8 @@
   (let [points [(gpt/point x y)
                 (gpt/point (+ x width) y)
                 (gpt/point (+ x width) (+ y height))
-                (gpt/point x (+ y height))]]
+                (gpt/point x (+ y height))
+                (gpt/point x y)]]
     (-> shape
         (assoc :type :path)
         (assoc :segments points))))
@@ -408,6 +419,15 @@
      :curve (transform-path shape xfmt)
      (transform-rect shape xfmt))
    shape))
+
+(defn center-transform [shape matrix]
+  (let [shape-center (center shape)]
+    (-> shape
+        (transform
+         (-> (gmt/matrix) 
+             (gmt/translate shape-center)
+             (gmt/multiply matrix)
+             (gmt/translate (gpt/negate shape-center)))))))
 
 (defn- transform-rect
   [{:keys [x y width height] :as shape} mx]
@@ -613,6 +633,39 @@
                  :type :rect}]
     (overlaps? shape selrect)))
 
+
+(defn calculate-rec-path-skew-angle
+  [path-shape]
+  (let [p1 (get-in path-shape [:segments 2])
+        p2 (get-in path-shape [:segments 3])
+        p3 (get-in path-shape [:segments 4])
+        v1 (gpt/to-vec p1 p2)
+        v2 (gpt/to-vec p2 p3)]
+    (- 90 (gpt/angle-with-other v1 v2))))
+
+(defn calculate-rec-path-height
+  "Calculates the height of a paralelogram given by the path"
+  [path-shape]
+
+  (let [p1 (get-in path-shape [:segments 2])
+        p2 (get-in path-shape [:segments 3])
+        p3 (get-in path-shape [:segments 4])
+        v1 (gpt/to-vec p1 p2)
+        v2 (gpt/to-vec p2 p3)
+        angle (gpt/angle-with-other v1 v2)]
+    (* (gpt/length v2) (mth/sin (mth/radians angle)))))
+
+(defn calculate-rec-path-rotation
+  [center path-shape1 path-shape2]
+  (let [p1 (get-in path-shape1 [:segments 0])
+        p2 (get-in path-shape2 [:segments 0])
+        v1 (gpt/to-vec center p1)
+        v2 (gpt/to-vec center p2)
+
+        rot-angle (gpt/angle-with-other v1 v2)
+        rot-sign (if (> (* (:y v1) (:x v2)) (* (:x v1) (:y v2))) -1 1)]
+    (* rot-sign rot-angle)))
+
 (defn transform-shape-point
   "Transform a point around the shape center"
   [point shape transform]
@@ -623,19 +676,6 @@
           (gmt/translate-matrix shape-center)
           transform
           (gmt/translate-matrix (gpt/negate shape-center)))))))
-
-
-(defn- add-rotate-transform [shape rotation]
-  (let [rotation (or rotation 0)]
-    (-> shape
-        (update :transform #(gmt/multiply (gmt/rotate-matrix rotation) (or % (gmt/matrix))))
-        (update :transform-inverse #(gmt/multiply (or % (gmt/matrix)) (gmt/rotate-matrix (- rotation)))))))
-
-(defn- add-stretch-transform [shape stretch]
-  (let [stretch (or stretch (gpt/point 1 1))]
-    (-> shape
-        (update :transform #(gmt/multiply (gmt/scale-matrix stretch) (or % (gmt/matrix))))
-        (update :transform-inverse #(gmt/multiply (or % (gmt/matrix)) (gmt/scale-matrix (gpt/inverse stretch)))))))
 
 (defn- transform-apply-modifiers
   [shape]
@@ -667,19 +707,32 @@
                        (gmt/multiply (:transform shape (gmt/matrix)))
                        (gmt/translate (gpt/negate shape-center)))))))
 
-(defn calculate-stretch
-  [shape-path shape]
-  (let [{:keys [width height] :as selrect} (shape->rect-shape shape-path)
-        {width' :width height' :height :as selrect'} (selection-rect [shape])
-        shape-path-size (gpt/point width height)
-        shape-size (gpt/point width' height')]
-    (gpt/divide shape-path-size shape-size)))
+(defn rect-path-dimensions [rect-path]
+  (let [seg (:segments rect-path)
+        [width height] (mapv (fn [[c1 c2]] (gpt/distance c1 c2)) (take 2 (d/zip seg (rest seg))))]
+    {:width width
+     :height height}))
+
+(defn calculate-stretch [shape-path transform-inverse]
+  (let [shape-center (center shape-path)
+        shape-path-temp (transform
+                         shape-path
+                         (-> (gmt/matrix)
+                             (gmt/translate shape-center)
+                             (gmt/multiply transform-inverse)
+                             (gmt/translate (gpt/negate shape-center))))
+
+        shape-path-temp-rec (shape->rect-shape shape-path-temp)
+        shape-path-temp-dim (rect-path-dimensions shape-path-temp)]
+    (gpt/divide (gpt/point (:width shape-path-temp-rec) (:height shape-path-temp-rec))
+                (gpt/point (:width shape-path-temp-dim) (:height shape-path-temp-dim)))))
 
 (defn transform-selrect
   [frame shape]
-  (-> (shape->rect-shape (transform-apply-modifiers shape))
-      (update :x - (:x frame 0))
-      (update :y - (:y frame 0))))
+  (-> shape
+      (transform-apply-modifiers)
+      (translate-to-frame frame)
+      (shape->rect-shape)))
 
 (defn dissoc-modifiers [shape]
   (-> shape
@@ -692,58 +745,74 @@
 
 (defn transform-rect-shape
   [shape]
-  (let [shape-path (transform-apply-modifiers shape)
-        shape-path-center (center shape-path)
+  (let [;; Apply modifiers to the rect as a path so we have the end shape expected
+        shape-path (transform-apply-modifiers shape)
+        shape-center (center shape-path)
 
-        shape-transform-inverse' (-> (gmt/matrix)
-                                     (gmt/translate shape-path-center)
-                                     (gmt/multiply (:transform-inverse shape (gmt/matrix)))
-                                     (gmt/multiply (gmt/rotate-matrix (- (:rotation-modifier shape 0))))
-                                     (gmt/translate (gpt/negate shape-path-center)))
+        ;; Reverse the current transformation stack to get the base rectangle
+        shape-path-temp (center-transform shape-path (:transform-inverse shape (gmt/matrix)))
+        shape-path-temp-dim (rect-path-dimensions shape-path-temp)
+        shape-path-temp-rec (shape->rect-shape shape-path-temp)
 
-        ;; Revert the transformation so we can calculate the rectangle properties: x, y, width, height
-        changes (-> shape-path
-                    (transform shape-transform-inverse')
-                    (path->rect-shape)
-                    (select-keys [:x :y :width :height]))
+        ;; This rectangle is the new data for the current rectangle. We want to change our rectangle
+        ;; to have this width, height, x, y
+        rec (center->rect shape-center (:width shape-path-temp-dim) (:height shape-path-temp-dim))
+        rec-path (rect->path rec)
 
-        ;; Merges the rect values and updates de transformation matrix before calculating the stretch
+        ;; The next matrix is a series of transformations we have to do to the previous rec so that
+        ;; after applying them the end result is the `shape-path-temp`
+        ;; This is compose of three transformations: skew, resize and rotation
+        stretch-matrix (gmt/matrix)
+
+        skew-angle (calculate-rec-path-skew-angle shape-path-temp)
+        stretch-matrix (gmt/multiply stretch-matrix (gmt/skew-matrix skew-angle 0))
+
+        h1 (calculate-rec-path-height shape-path-temp)
+        h2 (calculate-rec-path-height (center-transform rec-path stretch-matrix))
+        stretch-matrix (gmt/multiply stretch-matrix (gmt/scale-matrix (gpt/point 1 (/ h1 h2))))
+
+        rotation-angle (calculate-rec-path-rotation shape-center (center-transform rec-path stretch-matrix) shape-path-temp)
+        stretch-matrix (gmt/multiply (gmt/rotate-matrix rotation-angle) stretch-matrix)
+
+        ;; This is the inverse to be able to remove the transformation
+        stretch-matrix-inverse (-> (gmt/matrix)
+                                   (gmt/scale (gpt/point 1 (/ h2 h1)))
+                                   (gmt/skew (- skew-angle) 0)
+                                   (gmt/rotate (- rotation-angle)))
+
         new-shape (-> shape
-                      (merge changes)
-                      (add-rotate-transform (:rotation-modifier shape 0)))
-        
-        ;; Calculate the stretch deformation with the resize and rotation aplied
-        stretch (calculate-stretch shape-path (-> new-shape dissoc-modifiers))]
+                      (merge rec)
+                      (update :transform #(gmt/multiply (or % (gmt/matrix)) stretch-matrix))
+                      (update :transform-inverse #(gmt/multiply stretch-matrix-inverse (or % (gmt/matrix)))))]
     
-    (-> new-shape
-        (add-stretch-transform stretch))))
+    new-shape))
 
 (defn transform-path-shape
   [shape]
   (transform-apply-modifiers shape)
   ;; TODO: Addapt for paths is not working
   #_(let [shape-path (transform-apply-modifiers shape)
-        shape-path-center (center shape-path)
+          shape-path-center (center shape-path)
 
-        shape-transform-inverse' (-> (gmt/matrix)
-                                     (gmt/translate shape-path-center)
-                                     (gmt/multiply (:transform-inverse shape (gmt/matrix)))
-                                     (gmt/multiply (gmt/rotate-matrix (- (:rotation-modifier shape 0))))
-                                     (gmt/translate (gpt/negate shape-path-center)))]
-        (-> shape-path
-            (transform shape-transform-inverse')
-            (add-rotate-transform (:rotation-modifier shape 0)))))
+          shape-transform-inverse' (-> (gmt/matrix)
+                                       (gmt/translate shape-path-center)
+                                       (gmt/multiply (:transform-inverse shape (gmt/matrix)))
+                                       (gmt/multiply (gmt/rotate-matrix (- (:rotation-modifier shape 0))))
+                                       (gmt/translate (gpt/negate shape-path-center)))]
+      (-> shape-path
+          (transform shape-transform-inverse')
+          (add-rotate-transform (:rotation-modifier shape 0)))))
 
 (defn transform-shape
   "Transform the shape properties given the modifiers"
   ([shape] (transform-shape nil shape))
   ([frame shape]
-   (let [new-shape (cond
-                 (#{:path :curve} (:type shape)) (transform-path-shape shape)
-                 :else (transform-rect-shape shape))]
+   (let [new-shape (case (:type shape)
+                     :path (transform-path-shape shape)
+                     :curve (transform-path-shape shape)
+                     (transform-rect-shape shape))]
      (-> new-shape
-         (update :x - (:x frame 0))
-         (update :y - (:y frame 0))
+         (translate-to-frame frame)
          (update :rotation #(mod (+ % (:rotation-modifier shape)) 360))
          (dissoc-modifiers)))))
 

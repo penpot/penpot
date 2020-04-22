@@ -171,3 +171,22 @@
    (fn [value]
      (map->Point value))))
 
+
+;; Vector functions
+(defn to-vec [p1 p2]
+  (subtract p2 p1))
+
+(defn dot [{x1 :x y1 :y} {x2 :x y2 :y}]
+  (+ (* x1 x2) (* y1 y2)))
+
+(defn unit [v]
+  (let [v-length (length v)]
+    (divide v (point v-length v-length))))
+
+(defn project [v1 v2]
+  (let [v2-unit (unit v2)
+        scalar-projection (dot v1 (unit v2))]
+    (multiply
+     v2-unit
+     (point scalar-projection scalar-projection))))
+
