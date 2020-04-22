@@ -38,7 +38,8 @@
 (def ^:private minimal-shapes
   [{:type :rect
     :name "Rect"
-    :stroke-color "#000000"}
+    :stroke-color "#000000"
+    :stroke-alignment :center}
    {:type :image}
    {:type :icon}
    {:type :circle
@@ -48,17 +49,20 @@
     :stroke-style :solid
     :stroke-color "#000000"
     :stroke-width 2
+    :stroke-alignment :center
     :fill-color "#000000"
     :fill-opacity 0
     :segments []}
    {:type :frame
     :stroke-style :none
+    :stroke-alignment :center
     :name "Artboard"}
    {:type :curve
     :name "Path"
     :stroke-style :solid
     :stroke-color "#000000"
     :stroke-width 2
+    :stroke-alignment :center
     :fill-color "#000000"
     :fill-opacity 0
     :segments []}

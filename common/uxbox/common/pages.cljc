@@ -61,6 +61,7 @@
 (s/def ::stroke-opacity number?)
 (s/def ::stroke-style #{:solid :dotted :dashed :mixed :none})
 (s/def ::stroke-width number?)
+(s/def ::stroke-alignment #{:center :inner :outer})
 (s/def ::text-align #{"left" "right" "center" "justify"})
 (s/def ::type #{:rect :path :circle :image :text :canvas :curve :icon :frame :group})
 (s/def ::x number?)
@@ -94,6 +95,7 @@
                    ::stroke-opacity
                    ::stroke-style
                    ::stroke-width
+                   ::stroke-alignment
                    ::text-align
                    ::width ::height]))
 

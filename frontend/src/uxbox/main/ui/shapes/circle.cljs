@@ -14,7 +14,8 @@
    [uxbox.util.interop :as itr]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]
-   [uxbox.main.ui.shapes.bounding-box :refer [bounding-box]]))
+   [uxbox.main.ui.shapes.bounding-box :refer [bounding-box]]
+   [uxbox.main.ui.shapes.custom-stroke :refer [shape-custom-stroke]]))
 
 ;; --- Circle Wrapper
 
@@ -54,4 +55,6 @@
                         :ry ry
                         :transform transform
                         :id (str "shape-" id)}))]
-    [:> "ellipse" props]))
+    [:& shape-custom-stroke {:shape shape
+                             :base-props props
+                             :elem-name "ellipse"}]))

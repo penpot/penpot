@@ -15,7 +15,8 @@
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.main.ui.shapes.common :as common]
    [uxbox.util.interop :as itr]
-   [uxbox.main.ui.shapes.bounding-box :refer [bounding-box]]))
+   [uxbox.main.ui.shapes.bounding-box :refer [bounding-box]]
+   [uxbox.main.ui.shapes.custom-stroke :refer [shape-custom-stroke]]))
 
 ;; --- Rect Wrapper
 
@@ -53,4 +54,8 @@
                         :id (str "shape-" id)
                         :width width
                         :height height}))]
-    [:> "rect" props]))
+
+    [:& shape-custom-stroke {:shape shape
+                             :base-props props
+                             :elem-name "rect"}]))
+

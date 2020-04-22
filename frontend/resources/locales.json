@@ -984,21 +984,21 @@
     "unused" : true
   },
   "workspace.options.position" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:130", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:126" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:144", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:126" ],
     "translations" : {
       "en" : "Position",
       "fr" : "Position"
     }
   },
   "workspace.options.radius" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:174" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:188" ],
     "translations" : {
       "en" : "Radius",
       "fr" : "TODO"
     }
   },
   "workspace.options.rotation" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:150" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:164" ],
     "translations" : {
       "en" : "Rotation",
       "fr" : "TODO"
@@ -1012,7 +1012,7 @@
     "unused" : true
   },
   "workspace.options.size" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:78", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:106", "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:78", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:101" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:78", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:92", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:120", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:101" ],
     "translations" : {
       "en" : "Size",
       "fr" : "Taille"
@@ -1025,35 +1025,53 @@
     }
   },
   "workspace.options.stroke" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:74", "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:129" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:81", "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:142" ],
     "translations" : {
       "en" : "Stroke",
       "fr" : null
     }
   },
+  "workspace.options.stroke.center" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:128" ],
+    "translations" : {
+      "en" : "Center"
+    }
+  },
   "workspace.options.stroke.dashed" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:115" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:136" ],
     "translations" : {
       "en" : "Dashed",
       "fr" : "Tiré"
     }
   },
   "workspace.options.stroke.dotted" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:114" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:135" ],
     "translations" : {
       "en" : "Dotted",
       "fr" : "Pointillé"
     }
   },
+  "workspace.options.stroke.inner" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:129" ],
+    "translations" : {
+      "en" : "Inside"
+    }
+  },
   "workspace.options.stroke.mixed" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:116" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:137" ],
     "translations" : {
       "en" : "Mixed",
       "fr" : "Mixte"
     }
   },
+  "workspace.options.stroke.outer" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:130" ],
+    "translations" : {
+      "en" : "Outside"
+    }
+  },
   "workspace.options.stroke.solid" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:113" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:134" ],
     "translations" : {
       "en" : "Solid",
       "fr" : "Solide"
@@ -1192,7 +1210,7 @@
     }
   },
   "workspace.viewport.click-to-close-path" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/drawarea.cljs:329" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/drawarea.cljs:335" ],
     "translations" : {
       "en" : "Click to close the path"
     }
