@@ -64,8 +64,8 @@
                 delta (if (= attr :x)
                         (gpt/point (math/neg (- pval cval)) 0)
                         (gpt/point 0 (math/neg (- pval cval))))]
-            (st/emit! (udw/apply-frame-displacement (:id shape) delta)
-                      (udw/materialize-frame-displacement (:id shape)))))
+            (st/emit! (udw/apply-displacement-in-bulk #{(:id shape)} delta)
+                      (udw/materialize-displacement-in-bulk #{(:id shape)}))))
 
         on-width-change #(on-size-change % :width)
         on-height-change #(on-size-change % :height)

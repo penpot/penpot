@@ -15,13 +15,13 @@
    [uxbox.main.refs :as refs]
    [uxbox.util.dom :as dom]
    [uxbox.util.interop :as itr]
+   [uxbox.util.debug :refer [debug?]]
    [uxbox.main.ui.shapes.common :as common]
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.store :as st]
-   [uxbox.main.streams :as ms]))
-
-(defonce ^:dynamic *debug* (atom false))
+   [uxbox.main.streams :as ms]
+   [uxbox.main.ui.shapes.bounding-box :refer [bounding-box]]))
 
 (defn- equals?
   [np op]
@@ -75,7 +75,8 @@
           {:frame frame
            :shape (geom/transform-shape frame shape)
            :children children
-           :is-child-selected? is-child-selected?}]]))))
+           :is-child-selected? is-child-selected?}]
+         [:& bounding-box {:shape shape :frame frame}]]))))
 
 (defn group-shape
   [shape-wrapper]
@@ -86,28 +87,18 @@
           shape (unchecked-get props "shape")
           children (unchecked-get props "children")
           is-child-selected? (unchecked-get props "is-child-selected?")
-          {:keys [id x y width height rotation
-                  displacement-modifier
-                  resize-modifier]} shape
-
-          transform (when (and rotation (pos? rotation))
-                      (str/format "rotate(%s %s %s)"
-                                  rotation
-                                  (+ x (/ width 2))
-                                  (+ y (/ height 2))))]
-      [:g {:transform transform}
+          {:keys [id x y width height]} shape
+          transform (geom/transform-matrix shape)]
+      [:g
        (for [item children]
          [:& shape-wrapper
-          {:frame frame
-           :shape (cond-> item
-                    displacement-modifier (assoc :displacement-modifier displacement-modifier)
-                    resize-modifier (assoc :resize-modifier resize-modifier))
-           :key (:id item)}])
+          {:frame frame :shape item :key (:id item)}])
 
        (when (not is-child-selected?)
-         [:rect {:x x
+         [:rect {:transform transform
+                 :x x
                  :y y
-                 :fill (if (deref *debug*) "red" "transparent")
+                 :fill (if (debug? :group) "red" "transparent")
                  :opacity 0.5
                  :id (str "group-" id)
                  :width width

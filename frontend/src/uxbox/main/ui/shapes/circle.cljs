@@ -13,7 +13,8 @@
    [uxbox.main.ui.shapes.common :as common]
    [uxbox.util.interop :as itr]
    [uxbox.util.geom.matrix :as gmt]
-   [uxbox.util.geom.point :as gpt]))
+   [uxbox.util.geom.point :as gpt]
+   [uxbox.main.ui.shapes.bounding-box :refer [bounding-box]]))
 
 ;; --- Circle Wrapper
 
@@ -28,19 +29,22 @@
     [:g.shape {:class (when selected? "selected")
                :on-mouse-down on-mouse-down
                :on-context-menu on-context-menu}
-     [:& circle-shape {:shape (geom/transform-shape frame shape)}]]))
+     [:& circle-shape {:shape (geom/transform-shape frame shape)}]
+     [:& bounding-box {:shape shape :frame frame}]]))
 
 ;; --- Circle Shape
 
 (mf/defc circle-shape
-  [{:keys [shape] :as props}]
-  (let [{:keys [id cx cy rx ry rotation]} shape
+  {::mf/wrap-props false}
+  [props]
+  (let [shape (unchecked-get props "shape")
+        {:keys [id x y width height]} shape
+        transform (geom/transform-matrix shape)
 
-        center    (gpt/point cx cy)
-        rotation  (or rotation 0)
-        transform (when (pos? rotation)
-                    (str (-> (gmt/matrix)
-                             (gmt/rotate rotation center))))
+        cx (+ x (/ width 2))
+        cy (+ y (/ height 2))
+        rx (/ width 2)
+        ry (/ height 2)
 
         props (-> (attrs/extract-style-attrs shape)
                   (itr/obj-assign!

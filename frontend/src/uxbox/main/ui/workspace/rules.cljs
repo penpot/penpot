@@ -149,7 +149,7 @@
                          ;; :x 0 :y 0
                          :height c/viewport-height}
 
-     [:g {:transform (str  "translate(0, " translate-y ")")}
+     [:g {:transform (str  "translate(0, " (+ translate-y 20) ")")}
       [:& vertical-rule-ticks {:zoom zoom}]]
      [:rect {:x 0
              :y 0

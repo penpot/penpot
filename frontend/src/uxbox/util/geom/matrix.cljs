@@ -33,6 +33,13 @@
   ([m1 m2 & others]
    (reduce multiply (multiply m1 m2) others)))
 
+(defn substract
+  [{m1a :a m1b :b m1c :c m1d :d m1e :e m1f :f :as m1}
+   {m2a :a m2b :b m2c :c m2d :d m2e :e m2f :f :as m2}]
+  (Matrix.
+   (- m1a m2a) (- m1b m2b) (- m1c m2c)
+   (- m1d m2d) (- m1e m2e) (- m1f m2f)))
+
 (defn ^boolean matrix?
   "Return true if `v` is Matrix instance."
   [v]
@@ -51,43 +58,46 @@
   (Matrix. 1 0 0 1 x y))
 
 (defn scale-matrix
-  [{x :x y :y :as pt}]
-  (assert (gpt/point? pt))
-  (Matrix. x 0 0 y 0 0))
+  ([pt center]
+   (multiply (translate-matrix center)
+             (scale-matrix pt)
+             (translate-matrix (gpt/negate center))))
+  ([{x :x y :y :as pt}]
+   (assert (gpt/point? pt))
+   (Matrix. x 0 0 y 0 0)))
 
 (defn rotate-matrix
-  [a]
-  (let [a (mth/radians a)]
-    (Matrix. (mth/cos a)
-             (mth/sin a)
-             (- (mth/sin a))
-             (mth/cos a)
-             0
-             0)))
+  ([angle point] (multiply (translate-matrix point)
+                           (rotate-matrix angle)
+                           (translate-matrix (gpt/negate point))))
+  ([angle]
+   (let [a (mth/radians angle)]
+     (Matrix. (mth/cos a)
+              (mth/sin a)
+              (- (mth/sin a))
+              (mth/cos a)
+              0
+              0))))
 
 (defn rotate
   "Apply rotation transformation to the matrix."
   ([m angle]
    (multiply m (rotate-matrix angle)))
   ([m angle center]
-   (multiply m
-             (translate-matrix center)
-             (rotate-matrix angle)
-             (translate-matrix (gpt/negate center)))))
+   (multiply m (rotate-matrix angle center))))
 
 (defn scale
   "Apply scale transformation to the matrix."
-  ([m scale] (multiply m (scale-matrix scale)))
+  ([m scale]
+   (multiply m (scale-matrix scale)))
   ([m scale center]
-   (multiply m
-             (translate-matrix center)
-             (scale-matrix scale)
-             (translate-matrix (gpt/negate center)))))
+   (multiply m (scale-matrix scale center))))
 
 (defn translate
   "Apply translate transformation to the matrix."
   [m pt]
   (multiply m (translate-matrix pt)))
+
 
 ;; --- Transit Adapter
 
@@ -118,4 +128,5 @@
               (* ky' (Math/sin rad)))
         dy (+ (* (- s3) (* ky' (- 1 (Math/cos rad))))
               (* kx' (Math/sin rad)))]
-    (gpt/point (* s1 dx) (* s2 dy))))
+    (translate-matrix
+     (gpt/point (* s1 dx) (* s2 dy)))))

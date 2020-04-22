@@ -94,7 +94,7 @@
   [state {:keys [id] :as item}]
   (let [item   (-> item
                    (geom/shape->rect-shape)
-                   (geom/resolve-rotation)
+                   (geom/transform-apply-modifiers)
                    (geom/shape->rect-shape))
         width  (+ (:x item 0) (:width item 0))
         height (+ (:y item 0) (:height item 0))
