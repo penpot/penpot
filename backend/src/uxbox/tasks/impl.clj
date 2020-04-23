@@ -117,8 +117,7 @@
           (p/then decode-task-row)
           (p/then (fn [item]
                     (when item
-                      (log/info "Execute task" (:name item)
-                                "with props" (pr-str (:props item)))
+                      (log/info "Execute task" (:name item))
                       (-> (p/do! (handle-task tasks item))
                           (p/handle (fn [v e]
                                       (if e

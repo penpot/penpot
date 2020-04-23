@@ -25,13 +25,17 @@
    :database-uri "postgresql://127.0.0.1/uxbox"
    :database-username "uxbox"
    :database-password "uxbox"
+
+   :redis-uri "redis://redis/0"
    :media-directory "resources/public/media"
    :assets-directory "resources/public/static"
    :media-uri "http://localhost:6060/media/"
    :assets-uri "http://localhost:6060/static/"
-   :email-reply-to "no-reply@nodomain.com"
-   :email-from "no-reply@nodomain.com"
-   :smtp-enabled false
+
+   :sendmail-backend "console"
+   :sendmail-reply-to "no-reply@example.com"
+   :sendmail-from "no-reply@example.com"
+
    :allow-demo-users true
    :registration-enabled true
    :registration-domain-whitelist ""
@@ -44,19 +48,21 @@
 (s/def ::database-username (s/nilable ::us/string))
 (s/def ::database-password (s/nilable ::us/string))
 (s/def ::database-uri ::us/string)
+(s/def ::redis-uri ::us/string)
 (s/def ::assets-uri ::us/string)
 (s/def ::assets-directory ::us/string)
 (s/def ::media-uri ::us/string)
 (s/def ::media-directory ::us/string)
-(s/def ::email-reply-to ::us/email)
-(s/def ::email-from ::us/email)
+(s/def ::sendmail-backend ::us/string)
+(s/def ::sendmail-backend-apikey ::us/string)
+(s/def ::sendmail-reply-to ::us/email)
+(s/def ::sendmail-from ::us/email)
 (s/def ::smtp-host ::us/string)
 (s/def ::smtp-port ::us/integer)
 (s/def ::smtp-user (s/nilable ::us/string))
 (s/def ::smtp-password (s/nilable ::us/string))
 (s/def ::smtp-tls ::us/boolean)
 (s/def ::smtp-ssl ::us/boolean)
-(s/def ::smtp-enabled ::us/boolean)
 (s/def ::allow-demo-users ::us/boolean)
 (s/def ::registration-enabled ::us/boolean)
 (s/def ::registration-domain-whitelist ::us/string)
@@ -73,15 +79,16 @@
                    ::assets-uri
                    ::media-directory
                    ::media-uri
-                   ::email-reply-to
-                   ::email-from
+                   ::sendmail-reply-to
+                   ::sendmail-from
+                   ::sendmail-backend
+                   ::sendmail-backend-apikey
                    ::smtp-host
                    ::smtp-port
                    ::smtp-user
                    ::smtp-password
                    ::smtp-tls
                    ::smtp-ssl
-                   ::smtp-enabled
                    ::debug-humanize-transit
                    ::allow-demo-users
                    ::registration-enabled]))

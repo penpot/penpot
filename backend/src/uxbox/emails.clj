@@ -34,16 +34,16 @@
 (defn send!
   "Schedule the email for sending."
   ([email context] (send! db/pool email context))
-  ([conn email context]
-   (us/verify fn? email)
+  ([conn email-factory context]
+   (us/verify fn? email-factory)
    (us/verify map? context)
-   (let [defaults {:from (:email-from cfg/config)
-                   :reply-to (:email-reply-to cfg/config)}
-         data (->> (merge defaults context)
-                   (email))]
+   (let [defaults {:from (:sendmail-from cfg/config)
+                   :reply-to (:sendmail-reply-to cfg/config)}
+         data (merge defaults context)
+         email (email-factory data)]
      (tasks/schedule! conn {:name "sendmail"
                             :delay 0
-                            :props data}))))
+                            :props email}))))
 
 ;; --- Emails
 
@@ -62,4 +62,3 @@
 (def password-recovery
   "A password recovery notification email."
   (emails/build ::password-recovery default-context))
-

@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 networks:
   default:
@@ -15,13 +15,16 @@ services:
   main:
     privileged: true
     image: "uxbox-devenv"
-    hostname: 'uxbox-devenv-main'
-    container_name: 'uxbox-devenv-main'
+    hostname: "uxbox-devenv-main"
+    container_name: "uxbox-devenv-main"
     command: "/home/uxbox/init.sh"
     stop_signal: SIGINT
+
     depends_on:
       - postgres
       - smtp
+      - redis
+
     volumes:
       - "user_data:/home/uxbox/local"
       - "${HOME}/.m2:/home/uxbox/.m2"
@@ -39,9 +42,12 @@ services:
       - UXBOX_DATABASE_URI=postgresql://postgres/uxbox
       - UXBOX_DATABASE_USERNAME=uxbox
       - UXBOX_DATABASE_PASSWORD=uxbox
+      - UXBOX_SENDMAIL_BACKEND=smtp
+      - UXBOX_SMTP_HOST=smtp
+      - UXBOX_SMTP_PORT=25
 
   smtp:
-    container_name: 'uxbox-devenv-smtp'
+    container_name: "uxbox-devenv-smtp"
     image: mwader/postfix-relay
     restart: always
     environment:
@@ -51,8 +57,8 @@ services:
   postgres:
     image: postgres:12
     command: postgres -c config_file=/etc/postgresql.conf
-    hostname: 'uxbox-devenv-postgres'
-    container_name: 'uxbox-devenv-postgres'
+    hostname: "uxbox-devenv-postgres"
+    container_name: "uxbox-devenv-postgres"
     restart: always
     stop_signal: SIGINT
     ports:
@@ -66,3 +72,12 @@ services:
       - ./files/postgresql.conf:/etc/postgresql.conf
       - ./files/postgresql_init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:6.0-rc3
+    hostname: "uxbox-devenv-redis"
+    container_name: "uxbox-devenv-redis"
+    restart: always
+
+    ports:
+      - 6379:6379
