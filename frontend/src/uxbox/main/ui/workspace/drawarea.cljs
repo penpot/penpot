@@ -64,7 +64,7 @@
     :segments []}
    {:type :text
     :name "Text"
-    :content "Type your text here"}])
+    :content nil}])
 
 (defn start-drawing
   [type]
