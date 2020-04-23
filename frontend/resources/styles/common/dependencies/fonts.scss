@@ -40,7 +40,7 @@ $base-lh-sm: 1.33;
 $title-lh: 1.25;
 $title-lh-sm: 1.15;
 
-// Font sources
+// Source Sans Pro
 @include font-face("sourcesanspro","sourcesanspro-extralight", "100");
 @include font-face("sourcesanspro","sourcesanspro-extralightitalic","100",italic);
 @include font-face("sourcesanspro","sourcesanspro-light","200");
@@ -53,3 +53,45 @@ $title-lh-sm: 1.15;
 @include font-face("sourcesanspro","sourcesanspro-bolditalic",bold,italic);
 @include font-face("sourcesanspro","sourcesanspro-black","900");
 @include font-face("sourcesanspro","sourcesanspro-blackitalic","900",italic);
+
+// Open Sans
+@include font-face("opensans","opensans-extralight","100");
+@include font-face("opensans","opensans-extralightitalic","100",italic);
+@include font-face("opensans","opensans-light","200");
+@include font-face("opensans","opensans-lightitalic","200",italic);
+@include font-face("opensans","opensans-regular",normal);
+@include font-face("opensans","opensans-italic",normal,italic);
+@include font-face("opensans","opensans-semibold","500");
+@include font-face("opensans","opensans-semibolditalic","500",italic);
+@include font-face("opensans","opensans-bold",bold);
+@include font-face("opensans","opensans-bolditalic",bold,italic);
+@include font-face("opensans","opensans-black","900");
+@include font-face("opensans","opensans-blackitalic","900",italic);
+
+// Roboto
+@include font-face("roboto","roboto-thin","100");
+@include font-face("roboto","roboto-thinitalic","100",italic);
+@include font-face("roboto","roboto-light","200");
+@include font-face("roboto","roboto-lightitalic","200",italic);
+@include font-face("roboto","roboto-regular",normal);
+@include font-face("roboto","roboto-italic",normal,italic);
+@include font-face("roboto","roboto-semibold","500");
+@include font-face("roboto","roboto-semibolditalic","500",italic);
+@include font-face("roboto","roboto-bold",bold);
+@include font-face("roboto","roboto-bolditalic",bold,italic);
+@include font-face("roboto","roboto-black","900");
+@include font-face("roboto","roboto-blackitalic","900",italic);
+
+// Roboto Condensed
+@include font-face("robotocondensed","robotocondensed-thin","100");
+@include font-face("robotocondensed","robotocondensed-thinitalic","100",italic);
+@include font-face("robotocondensed","robotocondensed-light","200");
+@include font-face("robotocondensed","robotocondensed-lightitalic","200",italic);
+@include font-face("robotocondensed","robotocondensed-regular",normal);
+@include font-face("robotocondensed","robotocondensed-italic",normal,italic);
+@include font-face("robotocondensed","robotocondensed-semibold","500");
+@include font-face("robotocondensed","robotocondensed-semibolditalic","500",italic);
+@include font-face("robotocondensed","robotocondensed-bold",bold);
+@include font-face("robotocondensed","robotocondensed-bolditalic",bold,italic);
+@include font-face("robotocondensed","robotocondensed-black","900");
+@include font-face("robotocondensed","robotocondensed-blackitalic","900",italic);
