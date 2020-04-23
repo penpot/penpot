@@ -57,9 +57,11 @@
           (let [id (-> (dom/get-target event)
                        (dom/get-value))
                 font (get fonts id)]
-            (dwt/set-font! editor id (:family font))
-            (when (not= id font-id)
-              (dwt/set-font-variant! editor nil nil nil))))
+            (fonts/ensure-loaded! id
+                                  #(do
+                                     (dwt/set-font! editor id (:family font))
+                                     (when (not= id font-id)
+                                       (dwt/set-font-variant! editor nil nil nil))))))
 
         on-font-size-change
         (fn [event]

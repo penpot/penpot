@@ -152,16 +152,18 @@
 (defmulti ^:private load-font :backend)
 
 (defmethod load-font :builtin
-  [{:keys [id] :as font}]
-  (js/console.log "[debug:fonts]: loading builtin font" id))
+  [{:keys [id ::on-loaded] :as font}]
+  (js/console.log "[debug:fonts]: loading builtin font" id)
+  (on-loaded id))
 
 (defmethod load-font :google
-  [{:keys [id family variants] :as font}]
+  [{:keys [id family variants ::on-loaded] :as font}]
   (js/console.log "[debug:fonts]: loading google font" id)
   (let [base (str "https://fonts.googleapis.com/css?family=" family)
         variants (str/join "," (map :name variants))
-        uri (str base ":" variants)
+        uri (str base ":" variants "&display=block")
         node (create-link-node uri)]
+    (.addEventListener node "load" (fn [event] (on-loaded id)))
     (.append (.-head js/document) node)
     nil))
 
@@ -170,9 +172,16 @@
   (js/console.warn "no implementation found for" backend))
 
 (defn ensure-loaded!
-  [id]
-  (when-not (contains? @loaded id)
-    (when-let [font (get @fontsdb id)]
-      (load-font font)
-      (swap! loaded conj id))))
+  ([id]
+   (when-not (contains? @loaded id)
+     (when-let [font (get @fontsdb id)]
+       (load-font font)
+       (swap! loaded conj id))))
+  ([id on-loaded]
+   (if (contains? @loaded id)
+     (on-loaded id)
+     (when-let [font (get @fontsdb id)]
+       (load-font (assoc font ::on-loaded on-loaded))
+       (swap! loaded conj id)))))
+
 
