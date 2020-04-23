@@ -9,16 +9,19 @@
 
 (ns uxbox.main.fonts
   "Fonts management and loading logic."
+  (:require-macros [uxbox.main.fonts :refer [preload-gfonts]])
   (:require
    [beicon.core :as rx]
+   [promesa.core :as p]
    [okulary.core :as l]
    [cuerdas.core :as str]
    [uxbox.util.dom :as dom]
-   [uxbox.util.http :as http]
-   [uxbox.util.transit :as t]
    [uxbox.util.timers :as ts]
    [uxbox.common.data :as d]
    [clojure.set :as set]))
+
+(def google-fonts
+  (preload-gfonts "fonts/gfonts.2020.04.23.json"))
 
 (def local-fonts
   [{:id "sourcesanspro"
@@ -88,6 +91,7 @@
     (swap! fontsdb #(merge % (d/index-by :id fonts)))))
 
 (register! :builtin local-fonts)
+(register! :google google-fonts)
 
 (defn resolve-variants
   [id]
@@ -97,45 +101,6 @@
   [backend]
   (get @fontsview backend))
 
-;; --- Google Fonts Fetcher
-
-(def ^:private gfonts-uri "/fonts/gfonts.2020.04.23.json")
-
-(defn- parse-gfont-variant
-  [variant]
-  (cond
-    (= "regular" variant)
-    {:name "regular" :width "400" :style "normal"}
-
-    (= "italic" variant)
-    {:name "italic" :width "400" :style "italic"}
-
-    :else
-    (when-let [[a b c] (re-find #"^(\d+)(.*)$" variant)]
-      (if (str/empty? c)
-        {:name a :width b :style "normal"}
-        {:name a :width b :style c}))))
-
-(defn- parse-gfont
-  [font]
-  (let [family (get font "family")
-        variants (get font "variants")]
-    {:id (str "gfont-" (str/slug family))
-     :family family
-     :name family
-     :variants (into [] (comp (map parse-gfont-variant)
-                              (filter identity))
-                     variants)}))
-
-(let [url (unchecked-get js/location "origin")
-      url (str url gfonts-uri)
-      stm (->> (http/send! {:method :get :url url})
-               (rx/map :body)
-               (rx/map t/decode)
-               (rx/mapcat #(get % "items"))
-               (rx/map parse-gfont)
-               (rx/reduce conj []))]
-  (rx/subscribe stm #(register! :google %)))
 
 ;; --- Fonts Loader
 
@@ -154,7 +119,8 @@
 (defmethod load-font :builtin
   [{:keys [id ::on-loaded] :as font}]
   (js/console.log "[debug:fonts]: loading builtin font" id)
-  (on-loaded id))
+  (when (fn? on-loaded)
+    (on-loaded id)))
 
 (defmethod load-font :google
   [{:keys [id family variants ::on-loaded] :as font}]
@@ -163,7 +129,8 @@
         variants (str/join "," (map :name variants))
         uri (str base ":" variants "&display=block")
         node (create-link-node uri)]
-    (.addEventListener node "load" (fn [event] (on-loaded id)))
+    (.addEventListener node "load" (fn [event] (when (fn? on-loaded)
+                                                 (on-loaded id))))
     (.append (.-head js/document) node)
     nil))
 
@@ -173,10 +140,8 @@
 
 (defn ensure-loaded!
   ([id]
-   (when-not (contains? @loaded id)
-     (when-let [font (get @fontsdb id)]
-       (load-font font)
-       (swap! loaded conj id))))
+   (p/create (fn [resolve]
+               (ensure-loaded! id resolve))))
   ([id on-loaded]
    (if (contains? @loaded id)
      (on-loaded id)
