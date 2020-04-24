@@ -250,27 +250,31 @@
                              #(merge % modifiers)))]
          (reduce update-shape state ids-with-children))))))
 
+(defn rotation-modifiers [center shape angle]
+  (let [displacement (let [shape-center (gsh/center shape)]
+                       (-> (gmt/matrix)
+                           (gmt/rotate angle center)
+                           (gmt/rotate (- angle) shape-center)))]
+    {:rotation angle
+     :displacement displacement}))
+
+
 ;; Set-rotation is custom because applies different modifiers to each shape adjusting their position
 (defn set-rotation
   [delta-rotation shapes]
   (ptk/reify ::set-rotation
+    IUpdateGroup
+    (get-ids [_] (map :id shapes))
+
     ptk/UpdateEvent
     (update [_ state]
       (let [page-id (:current-page-id state)]
-        (letfn [(calculate-displacement [shape angle center]
-                  (let [shape-center (gsh/center shape)]
-                    (-> (gmt/matrix)
-                        (gmt/rotate angle center)
-                        (gmt/rotate (- angle) shape-center))))
-
-                (rotate-shape [state angle shape center]
+        (letfn [(rotate-shape [state angle shape center]
                   (let [objects (get-in state [:workspace-data page-id :objects])
                         path [:workspace-data page-id :objects (:id shape) :modifiers]
-                        ds (calculate-displacement shape angle center)]
+                        modifiers (rotation-modifiers center shape angle)]
                     (-> state
-                        (assoc-in (conj path :rotation) angle)
-                        (assoc-in (conj path :displacement) ds))))
-
+                        (update-in path merge modifiers))))
 
                 (rotate-around-center [state angle center shapes]
                   (reduce #(rotate-shape %1 angle %2 center) state shapes))]

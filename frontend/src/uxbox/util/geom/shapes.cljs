@@ -464,14 +464,16 @@
 
 (declare transform-apply-modifiers)
 
+(defn selection-rect-shape [shape]
+  (-> shape
+      (transform-apply-modifiers)
+      (shape->rect-shape)))
+
 (defn selection-rect
   "Returns a rect that contains all the shapes and is aware of the
   rotation of each shape. Mainly used for multiple selection."
   [shapes]
-  (let [xf-resolve-shape (comp (map shape->rect-shape)
-                               (map transform-apply-modifiers)
-                               (map shape->rect-shape))
-
+  (let [xf-resolve-shape (map selection-rect-shape)
         shapes (into [] xf-resolve-shape shapes)
         minx (transduce (map :x1) min shapes)
         miny (transduce (map :y1) min shapes)

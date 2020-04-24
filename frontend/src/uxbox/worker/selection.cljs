@@ -92,10 +92,8 @@
 
 (defn- resolve-object
   [state {:keys [id] :as item}]
-  (let [item   (-> item
-                   (geom/shape->rect-shape)
-                   (geom/transform-apply-modifiers)
-                   (geom/shape->rect-shape))
+  (let [selection-rect (geom/selection-rect-shape item)
+        item   (merge item (select-keys selection-rect [:x :y :width :height]))
         width  (+ (:x item 0) (:width item 0))
         height (+ (:y item 0) (:height item 0))
         max    (fnil max 0)]

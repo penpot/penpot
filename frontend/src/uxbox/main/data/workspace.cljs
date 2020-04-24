@@ -153,6 +153,7 @@
 
 
 (declare initialize-page-persistence)
+(declare initialize-group-check)
 
 (defn initialize-page
   [page-id]
@@ -169,7 +170,8 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (initialize-page-persistence page-id)))))
+      (rx/of (initialize-page-persistence page-id)
+             (initialize-group-check)))))
 
 (defn finalize-page
   [page-id]
@@ -199,7 +201,7 @@
     
     ptk/UpdateEvent
     (update [_ state]
-      (let [page-id (:page-id state)
+      (let [page-id (:current-page-id state)
             objects (get-in state [:workspace-data page-id :objects])
             groups-to-adjust (->> ids
                                   (mapcat #(reverse (helpers/get-all-parents % objects)))
@@ -207,13 +209,25 @@
                                   (filter #(= (:type %) :group))
                                   (map #(:id %))
                                   distinct)
-
             update-group
             (fn [state group]
               (let [objects (get-in state [:workspace-data page-id :objects])
-                    group-objects (map #(get objects %) (:shapes group))
+                    group-center (geom/center group)
+                    group-objects (->> (:shapes group)
+                                       (map #(get objects %))
+                                       (map #(-> %
+                                                 (assoc :modifiers
+                                                        (transforms/rotation-modifiers group-center % (- (:rotation group 0))))
+                                                 (geom/transform-shape))))
                     selrect (geom/selection-rect group-objects)]
-                (merge group (select-keys selrect [:x :y :width :height]))))
+
+                ;; Rotate the group shape change the data and rotate back again
+                (-> group
+                    (assoc-in [:modifiers :rotation] (- (:rotation group)))
+                    (geom/transform-shape)
+                    (merge (select-keys selrect [:x :y :width :height]))
+                    (assoc-in [:modifiers :rotation] (:rotation group))
+                    (geom/transform-shape))))
 
             reduce-fn
             #(update-in %1 [:workspace-data page-id :objects %2] (partial update-group %1))]
