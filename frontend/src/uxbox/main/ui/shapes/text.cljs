@@ -154,10 +154,14 @@
 
         font-family (unchecked-get data "fontFamily")
         font-size  (unchecked-get data "fontSize")
+        fill (unchecked-get data "fill")
+        opacity (unchecked-get data "opacity")
 
         fontsdb (mf/deref fonts/fontsdb)
 
         base #js {:textDecoration text-decoration
+                  :color fill
+                  :opacity opacity
                   :textTransform text-transform}]
 
     (when (and (string? letter-spacing)
@@ -250,10 +254,12 @@
           (dom/prevent-default event)
           (dom/stop-propagation event)
           (let [sidebar (dom/get-element "settings-bar")
+                cpicker (dom/get-element-by-class "colorpicker-tooltip")
                 self    (mf/ref-val self-ref)
                 target  (dom/get-target event)]
             (when-not (or (.contains sidebar target)
-                          (.contains self target))
+                          (.contains self target)
+                          (and cpicker (.contains cpicker target)))
               (on-close))))
 
         on-keyup
@@ -332,7 +338,9 @@
                      :height height}
 
      [:> rslate/Slate {:editor editor
-                       :value content}
+                       :value content
+                       :on-change (constantly nil)}
+
       [:> rslate/Editable {:auto-focus "false"
                            :read-only "true"
                            :class "rich-text"

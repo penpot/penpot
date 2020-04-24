@@ -10,6 +10,7 @@
 (ns uxbox.main.ui.workspace.sidebar.options.text
   (:require
    [rumext.alpha :as mf]
+   [cuerdas.core :as str]
    [okulary.core :as l]
    [uxbox.builtins.icons :as i]
    [uxbox.common.data :as d]
@@ -17,6 +18,8 @@
    [uxbox.main.data.workspace.texts :as dwt]
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
+   [uxbox.main.ui.modal :as modal]
+   [uxbox.main.ui.workspace.colorpicker :refer [colorpicker-modal]]
    [uxbox.main.ui.workspace.sidebar.options.measures :refer [measures-menu]]
    [uxbox.util.dom :as dom]
    [uxbox.main.fonts :as fonts]
@@ -77,6 +80,7 @@
             (dwt/set-font! editor (:id font) (:family font))
             (dwt/set-font-variant! editor id (:weight variant) (:style variant))))
         ]
+
     [:*
      [:div.row-flex
       [:select.input-select {:value font-id
@@ -116,9 +120,9 @@
 (mf/defc text-align-options
   [{:keys [editor] :as props}]
   (let [on-text-align-change
-       (fn [event type]
-         (js/console.log (dwt/set-text-align! editor type)))]
-      ;; --- Align
+        (fn [event type]
+          (dwt/set-text-align! editor type))]
+    ;; --- Align
 
     [:div.row-flex.align-icons
      [:span.tooltip.tooltip-bottom
@@ -146,6 +150,77 @@
        :on-click #(on-text-align-change % "justify")}
       i/text-align-justify]]))
 
+
+(mf/defc text-fill-options
+  [{:keys [editor] :as props}]
+  (let [color (dwt/current-fill editor {:default "#000000"})
+        opacity (dwt/current-opacity editor {:default 1})
+        opacity (math/round (* opacity 100))
+
+        on-color-change
+        (fn [color]
+          (dwt/set-fill! editor color))
+
+        on-color-input-change
+        (fn [event]
+          (let [input (dom/get-target event)
+                value (dom/get-value input)]
+            (when (dom/valid? input)
+              (on-color-change value))))
+
+        on-opacity-change
+        (fn [event]
+          (let [value (-> (dom/get-target event)
+                          (dom/get-value))]
+            (when (str/numeric? value)
+              (let [value (-> (d/parse-integer value 1)
+                              (/ 100))]
+                (dwt/set-opacity! editor value)))))
+
+        show-color-picker
+        (fn [event]
+          (let [x (.-clientX event)
+                y (.-clientY event)
+                props {:x x :y y
+                       :on-change on-color-change
+                       :default "#ffffff"
+                       :value color
+                       :transparent? true}]
+            (modal/show! colorpicker-modal props)))]
+
+    [:div.row-flex.color-data
+     [:span.color-th
+      {:style {:background-color color}
+       :on-click show-color-picker
+       }]
+
+     [:div.color-info
+      [:input {:default-value color
+               :pattern "^#(?:[0-9a-fA-F]{3}){1,2}$"
+               :ref (fn [el]
+                      (when el
+                        (set! (.-value el) color)))
+               :on-change on-color-input-change
+               }]]
+
+     [:div.input-element.percentail
+      [:input.input-text {:type "number"
+                          :ref (fn [el]
+                                 (when el
+                                   (set! (.-value el) opacity)))
+                          :default-value opacity
+                          :on-change on-opacity-change
+                          :min "0"
+                          :max "100"}]]
+
+     [:input.slidebar {:type "range"
+                       :min "0"
+                       :max "100"
+                       :value opacity
+                       :step "1"
+                       :on-change on-opacity-change
+                       }]]))
+
 (mf/defc spacing-options
   [{:keys [editor] :as props}]
   (let [selection (mf/use-ref)
@@ -164,21 +239,10 @@
         :min "0"
         :max "200"
         :value lh
-        :on-focus  (fn [event]
-                     (js/console.log "line-height on-focus")
-                     ;; (mf/set-ref-val! selection (.-selection editor))
-                     (dom/prevent-default event)
-                     (dom/stop-propagation event))
-        :on-blur   (fn [event]
-                     ;; (js/console.log "line-height on-blur")
-                     (mf/set-ref-val! selection nil)
-                     (dom/prevent-default event)
-                     (dom/stop-propagation event))
         :on-change (fn [event]
                      (let [val (-> (dom/get-target event)
                                    (dom/get-value))
                            sel (mf/ref-val selection)]
-                       ;; (js/console.log "line-height on-change" sel val)
                        (dwt/set-line-height! editor val sel)))}]]
      [:div.input-icon
       [:span.icon-before.tooltip.tooltip-bottom
@@ -190,21 +254,10 @@
         :min "0"
         :max "200"
         :value ls
-        :on-focus  (fn [event]
-                     ;; (js/console.log "letter-spacing on-focus")
-                     (mf/set-ref-val! selection (.-selection editor))
-                     (dom/prevent-default event)
-                     (dom/stop-propagation event))
-        :on-blur   (fn [event]
-                     ;; (js/console.log "letter-spacing on-blur")
-                     (mf/set-ref-val! selection nil)
-                     (dom/prevent-default event)
-                     (dom/stop-propagation event))
         :on-change (fn [event]
                      (let [val (-> (dom/get-target event)
                                    (dom/get-value))
                            sel (mf/ref-val selection)]
-                       ;; (js/console.log "letter-spacing on-change" sel val)
                        (dwt/set-letter-spacing! editor val sel)))}]]]))
 
 (mf/defc box-sizing-options
@@ -263,10 +316,10 @@
        i/minus]
 
       [:span.tooltip.tooltip-bottom
-         {:alt "Underline"
-          :class (dom/classnames
-                  :current (dwt/text-decoration-enabled? editor "underline"))
-          :on-click #(on-decoration-change % "underline")}
+       {:alt "Underline"
+        :class (dom/classnames
+                :current (dwt/text-decoration-enabled? editor "underline"))
+        :on-click #(on-decoration-change % "underline")}
        i/underline]
 
       [:span.tooltip.tooltip-bottom
@@ -324,19 +377,26 @@
         editor (:editor (mf/deref refs/workspace-local))
         locale (i18n/use-locale)]
 
-    [:div.element-set
-     [:div.element-set-title (t locale "workspace.options.font-options")]
-     [:div.element-set-content
-      [:& font-options {:editor editor}]
-      [:& text-align-options {:editor editor}]
-      [:& spacing-options {:editor editor}]
+    [:*
+     [:div.element-set
+      [:div.element-set-title (t locale "workspace.options.fill")]
+      [:div.element-set-content
+       [:& text-fill-options {:editor editor}]]]
 
-      [:div.row-flex
-       [:& vertical-align-options {:editor editor}]
-       [:& box-sizing-options {:editor editor}]]
 
-      [:& text-decoration-options {:editor editor}]
-      [:& text-transform-options {:editor editor}]]]))
+     [:div.element-set
+      [:div.element-set-title (t locale "workspace.options.font-options")]
+      [:div.element-set-content
+       [:& font-options {:editor editor}]
+       [:& text-align-options {:editor editor}]
+       [:& spacing-options {:editor editor}]
+
+       [:div.row-flex
+        [:& vertical-align-options {:editor editor}]
+        [:& box-sizing-options {:editor editor}]]
+
+       [:& text-decoration-options {:editor editor}]
+       [:& text-transform-options {:editor editor}]]]]))
 
 (mf/defc options
   [{:keys [shape] :as props}]

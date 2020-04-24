@@ -18,9 +18,6 @@
    [uxbox.main.fonts :as fonts]
    ["slate" :as slate :refer [Editor Transforms Text]]))
 
-(declare set-nodes!)
-(declare is-text?)
-
 (defn assign-editor
   [editor]
   (ptk/reify ::assign-editor
@@ -93,14 +90,20 @@
                   at]
            :as opts}]
   (when editor
-    (let [options #js {:match pred
-                       :universal universal?}
-          _ (when at (unchecked-set options "at" at))
+    (let [options #js {:match pred :universal universal?}
+          default-loc #js {:path #js [0 0] :offset 0}]
 
-          result (.nodes Editor editor options)
-          match  (ffirst (es6-iterator-seq result))]
-      (when (object? match)
-        (unchecked-get match attr)))))
+      (cond
+        (object? at)
+        (unchecked-set options "at" at)
+
+        (nil? (unchecked-get editor "selection"))
+        (unchecked-set options "at" default-loc))
+
+      (let [result (.nodes Editor editor options)
+            match  (ffirst (es6-iterator-seq result))]
+        (when (object? match)
+          (unchecked-get match attr))))))
 
 (defn current-line-height
   [editor {:keys [at default]}]
@@ -141,6 +144,24 @@
   (or (current-value editor {:at at
                              :pred is-text?
                              :attr "fontVariantId"
+                             :universal? true})
+      default))
+
+
+(defn current-fill
+  [editor {:keys [at default]}]
+  (or (current-value editor {:at at
+                             :pred is-text?
+                             :attr "fill"
+                             :universal? true})
+      default))
+
+
+(defn current-opacity
+  [editor {:keys [at default]}]
+  (or (current-value editor {:at at
+                             :pred is-text?
+                             :attr "opacity"
                              :universal? true})
       default))
 
@@ -214,5 +235,16 @@
               #js {:match is-text?
                    :split true}))
 
+(defn set-fill!
+  [editor val]
+  (set-nodes! editor
+              #js {:fill val}
+              #js {:match is-text?
+                   :split true}))
 
-
+(defn set-opacity!
+  [editor val]
+  (set-nodes! editor
+              #js {:opacity val}
+              #js {:match is-text?
+                   :split true}))
