@@ -1730,8 +1730,8 @@
 (def start-move-selected transforms/start-move-selected)
 (def move-selected transforms/move-selected)
 
-(def apply-displacement-in-bulk transforms/apply-displacement-in-bulk)
-(def materialize-displacement-in-bulk transforms/materialize-displacement-in-bulk)
+(def set-modifiers transforms/set-modifiers)
+(def apply-modifiers transforms/apply-modifiers)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shortcuts

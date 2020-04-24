@@ -64,8 +64,10 @@
                 delta (if (= attr :x)
                         (gpt/point (math/neg (- pval cval)) 0)
                         (gpt/point 0 (math/neg (- pval cval))))]
-            (st/emit! (udw/apply-displacement-in-bulk #{(:id shape)} delta)
-                      (udw/materialize-displacement-in-bulk #{(:id shape)}))))
+            
+            ;; TODO: Change so not apply the modifiers until blur
+            (st/emit! (udw/set-modifiers #{(:id shape)} {:displacement delta})
+                      (udw/apply-modifiers #{(:id shape)}))))
 
         on-width-change #(on-size-change % :width)
         on-height-change #(on-size-change % :height)

@@ -679,12 +679,13 @@
 
 (defn- transform-apply-modifiers
   [shape]
-  (let [ds-modifier (:displacement-modifier shape (gmt/matrix))
-        resize (:resize-modifier-vector shape (gpt/point 1 1))
-        origin (:resize-modifier-origin shape (gpt/point 0 0))
-        resize-transform (:resize-modifier-transform shape (gmt/matrix))
-        resize-transform-inverse (:resize-modifier-transform-inverse shape (gmt/matrix))
-        rt-modif (:rotation-modifier shape 0)
+  (let [modifiers (:modifiers shape)
+        ds-modifier (:displacement modifiers (gmt/matrix))
+        resize (:resize-vector modifiers (gpt/point 1 1))
+        origin (:resize-origin modifiers (gpt/point 0 0))
+        resize-transform (:resize-transform modifiers (gmt/matrix))
+        resize-transform-inverse (:resize-transform-inverse modifiers (gmt/matrix))
+        rt-modif (:rotation modifiers 0)
 
         shape (-> shape
                   (transform ds-modifier))
@@ -733,15 +734,6 @@
       (transform-apply-modifiers)
       (translate-to-frame frame)
       (shape->rect-shape)))
-
-(defn dissoc-modifiers [shape]
-  (-> shape
-      (dissoc :rotation-modifier)
-      (dissoc :displacement-modifier)
-      (dissoc :resize-modifier)
-      (dissoc :resize-modifier-vector)
-      (dissoc :resize-modifier-origin)
-      (dissoc :resize-modifier-rotation)))
 
 (defn transform-rect-shape
   [shape]
@@ -813,8 +805,8 @@
                      (transform-rect-shape shape))]
      (-> new-shape
          (translate-to-frame frame)
-         (update :rotation #(mod (+ % (:rotation-modifier shape)) 360))
-         (dissoc-modifiers)))))
+         (update :rotation #(mod (+ % (get-in shape [:modifiers :rotation] 0)) 360))
+         (dissoc :modifiers)))))
 
 
 (defn transform-matrix

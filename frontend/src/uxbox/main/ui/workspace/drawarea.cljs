@@ -123,9 +123,9 @@
                   scalev (gpt/divide (gpt/add shapev deltav) shapev)]
 
               (-> shape
-                  (assoc :resize-modifier-vector scalev)
-                  (assoc :resize-modifier-origin (gpt/point x y))
-                  (assoc :resize-modifier-rotation 0))))
+                  (assoc-in [:modifiers :resize-vector] scalev)
+                  (assoc-in [:modifiers :resize-origin] (gpt/point x y))
+                  (assoc-in [:modifiers :resize-rotation] 0))))
 
           (update-drawing [state initial point lock?]
             (update-in state [:workspace-local :drawing] resize-shape initial point lock?))]
@@ -273,11 +273,11 @@
          (rx/of dw/clear-drawing)
          (when (::initialized? shape)
            (let [shape (-> shape
-                              (geom/transform-shape)
-                              (dissoc shape ::initialized?))]
-                ;; Add & select the created shape to the workspace
-                (rx/of dw/deselect-all
-                       (dw/add-shape shape)))))))))
+                           (geom/transform-shape)
+                           (dissoc shape ::initialized?))]
+             ;; Add & select the created shape to the workspace
+             (rx/of dw/deselect-all
+                    (dw/add-shape shape)))))))))
 
 (def close-drawing-path
   (ptk/reify ::close-drawing-path
