@@ -15,6 +15,7 @@
    [goog.events :as events]
    [goog.object :as gobj]
    [potok.core :as ptk]
+   [uxbox.util.object :as obj]
    [uxbox.main.fonts :as fonts]
    ["slate" :as slate :refer [Editor Transforms Text]]))
 
@@ -29,10 +30,22 @@
 
 ;; --- Helpers
 
+(defn- calculate-full-selection
+  [editor]
+  (let [children (obj/get editor "children")
+        paragraphs (obj/get-in children [0 "children" 0 "children"])]
+    #js {:anchor #js {:path #js [0 0 0]
+                      :offset 0}
+         :focus #js {:path #js [0 0 (dec (alength paragraphs))]
+                     :offset 1}}))
+
 (defn set-nodes!
   ([editor props]
    (set-nodes! editor props #js {}))
   ([editor props options]
+   (when (and (nil? (obj/get editor "selection"))
+              (nil? (obj/get options "at")))
+     (obj/assoc! options "at" (calculate-full-selection editor)))
    (.setNodes Transforms editor props options)
    editor))
 
@@ -57,28 +70,28 @@
   [editor type]
   (enabled? editor true
             (fn [v]
-              (let [val (unchecked-get v "textDecoration")]
+              (let [val (obj/get v "textDecoration")]
                 (identical? type val)))))
 
 (defn text-transform-enabled?
   [editor type]
   (enabled? editor true
             (fn [v]
-              (let [val (unchecked-get v "textTransform")]
+              (let [val (obj/get v "textTransform")]
                 (identical? type val)))))
 
 (defn text-align-enabled?
   [editor type]
   (enabled? editor false
             (fn [v]
-              (let [val (unchecked-get v "textAlign")]
+              (let [val (obj/get v "textAlign")]
                 (identical? type val)))))
 
 (defn vertical-align-enabled?
   [editor type]
   (enabled? editor false
             (fn [v]
-              (let [val (unchecked-get v "verticalAlign")]
+              (let [val (obj/get v "verticalAlign")]
                 (identical? type val)))))
 
 ;; --- Getters
@@ -90,20 +103,18 @@
                   at]
            :as opts}]
   (when editor
-    (let [options #js {:match pred :universal universal?}
-          default-loc #js {:path #js [0 0] :offset 0}]
-
+    (let [options #js {:match pred :universal universal?}]
       (cond
         (object? at)
-        (unchecked-set options "at" at)
+        (obj/assoc! options "at" at)
 
-        (nil? (unchecked-get editor "selection"))
-        (unchecked-set options "at" default-loc))
+        (nil? (obj/get editor "selection"))
+        (obj/assoc! options "at" (calculate-full-selection editor)))
 
       (let [result (.nodes Editor editor options)
             match  (ffirst (es6-iterator-seq result))]
         (when (object? match)
-          (unchecked-get match attr))))))
+          (obj/get match attr))))))
 
 (defn current-line-height
   [editor {:keys [at default]}]
@@ -168,7 +179,6 @@
 
 ;; --- Setters
 
-
 (defn set-text-decoration!
   [editor type]
   (set-nodes! editor
@@ -194,7 +204,7 @@
   (set-nodes! editor
               #js {:verticalAlign type}
               #js {:match (fn [item]
-                            (= "text-box" (unchecked-get item "type")))}))
+                            (= "text-box" (obj/get item "type")))}))
 
 (defn set-line-height!
   [editor val at]

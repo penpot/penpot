@@ -22,6 +22,7 @@
    [uxbox.util.color :as color]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.shapes :as geom]
+   [uxbox.util.object :as obj]
    [uxbox.util.geom.matrix :as gmt]
    ["slate" :as slate]
    ["slate-react" :as rslate])
@@ -72,38 +73,33 @@
 
 ;; --- Text Rendering
 
-(defn obj-assoc!
-  [obj attr value]
-  (unchecked-set obj attr value)
-  obj)
-
 (defn- generate-text-box-styles
   [data]
-  (let [valign (unchecked-get data "verticalAlign")
+  (let [valign (obj/get data "verticalAlign")
         base   #js {:height "100%"
                     :width "100%"
                     :display "flex"}]
     (cond-> base
-      (= valign "top") (obj-assoc! "alignItems" "flex-start")
-      (= valign "center") (obj-assoc! "alignItems" "center")
-      (= valign "bottom") (obj-assoc! "alignItems" "flex-end"))))
+      (= valign "top") (obj/assoc! "alignItems" "flex-start")
+      (= valign "center") (obj/assoc! "alignItems" "center")
+      (= valign "bottom") (obj/assoc! "alignItems" "flex-end"))))
 
 (mf/defc rt-text-box
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
   [props]
-  (let [attrs  (unchecked-get props "attributes")
-        childs (unchecked-get props "children")
-        data   (unchecked-get props "element")
-        type   (unchecked-get data "type")
+  (let [attrs  (obj/get props "attributes")
+        childs (obj/get props "children")
+        data   (obj/get props "element")
+        type   (obj/get data "type")
         style  (generate-text-box-styles data)
-        attrs  (obj-assoc! attrs "style" style)
-        attrs  (obj-assoc! attrs "className" type)]
+        attrs  (obj/assoc! attrs "style" style)
+        attrs  (obj/assoc! attrs "className" type)]
     [:> :div attrs childs]))
 
 (defn- generate-text-styles
   [data]
-  (let [valign (unchecked-get data "verticalAlign")
+  (let [valign (obj/get data "verticalAlign")
         base #js {:display "inline-block"
                   :width "100%"}]
     base))
@@ -112,13 +108,13 @@
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
   [props]
-  (let [attrs  (unchecked-get props "attributes")
-        childs (unchecked-get props "children")
-        data   (unchecked-get props "element")
-        type   (unchecked-get data "type")
+  (let [attrs  (obj/get props "attributes")
+        childs (obj/get props "children")
+        data   (obj/get props "element")
+        type   (obj/get data "type")
         style  (generate-text-styles data)
-        attrs  (obj-assoc! attrs "style" style)
-        attrs  (obj-assoc! attrs "className" type)]
+        attrs  (obj/assoc! attrs "style" style)
+        attrs  (obj/assoc! attrs "className" type)]
     [:> :div attrs childs]))
 
 (defn- generate-paragraph-styles
@@ -126,36 +122,36 @@
   (let [base #js {:fontSize "14px"
                   :margin "inherit"
                   :lineHeight "1.2"}
-        lh (unchecked-get data "lineHeight")
-        ta (unchecked-get data "textAlign")]
+        lh (obj/get data "lineHeight")
+        ta (obj/get data "textAlign")]
     (cond-> base
-      ta (obj-assoc! "textAlign" ta)
-      lh (obj-assoc! "lineHeight" lh))))
+      ta (obj/assoc! "textAlign" ta)
+      lh (obj/assoc! "lineHeight" lh))))
 
 (mf/defc rt-pharagraph
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
   [props]
-  (let [attrs  (unchecked-get props "attributes")
-        childs (unchecked-get props "children")
-        data   (unchecked-get props "element")
+  (let [attrs  (obj/get props "attributes")
+        childs (obj/get props "children")
+        data   (obj/get props "element")
         style  (generate-paragraph-styles data)
-        attrs  (obj-assoc! attrs "style" style)]
+        attrs  (obj/assoc! attrs "style" style)]
     [:> :p attrs childs]))
 
 (defn- generate-leaf-styles
   [data]
-  (let [letter-spacing (unchecked-get data "letterSpacing")
-        text-decoration (unchecked-get data "textDecoration")
-        text-transform (unchecked-get data "textTransform")
+  (let [letter-spacing (obj/get data "letterSpacing")
+        text-decoration (obj/get data "textDecoration")
+        text-transform (obj/get data "textTransform")
 
-        font-id (unchecked-get data "fontId")
-        font-variant-id (unchecked-get data "fontVariantId")
+        font-id (obj/get data "fontId")
+        font-variant-id (obj/get data "fontVariantId")
 
-        font-family (unchecked-get data "fontFamily")
-        font-size  (unchecked-get data "fontSize")
-        fill (unchecked-get data "fill")
-        opacity (unchecked-get data "opacity")
+        font-family (obj/get data "fontFamily")
+        font-size  (obj/get data "fontSize")
+        fill (obj/get data "fill")
+        opacity (obj/get data "opacity")
 
         fontsdb (mf/deref fonts/fontsdb)
 
@@ -166,27 +162,27 @@
 
     (when (and (string? letter-spacing)
                (pos? (alength letter-spacing)))
-      (obj-assoc! base "letterSpacing" (str letter-spacing "px")))
+      (obj/assoc! base "letterSpacing" (str letter-spacing "px")))
 
     (when (and (string? font-size)
                (pos? (alength font-size)))
-      (obj-assoc! base "fontSize" (str font-size "px")))
+      (obj/assoc! base "fontSize" (str font-size "px")))
 
     (when (and (string? font-id)
                (pos? (alength font-id)))
       (let [font (get fontsdb font-id)]
         (fonts/ensure-loaded! font-id)
         (let [font-family (or (:family font)
-                              (unchecked-get data "fontFamily"))
+                              (obj/get data "fontFamily"))
               font-variant (d/seek #(= font-variant-id (:name %))
                                    (:variants font))
               font-style  (or (:style font-variant)
-                              (unchecked-get data "fontStyle"))
+                              (obj/get data "fontStyle"))
               font-weight (or (:weight font-variant)
-                              (unchecked-get data "fontWeight"))]
-          (obj-assoc! base "fontFamily" font-family)
-          (obj-assoc! base "fontStyle" font-style)
-          (obj-assoc! base "fontWeight" font-weight))))
+                              (obj/get data "fontWeight"))]
+          (obj/assoc! base "fontFamily" font-family)
+          (obj/assoc! base "fontStyle" font-style)
+          (obj/assoc! base "fontWeight" font-weight))))
 
     base))
 
@@ -194,18 +190,18 @@
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
   [props]
-  (let [attrs (unchecked-get props "attributes")
-        childs (unchecked-get props "children")
-        data   (unchecked-get props "leaf")
+  (let [attrs (obj/get props "attributes")
+        childs (obj/get props "children")
+        data   (obj/get props "leaf")
         style  (generate-leaf-styles data)
-        attrs  (obj-assoc! attrs "style" style)]
+        attrs  (obj/assoc! attrs "style" style)]
     [:> :span attrs childs]))
 
 (defn- render-element
   [props]
   (mf/html
-   (let [element (unchecked-get props "element")]
-     (case (unchecked-get element "type")
+   (let [element (obj/get props "element")]
+     (case (obj/get element "type")
        "text-box"  [:> rt-text-box props]
        "text"      [:> rt-text props]
        "paragraph" [:> rt-pharagraph props]
@@ -302,7 +298,7 @@
                    (dom/prevent-default event)
                    (dom/stop-propagation event)
                    ;; WARN: monky patch
-                   (unchecked-set slate/Transforms "deselect" (constantly nil)))
+                   (obj/assoc! slate/Transforms "deselect" (constantly nil)))
         :placeholder "Type some text here..."}]]]))
 
 ;; --- Text Shape Wrapper
@@ -325,6 +321,12 @@
             (st/emit! (dwt/assign-editor editor))
             #(st/emit! (dwt/assign-editor nil))))
 
+        on-change
+        (mf/use-callback
+         (fn [val]
+            (let [content (js->clj val)]
+              (st/emit! (dw/update-shape id {:content content})))))
+
         render-element (mf/use-callback render-element)
         render-leaf (mf/use-callback render-leaf)]
 
@@ -339,7 +341,7 @@
 
      [:> rslate/Slate {:editor editor
                        :value content
-                       :on-change (constantly nil)}
+                       :on-change on-change}
 
       [:> rslate/Editable {:auto-focus "false"
                            :read-only "true"

@@ -378,7 +378,6 @@
   (let [id (:id shape)
         editor (:editor (mf/deref refs/workspace-local))
         locale (i18n/use-locale)]
-
     [:*
      [:div.element-set
       [:div.element-set-title (t locale "workspace.options.fill")]
