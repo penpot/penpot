@@ -14,7 +14,7 @@
    [uxbox.common.data :as d]
    [uxbox.main.constants :as c]
    [uxbox.main.data.workspace :as dw]
-   [uxbox.main.geom :as geom]
+   [uxbox.util.geom.shapes :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.shapes.attrs :as attrs]

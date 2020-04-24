@@ -10,7 +10,7 @@
    [cuerdas.core :as str]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]
-   [uxbox.main.geom :as geom]
+   [uxbox.util.geom.shapes :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.main.ui.shapes.common :as common]

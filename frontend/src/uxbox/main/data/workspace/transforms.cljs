@@ -9,7 +9,7 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
-   [uxbox.main.geom :as geom]
+   [uxbox.util.geom.shapes :as gsh]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.main.data.helpers :as helpers]
@@ -89,7 +89,7 @@
 
                   ;; Resize origin point given the selected handler
                   origin  (-> (handler-resize-origin shape handler)
-                              (geom/transform-shape-point shape shape-transform))]
+                              (gsh/transform-shape-point shape shape-transform))]
               
               (rx/of (set-modifiers ids {:resize-vector scalev
                                          :resize-origin origin
@@ -114,7 +114,7 @@
       ptk/WatchEvent
       (watch [_ state stream]
         (let [initial (apply-zoom @ms/mouse-position)
-              shape  (geom/shape->rect-shape shape)
+              shape  (gsh/shape->rect-shape shape)
               stoper (rx/filter ms/mouse-up? stream)]
           (rx/concat
            (->> ms/mouse-position
@@ -134,7 +134,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [stoper (rx/filter ms/mouse-up? stream)
-            group  (geom/selection-rect shapes)
+            group  (gsh/selection-rect shapes)
             group-center (gpt/center group)
             initial-angle (gpt/angle (apply-zoom @ms/mouse-position) group-center)
             calculate-angle (fn [pos ctrl?]
@@ -216,7 +216,7 @@
             selected (get-in state [:workspace-local :selected])
             options (get-in state [:workspace-data pid :options])
             shapes (map #(get-in state [:workspace-data pid :objects %]) selected)
-            shape (geom/shapes->rect-shape shapes)
+            shape (gsh/shapes->rect-shape shapes)
             displacement (if align?
                            (get-displacement-with-grid shape direction options)
                            (get-displacement shape direction))]
@@ -258,7 +258,7 @@
     (update [_ state]
       (let [page-id (:current-page-id state)]
         (letfn [(calculate-displacement [shape angle center]
-                  (let [shape-center (geom/center shape)]
+                  (let [shape-center (gsh/center shape)]
                     (-> (gmt/matrix)
                         (gmt/rotate angle center)
                         (gmt/rotate (- angle) shape-center))))
@@ -275,7 +275,7 @@
                 (rotate-around-center [state angle center shapes]
                   (reduce #(rotate-shape %1 angle %2 center) state shapes))]
 
-          (let [center (-> shapes geom/selection-rect gpt/center)
+          (let [center (-> shapes gsh/selection-rect gpt/center)
                 objects (get-in state [:workspace-data page-id :objects])
                 id->obj #(get objects %)
                 get-children (fn [shape] (map id->obj (helpers/get-children (:id shape) objects)))
@@ -300,7 +300,7 @@
             ;; For each shape applies the modifiers by transforming the objects
             update-shape
             (fn [state shape-id]
-              (update-in state [:workspace-data page-id :objects shape-id] geom/transform-shape))]
+              (update-in state [:workspace-data page-id :objects shape-id] gsh/transform-shape))]
 
         (reduce update-shape state ids-with-children)))
 

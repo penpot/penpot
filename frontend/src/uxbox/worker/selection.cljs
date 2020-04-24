@@ -17,8 +17,8 @@
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.common.uuid :as uuid]
-   [uxbox.main.geom :as geom]
    [uxbox.worker.impl :as impl]
+   [uxbox.util.geom.shapes :as geom]
    [uxbox.util.quadtree :as qdt]))
 
 (defonce state (l/atom {}))

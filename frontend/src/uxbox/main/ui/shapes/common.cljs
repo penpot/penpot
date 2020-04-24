@@ -20,7 +20,7 @@
    [uxbox.main.store :as st]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.streams :as uws]
-   [uxbox.main.geom :as geom]
+   [uxbox.util.geom.shapes :as geom]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.dom :as dom]))

@@ -10,7 +10,7 @@
    [rumext.alpha :as mf]
    [uxbox.common.uuid :as uuid]
    [uxbox.util.math :as mth]
-   [uxbox.main.geom :as geom]
+   [uxbox.util.geom.shapes :as geom]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.main.ui.shapes.frame :as frame]

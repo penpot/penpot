@@ -5,7 +5,7 @@
    [beicon.core :as rx]
    [potok.core :as ptk]
    [uxbox.main.worker :as uw]
-   [uxbox.main.geom :as geom]
+   [uxbox.util.geom.shapes :as geom]
    [uxbox.common.data :as d]
    [uxbox.common.spec :as us]
    [uxbox.common.pages :as cp]

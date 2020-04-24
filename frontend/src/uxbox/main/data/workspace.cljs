@@ -25,7 +25,7 @@
    [uxbox.main.data.dashboard :as dd]
    [uxbox.main.data.helpers :as helpers]
    [uxbox.main.data.icons :as udi]
-   [uxbox.main.geom :as geom]
+   [uxbox.util.geom.shapes :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.repo :as rp]
    [uxbox.main.store :as st]

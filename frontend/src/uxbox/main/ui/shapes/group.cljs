@@ -11,7 +11,7 @@
   (:require
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
-   [uxbox.main.geom :as geom]
+   [uxbox.util.geom.shapes :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.util.dom :as dom]
    [uxbox.util.interop :as itr]
