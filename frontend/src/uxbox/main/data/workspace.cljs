@@ -1414,14 +1414,15 @@
   (us/verify ::us/uuid id)
   (us/verify ::position position)
   (ptk/reify ::update-position
-    IUpdateGroup
-    (get-ids [_] [id])
-
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [page-id (:current-page-id state)]
-        (update-in state [:workspace-data page-id :objects id]
-                   geom/absolute-move position)))))
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id (:current-page-id state)
+            shape (get-in state [:workspace-data page-id :objects id])
+            current-position (gpt/point (:x shape) (:y shape))
+            position (gpt/point (or (:x position) (:x shape)) (or (:y position) (:y shape)))
+            displacement (gmt/translate-matrix (gpt/subtract position current-position))]
+        (rx/of (transforms/set-modifiers [id] {:displacement displacement})
+               (transforms/apply-modifiers [id]))))))
 
 ;; --- Path Modifications
 
@@ -1744,6 +1745,7 @@
 (def start-move-selected transforms/start-move-selected)
 (def move-selected transforms/move-selected)
 
+(def set-rotation transforms/set-rotation)
 (def set-modifiers transforms/set-modifiers)
 (def apply-modifiers transforms/apply-modifiers)
 

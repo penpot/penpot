@@ -313,3 +313,4 @@
       (let [page-id (:current-page-id state)]
         (rx/of (common/diff-and-commit-changes page-id)
                (common/rehash-shape-frame-relationship ids))))))
+
