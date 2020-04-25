@@ -69,7 +69,7 @@
     .element-set-title {
       color: $color-gray-10;
       display: flex;
-      font-size: $fs14;
+      font-size: $fs13;
       padding: $small $x-small;
       width: 100%;
     }
@@ -100,7 +100,7 @@
 
       span {
         color: $color-gray-20;
-        font-size: $fs14;
+        font-size: $fs12;
         max-width: 75%;
         overflow-x: hidden;
         text-overflow: ellipsis;
@@ -182,14 +182,14 @@
 .element-set-content {
   display: flex;
   flex-direction: column;
-  padding: $small $x-small;
+  padding: $x-small;
 
   .input-text {
     background-color: $color-gray-50;
     border: 1px solid transparent;
     border-bottom-color: $color-gray-40;
     color: $color-gray-10;
-    font-size: $fs13;
+    font-size: $fs12;
     margin: $x-small;
     padding: $x-small;
     width: 100%;
@@ -217,7 +217,7 @@
 
   .element-set-subtitle {
     color: $color-gray-10;
-    font-size: $fs12;
+    font-size: $fs11;
     width: 12rem;
   }
 
@@ -356,9 +356,9 @@
   border-radius: $br-small;
   cursor: pointer;
   flex-shrink: 0;
-  height: 25px;
+  height: 20px;
   margin: 5px 4px 0 0;
-  width: 25px;
+  width: 20px;
 
   &.palette-th {
     align-items: center;

@@ -21,7 +21,7 @@
         svg {
           fill: $color-gray-30;
           height: 13px;
-          margin-right: $small;
+          margin-right: $x-small;
           width: 13px;
         }
 
@@ -29,7 +29,7 @@
 
       span {
         color: $color-gray-20;
-        font-size: $fs13;
+        font-size: $fs12;
         max-width: 75%;
         overflow-x: hidden;
         text-overflow: ellipsis;

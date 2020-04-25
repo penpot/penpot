@@ -8,17 +8,17 @@
 .element-list-body {
   align-items: center;
   display: flex;
-  height: 35px;
+  height: 32px;
   padding: $x-small $small;
   transition: none;
   width: 100%;
 
   svg {
     fill: $color-gray-20;
-    height: 16px;
+    height: 13px;
     flex-shrink: 0;
     margin-right: 8px;
-    width: 16px;
+    width: 13px;
   }
   
   &.group {
@@ -123,7 +123,7 @@ input.element-name {
 span.element-name {
   color: $color-gray-20;
   display: block;
-  font-size: $fs13;
+  font-size: $fs12;
   max-width: 130px;
   min-width: 40px;
   min-height: 16px;
@@ -179,7 +179,7 @@ span.element-name {
   width: 12px;
   
   svg {
-    fill: $color-gray-30;
+    fill: $color-gray-20;
     transform: rotate(90deg);
     width: 10px;
   }
