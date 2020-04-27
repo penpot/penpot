@@ -51,7 +51,7 @@
         my (+ sy (/ height 2))
         ex (+ sx width)
         ey (+ sy height)
-        
+
         [x y] (case handler
                 :right [sx my]
                 :bottom [mx sy]
@@ -92,7 +92,7 @@
                   ;; Resize origin point given the selected handler
                   origin  (-> (handler-resize-origin shape handler)
                               (gsh/transform-shape-point shape shape-transform))]
-              
+
               (rx/of (set-modifiers ids
                                     {:resize-vector scalev
                                      :resize-origin origin
@@ -167,7 +167,8 @@
 
 ;; -- MOVE
 
-(defn start-move-selected []
+(defn start-move-selected
+  []
   (ptk/reify ::start-move-selected
     ptk/WatchEvent
     (watch [_ state stream]
@@ -175,15 +176,23 @@
             stoper (rx/filter ms/mouse-up? stream)
             zero-point? #(= % (gpt/point 0 0))
             initial (apply-zoom @ms/mouse-position)
-            position @ms/mouse-position]
+            position @ms/mouse-position
+            counter  (volatile! 0)]
         (rx/concat
          (->> ms/mouse-position
               (rx/map apply-zoom)
               (rx/filter (complement zero-point?))
               (rx/map #(gpt/subtract % initial))
-              (rx/map #(set-modifiers selected {:displacement (gmt/translate-matrix %)}))
+              (rx/map gmt/translate-matrix)
+              (rx/filter #(not (gmt/base? %)))
+              (rx/map #(set-modifiers selected {:displacement %}))
+              (rx/tap #(vswap! counter inc))
               (rx/take-until stoper))
-         (rx/of (apply-modifiers selected)))))))
+         (->> (rx/create (fn [sink] (sink @counter)))
+              (rx/mapcat (fn [n]
+                           (if (zero? n)
+                             (rx/empty)
+                             (rx/of (apply-modifiers selected)))))))))))
 
 (defn- get-displacement-with-grid
   "Retrieve the correct displacement delta point for the

@@ -52,6 +52,12 @@
   ([a b c d e f]
    (Matrix. a b c d e f)))
 
+(def base (matrix))
+
+(defn base?
+  [v]
+  (= v base))
+
 (defn translate-matrix
   [{x :x y :y :as pt}]
   (assert (gpt/point? pt))
