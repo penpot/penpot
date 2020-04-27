@@ -120,7 +120,8 @@
             (let [shape' (geom/shape->rect-shape shape)
                   shapev (gpt/point (:width shape') (:height shape'))
                   deltav (gpt/subtract point initial)
-                  scalev (gpt/divide (gpt/add shapev deltav) shapev)]
+                  scalev (gpt/divide (gpt/add shapev deltav) shapev)
+                  scalev (if lock? (let [v (max (:x scalev) (:y scalev))] (gpt/point v v)) scalev)]
 
               (-> shape
                   (assoc-in [:modifiers :resize-vector] scalev)

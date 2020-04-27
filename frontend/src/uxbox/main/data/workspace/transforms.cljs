@@ -84,6 +84,8 @@
                   ;; Resize vector
                   scalev (gpt/divide (gpt/add shapev deltav) shapev)
 
+                  scalev (if lock? (let [v (max (:x scalev) (:y scalev))] (gpt/point v v)) scalev)
+
                   shape-transform (:transform shape (gmt/matrix))
                   shape-transform-inverse (:transform-inverse shape (gmt/matrix))
 

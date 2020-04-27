@@ -1,5 +1,7 @@
 (ns uxbox.util.debug
-  "Debugging utils")
+  "Debugging utils"
+  (:require
+   [uxbox.main.store :as store]))
 
 (def debug-options #{:bounding-boxes :group :events #_:simple-selection})
 
@@ -30,8 +32,8 @@
    val))
 
 (defn dump-state []
-  (logjs "state" @uxbox.main.store/state))
+  (logjs "state" @store/state))
 
 (defn dump-objects []
-  (let [page-id (get @uxbox.main.store/state :page-id)]
-    (logjs "state" (get-in @uxbox.main.store/state [:workspace-data page-id :objects]))))
+  (let [page-id (get @store/state :page-id)]
+    (logjs "state" (get-in @store/state [:workspace-data page-id :objects]))))
