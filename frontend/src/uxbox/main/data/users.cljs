@@ -44,15 +44,21 @@
 ;; --- Profile Fetched
 
 (defn profile-fetched
-  [data]
+  [{:keys [fullname] :as data}]
   (us/verify ::profile data)
   (ptk/reify ::profile-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (let [profile (avatars/assign data)]
-        (assoc state :profile (cond-> profile
-                                (nil? (:lang data)) (assoc :lang cfg/default-language)
-                                (nil? (:theme data)) (assoc :theme cfg/default-theme)))))
+      (assoc state :profile
+             (cond-> data
+               (nil? (:photo-uri data))
+               (assoc :photo-uri (avatars/generate {:name fullname}))
+
+               (nil? (:lang data))
+               (assoc :lang cfg/default-language)
+
+               (nil? (:theme data))
+               (assoc :theme cfg/default-theme))))
 
     ptk/EffectEvent
     (effect [_ state stream]

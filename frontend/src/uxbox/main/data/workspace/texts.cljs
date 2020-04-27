@@ -45,7 +45,7 @@
   ([editor props options]
    (when (and (nil? (obj/get editor "selection"))
               (nil? (obj/get options "at")))
-     (obj/assoc! options "at" (calculate-full-selection editor)))
+     (obj/set! options "at" (calculate-full-selection editor)))
    (.setNodes Transforms editor props options)
    editor))
 
@@ -106,10 +106,10 @@
     (let [options #js {:match pred :universal universal?}]
       (cond
         (object? at)
-        (obj/assoc! options "at" at)
+        (obj/set! options "at" at)
 
         (nil? (obj/get editor "selection"))
-        (obj/assoc! options "at" (calculate-full-selection editor)))
+        (obj/set! options "at" (calculate-full-selection editor)))
 
       (let [result (.nodes Editor editor options)
             match  (ffirst (es6-iterator-seq result))]

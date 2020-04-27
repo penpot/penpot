@@ -80,9 +80,9 @@
                     :width "100%"
                     :display "flex"}]
     (cond-> base
-      (= valign "top") (obj/assoc! "alignItems" "flex-start")
-      (= valign "center") (obj/assoc! "alignItems" "center")
-      (= valign "bottom") (obj/assoc! "alignItems" "flex-end"))))
+      (= valign "top") (obj/set! "alignItems" "flex-start")
+      (= valign "center") (obj/set! "alignItems" "center")
+      (= valign "bottom") (obj/set! "alignItems" "flex-end"))))
 
 (mf/defc rt-text-box
   {::mf/wrap-props false
@@ -93,8 +93,8 @@
         data   (obj/get props "element")
         type   (obj/get data "type")
         style  (generate-text-box-styles data)
-        attrs  (obj/assoc! attrs "style" style)
-        attrs  (obj/assoc! attrs "className" type)]
+        attrs  (obj/set! attrs "style" style)
+        attrs  (obj/set! attrs "className" type)]
     [:> :div attrs childs]))
 
 (defn- generate-text-styles
@@ -113,8 +113,8 @@
         data   (obj/get props "element")
         type   (obj/get data "type")
         style  (generate-text-styles data)
-        attrs  (obj/assoc! attrs "style" style)
-        attrs  (obj/assoc! attrs "className" type)]
+        attrs  (obj/set! attrs "style" style)
+        attrs  (obj/set! attrs "className" type)]
     [:> :div attrs childs]))
 
 (defn- generate-paragraph-styles
@@ -125,8 +125,8 @@
         lh (obj/get data "lineHeight")
         ta (obj/get data "textAlign")]
     (cond-> base
-      ta (obj/assoc! "textAlign" ta)
-      lh (obj/assoc! "lineHeight" lh))))
+      ta (obj/set! "textAlign" ta)
+      lh (obj/set! "lineHeight" lh))))
 
 (mf/defc rt-pharagraph
   {::mf/wrap-props false
@@ -136,7 +136,7 @@
         childs (obj/get props "children")
         data   (obj/get props "element")
         style  (generate-paragraph-styles data)
-        attrs  (obj/assoc! attrs "style" style)]
+        attrs  (obj/set! attrs "style" style)]
     [:> :p attrs childs]))
 
 (defn- generate-leaf-styles
@@ -162,11 +162,11 @@
 
     (when (and (string? letter-spacing)
                (pos? (alength letter-spacing)))
-      (obj/assoc! base "letterSpacing" (str letter-spacing "px")))
+      (obj/set! base "letterSpacing" (str letter-spacing "px")))
 
     (when (and (string? font-size)
                (pos? (alength font-size)))
-      (obj/assoc! base "fontSize" (str font-size "px")))
+      (obj/set! base "fontSize" (str font-size "px")))
 
     (when (and (string? font-id)
                (pos? (alength font-id)))
@@ -180,9 +180,9 @@
                               (obj/get data "fontStyle"))
               font-weight (or (:weight font-variant)
                               (obj/get data "fontWeight"))]
-          (obj/assoc! base "fontFamily" font-family)
-          (obj/assoc! base "fontStyle" font-style)
-          (obj/assoc! base "fontWeight" font-weight))))
+          (obj/set! base "fontFamily" font-family)
+          (obj/set! base "fontStyle" font-style)
+          (obj/set! base "fontWeight" font-weight))))
 
     base))
 
@@ -194,7 +194,7 @@
         childs (obj/get props "children")
         data   (obj/get props "leaf")
         style  (generate-leaf-styles data)
-        attrs  (obj/assoc! attrs "style" style)]
+        attrs  (obj/set! attrs "style" style)]
     [:> :span attrs childs]))
 
 (defn- render-element
@@ -298,7 +298,7 @@
                    (dom/prevent-default event)
                    (dom/stop-propagation event)
                    ;; WARN: monky patch
-                   (obj/assoc! slate/Transforms "deselect" (constantly nil)))
+                   (obj/set! slate/Transforms "deselect" (constantly nil)))
         :placeholder "Type some text here..."}]]]))
 
 ;; --- Text Shape Wrapper

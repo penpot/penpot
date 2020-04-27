@@ -295,26 +295,52 @@
       (ws/-close (get-in state [:ws file-id]))
       (rx/of ::finalize-ws))))
 
-;; --- Handle: Who
+;; --- Handle: Presence
+
+(def ^:private presence-palette
+  #{"#2e8b57" ; seagreen
+    "#808000" ; olive
+    "#b22222" ; firebrick
+    "#ff8c00" ; darkorage
+    "#ffd700" ; gold
+    "#ba55d3" ; mediumorchid
+    "#00fa9a" ; mediumspringgreen
+    "#00bfff" ; deepskyblue
+    "#dda0dd" ; plum
+    "#ff1493" ; deeppink
+    "#ffa07a" ; lightsalmon
+    })
 
 (defn handle-presence
   [{:keys [sessions] :as msg}]
-  (ptk/reify ::handle-presence
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [users (:workspace-users state)]
-        (update state :workspace-presence
-                (fn [prev-sessions]
-                  (reduce (fn [acc [sid pid]]
-                            (if-let [prev (get prev-sessions sid)]
-                              (assoc acc sid prev)
-                              (let [profile (get users pid)
-                                    session {:id sid
-                                             :fullname (:fullname profile)
-                                             :photo-uri (:photo-uri profile)}]
-                                (assoc acc sid (avatars/assign session)))))
-                          {}
-                          sessions)))))))
+  (letfn [(assign-color [sessions session]
+            (if (string? (:color session))
+              session
+              (let [used (into #{}
+                               (comp (map second)
+                                     (map :color)
+                                     (remove nil?))
+                               sessions)
+                    avail (set/difference presence-palette used)
+                    color (or (first avail) "#000000")]
+                (assoc session :color color))))
+          (update-sessions [previous profiles]
+            (reduce (fn [current [session-id profile-id]]
+                      (let [profile (get profiles profile-id)
+                            session {:id session-id
+                                     :fullname (:fullname profile)
+                                     :photo-uri (or (:photo-uri profile)
+                                                    (avatars/generate {:name (:fullname profile)}))}
+                            session (assign-color current session)]
+                        (assoc current session-id session)))
+                    (select-keys previous (map first sessions))
+                    (filter (fn [[sid]] (not (contains? previous sid))) sessions)))]
+
+    (ptk/reify ::handle-presence
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [profiles  (:workspace-users state)]
+          (update state :workspace-presence update-sessions profiles))))))
 
 (defn handle-pointer-update
   [{:keys [page-id profile-id session-id x y] :as msg}]
