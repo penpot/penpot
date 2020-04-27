@@ -31,7 +31,6 @@
 
 (defmethod impl/handler :selection/create-index
   [{:keys [file-id pages] :as message}]
-  (js/console.log :selection/create-index file-id)
   (letfn [(index-page [state page]
             (let [id (:id page)
                   objects (get-in page [:data :objects])
@@ -42,33 +41,29 @@
           (update-state [state]
             (reduce index-page state pages))]
 
-    (time
-     (swap! state update-state))
+    (swap! state update-state)
     nil))
 
 (defmethod impl/handler :selection/update-index
   [{:keys [page-id objects] :as message}]
-  (js/console.log :selection/update-index page-id)
   (letfn [(update-page [_]
             (let [objects (reduce resolve-object {} (vals objects))
                   index   (create-index objects)]
               {:index index :objects objects}))]
-    (time
-     (swap! state update page-id update-page))
+    (swap! state update page-id update-page)
     nil))
 
 (defmethod impl/handler :selection/query
   [{:keys [page-id rect] :as message}]
-  (time
-   (when-let [{:keys [index objects]} (get @state page-id)]
-     (let [lookup #(get objects %)
-           result (-> (qdt/search index (clj->js rect))
-                      (es6-iterator-seq))
-           matches? #(geom/overlaps? % rect)]
-       (into #{} (comp (map #(unchecked-get % "data"))
+  (when-let [{:keys [index objects]} (get @state page-id)]
+    (let [lookup #(get objects %)
+          result (-> (qdt/search index (clj->js rect))
+                     (es6-iterator-seq))
+          matches? #(geom/overlaps? % rect)]
+      (into #{} (comp (map #(unchecked-get % "data"))
                        (filter matches?)
                        (map :id))
-             result)))))
+            result))))
 
 (defn- calculate-bounds
   [objects]

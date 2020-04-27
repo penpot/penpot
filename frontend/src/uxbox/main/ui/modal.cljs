@@ -27,6 +27,8 @@
 
 (defn- on-parent-clicked
   [event parent-ref]
+  (dom/stop-propagation event)
+  (dom/prevent-default event)
   (let [parent (mf/ref-val parent-ref)
         current (dom/get-target event)]
     (when (dom/equals? parent current)

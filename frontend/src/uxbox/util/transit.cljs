@@ -11,15 +11,35 @@
             [uxbox.util.geom.matrix :as gmt]
             [uxbox.util.time :as dt]))
 
+(deftype Blob [content]
+  IDeref
+  (-deref [_] content))
+
+(defn blob?
+  [v]
+  (instance? Blob v))
+
+(def blob-write-handler
+  (t/write-handler
+   (constantly "jsonblob")
+   (fn [v] (js/JSON.stringify @v))))
+
+(def blob-read-handler
+  (t/read-handler
+   (fn [value]
+     (->Blob (js/JSON.parse value)))))
+
 ;; --- Transit Handlers
 
 (def ^:privare +read-handlers+
   {"u" uuid
+   "jsonblob" blob-read-handler
    "matrix" gmt/matrix-read-handler
    "point" gpt/point-read-handler})
 
 (def ^:privare +write-handlers+
   {gmt/Matrix gmt/matrix-write-handler
+   Blob       blob-write-handler
    gpt/Point gpt/point-write-handler})
 
 ;; --- Public Api

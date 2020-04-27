@@ -41,7 +41,7 @@
 ;; Page Data related
 (s/def ::blocked boolean?)
 (s/def ::collapsed boolean?)
-(s/def ::content string?)
+(s/def ::content any?)
 (s/def ::fill-color string?)
 (s/def ::fill-opacity number?)
 (s/def ::font-family string?)

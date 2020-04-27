@@ -21,7 +21,8 @@
   }
  :aliases
  {:dev
-  {:extra-deps
+  {:extra-paths ["test" "dev"]
+   :extra-deps
    {com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}
     com.bhauman/rebel-readline {:mvn/version "0.1.4"}
     org.clojure/tools.namespace {:mvn/version "0.3.1"}
@@ -34,8 +35,7 @@
 
     ;; i18n parsing
     carocad/parcera {:mvn/version "0.11.0"}
-    org.antlr/antlr4-runtime {:mvn/version "4.7"}}
-   :extra-paths ["test"]}
+    org.antlr/antlr4-runtime {:mvn/version "4.7"}}}
 
   :repl
   {:main-opts  ["-m" "rebel-readline.main"]}

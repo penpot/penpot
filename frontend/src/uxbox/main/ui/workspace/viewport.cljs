@@ -291,6 +291,7 @@
                      :on-mouse-up on-mouse-up
                      :on-drag-over on-drag-over
                      :on-drop on-drop}
+
       [:g.zoom {:transform (str "scale(" zoom ", " zoom ")")}
        ;; [:& perf/profiler {:label "viewport-frames"}
        [:& frames {:key (:id page)}]

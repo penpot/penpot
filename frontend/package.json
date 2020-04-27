@@ -35,6 +35,8 @@
     "react-color": "^2.18.0",
     "react-dom": "^16.13.1",
     "rxjs": "^7.0.0-beta.0",
+    "slate": "^0.57.1",
+    "slate-react": "^0.57.1",
     "source-map-support": "^0.5.16",
     "tdigest": "^0.1.1",
     "xregexp": "^4.3.0"

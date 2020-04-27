@@ -922,6 +922,25 @@
     },
     "unused" : true
   },
+  "workspace.options.font-options.decoration": "Decoration",
+  "workspace.options.font-options.none": "None",
+  "workspace.options.font-options.underline": "Underline",
+  "workspace.options.font-options.strikethrough": "Strikethrough",
+  "workspace.options.font-options.align-left": "Align left",
+  "workspace.options.font-options.align-center": "Align center",
+  "workspace.options.font-options.align-right": "Align right",
+  "workspace.options.font-options.align-justify": "Justify",
+  "workspace.options.font-options.line-height": "Line height",
+  "workspace.options.font-options.letter-spacing": "Letter Spacing",
+  "workspace.options.font-options.vertical-align": "Vertical align",
+  "workspace.options.font-options.align-top": "Align top",
+  "workspace.options.font-options.align-middle": "Align middle",
+  "workspace.options.font-options.align-bottom": "Align bottom",
+  "workspace.options.font-options.text-case": "Case",
+  "workspace.options.font-options.uppercase": "Uppercase",
+  "workspace.options.font-options.lowercase": "Lowercase",
+  "workspace.options.font-options.titlecase": "Titlecase",
+
   "workspace.options.font-options" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:85" ],
     "translations" : {

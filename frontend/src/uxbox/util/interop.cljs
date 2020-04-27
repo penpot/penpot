@@ -7,11 +7,19 @@
 (ns uxbox.util.interop
   "Interop helpers.")
 
+;; TODO: this can be optimized using es6-iterator-seq
 (defn iterable->seq
   "Convert an es6 iterable into cljs Seq."
   [v]
   (seq (js/Array.from v)))
 
 (defn obj-assign!
-  [obj1 obj2]
-  (js/Object.assign obj1 obj2))
+  ([a b]
+   (js/Object.assign a b))
+  ([a b & more]
+   (reduce obj-assign! (obj-assign! a b) more)))
+
+(defn obj-assoc!
+  [obj attr value]
+  (unchecked-set obj attr value)
+  obj)
