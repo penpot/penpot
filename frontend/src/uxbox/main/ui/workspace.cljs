@@ -79,7 +79,6 @@
    (fn []
      (st/emit! (dw/initialize-page page-id))
      #(st/emit! (dw/finalize-page page-id))))
-
   (when-let [page (mf/deref refs/workspace-page)]
     [:& workspace-content {:page page
                            :project project
@@ -100,7 +99,6 @@
   (let [file (mf/deref refs/workspace-file)
         project (mf/deref refs/workspace-project)
         layout (mf/deref refs/workspace-layout)]
-
     [:*
      [:& header {:file file
                  :project project

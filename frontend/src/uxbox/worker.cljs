@@ -72,3 +72,9 @@
 
 (defn ^:dev/before-load stop []
   (.removeEventListener js/self "message" on-message))
+
+(defn ^:dev/after-load start []
+  []
+  (.addEventListener js/self "message" on-message))
+
+
