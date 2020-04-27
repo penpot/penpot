@@ -8,6 +8,7 @@
   (:refer-clojure :exclude [loop doseq])
   (:require
    [clojure.spec.alpha :as s]
+   [clojure.core.async :as a]
    [clojure.core :as c]
    [promesa.core :as p]
    [vertx.impl :as impl])
@@ -120,4 +121,19 @@
            (let [~bsym (.next ~itsym)]
              ~@body
              (recur)))))))
+
+
+(defmacro go-try
+  [& body]
+  `(a/go
+     (try
+       ~@body
+       (catch Throwable e# e#))))
+
+(defmacro <?
+  [ch]
+  `(let [r# (a/<! ~ch)]
+     (if (instance? Throwable r#)
+       (throw r#)
+       r#)))
 

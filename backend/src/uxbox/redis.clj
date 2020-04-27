@@ -33,17 +33,21 @@
   :stop (.close ^AutoCloseable client))
 
 (defstate conn
-  :start (redis/connect client)
+  :start @(redis/connect client)
   :stop (.close ^AutoCloseable conn))
 
 ;; --- API FORWARD
 
-(defmacro with-conn
-  [& args]
-  `(redis/with-conn ~@args))
+(defn subscribe
+  [topic]
+  (redis/subscribe client topic))
 
 (defn run!
-  [conn cmd params]
+  [cmd params]
   (let [ctx (vu/get-or-create-context system)]
     (-> (redis/run! conn cmd params)
         (vu/handle-on-context ctx))))
+
+(defn run
+  [cmd params]
+  (redis/run conn cmd params))
