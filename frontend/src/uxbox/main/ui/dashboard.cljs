@@ -41,14 +41,10 @@
       (uuid-str? team-id)
       (assoc :team-id (uuid team-id))
 
-      (= "self" team-id)
-      (assoc :team-id (:default-team-id profile))
-
       (uuid-str? project-id)
       (assoc :project-id (uuid project-id))
 
-      (and (= "drafts" project-id)
-           (= "self" team-id))
+      (= "drafts" project-id)
       (assoc :project-id (:default-project-id profile))
 
       (str/starts-with? (name route-name) "dashboard-library")

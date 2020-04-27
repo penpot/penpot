@@ -178,4 +178,4 @@
                         :selected-project-id project-id
                         :selected-section section
                         :profile profile
-                        :team-id "self"}]]]))
+                        :team-id (:default-team-id profile)}]]]))

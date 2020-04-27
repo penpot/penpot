@@ -27,7 +27,7 @@
     [:main.settings-main
      [:& messages]
      [:div.settings-content
-      [:& header {:section section}]
+      [:& header {:section section :profile profile}]
       (case section
         :settings-profile (mf/element profile-page)
         :settings-password (mf/element password-page))]]))
