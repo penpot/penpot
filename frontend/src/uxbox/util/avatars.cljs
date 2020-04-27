@@ -13,7 +13,7 @@
    [uxbox.util.object :as obj]
    ["randomcolor" :as rdcolor]))
 
-(defn- impl-generate-image
+(defn generate
   [{:keys [name color size]
     :or {color "#303236" size 128}}]
   (let [parts   (str/words (str/upper name))
@@ -23,19 +23,15 @@
         canvas  (.createElement js/document "canvas")
         context (.getContext canvas "2d")]
 
-    (set! (.-width canvas) size)
-    (set! (.-height canvas) size)
-    (set! (.-fillStyle context) "#303236")
+    (obj/set! canvas "width" size)
+    (obj/set! canvas "height" size)
+
+    (obj/set! context "fillStyle" color)
     (.fillRect context 0 0 size size)
 
-    (set! (.-font context) (str (/ size 2) "px Arial"))
-    (set! (.-textAlign context) "center")
-    (set! (.-fillStyle context) "#FFFFFF")
+    (obj/set! context "font" (str (/ size 2) "px Arial"))
+    (obj/set! context "textAlign" "center")
+    (obj/set! context "fillStyle" "#FFFFFF")
     (.fillText context letters (/ size 2) (/ size 1.5))
-    (.toDataURL canvas)))
 
-(defn assign
-  [{:keys [id photo-uri fullname color] :as profile}]
-  (cond-> profile
-    (not photo-uri) (assoc :photo-uri (impl-generate-image {:name fullname}))
-    (not color) (assoc :color (rdcolor))))
+    (.toDataURL canvas)))

@@ -34,14 +34,13 @@
                (rest keys)
                (unchecked-get res key))))))
 
-(defn assign!
+(defn merge!
   ([a b]
    (js/Object.assign a b))
   ([a b & more]
-   (reduce assign! (assign! a b) more)))
+   (reduce merge! (merge! a b) more)))
 
-(defn assoc!
-  [obj attr value]
-  (when (object? obj)
-    (unchecked-set obj attr value)
-    obj))
+(defn set!
+  [obj key value]
+  (unchecked-set obj key value)
+  obj)
