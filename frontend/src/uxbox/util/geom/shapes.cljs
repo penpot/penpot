@@ -424,7 +424,7 @@
   (let [shape-center (center shape)]
     (-> shape
         (transform
-         (-> (gmt/matrix) 
+         (-> (gmt/matrix)
              (gmt/translate shape-center)
              (gmt/multiply matrix)
              (gmt/translate (gpt/negate shape-center)))))))
@@ -790,7 +790,7 @@
                       (merge rec)
                       (update :transform #(gmt/multiply (or % (gmt/matrix)) stretch-matrix))
                       (update :transform-inverse #(gmt/multiply stretch-matrix-inverse (or % (gmt/matrix)))))]
-    
+
     new-shape))
 
 (defn transform-path-shape
