@@ -20,6 +20,7 @@
    [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.workspace.images :refer [import-image-modal]]
    [uxbox.main.ui.components.dropdown :refer [dropdown]]
+   [uxbox.main.ui.workspace.presence :as presence]
    [uxbox.util.i18n :as i18n :refer [tr t]]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.math :as mth]
@@ -60,33 +61,7 @@
        [:li {:on-click on-zoom-to-200}
         "Zoom to 200%" [:span "Shift + 2"]]]]]))
 
-
-
 ;; --- Header Users
-
-(mf/defc user-widget
-  [{:keys [user self?] :as props}]
-  (let [photo (or (:photo-uri user)
-                  (if self?
-                    "/images/avatar.jpg"
-                    "/images/avatar-red.jpg"))]
-    [:li.tooltip.tooltip-bottom
-     {:alt (:fullname user)
-      :on-click (when self?
-                  #(st/emit! (rt/navigate :settings/profile)))}
-     [:img {:style {:border-color (:color user)}
-            :src photo}]]))
-
-(mf/defc active-users
-  [props]
-  (let [profile (mf/deref refs/profile)
-        users (mf/deref refs/workspace-users)]
-    [:ul.active-users
-     [:& user-widget {:user profile :self? true}]
-     (for [id (->> (:active users)
-                   (remove #(= % (:id profile))))]
-       [:& user-widget {:user (get-in users [:by-id id])
-                        :key id}])]))
 
 (mf/defc menu
   [{:keys [layout project file] :as props}]
@@ -161,7 +136,7 @@
                :file file}]
 
      [:div.users-section
-      [:& active-users]]
+      [:& presence/active-sessions]]
 
      [:div.options-section
       [:& zoom-widget

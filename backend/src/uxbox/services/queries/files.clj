@@ -207,18 +207,19 @@
 
 (defn retrieve-file-users
   [conn id]
-  (db/query conn [sql:file-users id]))
+  (-> (db/query conn [sql:file-users id])
+      (p/then (fn [rows]
+                (mapv #(images/resolve-media-uris % [:photo :photo-uri]) rows)))))
 
-(s/def ::file-with-users
+
+(s/def ::file-users
   (s/keys :req-un [::profile-id ::id]))
 
-(sq/defquery ::file-with-users
+(sq/defquery ::file-users
   [{:keys [profile-id id] :as params}]
   (db/with-atomic [conn db/pool]
     (check-edition-permissions! conn profile-id id)
-    (p/let [file  (retrieve-file conn id)
-            users (retrieve-file-users conn id)]
-      (assoc file :users users))))
+    (retrieve-file-users conn id)))
 
 (s/def ::file
   (s/keys :req-un [::profile-id ::id]))

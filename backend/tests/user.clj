@@ -23,7 +23,7 @@
    [promesa.exec :as px]
    [uxbox.migrations]
    [uxbox.db :as db]
-   [uxbox.redis :as rd]
+   ;; [uxbox.redis :as rd]
    [uxbox.util.storage :as st]
    [uxbox.util.time :as tm]
    [uxbox.util.blob :as blob]
@@ -89,7 +89,6 @@
                               '(uxbox.services.queries/defquery)
                               '(promesa.core/let)]}}}})
        (kondo/print!))))
-
 
 ;; (defn red
 ;;   [items]

@@ -40,6 +40,7 @@
    [uxbox.util.time :as dt]
    [uxbox.util.transit :as t]
    [uxbox.util.webapi :as wapi]
+   [uxbox.util.avatars :as avatars]
    [uxbox.main.data.workspace.common :refer [IBatchedChange IUpdateGroup] :as common]
    [uxbox.main.data.workspace.transforms :as transforms]))
 
@@ -63,7 +64,7 @@
 ;; --- Declarations
 
 (declare fetch-project)
-(declare handle-who)
+(declare handle-presence)
 (declare handle-pointer-update)
 (declare handle-pointer-send)
 (declare handle-page-change)
@@ -122,11 +123,19 @@
                    (rx/map (constantly ::index-initialized)))))]
 
     (ptk/reify ::initialize
+      ptk/UpdateEvent
+      (update [_ state]
+        (assoc state :workspace-presence {}))
+
       ptk/WatchEvent
       (watch [_ state stream]
         (rx/merge
-         (rx/of (fetch-bundle project-id file-id)
-                (initialize-ws file-id))
+         (rx/of (fetch-bundle project-id file-id))
+
+         (->> stream
+              (rx/filter (ptk/type? ::bundle-fetched))
+              (rx/mapcat (fn [_] (rx/of (initialize-ws file-id))))
+              (rx/first))
 
          (->> stream
               (rx/filter (ptk/type? ::bundle-fetched))
@@ -198,7 +207,7 @@
   [ids]
   (ptk/reify ::adjust-group-shapes
     IBatchedChange
-    
+
     ptk/UpdateEvent
     (update [_ state]
       (let [page-id (:current-page-id state)
@@ -249,7 +258,8 @@
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
-      (let [url (ws/url (str "/sub/" file-id))]
+      (let [sid (:session-id state)
+            url (ws/url (str "/notifications/" file-id "/" sid))]
         (assoc-in state [:ws file-id] (ws/open url))))
 
     ptk/WatchEvent
@@ -263,7 +273,7 @@
                    (rx/filter #(s/valid? ::message %))
                    (rx/map (fn [{:keys [type] :as msg}]
                              (case type
-                               :who (handle-who msg)
+                               :presence (handle-presence msg)
                                :pointer-update (handle-pointer-update msg)
                                :page-change (handle-page-change msg)
                                ::unknown))))
@@ -287,37 +297,37 @@
 
 ;; --- Handle: Who
 
-;; TODO: assign color
-
-(defn- assign-user-color
-  [state user-id]
-  (let [user (get-in state [:workspace-users :by-id user-id])
-        color "#000000" #_(js/randomcolor)
-        user (if (string? (:color user))
-               user
-               (assoc user :color color))]
-    (assoc-in state [:workspace-users :by-id user-id] user)))
-
-(defn handle-who
-  [{:keys [users] :as msg}]
-  (us/verify set? users)
-  (ptk/reify ::handle-who
+(defn handle-presence
+  [{:keys [sessions] :as msg}]
+  (ptk/reify ::handle-presence
     ptk/UpdateEvent
     (update [_ state]
-      (as-> state $$
-        (assoc-in $$ [:workspace-users :active] users)
-        (reduce assign-user-color $$ users)))))
+      (let [users (:workspace-users state)]
+        (update state :workspace-presence
+                (fn [prev-sessions]
+                  (reduce (fn [acc [sid pid]]
+                            (if-let [prev (get prev-sessions sid)]
+                              (assoc acc sid prev)
+                              (let [profile (get users pid)
+                                    session {:id sid
+                                             :fullname (:fullname profile)
+                                             :photo-uri (:photo-uri profile)}]
+                                (assoc acc sid (avatars/assign session)))))
+                          {}
+                          sessions)))))))
 
 (defn handle-pointer-update
-  [{:keys [user-id page-id x y] :as msg}]
+  [{:keys [page-id profile-id session-id x y] :as msg}]
   (ptk/reify ::handle-pointer-update
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-users :pointer user-id]
-                {:page-id page-id
-                 :user-id user-id
-                 :x x
-                 :y y}))))
+      (let [profile  (get-in state [:workspace-users profile-id])]
+        (update-in state [:workspace-presence session-id]
+                   (fn [session]
+                     (assoc session
+                            :point (gpt/point x y)
+                            :updated-at (dt/now)
+                            :page-id page-id)))))))
 
 (defn handle-pointer-send
   [file-id point]
@@ -325,6 +335,7 @@
     ptk/EffectEvent
     (effect [_ state stream]
       (let [ws (get-in state [:ws file-id])
+            sid (:session-id state)
             pid (get-in state [:workspace-page :id])
             msg {:type :pointer-update
                  :page-id pid
@@ -340,8 +351,6 @@
       #_(let [page-id' (get-in state [:workspace-page :id])]
         (when (= page-id page-id')
           (rx/of (shapes-changes-commited msg)))))))
-
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Persistence
@@ -443,22 +452,24 @@
   (ptk/reify ::fetch-bundle
     ptk/WatchEvent
     (watch [_ state stream]
-      (->> (rx/zip (rp/query :file-with-users {:id file-id})
+      (->> (rx/zip (rp/query :file {:id file-id})
+                   (rp/query :file-users {:id file-id})
                    (rp/query :project-by-id {:project-id project-id})
                    (rp/query :pages {:file-id file-id}))
            (rx/first)
-           (rx/map (fn [[file project pages]]
-                     (bundle-fetched file project pages)))
+           (rx/map (fn [[file users project pages]]
+                     (bundle-fetched file users project pages)))
            (rx/catch (fn [{:keys [type] :as error}]
                        (when (= :not-found type)
                          (rx/of (rt/nav :not-found)))))))))
 
 (defn- bundle-fetched
-  [file project pages]
+  [file users project pages]
   (ptk/reify ::bundle-fetched
     IDeref
     (-deref [_]
       {:file file
+       :users users
        :project project
        :pages pages})
 
@@ -468,6 +479,7 @@
         (as-> state $$
           (assoc $$
                  :workspace-file file
+                 :workspace-users (d/index-by :id users)
                  :workspace-pages {}
                  :workspace-project project)
           (reduce assoc-page $$ pages))))))

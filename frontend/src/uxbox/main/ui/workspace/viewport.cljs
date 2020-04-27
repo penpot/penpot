@@ -2,8 +2,10 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2019 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.main.ui.workspace.viewport
   (:require
@@ -26,6 +28,7 @@
    [uxbox.main.ui.workspace.grid :refer [grid]]
    [uxbox.main.ui.workspace.ruler :refer [ruler]]
    [uxbox.main.ui.workspace.selection :refer [selection-handlers]]
+   [uxbox.main.ui.workspace.presence :as presence]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.perf :as perf]
@@ -315,50 +318,5 @@
       (when (contains? flags :ruler)
         [:& ruler {:zoom zoom :ruler (:ruler local)}])
 
-      [:& remote-user-cursors {:page page}]
+      [:& presence/active-cursors {:page page}]
       [:& selection-rect {:data (:selrect local)}]]]))
-
-
-(mf/defc remote-user-cursor
-  [{:keys [pointer user] :as props}]
-  [:g.multiuser-cursor {:key (:user-id pointer)
-                        :transform (str "translate(" (:x pointer) "," (:y pointer) ") scale(4)")}
-   [:path {:fill (:color user)
-           :d "M5.292 4.027L1.524.26l-.05-.01L0 0l.258 1.524 3.769 3.768zm-.45 0l-.313.314L1.139.95l.314-.314zm-.5.5l-.315.316-3.39-3.39.315-.315 3.39 3.39zM1.192.526l-.668.667L.431.646.64.43l.552.094z"
-           :font-family "sans-serif"}]
-   [:g {:transform "translate(0 -291.708)"}
-    [:rect {:width "21.415"
-            :height "5.292"
-            :x "6.849"
-            :y "291.755"
-            :fill (:color user)
-            :fill-opacity ".893"
-            :paint-order "stroke fill markers"
-            :rx ".794"
-            :ry ".794"}]
-    [:text {:x "9.811"
-            :y "295.216"
-            :fill "#fff"
-            :stroke-width ".265"
-            :font-family "Open Sans"
-            :font-size"2.91"
-            :font-weight "400"
-            :letter-spacing"0"
-            :style {:line-height "1.25"}
-            :word-spacing "0"
-            ;; :style="line-height:1
-            }
-     (:fullname user)]]])
-
-(mf/defc remote-user-cursors
-  [{:keys [page] :as props}]
-  (let [users (mf/deref refs/workspace-users)
-        pointers (->> (vals (:pointer users))
-                      (remove #(not= (:id page) (:page-id %)))
-                      (filter #((:active users) (:user-id %))))]
-    (for [pointer pointers]
-      (let [user (get-in users [:by-id (:user-id pointer)])]
-        [:& remote-user-cursor {:pointer pointer
-                                :user user
-                                :key (:user-id pointer)}]))))
-

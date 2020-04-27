@@ -30,12 +30,13 @@
                    :allow-methods #{:post :get :patch :head :options :put}
                    :allow-headers #{:x-requested-with :content-type :cookie}}
 
-        routes [["/sub/:file-id" {:middleware [[vwm/cookies]
-                                               [vwm/cors cors-opts]
-                                               [middleware/format-response-body]
-                                               [session/auth]]
-                                  :handler ws/handler
-                                  :method :get}]
+        routes [["/notifications/:file-id/:session-id"
+                 {:middleware [[vwm/cookies]
+                               [vwm/cors cors-opts]
+                               [middleware/format-response-body]
+                               [session/auth]]
+                  :handler ws/handler
+                  :method :get}]
 
                 ["/api" {:middleware [[vwm/cookies]
                                       [vwm/params]
