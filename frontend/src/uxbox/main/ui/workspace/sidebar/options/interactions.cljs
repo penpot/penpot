@@ -14,9 +14,60 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.colorpicker :as cp]
+   [uxbox.main.ui.components.dropdown :refer [dropdown]]
    [uxbox.util.data :refer [read-string]]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :refer [tr]]))
+
+(mf/defc interactions-menu
+  [{:keys [shape] :as props}]
+  (let [interaction (first (:interactions shape)) ;; TODO: in the future we may have several interactions in one shape
+        destination (first (deref (refs/objects-by-id [(:destination interaction)])))
+        frames (mf/deref refs/frames)
+        show-frames-dropdown? (mf/use-state false)
+
+        on-set-blur
+          #(reset! show-frames-dropdown? false)
+
+        on-select-destination
+          #(if (nil? %)
+            (st/emit! (dw/update-shape (:id shape) {:interactions []}))
+            (st/emit! (dw/update-shape (:id shape) {:interactions [{:event-type :click
+                                                                    :action-type :navigate
+                                                                    :destination %}]})))
+
+        on-navigate
+          #(st/emit! (dw/select-shapes #{(:id destination)}))]
+
+    (if (not shape) 
+      [:*
+       [:div.interactions-help-icon i/interaction]
+       [:div.interactions-help (tr "workspace.options.select-a-shape")]
+       [:div.interactions-help-icon i/play]
+       [:div.interactions-help (tr "workspace.options.use-play-button")]]
+
+     [:div.element-set {:on-blur on-set-blur}
+       [:div.element-set-title
+        [:span (tr "workspace.options.navigate-to")]]
+       [:div.element-set-content
+        [:div.row-flex
+         [:div.custom-select.flex-grow {:on-click #(reset! show-frames-dropdown? true)}
+          (if destination
+            [:span (:name destination)]
+            [:span (tr "workspace.options.select-artboard")])
+          [:span.dropdown-button i/arrow-down]
+           [:& dropdown {:show @show-frames-dropdown?
+                         :on-close #(reset! show-frames-dropdown? false)}
+            [:ul.custom-select-dropdown
+             [:li.dropdown-separator {:key nil
+                                      :on-click #(on-select-destination nil)}
+              (tr "workspace.options.none")]
+             (for [frame frames]
+               (when (not= (:id frame) (:id shape)) ; A frame cannot navigate to itself
+                 [:li {:key (:id frame)
+                       :on-click #(on-select-destination (:id frame))}
+                  (:name frame)]))]]]
+         [:span.navigate-icon {on-click on-navigate} i/navigate]]]])))
 
 ;; --- Helpers
 
@@ -469,25 +520,25 @@
 
 ;; --- Interactions Menu
 
-(def +initial-form+
-  {:trigger :click
-   :action :show})
-
-(mf/defc interactions-menu
-  [{:keys [menu shape] :as props}]
-  #_(let [form (mf/use-state nil)
-        interactions (:interactions shape)]
-    [:div.element-set {:key (str (:id menu))}
-     [:div.element-set-title (:name menu)]
-     [:div.element-set-content
-      (if form
-        [:& interactions-form {:form form :shape shape}]
-        [:div
-         [:& interactions-list {:form form :shape shape}]
-         [:input.btn-primary.btn-small
-          {:value "New interaction"
-           :on-click #(reset! form +initial-form+)
-           :type "button"}]])]]))
+;; (def +initial-form+
+;;   {:trigger :click
+;;    :action :show})
+;;
+;; (mf/defc interactions-menu
+;;   [{:keys [menu shape] :as props}]
+;;   #_(let [form (mf/use-state nil)
+;;         interactions (:interactions shape)]
+;;     [:div.element-set {:key (str (:id menu))}
+;;      [:div.element-set-title (:name menu)]
+;;      [:div.element-set-content
+;;       (if form
+;;         [:& interactions-form {:form form :shape shape}]
+;;         [:div
+;;          [:& interactions-list {:form form :shape shape}]
+;;          [:input.btn-primary.btn-small
+;;           {:value "New interaction"
+;;            :on-click #(reset! form +initial-form+)
+;;            :type "button"}]])]]))
 
 ;; --- Not implemented stuff
 

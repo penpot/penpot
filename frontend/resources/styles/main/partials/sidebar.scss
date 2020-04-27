@@ -111,11 +111,13 @@
     }
   }
 }
+
 .tool-window-content {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   overflow-y: auto;
   height: 100%;
+  width: 100%;
 }
 
 .element-list {

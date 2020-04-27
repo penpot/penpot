@@ -135,6 +135,19 @@
                    ::grid-x
                    ::grid-color]))
 
+;; Interactions
+
+(s/def ::event-type #{:click}) ; In the future we will have more options
+(s/def ::action-type #{:navigate})
+(s/def ::destination uuid?)
+
+(s/def ::interaction
+  (s/keys :req-un [::event-type
+                   ::action-type
+                   ::destination]))
+
+(s/def ::interactions (s/coll-of ::interaction :kind vector?))
+
 ;; Page Data related
 (s/def ::blocked boolean?)
 (s/def ::collapsed boolean?)
@@ -194,7 +207,8 @@
                    ::stroke-width
                    ::stroke-alignment
                    ::text-align
-                   ::width ::height]))
+                   ::width ::height
+                   ::interactions]))
 
 (s/def ::minimal-shape
   (s/keys :req-un [::type ::name]

@@ -17,13 +17,15 @@
    [uxbox.main.ui.shapes.bounding-box :refer [bounding-box]]
    [uxbox.main.ui.shapes.custom-stroke :refer [shape-custom-stroke]]))
 
-;; --- Circle Wrapper
+;; --- Circle Wrapper for workspace
 
 (declare circle-shape)
 
 (mf/defc circle-wrapper
-  [{:keys [shape] :as props}]
-  (let [selected (mf/deref refs/selected-shapes)
+  {::mf/wrap-props false}
+  [props]
+  (let [shape (unchecked-get props "shape")
+        selected (mf/deref refs/selected-shapes)
         selected? (contains? selected (:id shape))
         on-mouse-down #(common/on-mouse-down % shape)
         on-context-menu #(common/on-context-menu % shape)]
@@ -31,6 +33,36 @@
                :on-mouse-down on-mouse-down
                :on-context-menu on-context-menu}
      [:& circle-shape {:shape shape}]]))
+
+;; --- Circle Wrapper for viewer
+
+(mf/defc circle-viewer-wrapper
+  {::mf/wrap-props false}
+  [props]
+  (let [shape (unchecked-get props "shape")
+        {:keys [id x y width height]} shape
+        transform (geom/transform-matrix shape)
+
+        show-interactions? (mf/deref refs/show-interactions?)
+
+        on-mouse-down (mf/use-callback
+                       (mf/deps shape)
+                       #(common/on-mouse-down-viewer % shape))]
+
+    [:g.shape {:on-mouse-down on-mouse-down
+               :cursor (when (:interactions shape) "pointer")}
+     [:*
+       [:& circle-shape {:shape shape}]
+       (when (and (:interactions shape) show-interactions?)
+         [:> "rect" #js {:x (- x 1)
+                         :y (- y 1)
+                         :width (+ width 2)
+                         :height (+ height 2)
+                         :transform transform
+                         :fill "#31EFB8"
+                         :stroke "#31EFB8"
+                         :strokeWidth 1
+                         :fillOpacity 0.2}])]]))
 
 ;; --- Circle Shape
 

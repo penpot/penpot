@@ -25,6 +25,8 @@
    [uxbox.main.ui.workspace.sidebar.options.image :as image]
    [uxbox.main.ui.workspace.sidebar.options.text :as text]
    [uxbox.main.ui.workspace.sidebar.options.page :as page]
+   [uxbox.main.ui.workspace.sidebar.options.interactions :refer [interactions-menu]]
+   [uxbox.main.ui.components.tab-container :refer [tab-container tab-element]]
    [uxbox.util.i18n :refer [tr]]))
 
 ;; --- Options
@@ -45,29 +47,43 @@
      :image [:& image/options {:shape shape}]
      nil)])
 
-(mf/defc shape-options-wrapper
-  [{:keys [shape-id page-id] :as props}]
-  (let [shape-iref (-> (mf/deps shape-id page-id)
-                       (mf/use-memo
-                        #(-> (l/in [:objects shape-id])
-                             (l/derived refs/workspace-data))))
-        shape (mf/deref shape-iref)]
-    [:& shape-options {:shape shape}]))
-
 (mf/defc options-toolbox
   {:wrap [mf/memo]}
   [{:keys [page selected] :as props}]
   (let [close #(st/emit! (udw/toggle-layout-flag :element-options))
-        selected (mf/deref refs/selected-shapes)]
-    [:div.element-options.tool-window
-     ;; [:div.tool-window-bar
-     ;;  [:div.tool-window-icon i/options]
-     ;;  [:span (tr "ds.settings.element-options")]
-     ;;  [:div.tool-window-close {:on-click close} i/close]]
-     [:& align-options]
-     [:div.tool-window-content
-      [:div.element-options
-       (if (= (count selected) 1)
-         [:& shape-options-wrapper {:shape-id (first selected)
-                                    :page-id (:id page)}]
-         [:& page/options {:page page}])]]]))
+        on-change-tab #(st/emit! (udw/set-options-mode %))
+
+        options-mode (mf/deref refs/options-mode)
+
+        selected (mf/deref refs/selected-shapes)
+        shape-id (first selected)
+        page-id (:id page)
+        shape-iref (-> (mf/deps shape-id page-id)
+                       (mf/use-memo
+                        #(-> (l/in [:objects shape-id])
+                             (l/derived refs/workspace-data))))
+        shape (mf/deref shape-iref)]
+
+    [:div.tool-window
+      ;; [:div.tool-window-bar
+      ;;  [:div.tool-window-icon i/options]
+      ;;  [:span (tr "ds.settings.element-options")]
+      ;;  [:div.tool-window-close {:on-click close} i/close]]
+      [:div.tool-window-content
+        [:& tab-container {:on-change-tab on-change-tab :selected options-mode}
+
+         [:& tab-element
+          {:id :design :title (tr "workspace.options.design")}
+          [:div.element-options
+           [:& align-options]
+           [:div
+            (if (= (count selected) 1)
+              [:& shape-options {:shape shape}]
+              [:& page/options {:page page}])]]]
+
+         [:& tab-element
+          {:id :prototype :title (tr "workspace.options.prototype")}
+          [:div.element-options
+           [:& interactions-menu {:shape shape}]]]]
+         ]]))
+

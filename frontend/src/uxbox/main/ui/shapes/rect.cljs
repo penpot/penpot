@@ -17,23 +17,53 @@
    [uxbox.util.interop :as itr]
    [uxbox.main.ui.shapes.custom-stroke :refer [shape-custom-stroke]]))
 
-;; --- Rect Wrapper
-
 (declare rect-shape)
+
+;; --- Rect Wrapper for workspace
 
 (mf/defc rect-wrapper
   {::mf/wrap-props false}
   [props]
   (let [shape (unchecked-get props "shape")
-        on-mouse-down   (mf/use-callback
-                         (mf/deps shape)
-                         #(common/on-mouse-down % shape))
+        on-mouse-down (mf/use-callback
+                       (mf/deps shape)
+                       #(common/on-mouse-down % shape))
         on-context-menu (mf/use-callback
                          (mf/deps shape)
                          #(common/on-context-menu % shape))]
     [:g.shape {:on-mouse-down on-mouse-down
                :on-context-menu on-context-menu}
      [:& rect-shape {:shape shape}]]))
+
+;; --- Rect Wrapper for viewer
+
+(mf/defc rect-viewer-wrapper
+  {::mf/wrap-props false}
+  [props]
+  (let [shape (unchecked-get props "shape")
+        {:keys [x y width height]} shape
+        transform (geom/transform-matrix shape)
+
+        show-interactions? (mf/deref refs/show-interactions?)
+
+        on-mouse-down (mf/use-callback
+                       (mf/deps shape)
+                       #(common/on-mouse-down-viewer % shape))]
+
+    [:g.shape {:on-mouse-down on-mouse-down
+               :cursor (when (:interactions shape) "pointer")}
+     [:*
+       [:& rect-shape {:shape shape}]
+       (when (and (:interactions shape) show-interactions?)
+         [:> "rect" #js {:x (- x 1)
+                         :y (- y 1)
+                         :width (+ width 2)
+                         :height (+ height 2)
+                         :transform transform
+                         :fill "#31EFB8"
+                         :stroke "#31EFB8"
+                         :strokeWidth 1
+                         :fillOpacity 0.2}])]]))
 
 ;; --- Rect Shape
 

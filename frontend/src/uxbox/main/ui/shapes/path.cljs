@@ -19,13 +19,15 @@
    [uxbox.main.ui.shapes.bounding-box :refer [bounding-box]]
    [uxbox.main.ui.shapes.custom-stroke :refer [shape-custom-stroke]]))
 
-;; --- Path Wrapper
+;; --- Path Wrapper for workspace
 
 (declare path-shape)
 
 (mf/defc path-wrapper
-  [{:keys [shape] :as props}]
-  (let [selected (mf/deref refs/selected-shapes)
+  {::mf/wrap-props false}
+  [props]
+  (let [shape (unchecked-get props "shape")
+        selected (mf/deref refs/selected-shapes)
         selected? (contains? selected (:id shape))
         on-mouse-down   (mf/use-callback
                          (mf/deps shape)
@@ -43,6 +45,35 @@
                :on-mouse-down on-mouse-down
                :on-context-menu on-context-menu}
      [:& path-shape {:shape shape :background? true}]]))
+
+;; --- Path Wrapper for viewer
+
+(mf/defc path-viewer-wrapper
+  {::mf/wrap-props false}
+  [props]
+  (let [shape (unchecked-get props "shape")
+        {:keys [x y width height]} (geom/shape->rect-shape shape)
+        transform (geom/transform-matrix shape)
+
+        show-interactions? (mf/deref refs/show-interactions?)
+
+        on-mouse-down (mf/use-callback
+                       (mf/deps shape)
+                       #(common/on-mouse-down-viewer % shape))]
+    [:g.shape {:on-mouse-down on-mouse-down
+               :cursor (when (:interactions shape) "pointer")}
+     [:*
+       [:& path-shape {:shape shape}]
+       (when (and (:interactions shape) show-interactions?)
+         [:> "rect" #js {:x (- x 1)
+                         :y (- y 1)
+                         :width (+ width 2)
+                         :height (+ height 2)
+                         :transform transform
+                         :fill "#31EFB8"
+                         :stroke "#31EFB8"
+                         :strokeWidth 1
+                         :fillOpacity 0.2}])]]))
 
 ;; --- Path Shape
 
@@ -68,8 +99,11 @@
           (recur buffer (inc index)))))))
 
 (mf/defc path-shape
-  [{:keys [shape background?] :as props}]
-  (let [{:keys [id x y width height]} (geom/shape->rect-shape shape)
+  {::mf/wrap-props false}
+  [props]
+  (let [shape (unchecked-get props "shape")
+        background? (unchecked-get props "background?")
+        {:keys [id x y width height]} (geom/shape->rect-shape shape)
         transform (geom/transform-matrix shape)
         pdata (render-path shape)
         props (-> (attrs/extract-style-attrs shape)

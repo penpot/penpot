@@ -7,11 +7,8 @@
 
 .element-options {
   display: flex;
+  flex-direction: column;
   width: 100%;
-
-  > div {
-    width: 100%;
-  }
 
   .element-icons {
     background-color: $color-gray-60;
@@ -307,6 +304,10 @@
           margin-left: auto;
         }
 
+        &.dropdown-separator:not(:last-child) {
+          border-bottom: 1px solid $color-gray-10;
+        }
+
         &.dropdown-label:not(:first-child) {
           border-top: 1px solid $color-gray-10;
         }
@@ -479,6 +480,29 @@
     stroke: $color-gray-40;
     stroke-width: 30px;
     width: 20px;
+  }
+
+  &:hover {
+    svg {
+      stroke: $color-gray-10;
+    }
+  }
+}
+
+.navigate-icon {
+  background-color: $color-gray-60;
+  cursor: pointer;
+  margin-left: $small;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+
+  svg {
+    height: 16px;
+    fill: $color-gray-30;
+    width: 16px;
   }
 
   &:hover {

@@ -16,6 +16,7 @@
    [uxbox.common.data :as d]
    [uxbox.common.spec :as us]
    [uxbox.main.data.workspace :as dw]
+   [uxbox.main.data.viewer :as dv]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.keyboard :as kbd]
@@ -66,10 +67,24 @@
           (st/emit! (dw/start-move-selected)))))))
 
 
+;; --- Workspace context menu
 (defn on-context-menu
   [event shape]
   (dom/prevent-default event)
   (dom/stop-propagation event)
   (let [position (dom/get-client-position event)]
-    (st/emit!(dw/show-shape-context-menu {:position position
-                                          :shape shape}))))
+    (st/emit! (dw/show-shape-context-menu {:position position
+                                           :shape shape}))))
+
+
+;; --- Interaction actions (in viewer mode)
+
+(defn on-mouse-down-viewer
+  [event {:keys [interactions] :as shape}]
+  (let [interaction (first (filter #(= (:action-type % :click)) interactions))]
+    (case (:action-type interaction)
+      :navigate
+      (let [frame-id (:destination interaction)]
+        (st/emit! (dv/go-to-frame frame-id)))
+      nil)))
+

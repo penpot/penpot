@@ -31,6 +31,8 @@
 (s/def ::file (s/keys :req-un [::id ::name]))
 (s/def ::page (s/keys :req-un [::id ::name ::cp/data]))
 
+(s/def ::interactions-mode #{:hide :show :show-on-click})
+
 (s/def ::bundle
   (s/keys :req-un [::project ::file ::page]))
 
@@ -45,7 +47,10 @@
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :viewer-local {:zoom 1 :page-id page-id}))
+      (assoc state :viewer-local {:zoom 1
+                                  :page-id page-id
+                                  :interactions-mode :hide
+                                  :show-interactions? false}))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -178,6 +183,52 @@
         (when (< index (dec total))
           (rx/of (rt/nav :viewer pparams (assoc qparams :index (inc index)))))))))
 
+(defn set-interactions-mode
+  [mode]
+  (us/verify ::interactions-mode mode)
+  (ptk/reify ::set-interactions-mode
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:viewer-local :interactions-mode] mode)
+          (assoc-in [:viewer-local :show-interactions?] (case mode
+                                                          :hide false
+                                                          :show true
+                                                          :show-on-click false))))))
+
+(declare flash-done)
+
+(def flash-interactions
+  (ptk/reify ::flash-interactions
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:viewer-local :show-interactions?] true))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [stopper (rx/filter (ptk/type? ::flash-interactions) stream)]
+        (->> (rx/of flash-done)
+             (rx/delay 1000)
+             (rx/take-until stopper))))))
+
+(def flash-done
+  (ptk/reify ::flash-done
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:viewer-local :show-interactions?] false))))
+
+;; --- Navigation
+
+(defn go-to-frame
+  [frame-id]
+  (us/verify ::us/uuid frame-id)
+  (ptk/reify ::go-to-frame
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id (get-in state [:viewer-local :page-id])
+            frames (get-in state [:viewer-data :frames])
+            index (d/index-of-pred frames #(= (:id %) frame-id))]
+        (rx/of (rt/nav :viewer {:page-id page-id} {:index index}))))))
 
 ;; --- Shortcuts
 

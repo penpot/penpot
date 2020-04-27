@@ -26,12 +26,19 @@ You can deactivate debug mode with
 (-debug! <option>)  ; to disable only one
 ```
 
-There are also some useful functions:
+## Debug state and objects
+
+There are also some useful functions to visualize the global state or any
+complex object:
+
 ```clojure
-(dump-state) ; to print in console all the global state
-(dump-objects) ; to print in console all objects in workspace
+(ns uxbox.util.debug)
 (logjs <msg> <var>) ; to print the value of a variable
 (tap <fn>) ; to include a function with side effect (e.g. logjs) in a transducer.
+
+(ns uxbox.main.store)
+(dump-state) ; to print in console all the global state
+(dump-objects) ; to print in console all objects in workspace
 ```
 
 

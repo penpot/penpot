@@ -14,25 +14,60 @@
    [uxbox.main.ui.shapes.common :as common]
    [uxbox.util.interop :as itr]))
 
-
-;; --- Icon Wrapper
+;; --- Icon Wrapper for workspace
 
 (declare icon-shape)
 
 (mf/defc icon-wrapper
-  [{:keys [shape frame] :as props}]
-  (let [selected (mf/deref refs/selected-shapes)
+  {::mf/wrap-props false}
+  [props]
+  (let [shape (unchecked-get props "shape")
+        frame (unchecked-get props "frame")
+        selected (mf/deref refs/selected-shapes)
         selected? (contains? selected (:id shape))
         on-mouse-down #(common/on-mouse-down % shape)]
     [:g.shape {:class (when selected? "selected")
                :on-mouse-down on-mouse-down}
      [:& icon-shape {:shape (geom/transform-shape frame shape)}]]))
 
+;; --- Icon Wrapper for viewer
+
+(mf/defc icon-viewer-wrapper
+  {::mf/wrap-props false}
+  [props]
+  (let [shape (unchecked-get props "shape")
+        frame (unchecked-get props "frame")
+
+        {:keys [x y width height]} shape
+        transform (geom/transform-matrix shape)
+
+        show-interactions? (mf/deref refs/show-interactions?)
+
+        on-mouse-down (mf/use-callback
+                       (mf/deps shape)
+                       #(common/on-mouse-down-viewer % shape))]
+    [:g.shape {:on-mouse-down on-mouse-down
+               :cursor (when (:interactions shape) "pointer")}
+     [:*
+       [:& icon-shape {:shape (geom/transform-shape frame shape)}]
+       (when (and (:interactions shape) show-interactions?)
+         [:> "rect" #js {:x (- x 1)
+                         :y (- y 1)
+                         :width (+ width 2)
+                         :height (+ height 2)
+                         :transform transform
+                         :fill "#31EFB8"
+                         :stroke "#31EFB8"
+                         :strokeWidth 1
+                         :fillOpacity 0.2}])]]))
+
 ;; --- Icon Shape
 
 (mf/defc icon-shape
-  [{:keys [shape] :as props}]
-  (let [{:keys [id x y width height metadata rotation content] :as shape} shape
+  {::mf/wrap-props false}
+  [props]
+  (let [shape (unchecked-get props "shape")
+        {:keys [id x y width height metadata rotation content]} shape
         transform (when (and rotation (pos? rotation))
                     (str/format "rotate(%s %s %s)"
                                 rotation

@@ -4,16 +4,16 @@
 ;;
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.main.exports
-  "The main logic for SVG export functionality."
+(ns uxbox.main.ui.viewer.frame-viewer
+  "The main container for a frame in viewer mode"
   (:require
    [rumext.alpha :as mf]
    [uxbox.common.uuid :as uuid]
-   [uxbox.common.pages :as cp]
    [uxbox.util.math :as mth]
    [uxbox.util.geom.shapes :as geom]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.geom.matrix :as gmt]
+   [uxbox.common.pages :as cp]
    [uxbox.main.ui.shapes.frame :as frame]
    [uxbox.main.ui.shapes.circle :as circle]
    [uxbox.main.ui.shapes.icon :as icon]
@@ -22,24 +22,6 @@
    [uxbox.main.ui.shapes.rect :as rect]
    [uxbox.main.ui.shapes.text :as text]
    [uxbox.main.ui.shapes.group :as group]))
-
-(def ^:private background-color "#E8E9EA") ;; $color-canvas
-(mf/defc background
-  []
-  [:rect
-   {:x 0 :y 0
-    :width "100%"
-    :height "100%"
-    :fill background-color}])
-
-(defn- calculate-dimensions
-  [data]
-  (let [shapes (vals (:objects data))
-        shape (geom/shapes->rect-shape shapes)
-        width (+ (:x shape) (:width shape) 100)
-        height (+ (:y shape) (:height shape) 100)]
-    {:width (if (mth/nan? width) 100 width)
-     :height (if (mth/nan? height) 100 height)}))
 
 (declare shape-wrapper)
 
@@ -79,39 +61,17 @@
         (let [shape (geom/transform-shape frame shape)
               opts #js {:shape shape}]
           (case (:type shape)
-            :curve [:> path/path-shape opts]
-            :text [:> text/text-shape opts]
-            :icon [:> icon/icon-shape opts]
-            :rect [:> rect/rect-shape opts]
-            :path [:> path/path-shape opts]
-            :image [:> image/image-shape opts]
-            :circle [:> circle/circle-shape opts]
+            :curve [:> path/path-viewer-wrapper opts]
+            :text [:> text/text-viewer-wrapper opts]
+            :icon [:> icon/icon-viewer-wrapper opts]
+            :rect [:> rect/rect-viewer-wrapper opts]
+            :path [:> path/path-viewer-wrapper opts]
+            :image [:> image/image-viewer-wrapper opts]
+            :circle [:> circle/circle-viewer-wrapper opts]
             :group [:> group-wrapper {:shape shape :frame frame}]
             nil))))))
 
-(mf/defc page-svg
-  {::mf/wrap [mf/memo]}
-  [{:keys [data] :as props}]
-  (let [objects (:objects data)
-        root    (get objects uuid/zero)
-        shapes  (->> (:shapes root)
-                     (map #(get objects %)))
-        dim (calculate-dimensions data)
-        frame-wrapper (mf/use-memo (mf/deps objects) #(frame-wrapper objects))
-        shape-wrapper (mf/use-memo (mf/deps objects) #(shape-wrapper objects))]
-    [:svg {:view-box (str "0 0 " (:width dim 0) " " (:height dim 0))
-           :version "1.1"
-           :xmlnsXlink "http://www.w3.org/1999/xlink"
-           :xmlns "http://www.w3.org/2000/svg"}
-     [:& background]
-     (for [item shapes]
-       (if (= (:type item) :frame)
-         [:& frame-wrapper {:shape item
-                            :key (:id item)}]
-         [:& shape-wrapper {:shape item
-                            :key (:id item)}]))]))
-
-(mf/defc frame-svg
+(mf/defc frame-viewer-svg
   {::mf/wrap [mf/memo]}
   [{:keys [objects frame zoom] :or {zoom 1} :as props}]
   (let [modifier (-> (gpt/point (:x frame) (:y frame))

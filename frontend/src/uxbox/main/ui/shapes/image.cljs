@@ -17,13 +17,15 @@
    [uxbox.util.interop :as itr]
    [uxbox.util.geom.matrix :as gmt]))
 
-;; --- Image Wrapper
+;; --- Image Wrapper for workspace
 
 (declare image-shape)
 
 (mf/defc image-wrapper
-  [{:keys [shape] :as props}]
-  (let [selected (mf/deref refs/selected-shapes)
+  {::mf/wrap-props false}
+  [props]
+  (let [shape (unchecked-get props "shape")
+        selected (mf/deref refs/selected-shapes)
         selected? (contains? selected (:id shape))
         on-mouse-down   (mf/use-callback
                          (mf/deps shape)
@@ -38,17 +40,47 @@
                :on-context-menu on-context-menu}
      [:& image-shape {:shape shape}]]))
 
+;; --- Image Wrapper for viewer
+
+(mf/defc image-viewer-wrapper
+  {::mf/wrap-props false}
+  [props]
+  (let [shape (unchecked-get props "shape")
+        {:keys [x y width height]} shape
+        transform (geom/transform-matrix shape)
+
+        show-interactions? (mf/deref refs/show-interactions?)
+
+        on-mouse-down (mf/use-callback
+                       (mf/deps shape)
+                       #(common/on-mouse-down-viewer % shape))]
+    [:g.shape {:on-mouse-down on-mouse-down
+               :cursor (when (:interactions shape) "pointer")}
+     [:*
+       [:& image-shape {:shape shape}]
+       (when (and (:interactions shape) show-interactions?)
+         [:> "rect" #js {:x (- x 1)
+                         :y (- y 1)
+                         :width (+ width 2)
+                         :height (+ height 2)
+                         :transform transform
+                         :fill "#31EFB8"
+                         :stroke "#31EFB8"
+                         :strokeWidth 1
+                         :fillOpacity 0.2}])]]))
+
 ;; --- Image Shape
 
 (mf/defc image-shape
-  [{:keys [shape] :as props}]
-  (let [{:keys [id x y width height rotation metadata]} shape
+  {::mf/wrap-props false}
+  [props]
+  (let [shape (unchecked-get props "shape")
+        {:keys [id x y width height rotation metadata]} shape
         transform (geom/transform-matrix shape)
         uri  (if (or (> (:thumb-width metadata) width)
                      (> (:thumb-height metadata) height))
                (:thumb-uri metadata)
                (:uri metadata))
-
 
         props (-> (attrs/extract-style-attrs shape)
                   (itr/obj-assign!

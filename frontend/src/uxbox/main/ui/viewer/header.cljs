@@ -24,6 +24,28 @@
    [uxbox.common.uuid :as uuid]
    [uxbox.util.webapi :as wapi]))
 
+(mf/defc interactions-menu
+  [{:keys [interactions-mode] :as props}]
+  (let [show-dropdown? (mf/use-state false)
+        locale (i18n/use-locale)
+        on-select-mode #(st/emit! (dv/set-interactions-mode %))]
+    [:div.header-icon
+     [:a {:on-click #(swap! show-dropdown? not)} i/eye
+      [:& dropdown {:show @show-dropdown?
+                    :on-close #(swap! show-dropdown? not)}
+       [:ul.custom-select-dropdown
+        [:li {:key :hide
+              :class (classnames :selected (= interactions-mode :hide))
+              :on-click #(on-select-mode :hide)}
+         (t locale "viewer.header.dont-show-interactions")]
+        [:li {:key :show
+              :class (classnames :selected (= interactions-mode :show))
+              :on-click #(on-select-mode :show)}
+         (t locale "viewer.header.show-interactions")]
+        [:li {:key :show-on-click
+              :class (classnames :selected (= interactions-mode :show-on-click))
+              :on-click #(on-select-mode :show-on-click)}
+         (t locale "viewer.header.show-interactions-on-click")]]]]]))
 
 (mf/defc share-link
   [{:keys [page] :as props}]
@@ -77,6 +99,8 @@
         total (count frames)
         on-click #(st/emit! dv/toggle-thumbnails-panel)
 
+        interactions-mode (:interactions-mode local)
+
         locale (i18n/use-locale)
 
         profile (mf/deref refs/profile)
@@ -105,6 +129,7 @@
       [:span.counters (str (inc index) " / " total)]]
 
      [:div.options-zone
+      [:& interactions-menu {:interactions-mode interactions-mode}]
       (when-not anonymous?
         [:& share-link {:page (:page data)}])
       (when-not anonymous?
@@ -126,5 +151,4 @@
          i/full-screen-off
          i/full-screen)]
       ]]))
-
 
