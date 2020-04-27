@@ -93,10 +93,12 @@
                   origin  (-> (handler-resize-origin shape handler)
                               (gsh/transform-shape-point shape shape-transform))]
               
-              (rx/of (set-modifiers ids {:resize-vector scalev
-                                         :resize-origin origin
-                                         :resize-transform shape-transform
-                                         :resize-transform-inverse shape-transform-inverse}))))
+              (rx/of (set-modifiers ids
+                                    {:resize-vector scalev
+                                     :resize-origin origin
+                                     :resize-transform shape-transform
+                                     :resize-transform-inverse shape-transform-inverse}
+                                    false))))
 
           ;; Unifies the instantaneous proportion lock modifier
           ;; activated by Ctrl key and the shapes own proportion
@@ -126,6 +128,7 @@
                 (rx/map normalize-proportion-lock)
                 (rx/mapcat (partial resize shape initial))
                 (rx/take-until stoper))
+           #_(rx/empty)
            (rx/of (apply-modifiers ids))))))))
 
 

@@ -658,11 +658,17 @@
     (* (gpt/length v2) (mth/sin (mth/radians angle)))))
 
 (defn calculate-rec-path-rotation
-  [center path-shape1 path-shape2]
-  (let [p1 (get-in path-shape1 [:segments 0])
-        p2 (get-in path-shape2 [:segments 0])
-        v1 (gpt/to-vec center p1)
-        v2 (gpt/to-vec center p2)
+  [path-shape1 path-shape2 resize-vector]
+
+  (let [idx-1 0
+        idx-2 (cond (and (neg? (:x resize-vector)) (pos? (:y resize-vector))) 1
+                    (and (neg? (:x resize-vector)) (neg? (:y resize-vector))) 2
+                    (and (pos? (:x resize-vector)) (neg? (:y resize-vector))) 3
+                    :else 0)
+        p1 (get-in path-shape1 [:segments idx-1])
+        p2 (get-in path-shape2 [:segments idx-2])
+        v1 (gpt/to-vec (center path-shape1) p1)
+        v2 (gpt/to-vec (center path-shape2) p2)
 
         rot-angle (gpt/angle-with-other v1 v2)
         rot-sign (if (> (* (:y v1) (:x v2)) (* (:x v1) (:y v2))) -1 1)]
@@ -742,6 +748,7 @@
   (let [;; Apply modifiers to the rect as a path so we have the end shape expected
         shape-path (transform-apply-modifiers shape)
         shape-center (center shape-path)
+        resize-vector (get-in shape [:modifiers :resize-vector] (gpt/point 1 1))
 
         ;; Reverse the current transformation stack to get the base rectangle
         shape-path-temp (center-transform shape-path (:transform-inverse shape (gmt/matrix)))
@@ -759,13 +766,18 @@
         stretch-matrix (gmt/matrix)
 
         skew-angle (calculate-rec-path-skew-angle shape-path-temp)
+
+        ;; When one of the axis is flipped we have to reverse the skew
+        skew-angle (if (neg? (* (:x resize-vector) (:y resize-vector))) (- skew-angle) skew-angle )
+
         stretch-matrix (gmt/multiply stretch-matrix (gmt/skew-matrix skew-angle 0))
 
         h1 (calculate-rec-path-height shape-path-temp)
         h2 (calculate-rec-path-height (center-transform rec-path stretch-matrix))
         stretch-matrix (gmt/multiply stretch-matrix (gmt/scale-matrix (gpt/point 1 (/ h1 h2))))
 
-        rotation-angle (calculate-rec-path-rotation shape-center (center-transform rec-path stretch-matrix) shape-path-temp)
+        rotation-angle (calculate-rec-path-rotation (center-transform rec-path stretch-matrix) shape-path-temp resize-vector)
+
         stretch-matrix (gmt/multiply (gmt/rotate-matrix rotation-angle) stretch-matrix)
 
         ;; This is the inverse to be able to remove the transformation
