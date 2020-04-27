@@ -301,7 +301,7 @@
 
 (mf/defc generic-draw-area
   [{:keys [shape zoom]}]
-  (let [{:keys [x y width height]} (geom/shape->rect-shape shape)]
+  (let [{:keys [x y width height]} (geom/transform-selrect nil shape)]
     (when (and x y)
       [:g
        [:& shapes/shape-wrapper {:shape shape}]
