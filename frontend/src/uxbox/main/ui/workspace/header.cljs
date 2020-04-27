@@ -121,7 +121,8 @@
 (mf/defc header
   [{:keys [file layout project] :as props}]
   (let [locale (i18n/use-locale)
-        go-to-dashboard #(st/emit! (rt/nav :dashboard-team {:team-id "self"}))
+        team-id (:team-id project)
+        go-back #(st/emit! (rt/nav :dashboard-team {:team-id team-id}))
         zoom (mf/deref refs/selected-zoom)
         page (mf/deref refs/workspace-page)
         locale (i18n/use-locale)
@@ -129,7 +130,7 @@
         view-url (rt/resolve router :viewer {:page-id (:id page)} {:index 0})]
     [:header.workspace-header
      [:div.main-icon
-      [:a {:on-click go-to-dashboard} i/logo-icon]]
+      [:a {:on-click go-back} i/logo-icon]]
 
      [:& menu {:layout layout
                :project project

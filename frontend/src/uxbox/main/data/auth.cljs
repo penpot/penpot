@@ -32,8 +32,9 @@
   (ptk/reify ::logged-in
     ptk/WatchEvent
     (watch [this state stream]
-      (rx/of (du/profile-fetched data)
-             (rt/navigate :dashboard-team {:team-id "self"})))))
+      (let [team-id (:default-team-id data)]
+        (rx/of (du/profile-fetched data)
+               (rt/navigate :dashboard-team {:team-id team-id}))))))
 
 ;; --- Login
 

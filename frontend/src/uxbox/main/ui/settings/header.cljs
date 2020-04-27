@@ -15,12 +15,14 @@
    [uxbox.util.router :as rt]))
 
 (mf/defc header
-  [{:keys [section] :as props}]
+  [{:keys [section profile] :as props}]
   (let [profile? (= section :settings-profile)
         password? (= section :settings-password)
-        locale (i18n/use-locale)]
+        locale (i18n/use-locale)
+        team-id (:default-team-id profile)]
     [:header
-      [:div.main-logo {:on-click #(st/emit! (rt/nav :dashboard-team {:team-id "self"}))}
+      [:div.main-logo
+       {:on-click #(st/emit! (rt/nav :dashboard-team {:team-id team-id}))}
        i/logo-icon]
      [:section.main-bar
       [:nav

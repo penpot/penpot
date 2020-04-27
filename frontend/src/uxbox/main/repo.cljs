@@ -63,7 +63,6 @@
 
 (defn- handle-response
   [response]
-  ;; (prn "handle-response1" response)
   (cond
     (http/success? response)
     (rx/of (:body response))
