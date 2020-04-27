@@ -58,7 +58,6 @@
   (let [locale (i18n/use-locale)
         form (fm/use-form ::profile-form #(deref refs/profile))
         data (:data form)]
-    (prn "data" form)
     [:form.profile-form {:on-submit #(on-submit % form)}
      [:span.settings-label (t locale "settings.profile.section-basic-data")]
 
