@@ -15,6 +15,7 @@
    [uxbox.main.repo :as rp]
    [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.storage :refer [storage]]
+   [uxbox.util.avatars :as avatars]
    [uxbox.util.theme :as theme]))
 
 ;; --- Common Specs
@@ -48,9 +49,10 @@
   (ptk/reify ::profile-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :profile (cond-> data
-                              (nil? (:lang data)) (assoc :lang cfg/default-language)
-                              (nil? (:theme data)) (assoc :theme cfg/default-theme))))
+      (let [profile (avatars/assign data)]
+        (assoc state :profile (cond-> profile
+                                (nil? (:lang data)) (assoc :lang cfg/default-language)
+                                (nil? (:theme data)) (assoc :theme cfg/default-theme)))))
 
     ptk/EffectEvent
     (effect [_ state stream]
