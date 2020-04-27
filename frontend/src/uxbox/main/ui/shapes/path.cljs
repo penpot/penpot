@@ -16,7 +16,8 @@
    [uxbox.main.ui.shapes.common :as common]
    [uxbox.util.interop :as itr]
    [uxbox.util.geom.matrix :as gmt]
-   [uxbox.main.ui.shapes.bounding-box :refer [bounding-box]]))
+   [uxbox.main.ui.shapes.bounding-box :refer [bounding-box]]
+   [uxbox.main.ui.shapes.custom-stroke :refer [shape-custom-stroke]]))
 
 ;; --- Path Wrapper
 
@@ -83,5 +84,10 @@
                :fill "transparent"
                :stroke-width "20px"
                :d pdata}]
-       [:> "path" props]]
-      [:> "path" props])))
+       [:& shape-custom-stroke {:shape shape
+                                :base-props props
+                                :elem-name "path"}]]
+      [:& shape-custom-stroke {:shape shape
+                               :base-props props
+                               :elem-name "path"}])))
+

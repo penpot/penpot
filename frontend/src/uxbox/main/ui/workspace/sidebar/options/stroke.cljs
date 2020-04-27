@@ -32,6 +32,13 @@
                           (d/read-string))]
             (st/emit! (udw/update-shape (:id shape) {:stroke-style value}))))
 
+        on-stroke-alignment-change
+        (fn [event]
+          (let [value (-> (dom/get-target event)
+                          (dom/get-value)
+                          (d/read-string))]
+            (st/emit! (udw/update-shape (:id shape) {:stroke-alignment value}))))
+
         on-stroke-width-change
         (fn [event]
           (let [value (-> (dom/get-target event)
@@ -120,22 +127,28 @@
                            :step "1"
                            :on-change on-stroke-opacity-change}]]
 
-        ;; Stroke Style & Width
+        ;; Stroke Width, Alignment & Style
         [:div.row-flex
-         [:select#style.input-select {:value (pr-str (:stroke-style shape))
-                                      :on-change on-stroke-style-change}
-          [:option {:value ":solid"} (t locale "workspace.options.stroke.solid")]
-          [:option {:value ":dotted"} (t locale "workspace.options.stroke.dotted")]
-          [:option {:value ":dashed"} (t locale "workspace.options.stroke.dashed")]
-          [:option {:value ":mixed"} (t locale "workspace.options.stroke.mixed")]]
-
          [:div.input-element.pixels
           [:input.input-text {:type "number"
                               :min "0"
                               :value (str (-> (:stroke-width shape)
                                               (d/coalesce 1)
                                               (math/round)))
-                              :on-change on-stroke-width-change}]]]]]
+                              :on-change on-stroke-width-change}]]
+
+         [:select#style.input-select {:value (pr-str (:stroke-alignment shape))
+                                      :on-change on-stroke-alignment-change}
+          [:option {:value ":center"} (t locale "workspace.options.stroke.center")]
+          [:option {:value ":inner"} (t locale "workspace.options.stroke.inner")]
+          [:option {:value ":outer"} (t locale "workspace.options.stroke.outer")]]
+
+         [:select#style.input-select {:value (pr-str (:stroke-style shape))
+                                      :on-change on-stroke-style-change}
+          [:option {:value ":solid"} (t locale "workspace.options.stroke.solid")]
+          [:option {:value ":dotted"} (t locale "workspace.options.stroke.dotted")]
+          [:option {:value ":dashed"} (t locale "workspace.options.stroke.dashed")]
+          [:option {:value ":mixed"} (t locale "workspace.options.stroke.mixed")]]]]]
 
       ;; NO STROKE
       [:div.element-set
