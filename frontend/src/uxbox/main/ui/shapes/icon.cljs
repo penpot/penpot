@@ -8,7 +8,7 @@
   (:require
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
-   [uxbox.main.geom :as geom]
+   [uxbox.util.geom.shapes :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.main.ui.shapes.common :as common]

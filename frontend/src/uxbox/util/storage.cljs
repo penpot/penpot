@@ -15,7 +15,7 @@
 
 (defn- load
   [alias]
-  (if (= *target* "nodejs")
+  (if (or (= *target* "nodejs") (not (exists? js/window)))
     {}
     (let [data (.getItem js/localStorage (name alias))]
       (if data

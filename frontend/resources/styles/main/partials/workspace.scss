@@ -108,10 +108,11 @@
   }
 
   .workspace-viewport {
-    height: calc(100% - 40px);
+    height: 100%;
     overflow: scroll;
     transition: none;
     width: 100%;
+    margin-top: 20px;
 
     .viewport {
       &.drawing {

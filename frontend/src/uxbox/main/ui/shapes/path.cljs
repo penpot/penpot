@@ -9,13 +9,14 @@
    [cuerdas.core :as str :include-macros true]
    [rumext.alpha :as mf]
    [uxbox.main.data.workspace :as dw]
-   [uxbox.main.geom :as geom]
+   [uxbox.util.geom.shapes :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.main.ui.shapes.common :as common]
    [uxbox.util.interop :as itr]
-   [uxbox.util.geom.matrix :as gmt]))
+   [uxbox.util.geom.matrix :as gmt]
+   [uxbox.main.ui.shapes.bounding-box :refer [bounding-box]]))
 
 ;; --- Path Wrapper
 
@@ -25,17 +26,23 @@
   [{:keys [shape frame] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
         selected? (contains? selected (:id shape))
-        on-mouse-down #(common/on-mouse-down % shape)
-        on-context-menu #(common/on-context-menu % shape)
-        on-double-click
-        (fn [event]
-          (when selected?
-            (st/emit! (dw/start-edition-mode (:id shape)))))]
+        on-mouse-down   (mf/use-callback
+                         (mf/deps shape)
+                         #(common/on-mouse-down % shape))
+        on-context-menu (mf/use-callback
+                         (mf/deps shape)
+                         #(common/on-context-menu % shape))
+        on-double-click (mf/use-callback
+                         (mf/deps shape)
+                         (fn [event]
+                           (when selected?
+                             (st/emit! (dw/start-edition-mode (:id shape))))))]
+
     [:g.shape {:on-double-click on-double-click
                :on-mouse-down on-mouse-down
                :on-context-menu on-context-menu}
-     [:& path-shape {:shape (geom/transform-shape frame shape)
-                     :background? true}]]))
+     [:& path-shape {:shape (geom/transform-shape frame shape) :background? true}]
+     [:& bounding-box {:shape shape :frame frame}]]))
 
 ;; --- Path Shape
 
@@ -62,14 +69,8 @@
 
 (mf/defc path-shape
   [{:keys [shape background?] :as props}]
-  (let [{:keys [id x y width height rotation]} (geom/shape->rect-shape shape)
-
-        transform (when (and rotation (pos? rotation))
-                    (str/format "rotate(%s %s %s)"
-                                rotation
-                                (+ x (/ width 2))
-                                (+ y (/ height 2))))
-
+  (let [{:keys [id x y width height]} (geom/shape->rect-shape shape)
+        transform (geom/transform-matrix shape)
         pdata (render-path shape)
         props (-> (attrs/extract-style-attrs shape)
                   (itr/obj-assign!

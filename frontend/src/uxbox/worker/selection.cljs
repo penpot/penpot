@@ -17,8 +17,8 @@
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.common.uuid :as uuid]
-   [uxbox.main.geom :as geom]
    [uxbox.worker.impl :as impl]
+   [uxbox.util.geom.shapes :as geom]
    [uxbox.util.quadtree :as qdt]))
 
 (defonce state (l/atom {}))
@@ -92,10 +92,8 @@
 
 (defn- resolve-object
   [state {:keys [id] :as item}]
-  (let [item   (-> item
-                   (geom/shape->rect-shape)
-                   (geom/resolve-rotation)
-                   (geom/shape->rect-shape))
+  (let [selection-rect (geom/selection-rect-shape item)
+        item   (merge item (select-keys selection-rect [:x :y :width :height]))
         width  (+ (:x item 0) (:width item 0))
         height (+ (:y item 0) (:height item 0))
         max    (fnil max 0)]

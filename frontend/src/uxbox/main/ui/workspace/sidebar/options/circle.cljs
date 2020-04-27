@@ -18,6 +18,6 @@
   [{:keys [shape] :as props}]
   [:div
    [:& measures-menu {:shape shape
-                      :options #{:circle-size :position :rotation}}]
+                      :options #{:size :position :rotation}}]
    [:& fill-menu {:shape shape}]
    [:& stroke-menu {:shape shape}]])

@@ -10,11 +10,12 @@
    [cuerdas.core :as str]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]
-   [uxbox.main.geom :as geom]
+   [uxbox.util.geom.shapes :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.main.ui.shapes.common :as common]
-   [uxbox.util.interop :as itr]))
+   [uxbox.util.interop :as itr]
+   [uxbox.main.ui.shapes.bounding-box :refer [bounding-box]]))
 
 ;; --- Rect Wrapper
 
@@ -33,7 +34,8 @@
                          #(common/on-context-menu % shape))]
     [:g.shape {:on-mouse-down on-mouse-down
                :on-context-menu on-context-menu}
-     [:& rect-shape {:shape (geom/transform-shape frame shape) }]]))
+     [:& rect-shape {:shape (geom/transform-shape frame shape) }]
+     [:& bounding-box {:shape shape :frame frame}]]))
 
 ;; --- Rect Shape
 
@@ -41,11 +43,8 @@
   {::mf/wrap-props false}
   [props]
   (let [shape (unchecked-get props "shape")
-        {:keys [id x y width height rotation]} shape
-        center (gpt/center shape)
-        transform (when (pos? rotation)
-                    (str (-> (gmt/matrix)
-                             (gmt/rotate rotation center))))
+        {:keys [id x y width height]} shape
+        transform (geom/transform-matrix shape)
         props (-> (attrs/extract-style-attrs shape)
                   (itr/obj-assign!
                    #js {:x x

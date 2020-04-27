@@ -12,7 +12,7 @@
    [rumext.alpha :as mf]
    [uxbox.main.constants :as c]
    [uxbox.main.data.workspace :as dw]
-   [uxbox.main.geom :as geom]
+   [uxbox.util.geom.shapes :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
@@ -112,19 +112,24 @@
             (let [shape (get-in state [:workspace-local :drawing])
                   shape (geom/setup shape {:x (:x point)
                                            :y (:y point)
-                                           :width 2
-                                           :height 2})]
+                                           :width 10
+                                           :height 10})]
               (assoc-in state [:workspace-local :drawing] (assoc shape ::initialized? true))))
 
-          (resize-shape [shape point lock?]
+          (resize-shape [{:keys [x y] :as shape} initial point lock?]
             (let [shape' (geom/shape->rect-shape shape)
-                  result (geom/resize-shape :bottom-right shape' point lock?)
-                  scale (geom/calculate-scale-ratio shape' result)
-                  mtx (geom/generate-resize-matrix :bottom-right shape' scale)]
-              (assoc shape :resize-modifier mtx)))
+                  shapev (gpt/point (:width shape') (:height shape'))
+                  deltav (gpt/subtract point initial)
+                  scalev (gpt/divide (gpt/add shapev deltav) shapev)
+                  scalev (if lock? (let [v (max (:x scalev) (:y scalev))] (gpt/point v v)) scalev)]
 
-          (update-drawing [state point lock?]
-            (update-in state [:workspace-local :drawing] resize-shape point lock?))]
+              (-> shape
+                  (assoc-in [:modifiers :resize-vector] scalev)
+                  (assoc-in [:modifiers :resize-origin] (gpt/point x y))
+                  (assoc-in [:modifiers :resize-rotation] 0))))
+
+          (update-drawing [state initial point lock?]
+            (update-in state [:workspace-local :drawing] resize-shape initial point lock?))]
 
     (ptk/reify ::handle-drawing-generic
       ptk/WatchEvent
@@ -132,7 +137,7 @@
         (let [{:keys [zoom flags]} (:workspace-local state)
               stoper? #(or (ms/mouse-up? %) (= % :interrupt))
               stoper (rx/filter stoper? stream)
-
+              initial @ms/mouse-position
               mouse (->> ms/mouse-position
                          (rx/map #(gpt/divide % (gpt/point zoom))))]
           (rx/concat
@@ -141,7 +146,7 @@
                 (rx/map (fn [pt] #(initialize-drawing % pt))))
            (->> mouse
                 (rx/with-latest vector ms/mouse-position-ctrl)
-                (rx/map (fn [[pt ctrl?]] #(update-drawing % pt ctrl?)))
+                (rx/map (fn [[pt ctrl?]] #(update-drawing % initial pt ctrl?)))
                 (rx/take-until stoper))
            (rx/of handle-finish-drawing)))))))
 
@@ -268,13 +273,12 @@
         (rx/concat
          (rx/of dw/clear-drawing)
          (when (::initialized? shape)
-           (let [modifier (:resize-modifier shape)
-                 shape (if (gmt/matrix? modifier)
-                         (geom/transform shape modifier)
-                         shape)
-                 shape (dissoc shape ::initialized? :resize-modifier)]
+           (let [shape (-> shape
+                           (geom/transform-shape)
+                           (dissoc shape ::initialized?))]
              ;; Add & select the created shape to the workspace
-             (rx/of dw/deselect-all (dw/add-shape shape)))))))))
+             (rx/of dw/deselect-all
+                    (dw/add-shape shape)))))))))
 
 (def close-drawing-path
   (ptk/reify ::close-drawing-path

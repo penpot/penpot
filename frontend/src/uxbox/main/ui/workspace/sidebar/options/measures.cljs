@@ -67,7 +67,8 @@
           (let [value (-> (dom/get-target event)
                           (dom/get-value)
                           (d/parse-integer 0))]
-            (st/emit! (udw/update-shape (:id shape) {:rotation value}))))
+            (st/emit! (udw/set-rotation (- value (:rotation shape)) [shape])
+                      (udw/apply-modifiers #{(:id shape)}))))
 
         on-radius-change
         (fn [event]

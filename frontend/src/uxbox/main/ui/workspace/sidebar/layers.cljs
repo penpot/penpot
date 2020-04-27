@@ -149,7 +149,6 @@
         on-drop
         (fn [side {:keys [id name] :as data}]
           (let [index (if (= :top side) (inc index) index)]
-            ;; (println "droping" name "on" side "of" (:name item) "/" index)
             (st/emit! (dw/relocate-shape id (:id item) index))))
 
         [dprops dref] (hooks/use-sortable

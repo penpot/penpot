@@ -9,13 +9,14 @@
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
    [uxbox.main.data.images :as udi]
-   [uxbox.main.geom :as geom]
+   [uxbox.util.geom.shapes :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.main.ui.shapes.common :as common]
    [uxbox.util.interop :as itr]
-   [uxbox.util.geom.matrix :as gmt]))
+   [uxbox.util.geom.matrix :as gmt]
+   [uxbox.main.ui.shapes.bounding-box :refer [bounding-box]]))
 
 ;; --- Image Wrapper
 
@@ -36,19 +37,15 @@
     [:g.shape {:class (when selected? "selected")
                :on-mouse-down on-mouse-down
                :on-context-menu on-context-menu}
-     [:& image-shape {:shape (geom/transform-shape frame shape)}]]))
+     [:& image-shape {:shape (geom/transform-shape frame shape)}]
+     [:& bounding-box {:shape shape :frame frame}]]))
 
 ;; --- Image Shape
 
 (mf/defc image-shape
   [{:keys [shape] :as props}]
   (let [{:keys [id x y width height rotation metadata]} shape
-
-        transform (when (and rotation (pos? rotation))
-                    (str/format "rotate(%s %s %s)"
-                                rotation
-                                (+ x (/ width 2))
-                                (+ y (/ height 2))))
+        transform (geom/transform-matrix shape)
         uri  (if (or (> (:thumb-width metadata) width)
                      (> (:thumb-height metadata) height))
                (:thumb-uri metadata)
