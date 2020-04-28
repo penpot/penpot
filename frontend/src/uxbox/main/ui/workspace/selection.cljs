@@ -48,9 +48,9 @@
 (def ^:private rotate-cursor-svg "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20px' height='20px' transform='rotate(%s)' viewBox='0 0 132.292 132.006'%3E%3Cpath d='M85.225 3.48c.034 4.989-.093 9.852-.533 14.78-29.218 5.971-54.975 27.9-63.682 56.683-1.51 2.923-1.431 7.632-3.617 9.546-5.825.472-11.544.5-17.393.45 11.047 15.332 20.241 32.328 32.296 46.725 5.632 1.855 7.155-5.529 10.066-8.533 8.12-12.425 17.252-24.318 24.269-37.482-6.25-.86-12.564-.88-18.857-1.057 5.068-17.605 19.763-31.81 37.091-37.122.181 6.402.206 12.825 1.065 19.184 15.838-9.05 30.899-19.617 45.601-30.257 2.985-4.77-3.574-7.681-6.592-9.791C111.753 17.676 98.475 8.889 85.23.046l-.005 3.435z'/%3E%3Cpath fill='%23fff' d='M92.478 23.995s-1.143.906-6.714 1.923c-29.356 5.924-54.352 30.23-59.717 59.973-.605 3.728-1.09 5.49-1.09 5.49l-11.483-.002s7.84 10.845 10.438 15.486c3.333 4.988 6.674 9.971 10.076 14.912a2266.92 2266.92 0 0019.723-29.326c-5.175-.16-10.35-.343-15.522-.572 3.584-27.315 26.742-50.186 53.91-54.096.306 5.297.472 10.628.631 15.91a2206.462 2206.462 0 0029.333-19.726c-9.75-6.7-19.63-13.524-29.483-20.12z'/%3E%3C/svg%3E\") 10 10, auto")
 
 (mf/defc rotation-handler
-  [{:keys [cx cy position on-mouse-down rotation]}]
+  [{:keys [cx cy position on-mouse-down rotation zoom]}]
   (when (#{:top-left :top-right :bottom-left :bottom-right} position)
-    (let [size 20
+    (let [size (/ 20 zoom)
           rotation (or rotation 0)
           x (- cx (if (#{:top-left :bottom-left} position) size 0))
           y (- cy (if (#{:top-left :top-right} position) size 0))
@@ -64,7 +64,8 @@
               :y y
               :width size
               :height size
-              :fill "transparent"
+              :fill (if (debug? :rotation-handler) "red" "transparent")
+              :transform (gmt/rotate-matrix rotation (gpt/point cx cy))
               :on-mouse-down (or on-mouse-down (fn []))}])))
 
 (mf/defc controls
@@ -101,6 +102,7 @@
                                 :cy (:y tp)
                                 :position position
                                 :rotation (:rotation shape)
+                                :zoom zoom
                                 :on-mouse-down on-rotate}]
 
           [:& control-item {:key (str "resize-" (name position))
