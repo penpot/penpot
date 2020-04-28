@@ -3,7 +3,7 @@
   (:require
    [uxbox.main.store :as store]))
 
-(def debug-options #{:bounding-boxes :group :events #_:simple-selection})
+(def debug-options #{:bounding-boxes :group :events :rotation-handler #_:simple-selection })
 
 (defonce ^:dynamic *debug* (atom #{}))
 
