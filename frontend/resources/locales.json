@@ -922,6 +922,7 @@
     },
     "unused" : true
   },
+
   "workspace.options.font-options.decoration": "Decoration",
   "workspace.options.font-options.none": "None",
   "workspace.options.font-options.underline": "Underline",

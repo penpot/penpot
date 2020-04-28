@@ -46,6 +46,17 @@
   }
 }
 
+.workspace-loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+
+  svg#loader-pencil {
+    fill: $color-gray-50;
+  }
+}
+
 .workspace-content {
   background-color: $color-canvas;
   display: flex;

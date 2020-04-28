@@ -7,7 +7,7 @@
 
 (ns uxbox.builtins.icons
   (:require-macros [uxbox.builtins.icons :refer [icon-xref]])
-  (:require [rumext.alpha :as mf :refer-macros [html]]))
+  (:require [rumext.alpha :as mf]))
 
 (def action (icon-xref :action))
 (def actions (icon-xref :actions))
@@ -108,7 +108,7 @@
 (def recent (icon-xref :recent))
 
 (def loader-pencil
-  (html
+  (mf/html
    [:svg
     {:viewBox "0 0 677.34762 182.15429"
      :height "182"
