@@ -2,7 +2,7 @@
  {org.clojure/tools.logging {:mvn/version "0.5.0"}
   funcool/promesa {:mvn/version "5.0.0"}
   metosin/reitit-core {:mvn/version "0.3.10"}
-  org.clojure/core.async {:mvn/version "0.7.559"}
+  org.clojure/core.async {:mvn/version "1.1.587"}
   io.vertx/vertx-core {:mvn/version "4.0.0-milestone4"}
   io.vertx/vertx-web {:mvn/version "4.0.0-milestone4"}
   io.vertx/vertx-web-client {:mvn/version "4.0.0-milestone4"}}
