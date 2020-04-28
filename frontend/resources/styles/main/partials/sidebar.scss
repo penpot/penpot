@@ -36,11 +36,11 @@
     }
 
     &[data-layout*='layers'][data-layout*='sitemap-pages'] {
-        grid-template-rows: 12rem 1fr;
+        grid-template-rows: 11.5rem 1fr;
     }
 
     &[data-layout*='libraries'][data-layout*='sitemap-pages'] {
-        grid-template-rows: 12rem 1fr;
+        grid-template-rows: 11.5rem 1fr;
     }
 
     &[data-layout*='layers'][data-layout*='libraries'] {
@@ -48,7 +48,7 @@
     }
 
     &[data-layout*='layers'][data-layout*='libraries'][data-layout*='sitemap-pages'] {
-        grid-template-rows: 12rem 25% 1fr;
+        grid-template-rows: 11.5rem 25% 1fr;
     }
 
 

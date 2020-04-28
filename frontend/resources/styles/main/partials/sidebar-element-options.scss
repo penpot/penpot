@@ -196,7 +196,11 @@
 
     &:focus {
       color: lighten($color-gray-10, 8%);
-      border-color: $color-primary;
+      border-color: $color-primary !important;
+    }
+
+    &:hover {
+      border-color: $color-gray-40;
     }
 
   }

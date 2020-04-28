@@ -165,8 +165,12 @@
       font-size: $fs13;
 
       &:focus {
-        border-color: $color-primary;
+        border-color: $color-primary !important;
         color: $color-white;
+      }
+
+      &:hover {
+        border-color: $color-gray-20;
       }
 
       &:invalid {
