@@ -85,6 +85,11 @@
                            :file file
                            :layout layout}]))
 
+(mf/defc workspace-loader
+  []
+  [:div.workspace-loader
+   i/loader-pencil])
+
 (mf/defc workspace
   [{:keys [project-id file-id page-id] :as props}]
   (mf/use-effect #(st/emit! dw/initialize-layout))
@@ -107,9 +112,10 @@
      [:& messages]
      [:& context-menu]
 
-     (when (and (and file project)
-                (:initialized file))
+     (if (and (and file project)
+              (:initialized file))
        [:& workspace-page {:file file
                            :project project
                            :layout layout
-                           :page-id page-id}])]))
+                           :page-id page-id}]
+       [:& workspace-loader])]))
