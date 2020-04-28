@@ -14,7 +14,7 @@ To activate it, open the REPL (`shadow-cljs cljs-repl main`) and type
 ```clojure
 (ns uxbox.util.debug)
 (debug-all!)  ; to enable all visual aids
-(debug! &lt;option&gt;)  ; current options are :bounding-boxes :group :events :rotation-handler
+(debug! <option>)  ; current options are :bounding-boxes :group :events :rotation-handler
 ```
 
 Then you need to refresh the screen, for example by selecting some shape
@@ -23,15 +23,15 @@ with the mouse.
 You can deactivate debug mode with
 ```clojure
 (debug-none!)  ; to disable all visual aids
-(-debug! &lt;option&gt;)  ; to disable only one
+(-debug! <option>)  ; to disable only one
 ```
 
 There are also some useful functions:
 ```clojure
 (dump-state) ; to print in console all the global state
 (dump-objects) ; to print in console all objects in workspace
-(logjs &lt;msg&gt; &lt;var&gt;) ; to print the value of a variable
-(tap &lt;fn&gt;) ; to include a function with side effect (e.g. logjs) in a transducer.
+(logjs <msg> <var>) ; to print the value of a variable
+(tap <fn>) ; to include a function with side effect (e.g. logjs) in a transducer.
 ```
 
 
