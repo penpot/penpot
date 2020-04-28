@@ -76,7 +76,7 @@
         (fn [event]
           (let [id (-> (dom/get-target event)
                        (dom/get-value))
-                variant (d/seek #(= id (:name %)) (:variants font))]
+                variant (d/seek #(= id (:id %)) (:variants font))]
             (dwt/set-font! editor (:id font) (:family font))
             (dwt/set-font-variant! editor id (:weight variant) (:style variant))))
         ]
@@ -112,7 +112,7 @@
       [:select.input-select {:value font-var
                              :on-change on-font-variant-change}
        (for [variant (:variants font)]
-         [:option {:value (:name variant)
+         [:option {:value (:id variant)
                    :key (pr-str variant)}
           (:name variant)])]]]))
 

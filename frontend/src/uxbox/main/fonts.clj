@@ -18,16 +18,16 @@
   [variant]
   (cond
     (= "regular" variant)
-    {:name "regular" :width "400" :style "normal"}
+    {:name "regular" :weight "400" :style "normal"}
 
     (= "italic" variant)
-    {:name "italic" :width "400" :style "italic"}
+    {:name "italic" :weight "400" :style "italic"}
 
     :else
     (when-let [[a b c] (re-find #"^(\d+)(.*)$" variant)]
       (if (str/empty? c)
-        {:name a :width b :style "normal"}
-        {:name a :width b :style c}))))
+        {:id a :name b :weight b :style "normal"}
+        {:id a :name (str b " (" c ")") :weight b :style c}))))
 
 (defn- parse-gfont
   [font]

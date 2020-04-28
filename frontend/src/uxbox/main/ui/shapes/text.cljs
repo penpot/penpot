@@ -152,7 +152,6 @@
         font-size  (obj/get data "fontSize")
         fill (obj/get data "fill")
         opacity (obj/get data "opacity")
-
         fontsdb (mf/deref fonts/fontsdb)
 
         base #js {:textDecoration text-decoration
@@ -174,7 +173,7 @@
         (fonts/ensure-loaded! font-id)
         (let [font-family (or (:family font)
                               (obj/get data "fontFamily"))
-              font-variant (d/seek #(= font-variant-id (:name %))
+              font-variant (d/seek #(= font-variant-id (:id %))
                                    (:variants font))
               font-style  (or (:style font-variant)
                               (obj/get data "fontStyle"))
