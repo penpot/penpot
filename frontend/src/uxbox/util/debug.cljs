@@ -35,5 +35,5 @@
   (logjs "state" @store/state))
 
 (defn dump-objects []
-  (let [page-id (get @store/state :page-id)]
+  (let [page-id (get @store/state :current-page-id)]
     (logjs "state" (get-in @store/state [:workspace-data page-id :objects]))))
