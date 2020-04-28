@@ -38,7 +38,7 @@
     :on-mouse-down on-click
     :r r
     :style {:fillOpacity "1"
-            :strokeWidth "2px"
+            :strokeWidth "1px"
             :vectorEffect "non-scaling-stroke"}
     :fill "#ffffff"
     :stroke "#1FDEA7"
@@ -71,7 +71,7 @@
 (mf/defc controls
   [{:keys [shape zoom on-resize on-rotate] :as props}]
   (let [{:keys [x y width height rotation] :as shape} (geom/shape->rect-shape shape)
-        radius (if (> (max width height) handler-size-threshold) 6.0 4.0)
+        radius (if (> (max width height) handler-size-threshold) 4.0 4.0)
         transform (geom/transform-matrix shape)
 
         resize-handlers {:top          [(+ x (/ width 2 )) y]
@@ -88,7 +88,7 @@
                   :x x :y y
                   :width width
                   :height height
-                  :stroke-dasharray (str (/ 8.0 zoom) "," (/ 5 zoom))
+                  ;;:stroke-dasharray (str (/ 8.0 zoom) "," (/ 5 zoom))
                   :vector-effect "non-scaling-stroke"
                   :style {:stroke "#1FDEA7"
                           :fill "transparent"
