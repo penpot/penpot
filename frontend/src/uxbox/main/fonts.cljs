@@ -27,50 +27,50 @@
   [{:id "sourcesanspro"
     :name "Source Sans Pro"
     :family "sourcesanspro"
-    :variants [{:name "100" :weight "100" :style "normal"}
-               {:name "100italic" :weight "100" :style "italic"}
-               {:name "200" :weight "200" :style "normal"}
-               {:name "200italic" :weight "200" :style "italic"}
-               {:name "300" :weight "300" :style "normal"}
-               {:name "300italic" :weight "300" :style "italic"}
-               {:name "regular" :weight "400" :style "normal"}
-               {:name "italic" :weight "400" :style "italic"}
-               {:name "500" :weight "500" :style "normal"}
-               {:name "500italic" :weight "500" :style "italic"}
-               {:name "bold" :weight "bold" :style "normal"}
-               {:name "bolditalic" :weight "bold" :style "italic"}
-               {:name "black" :weight "900" :style "normal"}
-               {:name "blackitalic" :weight "900" :style "italic"}]}
+    :variants [{:id "100" :name "100" :weight "100" :style "normal"}
+               {:id "100italic" :name "100 (italic)" :weight "100" :style "italic"}
+               {:id "200" :name "200" :weight "200" :style "normal"}
+               {:id "200italic" :name "200 (italic)" :weight "200" :style "italic"}
+               {:id "300" :name "300" :weight "300" :style "normal"}
+               {:id "300italic" :name "300 (italic)"  :weight "300" :style "italic"}
+               {:id "regular" :name "regular" :weight "400" :style "normal"}
+               {:id "italic" :name "italic" :weight "400" :style "italic"}
+               {:id "500" :name "500" :weight "500" :style "normal"}
+               {:id "500italic" :name "500 (italic)" :weight "500" :style "italic"}
+               {:id "bold" :name "bold" :weight "bold" :style "normal"}
+               {:id "bolditalic" :name "bold (italic)" :weight "bold" :style "italic"}
+               {:id "black" :name "black" :weight "900" :style "normal"}
+               {:id "blackitalic" :name "black (italic)" :weight "900" :style "italic"}]}
    {:id "roboto"
     :family "roboto"
     :name "Roboto"
-    :variants [{:name "100" :weight "100" :style "normal"}
-               {:name "100italic" :weight "100" :style "italic"}
-               {:name "200" :weight "200" :style "normal"}
-               {:name "200italic" :weight "200" :style "italic"}
-               {:name "regular" :weight "400" :style "normal"}
-               {:name "italic" :weight "400" :style "italic"}
-               {:name "500" :weight "500" :style "normal"}
-               {:name "500italic" :weight "500" :style "italic"}
-               {:name "bold" :weight "bold" :style "normal"}
-               {:name "bolditalic" :weight "bold" :style "italic"}
-               {:name "black" :weight "900" :style "normal"}
-               {:name "blackitalic" :weight "900" :style "italic"}]}
+    :variants [{:id "100" :name "100" :weight "100" :style "normal"}
+               {:id "100italic" :name "100 (italic)" :weight "100" :style "italic"}
+               {:id "200" :name "200" :weight "200" :style "normal"}
+               {:id "200italic" :name "200 (italic)" :weight "200" :style "italic"}
+               {:id "regular" :name "regular" :weight "400" :style "normal"}
+               {:id "italic" :name "italic" :weight "400" :style "italic"}
+               {:id "500" :name "500" :weight "500" :style "normal"}
+               {:id "500italic" :name "500 (italic)" :weight "500" :style "italic"}
+               {:id "bold" :name "bold" :weight "bold" :style "normal"}
+               {:id "bolditalic" :name "bold (italic)" :weight "bold" :style "italic"}
+               {:id "black" :name "black" :weight "900" :style "normal"}
+               {:id "blackitalic" :name "black (italic)" :weight "900" :style "italic"}]}
    {:id "robotocondensed"
     :family "robotocondensed"
     :name "Roboto Condensed"
-    :variants [{:name "100" :weight "100" :style "normal"}
-               {:name "100italic" :weight "100" :style "italic"}
-               {:name "200" :weight "200" :style "normal"}
-               {:name "200italic" :weight "200" :style "italic"}
-               {:name "regular" :weight "400" :style "normal"}
-               {:name "italic" :weight "400" :style "italic"}
-               {:name "500" :weight "500" :style "normal"}
-               {:name "500italic" :weight "500" :style "italic"}
-               {:name "bold" :weight "bold" :style "normal"}
-               {:name "bolditalic" :weight "bold" :style "italic"}
-               {:name "black" :weight "900" :style "normal"}
-               {:name "blackitalic" :weight "900" :style "italic"}]}])
+    :variants [{:id "100" :name "100" :weight "100" :style "normal"}
+               {:id "100italic" :name "100 (italic)" :weight "100" :style "italic"}
+               {:id "200" :name "200" :weight "200" :style "normal"}
+               {:id "200italic" :name "200 (italic)" :weight "200" :style "italic"}
+               {:id "regular" :name "regular" :weight "400" :style "normal"}
+               {:id "italic" :name "italic" :weight "400" :style "italic"}
+               {:id "500" :name "500" :weight "500" :style "normal"}
+               {:id "500italic" :name "500 (italic)" :weight "500" :style "italic"}
+               {:id "bold" :name "bold" :weight "bold" :style "normal"}
+               {:id "bolditalic" :name "bold (italic)" :weight "bold" :style "italic"}
+               {:id "black" :name "black" :weight "900" :style "normal"}
+               {:id "blackitalic" :name "black (italic)" :weight "900" :style "italic"}]}])
 
 (defonce fontsdb (l/atom {}))
 (defonce fontsview (l/atom {}))
@@ -126,7 +126,7 @@
   [{:keys [id family variants ::on-loaded] :as font}]
   (js/console.log "[debug:fonts]: loading google font" id)
   (let [base (str "https://fonts.googleapis.com/css?family=" family)
-        variants (str/join "," (map :name variants))
+        variants (str/join "," (map :id variants))
         uri (str base ":" variants "&display=block")
         node (create-link-node uri)]
     (.addEventListener node "load" (fn [event] (when (fn? on-loaded)
