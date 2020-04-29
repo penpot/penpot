@@ -22,7 +22,7 @@
 (declare circle-shape)
 
 (mf/defc circle-wrapper
-  [{:keys [shape frame] :as props}]
+  [{:keys [shape] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
         selected? (contains? selected (:id shape))
         on-mouse-down #(common/on-mouse-down % shape)
@@ -30,8 +30,7 @@
     [:g.shape {:class (when selected? "selected")
                :on-mouse-down on-mouse-down
                :on-context-menu on-context-menu}
-     [:& circle-shape {:shape (geom/transform-shape frame shape)}]
-     [:& bounding-box {:shape shape :frame frame}]]))
+     [:& circle-shape {:shape shape}]]))
 
 ;; --- Circle Shape
 

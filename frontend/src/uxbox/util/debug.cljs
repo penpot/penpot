@@ -1,9 +1,7 @@
 (ns uxbox.util.debug
-  "Debugging utils"
-  (:require
-   [uxbox.main.store :as store]))
+  "Debugging utils")
 
-(def debug-options #{:bounding-boxes :group :events :rotation-handler #_:simple-selection })
+(def debug-options #{:bounding-boxes :group :events :rotation-handler :selection-center #_:simple-selection })
 
 (defonce ^:dynamic *debug* (atom #{}))
 
@@ -12,6 +10,13 @@
 (defn debug! [option] (swap! *debug* conj option))
 (defn -debug! [option] (swap! *debug* disj option))
 (defn debug? [option] (@*debug* option))
+
+
+(defn ^:export toggle-debug [name] (let [option (keyword name)]
+                                     (if (debug? option)
+                                       (-debug! option)
+                                       (debug! option))))
+(defn ^:export debug-all [name] (debug-all!))
 
 (defn tap
   "Transducer function that can execute a side-effect `effect-fn` per input"
@@ -31,9 +36,4 @@
    (js/console.log str (clj->js val))
    val))
 
-(defn dump-state []
-  (logjs "state" @store/state))
 
-(defn dump-objects []
-  (let [page-id (get @store/state :current-page-id)]
-    (logjs "state" (get-in @store/state [:workspace-data page-id :objects]))))

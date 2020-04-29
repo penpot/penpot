@@ -23,11 +23,10 @@
   (when (debug? :bounding-boxes)
     (let [shape (unchecked-get props "shape")
           frame (unchecked-get props "frame")
-          selrect (geom/transform-selrect frame shape)
-          shape-path (-> shape
-                         (geom/transform-apply-modifiers)
-                         (geom/translate-to-frame frame))
-          shape-center (geom/center shape-path)]
+          selrect (-> shape
+                      (geom/selection-rect-shape)
+                      (geom/translate-to-frame frame))
+          shape-center (geom/center selrect)]
       [:g
        [:text {:x (:x selrect)
                :y (- (:y selrect) 5)
@@ -37,10 +36,12 @@
                :stroke-width 0.1}
         (str/format "%s - (%s, %s)" (str/slice (str (:id shape)) 0 8) (fix (:x shape)) (fix (:y shape)))]
 
-       [:circle {:cx (:x shape-center) :cy (:y shape-center) :r 5 :fill "yellow"}]
-
        [:rect  {:x (:x selrect)
                 :y (:y selrect)
                 :width (:width selrect)
                 :height (:height selrect)
-                :style {:stroke "red" :fill "transparent" :stroke-width "1px" :stroke-opacity 0.5}}]])))
+                :style {:stroke "red"
+                        :fill "transparent"
+                        :stroke-width "1px"
+                        :stroke-opacity 0.5
+                        :pointer-events "none"}}]])))

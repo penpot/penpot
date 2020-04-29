@@ -22,13 +22,14 @@
    [uxbox.main.ui.shapes.text :as text]
    [uxbox.main.ui.shapes.group :as group]))
 
+(def ^:private background-color "#E8E9EA") ;; $color-canvas
 (mf/defc background
   []
   [:rect
    {:x 0 :y 0
     :width "100%"
     :height "100%"
-    :fill "#AFB2BF"}])
+    :fill background-color}])
 
 (defn- calculate-dimensions
   [data]
@@ -75,7 +76,7 @@
     (let [group-wrapper (mf/use-memo (mf/deps objects) #(group-wrapper objects))]
       (when (and shape (not (:hidden shape)))
         (let [shape (geom/transform-shape frame shape)
-              opts #js {:shape shape :frame frame}]
+              opts #js {:shape shape}]
           (case (:type shape)
             :curve [:> path/path-shape opts]
             :text [:> text/text-shape opts]
@@ -84,7 +85,7 @@
             :path [:> path/path-shape opts]
             :image [:> image/image-shape opts]
             :circle [:> circle/circle-shape opts]
-            :group [:> group-wrapper opts]
+            :group [:> group-wrapper {:shape shape :frame frame}]
             nil))))))
 
 (mf/defc page-svg

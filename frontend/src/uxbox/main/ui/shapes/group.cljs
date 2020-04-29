@@ -73,11 +73,9 @@
 
          [:& group-shape
           {:frame frame
-           :shape (geom/transform-shape frame shape)
+           :shape shape
            :children children
-           :is-child-selected? is-child-selected?}]
-         (when (not is-child-selected?)
-           [:& bounding-box {:shape shape :frame frame}])]))))
+           :is-child-selected? is-child-selected?}]]))))
 
 (defn group-shape
   [shape-wrapper]

@@ -72,6 +72,7 @@
   [{:keys [shape zoom on-resize on-rotate] :as props}]
   (let [{:keys [x y width height rotation] :as shape} (geom/shape->rect-shape shape)
         radius (if (> (max width height) handler-size-threshold) 4.0 4.0)
+
         transform (geom/transform-matrix shape)
 
         resize-handlers {:top          [(+ x (/ width 2 )) y]
@@ -85,14 +86,12 @@
     
     [:g.controls
      [:rect.main {:transform transform
-                  :x x :y y
-                  :width width
-                  :height height
-                  ;;:stroke-dasharray (str (/ 8.0 zoom) "," (/ 5 zoom))
-                  :vector-effect "non-scaling-stroke"
+                  :x (- x 1) :y (- y 1)
+                  :width (+ width 2)
+                  :height (+ height 2)
                   :style {:stroke "#1FDEA7"
-                          :fill "transparent"
-                          :stroke-opacity "1"}}]
+                          :stroke-width "1"
+                          :fill "transparent"}}]
 
      (for [[position [cx cy]] resize-handlers]
        (let [tp (gpt/transform (gpt/point cx cy) transform)]
@@ -156,12 +155,12 @@
 
 (mf/defc text-edition-selection-handlers
   [{:keys [shape zoom] :as props}]
-  (let [{:keys [x y width height] :as shape} shape]
+  (let [{:keys [x y width height]} shape]
     [:g.controls
      [:rect.main {:x x :y y
+                  :transform (geom/transform-matrix shape)
                   :width width
                   :height height
-                  ;; :stroke-dasharray (str (/ 5.0 zoom) "," (/ 5 zoom))
                   :style {:stroke "#1FDEA7"
                           :stroke-width "0.5"
                           :stroke-opacity "1"
@@ -170,16 +169,20 @@
 (mf/defc multiple-selection-handlers
   [{:keys [shapes selected zoom objects] :as props}]
   (let [shape (geom/selection-rect shapes)
+        shape-center (geom/center shape)
         on-resize #(do (dom/stop-propagation %2)
                        (st/emit! (dw/start-resize %1 selected shape objects)))
 
         on-rotate #(do (dom/stop-propagation %)
                        (st/emit! (dw/start-rotate shapes)))]
 
-    [:& controls {:shape shape
-                  :zoom zoom
-                  :on-resize on-resize
-                  :on-rotate on-rotate}]))
+    [:*
+     [:& controls {:shape shape
+                   :zoom zoom
+                   :on-resize on-resize
+                   :on-rotate on-rotate}]
+     (when (debug? :selection-center)
+       [:circle {:cx (:x shape-center) :cy (:y shape-center) :r 5 :fill "yellow"}])]))
 
 (mf/defc single-selection-handlers
   [{:keys [shape zoom objects] :as props}]

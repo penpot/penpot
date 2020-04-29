@@ -15,7 +15,6 @@
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.main.ui.shapes.common :as common]
    [uxbox.util.interop :as itr]
-   [uxbox.main.ui.shapes.bounding-box :refer [bounding-box]]
    [uxbox.main.ui.shapes.custom-stroke :refer [shape-custom-stroke]]))
 
 ;; --- Rect Wrapper
@@ -26,7 +25,6 @@
   {::mf/wrap-props false}
   [props]
   (let [shape (unchecked-get props "shape")
-        frame (unchecked-get props "frame")
         on-mouse-down   (mf/use-callback
                          (mf/deps shape)
                          #(common/on-mouse-down % shape))
@@ -35,8 +33,7 @@
                          #(common/on-context-menu % shape))]
     [:g.shape {:on-mouse-down on-mouse-down
                :on-context-menu on-context-menu}
-     [:& rect-shape {:shape (geom/transform-shape frame shape) }]
-     [:& bounding-box {:shape shape :frame frame}]]))
+     [:& rect-shape {:shape shape}]]))
 
 ;; --- Rect Shape
 

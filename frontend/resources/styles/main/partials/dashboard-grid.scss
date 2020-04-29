@@ -349,9 +349,16 @@
   position: relative;
   width: 100%;
 
+  background-color: $color-canvas;
+
   .img-th {
     height: auto;
     width: 100%;
+  }
+
+  svg {
+      height: 100%;
+      width: 100%;
   }
 
 }

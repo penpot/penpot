@@ -88,7 +88,3 @@
   (when (= "main" (unchecked-get js/window app-sym))
     (reinit)))
 
-(defn ^:export toggle-debug
-  []
-  (swap! st/*debug* not))
-

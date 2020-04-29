@@ -75,7 +75,7 @@
 
             inv-zoom    (/ 1 zoom)
             childs      (mapv #(get objects %) (:shapes shape))
-            ds-modifier (:displacement-modifier shape)
+            ds-modifier (get-in shape [:modifiers :displacement])
 
             label-pos (cond-> (gpt/point x (- y 10))
                         (gmt/matrix? ds-modifier) (gpt/transform ds-modifier))

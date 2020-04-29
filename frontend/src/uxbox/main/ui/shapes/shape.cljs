@@ -19,6 +19,8 @@
    [uxbox.main.ui.shapes.text :as text]
    [uxbox.main.ui.shapes.group :as group]
    [uxbox.main.ui.shapes.frame :as frame]
+   [uxbox.main.ui.shapes.bounding-box :refer [bounding-box]]
+   [uxbox.util.geom.shapes :as gsh]
    [uxbox.main.refs :as refs]))
 
 (defn- shape-wrapper-memo-equals?
@@ -42,21 +44,24 @@
   [props]
   (let [shape (unchecked-get props "shape")
         frame (unchecked-get props "frame")
-        opts #js {:shape shape :frame frame}]
+        opts #js {:shape (->> shape (gsh/transform-shape frame))
+                  :frame frame}]
     (when (and shape (not (:hidden shape)))
-      (case (:type shape)
-        :group [:> group-wrapper opts]
-        :curve [:> path/path-wrapper opts]
-        :text [:> text/text-wrapper opts]
-        :icon [:> icon/icon-wrapper opts]
-        :rect [:> rect/rect-wrapper opts]
-        :path [:> path/path-wrapper opts]
-        :image [:> image/image-wrapper opts]
-        :circle [:> circle/circle-wrapper opts]
+      [:*
+       (case (:type shape)
+         :group [:> group-wrapper opts]
+         :curve [:> path/path-wrapper opts]
+         :text [:> text/text-wrapper opts]
+         :icon [:> icon/icon-wrapper opts]
+         :rect [:> rect/rect-wrapper opts]
+         :path [:> path/path-wrapper opts]
+         :image [:> image/image-wrapper opts]
+         :circle [:> circle/circle-wrapper opts]
 
-        ;; Only used when drawing a new frame.
-        :frame [:> frame-wrapper opts]
-        nil))))
+         ;; Only used when drawing a new frame.
+         :frame [:> frame-wrapper {:shape shape}]
+         nil)
+       [:& bounding-box {:shape shape :frame frame}]])))
 
 (def group-wrapper (group/group-wrapper shape-wrapper))
 (def frame-wrapper (frame/frame-wrapper shape-wrapper))

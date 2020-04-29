@@ -15,15 +15,14 @@
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.main.ui.shapes.common :as common]
    [uxbox.util.interop :as itr]
-   [uxbox.util.geom.matrix :as gmt]
-   [uxbox.main.ui.shapes.bounding-box :refer [bounding-box]]))
+   [uxbox.util.geom.matrix :as gmt]))
 
 ;; --- Image Wrapper
 
 (declare image-shape)
 
 (mf/defc image-wrapper
-  [{:keys [shape frame] :as props}]
+  [{:keys [shape] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
         selected? (contains? selected (:id shape))
         on-mouse-down   (mf/use-callback
@@ -37,8 +36,7 @@
     [:g.shape {:class (when selected? "selected")
                :on-mouse-down on-mouse-down
                :on-context-menu on-context-menu}
-     [:& image-shape {:shape (geom/transform-shape frame shape)}]
-     [:& bounding-box {:shape shape :frame frame}]]))
+     [:& image-shape {:shape shape}]]))
 
 ;; --- Image Shape
 

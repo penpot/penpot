@@ -35,7 +35,6 @@
         frames  (:frames data [])
         objects (:objects data)
         frame   (get frames index)]
-
     [:section.viewer-preview
      (cond
        (empty? frames)

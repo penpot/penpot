@@ -24,7 +24,7 @@
 (declare path-shape)
 
 (mf/defc path-wrapper
-  [{:keys [shape frame] :as props}]
+  [{:keys [shape] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
         selected? (contains? selected (:id shape))
         on-mouse-down   (mf/use-callback
@@ -42,8 +42,7 @@
     [:g.shape {:on-double-click on-double-click
                :on-mouse-down on-mouse-down
                :on-context-menu on-context-menu}
-     [:& path-shape {:shape (geom/transform-shape frame shape) :background? true}]
-     [:& bounding-box {:shape shape :frame frame}]]))
+     [:& path-shape {:shape shape :background? true}]]))
 
 ;; --- Path Shape
 
