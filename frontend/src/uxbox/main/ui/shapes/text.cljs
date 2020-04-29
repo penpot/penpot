@@ -46,7 +46,7 @@
 (declare text-shape)
 
 (mf/defc text-wrapper
-  [{:keys [shape frame] :as props}]
+  [{:keys [shape] :as props}]
   (let [{:keys [id x1 y1 content group]} shape
         selected (mf/deref refs/selected-shapes)
         edition (mf/deref refs/selected-edition)
@@ -67,8 +67,8 @@
                :on-mouse-down on-mouse-down
                :on-context-menu on-context-menu}
      (if edition?
-       [:& text-shape-edit {:shape (geom/transform-shape frame shape)}]
-       [:& text-shape {:shape (geom/transform-shape frame shape)
+       [:& text-shape-edit {:shape shape}]
+       [:& text-shape {:shape shape
                        :selected? selected?}])]))
 
 ;; --- Text Rendering
@@ -284,7 +284,8 @@
 
     (mf/use-effect on-mount)
 
-    [:foreignObject {:x x :y y :width width :height height :ref self-ref}
+    [:foreignObject {:transform (geom/transform-matrix shape)
+                     :x x :y y :width width :height height :ref self-ref}
      [:> rslate/Slate {:editor editor
                        :value @state
                        :on-change on-change}
@@ -305,13 +306,7 @@
 
 (mf/defc text-shape
   [{:keys [shape selected?] :as props}]
-  (let [{:keys [id x y width height rotation content]} shape
-        transform (when (and rotation (pos? rotation))
-                    (str/format "rotate(%s %s %s)"
-                                rotation
-                                (+ x (/ width 2))
-                                (+ y (/ height 2))))
-
+  (let [{:keys [id x y width height content]} shape
         content (parse-content content)
         editor (mf/use-memo #(rslate/withReact (slate/createEditor)))
 
@@ -334,7 +329,7 @@
 
     [:foreignObject {:x x
                      :y y
-                     :transform transform
+                     :transform (geom/transform-matrix shape)
                      :id (str id)
                      :width width
                      :height height}

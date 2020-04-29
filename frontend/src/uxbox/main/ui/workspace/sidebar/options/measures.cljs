@@ -15,25 +15,43 @@
    [uxbox.main.refs :as refs]
    [uxbox.common.data :as d]
    [uxbox.util.dom :as dom]
+   [uxbox.util.geom.shapes :as gsh]
+   [uxbox.util.geom.point :as gpt]
    [uxbox.main.data.workspace :as udw]
    [uxbox.util.math :as math]
    [uxbox.util.i18n :refer [t] :as i18n]))
+
+
+;; -- User/drawing coords
+(defn user-coords-vector [shape]
+  (let [{sel-x :x sel-y :y :as selrect}
+        (-> shape
+            gsh/shape->path
+            (gsh/center-transform (:transform shape))
+            gsh/shape->rect-shape)
+        {rec-x :x rec-y :y} (-> shape gsh/shape->rect-shape)
+
+        dx (- rec-x sel-x)
+        dy (- rec-y sel-y)]
+    (gpt/point dx dy)))
+
+(defn user->draw [{:keys [x y width height] :as shape}]
+  (let [dv (user-coords-vector shape)]
+      (-> shape (gsh/move dv))))
+
+(defn draw->user [{:keys [x y width height] :as shape}]
+  (let [dv (user-coords-vector shape)]
+    (-> shape (gsh/move (gpt/negate dv)))))
 
 (mf/defc measures-menu
   [{:keys [shape options] :as props}]
   (let [options (or options #{:size :position :rotation :radius})
         locale (i18n/use-locale)
+        frame (deref (refs/object-by-id (:frame-id shape)))
 
-        data (deref refs/workspace-data)
-        parent (get-in data [:objects (:frame-id shape)])
-
-        x (cond
-            (:x shape) :x
-            (:cx shape) :cx)
-
-        y (cond
-            (:y shape) :y
-            (:cy shape) :cy)
+        shape (->> shape
+                   (gsh/transform-shape frame)
+                   (draw->user))
 
         on-size-change
         (fn [event attr]
@@ -58,9 +76,12 @@
         (fn [event attr]
           (let [value (-> (dom/get-target event)
                           (dom/get-value)
-                          (d/parse-integer 0)
-                          (+ (attr parent)))] ; Convert back to absolute position before update
-            (st/emit! (udw/update-position (:id shape) {attr value}))))
+                          (d/parse-integer 0))
+                new-shape (-> shape
+                              (assoc attr value)
+                              (gsh/translate-from-frame frame)
+                              (user->draw))]
+            (st/emit! (udw/update-position (:id shape) (select-keys new-shape [attr])))))
 
         on-rotation-change
         (fn [event]
@@ -89,31 +110,31 @@
 
       ;; WIDTH & HEIGHT
       (when (options :size)
-       [:div.row-flex
-        [:span.element-set-subtitle (t locale "workspace.options.size")]
-        [:div.lock-size {:class (when (:proportion-lock shape) "selected")
-                         :on-click on-proportion-lock-change}
-         (if (:proportion-lock shape)
-           i/lock
-           i/unlock)]
-        [:div.input-element.pixels
-         [:input.input-text {:type "number"
-                             :min "0"
-                             :no-validate true
-                             :on-change on-width-change
-                             :value (str (-> (:width shape)
-                                             (d/coalesce 0)
-                                             (math/round)))}]]
+        [:div.row-flex
+         [:span.element-set-subtitle (t locale "workspace.options.size")]
+         [:div.lock-size {:class (when (:proportion-lock shape) "selected")
+                          :on-click on-proportion-lock-change}
+          (if (:proportion-lock shape)
+            i/lock
+            i/unlock)]
+         [:div.input-element.pixels
+          [:input.input-text {:type "number"
+                              :min "0"
+                              :no-validate true
+                              :on-change on-width-change
+                              :value (str (-> (:width shape)
+                                              (d/coalesce 0)
+                                              (math/round)))}]]
 
 
-        [:div.input-element.pixels
-         [:input.input-text {:type "number"
-                             :min "0"
-                             :no-validate true
-                             :on-change on-height-change
-                             :value (str (-> (:height shape)
-                                             (d/coalesce 0)
-                                             (math/round)))}]]])
+         [:div.input-element.pixels
+          [:input.input-text {:type "number"
+                              :min "0"
+                              :no-validate true
+                              :on-change on-height-change
+                              :value (str (-> (:height shape)
+                                              (d/coalesce 0)
+                                              (math/round)))}]]])
 
       ;; Circle RX RY
       (when (options :circle-size)
@@ -142,57 +163,61 @@
       ;; POSITION
       (when (options :position)
         [:div.row-flex
-        [:span.element-set-subtitle (t locale "workspace.options.position")]
-        [:div.input-element.pixels
-         [:input.input-text {:placeholder "x"
-                             :type "number"
-                             :no-validate true
-                             :on-change on-pos-x-change
-                             :value (str (-> (- (x shape) (:x parent)) ; Show to user position relative to frame
-                                             (d/coalesce 0)
-                                             (math/round)))}]]
-        [:div.input-element.pixels
-         [:input.input-text {:placeholder "y"
-                             :type "number"
-                             :no-validate true
-                             :on-change on-pos-y-change
-                             :value (str (-> (- (y shape) (:y parent))
-                                             (d/coalesce 0)
-                                             (math/round)))}]]])
+         [:span.element-set-subtitle (t locale "workspace.options.position")]
+         [:div.input-element.pixels
+          [:input.input-text {:placeholder "x"
+                              :type "number"
+                              :no-validate true
+                              :on-change on-pos-x-change
+                              :value (:x shape)
+                              ;;:value (str (-> (- (x shape) (:x parent)) ; Show to user position relative to frame
+                              ;;                (d/coalesce 0)
+                              ;;                (math/round)))
+                              }]]
+         [:div.input-element.pixels
+          [:input.input-text {:placeholder "y"
+                              :type "number"
+                              :no-validate true
+                              :on-change on-pos-y-change
+                              :value (:y shape)
+                              ;;:value (str (-> (- (y shape) (:y parent))
+                              ;;                (d/coalesce 0)
+                              ;;                (math/round)))
+                              }]]])
 
       (when (options :rotation)
-       [:div.row-flex
-        [:span.element-set-subtitle (t locale "workspace.options.rotation")]
-        [:div.input-element.degrees
-         [:input.input-text
-          {:placeholder ""
-           :type "number"
-           :no-validate true
+        [:div.row-flex
+         [:span.element-set-subtitle (t locale "workspace.options.rotation")]
+         [:div.input-element.degrees
+          [:input.input-text
+           {:placeholder ""
+            :type "number"
+            :no-validate true
+            :min "0"
+            :max "360"
+            :on-change on-rotation-change
+            :value (str (-> (:rotation shape)
+                            (d/coalesce 0)
+                            (math/round)))}]]
+         [:input.slidebar
+          {:type "range"
            :min "0"
            :max "360"
+           :step "1"
+           :no-validate true
            :on-change on-rotation-change
            :value (str (-> (:rotation shape)
-                           (d/coalesce 0)
-                           (math/round)))}]]
-        [:input.slidebar
-         {:type "range"
-          :min "0"
-          :max "360"
-          :step "1"
-          :no-validate true
-          :on-change on-rotation-change
-          :value (str (-> (:rotation shape)
-                          (d/coalesce 0)))}]])
+                           (d/coalesce 0)))}]])
 
       (when (options :radius)
-       [:div.row-flex
-        [:span.element-set-subtitle (t locale "workspace.options.radius")]
-        [:div.input-element.pixels
-         [:input.input-text
-          {:placeholder "rx"
-           :type "number"
-           :on-change on-radius-change
-           :value (str (-> (:rx shape)
-                           (d/coalesce 0)
-                           (math/round)))}]]
-        [:div.input-element]])]]))
+        [:div.row-flex
+         [:span.element-set-subtitle (t locale "workspace.options.radius")]
+         [:div.input-element.pixels
+          [:input.input-text
+           {:placeholder "rx"
+            :type "number"
+            :on-change on-radius-change
+            :value (str (-> (:rx shape)
+                            (d/coalesce 0)
+                            (math/round)))}]]
+         [:div.input-element]])]]))

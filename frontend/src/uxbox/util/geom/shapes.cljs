@@ -376,6 +376,7 @@
         maxx (transduce (map :x) max segments)
         maxy (transduce (map :y) max segments)]
     (assoc shape
+           :type :rect
            :x1 minx
            :y1 miny
            :x2 maxx
@@ -495,7 +496,7 @@
 
 (defn translate-from-frame
   [shape {:keys [x y] :as frame}]
-  (move shape (gpt/point (+ x) (+ y))))
+  (move shape (gpt/point x y)))
 
 ;; --- Alignment
 
@@ -736,13 +737,6 @@
     (gpt/divide (gpt/point (:width shape-path-temp-rec) (:height shape-path-temp-rec))
                 (gpt/point (:width shape-path-temp-dim) (:height shape-path-temp-dim)))))
 
-(defn transform-selrect
-  [frame shape]
-  (-> shape
-      (transform-apply-modifiers)
-      (translate-to-frame frame)
-      (shape->rect-shape)))
-
 (defn transform-rect-shape
   [shape]
   (let [;; Apply modifiers to the rect as a path so we have the end shape expected
@@ -788,6 +782,8 @@
 
         new-shape (-> shape
                       (merge rec)
+                      (update :x #(mth/precision % 2))
+                      (update :y #(mth/precision % 2))
                       (update :transform #(gmt/multiply (or % (gmt/matrix)) stretch-matrix))
                       (update :transform-inverse #(gmt/multiply stretch-matrix-inverse (or % (gmt/matrix)))))]
 

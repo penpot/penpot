@@ -70,7 +70,6 @@
             (let [frame (get objects (:frame-id shape))
                   {:keys [width height rotation]} shape
 
-                  center (gpt/center shape)
                   shapev (-> (gpt/point width height))
 
                   ;; Vector modifiers depending on the handler
@@ -140,7 +139,7 @@
     (watch [_ state stream]
       (let [stoper (rx/filter ms/mouse-up? stream)
             group  (gsh/selection-rect shapes)
-            group-center (gpt/center group)
+            group-center (gsh/center group)
             initial-angle (gpt/angle (apply-zoom @ms/mouse-position) group-center)
             calculate-angle (fn [pos ctrl?]
                               (let [angle (- (gpt/angle pos group-center) initial-angle)
@@ -161,7 +160,7 @@
               (rx/with-latest vector ms/mouse-position-ctrl)
               (rx/map (fn [[pos ctrl?]]
                         (let [delta-angle (calculate-angle pos ctrl?)]
-                          (set-rotation delta-angle shapes))))
+                          (set-rotation delta-angle shapes group-center))))
               (rx/take-until stoper))
          (rx/of (apply-modifiers (map :id shapes))))))))
 
@@ -275,7 +274,7 @@
 
 ;; Set-rotation is custom because applies different modifiers to each shape adjusting their position
 (defn set-rotation
-  [delta-rotation shapes]
+  [delta-rotation shapes center]
   (ptk/reify ::set-rotation
     IUpdateGroup
     (get-ids [_] (map :id shapes))
@@ -293,8 +292,7 @@
                 (rotate-around-center [state angle center shapes]
                   (reduce #(rotate-shape %1 angle %2 center) state shapes))]
 
-          (let [center (-> shapes gsh/selection-rect gpt/center)
-                objects (get-in state [:workspace-data page-id :objects])
+          (let [objects (get-in state [:workspace-data page-id :objects])
                 id->obj #(get objects %)
                 get-children (fn [shape] (map id->obj (helpers/get-children (:id shape) objects)))
                 shapes (concat shapes (mapcat get-children shapes))]

@@ -83,7 +83,7 @@
   (let [modifier (-> (gpt/point (:x frame) (:y frame))
                      (gpt/negate)
                      (gmt/translate-matrix))
-        frame (assoc frame :displacement-modifier modifier)
+        frame (assoc-in frame [:modifiers :displacement] modifier )
 
         width (* (:width frame) zoom)
         height (* (:height frame) zoom)
