@@ -35,15 +35,18 @@
 (declare handle-finish-drawing)
 (declare conditional-align)
 
+(def ^:private default-color "#b1b2b5") ;; $color-gray-20
+
 (def ^:private minimal-shapes
   [{:type :rect
     :name "Rect"
-    :stroke-color "#000000"
+    :fill-color default-color
     :stroke-alignment :center}
    {:type :image}
    {:type :icon}
    {:type :circle
-    :name "Circle"}
+    :name "Circle"
+    :fill-color default-color}
    {:type :path
     :name "Path"
     :stroke-style :solid
@@ -312,10 +315,9 @@
        [:rect.main {:x x :y y
                     :width width
                     :height height
-                    :stroke-dasharray (str (/ 5.0 zoom) "," (/ 5 zoom))
-                    :style {:stroke "#333"
+                    :style {:stroke "#1FDEA7"
                             :fill "transparent"
-                            :stroke-opacity "1"}}]])))
+                            :stroke-width "1"}}]])))
 
 (mf/defc path-draw-area
   [{:keys [shape] :as props}]

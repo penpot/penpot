@@ -22,13 +22,14 @@
    [uxbox.main.ui.shapes.text :as text]
    [uxbox.main.ui.shapes.group :as group]))
 
+(def ^:private background-color "#E8E9EA") ;; $color-canvas
 (mf/defc background
   []
   [:rect
    {:x 0 :y 0
     :width "100%"
     :height "100%"
-    :fill "#AFB2BF"}])
+    :fill background-color}])
 
 (defn- calculate-dimensions
   [data]

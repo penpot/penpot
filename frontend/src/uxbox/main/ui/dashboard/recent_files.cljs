@@ -51,11 +51,14 @@
 
 (mf/defc recent-project
   [{:keys [project files first? locale] :as props}]
-  (let [project-id (:id project)]
+  (let [project-id (:id project)
+        team-id (:team-id project)]
     [:div.recent-files-row
      {:class-name (when first? "first")}
      [:div.recent-files-row-title
-      [:h2.recent-files-row-title-name (:name project)]
+      [:h2.recent-files-row-title-name {:on-click #(st/emit! (rt/nav :dashboard-project {:team-id team-id
+                                                                                         :project-id project-id}))
+                                        :style {:cursor "pointer"}} (:name project)]
       [:span.recent-files-row-title-info (str (:file-count project) " files")]
       (let [time (-> (:modified-at project)
                      (dt/timeago {:locale locale}))]

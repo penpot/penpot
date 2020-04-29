@@ -10,7 +10,8 @@
    [okulary.core :as l]
    [potok.core :as ptk]
    [uxbox.common.uuid :as uuid]
-   [uxbox.util.storage :refer [storage]]))
+   [uxbox.util.storage :refer [storage]]
+   [uxbox.util.debug :refer [debug? logjs]]))
 
 (enable-console-print!)
 
@@ -34,13 +35,11 @@
     :else
     (str "unk: " (pr-str event))))
 
-(defonce ^:dynamic *debug* (atom false))
-
 (when *assert*
   (defonce debug-subscription
     (as-> stream $
-      (rx/filter ptk/event? $)
-      (rx/filter (fn [s] (deref *debug*)) $)
+      #_(rx/filter ptk/event? $)
+      (rx/filter (fn [s] (debug? :events)) $)
       (rx/subscribe $ (fn [event]
                         (println "[stream]: " (repr-event event)))))))
 (defn emit!
@@ -62,3 +61,10 @@
   ([props]
    (emit! #(merge % initial-state props))
    (rx/to-atom store state)))
+
+(defn ^:export dump-state []
+  (logjs "state" @state))
+
+(defn ^:export dump-objects []
+  (let [page-id (get @state :current-page-id)]
+    (logjs "state" (get-in @state [:workspace-data page-id :objects]))))
