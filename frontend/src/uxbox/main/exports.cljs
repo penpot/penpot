@@ -76,7 +76,7 @@
     (let [group-wrapper (mf/use-memo (mf/deps objects) #(group-wrapper objects))]
       (when (and shape (not (:hidden shape)))
         (let [shape (geom/transform-shape frame shape)
-              opts #js {:shape shape :frame frame}]
+              opts #js {:shape shape}]
           (case (:type shape)
             :curve [:> path/path-shape opts]
             :text [:> text/text-shape opts]
@@ -85,7 +85,7 @@
             :path [:> path/path-shape opts]
             :image [:> image/image-shape opts]
             :circle [:> circle/circle-shape opts]
-            :group [:> group-wrapper opts]
+            :group [:> group-wrapper {:shape shape :frame frame}]
             nil))))))
 
 (mf/defc page-svg
