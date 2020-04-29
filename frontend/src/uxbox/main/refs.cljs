@@ -62,7 +62,7 @@
   (letfn [(selector [state]
             (let [page-id (get-in state [:workspace-page :id])
                   objects (get-in state [:workspace-data page-id :objects])]
-              (->> (get objects id))))]
+              (get objects id)))]
     (l/derived selector st/state =)))
 
 (defn objects-by-id
