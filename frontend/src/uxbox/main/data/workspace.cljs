@@ -1237,6 +1237,9 @@
   (us/verify number? index)
 
   (ptk/reify ::relocate-shape
+    IUpdateGroup
+    (get-ids [_] [id])
+
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id (:current-page-id state)
