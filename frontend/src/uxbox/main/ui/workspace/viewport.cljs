@@ -141,7 +141,7 @@
 
         on-mouse-down
         (mf/use-callback
-         (mf/deps drawing-tool)
+         (mf/deps drawing-tool edition)
          (fn [event]
            (dom/stop-propagation event)
            (let [ctrl? (kbd/ctrl? event)
