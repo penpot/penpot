@@ -1235,7 +1235,7 @@
   (us/verify number? index)
 
   (ptk/reify ::relocate-shape
-    IUpdateGroup
+    dwc/IUpdateGroup
     (get-ids [_] [id])
 
     ptk/WatchEvent
