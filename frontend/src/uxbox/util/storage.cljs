@@ -7,18 +7,21 @@
 (ns uxbox.util.storage
   (:require [uxbox.util.transit :as t]))
 
+(defn- ^boolean is-worker?
+  []
+  (or (= *target* "nodejs")
+      (not (exists? js/window))))
+
 (defn- persist
   [alias value]
-  (when-not (or (= *target* "nodejs")
-                (not (exists? js/window)))
+  (when-not (is-worker?)
     (let [key (name alias)
           value (t/encode value)]
       (.setItem js/localStorage key value))))
 
 (defn- load
   [alias]
-  (when-not (or (= *target* "nodejs")
-          (not (exists? js/window)))
+  (when-not (is-worker?)
     (let [data (.getItem js/localStorage (name alias))]
       (try
         (t/decode data)
