@@ -48,37 +48,64 @@
 (mf/defc font-options
   [{:keys [editor shape] :as props}]
   (let [selection (mf/use-ref)
-        font-id   (dwt/current-font-family editor {:default "sourcesanspro"})
-        font-size (dwt/current-font-size editor {:default "14"})
-        font-var  (dwt/current-font-variant editor {:default "regular"})
+
+        {:keys [font-id
+                font-size
+                font-variant-id]
+         :or {font-id "sourcesanspro"
+              font-size "14"
+              font-variant-id "regular"}}
+        (dwt/current-text-values
+         {:editor editor
+          :shape shape
+          :attrs [:font-id
+                  :font-size
+                  :font-variant-id]})
 
         fonts     (mf/deref fonts/fontsdb)
         font      (get fonts font-id)
+
+        change-font
+        (fn [id]
+          (st/emit! (dwt/update-text-attrs
+                     {:id (:id shape)
+                      :editor editor
+                      :attrs {:font-id id
+                              :font-family (:family (get fonts id))
+                              :font-variant-id nil
+                              :font-weight nil
+                              :font-style nil}})))
 
         on-font-family-change
         (fn [event]
           (let [id (-> (dom/get-target event)
                        (dom/get-value))
                 font (get fonts id)]
-            (fonts/ensure-loaded! id
-                                  #(do
-                                     (dwt/set-font! editor id (:family font))
-                                     (when (not= id font-id)
-                                       (dwt/set-font-variant! editor nil nil nil))))))
+            (fonts/ensure-loaded! id (partial change-font id))))
 
         on-font-size-change
         (fn [event]
           (let [val (-> (dom/get-target event)
                         (dom/get-value))]
-            (dwt/set-font-size! editor val)))
+            (st/emit! (dwt/update-text-attrs
+                       {:id (:id shape)
+                        :editor editor
+                        :attrs {:font-size val}}))))
 
         on-font-variant-change
         (fn [event]
           (let [id (-> (dom/get-target event)
                        (dom/get-value))
                 variant (d/seek #(= id (:id %)) (:variants font))]
-            (dwt/set-font! editor (:id font) (:family font))
-            (dwt/set-font-variant! editor id (:weight variant) (:style variant))))
+
+            (st/emit! (dwt/update-text-attrs
+                       {:id (:id shape)
+                        :editor editor
+                        :attrs {:font-id (:id font)
+                                :font-family (:family font)
+                                :font-variant-id id
+                                :font-weight (:weight variant)
+                                :font-style (:style variant)}}))))
         ]
 
     [:*
@@ -109,7 +136,7 @@
                            :on-change on-font-size-change
                            }]]
 
-      [:select.input-select {:value font-var
+      [:select.input-select {:value font-variant-id
                              :on-change on-font-variant-change}
        (for [variant (:variants font)]
          [:option {:value (:id variant)
@@ -118,48 +145,63 @@
 
 
 (mf/defc text-align-options
-  [{:keys [editor locale] :as props}]
-  (let [on-text-align-change
-        (fn [event type]
-          (dwt/set-text-align! editor type))]
-    ;; --- Align
+  [{:keys [editor shape locale] :as props}]
+  (let [{:keys [text-align]
+         :or {text-align "left"}}
+        (dwt/current-paragraph-values
+         {:editor editor
+          :shape shape
+          :attrs [:text-align]})
 
+        on-change
+        (fn [event type]
+          (st/emit! (dwt/update-paragraph-attrs
+                     {:id (:id shape)
+                      :editor editor
+                      :attrs {:text-align type}})))]
+
+    ;; --- Align
     [:div.row-flex.align-icons
      [:span.tooltip.tooltip-bottom
       {:alt (t locale "workspace.options.font-options.align-left")
-       :class (dom/classnames
-               :current (dwt/text-align-enabled? editor "left"))
-       :on-click #(on-text-align-change % "left")}
+       :class (dom/classnames :current (= "left" text-align))
+       :on-click #(on-change % "left")}
       i/text-align-left]
      [:span.tooltip.tooltip-bottom
       {:alt (t locale "workspace.options.font-options.align-center")
-       :class (dom/classnames
-               :current (dwt/text-align-enabled? editor "center"))
-       :on-click #(on-text-align-change % "center")}
+       :class (dom/classnames :current (= "center" text-align))
+       :on-click #(on-change % "center")}
       i/text-align-center]
      [:span.tooltip.tooltip-bottom
       {:alt (t locale "workspace.options.font-options.align-right")
-       :class (dom/classnames
-               :current (dwt/text-align-enabled? editor "right"))
-       :on-click #(on-text-align-change % "right")}
+       :class (dom/classnames :current (= "right" text-align))
+       :on-click #(on-change % "right")}
       i/text-align-right]
      [:span.tooltip.tooltip-bottom
       {:alt (t locale "workspace.options.font-options.align-justify")
-       :class (dom/classnames
-               :current (dwt/text-align-enabled? editor "justify"))
-       :on-click #(on-text-align-change % "justify")}
+       :class (dom/classnames :current (= "justify" text-align))
+       :on-click #(on-change % "justify")}
       i/text-align-justify]]))
 
 
 (mf/defc text-fill-options
-  [{:keys [editor] :as props}]
-  (let [color (dwt/current-fill editor {:default "#000000"})
-        opacity (dwt/current-opacity editor {:default 1})
+  [{:keys [editor shape] :as props}]
+  (let [{:keys [fill opacity]
+         :or {fill "#000000"
+              opacity 1}}
+        (dwt/current-text-values
+         {:editor editor
+          :shape shape
+          :attrs [:fill :opacity]})
+
         opacity (math/round (* opacity 100))
 
         on-color-change
         (fn [color]
-          (dwt/set-fill! editor color))
+          (st/emit! (dwt/update-text-attrs
+                     {:id (:id shape)
+                      :editor editor
+                      :attrs {:fill color}})))
 
         on-color-input-change
         (fn [event]
@@ -175,7 +217,10 @@
             (when (str/numeric? value)
               (let [value (-> (d/parse-integer value 1)
                               (/ 100))]
-                (dwt/set-opacity! editor value)))))
+                (st/emit! (dwt/update-text-attrs
+                           {:id (:id shape)
+                            :editor editor
+                            :attrs {:opacity value}}))))))
 
         show-color-picker
         (fn [event]
@@ -184,22 +229,22 @@
                 props {:x x :y y
                        :on-change on-color-change
                        :default "#ffffff"
-                       :value color
+                       :value fill
                        :transparent? true}]
             (modal/show! colorpicker-modal props)))]
 
     [:div.row-flex.color-data
      [:span.color-th
-      {:style {:background-color color}
+      {:style {:background-color fill}
        :on-click show-color-picker
        }]
 
      [:div.color-info
-      [:input {:default-value color
+      [:input {:default-value fill
                :pattern "^#(?:[0-9a-fA-F]{3}){1,2}$"
                :ref (fn [el]
                       (when el
-                        (set! (.-value el) color)))
+                        (set! (.-value el) fill)))
                :on-change on-color-input-change
                }]]
 
@@ -222,12 +267,25 @@
                        }]]))
 
 (mf/defc spacing-options
-  [{:keys [editor locale] :as props}]
-  (let [selection (mf/use-ref)
-        lh (dwt/current-line-height editor {:default "1.2"
-                                            :at (mf/ref-val selection)})
-        ls (dwt/current-letter-spacing editor {:default "0"
-                                               :at (mf/ref-val selection)})]
+  [{:keys [editor shape locale] :as props}]
+  (let [{:keys [letter-spacing
+                line-height]
+         :or {line-height "1.2"
+              letter-spacing "0"}}
+        (dwt/current-text-values
+         {:editor editor
+          :shape shape
+          :attrs [:line-height
+                  :letter-spacing]})
+
+        on-change
+        (fn [event attr]
+          (let [val (-> (dom/get-target event)
+                        (dom/get-value))]
+            (st/emit! (dwt/update-text-attrs
+                       {:id (:id shape)
+                        :editor editor
+                        :attrs {attr val}}))))]
     [:div.row-flex
      [:div.input-icon
       [:span.icon-before.tooltip.tooltip-bottom
@@ -238,12 +296,9 @@
         :step "0.1"
         :min "0"
         :max "200"
-        :value lh
-        :on-change (fn [event]
-                     (let [val (-> (dom/get-target event)
-                                   (dom/get-value))
-                           sel (mf/ref-val selection)]
-                       (dwt/set-line-height! editor val sel)))}]]
+        :value line-height
+        :on-change #(on-change % :line-height)}]]
+
      [:div.input-icon
       [:span.icon-before.tooltip.tooltip-bottom
        {:alt (t locale "workspace.options.font-options.letter-spacing")}
@@ -253,12 +308,8 @@
         :step "0.1"
         :min "0"
         :max "200"
-        :value ls
-        :on-change (fn [event]
-                     (let [val (-> (dom/get-target event)
-                                   (dom/get-value))
-                           sel (mf/ref-val selection)]
-                       (dwt/set-letter-spacing! editor val sel)))}]]]))
+        :value letter-spacing
+        :on-change #(on-change % :letter-spacing)}]]]))
 
 ;; (mf/defc box-sizing-options
 ;;   [{:keys [editor] :as props}]
@@ -274,126 +325,138 @@
 ;;     i/auto-fix]])
 
 (mf/defc vertical-align-options
-  [{:keys [editor locale] :as props}]
-  (let [on-vertical-align-change
+  [{:keys [editor locale shape] :as props}]
+  (let [{:keys [vertical-align]
+         :or {vertical-align "top"}}
+        (dwt/current-root-values
+         {:editor editor
+          :shape shape
+          :attrs [:vertical-align]})
+
+        on-change
         (fn [event type]
-          (dwt/set-vertical-align! editor type))]
+          (st/emit! (dwt/update-root-attrs
+                     {:id (:id shape)
+                      :editor editor
+                      :attrs {:vertical-align type}})))]
+
     [:div.row-flex
      [:span.element-set-subtitle (t locale "workspace.options.font-options.vertical-align")]
      [:div.align-icons
       [:span.tooltip.tooltip-bottom
        {:alt (t locale "workspace.options.font-options.align-top")
-        :class (dom/classnames
-                :current (dwt/vertical-align-enabled? editor "top"))
-        :on-click #(on-vertical-align-change % "top")}
+        :class (dom/classnames :current (= "top" vertical-align))
+        :on-click #(on-change % "top")}
        i/align-top]
       [:span.tooltip.tooltip-bottom
        {:alt (t locale "workspace.options.font-options.align-middle")
-        :class (dom/classnames
-                :current (dwt/vertical-align-enabled? editor "center"))
-        :on-click #(on-vertical-align-change % "center")}
+        :class (dom/classnames :current (= "center" vertical-align))
+        :on-click #(on-change % "center")}
        i/align-middle]
       [:span.tooltip.tooltip-bottom
        {:alt (t locale "workspace.options.font-options.align-bottom")
-        :class (dom/classnames
-                :current (dwt/vertical-align-enabled? editor "bottom"))
-        :on-click #(on-vertical-align-change % "bottom")}
+        :class (dom/classnames :current (= "bottom" vertical-align))
+        :on-click #(on-change % "bottom")}
        i/align-bottom]]]))
 
 (mf/defc text-decoration-options
-  [{:keys [editor locale] :as props}]
-  (let [on-decoration-change
+  [{:keys [editor locale shape] :as props}]
+  (let [{:keys [text-decoration]
+         :or {text-decoration "none"}}
+        (dwt/current-text-values
+         {:editor editor
+          :shape shape
+          :attrs [:text-decoration]})
+
+        on-change
         (fn [event type]
-          (dom/prevent-default event)
-          (dom/stop-propagation event)
-          (if (dwt/text-decoration-enabled? editor type)
-            (dwt/set-text-decoration! editor "none")
-            (dwt/set-text-decoration! editor type)))]
+          (st/emit! (dwt/update-text-attrs
+                     {:id (:id shape)
+                      :editor editor
+                      :attrs {:text-decoration type}})))]
     [:div.row-flex
      [:span.element-set-subtitle (t locale "workspace.options.font-options.decoration")]
      [:div.align-icons
       [:span.tooltip.tooltip-bottom
        {:alt (t locale "workspace.options.font-options.none")
-        :on-click #(on-decoration-change % "none")}
+        :class (dom/classnames :current (= "none" text-decoration))
+        :on-click #(on-change % "none")}
        i/minus]
 
       [:span.tooltip.tooltip-bottom
        {:alt (t locale "workspace.options.font-options.underline")
-        :class (dom/classnames
-                :current (dwt/text-decoration-enabled? editor "underline"))
-        :on-click #(on-decoration-change % "underline")}
+        :class (dom/classnames :current (= "underline" text-decoration))
+        :on-click #(on-change % "underline")}
        i/underline]
 
       [:span.tooltip.tooltip-bottom
        {:alt (t locale "workspace.options.font-options.strikethrough")
-        :class (dom/classnames
-                :current (dwt/text-decoration-enabled? editor "line-through"))
-        :on-click #(on-decoration-change % "line-through")}
+        :class (dom/classnames :current (= "line-through" text-decoration))
+        :on-click #(on-change % "line-through")}
        i/strikethrough]]]))
 
-
 (mf/defc text-transform-options
-  [{:keys [editor locale] :as props}]
-  (let [on-text-transform-change
+  [{:keys [editor locale shape] :as props}]
+  (let [{:keys [text-transform]
+         :or {text-transform "none"}}
+        (dwt/current-text-values
+         {:editor editor
+          :shape shape
+          :attrs [:text-transform]})
+
+        on-change
         (fn [event type]
-          (dom/prevent-default event)
-          (dom/stop-propagation event)
-          (if (dwt/text-transform-enabled? editor type)
-            (dwt/set-text-transform! editor "none")
-            (dwt/set-text-transform! editor type)))]
+          (st/emit! (dwt/update-text-attrs
+                     {:id (:id shape)
+                      :editor editor
+                      :attrs {:text-transform type}})))]
     [:div.row-flex
      [:span.element-set-subtitle (t locale "workspace.options.font-options.text-case")]
      [:div.align-icons
       [:span.tooltip.tooltip-bottom
        {:alt (t locale "workspace.options.font-options.none")
-        :class (dom/classnames
-                :current (dwt/text-transform-enabled? editor "none"))
-        :on-click #(on-text-transform-change % "none")}
-
+        :class (dom/classnames :current (= "none" text-transform))
+        :on-click #(on-change % "none")}
        i/minus]
       [:span.tooltip.tooltip-bottom
        {:alt (t locale "workspace.options.font-options.uppercase")
-        :class (dom/classnames
-                :current (dwt/text-transform-enabled? editor "uppercase"))
-        :on-click #(on-text-transform-change % "uppercase")}
-
+        :class (dom/classnames :current (= "uppercase" text-transform))
+        :on-click #(on-change % "uppercase")}
        i/uppercase]
       [:span.tooltip.tooltip-bottom
        {:alt (t locale "workspace.options.font-options.lowercase")
-        :class (dom/classnames
-                :current (dwt/text-transform-enabled? editor "lowercase"))
-        :on-click #(on-text-transform-change % "lowercase")}
-
+        :class (dom/classnames :current (= "lowercase" text-transform))
+        :on-click #(on-change % "lowercase")}
        i/lowercase]
       [:span.tooltip.tooltip-bottom
        {:alt (t locale "workspace.options.font-options.titlecase")
-        :class (dom/classnames
-                :current (dwt/text-transform-enabled? editor "capitalize"))
-        :on-click #(on-text-transform-change % "capitalize")}
+        :class (dom/classnames :current (= "capitalize" text-transform))
+        :on-click #(on-change % "capitalize")}
        i/titlecase]]]))
 
 (mf/defc text-menu
   {::mf/wrap [mf/memo]}
   [{:keys [shape] :as props}]
   (let [id (:id shape)
-        editor (:editor (mf/deref refs/workspace-local))
-        locale (i18n/use-locale)]
+        local (mf/deref refs/workspace-local)
+        editor (get-in local [:editors (:id shape)])
+        locale (mf/deref i18n/locale)]
     [:*
      [:div.element-set
       [:div.element-set-title (t locale "workspace.options.fill")]
       [:div.element-set-content
-       [:& text-fill-options {:editor editor}]]]
+       [:& text-fill-options {:editor editor :shape shape}]]]
 
 
      [:div.element-set
       [:div.element-set-title (t locale "workspace.options.font-options")]
       [:div.element-set-content
-       [:& font-options {:editor editor :locale locale}]
-       [:& text-align-options {:editor editor :locale locale}]
-       [:& spacing-options {:editor editor :locale locale}]
-       [:& vertical-align-options {:editor editor :locale locale}]
-       [:& text-decoration-options {:editor editor :locale locale}]
-       [:& text-transform-options {:editor editor :locale locale}]]]]))
+       [:& font-options {:editor editor :locale locale :shape shape}]
+       [:& text-align-options {:editor editor :locale locale :shape shape}]
+       [:& spacing-options {:editor editor :locale locale :shape shape}]
+       [:& vertical-align-options {:editor editor :locale locale :shape shape}]
+       [:& text-decoration-options {:editor editor :locale locale :shape shape}]
+       [:& text-transform-options {:editor editor :locale locale :shape shape}]]]]))
 
 (mf/defc options
   [{:keys [shape] :as props}]

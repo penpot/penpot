@@ -12,8 +12,6 @@
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [clojure.set :as set]
-   [goog.events :as events]
-   [goog.object :as gobj]
    [potok.core :as ptk]
    [uxbox.common.data :as d]
    [uxbox.common.exceptions :as ex]
