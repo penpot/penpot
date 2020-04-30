@@ -39,7 +39,7 @@
    [uxbox.util.transit :as t]
    [uxbox.util.webapi :as wapi]
    [uxbox.util.avatars :as avatars]
-   [uxbox.main.data.workspace.common :refer [IBatchedChange IUpdateGroup] :as common]
+   [uxbox.main.data.workspace.common :as dwc]
    [uxbox.main.data.workspace.transforms :as transforms]))
 
 ;; TODO: temporal workaround
@@ -198,13 +198,13 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (->> stream
-           (rx/filter #(satisfies? IUpdateGroup %))
-           (rx/map #(adjust-group-shapes (common/get-ids %)))))))
+           (rx/filter #(satisfies? dwc/IUpdateGroup %))
+           (rx/map #(adjust-group-shapes (dwc/get-ids %)))))))
 
 (defn adjust-group-shapes
   [ids]
   (ptk/reify ::adjust-group-shapes
-    IBatchedChange
+    dwc/IBatchedChange
 
     ptk/UpdateEvent
     (update [_ state]
@@ -395,12 +395,12 @@
                                    (ptk/type? ::initialize-page %))
                               stream)
             notifier (->> stream
-                          (rx/filter (ptk/type? ::common/commit-changes))
+                          (rx/filter (ptk/type? ::dwc/commit-changes))
                           (rx/debounce 2000)
                           (rx/merge stoper))]
         (rx/merge
          (->> stream
-              (rx/filter (ptk/type? ::common/commit-changes))
+              (rx/filter (ptk/type? ::dwc/commit-changes))
               (rx/map deref)
               (rx/buffer-until notifier)
               (rx/map vec)
@@ -408,9 +408,9 @@
               (rx/map #(persist-changes page-id %))
               (rx/take-until (rx/delay 100 stoper)))
          (->> stream
-              (rx/filter #(satisfies? IBatchedChange %))
+              (rx/filter #(satisfies? dwc/IBatchedChange %))
               (rx/debounce 200)
-              (rx/map (fn [_] (common/diff-and-commit-changes page-id)))
+              (rx/map (fn [_] (dwc/diff-and-commit-changes page-id)))
               (rx/take-until stoper)))))))
 
 (defn persist-changes
@@ -892,7 +892,7 @@
 
             frame-id (if (= :frame (:type shape))
                        uuid/zero
-                       (common/calculate-frame-overlap objects shape))
+                       (dwc/calculate-frame-overlap objects shape))
 
             shape    (merge
                       (if (= :frame (:type shape))
@@ -910,7 +910,7 @@
             uchange  {:type :del-obj
                       :id id}]
 
-        (rx/of (common/commit-changes [rchange] [uchange] {:commit-local? true})
+        (rx/of (dwc/commit-changes [rchange] [uchange] {:commit-local? true})
                (select-shapes #{id}))))))
 
 
@@ -957,7 +957,7 @@
         moved-obj (geom/move renamed-obj delta)
         frame-id (if frame-id
                    frame-id
-                   (common/calculate-frame-overlap objects moved-obj))
+                   (dwc/calculate-frame-overlap objects moved-obj))
 
         parent-id (or parent-id frame-id)
 
@@ -1031,7 +1031,7 @@
                           (map #(get-in % [:obj :id]))
                           (into #{}))]
 
-        (rx/of (common/commit-changes rchanges uchanges {:commit-local? true})
+        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
                (select-shapes selected))))))
 
 
@@ -1071,8 +1071,8 @@
   (us/verify ::us/uuid id)
   (us/verify ::shape-attrs attrs)
   (ptk/reify ::update-shape
-    IBatchedChange
-    IUpdateGroup
+    dwc/IBatchedChange
+    dwc/IUpdateGroup
     (get-ids [_] [id])
 
     ptk/UpdateEvent
@@ -1086,7 +1086,7 @@
   [opts]
   (us/verify ::cp/options opts)
   (ptk/reify ::update-options
-    IBatchedChange
+    dwc/IBatchedChange
     ptk/UpdateEvent
     (update [_ state]
       (let [pid (:current-page-id state)]
@@ -1166,7 +1166,7 @@
                       :parent-id (get cpindex id)
                       :obj obj}))
                   (reverse (map :id rchanges)))]
-        (rx/of (common/commit-changes rchanges uchanges {:commit-local? true}))))))
+        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 
 (def delete-selected
   "Deselect all and remove all selected shapes."
@@ -1189,7 +1189,7 @@
   (us/verify ::us/uuid id)
   (us/verify string? name)
   (ptk/reify ::rename-shape
-    IBatchedChange
+    dwc/IBatchedChange
     ptk/UpdateEvent
     (update [_ state]
       (let [page-id (:current-page-id state)]
@@ -1221,7 +1221,7 @@
                                 :id frame-id
                                 :operations [{:type :abs-order :id id :index cindex}]}))
                            selected)]
-        (rx/of (common/commit-changes rchanges uchanges {:commit-local? true}))))))
+        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 
 
 ;; --- Change Shape Order (D&D Ordering)
@@ -1244,7 +1244,7 @@
             selected (get-in state [:workspace-local :selected])
             objects (get-in state [:workspace-data page-id :objects])
             parent-id (helpers/get-parent ref-id objects)]
-        (rx/of (common/commit-changes [{:type :mov-objects
+        (rx/of (dwc/commit-changes [{:type :mov-objects
                                  :parent-id parent-id
                                  :index index
                                  :shapes (vec selected)}]
@@ -1283,7 +1283,7 @@
   [axis]
   (us/verify ::geom/align-axis axis)
   (ptk/reify :align-objects
-    IBatchedChange
+    dwc/IBatchedChange
     ptk/UpdateEvent
     (update [_ state]
       (let [page-id (:current-page-id state)
@@ -1311,7 +1311,7 @@
   [axis]
   (us/verify ::geom/dist-axis axis)
   (ptk/reify :align-objects
-    IBatchedChange
+    dwc/IBatchedChange
     ptk/UpdateEvent
     (update [_ state]
       (let [page-id (:current-page-id state)
@@ -1400,8 +1400,8 @@
   (us/verify #{:width :height} attr)
   (us/verify ::us/number value)
   (ptk/reify ::update-rect-dimensions
-    IBatchedChange
-    IUpdateGroup
+    dwc/IBatchedChange
+    dwc/IUpdateGroup
     (get-ids [_] [id])
 
     ptk/UpdateEvent
@@ -1409,23 +1409,6 @@
       (let [page-id (:current-page-id state)]
         (update-in state [:workspace-data page-id :objects id]
                    geom/resize-rect attr value)))))
-
-(defn update-circle-dimensions
-  [id attr value]
-  (us/verify ::us/uuid id)
-  (us/verify #{:rx :ry} attr)
-  (us/verify ::us/number value)
-  (ptk/reify ::update-rect-dimensions
-    IBatchedChange
-    IUpdateGroup
-    (get-ids [_] [id])
-
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [page-id (:current-page-id state)]
-        state
-        #_(update-in state [:workspace-data page-id :objects id]
-                   geom/resize-circle attr value)))))
 
 ;; --- Shape Proportions
 
@@ -1650,7 +1633,7 @@
                           (filter #(selected (:old-id %)))
                           (map #(get-in % [:obj :id]))
                           (into #{}))]
-        (rx/of (common/commit-changes rchanges uchanges {:commit-local? true})
+        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
                (select-shapes selected))))))
 
 (def paste
@@ -1735,7 +1718,7 @@
                            :shapes (vec selected)}
                           {:type :del-obj
                            :id id}]]
-            (rx/of (common/commit-changes rchanges uchanges {:commit-local? true})
+            (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
                    (select-shapes #{id}))))))))
 
 (def remove-group
@@ -1771,7 +1754,7 @@
                            :parent-id parent-id
                            :shapes [group-id]
                            :index index-in-parent}]]
-            (rx/of (common/commit-changes rchanges uchanges {:commit-local? true}))))))))
+            (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports
@@ -1806,10 +1789,10 @@
    "shift+1" #(st/emit! reset-zoom)
    "shift+2" #(st/emit! zoom-to-200)
    "ctrl+d" #(st/emit! duplicate-selected)
-   "ctrl+z" #(st/emit! common/undo)
-   "ctrl+shift+z" #(st/emit! common/redo)
-   "ctrl+y" #(st/emit! common/redo)
-   "ctrl+q" #(st/emit! common/reinitialize-undo)
+   "ctrl+z" #(st/emit! dwc/undo)
+   "ctrl+shift+z" #(st/emit! dwc/redo)
+   "ctrl+y" #(st/emit! dwc/redo)
+   "ctrl+q" #(st/emit! dwc/reinitialize-undo)
    "ctrl+b" #(st/emit! (select-for-drawing :rect))
    "ctrl+e" #(st/emit! (select-for-drawing :circle))
    "ctrl+t" #(st/emit! (select-for-drawing :text))
