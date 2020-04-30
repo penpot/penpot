@@ -33,8 +33,6 @@
   [router path]
   (let [match (rt/match router path)
         profile (:profile storage)]
-    (prn "on-navigate" match path)
-
     (cond
       (and (= path "") (not profile))
       (st/emit! (rt/nav :login))

@@ -17,7 +17,7 @@
 
 (mf/defc ruler-text
   [{:keys [zoom ruler] :as props}]
-  (let [{:keys [start end]} ruler
+  #_(let [{:keys [start end]} ruler
         distance (-> (gpt/distance (gpt/divide end zoom)
                                    (gpt/divide start zoom))
                      (mth/precision 2))
@@ -42,7 +42,7 @@
 
 (mf/defc ruler-line
   [{:keys [zoom ruler] :as props}]
-  (let [{:keys [start end]} ruler]
+  #_(let [{:keys [start end]} ruler]
     [:line {:x1 (:x start)
             :y1 (:y start)
             :x2 (:x end)
@@ -53,7 +53,7 @@
 
 (mf/defc ruler
   [{:keys [ruler zoom] :as props}]
-  (letfn [(on-mouse-down [event]
+  #_(letfn [(on-mouse-down [event]
             (dom/stop-propagation event)
             (st/emit! :interrupt
                       (udw/assign-cursor-tooltip nil)
