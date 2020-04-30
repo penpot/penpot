@@ -27,4 +27,12 @@
     {:fn-invoke-direct true
      :source-map true
      :anon-fn-naming-policy :off
-     :source-map-detail-level :all}}}}}
+     :source-map-detail-level :all}}}
+
+  :tests
+  {:target :node-test
+   :output-to "target/tests.js"
+   :ns-regexp "^uxbox.test-"
+   :autorun true}}}
+
+

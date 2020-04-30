@@ -1,8 +1,6 @@
-(ns uxbox.tests.test-util-geom
+(ns uxbox.test-util-geom
   (:require [cljs.test :as t :include-macros true]
             [cljs.pprint :refer [pprint]]
-            ;; [uxbox.util.geom.point-impl :as gpt2]
-            ;; [uxbox.util.geom.matrix-impl :as gmt2]
             [uxbox.util.geom.point :as gpt]
             [uxbox.util.geom.matrix :as gmt]))
 
