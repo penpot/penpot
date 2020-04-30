@@ -141,8 +141,20 @@
              node
              attrs))
 
-(defn- update-attrs
-  [{:keys [id editor attrs pred split]}]
+(defn impl-update-shape-attrs
+  ([shape attrs]
+   ;; NOTE: this arity is used in workspace for properly update the
+   ;; fill color using colorpalette, then the predicate should be
+   ;; defined.
+   (impl-update-shape-attrs shape attrs is-text-node?))
+  ([{:keys [type content] :as shape} attrs pred]
+   (assert (= :text type) "should be shape type")
+   (let [merge-attrs #(merge-attrs % attrs)]
+     (update shape :content #(transform-nodes pred merge-attrs %)))))
+
+(defn update-attrs
+  [{:keys [id editor attrs pred split]
+    :or {pred is-text-node?}}]
   (if editor
     (ptk/reify ::update-attrs
       ptk/EffectEvent
@@ -156,9 +168,7 @@
         (let [page-id (get-in state [:workspace-page :id])
               merge-attrs #(merge-attrs % attrs)]
           (update-in state [:workspace-data page-id :objects id]
-                     (fn [{:keys [type content] :as shape}]
-                       (assert (= :text type) "should be shape type")
-                       (update shape :content #(transform-nodes pred merge-attrs %)))))))))
+                     #(impl-update-shape-attrs % attrs pred)))))))
 
 (defn update-text-attrs
   [options]

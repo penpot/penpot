@@ -607,25 +607,26 @@
   [id attrs]
   (us/verify ::us/uuid id)
   (us/verify ::shape-attrs attrs)
-  (ptk/reify ::update-shape
-    dwc/IBatchedChange
-    dwc/IUpdateGroup
-    (get-ids [_] [id])
+  (letfn [(update-shape [shape]
+            (cond-> (merge shape attrs)
+              (and (= :text (:type shape))
+                   (string? (:fill-color attrs)))
+              (dwtxt/impl-update-shape-attrs {:fill (:fill-color attrs)})))]
+    (ptk/reify ::update-shape
+      dwc/IBatchedChange
+      dwc/IUpdateGroup
+      (get-ids [_] [id])
 
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [page-id (:current-page-id state)
-            grouped #{:frame :group}]
-        (update-in state [:workspace-data page-id :objects]
-                   (fn [objects]
-                     (let [childs (d/concat [id] (helpers/get-children id objects))]
-                       (reduce (fn [objects id]
-                                 (let [obj (get objects id)]
-                                   (if (contains? grouped (:type obj))
-                                     objects
-                                     (update objects id merge attrs))))
-                               objects
-                               childs))))))))
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [page-id (:current-page-id state)
+              grouped #{:frame :group}]
+          (update-in state [:workspace-data page-id :objects]
+                     (fn [objects]
+                       (->> (d/concat [id] (helpers/get-children id objects))
+                            (map #(get objects %))
+                            (remove #(grouped (:type %)))
+                            (reduce #(update %1 (:id %2) update-shape) objects)))))))))
 
 ;; --- Update Page Options
 
@@ -660,11 +661,7 @@
             page-id  (get-in state [:workspace-page :id])]
         (->> (rx/from selected)
              (rx/map (fn [id]
-                       (let [shape (get-in state [:workspace-data page-id :objects id])]
-                         (if (and (string? fill-color)
-                                  (= :text (:type shape)))
-                           (dwtxt/update-text-attrs {:id id :attrs {:fill fill-color}})
-                           (update-shape-recursive id attrs))))))))))
+                       (update-shape-recursive id attrs))))))))
 
 ;; --- Shape Movement (using keyboard shorcuts)
 
