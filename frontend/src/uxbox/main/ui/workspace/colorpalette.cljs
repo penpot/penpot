@@ -45,8 +45,8 @@
         select-color
         (fn [event]
           (if (kbd/shift? event)
-            (st/emit! (udw/update-selected-shapes {:stroke-color color}))
-            (st/emit! (udw/update-selected-shapes {:fill-color color}))))]
+            (st/emit! (udw/update-color-on-selected-shapes {:stroke-color color}))
+            (st/emit! (udw/update-color-on-selected-shapes {:fill-color color}))))]
 
     [:div.color-cell {:key (str color)
                       :on-click select-color}
