@@ -18,7 +18,6 @@
    [uxbox.main.store :as st]
    [uxbox.main.ui :as ui]
    [uxbox.main.ui.modal :refer [modal]]
-   [uxbox.main.ui.loader :refer [loader]]
    [uxbox.main.worker]
    [uxbox.util.dom :as dom]
    [uxbox.util.html.history :as html-history]
@@ -32,13 +31,16 @@
 
 (defn- on-navigate
   [router path]
-  (let [match (rt/match router path)]
-    (cond
-      (and (= path "") (:auth storage))
-      (st/emit! (rt/nav :dashboard-projects))
+  (let [match (rt/match router path)
+        profile (:profile storage)]
+    (prn "on-navigate" match path)
 
-      (and (= path "") (not (:auth storage)))
+    (cond
+      (and (= path "") (not profile))
       (st/emit! (rt/nav :login))
+
+      (and (= path "") profile)
+      (st/emit! (rt/nav :dashboard-team {:team-id (:default-team-id profile)}))
 
       (nil? match)
       (st/emit! (rt/nav :not-found))
@@ -59,11 +61,8 @@
 
     (mf/mount (mf/element ui/app) (dom/get-element "app"))
     (mf/mount (mf/element modal) (dom/get-element "modal"))
-    (mf/mount (mf/element loader) (dom/get-element "loader"))
 
     (on-navigate router cpath)))
-
-(def app-sym (.for js/Symbol "uxbox.app"))
 
 (defn ^:export init
   []
@@ -71,7 +70,6 @@
         themes (gobj/get goog.global "uxboxThemes")]
     (i18n/init! translations)
     (theme/init! themes)
-    (unchecked-set js/window app-sym "main")
     (st/init)
     (init-ui)))
 
@@ -80,11 +78,9 @@
   (remove-watch html-history/path ::main)
   (mf/unmount (dom/get-element "app"))
   (mf/unmount (dom/get-element "modal"))
-  (mf/unmount (dom/get-element "loader"))
   (init-ui))
 
 (defn ^:dev/after-load after-load
   []
-  (when (= "main" (unchecked-get js/window app-sym))
-    (reinit)))
+  (reinit))
 
