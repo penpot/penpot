@@ -227,7 +227,8 @@
 
         state    (mf/use-state #(parse-content content))
         editor   (mf/use-memo #(dwt/create-editor))
-        self-ref (mf/use-ref)
+        self-ref      (mf/use-ref)
+        selecting-ref (mf/use-ref)
 
         on-close
         (fn []
@@ -240,11 +241,22 @@
           (let [sidebar (dom/get-element "settings-bar")
                 cpicker (dom/get-element-by-class "colorpicker-tooltip")
                 self    (mf/ref-val self-ref)
-                target  (dom/get-target event)]
+                target  (dom/get-target event)
+                selecting? (mf/ref-val selecting-ref)]
             (when-not (or (.contains sidebar target)
                           (.contains self target)
                           (and cpicker (.contains cpicker target)))
-              (on-close))))
+              (if selecting?
+                (mf/set-ref-val! selecting-ref false)
+                (on-close)))))
+
+        on-mouse-down
+        (fn [event]
+          (mf/set-ref-val! selecting-ref true))
+
+        on-mouse-up
+        (fn [event]
+          (mf/set-ref-val! selecting-ref false))
 
         on-keyup
         (fn [event]
@@ -282,6 +294,8 @@
         :class "rich-text"
         :render-element render-element
         :render-leaf render-text
+        :on-mouse-up on-mouse-up
+        :on-mouse-down on-mouse-down
         :on-blur (fn [event]
                    (dom/prevent-default event)
                    (dom/stop-propagation event)
