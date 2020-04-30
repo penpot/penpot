@@ -25,6 +25,7 @@
    [uxbox.main.data.workspace.notifications :as dwn]
    [uxbox.main.data.workspace.persistence :as dwp]
    [uxbox.main.data.workspace.transforms :as dwt]
+   [uxbox.main.data.workspace.texts :as dwtxt]
    [uxbox.main.repo :as rp]
    [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
@@ -598,6 +599,30 @@
       (let [pid (:current-page-id state)]
         (update-in state [:workspace-data pid :objects id] merge attrs)))))
 
+(defn update-shape-recursive
+  [id attrs]
+  (us/verify ::us/uuid id)
+  (us/verify ::shape-attrs attrs)
+  (ptk/reify ::update-shape
+    dwc/IBatchedChange
+    dwc/IUpdateGroup
+    (get-ids [_] [id])
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [page-id (:current-page-id state)
+            grouped #{:frame :group}]
+        (update-in state [:workspace-data page-id :objects]
+                   (fn [objects]
+                     (let [childs (d/concat [id] (helpers/get-children id objects))]
+                       (reduce (fn [objects id]
+                                 (let [obj (get objects id)]
+                                   (if (contains? grouped (:type obj))
+                                     objects
+                                     (update objects id merge attrs))))
+                               objects
+                               childs))))))))
+
 ;; --- Update Page Options
 
 (defn update-options
@@ -620,6 +645,22 @@
     (watch [_ state stream]
       (let [selected (get-in state [:workspace-local :selected])]
         (rx/from (map #(update-shape % attrs) selected))))))
+
+(defn update-color-on-selected-shapes
+  [{:keys [fill-color stroke-color] :as attrs}]
+  (us/verify ::shape-attrs attrs)
+  (ptk/reify ::update-color-on-selected-shapes
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [selected (get-in state [:workspace-local :selected])
+            page-id  (get-in state [:workspace-page :id])]
+        (->> (rx/from selected)
+             (rx/map (fn [id]
+                       (let [shape (get-in state [:workspace-data page-id :objects id])]
+                         (if (and (string? fill-color)
+                                  (= :text (:type shape)))
+                           (dwtxt/update-text-attrs {:id id :attrs {:fill fill-color}})
+                           (update-shape-recursive id attrs))))))))))
 
 ;; --- Shape Movement (using keyboard shorcuts)
 
