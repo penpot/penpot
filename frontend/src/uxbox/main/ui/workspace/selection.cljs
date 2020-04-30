@@ -22,6 +22,7 @@
    [uxbox.util.object :as obj]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.geom.matrix :as gmt]
+   [uxbox.main.ui.workspace.snap-feedback :refer [snap-feedback]]
    [uxbox.util.debug :refer [debug?]]))
 
 ;; --- Controls (Component)
@@ -191,12 +192,12 @@
                           :fill "transparent"}}]]))
 
 (mf/defc multiple-selection-handlers
-  [{:keys [shapes selected zoom objects] :as props}]
+  [{:keys [shapes selected zoom] :as props}]
   (let [shape (geom/selection-rect shapes)
         shape-center (geom/center shape)
 
         on-resize #(do (dom/stop-propagation %2)
-                       (st/emit! (dw/start-resize %1 selected shape objects)))
+                       (st/emit! (dw/start-resize %1 selected shape)))
 
         on-rotate #(do (dom/stop-propagation %)
                        (st/emit! (dw/start-rotate shapes)))]
@@ -206,36 +207,37 @@
                    :zoom zoom
                    :on-resize on-resize
                    :on-rotate on-rotate}]
+     [:& snap-feedback {:shapes shapes}]
      (when (debug? :selection-center)
        [:circle {:cx (:x shape-center) :cy (:y shape-center) :r 5 :fill "yellow"}])]))
 
 (mf/defc single-selection-handlers
-  [{:keys [shape zoom objects] :as props}]
+  [{:keys [shape zoom] :as props}]
   (let [shape-id (:id shape)
         shape (geom/transform-shape shape)
         shape' (if (debug? :simple-selection) (geom/selection-rect [shape]) shape)
 
         on-resize
         #(do (dom/stop-propagation %2)
-             (st/emit! (dw/start-resize %1 #{shape-id} shape' objects)))
+             (st/emit! (dw/start-resize %1 #{shape-id} shape')))
 
         on-rotate
         #(do (dom/stop-propagation %)
              (st/emit! (dw/start-rotate [shape])))]
-    [:& controls {:shape shape'
-                  :zoom zoom
-                  :on-rotate on-rotate
-                  :on-resize on-resize}]))
+
+    [:*
+     [:& controls {:shape shape'
+                   :zoom zoom
+                   :on-rotate on-rotate
+                   :on-resize on-resize}]
+     [:& snap-feedback {:shapes [shape]}]]))
 
 (mf/defc selection-handlers
   [{:keys [selected edition zoom] :as props}]
-  (let [data    (mf/deref refs/workspace-data)
-        objects (:objects data)
-
-        ;; We need remove posible nil values because on shape
+  (let [;; We need remove posible nil values because on shape
         ;; deletion many shape will reamin selected and deleted
         ;; in the same time for small instant of time
-        shapes (->> (map #(get objects %) selected)
+        shapes (->> (mf/deref (refs/objects-by-id selected))
                     (remove nil?))
         num (count shapes)
         {:keys [id type] :as shape} (first shapes)]
@@ -246,7 +248,6 @@
       (> num 1)
       [:& multiple-selection-handlers {:shapes shapes
                                        :selected selected
-                                       :objects objects
                                        :zoom zoom}]
 
       (and (= type :text)
@@ -261,5 +262,4 @@
 
       :else
       [:& single-selection-handlers {:shape shape
-                                     :zoom zoom
-                                     :objects objects}])))
+                                     :zoom zoom}])))

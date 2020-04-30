@@ -33,6 +33,7 @@
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.geom.shapes :as geom]
+   [uxbox.util.geom.snap :as snap]
    [uxbox.util.math :as mth]
    [uxbox.util.router :as rt]
    [uxbox.util.transit :as t]
@@ -146,7 +147,8 @@
         (-> state
             (assoc :current-page-id page-id   ; mainly used by events
                    :workspace-local local
-                   :workspace-page (dissoc page :data))
+                   :workspace-page (dissoc page :data)
+                   :workspace-snap-data (snap/initialize-snap-data (get-in page [:data :objects])))
             (assoc-in [:workspace-data page-id] (:data page)))))
 
     ptk/WatchEvent

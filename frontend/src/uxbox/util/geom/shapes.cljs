@@ -687,7 +687,7 @@
           transform
           (gmt/translate-matrix (gpt/negate shape-center)))))))
 
-(defn- transform-apply-modifiers
+(defn transform-apply-modifiers
   [shape]
   (let [modifiers (:modifiers shape)
         ds-modifier (:displacement modifiers (gmt/matrix))

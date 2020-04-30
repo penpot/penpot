@@ -52,6 +52,9 @@
 (def workspace-presence
   (l/derived :workspace-presence st/state))
 
+(def workspace-snap-data
+  (l/derived :workspace-snap-data st/state))
+
 (def workspace-data
   (-> #(let [page-id (get-in % [:workspace-page :id])]
          (get-in % [:workspace-data page-id]))

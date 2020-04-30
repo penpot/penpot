@@ -3,16 +3,19 @@
   (:require
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
+   [beicon.core :as rx]
    [potok.core :as ptk]
    [uxbox.common.data :as d]
    [uxbox.common.spec :as us]
    [uxbox.main.data.helpers :as helpers]
    [uxbox.main.data.workspace.common :as dwc]
    [uxbox.main.refs :as refs]
+   [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]
-   [uxbox.util.geom.shapes :as gsh]))
+   [uxbox.util.geom.shapes :as gsh]
+   [uxbox.util.geom.snap :as snap]))
 
 ;; -- Declarations
 
@@ -64,10 +67,9 @@
 
 ;; -- RESIZE
 (defn start-resize
-  [handler ids shape objects]
+  [handler ids shape]
   (letfn [(resize [shape initial [point lock?]]
-            (let [frame (get objects (:frame-id shape))
-                  {:keys [width height rotation]} shape
+            (let [{:keys [width height rotation]} shape
 
                   shapev (-> (gpt/point width height))
 
@@ -171,6 +173,9 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [selected (get-in state [:workspace-local :selected])
+            page-id (get state :current-page-id)
+            shapes (mapv #(get-in state [:workspace-data page-id :objects %]) selected)
+            snap-data (get state :workspace-snap-data)
             stoper (rx/filter ms/mouse-up? stream)
             zero-point? #(= % (gpt/point 0 0))
             initial (apply-zoom @ms/mouse-position)
@@ -180,7 +185,8 @@
          (->> ms/mouse-position
               (rx/map apply-zoom)
               (rx/filter (complement zero-point?))
-              (rx/map #(gpt/subtract % initial))
+              (rx/map #(gpt/to-vec initial %))
+              (rx/map (snap/closest-snap snap-data shapes))
               (rx/map gmt/translate-matrix)
               (rx/filter #(not (gmt/base? %)))
               (rx/map #(set-modifiers selected {:displacement %}))
@@ -301,7 +307,6 @@
   [ids]
   (us/verify (s/coll-of uuid?) ids)
   (ptk/reify ::apply-modifiers
-
     dwc/IUpdateGroup
     (get-ids [_] ids)
 
