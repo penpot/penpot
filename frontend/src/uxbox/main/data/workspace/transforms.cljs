@@ -1,19 +1,18 @@
 (ns uxbox.main.data.workspace.transforms
   "Events related with shapes transformations"
   (:require
-   [cljs.spec.alpha :as s]
    [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
    [potok.core :as ptk]
-   [uxbox.common.spec :as us]
    [uxbox.common.data :as d]
-   [uxbox.main.refs :as refs]
-   [uxbox.main.store :as st]
-   [uxbox.main.streams :as ms]
-   [uxbox.util.geom.shapes :as gsh]
-   [uxbox.util.geom.point :as gpt]
-   [uxbox.util.geom.matrix :as gmt]
+   [uxbox.common.spec :as us]
    [uxbox.main.data.helpers :as helpers]
-   [uxbox.main.data.workspace.common :as dwc]))
+   [uxbox.main.data.workspace.common :as dwc]
+   [uxbox.main.refs :as refs]
+   [uxbox.main.streams :as ms]
+   [uxbox.util.geom.matrix :as gmt]
+   [uxbox.util.geom.point :as gpt]
+   [uxbox.util.geom.shapes :as gsh]))
 
 ;; -- Declarations
 

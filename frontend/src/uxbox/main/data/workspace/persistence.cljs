@@ -11,7 +11,6 @@
   (:require
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [clojure.set :as set]
    [potok.core :as ptk]
    [uxbox.common.data :as d]
    [uxbox.common.pages :as cp]
@@ -20,9 +19,6 @@
    [uxbox.main.data.workspace.common :as dwc]
    [uxbox.main.repo :as rp]
    [uxbox.main.store :as st]
-   [uxbox.main.streams :as ms]
-   [uxbox.main.websockets :as ws]
-   [uxbox.util.avatars :as avatars]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.router :as rt]
    [uxbox.util.time :as dt]
