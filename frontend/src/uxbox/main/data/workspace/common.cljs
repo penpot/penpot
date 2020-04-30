@@ -1,15 +1,15 @@
 (ns uxbox.main.data.workspace.common
   (:require
-   [clojure.set :as set]
-   [cljs.spec.alpha :as s]
    [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
+   [clojure.set :as set]
    [potok.core :as ptk]
-   [uxbox.main.worker :as uw]
-   [uxbox.util.geom.shapes :as geom]
    [uxbox.common.data :as d]
-   [uxbox.common.spec :as us]
    [uxbox.common.pages :as cp]
-   [uxbox.common.uuid :as uuid]))
+   [uxbox.common.spec :as us]
+   [uxbox.common.uuid :as uuid]
+   [uxbox.main.worker :as uw]
+   [uxbox.util.geom.shapes :as geom]))
 
 ;; --- Protocols
 
