@@ -66,6 +66,7 @@
   (cond
     (object? node) (.isText Text node)
     (map? node) (string? (:text node))
+    (nil? node) false
     :else (throw (ex-info "unexpected type" {:node node}))))
 
 (defn- ^boolean is-paragraph-node?
@@ -73,6 +74,7 @@
   (cond
     (object? node) (= (.-type node) "paragraph")
     (map? node) (= "paragraph" (:type node))
+    (nil? node) false
     :else (throw (ex-info "unexpected type" {:node node}))))
 
 (defn- ^boolean is-root-node?
@@ -80,6 +82,7 @@
   (cond
     (object? node) (= (.-type node) "root")
     (map? node) (= "root" (:type node))
+    (nil? node) false
     :else (throw (ex-info "unexpected type" {:node node}))))
 
 (defn- editor-current-values
