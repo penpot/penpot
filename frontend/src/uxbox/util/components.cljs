@@ -9,7 +9,7 @@
   (:require
    [beicon.core :as rx]
    [rumext.alpha :as mf]
-   [uxbox.util.timers :refer [schedule-on-idle]]))
+   [uxbox.util.timers :refer [schedule]]))
 
 ;; TODO: this file is DEPRECATED (pending deletion)
 
@@ -33,7 +33,7 @@
                :pending-num (- pending-num chunk-size)}))
           (after-render [state]
             (when (pos? (:pending-num @state))
-              (let [sem (schedule-on-idle (fn [] (swap! state update-state)))]
+              (let [sem (schedule (fn [] (swap! state update-state)))]
                 #(rx/cancel! sem))))]
 
     (let [initial (mf/use-memo initial-state)

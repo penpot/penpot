@@ -20,7 +20,6 @@
    [uxbox.main.ui.modal :refer [modal]]
    [uxbox.main.worker]
    [uxbox.util.dom :as dom]
-   [uxbox.util.html.history :as html-history]
    [uxbox.util.i18n :as i18n]
    [uxbox.util.theme :as theme]
    [uxbox.util.router :as rt]
@@ -29,38 +28,33 @@
 
 (declare reinit)
 
-(defn- on-navigate
+(defn on-navigate
   [router path]
   (let [match (rt/match router path)
         profile (:profile storage)]
     (cond
       (and (= path "") (not profile))
-      (st/emit! (rt/nav :login))
+      (rt/nav :login)
 
       (and (= path "") profile)
-      (st/emit! (rt/nav :dashboard-team {:team-id (:default-team-id profile)}))
+      (rt/nav :dashboard-team {:team-id (:default-team-id profile)})
 
       (nil? match)
-      (st/emit! (rt/nav :not-found))
+      (rt/nav :not-found)
 
       :else
-      (st/emit! #(assoc % :route match)))))
+      #(assoc % :route match))))
 
 (defn init-ui
   []
-  (let [router (rt/init ui/routes)
-        cpath (deref html-history/path)]
+  (st/emit! (rt/initialize-router ui/routes)
+            (rt/initialize-history on-navigate))
 
-    (st/emit! #(assoc % :router router))
-    (add-watch html-history/path ::main #(on-navigate router %4))
+  (when (:profile storage)
+    (st/emit! udu/fetch-profile))
 
-    (when (:profile storage)
-      (st/emit! udu/fetch-profile))
-
-    (mf/mount (mf/element ui/app) (dom/get-element "app"))
-    (mf/mount (mf/element modal) (dom/get-element "modal"))
-
-    (on-navigate router cpath)))
+  (mf/mount (mf/element ui/app) (dom/get-element "app"))
+  (mf/mount (mf/element modal) (dom/get-element "modal")))
 
 (defn ^:export init
   []
@@ -73,7 +67,6 @@
 
 (defn reinit
   []
-  (remove-watch html-history/path ::main)
   (mf/unmount (dom/get-element "app"))
   (mf/unmount (dom/get-element "modal"))
   (init-ui))
