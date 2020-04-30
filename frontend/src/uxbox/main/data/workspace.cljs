@@ -394,6 +394,8 @@
           (recur (inc counter))
           candidate)))))
 
+(declare start-edition-mode)
+
 (defn add-shape
   [attrs]
   (us/verify ::shape-attrs attrs)
@@ -430,7 +432,9 @@
                       :id id}]
 
         (rx/of (dwc/commit-changes [rchange] [uchange] {:commit-local? true})
-               (select-shapes #{id}))))))
+               (select-shapes #{id})
+               (when (= :text (:type attrs))
+                 (start-edition-mode id)))))))
 
 
 ;; --- Duplicate Shapes
