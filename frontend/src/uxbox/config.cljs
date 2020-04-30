@@ -8,17 +8,17 @@
 ;; Copyright (c) 2016-2020 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.config
-  (:require [goog.object :as gobj]))
+  (:require [uxbox.util.object :as obj]))
 
 (defn- get-current-origin
   []
-  (let [location (gobj/get goog.global "location")]
-    (gobj/get location "origin")))
+  (let [location (obj/get goog.global "location")]
+    (obj/get location "origin")))
 
-(let [config (gobj/get goog.global "uxboxConfig")
-      public-url (gobj/get config "publicURL" "http://localhost:6060")]
+(let [config (obj/get goog.global "uxboxConfig")
+      public-url (obj/get config "publicURL" "http://localhost:6060")]
 
   (def default-language "en")
-  (def demo-warning (gobj/get config "demoWarning" true))
+  (def demo-warning (obj/get config "demoWarning" true))
   (def url public-url)
   (def default-theme "default"))
