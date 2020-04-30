@@ -13,7 +13,7 @@
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.main.data.helpers :as helpers]
-   [uxbox.main.data.workspace.common :refer [IBatchedChange IUpdateGroup] :as common]))
+   [uxbox.main.data.workspace.common :as dwc]))
 
 ;; -- Declarations
 
@@ -276,7 +276,7 @@
 (defn set-rotation
   [delta-rotation shapes center]
   (ptk/reify ::set-rotation
-    IUpdateGroup
+    dwc/IUpdateGroup
     (get-ids [_] (map :id shapes))
 
     ptk/UpdateEvent
@@ -302,7 +302,8 @@
   [ids]
   (us/verify (s/coll-of uuid?) ids)
   (ptk/reify ::apply-modifiers
-    IUpdateGroup
+
+    dwc/IUpdateGroup
     (get-ids [_] ids)
 
     ptk/UpdateEvent
@@ -323,6 +324,6 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id (:current-page-id state)]
-        (rx/of (common/diff-and-commit-changes page-id)
-               (common/rehash-shape-frame-relationship ids))))))
+        (rx/of (dwc/diff-and-commit-changes page-id)
+               (dwc/rehash-shape-frame-relationship ids))))))
 

@@ -12,45 +12,54 @@
    [uxbox.common.uuid :as uuid]))
 
 ;; --- Protocols
+
 (defprotocol IBatchedChange)
 (defprotocol IUpdateGroup
   (get-ids [this]))
 
-(declare append-undo)
+(declare setup-selection-index)
+(declare update-selection-index)
 (declare reset-undo)
-(declare commit-changes)
-(declare calculate-shape-to-frame-relationship-changes)
+(declare append-undo)
 
-(defn- retrieve-toplevel-shapes
-  [objects]
-  (let [lookup #(get objects %)
-        root   (lookup uuid/zero)
-        childs (:shapes root)]
-    (loop [id  (first childs)
-           ids (rest childs)
-           res []]
-      (if (nil? id)
-        res
-        (let [obj (lookup id)
-              typ (:type obj)]
-          (recur (first ids)
-                 (rest ids)
-                 (if (= :frame typ)
-                   (into res (:shapes obj))
-                   (conj res id))))))))
+;; --- Changes Handling
 
-(defn rehash-shape-frame-relationship
-  [ids]
-  (ptk/reify ::rehash-shape-frame-relationship
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [page-id (:current-page-id state)
-            objects (get-in state [:workspace-data page-id :objects])
-            ids     (retrieve-toplevel-shapes objects)
-            [rch uch] (calculate-shape-to-frame-relationship-changes objects ids)]
+(defn commit-changes
+  ([changes undo-changes]
+   (commit-changes changes undo-changes {}))
+  ([changes undo-changes {:keys [save-undo?
+                                 commit-local?]
+                          :or {save-undo? true
+                               commit-local? false}
+                          :as opts}]
+   (us/verify ::cp/changes changes)
+   (us/verify ::cp/changes undo-changes)
 
-        (when-not (empty? rch)
-          (rx/of (commit-changes rch uch {:commit-local? true})))))))
+   (ptk/reify ::commit-changes
+     cljs.core/IDeref
+     (-deref [_] changes)
+
+     ptk/UpdateEvent
+     (update [_ state]
+       (let [page-id (:current-page-id state)
+             state (update-in state [:workspace-pages page-id :data] cp/process-changes changes)]
+         (cond-> state
+           commit-local? (update-in [:workspace-data page-id] cp/process-changes changes))))
+
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [page (:workspace-page state)
+             uidx (get-in state [:workspace-local :undo-index] ::not-found)]
+         (rx/concat
+          (rx/of (update-selection-index (:id page)))
+
+          (when (and save-undo? (not= uidx ::not-found))
+            (rx/of (reset-undo uidx)))
+
+          (when save-undo?
+            (let [entry {:undo-changes undo-changes
+                         :redo-changes changes}]
+              (rx/of (append-undo entry))))))))))
 
 (defn- generate-operations
   [ma mb]
@@ -90,53 +99,6 @@
     (reduce impl-diff [] (set/union (set (keys (:objects prev)))
                                     (set (keys (:objects curr)))))))
 
-(defn- update-selection-index
-  [page-id]
-  (ptk/reify ::update-selection-index
-    ptk/EffectEvent
-    (effect [_ state stream]
-      (let [objects (get-in state [:workspace-pages page-id :data :objects])
-            lookup  #(get objects %)]
-        (uw/ask! {:cmd :selection/update-index
-                  :page-id page-id
-                  :objects objects})))))
-
-(defn commit-changes
-  ([changes undo-changes] (commit-changes changes undo-changes {}))
-  ([changes undo-changes {:keys [save-undo?
-                                 commit-local?]
-                          :or {save-undo? true
-                               commit-local? false}
-                          :as opts}]
-   (us/verify ::cp/changes changes)
-   (us/verify ::cp/changes undo-changes)
-
-   (ptk/reify ::commit-changes
-     cljs.core/IDeref
-     (-deref [_] changes)
-
-     ptk/UpdateEvent
-     (update [_ state]
-       (let [page-id (:current-page-id state)
-             state (update-in state [:workspace-pages page-id :data] cp/process-changes changes)]
-         (cond-> state
-           commit-local? (update-in [:workspace-data page-id] cp/process-changes changes))))
-
-     ptk/WatchEvent
-     (watch [_ state stream]
-       (let [page (:workspace-page state)
-             uidx (get-in state [:workspace-local :undo-index] ::not-found)]
-         (rx/concat
-          (rx/of (update-selection-index (:id page)))
-
-          (when (and save-undo? (not= uidx ::not-found))
-            (rx/of (reset-undo uidx)))
-
-          (when save-undo?
-            (let [entry {:undo-changes undo-changes
-                         :redo-changes changes}]
-              (rx/of (append-undo entry))))))))))
-
 (defn diff-and-commit-changes
   [page-id]
   (ptk/reify ::diff-and-commit-changes
@@ -151,9 +113,113 @@
         (when-not (empty? changes)
           (rx/of (commit-changes changes undo-changes)))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Undo/Redo
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; --- Selection Index Handling
+
+(defn- setup-selection-index
+  [{:keys [file pages] :as bundle}]
+  (ptk/reify ::setup-selection-index
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [msg {:cmd :selection/create-index
+                 :file-id (:id file)
+                 :pages pages}]
+        (->> (uw/ask! msg)
+             (rx/map (constantly ::index-initialized)))))))
+
+
+(defn update-selection-index
+  [page-id]
+  (ptk/reify ::update-selection-index
+    ptk/EffectEvent
+    (effect [_ state stream]
+      (let [objects (get-in state [:workspace-pages page-id :data :objects])
+            lookup  #(get objects %)]
+        (uw/ask! {:cmd :selection/update-index
+                  :page-id page-id
+                  :objects objects})))))
+
+
+;; --- Common Helpers & Events
+
+;; TODO: move
+(defn retrieve-toplevel-shapes
+  [objects]
+  (let [lookup #(get objects %)
+        root   (lookup uuid/zero)
+        childs (:shapes root)]
+    (loop [id  (first childs)
+           ids (rest childs)
+           res []]
+      (if (nil? id)
+        res
+        (let [obj (lookup id)
+              typ (:type obj)]
+          (recur (first ids)
+                 (rest ids)
+                 (if (= :frame typ)
+                   (into res (:shapes obj))
+                   (conj res id))))))))
+
+(defn- calculate-frame-overlap
+  [objects shape]
+  (let [rshp (geom/shape->rect-shape shape)
+
+        xfmt (comp
+              (filter #(= :frame (:type %)))
+              (filter #(not= (:id shape) (:id %)))
+              (filter #(not= uuid/zero (:id %)))
+              (filter #(geom/overlaps? % rshp)))
+
+        frame (->> (vals objects)
+                   (sequence xfmt)
+                   (first))]
+
+    (or (:id frame) uuid/zero)))
+
+(defn- calculate-shape-to-frame-relationship-changes
+  [objects ids]
+  (loop [id  (first ids)
+         ids (rest ids)
+         rch []
+         uch []]
+    (if (nil? id)
+      [rch uch]
+      (let [obj (get objects id)
+            fid (calculate-frame-overlap objects obj)]
+        (if (not= fid (:frame-id obj))
+          (recur (first ids)
+                 (rest ids)
+                 (conj rch {:type :mov-objects
+                            :parent-id fid
+                            :shapes [id]})
+                 (conj uch {:type :mov-objects
+                            :parent-id (:frame-id obj)
+                            :shapes [id]}))
+          (recur (first ids)
+                 (rest ids)
+                 rch
+                 uch))))))
+
+(defn rehash-shape-frame-relationship
+  [ids]
+  (ptk/reify ::rehash-shape-frame-relationship
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id (:current-page-id state)
+            objects (get-in state [:workspace-data page-id :objects])
+            ids     (retrieve-toplevel-shapes objects)
+            [rch uch] (calculate-shape-to-frame-relationship-changes objects ids)]
+        (when-not (empty? rch)
+          (rx/of (commit-changes rch uch {:commit-local? true})))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Undo / Redo
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/def ::undo-changes ::cp/changes)
+(s/def ::redo-changes ::cp/changes)
+(s/def ::undo-entry
+  (s/keys :req-un [::undo-changes ::redo-changes]))
 
 (def MAX-UNDO-SIZE 50)
 
@@ -184,11 +250,6 @@
           (update-in [:workspace-local :undo]
                      (fn [queue]
                        (into [] (take (inc index) queue))))))))
-
-(s/def ::undo-changes ::cp/changes)
-(s/def ::redo-changes ::cp/changes)
-(s/def ::undo-entry
-  (s/keys :req-un [::undo-changes ::redo-changes]))
 
 (defn- append-undo
   [entry]
@@ -230,44 +291,4 @@
     (update [_ state]
       (update state :workspace-local dissoc :undo-index :undo))))
 
-
-(defn- calculate-frame-overlap
-  [objects shape]
-  (let [rshp (geom/shape->rect-shape shape)
-
-        xfmt (comp
-              (filter #(= :frame (:type %)))
-              (filter #(not= (:id shape) (:id %)))
-              (filter #(not= uuid/zero (:id %)))
-              (filter #(geom/overlaps? % rshp)))
-
-        frame (->> (vals objects)
-                   (sequence xfmt)
-                   (first))]
-
-    (or (:id frame) uuid/zero)))
-
-(defn- calculate-shape-to-frame-relationship-changes
-  [objects ids]
-  (loop [id  (first ids)
-         ids (rest ids)
-         rch []
-         uch []]
-    (if (nil? id)
-      [rch uch]
-      (let [obj (get objects id)
-            fid (calculate-frame-overlap objects obj)]
-        (if (not= fid (:frame-id obj))
-          (recur (first ids)
-                 (rest ids)
-                 (conj rch {:type :mov-objects
-                            :parent-id fid
-                            :shapes [id]})
-                 (conj uch {:type :mov-objects
-                            :parent-id (:frame-id obj)
-                            :shapes [id]}))
-          (recur (first ids)
-                 (rest ids)
-                 rch
-                 uch))))))
 
