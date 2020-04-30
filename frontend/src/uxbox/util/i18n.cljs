@@ -8,16 +8,17 @@
 (ns uxbox.util.i18n
   "A i18n foundation."
   (:require
-   [cuerdas.core :as str]
-   [rumext.alpha :as mf]
    [beicon.core :as rx]
+   [cuerdas.core :as str]
    [goog.object :as gobj]
+   [okulary.core :as l]
+   [rumext.alpha :as mf]
    [uxbox.config :as cfg]
-   [uxbox.util.transit :as t]
-   [uxbox.util.storage :refer [storage]]))
+   [uxbox.util.storage :refer [storage]]
+   [uxbox.util.transit :as t]))
 
-(defonce locale (get storage ::locale cfg/default-language))
-(defonce locale-sub (rx/subject))
+(defonce locale (l/atom (or (get storage ::locale)
+                            cfg/default-language)))
 (defonce translations #js {})
 
 ;; The traslations `data` is a javascript object and should be treated
@@ -33,8 +34,7 @@
 (defn set-current-locale!
   [v]
   (swap! storage assoc ::locale v)
-  (set! locale v)
-  (rx/push! locale-sub v))
+  (reset! locale v))
 
 (defn set-default-locale!
   []
@@ -76,15 +76,12 @@
      (apply str/format value (map #(if (c? %) @% %) args)))))
 
 (defn tr
-  ([code] (t locale code))
-  ([code & args] (apply t locale code args)))
+  ([code] (t @locale code))
+  ([code & args] (apply t @locale code args)))
 
+
+;; DEPRECATED
 (defn use-locale
   []
-  (let [[locale set-locale] (mf/useState locale)]
-    (mf/useEffect (fn []
-                    (let [sub (rx/sub! locale-sub #(set-locale %))]
-                      #(rx/dispose! sub)))
-                  #js [])
-    locale))
+  (mf/deref locale))
 

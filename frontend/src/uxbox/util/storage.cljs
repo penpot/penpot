@@ -9,24 +9,27 @@
 
 (defn- persist
   [alias value]
-  (let [key (name alias)
-        value (t/encode value)]
-    (.setItem js/localStorage key value)))
+  (when-not (or (= *target* "nodejs")
+                (not (exists? js/window)))
+    (let [key (name alias)
+          value (t/encode value)]
+      (.setItem js/localStorage key value))))
 
 (defn- load
   [alias]
-  (if (or (= *target* "nodejs") (not (exists? js/window)))
-    {}
+  (when-not (or (= *target* "nodejs")
+          (not (exists? js/window)))
     (let [data (.getItem js/localStorage (name alias))]
-      (if data
+      (try
         (t/decode data)
-        {}))))
+        (catch :default e
+          (js/console.error "Error on loading data from local storage." e)
+          nil)))))
 
-(defn make-storage
+(defn- make-storage
   [alias]
   (let [data (atom (load alias))]
-    (when (not= *target* "nodejs")
-      (add-watch data :sub #(persist alias %4)))
+    (add-watch data :sub #(persist alias %4))
     (reify
       Object
       (toString [_]
@@ -56,8 +59,9 @@
 
       ILookup
       (-lookup [_ key]
-        (-lookup @data key nil))
+        (get @data key nil))
       (-lookup [_ key not-found]
-        (-lookup @data key not-found)))))
+        (get @data key not-found)))))
 
-(def storage (make-storage "uxbox"))
+(def storage
+  (make-storage "uxbox"))
