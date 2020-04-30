@@ -63,6 +63,7 @@
           (dom/prevent-default event)
           (when selected?
             (st/emit! (dw/start-edition-mode (:id shape)))))]
+
     [:g.shape {:on-double-click on-double-click
                :on-mouse-down on-mouse-down
                :on-context-menu on-context-menu}
@@ -71,11 +72,11 @@
        [:& text-shape {:shape shape
                        :selected? selected?}])]))
 
-;; --- Text Rendering
+;; --- Text Editor Rendering
 
-(defn- generate-text-box-styles
+(defn- generate-root-styles
   [data]
-  (let [valign (obj/get data "verticalAlign")
+  (let [valign (obj/get data "vertical-align")
         base   #js {:height "100%"
                     :width "100%"
                     :display "flex"}]
@@ -84,75 +85,31 @@
       (= valign "center") (obj/set! "alignItems" "center")
       (= valign "bottom") (obj/set! "alignItems" "flex-end"))))
 
-(mf/defc rt-text-box
-  {::mf/wrap-props false
-   ::mf/wrap [mf/memo]}
-  [props]
-  (let [attrs  (obj/get props "attributes")
-        childs (obj/get props "children")
-        data   (obj/get props "element")
-        type   (obj/get data "type")
-        style  (generate-text-box-styles data)
-        attrs  (obj/set! attrs "style" style)
-        attrs  (obj/set! attrs "className" type)]
-    [:> :div attrs childs]))
-
-(defn- generate-text-styles
-  [data]
-  (let [valign (obj/get data "verticalAlign")
-        base #js {:display "inline-block"
-                  :width "100%"}]
-    base))
-
-(mf/defc rt-text
-  {::mf/wrap-props false
-   ::mf/wrap [mf/memo]}
-  [props]
-  (let [attrs  (obj/get props "attributes")
-        childs (obj/get props "children")
-        data   (obj/get props "element")
-        type   (obj/get data "type")
-        style  (generate-text-styles data)
-        attrs  (obj/set! attrs "style" style)
-        attrs  (obj/set! attrs "className" type)]
-    [:> :div attrs childs]))
-
 (defn- generate-paragraph-styles
   [data]
   (let [base #js {:fontSize "14px"
                   :margin "inherit"
                   :lineHeight "1.2"}
-        lh (obj/get data "lineHeight")
-        ta (obj/get data "textAlign")]
+        lh (obj/get data "line-height")
+        ta (obj/get data "text-align")]
     (cond-> base
       ta (obj/set! "textAlign" ta)
       lh (obj/set! "lineHeight" lh))))
 
-(mf/defc rt-pharagraph
-  {::mf/wrap-props false
-   ::mf/wrap [mf/memo]}
-  [props]
-  (let [attrs  (obj/get props "attributes")
-        childs (obj/get props "children")
-        data   (obj/get props "element")
-        style  (generate-paragraph-styles data)
-        attrs  (obj/set! attrs "style" style)]
-    [:> :p attrs childs]))
-
-(defn- generate-leaf-styles
+(defn- generate-text-styles
   [data]
-  (let [letter-spacing (obj/get data "letterSpacing")
-        text-decoration (obj/get data "textDecoration")
-        text-transform (obj/get data "textTransform")
+  (let [letter-spacing (obj/get data "letter-spacing")
+        text-decoration (obj/get data "text-decoration")
+        text-transform (obj/get data "text-transform")
 
-        font-id (obj/get data "fontId")
-        font-variant-id (obj/get data "fontVariantId")
+        font-id (obj/get data "font-id")
+        font-variant-id (obj/get data "font-variant-id")
 
-        font-family (obj/get data "fontFamily")
-        font-size  (obj/get data "fontSize")
+        font-family (obj/get data "font-family")
+        font-size  (obj/get data "font-size")
         fill (obj/get data "fill")
         opacity (obj/get data "opacity")
-        fontsdb (mf/deref fonts/fontsdb)
+        fontsdb (deref fonts/fontsdb)
 
         base #js {:textDecoration text-decoration
                   :color fill
@@ -185,14 +142,50 @@
 
     base))
 
-(mf/defc rt-leaf
+
+(mf/defc editor-root-node
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
+  [props]
+  (let [attrs  (obj/get props "attributes")
+        childs (obj/get props "children")
+        data   (obj/get props "element")
+        type   (obj/get data "type")
+        style  (generate-root-styles data)
+        attrs  (obj/set! attrs "style" style)
+        attrs  (obj/set! attrs "className" type)]
+    [:> :div attrs childs]))
+
+(mf/defc editor-paragraph-set-node
+  {::mf/wrap-props false}
+  [props]
+  (let [attrs  (obj/get props "attributes")
+        childs (obj/get props "children")
+        data   (obj/get props "element")
+        type   (obj/get data "type")
+        style  #js {:display "inline-block"
+                    :width "100%"}
+        attrs  (obj/set! attrs "style" style)
+        attrs  (obj/set! attrs "className" type)]
+    [:> :div attrs childs]))
+
+(mf/defc editor-paragraph-node
+  {::mf/wrap-props false}
+  [props]
+  (let [attrs  (obj/get props "attributes")
+        childs (obj/get props "children")
+        data   (obj/get props "element")
+        style  (generate-paragraph-styles data)
+        attrs  (obj/set! attrs "style" style)]
+    [:> :p attrs childs]))
+
+(mf/defc editor-text-node
+  {::mf/wrap-props false}
   [props]
   (let [attrs (obj/get props "attributes")
         childs (obj/get props "children")
         data   (obj/get props "leaf")
-        style  (generate-leaf-styles data)
+        style  (generate-text-styles data)
         attrs  (obj/set! attrs "style" style)]
     [:> :span attrs childs]))
 
@@ -201,48 +194,44 @@
   (mf/html
    (let [element (obj/get props "element")]
      (case (obj/get element "type")
-       "text-box"  [:> rt-text-box props]
-       "text"      [:> rt-text props]
-       "paragraph" [:> rt-pharagraph props]
+       "root"          [:> editor-root-node props]
+       "paragraph-set" [:> editor-paragraph-set-node props]
+       "paragraph"     [:> editor-paragraph-node props]
        nil))))
 
-(defn- render-leaf
+(defn- render-text
   [props]
   (mf/html
-   [:> rt-leaf props]))
+   [:> editor-text-node props]))
 
 ;; --- Text Shape Edit
 
 (defn- initial-text
-  ([] (initial-text ""))
-  ([text]
-   #js [#js {:type "text-box"
-             :children #js [#js {:type "text"
-                                 :children #js [#js {:type "paragraph"
-                                                     :children #js [#js {:text text}]}]}]}]))
+  [text]
+  (clj->js
+   [{:type "root"
+     :children [{:type "paragraph-set"
+                 :children [{:type "paragraph"
+                             :children [{:text (or text "")}]}]}]}]))
 (defn- parse-content
   [content]
   (cond
     (string? content) (initial-text content)
-    (vector? content) (clj->js content)
-    (object? content) content
-    :else (initial-text)))
+    (map? content) (clj->js [content])
+    :else (initial-text "")))
 
 (mf/defc text-shape-edit
   {::mf/wrap [mf/memo]}
   [{:keys [shape] :as props}]
   (let [{:keys [id x y width height content]} shape
 
-        state  (mf/use-state #(parse-content content))
-        value  (mf/use-var @state)
-
-        editor (mf/use-memo #(rslate/withReact (slate/createEditor)))
+        state    (mf/use-state #(parse-content content))
+        editor   (mf/use-memo #(dwt/create-editor))
         self-ref (mf/use-ref)
 
         on-close
         (fn []
-          (st/emit! dw/clear-edition-mode
-                    dw/deselect-all))
+          (st/emit! dw/clear-edition-mode))
 
         on-click
         (fn [event]
@@ -264,22 +253,21 @@
 
         on-mount
         (fn []
-          (let [
-                lkey1 (events/listen js/document EventType.CLICK on-click)
+          (let [lkey1 (events/listen js/document EventType.CLICK on-click)
                 lkey2 (events/listen js/document EventType.KEYUP on-keyup)]
-            (st/emit! (dwt/assign-editor editor))
-            #(let [content (js->clj @value)]
-               (st/emit! (dwt/assign-editor nil)
-                         (dw/update-shape id {:content content}))
+            (st/emit! (dwt/assign-editor id editor))
+            #(do
+               (st/emit! (dwt/assign-editor id nil))
                (events/unlistenByKey lkey1)
                (events/unlistenByKey lkey2))))
 
         on-change
         (mf/use-callback
          (fn [val]
-           (st/emit! (dwt/assign-editor editor))
-           (reset! state val)
-           (reset! value val)))]
+           (let [content (js->clj val :keywordize-keys true)
+                 content (first content)]
+             (st/emit! (dw/update-shape id {:content content}))
+             (reset! state val))))]
 
     (mf/use-effect on-mount)
 
@@ -293,7 +281,7 @@
         :spell-check "false"
         :class "rich-text"
         :render-element render-element
-        :render-leaf render-leaf
+        :render-leaf render-text
         :on-blur (fn [event]
                    (dom/prevent-default event)
                    (dom/stop-propagation event)
@@ -303,43 +291,45 @@
 
 ;; --- Text Shape Wrapper
 
+(defn- render-text-node
+  ([node] (render-text-node 0 node))
+  ([index {:keys [type text children] :as node}]
+   (mf/html
+    (if (string? text)
+      (let [style (generate-text-styles (clj->js node))]
+        [:span {:style style :key index} text])
+      (let [children (map-indexed render-text-node children)]
+        (case type
+          "root"
+          (let [style (generate-root-styles (clj->js node))]
+            [:div.root.rich-text {:key index :style style} children])
+
+          "paragraph-set"
+          (let [style #js {:display "inline-block"
+                           :width "100%"}]
+            [:div.paragraphs {:key index :style style} children])
+
+          "paragraph"
+          (let [style (generate-paragraph-styles (clj->js node))]
+            [:p {:key index :style style} children])
+
+          nil))))))
+
+(mf/defc text-content
+  {::mf/wrap-props false
+   ::mf/wrap [mf/memo]}
+  [props]
+  (let [root (obj/get props "content")]
+    (render-text-node root)))
+
 (mf/defc text-shape
   [{:keys [shape selected?] :as props}]
-  (let [{:keys [id x y width height content]} shape
-        content (parse-content content)
-        editor (mf/use-memo #(rslate/withReact (slate/createEditor)))
-
-        on-mount
-        (fn []
-          (when selected?
-            (st/emit! (dwt/assign-editor editor))
-            #(st/emit! (dwt/assign-editor nil))))
-
-        on-change
-        (mf/use-callback
-         (fn [val]
-            (let [content (js->clj val)]
-              (st/emit! (dw/update-shape id {:content content})))))
-
-        render-element (mf/use-callback render-element)
-        render-leaf (mf/use-callback render-leaf)]
-
-    (mf/use-effect (mf/deps id selected?) on-mount)
-
+  (let [{:keys [id x y width height rotation content]} shape]
     [:foreignObject {:x x
                      :y y
                      :transform (geom/transform-matrix shape)
                      :id (str id)
                      :width width
                      :height height}
+     [:& text-content {:content (:content shape)}]]))
 
-     [:> rslate/Slate {:editor editor
-                       :value content
-                       :on-change on-change}
-
-      [:> rslate/Editable {:auto-focus "false"
-                           :read-only "true"
-                           :class "rich-text"
-                           :render-element render-element
-                           :render-leaf render-leaf
-                           :placeholder "Type some text here..."}]]]))

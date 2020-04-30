@@ -9,23 +9,27 @@
 
 (ns uxbox.main.data.workspace.texts
   (:require
-   [beicon.core :as rx]
+   [clojure.walk :as walk]
    [cljs.spec.alpha :as s]
-   [clojure.set :as set]
-   [goog.events :as events]
    [goog.object :as gobj]
    [potok.core :as ptk]
    [uxbox.util.object :as obj]
    [uxbox.main.fonts :as fonts]
+   [uxbox.main.data.workspace.common :as dwc]
+   ["slate-react" :as rslate]
    ["slate" :as slate :refer [Editor Transforms Text]]))
 
+(defn create-editor
+  []
+  (rslate/withReact (slate/createEditor)))
+
 (defn assign-editor
-  [editor]
+  [id editor]
   (ptk/reify ::assign-editor
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (assoc-in [:workspace-local :editor] editor)
+          (assoc-in [:workspace-local :editors id] editor)
           (update-in [:workspace-local :editor-n] (fnil inc 0))))))
 
 ;; --- Helpers
@@ -39,222 +43,128 @@
          :focus #js {:path #js [0 0 (dec (alength paragraphs))]
                      :offset 1}}))
 
-(defn set-nodes!
+(defn- editor-set!
   ([editor props]
-   (set-nodes! editor props #js {}))
+   (editor-set! editor props #js {}))
   ([editor props options]
-   (when (and (nil? (obj/get editor "selection"))
-              (nil? (obj/get options "at")))
-     (obj/set! options "at" (calculate-full-selection editor)))
    (.setNodes Transforms editor props options)
    editor))
 
-(defn is-text?
-  [v]
-  (.isText Text v))
+(defn- transform-nodes
+  [pred transform data]
+  (walk/postwalk
+   (fn [item]
+     (if (and (map? item) (pred item))
+       (transform item)
+       item))
+   data))
 
-(defn is-paragraph?
-  [v]
-  (= (.-type v) "paragraph"))
+;; --- Editor Related Helpers
 
-;; --- Predicates
+(defn- ^boolean is-text-node?
+  [node]
+  (cond
+    (object? node) (.isText Text node)
+    (map? node) (string? (:text node))
+    :else (throw (ex-info "unexpected type" {:node node}))))
 
-(defn enabled?
-  [editor universal? pred]
-  (when editor
-    (let [result (.nodes Editor editor #js {:match pred :universal universal?})
-          match  (first (es6-iterator-seq result))]
-      (array? match))))
+(defn- ^boolean is-paragraph-node?
+  [node]
+  (cond
+    (object? node) (= (.-type node) "paragraph")
+    (map? node) (= "paragraph" (:type node))
+    :else (throw (ex-info "unexpected type" {:node node}))))
 
-(defn text-decoration-enabled?
-  [editor type]
-  (enabled? editor true
-            (fn [v]
-              (let [val (obj/get v "textDecoration")]
-                (identical? type val)))))
+(defn- ^boolean is-root-node?
+  [node]
+  (cond
+    (object? node) (= (.-type node) "root")
+    (map? node) (= "root" (:type node))
+    :else (throw (ex-info "unexpected type" {:node node}))))
 
-(defn text-transform-enabled?
-  [editor type]
-  (enabled? editor true
-            (fn [v]
-              (let [val (obj/get v "textTransform")]
-                (identical? type val)))))
+(defn- editor-current-values
+  [editor pred attrs universal?]
+  (let [options #js {:match pred :universal universal?}
+        _ (when (nil? (obj/get editor "selection"))
+            (obj/set! options "at" (calculate-full-selection editor)))
+        result (.nodes Editor editor options)
+        match  (ffirst (es6-iterator-seq result))]
+    (when (object? match)
+      (let [attrs  (clj->js attrs)
+            result (areduce attrs i ret #js {}
+                            (let [val (obj/get match (aget attrs i))]
+                              (if val
+                                (obj/set! ret (aget attrs i) val)
+                                ret)))]
+        (js->clj result :keywordize-keys true)))))
 
-(defn text-align-enabled?
-  [editor type]
-  (enabled? editor false
-            (fn [v]
-              (let [val (obj/get v "textAlign")]
-                (identical? type val)))))
+(defn- nodes-seq
+  [match? node]
+  (->> (tree-seq map? :children node)
+       (filter match?)))
 
-(defn vertical-align-enabled?
-  [editor type]
-  (enabled? editor false
-            (fn [v]
-              (let [val (obj/get v "verticalAlign")]
-                (identical? type val)))))
+(defn- shape-current-values
+  [shape pred attrs]
+  (let [root  (:content shape)
+        nodes (nodes-seq pred root)
+        match (first nodes)]
+    (when match
+      (select-keys match attrs))))
 
-;; --- Getters
+(defn current-text-values
+  [{:keys [editor default attrs shape]}]
+  (if editor
+    (editor-current-values editor is-text-node? attrs true)
+    (shape-current-values shape is-text-node? attrs)))
 
-(defn current-value
-  [editor {:keys [universal?
-                  attr
-                  pred
-                  at]
-           :as opts}]
-  (when editor
-    (let [options #js {:match pred :universal universal?}]
-      (cond
-        (object? at)
-        (obj/set! options "at" at)
+(defn current-paragraph-values
+  [{:keys [editor attrs shape]}]
+  (if editor
+    (editor-current-values editor is-paragraph-node? attrs false)
+    (shape-current-values shape is-paragraph-node? attrs)))
 
-        (nil? (obj/get editor "selection"))
-        (obj/set! options "at" (calculate-full-selection editor)))
+(defn current-root-values
+  [{:keys [editor attrs shape]}]
+  (if editor
+    (editor-current-values editor is-root-node? attrs false)
+    (shape-current-values shape is-root-node? attrs)))
 
-      (let [result (.nodes Editor editor options)
-            match  (ffirst (es6-iterator-seq result))]
-        (when (object? match)
-          (obj/get match attr))))))
+(defn- merge-attrs
+  [node attrs]
+  (reduce-kv (fn [node k v]
+               (if (nil? v)
+                 (dissoc node k)
+                 (assoc node k v)))
+             node
+             attrs))
 
-(defn current-line-height
-  [editor {:keys [at default]}]
-  (or (current-value editor {:at at
-                             :pred is-paragraph?
-                             :attr "lineHeight"
-                             :universal? false})
-      default))
+(defn- update-attrs
+  [{:keys [id editor attrs pred split]}]
+  (if editor
+    (ptk/reify ::update-attrs
+      ptk/EffectEvent
+      (effect [_ state stream]
+        (editor-set! editor (clj->js attrs) #js {:match pred :split split})))
 
-(defn current-letter-spacing
-  [editor {:keys [at default]}]
-  (or (current-value editor {:at at
-                             :pred is-text?
-                             :attr "letterSpacing"
-                             :universal? true})
-      default))
+    (ptk/reify ::update-attrs
+      dwc/IBatchedChange
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [page-id (get-in state [:workspace-page :id])
+              merge-attrs #(merge-attrs % attrs)]
+          (update-in state [:workspace-data page-id :objects id]
+                     (fn [{:keys [type content] :as shape}]
+                       (assert (= :text type) "should be shape type")
+                       (update shape :content #(transform-nodes pred merge-attrs %)))))))))
 
+(defn update-text-attrs
+  [options]
+  (update-attrs (assoc options :pred is-text-node? :split true)))
 
-(defn current-font-family
-  [editor {:keys [at default]}]
-  (or (current-value editor {:at at
-                             :pred is-text?
-                             :attr "fontId"
-                             :universal? true})
-      default))
+(defn update-paragraph-attrs
+  [options]
+  (update-attrs (assoc options :pred is-paragraph-node? :split false)))
 
-(defn current-font-size
-  [editor {:keys [at default]}]
-  (or (current-value editor {:at at
-                             :pred is-text?
-                             :attr "fontSize"
-                             :universal? true})
-      default))
-
-
-(defn current-font-variant
-  [editor {:keys [at default]}]
-  (or (current-value editor {:at at
-                             :pred is-text?
-                             :attr "fontVariantId"
-                             :universal? true})
-      default))
-
-
-(defn current-fill
-  [editor {:keys [at default]}]
-  (or (current-value editor {:at at
-                             :pred is-text?
-                             :attr "fill"
-                             :universal? true})
-      default))
-
-
-(defn current-opacity
-  [editor {:keys [at default]}]
-  (or (current-value editor {:at at
-                             :pred is-text?
-                             :attr "opacity"
-                             :universal? true})
-      default))
-
-
-;; --- Setters
-
-(defn set-text-decoration!
-  [editor type]
-  (set-nodes! editor
-              #js {:textDecoration type}
-              #js {:match is-text?
-                   :split true}))
-
-(defn set-text-align!
-  [editor type]
-  (set-nodes! editor
-              #js {:textAlign type}
-              #js {:match is-paragraph?}))
-
-(defn set-text-transform!
-  [editor type]
-  (set-nodes! editor
-              #js {:textTransform type}
-              #js {:match is-text?
-                   :split true}))
-
-(defn set-vertical-align!
-  [editor type]
-  (set-nodes! editor
-              #js {:verticalAlign type}
-              #js {:match (fn [item]
-                            (= "text-box" (obj/get item "type")))}))
-
-(defn set-line-height!
-  [editor val at]
-  (set-nodes! editor
-              #js {:lineHeight val}
-              #js {:at at
-                   :match is-paragraph?}))
-
-(defn set-letter-spacing!
-  [editor val at]
-  (set-nodes! editor
-              #js {:letterSpacing val}
-              #js {:at at
-                   :match is-text?
-                   :split true}))
-
-(defn set-font!
-  [editor id family]
-  (set-nodes! editor
-              #js {:fontId id
-                   :fontFamily family}
-              #js {:match is-text?
-                   :split true}))
-
-(defn set-font-size!
-  [editor val]
-  (set-nodes! editor
-              #js {:fontSize val}
-              #js {:match is-text?
-                   :split true}))
-
-(defn set-font-variant!
-  [editor id weight style]
-  (set-nodes! editor
-              #js {:fontVariantId id
-                   :fontWeight weight
-                   :fontStyle style}
-              #js {:match is-text?
-                   :split true}))
-
-(defn set-fill!
-  [editor val]
-  (set-nodes! editor
-              #js {:fill val}
-              #js {:match is-text?
-                   :split true}))
-
-(defn set-opacity!
-  [editor val]
-  (set-nodes! editor
-              #js {:opacity val}
-              #js {:match is-text?
-                   :split true}))
+(defn update-root-attrs
+  [options]
+  (update-attrs (assoc options :pred is-root-node? :split false)))
