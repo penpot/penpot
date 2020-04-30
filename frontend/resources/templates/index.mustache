@@ -4,14 +4,12 @@
     <meta charset="utf-8" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
     <title>UXBOX - The Open-Source prototyping tool</title>
-    <link id="theme" href="/css/main-{{& th}}.css?ts={{& ts}}" rel="stylesheet" type="text/css" />
+    <link id="theme" href="/css/main-{{& th}}.css?ts={{& ts}}" 
+          rel="stylesheet" type="text/css" />
     <link rel="icon" href="/images/favicon.png" />
-    <!-- <link rel="preload" as="image" type="image/svg+xml" -->
-    <!--       href="/images/svg-sprite/symbol/svg/sprite.symbol.svg" /> -->
   </head>
   <body>
     <section id="app" tabindex="1"></section>
-    <section id="loader"></section>
     <section id="modal"></section>
     <script>
       window.uxboxConfig = JSON.parse({{& config }});
