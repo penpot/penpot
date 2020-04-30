@@ -70,14 +70,14 @@
 (t/deftest matrix-translate-test
   (let [m (-> (gmt/matrix)
               (gmt/translate (gpt/point 2 10)))]
-    (t/is (str m) "matrix(1,0,0,1,2,10)")))
+    (t/is (= (str m) "matrix(1,0,0,1,2,10)"))))
 
 (t/deftest matrix-scale-test
   (let [m (-> (gmt/matrix)
               (gmt/scale (gpt/point 2)))]
-    (t/is (str m) "matrix(2,0,0,2,0,0)")))
+    (t/is (= (str m) "matrix(2,0,0,2,0,0)"))))
 
 (t/deftest matrix-rotate-test
   (let [m (-> (gmt/matrix)
               (gmt/rotate 10))]
-    (t/is (str m) "matrix(0.984807753012208,0.17364817766693033,-0.17364817766693033,0.984807753012208,0,0)")))
+    (t/is (= (str m) "matrix(0.984807753012208,0.17364817766693033,-0.17364817766693033,0.984807753012208,0,0)"))))
