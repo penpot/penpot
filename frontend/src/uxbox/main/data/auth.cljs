@@ -65,7 +65,7 @@
   (ptk/reify ::clear-user-data
     ptk/UpdateEvent
     (update [_ state]
-      (select-keys state [:route :router :session-id]))
+      (select-keys state [:route :router :session-id :history]))
 
     ptk/WatchEvent
     (watch [_ state s]

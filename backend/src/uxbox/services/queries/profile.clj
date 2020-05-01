@@ -94,4 +94,4 @@
 (defn strip-private-attrs
   "Only selects a publicy visible profile attrs."
   [profile]
-  (select-keys profile [:id :fullname :lang :email :created-at :photo :theme]))
+  (select-keys profile [:id :fullname :lang :email :created-at :photo :theme :photo-uri]))
