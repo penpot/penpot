@@ -141,7 +141,9 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (->> (rp/query :projects-by-team {:team-id team-id})
-           (rx/map projects-fetched)))))
+           (rx/map projects-fetched)
+           (rx/catch (fn [error]
+                       (rx/of (rt/nav' :not-authorized))))))))
 
 (defn projects-fetched
   [projects]
@@ -208,7 +210,9 @@
     (watch [_ state stream]
       (let [params {:team-id team-id}]
         (->> (rp/query :recent-files params)
-             (rx/map recent-files-fetched))))))
+             (rx/map recent-files-fetched)
+             (rx/catch (fn [e]
+                         (rx/of (rt/nav' :not-authorized)))))))))
 
 (defn recent-files-fetched
   [recent-files]

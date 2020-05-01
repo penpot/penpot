@@ -87,20 +87,26 @@
 
 ;; --- Navigate (Event)
 
-(deftype Navigate [id params qparams]
+(deftype Navigate [id params qparams replace]
   ptk/EffectEvent
   (effect [_ state stream]
+    (prn "Navigate" id params qparams replace)
     (let [router  (:router state)
           history (:history state)
           path    (resolve router id params qparams)]
-      (bhistory/set-token! history path))))
+      (if ^boolean replace
+        (bhistory/replace-token! history path)
+        (bhistory/set-token! history path)))))
 
 (defn nav
   ([id] (nav id nil nil))
   ([id params] (nav id params nil))
-  ([id params qparams]
-   {:pre [(keyword? id)]}
-   (Navigate. id params qparams)))
+  ([id params qparams] (Navigate. id params qparams false)))
+
+(defn nav'
+  ([id] (nav id nil nil))
+  ([id params] (nav id params nil))
+  ([id params qparams] (Navigate. id params qparams true)))
 
 (def navigate nav)
 
@@ -112,6 +118,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [history (bhistory/create)]
+        (bhistory/enable! history)
         (assoc state :history history)))
 
     ptk/WatchEvent
@@ -119,14 +126,15 @@
       (let [stoper  (rx/filter (ptk/type? ::initialize-history) stream)
             history (:history state)
             router  (:router state)]
-        (->> (rx/create (fn [sink]
-                          (let [key (e/listen history "navigate" #(sink (.-token %)))]
-                            (bhistory/enable! history)
-                            (fn []
-                              (bhistory/disable! history)
-                              (e/unlistenByKey key)))))
-             (rx/map #(on-change router %))
-             (rx/take-until stoper))))))
+        (rx/merge
+         (rx/of (on-change router (.getToken history)))
+         (->> (rx/create (fn [sink]
+                           (let [key (e/listen history "navigate" #(sink (.-token %)))]
+                             (fn []
+                               (bhistory/disable! history)
+                               (e/unlistenByKey key)))))
+              (rx/map #(on-change router %))
+              (rx/take-until stoper)))))))
 
 
 

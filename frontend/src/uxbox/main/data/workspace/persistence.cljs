@@ -140,9 +140,17 @@
            (rx/first)
            (rx/map (fn [[file users project pages]]
                      (bundle-fetched file users project pages)))
-           (rx/catch (fn [{:keys [type] :as error}]
-                       (when (= :not-found type)
-                         (rx/of (rt/nav :not-found)))))))))
+           (rx/catch (fn [{:keys [type code] :as error}]
+                       (cond
+                         (= :not-found type)
+                         (rx/of (rt/nav' :not-found))
+
+                         (and (= :authentication type)
+                              (= :unauthorized code))
+                         (rx/of (rt/nav' :not-authorized))
+
+                         :else
+                         (throw error))))))))
 
 (defn- bundle-fetched
   [file users project pages]
