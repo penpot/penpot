@@ -65,19 +65,21 @@
                 :bottom-left [ex sy])]
     (gpt/point x y)))
 
+(defn finish-transform [state]
+  (update state :workspace-local dissoc :transform))
+
 ;; -- RESIZE
 (defn start-resize
   [handler ids shape]
-  (letfn [(resize [shape initial [point lock?]]
+  (letfn [(resize [shape initial resizing-shapes snap-data [point lock?]]
             (let [{:keys [width height rotation]} shape
-
                   shapev (-> (gpt/point width height))
 
                   ;; Vector modifiers depending on the handler
                   handler-modif (let [[x y] (handler-modifiers handler)] (gpt/point x y))
 
                   ;; Difference between the origin point in the coordinate system of the rotation
-                  deltav (-> (gpt/subtract point initial)
+                  deltav (-> (snap/closest-snap snap-data resizing-shapes (gpt/to-vec initial point))
                              (gpt/transform (gmt/rotate-matrix (- rotation)))
                              (gpt/multiply handler-modif))
 
@@ -115,27 +117,41 @@
           ;;     (rx/of point)))
           ]
     (reify
+      ptk/UpdateEvent
+      (update [_ state]
+        (-> state
+            (assoc-in [:workspace-local :transform] :resize)))
+
       ptk/WatchEvent
       (watch [_ state stream]
         (let [initial (apply-zoom @ms/mouse-position)
               shape  (gsh/shape->rect-shape shape)
-              stoper (rx/filter ms/mouse-up? stream)]
+              stoper (rx/filter ms/mouse-up? stream)
+              snap-data (get state :workspace-snap-data)
+              page-id (get state :current-page-id)
+              resizing-shapes (map #(get-in state [:workspace-data page-id :objects %]) ids)]
           (rx/concat
            (->> ms/mouse-position
                 (rx/map apply-zoom)
                 ;; (rx/mapcat apply-grid-alignment)
                 (rx/with-latest vector ms/mouse-position-ctrl)
                 (rx/map normalize-proportion-lock)
-                (rx/mapcat (partial resize shape initial))
+                (rx/mapcat (partial resize shape initial resizing-shapes snap-data))
                 (rx/take-until stoper))
            #_(rx/empty)
-           (rx/of (apply-modifiers ids))))))))
+           (rx/of (apply-modifiers ids)
+                  finish-transform)))))))
 
 
 ;; -- ROTATE
 (defn start-rotate
   [shapes]
   (ptk/reify ::start-rotate
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:workspace-local :transform] :rotate)))
+
     ptk/WatchEvent
     (watch [_ state stream]
       (let [stoper (rx/filter ms/mouse-up? stream)
@@ -163,13 +179,19 @@
                         (let [delta-angle (calculate-angle pos ctrl?)]
                           (set-rotation delta-angle shapes group-center))))
               (rx/take-until stoper))
-         (rx/of (apply-modifiers (map :id shapes))))))))
+         (rx/of (apply-modifiers (map :id shapes))
+                finish-transform))))))
 
 ;; -- MOVE
 
 (defn start-move-selected
   []
   (ptk/reify ::start-move-selected
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:workspace-local :transform] :move)))
+
     ptk/WatchEvent
     (watch [_ state stream]
       (let [selected (get-in state [:workspace-local :selected])
@@ -192,11 +214,14 @@
               (rx/map #(set-modifiers selected {:displacement %}))
               (rx/tap #(vswap! counter inc))
               (rx/take-until stoper))
-         (->> (rx/create (fn [sink] (sink @counter)))
+         (->> (rx/create (fn [sink] (sink (reduced @counter))))
               (rx/mapcat (fn [n]
                            (if (zero? n)
                              (rx/empty)
-                             (rx/of (apply-modifiers selected)))))))))))
+                             (rx/of (apply-modifiers selected))))))
+
+         (rx/of finish-transform)
+         )))))
 
 (defn- get-displacement-with-grid
   "Retrieve the correct displacement delta point for the

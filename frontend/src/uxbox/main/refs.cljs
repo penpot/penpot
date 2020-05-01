@@ -93,6 +93,15 @@
 (def selected-shapes
   (l/derived :selected workspace-local))
 
+(def selected-shapes-with-children
+  (letfn [(selector [state]
+            (let [selected (get-in state [:workspace-local :selected])
+                  page-id (get-in state [:workspace-page :id])
+                  objects (get-in state [:workspace-data page-id :objects])
+                  children (mapcat #(helpers/get-children % objects) selected)]
+              (into selected children)))]
+    (l/derived selector st/state)))
+
 (defn make-selected
   [id]
   (l/derived #(contains? % id) selected-shapes))
@@ -105,3 +114,6 @@
 
 (def selected-edition
   (l/derived :edition workspace-local))
+
+(def current-transform
+  (l/derived :transform workspace-local))

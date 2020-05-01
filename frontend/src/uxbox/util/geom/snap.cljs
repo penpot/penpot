@@ -16,17 +16,29 @@
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.debug :refer [logjs]]))
 
-(def ^:private snap-accuracy 5)
+(def ^:private snap-accuracy 8)
 
 (defn mapm
   "Map over the values of a map"
   [mfn coll]
   (into {} (map (fn [[key val]] [key (mfn val)]) coll)))
 
+(defn- frame-snap-points [{:keys [x y width height]}]
+  #{(gpt/point x y)
+    (gpt/point (+ x (/ width 2)) y)
+    (gpt/point (+ x width) y)
+    (gpt/point (+ x width) (+ y (/ height 2)))
+    (gpt/point (+ x width) (+ y height))
+    (gpt/point (+ x (/ width 2)) (+ y height))
+    (gpt/point x (+ y height))
+    (gpt/point x (+ y (/ height 2)))})
+
 (defn shape-snap-points [shape]
-  (let [modified-path (gsh/transform-apply-modifiers shape)
-        shape-center (gsh/center modified-path)]
-    (into #{shape-center} (:segments modified-path))))
+  (if (= :frame (:type shape))
+    (frame-snap-points shape)
+    (let [modified-path (gsh/transform-apply-modifiers shape)
+          shape-center (gsh/center modified-path)]
+      (into #{shape-center} (:segments modified-path)))))
 
 (defn create-coord-data [shapes coord]
   (let [process-shape
@@ -42,7 +54,14 @@
   "Initialize the snap information with the current workspace information"
   [objects]
   (let [shapes (vals objects)
-        frame-shapes (group-by :frame-id (filter (comp not nil? :frame-id) shapes))]
+        frame-shapes (->> shapes
+                          (filter (comp not nil? :frame-id))
+                          (group-by :frame-id))
+
+        frame-shapes (->> shapes
+                          (filter #(= :frame (:type %)))
+                          (remove #(= zero (:id %)))
+                          (reduce #(update %1 (:id %2) conj %2) frame-shapes))]
     (logjs "snap-data"
            (mapm (fn [shapes] {:x (create-coord-data shapes :x)
                                :y (create-coord-data shapes :y)})
@@ -125,13 +144,13 @@
 
      (gpt/add trans-vec snapv))))
 
-(defn get-snap-points [snap-data frame-id shape-id point coord]
+(defn get-snap-points [snap-data frame-id filter-shapes point coord]
   (let [value (coord point)
 
         ;; Search for values within 1 pixel
         snap-matches (-> (get-in snap-data [frame-id coord])
                         (range-query (- value 0.5) (+ value 0.5))
-                        (remove-from-snap-points #{shape-id}))
+                        (remove-from-snap-points filter-shapes))
 
         snap-points (mapcat (fn [[v data]] (map (fn [[point _]] point) data)) snap-matches)]
     snap-points))
@@ -139,5 +158,5 @@
 (defn is-snapping? [snap-data frame-id shape-id point coord]
   (let [value (coord point)
         ;; Search for values within 1 pixel
-        snap-points (range-query (get-in snap-data [frame-id coord]) (- value 0.25) (+ value 0.25))]
+        snap-points (range-query (get-in snap-data [frame-id coord]) (- value 1.0) (+ value 1.0))]
     (some (fn [[point other-shape-id]] (not (= shape-id other-shape-id))) snap-points)))

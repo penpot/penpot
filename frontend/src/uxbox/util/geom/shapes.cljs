@@ -738,6 +738,15 @@
     (gpt/divide (gpt/point (:width shape-path-temp-rec) (:height shape-path-temp-rec))
                 (gpt/point (:width shape-path-temp-dim) (:height shape-path-temp-dim)))))
 
+(defn- fix-invalid-rect-values [rect-shape]
+  (letfn [(check [num] (if (or (nil? num) (mth/nan? num)) 0 num))
+          (to-positive [num] (if (< num 1) 1 num))]
+    (-> rect-shape
+        (update :x check)
+        (update :y check)
+        (update :width (comp to-positive check))
+        (update :height (comp to-positive check)))))
+
 (defn transform-rect-shape
   [shape]
   (let [;; Apply modifiers to the rect as a path so we have the end shape expected
@@ -785,6 +794,7 @@
                       (merge rec)
                       (update :x #(mth/precision % 2))
                       (update :y #(mth/precision % 2))
+                      (fix-invalid-rect-values)
                       (update :transform #(gmt/multiply (or % (gmt/matrix)) stretch-matrix))
                       (update :transform-inverse #(gmt/multiply stretch-matrix-inverse (or % (gmt/matrix)))))]
 

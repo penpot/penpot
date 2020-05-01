@@ -22,7 +22,6 @@
    [uxbox.util.object :as obj]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.geom.matrix :as gmt]
-   [uxbox.main.ui.workspace.snap-feedback :refer [snap-feedback]]
    [uxbox.util.debug :refer [debug?]]))
 
 ;; --- Controls (Component)
@@ -97,7 +96,7 @@
         zoom  (obj/get props "zoom")
         on-resize (obj/get props "on-resize")
         on-rotate (obj/get props "on-rotate")
-
+        current-transform (mf/deref refs/current-transform)
         {:keys [x y width height rotation] :as shape} (geom/shape->rect-shape shape)
 
         radius (if (> (max width height) handler-size-threshold) 4.0 4.0)
@@ -112,23 +111,26 @@
                          :bottom-right [(+ x width) (+ y height)]}]
 
     [:g.controls
-     [:rect.main {:transform transform
-                  :x (- x 1) :y (- y 1)
-                  :width (+ width 2)
-                  :height (+ height 2)
-                  :style {:stroke "#1FDEA7"
-                          :stroke-width "1"
-                          :fill "transparent"}}]
+     (when (not (#{:move :rotate :resize} current-transform))
+      [:rect.main {:transform transform
+                   :x (- x 1) :y (- y 1)
+                   :width (+ width 2)
+                   :height (+ height 2)
+                   :style {:stroke "#1FDEA7"
+                           :stroke-width "1"
+                           :fill "transparent"}}])
 
-     (for [[position [cx cy]] resize-handlers]
-       (let [tp (gpt/transform (gpt/point cx cy) transform)]
-         [:* {:key (name position)}
-          [:& rotation-handler {:cx (:x tp)
-                                :cy (:y tp)
-                                :position position
-                                :rotation (:rotation shape)
-                                :zoom zoom
-                                :on-mouse-down on-rotate}]
+     (when (not (#{:move :rotate} current-transform))
+       (for [[position [cx cy]] resize-handlers]
+         (let [tp (gpt/transform (gpt/point cx cy) transform)]
+           [:* {:key (name position)}
+            [:& rotation-handler {:key (str "rotation-" (name position))
+                                  :cx (:x tp)
+                                  :cy (:y tp)
+                                  :position position
+                                  :rotation (:rotation shape)
+                                  :zoom zoom
+                                  :on-mouse-down on-rotate}]
 
           [:& control-item {:class (name position)
                             :on-click #(on-resize position %)
@@ -195,7 +197,6 @@
   [{:keys [shapes selected zoom] :as props}]
   (let [shape (geom/selection-rect shapes)
         shape-center (geom/center shape)
-
         on-resize #(do (dom/stop-propagation %2)
                        (st/emit! (dw/start-resize %1 selected shape)))
 
@@ -207,7 +208,6 @@
                    :zoom zoom
                    :on-resize on-resize
                    :on-rotate on-rotate}]
-     [:& snap-feedback {:shapes shapes}]
      (when (debug? :selection-center)
        [:circle {:cx (:x shape-center) :cy (:y shape-center) :r 5 :fill "yellow"}])]))
 
@@ -229,8 +229,7 @@
      [:& controls {:shape shape'
                    :zoom zoom
                    :on-rotate on-rotate
-                   :on-resize on-resize}]
-     [:& snap-feedback {:shapes [shape]}]]))
+                   :on-resize on-resize}]]))
 
 (mf/defc selection-handlers
   [{:keys [selected edition zoom] :as props}]

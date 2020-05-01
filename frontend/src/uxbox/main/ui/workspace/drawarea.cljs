@@ -119,8 +119,8 @@
             (let [shape (get-in state [:workspace-local :drawing])
                   shape (geom/setup shape {:x (:x point)
                                            :y (:y point)
-                                           :width 10
-                                           :height 10})]
+                                           :width 1
+                                           :height 1})]
               (assoc-in state [:workspace-local :drawing] (assoc shape ::initialized? true))))
 
           (resize-shape [{:keys [x y] :as shape} initial point lock?]
@@ -280,8 +280,16 @@
         (rx/concat
          (rx/of dw/clear-drawing)
          (when (::initialized? shape)
-           (let [shape (-> shape
+           (let [shape-min-width (case (:type shape)
+                                   :text 20
+                                   5)
+                 shape-min-height (case (:type shape)
+                                    :text 16
+                                    5)
+                 shape (-> shape
                            (geom/transform-shape)
+                           (update :width #(max shape-min-width %))
+                           (update :height #(max shape-min-height %))
                            (dissoc shape ::initialized?))]
              ;; Add & select the created shape to the workspace
              (rx/of dw/deselect-all
