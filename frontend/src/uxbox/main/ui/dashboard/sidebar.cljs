@@ -167,7 +167,7 @@
          :type "text"
          :placeholder (t locale "ds.search.placeholder")
          :default-value search-term-not-nil
-         :autoComplete "off"
+         :auto-complete "off"
          :on-focus on-search-focus
          :on-change on-search-change
          :ref #(when % (set! (.-value %) search-term-not-nil))}]
