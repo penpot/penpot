@@ -9,15 +9,18 @@
    [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.confirm :refer [confirm-dialog]]
+   [uxbox.main.ui.components.defer :refer [deferred]]
    [uxbox.main.ui.components.context-menu :refer [context-menu]]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t tr]]
    [uxbox.util.router :as rt]
+   [uxbox.util.timers :as ts]
    [uxbox.util.time :as dt]))
 
 ;; --- Grid Item Thumbnail
 
 (mf/defc grid-item-thumbnail
+  {::mf/wrap [#(deferred % ts/schedule-on-idle)]}
   [{:keys [file] :as props}]
   [:div.grid-item-th
    [:& exports/page-svg {:data (:data file)
