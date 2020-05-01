@@ -377,16 +377,6 @@
             )
           }]
         [:*
-         ;; TODO: Fix the chunked list
-         #_[:& chunked-list {:items items
-                             :initial-size 30
-                             :chunk-size 30}
-            (fn [item]
-              (let [item (assoc item :key (:id item))]
-                (case section
-                  :icons [:& library-icon-card item]
-                  :images [:& library-image-card item]
-                  :palettes [:& library-color-card item ])))]
          (if (> (count items) 0)
            [:div.library-page-cards-container
             (for [item items]
