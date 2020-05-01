@@ -32,3 +32,12 @@
     (reify rx/IDisposable
       (-dispose [_]
         (js/cancelIdleCallback sem)))))
+
+(defn raf
+  [f]
+  (js/window.requestAnimationFrame f))
+
+(defn idle-then-raf
+  [f]
+  (schedule-on-idle #(raf f)))
+

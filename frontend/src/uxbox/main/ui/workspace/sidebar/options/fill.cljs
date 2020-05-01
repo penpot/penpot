@@ -17,10 +17,21 @@
    [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.workspace.colorpicker :refer [colorpicker-modal]]
    [uxbox.util.dom :as dom]
+   [uxbox.util.object :as obj]
    [uxbox.util.math :as math]
    [uxbox.util.i18n :as i18n :refer [tr t]]))
 
+(defn- fill-menu-memo-equals?
+  [np op]
+  (let [new-shape (obj/get np "shape")
+        old-shape (obj/get op "shape")]
+    (and (identical? (:fill-color new-shape)
+                     (:fill-color old-shape))
+         (identical? (:fill-opacity new-shape)
+                     (:fill-opacity old-shape)))))
+
 (mf/defc fill-menu
+  {::mf/wrap [#(mf/memo' % fill-menu-memo-equals?)]}
   [{:keys [shape] :as props}]
   (let [locale (i18n/use-locale)
 

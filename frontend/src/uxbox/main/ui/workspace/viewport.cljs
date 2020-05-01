@@ -23,6 +23,7 @@
    [uxbox.main.streams :as ms]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.hooks :as hooks]
+   [uxbox.main.ui.components.defer :refer [deferred]]
    [uxbox.main.ui.shapes :refer [shape-wrapper frame-wrapper]]
    [uxbox.main.ui.workspace.drawarea :refer [draw-area start-drawing]]
    [uxbox.main.ui.workspace.grid :refer [grid]]
@@ -101,6 +102,7 @@
               dom (dom/get-element "workspace-viewport")]
           (-> (rx/take-until stoper ms/mouse-position)
               (rx/subscribe #(on-point dom reference %))))))))
+
 
 ;; --- Viewport
 

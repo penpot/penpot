@@ -10,21 +10,23 @@
 
 (ns uxbox.main.ui.workspace.sidebar.layers
   (:require
-   [rumext.alpha :as mf]
    [okulary.core :as l]
-   [uxbox.common.data :as d]
+   [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
-   [uxbox.main.data.workspace :as dw]
+   [uxbox.common.data :as d]
+   [uxbox.common.uuid :as uuid]
    [uxbox.main.data.helpers :as dh]
+   [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
+   [uxbox.main.ui.components.defer :refer [deferred]]
    [uxbox.main.ui.hooks :as hooks]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.shapes.icon :as icon]
    [uxbox.util.dom :as dom]
-   [uxbox.util.perf :as perf]
-   [uxbox.common.uuid :as uuid]
-   [uxbox.util.i18n :as i18n :refer [t]]))
+   [uxbox.util.timers :as ts]
+   [uxbox.util.i18n :as i18n :refer [t]]
+   [uxbox.util.perf :as perf]))
 
 ;; --- Helpers
 
@@ -230,7 +232,8 @@
 
 (mf/defc frame-wrapper
   {::mf/wrap-props false
-   ::mf/wrap [#(mf/memo' % frame-wrapper-memo-equals?)]}
+   ::mf/wrap [#(deferred % ts/idle-then-raf)
+              #(mf/memo' % frame-wrapper-memo-equals?)]}
   [props]
   [:> layer-item props])
 

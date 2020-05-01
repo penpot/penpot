@@ -17,10 +17,27 @@
    [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.workspace.colorpicker :refer [colorpicker-modal]]
    [uxbox.util.dom :as dom]
+   [uxbox.util.object :as obj]
    [uxbox.util.i18n :as i18n :refer  [tr t]]
    [uxbox.util.math :as math]))
 
+(defn- stroke-menu-memo-equals?
+  [np op]
+  (let [new-shape (obj/get np "shape")
+        old-shape (obj/get op "shape")]
+    (and (identical? (:stroke-style new-shape)
+                     (:stroke-style old-shape))
+         (identical? (:stroke-alignment new-shape)
+                     (:stroke-alignment old-shape))
+         (identical? (:stroke-width new-shape)
+                     (:stroke-width old-shape))
+         (identical? (:stroke-color new-shape)
+                     (:stroke-color old-shape))
+         (identical? (:stroke-opacity new-shape)
+                     (:stroke-opacity old-shape)))))
+
 (mf/defc stroke-menu
+  {::mf/wrap [#(mf/memo' % stroke-menu-memo-equals?)]}
   [{:keys [shape] :as props}]
   (let [locale (i18n/use-locale)
         show-options (not= (:stroke-style shape) :none)
