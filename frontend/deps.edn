@@ -1,11 +1,11 @@
 {:paths ["src" "vendor" "resources" "../common"]
  :deps
- {org.clojure/clojurescript {:mvn/version "1.10.597"}
+ {org.clojure/clojurescript {:mvn/version "1.10.753"}
   org.clojure/clojure {:mvn/version "1.10.1"}
-  com.cognitect/transit-cljs {:mvn/version "0.8.256"}
+  com.cognitect/transit-cljs {:mvn/version "0.8.264"}
 
   environ/environ {:mvn/version "1.1.0"}
-  metosin/reitit-core {:mvn/version "0.3.10"}
+  metosin/reitit-core {:mvn/version "0.4.2"}
   expound/expound {:mvn/version "0.8.4"}
 
   danlentz/clj-uuid {:mvn/version "0.1.9"}
@@ -37,12 +37,12 @@
     carocad/parcera {:mvn/version "0.11.0"}
     org.antlr/antlr4-runtime {:mvn/version "4.7"}}}
 
+  :outdated
+  {:extra-deps {olical/depot {:mvn/version "RELEASE"}}
+   :main-opts ["-m" "depot.outdated.main"]}
+
   :repl
   {:main-opts  ["-m" "rebel-readline.main"]}
-
-  :ancient
-  {:main-opts ["-m" "deps-ancient.deps-ancient"]
-   :extra-deps {deps-ancient {:mvn/version "RELEASE"}}}
 
   }}
 
