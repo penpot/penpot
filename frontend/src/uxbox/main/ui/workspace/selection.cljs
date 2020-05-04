@@ -216,16 +216,12 @@
         shape' (if (debug? :simple-selection) (geom/selection-rect [shape]) shape)
 
         on-resize
-        (mf/use-callback
-         (mf/deps shape-id)
-         #(do (dom/stop-propagation %2)
-              (st/emit! (dw/start-resize %1 #{shape-id} shape' objects))))
+        #(do (dom/stop-propagation %2)
+             (st/emit! (dw/start-resize %1 #{shape-id} shape' objects)))
 
         on-rotate
-        (mf/use-callback
-         (mf/deps shape-id)
-         #(do (dom/stop-propagation %)
-              (st/emit! (dw/start-rotate [shape]))))]
+        #(do (dom/stop-propagation %)
+             (st/emit! (dw/start-rotate [shape])))]
     [:& controls {:shape shape'
                   :zoom zoom
                   :on-rotate on-rotate
