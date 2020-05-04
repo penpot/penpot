@@ -19,7 +19,6 @@
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.components.defer :refer [throttle deferred]]
    [uxbox.main.ui.hooks :as hooks]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.shapes.icon :as icon]
@@ -233,8 +232,8 @@
 
 (mf/defc frame-wrapper
   {::mf/wrap-props false
-   ::mf/wrap [#(deferred % ts/idle-then-raf)
-              #(mf/memo' % frame-wrapper-memo-equals?)]}
+   ::mf/wrap [#(mf/memo' % frame-wrapper-memo-equals?)
+              #(mf/deferred % ts/idle-then-raf)]}
   [props]
   [:> layer-item props])
 
@@ -271,7 +270,7 @@
 
 (mf/defc layers-tree-wrapper
   {::mf/wrap-props false
-   ::mf/wrap [#(throttle % 200) mf/memo]}
+   ::mf/wrap [mf/memo #(mf/throttle % 200)]}
   [props]
   (let [objects (obj/get props "objects")
         objects (strip-objects objects)]

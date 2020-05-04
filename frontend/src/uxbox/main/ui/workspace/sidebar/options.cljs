@@ -15,7 +15,6 @@
    [uxbox.main.data.workspace :as udw]
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
-   [uxbox.main.ui.components.defer :refer [throttle]]
    [uxbox.main.ui.workspace.sidebar.align :refer [align-options]]
    [uxbox.main.ui.workspace.sidebar.options.frame :as frame]
    [uxbox.main.ui.workspace.sidebar.options.group :as group]
@@ -31,7 +30,7 @@
 ;; --- Options
 
 (mf/defc shape-options
-  {::mf/wrap [#(throttle % 60)]}
+  {::mf/wrap [#(mf/throttle % 60)]}
   [{:keys [shape] :as props}]
   [:div
    (case (:type shape)

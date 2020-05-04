@@ -23,7 +23,6 @@
    [uxbox.main.streams :as ms]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.hooks :as hooks]
-   [uxbox.main.ui.components.defer :refer [deferred]]
    [uxbox.main.ui.shapes :refer [shape-wrapper frame-wrapper]]
    [uxbox.main.ui.workspace.drawarea :refer [draw-area start-drawing]]
    [uxbox.main.ui.workspace.grid :refer [grid]]

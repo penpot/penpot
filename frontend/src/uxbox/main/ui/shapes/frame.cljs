@@ -17,7 +17,6 @@
    [uxbox.util.geom.shapes :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.components.defer :refer [deferred]]
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.main.ui.shapes.common :as common]
    [uxbox.util.dom :as dom]
@@ -55,8 +54,8 @@
   [shape-wrapper]
   (let [frame-shape (frame-shape shape-wrapper)]
     (mf/fnc frame-wrapper
-      {::mf/wrap [#(deferred % ts/schedule-on-idle)
-                  #(mf/memo' % frame-wrapper-memo-equals?)]
+      {::mf/wrap [#(mf/memo' % frame-wrapper-memo-equals?)
+                  #(mf/deferred % ts/schedule-on-idle)]
        ::mf/wrap-props false}
       [props]
       (let [shape (unchecked-get props "shape")
