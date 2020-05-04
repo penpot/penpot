@@ -90,7 +90,6 @@
 (deftype Navigate [id params qparams replace]
   ptk/EffectEvent
   (effect [_ state stream]
-    (prn "Navigate" id params qparams replace)
     (let [router  (:router state)
           history (:history state)
           path    (resolve router id params qparams)]
