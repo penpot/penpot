@@ -10,21 +10,23 @@
 
 (ns uxbox.main.ui.workspace.sidebar.layers
   (:require
-   [rumext.alpha :as mf]
    [okulary.core :as l]
-   [uxbox.common.data :as d]
+   [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
-   [uxbox.main.data.workspace :as dw]
+   [uxbox.common.data :as d]
+   [uxbox.common.uuid :as uuid]
    [uxbox.main.data.helpers :as dh]
+   [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.hooks :as hooks]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.shapes.icon :as icon]
+   [uxbox.util.object :as obj]
    [uxbox.util.dom :as dom]
-   [uxbox.util.perf :as perf]
-   [uxbox.common.uuid :as uuid]
-   [uxbox.util.i18n :as i18n :refer [t]]))
+   [uxbox.util.timers :as ts]
+   [uxbox.util.i18n :as i18n :refer [t]]
+   [uxbox.util.perf :as perf]))
 
 ;; --- Helpers
 
@@ -230,28 +232,16 @@
 
 (mf/defc frame-wrapper
   {::mf/wrap-props false
-   ::mf/wrap [#(mf/memo' % frame-wrapper-memo-equals?)]}
+   ::mf/wrap [#(mf/memo' % frame-wrapper-memo-equals?)
+              #(mf/deferred % ts/idle-then-raf)]}
   [props]
   [:> layer-item props])
 
-(def ^:private layers-objects
-  (letfn [(strip-data [obj]
-            (select-keys obj [:id :name :blocked :hidden :shapes :type]))
-          (selector [{:keys [objects] :as data}]
-            (persistent!
-             (reduce-kv (fn [res id obj]
-                          (assoc! res id (strip-data obj)))
-                        (transient {})
-                        objects)))]
-  (l/derived selector refs/workspace-data =)))
-
 (mf/defc layers-tree
-  {::mf/wrap [mf/memo]}
-  []
+  {::mf/wrap [#(mf/memo % =)]}
+  [{:keys [objects] :as props}]
   (let [selected (mf/deref refs/selected-shapes)
-        objects (mf/deref layers-objects)
         root (get objects uuid/zero)]
-    ;; [:& perf/profiler {:label "layers-tree" :enabled false}
     [:ul.element-list
      (for [[index id] (reverse (d/enumerate (:shapes root)))]
        (let [obj (get objects id)]
@@ -269,16 +259,30 @@
              :objects objects
              :key id}])))]))
 
+(defn- strip-objects
+  [objects]
+  (let [strip-data #(select-keys % [:id :name :blocked :hidden :shapes :type])]
+    (persistent!
+     (reduce-kv (fn [res id obj]
+                  (assoc! res id (strip-data obj)))
+                (transient {})
+                objects))))
+
+(mf/defc layers-tree-wrapper
+  {::mf/wrap-props false
+   ::mf/wrap [mf/memo #(mf/throttle % 200)]}
+  [props]
+  (let [objects (obj/get props "objects")
+        objects (strip-objects objects)]
+    [:& layers-tree {:objects objects}]))
 
 ;; --- Layers Toolbox
-
-;; NOTE: we need to consider using something like react window for
-;; only render visible items instead of all.
 
 (mf/defc layers-toolbox
   {:wrap [mf/memo]}
   [{:keys [page] :as props}]
-  (let [locale (i18n/use-locale)
+  (let [locale   (mf/deref i18n/locale)
+        data     (mf/deref refs/workspace-data)
         on-click #(st/emit! (dw/toggle-layout-flag :layers))]
     [:div#layers.tool-window
      [:div.tool-window-bar
@@ -286,4 +290,5 @@
       [:span (:name page)]
       #_[:div.tool-window-close {:on-click on-click} i/close]]
      [:div.tool-window-content
-      [:& layers-tree {:key (:id page)}]]]))
+      [:& layers-tree-wrapper {:key (:id page)
+                               :objects (:objects data)}]]]))

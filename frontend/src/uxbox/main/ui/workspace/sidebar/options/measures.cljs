@@ -21,9 +21,10 @@
    [uxbox.util.math :as math]
    [uxbox.util.i18n :refer [t] :as i18n]))
 
-
 ;; -- User/drawing coords
-(defn user-coords-vector [shape]
+
+(defn user-coords-vector
+  [shape]
   (let [{sel-x :x sel-y :y :as selrect}
         (-> shape
             gsh/shape->path
@@ -35,11 +36,13 @@
         dy (- rec-y sel-y)]
     (gpt/point dx dy)))
 
-(defn user->draw [{:keys [x y width height] :as shape}]
+(defn user->draw
+  [{:keys [x y width height] :as shape}]
   (let [dv (user-coords-vector shape)]
-      (-> shape (gsh/move dv))))
+    (-> shape (gsh/move dv))))
 
-(defn draw->user [{:keys [x y width height] :as shape}]
+(defn draw->user
+  [{:keys [x y width height] :as shape}]
   (let [dv (user-coords-vector shape)]
     (-> shape (gsh/move (gpt/negate dv)))))
 

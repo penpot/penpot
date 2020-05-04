@@ -17,7 +17,7 @@
   funcool/okulary {:mvn/version "2020.04.14-0"}
   funcool/potok {:mvn/version "2.8.0-SNAPSHOT"}
   funcool/promesa {:mvn/version "5.1.0"}
-  funcool/rumext {:mvn/version "2020.04.14-1"}
+  funcool/rumext {:mvn/version "2020.05.04-0"}
   }
  :aliases
  {:dev

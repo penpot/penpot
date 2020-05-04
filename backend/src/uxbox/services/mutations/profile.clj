@@ -89,7 +89,8 @@
 
 (defn- retrieve-profile-by-email
   [conn email]
-  (db/query-one conn [sql:profile-by-email email]))
+  (-> (db/query-one conn [sql:profile-by-email email])
+      (p/then #(images/resolve-media-uris % [:photo :photo-uri]))))
 
 
 ;; --- Mutation: Update Profile (own)

@@ -7,16 +7,19 @@
 (ns uxbox.util.router
   (:refer-clojure :exclude [resolve])
   (:require
+   [beicon.core :as rx]
+   [rumext.alpha :as mf]
    [reitit.core :as r]
+   [goog.events :as e]
    [cuerdas.core :as str]
    [potok.core :as ptk]
-   [uxbox.common.data :as d]
-   [uxbox.util.html.history :as html-history])
+   [uxbox.util.browser-history :as bhistory]
+   [uxbox.common.data :as d])
   (:import
    goog.Uri
    goog.Uri.QueryData))
 
-;; --- API
+;; --- Router API
 
 (defn- parse-query-data
   [^QueryData qdata]
@@ -50,9 +53,16 @@
          (.setQueryData uri qdt)
          (.toString uri))))))
 
-(defn init
+(defn create
   [routes]
   (r/router routes))
+
+(defn initialize-router
+  [routes]
+  (ptk/reify ::initialize-router
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :router (create routes)))))
 
 (defn query-params
   "Given goog.Uri, read query parameters into Clojure map."
@@ -62,13 +72,6 @@
          (.getKeys)
          (map (juxt keyword #(.get q %)))
          (into {}))))
-
-(defn navigate!
-  ([router id] (navigate! router id {} {}))
-  ([router id params] (navigate! router id params {}))
-  ([router id params qparams]
-   (-> (resolve router id params qparams)
-       (html-history/set-path!))))
 
 (defn match
   "Given routing tree and current path, return match with possibly
@@ -84,18 +87,54 @@
 
 ;; --- Navigate (Event)
 
-(deftype Navigate [id params qparams]
+(deftype Navigate [id params qparams replace]
   ptk/EffectEvent
   (effect [_ state stream]
-    (let [router (:router state)]
-      (navigate! router id params qparams))))
+    (let [router  (:router state)
+          history (:history state)
+          path    (resolve router id params qparams)]
+      (if ^boolean replace
+        (bhistory/replace-token! history path)
+        (bhistory/set-token! history path)))))
 
 (defn nav
   ([id] (nav id nil nil))
   ([id params] (nav id params nil))
-  ([id params qparams]
-   {:pre [(keyword? id)]}
-   (Navigate. id params qparams)))
+  ([id params qparams] (Navigate. id params qparams false)))
+
+(defn nav'
+  ([id] (nav id nil nil))
+  ([id params] (nav id params nil))
+  ([id params qparams] (Navigate. id params qparams true)))
 
 (def navigate nav)
+
+;; --- History API
+
+(defn initialize-history
+  [on-change]
+  (ptk/reify ::initialize-history
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [history (bhistory/create)]
+        (bhistory/enable! history)
+        (assoc state :history history)))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [stoper  (rx/filter (ptk/type? ::initialize-history) stream)
+            history (:history state)
+            router  (:router state)]
+        (rx/merge
+         (rx/of (on-change router (.getToken history)))
+         (->> (rx/create (fn [sink]
+                           (let [key (e/listen history "navigate" #(sink (.-token %)))]
+                             (fn []
+                               (bhistory/disable! history)
+                               (e/unlistenByKey key)))))
+              (rx/map #(on-change router %))
+              (rx/take-until stoper)))))))
+
+
+
 

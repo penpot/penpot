@@ -20,6 +20,7 @@
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.main.ui.shapes.common :as common]
    [uxbox.util.dom :as dom]
+   [uxbox.util.timers :as ts]
    [uxbox.util.interop :as itr]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]))
@@ -53,7 +54,8 @@
   [shape-wrapper]
   (let [frame-shape (frame-shape shape-wrapper)]
     (mf/fnc frame-wrapper
-      {::mf/wrap [#(mf/memo' % frame-wrapper-memo-equals?)]
+      {::mf/wrap [#(mf/memo' % frame-wrapper-memo-equals?)
+                  #(mf/deferred % ts/schedule-on-idle)]
        ::mf/wrap-props false}
       [props]
       (let [shape (unchecked-get props "shape")

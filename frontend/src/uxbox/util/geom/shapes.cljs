@@ -465,7 +465,8 @@
 
 (declare transform-apply-modifiers)
 
-(defn selection-rect-shape [shape]
+(defn selection-rect-shape
+  [shape]
   (-> shape
       (transform-apply-modifiers)
       (shape->rect-shape)))

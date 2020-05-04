@@ -15,6 +15,7 @@
    [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-menu]]))
 
 (mf/defc options
+  {::mf/wrap [mf/memo]}
   [{:keys [shape] :as props}]
   [:div
    [:& measures-menu {:shape shape}]

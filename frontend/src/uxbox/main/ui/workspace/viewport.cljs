@@ -102,6 +102,7 @@
           (-> (rx/take-until stoper ms/mouse-position)
               (rx/subscribe #(on-point dom reference %))))))))
 
+
 ;; --- Viewport
 
 (declare remote-user-cursors)

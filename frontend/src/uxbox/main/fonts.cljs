@@ -83,7 +83,7 @@
                                (group-by :backend (vals db)))))
 (add-watch fontsdb "main"
            (fn [_ _ _ db]
-             (ts/schedule-on-idle #(materialize-fontsview db))))
+             (ts/schedule #(materialize-fontsview db))))
 
 (defn register!
   [backend fonts]

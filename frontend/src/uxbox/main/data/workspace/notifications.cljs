@@ -72,7 +72,8 @@
   (ptk/reify ::finalize
     ptk/WatchEvent
     (watch [_ state stream]
-      (ws/-close (get-in state [:ws file-id]))
+      (when-let [ws (get-in state [:ws file-id])]
+        (ws/-close ws))
       (rx/of ::finalize))))
 
 ;; --- Handle: Presence

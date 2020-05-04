@@ -30,6 +30,7 @@
 ;; --- Options
 
 (mf/defc shape-options
+  {::mf/wrap [#(mf/throttle % 60)]}
   [{:keys [shape] :as props}]
   [:div
    (case (:type shape)
