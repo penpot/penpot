@@ -63,7 +63,7 @@
                     :y2 10000
                     :style {:stroke line-color :stroke-width "1"}
                     :opacity 0.4}]
-            
+
             [:line {:x1 -10000
                     :y1 (:y point)
                     :x2 10000

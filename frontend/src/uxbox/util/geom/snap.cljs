@@ -113,7 +113,7 @@
 (defn search-snap-point
   "Search snap for a single point"
   [point coord snap-data filter-shapes]
-  
+
   (let [coord-value (get point coord)
 
         ;; This gives a list of [value [[point1 uuid1] [point2 uuid2] ...] we need to remove
@@ -144,7 +144,7 @@
 
       ;; Frames doesn't contain zero. So we take the first frame
       (not (frames zero)) (-> shapes first :frame-id)
-      
+
       ;; Otherwise the root frame is the common
       :else zero)))
 
