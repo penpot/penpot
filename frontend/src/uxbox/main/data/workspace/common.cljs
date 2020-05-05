@@ -18,6 +18,7 @@
    [uxbox.common.spec :as us]
    [uxbox.common.uuid :as uuid]
    [uxbox.main.worker :as uw]
+   [uxbox.util.timers :as ts]
    [uxbox.util.geom.shapes :as geom]
    [uxbox.util.geom.snap :as snap]))
 
@@ -111,19 +112,32 @@
     (reduce impl-diff [] (set/union (set (keys (:objects prev)))
                                     (set (keys (:objects curr)))))))
 
+(defn- generate-changes-when-idle
+  [& args]
+  (rx/create
+   (fn [sink]
+     (ts/schedule-on-idle
+      (fn []
+        (->> (apply generate-changes args)
+             (reduced)
+             (sink))
+        (constantly nil))))))
+
 (defn diff-and-commit-changes
   [page-id]
   (ptk/reify ::diff-and-commit-changes
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-id (:current-page-id state)
-            curr (get-in state [:workspace-data page-id])
-            prev (get-in state [:workspace-pages page-id :data])
-
-            changes (generate-changes prev curr)
-            undo-changes (generate-changes curr prev)]
-        (when-not (empty? changes)
-          (rx/of (commit-changes changes undo-changes)))))))
+      (let [page-id (get-in state [:workspace-page :id])
+            curr    (get-in state [:workspace-data page-id])
+            prev    (get-in state [:workspace-pages page-id :data])]
+        (->> (rx/zip (generate-changes-when-idle prev curr)
+                     (generate-changes-when-idle curr prev))
+             (rx/observe-on :queue)
+             (rx/mapcat (fn [[rchanges uchanges]]
+                          (if (empty? rchanges)
+                            (rx/empty)
+                            (rx/of (commit-changes rchanges uchanges))))))))))
 
 ;; --- Selection Index Handling
 
