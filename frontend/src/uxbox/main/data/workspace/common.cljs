@@ -162,7 +162,6 @@
 
 ;; --- Common Helpers & Events
 
-;; TODO: move
 (defn retrieve-toplevel-shapes
   [objects]
   (let [lookup #(get objects %)
@@ -178,46 +177,55 @@
           (recur (first ids)
                  (rest ids)
                  (if (= :frame typ)
-                   (into res (:shapes obj))
-                   (conj res id))))))))
+                   (into res (map lookup) (:shapes obj))
+                   (conj res obj))))))))
+
+
+(defn retrieve-frames
+  [objects]
+  (let [root   (get objects uuid/zero)
+        loopfn (fn loopfn [ids]
+                 (let [obj (get objects (first ids))]
+                   (cond
+                     (nil? obj)
+                     nil
+
+                     (= :frame (:type obj))
+                     (lazy-seq (cons obj (loopfn (rest ids))))
+
+                     :else
+                     (lazy-seq (loopfn (rest ids))))))]
+    (loopfn (:shapes root))))
 
 (defn- calculate-frame-overlap
-  [objects shape]
-  (let [rshp (geom/shape->rect-shape shape)
-
-        xfmt (comp
-              (filter #(= :frame (:type %)))
-              (filter #(not= (:id shape) (:id %)))
-              (filter #(not= uuid/zero (:id %)))
-              (filter #(geom/overlaps? % rshp)))
-
-        frame (->> (vals objects)
-                   (sequence xfmt)
-                   (first))]
-
+  [frames shape]
+  (let [shape   (geom/shape->rect-shape shape)
+        xf      (comp
+                 (filter #(geom/overlaps? % shape))
+                 (take 1))
+        frame   (first (into [] xf frames))]
     (or (:id frame) uuid/zero)))
 
 (defn- calculate-shape-to-frame-relationship-changes
-  [objects ids]
-  (loop [id  (first ids)
-         ids (rest ids)
-         rch []
-         uch []]
-    (if (nil? id)
+  [frames shapes]
+  (loop [shape  (first shapes)
+         shapes (rest shapes)
+         rch    []
+         uch    []]
+    (if (nil? shape)
       [rch uch]
-      (let [obj (get objects id)
-            fid (calculate-frame-overlap objects obj)]
-        (if (not= fid (:frame-id obj))
-          (recur (first ids)
-                 (rest ids)
+      (let [fid (calculate-frame-overlap frames shape)]
+        (if (not= fid (:frame-id shape))
+          (recur (first shapes)
+                 (rest shapes)
                  (conj rch {:type :mov-objects
                             :parent-id fid
-                            :shapes [id]})
+                            :shapes [(:id shape)]})
                  (conj uch {:type :mov-objects
-                            :parent-id (:frame-id obj)
-                            :shapes [id]}))
-          (recur (first ids)
-                 (rest ids)
+                            :parent-id (:frame-id shape)
+                            :shapes [(:id shape)]}))
+          (recur (first shapes)
+                 (rest shapes)
                  rch
                  uch))))))
 
@@ -226,10 +234,13 @@
   (ptk/reify ::rehash-shape-frame-relationship
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-id (:current-page-id state)
+      (let [page-id (get-in state [:workspace-page :id])
             objects (get-in state [:workspace-data page-id :objects])
-            ids     (retrieve-toplevel-shapes objects)
-            [rch uch] (calculate-shape-to-frame-relationship-changes objects ids)]
+
+            shapes (retrieve-toplevel-shapes objects)
+            frames (retrieve-frames objects)
+
+            [rch uch] (calculate-shape-to-frame-relationship-changes frames shapes)]
         (when-not (empty? rch)
           (rx/of (commit-changes rch uch {:commit-local? true})))))))
 
