@@ -32,6 +32,8 @@
 (declare frame-shape)
 (declare translate-to-frame)
 
+;; ---- Frame Wrapper for workspace
+
 (defn frame-wrapper-memo-equals?
   [np op]
   (let [n-shape (aget np "shape")
@@ -113,6 +115,20 @@
            [:& frame-shape
             {:shape (geom/transform-shape shape)
              :childs childs}]])))))
+
+;; ;; --- Frame Wrapper for viewer
+;;
+;; (mf/defc frame-viewer-wrapper
+;;   {::mf/wrap-props false}
+;;   [props]
+;;   (let [shape (unchecked-get props "shape")
+;;         on-mouse-down (mf/use-callback
+;;                        (mf/deps shape)
+;;                        #(common/on-mouse-down-viewer % shape))]
+;;     [:g.shape {:on-mouse-down on-mouse-down}
+;;      [:& rect-shape {:shape shape}]]))
+
+;; ---- Frame shape
 
 (defn frame-shape
   [shape-wrapper]

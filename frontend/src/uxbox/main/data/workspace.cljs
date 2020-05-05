@@ -68,13 +68,16 @@
     :element-options
     :rules})
 
+(s/def ::options-mode #{:design :prototype})
+
 (def workspace-default
   {:zoom 1
    :flags #{}
    :selected #{}
    :drawing nil
    :drawing-tool nil
-   :tooltip nil})
+   :tooltip nil
+   :options-mode :design})
 
 (def initialize-layout
   (ptk/reify ::initialize-layout
@@ -242,6 +245,16 @@
                           (disj flags flag)
                           (conj flags flag)))))]
         (reduce reduce-fn state flags)))))
+
+;; --- Set element options mode
+
+(defn set-options-mode
+  [mode]
+  (us/assert ::options-mode mode)
+  (ptk/reify ::set-options-mode
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :options-mode] mode))))
 
 ;; --- Tooltip
 

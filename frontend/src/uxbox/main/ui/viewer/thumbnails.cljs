@@ -15,7 +15,6 @@
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.common.data :as d]
-   [uxbox.common.pages :as cp]
    [uxbox.main.store :as st]
    [uxbox.main.data.viewer :as dv]
    [uxbox.main.ui.components.dropdown :refer [dropdown']]
@@ -78,37 +77,6 @@
         [:div.thumbnails-list-inside {:style {:right (str (* @offset 152) "px")}}
          children]]])))
 
-(mf/defc frame-svg
-  {::mf/wrap [mf/memo]}
-  [{:keys [objects frame zoom] :or {zoom 1} :as props}]
-  (let [modifier (-> (gpt/point (:x frame) (:y frame))
-                     (gpt/negate)
-                     (gmt/translate-matrix))
-
-        frame-id (:id frame)
-        modifier-ids (concat [frame-id] (cp/get-children frame-id objects))
-
-        update-fn (fn [state shape-id]
-                    (-> state
-                        (assoc-in [shape-id :modifiers :displacement] modifier)))
-        objects (reduce update-fn objects modifier-ids)
-        frame (assoc-in frame [:modifiers :displacement] modifier )
-
-        width (* (:width frame) zoom)
-        height (* (:height frame) zoom)
-        vbox (str "0 0 " (:width frame 0) " " (:height frame 0))
-        frame-wrapper (mf/use-memo (mf/deps objects)
-                                   #(exports/frame-wrapper objects))]
-
-    [:svg {:view-box vbox
-           :width width
-           :height height
-           :version "1.1"
-           :xmlnsXlink "http://www.w3.org/1999/xlink"
-           :xmlns "http://www.w3.org/2000/svg"}
-     [:& frame-wrapper {:shape frame
-                        :view-box vbox}]]))
-
 (mf/defc thumbnails-summary
   [{:keys [on-toggle-expand on-close total] :as props}]
   [:div.thumbnails-summary
@@ -122,7 +90,7 @@
   [:div.thumbnail-item {:on-click #(on-click % index)}
    [:div.thumbnail-preview
     {:class (classnames :selected selected?)}
-    [:& frame-svg {:frame frame :objects objects}]]
+    [:& exports/frame-svg {:frame frame :objects objects}]]
    [:div.thumbnail-info
     [:span.name (:name frame)]]])
 

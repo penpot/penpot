@@ -39,15 +39,17 @@
     (dom/stop-propagation event)
     (common/on-mouse-down event shape)))
 
-;; --- Text Wrapper
+;; --- Text Wrapper for workspace
 
 (declare text-shape-html)
 (declare text-shape-edit)
 (declare text-shape)
 
 (mf/defc text-wrapper
-  [{:keys [shape] :as props}]
-  (let [{:keys [id x1 y1 content group]} shape
+  {::mf/wrap-props false}
+  [props]
+  (let [shape (unchecked-get props "shape")
+        {:keys [id x1 y1 content group]} shape
         selected (mf/deref refs/selected-shapes)
         edition (mf/deref refs/selected-edition)
         edition? (= edition id)
@@ -71,6 +73,35 @@
        [:& text-shape-edit {:shape shape}]
        [:& text-shape {:shape shape
                        :selected? selected?}])]))
+
+;; --- Text Wrapper for viewer
+
+(mf/defc text-viewer-wrapper
+  {::mf/wrap-props false}
+  [props]
+  (let [shape (unchecked-get props "shape")
+        {:keys [x y width height]} shape
+        transform (geom/transform-matrix shape)
+
+        show-interactions? (mf/deref refs/show-interactions?)
+
+        on-mouse-down (mf/use-callback
+                       (mf/deps shape)
+                       #(common/on-mouse-down-viewer % shape))]
+    [:g.shape {:on-mouse-down on-mouse-down
+               :cursor (when (:interactions shape) "pointer")}
+     [:*
+       [:& text-shape {:shape shape}]
+       (when (and (:interactions shape) show-interactions?)
+         [:> "rect" #js {:x (- x 1)
+                         :y (- y 1)
+                         :width (+ width 2)
+                         :height (+ height 2)
+                         :transform transform
+                         :fill "#31EFB8"
+                         :stroke "#31EFB8"
+                         :strokeWidth 1
+                         :fillOpacity 0.2}])]]))
 
 ;; --- Text Editor Rendering
 
@@ -342,8 +373,11 @@
     (render-text-node root)))
 
 (mf/defc text-shape
-  [{:keys [shape selected?] :as props}]
-  (let [{:keys [id x y width height rotation content]} shape]
+  {::mf/wrap-props false}
+  [props]
+  (let [shape (unchecked-get props "shape")
+        shape (unchecked-get props "selected?")
+        {:keys [id x y width height rotation content]} shape]
     [:foreignObject {:x x
                      :y y
                      :transform (geom/transform-matrix shape)

@@ -64,18 +64,22 @@
   (persistent!
    (reduce #(assoc! %1 (getter %2) %2) (transient {}) coll)))
 
-(defn index-of
-  [coll v]
+(defn index-of-pred
+  [coll pred]
   (loop [c (first coll)
          coll (rest coll)
          index 0]
     (if (nil? c)
       nil
-      (if (= c v)
+      (if (pred c)
         index
         (recur (first coll)
                (rest coll)
                (inc index))))))
+
+(defn index-of
+  [coll v]
+  (index-of-pred coll #(= % v)))
 
 (defn remove-nil-vals
   "Given a map, return a map removing key-value

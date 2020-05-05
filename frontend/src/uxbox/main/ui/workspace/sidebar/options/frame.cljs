@@ -64,7 +64,7 @@
                 delta (if (= attr :x)
                         (gpt/point (math/neg (- pval cval)) 0)
                         (gpt/point 0 (math/neg (- pval cval))))]
-            
+
             ;; TODO: Change so not apply the modifiers until blur
             (st/emit! (udw/set-modifiers #{(:id shape)} {:displacement delta})
                       (udw/apply-modifiers #{(:id shape)}))))
@@ -94,9 +94,7 @@
                (:name size-preset)
                [:span (:width size-preset) " x " (:height size-preset)]]))]]]
        [:span.orientation-icon {on-click #(on-orientation-clicked :vert)} i/size-vert]
-       [:span.orientation-icon {on-click #(on-orientation-clicked :horiz)} i/size-horiz]
-       ]
-
+       [:span.orientation-icon {on-click #(on-orientation-clicked :horiz)} i/size-horiz]]
 
       ;; WIDTH & HEIGHT
       [:div.row-flex

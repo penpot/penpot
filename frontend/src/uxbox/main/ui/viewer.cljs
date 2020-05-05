@@ -17,13 +17,15 @@
    [uxbox.builtins.icons :as i]
    [uxbox.common.exceptions :as ex]
    [uxbox.main.data.viewer :as dv]
+   [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.components.dropdown :refer [dropdown]]
    [uxbox.main.ui.hooks :as hooks]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.messages :refer [messages]]
    [uxbox.main.ui.viewer.header :refer [header]]
-   [uxbox.main.ui.viewer.thumbnails :refer [thumbnails-panel frame-svg]]
+   [uxbox.main.ui.viewer.thumbnails :refer [thumbnails-panel]]
+   [uxbox.main.ui.viewer.frame-viewer :refer [frame-viewer-svg]]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t tr]])
@@ -46,15 +48,22 @@
         [:span (t locale "viewer.frame-not-found")]]
 
        :else
-       [:& frame-svg {:frame frame
-                      :zoom zoom
-                      :objects objects}])]))
+       [:& frame-viewer-svg {:frame frame
+                             :zoom zoom
+                             :objects objects}])]))
 
 (mf/defc viewer-content
   [{:keys [data local index] :as props}]
   (let [container (mf/use-ref)
 
         [toggle-fullscreen fullscreen?] (hooks/use-fullscreen container)
+
+        on-click
+        (fn [event]
+          (dom/stop-propagation event)
+          (let [mode (get local :interactions-mode)]
+            (when (= mode :show-on-click)
+              (st/emit! dv/flash-interactions))))
 
         on-mouse-wheel
         (fn [event]
@@ -64,7 +73,6 @@
               (if (pos? (.-deltaY event))
                 (st/emit! dv/decrease-zoom)
                 (st/emit! dv/increase-zoom)))))
-
 
         on-mount
         (fn []
@@ -88,7 +96,7 @@
                   :fullscreen? fullscreen?
                   :local local
                   :index index}]
-      [:div.viewer-content
+      [:div.viewer-content {:on-click on-click}
        (when (:show-thumbnails local)
          [:& thumbnails-panel {:index index
                                :data data}])
@@ -99,20 +107,14 @@
 
 ;; --- Component: Viewer Page
 
-(def viewer-data-ref
-  (l/derived :viewer-data st/state))
-
-(def viewer-local-ref
-  (l/derived :viewer-local st/state))
-
 (mf/defc viewer-page
   [{:keys [page-id index token] :as props}]
   (mf/use-effect
    (mf/deps page-id token)
    #(st/emit! (dv/initialize page-id token)))
 
-  (let [data (mf/deref viewer-data-ref)
-        local (mf/deref viewer-local-ref)]
+  (let [data (mf/deref refs/viewer-data-ref)
+        local (mf/deref refs/viewer-local-ref)]
     (when data
       [:& viewer-content {:index index
                           :local local

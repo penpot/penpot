@@ -9,8 +9,8 @@
 (defn debug-none! [] (reset! *debug* #{}))
 (defn debug! [option] (swap! *debug* conj option))
 (defn -debug! [option] (swap! *debug* disj option))
-(defn debug? [option] (@*debug* option))
 
+(defn ^:export debug? [option] (@*debug* option))
 
 (defn ^:export toggle-debug [name] (let [option (keyword name)]
                                      (if (debug? option)
@@ -18,7 +18,7 @@
                                        (debug! option))))
 (defn ^:export debug-all [name] (debug-all!))
 
-(defn tap
+(defn ^:export tap
   "Transducer function that can execute a side-effect `effect-fn` per input"
   [effect-fn]
   
@@ -30,7 +30,7 @@
        (effect-fn input)
        (rf result input)))))
 
-(defn logjs
+(defn ^:export logjs
   ([str] (tap (partial logjs str)))
   ([str val]
    (js/console.log str (clj->js val))

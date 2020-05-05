@@ -42,6 +42,30 @@
     }
   }
 
+  .header-icon {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+
+    a {
+      height: 16px;
+      width: 16px;
+
+      svg {
+        fill: $color-gray-30;
+        height: 16px;
+        width: 16px;
+      }
+
+      &:hover {
+        svg {
+          fill: $color-primary;
+        }
+      }
+    }
+  }
+
   .sitemap-zone {
     align-items: center;
     cursor: pointer;
@@ -88,7 +112,7 @@
   .options-zone {
     align-items: center;
     display: flex;
-    width: 300px;
+    width: 350px;
     justify-content: flex-end;
     position: relative;
 
@@ -221,6 +245,40 @@
       width: 16px;
     }
 
+  }
+
+  .custom-select-dropdown {
+    position: absolute;
+    left: 0;
+    z-index: 12;
+    width: 200px;
+    max-height: 30rem;
+    min-width: 7rem;
+    overflow-y: auto;
+
+    background-color: $color-white;
+    border-radius: $br-small;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
+
+    li {
+      color: $color-gray-60;
+      cursor: pointer;
+      font-size: $fs14;
+      display: flex;
+      padding: $small $small $small 25px;
+
+      &.selected {
+        background-image: url(/images/icons/tick.svg);
+        background-repeat: no-repeat;
+        background-position: 5% 48%;
+        background-size: 10px;
+        font-weight: bold;
+      }
+
+      &:hover {
+        background-color: $color-primary-lighter;
+      }
+    }
   }
 
   .zoom-dropdown {

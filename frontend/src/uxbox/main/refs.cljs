@@ -14,7 +14,10 @@
    [beicon.core :as rx]
    [uxbox.common.pages :as cp]
    [uxbox.main.constants :as c]
-   [uxbox.main.store :as st]))
+   [uxbox.main.store :as st]
+   [uxbox.common.uuid :as uuid]))
+
+;; ---- Global refs
 
 (def route
   (l/derived :route st/state))
@@ -27,6 +30,8 @@
 
 (def profile
   (l/derived :profile st/state))
+
+;; ---- Workspace refs
 
 (def workspace-local
   (l/derived :workspace-local st/state))
@@ -79,6 +84,15 @@
                    (vec))))]
     (l/derived selector st/state =)))
 
+(def frames
+  (letfn [(selector [data]
+            (->> (get-in data [:objects uuid/zero])
+                 :shapes
+                 (map #(get-in data [:objects %]))
+                 (filter #(= (:type %) :frame))
+                 (sort-by :name)))]
+    (l/derived selector workspace-data)))
+
 (defn is-child-selected?
   [id]
   (letfn [(selector [state]
@@ -120,3 +134,21 @@
 
 (def current-transform
   (l/derived :transform workspace-local))
+
+(def options-mode
+  (l/derived :options-mode workspace-local))
+
+;; ---- Viewer refs
+
+(def viewer-data-ref
+  (l/derived :viewer-data st/state))
+
+(def viewer-local-ref
+  (l/derived :viewer-local st/state))
+
+(def interactions-mode
+  (l/derived :interactions-mode viewer-local-ref))
+
+(def show-interactions?
+  (l/derived :show-interactions? viewer-local-ref))
+
