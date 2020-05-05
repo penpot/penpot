@@ -413,9 +413,11 @@
             unames   (retrieve-used-names objects)
             name     (generate-unique-name unames (:name shape))
 
+            frames   (dwc/retrieve-frames objects)
+
             frame-id (if (= :frame (:type shape))
                        uuid/zero
-                       (dwc/calculate-frame-overlap objects shape))
+                       (dwc/calculate-frame-overlap frames shape))
 
             shape    (merge
                       (if (= :frame (:type shape))
