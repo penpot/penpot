@@ -55,6 +55,5 @@
     (let [w (t/writer :json {:handlers +write-handlers+})]
       (t/write w data))
     (catch :default e
-      (println "data:" data)
       (throw e))))
 
