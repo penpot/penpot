@@ -16,9 +16,106 @@
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]))
 
-;; TODO: should be replaced when uuid is unified under
-;; uxbox.common.uuid namespace.
-(def uuid-zero #uuid "00000000-0000-0000-0000-000000000000")
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Page Data Structure Helpers
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn get-children
+  "Retrieve all children ids recursively for a given object"
+  [id objects]
+  (let [shapes (get-in objects [id :shapes])]
+    (if shapes
+      (d/concat shapes (mapcat #(get-children % objects) shapes))
+      [])))
+
+(defn is-shape-grouped
+  "Checks if a shape is inside a group"
+  [shape-id objects]
+  (let [contains-shape-fn (fn [{:keys [shapes]}] ((set shapes) shape-id))
+        shapes (remove #(= (:type %) :frame) (vals objects))]
+    (some contains-shape-fn shapes)))
+
+(defn get-parent
+  "Retrieve the id of the parent for the shape-id (if exists)"
+  [shape-id objects]
+  (let [check-parenthood
+        (fn [shape]
+          (when (and (:shapes shape)
+                     ((set (:shapes shape)) shape-id))
+            (:id shape)))]
+    (some check-parenthood (vals objects))))
+
+(defn calculate-child-parent-map
+  [objects]
+  (let [red-fn
+        (fn [acc {:keys [id shapes]}]
+          ;; Insert every pair shape -> parent into accumulated value
+          (into acc (map #(vector % id) (or shapes []))))]
+    (reduce red-fn {} (vals objects))))
+
+(defn get-all-parents
+  [shape-id objects]
+  (let [child->parent (calculate-child-parent-map objects)
+        rec-fn (fn [cur result]
+                 (if-let [parent (child->parent cur)]
+                   (recur parent (conj result parent))
+                   (vec (reverse result))))]
+    (rec-fn shape-id [])))
+
+(defn- calculate-invalid-targets
+  [shape-id objects]
+  (let [result #{shape-id}
+        children (get-in objects [shape-id :shape])
+        reduce-fn (fn [result child-id]
+                    (into result (calculate-invalid-targets child-id objects)))]
+    (reduce reduce-fn result children)))
+
+(defn- insert-at-index
+  [shapes index ids]
+  (let [[before after] (split-at index shapes)
+        p? (set ids)]
+    (d/concat []
+              (remove p? before)
+              ids
+              (remove p? after))))
+
+(defn select-toplevel-shapes
+  [objects]
+  (let [lookup #(get objects %)
+        root   (lookup uuid/zero)
+        childs (:shapes root)]
+    (loop [id  (first childs)
+           ids (rest childs)
+           res []]
+      (if (nil? id)
+        res
+        (let [obj (lookup id)
+              typ (:type obj)]
+          (recur (first ids)
+                 (rest ids)
+                 (if (= :frame typ)
+                   (into res (map lookup) (:shapes obj))
+                   (conj res obj))))))))
+
+(defn select-frames
+  [objects]
+  (let [root   (get objects uuid/zero)
+        loopfn (fn loopfn [ids]
+                 (let [obj (get objects (first ids))]
+                   (cond
+                     (nil? obj)
+                     nil
+
+                     (= :frame (:type obj))
+                     (lazy-seq (cons obj (loopfn (rest ids))))
+
+                     :else
+                     (lazy-seq (loopfn (rest ids))))))]
+    (loopfn (:shapes root))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Page Transformation Changes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; --- Specs
 
@@ -158,7 +255,7 @@
 (s/def ::change (s/multi-spec change-spec-impl :type))
 (s/def ::changes (s/coll-of ::change))
 
-(def root #uuid "00000000-0000-0000-0000-000000000000")
+(def root uuid/zero)
 
 (def default-page-data
   "A reference value of the empty page data."
@@ -176,7 +273,7 @@
    :fill-opacity 1})
 
 (def default-frame-attrs
-  {:frame-id uuid-zero
+  {:frame-id uuid/zero
    :fill-color "#ffffff"
    :fill-opacity 1
    :shapes []})
@@ -236,32 +333,6 @@
 
         (seq shapes)   ; Recursive delete all dependend objects
         (as-> $ (reduce #(or (process-change %1 {:type :del-obj :id %2}) %1) $ shapes))))))
-
-(defn- calculate-child-parent-map
-  [objects]
-  (let [red-fn
-        (fn [acc {:keys [id shapes]}]
-          ;; Insert every pair shape -> parent into accumulated value
-          (into acc (map #(vector % id) (or shapes []))))]
-    (reduce red-fn {} (vals objects))))
-
-(defn- calculate-invalid-targets
-  [shape-id objects]
-  (let [result #{shape-id}
-        children (get-in objects [shape-id :shape])
-        reduce-fn (fn [result child-id]
-                    (into result (calculate-invalid-targets child-id objects)))]
-    (reduce reduce-fn result children)))
-
-(defn- insert-at-index
-  [shapes index ids]
-  (let [[before after] (split-at index shapes)
-        p? (set ids)]
-    (d/concat []
-              (remove p? before)
-              ids
-              (remove p? after))))
-
 
 (defmethod process-change :mov-objects
   [data {:keys [parent-id shapes index] :as change}]

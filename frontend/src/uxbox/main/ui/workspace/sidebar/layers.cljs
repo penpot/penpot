@@ -15,7 +15,7 @@
    [uxbox.builtins.icons :as i]
    [uxbox.common.data :as d]
    [uxbox.common.uuid :as uuid]
-   [uxbox.main.data.helpers :as dh]
+   [uxbox.common.pages :as cp]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
@@ -211,7 +211,7 @@
         old-obs (unchecked-get oprops "objects")]
     (and (= new-itm old-itm)
          (identical? new-idx old-idx)
-         (let [childs (dh/get-children (:id new-itm) new-obs)
+         (let [childs (cp/get-children (:id new-itm) new-obs)
                childs' (conj childs (:id new-itm))]
            (and (or (= new-sel old-sel)
                     (not (or (boolean (some new-sel childs'))

@@ -176,41 +176,6 @@
 
 ;; --- Common Helpers & Events
 
-(defn retrieve-toplevel-shapes
-  [objects]
-  (let [lookup #(get objects %)
-        root   (lookup uuid/zero)
-        childs (:shapes root)]
-    (loop [id  (first childs)
-           ids (rest childs)
-           res []]
-      (if (nil? id)
-        res
-        (let [obj (lookup id)
-              typ (:type obj)]
-          (recur (first ids)
-                 (rest ids)
-                 (if (= :frame typ)
-                   (into res (map lookup) (:shapes obj))
-                   (conj res obj))))))))
-
-
-(defn retrieve-frames
-  [objects]
-  (let [root   (get objects uuid/zero)
-        loopfn (fn loopfn [ids]
-                 (let [obj (get objects (first ids))]
-                   (cond
-                     (nil? obj)
-                     nil
-
-                     (= :frame (:type obj))
-                     (lazy-seq (cons obj (loopfn (rest ids))))
-
-                     :else
-                     (lazy-seq (loopfn (rest ids))))))]
-    (loopfn (:shapes root))))
-
 (defn- calculate-frame-overlap
   [frames shape]
   (let [shape   (geom/shape->rect-shape shape)
@@ -251,8 +216,8 @@
       (let [page-id (get-in state [:workspace-page :id])
             objects (get-in state [:workspace-data page-id :objects])
 
-            shapes (retrieve-toplevel-shapes objects)
-            frames (retrieve-frames objects)
+            shapes (cp/select-toplevel-shapes objects)
+            frames (cp/select-frames objects)
 
             [rch uch] (calculate-shape-to-frame-relationship-changes frames shapes)]
         (when-not (empty? rch)

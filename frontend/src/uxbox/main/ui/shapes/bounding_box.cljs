@@ -16,7 +16,8 @@
    [uxbox.util.debug :refer [debug?]]
    ["randomcolor" :as rdcolor]))
 
-(defn fix [num]
+(defn fixed
+  [num]
   (when num (.toFixed num 2)))
 
 (mf/defc bounding-box
@@ -37,7 +38,7 @@
                :fill "red"
                :stroke "white"
                :stroke-width 0.1}
-        (str/format "%s - (%s, %s)" (str/slice (str (:id shape)) 0 8) (fix (:x shape)) (fix (:y shape)))]
+        (str/format "%s - (%s, %s)" (str/slice (str (:id shape)) 0 8) (fixed (:x shape)) (fixed (:y shape)))]
 
        [:rect  {:x (:x selrect)
                 :y (:y selrect)
