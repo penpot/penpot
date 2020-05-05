@@ -18,11 +18,11 @@
    [uxbox.main.repo :as rp]
    [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
-   [uxbox.main.websockets :as ws]
    [uxbox.util.avatars :as avatars]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.time :as dt]
-   [uxbox.util.transit :as t]))
+   [uxbox.util.transit :as t]
+   [uxbox.util.websockets :as ws]))
 
 (declare handle-presence)
 (declare handle-pointer-update)
