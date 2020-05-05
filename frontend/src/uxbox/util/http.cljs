@@ -7,14 +7,16 @@
 (ns uxbox.util.http
   "A http client with rx streams interface."
   (:refer-clojure :exclude [get])
-  (:require [beicon.core :as rx]
-            [goog.events :as events]
-            [clojure.string :as str])
-  (:import [goog.net ErrorCode EventType]
-           [goog.net.XhrIo ResponseType]
-           [goog.net XhrIo]
-           [goog.Uri QueryData]
-           [goog Uri]))
+  (:require
+   [beicon.core :as rx]
+   [goog.events :as events]
+   [clojure.string :as str])
+  (:import
+   [goog.net ErrorCode EventType]
+   [goog.net.XhrIo ResponseType]
+   [goog.net XhrIo]
+   [goog.Uri QueryData]
+   [goog Uri]))
 
 (defn translate-method
   [method]

@@ -13,22 +13,16 @@
    [cljs.spec.alpha :as s]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
+   [uxbox.main.fonts :as fonts]
    [uxbox.main.exports :as exports]
    [uxbox.worker.impl :as impl]
    ["react-dom/server" :as rds]))
-
-(mf/defc foobar
-  [{:keys [name]}]
-  [:span name])
-
-(defmethod impl/handler :echo
-  [message]
-  {:result (rds/renderToString (mf/element foobar {:name "foobar"}))})
 
 (defmethod impl/handler :thumbnails/generate
   [{:keys [data] :as message}]
   (let [elem (mf/element exports/page-svg #js {:data data
                                                :width "290"
                                                :height "150"})]
-    (rds/renderToStaticMarkup elem)))
+    {:svg (rds/renderToStaticMarkup elem)
+     :fonts @fonts/loaded}))
 

@@ -117,8 +117,8 @@
 (mf/defc text-shape
   {::mf/wrap-props false}
   [props]
-  (let [shape (unchecked-get props "shape")
-        shape (unchecked-get props "selected?")
+  (let [shape     (unchecked-get props "shape")
+        selected? (unchecked-get props "selected?")
         {:keys [id x y width height rotation content]} shape]
     [:foreignObject {:x x
                      :y y

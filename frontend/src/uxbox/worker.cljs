@@ -18,6 +18,7 @@
    [uxbox.common.uuid :as uuid]
    [uxbox.worker.impl :as impl]
    [uxbox.worker.selection]
+   [uxbox.worker.thumbnails]
    [uxbox.util.transit :as t]
    [uxbox.util.worker :as w]))
 
