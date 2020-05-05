@@ -88,7 +88,7 @@
     (watch [_ state stream]
       (let [local (:dashboard-local state)]
         (rx/of (fetch-files (:project-id local))
-               (fetch-projects (:team-id local)))))))
+               (fetch-projects (:team-id local) nil))))))
 
 
 (defn initialize-recent
@@ -104,7 +104,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [local (:dashboard-local state)]
-        (rx/of (fetch-projects (:team-id local))
+        (rx/of (fetch-projects (:team-id local) nil)
                (fetch-recent-files (:team-id local)))))))
 
 
@@ -122,7 +122,7 @@
      ptk/WatchEvent
      (watch [_ state stream]
        (let [local (:dashboard-local state)]
-         (rx/of (fetch-projects (:team-id local))
+         (rx/of (fetch-projects (:team-id local) nil)
                 (fetch-files (:project-id local)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
