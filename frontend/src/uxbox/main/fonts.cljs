@@ -124,15 +124,16 @@
 
 (defmethod load-font :google
   [{:keys [id family variants ::on-loaded] :as font}]
-  (js/console.log "[debug:fonts]: loading google font" id)
-  (let [base (str "https://fonts.googleapis.com/css?family=" family)
-        variants (str/join "," (map :id variants))
-        uri (str base ":" variants "&display=block")
-        node (create-link-node uri)]
-    (.addEventListener node "load" (fn [event] (when (fn? on-loaded)
-                                                 (on-loaded id))))
-    (.append (.-head js/document) node)
-    nil))
+  (when (exists? js/window)
+    (js/console.log "[debug:fonts]: loading google font" id)
+    (let [base (str "https://fonts.googleapis.com/css?family=" family)
+          variants (str/join "," (map :id variants))
+          uri (str base ":" variants "&display=block")
+          node (create-link-node uri)]
+      (.addEventListener node "load" (fn [event] (when (fn? on-loaded)
+                                                   (on-loaded id))))
+      (.append (.-head js/document) node)
+      nil)))
 
 (defmethod load-font :default
   [{:keys [backend] :as font}]

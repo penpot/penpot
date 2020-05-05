@@ -27,7 +27,6 @@
    [uxbox.main.ui.profile.recovery-request :refer [profile-recovery-request-page]]
    [uxbox.main.ui.profile.register :refer [profile-register-page]]
    [uxbox.main.ui.settings :as settings]
-   [uxbox.main.ui.shapes]
    [uxbox.main.ui.viewer :refer [viewer-page]]
    [uxbox.main.ui.workspace :as workspace]
    [uxbox.util.i18n :refer [tr]]

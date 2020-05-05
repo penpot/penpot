@@ -1,15 +1,17 @@
 (ns uxbox.main.ui.dashboard.grid
   (:require
    [cuerdas.core :as str]
+   [beicon.core :as rx]
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.main.data.dashboard :as dsh]
    [uxbox.main.store :as st]
-   [uxbox.main.exports :as exports]
    [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.confirm :refer [confirm-dialog]]
    [uxbox.main.ui.components.context-menu :refer [context-menu]]
+   [uxbox.main.worker :as wrk]
+   [uxbox.main.fonts :as fonts]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t tr]]
    [uxbox.util.router :as rt]
@@ -19,12 +21,19 @@
 ;; --- Grid Item Thumbnail
 
 (mf/defc grid-item-thumbnail
-  {::mf/wrap [#(mf/deferred % ts/schedule-on-idle)]}
+  {::mf/wrap [mf/memo]}
   [{:keys [file] :as props}]
-  [:div.grid-item-th
-   [:& exports/page-svg {:data (:data file)
-                         :width "290"
-                         :height "150"}]])
+  (let [container (mf/use-ref)]
+    (mf/use-effect
+     (mf/deps file)
+     (fn []
+       (-> (wrk/ask! {:cmd :thumbnails/generate
+                      :data (:data file)})
+           (rx/subscribe (fn [{:keys [svg fonts]}]
+                           (run! fonts/ensure-loaded! fonts)
+                           (let [node (mf/ref-val container)]
+                             (set! (.-innerHTML node) svg)))))))
+    [:div.grid-item-th {:ref container}]))
 
 ;; --- Grid Item
 
