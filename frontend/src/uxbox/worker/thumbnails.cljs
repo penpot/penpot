@@ -10,6 +10,7 @@
 (ns uxbox.worker.thumbnails
   (:require
    [rumext.alpha :as mf]
+   [promesa.core :as p]
    [cljs.spec.alpha :as s]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
@@ -25,4 +26,3 @@
                                                :height "150"})]
     {:svg (rds/renderToStaticMarkup elem)
      :fonts @fonts/loaded}))
-

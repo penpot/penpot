@@ -36,7 +36,7 @@
   (try
     (let [result (impl/handler payload)]
       (cond
-        (p/thenable? result)
+        (p/promise? result)
         (p/handle result
                   (fn [msg]
                     (.postMessage js/self (t/encode
