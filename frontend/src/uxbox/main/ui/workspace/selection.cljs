@@ -96,6 +96,7 @@
         zoom  (obj/get props "zoom")
         on-resize (obj/get props "on-resize")
         on-rotate (obj/get props "on-rotate")
+        current-transform (mf/deref refs/current-transform)
 
         {:keys [x y width height rotation] :as shape} (geom/shape->rect-shape shape)
 
@@ -111,32 +112,33 @@
                          :bottom-right [(+ x width) (+ y height)]}]
 
     [:g.controls
-     [:rect.main {:transform transform
+     (when (not (#{:move :rotate :resize} current-transform))
+         [:rect.main {:transform transform
                   :x (- x 1) :y (- y 1)
                   :width (+ width 2)
                   :height (+ height 2)
                   :style {:stroke "#1FDEA7"
                           :stroke-width "1"
-                          :fill "transparent"}}]
+                          :fill "transparent"}}])
 
-     (for [[position [cx cy]] resize-handlers]
-       (let [tp (gpt/transform (gpt/point cx cy) transform)]
-         [:* {:key (name position)}
-          [:& rotation-handler {:cx (:x tp)
-                                :cy (:y tp)
-                                :position position
-                                :rotation (:rotation shape)
-                                :zoom zoom
-                                :on-mouse-down on-rotate}]
+     (when (not (#{:move :rotate} current-transform))
+       (for [[position [cx cy]] resize-handlers]
+         (let [tp (gpt/transform (gpt/point cx cy) transform)]
+           [:* {:key (name position)}
+            [:& rotation-handler {:cx (:x tp)
+                                  :cy (:y tp)
+                                  :position position
+                                  :rotation (:rotation shape)
+                                  :zoom zoom
+                                  :on-mouse-down on-rotate}]
 
-          [:& control-item {:class (name position)
-                            :on-click #(on-resize position %)
-                            :r (/ radius zoom)
-                            :cx (:x tp)
-                            :cy (:y tp)}]]))]))
+            [:& control-item {:class (name position)
+                              :on-click #(on-resize position %)
+                              :r (/ radius zoom)
+                              :cx (:x tp)
+                              :cy (:y tp)}]])))]))
 
 ;; --- Selection Handlers (Component)
-
 (mf/defc path-edition-selection-handlers
   [{:keys [shape modifiers zoom] :as props}]
   (letfn [(on-mouse-down [event index]
@@ -191,12 +193,11 @@
                           :fill "transparent"}}]]))
 
 (mf/defc multiple-selection-handlers
-  [{:keys [shapes selected zoom objects] :as props}]
+  [{:keys [shapes selected zoom] :as props}]
   (let [shape (geom/selection-rect shapes)
         shape-center (geom/center shape)
-
         on-resize #(do (dom/stop-propagation %2)
-                       (st/emit! (dw/start-resize %1 selected shape objects)))
+                       (st/emit! (dw/start-resize %1 selected shape)))
 
         on-rotate #(do (dom/stop-propagation %)
                        (st/emit! (dw/start-rotate shapes)))]
@@ -210,32 +211,31 @@
        [:circle {:cx (:x shape-center) :cy (:y shape-center) :r 5 :fill "yellow"}])]))
 
 (mf/defc single-selection-handlers
-  [{:keys [shape zoom objects] :as props}]
+  [{:keys [shape zoom] :as props}]
   (let [shape-id (:id shape)
         shape (geom/transform-shape shape)
         shape' (if (debug? :simple-selection) (geom/selection-rect [shape]) shape)
 
         on-resize
         #(do (dom/stop-propagation %2)
-             (st/emit! (dw/start-resize %1 #{shape-id} shape' objects)))
+             (st/emit! (dw/start-resize %1 #{shape-id} shape')))
 
         on-rotate
         #(do (dom/stop-propagation %)
              (st/emit! (dw/start-rotate [shape])))]
-    [:& controls {:shape shape'
-                  :zoom zoom
-                  :on-rotate on-rotate
-                  :on-resize on-resize}]))
+
+    [:*
+     [:& controls {:shape shape'
+                   :zoom zoom
+                   :on-rotate on-rotate
+                   :on-resize on-resize}]]))
 
 (mf/defc selection-handlers
   [{:keys [selected edition zoom] :as props}]
-  (let [data    (mf/deref refs/workspace-data)
-        objects (:objects data)
-
-        ;; We need remove posible nil values because on shape
+  (let [;; We need remove posible nil values because on shape
         ;; deletion many shape will reamin selected and deleted
         ;; in the same time for small instant of time
-        shapes (->> (map #(get objects %) selected)
+        shapes (->> (mf/deref (refs/objects-by-id selected))
                     (remove nil?))
         num (count shapes)
         {:keys [id type] :as shape} (first shapes)]
@@ -246,7 +246,6 @@
       (> num 1)
       [:& multiple-selection-handlers {:shapes shapes
                                        :selected selected
-                                       :objects objects
                                        :zoom zoom}]
 
       (and (= type :text)
@@ -261,5 +260,4 @@
 
       :else
       [:& single-selection-handlers {:shape shape
-                                     :zoom zoom
-                                     :objects objects}])))
+                                     :zoom zoom}])))

@@ -29,6 +29,7 @@
    [uxbox.main.ui.workspace.ruler :refer [ruler]]
    [uxbox.main.ui.workspace.selection :refer [selection-handlers]]
    [uxbox.main.ui.workspace.presence :as presence]
+   [uxbox.main.ui.workspace.snap-feedback :refer [snap-feedback]]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.perf :as perf]
@@ -305,10 +306,13 @@
                                  :zoom zoom
                                  :edition edition}])
 
+
        (when-let [drawing-shape (:drawing local)]
          [:& draw-area {:shape drawing-shape
                         :zoom zoom
                         :modifiers (:modifiers local)}])
+
+       [:& snap-feedback]
 
        (if (contains? flags :grid)
          [:& grid])]

@@ -8,8 +8,9 @@
 ;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.util.geom.point
-  (:refer-clojure :exclude [divide])
+  (:refer-clojure :exclude [divide min max])
   (:require
+   [cljs.core :as c]
    [cuerdas.core :as str]
    [uxbox.util.math :as mth]
    [cognitect.transit :as t]))
@@ -69,6 +70,15 @@
   (assert (point? p))
   (assert (point? other))
   (Point. (/ x ox) (/ y oy)))
+
+
+(defn min
+  [{x1 :x y1 :y :as p1} {x2 :x y2 :y :as p2}]
+  (Point. (c/min x1 x2) (c/min y1 y2)))
+
+(defn max
+  [{x1 :x y1 :y :as p1} {x2 :x y2 :y :as p2}]
+  (Point. (c/max x1 x2) (c/max y1 y2)))
 
 (defn inverse
   [{:keys [x y] :as p}]

@@ -24,6 +24,7 @@
    [uxbox.util.geom.path :as path]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.i18n :as i18n :refer [t]]
+   [uxbox.util.geom.snap :as snap]
    [uxbox.common.uuid :as uuid]))
 
 ;; --- Events
@@ -115,28 +116,30 @@
         (rx/of handle-drawing-generic)))))
 
 (def handle-drawing-generic
-  (letfn [(initialize-drawing [state point]
+  (letfn [(initialize-drawing [state point frame-id]
             (let [shape (get-in state [:workspace-local :drawing])
                   shape (geom/setup shape {:x (:x point)
                                            :y (:y point)
-                                           :width 10
-                                           :height 10})]
-              (assoc-in state [:workspace-local :drawing] (assoc shape ::initialized? true))))
+                                           :width 1
+                                           :height 1})]
+              (assoc-in state [:workspace-local :drawing] (-> shape
+                                                              (assoc :frame-id frame-id)
+                                                              (assoc ::initialized? true)))))
 
-          (resize-shape [{:keys [x y] :as shape} initial point lock?]
+          (resize-shape [{:keys [x y] :as shape} initial snap-data point lock?]
             (let [shape' (geom/shape->rect-shape shape)
                   shapev (gpt/point (:width shape') (:height shape'))
-                  deltav (gpt/subtract point initial)
+                  point-snap (snap/closest-snap-point snap-data [shape] point)
+                  deltav (gpt/to-vec initial point-snap)
                   scalev (gpt/divide (gpt/add shapev deltav) shapev)
                   scalev (if lock? (let [v (max (:x scalev) (:y scalev))] (gpt/point v v)) scalev)]
-
               (-> shape
                   (assoc-in [:modifiers :resize-vector] scalev)
                   (assoc-in [:modifiers :resize-origin] (gpt/point x y))
                   (assoc-in [:modifiers :resize-rotation] 0))))
 
-          (update-drawing [state initial point lock?]
-            (update-in state [:workspace-local :drawing] resize-shape initial point lock?))]
+          (update-drawing [state initial snap-data point lock?]
+            (update-in state [:workspace-local :drawing] resize-shape initial snap-data point lock?))]
 
     (ptk/reify ::handle-drawing-generic
       ptk/WatchEvent
@@ -145,15 +148,29 @@
               stoper? #(or (ms/mouse-up? %) (= % :interrupt))
               stoper (rx/filter stoper? stream)
               initial @ms/mouse-position
+              snap-data (get state :workspace-snap-data)
               mouse (->> ms/mouse-position
-                         (rx/map #(gpt/divide % (gpt/point zoom))))]
+                         (rx/map #(gpt/divide % (gpt/point zoom))))
+
+              page-id (get state :current-page-id)
+              objects (get-in state [:workspace-data page-id :objects])
+
+              frames (->> objects
+                          vals
+                          (filter (comp #{:frame} :type))
+                          (remove #(= (:id %) uuid/zero) ))
+
+              frame-id (->> frames
+                            (filter #(geom/has-point? % initial))
+                            first
+                            :id)]
           (rx/concat
            (->> mouse
                 (rx/take 1)
-                (rx/map (fn [pt] #(initialize-drawing % pt))))
+                (rx/map (fn [pt] #(initialize-drawing % pt frame-id))))
            (->> mouse
                 (rx/with-latest vector ms/mouse-position-ctrl)
-                (rx/map (fn [[pt ctrl?]] #(update-drawing % initial pt ctrl?)))
+                (rx/map (fn [[pt ctrl?]] #(update-drawing % initial snap-data pt ctrl?)))
                 (rx/take-until stoper))
            (rx/of handle-finish-drawing)))))))
 
@@ -280,8 +297,16 @@
         (rx/concat
          (rx/of dw/clear-drawing)
          (when (::initialized? shape)
-           (let [shape (-> shape
+           (let [shape-min-width (case (:type shape)
+                                   :text 20
+                                   5)
+                 shape-min-height (case (:type shape)
+                                    :text 16
+                                    5)
+                 shape (-> shape
                            (geom/transform-shape)
+                           (update :width #(max shape-min-width %))
+                           (update :height #(max shape-min-height %))
                            (dissoc shape ::initialized?))]
              ;; Add & select the created shape to the workspace
              (rx/of dw/deselect-all

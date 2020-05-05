@@ -9,7 +9,8 @@
    [uxbox.common.spec :as us]
    [uxbox.common.uuid :as uuid]
    [uxbox.main.worker :as uw]
-   [uxbox.util.geom.shapes :as geom]))
+   [uxbox.util.geom.shapes :as geom]
+   [uxbox.util.geom.snap :as snap]))
 
 ;; --- Protocols
 
@@ -19,6 +20,7 @@
 
 (declare setup-selection-index)
 (declare update-selection-index)
+(declare update-snap-data)
 (declare reset-undo)
 (declare append-undo)
 
@@ -51,7 +53,8 @@
        (let [page (:workspace-page state)
              uidx (get-in state [:workspace-local :undo-index] ::not-found)]
          (rx/concat
-          (rx/of (update-selection-index (:id page)))
+          (rx/of (update-selection-index (:id page))
+                 (update-snap-data (:id page)))
 
           (when (and save-undo? (not= uidx ::not-found))
             (rx/of (reset-undo uidx)))
@@ -138,6 +141,15 @@
                   :page-id page-id
                   :objects objects})))))
 
+(defn update-snap-data
+  [page-id]
+  (ptk/reify ::update-snap-data
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [page  (get-in state [:workspace-pages page-id])
+            objects (get-in page [:data :objects])]
+        (-> state
+            (assoc :workspace-snap-data (snap/initialize-snap-data objects)))))))
 
 ;; --- Common Helpers & Events
 

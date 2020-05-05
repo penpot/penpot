@@ -3,16 +3,19 @@
   (:require
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
+   [beicon.core :as rx]
    [potok.core :as ptk]
    [uxbox.common.data :as d]
    [uxbox.common.spec :as us]
    [uxbox.main.data.helpers :as helpers]
    [uxbox.main.data.workspace.common :as dwc]
    [uxbox.main.refs :as refs]
+   [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]
-   [uxbox.util.geom.shapes :as gsh]))
+   [uxbox.util.geom.shapes :as gsh]
+   [uxbox.util.geom.snap :as snap]))
 
 ;; -- Declarations
 
@@ -62,23 +65,38 @@
                 :bottom-left [ex sy])]
     (gpt/point x y)))
 
+(defn finish-transform [state]
+  (update state :workspace-local dissoc :transform))
+
+(defn handler->initial-point [{:keys [x1 y1 x2 y2] :as shape} handler]
+  (let [[x y] (case handler
+                :top-left [x1 y1]
+                :top [x1 y1]
+                :top-right [x2 y1]
+                :right [x2 y1]
+                :bottom-right [x2 y2]
+                :bottom [x2 y2]
+                :bottom-left [x1 y2]
+                :left [x1 y2])] 
+    (gpt/point x y)))
+
 ;; -- RESIZE
 (defn start-resize
-  [handler ids shape objects]
-  (letfn [(resize [shape initial [point lock?]]
-            (let [frame (get objects (:frame-id shape))
-                  {:keys [width height rotation]} shape
-
+  [handler ids shape]
+  (letfn [(resize [shape initial resizing-shapes snap-data [point lock?]]
+            (let [{:keys [width height rotation]} shape
                   shapev (-> (gpt/point width height))
 
                   ;; Vector modifiers depending on the handler
                   handler-modif (let [[x y] (handler-modifiers handler)] (gpt/point x y))
 
+                  point-snap (snap/closest-snap-point snap-data resizing-shapes point)
+
                   ;; Difference between the origin point in the coordinate system of the rotation
-                  deltav (-> (gpt/subtract point initial)
+                  deltav (-> (gpt/to-vec initial (if (= rotation 0) point-snap point))
                              (gpt/transform (gmt/rotate-matrix (- rotation)))
                              (gpt/multiply handler-modif))
-
+                  
                   ;; Resize vector
                   scalev (gpt/divide (gpt/add shapev deltav) shapev)
 
@@ -113,27 +131,41 @@
           ;;     (rx/of point)))
           ]
     (reify
+      ptk/UpdateEvent
+      (update [_ state]
+        (-> state
+            (assoc-in [:workspace-local :transform] :resize)))
+
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [initial (apply-zoom @ms/mouse-position)
-              shape  (gsh/shape->rect-shape shape)
-              stoper (rx/filter ms/mouse-up? stream)]
+        (let [shape  (gsh/shape->rect-shape shape)
+              initial (handler->initial-point shape handler)
+              stoper (rx/filter ms/mouse-up? stream)
+              snap-data (get state :workspace-snap-data)
+              page-id (get state :current-page-id)
+              resizing-shapes (map #(get-in state [:workspace-data page-id :objects %]) ids)]
           (rx/concat
            (->> ms/mouse-position
                 (rx/map apply-zoom)
                 ;; (rx/mapcat apply-grid-alignment)
                 (rx/with-latest vector ms/mouse-position-ctrl)
                 (rx/map normalize-proportion-lock)
-                (rx/mapcat (partial resize shape initial))
+                (rx/mapcat (partial resize shape initial resizing-shapes snap-data))
                 (rx/take-until stoper))
            #_(rx/empty)
-           (rx/of (apply-modifiers ids))))))))
+           (rx/of (apply-modifiers ids)
+                  finish-transform)))))))
 
 
 ;; -- ROTATE
 (defn start-rotate
   [shapes]
   (ptk/reify ::start-rotate
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:workspace-local :transform] :rotate)))
+
     ptk/WatchEvent
     (watch [_ state stream]
       (let [stoper (rx/filter ms/mouse-up? stream)
@@ -161,36 +193,55 @@
                         (let [delta-angle (calculate-angle pos ctrl?)]
                           (set-rotation delta-angle shapes group-center))))
               (rx/take-until stoper))
-         (rx/of (apply-modifiers (map :id shapes))))))))
+         (rx/of (apply-modifiers (map :id shapes))
+                finish-transform))))))
 
 ;; -- MOVE
+
+(declare start-move)
 
 (defn start-move-selected
   []
   (ptk/reify ::start-move-selected
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [selected (get-in state [:workspace-local :selected])
-            stoper (rx/filter ms/mouse-up? stream)
-            zero-point? #(= % (gpt/point 0 0))
-            initial (apply-zoom @ms/mouse-position)
-            position @ms/mouse-position
-            counter  (volatile! 0)]
+      (let [initial (apply-zoom @ms/mouse-position)
+            selected (get-in state [:workspace-local :selected])
+            stopper (rx/filter ms/mouse-up? stream)]
+        (->> ms/mouse-position
+             (rx/take-until stopper)
+             (rx/map apply-zoom)
+             (rx/map #(gpt/to-vec initial %))
+             (rx/map #(gpt/length %))
+             (rx/filter #(> % 0.5))
+             (rx/take 1)
+             (rx/map #(start-move initial selected)))))))
+
+(defn start-move
+  [from-position ids]
+  (ptk/reify ::start-move
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:workspace-local :transform] :move)))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id (get state :current-page-id)
+            shapes (mapv #(get-in state [:workspace-data page-id :objects %]) ids)
+            snap-data (get state :workspace-snap-data)
+            stopper (rx/filter ms/mouse-up? stream)]
         (rx/concat
          (->> ms/mouse-position
+              (rx/take-until stopper)
               (rx/map apply-zoom)
-              (rx/filter (complement zero-point?))
-              (rx/map #(gpt/subtract % initial))
+              (rx/map #(gpt/to-vec from-position %))
+              (rx/map (snap/closest-snap-move snap-data shapes))
               (rx/map gmt/translate-matrix)
-              (rx/filter #(not (gmt/base? %)))
-              (rx/map #(set-modifiers selected {:displacement %}))
-              (rx/tap #(vswap! counter inc))
-              (rx/take-until stoper))
-         (->> (rx/create (fn [sink] (sink @counter)))
-              (rx/mapcat (fn [n]
-                           (if (zero? n)
-                             (rx/empty)
-                             (rx/of (apply-modifiers selected)))))))))))
+              (rx/map #(set-modifiers ids {:displacement %})))
+
+         (rx/of (apply-modifiers ids)
+                finish-transform))))))
 
 (defn- get-displacement-with-grid
   "Retrieve the correct displacement delta point for the
@@ -209,31 +260,60 @@
 (defn- get-displacement
   "Retrieve the correct displacement delta point for the
   provided direction speed and distances thresholds."
-  [shape direction]
+  [direction]
   (case direction
     :up (gpt/point 0 (- 1))
     :down (gpt/point 0 1)
     :left (gpt/point (- 1) 0)
     :right (gpt/point 1 0)))
 
+(s/def ::direction #{:up :down :right :left})
+
 (defn move-selected
   [direction align?]
   (us/verify ::direction direction)
   (us/verify boolean? align?)
 
-  (ptk/reify ::move-selected
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [pid (:current-page-id state)
-            selected (get-in state [:workspace-local :selected])
-            options (get-in state [:workspace-data pid :options])
-            shapes (map #(get-in state [:workspace-data pid :objects %]) selected)
-            shape (gsh/shapes->rect-shape shapes)
-            displacement (if align?
-                           (get-displacement-with-grid shape direction options)
-                           (get-displacement shape direction))]
-        (rx/of (set-modifiers selected displacement)
-               (apply-modifiers selected))))))
+  (let [same-event (js/Symbol "same-event")]
+    (ptk/reify ::move-selected
+      IDeref
+      (-deref [_] direction)
+      
+      ptk/UpdateEvent
+      (update [_ state]
+        (if (nil? (get-in state [:workspace-local :current-move-selected]))
+          (-> state
+              (assoc-in [:workspace-local :transform] :move)
+              (assoc-in [:workspace-local :current-move-selected] same-event))
+          state))
+
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (if (= same-event (get-in state [:workspace-local :current-move-selected]))
+          (let [selected (get-in state [:workspace-local :selected])
+                move-events (->> stream
+                                 (rx/filter (ptk/type? ::move-selected))
+                                 (rx/filter #(= direction (deref %))))
+                stopper (->> move-events
+                             (rx/debounce 100)
+                             (rx/first)) 
+                mov-vec (get-displacement direction)]
+            
+            (rx/concat
+             (rx/merge
+              (->> move-events
+                   (rx/take-until stopper)
+                   (rx/scan #(gpt/add %1 mov-vec) (gpt/point 0 0))
+                   (rx/map #(set-modifiers selected {:displacement (gmt/translate-matrix %)})))
+              (rx/of (move-selected direction align?)))
+             
+             (rx/of (apply-modifiers selected)
+                    (fn [state] (-> state
+                                    (update :workspace-local dissoc :current-move-selected))))
+             (->>
+              (rx/timer 100)
+              (rx/map (fn [] finish-transform)))))
+            (rx/empty))))))
 
 
 ;; -- Apply modifiers
@@ -301,7 +381,6 @@
   [ids]
   (us/verify (s/coll-of uuid?) ids)
   (ptk/reify ::apply-modifiers
-
     dwc/IUpdateGroup
     (get-ids [_] ids)
 
