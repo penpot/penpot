@@ -5,20 +5,16 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2016-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.config
   (:require [uxbox.util.object :as obj]))
 
-(defn- get-current-origin
-  []
-  (let [location (obj/get goog.global "location")]
-    (obj/get location "origin")))
+(this-as global
+  (let [config (obj/get global "uxboxConfig")
+        public-url (obj/get config "publicURL" "http://localhost:6060")]
+    (def default-language "en")
+    (def demo-warning (obj/get config "demoWarning" true))
+    (def url public-url)
+    (def default-theme "default")))
 
-(let [config (obj/get goog.global "uxboxConfig")
-      public-url (obj/get config "publicURL" "http://localhost:6060")]
-
-  (def default-language "en")
-  (def demo-warning (obj/get config "demoWarning" true))
-  (def url public-url)
-  (def default-theme "default"))
