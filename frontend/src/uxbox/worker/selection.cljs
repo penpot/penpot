@@ -16,6 +16,7 @@
    [cuerdas.core :as str]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
+   [uxbox.common.pages :as cp]
    [uxbox.common.uuid :as uuid]
    [uxbox.worker.impl :as impl]
    [uxbox.util.geom.shapes :as geom]
@@ -25,7 +26,6 @@
 
 (declare resolve-object)
 (declare index-object)
-(declare retrieve-toplevel-shapes)
 (declare calculate-bounds)
 (declare create-index)
 
@@ -77,8 +77,7 @@
   (let [bounds (calculate-bounds objects)]
     (reduce index-object
             (qdt/create bounds)
-            (->> (retrieve-toplevel-shapes objects)
-                 (map #(get objects %))))))
+            (cp/select-toplevel-shapes objects))))
 
 (defn- index-object
   [index {:keys [id x y width height] :as obj}]
@@ -96,21 +95,3 @@
         (assoc id item)
         (update ::width max width)
         (update ::height max height))))
-
-(defn- retrieve-toplevel-shapes
-  [objects]
-  (let [lookup #(get objects %)
-        root   (lookup uuid/zero)
-        childs (:shapes root)]
-    (loop [id  (first childs)
-           ids (rest childs)
-           res []]
-      (if (nil? id)
-        res
-        (let [obj (lookup id)
-              typ (:type obj)]
-          (recur (first ids)
-                 (rest ids)
-                 (if (= :frame typ)
-                   (into res (:shapes obj))
-                   (conj res id))))))))

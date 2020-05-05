@@ -7,13 +7,13 @@
 (ns uxbox.util.geom.shapes
   (:require
    [clojure.spec.alpha :as s]
+   [uxbox.common.pages :as cp]
    [uxbox.common.spec :as us]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.math :as mth]
    [uxbox.util.data :as d]
-   [uxbox.util.debug :as debug]
-   [uxbox.main.data.helpers :as helpers]))
+   [uxbox.util.debug :as debug]))
 
 ;; --- Relative Movement
 
@@ -56,7 +56,7 @@
 (defn recursive-move
   "Move the shape and all its recursive children."
   [shape dpoint objects]
-  (let [children-ids (helpers/get-children (:id shape) objects)
+  (let [children-ids (cp/get-children (:id shape) objects)
         children (map #(get objects %) children-ids)]
     (map #(move % dpoint) (cons shape children))))
 

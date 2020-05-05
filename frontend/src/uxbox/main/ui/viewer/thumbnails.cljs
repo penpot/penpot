@@ -15,9 +15,9 @@
    [rumext.alpha :as mf]
    [uxbox.builtins.icons :as i]
    [uxbox.common.data :as d]
+   [uxbox.common.pages :as cp]
    [uxbox.main.store :as st]
    [uxbox.main.data.viewer :as dv]
-   [uxbox.main.data.helpers :as helpers]
    [uxbox.main.ui.components.dropdown :refer [dropdown']]
    [uxbox.main.ui.shapes.frame :as frame]
    [uxbox.main.exports :as exports]
@@ -86,7 +86,7 @@
                      (gmt/translate-matrix))
 
         frame-id (:id frame)
-        modifier-ids (concat [frame-id] (helpers/get-children frame-id objects))
+        modifier-ids (concat [frame-id] (cp/get-children frame-id objects))
 
         update-fn (fn [state shape-id]
                     (-> state

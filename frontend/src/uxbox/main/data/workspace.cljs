@@ -20,7 +20,6 @@
    [uxbox.common.uuid :as uuid]
    [uxbox.config :as cfg]
    [uxbox.main.constants :as c]
-   [uxbox.main.data.helpers :as helpers]
    [uxbox.main.data.workspace.common :as dwc]
    [uxbox.main.data.workspace.notifications :as dwn]
    [uxbox.main.data.workspace.persistence :as dwp]
@@ -197,7 +196,7 @@
       (let [page-id (:current-page-id state)
             objects (get-in state [:workspace-data page-id :objects])
             groups-to-adjust (->> ids
-                                  (mapcat #(reverse (helpers/get-all-parents % objects)))
+                                  (mapcat #(reverse (cp/get-all-parents % objects)))
                                   (map #(get objects %))
                                   (filter #(= (:type %) :group))
                                   (map #(:id %))
@@ -413,7 +412,7 @@
             unames   (retrieve-used-names objects)
             name     (generate-unique-name unames (:name shape))
 
-            frames   (dwc/retrieve-frames objects)
+            frames   (cp/select-frames objects)
 
             frame-id (if (= :frame (:type shape))
                        uuid/zero
@@ -627,7 +626,7 @@
               grouped #{:frame :group}]
           (update-in state [:workspace-data page-id :objects]
                      (fn [objects]
-                       (->> (d/concat [id] (helpers/get-children id objects))
+                       (->> (d/concat [id] (cp/get-children id objects))
                             (map #(get objects %))
                             (remove #(grouped (:type %)))
                             (reduce #(update %1 (:id %2) update-shape) objects)))))))))
@@ -707,13 +706,13 @@
       (let [page-id (:current-page-id state)
             session-id (:session-id state)
             objects (get-in state [:workspace-data page-id :objects])
-            cpindex (helpers/calculate-child-parent-map objects)
+            cpindex (cp/calculate-child-parent-map objects)
 
             del-change #(array-map :type :del-obj :id %)
 
             rchanges
             (reduce (fn [res id]
-                      (let [chd (helpers/get-children id objects)]
+                      (let [chd (cp/get-children id objects)]
                         (into res (d/concat
                                    (mapv del-change (reverse chd))
                                    [(del-change id)]))))
@@ -806,7 +805,7 @@
       (let [page-id (:current-page-id state)
             selected (get-in state [:workspace-local :selected])
             objects (get-in state [:workspace-data page-id :objects])
-            parent-id (helpers/get-parent ref-id objects)]
+            parent-id (cp/get-parent ref-id objects)]
         (rx/of (dwc/commit-changes [{:type :mov-objects
                                  :parent-id parent-id
                                  :index index
@@ -1028,7 +1027,7 @@
     (update [_ state]
       (let [page-id (get-in state [:workspace-page :id])
             objects (get-in state [:workspace-data page-id :objects])
-            childs (helpers/get-children id objects)]
+            childs (cp/get-children id objects)]
         (update-in state [:workspace-data page-id :objects]
                    (fn [objects]
                      (reduce (fn [objects id]
@@ -1273,7 +1272,7 @@
         (when (and (= 1 (count selected))
                    (= (:type group) :group))
           (let [shapes    (:shapes group)
-                parent-id (helpers/get-parent group-id objects)
+                parent-id (cp/get-parent group-id objects)
                 parent    (get objects parent-id)
                 index-in-parent (->> (:shapes parent)
                                      (map-indexed vector)

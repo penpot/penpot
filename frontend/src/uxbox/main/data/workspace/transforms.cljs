@@ -7,7 +7,7 @@
    [potok.core :as ptk]
    [uxbox.common.data :as d]
    [uxbox.common.spec :as us]
-   [uxbox.main.data.helpers :as helpers]
+   [uxbox.common.pages :as cp]
    [uxbox.main.data.workspace.common :as dwc]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
@@ -77,7 +77,7 @@
                 :bottom-right [x2 y2]
                 :bottom [x2 y2]
                 :bottom-left [x1 y2]
-                :left [x1 y2])] 
+                :left [x1 y2])]
     (gpt/point x y)))
 
 ;; -- RESIZE
@@ -96,7 +96,7 @@
                   deltav (-> (gpt/to-vec initial (if (= rotation 0) point-snap point))
                              (gpt/transform (gmt/rotate-matrix (- rotation)))
                              (gpt/multiply handler-modif))
-                  
+
                   ;; Resize vector
                   scalev (gpt/divide (gpt/add shapev deltav) shapev)
 
@@ -278,7 +278,7 @@
     (ptk/reify ::move-selected
       IDeref
       (-deref [_] direction)
-      
+
       ptk/UpdateEvent
       (update [_ state]
         (if (nil? (get-in state [:workspace-local :current-move-selected]))
@@ -296,9 +296,9 @@
                                  (rx/filter #(= direction (deref %))))
                 stopper (->> move-events
                              (rx/debounce 100)
-                             (rx/first)) 
+                             (rx/first))
                 mov-vec (get-displacement direction)]
-            
+
             (rx/concat
              (rx/merge
               (->> move-events
@@ -306,7 +306,7 @@
                    (rx/scan #(gpt/add %1 mov-vec) (gpt/point 0 0))
                    (rx/map #(set-modifiers selected {:displacement (gmt/translate-matrix %)})))
               (rx/of (move-selected direction align?)))
-             
+
              (rx/of (apply-modifiers selected)
                     (fn [state] (-> state
                                     (update :workspace-local dissoc :current-move-selected))))
@@ -332,7 +332,8 @@
                                (or recurse-frames? (not (= :frame (:type shape))))))
 
              ;; ID's + Children but remove frame children if the flag is set to false
-             ids-with-children (concat ids (mapcat #(helpers/get-children % objects) (filter not-frame-id? ids)))
+             ids-with-children (concat ids (mapcat #(cp/get-children % objects)
+                                                   (filter not-frame-id? ids)))
 
              ;; For each shape updates the modifiers given as arguments
              update-shape (fn [state shape-id]
@@ -373,7 +374,7 @@
 
           (let [objects (get-in state [:workspace-data page-id :objects])
                 id->obj #(get objects %)
-                get-children (fn [shape] (map id->obj (helpers/get-children (:id shape) objects)))
+                get-children (fn [shape] (map id->obj (cp/get-children (:id shape) objects)))
                 shapes (concat shapes (mapcat get-children shapes))]
             (rotate-around-center state delta-rotation center shapes)))))))
 
@@ -390,7 +391,7 @@
             objects (get-in state [:workspace-data page-id :objects])
 
             ;; ID's + Children
-            ids-with-children (concat ids (mapcat #(helpers/get-children % objects) ids))
+            ids-with-children (concat ids (mapcat #(cp/get-children % objects) ids))
 
             ;; For each shape applies the modifiers by transforming the objects
             update-shape

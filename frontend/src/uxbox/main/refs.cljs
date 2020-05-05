@@ -12,9 +12,9 @@
   (:require
    [okulary.core :as l]
    [beicon.core :as rx]
+   [uxbox.common.pages :as cp]
    [uxbox.main.constants :as c]
-   [uxbox.main.store :as st]
-   [uxbox.main.data.helpers :as helpers]))
+   [uxbox.main.store :as st]))
 
 (def route
   (l/derived :route st/state))
@@ -86,7 +86,7 @@
                   objects (get-in state [:workspace-data page-id :objects])
                   selected (get-in state [:workspace-local :selected])
                   shape (get objects id)
-                  children (helpers/get-children id objects)]
+                  children (cp/get-children id objects)]
               (some selected children)))]
     (l/derived selector st/state)))
 
@@ -98,7 +98,7 @@
             (let [selected (get-in state [:workspace-local :selected])
                   page-id (get-in state [:workspace-page :id])
                   objects (get-in state [:workspace-data page-id :objects])
-                  children (mapcat #(helpers/get-children % objects) selected)]
+                  children (mapcat #(cp/get-children % objects) selected)]
               (into selected children)))]
     (l/derived selector st/state)))
 
