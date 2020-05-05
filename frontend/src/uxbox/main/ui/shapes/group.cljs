@@ -19,14 +19,14 @@
   (mf/fnc group-shape
     {::mf/wrap-props false}
     [props]
-    (let [frame (unchecked-get props "frame")
-          shape (unchecked-get props "shape")
-          children (unchecked-get props "children")
+    (let [frame  (unchecked-get props "frame")
+          shape  (unchecked-get props "shape")
+          childs (unchecked-get props "childs")
           is-child-selected? (unchecked-get props "is-child-selected?")
           {:keys [id x y width height]} shape
           transform (geom/transform-matrix shape)]
       [:g
-       (for [item children]
+       (for [item childs]
          [:& shape-wrapper
           {:frame frame :shape item :key (:id item)}])
 
