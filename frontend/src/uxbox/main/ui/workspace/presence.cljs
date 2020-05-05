@@ -14,7 +14,7 @@
    [uxbox.main.store :as st]
    [uxbox.util.router :as rt]))
 
-(def ^:const pointer-icon-path
+(def pointer-icon-path
   (str "M5.292 4.027L1.524.26l-.05-.01L0 0l.258 1.524 3.769 3.768zm-.45 "
        "0l-.313.314L1.139.95l.314-.314zm-.5.5l-.315.316-3.39-3.39.315-.315 "
        "3.39 3.39zM1.192.526l-.668.667L.431.646.64.43l.552.094z"))
