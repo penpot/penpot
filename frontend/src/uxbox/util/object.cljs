@@ -14,12 +14,10 @@
 
 (defn get
   ([obj k]
-   (when (object? obj)
+   (when-not (nil? obj)
      (unchecked-get obj k)))
   ([obj k default]
-   (if (object? obj)
-     (or (unchecked-get obj k) default)
-     default)))
+   (or (get obj k) default)))
 
 (defn get-in
   [obj keys]

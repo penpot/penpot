@@ -20,12 +20,14 @@
              :depends-on #{:shared}}}
    :compiler-options
    {:output-feature-set :es8
-    ;; :optimizations :simple
     :output-wrapper false}
+
    :release
    {:compiler-options
     {:fn-invoke-direct true
      :source-map true
+     ;; :pseudo-names true
+     ;; :pretty-print true
      :anon-fn-naming-policy :off
      :source-map-detail-level :all}}}
 
