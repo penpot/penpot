@@ -31,7 +31,7 @@
     funcool/datoteka {:mvn/version "1.2.0"}
     binaryage/devtools {:mvn/version "RELEASE"}
 
-    thheller/shadow-cljs {:mvn/version "2.8.93"}
+    thheller/shadow-cljs {:mvn/version "2.8.110"}
 
     ;; i18n parsing
     carocad/parcera {:mvn/version "0.11.0"}
