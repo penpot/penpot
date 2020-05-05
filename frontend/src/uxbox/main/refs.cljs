@@ -65,6 +65,9 @@
          (get-in % [:workspace-data page-id]))
       (l/derived st/state)))
 
+(def workspace-objects
+  (l/derived :objects workspace-data))
+
 (defn object-by-id
   [id]
   (letfn [(selector [state]
@@ -83,15 +86,6 @@
                    (filter identity)
                    (vec))))]
     (l/derived selector st/state =)))
-
-(def frames
-  (letfn [(selector [data]
-            (->> (get-in data [:objects uuid/zero])
-                 :shapes
-                 (map #(get-in data [:objects %]))
-                 (filter #(= (:type %) :frame))
-                 (sort-by :name)))]
-    (l/derived selector workspace-data)))
 
 (defn is-child-selected?
   [id]
@@ -140,15 +134,8 @@
 
 ;; ---- Viewer refs
 
-(def viewer-data-ref
+(def viewer-data
   (l/derived :viewer-data st/state))
 
-(def viewer-local-ref
+(def viewer-local
   (l/derived :viewer-local st/state))
-
-(def interactions-mode
-  (l/derived :interactions-mode viewer-local-ref))
-
-(def show-interactions?
-  (l/derived :show-interactions? viewer-local-ref))
-

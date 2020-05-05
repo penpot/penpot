@@ -32,8 +32,8 @@
   (:import goog.events.EventType))
 
 (mf/defc main-panel
-  [{:keys [data zoom index]}]
-  (let [locale  (i18n/use-locale)
+  [{:keys [data local index]}]
+  (let [locale  (mf/deref i18n/locale)
         frames  (:frames data [])
         objects (:objects data)
         frame   (get frames index)]
@@ -49,7 +49,8 @@
 
        :else
        [:& frame-svg {:frame frame
-                      :zoom zoom
+                      :show-interactions? (:show-interactions? local)
+                      :zoom (:zoom local)
                       :objects objects}])]))
 
 (mf/defc viewer-content
@@ -101,7 +102,7 @@
          [:& thumbnails-panel {:index index
                                :data data}])
        [:& main-panel {:data data
-                       :zoom (:zoom local)
+                       :local local
                        :index index}]]]]))
 
 
@@ -113,8 +114,8 @@
    (mf/deps page-id token)
    #(st/emit! (dv/initialize page-id token)))
 
-  (let [data (mf/deref refs/viewer-data-ref)
-        local (mf/deref refs/viewer-local-ref)]
+  (let [data (mf/deref refs/viewer-data)
+        local (mf/deref refs/viewer-local)]
     (when data
       [:& viewer-content {:index index
                           :local local

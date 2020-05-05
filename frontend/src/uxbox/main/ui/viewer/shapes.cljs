@@ -23,15 +23,10 @@
    [uxbox.main.ui.shapes.path :as path]
    [uxbox.main.ui.shapes.rect :as rect]
    [uxbox.main.ui.shapes.text :as text]
+   [uxbox.util.object :as obj]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.geom.shapes :as geom]))
-
-;; TODO: reivisit show interactions ref
-;; TODO: revisit refs/frames
-
-
-;; --- Interaction actions (in viewer mode)
 
 (defn on-mouse-down
   [event {:keys [interactions] :as shape}]
@@ -49,9 +44,14 @@
   (let [shape-wrapper (shape-wrapper-factory objects)
         frame-shape   (frame/frame-shape shape-wrapper)]
     (mf/fnc frame-wrapper
-      [{:keys [shape] :as props}]
-      (let [childs (mapv #(get objects %) (:shapes shape))
-            shape (geom/transform-shape shape)]
+      {::mf/wrap-props false}
+      [props]
+      (let [shape (unchecked-get props "shape")
+            childs (mapv #(get objects %) (:shapes shape))
+            shape  (geom/transform-shape shape)
+            props  (obj/merge! #js {} props
+                               #js {:shape shape
+                                    :childs childs})]
         [:& frame-shape {:shape shape :childs childs}]))))
 
 (defn group-wrapper-factory
@@ -59,11 +59,13 @@
   (let [shape-wrapper (shape-wrapper-factory objects)
         group-shape   (group/group-shape shape-wrapper)]
     (mf/fnc group-wrapper
-      [{:keys [shape frame] :as props}]
-      (let [children (mapv #(get objects %) (:shapes shape))]
-        [:& group-shape {:frame frame
-                         :shape shape
-                         :children children}]))))
+      {::mf/wrap-props false}
+      [props]
+      (let [shape  (unchecked-get props "shape")
+            childs (mapv #(get objects %) (:shapes shape))
+            props  (obj/merge! #js {} props #
+                               js {:childs childs})]
+        [:> group-shape props]))))
 
 (defn generic-wrapper-factory
   [component]
@@ -73,6 +75,7 @@
     (let [{:keys [x y width height]
            :as shape} (->> (unchecked-get props "shape")
                            (geom/selection-rect-shape))
+
           show-interactions? (unchecked-get props "show-interactions?")
           on-mouse-down (mf/use-callback
                          (mf/deps shape)
@@ -101,12 +104,16 @@
 (defn shape-wrapper-factory
   [objects]
   (mf/fnc shape-wrapper
-    [{:keys [frame shape] :as props}]
-    (let [group-wrapper (mf/use-memo (mf/deps objects)
-                                     #(group-wrapper-factory objects))]
+    {::mf/wrap-props false}
+    [props]
+    (let [group-wrapper (mf/use-memo (mf/deps objects) #(group-wrapper-factory objects))
+          shape (unchecked-get props "shape")
+          frame (unchecked-get props "frame")
+          show-interactions? (unchecked-get props "show-interactions?")]
       (when (and shape (not (:hidden shape)))
         (let [shape (geom/transform-shape frame shape)
-              opts #js {:shape shape}]
+              opts #js {:shape shape
+                        :show-interactions? show-interactions?}]
           (case (:type shape)
             :curve  [:> path-wrapper opts]
             :text   [:> text-wrapper opts]
@@ -115,12 +122,14 @@
             :path   [:> path-wrapper opts]
             :image  [:> image-wrapper opts]
             :circle [:> circle-wrapper opts]
-            :group  [:> group-wrapper {:shape shape :frame frame}]
-            nil))))))
+            :group  [:> group-wrapper
+                     {:shape shape
+                      :frame frame
+                      :show-interactions? show-interactions?}]))))))
 
 (mf/defc frame-svg
   {::mf/wrap [mf/memo]}
-  [{:keys [objects frame zoom] :or {zoom 1} :as props}]
+  [{:keys [objects frame zoom show-interactions?] :or {zoom 1} :as props}]
   (let [modifier (-> (gpt/point (:x frame) (:y frame))
                      (gpt/negate)
                      (gmt/translate-matrix))
@@ -145,5 +154,7 @@
            :version "1.1"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
            :xmlns "http://www.w3.org/2000/svg"}
-     [:& wrapper {:shape frame :view-box vbox}]]))
+     [:& wrapper {:shape frame
+                  :show-interactions? show-interactions?
+                  :view-box vbox}]]))
 
