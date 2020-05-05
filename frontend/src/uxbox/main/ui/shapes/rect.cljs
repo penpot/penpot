@@ -41,11 +41,8 @@
   {::mf/wrap-props false}
   [props]
   (let [shape (unchecked-get props "shape")
-        {:keys [x y width height]} shape
-        transform (geom/transform-matrix shape)
-
+        {:keys [x y width height]} (geom/selection-rect-shape shape)
         show-interactions? (mf/deref refs/show-interactions?)
-
         on-mouse-down (mf/use-callback
                        (mf/deps shape)
                        #(common/on-mouse-down-viewer % shape))]
@@ -59,7 +56,6 @@
                          :y (- y 1)
                          :width (+ width 2)
                          :height (+ height 2)
-                         :transform transform
                          :fill "#31EFB8"
                          :stroke "#31EFB8"
                          :strokeWidth 1
