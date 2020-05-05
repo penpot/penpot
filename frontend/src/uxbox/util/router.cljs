@@ -126,7 +126,8 @@
             history (:history state)
             router  (:router state)]
         (rx/merge
-         (rx/of (on-change router (.getToken history)))
+         (->> (rx/of (on-change router (.getToken history)))
+              (rx/observe-on :asap))
          (->> (rx/create (fn [sink]
                            (let [key (e/listen history "navigate" #(sink (.-token %)))]
                              (fn []
