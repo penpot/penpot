@@ -112,6 +112,9 @@
 (def selected-drawing-tool
   (l/derived :drawing-tool workspace-local))
 
+(def current-drawing-shape
+  (l/derived :drawing workspace-local))
+
 (def selected-edition
   (l/derived :edition workspace-local))
 

@@ -306,12 +306,13 @@
                                  :zoom zoom
                                  :edition edition}])
 
-       [:& snap-feedback]
 
        (when-let [drawing-shape (:drawing local)]
          [:& draw-area {:shape drawing-shape
                         :zoom zoom
                         :modifiers (:modifiers local)}])
+
+       [:& snap-feedback]
 
        (if (contains? flags :grid)
          [:& grid])]

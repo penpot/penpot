@@ -10,13 +10,13 @@
 (ns uxbox.util.geom.snap
   (:require
    [cljs.spec.alpha :as s]
+   [clojure.set :as set]
    [uxbox.util.math :as mth]
    [uxbox.common.uuid :refer [zero]]
    [uxbox.util.geom.shapes :as gsh]
-   [uxbox.util.geom.point :as gpt]
-   [uxbox.util.debug :refer [logjs]]))
+   [uxbox.util.geom.point :as gpt]))
 
-(def ^:private snap-accuracy 8)
+(def ^:private snap-accuracy 20)
 
 (defn mapm
   "Map over the values of a map"
@@ -33,12 +33,44 @@
     (gpt/point x (+ y height))
     (gpt/point x (+ y (/ height 2)))})
 
-(defn shape-snap-points [shape]
-  (if (= :frame (:type shape))
-    (frame-snap-points shape)
-    (let [modified-path (gsh/transform-apply-modifiers shape)
-          shape-center (gsh/center modified-path)]
-      (into #{shape-center} (:segments modified-path)))))
+(defn- frame-snap-points-resize [{:keys [x y width height]} handler]
+  (case handler
+    :top-left (gpt/point x y)
+    :top (gpt/point (+ x (/ width 2)) y)
+    :top-right (gpt/point (+ x width) y)
+    :right (gpt/point (+ x width) (+ y (/ height 2)))
+    :bottom-right (gpt/point (+ x width) (+ y height))
+    :bottom (gpt/point (+ x (/ width 2)) (+ y height))
+    :bottom-left (gpt/point x (+ y height))
+    :left (gpt/point x (+ y (/ height 2)))))
+
+(def ^:private handler->point-idx
+  {:top-left 0
+   :top 0
+   :top-right 1
+   :right 1
+   :bottom-right 2
+   :bottom 2
+   :bottom-left 3
+   :left 3})
+
+(defn shape-snap-points-resize
+  [handler shape]
+  (let [modified-path (gsh/transform-apply-modifiers shape)
+        point-idx (handler->point-idx handler)]
+    #{(case (:type shape)
+        :frame (frame-snap-points-resize shape handler)
+        (:path :curve) (-> modified-path gsh/shape->rect-shape :segments (nth point-idx))
+        (-> modified-path :segments (nth point-idx)))}))
+
+(defn shape-snap-points
+  [shape]
+  (let [modified-path (gsh/transform-apply-modifiers shape)
+        shape-center (gsh/center modified-path)]
+    (case (:type shape)
+      :frame (frame-snap-points shape)
+      (:path :curve) (into #{shape-center} (-> modified-path gsh/shape->rect-shape :segments))
+      (into #{shape-center} (-> modified-path :segments)))))
 
 (defn create-coord-data [shapes coord]
   (let [process-shape
@@ -62,10 +94,9 @@
                           (filter #(= :frame (:type %)))
                           (remove #(= zero (:id %)))
                           (reduce #(update %1 (:id %2) conj %2) frame-shapes))]
-    (logjs "snap-data"
-           (mapm (fn [shapes] {:x (create-coord-data shapes :x)
-                               :y (create-coord-data shapes :y)})
-                 frame-shapes))))
+    (mapm (fn [shapes] {:x (create-coord-data shapes :x)
+                        :y (create-coord-data shapes :y)})
+          frame-shapes)))
 
 (defn range-query
   "Queries the snap-data within a range of values"
@@ -117,39 +148,46 @@
       ;; Otherwise the root frame is the common
       :else zero)))
 
-(defn closest-snap
-  ([snap-data shapes] (partial closest-snap snap-data shapes))
+(defn- closest-snap
+  [snap-data shapes trans-vec shapes-points]
+  (let [;; Get the common frame-id to make the snap
+        frame-id (snap-frame-id shapes)
+
+        ;; We don't want to snap to the shapes currently transformed
+        remove-shapes (into #{} (map :id shapes))
+
+        ;; The snap is a tuple. The from is the point in the current moving shape
+        ;; the "to" is the point where we'll snap. So we need to create a vector
+        ;; snap-from --> snap-to and move the position in that vector
+        [snap-from-x snap-to-x] (search-snap shapes-points :x (get-in snap-data [frame-id :x]) remove-shapes)
+        [snap-from-y snap-to-y] (search-snap shapes-points :y (get-in snap-data [frame-id :y]) remove-shapes)
+
+        snapv (gpt/to-vec (gpt/point snap-from-x snap-from-y)
+                          (gpt/point snap-to-x snap-to-y))]
+
+    (gpt/add trans-vec snapv)))
+
+(defn closest-snap-point
+  [snap-data shapes point]
+  (closest-snap snap-data shapes point [point]))
+
+(defn closest-snap-move
+  ([snap-data shapes] (partial closest-snap-move snap-data shapes))
   ([snap-data shapes trans-vec]
-   (let [;; Get the common frame-id to make the snap
-         frame-id (snap-frame-id shapes)
-
-         ;; We don't want to snap to the shapes currently moving
-         remove-shapes (into #{} (map :id shapes))
-
-         shapes-points (->> shapes
+   (let [shapes-points (->> shapes
                             ;; Unroll all the possible snap-points
-                            (mapcat shape-snap-points)
+                            (mapcat (partial shape-snap-points))
 
                             ;; Move the points in the translation vector
-                            (map #(gpt/add % trans-vec)))
-
-         ;; The snap is a tuple. The from is the point in the current moving shape
-         ;; the "to" is the point where we'll snap. So we need to create a vector
-         ;; snap-from --> snap-to and move the position in that vector
-         [snap-from-x snap-to-x] (search-snap shapes-points :x (get-in snap-data [frame-id :x]) remove-shapes)
-         [snap-from-y snap-to-y] (search-snap shapes-points :y (get-in snap-data [frame-id :y]) remove-shapes)
-
-         snapv (gpt/to-vec (gpt/point snap-from-x snap-from-y)
-                           (gpt/point snap-to-x snap-to-y))]
-
-     (gpt/add trans-vec snapv))))
+                            (map #(gpt/add % trans-vec)))]
+     (closest-snap snap-data shapes trans-vec shapes-points))))
 
 (defn get-snap-points [snap-data frame-id filter-shapes point coord]
   (let [value (coord point)
 
         ;; Search for values within 1 pixel
         snap-matches (-> (get-in snap-data [frame-id coord])
-                        (range-query (- value 0.5) (+ value 0.5))
+                        (range-query (- value 1) (+ value 1))
                         (remove-from-snap-points filter-shapes))
 
         snap-points (mapcat (fn [[v data]] (map (fn [[point _]] point) data)) snap-matches)]

@@ -97,6 +97,7 @@
         on-resize (obj/get props "on-resize")
         on-rotate (obj/get props "on-rotate")
         current-transform (mf/deref refs/current-transform)
+
         {:keys [x y width height rotation] :as shape} (geom/shape->rect-shape shape)
 
         radius (if (> (max width height) handler-size-threshold) 4.0 4.0)
@@ -112,34 +113,32 @@
 
     [:g.controls
      (when (not (#{:move :rotate :resize} current-transform))
-      [:rect.main {:transform transform
-                   :x (- x 1) :y (- y 1)
-                   :width (+ width 2)
-                   :height (+ height 2)
-                   :style {:stroke "#1FDEA7"
-                           :stroke-width "1"
-                           :fill "transparent"}}])
+         [:rect.main {:transform transform
+                  :x (- x 1) :y (- y 1)
+                  :width (+ width 2)
+                  :height (+ height 2)
+                  :style {:stroke "#1FDEA7"
+                          :stroke-width "1"
+                          :fill "transparent"}}])
 
      (when (not (#{:move :rotate} current-transform))
        (for [[position [cx cy]] resize-handlers]
          (let [tp (gpt/transform (gpt/point cx cy) transform)]
            [:* {:key (name position)}
-            [:& rotation-handler {:key (str "rotation-" (name position))
-                                  :cx (:x tp)
+            [:& rotation-handler {:cx (:x tp)
                                   :cy (:y tp)
                                   :position position
                                   :rotation (:rotation shape)
                                   :zoom zoom
                                   :on-mouse-down on-rotate}]
 
-          [:& control-item {:class (name position)
-                            :on-click #(on-resize position %)
-                            :r (/ radius zoom)
-                            :cx (:x tp)
-                            :cy (:y tp)}]]))]))
+            [:& control-item {:class (name position)
+                              :on-click #(on-resize position %)
+                              :r (/ radius zoom)
+                              :cx (:x tp)
+                              :cy (:y tp)}]])))]))
 
 ;; --- Selection Handlers (Component)
-
 (mf/defc path-edition-selection-handlers
   [{:keys [shape modifiers zoom] :as props}]
   (letfn [(on-mouse-down [event index]

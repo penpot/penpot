@@ -148,7 +148,6 @@
     (update [_ state]
       (let [page  (get-in state [:workspace-pages page-id])
             objects (get-in page [:data :objects])]
-        (println "Update snap data")
         (-> state
             (assoc :workspace-snap-data (snap/initialize-snap-data objects)))))))
 

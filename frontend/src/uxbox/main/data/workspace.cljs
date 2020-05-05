@@ -693,7 +693,6 @@
     :left (gpt/point (- 1) 0)
     :right (gpt/point 1 0)))
 
-(s/def ::direction #{:up :down :right :left})
 (s/def ::loc  #{:up :down :bottom :top})
 
 ;; --- Delete Selected
