@@ -17,7 +17,7 @@
    [uxbox.main.fonts :as fonts]
    [uxbox.main.data.workspace.common :as dwc]
    ["slate-react" :as rslate]
-   ["slate" :as slate :refer [Editor Transforms Text]]))
+   ["slate" :as slate :refer [Editor Node Transforms Text]]))
 
 (defn create-editor
   []
@@ -36,12 +36,21 @@
 
 (defn- calculate-full-selection
   [editor]
-  (let [children (obj/get editor "children")
-        paragraphs (obj/get-in children [0 "children" 0 "children"])]
+  (let [children   (obj/get editor "children")
+        paragraphs (obj/get-in children [0 "children" 0 "children"])
+        lastp      (aget paragraphs (dec (alength paragraphs)))
+        lastptxt   (.string Node lastp)]
     #js {:anchor #js {:path #js [0 0 0]
                       :offset 0}
          :focus #js {:path #js [0 0 (dec (alength paragraphs))]
-                     :offset 1}}))
+                     :offset (alength lastptxt)}}))
+
+(defn- editor-select-all!
+  [editor]
+  (let [children   (obj/get editor "children")
+        paragraphs (obj/get-in children [0 "children" 0 "children"])
+        range      (calculate-full-selection editor)]
+    (.select Transforms editor range)))
 
 (defn- editor-set!
   ([editor props]

@@ -273,6 +273,10 @@
                (events/unlistenByKey lkey1)
                (events/unlistenByKey lkey2))))
 
+        on-focus
+        (fn [event]
+          (dwt/editor-select-all! editor))
+
         on-change
         (mf/use-callback
          (fn [val]
@@ -291,6 +295,7 @@
       [:> rslate/Editable
        {:auto-focus "true"
         :spell-check "false"
+        :on-focus on-focus
         :class "rich-text"
         :render-element render-element
         :render-leaf render-text
