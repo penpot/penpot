@@ -60,10 +60,10 @@
         group-shape   (group/group-shape shape-wrapper)]
     (mf/fnc group-wrapper
       [{:keys [shape frame] :as props}]
-      (let [children (mapv #(get objects %) (:shapes shape))]
+      (let [childs (mapv #(get objects %) (:shapes shape))]
         [:& group-shape {:frame frame
                          :shape shape
-                         :children children}]))))
+                         :childs childs}]))))
 
 (defn shape-wrapper-factory
   [objects]

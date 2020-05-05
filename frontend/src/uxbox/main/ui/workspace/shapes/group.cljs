@@ -44,10 +44,9 @@
             on-context-menu (mf/use-callback (mf/deps shape)
                                              #(common/on-context-menu % shape))
 
-            children-ref   (mf/use-memo (mf/deps shape)
-                                        #(refs/objects-by-id (:shapes shape)))
-            children       (mf/deref children-ref)
-
+            childs-ref   (mf/use-memo (mf/deps shape)
+                                      #(refs/objects-by-id (:shapes shape)))
+            childs       (mf/deref childs-ref)
 
             is-child-selected-ref (mf/use-memo (mf/deps (:id shape))
                                                #(refs/is-child-selected? (:id shape)))
@@ -69,6 +68,6 @@
          [:& group-shape
           {:frame frame
            :shape shape
-           :children children
+           :childs childs
            :is-child-selected? is-child-selected?}]]))))
 
