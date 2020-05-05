@@ -81,7 +81,7 @@
       (insert! name measure)
       (print-summary!))))
 
-(defn mesurable
+(defn measurable
   [name f]
   (fn [& args]
     (uxbox.util.perf/with-measure name
