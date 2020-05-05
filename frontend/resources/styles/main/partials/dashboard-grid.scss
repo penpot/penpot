@@ -82,6 +82,7 @@
 
     .grid-item {
       align-items: center;
+      border: 1px solid lighten($color-gray-20, 13%);
       border-radius: $br-small;
       cursor: pointer;
       display: flex;
@@ -451,6 +452,7 @@
     border: 1px dashed $color-gray-20;
     display: flex;
     flex-direction: column;
+    height: fit-content;
     margin: $size-4;
     padding: 3rem;
     width: 100%;

@@ -86,6 +86,20 @@
   font-weight: normal;
 }
 
+.main-bar-icon {
+  cursor: pointer;
+  margin-left: $small;
+
+  svg {
+    fill: $color-gray-40;
+    width: 10px;
+
+    &:hover {
+      fill: $color-primary-dark;
+    }
+  }
+}
+
 .user-zone {
   align-items: center;
   border-right: 1px solid $color-gray-10;

@@ -54,7 +54,8 @@
      (if (:is-default project)
        [:h1.dashboard-title (t locale "dashboard.header.draft")]
        [:*
-        [:div.main-bar-icon {:on-click on-menu-click} i/actions]
+        [:h1.dashboard-title (t locale "dashboard.header.project" (:name project))]
+        [:div.main-bar-icon {:on-click on-menu-click} i/arrow-down]
         [:& context-menu {:on-close on-menu-close
                           :show (:menu-open @local)
                           :options [[(t locale "dashboard.grid.edit") on-edit]
@@ -64,8 +65,7 @@
                                 :auto-focus true
                                 :on-key-down on-key-down
                                 :on-blur on-blur
-                                :default-value (:name project)}]
-          [:h1.dashboard-title (t locale "dashboard.header.project" (:name project))])])
+                                :default-value (:name project)}])])
      [:a.btn-dashboard {:on-click #(do
                                      (dom/prevent-default %)
                                      (st/emit! (dsh/create-file project-id)))}
@@ -84,4 +84,3 @@
       [:& project-header {:team-id team-id :project-id project-id}]
       [:section.projects-page
        [:& grid { :id project-id :files files :hide-new? true}]]]))
-
