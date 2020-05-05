@@ -25,7 +25,7 @@
    [uxbox.main.ui.messages :refer [messages]]
    [uxbox.main.ui.viewer.header :refer [header]]
    [uxbox.main.ui.viewer.thumbnails :refer [thumbnails-panel]]
-   [uxbox.main.ui.viewer.frame-viewer :refer [frame-viewer-svg]]
+   [uxbox.main.ui.viewer.shapes :refer [frame-svg]]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t tr]])
@@ -48,9 +48,9 @@
         [:span (t locale "viewer.frame-not-found")]]
 
        :else
-       [:& frame-viewer-svg {:frame frame
-                             :zoom zoom
-                             :objects objects}])]))
+       [:& frame-svg {:frame frame
+                      :zoom zoom
+                      :objects objects}])]))
 
 (mf/defc viewer-content
   [{:keys [data local index] :as props}]

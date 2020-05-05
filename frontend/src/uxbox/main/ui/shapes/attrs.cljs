@@ -8,9 +8,7 @@
 ;; Copyright (c) 2016-2020 UXBOX Labs SL
 
 (ns uxbox.main.ui.shapes.attrs
-  (:require
-   [cuerdas.core :as str]
-   [uxbox.util.interop :as itr]))
+  (:require [uxbox.util.object :as obj]))
 
 (defn- stroke-type->dasharray
   [style]
@@ -28,9 +26,9 @@
                    :rx (:rx shape nil)
                    :ry (:ry shape nil)}]
     (when (not= stroke-style :none)
-      (itr/obj-assign! attrs
-                       #js {:stroke (:stroke-color shape nil)
-                            :strokeWidth (:stroke-width shape nil)
-                            :strokeOpacity (:stroke-opacity shape nil)
-                            :strokeDasharray (stroke-type->dasharray stroke-style)}))
+      (obj/merge! attrs
+                  #js {:stroke (:stroke-color shape nil)
+                       :strokeWidth (:stroke-width shape nil)
+                       :strokeOpacity (:stroke-opacity shape nil)
+                       :strokeDasharray (stroke-type->dasharray stroke-style)}))
     attrs))
