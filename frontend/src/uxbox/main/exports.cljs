@@ -24,6 +24,7 @@
    [uxbox.main.ui.shapes.group :as group]))
 
 (def ^:private background-color "#E8E9EA") ;; $color-canvas
+
 (mf/defc background
   []
   [:rect
@@ -41,40 +42,34 @@
     {:width (if (mth/nan? width) 100 width)
      :height (if (mth/nan? height) 100 height)}))
 
-(declare shape-wrapper)
+(declare shape-wrapper-factory)
 
-(defn frame-wrapper
+(defn frame-wrapper-factory
   [objects]
-  (mf/fnc frame-wrapper
-    [{:keys [shape] :as props}]
-    (let [childs (mapv #(get objects %)
-                       (:shapes shape))
-          shape-wrapper (mf/use-memo (mf/deps objects)
-                                     #(shape-wrapper objects))
-          frame-shape   (mf/use-memo (mf/deps objects)
-                                     #(frame/frame-shape shape-wrapper))
-          shape (geom/transform-shape shape)]
-      [:& frame-shape {:shape shape :childs childs}])))
+  (let [shape-wrapper (shape-wrapper-factory objects)
+        frame-shape   (frame/frame-shape shape-wrapper)]
+    (mf/fnc frame-wrapper
+      [{:keys [shape] :as props}]
+      (let [childs (mapv #(get objects %) (:shapes shape))
+            shape (geom/transform-shape shape)]
+        [:& frame-shape {:shape shape :childs childs}]))))
 
-(defn group-wrapper
+(defn group-wrapper-factory
   [objects]
-  (mf/fnc group-wrapper
-    [{:keys [shape frame] :as props}]
-    (let [children (mapv #(get objects %)
-                         (:shapes shape))
-          shape-wrapper (mf/use-memo (mf/deps objects)
-                                     #(shape-wrapper objects))
-          group-shape   (mf/use-memo (mf/deps objects)
-                                     #(group/group-shape shape-wrapper))]
-      [:& group-shape {:frame frame
-                       :shape shape
-                       :children children}])))
+  (let [shape-wrapper (shape-wrapper-factory objects)
+        group-shape   (group/group-shape shape-wrapper)]
+    (mf/fnc group-wrapper
+      [{:keys [shape frame] :as props}]
+      (let [children (mapv #(get objects %) (:shapes shape))]
+        [:& group-shape {:frame frame
+                         :shape shape
+                         :children children}]))))
 
-(defn shape-wrapper
+(defn shape-wrapper-factory
   [objects]
   (mf/fnc shape-wrapper
     [{:keys [frame shape] :as props}]
-    (let [group-wrapper (mf/use-memo (mf/deps objects) #(group-wrapper objects))]
+    (let [group-wrapper (mf/use-memo (mf/deps objects) #(group-wrapper-factory objects))]
       (when (and shape (not (:hidden shape)))
         (let [shape (geom/transform-shape frame shape)
               opts #js {:shape shape}]
@@ -93,13 +88,24 @@
   {::mf/wrap [mf/memo]}
   [{:keys [data] :as props}]
   (let [objects (:objects data)
+        dim     (calculate-dimensions data)
         root    (get objects uuid/zero)
         shapes  (->> (:shapes root)
                      (map #(get objects %)))
-        dim (calculate-dimensions data)
-        frame-wrapper (mf/use-memo (mf/deps objects) #(frame-wrapper objects))
-        shape-wrapper (mf/use-memo (mf/deps objects) #(shape-wrapper objects))]
-    [:svg {:view-box (str "0 0 " (:width dim 0) " " (:height dim 0))
+
+        vbox    (str "0 0 " (:width dim 0) " " (:height dim 0))
+
+        frame-wrapper
+        (mf/use-memo
+         (mf/deps objects)
+         #(frame-wrapper-factory objects))
+
+        shape-wrapper
+        (mf/use-memo
+         (mf/deps objects)
+         #(shape-wrapper-factory objects))]
+
+    [:svg {:view-box vbox
            :version "1.1"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
            :xmlns "http://www.w3.org/2000/svg"}
@@ -119,19 +125,19 @@
                      (gmt/translate-matrix))
 
         frame-id (:id frame)
+
         modifier-ids (concat [frame-id] (cp/get-children frame-id objects))
-
-        update-fn (fn [state shape-id]
-                    (-> state
-                        (assoc-in [shape-id :modifiers :displacement] modifier)))
+        update-fn #(assoc-in %1 [%2 :modifiers :displacement] modifier)
         objects (reduce update-fn objects modifier-ids)
-        frame (assoc-in frame [:modifiers :displacement] modifier )
+        frame (assoc-in frame [:modifiers :displacement] modifier)
 
-        width (* (:width frame) zoom)
+        width  (* (:width frame) zoom)
         height (* (:height frame) zoom)
-        vbox (str "0 0 " (:width frame 0) " " (:height frame 0))
-        frame-wrapper (mf/use-memo (mf/deps objects)
-                                   #(frame-wrapper objects))]
+        vbox   (str "0 0 " (:width frame 0)
+                    " "    (:height frame 0))
+        wrapper (mf/use-memo
+                 (mf/deps objects)
+                 #(frame-wrapper-factory objects))]
 
     [:svg {:view-box vbox
            :width width
@@ -139,6 +145,5 @@
            :version "1.1"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
            :xmlns "http://www.w3.org/2000/svg"}
-     [:& frame-wrapper {:shape frame
-                        :view-box vbox}]]))
+     [:& wrapper {:shape frame :view-box vbox}]]))
 

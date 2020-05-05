@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns uxbox.main.ui.shapes.bounding-box
+(ns uxbox.main.ui.workspace.shapes.bbox
   (:require
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
