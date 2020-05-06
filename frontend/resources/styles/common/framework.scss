@@ -19,9 +19,17 @@
   justify-content: center;
   padding: 0 1rem;
   transition: all .4s;
+  svg {
+    height: 15px;
+    width: 15px;
+  }
   &.btn-large {
     font-size: $fs14;
     height: 40px;
+    svg {
+      height: 20px;
+      width: 20px;
+    }
   }
   &.btn-small {
     height: 25px;
@@ -66,6 +74,51 @@
   color: $color-primary-dark;
   &:hover {
     background: rgba(49,239,184,.12);
+  }
+}
+
+.btn-icon-dark {
+  @extend %btn;
+  background: $color-gray-60;
+  color: $color-gray-20;
+  svg {
+    fill: $color-gray-20;
+  }
+  &:hover {
+    background: $color-primary;
+    svg {
+      fill: $color-gray-60;
+    }
+  }
+}
+
+.btn-icon-light {
+  @extend %btn;
+  background: $color-gray-10;
+  color: $color-gray-40;
+  svg {
+    fill: $color-gray-40;
+  }
+  &:hover {
+    background: $color-primary;
+    svg {
+      fill: $color-gray-60;
+    }
+  }
+}
+
+.btn-icon-basic {
+  @extend %btn;
+  background: transparent;
+  color: $color-gray-60;
+  svg {
+    fill: $color-gray-60;
+  }
+  &:hover {
+    background: transparent;
+    svg {
+      fill: $color-primary;
+    }
   }
 }
 
