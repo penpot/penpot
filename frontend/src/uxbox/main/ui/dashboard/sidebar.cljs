@@ -14,7 +14,7 @@
    [okulary.core :as l]
    [rumext.alpha :as mf]
    [goog.functions :as f]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.main.constants :as c]
    [uxbox.main.data.dashboard :as dsh]
    [uxbox.main.store :as st]

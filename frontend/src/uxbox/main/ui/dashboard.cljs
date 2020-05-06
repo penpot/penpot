@@ -11,7 +11,7 @@
   (:require
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.main.refs :as refs]

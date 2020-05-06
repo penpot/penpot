@@ -10,7 +10,7 @@
             [beicon.core :as rx]
             [potok.core :as ptk]
             [lentes.core :as l]
-            [uxbox.builtins.icons :as i]
+            [uxbox.main.ui.icons :as i]
             [uxbox.main.store :as st]
             [uxbox.main.refs :as refs]
             [uxbox.main.data.lightbox :as udl]

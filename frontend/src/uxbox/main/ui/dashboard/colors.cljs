@@ -10,7 +10,7 @@
    [cuerdas.core :as str]
    [lentes.core :as l]
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.main.data.colors :as dc]
    [uxbox.main.store :as st]
    [uxbox.main.ui.dashboard.common :as common]

@@ -14,7 +14,7 @@
    [lentes.core :as l]
    [potok.core :as ptk]
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.common.data :as d]
    [uxbox.main.constants :as c]
    [uxbox.main.data.workspace :as dw]

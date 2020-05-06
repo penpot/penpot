@@ -12,7 +12,7 @@
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.common.data :as d]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.data.workspace.texts :as dwt]

@@ -10,7 +10,7 @@
    [lentes.core :as l]
    [rumext.alpha :as mf]
    [uxbox.common.data :as d]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.main.data.icons :as di]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]

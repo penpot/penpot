@@ -7,7 +7,7 @@
 
 (ns uxbox.main.ui.confirm
   (:require
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [rumext.alpha :as mf]
    [uxbox.main.ui.modal :as modal]
    [uxbox.util.i18n :refer (tr)]

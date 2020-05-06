@@ -12,7 +12,7 @@
    [beicon.core :as rx]
    [lentes.core :as l]
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.main.constants :as c]
    [uxbox.main.data.history :as udh]
    [uxbox.main.data.workspace :as dw]

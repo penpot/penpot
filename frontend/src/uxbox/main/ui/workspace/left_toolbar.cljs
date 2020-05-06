@@ -17,7 +17,7 @@
    [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.workspace.images :refer [import-image-modal]]
    [uxbox.util.i18n :as i18n :refer [t]]
-   [uxbox.builtins.icons :as i]))
+   [uxbox.main.ui.icons :as i]))
 
 ;; --- Component: Left toolbar
 

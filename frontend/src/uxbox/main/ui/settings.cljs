@@ -10,7 +10,7 @@
    [cuerdas.core :as str]
    [potok.core :as ptk]
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.util.router :as rt]

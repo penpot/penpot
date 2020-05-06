@@ -8,7 +8,7 @@
   (:require
    [lentes.core :as l]
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.main.data.auth :as da]
    [uxbox.main.store :as st]
    [uxbox.util.i18n :as i18n :refer [tr t]]

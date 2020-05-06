@@ -11,7 +11,7 @@
    [cuerdas.core :as str]
    [lentes.core :as l]
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.main.data.auth :as uda]
    [uxbox.main.store :as st]
    [uxbox.main.ui.messages :refer [messages]]

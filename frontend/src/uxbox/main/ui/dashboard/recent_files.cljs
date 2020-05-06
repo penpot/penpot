@@ -11,7 +11,7 @@
   (:require
    [okulary.core :as l]
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.common.exceptions :as ex]
    [uxbox.main.constants :as c]
    [uxbox.main.data.dashboard :as dsh]

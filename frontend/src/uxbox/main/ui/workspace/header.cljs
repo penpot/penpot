@@ -11,7 +11,7 @@
 (ns uxbox.main.ui.workspace.header
   (:require
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i :include-macros true]
+   [uxbox.main.ui.icons :as i :include-macros true]
    [uxbox.config :as cfg]
    [uxbox.main.data.history :as udh]
    [uxbox.main.data.workspace :as dw]

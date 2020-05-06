@@ -9,7 +9,7 @@
   (:require
    [lentes.core :as l]
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.common.data :as d]
    [uxbox.main.data.images :as udi]
    [uxbox.main.data.workspace :as dw]

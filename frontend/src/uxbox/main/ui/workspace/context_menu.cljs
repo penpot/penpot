@@ -17,7 +17,7 @@
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
    [uxbox.main.streams :as ms]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.util.dom :as dom]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.ui.hooks :refer [use-rxsub]]
