@@ -16,7 +16,7 @@
    [uxbox.util.geom.shapes :as gsh]
    [uxbox.util.geom.point :as gpt]))
 
-(def ^:private snap-accuracy 20)
+(def ^:private snap-accuracy 10)
 
 (defn mapm
   "Map over the values of a map"
@@ -111,7 +111,7 @@
        (filter (fn [[_ data]] (not (empty? data))))))
 
 (defn search-snap-point
-  "Search snap for a single point"
+  "Search snap for a single point in the `coord` given"
   [point coord snap-data filter-shapes]
 
   (let [coord-value (get point coord)
@@ -134,7 +134,7 @@
 
   (let [snap-points (mapcat #(search-snap-point % coord snap-data filter-shapes) points)
         result (->> snap-points (apply min-key first) second)]
-    (or result [0 0])))
+    result))
 
 (defn snap-frame-id [shapes]
   (let [frames (into #{} (map :frame-id shapes))]
@@ -162,8 +162,8 @@
         [snap-from-x snap-to-x] (search-snap shapes-points :x (get-in snap-data [frame-id :x]) remove-shapes)
         [snap-from-y snap-to-y] (search-snap shapes-points :y (get-in snap-data [frame-id :y]) remove-shapes)
 
-        snapv (gpt/to-vec (gpt/point snap-from-x snap-from-y)
-                          (gpt/point snap-to-x snap-to-y))]
+        snapv (gpt/to-vec (gpt/point (or snap-from-x 0) (or snap-from-y 0))
+                          (gpt/point (or snap-to-x 0) (or snap-to-y 0)))]
 
     (gpt/add trans-vec snapv)))
 
