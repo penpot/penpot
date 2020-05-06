@@ -82,7 +82,14 @@
       (t/is (= (rt/get tree 25)  [:d]))
       (t/is (= (rt/get tree 75)  [:e]))
       (t/is (= (rt/get tree 125) [:f]))
-      (t/is (= (rt/get tree 175) [:g])))))
+      (t/is (= (rt/get tree 175) [:g]))))
+
+  (t/testing "Adds a bunch of nodes and then delete. The tree should be empty"
+    (let [size 10000
+          tree (rt/make-tree)
+          tree (reduce #(rt/insert %1 %2 :x) tree (range 0 (dec size)))
+          tree (reduce #(rt/remove %1 %2 :x) tree (range 0 (dec size)))]
+      (t/is (rt/empty? tree)))))
 
 (t/deftest test-update-elements
   (t/testing "Updates an element"
@@ -138,3 +145,9 @@
       (t/is (= (rt/range-query tree 200 300) []))
       (t/is (= (rt/range-query tree 200 0) [])))))
 
+(t/deftest test-balanced-tree
+  (t/testing "Creates a worst-case BST and probes for a balanced height"
+    (let [size 1024
+          tree (reduce #(rt/insert %1 %2 :x) (rt/make-tree) (range 0 (dec size)))
+          height (rt/height tree)]
+      (t/is (= height (inc (js/Math.log2 size)))))))

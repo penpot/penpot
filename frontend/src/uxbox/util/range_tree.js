@@ -9,6 +9,10 @@
  * Copyright (c) 2020 UXBOX Labs SL
  */
 
+/*
+ * Balanced Binary Search Tree based on the red-black BST 
+ * described at "Algorithms" by Robert Sedwick & Kevin Wayne
+ */
 "use strict";
 
 goog.provide("uxbox.util.range_tree");
@@ -18,6 +22,11 @@ goog.scope(function() {
     const eq = cljs.core._EQ_;
     const vec = cljs.core.vec;
     const nil = cljs.core.nil;
+
+    const Color = {
+        RED: "RED",
+        BLACK: "BLACK"
+    }
      
     class Node {
         constructor(value, data) {
@@ -25,6 +34,7 @@ goog.scope(function() {
             this.data = [ data ];
             this.left = null;
             this.right = null;
+            this.color = Color.BLACK;
         }
     }
     
@@ -39,11 +49,31 @@ goog.scope(function() {
      
         insert(value, data) {
             this.root = recInsert(this.root, value, data);
+            this.root.color = Color.BLACK;
             return this;
         }
      
         remove(value, data) {
-            this.root = recRemove(this.root, value, data);
+            if (!this.root) {
+                return this;
+            }
+
+            this.root = recRemoveData(this.root, value, data);
+
+            const newData = recGet(this.root, value);
+
+            if (newData && newData.length === 0) {
+                if (!isRed(this.root.left) && !isRed(this.root.right)) {
+                    this.root.color = Color.RED;
+                }
+
+                this.root = recRemoveNode(this.root, value);
+
+                if (this.root) {
+                    this.root.color = Color.BLACK;
+                }
+            }
+
             return this;
         }
     
@@ -59,14 +89,28 @@ goog.scope(function() {
         rangeQuery (fromValue, toValue) {
             return recRangeQuery(this.root, fromValue, toValue, []);
         }
+
+        height() {
+            return recHeight(this.root);
+        }
+
+        isEmpty() {
+            return this.root === null;
+        }
     }
 
     // Tree implementation functions
 
+    function isRed(branch) {
+        return branch !== null && branch.color === Color.RED;
+    }
+
     // Insert recursively in the tree
     function recInsert (branch, value, data) {
         if (branch === null) {
-            return new Node(value, data);
+            const ret = new Node(value, data);
+            ret.color = Color.RED;
+            return ret;
         } else if (branch.value === value) {
             // Find node we'll add to the end of the list
             branch.data.push(data);
@@ -75,6 +119,16 @@ goog.scope(function() {
             branch.left = recInsert(branch.left, value, data);
         } else if (branch.value < value) {
             branch.right = recInsert(branch.right, value, data);
+        }
+
+        if (isRed(branch.right) && !isRed(branch.left)) {
+            branch = rotateLeft(branch);
+        }
+        if (isRed(branch.left) && isRed(branch.left.left)) {
+            branch = rotateRight(branch);
+        }
+        if (isRed(branch.left) && isRed(branch.right)) {
+            flipColors(branch);
         }
         return branch;
     }
@@ -91,46 +145,62 @@ goog.scope(function() {
     // Remove the lefmost node of the current branch
     function recRemoveMin(branch) {
         if (branch.left === null) {
-            return branch.right;
-        } else {
-            branch.left = recRemoveMin(branch.left);
-            return branch;
+            return null;
         }
+
+        if (!isRed(branch.left) && !isRed(branch.left.left)) {
+            branch = moveRedLeft(branch);
+        }
+        branch.left = recRemoveMin(branch.left);
+        return balance(branch);
     }
 
     // Remove the data element for the value given
-    function recRemove(branch, value, data) {
+    // this will not remove the node, we have to remove the empty node afterwards
+    function recRemoveData(branch, value, data) {
         if (branch === null) {
             // Not found
             return branch;
         } else if (branch.value === value) {
             // Node found, we remove the data
             branch.data = branch.data.filter ((it) => !eq(it, data));
-
-            if (branch.data.length > 0) {
-                return branch;
-            }
-
-            // If the data is empty we need to remove the branch
-            if (branch.right === null) {
-                return branch.left;
-            } else if (branch.left === null) {
-                return branch.right;
-            } else {
-                const oldBranch = branch;
-                const newBranch = searchMin(branch.right);
-                newBranch.right = recRemoveMin(oldBranch.right);
-                newBranch.left = oldBranch.left;
-                return newBranch;
-            }
+            return branch;
         } else if (branch.value > value) {
-            // Target value is less than the current value we go left
-            branch.left = recRemove (branch.left, value, data);
+            branch.left = recRemoveData (branch.left, value, data);
             return branch;
         } else if (branch.value < value) {
-            branch.right = recRemove (branch.right, value, data);
+            branch.right = recRemoveData(branch.right, value, data);
             return branch;
         }
+    }
+
+    function recRemoveNode(branch, value) {
+        if (value < branch.value) {
+            if (!isRed(branch.left) && !isRed(branch.left.left)) {
+                branch = moveRedLeft(branch);
+            }
+            branch.left = recRemoveNode(branch.left, value);
+        } else {
+            if (isRed(branch.left)) {
+                branch = rotateRight(branch);
+            }
+            if (value === branch.value && branch.right === null) {
+                return null;
+            }
+            if (!isRed(branch.right) && !isRed(branch.right.left)) {
+                branch = moveRedRight(branch);
+            }
+
+            if (value === branch.value) {
+                const x = searchMin(branch.right);
+                branch.value = x.value;
+                branch.data = x.data;
+                branch.right = recRemoveMin(branch.right);
+            } else {
+                branch.right = recRemoveNode(branch.right, value);
+            }
+        }
+        return balance(branch);
     }
 
     // Retrieve all the data related to value
@@ -175,6 +245,86 @@ goog.scope(function() {
         return result;
     }
 
+    function rotateLeft(branch) {
+        const x = branch.right;
+        branch.right = x.left;
+        x.left = branch;
+        x.color = x.left.color;
+        x.left.color = Color.RED;
+        return x;
+    }
+
+    function rotateRight(branch) {
+        const x = branch.left;
+        branch.left = x.right;
+        x.right = branch;
+        x.color = x.right.color;
+        x.right.color = Color.RED;
+        return x;
+    }
+
+    function balance(branch) {
+        if (isRed(branch.right)) {
+            branch = rotateLeft(branch);
+        }
+        if (isRed(branch.left) && isRed(branch.left.left)) {
+            branch = rotateRight(branch);
+        }
+        if (isRed(branch.left) && isRed(branch.right)) {
+            flipColors(branch);
+        }
+        return branch;
+    }
+
+    function moveRedLeft(branch) {
+        flipColors(branch);
+        if (isRed(branch.right.left)) {
+            branch.right = rotateRight(branch.right);
+            branch = rotateLeft(branch);
+            flipColors(branch);
+        }
+        return branch;
+    }
+
+    function moveRedRight(branch) {
+        flipColors(branch);
+        if (branch.left && isRed(branch.left.left)) {
+            branch = rotateRight(branch);
+            flipColors(branch);
+        }
+        return branch;
+    }
+
+    function flip(color) {
+        return color === Color.RED ? Color.BLACK : Color.RED;
+    }
+
+    function flipColors(branch) {
+        branch.color = flip(branch.color);
+        if (branch.left) {
+            branch.left.color = flip(branch.left.color);
+        }
+        if (branch.right) {
+            branch.right.color = flip(branch.right.color);
+        }
+    }
+
+    function recHeight(branch) {
+        let curHeight = 0;
+        if (branch !== null) {
+            curHeight = Math.max(recHeight(branch.left), recHeight(branch.right))
+        }
+        return 1 + curHeight;
+    }
+
+    function printTree(tree) {
+        if (!tree) {
+            return "";
+        }
+        const val = tree.color[0] + "(" + tree.value + ")";
+        return "[" + printTree(tree.left) + " " + val + " " + printTree(tree.right) + "]";
+    }
+
     // External API to CLJS
     const self = uxbox.util.range_tree;
     self.make_tree = () => new RangeTree();
@@ -189,4 +339,8 @@ goog.scope(function() {
         return vec(result);
     };
     self.range_query = (tree, from_value, to_value) => vec(tree.rangeQuery(from_value, to_value));
+    self.empty_QMARK_ = (tree) => tree.isEmpty();
+    self.height = (tree) => tree.height();
+    self.print = (tree) => printTree(tree.root);
 });
+
