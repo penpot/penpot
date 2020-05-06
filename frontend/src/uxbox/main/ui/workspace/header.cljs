@@ -70,7 +70,7 @@
         locale (i18n/use-locale)]
 
     [:div.menu-section
-     [:div.menu-button {:on-click #(reset! show-menu? true)} i/actions]
+     [:div.btn-icon-dark.btn-small {:on-click #(reset! show-menu? true)} i/actions]
      [:div.project-tree {:alt (t locale "header.sitemap")
                          :class (classnames :selected (contains? layout :sitemap))
                          :on-click toggle-sitemap}
@@ -148,7 +148,7 @@
         :on-zoom-to-100 #(st/emit! dw/reset-zoom)
         :on-zoom-to-200 #(st/emit! dw/zoom-to-200)}]
 
-      [:a.preview-button
+      [:a.btn-icon-dark.btn-small
        {;; :target "__blank"
         :alt (t locale "workspace.header.viewer")
         :href (str "#" view-url)} i/play]]]))

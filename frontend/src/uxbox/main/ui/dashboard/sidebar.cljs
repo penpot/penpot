@@ -119,7 +119,7 @@
 
      [:div.projects-row
       [:span "PROJECTS"]
-      [:a.add-project {:on-click #(st/emit! dsh/create-project)}
+      [:a.btn-icon-light.btn-small {:on-click #(st/emit! dsh/create-project)}
        i/close]]
 
      [:& sidebar-projects

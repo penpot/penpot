@@ -102,7 +102,7 @@
                             :on-change (fm/on-input-change form :theme)}
       [:option {:value "light"} "Default"]]
 
-     [:input.btn-primary
+     [:input.btn-primary.btn-large
       {:type "submit"
        :class (when-not (:valid form) "btn-disabled")
        :disabled (not (:valid form))

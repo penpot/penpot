@@ -133,7 +133,7 @@
       (when-not anonymous?
         [:& share-link {:page (:page data)}])
       (when-not anonymous?
-        [:a {:on-click on-edit}
+        [:a.btn-text-basic.btn-small {:on-click on-edit}
          (t locale "viewer.header.edit-page")])
 
       [:& zoom-widget
@@ -144,7 +144,7 @@
         :on-zoom-to-100 #(st/emit! dv/reset-zoom)
         :on-zoom-to-200 #(st/emit! dv/zoom-to-200)}]
 
-      [:span.btn-fullscreen.tooltip.tooltip-bottom
+      [:span.btn-icon-dark.btn-small.tooltip.tooltip-bottom
        {:alt (t locale "viewer.header.fullscreen")
         :on-click toggle-fullscreen}
        (if fullscreen?

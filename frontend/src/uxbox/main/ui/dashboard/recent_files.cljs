@@ -46,7 +46,7 @@
   (let [locale (i18n/use-locale)]
     [:header#main-bar.main-bar
      [:h1.dashboard-title "Recent"]
-     [:a.btn-dashboard {:on-click #(st/emit! dsh/create-project)}
+     [:a.btn-secondary.btn-small {:on-click #(st/emit! dsh/create-project)}
       (t locale "dashboard.header.new-project")]]))
 
 (mf/defc recent-project

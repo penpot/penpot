@@ -66,7 +66,7 @@
                                 :on-key-down on-key-down
                                 :on-blur on-blur
                                 :default-value (:name project)}])])
-     [:a.btn-dashboard {:on-click #(do
+     [:a.btn-secondary.btn-small {:on-click #(do
                                      (dom/prevent-default %)
                                      (st/emit! (dsh/create-file project-id)))}
       (t locale "dashboard.header.new-file")]]))

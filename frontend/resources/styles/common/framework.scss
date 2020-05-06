@@ -81,6 +81,7 @@
   @extend %btn;
   background: $color-gray-60;
   color: $color-gray-20;
+  padding: $x-small;
   svg {
     fill: $color-gray-20;
   }
@@ -96,6 +97,7 @@
   @extend %btn;
   background: $color-gray-10;
   color: $color-gray-40;
+  padding: $x-small;
   svg {
     fill: $color-gray-40;
   }
@@ -111,6 +113,7 @@
   @extend %btn;
   background: transparent;
   color: $color-gray-60;
+  padding: $x-small;
   svg {
     fill: $color-gray-60;
   }
@@ -157,21 +160,6 @@
   }
   &.mb {
     margin-bottom: .5rem;
-  }
-}
-
-.btn-dashboard {
-  @extend %btn;
-  background-color: $color-white;
-  border: 1px solid $color-black;
-  border-radius: 2px;
-  color: $color-black;
-  padding: $x-small $small;
-
-  &:hover {
-    background-color: $color-primary;
-    border-color: $color-primary;
-    color: $color-black;
   }
 }
 

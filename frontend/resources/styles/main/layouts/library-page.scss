@@ -71,19 +71,8 @@
     overflow: hidden;
 }
 
-.library-sidebar-add-item {
-    background-color: $color-primary;
-    border-radius: 2px;
-    border: none;
-    cursor: pointer;
-    font-size: 12px;
-    padding: $size-2;
+.btn-primary {
     width: 100%;
-
-    &:hover {
-        background-color: $color-black;
-        color: $color-primary;
-    }
 }
 
 .library-sidebar-list {
@@ -157,8 +146,7 @@
 .library-top-menu-actions {
     display: flex;
 
-    .btn-dashboard {
-        background-color: transparent;
+    .btn-secondary {
         margin-left: $size-2;
     }
 }
@@ -166,7 +154,12 @@
 .library-top-menu-actions-delete {
     display: flex;
     justify-content: center;
-    flex-direction: column
+    flex-direction: column;
+    &:hover {
+        svg {
+            fill: $color-danger;
+        }
+    }
 }
 
 .library-page-cards-container {
