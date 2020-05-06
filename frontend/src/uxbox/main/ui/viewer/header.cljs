@@ -88,7 +88,7 @@
        [:span.share-link-subtitle (t locale "viewer.header.share.subtitle")]
        [:div.share-link-buttons
         (if (string? token)
-          [:button.btn-delete {:on-click delete}
+          [:button.btn-warning {:on-click delete}
            (t locale "viewer.header.share.remove-link")]
           [:button.btn-primary {:on-click create}
            (t locale "viewer.header.share.create-link")])]]]]))
