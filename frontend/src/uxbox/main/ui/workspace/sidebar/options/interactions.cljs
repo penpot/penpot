@@ -10,7 +10,7 @@
 (ns uxbox.main.ui.workspace.sidebar.options.interactions
   (:require
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.common.pages :as cp]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]

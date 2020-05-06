@@ -22,7 +22,7 @@
    [uxbox.main.data.icons :as dico]
    [uxbox.main.data.images :as dimg]
    [uxbox.main.data.colors :as dcol]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
    [uxbox.main.ui.components.context-menu :refer [context-menu]]

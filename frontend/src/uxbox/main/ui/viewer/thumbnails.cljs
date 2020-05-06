@@ -13,7 +13,7 @@
    [goog.object :as gobj]
    [lentes.core :as l]
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.common.data :as d]
    [uxbox.main.store :as st]
    [uxbox.main.data.viewer :as dv]

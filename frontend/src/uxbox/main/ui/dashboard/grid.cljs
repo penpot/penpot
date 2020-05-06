@@ -3,7 +3,7 @@
    [cuerdas.core :as str]
    [beicon.core :as rx]
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.main.data.dashboard :as dsh]
    [uxbox.main.store :as st]
    [uxbox.main.ui.modal :as modal]

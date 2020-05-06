@@ -13,7 +13,7 @@
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
    [uxbox.common.data :as d]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]

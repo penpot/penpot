@@ -12,7 +12,7 @@
    [beicon.core :as rx]
    [okulary.core :as l]
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.main.data.colors :as udc]
    [uxbox.main.data.library :as dlib]
    [uxbox.main.data.workspace :as udw]

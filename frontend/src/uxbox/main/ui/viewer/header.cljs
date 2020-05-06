@@ -10,7 +10,7 @@
 (ns uxbox.main.ui.viewer.header
   (:require
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.main.data.messages :as dm]
    [uxbox.main.data.viewer :as dv]
    [uxbox.main.refs :as refs]

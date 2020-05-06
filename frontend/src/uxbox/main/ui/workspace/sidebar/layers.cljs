@@ -12,7 +12,7 @@
   (:require
    [okulary.core :as l]
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.common.data :as d]
    [uxbox.common.uuid :as uuid]
    [uxbox.common.pages :as cp]

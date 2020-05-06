@@ -13,7 +13,7 @@
    [cuerdas.core :as str]
    [potok.core :as ptk]
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.common.data :as d]
    [uxbox.common.exceptions :as ex]
    [uxbox.main.data.auth :refer [logout]]

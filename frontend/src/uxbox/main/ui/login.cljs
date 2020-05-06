@@ -13,7 +13,7 @@
    [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]
    [uxbox.common.spec :as us]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.config :as cfg]
    [uxbox.main.data.auth :as da]
    [uxbox.main.store :as st]

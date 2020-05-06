@@ -7,7 +7,7 @@
 (ns uxbox.main.ui.loader
   (:require
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.main.store :as st]))
 
 ;; --- Component

@@ -1,7 +1,7 @@
 (ns uxbox.main.ui.components.editable-label
   (:require
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.util.dom :as dom]
    [uxbox.util.timers :as timers]

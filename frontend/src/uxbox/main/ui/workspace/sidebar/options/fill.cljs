@@ -10,7 +10,7 @@
 (ns uxbox.main.ui.workspace.sidebar.options.fill
   (:require
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.common.data :as d]
    [uxbox.main.data.workspace :as udw]
    [uxbox.main.store :as st]

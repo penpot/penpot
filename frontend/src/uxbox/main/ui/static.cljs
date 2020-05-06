@@ -11,7 +11,7 @@
   (:require
    [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i]))
+   [uxbox.main.ui.icons :as i]))
 
 (mf/defc not-found-page
   [{:keys [error] :as props}]

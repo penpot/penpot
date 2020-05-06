@@ -8,7 +8,7 @@
   (:require
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.main.ui.keyboard :as k]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as t :refer [tr]]))

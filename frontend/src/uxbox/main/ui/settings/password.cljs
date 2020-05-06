@@ -12,7 +12,7 @@
   (:require
    [rumext.alpha :as mf]
    [cljs.spec.alpha :as s]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.main.data.users :as udu]
    [uxbox.main.data.messages :as dm]
    [uxbox.main.store :as st]

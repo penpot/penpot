@@ -11,7 +11,7 @@
   (:require
    [rumext.alpha :as mf]
    [uxbox.common.data :as d]
-   [uxbox.builtins.icons :as i]
+   [uxbox.main.ui.icons :as i]
    [uxbox.main.data.workspace :as udw]
    [uxbox.main.store :as st]
    [uxbox.main.ui.modal :as modal]
