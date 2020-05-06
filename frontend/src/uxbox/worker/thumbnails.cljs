@@ -10,10 +10,6 @@
 (ns uxbox.worker.thumbnails
   (:require
    [rumext.alpha :as mf]
-   [promesa.core :as p]
-   [cljs.spec.alpha :as s]
-   [uxbox.common.exceptions :as ex]
-   [uxbox.common.spec :as us]
    [uxbox.main.fonts :as fonts]
    [uxbox.main.exports :as exports]
    [uxbox.worker.impl :as impl]
