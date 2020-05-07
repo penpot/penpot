@@ -69,7 +69,7 @@
   (let [modified-path (gsh/transform-apply-modifiers shape)
         shape-center (gsh/center modified-path)]
     (case (:type shape)
-      :frame (frame-snap-points shape)
+      :frame (-> modified-path gsh/shape->rect-shape frame-snap-points)
       (:path :curve) (into #{shape-center} (-> modified-path gsh/shape->rect-shape :segments))
       (into #{shape-center} (-> modified-path :segments)))))
 

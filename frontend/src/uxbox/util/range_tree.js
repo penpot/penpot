@@ -358,7 +358,12 @@ goog.scope(function() {
         }
         return vec(result);
     };
-    self.range_query = (tree, from_value, to_value) => vec(tree.rangeQuery(from_value, to_value));
+    self.range_query = (tree, from_value, to_value) => {
+        if (!tree) {
+            return vec();
+        }
+        return vec(tree.rangeQuery(from_value, to_value))
+    };
     self.empty_QMARK_ = (tree) => tree.isEmpty();
     self.height = (tree) => tree.height();
     self.print = (tree) => printTree(tree.root);

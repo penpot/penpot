@@ -173,7 +173,10 @@
                    (rt/insert 175 :g))]
       (t/is (= (rt/range-query tree -100 0) []))
       (t/is (= (rt/range-query tree 200 300) []))
-      (t/is (= (rt/range-query tree 200 0) [])))))
+      (t/is (= (rt/range-query tree 200 0) []))))
+
+  (t/testing "Range query over null should return empty"
+    (t/is (= (rt/range-query nil 0 100) []))))
 
 (t/deftest test-balanced-tree
   (t/testing "Creates a worst-case BST and probes for a balanced height"
