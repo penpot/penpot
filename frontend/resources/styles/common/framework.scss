@@ -369,7 +369,6 @@ ul.slider-dots {
     &::after {
       content: "px";
     }
-
   }
 
   &.percentail {
@@ -377,7 +376,6 @@ ul.slider-dots {
     &::after {
       content: "%";
     }
-
   }
 
   &.miliseconds {
@@ -385,7 +383,6 @@ ul.slider-dots {
     &::after {
       content: "ms";
     }
-
   }
 
   &.degrees {
@@ -393,9 +390,35 @@ ul.slider-dots {
     &::after {
       content: "dg";
     }
-
   }
 
+  &.height {
+
+    &::after {
+      content: "H";
+    }
+  }
+
+  &.width {
+
+    &::after {
+      content: "W";
+    }
+  }
+
+  &.Xaxis {
+
+    &::after {
+      content: "X";
+    }
+  }
+
+  &.Yaxis {
+
+    &::after {
+      content: "Y";
+    }
+  }
 }
 
 input,

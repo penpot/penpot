@@ -110,7 +110,7 @@
           (if (:proportion-lock shape)
             i/lock
             i/unlock)]
-         [:div.input-element.pixels
+         [:div.input-element.width
           [:input.input-text {:type "number"
                               :min "0"
                               :no-validate true
@@ -120,7 +120,7 @@
                                               (math/round)))}]]
 
 
-         [:div.input-element.pixels
+         [:div.input-element.height
           [:input.input-text {:type "number"
                               :min "0"
                               :no-validate true
@@ -133,7 +133,7 @@
       (when (options :position)
         [:div.row-flex
          [:span.element-set-subtitle (t locale "workspace.options.position")]
-         [:div.input-element.pixels
+         [:div.input-element.Xaxis
           [:input.input-text {:placeholder "x"
                               :type "number"
                               :no-validate true
@@ -143,7 +143,7 @@
                               ;;                (d/coalesce 0)
                               ;;                (math/round)))
                               }]]
-         [:div.input-element.pixels
+         [:div.input-element.Yaxis
           [:input.input-text {:placeholder "y"
                               :type "number"
                               :no-validate true
