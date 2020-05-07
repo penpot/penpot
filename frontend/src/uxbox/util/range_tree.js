@@ -24,8 +24,8 @@ goog.scope(function() {
     const nil = cljs.core.nil;
 
     const Color = {
-        RED: "RED",
-        BLACK: "BLACK"
+        RED: 1,
+        BLACK: 2
     }
      
     class Node {
@@ -96,6 +96,12 @@ goog.scope(function() {
 
         isEmpty() {
             return this.root === null;
+        }
+
+        toString() {
+            const result = [];
+            recToString(this.root, result);
+            return result.join(", ");
         }
     }
 
@@ -237,7 +243,8 @@ goog.scope(function() {
             recRangeQuery(branch.left, fromValue, toValue, result);
         }
         if (fromValue <= branch.value && toValue >= branch.value) {
-            Array.prototype.push.apply(result, branch.data);
+            // Array.prototype.push.apply(result, branch.data);
+            result.push(vec([branch.value, vec(branch.data)]))
         }
         if (toValue > branch.value) {
             recRangeQuery(branch.right, fromValue, toValue, result);
@@ -317,6 +324,19 @@ goog.scope(function() {
         return 1 + curHeight;
     }
 
+    // This will return the string representation. We don't care about internal structure
+    // only the data
+    function recToString(branch, result) {
+        if (branch === null) {
+            return;
+        }
+
+        recToString(branch.left, result);
+        result.push(`${branch.value}: [${branch.data.join(", ")}]`)
+        recToString(branch.right, result);
+    }
+
+    // This function prints the tree structure, not the data
     function printTree(tree) {
         if (!tree) {
             return "";

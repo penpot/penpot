@@ -494,9 +494,10 @@
         name (generate-unique-name names (:name obj))
         renamed-obj (assoc obj :id id :name name)
         moved-obj (geom/move renamed-obj delta)
+        frames (cp/select-frames objects)
         frame-id (if frame-id
                    frame-id
-                   (dwc/calculate-frame-overlap objects moved-obj))
+                   (dwc/calculate-frame-overlap frames moved-obj))
 
         parent-id (or parent-id frame-id)
 

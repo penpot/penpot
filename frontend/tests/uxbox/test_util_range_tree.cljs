@@ -85,10 +85,18 @@
       (t/is (= (rt/get tree 175) [:g]))))
 
   (t/testing "Adds a bunch of nodes and then delete. The tree should be empty"
+    ;; Try an increase range
     (let [size 10000
           tree (rt/make-tree)
           tree (reduce #(rt/insert %1 %2 :x) tree (range 0 (dec size)))
           tree (reduce #(rt/remove %1 %2 :x) tree (range 0 (dec size)))]
+      (t/is (rt/empty? tree)))
+
+    ;; Try a decreasing range
+    (let [size 10000
+          tree (rt/make-tree)
+          tree (reduce #(rt/insert %1 %2 :x) tree (range (dec size) -1 -1))
+          tree (reduce #(rt/remove %1 %2 :x) tree (range (dec size) -1 -1))]
       (t/is (rt/empty? tree)))))
 
 (t/deftest test-update-elements
@@ -126,11 +134,33 @@
                    (rt/insert 175 :i)
                    (rt/insert 200 :j)
                    (rt/insert 200 :k))]
-      (t/is (= (rt/range-query tree 0 200) [:a :b :c :d :e :f :g :h :i :j :k]))
-      (t/is (= (rt/range-query tree 0 100) [:a :b :c :d :e :f]))
-      (t/is (= (rt/range-query tree 100 200) [:e :f :g :h :i :j :k]))
-      (t/is (= (rt/range-query tree 10 60) [:b :c]))
-      (t/is (= (rt/range-query tree 199.5 200.5) [:j :k]))))
+      (t/is (= (rt/range-query tree 0 200)
+               [[0   [:a]]
+                [25  [:b]]
+                [50  [:c]]
+                [75  [:d]]
+                [100 [:e :f]]
+                [125 [:g]]
+                [150 [:h]]
+                [175 [:i]]
+                [200 [:j :k]]]))
+      (t/is (= (rt/range-query tree 0 100)
+               [[0   [:a]]
+                [25  [:b]]
+                [50  [:c]]
+                [75  [:d]]
+                [100 [:e :f]]]))
+      (t/is (= (rt/range-query tree 100 200)
+               [[100 [:e :f]]
+                [125 [:g]]
+                [150 [:h]]
+                [175 [:i]]
+                [200 [:j :k]]]))
+      (t/is (= (rt/range-query tree 10 60)
+               [[25  [:b]]
+                [50  [:c]]]))
+      (t/is (= (rt/range-query tree 199.5 200.5)
+               [[200 [:j :k]]]))))
 
   (t/testing "Empty range query"
     (let [tree (-> (rt/make-tree)
@@ -151,3 +181,14 @@
           tree (reduce #(rt/insert %1 %2 :x) (rt/make-tree) (range 0 (dec size)))
           height (rt/height tree)]
       (t/is (= height (inc (js/Math.log2 size)))))))
+
+(t/deftest test-to-string
+  (t/testing "Creates a tree and prints it"
+    (let [tree (-> (rt/make-tree)
+                   (rt/insert 50  :a)
+                   (rt/insert 25  :b)
+                   (rt/insert 25  :c)
+                   (rt/insert 100 :d)
+                   (rt/insert 75  :e))
+          result (str tree)]
+      (t/is (= result "25: [:b, :c], 50: [:a], 75: [:e], 100: [:d]")))))
