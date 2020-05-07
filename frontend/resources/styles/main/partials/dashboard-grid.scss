@@ -224,7 +224,7 @@
                 transform: scale(1.4);
 
                 svg {
-                  fill: $color-danger;
+                  fill: $color-primary-dark;
                 }
 
               }
@@ -461,8 +461,4 @@
       color: $color-gray-40;
       margin-bottom: $medium;
     }
-}
-
-.grid-files-link-text {
-    color: $color-black;
 }

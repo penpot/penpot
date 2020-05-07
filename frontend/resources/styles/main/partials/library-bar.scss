@@ -149,30 +149,8 @@
     font-size: $fs14;
   }
 
-  .add-project {
-    align-items: center;
-    background-color: $color-gray-10;
-    border-radius: $br-small;
-    border: 1px solid transparent;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
+  .btn-icon-light {
     margin-left: auto;
-    padding: $x-small;
-
-    svg {
-      fill: $color-gray-60;
-      height: $size-2;
-      width: $size-2;
-    }
-
-    &:hover {
-      background-color: $color-primary;
-
-      svg {
-        fill: $color-gray-60;
-      }
-    }
   }
 }
 

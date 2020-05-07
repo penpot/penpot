@@ -107,7 +107,7 @@
   [{:keys [section items team-id library-id]}]
   (let [locale (i18n/use-locale)]
     [:aside.library-sidebar
-     [:button.library-sidebar-add-item
+     [:button.btn-primary.btn-small
       {:type "button"
        :on-click #(create-library section team-id)}
       (t locale (str "dashboard.library.add-library." (name section)))]
@@ -166,12 +166,12 @@
        i/trash]
 
       (if (= section :palettes)
-        [:button.btn-dashboard
+        [:button.btn-secondary.btn-small
          {:on-click #(create-item section library-id)}
          (t locale (str "dashboard.library.add-item." (name section)))]
 
         [:*
-         [:label {:for "file-upload" :class-name "btn-dashboard"}
+         [:label {:for "file-upload" :class-name "btn-secondary btn-small"}
           (t locale (str "dashboard.library.add-item." (name section)))]
          [:input {:on-change #(create-item section library-id %)
                   :id "file-upload"

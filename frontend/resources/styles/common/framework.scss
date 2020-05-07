@@ -2,66 +2,126 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-// Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+// Copyright (c) 2020 Andrey Antukh <niwi@niwi.nz>
+// Copyright (c) 2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 // Buttons
 
 %btn {
   appearance: none;
-  align-items: stretch;
+  align-items: center;
   border: none;
   border-radius: 3px;
   cursor: pointer;
   display: flex;
-  font-size: $fs14;
+  font-size: $fs13;
+  height: 30px;
   justify-content: center;
-  padding: 1rem;
+  padding: 0 1rem;
   transition: all .4s;
-  &.btn-big {
-    padding: 2rem 1rem;
+  svg {
+    height: 15px;
+    width: 15px;
   }
-  &.btn-noshr {
-    flex-shrink: 0;
+  &.btn-large {
+    font-size: $fs14;
+    height: 40px;
+    svg {
+      height: 20px;
+      width: 20px;
+    }
   }
   &.btn-small {
-    font-size: $fs13;
-    padding: .7rem 1rem;
-    line-height: 1.15;
+    height: 25px;
   }
 }
 
 .btn-primary {
   @extend %btn;
-  align-items: center;
   background: $color-primary;
   color: $color-black;
-  justify-content: center;
-  display: flex;
-  padding: 1rem;
   &:hover {
     background: $color-black;
     color: $color-primary;
   }
 }
 
-.btn-success {
+.btn-secondary {
   @extend %btn;
-  background: $color-success;
-  color: $color-white;
+  background: $color-white;
+  border: 1px solid $color-black;
+  color: $color-black;
   &:hover {
-    background: $color-success-dark;
-    color: $color-white;
+    background: $color-primary;
+    border-color: $color-primary;
+    color: $color-black;
   }
 }
 
-.btn-delete {
+.btn-warning {
   @extend %btn;
   background: $color-danger;
   color: $color-white;
   &:hover {
     background: $color-danger-dark;
     color: $color-white;
+  }
+}
+
+.btn-text-basic {
+  @extend %btn;
+  background: transparent;
+  color: $color-primary-dark;
+  &:hover {
+    background: rgba(49,239,184,.12);
+  }
+}
+
+.btn-icon-dark {
+  @extend %btn;
+  background: $color-gray-60;
+  color: $color-gray-20;
+  padding: $x-small;
+  svg {
+    fill: $color-gray-20;
+  }
+  &:hover {
+    background: $color-primary;
+    svg {
+      fill: $color-gray-60;
+    }
+  }
+}
+
+.btn-icon-light {
+  @extend %btn;
+  background: $color-gray-10;
+  color: $color-gray-40;
+  padding: $x-small;
+  svg {
+    fill: $color-gray-40;
+  }
+  &:hover {
+    background: $color-primary;
+    svg {
+      fill: $color-gray-60;
+    }
+  }
+}
+
+.btn-icon-basic {
+  @extend %btn;
+  background: transparent;
+  color: $color-gray-60;
+  padding: $x-small;
+  svg {
+    fill: $color-gray-60;
+  }
+  &:hover {
+    background: transparent;
+    svg {
+      fill: $color-primary;
+    }
   }
 }
 
@@ -72,33 +132,6 @@
   &:hover {
     background: $color-gray-40;
   }
-}
-
-.btn-complete {
-  @extend %btn;
-  background: $color-complete;
-  color: $color-white;
-  &:hover {
-    background: $color-complete-dark;
-    color: $color-white;
-  }
-}
-
-.btn-transparent {
-  @extend %btn;
-  background: transparent;
-  border: 2px solid $color-white;
-  color: $color-white;
-  &:hover {
-    background: $color-white;
-    color: $color-info-dark;
-  }
-}
-.btn-large {
-  flex-grow: 3;
-  max-width: 400px;
-  flex-basis: 60%;
-  width: 100%;
 }
 
 .btn-option {
@@ -127,21 +160,6 @@
   }
   &.mb {
     margin-bottom: .5rem;
-  }
-}
-
-.btn-dashboard {
-  @extend %btn;
-  background-color: $color-white;
-  border: 1px solid $color-black;
-  border-radius: 2px;
-  color: $color-black;
-  padding: $x-small $small;
-
-  &:hover {
-    background-color: $color-primary;
-    border-color: $color-primary;
-    color: $color-black;
   }
 }
 

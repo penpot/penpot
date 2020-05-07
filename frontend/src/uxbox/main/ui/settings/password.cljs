@@ -95,7 +95,7 @@
 
      [:& fm/field-error {:form form :field :password-2}]
 
-     [:input.btn-primary
+     [:input.btn-primary.btn-large
       {:type "submit"
        :class (when-not (:valid form) "btn-disabled")
        :disabled (not (:valid form))
