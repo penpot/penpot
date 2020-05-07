@@ -167,7 +167,7 @@
           (rx/concat
            (->> mouse
                 (rx/take 1)
-                (rx/map (fn [pt] #(initialize-drawing % pt frame-id))))
+                (rx/map (fn [pt] #(initialize-drawing % pt (or frame-id uuid/zero)))))
            (->> mouse
                 (rx/with-latest vector ms/mouse-position-ctrl)
                 (rx/map (fn [[pt ctrl?]] #(update-drawing % initial snap-data pt ctrl?)))
