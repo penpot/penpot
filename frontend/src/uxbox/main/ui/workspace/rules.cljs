@@ -2,156 +2,129 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.main.ui.workspace.rules
   (:require
-   [beicon.core :as rx]
-   [cuerdas.core :as str]
    [rumext.alpha :as mf]
-   [uxbox.main.constants :as c]
-   [uxbox.main.refs :as refs]
-   [uxbox.main.store :as s]
-   [uxbox.main.streams :as ms]
-   [uxbox.main.ui.hooks :refer [use-rxsub]]
-   [uxbox.util.dom :as dom]))
+   [uxbox.util.object :as obj]))
 
-;; --- Constants & Helpers
-
-(def rule-padding 20)
-(def step-padding 20)
-(def step-size 10)
-(def scroll-padding 50)
-
-(def +ticks+ (range 0 c/viewport-width step-size))
-
-(defn big-ticks-mod [zoom] (/ 100 zoom))
-(defn mid-ticks-mod [zoom] (/ 50 zoom))
-
-
-
-(defn- make-vertical-tick
-  [zoom acc value]
-  (let [big-ticks-mod (big-ticks-mod zoom)
-        mid-ticks-mod (mid-ticks-mod zoom)
-        pos (+ (* value zoom)
-               rule-padding
-               scroll-padding)]
-    (cond
-      (< (mod value big-ticks-mod) step-size)
-      (conj acc (str/format "M %s %s L %s %s" pos 5 pos step-padding))
-
-      (< (mod value mid-ticks-mod) step-size)
-      (conj acc (str/format "M %s %s L %s %s" pos 10 pos step-padding))
-
-      :else
-      (conj acc (str/format "M %s %s L %s %s" pos 15 pos step-padding)))))
-
-(defn- make-horizontal-tick
-  [zoom acc value]
-  (let [big-ticks-mod (big-ticks-mod zoom)
-        mid-ticks-mod (mid-ticks-mod zoom)
-        pos (+ (* value zoom)
-               scroll-padding)]
-    (cond
-      (< (mod value big-ticks-mod) step-size)
-      (conj acc (str/format "M %s %s L %s %s" 5 pos step-padding pos))
-
-      (< (mod value mid-ticks-mod) step-size)
-      (conj acc (str/format "M %s %s L %s %s" 10 pos step-padding pos))
-
-      :else
-      (conj acc (str/format "M %s %s L %s %s" 15 pos step-padding pos)))))
-
-;; --- Horizontal Text Label
-
-(mf/defc horizontal-text-label
-  [{:keys [zoom value] :as props}]
-  (let [big-ticks-mod (big-ticks-mod zoom)
-        pos (+ (* value zoom)
-               rule-padding
-               scroll-padding)]
-    (when (< (mod value big-ticks-mod) step-size)
-      [:text {:x (+ pos 2)
-              :y 13
-              :key (str pos)
-              :fill "#9da2a6"
-              :style {:font-size "12px"}}
-       value])))
-
-;; --- Horizontal Text Label
-
-(mf/defc vertical-text-label
-  [{:keys [zoom value] :as props}]
-  (let [big-ticks-mod (big-ticks-mod zoom)
-        pos (+ (* value zoom)
-               scroll-padding)]
-    (when (< (mod value big-ticks-mod) step-size)
-      [:text {:y (- pos 3)
-              :x 5
-              :key (str pos)
-              :fill "#9da2a6"
-              :transform (str/format "rotate(90 0 %s)" pos)
-              :style {:font-size "12px"}}
-       value])))
-
-;; --- Horizontal Rule Ticks (Component)
-
-(mf/defc horizontal-rule-ticks
-  {:wrap [mf/memo]}
-  [{:keys [zoom]}]
-  (let [path (reduce (partial make-vertical-tick zoom) [] +ticks+)]
-    [:g
-     [:path {:d (str/join " " path)}]
-     (for [tick +ticks+]
-       [:& horizontal-text-label {:zoom zoom :value tick :key tick}])]))
-
-;; --- Vertical Rule Ticks (Component)
-
-(mf/defc vertical-rule-ticks
-  {:wrap [mf/memo]}
-  [{:keys [zoom]}]
-  (let [path (reduce (partial make-horizontal-tick zoom) [] +ticks+)]
-    [:g
-     [:path {:d (str/join " " path)}]
-     (for [tick +ticks+]
-       [:& vertical-text-label {:zoom zoom :value tick :key tick}])]))
-
-;; --- Horizontal Rule (Component)
+(def STEP-PADDING 20)
 
 (mf/defc horizontal-rule
-  {:wrap [mf/memo]}
-  [props]
-  (let [scroll (use-rxsub  ms/viewport-scroll)
-        zoom (mf/deref refs/selected-zoom)
-        translate-x (- (- scroll-padding) (:x scroll))]
-    [:svg.horizontal-rule
-     {:width c/viewport-width
-      :height 20}
-     [:rect {:height 20
-             :width c/viewport-width}]
-     [:g {:transform (str "translate(" translate-x ", 0)")}
-      [:& horizontal-rule-ticks {:zoom zoom}]]]))
+  [{:keys [zoom size]}]
+  (let [canvas (mf/use-ref)
+        {:keys [x viewport-width width]} size]
+
+    (mf/use-layout-effect
+     (mf/deps viewport-width width x zoom)
+     (fn []
+       (let [node (mf/ref-val canvas)
+             dctx (.getContext node "2d")
+
+             btm 1
+             trx (- (* (- 0 x) zoom) 50)
+
+             min-val (js/Math.round x)
+             max-val (js/Math.round (+ x (/ viewport-width zoom)))
+
+             tmp0 (js/Math.abs (- max-val min-val))
+             tmp1 (js/Math.round (/ tmp0 200))
+             btm  (max (* btm (* 10 tmp1)) 1)]
+
+         (obj/set! node "width" viewport-width)
+
+         (obj/set! dctx "fillStyle" "#E8E9EA")
+         (.fillRect dctx 0 0 viewport-width 20)
+
+         (.save dctx)
+         (.translate dctx trx 0)
+
+         (obj/set! dctx "font" "12px serif")
+         (obj/set! dctx "fillStyle" "#7B7D85")
+         (obj/set! dctx "strokeStyle" "#7B7D85")
+         (obj/set! dctx "textAlign" "center")
+
+         (loop [i min-val]
+           (when (< i max-val)
+             (let [pos (+ (* i zoom) 50)]
+               (when (= (mod i btm) 0)
+                 (.fillText dctx (str i) (- pos 0) 13))
+               (recur (+ i 1)))))
+
+         (let [path (js/Path2D.)]
+           (loop [i min-val]
+             (if (> i max-val)
+               (.stroke dctx path)
+               (let [pos (+ (* i zoom) 50)]
+                 (when (= (mod i btm) 0)
+                   (.moveTo path pos 17)
+                   (.lineTo path pos STEP-PADDING))
+                 (recur (inc i))))))
+
+         (.restore dctx))))
+
+    [:canvas.horizontal-rule {:ref canvas :width (:viewport-width size) :height 20}]))
+
 
 ;; --- Vertical Rule (Component)
 
 (mf/defc vertical-rule
-  {:wrap [mf/memo]}
-  [props]
-  (let [scroll (use-rxsub ms/viewport-scroll)
-        zoom (or (mf/deref refs/selected-zoom) 1)
-        scroll-y (:y scroll)
-        translate-y (+ (- scroll-padding)
-                       (- (:y scroll)))
-        ]
-    [:svg.vertical-rule {:width 20
-                         ;; :x 0 :y 0
-                         :height c/viewport-height}
+  {::mf/wrap [mf/memo #(mf/throttle % 60)]}
+  [{:keys [zoom size]}]
+  (let [canvas (mf/use-ref)
+        {:keys [y height viewport-height]} size]
+    (mf/use-layout-effect
+     (mf/deps height y zoom)
+     (fn []
+       (let [node (mf/ref-val canvas)
+             dctx (.getContext node "2d")
 
-     [:g {:transform (str  "translate(0, " (+ translate-y 20) ")")}
-      [:& vertical-rule-ticks {:zoom zoom}]]
-     [:rect {:x 0
-             :y 0
-             :height 20
-             :width 20}]]))
+             btm 1
+             try (- (* (- 0 y) zoom) 50)
+
+             min-val (js/Math.round y)
+             max-val (js/Math.round (+ y (/ viewport-height zoom)))
+
+             tmp0 (js/Math.abs (- max-val min-val))
+             tmp1 (js/Math.round (/ tmp0 100))
+             btm  (max (* btm (* 10 tmp1)) 1)]
+
+         (obj/set! node "height" viewport-height)
+
+         (obj/set! dctx "fillStyle" "#E8E9EA")
+         (.fillRect dctx 0 0 20 viewport-height)
+
+         (obj/set! dctx "font" "11px serif")
+         (obj/set! dctx "fillStyle" "#7B7D85")
+         (obj/set! dctx "strokeStyle" "#7B7D85")
+         (obj/set! dctx "textAlign" "center")
+
+         (.translate dctx 0 try)
+
+         (loop [i min-val]
+           (when (< i max-val)
+             (let [pos (+ (* i zoom) 50)]
+               (when (= (mod i btm) 0)
+                 (.save dctx)
+                 (.translate dctx 12 pos)
+                 (.rotate dctx (/ (* 270 js/Math.PI) 180))
+                 (.fillText dctx (str i) 0 0)
+                 (.restore dctx))
+               (recur (inc i)))))
+
+         (let [path (js/Path2D.)]
+           (loop [i min-val]
+             (if (> i max-val)
+               (.stroke dctx path)
+               (let [pos (+ (* i zoom) 50)]
+                 (when (= (mod i btm) 0)
+                   (.moveTo path 17 pos)
+                   (.lineTo path STEP-PADDING pos))
+                 (recur (inc i)))))))))
+
+    [:canvas.vertical-rule {:ref canvas :width 20 :height height}]))
+

@@ -37,13 +37,7 @@
            on-zoom-to-100
            on-zoom-to-200]
     :as props}]
-  (let [show-dropdown? (mf/use-state false)
-        ;; increase #(st/emit! dv/increase-zoom)
-        ;; decrease #(st/emit! dv/decrease-zoom)
-        ;; zoom-to-50 #(st/emit! dv/zoom-to-50)
-        ;; zoom-to-100 #(st/emit! dv/reset-zoom)
-        ;; zoom-to-200 #(st/emit! dv/zoom-to-200)
-        ]
+  (let [show-dropdown? (mf/use-state false)]
     [:div.zoom-widget {:on-click #(reset! show-dropdown? true)}
      [:span {} (str (mth/round (* 100 zoom)) "%")]
      [:span.dropdown-button i/arrow-down]

@@ -72,6 +72,12 @@
 
 (def workspace-default
   {:zoom 1
+   :size {:x 0
+          :y 0
+          :width c/viewport-width
+          :height c/viewport-width
+          :viewport-width c/viewport-width
+          :viewport-height c/viewport-height}
    :flags #{}
    :selected #{}
    :drawing nil
@@ -189,6 +195,56 @@
 ;; Workspace State Manipulation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; --- Viewport Sizing
+
+(defn initialize-viewport
+  [{:keys [width height] :as size}]
+  (ptk/reify ::initialize-viewport
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-local
+              (fn [local]
+                (-> local
+                    (assoc :zoom 1)
+                    (update :size assoc
+                            :x 0
+                            :y 0
+                            :width width
+                            :height height
+                            :viewport-width width
+                            :viewport-height height)))))))
+
+
+
+(defn update-viewport-position
+  [{:keys [x y] :or {x identity y identity}}]
+  (ptk/reify ::update-viewport-position
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-local :size]
+                 (fn [size]
+                   (-> size
+                       (update :x x)
+                       (update :y y)))))))
+
+(defn update-viewport-size
+  [{:keys [width height]}]
+  (ptk/reify ::update-viewport-size
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-local
+              (fn [{:keys [size] :as local}]
+                (let [wprop (/ (:viewport-width size) width)
+                      hprop (/ (:viewport-height size) height)
+                      size'  (-> size
+                                (assoc :viewport-width width)
+                                (assoc :viewport-height height)
+                                (update :width #(/ % wprop))
+                                (update :height #(/ % hprop)))]
+                  (assoc local :size size')))))))
+
+;; ---
+
 (defn adjust-group-shapes
   [ids]
   (ptk/reify ::adjust-group-shapes
@@ -269,41 +325,103 @@
 
 ;; --- Zoom Management
 
-(def increase-zoom
+(defn- impl-update-zoom
+  [local zoom]
+  (let [base-width (get-in local [:size :viewport-width])
+        base-height (get-in local [:size :viewport-height])
+
+        zoom (if (fn? zoom)
+               (zoom (:zoom local))
+               zoom)
+
+        width (/ base-width zoom)
+        height (/ base-height zoom)]
+    (-> local
+        (assoc :zoom zoom)
+        (update :size assoc :width width :height height))))
+
+(defn increase-zoom
+  [center]
   (ptk/reify ::increase-zoom
     ptk/UpdateEvent
     (update [_ state]
-      (let [increase #(nth c/zoom-levels
-                           (+ (d/index-of c/zoom-levels %) 1)
-                           (last c/zoom-levels))]
-        (update-in state [:workspace-local :zoom] (fnil increase 1))))))
+      (update state :workspace-local
+              #(impl-update-zoom % (fn [z] (* z 1.1)))))))
 
-(def decrease-zoom
+(defn decrease-zoom
+  [center]
   (ptk/reify ::decrease-zoom
     ptk/UpdateEvent
     (update [_ state]
-      (let [decrease #(nth c/zoom-levels
-                           (- (d/index-of c/zoom-levels %) 1)
-                           (first c/zoom-levels))]
-        (update-in state [:workspace-local :zoom] (fnil decrease 1))))))
+      (update state :workspace-local
+              #(impl-update-zoom % (fn [z] (* z 0.9)))))))
 
 (def reset-zoom
   (ptk/reify ::reset-zoom
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-local :zoom] 1))))
+      (update state :workspace-local
+              #(impl-update-zoom % 1)))))
 
 (def zoom-to-50
   (ptk/reify ::zoom-to-50
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-local :zoom] 0.5))))
+      (update state :workspace-local
+              #(impl-update-zoom % 0.5)))))
 
 (def zoom-to-200
   (ptk/reify ::zoom-to-200
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-local :zoom] 2))))
+      (update state :workspace-local
+              #(impl-update-zoom % 2)))))
+
+;; (defn impl-expand-rect
+;;   [{:keys [x y width height] :as rect} padding]
+;;   (assoc rect
+;;          :x (- x padding)
+;;          :y (- y padding)
+;;          :width (+ width padding)
+;;          :height (+ height padding)))
+
+;; (def zoom-to-selected-shape
+;;   (ptk/reify ::zoom-to-selected-shape
+;;     ptk/UpdateEvent
+;;     (update [_ state]
+;;       (let [page-id  (get-in state [:workspace-page :id])
+;;             objects  (get-in state [:workspace-data page-id :objects])
+;;             selected (get-in state [:workspace-local :selected])
+;;             shapes   (map #(get objects %) selected)
+;;             rect     (geom/selection-rect shapes)
+;;             rect     (impl-expand-rect rect 20)
+;;             ]
+;;         (update state :workspace-local
+;;                 (fn [{:keys [size] :as local}]
+;;                   (let [proportion (/ (:viewport-width size) (:viewport-height size))
+;;                         width (:width rect)
+;;                         height (/ (:width rect) proportion)
+
+;;                         [width height] (if (> (:height rect) height)
+;;                                          [(* width proportion) (:height rect)]
+;;                                          [width height])
+
+;;                         zoom (/ (:viewport-width size) width)]
+
+;;                     ;; (js/console.log "proportion=" proportion
+;;                     ;;                 "width=" width
+;;                     ;;                 "height=" height
+;;                     ;;                 "viewport-width=" (:viewport-width size)
+;;                     ;;                 "viewport-height=" (:viewport-height size))
+;;                     (-> local
+;;                         (assoc :zoom zoom)
+;;                         (update :size assoc
+;;                                 :x (:x rect)
+;;                                 :y (:y rect)
+;;                                 :width width
+;;                                 :height height
+;;                                 )))))))))
+
 
 ;; --- Selection Rect
 
@@ -328,8 +446,8 @@
               {:type :rect
                :x start-x
                :y start-y
-               :width (- end-x start-x)
-               :height (- end-y start-y)}))]
+               :width (mth/abs (- end-x start-x))
+               :height (mth/abs (- end-y start-y))}))]
     (ptk/reify ::handle-selection
       ptk/WatchEvent
       (watch [_ state stream]
@@ -1341,6 +1459,7 @@
   {"ctrl+shift+m" #(st/emit! (toggle-layout-flag :sitemap))
    "ctrl+shift+i" #(st/emit! (toggle-layout-flag :libraries))
    "ctrl+shift+l" #(st/emit! (toggle-layout-flag :layers))
+   "ctrl+shift+r" #(st/emit! (toggle-layout-flag :rules))
    "+" #(st/emit! increase-zoom)
    "-" #(st/emit! decrease-zoom)
    "ctrl+g" #(st/emit! create-group)
@@ -1348,6 +1467,7 @@
    "shift+0" #(st/emit! zoom-to-50)
    "shift+1" #(st/emit! reset-zoom)
    "shift+2" #(st/emit! zoom-to-200)
+   ;; "shift+2" #(st/emit! zoom-to-selected-shape)
    "ctrl+d" #(st/emit! duplicate-selected)
    "ctrl+z" #(st/emit! dwc/undo)
    "ctrl+shift+z" #(st/emit! dwc/redo)

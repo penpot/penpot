@@ -132,7 +132,10 @@
                   point-snap (snap/closest-snap-point snap-data [shape] point)
                   deltav (gpt/to-vec initial point-snap)
                   scalev (gpt/divide (gpt/add shapev deltav) shapev)
-                  scalev (if lock? (let [v (max (:x scalev) (:y scalev))] (gpt/point v v)) scalev)]
+                  scalev (if lock?
+                           (let [v (max (:x scalev) (:y scalev))]
+                             (gpt/point v v))
+                           scalev)]
               (-> shape
                   (assoc-in [:modifiers :resize-vector] scalev)
                   (assoc-in [:modifiers :resize-origin] (gpt/point x y))
@@ -144,13 +147,12 @@
     (ptk/reify ::handle-drawing-generic
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [{:keys [zoom flags]} (:workspace-local state)
+        (let [{:keys [flags]} (:workspace-local state)
               stoper? #(or (ms/mouse-up? %) (= % :interrupt))
               stoper (rx/filter stoper? stream)
               initial @ms/mouse-position
               snap-data (get state :workspace-snap-data)
-              mouse (->> ms/mouse-position
-                         (rx/map #(gpt/divide % (gpt/point zoom))))
+              mouse ms/mouse-position
 
               page-id (get state :current-page-id)
               objects (get-in state [:workspace-data page-id :objects])
@@ -204,15 +206,14 @@
     (ptk/reify ::handle-drawing-path
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [{:keys [zoom flags]} (:workspace-local state)
+        (let [{:keys [flags]} (:workspace-local state)
 
-              last-point (volatile! (gpt/divide @ms/mouse-position (gpt/point zoom)))
+              last-point (volatile! @ms/mouse-position)
 
               stoper (->> (rx/filter stoper-event? stream)
                           (rx/share))
 
-              mouse (->> (rx/sample 10 ms/mouse-position)
-                         (rx/map #(gpt/divide % (gpt/point zoom))))
+              mouse (rx/sample 10 ms/mouse-position)
 
               points (->> stream
                           (rx/filter ms/mouse-click?)
@@ -277,10 +278,10 @@
     (ptk/reify ::handle-drawing-curve
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [{:keys [zoom flags]} (:workspace-local state)
+        (prn "handle-drawing-curve")
+        (let [{:keys [flags]} (:workspace-local state)
               stoper (rx/filter stoper-event? stream)
-              mouse  (->> (rx/sample 10 ms/mouse-position)
-                          (rx/map #(gpt/divide % (gpt/point zoom))))]
+              mouse  (rx/sample 10 ms/mouse-position)]
           (rx/concat
            (rx/of initialize-drawing)
            (->> mouse
@@ -324,15 +325,14 @@
 (declare path-draw-area)
 
 (mf/defc draw-area
-  [{:keys [zoom shape] :as props}]
+  [{:keys [shape] :as props}]
   (when (:id shape)
     (case (:type shape)
       (:path :curve) [:& path-draw-area {:shape shape}]
-      [:& generic-draw-area {:shape shape
-                             :zoom zoom}])))
+      [:& generic-draw-area {:shape shape}])))
 
 (mf/defc generic-draw-area
-  [{:keys [shape zoom]}]
+  [{:keys [shape]}]
   (let [{:keys [x y width height]} (geom/selection-rect-shape shape)]
     (when (and x y)
       [:g
