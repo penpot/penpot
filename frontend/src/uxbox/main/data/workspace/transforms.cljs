@@ -25,10 +25,6 @@
 
 ;; -- Helpers
 
-(defn- apply-zoom
-  [point]
-  (gpt/divide point (gpt/point @refs/selected-zoom)))
-
 ;; For each of the 8 handlers gives the modifier for resize
 ;; for example, right will only grow in the x coordinate and left
 ;; will grow in the inverse of the x coordinate
@@ -146,7 +142,6 @@
               resizing-shapes (map #(get-in state [:workspace-data page-id :objects %]) ids)]
           (rx/concat
            (->> ms/mouse-position
-                (rx/map apply-zoom)
                 ;; (rx/mapcat apply-grid-alignment)
                 (rx/with-latest vector ms/mouse-position-ctrl)
                 (rx/map normalize-proportion-lock)
@@ -171,7 +166,7 @@
       (let [stoper (rx/filter ms/mouse-up? stream)
             group  (gsh/selection-rect shapes)
             group-center (gsh/center group)
-            initial-angle (gpt/angle (apply-zoom @ms/mouse-position) group-center)
+            initial-angle (gpt/angle @ms/mouse-position group-center)
             calculate-angle (fn [pos ctrl?]
                               (let [angle (- (gpt/angle pos group-center) initial-angle)
                                     angle (if (neg? angle) (+ 360 angle) angle)
@@ -187,7 +182,6 @@
                                 angle))]
         (rx/concat
          (->> ms/mouse-position
-              (rx/map apply-zoom)
               (rx/with-latest vector ms/mouse-position-ctrl)
               (rx/map (fn [[pos ctrl?]]
                         (let [delta-angle (calculate-angle pos ctrl?)]
@@ -205,12 +199,11 @@
   (ptk/reify ::start-move-selected
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [initial (apply-zoom @ms/mouse-position)
+      (let [initial @ms/mouse-position
             selected (get-in state [:workspace-local :selected])
             stopper (rx/filter ms/mouse-up? stream)]
         (->> ms/mouse-position
              (rx/take-until stopper)
-             (rx/map apply-zoom)
              (rx/map #(gpt/to-vec initial %))
              (rx/map #(gpt/length %))
              (rx/filter #(> % 0.5))
@@ -234,7 +227,6 @@
         (rx/concat
          (->> ms/mouse-position
               (rx/take-until stopper)
-              (rx/map apply-zoom)
               (rx/map #(gpt/to-vec from-position %))
               (rx/map (snap/closest-snap-move snap-data shapes))
               (rx/map gmt/translate-matrix)

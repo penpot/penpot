@@ -45,23 +45,29 @@
         right-sidebar? (not (empty? (keep layout [:icons :drawtools :element-options])))
         classes (classnames
                  :no-tool-bar-right (not right-sidebar?)
-                 :no-tool-bar-left (not left-sidebar?))]
+                 :no-tool-bar-left (not left-sidebar?))
+
+        local (mf/deref refs/workspace-local)]
+
     [:*
      (when (:colorpalette layout)
        [:& colorpalette {:left-sidebar? left-sidebar?}])
 
      [:section.workspace-content {:class classes}
-
       [:& history-dialog]
 
-      ;; Rules
-      (when (contains? layout :rules)
-        [:*
-         [:& horizontal-rule]
-         [:& vertical-rule]])
+      [:section.workspace-viewport
+       (when (contains? layout :rules)
+         [:*
+          [:div.empty-rule-square]
+          [:& horizontal-rule {:zoom (:zoom local)
+                               :size (:size local)}]
+          [:& vertical-rule {:zoom (:zoom local 1)
+                             :size (:size local)}]])
 
-      [:section.workspace-viewport {:id "workspace-viewport"}
-       [:& viewport {:page page :file file}]]]
+       [:& viewport {:page page
+                     :file file
+                     :local local}]]]
 
      [:& left-toolbar {:page page :layout layout}]
 

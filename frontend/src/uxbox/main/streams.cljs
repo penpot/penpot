@@ -77,14 +77,19 @@
   [current]
   (->> (rx/concat (rx/of current)
                   (rx/sample 10 mouse-position))
-       (rx/map #(gpt/divide % (gpt/point @refs/selected-zoom)))
-       ;; (rx/mapcat (fn [point]
-       ;;              (if @refs/selected-alignment
-       ;;                (uwrk/align-point point)
-       ;;                (rx/of point))))
        (rx/buffer 2 1)
        (rx/map (fn [[old new]]
                  (gpt/subtract new old)))))
+
+
+(defonce mouse-position-delta
+  (let [sub (rx/behavior-subject nil)
+        ob  (->> st/stream
+                 (rx/filter pointer-event?)
+                 (rx/filter #(= :delta (:source %)))
+                 (rx/map :pt))]
+    (rx/subscribe-with ob sub)
+    sub))
 
 (defonce viewport-scroll
   (let [sub (rx/behavior-subject nil)
