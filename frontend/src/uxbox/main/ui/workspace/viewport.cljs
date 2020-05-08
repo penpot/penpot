@@ -24,6 +24,7 @@
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.hooks :as hooks]
    [uxbox.main.ui.workspace.shapes :refer [shape-wrapper frame-wrapper]]
+   [uxbox.main.ui.workspace.shapes.interactions :refer [interactions]]
    [uxbox.main.ui.workspace.drawarea :refer [draw-area start-drawing]]
    [uxbox.main.ui.workspace.grid :refer [grid]]
    [uxbox.main.ui.workspace.ruler :refer [ruler]]
@@ -126,8 +127,8 @@
 
 (mf/defc viewport
   [{:keys [page local] :as props}]
-  (let [
-        {:keys [drawing-tool
+  (let [{:keys [drawing-tool
+                options-mode
                 zoom
                 flags
                 vport
@@ -375,5 +376,7 @@
         [:& ruler {:zoom zoom :ruler (:ruler local)}])
 
       [:& presence/active-cursors {:page page}]
-      [:& selection-rect {:data (:selrect local)}]]]))
+      [:& selection-rect {:data (:selrect local)}]
+      (when (= options-mode :prototype)
+        [:& interactions {:selected selected}])]]))
 

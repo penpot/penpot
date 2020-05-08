@@ -30,45 +30,16 @@
 
 (defn on-mouse-down
   [event {:keys [interactions] :as shape}]
-  (let [interaction (first (filter #(= (:action-type % :click)) interactions))]
+  (let [interaction (first (filter #(= (:event-type %) :click) interactions))]
     (case (:action-type interaction)
       :navigate
       (let [frame-id (:destination interaction)]
         (st/emit! (dv/go-to-frame frame-id)))
       nil)))
 
-(declare shape-wrapper-factory)
-
-(defn frame-wrapper-factory
-  [objects]
-  (let [shape-wrapper (shape-wrapper-factory objects)
-        frame-shape   (frame/frame-shape shape-wrapper)]
-    (mf/fnc frame-wrapper
-      {::mf/wrap-props false}
-      [props]
-      (let [shape (unchecked-get props "shape")
-            childs (mapv #(get objects %) (:shapes shape))
-            shape  (geom/transform-shape shape)
-            props  (obj/merge! #js {} props
-                               #js {:shape shape
-                                    :childs childs})]
-        [:& frame-shape {:shape shape :childs childs}]))))
-
-(defn group-wrapper-factory
-  [objects]
-  (let [shape-wrapper (shape-wrapper-factory objects)
-        group-shape   (group/group-shape shape-wrapper)]
-    (mf/fnc group-wrapper
-      {::mf/wrap-props false}
-      [props]
-      (let [shape  (unchecked-get props "shape")
-            childs (mapv #(get objects %) (:shapes shape))
-            props  (obj/merge! #js {} props #
-                               js {:childs childs})]
-        [:> group-shape props]))))
-
 (defn generic-wrapper-factory
-  [component]
+  "Wrap some svg shape and add interaction controls"
+  [component show-interactions?]
   (mf/fnc generic-wrapper
     {::mf/wrap-props false}
     [props]
@@ -76,14 +47,18 @@
            :as shape} (->> (unchecked-get props "shape")
                            (geom/selection-rect-shape))
 
-          show-interactions? (unchecked-get props "show-interactions?")
+          childs (unchecked-get props "childs")
+          frame (unchecked-get props "frame")
+
           on-mouse-down (mf/use-callback
                          (mf/deps shape)
                          #(on-mouse-down % shape))]
 
       [:g.shape {:on-mouse-down on-mouse-down
                  :cursor (when (:interactions shape) "pointer")}
-       [:& component {:shape shape}]
+       [:& component {:shape shape
+                      :frame frame
+                      :childs childs}]
        (when (and (:interactions shape) show-interactions?)
          [:rect {:x (- x 1)
                  :y (- y 1)
@@ -94,38 +69,100 @@
                  :stroke-width 1
                  :fill-opacity 0.2}])])))
 
-(def rect-wrapper (generic-wrapper-factory rect/rect-shape))
-(def icon-wrapper (generic-wrapper-factory icon/icon-shape))
-(def image-wrapper (generic-wrapper-factory image/image-shape))
-(def path-wrapper (generic-wrapper-factory path/path-shape))
-(def text-wrapper (generic-wrapper-factory text/text-shape))
-(def circle-wrapper (generic-wrapper-factory circle/circle-shape))
+(defn frame-wrapper
+  [shape-container show-interactions?]
+  (generic-wrapper-factory (frame/frame-shape shape-container) show-interactions?))
 
-(defn shape-wrapper-factory
-  [objects]
-  (mf/fnc shape-wrapper
-    {::mf/wrap-props false}
-    [props]
-    (let [group-wrapper (mf/use-memo (mf/deps objects) #(group-wrapper-factory objects))
-          shape (unchecked-get props "shape")
-          frame (unchecked-get props "frame")
-          show-interactions? (unchecked-get props "show-interactions?")]
-      (when (and shape (not (:hidden shape)))
-        (let [shape (geom/transform-shape frame shape)
-              opts #js {:shape shape
-                        :show-interactions? show-interactions?}]
-          (case (:type shape)
-            :curve  [:> path-wrapper opts]
-            :text   [:> text-wrapper opts]
-            :icon   [:> icon-wrapper opts]
-            :rect   [:> rect-wrapper opts]
-            :path   [:> path-wrapper opts]
-            :image  [:> image-wrapper opts]
-            :circle [:> circle-wrapper opts]
-            :group  [:> group-wrapper
-                     {:shape shape
-                      :frame frame
-                      :show-interactions? show-interactions?}]))))))
+(defn group-wrapper
+  [shape-container show-interactions?]
+  (generic-wrapper-factory (group/group-shape shape-container) show-interactions?))
+
+(defn rect-wrapper
+  [show-interactions?]
+  (generic-wrapper-factory rect/rect-shape show-interactions?))
+
+(defn icon-wrapper
+  [show-interactions?]
+  (generic-wrapper-factory icon/icon-shape show-interactions?))
+
+(defn image-wrapper
+  [show-interactions?]
+  (generic-wrapper-factory image/image-shape show-interactions?))
+
+(defn path-wrapper
+  [show-interactions?]
+  (generic-wrapper-factory path/path-shape show-interactions?))
+
+(defn text-wrapper
+  [show-interactions?]
+  (generic-wrapper-factory text/text-shape show-interactions?))
+
+(defn circle-wrapper
+  [show-interactions?]
+  (generic-wrapper-factory circle/circle-shape show-interactions?))
+
+
+(declare shape-container-factory)
+
+(defn frame-container-factory
+  [objects show-interactions?]
+  (let [shape-container (shape-container-factory objects show-interactions?)
+        frame-wrapper (frame-wrapper shape-container show-interactions?)]
+    (mf/fnc frame-container
+      {::mf/wrap-props false}
+      [props]
+      (let [shape (unchecked-get props "shape")
+            childs (mapv #(get objects %) (:shapes shape))
+            shape  (geom/transform-shape shape)
+            props  (obj/merge! #js {} props
+                               #js {:childs childs
+                                    :show-interactions? show-interactions?})]
+        [:> frame-wrapper props]))))
+
+(defn group-container-factory
+  [objects show-interactions?]
+  (let [shape-container (shape-container-factory objects show-interactions?)
+        group-wrapper (group-wrapper shape-container show-interactions?)]
+    (mf/fnc group-container
+      {::mf/wrap-props false}
+      [props]
+      (let [shape  (unchecked-get props "shape")
+            childs (mapv #(get objects %) (:shapes shape))
+            props  (obj/merge! #js {} props
+                               #js {:childs childs
+                                    :show-interactions? show-interactions?})]
+        [:> group-wrapper props]))))
+
+(defn shape-container-factory
+  [objects show-interactions?]
+  (let [path-wrapper (path-wrapper show-interactions?)
+        text-wrapper (text-wrapper show-interactions?)
+        icon-wrapper (icon-wrapper show-interactions?)
+        rect-wrapper (rect-wrapper show-interactions?)
+        image-wrapper (image-wrapper show-interactions?)
+        circle-wrapper (circle-wrapper show-interactions?)]
+    (mf/fnc shape-container
+      {::mf/wrap-props false}
+      [props]
+      (let [group-container (mf/use-memo
+                              (mf/deps objects)
+                              #(group-container-factory objects show-interactions?))
+            shape (unchecked-get props "shape")
+            frame (unchecked-get props "frame")]
+        (when (and shape (not (:hidden shape)))
+          (let [shape (geom/transform-shape frame shape)
+                opts #js {:shape shape}]
+            (case (:type shape)
+              :curve  [:> path-wrapper opts]
+              :text   [:> text-wrapper opts]
+              :icon   [:> icon-wrapper opts]
+              :rect   [:> rect-wrapper opts]
+              :path   [:> path-wrapper opts]
+              :image  [:> image-wrapper opts]
+              :circle [:> circle-wrapper opts]
+              :group [:> group-container
+                      {:shape shape
+                       :frame frame}])))))))
 
 (mf/defc frame-svg
   {::mf/wrap [mf/memo]}
@@ -146,7 +183,7 @@
                     " "    (:height frame 0))
         wrapper (mf/use-memo
                  (mf/deps objects)
-                 #(frame-wrapper-factory objects))]
+                 #(frame-container-factory objects show-interactions?))]
 
     [:svg {:view-box vbox
            :width width
