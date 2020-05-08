@@ -10,7 +10,7 @@
 
   danlentz/clj-uuid {:mvn/version "0.1.9"}
 
-  funcool/beicon {:mvn/version "2020.03.29-1"}
+  funcool/beicon {:mvn/version "2020.05.08-2"}
   funcool/cuerdas {:mvn/version "2020.03.26-3"}
   funcool/lentes {:mvn/version "1.4.0-SNAPSHOT"}
 

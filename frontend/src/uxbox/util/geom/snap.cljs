@@ -11,18 +11,14 @@
   (:require
    [cljs.spec.alpha :as s]
    [clojure.set :as set]
+   [beicon.core :as rx]
    [uxbox.util.math :as mth]
    [uxbox.common.uuid :refer [zero]]
    [uxbox.util.geom.shapes :as gsh]
    [uxbox.util.geom.point :as gpt]
-   [uxbox.util.range-tree :as rt]))
+   [uxbox.main.worker :as uw]))
 
 (def ^:private snap-accuracy 10)
-
-(defn mapm
-  "Map over the values of a map"
-  [mfn coll]
-  (into {} (map (fn [[key val]] [key (mfn val)]) coll)))
 
 (defn- frame-snap-points [{:keys [x y width height]}]
   #{(gpt/point x y)
@@ -55,15 +51,6 @@
    :bottom-left 3
    :left 3})
 
-(defn shape-snap-points-resize
-  [handler shape]
-  (let [modified-path (gsh/transform-apply-modifiers shape)
-        point-idx (handler->point-idx handler)]
-    #{(case (:type shape)
-        :frame (frame-snap-points-resize shape handler)
-        (:path :curve) (-> modified-path gsh/shape->rect-shape :segments (nth point-idx))
-        (-> modified-path :segments (nth point-idx)))}))
-
 (defn shape-snap-points
   [shape]
   (let [modified-path (gsh/transform-apply-modifiers shape)
@@ -73,63 +60,23 @@
       (:path :curve) (into #{shape-center} (-> modified-path gsh/shape->rect-shape :segments))
       (into #{shape-center} (-> modified-path :segments)))))
 
-(defn create-coord-data [shapes coord]
-  (let [process-shape (fn [coord]
-                        (fn [shape]
-                          (let [points (shape-snap-points shape)]
-                            (map #(vector % (:id shape)) points))))
-        into-tree (fn [tree [point _ :as data]]
-                    (rt/insert tree (coord point) data))]
-    (->> shapes
-         (mapcat (process-shape coord))
-         (reduce into-tree (rt/make-tree)))))
 
-(defn initialize-snap-data
-  "Initialize the snap information with the current workspace information"
-  [objects]
-  (let [shapes (vals objects)
-        frame-shapes (->> shapes
-                          (filter (comp not nil? :frame-id))
-                          (group-by :frame-id))
+(defn remove-from-snap-points [ids-to-remove]
+  (fn [query-result]
+    (->> query-result
+         (map (fn [[value data]] [value (remove (comp ids-to-remove second) data)]))
+         (filter (fn [[_ data]] (not (empty? data)))))))
 
-        frame-shapes (->> shapes
-                          (filter #(= :frame (:type %)))
-                          (remove #(= zero (:id %)))
-                          (reduce #(update %1 (:id %2) conj %2) frame-shapes))]
-    (mapm (fn [shapes] {:x (create-coord-data shapes :x)
-                        :y (create-coord-data shapes :y)})
-          frame-shapes)))
+(defn- calculate-distance [query-result point coord]
+  (->> query-result
+       (map (fn [[value data]] [(mth/abs (- value (coord point))) [(coord point) value]]))))
 
-(defn remove-from-snap-points [snap-points ids-to-remove]
-  (->> snap-points
-       (map (fn [[value data]] [value (remove (comp ids-to-remove second) data)]))
-       (filter (fn [[_ data]] (not (empty? data))))))
-
-(defn search-snap-point
-  "Search snap for a single point in the `coord` given"
-  [point coord snap-data filter-shapes]
-
-  (let [coord-value (get point coord)
-
-        ;; This gives a list of [value [[point1 uuid1] [point2 uuid2] ...] we need to remove
-        ;; the shapes in filter shapes
-        candidates (-> snap-data
-                       (rt/range-query (- coord-value snap-accuracy) (+ coord-value snap-accuracy))
-                       (remove-from-snap-points filter-shapes))
-
-        ;; Now return with the distance and the from-to pair that we'll return if this is the chosen
-        point-snaps (map (fn [[cand-value data]] [(mth/abs (- coord-value cand-value)) [coord-value cand-value]]) candidates)]
-    point-snaps))
-
-(defn search-snap
-  "Search a snap point in one axis `snap-data` contains the information to make the snap.
-  `points` are the points that we need to search for a snap and `filter-shapes` is a set of uuids
-  containgin the shapes that should be ignored to get a snap (usually because they are being moved)"
-  [points coord snap-data filter-shapes]
-
-  (let [snap-points (mapcat #(search-snap-point % coord snap-data filter-shapes) points)
-        result (->> snap-points (apply min-key first) second)]
-    result))
+(defn- get-min-distance-snap [points coord]
+  (fn [query-result]
+    (->> points
+         (mapcat #(calculate-distance query-result % coord))
+         (apply min-key first)
+         second)))
 
 (defn snap-frame-id [shapes]
   (let [frames (into #{} (map :frame-id shapes))]
@@ -143,53 +90,63 @@
       ;; Otherwise the root frame is the common
       :else zero)))
 
+(defn flatten-to-points
+  [query-result]
+  (mapcat (fn [[v data]] (map (fn [[point _]] point) data)) query-result))
+
+(defn get-snap-points [page-id frame-id filter-shapes point coord]
+  (let [value (coord point)]
+    (->> (uw/ask! {:cmd :snaps/range-query
+                   :page-id page-id
+                   :frame-id frame-id
+                   :coord coord
+                   :ranges [[(- value 1) (+ value 1)]]})
+         (rx/first)
+         (rx/map (remove-from-snap-points filter-shapes))
+         (rx/map flatten-to-points))))
+
+(defn- search-snap
+  [page-id frame-id points coord filter-shapes]
+  (let [ranges (->> points
+                    (map coord)
+                    (mapv #(vector (- % snap-accuracy)
+                                   (+ % snap-accuracy))))]
+    (->> (uw/ask! {:cmd :snaps/range-query
+                   :page-id page-id
+                   :frame-id frame-id
+                   :coord coord
+                   :ranges ranges})
+         (rx/first)
+         (rx/map (remove-from-snap-points filter-shapes))
+         (rx/map (get-min-distance-snap points coord)))))
+
 (defn- closest-snap
-  [snap-data shapes trans-vec shapes-points]
-  (let [;; Get the common frame-id to make the snap
-        frame-id (snap-frame-id shapes)
-
-        ;; We don't want to snap to the shapes currently transformed
-        remove-shapes (into #{} (map :id shapes))
-
-        ;; The snap is a tuple. The from is the point in the current moving shape
-        ;; the "to" is the point where we'll snap. So we need to create a vector
-        ;; snap-from --> snap-to and move the position in that vector
-        [snap-from-x snap-to-x] (search-snap shapes-points :x (get-in snap-data [frame-id :x]) remove-shapes)
-        [snap-from-y snap-to-y] (search-snap shapes-points :y (get-in snap-data [frame-id :y]) remove-shapes)
-
-        snapv (gpt/to-vec (gpt/point (or snap-from-x 0) (or snap-from-y 0))
-                          (gpt/point (or snap-to-x 0) (or snap-to-y 0)))]
-
-    (gpt/add trans-vec snapv)))
+  [page-id frame-id points filter-shapes]
+  (let [snap-x (search-snap page-id frame-id points :x filter-shapes)
+        snap-y (search-snap page-id frame-id points :y filter-shapes)
+        snap-as-vector (fn [[from-x to-x] [from-y to-y]]
+                         (let [from (gpt/point (or from-x 0) (or from-y 0))
+                               to   (gpt/point (or to-x 0)   (or to-y 0))]
+                           (gpt/to-vec from to)))]
+    ;; snap-x is the second parameter because is the "source" to combine
+    (rx/combine-latest snap-as-vector snap-y snap-x)))
 
 (defn closest-snap-point
-  [snap-data shapes point]
-  (closest-snap snap-data shapes point [point]))
+  [page-id shapes point]
+  (let [frame-id (snap-frame-id shapes)
+        filter-shapes (into #{} (map :id shapes))]
+    (->> (closest-snap page-id frame-id [point] filter-shapes)
+         (rx/map #(gpt/add point %)))))
 
 (defn closest-snap-move
-  ([snap-data shapes] (partial closest-snap-move snap-data shapes))
-  ([snap-data shapes trans-vec]
-   (let [shapes-points (->> shapes
-                            ;; Unroll all the possible snap-points
-                            (mapcat (partial shape-snap-points))
+  [page-id shapes movev]
+  (let [frame-id (snap-frame-id shapes)
+        filter-shapes (into #{} (map :id shapes))
+        shapes-points (->> shapes
+                           ;; Unroll all the possible snap-points
+                           (mapcat (partial shape-snap-points))
 
-                            ;; Move the points in the translation vector
-                            (map #(gpt/add % trans-vec)))]
-     (closest-snap snap-data shapes trans-vec shapes-points))))
-
-(defn get-snap-points [snap-data frame-id filter-shapes point coord]
-  (let [value (coord point)
-
-        ;; Search for values within 1 pixel
-        snap-matches (-> (get-in snap-data [frame-id coord])
-                         (rt/range-query (- value 1) (+ value 1))
-                         (remove-from-snap-points filter-shapes))
-
-        snap-points (mapcat (fn [[v data]] (map (fn [[point _]] point) data)) snap-matches)]
-    snap-points))
-
-(defn is-snapping? [snap-data frame-id shape-id point coord]
-  (let [value (coord point)
-        ;; Search for values within 1 pixel
-        snap-points (rt/range-query (get-in snap-data [frame-id coord]) (- value 1.0) (+ value 1.0))]
-    (some (fn [[point other-shape-id]] (not (= shape-id other-shape-id))) snap-points)))
+                           ;; Move the points in the translation vector
+                           (map #(gpt/add % movev)))]
+    (->> (closest-snap page-id frame-id shapes-points filter-shapes)
+         (rx/map #(gpt/add movev %)))))

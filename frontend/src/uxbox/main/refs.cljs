@@ -42,6 +42,9 @@
 (def workspace-page
   (l/derived :workspace-page st/state))
 
+(def workspace-page-id
+  (l/derived :id workspace-page))
+
 (def workspace-file
   (l/derived :workspace-file st/state))
 

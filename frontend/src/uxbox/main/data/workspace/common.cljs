@@ -29,8 +29,7 @@
   (get-ids [this]))
 
 (declare setup-selection-index)
-(declare update-selection-index)
-(declare update-snap-data)
+(declare update-page-indices)
 (declare reset-undo)
 (declare append-undo)
 
@@ -63,8 +62,7 @@
        (let [page (:workspace-page state)
              uidx (get-in state [:workspace-local :undo-index] ::not-found)]
          (rx/concat
-          (rx/of (update-selection-index (:id page))
-                 (update-snap-data (:id page)))
+          (rx/of (update-page-indices (:id page)))
 
           (when (and save-undo? (not= uidx ::not-found))
             (rx/of (reset-undo uidx)))
@@ -146,33 +144,23 @@
   (ptk/reify ::setup-selection-index
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [msg {:cmd :selection/create-index
+      (let [msg {:cmd :create-page-indices
                  :file-id (:id file)
                  :pages pages}]
         (->> (uw/ask! msg)
              (rx/map (constantly ::index-initialized)))))))
 
 
-(defn update-selection-index
+(defn update-page-indices
   [page-id]
-  (ptk/reify ::update-selection-index
+  (ptk/reify ::update-page-indices
     ptk/EffectEvent
     (effect [_ state stream]
       (let [objects (get-in state [:workspace-pages page-id :data :objects])
             lookup  #(get objects %)]
-        (uw/ask! {:cmd :selection/update-index
+        (uw/ask! {:cmd :update-page-indices
                   :page-id page-id
                   :objects objects})))))
-
-(defn update-snap-data
-  [page-id]
-  (ptk/reify ::update-snap-data
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [page  (get-in state [:workspace-pages page-id])
-            objects (get-in page [:data :objects])]
-        (-> state
-            (assoc :workspace-snap-data (snap/initialize-snap-data objects)))))))
 
 ;; --- Common Helpers & Events
 

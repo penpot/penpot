@@ -155,8 +155,7 @@
         (-> state
             (assoc :current-page-id page-id   ; mainly used by events
                    :workspace-local local
-                   :workspace-page (dissoc page :data)
-                   :workspace-snap-data (snap/initialize-snap-data (get-in page [:data :objects])))
+                   :workspace-page (dissoc page :data))
             (assoc-in [:workspace-data page-id] (:data page)))))
 
     ptk/WatchEvent

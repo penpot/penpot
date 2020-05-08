@@ -48,28 +48,4 @@
                         :fill "transparent"
                         :stroke-width "1px"
                         :stroke-opacity 0.5
-                        :pointer-events "none"}}]
-
-       #_(for [point (snap/shape-snap-points shape)]
-         (let [point (gpt/subtract point (gpt/point (:x frame) (:y frame)))]
-           [:* {:key (str "point-" (:id shape) "-" (:x point) "-" (:y point))}
-            [:circle {:cx (:x point)
-                      :cy (:y point)
-                      :r 4
-                      :fill line-color}]
-
-            [:line {:x1 (:x point)
-                    :y1 -10000
-                    :x2 (:x point)
-                    :y2 10000
-                    :style {:stroke line-color :stroke-width "1"}
-                    :opacity 0.4}]
-
-            [:line {:x1 -10000
-                    :y1 (:y point)
-                    :x2 10000
-                    :y2 (:y point)
-                    :style {:stroke line-color :stroke-width "1"}
-                    :opacity 0.4}]]
-           ))
-       ])))
+                        :pointer-events "none"}}]])))
