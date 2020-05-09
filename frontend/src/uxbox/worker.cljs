@@ -19,6 +19,7 @@
    [uxbox.worker.impl :as impl]
    [uxbox.worker.selection]
    [uxbox.worker.thumbnails]
+   [uxbox.worker.snaps]
    [uxbox.util.transit :as t]
    [uxbox.util.worker :as w]))
 

@@ -1,6 +1,7 @@
 (ns uxbox.main.ui.workspace.snap-feedback
   (:require
    [rumext.alpha :as mf]
+   [beicon.core :as rx]
    [uxbox.main.refs :as refs]
    [uxbox.util.geom.snap :as snap]
    [uxbox.util.geom.point :as gpt]))
@@ -30,33 +31,62 @@
           :style {:stroke line-color :stroke-width "1"}
           :opacity 0.4}])
 
-(mf/defc snap-feedback []
-  (let [selected (mf/deref refs/selected-shapes)
+(defn get-snap [coord {:keys [shapes page-id filter-shapes]}]
+  (->> (rx/from shapes)
+       (rx/flat-map (fn [shape]
+                      (->> (snap/shape-snap-points shape)
+                           (map #(vector (:frame-id shape) %)))))
+       (rx/flat-map (fn [[frame-id point]]
+                      (->> (snap/get-snap-points page-id frame-id filter-shapes point coord)
+                           (rx/map #(vector point % coord)))))
+       (rx/reduce conj [])))
+
+(mf/defc snap-feedback-points
+  [{:keys [shapes page-id filter-shapes] :as props}]
+  (let [state (mf/use-state [])
+        subject (mf/use-memo #(rx/subject))]
+
+    (mf/use-effect
+     (fn []
+       (->> subject
+            (rx/switch-map #(rx/combine-latest
+                             concat
+                             (get-snap :y %)
+                             (get-snap :x %)))
+            (rx/subs #(reset! state %)))))
+
+    (mf/use-effect
+     (mf/deps shapes)
+     (fn []
+       (rx/push! subject props)))
+
+    [:g.snap-feedback
+     (for [[point snaps coord] @state]
+       (if (not-empty snaps)
+         [:g.point {:key (str "point-" (:x point) "-" (:y point)  "-" (name coord))}
+          [:& snap-point {:key (str "point-" (:x point) "-" (:y point)  "-" (name coord))
+                          :point point}]
+
+          (for [snap snaps]
+            [:& snap-point {:key (str "snap-" (:x point) "-" (:y point) "-" (:x snap) "-" (:y snap) "-" (name coord))
+                            :point snap}])
+
+          (for [snap snaps]
+            [:& snap-line {:key (str "line-" (:x point) "-" (:y point) "-" (:x snap) "-" (:y snap) "-" (name coord))
+                           :snap snap
+                           :point point}])]))]))
+
+(mf/defc snap-feedback [{:keys []}]
+  (let [page-id (mf/deref refs/workspace-page-id)
+        selected (mf/deref refs/selected-shapes)
         selected-shapes (mf/deref (refs/objects-by-id selected))
         drawing (mf/deref refs/current-drawing-shape)
         filter-shapes (mf/deref refs/selected-shapes-with-children)
         current-transform (mf/deref refs/current-transform)
         snap-data (mf/deref refs/workspace-snap-data)
         shapes (if drawing [drawing] selected-shapes)]
-    (when (or drawing current-transform)
-      (for [shape shapes]
-        (for [point (snap/shape-snap-points shape)]
-          (let [frame-id (:frame-id shape)
-                shape-id (:id shape)
-                snaps (into #{}
-                            (concat 
-                             (snap/get-snap-points snap-data frame-id filter-shapes point :x)
-                             (snap/get-snap-points snap-data frame-id filter-shapes point :y)))]
-            (if (not-empty snaps)
-              [:* {:key (str "point-" (:id shape) "-" (:x point) "-" (:y point))}
-               [:& snap-point {:point point}]
-
-               (for [snap snaps]
-                 [:& snap-point {:key (str "snap-" (:id shape) "-" (:x point) "-" (:y point) "-" (:x snap) "-" (:y snap))
-                                 :point snap}])
-
-               (for [snap snaps]
-                 [:& snap-line {:key (str "line-" (:id shape) "-" (:x point) "-" (:y point) "-" (:x snap) "-" (:y snap))
-                                :snap snap
-                                :point point}])])))))))
+    (when (or drawing current-transform) 
+        [:& snap-feedback-points {:shapes shapes
+                                  :page-id page-id
+                                  :filter-shapes filter-shapes}])))
 

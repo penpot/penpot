@@ -79,14 +79,12 @@
 ;; -- RESIZE
 (defn start-resize
   [handler ids shape]
-  (letfn [(resize [shape initial resizing-shapes snap-data [point lock?]]
+  (letfn [(resize [shape initial resizing-shapes [point lock? point-snap]]
             (let [{:keys [width height rotation]} shape
                   shapev (-> (gpt/point width height))
 
                   ;; Vector modifiers depending on the handler
                   handler-modif (let [[x y] (handler-modifiers handler)] (gpt/point x y))
-
-                  point-snap (snap/closest-snap-point snap-data resizing-shapes point)
 
                   ;; Difference between the origin point in the coordinate system of the rotation
                   deltav (-> (gpt/to-vec initial (if (= rotation 0) point-snap point))
@@ -137,7 +135,6 @@
         (let [shape  (gsh/shape->rect-shape shape)
               initial (handler->initial-point shape handler)
               stoper (rx/filter ms/mouse-up? stream)
-              snap-data (get state :workspace-snap-data)
               page-id (get state :current-page-id)
               resizing-shapes (map #(get-in state [:workspace-data page-id :objects %]) ids)]
           (rx/concat
@@ -145,7 +142,10 @@
                 ;; (rx/mapcat apply-grid-alignment)
                 (rx/with-latest vector ms/mouse-position-ctrl)
                 (rx/map normalize-proportion-lock)
-                (rx/mapcat (partial resize shape initial resizing-shapes snap-data))
+                (rx/switch-map (fn [[point :as current]]
+                               (->> (snap/closest-snap-point page-id resizing-shapes point)
+                                    (rx/map #(conj current %)))))
+                (rx/mapcat (partial resize shape initial resizing-shapes))
                 (rx/take-until stoper))
            #_(rx/empty)
            (rx/of (apply-modifiers ids)
@@ -222,13 +222,12 @@
     (watch [_ state stream]
       (let [page-id (get state :current-page-id)
             shapes (mapv #(get-in state [:workspace-data page-id :objects %]) ids)
-            snap-data (get state :workspace-snap-data)
             stopper (rx/filter ms/mouse-up? stream)]
         (rx/concat
          (->> ms/mouse-position
               (rx/take-until stopper)
               (rx/map #(gpt/to-vec from-position %))
-              (rx/map (snap/closest-snap-move snap-data shapes))
+              (rx/switch-map #(snap/closest-snap-move page-id shapes %))
               (rx/map gmt/translate-matrix)
               (rx/map #(set-modifiers ids {:displacement %})))
 

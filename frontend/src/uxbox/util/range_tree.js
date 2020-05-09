@@ -103,6 +103,12 @@ goog.scope(function() {
             recToString(this.root, result);
             return result.join(", ");
         }
+
+        asMap() {
+            const result = {};
+            recTreeAsMap(this.root, result);
+            return result;
+        }
     }
 
     // Tree implementation functions
@@ -243,7 +249,6 @@ goog.scope(function() {
             recRangeQuery(branch.left, fromValue, toValue, result);
         }
         if (fromValue <= branch.value && toValue >= branch.value) {
-            // Array.prototype.push.apply(result, branch.data);
             result.push(vec([branch.value, vec(branch.data)]))
         }
         if (toValue > branch.value) {
@@ -345,6 +350,16 @@ goog.scope(function() {
         return "[" + printTree(tree.left) + " " + val + " " + printTree(tree.right) + "]";
     }
 
+    function recTreeAsMap(branch, result) {
+        if (!branch) {
+            return result;
+        }
+        recTreeAsMap(branch.left, result);
+        result[branch.value] = branch.data;
+        recTreeAsMap(branch.right, result);
+        return result;
+    }
+
     // External API to CLJS
     const self = uxbox.util.range_tree;
     self.make_tree = () => new RangeTree();
@@ -367,5 +382,6 @@ goog.scope(function() {
     self.empty_QMARK_ = (tree) => tree.isEmpty();
     self.height = (tree) => tree.height();
     self.print = (tree) => printTree(tree.root);
+    self.as_map = (tree) => tree.asMap();
 });
 

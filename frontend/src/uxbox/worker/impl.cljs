@@ -20,3 +20,17 @@
 (defmethod handler :echo
   [message]
   message)
+
+(defmethod handler :create-page-indices
+  [message]
+  (handler (-> message
+               (assoc :cmd :selection/create-index)))
+  (handler (-> message
+               (assoc :cmd :snaps/create-index))))
+
+(defmethod handler :update-page-indices
+  [message]
+  (handler (-> message
+               (assoc :cmd :selection/update-index)))
+  (handler (-> message
+               (assoc :cmd :snaps/update-index))))

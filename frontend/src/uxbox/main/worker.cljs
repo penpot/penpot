@@ -16,7 +16,7 @@
 
 (defn on-error
   [instance error]
-  (js/console.log "error on worker" error))
+  (js/console.error "Error on worker" (.-data error)))
 
 (defonce instance
   (when (not= *target* "nodejs")

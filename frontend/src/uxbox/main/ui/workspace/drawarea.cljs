@@ -116,20 +116,9 @@
         (rx/of handle-drawing-generic)))))
 
 (def handle-drawing-generic
-  (letfn [(initialize-drawing [state point frame-id]
-            (let [shape (get-in state [:workspace-local :drawing])
-                  shape (geom/setup shape {:x (:x point)
-                                           :y (:y point)
-                                           :width 1
-                                           :height 1})]
-              (assoc-in state [:workspace-local :drawing] (-> shape
-                                                              (assoc :frame-id frame-id)
-                                                              (assoc ::initialized? true)))))
-
-          (resize-shape [{:keys [x y] :as shape} initial snap-data point lock?]
+  (letfn [(resize-shape [{:keys [x y] :as shape} initial point lock? point-snap]
             (let [shape' (geom/shape->rect-shape shape)
                   shapev (gpt/point (:width shape') (:height shape'))
-                  point-snap (snap/closest-snap-point snap-data [shape] point)
                   deltav (gpt/to-vec initial point-snap)
                   scalev (gpt/divide (gpt/add shapev deltav) shapev)
                   scalev (if lock?
@@ -141,8 +130,8 @@
                   (assoc-in [:modifiers :resize-origin] (gpt/point x y))
                   (assoc-in [:modifiers :resize-rotation] 0))))
 
-          (update-drawing [state initial snap-data point lock?]
-            (update-in state [:workspace-local :drawing] resize-shape initial snap-data point lock?))]
+          (update-drawing [state initial point lock? point-snap]
+            (update-in state [:workspace-local :drawing] resize-shape initial point lock? point-snap))]
 
     (ptk/reify ::handle-drawing-generic
       ptk/WatchEvent
@@ -151,7 +140,6 @@
               stoper? #(or (ms/mouse-up? %) (= % :interrupt))
               stoper (rx/filter stoper? stream)
               initial @ms/mouse-position
-              snap-data (get state :workspace-snap-data)
               mouse ms/mouse-position
 
               page-id (get state :current-page-id)
@@ -162,17 +150,26 @@
                           (filter (comp #{:frame} :type))
                           (remove #(= (:id %) uuid/zero) ))
 
-              frame-id (->> frames
-                            (filter #(geom/has-point? % initial))
-                            first
-                            :id)]
+              frame-id (or (->> frames
+                                (filter #(geom/has-point? % initial))
+                                first
+                                :id)
+                           uuid/zero)
+
+              shape (-> state
+                        (get-in [:workspace-local :drawing])
+                        (geom/setup {:x (:x initial) :y (:y initial) :width 1 :height 1})
+                        (assoc :frame-id frame-id)
+                        (assoc ::initialized? true))]
           (rx/concat
-           (->> mouse
-                (rx/take 1)
-                (rx/map (fn [pt] #(initialize-drawing % pt (or frame-id uuid/zero)))))
+           (rx/of #(assoc-in state [:workspace-local :drawing] shape))
+
            (->> mouse
                 (rx/with-latest vector ms/mouse-position-ctrl)
-                (rx/map (fn [[pt ctrl?]] #(update-drawing % initial snap-data pt ctrl?)))
+                (rx/switch-map (fn [[point :as current]]
+                                 (->> (snap/closest-snap-point page-id [shape] point)
+                                      (rx/map #(conj current %)))))
+                (rx/map (fn [[pt ctrl? point-snap]] #(update-drawing % initial pt ctrl? point-snap)))
                 (rx/take-until stoper))
            (rx/of handle-finish-drawing)))))))
 
