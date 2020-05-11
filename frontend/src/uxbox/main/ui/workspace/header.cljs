@@ -108,6 +108,13 @@
          (if (contains? layout :libraries)
            (t locale "workspace.header.menu.hide-libraries")
            (t locale "workspace.header.menu.show-libraries"))]]
+
+       [:li {:on-click #(st/emit! (dw/toggle-layout-flag :dynamic-alignment))}
+        [:span i/shape-halign-left]
+        [:span
+         (if (contains? layout :dynamic-alignment)
+           (t locale "workspace.header.menu.disable-dynamic-alignment")
+           (t locale "workspace.header.menu.enable-dynamic-alignment"))]]
        ]]]))
 
 ;; --- Header Component

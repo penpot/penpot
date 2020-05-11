@@ -24,7 +24,7 @@
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.geom.shapes :as gsh]
-   [uxbox.util.geom.snap :as snap]))
+   [uxbox.main.snap :as snap]))
 
 ;; -- Declarations
 
@@ -145,14 +145,15 @@
               initial (handler->initial-point shape handler)
               stoper (rx/filter ms/mouse-up? stream)
               page-id (get state :current-page-id)
-              resizing-shapes (map #(get-in state [:workspace-data page-id :objects %]) ids)]
+              resizing-shapes (map #(get-in state [:workspace-data page-id :objects %]) ids)
+              layout (get state :workspace-layout)]
           (rx/concat
            (->> ms/mouse-position
                 ;; (rx/mapcat apply-grid-alignment)
                 (rx/with-latest vector ms/mouse-position-ctrl)
                 (rx/map normalize-proportion-lock)
                 (rx/switch-map (fn [[point :as current]]
-                               (->> (snap/closest-snap-point page-id resizing-shapes point)
+                               (->> (snap/closest-snap-point page-id resizing-shapes layout point)
                                     (rx/map #(conj current %)))))
                 (rx/mapcat (partial resize shape initial resizing-shapes))
                 (rx/take-until stoper))
@@ -231,12 +232,13 @@
     (watch [_ state stream]
       (let [page-id (get state :current-page-id)
             shapes (mapv #(get-in state [:workspace-data page-id :objects %]) ids)
-            stopper (rx/filter ms/mouse-up? stream)]
+            stopper (rx/filter ms/mouse-up? stream)
+            layout (get state :workspace-layout)]
         (rx/concat
          (->> ms/mouse-position
               (rx/take-until stopper)
               (rx/map #(gpt/to-vec from-position %))
-              (rx/switch-map #(snap/closest-snap-move page-id shapes %))
+              (rx/switch-map #(snap/closest-snap-move page-id shapes layout %))
               (rx/map gmt/translate-matrix)
               (rx/map #(set-modifiers ids {:displacement %})))
 

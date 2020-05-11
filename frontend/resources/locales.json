@@ -875,6 +875,8 @@
       "en" : "Show rules"
     }
   },
+  "workspace.header.menu.disable-dynamic-alignment": "Disable dynamic alignment",
+  "workspace.header.menu.enable-dynamic-alignment": "Enable dynamic aligment",
   "workspace.header.viewer" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:153" ],
     "translations" : {

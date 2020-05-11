@@ -32,7 +32,6 @@
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.geom.shapes :as geom]
-   [uxbox.util.geom.snap :as snap]
    [uxbox.util.math :as mth]
    [uxbox.util.router :as rt]
    [uxbox.util.transit :as t]
@@ -67,7 +66,7 @@
     :layers
     :element-options
     :rules
-    })
+    :dynamic-alignment})
 
 (s/def ::options-mode #{:design :prototype})
 
@@ -1452,6 +1451,7 @@
    "ctrl+shift+i" #(st/emit! (toggle-layout-flag :libraries))
    "ctrl+shift+l" #(st/emit! (toggle-layout-flag :layers))
    "ctrl+shift+r" #(st/emit! (toggle-layout-flag :rules))
+   "ctrl+shift+d" #(st/emit! (toggle-layout-flag :dynamic-alignment))
    "+" #(st/emit! increase-zoom)
    "-" #(st/emit! decrease-zoom)
    "ctrl+g" #(st/emit! create-group)
