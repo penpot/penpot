@@ -118,7 +118,7 @@
                   :width (+ width 2)
                   :height (+ height 2)
                   :style {:stroke "#1FDEA7"
-                          :stroke-width "1"
+                          :stroke-width (/ 1 zoom)
                           :fill "transparent"}}])
 
      (when (not (#{:move :rotate} current-transform))

@@ -2,6 +2,9 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.util.geom.shapes
@@ -80,52 +83,6 @@
         dy (if y (- (_chk y) (_chk (:y shape))) 0)]
     (move shape (gpt/point dx dy))))
 
-;; --- Rotation
-
-;; TODO: maybe we can consider apply the rotation
-;;       directly to the shape coordinates?
-;; FIXME: deprecated, should be removed
-
-(defn rotate
-  "Apply the rotation to the shape."
-  [shape rotation]
-  (assoc shape :rotation rotation))
-
-;; --- Corner points
-
-(defn corner-points [points]
-  (let [minx (apply min (map :x points))
-        miny (apply min (map :y points))
-        maxx (apply max (map :x points))
-        maxy (apply max (map :y points))]
-    {:x1 minx :y1 miny :x2 maxx :y2 maxy}))
-
-;; --- Size
-
-(declare size-path)
-
-(defn size
-  "Calculate the size of the shape."
-  [shape]
-  (case (:type shape)
-    :curve (size-path shape)
-    :path (size-path shape)
-    shape))
-
-(defn- size-path
-  [{:keys [segments x1 y1 x2 y2] :as shape}]
-  (if (and x1 y1 x2 y2)
-    (assoc shape
-           :width (- x2 x1)
-           :height (- y2 y1))
-    (let [minx (apply min (map :x segments))
-          miny (apply min (map :y segments))
-          maxx (apply max (map :x segments))
-          maxy (apply max (map :y segments))]
-      (assoc shape
-             :width (- maxx minx)
-             :height (- maxy miny)))))
-
 ;; --- Center
 
 (declare center-rect)
@@ -173,8 +130,6 @@
 (defn- assign-proportions-rect
   [{:keys [width height] :as shape}]
   (assoc shape :proportion (/ width height)))
-
-;; TODO: implement the rest of shapes
 
 ;; --- Paths
 
@@ -230,49 +185,6 @@
         (-> shape
             (assoc :height value)
             (assoc :width (* value proportion)))))))
-
-;; --- Resize
-
-(defn calculate-scale-ratio
-  "Calculate the scale factor from one shape to an other.
-
-  The shapes should be of rect-like type because width
-  and height are used for calculate the ratio."
-  [origin final]
-  [(/ (:width final) (:width origin))
-   (/ (:height final) (:height origin))])
-
-(defn- get-vid-coords [vid]
-  (case vid
-    :top-left     [:x2 :y2]
-    :top-right    [:x1 :y2]
-    :top          [:x1 :y2]
-    :bottom-left  [:x2 :y1]
-    :bottom-right [:x  :y ]
-    :bottom       [:x1 :y1]
-    :right        [:x1 :y1]
-    :left         [:x2 :y1]))
-
-(defn resize-shape
-  "Apply a resize transformation to a rect-like shape. The shape
-  should have the `width` and `height` attrs, because these attrs
-  are used for the resize transformation.
-
-  Mainly used in drawarea and interactive resize on workspace
-  with the main objective that on the end of resize have a way
-  a calculte the resize ratio with `calculate-scale-ratio`."
-  [vid shape initial target lock?]
-
-  (let [{:keys [x y]} (gpt/subtract target initial)
-        [cor-x cor-y] (get-vid-coords vid)]
-    (let [final-x (if (#{:top :bottom} vid) (:x2 shape) x)
-          final-y (if (#{:right :left} vid) (:y2 shape) y)
-          width (Math/abs (- final-x (cor-x shape)))
-          height (Math/abs (- final-y (cor-y shape)))
-          proportion (:proportion shape 1)]
-      (assoc shape
-             :width width
-             :height (if lock? (/ width proportion) height)))))
 
 ;; --- Setup (Initialize)
 
@@ -453,15 +365,6 @@
     (assoc shape :segments segments)))
 
 ;; --- Outer Rect
-
-(defn rotation-matrix
-  "Generate a rotation matrix from shape."
-  [{:keys [x y width height rotation] :as shape}]
-  (let [cx (+ x (/ width 2))
-        cy (+ y (/ height 2))]
-    (cond-> (gmt/matrix)
-      (and rotation (pos? rotation))
-      (gmt/rotate rotation (gpt/point cx cy)))))
 
 (declare transform-apply-modifiers)
 
@@ -730,7 +633,8 @@
     (gpt/divide (gpt/point (:width shape-path-temp-rec) (:height shape-path-temp-rec))
                 (gpt/point (:width shape-path-temp-dim) (:height shape-path-temp-dim)))))
 
-(defn- fix-invalid-rect-values [rect-shape]
+(defn fix-invalid-rect-values
+  [rect-shape]
   (letfn [(check [num] (if (or (nil? num) (mth/nan? num)) 0 num))
           (to-positive [num] (if (< num 1) 1 num))]
     (-> rect-shape
@@ -831,3 +735,33 @@
          (gmt/translate shape-center)
          (gmt/multiply (:transform shape (gmt/matrix)))
          (gmt/translate (gpt/negate shape-center))))))
+
+(defn adjust-to-viewport
+  ([viewport srect] (adjust-to-viewport viewport srect nil))
+  ([viewport srect {:keys [padding] :or {padding 0}}]
+   (let [gprop (/ (:width viewport) (:height viewport))
+         srect (-> srect
+                   (update :x #(- % padding))
+                   (update :y #(- % padding))
+                   (update :width #(+ % padding padding))
+                   (update :height #(+ % padding padding)))
+         width (:width srect)
+         height (:height srect)
+         lprop (/ width height)]
+     (cond
+      (> gprop lprop)
+      (let [width'  (* (/ width lprop) gprop)
+            padding (/ (- width' width) 2)]
+        (-> srect
+            (update :x #(- % padding))
+            (assoc :width width')))
+
+      (< gprop lprop)
+      (let [height' (/ (* height lprop) gprop)
+            padding (/ (- height' height) 2)]
+        (-> srect
+            (update :y #(- % padding))
+            (assoc :height height')))
+
+      :else srect))))
+

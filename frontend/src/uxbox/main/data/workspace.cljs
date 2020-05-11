@@ -66,18 +66,13 @@
     :sitemap-pages
     :layers
     :element-options
-    :rules})
+    :rules
+    })
 
 (s/def ::options-mode #{:design :prototype})
 
 (def workspace-default
   {:zoom 1
-   :size {:x 0
-          :y 0
-          :width c/viewport-width
-          :height c/viewport-width
-          :viewport-width c/viewport-width
-          :viewport-height c/viewport-height}
    :flags #{}
    :selected #{}
    :drawing nil
@@ -196,51 +191,59 @@
 
 ;; --- Viewport Sizing
 
+(declare zoom-to-fit-all)
+
+;; TODO: add-spec
+
 (defn initialize-viewport
   [{:keys [width height] :as size}]
+  (js/console.log "initialize-viewport" size)
   (ptk/reify ::initialize-viewport
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-local
               (fn [local]
                 (-> local
-                    (assoc :zoom 1)
-                    (update :size assoc
-                            :x 0
-                            :y 0
-                            :width width
-                            :height height
-                            :viewport-width width
-                            :viewport-height height)))))))
+                    (assoc :vport size)
+                    (update :vbox (fn [vbox]
+                                    (if (nil? vbox)
+                                      (assoc size :x 0 :y 0)
+                                      vbox)))))))
 
-
+    ptk/WatchEvent
+    (watch [_ state stream]
+      #_(rx/of zoom-to-fit-all))))
 
 (defn update-viewport-position
   [{:keys [x y] :or {x identity y identity}}]
+  (us/assert fn? x)
+  (us/assert fn? y)
   (ptk/reify ::update-viewport-position
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:workspace-local :size]
-                 (fn [size]
-                   (-> size
-                       (update :x x)
-                       (update :y y)))))))
+      (update-in state [:workspace-local :vbox]
+                 (fn [vbox]
+                   (-> vbox
+                       (update :x (comp mth/round x))
+                       (update :y (comp mth/round y))))))))
+
+;; TODO: add spec
 
 (defn update-viewport-size
-  [{:keys [width height]}]
+  [{:keys [width height] :as size}]
   (ptk/reify ::update-viewport-size
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-local
-              (fn [{:keys [size] :as local}]
-                (let [wprop (/ (:viewport-width size) width)
-                      hprop (/ (:viewport-height size) height)
-                      size'  (-> size
-                                (assoc :viewport-width width)
-                                (assoc :viewport-height height)
-                                (update :width #(/ % wprop))
-                                (update :height #(/ % hprop)))]
-                  (assoc local :size size')))))))
+              (fn [{:keys [vbox vport] :as local}]
+                (let [wprop (/ (:width vport) width)
+                      hprop (/ (:height vport) height)]
+                  (-> local
+                      (assoc :vport size)
+                      (update :vbox (fn [vbox]
+                                      (-> vbox
+                                          (update :width #(/ % wprop))
+                                          (update :height #(/ % hprop))))))))))))
 
 ;; ---
 
@@ -325,19 +328,15 @@
 ;; --- Zoom Management
 
 (defn- impl-update-zoom
-  [local zoom]
-  (let [base-width (get-in local [:size :viewport-width])
-        base-height (get-in local [:size :viewport-height])
-
-        zoom (if (fn? zoom)
+  [{:keys [vbox vport] :as local} zoom]
+  (let [zoom (if (fn? zoom)
                (zoom (:zoom local))
                zoom)
-
-        width (/ base-width zoom)
-        height (/ base-height zoom)]
+        width (/ (:width vport) zoom)
+        height (/ (:height vport) zoom)]
     (-> local
         (assoc :zoom zoom)
-        (update :size assoc :width width :height height))))
+        (update :vbox assoc :width width :height height))))
 
 (defn increase-zoom
   [center]
@@ -376,51 +375,45 @@
       (update state :workspace-local
               #(impl-update-zoom % 2)))))
 
-;; (defn impl-expand-rect
-;;   [{:keys [x y width height] :as rect} padding]
-;;   (assoc rect
-;;          :x (- x padding)
-;;          :y (- y padding)
-;;          :width (+ width padding)
-;;          :height (+ height padding)))
+(def zoom-to-fit-all
+  (ptk/reify ::zoom-to-fit-all
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [page-id (get-in state [:workspace-page :id])
+            objects (get-in state [:workspace-data page-id :objects])
+            shapes  (cp/select-toplevel-shapes objects {:include-frames? true})
+            srect   (geom/shapes->rect-shape shapes)]
 
-;; (def zoom-to-selected-shape
-;;   (ptk/reify ::zoom-to-selected-shape
-;;     ptk/UpdateEvent
-;;     (update [_ state]
-;;       (let [page-id  (get-in state [:workspace-page :id])
-;;             objects  (get-in state [:workspace-data page-id :objects])
-;;             selected (get-in state [:workspace-local :selected])
-;;             shapes   (map #(get objects %) selected)
-;;             rect     (geom/selection-rect shapes)
-;;             rect     (impl-expand-rect rect 20)
-;;             ]
-;;         (update state :workspace-local
-;;                 (fn [{:keys [size] :as local}]
-;;                   (let [proportion (/ (:viewport-width size) (:viewport-height size))
-;;                         width (:width rect)
-;;                         height (/ (:width rect) proportion)
+        (if (or (mth/nan? (:width srect))
+                (mth/nan? (:height srect)))
+          state
+          (update state :workspace-local
+                  (fn [{:keys [vbox vport] :as local}]
+                    (let [srect (geom/adjust-to-viewport vport srect {:padding 40})
+                          zoom  (/ (:width vport) (:width srect))]
+                      (-> local
+                          (assoc :zoom zoom)
+                          (update :vbox merge srect))))))))))
 
-;;                         [width height] (if (> (:height rect) height)
-;;                                          [(* width proportion) (:height rect)]
-;;                                          [width height])
-
-;;                         zoom (/ (:viewport-width size) width)]
-
-;;                     ;; (js/console.log "proportion=" proportion
-;;                     ;;                 "width=" width
-;;                     ;;                 "height=" height
-;;                     ;;                 "viewport-width=" (:viewport-width size)
-;;                     ;;                 "viewport-height=" (:viewport-height size))
-;;                     (-> local
-;;                         (assoc :zoom zoom)
-;;                         (update :size assoc
-;;                                 :x (:x rect)
-;;                                 :y (:y rect)
-;;                                 :width width
-;;                                 :height height
-;;                                 )))))))))
-
+(def zoom-to-selected-shape
+  (ptk/reify ::zoom-to-selected-shape
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [selected (get-in state [:workspace-local :selected])]
+        (if (empty? selected)
+          state
+          (let [page-id (get-in state [:workspace-page :id])
+                objects (get-in state [:workspace-data page-id :objects])
+                srect  (->> selected
+                            (map #(get objects %))
+                            (geom/selection-rect))]
+            (update state :workspace-local
+                    (fn [{:keys [vbox vport] :as local}]
+                      (let [srect (geom/adjust-to-viewport vport srect {:padding 40})
+                            zoom  (/ (:width vport) (:width srect))]
+                        (-> local
+                            (assoc :zoom zoom)
+                            (update :vbox merge srect)))))))))))
 
 ;; --- Selection Rect
 
@@ -1464,9 +1457,10 @@
    "ctrl+g" #(st/emit! create-group)
    "ctrl+shift+g" #(st/emit! remove-group)
    "shift+0" #(st/emit! zoom-to-50)
-   "shift+1" #(st/emit! reset-zoom)
-   "shift+2" #(st/emit! zoom-to-200)
-   ;; "shift+2" #(st/emit! zoom-to-selected-shape)
+   ;; "shift+1" #(st/emit! reset-zoom)
+   "shift+1" #(st/emit! zoom-to-fit-all)
+   ;; "shift+2" #(st/emit! zoom-to-200)
+   "shift+2" #(st/emit! zoom-to-selected-shape)
    "ctrl+d" #(st/emit! duplicate-selected)
    "ctrl+z" #(st/emit! dwc/undo)
    "ctrl+shift+z" #(st/emit! dwc/redo)

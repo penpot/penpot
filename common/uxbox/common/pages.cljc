@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2019-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.common.pages
   "A common (clj/cljs) functions and specs for pages."
@@ -80,22 +80,25 @@
               (remove p? after))))
 
 (defn select-toplevel-shapes
-  [objects]
-  (let [lookup #(get objects %)
-        root   (lookup uuid/zero)
-        childs (:shapes root)]
-    (loop [id  (first childs)
-           ids (rest childs)
-           res []]
-      (if (nil? id)
-        res
-        (let [obj (lookup id)
-              typ (:type obj)]
-          (recur (first ids)
-                 (rest ids)
-                 (if (= :frame typ)
-                   (into res (map lookup) (:shapes obj))
-                   (conj res obj))))))))
+  ([objects] (select-toplevel-shapes objects nil))
+  ([objects {:keys [include-frames?] :or {include-frames? false}}]
+   (let [lookup #(get objects %)
+         root   (lookup uuid/zero)
+         childs (:shapes root)]
+     (loop [id  (first childs)
+            ids (rest childs)
+            res []]
+       (if (nil? id)
+         res
+         (let [obj (lookup id)
+               typ (:type obj)]
+           (recur (first ids)
+                  (rest ids)
+                  (if (= :frame typ)
+                    (if include-frames?
+                      (d/concat res [obj] (map lookup (:shapes obj)))
+                      (d/concat res (map lookup (:shapes obj))))
+                    (conj res obj)))))))))
 
 (defn select-frames
   [objects]
