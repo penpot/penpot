@@ -61,11 +61,14 @@
          [:*
           [:div.empty-rule-square]
           [:& horizontal-rule {:zoom (:zoom local)
-                               :size (:size local)}]
+                               :vbox (:vbox local)
+                               :vport (:vport local)}]
           [:& vertical-rule {:zoom (:zoom local 1)
-                             :size (:size local)}]])
+                             :vbox (:vbox local)
+                             :vport (:vport local)}]])
 
        [:& viewport {:page page
+                     :key (:id page)
                      :file file
                      :local local}]]]
 

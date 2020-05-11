@@ -130,7 +130,8 @@
         {:keys [drawing-tool
                 zoom
                 flags
-                size
+                vport
+                vbox
                 edition
                 tooltip
                 selected]} local
@@ -276,7 +277,8 @@
                  (st/emit! (dw/decrease-zoom pos))
                  (st/emit! (dw/increase-zoom pos))))
              (let [event (.getBrowserEvent event)
-                   delta (.-deltaY ^js event)]
+                   delta (.-deltaY ^js event)
+                   delta (/ delta @refs/selected-zoom)]
                (if (kbd/shift? event)
                  (st/emit! (dw/update-viewport-position {:x #(+ % delta)}))
                  (st/emit! (dw/update-viewport-position {:y #(+ % delta)})))))))
@@ -299,28 +301,23 @@
         on-resize
         (fn [event]
           (let [node (mf/ref-val viewport-ref)
-                parent (.-parentElement ^js node)]
-            (st/emit! (dw/update-viewport-size
-                       {:width (.-clientWidth ^js parent)
-                        :height (.-clientHeight ^js parent)}))))
+                prnt (dom/get-parent node)]
+            (st/emit! (dw/update-viewport-size (dom/get-client-size prnt)))))
 
         on-mount
         (fn []
           (let [node (mf/ref-val viewport-ref)
-                prnt (.-parentElement ^js node)
+                prnt (dom/get-parent node)
 
                 key1 (events/listen js/document EventType.KEYDOWN on-key-down)
                 key2 (events/listen js/document EventType.KEYUP on-key-up)
                 key3 (events/listen node EventType.MOUSEMOVE on-mouse-move)
                 ;; bind with passive=false to allow the event to be cancelled
                 ;; https://stackoverflow.com/a/57582286/3219895
-                key4 (events/listen js/window EventType.WHEEL on-mouse-wheel
-                                    #js {"passive" false})
+                key4 (events/listen js/window EventType.WHEEL on-mouse-wheel #js {:passive false})
                 key5 (events/listen js/window EventType.RESIZE on-resize)]
 
-            (st/emit! (dw/initialize-viewport
-                       {:width (.-clientWidth ^js prnt)
-                        :height (.-clientHeight ^js prnt)}))
+            (st/emit! (dw/initialize-viewport (dom/get-client-size prnt)))
 
             (fn []
               (events/unlistenByKey key1)
@@ -335,22 +332,23 @@
     (mf/use-effect on-mount)
     [:*
      [:& coordinates {:zoom zoom}]
-     [:svg.viewport {
-                     :width (:viewport-width size)
-                     :height (:viewport-height size)
-                     :view-box (str/join " " [(:x size)
-                                              (:y size)
-                                              (:width size)
-                                              (:height size)])
-                     :ref viewport-ref
-                     :class (when drawing-tool "drawing")
-                     :on-context-menu on-context-menu
-                     :on-click on-click
-                     :on-double-click on-double-click
-                     :on-mouse-down on-mouse-down
-                     :on-mouse-up on-mouse-up
-                     :on-drag-over on-drag-over
-                     :on-drop on-drop}
+     [:svg.viewport
+      {:preserveAspectRatio "xMidYMid meet"
+       :width (:width vport 0)
+       :height (:height vport 0)
+       :view-box (str/join " " [(:x vbox 0)
+                                (:y vbox 0)
+                                (:width vbox 0 )
+                                (:height vbox 0)])
+       :ref viewport-ref
+       :class (when drawing-tool "drawing")
+       :on-context-menu on-context-menu
+       :on-click on-click
+       :on-double-click on-double-click
+       :on-mouse-down on-mouse-down
+       :on-mouse-up on-mouse-up
+       :on-drag-over on-drag-over
+       :on-drop on-drop}
       [:g
        [:& frames {:key (:id page)}]
 

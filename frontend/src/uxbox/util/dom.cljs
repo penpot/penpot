@@ -5,8 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
-;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.util.dom
   (:require
@@ -68,6 +67,10 @@
   "Extract the target from event instance."
   [event]
   (.-target event))
+
+(defn get-parent
+  [dom]
+  (.-parentElement ^js dom))
 
 (defn get-value
   "Extract the value from dom node."
@@ -149,6 +152,11 @@
   (let [x (.-clientX event)
         y (.-clientY event)]
     (gpt/point x y)))
+
+(defn get-client-size
+  [node]
+  {:width (.-clientWidth ^js node)
+   :height (.-clientHeight ^js node)})
 
 (defn focus!
   [node]

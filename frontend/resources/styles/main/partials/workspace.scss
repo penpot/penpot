@@ -119,7 +119,7 @@
   }
 
   .workspace-viewport {
-    height: 100%;
+    height: calc(100% - 40px);
     overflow: hidden;
     transition: none;
     width: 100%;
@@ -129,8 +129,9 @@
     grid-template-columns: 20px 1fr;
 
     .viewport {
-      grid-column: 2 / span 1;
-      grid-row: 2 / span 1;
+      grid-column: 1 / span 2;
+      grid-row: 1 / span 2;
+      overflow: hidden;
 
       &.drawing {
         cursor: cell;
@@ -156,7 +157,7 @@
       }
     }
 
-    .viewport, .page-canvas, .page-layout {
+    .page-canvas, .page-layout {
       overflow: visible;
     }
   }

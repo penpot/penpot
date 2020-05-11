@@ -10,121 +10,100 @@
 (ns uxbox.main.ui.workspace.rules
   (:require
    [rumext.alpha :as mf]
+   [uxbox.util.math :as mth]
    [uxbox.util.object :as obj]))
 
-(def STEP-PADDING 20)
+(defn draw-rule!
+  [dctx {:keys [zoom size start count type] :or {count 200}}]
+  (let [txfm (- (* (- 0 start) zoom) 20)
+        minv (mth/round start)
+        maxv (mth/round (+ start (/ size zoom)))
+
+        step  (mth/round (/ (mth/abs (- maxv minv)) count))
+        step  (max (* 1 (* 10 step)) 1)]
+
+    (obj/set! dctx "fillStyle" "#E8E9EA")
+    (if (= type :horizontal)
+      (do
+        (.fillRect dctx 0 0 size 20)
+        (.translate dctx txfm 0))
+      (do
+        (.fillRect dctx 0 0 20 size)
+        (.translate dctx 0 txfm)))
+
+    (obj/set! dctx "font" "12px serif")
+    (obj/set! dctx "fillStyle" "#7B7D85")
+    (obj/set! dctx "strokeStyle" "#7B7D85")
+    (obj/set! dctx "textAlign" "center")
+
+    (loop [i minv]
+      (when (< i maxv)
+        (let [pos (+ (* i zoom) 0)]
+          (when (= (mod i step) 0)
+            (.save dctx)
+            (if (= type :horizontal)
+              (do
+                (.fillText dctx (str i) pos 13))
+              (do
+                (.translate dctx 12 pos)
+                (.rotate dctx (/ (* 270 js/Math.PI) 180))
+                (.fillText dctx (str i) 0 0)))
+            (.restore dctx))
+          (recur (inc i)))))
+
+    (let [path (js/Path2D.)]
+      (loop [i minv]
+        (if (> i maxv)
+          (.stroke dctx path)
+          (let [pos (+ (* i zoom) 0)]
+            (when (= (mod i step) 0)
+              (if (= type :horizontal)
+                (do
+                  (.moveTo path pos 17)
+                  (.lineTo path pos 20))
+                (do
+                  (.moveTo path 17 pos)
+                  (.lineTo path 20 pos))))
+            (recur (inc i))))))))
+
 
 (mf/defc horizontal-rule
-  [{:keys [zoom size]}]
+  [{:keys [zoom vbox vport] :as props}]
   (let [canvas (mf/use-ref)
-        {:keys [x viewport-width width]} size]
-
+        width  (- (:width vport) 20)]
     (mf/use-layout-effect
-     (mf/deps viewport-width width x zoom)
+     (mf/deps zoom width (:x vbox))
      (fn []
        (let [node (mf/ref-val canvas)
-             dctx (.getContext node "2d")
+             dctx (.getContext ^js node "2d")]
+         (obj/set! node "width" width)
+         (draw-rule! dctx {:zoom zoom
+                           :type :horizontal
+                           :size width
+                           :start (:x vbox)}))))
 
-             btm 1
-             trx (- (* (- 0 x) zoom) 50)
-
-             min-val (js/Math.round x)
-             max-val (js/Math.round (+ x (/ viewport-width zoom)))
-
-             tmp0 (js/Math.abs (- max-val min-val))
-             tmp1 (js/Math.round (/ tmp0 200))
-             btm  (max (* btm (* 10 tmp1)) 1)]
-
-         (obj/set! node "width" viewport-width)
-
-         (obj/set! dctx "fillStyle" "#E8E9EA")
-         (.fillRect dctx 0 0 viewport-width 20)
-
-         (.save dctx)
-         (.translate dctx trx 0)
-
-         (obj/set! dctx "font" "12px serif")
-         (obj/set! dctx "fillStyle" "#7B7D85")
-         (obj/set! dctx "strokeStyle" "#7B7D85")
-         (obj/set! dctx "textAlign" "center")
-
-         (loop [i min-val]
-           (when (< i max-val)
-             (let [pos (+ (* i zoom) 50)]
-               (when (= (mod i btm) 0)
-                 (.fillText dctx (str i) (- pos 0) 13))
-               (recur (+ i 1)))))
-
-         (let [path (js/Path2D.)]
-           (loop [i min-val]
-             (if (> i max-val)
-               (.stroke dctx path)
-               (let [pos (+ (* i zoom) 50)]
-                 (when (= (mod i btm) 0)
-                   (.moveTo path pos 17)
-                   (.lineTo path pos STEP-PADDING))
-                 (recur (inc i))))))
-
-         (.restore dctx))))
-
-    [:canvas.horizontal-rule {:ref canvas :width (:viewport-width size) :height 20}]))
-
-
-;; --- Vertical Rule (Component)
+    [:canvas.horizontal-rule
+     {:ref canvas
+      :width width
+      :height 20}]))
 
 (mf/defc vertical-rule
-  {::mf/wrap [mf/memo #(mf/throttle % 60)]}
-  [{:keys [zoom size]}]
+  [{:keys [zoom vbox vport] :as props}]
   (let [canvas (mf/use-ref)
-        {:keys [y height viewport-height]} size]
+        height  (- (:height vport) 20)]
     (mf/use-layout-effect
-     (mf/deps height y zoom)
+     (mf/deps zoom height (:y vbox))
      (fn []
        (let [node (mf/ref-val canvas)
-             dctx (.getContext node "2d")
+             dctx (.getContext ^js node "2d")]
+         (obj/set! node "height" height)
+         (draw-rule! dctx {:zoom zoom
+                           :type :vertical
+                           :size height
+                           :count 100
+                           :start (:y vbox)}))))
 
-             btm 1
-             try (- (* (- 0 y) zoom) 50)
-
-             min-val (js/Math.round y)
-             max-val (js/Math.round (+ y (/ viewport-height zoom)))
-
-             tmp0 (js/Math.abs (- max-val min-val))
-             tmp1 (js/Math.round (/ tmp0 100))
-             btm  (max (* btm (* 10 tmp1)) 1)]
-
-         (obj/set! node "height" viewport-height)
-
-         (obj/set! dctx "fillStyle" "#E8E9EA")
-         (.fillRect dctx 0 0 20 viewport-height)
-
-         (obj/set! dctx "font" "11px serif")
-         (obj/set! dctx "fillStyle" "#7B7D85")
-         (obj/set! dctx "strokeStyle" "#7B7D85")
-         (obj/set! dctx "textAlign" "center")
-
-         (.translate dctx 0 try)
-
-         (loop [i min-val]
-           (when (< i max-val)
-             (let [pos (+ (* i zoom) 50)]
-               (when (= (mod i btm) 0)
-                 (.save dctx)
-                 (.translate dctx 12 pos)
-                 (.rotate dctx (/ (* 270 js/Math.PI) 180))
-                 (.fillText dctx (str i) 0 0)
-                 (.restore dctx))
-               (recur (inc i)))))
-
-         (let [path (js/Path2D.)]
-           (loop [i min-val]
-             (if (> i max-val)
-               (.stroke dctx path)
-               (let [pos (+ (* i zoom) 50)]
-                 (when (= (mod i btm) 0)
-                   (.moveTo path 17 pos)
-                   (.lineTo path STEP-PADDING pos))
-                 (recur (inc i)))))))))
-
-    [:canvas.vertical-rule {:ref canvas :width 20 :height height}]))
-
+    [:canvas.vertical-rule
+     {:ref canvas
+      :width 20
+      :height height}]))

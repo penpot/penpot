@@ -2,7 +2,10 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.main.exports
   "The main logic for SVG export functionality."
@@ -34,13 +37,11 @@
     :fill background-color}])
 
 (defn- calculate-dimensions
-  [data]
-  (let [shapes (vals (:objects data))
-        shape (geom/shapes->rect-shape shapes)
-        width (+ (:x shape) (:width shape) 100)
-        height (+ (:y shape) (:height shape) 100)]
-    {:width (if (mth/nan? width) 100 width)
-     :height (if (mth/nan? height) 100 height)}))
+  [{:keys [objects] :as data} vport]
+  (let [shapes (cp/select-toplevel-shapes objects {:include-frames? true})]
+    (->> (geom/shapes->rect-shape shapes)
+         (geom/adjust-to-viewport vport)
+         (geom/fix-invalid-rect-values))))
 
 (declare shape-wrapper-factory)
 
@@ -86,14 +87,19 @@
 
 (mf/defc page-svg
   {::mf/wrap [mf/memo]}
-  [{:keys [data] :as props}]
+  [{:keys [data width height] :as props}]
   (let [objects (:objects data)
-        dim     (calculate-dimensions data)
+        vport   {:width width :height height}
+
+        dim     (calculate-dimensions data vport)
         root    (get objects uuid/zero)
         shapes  (->> (:shapes root)
                      (map #(get objects %)))
 
-        vbox    (str "0 0 " (:width dim 0) " " (:height dim 0))
+        vbox    (str (:x dim 0) " "
+                     (:y dim 0) " "
+                     (:width dim 100) " "
+                     (:height dim 100))
 
         frame-wrapper
         (mf/use-memo
@@ -104,7 +110,6 @@
         (mf/use-memo
          (mf/deps objects)
          #(shape-wrapper-factory objects))]
-
     [:svg {:view-box vbox
            :version "1.1"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
