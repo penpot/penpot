@@ -77,7 +77,8 @@
    :drawing nil
    :drawing-tool nil
    :tooltip nil
-   :options-mode :design})
+   :options-mode :design
+   :draw-interaction-to nil})
 
 (def initialize-layout
   (ptk/reify ::initialize-layout
@@ -1417,6 +1418,63 @@
                            :shapes [group-id]
                            :index index-in-parent}]]
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Interactions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(declare move-create-interaction)
+(declare finish-create-interaction)
+
+(defn start-create-interaction
+  []
+  (ptk/reify ::start-create-interaction
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [initial-pos @ms/mouse-position
+            selected (get-in state [:workspace-local :selected])
+            stopper (rx/filter ms/mouse-up? stream)]
+        (when (= 1 (count selected))
+          (rx/concat
+            (->> ms/mouse-position
+                 (rx/take-until stopper)
+                 (rx/map #(move-create-interaction initial-pos %)))
+            (rx/of (finish-create-interaction initial-pos))))))))
+
+(defn move-create-interaction
+  [initial-pos position]
+  (ptk/reify ::move-create-interaction
+    ptk/UpdateEvent
+    (update [_ state]
+      (if (= position initial-pos)
+        state
+        (assoc-in state [:workspace-local :draw-interaction-to] position)))))
+
+(defn finish-create-interaction
+  [initial-pos]
+  (ptk/reify ::finish-create-interaction
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :draw-interaction-to] nil))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [position @ms/mouse-position
+
+            page-id (:current-page-id state)
+            objects (get-in state [:workspace-data page-id :objects])
+            frame (dwc/get-frame-at-point objects position)
+
+            shape-id (first (get-in state [:workspace-local :selected]))]
+
+        (when-not (= position initial-pos)
+          (if (and frame shape-id (not= (:id frame) shape-id))
+            (rx/of (update-shape shape-id
+                                 {:interactions [{:event-type :click
+                                                  :action-type :navigate
+                                                  :destination (:id frame)}]}))
+            (rx/of (update-shape shape-id
+                                 {:interactions []}))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports

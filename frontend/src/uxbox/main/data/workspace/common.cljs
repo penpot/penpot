@@ -210,6 +210,15 @@
         (when-not (empty? rch)
           (rx/of (commit-changes rch uch {:commit-local? true})))))))
 
+
+(defn get-frame-at-point
+  [objects point]
+  (let [frames (cp/select-frames objects)]
+    (loop [frame (first frames)
+           rest (rest frames)]
+      (d/seek #(geom/has-point? % point) frames))))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Undo / Redo
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

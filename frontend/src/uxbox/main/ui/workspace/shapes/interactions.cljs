@@ -26,62 +26,21 @@
   [shape]
   (first (filter #(= (:event-type %) :click) (:interactions shape))))
 
-(defn- on-mouse-down-unselected
+
+(defn- on-mouse-down
   [event {:keys [id type] :as shape} selected]
   (do
     (dom/stop-propagation event)
-    (if (empty? selected)
-      (st/emit! (dw/select-shape id)
-                (dw/start-move-selected))
+    (when-not (empty? selected)
+      (st/emit! dw/deselect-all))
+    (st/emit! (dw/select-shape id))
+    (st/emit! (dw/start-create-interaction))))
 
-      (if (kbd/shift? event)
-        (st/emit! (dw/select-shape id))
-        (st/emit! dw/deselect-all
-                  (dw/select-shape id)
-                  (dw/start-move-selected))))))
 
-;; TODO: add more mouse behavior, to create interactions by drag&drop
-;; (defn- on-mouse-down
-;;   [event {:keys [id type] :as shape}]
-;;   (let [selected @refs/selected-shapes
-;;         selected? (contains? selected id)
-;;         drawing? @refs/selected-drawing-tool
-;;         button (.-which (.-nativeEvent event))]
-;;     (when-not (:blocked shape)
-;;       (cond
-;;         (not= 1 button)
-;;         nil
-;;
-;;         drawing?
-;;         nil
-;;
-;;         (= type :frame)
-;;         (when selected?
-;;           (dom/stop-propagation event)
-;;           (st/emit! (dw/start-move-selected)))
-;;
-;;         (and (not selected?) (empty? selected))
-;;         (do
-;;           (dom/stop-propagation event)
-;;           (st/emit! dw/deselect-all
-;;                     (dw/select-shape id)
-;;                     (dw/start-move-selected)))
-;;
-;;         (and (not selected?) (not (empty? selected)))
-;;         (do
-;;           (dom/stop-propagation event)
-;;           (if (kbd/shift? event)
-;;             (st/emit! (dw/select-shape id))
-;;             (st/emit! dw/deselect-all
-;;                       (dw/select-shape id)
-;;                       (dw/start-move-selected))))
-;;         :else
-;;         (do
-;;           (dom/stop-propagation event)
-;;           (st/emit! (dw/start-move-selected)))))))
-
-(mf/defc interaction-path
-  [{:keys [orig-shape dest-shape selected selected?] :as props}]
+(defn connect-to-shape
+  "Calculate the best position to draw an interaction line
+  between two shapes"
+  [orig-shape dest-shape]
   (let [orig-rect (geom/selection-rect-shape orig-shape)
         dest-rect (geom/selection-rect-shape dest-shape)
 
@@ -103,11 +62,47 @@
         orig-x (if (= orig-pos :right) orig-x-right orig-x-left)
         dest-x (if (= dest-pos :right) dest-x-right dest-x-left)
 
+        orig-y (+ (:y orig-rect) (/ (:height orig-rect) 2))
+        dest-y (+ (:y dest-rect) (/ (:height dest-rect) 2))]
+
+    [orig-pos orig-x orig-y dest-pos dest-x dest-y]))
+
+
+(defn connect-to-point
+  "Calculate the best position to draw an interaction line
+  between one shape and one point"
+  [orig-shape dest-point]
+  (let [orig-rect (geom/selection-rect-shape orig-shape)
+
+        orig-x-left (:x orig-rect)
+        orig-x-right (+ orig-x-left (:width orig-rect))
+        orig-x-center (+ orig-x-left (/ (:width orig-rect) 2))
+
+        dest-x (:x dest-point)
+        dest-y (:y dest-point)
+
+        orig-pos (if (<= orig-x-right dest-x) :right
+                   (if (>= orig-x-left dest-x) :left
+                     (if (<= orig-x-center dest-x) :right :left)))
+        dest-pos (if (<= orig-x-right dest-x) :left
+                   (if (>= orig-x-left dest-x) :right
+                     (if (<= orig-x-center dest-x) :right :left)))
+
+        orig-x (if (= orig-pos :right) orig-x-right orig-x-left)
+        orig-y (+ (:y orig-rect) (/ (:height orig-rect) 2))]
+
+    [orig-pos orig-x orig-y dest-pos dest-x dest-y]))
+
+
+(mf/defc interaction-path
+  [{:keys [orig-shape dest-shape dest-point selected selected?] :as props}]
+  (let [[orig-pos orig-x orig-y dest-pos dest-x dest-y]
+        (if dest-shape
+          (connect-to-shape orig-shape dest-shape)
+          (connect-to-point orig-shape dest-point))
+
         orig-dx (if (= orig-pos :right) 100 -100)
         dest-dx (if (= dest-pos :right) 100 -100)
-
-        orig-y (+ (:y orig-rect) (/ (:height orig-rect) 2))
-        dest-y (+ (:y dest-rect) (/ (:height dest-rect) 2))
 
         path ["M" orig-x orig-y "C" (+ orig-x orig-dx) orig-y (+ dest-x dest-dx) dest-y dest-x dest-y]
         pdata (str/join " " path)
@@ -122,16 +117,16 @@
               :fill "transparent"
               :stroke-width 2
               :d pdata
-              :on-mouse-down #(on-mouse-down-unselected % orig-shape selected)}]
+              :on-mouse-down #(on-mouse-down % orig-shape selected)}]
 
-      [:g
+      [:g {:on-mouse-down #(on-mouse-down % orig-shape selected)}
        [:path {:stroke "#31EFB8"
                :fill "transparent"
                :stroke-width 2
                :d pdata}]
        [:circle {:cx orig-x
                  :cy orig-y
-                 :r 4
+                 :r 8
                  :stroke "#31EFB8"
                  :stroke-width 2
                  :fill "#FFFFFF"}]
@@ -149,9 +144,12 @@
 (mf/defc interactions
   [{:keys [selected] :as props}]
   (let [data (mf/deref refs/workspace-data)
+        local (mf/deref refs/workspace-local)
         objects (:objects data)
         active-shapes (filter #(first (get-click-interaction %)) (vals objects))
-        selected-shapes (map #(get objects %) selected)]
+        selected-shapes (map #(get objects %) selected)
+        draw-interaction-to (:draw-interaction-to local)
+        first-selected (first selected-shapes)]
     [:*
       (for [shape active-shapes]
         (let [interaction (get-click-interaction shape)
@@ -164,13 +162,19 @@
                                   :selected selected
                                   :selected? false}])))
 
-      (for [shape selected-shapes]
-        (let [interaction (get-click-interaction shape)
-              dest-shape (get objects (:destination interaction))]
-          (when dest-shape
-            [:& interaction-path {:key (:id shape)
-                                  :orig-shape shape
-                                  :dest-shape dest-shape
-                                  :selected selected
-                                  :selected? true}])))]))
+      (if (and draw-interaction-to first-selected)
+        [:& interaction-path {:key "interactive"
+                              :orig-shape first-selected
+                              :dest-point draw-interaction-to
+                              :selected? true}]
+
+        (for [shape selected-shapes]
+          (let [interaction (get-click-interaction shape)
+                dest-shape (get objects (:destination interaction))]
+            (when dest-shape
+              [:& interaction-path {:key (:id shape)
+                                    :orig-shape shape
+                                    :dest-shape dest-shape
+                                    :selected selected
+                                    :selected? true}]))))]))
 
