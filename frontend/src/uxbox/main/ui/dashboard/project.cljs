@@ -58,7 +58,7 @@
         [:div.main-bar-icon {:on-click on-menu-click} i/arrow-down]
         [:& context-menu {:on-close on-menu-close
                           :show (:menu-open @local)
-                          :options [[(t locale "dashboard.grid.edit") on-edit]
+                          :options [[(t locale "dashboard.grid.rename") on-edit]
                                     [(t locale "dashboard.grid.delete") on-delete]]}]
         (if (:edition @local)
           [:input.element-name {:type "text"

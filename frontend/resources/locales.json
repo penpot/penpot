@@ -11,6 +11,12 @@
       "en" : "Edit"
     }
   },
+  "dashboard.grid.rename" : {
+    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:60", "src/uxbox/main/ui/dashboard/grid.cljs:91" ],
+    "translations" : {
+      "en" : "Rename"
+    }
+  },
   "dashboard.grid.empty-files" : {
     "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:114" ],
     "translations" : {

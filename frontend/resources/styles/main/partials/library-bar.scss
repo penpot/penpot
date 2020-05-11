@@ -47,26 +47,27 @@
     }
 
     .library-elements {
+      border-top: 1px solid $color-gray-10;
       display: flex;
       flex-direction: column;
       height: calc(95% - 1rem);
       margin-bottom: $size-4;
       overflow-y: auto;
-      padding-bottom: 20px;
+      padding: $size-4 0;
 
       li {
         align-items: center;
         cursor: pointer;
         display: flex;
         flex-shrink: 0;
-        padding: $size-4 $size-2;
+        padding: $size-2;
 
         svg {
           border-radius: 3px;
           fill: $color-black;
           margin-right: 8px;
-          height: $size-4;
-          width: $size-4;
+          height: $size-3;
+          width: $size-3;
         }
 
         span.element-title {
@@ -78,14 +79,8 @@
         }
   
         &.recent-projects {
-          border-top: 1px solid $color-gray-10;
-          
           svg {
             fill: $color-white;
-          }
-          
-          span {
-            font-size: $fs15;
           }
         }
 
@@ -142,6 +137,7 @@
 .projects-row {
   align-items: center;
   display: flex;
+  margin-top: 1rem;
   padding: $size-2;
 
   span {

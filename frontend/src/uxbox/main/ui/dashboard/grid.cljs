@@ -98,7 +98,7 @@
        i/actions]
       [:& context-menu {:on-close on-menu-close
                         :show (:menu-open @local)
-                        :options [[(t locale "dashboard.grid.edit") on-edit]
+                        :options [[(t locale "dashboard.grid.rename") on-edit]
                                   [(t locale "dashboard.grid.delete") on-delete]]}]]]))
 
 ;; --- Grid
