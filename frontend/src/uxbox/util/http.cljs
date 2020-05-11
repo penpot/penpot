@@ -2,15 +2,20 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.util.http
   "A http client with rx streams interface."
   (:refer-clojure :exclude [get])
   (:require
+   [cljs.core :as c]
    [beicon.core :as rx]
+   [clojure.string :as str]
    [goog.events :as events]
-   [clojure.string :as str])
+   [uxbox.util.transit :as t])
   (:import
    [goog.net ErrorCode EventType]
    [goog.net.XhrIo ResponseType]
@@ -78,7 +83,6 @@
        (letfn [(on-complete [event]
                  (let [type (translate-error-code (.getLastErrorCode xhr))
                        status (.getStatus xhr)]
-                   ;; (prn "on-complete" type method url)
                    (if (pos? status)
                      (sink (rx/end
                             {:status status
