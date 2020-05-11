@@ -11,6 +11,7 @@
   (:require
    [okulary.core :as l]
    [uxbox.common.uuid :as uuid]
+   [uxbox.common.pages :as cp]
    [uxbox.worker.impl :as impl]
    [uxbox.util.range-tree :as rt]
    [uxbox.util.geom.snap :as snap]))
@@ -39,13 +40,10 @@
   "Initialize the snap information with the current workspace information"
   [objects]
   (let [shapes (vals objects)
-        frame-shapes (->> shapes
-                          (filter (comp not nil? :frame-id))
+        frame-shapes (->> (vals objects)
+                          (filter :frame-id)
                           (group-by :frame-id))
-
-        frame-shapes (->> shapes
-                          (filter #(= :frame (:type %)))
-                          (remove #(= uuid/zero (:id %)))
+        frame-shapes (->> (cp/select-frames objects)
                           (reduce #(update %1 (:id %2) conj %2) frame-shapes))]
     (mapm (fn [shapes] {:x (create-coord-data shapes :x)
                         :y (create-coord-data shapes :y)})
