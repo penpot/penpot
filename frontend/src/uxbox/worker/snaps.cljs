@@ -39,8 +39,7 @@
 (defn- initialize-snap-data
   "Initialize the snap information with the current workspace information"
   [objects]
-  (let [shapes (vals objects)
-        frame-shapes (->> (vals objects)
+  (let [frame-shapes (->> (vals objects)
                           (filter :frame-id)
                           (group-by :frame-id))
         frame-shapes (->> (cp/select-frames objects)
