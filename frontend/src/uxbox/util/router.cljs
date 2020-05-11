@@ -2,19 +2,22 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.util.router
   (:refer-clojure :exclude [resolve])
   (:require
    [beicon.core :as rx]
-   [rumext.alpha :as mf]
-   [reitit.core :as r]
-   [goog.events :as e]
    [cuerdas.core :as str]
+   [goog.events :as e]
    [potok.core :as ptk]
+   [reitit.core :as r]
+   [uxbox.common.data :as d]
    [uxbox.util.browser-history :as bhistory]
-   [uxbox.common.data :as d])
+   [uxbox.util.timers :as ts])
   (:import
    goog.Uri
    goog.Uri.QueryData))
@@ -120,21 +123,19 @@
         (bhistory/enable! history)
         (assoc state :history history)))
 
-    ptk/WatchEvent
-    (watch [_ state stream]
+    ptk/EffectEvent
+    (effect [_ state stream]
       (let [stoper  (rx/filter (ptk/type? ::initialize-history) stream)
             history (:history state)
             router  (:router state)]
-        (rx/merge
-         (->> (rx/of (on-change router (.getToken history)))
-              (rx/observe-on :asap))
-         (->> (rx/create (fn [sink]
+        (ts/schedule #(on-change router (.getToken history)))
+        (->> (rx/create (fn [sink]
                            (let [key (e/listen history "navigate" #(sink (.-token %)))]
                              (fn []
                                (bhistory/disable! history)
                                (e/unlistenByKey key)))))
-              (rx/map #(on-change router %))
-              (rx/take-until stoper)))))))
+              (rx/take-until stoper)
+              (rx/subs #(on-change router %)))))))
 
 
 

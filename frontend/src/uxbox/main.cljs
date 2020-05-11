@@ -13,6 +13,7 @@
    [beicon.core :as rx]
    [goog.object :as gobj]
    [rumext.alpha :as mf]
+   [uxbox.common.uuid :as uuid]
    [uxbox.main.data.auth :refer [logout]]
    [uxbox.main.data.users :as udu]
    [uxbox.main.store :as st]
@@ -23,6 +24,7 @@
    [uxbox.util.i18n :as i18n]
    [uxbox.util.theme :as theme]
    [uxbox.util.router :as rt]
+   [uxbox.util.object :as obj]
    [uxbox.util.storage :refer [storage]]
    [uxbox.util.timers :as ts]))
 
@@ -31,35 +33,38 @@
 (defn on-navigate
   [router path]
   (let [match (rt/match router path)
-        profile (:profile storage)]
+        profile (:profile storage)
+        authed? (and (not (nil? profile))
+                     (not= (:id profile) uuid/zero))]
     (cond
-      (and (= path "") (not profile))
-      (rt/nav :login)
+      (and (or (= path "")
+               (nil? match))
+           (not authed?))
+      (st/emit! (rt/nav :login))
 
-      (and (= path "") profile)
-      (rt/nav :dashboard-team {:team-id (:default-team-id profile)})
+      (and (= path "") authed?)
+      (st/emit! (rt/nav :dashboard-team {:team-id (:default-team-id profile)}))
+
 
       (nil? match)
-      (rt/nav :not-found)
+      (st/emit! (rt/nav :not-found))
 
       :else
-      #(assoc % :route match))))
+      (st/emit! #(assoc % :route match)))))
 
 (defn init-ui
   []
   (st/emit! (rt/initialize-router ui/routes)
             (rt/initialize-history on-navigate))
 
-  (when (:profile storage)
-    (st/emit! udu/fetch-profile))
-
+  (st/emit! udu/fetch-profile)
   (mf/mount (mf/element ui/app) (dom/get-element "app"))
   (mf/mount (mf/element modal) (dom/get-element "modal")))
 
 (defn ^:export init
   []
-  (let [translations (gobj/get goog.global "uxboxTranslations")
-        themes (gobj/get goog.global "uxboxThemes")]
+  (let [translations (obj/get js/window "uxboxTranslations")
+        themes (gobj/get js/window "uxboxThemes")]
     (i18n/init! translations)
     (theme/init! themes)
     (st/init)
