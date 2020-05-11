@@ -10,15 +10,47 @@
 (ns uxbox.worker.thumbnails
   (:require
    [rumext.alpha :as mf]
+   [beicon.core :as rx]
+   [promesa.core :as p]
    [uxbox.main.fonts :as fonts]
    [uxbox.main.exports :as exports]
    [uxbox.worker.impl :as impl]
+   [uxbox.util.http-api :as http]
    ["react-dom/server" :as rds]))
 
+(defn- handle-response
+  [response]
+  (cond
+    (http/success? response)
+    (rx/of (:body response))
+
+    (http/client-error? response)
+    (rx/throw (:body response))
+
+    :else
+    (rx/throw {:type :unexpected
+               :code (:error response)})))
+
+(defn- request-page
+  [id]
+  (p/create
+   (fn [resolve reject]
+     (->> (http/send! {:url "http://localhost:6060/api/w/query/page"
+                       :query {:id id}
+                       :method :get})
+          (rx/mapcat handle-response)
+          (rx/subs (fn [body]
+                     (resolve (:data body)))
+                   (fn [error]
+                     (reject error)))))))
+
 (defmethod impl/handler :thumbnails/generate
-  [{:keys [data] :as message}]
-  (let [elem (mf/element exports/page-svg #js {:data data
-                                               :width "290"
-                                               :height "150"})]
-    {:svg (rds/renderToStaticMarkup elem)
-     :fonts @fonts/loaded}))
+  [{:keys [id] :as message}]
+  (p/then
+   (request-page id)
+   (fn [data]
+     (let [elem (mf/element exports/page-svg #js {:data data
+                                                  :width "290"
+                                                  :height "150"})]
+       {:svg (rds/renderToStaticMarkup elem)
+        :fonts @fonts/loaded}))))

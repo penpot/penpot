@@ -28,11 +28,12 @@
      (mf/deps file)
      (fn []
        (-> (wrk/ask! {:cmd :thumbnails/generate
-                      :data (:data file)})
+                      :id (first (:pages file))
+                      })
            (rx/subscribe (fn [{:keys [svg fonts]}]
                            (run! fonts/ensure-loaded! fonts)
-                           (let [node (mf/ref-val container)]
-                             (set! (.-innerHTML node) svg)))))))
+                           (when-let [node (mf/ref-val container)]
+                             (set! (.-innerHTML ^js node) svg)))))))
     [:div.grid-item-th {:ref container}]))
 
 ;; --- Grid Item
