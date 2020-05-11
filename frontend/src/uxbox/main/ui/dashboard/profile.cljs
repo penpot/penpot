@@ -27,7 +27,7 @@
 
 (mf/defc profile-section
   [{:keys [profile] :as props}]
-  (let [show (mf/use-state false)
+  (let [show  (mf/use-state false)
         photo (:photo-uri profile "")
         photo (if (str/empty? photo)
                 "/images/avatar.jpg"
