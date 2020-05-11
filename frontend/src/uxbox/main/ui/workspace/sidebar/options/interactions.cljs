@@ -71,7 +71,8 @@
               (t locale "workspace.options.none")]
 
              (for [frame frames]
-               (when (not= (:id frame) (:id shape)) ; A frame cannot navigate to itself
+               (when (and (not= (:id frame) (:id shape)) ; A frame cannot navigate to itself
+                          (not= (:id frame) (:frame-id shape))) ; nor a shape to its container frame
                  [:li {:key (:id frame)
                        :on-click #(on-select-destination (:id frame))}
                   (:name frame)]))]]]

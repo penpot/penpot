@@ -27,8 +27,9 @@
           transform (geom/transform-matrix shape)]
       [:g
        (for [item childs]
-         [:& shape-wrapper
-          {:frame frame :shape item :key (:id item)}])
+         [:& shape-wrapper {:frame frame
+                            :shape item
+                            :key (:id item)}])
 
        (when (not is-child-selected?)
          [:rect {:transform transform
