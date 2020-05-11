@@ -11,9 +11,6 @@
   (:require
    [cljs.spec.alpha :as s]
    [okulary.core :as l]
-   [promesa.core :as p]
-   [beicon.core :as rx]
-   [cuerdas.core :as str]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.common.pages :as cp]
@@ -24,20 +21,16 @@
 
 (defonce state (l/atom {}))
 
-(declare resolve-object)
 (declare index-object)
-(declare calculate-bounds)
 (declare create-index)
 
 (defmethod impl/handler :selection/create-index
   [{:keys [file-id pages] :as message}]
   (letfn [(index-page [state page]
             (let [id (:id page)
-                  objects (get-in page [:data :objects])
-                  objects (reduce resolve-object {} (vals objects))
-                  index (create-index objects)]
-              (assoc state id {:index index
-                               :objects objects})))
+                  objects (get-in page [:data :objects])]
+              (assoc state id (create-index objects))))
+
           (update-state [state]
             (reduce index-page state pages))]
 
@@ -46,52 +39,35 @@
 
 (defmethod impl/handler :selection/update-index
   [{:keys [page-id objects] :as message}]
-  (letfn [(update-page [_]
-            (let [objects (reduce resolve-object {} (vals objects))
-                  index   (create-index objects)]
-              {:index index :objects objects}))]
-    (swap! state update page-id update-page)
+  (let [index (create-index objects)]
+    (swap! state update page-id (constantly index))
     nil))
 
 (defmethod impl/handler :selection/query
   [{:keys [page-id rect] :as message}]
-  (when-let [{:keys [index objects]} (get @state page-id)]
-    (let [lookup #(get objects %)
-          result (-> (qdt/search index (clj->js rect))
+  (when-let [index (get @state page-id)]
+    (let [result (-> (qdt/search index (clj->js rect))
                      (es6-iterator-seq))
           matches? #(geom/overlaps? % rect)]
       (into #{} (comp (map #(unchecked-get % "data"))
-                       (filter matches?)
-                       (map :id))
+                      (filter matches?)
+                      (map :id))
             result))))
-
-(defn- calculate-bounds
-  [objects]
-  #js {:x 0
-       :y 0
-       :width (::width objects)
-       :height (::height objects)})
 
 (defn- create-index
   [objects]
-  (let [bounds (calculate-bounds objects)]
+  (let [shapes (->> (cp/select-toplevel-shapes objects)
+                    (map #(merge % (select-keys % [:x :y :width :height]))))
+        bounds (geom/shapes->rect-shape shapes)
+        bounds #js {:x (:x bounds)
+                    :y (:y bounds)
+                    :width (:width bounds)
+                    :height (:height bounds)}]
     (reduce index-object
             (qdt/create bounds)
-            (cp/select-toplevel-shapes objects))))
+            shapes)))
 
 (defn- index-object
   [index {:keys [id x y width height] :as obj}]
   (let [rect #js {:x x :y y :width width :height height}]
     (qdt/insert index rect obj)))
-
-(defn- resolve-object
-  [state {:keys [id] :as item}]
-  (let [selection-rect (geom/selection-rect-shape item)
-        item   (merge item (select-keys selection-rect [:x :y :width :height]))
-        width  (+ (:x item 0) (:width item 0))
-        height (+ (:y item 0) (:height item 0))
-        max    (fnil max 0)]
-    (-> state
-        (assoc id item)
-        (update ::width max width)
-        (update ::height max height))))
