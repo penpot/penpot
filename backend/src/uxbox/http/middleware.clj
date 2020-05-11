@@ -21,9 +21,10 @@
 
 (defn- wrap-parse-request-body
   [handler]
-  (fn [{:keys [headers body] :as request}]
+  (fn [{:keys [headers body method] :as request}]
     (let [mtype (get headers "content-type")]
-      (if (= "application/transit+json" mtype)
+      (if (and (= "application/transit+json" mtype)
+               (not= method :get))
         (try
           (let [params (t/decode (t/buffer->bytes body))]
             (handler (assoc request :body-params params)))
