@@ -19,8 +19,7 @@
    [uxbox.common.uuid :as uuid]
    [uxbox.main.worker :as uw]
    [uxbox.util.timers :as ts]
-   [uxbox.util.geom.shapes :as geom]
-   [uxbox.util.geom.snap :as snap]))
+   [uxbox.util.geom.shapes :as geom]))
 
 ;; --- Protocols
 

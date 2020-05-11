@@ -10,7 +10,6 @@
    [rumext.alpha :as mf]
    [uxbox.util.debug :as debug]
    [uxbox.util.geom.shapes :as geom]
-   [uxbox.util.geom.snap :as snap]
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.debug :refer [debug?]]

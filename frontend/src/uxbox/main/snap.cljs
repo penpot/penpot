@@ -7,65 +7,26 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns uxbox.util.geom.snap
+(ns uxbox.main.snap
   (:require
-   [cljs.spec.alpha :as s]
-   [clojure.set :as set]
    [beicon.core :as rx]
-   [uxbox.util.math :as mth]
    [uxbox.common.uuid :refer [zero]]
-   [uxbox.util.geom.shapes :as gsh]
+   [uxbox.util.math :as mth]
    [uxbox.util.geom.point :as gpt]
-   [uxbox.main.worker :as uw]))
+   [uxbox.main.worker :as uw]
+   [uxbox.util.geom.snap-points :as sp]))
 
-(def ^:private snap-accuracy 10)
+(def ^:private snap-accuracy 5)
 
-(defn- frame-snap-points [{:keys [x y width height]}]
-  #{(gpt/point x y)
-    (gpt/point (+ x (/ width 2)) y)
-    (gpt/point (+ x width) y)
-    (gpt/point (+ x width) (+ y (/ height 2)))
-    (gpt/point (+ x width) (+ y height))
-    (gpt/point (+ x (/ width 2)) (+ y height))
-    (gpt/point x (+ y height))
-    (gpt/point x (+ y (/ height 2)))})
-
-(defn- frame-snap-points-resize [{:keys [x y width height]} handler]
-  (case handler
-    :top-left (gpt/point x y)
-    :top (gpt/point (+ x (/ width 2)) y)
-    :top-right (gpt/point (+ x width) y)
-    :right (gpt/point (+ x width) (+ y (/ height 2)))
-    :bottom-right (gpt/point (+ x width) (+ y height))
-    :bottom (gpt/point (+ x (/ width 2)) (+ y height))
-    :bottom-left (gpt/point x (+ y height))
-    :left (gpt/point x (+ y (/ height 2)))))
-
-(def ^:private handler->point-idx
-  {:top-left 0
-   :top 0
-   :top-right 1
-   :right 1
-   :bottom-right 2
-   :bottom 2
-   :bottom-left 3
-   :left 3})
-
-(defn shape-snap-points
-  [shape]
-  (let [modified-path (gsh/transform-apply-modifiers shape)
-        shape-center (gsh/center modified-path)]
-    (case (:type shape)
-      :frame (-> modified-path gsh/shape->rect-shape frame-snap-points)
-      (:path :curve) (into #{shape-center} (-> modified-path gsh/shape->rect-shape :segments))
-      (into #{shape-center} (-> modified-path :segments)))))
-
-
-(defn remove-from-snap-points [ids-to-remove]
+(defn- remove-from-snap-points [ids-to-remove]
   (fn [query-result]
     (->> query-result
          (map (fn [[value data]] [value (remove (comp ids-to-remove second) data)]))
          (filter (fn [[_ data]] (not (empty? data)))))))
+
+(defn- flatten-to-points
+  [query-result]
+  (mapcat (fn [[v data]] (map (fn [[point _]] point) data)) query-result))
 
 (defn- calculate-distance [query-result point coord]
   (->> query-result
@@ -78,7 +39,7 @@
          (apply min-key first)
          second)))
 
-(defn snap-frame-id [shapes]
+(defn- snap-frame-id [shapes]
   (let [frames (into #{} (map :frame-id shapes))]
     (cond
       ;; Only shapes from one frame. The common is the only one
@@ -89,10 +50,6 @@
 
       ;; Otherwise the root frame is the common
       :else zero)))
-
-(defn flatten-to-points
-  [query-result]
-  (mapcat (fn [[v data]] (map (fn [[point _]] point) data)) query-result))
 
 (defn get-snap-points [page-id frame-id filter-shapes point coord]
   (let [value (coord point)]
@@ -132,21 +89,25 @@
     (rx/combine-latest snap-as-vector snap-y snap-x)))
 
 (defn closest-snap-point
-  [page-id shapes point]
-  (let [frame-id (snap-frame-id shapes)
-        filter-shapes (into #{} (map :id shapes))]
-    (->> (closest-snap page-id frame-id [point] filter-shapes)
-         (rx/map #(gpt/add point %)))))
+  [page-id shapes layout point]
+  (if (layout :dynamic-alignment)
+    (let [frame-id (snap-frame-id shapes)
+          filter-shapes (into #{} (map :id shapes))]
+      (->> (closest-snap page-id frame-id [point] filter-shapes)
+           (rx/map #(gpt/add point %))))
+    (rx/of point)))
 
 (defn closest-snap-move
-  [page-id shapes movev]
-  (let [frame-id (snap-frame-id shapes)
-        filter-shapes (into #{} (map :id shapes))
-        shapes-points (->> shapes
-                           ;; Unroll all the possible snap-points
-                           (mapcat (partial shape-snap-points))
+  [page-id shapes layout movev]
+  (if (layout :dynamic-alignment)
+    (let [frame-id (snap-frame-id shapes)
+          filter-shapes (into #{} (map :id shapes))
+          shapes-points (->> shapes
+                             ;; Unroll all the possible snap-points
+                             (mapcat (partial sp/shape-snap-points))
 
-                           ;; Move the points in the translation vector
-                           (map #(gpt/add % movev)))]
-    (->> (closest-snap page-id frame-id shapes-points filter-shapes)
-         (rx/map #(gpt/add movev %)))))
+                             ;; Move the points in the translation vector
+                             (map #(gpt/add % movev)))]
+      (->> (closest-snap page-id frame-id shapes-points filter-shapes)
+           (rx/map #(gpt/add movev %))))
+    (rx/of movev)))

@@ -14,7 +14,7 @@
    [uxbox.common.pages :as cp]
    [uxbox.worker.impl :as impl]
    [uxbox.util.range-tree :as rt]
-   [uxbox.util.geom.snap :as snap]))
+   [uxbox.util.geom.snap-points :as snap]))
 
 (defonce state (l/atom {}))
 

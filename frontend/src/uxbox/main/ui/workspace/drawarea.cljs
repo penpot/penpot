@@ -24,7 +24,7 @@
    [uxbox.util.geom.path :as path]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.i18n :as i18n :refer [t]]
-   [uxbox.util.geom.snap :as snap]
+   [uxbox.main.snap :as snap]
    [uxbox.common.uuid :as uuid]))
 
 ;; --- Events
@@ -144,6 +144,7 @@
 
               page-id (get state :current-page-id)
               objects (get-in state [:workspace-data page-id :objects])
+              layout (get state :workspace-layout)
 
               frames (->> objects
                           vals
@@ -167,7 +168,7 @@
            (->> mouse
                 (rx/with-latest vector ms/mouse-position-ctrl)
                 (rx/switch-map (fn [[point :as current]]
-                                 (->> (snap/closest-snap-point page-id [shape] point)
+                                 (->> (snap/closest-snap-point page-id [shape] layout point)
                                       (rx/map #(conj current %)))))
                 (rx/map (fn [[pt ctrl? point-snap]] #(update-drawing % initial pt ctrl? point-snap)))
                 (rx/take-until stoper))
