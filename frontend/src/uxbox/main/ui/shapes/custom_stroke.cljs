@@ -40,7 +40,8 @@
                                             :strokeOpacity nil
                                             :strokeDasharray nil
                                             :fill "white"
-                                            :fillOpacity 1}))
+                                            :fillOpacity 1
+                                            :transform nil}))
 
             stroke-width (obj/get base-props "strokeWidth")
             shape-props (-> (obj/merge! #js {} base-props)
@@ -66,14 +67,16 @@
                                                   :strokeOpacity 1
                                                   :strokeDasharray nil
                                                   :fill "white"
-                                                  :fillOpacity 1}))
+                                                  :fillOpacity 1
+                                                  :transform nil}))
             mask-props2 (-> (obj/merge! #js {} base-props)
                             (obj/merge! #js {:stroke nil
                                              :strokeWidth nil
                                              :strokeOpacity nil
                                              :strokeDasharray nil
                                              :fill "black"
-                                             :fillOpacity 1}))
+                                             :fillOpacity 1
+                                             :transform nil}))
 
             shape-props1 (-> (obj/merge! #js {} base-props)
                              (obj/merge! #js {:stroke nil
