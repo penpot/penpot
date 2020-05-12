@@ -33,9 +33,9 @@
   [{:keys [zoom
            on-increase
            on-decrease
-           on-zoom-to-50
-           on-zoom-to-100
-           on-zoom-to-200]
+           on-zoom-reset
+           on-zoom-fit
+           on-zoom-selected]
     :as props}]
   (let [show-dropdown? (mf/use-state false)]
     [:div.zoom-widget {:on-click #(reset! show-dropdown? true)}
@@ -48,12 +48,12 @@
         "Zoom in" [:span "+"]]
        [:li {:on-click on-decrease}
         "Zoom out" [:span "-"]]
-       [:li {:on-click on-zoom-to-50}
-        "Zoom to 50%" [:span "Shift + 0"]]
-       [:li {:on-click on-zoom-to-100}
-        "Zoom to 100%" [:span "Shift + 1"]]
-       [:li {:on-click on-zoom-to-200}
-        "Zoom to 200%" [:span "Shift + 2"]]]]]))
+       [:li {:on-click on-zoom-reset}
+        "Zoom to 100%" [:span "Shift + 0"]]
+       [:li {:on-click on-zoom-fit}
+        "Zoom to fit all" [:span "Shift + 1"]]
+       [:li {:on-click on-zoom-selected}
+        "Zoom to selected" [:span "Shift + 2"]]]]]))
 
 ;; --- Header Users
 
@@ -145,9 +145,9 @@
        {:zoom zoom
         :on-increase #(st/emit! dw/increase-zoom)
         :on-decrease #(st/emit! dw/decrease-zoom)
-        :on-zoom-to-50 #(st/emit! dw/zoom-to-50)
-        :on-zoom-to-100 #(st/emit! dw/reset-zoom)
-        :on-zoom-to-200 #(st/emit! dw/zoom-to-200)}]
+        :on-zoom-reset #(st/emit! dw/reset-zoom)
+        :on-zoom-fit #(st/emit! dw/zoom-to-fit-all)
+        :on-zoom-selected #(st/emit! dw/zoom-to-selected-shape)}]
 
       [:a.btn-icon-dark.btn-small
        {;; :target "__blank"

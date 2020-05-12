@@ -276,7 +276,6 @@
     (ptk/reify ::handle-drawing-curve
       ptk/WatchEvent
       (watch [_ state stream]
-        (prn "handle-drawing-curve")
         (let [{:keys [flags]} (:workspace-local state)
               stoper (rx/filter stoper-event? stream)
               mouse  (rx/sample 10 ms/mouse-position)]
@@ -323,14 +322,14 @@
 (declare path-draw-area)
 
 (mf/defc draw-area
-  [{:keys [shape] :as props}]
+  [{:keys [shape zoom] :as props}]
   (when (:id shape)
     (case (:type shape)
       (:path :curve) [:& path-draw-area {:shape shape}]
-      [:& generic-draw-area {:shape shape}])))
+      [:& generic-draw-area {:shape shape :zoom zoom}])))
 
 (mf/defc generic-draw-area
-  [{:keys [shape]}]
+  [{:keys [shape zoom]}]
   (let [{:keys [x y width height]} (geom/selection-rect-shape shape)]
     (when (and x y)
       [:g
@@ -340,7 +339,7 @@
                     :height height
                     :style {:stroke "#1FDEA7"
                             :fill "transparent"
-                            :stroke-width "1"}}]])))
+                            :stroke-width (/ 1 zoom)}}]])))
 
 (mf/defc path-draw-area
   [{:keys [shape] :as props}]

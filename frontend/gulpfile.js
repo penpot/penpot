@@ -95,6 +95,7 @@ function readLocales() {
 
 function readConfig(data) {
   const publicURL = process.env.UXBOX_PUBLIC_URL;
+  const backendURL = process.env.UXBOX_BACKEND_URL;
   const demoWarn = process.env.UXBOX_DEMO_WARNING;
   const deployDate = process.env.UXBOX_DEPLOY_DATE;
   const deployCommit = process.env.UXBOX_DEPLOY_COMMIT;
@@ -105,6 +106,10 @@ function readConfig(data) {
 
   if (publicURL !== undefined) {
     cfg.publicURL = publicURL;
+  }
+
+  if (backendURL !== undefined) {
+    cfg.backendURL = backendURL;
   }
 
   if (deployDate !== undefined) {

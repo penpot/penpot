@@ -36,15 +36,15 @@
         profile (:profile storage)
         authed? (and (not (nil? profile))
                      (not= (:id profile) uuid/zero))]
+
     (cond
       (and (or (= path "")
                (nil? match))
            (not authed?))
       (st/emit! (rt/nav :login))
 
-      (and (= path "") authed?)
+      (and (nil? match) authed?)
       (st/emit! (rt/nav :dashboard-team {:team-id (:default-team-id profile)}))
-
 
       (nil? match)
       (st/emit! (rt/nav :not-found))

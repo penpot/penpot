@@ -24,7 +24,6 @@
         {:keys [id x y width height]} (geom/shape->rect-shape shape)
         stroke-style (:stroke-style shape :none)
         stroke-position (:stroke-alignment shape :center)]
-
     (cond
       ;; Center alignment (or no stroke): the default in SVG
       (or (= stroke-style :none) (= stroke-position :center))
@@ -43,7 +42,7 @@
                                             :fill "white"
                                             :fillOpacity 1}))
 
-            stroke-width (.-strokeWidth base-props)
+            stroke-width (obj/get base-props "strokeWidth")
             shape-props (-> (obj/merge! #js {} base-props)
                             (obj/merge! #js {:strokeWidth (* stroke-width 2)
                                               :clipPath (str "url('#" clip-id "')")}))]

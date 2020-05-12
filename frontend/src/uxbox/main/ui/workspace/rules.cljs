@@ -13,15 +13,30 @@
    [uxbox.util.math :as mth]
    [uxbox.util.object :as obj]))
 
+(defn- calculate-step-size
+  [zoom]
+  (cond
+    (< 0 zoom 0.008) 10000
+    (< 0.008 zoom 0.015) 5000
+    (< 0.015 zoom 0.04) 2500
+    (< 0.04 zoom 0.07) 1000
+    (< 0.07 zoom 0.2) 500
+    (< 0.2 zoom 0.5) 250
+    (< 0.5 zoom 1) 100
+    (<= 1 zoom 2) 50
+    (< 2 zoom 4) 25
+    (< 4 zoom 6) 10
+    (< 6 zoom 15) 5
+    (< 15 zoom 25) 2
+    (< 25 zoom) 1
+    :else 1))
+
 (defn draw-rule!
   [dctx {:keys [zoom size start count type] :or {count 200}}]
   (let [txfm (- (* (- 0 start) zoom) 20)
         minv (mth/round start)
         maxv (mth/round (+ start (/ size zoom)))
-
-        step  (mth/round (/ (mth/abs (- maxv minv)) count))
-        step  (max (* 1 (* 10 step)) 1)]
-
+        step (calculate-step-size zoom)]
     (obj/set! dctx "fillStyle" "#E8E9EA")
     (if (= type :horizontal)
       (do
@@ -31,7 +46,7 @@
         (.fillRect dctx 0 0 20 size)
         (.translate dctx 0 txfm)))
 
-    (obj/set! dctx "font" "12px serif")
+    (obj/set! dctx "font" "12px sourcesanspro")
     (obj/set! dctx "fillStyle" "#7B7D85")
     (obj/set! dctx "strokeStyle" "#7B7D85")
     (obj/set! dctx "textAlign" "center")
