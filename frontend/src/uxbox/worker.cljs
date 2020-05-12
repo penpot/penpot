@@ -20,8 +20,20 @@
    [uxbox.worker.selection]
    [uxbox.worker.thumbnails]
    [uxbox.worker.snaps]
+   [uxbox.util.object :as obj]
    [uxbox.util.transit :as t]
-   [uxbox.util.worker :as w]))
+   [uxbox.util.worker :as w])
+  (:import goog.Uri))
+
+;; --- Initialization
+
+(this-as global
+  (let [location (obj/get global "location")
+        uri      (Uri. (obj/get location "href"))
+        buri     (.getParameterValue uri "backendURL")]
+    (swap! impl/config assoc :backend-url buri)))
+
+;; --- Messages Handling
 
 (s/def ::cmd keyword?)
 (s/def ::payload

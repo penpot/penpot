@@ -5,9 +5,15 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.worker.impl
-  (:require [uxbox.util.transit :as t]))
+  (:require
+   [okulary.core :as l]
+   [uxbox.util.transit :as t]))
 
 (enable-console-print!)
+
+;; --- Config
+
+(defonce config (l/atom {}))
 
 ;; --- Handler
 

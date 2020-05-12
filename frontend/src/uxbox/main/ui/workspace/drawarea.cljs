@@ -276,7 +276,6 @@
     (ptk/reify ::handle-drawing-curve
       ptk/WatchEvent
       (watch [_ state stream]
-        (prn "handle-drawing-curve")
         (let [{:keys [flags]} (:workspace-local state)
               stoper (rx/filter stoper-event? stream)
               mouse  (rx/sample 10 ms/mouse-position)]

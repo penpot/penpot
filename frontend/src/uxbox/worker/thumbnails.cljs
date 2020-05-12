@@ -33,16 +33,18 @@
 
 (defn- request-page
   [id]
-  (p/create
-   (fn [resolve reject]
-     (->> (http/send! {:url "http://localhost:6060/api/w/query/page"
-                       :query {:id id}
-                       :method :get})
-          (rx/mapcat handle-response)
-          (rx/subs (fn [body]
-                     (resolve (:data body)))
-                   (fn [error]
-                     (reject error)))))))
+  (let [url (get @impl/config :backend-url "http://localhost:6060")
+        url (str url "/api/w/query/page")]
+    (p/create
+     (fn [resolve reject]
+       (->> (http/send! {:url url
+                         :query {:id id}
+                         :method :get})
+            (rx/mapcat handle-response)
+            (rx/subs (fn [body]
+                       (resolve (:data body)))
+                     (fn [error]
+                       (reject error))))))))
 
 (defmethod impl/handler :thumbnails/generate
   [{:keys [id] :as message}]
