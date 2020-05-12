@@ -23,7 +23,7 @@
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.hooks :as hooks]
    [uxbox.main.ui.messages :refer [messages]]
-   [uxbox.main.ui.workspace.viewport :refer [viewport]]
+   [uxbox.main.ui.workspace.viewport :refer [viewport coordinates]]
    [uxbox.main.ui.workspace.colorpalette :refer [colorpalette]]
    [uxbox.main.ui.workspace.context-menu :refer [context-menu]]
    [uxbox.main.ui.workspace.header :refer [header]]
@@ -65,7 +65,9 @@
                                :vport (:vport local)}]
           [:& vertical-rule {:zoom (:zoom local 1)
                              :vbox (:vbox local)
-                             :vport (:vport local)}]])
+                             :vport (:vport local)}]
+          [:& coordinates]])
+
 
        [:& viewport {:page page
                      :key (:id page)

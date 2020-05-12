@@ -23,8 +23,8 @@
    [uxbox.main.data.workspace.common :as dwc]
    [uxbox.main.data.workspace.notifications :as dwn]
    [uxbox.main.data.workspace.persistence :as dwp]
-   [uxbox.main.data.workspace.transforms :as dwt]
    [uxbox.main.data.workspace.texts :as dwtxt]
+   [uxbox.main.data.workspace.transforms :as dwt]
    [uxbox.main.repo :as rp]
    [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
@@ -224,8 +224,8 @@
       (update-in state [:workspace-local :vbox]
                  (fn [vbox]
                    (-> vbox
-                       (update :x (comp mth/round x))
-                       (update :y (comp mth/round y))))))))
+                       (update :x x)
+                       (update :y y)))))))
 
 ;; TODO: add spec
 
@@ -328,15 +328,16 @@
 ;; --- Zoom Management
 
 (defn- impl-update-zoom
-  [{:keys [vbox vport] :as local} zoom]
-  (let [zoom (if (fn? zoom)
-               (zoom (:zoom local))
-               zoom)
-        width (/ (:width vport) zoom)
-        height (/ (:height vport) zoom)]
+  [{:keys [vbox vport] :as local} center zoom]
+  (let [new-zoom (if (fn? zoom) (zoom (:zoom local)) zoom)
+        old-zoom (:zoom local)
+        center (if center center (geom/center vbox))
+        scale (/ old-zoom new-zoom)
+        mtx  (gmt/scale-matrix (gpt/point scale) center)
+        vbox' (geom/transform vbox mtx)]
     (-> local
-        (assoc :zoom zoom)
-        (update :vbox assoc :width width :height height))))
+        (assoc :zoom new-zoom)
+        (update :vbox merge (select-keys vbox' [:x :y :width :height])))))
 
 (defn increase-zoom
   [center]
@@ -344,7 +345,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-local
-              #(impl-update-zoom % (fn [z] (* z 1.1)))))))
+              #(impl-update-zoom % center (fn [z] (min (* z 1.1) 200)))))))
 
 (defn decrease-zoom
   [center]
@@ -352,28 +353,14 @@
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-local
-              #(impl-update-zoom % (fn [z] (* z 0.9)))))))
+              #(impl-update-zoom % center (fn [z] (max (* z 0.9) 0.01)))))))
 
 (def reset-zoom
   (ptk/reify ::reset-zoom
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-local
-              #(impl-update-zoom % 1)))))
-
-(def zoom-to-50
-  (ptk/reify ::zoom-to-50
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-local
-              #(impl-update-zoom % 0.5)))))
-
-(def zoom-to-200
-  (ptk/reify ::zoom-to-200
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-local
-              #(impl-update-zoom % 2)))))
+              #(impl-update-zoom % nil 1)))))
 
 (def zoom-to-fit-all
   (ptk/reify ::zoom-to-fit-all
@@ -1514,10 +1501,8 @@
    "-" #(st/emit! decrease-zoom)
    "ctrl+g" #(st/emit! create-group)
    "ctrl+shift+g" #(st/emit! remove-group)
-   "shift+0" #(st/emit! zoom-to-50)
-   ;; "shift+1" #(st/emit! reset-zoom)
+   "shift+0" #(st/emit! reset-zoom)
    "shift+1" #(st/emit! zoom-to-fit-all)
-   ;; "shift+2" #(st/emit! zoom-to-200)
    "shift+2" #(st/emit! zoom-to-selected-shape)
    "ctrl+d" #(st/emit! duplicate-selected)
    "ctrl+z" #(st/emit! dwc/undo)

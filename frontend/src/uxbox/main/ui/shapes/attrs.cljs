@@ -28,7 +28,7 @@
     (when (not= stroke-style :none)
       (obj/merge! attrs
                   #js {:stroke (:stroke-color shape nil)
-                       :strokeWidth (:stroke-width shape nil)
+                       :strokeWidth (:stroke-width shape 1)
                        :strokeOpacity (:stroke-opacity shape nil)
                        :strokeDasharray (stroke-type->dasharray stroke-style)}))
     attrs))

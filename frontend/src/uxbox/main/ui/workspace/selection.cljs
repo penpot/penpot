@@ -113,13 +113,14 @@
 
     [:g.controls
      (when (not (#{:move :rotate :resize} current-transform))
-         [:rect.main {:transform transform
-                  :x (- x 1) :y (- y 1)
-                  :width (+ width 2)
-                  :height (+ height 2)
-                  :style {:stroke "#1FDEA7"
-                          :stroke-width (/ 1 zoom)
-                          :fill "transparent"}}])
+       [:rect.main
+        {:transform transform
+         :x x :y y
+         :width width
+         :height height
+         :style {:stroke "#1FDEA7"
+                 :stroke-width (/ 1 zoom)
+                 :fill "transparent"}}])
 
      (when (not (#{:move :rotate} current-transform))
        (for [[position [cx cy]] resize-handlers]

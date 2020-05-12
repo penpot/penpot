@@ -16,13 +16,40 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.components.dropdown :refer [dropdown]]
-   [uxbox.main.ui.workspace.header :refer [zoom-widget]]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t]]
    [uxbox.util.router :as rt]
+   [uxbox.util.math :as mth]
    [uxbox.common.uuid :as uuid]
    [uxbox.util.webapi :as wapi]))
+
+(mf/defc zoom-widget
+  {:wrap [mf/memo]}
+  [{:keys [zoom
+           on-increase
+           on-decrease
+           on-zoom-to-50
+           on-zoom-to-100
+           on-zoom-to-200]
+    :as props}]
+  (let [show-dropdown? (mf/use-state false)]
+    [:div.zoom-widget {:on-click #(reset! show-dropdown? true)}
+     [:span {} (str (mth/round (* 100 zoom)) "%")]
+     [:span.dropdown-button i/arrow-down]
+     [:& dropdown {:show @show-dropdown?
+                   :on-close #(reset! show-dropdown? false)}
+      [:ul.zoom-dropdown
+       [:li {:on-click on-increase}
+        "Zoom in" [:span "+"]]
+       [:li {:on-click on-decrease}
+        "Zoom out" [:span "-"]]
+       [:li {:on-click on-zoom-to-50}
+        "Zoom to 50%" [:span "Shift + 0"]]
+       [:li {:on-click on-zoom-to-100}
+        "Zoom to 100%" [:span "Shift + 1"]]
+       [:li {:on-click on-zoom-to-200}
+        "Zoom to 200%" [:span "Shift + 2"]]]]]))
 
 (mf/defc interactions-menu
   [{:keys [interactions-mode] :as props}]

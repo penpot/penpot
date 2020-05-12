@@ -43,8 +43,8 @@
   for rect-like shapes."
   [shape {dx :x dy :y}]
   (assoc shape
-         :x (mth/round (+ (_chk (:x shape)) (_chk dx)))
-         :y (mth/round (+ (_chk (:y shape)) (_chk dy)))))
+         :x (+ (_chk (:x shape)) (_chk dx))
+         :y (+ (_chk (:y shape)) (_chk dy))))
 
 (defn- move-path
   "A specialized function for relative movement

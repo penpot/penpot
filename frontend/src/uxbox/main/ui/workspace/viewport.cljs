@@ -41,7 +41,7 @@
 ;; --- Coordinates Widget
 
 (mf/defc coordinates
-  [{:keys [zoom] :as props}]
+  []
   (let [coords (some-> (hooks/use-rxsub ms/mouse-position)
                        (gpt/round 0))]
     [:ul.coordinates
@@ -268,21 +268,27 @@
         on-mouse-wheel
         (mf/use-callback
          (fn [event]
-           (dom/prevent-default event)
-           (dom/stop-propagation event)
+           (let [node (mf/ref-val viewport-ref)
+                 target (dom/get-target event)]
+             (cond
+               (kbd/ctrl? event)
+               (let [event (.getBrowserEvent event)
+                     pos   @ms/mouse-position]
+                 (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (if (pos? (.-deltaY event))
+                   (st/emit! (dw/decrease-zoom pos))
+                   (st/emit! (dw/increase-zoom pos))))
 
-           (if (kbd/ctrl? event)
-             (let [event (.getBrowserEvent event)
-                   pos   @ms/mouse-position]
-               (if (pos? (.-deltaY event))
-                 (st/emit! (dw/decrease-zoom pos))
-                 (st/emit! (dw/increase-zoom pos))))
-             (let [event (.getBrowserEvent event)
-                   delta (.-deltaY ^js event)
-                   delta (/ delta @refs/selected-zoom)]
-               (if (kbd/shift? event)
-                 (st/emit! (dw/update-viewport-position {:x #(+ % delta)}))
-                 (st/emit! (dw/update-viewport-position {:y #(+ % delta)})))))))
+               (.contains ^js node target)
+               (let [event (.getBrowserEvent event)
+                     delta (.-deltaY ^js event)
+                     delta (/ delta @refs/selected-zoom)]
+                 (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (if (kbd/shift? event)
+                   (st/emit! (dw/update-viewport-position {:x #(+ % delta)}))
+                   (st/emit! (dw/update-viewport-position {:y #(+ % delta)}))))))))
 
         on-drag-over
         ;; Should prevent only events that we'll handle on-drop
@@ -331,52 +337,50 @@
         ]
 
     (mf/use-effect on-mount)
-    [:*
-     [:& coordinates {:zoom zoom}]
-     [:svg.viewport
-      {:preserveAspectRatio "xMidYMid meet"
-       :width (:width vport 0)
-       :height (:height vport 0)
-       :view-box (str/join " " [(:x vbox 0)
-                                (:y vbox 0)
-                                (:width vbox 0 )
-                                (:height vbox 0)])
-       :ref viewport-ref
-       :class (when drawing-tool "drawing")
-       :on-context-menu on-context-menu
-       :on-click on-click
-       :on-double-click on-double-click
-       :on-mouse-down on-mouse-down
-       :on-mouse-up on-mouse-up
-       :on-drag-over on-drag-over
-       :on-drop on-drop}
-      [:g
-       [:& frames {:key (:id page)}]
+    [:svg.viewport
+     {:preserveAspectRatio "xMidYMid meet"
+      :width (:width vport 0)
+      :height (:height vport 0)
+      :view-box (str/join " " [(:x vbox 0)
+                               (:y vbox 0)
+                               (:width vbox 0 )
+                               (:height vbox 0)])
+      :ref viewport-ref
+      :class (when drawing-tool "drawing")
+      :on-context-menu on-context-menu
+      :on-click on-click
+      :on-double-click on-double-click
+      :on-mouse-down on-mouse-down
+      :on-mouse-up on-mouse-up
+      :on-drag-over on-drag-over
+      :on-drop on-drop}
+     [:g
+      [:& frames {:key (:id page)}]
 
-       (when (seq selected)
-         [:& selection-handlers {:selected selected
-                                 :zoom zoom
-                                 :edition edition}])
+      (when (seq selected)
+        [:& selection-handlers {:selected selected
+                                :zoom zoom
+                                :edition edition}])
 
 
-       (when-let [drawing-shape (:drawing local)]
-         [:& draw-area {:shape drawing-shape
-                        :zoom zoom
-                        :modifiers (:modifiers local)}])
+      (when-let [drawing-shape (:drawing local)]
+        [:& draw-area {:shape drawing-shape
+                       :zoom zoom
+                       :modifiers (:modifiers local)}])
 
-       [:& snap-feedback]
+      [:& snap-feedback]
 
-       (when (contains? flags :grid)
-         [:& grid])]
+      (when (contains? flags :grid)
+        [:& grid])]
 
-      (when tooltip
-        [:& cursor-tooltip {:zoom zoom :tooltip tooltip}])
+     (when tooltip
+       [:& cursor-tooltip {:zoom zoom :tooltip tooltip}])
 
-      (when (contains? flags :ruler)
-        [:& ruler {:zoom zoom :ruler (:ruler local)}])
+     (when (contains? flags :ruler)
+       [:& ruler {:zoom zoom :ruler (:ruler local)}])
 
-      [:& presence/active-cursors {:page page}]
-      [:& selection-rect {:data (:selrect local)}]
-      (when (= options-mode :prototype)
-        [:& interactions {:selected selected}])]]))
+     [:& presence/active-cursors {:page page}]
+     [:& selection-rect {:data (:selrect local)}]
+     (when (= options-mode :prototype)
+       [:& interactions {:selected selected}])]))
 
