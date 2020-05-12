@@ -27,7 +27,7 @@
                   (assoc :password password)
                   (str))]
     (log/info "creating connection pool with" dburi)
-    (pg/pool dburi {:system system :max-size 1})))
+    (pg/pool dburi {:system system :max-size 8})))
 
 (defstate pool
   :start (create-pool cfg/config system))
