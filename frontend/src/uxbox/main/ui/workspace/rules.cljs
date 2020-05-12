@@ -46,7 +46,7 @@
         (.fillRect dctx 0 0 20 size)
         (.translate dctx 0 txfm)))
 
-    (obj/set! dctx "font" "12px serif")
+    (obj/set! dctx "font" "12px sourcesanspro")
     (obj/set! dctx "fillStyle" "#7B7D85")
     (obj/set! dctx "strokeStyle" "#7B7D85")
     (obj/set! dctx "textAlign" "center")
