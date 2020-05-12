@@ -16,7 +16,8 @@
                                      (if (debug? option)
                                        (-debug! option)
                                        (debug! option))))
-(defn ^:export debug-all [name] (debug-all!))
+(defn ^:export debug-all [] (debug-all!))
+(defn ^:export debug-none [] (debug-none!))
 
 (defn ^:export tap
   "Transducer function that can execute a side-effect `effect-fn` per input"
