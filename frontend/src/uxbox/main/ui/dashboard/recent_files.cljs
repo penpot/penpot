@@ -52,17 +52,19 @@
 (mf/defc recent-project
   [{:keys [project files first? locale] :as props}]
   (let [project-id (:id project)
-        team-id (:team-id project)]
+        team-id (:team-id project)
+        file-count (or (:file-count project) 0)]
     [:div.recent-files-row
      {:class-name (when first? "first")}
      [:div.recent-files-row-title
       [:h2.recent-files-row-title-name {:on-click #(st/emit! (rt/nav :dashboard-project {:team-id team-id
                                                                                          :project-id project-id}))
                                         :style {:cursor "pointer"}} (:name project)]
-      [:span.recent-files-row-title-info (str (:file-count project) " files")]
-      (let [time (-> (:modified-at project)
-                     (dt/timeago {:locale locale}))]
-        [:span.recent-files-row-title-info (str ", " time)])]
+      [:span.recent-files-row-title-info (str file-count " files")]
+      (when (> file-count 0)
+        (let [time (-> (:modified-at project)
+                       (dt/timeago {:locale locale}))]
+          [:span.recent-files-row-title-info (str ", " time)]))]
      [:& grid {:id (:id project)
                :files files
                :hide-new? true}]]))
