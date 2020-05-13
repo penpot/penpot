@@ -112,7 +112,7 @@
                          :bottom-right [(+ x width) (+ y height)]}]
 
     [:g.controls
-     (when (not (#{:move :rotate :resize} current-transform))
+     (when (not (#{:move :rotate} current-transform))
        [:rect.main
         {:transform transform
          :x x :y y

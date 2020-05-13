@@ -272,9 +272,9 @@
 (s/def ::direction #{:up :down :right :left})
 
 (defn move-selected
-  [direction align?]
+  [direction shift?]
   (us/verify ::direction direction)
-  (us/verify boolean? align?)
+  (us/verify boolean? shift?)
 
   (let [same-event (js/Symbol "same-event")]
     (ptk/reify ::move-selected
@@ -299,7 +299,8 @@
                 stopper (->> move-events
                              (rx/debounce 100)
                              (rx/first))
-                mov-vec (get-displacement direction)]
+                scale (if shift? (gpt/point 10) (gpt/point 1))
+                mov-vec (gpt/multiply (get-displacement direction) scale)]
 
             (rx/concat
              (rx/merge
@@ -307,7 +308,7 @@
                    (rx/take-until stopper)
                    (rx/scan #(gpt/add %1 mov-vec) (gpt/point 0 0))
                    (rx/map #(set-modifiers selected {:displacement (gmt/translate-matrix %)})))
-              (rx/of (move-selected direction align?)))
+              (rx/of (move-selected direction shift?)))
 
              (rx/of (apply-modifiers selected)
                     (fn [state] (-> state
