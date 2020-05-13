@@ -161,9 +161,10 @@
                          :accept-text "Delete"})))]]}]]
 
      [:div.library-top-menu-actions
-      [:a.library-top-menu-actions-delete
-       {:on-click #(when on-delete-selected (on-delete-selected))}
-       i/trash]
+      (when on-delete-selected 
+        [:a.library-top-menu-actions-delete
+         {:on-click on-delete-selected}
+         i/trash])
 
       (if (= section :palettes)
         [:button.btn-secondary.btn-small
@@ -184,11 +185,10 @@
                   :style {:display "none"}}]])]]))
 
 (mf/defc library-icon-card
-  [{:keys [item on-select on-unselect]}]
+  [{:keys [item on-select on-unselect on-delete]}]
   (let [{:keys [id name url content metadata library-id modified-at]} item
         locale (i18n/use-locale)
-        state (mf/use-state {:is-open false
-                             :selected false})
+        state (mf/use-state {:is-open false :selected false})
         time (dt/timeago modified-at {:locale locale})
         handle-change (fn []
                         (swap! state update :selected not)
@@ -200,7 +200,7 @@
       [:input {:type "checkbox"
                :id (str "icon-" id)
                :on-change handle-change
-               :checked (:selected @state)}]
+               :value (:selected @state)}]
       [:label {:for (str "icon-" id)}]]
      [:div.library-card-image
       [:svg {:view-box (->> metadata :view-box (str/join " "))
@@ -221,15 +221,17 @@
                    (fn []
                      (modal/show!
                       confirm-dialog
-                      {:on-accept #(st/emit! (dlib/delete-item :icons library-id id))
+                      {:on-accept #(do
+                                     (st/emit! (dlib/delete-item :icons library-id id))
+                                     (on-delete id))
                        :message "Are you sure you want to delete this icon?"
                        :accept-text "Delete"}))]]}]]]))
 
 (mf/defc library-image-card
-  [{:keys [item on-select on-unselect]}]
+  [{:keys [item on-select on-unselect on-delete]}]
   (let [{:keys [id name thumb-uri library-id modified-at]} item
         locale (i18n/use-locale)
-        state (mf/use-state {:is-open false})
+        state (mf/use-state {:is-open false :selected false})
         time (dt/timeago modified-at {:locale locale})
         handle-change (fn []
                         (swap! state update :selected not)
@@ -241,7 +243,7 @@
       [:input {:type "checkbox"
                :id (str "image-" id)
                :on-change handle-change
-               :checked (:selected @state)}]
+               :value (:selected @state)}]
       [:label {:for (str "image-" id)}]]
      [:div.library-card-image
       [:img {:src thumb-uri}]]
@@ -258,15 +260,17 @@
                    (fn []
                      (modal/show!
                       confirm-dialog
-                      {:on-accept #(st/emit! (dlib/delete-item :images library-id id))
+                      {:on-accept #(do
+                                     (st/emit! (dlib/delete-item :images library-id id))
+                                     (on-delete id))
                        :message "Are you sure you want to delete this image?"
                        :accept-text "Delete"}))]]}]]]))
 
 (mf/defc library-color-card
-  [{:keys [item on-select on-unselect]}]
-  (let [{:keys [ id content library-id modified-at]} item
+  [{:keys [item on-select on-unselect on-delete]}]
+  (let [{:keys [id content library-id modified-at]} item
         locale (i18n/use-locale)
-        state (mf/use-state {:is-open false})
+        state (mf/use-state {:is-open false :selected false})
         handle-change (fn []
                         (swap! state update :selected not)
                         (if (:selected @state)
@@ -278,7 +282,7 @@
         [:input {:type "checkbox"
                  :id (str "color-" id)
                  :on-change handle-change
-                 :checked (:selected @state)}]
+                 :value (:selected @state)}]
         [:label {:for (str "color-" id)}]]
        [:div.library-card-image
         { :style { :background-color content }}]
@@ -297,7 +301,9 @@
                      (fn []
                        (modal/show!
                         confirm-dialog
-                        {:on-accept #(st/emit! (dlib/delete-item :palettes library-id id))
+                        {:on-accept #(do
+                                       (st/emit! (dlib/delete-item :palettes library-id id))
+                                       (on-delete id))
                          :message "Are you sure you want to delete this color?"
                          :accept-text "Delete"}))]]}]]])))
 
@@ -366,16 +372,14 @@
           :library-id library-id
           :team-id team-id
           :on-delete-selected
-          (fn []
-            (when (-> @state :selected count (> 0))
-              (modal/show!
-               confirm-dialog
-               {:on-accept #(st/emit! (dlib/batch-delete-item section library-id (:selected @state)))
-                :message (str "Are you sure you want to delete " (-> @state :selected count) " items?")
-                :accept-text "Delete"})
-              )
-            )
-          }]
+            (when-not (empty? (:selected @state))
+              (fn []
+                (modal/show!
+                  confirm-dialog
+                  {:on-accept #(do (st/emit! (dlib/batch-delete-item section library-id (:selected @state)))
+                                   (swap! state assoc :selected #{}))
+                   :message (str "Are you sure you want to delete " (-> @state :selected count) " items?")
+                   :accept-text "Delete"})))}]
         [:*
          (if (> (count items) 0)
            [:div.library-page-cards-container
@@ -384,7 +388,8 @@
                     props {:item item
                            :key (:id item)
                            :on-select #(swap! state update :selected conj %)
-                           :on-unselect #(swap! state update :selected disj %)}]
+                           :on-unselect #(swap! state update :selected disj %)
+                           :on-delete #(swap! state update :selected disj %)}]
                 (case section
                   :icons [:& library-icon-card props]
                   :images [:& library-image-card props]
