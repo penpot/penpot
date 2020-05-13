@@ -143,8 +143,8 @@
      [:div.options-section
       [:& zoom-widget
        {:zoom zoom
-        :on-increase #(st/emit! dw/increase-zoom)
-        :on-decrease #(st/emit! dw/decrease-zoom)
+        :on-increase #(st/emit! (dw/increase-zoom nil))
+        :on-decrease #(st/emit! (dw/decrease-zoom nil))
         :on-zoom-reset #(st/emit! dw/reset-zoom)
         :on-zoom-fit #(st/emit! dw/zoom-to-fit-all)
         :on-zoom-selected #(st/emit! dw/zoom-to-selected-shape)}]
