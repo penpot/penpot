@@ -25,7 +25,9 @@
   [np op]
   (let [new-shape (obj/get np "shape")
         old-shape (obj/get op "shape")]
-    (and (identical? (:fill-color new-shape)
+    (and (= (:id new-shape)
+            (:id old-shape))
+         (identical? (:fill-color new-shape)
                      (:fill-color old-shape))
          (identical? (:fill-opacity new-shape)
                      (:fill-opacity old-shape)))))

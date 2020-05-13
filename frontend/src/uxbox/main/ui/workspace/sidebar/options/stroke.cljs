@@ -25,7 +25,9 @@
   [np op]
   (let [new-shape (obj/get np "shape")
         old-shape (obj/get op "shape")]
-    (and (identical? (:stroke-style new-shape)
+    (and (= (:id new-shape)
+            (:id old-shape))
+         (identical? (:stroke-style new-shape)
                      (:stroke-style old-shape))
          (identical? (:stroke-alignment new-shape)
                      (:stroke-alignment old-shape))
