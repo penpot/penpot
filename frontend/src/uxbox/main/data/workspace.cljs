@@ -1452,10 +1452,13 @@
             objects (get-in state [:workspace-data page-id :objects])
             frame (dwc/get-frame-at-point objects position)
 
-            shape-id (first (get-in state [:workspace-local :selected]))]
+            shape-id (first (get-in state [:workspace-local :selected]))
+            shape (get objects shape-id)]
 
         (when-not (= position initial-pos)
-          (if (and frame shape-id (not= (:id frame) shape-id))
+          (if (and frame shape-id
+                   (not= (:id frame) (:id shape))
+                   (not= (:id frame) (:frame-id shape)))
             (rx/of (update-shape shape-id
                                  {:interactions [{:event-type :click
                                                   :action-type :navigate

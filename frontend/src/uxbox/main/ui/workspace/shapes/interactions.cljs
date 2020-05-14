@@ -141,10 +141,34 @@
                :stroke-width 2
                :d arrow-pdata}]])))
 
+
+(mf/defc interaction-handle
+  [{:keys [shape selected] :as props}]
+  (let [shape-rect (geom/selection-rect-shape shape)
+        handle-x (+ (:x shape-rect) (:width shape-rect))
+        handle-y (+ (:y shape-rect) (/ (:height shape-rect) 2))
+
+        arrow-path ["M" (- handle-x 5) handle-y "l 8 0 l -4 -4 m 4 4 l -4 4"]
+        arrow-pdata (str/join " " arrow-path)]
+
+    [:g {:on-mouse-down #(on-mouse-down % shape selected)}
+       [:circle {:cx handle-x
+                 :cy handle-y
+                 :r 8
+                 :stroke "#31EFB8"
+                 :stroke-width 2
+                 :fill "#FFFFFF"}]
+       [:path {:stroke "#31EFB8"
+               :fill "transparent"
+               :stroke-width 2
+               :d arrow-pdata}]]))
+
+
 (mf/defc interactions
   [{:keys [selected] :as props}]
   (let [data (mf/deref refs/workspace-data)
         local (mf/deref refs/workspace-local)
+        current-transform (:transform local)
         objects (:objects data)
         active-shapes (filter #(first (get-click-interaction %)) (vals objects))
         selected-shapes (map #(get objects %) selected)
@@ -171,10 +195,14 @@
         (for [shape selected-shapes]
           (let [interaction (get-click-interaction shape)
                 dest-shape (get objects (:destination interaction))]
-            (when dest-shape
+            (if dest-shape
               [:& interaction-path {:key (:id shape)
                                     :orig-shape shape
                                     :dest-shape dest-shape
                                     :selected selected
-                                    :selected? true}]))))]))
+                                    :selected? true}]
+              (when (not (#{:move :rotate} current-transform))
+                [:& interaction-handle {:key (:id shape)
+                                        :shape shape
+                                        :selected selected}])))))]))
 
