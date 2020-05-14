@@ -152,7 +152,9 @@
 
 (defn disconnect!
   [conn]
-  (.. conn (getSession) (disconnect)))
+  (let [session (.getSession conn)]
+    (when session
+      (.disconnect session))))
 
 (defn- on-subscribed
   [{:keys [conn] :as ws}]
