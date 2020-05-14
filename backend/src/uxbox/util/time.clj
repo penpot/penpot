@@ -54,8 +54,15 @@
     (integer? ms-or-obj)
     (Duration/ofMillis ms-or-obj)
 
+    (string? ms-or-obj)
+    (Duration/parse ms-or-obj)
+
     :else
     (obj->duration ms-or-obj)))
+
+(defn duration-between
+  [t1 t2]
+  (Duration/between t1 t2))
 
 (defn parse-duration
   [s]

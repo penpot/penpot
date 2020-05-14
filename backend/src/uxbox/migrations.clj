@@ -29,7 +29,10 @@
      :fn (mg/resource "migrations/0004.tasks.sql")}
     {:desc "Initial libraries tables"
      :name "0005-libraries"
-     :fn (mg/resource "migrations/0005.libraries.sql")}]})
+     :fn (mg/resource "migrations/0005.libraries.sql")}
+    {:desc "Initial presence tables"
+     :name "0006-presence"
+     :fn (mg/resource "migrations/0006.presence.sql")}]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Entry point
