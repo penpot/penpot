@@ -5,6 +5,7 @@ CREATE TABLE task (
   modified_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   completed_at timestamptz NULL DEFAULT NULL,
   scheduled_at timestamptz NOT NULL,
+  priority smallint DEFAULT 100,
 
   queue text NOT NULL,
 
