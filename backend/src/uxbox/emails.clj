@@ -27,8 +27,8 @@
 
 (defn render
   [email context]
-  (let [defaults {:from (:email-from cfg/config)
-                  :reply-to (:email-reply-to cfg/config)}]
+  (let [defaults {:from (:sendmail-from cfg/config)
+                  :reply-to (:sendmail-reply-to cfg/config)}]
     (email (merge defaults context))))
 
 (defn send!

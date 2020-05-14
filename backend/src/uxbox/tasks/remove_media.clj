@@ -15,8 +15,7 @@
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.media :as media]
-   [uxbox.util.storage :as ust]
-   [vertx.util :as vu]))
+   [uxbox.util.storage :as ust]))
 
 (s/def ::path ::us/not-empty-string)
 (s/def ::props
@@ -25,8 +24,7 @@
 (defn handler
   [{:keys [props] :as task}]
   (us/verify ::props props)
-  (vu/blocking
-   (when (ust/exists? media/media-storage (:path props))
-     (ust/delete! media/media-storage (:path props))
-     (log/debug "Media " (:path props) " removed."))))
+  (when (ust/exists? media/media-storage (:path props))
+    (ust/delete! media/media-storage (:path props))
+    (log/debug "Media " (:path props) " removed.")))
 

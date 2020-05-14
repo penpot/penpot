@@ -16,4 +16,4 @@
 
 (defn send!
   [req]
-  (http/send-async req {:client @default-client :as :string}))
+  (http/send req {:client @default-client :as :string}))

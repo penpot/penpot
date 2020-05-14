@@ -9,30 +9,32 @@
 
 (ns uxbox.http.middleware
   (:require
-   [promesa.core :as p]
-   [vertx.web :as vw]
-   [uxbox.config :as cfg]
+   [clojure.tools.logging :as log]
+   [ring.middleware.cookies :refer [wrap-cookies]]
+   [ring.middleware.keyword-params :refer [wrap-keyword-params]]
+   [ring.middleware.multipart-params :refer [wrap-multipart-params]]
+   [ring.middleware.params :refer [wrap-params]]
+   [ring.middleware.resource :refer [wrap-resource]]
    [uxbox.common.exceptions :as ex]
-   [uxbox.util.transit :as t])
-  (:import
-   io.vertx.ext.web.RoutingContext
-   io.vertx.ext.web.FileUpload
-   io.vertx.core.buffer.Buffer))
+   [uxbox.config :as cfg]
+   [uxbox.util.transit :as t]))
 
 (defn- wrap-parse-request-body
   [handler]
-  (fn [{:keys [headers body method] :as request}]
-    (let [mtype (get headers "content-type")]
-      (if (and (= "application/transit+json" mtype)
-               (not= method :get))
-        (try
-          (let [params (t/decode (t/buffer->bytes body))]
-            (handler (assoc request :body-params params)))
-          (catch Exception e
-            (ex/raise :type :parse
-                      :message "Unable to parse transit from request body."
-                      :cause e)))
-        (handler request)))))
+  (letfn [(parse-body [body]
+            (try
+              (let [reader (t/reader body)]
+                (t/read! reader))
+              (catch Exception e
+                (ex/raise :type :parse
+                          :message "Unable to parse transit from request body."
+                          :cause e))))]
+    (fn [{:keys [headers body request-method] :as request}]
+      (handler
+       (cond-> request
+         (and (= "application/transit+json" (get headers "content-type"))
+              (not= request-method :get))
+         (assoc :body-params (parse-body body)))))))
 
 (def parse-request-body
   {:name ::parse-request-body
@@ -47,7 +49,7 @@
     (cond
       (coll? body)
       (-> response
-          (assoc :body (t/bytes->buffer (t/encode body {:type type})))
+          (assoc :body (t/encode body {:type type}))
           (update :headers assoc
                   "content-type"
                   "application/transit+json"))
@@ -61,26 +63,69 @@
 (defn- wrap-format-response-body
   [handler]
   (fn [request]
-    (-> (p/do! (handler request))
-        (p/then' (fn [response]
-                   (cond-> response
-                     (map? response) (impl-format-response-body)))))))
+    (let [response (handler request)]
+      (cond-> response
+        (map? response) (impl-format-response-body)))))
 
 (def format-response-body
   {:name ::format-response-body
    :compile (constantly wrap-format-response-body)})
 
+(defn- wrap-errors
+  [handler on-error]
+  (fn [request]
+    (try
+      (handler request)
+      (catch Throwable e
+        (on-error e request)))))
 
-(defn- wrap-method-match
+(def errors
+  {:name ::errors
+   :compile (constantly wrap-errors)})
+
+(def cookies
+  {:name ::cookies
+   :compile (constantly wrap-cookies)})
+
+(def params
+  {:name ::params
+   :compile (constantly wrap-params)})
+
+(def multipart-params
+  {:name ::multipart-params
+   :compile (constantly wrap-multipart-params)})
+
+(def keyword-params
+  {:name ::keyword-params
+   :compile (constantly wrap-keyword-params)})
+
+(defn- wrap-development-cors
   [handler]
-  (fn [request]))
+  (letfn [(add-cors-headers [response]
+            (update response :headers
+                    (fn [headers]
+                      (-> headers
+                          (assoc "access-control-allow-origin" "http://localhost:3449")
+                          (assoc "access-control-allow-methods" "GET,POST,DELETE,OPTIONS,PUT,HEAD,PATCH")
+                          (assoc "access-control-allow-credentials" "true")
+                          (assoc "access-control-expose-headers" "x-requested-with, content-type, cookie")
+                          (assoc "access-control-allow-headers" "content-type")))))]
+    (fn [request]
+      (if (= (:request-method request) :options)
+        (-> {:status 200 :body ""}
+            (add-cors-headers))
+        (let [response (handler request)]
+          (add-cors-headers response))))))
 
-(def method-match
-  {:name ::method-match
-   :compile (fn [data opts]
-              (when-let [method (:method data)]
-                (fn [handler]
-                  (fn [request]
-                    (if (= (:method request) method)
-                      (handler request)
-                      {:status 405 :body ""})))))})
+(def development-cors
+  {:name ::development-cors
+   :compile (fn [& args]
+              (when *assert*
+                wrap-development-cors))})
+
+(def development-resources
+  {:name ::development-resources
+   :compile (fn [& args]
+              (when *assert*
+                #(wrap-resource % "public")))})
+

@@ -15,7 +15,6 @@
    [clojure.pprint :refer [pprint]]
    [clojure.java.io :as io]
    [clojure.edn :as edn]
-   [promesa.core :as p]
    [mount.core :as mount]
    [datoteka.core :as fs]
    [cuerdas.core :as str]
@@ -63,7 +62,6 @@
   ([code]
    (System/exit code)))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Icons Libraries Importer
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -71,10 +69,8 @@
 (defn- icon-library-exists?
   [conn id]
   (s/assert ::us/uuid id)
-  (let [sql "select id from icon_library where id = $1"]
-    (-> (db/query-one conn [sql id])
-        (p/then (fn [row] (if row true false))))))
-
+  (let [row (db/get-by-id conn :icon-library id)]
+    (if row true false)))
 
 (defn- create-icons-library
   [conn {:keys [name] :as item}]
@@ -87,11 +83,9 @@
 (defn- create-icons-library-if-not-exists
   [conn {:keys [name] :as item}]
   (let [id (uuid/namespaced +icons-uuid-ns+ name)]
-    (-> (icon-library-exists? conn id)
-        (p/then (fn [exists?]
-                  (when-not exists?
-                    (create-icons-library conn item))))
-        (p/then (constantly id)))))
+    (when-not (icon-library-exists? conn id)
+      (create-icons-library conn item))
+    id))
 
 (defn- create-icon
   [conn library-id icon-id localpath]
@@ -113,36 +107,32 @@
 (defn- icon-exists?
   [conn id]
   (s/assert ::us/uuid id)
-  (let [sql "select id from icon where id = $1"]
-    (-> (db/query-one conn [sql id])
-        (p/then (fn [row] (if row true false))))))
+  (let [row (db/get-by-id conn :icon id)]
+    (if row true false)))
 
 (defn- import-icon-if-not-exists
   [conn library-id fpath]
   (s/assert ::us/uuid library-id)
   (s/assert fs/path? fpath)
   (let [icon-id (uuid/namespaced +icons-uuid-ns+ (str library-id (fs/name fpath)))]
-    (-> (icon-exists? conn icon-id)
-        (p/then (fn [exists?]
-                  (when-not exists?
-                    (create-icon conn library-id icon-id fpath))))
-        (p/then (constantly icon-id)))))
+    (when-not (icon-exists? conn icon-id)
+      (create-icon conn library-id icon-id fpath))
+    icon-id))
 
 (defn- import-icons
   [conn library-id {:keys [path regex] :as item}]
-  (p/run! (fn [fpath]
-            (when (re-matches regex (str fpath))
-              (import-icon-if-not-exists conn library-id fpath)))
-          (->> (fs/list-dir path)
-               (filter fs/regular-file?))))
+  (run! (fn [fpath]
+          (when (re-matches regex (str fpath))
+            (import-icon-if-not-exists conn library-id fpath)))
+        (->> (fs/list-dir path)
+             (filter fs/regular-file?))))
 
 (defn- process-icons-library
   [conn basedir {:keys [path regex] :as item}]
   (s/assert ::import-item-media item)
-  (-> (create-icons-library-if-not-exists conn item)
-      (p/then (fn [library-id]
-                (->> (assoc item :path (fs/join basedir path))
-                     (import-icons conn library-id))))))
+  (let [library-id (create-icons-library-if-not-exists conn item)]
+    (->> (assoc item :path (fs/join basedir path))
+         (import-icons conn library-id))))
 
 
 ;; --- Images Libraries Importer
@@ -150,9 +140,8 @@
 (defn- image-library-exists?
   [conn id]
   (s/assert ::us/uuid id)
-  (let [sql "select id from image_library where id = $1"]
-    (-> (db/query-one conn [sql id])
-        (p/then (fn [row] (if row true false))))))
+  (let [row (db/get-by-id conn :image-library id)]
+    (if row true false)))
 
 (defn- create-images-library
   [conn {:keys [name] :as item}]
@@ -162,16 +151,12 @@
                                  :team-id uuid/zero
                                  :name name})))
 
-
 (defn- create-images-library-if-not-exists
   [conn {:keys [name] :as item}]
   (let [id (uuid/namespaced +images-uuid-ns+ name)]
-    (-> (image-library-exists? conn id)
-        (p/then (fn [exists?]
-                  (when-not exists?
-                    (create-images-library conn item))))
-        (p/then (constantly id)))))
-
+    (when-not (image-library-exists? conn id)
+      (create-images-library conn item)
+      id)))
 
 (defn- create-image
   [conn library-id image-id localpath]
@@ -186,9 +171,9 @@
                 ".png"  "image/png"
                 ".webp" "image/webp")]
     (log/info "Creating image" filename image-id)
-    (images/create-image conn {:content {:path localpath
-                                         :name filename
-                                         :mtype mtype
+    (images/create-image conn {:content {:tempfile localpath
+                                         :filename filename
+                                         :content-type mtype
                                          :size (.length file)}
                                :id image-id
                                :library-id library-id
@@ -198,36 +183,32 @@
 (defn- image-exists?
   [conn id]
   (s/assert ::us/uuid id)
-  (let [sql "select id from image where id = $1"]
-    (-> (db/query-one conn [sql id])
-        (p/then (fn [row] (if row true false))))))
+  (let [row (db/get-by-id conn :image id)]
+    (if row true false)))
 
 (defn- import-image-if-not-exists
   [conn library-id fpath]
   (s/assert ::us/uuid library-id)
   (s/assert fs/path? fpath)
   (let [image-id (uuid/namespaced +images-uuid-ns+ (str library-id (fs/name fpath)))]
-    (-> (image-exists? conn image-id)
-        (p/then (fn [exists?]
-                  (when-not exists?
-                    (create-image conn library-id image-id fpath))))
-        (p/then (constantly image-id)))))
+    (when-not (image-exists? conn image-id)
+      (create-image conn library-id image-id fpath))
+    image-id))
 
 (defn- import-images
   [conn library-id {:keys [path regex] :as item}]
-  (p/run! (fn [fpath]
-            (when (re-matches regex (str fpath))
-              (import-image-if-not-exists conn library-id fpath)))
-          (->> (fs/list-dir path)
-               (filter fs/regular-file?))))
+  (run! (fn [fpath]
+          (when (re-matches regex (str fpath))
+            (import-image-if-not-exists conn library-id fpath)))
+        (->> (fs/list-dir path)
+             (filter fs/regular-file?))))
 
 (defn- process-images-library
   [conn basedir {:keys [path regex] :as item}]
   (s/assert ::import-item-media item)
-  (-> (create-images-library-if-not-exists conn item)
-      (p/then (fn [library-id]
-                (->> (assoc item :path (fs/join basedir path))
-                     (import-images conn library-id))))))
+  (let [library-id (create-images-library-if-not-exists conn item)]
+    (->> (assoc item :path (fs/join basedir path))
+         (import-images conn library-id))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -237,9 +218,8 @@
 (defn- color-library-exists?
   [conn id]
   (s/assert ::us/uuid id)
-  (let [sql "select id from color_library where id = $1"]
-    (-> (db/query-one conn [sql id])
-        (p/then (fn [row] (if row true false))))))
+  (let [row (db/get-by-id conn :color-library id)]
+    (if row true false)))
 
 (defn- create-colors-library
   [conn {:keys [name] :as item}]
@@ -253,43 +233,33 @@
 (defn- create-colors-library-if-not-exists
   [conn {:keys [name] :as item}]
   (let [id (uuid/namespaced +colors-uuid-ns+ name)]
-    (-> (color-library-exists? conn id)
-        (p/then (fn [exists?]
-                  (when-not exists?
-                    (create-colors-library conn item))))
-        (p/then (constantly id)))))
+    (when-not (color-library-exists? conn id)
+      (create-colors-library conn item))
+    id))
 
 (defn- create-color
   [conn library-id content]
   (s/assert ::us/uuid library-id)
   (s/assert ::us/color content)
-
   (let [color-id (uuid/namespaced +colors-uuid-ns+ (str library-id content))]
     (log/info "Creating color" content color-id)
-    (-> (colors/create-color conn {:id color-id
-                                   :library-id library-id
-                                   :name content
-                                   :content content})
-        (p/then' (constantly color-id)))))
-
-(defn- prune-colors
-  [conn library-id]
-  (-> (db/query-one conn ["delete from color where library_id=$1" library-id])
-      (p/then (constantly nil))))
+    (colors/create-color conn {:id color-id
+                               :library-id library-id
+                               :name content
+                               :content content})
+    color-id))
 
 (defn- import-colors
   [conn library-id {:keys [colors] :as item}]
   (us/verify ::import-item-color item)
-  (p/do!
-   (prune-colors conn library-id)
-   (p/run! #(create-color conn library-id %) colors)))
+  (db/delete! conn :color {:library-id library-id})
+  (run! #(create-color conn library-id %) colors))
 
 (defn- process-colors-library
   [conn {:keys [name id colors] :as item}]
   (us/verify ::import-item-color item)
-  (-> (create-colors-library-if-not-exists conn item)
-      (p/then #(import-colors conn % item))))
-
+  (let [library-id (create-colors-library-if-not-exists conn item)]
+    (import-colors conn library-id item)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Entry Point
@@ -328,22 +298,22 @@
   (let [images (:images data)
         icons (:icons data)
         colors (:colors data)]
-    (p/do!
-     (p/run! #(process-images-library conn basedir %) images)
-     (p/run! #(process-icons-library conn basedir %) icons)
-     (p/run! #(process-colors-library conn %) colors)
-     nil)))
+    (run! #(process-images-library conn basedir %) images)
+    (run! #(process-icons-library conn basedir %) icons)
+    (run! #(process-colors-library conn %) colors)))
 
 (defn run
   [path]
-  (p/let [[basedir data] (read-file path)]
+  (let [[basedir data] (read-file path)]
     (db/with-atomic [conn db/pool]
       (importer conn basedir data))))
 
 (defn -main
   [& [path]]
   (let [path (validate-path path)]
-    (start-system)
-    (-> (run path)
-        (p/finally (fn [_ _] (stop-system))))))
+    (try
+      (start-system)
+      (run path)
+      (finally
+        (stop-system)))))
 

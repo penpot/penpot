@@ -10,13 +10,10 @@
    [clojure.tools.logging :as log]
    [lambdaisland.uri :refer [uri]]
    [mount.core :as mount :refer [defstate]]
-   [promesa.core :as p]
    [uxbox.common.exceptions :as ex]
    [uxbox.config :as cfg]
-   [uxbox.core :refer [system]]
-   [uxbox.util.redis :as redis]
    [uxbox.util.data :as data]
-   [vertx.util :as vu])
+   [uxbox.util.redis :as redis])
   (:import
    java.lang.AutoCloseable))
 
@@ -33,20 +30,20 @@
   :stop (.close ^AutoCloseable client))
 
 (defstate conn
-  :start @(redis/connect client)
+  :start (redis/connect client)
   :stop (.close ^AutoCloseable conn))
 
 ;; --- API FORWARD
 
 (defn subscribe
-  [topic]
-  (redis/subscribe client topic))
+  ([topic]
+   (redis/subscribe client topic))
+  ([topic xf]
+   (redis/subscribe client topic xf)))
 
 (defn run!
   [cmd params]
-  (let [ctx (vu/get-or-create-context system)]
-    (-> (redis/run! conn cmd params)
-        (vu/handle-on-context ctx))))
+  (redis/run! conn cmd params))
 
 (defn run
   [cmd params]

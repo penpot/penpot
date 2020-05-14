@@ -16,7 +16,6 @@
    [uxbox.db :as db]
    [uxbox.images :as images]
    [uxbox.services.queries :as sq]
-   [uxbox.services.util :as su]
    [uxbox.util.blob :as blob]))
 
 (declare decode-row)
@@ -38,8 +37,8 @@
      select p.*
        from project as p
       inner join team_profile_rel as tpr on (tpr.team_id = p.team_id)
-      where tpr.profile_id = $1
-        and p.team_id = $2
+      where tpr.profile_id = ?
+        and p.team_id = ?
         and p.deleted_at is null
         and (tpr.is_admin = true or
              tpr.is_owner = true or
@@ -48,8 +47,8 @@
      select p.*
        from project as p
       inner join project_profile_rel as ppr on (ppr.project_id = p.id)
-      where ppr.profile_id = $1
-        and p.team_id = $2
+      where ppr.profile_id = ?
+        and p.team_id = ?
         and p.deleted_at is null
         and (ppr.is_admin = true or
              ppr.is_owner = true or
@@ -62,7 +61,7 @@
      from file
     inner join projects as pr on (file.project_id = pr.id)
      left join page on (file.id = page.file_id)
-    where file.name ilike ('%' || $3 || '%')
+    where file.name ilike ('%' || ? || '%')
    window pages_w as (partition by file.id order by page.created_at
                       range between unbounded preceding
                                 and unbounded following)
@@ -73,8 +72,12 @@
 
 (sq/defquery ::search-files
   [{:keys [profile-id team-id search-term] :as params}]
-  (-> (db/query db/pool [sql:search-files profile-id team-id search-term])
-      (p/then (partial mapv decode-row))))
+  (let [rows (db/exec! db/pool [sql:search-files
+                                profile-id team-id
+                                profile-id team-id
+                                search-term])]
+    (mapv decode-row rows)))
+
 
 ;; --- Query: Draft Files
 
@@ -86,8 +89,8 @@
      from file as f
     inner join file_profile_rel as fp_r on (fp_r.file_id = f.id)
      left join page as pg on (f.id = pg.file_id)
-    where fp_r.profile_id = $1
-      and f.project_id = $2
+    where fp_r.profile_id = ?
+      and f.project_id = ?
       and f.deleted_at is null
       and pg.deleted_at is null
       and (fp_r.is_admin = true or
@@ -104,8 +107,8 @@
 
 (sq/defquery ::files
   [{:keys [profile-id project-id] :as params}]
-  (-> (db/query db/pool [sql:files profile-id project-id])
-      (p/then (partial mapv decode-row))))
+  (->> (db/exec! db/pool [sql:files profile-id project-id])
+       (mapv decode-row)))
 
 ;; --- Query: File Permissions
 
@@ -114,8 +117,8 @@
           fpr.is_admin,
           fpr.can_edit
      from file_profile_rel as fpr
-    where fpr.file_id = $1
-      and fpr.profile_id = $2
+    where fpr.file_id = ?
+      and fpr.profile_id = ?
    union all
    select tpr.is_owner,
           tpr.is_admin,
@@ -123,28 +126,31 @@
      from team_profile_rel as tpr
     inner join project as p on (p.team_id = tpr.team_id)
     inner join file as f on (p.id = f.project_id)
-    where f.id = $1
-      and tpr.profile_id = $2
+    where f.id = ?
+      and tpr.profile_id = ?
    union all
    select ppr.is_owner,
           ppr.is_admin,
           ppr.can_edit
      from project_profile_rel as ppr
     inner join file as f on (f.project_id = ppr.project_id)
-    where f.id = $1
-      and ppr.profile_id = $2;")
+    where f.id = ?
+      and ppr.profile_id = ?;")
 
 (defn check-edition-permissions!
   [conn profile-id file-id]
-  (-> (db/query conn [sql:file-permissions file-id profile-id])
-      (p/then' seq)
-      (p/then' su/raise-not-found-if-nil)
-      (p/then' (fn [rows]
-                 (when-not (or (some :can-edit rows)
-                               (some :is-admin rows)
-                               (some :is-owner rows))
-                   (ex/raise :type :validation
-                             :code :not-authorized))))))
+  (let [rows (db/exec! conn [sql:file-permissions
+                             file-id profile-id
+                             file-id profile-id
+                             file-id profile-id])]
+    (when (empty? rows)
+      (ex/raise :type :not-found))
+
+    (when-not (or (some :can-edit rows)
+                  (some :is-admin rows)
+                  (some :is-owner rows))
+      (ex/raise :type :validation
+                :code :not-authorized))))
 
 ;; --- Query: Images of the File
 
@@ -162,15 +168,15 @@
 (def ^:private sql:file-images
   "select fi.*
      from file_image as fi
-    where fi.file_id = $1")
+    where fi.file_id = ?")
 
 (defn retrieve-file-images
   [conn {:keys [file-id] :as params}]
   (let [sqlv [sql:file-images file-id]
         xf (comp (map #(images/resolve-urls % :path :uri))
                  (map #(images/resolve-urls % :thumb-path :thumb-uri)))]
-    (-> (db/query conn sqlv)
-        (p/then' #(into [] xf %)))))
+    (->> (db/exec! conn sqlv)
+         (into [] xf))))
 
 ;; --- Query: File (By ID)
 
@@ -179,7 +185,7 @@
           array_agg(pg.id) over pages_w as pages
      from file as f
      left join page as pg on (f.id = pg.file_id)
-    where f.id = $1
+    where f.id = ?
       and f.deleted_at is null
       and pg.deleted_at is null
    window pages_w as (partition by f.id order by pg.ordering
@@ -190,27 +196,26 @@
   "select pf.id, pf.fullname, pf.photo
      from profile as pf
     inner join file_profile_rel as fpr on (fpr.profile_id = pf.id)
-    where fpr.file_id = $1
+    where fpr.file_id = ?
     union
    select pf.id, pf.fullname, pf.photo
      from profile as pf
     inner join team_profile_rel as tpr on (tpr.profile_id = pf.id)
     inner join project as p on (tpr.team_id = p.team_id)
     inner join file as f on (p.id = f.project_id)
-    where f.id = $1")
+    where f.id = ?")
 
 (defn retrieve-file
   [conn id]
-  (-> (db/query-one conn [sql:file id])
-      (p/then' su/raise-not-found-if-nil)
-      (p/then' decode-row)))
+  (let [row (db/exec-one! conn [sql:file id])]
+    (when-not row
+      (ex/raise :type :not-found))
+    (decode-row row)))
 
 (defn retrieve-file-users
   [conn id]
-  (-> (db/query conn [sql:file-users id])
-      (p/then (fn [rows]
-                (mapv #(images/resolve-media-uris % [:photo :photo-uri]) rows)))))
-
+  (->> (db/exec! conn [sql:file-users id id])
+       (mapv #(images/resolve-media-uris % [:photo :photo-uri]))))
 
 (s/def ::file-users
   (s/keys :req-un [::profile-id ::id]))
@@ -230,7 +235,6 @@
     (check-edition-permissions! conn profile-id id)
     (retrieve-file conn id)))
 
-
 ;; --- Helpers
 
 (defn decode-row
@@ -238,4 +242,4 @@
   (when row
     (cond-> row
       data (assoc :data (blob/decode data))
-      pages (assoc :pages (vec (remove nil? pages))))))
+      pages (assoc :pages (vec (.getArray pages))))))

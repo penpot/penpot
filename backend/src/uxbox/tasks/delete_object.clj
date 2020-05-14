@@ -12,13 +12,11 @@
   (:require
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
-   [promesa.core :as p]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.db :as db]
    [uxbox.media :as media]
-   [uxbox.util.storage :as ust]
-   [vertx.util :as vu]))
+   [uxbox.util.storage :as ust]))
 
 (s/def ::type keyword?)
 (s/def ::id ::us/uuid)
@@ -40,42 +38,42 @@
 
 (defmethod handle-deletion :image
   [conn {:keys [id] :as props}]
-  (let [sql "delete from image where id=$1 and deleted_at is not null"]
-    (db/query-one conn [sql id])))
+  (let [sql "delete from image where id=? and deleted_at is not null"]
+    (db/exec-one! conn [sql id])))
 
 (defmethod handle-deletion :image-collection
   [conn {:keys [id] :as props}]
   (let [sql "delete from image_collection
-              where id=$1 and deleted_at is not null"]
-    (db/query-one conn [sql id])))
+              where id=? and deleted_at is not null"]
+    (db/exec-one! conn [sql id])))
 
 (defmethod handle-deletion :icon
   [conn {:keys [id] :as props}]
-  (let [sql "delete from icon where id=$1 and deleted_at is not null"]
-    (db/query-one conn [sql id])))
+  (let [sql "delete from icon where id=? and deleted_at is not null"]
+    (db/exec-one! conn [sql id])))
 
 (defmethod handle-deletion :icon-collection
   [conn {:keys [id] :as props}]
   (let [sql "delete from icon_collection
-              where id=$1 and deleted_at is not null"]
-    (db/query-one conn [sql id])))
+              where id=? and deleted_at is not null"]
+    (db/exec-one! conn [sql id])))
 
 (defmethod handle-deletion :file
   [conn {:keys [id] :as props}]
-  (let [sql "delete from file where id=$1 and deleted_at is not null"]
-    (db/query-one conn [sql id])))
+  (let [sql "delete from file where id=? and deleted_at is not null"]
+    (db/exec-one! conn [sql id])))
 
 (defmethod handle-deletion :file-image
   [conn {:keys [id] :as props}]
-  (let [sql "delete from file_image where id=$1 and deleted_at is not null"]
-    (db/query-one conn [sql id])))
+  (let [sql "delete from file_image where id=? and deleted_at is not null"]
+    (db/exec-one! conn [sql id])))
 
 (defmethod handle-deletion :page
   [conn {:keys [id] :as props}]
-  (let [sql "delete from page where id=$1 and deleted_at is not null"]
-    (db/query-one conn [sql id])))
+  (let [sql "delete from page where id=? and deleted_at is not null"]
+    (db/exec-one! conn [sql id])))
 
 (defmethod handle-deletion :page-version
   [conn {:keys [id] :as props}]
-  (let [sql "delete from page_version where id=$1 and deleted_at is not null"]
-    (db/query-one conn [sql id])))
+  (let [sql "delete from page_version where id=? and deleted_at is not null"]
+    (db/exec-one! conn [sql id])))

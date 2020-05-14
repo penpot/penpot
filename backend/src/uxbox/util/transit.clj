@@ -11,7 +11,6 @@
    [uxbox.util.time :as dt]
    [uxbox.util.data :as data])
   (:import
-   io.vertx.core.buffer.Buffer
    java.io.ByteArrayInputStream
    java.io.ByteArrayOutputStream
    java.io.File))
@@ -84,13 +83,4 @@
    (bytes->str data "UTF-8"))
   ([^bytes data, ^String encoding]
    (String. data encoding)))
-
-(defn bytes->buffer
-  [^bytes data]
-  (Buffer/buffer data))
-
-(defn buffer->bytes
-  [^Buffer data]
-  (.getBytes data))
-
 

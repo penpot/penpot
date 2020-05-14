@@ -1,7 +1,9 @@
 (ns uxbox.tests.helpers
   (:require
+   [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
+   [datoteka.core :as fs]
    [cuerdas.core :as str]
    [mount.core :as mount]
    [environ.core :refer [env]]
@@ -21,27 +23,34 @@
    [uxbox.util.blob :as blob]
    [uxbox.common.uuid :as uuid]
    [uxbox.util.storage :as ust]
-   [uxbox.config :as cfg]
-   [vertx.util :as vu]))
+   [uxbox.config :as cfg])
+  (:import org.postgresql.ds.PGSimpleDataSource))
 
-(def ^:dynamic *context* nil)
+(defn testing-datasource
+  []
+  (doto (PGSimpleDataSource.)
+    (.setServerName "postgres")
+    (.setDatabaseName "uxbox_test")
+    (.setUser "uxbox")
+    (.setPassword "uxbox")))
 
 (defn state-init
   [next]
   (let [config (cfg/read-test-config env)]
-    (-> (mount/only #{#'uxbox.config/config
-                      #'uxbox.core/system
-                      #'uxbox.db/pool
-                      #'uxbox.services.init/query-services
-                      #'uxbox.services.init/mutation-services
-                      #'uxbox.migrations/migrations
-                      #'uxbox.media/assets-storage
-                      #'uxbox.media/media-storage})
-        (mount/swap {#'uxbox.config/config config})
-        (mount/start))
     (try
-      (binding [*context* (vu/get-or-create-context uxbox.core/system)]
-        (next))
+      ;; (Class/forName "org.postgresql.Driver")
+      (let [pool (testing-datasource)]
+        (-> (mount/only #{#'uxbox.config/config
+                          #'uxbox.db/pool
+                          #'uxbox.services.init/query-services
+                          #'uxbox.services.init/mutation-services
+                          #'uxbox.migrations/migrations
+                          #'uxbox.media/assets-storage
+                          #'uxbox.media/media-storage})
+            (mount/swap {#'uxbox.config/config config
+                         #'uxbox.db/pool pool})
+            (mount/start)))
+      (next)
       (finally
         (mount/stop)))))
 
@@ -51,14 +60,12 @@
                  "  FROM information_schema.tables "
                  " WHERE table_schema = 'public' "
                  "   AND table_name != 'migrations';")]
-
-    @(db/with-atomic [conn db/pool]
-       (-> (db/query conn sql)
-           (p/then #(map :table-name %))
-           (p/then (fn [result]
-                     (db/query-one conn (str "TRUNCATE "
-                                             (apply str (interpose ", " result))
-                                             " CASCADE;")))))))
+    (db/with-atomic [conn db/pool]
+      (let [result (->> (db/exec! conn [sql])
+                        (map :table-name))]
+        (db/exec! conn [(str "TRUNCATE "
+                             (apply str (interpose ", " result))
+                             " CASCADE;")]))))
   (try
     (next)
     (finally
@@ -142,15 +149,8 @@
 (defmacro try-on!
   [expr]
   `(try
-     (let [d# (p/deferred)]
-       (->> #(p/finally (p/do! ~expr)
-                        (fn [v# e#]
-                          (if e#
-                            (p/reject! d# e#)
-                            (p/resolve! d# v#))))
-            (vu/run-on-context! *context*))
-       (array-map :error nil
-                  :result (deref d#)))
+     {:error nil
+      :result ~expr}
      (catch Exception e#
        {:error (handle-error e#)
         :result nil})))
@@ -211,3 +211,11 @@
   [e code]
   (let [data (ex-data e)]
     (= code (:code data))))
+
+(defn tempfile
+  [source]
+  (let [rsc (io/resource source)
+        tmp (fs/create-tempfile)]
+    (io/copy (io/file rsc)
+             (io/file tmp))
+    tmp))

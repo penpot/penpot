@@ -14,16 +14,14 @@
    [promesa.exec :as px]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
-   [uxbox.db :as db]
-   [uxbox.media :as media]
-   [uxbox.images :as images]
-   [uxbox.services.queries.teams :as teams]
-   [uxbox.services.queries :as sq]
-   [uxbox.services.util :as su]
-   [uxbox.util.blob :as blob]
-   [uxbox.util.data :as data]
    [uxbox.common.uuid :as uuid]
-   [vertx.core :as vc]))
+   [uxbox.db :as db]
+   [uxbox.images :as images]
+   [uxbox.media :as media]
+   [uxbox.services.queries :as sq]
+   [uxbox.services.queries.teams :as teams]
+   [uxbox.util.blob :as blob]
+   [uxbox.util.data :as data]))
 
 ;; --- Helpers & Specs
 
@@ -32,15 +30,13 @@
 (s/def ::team-id ::us/uuid)
 (s/def ::library-id (s/nilable ::us/uuid))
 
-
-
 ;; --- Query: Colors Librarys
 
 (def ^:private sql:libraries
   "select lib.*,
           (select count(*) from color where library_id = lib.id) as num_colors
      from color_library as lib
-    where lib.team_id = $1
+    where lib.team_id = ?
       and lib.deleted_at is null
     order by lib.created_at desc")
 
@@ -51,8 +47,7 @@
   [{:keys [profile-id team-id]}]
   (db/with-atomic [conn db/pool]
     (teams/check-read-permissions! conn profile-id team-id)
-    (db/query conn [sql:libraries team-id])))
-
+    (db/exec! conn [sql:libraries team-id])))
 
 
 ;; --- Query: Color Library
@@ -65,7 +60,7 @@
 (sq/defquery ::color-library
   [{:keys [profile-id id]}]
   (db/with-atomic [conn db/pool]
-    (p/let [lib (retrieve-library conn id)]
+    (let [lib (retrieve-library conn id)]
       (teams/check-read-permissions! conn profile-id (:team-id lib))
       lib)))
 
@@ -74,14 +69,14 @@
           (select count(*) from color where library_id = lib.id) as num_colors
      from color_library as lib
     where lib.deleted_at is null
-      and lib.id = $1")
+      and lib.id = ?")
 
 (defn- retrieve-library
   [conn id]
-  (-> (db/query-one conn [sql:single-library id])
-      (p/then' su/raise-not-found-if-nil)))
-
-
+  (let [row (db/exec-one! conn [sql:single-library id])]
+    (when-not row
+      (ex/raise :type :not-found))
+    row))
 
 ;; --- Query: Colors (by library)
 
@@ -93,7 +88,7 @@
 (sq/defquery ::colors
   [{:keys [profile-id library-id] :as params}]
   (db/with-atomic [conn db/pool]
-    (p/let [lib (retrieve-library conn library-id)]
+    (let [lib (retrieve-library conn library-id)]
       (teams/check-read-permissions! conn profile-id (:team-id lib))
       (retrieve-colors conn library-id))))
 
@@ -102,13 +97,12 @@
      from color as color
     inner join color_library as lib on (lib.id = color.library_id)
     where color.deleted_at is null
-      and color.library_id = $1
+      and color.library_id = ?
    order by created_at desc")
 
 (defn- retrieve-colors
   [conn library-id]
-  (db/query conn [sql:colors library-id]))
-
+  (db/exec! conn [sql:colors library-id]))
 
 
 ;; --- Query: Color (by ID)
@@ -122,7 +116,7 @@
 (sq/defquery ::color
   [{:keys [profile-id id] :as params}]
   (db/with-atomic [conn db/pool]
-    (p/let [color (retrieve-color conn id)]
+    (let [color (retrieve-color conn id)]
       (teams/check-read-permissions! conn profile-id (:team-id color))
       color)))
 
@@ -132,10 +126,12 @@
      from color as color
     inner join color_library as lib on (lib.id = color.library_id)
     where color.deleted_at is null
-      and color.id = $1
+      and color.id = ?
    order by created_at desc")
 
 (defn retrieve-color
   [conn id]
-  (-> (db/query-one conn [sql:single-color id])
-      (p/then' su/raise-not-found-if-nil)))
+  (let [row (db/exec-one! conn [sql:single-color id])]
+    (when-not row
+      (ex/raise :type :not-found))
+    row))

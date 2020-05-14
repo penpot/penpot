@@ -10,16 +10,14 @@
 (ns uxbox.services.mutations.projects
   (:require
    [clojure.spec.alpha :as s]
-   [promesa.core :as p]
-   [uxbox.config :as cfg]
-   [uxbox.db :as db]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
-   [uxbox.tasks :as tasks]
+   [uxbox.common.uuid :as uuid]
+   [uxbox.config :as cfg]
+   [uxbox.db :as db]
    [uxbox.services.mutations :as sm]
-   [uxbox.services.util :as su]
-   [uxbox.util.blob :as blob]
-   [uxbox.common.uuid :as uuid]))
+   [uxbox.tasks :as tasks]
+   [uxbox.util.blob :as blob]))
 
 ;; --- Helpers & Specs
 
@@ -35,28 +33,28 @@
           tpr.can_edit
      from team_profile_rel as tpr
     inner join project as p on (p.team_id = tpr.team_id)
-    where p.id = $1
-      and tpr.profile_id = $2
+    where p.id = ?
+      and tpr.profile_id = ?
    union all
    select ppr.is_owner,
           ppr.is_admin,
           ppr.can_edit
      from project_profile_rel as ppr
-    where ppr.project_id = $1
-      and ppr.profile_id = $2")
+    where ppr.project_id = ?
+      and ppr.profile_id = ?")
 
 (defn check-edition-permissions!
   [conn profile-id project-id]
-  (-> (db/query conn [sql:project-permissions project-id profile-id])
-      (p/then' seq)
-      (p/then' su/raise-not-found-if-nil)
-      (p/then' (fn [rows]
-                 (when-not (or (some :can-edit rows)
-                               (some :is-admin rows)
-                               (some :is-owner rows))
-                   (ex/raise :type :validation
-                             :code :not-authorized))))))
-
+  (let [rows (db/exec! conn [sql:project-permissions
+                             project-id profile-id
+                             project-id profile-id])]
+    (when (empty? rows)
+      (ex/raise :type :not-found))
+    (when-not (or (some :can-edit rows)
+                  (some :is-admin rows)
+                  (some :is-owner rows))
+      (ex/raise :type :validation
+                :code :not-authorized))))
 
 
 ;; --- Mutation: Create Project
@@ -72,30 +70,28 @@
 (sm/defmutation ::create-project
   [params]
   (db/with-atomic [conn db/pool]
-    (p/let [proj (create-project conn params)]
+    (let [proj (create-project conn params)]
       (create-project-profile conn (assoc params :project-id (:id proj)))
       proj)))
-
-(def ^:private sql:insert-project
-  "insert into project (id, team_id, name, is_default)
-   values ($1, $2, $3, $4)
-   returning *")
 
 (defn create-project
   [conn {:keys [id profile-id team-id name default?] :as params}]
   (let [id (or id (uuid/next))
         default? (if (boolean? default?) default? false)]
-    (db/query-one conn [sql:insert-project id team-id name default?])))
-
-(def ^:private sql:create-project-profile
-  "insert into project_profile_rel (project_id, profile_id, is_owner, is_admin, can_edit)
-   values ($1, $2, true, true, true)
-   returning *")
+    (db/insert! conn :project
+                {:id id
+                 :team-id team-id
+                 :name name
+                 :is-default default?})))
 
 (defn create-project-profile
   [conn {:keys [project-id profile-id] :as params}]
-  (-> (db/query-one conn [sql:create-project-profile project-id profile-id])
-      (p/then' su/constantly-nil)))
+  (db/insert! conn :project-profile-rel
+              {:project-id project-id
+               :profile-id profile-id
+               :is-owner true
+               :is-admin true
+               :can-edit true}))
 
 
 
@@ -107,23 +103,13 @@
   (s/keys :req-un [::profile-id ::name ::id]))
 
 (sm/defmutation ::rename-project
-  [{:keys [id profile-id] :as params}]
+  [{:keys [id profile-id name] :as params}]
   (db/with-atomic [conn db/pool]
-    (check-edition-permissions! conn profile-id id)
-    (rename-project conn params)))
-
-(def ^:private sql:rename-project
-  "update project
-      set name = $2
-    where id = $1
-      and deleted_at is null
-     returning *")
-
-(defn rename-project
-  [conn {:keys [id name] :as params}]
-  (db/query-one conn [sql:rename-project id name]))
-
-
+    (let [project (db/get-by-id conn :project id {:for-update true})]
+      (check-edition-permissions! conn profile-id id)
+      (db/update! conn :project
+                  {:name name}
+                  {:id id}))))
 
 ;; --- Mutation: Delete Project
 
@@ -147,10 +133,10 @@
 (def ^:private sql:mark-project-deleted
   "update project
       set deleted_at = clock_timestamp()
-    where id = $1
+    where id = ?
    returning id")
 
 (defn mark-project-deleted
   [conn {:keys [id profile-id] :as params}]
-  (-> (db/query-one conn [sql:mark-project-deleted id])
-      (p/then' su/constantly-nil)))
+  (db/exec! conn [sql:mark-project-deleted id])
+  nil)

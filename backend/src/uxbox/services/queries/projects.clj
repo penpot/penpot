@@ -11,7 +11,6 @@
    [uxbox.common.spec :as us]
    [uxbox.db :as db]
    [uxbox.services.queries :as sq]
-   [uxbox.services.util :as su]
    [uxbox.util.blob :as blob]))
 
 (declare decode-row)
@@ -32,7 +31,7 @@
                 and deleted_at is null) as file_count
        from project as p
       inner join team_profile_rel as tpr on (tpr.team_id = p.team_id)
-      where tpr.profile_id = $1
+      where tpr.profile_id = ?
         and p.deleted_at is null
         and (tpr.is_admin = true or
              tpr.is_owner = true or
@@ -44,7 +43,7 @@
                 and deleted_at is null)
        from project as p
       inner join project_profile_rel as ppr on (ppr.project_id = p.id)
-      where ppr.profile_id = $1
+      where ppr.profile_id = ?
         and p.deleted_at is null
         and (ppr.is_admin = true or
              ppr.is_owner = true or
@@ -52,15 +51,15 @@
    )
    select *
      from projects
-    where team_id = $2
+    where team_id = ?
     order by modified_at desc")
 
 (def ^:private sql:project-by-id
   "select p.*
      from project as p
     inner join project_profile_rel as ppr on (ppr.project_id = p.id)
-    where ppr.profile_id = $1
-      and p.id = $2
+    where ppr.profile_id = ?
+      and p.id = ?
       and p.deleted_at is null
       and (ppr.is_admin = true or
            ppr.is_owner = true or
@@ -78,11 +77,11 @@
 
 (defn retrieve-projects
   [conn profile-id team-id]
-  (db/query conn [sql:projects profile-id team-id]))
+  (db/exec! conn [sql:projects profile-id profile-id team-id]))
 
 (defn retrieve-project
   [conn profile-id id]
-  (db/query-one conn [sql:project-by-id profile-id id]))
+  (db/exec-one! conn [sql:project-by-id profile-id id]))
 
 (sq/defquery ::projects-by-team
   [{:keys [profile-id team-id]}]

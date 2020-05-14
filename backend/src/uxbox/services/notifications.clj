@@ -7,14 +7,29 @@
 (ns uxbox.services.notifications
   "A websocket based notifications mechanism."
   (:require
-   [clojure.tools.logging :as log]
    [clojure.core.async :as a :refer [>! <!]]
+   [clojure.tools.logging :as log]
    [promesa.core :as p]
+   [ring.adapter.jetty9 :as jetty]
    [uxbox.common.exceptions :as ex]
-   [uxbox.util.transit :as t]
-   [uxbox.redis :as redis]
    [uxbox.common.uuid :as uuid]
-   [vertx.util :as vu :refer [<?]]))
+   [uxbox.redis :as redis]
+   [ring.util.codec :as codec]
+   [uxbox.util.transit :as t]))
+
+(defmacro go-try
+  [& body]
+  `(a/go
+     (try
+       ~@body
+       (catch Throwable e# e#))))
+
+(defmacro <?
+  [ch]
+  `(let [r# (a/<! ~ch)]
+     (if (instance? Throwable r#)
+       (throw r#)
+       r#)))
 
 (defn- decode-message
   [message]
@@ -30,14 +45,14 @@
 
 (defn- publish
   [channel message]
-  (vu/go-try
+  (go-try
    (let [message (encode-message message)]
      (<? (redis/run :publish {:channel (str channel)
                               :message message})))))
 
 (defn- retrieve-presence
   [key]
-  (vu/go-try
+  (go-try
    (let [data (<? (redis/run :hgetall {:key key}))]
      (into [] (map (fn [[k v]] [(uuid/uuid k) (uuid/uuid v)])) data))))
 
@@ -46,7 +61,7 @@
   (let [key (str file-id)
         field (str session-id)
         value (str profile-id)]
-    (vu/go-try
+    (go-try
      (<? (redis/run :hset {:key key :field field :value value}))
      (<? (retrieve-presence key)))))
 
@@ -54,7 +69,7 @@
   [file-id session-id profile-id]
   (let [key (str file-id)
         field (str session-id)]
-    (vu/go-try
+    (go-try
      (<? (redis/run :hdel {:key key :field field}))
      (<? (retrieve-presence key)))))
 
@@ -69,14 +84,14 @@
 (defmethod handle-message :connect
   [{:keys [file-id profile-id session-id output] :as ws} message]
   (log/info (str "profile " profile-id " is connected to " file-id))
-  (vu/go-try
+  (go-try
    (let [members (<? (join-room file-id session-id profile-id))]
      (<? (publish file-id {:type :presence :sessions  members})))))
 
 (defmethod handle-message :disconnect
   [{:keys [profile-id file-id session-id] :as ws} message]
   (log/info (str "profile " profile-id " is disconnected from " file-id))
-  (vu/go-try
+  (go-try
    (let [members (<? (leave-room file-id session-id profile-id))]
      (<? (publish file-id {:type :presence :sessions members})))))
 
@@ -87,7 +102,7 @@
 
 (defmethod handle-message :pointer-update
   [{:keys [profile-id file-id session-id] :as ws} message]
-  (vu/go-try
+  (go-try
    (let [message (assoc message
                         :profile-id profile-id
                         :session-id session-id)]
@@ -97,43 +112,31 @@
 ;; WebSocket Handler
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- process-message
-  [ws message]
-  (vu/go-try
-   (let [message (decode-message message)]
-     (<? (handle-message ws message)))))
-
 (defn- forward-message
-  [{:keys [output session-id profile-id] :as ws} message]
-  (vu/go-try
-   (let [message' (decode-message message)]
-     (when-not (= (:session-id message') session-id)
-       (>! output message)))))
-
-(defn- close-all!
-  [{:keys [sch] :as ws}]
-  (a/close! sch)
-  (.close ^java.lang.AutoCloseable ws))
+  [{:keys [out session-id profile-id] :as ws} message]
+  (go-try
+   (when-not (= (:session-id message) session-id)
+     (>! out message))))
 
 (defn start-loop!
-  [{:keys [input output sch on-error] :as ws}]
-  (vu/go-try
+  [{:keys [in out sub] :as ws}]
+  (go-try
    (loop []
      (let [timeout (a/timeout 30000)
-           [val port] (a/alts! [input sch timeout])]
-       ;; (prn "alts" val "from" (cond (= port input) "input"
-       ;;                              (= port sch)   "redis"
+           [val port] (a/alts! [in sub timeout])]
+       ;; (prn "alts" val "from" (cond (= port in)  "input"
+       ;;                              (= port sub) "redis"
        ;;                              :else "timeout"))
 
        (cond
          ;; Process message coming from connected client
-         (and (= port input) (not (nil? val)))
+         (and (= port in) (not (nil? val)))
          (do
-           (<? (process-message ws val))
+           (<? (handle-message ws val))
            (recur))
 
          ;; Forward message to the websocket
-         (and (= port sch) (not (nil? val)))
+         (and (= port sub) (not (nil? val)))
          (do
            (<? (forward-message ws val))
            (recur))
@@ -141,36 +144,68 @@
          ;; Timeout channel signaling
          (= port timeout)
          (do
-           (>! output (encode-message {:type :ping}))
+           (>! out {:type :ping})
            (recur))
 
          :else
          nil)))))
 
+(defn disconnect!
+  [conn]
+  (.. conn (getSession) (disconnect)))
+
 (defn- on-subscribed
-  [{:keys [on-error] :as ws} sch]
-  (let [ws (assoc ws :sch sch)]
-    (a/go
-      (try
-        (<? (handle-message ws {:type :connect}))
-        (<? (start-loop! ws))
-        (<? (handle-message ws {:type :disconnect}))
-        (close-all! ws)
-        (catch Throwable e
-          (on-error e)
-          (close-all! ws))))))
+  [{:keys [conn] :as ws}]
+  (a/go
+    (try
+      (<? (handle-message ws {:type :connect}))
+      (<? (start-loop! ws))
+      (<? (handle-message ws {:type :disconnect}))
+      (catch Throwable err
+        (log/error "Unexpected exception on websocket handler:\n"
+                   (with-out-str
+                     (.printStackTrace err (java.io.PrintWriter. *out*))))
+        (disconnect! conn)))))
+
+(defrecord WebSocket [conn in out sub])
+
+(defn- start-rcv-loop!
+  [{:keys [conn out] :as ws}]
+  (a/go-loop []
+    (let [val (a/<! out)]
+      (when-not (nil? val)
+        (jetty/send! conn (encode-message val))
+        (recur)))))
 
 (defn websocket
-  [req {:keys [input on-error] :as ws}]
-  (let [fid (uuid/uuid (get-in req [:path-params :file-id]))
-        sid (uuid/uuid (get-in req [:path-params :session-id]))
-        pid (:profile-id req)
-        ws  (assoc ws
-                   :profile-id pid
-                   :file-id fid
-                   :session-id sid)]
-    (-> (redis/subscribe (str fid))
-        (p/finally (fn [sch error]
-                     (if error
-                       (on-error error)
-                       (on-subscribed ws sch)))))))
+  [{:keys [file-id] :as params}]
+  (let [in  (a/chan 32)
+        out (a/chan 32)]
+    {:on-connect (fn [conn]
+                   (let [xf  (map decode-message)
+                         sub (redis/subscribe (str file-id) xf)
+                         ws  (WebSocket. conn in out sub nil params)]
+                     (start-rcv-loop! ws)
+                     (a/go
+                       (a/<! (on-subscribed ws))
+                       (a/close! sub))))
+
+     :on-error (fn [conn e]
+                 ;; (prn "websocket" :on-error e)
+                 (a/close! out)
+                 (a/close! in))
+
+     :on-close (fn [conn status-code reason]
+                 ;; (prn "websocket" :on-close status-code reason)
+                 (a/close! out)
+                 (a/close! in))
+
+     :on-text (fn [ws message]
+                (let [message (decode-message message)]
+                  ;; (prn "websocket" :on-text message)
+                  (a/>!! in message)))
+
+     :on-bytes (fn [ws bytes offset len]
+                 #_(prn "websocket" :on-bytes bytes))}))
+
+

@@ -10,17 +10,17 @@
 (ns uxbox.services.mutations.icons
   (:require
    [clojure.spec.alpha :as s]
-   [promesa.core :as p]
+   [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
+   [uxbox.common.uuid :as uuid]
    [uxbox.config :as cfg]
    [uxbox.db :as db]
    [uxbox.services.mutations :as sm]
    [uxbox.services.queries.icons :refer [decode-row]]
    [uxbox.services.queries.teams :as teams]
-   [uxbox.services.util :as su]
    [uxbox.tasks :as tasks]
    [uxbox.util.blob :as blob]
-   [uxbox.common.uuid :as uuid]))
+   [uxbox.util.time :as dt]))
 
 ;; --- Helpers & Specs
 
@@ -42,7 +42,6 @@
 
 (s/def ::metadata
   (s/keys :opt-un [::width ::height ::view-box ::mimetype]))
-
 
 
 ;; --- Mutation: Create Library
@@ -67,8 +66,10 @@
 (defn create-library
   [conn {:keys [team-id id name] :as params}]
   (let [id (or id (uuid/next))]
-    (db/query-one conn [sql:create-library id team-id name])))
-
+    (db/insert! conn :icon-library
+                {:id id
+                 :team-id team-id
+                 :name name})))
 
 
 ;; --- Mutation: Rename Library
@@ -82,59 +83,19 @@
 (sm/defmutation ::rename-icon-library
   [{:keys [id profile-id name] :as params}]
   (db/with-atomic [conn db/pool]
-    (p/let [lib (select-library-for-update conn id)]
+    (let [lib (select-library-for-update conn id)]
       (teams/check-edition-permissions! conn profile-id (:team-id lib))
       (rename-library conn id name))))
 
-(def ^:private sql:select-library-for-update
-  "select l.*
-     from icon_library as l
-    where l.id = $1
-      for update")
-
-(def ^:private sql:rename-library
-  "update icon_library
-      set name = $2
-    where id = $1")
-
 (defn- select-library-for-update
   [conn id]
-  (-> (db/query-one conn [sql:select-library-for-update id])
-      (p/then' su/raise-not-found-if-nil)))
+  (db/get-by-id conn :icon-library id {:for-update true}))
 
 (defn- rename-library
   [conn id name]
-  (-> (db/query-one conn [sql:rename-library id name])
-      (p/then' su/constantly-nil)))
-
-
-
-;; ;; --- Copy Icon
-
-;; (declare create-icon)
-
-;; (defn- retrieve-icon
-;;   [conn {:keys [profile-id id]}]
-;;   (let [sql "select * from icon
-;;               where id = $1
-;;                 and deleted_at is null
-;;                 and (profile_id = $2 or
-;;                      profile_id = '00000000-0000-0000-0000-000000000000'::uuid)"]
-;;   (-> (db/query-one conn [sql id profile-id])
-;;       (p/then' su/raise-not-found-if-nil))))
-
-;; (s/def ::copy-icon
-;;   (s/keys :req-un [:us/id ::library-id ::profile-id]))
-
-;; (sm/defmutation ::copy-icon
-;;   [{:keys [profile-id id library-id] :as params}]
-;;   (db/with-atomic [conn db/pool]
-;;     (-> (retrieve-icon conn {:profile-id profile-id :id id})
-;;         (p/then (fn [icon]
-;;                   (let [icon (-> (dissoc icon :id)
-;;                                  (assoc :library-id library-id))]
-;;                     (create-icon conn icon)))))))
-
+  (db/update! conn :icon-library
+              {:name name}
+              {:id id}))
 
 ;; --- Mutation: Delete Library
 
@@ -146,7 +107,7 @@
 (sm/defmutation ::delete-icon-library
   [{:keys [profile-id id] :as params}]
   (db/with-atomic [conn db/pool]
-    (p/let [lib (select-library-for-update conn id)]
+    (let [lib (select-library-for-update conn id)]
       (teams/check-edition-permissions! conn profile-id (:team-id lib))
 
       ;; Schedule object deletion
@@ -154,19 +115,10 @@
                              :delay cfg/default-deletion-delay
                              :props {:id id :type :icon-library}})
 
-      (delete-library conn id))))
-
-(def ^:private sql:mark-library-deleted
-  "update icon_library
-      set deleted_at = clock_timestamp()
-    where id = $1
-   returning id")
-
-(defn- delete-library
-  [conn id]
-  (-> (db/query-one conn [sql:mark-library-deleted id])
-      (p/then' su/constantly-nil)))
-
+      (db/update! conn :icon-library
+                  {:deleted-at (dt/now)}
+                  {:id id})
+      nil)))
 
 
 ;; --- Mutation: Create Icon (Upload)
@@ -180,21 +132,20 @@
 (sm/defmutation ::create-icon
   [{:keys [profile-id library-id] :as params}]
   (db/with-atomic [conn db/pool]
-    (p/let [lib (select-library-for-update conn library-id)]
+    (let [lib (select-library-for-update conn library-id)]
       (teams/check-edition-permissions! conn profile-id (:team-id lib))
       (create-icon conn params))))
-
-(def ^:private sql:create-icon
-  "insert into icon (id, name, library_id, content, metadata)
-   values ($1, $2, $3, $4, $5) returning *")
 
 (defn create-icon
   [conn {:keys [id name library-id metadata content]}]
   (let [id (or id (uuid/next))]
-    (-> (db/query-one conn [sql:create-icon id name library-id
-                            content (blob/encode metadata)])
-        (p/then' decode-row))))
-
+    (-> (db/insert! conn :icon
+                    {:id id
+                     :name name
+                     :library-id library-id
+                     :content content
+                     :metadata (blob/encode metadata)})
+        (decode-row))))
 
 
 ;; --- Mutation: Rename Icon
@@ -208,33 +159,27 @@
 (sm/defmutation ::rename-icon
   [{:keys [id profile-id name] :as params}]
   (db/with-atomic [conn db/pool]
-    (p/let [clr (select-icon-for-update conn id)]
-      (teams/check-edition-permissions! conn profile-id (:team-id clr))
-      (rename-icon conn id name))))
+    (let [icon (select-icon-for-update conn id)]
+      (teams/check-edition-permissions! conn profile-id (:team-id icon))
+      (db/update! conn :icon
+                  {:name name}
+                  {:id id}))))
 
-(def ^:private sql:select-icon-for-update
+(def ^:private
+  sql:select-icon-for-update
   "select i.*,
           lib.team_id as team_id
      from icon as i
     inner join icon_library as lib on (lib.id = i.library_id)
-    where i.id = $1
+    where i.id = ?
       for update")
-
-(def ^:private sql:rename-icon
-  "update icon
-      set name = $2
-    where id = $1")
 
 (defn- select-icon-for-update
   [conn id]
-  (-> (db/query-one conn [sql:select-icon-for-update id])
-      (p/then' su/raise-not-found-if-nil)))
-
-(defn- rename-icon
-  [conn id name]
-  (-> (db/query-one conn [sql:rename-icon id name])
-      (p/then' su/constantly-nil)))
-
+  (let [row (db/exec-one! conn [sql:select-icon-for-update id])]
+    (when-not row
+      (ex/raise :type :not-found))
+    row))
 
 
 ;; --- Mutation: Delete Icon
@@ -247,7 +192,7 @@
 (sm/defmutation ::delete-icon
   [{:keys [id profile-id] :as params}]
   (db/with-atomic [conn db/pool]
-    (p/let [icn (select-icon-for-update conn id)]
+    (let [icn (select-icon-for-update conn id)]
       (teams/check-edition-permissions! conn profile-id (:team-id icn))
 
       ;; Schedule object deletion
@@ -255,14 +200,7 @@
                              :delay cfg/default-deletion-delay
                              :props {:id id :type :icon}})
 
-      (delete-icon conn id))))
-
-(def ^:private sql:mark-icon-deleted
-  "update icon
-      set deleted_at = clock_timestamp()
-    where id = $1")
-
-(defn- delete-icon
-  [conn id]
-  (-> (db/query-one conn [sql:mark-icon-deleted id])
-      (p/then' su/constantly-nil)))
+      (db/update! conn :icon
+                  {:deleted-at (dt/now)}
+                  {:id id})
+      nil)))

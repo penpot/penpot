@@ -6,16 +6,13 @@
 
 (ns uxbox.http.handlers
   (:require
-   [promesa.core :as p]
    [uxbox.common.exceptions :as ex]
+   [uxbox.common.uuid :as uuid]
    [uxbox.emails :as emails]
    [uxbox.http.session :as session]
    [uxbox.services.init]
    [uxbox.services.mutations :as sm]
-   [uxbox.services.queries :as sq]
-   [uxbox.common.uuid :as uuid]
-   [vertx.web :as vw]
-   [vertx.eventbus :as ve]))
+   [uxbox.services.queries :as sq]))
 
 (def unauthorized-services
   #{:create-demo-profile
@@ -36,10 +33,8 @@
                (:profile-id req) (assoc :profile-id (:profile-id req)))]
     (if (or (:profile-id req)
             (contains? unauthorized-services type))
-      (-> (sq/handle (with-meta data {:req req}))
-          (p/then' (fn [result]
-                     {:status 200
-                      :body result})))
+      {:status 200
+       :body (sq/handle (with-meta data {:req req}))}
       {:status 403
        :body {:type :authentication
               :code :unauthorized}})))
@@ -55,9 +50,8 @@
                (:profile-id req) (assoc :profile-id (:profile-id req)))]
     (if (or (:profile-id req)
             (contains? unauthorized-services type))
-      (-> (sm/handle (with-meta data {:req req}))
-          (p/then' (fn [result]
-                     {:status 200 :body result})))
+      {:status 200
+       :body (sm/handle (with-meta data {:req req}))}
       {:status 403
        :body {:type :authentication
               :code :unauthorized}})))
@@ -66,8 +60,8 @@
   [req]
   (let [data (:body-params req)
         user-agent (get-in req [:headers "user-agent"])]
-    (p/let [profile (sm/handle (assoc data ::sm/type :login))
-            token   (session/create (:id profile) user-agent)]
+    (let [profile (sm/handle (assoc data ::sm/type :login))
+          token   (session/create (:id profile) user-agent)]
       {:status 200
        :cookies {"auth-token" {:value token :path "/"}}
        :body profile})))
@@ -76,16 +70,15 @@
   [req]
   (some-> (get-in req [:cookies "auth-token"])
           (uuid/uuid)
-          (session/delete)
-          (p/then' (fn [token]
-                     {:status 204
-                      :cookies {"auth-token" nil}
-                      :body ""}))))
+          (session/delete))
+  {:status 204
+   :cookies {"auth-token" nil}
+   :body ""})
 
 (defn echo-handler
   [req]
-  (p/promise {:status 200
-              :body {:params (:params req)
-                     :cookies (:cookies req)
-                     :headers (:headers req)}}))
+  {:status 200
+   :body {:params (:params req)
+          :cookies (:cookies req)
+          :headers (:headers req)}})
 

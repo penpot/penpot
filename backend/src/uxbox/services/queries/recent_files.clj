@@ -25,8 +25,8 @@
      from file as f
     inner join file_profile_rel as fp_r on (fp_r.file_id = f.id)
      left join page as pg on (f.id = pg.file_id)
-    where fp_r.profile_id = $1
-      and f.project_id = $2
+    where fp_r.profile_id = ?
+      and f.project_id = ?
       and f.deleted_at is null
       and pg.deleted_at is null
       and (fp_r.is_admin = true or
@@ -38,10 +38,11 @@
     order by f.modified_at desc
     limit 5")
 
-(defn recent-by-project [profile-id project]
+(defn recent-by-project
+  [profile-id project]
   (let [project-id (:id project)]
-    (-> (db/query db/pool [sql:project-files-recent profile-id project-id])
-        (p/then (partial mapv decode-row)))))
+    (->> (db/exec! db/pool [sql:project-files-recent profile-id project-id])
+         (mapv decode-row))))
 
 (s/def ::team-id ::us/uuid)
 (s/def ::profile-id ::us/uuid)
@@ -51,8 +52,9 @@
 
 (sq/defquery ::recent-files
   [{:keys [profile-id team-id]}]
-  (-> (retrieve-projects db/pool profile-id team-id)
-      ;; Retrieve for each proyect the 5 more recent files
-      (p/then #(p/all (map (partial recent-by-project profile-id) %)))
-      ;; Change the structure so it's a map with project-id as keys
-      (p/then #(->> % (flatten) (group-by :project-id)))))
+  (->> (retrieve-projects db/pool profile-id team-id)
+       ;; Retrieve for each proyect the 5 more recent files
+       (map (partial recent-by-project profile-id))
+       ;; Change the structure so it's a map with project-id as keys
+       (flatten)
+       (group-by :project-id)))

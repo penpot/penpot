@@ -6,8 +6,6 @@
 
 (ns uxbox.http.session
   (:require
-   [promesa.core :as p]
-   [vertx.core :as vc]
    [uxbox.db :as db]
    [uxbox.common.uuid :as uuid]))
 
@@ -17,22 +15,21 @@
   "Retrieves a user id associated with the provided auth token."
   [token]
   (when token
-    (let [sql "select profile_id from session where id = $1"]
-      (-> (db/query-one db/pool [sql token])
-          (p/then' (fn [row] (when row (:profile-id row))))))))
+    (let [row (db/get-by-params db/pool :session {:id token})]
+      (:profile-id row))))
 
 (defn create
   [user-id user-agent]
-  (let [id  (uuid/random)
-        sql "insert into session (id, profile_id, user_agent) values ($1, $2, $3)"]
-    (-> (db/query-one db/pool [sql id user-id user-agent])
-        (p/then (constantly (str id))))))
+  (let [id  (uuid/random)]
+    (db/insert! db/pool :session {:id id
+                                  :profile-id user-id
+                                  :user-agent user-agent})
+    (str id)))
 
 (defn delete
   [token]
-  (let [sql "delete from session where id = $1"]
-    (-> (db/query-one db/pool [sql token])
-        (p/then' (constantly nil)))))
+  (db/delete! db/pool :session {:id token})
+  nil)
 
 ;; --- Interceptor
 
@@ -40,19 +37,18 @@
   [request]
   (try
     (when-let [token (get-in request [:cookies "auth-token"])]
-      (uuid/uuid token))
+      (uuid/uuid (:value token)))
     (catch java.lang.IllegalArgumentException e
       nil)))
 
-(defn- wrap-auth
+(defn wrap-auth
   [handler]
   (fn [request]
-    (let [token (parse-token request)]
-      (-> (p/do! (retrieve token))
-          (p/then (fn [profile-id]
-                    (if profile-id
-                      (handler (assoc request :profile-id profile-id))
-                      (handler request))))))))
+    (let [token (parse-token request)
+          profile-id (retrieve token)]
+      (if profile-id
+        (handler (assoc request :profile-id profile-id))
+        (handler request)))))
 
 (def auth
   {:nane ::auth

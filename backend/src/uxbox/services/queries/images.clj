@@ -11,12 +11,12 @@
   (:require
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
+   [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.db :as db]
    [uxbox.images :as images]
    [uxbox.services.queries.teams :as teams]
-   [uxbox.services.queries :as sq]
-   [uxbox.services.util :as su]))
+   [uxbox.services.queries :as sq]))
 
 (s/def ::id ::us/uuid)
 (s/def ::name ::us/string)
@@ -30,7 +30,7 @@
   "select lib.*,
           (select count(*) from image where library_id = lib.id) as num_images
      from image_library as lib
-    where lib.team_id = $1
+    where lib.team_id = ?
       and lib.deleted_at is null
     order by lib.created_at desc")
 
@@ -41,7 +41,7 @@
   [{:keys [profile-id team-id]}]
   (db/with-atomic [conn db/pool]
     (teams/check-read-permissions! conn profile-id team-id)
-    (db/query conn [sql:libraries team-id])))
+    (db/exec! conn [sql:libraries team-id])))
 
 
 ;; --- Query: Image Library
@@ -54,7 +54,7 @@
 (sq/defquery ::image-library
   [{:keys [profile-id id]}]
   (db/with-atomic [conn db/pool]
-    (p/let [lib (retrieve-library conn id)]
+    (let [lib (retrieve-library conn id)]
       (teams/check-read-permissions! conn profile-id (:team-id lib))
       lib)))
 
@@ -63,13 +63,14 @@
           (select count(*) from image where library_id = lib.id) as num_images
      from image_library as lib
     where lib.deleted_at is null
-      and lib.id = $1")
+      and lib.id = ?")
 
 (defn- retrieve-library
   [conn id]
-  (-> (db/query-one conn [sql:single-library id])
-      (p/then' su/raise-not-found-if-nil)))
-
+  (let [row (db/exec-one! conn [sql:single-library id])]
+    (when-not row
+      (ex/raise :type :not-found))
+    row))
 
 
 ;; --- Query: Images (by library)
@@ -85,13 +86,11 @@
 (sq/defquery ::images
   [{:keys [profile-id library-id] :as params}]
   (db/with-atomic [conn db/pool]
-    (p/let [lib (retrieve-library conn library-id)]
+    (let [lib (retrieve-library conn library-id)]
       (teams/check-read-permissions! conn profile-id (:team-id lib))
-      (-> (retrieve-images conn library-id)
-          (p/then' (fn [rows]
-                     (->> rows
-                          (mapv #(images/resolve-urls % :path :uri))
-                          (mapv #(images/resolve-urls % :thumb-path :thumb-uri)))))))))
+      (->> (retrieve-images conn library-id)
+           (mapv #(images/resolve-urls % :path :uri))
+           (mapv #(images/resolve-urls % :thumb-path :thumb-uri))))))
 
 
 (def ^:private sql:images
@@ -99,12 +98,12 @@
      from image as img
     inner join image_library as lib on (lib.id = img.library_id)
     where img.deleted_at is null
-      and img.library_id = $1
+      and img.library_id = ?
    order by created_at desc")
 
 (defn- retrieve-images
   [conn library-id]
-  (db/query conn [sql:images library-id]))
+  (db/exec! conn [sql:images library-id]))
 
 
 
@@ -119,7 +118,7 @@
 (sq/defquery ::image
   [{:keys [profile-id id] :as params}]
   (db/with-atomic [conn db/pool]
-    (p/let [img (retrieve-image conn id)]
+    (let [img (retrieve-image conn id)]
       (teams/check-read-permissions! conn profile-id (:team-id img))
       (-> img
           (images/resolve-urls :path :uri)
@@ -131,13 +130,14 @@
      from image as img
     inner join image_library as lib on (lib.id = img.library_id)
     where img.deleted_at is null
-      and img.id = $1
+      and img.id = ?
    order by created_at desc")
 
 (defn retrieve-image
   [conn id]
-  (-> (db/query-one conn [sql:single-image id])
-      (p/then' su/raise-not-found-if-nil)))
-
+  (let [row (db/exec-one! conn [sql:single-image id])]
+    (when-not row
+      (ex/raise :type :not-found))
+    row))
 
 

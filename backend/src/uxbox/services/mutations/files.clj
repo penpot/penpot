@@ -10,25 +10,24 @@
 (ns uxbox.services.mutations.files
   (:require
    [clojure.spec.alpha :as s]
-   [promesa.core :as p]
    [datoteka.core :as fs]
+   [promesa.core :as p]
+   [uxbox.common.exceptions :as ex]
+   [uxbox.common.pages :as cp]
+   [uxbox.common.spec :as us]
+   [uxbox.common.uuid :as uuid]
    [uxbox.config :as cfg]
    [uxbox.db :as db]
-   [uxbox.media :as media]
    [uxbox.images :as images]
-   [uxbox.common.exceptions :as ex]
-   [uxbox.common.spec :as us]
-   [uxbox.common.pages :as cp]
-   [uxbox.tasks :as tasks]
-   [uxbox.services.queries.files :as files]
+   [uxbox.media :as media]
    [uxbox.services.mutations :as sm]
-   [uxbox.services.mutations.projects :as proj]
    [uxbox.services.mutations.images :as imgs]
-   [uxbox.services.util :as su]
+   [uxbox.services.mutations.projects :as proj]
+   [uxbox.services.queries.files :as files]
+   [uxbox.tasks :as tasks]
    [uxbox.util.blob :as blob]
-   [uxbox.common.uuid :as uuid]
    [uxbox.util.storage :as ust]
-   [vertx.util :as vu]))
+   [uxbox.util.time :as dt]))
 
 ;; --- Helpers & Specs
 
@@ -49,41 +48,36 @@
 (sm/defmutation ::create-file
   [{:keys [profile-id project-id] :as params}]
   (db/with-atomic [conn db/pool]
-    (p/let [file (create-file conn params)
-            page (create-page conn (assoc params :file-id (:id file)))]
+    (let [file (create-file conn params)
+          page (create-page conn (assoc params :file-id (:id file)))]
       (assoc file :pages [(:id page)]))))
-
-(def ^:private sql:create-file
-  "insert into file (id, project_id, name)
-   values ($1, $2, $3) returning *")
-
-(def ^:private sql:create-file-profile
-  "insert into file_profile_rel (profile_id, file_id, is_owner, is_admin, can_edit)
-   values ($1, $2, true, true, true) returning *")
-
-(def ^:private sql:create-page
-  "insert into page (id, file_id, name, ordering, data)
-   values ($1, $2, $3, $4, $5) returning id")
 
 (defn- create-file-profile
   [conn {:keys [profile-id file-id] :as params}]
-  (db/query-one conn [sql:create-file-profile profile-id file-id]))
+  (db/insert! conn :file-profile-rel
+              {:profile-id profile-id
+               :file-id file-id
+               :is-owner true
+               :is-admin true
+               :can-edit true}))
 
 (defn- create-file
   [conn {:keys [id profile-id name project-id] :as params}]
-  (p/let [id   (or id (uuid/next))
-          file (db/query-one conn [sql:create-file id project-id name])]
+  (let [id   (or id (uuid/next))
+        file (db/insert! conn :file {:id id :project-id project-id :name name})]
     (->> (assoc params :file-id id)
          (create-file-profile conn))
     file))
 
 (defn- create-page
   [conn {:keys [file-id] :as params}]
-  (let [id  (uuid/next)
-        name "Page 1"
-        data (blob/encode cp/default-page-data)]
-    (db/query-one conn [sql:create-page id file-id name 1 data])))
-
+  (let [id  (uuid/next)]
+    (db/insert! conn :page
+                {:id id
+                 :file-id file-id
+                 :name "Page 1"
+                 :ordering 1
+                 :data (blob/encode cp/default-page-data)})))
 
 
 ;; --- Mutation: Rename File
@@ -99,16 +93,11 @@
     (files/check-edition-permissions! conn profile-id id)
     (rename-file conn params)))
 
-(def ^:private sql:rename-file
-  "update file
-      set name = $2
-    where id = $1
-      and deleted_at is null
-     returning *")
-
 (defn- rename-file
   [conn {:keys [id name] :as params}]
-  (db/query-one conn [sql:rename-file id name]))
+  (db/update! conn :file
+              {:name name}
+              {:id id}))
 
 
 ;; --- Mutation: Delete Project File
@@ -133,13 +122,15 @@
 (def ^:private sql:mark-file-deleted
   "update file
       set deleted_at = clock_timestamp()
-    where id = $1
+    where id = ?
       and deleted_at is null")
 
 (defn mark-file-deleted
   [conn {:keys [id] :as params}]
-  (-> (db/query-one conn [sql:mark-file-deleted id])
-      (p/then' su/constantly-nil)))
+  (db/update! conn :file
+              {:deleted-at (dt/now)}
+              {:id id})
+  nil)
 
 
 ;; --- Mutation: Upload File Image
@@ -169,31 +160,29 @@
 
 (defn- create-file-image
   [conn {:keys [content file-id name] :as params}]
-  (when-not (imgs/valid-image-types? (:mtype content))
+  (when-not (imgs/valid-image-types? (:content-type content))
     (ex/raise :type :validation
               :code :image-type-not-allowed
               :hint "Seems like you are uploading an invalid image."))
 
-  (p/let [image-opts (vu/blocking (images/info (:path content)))
-          image-path (imgs/persist-image-on-fs content)
-          thumb-opts imgs/thumbnail-options
-          thumb-path (imgs/persist-image-thumbnail-on-fs thumb-opts image-path)
-
-          sqlv [sql:insert-file-image
-                file-id
-                name
-                (str image-path)
-                (:width image-opts)
-                (:height image-opts)
-                (:mtype content)
-                (str thumb-path)
-                (:width thumb-opts)
-                (:height thumb-opts)
-                (:quality thumb-opts)
-                (images/format->mtype (:format thumb-opts))]]
-    (-> (db/query-one db/pool sqlv)
-        (p/then' #(images/resolve-urls % :path :uri))
-        (p/then' #(images/resolve-urls % :thumb-path :thumb-uri)))))
+  (let [image-opts (images/info (:tempfile content))
+        image-path (imgs/persist-image-on-fs content)
+        thumb-opts imgs/thumbnail-options
+        thumb-path (imgs/persist-image-thumbnail-on-fs thumb-opts image-path)]
+    (-> (db/insert! conn :file-image
+                    {:file-id file-id
+                     :name name
+                     :path (str image-path)
+                     :width (:width image-opts)
+                     :height (:height image-opts)
+                     :mtype  (:content-type content)
+                     :thumb-path (str thumb-path)
+                     :thumb-width (:width thumb-opts)
+                     :thumb-height (:height thumb-opts)
+                     :thumb-quality (:quality thumb-opts)
+                     :thumb-mtype (images/format->mtype (:format thumb-opts))})
+        (images/resolve-urls :path :uri)
+        (images/resolve-urls :thumb-path :thumb-uri))))
 
 
 ;; --- Mutation: Import from collection
@@ -215,28 +204,26 @@
 
 (defn- import-image-to-file
   [conn {:keys [image-id file-id] :as params}]
-  (p/let [image (-> (db/query-one conn [sql:select-image-by-id image-id])
-                    (p/then' su/raise-not-found-if-nil))
-          image-path (copy-image (:path image))
-          thumb-path (copy-image (:thumb-path image))
-          sqlv [sql:insert-file-image
-                file-id
-                (:name image)
-                (str image-path)
-                (:width image)
-                (:height image)
-                (:mtype image)
-                (str thumb-path)
-                (:thumb-width image)
-                (:thumb-height image)
-                (:thumb-quality image)
-                (:thumb-mtype image)]]
-    (-> (db/query-one db/pool sqlv)
-        (p/then' #(images/resolve-urls % :path :uri))
-        (p/then' #(images/resolve-urls % :thumb-path :thumb-uri)))))
+  (let [image      (db/get-by-id conn :image image-id)
+        image-path (copy-image (:path image))
+        thumb-path (copy-image (:thumb-path image))]
+
+    (-> (db/insert! conn :file-image
+                    {:file-id file-id
+                     :name (:name image)
+                     :path (str image-path)
+                     :width (:width image)
+                     :height (:height image)
+                     :mtype  (:mtype image)
+                     :thumb-path (str thumb-path)
+                     :thumb-width (:thumb-width image)
+                     :thumb-height (:thumb-height image)
+                     :thumb-quality (:thumb-quality image)
+                     :thumb-mtype (:thumb-mtype image)})
+        (images/resolve-urls :path :uri)
+        (images/resolve-urls :thumb-path :thumb-uri))))
 
 (defn- copy-image
   [path]
-  (vu/blocking
-   (let [image-path (ust/lookup media/media-storage path)]
-     (ust/save! media/media-storage (fs/name image-path) image-path))))
+  (let [image-path (ust/lookup media/media-storage path)]
+    (ust/save! media/media-storage (fs/name image-path) image-path)))

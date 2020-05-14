@@ -15,10 +15,10 @@
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest pages-crud
-  (let [prof @(th/create-profile db/pool 1)
-        team (:default-team prof)
-        proj (:default-project prof)
-        file @(th/create-file db/pool (:id prof) (:id proj) 1)
+  (let [prof (th/create-profile db/pool 1)
+        team-id (:default-team prof)
+        proj-id (:default-project prof)
+        file (th/create-file db/pool (:id prof) proj-id 1)
         page-id (uuid/next)]
 
     (t/testing "create page"
@@ -48,7 +48,7 @@
                   :id page-id}
              out (th/try-on! (sm/handle data))]
 
-        (th/print-result! out)
+        ;; (th/print-result! out)
         (t/is (nil? (:error out)))
         (let [result (:result out)]
           (t/is (string? (:share-token result))))))
@@ -93,10 +93,10 @@
     ))
 
 (t/deftest update-page-data
-  (let [prof @(th/create-profile db/pool 1)
-        team (:default-team prof)
-        proj (:default-project prof)
-        file @(th/create-file db/pool (:id prof) (:id proj) 1)
+  (let [prof    (th/create-profile db/pool 1)
+        team-id (:default-team prof)
+        proj-id (:default-project prof)
+        file    (th/create-file db/pool (:id prof) proj-id 1)
         page-id (uuid/next)]
 
     (t/testing "create empty page"
@@ -167,11 +167,11 @@
 
 
 (t/deftest update-page-data-2
-  (let [prof @(th/create-profile db/pool 1)
-        team (:default-team prof)
-        proj (:default-project prof)
-        file @(th/create-file db/pool (:id prof) (:id proj) 1)
-        page @(th/create-page db/pool (:id prof) (:id file) 1)]
+  (let [prof    (th/create-profile db/pool 1)
+        team-id (:default-team prof)
+        proj-id (:default-project prof)
+        file    (th/create-file db/pool (:id prof) proj-id 1)
+        page    (th/create-page db/pool (:id prof) (:id file) 1)]
     (t/testing "lagging changes"
       (let [sid  (uuid/next)
             data {::sm/type :update-page

@@ -1,31 +1,28 @@
 (ns uxbox.tests.test-services-colors
   (:require
    [clojure.test :as t]
-   [promesa.core :as p]
    [datoteka.core :as fs]
    [clojure.java.io :as io]
    [uxbox.db :as db]
-   [uxbox.core :refer [system]]
    [uxbox.services.mutations :as sm]
    [uxbox.services.queries :as sq]
    [uxbox.util.storage :as ust]
    [uxbox.common.uuid :as uuid]
-   [uxbox.tests.helpers :as th]
-   [vertx.core :as vc]))
+   [uxbox.tests.helpers :as th]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest color-libraries-crud
-  (let [id    (uuid/next)
-        prof @(th/create-profile db/pool 2)
-        team (:default-team prof)]
+  (let [id      (uuid/next)
+        prof    (th/create-profile db/pool 2)
+        team-id (:default-team prof)]
 
     (t/testing "create library"
       (let [data {::sm/type :create-color-library
                   :name "sample library"
                   :profile-id (:id prof)
-                  :team-id (:id team)
+                  :team-id team-id
                   :id id}
             out (th/try-on! (sm/handle data))]
 
@@ -34,7 +31,7 @@
 
         (let [result (:result out)]
           (t/is (= id (:id result)))
-          (t/is (= (:id team)  (:team-id result)))
+          (t/is (= team-id  (:team-id result)))
           (t/is (= (:name data) (:name result))))))
 
     (t/testing "update library"
@@ -46,21 +43,9 @@
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
-        (t/is (nil? (:result out)))))
-
-    (t/testing "query libraries"
-      (let [data {::sq/type :color-libraries
-                  :profile-id (:id prof)
-                  :team-id (:id team)}
-            out (th/try-on! (sq/handle data))]
-
-        ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
 
         (let [result (:result out)]
-          (t/is (= 1 (count result)))
-          (t/is (= (:id team) (get-in result [0 :team-id])))
-          (t/is (= "renamed" (get-in result [0 :name]))))))
+          (t/is (= "renamed" (get-in result [:name]))))))
 
     (t/testing "delete library"
       (let [data {::sm/type :delete-color-library
@@ -76,7 +61,7 @@
     (t/testing "query libraries after delete"
       (let [data {::sq/type :color-libraries
                   :profile-id (:id prof)
-                  :team-id (:id team)}
+                  :team-id team-id}
             out (th/try-on! (sq/handle data))]
 
         ;; (th/print-result! out)
@@ -86,9 +71,9 @@
     ))
 
 (t/deftest colors-crud
-  (let [prof @(th/create-profile db/pool 1)
-        team (:default-team prof)
-        coll @(th/create-color-library db/pool (:id team) 1)
+  (let [prof     (th/create-profile db/pool 1)
+        team-id  (:default-team prof)
+        coll     (th/create-color-library db/pool team-id 1)
         color-id (uuid/next)]
 
     (t/testing "upload color to library"

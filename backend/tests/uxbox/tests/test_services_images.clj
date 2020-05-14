@@ -1,31 +1,27 @@
 (ns uxbox.tests.test-services-images
   (:require
    [clojure.test :as t]
-   [promesa.core :as p]
    [datoteka.core :as fs]
-   [clojure.java.io :as io]
+   [uxbox.common.uuid :as uuid]
    [uxbox.db :as db]
-   [uxbox.core :refer [system]]
    [uxbox.services.mutations :as sm]
    [uxbox.services.queries :as sq]
-   [uxbox.util.storage :as ust]
-   [uxbox.common.uuid :as uuid]
    [uxbox.tests.helpers :as th]
-   [vertx.core :as vc]))
+   [uxbox.util.storage :as ust]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest image-libraries-crud
   (let [id      (uuid/next)
-        prof @(th/create-profile db/pool 2)
-        team (:default-team prof)]
+        prof    (th/create-profile db/pool 2)
+        team-id (:default-team prof)]
 
     (t/testing "create library"
       (let [data {::sm/type :create-image-library
                   :name "sample library"
                   :profile-id (:id prof)
-                  :team-id (:id team)
+                  :team-id team-id
                   :id id}
             out (th/try-on! (sm/handle data))]
 
@@ -33,7 +29,7 @@
         (t/is (nil? (:error out)))
 
         (let [result (:result out)]
-          (t/is (= (:id team)  (:team-id result)))
+          (t/is (= team-id  (:team-id result)))
           (t/is (= (:name data) (:name result))))))
 
     (t/testing "rename library"
@@ -45,7 +41,10 @@
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
-        (t/is (nil? (:result out)))))
+
+        (let [result (:result out)]
+          (t/is (= id (:id result)))
+          (t/is (= "renamed" (:name result))))))
 
     (t/testing "query single library"
       (let [data {::sq/type :image-library
@@ -62,7 +61,7 @@
 
     (t/testing "query libraries"
       (let [data {::sq/type :image-libraries
-                  :team-id (:id team)
+                  :team-id team-id
                   :profile-id (:id prof)}
             out (th/try-on! (sq/handle data))]
 
@@ -87,7 +86,7 @@
     (t/testing "query libraries after delete"
       (let [data {::sq/type :image-libraries
                   :profile-id (:id prof)
-                  :team-id (:id team)}
+                  :team-id team-id}
             out (th/try-on! (sq/handle data))]
 
         ;; (th/print-result! out)
@@ -96,15 +95,15 @@
     ))
 
 (t/deftest images-crud
-  (let [prof @(th/create-profile db/pool 1)
-        team (:default-team prof)
-        lib  @(th/create-image-library db/pool (:id team) 1)
+  (let [prof     (th/create-profile db/pool 1)
+        team-id  (:default-team prof)
+        lib      (th/create-image-library db/pool team-id 1)
         image-id (uuid/next)]
 
     (t/testing "upload image to library"
-      (let [content {:name "sample.jpg"
-                     :path "tests/uxbox/tests/_files/sample.jpg"
-                     :mtype "image/jpeg"
+      (let [content {:filename "sample.jpg"
+                     :tempfile (th/tempfile "uxbox/tests/_files/sample.jpg")
+                     :content-type "image/jpeg"
                      :size 312043}
             data {::sm/type :upload-image
                   :id image-id
@@ -127,7 +126,8 @@
         (t/is (string? (get-in out [:result :path])))
         (t/is (string? (get-in out [:result :thumb-path])))
         (t/is (string? (get-in out [:result :uri])))
-        (t/is (string? (get-in out [:result :thumb-uri])))))
+        (t/is (string? (get-in out [:result :thumb-uri])))
+        ))
 
     (t/testing "list images by library"
       (let [data {::sq/type :images

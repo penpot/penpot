@@ -20,10 +20,10 @@
   (let [result (emails/render emails/register {:to "example@uxbox.io" :name "foo"})]
     (t/is (map? result))
     (t/is (contains? result :subject))
-    (t/is (contains? result :body))
+    (t/is (contains? result :content))
     (t/is (contains? result :to))
     (t/is (contains? result :reply-to))
-    (t/is (vector? (:body result)))))
+    (t/is (vector? (:content result)))))
 
 ;; (t/deftest email-sending-and-sendmail-job
 ;;   (let [res @(emails/send! emails/register {:to "example@uxbox.io" :name "foo"})]

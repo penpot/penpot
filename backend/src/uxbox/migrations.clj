@@ -37,8 +37,9 @@
 
 (defn migrate
   []
-  (with-open [ctx (mg/context db/pool)]
-    @(mg/migrate ctx +migrations+)))
+  (with-open [conn (db/open)]
+    (mg/setup! conn)
+    (mg/migrate! conn +migrations+)))
 
 (defstate migrations
   :start (migrate))
