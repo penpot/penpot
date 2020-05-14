@@ -10,11 +10,12 @@
 (ns uxbox.main.ui.workspace.layout-display
   (:require
    [rumext.alpha :as mf]
-   [uxbox.main.refs :as refs]))
+   [uxbox.main.refs :as refs]
+   [uxbox.util.geom.layout :as ula]))
 
-(mf/defc grid-layout [{:keys [frame zoom params] :as props}]
-  (let [{:keys [color size]} params
-        {color-value :value color-opacity :opacity} (:color params)
+(mf/defc grid-layout [{:keys [frame zoom layout] :as props}]
+  (let [{:keys [color size] :as params} (-> layout :params)
+        {color-value :value color-opacity :opacity} color
         {frame-width :width frame-height :height :keys [x y]} frame]
     [:g.grid
      [:*
@@ -37,49 +38,13 @@
                         :stroke-opacity color-opacity
                         :stroke-width (str (/ 1 zoom))}}])]]))
 
-(defn calculate-column-layout [frame size gutter margin item-width layout-type]
-  (let [{:keys [width height x y]} frame
-        parts (/ width size)
-        item-width (or item-width (+ parts (- gutter) (/ gutter size) (- (/ (* margin 2) size))))
-        item-height height
-        initial-offset (case layout-type
-                         :right (- width (* item-width size) (* gutter (dec size)) margin)
-                         :center (/ (- width (* item-width size) (* gutter (dec size))) 2)
-                         margin)
-        gutter (if (= :stretch layout-type) (/ (- width (* item-width size) (* margin 2)) (dec size)) gutter)
-        next-x (fn [cur-val] (+ initial-offset x (* (+ item-width gutter) cur-val)))
-        next-y (fn [cur-val] y)]
-    [parts item-width item-height next-x next-y]))
-
-(defn calculate-row-layout [frame size gutter margin item-height layout-type]
-  (let [{:keys [width height x y]} frame
-        parts (/ height size)
-        item-width width
-        item-height (or item-height (+ parts (- gutter) (/ gutter size) (- (/ (* margin 2) size))))
-        initial-offset (case layout-type
-                         :right (- height (* item-height size) (* gutter (dec size)) margin)
-                         :center (/ (- height (* item-height size) (* gutter (dec size))) 2)
-                         margin)
-        gutter (if (= :stretch layout-type) (/ (- height (* item-height size) (* margin 2)) (dec size)) gutter)
-        next-x (fn [cur-val] x)
-        next-y (fn [cur-val] (+ initial-offset y (* (+ item-height gutter) cur-val)))]
-    [parts item-width item-height next-x next-y]))
-
-(mf/defc flex-layout [{:keys [frame zoom params orientation]}]
-  (let [{:keys [color size type gutter margin item-width item-height]} params
-        {color-value :value color-opacity :opacity} (:color params)
-
-       ;; calculates the layout configuration
-        [parts item-width item-height next-x next-y]
-        (if (= orientation :column)
-          (calculate-column-layout frame size gutter margin item-width type)
-          (calculate-row-layout frame size gutter margin item-height type))]
-
-    (for [cur-val (range 0 size)]
-      [:rect {:x (next-x cur-val)
-              :y (next-y cur-val)
-              :width item-width
-              :height item-height
+(mf/defc flex-layout [{:keys [frame zoom layout]}]
+  (let [{color-value :value color-opacity :opacity} (-> layout :params :color)]
+    (for [{:keys [x y width height]} (ula/layout-rects frame layout)]
+      [:rect {:x x
+              :y y
+              :width width
+              :height height
               :style {:pointer-events "none"
                       :fill color-value
                       :opacity color-opacity}}])))
@@ -87,14 +52,11 @@
 (mf/defc layout-display [{:keys [frame]}]
   (let [zoom (mf/deref refs/selected-zoom)
         layouts (:layouts frame)]
-    (for [[index {:keys [type display params]}] (map-indexed vector layouts)]
+    (for [[index {:keys [type display] :as layout}] (map-indexed vector layouts)]
       (let [props #js {:key (str (:id frame) "-layout-" index)
                        :frame frame
                        :zoom zoom
-                       :params params
-                       :orientation (cond (= type :column) :column
-                                          (= type :row) :row
-                                          :else nil) }]
+                       :layout layout}]
         (when display
           (case type
             :square [:> grid-layout props]

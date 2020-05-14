@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns uxbox.main.ui.workspace.sidebar.options.grid-options
+(ns uxbox.main.ui.workspace.sidebar.options.frame-layouts
   (:require
    [rumext.alpha :as mf]
    [uxbox.util.dom :as dom]
@@ -49,7 +49,7 @@
          :color {:value "#DE4762"
                  :opacity 0.1}}})
 
-(mf/defc grid-option [{:keys [layout on-change on-remove]}]
+(mf/defc layout-options [{:keys [layout on-change on-remove]}]
   (let [state (mf/use-state {:show-advanced-options false
                              :changes {}})
         {:keys [type display params] :as layout} (d/deep-merge layout (:changes @state))
@@ -169,7 +169,7 @@
        [:button.btn-options "Use default"]
        [:button.btn-options "Set as default"]]]]))
 
-(mf/defc grid-options [{:keys [shape]}]
+(mf/defc frame-layouts [{:keys [shape]}]
   (let [id (:id shape)
         handle-create-layout #(st/emit! (dw/add-frame-layout id))
         handle-remove-layout (fn [index] #(st/emit! (dw/remove-frame-layout id index)))
@@ -181,8 +181,8 @@
 
      [:div.element-set-content
       (for [[index layout] (map-indexed vector (:layouts shape))]
-        [:& grid-option {:key (str (:id shape) "-" index)
-                         :layout layout
-                         :on-change (handle-edit-layout index)
-                         :on-remove (handle-remove-layout index)}])]]))
+        [:& layout-options {:key (str (:id shape) "-" index)
+                            :layout layout
+                            :on-change (handle-edit-layout index)
+                            :on-remove (handle-remove-layout index)}])]]))
 

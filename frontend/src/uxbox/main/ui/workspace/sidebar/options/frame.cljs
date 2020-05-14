@@ -22,7 +22,7 @@
    [uxbox.main.ui.components.dropdown :refer [dropdown]]
    [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-menu]]
    [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-menu]]
-   [uxbox.main.ui.workspace.sidebar.options.grid-options :refer [grid-options]]))
+   [uxbox.main.ui.workspace.sidebar.options.frame-layouts :refer [frame-layouts]]))
 
 (declare +size-presets+)
 
@@ -204,4 +204,4 @@
    [:& measures-menu {:shape shape}]
    [:& fill-menu {:shape shape}]
    [:& stroke-menu {:shape shape}]
-   [:& grid-options {:shape shape}]])
+   [:& frame-layouts {:shape shape}]])
