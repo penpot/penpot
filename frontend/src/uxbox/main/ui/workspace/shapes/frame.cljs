@@ -22,7 +22,8 @@
    [uxbox.util.geom.shapes :as geom]
    [uxbox.util.dom :as dom]
    [uxbox.main.streams :as ms]
-   [uxbox.util.timers :as ts]))
+   [uxbox.util.timers :as ts]
+   [uxbox.main.ui.workspace.layout-display :refer [layout-display]]))
 
 (defn- frame-wrapper-factory-equals?
   [np op]
@@ -64,15 +65,14 @@
             on-context-menu (mf/use-callback (mf/deps shape)
                                              #(common/on-context-menu % shape))
 
-
+            shape (geom/transform-shape shape)
             {:keys [x y width height]} shape
 
             inv-zoom    (/ 1 zoom)
             childs      (mapv #(get objects %) (:shapes shape))
             ds-modifier (get-in shape [:modifiers :displacement])
 
-            label-pos (cond-> (gpt/point x (- y 10))
-                        (gmt/matrix? ds-modifier) (gpt/transform ds-modifier))
+            label-pos (gpt/point x (- y 10))
 
             on-double-click
             (mf/use-callback
@@ -104,7 +104,7 @@
                    :on-click on-double-click}
             (:name shape)]
            [:& frame-shape
-            {:shape (geom/transform-shape shape)
-             :childs childs}]])))))
-
+            {:shape shape
+             :childs childs}]
+           [:& layout-display {:frame shape}]])))))
 

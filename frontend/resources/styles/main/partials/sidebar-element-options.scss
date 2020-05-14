@@ -263,6 +263,11 @@
     padding: $x-small $big $x-small $x-small;
     position: relative;
 
+    & hr {
+        margin: 0;
+        border-color: $color-gray-20;
+    }
+
     .dropdown-button {
       position: absolute;
       right: $x-small;
@@ -320,6 +325,30 @@
           background-color: $color-primary-lighter;
         }
       }
+    }
+
+    & li.checked-element {
+        padding-left: 0;
+
+        & span {
+            margin: 0;
+            color: $color-black;
+        }
+
+        & svg {
+            visibility: hidden;
+            width: 8px;
+            height: 8px;
+            background: none;
+            margin: 0.25rem;
+            fill: $color-black;
+        }
+
+        &.is-selected {
+            & svg {
+                visibility: visible;
+            }
+        }
     }
   }
 
@@ -534,4 +563,114 @@
       width: 16px;
     }
   }
+}
+
+.custom-button {
+    cursor: pointer;
+    background: none;
+    border: none;
+
+    & svg {
+        width: 1rem;
+        height: 1rem;
+        fill: $color-gray-20;
+    }
+}
+
+.element-set-content .input-row {
+    & .element-set-subtitle {
+        width: 5.5rem;
+    }
+}
+
+.grid-option {
+    margin-bottom: 0.5rem;
+}
+
+.element-set-content .grid-option-main {
+    display: flex;
+    padding: 0.5rem 0;
+    border: 1px solid $color-black;
+    border-radius: 4px;
+
+    &:hover {
+        background: #1F1F1F;
+    }
+
+    & .custom-select {
+        height: 2rem;
+        border: none;
+        border-bottom: 1px solid #65666A;
+    }
+
+    & .input-element {
+        width: 50px;
+        overflow: hidden;
+    }
+
+    & .custom-select-dropdown {
+        width: 96px;
+    }
+
+    & .input-option {
+        margin-left: 0.5rem;
+
+        & .custom-select-dropdown {
+            width: 56px;
+            min-width: 56px;
+            max-height: 10rem;
+        }
+
+    }
+
+}
+
+.grid-option-main-actions {
+    display: flex;
+    visibility: hidden;
+
+    .grid-option:hover & {
+        visibility: visible;
+    }
+}
+
+.focus-overlay {
+    background: $color-black;
+    height: 100%;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 100%;
+    opacity: 0.4;
+}
+
+.element-set-content .advanced-options {
+    background-color: #303236;
+    border-radius: 4px;
+    left: -8px;
+    padding: 0.5rem;
+    position: relative;
+    top: 2px;
+    width: calc(100% + 16px);
+}
+
+.btn-options {
+    cursor: pointer;
+    border: 1px solid $color-black;
+    background: #1F1F1F;
+    border-radius: 2px;
+    color: #B1B2B5;
+    font-size: 11px;
+    line-height: 16px;
+    flex-grow: 1;
+    padding: 0.25rem 0;
+
+    &:first-child {
+        margin-right: 0.5rem;
+    }
+
+    &:hover {
+        background: $color-primary;
+        color: $color-black;
+    }
 }

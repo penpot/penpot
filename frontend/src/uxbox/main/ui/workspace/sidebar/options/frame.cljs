@@ -12,16 +12,17 @@
   (:require
    [rumext.alpha :as mf]
    [uxbox.common.data :as d]
-   [uxbox.main.ui.icons :as i]
-   [uxbox.main.data.workspace :as udw]
-   [uxbox.main.store :as st]
-   [uxbox.main.ui.components.dropdown :refer [dropdown]]
-   [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-menu]]
-   [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-menu]]
    [uxbox.util.dom :as dom]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.i18n :refer [tr]]
-   [uxbox.util.math :as math]))
+   [uxbox.util.math :as math]
+   [uxbox.main.store :as st]
+   [uxbox.main.data.workspace :as udw]
+   [uxbox.main.ui.icons :as i]
+   [uxbox.main.ui.components.dropdown :refer [dropdown]]
+   [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-menu]]
+   [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-menu]]
+   [uxbox.main.ui.workspace.sidebar.options.grid-options :refer [grid-options]]))
 
 (declare +size-presets+)
 
@@ -82,11 +83,11 @@
        [:div.custom-select.flex-grow {:on-click #(reset! show-presets-dropdown? true)}
         [:span (tr "workspace.options.size-presets")]
         [:span.dropdown-button i/arrow-down]
-         [:& dropdown {:show @show-presets-dropdown?
-                       :on-close #(reset! show-presets-dropdown? false)}
-          [:ul.custom-select-dropdown
-            (for [size-preset +size-presets+]
-             (if-not (:width size-preset)
+        [:& dropdown {:show @show-presets-dropdown?
+                      :on-close #(reset! show-presets-dropdown? false)}
+         [:ul.custom-select-dropdown
+          (for [size-preset +size-presets+]
+            (if-not (:width size-preset)
               [:li.dropdown-label {:key (:name size-preset)}
                [:span (:name size-preset)]]
               [:li {:key (:name size-preset)
@@ -202,4 +203,5 @@
   [:div
    [:& measures-menu {:shape shape}]
    [:& fill-menu {:shape shape}]
-   [:& stroke-menu {:shape shape}]])
+   [:& stroke-menu {:shape shape}]
+   [:& grid-options {:shape shape}]])

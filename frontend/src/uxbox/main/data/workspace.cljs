@@ -1487,6 +1487,44 @@
             (rx/of (update-shape shape-id
                                  {:interactions []}))))))))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Layouts
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn add-frame-layout [frame-id]
+  (ptk/reify ::set-frame-layout
+    dwc/IBatchedChange
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [pid (:current-page-id state)
+            default-params {:size 16 :color {:value "#59B9E2" :opacity 0.9}}
+            prop-path [:workspace-data pid :objects frame-id :layouts]
+            layout {:type :square
+                    :params default-params
+                    :display true}]
+        (-> state
+            (update-in prop-path #(if (nil? %) [layout] (conj % layout))))))))
+
+(defn remove-frame-layout [frame-id index]
+  (ptk/reify ::set-frame-layout
+    dwc/IBatchedChange
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [pid (:current-page-id state)]
+        (-> state
+            (update-in [:workspace-data pid :objects frame-id :layouts] #(d/remove-at-index % index)))))))
+
+(defn set-frame-layout [frame-id index data]
+  (ptk/reify ::set-frame-layout
+    dwc/IBatchedChange
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [pid (:current-page-id state)]
+        (->
+         state
+         (assoc-in [:workspace-data pid :objects frame-id :layouts index] data))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
