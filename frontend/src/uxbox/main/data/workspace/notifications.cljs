@@ -28,6 +28,7 @@
 (declare handle-pointer-update)
 (declare handle-page-change)
 (declare handle-pointer-send)
+(declare send-keepalive)
 
 (s/def ::type keyword?)
 (s/def ::message
@@ -46,8 +47,11 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [wsession (get-in state [:ws file-id])
-            stoper (rx/filter #(= ::finalize %) stream)]
+            stoper   (rx/filter #(= ::finalize %) stream)
+            interval (* 1000 60)]
         (->> (rx/merge
+              (->> (rx/timer interval interval)
+                   (rx/map #(send-keepalive file-id)))
               (->> (ws/-stream wsession)
                    (rx/filter #(= :message (:type %)))
                    (rx/map (comp t/decode :payload))
@@ -65,6 +69,15 @@
                    (rx/map #(handle-pointer-send file-id (:pt %)))))
 
              (rx/take-until stoper))))))
+
+(defn send-keepalive
+  [file-id]
+  (ptk/reify ::send-keepalive
+    ptk/EffectEvent
+    (effect [_ state stream]
+      (prn "send-keepalive" file-id)
+      (when-let [ws (get-in state [:ws file-id])]
+        (ws/-send ws (t/encode {:type :keepalive}))))))
 
 ;; --- Finalize Websocket
 

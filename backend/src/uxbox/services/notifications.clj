@@ -14,7 +14,8 @@
    [uxbox.common.exceptions :as ex]
    [uxbox.common.uuid :as uuid]
    [uxbox.redis :as redis]
-   [ring.util.codec :as codec]
+   [uxbox.db :as db]
+   [uxbox.util.time :as dt]
    [uxbox.util.transit :as t]))
 
 (defmacro go-try
@@ -31,47 +32,55 @@
        (throw r#)
        r#)))
 
-(defn- decode-message
-  [message]
-  (->> (t/str->bytes message)
-       (t/decode)))
-
-(defn- encode-message
-  [message]
-  (->> (t/encode message)
-       (t/bytes->str)))
+(defmacro thread-try
+  [& body]
+  `(a/thread
+     (try
+       ~@body
+       (catch Throwable e#
+         e#))))
 
 ;; --- Redis Interactions
 
 (defn- publish
   [channel message]
   (go-try
-   (let [message (encode-message message)]
+   (let [message (t/encode-str message)]
      (<? (redis/run :publish {:channel (str channel)
                               :message message})))))
 
+(def ^:private
+  sql:retrieve-presence
+  "select * from presence
+    where file_id=?
+      and (clock_timestamp() - updated_at) < '5 min'::interval")
+
 (defn- retrieve-presence
-  [key]
-  (go-try
-   (let [data (<? (redis/run :hgetall {:key key}))]
-     (into [] (map (fn [[k v]] [(uuid/uuid k) (uuid/uuid v)])) data))))
+  [file-id]
+  (thread-try
+   (let [rows (db/exec! db/pool [sql:retrieve-presence file-id])]
+     (mapv (juxt :session-id :profile-id) rows))))
 
-(defn- join-room
-  [file-id session-id profile-id]
-  (let [key (str file-id)
-        field (str session-id)
-        value (str profile-id)]
-    (go-try
-     (<? (redis/run :hset {:key key :field field :value value}))
-     (<? (retrieve-presence key)))))
+(def ^:private
+  sql:update-presence
+  "insert into presence (file_id, session_id, profile_id, updated_at)
+   values (?, ?, ?, clock_timestamp())
+       on conflict (file_id, session_id, profile_id)
+       do update set updated_at=clock_timestamp()")
 
-(defn- leave-room
+(defn- update-presence
   [file-id session-id profile-id]
-  (let [key (str file-id)
-        field (str session-id)]
-    (go-try
-     (<? (redis/run :hdel {:key key :field field}))
-     (<? (retrieve-presence key)))))
+  (thread-try
+   (let [now (dt/now)
+         sql [sql:update-presence file-id session-id profile-id]]
+     (db/exec-one! db/pool sql))))
+
+(defn- delete-presence
+  [file-id session-id profile-id]
+  (thread-try
+   (db/delete! db/pool :presence {:file-id file-id
+                                  :profile-id profile-id
+                                  :session-id session-id})))
 
 ;; --- WebSocket Messages Handling
 
@@ -85,28 +94,33 @@
   [{:keys [file-id profile-id session-id output] :as ws} message]
   (log/info (str "profile " profile-id " is connected to " file-id))
   (go-try
-   (let [members (<? (join-room file-id session-id profile-id))]
-     (<? (publish file-id {:type :presence :sessions  members})))))
+   (<? (update-presence file-id session-id profile-id))
+   (let [members (<? (retrieve-presence file-id))]
+     (<? (publish file-id {:type :presence :sessions members})))))
 
 (defmethod handle-message :disconnect
   [{:keys [profile-id file-id session-id] :as ws} message]
   (log/info (str "profile " profile-id " is disconnected from " file-id))
   (go-try
-   (let [members (<? (leave-room file-id session-id profile-id))]
+   (<? (delete-presence file-id session-id profile-id))
+   (let [members (<? (retrieve-presence file-id))]
      (<? (publish file-id {:type :presence :sessions members})))))
+
+(defmethod handle-message :keepalive
+  [{:keys [profile-id file-id session-id] :as ws} message]
+  (update-presence file-id session-id profile-id))
+
+(defmethod handle-message :pointer-update
+  [{:keys [profile-id file-id session-id] :as ws} message]
+  (let [message (assoc message
+                       :profile-id profile-id
+                       :session-id session-id)]
+    (publish file-id message)))
 
 (defmethod handle-message :default
   [ws message]
   (a/go
     (log/warn (str "received unexpected message: " message))))
-
-(defmethod handle-message :pointer-update
-  [{:keys [profile-id file-id session-id] :as ws} message]
-  (go-try
-   (let [message (assoc message
-                        :profile-id profile-id
-                        :session-id session-id)]
-     (<? (publish file-id message)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WebSocket Handler
@@ -176,7 +190,7 @@
   (a/go-loop []
     (let [val (a/<! out)]
       (when-not (nil? val)
-        (jetty/send! conn (encode-message val))
+        (jetty/send! conn (t/encode-str val))
         (recur)))))
 
 (defn websocket
@@ -184,7 +198,7 @@
   (let [in  (a/chan 32)
         out (a/chan 32)]
     {:on-connect (fn [conn]
-                   (let [xf  (map decode-message)
+                   (let [xf  (map t/decode-str)
                          sub (redis/subscribe (str file-id) xf)
                          ws  (WebSocket. conn in out sub nil params)]
                      (start-rcv-loop! ws)
@@ -203,7 +217,7 @@
                  (a/close! in))
 
      :on-text (fn [ws message]
-                (let [message (decode-message message)]
+                (let [message (t/decode-str message)]
                   ;; (prn "websocket" :on-text message)
                   (a/>!! in message)))
 

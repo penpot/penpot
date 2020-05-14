@@ -52,6 +52,9 @@
 
 ;; --- High-Level Api
 
+(declare str->bytes)
+(declare bytes->str)
+
 (defn decode
   ([data]
    (decode data nil))
@@ -68,6 +71,16 @@
        (write! w data)
        (.toByteArray out)))))
 
+(defn decode-str
+  [message]
+  (->> (str->bytes message)
+       (decode)))
+
+(defn encode-str
+  [message]
+  (->> (encode message)
+       (bytes->str)))
+
 ;; --- Helpers
 
 (defn str->bytes
@@ -83,4 +96,3 @@
    (bytes->str data "UTF-8"))
   ([^bytes data, ^String encoding]
    (String. data encoding)))
-

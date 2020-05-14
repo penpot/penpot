@@ -24,8 +24,6 @@ CREATE TRIGGER task__modified_at__tgr
 BEFORE UPDATE ON task
    FOR EACH ROW EXECUTE PROCEDURE update_modified_at();
 
-
-
 CREATE TABLE scheduled_task (
   id text PRIMARY KEY,
 

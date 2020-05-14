@@ -72,7 +72,7 @@
 (defn migrate!
   "Main entry point for apply a migration."
   ([conn migrations]
-   (migrate! conn migrations nil))
+   (impl-migrate conn migrations nil))
   ([conn migrations options]
    (impl-migrate conn migrations options)))
 
