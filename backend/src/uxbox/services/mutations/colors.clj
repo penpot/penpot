@@ -10,15 +10,15 @@
 (ns uxbox.services.mutations.colors
   (:require
    [clojure.spec.alpha :as s]
-   [promesa.core :as p]
+   [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
+   [uxbox.common.uuid :as uuid]
    [uxbox.config :as cfg]
    [uxbox.db :as db]
-   [uxbox.tasks :as tasks]
-   [uxbox.services.queries.teams :as teams]
    [uxbox.services.mutations :as sm]
-   [uxbox.services.util :as su]
-   [uxbox.common.uuid :as uuid]))
+   [uxbox.services.queries.teams :as teams]
+   [uxbox.tasks :as tasks]
+   [uxbox.util.time :as dt]))
 
 ;; --- Helpers & Specs
 
@@ -44,15 +44,13 @@
     (teams/check-edition-permissions! conn profile-id team-id)
     (create-library conn params)))
 
-(def ^:private sql:create-library
-  "insert into color_library (id, team_id, name)
-   values ($1, $2, $3)
-   returning *;")
-
 (defn create-library
   [conn {:keys [id team-id name]}]
   (let [id (or id (uuid/next))]
-    (db/query-one conn [sql:create-library id team-id name])))
+    (db/insert! conn :color-library
+                {:id id
+                 :team-id team-id
+                 :name name})))
 
 
 ;; --- Mutation: Rename Library
@@ -66,7 +64,7 @@
 (sm/defmutation ::rename-color-library
   [{:keys [id profile-id name] :as params}]
   (db/with-atomic [conn db/pool]
-    (p/let [lib (select-library-for-update conn id)]
+    (let [lib (select-library-for-update conn id)]
       (teams/check-edition-permissions! conn profile-id (:team-id lib))
       (rename-library conn id name))))
 
@@ -83,42 +81,13 @@
 
 (defn- select-library-for-update
   [conn id]
-  (-> (db/query-one conn [sql:select-library-for-update id])
-      (p/then' su/raise-not-found-if-nil)))
+  (db/get-by-id conn :color-library id {:for-update true}))
 
 (defn- rename-library
   [conn id name]
-  (-> (db/query-one conn [sql:rename-library id name])
-      (p/then' su/constantly-nil)))
-
-
-
-;; --- Copy Color
-
-;; (declare create-color)
-
-;; (defn- retrieve-color
-;;   [conn {:keys [profile-id id]}]
-;;   (let [sql "select * from color
-;;               where id = $1
-;;                 and deleted_at is null
-;;                 and (profile_id = $2 or
-;;                      profile_id = '00000000-0000-0000-0000-000000000000'::uuid)"]
-;;   (-> (db/query-one conn [sql id profile-id])
-;;       (p/then' su/raise-not-found-if-nil))))
-
-;; (s/def ::copy-color
-;;   (s/keys :req-un [:us/id ::library-id ::profile-id]))
-
-;; (sm/defmutation ::copy-color
-;;   [{:keys [profile-id id library-id] :as params}]
-;;   (db/with-atomic [conn db/pool]
-;;     (-> (retrieve-color conn {:profile-id profile-id :id id})
-;;         (p/then (fn [color]
-;;                   (let [color (-> (dissoc color :id)
-;;                                  (assoc :library-id library-id))]
-;;                     (create-color conn color)))))))
-
+  (db/update! conn :color-library
+              {:name name}
+              {:id id}))
 
 
 ;; --- Delete Library
@@ -131,7 +100,7 @@
 (sm/defmutation ::delete-color-library
   [{:keys [id profile-id] :as params}]
   (db/with-atomic [conn db/pool]
-    (p/let [lib (select-library-for-update conn id)]
+    (let [lib (select-library-for-update conn id)]
       (teams/check-edition-permissions! conn profile-id (:team-id lib))
 
       ;; Schedule object deletion
@@ -139,18 +108,10 @@
                              :delay cfg/default-deletion-delay
                              :props {:id id :type :color-library}})
 
-      (delete-library conn id))))
-
-(def ^:private sql:mark-library-deleted
-  "update color_library
-      set deleted_at = clock_timestamp()
-    where id = $1")
-
-(defn- delete-library
-  [conn id]
-  (-> (db/query-one conn [sql:mark-library-deleted id])
-      (p/then' su/constantly-nil)))
-
+      (db/update! conn :color-library
+                  {:deleted-at (dt/now)}
+                  {:id id})
+      nil)))
 
 
 ;; --- Mutation: Create Color (Upload)
@@ -164,7 +125,7 @@
 (sm/defmutation ::create-color
   [{:keys [profile-id library-id] :as params}]
   (db/with-atomic [conn db/pool]
-    (p/let [lib (select-library-for-update conn library-id)]
+    (let [lib (select-library-for-update conn library-id)]
       (teams/check-edition-permissions! conn profile-id (:team-id lib))
       (create-color conn params))))
 
@@ -175,14 +136,15 @@
 (defn create-color
   [conn {:keys [id name library-id content]}]
   (let [id (or id (uuid/next))]
-    (db/query-one conn [sql:create-color id name library-id content])))
-
+    (db/insert! conn :color {:id id
+                             :name name
+                             :library-id library-id
+                             :content content})))
 
 
 ;; --- Mutation: Rename Color
 
 (declare select-color-for-update)
-(declare rename-color)
 
 (s/def ::rename-color
   (s/keys :req-un [::id ::profile-id ::name]))
@@ -190,33 +152,26 @@
 (sm/defmutation ::rename-color
   [{:keys [id profile-id name] :as params}]
   (db/with-atomic [conn db/pool]
-    (p/let [clr (select-color-for-update conn id)]
+    (let [clr (select-color-for-update conn id)]
       (teams/check-edition-permissions! conn profile-id (:team-id clr))
-      (rename-color conn id name))))
+      (db/update! conn :color
+                  {:name name}
+                  {:id id}))))
 
 (def ^:private sql:select-color-for-update
   "select c.*,
           lib.team_id as team_id
      from color as c
     inner join color_library as lib on (lib.id = c.library_id)
-    where c.id = $1
+    where c.id = ?
       for update of c")
-
-(def ^:private sql:rename-color
-  "update color
-      set name = $2
-    where id = $1")
 
 (defn- select-color-for-update
   [conn id]
-  (-> (db/query-one conn [sql:select-color-for-update id])
-      (p/then' su/raise-not-found-if-nil)))
-
-(defn- rename-color
-  [conn id name]
-  (-> (db/query-one conn [sql:rename-color id name])
-      (p/then' su/constantly-nil)))
-
+  (let [row (db/exec-one! conn [sql:select-color-for-update id])]
+    (when-not row
+      (ex/raise :type :not-found))
+    row))
 
 
 ;; --- Delete Color
@@ -229,7 +184,7 @@
 (sm/defmutation ::delete-color
   [{:keys [profile-id id] :as params}]
   (db/with-atomic [conn db/pool]
-    (p/let [clr (select-color-for-update conn id)]
+    (let [clr (select-color-for-update conn id)]
       (teams/check-edition-permissions! conn profile-id (:team-id clr))
 
       ;; Schedule object deletion
@@ -237,14 +192,7 @@
                              :delay cfg/default-deletion-delay
                              :props {:id id :type :color}})
 
-      (delete-color conn id))))
-
-(def ^:private sql:mark-color-deleted
-  "update color
-      set deleted_at = clock_timestamp()
-    where id = $1")
-
-(defn- delete-color
-  [conn id]
-  (-> (db/query-one conn [sql:mark-color-deleted id])
-      (p/then' su/constantly-nil)))
+      (db/update! conn :color
+                  {:deleted-at (dt/now)}
+                  {:id id})
+      nil)))

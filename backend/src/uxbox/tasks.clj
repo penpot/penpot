@@ -13,19 +13,15 @@
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
    [mount.core :as mount :refer [defstate]]
-   [promesa.core :as p]
    [uxbox.common.spec :as us]
    [uxbox.config :as cfg]
-   [uxbox.core :refer [system]]
    [uxbox.db :as db]
    [uxbox.tasks.sendmail]
    [uxbox.tasks.remove-media]
    [uxbox.tasks.delete-profile]
    [uxbox.tasks.delete-object]
    [uxbox.tasks.impl :as impl]
-   [uxbox.util.time :as dt]
-   [vertx.core :as vc]
-   [vertx.timers :as vt]))
+   [uxbox.util.time :as dt]))
 
 ;; --- Public API
 
@@ -48,10 +44,17 @@
    "remove-media" #'uxbox.tasks.remove-media/handler
    "sendmail" #'uxbox.tasks.sendmail/handler})
 
-(defstate tasks-worker
-  :start (as-> (impl/worker-verticle {:tasks tasks}) $$
-           (vc/deploy! system $$ {:instances 1})
-           (deref $$)))
+(defstate worker
+  :start (impl/start-worker! {:tasks tasks})
+  :stop (impl/stop! worker))
+
+;; (defstate scheduler
+;;   :start (impl/start-scheduler! tasks)
+;;   :stop (impl/stop! tasks-worker))
+
+;; :start (as-> (impl/worker-verticle {:tasks tasks}) $$
+;;          (vc/deploy! system $$ {:instances 1})
+;;          (deref $$)))
 
 ;; (def ^:private schedule
 ;;   [{:id "every 1 hour"

@@ -8,70 +8,57 @@
   (:require
    [clojure.tools.logging :as log]
    [mount.core :as mount :refer [defstate]]
-   [promesa.core :as p]
-   [uxbox.core :refer [system]]
+   [reitit.ring :as rring]
+   [ring.adapter.jetty9 :as jetty]
    [uxbox.config :as cfg]
+   [uxbox.http.debug :as debug]
    [uxbox.http.errors :as errors]
+   [uxbox.http.handlers :as handlers]
    [uxbox.http.middleware :as middleware]
    [uxbox.http.session :as session]
-   [uxbox.http.handlers :as handlers]
-   [uxbox.http.debug :as debug]
    [uxbox.http.ws :as ws]
-   [vertx.core :as vc]
-   [vertx.http :as vh]
-   [vertx.web :as vw]
-   [vertx.web.middleware :as vwm]))
+   [uxbox.services.notifications :as usn]))
 
-(defn- on-start
-  [ctx]
-  (let [cors-opts {:origin (:http-server-cors cfg/config "http://localhost:3449")
-                   :max-age 3600
-                   :allow-credentials true
-                   :allow-methods #{:post :get :patch :head :options :put}
-                   :allow-headers #{:x-requested-with :content-type :cookie}}
+(defn- create-router
+  []
+  (rring/router
+   [["/api" {:middleware [[middleware/format-response-body]
+                          [middleware/errors errors/handle]
+                          [middleware/parse-request-body]
+                          [middleware/params]
+                          [middleware/multipart-params]
+                          [middleware/keyword-params]
+                          [middleware/cookies]]}
+     ["/echo" {:get handlers/echo-handler
+               :post handlers/echo-handler}]
 
-        routes [["/notifications/:file-id/:session-id"
-                 {:middleware [[vwm/cookies]
-                               [vwm/cors cors-opts]
-                               [middleware/format-response-body]
-                               [session/auth]]
-                  :handler ws/handler
-                  :method :get}]
+     ["/login" {:handler handlers/login-handler
+                :method :post}]
+     ["/logout" {:handler handlers/logout-handler
+                 :method :post}]
 
-                ["/api" {:middleware [[vwm/cookies]
-                                      [vwm/params]
-                                      [vwm/cors cors-opts]
-                                      [middleware/parse-request-body]
-                                      [middleware/format-response-body]
-                                      [middleware/method-match]
-                                      [vwm/errors errors/handle]]}
-                 ["/echo" {:handler handlers/echo-handler}]
 
-                 ["/login" {:handler handlers/login-handler
-                            :method :post}]
-                 ["/logout" {:handler handlers/logout-handler
-                             :method :post}]
-                 ["/w" {:middleware [session/auth]}
-                  ["/mutation/:type" {:middleware [vwm/uploads]
-                                      :handler handlers/mutation-handler
-                                      :method :post}]
-                  ["/query/:type" {:handler handlers/query-handler
-                                   :method :get}]]]]
+     ["/w" {:middleware [session/auth]}
+      ["/query/:type" {:get handlers/query-handler}]
+      ["/mutation/:type" {:post handlers/mutation-handler}]]]]))
 
-        handler (vw/handler ctx
-                            (vw/assets "/media/*" {:root "resources/public/media"})
-                            (vw/assets "/static/*" {:root "resources/public/static"})
-                            (vw/router routes))]
+(defstate app
+  :start (rring/ring-handler
+          (create-router)
+          (constantly {:status 404, :body ""})
+          {:middleware [middleware/development-resources
+                        middleware/development-cors]}))
 
-    (log/info "Starting http server on" (:http-server-port cfg/config) "port.")
-    (vh/server ctx {:handler handler
-                    :port (:http-server-port cfg/config)})))
-
-(def num-cpus
-  (delay (.availableProcessors (Runtime/getRuntime))))
+(defn start-server
+  [cfg app]
+  (let [wsockets {"/ws/notifications" ws/handler}
+        options  {:port (:http-server-port cfg)
+                  :h2c? true
+                  :join? false
+                  :allow-null-path-info true
+                  :websockets wsockets}]
+    (jetty/run-jetty app options)))
 
 (defstate server
-  :start (let [vf (vc/verticle {:on-start on-start})]
-           @(vc/deploy! system vf {:instances @num-cpus})))
-
-
+  :start (start-server cfg/config app)
+  :stop (.stop server))

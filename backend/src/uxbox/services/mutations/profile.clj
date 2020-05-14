@@ -19,23 +19,21 @@
    [sodi.util]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
+   [uxbox.common.uuid :as uuid]
    [uxbox.config :as cfg]
    [uxbox.db :as db]
    [uxbox.emails :as emails]
    [uxbox.images :as images]
-   [uxbox.tasks :as tasks]
    [uxbox.media :as media]
    [uxbox.services.mutations :as sm]
    [uxbox.services.mutations.images :as imgs]
-   [uxbox.services.mutations.teams :as mt.teams]
    [uxbox.services.mutations.projects :as mt.projects]
+   [uxbox.services.mutations.teams :as mt.teams]
    [uxbox.services.queries.profile :as profile]
-   [uxbox.services.util :as su]
+   [uxbox.tasks :as tasks]
    [uxbox.util.blob :as blob]
    [uxbox.util.storage :as ust]
-   [uxbox.common.uuid :as uuid]
-   [uxbox.util.time :as tm]
-   [vertx.util :as vu]))
+   [uxbox.util.time :as dt]))
 
 ;; --- Helpers & Specs
 
@@ -75,22 +73,15 @@
                         :code ::wrong-credentials))
             profile)]
     (db/with-atomic [conn db/pool]
-      (p/let [prof (-> (retrieve-profile-by-email conn email)
-                       (p/then' check-profile)
-                       (p/then' profile/strip-private-attrs))
-              addt (profile/retrieve-additional-data conn (:id prof))]
+      (let [prof (-> (retrieve-profile-by-email conn email)
+                     (check-profile)
+                     (profile/strip-private-attrs))
+            addt (profile/retrieve-additional-data conn (:id prof))]
         (merge prof addt)))))
-
-(def sql:profile-by-email
-  "select u.*
-     from profile as u
-    where u.email=$1
-      and u.deleted_at is null")
 
 (defn- retrieve-profile-by-email
   [conn email]
-  (-> (db/query-one conn [sql:profile-by-email email])
-      (p/then #(images/resolve-media-uris % [:photo :photo-uri]))))
+  (db/get-by-params conn :profile {:email email} {:for-update true}))
 
 
 ;; --- Mutation: Update Profile (own)
@@ -106,10 +97,11 @@
 
 (defn- update-profile
   [conn {:keys [id fullname lang theme] :as params}]
-  (let [sqlv [sql:update-profile id fullname lang theme]]
-    (-> (db/query-one conn sqlv)
-        (p/then' su/raise-not-found-if-nil)
-        (p/then' profile/strip-private-attrs))))
+  (db/update! conn :profile
+              {:fullname fullname
+               :lang lang
+               :theme theme}
+              {:id id}))
 
 (s/def ::update-profile
   (s/keys :req-un [::id ::fullname ::lang ::theme]))
@@ -117,39 +109,31 @@
 (sm/defmutation ::update-profile
   [params]
   (db/with-atomic [conn db/pool]
-    (update-profile conn params)))
+    (update-profile conn params)
+    nil))
 
 
 ;; --- Mutation: Update Password
 
 (defn- validate-password!
   [conn {:keys [profile-id old-password] :as params}]
-  (p/let [profile (profile/retrieve-profile conn profile-id)
-          result (sodi.pwhash/verify old-password (:password profile))]
+  (let [profile (profile/retrieve-profile conn profile-id)
+        result  (sodi.pwhash/verify old-password (:password profile))]
     (when-not (:valid result)
       (ex/raise :type :validation
                 :code ::old-password-not-match))))
-
-(defn update-password
-  [conn {:keys [profile-id password]}]
-  (let [sql "update profile
-                set password = $2
-              where id = $1
-                and deleted_at is null
-            returning id"
-        password (sodi.pwhash/derive password)]
-    (-> (db/query-one conn [sql profile-id password])
-        (p/then' su/raise-not-found-if-nil)
-        (p/then' su/constantly-nil))))
 
 (s/def ::update-profile-password
   (s/keys :req-un [::profile-id ::password ::old-password]))
 
 (sm/defmutation ::update-profile-password
-  [params]
+  [{:keys [password profile-id] :as params}]
   (db/with-atomic [conn db/pool]
     (validate-password! conn params)
-    (update-password conn params)))
+    (db/update! conn :profile
+                {:password (sodi.pwhash/derive password)}
+                {:id profile-id})
+    nil))
 
 
 
@@ -165,8 +149,8 @@
 (sm/defmutation ::update-profile-photo
   [{:keys [profile-id file] :as params}]
   (db/with-atomic [conn db/pool]
-    (p/let [profile (profile/retrieve-profile conn profile-id)
-            photo (upload-photo conn params)]
+    (let [profile (profile/retrieve-profile conn profile-id)
+          photo   (upload-photo conn params)]
 
       ;; Schedule deletion of old photo
       (when (and (string? (:photo profile))
@@ -178,20 +162,20 @@
 
 (defn- upload-photo
   [conn {:keys [file profile-id]}]
-  (when-not (imgs/valid-image-types? (:mtype file))
+  (when-not (imgs/valid-image-types? (:content-type file))
     (ex/raise :type :validation
               :code :image-type-not-allowed
               :hint "Seems like you are uploading an invalid image."))
-  (vu/blocking
-   (let [thumb-opts {:width 256
-                     :height 256
-                     :quality 75
-                     :format "webp"}
-         prefix (-> (sodi.prng/random-bytes 8)
-                    (sodi.util/bytes->b64s))
-         name   (str prefix ".webp")
-         photo  (images/generate-thumbnail2 (fs/path (:path file)) thumb-opts)]
-     (ust/save! media/media-storage name photo))))
+  (let [thumb-opts {:width 256
+                    :height 256
+                    :quality 75
+                    :format "webp"}
+        prefix (-> (sodi.prng/random-bytes 8)
+                   (sodi.util/bytes->b64s))
+        name   (str prefix ".webp")
+        path   (fs/path (:tempfile file))
+        photo  (images/generate-thumbnail2 path thumb-opts)]
+    (ust/save! media/media-storage name photo)))
 
 (defn- update-profile-photo
   [conn profile-id path]
@@ -199,9 +183,10 @@
               where id=$2
                 and deleted_at is null
              returning id"]
-    (-> (db/query-one conn [sql (str path) profile-id])
-        (p/then' su/raise-not-found-if-nil))))
-
+    (db/update! conn :profile
+                {:photo (str path)}
+                {:id profile-id})
+    nil))
 
 
 ;; --- Mutation: Register Profile
@@ -213,7 +198,8 @@
   (s/keys :req-un [::email ::password ::fullname]))
 
 (defn email-domain-in-whitelist?
-  "Returns true if email's domain is in the given whitelist or if given whitelist is an empty string."
+  "Returns true if email's domain is in the given whitelist or if given
+  whitelist is an empty string."
   [whitelist email]
   (if (str/blank? whitelist)
     true
@@ -226,20 +212,18 @@
   (when-not (:registration-enabled cfg/config)
     (ex/raise :type :restriction
               :code :registration-disabled))
-  (when-not (email-domain-in-whitelist? (:registration-domain-whitelist cfg/config) (:email params))
+  (when-not (email-domain-in-whitelist? (:registration-domain-whitelist cfg/config)
+                                        (:email params))
     (ex/raise :type :validation
               :code ::email-domain-is-not-allowed))
   (db/with-atomic [conn db/pool]
     (check-profile-existence! conn params)
-    (-> (register-profile conn params)
-        (p/then (fn [profile]
-                  ;; TODO: send a correct link for email verification
-                  (let [data {:to (:email params)
-                              :name (:fullname params)}]
-                    (p/do!
-                     (emails/send! conn emails/register data)
-                     profile)))))))
-
+    (let [profile (register-profile conn params)]
+      ;; TODO: send a correct link for email verification
+      (let [data {:to (:email params)
+                  :name (:fullname params)}]
+        (emails/send! conn emails/register data)
+        profile))))
 
 (def ^:private sql:insert-profile
   "insert into profile (id, fullname, email, password, photo, is_demo)
@@ -256,12 +240,11 @@
 
 (defn- check-profile-existence!
   [conn {:keys [email] :as params}]
-  (-> (db/query-one conn [sql:profile-existence email])
-      (p/then' (fn [result]
-                 (when (:val result)
-                   (ex/raise :type :validation
-                             :code ::email-already-exists))
-                 params))))
+  (let [result (db/exec-one! conn [sql:profile-existence email])]
+    (when (:val result)
+      (ex/raise :type :validation
+                :code ::email-already-exists))
+    params))
 
 (defn- create-profile
   "Create the profile entry on the database with limited input
@@ -270,33 +253,42 @@
   (let [id (or id (uuid/next))
         demo? (if (boolean? demo?) demo? false)
         password (sodi.pwhash/derive password)]
-    (db/query-one conn [sql:insert-profile id fullname email password demo?])))
+    (db/insert! conn :profile
+                {:id id
+                 :fullname fullname
+                 :email email
+                 :photo ""
+                 :password password
+                 :is-demo demo?})))
 
 (defn- create-profile-email
   [conn {:keys [id email] :as profile}]
-  (-> (db/query-one conn [sql:insert-email id email])
-      (p/then' su/constantly-nil)))
+  (db/insert! conn :profile-email
+              {:profile-id id
+               :email email
+               :is-main true}))
 
 (defn register-profile
   [conn params]
-  (p/let [prof (create-profile conn params)
-          _    (create-profile-email conn prof)
+  (let [prof (create-profile conn params)
+        _    (create-profile-email conn prof)
 
-          team (mt.teams/create-team conn {:profile-id (:id prof)
-                                           :name "Default"
-                                           :default? true})
-          _    (mt.teams/create-team-profile conn {:team-id (:id team)
-                                                   :profile-id (:id prof)})
+        team (mt.teams/create-team conn {:profile-id (:id prof)
+                                         :name "Default"
+                                         :default? true})
+        _    (mt.teams/create-team-profile conn {:team-id (:id team)
+                                                 :profile-id (:id prof)})
 
-          proj (mt.projects/create-project  conn {:profile-id (:id prof)
-                                                  :team-id (:id team)
-                                                  :name "Drafts"
-                                                  :default? true})
-          _    (mt.projects/create-project-profile conn {:project-id (:id proj)
-                                                         :profile-id (:id prof)})]
+        proj (mt.projects/create-project conn {:profile-id (:id prof)
+                                               :team-id (:id team)
+                                               :name "Drafts"
+                                               :default? true})
+        _    (mt.projects/create-project-profile conn {:project-id (:id proj)
+                                                       :profile-id (:id prof)})
+        ]
     (merge (profile/strip-private-attrs prof)
-           {:default-team team
-            :default-project proj})))
+           {:default-team (:id team)
+            :default-project (:id proj)})))
 
 ;; --- Mutation: Request Profile Recovery
 
@@ -312,20 +304,21 @@
             (let [token (-> (sodi.prng/random-bytes 32)
                             (sodi.util/bytes->b64s))
                   sql sql:insert-recovery-token]
-              (-> (db/query-one conn [sql id token])
-                  (p/then (constantly (assoc profile :token token))))))
+              (db/insert! conn :password-recovery-token
+                          {:profile-id id
+                           :token token})
+              (assoc profile :token token)))
           (send-email-notification [conn profile]
-            (emails/send! conn
-                          emails/password-recovery
+            (emails/send! conn emails/password-recovery
                           {:to (:email profile)
                            :token (:token profile)
-                           :name (:fullname profile)}))]
+                           :name (:fullname profile)})
+            nil)]
     (db/with-atomic [conn db/pool]
-      (-> (retrieve-profile-by-email conn email)
-          (p/then' su/raise-not-found-if-nil)
-          (p/then #(create-recovery-token conn %))
-          (p/then #(send-email-notification conn %))
-          (p/then (constantly nil))))))
+      (let [profile (->> (retrieve-profile-by-email conn email)
+                         (create-recovery-token conn))]
+        (send-email-notification conn profile)))))
+
 
 ;; --- Mutation: Recover Profile
 
@@ -343,18 +336,17 @@
                         where token=$1 returning *"
                   sql "select * from password_recovery_token
                         where token=$1"]
-              (-> (db/query-one conn [sql token])
-                  (p/then' :profile-id)
-                  (p/then' su/raise-not-found-if-nil))))
+              (-> {:token token}
+                  (db/get-by-params conn :password-recovery-token)
+                  (:profile-id))))
           (update-password [conn profile-id]
             (let [sql "update profile set password=$2 where id=$1"
                   pwd (sodi.pwhash/derive password)]
-              (-> (db/query-one conn [sql profile-id pwd])
-                  (p/then' (constantly nil)))))]
+              (db/update! conn :profile {:password pwd} {:id profile-id})
+              nil))]
     (db/with-atomic [conn db/pool]
       (-> (validate-token conn token)
-          (p/then (fn [profile-id] (update-password conn profile-id)))))))
-
+          (update-password conn)))))
 
 
 ;; --- Mutation: Delete Profile
@@ -372,16 +364,19 @@
 
     ;; Schedule a complete deletion of profile
     (tasks/schedule! conn {:name "delete-profile"
-                           :delay (tm/duration {:hours 48})
+                           :delay (dt/duration {:hours 48})
                            :props {:profile-id profile-id}})
 
-    (mark-profile-as-deleted! conn profile-id)))
+    (db/update! conn :profile
+                {:deleted-at (dt/now)}
+                {:id profile-id})
+    nil))
 
 (def ^:private sql:teams-ownership-check
   "with teams as (
      select tpr.team_id as id
        from team_profile_rel as tpr
-      where tpr.profile_id =  $1
+      where tpr.profile_id = ?
         and tpr.is_owner is true
    )
    select tpr.team_id,
@@ -393,18 +388,9 @@
 
 (defn- check-teams-ownership!
   [conn profile-id]
-  (-> (db/query conn [sql:teams-ownership-check profile-id])
-      (p/then' (fn [rows]
-                 (when-not (empty? rows)
-                   (ex/raise :type :validation
-                             :code :owner-teams-with-people
-                             :hint "The user need to transfer ownership of owned teams."
-                             :context {:teams (mapv :team-id rows)}))))))
-
-(def ^:private sql:mark-profile-deleted
-  "update profile set deleted_at=now() where id=$1")
-
-(defn- mark-profile-as-deleted!
-  [conn profile-id]
-  (-> (db/query-one conn [sql:mark-profile-deleted profile-id])
-      (p/then' su/constantly-nil)))
+  (let [rows (db/exec! conn [sql:teams-ownership-check profile-id])]
+    (when-not (empty? rows)
+      (ex/raise :type :validation
+                :code :owner-teams-with-people
+                :hint "The user need to transfer ownership of owned teams."
+                :context {:teams (mapv :team-id rows)}))))

@@ -40,15 +40,14 @@
 (defn connect
   [client]
   (let [^RedisURI uri (:uri client)
-        ^RedisClient client (:client client)]
-    (-> (.connectAsync client StringCodec/UTF8 uri)
-        (p/then' (fn [^StatefulRedisConnection conn]
-                   (->Connection (.async conn)))))))
+        ^RedisClient client (:client client)
+        ^StatefulRedisConnection conn (.connect client StringCodec/UTF8 uri)]
+    (->Connection (.async conn))))
 
 (defn- impl-subscribe
-  [^String topic ^StatefulRedisPubSubConnection conn]
-  (let [cmd    (.async conn)
-        output (a/chan 1 (filter string?))
+  [^String topic xf ^StatefulRedisPubSubConnection conn]
+  (let [cmd    (.sync conn)
+        output (a/chan 1 (comp (filter string?) xf))
         buffer (a/chan (a/sliding-buffer 64))
         sub    (reify RedisPubSubListener
                  (message [it pattern channel message])
@@ -74,15 +73,17 @@
             (when (.isOpen conn)
               (.close conn))))))
 
-    (-> (.subscribe ^RedisPubSubAsyncCommands cmd (into-array String [topic]))
-        (p/then' (constantly output)))))
+    (.subscribe ^RedisPubSubCommands cmd (into-array String [topic]))
+    output))
 
 (defn subscribe
-  [client topic]
-  (let [^RedisURI uri (:uri client)
-        ^RedisClient client (:client client)]
-    (-> (.connectPubSubAsync client StringCodec/UTF8 uri)
-        (p/then (partial impl-subscribe topic)))))
+  ([client topic]
+   (subscribe client topic (map identity)))
+  ([client topic xf]
+   (let [^RedisURI uri (:uri client)
+         ^RedisClient client (:client client)]
+     (->> (.connectPubSub client StringCodec/UTF8 uri)
+          (impl-subscribe topic xf)))))
 
 (defn- resolve-to-bool
   [v]

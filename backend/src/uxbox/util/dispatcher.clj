@@ -9,7 +9,6 @@
   (:refer-clojure :exclude [defmethod])
   (:require
    [clojure.spec.alpha :as s]
-   [promesa.core :as p]
    [expound.alpha :as expound]
    [uxbox.common.exceptions :as ex])
   (:import
@@ -127,14 +126,10 @@
     (with-meta
       (fn [params]
         (try
-          (-> (handler params)
-              (p/catch' (fn [error]
-                          (ex/raise :type :service-error
-                                    :name (:spec mdata)
-                                    :cause error))))
+          (handler params)
           (catch Throwable error
-            (p/rejected (ex/error :type :service-error
-                                  :name (:spec mdata)
-                                  :cause error)))))
+            (ex/raise :type :service-error
+                      :name (:spec mdata)
+                      :cause error))))
       (assoc mdata ::wrap-error true))))
 

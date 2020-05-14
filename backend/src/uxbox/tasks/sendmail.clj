@@ -12,12 +12,10 @@
    [clojure.data.json :as json]
    [clojure.tools.logging :as log]
    [postal.core :as postal]
-   [promesa.core :as p]
    [uxbox.common.data :as d]
    [uxbox.common.exceptions :as ex]
    [uxbox.config :as cfg]
-   [uxbox.util.http :as http]
-   [vertx.util :as vu]))
+   [uxbox.util.http :as http]))
 
 (defmulti sendmail (fn [config email] (:sendmail-backend config)))
 
@@ -49,21 +47,17 @@
         headers {"Authorization" (str "Bearer " apikey)
                  "Content-Type" "application/json"}
         body    (json/write-str params)]
-    (-> (http/send! {:method :post
-                     :headers headers
-                     :uri "https://api.sendgrid.com/v3/mail/send"
-                     :body body})
-        (p/handle
-         (fn [response error]
-           (cond
-             error
-             (log/error "Error on sending email to sendgrid:" (pr-str error))
 
-             (= 202 (:status response))
-             nil
 
-             :else
-             (log/error "Unexpected status from sendgrid:" (pr-str response))))))))
+    (try
+      (let [response (http/send! {:method :post
+                                  :headers headers
+                                  :uri "https://api.sendgrid.com/v3/mail/send"
+                                  :body body})]
+        (when-not (= 202 (:status response))
+          (log/error "Unexpected status from sendgrid:" (pr-str response))))
+      (catch Throwable error
+        (log/error "Error on sending email to sendgrid:" (pr-str error))))))
 
 (defn- get-smtp-config
   [config]
@@ -87,14 +81,13 @@
 
 (defmethod sendmail "smtp"
   [config email]
-  (vu/blocking
-   (let [config (get-smtp-config config)
-         email  (email->postal email)
-         result (postal/send-message config email)]
-     (when (not= (:error result) :SUCCESS)
-       (ex/raise :type :sendmail-error
-                 :code :email-not-sent
-                 :context result)))))
+  (let [config (get-smtp-config config)
+        email  (email->postal email)
+        result (postal/send-message config email)]
+    (when (not= (:error result) :SUCCESS)
+      (ex/raise :type :sendmail-error
+                :code :email-not-sent
+                :context result))))
 
 (defn handler
   {:uxbox.tasks/name "sendmail"}

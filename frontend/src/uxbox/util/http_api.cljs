@@ -35,13 +35,15 @@
   [{:keys [body headers auth method query url response-type]
     :or {auth true response-type :text}}]
   (let [headers (merge {"Accept" "application/transit+json,*/*"}
-                       default-headers
+                       (when (map? body) default-headers)
                        headers)
         request {:method method
                  :url url
                  :headers headers
                  :query query
-                 :body (when (not= :get method) (t/encode body))}
+                 :body (if (map? body)
+                         (t/encode body)
+                         body)}
         options {:response-type response-type
                  :credentials? auth}]
     (http/send! request options)))

@@ -5,11 +5,13 @@
  :deps
  {org.clojure/clojure {:mvn/version "1.10.1"}
   org.clojure/data.json {:mvn/version "1.0.0"}
+  org.clojure/core.async {:mvn/version "1.2.603"}
 
   ;; Logging
   org.clojure/tools.logging {:mvn/version "1.1.0"}
   org.apache.logging.log4j/log4j-api {:mvn/version "2.13.2"}
   org.apache.logging.log4j/log4j-core {:mvn/version "2.13.2"}
+  org.apache.logging.log4j/log4j-web {:mvn/version "2.13.2"}
   org.apache.logging.log4j/log4j-jul {:mvn/version "2.13.2"}
   org.apache.logging.log4j/log4j-slf4j-impl {:mvn/version "2.13.2"}
 
@@ -17,14 +19,14 @@
   instaparse/instaparse {:mvn/version "1.4.10"}
   com.cognitect/transit-clj {:mvn/version "1.0.324"}
 
-  ;; TODO: vendorize pgclient under `vertx-clojure/vertx-pgclient`
-  io.vertx/vertx-pg-client {:mvn/version "4.0.0-milestone4"}
   io.lettuce/lettuce-core {:mvn/version "5.2.2.RELEASE"}
   java-http-clj/java-http-clj {:mvn/version "0.4.1"}
 
-  vertx-clojure/vertx
-  {:local/root "vendor/vertx"
-   :deps/manifest :pom}
+  info.sunng/ring-jetty9-adapter {:mvn/version "0.12.8"}
+  seancorfield/next.jdbc {:mvn/version "1.0.424"}
+  metosin/reitit-ring {:mvn/version "0.4.2"}
+  org.postgresql/postgresql {:mvn/version "42.2.12"}
+  com.zaxxer/HikariCP {:mvn/version "3.4.3"}
 
   funcool/datoteka {:mvn/version "1.2.0"}
   funcool/promesa {:mvn/version "5.1.0"}

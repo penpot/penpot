@@ -1,30 +1,27 @@
 (ns uxbox.tests.test-services-viewer
   (:require
    [clojure.test :as t]
-   [promesa.core :as p]
    [datoteka.core :as fs]
+   [uxbox.common.uuid :as uuid]
    [uxbox.db :as db]
-   [uxbox.media :as media]
-   [uxbox.core :refer [system]]
    [uxbox.http :as http]
+   [uxbox.media :as media]
    [uxbox.services.mutations :as sm]
    [uxbox.services.queries :as sq]
    [uxbox.tests.helpers :as th]
-   [uxbox.util.storage :as ust]
-   [uxbox.common.uuid :as uuid]
-   [vertx.util :as vu]))
+   [uxbox.util.storage :as ust]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest retrieve-bundle
-  (let [prof @(th/create-profile db/pool 1)
-        prof2 @(th/create-profile db/pool 2)
-        team (:default-team prof)
-        proj (:default-project prof)
+  (let [prof    (th/create-profile db/pool 1)
+        prof2   (th/create-profile db/pool 2)
+        team-id (:default-team prof)
+        proj-id (:default-project prof)
 
-        file @(th/create-file db/pool (:id prof) (:id proj) 1)
-        page @(th/create-page db/pool (:id prof) (:id file) 1)
+        file  (th/create-file db/pool (:id prof) proj-id 1)
+        page  (th/create-page db/pool (:id prof) (:id file) 1)
         token (atom nil)]
 
 

@@ -14,17 +14,15 @@
    [promesa.exec :as px]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
-   [uxbox.db :as db]
-   [uxbox.media :as media]
-   [uxbox.images :as images]
-   [uxbox.services.queries.pages :as pages]
-   [uxbox.services.queries.files :as files]
-   [uxbox.services.queries :as sq]
-   [uxbox.services.util :as su]
-   [uxbox.util.blob :as blob]
-   [uxbox.util.data :as data]
    [uxbox.common.uuid :as uuid]
-   [vertx.core :as vc]))
+   [uxbox.db :as db]
+   [uxbox.images :as images]
+   [uxbox.media :as media]
+   [uxbox.services.queries :as sq]
+   [uxbox.services.queries.files :as files]
+   [uxbox.services.queries.pages :as pages]
+   [uxbox.util.blob :as blob]
+   [uxbox.util.data :as data]))
 
 ;; --- Helpers & Specs
 
@@ -37,12 +35,12 @@
   sql:project
   "select p.id, p.name
      from project as p
-    where p.id = $1
+    where p.id = ?
       and p.deleted_at is null")
 
 (defn- retrieve-project
   [conn id]
-  (db/query-one conn [sql:project id]))
+  (db/exec-one! conn [sql:project id]))
 
 (s/def ::share-token ::us/string)
 (s/def ::viewer-bundle
@@ -52,10 +50,10 @@
 (sq/defquery ::viewer-bundle
   [{:keys [profile-id page-id share-token] :as params}]
   (db/with-atomic [conn db/pool]
-    (p/let [page (pages/retrieve-page conn page-id)
-            file (files/retrieve-file conn (:file-id page))
-            images (files/retrieve-file-images conn page)
-            project (retrieve-project conn (:project-id file))]
+    (let [page (pages/retrieve-page conn page-id)
+          file (files/retrieve-file conn (:file-id page))
+          images (files/retrieve-file-images conn page)
+          project (retrieve-project conn (:project-id file))]
       (if (string? share-token)
         (when (not= share-token (:share-token page))
           (ex/raise :type :validation

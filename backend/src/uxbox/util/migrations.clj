@@ -10,8 +10,8 @@
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [promesa.core :as p]
-   [uxbox.util.pgsql :as pg]))
+   [next.jdbc :as jdbc]))
+
 
 (s/def ::name string?)
 (s/def ::step (s/keys :req-un [::name ::desc ::fn]))
@@ -24,75 +24,57 @@
 (defn- registered?
   "Check if concrete migration is already registred."
   [pool modname stepname]
-  (let [sql "select * from migrations where module=$1 and step=$2"]
-    (-> (pg/query pool [sql modname stepname])
-        (p/then' (fn [rows]
-                   (pos? (count rows)))))))
+  (let [sql  "select * from migrations where module=? and step=?"
+        rows (jdbc/execute! pool [sql modname stepname])]
+    (pos? (count rows))))
 
 (defn- register!
   "Register a concrete migration into local migrations database."
   [pool modname stepname]
-  (let [sql "insert into migrations (module, step) values ($1, $2)"]
-    (-> (pg/query pool [sql modname stepname])
-        (p/then' (constantly nil)))))
+  (let [sql "insert into migrations (module, step) values (?, ?)"]
+    (jdbc/execute! pool [sql modname stepname])
+    nil))
 
+(defn- impl-migrate-single
+  [pool modname {:keys [name] :as migration}]
+  (letfn [(execute []
+            (register! pool modname name)
+            ((:fn migration) pool))]
+    (when-not (registered? pool modname (:name migration))
+      (log/info (str/format "applying migration %s/%s" modname name))
+      (register! pool modname name)
+      ((:fn migration) pool))))
 
-(defn- setup!
+(defn- impl-migrate
+  [conn migrations {:keys [fake] :or {fake false}}]
+  (s/assert ::migrations migrations)
+  (let [mname (:name migrations)
+        steps (:steps migrations)]
+    (jdbc/with-transaction [conn conn]
+      (run! #(impl-migrate-single conn mname %) steps))))
+
+(defprotocol IMigrationContext
+  (-migrate [_ migration options]))
+
+;; --- Public Api
+(defn setup!
   "Initialize the database if it is not initialized."
-  [pool]
+  [conn]
   (let [sql (str "create table if not exists migrations ("
                  " module text,"
                  " step text,"
                  " created_at timestamp DEFAULT current_timestamp,"
                  " unique(module, step)"
                  ");")]
-    (-> (pg/query pool sql)
-        (p/then' (constantly nil)))))
+    (jdbc/execute! conn [sql])
+    nil))
 
-(defn- impl-migrate-single
-  [pool modname {:keys [name] :as migration}]
-  (letfn [(execute []
-            (p/do! (register! pool modname name)
-                   ((:fn migration) pool)))]
-    (-> (registered? pool modname (:name migration))
-        (p/then (fn [registered?]
-                  (when-not registered?
-                    (log/info (str/format "applying migration %s/%s" modname name))
-                    (execute)))))))
-
-(defn- impl-migrate
-  [pool migrations {:keys [fake] :or {fake false}}]
-  (s/assert ::migrations migrations)
-  (let [mname (:name migrations)
-        steps (:steps migrations)]
-    ;; (println (str/format "Applying migrations for `%s`:" mname))
-    (pg/with-atomic [conn pool]
-      (p/run! #(impl-migrate-single conn mname %) steps))))
-
-(defprotocol IMigrationContext
-  (-migrate [_ migration options]))
-
-;; --- Public Api
-
-(defn context
-  "Create new instance of migration context."
-  ([pool] (context pool nil))
-  ([pool opts]
-   @(setup! pool)
-   (reify
-     java.lang.AutoCloseable
-     (close [_] #_(.close pool))
-
-     IMigrationContext
-     (-migrate [_ migration options]
-       (impl-migrate pool migration options)))))
-
-(defn migrate
+(defn migrate!
   "Main entry point for apply a migration."
-  ([ctx migrations]
-   (migrate ctx migrations nil))
-  ([ctx migrations options]
-   (-migrate ctx migrations options)))
+  ([conn migrations]
+   (migrate! conn migrations nil))
+  ([conn migrations options]
+   (impl-migrate conn migrations options)))
 
 (defn resource
   "Helper for setup migration functions
@@ -101,5 +83,5 @@
   [path]
   (fn [pool]
     (let [sql (slurp (io/resource path))]
-      (-> (pg/query pool sql)
-          (p/then' (constantly true))))))
+      (jdbc/execute! pool [sql])
+      true)))

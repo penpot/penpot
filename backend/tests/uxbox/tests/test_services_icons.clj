@@ -1,31 +1,28 @@
 (ns uxbox.tests.test-services-icons
   (:require
-   [clojure.test :as t]
-   [promesa.core :as p]
-   [datoteka.core :as fs]
    [clojure.java.io :as io]
+   [clojure.test :as t]
+   [datoteka.core :as fs]
+   [uxbox.common.uuid :as uuid]
    [uxbox.db :as db]
-   [uxbox.core :refer [system]]
    [uxbox.services.mutations :as sm]
    [uxbox.services.queries :as sq]
-   [uxbox.util.storage :as ust]
-   [uxbox.common.uuid :as uuid]
    [uxbox.tests.helpers :as th]
-   [vertx.core :as vc]))
+   [uxbox.util.storage :as ust]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest icon-libraries-crud
-  (let [id      (uuid/next)
-        prof @(th/create-profile db/pool 2)
-        team (:default-team prof)]
+  (let [id   (uuid/next)
+        prof (th/create-profile db/pool 2)
+        team-id (:default-team prof)]
 
     (t/testing "create library"
       (let [data {::sm/type :create-icon-library
                   :name "sample library"
                   :profile-id (:id prof)
-                  :team-id (:id team)
+                  :team-id team-id
                   :id id}
             out (th/try-on! (sm/handle data))]
 
@@ -34,25 +31,28 @@
 
         (let [result (:result out)]
           (t/is (= id (:id result)))
-          (t/is (= (:id team)  (:team-id result)))
+          (t/is (= team-id  (:team-id result)))
           (t/is (= (:name data) (:name result))))))
 
     (t/testing "rename library"
       (let [data {::sm/type :rename-icon-library
                   :name "renamed"
                   :profile-id (:id prof)
-                  :team-id (:id team)
+                  :team-id team-id
                   :id id}
             out (th/try-on! (sm/handle data))]
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
-        (t/is (nil? (:result out)))))
+
+        (let [result (:result out)]
+          (t/is (= id (:id result)))
+          (t/is (= "renamed" (:name result))))))
 
     (t/testing "query libraries"
       (let [data {::sq/type :icon-libraries
                   :profile-id (:id prof)
-                  :team-id (:id team)}
+                  :team-id team-id}
             out (th/try-on! (sq/handle data))]
 
         ;; (th/print-result! out)
@@ -77,7 +77,7 @@
     (t/testing "query libraries after delete"
       (let [data {::sq/type :icon-libraries
                   :profile-id (:id prof)
-                  :team-id (:id team)}
+                  :team-id team-id}
             out (th/try-on! (sq/handle data))]
 
         ;; (th/print-result! out)
@@ -88,9 +88,9 @@
     ))
 
 (t/deftest icons-crud
-  (let [prof @(th/create-profile db/pool 1)
-        team (:default-team prof)
-        coll @(th/create-icon-library db/pool (:id team) 1)
+  (let [prof    (th/create-profile db/pool 1)
+        team-id (:default-team prof)
+        coll    (th/create-icon-library db/pool team-id 1)
         icon-id (uuid/next)]
 
     (t/testing "upload icon to library"

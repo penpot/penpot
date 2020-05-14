@@ -25,13 +25,17 @@
   (-close [_] "close websocket"))
 
 (defn url
-  [path]
-  (let [url (.parse Uri cfg/url)]
-    (.setPath url path)
-    (if (= (.getScheme url) "http")
-      (.setScheme url "ws")
-      (.setScheme url "wss"))
-    (.toString url)))
+  ([path] (url path {}))
+  ([path params]
+   (let [uri (.parse Uri cfg/url)]
+     (.setPath uri path)
+     (if (= (.getScheme uri) "http")
+       (.setScheme uri "ws")
+       (.setScheme uri "wss"))
+     (run! (fn [[k v]]
+             (.setParameterValue uri (name k) (str v)))
+           params)
+     (.toString uri))))
 
 (defn open
   [uri]

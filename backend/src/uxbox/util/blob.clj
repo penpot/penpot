@@ -12,7 +12,6 @@
   page data, page options and txlog payload storage."
   (:require [uxbox.util.transit :as t])
   (:import
-   io.vertx.core.buffer.Buffer
    java.io.ByteArrayInputStream
    java.io.ByteArrayOutputStream
    java.io.DataInputStream
@@ -27,9 +26,6 @@
 (extend-protocol IDataToBytes
   (Class/forName "[B")
   (->bytes [data] data)
-
-  Buffer
-  (->bytes [data] (.getBytes ^Buffer data))
 
   String
   (->bytes [data] (.getBytes ^String data "UTF-8")))
@@ -49,8 +45,7 @@
       (.writeShort dos (short 1)) ;; version number
       (.writeInt dos (int data-len))
       (.write dos ^bytes cdata (int 0) clen)
-      (-> (.toByteArray baos)
-          (t/bytes->buffer)))))
+      (.toByteArray baos))))
 
 (declare decode-v1)
 

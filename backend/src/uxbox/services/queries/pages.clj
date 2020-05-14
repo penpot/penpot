@@ -12,12 +12,11 @@
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
    [uxbox.common.spec :as us]
+   [uxbox.common.exceptions :as ex]
    [uxbox.db :as db]
    [uxbox.services.queries :as sq]
-   [uxbox.services.util :as su]
    [uxbox.services.queries.files :as files]
-   [uxbox.util.blob :as blob]
-   [uxbox.util.sql :as sql]))
+   [uxbox.util.blob :as blob]))
 
 ;; --- Helpers & Specs
 
@@ -27,8 +26,6 @@
 (s/def ::profile-id ::us/uuid)
 (s/def ::project-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
-
-
 
 ;; --- Query: Pages (By File ID)
 
@@ -46,16 +43,14 @@
 (def ^:private sql:pages
   "select p.*
      from page as p
-    where p.file_id = $1
+    where p.file_id = ?
       and p.deleted_at is null
     order by p.created_at asc")
 
 (defn- retrieve-pages
   [conn {:keys [profile-id file-id] :as params}]
-  (-> (db/query conn [sql:pages file-id])
-      (p/then (partial mapv decode-row))))
-
-
+  (->> (db/exec! conn [sql:pages file-id])
+       (mapv decode-row)))
 
 ;; --- Query: Single Page (By ID)
 
@@ -66,20 +61,20 @@
 
 (sq/defquery ::page
   [{:keys [profile-id id] :as params}]
-  (db/with-atomic [conn db/pool]
-    (p/let [page (retrieve-page conn id)]
+  (with-open [conn (db/open)]
+    (let [page (retrieve-page conn id)]
       (files/check-edition-permissions! conn profile-id (:file-id page))
       page)))
 
 (def ^:private sql:page
-  "select p.* from page as p where id=$1")
+  "select p.* from page as p where id=?")
 
 (defn retrieve-page
   [conn id]
-  (-> (db/query-one conn [sql:page id])
-      (p/then' su/raise-not-found-if-nil)
-      (p/then' decode-row)))
-
+  (let [row (db/exec-one! conn [sql:page id])]
+    (when-not row
+      (ex/raise :type :not-found))
+    (decode-row row)))
 
 ;; --- Query: Page Changes
 
@@ -90,10 +85,10 @@
           pc.changes,
           pc.revn
      from page_change as pc
-    where pc.page_id=$1
+    where pc.page_id=?
     order by pc.revn asc
-    limit $2
-   offset $3")
+    limit ?
+   offset ?")
 
 
 (s/def ::skip ::us/integer)
@@ -104,14 +99,14 @@
 
 (defn retrieve-page-changes
   [conn id skip limit]
-  (-> (db/query conn [sql:page-changes id limit skip])
-      (p/then' #(mapv decode-row %))))
+  (->> (db/exec! conn [sql:page-changes id limit skip])
+       (mapv decode-row)))
 
 (sq/defquery ::page-changes
   [{:keys [profile-id id skip limit]}]
   (when *assert*
-    (-> (db/query db/pool [sql:page-changes id limit skip])
-        (p/then' #(mapv decode-row %)))))
+    (-> (db/exec! db/pool [sql:page-changes id limit skip])
+        (mapv decode-row))))
 
 
 ;; --- Helpers

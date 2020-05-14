@@ -12,15 +12,12 @@
   (:require
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
-   [promesa.core :as p]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.db :as db]
    [uxbox.media :as media]
-   [uxbox.util.storage :as ust]
-   [vertx.util :as vu]))
+   [uxbox.util.storage :as ust]))
 
-(declare select-profile)
 (declare delete-profile-data)
 (declare delete-teams)
 (declare delete-files)
@@ -34,38 +31,32 @@
   [{:keys [props] :as task}]
   (us/verify ::props props)
   (db/with-atomic [conn db/pool]
-    (-> (select-profile conn (:profile-id props))
-        (p/then (fn [profile]
-                  (if (or (:is-demo profile)
-                          (not (nil? (:deleted-at profile))))
-                    (delete-profile-data conn (:id profile))
-                    (log/warn "Profile " (:id profile)
-                              "does not match constraints for deletion")))))))
+    (let [id (:profile-id props)
+          profile (db/get-by-id conn :profile id {:for-update true})]
+      (if (or (:is-demo profile)
+              (not (nil? (:deleted-at profile))))
+        (delete-profile-data conn (:id profile))
+        (log/warn "Profile " (:id profile)
+                  "does not match constraints for deletion")))))
 
 (defn- delete-profile-data
   [conn profile-id]
   (log/info "Proceding to delete all data related to profile" profile-id)
-  (p/do!
-   (delete-teams conn profile-id)
-   (delete-files conn profile-id)
-   (delete-profile conn profile-id)))
+  (delete-teams conn profile-id)
+  (delete-files conn profile-id)
+  (delete-profile conn profile-id))
 
 (def ^:private sql:select-profile
   "select id, is_demo, deleted_at
      from profile
-    where id=$1 for update")
-
-(defn- select-profile
-  [conn profile-id]
-  (db/query-one conn [sql:select-profile profile-id]))
-
+    where id=? for update")
 
 (def ^:private sql:remove-owned-teams
   "with teams as (
      select distinct
             tpr.team_id as id
        from team_profile_rel as tpr
-      where tpr.profile_id = $1
+      where tpr.profile_id = ?
         and tpr.is_owner is true
    ), to_delete_teams as (
      select tpr.team_id as id
@@ -80,8 +71,7 @@
 
 (defn- delete-teams
   [conn profile-id]
-  (-> (db/query-one conn [sql:remove-owned-teams profile-id])
-      (p/then' (constantly nil))))
+  (db/exec-one! conn [sql:remove-owned-teams profile-id]))
 
 (def ^:private sql:remove-owned-files
   "with files_to_delete as (
@@ -89,7 +79,7 @@
             fpr.file_id as id
        from file_profile_rel as fpr
       inner join file as f on (fpr.file_id = f.id)
-      where fpr.profile_id = $1
+      where fpr.profile_id = ?
         and fpr.is_owner is true
         and f.project_id is null
    )
@@ -99,12 +89,8 @@
 
 (defn- delete-files
   [conn profile-id]
-  (-> (db/query-one conn [sql:remove-owned-files profile-id])
-      (p/then' (constantly nil))))
+  (db/exec-one! conn [sql:remove-owned-files profile-id]))
 
 (defn delete-profile
   [conn profile-id]
-  (let [sql "delete from profile where id=$1"]
-    (-> (db/query conn [sql profile-id])
-        (p/then' (constantly profile-id)))))
-
+  (db/delete! conn :profile {:id profile-id}))

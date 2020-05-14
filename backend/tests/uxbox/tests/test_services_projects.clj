@@ -13,8 +13,8 @@
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest projects-crud
-  (let [prof @(th/create-profile db/pool 1)
-        team @(th/create-team db/pool (:id prof) 1)
+  (let [prof (th/create-profile db/pool 1)
+        team (th/create-team db/pool (:id prof) 1)
         project-id (uuid/next)]
 
     (t/testing "create a project"
@@ -51,7 +51,6 @@
             out  (th/try-on! (sm/handle data))]
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
-
         (let [result (:result out)]
           (t/is (= (:id data) (:id result)))
           (t/is (= (:name data) (:name result)))
