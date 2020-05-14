@@ -24,7 +24,6 @@
   (let [selected @refs/selected-shapes
         selected? (contains? selected id)
         drawing? @refs/selected-drawing-tool
-        options-mode @refs/options-mode
         button (.-which (.-nativeEvent event))]
     (when-not (:blocked shape)
       (cond
@@ -37,9 +36,7 @@
         (= type :frame)
         (when selected?
           (dom/stop-propagation event)
-          (if (= options-mode :design)
-            (st/emit! (dw/start-move-selected))
-            (st/emit! (dw/start-create-interaction))))
+          (st/emit! (dw/start-move-selected)))))
 
         :else
         (do
@@ -48,9 +45,7 @@
             (when-not (or (empty? selected) (kbd/shift? event))
               (st/emit! dw/deselect-all))
             (st/emit! (dw/select-shape id)))
-          (if (= options-mode :design)
-            (st/emit! (dw/start-move-selected))
-            (st/emit! (dw/start-create-interaction))))))))
+          (st/emit! (dw/start-move-selected)))))
 
 (defn on-context-menu
   [event shape]

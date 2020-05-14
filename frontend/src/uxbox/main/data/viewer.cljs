@@ -208,7 +208,7 @@
     (watch [_ state stream]
       (let [stopper (rx/filter (ptk/type? ::flash-interactions) stream)]
         (->> (rx/of flash-done)
-             (rx/delay 1000)
+             (rx/delay 500)
              (rx/take-until stopper))))))
 
 (def flash-done
