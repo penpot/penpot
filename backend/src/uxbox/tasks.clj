@@ -23,14 +23,6 @@
    [uxbox.tasks.impl :as impl]
    [uxbox.util.time :as dt]))
 
-;; --- Public API
-
-(defn schedule!
-  ([opts] (schedule! db/pool opts))
-  ([conn opts]
-   (s/assert ::impl/task-options opts)
-   (impl/schedule! conn opts)))
-
 ;; --- State initialization
 
 ;; TODO: missing self maintanance task; when the queue table is full
@@ -47,6 +39,14 @@
 (defstate worker
   :start (impl/start-worker! {:tasks tasks})
   :stop (impl/stop! worker))
+
+;; --- Public API
+
+(defn schedule!
+  ([opts] (schedule! db/pool opts))
+  ([conn opts]
+   (s/assert ::impl/task-options opts)
+   (impl/schedule! conn opts)))
 
 ;; (defstate scheduler
 ;;   :start (impl/start-scheduler! tasks)

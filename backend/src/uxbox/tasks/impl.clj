@@ -153,9 +153,7 @@
 (defn start-worker!
   [options]
   (let [stop (a/chan)]
-    (a/go
-      (a/<! (start-worker-eventloop! (assoc options ::stop stop)))
-      (log/info "STOPING"))
+    (start-worker-eventloop! (assoc options ::stop stop))
     (->Worker stop)))
 
 (defn stop!
