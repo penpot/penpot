@@ -189,6 +189,22 @@
              (when (= 2 (.-which event))
                (st/emit! ::finish-positioning)))))
 
+        on-pointer-down
+        (mf/use-callback
+          (fn [event]
+           (let [target (dom/get-target event)]
+             ; Capture mouse pointer to detect the movements even if cursor
+             ; leaves the viewport or the browser itself
+             ; https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture
+             (.setPointerCapture target (.-pointerId event)))))
+
+        on-pointer-up
+        (mf/use-callback
+          (fn [event]
+           (let [target (dom/get-target event)]
+             ; Release pointer on mouse up
+             (.releasePointerCapture target (.-pointerId event)))))
+
         on-click
         (mf/use-callback
          (fn [event]
@@ -352,6 +368,8 @@
       :on-double-click on-double-click
       :on-mouse-down on-mouse-down
       :on-mouse-up on-mouse-up
+      :on-pointer-down on-pointer-down
+      :on-pointer-up on-pointer-up
       :on-drag-over on-drag-over
       :on-drop on-drop}
      [:g
