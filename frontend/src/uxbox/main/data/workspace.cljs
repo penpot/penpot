@@ -197,7 +197,6 @@
 
 (defn initialize-viewport
   [{:keys [width height] :as size}]
-  (js/console.log "initialize-viewport" size)
   (ptk/reify ::initialize-viewport
     ptk/UpdateEvent
     (update [_ state]
@@ -208,11 +207,7 @@
                     (update :vbox (fn [vbox]
                                     (if (nil? vbox)
                                       (assoc size :x 0 :y 0)
-                                      vbox)))))))
-
-    ptk/WatchEvent
-    (watch [_ state stream]
-      #_(rx/of zoom-to-fit-all))))
+                                      vbox)))))))))
 
 (defn update-viewport-position
   [{:keys [x y] :or {x identity y identity}}]
