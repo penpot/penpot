@@ -33,6 +33,7 @@
    [uxbox.main.ui.workspace.snap-feedback :refer [snap-feedback]]
    [uxbox.util.math :as mth]
    [uxbox.util.dom :as dom]
+   [uxbox.util.object :as obj]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.perf :as perf]
    [uxbox.common.uuid :as uuid])
@@ -162,10 +163,7 @@
 
                (and (not edition)
                     (= 2 (.-which event)))
-               (handle-viewport-positioning viewport-ref)
-
-               :else
-               (js/console.log "on-mouse-down" event)))))
+               (handle-viewport-positioning viewport-ref)))))
 
         on-context-menu
         (mf/use-callback
@@ -234,10 +232,13 @@
                  shift? (kbd/shift? event)
                  opts {:key key
                        :shift? shift?
-                       :ctrl? ctrl?}]
+                       :ctrl? ctrl?}
+                 target (dom/get-target event)]
+
              (when-not (.-repeat bevent)
                (st/emit! (ms/->KeyboardEvent :down key ctrl? shift?))
-               (when (kbd/space? event)
+               (when (and (kbd/space? event)
+                          (not= "rich-text" (obj/get target "className")))
                  (handle-viewport-positioning viewport-ref))))))
 
         on-key-up

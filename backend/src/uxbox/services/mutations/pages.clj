@@ -21,8 +21,10 @@
    [uxbox.services.queries.files :as files]
    [uxbox.services.queries.pages :refer [decode-row]]
    [uxbox.tasks :as tasks]
+   [uxbox.redis :as redis]
    [uxbox.util.blob :as blob]
-   [uxbox.util.time :as dt]))
+   [uxbox.util.time :as dt]
+   [uxbox.util.transit :as t]))
 
 ;; --- Helpers & Specs
 
@@ -148,9 +150,10 @@
 (s/def ::changes
   (s/coll-of map? :kind vector?))
 
+(s/def ::session-id ::us/uuid)
 (s/def ::revn ::us/integer)
 (s/def ::update-page
-  (s/keys :req-un [::id ::profile-id ::revn ::changes]))
+  (s/keys :req-un [::id ::session-id ::profile-id ::revn ::changes]))
 
 (declare update-page)
 (declare retrieve-lagged-changes)
@@ -172,7 +175,9 @@
               :hint "The incoming revision number is greater that stored version."
               :context {:incoming-revn (:revn params)
                         :stored-revn (:revn page)}))
-  (let [changes  (:changes params)
+  (let [sid      (:session-id params)
+        changes  (->> (:changes params)
+                      (mapv #(assoc % :session-id sid)))
         data (-> (:data page)
                  (blob/decode)
                  (cp/process-changes changes)
@@ -183,7 +188,16 @@
                     :revn (inc (:revn page))
                     :changes (blob/encode changes))
 
-        chng (insert-page-change! conn page)]
+        chng (insert-page-change! conn page)
+        msg  {:type :page-change
+              :profile-id (:profile-id params)
+              :page-id (:id page)
+              :session-id sid
+              :revn (:revn page)
+              :changes changes}]
+
+    @(redis/run! :publish {:channel (str (:file-id page))
+                           :message (t/encode-str msg)})
 
     (db/update! conn :page
                 {:revn (:revn page)
@@ -191,13 +205,6 @@
                 {:id (:id page)})
 
     (retrieve-lagged-changes conn chng params)))
-
-;; (p/do! (ve/publish! uxbox.core/system topic
-;;                     {:type :page-change
-;;                      :profile-id (:profile-id params)
-;;                      :page-id (:page-id s)
-;;                      :revn (:revn s)
-;;                      :changes changes})
 
 (defn- insert-page-change!
   [conn {:keys [revn data changes] :as page}]
