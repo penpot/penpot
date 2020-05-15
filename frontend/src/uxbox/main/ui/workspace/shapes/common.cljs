@@ -36,7 +36,7 @@
         (= type :frame)
         (when selected?
           (dom/stop-propagation event)
-          (st/emit! (dw/start-move-selected)))))
+          (st/emit! (dw/start-move-selected)))
 
         :else
         (do
@@ -45,7 +45,7 @@
             (when-not (or (empty? selected) (kbd/shift? event))
               (st/emit! dw/deselect-all))
             (st/emit! (dw/select-shape id)))
-          (st/emit! (dw/start-move-selected)))))
+          (st/emit! (dw/start-move-selected)))))))
 
 (defn on-context-menu
   [event shape]
