@@ -12,17 +12,7 @@
    [cljs.spec.alpha :as s]
    [clojure.set :as set]
    [uxbox.util.geom.shapes :as gsh]
-   [uxbox.util.geom.point :as gpt]
-   [uxbox.util.geom.layout :as gla]))
-
-(defn- layout-rect-snaps [{:keys [x y width height]}]
-  #{(gpt/point x y)
-    (gpt/point (+ x width) y)
-    (gpt/point (+ x width) (+ y height))
-    (gpt/point x (+ y height))})
-
-(defn- layout-snap-points [frame {:keys [type] :as layout}]
-  (mapcat layout-rect-snaps (gla/layout-rects frame layout)))
+   [uxbox.util.geom.point :as gpt]))
 
 (defn- frame-snap-points [{:keys [x y width height layouts] :as frame}]
   (into #{(gpt/point x y)
@@ -32,11 +22,7 @@
           (gpt/point (+ x width) (+ y height))
           (gpt/point (+ x (/ width 2)) (+ y height))
           (gpt/point x (+ y height))
-          (gpt/point x (+ y (/ height 2)))}
-        (->>
-         layouts
-         (filter #(and (not= :grid (:type %)) (:display %)))
-         (mapcat #(layout-snap-points frame %)))))
+          (gpt/point x (+ y (/ height 2)))}))
 
 (defn shape-snap-points
   [shape]

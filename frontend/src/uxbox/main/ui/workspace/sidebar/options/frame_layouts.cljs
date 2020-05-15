@@ -12,7 +12,9 @@
    [rumext.alpha :as mf]
    [uxbox.util.dom :as dom]
    [uxbox.util.data :as d]
+   [uxbox.common.data :refer [parse-integer]]
    [uxbox.main.store :as st]
+   [uxbox.main.refs :as refs]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.ui.icons :as i]
    [uxbox.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
@@ -29,27 +31,8 @@
      [:div.advanced-options {}
       children]]))
 
-(defonce ^:private default-params
-  {:square {:size 16
-            :color {:value "#59B9E2"
-                    :opacity 0.9}}
-
-   :column {:size 12
-            :type :stretch
-            :item-width nil
-            :gutter 8
-            :margin 0
-            :color {:value "#DE4762"
-                    :opacity 0.1}}
-   :row {:size 12
-         :type :stretch
-         :item-height nil
-         :gutter 8
-         :margin 0
-         :color {:value "#DE4762"
-                 :opacity 0.1}}})
-
-(mf/defc layout-options [{:keys [layout on-change on-remove]}]
+(mf/defc layout-options [{:keys [layout default-layout-params on-change on-remove]}]
+  (prn "(render) layout" layout)
   (let [state (mf/use-state {:show-advanced-options false
                              :changes {}})
         {:keys [type display params] :as layout} (d/deep-merge layout (:changes @state))
@@ -61,17 +44,18 @@
                       18 12 10 8 6 4 3 2]
 
         emit-changes! (fn [update-fn]
-                       (swap! state update :changes update-fn)
-                       (when on-change (on-change (d/deep-merge layout (-> @state :changes update-fn)))))
+                        (swap! state update :changes update-fn)
+                        (prn "(event) layout" (d/deep-merge layout (-> @state :changes update-fn)))
+                        (when on-change (on-change (d/deep-merge layout (-> @state :changes update-fn)))))
 
         handle-toggle-visibility (fn [event]
-                                   (emit-changes! #(update % :display not)))
+                                   (emit-changes! (fn [changes] (update changes :display #(if (nil? %) false (not %))))))
 
         handle-remove-layout (fn [event]
                                (when on-remove (on-remove)))
 
         handle-change-type (fn [type]
-                             (let [defaults (type default-params)
+                             (let [defaults (type default-layout-params)
                                    params (merge
                                            defaults
                                            (select-keys (keys defaults) (-> @state :changes params)))
@@ -85,7 +69,7 @@
         handle-change-event (fn [& keys]
                               (fn [event]
                                 (let [change-fn (apply handle-change keys)]
-                                  (-> event dom/get-target dom/get-value change-fn))))
+                                  (-> event dom/get-target dom/get-value parse-integer change-fn))))
         ]
 
     [:div.grid-option
@@ -169,20 +153,45 @@
        [:button.btn-options "Use default"]
        [:button.btn-options "Set as default"]]]]))
 
+(defonce ^:private default-layout-params
+  {:square {:size 16
+            :color {:value "#59B9E2"
+                    :opacity 0.9}}
+
+   :column {:size 12
+            :type :stretch
+            :item-width nil
+            :gutter 8
+            :margin 0
+            :color {:value "#DE4762"
+                    :opacity 0.1}}
+   :row {:size 12
+         :type :stretch
+         :item-height nil
+         :gutter 8
+         :margin 0
+         :color {:value "#DE4762"
+                 :opacity 0.1}}})
+
 (mf/defc frame-layouts [{:keys [shape]}]
   (let [id (:id shape)
+        default-layout-params (merge default-layout-params (mf/deref refs/workspace-saved-layouts))
         handle-create-layout #(st/emit! (dw/add-frame-layout id))
         handle-remove-layout (fn [index] #(st/emit! (dw/remove-frame-layout id index)))
-        handle-edit-layout (fn [index] #(st/emit! (dw/set-frame-layout id index %)))]
+        handle-edit-layout (fn [index] #(st/emit! (dw/set-frame-layout id index %)))
+        handle-save-layout (fn [layout] (st/emit! (dw/set-default-layout (:type layout) (:params layout))))]
     [:div.element-set
      [:div.element-set-title
       [:span "Grid & Layout"]
       [:div.add-page {:on-click handle-create-layout} i/close]]
 
-     [:div.element-set-content
-      (for [[index layout] (map-indexed vector (:layouts shape))]
-        [:& layout-options {:key (str (:id shape) "-" index)
-                            :layout layout
-                            :on-change (handle-edit-layout index)
-                            :on-remove (handle-remove-layout index)}])]]))
+     (when (not (empty? (:layouts shape)))
+       [:div.element-set-content
+        (for [[index layout] (map-indexed vector (:layouts shape))]
+          [:& layout-options {:key (str (:id shape) "-" index)
+                              :layout layout
+                              :default-layout-params default-layout-params
+                              :on-change (handle-edit-layout index)
+                              :on-remove (handle-remove-layout index)
+                              :on-save-layout handle-save-layout}])])]))
 

@@ -42,6 +42,12 @@
 (def workspace-page
   (l/derived :workspace-page st/state))
 
+(def workspace-page-options
+  (l/derived :options workspace-page))
+
+(def workspace-saved-layouts
+  (l/derived :saved-layouts workspace-page-options))
+
 (def workspace-page-id
   (l/derived :id workspace-page))
 
@@ -70,6 +76,9 @@
 
 (def workspace-objects
   (l/derived :objects workspace-data))
+
+(def workspace-frames
+  (l/derived cp/select-frames workspace-objects))
 
 (defn object-by-id
   [id]

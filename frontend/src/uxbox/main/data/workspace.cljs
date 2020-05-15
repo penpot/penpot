@@ -66,7 +66,8 @@
     :layers
     :element-options
     :rules
-    :dynamic-alignment})
+    :dynamic-alignment
+    :layouts})
 
 (s/def ::options-mode #{:design :prototype})
 
@@ -1524,6 +1525,17 @@
         (->
          state
          (assoc-in [:workspace-data pid :objects frame-id :layouts index] data))))))
+
+(defn set-default-layout [type params]
+  (ptk/reify ::set-default-layout
+    dwc/IBatchedChange
+
+    ;; TODO: Save into the backend
+    ptk/UpdateEvent
+    (update [_ state]
+      (->
+       state
+       (assoc-in [:workspace-page :options :saved-layouts type] params)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports

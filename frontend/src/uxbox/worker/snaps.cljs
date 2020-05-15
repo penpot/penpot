@@ -14,7 +14,8 @@
    [uxbox.common.pages :as cp]
    [uxbox.worker.impl :as impl]
    [uxbox.util.range-tree :as rt]
-   [uxbox.util.geom.snap-points :as snap]))
+   [uxbox.util.geom.snap-points :as snap]
+   [uxbox.util.geom.layout :as gla]))
 
 (defonce state (l/atom {}))
 
@@ -23,8 +24,11 @@
   [shapes coord]
   (let [process-shape (fn [coord]
                         (fn [shape]
-                          (let [points (snap/shape-snap-points shape)]
-                            (map #(vector % (:id shape)) points))))
+                          (concat
+                           (let [points (snap/shape-snap-points shape)]
+                             (map #(vector % (:id shape)) points))
+                           (let [points (gla/layout-snap-points shape coord)]
+                             (map #(vector % :layout) points)))))
         into-tree (fn [tree [point _ :as data]]
                     (rt/insert tree (coord point) data))]
     (->> shapes

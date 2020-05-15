@@ -575,6 +575,10 @@
         height: 1rem;
         fill: $color-gray-20;
     }
+
+    &:hover svg, &.is-active svg {
+        fill: $color-primary;
+    }
 }
 
 .element-set-content .input-row {

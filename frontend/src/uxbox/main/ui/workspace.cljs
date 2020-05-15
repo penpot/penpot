@@ -73,7 +73,8 @@
        [:& viewport {:page page
                      :key (:id page)
                      :file file
-                     :local local}]]]
+                     :local local
+                     :layout layout}]]]
 
      [:& left-toolbar {:page page :layout layout}]
 

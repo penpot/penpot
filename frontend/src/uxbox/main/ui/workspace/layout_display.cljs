@@ -11,13 +11,15 @@
   (:require
    [rumext.alpha :as mf]
    [uxbox.main.refs :as refs]
+   [uxbox.common.pages :as cp]
+   [uxbox.util.geom.shapes :as gsh]
    [uxbox.util.geom.layout :as ula]))
 
 (mf/defc grid-layout [{:keys [frame zoom layout] :as props}]
   (let [{:keys [color size] :as params} (-> layout :params)
-        {color-value :value color-opacity :opacity} color
+        {color-value :value color-opacity :opacity} (-> layout :params :color)
         {frame-width :width frame-height :height :keys [x y]} frame]
-    [:g.grid
+    [:g.layout
      [:*
       (for [xs (range size frame-width size)]
         [:line {:key (str (:id frame) "-y-" xs)
@@ -38,20 +40,20 @@
                         :stroke-opacity color-opacity
                         :stroke-width (str (/ 1 zoom))}}])]]))
 
-(mf/defc flex-layout [{:keys [frame zoom layout]}]
+(mf/defc flex-layout [{:keys [key frame zoom layout]}]
   (let [{color-value :value color-opacity :opacity} (-> layout :params :color)]
-    (for [{:keys [x y width height]} (ula/layout-rects frame layout)]
-      [:rect {:x x
-              :y y
-              :width width
-              :height height
-              :style {:pointer-events "none"
-                      :fill color-value
-                      :opacity color-opacity}}])))
+    [:g.layout
+     (for [{:keys [x y width height]} (ula/layout-rects frame layout)]
+       [:rect {:key (str key "-" x "-" y)
+               :x x
+               :y y
+               :width width
+               :height height
+               :style {:fill color-value
+                       :opacity color-opacity}}])]))
 
-(mf/defc layout-display [{:keys [frame]}]
-  (let [zoom (mf/deref refs/selected-zoom)
-        layouts (:layouts frame)]
+(mf/defc layout-display-frame [{:keys [frame zoom]}]
+  (let [layouts (:layouts frame)]
     (for [[index {:keys [type display] :as layout}] (map-indexed vector layouts)]
       (let [props #js {:key (str (:id frame) "-layout-" index)
                        :frame frame
@@ -62,3 +64,12 @@
             :square [:> grid-layout props]
             :column [:> flex-layout props]
             :row    [:> flex-layout props]))))))
+
+
+(mf/defc layout-display [{:keys [zoom]}]
+  (let [frames (mf/deref refs/workspace-frames)]
+    [:g.layout-display {:style {:pointer-events "none"}}
+     (for [frame frames]
+       [:& layout-display-frame {:key (str "layout-" (:id frame))
+                                 :zoom zoom
+                                 :frame (gsh/transform-shape frame)}])]))

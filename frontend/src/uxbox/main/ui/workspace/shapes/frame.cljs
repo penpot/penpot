@@ -22,8 +22,7 @@
    [uxbox.util.geom.shapes :as geom]
    [uxbox.util.dom :as dom]
    [uxbox.main.streams :as ms]
-   [uxbox.util.timers :as ts]
-   [uxbox.main.ui.workspace.layout-display :refer [layout-display]]))
+   [uxbox.util.timers :as ts]))
 
 (defn- frame-wrapper-factory-equals?
   [np op]
@@ -105,6 +104,5 @@
             (:name shape)]
            [:& frame-shape
             {:shape shape
-             :childs childs}]
-           [:& layout-display {:frame shape}]])))))
+             :childs childs}]])))))
 

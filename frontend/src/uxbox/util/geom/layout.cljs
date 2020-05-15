@@ -7,7 +7,9 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns uxbox.util.geom.layout)
+(ns uxbox.util.geom.layout
+  (:require
+   [uxbox.util.geom.point :as gpt]))
 
 (defn calculate-column-layout [{:keys [width height x y] :as frame} {:keys [size gutter margin item-width type] :as params}]
   (let [parts (/ width size)
@@ -20,7 +22,7 @@
         gutter (if (= :stretch type) (/ (- width (* item-width size) (* margin 2)) (dec size)) gutter)
         next-x (fn [cur-val] (+ initial-offset x (* (+ item-width gutter) cur-val)))
         next-y (fn [cur-val] y)]
-    [item-width item-height next-x next-y]))
+    [size item-width item-height next-x next-y]))
 
 (defn calculate-row-layout [{:keys [width height x y] :as frame} {:keys [size gutter margin item-height type] :as params}]
   (let [{:keys [width height x y]} frame
@@ -34,16 +36,51 @@
         gutter (if (= :stretch type) (/ (- height (* item-height size) (* margin 2)) (dec size)) gutter)
         next-x (fn [cur-val] x)
         next-y (fn [cur-val] (+ initial-offset y (* (+ item-height gutter) cur-val)))]
-    [item-width item-height next-x next-y]))
+    [size item-width item-height next-x next-y]))
+
+(defn calculate-grid-layout [{:keys [width height x y] :as frame} {:keys [size] :as params}]
+  (let [col-size (quot width size)
+        row-size (quot height size)
+        as-row-col (fn [value] [(quot value col-size) (rem value col-size)])
+        next-x (fn [cur-val]
+                 (let [[_ col] (as-row-col cur-val)] (+ x (* col size))))
+        next-y (fn [cur-val]
+                 (let [[row _] (as-row-col cur-val)] (+ y (* row size))))]
+    [(* col-size row-size) size size next-x next-y]))
 
 (defn layout-rects [frame layout]
-  (let [[item-width item-height next-x next-y]
-        (case (-> layout :type)
-          :column (calculate-column-layout frame (-> layout :params))
-          :row (calculate-row-layout frame (-> layout :params)))]
+  (let [layout-fn (case (-> layout :type)
+                    :column calculate-column-layout
+                    :row calculate-row-layout
+                    :square calculate-grid-layout)
+        [num-items item-width item-height next-x next-y] (layout-fn frame (-> layout :params))]
     (->>
-     (range 0 (-> layout :params :size))
+     (range 0 num-items)
      (map #(hash-map :x (next-x %)
                      :y (next-y %)
                      :width item-width
                      :height item-height)))))
+
+(defn- layout-rect-points [{:keys [x y width height]}]
+  [(gpt/point x y)
+   (gpt/point (+ x width) y)
+   (gpt/point (+ x width) (+ y height))
+   (gpt/point x (+ y height))])
+
+(defn- layout-snap-points
+  ([shape coord] (mapcat #(layout-snap-points shape % coord) (:layouts shape)))
+  ([shape {:keys [type display params] :as layout} coord]
+
+   (case type
+     :square (let [{:keys [x y width height]} shape
+                   size (-> params :size)]
+               (if (= coord :x)
+                 (mapcat #(vector (gpt/point (+ x %) y)
+                                  (gpt/point (+ x %) (+ y height))) (range size width size))
+                 (mapcat #(vector (gpt/point x (+ y %))
+                                  (gpt/point (+ x width) (+ y %))) (range size height size))))
+     :column (when (= coord :x) (->> (layout-rects shape layout)
+                                     (mapcat layout-rect-points)))
+
+     :row (when (= coord :y) (->> (layout-rects shape layout)
+                                  (mapcat layout-rect-points))))))
