@@ -242,9 +242,9 @@
       (files/check-edition-permissions! conn profile-id (:file-id page))
 
       ;; Schedule object deletion
-      (tasks/schedule! conn {:name "delete-object"
-                             :delay cfg/default-deletion-delay
-                             :props {:id id :type :page}})
+      (tasks/submit! conn {:name "delete-object"
+                           :delay cfg/default-deletion-delay
+                           :props {:id id :type :page}})
 
       (db/update! conn :page
                   {:deleted-at (dt/now)}

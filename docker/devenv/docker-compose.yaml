@@ -38,7 +38,6 @@ services:
       - 9090:9090
 
     environment:
-      - CLOJURE_OPTS=-J-XX:-OmitStackTraceInFastThrow
       - UXBOX_DATABASE_URI=postgresql://postgres/uxbox
       - UXBOX_DATABASE_USERNAME=uxbox
       - UXBOX_DATABASE_PASSWORD=uxbox

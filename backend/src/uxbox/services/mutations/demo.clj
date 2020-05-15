@@ -38,8 +38,8 @@
                                         :password password})
 
       ;; Schedule deletion of the demo profile
-      (tasks/schedule! conn {:name "delete-profile"
-                             :delay cfg/default-deletion-delay
-                             :props {:profile-id id}})
+      (tasks/submit! conn {:name "delete-profile"
+                           :delay cfg/default-deletion-delay
+                           :props {:profile-id id}})
       {:email email
        :password password})))

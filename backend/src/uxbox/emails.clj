@@ -41,9 +41,9 @@
                    :reply-to (:sendmail-reply-to cfg/config)}
          data (merge defaults context)
          email (email-factory data)]
-     (tasks/schedule! conn {:name "sendmail"
-                            :delay 0
-                            :props email}))))
+     (tasks/submit! conn {:name "sendmail"
+                          :delay 0
+                          :props email}))))
 
 ;; --- Emails
 

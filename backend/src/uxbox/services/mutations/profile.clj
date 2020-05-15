@@ -155,8 +155,8 @@
       ;; Schedule deletion of old photo
       (when (and (string? (:photo profile))
                  (not (str/blank? (:photo profile))))
-        (tasks/schedule! conn {:name "remove-media"
-                               :props {:path (:photo profile)}}))
+        (tasks/submit! conn {:name "remove-media"
+                             :props {:path (:photo profile)}}))
       ;; Save new photo
       (update-profile-photo conn profile-id photo))))
 
@@ -363,9 +363,9 @@
     (check-teams-ownership! conn profile-id)
 
     ;; Schedule a complete deletion of profile
-    (tasks/schedule! conn {:name "delete-profile"
-                           :delay (dt/duration {:hours 48})
-                           :props {:profile-id profile-id}})
+    (tasks/submit! conn {:name "delete-profile"
+                         :delay (dt/duration {:hours 48})
+                         :props {:profile-id profile-id}})
 
     (db/update! conn :profile
                 {:deleted-at (dt/now)}

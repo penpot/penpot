@@ -17,11 +17,21 @@
    [uxbox.config :as cfg]
    [uxbox.db :as db]
    [uxbox.tasks.sendmail]
+   [uxbox.tasks.gc]
    [uxbox.tasks.remove-media]
    [uxbox.tasks.delete-profile]
    [uxbox.tasks.delete-object]
    [uxbox.tasks.impl :as impl]
-   [uxbox.util.time :as dt]))
+   [uxbox.util.time :as dt])
+  (:import
+   java.util.concurrent.ScheduledExecutorService
+   java.util.concurrent.Executors))
+
+;; --- Scheduler Executor Initialization
+
+(defstate scheduler
+  :start (Executors/newScheduledThreadPool (int 1))
+  :stop (.shutdownNow ^ScheduledExecutorService scheduler))
 
 ;; --- State initialization
 
@@ -36,33 +46,25 @@
    "remove-media" #'uxbox.tasks.remove-media/handler
    "sendmail" #'uxbox.tasks.sendmail/handler})
 
+(def ^:private schedule
+  [{:id "remove-deleted-media"
+    :cron (dt/cron "1 1 */1 * * ? *")
+    :fn #'uxbox.tasks.gc/remove-media}])
+
 (defstate worker
-  :start (impl/start-worker! {:tasks tasks})
+  :start (impl/start-worker! {:tasks tasks
+                              :xtor scheduler})
+  :stop (impl/stop! worker))
+
+(defstate scheduler-worker
+  :start (impl/start-scheduler-worker! {:schedule schedule
+                                        :xtor scheduler})
   :stop (impl/stop! worker))
 
 ;; --- Public API
 
-(defn schedule!
-  ([opts] (schedule! db/pool opts))
+(defn submit!
+  ([opts] (submit! db/pool opts))
   ([conn opts]
    (s/assert ::impl/task-options opts)
-   (impl/schedule! conn opts)))
-
-;; (defstate scheduler
-;;   :start (impl/start-scheduler! tasks)
-;;   :stop (impl/stop! tasks-worker))
-
-;; :start (as-> (impl/worker-verticle {:tasks tasks}) $$
-;;          (vc/deploy! system $$ {:instances 1})
-;;          (deref $$)))
-
-;; (def ^:private schedule
-;;   [{:id "every 1 hour"
-;;     :cron (dt/cron "1 1 */1 * * ? *")
-;;     :fn #'uxbox.tasks.gc/handler
-;;     :props {:foo 1}}])
-
-;; (defstate scheduler
-;;   :start (as-> (impl/scheduler-verticle {:schedule schedule}) $$
-;;            (vc/deploy! system $$ {:instances 1 :worker true})
-;;            (deref $$)))
+   (impl/submit! conn opts)))

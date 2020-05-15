@@ -6,6 +6,7 @@
 
 (ns uxbox.db
   (:require
+   [clojure.data.json :as json]
    [clojure.string :as str]
    [clojure.tools.logging :as log]
    [lambdaisland.uri :refer [uri]]
@@ -20,6 +21,7 @@
    [uxbox.config :as cfg]
    [uxbox.util.data :as data])
   (:import
+   org.postgresql.util.PGobject
    com.zaxxer.hikari.HikariConfig
    com.zaxxer.hikari.HikariDataSource))
 
@@ -112,3 +114,16 @@
    (get-by-params ds table {:id id} nil))
   ([ds table id opts]
    (get-by-params ds table {:id id} opts)))
+
+(defn pgobject?
+  [v]
+  (instance? PGobject v))
+
+(defn decode-pgobject
+  [^PGobject obj]
+  (let [typ (.getType obj)
+        val (.getValue obj)]
+    (if (or (= typ "json")
+            (= typ "jsonb"))
+      (json/read-str val)
+      val)))
