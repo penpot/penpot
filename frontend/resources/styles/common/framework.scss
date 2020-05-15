@@ -72,6 +72,7 @@
   @extend %btn;
   background: transparent;
   color: $color-primary-dark;
+  flex-shrink: 0;
   &:hover {
     background: rgba(49,239,184,.12);
   }
