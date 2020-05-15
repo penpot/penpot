@@ -1271,8 +1271,8 @@
   "workspace.toolbar.circle" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:45" ],
     "translations" : {
-      "en" : "Circle (Ctrl + E)",
-      "fr" : "Cercle (Ctrl + E)"
+      "en" : "Circle (E)",
+      "fr" : "Cercle (E)"
     }
   },
   "workspace.toolbar.color-palette" : {
@@ -1291,15 +1291,15 @@
   },
   "workspace.toolbar.download" : {
     "translations" : {
-      "en" : "Download (Ctrl + E)",
-      "fr" : "Télécharger (Ctrl + E)"
+      "en" : "Download",
+      "fr" : "Télécharger"
     },
     "unused" : true
   },
   "workspace.toolbar.frame" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:35" ],
     "translations" : {
-      "en" : "Artboard",
+      "en" : "Artboard (A)",
       "fr" : null
     }
   },
@@ -1347,8 +1347,8 @@
   "workspace.toolbar.rect" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:40" ],
     "translations" : {
-      "en" : "Box (Ctrl + B)",
-      "fr" : "Boîte (Ctrl + B)"
+      "en" : "Box (B)",
+      "fr" : "Boîte (B)"
     }
   },
   "workspace.toolbar.rules" : {
@@ -1361,8 +1361,8 @@
   "workspace.toolbar.text" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:50" ],
     "translations" : {
-      "en" : "Text",
-      "fr" : "Texte"
+      "en" : "Text (T)",
+      "fr" : "Texte (T)"
     }
   },
   "workspace.viewport.click-to-close-path" : {
