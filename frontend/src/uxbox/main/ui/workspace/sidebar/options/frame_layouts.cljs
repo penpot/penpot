@@ -32,7 +32,6 @@
       children]]))
 
 (mf/defc layout-options [{:keys [layout default-layout-params on-change on-remove]}]
-  (prn "(render) layout" layout)
   (let [state (mf/use-state {:show-advanced-options false
                              :changes {}})
         {:keys [type display params] :as layout} (d/deep-merge layout (:changes @state))
@@ -45,7 +44,6 @@
 
         emit-changes! (fn [update-fn]
                         (swap! state update :changes update-fn)
-                        (prn "(event) layout" (d/deep-merge layout (-> @state :changes update-fn)))
                         (when on-change (on-change (d/deep-merge layout (-> @state :changes update-fn)))))
 
         handle-toggle-visibility (fn [event]
