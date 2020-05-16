@@ -847,7 +847,8 @@
 
             shapes (map lookup selected)
             shape? #(not= (:type %) :frame)]
-        (rx/of (delete-shapes selected))))))
+        (rx/of (delete-shapes selected)
+               deselect-all)))))
 
 
 ;; --- Rename Shape
