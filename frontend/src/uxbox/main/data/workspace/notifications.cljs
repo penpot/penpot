@@ -18,6 +18,7 @@
    [uxbox.main.repo :as rp]
    [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
+   [uxbox.main.data.workspace.common :as dwc]
    [uxbox.main.data.workspace.persistence :as dwp]
    [uxbox.util.avatars :as avatars]
    [uxbox.util.geom.point :as gpt]
@@ -169,6 +170,7 @@
   (ptk/reify ::handle-page-change
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (dwp/shapes-changes-persisted msg)))))
+      (rx/of (dwp/shapes-changes-persisted msg)
+             (dwc/update-page-indices (:page-id msg))))))
 
 
