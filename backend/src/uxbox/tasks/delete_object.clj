@@ -15,7 +15,7 @@
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.db :as db]
-   [uxbox.media :as media]
+   [uxbox.metrics :as mtx]
    [uxbox.util.storage :as ust]))
 
 (s/def ::type keyword?)
@@ -35,6 +35,11 @@
   (us/verify ::props props)
   (db/with-atomic [conn db/pool]
     (handle-deletion conn props)))
+
+(mtx/instrument-with-summary!
+ {:var #'handler
+  :id "tasks__delete_object"
+  :help "Timing of remove-object task."})
 
 (defmethod handle-deletion :image
   [conn {:keys [id] :as props}]

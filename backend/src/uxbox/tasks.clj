@@ -16,6 +16,7 @@
    [uxbox.common.spec :as us]
    [uxbox.config :as cfg]
    [uxbox.db :as db]
+   [uxbox.metrics :as mtx]
    [uxbox.tasks.sendmail]
    [uxbox.tasks.gc]
    [uxbox.tasks.remove-media]
@@ -68,3 +69,8 @@
   ([conn opts]
    (s/assert ::impl/task-options opts)
    (impl/submit! conn opts)))
+
+(mtx/instrument-with-counter!
+ {:var #'submit!
+  :id "tasks__submit_counter"
+  :help "Absolute task submit counter."})

@@ -15,6 +15,7 @@
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.media :as media]
+   [uxbox.metrics :as mtx]
    [uxbox.util.storage :as ust]))
 
 (s/def ::path ::us/not-empty-string)
@@ -28,3 +29,7 @@
     (ust/delete! media/media-storage (:path props))
     (log/debug "Media " (:path props) " removed.")))
 
+(mtx/instrument-with-summary!
+ {:var #'handler
+  :id "tasks__remove_media"
+  :help "Timing of remove-media task."})

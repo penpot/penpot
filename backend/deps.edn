@@ -9,11 +9,15 @@
 
   ;; Logging
   org.clojure/tools.logging {:mvn/version "1.1.0"}
-  org.apache.logging.log4j/log4j-api {:mvn/version "2.13.2"}
-  org.apache.logging.log4j/log4j-core {:mvn/version "2.13.2"}
-  org.apache.logging.log4j/log4j-web {:mvn/version "2.13.2"}
-  org.apache.logging.log4j/log4j-jul {:mvn/version "2.13.2"}
-  org.apache.logging.log4j/log4j-slf4j-impl {:mvn/version "2.13.2"}
+  org.apache.logging.log4j/log4j-api {:mvn/version "2.13.3"}
+  org.apache.logging.log4j/log4j-core {:mvn/version "2.13.3"}
+  org.apache.logging.log4j/log4j-web {:mvn/version "2.13.3"}
+  org.apache.logging.log4j/log4j-jul {:mvn/version "2.13.3"}
+  org.apache.logging.log4j/log4j-slf4j-impl {:mvn/version "2.13.3"}
+
+  io.prometheus/simpleclient {:mvn/version "0.9.0"}
+  io.prometheus/simpleclient_hotspot {:mvn/version "0.9.0"}
+  io.prometheus/simpleclient_httpserver {:mvn/version "0.9.0"}
 
   expound/expound {:mvn/version "0.8.4"}
   instaparse/instaparse {:mvn/version "1.4.10"}
@@ -26,7 +30,7 @@
   seancorfield/next.jdbc {:mvn/version "1.0.424"}
   metosin/reitit-ring {:mvn/version "0.4.2"}
   org.postgresql/postgresql {:mvn/version "42.2.12"}
-  com.zaxxer/HikariCP {:mvn/version "3.4.3"}
+  com.zaxxer/HikariCP {:mvn/version "3.4.5"}
 
   funcool/datoteka {:mvn/version "1.2.0"}
   funcool/promesa {:mvn/version "5.1.0"}
@@ -51,7 +55,7 @@
   io.aviso/pretty {:mvn/version "0.1.37"}
 
   mount/mount {:mvn/version "0.1.16"}
-  environ/environ {:mvn/version "1.1.0"}}
+  environ/environ {:mvn/version "1.2.0"}}
  :paths ["src" "resources" "../common" "common"]
  :aliases
  {:dev

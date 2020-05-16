@@ -15,6 +15,7 @@
    [uxbox.common.data :as d]
    [uxbox.common.exceptions :as ex]
    [uxbox.config :as cfg]
+   [uxbox.metrics :as mtx]
    [uxbox.util.http :as http]))
 
 (defmulti sendmail (fn [config email] (:sendmail-backend config)))
@@ -94,3 +95,7 @@
   [{:keys [props] :as task}]
   (sendmail cfg/config props))
 
+(mtx/instrument-with-summary!
+ {:var #'handler
+  :id "tasks__sendmail"
+  :help "Timing of sendmail task."})

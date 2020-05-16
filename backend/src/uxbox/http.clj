@@ -17,12 +17,14 @@
    [uxbox.http.middleware :as middleware]
    [uxbox.http.session :as session]
    [uxbox.http.ws :as ws]
+   [uxbox.metrics :as mtx]
    [uxbox.services.notifications :as usn]))
 
 (defn- create-router
   []
   (rring/router
-   [["/api" {:middleware [[middleware/format-response-body]
+   [["/metrics" {:get mtx/dump}]
+    ["/api" {:middleware [[middleware/format-response-body]
                           [middleware/errors errors/handle]
                           [middleware/parse-request-body]
                           [middleware/params]
@@ -37,7 +39,6 @@
      ["/logout" {:handler handlers/logout-handler
                  :method :post}]
 
-
      ["/w" {:middleware [session/auth]}
       ["/query/:type" {:get handlers/query-handler}]
       ["/mutation/:type" {:post handlers/mutation-handler}]]]]))
@@ -46,8 +47,9 @@
   :start (rring/ring-handler
           (create-router)
           (constantly {:status 404, :body ""})
-          {:middleware [middleware/development-resources
-                        middleware/development-cors]}))
+          {:middleware [[middleware/development-resources]
+                        [middleware/development-cors]
+                        [middleware/metrics]]}))
 
 (defn start-server
   [cfg app]

@@ -17,11 +17,13 @@
    [next.jdbc.result-set :as jdbc-rs]
    [next.jdbc.sql :as jdbc-sql]
    [next.jdbc.sql.builder :as jdbc-bld]
+   [uxbox.metrics :as mtx]
    [uxbox.common.exceptions :as ex]
    [uxbox.config :as cfg]
    [uxbox.util.data :as data])
   (:import
    org.postgresql.util.PGobject
+   com.zaxxer.hikari.metrics.prometheus.PrometheusMetricsTrackerFactory
    com.zaxxer.hikari.HikariConfig
    com.zaxxer.hikari.HikariDataSource))
 
@@ -30,17 +32,20 @@
   (let [dburi    (:database-uri cfg)
         username (:database-username cfg)
         password (:database-password cfg)
-        config (HikariConfig.)]
+        config (HikariConfig.)
+        mfactory (PrometheusMetricsTrackerFactory. mtx/registry)]
     (doto config
       (.setJdbcUrl (str "jdbc:" dburi))
+      (.setPoolName "main")
       (.setAutoCommit true)
       (.setReadOnly false)
-      (.setConnectionTimeout 30000)
-      (.setValidationTimeout 5000)
-      (.setIdleTimeout 600000)
-      (.setMaxLifetime 1800000)
-      (.setMinimumIdle 10)
-      (.setMaximumPoolSize 20))
+      (.setConnectionTimeout 30000) ;; 30seg
+      (.setValidationTimeout 5000)  ;; 5seg
+      (.setIdleTimeout 900000)      ;; 15min
+      (.setMaxLifetime 900000)      ;; 15min
+      (.setMinimumIdle 5)
+      (.setMaximumPoolSize 10)
+      (.setMetricsTrackerFactory mfactory))
     (when username (.setUsername config username))
     (when password (.setPassword config password))
     config))
@@ -127,3 +132,11 @@
             (= typ "jsonb"))
       (json/read-str val)
       val)))
+
+;; Instrumentation
+
+(mtx/instrument-with-counter!
+ {:var [#'jdbc/execute-one!
+        #'jdbc/execute!]
+  :id "database__query_counter"
+  :help "An absolute counter of database queries."})

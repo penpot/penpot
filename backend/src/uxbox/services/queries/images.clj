@@ -10,13 +10,12 @@
 (ns uxbox.services.queries.images
   (:require
    [clojure.spec.alpha :as s]
-   [promesa.core :as p]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.db :as db]
    [uxbox.images :as images]
-   [uxbox.services.queries.teams :as teams]
-   [uxbox.services.queries :as sq]))
+   [uxbox.services.queries :as sq]
+   [uxbox.services.queries.teams :as teams]))
 
 (s/def ::id ::us/uuid)
 (s/def ::name ::us/string)

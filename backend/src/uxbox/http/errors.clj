@@ -9,6 +9,7 @@
   (:require
    [clojure.tools.logging :as log]
    [cuerdas.core :as str]
+   [uxbox.metrics :as mtx]
    [io.aviso.exception :as e]))
 
 (defmulti handle-exception

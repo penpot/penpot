@@ -20,22 +20,18 @@
 (definterface IDispatcher
   (^void add [key f]))
 
-(defn- wrap-handler
-  [items handler]
-  (reduce #(%2 %1) handler items))
-
-(deftype Dispatcher [reg attr wrap-fns]
+(deftype Dispatcher [reg attr wrap]
   IDispatcher
   (add [this key f]
-    (let [f (wrap-handler wrap-fns f)]
-      (.put ^Map reg key f)
-      this))
+    (.put ^Map reg key (wrap f))
+    this)
+
 
   clojure.lang.IDeref
   (deref [_]
     {:registry reg
      :attr attr
-     :wrap-fns wrap-fns})
+     :wrap wrap})
 
   clojure.lang.IFn
   (invoke [_ params]
@@ -100,36 +96,3 @@
     `(do
        (s/assert dispatcher? ~sym)
        (add-method ~sym ~key ~f ~meta))))
-
-(defn wrap-spec
-  [handler]
-  (let [mdata (meta handler)
-        spec (s/get-spec (:spec mdata))]
-    (if (nil? spec)
-      handler
-      (with-meta
-        (fn [params]
-          (let [result (s/conform spec params)]
-            (if (not= result ::s/invalid)
-              (handler result)
-              (let [data (s/explain-data spec params)]
-                (ex/raise :type :validation
-                          :code :spec-validation
-                          :explain (with-out-str
-                                     (expound/printer data))
-                          :data (::s/problems data))))))
-        (assoc mdata ::wrap-spec true)))))
-
-(defn wrap-error
-  [handler]
-  (let [mdata (meta handler)]
-    (with-meta
-      (fn [params]
-        (try
-          (handler params)
-          (catch Throwable error
-            (ex/raise :type :service-error
-                      :name (:spec mdata)
-                      :cause error))))
-      (assoc mdata ::wrap-error true))))
-
