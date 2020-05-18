@@ -41,10 +41,13 @@
         :else
         (do
           (dom/stop-propagation event)
-          (when-not selected?
-            (when-not (or (empty? selected) (kbd/shift? event))
-              (st/emit! dw/deselect-all))
-            (st/emit! (dw/select-shape id)))
+          (if selected?
+            (when (kbd/shift? event)
+              (st/emit! (dw/select-shape id true)))
+            (do
+              (when-not (or (empty? selected) (kbd/shift? event))
+                (st/emit! dw/deselect-all))
+              (st/emit! (dw/select-shape id))))
           (st/emit! (dw/start-move-selected)))))))
 
 (defn on-context-menu

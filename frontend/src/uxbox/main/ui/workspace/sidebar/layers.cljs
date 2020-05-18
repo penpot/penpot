@@ -125,7 +125,7 @@
               nil
 
               (.-ctrlKey event)
-              (st/emit! (dw/select-shape id))
+              (st/emit! (dw/select-shape id true))
 
               (> (count selected) 1)
               (st/emit! dw/deselect-all
