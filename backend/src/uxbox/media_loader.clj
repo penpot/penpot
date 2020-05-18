@@ -49,7 +49,8 @@
 (s/def ::path ::us/string)
 (s/def ::regex #(instance? java.util.regex.Pattern %))
 
-(s/def ::colors (s/every ::us/color :kind set?))
+(s/def ::colors
+  (s/* (s/cat :name ::us/string :color ::us/color)))
 
 (s/def ::import-item-media
   (s/keys :req-un [::name ::path ::regex]))
@@ -238,22 +239,23 @@
     id))
 
 (defn- create-color
-  [conn library-id content]
+  [conn library-id name content]
   (s/assert ::us/uuid library-id)
   (s/assert ::us/color content)
   (let [color-id (uuid/namespaced +colors-uuid-ns+ (str library-id content))]
-    (log/info "Creating color" content color-id)
+    (log/info "Creating color" color-id "-" name content)
     (colors/create-color conn {:id color-id
                                :library-id library-id
-                               :name content
+                               :name name
                                :content content})
     color-id))
 
 (defn- import-colors
   [conn library-id {:keys [colors] :as item}]
-  (us/verify ::import-item-color item)
   (db/delete! conn :color {:library-id library-id})
-  (run! #(create-color conn library-id %) colors))
+  (run! (fn [[name content]]
+          (create-color conn library-id name content))
+        (partition-all 2 colors)))
 
 (defn- process-colors-library
   [conn {:keys [name id colors] :as item}]
