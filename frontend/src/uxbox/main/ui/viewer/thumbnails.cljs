@@ -34,7 +34,7 @@
 (mf/defc thumbnails-content
   [{:keys [children expanded? total] :as props}]
   (let [container (mf/use-ref)
-        width (mf/use-var (.. js/document -documentElement -clientWidth))
+        width     (mf/use-var (.. js/document -documentElement -clientWidth))
         element-width (mf/use-var 152)
 
         offset (mf/use-state 0)

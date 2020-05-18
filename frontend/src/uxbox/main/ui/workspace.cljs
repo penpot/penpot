@@ -39,7 +39,7 @@
 ;; --- Workspace
 
 (mf/defc workspace-content
-  [{:keys [page file layout] :as params}]
+  [{:keys [page file layout project] :as params}]
   (let [left-sidebar? (not (empty? (keep layout [:layers :sitemap
                                                  :document-history :libraries])))
         right-sidebar? (not (empty? (keep layout [:icons :drawtools :element-options])))
@@ -51,7 +51,8 @@
 
     [:*
      (when (:colorpalette layout)
-       [:& colorpalette {:left-sidebar? left-sidebar?}])
+       [:& colorpalette {:left-sidebar? left-sidebar?
+                         :project project}])
 
      [:section.workspace-content {:class classes}
       [:& history-dialog]

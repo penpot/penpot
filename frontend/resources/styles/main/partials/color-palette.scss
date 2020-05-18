@@ -27,7 +27,7 @@
       margin: 0 .5rem;
       width: 1rem;
     }
-    
+
     &:hover {
       svg {
         fill: $color-gray-50;
@@ -37,7 +37,7 @@
       display: none;
     }
   }
-  
+
 
   .left-arrow {
       transform: rotate(180deg);
@@ -70,7 +70,7 @@
     justify-content: center;
     margin-right: .5rem;
     padding: 0.5rem;
-    
+
     .color-palette-buttons {
         align-items: center;
         display: flex;
@@ -126,6 +126,7 @@
 }
 
 .color-palette-inside {
+  position: relative;
   align-items: center;
   display: flex;
   transition: all .6s ease;
