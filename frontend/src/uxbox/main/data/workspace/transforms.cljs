@@ -357,29 +357,32 @@
 
 ;; Set-rotation is custom because applies different modifiers to each shape adjusting their position
 (defn set-rotation
-  [delta-rotation shapes center]
-  (ptk/reify ::set-rotation
-    dwc/IUpdateGroup
-    (get-ids [_] (map :id shapes))
+  ([delta-rotation shapes]
+   (set-rotation delta-rotation shapes (-> shapes gsh/selection-rect gsh/center)))
 
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [page-id (:current-page-id state)]
-        (letfn [(rotate-shape [state angle shape center]
-                  (let [objects (get-in state [:workspace-data page-id :objects])
-                        path [:workspace-data page-id :objects (:id shape) :modifiers]
-                        modifiers (rotation-modifiers center shape angle)]
-                    (-> state
-                        (update-in path merge modifiers))))
+  ([delta-rotation shapes center]
+   (ptk/reify ::set-rotation
+     dwc/IUpdateGroup
+     (get-ids [_] (map :id shapes))
 
-                (rotate-around-center [state angle center shapes]
-                  (reduce #(rotate-shape %1 angle %2 center) state shapes))]
+     ptk/UpdateEvent
+     (update [_ state]
+       (let [page-id (:current-page-id state)]
+         (letfn [(rotate-shape [state angle shape center]
+                   (let [objects (get-in state [:workspace-data page-id :objects])
+                         path [:workspace-data page-id :objects (:id shape) :modifiers]
+                         modifiers (rotation-modifiers center shape angle)]
+                     (-> state
+                         (update-in path merge modifiers))))
 
-          (let [objects (get-in state [:workspace-data page-id :objects])
-                id->obj #(get objects %)
-                get-children (fn [shape] (map id->obj (cp/get-children (:id shape) objects)))
-                shapes (concat shapes (mapcat get-children shapes))]
-            (rotate-around-center state delta-rotation center shapes)))))))
+                 (rotate-around-center [state angle center shapes]
+                   (reduce #(rotate-shape %1 angle %2 center) state shapes))]
+
+           (let [objects (get-in state [:workspace-data page-id :objects])
+                 id->obj #(get objects %)
+                 get-children (fn [shape] (map id->obj (cp/get-children (:id shape) objects)))
+                 shapes (concat shapes (mapcat get-children shapes))]
+             (rotate-around-center state delta-rotation center shapes))))))))
 
 (defn apply-modifiers
   [ids]
