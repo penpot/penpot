@@ -15,6 +15,7 @@
    [ring.middleware.multipart-params :refer [wrap-multipart-params]]
    [ring.middleware.params :refer [wrap-params]]
    [ring.middleware.resource :refer [wrap-resource]]
+   [uxbox.metrics :as mtx]
    [uxbox.common.exceptions :as ex]
    [uxbox.config :as cfg]
    [uxbox.util.transit :as t]))
@@ -82,6 +83,12 @@
 (def errors
   {:name ::errors
    :compile (constantly wrap-errors)})
+
+(def metrics
+  {:name ::metrics
+   :wrap (fn [handler]
+           (mtx/wrap-counter handler {:id "http__requests_counter"
+                                      :help "Absolute http requests counter."}))})
 
 (def cookies
   {:name ::cookies

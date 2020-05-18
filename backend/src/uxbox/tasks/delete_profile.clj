@@ -15,7 +15,7 @@
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.db :as db]
-   [uxbox.media :as media]
+   [uxbox.metrics :as mtx]
    [uxbox.util.storage :as ust]))
 
 (declare delete-profile-data)
@@ -38,6 +38,11 @@
         (delete-profile-data conn (:id profile))
         (log/warn "Profile " (:id profile)
                   "does not match constraints for deletion")))))
+
+(mtx/instrument-with-summary!
+ {:var #'handler
+  :id "tasks__delete_profile"
+  :help "Timing of delete-profile task."})
 
 (defn- delete-profile-data
   [conn profile-id]

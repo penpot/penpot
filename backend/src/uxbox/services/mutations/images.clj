@@ -96,9 +96,9 @@
       (teams/check-edition-permissions! conn profile-id (:team-id lib))
 
       ;; Schedule object deletion
-      (tasks/schedule! conn {:name "delete-object"
-                             :delay cfg/default-deletion-delay
-                             :props {:id id :type :image-library}})
+      (tasks/submit! conn {:name "delete-object"
+                           :delay cfg/default-deletion-delay
+                           :props {:id id :type :image-library}})
 
       (db/update! conn :image-library
                   {:deleted-at (dt/now)}
@@ -226,9 +226,9 @@
       (teams/check-edition-permissions! conn profile-id (:team-id img))
 
       ;; Schedule object deletion
-      (tasks/schedule! conn {:name "delete-object"
-                             :delay cfg/default-deletion-delay
-                             :props {:id id :type :image}})
+      (tasks/submit! conn {:name "delete-object"
+                           :delay cfg/default-deletion-delay
+                           :props {:id id :type :image}})
 
       (db/update! conn :image
                   {:deleted-at (dt/now)}

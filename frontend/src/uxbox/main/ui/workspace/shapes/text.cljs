@@ -260,15 +260,16 @@
         (fn [event]
           (mf/set-ref-val! selecting-ref false))
 
-        on-keyup
+        on-key-up
         (fn [event]
+          (dom/stop-propagation event)
           (when (= (.-keyCode event) 27) ; ESC
             (on-close)))
 
         on-mount
         (fn []
           (let [lkey1 (events/listen js/document EventType.CLICK on-click)
-                lkey2 (events/listen js/document EventType.KEYUP on-keyup)]
+                lkey2 (events/listen js/document EventType.KEYUP on-key-up)]
             (st/emit! (dwt/assign-editor id editor))
             #(do
                (st/emit! (dwt/assign-editor id nil))

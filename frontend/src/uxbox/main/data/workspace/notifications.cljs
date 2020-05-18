@@ -18,6 +18,8 @@
    [uxbox.main.repo :as rp]
    [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
+   [uxbox.main.data.workspace.common :as dwc]
+   [uxbox.main.data.workspace.persistence :as dwp]
    [uxbox.util.avatars :as avatars]
    [uxbox.util.geom.point :as gpt]
    [uxbox.util.time :as dt]
@@ -75,7 +77,6 @@
   (ptk/reify ::send-keepalive
     ptk/EffectEvent
     (effect [_ state stream]
-      (prn "send-keepalive" file-id)
       (when-let [ws (get-in state [:ws file-id])]
         (ws/-send ws (t/encode {:type :keepalive}))))))
 
@@ -165,13 +166,11 @@
         (ws/-send ws (t/encode msg))))))
 
 (defn handle-page-change
-  [{:keys [profile-id page-id revn operations] :as msg}]
+  [msg]
   (ptk/reify ::handle-page-change
     ptk/WatchEvent
     (watch [_ state stream]
-      #_(let [page-id' (get-in state [:workspace-page :id])]
-        (when (= page-id page-id')
-          (rx/of (shapes-changes-commited msg)))))))
-
+      (rx/of (dwp/shapes-changes-persisted msg)
+             (dwc/update-page-indices (:page-id msg))))))
 
 

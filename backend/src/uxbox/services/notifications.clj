@@ -13,8 +13,9 @@
    [ring.adapter.jetty9 :as jetty]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.uuid :as uuid]
-   [uxbox.redis :as redis]
    [uxbox.db :as db]
+   [uxbox.redis :as redis]
+   [uxbox.metrics :as mtx]
    [uxbox.util.time :as dt]
    [uxbox.util.transit :as t]))
 
@@ -193,11 +194,20 @@
         (jetty/send! conn (t/encode-str val))
         (recur)))))
 
+(defonce metrics-active-connections
+  (mtx/gauge {:id "notificatons__active_connections"
+              :help "Active connections to the notifications service."}))
+
+(defonce metrics-message-counter
+  (mtx/counter {:id "notificatons__messages_counter"
+                :help "A total number of messages handled by the notifications service."}))
+
 (defn websocket
   [{:keys [file-id] :as params}]
   (let [in  (a/chan 32)
         out (a/chan 32)]
     {:on-connect (fn [conn]
+                   (metrics-active-connections :inc)
                    (let [xf  (map t/decode-str)
                          sub (redis/subscribe (str file-id) xf)
                          ws  (WebSocket. conn in out sub nil params)]
@@ -207,21 +217,19 @@
                        (a/close! sub))))
 
      :on-error (fn [conn e]
-                 ;; (prn "websocket" :on-error e)
                  (a/close! out)
                  (a/close! in))
 
      :on-close (fn [conn status-code reason]
-                 ;; (prn "websocket" :on-close status-code reason)
+                 (metrics-active-connections :dec)
                  (a/close! out)
                  (a/close! in))
 
      :on-text (fn [ws message]
+                (metrics-message-counter :inc)
                 (let [message (t/decode-str message)]
-                  ;; (prn "websocket" :on-text message)
                   (a/>!! in message)))
 
-     :on-bytes (fn [ws bytes offset len]
-                 #_(prn "websocket" :on-bytes bytes))}))
+     :on-bytes (constantly nil)}))
 
 

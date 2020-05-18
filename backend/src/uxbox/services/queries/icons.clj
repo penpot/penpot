@@ -10,8 +10,6 @@
 (ns uxbox.services.queries.icons
   (:require
    [clojure.spec.alpha :as s]
-   [promesa.core :as p]
-   [promesa.exec :as px]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.common.uuid :as uuid]

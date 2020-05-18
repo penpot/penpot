@@ -113,9 +113,9 @@
     (files/check-edition-permissions! conn profile-id id)
 
     ;; Schedule object deletion
-    (tasks/schedule! conn {:name "delete-object"
-                           :delay cfg/default-deletion-delay
-                           :props {:id id :type :file}})
+    (tasks/submit! conn {:name "delete-object"
+                         :delay cfg/default-deletion-delay
+                         :props {:id id :type :file}})
 
     (mark-file-deleted conn params)))
 

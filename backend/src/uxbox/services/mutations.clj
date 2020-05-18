@@ -5,16 +5,16 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2019-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.services.mutations
   (:require
+   [uxbox.services.middleware :as middleware]
    [uxbox.util.dispatcher :as uds]))
 
 (uds/defservice handle
   :dispatch-by ::type
-  :wrap [uds/wrap-spec
-         uds/wrap-error])
+  :wrap middleware/wrap)
 
 (defmacro defmutation
   [key & rest]

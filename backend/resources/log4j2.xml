@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="info" monitorInterval="60">
   <Appenders>
     <Console name="console" target="SYSTEM_OUT">

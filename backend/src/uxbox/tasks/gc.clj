@@ -9,8 +9,8 @@
 
 (ns uxbox.tasks.gc
   (:require
-   [clojure.tools.logging :as log]
    [clojure.spec.alpha :as s]
+   [clojure.tools.logging :as log]
    [cuerdas.core :as str]
    [postal.core :as postal]
    [promesa.core :as p]
@@ -18,36 +18,47 @@
    [uxbox.common.spec :as us]
    [uxbox.config :as cfg]
    [uxbox.db :as db]
-   [uxbox.util.blob :as blob]))
+   [uxbox.media :as media]
+   [uxbox.util.blob :as blob]
+   [uxbox.util.storage :as ust]))
 
-;; TODO: delete media referenced in pendint_to_delete table
+(def ^:private sql:delete-items
+  "with items_part as (
+     select i.id
+       from pending_to_delete as i
+      order by i.created_at
+      limit ?
+      for update skip locked
+   )
+   delete from pending_to_delete
+    where id in (select id from items_part)
+   returning *")
 
-;; (def ^:private sql:delete-item
-;;   "with items_part as (
-;;      select i.id
-;;        from pending_to_delete as i
-;;       order by i.created_at
-;;       limit 1
-;;       for update skip locked
-;;    )
-;;    delete from pending_to_delete
-;;     where id in (select id from items_part)
-;;    returning *")
+(defn- impl-remove-media
+  [result]
+  (run! (fn [item]
+          (let [path1 (get item "path")
+                path2 (get item "thumb_path")]
+            (ust/delete! media/media-storage path1)
+            (ust/delete! media/media-storage path2)))
+        result))
 
-;; (defn- remove-items
-;;   []
-;;   (vu/loop []
-;;     (db/with-atomic [conn db/pool]
-;;       (-> (db/query-one conn sql:delete-item)
-;;           (p/then decode-row)
-;;           (p/then (vu/wrap-blocking remove-media))
-;;           (p/then (fn [item]
-;;                     (when (not (empty? items))
-;;                       (p/recur))))))))
+(defn- decode-row
+  [{:keys [data] :as row}]
+  (cond-> row
+    (db/pgobject? data) (assoc :data (db/decode-pgobject data))))
 
-;; (defn- remove-media
-;;   [{:keys
-;;   (doseq [item files]
-;;     (ust/delete! media/media-storage (:path item))
-;;     (ust/delete! media/media-storage (:thumb-path item)))
-;;   files)
+(defn- get-items
+  [conn]
+  (->> (db/exec! conn [sql:delete-items 10])
+       (map decode-row)
+       (map :data)))
+
+(defn remove-media
+  [{:keys [props] :as task}]
+  (db/with-atomic [conn db/pool]
+    (loop [result (get-items conn)]
+      (when-not (empty? result)
+        (impl-remove-media result)
+        (recur (get-items conn))))))
+

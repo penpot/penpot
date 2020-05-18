@@ -42,7 +42,7 @@
       (let [stoper (rx/filter #(= ::finalize %) stream)
             notifier (->> stream
                           (rx/filter (ptk/type? ::dwc/commit-changes))
-                          (rx/debounce 2000)
+                          (rx/debounce 200)
                           (rx/merge stoper))]
         (rx/merge
          (->> stream
@@ -64,15 +64,13 @@
   (ptk/reify ::persist-changes
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [session-id (:session-id state)
-            page (get-in state [:workspace-pages page-id])
-            changes (->> changes
-                         (mapcat identity)
-                         (map #(assoc % :session-id session-id))
-                         (vec))
-            params {:id (:id page)
-                    :revn (:revn page)
-                    :changes changes}]
+      (let [sid     (:session-id state)
+            page    (get-in state [:workspace-pages page-id])
+            changes (into [] (mapcat identity) changes)
+            params  {:id (:id page)
+                     :revn (:revn page)
+                     :session-id sid
+                     :changes changes}]
         (->> (rp/mutation :update-page params)
              (rx/map shapes-changes-persisted))))))
 
