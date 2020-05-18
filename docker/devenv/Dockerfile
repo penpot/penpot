@@ -3,7 +3,7 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV NODE_VERSION=v12.16.1 \
+ENV NODE_VERSION=v12.16.3 \
     CLOJURE_VERSION=1.10.1.507 \
     LANG=en_US.UTF-8 \
     LC_ALL=C.UTF-8
@@ -39,10 +39,10 @@ RUN set -ex; \
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0xB1998361219BD9C9 && \
     echo "deb http://repos.azulsystems.com/debian stable  main" >> /etc/apt/sources.list.d/zulu.list && \
     apt-get -qq update && \
-    apt-get -qqy install zulu-13 && \
+    apt-get -qqy install zulu-14 && \
     rm -rf /var/lib/apt/lists/*;
 
-ENV JAVA_HOME=/usr/lib/jvm/zulu-13-amd64/
+ENV JAVA_HOME=/usr/lib/jvm/zulu-14-amd64
 
 RUN curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - && \
     echo "deb http://apt.postgresql.org/pub/repos/apt buster-pgdg main" >> /etc/apt/sources.list.d/postgresql.list && \
