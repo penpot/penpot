@@ -8,6 +8,7 @@
    [mount.core :as mount]
    [environ.core :refer [env]]
    [uxbox.common.pages :as cp]
+   [uxbox.services.init]
    [uxbox.services.mutations.profile :as profile]
    [uxbox.services.mutations.projects :as projects]
    [uxbox.services.mutations.teams :as teams]
