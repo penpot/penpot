@@ -74,6 +74,7 @@
   {:zoom 1
    :flags #{}
    :selected #{}
+   :expanded {}
    :drawing nil
    :drawing-tool nil
    :tooltip nil
@@ -445,17 +446,28 @@
 
 ;; --- Toggle shape's selection status (selected or deselected)
 
+(declare expand-all-parents)
+
 (defn select-shape
-  [id]
-  (us/verify ::us/uuid id)
-  (ptk/reify ::select-shape
-    ptk/UpdateEvent
-    (update [_ state]
-      (update-in state [:workspace-local :selected]
-                 (fn [selected]
-                   (if (contains? selected id)
-                     (disj selected id)
-                     (conj selected id)))))))
+  ([id] (select-shape id false))
+  ([id toggle?]
+   (us/verify ::us/uuid id)
+   (ptk/reify ::select-shape
+     ptk/UpdateEvent
+     (update [_ state]
+       (update-in state [:workspace-local :selected]
+                  (fn [selected]
+                    (if-not toggle?
+                      (conj selected id)
+                      (if (contains? selected id)
+                        (disj selected id)
+                        (conj selected id))))))
+
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [page-id (get-in state [:workspace-page :id])
+             objects (get-in state [:workspace-data page-id :objects])]
+         (rx/of (expand-all-parents [id] objects)))))))
 
 (defn select-shapes
   [ids]
@@ -463,7 +475,13 @@
   (ptk/reify ::select-shapes
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-local :selected] ids))))
+      (assoc-in state [:workspace-local :selected] ids))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id (get-in state [:workspace-page :id])
+            objects (get-in state [:workspace-data page-id :objects])]
+        (rx/of (expand-all-parents ids objects))))))
 
 (def deselect-all
   "Clear all possible state of drawing, edition
@@ -686,15 +704,15 @@
 (defn select-inside-group
   [group-id position]
   (ptk/reify ::select-inside-group
-    ptk/UpdateEvent
-    (update [_ state]
+    ptk/WatchEvent
+    (watch [_ state stream]
       (let [page-id (:current-page-id state)
             objects (get-in state [:workspace-data page-id :objects])
             group (get objects group-id)
             children (map #(get objects %) (:shapes group))
             selected (->> children (filter #(geom/has-point? % position)) first)]
-        (cond-> state
-          selected (assoc-in [:workspace-local :selected] #{(:id selected)}))))))
+        (when selected
+          (rx/of deselect-all (select-shape (:id selected))))))))
 
 ;; --- Update Shape Attrs
 
@@ -1126,6 +1144,21 @@
     (update [_ state]
       (update state :workspace-local dissoc :expanded))))
 
+(defn expand-all-parents
+  [ids objects]
+  (ptk/reify ::expand-all-parents
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [expand-fn (fn [expanded]
+                        (merge expanded
+                          (->> ids
+                               (map #(cp/get-all-parents % objects))
+                               flatten
+                               (filter #(not= % uuid/zero))
+                               (map (fn [id] {id true}))
+                               (into {}))))]
+        (update-in state [:workspace-local :expanded] expand-fn)))))
+
 (defn recursive-assign
   "A helper for assign recursively a shape attr."
   [id attr value]
@@ -1202,22 +1235,14 @@
   (ptk/reify ::show-context-menu
     ptk/UpdateEvent
     (update [_ state]
-      (let [selected (get-in state [:workspace-local :selected])
-            selected (cond
-                       (empty? selected)
-                       (conj selected (:id shape))
-
-                       (contains? selected (:id shape))
-                       selected
-
-                       :else
-                       #{(:id shape)})
-            mdata {:position position
-                   :selected selected
+      (let [mdata {:position position
                    :shape shape}]
         (-> state
-            (assoc-in [:workspace-local :context-menu] mdata)
-            (assoc-in [:workspace-local :selected] selected))))))
+            (assoc-in [:workspace-local :context-menu] mdata))))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (select-shape (:id shape))))))
 
 (def hide-context-menu
   (ptk/reify ::hide-context-menu
