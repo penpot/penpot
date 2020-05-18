@@ -14,17 +14,19 @@
    [uxbox.main.ui.components.select :refer [select]]
    [uxbox.util.dom :as dom]))
 
-(mf/defc input-row [{:keys [label options value on-change]}]
-  [:div.row-flex.input-row
-   [:span.element-set-subtitle label]
-   [:div.input-element
-    (if options
-      [:& select {:default-value value
-                  :class "input-option"
-                  :options options
-                  :on-change on-change}]
-      [:input.input-text
-       {:placeholder label
-        :type "number"
-        :on-change #(-> % dom/get-target dom/get-value d/parse-integer on-change)
-        :value value}])]])
+(mf/defc input-row [{:keys [label options value class min max on-change]}]
+  (let [handle-change (fn [value] (when (and (or (not min) (>= value min)) (or (not max) (<= value max)))
+                                    (on-change value)))]
+    [:div.row-flex.input-row
+     [:span.element-set-subtitle label]
+     [:div.input-element {:class class}
+      (if options
+        [:& select {:default-value value
+                    :class "input-option"
+                    :options options
+                    :on-change on-change}]
+        [:input.input-text
+         {:placeholder label
+          :type "number"
+          :on-change #(-> % dom/get-target dom/get-value d/parse-integer handle-change)
+          :value value}])]]))

@@ -386,10 +386,10 @@
                        :zoom zoom
                        :modifiers (:modifiers local)}])
 
-      (when (contains? layout :layouts)
+      (when (contains? layout :display-grid)
         [:& layout-display {:zoom zoom}])
 
-      [:& snap-feedback]
+      [:& snap-feedback {:layout layout}]
 
       (when tooltip
         [:& cursor-tooltip {:zoom zoom :tooltip tooltip}])]

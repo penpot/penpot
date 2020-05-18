@@ -72,42 +72,42 @@
                    :on-close #(reset! show-menu? false)}
       [:ul.menu
        [:li {:on-click #(st/emit! (dw/toggle-layout-flag :rules))}
-        [:span i/ruler]
         [:span
          (if (contains? layout :rules)
            (t locale "workspace.header.menu.hide-rules")
            (t locale "workspace.header.menu.show-rules"))]]
 
-       [:li {:on-click #(st/emit! (dw/toggle-layout-flag :grid))}
-        [:span i/grid]
+       [:li {:on-click #(st/emit! (dw/toggle-layout-flag :display-grid))}
         [:span
-         (if (contains? layout :grid)
+         (if (contains? layout :display-grid)
            (t locale "workspace.header.menu.hide-grid")
            (t locale "workspace.header.menu.show-grid"))]]
 
+       [:li {:on-click #(st/emit! (dw/toggle-layout-flag :snap-grid))}
+        [:span
+         (if (contains? layout :snap-grid)
+           (t locale "workspace.header.menu.disable-snap-grid")
+           (t locale "workspace.header.menu.enable-snap-grid"))]]
+
        [:li {:on-click #(st/emit! (dw/toggle-layout-flag :sitemap :layers))}
-        [:span i/layers]
         [:span
          (if (or (contains? layout :sitemap) (contains? layout :layers))
            (t locale "workspace.header.menu.hide-layers")
            (t locale "workspace.header.menu.show-layers"))]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flag :colorpalette))}
-        [:span i/palette]
         [:span
          (if (contains? layout :colorpalette)
            (t locale "workspace.header.menu.hide-palette")
            (t locale "workspace.header.menu.show-palette"))]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flag :libraries))}
-        [:span i/icon-set]
         [:span
          (if (contains? layout :libraries)
            (t locale "workspace.header.menu.hide-libraries")
            (t locale "workspace.header.menu.show-libraries"))]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flag :dynamic-alignment))}
-        [:span i/shape-halign-left]
         [:span
          (if (contains? layout :dynamic-alignment)
            (t locale "workspace.header.menu.disable-dynamic-alignment")

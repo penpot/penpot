@@ -591,6 +591,13 @@
     margin-bottom: 0.5rem;
 }
 
+.element-set-content .custom-select.input-option {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    margin-left: 0.25rem;
+}
+
 .element-set-content .grid-option-main {
     display: flex;
     padding: 0.5rem 0;
@@ -626,7 +633,6 @@
         }
 
     }
-
 }
 
 .grid-option-main-actions {
@@ -661,9 +667,9 @@
 .btn-options {
     cursor: pointer;
     border: 1px solid $color-black;
-    background: #1F1F1F;
+    background: $color-gray-60;
     border-radius: 2px;
-    color: #B1B2B5;
+    color: $color-gray-20;
     font-size: 11px;
     line-height: 16px;
     flex-grow: 1;
@@ -673,8 +679,13 @@
         margin-right: 0.5rem;
     }
 
-    &:hover {
+    &:not([disabled]):hover {
         background: $color-primary;
         color: $color-black;
+    }
+
+    &[disabled] {
+        opacity: 0.4;
+        cursor: auto;
     }
 }

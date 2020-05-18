@@ -39,7 +39,8 @@
       (/ 100)))
 
 (mf/defc color-row [{:keys [value on-change]}]
-  (let [state (mf/use-state value)
+  (let [value (or value {:value "#FFFFFF" :opacity 1})
+        state (mf/use-state value)
         change-color (fn [color]
                        (let [update-color (fn [state] (assoc state :value color))]
                          (swap! state update-color)
@@ -65,6 +66,10 @@
                                     string->opacity
                                     change-opacity))]
 
+    (mf/use-effect
+     (mf/deps value)
+     #(reset! state value))
+
     [:div.row-flex.color-data
      [:span.color-th
       {:style {:background-color (-> @state :value)}
@@ -88,3 +93,4 @@
                        :value (-> @state :opacity opacity->string)
                        :step "1"
                        :on-change handle-opacity-change}]]))
+

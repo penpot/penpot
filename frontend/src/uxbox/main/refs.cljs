@@ -42,12 +42,6 @@
 (def workspace-page
   (l/derived :workspace-page st/state))
 
-(def workspace-page-options
-  (l/derived :options workspace-page))
-
-(def workspace-saved-layouts
-  (l/derived :saved-layouts workspace-page-options))
-
 (def workspace-page-id
   (l/derived :id workspace-page))
 
@@ -73,6 +67,13 @@
   (-> #(let [page-id (get-in % [:workspace-page :id])]
          (get-in % [:workspace-data page-id]))
       (l/derived st/state)))
+
+(def workspace-page-options
+  (l/derived :options workspace-data))
+
+(def workspace-saved-layouts
+  (l/derived :saved-layouts workspace-page-options))
+
 
 (def workspace-objects
   (l/derived :objects workspace-data))

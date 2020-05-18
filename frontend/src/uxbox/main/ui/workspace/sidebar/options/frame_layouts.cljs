@@ -31,7 +31,7 @@
      [:div.advanced-options {}
       children]]))
 
-(mf/defc layout-options [{:keys [layout default-layout-params on-change on-remove]}]
+(mf/defc layout-options [{:keys [layout default-layout-params on-change on-remove on-save-layout]}]
   (let [state (mf/use-state {:show-advanced-options false
                              :changes {}})
         {:keys [type display params] :as layout} (d/deep-merge layout (:changes @state))
@@ -68,7 +68,15 @@
                               (fn [event]
                                 (let [change-fn (apply handle-change keys)]
                                   (-> event dom/get-target dom/get-value parse-integer change-fn))))
-        ]
+
+        handle-use-default (fn []
+                             (emit-changes! #(hash-map :params ((:type layout) default-layout-params))))
+        handle-set-as-default (fn []
+                                (let [current-layout (d/deep-merge layout (-> @state :changes))]
+                                  (on-save-layout current-layout)))
+
+        is-default (= (->> @state :changes (d/deep-merge layout) :params)
+                      (->> layout :type default-layout-params))]
 
     [:div.grid-option
      [:div.grid-option-main
@@ -85,7 +93,7 @@
       (if (= type :square)
         [:div.input-element.pixels
          [:input.input-text {:type "number"
-                             :min "0"
+                             :min "1"
                              :no-validate true
                              :value (:size params)
                              :on-change (handle-change-event :params :size)}]]
@@ -102,6 +110,8 @@
                            :on-close toggle-advanced-options}
       (when (= :square type)
         [:& input-row {:label "Size"
+                       :class "pixels"
+                       :min 1
                        :value (:size params)
                        :on-change (handle-change :params :size)}])
 
@@ -128,52 +138,38 @@
 
       (when (= :row type)
         [:& input-row {:label "Height"
+                       :class "pixels"
                        :value (or (:item-height params) "")
                        :on-change (handle-change :params :item-height)}])
 
       (when (= :column type)
         [:& input-row {:label "Width"
+                       :class "pixels"
                        :value (or (:item-width params) "")
                        :on-change (handle-change :params :item-width)}])
 
       (when (#{:row :column} type)
         [:*
          [:& input-row {:label "Gutter"
+                        :class "pixels"
                         :value (:gutter params)
                         :on-change (handle-change :params :gutter)}]
          [:& input-row {:label "Margin"
+                        :class "pixels"
                         :value (:margin params)
                         :on-change (handle-change :params :margin)}]])
 
       [:& color-row {:value (:color params)
                      :on-change (handle-change :params :color)}]
       [:div.row-flex
-       [:button.btn-options "Use default"]
-       [:button.btn-options "Set as default"]]]]))
-
-(defonce ^:private default-layout-params
-  {:square {:size 16
-            :color {:value "#59B9E2"
-                    :opacity 0.9}}
-
-   :column {:size 12
-            :type :stretch
-            :item-width nil
-            :gutter 8
-            :margin 0
-            :color {:value "#DE4762"
-                    :opacity 0.1}}
-   :row {:size 12
-         :type :stretch
-         :item-height nil
-         :gutter 8
-         :margin 0
-         :color {:value "#DE4762"
-                 :opacity 0.1}}})
+       [:button.btn-options {:disabled is-default
+                             :on-click handle-use-default} "Use default"]
+       [:button.btn-options {:disabled is-default
+                             :on-click handle-set-as-default} "Set as default"]]]]))
 
 (mf/defc frame-layouts [{:keys [shape]}]
   (let [id (:id shape)
-        default-layout-params (merge default-layout-params (mf/deref refs/workspace-saved-layouts))
+        default-layout-params (merge dw/default-layout-params (mf/deref refs/workspace-saved-layouts))
         handle-create-layout #(st/emit! (dw/add-frame-layout id))
         handle-remove-layout (fn [index] #(st/emit! (dw/remove-frame-layout id index)))
         handle-edit-layout (fn [index] #(st/emit! (dw/set-frame-layout id index %)))

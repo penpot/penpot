@@ -19,26 +19,27 @@
   (let [{:keys [color size] :as params} (-> layout :params)
         {color-value :value color-opacity :opacity} (-> layout :params :color)
         {frame-width :width frame-height :height :keys [x y]} frame]
-    [:g.layout
-     [:*
-      (for [xs (range size frame-width size)]
-        [:line {:key (str (:id frame) "-y-" xs)
-                :x1 (+ x xs)
-                :y1 y
-                :x2 (+ x xs)
-                :y2 (+ y frame-height)
-                :style {:stroke color-value
-                        :stroke-opacity color-opacity
-                        :stroke-width (str (/ 1 zoom))}}])
-      (for [ys (range size frame-height size)]
-        [:line {:key (str (:id frame) "-x-" ys)
-                :x1 x
-                :y1 (+ y ys)
-                :x2 (+ x frame-width)
-                :y2 (+ y ys)
-                :style {:stroke color-value
-                        :stroke-opacity color-opacity
-                        :stroke-width (str (/ 1 zoom))}}])]]))
+    (when (> size 0)
+      [:g.layout
+       [:*
+        (for [xs (range size frame-width size)]
+          [:line {:key (str (:id frame) "-y-" xs)
+                  :x1 (+ x xs)
+                  :y1 y
+                  :x2 (+ x xs)
+                  :y2 (+ y frame-height)
+                  :style {:stroke color-value
+                          :stroke-opacity color-opacity
+                          :stroke-width (str (/ 1 zoom))}}])
+        (for [ys (range size frame-height size)]
+          [:line {:key (str (:id frame) "-x-" ys)
+                  :x1 x
+                  :y1 (+ y ys)
+                  :x2 (+ x frame-width)
+                  :y2 (+ y ys)
+                  :style {:stroke color-value
+                          :stroke-opacity color-opacity
+                          :stroke-width (str (/ 1 zoom))}}])]])))
 
 (mf/defc flex-layout [{:keys [key frame zoom layout]}]
   (let [{color-value :value color-opacity :opacity} (-> layout :params :color)]

@@ -14,6 +14,38 @@
    [uxbox.common.uuid :as uuid]
    [uxbox.tests.helpers :as th]))
 
+(t/deftest process-change-set-option
+  (let [data cp/default-page-data]
+    (t/testing "Sets option single"
+      (let [chg {:type :set-option
+                 :option :test
+                 :value "test"}
+            res (cp/process-changes data [chg])]
+        (t/is (= "test" (get-in res [:options :test])))))
+
+    (t/testing "Sets option nested"
+      (let [chgs [{:type :set-option
+                   :option [:values :test :a]
+                   :value "a"}
+                  {:type :set-option
+                   :option [:values :test :b]
+                   :value "b"}]
+            res (cp/process-changes data chgs)]
+        (t/is (= {:a "a" :b "b"} (get-in res [:options :values :test])))))
+
+    (t/testing "Remove option"
+      (let [chgs [{:type :set-option
+                   :option [:values :test :a]
+                   :value "a"}
+                  {:type :set-option
+                   :option [:values :test :b]
+                   :value "b"}
+                  {:type :set-option
+                   :option [:values :test]
+                   :value nil}]
+            res (cp/process-changes data chgs)]
+        (t/is (= nil (get-in res [:options :values :test])))))))
+
 (t/deftest process-change-add-obj
   (let [data cp/default-page-data
         id-a (uuid/next)

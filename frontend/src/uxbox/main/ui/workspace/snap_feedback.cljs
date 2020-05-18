@@ -80,12 +80,17 @@
                            :point point
                            :zoom zoom}])]))]))
 
-(mf/defc snap-feedback [{:keys []}]
+(mf/defc snap-feedback [{:keys [layout]}]
   (let [page-id (mf/deref refs/workspace-page-id)
         selected (mf/deref refs/selected-shapes)
         selected-shapes (mf/deref (refs/objects-by-id selected))
         drawing (mf/deref refs/current-drawing-shape)
         filter-shapes (mf/deref refs/selected-shapes-with-children)
+        filter-shapes (fn [id] (if (= id :layout)
+                                 (or (not (contains? layout :display-grid))
+                                     (not (contains? layout :snap-grid)))
+                                 (or (filter-shapes id)
+                                     (not (contains? layout :dynamic-alignment)))))
         current-transform (mf/deref refs/current-transform)
         snap-data (mf/deref refs/workspace-snap-data)
         shapes (if drawing [drawing] selected-shapes)

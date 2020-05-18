@@ -74,11 +74,12 @@
    (case type
      :square (let [{:keys [x y width height]} shape
                    size (-> params :size)]
-               (if (= coord :x)
-                 (mapcat #(vector (gpt/point (+ x %) y)
-                                  (gpt/point (+ x %) (+ y height))) (range size width size))
-                 (mapcat #(vector (gpt/point x (+ y %))
-                                  (gpt/point (+ x width) (+ y %))) (range size height size))))
+               (when (> size 0)
+                 (if (= coord :x)
+                   (mapcat #(vector (gpt/point (+ x %) y)
+                                    (gpt/point (+ x %) (+ y height))) (range size width size))
+                   (mapcat #(vector (gpt/point x (+ y %))
+                                    (gpt/point (+ x width) (+ y %))) (range size height size)))))
      :column (when (= coord :x) (->> (layout-rects shape layout)
                                      (mapcat layout-rect-points)))
 

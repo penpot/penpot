@@ -67,7 +67,8 @@
     :element-options
     :rules
     :dynamic-alignment
-    :layouts})
+    :display-grid
+    :snap-grid})
 
 (s/def ::options-mode #{:design :prototype})
 
@@ -1493,13 +1494,35 @@
 ;; Layouts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defonce default-layout-params
+  {:square {:size 16
+            :color {:value "#59B9E2"
+                    :opacity 0.9}}
+
+   :column {:size 12
+            :type :stretch
+            :item-width nil
+            :gutter 8
+            :margin 0
+            :color {:value "#DE4762"
+                    :opacity 0.1}}
+   :row {:size 12
+         :type :stretch
+         :item-height nil
+         :gutter 8
+         :margin 0
+         :color {:value "#DE4762"
+                 :opacity 0.1}}})
+
 (defn add-frame-layout [frame-id]
   (ptk/reify ::set-frame-layout
     dwc/IBatchedChange
     ptk/UpdateEvent
     (update [_ state]
       (let [pid (:current-page-id state)
-            default-params {:size 16 :color {:value "#59B9E2" :opacity 0.9}}
+            default-params (or
+                            (get-in state [:workspace-data pid :options :saved-layouts :square])
+                            (:square default-layout-params))
             prop-path [:workspace-data pid :objects frame-id :layouts]
             layout {:type :square
                     :params default-params
@@ -1528,14 +1551,13 @@
 
 (defn set-default-layout [type params]
   (ptk/reify ::set-default-layout
-    dwc/IBatchedChange
-
-    ;; TODO: Save into the backend
-    ptk/UpdateEvent
-    (update [_ state]
-      (->
-       state
-       (assoc-in [:workspace-page :options :saved-layouts type] params)))))
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (dwc/commit-changes [{:type :set-option
+                                   :option [:saved-layouts type]
+                                   :value params}]
+                                 []
+                                 {:commit-local? true})))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports
