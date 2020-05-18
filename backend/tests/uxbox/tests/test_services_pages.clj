@@ -122,6 +122,7 @@
             data {::sm/type :update-page
                   :id page-id
                   :revn 0
+                  :session-id uuid/zero
                   :profile-id (:id prof)
                   :changes [{:type :add-obj
                              :frame-id uuid/zero
@@ -145,6 +146,7 @@
 
     (t/testing "conflict error"
       (let [data {::sm/type :update-page
+                  :session-id uuid/zero
                   :id page-id
                   :revn 99
                   :profile-id (:id prof)
@@ -177,6 +179,7 @@
             data {::sm/type :update-page
                   :id (:id page)
                   :revn 0
+                  :session-id uuid/zero
                   :profile-id (:id prof)
                   :changes [{:type :add-obj
                              :id sid

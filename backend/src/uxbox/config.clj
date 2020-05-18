@@ -111,6 +111,7 @@
 (defn read-test-config
   [env]
   (assoc (read-config env)
+         :redis-uri "redis://redis/1"
          :database-uri "postgresql://postgres/uxbox_test"
          :media-directory "/tmp/uxbox/media"
          :assets-directory "/tmp/uxbox/static"

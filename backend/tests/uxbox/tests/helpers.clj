@@ -38,10 +38,11 @@
   [next]
   (let [config (cfg/read-test-config env)]
     (try
-      ;; (Class/forName "org.postgresql.Driver")
       (let [pool (testing-datasource)]
         (-> (mount/only #{#'uxbox.config/config
                           #'uxbox.db/pool
+                          #'uxbox.redis/client
+                          #'uxbox.redis/conn
                           #'uxbox.services.init/query-services
                           #'uxbox.services.init/mutation-services
                           #'uxbox.migrations/migrations
