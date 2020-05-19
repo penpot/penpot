@@ -60,14 +60,11 @@
 (mf/defc menu
   [{:keys [layout project file] :as props}]
   (let [show-menu? (mf/use-state false)
-        toggle-sitemap #(st/emit! (dw/toggle-layout-flag :sitemap))
         locale (i18n/use-locale)]
 
     [:div.menu-section
      [:div.btn-icon-dark.btn-small {:on-click #(reset! show-menu? true)} i/actions]
-     [:div.project-tree {:alt (t locale "header.sitemap")
-                         :class (classnames :selected (contains? layout :sitemap))
-                         :on-click toggle-sitemap}
+     [:div.project-tree {:alt (t locale "header.sitemap")}
       [:span.project-name (:name project) " /"]
       [:span (:name file)]]
 
@@ -88,10 +85,10 @@
            (t locale "workspace.header.menu.hide-grid")
            (t locale "workspace.header.menu.show-grid"))]]
 
-       [:li {:on-click #(st/emit! (dw/toggle-layout-flag :layers))}
+       [:li {:on-click #(st/emit! (dw/toggle-layout-flag :sitemap :layers))}
         [:span i/layers]
         [:span
-         (if (contains? layout :layers)
+         (if (or (contains? layout :sitemap) (contains? layout :layers))
            (t locale "workspace.header.menu.hide-layers")
            (t locale "workspace.header.menu.show-layers"))]]
 
