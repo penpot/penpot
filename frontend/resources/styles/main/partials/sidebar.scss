@@ -7,6 +7,7 @@
 
 .settings-bar {
   background-color: $color-gray-50;
+  border-left: 1px solid $color-gray-60;
   bottom: 0;
   height: 100%;
   position: fixed;
@@ -15,6 +16,8 @@
   z-index: 10;
 
   &.settings-bar-left {
+    border-left: none;
+    border-right: 1px solid $color-gray-60;
     left: 40px;
   }
 

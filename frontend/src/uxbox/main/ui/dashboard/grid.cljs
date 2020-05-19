@@ -123,4 +123,4 @@
         [:div.grid-files-empty
          [:div.grid-files-desc (t locale "dashboard.grid.empty-files")]
          [:div.grid-files-link
-          [:a.btn-text-basic.btn-small {:on-click on-click} (t locale "ds.new-file")]]])]]))
+          [:a.btn-secondary.btn-small {:on-click on-click} (t locale "ds.new-file")]]])]]))

@@ -450,6 +450,7 @@
 .grid-files-empty {
     align-items: center;
     border: 1px dashed $color-gray-20;
+    border-radius: $br-small;
     display: flex;
     flex-direction: column;
     height: fit-content;
@@ -458,7 +459,7 @@
     width: 100%;
 
     .grid-files-desc {
-      color: $color-gray-40;
+      color: $color-gray-60;
       margin-bottom: $medium;
     }
 }
