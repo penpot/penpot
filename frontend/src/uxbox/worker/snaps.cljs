@@ -15,20 +15,23 @@
    [uxbox.worker.impl :as impl]
    [uxbox.util.range-tree :as rt]
    [uxbox.util.geom.snap-points :as snap]
-   [uxbox.util.geom.layout :as gla]))
+   [uxbox.util.geom.grid :as gg]))
 
 (defonce state (l/atom {}))
 
 (defn- create-coord-data
   "Initializes the range tree given the shapes"
-  [shapes coord]
+  [frame-id shapes coord]
   (let [process-shape (fn [coord]
                         (fn [shape]
                           (concat
                            (let [points (snap/shape-snap-points shape)]
                              (map #(vector % (:id shape)) points))
-                           (let [points (gla/layout-snap-points shape coord)]
-                             (map #(vector % :layout) points)))))
+
+                           ;; The grid points are only added by the "root" of the coord-dat
+                           (if (= (:id shape) frame-id)
+                            (let [points (gg/grid-snap-points shape coord)]
+                              (map #(vector % :layout) points))))))
         into-tree (fn [tree [point _ :as data]]
                     (rt/insert tree (coord point) data))]
     (->> shapes
@@ -38,7 +41,7 @@
 (defn- mapm
   "Map over the values of a map"
   [mfn coll]
-  (into {} (map (fn [[key val]] [key (mfn val)]) coll)))
+  (into {} (map (fn [[key val]] [key (mfn key val)]) coll)))
 
 (defn- initialize-snap-data
   "Initialize the snap information with the current workspace information"
@@ -48,8 +51,8 @@
                           (group-by :frame-id))
         frame-shapes (->> (cp/select-frames objects)
                           (reduce #(update %1 (:id %2) conj %2) frame-shapes))]
-    (mapm (fn [shapes] {:x (create-coord-data shapes :x)
-                        :y (create-coord-data shapes :y)})
+    (mapm (fn [frame-id shapes] {:x (create-coord-data frame-id shapes :x)
+                                 :y (create-coord-data frame-id shapes :y)})
           frame-shapes)))
 
 (defn- log-state

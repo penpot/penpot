@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns uxbox.main.ui.workspace.sidebar.options.frame-layouts
+(ns uxbox.main.ui.workspace.sidebar.options.frame-grid
   (:require
    [rumext.alpha :as mf]
    [uxbox.util.dom :as dom]
@@ -16,8 +16,8 @@
    [uxbox.common.data :refer [parse-integer]]
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
-   [uxbox.main.data.workspace :as dw]
-   [uxbox.util.geom.layout :as gla]
+   [uxbox.main.data.workspace.grid :as dw]
+   [uxbox.util.geom.grid :as gg]
    [uxbox.main.ui.icons :as i]
    [uxbox.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
    [uxbox.main.ui.workspace.sidebar.options.rows.input-row :refer [input-row]]
@@ -40,29 +40,29 @@
    :separator
    18 12 10 8 6 4 3 2])
 
-(mf/defc layout-options [{:keys [frame layout default-layout-params on-change on-remove on-save-layout]}]
+(mf/defc grid-options [{:keys [frame grid default-grid-params on-change on-remove on-save-grid]}]
   (let [state (mf/use-state {:show-advanced-options false
                              :changes {}})
-        {:keys [type display params] :as layout} (d/deep-merge layout (:changes @state))
+        {:keys [type display params] :as grid} (d/deep-merge grid (:changes @state))
 
         toggle-advanced-options #(swap! state update :show-advanced-options not)
 
         emit-changes!
         (fn [update-fn]
           (swap! state update :changes update-fn)
-          (when on-change (on-change (d/deep-merge layout (-> @state :changes update-fn)))))
+          (when on-change (on-change (d/deep-merge grid (-> @state :changes update-fn)))))
 
         handle-toggle-visibility
         (fn [event]
           (emit-changes! (fn [changes] (update changes :display #(if (nil? %) false (not %))))))
 
-        handle-remove-layout
+        handle-remove-grid
         (fn [event]
           (when on-remove (on-remove)))
 
         handle-change-type
         (fn [type]
-          (let [defaults (type default-layout-params)
+          (let [defaults (type default-grid-params)
                 keys (keys defaults)
                 params (->> @state :changes params (select-keys keys) (merge defaults))
                 to-merge {:type type :params params}]
@@ -81,11 +81,11 @@
 
         handle-change-size
         (fn [size]
-          (let [layout (d/deep-merge layout (:changes @state))
-                {:keys [margin gutter item-length]} (:params layout)
-                frame-length (if (= :column (:type layout)) (:width frame) (:height frame))
+          (let [grid (d/deep-merge grid (:changes @state))
+                {:keys [margin gutter item-length]} (:params grid)
+                frame-length (if (= :column (:type grid)) (:width frame) (:height frame))
                 item-length (if (or (nil? size) (= :auto size))
-                              (-> (gla/calculate-default-item-length frame-length margin gutter)
+                              (-> (gg/calculate-default-item-length frame-length margin gutter)
                                   (mth/round))
                               item-length)]
             (emit-changes! #(-> %
@@ -94,7 +94,7 @@
 
         handle-change-item-length
         (fn [item-length]
-          (let [{:keys [margin gutter size]} (->> @state :changes :params (d/deep-merge (:params layout)))
+          (let [{:keys [margin gutter size]} (->> @state :changes :params (d/deep-merge (:params grid)))
                 size (if (and (nil? item-length) (or (nil? size) (= :auto size))) 12 size)]
             (emit-changes! #(-> %
                                 (assoc-in [:params :size] size)
@@ -102,15 +102,15 @@
 
         handle-use-default
         (fn []
-          (emit-changes! #(hash-map :params ((:type layout) default-layout-params))))
+          (emit-changes! #(hash-map :params ((:type grid) default-grid-params))))
 
         handle-set-as-default
         (fn []
-          (let [current-layout (d/deep-merge layout (-> @state :changes))]
-            (on-save-layout current-layout)))
+          (let [current-grid (d/deep-merge grid (-> @state :changes))]
+            (on-save-grid current-grid)))
 
-        is-default (= (->> @state :changes (d/deep-merge layout) :params)
-                      (->> layout :type default-layout-params))]
+        is-default (= (->> @state :changes (d/deep-merge grid) :params)
+                      (->> grid :type default-grid-params))]
 
     [:div.grid-option
      [:div.grid-option-main
@@ -139,7 +139,7 @@
 
       [:div.grid-option-main-actions
        [:button.custom-button {:on-click handle-toggle-visibility} (if display i/eye i/eye-closed)]
-       [:button.custom-button {:on-click handle-remove-layout} i/trash]]]
+       [:button.custom-button {:on-click handle-remove-grid} i/trash]]]
 
      [:& advanced-options {:visible? (:show-advanced-options @state)
                            :on-close toggle-advanced-options}
@@ -203,26 +203,26 @@
        [:button.btn-options {:disabled is-default
                              :on-click handle-set-as-default} "Set as default"]]]]))
 
-(mf/defc frame-layouts [{:keys [shape]}]
+(mf/defc frame-grid [{:keys [shape]}]
   (let [id (:id shape)
-        default-layout-params (merge dw/default-layout-params (mf/deref refs/workspace-saved-layouts))
-        handle-create-layout #(st/emit! (dw/add-frame-layout id))
-        handle-remove-layout (fn [index] #(st/emit! (dw/remove-frame-layout id index)))
-        handle-edit-layout (fn [index] #(st/emit! (dw/set-frame-layout id index %)))
-        handle-save-layout (fn [layout] (st/emit! (dw/set-default-layout (:type layout) (:params layout))))]
+        default-grid-params (merge dw/default-grid-params (mf/deref refs/workspace-saved-grids))
+        handle-create-grid #(st/emit! (dw/add-frame-grid id))
+        handle-remove-grid (fn [index] #(st/emit! (dw/remove-frame-grid id index)))
+        handle-edit-grid (fn [index] #(st/emit! (dw/set-frame-grid id index %)))
+        handle-save-grid (fn [grid] (st/emit! (dw/set-default-grid (:type grid) (:params grid))))]
     [:div.element-set
      [:div.element-set-title
-      [:span "Grid & Layout"]
-      [:div.add-page {:on-click handle-create-layout} i/close]]
+      [:span "Grids"]
+      [:div.add-page {:on-click handle-create-grid} i/close]]
 
-     (when (not (empty? (:layouts shape)))
+     (when (not (empty? (:grids shape)))
        [:div.element-set-content
-        (for [[index layout] (map-indexed vector (:layouts shape))]
-          [:& layout-options {:key (str (:id shape) "-" index)
-                              :layout layout
-                              :default-layout-params default-layout-params
+        (for [[index grid] (map-indexed vector (:grids shape))]
+          [:& grid-options {:key (str (:id shape) "-" index)
+                              :grid grid
+                              :default-grid-params default-grid-params
                               :frame shape
-                              :on-change (handle-edit-layout index)
-                              :on-remove (handle-remove-layout index)
-                              :on-save-layout handle-save-layout}])])]))
+                              :on-change (handle-edit-grid index)
+                              :on-remove (handle-remove-grid index)
+                              :on-save-grid handle-save-grid}])])]))
 

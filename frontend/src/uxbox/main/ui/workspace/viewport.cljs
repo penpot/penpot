@@ -29,7 +29,7 @@
    [uxbox.main.ui.workspace.selection :refer [selection-handlers]]
    [uxbox.main.ui.workspace.presence :as presence]
    [uxbox.main.ui.workspace.snap-feedback :refer [snap-feedback]]
-   [uxbox.main.ui.workspace.layout-display :refer [layout-display]]
+   [uxbox.main.ui.workspace.frame-grid :refer [frame-grid]]
    [uxbox.util.math :as mth]
    [uxbox.util.dom :as dom]
    [uxbox.util.object :as obj]
@@ -387,7 +387,7 @@
                        :modifiers (:modifiers local)}])
 
       (when (contains? layout :display-grid)
-        [:& layout-display {:zoom zoom}])
+        [:& frame-grid {:zoom zoom}])
 
       [:& snap-feedback {:layout layout}]
 

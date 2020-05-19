@@ -14,7 +14,7 @@
    [uxbox.util.geom.shapes :as gsh]
    [uxbox.util.geom.point :as gpt]))
 
-(defn- frame-snap-points [{:keys [x y width height layouts] :as frame}]
+(defn- frame-snap-points [{:keys [x y width height] :as frame}]
   (into #{(gpt/point x y)
           (gpt/point (+ x (/ width 2)) y)
           (gpt/point (+ x width) y)
