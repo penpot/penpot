@@ -23,7 +23,8 @@
    [uxbox.main.ui.workspace.sidebar.options.rows.input-row :refer [input-row]]
    [uxbox.main.ui.components.select :refer [select]]
    [uxbox.main.ui.components.editable-select :refer [editable-select]]
-   [uxbox.main.ui.components.dropdown :refer [dropdown]]))
+   [uxbox.main.ui.components.dropdown :refer [dropdown]]
+   [uxbox.util.i18n :as i18n :refer [tr t]]))
 
 (mf/defc advanced-options [{:keys [visible? on-close children]}]
   (when visible?
@@ -36,12 +37,13 @@
       children]]))
 
 (def ^:private size-options
-  [{:value :auto :label "Auto"}
+  [{:value :auto :label (tr "workspace.options.grid.auto")}
    :separator
    18 12 10 8 6 4 3 2])
 
 (mf/defc grid-options [{:keys [frame grid default-grid-params on-change on-remove on-save-grid]}]
-  (let [state (mf/use-state {:show-advanced-options false
+  (let [locale (i18n/use-locale)
+        state (mf/use-state {:show-advanced-options false
                              :changes {}})
         {:keys [type display params] :as grid} (d/deep-merge grid (:changes @state))
 
@@ -119,9 +121,9 @@
 
       [:& select {:class "flex-grow"
                   :default-value type
-                  :options [{:value :square :label "Square"}
-                            {:value :column :label "Columns"}
-                            {:value :row :label "Rows"}]
+                  :options [{:value :square :label (t locale "workspace.options.grid.square")}
+                            {:value :column :label (t locale "workspace.options.grid.column")}
+                            {:value :row :label (t locale "workspace.options.grid.row")}]
                   :on-change handle-change-type}]
 
       (if (= type :square)
@@ -144,14 +146,14 @@
      [:& advanced-options {:visible? (:show-advanced-options @state)
                            :on-close toggle-advanced-options}
       (when (= :square type)
-        [:& input-row {:label "Size"
+        [:& input-row {:label (t locale "workspace.options.grid.params.size")
                        :class "pixels"
                        :min 1
                        :value (:size params)
                        :on-change (handle-change :params :size)}])
 
       (when (= :row type)
-        [:& input-row {:label "Rows"
+        [:& input-row {:label (t locale "workspace.options.grid.params.rows")
                        :type :editable-select
                        :options size-options
                        :value (:size params)
@@ -159,7 +161,7 @@
                        :on-change handle-change-size}])
 
       (when (= :column type)
-        [:& input-row {:label "Columns"
+        [:& input-row {:label (t locale "workspace.options.grid.params.columns")
                        :type :editable-select
                        :options size-options
                        :value (:size params)
@@ -167,29 +169,31 @@
                        :on-change handle-change-size}])
 
       (when (#{:row :column} type)
-        [:& input-row {:label "Type"
+        [:& input-row {:label (t locale "workspace.options.grid.params.type")
                        :type :select
-                       :options [{:value :stretch :label "Stretch"}
-                                 {:value :left :label "Left"}
-                                 {:value :center :label "Center"}
-                                 {:value :right :label "Right"}]
+                       :options [{:value :stretch :label (t locale "workspace.options.grid.params.type.stretch")}
+                                 {:value :left :label (t locale "workspace.options.grid.params.type.left")}
+                                 {:value :center :label (t locale "workspace.options.grid.params.type.center")}
+                                 {:value :right :label (t locale "workspace.options.grid.params.type.right")}]
                        :value (:type params)
                        :on-change (handle-change :params :type)}])
 
       (when (#{:row :column} type)
-        [:& input-row {:label (if (= :row type) "Height" "Width")
+        [:& input-row {:label (if (= :row type)
+                                (t locale "workspace.options.grid.params.width")
+                                (t locale "workspace.options.grid.params.height"))
                        :class "pixels"
                        :value (or (:item-length params) "")
                        :on-change handle-change-item-length}])
 
       (when (#{:row :column} type)
         [:*
-         [:& input-row {:label "Gutter"
+         [:& input-row {:label (t locale "workspace.options.grid.params.gutter")
                         :class "pixels"
                         :value (:gutter params)
                         :min 0
                         :on-change (handle-change :params :gutter)}]
-         [:& input-row {:label "Margin"
+         [:& input-row {:label (t locale "workspace.options.grid.params.margin")
                         :class "pixels"
                         :min 0
                         :value (:margin params)
@@ -199,12 +203,13 @@
                      :on-change (handle-change :params :color)}]
       [:div.row-flex
        [:button.btn-options {:disabled is-default
-                             :on-click handle-use-default} "Use default"]
+                             :on-click handle-use-default} (t locale "workspace.options.grid.params.use-default")]
        [:button.btn-options {:disabled is-default
-                             :on-click handle-set-as-default} "Set as default"]]]]))
+                             :on-click handle-set-as-default} (t locale "workspace.options.grid.params.set-default")]]]]))
 
 (mf/defc frame-grid [{:keys [shape]}]
-  (let [id (:id shape)
+  (let [locale (i18n/use-locale)
+        id (:id shape)
         default-grid-params (merge dw/default-grid-params (mf/deref refs/workspace-saved-grids))
         handle-create-grid #(st/emit! (dw/add-frame-grid id))
         handle-remove-grid (fn [index] #(st/emit! (dw/remove-frame-grid id index)))
@@ -212,7 +217,7 @@
         handle-save-grid (fn [grid] (st/emit! (dw/set-default-grid (:type grid) (:params grid))))]
     [:div.element-set
      [:div.element-set-title
-      [:span "Grids"]
+      [:span (t locale "workspace.options.grid.title")]
       [:div.add-page {:on-click handle-create-grid} i/close]]
 
      (when (not (empty? (:grids shape)))

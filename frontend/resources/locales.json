@@ -355,7 +355,7 @@
     }
   },
   "header.sitemap" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:68" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:67" ],
     "translations" : {
       "en" : null,
       "fr" : null
@@ -822,91 +822,91 @@
     }
   },
   "workspace.header.menu.disable-dynamic-alignment" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:116" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:113" ],
     "translations" : {
       "en" : "Disable dynamic alignment"
     }
   },
   "workspace.header.menu.disable-snap-grid" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:92" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:89" ],
     "translations" : {
       "en" : "Disable snap to grid"
     }
   },
   "workspace.header.menu.enable-dynamic-alignment" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:117" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:114" ],
     "translations" : {
       "en" : "Enable dynamic aligment"
     }
   },
   "workspace.header.menu.enable-snap-grid" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:93" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:90" ],
     "translations" : {
       "en" : "Snap to grid"
     }
   },
   "workspace.header.menu.hide-grid" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:86" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:83" ],
     "translations" : {
       "en" : "Hide grid"
     }
   },
   "workspace.header.menu.hide-layers" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:98" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:95" ],
     "translations" : {
       "en" : "Hide layers"
     }
   },
   "workspace.header.menu.hide-libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:110" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:107" ],
     "translations" : {
       "en" : "Hide libraries"
     }
   },
   "workspace.header.menu.hide-palette" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:104" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:101" ],
     "translations" : {
       "en" : "Hide color palette"
     }
   },
   "workspace.header.menu.hide-rules" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:80" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:77" ],
     "translations" : {
       "en" : "Hide rules"
     }
   },
   "workspace.header.menu.show-grid" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:87" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:84" ],
     "translations" : {
       "en" : "Show grid"
     }
   },
   "workspace.header.menu.show-layers" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:99" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:96" ],
     "translations" : {
       "en" : "Show layers"
     }
   },
   "workspace.header.menu.show-libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:111" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:108" ],
     "translations" : {
       "en" : "Show libraries"
     }
   },
   "workspace.header.menu.show-palette" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:105" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:102" ],
     "translations" : {
       "en" : "Show color palette"
     }
   },
   "workspace.header.menu.show-rules" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:81" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:78" ],
     "translations" : {
       "en" : "Show rules"
     }
   },
   "workspace.header.viewer" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:154" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:151" ],
     "translations" : {
       "en" : "View mode (Ctrl + P)",
       "fr" : "Mode visualisation (Ctrl + P)"
@@ -1103,6 +1103,120 @@
       "fr" : "Paramètres de la grille"
     },
     "unused" : true
+  },
+  "workspace.options.grid.auto" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:40" ],
+    "translations" : {
+      "en" : "Auto"
+    }
+  },
+  "workspace.options.grid.column" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:125" ],
+    "translations" : {
+      "en" : "Columns"
+    }
+  },
+  "workspace.options.grid.params.columns" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:164" ],
+    "translations" : {
+      "en" : "Columns"
+    }
+  },
+  "workspace.options.grid.params.gutter" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:191" ],
+    "translations" : {
+      "en" : "Gutter"
+    }
+  },
+  "workspace.options.grid.params.height" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:184" ],
+    "translations" : {
+      "en" : "Height"
+    }
+  },
+  "workspace.options.grid.params.margin" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:196" ],
+    "translations" : {
+      "en" : "Margin"
+    }
+  },
+  "workspace.options.grid.params.rows" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:156" ],
+    "translations" : {
+      "en" : "Rows"
+    }
+  },
+  "workspace.options.grid.params.set-default" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:208" ],
+    "translations" : {
+      "en" : "Set as default"
+    }
+  },
+  "workspace.options.grid.params.size" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:149" ],
+    "translations" : {
+      "en" : "Size"
+    }
+  },
+  "workspace.options.grid.params.type" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:172" ],
+    "translations" : {
+      "en" : "Type"
+    }
+  },
+  "workspace.options.grid.params.type.center" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:176" ],
+    "translations" : {
+      "en" : "Center"
+    }
+  },
+  "workspace.options.grid.params.type.left" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:175" ],
+    "translations" : {
+      "en" : "Left"
+    }
+  },
+  "workspace.options.grid.params.type.right" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:177" ],
+    "translations" : {
+      "en" : "Right"
+    }
+  },
+  "workspace.options.grid.params.type.stretch" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:174" ],
+    "translations" : {
+      "en" : "Stretch"
+    }
+  },
+  "workspace.options.grid.params.use-default" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:206" ],
+    "translations" : {
+      "en" : "Use default"
+    }
+  },
+  "workspace.options.grid.params.width" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:183" ],
+    "translations" : {
+      "en" : "Width"
+    }
+  },
+  "workspace.options.grid.row" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:126" ],
+    "translations" : {
+      "en" : "Rows"
+    }
+  },
+  "workspace.options.grid.square" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:124" ],
+    "translations" : {
+      "en" : "Square"
+    }
+  },
+  "workspace.options.grid.title" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:220" ],
+    "translations" : {
+      "en" : "Grid & Layouts"
+    }
   },
   "workspace.options.line-height-letter-spacing" : {
     "translations" : {

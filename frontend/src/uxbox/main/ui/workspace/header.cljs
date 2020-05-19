@@ -21,7 +21,7 @@
    [uxbox.main.ui.workspace.images :refer [import-image-modal]]
    [uxbox.main.ui.components.dropdown :refer [dropdown]]
    [uxbox.main.ui.workspace.presence :as presence]
-   [uxbox.util.i18n :as i18n :refer [tr t]]
+   [uxbox.util.i18n :as i18n :refer [t]]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.math :as mth]
    [uxbox.util.router :as rt]))
