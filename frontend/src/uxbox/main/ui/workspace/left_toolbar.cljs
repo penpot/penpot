@@ -70,7 +70,7 @@
        [:li.tooltip.tooltip-right
         {:alt "Layers"
          :class (when (contains? layout :layers) "selected")
-         :on-click #(st/emit! (dw/toggle-layout-flag :layers))}
+         :on-click #(st/emit! (dw/toggle-layout-flag :sitemap :layers))}
         i/layers]
        [:li.tooltip.tooltip-right
         {:alt (t locale "workspace.toolbar.libraries")
