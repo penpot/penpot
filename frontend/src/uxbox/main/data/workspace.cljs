@@ -1501,7 +1501,7 @@
 
    :column {:size 12
             :type :stretch
-            :item-width nil
+            :item-length nil
             :gutter 8
             :margin 0
             :color {:value "#DE4762"

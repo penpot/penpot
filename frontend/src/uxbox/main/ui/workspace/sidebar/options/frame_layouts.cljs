@@ -12,10 +12,12 @@
    [rumext.alpha :as mf]
    [uxbox.util.dom :as dom]
    [uxbox.util.data :as d]
+   [uxbox.util.math :as mth]
    [uxbox.common.data :refer [parse-integer]]
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
    [uxbox.main.data.workspace :as dw]
+   [uxbox.util.geom.layout :as gla]
    [uxbox.main.ui.icons :as i]
    [uxbox.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
    [uxbox.main.ui.workspace.sidebar.options.rows.input-row :refer [input-row]]
@@ -38,7 +40,7 @@
    :separator
    18 12 10 8 6 4 3 2])
 
-(mf/defc layout-options [{:keys [layout default-layout-params on-change on-remove on-save-layout]}]
+(mf/defc layout-options [{:keys [frame layout default-layout-params on-change on-remove on-save-layout]}]
   (let [state (mf/use-state {:show-advanced-options false
                              :changes {}})
         {:keys [type display params] :as layout} (d/deep-merge layout (:changes @state))
@@ -77,6 +79,27 @@
             (let [change-fn (apply handle-change keys)]
               (-> event dom/get-target dom/get-value parse-integer change-fn))))
 
+        handle-change-size
+        (fn [size]
+          (let [layout (d/deep-merge layout (:changes @state))
+                {:keys [margin gutter item-length]} (:params layout)
+                frame-length (if (= :column (:type layout)) (:width frame) (:height frame))
+                item-length (if (or (nil? size) (= :auto size))
+                              (-> (gla/calculate-default-item-length frame-length margin gutter)
+                                  (mth/round))
+                              item-length)]
+            (emit-changes! #(-> %
+                                (assoc-in [:params :size] size)
+                                (assoc-in [:params :item-length] item-length)))))
+
+        handle-change-item-length
+        (fn [item-length]
+          (let [{:keys [margin gutter size]} (->> @state :changes :params (d/deep-merge (:params layout)))
+                size (if (and (nil? item-length) (or (nil? size) (= :auto size))) 12 size)]
+            (emit-changes! #(-> %
+                                (assoc-in [:params :size] size)
+                                (assoc-in [:params :item-length] item-length)))))
+
         handle-use-default
         (fn []
           (emit-changes! #(hash-map :params ((:type layout) default-layout-params))))
@@ -112,7 +135,7 @@
                              :type (when (number? (:size params)) "number" )
                              :class "input-option"
                              :options size-options
-                             :on-change (handle-change :params :size)}])
+                             :on-change handle-change-size}])
 
       [:div.grid-option-main-actions
        [:button.custom-button {:on-click handle-toggle-visibility} (if display i/eye i/eye-closed)]
@@ -133,7 +156,7 @@
                        :options size-options
                        :value (:size params)
                        :min 1
-                       :on-change (handle-change :params :size)}])
+                       :on-change handle-change-size}])
 
       (when (= :column type)
         [:& input-row {:label "Columns"
@@ -141,7 +164,7 @@
                        :options size-options
                        :value (:size params)
                        :min 1
-                       :on-change (handle-change :params :size)}])
+                       :on-change handle-change-size}])
 
       (when (#{:row :column} type)
         [:& input-row {:label "Type"
@@ -153,18 +176,11 @@
                        :value (:type params)
                        :on-change (handle-change :params :type)}])
 
-      (when (= :row type)
-        [:& input-row {:label "Height"
+      (when (#{:row :column} type)
+        [:& input-row {:label (if (= :row type) "Height" "Width")
                        :class "pixels"
-                       :min 1
-                       :value (or (:item-height params) "")
-                       :on-change (handle-change :params :item-height)}])
-
-      (when (= :column type)
-        [:& input-row {:label "Width"
-                       :class "pixels"
-                       :value (or (:item-width params) "")
-                       :on-change (handle-change :params :item-width)}])
+                       :value (or (:item-length params) "")
+                       :on-change handle-change-item-length}])
 
       (when (#{:row :column} type)
         [:*
@@ -205,6 +221,7 @@
           [:& layout-options {:key (str (:id shape) "-" index)
                               :layout layout
                               :default-layout-params default-layout-params
+                              :frame shape
                               :on-change (handle-edit-layout index)
                               :on-remove (handle-remove-layout index)
                               :on-save-layout handle-save-layout}])])]))

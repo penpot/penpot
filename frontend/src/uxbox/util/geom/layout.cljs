@@ -24,10 +24,10 @@
         frame-length-no-margins (- frame-length (+ margin (- margin gutter)))]
     (mth/floor (/ frame-length-no-margins (+ item-length gutter)))))
 
-(defn calculate-column-layout [{:keys [width height x y] :as frame} {:keys [size gutter margin item-width type] :as params}]
-  (let [size (if (number? size) size (calculate-size width item-width margin gutter))
+(defn calculate-column-layout [{:keys [width height x y] :as frame} {:keys [size gutter margin item-length type] :as params}]
+  (let [size (if (number? size) size (calculate-size width item-length margin gutter))
         parts (/ width size)
-        item-width (or item-width (+ parts (- gutter) (/ gutter size) (- (/ (* margin 2) size))))
+        item-width (or item-length (+ parts (- gutter) (/ gutter size) (- (/ (* margin 2) size))))
         item-height height
         initial-offset (case type
                          :right (- width (* item-width size) (* gutter (dec size)) margin)
@@ -38,11 +38,11 @@
         next-y (fn [cur-val] y)]
     [size item-width item-height next-x next-y]))
 
-(defn calculate-row-layout [{:keys [width height x y] :as frame} {:keys [size gutter margin item-height type] :as params}]
-  (let [size (if (number? size) size (calculate-size height item-height margin gutter))
+(defn calculate-row-layout [{:keys [width height x y] :as frame} {:keys [size gutter margin item-length type] :as params}]
+  (let [size (if (number? size) size (calculate-size height item-length margin gutter))
         parts (/ height size)
         item-width width
-        item-height (or item-height (+ parts (- gutter) (/ gutter size) (- (/ (* margin 2) size))))
+        item-height (or item-length (+ parts (- gutter) (/ gutter size) (- (/ (* margin 2) size))))
         initial-offset (case type
                          :right (- height (* item-height size) (* gutter (dec size)) margin)
                          :center (/ (- height (* item-height size) (* gutter (dec size))) 2)

@@ -285,7 +285,7 @@
       position: absolute;
       left: 0;
       z-index: 12;
-      width: 200px;
+      // width: 200px;
       max-height: 30rem;
       min-width: 7rem;
       overflow-y: auto;
@@ -414,9 +414,21 @@
   }
 }
 
-.grid-option-main .editable-select.input-option .input-text {
-    padding: 0;
-    padding-top: 0.18rem;
+.element-set-content .grid-option-main  {
+    .editable-select.input-option .input-text {
+        padding: 0;
+        padding-top: 0.18rem;
+    }
+
+    .input-element {
+        width: 55px;
+        margin: 0 0.2rem;
+    }
+
+    .input-text {
+        padding-left: 0;
+        color: #b1b2b5;
+    }
 }
 
 .color-th {
@@ -644,6 +656,7 @@
     }
 
     & .custom-select {
+        min-width: 4.75rem;
         height: 2rem;
         border: none;
         border-bottom: 1px solid #65666A;

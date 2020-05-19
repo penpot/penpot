@@ -45,8 +45,15 @@
 (mf/defc snap-feedback-points
   [{:keys [shapes page-id filter-shapes zoom] :as props}]
   (let [state (mf/use-state [])
-        subject (mf/use-memo #(rx/subject))]
+        subject (mf/use-memo #(rx/subject))
 
+        ;; We use sets to store points/lines so there are no points/lines repeated
+        ;; can cause problems with react keys
+        snap-points (into #{} (mapcat (fn [[point snaps coord]]
+                                        (when (not-empty snaps) (concat [point] snaps))) @state))
+
+        snap-lines (into #{} (mapcat (fn [[point snaps coord]]
+                                       (when (not-empty snaps) (map #(vector point %) snaps))) @state))]
     (mf/use-effect
      (fn []
        (->> subject
@@ -61,24 +68,17 @@
      (fn []
        (rx/push! subject props)))
 
+
     [:g.snap-feedback
-     (for [[point snaps coord] @state]
-       (if (not-empty snaps)
-         [:g.point {:key (str "point-" (:x point) "-" (:y point)  "-" (name coord))}
-          [:& snap-point {:key (str "point-" (:x point) "-" (:y point)  "-" (name coord))
-                          :point point
-                          :zoom zoom}]
-
-          (for [snap snaps]
-            [:& snap-point {:key (str "snap-" (:x point) "-" (:y point) "-" (:x snap) "-" (:y snap) "-" (name coord))
-                            :point snap
-                            :zoom zoom}])
-
-          (for [snap snaps]
-            [:& snap-line {:key (str "line-" (:x point) "-" (:y point) "-" (:x snap) "-" (:y snap) "-" (name coord))
-                           :snap snap
-                           :point point
-                           :zoom zoom}])]))]))
+     (for [[from-point to-point] snap-lines]
+       [:& snap-line {:key (str "line-" (:x from-point) "-" (:y from-point) "-" (:x to-point) "-" (:y to-point) "-")
+                      :snap from-point
+                      :point to-point
+                      :zoom zoom}])
+     (for [point snap-points]
+       [:& snap-point {:key (str "point-" (:x point) "-" (:y point))
+                       :point point
+                       :zoom zoom}])]))
 
 (mf/defc snap-feedback [{:keys [layout]}]
   (let [page-id (mf/deref refs/workspace-page-id)
