@@ -18,10 +18,10 @@
 
 (def ^:private snap-accuracy 5)
 
-(defn- remove-from-snap-points [ids-to-remove]
+(defn- remove-from-snap-points [remove-id?]
   (fn [query-result]
     (->> query-result
-         (map (fn [[value data]] [value (remove (comp ids-to-remove second) data)]))
+         (map (fn [[value data]] [value (remove (comp remove-id? second) data)]))
          (filter (fn [[_ data]] (not (empty? data)))))))
 
 (defn- flatten-to-points
@@ -90,24 +90,32 @@
 
 (defn closest-snap-point
   [page-id shapes layout point]
-  (if (layout :dynamic-alignment)
-    (let [frame-id (snap-frame-id shapes)
-          filter-shapes (into #{} (map :id shapes))]
-      (->> (closest-snap page-id frame-id [point] filter-shapes)
-           (rx/map #(gpt/add point %))))
-    (rx/of point)))
+  (let [frame-id (snap-frame-id shapes)
+        filter-shapes (into #{} (map :id shapes))
+        filter-shapes (fn [id] (if (= id :layout)
+                                 (or (not (contains? layout :display-grid))
+                                     (not (contains? layout :snap-grid)))
+                                 (or (filter-shapes id)
+                                     (not (contains? layout :dynamic-alignment)))))]
+    (->> (closest-snap page-id frame-id [point] filter-shapes)
+         (rx/map #(gpt/add point %))
+         (rx/map gpt/round))))
 
 (defn closest-snap-move
   [page-id shapes layout movev]
-  (if (layout :dynamic-alignment)
-    (let [frame-id (snap-frame-id shapes)
-          filter-shapes (into #{} (map :id shapes))
-          shapes-points (->> shapes
-                             ;; Unroll all the possible snap-points
-                             (mapcat (partial sp/shape-snap-points))
+  (let [frame-id (snap-frame-id shapes)
+        filter-shapes (into #{} (map :id shapes))
+        filter-shapes (fn [id] (if (= id :layout)
+                                 (or (not (contains? layout :display-grid))
+                                     (not (contains? layout :snap-grid)))
+                                 (or (filter-shapes id)
+                                     (not (contains? layout :dynamic-alignment)))))
+        shapes-points (->> shapes
+                           ;; Unroll all the possible snap-points
+                           (mapcat (partial sp/shape-snap-points))
 
-                             ;; Move the points in the translation vector
-                             (map #(gpt/add % movev)))]
-      (->> (closest-snap page-id frame-id shapes-points filter-shapes)
-           (rx/map #(gpt/add movev %))))
-    (rx/of movev)))
+                           ;; Move the points in the translation vector
+                           (map #(gpt/add % movev)))]
+    (->> (closest-snap page-id frame-id shapes-points filter-shapes)
+         (rx/map #(gpt/add movev %))
+         (rx/map gpt/round))))

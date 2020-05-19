@@ -253,6 +253,12 @@
 
 (defmulti change-spec-impl :type)
 
+(s/def :set-option/option any? #_(s/or keyword? (s/coll-of keyword?)))
+(s/def :set-option/value any?)
+
+(defmethod change-spec-impl :set-option [_]
+  (s/keys :req-un [:set-option/option :set-option/value]))
+
 (defmethod change-spec-impl :add-obj [_]
   (s/keys :req-un [::id ::frame-id ::obj]
           :opt-un [::session-id ::parent-id]))
@@ -312,6 +318,12 @@
                data)))
 
 (declare insert-at-index)
+
+(defmethod process-change :set-option
+  [data {:keys [option value]}]
+  (let [path (if (seqable? option) option [option])]
+    (-> data
+        (assoc-in (into [:options] path) value))))
 
 (defmethod process-change :add-obj
   [data {:keys [id obj frame-id parent-id index] :as change}]

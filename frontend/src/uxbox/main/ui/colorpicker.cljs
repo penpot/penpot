@@ -25,7 +25,6 @@
                         :onChangeComplete on-change-complete
                         :style {:box-shadow "none"}}]))
 
-
 (def most-used-colors
   (letfn [(selector [{:keys [objects]}]
             (as-> {} $

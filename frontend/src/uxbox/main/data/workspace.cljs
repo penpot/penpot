@@ -66,7 +66,9 @@
     :layers
     :element-options
     :rules
-    :dynamic-alignment})
+    :dynamic-alignment
+    :display-grid
+    :snap-grid})
 
 (s/def ::options-mode #{:design :prototype})
 

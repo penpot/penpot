@@ -68,8 +68,17 @@
          (get-in % [:workspace-data page-id]))
       (l/derived st/state)))
 
+(def workspace-page-options
+  (l/derived :options workspace-data))
+
+(def workspace-saved-grids
+  (l/derived :saved-grids workspace-page-options))
+
 (def workspace-objects
   (l/derived :objects workspace-data))
+
+(def workspace-frames
+  (l/derived cp/select-frames workspace-objects))
 
 (defn object-by-id
   [id]

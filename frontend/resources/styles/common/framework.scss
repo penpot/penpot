@@ -366,6 +366,9 @@ ul.slider-dots {
   // Input amounts
 
   &.pixels {
+    & input {
+      padding-right: 20px;
+    }
 
     &::after {
       content: "px";

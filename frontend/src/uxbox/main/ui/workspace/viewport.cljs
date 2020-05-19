@@ -26,11 +26,10 @@
    [uxbox.main.ui.workspace.shapes :refer [shape-wrapper frame-wrapper]]
    [uxbox.main.ui.workspace.shapes.interactions :refer [interactions]]
    [uxbox.main.ui.workspace.drawarea :refer [draw-area start-drawing]]
-   [uxbox.main.ui.workspace.grid :refer [grid]]
-   [uxbox.main.ui.workspace.ruler :refer [ruler]]
    [uxbox.main.ui.workspace.selection :refer [selection-handlers]]
    [uxbox.main.ui.workspace.presence :as presence]
    [uxbox.main.ui.workspace.snap-feedback :refer [snap-feedback]]
+   [uxbox.main.ui.workspace.frame-grid :refer [frame-grid]]
    [uxbox.util.math :as mth]
    [uxbox.util.dom :as dom]
    [uxbox.util.object :as obj]
@@ -127,7 +126,7 @@
                             :key (:id item)}]))]))
 
 (mf/defc viewport
-  [{:keys [page local] :as props}]
+  [{:keys [page local layout] :as props}]
   (let [{:keys [drawing-tool
                 options-mode
                 zoom
@@ -354,6 +353,7 @@
         ]
 
     (mf/use-effect on-mount)
+
     [:svg.viewport
      {:preserveAspectRatio "xMidYMid meet"
       :width (:width vport 0)
@@ -381,22 +381,18 @@
                                 :zoom zoom
                                 :edition edition}])
 
-
       (when-let [drawing-shape (:drawing local)]
         [:& draw-area {:shape drawing-shape
                        :zoom zoom
                        :modifiers (:modifiers local)}])
 
-      [:& snap-feedback]
+      (when (contains? layout :display-grid)
+        [:& frame-grid {:zoom zoom}])
 
-      (when (contains? flags :grid)
-        [:& grid])]
+      [:& snap-feedback {:layout layout}]
 
-     (when tooltip
-       [:& cursor-tooltip {:zoom zoom :tooltip tooltip}])
-
-     (when (contains? flags :ruler)
-       [:& ruler {:zoom zoom :ruler (:ruler local)}])
+      (when tooltip
+        [:& cursor-tooltip {:zoom zoom :tooltip tooltip}])]
 
      [:& presence/active-cursors {:page page}]
      [:& selection-rect {:data (:selrect local)}]

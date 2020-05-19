@@ -110,6 +110,7 @@
 (def unlock (icon-xref :unlock))
 (def uppercase (icon-xref :uppercase))
 (def user (icon-xref :user))
+(def tick (icon-xref :tick))
 
 (def loader-pencil
   (mf/html

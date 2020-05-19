@@ -9,7 +9,9 @@
   (:refer-clojure :exclude [concat read-string])
   (:require [clojure.set :as set]
             #?(:cljs [cljs.reader :as r]
-               :clj [clojure.edn :as r])))
+               :clj [clojure.edn :as r])
+            #?(:cljs [cljs.core :as core]
+               :clj [clojure.core :as core])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Structures Manipulation
@@ -93,6 +95,12 @@
   [data keys]
   (persistent!
    (reduce #(dissoc! %1 %2) (transient data) keys)))
+
+(defn remove-at-index
+  [v index]
+  (vec (core/concat
+        (subvec v 0 index)
+        (subvec v (inc index)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Parsing / Conversion
