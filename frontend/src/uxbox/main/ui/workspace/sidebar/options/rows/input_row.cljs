@@ -12,21 +12,38 @@
    [rumext.alpha :as mf]
    [uxbox.common.data :as d]
    [uxbox.main.ui.components.select :refer [select]]
+   [uxbox.main.ui.components.editable-select :refer [editable-select]]
    [uxbox.util.dom :as dom]))
 
-(mf/defc input-row [{:keys [label options value class min max on-change]}]
-  (let [handle-change (fn [value] (when (and (or (not min) (>= value min)) (or (not max) (<= value max)))
-                                    (on-change value)))]
-    [:div.row-flex.input-row
-     [:span.element-set-subtitle label]
-     [:div.input-element {:class class}
-      (if options
-        [:& select {:default-value value
-                    :class "input-option"
-                    :options options
-                    :on-change on-change}]
+(mf/defc input-row [{:keys [label options value class min max on-change type]}]
+  [:div.row-flex.input-row
+   [:span.element-set-subtitle label]
+   [:div.input-element {:class class}
+
+    (case type
+      :select
+      [:& select {:default-value value
+                  :class "input-option"
+                  :options options
+                  :on-change on-change}]
+      :editable-select
+      [:& editable-select {:value value
+                           :class "input-option"
+                           :options options
+                           :type (when (number? value) "number")
+                           :on-change on-change}]
+
+      (let [handle-change
+            (fn [event]
+              (let [value (-> event dom/get-target dom/get-value d/parse-integer)]
+                (when (and (not (nil? on-change))
+                           (or (not min) (>= value min))
+                           (or (not max) (<= value max)))
+                  (on-change value))))]
         [:input.input-text
          {:placeholder label
           :type "number"
-          :on-change #(-> % dom/get-target dom/get-value d/parse-integer handle-change)
-          :value value}])]]))
+          :on-change handle-change
+          :value value}]))
+    
+    ]])

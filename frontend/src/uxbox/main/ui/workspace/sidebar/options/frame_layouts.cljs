@@ -20,16 +20,23 @@
    [uxbox.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
    [uxbox.main.ui.workspace.sidebar.options.rows.input-row :refer [input-row]]
    [uxbox.main.ui.components.select :refer [select]]
+   [uxbox.main.ui.components.editable-select :refer [editable-select]]
    [uxbox.main.ui.components.dropdown :refer [dropdown]]))
 
 (mf/defc advanced-options [{:keys [visible? on-close children]}]
   (when visible?
     [:*
-     [:div.focus-overlay {:on-click #(when on-close (do
-                                                      (dom/stop-propagation %)
-                                                      (on-close)))}]
+     [:div.focus-overlay {:on-click #(when on-close
+                                       (do
+                                         (dom/stop-propagation %)
+                                         (on-close)))}]
      [:div.advanced-options {}
       children]]))
+
+(def ^:private size-options
+  [{:value :auto :label "Auto"}
+   :separator
+   18 12 10 8 6 4 3 2])
 
 (mf/defc layout-options [{:keys [layout default-layout-params on-change on-remove on-save-layout]}]
   (let [state (mf/use-state {:show-advanced-options false
@@ -38,42 +45,46 @@
 
         toggle-advanced-options #(swap! state update :show-advanced-options not)
 
-        size-options [{:value :auto :label "Auto"}
-                      :separator
-                      18 12 10 8 6 4 3 2]
+        emit-changes!
+        (fn [update-fn]
+          (swap! state update :changes update-fn)
+          (when on-change (on-change (d/deep-merge layout (-> @state :changes update-fn)))))
 
-        emit-changes! (fn [update-fn]
-                        (swap! state update :changes update-fn)
-                        (when on-change (on-change (d/deep-merge layout (-> @state :changes update-fn)))))
+        handle-toggle-visibility
+        (fn [event]
+          (emit-changes! (fn [changes] (update changes :display #(if (nil? %) false (not %))))))
 
-        handle-toggle-visibility (fn [event]
-                                   (emit-changes! (fn [changes] (update changes :display #(if (nil? %) false (not %))))))
+        handle-remove-layout
+        (fn [event]
+          (when on-remove (on-remove)))
 
-        handle-remove-layout (fn [event]
-                               (when on-remove (on-remove)))
+        handle-change-type
+        (fn [type]
+          (let [defaults (type default-layout-params)
+                keys (keys defaults)
+                params (->> @state :changes params (select-keys keys) (merge defaults))
+                to-merge {:type type :params params}]
+            (emit-changes! #(d/deep-merge % to-merge))))
 
-        handle-change-type (fn [type]
-                             (let [defaults (type default-layout-params)
-                                   params (merge
-                                           defaults
-                                           (select-keys (keys defaults) (-> @state :changes params)))
-                                   to-merge {:type type :params params}]
-                               (emit-changes! #(d/deep-merge % to-merge))))
+        handle-change
+        (fn [& keys]
+          (fn [value]
+            (emit-changes! #(assoc-in % keys value))))
 
-        handle-change (fn [& keys]
-                        (fn [value]
-                          (emit-changes! #(assoc-in % keys value))))
+        handle-change-event
+        (fn [& keys]
+          (fn [event]
+            (let [change-fn (apply handle-change keys)]
+              (-> event dom/get-target dom/get-value parse-integer change-fn))))
 
-        handle-change-event (fn [& keys]
-                              (fn [event]
-                                (let [change-fn (apply handle-change keys)]
-                                  (-> event dom/get-target dom/get-value parse-integer change-fn))))
+        handle-use-default
+        (fn []
+          (emit-changes! #(hash-map :params ((:type layout) default-layout-params))))
 
-        handle-use-default (fn []
-                             (emit-changes! #(hash-map :params ((:type layout) default-layout-params))))
-        handle-set-as-default (fn []
-                                (let [current-layout (d/deep-merge layout (-> @state :changes))]
-                                  (on-save-layout current-layout)))
+        handle-set-as-default
+        (fn []
+          (let [current-layout (d/deep-merge layout (-> @state :changes))]
+            (on-save-layout current-layout)))
 
         is-default (= (->> @state :changes (d/deep-merge layout) :params)
                       (->> layout :type default-layout-params))]
@@ -97,10 +108,11 @@
                              :no-validate true
                              :value (:size params)
                              :on-change (handle-change-event :params :size)}]]
-        [:& select {:default-value (:size params)
-                    :class "input-option"
-                    :options size-options
-                    :on-change (handle-change :params :size)}])
+        [:& editable-select {:value (:size params)
+                             :type (when (number? (:size params)) "number" )
+                             :class "input-option"
+                             :options size-options
+                             :on-change (handle-change :params :size)}])
 
       [:div.grid-option-main-actions
        [:button.custom-button {:on-click handle-toggle-visibility} (if display i/eye i/eye-closed)]
@@ -117,18 +129,23 @@
 
       (when (= :row type)
         [:& input-row {:label "Rows"
+                       :type :editable-select
                        :options size-options
                        :value (:size params)
+                       :min 1
                        :on-change (handle-change :params :size)}])
 
       (when (= :column type)
         [:& input-row {:label "Columns"
+                       :type :editable-select
                        :options size-options
                        :value (:size params)
+                       :min 1
                        :on-change (handle-change :params :size)}])
 
       (when (#{:row :column} type)
         [:& input-row {:label "Type"
+                       :type :select
                        :options [{:value :stretch :label "Stretch"}
                                  {:value :left :label "Left"}
                                  {:value :center :label "Center"}
@@ -139,6 +156,7 @@
       (when (= :row type)
         [:& input-row {:label "Height"
                        :class "pixels"
+                       :min 1
                        :value (or (:item-height params) "")
                        :on-change (handle-change :params :item-height)}])
 
@@ -153,9 +171,11 @@
          [:& input-row {:label "Gutter"
                         :class "pixels"
                         :value (:gutter params)
+                        :min 0
                         :on-change (handle-change :params :gutter)}]
          [:& input-row {:label "Margin"
                         :class "pixels"
+                        :min 0
                         :value (:margin params)
                         :on-change (handle-change :params :margin)}]])
 

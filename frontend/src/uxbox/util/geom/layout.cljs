@@ -9,10 +9,24 @@
 
 (ns uxbox.util.geom.layout
   (:require
+   [uxbox.util.math :as mth]
    [uxbox.util.geom.point :as gpt]))
 
+(def ^:private default-items 12)
+
+(defn calculate-default-item-length [frame-length margin gutter]
+  (/ (- frame-length (+ margin (- margin gutter)) (* gutter default-items)) default-items))
+
+(defn calculate-size
+  "Calculates the number of rows/columns given the other layout parameters"
+  [frame-length item-length margin gutter]
+  (let [item-length (or item-length (calculate-default-item-length frame-length margin gutter))
+        frame-length-no-margins (- frame-length (+ margin (- margin gutter)))]
+    (mth/floor (/ frame-length-no-margins (+ item-length gutter)))))
+
 (defn calculate-column-layout [{:keys [width height x y] :as frame} {:keys [size gutter margin item-width type] :as params}]
-  (let [parts (/ width size)
+  (let [size (if (number? size) size (calculate-size width item-width margin gutter))
+        parts (/ width size)
         item-width (or item-width (+ parts (- gutter) (/ gutter size) (- (/ (* margin 2) size))))
         item-height height
         initial-offset (case type
@@ -25,7 +39,7 @@
     [size item-width item-height next-x next-y]))
 
 (defn calculate-row-layout [{:keys [width height x y] :as frame} {:keys [size gutter margin item-height type] :as params}]
-  (let [{:keys [width height x y]} frame
+  (let [size (if (number? size) size (calculate-size height item-height margin gutter))
         parts (/ height size)
         item-width width
         item-height (or item-height (+ parts (- gutter) (/ gutter size) (- (/ (* margin 2) size))))
