@@ -71,7 +71,7 @@
             childs      (mapv #(get objects %) (:shapes shape))
             ds-modifier (get-in shape [:modifiers :displacement])
 
-            label-pos (gpt/point x (- y 10))
+            label-pos (gpt/point x (- y (/ 10 zoom)))
 
             on-double-click
             (mf/use-callback

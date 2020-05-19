@@ -180,8 +180,8 @@
 
       (when (#{:row :column} type)
         [:& input-row {:label (if (= :row type)
-                                (t locale "workspace.options.grid.params.width")
-                                (t locale "workspace.options.grid.params.height"))
+                                (t locale "workspace.options.grid.params.height")
+                                (t locale "workspace.options.grid.params.width"))
                        :class "pixels"
                        :value (or (:item-length params) "")
                        :on-change handle-change-item-length}])

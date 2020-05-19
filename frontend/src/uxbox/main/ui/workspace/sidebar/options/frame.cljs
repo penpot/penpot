@@ -38,10 +38,10 @@
 
         on-orientation-clicked
         (fn [orientation]
-         (let [width (:width shape)
-               height (:height shape)
-               new-width (if (= orientation :horiz) (max width height) (min width height))
-               new-height (if (= orientation :horiz) (min width height) (max width height))]
+          (let [width (:width shape)
+                height (:height shape)
+                new-width (if (= orientation :horiz) (max width height) (min width height))
+                new-height (if (= orientation :horiz) (min width height) (max width height))]
             (st/emit! (udw/update-rect-dimensions (:id shape) :width new-width)
                       (udw/update-rect-dimensions (:id shape) :height new-height))))
 

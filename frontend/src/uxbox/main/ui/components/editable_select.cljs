@@ -55,7 +55,7 @@
                          :type type}]
      [:span.dropdown-button {:on-click open-dropdown} i/arrow-down]
 
-     [:& dropdown {:show (:is-open? @state)
+     [:& dropdown {:show (get @state :is-open? false)
                    :on-close close-dropdown}
       [:ul.custom-select-dropdown
        (for [[index item] (map-indexed vector options)]

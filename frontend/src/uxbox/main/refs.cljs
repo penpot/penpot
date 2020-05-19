@@ -74,7 +74,6 @@
 (def workspace-saved-grids
   (l/derived :saved-grids workspace-page-options))
 
-
 (def workspace-objects
   (l/derived :objects workspace-data))
 

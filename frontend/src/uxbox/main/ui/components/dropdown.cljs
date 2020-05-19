@@ -43,8 +43,8 @@
 (mf/defc dropdown
   {::mf/wrap-props false}
   [props]
-  #_(assert (fn? (gobj/get props "on-close")) "missing `on-close` prop")
-  #_(assert (boolean? (gobj/get props "show")) "missing `show` prop")
+  (assert (fn? (gobj/get props "on-close")) "missing `on-close` prop")
+  (assert (boolean? (gobj/get props "show")) "missing `show` prop")
 
   (when (gobj/get props "show")
     (mf/element dropdown' props)))
