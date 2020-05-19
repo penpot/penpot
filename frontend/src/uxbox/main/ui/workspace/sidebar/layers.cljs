@@ -261,7 +261,7 @@
 
 (defn- strip-objects
   [objects]
-  (let [strip-data #(select-keys % [:id :name :blocked :hidden :shapes :type])]
+  (let [strip-data #(select-keys % [:id :name :blocked :hidden :shapes :type :content :metadata])]
     (persistent!
      (reduce-kv (fn [res id obj]
                   (assoc! res id (strip-data obj)))
