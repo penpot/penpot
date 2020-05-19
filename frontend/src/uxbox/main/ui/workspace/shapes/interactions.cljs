@@ -94,8 +94,35 @@
     [orig-pos orig-x orig-y dest-pos dest-x dest-y]))
 
 
+(mf/defc interaction-marker
+  [{:keys [x y arrow-dir zoom] :as props}]
+  (let [arrow-pdata (case arrow-dir
+                      :right "M -5 0 l 8 0 l -4 -4 m 4 4 l -4 4"
+                      :left "M 5 0 l -8 0 l 4 -4 m -4 4 l 4 4"
+                      [])
+        inv-zoom (/ 1 zoom)]
+    [:*
+      [:circle {:cx 0
+                :cy 0
+                :r 8
+                :stroke "#31EFB8"
+                :stroke-width 2
+                :fill "#FFFFFF"
+                :transform (str
+                             "scale(" inv-zoom ", " inv-zoom ") "
+                             "translate(" (* zoom x) ", " (* zoom y) ")")}]
+      (when arrow-dir
+        [:path {:stroke "#31EFB8"
+                :fill "transparent"
+                :stroke-width 2
+                :d arrow-pdata
+                :transform (str
+                             "scale(" inv-zoom ", " inv-zoom ") "
+                             "translate(" (* zoom x) ", " (* zoom y) ")")}])]))
+
+
 (mf/defc interaction-path
-  [{:keys [orig-shape dest-shape dest-point selected selected?] :as props}]
+  [{:keys [orig-shape dest-shape dest-point selected selected? zoom] :as props}]
   (let [[orig-pos orig-x orig-y dest-pos dest-x dest-y]
         (if dest-shape
           (connect-to-shape orig-shape dest-shape)
@@ -107,67 +134,47 @@
         path ["M" orig-x orig-y "C" (+ orig-x orig-dx) orig-y (+ dest-x dest-dx) dest-y dest-x dest-y]
         pdata (str/join " " path)
 
-        arrow-path (if (= dest-pos :left)
-                     ["M" (- dest-x 5) dest-y "l 8 0 l -4 -4 m 4 4 l -4 4"]
-                     ["M" (+ dest-x 5) dest-y "l -8 0 l 4 -4 m -4 4 l 4 4"])
-        arrow-pdata (str/join " " arrow-path)]
+        arrow-dir (if (= dest-pos :left) :right :left)]
 
     (if-not selected?
       [:path {:stroke "#B1B2B5"
               :fill "transparent"
-              :stroke-width 2
+              :stroke-width (/ 2 zoom)
               :d pdata
               :on-mouse-down #(on-mouse-down % orig-shape selected)}]
 
       [:g {:on-mouse-down #(on-mouse-down % orig-shape selected)}
        [:path {:stroke "#31EFB8"
                :fill "transparent"
-               :stroke-width 2
+               :stroke-width (/ 2 zoom)
                :d pdata}]
-       [:circle {:cx orig-x
-                 :cy orig-y
-                 :r 8
-                 :stroke "#31EFB8"
-                 :stroke-width 2
-                 :fill "#FFFFFF"}]
-       [:circle {:cx dest-x
-                 :cy dest-y
-                 :r 8
-                 :stroke "#31EFB8"
-                 :stroke-width 2
-                 :fill "#FFFFFF"}]
-       [:path {:stroke "#31EFB8"
-               :fill "transparent"
-               :stroke-width 2
-               :d arrow-pdata}]])))
+       [:& interaction-marker {:x orig-x
+                               :y orig-y
+                               :arrow-dir nil
+                               :zoom zoom}]
+       [:& interaction-marker {:x dest-x
+                               :y dest-y
+                               :arrow-dir arrow-dir
+                               :zoom zoom}]])))
 
 
 (mf/defc interaction-handle
-  [{:keys [shape selected] :as props}]
+  [{:keys [shape selected zoom] :as props}]
   (let [shape-rect (geom/selection-rect-shape shape)
         handle-x (+ (:x shape-rect) (:width shape-rect))
-        handle-y (+ (:y shape-rect) (/ (:height shape-rect) 2))
-
-        arrow-path ["M" (- handle-x 5) handle-y "l 8 0 l -4 -4 m 4 4 l -4 4"]
-        arrow-pdata (str/join " " arrow-path)]
-
+        handle-y (+ (:y shape-rect) (/ (:height shape-rect) 2))]
     [:g {:on-mouse-down #(on-mouse-down % shape selected)}
-       [:circle {:cx handle-x
-                 :cy handle-y
-                 :r 8
-                 :stroke "#31EFB8"
-                 :stroke-width 2
-                 :fill "#FFFFFF"}]
-       [:path {:stroke "#31EFB8"
-               :fill "transparent"
-               :stroke-width 2
-               :d arrow-pdata}]]))
+     [:& interaction-marker {:x handle-x
+                             :y handle-y
+                             :arrow-dir :right
+                             :zoom zoom}]]))
 
 
 (mf/defc interactions
   [{:keys [selected] :as props}]
   (let [data (mf/deref refs/workspace-data)
         local (mf/deref refs/workspace-local)
+        zoom (mf/deref refs/selected-zoom)
         current-transform (:transform local)
         objects (:objects data)
         active-shapes (filter #(first (get-click-interaction %)) (vals objects))
@@ -184,13 +191,15 @@
                                   :orig-shape shape
                                   :dest-shape dest-shape
                                   :selected selected
-                                  :selected? false}])))
+                                  :selected? false
+                                  :zoom zoom}])))
 
       (if (and draw-interaction-to first-selected)
         [:& interaction-path {:key "interactive"
                               :orig-shape first-selected
                               :dest-point draw-interaction-to
-                              :selected? true}]
+                              :selected? true
+                              :zoom zoom}]
 
         (for [shape selected-shapes]
           (let [interaction (get-click-interaction shape)
@@ -200,9 +209,11 @@
                                     :orig-shape shape
                                     :dest-shape dest-shape
                                     :selected selected
-                                    :selected? true}]
+                                    :selected? true
+                                    :zoom zoom}]
               (when (not (#{:move :rotate} current-transform))
                 [:& interaction-handle {:key (:id shape)
                                         :shape shape
-                                        :selected selected}])))))]))
+                                        :selected selected
+                                        :zoom zoom}])))))]))
 
