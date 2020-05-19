@@ -34,24 +34,27 @@
 
         dx (- rec-x sel-x)
         dy (- rec-y sel-y)]
-    (gpt/point dx dy)))
+    (-> (gpt/point dx dy)
+        (gpt/round 2))))
 
 (defn user->draw
   [{:keys [x y width height] :as shape}]
   (let [dv (user-coords-vector shape)]
-    (-> shape (gsh/move dv))))
+    (-> shape
+        (gsh/move dv))))
 
 (defn draw->user
   [{:keys [x y width height] :as shape}]
   (let [dv (user-coords-vector shape)]
-    (-> shape (gsh/move (gpt/negate dv)))))
+    (-> shape
+        (gsh/move (gpt/negate dv)))))
 
 (mf/defc measures-menu
   [{:keys [shape options] :as props}]
   (let [options (or options #{:size :position :rotation :radius})
         locale (i18n/use-locale)
         frame (deref (refs/object-by-id (:frame-id shape)))
-
+        old-shape shape
         shape (->> shape
                    (gsh/transform-shape frame)
                    (draw->user))
@@ -83,7 +86,7 @@
           (let [value (-> (dom/get-target event)
                           (dom/get-value)
                           (d/parse-integer 0))]
-            (st/emit! (udw/set-rotation (- value (:rotation shape)) [shape])
+            (st/emit! (udw/set-rotation (- value (:rotation shape)) [old-shape])
                       (udw/apply-modifiers #{(:id shape)}))))
 
         on-radius-change
@@ -138,21 +141,13 @@
                               :type "number"
                               :no-validate true
                               :on-change on-pos-x-change
-                              :value (:x shape)
-                              ;;:value (str (-> (- (x shape) (:x parent)) ; Show to user position relative to frame
-                              ;;                (d/coalesce 0)
-                              ;;                (math/round)))
-                              }]]
+                              :value (:x shape)}]]
          [:div.input-element.Yaxis
           [:input.input-text {:placeholder "y"
                               :type "number"
                               :no-validate true
                               :on-change on-pos-y-change
-                              :value (:y shape)
-                              ;;:value (str (-> (- (y shape) (:y parent))
-                              ;;                (d/coalesce 0)
-                              ;;                (math/round)))
-                              }]]])
+                              :value (:y shape)}]]])
 
       (when (options :rotation)
         [:div.row-flex
@@ -163,7 +158,7 @@
             :type "number"
             :no-validate true
             :min "0"
-            :max "360"
+            :max "359"
             :on-change on-rotation-change
             :value (str (-> (:rotation shape)
                             (d/coalesce 0)
@@ -171,12 +166,13 @@
          [:input.slidebar
           {:type "range"
            :min "0"
-           :max "360"
-           :step "1"
+           :max "359"
+           :step "10"
            :no-validate true
            :on-change on-rotation-change
            :value (str (-> (:rotation shape)
-                           (d/coalesce 0)))}]])
+                           (d/coalesce 0)
+                           (math/round)))}]])
 
       (when (options :radius)
         [:div.row-flex
