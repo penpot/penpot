@@ -18,12 +18,10 @@
    [uxbox.main.data.workspace.texts :as dwt]
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
-   [uxbox.main.ui.modal :as modal]
-   [uxbox.main.ui.workspace.colorpicker :refer [colorpicker-modal]]
    [uxbox.main.ui.workspace.sidebar.options.measures :refer [measures-menu]]
+   [uxbox.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
    [uxbox.util.dom :as dom]
    [uxbox.main.fonts :as fonts]
-   [uxbox.util.math :as math]
    [uxbox.util.i18n :as i18n :refer [tr t]]
    ["slate" :refer [Transforms]]))
 
@@ -186,85 +184,24 @@
 
 (mf/defc text-fill-options
   [{:keys [editor shape] :as props}]
-  (let [{:keys [fill opacity]
-         :or {fill "#000000"
-              opacity 1}}
-        (dwt/current-text-values
-         {:editor editor
-          :shape shape
-          :attrs [:fill :opacity]})
+  (let [text-color (dwt/current-text-values
+                    {:editor editor
+                     :shape shape
+                     :attrs [:fill :opacity]})
 
-        opacity (math/round (* opacity 100))
+        current-color {:value (:fill text-color)
+                       :opacity (:opacity text-color)}
 
-        on-color-change
-        (fn [color]
-          (st/emit! (dwt/update-text-attrs
-                     {:id (:id shape)
-                      :editor editor
-                      :attrs {:fill color}})))
+        handle-change-color
+        (fn [value opacity]
+          (st/emit! (dwt/update-text-attrs {:id (:id shape)
+                                            :editor editor
+                                            :attrs {:fill value
+                                                    :opacity opacity}})))]
 
-        on-color-input-change
-        (fn [event]
-          (let [input (dom/get-target event)
-                value (dom/get-value input)]
-            (when (dom/valid? input)
-              (on-color-change value))))
-
-        on-opacity-change
-        (fn [event]
-          (let [value (-> (dom/get-target event)
-                          (dom/get-value))]
-            (when (str/numeric? value)
-              (let [value (-> (d/parse-integer value 1)
-                              (/ 100))]
-                (st/emit! (dwt/update-text-attrs
-                           {:id (:id shape)
-                            :editor editor
-                            :attrs {:opacity value}}))))))
-
-        show-color-picker
-        (fn [event]
-          (let [x (.-clientX event)
-                y (.-clientY event)
-                props {:x x :y y
-                       :on-change on-color-change
-                       :default "#ffffff"
-                       :value fill
-                       :transparent? true}]
-            (modal/show! colorpicker-modal props)))]
-
-    [:div.row-flex.color-data
-     [:span.color-th
-      {:style {:background-color fill}
-       :on-click show-color-picker
-       }]
-
-     [:div.color-info
-      [:input {:default-value fill
-               :pattern "^#(?:[0-9a-fA-F]{3}){1,2}$"
-               :ref (fn [el]
-                      (when el
-                        (set! (.-value el) fill)))
-               :on-change on-color-input-change
-               }]]
-
-     [:div.input-element.percentail
-      [:input.input-text {:type "number"
-                          :ref (fn [el]
-                                 (when el
-                                   (set! (.-value el) opacity)))
-                          :default-value opacity
-                          :on-change on-opacity-change
-                          :min "0"
-                          :max "100"}]]
-
-     [:input.slidebar {:type "range"
-                       :min "0"
-                       :max "100"
-                       :value opacity
-                       :step "1"
-                       :on-change on-opacity-change
-                       }]]))
+    [:& color-row {:value current-color
+                   :on-change handle-change-color}]
+    ))
 
 (mf/defc spacing-options
   [{:keys [editor shape locale] :as props}]

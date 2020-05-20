@@ -102,6 +102,12 @@
                                 (assoc-in [:params :size] size)
                                 (assoc-in [:params :item-length] item-length)))))
 
+        handle-change-color
+        (fn [value opacity]
+          (emit-changes! #(-> %
+                              (assoc-in [:params :color :value] value)
+                              (assoc-in [:params :color :opacity] opacity))))
+
         handle-use-default
         (fn []
           (emit-changes! #(hash-map :params ((:type grid) default-grid-params))))
@@ -200,7 +206,7 @@
                         :on-change (handle-change :params :margin)}]])
 
       [:& color-row {:value (:color params)
-                     :on-change (handle-change :params :color)}]
+                     :on-change handle-change-color}]
       [:div.row-flex
        [:button.btn-options {:disabled is-default
                              :on-click handle-use-default} (t locale "workspace.options.grid.params.use-default")]

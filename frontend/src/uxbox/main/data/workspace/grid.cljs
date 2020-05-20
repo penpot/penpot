@@ -21,7 +21,7 @@
 (defonce ^:private default-square-params
   {:size 16
    :color {:value "#59B9E2"
-           :opacity 0.9}})
+           :opacity 0.2}})
 
 (defonce ^:private default-layout-params
   {:size 12

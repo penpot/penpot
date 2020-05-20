@@ -10,15 +10,10 @@
 (ns uxbox.main.ui.workspace.sidebar.options.fill
   (:require
    [rumext.alpha :as mf]
-   [uxbox.main.ui.icons :as i]
-   [uxbox.common.data :as d]
    [uxbox.main.data.workspace :as udw]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.modal :as modal]
-   [uxbox.main.ui.workspace.colorpicker :refer [colorpicker-modal]]
-   [uxbox.util.dom :as dom]
+   [uxbox.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
    [uxbox.util.object :as obj]
-   [uxbox.util.math :as math]
    [uxbox.util.i18n :as i18n :refer [tr t]]))
 
 (defn- fill-menu-memo-equals?
@@ -36,70 +31,14 @@
   {::mf/wrap [#(mf/memo' % fill-menu-memo-equals?)]}
   [{:keys [shape] :as props}]
   (let [locale (i18n/use-locale)
-
-        on-color-change
-        (fn [color]
-          (st/emit! (udw/update-shape (:id shape) {:fill-color color})))
-
-        on-color-input-change
-        (fn [event]
-          (let [input (dom/get-target event)
-                value (dom/get-value input)]
-            (when (dom/valid? input)
-              (on-color-change value))))
-
-        on-opacity-change
-        (fn [event]
-          (let [value (-> (dom/get-target event)
-                          (dom/get-value)
-                          (d/parse-integer 1)
-                          (/ 100))]
-            (st/emit! (udw/update-shape (:id shape) {:fill-opacity value}))))
-
-        show-color-picker
-        (fn [event]
-          (let [x (.-clientX event)
-                y (.-clientY event)
-                props {:x x :y y
-                       :on-change on-color-change
-                       :default "#ffffff"
-                       :value (:fill-color shape)
-                       :transparent? true}]
-            (modal/show! colorpicker-modal props)))]
-
+        color {:value (:fill-color shape)
+               :opacity (:fill-opacity shape)}
+        handle-change-color (fn [value opacity]
+                              (let [change {:fill-color value
+                                            :fill-opacity opacity}]
+                                (st/emit! (udw/update-shape (:id shape) change))))]
     [:div.element-set
      [:div.element-set-title (t locale "workspace.options.fill")]
      [:div.element-set-content
-
-      [:div.row-flex.color-data
-       [:span.color-th
-        {:style {:background-color (:fill-color shape)}
-         :on-click show-color-picker}]
-
-       [:div.color-info
-        [:input {:default-value (:fill-color shape)
-                 :ref (fn [el]
-                        (when el
-                          (set! (.-value el) (:fill-color shape))))
-                 :pattern "^#(?:[0-9a-fA-F]{3}){1,2}$"
-                 :on-change on-color-input-change}]]
-
-       [:div.input-element.percentail
-        [:input.input-text {:type "number"
-                            :value (str (-> (:fill-opacity shape)
-                                            (d/coalesce 1)
-                                            (* 100)
-                                            (math/round)))
-                            :on-change on-opacity-change
-                            :min "0"
-                            :max "100"}]]
-
-       [:input.slidebar {:type "range"
-                         :min "0"
-                         :max "100"
-                         :value (str (-> (:fill-opacity shape)
-                                         (d/coalesce 1)
-                                         (* 100)
-                                         (math/round)))
-                         :step "1"
-                         :on-change on-opacity-change}]]]]))
+      [:& color-row {:value color
+                     :on-change handle-change-color}]]]))

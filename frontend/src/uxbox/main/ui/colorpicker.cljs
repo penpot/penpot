@@ -10,19 +10,23 @@
    [uxbox.main.store :as st]
    [goog.object :as gobj]
    [rumext.alpha :as mf]
-   ["react-color/lib/components/sketch/Sketch" :as sketch]))
+   [uxbox.util.color :refer [hex->rgb]]
+   ["react-color/lib/components/chrome/Chrome" :as pickerskin]))
 
 (mf/defc colorpicker
-  [{:keys [on-change value colors] :as props}]
-  (let [local-value (mf/use-state value)
-        on-change-complete #(do
-                              (reset! local-value %)
-                              (on-change (gobj/get % "hex")))]
+  [{:keys [on-change value opacity colors] :as props}]
+  (let [hex-value (mf/use-state (or value "#FFFFFF"))
+        alpha-value (mf/use-state (or opacity 1))
+        [r g b] (hex->rgb @hex-value)
+        on-change-complete #(let [hex (gobj/get % "hex")
+                                  opacity (-> % (gobj/get "rgb") (gobj/get "a"))]
+                              (reset! hex-value hex)
+                              (reset! alpha-value opacity)
+                              (on-change hex opacity))]
 
-    [:> sketch/default {:color @local-value
-                        :disableAlpha true
+    [:> pickerskin/default {:color #js { :r r :g g :b b :a @alpha-value}
                         :presetColors colors
-                        :onChangeComplete on-change-complete
+                        :onChange on-change-complete
                         :style {:box-shadow "none"}}]))
 
 (def most-used-colors
