@@ -14,11 +14,12 @@
 ;; --- Color Picker Modal
 
 (mf/defc colorpicker-modal
-  [{:keys [x y default value page on-change] :as props}]
+  [{:keys [x y default value opacity page on-change] :as props}]
   [:div.colorpicker-tooltip
    {:style {:left (str (- x 260) "px")
             :top (str (- y 50) "px")}}
    [:& cp/colorpicker {:value (or value default)
+                       :opacity (or opacity 1)
                        :colors (into-array @cp/most-used-colors)
                        :on-change on-change}]])
 

@@ -317,7 +317,7 @@
     flex-direction: column;
     align-items: center;
 
-    & .sketch-picker {
+    & .sketch-picker, .chrome-picker {
         box-shadow: none !important;
         border: 1px solid $color-gray-10 !important;
         border-radius: 0 !important;

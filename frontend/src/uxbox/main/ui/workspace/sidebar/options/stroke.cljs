@@ -19,7 +19,8 @@
    [uxbox.util.dom :as dom]
    [uxbox.util.object :as obj]
    [uxbox.util.i18n :as i18n :refer  [tr t]]
-   [uxbox.util.math :as math]))
+   [uxbox.util.math :as math]
+   [uxbox.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]))
 
 (defn- stroke-menu-memo-equals?
   [np op]
@@ -75,35 +76,13 @@
         (fn [event]
           (st/emit! (udw/update-shape (:id shape) {:stroke-style :none})))
 
-        on-stroke-opacity-change
-        (fn [event]
-          (let [value (-> (dom/get-target event)
-                          (dom/get-value)
-                          (d/parse-integer 0)
-                          (/ 100))]
-            (st/emit! (udw/update-shape (:id shape) {:stroke-opacity value}))))
+        current-stroke-color {:value (:stroke-color shape)
+                              :opacity (:stroke-opacity shape)}
 
-        on-color-change
-        (fn [color]
-          (st/emit! (udw/update-shape (:id shape) {:stroke-color color})))
-
-        on-color-input-change
-        (fn [event]
-          (let [input (dom/get-target event)
-                value (dom/get-value input)]
-            (when (dom/valid? input)
-              (on-color-change value))))
-
-        show-color-picker
-        (fn [event]
-          (let [x (.-clientX event)
-                y (.-clientY event)
-                props {:x x :y y
-                       :default "#ffffff"
-                       :value (:stroke-color shape)
-                       :on-change on-color-change
-                       :transparent? true}]
-            (modal/show! colorpicker-modal props)))]
+        handle-change-stroke-color
+        (fn [value opacity]
+          (st/emit! (udw/update-shape (:id shape) {:stroke-color value
+                                                   :stroke-opacity opacity})))]
 
     (if (not= :none (:stroke-style shape :none))
       [:div.element-set
@@ -112,39 +91,9 @@
         [:div.add-page {:on-click on-del-stroke} i/minus]]
 
        [:div.element-set-content
-
         ;; Stroke Color
-        [:div.row-flex.color-data
-         [:span.color-th {:style {:background-color (:stroke-color shape)}
-                          :on-click show-color-picker}]
-         [:div.color-info
-          [:input {:default-value (:stroke-color shape)
-                   :ref (fn [el]
-                          (when el
-                            (set! (.-value el) (:stroke-color shape))))
-                   :pattern "^#(?:[0-9a-fA-F]{3}){1,2}$"
-                   :on-change on-color-input-change}]]
-
-         [:div.input-element.percentail
-          [:input.input-text {:placeholder ""
-                              :value (str (-> (:stroke-opacity shape)
-                                              (d/coalesce 1)
-                                              (* 100)
-                                              (math/round)))
-                              :type "number"
-                              :on-change on-stroke-opacity-change
-                              :min "0"
-                              :max "100"}]]
-
-         [:input.slidebar {:type "range"
-                           :min "0"
-                           :max "100"
-                           :value (str (-> (:stroke-opacity shape)
-                                           (d/coalesce 1)
-                                           (* 100)
-                                           (math/round)))
-                           :step "1"
-                           :on-change on-stroke-opacity-change}]]
+        [:& color-row {:value current-stroke-color
+                       :on-change handle-change-stroke-color}]
 
         ;; Stroke Width, Alignment & Style
         [:div.row-flex

@@ -24,41 +24,53 @@
                  :y y
                  :on-change handle-change-color
                  :value (:value color)
+                 :opacity (:opacity color)
                  :transparent? true}]
       (modal/show! colorpicker-modal props))))
 
 (defn opacity->string [opacity]
-  (str (-> opacity
-           (d/coalesce 1)
-           (* 100)
-           (math/round))))
+  (if (and opacity (not= opacity ""))
+    (str (-> opacity
+             (d/coalesce 1)
+             (* 100)
+             (math/round)))
+    ""))
 
 (defn string->opacity [opacity-str]
-  (-> opacity-str
-      (d/parse-integer 1)
-      (/ 100)))
+  (when (and opacity-str (not= "" opacity-str))
+    (-> opacity-str
+        (d/parse-integer 1)
+        (/ 100))))
 
 (mf/defc color-row [{:keys [value on-change]}]
-  (let [value (or value {:value "#FFFFFF" :opacity 1})
-        state (mf/use-state value)
-        change-color (fn [color]
-                       (let [update-color (fn [state] (assoc state :value color))]
-                         (swap! state update-color)
-                         (when on-change (on-change (update-color @state)))))
+  (let [default-value {:value "#000000" :opacity 1}
 
-        change-opacity (fn [opacity]
-                         (let [update-opacity (fn [state] (assoc state :opacity opacity))]
-                           (swap! state update-opacity)
-                           (when on-change (on-change (update-opacity @state)))))
+        parse-value (fn [value]
+                      (-> (merge default-value value)
+                          (update :value #(or % "#000000"))
+                          (update :opacity #(or % 1))))
 
-        handle-pick-color (fn [color]
-                            (change-color color))
+        state (mf/use-state (parse-value value))
+
+        change-color (fn [new-value]
+                       (let [{:keys [value opacity]} @state]
+                         (swap! state assoc :value new-value)
+                         (when on-change (on-change new-value opacity))))
+
+        change-opacity (fn [new-opacity]
+                         (let [{:keys [value opacity]} @state]
+                           (swap! state assoc :opacity new-opacity)
+                           (when (and new-opacity on-change) (on-change value new-opacity))))
+
+        handle-pick-color (fn [color opacity]
+                            (reset! state {:value color :opacity opacity})
+                            (when on-change (on-change color opacity)))
 
         handle-input-color-change (fn [event]
                                     (let [target (dom/get-target event)
                                           value (dom/get-value target)]
                                       (when (dom/valid? target)
-                                        (change-color value))))
+                                        (change-color (str "#" value)))))
         handle-opacity-change (fn [event]
                                 (-> event
                                     dom/get-target
@@ -68,7 +80,7 @@
 
     (mf/use-effect
      (mf/deps value)
-     #(reset! state value))
+     #(reset! state (parse-value value)))
 
     [:div.row-flex.color-data
      [:span.color-th
@@ -76,8 +88,8 @@
        :on-click (color-picker-callback @state handle-pick-color)}]
 
      [:div.color-info
-      [:input {:value (-> @state :value)
-               :pattern "^#(?:[0-9a-fA-F]{3}){1,2}$"
+      [:input {:value (-> @state :value (subs 1))
+               :pattern "^[0-9a-fA-F]{0,6}$"
                :on-change handle-input-color-change}]]
 
      [:div.input-element.percentail
@@ -87,7 +99,7 @@
                           :min "0"
                           :max "100"}]]
 
-     [:input.slidebar {:type "range"
+     #_[:input.slidebar {:type "range"
                        :min "0"
                        :max "100"
                        :value (-> @state :opacity opacity->string)
