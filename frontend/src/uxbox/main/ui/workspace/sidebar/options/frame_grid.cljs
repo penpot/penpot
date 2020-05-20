@@ -36,13 +36,14 @@
      [:div.advanced-options {}
       children]]))
 
-(def ^:private size-options
-  [{:value :auto :label (tr "workspace.options.grid.auto")}
+(defn- get-size-options [locale]
+  [{:value :auto :label (t locale "workspace.options.grid.auto")}
    :separator
    18 12 10 8 6 4 3 2])
 
 (mf/defc grid-options [{:keys [frame grid default-grid-params on-change on-remove on-save-grid]}]
   (let [locale (i18n/use-locale)
+        size-options (get-size-options locale)
         state (mf/use-state {:show-advanced-options false
                              :changes {}})
         {:keys [type display params] :as grid} (d/deep-merge grid (:changes @state))
@@ -178,9 +179,13 @@
         [:& input-row {:label (t locale "workspace.options.grid.params.type")
                        :type :select
                        :options [{:value :stretch :label (t locale "workspace.options.grid.params.type.stretch")}
-                                 {:value :left :label (t locale "workspace.options.grid.params.type.left")}
+                                 {:value :left :label (if (= type :row)
+                                                        (t locale "workspace.options.grid.params.type.top")
+                                                        (t locale "workspace.options.grid.params.type.left"))}
                                  {:value :center :label (t locale "workspace.options.grid.params.type.center")}
-                                 {:value :right :label (t locale "workspace.options.grid.params.type.right")}]
+                                 {:value :right :label (if (= type :row)
+                                                         (t locale "workspace.options.grid.params.type.bottom")
+                                                         (t locale "workspace.options.grid.params.type.right"))}]
                        :value (:type params)
                        :on-change (handle-change :params :type)}])
 

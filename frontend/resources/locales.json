@@ -962,7 +962,7 @@
     }
   },
   "workspace.options.fill" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:446", "src/uxbox/main/ui/workspace/sidebar/options/fill.cljs:71" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/fill.cljs:41", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:383" ],
     "translations" : {
       "en" : "Fill",
       "fr" : "Fond"
@@ -976,116 +976,116 @@
     "unused" : true
   },
   "workspace.options.font-options" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:452" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:389" ],
     "translations" : {
       "en" : "Text",
       "fr" : "TODO"
     }
   },
   "workspace.options.font-options.align-bottom" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:357" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:294" ],
     "translations" : {
       "en" : "Align bottom"
     }
   },
   "workspace.options.font-options.align-center" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:171" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:169" ],
     "translations" : {
       "en" : "Align center"
     }
   },
   "workspace.options.font-options.align-justify" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:181" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:179" ],
     "translations" : {
       "en" : "Justify"
     }
   },
   "workspace.options.font-options.align-left" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:166" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:164" ],
     "translations" : {
       "en" : "Align left"
     }
   },
   "workspace.options.font-options.align-middle" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:352" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:289" ],
     "translations" : {
       "en" : "Align middle"
     }
   },
   "workspace.options.font-options.align-right" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:176" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:174" ],
     "translations" : {
       "en" : "Align right"
     }
   },
   "workspace.options.font-options.align-top" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:347" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:284" ],
     "translations" : {
       "en" : "Align top"
     }
   },
   "workspace.options.font-options.decoration" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:378" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:315" ],
     "translations" : {
       "en" : "Decoration"
     }
   },
   "workspace.options.font-options.letter-spacing" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:304" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:241" ],
     "translations" : {
       "en" : "Letter Spacing"
     }
   },
   "workspace.options.font-options.line-height" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:292" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:229" ],
     "translations" : {
       "en" : "Line height"
     }
   },
   "workspace.options.font-options.lowercase" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:427" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:364" ],
     "translations" : {
       "en" : "Lowercase"
     }
   },
   "workspace.options.font-options.none" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:381", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:417" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:318", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:354" ],
     "translations" : {
       "en" : "None"
     }
   },
   "workspace.options.font-options.strikethrough" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:393" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:330" ],
     "translations" : {
       "en" : "Strikethrough"
     }
   },
   "workspace.options.font-options.text-case" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:414" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:351" ],
     "translations" : {
       "en" : "Case"
     }
   },
   "workspace.options.font-options.titlecase" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:432" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:369" ],
     "translations" : {
       "en" : "Titlecase"
     }
   },
   "workspace.options.font-options.underline" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:387" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:324" ],
     "translations" : {
       "en" : "Underline"
     }
   },
   "workspace.options.font-options.uppercase" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:422" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:359" ],
     "translations" : {
       "en" : "Uppercase"
     }
   },
   "workspace.options.font-options.vertical-align" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:344" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:281" ],
     "translations" : {
       "en" : "Vertical align"
     }
@@ -1111,109 +1111,121 @@
     }
   },
   "workspace.options.grid.column" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:125" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:132" ],
     "translations" : {
       "en" : "Columns"
     }
   },
   "workspace.options.grid.params.columns" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:164" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:171" ],
     "translations" : {
       "en" : "Columns"
     }
   },
   "workspace.options.grid.params.gutter" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:191" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:202" ],
     "translations" : {
       "en" : "Gutter"
     }
   },
   "workspace.options.grid.params.height" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:184" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:194" ],
     "translations" : {
       "en" : "Height"
     }
   },
   "workspace.options.grid.params.margin" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:196" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:207" ],
     "translations" : {
       "en" : "Margin"
     }
   },
   "workspace.options.grid.params.rows" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:156" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:163" ],
     "translations" : {
       "en" : "Rows"
     }
   },
   "workspace.options.grid.params.set-default" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:208" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:219" ],
     "translations" : {
       "en" : "Set as default"
     }
   },
   "workspace.options.grid.params.size" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:149" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:156" ],
     "translations" : {
       "en" : "Size"
     }
   },
   "workspace.options.grid.params.type" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:172" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:179" ],
     "translations" : {
       "en" : "Type"
     }
   },
+  "workspace.options.grid.params.type.bottom" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:187" ],
+    "translations" : {
+      "en" : "Bottom"
+    }
+  },
   "workspace.options.grid.params.type.center" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:176" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:185" ],
     "translations" : {
       "en" : "Center"
     }
   },
   "workspace.options.grid.params.type.left" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:175" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:184" ],
     "translations" : {
       "en" : "Left"
     }
   },
   "workspace.options.grid.params.type.right" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:177" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:188" ],
     "translations" : {
       "en" : "Right"
     }
   },
   "workspace.options.grid.params.type.stretch" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:174" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:181" ],
     "translations" : {
       "en" : "Stretch"
     }
   },
+  "workspace.options.grid.params.type.top" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:183" ],
+    "translations" : {
+      "en" : "Top"
+    }
+  },
   "workspace.options.grid.params.use-default" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:206" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:217" ],
     "translations" : {
       "en" : "Use default"
     }
   },
   "workspace.options.grid.params.width" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:183" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:195" ],
     "translations" : {
       "en" : "Width"
     }
   },
   "workspace.options.grid.row" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:126" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:133" ],
     "translations" : {
       "en" : "Rows"
     }
   },
   "workspace.options.grid.square" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:124" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:131" ],
     "translations" : {
       "en" : "Square"
     }
   },
   "workspace.options.grid.title" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:220" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame_grid.cljs:231" ],
     "translations" : {
       "en" : "Grid & Layouts"
     }
@@ -1311,53 +1323,53 @@
     }
   },
   "workspace.options.stroke" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:111", "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:175" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:90", "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:124" ],
     "translations" : {
       "en" : "Stroke",
       "fr" : null
     }
   },
   "workspace.options.stroke.center" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:161" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:110" ],
     "translations" : {
       "en" : "Center"
     }
   },
   "workspace.options.stroke.dashed" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:169" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:118" ],
     "translations" : {
       "en" : "Dashed",
       "fr" : "Tiré"
     }
   },
   "workspace.options.stroke.dotted" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:168" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:117" ],
     "translations" : {
       "en" : "Dotted",
       "fr" : "Pointillé"
     }
   },
   "workspace.options.stroke.inner" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:162" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:111" ],
     "translations" : {
       "en" : "Inside"
     }
   },
   "workspace.options.stroke.mixed" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:170" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:119" ],
     "translations" : {
       "en" : "Mixed",
       "fr" : "Mixte"
     }
   },
   "workspace.options.stroke.outer" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:163" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:112" ],
     "translations" : {
       "en" : "Outside"
     }
   },
   "workspace.options.stroke.solid" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:167" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:116" ],
     "translations" : {
       "en" : "Solid",
       "fr" : "Solide"
