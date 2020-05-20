@@ -42,7 +42,16 @@
                           :stroke-width (str (/ 1 zoom))}}])]])))
 
 (mf/defc layout-grid [{:keys [key frame zoom grid]}]
-  (let [{color-value :value color-opacity :opacity} (-> grid :params :color)]
+  (let [{color-value :value color-opacity :opacity} (-> grid :params :color)
+        gutter (-> grid :params :gutter)
+        gutter? (and (not (nil? gutter)) (not= gutter 0))
+
+        style (if gutter?
+                #js {:fill color-value
+                     :opacity color-opacity}
+                #js {:stroke color-value
+                     :strokeOpacity color-opacity
+                     :fill "transparent"})]
     [:g.grid
      (for [{:keys [x y width height]} (gg/grid-areas frame grid)]
        [:rect {:key (str key "-" x "-" y)
@@ -50,8 +59,7 @@
                :y y
                :width width
                :height height
-               :style {:fill color-value
-                       :opacity color-opacity}}])]))
+               :style style}])]))
 
 (mf/defc grid-display-frame [{:keys [frame zoom]}]
   (let [grids (:grids frame)]
