@@ -1074,6 +1074,10 @@ input[type=range]:focus::-ms-fill-upper {
   -webkit-user-drag: element;
 }
 
+.dnd-over > .element-list-body {
+  border: 1px solid white !important;
+}
+
 .dnd-over-top {
   border-top: 1px solid white !important;
 }

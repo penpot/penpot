@@ -85,8 +85,20 @@
     (set! (.-src img) imd)
     img))
 
+(defn drop-side
+  [height ypos detect-center?]
+  (let [thold  (/ height 2)
+        thold1 (* height 0.2)
+        thold2 (* height 0.8)]
+    (if detect-center?
+      (cond
+        (< ypos thold1) :top
+        (> ypos thold2) :bot
+        :else :center)
+      (if (> ypos thold) :bot :top))))
+
 (defn use-sortable
-  [& {:keys [type data on-drop on-drag] :as opts}]
+  [& {:keys [type data on-drop on-drag detect-center?] :as opts}]
   (let [ref   (mf/use-ref)
         state (mf/use-state {})
 
@@ -115,8 +127,7 @@
                 dtrans (unchecked-get event "dataTransfer")
                 ypos   (unchecked-get event "offsetY")
                 height (unchecked-get target "clientHeight")
-                thold  (/ height 2)
-                side   (if (> ypos thold) :bot :top)]
+                side   (drop-side height ypos detect-center?)]
 
             (set! (.-dropEffect dtrans) "move")
             (set! (.-effectAllowed dtrans) "move")
@@ -159,8 +170,7 @@
 
                 ypos   (unchecked-get event "offsetY")
                 height (unchecked-get target "clientHeight")
-                thold  (/ height 2)
-                side   (if (> ypos thold) :bot :top)]
+                side   (drop-side height ypos detect-center?)]
 
             ;; TODO: seems unnecessary
             (swap! state (fn [state]
