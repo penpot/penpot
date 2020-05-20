@@ -16,7 +16,7 @@
    [uxbox.main.ui.icons :as i]
    [uxbox.main.ui.components.dropdown :refer [dropdown]]))
 
-(mf/defc editable-select [{:keys [value type options class on-change]}]
+(mf/defc editable-select [{:keys [value type options class on-change placeholder]}]
   (let [state (mf/use-state {:id (uuid/next)
                              :is-open? false
                              :current-value value})
@@ -52,6 +52,7 @@
     [:div.editable-select {:class class}
      [:input.input-text {:value (or (-> @state :current-value value->label) "")
                          :on-change handle-change-input
+                         :placeholder placeholder
                          :type type}]
      [:span.dropdown-button {:on-click open-dropdown} i/arrow-down]
 

@@ -146,6 +146,7 @@
                              :type (when (number? (:size params)) "number" )
                              :class "input-option"
                              :options size-options
+                             :placeholder "Auto"
                              :on-change handle-change-size}])
 
       [:div.grid-option-main-actions
@@ -167,6 +168,7 @@
                        :options size-options
                        :value (:size params)
                        :min 1
+                       :placeholder "Auto"
                        :on-change handle-change-size}])
 
       (when (= :column type)
@@ -175,6 +177,7 @@
                        :options size-options
                        :value (:size params)
                        :min 1
+                       :placeholder "Auto"
                        :on-change handle-change-size}])
 
       (when (#{:row :column} type)
@@ -196,6 +199,7 @@
                                 (t locale "workspace.options.grid.params.height")
                                 (t locale "workspace.options.grid.params.width"))
                        :class "pixels"
+                       :placeholder "Auto"
                        :value (or (:item-length params) "")
                        :on-change handle-change-item-length}])
 
@@ -205,10 +209,12 @@
                         :class "pixels"
                         :value (:gutter params)
                         :min 0
+                        :placeholder "0"
                         :on-change (handle-change :params :gutter)}]
          [:& input-row {:label (t locale "workspace.options.grid.params.margin")
                         :class "pixels"
                         :min 0
+                        :placeholder "0"
                         :value (:margin params)
                         :on-change (handle-change :params :margin)}]])
 

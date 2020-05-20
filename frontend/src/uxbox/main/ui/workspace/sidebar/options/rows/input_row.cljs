@@ -15,7 +15,7 @@
    [uxbox.main.ui.components.editable-select :refer [editable-select]]
    [uxbox.util.dom :as dom]))
 
-(mf/defc input-row [{:keys [label options value class min max on-change type]}]
+(mf/defc input-row [{:keys [label options value class min max on-change type placeholder]}]
   [:div.row-flex.input-row
    [:span.element-set-subtitle label]
    [:div.input-element {:class class}
@@ -26,11 +26,13 @@
                   :class "input-option"
                   :options options
                   :on-change on-change}]
+
       :editable-select
       [:& editable-select {:value value
                            :class "input-option"
                            :options options
                            :type (when (number? value) "number")
+                           :placeholder placeholder
                            :on-change on-change}]
 
       (let [handle-change
@@ -41,9 +43,9 @@
                            (or (not max) (<= value max)))
                   (on-change value))))]
         [:input.input-text
-         {:placeholder label
+         {:placeholder placeholder
           :type "number"
           :on-change handle-change
-          :value value}]))
+          :value (or value "")}]))
     
     ]])
