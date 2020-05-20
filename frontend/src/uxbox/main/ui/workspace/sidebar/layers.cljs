@@ -87,6 +87,7 @@
   [{:keys [index item selected objects] :as props}]
   (let [id        (:id item)
         selected? (contains? selected id)
+        container? (or (= (:type item) :frame) (= (:type item) :group))
 
         expanded-iref (mf/use-memo
                         (mf/deps id)
@@ -149,25 +150,30 @@
                       (dw/select-shape id))))
 
         on-drop
-        (fn [side {:keys [id name] :as data}]
-          (let [index (if (= :top side) (inc index) index)]
-            (st/emit! (dw/relocate-shape id (:id item) index))))
+        (fn [side {:keys [id] :as data}]
+          (if (= side :center)
+            (st/emit! (dw/relocate-shape id (:id item) 0))
+            (let [index (if (= side :top) (inc index) index)
+                  parent-id (cp/get-parent (:id item) objects)]
+              (st/emit! (dw/relocate-shape id parent-id index)))))
 
         [dprops dref] (hooks/use-sortable
                        :type (str (:frame-id item))
                        :on-drop on-drop
                        :on-drag on-drag
+                       :detect-center? container?
                        :data {:id (:id item)
                               :index index
-                              :name (:name item)})
-        ]
+                              :name (:name item)})]
+
     [:li {:on-context-menu on-context-menu
           :ref dref
           :class (dom/classnames
-                  :dnd-over-top (= (:over dprops) :top)
-                  :dnd-over-bot (= (:over dprops) :bot)
-                  :selected selected?
-                  )}
+                   :dnd-over (= (:over dprops) :center)
+                   :dnd-over-top (= (:over dprops) :top)
+                   :dnd-over-bot (= (:over dprops) :bot)
+                   :selected selected?)}
+
      [:div.element-list-body {:class (dom/classnames :selected selected?
                                                      :icon-layer (= (:type item) :icon))
                               :on-click select-shape
@@ -245,15 +251,15 @@
     [:ul.element-list
      (for [[index id] (reverse (d/enumerate (:shapes root)))]
        (let [obj (get objects id)]
-         (if (= :frame (:type obj))
+         (if (= (:type obj) :frame)
            [:& frame-wrapper
-            {:item (get objects id)
+            {:item obj
              :selected selected
              :index index
              :objects objects
              :key id}]
            [:& layer-item
-            {:item (get objects id)
+            {:item obj
              :selected selected
              :index index
              :objects objects
