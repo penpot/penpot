@@ -116,8 +116,9 @@
         (rx/of handle-drawing-generic)))))
 
 (def handle-drawing-generic
-  (letfn [(resize-shape [{:keys [x y] :as shape} initial point lock? point-snap]
-            (let [shape' (geom/shape->rect-shape shape)
+  (letfn [(resize-shape [{:keys [x y] :as shape} point lock? point-snap]
+            (let [initial (gpt/point x y)
+                  shape' (geom/shape->rect-shape shape)
                   shapev (gpt/point (:width shape') (:height shape'))
                   deltav (gpt/to-vec initial point-snap)
                   scalev (gpt/divide (gpt/add shapev deltav) shapev)
@@ -130,8 +131,8 @@
                   (assoc-in [:modifiers :resize-origin] (gpt/point x y))
                   (assoc-in [:modifiers :resize-rotation] 0))))
 
-          (update-drawing [state initial point lock? point-snap]
-            (update-in state [:workspace-local :drawing] resize-shape initial point lock? point-snap))]
+          (update-drawing [state point lock? point-snap]
+            (update-in state [:workspace-local :drawing] resize-shape point lock? point-snap))]
 
     (ptk/reify ::handle-drawing-generic
       ptk/WatchEvent
@@ -140,8 +141,7 @@
               stoper? #(or (ms/mouse-up? %) (= % :interrupt))
               stoper (rx/filter stoper? stream)
               initial @ms/mouse-position
-              mouse ms/mouse-position
-
+              
               page-id (get state :current-page-id)
               objects (get-in state [:workspace-data page-id :objects])
               layout (get state :workspace-layout)
@@ -165,12 +165,18 @@
           (rx/concat
            (rx/of #(assoc-in state [:workspace-local :drawing] shape))
 
-           (->> mouse
+           (->> (snap/closest-snap-point page-id [shape] layout initial)
+                (rx/map (fn [{:keys [x y]}]
+                          #(-> %
+                               (assoc-in [:workspace-local :drawing :x] x)
+                               (assoc-in [:workspace-local :drawing :y] y)))))
+
+           (->> ms/mouse-position
                 (rx/with-latest vector ms/mouse-position-ctrl)
                 (rx/switch-map (fn [[point :as current]]
                                  (->> (snap/closest-snap-point page-id [shape] layout point)
                                       (rx/map #(conj current %)))))
-                (rx/map (fn [[pt ctrl? point-snap]] #(update-drawing % initial pt ctrl? point-snap)))
+                (rx/map (fn [[pt ctrl? point-snap]] #(update-drawing % pt ctrl? point-snap)))
                 (rx/take-until stoper))
            (rx/of handle-finish-drawing)))))))
 

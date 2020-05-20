@@ -56,12 +56,16 @@
                                        (when (not-empty snaps) (map #(vector point %) snaps))) @state))]
     (mf/use-effect
      (fn []
-       (->> subject
-            (rx/switch-map #(rx/combine-latest
-                             concat
-                             (get-snap :y %)
-                             (get-snap :x %)))
-            (rx/subs #(reset! state %)))))
+       (let [sub
+             (->> subject
+                  (rx/switch-map #(rx/combine-latest
+                                   concat
+                                   (get-snap :y %)
+                                   (get-snap :x %)))
+                  (rx/subs #(reset! state %)))]
+         
+         ;; On unmount callback
+         #(rx/dispose! sub))))
 
     (mf/use-effect
      (mf/deps shapes)
