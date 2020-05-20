@@ -30,7 +30,7 @@
   [{:keys [width height x y] :as frame} {:keys [size gutter margin item-length type] :as params}]
   (let [size (if (number? size) size (calculate-size width item-length margin gutter))
         parts (/ width size)
-        item-width (or item-length (+ parts (- gutter) (/ gutter size) (- (/ (* margin 2) size))))
+        item-width (min (or item-length ##Inf) (+ parts (- gutter) (/ gutter size) (- (/ (* margin 2) size))))
         item-height height
         initial-offset (case type
                          :right (- width (* item-width size) (* gutter (dec size)) margin)
@@ -46,7 +46,7 @@
   (let [size (if (number? size) size (calculate-size height item-length margin gutter))
         parts (/ height size)
         item-width width
-        item-height (or item-length (+ parts (- gutter) (/ gutter size) (- (/ (* margin 2) size))))
+        item-height (min (or item-length ##Inf) (+ parts (- gutter) (/ gutter size) (- (/ (* margin 2) size))))
         initial-offset (case type
                          :right (- height (* item-height size) (* gutter (dec size)) margin)
                          :center (/ (- height (* item-height size) (* gutter (dec size))) 2)

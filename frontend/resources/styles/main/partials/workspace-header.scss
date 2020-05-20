@@ -36,7 +36,7 @@
         height: 30px;
         width: 28px;
 
-        }
+      }
 
       &:hover {
 
@@ -118,6 +118,8 @@
       cursor: pointer;
       font-size: $fs12;
       padding: $small $x-small;
+      display: flex;
+      justify-content: space-between;
 
       svg {
         fill: $color-gray-60;
@@ -128,6 +130,10 @@
       span {
         color: $color-gray-60;
         margin: 0 $x-small;
+      }
+
+      .shortcut {
+        color: $color-gray-20;
       }
 
       &:hover {

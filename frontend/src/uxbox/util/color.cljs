@@ -33,7 +33,7 @@
   [v]
   (try
     (into [] (gcolor/hexToRgb v))
-    (catch js/Object e [0 0 0])))
+    (catch :default e [0 0 0])))
 
 (defn rgb->hex
   [[r g b]]
