@@ -75,43 +75,50 @@
         [:span
          (if (contains? layout :rules)
            (t locale "workspace.header.menu.hide-rules")
-           (t locale "workspace.header.menu.show-rules"))]]
+           (t locale "workspace.header.menu.show-rules"))]
+        [:span.shortcut "Ctrl+r"]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flag :display-grid))}
         [:span
          (if (contains? layout :display-grid)
            (t locale "workspace.header.menu.hide-grid")
-           (t locale "workspace.header.menu.show-grid"))]]
+           (t locale "workspace.header.menu.show-grid"))]
+        [:span.shortcut "Ctrl+'"]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flag :snap-grid))}
         [:span
          (if (contains? layout :snap-grid)
            (t locale "workspace.header.menu.disable-snap-grid")
-           (t locale "workspace.header.menu.enable-snap-grid"))]]
+           (t locale "workspace.header.menu.enable-snap-grid"))]
+        [:span.shortcut "Ctrl+Shift+'"]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flag :sitemap :layers))}
         [:span
          (if (or (contains? layout :sitemap) (contains? layout :layers))
            (t locale "workspace.header.menu.hide-layers")
-           (t locale "workspace.header.menu.show-layers"))]]
+           (t locale "workspace.header.menu.show-layers"))]
+        [:span.shortcut "Ctrl+l"]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flag :colorpalette))}
         [:span
          (if (contains? layout :colorpalette)
            (t locale "workspace.header.menu.hide-palette")
-           (t locale "workspace.header.menu.show-palette"))]]
+           (t locale "workspace.header.menu.show-palette"))]
+        [:span.shortcut "Ctrl+p"]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flag :libraries))}
         [:span
          (if (contains? layout :libraries)
            (t locale "workspace.header.menu.hide-libraries")
-           (t locale "workspace.header.menu.show-libraries"))]]
+           (t locale "workspace.header.menu.show-libraries"))]
+        [:span.shortcut "Ctrl+i"]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flag :dynamic-alignment))}
         [:span
          (if (contains? layout :dynamic-alignment)
            (t locale "workspace.header.menu.disable-dynamic-alignment")
-           (t locale "workspace.header.menu.enable-dynamic-alignment"))]]
+           (t locale "workspace.header.menu.enable-dynamic-alignment"))]
+        [:span.shortcut "Ctrl+a"]]
        ]]]))
 
 ;; --- Header Component
