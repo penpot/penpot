@@ -67,7 +67,9 @@
         (fn [type]
           (let [defaults (type default-grid-params)
                 keys (keys defaults)
-                params (->> @state :changes params (select-keys keys) (merge defaults))
+                current-changes (-> @state :changes :params (select-keys keys))
+                ;; We give more priority to the current changes
+                params (merge defaults current-changes)
                 to-merge {:type type :params params}]
             (emit-changes! #(d/deep-merge % to-merge))))
 
