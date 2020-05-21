@@ -34,7 +34,7 @@
    [uxbox.main.ui.workspace.left-toolbar :refer [left-toolbar]]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
-   [uxbox.util.geom.point :as gpt]))
+   [uxbox.common.geom.point :as gpt]))
 
 ;; --- Workspace
 

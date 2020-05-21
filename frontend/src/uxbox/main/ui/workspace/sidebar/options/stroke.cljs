@@ -19,7 +19,7 @@
    [uxbox.util.dom :as dom]
    [uxbox.util.object :as obj]
    [uxbox.util.i18n :as i18n :refer  [tr t]]
-   [uxbox.util.math :as math]
+   [uxbox.common.math :as math]
    [uxbox.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]))
 
 (defn- stroke-menu-memo-equals?

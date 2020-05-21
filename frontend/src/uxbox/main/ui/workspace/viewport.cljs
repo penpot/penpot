@@ -30,10 +30,10 @@
    [uxbox.main.ui.workspace.presence :as presence]
    [uxbox.main.ui.workspace.snap-feedback :refer [snap-feedback]]
    [uxbox.main.ui.workspace.frame-grid :refer [frame-grid]]
-   [uxbox.util.math :as mth]
+   [uxbox.common.math :as mth]
    [uxbox.util.dom :as dom]
    [uxbox.util.object :as obj]
-   [uxbox.util.geom.point :as gpt]
+   [uxbox.common.geom.point :as gpt]
    [uxbox.util.perf :as perf]
    [uxbox.common.uuid :as uuid])
   (:import goog.events.EventType))

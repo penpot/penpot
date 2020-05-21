@@ -17,9 +17,9 @@
    [uxbox.main.store :as st]
    [uxbox.main.ui.workspace.shapes.common :as common]
    [uxbox.main.ui.shapes.frame :as frame]
-   [uxbox.util.geom.matrix :as gmt]
-   [uxbox.util.geom.point :as gpt]
-   [uxbox.util.geom.shapes :as geom]
+   [uxbox.common.geom.matrix :as gmt]
+   [uxbox.common.geom.point :as gpt]
+   [uxbox.common.geom.shapes :as geom]
    [uxbox.util.dom :as dom]
    [uxbox.main.streams :as ms]
    [uxbox.util.timers :as ts]))

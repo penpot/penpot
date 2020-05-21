@@ -9,8 +9,8 @@
 
 (ns uxbox.util.geom.grid
   (:require
-   [uxbox.util.math :as mth]
-   [uxbox.util.geom.point :as gpt]))
+   [uxbox.common.math :as mth]
+   [uxbox.common.geom.point :as gpt]))
 
 (def ^:private default-items 12)
 

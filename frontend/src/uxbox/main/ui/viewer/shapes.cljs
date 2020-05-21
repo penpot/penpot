@@ -24,9 +24,9 @@
    [uxbox.main.ui.shapes.rect :as rect]
    [uxbox.main.ui.shapes.text :as text]
    [uxbox.util.object :as obj]
-   [uxbox.util.geom.matrix :as gmt]
-   [uxbox.util.geom.point :as gpt]
-   [uxbox.util.geom.shapes :as geom]))
+   [uxbox.common.geom.matrix :as gmt]
+   [uxbox.common.geom.point :as gpt]
+   [uxbox.common.geom.shapes :as geom]))
 
 (defn on-mouse-down
   [event {:keys [interactions] :as shape}]

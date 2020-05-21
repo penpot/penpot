@@ -22,10 +22,10 @@
    [uxbox.main.exports :as exports]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
-   [uxbox.util.geom.matrix :as gmt]
-   [uxbox.util.geom.point :as gpt]
+   [uxbox.common.geom.matrix :as gmt]
+   [uxbox.common.geom.point :as gpt]
    [uxbox.util.i18n :as i18n :refer [t tr]]
-   [uxbox.util.math :as mth]
+   [uxbox.common.math :as mth]
    [uxbox.util.router :as rt]
    [uxbox.main.data.viewer :as vd])
   (:import goog.events.EventType

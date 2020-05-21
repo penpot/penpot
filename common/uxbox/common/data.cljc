@@ -102,6 +102,9 @@
         (subvec v 0 index)
         (subvec v (inc index)))))
 
+(defn zip [col1 col2]
+  (map vector col1 col2))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Parsing / Conversion
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

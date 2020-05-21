@@ -21,9 +21,9 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
-   [uxbox.util.geom.matrix :as gmt]
-   [uxbox.util.geom.point :as gpt]
-   [uxbox.util.geom.shapes :as gsh]
+   [uxbox.common.geom.matrix :as gmt]
+   [uxbox.common.geom.point :as gpt]
+   [uxbox.common.geom.shapes :as gsh]
    [uxbox.main.snap :as snap]))
 
 ;; -- Declarations

@@ -19,7 +19,7 @@
    [uxbox.main.data.workspace.common :as dwc]
    [uxbox.main.repo :as rp]
    [uxbox.main.store :as st]
-   [uxbox.util.geom.point :as gpt]
+   [uxbox.common.geom.point :as gpt]
    [uxbox.util.router :as rt]
    [uxbox.util.time :as dt]
    [uxbox.util.transit :as t]))

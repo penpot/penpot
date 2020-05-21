@@ -13,7 +13,7 @@
    [cuerdas.core :as str]
    [beicon.core :as rx]
    [cuerdas.core :as str]
-   [uxbox.util.geom.point :as gpt]
+   [uxbox.common.geom.point :as gpt]
    [uxbox.util.blob :as blob]
    [uxbox.util.transit :as ts]))
 

@@ -7,11 +7,12 @@
 (ns uxbox.util.perf
   "Performance profiling for react components."
   (:require-macros [uxbox.util.perf])
-  (:require [uxbox.util.math :as math]
-            [rumext.alpha :as mf]
-            [goog.functions :as f]
-            ["react" :as react]
-            ["tdigest" :as td]))
+  (:require
+   [uxbox.common.math :as math]
+   [rumext.alpha :as mf]
+   [goog.functions :as f]
+   ["react" :as react]
+   ["tdigest" :as td]))
 
 ;; For use it, just wrap the component you want to profile with
 ;; `perf/profiler` component and pass a label for debug purpose.

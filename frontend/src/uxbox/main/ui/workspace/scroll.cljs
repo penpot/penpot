@@ -11,7 +11,7 @@
             [potok.core :as ptk]
             [uxbox.main.refs :as refs]
             [uxbox.util.dom :as dom]
-            [uxbox.util.geom.point :as gpt]))
+            [uxbox.common.geom.point :as gpt]))
 
 ;; FIXME: revisit this ns in order to find a better location for its functions
 ;; TODO: this need a good refactor (probably move to events with access to the state)

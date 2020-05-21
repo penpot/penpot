@@ -8,10 +8,10 @@
   (:require
    [rumext.alpha :as mf]
    [uxbox.common.data :as d]
+   [uxbox.common.geom.shapes :as geom]
+   [uxbox.common.geom.matrix :as gmt]
    [uxbox.main.fonts :as fonts]
-   [uxbox.util.geom.shapes :as geom]
-   [uxbox.util.object :as obj]
-   [uxbox.util.geom.matrix :as gmt]))
+   [uxbox.util.object :as obj]))
 
 ;; --- Text Editor Rendering
 

@@ -16,7 +16,7 @@
    [uxbox.common.pages :as cp]
    [uxbox.common.uuid :as uuid]
    [uxbox.worker.impl :as impl]
-   [uxbox.util.geom.shapes :as geom]
+   [uxbox.common.geom.shapes :as geom]
    [uxbox.util.quadtree :as qdt]))
 
 (defonce state (l/atom {}))

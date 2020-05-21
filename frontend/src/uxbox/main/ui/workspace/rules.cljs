@@ -10,7 +10,7 @@
 (ns uxbox.main.ui.workspace.rules
   (:require
    [rumext.alpha :as mf]
-   [uxbox.util.math :as mth]
+   [uxbox.common.math :as mth]
    [uxbox.util.object :as obj]))
 
 (defn- calculate-step-size

@@ -12,7 +12,7 @@
    [rumext.alpha :as mf]
    [uxbox.main.refs :as refs]
    [uxbox.common.pages :as cp]
-   [uxbox.util.geom.shapes :as gsh]
+   [uxbox.common.geom.shapes :as gsh]
    [uxbox.util.geom.grid :as gg]))
 
 (mf/defc square-grid [{:keys [frame zoom grid] :as props}]

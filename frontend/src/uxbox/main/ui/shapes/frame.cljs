@@ -12,7 +12,7 @@
    [rumext.alpha :as mf]
    [uxbox.common.data :as d]
    [uxbox.main.ui.shapes.attrs :as attrs]
-   [uxbox.util.geom.shapes :as geom]
+   [uxbox.common.geom.shapes :as geom]
    [uxbox.util.object :as obj]))
 
 (def frame-default-props {:fill-color "#ffffff"})

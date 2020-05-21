@@ -12,7 +12,7 @@
    [rumext.alpha :as mf]
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.util.debug :refer [debug?]]
-   [uxbox.util.geom.shapes :as geom]))
+   [uxbox.common.geom.shapes :as geom]))
 
 (defn group-shape
   [shape-wrapper]

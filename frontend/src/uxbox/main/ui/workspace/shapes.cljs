@@ -26,7 +26,7 @@
    [uxbox.main.ui.workspace.shapes.group :as group]
    [uxbox.main.ui.workspace.shapes.path :as path]
    [uxbox.main.ui.workspace.shapes.text :as text]
-   [uxbox.util.geom.shapes :as geom]))
+   [uxbox.common.geom.shapes :as geom]))
 
 (declare group-wrapper)
 (declare frame-wrapper)

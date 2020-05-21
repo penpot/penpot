@@ -19,9 +19,6 @@
    [uxbox.main.ui.shapes.path :as path]
    [uxbox.main.ui.workspace.shapes.common :as common]
    [uxbox.util.dom :as dom]
-   [uxbox.util.geom.matrix :as gmt]
-   [uxbox.util.geom.point :as gpt]
-   [uxbox.util.geom.shapes :as geom]
    [uxbox.util.interop :as itr]
    [uxbox.main.streams :as ms]
    [uxbox.util.timers :as ts]))

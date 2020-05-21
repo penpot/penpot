@@ -7,7 +7,7 @@
 (ns uxbox.main.ui.shapes.custom-stroke
   (:require
    [rumext.alpha :as mf]
-   [uxbox.util.geom.shapes :as geom]
+   [uxbox.common.geom.shapes :as geom]
    [uxbox.util.object :as obj]))
 
 ; The SVG standard does not implement yet the 'stroke-alignment'

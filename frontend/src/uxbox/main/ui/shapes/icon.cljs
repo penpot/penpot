@@ -10,7 +10,7 @@
 (ns uxbox.main.ui.shapes.icon
   (:require
    [rumext.alpha :as mf]
-   [uxbox.util.geom.shapes :as geom]
+   [uxbox.common.geom.shapes :as geom]
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.util.object :as obj]))
 

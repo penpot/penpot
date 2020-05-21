@@ -7,46 +7,55 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns uxbox.util.math
+(ns uxbox.common.math
   "A collection of math utils."
-  (:require [goog.math :as math]))
+  #?(:cljs
+     (:require [goog.math :as math])))
 
 (defn ^boolean nan?
   [v]
-  (js/isNaN v))
+  #?(:cljs (js/isNaN v)
+     :clj (Double/isNaN v)))
 
 (defn ^boolean finite?
   [v]
-  (js/isFinite v))
+  #?(:cljs (js/isFinite v)
+     :clj (Double/isFinite v)))
 
 (defn abs
   [^number v]
-  (js/Math.abs v))
+  #?(:cljs (js/Math.abs v)
+     :clj (Math/abs v)))
 
 (defn sin
   "Returns the sine of a number"
   [^number v]
-  (js/Math.sin v))
+  #?(:cljs (js/Math.sin v)
+     :clj (Math/sin)))
 
 (defn cos
   "Returns the cosine of a number."
   [^number v]
-  (js/Math.cos v))
+  #?(:cljs (js/Math.cos v)
+     :clj (Math/cos v)))
 
 (defn acos
   "Returns the arccosine of a number."
   [^number v]
-  (js/Math.acos v))
+  #?(:cljs (js/Math.acos v)
+     :clj (Math/acos v)))
 
 (defn tan
   "Returns the tangent of a number."
   [^number v]
-  (js/Math.tan v))
+  #?(:cljs (js/Math.tan v)
+     :clj (Math/tan v)))
 
 (defn atan2
   "Returns the arctangent of the quotient of its arguments."
   [^number x ^number y]
-  (js/Math.atan2 x y))
+  #?(:cljs (js/Math.atan2 x y)
+     :clj (Math/atan2 x y)))
 
 (defn neg
   "Negate the number"
@@ -56,51 +65,53 @@
 (defn sqrt
   "Returns the square root of a number."
   [v]
-  (js/Math.sqrt v))
+  #?(:cljs (js/Math.sqrt v)
+     :clj (Math/sqrt v)))
 
 (defn pow
   "Returns the base to the exponent power."
   [b e]
-  (js/Math.pow b e))
+  #?(:cljs (js/Math.pow b e)
+     :clj (Math/pow b e)))
 
 (defn floor
   "Returns the largest integer less than or
   equal to a given number."
   [^number v]
-  (js/Math.floor v))
+  #?(:cljs (js/Math.floor v)
+     :clj (Math/floor)))
 
 (defn round
   "Returns the value of a number rounded to
   the nearest integer."
   [^number v]
-  (js/Math.round v))
+  #?(:cljs (js/Math.round v)
+     :clj (Math/round v)))
 
 (defn ceil
   "Returns the smallest integer greater than
   or equal to a given number."
   [^number v]
-  (js/Math.ceil v))
+  #?(:cljs (js/Math.ceil v)
+     :clj (Math/ceil v)))
 
 (defn precision
   [^number v ^number n]
   (when (and (number? v) (number? n))
-    (js/parseFloat (.toFixed v n))))
-
-(defn precision-or-0
-  [^number v ^number n]
-  (if (.-toFixed v)
-    (js/parseFloat (.toFixed v n))
-    0))
+    #?(:cljs (js/parseFloat (.toFixed v n))
+       :clj (.. (BigDecimal/valueOf v) (setScale n java.math.RoundingMode/HALF_UP) (doubleValue)))))
 
 (defn radians
   "Converts degrees to radians."
   [^number degrees]
-  (math/toRadians degrees))
+  #?(:cljs (math/toRadians degrees)
+     :clj (Math/toRadians degrees)))
 
 (defn degrees
   "Converts radians to degrees."
-  [^number radiants]
-  (math/toDegrees radiants))
+  [^number radians]
+  #?(:cljs (math/toDegrees radians)
+     :clj (Math/toDegrees radians)))
 
 (defn distance
   "Calculate the distance between two points."
