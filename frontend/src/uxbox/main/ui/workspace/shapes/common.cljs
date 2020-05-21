@@ -15,9 +15,9 @@
    [uxbox.main.store :as st]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.util.dom :as dom]
-   [uxbox.util.geom.matrix :as gmt]
-   [uxbox.util.geom.point :as gpt]
-   [uxbox.util.geom.shapes :as geom]))
+   [uxbox.common.geom.matrix :as gmt]
+   [uxbox.common.geom.point :as gpt]
+   [uxbox.common.geom.shapes :as geom]))
 
 (defn- on-mouse-down
   [event {:keys [id type] :as shape}]

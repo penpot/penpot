@@ -5,13 +5,13 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns uxbox.util.geom.matrix
-  (:require [cuerdas.core :as str]
-            [cognitect.transit :as t]
-            [uxbox.util.math :as mth]
-            [uxbox.util.geom.point :as gpt]))
+(ns uxbox.common.geom.matrix
+  (:require
+   [cuerdas.core :as str]
+   [uxbox.common.math :as mth]
+   [uxbox.common.geom.point :as gpt]))
 
 ;; --- Matrix Impl
 
@@ -121,14 +121,3 @@
   ([m angle-x angle-y p]
    (multiply m (skew-matrix angle-x angle-y p))))
 
-;; --- Transit Adapter
-
-(def matrix-write-handler
-  (t/write-handler
-   (constantly "matrix")
-   (fn [v] (into {} v))))
-
-(def matrix-read-handler
-  (t/read-handler
-   (fn [value]
-     (map->Matrix value))))

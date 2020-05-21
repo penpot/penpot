@@ -9,9 +9,9 @@
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
    [uxbox.util.debug :as debug]
-   [uxbox.util.geom.shapes :as geom]
-   [uxbox.util.geom.matrix :as gmt]
-   [uxbox.util.geom.point :as gpt]
+   [uxbox.common.geom.shapes :as geom]
+   [uxbox.common.geom.matrix :as gmt]
+   [uxbox.common.geom.point :as gpt]
    [uxbox.util.debug :refer [debug?]]
    ["randomcolor" :as rdcolor]))
 

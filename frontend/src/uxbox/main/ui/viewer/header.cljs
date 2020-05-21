@@ -20,7 +20,7 @@
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t]]
    [uxbox.util.router :as rt]
-   [uxbox.util.math :as mth]
+   [uxbox.common.math :as mth]
    [uxbox.common.uuid :as uuid]
    [uxbox.util.webapi :as wapi]))
 

@@ -14,13 +14,12 @@
    [cuerdas.core :as str]
    [uxbox.util.data :as dt]
    [uxbox.util.dom :as dom]
-   [uxbox.util.geom.point :as gpt]
-   [uxbox.util.geom.shapes :as geom]
+   [uxbox.common.geom.point :as gpt]
+   [uxbox.common.geom.shapes :as geom]
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
    [uxbox.main.data.workspace :as dw]
-   [uxbox.main.ui.keyboard :as kbd]
-   ))
+   [uxbox.main.ui.keyboard :as kbd]))
 
 (defn- get-click-interaction
   [shape]

@@ -11,8 +11,8 @@
   (:require
    [cljs.spec.alpha :as s]
    [clojure.set :as set]
-   [uxbox.util.geom.shapes :as gsh]
-   [uxbox.util.geom.point :as gpt]))
+   [uxbox.common.geom.shapes :as gsh]
+   [uxbox.common.geom.point :as gpt]))
 
 (defn- frame-snap-points [{:keys [x y width height] :as frame}]
   (into #{(gpt/point x y)

@@ -7,8 +7,8 @@
 (ns uxbox.util.transit
   "A lightweight abstraction for transit serialization."
   (:require [cognitect.transit :as t]
-            [uxbox.util.geom.point :as gpt]
-            [uxbox.util.geom.matrix :as gmt]
+            [uxbox.common.geom.point :as gpt]
+            [uxbox.common.geom.matrix :as gmt]
             [uxbox.util.time :as dt]))
 
 (deftype Blob [content]
@@ -29,18 +29,40 @@
    (fn [value]
      (->Blob (js/JSON.parse value)))))
 
+;; --- Transit adapters
+
+(def point-write-handler
+  (t/write-handler
+   (constantly "point")
+   (fn [v] (into {} v))))
+
+(def point-read-handler
+  (t/read-handler
+   (fn [value]
+     (gpt/map->Point value))))
+
+(def matrix-write-handler
+  (t/write-handler
+   (constantly "matrix")
+   (fn [v] (into {} v))))
+
+(def matrix-read-handler
+  (t/read-handler
+   (fn [value]
+     (gmt/map->Matrix value))))
+
 ;; --- Transit Handlers
 
 (def ^:privare +read-handlers+
   {"u" uuid
    "jsonblob" blob-read-handler
-   "matrix" gmt/matrix-read-handler
-   "point" gpt/point-read-handler})
+   "matrix" matrix-read-handler
+   "point" point-read-handler})
 
 (def ^:privare +write-handlers+
-  {gmt/Matrix gmt/matrix-write-handler
+  {gmt/Matrix matrix-write-handler
    Blob       blob-write-handler
-   gpt/Point gpt/point-write-handler})
+   gpt/Point point-write-handler})
 
 ;; --- Public Api
 
@@ -56,4 +78,3 @@
       (t/write w data))
     (catch :default e
       (throw e))))
-

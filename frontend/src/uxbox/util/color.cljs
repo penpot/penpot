@@ -11,7 +11,7 @@
   "Color conversion utils."
   (:require
    [cuerdas.core :as str]
-   [uxbox.util.math :as math]
+   [uxbox.common.math :as math]
    [goog.color :as gcolor]))
 
 (defn rgb->str

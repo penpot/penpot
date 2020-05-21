@@ -1,7 +1,7 @@
 (ns uxbox.test-util-range-tree
   (:require [cljs.test :as t :include-macros true]
             [cljs.pprint :refer [pprint]]
-            [uxbox.util.geom.point :as gpt]
+            [uxbox.common.geom.point :as gpt]
             [uxbox.util.range-tree :as rt]))
 
 (defn check-max-height [tree num-nodes])

@@ -7,16 +7,15 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns uxbox.util.geom.shapes
+(ns uxbox.common.geom.shapes
   (:require
    [clojure.spec.alpha :as s]
    [uxbox.common.pages :as cp]
    [uxbox.common.spec :as us]
-   [uxbox.util.geom.matrix :as gmt]
-   [uxbox.util.geom.point :as gpt]
-   [uxbox.util.math :as mth]
-   [uxbox.util.data :as d]
-   [uxbox.util.debug :as debug]))
+   [uxbox.common.geom.matrix :as gmt]
+   [uxbox.common.geom.point :as gpt]
+   [uxbox.common.math :as mth]
+   [uxbox.common.data :as d]))
 
 ;; --- Relative Movement
 

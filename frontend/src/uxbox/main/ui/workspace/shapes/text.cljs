@@ -22,9 +22,8 @@
    [uxbox.main.fonts :as fonts]
    [uxbox.util.color :as color]
    [uxbox.util.dom :as dom]
-   [uxbox.util.geom.shapes :as geom]
+   [uxbox.common.geom.shapes :as geom]
    [uxbox.util.object :as obj]
-   [uxbox.util.geom.matrix :as gmt]
    ["slate" :as slate]
    ["slate-react" :as rslate])
   (:import

@@ -12,7 +12,7 @@
    [rumext.alpha :as mf]
    [uxbox.util.dom :as dom]
    [uxbox.util.data :as d]
-   [uxbox.util.math :as mth]
+   [uxbox.common.math :as mth]
    [uxbox.common.data :refer [parse-integer]]
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]

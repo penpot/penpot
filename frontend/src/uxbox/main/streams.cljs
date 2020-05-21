@@ -10,7 +10,7 @@
    [beicon.core :as rx]
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
-   [uxbox.util.geom.point :as gpt]))
+   [uxbox.common.geom.point :as gpt]))
 
 ;; --- User Events
 

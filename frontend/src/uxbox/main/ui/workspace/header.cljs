@@ -23,7 +23,7 @@
    [uxbox.main.ui.workspace.presence :as presence]
    [uxbox.util.i18n :as i18n :refer [t]]
    [uxbox.util.data :refer [classnames]]
-   [uxbox.util.math :as mth]
+   [uxbox.common.math :as mth]
    [uxbox.util.router :as rt]))
 
 ;; --- Zoom Widget

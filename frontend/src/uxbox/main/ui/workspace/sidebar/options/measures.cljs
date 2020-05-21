@@ -15,10 +15,10 @@
    [uxbox.main.refs :as refs]
    [uxbox.common.data :as d]
    [uxbox.util.dom :as dom]
-   [uxbox.util.geom.shapes :as gsh]
-   [uxbox.util.geom.point :as gpt]
+   [uxbox.common.geom.shapes :as gsh]
+   [uxbox.common.geom.point :as gpt]
    [uxbox.main.data.workspace :as udw]
-   [uxbox.util.math :as math]
+   [uxbox.common.math :as math]
    [uxbox.util.i18n :refer [t] :as i18n]))
 
 ;; -- User/drawing coords

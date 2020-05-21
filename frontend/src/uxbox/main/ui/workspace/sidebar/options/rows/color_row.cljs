@@ -10,7 +10,7 @@
 (ns uxbox.main.ui.workspace.sidebar.options.rows.color-row
   (:require
    [rumext.alpha :as mf]
-   [uxbox.util.math :as math]
+   [uxbox.common.math :as math]
    [uxbox.util.dom :as dom]
    [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.workspace.colorpicker :refer [colorpicker-modal]]

@@ -11,8 +11,8 @@
   (:require
    [beicon.core :as rx]
    [uxbox.common.uuid :refer [zero]]
-   [uxbox.util.math :as mth]
-   [uxbox.util.geom.point :as gpt]
+   [uxbox.common.math :as mth]
+   [uxbox.common.geom.point :as gpt]
    [uxbox.main.worker :as uw]
    [uxbox.util.geom.snap-points :as sp]))
 

@@ -5,15 +5,15 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns uxbox.util.geom.point
+(ns uxbox.common.geom.point
   (:refer-clojure :exclude [divide min max])
   (:require
-   [cljs.core :as c]
+   #?(:cljs [cljs.core :as c]
+      :clj [clj.core :as c])
    [cuerdas.core :as str]
-   [uxbox.util.math :as mth]
-   [cognitect.transit :as t]))
+   [uxbox.common.math :as mth]))
 
 ;; --- Point Impl
 
@@ -165,19 +165,6 @@
   (Point. (+ (* x a) (* y c) e)
           (+ (* x b) (* y d) f)))
 
-;; --- Transit Adapter
-
-(def point-write-handler
-  (t/write-handler
-   (constantly "point")
-   (fn [v] (into {} v))))
-
-(def point-read-handler
-  (t/read-handler
-   (fn [value]
-     (map->Point value))))
-
-
 ;; Vector functions
 (defn to-vec [p1 p2]
   (subtract p2 p1))
@@ -195,4 +182,3 @@
     (multiply
      v2-unit
      (point scalar-projection scalar-projection))))
-

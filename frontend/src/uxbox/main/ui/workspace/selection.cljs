@@ -15,14 +15,14 @@
    [rumext.alpha :as mf]
    [rumext.util :refer [map->obj]]
    [uxbox.main.data.workspace :as dw]
-   [uxbox.util.geom.shapes :as geom]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
    [uxbox.util.dom :as dom]
    [uxbox.util.object :as obj]
-   [uxbox.util.geom.point :as gpt]
-   [uxbox.util.geom.matrix :as gmt]
+   [uxbox.common.geom.shapes :as geom]
+   [uxbox.common.geom.point :as gpt]
+   [uxbox.common.geom.matrix :as gmt]
    [uxbox.util.debug :refer [debug?]]))
 
 (defn rotation-cursor [angle]
@@ -161,7 +161,7 @@
 (mf/defc resize-side-handler [{:keys [x y length angle zoom position transform on-resize]}]
   [:rect {:x (+ x (/ resize-point-rect-size zoom))
           :y (- y (/ resize-side-height 2 zoom))
-          :width (- length (/ (* resize-point-rect-size 2) zoom))
+          :width (max 0 (- length (/ (* resize-point-rect-size 2) zoom)))
           :height (/ resize-side-height zoom)
           :transform (gmt/multiply transform
                                    (gmt/rotate-matrix angle (gpt/point x y)))

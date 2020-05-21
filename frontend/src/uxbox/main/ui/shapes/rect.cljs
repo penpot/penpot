@@ -12,7 +12,7 @@
    [rumext.alpha :as mf]
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.main.ui.shapes.custom-stroke :refer [shape-custom-stroke]]
-   [uxbox.util.geom.shapes :as geom]
+   [uxbox.common.geom.shapes :as geom]
    [uxbox.util.object :as obj]))
 
 (mf/defc rect-shape

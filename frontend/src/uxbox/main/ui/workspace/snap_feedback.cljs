@@ -5,7 +5,7 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.snap :as snap]
    [uxbox.util.geom.snap-points :as sp]
-   [uxbox.util.geom.point :as gpt]))
+   [uxbox.common.geom.point :as gpt]))
 
 (def ^:private line-color "#D383DA")
 

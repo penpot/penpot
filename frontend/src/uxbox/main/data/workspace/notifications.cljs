@@ -21,7 +21,7 @@
    [uxbox.main.data.workspace.common :as dwc]
    [uxbox.main.data.workspace.persistence :as dwp]
    [uxbox.util.avatars :as avatars]
-   [uxbox.util.geom.point :as gpt]
+   [uxbox.common.geom.point :as gpt]
    [uxbox.util.time :as dt]
    [uxbox.util.transit :as t]
    [uxbox.util.websockets :as ws]))
