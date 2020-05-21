@@ -13,6 +13,7 @@
    [cuerdas.core :as str]
    [potok.core :as ptk]
    [rumext.alpha :as mf]
+   [rumext.util :refer [map->obj]]
    [uxbox.main.data.workspace :as dw]
    [uxbox.util.geom.shapes :as geom]
    [uxbox.main.refs :as refs]
@@ -24,70 +25,151 @@
    [uxbox.util.geom.matrix :as gmt]
    [uxbox.util.debug :refer [debug?]]))
 
-;; --- Controls (Component)
-
-(def ^:private handler-size-threshold
-  "The size in pixels that shape width or height
-  should reach in order to increase the handler
-  control pointer radius from 4 to 6."
-  60)
-
-(mf/defc control-item
-  {::mf/wrap-props false}
-  [props]
-  (let [class (obj/get props "class")
-        on-click (obj/get props "on-click")
-        r (obj/get props "r")
-        cx (obj/get props "cx")
-        cy (obj/get props "cy")]
-    [:circle
-     {:class-name class
-      :on-mouse-down on-click
-      :r r
-      :style {:fillOpacity "1"
-              :strokeWidth "1px"
-            :vectorEffect "non-scaling-stroke"}
-      :fill "#ffffff"
-      :stroke "#1FDEA7"
-      :cx cx
-      :cy cy}]))
-
-(def ^:private rotate-cursor-svg "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20px' height='20px' transform='rotate(%s)' viewBox='0 0 132.292 132.006'%3E%3Cpath d='M85.225 3.48c.034 4.989-.093 9.852-.533 14.78-29.218 5.971-54.975 27.9-63.682 56.683-1.51 2.923-1.431 7.632-3.617 9.546-5.825.472-11.544.5-17.393.45 11.047 15.332 20.241 32.328 32.296 46.725 5.632 1.855 7.155-5.529 10.066-8.533 8.12-12.425 17.252-24.318 24.269-37.482-6.25-.86-12.564-.88-18.857-1.057 5.068-17.605 19.763-31.81 37.091-37.122.181 6.402.206 12.825 1.065 19.184 15.838-9.05 30.899-19.617 45.601-30.257 2.985-4.77-3.574-7.681-6.592-9.791C111.753 17.676 98.475 8.889 85.23.046l-.005 3.435z'/%3E%3Cpath fill='%23fff' d='M92.478 23.995s-1.143.906-6.714 1.923c-29.356 5.924-54.352 30.23-59.717 59.973-.605 3.728-1.09 5.49-1.09 5.49l-11.483-.002s7.84 10.845 10.438 15.486c3.333 4.988 6.674 9.971 10.076 14.912a2266.92 2266.92 0 0019.723-29.326c-5.175-.16-10.35-.343-15.522-.572 3.584-27.315 26.742-50.186 53.91-54.096.306 5.297.472 10.628.631 15.91a2206.462 2206.462 0 0029.333-19.726c-9.75-6.7-19.63-13.524-29.483-20.12z'/%3E%3C/svg%3E\") 10 10, auto")
-
-(defn rotation-cursor
-  [angle]
+(defn rotation-cursor [angle]
   (str "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20px' height='20px' transform='rotate(" angle ")' viewBox='0 0 132.292 132.006'%3E%3Cpath d='M85.225 3.48c.034 4.989-.093 9.852-.533 14.78-29.218 5.971-54.975 27.9-63.682 56.683-1.51 2.923-1.431 7.632-3.617 9.546-5.825.472-11.544.5-17.393.45 11.047 15.332 20.241 32.328 32.296 46.725 5.632 1.855 7.155-5.529 10.066-8.533 8.12-12.425 17.252-24.318 24.269-37.482-6.25-.86-12.564-.88-18.857-1.057 5.068-17.605 19.763-31.81 37.091-37.122.181 6.402.206 12.825 1.065 19.184 15.838-9.05 30.899-19.617 45.601-30.257 2.985-4.77-3.574-7.681-6.592-9.791C111.753 17.676 98.475 8.889 85.23.046l-.005 3.435z'/%3E%3Cpath fill='%23fff' d='M92.478 23.995s-1.143.906-6.714 1.923c-29.356 5.924-54.352 30.23-59.717 59.973-.605 3.728-1.09 5.49-1.09 5.49l-11.483-.002s7.84 10.845 10.438 15.486c3.333 4.988 6.674 9.971 10.076 14.912a2266.92 2266.92 0 0019.723-29.326c-5.175-.16-10.35-.343-15.522-.572 3.584-27.315 26.742-50.186 53.91-54.096.306 5.297.472 10.628.631 15.91a2206.462 2206.462 0 0029.333-19.726c-9.75-6.7-19.63-13.524-29.483-20.12z'/%3E%3C/svg%3E\") 10 10, auto"))
 
-(def rotation-handler-positions
-  #{:top-left :top-right :bottom-left :bottom-right})
+(def rotation-handler-size 25)
+(def resize-point-radius 4)
+(def resize-point-circle-radius 10)
+(def resize-point-rect-size 20)
+(def resize-side-height 8)
+(def selection-rect-color "#1FDEA7")
+(def selection-rect-width 1)
 
-(mf/defc rotation-handler
-  {::mf/wrap-props false}
-  [props]
-  (let [cx (obj/get props "cx")
-        cy (obj/get props "cy")
-        position (obj/get props "position")
-        on-mouse-down (obj/get props "on-mouse-down")
-        rotation (obj/get props "rotation")
-        zoom (obj/get props "zoom")]
-    (when (contains? rotation-handler-positions position)
-      (let [size (/ 20 zoom)
-            rotation (or rotation 0)
-            x (- cx (if (#{:top-left :bottom-left} position) size 0))
-            y (- cy (if (#{:top-left :top-right} position) size 0))
-            angle (case position
-                    :top-left 0
-                    :top-right 90
-                    :bottom-right 180
-                    :bottom-left 270)]
-        [:rect {:style {:cursor (rotation-cursor (+ rotation angle))}
-                :x x
-                :y y
-                :width size
-                :height size
-                :fill (if (debug? :rotation-handler) "red" "transparent")
-                :transform (gmt/rotate-matrix rotation (gpt/point cx cy))
-                :on-mouse-down (or on-mouse-down (fn []))}]))))
+(mf/defc selection-rect [{:keys [transform rect zoom]}]
+  (let [{:keys [x y width height]} rect]
+    [:rect.main
+     {:x x
+      :y y
+      :width width
+      :height height
+      :transform transform
+      :style {:stroke selection-rect-color
+              :stroke-width (/ selection-rect-width zoom)
+              :fill "transparent"}}]))
+
+(defn- handlers-for-selection [{:keys [x y width height]}]
+  [;; TOP-LEFT
+   {:type :rotation
+    :position :top-left
+    :props {:cx x :cy y}}
+
+   {:type :resize-point
+    :position :top-left
+    :props {:cx x :cy y}}
+
+   ;; TOP
+   {:type :resize-side
+    :position :top
+    :props {:x x :y y :length width :angle 0 }}
+
+   ;; TOP-RIGHT
+   {:type :rotation
+    :position :top-right
+    :props {:cx (+ x width) :cy y}}
+
+   {:type :resize-point
+    :position :top-right
+    :props {:cx (+ x width) :cy y}}
+
+   ;; RIGHT
+   {:type :resize-side
+    :position :right
+    :props {:x (+ x width) :y y :length height :angle 90 }}
+
+   ;; BOTTOM-RIGHT
+   {:type :rotation
+    :position :bottom-right
+    :props {:cx (+ x width) :cy (+ y height)}}
+
+   {:type :resize-point
+    :position :bottom-right
+    :props {:cx (+ x width) :cy (+ y height)}}
+
+   ;; BOTTOM
+   {:type :resize-side
+    :position :bottom
+    :props {:x (+ x width) :y (+ y height) :length width :angle 180 }}
+
+   ;; BOTTOM-LEFT
+   {:type :rotation
+    :position :bottom-left
+    :props {:cx x :cy (+ y height)}}
+
+   {:type :resize-point
+    :position :bottom-left
+    :props {:cx x :cy (+ y height)}}
+
+   ;; LEFT
+   {:type :resize-side
+    :position :left
+    :props {:x x :y (+ y height) :length height :angle 270 }}])
+
+(mf/defc rotation-handler [{:keys [cx cy transform position rotation zoom on-rotate]}]
+  (let [size (/ rotation-handler-size zoom)
+        x (- cx (if (#{:top-left :bottom-left} position) size 0))
+        y (- cy (if (#{:top-left :top-right} position) size 0))
+        angle (case position
+                :top-left 0
+                :top-right 90
+                :bottom-right 180
+                :bottom-left 270)]
+    [:rect {:style {:cursor (rotation-cursor (+ rotation angle))}
+            :x x
+            :y y
+            :width size
+            :height size
+            :fill (if (debug? :rotation-handler) "blue" "transparent")
+            :transform transform
+            :on-mouse-down on-rotate}]))
+
+(mf/defc resize-point-handler [{:keys [cx cy zoom position on-resize transform]}]
+  (let [{cx' :x cy' :y} (gpt/transform (gpt/point cx cy) transform)
+        rot-square (case position
+                     :top-left 0
+                     :top-right 90
+                     :bottom-right 180
+                     :bottom-left 270)]
+    [:g.resize-handler
+     [:circle {:class (name position)
+               :r (/ resize-point-radius zoom)
+               :style {:fillOpacity "1"
+                       :strokeWidth "1px"
+                       :vectorEffect "non-scaling-stroke"}
+               :fill "#FFFFFF"
+               :stroke "#1FDEA7"
+               :cx cx'
+               :cy cy'}]
+
+     [:rect {:class (name position)
+             :x cx
+             :y cy
+             :width (/ resize-point-rect-size zoom)
+             :height (/ resize-point-rect-size zoom)
+             :fill (if (debug? :resize-handler) "red" "transparent")
+             :on-mouse-down on-resize
+             :transform (gmt/multiply transform
+                                      (gmt/rotate-matrix rot-square (gpt/point cx cy)))}]
+     [:circle {:class (name position)
+               :on-mouse-down on-resize
+               :r (/ resize-point-circle-radius zoom)
+               :fill (if (debug? :resize-handler) "red" "transparent")
+               :cx cx'
+               :cy cy'}]
+     ]))
+
+(mf/defc resize-side-handler [{:keys [x y length angle zoom position transform on-resize]}]
+  [:rect {:x (+ x (/ resize-point-rect-size zoom))
+          :y (- y (/ resize-side-height 2 zoom))
+          :width (- length (/ (* resize-point-rect-size 2) zoom))
+          :height (/ resize-side-height zoom)
+          :transform (gmt/multiply transform
+                                   (gmt/rotate-matrix angle (gpt/point x y)))
+          :on-mouse-down on-resize
+          :style {:fill (if (debug? :resize-handler) "yellow" "transparent")
+                  :cursor (if (#{:left :right} position)
+                            "ew-resize"
+                            "ns-resize") }}])
 
 (mf/defc controls
   {::mf/wrap-props false}
@@ -98,46 +180,31 @@
         on-rotate (obj/get props "on-rotate")
         current-transform (mf/deref refs/current-transform)
 
-        {:keys [x y width height rotation] :as shape} (geom/shape->rect-shape shape)
+        selrect (geom/shape->rect-shape shape)
+        transform (geom/transform-matrix shape)]
 
-        radius (if (> (max width height) handler-size-threshold) 4.0 4.0)
-        transform (geom/transform-matrix shape)
-        resize-handlers {:top          [(+ x (/ width 2 )) y]
-                         :right        [(+ x width) (+ y (/ height 2))]
-                         :bottom       [(+ x (/ width 2)) (+ y height)]
-                         :left         [x (+ y (/ height 2))]
-                         :top-left     [x y]
-                         :top-right    [(+ x width) y]
-                         :bottom-left  [x (+ y height)]
-                         :bottom-right [(+ x width) (+ y height)]}]
+    (when (not (#{:move :rotate} current-transform))
+      [:g.controls
 
-    [:g.controls
-     (when (not (#{:move :rotate} current-transform))
-       [:rect.main
-        {:transform transform
-         :x x :y y
-         :width width
-         :height height
-         :style {:stroke "#1FDEA7"
-                 :stroke-width (/ 1 zoom)
-                 :fill "transparent"}}])
+       ;; Selection rect
+       [:& selection-rect {:rect shape
+                           :transform transform
+                           :zoom zoom}]
 
-     (when (not (#{:move :rotate} current-transform))
-       (for [[position [cx cy]] resize-handlers]
-         (let [tp (gpt/transform (gpt/point cx cy) transform)]
-           [:* {:key (name position)}
-            [:& rotation-handler {:cx (:x tp)
-                                  :cy (:y tp)
-                                  :position position
-                                  :rotation (:rotation shape)
-                                  :zoom zoom
-                                  :on-mouse-down on-rotate}]
-
-            [:& control-item {:class (name position)
-                              :on-click #(on-resize position %)
-                              :r (/ radius zoom)
-                              :cx (:x tp)
-                              :cy (:y tp)}]])))]))
+       ;; Handlers
+       (for [{:keys [type position props]} (handlers-for-selection selrect)]
+         (let [common-props {:key (str (name type) "-" (name position))
+                             :zoom zoom
+                             :position position
+                             :on-rotate on-rotate
+                             :on-resize (partial on-resize position)
+                             :transform transform
+                             :rotation (:rotation shape)}
+               props (->> props (merge common-props) map->obj)]
+           (case type
+             :rotation (when (not= :frame (:type shape)) [:> rotation-handler props])
+             :resize-point [:> resize-point-handler props]
+             :resize-side [:> resize-side-handler props])))])))
 
 ;; --- Selection Handlers (Component)
 (mf/defc path-edition-selection-handlers

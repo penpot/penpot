@@ -73,18 +73,6 @@
 (defn finish-transform [state]
   (update state :workspace-local dissoc :transform))
 
-(defn handler->initial-point [{:keys [x1 y1 x2 y2] :as shape} handler]
-  (let [[x y] (case handler
-                :top-left [x1 y1]
-                :top [x1 y1]
-                :top-right [x2 y1]
-                :right [x2 y1]
-                :bottom-right [x2 y2]
-                :bottom [x2 y2]
-                :bottom-left [x1 y2]
-                :left [x1 y2])]
-    (gpt/point x y)))
-
 ;; -- RESIZE
 (defn start-resize
   [handler ids shape]
@@ -142,7 +130,7 @@
       ptk/WatchEvent
       (watch [_ state stream]
         (let [shape  (gsh/shape->rect-shape shape)
-              initial (handler->initial-point shape handler)
+              initial @ms/mouse-position
               stoper (rx/filter ms/mouse-up? stream)
               page-id (get state :current-page-id)
               resizing-shapes (map #(get-in state [:workspace-data page-id :objects %]) ids)
