@@ -1,7 +1,7 @@
 (ns uxbox.util.debug
   "Debugging utils")
 
-(def debug-options #{:bounding-boxes :group :events :rotation-handler :selection-center #_:simple-selection })
+(def debug-options #{:bounding-boxes :group :events :rotation-handler :resize-handler :selection-center #_:simple-selection })
 
 (defonce ^:dynamic *debug* (atom #{}))
 

@@ -1519,7 +1519,7 @@
   {"ctrl+m" #(st/emit! (toggle-layout-flag :sitemap))
    "ctrl+i" #(st/emit! (toggle-layout-flag :libraries))
    "ctrl+l" #(st/emit! (toggle-layout-flag :layers))
-   "ctrl+r" #(st/emit! (toggle-layout-flag :rules))
+   "ctrl+shift+r" #(st/emit! (toggle-layout-flag :rules))
    "ctrl+a" #(st/emit! (toggle-layout-flag :dynamic-alignment))
    "ctrl+p" #(st/emit! (toggle-layout-flag :colorpalette))
    "ctrl+'" #(st/emit! (toggle-layout-flag :display-grid))
