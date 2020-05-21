@@ -916,13 +916,11 @@
 
 ;; --- Change Shape Order (D&D Ordering)
 
-;; TODO: pending UNDO
-
 (defn relocate-shape
-  [id parent-id index]
+  [id parent-id to-index]
   (us/verify ::us/uuid id)
   (us/verify ::us/uuid parent-id)
-  (us/verify number? index)
+  (us/verify number? to-index)
 
   (ptk/reify ::relocate-shape
     dwc/IUpdateGroup
@@ -931,12 +929,18 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id (:current-page-id state)
+            objects (get-in state [:workspace-data page-id :objects])
+            parent (get objects (cp/get-parent id objects))
+            current-index (d/index-of (:shapes parent) id)
             selected (get-in state [:workspace-local :selected])]
         (rx/of (dwc/commit-changes [{:type :mov-objects
                                      :parent-id parent-id
-                                     :index index
+                                     :index to-index
                                      :shapes (vec selected)}]
-                                   []
+                                   [{:type :mov-objects
+                                     :parent-id (:id parent)
+                                     :index current-index
+                                     :shapes (vec selected)}]
                                    {:commit-local? true}))))))
 
 ;; --- Change Page Order (D&D Ordering)

@@ -72,6 +72,12 @@
                     (into result (calculate-invalid-targets child-id objects)))]
     (reduce reduce-fn result children)))
 
+(defn- valid-frame-target
+  [shape-id parent-id objects]
+  (let [shape (get objects shape-id)]
+    (or (not= (:type shape) :frame)
+        (= parent-id uuid/zero))))
+
 (defn- insert-at-index
   [shapes index ids]
   (let [[before after] (split-at index shapes)
@@ -389,8 +395,9 @@
         ;; Check if the move from shape-id -> parent-id is valid
         is-valid-move
         (fn [shape-id]
-          (let [invalid (calculate-invalid-targets shape-id (:objects data))]
-            (not (invalid parent-id))))
+          (let [invalid-targets (calculate-invalid-targets shape-id (:objects data))]
+            (and (not (invalid-targets parent-id))
+                 (valid-frame-target shape-id parent-id (:objects data)))))
 
         valid? (every? is-valid-move shapes)
 
