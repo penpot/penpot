@@ -12,6 +12,7 @@
    [okulary.core :as l]
    [uxbox.common.uuid :as uuid]
    [uxbox.common.pages :as cp]
+   [uxbox.common.data :as d]   
    [uxbox.worker.impl :as impl]
    [uxbox.util.range-tree :as rt]
    [uxbox.util.geom.snap-points :as snap]
@@ -38,11 +39,6 @@
          (mapcat (process-shape coord))
          (reduce into-tree (rt/make-tree)))))
 
-(defn- mapm
-  "Map over the values of a map"
-  [mfn coll]
-  (into {} (map (fn [[key val]] [key (mfn key val)]) coll)))
-
 (defn- initialize-snap-data
   "Initialize the snap information with the current workspace information"
   [objects]
@@ -51,16 +47,16 @@
                           (group-by :frame-id))
         frame-shapes (->> (cp/select-frames objects)
                           (reduce #(update %1 (:id %2) conj %2) frame-shapes))]
-    (mapm (fn [frame-id shapes] {:x (create-coord-data frame-id shapes :x)
+    (d/mapm (fn [frame-id shapes] {:x (create-coord-data frame-id shapes :x)
                                  :y (create-coord-data frame-id shapes :y)})
           frame-shapes)))
 
 (defn- log-state
   "Helper function to print a friendly version of the snap tree. Debugging purposes"
   []
-  (let [process-frame-data #(mapm rt/as-map %)
-        process-page-data  #(mapm process-frame-data %)]
-    (js/console.log "STATE" (clj->js (mapm process-page-data @state)))))
+  (let [process-frame-data #(d/mapm rt/as-map %)
+        process-page-data  #(d/mapm process-frame-data %)]
+    (js/console.log "STATE" (clj->js (d/mapm process-page-data @state)))))
 
 (defn- index-page [state page-id objects]
   (let [snap-data (initialize-snap-data objects)]

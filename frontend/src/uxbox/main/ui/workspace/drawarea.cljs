@@ -196,7 +196,8 @@
                 (assoc-in [:workspace-local :drawing ::initialized?] true)))
 
           (insert-point-segment [state point]
-            (update-in state [:workspace-local :drawing :segments] (fnil conj []) point))
+            (-> state
+                (update-in [:workspace-local :drawing :segments] (fnil conj []) point)))
 
           (update-point-segment [state index point]
             (let [segments (count (get-in state [:workspace-local :drawing :segments]))
@@ -204,8 +205,12 @@
               (cond-> state
                 exists? (assoc-in [:workspace-local :drawing :segments index] point))))
 
-          (remove-dangling-segmnet [state]
-            (update-in state [:workspace-local :drawing :segments] #(vec (butlast %))))]
+          (finish-drawing-path [state]
+            (update-in
+             state [:workspace-local :drawing]
+             (fn [shape] (-> shape
+                           (update :segments #(vec (butlast %)))
+                           (geom/update-path-selrect)))))]
 
     (ptk/reify ::handle-drawing-path
       ptk/WatchEvent
@@ -263,8 +268,10 @@
                                          point)]
                              #(update-point-segment % index point))))
                  (rx/take-until stoper))
-            (rx/of remove-dangling-segmnet
+            (rx/of finish-drawing-path
                    handle-finish-drawing))))))))
+
+(def simplify-tolerance 0.3)
 
 (def handle-drawing-curve
   (letfn [(stoper-event? [{:keys [type shift] :as event}]
@@ -276,8 +283,13 @@
           (insert-point-segment [state point]
             (update-in state [:workspace-local :drawing :segments] (fnil conj []) point))
 
-          (simplify-drawing-path [state tolerance]
-              (update-in state [:workspace-local :drawing :segments] path/simplify tolerance))]
+          (finish-drawing-curve [state]
+            (update-in
+             state [:workspace-local :drawing]
+             (fn [shape]
+               (-> shape
+                   (update :segments #(path/simplify % simplify-tolerance))
+                   (geom/update-path-selrect)))))]
 
     (ptk/reify ::handle-drawing-curve
       ptk/WatchEvent
@@ -290,7 +302,7 @@
            (->> mouse
                 (rx/map (fn [pt] #(insert-point-segment % pt)))
                 (rx/take-until stoper))
-           (rx/of #(simplify-drawing-path % 0.3)
+           (rx/of finish-drawing-curve
                   handle-finish-drawing)))))))
 
 (def handle-finish-drawing
@@ -308,10 +320,8 @@
                                     :text 16
                                     5)
                  shape (-> shape
-                           (geom/transform-shape)
-                           (update :width #(max shape-min-width %))
-                           (update :height #(max shape-min-height %))
-                           (dissoc shape ::initialized?))]
+                           geom/transform-shape
+                           (dissoc ::initialized?))                 ]
              ;; Add & select the created shape to the workspace
              (rx/of dw/deselect-all
                     (dw/add-shape shape)))))))))
@@ -336,7 +346,7 @@
 
 (mf/defc generic-draw-area
   [{:keys [shape zoom]}]
-  (let [{:keys [x y width height]} (geom/selection-rect-shape shape)]
+  (let [{:keys [x y width height]} (:selrect shape)]
     (when (and x y)
       [:g
        [:& shapes/shape-wrapper {:shape shape}]

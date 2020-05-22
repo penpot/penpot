@@ -3,7 +3,7 @@
 
 (def debug-options #{:bounding-boxes :group :events :rotation-handler :resize-handler :selection-center #_:simple-selection })
 
-(defonce ^:dynamic *debug* (atom #{}))
+(defonce ^:dynamic *debug* (atom #{:bounding-boxes}))
 
 (defn debug-all! [] (reset! *debug* debug-options))
 (defn debug-none! [] (reset! *debug* #{}))

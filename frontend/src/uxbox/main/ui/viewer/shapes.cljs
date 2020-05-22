@@ -44,8 +44,7 @@
     {::mf/wrap-props false}
     [props]
     (let [{:keys [x y width height]
-           :as shape} (->> (unchecked-get props "shape")
-                           (geom/selection-rect-shape))
+           :as shape} (->> (unchecked-get props "shape") :selrect)
 
           childs (unchecked-get props "childs")
           frame (unchecked-get props "frame")

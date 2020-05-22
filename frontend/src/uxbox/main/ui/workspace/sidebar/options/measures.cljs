@@ -25,13 +25,9 @@
 
 (defn user-coords-vector
   [shape]
-  (let [{sel-x :x sel-y :y :as selrect}
-        (-> shape
-            gsh/shape->path
-            (gsh/center-transform (:transform shape))
-            gsh/shape->rect-shape)
+  (let [oldselrec (-> shape gsh/shape->path (gsh/center-transform (:transform shape)) gsh/shape->rect-shape)
+        {sel-x :x sel-y :y :as selrec} #_(:selrect shape) oldselrec
         {rec-x :x rec-y :y} (-> shape gsh/shape->rect-shape)
-
         dx (- rec-x sel-x)
         dy (- rec-y sel-y)]
     (-> (gpt/point dx dy)
@@ -141,13 +137,13 @@
                               :type "number"
                               :no-validate true
                               :on-change on-pos-x-change
-                              :value (:x shape)}]]
+                              :value (-> shape :x (math/precision 2))}]]
          [:div.input-element.Yaxis
           [:input.input-text {:placeholder "y"
                               :type "number"
                               :no-validate true
                               :on-change on-pos-y-change
-                              :value (:y shape)}]]])
+                              :value (-> shape :y (math/precision 2))}]]])
 
       (when (options :rotation)
         [:div.row-flex

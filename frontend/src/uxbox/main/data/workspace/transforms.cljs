@@ -80,6 +80,8 @@
             (let [{:keys [width height rotation]} shape
                   shapev (-> (gpt/point width height))
 
+                  rotation (if (#{:curve :path} (:type shape)) 0 rotation)
+
                   ;; Vector modifiers depending on the handler
                   handler-modif (let [[x y] (handler-modifiers handler)] (gpt/point x y))
 
@@ -129,7 +131,7 @@
 
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [shape  (gsh/shape->rect-shape shape)
+        (let [;;shape  (gsh/shape->rect-shape shape)
               initial @ms/mouse-position
               stoper (rx/filter ms/mouse-up? stream)
               page-id (get state :current-page-id)

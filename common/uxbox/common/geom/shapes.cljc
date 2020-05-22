@@ -17,6 +17,15 @@
    [uxbox.common.math :as mth]
    [uxbox.common.data :as d]))
 
+(defn- nilf
+  "Returns a new function that if you pass nil as any argument will
+  return nil"
+  [f]
+  (fn [& args]
+    (if (some nil? args)
+      nil
+      (apply f args))))
+
 ;; --- Relative Movement
 
 (declare move-rect)
@@ -31,29 +40,23 @@
 (defn move
   "Move the shape relativelly to its current
   position applying the provided delta."
-  [shape dpoint]
-  (case (:type shape)
-    :curve (move-path shape dpoint)
-    :path (move-path shape dpoint)
-    (move-rect shape dpoint)))
-
-(defn- move-rect
-  "A specialized function for relative movement
-  for rect-like shapes."
   [shape {dx :x dy :y}]
-  (assoc shape
-         :x (+ (-chk (:x shape)) (-chk dx))
-         :y (+ (-chk (:y shape)) (-chk dy))))
-
-(defn- move-path
-  "A specialized function for relative movement
-  for path shapes."
-  [shape {dx :x dy :y}]
-  (let [segments (:segments shape)
-        xf (comp
-            (map #(update % :x + dx))
-            (map #(update % :y + dy)))]
-    (assoc shape :segments (into [] xf segments))))
+  (let [inc-x (nilf (fn [x] (+ (-chk x) (-chk dx))))
+        inc-y (nilf (fn [y] (+ (-chk y) (-chk dy))))
+        inc-point (nilf (fn [p] (-> p
+                                    (update :x inc-x)
+                                    (update :y inc-y))))]
+    (-> shape
+        (update :x inc-x)
+        (update :y inc-y)
+        (update-in [:selrect :x] inc-x)
+        (update-in [:selrect :x1] inc-x)
+        (update-in [:selrect :x2] inc-x)
+        (update-in [:selrect :y] inc-y)
+        (update-in [:selrect :y1] inc-y)
+        (update-in [:selrect :y2] inc-y)
+        (update :points #(mapv inc-point %))
+        (update :segments #(mapv inc-point %)))))
 
 (defn recursive-move
   "Move the shape and all its recursive children."
@@ -70,8 +73,7 @@
   "Move the shape to the exactly specified position."
   [shape position]
   (case (:type shape)
-    :path shape
-    :curve shape
+    (:curve :path) shape
     (absolute-move-rect shape position)))
 
 (defn- absolute-move-rect
@@ -198,14 +200,19 @@
     :image (setup-image shape props)
     (setup-rect shape props)))
 
+(declare shape->points)
+(declare points->selrect)
+
 (defn- setup-rect
   "A specialized function for setup rect-like shapes."
   [shape {:keys [x y width height]}]
-  (assoc shape
-         :x x
-         :y y
-         :width width
-         :height height))
+  (as-> shape $
+    (assoc $ :x x
+             :y y
+             :width width
+             :height height)
+    (assoc $ :points (shape->points $))
+    (assoc $ :selrect (points->selrect (:points $)))))
 
 (defn- setup-image
   [{:keys [metadata] :as shape} {:keys [x y width height] :as props}]
@@ -228,8 +235,7 @@
   "Coerce shape to rect like shape."
   [{:keys [type] :as shape}]
   (case type
-    :path (path->rect-shape shape)
-    :curve (path->rect-shape shape)
+    (:curve :path) (path->rect-shape shape)
     (rect->rect-shape shape)))
 
 (defn shapes->rect-shape
@@ -249,13 +255,43 @@
      :height (- maxy miny)
      :type :rect}))
 
+;; -- Points
+
+(declare transform-shape-point)
+(defn shape->points [shape]
+  (let [points
+        (case (:type shape)
+          (:curve :path) (:segments shape)
+          (let [{:keys [x y width height]} shape]
+            [(gpt/point x y)
+             (gpt/point (+ x width) y)
+             (gpt/point (+ x width) (+ y height))
+             (gpt/point x (+ y height))]))]
+    (mapv #(transform-shape-point % shape (:transform shape (gmt/matrix))) points)))
+
+(defn points->selrect [points]
+  (let [minx (transduce (map :x) min points)
+        miny (transduce (map :y) min points)
+        maxx (transduce (map :x) max points)
+        maxy (transduce (map :y) max points)]
+    {:x1 minx
+     :y1 miny
+     :x2 maxx
+     :y2 maxy
+     :x minx
+     :y miny
+     :width (- maxx minx)
+     :height (- maxy miny)
+     :type :rect}))
+
+;; Shape->PATH
+
 (declare rect->path)
 
 (defn shape->path
   [shape]
   (case (:type shape)
-    :path shape
-    :curve shape
+    (:curve :path) shape
     (rect->path shape)))
 
 (defn rect->path
@@ -282,20 +318,9 @@
 
 (defn- path->rect-shape
   [{:keys [segments] :as shape}]
-  (let [minx (transduce (map :x) min segments)
-        miny (transduce (map :y) min segments)
-        maxx (transduce (map :x) max segments)
-        maxy (transduce (map :y) max segments)]
-    (assoc shape
-           :type :rect
-           :x1 minx
-           :y1 miny
-           :x2 maxx
-           :y2 maxy
-           :x minx
-           :y miny
-           :width (- maxx minx)
-           :height (- maxy miny))))
+  (merge shape
+         {:type :rect}
+         (:selrect shape)))
 
 ;; --- Resolve Shape
 
@@ -365,19 +390,11 @@
 
 ;; --- Outer Rect
 
-(declare transform-apply-modifiers)
-
-(defn selection-rect-shape
-  [shape]
-  (-> shape
-      (transform-apply-modifiers)
-      (shape->rect-shape)))
-
 (defn selection-rect
   "Returns a rect that contains all the shapes and is aware of the
   rotation of each shape. Mainly used for multiple selection."
   [shapes]
-  (let [xf-resolve-shape (map selection-rect-shape)
+  (let [xf-resolve-shape (map :selrect)
         shapes (into [] xf-resolve-shape shapes)
         minx (transduce (map :x1) min shapes)
         miny (transduce (map :y1) min shapes)
@@ -685,19 +702,27 @@
                                    (gmt/skew (- skew-angle) 0)
                                    (gmt/rotate (- rotation-angle)))
 
-        new-shape (-> shape
-                      (merge rec)
-                      (update :x #(mth/precision % 2))
-                      (update :y #(mth/precision % 2))
-                      (fix-invalid-rect-values)
-                      (update :transform #(gmt/multiply (or % (gmt/matrix)) stretch-matrix))
-                      (update :transform-inverse #(gmt/multiply stretch-matrix-inverse (or % (gmt/matrix)))))]
+        new-shape (as-> shape $
+                    (merge  $ rec)
+                    (update $ :x #(mth/precision % 2))
+                    (update $ :y #(mth/precision % 2))
+                    (fix-invalid-rect-values $)
+                    (update $ :transform #(gmt/multiply (or % (gmt/matrix)) stretch-matrix))
+                    (update $ :transform-inverse #(gmt/multiply stretch-matrix-inverse (or % (gmt/matrix))))
+                    (assoc  $ :points (shape->points $))
+                    (assoc  $ :selrect (points->selrect (:points $)))
+                    (update $ :rotation #(mod (+ % (get-in $ [:modifiers :rotation] 0)) 360))
+
+                    )]
 
     new-shape))
 
+(declare update-path-selrect)
 (defn transform-path-shape
   [shape]
-  (transform-apply-modifiers shape)
+  (-> shape
+      transform-apply-modifiers
+      update-path-selrect)
   ;; TODO: Addapt for paths is not working
   #_(let [shape-path (transform-apply-modifiers shape)
           shape-path-center (center shape-path)
@@ -715,14 +740,15 @@
   "Transform the shape properties given the modifiers"
   ([shape] (transform-shape nil shape))
   ([frame shape]
-   (let [new-shape (case (:type shape)
-                     :path (transform-path-shape shape)
-                     :curve (transform-path-shape shape)
-                     (transform-rect-shape shape))]
+   (let [new-shape
+         (if (:modifiers shape)
+           (as-> (case (:type shape)
+                   (:curve :path) (transform-path-shape shape)
+                   (transform-rect-shape shape)) $
+             (dissoc $ :modifiers))
+           shape)]
      (-> new-shape
-         (translate-to-frame frame)
-         (update :rotation #(mod (+ % (get-in shape [:modifiers :rotation] 0)) 360))
-         (dissoc :modifiers)))))
+         (translate-to-frame frame)))))
 
 
 (defn transform-matrix
@@ -734,6 +760,15 @@
          (gmt/translate shape-center)
          (gmt/multiply (:transform shape (gmt/matrix)))
          (gmt/translate (gpt/negate shape-center))))))
+
+(defn update-path-selrect [shape]
+  (as-> shape $
+    (assoc $ :points (shape->points $))
+    (assoc $ :selrect (points->selrect (:points $)))
+    (assoc $ :x (get-in $ [:selrect :x]))
+    (assoc $ :y (get-in $ [:selrect :y]))
+    (assoc $ :width (get-in $ [:selrect :width]))
+    (assoc $ :height (get-in $ [:selrect :height]))))
 
 (defn adjust-to-viewport
   ([viewport srect] (adjust-to-viewport viewport srect nil))

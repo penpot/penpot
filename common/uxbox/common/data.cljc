@@ -105,6 +105,11 @@
 (defn zip [col1 col2]
   (map vector col1 col2))
 
+(defn mapm
+  "Map over the values of a map"
+  [mfn coll]
+  (into {} (map (fn [[key val]] [key (mfn key val)]) coll)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Parsing / Conversion
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
