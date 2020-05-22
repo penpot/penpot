@@ -41,7 +41,7 @@
       (and (or (= path "")
                (nil? match))
            (not authed?))
-      (st/emit! (rt/nav :login))
+      (st/emit! (rt/nav :auth-login))
 
       (and (nil? match) authed?)
       (st/emit! (rt/nav :dashboard-team {:team-id (:default-team-id profile)}))

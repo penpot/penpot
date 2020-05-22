@@ -35,7 +35,7 @@
   [& params]
   (assert (even? (count params)))
   (str/join " " (reduce (fn [acc [k v]]
-                          (if (true? v)
+                          (if (true? (boolean v))
                             (conj acc (name k))
                             acc))
                         []

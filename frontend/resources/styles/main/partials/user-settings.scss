@@ -1,70 +1,164 @@
 .settings-content {
-  .main-logo {
-    position: fixed;
-    left: 0;
-    top:0;
-    width: 40px;
-    height: 40px;
-    z-index: 12;
-    cursor: pointer;
-  }
-
-  nav {
+  header {
     display: flex;
-    left: 0;
-    width: 100%;
-    justify-content: center;
+    flex-direction: column;
+    height: 160px;
+    background-color: $color-white;
 
-    .nav-item {
-      margin: 0 $size-6;
-      color: $color-gray-30;
-      text-transform: uppercase;
-      border-bottom: 1px solid transparent;
+    .secondary-menu {
+      display: flex;
+      justify-content: space-between;
+      height: 40px;
+      font-size: $fs14;
+      color: $color-gray-60;
 
-      &:hover {
-        color: $color-black;
+      .icon {
+        display: flex;
+        align-items: center;
       }
 
-      &.current {
-        color: $color-black;
-        border-bottom: 1px solid $color-primary;
+      .left {
+        margin-left: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+
+        .label {
+          margin-left: 15px;
+        }
+
+        svg {
+          fill: $color-gray-60;
+          width: 14px;
+          height: 14px;
+          transform: rotate(180deg);
+        }
+      }
+      .right {
+        align-items: center;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        margin-right: 30px;
+
+        .label {
+          color: $color-primary-dark;
+          margin-right: 15px;
+        }
+
+        svg {
+          fill: $color-primary-dark;
+          width: 14px;
+          height: 14px;
+        }
+
+        &:hover {
+          .label {
+            color: $color-danger;
+          }
+          svg {
+            fill: $color-danger;
+          }
+        }
+      }
+    }
+
+    h1 {
+      align-items: top;
+      color: $color-gray-60;
+      display: flex;
+      flex-grow: 1;
+      font-size: $fs24;
+      font-weight: normal;
+      justify-content: center;
+    }
+
+    nav {
+      display: flex;
+      justify-content: center;
+      height: 40px;
+
+      .nav-item {
+        align-items: center;
+        color: $color-gray-40;
+        display: flex;
+        flex-basis: 140px;
+        justify-content: center;
+
+        &.current {
+          border-bottom: 3px solid $color-primary;
+        }
       }
     }
   }
-}
 
-.settings-profile,
-.settings-password {
-  display: flex;
-  flex-direction: column;
-  margin: 0 auto;
-  width: 500px;
 
-  .settings-label {
-    color: $color-black;
-    font-size: $fs15;
-    margin: $x-big 0 $x-small 0;
-    padding: $medium 0;
-  }
-
-  .input-text {
-    color: $color-gray-60;
-  }
-
-  .btn-primary {
-    margin-top: $medium;
-  }
-
-  .profile-form,
-  .password-form {
-    display: flex;
-    flex-direction: column;
+  .settings-profile {
+    .forms-container {
+      margin-top: 80px;
+    }
   }
 
   .avatar-form {
-    align-items: center;
+    flex-basis: 168px;
+    height: 100vh;
     display: flex;
+    position: relative;
 
+    .image-change-field {
+      position: relative;
+      width: 120px;
+      height: 120px;
+
+      .update-overlay {
+        opacity: 0;
+        cursor: pointer;
+        position: absolute;
+        width: 121px;
+        height: 121px;
+        border-radius: 50%;
+        font-size: $fs24;
+        color: $color-white;
+        line-height: 120px;
+        text-align: center;
+        background: $color-primary-dark;
+        z-index: 14;
+      }
+
+      input[type=file] {
+        width: 120px;
+        height: 120px;
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+        top: 0;
+        z-index: 15;
+      }
+
+      &:hover {
+        img {display: none;}
+        .update-overlay {opacity: 1};
+      }
+    }
+  }
+
+  .profile-form {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+
+    .change-email {
+      display: flex;
+      flex-direction: row;
+      font-size: $fs12;
+      color: $color-primary-dark;
+      justify-content: flex-end;
+      margin-bottom: 20px;
+    }
+  }
+
+  .avatar-form {
     img {
       border-radius: 50%;
       flex-shrink: 0;
@@ -72,7 +166,18 @@
       margin-right: $medium;
       width: 120px;
     }
+  }
 
+  .options-form,
+  .password-form {
+    display: flex;
+    flex-direction: column;
+    flex-basis: 368px;
+
+    h2 {
+      font-size: $fs14;
+      font-weight: normal;
+      margin-bottom: $medium;
+    }
   }
 }
-

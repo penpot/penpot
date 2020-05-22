@@ -62,3 +62,11 @@
 (def password-recovery
   "A password recovery notification email."
   (emails/build ::password-recovery default-context))
+
+(s/def ::pending-email ::us/string)
+(s/def ::change-email
+  (s/keys :req-un [::name ::pending-email ::token]))
+
+(def change-email
+  "Password change confirmation email"
+  (emails/build ::change-email default-context))

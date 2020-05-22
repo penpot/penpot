@@ -18,6 +18,7 @@
   #{:create-demo-profile
     :logout
     :profile
+    :verify-profile-token
     :recover-profile
     :register-profile
     :request-profile-recovery
@@ -50,8 +51,17 @@
                (:profile-id req) (assoc :profile-id (:profile-id req)))]
     (if (or (:profile-id req)
             (contains? unauthorized-services type))
-      {:status 200
-       :body (sm/handle (with-meta data {:req req}))}
+      (let [body (sm/handle (with-meta data {:req req}))]
+        (if (= type :delete-profile)
+          (do
+            (some-> (get-in req [:cookies "auth-token" :value])
+                    (uuid/uuid)
+                    (session/delete))
+            {:status 204
+             :cookies {"auth-token" {:value "" :max-age -1}}
+             :body ""})
+          {:status 200
+           :body body}))
       {:status 403
        :body {:type :authentication
               :code :unauthorized}})))
@@ -68,11 +78,11 @@
 
 (defn logout-handler
   [req]
-  (some-> (get-in req [:cookies "auth-token"])
+  (some-> (get-in req [:cookies "auth-token" :value])
           (uuid/uuid)
           (session/delete))
-  {:status 204
-   :cookies {"auth-token" nil}
+  {:status 200
+   :cookies {"auth-token" {:value "" :max-age -1}}
    :body ""})
 
 (defn echo-handler

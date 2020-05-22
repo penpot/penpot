@@ -143,7 +143,7 @@
       (->> (rp/query :projects-by-team {:team-id team-id})
            (rx/map projects-fetched)
            (rx/catch (fn [error]
-                       (rx/of (rt/nav' :not-authorized))))))))
+                       (rx/of (rt/nav' :auth-login))))))))
 
 (defn projects-fetched
   [projects]
@@ -212,7 +212,7 @@
         (->> (rp/query :recent-files params)
              (rx/map recent-files-fetched)
              (rx/catch (fn [e]
-                         (rx/of (rt/nav' :not-authorized)))))))))
+                         (rx/of (rt/nav' :auth-login)))))))))
 
 (defn recent-files-fetched
   [recent-files]

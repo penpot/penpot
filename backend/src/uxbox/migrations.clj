@@ -34,8 +34,11 @@
      :name "0006-presence"
      :fn (mg/resource "migrations/0006.presence.sql")}
     {:desc "Remove version"
-     :name "0007.remove_version"
-     :fn (mg/resource "migrations/0007.remove_version.sql")}]})
+     :name "0007-remove-version"
+     :fn (mg/resource "migrations/0007.remove-version.sql")}]})
+    {:desc "Initial generic token tables"
+     :name "0008-generic-token"
+     :fn (mg/resource "migrations/0007.generic-token.sql")}]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Entry point

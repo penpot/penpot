@@ -95,7 +95,7 @@
 (defmethod mutation :logout
   [id params]
   (let [url (str url "/api/logout")]
-    (->> (http/send! {:method :post :url url :body params :auth false})
+    (->> (http/send! {:method :post :url url :body params})
          (rx/mapcat handle-response))))
 
 (def client-error? http/client-error?)

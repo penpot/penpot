@@ -5,10 +5,11 @@ application.
 
 ## Access to clojure from javascript console
 
-The uxbox namespace of the main application is exported, so that is accessible from
-javascript console in Chrome developer tools. Object names and data types are converted
-to javascript style. For example you can emit the event to reset zoom level by typing
-this at the console (there is autocompletion for help):
+The uxbox namespace of the main application is exported, so that is
+accessible from javascript console in Chrome developer tools. Object
+names and data types are converted to javascript style. For example
+you can emit the event to reset zoom level by typing this at the
+console (there is autocompletion for help):
 
 ```javascript
 uxbox.main.store.emit_BANG_(uxbox.main.data.workspace.reset_zoom)
@@ -16,17 +17,21 @@ uxbox.main.store.emit_BANG_(uxbox.main.data.workspace.reset_zoom)
 
 ## Visual debug mode and utilities
 
-Debugging a problem in the viewport algorithms for grouping and rotating
-is difficult. We have set a visual debug mode that displays some
-annotations on screen, to help understanding what's happening.
+Debugging a problem in the viewport algorithms for grouping and
+rotating is difficult. We have set a visual debug mode that displays
+some annotations on screen, to help understanding what's happening.
 
 To activate it, open the javascript console and type
+
 ```javascript
 uxbox.util.debug.toggle_debug("option")
 ```
-Current options are `bounding-boxes`, `group`, `events` and `rotation-handler`.
+
+Current options are `bounding-boxes`, `group`, `events` and
+`rotation-handler`.
 
 You can also activate or deactivate all visual aids with
+
 ```javascript
 uxbox.util.debug.debug_all()
 uxbox.util.debug.debug_none()
@@ -34,8 +39,8 @@ uxbox.util.debug.debug_none()
 
 ## Debug state and objects
 
-There are also some useful functions to visualize the global state or any
-complex object. To use them from clojure:
+There are also some useful functions to visualize the global state or
+any complex object. To use them from clojure:
 
 ```clojure
 (ns uxbox.util.debug)

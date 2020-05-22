@@ -61,3 +61,9 @@
   (show {:content message
          :type :info
          :timeout timeout}))
+
+(defn success
+  [message & {:keys [timeout] :or {timeout 3000}}]
+  (show {:content message
+         :type :info
+         :timeout timeout}))

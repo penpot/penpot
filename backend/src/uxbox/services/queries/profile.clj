@@ -73,8 +73,7 @@
 
 (defn retrieve-profile-data
   [conn id]
-  (let [sql "select * from profile where id=? and deleted_at is null"]
-    (db/exec-one! conn [sql id])))
+  (db/get-by-id conn :profile id))
 
 (defn retrieve-profile
   [conn id]
@@ -93,4 +92,4 @@
 (defn strip-private-attrs
   "Only selects a publicy visible profile attrs."
   [o]
-  (select-keys o [:id :fullname :lang :email :created-at :photo :theme :photo-uri]))
+  (dissoc o :password :deleted-at))

@@ -5,8 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2016-2020 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2016-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.main.ui.settings.password
   (:require
@@ -15,40 +14,52 @@
    [uxbox.main.ui.icons :as i]
    [uxbox.main.data.users :as udu]
    [uxbox.main.data.messages :as dm]
+   [uxbox.main.ui.components.forms :refer [input submit-button form]]
    [uxbox.main.store :as st]
    [uxbox.util.dom :as dom]
    [uxbox.util.forms :as fm]
-   [uxbox.util.i18n :refer [tr]]))
+   [uxbox.util.i18n :as i18n :refer [t tr]]))
 
 (defn- on-error
   [form error]
   (case (:code error)
-    :uxbox.services.users/old-password-not-match
+    :uxbox.services.mutations.profile/old-password-not-match
     (swap! form assoc-in [:errors :password-old]
-           {:type ::api :message "settings.password.wrong-old-password"})
+           {:message (tr "errors.wrong-old-password")})
 
-    :else (throw (ex-info "unexpected" {:error error}))))
+    :else
+    (let [msg (tr "generic.error")]
+      (st/emit! (dm/error msg)))))
+
+(defn- on-success
+  [form]
+  (let [msg (tr "settings.notifications.password-saved")]
+    (st/emit! (dm/info msg))))
 
 (defn- on-submit
-  [event form]
+  [form event]
   (dom/prevent-default event)
-  (let [data (:clean-data form)
-        mdata {:on-success #(st/emit! (dm/info (tr "settings.password.password-saved")))
-              :on-error #(on-error form %)}]
-    (st/emit! (udu/update-password (with-meta data mdata)))))
+  (let [params (with-meta (:clean-data form)
+                 {:on-success (partial on-success form)
+                  :on-error (partial on-error form)})]
+    (st/emit! (udu/update-password params))))
 
 (s/def ::password-1 ::fm/not-empty-string)
 (s/def ::password-2 ::fm/not-empty-string)
 (s/def ::password-old ::fm/not-empty-string)
 
-(defn password-equality
+(defn- password-equality
   [data]
   (let [password-1 (:password-1 data)
         password-2 (:password-2 data)]
-    (when (and password-1 password-2
-               (not= password-1 password-2))
-      {:password-2 {:code ::password-not-equal
-                    :message "profile.password.not-equal"}})))
+
+    (cond-> {}
+      (and password-1 password-2
+           (not= password-1 password-2))
+      (assoc :password-2 {:message (tr "errors.password-invalid-confirmation")})
+
+      (and password-1 (> 8 (count password-1)))
+      (assoc :password-1 {:message (tr "errors.password-too-short")}))))
 
 (s/def ::password-form
   (s/keys :req-un [::password-1
@@ -56,54 +67,37 @@
                    ::password-old]))
 
 (mf/defc password-form
-  [props]
-  (let [{:keys [data] :as form} (fm/use-form2 :spec ::password-form
-                                              :validators [password-equality]
-                                              :initial {})]
-    [:form.password-form {:on-submit #(on-submit % form)}
-     [:span.settings-label (tr "settings.password.change-password")]
-     [:input.input-text
-      {:type "password"
-       :name "password-old"
-       :value (:password-old data "")
-       :class (fm/error-class form :password-old)
-       :on-blur (fm/on-input-blur form :password-old)
-       :on-change (fm/on-input-change form :password-old)
-       :placeholder (tr "settings.password.old-password")}]
+  [{:keys [locale] :as props}]
+  [:& form {:class "password-form"
+            :on-submit on-submit
+            :spec ::password-form
+            :validators [password-equality]
+            :initial {}}
+   [:h2 (t locale "settings.password-change-title")]
 
-     [:& fm/field-error {:form  form :field :password-old :type ::api}]
+   [:& input
+    {:type "password"
+     :name :password-old
+     :label (t locale "settings.old-password-label")}]
 
-     [:input.input-text
-      {:type "password"
-       :name "password-1"
-       :value (:password-1 data "")
-       :class (fm/error-class form :password-1)
-       :on-blur (fm/on-input-blur form :password-1)
-       :on-change (fm/on-input-change form :password-1)
-       :placeholder (tr "settings.password.new-password")}]
+   [:& input
+    {:type "password"
+     :name :password-1
+     :label (t locale "settings.new-password-label")}]
 
-     [:& fm/field-error {:form form :field :password-1}]
+   [:& input
+    {:type "password"
+     :name :password-2
+     :label (t locale "settings.confirm-password-label")}]
 
-     [:input.input-text
-      {:type "password"
-       :name "password-2"
-       :value (:password-2 data "")
-       :class (fm/error-class form :password-2)
-       :on-blur (fm/on-input-blur form :password-2)
-       :on-change (fm/on-input-change form :password-2)
-       :placeholder (tr "settings.password.confirm-password")}]
-
-     [:& fm/field-error {:form form :field :password-2}]
-
-     [:input.btn-primary.btn-large
-      {:type "submit"
-       :class (when-not (:valid form) "btn-disabled")
-       :disabled (not (:valid form))
-       :value (tr "settings.update-settings")}]]))
+   [:& submit-button
+    {:label (t locale "settings.profile-submit-label")}]])
 
 ;; --- Password Page
 
 (mf/defc password-page
   [props]
-  [:section.settings-password
-   [:& password-form]])
+  (let [locale (mf/deref i18n/locale)]
+    [:section.settings-password.generic-form
+     [:div.forms-container
+      [:& password-form {:locale locale}]]]))

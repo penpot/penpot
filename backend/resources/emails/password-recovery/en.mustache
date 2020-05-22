@@ -1,42 +1,18 @@
 -- begin :subject
-Password recovery.
+Password reset.
 -- end
 
 -- begin :body-text
 Hello {{name}}!
 
-You have requested a password recovery.
+We received a request to reset your password. Click the link below to choose a
+new one:
 
-The token is:
+{{ publicUrl }}/#/auth/recovery?token={{token}}
 
-{{ token }}
--- end
+If you received this email by mistake, you can safely ignore it. Your password
+won't be changed.
 
--- begin :body-html
-<html>
-  <head>
-    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
-    <meta content="width=device-width" name="viewport" />
-    <title>title</title>
-    {{> ../partials/inline_style }}
-  </head>
-  <body bgcolor="#f6f6f6" cz-shortcut-listen="true">
-    <table class="body-wrap">
-      <tbody>
-        <tr>
-          <td></td>
-          <td bgcolor="#FFFFFF" class="container">
-            <div class="logo">
-              <img alt="UXBOX" src="{{#static}}images/email/logo.png{{/static}}" />
-            </div>
-            <p>TODO</p>
-            <p>{{ token }}</p>
-          </td>
-          <td></td>
-        </tr>
-      </tbody>
-    </table>
-    {{> ../partials/en/footer }}
-  </body>
-</html>
+Enjoy!
+The UXBOX team.
 -- end

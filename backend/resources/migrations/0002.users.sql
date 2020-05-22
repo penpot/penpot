@@ -6,7 +6,10 @@ CREATE TABLE profile (
   deleted_at timestamptz NULL,
 
   fullname text NOT NULL DEFAULT '',
+
   email text NOT NULL,
+  pending_email text NULL,
+
   photo text NOT NULL,
   password text NOT NULL,
 
@@ -30,26 +33,6 @@ VALUES ('00000000-0000-0000-0000-000000000000'::uuid,
         'system@uxbox.io',
         '',
         '!');
-
-
-
-CREATE TABLE profile_email (
-  profile_id uuid NOT NULL REFERENCES profile(id) ON DELETE CASCADE,
-
-  created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
-  verified_at timestamptz NULL DEFAULT NULL,
-
-  email text NOT NULL,
-
-  is_main boolean NOT NULL DEFAULT false,
-  is_verified boolean NOT NULL DEFAULT false
-);
-
-CREATE INDEX profile_email__profile_id__idx
-    ON profile_email (profile_id);
-
-CREATE UNIQUE INDEX profile_email__email__idx
-    ON profile_email (email);
 
 
 
@@ -119,19 +102,6 @@ CREATE INDEX profile_attr__profile_id__idx
 CREATE TRIGGER profile_attr__modified_at__tgr
 BEFORE UPDATE ON profile_attr
    FOR EACH ROW EXECUTE PROCEDURE update_modified_at();
-
-
-
-CREATE TABLE password_recovery_token (
-  profile_id uuid NOT NULL REFERENCES profile(id) ON DELETE CASCADE,
-  token text NOT NULL,
-
-  created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
-  used_at timestamptz NULL,
-
-  PRIMARY KEY (profile_id, token)
-);
-
 
 
 CREATE TABLE session (

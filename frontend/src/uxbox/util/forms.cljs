@@ -50,44 +50,25 @@
     :else acc))
 
 (defn use-form
-  [spec initial]
-  (let [[state update-state] (mf/useState {:data (if (fn? initial) (initial) initial)
-                                           :errors {}
-                                           :touched {}})
-        clean-data (s/conform spec (:data state))
-        problems (when (= ::s/invalid clean-data)
-                   (::s/problems (s/explain-data spec (:data state))))
-
-
-        errors (merge (reduce interpret-problem {} problems)
-                      (:errors state))]
-    (-> (assoc state
-               :errors errors
-               :clean-data (when (not= clean-data ::s/invalid) clean-data)
-               :valid (and (empty? errors)
-                           (not= clean-data ::s/invalid)))
-        (impl-mutator update-state))))
-
-(defn use-form2
   [& {:keys [spec validators initial]}]
   (let [[state update-state] (mf/useState {:data (if (fn? initial) (initial) initial)
                                            :errors {}
                                            :touched {}})
-        clean-data (s/conform spec (:data state))
-        problems (when (= ::s/invalid clean-data)
+
+        cleaned  (s/conform spec (:data state))
+        problems (when (= ::s/invalid cleaned)
                    (::s/problems (s/explain-data spec (:data state))))
 
-        errors (merge (reduce interpret-problem {} problems)
-                      (when (not= clean-data ::s/invalid)
+        errors   (merge (reduce interpret-problem {} problems)
                         (reduce (fn [errors vf]
-                                  (merge errors (vf clean-data)))
-                                {} validators))
-                      (:errors state))]
+                                  (merge errors (vf (:data state))))
+                                {} validators)
+                        (:errors state))]
     (-> (assoc state
                :errors errors
-               :clean-data (when (not= clean-data ::s/invalid) clean-data)
+               :clean-data (when (not= cleaned ::s/invalid) cleaned)
                :valid (and (empty? errors)
-                           (not= clean-data ::s/invalid)))
+                           (not= cleaned ::s/invalid)))
         (impl-mutator update-state))))
 
 (defn on-input-change

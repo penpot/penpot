@@ -26,6 +26,8 @@
    :database-username "uxbox"
    :database-password "uxbox"
 
+   :public-url "http://localhost:3449"
+
    :redis-uri "redis://redis/0"
    :media-directory "resources/public/media"
    :assets-directory "resources/public/static"
@@ -67,11 +69,13 @@
 (s/def ::registration-enabled ::us/boolean)
 (s/def ::registration-domain-whitelist ::us/string)
 (s/def ::debug-humanize-transit ::us/boolean)
+(s/def ::public-url ::us/string)
 
 (s/def ::config
   (s/keys :opt-un [::http-server-cors
                    ::http-server-debug
                    ::http-server-port
+                   ::public-url
                    ::database-username
                    ::database-password
                    ::database-uri

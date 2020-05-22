@@ -27,13 +27,12 @@
 
 (defn- on-parent-clicked
   [event parent-ref]
-  (dom/stop-propagation event)
-  (dom/prevent-default event)
   (let [parent (mf/ref-val parent-ref)
         current (dom/get-target event)]
     (when (dom/equals? parent current)
-      (reset! state nil)
-      #_(st/emit! (udl/hide-lightbox)))))
+      (dom/stop-propagation event)
+      (dom/prevent-default event)
+      (reset! state nil))))
 
 (mf/defc modal-wrapper
   [{:keys [component props]}]
@@ -46,7 +45,8 @@
         parent-ref (mf/use-ref nil)]
     [:div.lightbox {:class classes
                     :ref parent-ref
-                    :on-click #(on-parent-clicked % parent-ref)}
+                    :on-click #(on-parent-clicked % parent-ref)
+                    }
      (mf/element component props)]))
 
 (mf/defc modal

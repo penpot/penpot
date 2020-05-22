@@ -2,8 +2,10 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.main.ui.settings
   (:require
@@ -18,6 +20,7 @@
    [uxbox.main.ui.messages :refer [messages]]
    [uxbox.main.ui.settings.header :refer [header]]
    [uxbox.main.ui.settings.password :refer [password-page]]
+   [uxbox.main.ui.settings.options :refer [options-page]]
    [uxbox.main.ui.settings.profile :refer [profile-page]]))
 
 (mf/defc settings
@@ -30,7 +33,8 @@
       [:& header {:section section :profile profile}]
       (case section
         :settings-profile (mf/element profile-page)
-        :settings-password (mf/element password-page))]]))
+        :settings-password (mf/element password-page)
+        :settings-options (mf/element options-page))]]))
 
 
 

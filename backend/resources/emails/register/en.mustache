@@ -1,41 +1,15 @@
 -- begin :subject
-Welcome to UXBOX.
+Verify email.
 -- end
 
 -- begin :body-text
 Hello {{name}}!
 
-Welcome to UXBOX.
+Thanks for signing up for your UXBOX account! Please verify your email using the
+link below adn get started building mockups and prototypes today!
 
-UXBOX team.
--- end
+{{ publicUrl }}/#/auth/verify-token?token={{token}}
 
--- begin :body-html
-<html>
-  <head>
-    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
-    <meta content="width=device-width" name="viewport" />
-    <title>title</title>
-    {{> ../partials/inline_style }}
-  </head>
-  <body bgcolor="#f6f6f6" cz-shortcut-listen="true">
-    <table class="body-wrap">
-      <tbody>
-        <tr>
-          <td></td>
-          <td bgcolor="#FFFFFF" class="container">
-            <div class="logo">
-              <img alt="UXBOX" src="{{#static}}images/email/logo.png{{/static}}" />
-            </div>
-            <p>Hello {{name}}!</p>
-            <p>Welcome to UXBOX.</p>
-            <p>UXBOX team.</p>
-          </td>
-          <td></td>
-        </tr>
-      </tbody>
-    </table>
-    {{> ../partials/en/footer }}
-  </body>
-</html>
+Enjoy!
+The UXBOX team.
 -- end
