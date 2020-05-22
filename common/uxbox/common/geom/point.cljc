@@ -11,7 +11,7 @@
   (:refer-clojure :exclude [divide min max])
   (:require
    #?(:cljs [cljs.core :as c]
-      :clj [clj.core :as c])
+      :clj [clojure.core :as c])
    [cuerdas.core :as str]
    [uxbox.common.math :as mth]))
 

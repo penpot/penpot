@@ -22,7 +22,7 @@
 (declare move-rect)
 (declare move-path)
 
-(defn- _chk
+(defn -chk
   "Function that checks if a number is nil or nan. Will return 0 when not
   valid and the number otherwise."
   [v]
@@ -42,8 +42,8 @@
   for rect-like shapes."
   [shape {dx :x dy :y}]
   (assoc shape
-         :x (+ (_chk (:x shape)) (_chk dx))
-         :y (+ (_chk (:y shape)) (_chk dy))))
+         :x (+ (-chk (:x shape)) (-chk dx))
+         :y (+ (-chk (:y shape)) (-chk dy))))
 
 (defn- move-path
   "A specialized function for relative movement
@@ -78,8 +78,8 @@
   "A specialized function for absolute moviment
   for rect-like shapes."
   [shape {:keys [x y] :as pos}]
-  (let [dx (if x (- (_chk x) (_chk (:x shape))) 0)
-        dy (if y (- (_chk y) (_chk (:y shape))) 0)]
+  (let [dx (if x (- (-chk x) (-chk (:x shape))) 0)
+        dy (if y (- (-chk y) (-chk (:y shape))) 0)]
     (move shape (gpt/point dx dy))))
 
 ;; --- Center
