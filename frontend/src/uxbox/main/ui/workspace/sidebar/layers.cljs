@@ -163,7 +163,7 @@
             (st/emit! (dw/toggle-collapse (:id item)))))
 
         [dprops dref] (hooks/use-sortable
-                       :type (str (:frame-id item))
+                       :data-type "uxbox/layer"
                        :on-drop on-drop
                        :on-drag on-drag
                        :on-hold on-hold

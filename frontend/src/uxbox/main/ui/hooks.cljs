@@ -117,7 +117,7 @@
 ;;     (if (.-relatedTarget event) (.-textContent (.-relatedTarget event)) "null")))
 
 (defn use-sortable
-  [& {:keys [type data on-drop on-drag on-hold detect-center?] :as opts}]
+  [& {:keys [data-type data on-drop on-drag on-hold detect-center?] :as opts}]
   (let [ref   (mf/use-ref)
         state (mf/use-state {:over nil
                              :timer nil})
@@ -129,7 +129,7 @@
           (let [dtrans (unchecked-get event "dataTransfer")]
             (.setDragImage dtrans (invisible-image) 0 0)
             (set! (.-effectAllowed dtrans) "move")
-            (.setData dtrans "application/json" (t/encode data))
+            (.setData dtrans data-type (t/encode data))
             (when (fn? on-drag)
               (on-drag data))))
 
@@ -149,17 +149,18 @@
 
         on-drag-over
         (fn [event]
-          (dom/prevent-default event) ;; prevent default to allow drag over
-          (let [target (dom/get-target event)
+          (let [dtrans (unchecked-get event "dataTransfer")
+                target (.-currentTarget event)
                 related (.-relatedTarget event)
-                dtrans (unchecked-get event "dataTransfer")
                 ypos   (unchecked-get event "offsetY")
                 height (unchecked-get target "clientHeight")
                 side   (drop-side height ypos detect-center?)]
-            (when-not (.contains target related)
-              (dom/stop-propagation event)
-              ;; (trace event data "drag-over")
-              (swap! state assoc :over side))))
+            (when (.includes (.-types dtrans) data-type)
+              (dom/prevent-default event) ;; prevent default to allow drag over
+              (when-not (.contains target related)
+                (dom/stop-propagation event)
+                ;; (trace event data "drag-over")
+                (swap! state assoc :over side)))))
 
         on-drag-leave
         (fn [event]
@@ -177,10 +178,10 @@
         (fn [event]
           (dom/stop-propagation event)
           ;; (trace event data "drop")
-          (let [target (dom/get-target event)
-                dtrans (unchecked-get event "dataTransfer")
-                dtdata (.getData dtrans "application/json")
+          (let [dtrans (unchecked-get event "dataTransfer")
+                dtdata (.getData dtrans data-type)
 
+                target (.-currentTarget event)
                 ypos   (unchecked-get event "offsetY")
                 height (unchecked-get target "clientHeight")
                 side   (drop-side height ypos detect-center?)]
@@ -205,7 +206,6 @@
         (fn []
           (let [dom (mf/ref-val ref)]
             (.setAttribute dom "draggable" true)
-            (.setAttribute dom "data-type" type)
 
             (.addEventListener dom "dragstart" on-drag-start false)
             (.addEventListener dom "dragenter" on-drag-enter false)
@@ -222,7 +222,7 @@
                (.removeEventListener dom "dragend" on-drag-end))))]
 
     (mf/use-effect
-     (mf/deps type data on-drop)
+     (mf/deps data on-drop)
      on-mount)
 
     [(deref state) ref]))
