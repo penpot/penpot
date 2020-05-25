@@ -157,10 +157,16 @@
                   parent-id (cp/get-parent (:id item) objects)]
                 (st/emit! (dw/relocate-shape id parent-id to-index)))))
 
+        on-hold
+        (fn []
+          (when-not expanded?
+            (st/emit! (dw/toggle-collapse (:id item)))))
+
         [dprops dref] (hooks/use-sortable
                        :type (str (:frame-id item))
                        :on-drop on-drop
                        :on-drag on-drag
+                       :on-hold on-hold
                        :detect-center? container?
                        :data {:id (:id item)
                               :index index
