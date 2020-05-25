@@ -210,8 +210,7 @@
             params {:name name
                     :file-id file-id
                     :ordering ordering
-                    :data cp/default-page-data
-                    :version cp/page-version}]
+                    :data cp/default-page-data}]
         (->> (rp/mutation :create-page params)
              (rx/map page-created))))))
 

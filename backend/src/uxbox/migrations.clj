@@ -32,7 +32,10 @@
      :fn (mg/resource "migrations/0005.libraries.sql")}
     {:desc "Initial presence tables"
      :name "0006-presence"
-     :fn (mg/resource "migrations/0006.presence.sql")}]})
+     :fn (mg/resource "migrations/0006.presence.sql")}
+    {:desc "Remove version"
+     :name "0007.remove_version"
+     :fn (mg/resource "migrations/0007.remove_version.sql")}]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Entry point

@@ -17,7 +17,6 @@
    [uxbox.common.data :as d]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.pages :as cp]
-   [uxbox.common.migrations :as mg]
    [uxbox.common.spec :as us]
    [uxbox.common.uuid :as uuid]
    [uxbox.config :as cfg]
@@ -151,7 +150,6 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [page  (get-in state [:workspace-pages page-id])
-            page (mg/migrate-page page)
             local (get-in state [:workspace-cache page-id] workspace-default)]
         (-> state
             (assoc :current-page-id page-id   ; mainly used by events

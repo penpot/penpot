@@ -21,16 +21,16 @@
   (when num (.toFixed num 2)))
 
 (mf/defc cross-point [{:keys [point zoom color]}]
-  (let [width (/ 10 zoom)]
+  (let [width (/ 5 zoom)]
     [:g.point
-     [:line {:x1 (- (:x point) 10) :y1 (- (:y point) 10)
-             :x2 (+ (:x point) 10) :y2 (+ (:y point) 10)
+     [:line {:x1 (- (:x point) width) :y1 (- (:y point) width)
+             :x2 (+ (:x point) width) :y2 (+ (:y point) width)
              :stroke color
              :stroke-width "1px"
              :stroke-opacity 0.5}]
 
-     [:line {:x1 (+ (:x point) 10) :y1 (- (:y point) 10)
-             :x2 (- (:x point) 10) :y2 (+ (:y point) 10)
+     [:line {:x1 (+ (:x point) width) :y1 (- (:y point) width)
+             :x2 (- (:x point) width) :y2 (+ (:y point) width)
              :stroke color
              :stroke-width "1px"
              :stroke-opacity 0.5}]]))

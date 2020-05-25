@@ -248,8 +248,8 @@
   (s/map-of uuid? ::shape))
 
 (s/def ::data
-  (s/keys :req-un [::options
-                   ::version
+  (s/keys :req-un [::version
+                   ::options
                    ::objects]))
 
 (s/def ::attr keyword?)
@@ -302,7 +302,8 @@
 
 (def default-page-data
   "A reference value of the empty page data."
-  {:options {}
+  {:version page-version
+   :options {}
    :objects
    {root
     {:id root

@@ -131,15 +131,13 @@
 
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [;;shape  (gsh/shape->rect-shape shape)
-              initial @ms/mouse-position
+        (let [initial @ms/mouse-position
               stoper (rx/filter ms/mouse-up? stream)
               page-id (get state :current-page-id)
               resizing-shapes (map #(get-in state [:workspace-data page-id :objects %]) ids)
               layout (get state :workspace-layout)]
           (rx/concat
            (->> ms/mouse-position
-                ;; (rx/mapcat apply-grid-alignment)
                 (rx/with-latest vector ms/mouse-position-ctrl)
                 (rx/map normalize-proportion-lock)
                 (rx/switch-map (fn [[point :as current]]

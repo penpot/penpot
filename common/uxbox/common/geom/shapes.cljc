@@ -241,10 +241,10 @@
 (defn shapes->rect-shape
   [shapes]
   (let [shapes (mapv shape->rect-shape shapes)
-        minx (transduce (map :x1) min shapes)
-        miny (transduce (map :y1) min shapes)
-        maxx (transduce (map :x2) max shapes)
-        maxy (transduce (map :y2) max shapes)]
+        minx (transduce (map :x1) min ##Inf shapes)
+        miny (transduce (map :y1) min ##Inf shapes)
+        maxx (transduce (map :x2) max ##-Inf shapes)
+        maxy (transduce (map :y2) max ##-Inf shapes)]
     {:x1 minx
      :y1 miny
      :x2 maxx
@@ -270,10 +270,10 @@
     (mapv #(transform-shape-point % shape (:transform shape (gmt/matrix))) points)))
 
 (defn points->selrect [points]
-  (let [minx (transduce (map :x) min points)
-        miny (transduce (map :y) min points)
-        maxx (transduce (map :x) max points)
-        maxy (transduce (map :y) max points)]
+  (let [minx (transduce (map :x) min ##Inf points)
+        miny (transduce (map :y) min ##Inf points)
+        maxx (transduce (map :x) max ##-Inf points)
+        maxy (transduce (map :y) max ##-Inf points)]
     {:x1 minx
      :y1 miny
      :x2 maxx
@@ -396,10 +396,10 @@
   [shapes]
   (let [xf-resolve-shape (map :selrect)
         shapes (into [] xf-resolve-shape shapes)
-        minx (transduce (map :x1) min shapes)
-        miny (transduce (map :y1) min shapes)
-        maxx (transduce (map :x2) max shapes)
-        maxy (transduce (map :y2) max shapes)]
+        minx (transduce (map :x1) min ##Inf shapes)
+        miny (transduce (map :y1) min ##Inf shapes)
+        maxx (transduce (map :x2) max ##-Inf shapes)
+        maxy (transduce (map :y2) max ##-Inf shapes)]
     {:x1 minx
      :y1 miny
      :x2 maxx

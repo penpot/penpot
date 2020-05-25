@@ -13,6 +13,7 @@
    [uxbox.common.data :as d]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.pages :as cp]
+   [uxbox.common.migrations :as mg]
    [uxbox.common.spec :as us]
    [uxbox.common.uuid :as uuid]
    [uxbox.config :as cfg]
@@ -178,15 +179,14 @@
   (let [sid      (:session-id params)
         changes  (->> (:changes params)
                       (mapv #(assoc % :session-id sid)))
-        data (-> (:data page)
-                 (blob/decode)
-                 (cp/process-changes changes)
-                 (blob/encode))
 
-        page (assoc page
-                    :data data
-                    :revn (inc (:revn page))
-                    :changes (blob/encode changes))
+        page (-> page
+                 (update :data blob/decode)
+                 (update :data mg/migrate-data)
+                 (update :data cp/process-changes changes)
+                 (update :data blob/encode)
+                 (update :revn inc)
+                 (assoc :changes (blob/encode changes)))
 
         chng (insert-page-change! conn page)
         msg  {:type :page-change
@@ -201,7 +201,7 @@
 
     (db/update! conn :page
                 {:revn (:revn page)
-                 :data data}
+                 :data (:data page)}
                 {:id (:id page)})
 
     (retrieve-lagged-changes conn chng params)))

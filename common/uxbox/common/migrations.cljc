@@ -9,24 +9,28 @@
 
 (defmulti migrate :version)
 
-(defn migrate-page
-  ([page from-version to-version]
-   (-> page
+(defn migrate-data
+  ([data from-version to-version]
+   (-> data
        (assoc :version to-version)
        (migrate)))
   
-  ([{:keys [version] :as page}]
-   (reduce #(migrate-page % (:version %1) %2)
-           page
-           (range version (inc p/page-version)))))
+  ([data]
+   (try
+     (reduce #(migrate-data %1 %2 (inc %2))
+             data
+             (range (:version data 0) p/page-version))
+
+     ;; If an error is thrown, we log the error and return the data without migrations
+     #?(:clj (catch Exception e (.printStackTrace e) data)
+        :cljs (catch :default e (.error js/console e) data)))))
 
 ;; Default handler, noop
-(defmethod migrate :default [page] page)
+(defmethod migrate :default [data] data)
 
 ;; -- MIGRATIONS --
 
-(defmethod migrate 4 [page]
-  (prn "Migrate " (:id page))
+(defmethod migrate 4 [data]
   ;; We changed the internal model of the shapes so they have their selection rect
   ;; and the vertices
   
@@ -48,16 +52,13 @@
                     (if (= (:id shape) uuid/zero)
                       shape
                       (assoc shape :selrect (gsh/points->selrect (:points shape))))))))]
-    (-> page
-
-        ;; We only store the version in the page data
-        (update :data dissoc :version )
+    (-> data
 
         ;; Adds vertices to shapes
-        (update-in [:data :objects] calculate-shape-points)
+        (update :objects calculate-shape-points)
 
         ;; Creates selection rects for shapes
-        (update-in [:data :objects] calculate-shape-selrects))))
+        (update :objects calculate-shape-selrects))))
 
 
 
