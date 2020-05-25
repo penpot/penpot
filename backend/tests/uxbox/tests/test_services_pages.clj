@@ -40,7 +40,6 @@
           (t/is (= (:name data) (:name result)))
           (t/is (= (:data data) (:data result)))
           (t/is (nil? (:share-token result)))
-          (t/is (= 0 (:version result)))
           (t/is (= 0 (:revn result))))))
 
     (t/testing "generate share token"

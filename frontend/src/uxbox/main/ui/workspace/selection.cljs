@@ -187,7 +187,7 @@
       [:g.controls
 
        ;; Selection rect
-       [:& selection-rect {:rect shape
+       [:& selection-rect {:rect selrect
                            :transform transform
                            :zoom zoom}]
 
@@ -283,7 +283,6 @@
   (let [shape-id (:id shape)
         shape (geom/transform-shape shape)
         shape' (if (debug? :simple-selection) (geom/selection-rect [shape]) shape)
-
         on-resize
         #(do (dom/stop-propagation %2)
              (st/emit! (dw/start-resize %1 #{shape-id} shape')))

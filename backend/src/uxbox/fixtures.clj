@@ -116,7 +116,6 @@
                         {:id id
                          :file-id file-id
                          :name name
-                         :version version
                          :ordering ordering
                          :data data})))
 

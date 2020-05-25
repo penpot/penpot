@@ -40,8 +40,8 @@
   "Calculate the best position to draw an interaction line
   between two shapes"
   [orig-shape dest-shape]
-  (let [orig-rect (geom/selection-rect-shape orig-shape)
-        dest-rect (geom/selection-rect-shape dest-shape)
+  (let [orig-rect (:selrect orig-shape)
+        dest-rect (:selrect dest-shape)
 
         orig-x-left (:x orig-rect)
         orig-x-right (+ orig-x-left (:width orig-rect))
@@ -71,7 +71,7 @@
   "Calculate the best position to draw an interaction line
   between one shape and one point"
   [orig-shape dest-point]
-  (let [orig-rect (geom/selection-rect-shape orig-shape)
+  (let [orig-rect (:selrect orig-shape)
 
         orig-x-left (:x orig-rect)
         orig-x-right (+ orig-x-left (:width orig-rect))
@@ -159,7 +159,7 @@
 
 (mf/defc interaction-handle
   [{:keys [shape selected zoom] :as props}]
-  (let [shape-rect (geom/selection-rect-shape shape)
+  (let [shape-rect (:selrect shape)
         handle-x (+ (:x shape-rect) (:width shape-rect))
         handle-y (+ (:y shape-rect) (/ (:height shape-rect) 2))]
     [:g {:on-mouse-down #(on-mouse-down % shape selected)}

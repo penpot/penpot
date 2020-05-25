@@ -12,7 +12,6 @@
    [cuerdas.core :as str]
    [next.jdbc :as jdbc]))
 
-
 (s/def ::name string?)
 (s/def ::step (s/keys :req-un [::name ::desc ::fn]))
 (s/def ::steps (s/every ::step :kind vector?))

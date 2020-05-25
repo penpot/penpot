@@ -9,6 +9,7 @@
 
 (ns uxbox.main.data.workspace
   (:require
+   [uxbox.util.debug :refer [logjs]]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [clojure.set :as set]

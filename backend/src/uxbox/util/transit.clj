@@ -9,11 +9,15 @@
    [cognitect.transit :as t]
    [clojure.java.io :as io]
    [uxbox.util.time :as dt]
-   [uxbox.util.data :as data])
+   [uxbox.util.data :as data]
+   [uxbox.common.geom.point :as gpt]
+   [uxbox.common.geom.matrix :as gmt])
   (:import
    java.io.ByteArrayInputStream
    java.io.ByteArrayOutputStream
-   java.io.File))
+   java.io.File
+   uxbox.common.geom.point.Point
+   uxbox.common.geom.matrix.Matrix))
 
 ;; --- Handlers
 
@@ -22,10 +26,36 @@
    (constantly "file")
    (fn [v] (str v))))
 
-(def +read-handlers+ dt/+read-handlers+)
+(def point-write-handler
+  (t/write-handler
+   (constantly "point")
+   (fn [v] (into {} v))))
+
+(def point-read-handler
+  (t/read-handler
+   (fn [value]
+     (gpt/map->Point value))))
+
+(def matrix-write-handler
+  (t/write-handler
+   (constantly "matrix")
+   (fn [v] (into {} v))))
+
+(def matrix-read-handler
+  (t/read-handler
+   (fn [value]
+     (gmt/map->Matrix value))))
+
+(def +read-handlers+
+  (assoc dt/+read-handlers+
+         "matrix" matrix-read-handler
+         "point" point-read-handler))
+
 (def +write-handlers+
   (assoc dt/+write-handlers+
-         File file-write-handler))
+         File file-write-handler
+         Matrix matrix-write-handler
+         Point point-write-handler))
 
 ;; --- Low-Level Api
 

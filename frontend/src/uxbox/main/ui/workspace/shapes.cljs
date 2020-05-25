@@ -20,7 +20,7 @@
    ;; namespace under uxbox.ui.workspace.shapes.* prefix, all the
    ;; others are defined using a generic wrapper implemented in
    ;; common.
-   [uxbox.main.ui.workspace.shapes.bbox :as bbox]
+   [uxbox.main.ui.workspace.shapes.bounding-box :refer [bounding-box]]
    [uxbox.main.ui.workspace.shapes.common :as common]
    [uxbox.main.ui.workspace.shapes.frame :as frame]
    [uxbox.main.ui.workspace.shapes.group :as group]
@@ -71,7 +71,8 @@
          ;; Only used when drawing a new frame.
          :frame [:> frame-wrapper {:shape shape}]
          nil)
-       [:& bbox/bounding-box {:shape shape :frame frame}]])))
+       [:& bounding-box {:shape (->> shape (geom/transform-shape frame)) :frame frame}]])))
 
 (def group-wrapper (group/group-wrapper-factory shape-wrapper))
 (def frame-wrapper (frame/frame-wrapper-factory shape-wrapper))
+

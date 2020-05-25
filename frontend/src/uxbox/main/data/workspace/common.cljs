@@ -165,9 +165,8 @@
 
 (defn- calculate-frame-overlap
   [frames shape]
-  (let [shape   (geom/shape->rect-shape shape)
-        xf      (comp
-                 (filter #(geom/overlaps? % shape))
+  (let [xf      (comp
+                 (filter #(geom/overlaps? % (:selrect shape)))
                  (take 1))
         frame   (first (into [] xf frames))]
     (or (:id frame) uuid/zero)))

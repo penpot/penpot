@@ -26,9 +26,8 @@
 
 (defn shape-snap-points
   [shape]
-  (let [modified-path (gsh/transform-apply-modifiers shape)
-        shape-center (gsh/center modified-path)]
+  (let [shape (gsh/transform-shape shape)
+        shape-center (gsh/center shape)]
     (case (:type shape)
-      :frame (-> modified-path gsh/shape->rect-shape frame-snap-points)
-      (:path :curve) (into #{shape-center} (-> modified-path gsh/shape->rect-shape :segments))
-      (into #{shape-center} (-> modified-path :segments)))))
+      :frame (-> shape gsh/shape->rect-shape frame-snap-points)
+      (into #{shape-center} (-> shape :points)))))

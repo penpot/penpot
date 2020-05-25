@@ -16,6 +16,8 @@
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]))
 
+(def page-version 4)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page Data Structure Helpers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -184,6 +186,22 @@
 (s/def ::width number?)
 (s/def ::height number?)
 (s/def ::index integer?)
+(s/def ::x1 number?)
+(s/def ::y1 number?)
+(s/def ::x2 number?)
+(s/def ::y2 number?)
+
+(s/def ::selrect (s/keys :req-un [::x
+                                  ::y
+                                  ::x1
+                                  ::y1
+                                  ::x2
+                                  ::y2
+                                  ::width
+                                  ::height]))
+
+(s/def ::point (s/keys :req-un [::x ::y]))
+(s/def ::points (s/coll-of ::point :kind vector?))
 
 (s/def ::shape-attrs
   (s/keys :opt-un [::blocked
@@ -211,7 +229,9 @@
                    ::stroke-alignment
                    ::text-align
                    ::width ::height
-                   ::interactions]))
+                   ::interactions
+                   ::selrect
+                   ::points]))
 
 (s/def ::minimal-shape
   (s/keys :req-un [::type ::name]
@@ -228,8 +248,8 @@
   (s/map-of uuid? ::shape))
 
 (s/def ::data
-  (s/keys :req-un [::options
-                   ::version
+  (s/keys :req-un [::version
+                   ::options
                    ::objects]))
 
 (s/def ::attr keyword?)
@@ -282,7 +302,7 @@
 
 (def default-page-data
   "A reference value of the empty page data."
-  {:version 3
+  {:version page-version
    :options {}
    :objects
    {root
@@ -469,5 +489,3 @@
   [shape op]
   (ex/raise :type :operation-not-implemented
             :context {:type (:type op)}))
-
-
