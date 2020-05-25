@@ -153,14 +153,20 @@
         (fn [side {:keys [id] :as data}]
           (if (= side :center)
             (st/emit! (dw/relocate-shape id (:id item) 0))
-            (let [index (if (= side :top) (inc index) index)
+            (let [to-index (if (= side :top) (inc index) index)
                   parent-id (cp/get-parent (:id item) objects)]
-              (st/emit! (dw/relocate-shape id parent-id index)))))
+                (st/emit! (dw/relocate-shape id parent-id to-index)))))
+
+        on-hold
+        (fn []
+          (when-not expanded?
+            (st/emit! (dw/toggle-collapse (:id item)))))
 
         [dprops dref] (hooks/use-sortable
-                       :type (str (:frame-id item))
+                       :data-type "uxbox/layer"
                        :on-drop on-drop
                        :on-drag on-drag
+                       :on-hold on-hold
                        :detect-center? container?
                        :data {:id (:id item)
                               :index index

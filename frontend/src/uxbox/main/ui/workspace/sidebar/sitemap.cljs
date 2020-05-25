@@ -64,7 +64,7 @@
             (st/emit! (dw/relocate-page id index))))
 
         [dprops dref] (hooks/use-sortable
-                       :type "page"
+                       :data-type "uxbox/page"
                        :on-drop on-drop
                        :data {:id (:id page)
                               :index index

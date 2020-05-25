@@ -18,6 +18,7 @@
    [uxbox.util.transit :as t]
    [uxbox.util.dom :as dom]
    [uxbox.util.webapi :as wapi]
+   [uxbox.util.timers :as ts]
    ["mousetrap" :as mousetrap])
   (:import goog.events.EventType))
 
@@ -30,7 +31,6 @@
          #(rx/cancel! sub)))
      #js [ob])
     state))
-
 
 (s/def ::shortcuts
   (s/map-of ::us/string fn?))
@@ -66,18 +66,6 @@
 
     [toggle @state]))
 
-;; (defn- extract-type
-;;   [dt]
-;;   (let [types (unchecked-get dt "types")
-;;         total (alength types)]
-;;     (loop [i 0]
-;;       (if (= i total)
-;;         nil
-;;         (if-let [match (re-find #"dnd/(.+)" (aget types i))]
-;;           (second match)
-;;           (recur (inc i)))))))
-
-
 (defn invisible-image
   []
   (let [img (js/Image.)
@@ -97,118 +85,145 @@
         :else :center)
       (if (> ypos thold) :bot :top))))
 
+(defn- set-timer
+  [state ms func]
+  (assoc state :timer (ts/schedule ms func)))
+
+(defn- cancel-timer
+  [state]
+  (let [timer (:timer state)]
+    (if timer
+      (do
+        (rx/dispose! timer)
+        (dissoc state :timer))
+      state)))
+
+;; The dnd interface is broken in several ways. This is the official documentation
+;; https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
+;;
+;; And there is some discussion of the problems and many uncomplete solutions
+;; https://github.com/lolmaus/jquery.dragbetter/#what-this-is-all-about
+;; https://www.w3schools.com/jsref/event_relatedtarget.asp
+;; https://stackoverflow.com/questions/14194324/firefox-firing-dragleave-when-dragging-over-text?noredirect=1&lq=1
+;; https://stackoverflow.com/questions/7110353/html5-dragleave-fired-when-hovering-a-child-element
+
+;; This function is useful to debug the erratic dnd interface behaviour when something weird occurs
+;; (defn- trace
+;;   [event data label]
+;;   (js/console.log
+;;     label
+;;     "[" (:name data) "]"
+;;     (if (.-currentTarget event) (.-textContent (.-currentTarget event)) "null")
+;;     (if (.-relatedTarget event) (.-textContent (.-relatedTarget event)) "null")))
+
 (defn use-sortable
-  [& {:keys [type data on-drop on-drag detect-center?] :as opts}]
+  [& {:keys [data-type data on-drop on-drag on-hold detect-center?] :as opts}]
   (let [ref   (mf/use-ref)
-        state (mf/use-state {})
+        state (mf/use-state {:over nil
+                             :timer nil})
 
         on-drag-start
         (fn [event]
-          ;; (dom/prevent-default event)
           (dom/stop-propagation event)
+          ;; (trace event data "drag-start")
           (let [dtrans (unchecked-get event "dataTransfer")]
             (.setDragImage dtrans (invisible-image) 0 0)
             (set! (.-effectAllowed dtrans) "move")
-            (.setData dtrans "application/json" (t/encode data))
-            ;; (.setData dtrans (str "dnd/" type) "")
+            (.setData dtrans data-type (t/encode data))
             (when (fn? on-drag)
-              (on-drag data))
-            (swap! state (fn [state]
-                           (if (:dragging? state)
-                             state
-                             (assoc state :dragging? true))))))
+              (on-drag data))))
+
+        on-drag-enter
+        (fn [event]
+          (dom/prevent-default event) ;; prevent default to allow drag enter
+          (let [target (.-currentTarget event)
+                related (.-relatedTarget event)]
+            (when-not (.contains target related) ;; ignore events triggered by elements that are
+              (dom/stop-propagation event)       ;; children of the drop target
+              ;; (trace event data "drag-enter")
+              (when (fn? on-hold)
+                (swap! state (fn [state]
+                               (-> state
+                                   (cancel-timer)
+                                   (set-timer 1000 on-hold))))))))
 
         on-drag-over
         (fn [event]
-          (dom/stop-propagation event)
-          (dom/prevent-default event)
-
-          (let [target (dom/get-target event)
-                dtrans (unchecked-get event "dataTransfer")
+          (let [dtrans (unchecked-get event "dataTransfer")
+                target (.-currentTarget event)
+                related (.-relatedTarget event)
                 ypos   (unchecked-get event "offsetY")
                 height (unchecked-get target "clientHeight")
                 side   (drop-side height ypos detect-center?)]
-
-            (set! (.-dropEffect dtrans) "move")
-            (set! (.-effectAllowed dtrans) "move")
-
-            (swap! state update :over (fn [state]
-                                        (if (not= state side)
-                                          side
-                                          state)))))
-
-        ;; on-drag-enter
-        ;; (fn [event]
-        ;;   (dom/prevent-default event)
-        ;;   (dom/stop-propagation event)
-        ;;   (let [dtrans (unchecked-get event "dataTransfer")
-        ;;         ty (extract-type dt)]
-        ;;     (when (= ty type)
-        ;;       #_(js/console.log "on-drag-enter" (:name data) ty type)
-        ;;       #_(swap! state (fn [state]
-        ;;                      (if (:over? state)
-        ;;                        state
-        ;;                        (assoc state :over? true)))))))
+            (when (.includes (.-types dtrans) data-type)
+              (dom/prevent-default event) ;; prevent default to allow drag over
+              (when-not (.contains target related)
+                (dom/stop-propagation event)
+                ;; (trace event data "drag-over")
+                (swap! state assoc :over side)))))
 
         on-drag-leave
         (fn [event]
           (let [target (.-currentTarget event)
                 related (.-relatedTarget event)]
             (when-not (.contains target related)
-              ;; (js/console.log "on-drag-leave" (:name data))
+              (dom/stop-propagation event)
+              ;; (trace event data "drag-leave")
               (swap! state (fn [state]
-                             (if (:over state)
-                               (dissoc state :over)
-                               state))))))
+                             (-> state
+                               (cancel-timer)
+                               (dissoc :over)))))))
 
         on-drop'
         (fn [event]
           (dom/stop-propagation event)
-          (let [target (dom/get-target event)
-                dtrans (unchecked-get event "dataTransfer")
-                dtdata (.getData dtrans "application/json")
+          ;; (trace event data "drop")
+          (let [dtrans (unchecked-get event "dataTransfer")
+                dtdata (.getData dtrans data-type)
 
+                target (.-currentTarget event)
                 ypos   (unchecked-get event "offsetY")
                 height (unchecked-get target "clientHeight")
                 side   (drop-side height ypos detect-center?)]
 
-            ;; TODO: seems unnecessary
             (swap! state (fn [state]
-                           (cond-> state
-                             (:dragging? state) (dissoc :dragging?)
-                             (:over state) (dissoc :over))))
+                           (-> state
+                             (cancel-timer)
+                             (dissoc :over))))
 
             (when (fn? on-drop)
               (on-drop side (t/decode dtdata)))))
 
         on-drag-end
         (fn [event]
+          ;; (trace event data "drag-end")
           (swap! state (fn [state]
-                         (cond-> state
-                           (:dragging? state) (dissoc :dragging?)
-                           (:over state) (dissoc :over)))))
+                         (-> state
+                           (cancel-timer)
+                           (dissoc :over)))))
 
         on-mount
         (fn []
           (let [dom (mf/ref-val ref)]
             (.setAttribute dom "draggable" true)
-            (.setAttribute dom "data-type" type)
 
             (.addEventListener dom "dragstart" on-drag-start false)
-            ;; (.addEventListener dom "dragenter" on-drag-enter false)
+            (.addEventListener dom "dragenter" on-drag-enter false)
             (.addEventListener dom "dragover" on-drag-over false)
             (.addEventListener dom "dragleave" on-drag-leave true)
             (.addEventListener dom "drop" on-drop' false)
             (.addEventListener dom "dragend" on-drag-end false)
             #(do
                (.removeEventListener dom "dragstart" on-drag-start)
-               ;; (.removeEventListener dom "dragenter" on-drag-enter)
+               (.removeEventListener dom "dragenter" on-drag-enter)
                (.removeEventListener dom "dragover" on-drag-over)
                (.removeEventListener dom "dragleave" on-drag-leave)
                (.removeEventListener dom "drop" on-drop')
                (.removeEventListener dom "dragend" on-drag-end))))]
 
     (mf/use-effect
-     (mf/deps type data on-drop)
+     (mf/deps data on-drop)
      on-mount)
+
     [(deref state) ref]))
+
