@@ -15,30 +15,41 @@
 (def +migrations+
   {:name "uxbox-main"
    :steps
-   [{:desc "Initial triggers and utils."
-     :name "0001-main"
-     :fn (mg/resource "migrations/0001.main.sql")}
-    {:desc "Initial auth related tables"
-     :name "0002-users"
-     :fn (mg/resource "migrations/0002.users.sql")}
-    {:desc "Initial projects tables"
-     :name "0003-projects"
-     :fn (mg/resource "migrations/0003.projects.sql")}
-    {:desc "Initial tasks related tables"
-     :name "0004-tasks"
-     :fn (mg/resource "migrations/0004.tasks.sql")}
-    {:desc "Initial libraries tables"
-     :name "0005-libraries"
-     :fn (mg/resource "migrations/0005.libraries.sql")}
-    {:desc "Initial presence tables"
-     :name "0006-presence"
-     :fn (mg/resource "migrations/0006.presence.sql")}
-    {:desc "Remove version"
-     :name "0007-remove-version"
-     :fn (mg/resource "migrations/0007.remove-version.sql")}]})
-    {:desc "Initial generic token tables"
-     :name "0008-generic-token"
-     :fn (mg/resource "migrations/0007.generic-token.sql")}]})
+   [{:desc "Add initial extensions and functions."
+     :name "0001-add-extensions"
+     :fn (mg/resource "migrations/0001-add-extensions.sql")}
+
+    {:desc "Add profile related tables"
+     :name "0002-add-profile-tables"
+     :fn (mg/resource "migrations/0002-add-profile-tables.sql")}
+
+    {:desc "Add project related tables"
+     :name "0003-add-project-tables"
+     :fn (mg/resource "migrations/0003-add-project-tables.sql")}
+
+    {:desc "Add tasks related tables"
+     :name "0004-add-tasks-tables"
+     :fn (mg/resource "migrations/0004-add-tasks-tables.sql")}
+
+    {:desc "Add libraries related tables"
+     :name "0005-add-libraries-tables"
+     :fn (mg/resource "migrations/0005-add-libraries-tables.sql")}
+
+    {:desc "Add presence related tables"
+     :name "0006-add-presence-tables"
+     :fn (mg/resource "migrations/0006-add-presence-tables.sql")}
+
+    {:desc "Drop version field from page table."
+     :name "0007-drop-version-field-from-page-table"
+     :fn (mg/resource "migrations/0007-drop-version-field-from-page-table.sql")}
+
+    {:desc "Add generic token related tables."
+     :name "0008-add-generic-token-table.sql"
+     :fn (mg/resource "migrations/0008-add-generic-token-table.sql")}
+
+    {:desc "Drop the profile_email table"
+     :name "0009-drop-profile-email-table.sql"
+     :fn (mg/resource "migrations/0009-drop-profile-email-table.sql")}]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Entry point
