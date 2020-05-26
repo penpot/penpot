@@ -11,7 +11,7 @@
   (:require
    [beicon.core :as rx]
    [cuerdas.core :as str]
-   [uxbox.config :refer [url]]
+   [uxbox.config :as cfg]
    [uxbox.util.http-api :as http]))
 
 (defn- handle-response
@@ -29,14 +29,14 @@
 
 (defn send-query!
   [id params]
-  (let [url (str url "/api/w/query/" (name id))]
-    (->> (http/send! {:method :get :url url :query params})
+  (let [uri (str cfg/backend-uri "/api/w/query/" (name id))]
+    (->> (http/send! {:method :get :uri uri :query params})
          (rx/mapcat handle-response))))
 
 (defn send-mutation!
   [id params]
-  (let [url (str url "/api/w/mutation/" (name id))]
-    (->> (http/send! {:method :post :url url :body params})
+  (let [uri (str cfg/backend-uri "/api/w/mutation/" (name id))]
+    (->> (http/send! {:method :post :uri uri :body params})
          (rx/mapcat handle-response))))
 
 (defn- dispatch
@@ -64,8 +64,8 @@
 
 (defmethod mutation :login-with-google
   [id params]
-  (let [url (str url "/api/oauth/google")]
-    (->> (http/send! {:method :post :url url})
+  (let [uri (str cfg/backend-uri "/api/oauth/google")]
+    (->> (http/send! {:method :post :uri uri})
          (rx/mapcat handle-response))))
 
 (defmethod mutation :upload-image
@@ -94,14 +94,14 @@
 
 (defmethod mutation :login
   [id params]
-  (let [url (str url "/api/login")]
-    (->> (http/send! {:method :post :url url :body params})
+  (let [uri (str cfg/backend-uri "/api/login")]
+    (->> (http/send! {:method :post :uri uri :body params})
          (rx/mapcat handle-response))))
 
 (defmethod mutation :logout
   [id params]
-  (let [url (str url "/api/logout")]
-    (->> (http/send! {:method :post :url url :body params})
+  (let [uri (str cfg/backend-uri "/api/logout")]
+    (->> (http/send! {:method :post :uri uri :body params})
          (rx/mapcat handle-response))))
 
 (def client-error? http/client-error?)

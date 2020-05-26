@@ -12,12 +12,11 @@
 
 (this-as global
   (let [config (obj/get global "uxboxConfig")
-        purl    (obj/get config "publicURL" "http://localhost:3449")
-        burl    (obj/get config "backendURL" "http://localhost:6060")
+        puri    (obj/get config "publicURI" "http://localhost:3449")
+        buri    (obj/get config "backendURI" "http://localhost:6060")
         warn   (obj/get config "demoWarning" true)]
     (def default-language "en")
     (def demo-warning warn)
-    (def url burl)
-    (def backend-url burl)
-    (def public-url purl)
+    (def backend-uri buri)
+    (def public-uri puri)
     (def default-theme "default")))

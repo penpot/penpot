@@ -42,9 +42,9 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [sid (:session-id state)
-            url (ws/url "/ws/notifications" {:file-id file-id
+            uri (ws/uri "/ws/notifications" {:file-id file-id
                                              :session-id sid})]
-        (assoc-in state [:ws file-id] (ws/open url))))
+        (assoc-in state [:ws file-id] (ws/open uri))))
 
     ptk/WatchEvent
     (watch [_ state stream]

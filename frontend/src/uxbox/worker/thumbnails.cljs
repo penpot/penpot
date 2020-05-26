@@ -33,11 +33,11 @@
 
 (defn- request-page
   [id]
-  (let [url (get @impl/config :backend-url "http://localhost:6060")
-        url (str url "/api/w/query/page")]
+  (let [uri (get @impl/config :backend-uri "http://localhost:6060")
+        uri (str uri "/api/w/query/page")]
     (p/create
      (fn [resolve reject]
-       (->> (http/send! {:url url
+       (->> (http/send! {:uri uri
                          :query {:id id}
                          :method :get})
             (rx/mapcat handle-response)
