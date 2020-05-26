@@ -1,0 +1,55 @@
+.generic-modal {
+  background-color: $color-white;
+  width: 565px;
+  display: flex;
+  position: relative;
+
+  .close {
+    cursor: pointer;
+    position: absolute;
+    right: 16px;
+    top: 16px;
+    svg {
+      width: 16px;
+      height: 16px;
+      transform: rotate(45deg);
+    }
+  }
+
+  .modal-content {
+    display: flex;
+    flex-grow: 1;
+    flex-direction: column;
+    padding: 100px;
+  }
+
+  .button-row {
+    display: flex;
+    justify-content: space-between;
+
+    > button {
+      font-size: $fs13;
+    }
+    > button:not(:first-child) {
+      margin-left: 25px;
+    }
+  }
+}
+
+.change-email-modal {
+  h2 {
+    font-size: $fs14;
+    margin-bottom: 20px;
+  }
+
+  .confirmation {
+    .btn-primary {
+      margin-bottom: 30px;
+    }
+
+    .featured-note .icon svg {
+      fill: $color-success;
+    }
+
+  }
+}

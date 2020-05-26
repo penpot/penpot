@@ -22,9 +22,9 @@
 
 (defonce instance
   (when (not= *target* "nodejs")
-    (let [uri (Uri. cfg/public-url)]
+    (let [uri (Uri. cfg/public-uri)]
       (.setPath uri "js/worker.js")
-      (.setParameterValue uri "backendURL" cfg/backend-url)
+      (.setParameterValue uri "backendURI" cfg/backend-uri)
       (uw/init (.toString uri) on-error))))
 
 (defn ask!

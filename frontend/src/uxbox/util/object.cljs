@@ -9,8 +9,11 @@
 
 (ns uxbox.util.object
   "A collection of helpers for work with javascript objects."
-  (:refer-clojure :exclude [get get-in assoc!])
-  (:require [goog.object :as gobj]))
+  (:refer-clojure :exclude [set! get get-in assoc!])
+  (:require
+   [cuerdas.core :as str]
+   [goog.object :as gobj]
+   ["lodash/omit" :as omit]))
 
 (defn get
   ([obj k]
@@ -32,6 +35,14 @@
                (rest keys)
                (unchecked-get res key))))))
 
+(defn without
+  [obj keys]
+  (let [keys (cond
+               (vector? keys) (into-array keys)
+               (array? keys) keys
+               :else (throw (js/Error. "unexpected input")))]
+    (omit obj keys)))
+
 (defn merge!
   ([a b]
    (js/Object.assign a b))
@@ -42,3 +53,13 @@
   [obj key value]
   (unchecked-set obj key value)
   obj)
+
+(defn- props-key-fn
+  [key]
+  (if (or (= key :class) (= key :class-name))
+    "className"
+    (str/camel (name key))))
+
+(defn clj->props
+  [props]
+  (clj->js props :keyword-fn props-key-fn))

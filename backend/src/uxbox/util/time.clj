@@ -17,6 +17,7 @@
    java.time.OffsetDateTime
    java.time.Duration
    java.util.Date
+   java.time.temporal.TemporalAmount
    org.apache.logging.log4j.core.util.CronExpression))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -31,6 +32,10 @@
 (defn now
   []
   (Instant/now))
+
+(defn plus
+  [d ta]
+  (.plus d ^TemporalAmount ta))
 
 (defn- obj->duration
   [{:keys [days minutes seconds hours nanos millis]}]

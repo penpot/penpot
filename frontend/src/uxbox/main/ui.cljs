@@ -21,11 +21,8 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.dashboard :refer [dashboard]]
-   [uxbox.main.ui.login :refer [login-page]]
    [uxbox.main.ui.static :refer [not-found-page not-authorized-page]]
-   [uxbox.main.ui.profile.recovery :refer [profile-recovery-page]]
-   [uxbox.main.ui.profile.recovery-request :refer [profile-recovery-request-page]]
-   [uxbox.main.ui.profile.register :refer [profile-register-page]]
+   [uxbox.main.ui.auth :refer [auth verify-token]]
    [uxbox.main.ui.settings :as settings]
    [uxbox.main.ui.viewer :refer [viewer-page]]
    [uxbox.main.ui.workspace :as workspace]
@@ -35,14 +32,18 @@
 ;; --- Routes
 
 (def routes
-  [["/login" :login]
-   ["/register" :profile-register]
-   ["/recovery/request" :profile-recovery-request]
-   ["/recovery" :profile-recovery]
+  [["/auth"
+    ["/login" :auth-login]
+    ["/register" :auth-register]
+    ["/recovery/request" :auth-recovery-request]
+    ["/recovery" :auth-recovery]
+    ["/verify-token" :auth-verify-token]
+    ["/goodbye" :auth-goodbye]]
 
    ["/settings"
     ["/profile" :settings-profile]
-    ["/password" :settings-password]]
+    ["/password" :settings-password]
+    ["/options" :settings-options]]
 
    ["/view/:page-id" :viewer]
    ["/not-found" :not-found]
@@ -84,20 +85,20 @@
   {::mf/wrap [#(mf/catch % {:fallback app-error})]}
   [{:keys [route] :as props}]
   (case (get-in route [:data :name])
-    :login
-    [:& login-page]
 
-    :profile-register
-    [:& profile-register-page]
+    (:auth-login
+     :auth-register
+     :auth-goodbye
+     :auth-recovery-request
+     :auth-recovery)
+    [:& auth {:route route}]
 
-    :profile-recovery-request
-    [:& profile-recovery-request-page]
-
-    :profile-recovery
-    [:& profile-recovery-page]
+    :auth-verify-token
+    [:& verify-token {:route route}]
 
     (:settings-profile
-     :settings-password)
+     :settings-password
+     :settings-options)
     [:& settings/settings {:route route}]
 
     :debug-icons-preview
@@ -136,7 +137,9 @@
     [:& not-authorized-page]
 
     :not-found
-    [:& not-found-page]))
+    [:& not-found-page]
+
+    nil))
 
 (mf/defc app
   []

@@ -82,10 +82,12 @@
 
 (defn create-profile
   [conn i]
-  (#'profile/register-profile conn {:id (mk-uuid "profile" i)
-                                    :fullname (str "Profile " i)
-                                    :email (str "profile" i ".test@nodomain.com")
-                                    :password "123123"}))
+  (let [params {:id (mk-uuid "profile" i)
+                :fullname (str "Profile " i)
+                :email (str "profile" i ".test@nodomain.com")
+                :password "123123"}]
+    (->> (#'profile/create-profile conn params)
+         (#'profile/create-profile-relations conn))))
 
 (defn create-team
   [conn profile-id i]

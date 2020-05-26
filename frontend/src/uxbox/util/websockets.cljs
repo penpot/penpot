@@ -24,10 +24,10 @@
   (-send [_ message] "send a message")
   (-close [_] "close websocket"))
 
-(defn url
-  ([path] (url path {}))
+(defn uri
+  ([path] (uri path {}))
   ([path params]
-   (let [uri (.parse Uri cfg/url)]
+   (let [uri (.parse Uri cfg/backend-uri)]
      (.setPath uri path)
      (if (= (.getScheme uri) "http")
        (.setScheme uri "ws")

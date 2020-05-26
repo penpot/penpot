@@ -32,13 +32,13 @@
   {"content-type" "application/transit+json"})
 
 (defn- impl-send
-  [{:keys [body headers auth method query url response-type]
+  [{:keys [body headers auth method query uri response-type]
     :or {auth true response-type :text}}]
   (let [headers (merge {"Accept" "application/transit+json,*/*"}
                        (when (map? body) default-headers)
                        headers)
         request {:method method
-                 :url url
+                 :uri uri
                  :headers headers
                  :query query
                  :body (if (map? body)

@@ -58,9 +58,9 @@
     :blob ResponseType.BLOB
     ResponseType.DEFAULT))
 
-(defn- create-url
-  [url qs qp]
-  (let [uri (Uri. url)]
+(defn- create-uri
+  [uri qs qp]
+  (let [uri (Uri. uri)]
     (when qs (.setQuery uri qs))
     (when qp
       (let [dt (.createFromMap QueryData (clj->js  qp))]
@@ -68,10 +68,10 @@
     (.toString uri)))
 
 (defn- fetch
-  [{:keys [method url query-string query headers body] :as request}
+  [{:keys [method uri query-string query headers body] :as request}
    {:keys [timeout credentials? response-type]
     :or {timeout 0 credentials? false response-type :text}}]
-  (let [uri (create-url url query-string query)
+  (let [uri (create-uri uri query-string query)
         headers (if headers (clj->js headers) #js {})
         method (translate-method method)
         xhr (doto (XhrIo.)

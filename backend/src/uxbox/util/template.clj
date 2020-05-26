@@ -11,6 +11,7 @@
    [clojure.tools.logging :as log]
    [clojure.walk :as walk]
    [clojure.java.io :as io]
+   [cuerdas.core :as str]
    [uxbox.common.exceptions :as ex])
   (:import
    java.io.StringReader
@@ -26,7 +27,7 @@
   (walk/postwalk (fn [x]
                    (cond
                      (instance? clojure.lang.Named x)
-                     (name x)
+                     (str/camel (name x))
 
                      (instance? clojure.lang.MapEntry x)
                      x

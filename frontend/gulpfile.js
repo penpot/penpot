@@ -94,8 +94,9 @@ function readLocales() {
 }
 
 function readConfig(data) {
-  const publicURL = process.env.UXBOX_PUBLIC_URL;
-  const backendURL = process.env.UXBOX_BACKEND_URL;
+  const googleClientID = process.env.UXBOX_GOOGLE_CLIENT_ID;
+  const publicURI = process.env.UXBOX_PUBLIC_URI;
+  const backendURI = process.env.UXBOX_BACKEND_URI;
   const demoWarn = process.env.UXBOX_DEMO_WARNING;
   const deployDate = process.env.UXBOX_DEPLOY_DATE;
   const deployCommit = process.env.UXBOX_DEPLOY_COMMIT;
@@ -104,12 +105,16 @@ function readConfig(data) {
     demoWarning: demoWarn === "true"
   };
 
-  if (publicURL !== undefined) {
-    cfg.publicURL = publicURL;
+  if (googleClientID !== undefined) {
+    cfg.googleClientID = googleClientID;
   }
 
-  if (backendURL !== undefined) {
-    cfg.backendURL = backendURL;
+  if (publicURI !== undefined) {
+    cfg.publicURI = publicURI;
+  }
+
+  if (backendURI !== undefined) {
+    cfg.backendURI = backendURI;
   }
 
   if (deployDate !== undefined) {

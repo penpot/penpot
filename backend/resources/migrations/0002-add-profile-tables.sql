@@ -32,6 +32,7 @@ VALUES ('00000000-0000-0000-0000-000000000000'::uuid,
         '!');
 
 
+--- NOTE: this table is deleted in the next migrations
 
 CREATE TABLE profile_email (
   profile_id uuid NOT NULL REFERENCES profile(id) ON DELETE CASCADE,
@@ -121,6 +122,7 @@ BEFORE UPDATE ON profile_attr
    FOR EACH ROW EXECUTE PROCEDURE update_modified_at();
 
 
+--- NOTE: this table is removed in the following migrations
 
 CREATE TABLE password_recovery_token (
   profile_id uuid NOT NULL REFERENCES profile(id) ON DELETE CASCADE,

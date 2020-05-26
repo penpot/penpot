@@ -15,3 +15,265 @@ textarea {
     color: $color-danger;
   }
 }
+
+.featured-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $fs11;
+  padding: 10px;
+  margin-bottom: 25px;
+  background-color: rgba(#59B9E2, 0.05);
+  color: $color-gray-60;
+
+  .icon {
+    display: flex;
+    padding: 10px;
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  &.warning {
+    color: $color-danger;
+  }
+}
+
+.generic-form {
+  display: flex;
+  justify-content: center;
+
+  .forms-container {
+    display: flex;
+    margin-top: 40px;
+    width: 536px;
+    justify-content: center;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    // flex-basis: 368px;
+  }
+
+  h1 {
+    font-size: $fs36;
+    color: #2C233E;
+    margin-bottom: 20px;
+  }
+
+  .subtitle {
+    font-size: $fs24;
+    color: #2C233E;
+    margin-bottom: 20px;
+  }
+
+  h2 {
+    font-size: $fs14;
+    color: $color-gray-60;
+    // height: 40px;
+    display: flex;
+    align-items: center;
+  }
+
+  a {
+    text-decoration: underline;
+  }
+
+  .links {
+    font-size: $fs11;
+  }
+
+  .link-entry {
+    font-size: $fs12;
+    color: $color-gray-40;
+    margin-bottom: 10px;
+  }
+
+  .link-entry a {
+    font-size: $fs12;
+    color: $color-primary-dark;
+  }
+}
+
+
+
+.custom-input {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+
+  label {
+    font-size: $fs10;
+    color: $color-gray-30;
+  }
+
+  input {
+    color: $color-gray-60;
+    font-size: $fs12;
+    width: 100%;
+    border: 0px;
+    padding: 0px;
+    margin: 0px;
+    background-color: transparent;
+  }
+
+  .input-container {
+    display: flex;
+    flex-direction: row;
+
+    background-color: $color-white;
+    border-radius: 2px;
+    border: 1px solid $color-gray-20;
+    height: 40px;
+    padding-left: 15px;
+    padding-right: 15px;
+
+    &.invalid {
+      border-color: $color-danger;
+      label {
+        color: $color-danger;
+      }
+    }
+
+    &.valid {
+      border-color: $color-success;
+    }
+
+    &.focus {
+      border-color: $color-gray-60;
+    }
+
+    &.disabled {
+      background-color: lighten($color-gray-10, 5%);
+      user-select: none;
+    }
+  }
+
+  .hint {
+    padding: 4px;
+    font-size: $fs10;
+  }
+
+  .error {
+    color: $color-danger;
+    padding: 4px;
+    font-size: $fs10;
+  }
+
+  .main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-top: 6px;
+    padding-bottom: 6px;
+
+  }
+
+  .help-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-left: 10px;
+    svg {
+      fill: $color-gray-30;
+      width: 15px;
+      height: 15px;
+    }
+  }
+}
+
+.custom-select {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: $big;
+  position: relative;
+
+  label {
+    font-size: $fs10;
+    color: $color-gray-30;
+  }
+
+  select {
+    cursor: pointer;
+    font-size: $fs12;
+    border: 0px;
+    opacity: 0;
+    z-index: 10;
+    padding: 0px;
+    margin: 0px;
+    background-color: transparent;
+    position: absolute;
+    width: calc(100% - 1px);
+    height: 100%;
+    padding: 15px;
+  }
+
+  .main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-top: 6px;
+    padding-bottom: 6px;
+
+  }
+
+  .input-container {
+    display: flex;
+    flex-direction: row;
+
+    background-color: $color-white;
+    border-radius: 2px;
+    border: 1px solid $color-gray-20;
+    height: 40px;
+    padding-left: 15px;
+    padding-right: 15px;
+
+    &.invalid {
+      border-color: $color-danger;
+      label {
+        color: $color-danger;
+      }
+    }
+
+    &.valid {
+      border-color: $color-success;
+    }
+
+    &.focus {
+      border-color: $color-gray-60;
+    }
+
+    &.disabled {
+      background-color: $color-gray-10;
+      user-select: none;
+    }
+  }
+
+  .value {
+    color: $color-gray-60;
+    font-size: $fs12;
+    width: 100%;
+    border: 0px;
+    padding: 0px;
+    margin: 0px;
+  }
+
+  .icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-left: 10px;
+
+
+    svg {
+      fill: $color-gray-30;
+      transform: rotate(90deg);
+      width: 15px;
+      height: 15px;
+    }
+  }
+}

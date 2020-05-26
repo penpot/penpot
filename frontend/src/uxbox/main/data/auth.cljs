@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.main.data.auth
   (:require
@@ -34,7 +34,7 @@
     (watch [this state stream]
       (let [team-id (:default-team-id data)]
         (rx/of (du/profile-fetched data)
-               (rt/navigate :dashboard-team {:team-id team-id}))))))
+               (rt/nav :dashboard-team {:team-id team-id}))))))
 
 ;; --- Login
 
@@ -51,13 +51,31 @@
 
     ptk/WatchEvent
     (watch [this state s]
-      (let [params {:email email
+      (let [{:keys [on-error on-success]
+             :or {on-error identity
+                  on-success identity}} (meta data)
+            params {:email email
                     :password password
-                    :scope "webapp"}
-            on-error #(rx/of (dm/error (tr "errors.auth.unauthorized")))]
+                    :scope "webapp"}]
         (->> (rp/mutation :login params)
-             (rx/map logged-in)
-             (rx/catch rp/client-error? on-error))))))
+             (rx/tap on-success)
+             (rx/catch (fn [err]
+                         (on-error err)
+                         (rx/empty)))
+             (rx/map logged-in))))))
+
+(defn login-from-token
+  [{:keys [profile] :as tdata}]
+  (ptk/reify ::login-from-token
+    ptk/UpdateEvent
+    (update [_ state]
+      (merge state (dissoc initial-state :route :router)))
+
+    ptk/WatchEvent
+    (watch [this state s]
+      (let [team-id (:default-team-id profile)]
+        (rx/of (du/profile-fetched profile)
+               (rt/nav' :dashboard-team {:team-id team-id}))))))
 
 ;; --- Logout
 
@@ -81,8 +99,8 @@
   (ptk/reify ::logout
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (rt/nav :login)
-             clear-user-data))))
+      (rx/of clear-user-data
+             (rt/nav :auth-login)))))
 
 ;; --- Register
 
@@ -93,18 +111,37 @@
 
 (defn register
   "Create a register event instance."
-  [data on-error]
+  [data]
   (s/assert ::register data)
-  (s/assert fn? on-error)
   (ptk/reify ::register
     ptk/WatchEvent
     (watch [_ state stream]
-      (letfn [(handle-error [{payload :payload}]
-                (on-error payload)
-                (rx/empty))]
+      (let [{:keys [on-error on-success]
+             :or {on-error identity
+                  on-success identity}} (meta data)]
         (->> (rp/mutation :register-profile data)
-             (rx/map (fn [_] (login data)))
-             (rx/catch rp/client-error? handle-error))))))
+             (rx/tap on-success)
+             (rx/map #(login data))
+             (rx/catch (fn [err]
+                         (on-error err)
+                         (rx/empty))))))))
+
+
+;; --- Request Account Deletion
+
+(def request-account-deletion
+  (letfn [(on-error [{:keys [code] :as error}]
+            (if (= :uxbox.services.mutations.profile/owner-teams-with-people code)
+              (let [msg (tr "settings.notifications.profile-deletion-not-allowed")]
+                (rx/of (dm/error msg)))
+              (rx/empty)))]
+    (ptk/reify ::request-account-deletion
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (rx/concat
+         (->> (rp/mutation :delete-profile {})
+              (rx/map #(rt/nav :auth-goodbye))
+              (rx/catch on-error)))))))
 
 ;; --- Recovery Request
 
@@ -112,38 +149,43 @@
   (s/keys :req-un [::email]))
 
 (defn request-profile-recovery
-  [data on-success]
+  [data]
   (us/verify ::recovery-request data)
-  (us/verify fn? on-success)
   (ptk/reify ::request-profile-recovery
     ptk/WatchEvent
     (watch [_ state stream]
-      (letfn [(on-error [{payload :payload}]
-                (rx/empty))]
+      (let [{:keys [on-error on-success]
+             :or {on-error identity
+                  on-success identity}} (meta data)]
+
         (->> (rp/mutation :request-profile-recovery data)
              (rx/tap on-success)
-             (rx/catch rp/client-error? on-error))))))
+             (rx/catch (fn [err]
+                         (on-error err)
+                         (rx/empty))))))))
+
 
 ;; --- Recovery (Password)
 
 (s/def ::token string?)
-(s/def ::on-error fn?)
-(s/def ::on-success fn?)
-
 (s/def ::recover-profile
-  (s/keys :req-un [::password ::token ::on-error ::on-success]))
+  (s/keys :req-un [::password ::token]))
 
 (defn recover-profile
-  [{:keys [token password on-error on-success] :as data}]
+  [{:keys [token password] :as data}]
   (us/verify ::recover-profile data)
   (ptk/reify ::recover-profile
     ptk/WatchEvent
     (watch [_ state stream]
-      (->> (rp/mutation :recover-profile {:token token :password password})
-           (rx/tap on-success)
-           (rx/catch (fn [err]
-                       (on-error)
-                       (rx/empty)))))))
+      (let [{:keys [on-error on-success]
+             :or {on-error identity
+                  on-success identity}} (meta data)]
+        (->> (rp/mutation :recover-profile data)
+             (rx/tap on-success)
+             (rx/catch (fn [err]
+                         (on-error)
+                         (rx/empty))))))))
+
 
 ;; --- Create Demo Profile
 

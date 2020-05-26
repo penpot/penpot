@@ -55,10 +55,10 @@ svg {
 
 a {
   cursor: pointer;
-  color: $color-primary;
+  color: $color-primary-dark;
 
   &:hover {
-    color: $color-primary-dark;
+    color: $color-primary;
   }
 
 }

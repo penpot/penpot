@@ -13,6 +13,7 @@
    [uxbox.common.spec :as us]
    [uxbox.config :as cfg]
    [uxbox.main.repo :as rp]
+   [uxbox.util.router :as rt]
    [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.storage :refer [storage]]
    [uxbox.util.avatars :as avatars]
@@ -74,7 +75,11 @@
     ptk/WatchEvent
     (watch [_ state s]
       (->> (rp/query! :profile)
-           (rx/map profile-fetched)))))
+           (rx/map profile-fetched)
+           (rx/catch (fn [error]
+                       (if (= (:type error) :not-found)
+                         (rx/of (rt/nav :auth-login))
+                         (rx/empty))))))))
 
 ;; --- Update Profile
 
@@ -91,8 +96,34 @@
                               (rx/empty))]
         (->> (rp/mutation :update-profile data)
              (rx/do on-success)
-             (rx/map profile-fetched)
+             (rx/map (constantly fetch-profile))
              (rx/catch rp/client-error? handle-error))))))
+
+;; --- Request Email Change
+
+(defn request-email-change
+  [{:keys [email] :as data}]
+  (ptk/reify ::request-email-change
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [{:keys [on-error on-success]
+             :or {on-error identity
+                  on-success identity}} (meta data)]
+        (->> (rp/mutation :request-email-change data)
+             (rx/tap on-success)
+             (rx/map (constantly fetch-profile))
+             (rx/catch (fn [err]
+                         (on-error err)
+                         (rx/empty))))))))
+
+;; --- Cancel Email Change
+
+(def cancel-email-change
+  (ptk/reify ::cancel-email-change
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/mutation :cancel-email-change {})
+           (rx/map (constantly fetch-profile))))))
 
 ;; --- Update Password (Form)
 
@@ -107,15 +138,16 @@
   (ptk/reify ::update-password
     ptk/WatchEvent
     (watch [_ state s]
-      (let [mdata (meta data)
-            on-success (:on-success mdata identity)
-            on-error (:on-error mdata identity)
+      (let [{:keys [on-error on-success]
+             :or {on-error identity
+                  on-success identity}} (meta data)
             params {:old-password (:password-old data)
                     :password (:password-1 data)}]
         (->> (rp/mutation :update-profile-password params)
-             (rx/catch rp/client-error? #(do (on-error (:payload %))
-                                             (rx/empty)))
-             (rx/do on-success)
+             (rx/tap on-success)
+             (rx/catch (fn [err]
+                         (on-error err)
+                         (rx/empty)))
              (rx/ignore))))))
 
 

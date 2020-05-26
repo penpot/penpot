@@ -5,115 +5,56 @@
 // Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
 // Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-.login {
-  align-items: center;
-  background-color: $color-gray-40;
-  background-image: url("/images/login-bg.jpg");
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
-  display: flex;
+// TODO: rename to auth.scss
+
+.auth {
+  display: grid;
+  grid-template-rows: auto;
+  grid-template-columns: 388px auto;
+}
+
+.auth-sidebar {
+  grid-column: 1 / span 1;
   height: 100vh;
-  justify-content: center;
-  position: relative;
-  width: 100%;
 
-  .login-body {
-    align-items: center;
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  padding-top: 100px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  background-color:#2C233E;
 
-    svg {
-      fill: $color-black;
-      height: 70px;
-      margin-bottom: $x-big;
-      width: 200px;
-      @include animation(.1s,1.5s,fadeInDown);
-    }
-
-    .login-content {
-      display: flex;
-      flex-direction: column;
-      width: 320px;
-      @include animation(1s,1s,fadeIn);
-
-      .input-text {
-        background-color: transparent;
-        border-color: $color-black;
-        color: $color-black;
-        font-size: $fs16;
-        margin-bottom: $big*2;
-
-        @include placeholder {
-          color: $color-gray-30;
-        }
-
-        &:hover {
-
-          @include placeholder {
-            color: $color-black;
-          }
-
-        }
-
-        &:focus {
-          background-color: $color-white;
-          border-color: $color-gray-10;
-        }
-
-        &.success {
-          background-color: $color-success-light;
-          color: $color-success-dark;
-
-          @include placeholder {
-            color: $color-white;
-          }
-
-        }
-
-        &.error {
-          background-color: rgba(234,35,35,.3);
-          color: red;
-
-          @include placeholder {
-            color: $color-white;
-          }
-
-        }
-
-      }
-
-      .input-checkbox {
-        margin: $big 0;
-
-        label {
-          color: $color-gray-20;
-        }
-
-      }
-
-      .login-links {
-        display: flex;
-        font-size: $fs13;
-        justify-content: space-between;
-        margin-top: $medium;
-
-        a {
-          color: $color-black;
-          text-align: center;
-
-          &:hover {
-            color: $color-primary-dark;
-          }
-        }
-      }
-
-      .btn-secondary {
-        margin-top: 5rem;
-      }
-
-    }
-
+  .tagline {
+    text-align: center;
+    width: 280px;
+    font-size: $fs24;
+    margin-top: 25px;
+    color: white;
   }
 
+  .logo {
+    svg {
+      fill: white;
+      width: 280px;
+      height: 80px;
+    }
+  }
+}
+
+.auth-content {
+  grid-column: 2 / span 1;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: $color-white;
+
+  .form-container {
+    width: 368px;
+  }
+
+  .btn-google-auth {
+    margin-bottom: $medium;
+    text-decoration: none;
+  }
 }
