@@ -19,7 +19,6 @@
    [uxbox.main.data.messages :as dm]
    [uxbox.main.store :as st]
    [uxbox.main.ui.components.forms :refer [input submit-button form]]
-   [uxbox.main.ui.messages :refer [messages]]
    [uxbox.main.ui.navigation :as nav]
    [uxbox.util.dom :as dom]
    [uxbox.util.forms :as fm]

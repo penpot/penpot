@@ -220,7 +220,7 @@
           (let [owner-id (:id owner)
                 id (mk-uuid "file" "draft" owner-id index)
                 name (str "file" index)
-                project-id (:default-project owner)]
+                project-id (:default-project-id owner)]
             (log/info "create draft file" id)
             (db/insert! conn :file
                         {:id id

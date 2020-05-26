@@ -156,6 +156,9 @@
 (sm/defmutation ::login
   [{:keys [email password scope] :as params}]
   (letfn [(check-password [profile password]
+            (when (= (:password profile) "!")
+              (ex/raise :type :validation
+                        :code ::account-without-password))
             (let [result (sodi.pwhash/verify password (:password profile))]
               (:valid result)))
 

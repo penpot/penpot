@@ -17,6 +17,7 @@
    [uxbox.main.data.auth :as da]
    [uxbox.main.data.users :as du]
    [uxbox.main.ui.components.forms :refer [input submit-button form]]
+   [uxbox.main.ui.messages :as msgs]
    [uxbox.main.data.messages :as dm]
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
@@ -36,9 +37,7 @@
     (= (:code error) :uxbox.services.mutations.profile/email-already-exists)
     (swap! form (fn [data]
                   (let [error {:message (tr "errors.email-already-exists")}]
-                    (-> data
-                        (assoc-in [:errors :email-1] error)
-                        (assoc-in [:errors :email-2] error)))))
+                    (assoc-in data [:errors :email-1] error))))
 
     :else
     (let [msg (tr "errors.unexpected-error")]
@@ -55,11 +54,9 @@
   [:section.modal-content.generic-form
    [:h2 (t locale "settings.change-email-title")]
 
-   [:span.featured-note
-    [:span.text
-     [:span "We’ll send you an email to your current email "]
-     [:strong (:email profile)]
-     [:span " to verify your identity."]]]
+   [:& msgs/inline-banner
+    {:type :info
+     :content (t locale "settings.change-email-info" (:email profile))}]
 
    [:& form {:on-submit on-submit
              :spec ::email-change-form
@@ -80,12 +77,10 @@
   [:section.modal-content.generic-form.confirmation
    [:h2 (t locale "settings.verification-sent-title")]
 
-   [:span.featured-note
-    [:span.icon i/trash]
-    [:span.text
-     [:span (str/format "We have sent you an email to “")]
-     [:strong (:email profile)]
-     [:span "” Please follow the instructions to verify the email."]]]
+
+   [:& msgs/inline-banner
+    {:type :info
+     :content (t locale "settings.change-email-info2" (:email profile))}]
 
    [:button.btn-primary.btn-large
     {:on-click #(modal/hide!)}

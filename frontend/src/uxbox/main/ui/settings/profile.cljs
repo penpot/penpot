@@ -19,6 +19,7 @@
    [uxbox.main.ui.settings.change-email :refer [change-email-modal]]
    [uxbox.main.ui.settings.delete-account :refer [delete-account-modal]]
    [uxbox.main.ui.modal :as modal]
+   [uxbox.main.ui.messages :as msgs]
    [uxbox.main.data.messages :as dm]
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
@@ -73,20 +74,17 @@
          (t locale "settings.change-email-label")]]
 
        (not= (:pending-email prof) (:email prof))
-       [:span.featured-note
-        [:span.icon i/trash]
-        [:span.text
-         [:span "There is a pending change of your email to "]
-         [:strong (:pending-email prof)]
-         [:span "."] [:br]
-         [:a {:on-click #(st/emit! udu/cancel-email-change)}
-          "Dismiss"]]]
+       [:& msgs/inline-banner
+        {:type :info
+         :content (t locale "settings.change-email-info3" (:pending-email prof))}
+        [:div.btn-secondary.btn-small
+         {:on-click #(st/emit! udu/cancel-email-change)}
+         (t locale "settings.cancel-email-change")]]
 
        :else
-       [:span.featured-note.warning
-        [:span.text
-         [:span "There is a pending email validation."]]])
-
+       [:& msgs/inline-banner
+        {:type :info
+         :content (t locale "settings.email-verification-pending")}])
 
      [:& submit-button
       {:label (t locale "settings.profile-submit-label")}]

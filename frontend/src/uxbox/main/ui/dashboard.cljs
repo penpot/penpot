@@ -13,6 +13,7 @@
    [rumext.alpha :as mf]
    [uxbox.main.ui.icons :as i]
    [uxbox.common.exceptions :as ex]
+   [uxbox.common.uuid :as uuid]
    [uxbox.common.spec :as us]
    [uxbox.main.refs :as refs]
    [uxbox.main.ui.dashboard.sidebar :refer [sidebar]]
@@ -21,7 +22,7 @@
    [uxbox.main.ui.dashboard.recent-files :refer [recent-files-page]]
    [uxbox.main.ui.dashboard.library :refer [library-page]]
    [uxbox.main.ui.dashboard.profile :refer [profile-section]]
-   [uxbox.main.ui.messages :refer [messages]]))
+   [uxbox.util.i18n :as i18n :refer [t]]))
 
 (defn ^boolean uuid-str?
   [s]
@@ -53,6 +54,8 @@
       (uuid-str? library-id)
       (assoc :library-id (uuid library-id)))))
 
+(declare global-notifications)
+
 
 (mf/defc dashboard
   [{:keys [route] :as props}]
@@ -61,7 +64,7 @@
         {:keys [search-term team-id project-id library-id library-section] :as params}
         (parse-params route profile)]
     [:*
-     [:& messages]
+     [:& global-notifications {:profile profile}]
      [:section.dashboard-layout
       [:div.main-logo i/logo-icon]
       [:& profile-section {:profile profile}]
@@ -91,3 +94,17 @@
          :dashboard-project
          [:& project-page {:team-id team-id
                            :project-id project-id}])]]]))
+
+
+(mf/defc global-notifications
+  [{:keys [profile] :as props}]
+  (let [locale  (mf/deref i18n/locale)]
+    (when (and profile
+               (not= uuid/zero (:id profile))
+               (= (:pending-email profile)
+                  (:email profile)))
+    [:section.banner.error.quick
+     [:div.content
+      [:div.icon i/msg-warning]
+      [:span (t locale "settings.notifications.email-not-verified" (:email profile))]]])))
+

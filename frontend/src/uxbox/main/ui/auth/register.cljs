@@ -18,9 +18,9 @@
    [uxbox.main.data.auth :as uda]
    [uxbox.main.store :as st]
    [uxbox.main.data.auth :as da]
-   [uxbox.main.ui.messages :refer [messages]]
    [uxbox.main.ui.components.forms :refer [input submit-button form]]
    [uxbox.main.ui.navigation :as nav]
+   [uxbox.main.ui.messages :as msgs]
    [uxbox.util.dom :as dom]
    [uxbox.util.forms :as fm]
    [uxbox.util.i18n :refer [tr t]]
@@ -28,14 +28,10 @@
 
 
 (mf/defc demo-warning
-
   [_]
-
-  [:div.msg-inline.warning.quick
-   [:div.icon i/msg-warning]
-    [:span.msg-text
-     "WARNING: This is a service, DO NOT USE for real work, the projects will be periodicaly wiped."]
-   [:div.close-button i/close]])
+  [:& msgs/inline-banner
+   {:type :warning
+    :content (tr "auth.demo-warning")}])
 
 (s/def ::fullname ::fm/not-empty-string)
 (s/def ::password ::fm/not-empty-string)

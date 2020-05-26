@@ -9,13 +9,13 @@
 
 (ns uxbox.main.data.messages
   (:require
+   [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]
-   [beicon.core :as rx]
    [uxbox.common.data :as d]
+   [uxbox.common.exceptions :as ex]
    [uxbox.common.pages :as cp]
    [uxbox.common.spec :as us]
-   [uxbox.common.exceptions :as ex]
    [uxbox.config :as cfg]))
 
 (declare hide)
@@ -33,10 +33,11 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stoper (rx/filter (ptk/type? ::show) stream)]
-        (->> (rx/of hide)
-             (rx/delay (:timeout data))
-             (rx/take-until stoper))))))
+      (when (:timeout data)
+        (let [stoper (rx/filter (ptk/type? ::show) stream)]
+          (->> (rx/of hide)
+               (rx/delay (:timeout data))
+               (rx/take-until stoper)))))))
 
 (def hide
   (ptk/reify ::hide
@@ -51,19 +52,29 @@
 
 
 (defn error
-  [message & {:keys [timeout] :or {timeout 3000}}]
-  (show {:content message
-         :type :error
-         :timeout timeout}))
+  ([content] (error content {}))
+  ([content {:keys [timeout] :or {timeout 3000}}]
+   (show {:content content
+          :type :error
+          :timeout timeout})))
 
 (defn info
-  [message & {:keys [timeout] :or {timeout 3000}}]
-  (show {:content message
-         :type :info
-         :timeout timeout}))
+  ([content] (info content {}))
+  ([content {:keys [timeout] :or {timeout 3000}}]
+   (show {:content content
+          :type :info
+          :timeout timeout})))
 
 (defn success
-  [message & {:keys [timeout] :or {timeout 3000}}]
-  (show {:content message
-         :type :info
-         :timeout timeout}))
+  ([content] (success content {}))
+  ([content {:keys [timeout] :or {timeout 3000}}]
+   (show {:content content
+          :type :success
+          :timeout timeout})))
+
+(defn warn
+  ([content] (warn content {}))
+  ([content {:keys [timeout] :or {timeout 3000}}]
+   (show {:content content
+          :type :warning
+          :timeout timeout})))

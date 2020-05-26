@@ -1,47 +1,47 @@
 {
   "auth.already-have-account" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:111" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:110" ],
     "translations" : {
       "en" : "Already have an account?",
       "fr" : "Vous avez déjà un compte ?"
     }
   },
   "auth.confirm-password-label" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/recovery.cljs:78" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/recovery.cljs:77" ],
     "translations" : {
       "en" : "Confirm password",
       "fr" : "Confirmez mot de passe"
     }
   },
   "auth.create-demo-profile" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:90", "src/uxbox/main/ui/auth/register.cljs:120" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:126", "src/uxbox/main/ui/auth/register.cljs:119" ],
     "translations" : {
       "en" : "Create demo account",
       "fr" : null
     }
   },
   "auth.create-demo-profile-label" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:87", "src/uxbox/main/ui/auth/register.cljs:117" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:123", "src/uxbox/main/ui/auth/register.cljs:116" ],
     "translations" : {
       "en" : "Just wanna try it?"
     }
   },
   "auth.email-label" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:55", "src/uxbox/main/ui/auth/register.cljs:86", "src/uxbox/main/ui/auth/recovery_request.cljs:47" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/recovery_request.cljs:46", "src/uxbox/main/ui/auth/login.cljs:83", "src/uxbox/main/ui/auth/register.cljs:85" ],
     "translations" : {
       "en" : "Email",
       "fr" : "adresse email"
     }
   },
   "auth.forgot-password" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:78" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:114" ],
     "translations" : {
       "en" : "Forgot your password?",
       "fr" : "Mot de passe oublié ?"
     }
   },
   "auth.fullname-label" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:80" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:79" ],
     "translations" : {
       "en" : "Full Name",
       "fr" : "Nom complet"
@@ -61,66 +61,66 @@
     }
   },
   "auth.login-here" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:114" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:113" ],
     "translations" : {
       "en" : "Login here"
     }
   },
   "auth.login-submit-label" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:63" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:91" ],
     "translations" : {
       "en" : "Sign in",
       "fr" : "Se connecter"
     }
   },
   "auth.login-subtitle" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:70" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:99" ],
     "translations" : {
       "en" : "Enter your details below"
     }
   },
   "auth.login-title" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:69" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:98" ],
     "translations" : {
       "en" : "Great to see you again!"
     }
   },
   "auth.new-password-label" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/recovery.cljs:74" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/recovery.cljs:73" ],
     "translations" : {
       "en" : "Type a new password",
       "fr" : null
     }
   },
   "auth.notifications.invalid-token-error" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/recovery.cljs:50" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/recovery.cljs:49" ],
     "translations" : {
       "en" : "The recovery token is invalid.",
       "fr" : "Le jeton de récupération n'est pas valide."
     }
   },
   "auth.notifications.password-changed-succesfully" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/recovery.cljs:54" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/recovery.cljs:53" ],
     "translations" : {
       "en" : "Password successfully changed"
     }
   },
   "auth.notifications.recovery-token-sent" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/recovery_request.cljs:34" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/recovery_request.cljs:33" ],
     "translations" : {
       "en" : "Password recovery link sent to your inbox.",
       "fr" : "Lien de récupération de mot de passe envoyé."
     }
   },
   "auth.password-label" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:61", "src/uxbox/main/ui/auth/register.cljs:90" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:89", "src/uxbox/main/ui/auth/register.cljs:89" ],
     "translations" : {
       "en" : "Password",
       "fr" : "Mot de passe"
     }
   },
   "auth.password-length-hint" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:89" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:88" ],
     "translations" : {
       "en" : "At least 8 characters"
     }
@@ -144,43 +144,43 @@
     }
   },
   "auth.recovery-submit-label" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/recovery.cljs:81" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/recovery.cljs:80" ],
     "translations" : {
       "en" : "Change your password"
     }
   },
   "auth.register" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:84" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:120" ],
     "translations" : {
       "en" : "Sign up here"
     }
   },
   "auth.register-label" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:81" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:117" ],
     "translations" : {
       "en" : "No account yet?"
     }
   },
   "auth.register-submit-label" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:94" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:93" ],
     "translations" : {
       "en" : "Create an account"
     }
   },
   "auth.register-subtitle" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:103" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:102" ],
     "translations" : {
       "en" : "It's free, it's Open Source"
     }
   },
   "auth.register-title" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:102" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:101" ],
     "translations" : {
       "en" : "Create an account"
     }
   },
   "auth.sidebar-tagline" : {
-    "used-in" : [ "src/uxbox/main/ui/auth.cljs:44" ],
+    "used-in" : [ "src/uxbox/main/ui/auth.cljs:42" ],
     "translations" : {
       "en" : "The open-source solution for design and prototyping."
     }
@@ -520,27 +520,27 @@
     "unused" : true
   },
   "errors.auth.unauthorized" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:37" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:38", "src/uxbox/main/ui/auth/login.cljs:72" ],
     "translations" : {
       "en" : "Username or password seems to be wrong.",
       "fr" : "Le nom d'utilisateur ou le mot de passe semble être faux."
     }
   },
   "errors.email-already-exists" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:38", "src/uxbox/main/ui/auth.cljs:84" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:39", "src/uxbox/main/ui/auth.cljs:87" ],
     "translations" : {
       "en" : "Email already used"
     }
   },
   "errors.generic" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:37", "src/uxbox/main/ui/auth.cljs:88", "src/uxbox/main/ui.cljs:179" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:38", "src/uxbox/main/ui/auth.cljs:91", "src/uxbox/main/ui.cljs:184" ],
     "translations" : {
       "en" : "Something wrong has happened.",
       "fr" : "Quelque chose c'est mal passé."
     }
   },
   "errors.network" : {
-    "used-in" : [ "src/uxbox/main/ui.cljs:173" ],
+    "used-in" : [ "src/uxbox/main/ui.cljs:178" ],
     "translations" : {
       "en" : "Unable to connect to backend server.",
       "fr" : "Impossible de se connecter au serveur principal."
@@ -560,14 +560,14 @@
     }
   },
   "errors.registration-disabled" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:52" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:51" ],
     "translations" : {
       "en" : "The registration is currently disabled.",
       "fr" : "L'enregistrement est actuellement désactivé."
     }
   },
   "errors.unexpected-error" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:44", "src/uxbox/main/ui/auth/register.cljs:58" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:43", "src/uxbox/main/ui/auth/register.cljs:57" ],
     "translations" : {
       "en" : "An unexpected error occurred.",
       "fr" : "Une erreur inattendue c'est produite"
@@ -635,7 +635,7 @@
     }
   },
   "profile.recovery.go-to-login" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/recovery.cljs:97" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/recovery.cljs:96" ],
     "translations" : {
       "en" : null,
       "fr" : null
@@ -647,32 +647,56 @@
       "en" : "Cancel and keep my account"
     }
   },
+  "settings.cancel-email-change" : {
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:82" ],
+    "translations" : {
+      "en" : "Cancel"
+    }
+  },
+  "settings.change-email-info" : {
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:59" ],
+    "translations" : {
+      "en" : "We'll send you an email to your current email “%s” to verify your identity."
+    }
+  },
+  "settings.change-email-info2" : {
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:83" ],
+    "translations" : {
+      "en" : "We have sent you an email to “%s”. Please follow the instructions to verify the email."
+    }
+  },
+  "settings.change-email-info3" : {
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:79" ],
+    "translations" : {
+      "en" : "There is a pending change of your email to “%s”."
+    }
+  },
   "settings.change-email-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:73" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:74" ],
     "translations" : {
       "en" : "Change email"
     }
   },
   "settings.change-email-submit-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:76" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:73" ],
     "translations" : {
       "en" : "Change email"
     }
   },
   "settings.change-email-title" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:56" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:55" ],
     "translations" : {
       "en" : "Change your email"
     }
   },
   "settings.close-modal-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:92" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:87" ],
     "translations" : {
       "en" : "Close"
     }
   },
   "settings.confirm-email-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:73" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:70" ],
     "translations" : {
       "en" : "Verify new email"
     }
@@ -697,13 +721,19 @@
     }
   },
   "settings.email-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:67" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:68" ],
     "translations" : {
       "en" : "Email"
     }
   },
+  "settings.email-verification-pending" : {
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:87" ],
+    "translations" : {
+      "en" : "There is a pending email validation."
+    }
+  },
   "settings.fullname-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:60" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:61" ],
     "translations" : {
       "en" : "Your name",
       "fr" : "Votre nom complet"
@@ -722,7 +752,7 @@
     }
   },
   "settings.new-email-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:69" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:66" ],
     "translations" : {
       "en" : "New email"
     }
@@ -734,52 +764,23 @@
       "fr" : "Nouveau mot de passe"
     }
   },
-  "settings.notifications.description" : {
-    "translations" : {
-      "en" : null,
-      "fr" : null
-    },
-    "unused" : true
-  },
   "settings.notifications.email-changed-successfully" : {
-    "used-in" : [ "src/uxbox/main/ui/auth.cljs:64" ],
+    "used-in" : [ "src/uxbox/main/ui/auth.cljs:62" ],
     "translations" : {
       "en" : "Your email address has been updated successfully"
     }
   },
+  "settings.notifications.email-not-verified" : {
+    "used-in" : [ "src/uxbox/main/ui/dashboard.cljs:109" ],
+    "translations" : {
+      "en" : "Your email address has not been verified yet. Please check your inbox at “%s” for a confirmation email."
+    }
+  },
   "settings.notifications.email-verified-successfully" : {
-    "used-in" : [ "src/uxbox/main/ui/auth.cljs:57" ],
+    "used-in" : [ "src/uxbox/main/ui/auth.cljs:55" ],
     "translations" : {
       "en" : "Your email address has been verified successfully"
     }
-  },
-  "settings.notifications.every-day" : {
-    "translations" : {
-      "en" : null,
-      "fr" : null
-    },
-    "unused" : true
-  },
-  "settings.notifications.every-hour" : {
-    "translations" : {
-      "en" : null,
-      "fr" : null
-    },
-    "unused" : true
-  },
-  "settings.notifications.none" : {
-    "translations" : {
-      "en" : null,
-      "fr" : null
-    },
-    "unused" : true
-  },
-  "settings.notifications.notifications-saved" : {
-    "translations" : {
-      "en" : null,
-      "fr" : null
-    },
-    "unused" : true
   },
   "settings.notifications.password-saved" : {
     "used-in" : [ "src/uxbox/main/ui/settings/password.cljs:36" ],
@@ -789,14 +790,13 @@
     }
   },
   "settings.notifications.profile-deletion-not-allowed" : {
+    "used-in" : [ "src/uxbox/main/data/auth.cljs:136" ],
     "translations" : {
-      "en" : null,
-      "fr" : null
-    },
-    "used-in" : [ "src/uxbox/main/data/auth.cljs:121" ]
+      "en" : "You can't delete you profile. Reasign your teams before proceed."
+    }
   },
   "settings.notifications.profile-saved" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/options.cljs:37", "src/uxbox/main/ui/settings/profile.cljs:42" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/options.cljs:37", "src/uxbox/main/ui/settings/profile.cljs:43" ],
     "translations" : {
       "en" : "Profile saved successfully!",
       "fr" : "Profil enregistré avec succès !"
@@ -810,13 +810,13 @@
     }
   },
   "settings.options" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/header.cljs:52" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/header.cljs:55" ],
     "translations" : {
       "en" : "OPTIONS"
     }
   },
   "settings.password" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/header.cljs:47" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/header.cljs:50" ],
     "translations" : {
       "en" : "PASSWORD",
       "fr" : "MOT DE PASSE"
@@ -830,27 +830,27 @@
     }
   },
   "settings.profile" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/header.cljs:42" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/header.cljs:45" ],
     "translations" : {
       "en" : "PROFILE",
       "fr" : "PROFIL"
     }
   },
   "settings.profile-submit-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/options.cljs:65", "src/uxbox/main/ui/settings/password.cljs:94", "src/uxbox/main/ui/settings/profile.cljs:92" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/options.cljs:65", "src/uxbox/main/ui/settings/password.cljs:94", "src/uxbox/main/ui/settings/profile.cljs:90" ],
     "translations" : {
       "en" : "Update settings",
       "fr" : "Mettre à jour les paramètres"
     }
   },
   "settings.remove-account-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:97" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:95" ],
     "translations" : {
       "en" : "Want to remove your account?"
     }
   },
   "settings.teams" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/header.cljs:57" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/header.cljs:60" ],
     "translations" : {
       "en" : "TEAMS"
     }
@@ -868,7 +868,7 @@
     }
   },
   "settings.update-photo-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:119" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:117" ],
     "translations" : {
       "en" : "UPDATE"
     }
@@ -881,7 +881,7 @@
     "unused" : true
   },
   "settings.verification-sent-title" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:81" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:78" ],
     "translations" : {
       "en" : "Verification email sent"
     }
@@ -893,13 +893,13 @@
     }
   },
   "viewer.empty-state" : {
-    "used-in" : [ "src/uxbox/main/ui/viewer.cljs:44" ],
+    "used-in" : [ "src/uxbox/main/ui/viewer.cljs:43" ],
     "translations" : {
       "en" : "No frames found on the page."
     }
   },
   "viewer.frame-not-found" : {
-    "used-in" : [ "src/uxbox/main/ui/viewer.cljs:48" ],
+    "used-in" : [ "src/uxbox/main/ui/viewer.cljs:47" ],
     "translations" : {
       "en" : "Frame not found."
     }
@@ -1467,7 +1467,7 @@
     "unused" : true
   },
   "workspace.options.position" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:127", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:138" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:127", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:134" ],
     "translations" : {
       "en" : "Position",
       "fr" : "Position"
@@ -1480,14 +1480,14 @@
     }
   },
   "workspace.options.radius" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:179" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:175" ],
     "translations" : {
       "en" : "Radius",
       "fr" : "TODO"
     }
   },
   "workspace.options.rotation" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:154" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:150" ],
     "translations" : {
       "en" : "Rotation",
       "fr" : "TODO"
@@ -1513,7 +1513,7 @@
     }
   },
   "workspace.options.size" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:102", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:110" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:102", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:106" ],
     "translations" : {
       "en" : "Size",
       "fr" : "Taille"
@@ -1717,7 +1717,7 @@
     }
   },
   "workspace.viewport.click-to-close-path" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/drawarea.cljs:363" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/drawarea.cljs:373" ],
     "translations" : {
       "en" : "Click to close the path"
     }

@@ -1002,7 +1002,7 @@ input[type=range]:focus::-ms-fill-upper {
 
 // Banner top
 
-.msg-banner {
+.banner {
   top: 0;
   left: 0px;
   width: 100%;
@@ -1013,7 +1013,7 @@ input[type=range]:focus::-ms-fill-upper {
   justify-content: center;
   align-items: center;
 
-  .close-button {
+  .btn-close {
     position: absolute;
     right: 0px;
     top: 0px;
@@ -1038,7 +1038,7 @@ input[type=range]:focus::-ms-fill-upper {
     }
   }
 
-  .msg-content {
+  .content {
     align-items: center;
     color: $color-white;
     display: flex;
@@ -1075,23 +1075,23 @@ input[type=range]:focus::-ms-fill-upper {
   &.warning {
     background-color: $color-warning;
   }
-  
+
   &.info {
     background-color: $color-info;
   }
 
   &.quick {
-    .close-button {
+    .btn-close {
       display: none;
     }
   }
 
-  &.hide-message {
+  &.hide {
     @include animation(0, .6s, fadeOutUp);
   }
 }
 
-.msg-inline {
+.inline-banner {
   display: flex;
   margin-bottom: $big;
   min-height: 40px;
@@ -1112,13 +1112,32 @@ input[type=range]:focus::-ms-fill-upper {
     }
   }
 
-  .msg-text {
+  .content {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .main {
+    display: flex;
+  }
+
+  .extra {
+    display: flex;
+    justify-content: flex-end;
+    padding: $small;
+
+    > div:not(:last-child) {
+      margin-right: $small;
+    }
+  }
+
+  .text {
     display: flex;
     font-size: $fs14;
     color: $color-black;
     padding: $small;
   }
-  
+
   &.error {
     background-color: lighten($color-danger,30%);
     .icon {
@@ -1139,7 +1158,7 @@ input[type=range]:focus::-ms-fill-upper {
       background-color: $color-warning;
     }
   }
-  
+
   &.info {
     background-color: lighten($color-info,30%);
     .icon {
@@ -1147,7 +1166,7 @@ input[type=range]:focus::-ms-fill-upper {
     }
   }
 
-  .close-button {
+  .btn-close {
     width: 40px;
     height: 40px;
     flex-shrink: 0;
@@ -1168,51 +1187,12 @@ input[type=range]:focus::-ms-fill-upper {
       opacity: .8;
     }
   }
-  
+
   &.quick {
-    .close-button {
+    .btn-close {
       display: none;
     }
   }
-}
-
-.message-version {
-  align-items: center;
-  background-color: rgba(27, 170, 214, .6);
-  border-radius: $br-small;
-  color: $color-white;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: $small;
-  position: absolute;
-  right: 250px;
-  top: 40px;
-  @include animation(0, 1s, fadeInDown);
-
-  span {
-    font-size: $fs13;
-    font-weight: bold;
-  }
-
-  .message-action {
-    align-items: center;
-    display: flex;
-    justify-content: space-around;
-    margin-top: $small;
-    width: 100%;
-
-    .btn-transparent {
-      font-size: $fs12;
-      padding: .3rem .5rem;
-    }
-
-  }
-
-  &.hide-message {
-    @include animation(0, .6s, fadeOutUp);
-  }
-
 }
 
 .close-bezier {
