@@ -13,6 +13,7 @@
    [beicon.core :as rx]
    [rumext.alpha :as mf]
    [uxbox.main.ui.icons :as i]
+   [uxbox.main.data.auth :as da]
    [uxbox.main.data.users :as du]
    [uxbox.main.data.messages :as dm]
    [uxbox.main.store :as st]
@@ -66,6 +67,10 @@
     (st/emit! (rt/nav :settings-profile)
               du/fetch-profile)))
 
+(defn- handle-authentication
+  [tdata]
+  (st/emit! (da/login-from-token tdata)))
+
 (mf/defc verify-token
   [{:keys [route] :as props}]
   (let [token (get-in route [:query-params :token])]
@@ -73,10 +78,11 @@
      (fn []
        (->> (rp/mutation :verify-profile-token {:token token})
             (rx/subs
-             (fn [response]
-               (case (:type response)
-                 :verify-email (handle-email-verified response)
-                 :change-email (handle-email-changed response)
+             (fn [tdata]
+               (case (:type tdata)
+                 :verify-email   (handle-email-verified tdata)
+                 :change-email   (handle-email-changed tdata)
+                 :authentication (handle-authentication tdata)
                  nil))
              (fn [error]
                (case (:code error)

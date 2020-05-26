@@ -10,13 +10,16 @@
 (ns uxbox.main.ui.auth.login
   (:require
    [cljs.spec.alpha :as s]
+   [beicon.core :as rx]
    [rumext.alpha :as mf]
    [uxbox.common.spec :as us]
    [uxbox.main.ui.icons :as i]
    [uxbox.main.data.auth :as da]
+   [uxbox.main.repo :as rp]
    [uxbox.main.store :as st]
    [uxbox.main.data.messages :as dm]
    [uxbox.main.ui.components.forms :refer [input submit-button form]]
+   [uxbox.util.object :as obj]
    [uxbox.util.dom :as dom]
    [uxbox.util.forms :as fm]
    [uxbox.util.i18n :refer [tr t]]
@@ -37,6 +40,13 @@
   (let [params (with-meta (:clean-data form)
                  {:on-error (partial on-error form)})]
     (st/emit! (da/login params))))
+
+(defn- login-with-google
+  [event]
+  (dom/prevent-default event)
+  (->> (rp/mutation! :login-with-google {})
+       (rx/subs (fn [{:keys [redirect-uri] :as rsp}]
+                  (.replace js/location redirect-uri)))))
 
 (mf/defc login-form
   [{:keys [locale] :as props}]
@@ -60,12 +70,17 @@
 
 (mf/defc login-page
   [{:keys [locale] :as props}]
+
   [:div.generic-form.login-form
    [:div.form-container
     [:h1 (t locale "auth.login-title")]
     [:div.subtitle (t locale "auth.login-subtitle")]
 
     [:& login-form {:locale locale}]
+
+    [:a.btn-secondary.btn-large.btn-google-auth
+     {:on-click login-with-google}
+     "Login with google"]
 
     [:div.links
      [:div.link-entry

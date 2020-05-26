@@ -2,12 +2,14 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.http.handlers
   (:require
    [uxbox.common.exceptions :as ex]
-   [uxbox.common.uuid :as uuid]
    [uxbox.emails :as emails]
    [uxbox.http.session :as session]
    [uxbox.services.init]
@@ -54,36 +56,16 @@
       (let [body (sm/handle (with-meta data {:req req}))]
         (if (= type :delete-profile)
           (do
-            (some-> (get-in req [:cookies "auth-token" :value])
-                    (uuid/uuid)
+            (some-> (session/extract-auth-token req)
                     (session/delete))
             {:status 204
-             :cookies {"auth-token" {:value "" :max-age -1}}
+             :cookies (session/cookies "" {:max-age -1})
              :body ""})
           {:status 200
            :body body}))
       {:status 403
        :body {:type :authentication
               :code :unauthorized}})))
-
-(defn login-handler
-  [req]
-  (let [data (:body-params req)
-        user-agent (get-in req [:headers "user-agent"])]
-    (let [profile (sm/handle (assoc data ::sm/type :login))
-          token   (session/create (:id profile) user-agent)]
-      {:status 200
-       :cookies {"auth-token" {:value token :path "/"}}
-       :body profile})))
-
-(defn logout-handler
-  [req]
-  (some-> (get-in req [:cookies "auth-token" :value])
-          (uuid/uuid)
-          (session/delete))
-  {:status 200
-   :cookies {"auth-token" {:value "" :max-age -1}}
-   :body ""})
 
 (defn echo-handler
   [req]

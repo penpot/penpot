@@ -29,13 +29,15 @@
         email    (str "demo-" sem ".demo@nodomain.com")
         fullname (str "Demo User " sem)
         password (-> (sodi.prng/random-bytes 12)
-                     (sodi.util/bytes->b64s))]
+                     (sodi.util/bytes->b64s))
+        params   {:id id
+                  :email email
+                  :fullname fullname
+                  :demo? true
+                  :password password}]
     (db/with-atomic [conn db/pool]
-      (#'profile/register-profile conn {:id id
-                                        :email email
-                                        :fullname fullname
-                                        :demo? true
-                                        :password password})
+      (->> (#'profile/create-profile conn params)
+           (#'profile/create-profile-relations conn))
 
       ;; Schedule deletion of the demo profile
       (tasks/submit! conn {:name "delete-profile"

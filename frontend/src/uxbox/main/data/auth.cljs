@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.main.data.auth
   (:require
@@ -34,7 +34,7 @@
     (watch [this state stream]
       (let [team-id (:default-team-id data)]
         (rx/of (du/profile-fetched data)
-               (rt/navigate :dashboard-team {:team-id team-id}))))))
+               (rt/nav :dashboard-team {:team-id team-id}))))))
 
 ;; --- Login
 
@@ -63,6 +63,20 @@
                          (on-error err)
                          (rx/empty)))
              (rx/map logged-in))))))
+
+(defn login-from-token
+  [{:keys [profile] :as tdata}]
+  (ptk/reify ::login-from-token
+    ptk/UpdateEvent
+    (update [_ state]
+      (merge state (dissoc initial-state :route :router)))
+
+    ptk/WatchEvent
+    (watch [this state s]
+      (let [team-id (:default-team-id profile)]
+        (rx/of (du/profile-fetched profile)
+               (rt/nav' :dashboard-team {:team-id team-id}))))))
+
 ;; --- Logout
 
 (def clear-user-data

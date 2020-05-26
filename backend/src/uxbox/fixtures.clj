@@ -17,7 +17,7 @@
    [uxbox.db :as db]
    [uxbox.media :as media]
    [uxbox.migrations]
-   [uxbox.services.mutations.profile :as mt.profile]
+   [uxbox.services.mutations.profile :as profile]
    [uxbox.util.blob :as blob]))
 
 (defn- mk-uuid
@@ -66,6 +66,11 @@
   [f items]
   (reduce #(conj %1 (f %2)) [] items))
 
+(defn- register-profile
+  [conn params]
+  (->> (#'profile/create-profile conn params)
+       (#'profile/create-profile-relations conn)))
+
 (defn impl-run
   [opts]
   (let [rng (java.util.Random. 1)
@@ -74,12 +79,12 @@
         (fn [conn index]
           (let [id (mk-uuid "profile" index)]
             (log/info "create profile" id)
-            (mt.profile/register-profile conn
-                                         {:id id
-                                          :fullname (str "Profile " index)
-                                          :password "123123"
-                                          :demo? true
-                                          :email (str "profile" index ".test@uxbox.io")})))
+            (register-profile conn
+                              {:id id
+                               :fullname (str "Profile " index)
+                               :password "123123"
+                               :demo? true
+                               :email (str "profile" index ".test@uxbox.io")})))
 
         create-profiles
         (fn [conn]

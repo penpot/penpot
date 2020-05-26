@@ -62,6 +62,12 @@
   ([id] (mutation id {}))
   ([id params] (mutation id params)))
 
+(defmethod mutation :login-with-google
+  [id params]
+  (let [url (str url "/api/oauth/google")]
+    (->> (http/send! {:method :post :url url})
+         (rx/mapcat handle-response))))
+
 (defmethod mutation :upload-image
   [id params]
   (let [form (js/FormData.)]

@@ -75,8 +75,10 @@
   (jdbc/get-connection pool))
 
 (defn exec!
-  [ds sv]
-  (jdbc/execute! ds sv {:builder-fn as-kebab-maps}))
+  ([ds sv]
+   (exec! ds sv {}))
+  ([ds sv opts]
+   (jdbc/execute! ds sv (assoc opts :builder-fn as-kebab-maps))))
 
 (defn exec-one!
   ([ds sv] (exec-one! ds sv {}))
@@ -119,6 +121,15 @@
    (get-by-params ds table {:id id} nil))
   ([ds table id opts]
    (get-by-params ds table {:id id} opts)))
+
+(defn query
+  ([ds table params]
+   (query ds table params nil))
+  ([ds table params opts]
+   (let [opts (cond-> (merge default-options opts)
+                (:for-update opts)
+                (assoc :suffix "for update"))]
+     (exec! ds (jdbc-bld/for-query table params opts) opts))))
 
 (defn pgobject?
   [v]

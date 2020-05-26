@@ -2,7 +2,10 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.migrations
   (:require
@@ -44,12 +47,16 @@
      :fn (mg/resource "migrations/0007-drop-version-field-from-page-table.sql")}
 
     {:desc "Add generic token related tables."
-     :name "0008-add-generic-token-table.sql"
+     :name "0008-add-generic-token-table"
      :fn (mg/resource "migrations/0008-add-generic-token-table.sql")}
 
     {:desc "Drop the profile_email table"
-     :name "0009-drop-profile-email-table.sql"
-     :fn (mg/resource "migrations/0009-drop-profile-email-table.sql")}]})
+     :name "0009-drop-profile-email-table"
+     :fn (mg/resource "migrations/0009-drop-profile-email-table.sql")}
+
+    {:desc "Add new HTTP session table"
+     :name "0010-add-http-session-table"
+     :fn (mg/resource "migrations/0010-add-http-session-table.sql")}]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Entry point

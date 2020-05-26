@@ -26,7 +26,8 @@
    :database-username "uxbox"
    :database-password "uxbox"
 
-   :public-url "http://localhost:3449"
+   :public-uri "http://localhost:3449"
+   :backend-uri "http://localhost:6060"
 
    :redis-uri "redis://redis/0"
    :media-directory "resources/public/media"
@@ -69,13 +70,19 @@
 (s/def ::registration-enabled ::us/boolean)
 (s/def ::registration-domain-whitelist ::us/string)
 (s/def ::debug-humanize-transit ::us/boolean)
-(s/def ::public-url ::us/string)
+(s/def ::public-uri ::us/string)
+(s/def ::backend-uri ::us/string)
+
+(s/def ::google-client-id ::us/string)
+(s/def ::google-client-secret ::us/string)
 
 (s/def ::config
   (s/keys :opt-un [::http-server-cors
                    ::http-server-debug
                    ::http-server-port
-                   ::public-url
+                   ::google-client-id
+                   ::google-client-secret
+                   ::public-uri
                    ::database-username
                    ::database-password
                    ::database-uri
