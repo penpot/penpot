@@ -994,11 +994,186 @@ input[type=range]:focus::-ms-fill-upper {
         white-space: normal;
         width: 100%;
       }
+    }
+  }
+}
 
+// Messages
+
+// Banner top
+
+.msg-banner {
+  top: 0;
+  left: 0px;
+  width: 100%;
+  height: 40px;
+  z-index: 13;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .close-button {
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    width: 40px;
+    height: 40px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    opacity: .35;
+
+    svg {
+      fill: $color-black;
+      height: 18px;
+      width: 18px;
+      transform: rotate(45deg);
     }
 
+    &:hover {
+      opacity: .8;
+    }
   }
 
+  .msg-content {
+    align-items: center;
+    color: $color-white;
+    display: flex;
+    justify-content: center;
+    max-width: 60%;
+
+    .icon {
+      display: flex;
+      margin-right: $medium;
+      svg {
+        fill: $color-white;
+        height: 20px;
+        width: 20px;
+      }
+    }
+
+    span {
+      font-size: $fs15;
+    }
+  }
+
+  &.fixed {
+    position: fixed;
+  }
+
+  &.error {
+    background-color: $color-danger;
+  }
+
+  &.success {
+    background-color: $color-success;
+  }
+
+  &.warning {
+    background-color: $color-warning;
+  }
+  
+  &.info {
+    background-color: $color-info;
+  }
+
+  &.quick {
+    .close-button {
+      display: none;
+    }
+  }
+
+  &.hide-message {
+    @include animation(0, .6s, fadeOutUp);
+  }
+}
+
+.msg-inline {
+  display: flex;
+  margin-bottom: $big;
+  min-height: 40px;
+  width: 100%;
+
+  .icon {
+    display: flex;
+    flex-shrink: 0;
+    justify-content: center;
+    margin-right: $small;
+    padding: $small;
+    width: 40px;
+
+    svg {
+      fill: $color-white;
+      height: 20px;
+      width: 20px;
+    }
+  }
+
+  .msg-text {
+    display: flex;
+    font-size: $fs14;
+    color: $color-black;
+    padding: $small;
+  }
+  
+  &.error {
+    background-color: lighten($color-danger,30%);
+    .icon {
+      background-color: $color-danger;
+    }
+  }
+
+  &.success {
+    background-color: lighten($color-success,30%);
+    .icon {
+      background-color: $color-success;
+    }
+  }
+
+  &.warning {
+    background-color: lighten($color-warning,30%);
+    .icon {
+      background-color: $color-warning;
+    }
+  }
+  
+  &.info {
+    background-color: lighten($color-info,30%);
+    .icon {
+      background-color: $color-info;
+    }
+  }
+
+  .close-button {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    opacity: .35;
+
+    svg {
+      fill: $color-black;
+      height: 18px;
+      width: 18px;
+      transform: rotate(45deg);
+    }
+
+    &:hover {
+      opacity: .8;
+    }
+  }
+  
+  &.quick {
+    .close-button {
+      display: none;
+    }
+  }
 }
 
 .message-version {

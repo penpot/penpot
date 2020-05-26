@@ -28,13 +28,14 @@
 
 
 (mf/defc demo-warning
+
   [_]
-  [:div.featured-note.warning
-   [:span
-    [:strong "WARNING: "]
-    "This is a " [:strong "demo"] " service, "
-    [:strong "DO NOT USE"] " for real work, "
-    " the projects will be periodicaly wiped."]])
+
+  [:div.msg-inline.warning.quick
+   [:div.icon i/msg-warning]
+    [:span.msg-text
+     "WARNING: This is a service, DO NOT USE for real work, the projects will be periodicaly wiped."]
+   [:div.close-button i/close]])
 
 (s/def ::fullname ::fm/not-empty-string)
 (s/def ::password ::fm/not-empty-string)
