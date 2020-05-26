@@ -12,6 +12,7 @@
    [cljs.spec.alpha :as s]
    [beicon.core :as rx]
    [rumext.alpha :as mf]
+   [uxbox.config :as cfg]
    [uxbox.common.spec :as us]
    [uxbox.main.ui.icons :as i]
    [uxbox.main.data.auth :as da]
@@ -78,9 +79,10 @@
 
     [:& login-form {:locale locale}]
 
-    [:a.btn-secondary.btn-large.btn-google-auth
-     {:on-click login-with-google}
-     "Login with google"]
+    (when cfg/google-client-id
+      [:a.btn-secondary.btn-large.btn-google-auth
+       {:on-click login-with-google}
+       "Login with google"])
 
     [:div.links
      [:div.link-entry
