@@ -137,7 +137,9 @@
     [:& not-authorized-page]
 
     :not-found
-    [:& not-found-page]))
+    [:& not-found-page]
+
+    nil))
 
 (mf/defc app
   []

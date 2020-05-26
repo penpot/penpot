@@ -41,7 +41,7 @@
      [:& messages]
      [:div.auth
       [:section.auth-sidebar
-       [:a.logo i/logo]
+       [:a.logo {:href "/#/"} i/logo]
        [:span.tagline (t locale "auth.sidebar-tagline")]]
 
       [:section.auth-content
