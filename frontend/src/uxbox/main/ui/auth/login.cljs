@@ -90,11 +90,6 @@
 
     [:& login-form {:locale locale}]
 
-    (when cfg/google-client-id
-      [:a.btn-secondary.btn-large.btn-google-auth
-       {:on-click login-with-google}
-       "Login with google"])
-
     [:div.links
      [:div.link-entry
       [:a {:on-click #(st/emit! (rt/nav :auth-recovery-request))
@@ -105,8 +100,14 @@
       [:span (t locale "auth.register-label") " "]
       [:a {:on-click #(st/emit! (rt/nav :auth-register))
            :tab-index "6"}
-       (t locale "auth.register")]]
+       (t locale "auth.register")]]]
 
+    (when cfg/google-client-id
+      [:a.btn-ocean.btn-large.btn-google-auth
+       {:on-click login-with-google}
+       "Login with Google"])
+
+    [:div.links.demo
      [:div.link-entry
       [:span (t locale "auth.create-demo-profile-label") " "]
       [:a {:on-click #(st/emit! da/create-demo-profile)

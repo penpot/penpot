@@ -23,6 +23,8 @@
   align-items: center;
   justify-content: flex-start;
   background-color:#2C233E;
+  background-image: url("/images/penpot-login.jpg");
+  background-size: cover;
 
   .tagline {
     text-align: center;
@@ -35,7 +37,7 @@
   .logo {
     svg {
       fill: white;
-      width: 280px;
+      width: 200px;
       height: 80px;
     }
   }
@@ -51,6 +53,10 @@
 
   .form-container {
     width: 368px;
+
+    .btn-ocean {
+      margin-top: $x-big;
+    }
   }
 
   .btn-google-auth {

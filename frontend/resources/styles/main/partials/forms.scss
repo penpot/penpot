@@ -82,7 +82,15 @@ textarea {
   }
 
   .links {
+    display: flex;
     font-size: $fs11;
+    justify-content: space-between;
+    margin-bottom: $medium;
+
+    &.demo {
+      justify-content: center;
+      margin-top: $big;
+    }
   }
 
   .link-entry {

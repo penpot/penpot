@@ -135,6 +135,16 @@
   }
 }
 
+.btn-ocean {
+  @extend %btn;
+  background: $color-ocean;
+  color: $color-white;
+  &:hover {
+    background: darken($color-ocean, 16%);
+    color: $color-white;
+  }
+}
+
 .btn-option {
   display: flex;
   a {
