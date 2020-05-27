@@ -203,7 +203,7 @@
                 :help "A total number of messages handled by the notifications service."}))
 
 (defn websocket
-  [{:keys [file-id] :as params}]
+  [{:keys [file-id profile-id] :as params}]
   (let [in  (a/chan 32)
         out (a/chan 32)]
     {:on-connect (fn [conn]
