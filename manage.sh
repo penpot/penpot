@@ -55,8 +55,9 @@ function build-frontend {
            --mount source=`pwd`,type=bind,target=/home/uxbox/uxbox \
            --mount source=${HOME}/.m2,type=bind,target=/home/uxbox/.m2 \
            -w /home/uxbox/uxbox/frontend \
-           -e UXBOX_PUBLIC_URL=${UXBOX_PUBLIC_URL} \
-           -e UXBOX_BACKEND_URL=${UXBOX_BACKEND_URL} \
+           -e UXBOX_PUBLIC_URI=${UXBOX_PUBLIC_URI} \
+           -e UXBOX_BACKEND_URI=${UXBOX_BACKEND_URI} \
+           -e UXBOX_GOOGLE_CLIENT_ID=${UXBOX_GOOGLE_CLIENT_ID} \
            -e UXBOX_DEMO_WARNING=${UXBOX_DEMO_WARNING} \
            -e UXBOX_DEPLOY_DATE=${UXBOX_DEPLOY_DATE} \
            -e UXBOX_DEPLOY_COMMIT=${UXBOX_DEPLOY_COMMIT} \
