@@ -16,7 +16,7 @@
 (t/deftest icon-libraries-crud
   (let [id   (uuid/next)
         prof (th/create-profile db/pool 2)
-        team-id (:default-team prof)]
+        team-id (:default-team-id prof)]
 
     (t/testing "create library"
       (let [data {::sm/type :create-icon-library
@@ -89,7 +89,7 @@
 
 (t/deftest icons-crud
   (let [prof    (th/create-profile db/pool 1)
-        team-id (:default-team prof)
+        team-id (:default-team-id prof)
         coll    (th/create-icon-library db/pool team-id 1)
         icon-id (uuid/next)]
 

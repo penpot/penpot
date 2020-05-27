@@ -16,8 +16,8 @@
 
 (t/deftest pages-crud
   (let [prof (th/create-profile db/pool 1)
-        team-id (:default-team prof)
-        proj-id (:default-project prof)
+        team-id (:default-team-id prof)
+        proj-id (:default-project-id prof)
         file (th/create-file db/pool (:id prof) proj-id 1)
         page-id (uuid/next)]
 
@@ -93,8 +93,8 @@
 
 (t/deftest update-page-data
   (let [prof    (th/create-profile db/pool 1)
-        team-id (:default-team prof)
-        proj-id (:default-project prof)
+        team-id (:default-team-id prof)
+        proj-id (:default-project-id prof)
         file    (th/create-file db/pool (:id prof) proj-id 1)
         page-id (uuid/next)]
 
@@ -169,8 +169,8 @@
 
 (t/deftest update-page-data-2
   (let [prof    (th/create-profile db/pool 1)
-        team-id (:default-team prof)
-        proj-id (:default-project prof)
+        team-id (:default-team-id prof)
+        proj-id (:default-project-id prof)
         file    (th/create-file db/pool (:id prof) proj-id 1)
         page    (th/create-page db/pool (:id prof) (:id file) 1)]
     (t/testing "lagging changes"

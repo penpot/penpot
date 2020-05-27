@@ -16,7 +16,7 @@
 (t/deftest color-libraries-crud
   (let [id      (uuid/next)
         prof    (th/create-profile db/pool 2)
-        team-id (:default-team prof)]
+        team-id (:default-team-id prof)]
 
     (t/testing "create library"
       (let [data {::sm/type :create-color-library
@@ -72,7 +72,7 @@
 
 (t/deftest colors-crud
   (let [prof     (th/create-profile db/pool 1)
-        team-id  (:default-team prof)
+        team-id  (:default-team-id prof)
         coll     (th/create-color-library db/pool team-id 1)
         color-id (uuid/next)]
 

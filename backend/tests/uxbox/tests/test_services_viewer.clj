@@ -17,8 +17,8 @@
 (t/deftest retrieve-bundle
   (let [prof    (th/create-profile db/pool 1)
         prof2   (th/create-profile db/pool 2)
-        team-id (:default-team prof)
-        proj-id (:default-project prof)
+        team-id (:default-team-id prof)
+        proj-id (:default-project-id prof)
 
         file  (th/create-file db/pool (:id prof) proj-id 1)
         page  (th/create-page db/pool (:id prof) (:id file) 1)

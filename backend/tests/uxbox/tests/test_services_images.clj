@@ -15,7 +15,7 @@
 (t/deftest image-libraries-crud
   (let [id      (uuid/next)
         prof    (th/create-profile db/pool 2)
-        team-id (:default-team prof)]
+        team-id (:default-team-id prof)]
 
     (t/testing "create library"
       (let [data {::sm/type :create-image-library
@@ -96,7 +96,7 @@
 
 (t/deftest images-crud
   (let [prof     (th/create-profile db/pool 1)
-        team-id  (:default-team prof)
+        team-id  (:default-team-id prof)
         lib      (th/create-image-library db/pool team-id 1)
         image-id (uuid/next)]
 

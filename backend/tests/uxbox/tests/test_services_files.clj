@@ -16,8 +16,8 @@
 
 (t/deftest files-crud
   (let [prof (th/create-profile db/pool 1)
-        team-id (:default-team prof)
-        proj-id (:default-project prof)
+        team-id (:default-team-id prof)
+        proj-id (:default-project-id prof)
         file-id (uuid/next)
         page-id (uuid/next)]
 
@@ -122,8 +122,8 @@
 
 (t/deftest file-images-crud
   (let [prof    (th/create-profile db/pool 1)
-        team-id (:default-team prof)
-        proj-id (:default-project prof)
+        team-id (:default-team-id prof)
+        proj-id (:default-project-id prof)
         file    (th/create-file db/pool (:id prof) proj-id 1)]
 
     (t/testing "upload file image"
