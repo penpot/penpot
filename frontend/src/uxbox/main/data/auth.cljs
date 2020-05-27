@@ -57,7 +57,8 @@
             params {:email email
                     :password password
                     :scope "webapp"}]
-        (->> (rp/mutation :login params)
+        (->> (rx/timer 100)
+             (rx/mapcat #(rp/mutation :login params))
              (rx/tap on-success)
              (rx/catch (fn [err]
                          (on-error err)

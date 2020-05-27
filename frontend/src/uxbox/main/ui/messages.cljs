@@ -1,3 +1,12 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
+
 (ns uxbox.main.ui.messages
   (:require
    [rumext.alpha :as mf]
@@ -10,41 +19,56 @@
    [uxbox.util.i18n :as i18n :refer [t]]
    [uxbox.util.timers :as ts]))
 
-;; --- Main Component (entry point)
+(defn- type->icon
+  [type]
+  (case type
+    :warning i/msg-warning
+    :error i/msg-error
+    :success i/msg-success
+    :info i/msg-info))
 
-(declare notification)
-
-(mf/defc messages
-  []
-  (let [message (mf/deref refs/message)]
-    (when message
-      [:& notification {:type (:type message)
-                        :status (:status message)
-                        :content (:content message)}])))
-
-(mf/defc messages-widget
-  []
-  (let [message (mf/deref refs/message)
-        message {:type :error
-                 :content "Hello world!"}]
-
-    [:& notification {:type (:type message)
-                      :status (:status message)
-                      :content (:content message)}]))
-
-;; --- Notification Component
-
-(mf/defc notification
-  [{:keys [type status content] :as props}]
-  (let [on-close #(st/emit! dm/hide)
-        klass (classnames
-               :error (= type :error)
-               :info (= type :info)
-               :hide-message (= status :hide)
+(mf/defc notification-item
+  [{:keys [type status on-close quick? content] :as props}]
+  (let [klass (dom/classnames
+               :fixed   true
                :success (= type :success)
-               :quick false)]
-    [:div.message {:class klass}
-     [:a.close-button {:on-click on-close} i/close]
-     [:div.message-content
-      [:span content]]]))
+               :error   (= type :error)
+               :info    (= type :info)
+               :warning (= type :warning)
+               :hide    (= status :hide)
+               :quick   quick?)]
+    [:section.banner {:class klass}
+     [:div.content
+      [:div.icon (type->icon type)]
+      [:span content]]
+     [:div.btn-close {:on-click on-close} i/close]]))
+
+(mf/defc notifications
+  []
+  (let [message  (mf/deref refs/message)
+        on-close #(st/emit! dm/hide)]
+    (when message
+      [:& notification-item {:type (:type message)
+                             :quick? (boolean (:timeout message))
+                             :status (:status message)
+                             :content (:content message)
+                             :on-close on-close}])))
+
+(mf/defc inline-banner
+  {::mf/wrap [mf/memo]}
+  [{:keys [type on-close content children] :as props}]
+  [:div.inline-banner {:class (dom/classnames
+                               :warning (= type :warning)
+                               :error   (= type :error)
+                               :success (= type :success)
+                               :info    (= type :info)
+                               :quick   (not on-close))}
+   [:div.icon (type->icon type)]
+   [:div.content
+    [:div.main
+     [:span.text content]
+     [:div.btn-close {:on-click on-close} i/close]]
+    (when children
+      [:div.extra
+       children])]])
 

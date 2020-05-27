@@ -1,3 +1,12 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
+
 (ns uxbox.tests.test-services-viewer
   (:require
    [clojure.test :as t]
@@ -17,8 +26,8 @@
 (t/deftest retrieve-bundle
   (let [prof    (th/create-profile db/pool 1)
         prof2   (th/create-profile db/pool 2)
-        team-id (:default-team prof)
-        proj-id (:default-project prof)
+        team-id (:default-team-id prof)
+        proj-id (:default-project-id prof)
 
         file  (th/create-file db/pool (:id prof) proj-id 1)
         page  (th/create-page db/pool (:id prof) (:id file) 1)

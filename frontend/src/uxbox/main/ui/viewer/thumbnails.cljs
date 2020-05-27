@@ -11,7 +11,6 @@
   (:require
    [goog.events :as events]
    [goog.object :as gobj]
-   [lentes.core :as l]
    [rumext.alpha :as mf]
    [uxbox.main.ui.icons :as i]
    [uxbox.common.data :as d]

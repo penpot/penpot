@@ -2,7 +2,10 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.util.forms
   (:refer-clojure :exclude [uuid])
@@ -10,7 +13,6 @@
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
-   [lentes.core :as l]
    [potok.core :as ptk]
    [rumext.alpha :as mf]
    [uxbox.common.spec :as us]

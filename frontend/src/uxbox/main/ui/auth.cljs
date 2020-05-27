@@ -17,7 +17,6 @@
    [uxbox.main.data.users :as du]
    [uxbox.main.data.messages :as dm]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.messages :refer [messages]]
    [uxbox.main.ui.auth.login :refer [login-page]]
    [uxbox.main.ui.auth.recovery :refer [recovery-page]]
    [uxbox.main.ui.auth.recovery-request :refer [recovery-request-page]]
@@ -37,21 +36,19 @@
   [{:keys [route] :as props}]
   (let [section (get-in route [:data :name])
         locale (mf/deref i18n/locale)]
-    [:*
-     [:& messages]
-     [:div.auth
-      [:section.auth-sidebar
-       [:a.logo {:href "/#/"} i/logo]
-       [:span.tagline (t locale "auth.sidebar-tagline")]]
+    [:div.auth
+     [:section.auth-sidebar
+      [:a.logo {:href "/#/"} i/logo]
+      [:span.tagline (t locale "auth.sidebar-tagline")]]
 
-      [:section.auth-content
-       (case section
-         :auth-register [:& register-page {:locale locale}]
-         :auth-login    [:& login-page {:locale locale}]
-         :auth-goodbye  [:& goodbye-page {:locale locale}]
-         :auth-recovery-request [:& recovery-request-page {:locale locale}]
-         :auth-recovery [:& recovery-page {:locale locale
-                                           :params (:query-params route)}])]]]))
+     [:section.auth-content
+      (case section
+        :auth-register [:& register-page {:locale locale}]
+        :auth-login    [:& login-page {:locale locale}]
+        :auth-goodbye  [:& goodbye-page {:locale locale}]
+        :auth-recovery-request [:& recovery-request-page {:locale locale}]
+        :auth-recovery [:& recovery-page {:locale locale
+                                          :params (:query-params route)}])]]))
 
 (defn- handle-email-verified
   [data]

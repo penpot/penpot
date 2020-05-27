@@ -22,9 +22,11 @@
 
 ;; --- Defaults
 
-(def default-context
+(defn default-context
+  []
   {:static media/resolve-asset
-   :comment (constantly nil)})
+   :comment (constantly nil)
+   :public-uri (:public-uri cfg/config)})
 
 ;; --- Public API
 

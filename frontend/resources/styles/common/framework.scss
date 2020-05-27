@@ -994,50 +994,205 @@ input[type=range]:focus::-ms-fill-upper {
         white-space: normal;
         width: 100%;
       }
-
     }
-
   }
-
 }
 
-.message-version {
-  align-items: center;
-  background-color: rgba(27, 170, 214, .6);
-  border-radius: $br-small;
-  color: $color-white;
+// Messages
+
+// Banner top
+
+.banner {
+  top: 0;
+  left: 0px;
+  width: 100%;
+  height: 40px;
+  z-index: 13;
+
   display: flex;
-  flex-direction: column;
   justify-content: center;
-  padding: $small;
-  position: absolute;
-  right: 250px;
-  top: 40px;
-  @include animation(0, 1s, fadeInDown);
+  align-items: center;
 
-  span {
-    font-size: $fs13;
-    font-weight: bold;
-  }
+  .btn-close {
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    width: 40px;
+    height: 40px;
 
-  .message-action {
-    align-items: center;
     display: flex;
-    justify-content: space-around;
-    margin-top: $small;
-    width: 100%;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    opacity: .35;
 
-    .btn-transparent {
-      font-size: $fs12;
-      padding: .3rem .5rem;
+    svg {
+      fill: $color-black;
+      height: 18px;
+      width: 18px;
+      transform: rotate(45deg);
     }
 
+    &:hover {
+      opacity: .8;
+    }
   }
 
-  &.hide-message {
+  .content {
+    align-items: center;
+    color: $color-white;
+    display: flex;
+    justify-content: center;
+    max-width: 60%;
+
+    .icon {
+      display: flex;
+      margin-right: $medium;
+      svg {
+        fill: $color-white;
+        height: 20px;
+        width: 20px;
+      }
+    }
+
+    span {
+      font-size: $fs15;
+    }
+  }
+
+  &.fixed {
+    position: fixed;
+  }
+
+  &.error {
+    background-color: $color-danger;
+  }
+
+  &.success {
+    background-color: $color-success;
+  }
+
+  &.warning {
+    background-color: $color-warning;
+  }
+
+  &.info {
+    background-color: $color-info;
+  }
+
+  &.quick {
+    .btn-close {
+      display: none;
+    }
+  }
+
+  &.hide {
     @include animation(0, .6s, fadeOutUp);
   }
+}
 
+.inline-banner {
+  display: flex;
+  margin-bottom: $big;
+  min-height: 40px;
+  width: 100%;
+
+  .icon {
+    display: flex;
+    flex-shrink: 0;
+    justify-content: center;
+    margin-right: $small;
+    padding: $small;
+    width: 40px;
+
+    svg {
+      fill: $color-white;
+      height: 20px;
+      width: 20px;
+    }
+  }
+
+  .content {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .main {
+    display: flex;
+  }
+
+  .extra {
+    display: flex;
+    justify-content: flex-end;
+    padding: $small;
+
+    > div:not(:last-child) {
+      margin-right: $small;
+    }
+  }
+
+  .text {
+    display: flex;
+    font-size: $fs14;
+    color: $color-black;
+    padding: $small;
+  }
+
+  &.error {
+    background-color: lighten($color-danger,30%);
+    .icon {
+      background-color: $color-danger;
+    }
+  }
+
+  &.success {
+    background-color: lighten($color-success,30%);
+    .icon {
+      background-color: $color-success;
+    }
+  }
+
+  &.warning {
+    background-color: lighten($color-warning,30%);
+    .icon {
+      background-color: $color-warning;
+    }
+  }
+
+  &.info {
+    background-color: lighten($color-info,30%);
+    .icon {
+      background-color: $color-info;
+    }
+  }
+
+  .btn-close {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    opacity: .35;
+
+    svg {
+      fill: $color-black;
+      height: 18px;
+      width: 18px;
+      transform: rotate(45deg);
+    }
+
+    &:hover {
+      opacity: .8;
+    }
+  }
+
+  &.quick {
+    .btn-close {
+      display: none;
+    }
+  }
 }
 
 .close-bezier {

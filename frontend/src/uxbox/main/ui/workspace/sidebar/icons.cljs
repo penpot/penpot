@@ -2,20 +2,21 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.main.ui.workspace.sidebar.icons
   (:require
-   [lentes.core :as l]
+   #_[uxbox.main.ui.dashboard.icons :as icons]
    [rumext.alpha :as mf]
    [uxbox.common.data :as d]
-   [uxbox.main.ui.icons :as i]
    [uxbox.main.data.icons :as di]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
-   #_[uxbox.main.ui.dashboard.icons :as icons]
+   [uxbox.main.ui.icons :as i]
    [uxbox.main.ui.shapes.icon :as icon]
    [uxbox.util.data :refer [read-string]]
    [uxbox.util.dom :as dom]

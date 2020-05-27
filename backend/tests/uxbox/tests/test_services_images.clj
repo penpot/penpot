@@ -1,3 +1,12 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
+
 (ns uxbox.tests.test-services-images
   (:require
    [clojure.test :as t]
@@ -15,7 +24,7 @@
 (t/deftest image-libraries-crud
   (let [id      (uuid/next)
         prof    (th/create-profile db/pool 2)
-        team-id (:default-team prof)]
+        team-id (:default-team-id prof)]
 
     (t/testing "create library"
       (let [data {::sm/type :create-image-library
@@ -96,7 +105,7 @@
 
 (t/deftest images-crud
   (let [prof     (th/create-profile db/pool 1)
-        team-id  (:default-team prof)
+        team-id  (:default-team-id prof)
         lib      (th/create-image-library db/pool team-id 1)
         image-id (uuid/next)]
 

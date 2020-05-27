@@ -2,14 +2,15 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
-;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.main.ui.workspace.selection
   "Selection handlers component."
   (:require
    [beicon.core :as rx]
-   [lentes.core :as l]
    [cuerdas.core :as str]
    [potok.core :as ptk]
    [rumext.alpha :as mf]

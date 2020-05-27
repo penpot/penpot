@@ -11,15 +11,14 @@
 (ns uxbox.main.ui.dashboard.profile
   (:require
    [cuerdas.core :as str]
-   [lentes.core :as l]
    [rumext.alpha :as mf]
-   [uxbox.main.ui.icons :as i]
    [uxbox.main.data.auth :as da]
-   [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
+   [uxbox.main.store :as st]
+   [uxbox.main.ui.components.dropdown :refer [dropdown]]
+   [uxbox.main.ui.icons :as i]
    [uxbox.main.ui.navigation :as nav]
    [uxbox.util.dom :as dom]
-   [uxbox.main.ui.components.dropdown :refer [dropdown]]
    [uxbox.util.i18n :as i18n :refer [t]]
    [uxbox.util.router :as rt]))
 

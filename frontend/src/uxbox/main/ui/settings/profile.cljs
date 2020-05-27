@@ -11,17 +11,17 @@
   (:require
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
-   [lentes.core :as l]
    [rumext.alpha :as mf]
-   [uxbox.main.ui.icons :as i]
+   [uxbox.main.data.messages :as dm]
    [uxbox.main.data.users :as udu]
+   [uxbox.main.refs :as refs]
+   [uxbox.main.store :as st]
    [uxbox.main.ui.components.forms :refer [input submit-button form]]
+   [uxbox.main.ui.icons :as i]
+   [uxbox.main.ui.messages :as msgs]
+   [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.settings.change-email :refer [change-email-modal]]
    [uxbox.main.ui.settings.delete-account :refer [delete-account-modal]]
-   [uxbox.main.ui.modal :as modal]
-   [uxbox.main.data.messages :as dm]
-   [uxbox.main.store :as st]
-   [uxbox.main.refs :as refs]
    [uxbox.util.dom :as dom]
    [uxbox.util.forms :as fm]
    [uxbox.util.i18n :as i18n :refer [tr t]]))
@@ -73,20 +73,17 @@
          (t locale "settings.change-email-label")]]
 
        (not= (:pending-email prof) (:email prof))
-       [:span.featured-note
-        [:span.icon i/trash]
-        [:span.text
-         [:span "There is a pending change of your email to "]
-         [:strong (:pending-email prof)]
-         [:span "."] [:br]
-         [:a {:on-click #(st/emit! udu/cancel-email-change)}
-          "Dismiss"]]]
+       [:& msgs/inline-banner
+        {:type :info
+         :content (t locale "settings.change-email-info3" (:pending-email prof))}
+        [:div.btn-secondary.btn-small
+         {:on-click #(st/emit! udu/cancel-email-change)}
+         (t locale "settings.cancel-email-change")]]
 
        :else
-       [:span.featured-note.warning
-        [:span.text
-         [:span "There is a pending email validation."]]])
-
+       [:& msgs/inline-banner
+        {:type :info
+         :content (t locale "settings.email-verification-pending")}])
 
      [:& submit-button
       {:label (t locale "settings.profile-submit-label")}]

@@ -1,3 +1,12 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
+
 (ns uxbox.tests.test-services-icons
   (:require
    [clojure.java.io :as io]
@@ -16,7 +25,7 @@
 (t/deftest icon-libraries-crud
   (let [id   (uuid/next)
         prof (th/create-profile db/pool 2)
-        team-id (:default-team prof)]
+        team-id (:default-team-id prof)]
 
     (t/testing "create library"
       (let [data {::sm/type :create-icon-library
@@ -89,7 +98,7 @@
 
 (t/deftest icons-crud
   (let [prof    (th/create-profile db/pool 1)
-        team-id (:default-team prof)
+        team-id (:default-team-id prof)
         coll    (th/create-icon-library db/pool team-id 1)
         icon-id (uuid/next)]
 

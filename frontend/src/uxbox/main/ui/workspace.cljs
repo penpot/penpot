@@ -10,7 +10,6 @@
 (ns uxbox.main.ui.workspace
   (:require
    [beicon.core :as rx]
-   [lentes.core :as l]
    [rumext.alpha :as mf]
    [uxbox.main.ui.icons :as i]
    [uxbox.main.constants :as c]
@@ -22,7 +21,6 @@
    [uxbox.main.ui.confirm]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.hooks :as hooks]
-   [uxbox.main.ui.messages :refer [messages]]
    [uxbox.main.ui.workspace.viewport :refer [viewport coordinates]]
    [uxbox.main.ui.workspace.colorpalette :refer [colorpalette]]
    [uxbox.main.ui.workspace.context-menu :refer [context-menu]]
@@ -117,12 +115,11 @@
   (let [file (mf/deref refs/workspace-file)
         project (mf/deref refs/workspace-project)
         layout (mf/deref refs/workspace-layout)]
-    [:*
+    [:section
      [:& header {:file file
                  :project project
                  :layout layout}]
 
-     [:& messages]
      [:& context-menu]
 
      (if (and (and file project)

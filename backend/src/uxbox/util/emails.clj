@@ -95,7 +95,10 @@
      (when-let [spec (s/get-spec id)]
        (s/assert spec context))
 
-     (let [context (merge extra-context context)
+     (let [context (merge (if (fn? extra-context)
+                            (extra-context)
+                            extra-context)
+                          context)
            email (impl-build-email id context)]
        (when-not email
          (ex/raise :type :internal

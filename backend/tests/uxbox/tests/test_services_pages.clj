@@ -1,3 +1,12 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
+
 (ns uxbox.tests.test-services-pages
   (:require
    [clojure.spec.alpha :as s]
@@ -16,8 +25,8 @@
 
 (t/deftest pages-crud
   (let [prof (th/create-profile db/pool 1)
-        team-id (:default-team prof)
-        proj-id (:default-project prof)
+        team-id (:default-team-id prof)
+        proj-id (:default-project-id prof)
         file (th/create-file db/pool (:id prof) proj-id 1)
         page-id (uuid/next)]
 
@@ -93,8 +102,8 @@
 
 (t/deftest update-page-data
   (let [prof    (th/create-profile db/pool 1)
-        team-id (:default-team prof)
-        proj-id (:default-project prof)
+        team-id (:default-team-id prof)
+        proj-id (:default-project-id prof)
         file    (th/create-file db/pool (:id prof) proj-id 1)
         page-id (uuid/next)]
 
@@ -169,8 +178,8 @@
 
 (t/deftest update-page-data-2
   (let [prof    (th/create-profile db/pool 1)
-        team-id (:default-team prof)
-        proj-id (:default-project prof)
+        team-id (:default-team-id prof)
+        proj-id (:default-project-id prof)
         file    (th/create-file db/pool (:id prof) proj-id 1)
         page    (th/create-page db/pool (:id prof) (:id file) 1)]
     (t/testing "lagging changes"

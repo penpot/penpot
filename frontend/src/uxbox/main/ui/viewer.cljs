@@ -22,7 +22,6 @@
    [uxbox.main.ui.components.dropdown :refer [dropdown]]
    [uxbox.main.ui.hooks :as hooks]
    [uxbox.main.ui.keyboard :as kbd]
-   [uxbox.main.ui.messages :refer [messages]]
    [uxbox.main.ui.viewer.header :refer [header]]
    [uxbox.main.ui.viewer.thumbnails :refer [thumbnails-panel]]
    [uxbox.main.ui.viewer.shapes :refer [frame-svg]]
@@ -87,23 +86,21 @@
     (mf/use-effect on-mount)
     (hooks/use-shortcuts dv/shortcuts)
 
-    [:*
-     [:& messages]
-     [:div.viewer-layout {:class (classnames :fullscreen fullscreen?)
-                          :ref container}
+    [:div.viewer-layout {:class (classnames :fullscreen fullscreen?)
+                         :ref container}
 
-      [:& header {:data data
-                  :toggle-fullscreen toggle-fullscreen
-                  :fullscreen? fullscreen?
-                  :local local
-                  :index index}]
-      [:div.viewer-content {:on-click on-click}
-       (when (:show-thumbnails local)
-         [:& thumbnails-panel {:index index
-                               :data data}])
-       [:& main-panel {:data data
-                       :local local
-                       :index index}]]]]))
+     [:& header {:data data
+                 :toggle-fullscreen toggle-fullscreen
+                 :fullscreen? fullscreen?
+                 :local local
+                 :index index}]
+     [:div.viewer-content {:on-click on-click}
+      (when (:show-thumbnails local)
+        [:& thumbnails-panel {:index index
+                              :data data}])
+      [:& main-panel {:data data
+                      :local local
+                      :index index}]]]))
 
 
 ;; --- Component: Viewer Page

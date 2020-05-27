@@ -18,6 +18,7 @@
    [uxbox.main.data.auth :as da]
    [uxbox.main.repo :as rp]
    [uxbox.main.store :as st]
+   [uxbox.main.ui.messages :as msgs]
    [uxbox.main.data.messages :as dm]
    [uxbox.main.ui.components.forms :refer [input submit-button form]]
    [uxbox.util.object :as obj]
@@ -32,16 +33,6 @@
 (s/def ::login-form
   (s/keys :req-un [::email ::password]))
 
-(defn- on-error
-  [form error]
-  (st/emit! (dm/error (tr "errors.auth.unauthorized"))))
-
-(defn- on-submit
-  [form event]
-  (let [params (with-meta (:clean-data form)
-                 {:on-error (partial on-error form)})]
-    (st/emit! (da/login params))))
-
 (defn- login-with-google
   [event]
   (dom/prevent-default event)
@@ -51,23 +42,43 @@
 
 (mf/defc login-form
   [{:keys [locale] :as props}]
-  [:& form {:on-submit on-submit
-            :spec ::login-form
-            :initial {}}
-   [:& input
-    {:name :email
-     :type "text"
-     :tab-index "2"
-     :help-icon i/at
-     :label (t locale "auth.email-label")}]
-   [:& input
-    {:type "password"
-     :name :password
-     :tab-index "3"
-     :help-icon i/eye
-     :label (t locale "auth.password-label")}]
-   [:& submit-button
-    {:label (t locale "auth.login-submit-label")}]])
+  (let [error? (mf/use-state false)
+
+        on-error
+        (fn [form event]
+          (reset! error? true))
+
+        on-submit
+        (fn [form event]
+          (reset! error? false)
+          (let [params (with-meta (:clean-data form)
+                         {:on-error on-error})]
+            (st/emit! (da/login params))))]
+
+    [:*
+     (when @error?
+       [:& msgs/inline-banner
+        {:type :warning
+         :content (t locale "errors.auth.unauthorized")
+         :on-close #(reset! error? false)}])
+
+     [:& form {:on-submit on-submit
+               :spec ::login-form
+               :initial {}}
+      [:& input
+       {:name :email
+        :type "text"
+        :tab-index "2"
+        :help-icon i/at
+        :label (t locale "auth.email-label")}]
+      [:& input
+       {:type "password"
+        :name :password
+        :tab-index "3"
+        :help-icon i/eye
+        :label (t locale "auth.password-label")}]
+      [:& submit-button
+       {:label (t locale "auth.login-submit-label")}]]]))
 
 (mf/defc login-page
   [{:keys [locale] :as props}]

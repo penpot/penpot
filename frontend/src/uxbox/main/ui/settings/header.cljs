@@ -9,7 +9,6 @@
 
 (ns uxbox.main.ui.settings.header
   (:require
-   [lentes.core :as l]
    [rumext.alpha :as mf]
    [uxbox.main.ui.icons :as i]
    [uxbox.main.data.auth :as da]

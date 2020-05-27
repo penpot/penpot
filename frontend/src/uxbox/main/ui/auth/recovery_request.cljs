@@ -11,7 +11,6 @@
   (:require
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
-   [lentes.core :as l]
    [rumext.alpha :as mf]
    [uxbox.main.ui.icons :as i]
    [uxbox.common.spec :as us]
@@ -19,7 +18,6 @@
    [uxbox.main.data.messages :as dm]
    [uxbox.main.store :as st]
    [uxbox.main.ui.components.forms :refer [input submit-button form]]
-   [uxbox.main.ui.messages :refer [messages]]
    [uxbox.main.ui.navigation :as nav]
    [uxbox.util.dom :as dom]
    [uxbox.util.forms :as fm]

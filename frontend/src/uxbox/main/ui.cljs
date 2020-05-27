@@ -13,20 +13,22 @@
    [cuerdas.core :as str]
    [potok.core :as ptk]
    [rumext.alpha :as mf]
-   [uxbox.main.ui.icons :as i]
    [uxbox.common.data :as d]
    [uxbox.common.exceptions :as ex]
+   [uxbox.common.uuid :as uuid]
    [uxbox.main.data.auth :refer [logout]]
    [uxbox.main.data.messages :as dm]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.dashboard :refer [dashboard]]
-   [uxbox.main.ui.static :refer [not-found-page not-authorized-page]]
    [uxbox.main.ui.auth :refer [auth verify-token]]
+   [uxbox.main.ui.dashboard :refer [dashboard]]
+   [uxbox.main.ui.icons :as i]
+   [uxbox.main.ui.messages :as msgs]
    [uxbox.main.ui.settings :as settings]
+   [uxbox.main.ui.static :refer [not-found-page not-authorized-page]]
    [uxbox.main.ui.viewer :refer [viewer-page]]
    [uxbox.main.ui.workspace :as workspace]
-   [uxbox.util.i18n :refer [tr]]
+   [uxbox.util.i18n :as i18n :refer [tr t]]
    [uxbox.util.timers :as ts]))
 
 ;; --- Routes
@@ -84,62 +86,63 @@
 (mf/defc app-container
   {::mf/wrap [#(mf/catch % {:fallback app-error})]}
   [{:keys [route] :as props}]
-  (case (get-in route [:data :name])
+  [:*
+   [:& msgs/notifications]
+   (case (get-in route [:data :name])
+     (:auth-login
+      :auth-register
+      :auth-goodbye
+      :auth-recovery-request
+      :auth-recovery)
+     [:& auth {:route route}]
 
-    (:auth-login
-     :auth-register
-     :auth-goodbye
-     :auth-recovery-request
-     :auth-recovery)
-    [:& auth {:route route}]
+     :auth-verify-token
+     [:& verify-token {:route route}]
 
-    :auth-verify-token
-    [:& verify-token {:route route}]
+     (:settings-profile
+      :settings-password
+      :settings-options)
+     [:& settings/settings {:route route}]
 
-    (:settings-profile
-     :settings-password
-     :settings-options)
-    [:& settings/settings {:route route}]
+     :debug-icons-preview
+     (when *assert*
+       [:& i/debug-icons-preview])
 
-    :debug-icons-preview
-    (when *assert*
-      [:& i/debug-icons-preview])
+     (:dashboard-search
+      :dashboard-team
+      :dashboard-project
+      :dashboard-library-icons
+      :dashboard-library-icons-index
+      :dashboard-library-images
+      :dashboard-library-images-index
+      :dashboard-library-palettes
+      :dashboard-library-palettes-index)
+     [:& dashboard {:route route}]
 
-    (:dashboard-search
-     :dashboard-team
-     :dashboard-project
-     :dashboard-library-icons
-     :dashboard-library-icons-index
-     :dashboard-library-images
-     :dashboard-library-images-index
-     :dashboard-library-palettes
-     :dashboard-library-palettes-index)
-    [:& dashboard {:route route}]
+     :viewer
+     (let [index (d/parse-integer (get-in route [:params :query :index]))
+           token (get-in route [:params :query :token])
+           page-id (uuid (get-in route [:params :path :page-id]))]
+       [:& viewer-page {:page-id page-id
+                        :index index
+                        :token token}])
 
-    :viewer
-    (let [index (d/parse-integer (get-in route [:params :query :index]))
-          token (get-in route [:params :query :token])
-          page-id (uuid (get-in route [:params :path :page-id]))]
-      [:& viewer-page {:page-id page-id
-                       :index index
-                       :token token}])
+     :workspace
+     (let [project-id (uuid (get-in route [:params :path :project-id]))
+           file-id (uuid (get-in route [:params :path :file-id]))
+           page-id (uuid (get-in route [:params :query :page-id]))]
+       [:& workspace/workspace {:project-id project-id
+                                :file-id file-id
+                                :page-id page-id
+                                :key file-id}])
 
-    :workspace
-    (let [project-id (uuid (get-in route [:params :path :project-id]))
-          file-id (uuid (get-in route [:params :path :file-id]))
-          page-id (uuid (get-in route [:params :query :page-id]))]
-      [:& workspace/workspace {:project-id project-id
-                               :file-id file-id
-                               :page-id page-id
-                               :key file-id}])
+     :not-authorized
+     [:& not-authorized-page]
 
-    :not-authorized
-    [:& not-authorized-page]
+     :not-found
+     [:& not-found-page]
 
-    :not-found
-    [:& not-found-page]
-
-    nil))
+     nil)])
 
 (mf/defc app
   []

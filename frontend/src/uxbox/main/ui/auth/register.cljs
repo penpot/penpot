@@ -11,16 +11,15 @@
   (:require
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
-   [lentes.core :as l]
    [rumext.alpha :as mf]
    [uxbox.config :as cfg]
    [uxbox.main.ui.icons :as i]
    [uxbox.main.data.auth :as uda]
    [uxbox.main.store :as st]
    [uxbox.main.data.auth :as da]
-   [uxbox.main.ui.messages :refer [messages]]
    [uxbox.main.ui.components.forms :refer [input submit-button form]]
    [uxbox.main.ui.navigation :as nav]
+   [uxbox.main.ui.messages :as msgs]
    [uxbox.util.dom :as dom]
    [uxbox.util.forms :as fm]
    [uxbox.util.i18n :refer [tr t]]
@@ -29,12 +28,9 @@
 
 (mf/defc demo-warning
   [_]
-  [:div.featured-note.warning
-   [:span
-    [:strong "WARNING: "]
-    "This is a " [:strong "demo"] " service, "
-    [:strong "DO NOT USE"] " for real work, "
-    " the projects will be periodicaly wiped."]])
+  [:& msgs/inline-banner
+   {:type :warning
+    :content (tr "auth.demo-warning")}])
 
 (s/def ::fullname ::fm/not-empty-string)
 (s/def ::password ::fm/not-empty-string)

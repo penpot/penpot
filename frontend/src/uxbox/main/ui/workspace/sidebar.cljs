@@ -5,15 +5,13 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.main.ui.workspace.sidebar
   (:require
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
    [uxbox.main.ui.workspace.sidebar.history :refer [history-toolbox]]
-   [uxbox.main.ui.workspace.sidebar.icons :refer [icons-toolbox]]
    [uxbox.main.ui.workspace.sidebar.layers :refer [layers-toolbox]]
    [uxbox.main.ui.workspace.sidebar.options :refer [options-toolbox]]
    [uxbox.main.ui.workspace.sidebar.sitemap :refer [sitemap-toolbox]]
@@ -45,6 +43,4 @@
   [:aside#settings-bar.settings-bar
    [:div.settings-bar-inside
     (when (contains? layout :element-options)
-      [:& options-toolbox {:page page}])
-    (when (contains? layout :icons)
-      [:& icons-toolbox])]])
+      [:& options-toolbox {:page page}])]])
