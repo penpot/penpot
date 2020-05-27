@@ -73,12 +73,22 @@
 
 
 (defn min
-  [{x1 :x y1 :y :as p1} {x2 :x y2 :y :as p2}]
-  (Point. (c/min x1 x2) (c/min y1 y2)))
+  ([] (min nil nil))
+  ([p1] (min p1 nil))
+  ([{x1 :x y1 :y :as p1} {x2 :x y2 :y :as p2}]
+   (cond
+     (nil? p1) p2
+     (nil? p2) p1
+     :else (Point. (c/min x1 x2) (c/min y1 y2)))))
 
 (defn max
-  [{x1 :x y1 :y :as p1} {x2 :x y2 :y :as p2}]
-  (Point. (c/max x1 x2) (c/max y1 y2)))
+  ([] (max nil nil))
+  ([p1] (max p1 nil))
+  ([{x1 :x y1 :y :as p1} {x2 :x y2 :y :as p2}]
+   (cond
+     (nil? p1) p2
+     (nil? p2) p1
+     :else (Point. (c/max x1 x2) (c/max y1 y2)))))
 
 (defn inverse
   [{:keys [x y] :as p}]

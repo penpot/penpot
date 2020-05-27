@@ -28,7 +28,8 @@
    [uxbox.main.ui.workspace.drawarea :refer [draw-area start-drawing]]
    [uxbox.main.ui.workspace.selection :refer [selection-handlers]]
    [uxbox.main.ui.workspace.presence :as presence]
-   [uxbox.main.ui.workspace.snap-feedback :refer [snap-feedback]]
+   [uxbox.main.ui.workspace.snap-points :refer [snap-points]]
+   [uxbox.main.ui.workspace.snap-distances :refer [snap-distances]]
    [uxbox.main.ui.workspace.frame-grid :refer [frame-grid]]
    [uxbox.common.math :as mth]
    [uxbox.util.dom :as dom]
@@ -389,7 +390,8 @@
       (when (contains? layout :display-grid)
         [:& frame-grid {:zoom zoom}])
 
-      [:& snap-feedback {:layout layout}]
+      [:& snap-points {:layout layout}]
+      [:& snap-distances {:layout layout}]
 
       (when tooltip
         [:& cursor-tooltip {:zoom zoom :tooltip tooltip}])]

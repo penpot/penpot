@@ -1,4 +1,4 @@
-(ns uxbox.main.ui.workspace.snap-feedback
+(ns uxbox.main.ui.workspace.snap-points
   (:require
    [rumext.alpha :as mf]
    [beicon.core :as rx]
@@ -42,7 +42,7 @@
                            (rx/map #(vector point % coord)))))
        (rx/reduce conj [])))
 
-(mf/defc snap-feedback-points
+(mf/defc snap-feedback
   [{:keys [shapes page-id filter-shapes zoom] :as props}]
   (let [state (mf/use-state [])
         subject (mf/use-memo #(rx/subject))
@@ -84,7 +84,7 @@
                        :point point
                        :zoom zoom}])]))
 
-(mf/defc snap-feedback [{:keys [layout]}]
+(mf/defc snap-points [{:keys [layout]}]
   (let [page-id (mf/deref refs/workspace-page-id)
         selected (mf/deref refs/selected-shapes)
         selected-shapes (mf/deref (refs/objects-by-id selected))
@@ -99,9 +99,10 @@
         snap-data (mf/deref refs/workspace-snap-data)
         shapes (if drawing [drawing] selected-shapes)
         zoom (mf/deref refs/selected-zoom)]
+
     (when (or drawing current-transform) 
-        [:& snap-feedback-points {:shapes shapes
-                                  :page-id page-id
-                                  :filter-shapes filter-shapes
-                                  :zoom zoom}])))
+      [:& snap-feedback {:shapes shapes
+                         :page-id page-id
+                         :filter-shapes filter-shapes
+                         :zoom zoom}])))
 
