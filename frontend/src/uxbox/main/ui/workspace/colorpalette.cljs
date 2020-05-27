@@ -13,6 +13,7 @@
    [goog.events :as events]
    [okulary.core :as l]
    [rumext.alpha :as mf]
+   [uxbox.common.math :as mth]
    [uxbox.main.data.library :as dlib]
    [uxbox.main.data.workspace :as udw]
    [uxbox.main.store :as st]
@@ -65,7 +66,7 @@
         state      (mf/use-state {:show-menu false })
 
         width      (:width @state 0)
-        visible    (/ width 66)
+        visible    (mth/round (/ width 66))
 
         offset     (:offset @state 0)
         max-offset (- (count items)
@@ -76,21 +77,22 @@
 
         on-left-arrow-click
         (mf/use-callback
+         (mf/deps max-offset visible)
          (fn [event]
            (swap! state update :offset
                   (fn [offset]
                     (if (pos? offset)
-                      (dec offset)
+                      (max (- offset (mth/round (/ visible 2))) 0)
                       offset)))))
 
         on-right-arrow-click
         (mf/use-callback
-         (mf/deps max-offset)
+         (mf/deps max-offset visible)
          (fn [event]
            (swap! state update :offset
                   (fn [offset]
                     (if (< offset max-offset)
-                      (inc offset)
+                      (min max-offset (+ offset (mth/round (/ visible 2))))
                       offset)))))
 
         on-scroll
