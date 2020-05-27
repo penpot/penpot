@@ -11,19 +11,18 @@
   (:require
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
-   [lentes.core :as l]
    [rumext.alpha :as mf]
-   [uxbox.main.ui.icons :as i]
    [uxbox.main.data.auth :as da]
-   [uxbox.main.data.users :as du]
-   [uxbox.main.ui.components.forms :refer [input submit-button form]]
-   [uxbox.main.ui.messages :as msgs]
    [uxbox.main.data.messages :as dm]
-   [uxbox.main.store :as st]
+   [uxbox.main.data.users :as du]
    [uxbox.main.refs :as refs]
+   [uxbox.main.store :as st]
+   [uxbox.main.ui.components.forms :refer [input submit-button form]]
+   [uxbox.main.ui.icons :as i]
+   [uxbox.main.ui.messages :as msgs]
+   [uxbox.main.ui.modal :as modal]
    [uxbox.util.dom :as dom]
    [uxbox.util.forms :as fm]
-   [uxbox.main.ui.modal :as modal]
    [uxbox.util.i18n :as i18n :refer [tr t]]))
 
 (s/def ::email-1 ::fm/email)

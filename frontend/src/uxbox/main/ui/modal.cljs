@@ -1,7 +1,6 @@
 (ns uxbox.main.ui.modal
   (:require
    [goog.events :as events]
-   [lentes.core :as l]
    [rumext.alpha :as mf]
    [uxbox.main.store :as st]
    [uxbox.main.ui.keyboard :as k]

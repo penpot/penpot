@@ -10,7 +10,6 @@
 (ns uxbox.main.ui.workspace
   (:require
    [beicon.core :as rx]
-   [lentes.core :as l]
    [rumext.alpha :as mf]
    [uxbox.main.ui.icons :as i]
    [uxbox.main.constants :as c]
