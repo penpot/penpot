@@ -651,11 +651,16 @@
 
 (defn fix-invalid-rect-values
   [rect-shape]
-  (letfn [(check [num] (if (or (nil? num) (mth/nan? num)) 0 num))
+  (letfn [(check [num]
+            (if (or (nil? num) (mth/nan? num) (= ##Inf num) (= ##-Inf num)) 0 num))
           (to-positive [num] (if (< num 1) 1 num))]
     (-> rect-shape
         (update :x check)
         (update :y check)
+        (update :x1 check)
+        (update :y1 check)
+        (update :x2 check)
+        (update :y2 check)
         (update :width (comp to-positive check))
         (update :height (comp to-positive check)))))
 
