@@ -17,8 +17,6 @@
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.modal :as modal]
-   [uxbox.main.ui.workspace.images :refer [import-image-modal]]
    [uxbox.main.ui.components.dropdown :refer [dropdown]]
    [uxbox.main.ui.workspace.presence :as presence]
    [uxbox.util.i18n :as i18n :refer [t]]

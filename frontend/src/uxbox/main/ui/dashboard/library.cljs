@@ -26,6 +26,7 @@
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
    [uxbox.main.ui.components.context-menu :refer [context-menu]]
+   [uxbox.main.ui.components.file-uploader :refer [file-uploader]]
    [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.confirm :refer [confirm-dialog]]
    [uxbox.main.ui.colorpicker :refer [colorpicker most-used-colors]]
@@ -62,19 +63,11 @@
 
 (defmulti create-item (fn [x _ _] x))
 
-(defmethod create-item :icons [_ library-id data]
-  (let [files (->> data
-                  (dom/get-target)
-                  (dom/get-files)
-                  (array-seq))]
-    (st/emit! (dico/create-icons library-id files))))
+(defmethod create-item :icons [_ library-id files]
+  (st/emit! (dico/create-icons library-id files)))
 
-(defmethod create-item :images [_ library-id data]
-  (let [files (->> data
-                  (dom/get-target)
-                  (dom/get-files)
-                  (array-seq))]
-    (st/emit! (dimg/create-images library-id files))))
+(defmethod create-item :images [_ library-id files]
+  (st/emit! (dimg/create-images library-id files)))
 
 (defmethod create-item :palettes [_ library-id]
   (letfn [(dispatch-color [color]
@@ -171,18 +164,15 @@
          {:on-click #(create-item section library-id)}
          (t locale (str "dashboard.library.add-item." (name section)))]
 
-        [:*
-         [:label {:for "file-upload" :class-name "btn-secondary btn-small"}
-          (t locale (str "dashboard.library.add-item." (name section)))]
-         [:input {:on-change #(create-item section library-id %)
-                  :id "file-upload"
-                  :type "file"
-                  :multiple true
-                  :accept (case section
-                            :images "image"
-                            :icons "image/svg+xml"
-                            "")
-                  :style {:display "none"}}]])]]))
+        [:& file-uploader {:accept (case section
+                                     :images "image"
+                                     :icons "image/svg+xml"
+                                     "")
+                           :multi true
+                           :label-text (t locale (str "dashboard.library.add-item." (name section)))
+                           :label-class "btn-secondary btn-small"
+                           :input-id "file-upload"
+                           :on-selected #(create-item section library-id %)}])]]))
 
 (mf/defc library-icon-card
   [{:keys [item on-select on-unselect on-delete]}]

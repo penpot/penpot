@@ -14,8 +14,8 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.store :as st]
-   [uxbox.main.ui.modal :as modal]
-   [uxbox.main.ui.workspace.images :refer [import-image-modal]]
+   [uxbox.main.ui.components.file-uploader :refer [file-uploader]]
+   [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t]]
    [uxbox.main.ui.icons :as i]))
 
@@ -23,11 +23,29 @@
 
 (mf/defc left-toolbar
   [{:keys [page layout] :as props}]
-  (let [selected-drawtool (mf/deref refs/selected-drawing-tool)
+  (let [file-input (mf/use-ref nil)
+        selected-drawtool (mf/deref refs/selected-drawing-tool)
         select-drawtool #(st/emit! :interrupt
                                    (dw/select-for-drawing %))
         locale (i18n/use-locale)
-        on-image #(modal/show! import-image-modal {})]
+
+        on-image #(dom/click (mf/ref-val file-input))
+
+        on-uploaded
+        (fn [{:keys [id name] :as image}]
+          (let [shape {:name name
+                       :metadata {:width (:width image)
+                                  :height (:height image)
+                                  :uri (:uri image)
+                                  :thumb-width (:thumb-width image)
+                                  :thumb-height (:thumb-height image)
+                                  :thumb-uri (:thumb-uri image)}}]
+            (st/emit! (dw/select-for-drawing :image shape))))
+
+        on-file-selected
+        (fn [file]
+          (st/emit! (dw/upload-image file on-uploaded)))]
+
     [:aside.left-toolbar
      [:div.left-toolbar-inside
       [:ul.left-toolbar-options
@@ -54,7 +72,12 @@
        [:li.tooltip.tooltip-right
         {:alt (t locale "workspace.toolbar.image")
          :on-click on-image}
-        i/image]
+        [:*
+          i/image
+          [:& file-uploader {:accept "image/jpeg,image/png,image/webp"
+                             :multi false
+                             :input-ref file-input
+                             :on-selected on-file-selected}]]]
        [:li.tooltip.tooltip-right
         {:alt (t locale "workspace.toolbar.curve")
          :class (when (= selected-drawtool :curve) "selected")
