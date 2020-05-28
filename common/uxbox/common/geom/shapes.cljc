@@ -48,7 +48,11 @@
                                     (update :y inc-y))))]
     (-> shape
         (update :x inc-x)
+        (update :x1 inc-x)
+        (update :x2 inc-x)
         (update :y inc-y)
+        (update :y1 inc-y)
+        (update :y2 inc-y)
         (update-in [:selrect :x] inc-x)
         (update-in [:selrect :x1] inc-x)
         (update-in [:selrect :x2] inc-x)
@@ -548,7 +552,6 @@
                  :type :rect}]
     (overlaps? shape selrect)))
 
-
 (defn calculate-rec-path-skew-angle
   [path-shape]
   (let [p1 (get-in path-shape [:segments 2])
@@ -586,6 +589,63 @@
         rot-angle (gpt/angle-with-other v1 v2)
         rot-sign (if (> (* (:y v1) (:x v2)) (* (:x v1) (:y v2))) -1 1)]
     (* rot-sign rot-angle)))
+
+(defn pad-selrec
+  ([selrect] (pad-selrec selrect 1))
+  ([selrec size]
+   (let [inc #(+ % size)
+         dec #(- % size)]
+     (-> selrec
+         (update :x dec)
+         (update :y dec)
+         (update :x1 dec)
+         (update :y1 dec)
+         (update :x2 inc)
+         (update :y2 inc)
+         (update :width (comp inc inc))
+         (update :height (comp inc inc))))))
+
+(defn selrect->areas [bounds selrect]
+  (let [make-selrect
+        (fn [x1 y1 x2 y2]
+          {:x1 x1 :y1 y1 :x2 x2 :y2 y2 :x x1 :y y1
+           :width (- x2 x1) :height (- y2 y1) :type :rect})
+        {frame-x1 :x1 frame-x2 :x2 frame-y1 :y1 frame-y2 :y2
+         frame-width :width frame-height :height} bounds
+        {sr-x1 :x1 sr-x2 :x2 sr-y1 :y1 sr-y2 :y2
+         sr-width :width sr-height :height} selrect]
+    {:left   (make-selrect frame-x1 sr-y1 sr-x1 sr-y2)
+     :top    (make-selrect sr-x1 frame-y1 sr-x2 sr-y1)
+     :right  (make-selrect sr-x2 sr-y1 frame-x2 sr-y2)
+     :bottom (make-selrect sr-x1 sr-y2 sr-x2 frame-y2)}))
+
+(defn distance-selrect [selrect other]
+  (let [{:keys [x1 y1]} other
+        {:keys [x2 y2]} selrect]
+    (gpt/point (- x1 x2) (- y1 y2))))
+
+(defn distance-shapes [shape other]
+  (distance-selrect (:selrect shape) (:selrect other)))
+
+(defn overlap-coord?
+  "Checks if two shapes overlap in one axis"
+  [coord shape other]
+  (let [[s1c1 s1c2 s2c1 s2c2]
+        ;; If checking if overlaps in x-axis we need to check the y
+        ;; coordinates, and the other way around
+        (if (= coord :x)
+          [(get-in shape [:selrect :y1])
+           (get-in shape [:selrect :y2])
+           (get-in other [:selrect :y1])
+           (get-in other [:selrect :y2])]
+          [(get-in shape [:selrect :x1])
+           (get-in shape [:selrect :x2])
+           (get-in other [:selrect :x1])
+           (get-in other [:selrect :x2])])]
+    (or (and (>= s2c1 s1c1) (<= s2c1 s1c2))
+        (and (>= s2c2 s1c1) (<= s2c2 s1c2))
+        (and (>= s1c1 s2c1) (<= s1c1 s2c2))
+        (and (>= s1c2 s2c1) (<= s1c2 s2c2)))))
 
 (defn transform-shape-point
   "Transform a point around the shape center"

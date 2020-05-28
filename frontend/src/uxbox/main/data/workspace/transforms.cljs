@@ -219,6 +219,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id (get state :current-page-id)
+            objects (get-in state [:workspace-data page-id :objects])
             shapes (mapv #(get-in state [:workspace-data page-id :objects %]) ids)
             stopper (rx/filter ms/mouse-up? stream)
             layout (get state :workspace-layout)]
@@ -226,7 +227,7 @@
          (->> ms/mouse-position
               (rx/take-until stopper)
               (rx/map #(gpt/to-vec from-position %))
-              (rx/switch-map #(snap/closest-snap-move page-id shapes layout %))
+              (rx/switch-map #(snap/closest-snap-move page-id shapes objects layout %))
               (rx/map gmt/translate-matrix)
               (rx/map #(set-modifiers ids {:displacement %})))
 
