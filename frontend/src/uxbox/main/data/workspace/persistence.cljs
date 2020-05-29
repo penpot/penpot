@@ -305,13 +305,11 @@
   ([file on-uploaded]
    (us/verify fn? on-uploaded)
    (ptk/reify ::upload-image
-     ptk/UpdateEvent
-     (update [_ state]
-       (assoc-in state [:workspace-local :uploading] true))
-
      ptk/WatchEvent
      (watch [_ state stream]
-       (let [check-file
+       (let [file-id (get-in state [:workspace-page :file-id])
+
+             check-file
              (fn [file]
               (when (> (.-size file) max-file-size)
                 (throw (ex-info (tr "errors.image-too-large") {})))
@@ -319,14 +317,10 @@
                 (throw (ex-info (tr "errors.image-format-unsupported") {})))
               file)
 
-             finalize-upload #(assoc-in % [:workspace-local :uploading] false)
-
-             file-id (get-in state [:workspace-page :file-id])
-
-             on-success #(do (st/emit! finalize-upload)
+             on-success #(do (st/emit! dm/hide)
                              (on-uploaded %))
 
-             on-error #(do (st/emit! finalize-upload)
+             on-error #(do (st/emit! dm/hide)
                            (if (.-message %)
                              (rx/of (dm/error (.-message %)))
                              (rx/of (dm/error (tr "errors.unexpected-error")))))
@@ -337,6 +331,9 @@
                 :file-id file-id
                 :content file})]
 
+         (st/emit! (dm/show {:content (tr "image.loading")
+                             :type :info
+                             :timeout nil}))
          (->> (rx/of file)
               (rx/map check-file)
               (rx/map prepare)

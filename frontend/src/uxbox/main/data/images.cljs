@@ -375,17 +375,23 @@
                  (throw (ex-info (tr "errors.image-format-unsupported") {})))
                file)
 
-             on-success on-uploaded
+             on-success #(do (st/emit! dm/hide)
+                             (on-uploaded %))
 
-             on-error #(if (.-message %)
-                         (rx/of (dm/error (.-message %)))
-                         (rx/of (dm/error (tr "errors.unexpected-error"))))
+             on-error #(do (st/emit! dm/hide)
+                           (if (.-message %)
+                             (rx/of (dm/error (.-message %)))
+                             (rx/of (dm/error (tr "errors.unexpected-error")))))
 
              prepare
              (fn [file]
                {:name (.-name file)
                 :library-id library-id
                 :content file})]
+
+         (st/emit! (dm/show {:content (tr "image.loading")
+                             :type :info
+                             :timeout nil}))
 
          (->> (rx/from files)
               (rx/map check-file)

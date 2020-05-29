@@ -546,13 +546,13 @@
     }
   },
   "errors.image-format-unsupported" : {
-    "used-in" : [ "src/uxbox/main/data/images.cljs:375", "src/uxbox/main/data/workspace/persistence.cljs:320" ],
+    "used-in" : [ "src/uxbox/main/data/images.cljs:375", "src/uxbox/main/data/workspace/persistence.cljs:318" ],
     "translations" : {
       "en" : "The image format is not supported (must be svg, jpg or png)."
     }
   },
   "errors.image-too-large" : {
-    "used-in" : [ "src/uxbox/main/data/images.cljs:373", "src/uxbox/main/data/workspace/persistence.cljs:318" ],
+    "used-in" : [ "src/uxbox/main/data/images.cljs:373", "src/uxbox/main/data/workspace/persistence.cljs:316" ],
     "translations" : {
       "en" : "The image is too large to be inserted (must be under 5mb)."
     }
@@ -585,7 +585,7 @@
     }
   },
   "errors.unexpected-error" : {
-    "used-in" : [ "src/uxbox/main/data/images.cljs:382", "src/uxbox/main/data/workspace/persistence.cljs:333", "src/uxbox/main/ui/auth/register.cljs:54", "src/uxbox/main/ui/settings/change_email.cljs:42" ],
+    "used-in" : [ "src/uxbox/main/data/images.cljs:384", "src/uxbox/main/data/workspace/persistence.cljs:327", "src/uxbox/main/ui/auth/register.cljs:54", "src/uxbox/main/ui/settings/change_email.cljs:42" ],
     "translations" : {
       "en" : "An unexpected error occurred.",
       "fr" : "Une erreur inattendue c'est produite"
@@ -624,6 +624,12 @@
       "fr" : "Importer une image depuis une librairie"
     },
     "unused" : true
+  },
+  "image.loading" : {
+    "used-in" : [ "src/uxbox/main/data/images.cljs:392", "src/uxbox/main/data/workspace/persistence.cljs:335" ],
+    "translations" : {
+      "en" : "Loading image..."
+    }
   },
   "image.new" : {
     "translations" : {
