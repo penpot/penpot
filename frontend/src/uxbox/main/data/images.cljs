@@ -12,6 +12,7 @@
    [potok.core :as ptk]
    [uxbox.common.spec :as us]
    [uxbox.common.data :as d]
+   [uxbox.main.data.messages :as dm]
    [uxbox.main.store :as st]
    [uxbox.main.repo :as rp]
    [uxbox.util.i18n :refer [tr]]
@@ -352,7 +353,11 @@
 
 ;; --- Create Image
 (declare create-images-result)
-(def allowed-file-types #{"image/jpeg" "image/png"})
+(def allowed-file-types #{"image/jpeg" "image/png" "image/webp"})
+(def max-file-size (* 5 1024 1024))
+
+;; TODO: unify with upload-image at main/data/workspace/persistence.cljs
+;; https://tree.taiga.io/project/uxboxproject/us/440
 
 (defn create-images
   ([library-id files] (create-images library-id files identity))
@@ -362,22 +367,28 @@
    (ptk/reify ::create-images
      ptk/WatchEvent
      (watch [_ state stream]
-       (letfn [(allowed-file? [file]
-                 (contains? allowed-file-types (.-type file)))
-               #_(finalize-upload [state]
-                 (assoc-in state [:dashboard-images :uploading] false))
-               (on-success [_]
-                 #_(st/emit! finalize-upload)
-                 (on-uploaded))
-               (on-error [e]
-                 #_(st/emit! finalize-upload)
-                 (rx/throw e))
-               (prepare [file]
-                 {:name (.-name file)
-                  :library-id library-id
-                  :content file})]
+       (let [check-file
+             (fn [file]
+               (when (> (.-size file) max-file-size)
+                 (throw (ex-info (tr "errors.image-too-large") {})))
+               (when-not (contains? allowed-file-types (.-type file))
+                 (throw (ex-info (tr "errors.image-format-unsupported") {})))
+               file)
+
+             on-success on-uploaded
+
+             on-error #(if (.-message %)
+                         (rx/of (dm/error (.-message %)))
+                         (rx/of (dm/error (tr "errors.unexpected-error"))))
+
+             prepare
+             (fn [file]
+               {:name (.-name file)
+                :library-id library-id
+                :content file})]
+
          (->> (rx/from files)
-              (rx/filter allowed-file?)
+              (rx/map check-file)
               (rx/map prepare)
               (rx/mapcat #(rp/mutation! :upload-image %))
               (rx/reduce conj [])

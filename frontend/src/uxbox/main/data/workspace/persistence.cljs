@@ -16,10 +16,12 @@
    [uxbox.common.pages :as cp]
    [uxbox.common.spec :as us]
    [uxbox.main.data.dashboard :as dd]
+   [uxbox.main.data.messages :as dm]
    [uxbox.main.data.workspace.common :as dwc]
    [uxbox.main.repo :as rp]
    [uxbox.main.store :as st]
    [uxbox.common.geom.point :as gpt]
+   [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.router :as rt]
    [uxbox.util.time :as dt]
    [uxbox.util.transit :as t]))
@@ -292,7 +294,11 @@
 ;; --- Upload Image
 
 (declare image-uploaded)
-(def allowed-file-types #{"image/jpeg" "image/png"})
+(def allowed-file-types #{"image/jpeg" "image/png" "image/webp"})
+(def max-file-size (* 5 1024 1024))
+
+;; TODO: unify with create-images at main/data/images.cljs
+;; https://tree.taiga.io/project/uxboxproject/us/440
 
 (defn upload-image
   ([file] (upload-image file identity))
@@ -305,22 +311,34 @@
 
      ptk/WatchEvent
      (watch [_ state stream]
-       (let [allowed-file? #(contains? allowed-file-types (.-type %))
+       (let [check-file
+             (fn [file]
+              (when (> (.-size file) max-file-size)
+                (throw (ex-info (tr "errors.image-too-large") {})))
+              (when-not (contains? allowed-file-types (.-type file))
+                (throw (ex-info (tr "errors.image-format-unsupported") {})))
+              file)
+
              finalize-upload #(assoc-in % [:workspace-local :uploading] false)
+
              file-id (get-in state [:workspace-page :file-id])
 
              on-success #(do (st/emit! finalize-upload)
                              (on-uploaded %))
+
              on-error #(do (st/emit! finalize-upload)
-                           (rx/throw %))
+                           (if (.-message %)
+                             (rx/of (dm/error (.-message %)))
+                             (rx/of (dm/error (tr "errors.unexpected-error")))))
 
              prepare
              (fn [file]
                {:name (.-name file)
                 :file-id file-id
                 :content file})]
+
          (->> (rx/of file)
-              (rx/filter allowed-file?)
+              (rx/map check-file)
               (rx/map prepare)
               (rx/mapcat #(rp/mutation! :upload-file-image %))
               (rx/do on-success)
