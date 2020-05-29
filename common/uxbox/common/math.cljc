@@ -120,3 +120,9 @@
         dy (- y1 y2)]
     (-> (sqrt (+ (pow dx 2) (pow dy 2)))
         (precision 2))))
+
+(defn log10
+  "Logarithm base 10"
+  [x]
+  #?(:cljs (js/Math.log10 x)
+     :clj (Math/log10 x)))

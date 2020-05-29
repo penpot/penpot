@@ -38,6 +38,11 @@
         half-point (+ c1 (/ (- c2 c1) 2))]
     half-point))
 
+(def pill-text-width-letter 6)
+(def pill-text-width-margin 12)
+(def pill-text-font-size 12)
+(def pill-text-height 20)
+(def pill-text-border-radius 4)
 
 (mf/defc shape-distance-segment
   "Displays a segment between two selrects with the distance between them"
@@ -46,22 +51,38 @@
                     (get sr2 (if (= :x coord) :x2 :y2)))
         to-c   (max (get sr1 (if (= :x coord) :x1 :y1))
                     (get sr2 (if (= :x coord) :x1 :y1)))
+
         distance (mth/round (- to-c from-c))
-        half-point (half-point coord sr1 sr2)]
+        half-point (half-point coord sr1 sr2)
+        text-ref (mf/use-ref nil)
+        width (-> distance
+                  mth/log10 ;; number of digits
+                  (* (/ pill-text-width-letter zoom))
+                  (+ (/ pill-text-width-margin zoom)))]
 
     [:g.distance-segment
      (let [point [(+ from-c (/ distance 2))
                   (if (= coord :x)
-                    (- half-point (/ 3 zoom))
+                    (- half-point (/ 10 zoom))
                     (+ half-point (/ 5 zoom)))]
            [x y] (if (= :x coord) point (reverse point))]
-       [:text {:x x
-               :y y
-               :font-size (/ 12 zoom)
-               :fill line-color
-               :text-anchor (if (= coord :x) "middle" "left")}
-        (mth/round distance)])
-     
+
+       [:*
+        [:rect {:x (if (= coord :x) (- x (/ width 2)) x)
+                :y (- (- y (/ (/ pill-text-height zoom) 2)) (if (= coord :x) (/ 2 zoom) 0))
+                :width width
+                :height (/ pill-text-height zoom)
+                :rx (/ pill-text-border-radius zoom)
+                :fill line-color}]
+
+        [:text {:ref text-ref
+                :x (if (= coord :x) x (+ x (/ width 2)))
+                :y (- (+ y (/ (/ pill-text-height zoom) 2) (- (/ 6 zoom))) (if (= coord :x) (/ 2 zoom) 0))
+                :font-size (/ pill-text-font-size zoom)
+                :fill "white"
+                :text-anchor "middle"}
+         (mth/round distance)]])
+
      (let [p1 [(+ from-c (/ segment-gap zoom)) (+ half-point (/ segment-gap-side zoom))]
            p2 [(+ from-c (/ segment-gap zoom)) (- half-point (/ segment-gap-side zoom))]
            [x1 y1] (if (= :x coord) p1 (reverse p1))
