@@ -19,11 +19,11 @@
   (let [opt-pick-one #(if multi % (first %))
 
         on-files-selected (fn [event] (st/emit!
-                                        (-> (dom/get-target event)
-                                            (dom/get-files)
-                                            (array-seq)
-                                            (opt-pick-one)
-                                            (on-selected))))]
+                                        (some-> (dom/get-target event)
+                                                (dom/get-files)
+                                                (array-seq)
+                                                (opt-pick-one)
+                                                (on-selected))))]
     [:*
      (when label-text
        [:label {:for input-id :class-name label-class} label-text])

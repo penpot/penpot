@@ -165,7 +165,7 @@
          (t locale (str "dashboard.library.add-item." (name section)))]
 
         [:& file-uploader {:accept (case section
-                                     :images "image"
+                                     :images "image/jpeg,image/png,image/webp"
                                      :icons "image/svg+xml"
                                      "")
                            :multi true

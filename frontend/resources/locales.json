@@ -14,14 +14,14 @@
     }
   },
   "auth.create-demo-profile" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:114", "src/uxbox/main/ui/auth/register.cljs:116" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:116", "src/uxbox/main/ui/auth/login.cljs:115" ],
     "translations" : {
       "en" : "Create demo account",
       "fr" : null
     }
   },
   "auth.create-demo-profile-label" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:111", "src/uxbox/main/ui/auth/register.cljs:113" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:113", "src/uxbox/main/ui/auth/login.cljs:112" ],
     "translations" : {
       "en" : "Just wanna try it?"
     }
@@ -33,14 +33,14 @@
     }
   },
   "auth.email-label" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:73", "src/uxbox/main/ui/auth/recovery_request.cljs:45", "src/uxbox/main/ui/auth/register.cljs:82" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:82", "src/uxbox/main/ui/auth/recovery_request.cljs:45", "src/uxbox/main/ui/auth/login.cljs:73" ],
     "translations" : {
       "en" : "Email",
       "fr" : "adresse email"
     }
   },
   "auth.forgot-password" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:102" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:97" ],
     "translations" : {
       "en" : "Forgot your password?",
       "fr" : "Mot de passe oublié ?"
@@ -119,7 +119,7 @@
     }
   },
   "auth.password-label" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:79", "src/uxbox/main/ui/auth/register.cljs:86" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:86", "src/uxbox/main/ui/auth/login.cljs:79" ],
     "translations" : {
       "en" : "Password",
       "fr" : "Mot de passe"
@@ -156,13 +156,13 @@
     }
   },
   "auth.register" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:108" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:103" ],
     "translations" : {
       "en" : "Sign up here"
     }
   },
   "auth.register-label" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:105" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:100" ],
     "translations" : {
       "en" : "No account yet?"
     }
@@ -299,21 +299,21 @@
     "unused" : true
   },
   "dashboard.library.menu.icons" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/library.cljs:96" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/library.cljs:89" ],
     "translations" : {
       "en" : "Icons",
       "fr" : "ICÔNES"
     }
   },
   "dashboard.library.menu.images" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/library.cljs:100" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/library.cljs:93" ],
     "translations" : {
       "en" : "Images",
       "fr" : "Images"
     }
   },
   "dashboard.library.menu.palettes" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/library.cljs:104" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/library.cljs:97" ],
     "translations" : {
       "en" : "Palettes"
     }
@@ -368,19 +368,19 @@
     }
   },
   "ds.button.delete" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/library.cljs:152", "src/uxbox/main/ui/dashboard/library.cljs:220", "src/uxbox/main/ui/dashboard/library.cljs:259", "src/uxbox/main/ui/dashboard/library.cljs:300" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/library.cljs:145", "src/uxbox/main/ui/dashboard/library.cljs:210", "src/uxbox/main/ui/dashboard/library.cljs:249", "src/uxbox/main/ui/dashboard/library.cljs:290" ],
     "translations" : {
       "en" : "Delete"
     }
   },
   "ds.button.rename" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/library.cljs:149" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/library.cljs:142" ],
     "translations" : {
       "en" : "Rename"
     }
   },
   "ds.button.save" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/library.cljs:54" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/library.cljs:55" ],
     "translations" : {
       "en" : "Save"
     }
@@ -484,11 +484,11 @@
     "unused" : true
   },
   "ds.store-images-title" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/images.cljs:183" ],
     "translations" : {
       "en" : "IMAGES STORE",
       "fr" : "BOUTIQUE"
-    }
+    },
+    "unused" : true
   },
   "ds.updated-at" : {
     "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:45" ],
@@ -505,11 +505,11 @@
     "unused" : true
   },
   "ds.your-images-title" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/images.cljs:180" ],
     "translations" : {
       "en" : "YOUR IMAGES",
       "fr" : "VOS IMAGES"
-    }
+    },
+    "unused" : true
   },
   "errors.api.form.registration-disabled" : {
     "translations" : {
@@ -533,16 +533,28 @@
     }
   },
   "errors.email-already-exists" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:38", "src/uxbox/main/ui/auth.cljs:87" ],
+    "used-in" : [ "src/uxbox/main/ui/auth.cljs:87", "src/uxbox/main/ui/settings/change_email.cljs:38" ],
     "translations" : {
       "en" : "Email already used"
     }
   },
   "errors.generic" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:37", "src/uxbox/main/ui/auth.cljs:91", "src/uxbox/main/ui.cljs:184" ],
+    "used-in" : [ "src/uxbox/main/ui.cljs:184", "src/uxbox/main/ui/auth.cljs:91", "src/uxbox/main/ui/settings/profile.cljs:37" ],
     "translations" : {
       "en" : "Something wrong has happened.",
       "fr" : "Quelque chose c'est mal passé."
+    }
+  },
+  "errors.image-format-unsupported" : {
+    "used-in" : [ "src/uxbox/main/data/images.cljs:375", "src/uxbox/main/data/workspace/persistence.cljs:320" ],
+    "translations" : {
+      "en" : "The image format is not supported (must be svg, jpg or png)."
+    }
+  },
+  "errors.image-too-large" : {
+    "used-in" : [ "src/uxbox/main/data/images.cljs:373", "src/uxbox/main/data/workspace/persistence.cljs:318" ],
+    "translations" : {
+      "en" : "The image is too large to be inserted (must be under 5mb)."
     }
   },
   "errors.network" : {
@@ -573,7 +585,7 @@
     }
   },
   "errors.unexpected-error" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:42", "src/uxbox/main/ui/auth/register.cljs:54" ],
+    "used-in" : [ "src/uxbox/main/data/images.cljs:382", "src/uxbox/main/data/workspace/persistence.cljs:333", "src/uxbox/main/ui/auth/register.cljs:54", "src/uxbox/main/ui/settings/change_email.cljs:42" ],
     "translations" : {
       "en" : "An unexpected error occurred.",
       "fr" : "Une erreur inattendue c'est produite"
@@ -593,7 +605,7 @@
     }
   },
   "header.sitemap" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:67" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:65" ],
     "translations" : {
       "en" : null,
       "fr" : null
@@ -607,35 +619,35 @@
     }
   },
   "image.import-library" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/images.cljs:172" ],
     "translations" : {
       "en" : "Import image from library",
       "fr" : "Importer une image depuis une librairie"
-    }
+    },
+    "unused" : true
   },
   "image.new" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/images.cljs:86" ],
     "translations" : {
       "en" : "New image",
       "fr" : "Nouvelle image"
-    }
+    },
+    "unused" : true
   },
   "image.select" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/images.cljs:92", "src/uxbox/main/ui/workspace/images.cljs:97" ],
     "translations" : {
       "en" : "Select from library",
       "fr" : "Choisir depuis une librairie"
-    }
+    },
+    "unused" : true
   },
   "image.upload" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/images.cljs:104" ],
     "translations" : {
       "en" : "Upload file",
       "fr" : "Envoyer un fichier"
-    }
+    },
+    "unused" : true
   },
   "modal.create-color.new-color" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/library.cljs:48" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/library.cljs:49" ],
     "translations" : {
       "en" : "New Color"
     }
@@ -843,7 +855,7 @@
     }
   },
   "settings.profile-submit-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/options.cljs:65", "src/uxbox/main/ui/settings/password.cljs:94", "src/uxbox/main/ui/settings/profile.cljs:89" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/password.cljs:94", "src/uxbox/main/ui/settings/options.cljs:65", "src/uxbox/main/ui/settings/profile.cljs:89" ],
     "translations" : {
       "en" : "Update settings",
       "fr" : "Mettre à jour les paramètres"
@@ -1031,91 +1043,91 @@
     }
   },
   "workspace.header.menu.disable-dynamic-alignment" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:119" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:117" ],
     "translations" : {
       "en" : "Disable dynamic alignment"
     }
   },
   "workspace.header.menu.disable-snap-grid" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:91" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:89" ],
     "translations" : {
       "en" : "Disable snap to grid"
     }
   },
   "workspace.header.menu.enable-dynamic-alignment" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:120" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:118" ],
     "translations" : {
       "en" : "Enable dynamic aligment"
     }
   },
   "workspace.header.menu.enable-snap-grid" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:92" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:90" ],
     "translations" : {
       "en" : "Snap to grid"
     }
   },
   "workspace.header.menu.hide-grid" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:84" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:82" ],
     "translations" : {
       "en" : "Hide grid"
     }
   },
   "workspace.header.menu.hide-layers" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:98" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:96" ],
     "translations" : {
       "en" : "Hide layers"
     }
   },
   "workspace.header.menu.hide-libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:112" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:110" ],
     "translations" : {
       "en" : "Hide libraries"
     }
   },
   "workspace.header.menu.hide-palette" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:105" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:103" ],
     "translations" : {
       "en" : "Hide color palette"
     }
   },
   "workspace.header.menu.hide-rules" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:77" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:75" ],
     "translations" : {
       "en" : "Hide rules"
     }
   },
   "workspace.header.menu.show-grid" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:85" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:83" ],
     "translations" : {
       "en" : "Show grid"
     }
   },
   "workspace.header.menu.show-layers" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:99" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:97" ],
     "translations" : {
       "en" : "Show layers"
     }
   },
   "workspace.header.menu.show-libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:113" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:111" ],
     "translations" : {
       "en" : "Show libraries"
     }
   },
   "workspace.header.menu.show-palette" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:106" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:104" ],
     "translations" : {
       "en" : "Show color palette"
     }
   },
   "workspace.header.menu.show-rules" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:78" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:76" ],
     "translations" : {
       "en" : "Show rules"
     }
   },
   "workspace.header.viewer" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:158" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:156" ],
     "translations" : {
       "en" : "View mode (Ctrl + P)",
       "fr" : "Mode visualisation (Ctrl + P)"
@@ -1473,7 +1485,7 @@
     "unused" : true
   },
   "workspace.options.position" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:127", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:134" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:134", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:127" ],
     "translations" : {
       "en" : "Position",
       "fr" : "Position"
@@ -1519,7 +1531,7 @@
     }
   },
   "workspace.options.size" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:102", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:106" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:106", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:102" ],
     "translations" : {
       "en" : "Size",
       "fr" : "Taille"
@@ -1626,21 +1638,21 @@
     }
   },
   "workspace.toolbar.circle" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:45" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:63" ],
     "translations" : {
       "en" : "Circle (E)",
       "fr" : "Cercle (E)"
     }
   },
   "workspace.toolbar.color-palette" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:84" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:107" ],
     "translations" : {
       "en" : "Color Palette (---)",
       "fr" : "Palette de couleurs (---)"
     }
   },
   "workspace.toolbar.curve" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:59" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:82" ],
     "translations" : {
       "en" : "Curve",
       "fr" : "Courbe"
@@ -1654,7 +1666,7 @@
     "unused" : true
   },
   "workspace.toolbar.frame" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:35" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:53" ],
     "translations" : {
       "en" : "Artboard (A)",
       "fr" : null
@@ -1675,20 +1687,20 @@
     "unused" : true
   },
   "workspace.toolbar.image" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:55" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:73" ],
     "translations" : {
       "en" : "Image (Ctrl + I)",
       "fr" : "Image (Ctrl + I)"
     }
   },
   "workspace.toolbar.libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:76" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:99" ],
     "translations" : {
       "en" : "Libraries (Ctrl + Shift + L)"
     }
   },
   "workspace.toolbar.path" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:64" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:87" ],
     "translations" : {
       "en" : "Path",
       "fr" : "Chemin"
@@ -1702,7 +1714,7 @@
     "unused" : true
   },
   "workspace.toolbar.rect" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:40" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:58" ],
     "translations" : {
       "en" : "Box (B)",
       "fr" : "Boîte (B)"
@@ -1716,7 +1728,7 @@
     "unused" : true
   },
   "workspace.toolbar.text" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:50" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:68" ],
     "translations" : {
       "en" : "Text (T)",
       "fr" : "Texte (T)"
