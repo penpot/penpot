@@ -117,7 +117,6 @@
   (s/keys :req-un [::id
                    ::name
                    ::file-id
-                   ::version
                    ::revn
                    ::created-at
                    ::modified-at

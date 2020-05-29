@@ -39,7 +39,7 @@
     half-point))
 
 (def pill-text-width-letter 6)
-(def pill-text-width-margin 12)
+(def pill-text-width-margin 6)
 (def pill-text-font-size 12)
 (def pill-text-height 20)
 (def pill-text-border-radius 4)
@@ -52,10 +52,11 @@
         to-c   (max (get sr1 (if (= :x coord) :x1 :y1))
                     (get sr2 (if (= :x coord) :x1 :y1)))
 
-        distance (mth/round (- to-c from-c))
+        distance (- to-c from-c)
+        distance-str (-> distance (mth/precision 2) str)
         half-point (half-point coord sr1 sr2)
-        width (-> distance
-                  mth/log10 ;; number of digits
+        width (-> distance-str
+                  count
                   (* (/ pill-text-width-letter zoom))
                   (+ (/ pill-text-width-margin zoom)))]
 
@@ -79,7 +80,7 @@
                 :font-size (/ pill-text-font-size zoom)
                 :fill "white"
                 :text-anchor "middle"}
-         (mth/round distance)]])
+         (mth/precision distance 2)]])
 
      (let [p1 [(+ from-c (/ segment-gap zoom)) (+ half-point (/ segment-gap-side zoom))]
            p2 [(+ from-c (/ segment-gap zoom)) (- half-point (/ segment-gap-side zoom))]
@@ -123,7 +124,8 @@
         (fn [[selrect selected frame]]
           (let [lt-side (if (= coord :x) :left :top)
                 gt-side (if (= coord :x) :right :bottom)
-                areas (gsh/selrect->areas (or (:selrect frame) @refs/vbox) selrect)
+                areas (gsh/selrect->areas (or (:selrect frame)
+                                              (gsh/rect->rect-shape @refs/vbox)) selrect)
                 query-side (fn [side]
                              (->> (uw/ask! {:cmd :selection/query
                                             :page-id page-id
@@ -141,7 +143,7 @@
                   (gsh/distance-selrect sr selrect)
                   (gsh/distance-selrect selrect sr))
                 coord
-                mth/round)))
+                (mth/precision 2))))
 
         get-shapes-match
         (fn [pred? shapes]

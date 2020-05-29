@@ -21,7 +21,7 @@
    [uxbox.util.geom.snap-points :as sp]))
 
 (def ^:private snap-accuracy 5)
-(def ^:private snap-distance-accuracy 10)
+(def ^:private snap-distance-accuracy 5)
 
 (defn- remove-from-snap-points [remove-id?]
   (fn [query-result]
@@ -162,7 +162,7 @@
                         (-> % gsh/selection-rect (gsh/move movev))))
        (rx/merge-map
         (fn [[frame selrect]]
-          (let [areas (->> (gsh/selrect->areas (or (:selrect frame) @refs/vbox) selrect)
+          (let [areas (->> (gsh/selrect->areas (or (:selrect frame) (gsh/rect->rect-shape @refs/vbox)) selrect)
                            (d/mapm #(select-shapes-area page-id shapes objects %2)))
                 snap-x (search-snap-distance selrect :x (:left areas) (:right areas))
                 snap-y (search-snap-distance selrect :y (:top areas) (:bottom areas))]

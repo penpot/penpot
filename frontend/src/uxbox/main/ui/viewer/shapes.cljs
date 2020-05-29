@@ -43,8 +43,8 @@
   (mf/fnc generic-wrapper
     {::mf/wrap-props false}
     [props]
-    (let [{:keys [x y width height]
-           :as shape} (->> (unchecked-get props "shape") :selrect)
+    (let [shape (unchecked-get props "shape")
+          {:keys [x y width height]} (:selrect shape)
 
           childs (unchecked-get props "childs")
           frame (unchecked-get props "frame")
@@ -114,7 +114,8 @@
             childs (mapv #(get objects %) (:shapes shape))
             shape  (geom/transform-shape shape)
             props  (obj/merge! #js {} props
-                               #js {:childs childs
+                               #js {:shape shape
+                                    :childs childs
                                     :show-interactions? show-interactions?})]
         [:> frame-wrapper props]))))
 
