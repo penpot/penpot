@@ -144,6 +144,9 @@
 (def options-mode
   (l/derived :options-mode workspace-local))
 
+(def vbox
+  (l/derived :vbox workspace-local))
+
 ;; ---- Viewer refs
 
 (def viewer-data

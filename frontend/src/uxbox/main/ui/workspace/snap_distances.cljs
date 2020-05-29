@@ -54,7 +54,6 @@
 
         distance (mth/round (- to-c from-c))
         half-point (half-point coord sr1 sr2)
-        text-ref (mf/use-ref nil)
         width (-> distance
                   mth/log10 ;; number of digits
                   (* (/ pill-text-width-letter zoom))
@@ -75,8 +74,7 @@
                 :rx (/ pill-text-border-radius zoom)
                 :fill line-color}]
 
-        [:text {:ref text-ref
-                :x (if (= coord :x) x (+ x (/ width 2)))
+        [:text {:x (if (= coord :x) x (+ x (/ width 2)))
                 :y (- (+ y (/ (/ pill-text-height zoom) 2) (- (/ 6 zoom))) (if (= coord :x) (/ 2 zoom) 0))
                 :font-size (/ pill-text-font-size zoom)
                 :fill "white"
@@ -125,7 +123,7 @@
         (fn [[selrect selected frame]]
           (let [lt-side (if (= coord :x) :left :top)
                 gt-side (if (= coord :x) :right :bottom)
-                areas (gsh/selrect->areas (:selrect frame) selrect)
+                areas (gsh/selrect->areas (or (:selrect frame) @refs/vbox) selrect)
                 query-side (fn [side]
                              (->> (uw/ask! {:cmd :selection/query
                                             :page-id page-id
