@@ -9,48 +9,13 @@
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [instaparse.core :as insta]
    [uxbox.common.spec :as us]
    [uxbox.common.exceptions :as ex]
    [uxbox.util.template :as tmpl]))
 
 ;; --- Impl.
 
-(def ^:private grammar
-  (str "message = part*"
-       "part = begin header body end; "
-       "header = tag* eol; "
-       "tag = space keyword; "
-       "body = line*; "
-       "begin = #'--\\s+begin\\s+'; "
-       "end = #'--\\s+end\\s*' eol*; "
-       "keyword = #':[\\w\\-]+'; "
-       "space = #'\\s*'; "
-       "line = #'.*\\n'; "
-       "eol = ('\\n' | '\\r\\n'); "))
-
-(def ^:private parse-fn (insta/parser grammar))
-(def ^:private email-path "emails/%(id)s/%(lang)s.mustache")
-
-(defn- parse-template
-  [content]
-  (loop [state {}
-         parts (drop 1 (parse-fn content))]
-    (if-let [[_ _ header body] (first parts)]
-      (let [type (get-in header [1 2 1])
-            type (keyword (str/slice type 1))
-            content (apply str (map second (rest body)))]
-        (recur (assoc state type (str/trim content " \n"))
-               (rest parts)))
-      state)))
-
-(s/def ::subject string?)
-(s/def ::body-text string?)
-(s/def ::body-html string?)
-
-(s/def ::parsed-email
-  (s/keys :req-un [::subject ::body-text]
-          :opt-un [::body-html]))
+(def ^:private email-path "emails/%(id)s/%(lang)s.%(type)s")
 
 (defn- build-base-email
   [data context]
@@ -66,13 +31,28 @@
               (:body-html data) (conj {:type "text/html"
                                        :value (:body-html data)}))})
 
+(defn- render-email-part
+  [type id context]
+  (let [lang (:lang context :en)
+        path (str/format email-path {:id (name id)
+                                     :lang (name lang)
+                                     :type (name type)})]
+    (some-> (io/resource path)
+            (tmpl/render context))))
+
 (defn- impl-build-email
   [id context]
   (let [lang (:lang context :en)
-        path (str/format email-path {:id (name id) :lang (name lang)})]
-    (-> (tmpl/render path context)
-        (parse-template)
-        (build-base-email context))))
+        subj (render-email-part :subj id context)
+        html (render-email-part :html id context)
+        text (render-email-part :txt id context)]
+
+    {:subject subj
+     :content (cond-> []
+                text (conj {:type "text/plain"
+                             :value text})
+                html (conj {:type "text/html"
+                            :value html}))}))
 
 ;; --- Public API
 

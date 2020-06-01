@@ -90,7 +90,6 @@
       (emails/send! conn emails/register
                     {:to (:email profile)
                      :name (:fullname profile)
-                     :public-url (:public-uri cfg/config)
                      :token token})
       profile)))
 
@@ -339,7 +338,6 @@
       (emails/send! conn emails/change-email
                     {:to (:email profile)
                      :name (:fullname profile)
-                     :public-url (:public-uri cfg/config)
                      :pending-email email
                      :token token})
       nil)))
@@ -430,7 +428,6 @@
           (send-email-notification [conn profile]
             (emails/send! conn emails/password-recovery
                           {:to (:email profile)
-                           :public-url (:public-uri cfg/config)
                            :token (:token profile)
                            :name (:fullname profile)}))]
 

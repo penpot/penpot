@@ -1,0 +1,19 @@
+{% extends "emails/base.html" %}
+
+{% block content %}
+  <p>Hello {{name}}!</p>
+
+  <p>We received a request to change your current email to {{ pending-email }}.</p>
+
+  <p>Click to the link below to confirm the change:</p>
+
+  <a class="btn-primary" href="{{ public-uri }}/#/auth/verify-token?token={{token}}">Confirm email change</a>
+
+  <p>If you received this email by mistake, please consider changing your password
+    for security reasons.</p>
+
+  <p>Enjoy!</p>
+
+  <p>The UXBOX team.</p>
+
+{% endblock %}

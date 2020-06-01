@@ -1,18 +1,12 @@
--- begin :subject
-Password reset.
--- end
-
--- begin :body-text
 Hello {{name}}!
 
 We received a request to reset your password. Click the link below to choose a
 new one:
 
-{{ publicUri }}/#/auth/recovery?token={{token}}
+{{ public-uri }}/#/auth/recovery?token={{token}}
 
 If you received this email by mistake, you can safely ignore it. Your password
 won't be changed.
 
 Enjoy!
 The UXBOX team.
--- end

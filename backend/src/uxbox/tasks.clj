@@ -52,15 +52,15 @@
     :cron (dt/cron "1 1 */1 * * ? *")
     :fn #'uxbox.tasks.gc/remove-media}])
 
-(defstate worker
+(defstate tasks-worker
   :start (impl/start-worker! {:tasks tasks
                               :xtor scheduler})
-  :stop (impl/stop! worker))
+  :stop (impl/stop! tasks-worker))
 
 (defstate scheduler-worker
   :start (impl/start-scheduler-worker! {:schedule schedule
                                         :xtor scheduler})
-  :stop (impl/stop! worker))
+  :stop (impl/stop! scheduler-worker))
 
 ;; --- Public API
 

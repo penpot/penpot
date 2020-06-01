@@ -1,0 +1,20 @@
+{% extends "emails/base.html" %}
+
+{% block content %}
+  <p>Hello {{name}}!</p>
+
+  <p>
+    Thanks for signing up for your UXBOX account! Please verify your
+    email using the link below adn get started building mockups and
+    prototypes today!
+  </p>
+
+  <a class="btn-primary" href="{{public-uri}}/#/auth/verify-token?token={{token}}">
+    Verify token
+  </a>
+
+  <p>Enjoy!</p>
+
+  <p>The UXBOX team.</p>
+
+{% endblock %}
