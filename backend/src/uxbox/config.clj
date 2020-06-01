@@ -32,8 +32,8 @@
    :redis-uri "redis://redis/0"
    :media-directory "resources/public/media"
    :assets-directory "resources/public/static"
-   :media-uri "http://localhost:6060/media/"
-   :assets-uri "http://localhost:6060/static/"
+   :media-uri "http://localhost:6060/media"
+   :assets-uri "http://localhost:6060/static"
 
    :sendmail-backend "console"
    :sendmail-reply-to "no-reply@example.com"

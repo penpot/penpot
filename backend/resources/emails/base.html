@@ -1,0 +1,85 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width">
+    {% block head %}
+    <title>UXBOX Email</title>
+    {% endblock %}
+    {% include "emails/partials/inline_style.html" %}
+  </head>
+
+  <body bgcolor="#f6f6f6" cz-shortcut-listen="true">
+    <!-- body -->
+    <table class="body-wrap">
+      <tbody><tr>
+        <td></td>
+        <td class="container" bgcolor="#FFFFFF">
+          <!-- logo -->
+          <div class="logo">
+            <img src="{{assets-uri}}/images/email/logo.png" alt="UXBOX">
+          </div>
+          <!-- content -->
+          <div class="content">
+            <table>
+              <tbody><tr>
+                <td>
+                  {% block content %}
+                  {% endblock %}
+                </td>
+              </tr>
+              </tbody></table>
+          </div>
+          <!-- /content -->
+
+        </td>
+        <td></td>
+      </tr>
+      </tbody>
+    </table>
+    <!-- /body -->
+
+    <!-- footer -->
+    <table class="footer-wrap">
+      <tbody><tr>
+        <td></td>
+        <td class="container">
+          <!-- content -->
+          <div class="content">
+            <table>
+              <tbody>
+                <tr>
+                  <td align="center">
+                    <p>UXBOX is the first Open Source prototyping platform that will be embraced by multidisciplinary teams.</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div style="text-align: center; margin: 10px 0;">
+                      <a href="#" target="_blank"><img style="display: inline-block; width: 25px; margin: 0 15px;" src="{{assets-uri}}/images/email/uxbox.png" alt="UXBOX"></a>
+                      <a href="#" target="_blank"><img style="display: inline-block; width: 25px; margin: 0 15px;" src="{{assets-uri}}/images/email/twitter.png" alt="TWITTER"></a>
+                      <a href="#" target="_blank"><img style="display: inline-block; width: 25px; margin: 0 15px;" src="{{assets-uri}}/images/email/github.png" alt="GITHUB"></a>
+                      <a href="#" target="_blank"><img style="display: inline-block; width: 25px; margin: 0 15px;" src="{{assets-uri}}/images/email/instagram.png" alt="INSTAGRAM"></a>
+                      <a href="#" target="_blank"><img style="display: inline-block; width: 25px; margin: 0 15px;" src="{{assets-uri}}/images/email/taiga.png" alt="TAIGA"></a>
+                    </div>
+                  </td>
+                </tr>
+                {% comment %}
+                <tr>
+                  <td align="center">
+                    <p>Sent from UXBOX | <a href="#" target="_blank"><unsubscribe>Email preferences</unsubscribe></a>
+                    </p>
+                  </td>
+                </tr>
+                {% endcomment %}
+              </tbody>
+            </table>
+          </div><!-- /content -->
+        </td>
+        <td></td>
+      </tr>
+      </tbody>
+    </table>
+    <!-- /footer -->
+  </body>
+</html>

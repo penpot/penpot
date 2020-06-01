@@ -24,8 +24,7 @@
 
 (defn default-context
   []
-  {:static media/resolve-asset
-   :comment (constantly nil)
+  {:assets-uri (:assets-uri cfg/config)
    :public-uri (:public-uri cfg/config)})
 
 ;; --- Public API

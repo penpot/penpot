@@ -1,0 +1,13 @@
+Hello {{name}}!
+
+We received a request to change your current email to {{ pending-email }}.
+
+Click to the link below to confirm the change:
+
+{{ public-uri }}/#/auth/verify-token?token={{token}}
+
+If you received this email by mistake, please consider changing your password
+for security reasons.
+
+Enjoy!
+The UXBOX team.

@@ -1,0 +1,173 @@
+<style>
+ /* GLOBAL */
+ * {
+   margin:0;
+   padding:0;
+   font-family: Arial, sans-serif;
+   font-size: 100%;
+   line-height: 1.6;
+ }
+
+ img {
+   max-width: 100%;
+   width: 100%;
+ }
+
+ body {
+   -webkit-font-smoothing:antialiased;
+   -webkit-text-size-adjust:none;
+   width: 100%!important;
+   height: 100%;
+ }
+
+ /* ELEMENTS */
+ a {
+   color: rgb(35, 211, 161);
+   text-decoration:none;
+   font-weight: bold;
+ }
+
+ a:hover {
+   text-decoration: underline;
+ }
+
+ .btn-primary {
+   text-decoration:none;
+   color: #000;
+   background-color: #31EFB8;
+   padding: 10px 30px;
+   font-weight: bold;
+   margin: 20px 0;
+   text-align: center;
+   cursor: pointer;
+   display: inline-block;
+   border-radius: 3px;
+ }
+
+ .btn-secondary {
+   text-decoration:none;
+   color: #000;
+   background-color: #fff;
+   padding: 10px 30px;
+   font-weight: bold;
+   margin: 20px 0;
+   text-align: center;
+   cursor: pointer;
+   display: inline-block;
+   border-radius: 3px;
+   border: 1px solid #000;
+ }
+
+ .btn-primary:hover,
+ .btn-secondary:hover {
+   color: #31EFB8;
+   background-color: #000;
+   text-decoration: none;
+ }
+
+ .last {
+   margin-bottom: 0;
+ }
+
+ .first{
+   margin-top: 0;
+ }
+
+ .logo {
+   background-color: #f6f6f6;
+   padding: 10px;
+ }
+ .logo h2 {
+   color: #000;
+   font-size: 20px;
+   font-weight: bold;
+   margin-top: 15px;
+ }
+ .logo img {
+   max-width: 120px;
+ }
+
+ /* BODY */
+ table.body-wrap {
+   width: 100%;
+   padding: 20px;
+ }
+
+ table.body-wrap .container{
+   color: #000;
+ }
+
+
+ /* FOOTER */
+ table.footer-wrap {
+   width: 100%;
+   clear:both!important;
+ }
+
+ .footer-wrap .container p {
+   font-size: 12px;
+   color:#666666;
+
+ }
+
+ table.footer-wrap a{
+   color: #999;
+ }
+
+
+ /* TYPOGRAPHY */
+ h1,h2,h3{
+   font-family: Arial, sans-serif;
+   line-height: 1.1;
+   margin-bottom:15px;
+   color:#000;
+   margin: 25px 0 15px;
+   line-height: 1.2;
+   font-weight:200;
+ }
+
+ h1 {
+   color: #000;
+   font-size: 24px;
+   font-weight: bold;
+ }
+ h2 {
+   font-size: 22px;
+ }
+ h3 {
+   font-size: 18px;
+ }
+
+ p, ul {
+   margin-bottom: 20px;
+   font-weight: normal;
+ }
+
+ ul li {
+   margin-left:5px;
+   list-style-position: inside;
+ }
+
+ /* RESPONSIVE */
+
+ /* Set a max-width, and make it display as block so it will automatically stretch to that width, but will also shrink down on a phone or something */
+ .container {
+   display: block !important;
+   max-width: 620px !important;
+   margin: 0 auto !important; /* makes it centered */
+   clear: both !important;
+ }
+
+ /* This should also be a block element, so that it will fill 100% of the .container */
+ .content {
+   padding: 20px;
+   max-width: 620px;
+   margin: 0 auto;
+   display: block;
+ }
+
+ /* Let's make sure tables in the content area are 100% wide */
+ .content table {
+   width: 100%;
+ }
+</style>

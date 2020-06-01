@@ -19,8 +19,9 @@
   io.prometheus/simpleclient_hotspot {:mvn/version "0.9.0"}
   io.prometheus/simpleclient_httpserver {:mvn/version "0.9.0"}
 
+  selmer/selmer {:mvn/version "1.12.18"}
+
   expound/expound {:mvn/version "0.8.4"}
-  instaparse/instaparse {:mvn/version "1.4.10"}
   com.cognitect/transit-clj {:mvn/version "1.0.324"}
 
   io.lettuce/lettuce-core {:mvn/version "5.2.2.RELEASE"}

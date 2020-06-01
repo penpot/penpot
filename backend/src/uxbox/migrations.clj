@@ -12,8 +12,7 @@
    [mount.core :as mount :refer [defstate]]
    [uxbox.db :as db]
    [uxbox.config :as cfg]
-   [uxbox.util.migrations :as mg]
-   [uxbox.util.template :as tmpl]))
+   [uxbox.util.migrations :as mg]))
 
 (def +migrations+
   {:name "uxbox-main"

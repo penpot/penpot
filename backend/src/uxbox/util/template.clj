@@ -12,57 +12,24 @@
    [clojure.walk :as walk]
    [clojure.java.io :as io]
    [cuerdas.core :as str]
-   [uxbox.common.exceptions :as ex])
-  (:import
-   java.io.StringReader
-   java.util.HashMap
-   java.util.function.Function;
-   com.github.mustachejava.DefaultMustacheFactory
-   com.github.mustachejava.Mustache))
+   [selmer.parser :as sp]
+   [uxbox.common.exceptions :as ex]))
 
-(def ^DefaultMustacheFactory +mustache-factory+ (DefaultMustacheFactory.))
-
-(defn- adapt-context
-  [data]
-  (walk/postwalk (fn [x]
-                   (cond
-                     (instance? clojure.lang.Named x)
-                     (str/camel (name x))
-
-                     (instance? clojure.lang.MapEntry x)
-                     x
-
-                     (fn? x)
-                     (reify Function
-                       (apply [this content]
-                         (try
-                           (x content)
-                           (catch Exception e
-                             (log/error e "Error on executing" x)
-                             ""))))
-
-                     (or (vector? x) (list? x))
-                     (java.util.ArrayList. ^java.util.List x)
-
-                     (map? x)
-                     (java.util.HashMap. ^java.util.Map x)
-
-                     (set? x)
-                     (java.util.HashSet. ^java.util.Set x)
-
-                     :else
-                     x))
-                 data))
-
+;; (sp/cache-off!)
 
 (defn render
   [path context]
   (try
-    (let [context (adapt-context context)
-          template (.compile +mustache-factory+ path)]
-      (with-out-str
-        (let [scope (HashMap. ^java.util.Map (walk/stringify-keys context))]
-          (.execute ^Mustache template *out* scope))))
+    (sp/render-file path context)
+    (catch Exception cause
+      (ex/raise :type :internal
+                :code :template-render-error
+                :cause cause))))
+
+(defn render-string
+  [content context]
+  (try
+    (sp/render content context)
     (catch Exception cause
       (ex/raise :type :internal
                 :code :template-render-error
