@@ -312,14 +312,19 @@
         on-drop
         (fn [event]
           (dom/prevent-default event)
-          (let [shape (dom/get-data-transfer event)
-                point (gpt/point (.-clientX event) (.-clientY event))
-                viewport-coord (translate-point-to-viewport point)
-                final-x (- (:x viewport-coord) (/ (:width shape) 2))
-                final-y (- (:y viewport-coord) (/ (:height shape) 2))]
-            (st/emit! (dw/add-shape (-> shape
-                                        (assoc :x final-x)
-                                        (assoc :y final-y))))))
+          (if (dnd/has-type? event "uxbox/shape")
+
+            (let [shape (dnd/get-data event "uxbox/shape")
+                  point (gpt/point (.-clientX event) (.-clientY event))
+                  viewport-coord (translate-point-to-viewport point)
+                  final-x (- (:x viewport-coord) (/ (:width shape) 2))
+                  final-y (- (:y viewport-coord) (/ (:height shape) 2))]
+              (st/emit! (dw/add-shape (-> shape
+                                          (assoc :x final-x)
+                                          (assoc :y final-y)))))
+
+            (let [files (dnd/get-files event)]
+              (run! #(st/emit! (dw/upload-image % on-uploaded)) files))))
 
         on-resize
         (fn [event]

@@ -162,16 +162,6 @@
   [node]
   (.focus node))
 
-(defn set-data-transfer
-  [event data]
-  (let [data-string (ts/encode data)]
-    (-> event .-dataTransfer (.setData "text/plain" data-string))))
-
-(defn get-data-transfer
-  [event]
-  (let [data-string (-> event .-dataTransfer (.getData "text/plain"))]
-    (ts/decode data-string)))
-
 (defn fullscreen?
   []
   (boolean (.-fullscreenElement js/document)))
