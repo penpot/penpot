@@ -191,6 +191,18 @@
             (assoc :height value)
             (assoc :width (* value proportion)))))))
 
+(defn resize
+  [shape width height]
+  (us/assert map? shape)
+  (us/assert number? width)
+  (us/assert number? height)
+  (-> shape
+      (assoc :width width
+             :height height
+             :x2 (+ (:x1 shape) width)
+             :y2 (+ (:y1 shape) height))
+      (update :selrect (nilf #(resize % width height)))))
+
 ;; --- Setup (Initialize)
 
 (declare setup-rect)
