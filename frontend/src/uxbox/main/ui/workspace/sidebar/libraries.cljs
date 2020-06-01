@@ -20,6 +20,7 @@
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.shapes.icon :as icon]
    [uxbox.util.dom :as dom]
+   [uxbox.util.dom.dnd :as dnd]
    [uxbox.util.timers :as timers]
    [uxbox.common.uuid :as uuid]
    [uxbox.util.i18n :as i18n :refer [tr]]
@@ -100,7 +101,8 @@
               :key (str (:id item))
               :on-drag-start (fn [event]
                                (swap! state assoc :drag-style true)
-                               (dom/set-data-transfer event (shape-from-item section item))
+                               (dnd/set-data! event "uxbox/shape" (shape-from-item section item))
+                               (dnd/set-allowed-effect! event "move")
                                ;; This state is so we can give custom css to the dragging
                                (timers/schedule #(swap! state assoc :drag-style false)))}
              (if (= section :icons)

@@ -26,7 +26,7 @@
    [uxbox.main.ui.hooks :as hooks]
    [uxbox.main.ui.workspace.shapes :refer [shape-wrapper frame-wrapper]]
    [uxbox.main.ui.workspace.shapes.interactions :refer [interactions]]
-   [uxbox.main.ui.workspace.drawarea :refer [draw-area start-drawing]]
+   [uxbox.main.ui.workspace.drawarea :refer [draw-area start-drawing direct-add-shape]]
    [uxbox.main.ui.workspace.selection :refer [selection-handlers]]
    [uxbox.main.ui.workspace.presence :as presence]
    [uxbox.main.ui.workspace.snap-points :refer [snap-points]]
@@ -34,6 +34,7 @@
    [uxbox.main.ui.workspace.frame-grid :refer [frame-grid]]
    [uxbox.common.math :as mth]
    [uxbox.util.dom :as dom]
+   [uxbox.util.dom.dnd :as dnd]
    [uxbox.util.object :as obj]
    [uxbox.common.geom.point :as gpt]
    [uxbox.util.perf :as perf]
@@ -305,9 +306,29 @@
                    (st/emit! (dw/update-viewport-position {:x #(+ % delta)}))
                    (st/emit! (dw/update-viewport-position {:y #(+ % delta)}))))))))
 
+        on-drag-enter
+        (fn [e]
+          (when (or (dnd/has-type? e "uxbox/shape")
+                    (dnd/has-type? e "Files"))
+            (dom/prevent-default e)))
+
         on-drag-over
-        ;; Should prevent only events that we'll handle on-drop
-        (fn [e] (dom/prevent-default e))
+        (fn [e]
+          (when (or (dnd/has-type? e "uxbox/shape")
+                    (dnd/has-type? e "Files"))
+            (dom/prevent-default e)))
+
+        on-uploaded
+        (fn [{:keys [id name] :as image}]
+          (let [shape {:name name
+                       :metadata {:width (:width image)
+                                  :height (:height image)
+                                  :uri (:uri image)
+                                  :thumb-width (:thumb-width image)
+                                  :thumb-height (:thumb-height image)
+                                  :thumb-uri (:thumb-uri image)}}
+                aspect-ratio (/ (:width image) (:height image))]
+            (st/emit! (direct-add-shape :image shape aspect-ratio))))
 
         on-drop
         (fn [event]
@@ -385,6 +406,7 @@
       :on-mouse-up on-mouse-up
       :on-pointer-down on-pointer-down
       :on-pointer-up on-pointer-up
+      :on-drag-enter on-drag-enter
       :on-drag-over on-drag-over
       :on-drop on-drop}
      [:g
