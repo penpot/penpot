@@ -74,6 +74,62 @@
     :name "Text"
     :content nil}])
 
+(defn- make-minimal-shape
+  [type]
+  (let [tool (seek #(= type (:type %)) minimal-shapes)]
+    (assert tool "unexpected drawing tool")
+    (assoc tool
+           :id (uuid/next)
+           :x 0
+           :y 0
+           :width 1
+           :height 1
+           :selrect {:x 0
+                     :x1 0
+                     :x2 0
+                     :y 0
+                     :y1 0
+                     :y2 0
+                     :width 1
+                     :height 1}
+           :points []
+           :segments [])))
+
+
+(defn- calculate-centered-box
+  [state aspect-ratio]
+  (if (>= aspect-ratio 1)
+    (let [vbox (get-in state [:workspace-local :vbox])
+          width (/ (:width vbox) 2)
+          height (/ width aspect-ratio)
+
+          x (+ (:x vbox) (/ width 2))
+          y (+ (:y vbox) (/ (- (:height vbox) height) 2))]
+
+      [width height x y])
+
+    (let [vbox (get-in state [:workspace-local :vbox])
+          height (/ (:height vbox) 2)
+          width (* height aspect-ratio)
+
+          y (+ (:y vbox) (/ height 2))
+          x (+ (:x vbox) (/ (- (:width vbox) width) 2))]
+
+      [width height x y])))
+
+(defn direct-add-shape
+  [type data aspect-ratio]
+  (ptk/reify ::direct-add-shape
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [[width height x y] (calculate-centered-box state aspect-ratio)
+            shape (-> (make-minimal-shape type)
+                      (merge data)
+                      (geom/resize width height)
+                      (geom/absolute-move (gpt/point x y)))]
+
+        (rx/of (dw/add-shape shape))))))
+
 (defn start-drawing
   [type]
   {:pre [(keyword? type)]}
@@ -93,12 +149,6 @@
                   (rx/map (fn [_] #(update % :workspace-local dissoc :drawing-lock))))
              (rx/of (handle-drawing type)))
             (rx/empty)))))))
-
-(defn- make-minimal-shape
-  [type]
-  (let [tool (seek #(= type (:type %)) minimal-shapes)]
-    (assert tool "unexpected drawing tool")
-    (assoc tool :id (uuid/next))))
 
 (defn handle-drawing
   [type]
@@ -141,7 +191,7 @@
               stoper? #(or (ms/mouse-up? %) (= % :interrupt))
               stoper (rx/filter stoper? stream)
               initial @ms/mouse-position
-              
+
               page-id (get state :current-page-id)
               objects (get-in state [:workspace-data page-id :objects])
               layout (get state :workspace-layout)
