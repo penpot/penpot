@@ -1,9 +1,14 @@
+.debug-preview {
+    max-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: scroll;
+}
 .debug-icons-preview {
   display: flex;
   flex-wrap: wrap;
-  overflow: scroll;
 
-  .icon-item {
+  .icon-item, .cursor-item {
     padding: 10px;
     display: flex;
     flex-direction: column;
@@ -16,5 +21,8 @@
       width: 100%;
       height: 100%;
     }
+  }
+  .cursor-item {
+      height: auto;
   }
 }
