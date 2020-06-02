@@ -9,7 +9,6 @@
 
 (ns uxbox.main.data.workspace
   (:require
-   [uxbox.util.debug :refer [logjs]]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [clojure.set :as set]
@@ -197,21 +196,53 @@
 
 (declare zoom-to-fit-all)
 
-;; TODO: add-spec
-
 (defn initialize-viewport
   [{:keys [width height] :as size}]
-  (ptk/reify ::initialize-viewport
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-local
-              (fn [local]
-                (-> local
-                    (assoc :vport size)
-                    (update :vbox (fn [vbox]
-                                    (if (nil? vbox)
-                                      (assoc size :x 0 :y 0)
-                                      vbox)))))))))
+  (letfn [(update* [{:keys [vbox vport] :as local}]
+            (let [wprop (/ (:width vport) width)
+                  hprop (/ (:height vport) height)]
+              (-> local
+                  (assoc :vport size)
+                  (update :vbox (fn [vbox]
+                                    (-> vbox
+                                        (update :width #(/ % wprop))
+                                        (update :height #(/ % hprop))))))))
+
+          (initialize [state local]
+            (let [page-id (get-in state [:workspace-page :id])
+                  objects (get-in state [:workspace-data page-id :objects])
+                  shapes  (cp/select-toplevel-shapes objects {:include-frames? true})
+                  srect   (geom/selection-rect shapes)
+                  local   (assoc local :vport size)]
+              (cond
+                (or (not (mth/finite? (:width srect)))
+                    (not (mth/finite? (:height srect))))
+                (assoc local :vbox (assoc size :x 0 :y 0))
+
+                (or (> (:width srect) width)
+                    (> (:height srect) height))
+                (let [srect (geom/adjust-to-viewport size srect {:padding 40})
+                      zoom  (/ (:width size) (:width srect))]
+                  (-> local
+                      (assoc :zoom zoom)
+                      (update :vbox merge srect)))
+
+                :else
+                (assoc local :vbox (assoc size
+                                          :x (- (:x srect) 40)
+                                          :y (- (:y srect) 40))))))
+
+          (setup [state local]
+            (if (:vbox local)
+              (update* local)
+              (initialize state local)))]
+
+    (ptk/reify ::initialize-viewport
+      ptk/UpdateEvent
+      (update [_ state]
+        (update state :workspace-local
+                (fn [local]
+                  (setup state local)))))))
 
 (defn update-viewport-position
   [{:keys [x y] :or {x identity y identity}}]
@@ -225,8 +256,6 @@
                    (-> vbox
                        (update :x x)
                        (update :y y)))))))
-
-;; TODO: add spec
 
 (defn update-viewport-size
   [{:keys [width height] :as size}]
@@ -368,7 +397,7 @@
       (let [page-id (get-in state [:workspace-page :id])
             objects (get-in state [:workspace-data page-id :objects])
             shapes  (cp/select-toplevel-shapes objects {:include-frames? true})
-            srect   (geom/shapes->rect-shape shapes)]
+            srect   (geom/selection-rect shapes)]
 
         (if (or (mth/nan? (:width srect))
                 (mth/nan? (:height srect)))

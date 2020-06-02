@@ -398,12 +398,11 @@
   "Returns a rect that contains all the shapes and is aware of the
   rotation of each shape. Mainly used for multiple selection."
   [shapes]
-  (let [xf-resolve-shape (map :selrect)
-        shapes (into [] xf-resolve-shape shapes)
-        minx (transduce (map :x1) min ##Inf shapes)
-        miny (transduce (map :y1) min ##Inf shapes)
-        maxx (transduce (map :x2) max ##-Inf shapes)
-        maxy (transduce (map :y2) max ##-Inf shapes)]
+  (let [shapes (map :selrect shapes)
+        minx   (transduce (map :x1) min ##Inf shapes)
+        miny   (transduce (map :y1) min ##Inf shapes)
+        maxx   (transduce (map :x2) max ##-Inf shapes)
+        maxy   (transduce (map :y2) max ##-Inf shapes)]
     {:x1 minx
      :y1 miny
      :x2 maxx
