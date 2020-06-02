@@ -53,4 +53,3 @@
 
             [:span {:style {:white-space "nowrap"
                             :margin-right "1rem"}} (pr-str key)]])))]))
-

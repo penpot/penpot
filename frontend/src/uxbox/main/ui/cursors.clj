@@ -59,7 +59,7 @@
         transform (if rotation (str " transform='rotate(" rotation ")'") "")
         data (clojure.pprint/cl-format
               nil
-              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='24px' height='24px'~A%3E~A%3C/svg%3E\") ~A ~A, auto"
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='20px' height='20px'~A%3E~A%3C/svg%3E\") ~A ~A, auto"
               transform data x y)]
     data))
 

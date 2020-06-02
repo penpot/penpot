@@ -298,3 +298,17 @@
       (update state :workspace-local dissoc :undo-index :undo))))
 
 
+(defn expand-all-parents
+  [ids objects]
+  (ptk/reify ::expand-all-parents
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [expand-fn (fn [expanded]
+                        (merge expanded
+                          (->> ids
+                               (map #(cp/get-all-parents % objects))
+                               flatten
+                               (filter #(not= % uuid/zero))
+                               (map (fn [id] {id true}))
+                               (into {}))))]
+        (update-in state [:workspace-local :expanded] expand-fn)))))

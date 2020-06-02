@@ -154,9 +154,8 @@
            (let [event (.-nativeEvent event)
                  ctrl? (kbd/ctrl? event)
                  shift? (kbd/shift? event)
-                 opts {:shift? shift?
-                       :ctrl? ctrl?}]
-             (st/emit! (ms/->MouseEvent :down ctrl? shift?))
+                 alt? (kbd/alt? event)]
+             (st/emit! (ms/->MouseEvent :down ctrl? shift? alt?))
 
              (cond
                (and (not edition) (= 1 (.-which event)))
@@ -183,9 +182,8 @@
            (let [event (.-nativeEvent event)
                  ctrl? (kbd/ctrl? event)
                  shift? (kbd/shift? event)
-                 opts {:shift? shift?
-                       :ctrl? ctrl?}]
-             (st/emit! (ms/->MouseEvent :up ctrl? shift?))
+                 alt? (kbd/alt? event)]
+             (st/emit! (ms/->MouseEvent :up ctrl? shift? alt?))
 
              (when (= 2 (.-which event))
                (st/emit! dw/finish-pan
@@ -213,9 +211,8 @@
            (dom/stop-propagation event)
            (let [ctrl? (kbd/ctrl? event)
                  shift? (kbd/shift? event)
-                 opts {:shift? shift?
-                       :ctrl? ctrl?}]
-             (st/emit! (ms/->MouseEvent :click ctrl? shift?)))))
+                 alt? (kbd/alt? event)]
+             (st/emit! (ms/->MouseEvent :click ctrl? shift? alt?)))))
 
         on-double-click
         (mf/use-callback
@@ -223,9 +220,8 @@
            (dom/stop-propagation event)
            (let [ctrl? (kbd/ctrl? event)
                  shift? (kbd/shift? event)
-                 opts {:shift? shift?
-                       :ctrl? ctrl?}]
-             (st/emit! (ms/->MouseEvent :double-click ctrl? shift?)))))
+                 alt? (kbd/alt? event)]
+             (st/emit! (ms/->MouseEvent :double-click ctrl? shift? alt?)))))
 
         on-key-down
         (mf/use-callback
@@ -234,13 +230,11 @@
                  key (.-keyCode event)
                  ctrl? (kbd/ctrl? event)
                  shift? (kbd/shift? event)
-                 opts {:key key
-                       :shift? shift?
-                       :ctrl? ctrl?}
+                 alt? (kbd/alt? event)
                  target (dom/get-target event)]
 
              (when-not (.-repeat bevent)
-               (st/emit! (ms/->KeyboardEvent :down key ctrl? shift?))
+               (st/emit! (ms/->KeyboardEvent :down key ctrl? shift? alt?))
                (when (and (kbd/space? event)
                           (not= "rich-text" (obj/get target "className")))
                  (handle-viewport-positioning viewport-ref))))))
@@ -251,13 +245,10 @@
            (let [key (.-keyCode event)
                  ctrl? (kbd/ctrl? event)
                  shift? (kbd/shift? event)
-                 opts {:key key
-                       :shift? shift?
-                       :ctrl? ctrl?}]
+                 alt? (kbd/alt? event)]
              (when (kbd/space? event)
-               (st/emit! dw/finish-pan
-                         ::finish-positioning))
-             (st/emit! (ms/->KeyboardEvent :up key ctrl? shift?)))))
+               (st/emit! dw/finish-pan ::finish-positioning))
+             (st/emit! (ms/->KeyboardEvent :up key ctrl? shift? alt?)))))
 
         translate-point-to-viewport
         (fn [pt]
@@ -282,10 +273,12 @@
                                  (.-movementY event))]
             (st/emit! (ms/->PointerEvent :delta delta
                                          (kbd/ctrl? event)
-                                         (kbd/shift? event)))
+                                         (kbd/shift? event)
+                                         (kbd/alt? event)))
             (st/emit! (ms/->PointerEvent :viewport pt
                                          (kbd/ctrl? event)
-                                         (kbd/shift? event)))))
+                                         (kbd/shift? event)
+                                         (kbd/alt? event)))))
 
         on-mouse-wheel
         (mf/use-callback

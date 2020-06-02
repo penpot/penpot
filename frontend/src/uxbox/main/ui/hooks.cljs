@@ -227,3 +227,10 @@
 
     [(deref state) ref]))
 
+
+(defn use-stream
+  "Wraps the subscription to a strem into a `use-effect` call"
+  [stream on-subscribe]
+  (mf/use-effect (fn []
+                   (let [sub (->> stream (rx/subs on-subscribe))]
+                     #(rx/dispose! sub)))))

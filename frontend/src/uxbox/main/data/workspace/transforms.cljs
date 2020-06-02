@@ -18,6 +18,7 @@
    [uxbox.common.spec :as us]
    [uxbox.common.pages :as cp]
    [uxbox.main.data.workspace.common :as dwc]
+   [uxbox.main.data.workspace.selection :as dws]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
@@ -191,6 +192,7 @@
 ;; -- MOVE
 
 (declare start-move)
+(declare start-move-duplicate)
 
 (defn start-move-selected
   []
@@ -206,33 +208,52 @@
              (rx/map #(gpt/length %))
              (rx/filter #(> % 1))
              (rx/take 1)
-             (rx/map #(start-move initial selected)))))))
+             (rx/with-latest vector ms/mouse-position-alt)
+             (rx/flat-map
+              (fn [[_ alt?]]
+                (if alt?
+                  ;; When alt is down we start a duplicate+move
+                  (rx/of (start-move-duplicate initial)
+                         dws/duplicate-selected)
+                  ;; Otherwise just plain old move
+                  (rx/of (start-move initial selected))))))))))
 
-(defn start-move
-  [from-position ids]
-  (ptk/reify ::start-move
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (assoc-in [:workspace-local :transform] :move)))
-
+(defn start-move-duplicate [from-position]
+  (ptk/reify ::start-move-selected
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-id (get state :current-page-id)
-            objects (get-in state [:workspace-data page-id :objects])
-            shapes (mapv #(get-in state [:workspace-data page-id :objects %]) ids)
-            stopper (rx/filter ms/mouse-up? stream)
-            layout (get state :workspace-layout)]
-        (rx/concat
-         (->> ms/mouse-position
-              (rx/take-until stopper)
-              (rx/map #(gpt/to-vec from-position %))
-              (rx/switch-map #(snap/closest-snap-move page-id shapes objects layout %))
-              (rx/map gmt/translate-matrix)
-              (rx/map #(set-modifiers ids {:displacement %})))
+      (->> stream
+           (rx/filter (ptk/type? ::dws/duplicate-selected))
+           (rx/first)
+           (rx/map #(start-move from-position))))))
 
-         (rx/of (apply-modifiers ids)
-                finish-transform))))))
+(defn start-move
+  ([from-position] (start-move from-position nil))
+  ([from-position ids]
+   (ptk/reify ::start-move
+     ptk/UpdateEvent
+     (update [_ state]
+       (-> state
+           (assoc-in [:workspace-local :transform] :move)))
+
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [page-id (get state :current-page-id)
+             objects (get-in state [:workspace-data page-id :objects])
+             ids (if (nil? ids) (get-in state [:workspace-local :selected]) ids)
+             shapes (mapv #(get-in state [:workspace-data page-id :objects %]) ids)
+             stopper (rx/filter ms/mouse-up? stream)
+             layout (get state :workspace-layout)]
+         (rx/concat
+          (->> ms/mouse-position
+               (rx/take-until stopper)
+               (rx/map #(gpt/to-vec from-position %))
+               (rx/switch-map #(snap/closest-snap-move page-id shapes objects layout %))
+               (rx/map gmt/translate-matrix)
+               (rx/map #(set-modifiers ids {:displacement %})))
+
+          (rx/of (apply-modifiers ids)
+                 finish-transform)))))))
 
 (defn- get-displacement-with-grid
   "Retrieve the correct displacement delta point for the

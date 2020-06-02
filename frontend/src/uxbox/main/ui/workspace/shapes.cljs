@@ -11,6 +11,10 @@
   "A workspace specific shapes wrappers."
   (:require
    [rumext.alpha :as mf]
+   [beicon.core :as rx]
+   [uxbox.main.streams :as ms]
+   [uxbox.main.ui.hooks :as hooks]
+   [uxbox.main.ui.cursors :as cur]
    [uxbox.main.ui.shapes.rect :as rect]
    [uxbox.main.ui.shapes.circle :as circle]
    [uxbox.main.ui.shapes.icon :as icon]
@@ -55,9 +59,13 @@
   (let [shape (unchecked-get props "shape")
         frame (unchecked-get props "frame")
         opts #js {:shape (->> shape (geom/transform-shape frame))
-                  :frame frame}]
+                  :frame frame}
+        alt? (mf/use-state false)]
+
+    (hooks/use-stream ms/keyboard-alt #(reset! alt? %))
+
     (when (and shape (not (:hidden shape)))
-      [:*
+      [:g.shape {:style {:cursor (if @alt? cur/duplicate nil)}}
        (case (:type shape)
          :curve [:> path/path-wrapper opts]
          :path [:> path/path-wrapper opts]
