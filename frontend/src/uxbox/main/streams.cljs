@@ -14,13 +14,13 @@
 
 ;; --- User Events
 
-(defrecord KeyboardEvent [type key shift ctrl])
+(defrecord KeyboardEvent [type key shift ctrl alt])
 
 (defn keyboard-event?
   [v]
   (instance? KeyboardEvent v))
 
-(defrecord MouseEvent [type ctrl shift])
+(defrecord MouseEvent [type ctrl shift alt])
 
 (defn mouse-event?
   [v]
@@ -36,7 +36,7 @@
   (and (mouse-event? v)
        (= :click (:type v))))
 
-(defrecord PointerEvent [source pt ctrl shift])
+(defrecord PointerEvent [source pt ctrl shift alt])
 
 (defn pointer-event?
   [v]
@@ -73,6 +73,24 @@
     (rx/subscribe-with ob sub)
     sub))
 
+(defonce mouse-position-alt
+  (let [sub (rx/behavior-subject nil)
+        ob  (->> st/stream
+                 (rx/filter pointer-event?)
+                 (rx/map :alt)
+                 (rx/dedupe))]
+    (rx/subscribe-with ob sub)
+    sub))
+
+(defonce keyboard-alt
+  (let [sub (rx/behavior-subject nil)
+        ob  (->> st/stream
+                 (rx/filter keyboard-event?)
+                 (rx/map :alt)
+                 (rx/dedupe))]
+    (rx/subscribe-with ob sub)
+    sub))
+
 (defn mouse-position-deltas
   [current]
   (->> (rx/concat (rx/of current)
@@ -97,4 +115,3 @@
                  (rx/map :point))]
     (rx/subscribe-with sob sub)
     sub))
-
