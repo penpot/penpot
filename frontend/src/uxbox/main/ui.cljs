@@ -23,6 +23,7 @@
    [uxbox.main.ui.auth :refer [auth verify-token]]
    [uxbox.main.ui.dashboard :refer [dashboard]]
    [uxbox.main.ui.icons :as i]
+   [uxbox.main.ui.cursors :as c]
    [uxbox.main.ui.messages :as msgs]
    [uxbox.main.ui.settings :as settings]
    [uxbox.main.ui.static :refer [not-found-page not-authorized-page]]
@@ -106,7 +107,12 @@
 
      :debug-icons-preview
      (when *assert*
-       [:& i/debug-icons-preview])
+       [:div.debug-preview
+        [:h1 "Cursors"]
+        [:& c/debug-preview]
+        [:h1 "Icons"]
+        [:& i/debug-icons-preview]
+        ])
 
      (:dashboard-search
       :dashboard-team

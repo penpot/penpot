@@ -48,6 +48,7 @@
               (when-not (or (empty? selected) (kbd/shift? event))
                 (st/emit! dw/deselect-all))
               (st/emit! (dw/select-shape id))))
+
           (st/emit! (dw/start-move-selected)))))))
 
 (defn on-context-menu

@@ -19,6 +19,7 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
+   [uxbox.main.ui.cursors :as cur]
    [uxbox.util.dom :as dom]
    [uxbox.util.object :as obj]
    [uxbox.common.geom.shapes :as geom]
@@ -26,8 +27,6 @@
    [uxbox.common.geom.matrix :as gmt]
    [uxbox.util.debug :refer [debug?]]))
 
-(defn rotation-cursor [angle]
-  (str "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20px' height='20px' transform='rotate(" angle ")' viewBox='0 0 132.292 132.006'%3E%3Cpath d='M85.225 3.48c.034 4.989-.093 9.852-.533 14.78-29.218 5.971-54.975 27.9-63.682 56.683-1.51 2.923-1.431 7.632-3.617 9.546-5.825.472-11.544.5-17.393.45 11.047 15.332 20.241 32.328 32.296 46.725 5.632 1.855 7.155-5.529 10.066-8.533 8.12-12.425 17.252-24.318 24.269-37.482-6.25-.86-12.564-.88-18.857-1.057 5.068-17.605 19.763-31.81 37.091-37.122.181 6.402.206 12.825 1.065 19.184 15.838-9.05 30.899-19.617 45.601-30.257 2.985-4.77-3.574-7.681-6.592-9.791C111.753 17.676 98.475 8.889 85.23.046l-.005 3.435z'/%3E%3Cpath fill='%23fff' d='M92.478 23.995s-1.143.906-6.714 1.923c-29.356 5.924-54.352 30.23-59.717 59.973-.605 3.728-1.09 5.49-1.09 5.49l-11.483-.002s7.84 10.845 10.438 15.486c3.333 4.988 6.674 9.971 10.076 14.912a2266.92 2266.92 0 0019.723-29.326c-5.175-.16-10.35-.343-15.522-.572 3.584-27.315 26.742-50.186 53.91-54.096.306 5.297.472 10.628.631 15.91a2206.462 2206.462 0 0029.333-19.726c-9.75-6.7-19.63-13.524-29.483-20.12z'/%3E%3C/svg%3E\") 10 10, auto"))
 
 (def rotation-handler-size 25)
 (def resize-point-radius 4)
@@ -115,7 +114,7 @@
                 :top-right 90
                 :bottom-right 180
                 :bottom-left 270)]
-    [:rect {:style {:cursor (rotation-cursor (+ rotation angle))}
+    [:rect {:style {:cursor (cur/rotate (+ rotation angle))}
             :x x
             :y y
             :width size
@@ -124,7 +123,7 @@
             :transform transform
             :on-mouse-down on-rotate}]))
 
-(mf/defc resize-point-handler [{:keys [cx cy zoom position on-resize transform]}]
+(mf/defc resize-point-handler [{:keys [cx cy zoom position on-resize transform rotation]}]
   (let [{cx' :x cy' :y} (gpt/transform (gpt/point cx cy) transform)
         rot-square (case position
                      :top-left 0
@@ -132,34 +131,36 @@
                      :bottom-right 180
                      :bottom-left 270)]
     [:g.resize-handler
-     [:circle {:class (name position)
-               :r (/ resize-point-radius zoom)
+     [:circle {:r (/ resize-point-radius zoom)
                :style {:fillOpacity "1"
                        :strokeWidth "1px"
-                       :vectorEffect "non-scaling-stroke"}
+                       :vectorEffect "non-scaling-stroke"
+                       }
                :fill "#FFFFFF"
                :stroke "#1FDEA7"
                :cx cx'
                :cy cy'}]
 
-     [:rect {:class (name position)
-             :x cx
+     [:rect {:x cx
              :y cy
              :width (/ resize-point-rect-size zoom)
              :height (/ resize-point-rect-size zoom)
              :fill (if (debug? :resize-handler) "red" "transparent")
              :on-mouse-down on-resize
+             :style {:cursor (if (#{:top-left :bottom-right} position)
+                               (cur/resize-nesw rotation) (cur/resize-nwse rotation))}
              :transform (gmt/multiply transform
                                       (gmt/rotate-matrix rot-square (gpt/point cx cy)))}]
-     [:circle {:class (name position)
-               :on-mouse-down on-resize
+     [:circle {:on-mouse-down on-resize
                :r (/ resize-point-circle-radius zoom)
                :fill (if (debug? :resize-handler) "red" "transparent")
                :cx cx'
-               :cy cy'}]
+               :cy cy'
+               :style {:cursor (if (#{:top-left :bottom-right} position)
+                                 (cur/resize-nesw rotation) (cur/resize-nwse rotation))}}]
      ]))
 
-(mf/defc resize-side-handler [{:keys [x y length angle zoom position transform on-resize]}]
+(mf/defc resize-side-handler [{:keys [x y length angle zoom position rotation transform on-resize]}]
   [:rect {:x (+ x (/ resize-point-rect-size zoom))
           :y (- y (/ resize-side-height 2 zoom))
           :width (max 0 (- length (/ (* resize-point-rect-size 2) zoom)))
@@ -169,8 +170,8 @@
           :on-mouse-down on-resize
           :style {:fill (if (debug? :resize-handler) "yellow" "transparent")
                   :cursor (if (#{:left :right} position)
-                            "ew-resize"
-                            "ns-resize") }}])
+                            (cur/resize-ew rotation)
+                            (cur/resize-ns rotation)) }}])
 
 (mf/defc controls
   {::mf/wrap-props false}
@@ -244,7 +245,7 @@
                      :on-mouse-down #(on-mouse-down % index)
                      :fill "#ffffff"
                      :stroke "#1FDEA7"
-                     :style {:cursor "pointer"}}]))])))
+                     :style {:cursor cur/move-pointer}}]))])))
 
 ;; TODO: add specs for clarity
 

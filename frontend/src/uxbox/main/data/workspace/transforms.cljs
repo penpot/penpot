@@ -204,7 +204,7 @@
              (rx/take-until stopper)
              (rx/map #(gpt/to-vec initial %))
              (rx/map #(gpt/length %))
-             (rx/filter #(> % 0.5))
+             (rx/filter #(> % 1))
              (rx/take 1)
              (rx/map #(start-move initial selected)))))))
 

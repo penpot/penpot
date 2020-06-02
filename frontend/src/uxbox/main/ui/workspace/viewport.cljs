@@ -15,6 +15,7 @@
    [potok.core :as ptk]
    [rumext.alpha :as mf]
    [uxbox.main.ui.icons :as i]
+   [uxbox.main.ui.cursors :as cur]
    [uxbox.common.data :as d]
    [uxbox.main.constants :as c]
    [uxbox.main.data.workspace :as dw]
@@ -96,6 +97,7 @@
 
         stream (->> ms/mouse-position-delta
                     (rx/take-until stoper))]
+    (st/emit! dw/start-pan)
     (rx/subscribe stream
                   (fn [delta]
                     (let [vbox (.. ^js node -viewBox -baseVal)
@@ -136,7 +138,8 @@
                 vbox
                 edition
                 tooltip
-                selected]} local
+                selected
+                panning]} local
 
         viewport-ref (mf/use-ref nil)
         last-position (mf/use-var nil)
@@ -185,7 +188,8 @@
              (st/emit! (ms/->MouseEvent :up ctrl? shift?))
 
              (when (= 2 (.-which event))
-               (st/emit! ::finish-positioning)))))
+               (st/emit! dw/finish-pan
+                         ::finish-positioning)))))
 
         on-pointer-down
         (mf/use-callback
@@ -251,7 +255,8 @@
                        :shift? shift?
                        :ctrl? ctrl?}]
              (when (kbd/space? event)
-               (st/emit! ::finish-positioning))
+               (st/emit! dw/finish-pan
+                         ::finish-positioning))
              (st/emit! (ms/->KeyboardEvent :up key ctrl? shift?)))))
 
         translate-point-to-viewport
@@ -365,6 +370,15 @@
                                (:height vbox 0)])
       :ref viewport-ref
       :class (when drawing-tool "drawing")
+      :style {:cursor (cond
+                        panning cur/hand
+                        (= drawing-tool :frame) cur/create-artboard
+                        (= drawing-tool :rect) cur/create-rectangle
+                        (= drawing-tool :circle) cur/create-ellipse
+                        (= drawing-tool :path) cur/pen
+                        (= drawing-tool :curve)cur/pencil
+                        drawing-tool cur/create-shape
+                        :else cur/pointer-inner)}
       :on-context-menu on-context-menu
       :on-click on-click
       :on-double-click on-double-click
