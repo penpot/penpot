@@ -26,15 +26,10 @@
 (def pen (cursor-ref :pen 0 0 0))
 (def pointer-inner (cursor-ref :pointer-inner 0 0 0))
 (def resize-alt (cursor-ref :resize-alt))
-
-#_(def resize-nesw (cursor-fn :resize-diagonal 90))
-#_(def resize-nwse (cursor-fn :resize-diagonal 0))
 (def resize-nesw (cursor-fn :resize-h 45))
 (def resize-nwse (cursor-fn :resize-h 135))
-
 (def resize-ew (cursor-fn :resize-h 0))
 (def resize-ns (cursor-fn :resize-h 90))
-
 (def rotate (cursor-fn :rotate 90))
 (def text (cursor-ref :text))
 

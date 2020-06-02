@@ -18,6 +18,7 @@
    [uxbox.main.data.workspace.texts :as dwt]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
+   [uxbox.main.ui.cursors :as cur]
    [uxbox.main.ui.workspace.shapes.common :as common]
    [uxbox.main.ui.shapes.text :as text]
    [uxbox.main.ui.keyboard :as kbd]
@@ -301,6 +302,7 @@
         :spell-check "false"
         :on-focus on-focus
         :class "rich-text"
+        :style {:cursor cur/text}
         :render-element render-element
         :render-leaf render-text
         :on-mouse-up on-mouse-up

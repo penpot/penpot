@@ -145,15 +145,6 @@
 
       g.controls {
         rect.main { pointer-events: none; }
-        circle.rotate { cursor: ns-resize; } // TODO
-        .top-left { cursor: nwse-resize; }
-        .bottom-right { cursor: nwse-resize; }
-        .top-right { cursor: nesw-resize; }
-        .bottom-left { cursor: nesw-resize; }
-        .top { cursor: ns-resize; }
-        .bottom { cursor: ns-resize; }
-        .left { cursor: ew-resize; }
-        .right { cursor: ew-resize; }
       }
     }
 

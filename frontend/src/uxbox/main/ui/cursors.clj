@@ -64,11 +64,13 @@
     data))
 
 (defmacro cursor-ref
+  "Creates a static cursor given its name, rotation and x/y hotspot"
   ([id] (encode-svg-cursor id default-rotation default-hotspot-x default-hotspot-y))
   ([id rotation] (encode-svg-cursor id rotation default-hotspot-x default-hotspot-y))
   ([id rotation x y] (encode-svg-cursor id rotation x y)))
 
 (defmacro cursor-fn
+  "Creates a dynamic cursor that can be rotated in runtime"
   [id initial]
   (let [cursor (encode-svg-cursor id "{{rotation}}" default-hotspot-x default-hotspot-y)]
     `(fn [rot#]

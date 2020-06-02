@@ -71,3 +71,4 @@
   [index {:keys [id x y width height] :as obj}]
   (let [rect #js {:x x :y y :width width :height height}]
     (qdt/insert index rect obj)))
+

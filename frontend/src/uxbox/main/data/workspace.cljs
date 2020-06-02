@@ -315,6 +315,14 @@
 
         (reduce reduce-fn state groups-to-adjust)))))
 
+(defn start-pan [state]
+  (-> state
+      (assoc-in [:workspace-local :panning] true)))
+
+(defn finish-pan [state]
+  (-> state
+      (update :workspace-local dissoc :panning)))
+
 
 ;; --- Toggle layout flag
 
