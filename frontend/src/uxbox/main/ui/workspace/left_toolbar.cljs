@@ -15,7 +15,6 @@
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.store :as st]
    [uxbox.main.ui.components.file-uploader :refer [file-uploader]]
-   [uxbox.main.ui.workspace.drawarea :refer [direct-add-shape]]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t]]
    [uxbox.main.ui.icons :as i]))
@@ -42,7 +41,7 @@
                                   :thumb-height (:thumb-height image)
                                   :thumb-uri (:thumb-uri image)}}
                 aspect-ratio (/ (:width image) (:height image))]
-            (st/emit! (direct-add-shape :image shape aspect-ratio))))
+            (st/emit! (dw/create-and-add-shape :image shape aspect-ratio))))
 
         on-file-selected
         (fn [file]

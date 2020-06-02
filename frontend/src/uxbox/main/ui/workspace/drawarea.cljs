@@ -22,6 +22,7 @@
    [uxbox.common.geom.shapes :as geom]
    [uxbox.common.geom.matrix :as gmt]
    [uxbox.common.geom.point :as gpt]
+   [uxbox.common.pages :as cp]
    [uxbox.util.geom.path :as path]
    [uxbox.util.i18n :as i18n :refer [t]]
    [uxbox.main.snap :as snap]
@@ -35,100 +36,6 @@
 (declare handle-drawing-curve)
 (declare handle-finish-drawing)
 (declare conditional-align)
-
-(def ^:private default-color "#b1b2b5") ;; $color-gray-20
-
-(def ^:private minimal-shapes
-  [{:type :rect
-    :name "Rect"
-    :fill-color default-color
-    :stroke-alignment :center}
-   {:type :image}
-   {:type :icon}
-   {:type :circle
-    :name "Circle"
-    :fill-color default-color}
-   {:type :path
-    :name "Path"
-    :stroke-style :solid
-    :stroke-color "#000000"
-    :stroke-width 2
-    :stroke-alignment :center
-    :fill-color "#000000"
-    :fill-opacity 0
-    :segments []}
-   {:type :frame
-    :stroke-style :none
-    :stroke-alignment :center
-    :name "Artboard"}
-   {:type :curve
-    :name "Path"
-    :stroke-style :solid
-    :stroke-color "#000000"
-    :stroke-width 2
-    :stroke-alignment :center
-    :fill-color "#000000"
-    :fill-opacity 0
-    :segments []}
-   {:type :text
-    :name "Text"
-    :content nil}])
-
-(defn- make-minimal-shape
-  [type]
-  (let [tool (seek #(= type (:type %)) minimal-shapes)]
-    (assert tool "unexpected drawing tool")
-    (assoc tool
-           :id (uuid/next)
-           :x 0
-           :y 0
-           :width 1
-           :height 1
-           :selrect {:x 0
-                     :x1 0
-                     :x2 0
-                     :y 0
-                     :y1 0
-                     :y2 0
-                     :width 1
-                     :height 1}
-           :points []
-           :segments [])))
-
-
-(defn- calculate-centered-box
-  [state aspect-ratio]
-  (if (>= aspect-ratio 1)
-    (let [vbox (get-in state [:workspace-local :vbox])
-          width (/ (:width vbox) 2)
-          height (/ width aspect-ratio)
-
-          x (+ (:x vbox) (/ width 2))
-          y (+ (:y vbox) (/ (- (:height vbox) height) 2))]
-
-      [width height x y])
-
-    (let [vbox (get-in state [:workspace-local :vbox])
-          height (/ (:height vbox) 2)
-          width (* height aspect-ratio)
-
-          y (+ (:y vbox) (/ height 2))
-          x (+ (:x vbox) (/ (- (:width vbox) width) 2))]
-
-      [width height x y])))
-
-(defn direct-add-shape
-  [type data aspect-ratio]
-  (ptk/reify ::direct-add-shape
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [[width height x y] (calculate-centered-box state aspect-ratio)
-            shape (-> (make-minimal-shape type)
-                      (merge data)
-                      (geom/resize width height)
-                      (geom/absolute-move (gpt/point x y)))]
-
-        (rx/of (dw/add-shape shape))))))
 
 (defn start-drawing
   [type]
@@ -155,7 +62,7 @@
   (ptk/reify ::handle-drawing
     ptk/UpdateEvent
     (update [_ state]
-      (let [data (make-minimal-shape type)]
+      (let [data (cp/make-minimal-shape type)]
         (update-in state [:workspace-local :drawing] merge data)))
 
     ptk/WatchEvent

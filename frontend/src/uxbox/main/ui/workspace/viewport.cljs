@@ -26,7 +26,7 @@
    [uxbox.main.ui.hooks :as hooks]
    [uxbox.main.ui.workspace.shapes :refer [shape-wrapper frame-wrapper]]
    [uxbox.main.ui.workspace.shapes.interactions :refer [interactions]]
-   [uxbox.main.ui.workspace.drawarea :refer [draw-area start-drawing direct-add-shape]]
+   [uxbox.main.ui.workspace.drawarea :refer [draw-area start-drawing]]
    [uxbox.main.ui.workspace.selection :refer [selection-handlers]]
    [uxbox.main.ui.workspace.presence :as presence]
    [uxbox.main.ui.workspace.snap-points :refer [snap-points]]
@@ -328,7 +328,7 @@
                                   :thumb-height (:thumb-height image)
                                   :thumb-uri (:thumb-uri image)}}
                 aspect-ratio (/ (:width image) (:height image))]
-            (st/emit! (direct-add-shape :image shape aspect-ratio))))
+            (st/emit! (dw/create-and-add-shape :image shape aspect-ratio))))
 
         on-drop
         (fn [event]
