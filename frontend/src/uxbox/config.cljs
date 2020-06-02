@@ -13,7 +13,7 @@
 (this-as global
   (let [config (obj/get global "uxboxConfig")
         puri   (obj/get config "publicURI" "http://localhost:3449")
-        buri   (obj/get config "backendURI" "http://localhost:6060")
+        buri   (obj/get config "backendURI" "http://localhost:3449")
         gcid   (obj/get config "googleClientID" true)
         warn   (obj/get config "demoWarning" true)]
     (def default-language "en")

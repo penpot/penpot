@@ -31,6 +31,7 @@ RUN set -ex; \
         build-essential \
         imagemagick \
         webp \
+        nginx \
         jq \
         redis-tools \
     ; \

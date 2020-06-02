@@ -1,5 +1,4 @@
 {:deps {:aliases [:dev]}
- :dev-http {3449 "classpath:public"}
  :http {:port 3448}
  :nrepl {:port 3447}
 
@@ -10,6 +9,7 @@
    :asset-path "/js"
    :devtools {:browser-inject :main}
    :build-options {:manifest-name "manifest.json"}
+
    :modules
    {:shared {:entries []}
     :main {:entries [uxbox.main]
