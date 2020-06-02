@@ -17,6 +17,9 @@ const sass = require("sass");
 const autoprefixer = require("autoprefixer")
 const postcss = require("postcss")
 
+const mapStream = require("map-stream");
+
+
 const paths = {};
 paths.resources = "./resources/";
 paths.output = "./resources/public/";
@@ -130,6 +133,42 @@ function readConfig(data) {
   return JSON.stringify(cfg);
 }
 
+const defaultManifest = {
+  "main": "/js/main.js",
+  "shared": "/js/shared.js",
+  "worker": "js/worker.js"
+};
+
+function readManifest() {
+  try {
+    const path = __dirname + "/resources/public/js/manifest.json";
+    const content = JSON.parse(fs.readFileSync(path, {encoding: "utf8"}));
+
+    const index = {};
+    for (let item of content) {
+      index[item.name] = "/js/" + item["output-name"];
+    };
+
+    return index;
+  } catch (e) {
+    console.error("Error on reading manifest, using default.");
+    return defaultManifest;
+  }
+}
+
+function touch() {
+  return mapStream(function(file, cb) {
+    if (file.isNull()) {
+      return cb(null, file);
+    }
+
+    // Update file modification and access time
+    return fs.utimes(file.path, new Date(), new Date(), () => {
+      cb(null, file)
+    });
+  });
+}
+
 function templatePipeline(options) {
   return function() {
     const input = options.input;
@@ -140,11 +179,13 @@ function templatePipeline(options) {
     const themes = ["default"];
 
     const locales = readLocales();
-    const config = readConfig({themes});
+    const manifest = readManifest();
+    const config = readConfig({themes, manifest});
 
     const tmpl = mustache({
       ts: ts,
       th: th,
+      manifest: manifest,
       config: JSON.stringify(config),
       translations: JSON.stringify(locales),
       themes: JSON.stringify(themes),
@@ -153,7 +194,8 @@ function templatePipeline(options) {
     return gulp.src(input)
       .pipe(tmpl)
       .pipe(rename("index.html"))
-      .pipe(gulp.dest(output));
+      .pipe(gulp.dest(output))
+      .pipe(touch());
   };
 }
 

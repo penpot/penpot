@@ -29,6 +29,7 @@ services:
       - "user_data:/home/uxbox/local"
       - "${HOME}/.m2:/home/uxbox/.m2"
       - "${PWD}:/home/uxbox/uxbox"
+      - ./files/nginx.conf:/etc/nginx/nginx.conf
 
     ports:
       - 3447:3447
