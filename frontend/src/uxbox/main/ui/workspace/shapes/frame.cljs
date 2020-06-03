@@ -16,6 +16,7 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.workspace.shapes.common :as common]
+   [uxbox.main.ui.workspace.shapes.outline :refer [outline]]
    [uxbox.main.ui.shapes.frame :as frame]
    [uxbox.common.geom.matrix :as gmt]
    [uxbox.common.geom.point :as gpt]
@@ -57,7 +58,7 @@
                                        #(refs/make-selected (:id shape)))
             selected? (mf/deref selected-iref)
             zoom (mf/deref refs/selected-zoom)
-
+            hover? (or (mf/deref refs/current-hover) #{})
 
             on-mouse-down   (mf/use-callback (mf/deps shape)
                                              #(common/on-mouse-down % shape))
@@ -68,7 +69,7 @@
             {:keys [x y width height]} shape
 
             inv-zoom    (/ 1 zoom)
-            childs      (mapv #(get objects %) (:shapes shape))
+            children      (mapv #(get objects %) (:shapes shape))
             ds-modifier (get-in shape [:modifiers :displacement])
 
             label-pos (gpt/point x (- y (/ 10 zoom)))
@@ -102,7 +103,12 @@
                    ;; User may also select the frame with single click in the label
                    :on-click on-double-click}
             (:name shape)]
-           [:& frame-shape
-            {:shape shape
-             :childs childs}]])))))
+           [:*
+            [:& frame-shape
+             {:shape shape
+              :children children}]
+
+            [:g.outlines
+             (for [child (filter (comp hover? :id) children)]
+               [:& outline {:shape (geom/transform-shape child)}])]]])))))
 

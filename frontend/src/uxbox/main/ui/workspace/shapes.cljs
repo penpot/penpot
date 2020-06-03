@@ -19,6 +19,8 @@
    [uxbox.main.ui.shapes.circle :as circle]
    [uxbox.main.ui.shapes.icon :as icon]
    [uxbox.main.ui.shapes.image :as image]
+   [uxbox.main.data.workspace.selection :as dws]
+   [uxbox.main.store :as st]
 
    ;; Shapes that has some peculiarities are defined in its own
    ;; namespace under uxbox.ui.workspace.shapes.* prefix, all the
@@ -52,20 +54,39 @@
       (and (identical? n-shape o-shape)
            (identical? n-frame o-frame)))))
 
+(defn use-mouse-over
+  [{:keys [id] :as shape}]
+  (mf/use-callback
+   (mf/deps shape)
+   (fn []
+     (st/emit! (dws/change-hover-state id true)))))
+
+(defn use-mouse-out
+  [{:keys [id] :as shape}]
+  (mf/use-callback
+   (mf/deps shape)
+   (fn []
+     (st/emit! (dws/change-hover-state id false)))))
+
 (mf/defc shape-wrapper
   {::mf/wrap [#(mf/memo' % shape-wrapper-memo-equals?)]
    ::mf/wrap-props false}
   [props]
   (let [shape (unchecked-get props "shape")
         frame (unchecked-get props "frame")
-        opts #js {:shape (->> shape (geom/transform-shape frame))
+        shape (geom/transform-shape frame shape)
+        opts #js {:shape shape
                   :frame frame}
-        alt? (mf/use-state false)]
+        alt? (mf/use-state false)
+        on-mouse-over (use-mouse-over shape)
+        on-mouse-out (use-mouse-out shape)]
 
     (hooks/use-stream ms/keyboard-alt #(reset! alt? %))
 
     (when (and shape (not (:hidden shape)))
-      [:g.shape {:style {:cursor (if @alt? cur/duplicate nil)}}
+      [:g.shape-wrapper {:on-mouse-over on-mouse-over
+                         :on-mouse-out on-mouse-out
+                         :style {:cursor (if @alt? cur/duplicate nil)}}
        (case (:type shape)
          :curve [:> path/path-wrapper opts]
          :path [:> path/path-wrapper opts]
@@ -79,7 +100,7 @@
          ;; Only used when drawing a new frame.
          :frame [:> frame-wrapper {:shape shape}]
          nil)
-       [:& bounding-box {:shape (->> shape (geom/transform-shape frame)) :frame frame}]])))
+       [:& bounding-box {:shape shape :frame frame}]])))
 
 (def group-wrapper (group/group-wrapper-factory shape-wrapper))
 (def frame-wrapper (frame/frame-wrapper-factory shape-wrapper))

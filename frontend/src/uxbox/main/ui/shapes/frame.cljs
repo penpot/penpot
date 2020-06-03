@@ -22,7 +22,7 @@
   (mf/fnc frame-shape
     {::mf/wrap-props false}
     [props]
-    (let [childs (unchecked-get props "childs")
+    (let [children (unchecked-get props "children")
           shape (unchecked-get props "shape")
           {:keys [id x y width height]} shape
 
@@ -36,7 +36,7 @@
                           :height height}))]
       [:svg {:x x :y y :width width :height height}
        [:> "rect" props]
-       (for [[i item] (d/enumerate childs)]
+       (for [[i item] (d/enumerate children)]
          [:& shape-wrapper {:frame shape
                             :shape item
                             :key (:id item)}])])))
