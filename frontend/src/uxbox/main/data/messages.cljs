@@ -47,9 +47,10 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (->> (rx/of #(dissoc % :message))
-           (rx/delay +animation-timeout+)))))
-
+      (let [stoper (rx/filter (ptk/type? ::show) stream)]
+        (->> (rx/of #(dissoc % :message))
+             (rx/delay +animation-timeout+)
+             (rx/take-until stoper))))))
 
 (defn error
   ([content] (error content {}))
