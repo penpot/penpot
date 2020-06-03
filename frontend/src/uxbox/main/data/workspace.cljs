@@ -1020,7 +1020,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [mdata {:position position
-                   :shape shape}]
+                   :shape shape
+                   :selected (get-in state [:workspace-local :selected])}]
         (-> state
             (assoc-in [:workspace-local :context-menu] mdata))))
 
