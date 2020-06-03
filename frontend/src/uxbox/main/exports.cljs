@@ -26,15 +26,16 @@
    [uxbox.main.ui.shapes.text :as text]
    [uxbox.main.ui.shapes.group :as group]))
 
-(def ^:private background-color "#E8E9EA") ;; $color-canvas
+(def ^:private default-color "#E8E9EA") ;; $color-canvas
 
 (mf/defc background
-  []
+  [{:keys [vbox color]}]
   [:rect
-   {:x 0 :y 0
-    :width "100%"
-    :height "100%"
-    :fill background-color}])
+   {:x (:x vbox)
+    :y (:y vbox)
+    :width (:width vbox)
+    :height (:height vbox)
+    :fill color}])
 
 (defn- calculate-dimensions
   [{:keys [objects] :as data} vport]
@@ -100,7 +101,7 @@
                      (:y dim 0) " "
                      (:width dim 100) " "
                      (:height dim 100))
-
+        background-color (get-in data [:options :background] default-color)
         frame-wrapper
         (mf/use-memo
          (mf/deps objects)
@@ -114,7 +115,7 @@
            :version "1.1"
            :xmlnsXlink "http://www.w3.org/1999/xlink"
            :xmlns "http://www.w3.org/2000/svg"}
-     [:& background]
+     [:& background {:vbox dim :color background-color}]
      (for [item shapes]
        (if (= (:type item) :frame)
          [:& frame-wrapper {:shape item

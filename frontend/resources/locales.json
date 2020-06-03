@@ -14,14 +14,14 @@
     }
   },
   "auth.create-demo-profile" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:116", "src/uxbox/main/ui/auth/login.cljs:115" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:115", "src/uxbox/main/ui/auth/register.cljs:116" ],
     "translations" : {
       "en" : "Create demo account",
       "fr" : null
     }
   },
   "auth.create-demo-profile-label" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:113", "src/uxbox/main/ui/auth/login.cljs:112" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:112", "src/uxbox/main/ui/auth/register.cljs:113" ],
     "translations" : {
       "en" : "Just wanna try it?"
     }
@@ -33,7 +33,7 @@
     }
   },
   "auth.email-label" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:82", "src/uxbox/main/ui/auth/recovery_request.cljs:45", "src/uxbox/main/ui/auth/login.cljs:73" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:73", "src/uxbox/main/ui/auth/recovery_request.cljs:45", "src/uxbox/main/ui/auth/register.cljs:82" ],
     "translations" : {
       "en" : "Email",
       "fr" : "adresse email"
@@ -119,7 +119,7 @@
     }
   },
   "auth.password-label" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/register.cljs:86", "src/uxbox/main/ui/auth/login.cljs:79" ],
+    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:79", "src/uxbox/main/ui/auth/register.cljs:86" ],
     "translations" : {
       "en" : "Password",
       "fr" : "Mot de passe"
@@ -343,7 +343,7 @@
     }
   },
   "dashboard.sidebar.drafts" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:111" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:112" ],
     "translations" : {
       "en" : "Drafts"
     }
@@ -355,7 +355,7 @@
     }
   },
   "dashboard.sidebar.recent" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:104" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:105" ],
     "translations" : {
       "en" : "Recent"
     }
@@ -456,7 +456,7 @@
     }
   },
   "ds.search.placeholder" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:168" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:171" ],
     "translations" : {
       "en" : "Search...",
       "fr" : "Rechercher..."
@@ -533,32 +533,32 @@
     }
   },
   "errors.email-already-exists" : {
-    "used-in" : [ "src/uxbox/main/ui/auth.cljs:87", "src/uxbox/main/ui/settings/change_email.cljs:38" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:38", "src/uxbox/main/ui/auth.cljs:87" ],
     "translations" : {
       "en" : "Email already used"
     }
   },
   "errors.generic" : {
-    "used-in" : [ "src/uxbox/main/ui.cljs:184", "src/uxbox/main/ui/auth.cljs:91", "src/uxbox/main/ui/settings/profile.cljs:37" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:37", "src/uxbox/main/ui/auth.cljs:91", "src/uxbox/main/ui.cljs:190" ],
     "translations" : {
       "en" : "Something wrong has happened.",
       "fr" : "Quelque chose c'est mal passé."
     }
   },
   "errors.image-format-unsupported" : {
-    "used-in" : [ "src/uxbox/main/data/images.cljs:375", "src/uxbox/main/data/workspace/persistence.cljs:318" ],
+    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:317", "src/uxbox/main/data/images.cljs:375" ],
     "translations" : {
       "en" : "The image format is not supported (must be svg, jpg or png)."
     }
   },
   "errors.image-too-large" : {
-    "used-in" : [ "src/uxbox/main/data/images.cljs:373", "src/uxbox/main/data/workspace/persistence.cljs:316" ],
+    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:315", "src/uxbox/main/data/images.cljs:373" ],
     "translations" : {
       "en" : "The image is too large to be inserted (must be under 5mb)."
     }
   },
   "errors.network" : {
-    "used-in" : [ "src/uxbox/main/ui.cljs:178" ],
+    "used-in" : [ "src/uxbox/main/ui.cljs:184" ],
     "translations" : {
       "en" : "Unable to connect to backend server.",
       "fr" : "Impossible de se connecter au serveur principal."
@@ -585,7 +585,7 @@
     }
   },
   "errors.unexpected-error" : {
-    "used-in" : [ "src/uxbox/main/data/images.cljs:384", "src/uxbox/main/data/workspace/persistence.cljs:327", "src/uxbox/main/ui/auth/register.cljs:54", "src/uxbox/main/ui/settings/change_email.cljs:42" ],
+    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:326", "src/uxbox/main/data/images.cljs:384", "src/uxbox/main/ui/settings/change_email.cljs:42", "src/uxbox/main/ui/auth/register.cljs:54" ],
     "translations" : {
       "en" : "An unexpected error occurred.",
       "fr" : "Une erreur inattendue c'est produite"
@@ -626,7 +626,7 @@
     "unused" : true
   },
   "image.loading" : {
-    "used-in" : [ "src/uxbox/main/data/images.cljs:392", "src/uxbox/main/data/workspace/persistence.cljs:335" ],
+    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:334", "src/uxbox/main/data/images.cljs:392" ],
     "translations" : {
       "en" : "Loading image..."
     }
@@ -861,7 +861,7 @@
     }
   },
   "settings.profile-submit-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/password.cljs:94", "src/uxbox/main/ui/settings/options.cljs:65", "src/uxbox/main/ui/settings/profile.cljs:89" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/options.cljs:65", "src/uxbox/main/ui/settings/password.cljs:94", "src/uxbox/main/ui/settings/profile.cljs:89" ],
     "translations" : {
       "en" : "Update settings",
       "fr" : "Mettre à jour les paramètres"
@@ -1140,39 +1140,45 @@
     }
   },
   "workspace.library.all" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:121" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:123" ],
     "translations" : {
       "en" : "All libraries"
     }
   },
   "workspace.library.icons" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:171" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:173" ],
     "translations" : {
       "en" : "Icons"
     }
   },
   "workspace.library.images" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:176" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:178" ],
     "translations" : {
       "en" : "Images"
     }
   },
   "workspace.library.libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:153" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:155" ],
     "translations" : {
       "en" : "Libraries"
     }
   },
   "workspace.library.own" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:122" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:124" ],
     "translations" : {
       "en" : "My libraries"
     }
   },
   "workspace.library.store" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:123" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:125" ],
     "translations" : {
       "en" : "Store libraries"
+    }
+  },
+  "workspace.options.canvas_background" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:39" ],
+    "translations" : {
+      "en" : "Canvas background"
     }
   },
   "workspace.options.color" : {
@@ -1189,7 +1195,7 @@
     }
   },
   "workspace.options.fill" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/fill.cljs:41", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:383" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:383", "src/uxbox/main/ui/workspace/sidebar/options/fill.cljs:41" ],
     "translations" : {
       "en" : "Fill",
       "fr" : "Fond"
@@ -1644,21 +1650,21 @@
     }
   },
   "workspace.toolbar.circle" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:63" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:64" ],
     "translations" : {
       "en" : "Circle (E)",
       "fr" : "Cercle (E)"
     }
   },
   "workspace.toolbar.color-palette" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:107" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:108" ],
     "translations" : {
       "en" : "Color Palette (---)",
       "fr" : "Palette de couleurs (---)"
     }
   },
   "workspace.toolbar.curve" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:82" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:83" ],
     "translations" : {
       "en" : "Curve",
       "fr" : "Courbe"
@@ -1672,7 +1678,7 @@
     "unused" : true
   },
   "workspace.toolbar.frame" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:53" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:54" ],
     "translations" : {
       "en" : "Artboard (A)",
       "fr" : null
@@ -1693,20 +1699,20 @@
     "unused" : true
   },
   "workspace.toolbar.image" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:73" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:74" ],
     "translations" : {
       "en" : "Image (Ctrl + I)",
       "fr" : "Image (Ctrl + I)"
     }
   },
   "workspace.toolbar.libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:99" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:100" ],
     "translations" : {
       "en" : "Libraries (Ctrl + Shift + L)"
     }
   },
   "workspace.toolbar.path" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:87" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:88" ],
     "translations" : {
       "en" : "Path",
       "fr" : "Chemin"
@@ -1720,7 +1726,7 @@
     "unused" : true
   },
   "workspace.toolbar.rect" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:58" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:59" ],
     "translations" : {
       "en" : "Box (B)",
       "fr" : "Boîte (B)"
@@ -1734,14 +1740,14 @@
     "unused" : true
   },
   "workspace.toolbar.text" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:68" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:69" ],
     "translations" : {
       "en" : "Text (T)",
       "fr" : "Texte (T)"
     }
   },
   "workspace.viewport.click-to-close-path" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/drawarea.cljs:373" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/drawarea.cljs:54" ],
     "translations" : {
       "en" : "Click to close the path"
     }

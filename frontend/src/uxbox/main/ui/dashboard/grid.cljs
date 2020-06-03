@@ -34,7 +34,8 @@
                            (run! fonts/ensure-loaded! fonts)
                            (when-let [node (mf/ref-val container)]
                              (set! (.-innerHTML ^js node) svg)))))))
-    [:div.grid-item-th {:ref container}]))
+    [:div.grid-item-th {:style {:background-color (get-in file [:data :options :background])}
+                        :ref container}]))
 
 ;; --- Grid Item
 

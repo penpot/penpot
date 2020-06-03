@@ -158,10 +158,6 @@
   .empty-rule-square {
     grid-column: 1 / span 1;
     grid-row: 1 / span 1;
-    background-color: $color-canvas;
-    z-index: 13;
-    border-right: 1px solid $color-gray-30;
-    border-bottom: 1px solid $color-gray-30;
   }
 
   .horizontal-rule {

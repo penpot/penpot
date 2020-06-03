@@ -1330,6 +1330,26 @@
                                  {:interactions []}))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; CANVAS OPTIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn change-canvas-color
+  [color]
+  (ptk/reify ::change-canvas-color
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [pid (get state :current-page-id)
+            current-color (get-in state [:workspace-data pid :options :background])]
+        (rx/of (dwc/commit-changes
+                [{:type :set-option
+                  :option :background
+                  :value color}]
+                [{:type :set-option
+                  :option :background
+                  :value current-color}]
+                {:commit-local? true}))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
