@@ -87,12 +87,12 @@
 
      (when (> (count selected) 1)
        [:& menu-entry {:title "Group"
-                       :shortcut "Ctrl + g"
+                       :shortcut "g"
                        :on-click do-create-group}])
 
      (when (and (= (count selected)) (= (:type shape) :group))
        [:& menu-entry {:title "Ungroup"
-                       :shortcut "Ctrl + shift + g"
+                       :shortcut "Shift + g"
                        :on-click do-remove-group}])
 
      (if (:hidden shape)
