@@ -311,6 +311,7 @@
 
         on-drop
         (fn [event]
+          (dom/prevent-default event)
           (let [shape (dom/get-data-transfer event)
                 point (gpt/point (.-clientX event) (.-clientY event))
                 viewport-coord (translate-point-to-viewport point)

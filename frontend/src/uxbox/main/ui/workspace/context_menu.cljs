@@ -90,7 +90,7 @@
                        :shortcut "g"
                        :on-click do-create-group}])
 
-     (when (and (= (count selected)) (= (:type shape) :group))
+     (when (and (= (count selected) 1) (= (:type shape) :group))
        [:& menu-entry {:title "Ungroup"
                        :shortcut "Shift + g"
                        :on-click do-remove-group}])

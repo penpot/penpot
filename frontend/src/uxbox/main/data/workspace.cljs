@@ -1020,7 +1020,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [mdata {:position position
-                   :shape shape}]
+                   :shape shape
+                   :selected (get-in state [:workspace-local :selected])}]
         (-> state
             (assoc-in [:workspace-local :context-menu] mdata))))
 
@@ -1328,6 +1329,7 @@
    "ctrl+shift+z" #(st/emit! dwc/redo)
    "ctrl+y" #(st/emit! dwc/redo)
    "ctrl+q" #(st/emit! dwc/reinitialize-undo)
+   "a" #(st/emit! (select-for-drawing :frame))
    "b" #(st/emit! (select-for-drawing :rect))
    "e" #(st/emit! (select-for-drawing :circle))
    "t" #(st/emit! (select-for-drawing :text))

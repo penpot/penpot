@@ -21,6 +21,7 @@
   & .library-bar {
     grid-row: 2;
     grid-column: 1 / span 2;
+    overflow: hidden;
   }
 
   & .dashboard-content {
