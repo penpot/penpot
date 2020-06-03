@@ -8,11 +8,20 @@
 .library-bar {
   background-color: $color-white;
 
+  .sidebar-team {
+    display: flex;
+    flex-direction: column;
+    padding: $size-4 0;
+    border-top: 1px solid $color-gray-10;
+    height: 100%;
+    padding-bottom: 2.8rem;
+  }
+
   .library-bar-inside {
-    border-right: 1px solid $color-gray-10;
     display: flex;
     flex-direction: column;
     height: 100%;
+    border-right: 1px solid $color-gray-10;
 
     .library-tabs {
       align-items: center;
@@ -47,13 +56,14 @@
     }
 
     .library-elements {
-      border-top: 1px solid $color-gray-10;
       display: flex;
       flex-direction: column;
-      height: calc(95% - 1rem);
-      margin-bottom: $size-4;
       overflow-y: auto;
-      padding: $size-4 0;
+      margin: 0;
+
+      &.library-common {
+          overflow: unset;
+      }
 
       li {
         align-items: center;

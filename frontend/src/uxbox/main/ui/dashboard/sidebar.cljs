@@ -96,36 +96,39 @@
         library? (and (str/starts-with? (name selected-section) "dashboard-library")
                       (= selected-team-id (:default-team-id profile)))
         locale (i18n/use-locale)]
-    [:ul.library-elements
-     [:li.recent-projects
-      {:on-click #(st/emit! (rt/nav :dashboard-team {:team-id team-id}))
-       :class-name (when home? "current")}
-      i/recent
-      [:span.element-title (t locale "dashboard.sidebar.recent")]]
+    [:div.sidebar-team
+     [:ul.library-elements.library-common
+      [:li.recent-projects
+       {:on-click #(st/emit! (rt/nav :dashboard-team {:team-id team-id}))
+        :class-name (when home? "current")}
+       i/recent
+       [:span.element-title (t locale "dashboard.sidebar.recent")]]
 
-     [:li
-      {:on-click #(st/emit! (rt/nav :dashboard-project {:team-id team-id
-                                                        :project-id "drafts"}))
-       :class-name (when drafts? "current")}
-      i/file-html
-      [:span.element-title (t locale "dashboard.sidebar.drafts")]]
+      [:li
+       {:on-click #(st/emit! (rt/nav :dashboard-project {:team-id team-id
+                                                         :project-id "drafts"}))
+        :class-name (when drafts? "current")}
+       i/file-html
+       [:span.element-title (t locale "dashboard.sidebar.drafts")]]
 
-
-     [:li
-      {:on-click #(st/emit! (rt/nav :dashboard-library-icons-index {:team-id team-id}))
-       :class-name (when library? "current")}
-      i/icon-set
-      [:span.element-title (t locale "dashboard.sidebar.libraries")]]
+      [:li
+       {:on-click #(st/emit! (rt/nav :dashboard-library-icons-index {:team-id team-id}))
+        :class-name (when library? "current")}
+       i/icon-set
+       [:span.element-title (t locale "dashboard.sidebar.libraries")]]]
 
      [:div.projects-row
       [:span "PROJECTS"]
       [:a.btn-icon-light.btn-small {:on-click #(st/emit! dsh/create-project)}
        i/close]]
 
-     [:& sidebar-projects
-      {:selected-team-id selected-team-id
-       :selected-project-id selected-project-id
-       :team-id team-id}]]))
+     [:ul.library-elements
+      [:& sidebar-projects
+       {:selected-team-id selected-team-id
+        :selected-project-id selected-project-id
+        :team-id team-id}]]]
+
+    ))
 
 
 (def debounced-emit! (f/debounce st/emit! 500))
