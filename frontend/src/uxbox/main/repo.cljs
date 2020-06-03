@@ -29,13 +29,13 @@
 
 (defn send-query!
   [id params]
-  (let [uri (str cfg/backend-uri "/api/w/query/" (name id))]
+  (let [uri (str cfg/public-uri "/api/w/query/" (name id))]
     (->> (http/send! {:method :get :uri uri :query params})
          (rx/mapcat handle-response))))
 
 (defn send-mutation!
   [id params]
-  (let [uri (str cfg/backend-uri "/api/w/mutation/" (name id))]
+  (let [uri (str cfg/public-uri "/api/w/mutation/" (name id))]
     (->> (http/send! {:method :post :uri uri :body params})
          (rx/mapcat handle-response))))
 
@@ -64,7 +64,7 @@
 
 (defmethod mutation :login-with-google
   [id params]
-  (let [uri (str cfg/backend-uri "/api/oauth/google")]
+  (let [uri (str cfg/public-uri "/api/oauth/google")]
     (->> (http/send! {:method :post :uri uri})
          (rx/mapcat handle-response))))
 
@@ -94,13 +94,13 @@
 
 (defmethod mutation :login
   [id params]
-  (let [uri (str cfg/backend-uri "/api/login")]
+  (let [uri (str cfg/public-uri "/api/login")]
     (->> (http/send! {:method :post :uri uri :body params})
          (rx/mapcat handle-response))))
 
 (defmethod mutation :logout
   [id params]
-  (let [uri (str cfg/backend-uri "/api/logout")]
+  (let [uri (str cfg/public-uri "/api/logout")]
     (->> (http/send! {:method :post :uri uri :body params})
          (rx/mapcat handle-response))))
 

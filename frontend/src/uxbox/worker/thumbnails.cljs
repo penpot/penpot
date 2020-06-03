@@ -33,7 +33,7 @@
 
 (defn- request-page
   [id]
-  (let [uri (get @impl/config :backend-uri "http://localhost:6060")
+  (let [uri (get @impl/config :public-uri "http://localhost:3449/")
         uri (str uri "/api/w/query/page")]
     (p/create
      (fn [resolve reject]

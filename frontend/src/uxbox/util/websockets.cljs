@@ -27,7 +27,7 @@
 (defn uri
   ([path] (uri path {}))
   ([path params]
-   (let [uri (.parse Uri cfg/backend-uri)]
+   (let [uri (.parse Uri cfg/public-uri)]
      (.setPath uri path)
      (if (= (.getScheme uri) "http")
        (.setScheme uri "ws")

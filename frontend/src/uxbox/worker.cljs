@@ -30,8 +30,8 @@
 (this-as global
   (let [location (obj/get global "location")
         uri      (Uri. (obj/get location "href"))
-        buri     (.getParameterValue uri "backendURI")]
-    (swap! impl/config assoc :backend-uri buri)))
+        puri     (.getParameterValue uri "publicURI")]
+    (swap! impl/config assoc :public-uri puri)))
 
 ;; --- Messages Handling
 

@@ -2,7 +2,10 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.http.auth.google
   (:require
@@ -27,7 +30,7 @@
 
 (defn- build-redirect-url
   []
-  (let [public (uri/uri (:backend-uri cfg/config))]
+  (let [public (uri/uri (:public-uri cfg/config))]
     (str (assoc public :path "/api/oauth/google/callback"))))
 
 (defn- get-access-token

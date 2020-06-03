@@ -5,18 +5,18 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2017-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.config
   "A configuration management."
   (:require
-   [clojure.tools.logging :as log]
    [clojure.spec.alpha :as s]
-   [uxbox.common.spec :as us]
+   [clojure.tools.logging :as log]
    [cuerdas.core :as str]
    [environ.core :refer [env]]
    [mount.core :refer [defstate]]
    [uxbox.common.exceptions :as ex]
+   [uxbox.common.spec :as us]
    [uxbox.util.time :as tm]))
 
 (def defaults
@@ -26,14 +26,13 @@
    :database-username "uxbox"
    :database-password "uxbox"
 
-   :public-uri "http://localhost:3449"
-   :backend-uri "http://localhost:6060"
-
-   :redis-uri "redis://redis/0"
    :media-directory "resources/public/media"
    :assets-directory "resources/public/static"
-   :media-uri "http://localhost:6060/media"
-   :assets-uri "http://localhost:6060/static"
+
+   :public-uri "http://localhost:3449/"
+   :redis-uri "redis://redis/0"
+   :media-uri "http://localhost:3449/media/"
+   :assets-uri "http://localhost:3449/static/"
 
    :sendmail-backend "console"
    :sendmail-reply-to "no-reply@example.com"

@@ -99,7 +99,6 @@ function readLocales() {
 function readConfig(data) {
   const googleClientID = process.env.UXBOX_GOOGLE_CLIENT_ID;
   const publicURI = process.env.UXBOX_PUBLIC_URI;
-  const backendURI = process.env.UXBOX_BACKEND_URI;
   const demoWarn = process.env.UXBOX_DEMO_WARNING;
   const deployDate = process.env.UXBOX_DEPLOY_DATE;
   const deployCommit = process.env.UXBOX_DEPLOY_COMMIT;
@@ -114,10 +113,6 @@ function readConfig(data) {
 
   if (publicURI !== undefined) {
     cfg.publicURI = publicURI;
-  }
-
-  if (backendURI !== undefined) {
-    cfg.backendURI = backendURI;
   }
 
   if (deployDate !== undefined) {
