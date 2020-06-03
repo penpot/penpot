@@ -125,6 +125,15 @@ textarea {
     padding: 0px;
     margin: 0px;
     background-color: transparent;
+
+  }
+
+  // Makes the background for autocomplete white
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px $color-white inset !important;
   }
 
   .input-container {
