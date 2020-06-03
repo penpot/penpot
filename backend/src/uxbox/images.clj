@@ -10,6 +10,7 @@
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [datoteka.core :as fs]
+   [uxbox.common.exceptions :as ex]
    [uxbox.common.data :as d]
    [uxbox.common.spec :as us]
    [uxbox.util.storage :as ust]
@@ -108,8 +109,12 @@
        (ByteArrayInputStream. thumbnail-data)))))
 
 (defn info
-  [path]
+  [content-type path]
   (let [instance (Info. (str path))]
+    (when-not (= content-type (.getProperty instance "Mime type"))
+      (ex/raise :type :validation
+                :code :image-type-mismatch
+                :hint "Seems like you are uploading a file whose content does not match the extension."))
     {:width (.getImageWidth instance)
      :height (.getImageHeight instance)}))
 

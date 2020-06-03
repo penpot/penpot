@@ -165,7 +165,7 @@
               :code :image-type-not-allowed
               :hint "Seems like you are uploading an invalid image."))
 
-  (let [image-opts (images/info (:tempfile content))
+  (let [image-opts (images/info (:content-type content) (:tempfile content))
         image-path (imgs/persist-image-on-fs content)
         thumb-opts imgs/thumbnail-options
         thumb-path (imgs/persist-image-thumbnail-on-fs thumb-opts image-path)]
