@@ -125,7 +125,7 @@
                   (:hidden item))
               nil
 
-              (.-ctrlKey event)
+              (.-shiftKey event)
               (st/emit! (dw/select-shape id true))
 
               (> (count selected) 1)
