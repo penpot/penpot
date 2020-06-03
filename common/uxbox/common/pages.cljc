@@ -327,6 +327,65 @@
    :fill-opacity 1
    :shapes []})
 
+(def ^:private default-color "#b1b2b5") ;; $color-gray-20
+
+(def ^:private minimal-shapes
+  [{:type :rect
+    :name "Rect"
+    :fill-color default-color
+    :stroke-alignment :center}
+   {:type :image}
+   {:type :icon}
+   {:type :circle
+    :name "Circle"
+    :fill-color default-color}
+   {:type :path
+    :name "Path"
+    :stroke-style :solid
+    :stroke-color "#000000"
+    :stroke-width 2
+    :stroke-alignment :center
+    :fill-color "#000000"
+    :fill-opacity 0
+    :segments []}
+   {:type :frame
+    :stroke-style :none
+    :stroke-alignment :center
+    :name "Artboard"}
+   {:type :curve
+    :name "Path"
+    :stroke-style :solid
+    :stroke-color "#000000"
+    :stroke-width 2
+    :stroke-alignment :center
+    :fill-color "#000000"
+    :fill-opacity 0
+    :segments []}
+   {:type :text
+    :name "Text"
+    :content nil}])
+
+(defn make-minimal-shape
+  [type]
+  (let [shape (d/seek #(= type (:type %)) minimal-shapes)]
+    (assert shape "unexpected shape type")
+    (assoc shape
+           :id (uuid/next)
+           :x 0
+           :y 0
+           :width 1
+           :height 1
+           :selrect {:x 0
+                     :x1 0
+                     :x2 0
+                     :y 0
+                     :y1 0
+                     :y2 0
+                     :width 1
+                     :height 1}
+           :points []
+           :segments [])))
+
 ;; --- Changes Processing Impl
 
 (defmulti process-change

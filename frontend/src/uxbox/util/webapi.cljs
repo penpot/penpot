@@ -13,6 +13,7 @@
    [promesa.core :as p]
    [beicon.core :as rx]
    [cuerdas.core :as str]
+   [uxbox.common.data :as d]
    [uxbox.util.transit :as t]))
 
 (defn read-file-as-text
@@ -79,8 +80,20 @@
 (defn- read-from-clipboard
   []
   (let [cboard (unchecked-get js/navigator "clipboard")]
-    (-> (.readText cboard)
-        (p/then identity))))
+    (rx/from (.readText cboard))))
+
+(defn- read-image-from-clipboard
+  []
+  (let [cboard (unchecked-get js/navigator "clipboard")
+        read-item (fn [item]
+                    (let [img-type (->> (.-types item)
+                                        (d/seek #(str/starts-with? % "image/")))]
+                      (if img-type
+                        (rx/from (.getType item img-type))
+                        (rx/empty))))]
+    (->> (rx/from (.read cboard)) ;; Get a stream of item lists
+         (rx/mapcat identity)     ;; Convert each item into an emission
+         (rx/switch-map read-item))))
 
 (defn request-fullscreen
   [el]

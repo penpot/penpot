@@ -508,6 +508,40 @@
                (when (= :text (:type attrs))
                  (start-edition-mode id)))))))
 
+(defn- calculate-centered-box
+  [state aspect-ratio]
+  (if (>= aspect-ratio 1)
+    (let [vbox (get-in state [:workspace-local :vbox])
+          width (/ (:width vbox) 2)
+          height (/ width aspect-ratio)
+
+          x (+ (:x vbox) (/ width 2))
+          y (+ (:y vbox) (/ (- (:height vbox) height) 2))]
+
+      [width height x y])
+
+    (let [vbox (get-in state [:workspace-local :vbox])
+          height (/ (:height vbox) 2)
+          width (* height aspect-ratio)
+
+          y (+ (:y vbox) (/ height 2))
+          x (+ (:x vbox) (/ (- (:width vbox) width) 2))]
+
+      [width height x y])))
+
+(defn create-and-add-shape
+  [type data aspect-ratio]
+  (ptk/reify ::create-and-add-shape
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [[width height x y] (calculate-centered-box state aspect-ratio)
+            shape (-> (cp/make-minimal-shape type)
+                      (merge data)
+                      (geom/resize width height)
+                      (geom/absolute-move (gpt/point x y)))]
+
+        (rx/of (add-shape shape))))))
+
 
 
 
@@ -1096,15 +1130,38 @@
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
                (dws/select-shapes selected))))))
 
+(defn- image-uploaded
+  [{:keys [id name] :as image}]
+  (let [shape {:name name
+               :metadata {:width (:width image)
+                          :height (:height image)
+                          :uri (:uri image)
+                          :thumb-width (:thumb-width image)
+                          :thumb-height (:thumb-height image)
+                          :thumb-uri (:thumb-uri image)}}
+        aspect-ratio (/ (:width image) (:height image))]
+    (st/emit! (create-and-add-shape :image shape aspect-ratio))))
+
+(defn- paste-image-impl
+  [image]
+  (ptk/reify ::paste-bin-impl
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (dwp/upload-image image image-uploaded)))))
+
 (def paste
   (ptk/reify ::paste
     ptk/WatchEvent
     (watch [_ state stream]
-      (->> (rx/from (wapi/read-from-clipboard))
+      (->> (wapi/read-from-clipboard)
            (rx/map t/decode)
            (rx/filter #(= :copied-shapes (:type %)))
            (rx/map #(select-keys % [:selected :objects]))
            (rx/map paste-impl)
+           (rx/catch (partial instance? js/SyntaxError)
+             (fn [_]
+               (->> (wapi/read-image-from-clipboard)
+                    (rx/map paste-image-impl))))
            (rx/catch (fn [err]
                        (js/console.error "Clipboard error:" err)
                        (rx/empty)))))))
