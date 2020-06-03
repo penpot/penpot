@@ -25,7 +25,8 @@
     :warning i/msg-warning
     :error i/msg-error
     :success i/msg-success
-    :info i/msg-info))
+    :info i/msg-info
+    i/msg-error))
 
 (mf/defc notification-item
   [{:keys [type status on-close quick? content] :as props}]

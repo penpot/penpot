@@ -291,7 +291,8 @@
     (ex/raise :type :validation
               :code :image-type-not-allowed
               :hint "Seems like you are uploading an invalid image."))
-  (let [thumb-opts {:width 256
+  (let [image-opts (images/info (:content-type file) (:tempfile file))
+        thumb-opts {:width 256
                     :height 256
                     :quality 75
                     :format "webp"}

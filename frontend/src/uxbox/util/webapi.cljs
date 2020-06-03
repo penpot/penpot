@@ -75,12 +75,12 @@
   [data]
   (assert (string? data) "`data` should be string")
   (let [cboard (unchecked-get js/navigator "clipboard")]
-    (.writeText cboard data)))
+    (.writeText ^js cboard data)))
 
 (defn- read-from-clipboard
   []
   (let [cboard (unchecked-get js/navigator "clipboard")]
-    (rx/from (.readText cboard))))
+    (rx/from (.readText ^js cboard))))
 
 (defn- read-image-from-clipboard
   []
@@ -91,7 +91,7 @@
                       (if img-type
                         (rx/from (.getType item img-type))
                         (rx/empty))))]
-    (->> (rx/from (.read cboard)) ;; Get a stream of item lists
+    (->> (rx/from (.read ^js cboard)) ;; Get a stream of item lists
          (rx/mapcat identity)     ;; Convert each item into an emission
          (rx/switch-map read-item))))
 
