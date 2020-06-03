@@ -147,6 +147,9 @@
 (def vbox
   (l/derived :vbox workspace-local))
 
+(def current-hover
+  (l/derived :hover workspace-local))
+
 ;; ---- Viewer refs
 
 (def viewer-data

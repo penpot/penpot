@@ -297,3 +297,11 @@
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
                (select-shapes selected))))))
+
+(defn change-hover-state [id value]
+  (ptk/reify ::change-hover-state
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update-in [:workspace-local :hover] #(if (nil? %) #{} %))
+          (update-in [:workspace-local :hover] (comp (if value conj disj)) id)))))

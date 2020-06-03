@@ -27,8 +27,7 @@
   {::mf/wrap-props false}
   [props]
   (let [shape (unchecked-get props "shape")
-        selected (mf/deref refs/selected-shapes)
-        selected? (contains? selected (:id shape))
+        hover? (or (mf/deref refs/current-hover) #{})
         on-mouse-down   (mf/use-callback
                          (mf/deps shape)
                          #(common/on-mouse-down % shape))
@@ -38,8 +37,11 @@
         on-double-click (mf/use-callback
                          (mf/deps shape)
                          (fn [event]
-                           (when selected?
-                             (st/emit! (dw/start-edition-mode (:id shape))))))]
+                           (when (hover? (:id shape))
+                             (do
+                               (dom/stop-propagation event)
+                               (dom/prevent-default event)
+                               (st/emit! (dw/start-edition-mode (:id shape)))))))]
 
     [:g.shape {:on-double-click on-double-click
                :on-mouse-down on-mouse-down
