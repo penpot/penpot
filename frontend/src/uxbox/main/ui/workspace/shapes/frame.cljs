@@ -9,6 +9,7 @@
 
 (ns uxbox.main.ui.workspace.shapes.frame
   (:require
+   [clojure.set :as set]
    [rumext.alpha :as mf]
    [uxbox.common.data :as d]
    [uxbox.main.constants :as c]
@@ -58,7 +59,10 @@
                                        #(refs/make-selected (:id shape)))
             selected? (mf/deref selected-iref)
             zoom (mf/deref refs/selected-zoom)
+
+            selected-shape? (or (mf/deref refs/selected-shapes) #{})
             hover? (or (mf/deref refs/current-hover) #{})
+            outline? (set/union selected-shape? hover?)
 
             on-mouse-down   (mf/use-callback (mf/deps shape)
                                              #(common/on-mouse-down % shape))
@@ -109,6 +113,6 @@
               :children children}]
 
             [:g.outlines
-             (for [child (filter (comp hover? :id) children)]
+             (for [child (filter (comp outline? :id) children)]
                [:& outline {:shape (geom/transform-shape child)}])]]])))))
 
