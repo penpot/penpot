@@ -19,6 +19,7 @@
    [uxbox.common.data :as d]
    [uxbox.main.constants :as c]
    [uxbox.main.data.workspace :as dw]
+   [uxbox.main.data.workspace.drawing :as dd]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
@@ -26,7 +27,7 @@
    [uxbox.main.ui.hooks :as hooks]
    [uxbox.main.ui.workspace.shapes :refer [shape-wrapper frame-wrapper]]
    [uxbox.main.ui.workspace.shapes.interactions :refer [interactions]]
-   [uxbox.main.ui.workspace.drawarea :refer [draw-area start-drawing]]
+   [uxbox.main.ui.workspace.drawarea :refer [draw-area]]
    [uxbox.main.ui.workspace.selection :refer [selection-handlers]]
    [uxbox.main.ui.workspace.presence :as presence]
    [uxbox.main.ui.workspace.snap-points :refer [snap-points]]
@@ -161,7 +162,7 @@
              (cond
                (and (not edition) (= 1 (.-which event)))
                (if drawing-tool
-                 (st/emit! (start-drawing drawing-tool))
+                 (st/emit! (dd/start-drawing drawing-tool))
                  (st/emit! dw/handle-selection))
 
                (and (not edition)
