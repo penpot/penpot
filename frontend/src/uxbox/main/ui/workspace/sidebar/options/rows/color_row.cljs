@@ -77,7 +77,8 @@
                                     dom/get-target
                                     dom/get-value
                                     string->opacity
-                                    change-opacity))]
+                                    change-opacity))
+        select-all #(-> % (dom/get-target) (.select))]
 
     (mf/use-effect
      (mf/deps value)
@@ -91,12 +92,14 @@
      [:div.color-info
       [:input {:value (-> @state :value (subs 1))
                :pattern "^[0-9a-fA-F]{0,6}$"
+               :on-click select-all
                :on-change handle-input-color-change}]]
 
      (when (not disable-opacity)
        [:div.input-element.percentail
         [:input.input-text {:type "number"
                             :value (-> @state :opacity opacity->string)
+                            :on-click select-all
                             :on-change handle-opacity-change
                             :min "0"
                             :max "100"}]])

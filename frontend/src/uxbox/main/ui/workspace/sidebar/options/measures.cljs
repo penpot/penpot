@@ -22,7 +22,6 @@
    [uxbox.util.i18n :refer [t] :as i18n]))
 
 ;; -- User/drawing coords
-
 (mf/defc measures-menu
   [{:keys [shape options] :as props}]
   (let [options (or options #{:size :position :rotation :radius})
@@ -72,7 +71,8 @@
         on-width-change #(on-size-change % :width)
         on-height-change #(on-size-change % :height)
         on-pos-x-change #(on-position-change % :x)
-        on-pos-y-change #(on-position-change % :y)]
+        on-pos-y-change #(on-position-change % :y)
+        select-all #(-> % (dom/get-target) (.select))]
 
     [:div.element-set
      [:div.element-set-content
@@ -90,6 +90,7 @@
           [:input.input-text {:type "number"
                               :min "0"
                               :no-validate true
+                              :on-click select-all
                               :on-change on-width-change
                               :value (str (-> (:width shape)
                                               (d/coalesce 0)
@@ -100,6 +101,7 @@
           [:input.input-text {:type "number"
                               :min "0"
                               :no-validate true
+                              :on-click select-all
                               :on-change on-height-change
                               :value (str (-> (:height shape)
                                               (d/coalesce 0)
@@ -113,12 +115,14 @@
           [:input.input-text {:placeholder "x"
                               :type "number"
                               :no-validate true
+                              :on-click select-all
                               :on-change on-pos-x-change
                               :value (-> shape :selrect :x (math/precision 2))}]]
          [:div.input-element.Yaxis
           [:input.input-text {:placeholder "y"
                               :type "number"
                               :no-validate true
+                              :on-click select-all
                               :on-change on-pos-y-change
                               :value (-> shape :selrect :y (math/precision 2))}]]])
 
@@ -132,6 +136,7 @@
             :no-validate true
             :min "0"
             :max "359"
+            :on-click select-all
             :on-change on-rotation-change
             :value (str (-> (:rotation shape)
                             (d/coalesce 0)
@@ -154,6 +159,7 @@
           [:input.input-text
            {:placeholder "rx"
             :type "number"
+            :on-click select-all
             :on-change on-radius-change
             :value (str (-> (:rx shape)
                             (d/coalesce 0)
