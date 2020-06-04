@@ -37,14 +37,10 @@
         minv (mth/round start)
         maxv (mth/round (+ start (/ size zoom)))
         step (calculate-step-size zoom)]
-    (obj/set! dctx "fillStyle" "#E8E9EA")
+
     (if (= type :horizontal)
-      (do
-        (.fillRect dctx 0 0 size 20)
-        (.translate dctx txfm 0))
-      (do
-        (.fillRect dctx 0 0 20 size)
-        (.translate dctx 0 txfm)))
+      (.translate dctx txfm 0)
+      (.translate dctx 0 txfm))
 
     (obj/set! dctx "font" "12px sourcesanspro")
     (obj/set! dctx "fillStyle" "#7B7D85")

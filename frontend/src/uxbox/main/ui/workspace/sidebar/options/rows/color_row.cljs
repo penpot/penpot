@@ -16,7 +16,7 @@
    [uxbox.main.ui.workspace.colorpicker :refer [colorpicker-modal]]
    [uxbox.common.data :as d]))
 
-(defn color-picker-callback [color handle-change-color]
+(defn color-picker-callback [color handle-change-color disable-opacity]
   (fn [event]
     (let [x (.-clientX event)
           y (.-clientY event)
@@ -25,7 +25,8 @@
                  :on-change handle-change-color
                  :value (:value color)
                  :opacity (:opacity color)
-                 :transparent? true}]
+                 :transparent? true
+                 :disable-opacity disable-opacity}]
       (modal/show! colorpicker-modal props))))
 
 (defn opacity->string [opacity]
@@ -42,7 +43,7 @@
         (d/parse-integer 1)
         (/ 100))))
 
-(mf/defc color-row [{:keys [value on-change]}]
+(mf/defc color-row [{:keys [value on-change disable-opacity]}]
   (let [default-value {:value "#000000" :opacity 1}
 
         parse-value (fn [value]
@@ -85,19 +86,20 @@
     [:div.row-flex.color-data
      [:span.color-th
       {:style {:background-color (-> @state :value)}
-       :on-click (color-picker-callback @state handle-pick-color)}]
+       :on-click (color-picker-callback @state handle-pick-color disable-opacity)}]
 
      [:div.color-info
       [:input {:value (-> @state :value (subs 1))
                :pattern "^[0-9a-fA-F]{0,6}$"
                :on-change handle-input-color-change}]]
 
-     [:div.input-element.percentail
-      [:input.input-text {:type "number"
-                          :value (-> @state :opacity opacity->string)
-                          :on-change handle-opacity-change
-                          :min "0"
-                          :max "100"}]]
+     (when (not disable-opacity)
+       [:div.input-element.percentail
+        [:input.input-text {:type "number"
+                            :value (-> @state :opacity opacity->string)
+                            :on-change handle-opacity-change
+                            :min "0"
+                            :max "100"}]])
 
      #_[:input.slidebar {:type "range"
                        :min "0"

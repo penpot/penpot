@@ -225,11 +225,4 @@
   input {
     margin-bottom: auto;
   }
-
-  & > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) {
-    width: 25px !important;
-    height: 25px !important;
-    border-radius: 20px !important;
-    margin: 0 !important;
-  }
 }

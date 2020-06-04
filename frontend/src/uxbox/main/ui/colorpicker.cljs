@@ -14,7 +14,7 @@
    ["react-color/lib/components/chrome/Chrome" :as pickerskin]))
 
 (mf/defc colorpicker
-  [{:keys [on-change value opacity colors] :as props}]
+  [{:keys [on-change value opacity colors disable-opacity] :as props}]
   (let [hex-value (mf/use-state (or value "#FFFFFF"))
         alpha-value (mf/use-state (or opacity 1))
         [r g b] (hex->rgb @hex-value)
@@ -25,9 +25,10 @@
                               (on-change hex opacity))]
 
     [:> pickerskin/default {:color #js { :r r :g g :b b :a @alpha-value}
-                        :presetColors colors
-                        :onChange on-change-complete
-                        :style {:box-shadow "none"}}]))
+                            :presetColors colors
+                            :onChange on-change-complete
+                            :disableAlpha disable-opacity
+                            :style {:box-shadow "none"}}]))
 
 (def most-used-colors
   (letfn [(selector [{:keys [objects]}]

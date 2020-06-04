@@ -377,6 +377,7 @@
               (events/unlistenByKey key5)
               )))
 
+        options (mf/deref refs/workspace-page-options)
         ]
 
     (mf/use-effect on-mount)
@@ -399,7 +400,8 @@
                         (= drawing-tool :path) cur/pen
                         (= drawing-tool :curve)cur/pencil
                         drawing-tool cur/create-shape
-                        :else cur/pointer-inner)}
+                        :else cur/pointer-inner)
+              :background-color (get options :background "#E8E9EA")}
       :on-context-menu on-context-menu
       :on-click on-click
       :on-double-click on-double-click
@@ -410,6 +412,7 @@
       :on-drag-enter on-drag-enter
       :on-drag-over on-drag-over
       :on-drop on-drop}
+
      [:g
       [:& frames {:key (:id page)}]
 
