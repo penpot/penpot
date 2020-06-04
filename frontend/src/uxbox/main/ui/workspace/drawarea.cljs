@@ -47,7 +47,7 @@
           (dom/stop-propagation event)
           (st/emit! (dw/assign-cursor-tooltip nil)
                     dd/close-drawing-path
-                    ::end-path-drawing))
+                    :path/end-path-drawing))
 
         on-mouse-enter
         (fn [event]

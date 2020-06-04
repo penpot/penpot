@@ -130,7 +130,7 @@
 
 (def handle-drawing-path
   (letfn [(stoper-event? [{:keys [type shift] :as event}]
-            (or (= event ::end-path-drawing)
+            (or (= event :path/end-path-drawing)
                 (and (ms/mouse-event? event)
                      (or (and (= type :double-click) shift)
                          (= type :context-menu)))
