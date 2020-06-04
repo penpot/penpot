@@ -44,8 +44,8 @@
             (st/emit! (dw/create-and-add-shape :image shape aspect-ratio))))
 
         on-file-selected
-        (fn [file]
-          (st/emit! (dw/upload-image file on-uploaded)))]
+        (fn [files]
+          (run! #(st/emit! (dw/upload-image % on-uploaded)) files))]
 
     [:aside.left-toolbar
      [:div.left-toolbar-inside
@@ -76,7 +76,7 @@
         [:*
           i/image
           [:& file-uploader {:accept "image/jpeg,image/png,image/webp"
-                             :multi false
+                             :multi true
                              :input-ref file-input
                              :on-selected on-file-selected}]]]
        [:li.tooltip.tooltip-right
