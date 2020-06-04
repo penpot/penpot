@@ -21,7 +21,7 @@
    [uxbox.util.geom.snap-points :as sp]))
 
 (def ^:private snap-accuracy 5)
-(def ^:private snap-distance-accuracy 5)
+(def ^:private snap-distance-accuracy 10)
 
 (defn- remove-from-snap-points [remove-id?]
   (fn [query-result]
@@ -145,9 +145,7 @@
                                        (filter #(<= (mth/abs %) snap-distance-accuracy))
                                        (reduce min ##Inf))]
 
-                     (if (mth/finite? min-snap) [0 min-snap] nil))
-
-                   )))))
+                     (if (mth/finite? min-snap) [0 min-snap] nil)))))))
 
 (defn select-shapes-area [page-id shapes objects area-selrect]
   (->> (uw/ask! {:cmd :selection/query

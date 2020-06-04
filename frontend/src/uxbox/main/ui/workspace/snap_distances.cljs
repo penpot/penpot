@@ -110,7 +110,7 @@
 
         pair->distance+pair
         (fn [[sh1 sh2]]
-          [(-> (gsh/distance-shapes sh1 sh2) coord mth/round) [sh1 sh2]])
+          [(-> (gsh/distance-shapes sh1 sh2) coord (mth/precision 2)) [sh1 sh2]])
 
         contains-selected?
         (fn [selected pairs]
