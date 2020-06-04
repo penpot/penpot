@@ -2,7 +2,10 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016-2017 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.images
   "Image postprocessing."
@@ -62,18 +65,10 @@
          tmp (fs/create-tempfile :suffix ext)
          opr (doto (IMOperation.)
                (.addImage)
-
                (.autoOrient)
                (.strip)
                (.thumbnail (int width) (int height) ">")
                (.quality (double quality))
-
-               ;; (.autoOrient)
-               ;; (.strip)
-               ;; (.thumbnail (int width) (int height) "^")
-               ;; (.gravity "center")
-               ;; (.extent (int width) (int height))
-               ;; (.quality (double quality))
                (.addImage))]
      (doto (ConvertCmd.)
        (.run opr (into-array (map str [input tmp]))))
@@ -81,7 +76,7 @@
        (fs/delete tmp)
        (ByteArrayInputStream. thumbnail-data)))))
 
-(defn generate-thumbnail2
+(defn generate-profile-thumbnail
   ([input] (generate-thumbnail input nil))
   ([input {:keys [quality format width height]
            :or {format "jpeg"

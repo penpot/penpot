@@ -5,23 +5,22 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2019-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.services.mutations.images
   (:require
    [clojure.spec.alpha :as s]
    [datoteka.core :as fs]
-   [promesa.core :as p]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
+   [uxbox.common.uuid :as uuid]
    [uxbox.config :as cfg]
    [uxbox.db :as db]
-   [uxbox.media :as media]
    [uxbox.images :as images]
-   [uxbox.tasks :as tasks]
-   [uxbox.services.queries.teams :as teams]
+   [uxbox.media :as media]
    [uxbox.services.mutations :as sm]
-   [uxbox.common.uuid :as uuid]
+   [uxbox.services.queries.teams :as teams]
+   [uxbox.tasks :as tasks]
    [uxbox.util.storage :as ust]
    [uxbox.util.time :as dt]))
 
@@ -29,7 +28,7 @@
   {:width 800
    :height 800
    :quality 85
-   :format "webp"})
+   :format "jpeg"})
 
 (s/def ::id ::us/uuid)
 (s/def ::name ::us/string)

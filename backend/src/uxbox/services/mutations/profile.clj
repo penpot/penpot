@@ -294,12 +294,12 @@
         thumb-opts {:width 256
                     :height 256
                     :quality 75
-                    :format "webp"}
+                    :format "jpeg"}
         prefix (-> (sodi.prng/random-bytes 8)
                    (sodi.util/bytes->b64s))
-        name   (str prefix ".webp")
+        name   (str prefix ".jpg")
         path   (fs/path (:tempfile file))
-        photo  (images/generate-thumbnail2 path thumb-opts)]
+        photo  (images/generate-profile-thumbnail path thumb-opts)]
     (ust/save! media/media-storage name photo)))
 
 (defn- update-profile-photo
