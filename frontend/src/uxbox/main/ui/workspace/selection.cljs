@@ -25,7 +25,8 @@
    [uxbox.common.geom.shapes :as geom]
    [uxbox.common.geom.point :as gpt]
    [uxbox.common.geom.matrix :as gmt]
-   [uxbox.util.debug :refer [debug?]]))
+   [uxbox.util.debug :refer [debug?]]
+   [uxbox.main.ui.workspace.shapes.outline :refer [outline]]))
 
 
 (def rotation-handler-size 25)
@@ -192,6 +193,7 @@
        [:& selection-rect {:rect selrect
                            :transform transform
                            :zoom zoom}]
+       [:& outline {:shape (geom/transform-shape shape)}]
 
        ;; Handlers
        (for [{:keys [type position props]} (handlers-for-selection selrect)]

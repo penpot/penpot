@@ -959,8 +959,9 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [page-id (:current-page-id state)]
-        (update-in state [:workspace-data page-id :objects id :segments index]
-                   gpt/add delta)))))
+        (-> state
+            (update-in [:workspace-data page-id :objects id :segments index] gpt/add delta)
+            (update-in [:workspace-data page-id :objects id] geom/update-path-selrect))))))
 
 ;; --- Shape attrs (Layers Sidebar)
 
