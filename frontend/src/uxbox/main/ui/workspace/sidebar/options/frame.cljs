@@ -68,7 +68,8 @@
         on-width-change #(on-size-change % :width)
         on-height-change #(on-size-change % :height)
         on-pos-x-change #(on-position-change % :x)
-        on-pos-y-change #(on-position-change % :y)]
+        on-pos-y-change #(on-position-change % :y)
+        select-all #(-> % (dom/get-target) (.select))]
 
     [:div.element-set
 
@@ -103,6 +104,7 @@
        [:div.input-element.pixels
         [:input.input-text {:type "number"
                             :min "0"
+                            :on-click select-all
                             :on-change on-width-change
                             :value (-> (:width shape)
                                        (math/precision 2)
@@ -112,6 +114,7 @@
        [:div.input-element.pixels
         [:input.input-text {:type "number"
                             :min "0"
+                            :on-click select-all
                             :on-change on-height-change
                             :value (-> (:height shape)
                                        (math/precision 2)
@@ -123,6 +126,7 @@
        [:div.input-element.pixels
         [:input.input-text {:placeholder "x"
                             :type "number"
+                            :on-click select-all
                             :on-change on-pos-x-change
                             :value (-> (:x shape)
                                        (math/precision 2)
@@ -130,6 +134,7 @@
        [:div.input-element.pixels
         [:input.input-text {:placeholder "y"
                             :type "number"
+                            :on-click select-all
                             :on-change on-pos-y-change
                             :value (-> (:y shape)
                                        (math/precision 2)
