@@ -65,7 +65,7 @@
                   #(mf/deferred % ts/schedule-on-idle)]
        ::mf/wrap-props false}
       [props]
-      (let [shape (unchecked-get props "shape")
+      (let [shape   (unchecked-get props "shape")
             objects (unchecked-get props "objects")
 
             selected-iref (mf/use-memo (mf/deps (:id shape))
@@ -82,7 +82,7 @@
             {:keys [x y width height]} shape
 
             inv-zoom    (/ 1 zoom)
-            children      (mapv #(get objects %) (:shapes shape))
+            children    (mapv #(get objects %) (:shapes shape))
             ds-modifier (get-in shape [:modifiers :displacement])
 
             label-pos (gpt/point x (- y (/ 10 zoom)))
@@ -121,5 +121,5 @@
            [:*
             [:& frame-shape
              {:shape shape
-              :children children}]]])))))
+              :childs children}]]])))))
 

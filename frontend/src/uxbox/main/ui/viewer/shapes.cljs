@@ -11,6 +11,7 @@
   "The main container for a frame in viewer mode"
   (:require
    [rumext.alpha :as mf]
+   [uxbox.common.data :as d]
    [uxbox.common.pages :as cp]
    [uxbox.main.data.viewer :as dv]
    [uxbox.main.refs :as refs]
@@ -47,7 +48,7 @@
           {:keys [x y width height]} (:selrect shape)
 
           childs (unchecked-get props "childs")
-          frame (unchecked-get props "frame")
+          frame  (unchecked-get props "frame")
 
           on-mouse-down (mf/use-callback
                          (mf/deps shape)
@@ -100,13 +101,12 @@
   [show-interactions?]
   (generic-wrapper-factory circle/circle-shape show-interactions?))
 
-
 (declare shape-container-factory)
 
 (defn frame-container-factory
   [objects show-interactions?]
   (let [shape-container (shape-container-factory objects show-interactions?)
-        frame-wrapper (frame-wrapper shape-container show-interactions?)]
+        frame-wrapper   (frame-wrapper shape-container show-interactions?)]
     (mf/fnc frame-container
       {::mf/wrap-props false}
       [props]
@@ -135,11 +135,11 @@
 
 (defn shape-container-factory
   [objects show-interactions?]
-  (let [path-wrapper (path-wrapper show-interactions?)
-        text-wrapper (text-wrapper show-interactions?)
-        icon-wrapper (icon-wrapper show-interactions?)
-        rect-wrapper (rect-wrapper show-interactions?)
-        image-wrapper (image-wrapper show-interactions?)
+  (let [path-wrapper   (path-wrapper show-interactions?)
+        text-wrapper   (text-wrapper show-interactions?)
+        icon-wrapper   (icon-wrapper show-interactions?)
+        rect-wrapper   (rect-wrapper show-interactions?)
+        image-wrapper  (image-wrapper show-interactions?)
         circle-wrapper (circle-wrapper show-interactions?)]
     (mf/fnc shape-container
       {::mf/wrap-props false}
@@ -171,19 +171,20 @@
                      (gpt/negate)
                      (gmt/translate-matrix))
 
-        frame-id (:id frame)
-        modifier-ids (concat [frame-id] (cp/get-children frame-id objects))
-        update-fn #(assoc-in %1 [%2 :modifiers :displacement] modifier)
-        objects (reduce update-fn objects modifier-ids)
-        frame (assoc-in frame [:modifiers :displacement] modifier)
+        update-fn    #(assoc-in %1 [%2 :modifiers :displacement] modifier)
 
-        width  (* (:width frame) zoom)
-        height (* (:height frame) zoom)
-        vbox   (str "0 0 " (:width frame 0)
-                    " "    (:height frame 0))
-        wrapper (mf/use-memo
-                 (mf/deps objects)
-                 #(frame-container-factory objects show-interactions?))]
+        frame-id     (:id frame)
+        modifier-ids (d/concat [frame-id] (cp/get-children frame-id objects))
+        objects      (reduce update-fn objects modifier-ids)
+        frame        (assoc-in frame [:modifiers :displacement] modifier)
+
+        width        (* (:width frame) zoom)
+        height       (* (:height frame) zoom)
+        vbox         (str "0 0 " (:width frame 0)
+                          " "    (:height frame 0))
+        wrapper      (mf/use-memo
+                      (mf/deps objects)
+                      #(frame-container-factory objects show-interactions?))]
 
     [:svg {:view-box vbox
            :width width

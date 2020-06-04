@@ -34,7 +34,7 @@
         options (mf/deref refs/workspace-page-options)
         handle-change-color (use-change-color page)]
     [:div.element-set
-     [:div.element-set-title (t locale "workspace.options.canvas_background")]
+     [:div.element-set-title (t locale "workspace.options.canvas-background")]
      [:div.element-set-content
       [:& color-row {:disable-opacity true
                      :value {:value (get options :background "#E8E9EA")

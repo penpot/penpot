@@ -1175,7 +1175,7 @@
       "en" : "Store libraries"
     }
   },
-  "workspace.options.canvas_background" : {
+  "workspace.options.canvas-background" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/page.cljs:39" ],
     "translations" : {
       "en" : "Canvas background"

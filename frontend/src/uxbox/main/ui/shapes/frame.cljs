@@ -22,8 +22,8 @@
   (mf/fnc frame-shape
     {::mf/wrap-props false}
     [props]
-    (let [children (unchecked-get props "children")
-          shape (unchecked-get props "shape")
+    (let [childs (unchecked-get props "childs")
+          shape  (unchecked-get props "shape")
           {:keys [id x y width height]} shape
 
           props (-> (merge frame-default-props shape)
@@ -36,7 +36,7 @@
                           :height height}))]
       [:svg {:x x :y y :width width :height height}
        [:> "rect" props]
-       (for [[i item] (d/enumerate children)]
+       (for [[i item] (d/enumerate childs)]
          [:& shape-wrapper {:frame shape
                             :shape item
                             :key (:id item)}])])))
