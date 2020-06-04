@@ -13,13 +13,15 @@
    [uxbox.common.geom.shapes :as gsh]
    [uxbox.util.object :as obj]
    [rumext.util :refer [map->obj]]
-   [uxbox.main.ui.shapes.path :as path]))
+   [uxbox.main.ui.shapes.path :as path]
+   [uxbox.main.refs :as refs]))
 
 
 (mf/defc outline
   {::mf/wrap-props false}
   [props]
-  (let [shape (unchecked-get props "shape")
+  (let [zoom (mf/deref refs/selected-zoom)
+        shape (unchecked-get props "shape")
         transform (gsh/transform-matrix shape)
         {:keys [id x y width height]} shape
 
@@ -30,7 +32,7 @@
 
         common {:fill "transparent"
                 :stroke "#31EFB8"
-                :strokeWidth "1px"
+                :strokeWidth (/ 1 zoom)
                 :pointerEvents "none"
                 :transform transform}
 
