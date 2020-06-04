@@ -60,15 +60,10 @@
         (fn [event attr]
           (let [cval (-> (dom/get-target event)
                          (dom/get-value)
-                         (d/parse-integer))
-                pval (get shape attr)
-                delta (if (= attr :x)
-                        (gpt/point (math/neg (- pval cval)) 0)
-                        (gpt/point 0 (math/neg (- pval cval))))]
-
+                         (d/parse-integer 0))]
             ;; TODO: Change so not apply the modifiers until blur
-            (st/emit! (udw/set-modifiers #{(:id shape)} {:displacement delta})
-                      (udw/apply-modifiers #{(:id shape)}))))
+            (when cval
+              (st/emit! (udw/update-position (:id shape) {attr cval})))))
 
         on-width-change #(on-size-change % :width)
         on-height-change #(on-size-change % :height)

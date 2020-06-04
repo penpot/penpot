@@ -23,28 +23,6 @@
 
 ;; -- User/drawing coords
 
-(defn user-coords-vector
-  [shape]
-  (let [oldselrec (-> shape gsh/shape->path (gsh/center-transform (:transform shape)) gsh/shape->rect-shape)
-        {sel-x :x sel-y :y :as selrec} #_(:selrect shape) oldselrec
-        {rec-x :x rec-y :y} (-> shape gsh/shape->rect-shape)
-        dx (- rec-x sel-x)
-        dy (- rec-y sel-y)]
-    (-> (gpt/point dx dy)
-        (gpt/round 2))))
-
-(defn user->draw
-  [{:keys [x y width height] :as shape}]
-  (let [dv (user-coords-vector shape)]
-    (-> shape
-        (gsh/move dv))))
-
-(defn draw->user
-  [{:keys [x y width height] :as shape}]
-  (let [dv (user-coords-vector shape)]
-    (-> shape
-        (gsh/move (gpt/negate dv)))))
-
 (mf/defc measures-menu
   [{:keys [shape options] :as props}]
   (let [options (or options #{:size :position :rotation :radius})
@@ -52,8 +30,7 @@
         frame (deref (refs/object-by-id (:frame-id shape)))
         old-shape shape
         shape (->> shape
-                   (gsh/transform-shape frame)
-                   (draw->user))
+                   (gsh/transform-shape frame))
 
         on-size-change
         (fn [event attr]
@@ -70,12 +47,12 @@
         (fn [event attr]
           (let [value (-> (dom/get-target event)
                           (dom/get-value)
-                          (d/parse-integer 0))
-                new-shape (-> shape
-                              (assoc attr value)
-                              (gsh/translate-from-frame frame)
-                              (user->draw))]
-            (st/emit! (udw/update-position (:id shape) (select-keys new-shape [attr])))))
+                          (d/parse-integer 0))]
+            (when value
+              (let [from (-> shape :selrect attr)
+                    to (+ value (attr frame))
+                    target (+ (attr shape) (- to from))]
+                (st/emit! (udw/update-position (:id shape) {attr target}))))))
 
         on-rotation-change
         (fn [event]
@@ -137,13 +114,13 @@
                               :type "number"
                               :no-validate true
                               :on-change on-pos-x-change
-                              :value (-> shape :x (math/precision 2))}]]
+                              :value (-> shape :selrect :x (math/precision 2))}]]
          [:div.input-element.Yaxis
           [:input.input-text {:placeholder "y"
                               :type "number"
                               :no-validate true
                               :on-change on-pos-y-change
-                              :value (-> shape :y (math/precision 2))}]]])
+                              :value (-> shape :selrect :y (math/precision 2))}]]])
 
       (when (options :rotation)
         [:div.row-flex
