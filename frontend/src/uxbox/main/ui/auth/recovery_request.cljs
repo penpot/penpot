@@ -12,12 +12,12 @@
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
-   [uxbox.main.ui.icons :as i]
    [uxbox.common.spec :as us]
    [uxbox.main.data.auth :as uda]
    [uxbox.main.data.messages :as dm]
    [uxbox.main.store :as st]
    [uxbox.main.ui.components.forms :refer [input submit-button form]]
+   [uxbox.main.ui.icons :as i]
    [uxbox.main.ui.navigation :as nav]
    [uxbox.util.dom :as dom]
    [uxbox.util.forms :as fm]
@@ -29,8 +29,9 @@
 
 (defn- on-submit
   [form event]
-  (let [on-success #(st/emit! (dm/info (tr "auth.notifications.recovery-token-sent"))
-                              (rt/nav :auth-login))
+  (let [on-success #(st/emit!
+                     (dm/info (tr "auth.notifications.recovery-token-sent"))
+                     (rt/nav :auth-login))
         params     (with-meta (:clean-data form)
                      {:on-success on-success})]
     (st/emit! (uda/request-profile-recovery params))))

@@ -187,7 +187,6 @@
     (db/exec-one! conn [sql:profile-by-email email])))
 
 
-
 ;; --- Mutation: Register if not exists
 
 (sm/defmutation ::login-or-register
@@ -433,10 +432,11 @@
                            :name (:fullname profile)}))]
 
     (db/with-atomic [conn db/pool]
-      (let [profile (->> (retrieve-profile-by-email conn email)
-                         (create-recovery-token conn))]
-        (send-email-notification conn profile)
-        nil))))
+      (some->> email
+               (retrieve-profile-by-email conn)
+               (create-recovery-token conn)
+               (send-email-notification conn))
+      nil)))
 
 
 ;; --- Mutation: Recover Profile
