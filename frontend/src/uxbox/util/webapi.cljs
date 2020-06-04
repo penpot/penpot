@@ -86,10 +86,10 @@
   []
   (let [cboard (unchecked-get js/navigator "clipboard")
         read-item (fn [item]
-                    (let [img-type (->> (.-types item)
+                    (let [img-type (->> (.-types ^js item)
                                         (d/seek #(str/starts-with? % "image/")))]
                       (if img-type
-                        (rx/from (.getType item img-type))
+                        (rx/from (.getType ^js item img-type))
                         (rx/empty))))]
     (->> (rx/from (.read ^js cboard)) ;; Get a stream of item lists
          (rx/mapcat identity)     ;; Convert each item into an emission
