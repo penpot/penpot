@@ -9,7 +9,6 @@
 
 (ns uxbox.main.ui.workspace.shapes.frame
   (:require
-   [clojure.set :as set]
    [rumext.alpha :as mf]
    [uxbox.common.data :as d]
    [uxbox.main.constants :as c]
@@ -17,7 +16,7 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.workspace.shapes.common :as common]
-   [uxbox.main.ui.workspace.shapes.outline :refer [outline]]
+   [uxbox.main.data.workspace.selection :as dws]
    [uxbox.main.ui.shapes.frame :as frame]
    [uxbox.common.geom.matrix :as gmt]
    [uxbox.common.geom.point :as gpt]
@@ -44,6 +43,20 @@
                (recur (first ids) (rest ids))
                false))))))
 
+(defn use-mouse-over
+  [{:keys [id] :as shape}]
+  (mf/use-callback
+   (mf/deps shape)
+   (fn []
+     (st/emit! (dws/change-hover-state id true)))))
+
+(defn use-mouse-out
+  [{:keys [id] :as shape}]
+  (mf/use-callback
+   (mf/deps shape)
+   (fn []
+     (st/emit! (dws/change-hover-state id false)))))
+
 (defn frame-wrapper-factory
   [shape-wrapper]
   (let [frame-shape (frame/frame-shape shape-wrapper)]
@@ -59,10 +72,6 @@
                                        #(refs/make-selected (:id shape)))
             selected? (mf/deref selected-iref)
             zoom (mf/deref refs/selected-zoom)
-
-            selected-shape? (or (mf/deref refs/selected-shapes) #{})
-            hover? (or (mf/deref refs/current-hover) #{})
-            outline? (set/union selected-shape? hover?)
 
             on-mouse-down   (mf/use-callback (mf/deps shape)
                                              #(common/on-mouse-down % shape))
@@ -105,14 +114,12 @@
                                (* zoom (:y label-pos))
                                ")")
                    ;; User may also select the frame with single click in the label
-                   :on-click on-double-click}
+                   :on-click on-double-click
+                   :on-mouse-over (use-mouse-over shape)
+                   :on-mouse-out (use-mouse-out shape)}
             (:name shape)]
            [:*
             [:& frame-shape
              {:shape shape
-              :children children}]
-
-            [:g.outlines
-             (for [child (filter (comp outline? :id) children)]
-               [:& outline {:shape (geom/transform-shape child)}])]]])))))
+              :children children}]]])))))
 

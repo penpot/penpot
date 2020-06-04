@@ -9,6 +9,7 @@
 
 (ns uxbox.main.ui.workspace.viewport
   (:require
+   [clojure.set :as set]
    [cuerdas.core :as str]
    [beicon.core :as rx]
    [goog.events :as events]
@@ -33,10 +34,12 @@
    [uxbox.main.ui.workspace.snap-points :refer [snap-points]]
    [uxbox.main.ui.workspace.snap-distances :refer [snap-distances]]
    [uxbox.main.ui.workspace.frame-grid :refer [frame-grid]]
+   [uxbox.main.ui.workspace.shapes.outline :refer [outline]]
    [uxbox.common.math :as mth]
    [uxbox.util.dom :as dom]
    [uxbox.util.dom.dnd :as dnd]
    [uxbox.util.object :as obj]
+   [uxbox.common.geom.shapes :as gsh]
    [uxbox.common.geom.point :as gpt]
    [uxbox.util.perf :as perf]
    [uxbox.common.uuid :as uuid])
@@ -129,6 +132,19 @@
                             :objects objects}]
          [:& shape-wrapper {:shape item
                             :key (:id item)}]))]))
+
+(mf/defc shape-outlines []
+  (let [selected-shape? (or (mf/deref refs/selected-shapes) #{})
+        hover? (or (mf/deref refs/current-hover) #{})
+        outline? (set/union selected-shape? hover?)
+        data    (mf/deref refs/workspace-data)
+        shapes (->> data :objects vals (filter (comp outline? :id)))
+        current-transform (mf/deref refs/current-transform)]
+    (when (nil? current-transform)
+      [:g.outlines
+       (for [shape shapes]
+         [:& outline {:key (str "outline-" (:id shape))
+                      :shape (gsh/transform-shape shape)}])])))
 
 (mf/defc viewport
   [{:keys [page local layout] :as props}]
@@ -415,6 +431,8 @@
 
      [:g
       [:& frames {:key (:id page)}]
+
+      [:& shape-outlines]
 
       (when (seq selected)
         [:& selection-handlers {:selected selected
