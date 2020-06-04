@@ -1296,21 +1296,29 @@
   (ptk/reify ::move-create-interaction
     ptk/UpdateEvent
     (update [_ state]
-      (if (= position initial-pos)
-        state
-        (assoc-in state [:workspace-local :draw-interaction-to] position)))))
+      (let [page-id (:current-page-id state)
+            objects (get-in state [:workspace-data page-id :objects])
+            selected-shape-id (-> state (get-in [:workspace-local :selected]) first)
+            selected-shape (get objects selected-shape-id)
+            selected-shape-frame-id (:frame-id selected-shape)
+            start-frame (get objects selected-shape-frame-id)
+            end-frame (dwc/get-frame-at-point objects position)]
+        (cond-> state
+          (not= position initial-pos) (assoc-in [:workspace-local :draw-interaction-to] position)
+          (not= start-frame end-frame) (assoc-in [:workspace-local :draw-interaction-to-frame] end-frame))))))
 
 (defn finish-create-interaction
   [initial-pos]
   (ptk/reify ::finish-create-interaction
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-local :draw-interaction-to] nil))
+      (-> state
+          (assoc-in [:workspace-local :draw-interaction-to] nil)
+          (assoc-in [:workspace-local :draw-interaction-to-frame] nil)))
 
     ptk/WatchEvent
     (watch [_ state stream]
       (let [position @ms/mouse-position
-
             page-id (:current-page-id state)
             objects (get-in state [:workspace-data page-id :objects])
             frame (dwc/get-frame-at-point objects position)

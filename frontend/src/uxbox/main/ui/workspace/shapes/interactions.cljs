@@ -19,7 +19,8 @@
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
    [uxbox.main.data.workspace :as dw]
-   [uxbox.main.ui.keyboard :as kbd]))
+   [uxbox.main.ui.keyboard :as kbd]
+   [uxbox.main.ui.workspace.shapes.outline :refer [outline]]))
 
 (defn- get-click-interaction
   [shape]
@@ -154,7 +155,10 @@
        [:& interaction-marker {:x dest-x
                                :y dest-y
                                :arrow-dir arrow-dir
-                               :zoom zoom}]])))
+                               :zoom zoom}]
+
+       (when dest-shape
+         [:& outline {:shape dest-shape}])])))
 
 
 (mf/defc interaction-handle
@@ -179,6 +183,7 @@
         active-shapes (filter #(first (get-click-interaction %)) (vals objects))
         selected-shapes (map #(get objects %) selected)
         draw-interaction-to (:draw-interaction-to local)
+        draw-interaction-to-frame (:draw-interaction-to-frame local)
         first-selected (first selected-shapes)]
     [:*
       (for [shape active-shapes]
@@ -197,6 +202,7 @@
         [:& interaction-path {:key "interactive"
                               :orig-shape first-selected
                               :dest-point draw-interaction-to
+                              :dest-shape draw-interaction-to-frame
                               :selected? true
                               :zoom zoom}]
 
