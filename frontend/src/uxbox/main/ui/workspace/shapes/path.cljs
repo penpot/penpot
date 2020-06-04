@@ -18,6 +18,7 @@
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.shapes.path :as path]
    [uxbox.main.ui.workspace.shapes.common :as common]
+   [uxbox.main.data.workspace.drawing :as dr]
    [uxbox.util.dom :as dom]
    [uxbox.util.interop :as itr]
    [uxbox.main.streams :as ms]
@@ -37,7 +38,7 @@
         on-double-click (mf/use-callback
                          (mf/deps shape)
                          (fn [event]
-                           (when (hover? (:id shape))
+                           (when (and (not (::dr/initialized? shape)) (hover? (:id shape)))
                              (do
                                (dom/stop-propagation event)
                                (dom/prevent-default event)

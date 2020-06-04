@@ -131,8 +131,9 @@
 (def handle-drawing-path
   (letfn [(stoper-event? [{:keys [type shift] :as event}]
             (or (= event :path/end-path-drawing)
+                (= event :interrupt)
                 (and (ms/mouse-event? event)
-                     (or (and (= type :double-click) shift)
+                     (or (= type :double-click)
                          (= type :context-menu)))
                 (and (ms/keyboard-event? event)
                      (= type :down)
@@ -207,6 +208,7 @@
 
            (rx/concat
             (->> stream'
+                 (rx/take-until stoper)
                  (rx/map (fn [[point ctrl? index :as xxx]]
                            (let [point (if ctrl?
                                          (as-> point $
@@ -214,8 +216,7 @@
                                            (align-position (gpt/angle $) $)
                                            (gpt/add $ @last-point))
                                          point)]
-                             #(update-point-segment % index point))))
-                 (rx/take-until stoper))
+                             #(update-point-segment % index point)))))
             (rx/of finish-drawing-path
                    handle-finish-drawing))))))))
 
