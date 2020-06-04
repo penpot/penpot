@@ -30,8 +30,8 @@
 
         common {:fill "transparent"
                 :stroke "#31EFB8"
-                :stroke-width "1px"
-                :pointer-events "none"
+                :strokeWidth "1px"
+                :pointerEvents "none"
                 :transform transform}
 
         props (case (:type shape)
