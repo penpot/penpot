@@ -43,7 +43,7 @@
                 aspect-ratio (/ (:width image) (:height image))]
             (st/emit! (dw/create-and-add-shape :image shape aspect-ratio))))
 
-        on-file-selected
+        on-files-selected
         (fn [files]
           (run! #(st/emit! (dw/upload-image % on-uploaded)) files))]
 
@@ -78,7 +78,7 @@
           [:& file-uploader {:accept "image/jpeg,image/png,image/webp"
                              :multi true
                              :input-ref file-input
-                             :on-selected on-file-selected}]]]
+                             :on-selected on-files-selected}]]]
        [:li.tooltip.tooltip-right
         {:alt (t locale "workspace.toolbar.curve")
          :class (when (= selected-drawtool :curve) "selected")

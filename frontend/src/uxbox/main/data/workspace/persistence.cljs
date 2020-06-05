@@ -298,6 +298,7 @@
 (def max-file-size (* 5 1024 1024))
 
 ;; TODO: unify with create-images at main/data/images.cljs
+;;       and update-photo at main/data/users.cljs
 ;; https://tree.taiga.io/project/uxboxproject/us/440
 
 (defn upload-image

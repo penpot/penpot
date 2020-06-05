@@ -17,6 +17,7 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.components.forms :refer [input submit-button form]]
+   [uxbox.main.ui.components.file-uploader :refer [file-uploader]]
    [uxbox.main.ui.icons :as i]
    [uxbox.main.ui.messages :as msgs]
    [uxbox.main.ui.modal :as modal]
@@ -97,27 +98,27 @@
 
 (mf/defc profile-photo-form
   [{:keys [locale] :as props}]
-  (let [profile (mf/deref refs/profile)
+  (let [file-input (mf/use-ref nil)
+        profile (mf/deref refs/profile)
         photo (:photo-uri profile)
         photo (if (or (str/empty? photo) (nil? photo))
                 "images/avatar.jpg"
                 photo)
 
-        on-change
-        (fn [event]
-          (let [target (dom/get-target event)
-                file (-> (dom/get-files target)
-                         (array-seq)
-                         (first))]
-            (st/emit! (udu/update-photo {:file file}))
-            (dom/clean-value! target)))]
+        on-image-click #(dom/click (mf/ref-val file-input))
+
+        on-file-selected
+        (fn [file]
+          (st/emit! (udu/update-photo file)))]
+
     [:form.avatar-form
      [:div.image-change-field
-      [:span.update-overlay (t locale "settings.update-photo-label")]
+      [:span.update-overlay {:on-click on-image-click} (t locale "settings.update-photo-label")]
       [:img {:src photo}]
-      [:input {:type "file"
-               :value ""
-               :on-change on-change}]]]))
+      [:& file-uploader {:accept "image/jpeg,image/png"
+                         :multi false
+                         :input-ref file-input
+                         :on-selected on-file-selected}]]]))
 
 ;; --- Profile Page
 

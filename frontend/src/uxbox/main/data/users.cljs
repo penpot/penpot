@@ -12,7 +12,9 @@
    [potok.core :as ptk]
    [uxbox.common.spec :as us]
    [uxbox.config :as cfg]
+   [uxbox.main.store :as st]
    [uxbox.main.repo :as rp]
+   [uxbox.main.data.messages :as dm]
    [uxbox.util.router :as rt]
    [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.storage :refer [storage]]
@@ -151,15 +153,50 @@
              (rx/ignore))))))
 
 
-;; --- Update Photoo
+;; --- Update Photo
 
 (s/def ::file #(instance? js/File %))
+(def allowed-file-types #{"image/jpeg" "image/png" "image/webp"})
+(def max-file-size (* 5 1024 1024))
+
+;; TODO: unify with create-images at main/data/images.cljs
+;;       and upload-image at main/data/workspace/persistence.cljs
+;; https://tree.taiga.io/project/uxboxproject/us/440
 
 (defn update-photo
-  [{:keys [file] :as params}]
+  [file]
   (us/verify ::file file)
   (ptk/reify ::update-photo
     ptk/WatchEvent
     (watch [_ state stream]
-      (->> (rp/mutation :update-profile-photo {:file file})
-           (rx/map (constantly fetch-profile))))))
+      (let [check-file
+            (fn [file]
+              (when (> (.-size file) max-file-size)
+                (throw (ex-info (tr "errors.image-too-large") {})))
+              (when-not (contains? allowed-file-types (.-type file))
+                (throw (ex-info (tr "errors.image-format-unsupported") {})))
+              file)
+
+             on-success #(do (println "hola") (st/emit! dm/hide))
+
+             on-error #(do (st/emit! dm/hide)
+                           (if (.-message %)
+                             (rx/of (dm/error (.-message %)))
+                             (rx/of (dm/error (tr "errors.unexpected-error")))))
+
+             prepare
+             (fn [file]
+               {:file file})]
+
+      (st/emit! (dm/show {:content (tr "image.loading")
+                          :type :info
+                          :timeout nil}))
+
+      (->> (rx/of file)
+           (rx/map check-file)
+           (rx/map prepare)
+           (rx/mapcat #(rp/mutation :update-profile-photo %))
+           (rx/do on-success)
+           (rx/map (constantly fetch-profile))
+           (rx/catch on-error))))))
+
