@@ -91,7 +91,7 @@
                 frame-length (if (= :column (:type grid)) (:width frame) (:height frame))
                 item-length (if (or (nil? size) (= :auto size))
                               (-> (gg/calculate-default-item-length frame-length margin gutter)
-                                  (mth/round))
+                                  (mth/precision 2))
                               item-length)]
             (emit-changes! #(-> %
                                 (assoc-in [:params :size] size)
