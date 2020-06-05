@@ -147,12 +147,12 @@
              :width (/ resize-point-rect-size zoom)
              :height (/ resize-point-rect-size zoom)
              :fill (if (debug? :resize-handler) "red" "transparent")
-             :on-mouse-down on-resize
+             :on-mouse-down #(on-resize {:x cx' :y cy'} %)
              :style {:cursor (if (#{:top-left :bottom-right} position)
                                (cur/resize-nesw rotation) (cur/resize-nwse rotation))}
              :transform (gmt/multiply transform
                                       (gmt/rotate-matrix rot-square (gpt/point cx cy)))}]
-     [:circle {:on-mouse-down on-resize
+     [:circle {:on-mouse-down #(on-resize {:x cx' :y cy'} %)
                :r (/ resize-point-circle-radius zoom)
                :fill (if (debug? :resize-handler) "red" "transparent")
                :cx cx'
@@ -162,17 +162,20 @@
      ]))
 
 (mf/defc resize-side-handler [{:keys [x y length angle zoom position rotation transform on-resize]}]
-  [:rect {:x (+ x (/ resize-point-rect-size zoom))
-          :y (- y (/ resize-side-height 2 zoom))
-          :width (max 0 (- length (/ (* resize-point-rect-size 2) zoom)))
-          :height (/ resize-side-height zoom)
-          :transform (gmt/multiply transform
-                                   (gmt/rotate-matrix angle (gpt/point x y)))
-          :on-mouse-down on-resize
-          :style {:fill (if (debug? :resize-handler) "yellow" "transparent")
-                  :cursor (if (#{:left :right} position)
-                            (cur/resize-ew rotation)
-                            (cur/resize-ns rotation)) }}])
+  (let [res-point (if (#{:top :bottom} position)
+                    {:y y}
+                    {:x x})]
+    [:rect {:x (+ x (/ resize-point-rect-size zoom))
+            :y (- y (/ resize-side-height 2 zoom))
+            :width (max 0 (- length (/ (* resize-point-rect-size 2) zoom)))
+            :height (/ resize-side-height zoom)
+            :transform (gmt/multiply transform
+                                     (gmt/rotate-matrix angle (gpt/point x y)))
+            :on-mouse-down #(on-resize res-point %)
+            :style {:fill (if (debug? :resize-handler) "yellow" "transparent")
+                    :cursor (if (#{:left :right} position)
+                              (cur/resize-ew rotation)
+                              (cur/resize-ns rotation)) }}]))
 
 (mf/defc controls
   {::mf/wrap-props false}
@@ -268,8 +271,9 @@
   [{:keys [shapes selected zoom] :as props}]
   (let [shape (geom/selection-rect shapes)
         shape-center (geom/center shape)
-        on-resize #(do (dom/stop-propagation %2)
-                       (st/emit! (dw/start-resize %1 selected shape)))
+        on-resize (fn [current-position initial-position event]
+                    (dom/stop-propagation event)
+                    (st/emit! (dw/start-resize current-position initial-position selected shape)))
 
         on-rotate #(do (dom/stop-propagation %)
                        (st/emit! (dw/start-rotate shapes)))]
@@ -287,9 +291,9 @@
   (let [shape-id (:id shape)
         shape (geom/transform-shape shape)
         shape' (if (debug? :simple-selection) (geom/selection-rect [shape]) shape)
-        on-resize
-        #(do (dom/stop-propagation %2)
-             (st/emit! (dw/start-resize %1 #{shape-id} shape')))
+        on-resize (fn [current-position initial-position event]
+                    (dom/stop-propagation event)
+                    (st/emit! (dw/start-resize current-position initial-position #{shape-id} shape')))
 
         on-rotate
         #(do (dom/stop-propagation %)

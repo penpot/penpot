@@ -178,7 +178,7 @@
     (->> (closest-snap page-id frame-id [point] filter-shapes)
          (rx/map #(or % (gpt/point 0 0)))
          (rx/map #(gpt/add point %))
-         (rx/map gpt/round))))
+)))
 
 (defn closest-snap-move
   [page-id shapes objects layout movev]

@@ -76,7 +76,7 @@
 
 ;; -- RESIZE
 (defn start-resize
-  [handler ids shape]
+  [handler initial ids shape]
   (letfn [(resize [shape initial resizing-shapes [point lock? point-snap]]
             (let [{:keys [width height rotation]} shape
                   shapev (-> (gpt/point width height))
@@ -132,7 +132,8 @@
 
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [initial @ms/mouse-position
+        (let [current-pointer @ms/mouse-position
+              initial-position (merge current-pointer initial)
               stoper (rx/filter ms/mouse-up? stream)
               page-id (get state :current-page-id)
               resizing-shapes (map #(get-in state [:workspace-data page-id :objects %]) ids)
@@ -144,7 +145,7 @@
                 (rx/switch-map (fn [[point :as current]]
                                (->> (snap/closest-snap-point page-id resizing-shapes layout point)
                                     (rx/map #(conj current %)))))
-                (rx/mapcat (partial resize shape initial resizing-shapes))
+                (rx/mapcat (partial resize shape initial-position resizing-shapes))
                 (rx/take-until stoper))
            #_(rx/empty)
            (rx/of (apply-modifiers ids)

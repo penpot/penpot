@@ -94,7 +94,7 @@
                               :on-change on-width-change
                               :value (str (-> (:width shape)
                                               (d/coalesce 0)
-                                              (math/round)))}]]
+                                              (math/precision 2)))}]]
 
 
          [:div.input-element.height
@@ -105,7 +105,7 @@
                               :on-change on-height-change
                               :value (str (-> (:height shape)
                                               (d/coalesce 0)
-                                              (math/round)))}]]])
+                                              (math/precision 2)))}]]])
 
       ;; POSITION
       (when (options :position)
@@ -140,7 +140,7 @@
             :on-change on-rotation-change
             :value (str (-> (:rotation shape)
                             (d/coalesce 0)
-                            (math/round)))}]]
+                            (math/precision 2)))}]]
          [:input.slidebar
           {:type "range"
            :min "0"
@@ -150,7 +150,7 @@
            :on-change on-rotation-change
            :value (str (-> (:rotation shape)
                            (d/coalesce 0)
-                           (math/round)))}]])
+                           (math/precision 2)))}]])
 
       (when (options :radius)
         [:div.row-flex
@@ -163,5 +163,5 @@
             :on-change on-radius-change
             :value (str (-> (:rx shape)
                             (d/coalesce 0)
-                            (math/round)))}]]
+                            (math/precision 2)))}]]
          [:div.input-element]])]]))

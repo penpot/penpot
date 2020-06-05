@@ -64,8 +64,9 @@
         (rx/of handle-drawing-generic)))))
 
 (def handle-drawing-generic
-  (letfn [(resize-shape [{:keys [x y] :as shape} point lock? point-snap]
-            (let [initial (gpt/point x y)
+  (letfn [(resize-shape [{:keys [x y width height] :as shape} point lock? point-snap]
+            (let [;; The new shape behaves like a resize on the bottom-right corner
+                  initial (gpt/point (+ x width) (+ y height))
                   shape' (geom/shape->rect-shape shape)
                   shapev (gpt/point (:width shape') (:height shape'))
                   deltav (gpt/to-vec initial point-snap)
