@@ -160,9 +160,9 @@
               :path   [:> path-wrapper opts]
               :image  [:> image-wrapper opts]
               :circle [:> circle-wrapper opts]
-              :group [:> group-container
-                      {:shape shape
-                       :frame frame}])))))))
+              :group  [:> group-container
+                       {:shape shape
+                        :frame frame}])))))))
 
 (mf/defc frame-svg
   {::mf/wrap [mf/memo]}

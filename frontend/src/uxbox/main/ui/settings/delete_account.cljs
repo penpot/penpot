@@ -11,10 +11,11 @@
   (:require
    [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]
-   [uxbox.main.ui.icons :as i]
    [uxbox.main.data.auth :as da]
    [uxbox.main.data.users :as du]
    [uxbox.main.store :as st]
+   [uxbox.main.ui.icons :as i]
+   [uxbox.main.ui.messages :as msgs]
    [uxbox.main.ui.modal :as modal]
    [uxbox.util.i18n :as i18n :refer [tr t]]))
 
@@ -27,9 +28,9 @@
      [:section.modal-content.generic-form
       [:h2 (t locale "settings.delete-account-title")]
 
-      [:span.featured-note
-       [:span.text
-        [:span (t locale "settings.delete-account-info")]]]
+      [:& msgs/inline-banner
+       {:type :warning
+        :content (t locale "settings.delete-account-info")}]
 
       [:div.button-row
        [:button.btn-warning.btn-large
