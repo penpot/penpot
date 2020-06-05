@@ -44,6 +44,14 @@ function scssPipeline(options) {
     });
   };
 
+  const touch = (_path) => {
+    return new Promise((resolve, reject) => {
+      return fs.utimes(file.path, new Date(), new Date(), () => {
+        resolve(_path);
+      });
+    })
+  };
+
   const render = (input) => {
     return new Promise((resolve, reject) => {
       sass.render({file: input}, async function(err, result) {
@@ -69,7 +77,11 @@ function scssPipeline(options) {
     return mkdirp(path.dirname(output))
       .then(() => render(input))
       .then((res) => postprocess(res, input, output))
-      .then((res) => write(output, res))
+      .then(async (res) => {
+        await write(output, res);
+        await touch(output);
+        return res;
+      })
       .catch((err) => null)
       .then(() => {
         next();

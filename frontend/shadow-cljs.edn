@@ -7,7 +7,8 @@
   {:target :browser
    :output-dir "resources/public/js/"
    :asset-path "/js"
-   :devtools {:browser-inject :main}
+   :devtools {:browser-inject :main
+              :watch-dir "resources/public"}
    :build-options {:manifest-name "manifest.json"}
 
    :modules
