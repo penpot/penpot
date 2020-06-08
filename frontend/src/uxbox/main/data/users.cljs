@@ -177,7 +177,7 @@
                 (throw (ex-info (tr "errors.image-format-unsupported") {})))
               file)
 
-             on-success #(do (println "hola") (st/emit! dm/hide))
+             on-success #(do (st/emit! dm/hide))
 
              on-error #(do (st/emit! dm/hide)
                            (if (.-message %)

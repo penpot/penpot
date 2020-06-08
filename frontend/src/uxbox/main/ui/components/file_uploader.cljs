@@ -18,12 +18,15 @@
   [{:keys [accept multi label-text label-class input-id input-ref on-selected] :as props}]
   (let [opt-pick-one #(if multi % (first %))
 
-        on-files-selected (fn [event] (st/emit!
-                                        (some-> (dom/get-target event)
-                                                (dom/get-files)
-                                                (array-seq)
-                                                (opt-pick-one)
-                                                (on-selected))))]
+        on-files-selected (fn [event]
+                            (let [target (dom/get-target event)]
+                              (st/emit!
+                                (some-> target
+                                        (dom/get-files)
+                                        (array-seq)
+                                        (opt-pick-one)
+                                        (on-selected)))
+                              (dom/clean-value! target)))]
     [:*
      (when label-text
        [:label {:for input-id :class-name label-class} label-text])
