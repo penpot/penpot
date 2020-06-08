@@ -8,6 +8,7 @@
 (ns uxbox.util.dom.dnd
   "Drag & Drop interop helpers."
   (:require
+    [cuerdas.core :as str]
     [uxbox.util.data :refer (read-string)]
     [uxbox.util.transit :as t]))
 
@@ -77,7 +78,10 @@
    (get-data e "uxbox/data"))
   ([e data-type]
    (let [dt (.-dataTransfer e)]
-     (t/decode (.getData dt data-type)))))
+     (if (or (str/starts-with? data-type "uxbox")
+             (= data-type "application/json"))
+       (t/decode (.getData dt data-type))
+       (.getData dt data-type)))))
 
 (defn get-files
   [e]
