@@ -11,10 +11,6 @@
 
 (enable-console-print!)
 
-;; --- Config
-
-(defonce config (l/atom {}))
-
 ;; --- Handler
 
 (defmulti handler :cmd)

@@ -12,9 +12,7 @@
    [cljs.spec.alpha :as s]
    [uxbox.config :as cfg]
    [uxbox.common.spec :as us]
-   [uxbox.util.worker :as uw])
-  (:import
-   goog.Uri))
+   [uxbox.util.worker :as uw]))
 
 (defn on-error
   [instance error]
@@ -22,10 +20,7 @@
 
 (defonce instance
   (when (not= *target* "nodejs")
-    (let [uri (Uri. cfg/public-uri)]
-      (.setPath uri "/js/worker.js")
-      (.setParameterValue uri "publicURI" cfg/public-uri)
-      (uw/init (.toString uri) on-error))))
+    (uw/init cfg/worker-uri on-error)))
 
 (defn ask!
   [message]

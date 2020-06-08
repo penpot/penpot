@@ -12,11 +12,13 @@
 
 (this-as global
   (let [config (obj/get global "uxboxConfig")
-        puri   (obj/get config "publicURI" "http://localhost:3449/")
+        puri   (obj/get config "publicURI")
+        wuri   (obj/get config "workerURI")
         gcid   (obj/get config "googleClientID" true)
         warn   (obj/get config "demoWarning" true)]
     (def default-language "en")
     (def demo-warning warn)
     (def google-client-id gcid)
+    (def worker-uri wuri)
     (def public-uri puri)
     (def default-theme "default")))

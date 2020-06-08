@@ -110,7 +110,6 @@ function readLocales() {
 
 function readConfig(data) {
   const googleClientID = process.env.UXBOX_GOOGLE_CLIENT_ID;
-  const publicURI = process.env.UXBOX_PUBLIC_URI;
   const demoWarn = process.env.UXBOX_DEMO_WARNING;
   const deployDate = process.env.UXBOX_DEPLOY_DATE;
   const deployCommit = process.env.UXBOX_DEPLOY_COMMIT;
@@ -121,10 +120,6 @@ function readConfig(data) {
 
   if (googleClientID !== undefined) {
     cfg.googleClientID = googleClientID;
-  }
-
-  if (publicURI !== undefined) {
-    cfg.publicURI = publicURI;
   }
 
   if (deployDate !== undefined) {
@@ -140,26 +135,24 @@ function readConfig(data) {
   return JSON.stringify(cfg);
 }
 
-const defaultManifest = {
-  "main": "/js/main.js",
-  "shared": "/js/shared.js",
-  "worker": "js/worker.js"
-};
-
-function readManifest() {
+function readManifest(publicURI) {
   try {
     const path = __dirname + "/resources/public/js/manifest.json";
     const content = JSON.parse(fs.readFileSync(path, {encoding: "utf8"}));
 
     const index = {};
     for (let item of content) {
-      index[item.name] = "/js/" + item["output-name"];
+      index[item.name] = publicURI + "/js/" + item["output-name"];
     };
 
     return index;
   } catch (e) {
     console.error("Error on reading manifest, using default.");
-    return defaultManifest;
+    return {
+      "main": publicURI + "/js/main.js",
+      "shared": publicURI + "/js/shared.js",
+      "worker": publicURI + "/js/worker.js"
+    };
   }
 }
 
@@ -182,12 +175,18 @@ function templatePipeline(options) {
     const output = options.output;
     const ts = Math.floor(new Date());
 
+    const publicURI = process.env.UXBOX_PUBLIC_URI || "http://localhost:3449";
     const th = process.env.UXBOX_THEME || "default";
+
     const themes = ["default"];
 
     const locales = readLocales();
-    const manifest = readManifest();
-    const config = readConfig({themes, manifest});
+    const manifest = readManifest(publicURI);
+
+    const config = readConfig({
+      workerURI: manifest.worker,
+      publicURI: publicURI
+    });
 
     const tmpl = mustache({
       ts: ts,

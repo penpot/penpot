@@ -25,14 +25,6 @@
    [uxbox.util.worker :as w])
   (:import goog.Uri))
 
-;; --- Initialization
-
-(this-as global
-  (let [location (obj/get global "location")
-        uri      (Uri. (obj/get location "href"))
-        puri     (.getParameterValue uri "publicURI")]
-    (swap! impl/config assoc :public-uri puri)))
-
 ;; --- Messages Handling
 
 (s/def ::cmd keyword?)
