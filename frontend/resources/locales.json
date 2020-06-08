@@ -533,26 +533,32 @@
     }
   },
   "errors.email-already-exists" : {
-    "used-in" : [ "src/uxbox/main/ui/auth.cljs:87", "src/uxbox/main/ui/settings/change_email.cljs:38" ],
+    "used-in" : [ "src/uxbox/main/ui/auth.cljs:87", "src/uxbox/main/ui/settings/change_email.cljs:47" ],
     "translations" : {
       "en" : "Email already used"
     }
   },
+  "errors.email-invalid-confirmation" : {
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:37" ],
+    "translations" : {
+      "en" : "Confirmation email must match"
+    }
+  },
   "errors.generic" : {
-    "used-in" : [ "src/uxbox/main/ui.cljs:190", "src/uxbox/main/ui/auth.cljs:91", "src/uxbox/main/ui/settings/profile.cljs:37" ],
+    "used-in" : [ "src/uxbox/main/ui.cljs:190", "src/uxbox/main/ui/auth.cljs:91", "src/uxbox/main/ui/settings/profile.cljs:38" ],
     "translations" : {
       "en" : "Something wrong has happened.",
       "fr" : "Quelque chose c'est mal passé."
     }
   },
   "errors.image-format-unsupported" : {
-    "used-in" : [ "src/uxbox/main/data/images.cljs:375", "src/uxbox/main/data/workspace/persistence.cljs:317" ],
+    "used-in" : [ "src/uxbox/main/data/images.cljs:376", "src/uxbox/main/data/workspace/persistence.cljs:318", "src/uxbox/main/data/users.cljs:177" ],
     "translations" : {
       "en" : "The image format is not supported (must be svg, jpg or png)."
     }
   },
   "errors.image-too-large" : {
-    "used-in" : [ "src/uxbox/main/data/images.cljs:373", "src/uxbox/main/data/workspace/persistence.cljs:315" ],
+    "used-in" : [ "src/uxbox/main/data/images.cljs:374", "src/uxbox/main/data/workspace/persistence.cljs:316", "src/uxbox/main/data/users.cljs:175" ],
     "translations" : {
       "en" : "The image is too large to be inserted (must be under 5mb)."
     }
@@ -565,13 +571,13 @@
     }
   },
   "errors.password-invalid-confirmation" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/password.cljs:59" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/password.cljs:58" ],
     "translations" : {
       "en" : "Confirmation password must match"
     }
   },
   "errors.password-too-short" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/password.cljs:62" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/password.cljs:61" ],
     "translations" : {
       "en" : "Password should at least be 8 characters"
     }
@@ -584,7 +590,7 @@
     }
   },
   "errors.unexpected-error" : {
-    "used-in" : [ "src/uxbox/main/data/images.cljs:384", "src/uxbox/main/data/workspace/persistence.cljs:326", "src/uxbox/main/ui/auth/register.cljs:54", "src/uxbox/main/ui/settings/change_email.cljs:42" ],
+    "used-in" : [ "src/uxbox/main/data/images.cljs:385", "src/uxbox/main/data/workspace/persistence.cljs:327", "src/uxbox/main/data/users.cljs:185", "src/uxbox/main/ui/auth/register.cljs:54", "src/uxbox/main/ui/settings/change_email.cljs:51" ],
     "translations" : {
       "en" : "An unexpected error occurred.",
       "fr" : "Une erreur inattendue c'est produite"
@@ -625,7 +631,7 @@
     "unused" : true
   },
   "image.loading" : {
-    "used-in" : [ "src/uxbox/main/data/images.cljs:392", "src/uxbox/main/data/workspace/persistence.cljs:334" ],
+    "used-in" : [ "src/uxbox/main/data/images.cljs:393", "src/uxbox/main/data/workspace/persistence.cljs:335", "src/uxbox/main/data/users.cljs:191" ],
     "translations" : {
       "en" : "Loading image..."
     }
@@ -665,98 +671,98 @@
     }
   },
   "settings.cancel-and-keep-my-account" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/delete_account.cljs:42" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/delete_account.cljs:43" ],
     "translations" : {
       "en" : "Cancel and keep my account"
     }
   },
   "settings.cancel-email-change" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:81" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:82" ],
     "translations" : {
       "en" : "Cancel"
     }
   },
   "settings.change-email-info" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:58" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:67" ],
     "translations" : {
       "en" : "We'll send you an email to your current email “%s” to verify your identity."
     }
   },
   "settings.change-email-info2" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:82" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:92" ],
     "translations" : {
       "en" : "We have sent you an email to “%s”. Please follow the instructions to verify the email."
     }
   },
   "settings.change-email-info3" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:78" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:79" ],
     "translations" : {
       "en" : "There is a pending change of your email to “%s”."
     }
   },
   "settings.change-email-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:73" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:74" ],
     "translations" : {
       "en" : "Change email"
     }
   },
   "settings.change-email-submit-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:72" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:82" ],
     "translations" : {
       "en" : "Change email"
     }
   },
   "settings.change-email-title" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:54" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:63" ],
     "translations" : {
       "en" : "Change your email"
     }
   },
   "settings.close-modal-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:86" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:96" ],
     "translations" : {
       "en" : "Close"
     }
   },
   "settings.confirm-email-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:69" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:79" ],
     "translations" : {
       "en" : "Verify new email"
     }
   },
   "settings.confirm-password-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/password.cljs:91" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/password.cljs:90" ],
     "translations" : {
       "en" : "Confirm password",
       "fr" : "Confirmez mot de passe"
     }
   },
   "settings.delete-account-info" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/delete_account.cljs:32" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/delete_account.cljs:33" ],
     "translations" : {
       "en" : "By removing your account you’ll lose all your  current projects and archives."
     }
   },
   "settings.delete-account-title" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/delete_account.cljs:28" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/delete_account.cljs:29" ],
     "translations" : {
       "en" : "Are you sure you want to delete your account?"
     }
   },
   "settings.email-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:67" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:68" ],
     "translations" : {
       "en" : "Email"
     }
   },
   "settings.email-verification-pending" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:86" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:87" ],
     "translations" : {
       "en" : "There is a pending email validation."
     }
   },
   "settings.fullname-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:60" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:61" ],
     "translations" : {
       "en" : "Your name",
       "fr" : "Votre nom complet"
@@ -775,13 +781,13 @@
     }
   },
   "settings.new-email-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:65" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:75" ],
     "translations" : {
       "en" : "New email"
     }
   },
   "settings.new-password-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/password.cljs:86" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/password.cljs:85" ],
     "translations" : {
       "en" : "New password",
       "fr" : "Nouveau mot de passe"
@@ -819,14 +825,14 @@
     }
   },
   "settings.notifications.profile-saved" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/options.cljs:37", "src/uxbox/main/ui/settings/profile.cljs:42" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/options.cljs:37", "src/uxbox/main/ui/settings/profile.cljs:43" ],
     "translations" : {
       "en" : "Profile saved successfully!",
       "fr" : "Profil enregistré avec succès !"
     }
   },
   "settings.old-password-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/password.cljs:81" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/password.cljs:80" ],
     "translations" : {
       "en" : "Old password",
       "fr" : "Ancien mot de passe"
@@ -846,7 +852,7 @@
     }
   },
   "settings.password-change-title" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/password.cljs:76" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/password.cljs:75" ],
     "translations" : {
       "en" : "Change password",
       "fr" : "Changement de mot de passe"
@@ -860,14 +866,14 @@
     }
   },
   "settings.profile-submit-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/password.cljs:94", "src/uxbox/main/ui/settings/options.cljs:65", "src/uxbox/main/ui/settings/profile.cljs:89" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/password.cljs:93", "src/uxbox/main/ui/settings/options.cljs:65", "src/uxbox/main/ui/settings/profile.cljs:90" ],
     "translations" : {
       "en" : "Update settings",
       "fr" : "Mettre à jour les paramètres"
     }
   },
   "settings.remove-account-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:94" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:95" ],
     "translations" : {
       "en" : "Want to remove your account?"
     }
@@ -904,13 +910,13 @@
     "unused" : true
   },
   "settings.verification-sent-title" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:77" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:87" ],
     "translations" : {
       "en" : "Verification email sent"
     }
   },
   "settings.yes-delete-my-account" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/delete_account.cljs:39" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/delete_account.cljs:40" ],
     "translations" : {
       "en" : "Yes, delete my account"
     }

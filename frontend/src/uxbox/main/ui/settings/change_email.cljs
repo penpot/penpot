@@ -27,6 +27,15 @@
 
 (s/def ::email-1 ::fm/email)
 (s/def ::email-2 ::fm/email)
+
+(defn- email-equality
+  [data]
+  (let [email-1 (:email-1 data)
+        email-2 (:email-2 data)]
+    (cond-> {}
+      (and email-1 email-2 (not= email-1 email-2))
+      (assoc :email-2 {:message (tr "errors.email-invalid-confirmation")}))))
+
 (s/def ::email-change-form
   (s/keys :req-un [::email-1 ::email-2]))
 
@@ -59,6 +68,7 @@
 
    [:& form {:on-submit on-submit
              :spec ::email-change-form
+             :validators [email-equality]
              :initial {}}
     [:& input {:type "text"
                :name :email-1

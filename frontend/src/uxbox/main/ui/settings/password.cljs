@@ -54,8 +54,7 @@
         password-2 (:password-2 data)]
 
     (cond-> {}
-      (and password-1 password-2
-           (not= password-1 password-2))
+      (and password-1 password-2 (not= password-1 password-2))
       (assoc :password-2 {:message (tr "errors.password-invalid-confirmation")})
 
       (and password-1 (> 8 (count password-1)))
