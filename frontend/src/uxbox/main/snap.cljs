@@ -150,6 +150,7 @@
 (defn select-shapes-area [page-id shapes objects area-selrect]
   (->> (uw/ask! {:cmd :selection/query
                  :page-id page-id
+                 :frame-id (->> shapes first :frame-id)
                  :rect area-selrect})
        (rx/map #(set/difference % (into #{} (map :id shapes))))
        (rx/map (fn [ids] (map #(get objects %) ids)))))

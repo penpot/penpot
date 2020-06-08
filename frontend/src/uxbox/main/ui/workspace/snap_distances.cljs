@@ -129,6 +129,7 @@
                 query-side (fn [side]
                              (->> (uw/ask! {:cmd :selection/query
                                             :page-id page-id
+                                            :frame-id (:id frame)
                                             :rect (gsh/pad-selrec (areas side))})
                                   (rx/map #(set/difference % selected))
                                   (rx/map #(->> % (map (partial get @refs/workspace-objects))))))]
@@ -154,6 +155,12 @@
                (map pair->distance+pair)
                (filter (comp pred? first))))
 
+        ;; Checks if the value is in a set of numbers with an error margin of 0.1
+        check-in-set
+        (fn [value number-set]
+          (->> number-set
+               (some #(<= (mth/abs (- value %)) 0.5))))
+
         ;; Left/Top shapes and right/bottom shapes (depends on `coord` parameter
         [lt-shapes gt-shapes] @to-measure
 
@@ -161,8 +168,9 @@
         lt-distances (->> lt-shapes (map distance-to-selrect) (filter pos?) (into #{}))
         gt-distances (->> gt-shapes (map distance-to-selrect) (filter pos?) (into #{}))
 
+
         ;; We'll show the distances that match a distance from the selrect
-        show-candidate? (set/union lt-distances gt-distances)
+        show-candidate? #(check-in-set % (set/union lt-distances gt-distances))
 
         ;; Checks the distances between elements for distances that match the set of distances
         distance-coincidences (concat (get-shapes-match show-candidate? lt-shapes)
@@ -170,9 +178,9 @@
 
         ;; Show the distances that either match one of the distances from the selrect
         ;; or are from the selrect and go to a shape on the left and to the right
-        show-distance? (into #{} (concat
-                                  (map first distance-coincidences)
-                                  (set/intersection lt-distances gt-distances)))
+        show-distance? #(check-in-set % (into #{} (concat
+                                                   (map first distance-coincidences)
+                                                   (set/intersection lt-distances gt-distances))))
 
         ;; These are the segments whose distance will be displayed
 
@@ -181,7 +189,7 @@
                                    (map second) ;; Retrieves list of [shape,shape] tuples
                                    (map #(mapv :selrect %))) ;; Changes [shape,shape] to [selrec,selrec]
 
-        ;; Segments from the selection to other
+        ;; Segments from the selection to the other shapes
         selection-segments (->> (concat lt-shapes gt-shapes)
                                 (filter #(show-distance? (distance-to-selrect %)))
                                 (map #(vector selrect (:selrect %))))

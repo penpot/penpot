@@ -44,11 +44,18 @@
     nil))
 
 (defmethod impl/handler :selection/query
-  [{:keys [page-id rect] :as message}]
+  [{:keys [page-id rect frame-id] :as message}]
   (when-let [index (get @state page-id)]
     (let [result (-> (qdt/search index (clj->js rect))
                      (es6-iterator-seq))
-          matches? #(geom/overlaps? % rect)]
+          matches? (fn [shape]
+                     (and
+                      ;; When not frame-id is passed, we filter the frames
+                      (or (and (not frame-id) (not= :frame (:type shape)))
+                          ;;  If we pass a frame-id only get the area for shapes inside that frame
+                          (= frame-id (:frame-id shape)))
+                      (geom/overlaps? shape rect)))]
+
       (into #{} (comp (map #(unchecked-get % "data"))
                       (filter matches?)
                       (map :id))
@@ -56,7 +63,7 @@
 
 (defn- create-index
   [objects]
-  (let [shapes (->> (cp/select-toplevel-shapes objects)
+  (let [shapes (->> (cp/select-toplevel-shapes objects {:include-frames? true})
                     (map #(merge % (select-keys % [:x :y :width :height]))))
         bounds (geom/shapes->rect-shape shapes)
         bounds #js {:x (:x bounds)
