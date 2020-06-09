@@ -51,9 +51,9 @@
       [:a.nav-item
        {:class (when options? "current")
         :on-click #(st/emit! (rt/nav :settings-options))}
-       (t locale "settings.options")]
+       (t locale "settings.options")]]]))
 
-      [:a.nav-item
-       {:class "foobar"
-        :on-click #(st/emit! (rt/nav :settings-profile))}
-       (t locale "settings.teams")]]]))
+      ;; [:a.nav-item
+      ;;  {:class "foobar"
+      ;;   :on-click #(st/emit! (rt/nav :settings-profile))}
+      ;;  (t locale "settings.teams")]]]))
