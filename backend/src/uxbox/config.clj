@@ -34,6 +34,8 @@
    :media-uri "http://localhost:3449/media/"
    :assets-uri "http://localhost:3449/static/"
 
+   :image-process-max-threads 2
+
    :sendmail-backend "console"
    :sendmail-reply-to "no-reply@example.com"
    :sendmail-from "no-reply@example.com"
@@ -71,6 +73,7 @@
 (s/def ::debug-humanize-transit ::us/boolean)
 (s/def ::public-uri ::us/string)
 (s/def ::backend-uri ::us/string)
+(s/def ::image-process-max-threads ::us/integer)
 
 (s/def ::google-client-id ::us/string)
 (s/def ::google-client-secret ::us/string)
@@ -101,7 +104,8 @@
                    ::smtp-ssl
                    ::debug-humanize-transit
                    ::allow-demo-users
-                   ::registration-enabled]))
+                   ::registration-enabled
+                   ::image-process-max-threads]))
 
 (defn env->config
   [env]
