@@ -40,7 +40,7 @@
 (defn- calculate-dimensions
   [{:keys [objects] :as data} vport]
   (let [shapes (cp/select-toplevel-shapes objects {:include-frames? true})]
-    (->> (geom/shapes->rect-shape shapes)
+    (->> (geom/selection-rect shapes)
          (geom/adjust-to-viewport vport)
          (geom/fix-invalid-rect-values))))
 
