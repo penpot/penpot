@@ -1209,21 +1209,23 @@
         (when (not-empty selected)
           (let [page-id (get-in state [:workspace-page :id])
                 objects (get-in state [:workspace-data page-id :objects])
+
                 selected-objects (map (partial get objects) selected)
-                selection-rect (geom/selection-rect selected-objects)
+                selrect  (geom/selection-rect selected-objects)
                 frame-id (-> selected-objects first :frame-id)
-                group-shape (group-shape id frame-id selected selection-rect)
-                frame-children (get-in objects [frame-id :shapes])
-                index-frame (->> frame-children
-                                 (map-indexed vector)
-                                 (filter #(selected (second %)))
-                                 (ffirst))
+                group    (-> (group-shape id frame-id selected selrect)
+                             (geom/setup selrect))
+
+                index    (->> (get-in objects [frame-id :shapes])
+                              (map-indexed vector)
+                              (filter #(selected (second %)))
+                              (ffirst))
 
                 rchanges [{:type :add-obj
                            :id id
                            :frame-id frame-id
-                           :obj group-shape
-                           :index index-frame}
+                           :obj group
+                           :index index}
                           {:type :mov-objects
                            :parent-id id
                            :shapes (vec selected)}]

@@ -227,14 +227,11 @@
 
 (defn- setup-image
   [{:keys [metadata] :as shape} {:keys [x y width height] :as props}]
-  (assoc shape
-         :x x
-         :y y
-         :width width
-         :height height
-         :proportion (/ (:width metadata)
-                        (:height metadata))
-         :proportion-lock true))
+  (-> (setup-rect shape props)
+      (assoc
+       :proportion (/ (:width metadata)
+                      (:height metadata))
+       :proportion-lock true)))
 
 ;; --- Coerce to Rect-like shape.
 
