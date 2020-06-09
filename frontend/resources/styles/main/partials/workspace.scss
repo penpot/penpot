@@ -25,7 +25,6 @@
     display: flex;
     justify-content: space-between;
 
-
     &.separator {
       border-top: 1px solid $color-gray-10;
       padding: 0px;
@@ -61,19 +60,18 @@
   background-color: $color-canvas;
   display: flex;
   height: 100%;
-  width: calc(100% - 520px);
+  width: calc(100% - #{$width-left-toolbar} - 2 * #{$width-settings-bar});
   padding: 0;
   margin: 0;
   position: fixed;
-  right: 240px;
+  right: $width-settings-bar;
 
   &.scrolling {
     cursor: grab;
   }
 
   &.no-tool-bar-right {
-    padding-right: 0;
-    width: calc(100% - 230px);
+    width: calc(100% - #{$width-left-toolbar} - #{$width-settings-bar});
     right: 0;
 
     .coordinates {
@@ -82,8 +80,7 @@
   }
 
   &.no-tool-bar-left {
-    padding-left: 0;
-    width: calc(100% - 230px);
+    width: calc(100% - #{$width-left-toolbar} - #{$width-settings-bar});
 
     &.no-tool-bar-right {
       width: 100%;
@@ -96,7 +93,7 @@
     bottom: -10px;
     padding-left: 5px;
     position: fixed;
-    right: 248px;
+    right: calc(#{$width-settings-bar} + 10px);
     text-align: center;
     width: 100px;
     padding-bottom: 2px;
@@ -200,8 +197,6 @@
 .selected .workspace-frame-label {
   fill: $color-primary-dark;
 }
-
-
 
 .multiuser-cursor {
   align-items: center;

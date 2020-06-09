@@ -5,13 +5,15 @@
 // Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
 // Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
+$width-left-toolbar: 40px;
+
 .left-toolbar {
   background-color: $color-gray-50;
   bottom: 0;
   height: 100%;
   position: fixed;
   left: 0;
-  width: 40px;
+  width: $width-left-toolbar;
   z-index: 11;
 }
 

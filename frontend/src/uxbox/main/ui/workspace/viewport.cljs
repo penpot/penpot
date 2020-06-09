@@ -393,10 +393,10 @@
               (events/unlistenByKey key5)
               )))
 
-        options (mf/deref refs/workspace-page-options)
-        ]
+        options (mf/deref refs/workspace-page-options)]
 
     (mf/use-effect on-mount)
+    (mf/use-effect (mf/deps layout) on-resize)
 
     [:svg.viewport
      {:preserveAspectRatio "xMidYMid meet"
