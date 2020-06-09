@@ -5,6 +5,8 @@
 // Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
 // Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
+$width-settings-bar: 15rem;
+
 .settings-bar {
   background-color: $color-gray-50;
   border-left: 1px solid $color-gray-60;
@@ -12,7 +14,7 @@
   height: 100%;
   position: fixed;
   right: 0;
-  width: 15rem;
+  width: $width-settings-bar;
   z-index: 10;
 
   &.settings-bar-left {

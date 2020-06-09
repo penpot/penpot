@@ -40,7 +40,7 @@
   [{:keys [page file layout project] :as params}]
   (let [left-sidebar? (not (empty? (keep layout [:layers :sitemap
                                                  :document-history :libraries])))
-        right-sidebar? (not (empty? (keep layout [:icons :drawtools :element-options])))
+        right-sidebar? (not (empty? (keep layout [:icons :element-options])))
         classes (classnames
                  :no-tool-bar-right (not right-sidebar?)
                  :no-tool-bar-left (not left-sidebar?))
