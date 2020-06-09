@@ -28,7 +28,7 @@
   {:width 800
    :height 800
    :quality 85
-   :format "jpeg"})
+   :format :jpeg})
 
 (s/def ::id ::us/uuid)
 (s/def ::name ::us/string)
@@ -146,23 +146,27 @@
               :code :image-type-not-allowed
               :hint "Seems like you are uploading an invalid image."))
 
-  (let [image-opts (images/info (:content-type content) (:tempfile content))
-        image-path (persist-image-on-fs content)
-        thumb-opts thumbnail-options
-        thumb-path (persist-image-thumbnail-on-fs thumb-opts image-path)]
+  (let [info  (images/run {:cmd :info :input {:path (:tempfile content)
+                                              :mtype (:content-type content)}})
+        path  (persist-image-on-fs content)
+        opts  (assoc thumbnail-options
+                    :input {:mtype (:mtype info)
+                            :path path})
+        thumb (persist-image-thumbnail-on-fs opts)]
+
     (-> (db/insert! conn :image
                     {:id (or id (uuid/next))
                      :library-id library-id
                      :name name
-                     :path (str image-path)
-                     :width (:width image-opts)
-                     :height (:height image-opts)
-                     :mtype  (:content-type content)
-                     :thumb-path (str thumb-path)
-                     :thumb-width (:width thumb-opts)
-                     :thumb-height (:height thumb-opts)
-                     :thumb-quality (:quality thumb-opts)
-                     :thumb-mtype (images/format->mtype (:format thumb-opts))})
+                     :path (str path)
+                     :width (:width info)
+                     :height (:height info)
+                     :mtype  (:mtype info)
+                     :thumb-path (str (:path thumb))
+                     :thumb-width (:width thumb)
+                     :thumb-height (:height thumb)
+                     :thumb-quality (:quality thumb)
+                     :thumb-mtype (:mtype thumb)})
         (images/resolve-urls :path :uri)
         (images/resolve-urls :thumb-path :thumb-uri))))
 
@@ -172,14 +176,21 @@
     (ust/save! media/media-storage filename tempfile)))
 
 (defn persist-image-thumbnail-on-fs
-  [thumb-opts input-path]
-  (let [input-path (ust/lookup media/media-storage input-path)
-        thumb-data (images/generate-thumbnail input-path thumb-opts)
-        [filename _] (fs/split-ext (fs/name input-path))
-        thumb-name (->> (images/format->extension (:format thumb-opts))
-                         (str "thumbnail-" filename))]
-    (ust/save! media/media-storage thumb-name thumb-data)))
+  [{:keys [input] :as params}]
+  (let [path  (ust/lookup media/media-storage (:path input))
+        thumb (images/run
+                (-> params
+                    (assoc :cmd :generic-thumbnail)
+                    (update :input assoc :path path)))
 
+        name  (str "thumbnail-"
+                   (first (fs/split-ext (fs/name (:path input))))
+                   (images/format->extension (:format thumb)))
+        path  (ust/save! media/media-storage name (:data thumb))]
+
+    (-> thumb
+        (dissoc :data :input)
+        (assoc :path path))))
 
 ;; --- Mutation: Rename Image
 

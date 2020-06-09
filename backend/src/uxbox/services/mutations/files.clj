@@ -119,12 +119,6 @@
 
     (mark-file-deleted conn params)))
 
-(def ^:private sql:mark-file-deleted
-  "update file
-      set deleted_at = clock_timestamp()
-    where id = ?
-      and deleted_at is null")
-
 (defn mark-file-deleted
   [conn {:keys [id] :as params}]
   (db/update! conn :file
@@ -150,14 +144,6 @@
     (files/check-edition-permissions! conn profile-id file-id)
     (create-file-image conn params)))
 
-(def ^:private sql:insert-file-image
-  "insert into file_image
-     (file_id, name, path, width, height, mtype,
-      thumb_path, thumb_width, thumb_height,
-      thumb_quality, thumb_mtype)
-   values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-   returning *")
-
 (defn- create-file-image
   [conn {:keys [content file-id name] :as params}]
   (when-not (imgs/valid-image-types? (:content-type content))
@@ -165,22 +151,26 @@
               :code :image-type-not-allowed
               :hint "Seems like you are uploading an invalid image."))
 
-  (let [image-opts (images/info (:content-type content) (:tempfile content))
-        image-path (imgs/persist-image-on-fs content)
-        thumb-opts imgs/thumbnail-options
-        thumb-path (imgs/persist-image-thumbnail-on-fs thumb-opts image-path)]
+  (let [info  (images/run {:cmd :info :input {:path (:tempfile content)
+                                              :mtype (:content-type content)}})
+        path  (imgs/persist-image-on-fs content)
+        opts  (assoc imgs/thumbnail-options
+                    :input {:mtype (:mtype info)
+                            :path path})
+        thumb (imgs/persist-image-thumbnail-on-fs opts)]
+
     (-> (db/insert! conn :file-image
                     {:file-id file-id
                      :name name
-                     :path (str image-path)
-                     :width (:width image-opts)
-                     :height (:height image-opts)
-                     :mtype  (:content-type content)
-                     :thumb-path (str thumb-path)
-                     :thumb-width (:width thumb-opts)
-                     :thumb-height (:height thumb-opts)
-                     :thumb-quality (:quality thumb-opts)
-                     :thumb-mtype (images/format->mtype (:format thumb-opts))})
+                     :path (str path)
+                     :width (:width info)
+                     :height (:height info)
+                     :mtype  (:mtype info)
+                     :thumb-path (str (:path thumb))
+                     :thumb-width (:width thumb)
+                     :thumb-height (:height thumb)
+                     :thumb-quality (:quality thumb)
+                     :thumb-mtype (:mtype thumb)})
         (images/resolve-urls :path :uri)
         (images/resolve-urls :thumb-path :thumb-uri))))
 
@@ -192,9 +182,6 @@
 
 (s/def ::import-image-to-file
   (s/keys :req-un [::image-id ::file-id ::profile-id]))
-
-(def ^:private sql:select-image-by-id
-  "select img.* from image as img where id=$1")
 
 (sm/defmutation ::import-image-to-file
   [{:keys [image-id file-id profile-id] :as params}]

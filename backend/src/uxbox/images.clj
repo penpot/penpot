@@ -10,108 +10,155 @@
 (ns uxbox.images
   "Image postprocessing."
   (:require
+   [clojure.core.async :as a]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [datoteka.core :as fs]
-   [uxbox.common.exceptions :as ex]
+   [mount.core :refer [defstate]]
+   [uxbox.config :as cfg]
    [uxbox.common.data :as d]
+   [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
-   [uxbox.util.storage :as ust]
-   [uxbox.media :as media])
+   [uxbox.media :as media]
+   [uxbox.util.storage :as ust])
   (:import
    java.io.ByteArrayInputStream
    java.io.InputStream
+   java.util.concurrent.Semaphore
    org.im4java.core.ConvertCmd
    org.im4java.core.Info
    org.im4java.core.IMOperation))
 
-;; --- Helpers
-
-(defn format->extension
-  [format]
-  (case format
-    "jpeg" ".jpg"
-    "webp" ".webp"))
-
-(defn format->mtype
-  [format]
-  (case format
-    "jpeg" "image/jpeg"
-    "webp" "image/webp"))
+(defstate semaphore
+  :start (Semaphore. (:image-process-max-threads cfg/config 1)))
 
 ;; --- Thumbnails Generation
 
+(s/def ::cmd keyword?)
+
+(s/def ::path (s/or :path fs/path?
+                    :string string?
+                    :file fs/file?))
+(s/def ::mtype string?)
+
+(s/def ::input
+  (s/keys :req-un [::path]
+          :opt-un [::mtype]))
+
 (s/def ::width integer?)
 (s/def ::height integer?)
+(s/def ::format #{:jpeg :webp :png})
 (s/def ::quality #(< 0 % 101))
-(s/def ::format #{"jpeg" "webp"})
-(s/def ::thumbnail-opts
-  (s/keys :opt-un [::format ::quality ::width ::height]))
+
+(s/def ::thumbnail-params
+  (s/keys :req-un [::cmd ::input ::format ::width ::height]))
 
 ;; Related info on how thumbnails generation
 ;;  http://www.imagemagick.org/Usage/thumbnails/
 
-(defn generate-thumbnail
-  ([input] (generate-thumbnail input nil))
-  ([input {:keys [quality format width height]
-           :or {format "jpeg"
-                quality 92
-                width 200
-                height 200}
-           :as opts}]
-   (us/assert ::thumbnail-opts opts)
-   (us/assert fs/path? input)
-   (let [ext (format->extension format)
-         tmp (fs/create-tempfile :suffix ext)
-         opr (doto (IMOperation.)
-               (.addImage)
-               (.autoOrient)
-               (.strip)
-               (.thumbnail (int width) (int height) ">")
-               (.quality (double quality))
-               (.addImage))]
-     (doto (ConvertCmd.)
-       (.run opr (into-array (map str [input tmp]))))
-     (let [thumbnail-data (fs/slurp-bytes tmp)]
-       (fs/delete tmp)
-       (ByteArrayInputStream. thumbnail-data)))))
+(defn format->extension
+  [format]
+  (case format
+    :png  ".png"
+    :jpeg ".jpg"
+    :webp ".webp"))
 
-(defn generate-profile-thumbnail
-  ([input] (generate-thumbnail input nil))
-  ([input {:keys [quality format width height]
-           :or {format "jpeg"
-                quality 92
-                width 200
-                height 200}
-           :as opts}]
-   (us/assert ::thumbnail-opts opts)
-   (us/assert fs/path? input)
-   (let [ext (format->extension format)
-         tmp (fs/create-tempfile :suffix ext)
-         opr (doto (IMOperation.)
-               (.addImage)
-               (.autoOrient)
-               (.strip)
-               (.thumbnail (int width) (int height) "^")
-               (.gravity "center")
-               (.extent (int width) (int height))
-               (.quality (double quality))
-               (.addImage))]
-     (doto (ConvertCmd.)
-       (.run opr (into-array (map str [input tmp]))))
-     (let [thumbnail-data (fs/slurp-bytes tmp)]
-       (fs/delete tmp)
-       (ByteArrayInputStream. thumbnail-data)))))
+(defn format->mtype
+  [format]
+  (case format
+    :png  "image/png"
+    :jpeg "image/jpeg"
+    :webp "image/webp"))
 
-(defn info
-  [content-type path]
-  (let [instance (Info. (str path))]
-    (when-not (= content-type (.getProperty instance "Mime type"))
+(defn mtype->format
+  [mtype]
+  (case mtype
+    "image/jpeg" :jpeg
+    "image/webp" :webp
+    "image/png"  :png
+    nil))
+
+(defn- generic-process
+  [{:keys [input format quality operation] :as params}]
+  (let [{:keys [path mtype]} input
+        format (or (mtype->format mtype) format)
+        ext    (format->extension format)
+        tmp (fs/create-tempfile :suffix ext)]
+
+    (doto (ConvertCmd.)
+      (.run operation (into-array (map str [path tmp]))))
+
+    (let [thumbnail-data (fs/slurp-bytes tmp)]
+      (fs/delete tmp)
+      (assoc params
+             :format format
+             :mtype  (format->mtype format)
+             :data   (ByteArrayInputStream. thumbnail-data)))))
+
+(defmulti process :cmd)
+
+(defmethod process :generic-thumbnail
+  [{:keys [quality width height] :as params}]
+  (us/assert ::thumbnail-params params)
+  (let [op (doto (IMOperation.)
+             (.addImage)
+             (.autoOrient)
+             (.strip)
+             (.thumbnail (int width) (int height) ">")
+             (.quality (double quality))
+             (.addImage))]
+    (generic-process (assoc params :operation op))))
+
+(defmethod process :profile-thumbnail
+  [{:keys [quality width height] :as params}]
+  (us/assert ::thumbnail-params params)
+  (let [op (doto (IMOperation.)
+             (.addImage)
+             (.autoOrient)
+             (.strip)
+             (.thumbnail (int width) (int height) "^")
+             (.gravity "center")
+             (.extent (int width) (int height))
+             (.quality (double quality))
+             (.addImage))]
+    (generic-process (assoc params :operation op))))
+
+(defmethod process :info
+  [{:keys [input] :as params}]
+  (us/assert ::input input)
+  (let [{:keys [path mtype]} input
+        instance (Info. (str path))
+        mtype'   (.getProperty instance "Mime type")]
+
+    (when (and (string? mtype)
+               (not= mtype mtype'))
       (ex/raise :type :validation
                 :code :image-type-mismatch
                 :hint "Seems like you are uploading a file whose content does not match the extension."))
-    {:width (.getImageWidth instance)
-     :height (.getImageHeight instance)}))
+    {:width  (.getImageWidth instance)
+     :height (.getImageHeight instance)
+     :mtype  mtype'}))
+
+(defmethod process :default
+  [{:keys [cmd] :as params}]
+  (ex/raise :type :internal
+            :code :not-implemented
+            :hint (str "No impl found for process cmd:" cmd)))
+
+(defn run
+  [params]
+  (try
+    (.acquire semaphore)
+    (let [res (a/<!! (a/thread
+                       (try
+                         (process params)
+                         (catch Throwable e
+                           e))))]
+      (if (instance? Throwable res)
+        (throw res)
+        res))
+    (finally
+      (.release semaphore))))
 
 (defn resolve-urls
   [row src dst]

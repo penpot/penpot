@@ -272,8 +272,15 @@
 
 (sm/defmutation ::update-profile-photo
   [{:keys [profile-id file] :as params}]
+  (when-not (imgs/valid-image-types? (:content-type file))
+    (ex/raise :type :validation
+              :code :image-type-not-allowed
+              :hint "Seems like you are uploading an invalid image."))
+
   (db/with-atomic [conn db/pool]
     (let [profile (profile/retrieve-profile conn profile-id)
+          _       (images/run {:cmd :info :input {:path (:tempfile file)
+                                                  :mtype (:content-type file)}})
           photo   (upload-photo conn params)]
 
       ;; Schedule deletion of old photo
@@ -286,21 +293,18 @@
 
 (defn- upload-photo
   [conn {:keys [file profile-id]}]
-  (when-not (imgs/valid-image-types? (:content-type file))
-    (ex/raise :type :validation
-              :code :image-type-not-allowed
-              :hint "Seems like you are uploading an invalid image."))
-  (let [image-opts (images/info (:content-type file) (:tempfile file))
-        thumb-opts {:width 256
-                    :height 256
-                    :quality 75
-                    :format "jpeg"}
-        prefix (-> (sodi.prng/random-bytes 8)
+  (let [prefix (-> (sodi.prng/random-bytes 8)
                    (sodi.util/bytes->b64s))
-        name   (str prefix ".jpg")
-        path   (fs/path (:tempfile file))
-        photo  (images/generate-profile-thumbnail path thumb-opts)]
-    (ust/save! media/media-storage name photo)))
+        thumb  (images/run
+                 {:cmd :profile-thumbnail
+                  :format :jpeg
+                  :quality 85
+                  :width 256
+                  :height 256
+                  :input  {:path (fs/path (:tempfile file))
+                           :mtype (:content-type file)}})
+        name   (str prefix (images/format->extension (:format thumb)))]
+    (ust/save! media/media-storage name (:data thumb))))
 
 (defn- update-profile-photo
   [conn profile-id path]
@@ -308,7 +312,6 @@
               {:photo (str path)}
               {:id profile-id})
   nil)
-
 
 ;; --- Mutation: Request Email Change
 
