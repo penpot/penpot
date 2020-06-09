@@ -50,7 +50,8 @@
    [:h2 (t locale "settings.language-change-title")]
 
    [:& select {:options [{:label "English" :value "en"}
-                         {:label "Français" :value "fr"}]
+                         ;; {:label "Français" :value "fr"}]
+                         {:label "Español" :value "es"}]
                :label (t locale "settings.language-label")
                :default "en"
                :name :lang}]
