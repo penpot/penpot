@@ -1200,8 +1200,8 @@
    :width (:width selection-rect)
    :height (:height selection-rect)})
 
-(def create-group
-  (ptk/reify ::create-group
+(def group-selected
+  (ptk/reify ::group-selected
     ptk/WatchEvent
     (watch [_ state stream]
       (let [id (uuid/next)
@@ -1237,8 +1237,8 @@
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
                    (dws/select-shapes #{id}))))))))
 
-(def remove-group
-  (ptk/reify ::remove-group
+(def ungroup-selected
+  (ptk/reify ::ungroup-selected
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
@@ -1407,8 +1407,8 @@
    "ctrl+shift+'" #(st/emit! (toggle-layout-flag :snap-grid))
    "+" #(st/emit! (increase-zoom nil))
    "-" #(st/emit! (decrease-zoom nil))
-   "g" #(st/emit! create-group)
-   "shift+g" #(st/emit! remove-group)
+   "g" #(st/emit! group-selected)
+   "shift+g" #(st/emit! ungroup-selected)
    "shift+0" #(st/emit! reset-zoom)
    "shift+1" #(st/emit! zoom-to-fit-all)
    "shift+2" #(st/emit! zoom-to-selected-shape)

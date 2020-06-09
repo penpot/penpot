@@ -58,8 +58,8 @@
         do-hide-shape #(st/emit! (dw/recursive-assign id :hidden true))
         do-lock-shape #(st/emit! (dw/recursive-assign id :blocked true))
         do-unlock-shape #(st/emit! (dw/recursive-assign id :blocked false))
-        do-create-group #(st/emit! dw/create-group)
-        do-remove-group #(st/emit! dw/remove-group)]
+        do-create-group #(st/emit! dw/group-selected)
+        do-remove-group #(st/emit! dw/ungroup-selected)]
     [:*
      [:& menu-entry {:title "Copy"
                      :shortcut "Ctrl + c"
