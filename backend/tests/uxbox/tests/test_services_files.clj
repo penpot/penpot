@@ -189,7 +189,7 @@
           (t/is (= image-id (:id result)))
           (t/is (= "testfile" (:name result)))
           (t/is (= "image/jpeg" (:mtype result)))
-          (t/is (= "image/webp" (:thumb-mtype result))))
+          (t/is (= "image/jpeg" (:thumb-mtype result))))
 
         (let [data2 {::sm/type :import-image-to-file
                      :image-id image-id

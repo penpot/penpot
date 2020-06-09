@@ -128,7 +128,7 @@
         (t/is (= image-id (get-in out [:result :id])))
         (t/is (= "testfile" (get-in out [:result :name])))
         (t/is (= "image/jpeg" (get-in out [:result :mtype])))
-        (t/is (= "image/webp" (get-in out [:result :thumb-mtype])))
+        (t/is (= "image/jpeg" (get-in out [:result :thumb-mtype])))
         (t/is (= 800 (get-in out [:result :width])))
         (t/is (= 800 (get-in out [:result :height])))
 
@@ -148,7 +148,7 @@
         (t/is (= image-id (get-in out [:result 0 :id])))
         (t/is (= "testfile" (get-in out [:result 0 :name])))
         (t/is (= "image/jpeg" (get-in out [:result 0 :mtype])))
-        (t/is (= "image/webp" (get-in out [:result 0 :thumb-mtype])))
+        (t/is (= "image/jpeg" (get-in out [:result 0 :thumb-mtype])))
         (t/is (= 800 (get-in out [:result 0 :width])))
         (t/is (= 800 (get-in out [:result 0 :height])))
 
@@ -167,7 +167,7 @@
         (t/is (= image-id (get-in out [:result :id])))
         (t/is (= "testfile" (get-in out [:result :name])))
         (t/is (= "image/jpeg" (get-in out [:result :mtype])))
-        (t/is (= "image/webp" (get-in out [:result :thumb-mtype])))
+        (t/is (= "image/jpeg" (get-in out [:result :thumb-mtype])))
         (t/is (= 800 (get-in out [:result :width])))
         (t/is (= 800 (get-in out [:result :height])))
 

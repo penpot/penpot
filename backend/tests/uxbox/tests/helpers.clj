@@ -19,6 +19,7 @@
    [uxbox.services.mutations.colors :as colors]
    [uxbox.fixtures :as fixtures]
    [uxbox.migrations]
+   [uxbox.images]
    [uxbox.media]
    [uxbox.db :as db]
    [uxbox.util.blob :as blob]
@@ -44,6 +45,7 @@
                           #'uxbox.db/pool
                           #'uxbox.redis/client
                           #'uxbox.redis/conn
+                          #'uxbox.images/semaphore
                           #'uxbox.services.init/query-services
                           #'uxbox.services.init/mutation-services
                           #'uxbox.migrations/migrations
