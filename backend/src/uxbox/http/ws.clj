@@ -17,21 +17,33 @@
    [ring.middleware.keyword-params :refer [wrap-keyword-params]]
    [ring.middleware.params :refer [wrap-params]]
    [uxbox.common.spec :as us]
+   [uxbox.db :as db]
    [uxbox.http.session :refer [wrap-auth]]
    [uxbox.services.notifications :as nf]))
 
 (s/def ::file-id ::us/uuid)
 (s/def ::session-id ::us/uuid)
+
 (s/def ::websocket-params
   (s/keys :req-un [::file-id ::session-id]))
 
 (defn websocket
   [{:keys [profile-id] :as req}]
   (let [params (us/conform ::websocket-params (:params req))
-        params (assoc params :profile-id profile-id)]
-    (if profile-id
-      (nf/websocket params)
-      {:error {:code 403 :message "Authentication required"}})))
+        file   (db/get-by-id db/pool :file (:file-id params))
+        params (assoc params
+                      :profile-id profile-id
+                      :file file)]
+
+    (cond
+      (not profile-id)
+      {:error {:code 403 :message "Authentication required"}}
+
+      (not file)
+      {:error {:code 404 :message "File does not exists"}}
+
+      :else
+      (nf/websocket params))))
 
 (def handler
   (-> websocket
