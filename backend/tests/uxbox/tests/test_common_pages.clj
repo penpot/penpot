@@ -36,7 +36,14 @@
             res (cp/process-changes data chgs)]
         (t/is (= {:a "a" :b "b"} (get-in res [:options :values :test])))))
 
-    (t/testing "Remove option"
+    (t/testing "Remove option single"
+      (let [chg {:type :set-option
+                 :option :test
+                 :value nil}
+            res (cp/process-changes data [chg])]
+        (t/is (empty? (keys (get res :options))))))
+
+    (t/testing "Remove option nested 1"
       (let [chgs [{:type :set-option
                    :option [:values :test :a]
                    :value "a"}
@@ -47,7 +54,20 @@
                    :option [:values :test]
                    :value nil}]
             res (cp/process-changes data chgs)]
-        (t/is (= nil (get-in res [:options :values :test])))))))
+        (t/is (empty? (keys (get res :options))))))
+
+    (t/testing "Remove option nested 2"
+      (let [chgs [{:type :set-option
+                   :option [:values :test1 :a]
+                   :value "a"}
+                  {:type :set-option
+                   :option [:values :test2 :b]
+                   :value "b"}
+                  {:type :set-option
+                   :option [:values :test2]
+                   :value nil}]
+            res (cp/process-changes data chgs)]
+        (t/is (= [:test1] (keys (get-in res [:options :values]))))))))
 
 (t/deftest process-change-add-obj
   (let [data cp/default-page-data
