@@ -13,7 +13,7 @@
    [uxbox.common.data :as d]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.pages :as cp]
-   [uxbox.common.migrations :as mg]
+   [uxbox.common.pages-migrations :as pmg]
    [uxbox.common.spec :as us]
    [uxbox.common.uuid :as uuid]
    [uxbox.config :as cfg]
@@ -182,7 +182,7 @@
 
         page (-> page
                  (update :data blob/decode)
-                 (update :data mg/migrate-data)
+                 (update :data pmg/migrate-data)
                  (update :data cp/process-changes changes)
                  (update :data blob/encode)
                  (update :revn inc)

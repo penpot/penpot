@@ -16,7 +16,7 @@
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]))
 
-(def page-version 4)
+(def page-version 5)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page Data Structure Helpers

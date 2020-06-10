@@ -13,7 +13,7 @@
    [promesa.core :as p]
    [uxbox.common.spec :as us]
    [uxbox.common.exceptions :as ex]
-   [uxbox.common.migrations :as mg]
+   [uxbox.common.pages-migrations :as pmg]
    [uxbox.db :as db]
    [uxbox.services.queries :as sq]
    [uxbox.services.queries.files :as files]
@@ -40,7 +40,7 @@
   (db/with-atomic [conn db/pool]
     (files/check-edition-permissions! conn profile-id file-id)
     (->> (retrieve-pages conn params)
-         (mapv #(update % :data mg/migrate-data)))))
+         (mapv #(update % :data pmg/migrate-data)))))
 
 (def ^:private sql:pages
   "select p.*
@@ -67,7 +67,7 @@
     (let [page (retrieve-page conn id)]
       (files/check-edition-permissions! conn profile-id (:file-id page))
       (-> page
-          (update :data mg/migrate-data)))))
+          (update :data pmg/migrate-data)))))
 
 (def ^:private sql:page
   "select p.* from page as p where id=?")
