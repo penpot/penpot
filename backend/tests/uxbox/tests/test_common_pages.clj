@@ -247,7 +247,7 @@
         (t/is (= [id3 id1 id2] (get-in res [:objects uuid/zero :shapes])))))
     ))
 
-(t/deftest process-changes-move-objects
+(t/deftest process-change-move-objects
   (let [frame-a-id (uuid/custom 1)
         frame-b-id (uuid/custom 2)
         group-a-id (uuid/custom 3)
@@ -391,10 +391,10 @@
         (t/is (= data res))))))
 
 
-(t/deftest process-changes-move-objects-3
+(t/deftest process-change-move-objects-regression
   (let [shape-2-id (uuid/custom 1 2)
         shape-3-id (uuid/custom 1 3)
-        frame-id (uuid/custom 1 1)
+        frame-id   (uuid/custom 1 1)
         changes [{:type :add-obj
                   :id frame-id
                   :frame-id uuid/zero
@@ -426,7 +426,7 @@
                  (get-in data [:objects shape-3-id :frame-id])))))))
 
 
-(t/deftest process-changes-move-objects-2
+(t/deftest process-change-move-objects-2
   (let [shape-1-id (uuid/custom 1 1)
         shape-2-id (uuid/custom 1 2)
         shape-3-id (uuid/custom 1 3)

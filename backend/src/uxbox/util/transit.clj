@@ -32,9 +32,7 @@
    (fn [v] (into {} v))))
 
 (def point-read-handler
-  (t/read-handler
-   (fn [value]
-     (gpt/map->Point value))))
+  (t/read-handler gpt/map->Point))
 
 (def matrix-write-handler
   (t/write-handler
@@ -42,9 +40,7 @@
    (fn [v] (into {} v))))
 
 (def matrix-read-handler
-  (t/read-handler
-   (fn [value]
-     (gmt/map->Matrix value))))
+  (t/read-handler gmt/map->Matrix))
 
 (def +read-handlers+
   (assoc dt/+read-handlers+

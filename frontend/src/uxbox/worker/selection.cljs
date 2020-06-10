@@ -65,7 +65,7 @@
   [objects]
   (let [shapes (->> (cp/select-toplevel-shapes objects {:include-frames? true})
                     (map #(merge % (select-keys % [:x :y :width :height]))))
-        bounds (geom/shapes->rect-shape shapes)
+        bounds (geom/selection-rect shapes)
         bounds #js {:x (:x bounds)
                     :y (:y bounds)
                     :width (:width bounds)

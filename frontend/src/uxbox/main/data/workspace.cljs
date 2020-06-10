@@ -659,18 +659,27 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id (:current-page-id state)
-            session-id (:session-id state)
             objects (get-in state [:workspace-data page-id :objects])
             cpindex (cp/calculate-child-parent-map objects)
 
             del-change #(array-map :type :del-obj :id %)
+
+            get-empty-parents
+            (fn get-empty-parents [id]
+              (let [parent (get objects (get cpindex id))]
+                (if (and (= :group (:type parent))
+                         (= 1 (count (:shapes parent))))
+                  (lazy-seq (cons (:id parent)
+                                  (get-empty-parents (:id parent))))
+                  nil)))
 
             rchanges
             (reduce (fn [res id]
                       (let [chd (cp/get-children id objects)]
                         (into res (d/concat
                                    (mapv del-change (reverse chd))
-                                   [(del-change id)]))))
+                                   [(del-change id)]
+                                   (map del-change (get-empty-parents id))))))
                     []
                     ids)
 
@@ -1200,8 +1209,8 @@
    :width (:width selection-rect)
    :height (:height selection-rect)})
 
-(def create-group
-  (ptk/reify ::create-group
+(def group-selected
+  (ptk/reify ::group-selected
     ptk/WatchEvent
     (watch [_ state stream]
       (let [id (uuid/next)
@@ -1209,21 +1218,23 @@
         (when (not-empty selected)
           (let [page-id (get-in state [:workspace-page :id])
                 objects (get-in state [:workspace-data page-id :objects])
+
                 selected-objects (map (partial get objects) selected)
-                selection-rect (geom/selection-rect selected-objects)
+                selrect  (geom/selection-rect selected-objects)
                 frame-id (-> selected-objects first :frame-id)
-                group-shape (group-shape id frame-id selected selection-rect)
-                frame-children (get-in objects [frame-id :shapes])
-                index-frame (->> frame-children
-                                 (map-indexed vector)
-                                 (filter #(selected (second %)))
-                                 (ffirst))
+                group    (-> (group-shape id frame-id selected selrect)
+                             (geom/setup selrect))
+
+                index    (->> (get-in objects [frame-id :shapes])
+                              (map-indexed vector)
+                              (filter #(selected (second %)))
+                              (ffirst))
 
                 rchanges [{:type :add-obj
                            :id id
                            :frame-id frame-id
-                           :obj group-shape
-                           :index index-frame}
+                           :obj group
+                           :index index}
                           {:type :mov-objects
                            :parent-id id
                            :shapes (vec selected)}]
@@ -1235,8 +1246,8 @@
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
                    (dws/select-shapes #{id}))))))))
 
-(def remove-group
-  (ptk/reify ::remove-group
+(def ungroup-selected
+  (ptk/reify ::ungroup-selected
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
@@ -1405,8 +1416,8 @@
    "ctrl+shift+'" #(st/emit! (toggle-layout-flag :snap-grid))
    "+" #(st/emit! (increase-zoom nil))
    "-" #(st/emit! (decrease-zoom nil))
-   "g" #(st/emit! create-group)
-   "shift+g" #(st/emit! remove-group)
+   "g" #(st/emit! group-selected)
+   "shift+g" #(st/emit! ungroup-selected)
    "shift+0" #(st/emit! reset-zoom)
    "shift+1" #(st/emit! zoom-to-fit-all)
    "shift+2" #(st/emit! zoom-to-selected-shape)

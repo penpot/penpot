@@ -48,11 +48,7 @@
                                     (update :y inc-y))))]
     (-> shape
         (update :x inc-x)
-        (update :x1 inc-x)
-        (update :x2 inc-x)
         (update :y inc-y)
-        (update :y1 inc-y)
-        (update :y2 inc-y)
         (update-in [:selrect :x] inc-x)
         (update-in [:selrect :x1] inc-x)
         (update-in [:selrect :x2] inc-x)
@@ -197,11 +193,10 @@
   (us/assert number? width)
   (us/assert number? height)
   (-> shape
-      (assoc :width width
-             :height height
-             :x2 (+ (:x1 shape) width)
-             :y2 (+ (:y1 shape) height))
-      (update :selrect (nilf #(resize % width height)))))
+      (assoc :width width :height height)
+      (update :selrect (fn [shape]
+                         (assoc :x2 (+ (:x1 shape) width)
+                                :y2 (+ (:y1 shape) height))))))
 
 ;; --- Setup (Initialize)
 
@@ -232,14 +227,11 @@
 
 (defn- setup-image
   [{:keys [metadata] :as shape} {:keys [x y width height] :as props}]
-  (assoc shape
-         :x x
-         :y y
-         :width width
-         :height height
-         :proportion (/ (:width metadata)
-                        (:height metadata))
-         :proportion-lock true))
+  (-> (setup-rect shape props)
+      (assoc
+       :proportion (/ (:width metadata)
+                      (:height metadata))
+       :proportion-lock true)))
 
 ;; --- Coerce to Rect-like shape.
 
@@ -247,29 +239,15 @@
 (declare group->rect-shape)
 (declare rect->rect-shape)
 
+;; TODO: completly remove
+
 (defn shape->rect-shape
   "Coerce shape to rect like shape."
+
   [{:keys [type] :as shape}]
   (case type
     (:curve :path) (path->rect-shape shape)
     (rect->rect-shape shape)))
-
-(defn shapes->rect-shape
-  [shapes]
-  (let [shapes (mapv shape->rect-shape shapes)
-        minx (transduce (map :x1) min ##Inf shapes)
-        miny (transduce (map :y1) min ##Inf shapes)
-        maxx (transduce (map :x2) max ##-Inf shapes)
-        maxy (transduce (map :y2) max ##-Inf shapes)]
-    {:x1 minx
-     :y1 miny
-     :x2 maxx
-     :y2 maxy
-     :x minx
-     :y miny
-     :width (- maxx minx)
-     :height (- maxy miny)
-     :type :rect}))
 
 ;; -- Points
 
@@ -603,10 +581,10 @@
 
 (defn pad-selrec
   ([selrect] (pad-selrec selrect 1))
-  ([selrec size]
+  ([selrect size]
    (let [inc #(+ % size)
          dec #(- % size)]
-     (-> selrec
+     (-> selrect
          (update :x dec)
          (update :y dec)
          (update :x1 dec)
@@ -728,10 +706,6 @@
     (-> rect-shape
         (update :x check)
         (update :y check)
-        (update :x1 check)
-        (update :y1 check)
-        (update :x2 check)
-        (update :y2 check)
         (update :width (comp to-positive check))
         (update :height (comp to-positive check)))))
 

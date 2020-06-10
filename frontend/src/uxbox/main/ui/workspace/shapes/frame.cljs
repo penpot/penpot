@@ -43,20 +43,6 @@
                (recur (first ids) (rest ids))
                false))))))
 
-(defn use-mouse-over
-  [{:keys [id] :as shape}]
-  (mf/use-callback
-   (mf/deps shape)
-   (fn []
-     (st/emit! (dws/change-hover-state id true)))))
-
-(defn use-mouse-out
-  [{:keys [id] :as shape}]
-  (mf/use-callback
-   (mf/deps shape)
-   (fn []
-     (st/emit! (dws/change-hover-state id false)))))
-
 (defn frame-wrapper-factory
   [shape-wrapper]
   (let [frame-shape (frame/frame-shape shape-wrapper)]
@@ -93,7 +79,19 @@
              (fn [event]
                (dom/prevent-default event)
                (st/emit! dw/deselect-all
-                         (dw/select-shape (:id shape)))))]
+                         (dw/select-shape (:id shape)))))
+
+            on-mouse-over
+            (mf/use-callback
+             (mf/deps (:id shape))
+             (fn []
+               (st/emit! (dws/change-hover-state (:id shape) true))))
+
+            on-mouse-out
+            (mf/use-callback
+             (mf/deps (:id shape))
+             (fn []
+               (st/emit! (dws/change-hover-state (:id shape) false))))]
 
         (when-not (:hidden shape)
           [:g {:class (when selected? "selected")
@@ -115,8 +113,8 @@
                                ")")
                    ;; User may also select the frame with single click in the label
                    :on-click on-double-click
-                   :on-mouse-over (use-mouse-over shape)
-                   :on-mouse-out (use-mouse-out shape)}
+                   :on-mouse-over on-mouse-over
+                   :on-mouse-out on-mouse-out}
             (:name shape)]
            [:*
             [:& frame-shape
