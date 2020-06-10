@@ -649,8 +649,6 @@
     :left (gpt/point (- 1) 0)
     :right (gpt/point 1 0)))
 
-(s/def ::loc  #{:up :down :bottom :top})
-
 ;; --- Delete Selected
 (defn- delete-shapes
   [ids]
@@ -723,6 +721,8 @@
         (update-in state [:workspace-data page-id :objects id] assoc :name name)))))
 
 ;; --- Shape Vertical Ordering
+
+(s/def ::loc  #{:up :down :bottom :top})
 
 (defn vertical-order-selected
   [loc]

@@ -407,8 +407,9 @@
 (defmethod process-change :set-option
   [data {:keys [option value]}]
   (let [path (if (seqable? option) option [option])]
-    (-> data
-        (assoc-in (into [:options] path) value))))
+    (if value
+      (assoc-in data (into [:options] path) value)
+      (assoc data :options (d/dissoc-in (:options data) path)))))
 
 (defmethod process-change :add-obj
   [data {:keys [id obj frame-id parent-id index] :as change}]

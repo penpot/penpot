@@ -76,8 +76,12 @@
   (ptk/reify ::set-default-grid
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (dwc/commit-changes [{:type :set-option
-                                   :option [:saved-grids type]
-                                   :value params}]
-                                 []
-                                 {:commit-local? true})))))
+      (let [pid (:current-page-id state)
+            prev-value (get-in state [:workspace-data pid :options :saved-grids type])]
+        (rx/of (dwc/commit-changes [{:type :set-option
+                                     :option [:saved-grids type]
+                                     :value params}]
+                                   [{:type :set-option
+                                     :option [:saved-grids type]
+                                     :value prev-value}]
+                                   {:commit-local? true}))))))
