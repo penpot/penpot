@@ -440,9 +440,16 @@
 (defmethod process-change :del-obj
   [data {:keys [id] :as change}]
   (when-let [{:keys [frame-id shapes] :as obj} (get-in data [:objects id])]
-    (let [data (update data :objects dissoc id)]
+    (let [objects   (:objects data)
+          parent-id (get-parent id objects)
+          parent    (get objects parent-id)
+          data      (update data :objects dissoc id)]
       (cond-> data
-        (contains? (:objects data) frame-id)
+        (and (not= parent-id frame-id)
+             (= :group (:type parent)))
+        (update-in [:objects parent-id :shapes] (fn [s] (filterv #(not= % id) s)))
+
+        (contains? objects frame-id)
         (update-in [:objects frame-id :shapes] (fn [s] (filterv #(not= % id) s)))
 
         (seq shapes)   ; Recursive delete all dependend objects

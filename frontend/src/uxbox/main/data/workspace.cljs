@@ -659,18 +659,27 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id (:current-page-id state)
-            session-id (:session-id state)
             objects (get-in state [:workspace-data page-id :objects])
             cpindex (cp/calculate-child-parent-map objects)
 
             del-change #(array-map :type :del-obj :id %)
+
+            get-empty-parents
+            (fn get-empty-parents [id]
+              (let [parent (get objects (get cpindex id))]
+                (if (and (= :group (:type parent))
+                         (= 1 (count (:shapes parent))))
+                  (lazy-seq (cons (:id parent)
+                                  (get-empty-parents (:id parent))))
+                  nil)))
 
             rchanges
             (reduce (fn [res id]
                       (let [chd (cp/get-children id objects)]
                         (into res (d/concat
                                    (mapv del-change (reverse chd))
-                                   [(del-change id)]))))
+                                   [(del-change id)]
+                                   (map del-change (get-empty-parents id))))))
                     []
                     ids)
 

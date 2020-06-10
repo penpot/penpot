@@ -153,9 +153,9 @@
         (fn [side {:keys [id] :as data}]
           (if (= side :center)
             (st/emit! (dw/relocate-shape id (:id item) 0))
-            (let [to-index (if (= side :top) (inc index) index)
+            (let [to-index  (if (= side :top) (inc index) index)
                   parent-id (cp/get-parent (:id item) objects)]
-                (st/emit! (dw/relocate-shape id parent-id to-index)))))
+              (st/emit! (dw/relocate-shape id parent-id to-index)))))
 
         on-hold
         (fn []
