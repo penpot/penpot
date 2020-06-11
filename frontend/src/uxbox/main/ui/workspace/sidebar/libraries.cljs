@@ -13,6 +13,9 @@
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
    [uxbox.common.data :as d]
+   [uxbox.common.pages :as cp]
+   [uxbox.common.geom.shapes :as geom]
+   [uxbox.common.geom.point :as gpt]
    [uxbox.main.ui.icons :as i]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
@@ -50,17 +53,19 @@
 (defmulti shape-from-item (fn [type _] type))
 
 (defmethod shape-from-item :icons [_ item]
-  (-> item
-      (assoc :type :icon)
-      (assoc :width (-> item :metadata :width))
-      (assoc :height (-> item :metadata :height))))
+  (-> (cp/make-minimal-shape :icon)
+      (merge item)
+      (geom/resize (-> item :metadata :width) (-> item :metadata :height))
+      (geom/absolute-move (gpt/point 0 0))))
 
 (defmethod shape-from-item :images [_ item]
   (let [metadata (select-keys item [:width :height :thumb-width
                                     :thumb-height :thumb-uri :uri])]
-    (-> item
-        (assoc :type :image)
-        (assoc :metadata metadata))))
+    (-> (cp/make-minimal-shape :image)
+        (merge item)
+        (assoc :metadata metadata)
+        (geom/resize (-> item :width) (-> item :height))
+        (geom/absolute-move (gpt/point 0 0)))))
 
 ;; --- Components
 

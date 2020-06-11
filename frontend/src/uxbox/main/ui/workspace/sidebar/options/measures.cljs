@@ -126,6 +126,7 @@
                               :on-change on-pos-y-change
                               :value (-> shape :selrect :y (math/precision 2))}]]])
 
+      ;; ROTATION
       (when (options :rotation)
         [:div.row-flex
          [:span.element-set-subtitle (t locale "workspace.options.rotation")]
@@ -152,6 +153,7 @@
                            (d/coalesce 0)
                            (math/precision 2)))}]])
 
+      ;; RADIUS
       (when (options :radius)
         [:div.row-flex
          [:span.element-set-subtitle (t locale "workspace.options.radius")]

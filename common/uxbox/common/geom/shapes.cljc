@@ -194,9 +194,10 @@
   (us/assert number? height)
   (-> shape
       (assoc :width width :height height)
-      (update :selrect (fn [shape]
-                         (assoc :x2 (+ (:x1 shape) width)
-                                :y2 (+ (:y1 shape) height))))))
+      (update :selrect (fn [selrect]
+                         (assoc selrect
+                                :x2 (+ (:x1 selrect) width)
+                                :y2 (+ (:y1 selrect) height))))))
 
 ;; --- Setup (Initialize)
 
