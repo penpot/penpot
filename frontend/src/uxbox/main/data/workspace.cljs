@@ -542,9 +542,6 @@
 
         (rx/of (add-shape shape))))))
 
-
-
-
 ;; --- Update Shape Attrs
 
 (defn update-shape
