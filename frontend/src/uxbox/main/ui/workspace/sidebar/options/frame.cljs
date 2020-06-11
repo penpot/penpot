@@ -75,7 +75,7 @@
 
      [:div.element-set-content
 
-      [:div.row-flex
+      [:div.row-flex.center
        [:div.presets.custom-select.flex-grow {:on-click #(reset! show-presets-dropdown? true)}
         [:span (tr "workspace.options.size-presets")]
         [:span.dropdown-button i/arrow-down]

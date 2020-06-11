@@ -31,6 +31,10 @@ textarea {
     // flex-basis: 368px;
   }
 
+  .field {
+    margin-bottom: 20px;
+  }
+
   h1 {
     font-size: $fs36;
     color: #2C233E;
@@ -79,12 +83,9 @@ textarea {
   }
 }
 
-
-
 .custom-input {
   display: flex;
   flex-direction: column;
-  margin-bottom: 20px;
 
   label {
     font-size: $fs10;
@@ -179,7 +180,6 @@ textarea {
 .custom-select {
   display: flex;
   flex-direction: column;
-  margin-bottom: $big;
   position: relative;
 
   label {
