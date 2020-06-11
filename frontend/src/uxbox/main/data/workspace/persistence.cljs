@@ -238,8 +238,8 @@
   (ptk/reify ::rename-page
     ptk/UpdateEvent
     (update [_ state]
-      (let [pid (get-in state [:workspac-page :id])
-            state (assoc-in state [:workspac-pages id :name] name)]
+      (let [pid (get-in state [:workspace-page :id])
+            state (assoc-in state [:workspace-pages id :name] name)]
         (cond-> state
           (= pid id) (assoc-in [:workspace-page :name] name))))
 
