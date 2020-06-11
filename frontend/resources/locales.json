@@ -1191,7 +1191,7 @@
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:123" ],
     "translations" : {
       "en" : "All libraries",
-      "es" : "Todas las bibliotecas"
+      "es" : "Todas"
     }
   },
   "workspace.library.icons" : {
@@ -1226,7 +1226,7 @@
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/libraries.cljs:125" ],
     "translations" : {
       "en" : "Store libraries",
-      "es" : "Bibliotecas predefinidas"
+      "es" : "Predefinidas"
     }
   },
   "workspace.options.canvas-background" : {

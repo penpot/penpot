@@ -85,12 +85,12 @@
        {:class (classnames :icons-tab (= section :icons)
                            :images-tab (= section :images))}
        [:select.input-select.library-tab-libraries
-        {:on-change #(st/emit! (dlib/select-library section (-> % dom/get-target dom/get-value uuid)))}
+        {:value current-selection
+         :on-change #(st/emit! (dlib/select-library section (-> % dom/get-target dom/get-value uuid)))}
         (for [library libraries]
           [:option.library-tab-libraries-item
            {:key (:id library)
-            :value (:id library)
-            :selected (= current-selection (:id library))}
+            :value (:id library)}
            (:name library)])]
        [:div.library-tab-content
         (let [items (mf/deref (selected-items-ref section current-selection))]
