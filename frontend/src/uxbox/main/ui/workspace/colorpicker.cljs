@@ -16,7 +16,7 @@
 (mf/defc colorpicker-modal
   [{:keys [x y default value opacity page on-change disable-opacity] :as props}]
   [:div.colorpicker-tooltip
-   {:style {:left (str (- x 260) "px")
+   {:style {:left (str (- x 270) "px")
             :top (str (- y 50) "px")}}
    [:& cp/colorpicker {:value (or value default)
                        :opacity (or opacity 1)
