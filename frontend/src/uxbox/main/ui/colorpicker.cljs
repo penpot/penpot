@@ -28,7 +28,7 @@
                             :presetColors colors
                             :onChange on-change-complete
                             :disableAlpha disable-opacity
-                            :style {:box-shadow "none"}}]))
+                            :styles {:default {:picker {:padding "10px"}}}}]))
 
 (def most-used-colors
   (letfn [(selector [{:keys [objects]}]
