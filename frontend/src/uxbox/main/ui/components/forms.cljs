@@ -66,7 +66,7 @@
                          :type @type')
                   (obj/clj->props))]
 
-    [:div.custom-input
+    [:div.field.custom-input
      [:div.input-container {:class klass}
       [:div.main-content
        (when-not (str/empty? value)
@@ -102,7 +102,7 @@
         cvalue    (d/seek #(= value (:value %)) options)
         on-change (fm/on-input-change form name)]
 
-    [:div.custom-select
+    [:div.field.custom-select
      [:select {:value value
                :on-change on-change}
       (for [item options]
