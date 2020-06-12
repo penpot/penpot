@@ -1244,10 +1244,7 @@
                 group     (-> (group-shape id frame-id selected selrect)
                               (geom/setup selrect))
 
-                index     (->> (get-in objects [frame-id :shapes])
-                               (map-indexed vector)
-                               (filter #(selected (second %)))
-                               (ffirst))
+                index     (cph/position-on-parent (:id (first items)) objects)
 
                 rchanges  [{:type :add-obj
                             :id id
@@ -1258,11 +1255,20 @@
                            {:type :mov-objects
                             :parent-id id
                             :shapes (vec selected)}]
-                uchanges  [{:type :mov-objects
-                            :parent-id frame-id
-                            :shapes (vec selected)}
-                           {:type :del-obj
-                            :id id}]]
+
+                uchanges
+                (reduce (fn [res obj]
+                          (conj res {:type :mov-objects
+                                     :parent-id (:parent-id obj)
+                                     :index (:index obj)
+                                     :shapes [(:id obj)]}))
+                        []
+                        (->> selected
+                             (map #(get objects %))
+                             (map #(assoc % :index (cph/position-on-parent (:id %) objects)))
+                             (sort-by :index)))
+
+                uchanges (conj uchanges {:type :del-obj :id id})]
 
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
                    (dws/select-shapes #{id}))))))))

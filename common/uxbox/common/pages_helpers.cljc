@@ -60,6 +60,13 @@
     (or (not= (:type shape) :frame)
         (= parent-id uuid/zero))))
 
+(defn position-on-parent
+  [id objects]
+  (let [obj (get objects id)
+        pid (:parent-id obj)
+        prt (get objects pid)]
+    (d/index-of (:shapes prt) id)))
+
 (defn insert-at-index
   [shapes index ids]
   (let [[before after] (split-at index shapes)
