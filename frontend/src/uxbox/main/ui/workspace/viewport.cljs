@@ -120,9 +120,9 @@
   {::mf/wrap-props false}
   [props]
   (let [objects   (unchecked-get props "objects")
-        selected? (or (mf/deref refs/selected-shapes) #{})
-        hover?    (or (mf/deref refs/current-hover) #{})
-        outline?  (set/union selected? hover?)
+        selected  (or (unchecked-get props "selected") #{})
+        hover     (or (unchecked-get props "hover") #{})
+        outline?  (set/union selected hover)
         shapes    (->> (vals objects) (filter (comp outline? :id)))
         transform (mf/deref refs/current-transform)]
     (when (nil? transform)
@@ -132,9 +132,12 @@
                       :shape (gsh/transform-shape shape)}])])))
 
 (mf/defc frames
-  {:wrap [mf/memo]}
-  []
-  (let [data    (mf/deref refs/workspace-data)
+  {::mf/wrap [mf/memo]
+   ::mf/wrap-props false}
+  [props]
+  (let [data     (mf/deref refs/workspace-data)
+        hover    (unchecked-get props "hover")
+        selected (unchecked-get props "selected")
         objects (:objects data)
         root    (get objects uuid/zero)
         shapes  (->> (:shapes root)
@@ -149,7 +152,9 @@
           [:& shape-wrapper {:shape item
                              :key (:id item)}]))]
 
-     [:& shape-outlines {:objects objects}]]))
+     [:& shape-outlines {:objects objects
+                         :selected selected
+                         :hover hover}]]))
 
 (mf/defc viewport
   [{:keys [page local layout] :as props}]
@@ -435,7 +440,9 @@
       :on-drop on-drop}
 
      [:g
-      [:& frames {:key (:id page)}]
+      [:& frames {:key (:id page)
+                  :hover (:hover local)
+                  :selected (:selected selected)}]
 
       (when (seq selected)
         [:& selection-handlers {:selected selected
