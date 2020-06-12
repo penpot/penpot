@@ -1232,13 +1232,14 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [id (uuid/next)
-            selected (get-in state [:workspace-local :selected])]
-        (when (not-empty selected)
-          (let [page-id (get-in state [:workspace-page :id])
-                objects (get-in state [:workspace-data page-id :objects])
-
-                items     (map #(get objects %) selected)
-                selrect   (geom/selection-rect items)
+            page-id  (get-in state [:workspace-page :id])
+            selected (get-in state [:workspace-local :selected])
+            objects  (get-in state [:workspace-data page-id :objects])
+            items    (->> selected
+                          (map #(get objects %))
+                          (filter #(not= :frame (:type %))))]
+        (when (not-empty items)
+          (let [selrect   (geom/selection-rect items)
                 frame-id  (-> items first :frame-id)
                 parent-id (-> items first :parent-id)
                 group     (-> (group-shape id frame-id selected selrect)
