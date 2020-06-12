@@ -12,16 +12,17 @@
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]
-   [uxbox.main.data.workspace.common :as dwc]
-   [uxbox.main.worker :as uw]
-   [uxbox.main.streams :as ms]
+   [uxbox.common.data :as d]
+   [uxbox.common.geom.point :as gpt]
+   [uxbox.common.geom.shapes :as geom]
+   [uxbox.common.math :as mth]
    [uxbox.common.pages :as cp]
+   [uxbox.common.pages-helpers :as cph]
    [uxbox.common.spec :as us]
    [uxbox.common.uuid :as uuid]
-   [uxbox.common.data :as d]
-   [uxbox.common.geom.shapes :as geom]
-   [uxbox.common.geom.point :as gpt]
-   [uxbox.common.math :as mth]))
+   [uxbox.main.data.workspace.common :as dwc]
+   [uxbox.main.streams :as ms]
+   [uxbox.main.worker :as uw]))
 
 (s/def ::set-of-uuid
   (s/every uuid? :kind set?))
@@ -220,7 +221,7 @@
         name (generate-unique-name names (:name obj))
         renamed-obj (assoc obj :id id :name name)
         moved-obj (geom/move renamed-obj delta)
-        frames (cp/select-frames objects)
+        frames (cph/select-frames objects)
         frame-id (if frame-id
                    frame-id
                    (dwc/calculate-frame-overlap frames moved-obj))

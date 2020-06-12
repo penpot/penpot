@@ -12,7 +12,8 @@
    [okulary.core :as l]
    [uxbox.common.uuid :as uuid]
    [uxbox.common.pages :as cp]
-   [uxbox.common.data :as d]   
+   [uxbox.common.pages-helpers :as cph]
+   [uxbox.common.data :as d]
    [uxbox.worker.impl :as impl]
    [uxbox.util.range-tree :as rt]
    [uxbox.util.geom.snap-points :as snap]
@@ -45,7 +46,7 @@
   (let [frame-shapes (->> (vals objects)
                           (filter :frame-id)
                           (group-by :frame-id))
-        frame-shapes (->> (cp/select-frames objects)
+        frame-shapes (->> (cph/select-frames objects)
                           (reduce #(update %1 (:id %2) conj %2) frame-shapes))]
     (d/mapm (fn [frame-id shapes] {:x (create-coord-data frame-id shapes :x)
                                  :y (create-coord-data frame-id shapes :y)})

@@ -77,16 +77,23 @@
     (t/testing "Adds single object"
       (let [chg  {:type :add-obj
                   :id id-a
+                  :parent-id uuid/zero
                   :frame-id uuid/zero
                   :obj {:id id-a
                         :frame-id uuid/zero
+                        :parent-id uuid/zero
                         :type :rect
                         :name "rect"}}
             res (cp/process-changes data [chg])]
 
+        ;; (clojure.pprint/pprint data)
+        ;; (clojure.pprint/pprint res)
+
         (t/is (= 2 (count (:objects res))))
         (t/is (= (:obj chg) (get-in res [:objects id-a])))
         (t/is (= [id-a] (get-in res [:objects uuid/zero :shapes])))))
+
+
     (t/testing "Adds several objects with different indexes"
       (let [data cp/default-page-data
 
@@ -277,36 +284,77 @@
         rect-c-id  (uuid/custom 7)
         rect-d-id  (uuid/custom 8)
         rect-e-id  (uuid/custom 9)
-        data (-> cp/default-page-data
-                 (assoc-in [cp/root :shapes] [frame-a-id])
-                 (assoc-in [:objects frame-a-id]
-                           {:id frame-a-id :name "Frame a" :type :frame})
-                 (assoc-in [:objects frame-b-id]
-                           {:id frame-b-id :name "Frame b" :type :frame})
 
-                 ;; Groups
-                 (assoc-in [:objects group-a-id]
-                           {:id group-a-id :name "Group A" :type :group :frame-id frame-a-id})
-                 (assoc-in [:objects group-b-id]
-                           {:id group-b-id :name "Group B" :type :group :frame-id frame-a-id})
+        data
+        (-> cp/default-page-data
+            (assoc-in [:objects uuid/zero :shapes] [frame-a-id frame-b-id])
+            (assoc-in [:objects frame-a-id]
+                      {:id frame-a-id
+                       :parent-id uuid/zero
+                       :frame-id uuid/zero
+                       :name "Frame a"
+                       :shapes [group-a-id group-b-id rect-e-id]
+                       :type :frame})
+
+            (assoc-in [:objects frame-b-id]
+                      {:id frame-b-id
+                       :parent-id uuid/zero
+                       :frame-id uuid/zero
+                       :name "Frame b"
+                       :shapes []
+                       :type :frame})
+
+            ;; Groups
+            (assoc-in [:objects group-a-id]
+                      {:id group-a-id
+                       :name "Group A"
+                       :type :group
+                       :parent-id frame-a-id
+                       :frame-id frame-a-id
+                       :shapes [rect-a-id rect-b-id rect-c-id]})
+            (assoc-in [:objects group-b-id]
+                      {:id group-b-id
+                       :name "Group B"
+                       :type :group
+                       :parent-id frame-a-id
+                       :frame-id frame-a-id
+                       :shapes [rect-d-id]})
 
                  ;; Shapes
-                 (assoc-in [:objects rect-a-id]
-                           {:id rect-a-id :name "Rect A" :type :rect :frame-id frame-a-id})
-                 (assoc-in [:objects rect-b-id]
-                           {:id rect-b-id :name "Rect B" :type :rect :frame-id frame-a-id})
-                 (assoc-in [:objects rect-c-id]
-                           {:id rect-c-id :name "Rect C" :type :rect :frame-id frame-a-id})
-                 (assoc-in [:objects rect-d-id]
-                           {:id rect-d-id :name "Rect D" :type :rect :frame-id frame-a-id})
-                 (assoc-in [:objects rect-e-id]
-                           {:id rect-e-id :name "Rect E" :type :rect :frame-id frame-a-id})
+            (assoc-in [:objects rect-a-id]
+                      {:id rect-a-id
+                       :name "Rect A"
+                       :type :rect
+                       :parent-id group-a-id
+                       :frame-id frame-a-id})
 
-                 ;; Relationships
-                 (assoc-in [:objects cp/root :shapes] [frame-a-id frame-b-id])
-                 (assoc-in [:objects frame-a-id :shapes] [group-a-id group-b-id rect-e-id])
-                 (assoc-in [:objects group-a-id :shapes] [rect-a-id rect-b-id rect-c-id])
-                 (assoc-in [:objects group-b-id :shapes] [rect-d-id]))]
+            (assoc-in [:objects rect-b-id]
+                      {:id rect-b-id
+                       :name "Rect B"
+                       :type :rect
+                       :parent-id group-a-id
+                       :frame-id frame-a-id})
+
+            (assoc-in [:objects rect-c-id]
+                      {:id rect-c-id
+                       :name "Rect C"
+                       :type :rect
+                       :parent-id group-a-id
+                       :frame-id frame-a-id})
+
+            (assoc-in [:objects rect-d-id]
+                      {:id rect-d-id
+                       :name "Rect D"
+                       :parent-id group-b-id
+                       :type :rect
+                       :frame-id frame-a-id})
+
+            (assoc-in [:objects rect-e-id]
+                      {:id rect-e-id
+                       :name "Rect E"
+                       :type :rect
+                       :parent-id frame-a-id
+                       :frame-id frame-a-id}))]
 
     (t/testing "Create new group an add objects from the same group"
       (let [new-group-id (uuid/next)
@@ -321,6 +369,10 @@
                       :parent-id new-group-id
                       :shapes [rect-b-id rect-c-id]}]
             res (cp/process-changes data changes)]
+
+        ;; (clojure.pprint/pprint data)
+        ;; (println "===============")
+        ;; (clojure.pprint/pprint res)
 
         (t/is (= [group-a-id group-b-id rect-e-id new-group-id]
                  (get-in res [:objects frame-a-id :shapes])))
@@ -396,10 +448,15 @@
 
     (t/testing "Move elements to frame zero"
       (let [changes [{:type :mov-objects
-                      :parent-id cp/root
+                      :parent-id uuid/zero
                       :shapes [group-a-id]
                       :index 0}]
             res (cp/process-changes data changes)]
+
+        ;; (pprint (get-in data [:objects uuid/zero]))
+        ;; (println "==========")
+        ;; (pprint (get-in res [:objects uuid/zero]))
+
         (t/is (= [group-a-id frame-a-id frame-b-id]
                  (get-in res [:objects cp/root :shapes])))))
 
@@ -408,7 +465,8 @@
                       :parent-id group-a-id
                       :shapes [group-a-id]}]
             res (cp/process-changes data changes)]
-        (t/is (= data res))))))
+        (t/is (= data res))))
+    ))
 
 
 (t/deftest process-change-move-objects-regression
@@ -652,5 +710,58 @@
         ))
 
     ))
+
+(t/deftest idenpotency-regression-1
+  (let [data {:version 5
+              :objects
+              {#uuid "00000000-0000-0000-0000-000000000000"
+               {:id #uuid "00000000-0000-0000-0000-000000000000",
+                :type :frame,
+                :name "root",
+                :shapes
+                [#uuid "f5d51910-ab23-11ea-ac38-e1abed64181a"
+                 #uuid "f6a36590-ab23-11ea-ac38-e1abed64181a"]},
+               #uuid "f5d51910-ab23-11ea-ac38-e1abed64181a"
+               {:name "Rect-1",
+                :type :rect,
+                :id #uuid "f5d51910-ab23-11ea-ac38-e1abed64181a",
+                :parent-id #uuid "00000000-0000-0000-0000-000000000000",
+                :frame-id #uuid "00000000-0000-0000-0000-000000000000"}
+               #uuid "f6a36590-ab23-11ea-ac38-e1abed64181a"
+               {:name "Rect-2",
+                :type :rect,
+                :id #uuid "f6a36590-ab23-11ea-ac38-e1abed64181a",
+                :parent-id #uuid "00000000-0000-0000-0000-000000000000",
+                :frame-id #uuid "00000000-0000-0000-0000-000000000000"}}}
+        chgs [{:type :add-obj,
+               :id #uuid "3375ec40-ab24-11ea-b512-b945e8edccf5",
+               :frame-id #uuid "00000000-0000-0000-0000-000000000000",
+               :index 0
+               :obj {:name "Group-1",
+                     :type :group,
+                     :id #uuid "3375ec40-ab24-11ea-b512-b945e8edccf5",
+                     :frame-id #uuid "00000000-0000-0000-0000-000000000000"}}
+              {:type :mov-objects,
+               :parent-id #uuid "3375ec40-ab24-11ea-b512-b945e8edccf5",
+               :shapes
+               [#uuid "f5d51910-ab23-11ea-ac38-e1abed64181a"
+                #uuid "f6a36590-ab23-11ea-ac38-e1abed64181a"]}]
+
+        res1 (cp/process-changes data chgs)
+        res2 (cp/process-changes res1 chgs)]
+
+    ;; (clojure.pprint/pprint data)
+    ;; (println "==============")
+    ;; (clojure.pprint/pprint res2)
+
+    (t/is (= [#uuid "f5d51910-ab23-11ea-ac38-e1abed64181a"
+              #uuid "f6a36590-ab23-11ea-ac38-e1abed64181a"]
+             (get-in data [:objects uuid/zero :shapes])))
+    (t/is (= [#uuid "3375ec40-ab24-11ea-b512-b945e8edccf5"]
+             (get-in res2 [:objects uuid/zero :shapes])))
+    (t/is (= [#uuid "3375ec40-ab24-11ea-b512-b945e8edccf5"]
+             (get-in res1 [:objects uuid/zero :shapes])))
+    ))
+
 
 

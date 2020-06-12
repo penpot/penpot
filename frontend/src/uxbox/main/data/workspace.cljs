@@ -16,6 +16,7 @@
    [uxbox.common.data :as d]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.pages :as cp]
+   [uxbox.common.pages-helpers :as cph]
    [uxbox.common.spec :as us]
    [uxbox.common.uuid :as uuid]
    [uxbox.config :as cfg]
@@ -212,7 +213,7 @@
           (initialize [state local]
             (let [page-id (get-in state [:workspace-page :id])
                   objects (get-in state [:workspace-data page-id :objects])
-                  shapes  (cp/select-toplevel-shapes objects {:include-frames? true})
+                  shapes  (cph/select-toplevel-shapes objects {:include-frames? true})
                   srect   (geom/selection-rect shapes)
                   local   (assoc local :vport size)]
               (cond
@@ -286,7 +287,7 @@
       (let [page-id (:current-page-id state)
             objects (get-in state [:workspace-data page-id :objects])
             groups-to-adjust (->> ids
-                                  (mapcat #(reverse (cp/get-all-parents % objects)))
+                                  (mapcat #(cph/get-parents % objects))
                                   (map #(get objects %))
                                   (filter #(= (:type %) :group))
                                   (map #(:id %))
@@ -405,7 +406,7 @@
     (update [_ state]
       (let [page-id (get-in state [:workspace-page :id])
             objects (get-in state [:workspace-data page-id :objects])
-            shapes  (cp/select-toplevel-shapes objects {:include-frames? true})
+            shapes  (cph/select-toplevel-shapes objects {:include-frames? true})
             srect   (geom/selection-rect shapes)]
 
         (if (or (mth/nan? (:width srect))
@@ -481,7 +482,7 @@
             unames   (retrieve-used-names objects)
             name     (generate-unique-name unames (:name shape))
 
-            frames   (cp/select-frames objects)
+            frames   (cph/select-frames objects)
 
             frame-id (if (= :frame (:type shape))
                        uuid/zero
@@ -578,7 +579,7 @@
               grouped #{:frame :group}]
           (update-in state [:workspace-data page-id :objects]
                      (fn [objects]
-                       (->> (d/concat [id] (cp/get-children id objects))
+                       (->> (d/concat [id] (cph/get-children id objects))
                             (map #(get objects %))
                             (remove #(grouped (:type %)))
                             (reduce #(update %1 (:id %2) update-shape) objects)))))))))
@@ -647,6 +648,7 @@
     :right (gpt/point 1 0)))
 
 ;; --- Delete Selected
+
 (defn- delete-shapes
   [ids]
   (us/assert (s/coll-of ::us/uuid) ids)
@@ -655,38 +657,57 @@
     (watch [_ state stream]
       (let [page-id (:current-page-id state)
             objects (get-in state [:workspace-data page-id :objects])
-            cpindex (cp/calculate-child-parent-map objects)
 
             del-change #(array-map :type :del-obj :id %)
+            reg-change #(array-map :type :reg-obj :id %)
 
             get-empty-parents
-            (fn get-empty-parents [id]
-              (let [parent (get objects (get cpindex id))]
-                (if (and (= :group (:type parent))
-                         (= 1 (count (:shapes parent))))
-                  (lazy-seq (cons (:id parent)
-                                  (get-empty-parents (:id parent))))
-                  nil)))
+            (fn get-empty-parents [parents]
+              (->> parents
+                   (map (fn [id]
+                          (let [obj (get objects id)]
+                            (when (and (= :group (:type obj))
+                                       (= 1 (count (:shapes obj))))
+                              obj))))
+                   (take-while (complement nil?))
+                   (map :id)))
 
             rchanges
             (reduce (fn [res id]
-                      (let [chd (cp/get-children id objects)]
-                        (into res (d/concat
-                                   (mapv del-change (reverse chd))
-                                   [(del-change id)]
-                                   (map del-change (get-empty-parents id))))))
+                      (let [children (cph/get-children id objects)
+                            parents  (cph/get-parents id objects)]
+                        (d/concat res
+                                  (map del-change (reverse children))
+                                  [(del-change id)]
+                                  (map del-change (get-empty-parents parents))
+                                  [{:type :reg-obj :ids parents}])))
                     []
                     ids)
 
             uchanges
-            (mapv (fn [id]
-                    (let [obj (get objects id)]
-                     {:type :add-obj
-                      :id id
-                      :frame-id (:frame-id obj)
-                      :parent-id (get cpindex id)
-                      :obj obj}))
-                  (reverse (map :id rchanges)))]
+            (reduce (fn [res id]
+                      (let [children (cph/get-children id objects)
+                            parents  (cph/get-parents id objects)
+                            add-chg  (fn [id]
+                                       (let [item (get objects id)]
+                                         {:type :add-obj
+                                          :id (:id item)
+                                          :frame-id (:frame-id item)
+                                          :parent-id (:parent-id item)
+                                          :obj item}))]
+                        (d/concat res
+                                  (map add-chg (reverse (get-empty-parents parents)))
+                                  [(add-chg id)]
+                                  (map add-chg children)
+                                  [{:type :reg-obj :ids parents}])))
+                    []
+                    ids)
+            ]
+
+        ;; (println "================ rchanges")
+        ;; (cljs.pprint/pprint rchanges)
+        ;; (println "================ uchanges")
+        ;; (cljs.pprint/pprint uchanges)
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 
 (def delete-selected
@@ -764,7 +785,7 @@
     (watch [_ state stream]
       (let [page-id (:current-page-id state)
             objects (get-in state [:workspace-data page-id :objects])
-            parent (get objects (cp/get-parent id objects))
+            parent (get objects (cph/get-parent id objects))
             current-index (d/index-of (:shapes parent) id)
             selected (get-in state [:workspace-local :selected])]
         (rx/of (dwc/commit-changes [{:type :mov-objects
@@ -992,7 +1013,7 @@
     (update [_ state]
       (let [page-id (get-in state [:workspace-page :id])
             objects (get-in state [:workspace-data page-id :objects])
-            childs (cp/get-children id objects)]
+            childs (cph/get-children id objects)]
         (update-in state [:workspace-data page-id :objects]
                    (fn [objects]
                      (reduce (fn [objects id]
@@ -1215,7 +1236,6 @@
         (when (not-empty selected)
           (let [page-id (get-in state [:workspace-page :id])
                 objects (get-in state [:workspace-data page-id :objects])
-
                 selected-objects (map (partial get objects) selected)
                 selrect  (geom/selection-rect selected-objects)
                 frame-id (-> selected-objects first :frame-id)
@@ -1226,7 +1246,6 @@
                               (map-indexed vector)
                               (filter #(selected (second %)))
                               (ffirst))
-
                 rchanges [{:type :add-obj
                            :id id
                            :frame-id frame-id
@@ -1255,7 +1274,7 @@
         (when (and (= 1 (count selected))
                    (= (:type group) :group))
           (let [shapes    (:shapes group)
-                parent-id (cp/get-parent group-id objects)
+                parent-id (cph/get-parent group-id objects)
                 parent    (get objects parent-id)
                 index-in-parent (->> (:shapes parent)
                                      (map-indexed vector)

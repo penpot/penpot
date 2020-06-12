@@ -10,8 +10,8 @@
 (ns uxbox.common.geom.shapes
   (:require
    [clojure.spec.alpha :as s]
-   [uxbox.common.pages :as cp]
    [uxbox.common.spec :as us]
+   [uxbox.common.pages-helpers :as cph]
    [uxbox.common.geom.matrix :as gmt]
    [uxbox.common.geom.point :as gpt]
    [uxbox.common.math :as mth]
@@ -61,7 +61,7 @@
 (defn recursive-move
   "Move the shape and all its recursive children."
   [shape dpoint objects]
-  (let [children-ids (cp/get-children (:id shape) objects)
+  (let [children-ids (cph/get-children (:id shape) objects)
         children (map #(get objects %) children-ids)]
     (map #(move % dpoint) (cons shape children))))
 
@@ -253,6 +253,7 @@
 ;; -- Points
 
 (declare transform-shape-point)
+
 (defn shape->points [shape]
   (let [points
         (case (:type shape)

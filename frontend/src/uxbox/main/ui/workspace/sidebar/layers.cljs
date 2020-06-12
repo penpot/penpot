@@ -16,6 +16,7 @@
    [uxbox.common.data :as d]
    [uxbox.common.uuid :as uuid]
    [uxbox.common.pages :as cp]
+   [uxbox.common.pages-helpers :as cph]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
@@ -154,7 +155,7 @@
           (if (= side :center)
             (st/emit! (dw/relocate-shape id (:id item) 0))
             (let [to-index  (if (= side :top) (inc index) index)
-                  parent-id (cp/get-parent (:id item) objects)]
+                  parent-id (cph/get-parent (:id item) objects)]
               (st/emit! (dw/relocate-shape id parent-id to-index)))))
 
         on-hold
@@ -223,7 +224,7 @@
         old-obs (unchecked-get oprops "objects")]
     (and (= new-itm old-itm)
          (identical? new-idx old-idx)
-         (let [childs (cp/get-children (:id new-itm) new-obs)
+         (let [childs (cph/get-children (:id new-itm) new-obs)
                childs' (conj childs (:id new-itm))]
            (and (or (= new-sel old-sel)
                     (not (or (boolean (some new-sel childs'))
@@ -273,7 +274,7 @@
 
 (defn- strip-objects
   [objects]
-  (let [strip-data #(select-keys % [:id :name :blocked :hidden :shapes :type :content :metadata])]
+  (let [strip-data #(select-keys % [:id :name :blocked :hidden :shapes :type :content :parent-id :metadata])]
     (persistent!
      (reduce-kv (fn [res id obj]
                   (assoc! res id (strip-data obj)))

@@ -16,6 +16,7 @@
    [uxbox.common.geom.shapes :as geom]
    [uxbox.common.geom.point :as gpt]
    [uxbox.common.pages :as cp]
+   [uxbox.common.pages-helpers :as cph]
    [uxbox.util.geom.path :as path]
    [uxbox.main.snap :as snap]
    [uxbox.main.streams :as ms]
@@ -95,7 +96,7 @@
               objects (get-in state [:workspace-data page-id :objects])
               layout  (get state :workspace-layout)
 
-              frames  (cp/select-frames objects)
+              frames  (cph/select-frames objects)
               fid     (or (->> frames
                                (filter #(geom/has-point? % initial))
                                first

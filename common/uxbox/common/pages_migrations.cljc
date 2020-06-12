@@ -1,6 +1,6 @@
 (ns uxbox.common.pages-migrations
   (:require
-   [uxbox.common.pages :as p]
+   [uxbox.common.pages :as cp]
    [uxbox.common.geom.shapes :as gsh]
    [uxbox.common.geom.point :as gpt]
    [uxbox.common.geom.matrix :as gmt]
@@ -8,15 +8,17 @@
    [uxbox.common.uuid :as uuid]
    [uxbox.common.data :as d]))
 
+;; TODO: revisit this
+
 (defmulti migrate :version)
 
 (defn migrate-data
   ([data]
-   (if (= (:version data) p/page-version)
+   (if (= (:version data) cp/page-version)
      data
      (reduce #(migrate-data %1 %2 (inc %2))
              data
-             (range (:version data 0) p/page-version))))
+             (range (:version data 0) cp/page-version))))
 
   ([data from-version to-version]
    (-> data

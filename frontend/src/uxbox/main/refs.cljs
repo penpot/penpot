@@ -10,12 +10,13 @@
 (ns uxbox.main.refs
   "A collection of derived refs."
   (:require
-   [okulary.core :as l]
    [beicon.core :as rx]
+   [okulary.core :as l]
    [uxbox.common.pages :as cp]
+   [uxbox.common.pages-helpers :as cph]
+   [uxbox.common.uuid :as uuid]
    [uxbox.main.constants :as c]
-   [uxbox.main.store :as st]
-   [uxbox.common.uuid :as uuid]))
+   [uxbox.main.store :as st]))
 
 ;; ---- Global refs
 
@@ -78,7 +79,7 @@
   (l/derived :objects workspace-data))
 
 (def workspace-frames
-  (l/derived cp/select-frames workspace-objects))
+  (l/derived cph/select-frames workspace-objects))
 
 (defn object-by-id
   [id]
@@ -106,7 +107,7 @@
                   objects (get-in state [:workspace-data page-id :objects])
                   selected (get-in state [:workspace-local :selected])
                   shape (get objects id)
-                  children (cp/get-children id objects)]
+                  children (cph/get-children id objects)]
               (some selected children)))]
     (l/derived selector st/state)))
 
@@ -118,7 +119,7 @@
             (let [selected (get-in state [:workspace-local :selected])
                   page-id (get-in state [:workspace-page :id])
                   objects (get-in state [:workspace-data page-id :objects])
-                  children (mapcat #(cp/get-children % objects) selected)]
+                  children (mapcat #(cph/get-children % objects) selected)]
               (into selected children)))]
     (l/derived selector st/state)))
 
