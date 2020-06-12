@@ -1236,29 +1236,34 @@
         (when (not-empty selected)
           (let [page-id (get-in state [:workspace-page :id])
                 objects (get-in state [:workspace-data page-id :objects])
-                selected-objects (map (partial get objects) selected)
-                selrect  (geom/selection-rect selected-objects)
-                frame-id (-> selected-objects first :frame-id)
-                group    (-> (group-shape id frame-id selected selrect)
-                             (geom/setup selrect))
 
-                index    (->> (get-in objects [frame-id :shapes])
-                              (map-indexed vector)
-                              (filter #(selected (second %)))
-                              (ffirst))
-                rchanges [{:type :add-obj
-                           :id id
-                           :frame-id frame-id
-                           :obj group
-                           :index index}
-                          {:type :mov-objects
-                           :parent-id id
-                           :shapes (vec selected)}]
-                uchanges [{:type :mov-objects
-                           :parent-id frame-id
-                           :shapes (vec selected)}
-                          {:type :del-obj
-                           :id id}]]
+                items     (map #(get objects %) selected)
+                selrect   (geom/selection-rect items)
+                frame-id  (-> items first :frame-id)
+                parent-id (-> items first :parent-id)
+                group     (-> (group-shape id frame-id selected selrect)
+                              (geom/setup selrect))
+
+                index     (->> (get-in objects [frame-id :shapes])
+                               (map-indexed vector)
+                               (filter #(selected (second %)))
+                               (ffirst))
+
+                rchanges  [{:type :add-obj
+                            :id id
+                            :frame-id frame-id
+                            :parent-id parent-id
+                            :obj group
+                            :index index}
+                           {:type :mov-objects
+                            :parent-id id
+                            :shapes (vec selected)}]
+                uchanges  [{:type :mov-objects
+                            :parent-id frame-id
+                            :shapes (vec selected)}
+                           {:type :del-obj
+                            :id id}]]
+
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
                    (dws/select-shapes #{id}))))))))
 
