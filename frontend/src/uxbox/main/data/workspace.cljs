@@ -692,6 +692,7 @@
                                        (let [item (get objects id)]
                                          {:type :add-obj
                                           :id (:id item)
+                                          :index (cph/position-on-parent id objects)
                                           :frame-id (:frame-id item)
                                           :parent-id (:parent-id item)
                                           :obj item}))]
