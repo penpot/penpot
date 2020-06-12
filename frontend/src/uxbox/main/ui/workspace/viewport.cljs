@@ -116,6 +116,21 @@
 
 (declare remote-user-cursors)
 
+(mf/defc shape-outlines
+  {::mf/wrap-props false}
+  [props]
+  (let [objects   (unchecked-get props "objects")
+        selected? (or (mf/deref refs/selected-shapes) #{})
+        hover?    (or (mf/deref refs/current-hover) #{})
+        outline?  (set/union selected? hover?)
+        shapes    (->> (vals objects) (filter (comp outline? :id)))
+        transform (mf/deref refs/current-transform)]
+    (when (nil? transform)
+      [:g.outlines
+       (for [shape shapes]
+         [:& outline {:key (str "outline-" (:id shape))
+                      :shape (gsh/transform-shape shape)}])])))
+
 (mf/defc frames
   {:wrap [mf/memo]}
   []
@@ -124,27 +139,17 @@
         root    (get objects uuid/zero)
         shapes  (->> (:shapes root)
                      (map #(get objects %)))]
-    [:g.shapes
-     (for [item shapes]
-       (if (= (:type item) :frame)
-         [:& frame-wrapper {:shape item
-                            :key (:id item)
-                            :objects objects}]
-         [:& shape-wrapper {:shape item
-                            :key (:id item)}]))]))
+    [:*
+     [:g.shapes
+      (for [item shapes]
+        (if (= (:type item) :frame)
+          [:& frame-wrapper {:shape item
+                             :key (:id item)
+                             :objects objects}]
+          [:& shape-wrapper {:shape item
+                             :key (:id item)}]))]
 
-(mf/defc shape-outlines []
-  (let [selected-shape? (or (mf/deref refs/selected-shapes) #{})
-        hover? (or (mf/deref refs/current-hover) #{})
-        outline? (set/union selected-shape? hover?)
-        data    (mf/deref refs/workspace-data)
-        shapes (->> data :objects vals (filter (comp outline? :id)))
-        current-transform (mf/deref refs/current-transform)]
-    (when (nil? current-transform)
-      [:g.outlines
-       (for [shape shapes]
-         [:& outline {:key (str "outline-" (:id shape))
-                      :shape (gsh/transform-shape shape)}])])))
+     [:& shape-outlines {:objects objects}]]))
 
 (mf/defc viewport
   [{:keys [page local layout] :as props}]
@@ -431,8 +436,6 @@
 
      [:g
       [:& frames {:key (:id page)}]
-
-      [:& shape-outlines]
 
       (when (seq selected)
         [:& selection-handlers {:selected selected
