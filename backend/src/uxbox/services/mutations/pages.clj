@@ -177,8 +177,7 @@
               :context {:incoming-revn (:revn params)
                         :stored-revn (:revn page)}))
   (let [sid      (:session-id params)
-        changes  (->> (:changes params)
-                      (mapv #(assoc % :session-id sid)))
+        changes   (:changes params)
 
         page (-> page
                  (update :data blob/decode)
