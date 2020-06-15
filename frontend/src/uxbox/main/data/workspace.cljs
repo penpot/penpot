@@ -777,7 +777,7 @@
   (us/verify ::us/uuid parent-id)
   (us/verify number? to-index)
 
-  (ptk/reify ::relocate-shape
+  (ptk/reify ::relocate-shapes
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
