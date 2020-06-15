@@ -469,39 +469,88 @@
     ))
 
 
-(t/deftest process-change-move-objects-regression
-  (let [shape-2-id (uuid/custom 1 2)
-        shape-3-id (uuid/custom 1 3)
+(t/deftest process-change-mov-objects-regression
+  (let [shape-1-id (uuid/custom 2 1)
+        shape-2-id (uuid/custom 2 2)
+        shape-3-id (uuid/custom 2 3)
         frame-id   (uuid/custom 1 1)
         changes [{:type :add-obj
                   :id frame-id
+                  :parent-id uuid/zero
                   :frame-id uuid/zero
                   :obj {:type :frame
                         :name "Frame"}}
                  {:type :add-obj
                   :frame-id frame-id
-                  :id shape-2-id
+                  :parent-id frame-id
+                  :id shape-1-id
                   :obj {:type :shape
-                        :name "Shape"}}
+                        :name "Shape 1"}}
                  {:type :add-obj
-                  :id shape-3-id
+                  :id shape-2-id
+                  :parent-id uuid/zero
                   :frame-id uuid/zero
                   :obj {:type :rect
-                        :name "Shape"}}]
+                        :name "Shape 2"}}
+
+                 {:type :add-obj
+                  :id shape-3-id
+                  :parent-id uuid/zero
+                  :frame-id uuid/zero
+                  :obj {:type :rect
+                        :name "Shape 3"}}
+                 ]
         data (cp/process-changes cp/default-page-data changes)]
+
+    (t/testing "preserve order on multiple shape mov 1"
+      (let [changes [{:type :mov-objects
+                      :shapes [shape-2-id shape-3-id]
+                      :parent-id uuid/zero
+                      :index 0}]
+            res (cp/process-changes data changes)]
+
+        ;; (println "==> BEFORE")
+        ;; (pprint (get-in data [:objects]))
+        ;; (println "==> AFTER")
+        ;; (pprint (get-in res [:objects]))
+
+        (t/is (= [frame-id shape-2-id shape-3-id]
+                 (get-in data [:objects uuid/zero :shapes])))
+        (t/is (= [shape-2-id shape-3-id frame-id]
+                 (get-in res [:objects uuid/zero :shapes])))))
+
+    (t/testing "preserve order on multiple shape mov 1"
+      (let [changes [{:type :mov-objects
+                      :shapes [shape-3-id shape-2-id]
+                      :parent-id uuid/zero
+                      :index 0}]
+            res (cp/process-changes data changes)]
+
+        ;; (println "==> BEFORE")
+        ;; (pprint (get-in data [:objects]))
+        ;; (println "==> AFTER")
+        ;; (pprint (get-in res [:objects]))
+
+        (t/is (= [frame-id shape-2-id shape-3-id]
+                 (get-in data [:objects uuid/zero :shapes])))
+        (t/is (= [shape-3-id shape-2-id frame-id]
+                 (get-in res [:objects uuid/zero :shapes])))))
+
     (t/testing "move inside->outside-inside"
       (let [changes [{:type :mov-objects
-                      :shapes [shape-3-id]
+                      :shapes [shape-2-id]
                       :parent-id frame-id}
                      {:type :mov-objects
-                      :shapes [shape-3-id]
+                      :shapes [shape-2-id]
                       :parent-id uuid/zero}]
             res (cp/process-changes data changes)]
 
+        (t/is (= (get-in res [:objects shape-1-id :frame-id])
+                 (get-in data [:objects shape-1-id :frame-id])))
         (t/is (= (get-in res [:objects shape-2-id :frame-id])
-                 (get-in data [:objects shape-2-id :frame-id])))
-        (t/is (= (get-in res [:objects shape-3-id :frame-id])
-                 (get-in data [:objects shape-3-id :frame-id])))))))
+                 (get-in data [:objects shape-2-id :frame-id])))))
+
+    ))
 
 
 (t/deftest process-change-move-objects-2
@@ -762,6 +811,3 @@
     (t/is (= [#uuid "3375ec40-ab24-11ea-b512-b945e8edccf5"]
              (get-in res1 [:objects uuid/zero :shapes])))
     ))
-
-
-

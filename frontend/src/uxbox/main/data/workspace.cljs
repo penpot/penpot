@@ -659,7 +659,6 @@
             objects (get-in state [:workspace-data page-id :objects])
 
             del-change #(array-map :type :del-obj :id %)
-            reg-change #(array-map :type :reg-obj :id %)
 
             get-empty-parents
             (fn get-empty-parents [parents]
@@ -680,7 +679,7 @@
                                   (map del-change (reverse children))
                                   [(del-change id)]
                                   (map del-change (get-empty-parents parents))
-                                  [{:type :reg-obj :ids parents}])))
+                                  [{:type :reg-objects :shapes (vec parents)}])))
                     []
                     ids)
 
@@ -700,7 +699,7 @@
                                   (map add-chg (reverse (get-empty-parents parents)))
                                   [(add-chg id)]
                                   (map add-chg children)
-                                  [{:type :reg-obj :ids parents}])))
+                                  [{:type :reg-objects :shapes (vec parents)}])))
                     []
                     ids)
             ]
@@ -772,32 +771,50 @@
 
 ;; --- Change Shape Order (D&D Ordering)
 
-(defn relocate-shape
-  [id parent-id to-index]
-  (us/verify ::us/uuid id)
+(defn relocate-shapes
+  [ids parent-id to-index]
+  (us/verify (s/coll-of ::us/uuid) ids)
   (us/verify ::us/uuid parent-id)
   (us/verify number? to-index)
 
   (ptk/reify ::relocate-shape
-    dwc/IUpdateGroup
-    (get-ids [_] [id])
-
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-id (:current-page-id state)
-            objects (get-in state [:workspace-data page-id :objects])
-            parent (get objects (cph/get-parent id objects))
-            current-index (d/index-of (:shapes parent) id)
-            selected (get-in state [:workspace-local :selected])]
-        (rx/of (dwc/commit-changes [{:type :mov-objects
-                                     :parent-id parent-id
-                                     :index to-index
-                                     :shapes (vec selected)}]
-                                   [{:type :mov-objects
-                                     :parent-id (:id parent)
-                                     :index current-index
-                                     :shapes (vec selected)}]
+      (let [page-id  (:current-page-id state)
+            objects  (get-in state [:workspace-data page-id :objects])
+            parents  (cph/get-common-parents ids objects)
+
+            rchanges [{:type :mov-objects
+                       :parent-id parent-id
+                       :index to-index
+                       :shapes (vec (reverse ids))}
+                      {:type :reg-objects
+                       :shapes (vec (conj parents parent-id))}]
+
+            uchanges
+            (reduce (fn [res id]
+                      (let [obj (get objects id)]
+                        (conj res
+                              {:type :mov-objects
+                               :parent-id (:parent-id obj)
+                               :index (cph/position-on-parent id objects)
+                               :shapes [id]})))
+                    [] (reverse ids))
+            uchanges (conj uchanges
+                           {:type :reg-objects
+                            :shapes (vec parents)})]
+
+        (rx/of (dwc/commit-changes rchanges uchanges
                                    {:commit-local? true}))))))
+
+(defn relocate-selected-shapes
+  [parent-id to-index]
+  (ptk/reify ::relocate-selected-shapes
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [selected (get-in state [:workspace-local :selected])]
+        (rx/of (relocate-shapes selected parent-id to-index))))))
+
 
 ;; --- Change Page Order (D&D Ordering)
 

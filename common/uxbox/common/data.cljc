@@ -48,10 +48,10 @@
 (defn concat
   [& colls]
   (loop [result (transient (first colls))
-         colls (rest colls)]
-    (if (seq colls)
+         colls  (next colls)]
+    (if colls
       (recur (reduce conj! result (first colls))
-             (rest colls))
+             (next colls))
       (persistent! result))))
 
 (defn enumerate

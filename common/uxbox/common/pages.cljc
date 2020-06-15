@@ -184,19 +184,16 @@
 
 (defmethod change-spec-impl :add-obj [_]
   (s/keys :req-un [::id ::frame-id ::obj]
-          :opt-un [::session-id ::parent-id]))
+          :opt-un [::parent-id]))
 
 (defmethod change-spec-impl :mod-obj [_]
-  (s/keys :req-un [::id ::operations]
-          :opt-un [::session-id]))
+  (s/keys :req-un [::id ::operations]))
 
 (defmethod change-spec-impl :del-obj [_]
-  (s/keys :req-un [::id]
-          :opt-un [::session-id]))
+  (s/keys :req-un [::id]))
 
-(defmethod change-spec-impl :reg-obj [_]
-  (s/keys :req-un [::ids]
-          :opt-un [::session-id]))
+(defmethod change-spec-impl :reg-objects [_]
+  (s/keys :req-un [::shapes]))
 
 (defmethod change-spec-impl :mov-objects [_]
   (s/keys :req-un [::parent-id ::shapes]
@@ -356,15 +353,15 @@
         (seq shapes)   ; Recursive delete all dependend objects
         (as-> $ (reduce #(or (process-change %1 {:type :del-obj :id %2}) %1) $ shapes))))))
 
-(defmethod process-change :reg-obj
-  [data {:keys [ids]}]
+(defmethod process-change :reg-objects
+  [data {:keys [shapes]}]
   (let [objects (:objects data)]
-    (loop [ids ids data data]
-      (if (seq ids)
-        (let [item (get objects (first ids))]
+    (loop [shapes shapes data data]
+      (if (seq shapes)
+        (let [item (get objects (first shapes))]
           (if (= :group (:type item))
             (recur
-             (rest ids)
+             (rest shapes)
              (update-in data [:objects (:id item)]
                         (fn [{:keys [shapes] :as obj}]
                           (let [shapes (->> shapes
@@ -381,7 +378,7 @@
                                   (assoc $ :points (geom/shape->points $))
                                   (assoc $ :selrect (geom/points->selrect (:points $)))))
                               obj)))))
-            (recur (rest ids) data)))
+            (recur (rest shapes) data)))
         data))))
 
 (defmethod process-change :mov-objects
