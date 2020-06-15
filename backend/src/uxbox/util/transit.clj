@@ -2,17 +2,22 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.util.transit
   (:require
    [cognitect.transit :as t]
    [clojure.java.io :as io]
+   [linked.core :as lk]
    [uxbox.util.time :as dt]
    [uxbox.util.data :as data]
    [uxbox.common.geom.point :as gpt]
    [uxbox.common.geom.matrix :as gmt])
   (:import
+   linked.set.LinkedSet
    java.io.ByteArrayInputStream
    java.io.ByteArrayOutputStream
    java.io.File
@@ -42,14 +47,24 @@
 (def matrix-read-handler
   (t/read-handler gmt/map->Matrix))
 
+(def ordered-set-write-handler
+  (t/write-handler
+   (constantly "ordered-set")
+   (fn [v] (vec v))))
+
+(def ordered-set-read-handler
+  (t/read-handler #(into (lk/set) %)))
+
 (def +read-handlers+
   (assoc dt/+read-handlers+
          "matrix" matrix-read-handler
+         "ordered-set" ordered-set-read-handler
          "point" point-read-handler))
 
 (def +write-handlers+
   (assoc dt/+write-handlers+
          File file-write-handler
+         LinkedSet ordered-set-write-handler
          Matrix matrix-write-handler
          Point point-write-handler))
 

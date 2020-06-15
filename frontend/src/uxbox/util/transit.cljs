@@ -2,14 +2,20 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016-2017 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.util.transit
   "A lightweight abstraction for transit serialization."
-  (:require [cognitect.transit :as t]
-            [uxbox.common.geom.point :as gpt]
-            [uxbox.common.geom.matrix :as gmt]
-            [uxbox.util.time :as dt]))
+  (:require
+   [cognitect.transit :as t]
+   [linked.core :as lk]
+   [linked.set :as lks]
+   [uxbox.common.geom.point :as gpt]
+   [uxbox.common.geom.matrix :as gmt]
+   [uxbox.util.time :as dt]))
 
 (deftype Blob [content]
   IDeref
@@ -51,18 +57,28 @@
    (fn [value]
      (gmt/map->Matrix value))))
 
+(def ordered-set-write-handler
+  (t/write-handler
+   (constantly "ordered-set")
+   (fn [v] (vec v))))
+
+(def ordered-set-read-handler
+  (t/read-handler #(into (lk/set) %)))
+
 ;; --- Transit Handlers
 
 (def ^:privare +read-handlers+
   {"u" uuid
+   "ordered-set" ordered-set-read-handler
    "jsonblob" blob-read-handler
    "matrix" matrix-read-handler
    "point" point-read-handler})
 
 (def ^:privare +write-handlers+
-  {gmt/Matrix matrix-write-handler
-   Blob       blob-write-handler
-   gpt/Point point-write-handler})
+  {gmt/Matrix    matrix-write-handler
+   Blob          blob-write-handler
+   lks/LinkedSet ordered-set-write-handler
+   gpt/Point     point-write-handler})
 
 ;; --- Public Api
 

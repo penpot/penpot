@@ -27,6 +27,9 @@
 (s/def ::set-of-uuid
   (s/every uuid? :kind set?))
 
+(s/def ::ordered-set-of-uuid
+  (s/every uuid? :kind d/ordered-set?))
+
 (s/def ::set-of-string
   (s/every string? :kind set?))
 
@@ -128,7 +131,7 @@
 
 (defn select-shapes
   [ids]
-  (us/verify ::set-of-uuid ids)
+  (us/verify ::ordered-set-of-uuid ids)
   (ptk/reify ::select-shapes
     ptk/UpdateEvent
     (update [_ state]
@@ -147,9 +150,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-local #(-> %
-                                          (assoc :selected #{})
+                                          (assoc :selected (d/ordered-set))
                                           (dissoc :selected-frame))))))
-
 
 ;; --- Select Shapes (By selrect)
 
@@ -294,7 +296,7 @@
             selected (->> rchanges
                           (filter #(selected (:old-id %)))
                           (map #(get-in % [:obj :id]))
-                          (into #{}))]
+                          (into (d/ordered-set)))]
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
                (select-shapes selected))))))

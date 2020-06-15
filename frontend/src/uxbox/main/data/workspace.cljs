@@ -77,7 +77,7 @@
 (def workspace-default
   {:zoom 1
    :flags #{}
-   :selected #{}
+   :selected (d/ordered-set)
    :expanded {}
    :drawing nil
    :drawing-tool nil
@@ -505,7 +505,7 @@
                       :id id}]
 
         (rx/of (dwc/commit-changes [rchange] [uchange] {:commit-local? true})
-               (dws/select-shapes #{id})
+               (dws/select-shapes (d/ordered-set id))
                (when (= :text (:type attrs))
                  (start-edition-mode id)))))))
 
@@ -1155,7 +1155,7 @@
             selected (->> rchanges
                           (filter #(selected (:old-id %)))
                           (map #(get-in % [:obj :id]))
-                          (into #{}))]
+                          (into (d/ordered-set)))]
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
                (dws/select-shapes selected))))))
 
@@ -1273,7 +1273,7 @@
                 uchanges (conj uchanges {:type :del-obj :id id})]
 
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
-                   (dws/select-shapes #{id}))))))))
+                   (dws/select-shapes (d/ordered-set id)))))))))
 
 (def ungroup-selected
   (ptk/reify ::ungroup-selected

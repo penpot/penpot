@@ -8,10 +8,27 @@
   "Data manipulation and query helper functions."
   (:refer-clojure :exclude [concat read-string])
   (:require [clojure.set :as set]
+            [linked.set :as lks]
             #?(:cljs [cljs.reader :as r]
                :clj [clojure.edn :as r])
             #?(:cljs [cljs.core :as core]
-               :clj [clojure.core :as core])))
+               :clj [clojure.core :as core]))
+  #?(:clj
+     (:import linked.set.LinkedSet)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Data Structures
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn ordered-set
+  ([] lks/empty-linked-set)
+  ([a] (conj lks/empty-linked-set a))
+  ([a & xs] (apply conj lks/empty-linked-set a xs)))
+
+(defn ordered-set?
+  [o]
+  #?(:cljs (instance? lks/LinkedSet o)
+     :clj (instance? LinkedSet o)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Structures Manipulation
