@@ -43,7 +43,7 @@
 
     [:div.align-options
      [:div.align-group
-       [:div.align-button.tooltip.tooltip-bottom
+       [:div.align-button.tooltip.tooltip-bottom-right
         {:alt (t locale "workspace.align.hleft")
          :class (when disabled "disabled")
          :on-click #(on-align-button-clicked :hleft)}
@@ -86,7 +86,7 @@
          :on-click #(on-align-button-clicked :vbottom)}
         i/shape-valign-bottom]
 
-       [:div.align-button.tooltip.tooltip-bottom
+       [:div.align-button.tooltip.tooltip-bottom-left
         {:alt (t locale "workspace.align.vdistribute")
          :class (when disabled-distribute "disabled")
          :on-click #(on-distribute-button-clicked :vertical)}

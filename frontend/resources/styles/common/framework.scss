@@ -927,7 +927,6 @@ input[type=range]:focus::-ms-fill-upper {
   position: relative;
 
   &:hover {
-
     &::after {
       background-color: $color-white;
       border-radius: $br-small;
@@ -944,52 +943,56 @@ input[type=range]:focus::-ms-fill-upper {
       z-index: 20;
       @include animation(.3s,.6s,fadeIn);
     }
-
   }
 
   &.tooltip-bottom {
-
     &:hover {
-
       &::after {
         left: -100%;
         top: 130%;
       }
-
     }
+  }
 
+  &.tooltip-bottom-right {
+    &:hover {
+      &::after {
+        left: 0;
+        top: 130%;
+      }
+    }
+  }
+
+  &.tooltip-bottom-left {
+    &:hover {
+      &::after {
+        left: unset;
+        right: 0;
+        top: 130%;
+      }
+    }
   }
 
   &.tooltip-top {
-
     &:hover {
-
       &::after {
         top: -165%;
         left: -60%;
       }
-
     }
-
   }
 
  &.tooltip-right {
-
     &:hover {
-
       &::after {
         top: 15%;
         left: 120%;
       }
-
     }
-
   }
 
   &.tooltip-hover {
-
     &:hover {
-
       &::after {
         align-items: center;
         background-color: $color-white;
