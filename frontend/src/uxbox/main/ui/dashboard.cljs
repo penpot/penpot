@@ -15,6 +15,7 @@
    [uxbox.common.exceptions :as ex]
    [uxbox.common.uuid :as uuid]
    [uxbox.common.spec :as us]
+   [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
    [uxbox.main.ui.dashboard.sidebar :refer [sidebar]]
    [uxbox.main.ui.dashboard.search :refer [search-page]]
@@ -22,6 +23,7 @@
    [uxbox.main.ui.dashboard.recent-files :refer [recent-files-page]]
    [uxbox.main.ui.dashboard.library :refer [library-page]]
    [uxbox.main.ui.dashboard.profile :refer [profile-section]]
+   [uxbox.util.router :as rt]
    [uxbox.util.i18n :as i18n :refer [t]]))
 
 (defn ^boolean uuid-str?
@@ -62,11 +64,13 @@
   (let [profile (mf/deref refs/profile)
         page (get-in route [:data :name])
         {:keys [search-term team-id project-id library-id library-section] :as params}
-        (parse-params route profile)]
+          (parse-params route profile)]
     [:*
      [:& global-notifications {:profile profile}]
      [:section.dashboard-layout
-      [:div.main-logo i/logo-icon]
+      [:div.main-logo
+        [:a {:on-click #(st/emit! (rt/nav :dashboard-team {:team-id team-id}))}
+         i/logo-icon]]
       [:& profile-section {:profile profile}]
       [:& sidebar {:team-id team-id
                    :project-id project-id
