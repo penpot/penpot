@@ -9,6 +9,7 @@
   expound/expound {:mvn/version "0.8.4"}
 
   danlentz/clj-uuid {:mvn/version "0.1.9"}
+  frankiesardo/linked {:mvn/version "1.3.0"}
 
   funcool/beicon {:mvn/version "2020.05.08-2"}
   funcool/cuerdas {:mvn/version "2020.03.26-3"}

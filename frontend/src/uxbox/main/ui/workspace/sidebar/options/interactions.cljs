@@ -10,12 +10,13 @@
 (ns uxbox.main.ui.workspace.sidebar.options.interactions
   (:require
    [rumext.alpha :as mf]
-   [uxbox.main.ui.icons :as i]
+   [uxbox.common.data :as d]
    [uxbox.common.pages-helpers :as cph]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.components.dropdown :refer [dropdown]]
+   [uxbox.main.ui.icons :as i]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t]]))
 
@@ -36,7 +37,7 @@
         show-frames-dropdown? (mf/use-state false)
 
         on-set-blur #(reset! show-frames-dropdown? false)
-        on-navigate #(st/emit! (dw/select-shapes #{(:id destination)}))
+        on-navigate #(st/emit! (dw/select-shapes (d/ordered-set (:id destination))))
 
         on-select-destination
         (fn [dest]

@@ -43,6 +43,7 @@
   lambdaisland/uri {:mvn/version "1.3.45"
                     :exclusions [org.clojure/data.json]}
 
+  frankiesardo/linked {:mvn/version "1.3.0"}
   danlentz/clj-uuid {:mvn/version "0.1.9"}
   org.jsoup/jsoup {:mvn/version "1.13.1"}
   org.im4java/im4java {:mvn/version "1.4.0"}

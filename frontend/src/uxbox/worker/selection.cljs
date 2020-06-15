@@ -11,6 +11,7 @@
   (:require
    [cljs.spec.alpha :as s]
    [okulary.core :as l]
+   [uxbox.common.data :as d]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.geom.shapes :as geom]
    [uxbox.common.pages :as cp]
@@ -57,9 +58,10 @@
                           (= frame-id (:frame-id shape)))
                       (geom/overlaps? shape rect)))]
 
-      (into #{} (comp (map #(unchecked-get % "data"))
-                      (filter matches?)
-                      (map :id))
+      (into (d/ordered-set)
+            (comp (map #(unchecked-get % "data"))
+                  (filter matches?)
+                  (map :id))
             result))))
 
 (defn- create-index
