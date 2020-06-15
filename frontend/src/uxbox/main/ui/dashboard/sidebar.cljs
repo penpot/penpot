@@ -33,30 +33,47 @@
 
 (mf/defc sidebar-project
   [{:keys [id name selected? team-id] :as props}]
-  (let [local (mf/use-state {:name name})
+  (let [dashboard-local @refs/dashboard-local
+        project-for-edit (:project-for-edit dashboard-local)
+        local (mf/use-state {:name name
+                             :editing (= id project-for-edit)})
         editable? (not (nil? id))
+        edit-input-ref (mf/use-ref)
+
         on-click #(st/emit! (rt/nav :dashboard-project {:team-id team-id :project-id id}))
-        on-dbl-click #(when editable? (swap! local assoc :edit true))
+        on-dbl-click #(when editable? (swap! local assoc :editing true))
         on-input #(as-> % $
                     (dom/get-target $)
                     (dom/get-value $)
                     (swap! local assoc :name $))
-        on-cancel #(swap! local assoc :edit false :name name)
+        on-cancel #(do
+                     (st/emit! dsh/clear-project-for-edit)
+                     (swap! local assoc :editing false :name name))
         on-keyup #(cond
                     (kbd/esc? %)
                     (on-cancel)
 
                     (kbd/enter? %)
                     (let [name (-> % dom/get-target dom/get-value)]
+                      (st/emit! dsh/clear-project-for-edit)
                       (st/emit! (dsh/rename-project id name))
-                      (swap! local assoc :edit false)))]
+                      (swap! local assoc :editing false)))]
+
+    (mf/use-effect
+      (mf/deps (:editing @local))
+      #(when (:editing @local)
+         (let [edit-input (mf/ref-val edit-input-ref)]
+           (dom/focus! edit-input)
+           (dom/select-text! edit-input))
+         nil))
 
     [:li {:on-click on-click
           :on-double-click on-dbl-click
           :class-name (when selected? "current")}
-     (if (:edit @local)
+     (if (:editing @local)
        [:div.edit-wrapper
         [:input.element-title {:value (:name @local)
+                               :ref edit-input-ref
                                :on-change on-input
                                :on-key-down on-keyup}]
         [:span.close {:on-click on-cancel} i/close]]
@@ -143,7 +160,7 @@
         (fn [event]
           (let [target (dom/get-target event)
                 value (dom/get-value target)]
-            (.select target)
+            (dom/select-text! target)
             (if (empty? value)
               (debounced-emit! (rt/nav :dashboard-search {:team-id team-id} {}))
               (debounced-emit! (rt/nav :dashboard-search {:team-id team-id} {:search-term value})))))
@@ -158,7 +175,7 @@
         (fn [event]
           (let [search-input (dom/get-element "search-input")]
             (dom/clean-value! search-input)
-            (.focus search-input)
+            (dom/focus! search-input)
             (debounced-emit! (rt/nav :dashboard-search {:team-id team-id} {}))))]
 
     [:div.library-bar
