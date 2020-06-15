@@ -32,6 +32,11 @@
 (def profile
   (l/derived :profile st/state))
 
+;; ---- Dashboard refs
+
+(def dashboard-local
+  (l/derived :dashboard-local st/state))
+
 ;; ---- Workspace refs
 
 (def workspace-local

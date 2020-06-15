@@ -81,6 +81,7 @@
     (update [_ state]
       (let [profile (:profile state)]
         (update state :dashboard-local assoc
+                :project-for-edit nil
                 :team-id (:default-team-id profile)
                 :project-id (:default-project-id profile))))
 
@@ -98,6 +99,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (update state :dashboard-local assoc
+              :project-for-edit nil
               :project-id nil
               :team-id team-id))
 
@@ -116,6 +118,7 @@
      ptk/UpdateEvent
      (update [_ state]
        (update state :dashboard-local assoc
+               :project-for-edit nil
                :team-id team-id
                :project-id project-id))
 
@@ -242,7 +245,7 @@
 (def create-project
   (ptk/reify ::create-project
     ptk/WatchEvent
-    (watch [this state stream]
+    (watch [_ state stream]
       (let [name (str "New Project " (gensym "p"))
             team-id (get-in state [:dashboard-local :team-id])]
         (->> (rp/mutation! :create-project {:name name :team-id team-id})
@@ -253,8 +256,20 @@
   (us/verify ::project data)
   (ptk/reify ::project-created
     ptk/UpdateEvent
-    (update [this state]
-      (update state :projects assoc (:id data) data))))
+    (update [_ state]
+      (-> state
+        (update :projects assoc (:id data) data)
+        (update :dashboard-local assoc :project-for-edit (:id data))))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (rt/nav :dashboard-project {:team-id (:team-id data) :project-id (:id data)})))))
+
+(def clear-project-for-edit
+  (ptk/reify ::clear-project-for-edit
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:dashboard-local :project-for-edit] nil))))
 
 ;; --- Rename Project
 
@@ -343,7 +358,7 @@
   (us/verify ::file data)
   (ptk/reify ::file-created
     ptk/UpdateEvent
-    (update [this state]
+    (update [_ state]
       (let [project-id (:project-id data)
             file-id (:id data)
             recent-project-files (get-in state [:recent-file-ids project-id] [])]

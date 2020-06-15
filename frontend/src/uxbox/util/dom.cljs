@@ -104,6 +104,10 @@
   [node]
   (set! (.-value node) ""))
 
+(defn select-text!
+  [node]
+  (.select node))
+
 (defn ^boolean equals?
   [node-a node-b]
   (.isEqualNode node-a node-b))
