@@ -28,6 +28,7 @@
 (mf/defc page-item
   [{:keys [page index deletable? selected?] :as props}]
   (let [local (mf/use-state {})
+        edit-input-ref (mf/use-ref)
 
         on-double-click
         (fn [event]
@@ -70,6 +71,13 @@
                               :index index
                               :name (:name page)})]
 
+    (mf/use-effect
+      (mf/deps (:edition @local))
+      #(when (:edition @local)
+         (let [edit-input (mf/ref-val edit-input-ref)]
+           (dom/select-text! edit-input))
+         nil))
+
     [:li {:class (dom/classnames
                   :selected selected?
                   :dnd-over-top (= (:over dprops) :top)
@@ -83,6 +91,7 @@
       (if (:edition @local)
         [:*
          [:input.element-name {:type "text"
+                               :ref edit-input-ref
                                :on-blur on-blur
                                :on-key-down on-key-down
                                :auto-focus true

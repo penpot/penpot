@@ -51,6 +51,7 @@
 (mf/defc layer-name
   [{:keys [shape] :as props}]
   (let [local (mf/use-state {})
+        edit-input-ref (mf/use-ref)
         on-blur (fn [event]
                   (let [target (dom/event->target event)
                         parent (.-parentNode target)
@@ -68,9 +69,18 @@
                          parent (.-parentNode parent)]
                      (set! (.-draggable parent) false))
                    (swap! local assoc :edition true))]
+
+    (mf/use-effect
+      (mf/deps (:edition @local))
+      #(when (:edition @local)
+         (let [edit-input (mf/ref-val edit-input-ref)]
+           (dom/select-text! edit-input))
+         nil))
+
     (if (:edition @local)
       [:input.element-name
        {:type "text"
+        :ref edit-input-ref
         :on-blur on-blur
         :on-key-down on-key-down
         :auto-focus true
