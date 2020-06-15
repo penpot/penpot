@@ -197,25 +197,24 @@
   fit."
   [objects names ids delta]
   (loop [names names
-         chgs []
-         id   (first ids)
-         ids  (rest ids)]
-    (if (nil? id)
-      chgs
-      (let [result (prepare-duplicate-change objects names id delta)
+         ids   (seq ids)
+         chgs  []]
+    (if ids
+      (let [id     (first ids)
+            result (prepare-duplicate-change objects names id delta)
             result (if (vector? result) result [result])]
         (recur
          (into names (map change->name) result)
-         (into chgs result)
-         (first ids)
-         (rest ids))))))
+         (next ids)
+         (into chgs result)))
+      chgs)))
 
 (defn- prepare-duplicate-change
   [objects names id delta]
   (let [obj (get objects id)]
     (if (= :frame (:type obj))
       (prepare-duplicate-frame-change objects names obj delta)
-      (prepare-duplicate-shape-change objects names obj delta nil nil))))
+      (prepare-duplicate-shape-change objects names obj delta (:frame-id obj) (:parent-id obj)))))
 
 (defn- prepare-duplicate-shape-change
   [objects names obj delta frame-id parent-id]
@@ -223,7 +222,7 @@
         name (generate-unique-name names (:name obj))
         renamed-obj (assoc obj :id id :name name)
         moved-obj (geom/move renamed-obj delta)
-        frames (cph/select-frames objects)
+        frames   (cph/select-frames objects)
         frame-id (if frame-id
                    frame-id
                    (dwc/calculate-frame-overlap frames moved-obj))
@@ -283,11 +282,11 @@
   (ptk/reify ::duplicate-selected
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-id (:current-page-id state)
+      (let [page-id  (:current-page-id state)
             selected (get-in state [:workspace-local :selected])
-            objects (get-in state [:workspace-data page-id :objects])
-            delta (gpt/point 0 0)
-            unames (retrieve-used-names objects)
+            objects  (get-in state [:workspace-data page-id :objects])
+            delta    (gpt/point 0 0)
+            unames   (retrieve-used-names objects)
 
             rchanges (prepare-duplicate-changes objects unames selected delta)
             uchanges (mapv #(array-map :type :del-obj :id (:id %))
