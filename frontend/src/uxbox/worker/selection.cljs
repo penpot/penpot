@@ -12,12 +12,13 @@
    [cljs.spec.alpha :as s]
    [okulary.core :as l]
    [uxbox.common.exceptions :as ex]
-   [uxbox.common.spec :as us]
-   [uxbox.common.pages :as cp]
-   [uxbox.common.uuid :as uuid]
-   [uxbox.worker.impl :as impl]
    [uxbox.common.geom.shapes :as geom]
-   [uxbox.util.quadtree :as qdt]))
+   [uxbox.common.pages :as cp]
+   [uxbox.common.pages-helpers :as cph]
+   [uxbox.common.spec :as us]
+   [uxbox.common.uuid :as uuid]
+   [uxbox.util.quadtree :as qdt]
+   [uxbox.worker.impl :as impl]))
 
 (defonce state (l/atom {}))
 
@@ -63,7 +64,7 @@
 
 (defn- create-index
   [objects]
-  (let [shapes (->> (cp/select-toplevel-shapes objects {:include-frames? true})
+  (let [shapes (->> (cph/select-toplevel-shapes objects {:include-frames? true})
                     (map #(merge % (select-keys % [:x :y :width :height]))))
         bounds (geom/selection-rect shapes)
         bounds #js {:x (:x bounds)

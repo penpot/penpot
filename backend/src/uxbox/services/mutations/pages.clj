@@ -13,7 +13,7 @@
    [uxbox.common.data :as d]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.pages :as cp]
-   [uxbox.common.migrations :as mg]
+   [uxbox.common.pages-migrations :as pmg]
    [uxbox.common.spec :as us]
    [uxbox.common.uuid :as uuid]
    [uxbox.config :as cfg]
@@ -177,12 +177,11 @@
               :context {:incoming-revn (:revn params)
                         :stored-revn (:revn page)}))
   (let [sid      (:session-id params)
-        changes  (->> (:changes params)
-                      (mapv #(assoc % :session-id sid)))
+        changes   (:changes params)
 
         page (-> page
                  (update :data blob/decode)
-                 (update :data mg/migrate-data)
+                 (update :data pmg/migrate-data)
                  (update :data cp/process-changes changes)
                  (update :data blob/encode)
                  (update :revn inc)

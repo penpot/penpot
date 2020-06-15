@@ -11,7 +11,7 @@
   (:require
    [rumext.alpha :as mf]
    [uxbox.main.ui.icons :as i]
-   [uxbox.common.pages :as cp]
+   [uxbox.common.pages-helpers :as cph]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
@@ -31,7 +31,7 @@
 
         destination (get objects (:destination interaction))
         frames      (mf/use-memo (mf/deps objects)
-                                 #(cp/select-frames objects))
+                                 #(cph/select-frames objects))
 
         show-frames-dropdown? (mf/use-state false)
 

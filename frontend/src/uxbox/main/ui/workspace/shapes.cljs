@@ -54,17 +54,17 @@
       (and (identical? n-shape o-shape)
            (identical? n-frame o-frame)))))
 
-(defn use-mouse-over
+(defn use-mouse-enter
   [{:keys [id] :as shape}]
   (mf/use-callback
-   (mf/deps shape)
+   (mf/deps id)
    (fn []
      (st/emit! (dws/change-hover-state id true)))))
 
-(defn use-mouse-out
+(defn use-mouse-leave
   [{:keys [id] :as shape}]
   (mf/use-callback
-   (mf/deps shape)
+   (mf/deps id)
    (fn []
      (st/emit! (dws/change-hover-state id false)))))
 
@@ -78,14 +78,19 @@
         opts #js {:shape shape
                   :frame frame}
         alt? (mf/use-state false)
-        on-mouse-over (use-mouse-over shape)
-        on-mouse-out (use-mouse-out shape)]
+        on-mouse-enter (use-mouse-enter shape)
+        on-mouse-leave (use-mouse-leave shape)]
 
     (hooks/use-stream ms/keyboard-alt #(reset! alt? %))
 
+    (mf/use-effect
+     (fn []
+       (fn []
+         (on-mouse-leave))))
+
     (when (and shape (not (:hidden shape)))
-      [:g.shape-wrapper {:on-mouse-over on-mouse-over
-                         :on-mouse-out on-mouse-out
+      [:g.shape-wrapper {:on-mouse-enter on-mouse-enter
+                         :on-mouse-leave on-mouse-leave
                          :style {:cursor (if @alt? cur/duplicate nil)}}
        (case (:type shape)
          :curve [:> path/path-wrapper opts]

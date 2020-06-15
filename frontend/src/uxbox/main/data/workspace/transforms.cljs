@@ -17,6 +17,7 @@
    [uxbox.common.data :as d]
    [uxbox.common.spec :as us]
    [uxbox.common.pages :as cp]
+   [uxbox.common.pages-helpers :as cph]
    [uxbox.main.data.workspace.common :as dwc]
    [uxbox.main.data.workspace.selection :as dws]
    [uxbox.main.refs :as refs]
@@ -346,7 +347,7 @@
                                (or recurse-frames? (not (= :frame (:type shape))))))
 
              ;; ID's + Children but remove frame children if the flag is set to false
-             ids-with-children (concat ids (mapcat #(cp/get-children % objects)
+             ids-with-children (concat ids (mapcat #(cph/get-children % objects)
                                                    (filter not-frame-id? ids)))
 
              ;; For each shape updates the modifiers given as arguments
@@ -391,7 +392,7 @@
 
            (let [objects (get-in state [:workspace-data page-id :objects])
                  id->obj #(get objects %)
-                 get-children (fn [shape] (map id->obj (cp/get-children (:id shape) objects)))
+                 get-children (fn [shape] (map id->obj (cph/get-children (:id shape) objects)))
                  shapes (concat shapes (mapcat get-children shapes))]
              (rotate-around-center state delta-rotation center shapes))))))))
 
@@ -408,7 +409,7 @@
             objects (get-in state [:workspace-data page-id :objects])
 
             ;; ID's + Children
-            ids-with-children (concat ids (mapcat #(cp/get-children % objects) ids))
+            ids-with-children (concat ids (mapcat #(cph/get-children % objects) ids))
 
             ;; For each shape applies the modifiers by transforming the objects
             update-shape

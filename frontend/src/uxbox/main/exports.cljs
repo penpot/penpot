@@ -13,6 +13,7 @@
    [rumext.alpha :as mf]
    [uxbox.common.uuid :as uuid]
    [uxbox.common.pages :as cp]
+   [uxbox.common.pages-helpers :as cph]
    [uxbox.common.math :as mth]
    [uxbox.common.geom.shapes :as geom]
    [uxbox.common.geom.point :as gpt]
@@ -39,7 +40,7 @@
 
 (defn- calculate-dimensions
   [{:keys [objects] :as data} vport]
-  (let [shapes (cp/select-toplevel-shapes objects {:include-frames? true})]
+  (let [shapes (cph/select-toplevel-shapes objects {:include-frames? true})]
     (->> (geom/selection-rect shapes)
          (geom/adjust-to-viewport vport)
          (geom/fix-invalid-rect-values))))
@@ -132,7 +133,7 @@
 
         frame-id (:id frame)
 
-        modifier-ids (concat [frame-id] (cp/get-children frame-id objects))
+        modifier-ids (concat [frame-id] (cph/get-children frame-id objects))
         update-fn #(assoc-in %1 [%2 :modifiers :displacement] modifier)
         objects (reduce update-fn objects modifier-ids)
         frame (assoc-in frame [:modifiers :displacement] modifier)

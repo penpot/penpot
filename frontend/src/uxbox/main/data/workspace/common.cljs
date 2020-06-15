@@ -15,6 +15,7 @@
    [potok.core :as ptk]
    [uxbox.common.data :as d]
    [uxbox.common.pages :as cp]
+   [uxbox.common.pages-helpers :as cph]
    [uxbox.common.spec :as us]
    [uxbox.common.uuid :as uuid]
    [uxbox.main.worker :as uw]
@@ -202,8 +203,8 @@
       (let [page-id (get-in state [:workspace-page :id])
             objects (get-in state [:workspace-data page-id :objects])
 
-            shapes (cp/select-toplevel-shapes objects)
-            frames (cp/select-frames objects)
+            shapes (cph/select-toplevel-shapes objects)
+            frames (cph/select-frames objects)
 
             [rch uch] (calculate-shape-to-frame-relationship-changes frames shapes)]
         (when-not (empty? rch)
@@ -212,7 +213,7 @@
 
 (defn get-frame-at-point
   [objects point]
-  (let [frames (cp/select-frames objects)]
+  (let [frames (cph/select-frames objects)]
     (loop [frame (first frames)
            rest (rest frames)]
       (d/seek #(geom/has-point? % point) frames))))
@@ -306,7 +307,7 @@
       (let [expand-fn (fn [expanded]
                         (merge expanded
                           (->> ids
-                               (map #(cp/get-all-parents % objects))
+                               (map #(cph/get-parents % objects))
                                flatten
                                (filter #(not= % uuid/zero))
                                (map (fn [id] {id true}))
