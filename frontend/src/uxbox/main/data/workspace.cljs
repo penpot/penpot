@@ -748,23 +748,33 @@
   (ptk/reify ::vertical-order-selected-shpes
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-id (:current-page-id state)
-            objects (get-in state [:workspace-data page-id :objects])
-            selected (seq (get-in state [:workspace-local :selected]))
-
+      (let [page-id  (:current-page-id state)
+            objects  (get-in state [:workspace-data page-id :objects])
+            selected (get-in state [:workspace-local :selected])
             rchanges (mapv (fn [id]
-                             (let [frame-id (get-in objects [id :frame-id])]
-                               {:type :mod-obj
-                                :id frame-id
-                                :operations [{:type :rel-order :id id :loc loc}]}))
+                             (let [obj (get objects id)
+                                   parent (get objects (:parent-id obj))
+                                   shapes (:shapes parent)
+                                   cindex (d/index-of shapes id)
+                                   nindex (case loc
+                                            :top (count shapes)
+                                            :down (max 0 (- cindex 1))
+                                            :up (min (count shapes) (+ (inc cindex) 1))
+                                            :bottom 0)]
+                               {:type :mov-objects
+                                :parent-id (:parent-id obj)
+                                :frame-id (:frame-id obj)
+                                :index nindex
+                                :shapes [id]}))
                            selected)
-            uchanges (mapv (fn [id]
-                             (let [frame-id (get-in objects [id :frame-id])
-                                   shapes (get-in objects [frame-id :shapes])
-                                   cindex (d/index-of shapes id)]
-                               {:type :mod-obj
-                                :id frame-id
-                                :operations [{:type :abs-order :id id :index cindex}]}))
+
+             uchanges (mapv (fn [id]
+                             (let [obj (get objects id)]
+                               {:type :mov-objects
+                                :parent-id (:parent-id obj)
+                                :frame-id (:frame-id obj)
+                                :shapes [id]
+                                :index (cph/position-on-parent id objects)}))
                            selected)]
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 

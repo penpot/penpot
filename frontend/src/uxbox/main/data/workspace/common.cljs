@@ -76,24 +76,25 @@
   [ma mb]
   (let [ma-keys (set (keys ma))
         mb-keys (set (keys mb))
-        added (set/difference mb-keys ma-keys)
+        added   (set/difference mb-keys ma-keys)
         removed (set/difference ma-keys mb-keys)
-        both (set/intersection ma-keys mb-keys)]
+        both    (set/intersection ma-keys mb-keys)]
     (d/concat
      (mapv #(array-map :type :set :attr % :val (get mb %)) added)
      (mapv #(array-map :type :set :attr % :val nil) removed)
-     (loop [k (first both)
-            r (rest both)
-            rs []]
-       (if k
-         (let [vma (get ma k)
+     (loop [items  (seq both)
+            result []]
+       (if items
+         (let [k   (first items)
+               vma (get ma k)
                vmb (get mb k)]
            (if (= vma vmb)
-             (recur (first r) (rest r) rs)
-             (recur (first r) (rest r) (conj rs {:type :set
-                                                 :attr k
-                                                 :val vmb}))))
-         rs)))))
+             (recur (next items) result)
+             (recur (next items)
+                    (conj result {:type :set
+                                  :attr k
+                                  :val vmb}))))
+         result)))))
 
 (defn- generate-changes
   [prev curr]
