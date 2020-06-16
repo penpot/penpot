@@ -255,15 +255,17 @@
 (declare transform-shape-point)
 
 (defn shape->points [shape]
-  (let [points
-        (case (:type shape)
-          (:curve :path) (:segments shape)
-          (let [{:keys [x y width height]} shape]
-            [(gpt/point x y)
-             (gpt/point (+ x width) y)
-             (gpt/point (+ x width) (+ y height))
-             (gpt/point x (+ y height))]))]
-    (mapv #(transform-shape-point % shape (:transform shape (gmt/matrix))) points)))
+  (let [points (case (:type shape)
+                 (:curve :path) (:segments shape)
+                 (let [{:keys [x y width height]} shape]
+                   [(gpt/point x y)
+                    (gpt/point (+ x width) y)
+                    (gpt/point (+ x width) (+ y height))
+                    (gpt/point x (+ y height))]))]
+    (->> points
+         (map #(transform-shape-point % shape (:transform shape (gmt/matrix))))
+         (map gpt/round)
+         (vec))))
 
 (defn points->selrect [points]
   (let [minx (transduce (map :x) min ##Inf points)
@@ -756,8 +758,10 @@
 
         new-shape (as-> shape $
                     (merge  $ rec)
-                    (update $ :x #(mth/precision % 2))
-                    (update $ :y #(mth/precision % 2))
+                    (update $ :x #(mth/precision % 0))
+                    (update $ :y #(mth/precision % 0))
+                    (update $ :width #(mth/precision % 0))
+                    (update $ :height #(mth/precision % 0))
                     (fix-invalid-rect-values $)
                     (update $ :transform #(gmt/multiply (or % (gmt/matrix)) stretch-matrix))
                     (update $ :transform-inverse #(gmt/multiply stretch-matrix-inverse (or % (gmt/matrix))))
@@ -766,7 +770,6 @@
                     (update $ :rotation #(mod (+ % (get-in $ [:modifiers :rotation] 0)) 360))
 
                     )]
-
     new-shape))
 
 (declare update-path-selrect)

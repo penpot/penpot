@@ -28,6 +28,8 @@
   [shape]
   (let [shape (gsh/transform-shape shape)
         shape-center (gsh/center shape)]
-    (case (:type shape)
-      :frame (-> shape gsh/shape->rect-shape frame-snap-points)
-      (into #{shape-center} (-> shape :points)))))
+    (if (= :frame (:type shape))
+      (-> shape
+          (gsh/shape->rect-shape)
+          (frame-snap-points))
+      (into #{shape-center} (:points shape)))))

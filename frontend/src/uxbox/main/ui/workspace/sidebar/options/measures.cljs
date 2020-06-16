@@ -73,7 +73,6 @@
         on-pos-x-change #(on-position-change % :x)
         on-pos-y-change #(on-position-change % :y)
         select-all #(-> % (dom/get-target) (.select))]
-
     [:div.element-set
      [:div.element-set-content
 
