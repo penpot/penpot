@@ -98,8 +98,8 @@
 (defn precision
   [v n]
   (when (and (number? v) (number? n))
-    #?(:cljs (js/parseFloat (.toFixed v n))
-       :clj (.. (BigDecimal/valueOf v) (setScale n java.math.RoundingMode/HALF_UP) (doubleValue)))))
+    (let [d (pow 10 n)]
+      (/ (round (* v d)) d))))
 
 (defn radians
   "Converts degrees to radians."

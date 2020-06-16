@@ -31,9 +31,9 @@
                              (map #(vector % (:id shape)) points))
 
                            ;; The grid points are only added by the "root" of the coord-dat
-                           (if (= (:id shape) frame-id)
-                            (let [points (gg/grid-snap-points shape coord)]
-                              (map #(vector % :layout) points))))))
+                           (when (= (:id shape) frame-id)
+                             (let [points (gg/grid-snap-points shape coord)]
+                               (map #(vector % :layout) points))))))
         into-tree (fn [tree [point _ :as data]]
                     (rt/insert tree (coord point) data))]
     (->> shapes
@@ -48,9 +48,10 @@
                           (group-by :frame-id))
         frame-shapes (->> (cph/select-frames objects)
                           (reduce #(update %1 (:id %2) conj %2) frame-shapes))]
+
     (d/mapm (fn [frame-id shapes] {:x (create-coord-data frame-id shapes :x)
-                                 :y (create-coord-data frame-id shapes :y)})
-          frame-shapes)))
+                                   :y (create-coord-data frame-id shapes :y)})
+            frame-shapes)))
 
 (defn- log-state
   "Helper function to print a friendly version of the snap tree. Debugging purposes"
@@ -74,7 +75,7 @@
               (index-page state id objects)))]
     (swap! state #(reduce process-page % pages)))
 
-  #_(log-state)
+  ;; (log-state)
   ;; Return nil so the worker will not answer anything back
   nil)
 
@@ -82,7 +83,7 @@
   [{:keys [page-id objects] :as message}]
   ;; TODO: Check the difference and update the index acordingly
   (swap! state index-page page-id objects)
-  #_(log-state)
+  ;; (log-state)
   nil)
 
 (defmethod impl/handler :snaps/range-query
@@ -95,4 +96,5 @@
          (mapcat calculate-range)
          set ;; unique
          (into []))))
+
 

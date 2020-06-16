@@ -1,4 +1,4 @@
-/* 
+/*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -10,7 +10,7 @@
  */
 
 /*
- * Balanced Binary Search Tree based on the red-black BST 
+ * Balanced Binary Search Tree based on the red-black BST
  * described at "Algorithms" by Robert Sedwick & Kevin Wayne
  */
 "use strict";
@@ -27,7 +27,7 @@ goog.scope(function() {
         RED: 1,
         BLACK: 2
     }
-     
+
     class Node {
         constructor(value, data) {
             this.value = value;
@@ -37,7 +37,7 @@ goog.scope(function() {
             this.color = Color.BLACK;
         }
     }
-    
+
     // Will store a map from key to list of data
     //   value => [ data ]
     // The values can be queried in range and the data stored will be retrived whole
@@ -46,13 +46,13 @@ goog.scope(function() {
         constructor() {
             this.root = null;
         }
-     
+
         insert(value, data) {
             this.root = recInsert(this.root, value, data);
             this.root.color = Color.BLACK;
             return this;
         }
-     
+
         remove(value, data) {
             if (!this.root) {
                 return this;
@@ -76,16 +76,16 @@ goog.scope(function() {
 
             return this;
         }
-    
+
         update (value, oldData, newData) {
             this.root = recUpdate(this.root, value, oldData, newData);
             return this;
         }
-    
+
         get(value) {
             return recGet(this.root, value);
         }
-    
+
         rangeQuery (fromValue, toValue) {
             return recRangeQuery(this.root, fromValue, toValue, []);
         }
@@ -227,7 +227,7 @@ goog.scope(function() {
             return recGet(branch.right, value);
         }
     }
-    
+
     function recUpdate(branch, value, oldData, newData) {
         if (branch === null) {
             return branch;

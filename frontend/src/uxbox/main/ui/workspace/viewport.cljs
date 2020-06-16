@@ -50,7 +50,7 @@
 (mf/defc coordinates
   []
   (let [coords (some-> (hooks/use-rxsub ms/mouse-position)
-                       (gpt/round 0))]
+                       (gpt/round))]
     [:ul.coordinates
      [:span {:alt "x"}
       (str "X: " (:x coords "-"))]
@@ -290,12 +290,13 @@
                 ]
             (-> (gpt/subtract pt brect)
                 (gpt/divide (gpt/point @refs/selected-zoom))
-                (gpt/add box))))
+                (gpt/add box)
+                (gpt/round 0))))
 
         on-mouse-move
         (fn [event]
           (let [event (.getBrowserEvent event)
-                pt (gpt/point (.-clientX event) (.-clientY event))
+                pt (dom/get-client-position event)
                 pt (translate-point-to-viewport pt)
                 delta (gpt/point (.-movementX event)
                                  (.-movementY event))]
@@ -457,7 +458,13 @@
       (when (contains? layout :display-grid)
         [:& frame-grid {:zoom zoom}])
 
-      [:& snap-points {:layout layout}]
+      [:& snap-points {:layout layout
+                       :transform (:transform local)
+                       :drawing (:drawing local)
+                       :zoom zoom
+                       :page-id (:id page)
+                       :selected selected}]
+
       [:& snap-distances {:layout layout}]
 
       (when tooltip

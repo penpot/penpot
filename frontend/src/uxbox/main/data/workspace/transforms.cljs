@@ -211,7 +211,7 @@
              (rx/filter #(> % 1))
              (rx/take 1)
              (rx/with-latest vector ms/mouse-position-alt)
-             (rx/flat-map
+             (rx/mapcat
               (fn [[_ alt?]]
                 (if alt?
                   ;; When alt is down we start a duplicate+move
@@ -242,15 +242,16 @@
      (watch [_ state stream]
        (let [page-id (get state :current-page-id)
              objects (get-in state [:workspace-data page-id :objects])
-             ids (if (nil? ids) (get-in state [:workspace-local :selected]) ids)
-             shapes (mapv #(get-in state [:workspace-data page-id :objects %]) ids)
+             ids     (if (nil? ids) (get-in state [:workspace-local :selected]) ids)
+             shapes  (mapv #(get objects %) ids)
              stopper (rx/filter ms/mouse-up? stream)
-             layout (get state :workspace-layout)]
+             layout  (get state :workspace-layout)]
          (rx/concat
           (->> ms/mouse-position
                (rx/take-until stopper)
                (rx/map #(gpt/to-vec from-position %))
                (rx/switch-map #(snap/closest-snap-move page-id shapes objects layout %))
+               (rx/map #(gpt/round % 0))
                (rx/map gmt/translate-matrix)
                (rx/map #(set-modifiers ids {:displacement %})))
 

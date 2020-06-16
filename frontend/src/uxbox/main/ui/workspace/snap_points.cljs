@@ -9,7 +9,8 @@
 
 (def ^:private line-color "#D383DA")
 
-(mf/defc snap-point [{:keys [point zoom]}]
+(mf/defc snap-point
+  [{:keys [point zoom]}]
   (let [{:keys [x y]} point
         cross-width (/ 3 zoom)]
     [:g
@@ -24,7 +25,8 @@
              :y2 (- y cross-width)
              :style {:stroke line-color :stroke-width (str (/ 1 zoom))}}]]))
 
-(mf/defc snap-line [{:keys [snap point zoom]}]
+(mf/defc snap-line
+  [{:keys [snap point zoom]}]
   [:line {:x1 (:x snap)
           :y1 (:y snap)
           :x2 (:x point)
@@ -32,7 +34,8 @@
           :style {:stroke line-color :stroke-width (str (/ 1 zoom))}
           :opacity 0.4}])
 
-(defn get-snap [coord {:keys [shapes page-id filter-shapes]}]
+(defn get-snap
+  [coord {:keys [shapes page-id filter-shapes]}]
   (->> (rx/from shapes)
        (rx/flat-map (fn [shape]
                       (->> (sp/shape-snap-points shape)
@@ -50,10 +53,11 @@
         ;; We use sets to store points/lines so there are no points/lines repeated
         ;; can cause problems with react keys
         snap-points (into #{} (mapcat (fn [[point snaps coord]]
-                                        (when (not-empty snaps) (concat [point] snaps))) @state))
-
+                                        (cons point snaps))
+                                      @state))
         snap-lines (into #{} (mapcat (fn [[point snaps coord]]
                                        (when (not-empty snaps) (map #(vector point %) snaps))) @state))]
+
     (mf/use-effect
      (fn []
        (let [sub
@@ -63,7 +67,7 @@
                                    (get-snap :y %)
                                    (get-snap :x %)))
                   (rx/subs #(reset! state %)))]
-         
+
          ;; On unmount callback
          #(rx/dispose! sub))))
 
@@ -72,35 +76,36 @@
      (fn []
        (rx/push! subject props)))
 
-
     [:g.snap-feedback
      (for [[from-point to-point] snap-lines]
-       [:& snap-line {:key (str "line-" (:x from-point) "-" (:y from-point) "-" (:x to-point) "-" (:y to-point) "-")
+       [:& snap-line {:key (str "line-" (:x from-point)
+                                "-" (:y from-point)
+                                "-" (:x to-point)
+                                "-" (:y to-point) "-")
                       :snap from-point
                       :point to-point
                       :zoom zoom}])
      (for [point snap-points]
-       [:& snap-point {:key (str "point-" (:x point) "-" (:y point))
+       [:& snap-point {:key (str "point-" (:x point)
+                                 "-" (:y point))
                        :point point
                        :zoom zoom}])]))
 
-(mf/defc snap-points [{:keys [layout]}]
-  (let [page-id (mf/deref refs/workspace-page-id)
-        selected (mf/deref refs/selected-shapes)
-        selected-shapes (mf/deref (refs/objects-by-id selected))
-        drawing (mf/deref refs/current-drawing-shape)
+(mf/defc snap-points
+  {::mf/wrap [mf/memo]}
+  [{:keys [layout zoom selected page-id drawing transform] :as props}]
+  (let [shapes        (mf/deref (refs/objects-by-id selected))
         filter-shapes (mf/deref refs/selected-shapes-with-children)
-        filter-shapes (fn [id] (if (= id :layout)
-                                 (or (not (contains? layout :display-grid))
-                                     (not (contains? layout :snap-grid)))
-                                 (or (filter-shapes id)
-                                     (not (contains? layout :dynamic-alignment)))))
-        current-transform (mf/deref refs/current-transform)
-        snap-data (mf/deref refs/workspace-snap-data)
-        shapes (if drawing [drawing] selected-shapes)
-        zoom (mf/deref refs/selected-zoom)]
-
-    (when (or drawing current-transform) 
+        filter-shapes (fn [id]
+                        (if (= id :layout)
+                          (or (not (contains? layout :display-grid))
+                              (not (contains? layout :snap-grid)))
+                          (or (filter-shapes id)
+                              (not (contains? layout :dynamic-alignment)))))
+        ;; current-transform (mf/deref refs/current-transform)
+        ;; snap-data (mf/deref refs/workspace-snap-data)
+        shapes    (if drawing [drawing] shapes)]
+    (when (or drawing transform)
       [:& snap-feedback {:shapes shapes
                          :page-id page-id
                          :filter-shapes filter-shapes
