@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
 
-npx mjml resources/emails-mjml/password-recovery/en.mjml -o resources/emails/password-recovery/en.html
+for f in resources/emails-mjml/*/*.mjml
+do
+  npx mjml $f -o `echo $f | sed -e "s/-mjml//" | sed -e "s/mjml/html/"`
+done
 
