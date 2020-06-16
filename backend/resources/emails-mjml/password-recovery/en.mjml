@@ -3,7 +3,7 @@
   <mj-head>
     <mj-font name="Source Sans Pro" href="{{ public-uri }}/fonts/sourcesanspro-regular.eot" />
     <mj-attributes>
-      <mj-text font-family="Source Sans Pro" font-size="16px" color="#000000" />
+      <mj-text font-family="Source Sans Pro" font-size="16px" color="#000000" line-height="150%" />
       <mj-button background-color="#31EFB8" color="#1F1F1F" font-family="Source Sans Pro" font-size="16px" />
     </mj-attributes>
   </mj-head>
@@ -38,7 +38,7 @@
 
     <mj-section padding="24px 0 0 0">
       <mj-column width="425px">
-        <mj-text align="center" font-size="14px" color="#64666A" line-height="150%">
+        <mj-text align="center" font-size="14px" color="#64666A">
           UXBOX is the first Open Source prototyping platform that will be embraced by multidisciplinary teams.
         </mj-text>
       </mj-column>
@@ -47,11 +47,11 @@
     <mj-section padding="0">
       <mj-column>
         <mj-social icon-size="24px" mode="horizontal">
-          <mj-social-element src="{{ public-uri }}/images/email/logo-uxbox.png" href="https://uxbox.io/" padding="0 16px" />
-          <mj-social-element src="{{ public-uri }}/images/email/logo-twitter.png" href="https://twitter.com/penpot" padding="0 16px" />
-          <mj-social-element src="{{ public-uri }}/images/email/logo-github.png" href="https://github.com/uxbox/" padding="0 16px" />
-          <mj-social-element src="{{ public-uri }}/images/email/logo-instagram.png" href="https://instagram.com/uxbox/" padding="0 16px" />
-          <mj-social-element src="{{ public-uri }}/images/email/logo-taiga.png" href="https://tree.taiga.io/project/uxbox" padding="0 16px" />
+          <mj-social-element src="{{ public-uri }}/images/email/logo-uxbox.png" href="https://uxbox.io/" padding="0 8px" />
+          <mj-social-element src="{{ public-uri }}/images/email/logo-twitter.png" href="https://twitter.com/penpot" padding="0 8px" />
+          <mj-social-element src="{{ public-uri }}/images/email/logo-github.png" href="https://github.com/uxbox/" padding="0 8px" />
+          <mj-social-element src="{{ public-uri }}/images/email/logo-instagram.png" href="https://instagram.com/uxbox/" padding="0 8px" />
+          <mj-social-element src="{{ public-uri }}/images/email/logo-taiga.png" href="https://tree.taiga.io/project/uxbox" padding="0 8px" />
         </mj-social>
       </mj-column>
     </mj-section>
