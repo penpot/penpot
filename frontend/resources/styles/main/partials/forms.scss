@@ -86,21 +86,18 @@ textarea {
 .custom-input {
   display: flex;
   flex-direction: column;
-
-  label {
-    font-size: $fs10;
-    color: $color-gray-30;
-  }
+  position: relative;
 
   input {
+    background-color: $color-white;
+    border-radius: 2px;
+    border: 1px solid $color-gray-20;
     color: $color-gray-60;
     font-size: $fs12;
+    height: 40px;
+    margin: 0;
+    padding: 15px 15px 0 15px;
     width: 100%;
-    border: 0px;
-    padding: 0px;
-    margin: 0px;
-    background-color: transparent;
-
   }
 
   // Makes the background for autocomplete white
@@ -111,35 +108,74 @@ textarea {
     -webkit-box-shadow: 0 0 0 30px $color-white inset !important;
   }
 
-  .input-container {
-    display: flex;
-    flex-direction: row;
+  label {
+    font-size: $fs10;
+    color: $color-gray-30;
+    position: absolute;
+    left: 15px;
+    top: 6px;
+  }
 
-    background-color: $color-white;
-    border-radius: 2px;
-    border: 1px solid $color-gray-20;
-    height: 40px;
-    padding-left: 15px;
-    padding-right: 15px;
-
-    &.invalid {
+  &.invalid {
+    input {
       border-color: $color-danger;
-      label {
-        color: $color-danger;
-      }
     }
+    label {
+      color: $color-danger;
+    }
+  }
 
-    &.valid {
+  &.valid {
+    input {
       border-color: $color-success;
     }
+  }
 
-    &.focus {
+  &.focus {
+    input {
       border-color: $color-gray-60;
     }
+  }
 
-    &.disabled {
+  &.disabled {
+    input {
       background-color: lighten($color-gray-10, 5%);
       user-select: none;
+    }
+  }
+
+  &.empty {
+    input {
+      padding-top: 0;
+    }
+
+    label {
+      clip: rect(0 0 0 0);
+      height: 1px;
+      margin: -1px;
+      overflow: hidden;
+      padding: 0;
+      width: 1px;
+    }
+  }
+
+  &.with-icon {
+    input {
+      padding-right: 50px;
+    }
+  }
+
+  .help-icon {
+    position: absolute;
+    right: 15px;
+    top: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    svg {
+      fill: $color-gray-30;
+      width: 15px;
+      height: 15px;
     }
   }
 
@@ -152,28 +188,6 @@ textarea {
     color: $color-danger;
     padding: 4px;
     font-size: $fs10;
-  }
-
-  .main-content {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding-top: 6px;
-    padding-bottom: 6px;
-
-  }
-
-  .help-icon {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding-left: 10px;
-    svg {
-      fill: $color-gray-30;
-      width: 15px;
-      height: 15px;
-    }
   }
 }
 
