@@ -115,7 +115,7 @@
   (let [file (mf/deref refs/workspace-file)
         project (mf/deref refs/workspace-project)
         layout (mf/deref refs/workspace-layout)]
-    [:section
+    [:section#workspace
      [:& header {:file file
                  :project project
                  :layout layout}]
