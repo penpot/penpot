@@ -23,20 +23,36 @@
 
 (mf/defc input
   [{:keys [type label help-icon disabled name form hint] :as props}]
-  (let [form     (mf/use-ctx form-ctx)
+  (let [form       (mf/use-ctx form-ctx)
 
-        type'    (mf/use-state type)
-        focus?   (mf/use-state false)
-        locale   (mf/deref i18n/locale)
+        type'      (mf/use-state type)
+        focus?     (mf/use-state false)
+        locale     (mf/deref i18n/locale)
 
-        touched? (get-in form [:touched name])
-        error    (get-in form [:errors name])
+        touched?   (get-in form [:touched name])
+        error      (get-in form [:errors name])
+
+        value      (get-in form [:data name] "")
+
+        help-icon' (cond 
+                     (and (= type "password")
+                          (= @type' "password"))
+                     i/eye
+
+                     (and (= type "password")
+                          (= @type' "text"))
+                     i/eye-closed
+
+                     :else
+                     help-icon)
 
         klass (dom/classnames
-               :focus    @focus?
-               :valid    (and touched? (not error))
-               :invalid  (and touched? error)
-               :disabled disabled)
+               :focus     @focus?
+               :valid     (and touched? (not error))
+               :invalid   (and touched? error)
+               :disabled  disabled
+               :empty     (str/empty? value)
+               :with-icon (not (nil? help-icon')))
 
         swap-text-password
         (fn []
@@ -54,8 +70,6 @@
           (when-not (get-in form [:touched name])
             (swap! form assoc-in [:touched name] true)))
 
-        value (get-in form [:data name] "")
-
         props (-> props
                   (dissoc :help-icon :form)
                   (assoc :value value
@@ -67,32 +81,22 @@
                   (obj/clj->props))]
 
     [:div.field.custom-input
-     [:div.input-container {:class klass}
-      [:div.main-content
-       (when-not (str/empty? value)
-         [:label label])
-       [:> :input props]]
-      [:div.help-icon
-       {:style {:cursor "pointer"}
-        :on-click (when (= "password" type)
-                    swap-text-password)}
-        (cond
-          (and (= type "password")
-               (= @type' "password"))
-          i/eye
+      {:class klass}
+      [:*
+        [:label label]
+        [:> :input props]
+        (when help-icon'
+          [:div.help-icon
+           {:style {:cursor "pointer"}
+            :on-click (when (= "password" type)
+                        swap-text-password)}
+           help-icon'])
+       (cond
+         (and touched? (:message error))
+         [:span.error (t locale (:message error))]
 
-          (and (= type "password")
-               (= @type' "text"))
-          i/eye-closed
-
-          :else
-          help-icon)]]
-     (cond
-       (and touched? (:message error))
-       [:span.error (t locale (:message error))]
-
-       (string? hint)
-       [:span.hint hint])]))
+         (string? hint)
+         [:span.hint hint])]]))
 
 (mf/defc select
   [{:keys [options label name form default]
