@@ -1,0 +1,19 @@
+How to trace a bitmap to svg in multiple colors:
+
+Generate the PPM format from PNG:
+
+  convert download.png download.ppm
+
+Generate a mask file for each color of the file:
+
+  ppmcolormask "#184d47" download.ppm > download-mask1.pbm
+  ppmcolormask "#66462C" download.ppm > download-mask2.pbm
+
+Then trace the bitmap (bitmap -> svg):
+
+  potrace --flat -b svg download-mask1.pbm -o download1.svg
+  potrace --flat -b svg download-mask2.pbm -o download2.svg
+
+Extract a list of colors from an image:
+
+  convert download.png +dither -colors 10 -unique-colors txt:

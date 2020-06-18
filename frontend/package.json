@@ -29,8 +29,10 @@
   },
   "dependencies": {
     "date-fns": "^2.13.0",
+    "html2canvas": "^1.0.0-rc.5",
     "map-stream": "0.0.7",
     "mousetrap": "^1.6.5",
+    "puppeteer": "^4.0.0",
     "randomcolor": "^0.5.4",
     "react": "^16.13.1",
     "react-color": "^2.18.1",

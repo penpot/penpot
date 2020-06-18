@@ -77,14 +77,14 @@
         (let [shape (geom/transform-shape frame shape)
               opts #js {:shape shape}]
           (case (:type shape)
-            :curve [:> path/path-shape opts]
-            :text [:> text/text-shape opts]
-            :icon [:> icon/icon-shape opts]
-            :rect [:> rect/rect-shape opts]
-            :path [:> path/path-shape opts]
-            :image [:> image/image-shape opts]
+            :curve  [:> path/path-shape opts]
+            :text   [:> text/text-shape opts]
+            :icon   [:> icon/icon-shape opts]
+            :rect   [:> rect/rect-shape opts]
+            :path   [:> path/path-shape opts]
+            :image  [:> image/image-shape opts]
             :circle [:> circle/circle-shape opts]
-            :group [:> group-wrapper {:shape shape :frame frame}]
+            :group  [:> group-wrapper {:shape shape :frame frame}]
             nil))))))
 
 (mf/defc page-svg

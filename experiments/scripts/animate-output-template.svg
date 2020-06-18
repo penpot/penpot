@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<svg onload="animate(evt)" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" width="451pt" height="339pt" viewBox="0 0 451 339" preserveAspectRatio="xMidYMid meet" zoomAndPan="magnify" contentScriptType="text/ecmascript" contentStyleType="text/css"
+     xmlns:a3="http://ns.adobe.com/AdobeSVGViewerExtensions/3.0/"
+     a3:scriptImplementation="Adobe">
+    <script type="text/ecmascript" a3:scriptImplementation="Adobe"><![CDATA[
+        var x = 0;
+        var speed = 83;
+	var length = 21;
+
+        function animate(evt) {
+            if ( window.svgDocument == null )
+                svgDocument = evt.target.ownerDocument;
+
+
+            setTimeout("advance()", speed);
+        }
+
+        function advance() {
+            frame = svgDocument.getElementById("frame_id_" + x);
+	    frame.setAttributeNS(null, "display", null);
+          
+            prev_frame = svgDocument.getElementById("frame_id_" + ((x+length)-1)%length);
+   	    prev_frame.setAttributeNS(null, "display", "none");
+
+            if ( ++x >= length ) {
+		this.x  = 0;
+	    }
+
+            setTimeout("advance()", speed);
+        }
+    ]]></script>
+</svg>
