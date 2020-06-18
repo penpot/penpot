@@ -26,7 +26,7 @@
           prototypes today!
         </mj-text>
         <mj-button href="{{ public-uri }}/#/auth/verify-token?token={{token}}">
-          Verify token
+          Verify email
         </mj-button>
         <mj-text>Enjoy!</mj-text>
         <mj-text>The UXBOX team.</mj-text>
