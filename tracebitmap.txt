@@ -17,3 +17,9 @@ Then trace the bitmap (bitmap -> svg):
 Extract a list of colors from an image:
 
   convert download.png +dither -colors 10 -unique-colors txt:
+
+
+Articles:
+
+- http://confluence.concord.org/display/CCTR/Removing%20Antialiasing.html
+- http://confluence.concord.org/display/CCTR/Tracing%20Color%20Raster%20Images.html
