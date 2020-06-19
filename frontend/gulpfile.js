@@ -142,16 +142,16 @@ function readManifest(publicURI) {
 
     const index = {};
     for (let item of content) {
-      index[item.name] = publicURI + "/js/" + item["output-name"];
+      index[item.name] = "/js/" + item["output-name"];
     };
 
     return index;
   } catch (e) {
     console.error("Error on reading manifest, using default.");
     return {
-      "main": publicURI + "/js/main.js",
-      "shared": publicURI + "/js/shared.js",
-      "worker": publicURI + "/js/worker.js"
+      "main": "/js/main.js",
+      "shared": "/js/shared.js",
+      "worker": "/js/worker.js"
     };
   }
 }
