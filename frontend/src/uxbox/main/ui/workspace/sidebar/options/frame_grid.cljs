@@ -151,7 +151,7 @@
 
       [:div.grid-option-main-actions
        [:button.custom-button {:on-click handle-toggle-visibility} (if display i/eye i/eye-closed)]
-       [:button.custom-button {:on-click handle-remove-grid} i/trash]]]
+       [:button.custom-button {:on-click handle-remove-grid} i/minus]]]
 
      [:& advanced-options {:visible? (:show-advanced-options @state)
                            :on-close toggle-advanced-options}

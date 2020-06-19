@@ -266,7 +266,7 @@
     .dropdown-button {
       position: absolute;
       right: $x-small;
-      top: $small;
+      top: 7px;
 
       svg {
         fill: $color-gray-40;
@@ -276,7 +276,7 @@
     }
 
     span {
-      font-size: $fs13;
+      font-size: $fs12;
     }
 
 
@@ -633,8 +633,8 @@
   border: none;
 
   & svg {
-    width: 1rem;
-    height: 1rem;
+    width: 12px;
+    height: 12px;
     fill: $color-gray-20;
   }
 
