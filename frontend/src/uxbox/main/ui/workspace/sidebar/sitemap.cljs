@@ -129,13 +129,14 @@
   (let [pages (d/enumerate (:pages file))
         deletable? (> (count pages) 1)]
     [:ul.element-list
-     (for [[index page-id] pages]
-       [:& page-item-wrapper
-        {:page-id page-id
-         :index index
-         :deletable? deletable?
-         :selected? (= page-id (:id current-page))
-         :key page-id}])]))
+     [:& hooks/sortable-container {}
+       (for [[index page-id] pages]
+         [:& page-item-wrapper
+          {:page-id page-id
+           :index index
+           :deletable? deletable?
+           :selected? (= page-id (:id current-page))
+           :key page-id}])]]))
 
 ;; --- Sitemap Toolbox
 
