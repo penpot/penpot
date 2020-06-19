@@ -102,7 +102,11 @@
 ;; - Ignore events originated in non-draggable children.
 ;; - At drag operation end, all elements that have received some enter/over
 ;;   event and have not received the corresponding leave event, are notified
-;;   so they can clean up.
+;;   so they can clean up. This can be occur, for example, if
+;;    * some leave events are throttled out because of a slow computer
+;;    * some corner cases of mouse entering a container element, and then
+;;      moving into a contained element. This is anyway mitigated by not
+;;      stopping propagation of leave event.
 ;;
 ;; Do not remove commented out lines, they are useful to debug events when
 ;; things go weird.
@@ -171,7 +175,6 @@
         on-drag-leave
         (fn [event]
           (when-not (dnd/from-child? event)
-            (dom/stop-propagation event)
             ;; (dnd/trace event data "drag-leave")
             (cleanup)))
 
