@@ -12,6 +12,7 @@
   (:require
    [okulary.core :as l]
    [rumext.alpha :as mf]
+   [beicon.core :as rx]
    [uxbox.main.ui.icons :as i]
    [uxbox.common.data :as d]
    [uxbox.common.uuid :as uuid]
@@ -266,21 +267,22 @@
   (let [selected (mf/deref refs/selected-shapes)
         root (get objects uuid/zero)]
     [:ul.element-list
-     (for [[index id] (reverse (d/enumerate (:shapes root)))]
-       (let [obj (get objects id)]
-         (if (= (:type obj) :frame)
-           [:& frame-wrapper
-            {:item obj
-             :selected selected
-             :index index
-             :objects objects
-             :key id}]
-           [:& layer-item
-            {:item obj
-             :selected selected
-             :index index
-             :objects objects
-             :key id}])))]))
+     [:& hooks/sortable-container {}
+       (for [[index id] (reverse (d/enumerate (:shapes root)))]
+         (let [obj (get objects id)]
+           (if (= (:type obj) :frame)
+             [:& frame-wrapper
+              {:item obj
+               :selected selected
+               :index index
+               :objects objects
+               :key id}]
+             [:& layer-item
+              {:item obj
+               :selected selected
+               :index index
+               :objects objects
+               :key id}])))]]))
 
 (defn- strip-objects
   [objects]

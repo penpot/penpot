@@ -21,15 +21,37 @@
 ;; https://www.w3schools.com/jsref/event_relatedtarget.asp
 ;; https://stackoverflow.com/questions/14194324/firefox-firing-dragleave-when-dragging-over-text?noredirect=1&lq=1
 ;; https://stackoverflow.com/questions/7110353/html5-dragleave-fired-when-hovering-a-child-element
+;;
+;; The main issue is that when we have a draggable element, for example
+;;   <li draggable="true">
+;;     <span>some text</span>
+;;     other text
+;;   </li>
+;;
+;; The api will generate enter and leave events when cursor moves within the internal
+;; elements (in this example the span and the other text). But the target of the event
+;; is the draggable element (the real initiator comes in the "relatedTarget" attribute).
+;; This causes that the draggable element receives events that tells that the cursor
+;; has moved from itself to itself, and this often causes strange behaviors.
+;;
+;; A common solution is to ignore events originated from child elements (look at
+;; from-child? function). This creates additional problems when there are nested draggable
+;; objects, for example a hierarchical tree with nested <li>s.
 
 (defn trace
-  ;; This function is useful to debug the erratic dnd interface behaviour when something weird occurs
+  ;; This function is useful to debug the dnd interface behaviour when something weird occurs.
   [event data label]
-  (js/console.log
-    label
-    "[" (:name data) "]"
-    (if (.-currentTarget event) (.-textContent (.-currentTarget event)) "null")
-    (if (.-relatedTarget event) (.-textContent (.-relatedTarget event)) "null")))
+  (let [currentTarget (.-currentTarget event)
+        relatedTarget (.-relatedTarget event)]
+    (js/console.log
+      label
+      "[" (:name data) "]"
+      ;; (if currentTarget
+      ;;   (str "<" (.-localName currentTarget) " " (.-textContent currentTarget) ">")
+      ;;   "null")
+      (if relatedTarget
+        (str "<" (.-localName relatedTarget) " " (.-textContent relatedTarget) ">")
+        "null"))))
 
 (defn set-data!
   ([e data]
@@ -93,9 +115,10 @@
   (let [ypos   (.-offsetY e)
         target (.-currentTarget e)
         height (.-clientHeight target)
+        innerHeight (.-clientHeight (.-firstChild target))
         thold  (/ height 2)
-        thold1 (* height 0.2)
-        thold2 (* height 0.8)]
+        thold1 (* innerHeight 0.2)
+        thold2 (* innerHeight 0.8)]
     (if detect-center?
       (cond
         (< ypos thold1) :top
