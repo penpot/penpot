@@ -23,6 +23,29 @@ In debian like linux distributions you can install it executing:
 sudo apt-get install docker docker-compose
 ```
 
+Start and enable docker environment:
+
+
+```bash
+sudo systemctl start docker
+sudo systemctl enable docker
+```
+
+Add your user to the docker group:
+
+```basb
+sudo usermod -aG docker $USER
+```
+
+And finally, increment user watches:
+
+```
+echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
+```
+
+NOTE: you probably need to login again for group change take the effect.
+
+
 ## Start the devenv ##
 
 **Requires a minimum knowledge of tmux usage in order to use that
