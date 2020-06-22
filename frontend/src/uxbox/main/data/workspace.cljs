@@ -221,7 +221,7 @@
               (cond
                 (or (not (mth/finite? (:width srect)))
                     (not (mth/finite? (:height srect))))
-                (assoc local :vbox (assoc size :x 0 :y 0))
+                (assoc local :vbox (assoc size :x 0 :y 0 :left-offset 0))
 
                 (or (> (:width srect) width)
                     (> (:height srect) height))
@@ -267,15 +267,17 @@
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-local
-              (fn [{:keys [vbox vport] :as local}]
+              (fn [{:keys [vbox vport left-sidebar? zoom] :as local}]
                 (let [wprop (/ (:width vport) width)
-                      hprop (/ (:height vport) height)]
-                  (-> local
-                      (assoc :vport size)
+                      hprop (/ (:height vport) height)
+                      left-offset (if left-sidebar? 0 (/ (* -1 15 16) zoom))]
+                  (-> local                           ;; This matches $width-settings-bar
+                      (assoc :vport size)             ;; in frontend/resources/styles/main/partials/sidebar.scss
                       (update :vbox (fn [vbox]
                                       (-> vbox
                                           (update :width #(/ % wprop))
-                                          (update :height #(/ % hprop))))))))))))
+                                          (update :height #(/ % hprop))
+                                          (assoc :left-offset left-offset)))))))))))
 
 ;; ---
 

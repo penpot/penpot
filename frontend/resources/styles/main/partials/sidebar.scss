@@ -6,6 +6,7 @@
 // Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 $width-settings-bar: 15rem;
+  // This width is also used in update-viewport-size at frontend/src/uxbox/main/data/workspace.cljs
 
 .settings-bar {
   background-color: $color-gray-50;

@@ -91,7 +91,7 @@
          (draw-rule! dctx {:zoom zoom
                            :type :horizontal
                            :size width
-                           :start (:x vbox)}))))
+                           :start (+ (:x vbox) (:left-offset vbox))}))))
 
     [:canvas.horizontal-rule
      {:ref canvas
