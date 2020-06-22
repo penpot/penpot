@@ -381,41 +381,37 @@
                 prnt (dom/get-parent node)]
             (st/emit! (dw/update-viewport-size (dom/get-client-size prnt)))))
 
-        on-mount
-        (fn []
-          (let [node (mf/ref-val viewport-ref)
-                prnt (dom/get-parent node)
-
-                key1 (events/listen js/document EventType.KEYDOWN on-key-down)
-                key2 (events/listen js/document EventType.KEYUP on-key-up)
-                key3 (events/listen node EventType.MOUSEMOVE on-mouse-move)
-                ;; bind with passive=false to allow the event to be cancelled
-                ;; https://stackoverflow.com/a/57582286/3219895
-                key4 (events/listen js/window EventType.WHEEL on-mouse-wheel #js {:passive false})
-                key5 (events/listen js/window EventType.RESIZE on-resize)]
-
-            (st/emit! (dw/initialize-viewport (dom/get-client-size prnt)))
-
-            (fn []
-              (events/unlistenByKey key1)
-              (events/unlistenByKey key2)
-              (events/unlistenByKey key3)
-              (events/unlistenByKey key4)
-              (events/unlistenByKey key5)
-              )))
-
         options (mf/deref refs/workspace-page-options)]
 
-    (mf/use-effect on-mount)
-    (mf/use-effect (mf/deps layout) on-resize)
+    (mf/use-layout-effect
+     (fn []
+       (let [node (mf/ref-val viewport-ref)
+             prnt (dom/get-parent node)
+
+             key1 (events/listen js/document EventType.KEYDOWN on-key-down)
+             key2 (events/listen js/document EventType.KEYUP on-key-up)
+             key3 (events/listen node EventType.MOUSEMOVE on-mouse-move)
+             ;; bind with passive=false to allow the event to be cancelled
+             ;; https://stackoverflow.com/a/57582286/3219895
+             key4 (events/listen js/window EventType.WHEEL on-mouse-wheel #js {:passive false})
+             key5 (events/listen js/window EventType.RESIZE on-resize)]
+         (st/emit! (dw/initialize-viewport (dom/get-client-size prnt)))
+         (fn []
+           (events/unlistenByKey key1)
+           (events/unlistenByKey key2)
+           (events/unlistenByKey key3)
+           (events/unlistenByKey key4)
+           (events/unlistenByKey key5)))))
+
+    (mf/use-layout-effect (mf/deps layout) on-resize)
 
     [:svg.viewport
      {:preserveAspectRatio "xMidYMid meet"
       :width (:width vport 0)
       :height (:height vport 0)
-      :view-box (str/join " " [(:x vbox 0)
+      :view-box (str/join " " [(+ (:x vbox 0) (:left-offset vbox 0))
                                (:y vbox 0)
-                               (:width vbox 0 )
+                               (:width vbox 0)
                                (:height vbox 0)])
       :ref viewport-ref
       :class (when drawing-tool "drawing")
