@@ -83,7 +83,9 @@
    :drawing-tool nil
    :tooltip nil
    :options-mode :design
-   :draw-interaction-to nil})
+   :draw-interaction-to nil
+   :left-sidebar? true
+   :right-sidebar? true})
 
 (def initialize-layout
   (ptk/reify ::initialize-layout
@@ -328,19 +330,34 @@
 
 ;; --- Toggle layout flag
 
-(defn toggle-layout-flag
+(defn- toggle-layout-flag
+  [state flag]
+  (update state :workspace-layout
+          (fn [flags]
+            (if (contains? flags flag)
+              (disj flags flag)
+              (conj flags flag)))))
+
+(defn- check-sidebars
+  [state]
+  (let [layout (:workspace-layout state)
+        left-sidebar? (not (empty? (keep layout [:layers
+                                                 :sitemap
+                                                 :document-history
+                                                 :libraries])))
+        right-sidebar? (not (empty? (keep layout [:icons
+                                                  :element-options])))]
+    (update-in state [:workspace-local]
+               assoc :left-sidebar? left-sidebar?
+                     :right-sidebar? right-sidebar?)))
+
+(defn toggle-layout-flags
   [& flags]
-  (ptk/reify ::toggle-layout-flag
+  (ptk/reify ::toggle-layout-flags
     ptk/UpdateEvent
     (update [_ state]
-      (let [reduce-fn
-            (fn [state flag]
-              (update state :workspace-layout
-                      (fn [flags]
-                        (if (contains? flags flag)
-                          (disj flags flag)
-                          (conj flags flag)))))]
-        (reduce reduce-fn state flags)))))
+      (-> (reduce toggle-layout-flag state flags)
+          (check-sidebars)))))
 
 ;; --- Set element options mode
 
@@ -1462,14 +1479,14 @@
 ;; Shortcuts impl https://github.com/ccampbell/mousetrap
 
 (def shortcuts
-  {"ctrl+m" #(st/emit! (toggle-layout-flag :sitemap))
-   "ctrl+i" #(st/emit! (toggle-layout-flag :libraries))
-   "ctrl+l" #(st/emit! (toggle-layout-flag :layers))
-   "ctrl+shift+r" #(st/emit! (toggle-layout-flag :rules))
-   "ctrl+a" #(st/emit! (toggle-layout-flag :dynamic-alignment))
-   "ctrl+p" #(st/emit! (toggle-layout-flag :colorpalette))
-   "ctrl+'" #(st/emit! (toggle-layout-flag :display-grid))
-   "ctrl+shift+'" #(st/emit! (toggle-layout-flag :snap-grid))
+  {"ctrl+m" #(st/emit! (toggle-layout-flags :sitemap))
+   "ctrl+i" #(st/emit! (toggle-layout-flags :libraries))
+   "ctrl+l" #(st/emit! (toggle-layout-flags :layers))
+   "ctrl+shift+r" #(st/emit! (toggle-layout-flags :rules))
+   "ctrl+a" #(st/emit! (toggle-layout-flags :dynamic-alignment))
+   "ctrl+p" #(st/emit! (toggle-layout-flags :colorpalette))
+   "ctrl+'" #(st/emit! (toggle-layout-flags :display-grid))
+   "ctrl+shift+'" #(st/emit! (toggle-layout-flags :snap-grid))
    "+" #(st/emit! (increase-zoom nil))
    "-" #(st/emit! (decrease-zoom nil))
    "g" #(st/emit! group-selected)

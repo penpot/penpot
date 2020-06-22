@@ -38,15 +38,12 @@
 
 (mf/defc workspace-content
   [{:keys [page file layout project] :as params}]
-  (let [left-sidebar? (not (empty? (keep layout [:layers :sitemap
-                                                 :document-history :libraries])))
-        right-sidebar? (not (empty? (keep layout [:icons :element-options])))
+  (let [local (mf/deref refs/workspace-local)
+        left-sidebar? (:left-sidebar? local)
+        right-sidebar? (:right-sidebar? local)
         classes (classnames
                  :no-tool-bar-right (not right-sidebar?)
-                 :no-tool-bar-left (not left-sidebar?))
-
-        local (mf/deref refs/workspace-local)]
-
+                 :no-tool-bar-left (not left-sidebar?))]
     [:*
      (when (:colorpalette layout)
        [:& colorpalette {:left-sidebar? left-sidebar?

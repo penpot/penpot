@@ -73,7 +73,7 @@
 
         on-close
         (fn [event]
-          (st/emit! (dw/toggle-layout-flag :icons)))
+          (st/emit! (dw/toggle-layout-flags :icons)))
 
         on-change
         (fn [val]
