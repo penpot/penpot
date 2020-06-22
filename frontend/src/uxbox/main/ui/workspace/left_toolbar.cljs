@@ -94,12 +94,12 @@
        [:li.tooltip.tooltip-right
         {:alt "Layers"
          :class (when (contains? layout :layers) "selected")
-         :on-click #(st/emit! (dw/toggle-layout-flag :sitemap :layers))}
+         :on-click #(st/emit! (dw/toggle-layout-flags :sitemap :layers))}
         i/layers]
        [:li.tooltip.tooltip-right
         {:alt (t locale "workspace.toolbar.libraries")
          :class (when (contains? layout :libraries) "selected")
-         :on-click #(st/emit! (dw/toggle-layout-flag :libraries))}
+         :on-click #(st/emit! (dw/toggle-layout-flags :libraries))}
         i/icon-set]
        [:li.tooltip.tooltip-right
         {:alt "History"}
@@ -107,5 +107,5 @@
        [:li.tooltip.tooltip-right
         {:alt (t locale "workspace.toolbar.color-palette")
          :class (when (contains? layout :colorpalette) "selected")
-         :on-click #(st/emit! (dw/toggle-layout-flag :colorpalette))}
+         :on-click #(st/emit! (dw/toggle-layout-flags :colorpalette))}
         i/palette]]]]))

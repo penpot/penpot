@@ -72,7 +72,7 @@
         max-offset (- (count items)
                       visible)
 
-        close-fn   #(st/emit! (udw/toggle-layout-flag :colorpalette))
+        close-fn   #(st/emit! (udw/toggle-layout-flags :colorpalette))
         container  (mf/use-ref nil)
 
         on-left-arrow-click

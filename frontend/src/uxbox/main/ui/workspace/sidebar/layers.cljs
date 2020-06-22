@@ -308,7 +308,7 @@
   [{:keys [page] :as props}]
   (let [locale   (mf/deref i18n/locale)
         data     (mf/deref refs/workspace-data)
-        on-click #(st/emit! (dw/toggle-layout-flag :layers))]
+        on-click #(st/emit! (dw/toggle-layout-flags :layers))]
     [:div#layers.tool-window
      [:div.tool-window-bar
       [:div.tool-window-icon i/layers]

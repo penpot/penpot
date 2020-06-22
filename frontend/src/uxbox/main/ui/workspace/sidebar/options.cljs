@@ -50,7 +50,7 @@
 (mf/defc options-toolbox
   {:wrap [mf/memo]}
   [{:keys [page selected] :as props}]
-  (let [close #(st/emit! (udw/toggle-layout-flag :element-options))
+  (let [close #(st/emit! (udw/toggle-layout-flags :element-options))
         on-change-tab #(st/emit! (udw/set-options-mode %))
 
         options-mode (mf/deref refs/options-mode)
