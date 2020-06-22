@@ -279,7 +279,6 @@
                                           (update :height #(/ % hprop))
                                           (assoc :left-offset left-offset)))))))))))
 
-;; ---
 
 (defn adjust-group-shapes
   [ids]
@@ -1284,7 +1283,10 @@
             objects  (get-in state [:workspace-data page-id :objects])
             items    (->> selected
                           (map #(get objects %))
-                          (filter #(not= :frame (:type %))))]
+                          (filter #(not= :frame (:type %)))
+                          (map #(assoc % ::index (cph/position-on-parent (:id %) objects)))
+                          (sort-by ::index))]
+
         (when (not-empty items)
           (let [selrect   (geom/selection-rect items)
                 frame-id  (-> items first :frame-id)
@@ -1292,7 +1294,7 @@
                 group     (-> (group-shape id frame-id selected selrect)
                               (geom/setup selrect))
 
-                index     (cph/position-on-parent (:id (first items)) objects)
+                index     (::index (first items))
 
                 rchanges  [{:type :add-obj
                             :id id
@@ -1302,19 +1304,19 @@
                             :index index}
                            {:type :mov-objects
                             :parent-id id
-                            :shapes (vec selected)}]
+                            :shapes (->> items
+                                         (map :id)
+                                         (into #{})
+                                         (vec))}]
 
                 uchanges
                 (reduce (fn [res obj]
                           (conj res {:type :mov-objects
                                      :parent-id (:parent-id obj)
-                                     :index (:index obj)
+                                     :index (::index obj)
                                      :shapes [(:id obj)]}))
                         []
-                        (->> selected
-                             (map #(get objects %))
-                             (map #(assoc % :index (cph/position-on-parent (:id %) objects)))
-                             (sort-by :index)))
+                        items)
 
                 uchanges (conj uchanges {:type :del-obj :id id})]
 
