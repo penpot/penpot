@@ -633,7 +633,7 @@
     (watch [_ state stream]
       (let [selected (get-in state [:workspace-local :selected])
             page-id  (get-in state [:workspace-page :id])]
-        (->> (rx/from selected)
+        (->> (rx/from (seq selected))
              (rx/map (fn [id]
                        (update-shape-recursive id attrs))))))))
 
