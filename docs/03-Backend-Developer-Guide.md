@@ -7,8 +7,8 @@ application.
 ## Fixtures ##
 
 This is a development feature that allows populate the database with a
-good amount of random content (usually used for just test the
-application or perform performance tweaks on queries).
+good amount of content (usually used for just test the application or
+perform performance tweaks on queries).
 
 In order to load fixtures, enter to the REPL environment executing the
 `bin/repl` script, and then execute `(uxbox.fixtures/run :small)`.
@@ -30,15 +30,10 @@ in the aplication. All users uses the following pattern:
 
 Where `N` is a number from 0 to 49 on the default fixture parameters.
 
+If you have a REPL access to the running process, you can execute it
+from there:
 
-## Sample media ##
-
-There is also a media collection with some libraries (material design
-icons and some colors). It may be loaded with:
-
-```bash
-clojure -Adev -m uxbox.media-loader ../sample_media/config.edn
+```clojure
+(require 'uxbox.fixtures)
+(uxbox.fixtures/run :small)
 ```
-
-You have more information at 05-Management-Guide.md document.
-
