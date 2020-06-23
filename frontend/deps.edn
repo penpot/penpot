@@ -27,6 +27,7 @@
    {com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}
     com.bhauman/rebel-readline {:mvn/version "0.1.4"}
     org.clojure/tools.namespace {:mvn/version "0.3.1"}
+    hashp/hashp {:mvn/version "RELEASE"}
 
     metosin/jsonista {:mvn/version "0.2.5"}
     funcool/datoteka {:mvn/version "1.2.0"}

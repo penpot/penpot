@@ -9,6 +9,7 @@
 
 (ns uxbox.main
   (:require
+   [hashp.core :include-macros true]
    [cljs.spec.alpha :as s]
    [beicon.core :as rx]
    [goog.object :as gobj]
