@@ -20,7 +20,8 @@
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.media :as media]
-   [uxbox.util.storage :as ust])
+   [uxbox.util.storage :as ust]
+   [uxbox.util.http :as http])
   (:import
    java.io.ByteArrayInputStream
    java.io.InputStream
@@ -186,3 +187,24 @@
   (us/assert map? row)
   (us/assert (s/coll-of vector?) pairs)
   (reduce #(resolve-uri media/media-storage %1 (nth %2 0) (nth %2 1)) row pairs))
+
+(defn download-image
+  [url]
+  (let [result (http/get! url {:as :byte-array})
+        data (:body result)
+        content-type (get (:headers result) "content-type")
+        format (mtype->format content-type)]
+    (if (nil? format)
+      (ex/raise :type :validation
+                :code :image-type-not-allowed
+                :hint "Seems like the url points to an invalid image.")
+      (let [tempfile (fs/create-tempfile)
+            base-filename (first (fs/split-ext (fs/name tempfile)))
+            filename (str base-filename (format->extension format))]
+        (with-open [ostream (io/output-stream tempfile)]
+          (.write ostream data))
+        {:filename filename
+         :size (count data)
+         :tempfile tempfile
+         :content-type content-type}))))
+

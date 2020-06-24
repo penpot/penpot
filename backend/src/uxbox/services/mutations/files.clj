@@ -35,6 +35,7 @@
 (s/def ::name ::us/string)
 (s/def ::profile-id ::us/uuid)
 (s/def ::project-id ::us/uuid)
+(s/def ::url ::us/url)
 
 ;; --- Mutation: Create Project File
 
@@ -127,16 +128,28 @@
   nil)
 
 
-;; --- Mutation: Upload File Image
+;; --- Mutations: Create File Image (Upload and create from url)
 
 (declare create-file-image)
 
 (s/def ::file-id ::us/uuid)
 (s/def ::content ::imgs/upload)
 
+(s/def ::add-file-image-from-url
+  (s/keys :req-un [::profile-id ::file-id ::name ::url]
+          :opt-un [::id]))
+
 (s/def ::upload-file-image
   (s/keys :req-un [::profile-id ::file-id ::name ::content]
           :opt-un [::id]))
+
+(sm/defmutation ::add-file-image-from-url
+  [{:keys [profile-id file-id url] :as params}]
+  (db/with-atomic [conn db/pool]
+    (files/check-edition-permissions! conn profile-id file-id)
+    (let [content (images/download-image url)
+          params' (merge params {:content content})]
+      (create-file-image conn params'))))
 
 (sm/defmutation ::upload-file-image
   [{:keys [profile-id file-id] :as params}]

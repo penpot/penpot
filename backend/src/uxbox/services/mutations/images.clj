@@ -10,7 +10,6 @@
 (ns uxbox.services.mutations.images
   (:require
    [clojure.spec.alpha :as s]
-   [clojure.java.io :as io]
    [datoteka.core :as fs]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
@@ -23,8 +22,7 @@
    [uxbox.services.queries.teams :as teams]
    [uxbox.tasks :as tasks]
    [uxbox.util.storage :as ust]
-   [uxbox.util.time :as dt]
-   [uxbox.util.http :as http]))
+   [uxbox.util.time :as dt]))
 
 (def thumbnail-options
   {:width 800
@@ -107,10 +105,8 @@
       nil)))
 
 
+;; --- Create Image (Upload and create from url)
 
-;; --- Create Image (Upload)
-
-(declare download-image)
 (declare create-image)
 (declare persist-image-on-fs)
 (declare persist-image-thumbnail-on-fs)
@@ -140,36 +136,16 @@
           :opt-un [::id]))
 
 (sm/defmutation ::add-image-from-url
-  [{:keys [library-id profile-id url] :as params}]
+  [{:keys [profile-id library-id url] :as params}]
   (db/with-atomic [conn db/pool]
     (let [lib (select-library-for-update conn library-id)]
       (teams/check-edition-permissions! conn profile-id (:team-id lib))
-      (let [content (download-image url)
+      (let [content (images/download-image url)
             params' (merge params {:content content})]
         (create-image conn params')))))
 
-(defn download-image
-  [url]
-  (let [result (http/get! url {:as :byte-array})
-        data (:body result)
-        content-type (get (:headers result) "content-type")
-        format (images/mtype->format content-type)]
-    (if (nil? format)
-      (ex/raise :type :validation
-                :code :image-type-not-allowed
-                :hint "Seems like the url points to an invalid image.")
-      (let [tempfile (fs/create-tempfile)
-            base-filename (get (fs/split-ext (fs/name tempfile)) 0)
-            filename (str base-filename (images/format->extension format))]
-        (with-open [ostream (io/output-stream tempfile)]
-          (.write ostream data))
-        {:filename filename
-         :size (count data)
-         :tempfile tempfile
-         :content-type content-type}))))
-
 (sm/defmutation ::upload-image
-  [{:keys [library-id profile-id] :as params}]
+  [{:keys [profile-id library-id] :as params}]
   (db/with-atomic [conn db/pool]
     (let [lib (select-library-for-update conn library-id)]
       (teams/check-edition-permissions! conn profile-id (:team-id lib))
