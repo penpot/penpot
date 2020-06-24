@@ -104,10 +104,36 @@
     ))
 
 (t/deftest images-crud
-  (let [prof     (th/create-profile db/pool 1)
-        team-id  (:default-team-id prof)
-        lib      (th/create-image-library db/pool team-id 1)
-        image-id (uuid/next)]
+  (let [prof       (th/create-profile db/pool 1)
+        team-id    (:default-team-id prof)
+        image-id-1 (uuid/next)
+        image-id-2 (uuid/next)
+        lib        (th/create-image-library db/pool team-id 1)]
+
+    (t/testing "create image from url to library"
+      (let [url "https://raw.githubusercontent.com/uxbox/uxbox/develop/frontend/resources/images/penpot-login.jpg"
+            data {::sm/type :add-image-from-url
+                  :id image-id-1
+                  :profile-id (:id prof)
+                  :library-id (:id lib)
+                  :name "testfile"
+                  :url url}
+            out (th/try-on! (sm/handle data))]
+
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+
+        (t/is (= image-id-1 (get-in out [:result :id])))
+        (t/is (= "testfile" (get-in out [:result :name])))
+        (t/is (= "image/jpeg" (get-in out [:result :mtype])))
+        (t/is (= "image/jpeg" (get-in out [:result :thumb-mtype])))
+        (t/is (= 787 (get-in out [:result :width])))
+        (t/is (= 2000 (get-in out [:result :height])))
+
+        (t/is (string? (get-in out [:result :path])))
+        (t/is (string? (get-in out [:result :thumb-path])))
+        (t/is (string? (get-in out [:result :uri])))
+        (t/is (string? (get-in out [:result :thumb-uri])))))
 
     (t/testing "upload image to library"
       (let [content {:filename "sample.jpg"
@@ -115,7 +141,7 @@
                      :content-type "image/jpeg"
                      :size 312043}
             data {::sm/type :upload-image
-                  :id image-id
+                  :id image-id-2
                   :profile-id (:id prof)
                   :library-id (:id lib)
                   :name "testfile"
@@ -125,7 +151,7 @@
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
 
-        (t/is (= image-id (get-in out [:result :id])))
+        (t/is (= image-id-2 (get-in out [:result :id])))
         (t/is (= "testfile" (get-in out [:result :name])))
         (t/is (= "image/jpeg" (get-in out [:result :mtype])))
         (t/is (= "image/jpeg" (get-in out [:result :thumb-mtype])))
@@ -135,8 +161,7 @@
         (t/is (string? (get-in out [:result :path])))
         (t/is (string? (get-in out [:result :thumb-path])))
         (t/is (string? (get-in out [:result :uri])))
-        (t/is (string? (get-in out [:result :thumb-uri])))
-        ))
+        (t/is (string? (get-in out [:result :thumb-uri])))))
 
     (t/testing "list images by library"
       (let [data {::sq/type :images
@@ -145,7 +170,8 @@
             out (th/try-on! (sq/handle data))]
         ;; (th/print-result! out)
 
-        (t/is (= image-id (get-in out [:result 0 :id])))
+        ;; Result is ordered by creation date descendent
+        (t/is (= image-id-2 (get-in out [:result 0 :id])))
         (t/is (= "testfile" (get-in out [:result 0 :name])))
         (t/is (= "image/jpeg" (get-in out [:result 0 :mtype])))
         (t/is (= "image/jpeg" (get-in out [:result 0 :thumb-mtype])))
@@ -160,11 +186,11 @@
     (t/testing "single image"
       (let [data {::sq/type :image
                   :profile-id (:id prof)
-                  :id image-id}
+                  :id image-id-2}
             out (th/try-on! (sq/handle data))]
         ;; (th/print-result! out)
 
-        (t/is (= image-id (get-in out [:result :id])))
+        (t/is (= image-id-2 (get-in out [:result :id])))
         (t/is (= "testfile" (get-in out [:result :name])))
         (t/is (= "image/jpeg" (get-in out [:result :mtype])))
         (t/is (= "image/jpeg" (get-in out [:result :thumb-mtype])))
@@ -179,7 +205,7 @@
     (t/testing "delete images"
       (let [data {::sm/type :delete-image
                   :profile-id (:id prof)
-                  :id image-id}
+                  :id image-id-1}
             out (th/try-on! (sm/handle data))]
 
         ;; (th/print-result! out)
@@ -189,7 +215,7 @@
     (t/testing "query image after delete"
       (let [data {::sq/type :image
                   :profile-id (:id prof)
-                  :id image-id}
+                  :id image-id-1}
             out (th/try-on! (sq/handle data))]
 
         ;; (th/print-result! out)
@@ -208,5 +234,5 @@
             out (th/try-on! (sq/handle data))]
         ;; (th/print-result! out)
         (let [result (:result out)]
-          (t/is (= 0 (count result))))))
+          (t/is (= 1 (count result))))))
     ))
