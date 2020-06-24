@@ -1463,6 +1463,7 @@
 
 ;; Persistence
 
+(def add-image-from-url dwp/add-image-from-url)
 (def upload-image dwp/upload-image)
 (def rename-page dwp/rename-page)
 (def delete-page dwp/delete-page)

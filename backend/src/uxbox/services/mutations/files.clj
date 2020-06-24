@@ -136,7 +136,7 @@
 (s/def ::content ::imgs/upload)
 
 (s/def ::add-file-image-from-url
-  (s/keys :req-un [::profile-id ::file-id ::name ::url]
+  (s/keys :req-un [::profile-id ::file-id ::url]
           :opt-un [::id]))
 
 (s/def ::upload-file-image
@@ -148,7 +148,8 @@
   (db/with-atomic [conn db/pool]
     (files/check-edition-permissions! conn profile-id file-id)
     (let [content (images/download-image url)
-          params' (merge params {:content content})]
+          params' (merge params {:content content
+                                 :name (:filename content)})]
       (create-file-image conn params'))))
 
 (sm/defmutation ::upload-file-image

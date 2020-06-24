@@ -128,7 +128,7 @@
 (s/def ::content ::upload)
 
 (s/def ::add-image-from-url
-  (s/keys :req-un [::profile-id ::library-id ::name ::url]
+  (s/keys :req-un [::profile-id ::library-id ::url]
           :opt-un [::id]))
 
 (s/def ::upload-image
@@ -141,7 +141,8 @@
     (let [lib (select-library-for-update conn library-id)]
       (teams/check-edition-permissions! conn profile-id (:team-id lib))
       (let [content (images/download-image url)
-            params' (merge params {:content content})]
+            params' (merge params {:content content
+                                   :name (:filename content)})]
         (create-image conn params')))))
 
 (sm/defmutation ::upload-image

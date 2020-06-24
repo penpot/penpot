@@ -140,7 +140,6 @@
             data {::sm/type :add-file-image-from-url
                   :profile-id (:id prof)
                   :file-id (:id file)
-                  :name "testfile"
                   :url url}
             out (th/try-on! (sm/handle data))]
 
@@ -149,7 +148,7 @@
 
         (let [result (:result out)]
           (t/is (= (:id file) (:file-id result)))
-          (t/is (= (:name data) (:name result)))
+          (t/is (not (nil? (:name result))))
           (t/is (= 787 (:width result)))
           (t/is (= 2000 (:height result)))
           (t/is (= "image/jpeg" (:mtype result)))
