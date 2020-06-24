@@ -116,7 +116,6 @@
                   :id image-id-1
                   :profile-id (:id prof)
                   :library-id (:id lib)
-                  :name "testfile"
                   :url url}
             out (th/try-on! (sm/handle data))]
 
@@ -124,7 +123,7 @@
         (t/is (nil? (:error out)))
 
         (t/is (= image-id-1 (get-in out [:result :id])))
-        (t/is (= "testfile" (get-in out [:result :name])))
+        (t/is (not (nil? (get-in out [:result :name]))))
         (t/is (= "image/jpeg" (get-in out [:result :mtype])))
         (t/is (= "image/jpeg" (get-in out [:result :thumb-mtype])))
         (t/is (= 787 (get-in out [:result :width])))

@@ -301,6 +301,38 @@
 ;;       and update-photo at main/data/users.cljs
 ;; https://tree.taiga.io/project/uxboxproject/us/440
 
+(defn add-image-from-url
+  ([url] (add-image-from-url url identity))
+  ([url on-added]
+   (us/verify fn? on-added)
+   (ptk/reify ::add-image-from-url
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [file-id (get-in state [:workspace-page :file-id])
+
+             on-success #(do (st/emit! dm/hide)
+                             (on-added %))
+
+             on-error #(do (st/emit! dm/hide)
+                           (if (.-message %)
+                             (rx/of (dm/error (.-message %)))
+                             (rx/of (dm/error (tr "errors.unexpected-error")))))
+
+             prepare
+             (fn [url]
+               {:file-id file-id
+                :url url})]
+
+         (st/emit! (dm/show {:content (tr "image.loading")
+                             :type :info
+                             :timeout nil}))
+         (->> (rx/of url)
+              (rx/map prepare)
+              (rx/mapcat #(rp/mutation! :add-file-image-from-url %))
+              (rx/do on-success)
+              (rx/map image-uploaded)
+              (rx/catch on-error)))))))
+
 (defn upload-image
   ([file] (upload-image file identity))
   ([file on-uploaded]

@@ -337,13 +337,15 @@
         on-drag-enter
         (fn [e]
           (when (or (dnd/has-type? e "uxbox/shape")
-                    (dnd/has-type? e "Files"))
+                    (dnd/has-type? e "Files")
+                    (dnd/has-type? e "text/uri-list"))
             (dom/prevent-default e)))
 
         on-drag-over
         (fn [e]
           (when (or (dnd/has-type? e "uxbox/shape")
-                    (dnd/has-type? e "Files"))
+                    (dnd/has-type? e "Files")
+                    (dnd/has-type? e "text/uri-list"))
             (dom/prevent-default e)))
 
         on-uploaded
@@ -361,8 +363,9 @@
         on-drop
         (fn [event]
           (dom/prevent-default event)
-          (if (dnd/has-type? event "uxbox/shape")
+          (cond
 
+            (dnd/has-type? event "uxbox/shape")
             (let [shape (dnd/get-data event "uxbox/shape")
                   point (gpt/point (.-clientX event) (.-clientY event))
                   viewport-coord (translate-point-to-viewport point)
@@ -372,6 +375,15 @@
                                           (assoc :x final-x)
                                           (assoc :y final-y)))))
 
+            (dnd/has-type? event "text/uri-list")
+            (let [data (dnd/get-data event "text/uri-list")
+                  lines (str/lines data)
+                  urls (filter #(and (not (str/blank? %))
+                                     (not (str/starts-with? % "#")))
+                               lines)]
+              (run! #(st/emit! (dw/add-image-from-url % on-uploaded)) urls))
+
+            :else
             (let [files (dnd/get-files event)]
               (run! #(st/emit! (dw/upload-image % on-uploaded)) files))))
 
