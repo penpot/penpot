@@ -135,6 +135,30 @@
         proj-id (:default-project-id prof)
         file    (th/create-file db/pool (:id prof) proj-id 1)]
 
+    (t/testing "create file image from url"
+      (let [url "https://raw.githubusercontent.com/uxbox/uxbox/develop/frontend/resources/images/penpot-login.jpg"
+            data {::sm/type :add-file-image-from-url
+                  :profile-id (:id prof)
+                  :file-id (:id file)
+                  :name "testfile"
+                  :url url}
+            out (th/try-on! (sm/handle data))]
+
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+
+        (let [result (:result out)]
+          (t/is (= (:id file) (:file-id result)))
+          (t/is (= (:name data) (:name result)))
+          (t/is (= 787 (:width result)))
+          (t/is (= 2000 (:height result)))
+          (t/is (= "image/jpeg" (:mtype result)))
+
+          (t/is (string? (:path result)))
+          (t/is (string? (:uri result)))
+          (t/is (string? (:thumb-path result)))
+          (t/is (string? (:thumb-uri result))))))
+
     (t/testing "upload file image"
       (let [content {:filename "sample.jpg"
                      :tempfile (th/tempfile "uxbox/tests/_files/sample.jpg")
@@ -144,9 +168,7 @@
                   :profile-id (:id prof)
                   :file-id (:id file)
                   :name "testfile"
-                  :content content
-                  :width 800
-                  :height 800}
+                  :content content}
 
             out (th/try-on! (sm/handle data))]
 
@@ -156,8 +178,8 @@
         (let [result (:result out)]
           (t/is (= (:id file) (:file-id result)))
           (t/is (= (:name data) (:name result)))
-          (t/is (= (:width data) (:width result)))
-          (t/is (= (:height data) (:height result)))
+          (t/is (= 800 (:width result)))
+          (t/is (= 800 (:height result)))
           (t/is (= (:content-type content) (:mtype result)))
 
           (t/is (string? (:path result)))
