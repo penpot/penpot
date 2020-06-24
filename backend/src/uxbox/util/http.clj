@@ -14,6 +14,11 @@
 (def default-client
   (delay (http/build-client {:executor @px/default-executor})))
 
+(defn get!
+  [url opts]
+  (let [opts' (merge {:client @default-client :as :string} opts)]
+    (http/get url nil opts')))
+
 (defn send!
   [req]
   (http/send req {:client @default-client :as :string}))
