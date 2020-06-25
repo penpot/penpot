@@ -157,7 +157,7 @@
         (-> state
             (assoc :current-page-id page-id   ; mainly used by events
                    :workspace-local local
-                   :workspace-page (dissoc page :data))
+                   :workspace-page  (dissoc page :data))
             (assoc-in [:workspace-data page-id] (:data page)))))
 
     ptk/WatchEvent
@@ -568,51 +568,71 @@
   (us/verify ::us/uuid id)
   (us/verify ::shape-attrs attrs)
   (ptk/reify ::update-shape
-    dwc/IBatchedChange
-    dwc/IUpdateGroup
-    (get-ids [_] [id])
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id (:current-page-id state)
+            object  (get-in state [:workspace-data page-id :objects id])
+            nobject (merge object attrs)
+            rops    (dwc/generate-operations object nobject)
+            uops    (dwc/generate-operations nobject object)
+            rchg    {:type :mod-obj
+                     :operations rops
+                     :id id}
+            uchg    {:type :mod-obj
+                     :operations uops
+                     :id id}]
+        (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true}))))))
 
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [pid (:current-page-id state)]
-        (update-in state [:workspace-data pid :objects id] merge attrs)))))
-
-(defn update-shape-recursive
-  [id attrs]
-  (us/verify ::us/uuid id)
+(defn update-shapes-recursive
+  [ids attrs]
   (us/verify ::shape-attrs attrs)
-  (letfn [(update-shape [shape]
+  (letfn [(impl-update [shape]
             (cond-> (merge shape attrs)
               (and (= :text (:type shape))
                    (string? (:fill-color attrs)))
-              (dwtxt/impl-update-shape-attrs {:fill (:fill-color attrs)})))]
-    (ptk/reify ::update-shape
-      dwc/IBatchedChange
-      dwc/IUpdateGroup
-      (get-ids [_] [id])
+              (dwtxt/impl-update-shape-attrs {:fill (:fill-color attrs)})))
 
-      ptk/UpdateEvent
-      (update [_ state]
-        (let [page-id (:current-page-id state)
-              grouped #{:frame :group}]
-          (update-in state [:workspace-data page-id :objects]
-                     (fn [objects]
-                       (->> (d/concat [id] (cph/get-children id objects))
-                            (map #(get objects %))
-                            (remove #(grouped (:type %)))
-                            (reduce #(update %1 (:id %2) update-shape) objects)))))))))
+          (impl-get-children [objects id]
+            (cons id (cph/get-children id objects)))
 
-;; --- Update Page Options
+          (impl-gen-changes [objects ids]
+            (loop [sids (seq ids)
+                   cids (seq (impl-get-children objects (first sids)))
+                   rchanges []
+                   uchanges []]
+              (cond
+                (nil? sids)
+                [rchanges uchanges]
 
-(defn update-options
-  [opts]
-  (us/verify ::cp/options opts)
-  (ptk/reify ::update-options
-    dwc/IBatchedChange
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [pid (:current-page-id state)]
-        (update-in state [:workspace-data pid :options] merge opts)))))
+                (nil? cids)
+                (recur (next sids)
+                       (seq (impl-get-children objects (first (next sids))))
+                       rchanges
+                       uchanges)
+
+                :else
+                (let [id   (first cids)
+                      obj1 (get objects id)
+                      obj2 (impl-update obj1)
+                      rops (dwc/generate-operations obj1 obj2)
+                      uops (dwc/generate-operations obj2 obj1)
+                      rchg {:type :mod-obj
+                            :operations rops
+                            :id id}
+                      uchg {:type :mod-obj
+                            :operations uops
+                            :id id}]
+                  (recur sids
+                         (next cids)
+                         (conj rchanges rchg)
+                         (conj uchanges uchg))))))]
+    (ptk/reify ::update-shapes-recursive
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (let [page-id  (get-in state [:workspace-page :id])
+              objects  (get-in state [:workspace-data page-id :objects])
+              [rchanges uchanges] (impl-gen-changes objects (seq ids))]
+        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})))))))
 
 ;; --- Update Selected Shapes attrs
 
@@ -633,9 +653,8 @@
     (watch [_ state stream]
       (let [selected (get-in state [:workspace-local :selected])
             page-id  (get-in state [:workspace-page :id])]
-        (->> (rx/from (seq selected))
-             (rx/map (fn [id]
-                       (update-shape-recursive id attrs))))))))
+        (rx/of (update-shapes-recursive selected attrs))))))
+
 
 ;; --- Shape Movement (using keyboard shorcuts)
 
@@ -1051,21 +1070,6 @@
     (update [_ state]
       (update state :workspace-local dissoc :expanded))))
 
-(defn recursive-assign
-  "A helper for assign recursively a shape attr."
-  [id attr value]
-  (ptk/reify ::recursive-assign
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [page-id (get-in state [:workspace-page :id])
-            objects (get-in state [:workspace-data page-id :objects])
-            childs (cph/get-children id objects)]
-        (update-in state [:workspace-data page-id :objects]
-                   (fn [objects]
-                     (reduce (fn [objects id]
-                               (assoc-in objects [id attr] value))
-                             objects
-                             (conj childs id))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Navigation

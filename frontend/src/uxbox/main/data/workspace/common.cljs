@@ -72,7 +72,7 @@
                          :redo-changes changes}]
               (rx/of (append-undo entry))))))))))
 
-(defn- generate-operations
+(defn generate-operations
   [ma mb]
   (let [ma-keys (set (keys ma))
         mb-keys (set (keys mb))
