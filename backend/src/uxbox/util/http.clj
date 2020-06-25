@@ -20,5 +20,7 @@
     (http/get url nil opts')))
 
 (defn send!
-  [req]
-  (http/send req {:client @default-client :as :string}))
+  ([req]
+   (http/send req {:client @default-client :as :string}))
+  ([req opts]
+   (http/send req (merge {:client @default-client :as :string} opts))))
