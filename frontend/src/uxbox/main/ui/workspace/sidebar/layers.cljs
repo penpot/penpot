@@ -118,15 +118,15 @@
         (fn [event]
           (dom/stop-propagation event)
           (if (:blocked item)
-            (st/emit! (dw/recursive-assign id :blocked false))
-            (st/emit! (dw/recursive-assign id :blocked true))))
+            (st/emit! (dw/update-shapes-recursive [id] {:blocked false}))
+            (st/emit! (dw/update-shapes-recursive [id] {:blocked true}))))
 
         toggle-visibility
         (fn [event]
           (dom/stop-propagation event)
           (if (:hidden item)
-            (st/emit! (dw/recursive-assign id :hidden false))
-            (st/emit! (dw/recursive-assign id :hidden true))))
+            (st/emit! (dw/update-shapes-recursive [id] {:hidden false}))
+            (st/emit! (dw/update-shapes-recursive [id] {:hidden true}))))
 
         select-shape
         (fn [event]
