@@ -314,3 +314,93 @@
                                (map (fn [id] {id true}))
                                (into {}))))]
         (update-in state [:workspace-local :expanded] expand-fn)))))
+
+;; --- Update Shape Attrs
+
+;; NOTE: This is a generic implementation for update multiple shapes
+;; in one single commit/undo entry.
+
+(s/def ::coll-of-uuid
+  (s/every ::us/uuid))
+
+(defn update-shapes
+  ([ids f] (update-shapes ids f nil))
+  ([ids f {:keys [reg-objects?] :or {reg-objects? false}}]
+   (us/assert ::coll-of-uuid ids)
+   (us/assert fn? f)
+   (ptk/reify ::update-shapes
+     ptk/WatchEvent
+     (watch [_ state stream]
+      (let [page-id (:current-page-id state)
+            objects (get-in state [:workspace-data page-id :objects])]
+        (loop [ids (seq ids)
+               rch []
+               uch []]
+          (if (nil? ids)
+            (rx/of (commit-changes
+                    (cond-> rch reg-objects? (conj {:type :reg-objects :shapes (vec ids)}))
+                    (cond-> uch reg-objects? (conj {:type :reg-objects :shapes (vec ids)}))
+                    {:commit-local? true}))
+
+            (let [id   (first ids)
+                  obj1 (get objects id)
+                  obj2 (f obj1)
+                  rchg {:type :mod-obj
+                        :operations (generate-operations obj1 obj2)
+                        :id id}
+                  uchg {:type :mod-obj
+                        :operations (generate-operations obj2 obj1)
+                        :id id}]
+              (recur (next ids)
+                     (conj rch rchg)
+                     (conj uch uchg))))))))))
+
+
+(defn update-shapes-recursive
+  [ids f]
+  (us/assert ::coll-of-uuid ids)
+  (us/assert fn? f)
+  (letfn [(impl-get-children [objects id]
+            (cons id (cph/get-children id objects)))
+
+          (impl-gen-changes [objects ids]
+            (loop [sids (seq ids)
+                   cids (seq (impl-get-children objects (first sids)))
+                   rchanges []
+                   uchanges []]
+              (cond
+                (nil? sids)
+                [rchanges uchanges]
+
+                (nil? cids)
+                (recur (next sids)
+                       (seq (impl-get-children objects (first (next sids))))
+                       rchanges
+                       uchanges)
+
+                :else
+                (let [id   (first cids)
+                      obj1 (get objects id)
+                      obj2 (f obj1)
+                      rops (generate-operations obj1 obj2)
+                      uops (generate-operations obj2 obj1)
+                      rchg {:type :mod-obj
+                            :operations rops
+                            :id id}
+                      uchg {:type :mod-obj
+                            :operations uops
+                            :id id}]
+                  (recur sids
+                         (next cids)
+                         (conj rchanges rchg)
+                         (conj uchanges uchg))))))]
+    (ptk/reify ::update-shapes-recursive
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (let [page-id  (get-in state [:workspace-page :id])
+              objects  (get-in state [:workspace-data page-id :objects])
+              [rchanges uchanges] (impl-gen-changes objects (seq ids))]
+        (rx/of (commit-changes rchanges uchanges {:commit-local? true})))))))
+
+
+

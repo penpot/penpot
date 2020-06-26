@@ -42,10 +42,6 @@
 ;; --- Specs
 
 (s/def ::shape-attrs ::cp/shape-attrs)
-
-(s/def ::set-of-uuid
-  (s/every uuid? :kind set?))
-
 (s/def ::set-of-string
   (s/every string? :kind set?))
 
@@ -186,10 +182,11 @@
   (ptk/reify ::initialize-group-check
     ptk/WatchEvent
     (watch [_ state stream]
-      ;; TODO: add stoper
-      (->> stream
-           (rx/filter #(satisfies? dwc/IUpdateGroup %))
-           (rx/map #(adjust-group-shapes (dwc/get-ids %)))))))
+      (let [stoper (rx/filter (ptk/type? ::finalize-page) stream)]
+        (->> stream
+             (rx/filter #(satisfies? dwc/IUpdateGroup %))
+             (rx/map #(adjust-group-shapes (dwc/get-ids %)))
+             (rx/take-until stoper))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -271,8 +268,8 @@
                 (let [wprop (/ (:width vport) width)
                       hprop (/ (:height vport) height)
                       left-offset (if left-sidebar? 0 (/ (* -1 15 16) zoom))]
-                  (-> local                           ;; This matches $width-settings-bar
-                      (assoc :vport size)             ;; in frontend/resources/styles/main/partials/sidebar.scss
+                  (-> local                ;; This matches $width-settings-bar
+                      (assoc :vport size)  ;; in frontend/resources/styles/main/partials/sidebar.scss
                       (update :vbox (fn [vbox]
                                       (-> vbox
                                           (update :width #(/ % wprop))
@@ -280,11 +277,17 @@
                                           (assoc :left-offset left-offset)))))))))))
 
 
+;; TODO: this event is mainly replaced by `:reg-objects` change, but many events
+;; are still implemented in function of this so we need to maintain it until
+;; all is ported to use `:reg-objects`.
+
+;; TODO: Additioanlly: many stuff related to rotation is not ported so
+;; we need to port it before completelly remove this.
+
 (defn adjust-group-shapes
   [ids]
   (ptk/reify ::adjust-group-shapes
     dwc/IBatchedChange
-
     ptk/UpdateEvent
     (update [_ state]
       (let [page-id (:current-page-id state)
@@ -570,69 +573,7 @@
   (ptk/reify ::update-shape
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-id (:current-page-id state)
-            object  (get-in state [:workspace-data page-id :objects id])
-            nobject (merge object attrs)
-            rops    (dwc/generate-operations object nobject)
-            uops    (dwc/generate-operations nobject object)
-            rchg    {:type :mod-obj
-                     :operations rops
-                     :id id}
-            uchg    {:type :mod-obj
-                     :operations uops
-                     :id id}]
-        (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true}))))))
-
-(defn update-shapes-recursive
-  [ids attrs]
-  (us/verify ::shape-attrs attrs)
-  (letfn [(impl-update [shape]
-            (cond-> (merge shape attrs)
-              (and (= :text (:type shape))
-                   (string? (:fill-color attrs)))
-              (dwtxt/impl-update-shape-attrs {:fill (:fill-color attrs)})))
-
-          (impl-get-children [objects id]
-            (cons id (cph/get-children id objects)))
-
-          (impl-gen-changes [objects ids]
-            (loop [sids (seq ids)
-                   cids (seq (impl-get-children objects (first sids)))
-                   rchanges []
-                   uchanges []]
-              (cond
-                (nil? sids)
-                [rchanges uchanges]
-
-                (nil? cids)
-                (recur (next sids)
-                       (seq (impl-get-children objects (first (next sids))))
-                       rchanges
-                       uchanges)
-
-                :else
-                (let [id   (first cids)
-                      obj1 (get objects id)
-                      obj2 (impl-update obj1)
-                      rops (dwc/generate-operations obj1 obj2)
-                      uops (dwc/generate-operations obj2 obj1)
-                      rchg {:type :mod-obj
-                            :operations rops
-                            :id id}
-                      uchg {:type :mod-obj
-                            :operations uops
-                            :id id}]
-                  (recur sids
-                         (next cids)
-                         (conj rchanges rchg)
-                         (conj uchanges uchg))))))]
-    (ptk/reify ::update-shapes-recursive
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (let [page-id  (get-in state [:workspace-page :id])
-              objects  (get-in state [:workspace-data page-id :objects])
-              [rchanges uchanges] (impl-gen-changes objects (seq ids))]
-        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})))))))
+      (rx/of (dwc/update-shapes [id] #(merge % attrs))))))
 
 ;; --- Update Selected Shapes attrs
 
@@ -652,8 +593,13 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [selected (get-in state [:workspace-local :selected])
-            page-id  (get-in state [:workspace-page :id])]
-        (rx/of (update-shapes-recursive selected attrs))))))
+            update-fn
+            (fn [shape]
+              (cond-> (merge shape attrs)
+                (and (= :text (:type shape))
+                     (string? (:fill-color attrs)))
+                (dwtxt/impl-update-shape-attrs {:fill (:fill-color attrs)})))]
+        (rx/of (dwc/update-shapes-recursive selected update-fn))))))
 
 
 ;; --- Shape Movement (using keyboard shorcuts)
@@ -761,19 +707,6 @@
         (rx/of (delete-shapes selected)
                dws/deselect-all)))))
 
-
-;; --- Rename Shape
-
-(defn rename-shape
-  [id name]
-  (us/verify ::us/uuid id)
-  (us/verify string? name)
-  (ptk/reify ::rename-shape
-    dwc/IBatchedChange
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [page-id (:current-page-id state)]
-        (update-in state [:workspace-data page-id :objects id] assoc :name name)))))
 
 ;; --- Shape Vertical Ordering
 
@@ -987,21 +920,19 @@
 
 ;; --- Update Dimensions
 
-(defn update-rect-dimensions
+;; Event mainly used for handling user modification of the size of the
+;; object from workspace sidebar options inputs.
+
+(defn update-dimensions
   [id attr value]
   (us/verify ::us/uuid id)
   (us/verify #{:width :height} attr)
   (us/verify ::us/number value)
-  (ptk/reify ::update-rect-dimensions
-    dwc/IBatchedChange
-    dwc/IUpdateGroup
-    (get-ids [_] [id])
+  (ptk/reify ::update-dimensions
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (dwc/update-shapes [id] #(geom/resize-rect % attr value))))))
 
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [page-id (:current-page-id state)]
-        (update-in state [:workspace-data page-id :objects id]
-                   geom/resize-rect attr value)))))
 
 ;; --- Shape Proportions
 
@@ -1260,6 +1191,18 @@
             pages (vec (concat before [id] after))]
         (assoc-in state [:projects (:project-id page) :pages] pages)))))
 
+(defn update-shape-flags
+  [id {:keys [blocked hidden] :as flags}]
+  (s/assert ::us/uuid id)
+  (s/assert ::shape-attrs flags)
+  (ptk/reify ::update-shape-flags
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (letfn [(update-fn [obj]
+                (cond-> obj
+                  (boolean? blocked) (assoc :blocked blocked)
+                  (boolean? hidden) (assoc :hidden hidden)))]
+        (rx/of (dwc/update-shapes-recursive [id] update-fn))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GROUPS
@@ -1480,6 +1423,7 @@
 (def duplicate-selected dws/duplicate-selected)
 (def handle-selection dws/handle-selection)
 (def select-inside-group dws/select-inside-group)
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shortcuts

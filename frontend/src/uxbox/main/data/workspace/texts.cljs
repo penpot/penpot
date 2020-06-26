@@ -9,15 +9,16 @@
 
 (ns uxbox.main.data.workspace.texts
   (:require
-   [clojure.walk :as walk]
+   ["slate" :as slate :refer [Editor Node Transforms Text]]
+   ["slate-react" :as rslate]
+   [beicon.core :as rx]
    [cljs.spec.alpha :as s]
+   [clojure.walk :as walk]
    [goog.object :as gobj]
    [potok.core :as ptk]
-   [uxbox.util.object :as obj]
-   [uxbox.main.fonts :as fonts]
    [uxbox.main.data.workspace.common :as dwc]
-   ["slate-react" :as rslate]
-   ["slate" :as slate :refer [Editor Node Transforms Text]]))
+   [uxbox.main.fonts :as fonts]
+   [uxbox.util.object :as obj]))
 
 (defn create-editor
   []
@@ -171,13 +172,9 @@
         (editor-set! editor (clj->js attrs) #js {:match pred :split split})))
 
     (ptk/reify ::update-attrs
-      dwc/IBatchedChange
-      ptk/UpdateEvent
-      (update [_ state]
-        (let [page-id (get-in state [:workspace-page :id])
-              merge-attrs #(merge-attrs % attrs)]
-          (update-in state [:workspace-data page-id :objects id]
-                     #(impl-update-shape-attrs % attrs pred)))))))
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (rx/of (dwc/update-shapes [id] #(impl-update-shape-attrs % attrs pred)))))))
 
 (defn update-text-attrs
   [options]

@@ -13,6 +13,7 @@
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]
    [uxbox.common.data :as d]
+   [uxbox.common.geom.point :as gpt]
    [uxbox.common.pages :as cp]
    [uxbox.common.spec :as us]
    [uxbox.main.data.dashboard :as dd]
@@ -20,8 +21,8 @@
    [uxbox.main.data.workspace.common :as dwc]
    [uxbox.main.repo :as rp]
    [uxbox.main.store :as st]
-   [uxbox.common.geom.point :as gpt]
    [uxbox.util.i18n :as i18n :refer [tr]]
+   [uxbox.util.object :as obj]
    [uxbox.util.router :as rt]
    [uxbox.util.time :as dt]
    [uxbox.util.transit :as t]))
@@ -34,32 +35,42 @@
 
 (defn initialize-page-persistence
   [page-id]
-  (ptk/reify ::initialize-persistence
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state :current-page-id page-id))
+  (letfn [(enable-reload-stoper []
+            (obj/set! js/window "onbeforeunload" (constantly false)))
+          (disable-reload-stoper []
+            (obj/set! js/window "onbeforeunload" nil))]
+    (ptk/reify ::initialize-persistence
+      ptk/UpdateEvent
+      (update [_ state]
+        (assoc state :current-page-id page-id))
 
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [stoper (rx/filter #(= ::finalize %) stream)
-            notifier (->> stream
-                          (rx/filter (ptk/type? ::dwc/commit-changes))
-                          (rx/debounce 200)
-                          (rx/merge stoper))]
-        (rx/merge
-         (->> stream
-              (rx/filter (ptk/type? ::dwc/commit-changes))
-              (rx/map deref)
-              (rx/buffer-until notifier)
-              (rx/map vec)
-              (rx/filter (complement empty?))
-              (rx/map #(persist-changes page-id %))
-              (rx/take-until (rx/delay 100 stoper)))
-         (->> stream
-              (rx/filter #(satisfies? dwc/IBatchedChange %))
-              (rx/debounce 200)
-              (rx/map (fn [_] (dwc/diff-and-commit-changes page-id)))
-              (rx/take-until stoper)))))))
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (let [stoper   (rx/filter #(= ::finalize %) stream)
+              notifier (->> stream
+                            (rx/filter (ptk/type? ::dwc/commit-changes))
+                            (rx/debounce 2000)
+                            (rx/merge stoper))]
+          (rx/merge
+           (->> stream
+                (rx/filter (ptk/type? ::dwc/commit-changes))
+                (rx/map deref)
+                (rx/tap enable-reload-stoper)
+                (rx/buffer-until notifier)
+                (rx/map vec)
+                (rx/filter (complement empty?))
+                (rx/map #(persist-changes page-id %))
+                (rx/take-until (rx/delay 100 stoper)))
+           (->> stream
+                (rx/filter (ptk/type? ::changes-persisted))
+                (rx/tap disable-reload-stoper)
+                (rx/ignore)
+                (rx/take-until stoper))
+           (->> stream
+                (rx/filter #(satisfies? dwc/IBatchedChange %))
+                (rx/debounce 10)
+                (rx/map (fn [_] (dwc/diff-and-commit-changes page-id)))
+                (rx/take-until stoper))))))))
 
 (defn persist-changes
   [page-id changes]
@@ -74,6 +85,11 @@
                      :session-id sid
                      :changes changes}]
         (->> (rp/mutation :update-page params)
+             (rx/map (fn [lagged]
+                       (if (= #{sid} (into #{} (map :session-id) lagged))
+                         (map #(assoc % :changes []) lagged)
+                         lagged)))
+             (rx/mapcat seq)
              (rx/map shapes-changes-persisted))))))
 
 (s/def ::shapes-changes-persisted
@@ -85,10 +101,9 @@
   (ptk/reify ::changes-persisted
     ptk/UpdateEvent
     (update [_ state]
-      (let [session-id (:session-id state)
-            state (-> state
-                      (assoc-in [:workspace-pages page-id :revn] revn))
-            changes (filter #(not= session-id (:session-id %)) changes)]
+      (let [sid   (:session-id state)
+            page  (get-in state [:workspace-pages page-id])
+            state (update-in state [:workspace-pages page-id :revn] #(max % revn))]
         (-> state
             (update-in [:workspace-data page-id] cp/process-changes changes)
             (update-in [:workspace-pages page-id :data] cp/process-changes changes))))))

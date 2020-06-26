@@ -177,23 +177,23 @@
               :context {:incoming-revn (:revn params)
                         :stored-revn (:revn page)}))
   (let [sid      (:session-id params)
-        changes   (:changes params)
+        changes  (:changes params)
+        page     (-> page
+                     (update :data blob/decode)
+                     (update :data pmg/migrate-data)
+                     (update :data cp/process-changes changes)
+                     (update :data blob/encode)
+                     (update :revn inc)
+                     (assoc :changes (blob/encode changes)
+                            :session-id sid))
 
-        page (-> page
-                 (update :data blob/decode)
-                 (update :data pmg/migrate-data)
-                 (update :data cp/process-changes changes)
-                 (update :data blob/encode)
-                 (update :revn inc)
-                 (assoc :changes (blob/encode changes)))
-
-        chng (insert-page-change! conn page)
-        msg  {:type :page-change
-              :profile-id (:profile-id params)
-              :page-id (:id page)
-              :session-id sid
-              :revn (:revn page)
-              :changes changes}]
+        chng     (insert-page-change! conn page)
+        msg      {:type :page-change
+                  :profile-id (:profile-id params)
+                  :page-id (:id page)
+                  :session-id sid
+                  :revn (:revn page)
+                  :changes changes}]
 
     @(redis/run! :publish {:channel (str (:file-id page))
                            :message (t/encode-str msg)})
@@ -206,11 +206,12 @@
     (retrieve-lagged-changes conn chng params)))
 
 (defn- insert-page-change!
-  [conn {:keys [revn data changes] :as page}]
+  [conn {:keys [revn data changes session-id] :as page}]
   (let [id (uuid/next)
         page-id (:id page)]
     (db/insert! conn :page-change
                 {:id id
+                 :session-id session-id
                  :page-id page-id
                  :revn revn
                  :data data
@@ -218,7 +219,8 @@
 
 (def ^:private
   sql:lagged-changes
-  "select s.id, s.changes
+  "select s.id, s.revn, s.page_id,
+          s.session_id, s.changes
      from page_change as s
     where s.page_id = ?
       and s.revn > ?
@@ -226,13 +228,8 @@
 
 (defn- retrieve-lagged-changes
   [conn snapshot params]
-  (let [rows (db/exec! conn [sql:lagged-changes (:id params) (:revn params)])]
-    {:page-id (:id params)
-     :revn (:revn snapshot)
-     :changes (into [] (comp (map decode-row)
-                             (map :changes)
-                             (mapcat identity))
-                    rows)}))
+  (->> (db/exec! conn [sql:lagged-changes (:id params) (:revn params)])
+       (mapv decode-row)))
 
 ;; --- Mutation: Delete Page
 

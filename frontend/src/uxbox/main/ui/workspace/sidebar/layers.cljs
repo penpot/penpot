@@ -59,7 +59,7 @@
                         parent (.-parentNode parent)
                         name (dom/get-value target)]
                     (set! (.-draggable parent) true)
-                    (st/emit! (dw/rename-shape (:id shape) name))
+                    (st/emit! (dw/update-shape (:id shape) {:name name}))
                     (swap! local assoc :edition false)))
         on-key-down (fn [event]
                       (when (kbd/enter? event)
@@ -118,15 +118,15 @@
         (fn [event]
           (dom/stop-propagation event)
           (if (:blocked item)
-            (st/emit! (dw/update-shapes-recursive [id] {:blocked false}))
-            (st/emit! (dw/update-shapes-recursive [id] {:blocked true}))))
+            (st/emit! (dw/update-shape-flags id {:blocked false}))
+            (st/emit! (dw/update-shape-flags id {:blocked true}))))
 
         toggle-visibility
         (fn [event]
           (dom/stop-propagation event)
           (if (:hidden item)
-            (st/emit! (dw/update-shapes-recursive [id] {:hidden false}))
-            (st/emit! (dw/update-shapes-recursive [id] {:hidden true}))))
+            (st/emit! (dw/update-shape-flags id {:hidden false}))
+            (st/emit! (dw/update-shape-flags id {:hidden true}))))
 
         select-shape
         (fn [event]

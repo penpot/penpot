@@ -106,6 +106,7 @@
 (s/def ::integer (s/conformer integer-conformer str))
 (s/def ::not-empty-string (s/and string? #(not (str/empty? %))))
 (s/def ::url string?)
+(s/def ::fn fn?)
 #?(:clj (s/def ::path (s/conformer path-conformer str)))
 
 ;; --- Macros

@@ -368,16 +368,15 @@
      :displacement displacement}))
 
 
-;; Set-rotation is custom because applies different modifiers to each shape adjusting their position
+;; Set-rotation is custom because applies different modifiers to each
+;; shape adjusting their position.
+
 (defn set-rotation
   ([delta-rotation shapes]
    (set-rotation delta-rotation shapes (-> shapes gsh/selection-rect gsh/center)))
 
   ([delta-rotation shapes center]
    (ptk/reify ::set-rotation
-     dwc/IUpdateGroup
-     (get-ids [_] (map :id shapes))
-
      ptk/UpdateEvent
      (update [_ state]
        (let [page-id (:current-page-id state)]
