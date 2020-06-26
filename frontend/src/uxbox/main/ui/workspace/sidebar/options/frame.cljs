@@ -33,8 +33,8 @@
 
         on-preset-selected
         (fn [width height]
-          (st/emit! (udw/update-rect-dimensions (:id shape) :width width)
-                    (udw/update-rect-dimensions (:id shape) :height height)))
+          (st/emit! (udw/update-dimensions (:id shape) :width width)
+                    (udw/update-dimensions (:id shape) :height height)))
 
         on-orientation-clicked
         (fn [orientation]
@@ -42,15 +42,15 @@
                 height (:height shape)
                 new-width (if (= orientation :horiz) (max width height) (min width height))
                 new-height (if (= orientation :horiz) (min width height) (max width height))]
-            (st/emit! (udw/update-rect-dimensions (:id shape) :width new-width)
-                      (udw/update-rect-dimensions (:id shape) :height new-height))))
+            (st/emit! (udw/update-dimensions (:id shape) :width new-width)
+                      (udw/update-dimensions (:id shape) :height new-height))))
 
         on-size-change
         (fn [event attr]
           (let [value (-> (dom/get-target event)
                           (dom/get-value)
                           (d/parse-integer 0))]
-            (st/emit! (udw/update-rect-dimensions (:id shape) attr value))))
+            (st/emit! (udw/update-dimensions (:id shape) attr value))))
 
         on-proportion-lock-change
         (fn [event]

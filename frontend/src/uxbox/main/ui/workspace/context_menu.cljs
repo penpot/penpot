@@ -54,10 +54,10 @@
         do-bring-to-front #(st/emit! (dw/vertical-order-selected :top))
         do-send-backward #(st/emit! (dw/vertical-order-selected :down))
         do-send-to-back #(st/emit! (dw/vertical-order-selected :bottom))
-        do-show-shape #(st/emit! (dw/update-shapes-recursive [id] {:hidden false}))
-        do-hide-shape #(st/emit! (dw/update-shapes-recursive [id] {:hidden true}))
-        do-lock-shape #(st/emit! (dw/update-shapes-recursive [id] {:blocked true}))
-        do-unlock-shape #(st/emit! (dw/update-shapes-recursive [id] {:blocked false}))
+        do-show-shape #(st/emit! (dw/update-shape-flags id {:hidden false}))
+        do-hide-shape #(st/emit! (dw/update-shape-flags id {:hidden true}))
+        do-lock-shape #(st/emit! (dw/update-shape-flags id {:blocked true}))
+        do-unlock-shape #(st/emit! (dw/update-shape-flags id {:blocked false}))
         do-create-group #(st/emit! dw/group-selected)
         do-remove-group #(st/emit! dw/ungroup-selected)]
     [:*

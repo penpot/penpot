@@ -55,7 +55,11 @@
 
     {:desc "Add new HTTP session table"
      :name "0010-add-http-session-table"
-     :fn (mg/resource "migrations/0010-add-http-session-table.sql")}]})
+     :fn (mg/resource "migrations/0010-add-http-session-table.sql")}
+
+    {:desc "Add session_id field to page_change table"
+     :name "0011-add-session-id-field-to-page-change-table"
+     :fn (mg/resource "migrations/0011-add-session-id-field-to-page-change-table.sql")}]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Entry point
