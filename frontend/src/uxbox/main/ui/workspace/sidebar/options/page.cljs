@@ -37,8 +37,7 @@
      [:div.element-set-title (t locale "workspace.options.canvas-background")]
      [:div.element-set-content
       [:& color-row {:disable-opacity true
-                     :value {:value (get options :background "#E8E9EA")
+                     :color {:value (get options :background "#E8E9EA")
                              :opacity 1}
-                     :on-change handle-change-color}]]])
-  )
+                     :on-change handle-change-color}]]]))
 

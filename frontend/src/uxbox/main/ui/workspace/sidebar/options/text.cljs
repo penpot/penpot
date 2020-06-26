@@ -199,9 +199,8 @@
                                             :attrs {:fill value
                                                     :opacity opacity}})))]
 
-    [:& color-row {:value current-color
-                   :on-change handle-change-color}]
-    ))
+    [:& color-row {:color current-color
+                   :on-change handle-change-color}]))
 
 (mf/defc spacing-options
   [{:keys [editor shape locale] :as props}]

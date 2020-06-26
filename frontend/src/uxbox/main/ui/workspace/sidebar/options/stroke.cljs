@@ -92,7 +92,7 @@
 
        [:div.element-set-content
         ;; Stroke Color
-        [:& color-row {:value current-stroke-color
+        [:& color-row {:color current-stroke-color
                        :on-change handle-change-stroke-color}]
 
         ;; Stroke Width, Alignment & Style

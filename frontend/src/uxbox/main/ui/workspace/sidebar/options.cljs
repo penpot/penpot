@@ -26,11 +26,12 @@
    [uxbox.main.ui.workspace.sidebar.options.group :as group]
    [uxbox.main.ui.workspace.sidebar.options.icon :as icon]
    [uxbox.main.ui.workspace.sidebar.options.image :as image]
-   [uxbox.main.ui.workspace.sidebar.options.interactions :refer [interactions-menu]]
+   [uxbox.main.ui.workspace.sidebar.options.text :as text]
    [uxbox.main.ui.workspace.sidebar.options.page :as page]
+   [uxbox.main.ui.workspace.sidebar.options.multiple :as multiple]
+   [uxbox.main.ui.workspace.sidebar.options.interactions :refer [interactions-menu]]
    [uxbox.main.ui.workspace.sidebar.options.path :as path]
    [uxbox.main.ui.workspace.sidebar.options.rect :as rect]
-   [uxbox.main.ui.workspace.sidebar.options.text :as text]
    [uxbox.util.dom :as dom]
    [uxbox.util.http :as http]
    [uxbox.util.i18n :as i18n :refer [tr t]]
@@ -106,7 +107,7 @@
 
 (mf/defc options-content
   {::mf/wrap [mf/memo]}
-  [{:keys [section selected shape page] :as props}]
+  [{:keys [section shapes page] :as props}]
   (let [locale (mf/deref i18n/locale)]
     [:div.tool-window
      [:div.tool-window-content
@@ -116,26 +117,22 @@
                         :title (t locale "workspace.options.design")}
         [:div.element-options
          [:& align-options]
-         (if (= (count selected) 1)
-           [:& shape-options {:shape shape :page page}]
-           [:& page/options {:page page}])]]
+         (case (count shapes)
+           0 [:& page/options {:page page}]
+           1 [:& shape-options {:shape (first shapes)}]
+           [:& multiple/options {:shapes shapes}])]]
 
        [:& tab-element {:id :prototype
                         :title (t locale "workspace.options.prototype")}
         [:div.element-options
-         [:& interactions-menu {:shape shape}]]]]]]))
+         [:& interactions-menu {:shape (first shapes)}]]]]]]))
 
 
 (mf/defc options-toolbox
   {::mf/wrap [mf/memo]}
   [{:keys [page local] :as props}]
-  (let [selected   (:selected local)
-        section    (:options-mode local)
-        shape-id   (first selected)
-        page-id    (:id page)
-        shape-iref (-> (mf/deps shape-id page-id)
-                       (mf/use-memo #(refs/object-by-id shape-id)))
-        shape      (mf/deref shape-iref)]
+  (let [section    (:options-mode local)
+        shapes     (mf/deref refs/selected-objects)]
     [:& options-content {:selected selected
                          :shape shape
                          :page page

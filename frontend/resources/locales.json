@@ -416,7 +416,7 @@
     }
   },
   "dashboard.sidebar.drafts" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:128" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:129" ],
     "translations" : {
       "en" : "Drafts",
       "fr" : "Brouillons",
@@ -424,7 +424,7 @@
     }
   },
   "dashboard.sidebar.libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:134" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:135" ],
     "translations" : {
       "en" : "Libraries",
       "fr" : "Librairies",
@@ -432,7 +432,7 @@
     }
   },
   "dashboard.sidebar.recent" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:121" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:122" ],
     "translations" : {
       "en" : "Recent",
       "fr" : "Récent",
@@ -528,7 +528,7 @@
     }
   },
   "ds.search.placeholder" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:187" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:188" ],
     "translations" : {
       "en" : "Search...",
       "fr" : "Rechercher...",
@@ -584,7 +584,7 @@
     }
   },
   "errors.image-format-unsupported" : {
-    "used-in" : [ "src/uxbox/main/data/users.cljs:177", "src/uxbox/main/data/workspace/persistence.cljs:365", "src/uxbox/main/data/images.cljs:376" ],
+    "used-in" : [ "src/uxbox/main/data/images.cljs:376", "src/uxbox/main/data/workspace/persistence.cljs:365", "src/uxbox/main/data/users.cljs:177" ],
     "translations" : {
       "en" : "The image format is not supported (must be svg, jpg or png).",
       "fr" : "Le format d'image n'est pas supporté (doit être svg, jpg ou png).",
@@ -592,7 +592,7 @@
     }
   },
   "errors.image-too-large" : {
-    "used-in" : [ "src/uxbox/main/data/users.cljs:175", "src/uxbox/main/data/workspace/persistence.cljs:363", "src/uxbox/main/data/images.cljs:374" ],
+    "used-in" : [ "src/uxbox/main/data/images.cljs:374", "src/uxbox/main/data/workspace/persistence.cljs:363", "src/uxbox/main/data/users.cljs:175" ],
     "translations" : {
       "en" : "The image is too large to be inserted (must be under 5mb).",
       "fr" : "L'image est trop grande (doit être inférieure à 5 Mo).",
@@ -632,7 +632,7 @@
     }
   },
   "errors.unexpected-error" : {
-    "used-in" : [ "src/uxbox/main/data/users.cljs:185", "src/uxbox/main/data/workspace/persistence.cljs:334", "src/uxbox/main/data/workspace/persistence.cljs:374", "src/uxbox/main/data/images.cljs:385", "src/uxbox/main/ui/settings/change_email.cljs:51", "src/uxbox/main/ui/auth/register.cljs:54" ],
+    "used-in" : [ "src/uxbox/main/data/images.cljs:385", "src/uxbox/main/data/workspace/persistence.cljs:334", "src/uxbox/main/data/workspace/persistence.cljs:374", "src/uxbox/main/data/users.cljs:185", "src/uxbox/main/ui/auth/register.cljs:54", "src/uxbox/main/ui/settings/change_email.cljs:51" ],
     "translations" : {
       "en" : "An unexpected error occurred.",
       "fr" : "Une erreur inattendue c'est produite",
@@ -672,7 +672,7 @@
     }
   },
   "image.loading" : {
-    "used-in" : [ "src/uxbox/main/data/users.cljs:191", "src/uxbox/main/data/workspace/persistence.cljs:341", "src/uxbox/main/data/workspace/persistence.cljs:382", "src/uxbox/main/data/images.cljs:393" ],
+    "used-in" : [ "src/uxbox/main/data/images.cljs:393", "src/uxbox/main/data/workspace/persistence.cljs:341", "src/uxbox/main/data/workspace/persistence.cljs:382", "src/uxbox/main/data/users.cljs:191" ],
     "translations" : {
       "en" : "Loading image...",
       "fr" : "Chargement de l'image...",
@@ -837,6 +837,13 @@
       "en" : "Select UI language",
       "fr" : "Sélectionner la langue de l'interface",
       "es" : "Cambiar el idioma de la interfaz"
+    }
+  },
+  "settings.multiple" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:127", "src/uxbox/main/ui/workspace/sidebar/options/rows/color_row.cljs:117", "src/uxbox/main/ui/workspace/sidebar/options/rows/color_row.cljs:126" ],
+    "translations" : {
+      "en" : "Multiple",
+      "es" : "Múltiple"
     }
   },
   "settings.new-email-label" : {
@@ -1360,7 +1367,7 @@
     }
   },
   "workspace.options.design" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options.cljs:107" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options.cljs:70" ],
     "translations" : {
       "en" : "Design",
       "fr" : "Conception",
@@ -1380,7 +1387,7 @@
     }
   },
   "workspace.options.fill" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:383", "src/uxbox/main/ui/workspace/sidebar/options/fill.cljs:41" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/fill.cljs:45", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:382" ],
     "translations" : {
       "en" : "Fill",
       "fr" : "Remplissage",
@@ -1388,7 +1395,7 @@
     }
   },
   "workspace.options.font-options" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:389" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:388" ],
     "translations" : {
       "en" : "Text",
       "fr" : "Texte",
@@ -1396,7 +1403,7 @@
     }
   },
   "workspace.options.font-options.align-bottom" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:294" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:293" ],
     "translations" : {
       "en" : "Align bottom",
       "fr" : "Aligner en bas",
@@ -1428,7 +1435,7 @@
     }
   },
   "workspace.options.font-options.align-middle" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:289" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:288" ],
     "translations" : {
       "en" : "Align middle",
       "fr" : "Aligner au milieu",
@@ -1444,7 +1451,7 @@
     }
   },
   "workspace.options.font-options.align-top" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:284" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:283" ],
     "translations" : {
       "en" : "Align top",
       "fr" : "Aligner en haut",
@@ -1452,7 +1459,7 @@
     }
   },
   "workspace.options.font-options.decoration" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:315" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:314" ],
     "translations" : {
       "en" : "Decoration",
       "fr" : "Décoration",
@@ -1460,7 +1467,7 @@
     }
   },
   "workspace.options.font-options.letter-spacing" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:241" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:240" ],
     "translations" : {
       "en" : "Letter Spacing",
       "fr" : "Espacement de caractères",
@@ -1468,7 +1475,7 @@
     }
   },
   "workspace.options.font-options.line-height" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:229" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:228" ],
     "translations" : {
       "en" : "Line height",
       "fr" : "Hauteur de ligne",
@@ -1476,7 +1483,7 @@
     }
   },
   "workspace.options.font-options.lowercase" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:364" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:363" ],
     "translations" : {
       "en" : "Lowercase",
       "fr" : "Minuscule",
@@ -1484,7 +1491,7 @@
     }
   },
   "workspace.options.font-options.none" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:318", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:354" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:317", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:353" ],
     "translations" : {
       "en" : "None",
       "fr" : "Aucune",
@@ -1492,7 +1499,7 @@
     }
   },
   "workspace.options.font-options.strikethrough" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:330" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:329" ],
     "translations" : {
       "en" : "Strikethrough",
       "fr" : "Barré",
@@ -1500,7 +1507,7 @@
     }
   },
   "workspace.options.font-options.text-case" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:351" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:350" ],
     "translations" : {
       "en" : "Case",
       "fr" : "Casse",
@@ -1508,7 +1515,7 @@
     }
   },
   "workspace.options.font-options.titlecase" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:369" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:368" ],
     "translations" : {
       "en" : "Titlecase",
       "fr" : "Titre",
@@ -1516,7 +1523,7 @@
     }
   },
   "workspace.options.font-options.underline" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:324" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:323" ],
     "translations" : {
       "en" : "Underline",
       "fr" : "Souligner",
@@ -1524,7 +1531,7 @@
     }
   },
   "workspace.options.font-options.uppercase" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:359" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:358" ],
     "translations" : {
       "en" : "Uppercase",
       "fr" : "Majuscule",
@@ -1532,7 +1539,7 @@
     }
   },
   "workspace.options.font-options.vertical-align" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:281" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:280" ],
     "translations" : {
       "en" : "Vertical align",
       "fr" : "Alignement vertical",
@@ -1724,7 +1731,7 @@
     }
   },
   "workspace.options.position" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:125", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:112" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:112", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:125" ],
     "translations" : {
       "en" : "Position",
       "fr" : "Position",
@@ -1732,7 +1739,7 @@
     }
   },
   "workspace.options.prototype" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options.cljs:115" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options.cljs:80" ],
     "translations" : {
       "en" : "Prototype",
       "fr" : "Prototype",
@@ -1772,7 +1779,7 @@
     }
   },
   "workspace.options.size" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:98", "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:82" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:82", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:98" ],
     "translations" : {
       "en" : "Size",
       "fr" : "Taille",
@@ -1788,7 +1795,7 @@
     }
   },
   "workspace.options.stroke" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:90", "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:124" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:112", "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:150" ],
     "translations" : {
       "en" : "Stroke",
       "fr" : "Bordure",
@@ -1796,7 +1803,7 @@
     }
   },
   "workspace.options.stroke.center" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:110" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:134" ],
     "translations" : {
       "en" : "Center",
       "fr" : "Centre",
@@ -1804,7 +1811,7 @@
     }
   },
   "workspace.options.stroke.dashed" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:118" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:144" ],
     "translations" : {
       "en" : "Dashed",
       "fr" : "Tiré",
@@ -1812,7 +1819,7 @@
     }
   },
   "workspace.options.stroke.dotted" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:117" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:143" ],
     "translations" : {
       "en" : "Dotted",
       "fr" : "Pointillé",
@@ -1820,7 +1827,7 @@
     }
   },
   "workspace.options.stroke.inner" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:111" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:135" ],
     "translations" : {
       "en" : "Inside",
       "fr" : "Intérieur",
@@ -1828,7 +1835,7 @@
     }
   },
   "workspace.options.stroke.mixed" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:119" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:145" ],
     "translations" : {
       "en" : "Mixed",
       "fr" : "Mixte",
@@ -1836,7 +1843,7 @@
     }
   },
   "workspace.options.stroke.outer" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:112" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:136" ],
     "translations" : {
       "en" : "Outside",
       "fr" : "Extérieur",
@@ -1844,7 +1851,7 @@
     }
   },
   "workspace.options.stroke.solid" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:116" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:142" ],
     "translations" : {
       "en" : "Solid",
       "fr" : "Solide",

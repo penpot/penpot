@@ -218,7 +218,7 @@
                         :value (:margin params)
                         :on-change (handle-change :params :margin)}]])
 
-      [:& color-row {:value (:color params)
+      [:& color-row {:color (:color params)
                      :on-change handle-change-color}]
       [:div.row-flex
        [:button.btn-options {:disabled is-default

@@ -7,18 +7,31 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns uxbox.main.ui.workspace.sidebar.options.rect
+(ns uxbox.main.ui.workspace.sidebar.options.multiple
   (:require
    [rumext.alpha :as mf]
    [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
    [uxbox.main.ui.workspace.sidebar.options.measures :refer [measures-menu]]
    [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-menu]]))
 
+(defn- get-multi
+  [shapes attrs]
+  (let [combine-value #(if (= %1 %2) %1 :multiple)
+
+        combine-values (fn [attrs shape values]
+                         (map #(combine-value (get shape %) (get values %)) attrs))
+
+        reducer (fn [result shape]
+                  (zipmap attrs (combine-values attrs shape result)))]
+
+    (reduce reducer (select-keys (first shapes) attrs) (rest shapes))))
+
+
 (mf/defc options
   {::mf/wrap [mf/memo]}
-  [{:keys [shape] :as props}]
-  (let [fill-values (select-keys shape fill-attrs)]
+  [{:keys [shapes] :as props}]
+  (let [ids (map :id shapes)
+        fill-values (get-multi shapes fill-attrs)]
     [:div
-     [:& measures-menu {:shape shape}]
-     [:& fill-menu {:ids [(:id shape)] :values fill-values}]
-     [:& stroke-menu {:shape shape}]]))
+     [:& fill-menu {:ids ids :values fill-values}]]))
+

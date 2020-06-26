@@ -10,7 +10,7 @@
 (ns uxbox.main.ui.workspace.sidebar.options.circle
   (:require
    [rumext.alpha :as mf]
-   [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-menu]]
+   [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
    [uxbox.main.ui.workspace.sidebar.options.measures :refer [measures-menu]]
    [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-menu]]))
 
@@ -19,5 +19,5 @@
   [:div
    [:& measures-menu {:shape shape
                       :options #{:size :position :rotation}}]
-   [:& fill-menu {:shape shape}]
+   [:& fill-menu {:ids [(:id shape)] :values (select-keys shape fill-attrs)}]
    [:& stroke-menu {:shape shape}]])

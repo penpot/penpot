@@ -10,35 +10,39 @@
 (ns uxbox.main.ui.workspace.sidebar.options.fill
   (:require
    [rumext.alpha :as mf]
-   [uxbox.main.data.workspace :as udw]
+   [uxbox.main.data.workspace.common :as dwc]
    [uxbox.main.store :as st]
    [uxbox.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
    [uxbox.util.object :as obj]
    [uxbox.util.i18n :as i18n :refer [tr t]]))
 
+(def fill-attrs [:fill-color :fill-opacity])
+
 (defn- fill-menu-memo-equals?
   [np op]
-  (let [new-shape (obj/get np "shape")
-        old-shape (obj/get op "shape")]
-    (and (= (:id new-shape)
-            (:id old-shape))
-         (identical? (:fill-color new-shape)
-                     (:fill-color old-shape))
-         (identical? (:fill-opacity new-shape)
-                     (:fill-opacity old-shape)))))
+  (let [new-ids    (obj/get np "ids")
+        old-ids    (obj/get op "ids")
+        new-values (obj/get np "values")
+        old-values (obj/get op "values")]
+    (and (= new-ids old-ids)
+         (identical? (:fill-color new-values)
+                     (:fill-color old-values))
+         (identical? (:fill-opacity new-values)
+                     (:fill-opacity old-values)))))
 
 (mf/defc fill-menu
   {::mf/wrap [#(mf/memo' % fill-menu-memo-equals?)]}
-  [{:keys [shape] :as props}]
+  [{:keys [ids values] :as props}]
   (let [locale (i18n/use-locale)
-        color {:value (:fill-color shape)
-               :opacity (:fill-opacity shape)}
+        color {:value (:fill-color values)
+               :opacity (:fill-opacity values)}
         handle-change-color (fn [value opacity]
-                              (let [change {:fill-color value
-                                            :fill-opacity opacity}]
-                                (st/emit! (udw/update-shape (:id shape) change))))]
+                              (let [change #(cond-> %
+                                             value (assoc :fill-color value)
+                                             opacity (assoc :fill-opacity opacity))]
+                                (st/emit! (dwc/update-shapes ids change))))]
     [:div.element-set
      [:div.element-set-title (t locale "workspace.options.fill")]
      [:div.element-set-content
-      [:& color-row {:value color
+      [:& color-row {:color color
                      :on-change handle-change-color}]]]))

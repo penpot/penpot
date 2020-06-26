@@ -11,12 +11,12 @@
   (:require
    [rumext.alpha :as mf]
    [uxbox.main.ui.workspace.sidebar.options.measures :refer [measures-menu]]
-   [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-menu]]
+   [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
    [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-menu]]))
 
 (mf/defc options
   [{:keys [shape] :as props}]
   [:div
    [:& measures-menu {:shape shape}]
-   [:& fill-menu {:shape shape}]
+   [:& fill-menu {:ids [(:id shape)] :values (select-keys shape fill-attrs)}]
    [:& stroke-menu {:shape shape}]])
