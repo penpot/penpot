@@ -11,22 +11,20 @@
   (:require
    [okulary.core :as l]
    [rumext.alpha :as mf]
-   [uxbox.main.ui.icons :as i]
    [uxbox.common.exceptions :as ex]
    [uxbox.main.constants :as c]
    [uxbox.main.data.dashboard :as dsh]
-   [uxbox.main.store :as st]
-   [uxbox.main.exports :as exports]
    [uxbox.main.refs :as refs]
-   [uxbox.main.ui.modal :as modal]
-   [uxbox.main.ui.keyboard :as kbd]
+   [uxbox.main.store :as st]
    [uxbox.main.ui.confirm :refer [confirm-dialog]]
+   [uxbox.main.ui.dashboard.grid :refer [grid]]
+   [uxbox.main.ui.icons :as i]
+   [uxbox.main.ui.keyboard :as kbd]
+   [uxbox.main.ui.modal :as modal]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t tr]]
    [uxbox.util.router :as rt]
-   [uxbox.util.time :as dt]
-   [uxbox.main.ui.dashboard.grid :refer [grid]])
-  )
+   [uxbox.util.time :as dt]))
 
 ;; --- Component: Content
 
