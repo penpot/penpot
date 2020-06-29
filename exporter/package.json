@@ -1,0 +1,20 @@
+{
+  "name": "uxbox-exporter",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "koa": "^2.13.0",
+    "puppeteer": "^4.0.1",
+    "puppeteer-cluster": "^0.21.0",
+    "xregexp": "^4.3.0"
+  },
+  "devDependencies": {
+    "source-map-support": "^0.5.19"
+  }
+}

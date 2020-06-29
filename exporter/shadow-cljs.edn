@@ -1,0 +1,35 @@
+{:dependencies
+ [[funcool/promesa "5.1.0"]
+  [funcool/cuerdas "2020.03.26-3"]
+  [lambdaisland/glogi "1.0.63"]
+  [metosin/reitit-core "0.5.2"]]
+ :source-paths ["src"]
+ :nrepl {:port 3497}
+
+ :builds
+ {:main
+  {:target :node-script
+   :main app.core/main
+   :output-to "target/exporter.js"
+   :output-dir "target/exporter/"
+   :asset-path "/js"
+
+   :devtools {:before-load-async app.core/stop
+              :after-load app.core/start}
+
+   :compiler-options
+   {:output-feature-set :es8
+    :output-wrapper false}
+
+   :release
+   {:closure-defines {goog.debug.LOGGING_ENABLED true}
+    :compiler-options
+    {:fn-invoke-direct true
+     :source-map true
+     :optimizations :simple
+     :pseudo-names true
+     :pretty-print true
+     :anon-fn-naming-policy :off
+     :source-map-detail-level :all}}}}}
+
+
