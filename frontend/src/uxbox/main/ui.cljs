@@ -28,6 +28,7 @@
    [uxbox.main.ui.settings :as settings]
    [uxbox.main.ui.static :refer [not-found-page not-authorized-page]]
    [uxbox.main.ui.viewer :refer [viewer-page]]
+   [uxbox.main.ui.render :as render]
    [uxbox.main.ui.workspace :as workspace]
    [uxbox.util.i18n :as i18n :refer [tr t]]
    [uxbox.util.timers :as ts]))
@@ -54,6 +55,9 @@
 
    (when *assert*
      ["/debug/icons-preview" :debug-icons-preview])
+
+   ;; Used for export
+   ["/render-object/:page-id/:object-id" :render-object]
 
    ["/dashboard"
     ["/team/:team-id"
@@ -84,77 +88,85 @@
       :not-found [:& not-found-page {:error data}]
       [:span "Internal application errror"])))
 
-(mf/defc app-container
+(mf/defc app
   {::mf/wrap [#(mf/catch % {:fallback app-error})]}
   [{:keys [route] :as props}]
-  [:*
-   [:& msgs/notifications]
-   (case (get-in route [:data :name])
-     (:auth-login
-      :auth-register
-      :auth-goodbye
-      :auth-recovery-request
-      :auth-recovery)
-     [:& auth {:route route}]
+  (case (get-in route [:data :name])
+    (:auth-login
+     :auth-register
+     :auth-goodbye
+     :auth-recovery-request
+     :auth-recovery)
+    [:& auth {:route route}]
 
-     :auth-verify-token
-     [:& verify-token {:route route}]
+    :auth-verify-token
+    [:& verify-token {:route route}]
 
-     (:settings-profile
-      :settings-password
-      :settings-options)
-     [:& settings/settings {:route route}]
+    (:settings-profile
+     :settings-password
+     :settings-options)
+    [:& settings/settings {:route route}]
 
-     :debug-icons-preview
-     (when *assert*
-       [:div.debug-preview
-        [:h1 "Cursors"]
-        [:& c/debug-preview]
-        [:h1 "Icons"]
-        [:& i/debug-icons-preview]
-        ])
+    :debug-icons-preview
+    (when *assert*
+      [:div.debug-preview
+       [:h1 "Cursors"]
+       [:& c/debug-preview]
+       [:h1 "Icons"]
+       [:& i/debug-icons-preview]
+       ])
 
-     (:dashboard-search
-      :dashboard-team
-      :dashboard-project
-      :dashboard-library-icons
-      :dashboard-library-icons-index
-      :dashboard-library-images
-      :dashboard-library-images-index
-      :dashboard-library-palettes
-      :dashboard-library-palettes-index)
-     [:& dashboard {:route route}]
+    (:dashboard-search
+     :dashboard-team
+     :dashboard-project
+     :dashboard-library-icons
+     :dashboard-library-icons-index
+     :dashboard-library-images
+     :dashboard-library-images-index
+     :dashboard-library-palettes
+     :dashboard-library-palettes-index)
+    [:& dashboard {:route route}]
 
-     :viewer
-     (let [index (d/parse-integer (get-in route [:params :query :index]))
-           token (get-in route [:params :query :token])
-           page-id (uuid (get-in route [:params :path :page-id]))]
-       [:& viewer-page {:page-id page-id
-                        :index index
-                        :token token}])
+    :viewer
+    (let [index (d/parse-integer (get-in route [:params :query :index]))
+          token (get-in route [:params :query :token])
+          page-id (uuid (get-in route [:params :path :page-id]))]
+      [:& viewer-page {:page-id page-id
+                       :index index
+                       :token token}])
 
-     :workspace
-     (let [project-id (uuid (get-in route [:params :path :project-id]))
-           file-id (uuid (get-in route [:params :path :file-id]))
-           page-id (uuid (get-in route [:params :query :page-id]))]
-       [:& workspace/workspace {:project-id project-id
-                                :file-id file-id
-                                :page-id page-id
-                                :key file-id}])
+    :render-object
+    (do
+      (prn route)
+      (let [page-id (uuid (get-in route [:params :path :page-id]))
+            object-id  (uuid (get-in route [:params :path :object-id]))]
+        [:& render/render-object {:page-id page-id
+                                  :object-id object-id}]))
 
-     :not-authorized
-     [:& not-authorized-page]
+    :workspace
+    (let [project-id (uuid (get-in route [:params :path :project-id]))
+          file-id (uuid (get-in route [:params :path :file-id]))
+          page-id (uuid (get-in route [:params :query :page-id]))]
+      [:& workspace/workspace {:project-id project-id
+                               :file-id file-id
+                               :page-id page-id
+                               :key file-id}])
 
-     :not-found
-     [:& not-found-page]
+    :not-authorized
+    [:& not-authorized-page]
 
-     nil)])
+    :not-found
+    [:& not-found-page]
 
-(mf/defc app
+    nil))
+
+(mf/defc app-wrapper
   []
   (let [route (mf/deref refs/route)]
-    (when route
-      [:& app-container {:route route}])))
+    [:*
+     [:& msgs/notifications]
+     (when route
+       [:& app {:route route}])]))
 
 ;; --- Error Handling
 

@@ -54,7 +54,7 @@
     (mf/fnc frame-wrapper
       [{:keys [shape] :as props}]
       (let [childs (mapv #(get objects %) (:shapes shape))
-            shape (geom/transform-shape shape)]
+            shape  (geom/transform-shape shape)]
         [:& frame-shape {:shape shape :childs childs}]))))
 
 (defn group-wrapper-factory
@@ -153,4 +153,3 @@
            :xmlnsXlink "http://www.w3.org/1999/xlink"
            :xmlns "http://www.w3.org/2000/svg"}
      [:& wrapper {:shape frame :view-box vbox}]]))
-
