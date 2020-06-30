@@ -12,12 +12,14 @@
    [rumext.alpha :as mf]
    [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
    [uxbox.main.ui.workspace.sidebar.options.measures :refer [measures-menu]]
-   [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-menu]]))
+   [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]))
 
 (mf/defc options
   [{:keys [shape] :as props}]
-  [:div
-   [:& measures-menu {:shape shape
-                      :options #{:size :position :rotation}}]
-   [:& fill-menu {:ids [(:id shape)] :values (select-keys shape fill-attrs)}]
-   [:& stroke-menu {:shape shape}]])
+  (let [ids [(:id shape)]
+        stroke-values (select-keys shape stroke-attrs)]
+    [:div
+     [:& measures-menu {:shape shape
+                        :options #{:size :position :rotation}}]
+     [:& fill-menu {:ids [(:id shape)] :values (select-keys shape fill-attrs)}]
+     [:& stroke-menu {:ids ids :values stroke-values}]]))

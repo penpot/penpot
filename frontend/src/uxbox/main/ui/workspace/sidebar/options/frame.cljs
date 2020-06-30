@@ -21,7 +21,7 @@
    [uxbox.main.ui.icons :as i]
    [uxbox.main.ui.components.dropdown :refer [dropdown]]
    [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
-   [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-menu]]
+   [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]
    [uxbox.main.ui.workspace.sidebar.options.frame-grid :refer [frame-grid]]))
 
 (declare +size-presets+)
@@ -200,9 +200,11 @@
 
 (mf/defc options
   [{:keys [shape] :as props}]
+  (let [ids [(:id shape)]
+        stroke-values (select-keys shape stroke-attrs)]
   [:div
    [:& measures-menu {:shape shape}]
    [:& fill-menu {:ids [(:id shape)] :values (select-keys shape fill-attrs)}]
-   [:& stroke-menu {:shape shape}]
-   [:& frame-grid {:shape shape}]])
+   [:& stroke-menu {:ids ids :values stroke-values}]
+   [:& frame-grid {:shape shape}]]))
 

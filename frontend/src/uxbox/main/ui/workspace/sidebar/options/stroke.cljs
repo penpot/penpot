@@ -9,82 +9,104 @@
 
 (ns uxbox.main.ui.workspace.sidebar.options.stroke
   (:require
+   [cuerdas.core :as str]
    [rumext.alpha :as mf]
    [uxbox.common.data :as d]
    [uxbox.main.ui.icons :as i]
-   [uxbox.main.data.workspace :as udw]
+   [uxbox.main.data.workspace.common :as dwc]
    [uxbox.main.store :as st]
    [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.workspace.colorpicker :refer [colorpicker-modal]]
+   [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
    [uxbox.util.object :as obj]
-   [uxbox.util.i18n :as i18n :refer  [tr t]]
+   [uxbox.util.i18n :as i18n :refer [tr t]]
    [uxbox.common.math :as math]
    [uxbox.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]))
 
+(def stroke-attrs [:stroke-style :stroke-alignment :stroke-width :stroke-color :stroke-opacity])
+
 (defn- stroke-menu-memo-equals?
   [np op]
-  (let [new-shape (obj/get np "shape")
-        old-shape (obj/get op "shape")]
-    (and (= (:id new-shape)
-            (:id old-shape))
-         (identical? (:stroke-style new-shape)
-                     (:stroke-style old-shape))
-         (identical? (:stroke-alignment new-shape)
-                     (:stroke-alignment old-shape))
-         (identical? (:stroke-width new-shape)
-                     (:stroke-width old-shape))
-         (identical? (:stroke-color new-shape)
-                     (:stroke-color old-shape))
-         (identical? (:stroke-opacity new-shape)
-                     (:stroke-opacity old-shape)))))
+  (let [new-ids    (obj/get np "ids")
+        old-ids    (obj/get op "ids")
+        new-values (obj/get np "values")
+        old-values (obj/get op "values")]
+    (and (= new-ids old-ids)
+         (identical? (:stroke-style new-values)
+                     (:stroke-style old-values))
+         (identical? (:stroke-alignment new-values)
+                     (:stroke-alignment old-values))
+         (identical? (:stroke-width new-values)
+                     (:stroke-width old-values))
+         (identical? (:stroke-color new-values)
+                     (:stroke-color old-values))
+         (identical? (:stroke-opacity new-values)
+                     (:stroke-opacity old-values)))))
+
+(defn width->string [width]
+  (if (= width :multiple)
+   ""
+   (str (-> width
+            (d/coalesce 1)
+            (math/round)))))
+
+(defn enum->string [value]
+  (if (= value :multiple)
+    ""
+    (pr-str value)))
 
 (mf/defc stroke-menu
   {::mf/wrap [#(mf/memo' % stroke-menu-memo-equals?)]}
-  [{:keys [shape] :as props}]
+  [{:keys [ids values] :as props}]
   (let [locale (i18n/use-locale)
-        show-options (not= (:stroke-style shape) :none)
+        show-options (not= (:stroke-style values :none) :none)
+
+        current-stroke-color {:value (:stroke-color values)
+                              :opacity (:stroke-opacity values)}
+
+        handle-change-stroke-color
+        (fn [value opacity]
+          (let [change #(cond-> %
+                         value (assoc :stroke-color value)
+                         opacity (assoc :stroke-opacity opacity))]
+            (st/emit! (dwc/update-shapes ids change))))
 
         on-stroke-style-change
         (fn [event]
           (let [value (-> (dom/get-target event)
                           (dom/get-value)
                           (d/read-string))]
-            (st/emit! (udw/update-shape (:id shape) {:stroke-style value}))))
+            (st/emit! (dwc/update-shapes ids #(assoc % :stroke-style value)))))
 
         on-stroke-alignment-change
         (fn [event]
           (let [value (-> (dom/get-target event)
                           (dom/get-value)
                           (d/read-string))]
-            (st/emit! (udw/update-shape (:id shape) {:stroke-alignment value}))))
+            (when-not (str/empty? value)
+              (st/emit! (dwc/update-shapes ids #(assoc % :stroke-alignment value))))))
 
         on-stroke-width-change
         (fn [event]
           (let [value (-> (dom/get-target event)
                           (dom/get-value)
                           (d/parse-integer 0))]
-            (st/emit! (udw/update-shape (:id shape) {:stroke-width value}))))
+            (when-not (str/empty? value)
+              (st/emit! (dwc/update-shapes ids #(assoc % :stroke-width value))))))
 
         on-add-stroke
         (fn [event]
-          (st/emit! (udw/update-shape (:id shape) {:stroke-style :solid
+          (st/emit! (dwc/update-shapes ids #(assoc %
+                                                   :stroke-style :solid
                                                    :stroke-color "#000000"
-                                                   :stroke-opacity 1})))
+                                                   :stroke-opacity 1))))
 
         on-del-stroke
         (fn [event]
-          (st/emit! (udw/update-shape (:id shape) {:stroke-style :none})))
+          (st/emit! (dwc/update-shapes ids #(assoc % :stroke-style :none))))]
 
-        current-stroke-color {:value (:stroke-color shape)
-                              :opacity (:stroke-opacity shape)}
-
-        handle-change-stroke-color
-        (fn [value opacity]
-          (st/emit! (udw/update-shape (:id shape) {:stroke-color value
-                                                   :stroke-opacity opacity})))]
-
-    (if (not= :none (:stroke-style shape :none))
+    (if show-options
       [:div.element-set
        [:div.element-set-title
         [:span (t locale "workspace.options.stroke")]
@@ -97,22 +119,26 @@
 
         ;; Stroke Width, Alignment & Style
         [:div.row-flex
-         [:div.input-element.pixels
+         [:div.input-element
+          {:class (classnames :pixels (not= (:stroke-width values) :multiple))}
           [:input.input-text {:type "number"
                               :min "0"
-                              :value (str (-> (:stroke-width shape)
-                                              (d/coalesce 1)
-                                              (math/round)))
+                              :value (-> (:stroke-width values) width->string)
+                              :placeholder (t locale "settings.multiple")
                               :on-change on-stroke-width-change}]]
 
-         [:select#style.input-select {:value (pr-str (:stroke-alignment shape))
+         [:select#style.input-select {:value (enum->string (:stroke-alignment values))
                                       :on-change on-stroke-alignment-change}
+          (when (= (:stroke-alignment values) :multiple)
+            [:option {:value ""} "--"])
           [:option {:value ":center"} (t locale "workspace.options.stroke.center")]
           [:option {:value ":inner"} (t locale "workspace.options.stroke.inner")]
           [:option {:value ":outer"} (t locale "workspace.options.stroke.outer")]]
 
-         [:select#style.input-select {:value (pr-str (:stroke-style shape))
+         [:select#style.input-select {:value (enum->string (:stroke-style values))
                                       :on-change on-stroke-style-change}
+          (when (= (:stroke-style values) :multiple)
+            [:option {:value ""} "--"])
           [:option {:value ":solid"} (t locale "workspace.options.stroke.solid")]
           [:option {:value ":dotted"} (t locale "workspace.options.stroke.dotted")]
           [:option {:value ":dashed"} (t locale "workspace.options.stroke.dashed")]
@@ -123,3 +149,4 @@
        [:div.element-set-title
         [:span (t locale "workspace.options.stroke")]
         [:div.add-page {:on-click on-add-stroke} i/close]]])))
+
