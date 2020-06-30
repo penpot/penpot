@@ -39,8 +39,9 @@
 ;; --- Right Sidebar (Component)
 
 (mf/defc right-sidebar
-  [{:keys [layout page] :as props}]
+  [{:keys [layout page local] :as props}]
   [:aside#settings-bar.settings-bar
    [:div.settings-bar-inside
     (when (contains? layout :element-options)
-      [:& options-toolbox {:page page}])]])
+      [:& options-toolbox {:page page
+                           :local local}])]])
