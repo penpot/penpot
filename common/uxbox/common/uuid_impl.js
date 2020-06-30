@@ -20,8 +20,13 @@ function fill(buf) {
   return buf;
 };
 
+// NOTE: NodeJS compatibility
+if (typeof require === "function") {
+  global.crypto = require("crypto");
+}
+
 if (global.crypto === undefined) {
-  console.warn("No high quality RNG available, switching back to Math.random.", platform);
+  console.warn("No high quality RNG available, switching back to Math.random.");
 
   fill = function(buf) {
     for (let i = 0, r; i < buf.length; i++) {

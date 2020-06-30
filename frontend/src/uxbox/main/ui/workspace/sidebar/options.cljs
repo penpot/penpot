@@ -14,6 +14,7 @@
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
    [uxbox.common.spec :as us]
+   [uxbox.main.data.messages :as dm]
    [uxbox.main.data.workspace :as udw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
@@ -67,8 +68,10 @@
                    (swap! loading? not)
                    (->> (request-screenshot (:id page) (:id shape))
                         (rx/subs
-                         (fn [{:keys [status body]}]
-                           (trigger-download (:name shape) body))
+                         (fn [{:keys [status body] :as response}]
+                           (if (= status 200)
+                             (trigger-download (:name shape) body)
+                             (st/emit! (dm/error (tr "errors.unexpected-error")))))
                          (constantly nil)
                          (fn []
                            (swap! loading? not)))))]

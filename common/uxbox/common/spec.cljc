@@ -9,7 +9,6 @@
   (:refer-clojure :exclude [assert])
   #?(:cljs (:require-macros [uxbox.common.spec :refer [assert]]))
   (:require
-   #?(:clj [datoteka.core :as fs])
    #?(:clj [clojure.spec.alpha :as s]
       :cljs [cljs.spec.alpha :as s])
    [expound.alpha :as expound]
@@ -85,15 +84,6 @@
     v
     ::s/invalid))
 
-#?(:clj
-   (defn path-conformer
-     [v]
-     (cond
-       (string? v) (fs/path v)
-       (fs/path? v) v
-       :else ::s/invalid)))
-
-
 ;; --- Default Specs
 
 (s/def ::inst inst?)
@@ -107,7 +97,6 @@
 (s/def ::not-empty-string (s/and string? #(not (str/empty? %))))
 (s/def ::url string?)
 (s/def ::fn fn?)
-#?(:clj (s/def ::path (s/conformer path-conformer str)))
 
 ;; --- Macros
 
