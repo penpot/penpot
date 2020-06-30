@@ -2,7 +2,10 @@
   (:require
    [app.browser :as bwr]
    [app.config :as cfg]
-   [promesa.core :as p]))
+   [cljs.spec.alpha :as s]
+   [promesa.core :as p]
+   [uxbox.common.exceptions :as exc :include-macros true]
+   [uxbox.common.spec :as us]))
 
 (defn- load-and-screenshot
   [page url cookie]
@@ -27,13 +30,17 @@
               (load-and-screenshot page url cookie)))]
     (bwr/exec! browser on-browser)))
 
+(s/def ::page-id ::us/uuid)
+(s/def ::object-id ::us/uuid)
+(s/def ::bitmap-handler-params
+  (s/keys :req-un [::page-id ::object-id]))
+
 (defn bitmap-handler
   [{:keys [params browser cookies] :as request}]
-  (let [page-id   (get-in params [:query :page-id])
-        object-id (get-in params [:query :object-id])
-        token     (.get ^js cookies "auth-token")]
-    (-> (take-screenshot browser {:page-id page-id
-                                  :object-id object-id
+  (let [params (us/conform ::bitmap-handler-params (:query params))
+        token  (.get ^js cookies "auth-token")]
+    (-> (take-screenshot browser {:page-id (:page-id params)
+                                  :object-id (:object-id params)
                                   :token token})
         (p/then (fn [result]
                   {:status 200

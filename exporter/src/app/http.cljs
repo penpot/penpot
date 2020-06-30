@@ -4,7 +4,9 @@
    [lambdaisland.glogi :as log]
    [app.browser :as bwr]
    [app.http.screenshot :refer [bitmap-handler]]
+   [app.util.transit :as t]
    [reitit.core :as r]
+   [cuerdas.core :as str]
    ["koa" :as koa]
    ["http" :as http])
   (:import
@@ -29,6 +31,31 @@
                :params params
                :query-params qparams)))))
 
+(defn- handle-error
+  [error request]
+  (let [{:keys [type message code] :as data} (ex-data error)]
+    (cond
+      (= :validation type)
+      (let [header (get-in request [:headers "accept"])]
+        (if (and (str/starts-with? header "text/html")
+                 (= :spec-validation (:code data)))
+          {:status 400
+           :headers {"content-type" "text/html"}
+           :body (str "<pre style='font-size:16px'>" (:explain data) "</pre>\n")}
+          {:status 400
+           :headers {"x-metadata" (t/encode data)}
+           :body ""}))
+
+      :else
+      (do
+        (log/error :msg "Unexpected error"
+                   :error error)
+        {:status 500
+         :headers {"x-metadata" (t/encode {:type :unexpected
+                                           :message (ex-message error)})}
+         :body ""}))))
+
+
 (defn- handle-response
   [ctx {:keys [body headers status] :or {headers {} status 200}}]
   (run! (fn [[k v]] (.set ^js ctx k v)) headers)
@@ -36,15 +63,30 @@
   (set! (.-status ^js ctx) status)
   nil)
 
+(defn- parse-headers
+  [ctx]
+  (let [orig (unchecked-get ctx "headers")]
+    (persistent!
+     (reduce #(assoc! %1 %2 (unchecked-get orig %2))
+             (transient {})
+             (js/Object.keys orig)))))
+
 (defn- wrap-handler
   [f extra]
   (fn [ctx]
     (let [cookies (unchecked-get ctx "cookies")
-          request (assoc extra :ctx ctx :cookies cookies)]
+          headers (parse-headers ctx)
+          request (assoc extra
+                         :ctx ctx
+                         :headers headers
+                         :cookies cookies)]
       (-> (p/do! (f request))
-          (p/then (fn [rsp]
-                    (when (map? rsp)
-                      (handle-response ctx rsp))))))))
+          (p/then  (fn [rsp]
+                     (when (map? rsp)
+                       (handle-response ctx rsp))))
+          (p/catch (fn [err]
+                     (->> (handle-error err request)
+                          (handle-response ctx))))))))
 
 (def routes
   [["/export"
