@@ -77,7 +77,9 @@
      (when left-sidebar?
        [:& left-sidebar {:file file :page page :layout layout}])
      (when right-sidebar?
-       [:& right-sidebar {:page page :layout layout}])]))
+       [:& right-sidebar {:page page
+                          :local local
+                          :layout layout}])]))
 
 (mf/defc workspace-page
   [{:keys [project file layout page-id] :as props}]

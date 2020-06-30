@@ -169,3 +169,24 @@
 (defn fullscreen?
   []
   (boolean (.-fullscreenElement js/document)))
+
+(defn ^boolean blob?
+  [v]
+  (instance? js/Blob v))
+
+(defn create-blob
+  "Create a blob from content."
+  ([content]
+   (create-blob content "application/octet-stream"))
+  ([content mimetype]
+   (js/Blob. #js [content] #js {:type mimetype})))
+
+(defn revoke-uri
+  [url]
+  (js/URL.revokeObjectURL url))
+
+(defn create-uri
+  "Create a url from blob."
+  [b]
+  {:pre [(blob? b)]}
+  (js/URL.createObjectURL b))

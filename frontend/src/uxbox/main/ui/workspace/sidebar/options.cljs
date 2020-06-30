@@ -9,32 +9,84 @@
 
 (ns uxbox.main.ui.workspace.sidebar.options
   (:require
-   [okulary.core :as l]
+   [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
+   [cuerdas.core :as str]
    [rumext.alpha :as mf]
-   [uxbox.main.ui.icons :as i]
+   [uxbox.common.spec :as us]
    [uxbox.main.data.workspace :as udw]
-   [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
+   [uxbox.main.store :as st]
+   [uxbox.main.ui.components.tab-container :refer [tab-container tab-element]]
+   [uxbox.main.ui.icons :as i]
    [uxbox.main.ui.workspace.sidebar.align :refer [align-options]]
+   [uxbox.main.ui.workspace.sidebar.options.circle :as circle]
    [uxbox.main.ui.workspace.sidebar.options.frame :as frame]
    [uxbox.main.ui.workspace.sidebar.options.group :as group]
-   [uxbox.main.ui.workspace.sidebar.options.rect :as rect]
    [uxbox.main.ui.workspace.sidebar.options.icon :as icon]
-   [uxbox.main.ui.workspace.sidebar.options.circle :as circle]
-   [uxbox.main.ui.workspace.sidebar.options.path :as path]
    [uxbox.main.ui.workspace.sidebar.options.image :as image]
-   [uxbox.main.ui.workspace.sidebar.options.text :as text]
-   [uxbox.main.ui.workspace.sidebar.options.page :as page]
    [uxbox.main.ui.workspace.sidebar.options.interactions :refer [interactions-menu]]
-   [uxbox.main.ui.components.tab-container :refer [tab-container tab-element]]
-   [uxbox.util.i18n :refer [tr]]))
+   [uxbox.main.ui.workspace.sidebar.options.page :as page]
+   [uxbox.main.ui.workspace.sidebar.options.path :as path]
+   [uxbox.main.ui.workspace.sidebar.options.rect :as rect]
+   [uxbox.main.ui.workspace.sidebar.options.text :as text]
+   [uxbox.util.dom :as dom]
+   [uxbox.util.http :as http]
+   [uxbox.util.i18n :as i18n :refer [tr t]]
+   [uxbox.util.object :as obj]))
 
 ;; --- Options
 
+(defn- request-screenshot
+  [page-id shape-id]
+  (http/send! {:method :get
+               :uri "/export/bitmap"
+               :query {:page-id page-id
+                       :object-id shape-id}}
+              {:credentials? true
+               :response-type :blob}))
+
+(defn- trigger-download
+  [name blob]
+  (let [link (dom/create-element "a")
+        uri  (dom/create-uri blob)]
+    (obj/set! link "href" uri)
+    (obj/set! link "download" (str/slug name))
+    (obj/set! (.-style ^js link) "display" "none")
+    (.appendChild (.-body ^js js/document) link)
+    (.click link)
+    (.remove link)))
+
+(mf/defc shape-export
+  {::mf/wrap [mf/memo]}
+  [{:keys [shape page] :as props}]
+  (let [loading? (mf/use-state false)
+        locale   (mf/deref i18n/locale)
+        on-click (fn [event]
+                   (dom/prevent-default event)
+                   (swap! loading? not)
+                   (->> (request-screenshot (:id page) (:id shape))
+                        (rx/subs
+                         (fn [{:keys [status body]}]
+                           (trigger-download (:name shape) body))
+                         (constantly nil)
+                         (fn []
+                           (swap! loading? not)))))]
+
+    [:div.element-set
+     [:div.btn-large.btn-icon-dark
+      {:on-click (when-not @loading? on-click)
+       :class (dom/classnames
+               :btn-disabled @loading?)
+       :disabled @loading?}
+      (if @loading?
+        (t locale "workspace.options.exporting-object")
+        (t locale "workspace.options.export-object"))]]))
+
 (mf/defc shape-options
   {::mf/wrap [#(mf/throttle % 60)]}
-  [{:keys [shape] :as props}]
-  [:div
+  [{:keys [shape page] :as props}]
+  [:*
    (case (:type shape)
      :frame [:& frame/options {:shape shape}]
      :group [:& group/options {:shape shape}]
@@ -45,45 +97,44 @@
      :path [:& path/options {:shape shape}]
      :curve [:& path/options {:shape shape}]
      :image [:& image/options {:shape shape}]
-     nil)])
+     nil)
+   [:& shape-export {:shape shape :page page}]])
+
+
+(mf/defc options-content
+  {::mf/wrap [mf/memo]}
+  [{:keys [section selected shape page] :as props}]
+  (let [locale (mf/deref i18n/locale)]
+    [:div.tool-window
+     [:div.tool-window-content
+      [:& tab-container {:on-change-tab #(st/emit! (udw/set-options-mode %))
+                         :selected section}
+       [:& tab-element {:id :design
+                        :title (t locale "workspace.options.design")}
+        [:div.element-options
+         [:& align-options]
+         (if (= (count selected) 1)
+           [:& shape-options {:shape shape :page page}]
+           [:& page/options {:page page}])]]
+
+       [:& tab-element {:id :prototype
+                        :title (t locale "workspace.options.prototype")}
+        [:div.element-options
+         [:& interactions-menu {:shape shape}]]]]]]))
+
 
 (mf/defc options-toolbox
-  {:wrap [mf/memo]}
-  [{:keys [page selected] :as props}]
-  (let [close #(st/emit! (udw/toggle-layout-flags :element-options))
-        on-change-tab #(st/emit! (udw/set-options-mode %))
-
-        options-mode (mf/deref refs/options-mode)
-
-        selected (mf/deref refs/selected-shapes)
-        shape-id (first selected)
-        page-id (:id page)
+  {::mf/wrap [mf/memo]}
+  [{:keys [page local] :as props}]
+  (let [selected   (:selected local)
+        section    (:options-mode local)
+        shape-id   (first selected)
+        page-id    (:id page)
         shape-iref (-> (mf/deps shape-id page-id)
-                       (mf/use-memo
-                        #(-> (l/in [:objects shape-id])
-                             (l/derived refs/workspace-data))))
-        shape (mf/deref shape-iref)]
-
-    [:div.tool-window
-      ;; [:div.tool-window-bar
-      ;;  [:div.tool-window-icon i/options]
-      ;;  [:span (tr "ds.settings.element-options")]
-      ;;  [:div.tool-window-close {:on-click close} i/close]]
-      [:div.tool-window-content
-        [:& tab-container {:on-change-tab on-change-tab :selected options-mode}
-
-         [:& tab-element
-          {:id :design :title (tr "workspace.options.design")}
-          [:div.element-options
-           [:& align-options]
-           [:div
-            (if (= (count selected) 1)
-              [:& shape-options {:shape shape}]
-              [:& page/options {:page page}])]]]
-
-         [:& tab-element
-          {:id :prototype :title (tr "workspace.options.prototype")}
-          [:div.element-options
-           [:& interactions-menu {:shape shape}]]]]
-         ]]))
+                       (mf/use-memo #(refs/object-by-id shape-id)))
+        shape      (mf/deref shape-iref)]
+    [:& options-content {:selected selected
+                         :shape shape
+                         :page page
+                         :section section}]))
 
