@@ -383,7 +383,6 @@
       [:div.element-set-content
        [:& text-fill-options {:editor editor :shape shape}]]]
 
-
      [:div.element-set
       [:div.element-set-title (t locale "workspace.options.font-options")]
       [:div.element-set-content

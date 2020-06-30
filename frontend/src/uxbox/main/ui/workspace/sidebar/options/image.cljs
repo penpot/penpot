@@ -14,5 +14,5 @@
 
 (mf/defc options
   [{:keys [shape] :as props}]
-  [:div
+  [:*
    [:& measures-menu {:shape shape}]])

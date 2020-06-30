@@ -32,8 +32,12 @@
 
 (mf/defc fill-menu
   {::mf/wrap [#(mf/memo' % fill-menu-memo-equals?)]}
-  [{:keys [ids values] :as props}]
+  [{:keys [ids type values] :as props}]
   (let [locale (i18n/use-locale)
+        label (case type
+                :multiple (t locale "workspace.options.selection-fill")
+                :group (t locale "workspace.options.group-fill")
+                (t locale "workspace.options.fill"))
         color {:value (:fill-color values)
                :opacity (:fill-opacity values)}
         handle-change-color (fn [value opacity]
@@ -42,7 +46,7 @@
                                              opacity (assoc :fill-opacity opacity))]
                                 (st/emit! (dwc/update-shapes ids change))))]
     [:div.element-set
-     [:div.element-set-title (t locale "workspace.options.fill")]
+     [:div.element-set-title label]
      [:div.element-set-content
       [:& color-row {:color color
                      :on-change handle-change-color}]]]))

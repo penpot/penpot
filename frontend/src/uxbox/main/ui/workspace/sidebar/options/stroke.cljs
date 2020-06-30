@@ -58,8 +58,13 @@
 
 (mf/defc stroke-menu
   {::mf/wrap [#(mf/memo' % stroke-menu-memo-equals?)]}
-  [{:keys [ids values] :as props}]
+  [{:keys [ids type values] :as props}]
   (let [locale (i18n/use-locale)
+        label (case type
+                :multiple (t locale "workspace.options.selection-stroke")
+                :group (t locale "workspace.options.group-stroke")
+                (t locale "workspace.options.stroke"))
+
         show-options (not= (:stroke-style values :none) :none)
 
         current-stroke-color {:value (:stroke-color values)
@@ -109,7 +114,7 @@
     (if show-options
       [:div.element-set
        [:div.element-set-title
-        [:span (t locale "workspace.options.stroke")]
+        [:span label]
         [:div.add-page {:on-click on-del-stroke} i/minus]]
 
        [:div.element-set-content
@@ -147,6 +152,6 @@
       ;; NO STROKE
       [:div.element-set
        [:div.element-set-title
-        [:span (t locale "workspace.options.stroke")]
+        [:span label]
         [:div.add-page {:on-click on-add-stroke} i/close]]])))
 

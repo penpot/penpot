@@ -14,7 +14,7 @@
    [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
    [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]))
 
-(defn- get-multi
+(defn get-multi
   [shapes attrs]
   (let [combine-value #(if (= %1 %2) %1 :multiple)
 
@@ -34,6 +34,10 @@
         fill-values (get-multi shapes fill-attrs)
         stroke-values (get-multi shapes stroke-attrs)]
     [:div
-     [:& fill-menu {:ids ids :values fill-values}]
-     [:& stroke-menu {:ids ids :values stroke-values}]]))
+     [:& fill-menu {:ids ids
+                    :type :multiple
+                    :values fill-values}]
+     [:& stroke-menu {:ids ids
+                      :type :multiple
+                      :values stroke-values}]]))
 

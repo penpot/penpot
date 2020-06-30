@@ -17,9 +17,14 @@
 (mf/defc options
   [{:keys [shape] :as props}]
   (let [ids [(:id shape)]
+        type (:type shape)
         stroke-values (select-keys shape stroke-attrs)]
-    [:div
+    [:*
      [:& measures-menu {:shape shape
                         :options #{:size :position :rotation}}]
-     [:& fill-menu {:ids [(:id shape)] :values (select-keys shape fill-attrs)}]
-     [:& stroke-menu {:ids ids :values stroke-values}]]))
+     [:& fill-menu {:ids ids
+                    :type type
+                    :values (select-keys shape fill-attrs)}]
+     [:& stroke-menu {:ids ids
+                      :type type
+                      :values stroke-values}]]))

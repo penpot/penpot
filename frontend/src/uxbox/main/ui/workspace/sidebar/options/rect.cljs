@@ -18,10 +18,15 @@
   {::mf/wrap [mf/memo]}
   [{:keys [shape] :as props}]
   (let [ids [(:id shape)]
+        type (:type shape)
         fill-values (select-keys shape fill-attrs)
         stroke-values (select-keys shape stroke-attrs)]
-    [:div
+    [:*
      [:& measures-menu {:shape shape}]
-     [:& fill-menu {:ids ids :values fill-values}]
-     [:& stroke-menu {:ids ids :values stroke-values}]]))
+     [:& fill-menu {:ids ids
+                    :type type
+                    :values fill-values}]
+     [:& stroke-menu {:ids ids
+                      :type type
+                      :values stroke-values}]]))
 

@@ -840,7 +840,7 @@
     }
   },
   "settings.multiple" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:127", "src/uxbox/main/ui/workspace/sidebar/options/rows/color_row.cljs:117", "src/uxbox/main/ui/workspace/sidebar/options/rows/color_row.cljs:126" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:132", "src/uxbox/main/ui/workspace/sidebar/options/rows/color_row.cljs:117", "src/uxbox/main/ui/workspace/sidebar/options/rows/color_row.cljs:126" ],
     "translations" : {
       "en" : "Multiple",
       "es" : "Múltiple"
@@ -1387,7 +1387,7 @@
     }
   },
   "workspace.options.fill" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/fill.cljs:45", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:382" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/fill.cljs:40", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:382" ],
     "translations" : {
       "en" : "Fill",
       "fr" : "Remplissage",
@@ -1714,6 +1714,20 @@
       "es" : "Rejilla & Estructuras"
     }
   },
+  "workspace.options.group-fill" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/fill.cljs:39" ],
+    "translations" : {
+      "en" : "Group fill",
+      "es" : "Relleno de grupo"
+    }
+  },
+  "workspace.options.group-stroke" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:65" ],
+    "translations" : {
+      "en" : "Group stroke",
+      "es" : "Borde de grupo"
+    }
+  },
   "workspace.options.navigate-to" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/interactions.cljs:59" ],
     "translations" : {
@@ -1778,6 +1792,20 @@
       "es" : "Selecciona un tablero"
     }
   },
+  "workspace.options.selection-fill" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/fill.cljs:38" ],
+    "translations" : {
+      "en" : "Selection fill",
+      "es" : "Relleno de selección"
+    }
+  },
+  "workspace.options.selection-stroke" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:64" ],
+    "translations" : {
+      "en" : "Selection stroke",
+      "es" : "Borde de selección"
+    }
+  },
   "workspace.options.size" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:82", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:98" ],
     "translations" : {
@@ -1795,7 +1823,7 @@
     }
   },
   "workspace.options.stroke" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:112", "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:150" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:66" ],
     "translations" : {
       "en" : "Stroke",
       "fr" : "Bordure",
@@ -1803,7 +1831,7 @@
     }
   },
   "workspace.options.stroke.center" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:134" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:139" ],
     "translations" : {
       "en" : "Center",
       "fr" : "Centre",
@@ -1811,7 +1839,7 @@
     }
   },
   "workspace.options.stroke.dashed" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:144" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:149" ],
     "translations" : {
       "en" : "Dashed",
       "fr" : "Tiré",
@@ -1819,7 +1847,7 @@
     }
   },
   "workspace.options.stroke.dotted" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:143" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:148" ],
     "translations" : {
       "en" : "Dotted",
       "fr" : "Pointillé",
@@ -1827,7 +1855,7 @@
     }
   },
   "workspace.options.stroke.inner" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:135" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:140" ],
     "translations" : {
       "en" : "Inside",
       "fr" : "Intérieur",
@@ -1835,7 +1863,7 @@
     }
   },
   "workspace.options.stroke.mixed" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:145" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:150" ],
     "translations" : {
       "en" : "Mixed",
       "fr" : "Mixte",
@@ -1843,7 +1871,7 @@
     }
   },
   "workspace.options.stroke.outer" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:136" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:141" ],
     "translations" : {
       "en" : "Outside",
       "fr" : "Extérieur",
@@ -1851,7 +1879,7 @@
     }
   },
   "workspace.options.stroke.solid" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:142" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:147" ],
     "translations" : {
       "en" : "Solid",
       "fr" : "Solide",

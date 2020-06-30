@@ -11,11 +11,27 @@
 (ns uxbox.main.ui.workspace.sidebar.options.group
   (:require
    [rumext.alpha :as mf]
-   [uxbox.main.ui.workspace.sidebar.options.measures :refer [measures-menu]]))
+   [uxbox.main.refs :as refs]
+   [uxbox.main.ui.workspace.sidebar.options.measures :refer [measures-menu]]
+   [uxbox.main.ui.workspace.sidebar.options.multiple :refer [get-multi]]
+   [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
+   [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]))
 
 (mf/defc options
   [{:keys [shape] :as props}]
-  [:div
+  (let [child-ids (:shapes shape)
+        children (mf/deref (refs/objects-by-id child-ids))
+
+        type (:type shape)
+        fill-values (get-multi children fill-attrs)
+        stroke-values (get-multi children stroke-attrs)]
+  [:*
    [:& measures-menu {:options #{:position :rotation}
-                      :shape shape}]])
+                      :shape shape}]
+   [:& fill-menu {:ids child-ids
+                  :type type
+                  :values fill-values}]
+   [:& stroke-menu {:ids child-ids
+                    :type type
+                    :values stroke-values}]]))
 
