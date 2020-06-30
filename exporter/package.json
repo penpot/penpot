@@ -6,8 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "UXBOX LABS SL",
+  "license": "SEE LICENSE IN <LICENSE>",
   "dependencies": {
     "koa": "^2.13.0",
     "puppeteer": "^4.0.1",
