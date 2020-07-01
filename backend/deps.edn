@@ -19,18 +19,18 @@
   io.prometheus/simpleclient_hotspot {:mvn/version "0.9.0"}
   io.prometheus/simpleclient_httpserver {:mvn/version "0.9.0"}
 
-  selmer/selmer {:mvn/version "1.12.18"}
+  selmer/selmer {:mvn/version "1.12.27"}
 
-  expound/expound {:mvn/version "0.8.4"}
+  expound/expound {:mvn/version "0.8.5"}
   com.cognitect/transit-clj {:mvn/version "1.0.324"}
 
   io.lettuce/lettuce-core {:mvn/version "5.2.2.RELEASE"}
   java-http-clj/java-http-clj {:mvn/version "0.4.1"}
 
-  info.sunng/ring-jetty9-adapter {:mvn/version "0.12.8"}
-  seancorfield/next.jdbc {:mvn/version "1.0.424"}
-  metosin/reitit-ring {:mvn/version "0.4.2"}
-  org.postgresql/postgresql {:mvn/version "42.2.12"}
+  info.sunng/ring-jetty9-adapter {:mvn/version "0.13.0"}
+  seancorfield/next.jdbc {:mvn/version "1.1.547"}
+  metosin/reitit-ring {:mvn/version "0.5.2"}
+  org.postgresql/postgresql {:mvn/version "42.2.14"}
   com.zaxxer/HikariCP {:mvn/version "3.4.5"}
 
   funcool/datoteka {:mvn/version "1.2.0"}
@@ -40,7 +40,7 @@
   {:local/root "vendor/sodi"
    :deps/manifest :pom}
 
-  lambdaisland/uri {:mvn/version "1.3.45"
+  lambdaisland/uri {:mvn/version "1.4.54"
                     :exclusions [org.clojure/data.json]}
 
   frankiesardo/linked {:mvn/version "1.3.0"}
@@ -49,7 +49,7 @@
   org.im4java/im4java {:mvn/version "1.4.0"}
   org.lz4/lz4-java {:mvn/version "1.7.1"}
   com.github.spullara.mustache.java/compiler {:mvn/version "0.9.6"}
-  commons-io/commons-io {:mvn/version "2.6"}
+  commons-io/commons-io {:mvn/version "2.7"}
   com.draines/postal {:mvn/version "2.0.3"
                       :exclusions [commons-codec/commons-codec]}
 
@@ -81,7 +81,7 @@
    :main-opts ["-m" "kaocha.runner"]}
 
   :outdated
-  {:extra-deps {olical/depot {:mvn/version "RELEASE"}}
+  {:extra-deps {olical/depot {:mvn/version "1.8.4"}}
    :main-opts ["-m" "depot.outdated.main"]}
 
   :jmx-remote
