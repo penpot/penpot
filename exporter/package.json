@@ -15,6 +15,7 @@
     "xregexp": "^4.3.0"
   },
   "devDependencies": {
+    "shadow-cljs": "^2.10.13",
     "source-map-support": "^0.5.19"
   }
 }
