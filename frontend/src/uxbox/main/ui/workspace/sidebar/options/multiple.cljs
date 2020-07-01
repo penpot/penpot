@@ -10,7 +10,7 @@
 (ns uxbox.main.ui.workspace.sidebar.options.multiple
   (:require
    [rumext.alpha :as mf]
-   [uxbox.main.ui.workspace.sidebar.options.measures :refer [measures-menu]]
+   [uxbox.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
    [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
    [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]))
 
@@ -31,9 +31,13 @@
   {::mf/wrap [mf/memo]}
   [{:keys [shapes] :as props}]
   (let [ids (map :id shapes)
+        measure-values (get-multi shapes measure-attrs)
         fill-values (get-multi shapes fill-attrs)
         stroke-values (get-multi shapes stroke-attrs)]
-    [:div
+    [:*
+     [:& measures-menu {:ids ids
+                        :type :multiple
+                        :values measure-values}]
      [:& fill-menu {:ids ids
                     :type :multiple
                     :values fill-values}]

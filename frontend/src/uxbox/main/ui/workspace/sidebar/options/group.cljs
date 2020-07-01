@@ -12,8 +12,8 @@
   (:require
    [rumext.alpha :as mf]
    [uxbox.main.refs :as refs]
-   [uxbox.main.ui.workspace.sidebar.options.measures :refer [measures-menu]]
    [uxbox.main.ui.workspace.sidebar.options.multiple :refer [get-multi]]
+   [uxbox.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
    [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
    [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]))
 
@@ -21,13 +21,14 @@
   [{:keys [shape] :as props}]
   (let [child-ids (:shapes shape)
         children (mf/deref (refs/objects-by-id child-ids))
-
         type (:type shape)
+        measure-values (select-keys shape measure-attrs)
         fill-values (get-multi children fill-attrs)
         stroke-values (get-multi children stroke-attrs)]
   [:*
-   [:& measures-menu {:options #{:position :rotation}
-                      :shape shape}]
+   [:& measures-menu {:ids (:id shape)
+                      :type type
+                      :values measure-values}]
    [:& fill-menu {:ids child-ids
                   :type type
                   :values fill-values}]

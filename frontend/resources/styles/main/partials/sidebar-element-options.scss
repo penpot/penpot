@@ -238,13 +238,17 @@
     }
 
     &.selected {
-
       svg {
         fill: $color-primary;
       }
-
     }
 
+    &.disabled {
+      cursor: unset;
+      svg {
+        fill: $color-gray-40;
+      }
+    }
   }
 
   .save-btn {

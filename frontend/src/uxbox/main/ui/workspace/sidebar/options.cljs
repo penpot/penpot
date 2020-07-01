@@ -133,8 +133,7 @@
   [{:keys [page local] :as props}]
   (let [section    (:options-mode local)
         shapes     (mf/deref refs/selected-objects)]
-    [:& options-content {:selected selected
-                         :shape shape
+    [:& options-content {:shapes shapes
                          :page page
                          :section section}]))
 

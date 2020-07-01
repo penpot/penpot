@@ -18,7 +18,7 @@
    [uxbox.main.data.workspace.texts :as dwt]
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
-   [uxbox.main.ui.workspace.sidebar.options.measures :refer [measures-menu]]
+   [uxbox.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
    [uxbox.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
    [uxbox.util.dom :as dom]
    [uxbox.main.fonts :as fonts]
@@ -395,6 +395,11 @@
 
 (mf/defc options
   [{:keys [shape] :as props}]
-  [:div
-   [:& measures-menu {:shape shape}]
-   [:& text-menu {:shape shape}]])
+  (let [ids [(:id shape)]
+        type (:type shape)
+        measure-values (select-keys shape measure-attrs)]
+    [:div
+     [:& measures-menu {:ids ids
+                        :type type
+                        :values measure-values}]
+     [:& text-menu {:shape shape}]]))

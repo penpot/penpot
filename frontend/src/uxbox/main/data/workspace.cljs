@@ -924,29 +924,29 @@
 ;; object from workspace sidebar options inputs.
 
 (defn update-dimensions
-  [id attr value]
-  (us/verify ::us/uuid id)
+  [ids attr value]
+  (us/verify (s/coll-of ::us/uuid) ids)
   (us/verify #{:width :height} attr)
   (us/verify ::us/number value)
   (ptk/reify ::update-dimensions
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (dwc/update-shapes [id] #(geom/resize-rect % attr value))))))
+      (rx/of (dwc/update-shapes ids #(geom/resize-rect % attr value))))))
 
 
 ;; --- Shape Proportions
 
-(defn toggle-shape-proportion-lock
-  [id]
-  (ptk/reify ::toggle-shape-proportion-lock
+(defn set-shape-proportion-lock
+  [id lock]
+  (ptk/reify ::set-shape-proportion-lock
     ptk/UpdateEvent
     (update [_ state]
       (let [page-id (:current-page-id state)
             shape (get-in state [:workspace-data page-id :objects id])]
-        (if (:proportion-lock shape)
-          (assoc-in state [:workspace-data page-id :objects id :proportion-lock] false)
-          (->> (geom/assign-proportions (assoc shape :proportion-lock true))
-               (assoc-in state [:workspace-data page-id :objects id])))))))
+        (if-not lock
+          (assoc-in state [:workspace-data page-id :objects id :proportion-lock] lock))
+          (->> (geom/assign-proportions (assoc shape :proportion-lock lock))
+               (assoc-in state [:workspace-data page-id :objects id]))))))
 
 ;; --- Update Shape Position
 

@@ -10,7 +10,7 @@
 (ns uxbox.main.ui.workspace.sidebar.options.icon
   (:require
    [rumext.alpha :as mf]
-   [uxbox.main.ui.workspace.sidebar.options.measures :refer [measures-menu]]
+   [uxbox.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
    [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
    [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]))
 
@@ -18,9 +18,12 @@
   [{:keys [shape] :as props}]
   (let [ids [(:id shape)]
         type (:type shape)
+        measure-values (select-keys shape measure-attrs)
         stroke-values (select-keys shape stroke-attrs)]
     [:*
-     [:& measures-menu {:shape shape}]
+     [:& measures-menu {:ids ids
+                        :type type
+                        :values measure-values}]
      [:& fill-menu {:ids ids
                     :type type
                     :values (select-keys shape fill-attrs)}]
