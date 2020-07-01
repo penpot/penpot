@@ -1,12 +1,12 @@
 {:paths ["src" "vendor" "resources" "../common"]
  :deps
- {org.clojure/clojurescript {:mvn/version "1.10.764"}
+ {org.clojure/clojurescript {:mvn/version "1.10.773"}
   org.clojure/clojure {:mvn/version "1.10.1"}
   com.cognitect/transit-cljs {:mvn/version "0.8.264"}
 
   environ/environ {:mvn/version "1.2.0"}
-  metosin/reitit-core {:mvn/version "0.5.1"}
-  expound/expound {:mvn/version "0.8.4"}
+  metosin/reitit-core {:mvn/version "0.5.2"}
+  expound/expound {:mvn/version "0.8.5"}
 
   danlentz/clj-uuid {:mvn/version "0.1.9"}
   frankiesardo/linked {:mvn/version "1.3.0"}
@@ -33,7 +33,7 @@
     funcool/datoteka {:mvn/version "1.2.0"}
     binaryage/devtools {:mvn/version "RELEASE"}
 
-    thheller/shadow-cljs {:mvn/version "2.9.10"}
+    thheller/shadow-cljs {:mvn/version "2.10.13"}
 
     lambdaisland/uri {:mvn/version "1.3.45"
                       :exclusions [org.clojure/data.json]}
@@ -43,7 +43,7 @@
     org.antlr/antlr4-runtime {:mvn/version "4.7"}}}
 
   :outdated
-  {:extra-deps {olical/depot {:mvn/version "RELEASE"}}
+  {:extra-deps {olical/depot {:mvn/version "1.8.4"}}
    :main-opts ["-m" "depot.outdated.main"]}
 
   :repl
