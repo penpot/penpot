@@ -145,12 +145,14 @@
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
 
-        (let [result (:result out)]
-          (t/is (= 1 (:revn result)))
-          (t/is (= (:id data) (:page-id result)))
-          (t/is (vector (:changes result)))
-          (t/is (= 1 (count (:changes result))))
-          (t/is (= :add-obj (get-in result [:changes 0 :type]))))))
+        (let [result  (:result out)
+              result1 (first result)]
+          (t/is (= 1 (count result)))
+          (t/is (= 1 (:revn result1)))
+          (t/is (= (:id data) (:page-id result1)))
+          (t/is (vector (:changes result1)))
+          (t/is (= 1 (count (:changes result1))))
+          (t/is (= :add-obj (get-in result1 [:changes 0 :type]))))))
 
     (t/testing "conflict error"
       (let [data {::sm/type :update-page
@@ -182,6 +184,7 @@
         proj-id (:default-project-id prof)
         file    (th/create-file db/pool (:id prof) proj-id 1)
         page    (th/create-page db/pool (:id prof) (:id file) 1)]
+
     (t/testing "lagging changes"
       (let [sid  (uuid/next)
             data {::sm/type :update-page
@@ -206,11 +209,13 @@
         (t/is (nil? (:error out1)))
         (t/is (nil? (:error out2)))
 
-        (t/is (= 1 (count (get-in out1 [:result :changes]))))
-        (t/is (= 2 (count (get-in out2 [:result :changes]))))
+        (t/is (= 1 (count (get-in out1 [:result 0 :changes]))))
+        (t/is (= 1 (count (get-in out2 [:result 0 :changes]))))
 
-        (t/is (= (:id data) (get-in out1 [:result :page-id])))
-        (t/is (= (:id data) (get-in out2 [:result :page-id])))
+        (t/is (= 2 (count (:result out2))))
+
+        (t/is (= (:id data) (get-in out1 [:result 0 :page-id])))
+        (t/is (= (:id data) (get-in out2 [:result 0 :page-id])))
     ))))
 
 
