@@ -3,8 +3,8 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV NODE_VERSION=v12.16.3 \
-    CLOJURE_VERSION=1.10.1.507 \
+ENV NODE_VERSION=v12.18.2 \
+    CLOJURE_VERSION=1.10.1.536 \
     LANG=en_US.UTF-8 \
     LC_ALL=C.UTF-8
 
@@ -83,8 +83,7 @@ RUN set -ex; \
     git clone https://github.com/creationix/nvm.git .nvm; \
     bash -c "source .nvm/nvm.sh && nvm install $NODE_VERSION"; \
     bash -c "source .nvm/nvm.sh && nvm alias default $NODE_VERSION"; \
-    bash -c "source .nvm/nvm.sh && nvm use default"; \
-    bash -c "source .nvm/nvm.sh && npm install -g shadow-cljs";
+    bash -c "source .nvm/nvm.sh && nvm use default";
 
 
 EXPOSE 3447
