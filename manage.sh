@@ -64,6 +64,19 @@ function build-frontend {
            $IMAGE ./scripts/build-app.sh
 }
 
+function build-exporter {
+    build-devenv-if-not-exists;
+
+    local IMAGE=$DEVENV_IMGNAME:latest;
+
+    echo "Running development image $IMAGE to build frontend."
+    docker run -t --rm \
+           --mount source=`pwd`,type=bind,target=/home/uxbox/uxbox \
+           --mount source=${HOME}/.m2,type=bind,target=/home/uxbox/.m2 \
+           -w /home/uxbox/uxbox/exporter \
+           $IMAGE ./scripts/build.sh
+}
+
 function build-backend {
     rm -rf ./backend/target/dist
     mkdir -p ./backend/target/dist
@@ -143,6 +156,10 @@ case $1 in
 
     build-backend)
         build-backend
+        ;;
+
+    build-exporter)
+        build-exporter
         ;;
 
     *)

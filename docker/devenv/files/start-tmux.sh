@@ -26,7 +26,7 @@ tmux send-keys -t uxbox 'cd uxbox/exporter' enter C-l
 tmux send-keys -t uxbox 'npx shadow-cljs watch main' enter
 tmux split-window -v
 tmux send-keys -t uxbox 'cd uxbox/exporter' enter C-l
-tmux send-keys -t uxbox './bin/wait-and-start' enter
+tmux send-keys -t uxbox './scripts/wait-and-start.sh' enter
 
 tmux new-window -t uxbox:3 -n 'backend'
 tmux select-window -t uxbox:3

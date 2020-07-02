@@ -13,10 +13,8 @@
  {:main
   {:target :node-script
    :main app.core/main
-   :output-to "target/exporter.js"
-   :output-dir "target/exporter/"
-   :asset-path "/js"
-
+   :output-to "target/app.js"
+   :output-dir "target/app/"
    :devtools {:before-load-async app.core/stop
               :after-load app.core/start}
 
