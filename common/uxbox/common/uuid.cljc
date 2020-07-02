@@ -14,7 +14,7 @@
      (:require [clj-uuid :as impl]
                [clojure.core :as c])
      :cljs
-     (:require ["./uuid_impl.js" :as impl]
+     (:require [uxbox.common.uuid-impl :as impl]
                [cljs.core :as c])))
 
 (def zero #uuid "00000000-0000-0000-0000-000000000000")
