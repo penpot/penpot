@@ -86,6 +86,7 @@
 
 ;; --- Default Specs
 
+(s/def ::keyword keyword?)
 (s/def ::inst inst?)
 (s/def ::string string?)
 (s/def ::email (s/conformer email-conformer str))

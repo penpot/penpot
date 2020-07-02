@@ -15,11 +15,13 @@
                             (f page)))))
 
 (defn emulate!
-  [page {:keys [viewport user-agent]
-         :or {user-agent USER-AGENT}}]
+  [page {:keys [viewport user-agent scale]
+         :or {user-agent USER-AGENT
+              scale 1}}]
   (let [[width height] viewport]
     (.emulate page #js {:viewport #js {:width width
-                                       :height height}
+                                       :height height
+                                       :deviceScaleFactor scale}
                         :userAgent user-agent})))
 
 (defn navigate!
@@ -33,10 +35,20 @@
   (.waitFor ^js page ms))
 
 (defn screenshot
-  ([page] (screenshot page nil))
-  ([page {:keys [full-page?]
-          :or {full-page? true}}]
-   (.screenshot ^js page #js {:fullPage full-page? :omitBackground true})))
+  ([frame] (screenshot frame nil))
+  ([frame {:keys [full-page? omit-background?]
+           :or {full-page? false
+                omit-background? false}}]
+   (.screenshot ^js frame #js {:fullPage full-page?
+                               :omitBackground omit-background?})))
+
+(defn eval!
+  [frame f]
+  (.evaluate ^js frame f))
+
+(defn select
+  [frame selector]
+  (.$ ^js frame selector))
 
 (defn set-cookie!
   [page {:keys [key value domain]}]
@@ -47,16 +59,15 @@
 (defn start!
   ([] (start! nil))
   ([{:keys [concurrency concurrency-strategy]
-     :or {concurrency 2
-          concurrency-strategy :browser}}]
+     :or {concurrency 10
+          concurrency-strategy :incognito}}]
    (let [ccst (case concurrency-strategy
                 :browser (.-CONCURRENCY_BROWSER ^js ppc/Cluster)
                 :incognito (.-CONCURRENCY_CONTEXT ^js ppc/Cluster)
                 :page (.-CONCURRENCY_PAGE ^js ppc/Cluster))
          opts #js {:concurrency ccst
                    :maxConcurrency concurrency
-                   :puppeteerOptions #js {:args #js ["--no-sandbox"
-                                                     "--explicitly-allowed-ports=6000"]}}]
+                   :puppeteerOptions #js {:args #js ["--no-sandbox"]}}]
      (.launch ^js ppc/Cluster opts))))
 
 (defn stop!

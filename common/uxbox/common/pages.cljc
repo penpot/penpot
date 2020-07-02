@@ -80,7 +80,7 @@
 (s/def ::stroke-width number?)
 (s/def ::stroke-alignment #{:center :inner :outer})
 (s/def ::text-align #{"left" "right" "center" "justify"})
-(s/def ::type #{:rect :path :circle :image :text :canvas :curve :icon :frame :group})
+(s/def ::type keyword?)
 (s/def ::x number?)
 (s/def ::y number?)
 (s/def ::cx number?)
@@ -92,6 +92,14 @@
 (s/def ::y1 number?)
 (s/def ::x2 number?)
 (s/def ::y2 number?)
+
+(s/def ::suffix string?)
+(s/def ::scale number?)
+(s/def ::export
+  (s/keys :req-un [::type ::suffix ::scale]))
+
+(s/def ::exports (s/coll-of ::export :kind vector?))
+
 
 (s/def ::selrect (s/keys :req-un [::x
                                   ::y
@@ -124,6 +132,7 @@
                    ::rx ::ry
                    ::cx ::cy
                    ::x ::y
+                   ::exports
                    ::stroke-color
                    ::stroke-opacity
                    ::stroke-style
