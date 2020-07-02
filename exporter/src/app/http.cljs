@@ -3,13 +3,14 @@
    [promesa.core :as p]
    [lambdaisland.glogi :as log]
    [app.browser :as bwr]
-   [app.http.screenshot :refer [bitmap-handler
-                                page-handler]]
+   [app.http.bitmap-export :refer [bitmap-export-handler]]
    [app.util.transit :as t]
    [reitit.core :as r]
    [cuerdas.core :as str]
    ["koa" :as koa]
-   ["http" :as http])
+   ["http" :as http]
+   ["inflation" :as inflate]
+   ["raw-body" :as raw-body])
   (:import
    goog.Uri))
 
@@ -26,11 +27,7 @@
   [router ctx]
   (let [uri (.parse Uri (unchecked-get ctx "originalUrl"))]
     (when-let [match (r/match-by-path router (.getPath uri))]
-      (let [qparams (query-params uri)
-            params  {:path (:path-params match) :query qparams}]
-        (assoc match
-               :params params
-               :query-params qparams)))))
+      (assoc match :query-params (query-params uri)))))
 
 (defn- handle-error
   [error request]
@@ -72,15 +69,33 @@
              (transient {})
              (js/Object.keys orig)))))
 
+(def parse-body?
+  #{"POST" "PUT" "DELETE"})
+
+(defn- parse-body
+  [ctx]
+  (let [headers (unchecked-get ctx "headers")
+        ctype   (unchecked-get headers "content-type")]
+    (when (parse-body? (.-method ^js ctx))
+      (-> (inflate (.-req ^js ctx))
+          (raw-body #js {:limit "5mb" :encoding "utf8"})
+          (p/then (fn [data]
+                  (cond-> data
+                    (= ctype "application/transit+json")
+                    (t/decode))))))))
+
 (defn- wrap-handler
   [f extra]
   (fn [ctx]
-    (let [cookies (unchecked-get ctx "cookies")
-          headers (parse-headers ctx)
-          request (assoc extra
-                         :ctx ctx
-                         :headers headers
-                         :cookies cookies)]
+    (p/let [cookies (unchecked-get ctx "cookies")
+            headers (parse-headers ctx)
+            body    (parse-body ctx)
+            request (assoc extra
+                           :method (str/lower (unchecked-get ctx "method"))
+                           :body body
+                           :ctx ctx
+                           :headers headers
+                           :cookies cookies)]
       (-> (p/do! (f request))
           (p/then  (fn [rsp]
                      (when (map? rsp)
@@ -91,16 +106,20 @@
 
 (def routes
   [["/export"
-    ["/bitmap" {:handler bitmap-handler}]
-    ["/page" {:handler page-handler}]]])
+    ["/bitmap" {:handler bitmap-export-handler}]]])
 
 (defn- router-handler
   [router]
-  (fn [{:keys [ctx] :as req}]
+  (fn [{:keys [ctx body] :as request}]
     (let [route   (match router ctx)
-          request (assoc req
+          params  (merge {}
+                         (:query-params route)
+                         (:path-params route)
+                         (when (map? body) body))
+          request (assoc request
                          :route route
-                         :params (:params route))
+                         :params params)
+
           handler (get-in route [:data :handler])]
       (if (and route handler)
         (handler request)

@@ -4,7 +4,8 @@
   [funcool/cuerdas "2020.03.26-3"]
   [lambdaisland/glogi "1.0.63"]
   [metosin/reitit-core "0.5.2"]
-  [com.cognitect/transit-cljs "0.8.264"]]
+  [com.cognitect/transit-cljs "0.8.264"]
+  [frankiesardo/linked "1.3.0"]]
 
  :source-paths ["src" "../common"]
  :nrepl {:port 3497}

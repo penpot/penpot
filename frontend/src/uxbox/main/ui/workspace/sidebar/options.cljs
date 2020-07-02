@@ -10,11 +10,8 @@
 (ns uxbox.main.ui.workspace.sidebar.options
   (:require
    [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
    [rumext.alpha :as mf]
    [uxbox.common.spec :as us]
-   [uxbox.main.data.messages :as dm]
    [uxbox.main.data.workspace :as udw]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
@@ -22,6 +19,7 @@
    [uxbox.main.ui.icons :as i]
    [uxbox.main.ui.workspace.sidebar.align :refer [align-options]]
    [uxbox.main.ui.workspace.sidebar.options.circle :as circle]
+   [uxbox.main.ui.workspace.sidebar.options.exports :refer [exports-menu]]
    [uxbox.main.ui.workspace.sidebar.options.frame :as frame]
    [uxbox.main.ui.workspace.sidebar.options.group :as group]
    [uxbox.main.ui.workspace.sidebar.options.icon :as icon]
@@ -32,60 +30,10 @@
    [uxbox.main.ui.workspace.sidebar.options.interactions :refer [interactions-menu]]
    [uxbox.main.ui.workspace.sidebar.options.path :as path]
    [uxbox.main.ui.workspace.sidebar.options.rect :as rect]
-   [uxbox.util.dom :as dom]
-   [uxbox.util.http :as http]
-   [uxbox.util.i18n :as i18n :refer [tr t]]
-   [uxbox.util.object :as obj]))
+   [uxbox.main.ui.workspace.sidebar.options.text :as text]
+   [uxbox.util.i18n :as i18n :refer [tr t]]))
 
 ;; --- Options
-
-(defn- request-screenshot
-  [page-id shape-id]
-  (http/send! {:method :get
-               :uri "/export/bitmap"
-               :query {:page-id page-id
-                       :object-id shape-id}}
-              {:credentials? true
-               :response-type :blob}))
-
-(defn- trigger-download
-  [name blob]
-  (let [link (dom/create-element "a")
-        uri  (dom/create-uri blob)]
-    (obj/set! link "href" uri)
-    (obj/set! link "download" (str/slug name))
-    (obj/set! (.-style ^js link) "display" "none")
-    (.appendChild (.-body ^js js/document) link)
-    (.click link)
-    (.remove link)))
-
-(mf/defc shape-export
-  {::mf/wrap [mf/memo]}
-  [{:keys [shape page] :as props}]
-  (let [loading? (mf/use-state false)
-        locale   (mf/deref i18n/locale)
-        on-click (fn [event]
-                   (dom/prevent-default event)
-                   (swap! loading? not)
-                   (->> (request-screenshot (:id page) (:id shape))
-                        (rx/subs
-                         (fn [{:keys [status body] :as response}]
-                           (if (= status 200)
-                             (trigger-download (:name shape) body)
-                             (st/emit! (dm/error (tr "errors.unexpected-error")))))
-                         (constantly nil)
-                         (fn []
-                           (swap! loading? not)))))]
-
-    [:div.element-set
-     [:div.btn-large.btn-icon-dark
-      {:on-click (when-not @loading? on-click)
-       :class (dom/classnames
-               :btn-disabled @loading?)
-       :disabled @loading?}
-      (if @loading?
-        (t locale "workspace.options.exporting-object")
-        (t locale "workspace.options.export-object"))]]))
 
 (mf/defc shape-options
   {::mf/wrap [#(mf/throttle % 60)]}
@@ -102,7 +50,7 @@
      :curve [:& path/options {:shape shape}]
      :image [:& image/options {:shape shape}]
      nil)
-   [:& shape-export {:shape shape :page page}]])
+   [:& exports-menu {:shape shape :page page}]])
 
 
 (mf/defc options-content

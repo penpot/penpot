@@ -9,9 +9,12 @@
   "author": "UXBOX LABS SL",
   "license": "SEE LICENSE IN <LICENSE>",
   "dependencies": {
+    "inflation": "^2.0.0",
+    "jszip": "^3.5.0",
     "koa": "^2.13.0",
     "puppeteer": "^4.0.1",
     "puppeteer-cluster": "^0.21.0",
+    "raw-body": "^2.4.1",
     "xregexp": "^4.3.0"
   },
   "devDependencies": {

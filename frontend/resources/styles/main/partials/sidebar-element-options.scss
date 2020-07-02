@@ -760,3 +760,42 @@
     cursor: auto;
   }
 }
+
+
+.element-set-options-group {
+  display: flex;
+  padding: 3px;
+  border: 1px solid $color-black;
+  border-radius: 4px;
+
+  &:hover {
+    background: #1F1F1F;
+  }
+}
+
+.exports-options {
+  .element-set-options-group {
+    justify-content: space-between;
+    .delete-icon {
+      display: flex;
+      min-width: 40px;
+      min-height: 40px;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      svg {
+        width: 20px;
+        height: 20px;
+        fill: $color-gray-20;
+      }
+    }
+
+    &:not(:first-child) {
+      margin-top: 7px;
+    }
+  }
+
+  .download-button {
+    margin-top: 10px;
+  }
+}
