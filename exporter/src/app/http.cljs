@@ -3,7 +3,8 @@
    [promesa.core :as p]
    [lambdaisland.glogi :as log]
    [app.browser :as bwr]
-   [app.http.screenshot :refer [bitmap-handler]]
+   [app.http.screenshot :refer [bitmap-handler
+                                page-handler]]
    [app.util.transit :as t]
    [reitit.core :as r]
    [cuerdas.core :as str]
@@ -90,7 +91,8 @@
 
 (def routes
   [["/export"
-    ["/bitmap" {:handler bitmap-handler}]]])
+    ["/bitmap" {:handler bitmap-handler}]
+    ["/page" {:handler page-handler}]]])
 
 (defn- router-handler
   [router]

@@ -17,4 +17,4 @@
              (js/Object.keys env)))))
 
 (defonce config
-  {:domain (:app-domain env "localhost:3449")})
+  {:public-uri (:app-public-uri env "http://localhost:3449")})

@@ -54,7 +54,9 @@
                 :incognito (.-CONCURRENCY_CONTEXT ^js ppc/Cluster)
                 :page (.-CONCURRENCY_PAGE ^js ppc/Cluster))
          opts #js {:concurrency ccst
-                   :maxConcurrency concurrency}]
+                   :maxConcurrency concurrency
+                   :puppeteerOptions #js {:args #js ["--no-sandbox"
+                                                     "--explicitly-allowed-ports=6000"]}}]
      (.launch ^js ppc/Cluster opts))))
 
 (defn stop!
