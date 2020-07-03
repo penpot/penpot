@@ -15,5 +15,5 @@ npx shadow-cljs release main
 rm -rf target/app
 
 # Copy package*.json files
-cp package-lock.json target/
+cp yarn.lock target/
 cp package.json target/
