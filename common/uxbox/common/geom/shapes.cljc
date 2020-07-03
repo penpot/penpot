@@ -168,24 +168,7 @@
          :proportion 1
          :proportion-lock false))
 
-;; --- Resize (Dimentsions)
-
-(defn resize-rect
-  [shape attr value]
-  (us/assert map? shape)
-  (us/assert #{:width :height} attr)
-  (us/assert number? value)
-
-  (let [{:keys [proportion proportion-lock]} shape]
-    (if-not proportion-lock
-      (assoc shape attr value)
-      (if (= attr :width)
-        (-> shape
-            (assoc :width value)
-            (assoc :height (/ value proportion)))
-        (-> shape
-            (assoc :height value)
-            (assoc :width (* value proportion)))))))
+;; --- Resize (Dimensions)
 
 (defn resize
   [shape width height]
@@ -198,6 +181,24 @@
                          (assoc selrect
                                 :x2 (+ (:x1 selrect) width)
                                 :y2 (+ (:y1 selrect) height))))))
+
+(defn resize-rect
+  [shape attr value]
+  (us/assert map? shape)
+  (us/assert #{:width :height} attr)
+  (us/assert number? value)
+  (let [{:keys [proportion proportion-lock]} shape
+        size (select-keys shape [:width :height])
+        new-size (if-not proportion-lock
+                   (assoc size attr value)
+                   (if (= attr :width)
+                     (-> size
+                         (assoc :width value)
+                         (assoc :height (/ value proportion)))
+                     (-> size
+                         (assoc :height value)
+                         (assoc :width (* value proportion)))))]
+    (resize shape (:width new-size) (:height new-size))))
 
 ;; --- Setup (Initialize)
 

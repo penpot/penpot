@@ -11,11 +11,18 @@
   (:require
    [rumext.alpha :as mf]
    [uxbox.common.data :as d]
-   [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-menu]]
-   [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-menu]]))
+   [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
+   [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]))
 
 (mf/defc options
   [{:keys [shape] :as props}]
-  [:div
-   [:& fill-menu {:shape shape}]
-   [:& stroke-menu {:shape shape}]])
+  (let [ids [(:id shape)]
+        type (:type shape)
+        stroke-values (select-keys shape stroke-attrs)]
+    [:*
+     [:& fill-menu {:ids ids
+                    :type type
+                    :values (select-keys shape fill-attrs)}]
+     [:& stroke-menu {:ids ids
+                      :type type
+                      :values stroke-values}]]))

@@ -10,9 +10,14 @@
 (ns uxbox.main.ui.workspace.sidebar.options.image
   (:require
    [rumext.alpha :as mf]
-   [uxbox.main.ui.workspace.sidebar.options.measures :refer [measures-menu]]))
+   [uxbox.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]))
 
 (mf/defc options
   [{:keys [shape] :as props}]
-  [:div
-   [:& measures-menu {:shape shape}]])
+  (let [ids [(:id shape)]
+        type (:type shape)
+        measure-values (select-keys shape measure-attrs)]
+    [:*
+     [:& measures-menu {:ids ids
+                        :type type
+                        :values measure-values}]]))

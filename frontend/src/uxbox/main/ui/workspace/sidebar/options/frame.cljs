@@ -20,8 +20,8 @@
    [uxbox.main.data.workspace :as udw]
    [uxbox.main.ui.icons :as i]
    [uxbox.main.ui.components.dropdown :refer [dropdown]]
-   [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-menu]]
-   [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-menu]]
+   [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
+   [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]
    [uxbox.main.ui.workspace.sidebar.options.frame-grid :refer [frame-grid]]))
 
 (declare +size-presets+)
@@ -33,8 +33,8 @@
 
         on-preset-selected
         (fn [width height]
-          (st/emit! (udw/update-dimensions (:id shape) :width width)
-                    (udw/update-dimensions (:id shape) :height height)))
+          (st/emit! (udw/update-dimensions [(:id shape)] :width width)
+                    (udw/update-dimensions [(:id shape)] :height height)))
 
         on-orientation-clicked
         (fn [orientation]
@@ -42,19 +42,19 @@
                 height (:height shape)
                 new-width (if (= orientation :horiz) (max width height) (min width height))
                 new-height (if (= orientation :horiz) (min width height) (max width height))]
-            (st/emit! (udw/update-dimensions (:id shape) :width new-width)
-                      (udw/update-dimensions (:id shape) :height new-height))))
+            (st/emit! (udw/update-dimensions [(:id shape)] :width new-width)
+                      (udw/update-dimensions [(:id shape)] :height new-height))))
 
         on-size-change
         (fn [event attr]
           (let [value (-> (dom/get-target event)
                           (dom/get-value)
                           (d/parse-integer 0))]
-            (st/emit! (udw/update-dimensions (:id shape) attr value))))
+            (st/emit! (udw/update-dimensions [(:id shape)] attr value))))
 
         on-proportion-lock-change
         (fn [event]
-          (st/emit! (udw/toggle-shape-proportion-lock (:id shape))))
+          (st/emit! (udw/set-shape-proportion-lock (:id shape) (not (:proportion-lock shape)))))
 
         on-position-change
         (fn [event attr]
@@ -200,9 +200,16 @@
 
 (mf/defc options
   [{:keys [shape] :as props}]
-  [:div
+  (let [ids [(:id shape)]
+        type (:type shape)
+        stroke-values (select-keys shape stroke-attrs)]
+  [:*
    [:& measures-menu {:shape shape}]
-   [:& fill-menu {:shape shape}]
-   [:& stroke-menu {:shape shape}]
-   [:& frame-grid {:shape shape}]])
+   [:& fill-menu {:ids ids
+                  :type type
+                  :values (select-keys shape fill-attrs)}]
+   [:& stroke-menu {:ids ids
+                    :type type
+                    :values stroke-values}]
+   [:& frame-grid {:shape shape}]]))
 

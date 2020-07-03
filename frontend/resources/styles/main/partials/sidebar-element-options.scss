@@ -238,13 +238,17 @@
     }
 
     &.selected {
-
       svg {
         fill: $color-primary;
       }
-
     }
 
+    &.disabled {
+      cursor: unset;
+      svg {
+        fill: $color-gray-40;
+      }
+    }
   }
 
   .save-btn {
@@ -444,6 +448,10 @@
   border: 1px solid $color-gray-10;
   border-radius: $br-small;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $color-gray-10;
   flex-shrink: 0;
   height: 20px;
   margin: 5px 4px 0 0;

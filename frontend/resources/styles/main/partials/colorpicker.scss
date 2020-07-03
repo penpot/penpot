@@ -176,8 +176,11 @@
       &:invalid {
         border-color: $color-danger;
       }
-
     }
+  }
+
+  ::placeholder{
+    color: $color-gray-10;
   }
 
   .type {
