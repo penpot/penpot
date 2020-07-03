@@ -3,6 +3,6 @@ source ~/.bashrc
 
 set -ex;
 
-npm ci
+yarn install
 clojure -Adev tools.clj build:tests
 node ./target/tests/main

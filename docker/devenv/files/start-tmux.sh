@@ -5,12 +5,10 @@ source ~/.zshrc
 
 echo "[start-tmux.sh] Installing node dependencies"
 pushd ~/uxbox/frontend/
-rm -rf node_modules;
-npm ci;
+yarn install
 popd
 pushd ~/uxbox/exporter/
-rm -rf node_modules;
-npm ci;
+yarn install
 popd
 
 tmux -2 new-session -d -s uxbox

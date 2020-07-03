@@ -5,7 +5,7 @@ set -ex
 
 TAG=`git log -n 1 --pretty=format:%H -- ./`
 
-npm ci
+yarn install
 
 export NODE_ENV=production;
 
