@@ -109,11 +109,11 @@
                                          {:exports exports})))))]
 
 
-    (if (seq exports)
-      [:div.element-set.exports-options
-       [:div.element-set-title
-        [:span (t locale "workspace.options.export")]
-        [:div.add-page {:on-click add-export} i/close]]
+    [:div.element-set.exports-options
+     [:div.element-set-title
+      [:span (t locale "workspace.options.export")]
+      [:div.add-page {:on-click add-export} i/close]]
+     (when (seq exports)
        [:div.element-set-content
         (for [[index export] (d/enumerate exports)]
           [:div.element-set-options-group
@@ -141,11 +141,5 @@
           :disabled @loading?}
          (if @loading?
            (t locale "workspace.options.exporting-object")
-           (t locale "workspace.options.export-object"))]]]
-
-      [:div.element-set
-       [:div.element-set-title
-        [:span (t locale "workspace.options.export")]
-        [:div.add-page {:on-click add-export} i/close]]])))
-
+           (t locale "workspace.options.export-object"))]])]))
 
