@@ -106,8 +106,18 @@
                  value   (dom/get-value target)
                  exports (assoc-in exports [index :suffix] value)]
              (st/emit! (udw/update-shape (:id shape)
-                                         {:exports exports})))))]
+                                         {:exports exports})))))
 
+        on-type-change
+        (mf/use-callback
+         (mf/deps shape)
+         (fn [index event]
+           (let [target  (dom/get-target event)
+                 value   (dom/get-value target)
+                 value   (keyword value)
+                 exports (assoc-in exports [index :type] value)]
+             (st/emit! (udw/update-shape (:id shape)
+                                         {:exports exports})))))]
 
     [:div.element-set.exports-options
      [:div.element-set-title
@@ -129,10 +139,12 @@
             [:option {:value "6"} "6x"]]
            [:input.input-text {:value (:suffix export)
                                :on-change (partial on-suffix-change index)}]
-           [:select.input-select
-            [:option {:value "png"} "PNG"]]
+           [:select.input-select {:value (name (:type export))
+                                  :on-change (partial on-type-change index)}
+            [:option {:value "png"} "PNG"]
+            [:option {:value "jpeg"} "JPEG"]]
            [:div.delete-icon {:on-click (partial delete-export index)}
-            i/trash]])
+            i/minus]])
 
         [:div.btn-large.btn-icon-dark.download-button
          {:on-click (when-not @loading? on-download)

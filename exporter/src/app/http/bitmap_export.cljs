@@ -15,7 +15,7 @@
    goog.Uri))
 
 (defn- screenshot-object
-  [browser {:keys [page-id object-id token scale suffix]}]
+  [browser {:keys [page-id object-id token scale suffix type]}]
   (letfn [(handle [page]
             (let [path   (str "/render-object/" page-id "/" object-id)
                   uri    (doto (Uri. (:public-uri cfg/config))
@@ -37,8 +37,9 @@
              (bwr/navigate! page uri)
              (bwr/eval! page (js* "() => document.body.style.background = 'transparent'"))
              (p/let [dom (bwr/select page "#screenshot")]
-               (bwr/screenshot dom {:omit-background? true
-                                    :type type}))))]
+               (case type
+                 :png (bwr/screenshot dom {:omit-background? true :type type})
+                 :jpeg (bwr/screenshot dom {:omit-background? false :type type})))))]
 
     (bwr/exec! browser handle)))
 
@@ -61,6 +62,8 @@
 
 (declare handle-single-export)
 (declare handle-multiple-export)
+(declare perform-bitmap-export)
+(declare attach-filename)
 
 (defn bitmap-export-handler
   [{:keys [params browser cookies] :as request}]
@@ -77,28 +80,13 @@
                 :object-id object-id))
       (handle-multiple-export
        request
-       (->> (d/enumerate exports)
-            (map (fn [[index item]]
-                   (assoc item
-                          :name name
-                          :index index
-                          :token token
-                          :page-id page-id
-                          :object-id object-id))))))))
+       (map (fn [item]
+              (assoc item
+                     :name name
+                     :token token
+                     :page-id page-id
+                     :object-id object-id)) exports)))))
 
-(defn perform-bitmap-export
-  [browser params]
-  (p/let [content (screenshot-object browser params)]
-    {:content content
-     :filename (str (str/slug (:name params))
-                    (if (not (str/blank? (:suffix params "")))
-                      (:suffix params "")
-                      (let [index (:index params 0)]
-                        (when (pos? index)
-                          (str "-" (inc index)))))
-                    ".png")
-     :length (alength content)
-     :mime-type "image/png"}))
 
 (defn handle-single-export
   [{:keys [browser]} params]
@@ -110,7 +98,9 @@
 
 (defn handle-multiple-export
   [{:keys [browser]} exports]
-  (let [proms (map (partial perform-bitmap-export browser) exports)]
+  (let [proms (->> exports
+                   (attach-filename)
+                   (map (partial perform-bitmap-export browser)))]
     (-> (p/all proms)
         (p/then (fn [results]
                   (reduce #(zip/add! %1 (:filename %2) (:content %2)) (zip/create) results)))
@@ -118,3 +108,45 @@
                   {:status 200
                    :headers {"content-type" "application/zip"}
                    :body (.generateNodeStream ^js fzip)})))))
+
+(defn- find-filename-candidate
+  [params used]
+  (loop [index 0]
+    (let [candidate (str (str/slug (:name params))
+                         (if (not (str/blank? (:suffix params "")))
+                           (:suffix params "")
+                           (when (pos? index)
+                             (str "-" (inc index))))
+                         (case (:type params)
+                           :png ".png"
+                           :jpeg ".jpg"
+                           :svg ".svg"))]
+      (if (contains? used candidate)
+        (recur (inc index))
+        candidate))))
+
+(defn- attach-filename
+  [exports]
+  (loop [exports (seq exports)
+         used   #{}
+         result  []]
+    (if (nil? exports)
+      result
+      (let [export    (first exports)
+            candidate (find-filename-candidate export used)
+            export    (assoc export :filename candidate)]
+        (recur (next exports)
+               (conj used candidate)
+               (conj result export))))))
+
+(defn- perform-bitmap-export
+  [browser params]
+  (p/let [content (screenshot-object browser params)]
+    {:content content
+     :filename (or (:filename params)
+                   (find-filename-candidate params #{}))
+     :length (alength content)
+     :mime-type (case (:type params)
+                  :png "image/png"
+                  :jpeg "image/jpeg")}))
+
