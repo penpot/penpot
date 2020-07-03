@@ -67,8 +67,6 @@
                  (fn []
                    (swap! loading? not))))))
 
-        _ (prn "exports-menu" exports)
-
         add-export
         (mf/use-callback
          (mf/deps shape)

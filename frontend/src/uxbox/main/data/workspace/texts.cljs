@@ -16,6 +16,7 @@
    [clojure.walk :as walk]
    [goog.object :as gobj]
    [potok.core :as ptk]
+   [uxbox.common.geom.shapes :as geom]
    [uxbox.main.data.workspace.common :as dwc]
    [uxbox.main.fonts :as fonts]
    [uxbox.util.object :as obj]))
@@ -119,10 +120,8 @@
 (defn- shape-current-values
   [shape pred attrs]
   (let [root  (:content shape)
-        nodes (nodes-seq pred root)
-        match (first nodes)]
-    (when match
-      (select-keys match attrs))))
+        nodes (nodes-seq pred root)]
+    (geom/get-attrs-multi nodes attrs)))
 
 (defn current-text-values
   [{:keys [editor default attrs shape]}]

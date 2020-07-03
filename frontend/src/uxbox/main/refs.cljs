@@ -124,7 +124,7 @@
            (let [selected (get-in state [:workspace-local :selected])
                  page-id (get-in state [:workspace-page :id])
                  objects (get-in state [:workspace-data page-id :objects])]
-             (->> selected (mapv #(get objects %)))))]
+             (mapv #(get objects %) selected)))]
     (l/derived selector st/state =)))
 
 (def selected-shapes-with-children

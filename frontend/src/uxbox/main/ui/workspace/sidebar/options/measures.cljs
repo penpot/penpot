@@ -25,7 +25,7 @@
 
 (def measure-attrs [:proportion-lock :width :height :x :y :rotation :rx :ry :selrect])
 
-(defn attr->string [attr values]
+(defn- attr->string [attr values]
   (let [value (attr values)]
     (if (= value :multiple)
       ""

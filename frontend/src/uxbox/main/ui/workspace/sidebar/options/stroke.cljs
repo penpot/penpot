@@ -44,14 +44,14 @@
          (identical? (:stroke-opacity new-values)
                      (:stroke-opacity old-values)))))
 
-(defn width->string [width]
+(defn- width->string [width]
   (if (= width :multiple)
    ""
    (str (-> width
             (d/coalesce 1)
             (math/round)))))
 
-(defn enum->string [value]
+(defn- enum->string [value]
   (if (= value :multiple)
     ""
     (pr-str value)))

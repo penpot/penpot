@@ -10,34 +10,19 @@
 (ns uxbox.main.ui.workspace.sidebar.options.multiple
   (:require
    [rumext.alpha :as mf]
+   [uxbox.common.geom.shapes :as geom]
    [uxbox.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
    [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
    [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]))
-
-(defn get-multi
-  [shapes attrs]
-  ;; Extract some attributes of a list of shapes.
-  ;; For each attribute, if the value is the same in all shapes,
-  ;; wll take this value. If there is any shape that is different,
-  ;; the value of the attribute will be the keyword :multiple.
-  (let [combine-value #(if (= %1 %2) %1 :multiple)
-
-        combine-values (fn [attrs shape values]
-                         (map #(combine-value (get shape %) (get values %)) attrs))
-
-        reducer (fn [result shape]
-                  (zipmap attrs (combine-values attrs shape result)))]
-
-    (reduce reducer (select-keys (first shapes) attrs) (rest shapes))))
 
 
 (mf/defc options
   {::mf/wrap [mf/memo]}
   [{:keys [shapes] :as props}]
   (let [ids (map :id shapes)
-        measure-values (get-multi shapes measure-attrs)
-        fill-values (get-multi shapes fill-attrs)
-        stroke-values (get-multi shapes stroke-attrs)]
+        measure-values (geom/get-attrs-multi shapes measure-attrs)
+        fill-values (geom/get-attrs-multi shapes fill-attrs)
+        stroke-values (geom/get-attrs-multi shapes stroke-attrs)]
     [:*
      [:& measures-menu {:ids ids
                         :type :multiple
