@@ -25,6 +25,11 @@
    [uxbox.util.i18n :as i18n :refer [tr t]]
    ["slate" :refer [Transforms]]))
 
+(defn- attr->string [value]
+  (if (= value :multiple)
+    ""
+    (str value)))
+
 (def ^:private editor-ref
   (l/derived :editor refs/workspace-local))
 
@@ -44,21 +49,22 @@
        (:name font)])]])
 
 (mf/defc font-options
-  [{:keys [editor shape] :as props}]
+  [{:keys [editor shape locale] :as props}]
   (let [selection (mf/use-ref)
 
         {:keys [font-id
                 font-size
-                font-variant-id]
-         :or {font-id "sourcesanspro"
-              font-size "14"
-              font-variant-id "regular"}}
+                font-variant-id]}
         (dwt/current-text-values
          {:editor editor
           :shape shape
           :attrs [:font-id
                   :font-size
                   :font-variant-id]})
+
+        font-id (or font-id "sourcesanspro")
+        font-size (or font-size "14")
+        font-variant-id (or font-variant-id "regular")
 
         fonts     (mf/deref fonts/fontsdb)
         font      (get fonts font-id)
@@ -77,18 +83,20 @@
         on-font-family-change
         (fn [event]
           (let [id (-> (dom/get-target event)
-                       (dom/get-value))
-                font (get fonts id)]
-            (fonts/ensure-loaded! id (partial change-font id))))
+                       (dom/get-value))]
+            (when-not (str/empty? id)
+              (let [font (get fonts id)]
+                (fonts/ensure-loaded! id (partial change-font id))))))
 
         on-font-size-change
         (fn [event]
           (let [val (-> (dom/get-target event)
                         (dom/get-value))]
-            (st/emit! (dwt/update-text-attrs
-                       {:id (:id shape)
-                        :editor editor
-                        :attrs {:font-size val}}))))
+            (when-not (str/empty? val)
+              (st/emit! (dwt/update-text-attrs
+                         {:id (:id shape)
+                          :editor editor
+                          :attrs {:font-size val}})))))
 
         on-font-variant-change
         (fn [event]
@@ -103,19 +111,22 @@
                                 :font-family (:family font)
                                 :font-variant-id id
                                 :font-weight (:weight variant)
-                                :font-style (:style variant)}}))))
-        ]
+                                :font-style (:style variant)}}))))]
 
     [:*
      [:div.row-flex
-      [:select.input-select {:value font-id
+      [:select.input-select {:value (attr->string font-id)
                              :on-change on-font-family-change}
+       (when (= font-id :multiple)
+         [:option {:value ""} (t locale "settings.multiple")])
        [:& font-select-optgroups]]]
 
      [:div.row-flex
       [:div.editable-select
-       [:select.input-select {:value font-size
+       [:select.input-select {:value (attr->string font-size)
                               :on-change on-font-size-change}
+        (when (= font-size :multiple)
+          [:option {:value ""} "--"])
         [:option {:value "8"} "8"]
         [:option {:value "9"} "9"]
         [:option {:value "10"} "10"]
@@ -131,11 +142,13 @@
                            :min "0"
                            :max "200"
                            :value font-size
-                           :on-change on-font-size-change
-                           }]]
+                           :placeholder "--"
+                           :on-change on-font-size-change}]]
 
-      [:select.input-select {:value font-variant-id
+      [:select.input-select {:value (attr->string font-variant-id)
                              :on-change on-font-variant-change}
+       (when (= font-size :multiple)
+         [:option {:value ""} "--"])
        (for [variant (:variants font)]
          [:option {:value (:id variant)
                    :key (pr-str variant)}
@@ -144,12 +157,13 @@
 
 (mf/defc text-align-options
   [{:keys [editor shape locale] :as props}]
-  (let [{:keys [text-align]
-         :or {text-align "left"}}
+  (let [{:keys [text-align]}
         (dwt/current-paragraph-values
          {:editor editor
           :shape shape
           :attrs [:text-align]})
+
+        text-align (or text-align "left")
 
         on-change
         (fn [event type]
@@ -204,15 +218,16 @@
 
 (mf/defc spacing-options
   [{:keys [editor shape locale] :as props}]
-  (let [{:keys [letter-spacing
-                line-height]
-         :or {line-height "1.2"
-              letter-spacing "0"}}
+  (let [{:keys [line-height
+                letter-spacing]}
         (dwt/current-text-values
          {:editor editor
           :shape shape
           :attrs [:line-height
                   :letter-spacing]})
+
+        line-height (or line-height "1.2")
+        letter-spacing (or letter-spacing "0")
 
         on-change
         (fn [event attr]
@@ -232,7 +247,8 @@
         :step "0.1"
         :min "0"
         :max "200"
-        :value line-height
+        :value (attr->string line-height)
+        :placeholder (t locale "settings.multiple")
         :on-change #(on-change % :line-height)}]]
 
      [:div.input-icon
@@ -244,7 +260,8 @@
         :step "0.1"
         :min "0"
         :max "200"
-        :value letter-spacing
+        :value (attr->string letter-spacing)
+        :placeholder (t locale "settings.multiple")
         :on-change #(on-change % :letter-spacing)}]]]))
 
 ;; (mf/defc box-sizing-options
@@ -262,12 +279,13 @@
 
 (mf/defc vertical-align-options
   [{:keys [editor locale shape] :as props}]
-  (let [{:keys [vertical-align]
-         :or {vertical-align "top"}}
+  (let [{:keys [vertical-align]}
         (dwt/current-root-values
          {:editor editor
           :shape shape
           :attrs [:vertical-align]})
+
+        vertical-align (or vertical-align "top")
 
         on-change
         (fn [event type]
@@ -297,12 +315,13 @@
 
 (mf/defc text-decoration-options
   [{:keys [editor locale shape] :as props}]
-  (let [{:keys [text-decoration]
-         :or {text-decoration "none"}}
+  (let [{:keys [text-decoration]}
         (dwt/current-text-values
          {:editor editor
           :shape shape
           :attrs [:text-decoration]})
+
+        text-decoration (or text-decoration "none")
 
         on-change
         (fn [event type]
@@ -333,12 +352,13 @@
 
 (mf/defc text-transform-options
   [{:keys [editor locale shape] :as props}]
-  (let [{:keys [text-transform]
-         :or {text-transform "none"}}
+  (let [{:keys [text-transform]}
         (dwt/current-text-values
          {:editor editor
           :shape shape
           :attrs [:text-transform]})
+
+        text-transform (or text-transform "none")
 
         on-change
         (fn [event type]

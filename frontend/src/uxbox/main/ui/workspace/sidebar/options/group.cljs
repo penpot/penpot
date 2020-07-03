@@ -11,8 +11,8 @@
 (ns uxbox.main.ui.workspace.sidebar.options.group
   (:require
    [rumext.alpha :as mf]
+   [uxbox.common.geom.shapes :as geom]
    [uxbox.main.refs :as refs]
-   [uxbox.main.ui.workspace.sidebar.options.multiple :refer [get-multi]]
    [uxbox.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
    [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
    [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]))
@@ -23,8 +23,8 @@
         children (mf/deref (refs/objects-by-id child-ids))
         type (:type shape)
         measure-values (select-keys shape measure-attrs)
-        fill-values (get-multi children fill-attrs)
-        stroke-values (get-multi children stroke-attrs)]
+        fill-values (geom/get-attrs-multi children fill-attrs)
+        stroke-values (geom/get-attrs-multi children stroke-attrs)]
   [:*
    [:& measures-menu {:ids [(:id shape)]
                       :type type
