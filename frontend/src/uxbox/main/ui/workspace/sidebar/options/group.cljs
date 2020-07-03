@@ -26,7 +26,7 @@
         fill-values (get-multi children fill-attrs)
         stroke-values (get-multi children stroke-attrs)]
   [:*
-   [:& measures-menu {:ids (:id shape)
+   [:& measures-menu {:ids [(:id shape)]
                       :type type
                       :values measure-values}]
    [:& fill-menu {:ids child-ids

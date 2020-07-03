@@ -16,6 +16,10 @@
 
 (defn get-multi
   [shapes attrs]
+  ;; Extract some attributes of a list of shapes.
+  ;; For each attribute, if the value is the same in all shapes,
+  ;; wll take this value. If there is any shape that is different,
+  ;; the value of the attribute will be the keyword :multiple.
   (let [combine-value #(if (= %1 %2) %1 :multiple)
 
         combine-values (fn [attrs shape values]
