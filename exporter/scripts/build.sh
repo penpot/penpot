@@ -3,7 +3,7 @@
 source ~/.bashrc
 set -ex
 
-npm ci
+yarn install
 rm -rf target
 
 export NODE_ENV=production;
