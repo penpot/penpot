@@ -25,6 +25,8 @@
    [uxbox.util.i18n :as i18n :refer [tr t]]
    ["slate" :refer [Transforms]]))
 
+(def text-fill-attrs [:fill :opacity])
+
 (defn- attr->string [value]
   (if (= value :multiple)
     ""
@@ -201,7 +203,7 @@
   (let [text-color (dwt/current-text-values
                     {:editor editor
                      :shape shape
-                     :attrs [:fill :opacity]})
+                     :attrs text-fill-attrs})
 
         current-color {:value (:fill text-color)
                        :opacity (:opacity text-color)}

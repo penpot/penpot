@@ -11,7 +11,9 @@
   (:require
    [rumext.alpha :as mf]
    [uxbox.main.data.workspace.common :as dwc]
+   [uxbox.main.data.workspace.texts :as dwt]
    [uxbox.main.store :as st]
+   [uxbox.main.refs :as refs]
    [uxbox.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
    [uxbox.util.object :as obj]
    [uxbox.util.i18n :as i18n :refer [tr t]]))
@@ -34,17 +36,34 @@
   {::mf/wrap [#(mf/memo' % fill-menu-memo-equals?)]}
   [{:keys [ids type values] :as props}]
   (let [locale (i18n/use-locale)
+
+        shapes (deref (refs/objects-by-id ids))
+        text-ids (map :id (filter #(= (:type %) :text) shapes))
+        other-ids (map :id (filter #(not= (:type %) :text) shapes))
+
         label (case type
                 :multiple (t locale "workspace.options.selection-fill")
                 :group (t locale "workspace.options.group-fill")
                 (t locale "workspace.options.fill"))
         color {:value (:fill-color values)
                :opacity (:fill-opacity values)}
+
         handle-change-color (fn [value opacity]
-                              (let [change #(cond-> %
-                                             value (assoc :fill-color value)
-                                             opacity (assoc :fill-opacity opacity))]
-                                (st/emit! (dwc/update-shapes ids change))))]
+                                (let [change #(cond-> %
+                                                value (assoc :fill-color value)
+                                                opacity (assoc :fill-opacity opacity))
+                                      new-attrs (cond-> {}
+                                                  value (assoc :fill value)
+                                                  opacity (assoc :opacity opacity))]
+
+                                  (when-not (empty? other-ids)
+                                    (st/emit! (dwc/update-shapes ids change)))
+                                  (when-not (empty? text-ids)
+                                    (run! #(st/emit! (dwt/update-text-attrs
+                                                       {:id %
+                                                        :editor nil
+                                                        :attrs new-attrs}))
+                                          text-ids))))]
     [:div.element-set
      [:div.element-set-title label]
      [:div.element-set-content

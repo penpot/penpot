@@ -11,17 +11,29 @@
   (:require
    [rumext.alpha :as mf]
    [uxbox.common.geom.shapes :as geom]
+   [uxbox.main.data.workspace.texts :as dwt]
    [uxbox.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
+   [uxbox.main.ui.workspace.sidebar.options.text :refer [text-fill-attrs]]
    [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
    [uxbox.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]))
 
+(defn- get-attrs
+  [shape attrs text-attrs]
+  (if (not= (:type shape) :text)
+    (select-keys shape attrs)
+    (let [text-values (dwt/current-text-values {:editor nil
+                                                :shape shape
+                                                :attrs text-attrs})
+          converted-values (zipmap fill-attrs
+                                   (map #(% text-values) text-attrs))]
+      converted-values)))
 
 (mf/defc options
   {::mf/wrap [mf/memo]}
   [{:keys [shapes] :as props}]
   (let [ids (map :id shapes)
         measure-values (geom/get-attrs-multi shapes measure-attrs)
-        fill-values (geom/get-attrs-multi shapes fill-attrs)
+        fill-values (geom/get-attrs-multi (map #(get-attrs % fill-attrs text-fill-attrs) shapes) fill-attrs)
         stroke-values (geom/get-attrs-multi shapes stroke-attrs)]
     [:*
      [:& measures-menu {:ids ids
