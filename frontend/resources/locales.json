@@ -650,17 +650,17 @@
   "generic.error" : {
     "used-in" : [ "src/uxbox/main/ui/settings/password.cljs:31" ],
     "translations" : {
-      "en" : null,
+      "en" : "An error has occurred",
       "fr" : null,
-      "es" : null
+      "es" : "Ha ocurrido un error"
     }
   },
   "header.sitemap" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:65" ],
     "translations" : {
-      "en" : null,
+      "en" : "Sitemap",
       "fr" : null,
-      "es" : null
+      "es" : "Mapa del sitio"
     }
   },
   "history.alert-message" : {
@@ -842,9 +842,9 @@
   "settings.multiple" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:121", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:251", "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:264", "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:132", "src/uxbox/main/ui/workspace/sidebar/options/rows/color_row.cljs:117", "src/uxbox/main/ui/workspace/sidebar/options/rows/color_row.cljs:126" ],
     "translations" : {
-      "en" : null,
+      "en" : "Mixed",
       "fr" : null,
-      "es" : null
+      "es" : "Varios"
     }
   },
   "settings.new-email-label" : {
@@ -1724,17 +1724,17 @@
   "workspace.options.group-fill" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/fill.cljs:39" ],
     "translations" : {
-      "en" : null,
+      "en" : "Group fill",
       "fr" : null,
-      "es" : null
+      "es" : "Relleno de grupo"
     }
   },
   "workspace.options.group-stroke" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:65" ],
     "translations" : {
-      "en" : null,
+      "en" : "Group stroke",
       "fr" : null,
-      "es" : null
+      "es" : "Borde de grupo"
     }
   },
   "workspace.options.navigate-to" : {
@@ -1804,17 +1804,17 @@
   "workspace.options.selection-fill" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/fill.cljs:38" ],
     "translations" : {
-      "en" : null,
+      "en" : "Selection fill",
       "fr" : null,
-      "es" : null
+      "es" : "Relleno de selección"
     }
   },
   "workspace.options.selection-stroke" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/stroke.cljs:64" ],
     "translations" : {
-      "en" : null,
+      "en" : "Selection stroke",
       "fr" : null,
-      "es" : null
+      "es" : "Borde de selección"
     }
   },
   "workspace.options.size" : {
