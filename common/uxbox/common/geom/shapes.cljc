@@ -856,26 +856,28 @@
       :else srect))))
 
 (defn get-attrs-multi
-  [shapes attrs]
-  ;; Extract some attributes of a list of shapes.
+  [values attrs]
+  ;; Extract some attributes of a list of shape values.
   ;; For each attribute, if the value is the same in all shapes,
   ;; wll take this value. If there is any shape that is different,
   ;; the value of the attribute will be the keyword :multiple.
   ;;
   ;; Example:
-  ;;   (def shapes [{:stroke-color "#ff0000'
+  ;;   (def values [{:stroke-color "#ff0000'
   ;;                 :stroke-width 3
   ;;                 :x 1000 :y 2000}
   ;;                {:stroke-width "#ff0000'
   ;;                 :stroke-width 5
   ;;                 :x 1500 :y 2000}])
   ;;
-  ;;   (get-attrs-multi shapes [:stroke-color :stroke-width :fill-color])
+  ;;   (get-attrs-multi values [:stroke-color :stroke-width :fill-color])
   ;;   >>> {:stroke-color "#ff0000'
   ;;        :stroke-width :multiple
   ;;        :fill-color nil}
   ;;
-  (let [combine-value #(if (= %1 %2) %1 :multiple)
+  (let [defined-values (filter some? values)
+
+        combine-value #(if (= %1 %2) %1 :multiple)
 
         combine-values (fn [attrs shape values]
                          (map #(combine-value (get shape %) (get values %)) attrs))
@@ -883,5 +885,5 @@
         reducer (fn [result shape]
                   (zipmap attrs (combine-values attrs shape result)))]
 
-    (reduce reducer (select-keys (first shapes) attrs) (rest shapes))))
+    (reduce reducer (select-keys (first defined-values) attrs) (rest defined-values))))
 

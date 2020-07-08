@@ -26,8 +26,12 @@
    ["slate" :refer [Transforms]]))
 
 (def text-fill-attrs [:fill :opacity])
-
 (def text-font-attrs [:font-id :font-family :font-variant-id :font-size :font-weight :font-style])
+(def text-align-attrs [:text-align])
+(def text-spacing-attrs [:line-height :letter-spacing])
+(def text-valign-attrs [:vertical-align])
+(def text-decoration-attrs [:text-decoration])
+(def text-transform-attrs [:text-transform])
 
 (defn- attr->string [value]
   (if (= value :multiple)
@@ -171,22 +175,22 @@
     ;; --- Align
     [:div.row-flex.align-icons
      [:span.tooltip.tooltip-bottom
-      {:alt (t locale "workspace.options.font-options.align-left")
+      {:alt (t locale "workspace.options.text-options.align-left")
        :class (dom/classnames :current (= "left" text-align))
        :on-click #(on-change % "left")}
       i/text-align-left]
      [:span.tooltip.tooltip-bottom
-      {:alt (t locale "workspace.options.font-options.align-center")
+      {:alt (t locale "workspace.options.text-options.align-center")
        :class (dom/classnames :current (= "center" text-align))
        :on-click #(on-change % "center")}
       i/text-align-center]
      [:span.tooltip.tooltip-bottom
-      {:alt (t locale "workspace.options.font-options.align-right")
+      {:alt (t locale "workspace.options.text-options.align-right")
        :class (dom/classnames :current (= "right" text-align))
        :on-click #(on-change % "right")}
       i/text-align-right]
      [:span.tooltip.tooltip-bottom
-      {:alt (t locale "workspace.options.font-options.align-justify")
+      {:alt (t locale "workspace.options.text-options.align-justify")
        :class (dom/classnames :current (= "justify" text-align))
        :on-click #(on-change % "justify")}
       i/text-align-justify]]))
@@ -212,7 +216,7 @@
     [:div.row-flex
      [:div.input-icon
       [:span.icon-before.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.font-options.line-height")}
+       {:alt (t locale "workspace.options.text-options.line-height")}
        i/line-height]
       [:input.input-text
        {:type "number"
@@ -225,7 +229,7 @@
 
      [:div.input-icon
       [:span.icon-before.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.font-options.letter-spacing")}
+       {:alt (t locale "workspace.options.text-options.letter-spacing")}
        i/letter-spacing]
       [:input.input-text
        {:type "number"
@@ -264,20 +268,20 @@
                 ids))]
 
     [:div.row-flex
-     [:span.element-set-subtitle (t locale "workspace.options.font-options.vertical-align")]
+     [:span.element-set-subtitle (t locale "workspace.options.text-options.vertical-align")]
      [:div.align-icons
       [:span.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.font-options.align-top")
+       {:alt (t locale "workspace.options.text-options.align-top")
         :class (dom/classnames :current (= "top" vertical-align))
         :on-click #(on-change % "top")}
        i/align-top]
       [:span.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.font-options.align-middle")
+       {:alt (t locale "workspace.options.text-options.align-middle")
         :class (dom/classnames :current (= "center" vertical-align))
         :on-click #(on-change % "center")}
        i/align-middle]
       [:span.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.font-options.align-bottom")
+       {:alt (t locale "workspace.options.text-options.align-bottom")
         :class (dom/classnames :current (= "bottom" vertical-align))
         :on-click #(on-change % "bottom")}
        i/align-bottom]]]))
@@ -296,22 +300,22 @@
                               :attrs {:text-decoration type}}))
                 ids))]
     [:div.row-flex
-     [:span.element-set-subtitle (t locale "workspace.options.font-options.decoration")]
+     [:span.element-set-subtitle (t locale "workspace.options.text-options.decoration")]
      [:div.align-icons
       [:span.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.font-options.none")
+       {:alt (t locale "workspace.options.text-options.none")
         :class (dom/classnames :current (= "none" text-decoration))
         :on-click #(on-change % "none")}
        i/minus]
 
       [:span.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.font-options.underline")
+       {:alt (t locale "workspace.options.text-options.underline")
         :class (dom/classnames :current (= "underline" text-decoration))
         :on-click #(on-change % "underline")}
        i/underline]
 
       [:span.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.font-options.strikethrough")
+       {:alt (t locale "workspace.options.text-options.strikethrough")
         :class (dom/classnames :current (= "line-through" text-decoration))
         :on-click #(on-change % "line-through")}
        i/strikethrough]]]))
@@ -330,25 +334,25 @@
                               :attrs {:text-transform type}}))
                 ids))]
     [:div.row-flex
-     [:span.element-set-subtitle (t locale "workspace.options.font-options.text-case")]
+     [:span.element-set-subtitle (t locale "workspace.options.text-options.text-case")]
      [:div.align-icons
       [:span.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.font-options.none")
+       {:alt (t locale "workspace.options.text-options.none")
         :class (dom/classnames :current (= "none" text-transform))
         :on-click #(on-change % "none")}
        i/minus]
       [:span.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.font-options.uppercase")
+       {:alt (t locale "workspace.options.text-options.uppercase")
         :class (dom/classnames :current (= "uppercase" text-transform))
         :on-click #(on-change % "uppercase")}
        i/uppercase]
       [:span.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.font-options.lowercase")
+       {:alt (t locale "workspace.options.text-options.lowercase")
         :class (dom/classnames :current (= "lowercase" text-transform))
         :on-click #(on-change % "lowercase")}
        i/lowercase]
       [:span.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.font-options.titlecase")
+       {:alt (t locale "workspace.options.text-options.titlecase")
         :class (dom/classnames :current (= "capitalize" text-transform))
         :on-click #(on-change % "capitalize")}
        i/titlecase]]]))
@@ -358,26 +362,26 @@
   [{:keys [ids
            type
            editor
-           fill-values
            font-values
            align-values
            spacing-values
            valign-values
            decoration-values
            transform-values] :as props}]
-  (let [locale (mf/deref i18n/locale)]
-    [:*
-     [:& fill-menu {:ids ids :type type :values fill-values :editor editor}]
-
-     [:div.element-set
-      [:div.element-set-title (t locale "workspace.options.font-options")]
-      [:div.element-set-content
-       [:& font-options {:editor editor :ids ids :values font-values :locale locale}]
-       [:& text-align-options {:editor editor :ids ids :values align-values :locale locale}]
-       [:& spacing-options {:editor editor :ids ids :values spacing-values :locale locale}]
-       [:& vertical-align-options {:editor editor :ids ids :values valign-values :locale locale}]
-       [:& text-decoration-options {:editor editor :ids ids :values decoration-values :locale locale}]
-       [:& text-transform-options {:editor editor :ids ids :values transform-values :locale locale}]]]]))
+  (let [locale (mf/deref i18n/locale)
+        label (case type
+                :multiple (t locale "workspace.options.text-options.title-selection")
+                :group (t locale "workspace.options.text-options.title-group")
+                (t locale "workspace.options.text-options.title"))]
+   [:div.element-set
+    [:div.element-set-title label]
+    [:div.element-set-content
+     [:& font-options {:editor editor :ids ids :values font-values :locale locale}]
+     [:& text-align-options {:editor editor :ids ids :values align-values :locale locale}]
+     [:& spacing-options {:editor editor :ids ids :values spacing-values :locale locale}]
+     [:& vertical-align-options {:editor editor :ids ids :values valign-values :locale locale}]
+     [:& text-decoration-options {:editor editor :ids ids :values decoration-values :locale locale}]
+     [:& text-transform-options {:editor editor :ids ids :values transform-values :locale locale}]]]))
 
 (mf/defc options
   [{:keys [shape] :as props}]
@@ -387,15 +391,12 @@
         local (deref refs/workspace-local)
         editor (get-in local [:editors (:id shape)])
 
-        _ (println "hay editor" (clj->js (not (nil? editor))))
-
         measure-values (select-keys shape measure-attrs)
 
         fill-values (dwt/current-text-values
                       {:editor editor
                        :shape shape
-                       :attrs [:fill
-                               :opacity]})
+                       :attrs text-fill-attrs})
 
         converted-fill-values {:fill-color (:fill fill-values)
                                :fill-opacity (:opacity fill-values)}
@@ -403,43 +404,43 @@
         font-values (dwt/current-text-values
                       {:editor editor
                        :shape shape
-                       :attrs [:font-id
-                               :font-size
-                               :font-variant-id]})
+                       :attrs text-font-attrs})
 
         align-values (dwt/current-paragraph-values
                        {:editor editor
                         :shape shape
-                        :attrs [:text-align]})
+                        :attrs text-align-attrs})
 
         spacing-values (dwt/current-text-values
                          {:editor editor
                           :shape shape
-                          :attrs [:line-height
-                                  :letter-spacing]})
+                          :attrs text-spacing-attrs})
 
         valign-values (dwt/current-root-values
                         {:editor editor
                          :shape shape
-                         :attrs [:vertical-align]})
+                         :attrs text-valign-attrs})
 
         decoration-values (dwt/current-text-values
                             {:editor editor
                              :shape shape
-                             :attrs [:text-decoration]})
+                             :attrs text-decoration-attrs})
 
         transform-values (dwt/current-text-values
                             {:editor editor
                              :shape shape
-                             :attrs [:text-transform]})]
-    [:div
+                             :attrs text-transform-attrs})]
+    [:*
      [:& measures-menu {:ids ids
                         :type type
                         :values measure-values}]
+     [:& fill-menu {:ids ids
+                    :type type
+                    :values converted-fill-values
+                    :editor editor}]
      [:& text-menu {:ids ids
                     :type type
                     :editor editor
-                    :fill-values converted-fill-values
                     :font-values font-values
                     :align-values align-values
                     :spacing-values spacing-values

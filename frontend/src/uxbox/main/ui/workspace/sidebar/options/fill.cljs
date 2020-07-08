@@ -55,9 +55,9 @@
                                 (let [change #(cond-> %
                                                 value (assoc :fill-color value)
                                                 opacity (assoc :fill-opacity opacity))
-                                      new-attrs (cond-> {}
-                                                  value (assoc :fill value)
-                                                  opacity (assoc :opacity opacity))]
+                                      converted-attrs (cond-> {}
+                                                        value (assoc :fill value)
+                                                        opacity (assoc :opacity opacity))]
 
                                   (when-not (empty? other-ids)
                                     (st/emit! (dwc/update-shapes ids change)))
@@ -65,7 +65,7 @@
                                     (run! #(st/emit! (dwt/update-text-attrs
                                                        {:id %
                                                         :editor editor
-                                                        :attrs new-attrs}))
+                                                        :attrs converted-attrs}))
                                           text-ids))))]
     [:div.element-set
      [:div.element-set-title label]
