@@ -24,9 +24,12 @@
   [np op]
   (let [new-ids    (obj/get np "ids")
         old-ids    (obj/get op "ids")
+        new-editor (obj/get np "editor")
+        old-editor (obj/get op "editor")
         new-values (obj/get np "values")
         old-values (obj/get op "values")]
     (and (= new-ids old-ids)
+         (= new-editor old-editor)
          (identical? (:fill-color new-values)
                      (:fill-color old-values))
          (identical? (:fill-opacity new-values)
@@ -34,7 +37,7 @@
 
 (mf/defc fill-menu
   {::mf/wrap [#(mf/memo' % fill-menu-memo-equals?)]}
-  [{:keys [ids type values] :as props}]
+  [{:keys [ids type values editor] :as props}]
   (let [locale (i18n/use-locale)
 
         shapes (deref (refs/objects-by-id ids))
@@ -61,7 +64,7 @@
                                   (when-not (empty? text-ids)
                                     (run! #(st/emit! (dwt/update-text-attrs
                                                        {:id %
-                                                        :editor nil
+                                                        :editor editor
                                                         :attrs new-attrs}))
                                           text-ids))))]
     [:div.element-set

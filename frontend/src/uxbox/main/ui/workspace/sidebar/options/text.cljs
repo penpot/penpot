@@ -19,13 +19,15 @@
    [uxbox.main.store :as st]
    [uxbox.main.refs :as refs]
    [uxbox.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
-   [uxbox.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
+   [uxbox.main.ui.workspace.sidebar.options.fill :refer [fill-menu]]
    [uxbox.util.dom :as dom]
    [uxbox.main.fonts :as fonts]
    [uxbox.util.i18n :as i18n :refer [tr t]]
    ["slate" :refer [Transforms]]))
 
 (def text-fill-attrs [:fill :opacity])
+
+(def text-font-attrs [:font-id :font-family :font-variant-id :font-size :font-weight :font-style])
 
 (defn- attr->string [value]
   (if (= value :multiple)
@@ -51,18 +53,10 @@
        (:name font)])]])
 
 (mf/defc font-options
-  [{:keys [editor shape locale] :as props}]
-  (let [selection (mf/use-ref)
-
-        {:keys [font-id
+  [{:keys [editor ids values locale] :as props}]
+  (let [{:keys [font-id
                 font-size
-                font-variant-id]}
-        (dwt/current-text-values
-         {:editor editor
-          :shape shape
-          :attrs [:font-id
-                  :font-size
-                  :font-variant-id]})
+                font-variant-id]} values
 
         font-id (or font-id "sourcesanspro")
         font-size (or font-size "14")
@@ -72,48 +66,51 @@
         font      (get fonts font-id)
 
         change-font
-        (fn [id]
-          (st/emit! (dwt/update-text-attrs
-                     {:id (:id shape)
-                      :editor editor
-                      :attrs {:font-id id
-                              :font-family (:family (get fonts id))
-                              :font-variant-id nil
-                              :font-weight nil
-                              :font-style nil}})))
+        (fn [new-font-id]
+          (run! #(st/emit! (dwt/update-text-attrs
+                             {:id %
+                              :editor editor
+                              :attrs {:font-id new-font-id
+                                      :font-family (:family (get fonts new-font-id))
+                                      :font-variant-id nil
+                                      :font-weight nil
+                                      :font-style nil}}))
+                ids))
 
         on-font-family-change
         (fn [event]
-          (let [id (-> (dom/get-target event)
-                       (dom/get-value))]
-            (when-not (str/empty? id)
-              (let [font (get fonts id)]
-                (fonts/ensure-loaded! id (partial change-font id))))))
+          (let [new-font-id (-> (dom/get-target event)
+                                (dom/get-value))]
+            (when-not (str/empty? new-font-id)
+              (let [font (get fonts new-font-id)]
+                (fonts/ensure-loaded! new-font-id (partial change-font new-font-id))))))
 
         on-font-size-change
         (fn [event]
-          (let [val (-> (dom/get-target event)
-                        (dom/get-value))]
-            (when-not (str/empty? val)
-              (st/emit! (dwt/update-text-attrs
-                         {:id (:id shape)
-                          :editor editor
-                          :attrs {:font-size val}})))))
+          (let [new-font-size (-> (dom/get-target event)
+                                  (dom/get-value))]
+            (when-not (str/empty? new-font-size)
+              (run! #(st/emit! (dwt/update-text-attrs
+                                 {:id %
+                                  :editor editor
+                                  :attrs {:font-size new-font-size}}))
+                    ids))))
 
         on-font-variant-change
         (fn [event]
-          (let [id (-> (dom/get-target event)
-                       (dom/get-value))
-                variant (d/seek #(= id (:id %)) (:variants font))]
+          (let [new-variant-id (-> (dom/get-target event)
+                                   (dom/get-value))
+                variant (d/seek #(= new-variant-id (:id %)) (:variants font))]
 
-            (st/emit! (dwt/update-text-attrs
-                       {:id (:id shape)
-                        :editor editor
-                        :attrs {:font-id (:id font)
-                                :font-family (:family font)
-                                :font-variant-id id
-                                :font-weight (:weight variant)
-                                :font-style (:style variant)}}))))]
+            (run! #(st/emit! (dwt/update-text-attrs
+                               {:id %
+                                :editor editor
+                                :attrs {:font-id (:id font)
+                                        :font-family (:family font)
+                                        :font-variant-id new-variant-id
+                                        :font-weight (:weight variant)
+                                        :font-style (:style variant)}}))
+                  ids)))]
 
     [:*
      [:div.row-flex
@@ -158,21 +155,18 @@
 
 
 (mf/defc text-align-options
-  [{:keys [editor shape locale] :as props}]
-  (let [{:keys [text-align]}
-        (dwt/current-paragraph-values
-         {:editor editor
-          :shape shape
-          :attrs [:text-align]})
+  [{:keys [editor ids values locale] :as props}]
+  (let [{:keys [text-align]} values
 
         text-align (or text-align "left")
 
         on-change
-        (fn [event type]
-          (st/emit! (dwt/update-paragraph-attrs
-                     {:id (:id shape)
-                      :editor editor
-                      :attrs {:text-align type}})))]
+        (fn [event new-align]
+          (run! #(st/emit! (dwt/update-paragraph-attrs
+                             {:id %
+                              :editor editor
+                              :attrs {:text-align new-align}}))
+                ids))]
 
     ;; --- Align
     [:div.row-flex.align-icons
@@ -198,47 +192,23 @@
       i/text-align-justify]]))
 
 
-(mf/defc text-fill-options
-  [{:keys [editor shape] :as props}]
-  (let [text-color (dwt/current-text-values
-                    {:editor editor
-                     :shape shape
-                     :attrs text-fill-attrs})
-
-        current-color {:value (:fill text-color)
-                       :opacity (:opacity text-color)}
-
-        handle-change-color
-        (fn [value opacity]
-          (st/emit! (dwt/update-text-attrs {:id (:id shape)
-                                            :editor editor
-                                            :attrs {:fill value
-                                                    :opacity opacity}})))]
-
-    [:& color-row {:color current-color
-                   :on-change handle-change-color}]))
-
 (mf/defc spacing-options
-  [{:keys [editor shape locale] :as props}]
+  [{:keys [editor ids values locale] :as props}]
   (let [{:keys [line-height
-                letter-spacing]}
-        (dwt/current-text-values
-         {:editor editor
-          :shape shape
-          :attrs [:line-height
-                  :letter-spacing]})
+                letter-spacing]} values
 
         line-height (or line-height "1.2")
         letter-spacing (or letter-spacing "0")
 
         on-change
         (fn [event attr]
-          (let [val (-> (dom/get-target event)
-                        (dom/get-value))]
-            (st/emit! (dwt/update-text-attrs
-                       {:id (:id shape)
-                        :editor editor
-                        :attrs {attr val}}))))]
+          (let [new-spacing (-> (dom/get-target event)
+                                (dom/get-value))]
+            (run! #(st/emit! (dwt/update-text-attrs
+                               {:id %
+                                :editor editor
+                                :attrs {attr new-spacing}}))
+                  ids)))]
     [:div.row-flex
      [:div.input-icon
       [:span.icon-before.tooltip.tooltip-bottom
@@ -280,21 +250,18 @@
 ;;     i/auto-fix]])
 
 (mf/defc vertical-align-options
-  [{:keys [editor locale shape] :as props}]
-  (let [{:keys [vertical-align]}
-        (dwt/current-root-values
-         {:editor editor
-          :shape shape
-          :attrs [:vertical-align]})
+  [{:keys [editor ids values locale] :as props}]
+  (let [{:keys [vertical-align]} values
 
         vertical-align (or vertical-align "top")
 
         on-change
-        (fn [event type]
-          (st/emit! (dwt/update-root-attrs
-                     {:id (:id shape)
-                      :editor editor
-                      :attrs {:vertical-align type}})))]
+        (fn [event new-align]
+          (run! #(st/emit! (dwt/update-root-attrs
+                             {:id %
+                              :editor editor
+                              :attrs {:vertical-align new-align}}))
+                ids))]
 
     [:div.row-flex
      [:span.element-set-subtitle (t locale "workspace.options.font-options.vertical-align")]
@@ -316,21 +283,18 @@
        i/align-bottom]]]))
 
 (mf/defc text-decoration-options
-  [{:keys [editor locale shape] :as props}]
-  (let [{:keys [text-decoration]}
-        (dwt/current-text-values
-         {:editor editor
-          :shape shape
-          :attrs [:text-decoration]})
+  [{:keys [editor ids values locale] :as props}]
+  (let [{:keys [text-decoration]} values
 
         text-decoration (or text-decoration "none")
 
         on-change
         (fn [event type]
-          (st/emit! (dwt/update-text-attrs
-                     {:id (:id shape)
-                      :editor editor
-                      :attrs {:text-decoration type}})))]
+          (run! #(st/emit! (dwt/update-text-attrs
+                             {:id %
+                              :editor editor
+                              :attrs {:text-decoration type}}))
+                ids))]
     [:div.row-flex
      [:span.element-set-subtitle (t locale "workspace.options.font-options.decoration")]
      [:div.align-icons
@@ -353,21 +317,18 @@
        i/strikethrough]]]))
 
 (mf/defc text-transform-options
-  [{:keys [editor locale shape] :as props}]
-  (let [{:keys [text-transform]}
-        (dwt/current-text-values
-         {:editor editor
-          :shape shape
-          :attrs [:text-transform]})
+  [{:keys [editor ids values locale] :as props}]
+  (let [{:keys [text-transform]} values
 
         text-transform (or text-transform "none")
 
         on-change
         (fn [event type]
-          (st/emit! (dwt/update-text-attrs
-                     {:id (:id shape)
-                      :editor editor
-                      :attrs {:text-transform type}})))]
+          (run! #(st/emit! (dwt/update-text-attrs
+                             {:id %
+                              :editor editor
+                              :attrs {:text-transform type}}))
+                ids))]
     [:div.row-flex
      [:span.element-set-subtitle (t locale "workspace.options.font-options.text-case")]
      [:div.align-icons
@@ -394,34 +355,94 @@
 
 (mf/defc text-menu
   {::mf/wrap [mf/memo]}
-  [{:keys [shape] :as props}]
-  (let [id (:id shape)
-        local (mf/deref refs/workspace-local)
-        editor (get-in local [:editors (:id shape)])
-        locale (mf/deref i18n/locale)]
+  [{:keys [ids
+           type
+           editor
+           fill-values
+           font-values
+           align-values
+           spacing-values
+           valign-values
+           decoration-values
+           transform-values] :as props}]
+  (let [locale (mf/deref i18n/locale)]
     [:*
-     [:div.element-set
-      [:div.element-set-title (t locale "workspace.options.fill")]
-      [:div.element-set-content
-       [:& text-fill-options {:editor editor :shape shape}]]]
+     [:& fill-menu {:ids ids :type type :values fill-values :editor editor}]
 
      [:div.element-set
       [:div.element-set-title (t locale "workspace.options.font-options")]
       [:div.element-set-content
-       [:& font-options {:editor editor :locale locale :shape shape}]
-       [:& text-align-options {:editor editor :locale locale :shape shape}]
-       [:& spacing-options {:editor editor :locale locale :shape shape}]
-       [:& vertical-align-options {:editor editor :locale locale :shape shape}]
-       [:& text-decoration-options {:editor editor :locale locale :shape shape}]
-       [:& text-transform-options {:editor editor :locale locale :shape shape}]]]]))
+       [:& font-options {:editor editor :ids ids :values font-values :locale locale}]
+       [:& text-align-options {:editor editor :ids ids :values align-values :locale locale}]
+       [:& spacing-options {:editor editor :ids ids :values spacing-values :locale locale}]
+       [:& vertical-align-options {:editor editor :ids ids :values valign-values :locale locale}]
+       [:& text-decoration-options {:editor editor :ids ids :values decoration-values :locale locale}]
+       [:& text-transform-options {:editor editor :ids ids :values transform-values :locale locale}]]]]))
 
 (mf/defc options
   [{:keys [shape] :as props}]
   (let [ids [(:id shape)]
         type (:type shape)
-        measure-values (select-keys shape measure-attrs)]
+
+        local (deref refs/workspace-local)
+        editor (get-in local [:editors (:id shape)])
+
+        _ (println "hay editor" (clj->js (not (nil? editor))))
+
+        measure-values (select-keys shape measure-attrs)
+
+        fill-values (dwt/current-text-values
+                      {:editor editor
+                       :shape shape
+                       :attrs [:fill
+                               :opacity]})
+
+        converted-fill-values {:fill-color (:fill fill-values)
+                               :fill-opacity (:opacity fill-values)}
+
+        font-values (dwt/current-text-values
+                      {:editor editor
+                       :shape shape
+                       :attrs [:font-id
+                               :font-size
+                               :font-variant-id]})
+
+        align-values (dwt/current-paragraph-values
+                       {:editor editor
+                        :shape shape
+                        :attrs [:text-align]})
+
+        spacing-values (dwt/current-text-values
+                         {:editor editor
+                          :shape shape
+                          :attrs [:line-height
+                                  :letter-spacing]})
+
+        valign-values (dwt/current-root-values
+                        {:editor editor
+                         :shape shape
+                         :attrs [:vertical-align]})
+
+        decoration-values (dwt/current-text-values
+                            {:editor editor
+                             :shape shape
+                             :attrs [:text-decoration]})
+
+        transform-values (dwt/current-text-values
+                            {:editor editor
+                             :shape shape
+                             :attrs [:text-transform]})]
     [:div
      [:& measures-menu {:ids ids
                         :type type
                         :values measure-values}]
-     [:& text-menu {:shape shape}]]))
+     [:& text-menu {:ids ids
+                    :type type
+                    :editor editor
+                    :fill-values converted-fill-values
+                    :font-values font-values
+                    :align-values align-values
+                    :spacing-values spacing-values
+                    :valign-values valign-values
+                    :decoration-values decoration-values
+                    :transform-values transform-values}]]))
