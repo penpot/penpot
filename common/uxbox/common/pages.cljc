@@ -233,7 +233,9 @@
   [{:type :rect
     :name "Rect"
     :fill-color default-color
-    :stroke-alignment :center}
+    :stroke-alignment :center
+    :rx 0
+    :ry 0}
    {:type :image}
    {:type :icon}
    {:type :circle
