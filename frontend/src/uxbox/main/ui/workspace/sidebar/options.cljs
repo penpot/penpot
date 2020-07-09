@@ -37,11 +37,11 @@
 
 (mf/defc shape-options
   {::mf/wrap [#(mf/throttle % 60)]}
-  [{:keys [shape page] :as props}]
+  [{:keys [shape shapes-with-children page] :as props}]
   [:*
    (case (:type shape)
      :frame [:& frame/options {:shape shape}]
-     :group [:& group/options {:shape shape}]
+     :group [:& group/options {:shape shape :shape-with-children shapes-with-children}]
      :text [:& text/options {:shape shape}]
      :rect [:& rect/options {:shape shape}]
      :icon [:& icon/options {:shape shape}]
@@ -55,7 +55,7 @@
 
 (mf/defc options-content
   {::mf/wrap [mf/memo]}
-  [{:keys [section shapes page] :as props}]
+  [{:keys [section shapes shapes-with-children page] :as props}]
   (let [locale (mf/deref i18n/locale)]
     [:div.tool-window
      [:div.tool-window-content
@@ -67,8 +67,8 @@
          [:& align-options]
          (case (count shapes)
            0 [:& page/options {:page page}]
-           1 [:& shape-options {:shape (first shapes)}]
-           [:& multiple/options {:shapes shapes}])]]
+           1 [:& shape-options {:shape (first shapes) :shapes-with-children shapes-with-children}]
+           [:& multiple/options {:shapes shapes-with-children}])]]
 
        [:& tab-element {:id :prototype
                         :title (t locale "workspace.options.prototype")}
@@ -79,9 +79,11 @@
 (mf/defc options-toolbox
   {::mf/wrap [mf/memo]}
   [{:keys [page local] :as props}]
-  (let [section    (:options-mode local)
-        shapes     (mf/deref refs/selected-objects)]
+  (let [section              (:options-mode local)
+        shapes               (mf/deref refs/selected-objects)
+        shapes-with-children (mf/deref refs/selected-objects-with-children)]
     [:& options-content {:shapes shapes
+                         :shapes-with-children shapes-with-children
                          :page page
                          :section section}]))
 

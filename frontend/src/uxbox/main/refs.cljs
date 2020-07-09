@@ -136,6 +136,16 @@
               (into selected children)))]
     (l/derived selector st/state)))
 
+(def selected-objects-with-children
+  (letfn [(selector [state]
+            (let [selected (get-in state [:workspace-local :selected])
+                  page-id (get-in state [:workspace-page :id])
+                  objects (get-in state [:workspace-data page-id :objects])
+                  children (mapcat #(cph/get-children % objects) selected)
+                  accumulated (into selected children)]
+              (mapv #(get objects %) accumulated)))]
+    (l/derived selector st/state)))
+
 (defn make-selected
   [id]
   (l/derived #(contains? % id) selected-shapes))

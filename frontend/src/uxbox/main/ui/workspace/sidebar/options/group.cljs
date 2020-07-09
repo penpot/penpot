@@ -12,6 +12,7 @@
   (:require
    [rumext.alpha :as mf]
    [uxbox.common.geom.shapes :as geom]
+   [uxbox.common.pages-helpers :as cph]
    [uxbox.main.refs :as refs]
    [uxbox.main.data.workspace.texts :as dwt]
    [uxbox.main.ui.workspace.sidebar.options.multiple :refer [get-shape-attrs]]
@@ -28,19 +29,19 @@
                                                          text-menu]]))
 
 (mf/defc options
-  [{:keys [shape] :as props}]
-  (let [child-ids (:shapes shape)
-        children (mf/deref (refs/objects-by-id child-ids))
-        text-ids (map :id (filter #(= (:type %) :text) children))
-        other-ids (map :id (filter #(not= (:type %) :text) children))
+  [{:keys [shape shape-with-children] :as props}]
+  (let [id (:id shape)
+        ids-with-children (map :id shape-with-children)
+        text-ids (map :id (filter #(= (:type %) :text) shape-with-children))
+        other-ids (map :id (filter #(not= (:type %) :text) shape-with-children))
 
-        type (:type shape)
+        type (:type shape) ; always be :group
 
         measure-values
         (select-keys shape measure-attrs)
 
         fill-values
-        (geom/get-attrs-multi children fill-attrs)
+        (geom/get-attrs-multi shape-with-children fill-attrs)
 
         stroke-values
         (geom/get-attrs-multi (map #(get-shape-attrs
@@ -49,7 +50,7 @@
                                       nil
                                       nil
                                       nil)
-                                   children)
+                                   shape-with-children)
                               stroke-attrs)
 
         font-values
@@ -59,7 +60,7 @@
                                       text-font-attrs
                                       nil
                                       dwt/current-text-values)
-                                   children)
+                                   shape-with-children)
                               text-font-attrs)
 
         align-values
@@ -69,7 +70,7 @@
                                       text-align-attrs
                                       nil
                                       dwt/current-paragraph-values)
-                                   children)
+                                   shape-with-children)
                               text-align-attrs)
 
         spacing-values
@@ -79,7 +80,7 @@
                                       text-spacing-attrs
                                       nil
                                       dwt/current-text-values)
-                                   children)
+                                   shape-with-children)
                               text-spacing-attrs)
 
         valign-values
@@ -89,7 +90,7 @@
                                       text-valign-attrs
                                       nil
                                       dwt/current-root-values)
-                                   children)
+                                   shape-with-children)
                               text-valign-attrs)
 
         decoration-values
@@ -99,7 +100,7 @@
                                       text-decoration-attrs
                                       nil
                                       dwt/current-text-values)
-                                   children)
+                                   shape-with-children)
                               text-decoration-attrs)
 
         transform-values
@@ -109,17 +110,17 @@
                                       text-transform-attrs
                                       nil
                                       dwt/current-text-values)
-                                   children)
+                                   shape-with-children)
                               text-transform-attrs)]
     [:*
-     [:& measures-menu {:ids [(:id shape)]
+     [:& measures-menu {:ids [id]
                         :type type
                         :values measure-values}]
-     [:& fill-menu {:ids child-ids
+     [:& fill-menu {:ids ids-with-children
                     :type type
                     :values fill-values}]
      (when-not (empty? other-ids)
-       [:& stroke-menu {:ids child-ids
+       [:& stroke-menu {:ids other-ids
                         :type type
                         :values stroke-values}])
      (when-not (empty? text-ids)

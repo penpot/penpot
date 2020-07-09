@@ -233,36 +233,61 @@
   [{:type :rect
     :name "Rect"
     :fill-color default-color
-    :stroke-alignment :center
-    :rx 0
-    :ry 0}
-   {:type :image}
-   {:type :icon}
-   {:type :circle
-    :name "Circle"
-    :fill-color default-color}
-   {:type :path
-    :name "Path"
-    :stroke-style :solid
-    :stroke-color "#000000"
-    :stroke-width 2
-    :stroke-alignment :center
-    :fill-color "#000000"
-    :fill-opacity 0
-    :segments []}
-   {:type :frame
+    :fill-opacity 1
     :stroke-style :none
     :stroke-alignment :center
-    :name "Artboard"}
-   {:type :curve
-    :name "Path"
-    :stroke-style :solid
+    :stroke-width 0
     :stroke-color "#000000"
-    :stroke-width 2
+    :stroke-opacity 0
+    :rx 0
+    :ry 0}
+
+   {:type :image}
+
+   {:type :icon}
+
+   {:type :circle
+    :name "Circle"
+    :fill-color default-color
+    :fill-opacity 1
+    :stroke-style :none
     :stroke-alignment :center
+    :stroke-width 0
+    :stroke-color "#000000"
+    :stroke-opacity 0}
+
+   {:type :path
+    :name "Path"
     :fill-color "#000000"
     :fill-opacity 0
+    :stroke-style :solid
+    :stroke-alignment :center
+    :stroke-width 2
+    :stroke-color "#000000"
+    :stroke-opacity 1
     :segments []}
+
+   {:type :frame
+    :name "Artboard"
+    :fill-color "#ffffff"
+    :fill-opacity 1
+    :stroke-style :none
+    :stroke-alignment :center
+    :stroke-width 0
+    :stroke-color "#000000"
+    :stroke-opacity 0}
+
+   {:type :curve
+    :name "Path"
+    :fill-color "#000000"
+    :fill-opacity 0
+    :stroke-style :solid
+    :stroke-alignment :center
+    :stroke-width 2
+    :stroke-color "#000000"
+    :stroke-opacity 1
+    :segments []}
+
    {:type :text
     :name "Text"
     :content nil}])
