@@ -38,7 +38,25 @@
         type (:type shape) ; always be :group
 
         measure-values
-        (select-keys shape measure-attrs)
+        (merge
+          ;; All values extracted from the group shape, except
+          ;; border radius, that needs to be looked up from children
+          (geom/get-attrs-multi (map #(get-shape-attrs
+                                        %
+                                        measure-attrs
+                                        nil
+                                        nil
+                                        nil)
+                                     [shape])
+                                measure-attrs)
+          (geom/get-attrs-multi (map #(get-shape-attrs
+                                        %
+                                        [:rx :ry]
+                                        nil
+                                        nil
+                                        nil)
+                                     shape-with-children)
+                                [:rx :ry]))
 
         fill-values
         (geom/get-attrs-multi shape-with-children fill-attrs)
@@ -114,6 +132,7 @@
                               text-transform-attrs)]
     [:*
      [:& measures-menu {:ids [id]
+                        :ids-with-children ids-with-children
                         :type type
                         :values measure-values}]
      [:& fill-menu {:ids ids-with-children

@@ -35,9 +35,11 @@
 
 ;; -- User/drawing coords
 (mf/defc measures-menu
-  [{:keys [options ids values] :as props}]
+  [{:keys [options ids ids-with-children values] :as props}]
   (let [options (or options #{:size :position :rotation :radius})
         locale (i18n/use-locale)
+
+        ids-with-children (or ids-with-children ids)
 
         old-shapes (deref (refs/objects-by-id ids))
         frames (map #(deref (refs/object-by-id (:frame-id %))) old-shapes)
@@ -93,8 +95,8 @@
           (let [value (-> (dom/get-target event)
                           (dom/get-value)
                           (d/parse-integer 0))]
-            (st/emit! (dwc/update-shapes-recursive
-                        ids
+            (st/emit! (dwc/update-shapes
+                        ids-with-children
                         #(if (:rx %)
                            (assoc % :rx value :ry value)
                            %)))))
