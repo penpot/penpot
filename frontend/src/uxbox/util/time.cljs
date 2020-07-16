@@ -13,6 +13,8 @@
    ["date-fns/formatDistanceToNow" :as df-format-distance]
    ["date-fns/locale/fr" :as df-fr-locale]
    ["date-fns/locale/en-US" :as df-en-locale]
+   ["date-fns/locale/es" :as df-es-locale]
+   ["date-fns/locale/ru" :as df-ru-locale]
    [goog.object :as gobj]))
 
 (def ^:private locales
@@ -20,7 +22,11 @@
        :en df-en-locale
        :en_US df-en-locale
        :fr df-fr-locale
-       :fr_FR df-fr-locale})
+       :fr_FR df-fr-locale
+       :es df-es-locale
+       :es_ES df-es-locale
+       :ru df-ru-locale
+       :ru_RU df-ru-locale})
 
 (defn now
   "Return the current Instant."
