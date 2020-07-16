@@ -82,7 +82,7 @@
                             (-> state
                                 (dissoc "unused")
                                 (update "used-in" conj rpath)))))
-      (assoc data code {"translations" {"en" nil "fr" nil "es" nil}
+      (assoc data code {"translations" {"en" nil "fr" nil "es" nil "ru" nil}
                         "used-in" [rpath]}))))
 
 (defn- clean-removed-translations

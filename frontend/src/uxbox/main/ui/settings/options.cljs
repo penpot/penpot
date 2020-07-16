@@ -51,7 +51,8 @@
 
    [:& select {:options [{:label "English" :value "en"}
                          {:label "Français" :value "fr"}
-                         {:label "Español" :value "es"}]
+                         {:label "Español" :value "es"}
+                         {:label "Русский" :value "ru"}]
                :label (t locale "settings.language-label")
                :default "en"
                :name :lang}]
