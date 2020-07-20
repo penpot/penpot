@@ -83,7 +83,7 @@
                  :content content
                  :id (uuid/next)
                  ;; TODO Keep the name of the original icon
-                 :name (str "Icon " (gensym "i"))
+                 :name (name (gensym "Icon "))
                  :metadata metadata})]
         (->> (rx/from files)
              (rx/filter allowed?)

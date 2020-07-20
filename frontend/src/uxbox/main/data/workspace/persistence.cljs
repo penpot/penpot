@@ -221,7 +221,7 @@
     ptk/WatchEvent
     (watch [this state stream]
       (let [file-id (get-in state [:workspace-file :id])
-            name (str "Page " (gensym "p"))
+            name (name (gensym "Page "))
             ordering (count (get-in state [:workspace-file :pages]))
             params {:name name
                     :file-id file-id
