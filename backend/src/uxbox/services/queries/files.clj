@@ -62,6 +62,7 @@
     inner join projects as pr on (file.project_id = pr.id)
      left join page on (file.id = page.file_id)
     where file.name ilike ('%' || ? || '%')
+      and file.deleted_at is null
    window pages_w as (partition by file.id order by page.created_at
                       range between unbounded preceding
                                 and unbounded following)
