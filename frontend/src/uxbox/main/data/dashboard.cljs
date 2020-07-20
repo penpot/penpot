@@ -246,7 +246,7 @@
   (ptk/reify ::create-project
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [name (str "New Project " (gensym "p"))
+      (let [name (str "New Project " (gensym ""))
             team-id (get-in state [:dashboard-local :team-id])]
         (->> (rp/mutation! :create-project {:name name :team-id team-id})
              (rx/map project-created))))))
@@ -348,7 +348,7 @@
   (ptk/reify ::create-file
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [name (str "New File " (gensym "p"))
+      (let [name (str "New File " (gensym ""))
             params {:name name :project-id project-id}]
         (->> (rp/mutation! :create-file params)
              (rx/map file-created))))))
