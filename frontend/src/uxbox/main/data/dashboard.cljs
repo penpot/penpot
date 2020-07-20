@@ -364,7 +364,13 @@
             recent-project-files (get-in state [:recent-file-ids project-id] [])]
         (-> state
           (assoc-in [:files file-id] data)
-          (assoc-in [:recent-file-ids project-id] (conj recent-project-files file-id)))))))
+          (assoc-in [:recent-file-ids project-id] (conj recent-project-files file-id)))))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (rt/nav :workspace {:project-id (:project-id data)
+                                 :file-id (:id data)}
+                     {:page-id (first (:pages data))})))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
