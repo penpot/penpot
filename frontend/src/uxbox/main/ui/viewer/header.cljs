@@ -107,10 +107,11 @@
        [:span.share-link-title (t locale "viewer.header.share.title")]
        [:div.share-link-input
         (if (string? token)
-          [:span.link link]
-          [:span.link-placeholder (t locale "viewer.header.share.placeholder")])
-        [:span.link-button {:on-click copy-link}
-         (t locale "viewer.header.share.copy-link")]]
+          [:*
+            [:span.link link]
+            [:span.link-button {:on-click copy-link}
+             (t locale "viewer.header.share.copy-link")]]
+          [:span.link-placeholder (t locale "viewer.header.share.placeholder")])]
 
        [:span.share-link-subtitle (t locale "viewer.header.share.subtitle")]
        [:div.share-link-buttons
