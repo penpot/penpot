@@ -183,7 +183,7 @@
            :value (attr->string :rotation values)}]])
 
       ;; RADIUS
-      (when (options :radius)
+      (when (and (options :radius) (not (nil? (:rx values))))
         [:div.row-flex
          [:span.element-set-subtitle (t locale "workspace.options.radius")]
          [:div.input-element.pixels
