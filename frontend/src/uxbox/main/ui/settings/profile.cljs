@@ -58,7 +58,8 @@
      [:& input
       {:type "text"
        :name :fullname
-       :label (t locale "settings.fullname-label")}]
+       :label (t locale "settings.fullname-label")
+       :trim true}]
 
      [:& input
       {:type "email"

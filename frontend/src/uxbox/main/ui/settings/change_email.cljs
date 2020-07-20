@@ -72,11 +72,13 @@
              :initial {}}
     [:& input {:type "text"
                :name :email-1
-               :label (t locale "settings.new-email-label")}]
+               :label (t locale "settings.new-email-label")
+               :trim true}]
 
     [:& input {:type "text"
                :name :email-2
-               :label (t locale "settings.confirm-email-label")}]
+               :label (t locale "settings.confirm-email-label")
+               :trim true}]
 
     [:& submit-button
      {:label (t locale "settings.change-email-submit-label")}]]])

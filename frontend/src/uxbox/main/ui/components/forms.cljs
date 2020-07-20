@@ -22,7 +22,7 @@
 (def form-ctx (mf/create-context nil))
 
 (mf/defc input
-  [{:keys [type label help-icon disabled name form hint] :as props}]
+  [{:keys [type label help-icon disabled name form hint trim] :as props}]
   (let [form       (mf/use-ctx form-ctx)
 
         type'      (mf/use-state type)
@@ -62,7 +62,7 @@
                            "password"))))
 
         on-focus  #(reset! focus? true)
-        on-change (fm/on-input-change form name)
+        on-change (fm/on-input-change form name trim)
 
         on-blur
         (fn [event]
@@ -71,7 +71,7 @@
             (swap! form assoc-in [:touched name] true)))
 
         props (-> props
-                  (dissoc :help-icon :form)
+                  (dissoc :help-icon :form :trim)
                   (assoc :value value
                          :on-focus on-focus
                          :on-blur on-blur

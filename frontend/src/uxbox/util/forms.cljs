@@ -74,14 +74,17 @@
         (impl-mutator update-state))))
 
 (defn on-input-change
-  [{:keys [data] :as form} field]
+  ([{:keys [data] :as form} field]
+   (on-input-change form field false))
+
+  ([{:keys [data] :as form} field trim?]
   (fn [event]
     (let [target (dom/get-target event)
           value (dom/get-value target)]
       (swap! form (fn [state]
                     (-> state
-                        (assoc-in [:data field] value)
-                        (update :errors dissoc field)))))))
+                        (assoc-in [:data field] (if trim? (str/trim value) value))
+                        (update :errors dissoc field))))))))
 
 (defn on-input-blur
   [{:keys [touched] :as form} field]
