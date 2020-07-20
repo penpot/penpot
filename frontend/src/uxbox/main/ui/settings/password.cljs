@@ -34,7 +34,7 @@
 (defn- on-success
   [form]
   (let [msg (tr "settings.notifications.password-saved")]
-    (st/emit! (dm/info msg))))
+    (st/emit! (dm/success msg))))
 
 (defn- on-submit
   [form event]

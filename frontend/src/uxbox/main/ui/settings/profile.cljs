@@ -40,7 +40,7 @@
 (defn- on-submit
   [form event]
   (let [data (:clean-data form)
-        on-success #(st/emit! (dm/info (tr "settings.notifications.profile-saved")))
+        on-success #(st/emit! (dm/success (tr "settings.notifications.profile-saved")))
         on-error #(on-error % form)]
     (st/emit! (udu/update-profile (with-meta data
                                     {:on-success on-success
