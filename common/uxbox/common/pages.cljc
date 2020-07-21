@@ -15,6 +15,8 @@
    [uxbox.common.pages-helpers :as cph]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.geom.shapes :as geom]
+   [uxbox.common.geom.matrix :as gmt]
+   [uxbox.common.geom.point :as gpt]
    [uxbox.common.spec :as us]
    [uxbox.common.uuid :as uuid]))
 
@@ -382,33 +384,53 @@
         (seq shapes)   ; Recursive delete all dependend objects
         (as-> $ (reduce #(or (process-change %1 {:type :del-obj :id %2}) %1) $ shapes))))))
 
+
+(defn rotation-modifiers
+  [center shape angle]
+  (let [displacement (let [shape-center (geom/center shape)]
+                       (-> (gmt/matrix)
+                           (gmt/rotate angle center)
+                           (gmt/rotate (- angle) shape-center)))]
+    {:rotation angle
+     :displacement displacement}))
+
 (defmethod process-change :reg-objects
   [data {:keys [shapes]}]
-  (let [objects (:objects data)]
-    (loop [shapes shapes data data]
-      (if (seq shapes)
-        (let [item (get objects (first shapes))]
-          (if (= :group (:type item))
-            (recur
-             (rest shapes)
-             (update-in data [:objects (:id item)]
-                        (fn [{:keys [shapes] :as obj}]
-                          (let [shapes (->> shapes
-                                            (map (partial get objects))
-                                            (filter identity))]
-                            (if (seq shapes)
-                              (let [selrect (geom/selection-rect shapes)]
-                                (as-> obj $
-                                  (assoc $
-                                         :x (:x selrect)
-                                         :y (:y selrect)
-                                         :width (:width selrect)
-                                         :height (:height selrect))
-                                  (assoc $ :points (geom/shape->points $))
-                                  (assoc $ :selrect (geom/points->selrect (:points $)))))
-                              obj)))))
-            (recur (rest shapes) data)))
-        data))))
+  (let [objects (:objects data)
+        xfm     (comp
+                 (mapcat #(cons % (cph/get-parents % objects)))
+                 (map #(get objects %))
+                 (filter #(= (:type %) :group))
+                 (map :id)
+                 (distinct))
+
+        ids     (into [] xfm shapes)
+
+        update-group
+        (fn [group data]
+          (let [objects (:objects data)
+                gcenter (geom/center group)
+
+                gxfm    (comp
+                         (map #(get objects %))
+                         (map #(-> %
+                                   (assoc :modifiers
+                                          (rotation-modifiers gcenter % (- (:rotation group 0))))
+                                   (geom/transform-shape))))
+
+                selrect (-> (into [] gxfm (:shapes group))
+                            (geom/selection-rect))]
+
+            ;; Rotate the group shape change the data and rotate back again
+            (-> group
+                (assoc-in [:modifiers :rotation] (- (:rotation group)))
+                (geom/transform-shape)
+                (merge (select-keys selrect [:x :y :width :height]))
+                (assoc-in [:modifiers :rotation] (:rotation group))
+                (geom/transform-shape))))]
+
+    (reduce #(update-in %1 [:objects %2] update-group %1) data ids)))
+
 
 (defmethod process-change :mov-objects
   [data {:keys [parent-id shapes index] :as change}]

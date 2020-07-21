@@ -137,7 +137,6 @@
 
     :render-object
     (do
-      (prn route)
       (let [page-id (uuid (get-in route [:params :path :page-id]))
             object-id  (uuid (get-in route [:params :path :object-id]))]
         [:& render/render-object {:page-id page-id

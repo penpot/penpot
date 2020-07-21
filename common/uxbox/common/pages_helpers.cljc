@@ -39,15 +39,6 @@
     (when parent-id
       (lazy-seq (cons parent-id (get-parents parent-id objects))))))
 
-(defn get-common-parents
-  [ids objects]
-  (loop [res (d/ordered-set)
-         ids (seq ids)]
-    (if ids
-      (recur (into res (get-parents (first ids) objects))
-             (next ids))
-      res)))
-
 (defn generate-child-parent-index
   [objects]
   (reduce-kv

@@ -25,8 +25,6 @@
 ;; --- Protocols
 
 (defprotocol IBatchedChange)
-(defprotocol IUpdateGroup
-  (get-ids [this]))
 
 (declare setup-selection-index)
 (declare update-page-indices)
@@ -96,7 +94,7 @@
                                   :val vmb}))))
          result)))))
 
-(defn- generate-changes
+(defn generate-changes
   [prev curr]
   (letfn [(impl-diff [res id]
             (let [prev-obj (get-in prev [:objects id])

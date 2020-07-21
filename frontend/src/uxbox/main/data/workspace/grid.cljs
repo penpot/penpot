@@ -12,6 +12,7 @@
    [beicon.core :as rx]
    [potok.core :as ptk]
    [uxbox.common.data :as d]
+   [uxbox.common.spec :as us]
    [uxbox.main.data.workspace.common :as dwc]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -37,42 +38,39 @@
    :column default-layout-params
    :row    default-layout-params})
 
-(defn add-frame-grid [frame-id]
-  (ptk/reify ::set-frame-grid
-    dwc/IBatchedChange
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [pid (:current-page-id state)
-            default-params (or
-                            (get-in state [:workspace-data pid :options :saved-grids :square])
-                            (:square default-grid-params))
-            prop-path [:workspace-data pid :objects frame-id :grids]
-            grid {:type :square
-                  :params default-params
-                  :display true}]
-        (-> state
-            (update-in prop-path #(if (nil? %) [grid] (conj % grid))))))))
+(defn add-frame-grid
+  [frame-id]
+  (us/assert ::us/uuid frame-id)
+  (ptk/reify ::add-frame-grid
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id (:current-page-id state)
+            data    (get-in state [:workspace-data page-id])
+            params  (or (get-in data [:options :saved-grids :square])
+                        (:square default-grid-params))
+            grid    {:type :square
+                     :params params
+                     :display true}]
+        (rx/of (dwc/update-shapes [frame-id]
+                                  (fn [obj] (update obj :grids (fnil #(conj % grid) [])))))))))
 
-(defn remove-frame-grid [frame-id index]
-  (ptk/reify ::set-frame-grid
-    dwc/IBatchedChange
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [pid (:current-page-id state)]
-        (-> state
-            (update-in [:workspace-data pid :objects frame-id :grids] #(d/remove-at-index % index)))))))
 
-(defn set-frame-grid [frame-id index data]
+(defn remove-frame-grid
+  [frame-id index]
   (ptk/reify ::set-frame-grid
-    dwc/IBatchedChange
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [pid (:current-page-id state)]
-        (->
-         state
-         (assoc-in [:workspace-data pid :objects frame-id :grids index] data))))))
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (dwc/update-shapes [frame-id] (fn [o] (update o :grids (fnil #(d/remove-at-index % index) []))))))))
 
-(defn set-default-grid [type params]
+(defn set-frame-grid
+  [frame-id index data]
+  (ptk/reify ::set-frame-grid
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (dwc/update-shapes [frame-id] #(assoc-in % [:grids index] data))))))
+
+(defn set-default-grid
+  [type params]
   (ptk/reify ::set-default-grid
     ptk/WatchEvent
     (watch [_ state stream]
