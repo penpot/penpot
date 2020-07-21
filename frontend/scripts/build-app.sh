@@ -3,7 +3,9 @@
 source ~/.bashrc
 set -ex
 
-TAG=`git log -n 1 --pretty=format:%H -- ./`
+if [ -z "${TAG}" ]; then
+    export TAG=`git log -n 1 --pretty=format:%H -- ./`
+fi
 
 yarn install
 
