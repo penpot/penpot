@@ -87,7 +87,7 @@
 
      (when (> (count selected) 1)
        [:& menu-entry {:title "Group"
-                       :shortcut "g"
+                       :shortcut "Ctrl + g"
                        :on-click do-create-group}])
 
      (when (and (= (count selected) 1) (= (:type shape) :group))

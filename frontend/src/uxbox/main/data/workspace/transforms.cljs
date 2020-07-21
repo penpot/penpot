@@ -112,11 +112,11 @@
                                     false))))
 
           ;; Unifies the instantaneous proportion lock modifier
-          ;; activated by Ctrl key and the shapes own proportion
+          ;; activated by Shift key and the shapes own proportion
           ;; lock flag that can be activated on element options.
-          (normalize-proportion-lock [[point ctrl?]]
+          (normalize-proportion-lock [[point shift?]]
             (let [proportion-lock? (:proportion-lock shape)]
-              [point (or proportion-lock? ctrl?)]))
+              [point (or proportion-lock? shift?)]))
 
           ;; Applies alginment to point if it is currently
           ;; activated on the current workspace
@@ -141,7 +141,7 @@
               layout (get state :workspace-layout)]
           (rx/concat
            (->> ms/mouse-position
-                (rx/with-latest vector ms/mouse-position-ctrl)
+                (rx/with-latest vector ms/mouse-position-shift)
                 (rx/map normalize-proportion-lock)
                 (rx/switch-map (fn [[point :as current]]
                                (->> (snap/closest-snap-point page-id resizing-shapes layout point)
@@ -171,10 +171,10 @@
             calculate-angle (fn [pos ctrl?]
                               (let [angle (- (gpt/angle pos group-center) initial-angle)
                                     angle (if (neg? angle) (+ 360 angle) angle)
-                                    modval (mod angle 90)
+                                    modval (mod angle 45)
                                     angle (if ctrl?
-                                            (if (< 50 modval)
-                                              (+ angle (- 90 modval))
+                                            (if (< 22.5 modval)
+                                              (+ angle (- 45 modval))
                                               (- angle modval))
                                             angle)
                                     angle (if (= angle 360)

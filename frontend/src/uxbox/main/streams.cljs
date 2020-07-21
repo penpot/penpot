@@ -73,6 +73,15 @@
     (rx/subscribe-with ob sub)
     sub))
 
+(defonce mouse-position-shift
+  (let [sub (rx/behavior-subject nil)
+        ob  (->> st/stream
+                 (rx/filter pointer-event?)
+                 (rx/map :shift)
+                 (rx/dedupe))]
+    (rx/subscribe-with ob sub)
+    sub))
+
 (defonce mouse-position-alt
   (let [sub (rx/behavior-subject nil)
         ob  (->> st/stream
