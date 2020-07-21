@@ -12,15 +12,15 @@
   (:require
    [beicon.core :as rx]
    [potok.core :as ptk]
-   [uxbox.main.data.workspace :as dw]
-   [uxbox.common.geom.shapes :as geom]
    [uxbox.common.geom.point :as gpt]
+   [uxbox.common.geom.shapes :as geom]
    [uxbox.common.pages :as cp]
    [uxbox.common.pages-helpers :as cph]
-   [uxbox.util.geom.path :as path]
+   [uxbox.common.uuid :as uuid]
+   [uxbox.main.data.workspace :as dw]
    [uxbox.main.snap :as snap]
    [uxbox.main.streams :as ms]
-   [uxbox.common.uuid :as uuid]))
+   [uxbox.util.geom.path :as path]))
 
 (declare handle-drawing)
 (declare handle-drawing-generic)
