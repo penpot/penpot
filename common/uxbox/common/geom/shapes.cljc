@@ -798,13 +798,13 @@
   ([frame shape]
    (let [new-shape
          (if (:modifiers shape)
-           (as-> (case (:type shape)
-                   (:curve :path) (transform-path-shape shape)
-                   (transform-rect-shape shape)) $
-             (dissoc $ :modifiers))
+           (-> (case (:type shape)
+                 (:curve :path) (transform-path-shape shape)
+                 (transform-rect-shape shape))
+               (dissoc :modifiers))
            shape)]
-     (-> new-shape
-         (translate-to-frame frame)))))
+     (cond-> new-shape
+       frame (translate-to-frame frame)))))
 
 
 (defn transform-matrix

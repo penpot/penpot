@@ -400,27 +400,30 @@
   [ids]
   (us/verify (s/coll-of uuid?) ids)
   (ptk/reify ::apply-modifiers
-    dwc/IUpdateGroup
-    (get-ids [_] ids)
-
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [page-id (:current-page-id state)
-            objects (get-in state [:workspace-data page-id :objects])
-
-            ;; ID's + Children
-            ids-with-children (concat ids (mapcat #(cph/get-children % objects) ids))
-
-            ;; For each shape applies the modifiers by transforming the objects
-            update-shape
-            (fn [state shape-id]
-              (update-in state [:workspace-data page-id :objects shape-id] gsh/transform-shape))]
-
-        (reduce update-shape state ids-with-children)))
-
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-id (:current-page-id state)]
-        (rx/of (dwc/diff-and-commit-changes page-id)
-               (dwc/rehash-shape-frame-relationship ids))))))
+      (let [page-id  (:current-page-id state)
+            objects0 (get-in state [:workspace-pages page-id :data :objects])
+            objects1 (get-in state [:workspace-data page-id :objects])
 
+            ;; ID's + Children ID's
+            ids-with-children (d/concat [] (mapcat #(cph/get-children % objects1) ids) ids)
+
+            ;; For each shape applies the modifiers by transforming the objects
+            update-shape #(update %1 %2 gsh/transform-shape)
+            objects2 (reduce update-shape objects1 ids-with-children)
+
+            regchg   {:type :reg-objects :shapes (vec ids)}
+
+            ;; we need to generate redo chages from current
+            ;; state (with current temporal values) to new state but
+            ;; the undo should be calculated from clear current
+            ;; state (without temporal values in it, for this reason
+            ;; we have 3 different objects references).
+
+            rchanges (conj (dwc/generate-changes {:objects objects1} {:objects objects2}) regchg)
+            uchanges (conj (dwc/generate-changes {:objects objects2} {:objects objects0}) regchg)
+            ]
+
+        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
+               (dwc/rehash-shape-frame-relationship ids))))))

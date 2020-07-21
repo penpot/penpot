@@ -54,7 +54,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (declare initialized)
-(declare initialize-group-check)
 
 ;; --- Initialize Workspace
 
@@ -158,8 +157,7 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (dwp/initialize-page-persistence page-id)
-             initialize-group-check))))
+      (rx/of (dwp/initialize-page-persistence page-id)))))
 
 (defn finalize-page
   [page-id]
@@ -175,19 +173,6 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (rx/of ::dwp/finalize))))
-
-(declare adjust-group-shapes)
-
-(def initialize-group-check
-  (ptk/reify ::initialize-group-check
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [stoper (rx/filter (ptk/type? ::finalize-page) stream)]
-        (->> stream
-             (rx/filter #(satisfies? dwc/IUpdateGroup %))
-             (rx/map #(adjust-group-shapes (dwc/get-ids %)))
-             (rx/take-until stoper))))))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace State Manipulation
@@ -276,52 +261,6 @@
                                           (update :height #(/ % hprop))
                                           (assoc :left-offset left-offset)))))))))))
 
-
-;; TODO: this event is mainly replaced by `:reg-objects` change, but many events
-;; are still implemented in function of this so we need to maintain it until
-;; all is ported to use `:reg-objects`.
-
-;; TODO: Additioanlly: many stuff related to rotation is not ported so
-;; we need to port it before completelly remove this.
-
-(defn adjust-group-shapes
-  [ids]
-  (ptk/reify ::adjust-group-shapes
-    dwc/IBatchedChange
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [page-id (:current-page-id state)
-            objects (get-in state [:workspace-data page-id :objects])
-            groups-to-adjust (->> ids
-                                  (mapcat #(cph/get-parents % objects))
-                                  (map #(get objects %))
-                                  (filter #(= (:type %) :group))
-                                  (map #(:id %))
-                                  distinct)
-            update-group
-            (fn [state group]
-              (let [objects (get-in state [:workspace-data page-id :objects])
-                    group-center (geom/center group)
-                    group-objects (->> (:shapes group)
-                                       (map #(get objects %))
-                                       (map #(-> %
-                                                 (assoc :modifiers
-                                                        (dwt/rotation-modifiers group-center % (- (:rotation group 0))))
-                                                 (geom/transform-shape))))
-                    selrect (geom/selection-rect group-objects)]
-
-                ;; Rotate the group shape change the data and rotate back again
-                (-> group
-                    (assoc-in [:modifiers :rotation] (- (:rotation group)))
-                    (geom/transform-shape)
-                    (merge (select-keys selrect [:x :y :width :height]))
-                    (assoc-in [:modifiers :rotation] (:rotation group))
-                    (geom/transform-shape))))
-
-            reduce-fn
-            #(update-in %1 [:workspace-data page-id :objects %2] (partial update-group %1))]
-
-        (reduce reduce-fn state groups-to-adjust)))))
 
 (defn start-pan [state]
   (-> state
@@ -762,14 +701,21 @@
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
             objects  (get-in state [:workspace-data page-id :objects])
-            parents  (cph/get-common-parents ids objects)
+
+            parents  (loop [res #{parent-id}
+                            ids (seq ids)]
+                       (if (nil? ids)
+                         (vec res)
+                         (recur
+                          (conj res (cph/get-parent (first ids) objects))
+                          (next ids))))
 
             rchanges [{:type :mov-objects
                        :parent-id parent-id
                        :index to-index
                        :shapes (vec (reverse ids))}
                       {:type :reg-objects
-                       :shapes (vec (conj parents parent-id))}]
+                       :shapes parents}]
 
             uchanges
             (reduce (fn [res id]
@@ -782,8 +728,12 @@
                     [] (reverse ids))
             uchanges (conj uchanges
                            {:type :reg-objects
-                            :shapes (vec parents)})]
+                            :shapes parents})]
 
+        ;; (println "================ rchanges")
+        ;; (cljs.pprint/pprint rchanges)
+        ;; (println "================ uchanges")
+        ;; (cljs.pprint/pprint uchanges)
         (rx/of (dwc/commit-changes rchanges uchanges
                                    {:commit-local? true}))))))
 
@@ -828,17 +778,35 @@
   [axis]
   (us/verify ::geom/align-axis axis)
   (ptk/reify :align-objects
-    dwc/IBatchedChange
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [page-id (:current-page-id state)
-            objects (get-in state [:workspace-data page-id :objects])
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id  (:current-page-id state)
+            objects  (get-in state [:workspace-data page-id :objects])
             selected (get-in state [:workspace-local :selected])
-            moved-objs (if (= 1 (count selected))
-                         (align-object-to-frame objects (first selected) axis)
-                         (align-objects-list objects selected axis))
-            updated-objs (merge objects (d/index-by :id moved-objs))]
-        (assoc-in state [:workspace-data page-id :objects] updated-objs)))))
+            moved    (if (= 1 (count selected))
+                       (align-object-to-frame objects (first selected) axis)
+                       (align-objects-list objects selected axis))]
+        (loop [moved    (seq moved)
+               rchanges []
+               uchanges []]
+          (if (nil? moved)
+            (do
+              ;; (println "================ rchanges")
+              ;; (cljs.pprint/pprint rchanges)
+              ;; (println "================ uchanges")
+              ;; (cljs.pprint/pprint uchanges)
+              (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})))
+            (let [curr (first moved)
+                  prev (get objects (:id curr))
+                  ops1 (dwc/generate-operations prev curr)
+                  ops2 (dwc/generate-operations curr prev)]
+              (recur (next moved)
+                     (conj rchanges {:type :mod-obj
+                                     :operations ops1
+                                     :id (:id curr)})
+                     (conj uchanges {:type :mod-obj
+                                     :operations ops2
+                                     :id (:id curr)})))))))))
 
 (defn align-object-to-frame
   [objects object-id axis]
@@ -856,16 +824,35 @@
   [axis]
   (us/verify ::geom/dist-axis axis)
   (ptk/reify :align-objects
-    dwc/IBatchedChange
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [page-id (:current-page-id state)
-            objects (get-in state [:workspace-data page-id :objects])
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id  (:current-page-id state)
+            objects  (get-in state [:workspace-data page-id :objects])
             selected (get-in state [:workspace-local :selected])
-            selected-objs (map #(get objects %) selected)
-            moved-objs (geom/distribute-space selected-objs axis objects)
-            updated-objs (merge objects (d/index-by :id moved-objs))]
-        (assoc-in state [:workspace-data page-id :objects] updated-objs)))))
+
+            moved    (-> (map #(get objects %) selected)
+                         (geom/distribute-space axis objects))]
+        (loop [moved    (seq moved)
+               rchanges []
+               uchanges []]
+          (if (nil? moved)
+            (do
+              ;; (println "================ rchanges")
+              ;; (cljs.pprint/pprint rchanges)
+              ;; (println "================ uchanges")
+              ;; (cljs.pprint/pprint uchanges)
+              (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})))
+            (let [curr (first moved)
+                  prev (get objects (:id curr))
+                  ops1 (dwc/generate-operations prev curr)
+                  ops2 (dwc/generate-operations curr prev)]
+              (recur (next moved)
+                     (conj rchanges {:type :mod-obj
+                                     :operations ops1
+                                     :id (:id curr)})
+                     (conj uchanges {:type :mod-obj
+                                     :operations ops2
+                                     :id (:id curr)})))))))))
 
 ;; --- Start shape "edition mode"
 
@@ -922,6 +909,8 @@
 
 ;; Event mainly used for handling user modification of the size of the
 ;; object from workspace sidebar options inputs.
+
+;; TODO: maybe replace directly with dwc/update-shapes?
 
 (defn update-dimensions
   [ids attr value]
