@@ -51,15 +51,15 @@
 (mf/defc text-wrapper
   {::mf/wrap-props false}
   [props]
-  (let [shape (unchecked-get props "shape")
-        {:keys [id x1 y1 content group]} shape
-        selected (mf/deref refs/selected-shapes)
-        edition (mf/deref refs/selected-edition)
-        edition? (= edition id)
+  (let [{:keys [id x1 y1 content group] :as shape} (unchecked-get props "shape")
+
+        selected  (mf/deref refs/selected-shapes)
+        edition   (mf/deref refs/selected-edition)
+        edition?  (= edition id)
         selected? (and (contains? selected id)
                        (= (count selected) 1))
 
-        on-mouse-down #(handle-mouse-down % shape)
+        on-mouse-down   #(handle-mouse-down % shape)
         on-context-menu #(common/on-context-menu % shape)
 
         on-double-click

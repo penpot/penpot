@@ -35,6 +35,7 @@
    [uxbox.common.geom.point :as gpt]
    [uxbox.common.geom.shapes :as geom]
    [uxbox.common.math :as mth]
+   [uxbox.util.timers :as ts]
    [uxbox.util.router :as rt]
    [uxbox.util.transit :as t]
    [uxbox.util.webapi :as wapi]))
@@ -464,10 +465,11 @@
             uchange  {:type :del-obj
                       :id id}]
 
-        (rx/of (dwc/commit-changes [rchange] [uchange] {:commit-local? true})
-               (dws/select-shapes (d/ordered-set id))
-               (when (= :text (:type attrs))
-                 (start-edition-mode id)))))))
+        (rx/concat
+         (rx/of (dwc/commit-changes [rchange] [uchange] {:commit-local? true})
+                (dws/select-shapes (d/ordered-set id)))
+         (->> (rx/of (start-edition-mode id))
+              (rx/observe-on :async)))))))
 
 (defn- calculate-centered-box
   [state aspect-ratio]
