@@ -67,7 +67,9 @@
          [:& align-options]
          (case (count shapes)
            0 [:& page/options {:page page}]
-           1 [:& shape-options {:shape (first shapes) :shapes-with-children shapes-with-children}]
+           1 [:& shape-options {:shape (first shapes)
+                                :page page
+                                :shapes-with-children shapes-with-children}]
            [:& multiple/options {:shapes shapes-with-children}])]]
 
        [:& tab-element {:id :prototype
