@@ -140,7 +140,7 @@
                  new-style (str "top: " (- top delta-y) "px; "
                                 "left: " (- left delta-x) "px;")]
              (when (or (> delta-x 0) (> delta-y 0))
-               (.setAttribute dropdown "style" new-style))))))
+               (.setAttribute ^js dropdown "style" new-style))))))
 
     [:& dropdown {:show (boolean mdata)
                   :on-close #(st/emit! dw/hide-context-menu)}
