@@ -24,8 +24,6 @@
 
 ;; --- Protocols
 
-(defprotocol IBatchedChange)
-
 (declare setup-selection-index)
 (declare update-page-indices)
 (declare reset-undo)
@@ -95,46 +93,19 @@
          result)))))
 
 (defn generate-changes
-  [prev curr]
+  [objects1 objects2]
   (letfn [(impl-diff [res id]
-            (let [prev-obj (get-in prev [:objects id])
-                  curr-obj (get-in curr [:objects id])
-                  ops (generate-operations (dissoc prev-obj :shapes :frame-id)
-                                           (dissoc curr-obj :shapes :frame-id))]
+            (let [obj1 (get objects1 id)
+                  obj2 (get objects2 id)
+                  ops  (generate-operations (dissoc obj1 :shapes :frame-id)
+                                            (dissoc obj2 :shapes :frame-id))]
               (if (empty? ops)
                 res
                 (conj res {:type :mod-obj
                            :operations ops
                            :id id}))))]
-    (reduce impl-diff [] (set/union (set (keys (:objects prev)))
-                                    (set (keys (:objects curr)))))))
-
-(defn- generate-changes-when-idle
-  [& args]
-  (rx/create
-   (fn [sink]
-     (ts/schedule-on-idle
-      (fn []
-        (->> (apply generate-changes args)
-             (reduced)
-             (sink))
-        (constantly nil))))))
-
-(defn diff-and-commit-changes
-  [page-id]
-  (ptk/reify ::diff-and-commit-changes
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [page-id (get-in state [:workspace-page :id])
-            curr    (get-in state [:workspace-data page-id])
-            prev    (get-in state [:workspace-pages page-id :data])]
-        (->> (rx/zip (generate-changes-when-idle prev curr)
-                     (generate-changes-when-idle curr prev))
-             (rx/observe-on :queue)
-             (rx/mapcat (fn [[rchanges uchanges]]
-                          (if (empty? rchanges)
-                            (rx/empty)
-                            (rx/of (commit-changes rchanges uchanges))))))))))
+    (reduce impl-diff [] (set/union (set (keys objects1))
+                                    (set (keys objects2))))))
 
 ;; --- Selection Index Handling
 
