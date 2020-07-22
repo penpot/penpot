@@ -421,8 +421,8 @@
             ;; state (without temporal values in it, for this reason
             ;; we have 3 different objects references).
 
-            rchanges (conj (dwc/generate-changes {:objects objects1} {:objects objects2}) regchg)
-            uchanges (conj (dwc/generate-changes {:objects objects2} {:objects objects0}) regchg)
+            rchanges (conj (dwc/generate-changes objects1 objects2) regchg)
+            uchanges (conj (dwc/generate-changes objects2 objects0) regchg)
             ]
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})

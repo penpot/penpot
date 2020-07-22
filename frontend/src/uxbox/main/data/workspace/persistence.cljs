@@ -65,11 +65,6 @@
                 (rx/filter (ptk/type? ::changes-persisted))
                 (rx/tap disable-reload-stoper)
                 (rx/ignore)
-                (rx/take-until stoper))
-           (->> stream
-                (rx/filter #(satisfies? dwc/IBatchedChange %))
-                (rx/debounce 10)
-                (rx/map (fn [_] (dwc/diff-and-commit-changes page-id)))
                 (rx/take-until stoper))))))))
 
 (defn persist-changes
