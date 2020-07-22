@@ -468,8 +468,9 @@
         (rx/concat
          (rx/of (dwc/commit-changes [rchange] [uchange] {:commit-local? true})
                 (dws/select-shapes (d/ordered-set id)))
-         (->> (rx/of (start-edition-mode id))
-              (rx/observe-on :async)))))))
+         (when (= :text (:type attrs))
+           (->> (rx/of (start-edition-mode id))
+                (rx/observe-on :async))))))))
 
 (defn- calculate-centered-box
   [state aspect-ratio]
