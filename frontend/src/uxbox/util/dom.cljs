@@ -162,6 +162,19 @@
   {:width (.-clientWidth ^js node)
    :height (.-clientHeight ^js node)})
 
+(defn get-bounding-rect
+  [node]
+  (let [rect (.getBoundingClientRect ^js node)]
+    {:left (.-left ^js rect)
+     :top (.-top ^js rect)
+     :right (.-right ^js rect)
+     :bottom (.-bottom ^js rect)}))
+
+(defn get-window-size
+  []
+  {:width (.-innerWidth ^js js/window)
+   :height (.-innerHeight ^js js/window)})
+
 (defn focus!
   [node]
   (.focus node))

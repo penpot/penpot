@@ -124,12 +124,29 @@
 
 (mf/defc context-menu
   [props]
-  (let [mdata (mf/deref menu-ref)]
+  (let [mdata (mf/deref menu-ref)
+        top (- (get-in mdata [:position :y]) 20)
+        left (get-in mdata [:position :x])
+        dropdown-ref (mf/use-ref)]
+
+    (mf/use-effect
+      (mf/deps mdata)
+      #(let [dropdown (mf/ref-val dropdown-ref)]
+         (when dropdown
+           (let [bounding-rect (dom/get-bounding-rect dropdown)
+                 window-size (dom/get-window-size)
+                 delta-x (max (- (:right bounding-rect) (:width window-size)) 0)
+                 delta-y (max (- (:bottom bounding-rect) (:height window-size)) 0)
+                 new-style (str "top: " (- top delta-y) "px; "
+                                "left: " (- left delta-x) "px;")]
+             (when (or (> delta-x 0) (> delta-y 0))
+               (.setAttribute ^js dropdown "style" new-style))))))
+
     [:& dropdown {:show (boolean mdata)
                   :on-close #(st/emit! dw/hide-context-menu)}
      [:ul.workspace-context-menu
-      {:style {:top (- (get-in mdata [:position :y]) 20)
-               :left (get-in mdata [:position :x])}
+      {:ref dropdown-ref
+       :style {:top top :left left}
        :on-context-menu prevent-default}
 
       (if (:shape mdata)
