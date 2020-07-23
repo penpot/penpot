@@ -4,8 +4,8 @@
     "translations" : {
       "en" : "Already have an account?",
       "fr" : "Vous avez déjà un compte?",
-      "es" : "¿Tienes ya una cuenta?",
-      "ru" : "Уже есть аккаунт?"
+      "ru" : "Уже есть аккаунт?",
+      "es" : "¿Tienes ya una cuenta?"
     }
   },
   "auth.confirm-password-label" : {
@@ -13,8 +13,8 @@
     "translations" : {
       "en" : "Confirm password",
       "fr" : "Confirmez mot de passe",
-      "es" : "Confirmar contraseña",
-      "ru" : "Подтвердите пароль"
+      "ru" : "Подтвердите пароль",
+      "es" : "Confirmar contraseña"
     }
   },
   "auth.create-demo-profile" : {
@@ -22,8 +22,8 @@
     "translations" : {
       "en" : "Create demo account",
       "fr" : "Créer un compte de démonstration",
-      "es" : "Crear cuenta de demostración",
-      "ru" : "Создать демо аккаунт"
+      "ru" : "Создать демо аккаунт",
+      "es" : "Crear cuenta de demostración"
     }
   },
   "auth.create-demo-profile-label" : {
@@ -31,8 +31,8 @@
     "translations" : {
       "en" : "Just wanna try it?",
       "fr" : "Vous voulez juste essayer?",
-      "es" : "¿Quieres probar?",
-      "ru" : "Хотите попробовать?"
+      "ru" : "Хотите попробовать?",
+      "es" : "¿Quieres probar?"
     }
   },
   "auth.demo-warning" : {
@@ -40,8 +40,8 @@
     "translations" : {
       "en" : "This is a DEMO service, DO NOT USE for real work, the projects will be periodicaly wiped.",
       "fr" : "Il s'agit d'un service DEMO, NE PAS UTILISER pour un travail réel, les projets seront périodiquement supprimés.",
-      "es" : "Este es un servicio de DEMOSTRACIÓN. NO USAR para trabajo real, los proyectos serán borrados periodicamente.",
-      "ru" : "Это ДЕМОНСТРАЦИЯ, НЕ ИСПОЛЬЗУЙТЕ для работы, проекты будут периодически удаляться."
+      "ru" : "Это ДЕМОНСТРАЦИЯ, НЕ ИСПОЛЬЗУЙТЕ для работы, проекты будут периодически удаляться.",
+      "es" : "Este es un servicio de DEMOSTRACIÓN. NO USAR para trabajo real, los proyectos serán borrados periodicamente."
     }
   },
   "auth.email-label" : {
@@ -49,8 +49,8 @@
     "translations" : {
       "en" : "Email",
       "fr" : "Adresse email",
-      "es" : "Correo electrónico",
-      "ru" : "Email"
+      "ru" : "Email",
+      "es" : "Correo electrónico"
     }
   },
   "auth.forgot-password" : {
@@ -58,8 +58,8 @@
     "translations" : {
       "en" : "Forgot your password?",
       "fr" : "Mot de passe oublié?",
-      "es" : "¿Olvidaste tu contraseña?",
-      "ru" : "Забыли пароль?"
+      "ru" : "Забыли пароль?",
+      "es" : "¿Olvidaste tu contraseña?"
     }
   },
   "auth.fullname-label" : {
@@ -67,8 +67,8 @@
     "translations" : {
       "en" : "Full Name",
       "fr" : "Nom complet",
-      "es" : "Nombre completo",
-      "ru" : "Полное имя"
+      "ru" : "Полное имя",
+      "es" : "Nombre completo"
     }
   },
   "auth.go-back-to-login" : {
@@ -76,8 +76,8 @@
     "translations" : {
       "en" : "Go back!",
       "fr" : "Retour!",
-      "es" : "Volver",
-      "ru" : "Назад!"
+      "ru" : "Назад!",
+      "es" : "Volver"
     }
   },
   "auth.goodbye-title" : {
@@ -85,8 +85,8 @@
     "translations" : {
       "en" : "Goodbye!",
       "fr" : "Au revoir!",
-      "es" : "¡Adiós!",
-      "ru" : "Пока!"
+      "ru" : "Пока!",
+      "es" : "¡Adiós!"
     }
   },
   "auth.login-here" : {
@@ -94,8 +94,8 @@
     "translations" : {
       "en" : "Login here",
       "fr" : "Se connecter ici",
-      "es" : "Entra aquí",
-      "ru" : "Войти здесь"
+      "ru" : "Войти здесь",
+      "es" : "Entra aquí"
     }
   },
   "auth.login-submit-label" : {
@@ -103,8 +103,8 @@
     "translations" : {
       "en" : "Sign in",
       "fr" : "Se connecter",
-      "es" : "Entrar",
-      "ru" : "Вход"
+      "ru" : "Вход",
+      "es" : "Entrar"
     }
   },
   "auth.login-subtitle" : {
@@ -112,8 +112,8 @@
     "translations" : {
       "en" : "Enter your details below",
       "fr" : "Entrez vos informations ci-dessous",
-      "es" : "Introduce tus datos aquí",
-      "ru" : "Введите информацию о себе ниже"
+      "ru" : "Введите информацию о себе ниже",
+      "es" : "Introduce tus datos aquí"
     }
   },
   "auth.login-title" : {
@@ -121,8 +121,8 @@
     "translations" : {
       "en" : "Great to see you again!",
       "fr" : "Ravi de vous revoir!",
-      "es" : "Encantados de volverte a ver",
-      "ru" : "Рады видеть Вас снова!"
+      "ru" : "Рады видеть Вас снова!",
+      "es" : "Encantados de volverte a ver"
     }
   },
   "auth.new-password-label" : {
@@ -130,8 +130,8 @@
     "translations" : {
       "en" : "Type a new password",
       "fr" : "Saisissez un nouveau mot de passe",
-      "es" : "Introduce la nueva contraseña",
-      "ru" : "Введите новый пароль"
+      "ru" : "Введите новый пароль",
+      "es" : "Introduce la nueva contraseña"
     }
   },
   "auth.notifications.invalid-token-error" : {
@@ -139,8 +139,8 @@
     "translations" : {
       "en" : "The recovery token is invalid.",
       "fr" : "Le code de récupération n'est pas valide.",
-      "es" : "El código de recuperación no es válido.",
-      "ru" : "Неверный код восстановления."
+      "ru" : "Неверный код восстановления.",
+      "es" : "El código de recuperación no es válido."
     }
   },
   "auth.notifications.password-changed-succesfully" : {
@@ -148,8 +148,8 @@
     "translations" : {
       "en" : "Password successfully changed",
       "fr" : "Mot de passe changé avec succès",
-      "es" : "La contraseña ha sido cambiada",
-      "ru" : "Пароль изменен успешно"
+      "ru" : "Пароль изменен успешно",
+      "es" : "La contraseña ha sido cambiada"
     }
   },
   "auth.notifications.recovery-token-sent" : {
@@ -157,8 +157,8 @@
     "translations" : {
       "en" : "Password recovery link sent to your inbox.",
       "fr" : "Lien de récupération de mot de passe envoyé.",
-      "es" : "Hemos enviado a tu buzón un enlace para recuperar tu contraseña.",
-      "ru" : "Ссылка для восстановления пароля отправлена на почту."
+      "ru" : "Ссылка для восстановления пароля отправлена на почту.",
+      "es" : "Hemos enviado a tu buzón un enlace para recuperar tu contraseña."
     }
   },
   "auth.password-label" : {
@@ -166,8 +166,8 @@
     "translations" : {
       "en" : "Password",
       "fr" : "Mot de passe",
-      "es" : "Contraseña",
-      "ru" : "Пароль"
+      "ru" : "Пароль",
+      "es" : "Contraseña"
     }
   },
   "auth.password-length-hint" : {
@@ -175,8 +175,8 @@
     "translations" : {
       "en" : "At least 8 characters",
       "fr" : "Au moins 8 caractères",
-      "es" : "8 caracteres como mínimo",
-      "ru" : "Минимум 8 символов"
+      "ru" : "Минимум 8 символов",
+      "es" : "8 caracteres como mínimo"
     }
   },
   "auth.recovery-request-submit-label" : {
@@ -184,8 +184,8 @@
     "translations" : {
       "en" : "Recover Password",
       "fr" : "Récupérer le mot de passe",
-      "es" : "Recuperar contraseña",
-      "ru" : "Восстановить пароль"
+      "ru" : "Восстановить пароль",
+      "es" : "Recuperar contraseña"
     }
   },
   "auth.recovery-request-subtitle" : {
@@ -193,8 +193,8 @@
     "translations" : {
       "en" : "We'll send you an email with instructions",
       "fr" : "Nous vous enverrons un e-mail avec des instructions",
-      "es" : "Te enviaremos un correo electrónico con instrucciones",
-      "ru" : "Письмо с инструкциями отправлено на почту."
+      "ru" : "Письмо с инструкциями отправлено на почту.",
+      "es" : "Te enviaremos un correo electrónico con instrucciones"
     }
   },
   "auth.recovery-request-title" : {
@@ -202,8 +202,8 @@
     "translations" : {
       "en" : "Forgot your password?",
       "fr" : "Vous avez oublié votre mot de passe?",
-      "es" : "¿Olvidaste tu contraseña?",
-      "ru" : "Забыли пароль?"
+      "ru" : "Забыли пароль?",
+      "es" : "¿Olvidaste tu contraseña?"
     }
   },
   "auth.recovery-submit-label" : {
@@ -211,8 +211,8 @@
     "translations" : {
       "en" : "Change your password",
       "fr" : "Changez votre mot de passe",
-      "es" : "Cambiar tu contraseña",
-      "ru" : "Изменить пароль"
+      "ru" : "Изменить пароль",
+      "es" : "Cambiar tu contraseña"
     }
   },
   "auth.register" : {
@@ -220,8 +220,8 @@
     "translations" : {
       "en" : "Sign up here",
       "fr" : "Inscrivez-vous ici",
-      "es" : "Regístrate aquí",
-      "ru" : "Зарегистрироваться"
+      "ru" : "Зарегистрироваться",
+      "es" : "Regístrate aquí"
     }
   },
   "auth.register-label" : {
@@ -229,8 +229,8 @@
     "translations" : {
       "en" : "No account yet?",
       "fr" : "Pas encore de compte?",
-      "es" : "¿No tienes una cuenta?",
-      "ru" : "Еще нет аккаунта?"
+      "ru" : "Еще нет аккаунта?",
+      "es" : "¿No tienes una cuenta?"
     }
   },
   "auth.register-submit-label" : {
@@ -238,8 +238,8 @@
     "translations" : {
       "en" : "Create an account",
       "fr" : "Créer un compte",
-      "es" : "Crear una cuenta",
-      "ru" : "Создать аккаунт"
+      "ru" : "Создать аккаунт",
+      "es" : "Crear una cuenta"
     }
   },
   "auth.register-subtitle" : {
@@ -247,8 +247,8 @@
     "translations" : {
       "en" : "It's free, it's Open Source",
       "fr" : "C'est gratuit, c'est Open Source",
-      "es" : "Es gratis, es Open Source",
-      "ru" : "Это бесплатно, это Open Source"
+      "ru" : "Это бесплатно, это Open Source",
+      "es" : "Es gratis, es Open Source"
     }
   },
   "auth.register-title" : {
@@ -256,8 +256,8 @@
     "translations" : {
       "en" : "Create an account",
       "fr" : "Créer un compte",
-      "es" : "Crear una cuenta",
-      "ru" : "Создать аккаунт"
+      "ru" : "Создать аккаунт",
+      "es" : "Crear una cuenta"
     }
   },
   "auth.sidebar-tagline" : {
@@ -265,8 +265,8 @@
     "translations" : {
       "en" : "The open-source solution for design and prototyping.",
       "fr" : "La solution Open Source pour la conception et le prototypage.",
-      "es" : "La solución de código abierto para diseñar y prototipar",
-      "ru" : "Open Source решение для дизайна и прототипирования."
+      "ru" : "Open Source решение для дизайна и прототипирования.",
+      "es" : "La solución de código abierto para diseñar y prototipar"
     }
   },
   "dashboard.grid.delete" : {
@@ -274,8 +274,8 @@
     "translations" : {
       "en" : "Delete",
       "fr" : "Supprimer",
-      "es" : "Borrar",
-      "ru" : "Удалить"
+      "ru" : "Удалить",
+      "es" : "Borrar"
     }
   },
   "dashboard.grid.empty-files" : {
@@ -283,8 +283,8 @@
     "translations" : {
       "en" : "You still have no files here",
       "fr" : "Vous n'avez encore aucun fichier ici",
-      "es" : "Todavía no hay ningún archivo aquí",
-      "ru" : "Файлов пока нет"
+      "ru" : "Файлов пока нет",
+      "es" : "Todavía no hay ningún archivo aquí"
     }
   },
   "dashboard.grid.rename" : {
@@ -292,8 +292,8 @@
     "translations" : {
       "en" : "Rename",
       "fr" : "Renommer",
-      "es" : "Renombrar",
-      "ru" : "Переименовать"
+      "ru" : "Переименовать",
+      "es" : "Renombrar"
     }
   },
   "dashboard.header.draft" : {
@@ -301,8 +301,8 @@
     "translations" : {
       "en" : "Draft",
       "fr" : "Brouillon",
-      "es" : "Borrador",
-      "ru" : "Черновик"
+      "ru" : "Черновик",
+      "es" : "Borrador"
     }
   },
   "dashboard.header.new-file" : {
@@ -310,8 +310,8 @@
     "translations" : {
       "en" : "+ New file",
       "fr" : "+ Nouveau fichier",
-      "es" : "+ Nuevo archivo",
-      "ru" : "+ Новый файл"
+      "ru" : "+ Новый файл",
+      "es" : "+ Nuevo archivo"
     }
   },
   "dashboard.header.new-project" : {
@@ -319,8 +319,8 @@
     "translations" : {
       "en" : "+ New project",
       "fr" : "+ Nouveau projet",
-      "es" : "+ Nuevo proyecto",
-      "ru" : "+ Новый проект"
+      "ru" : "+ Новый проект",
+      "es" : "+ Nuevo proyecto"
     }
   },
   "dashboard.header.profile-menu.logout" : {
@@ -328,8 +328,8 @@
     "translations" : {
       "en" : "Exit",
       "fr" : "Quitter",
-      "es" : "Salir",
-      "ru" : "Выход"
+      "ru" : "Выход",
+      "es" : "Salir"
     }
   },
   "dashboard.header.profile-menu.password" : {
@@ -337,8 +337,8 @@
     "translations" : {
       "en" : "Password",
       "fr" : "Mot de passe",
-      "es" : "Contraseña",
-      "ru" : "Пароль"
+      "ru" : "Пароль",
+      "es" : "Contraseña"
     }
   },
   "dashboard.header.profile-menu.profile" : {
@@ -346,8 +346,8 @@
     "translations" : {
       "en" : "Profile",
       "fr" : "Profil",
-      "es" : "Perfil",
-      "ru" : "Профиль"
+      "ru" : "Профиль",
+      "es" : "Perfil"
     }
   },
   "dashboard.header.project" : {
@@ -355,16 +355,16 @@
     "translations" : {
       "en" : "Project %s",
       "fr" : "Projet %s",
-      "es" : "Proyecto %s",
-      "ru" : "Проект %s"
+      "ru" : "Проект %s",
+      "es" : "Proyecto %s"
     }
   },
   "dashboard.library.add-item.icons" : {
     "translations" : {
       "en" : "+ New icon",
       "fr" : "+ Nouvel icône",
-      "es" : "+ Nuevo icono",
-      "ru" : "+ Новая иконка"
+      "ru" : "+ Новая иконка",
+      "es" : "+ Nuevo icono"
     },
     "unused" : true
   },
@@ -372,8 +372,8 @@
     "translations" : {
       "en" : "+ New image",
       "fr" : "+ Nouvelle image",
-      "es" : "+ Nueva imagen",
-      "ru" : "+ Новое изображение"
+      "ru" : "+ Новое изображение",
+      "es" : "+ Nueva imagen"
     },
     "unused" : true
   },
@@ -381,8 +381,8 @@
     "translations" : {
       "en" : "+ New color",
       "fr" : "+ Nouvelle couleur",
-      "es" : "+ Nuevo color",
-      "ru" : "+ Новый цвет"
+      "ru" : "+ Новый цвет",
+      "es" : "+ Nuevo color"
     },
     "unused" : true
   },
@@ -390,8 +390,8 @@
     "translations" : {
       "en" : "+ New icon library",
       "fr" : "+ Nouvelle librairie d'icônes",
-      "es" : "+ Nueva biblioteca de iconos",
-      "ru" : "+ Новая библиотека иконок"
+      "ru" : "+ Новая библиотека иконок",
+      "es" : "+ Nueva biblioteca de iconos"
     },
     "unused" : true
   },
@@ -399,8 +399,8 @@
     "translations" : {
       "en" : "+ New image library",
       "fr" : "+ Nouvelle librairie d'image",
-      "es" : "+ Nueva biblioteca de imágenes",
-      "ru" : "+ Новая библиотека изображений"
+      "ru" : "+ Новая библиотека изображений",
+      "es" : "+ Nueva biblioteca de imágenes"
     },
     "unused" : true
   },
@@ -408,8 +408,8 @@
     "translations" : {
       "en" : "+ New palette",
       "fr" : "+ Nouvelle palette",
-      "es" : "+ Nueva paleta",
-      "ru" : "+ Новая палитра"
+      "ru" : "+ Новая палитра",
+      "es" : "+ Nueva paleta"
     },
     "unused" : true
   },
@@ -418,8 +418,8 @@
     "translations" : {
       "en" : "Icons",
       "fr" : "Icônes",
-      "es" : "Iconos",
-      "ru" : "Иконки"
+      "ru" : "Иконки",
+      "es" : "Iconos"
     }
   },
   "dashboard.library.menu.images" : {
@@ -427,8 +427,8 @@
     "translations" : {
       "en" : "Images",
       "fr" : "Images",
-      "es" : "Imágenes",
-      "ru" : "Изображения"
+      "ru" : "Изображения",
+      "es" : "Imágenes"
     }
   },
   "dashboard.library.menu.palettes" : {
@@ -436,8 +436,8 @@
     "translations" : {
       "en" : "Palettes",
       "fr" : "Palettes",
-      "es" : "Paletas",
-      "ru" : "Палитры"
+      "ru" : "Палитры",
+      "es" : "Paletas"
     }
   },
   "dashboard.search.no-matches-for" : {
@@ -445,8 +445,8 @@
     "translations" : {
       "en" : "No matches found for \"%s\"",
       "fr" : "Aucune correspondance pour \"%s\"",
-      "es" : "No se encuentra \"%s\"",
-      "ru" : "Совпадений для \"%s\" не найдено"
+      "ru" : "Совпадений для \"%s\" не найдено",
+      "es" : "No se encuentra \"%s\""
     }
   },
   "dashboard.search.searching-for" : {
@@ -454,8 +454,8 @@
     "translations" : {
       "en" : "Searching for \"%s\"...",
       "fr" : "Recherche de \"%s\"...",
-      "es" : "Buscando \"%s\"...",
-      "ru" : "Ищу \"%s\"..."
+      "ru" : "Ищу \"%s\"...",
+      "es" : "Buscando \"%s\"..."
     }
   },
   "dashboard.search.type-something" : {
@@ -463,8 +463,8 @@
     "translations" : {
       "en" : "Type to search results",
       "fr" : "Écrivez pour rechercher",
-      "es" : "Escribe algo para buscar",
-      "ru" : "Введите для поиска"
+      "ru" : "Введите для поиска",
+      "es" : "Escribe algo para buscar"
     }
   },
   "dashboard.sidebar.drafts" : {
@@ -472,8 +472,8 @@
     "translations" : {
       "en" : "Drafts",
       "fr" : "Brouillons",
-      "es" : "Borradores",
-      "ru" : "Черновики"
+      "ru" : "Черновики",
+      "es" : "Borradores"
     }
   },
   "dashboard.sidebar.libraries" : {
@@ -481,8 +481,8 @@
     "translations" : {
       "en" : "Libraries",
       "fr" : "Librairies",
-      "es" : "Bibliotecas",
-      "ru" : "Библиотеки"
+      "ru" : "Библиотеки",
+      "es" : "Bibliotecas"
     }
   },
   "dashboard.sidebar.recent" : {
@@ -490,8 +490,8 @@
     "translations" : {
       "en" : "Recent",
       "fr" : "Récent",
-      "es" : "Reciente",
-      "ru" : "Недавние"
+      "ru" : "Недавние",
+      "es" : "Reciente"
     }
   },
   "ds.accept" : {
@@ -499,8 +499,8 @@
     "translations" : {
       "en" : "Accept",
       "fr" : "Accepter",
-      "es" : "Aceptar",
-      "ru" : "Принять"
+      "ru" : "Принять",
+      "es" : "Aceptar"
     }
   },
   "ds.button.delete" : {
@@ -508,8 +508,8 @@
     "translations" : {
       "en" : "Delete",
       "fr" : "Supprimer",
-      "es" : "Borrar",
-      "ru" : "Удалить"
+      "ru" : "Удалить",
+      "es" : "Borrar"
     }
   },
   "ds.button.rename" : {
@@ -517,8 +517,8 @@
     "translations" : {
       "en" : "Rename",
       "fr" : "Renommer",
-      "es" : "Renombrar",
-      "ru" : "Переименовать"
+      "ru" : "Переименовать",
+      "es" : "Renombrar"
     }
   },
   "ds.button.save" : {
@@ -526,8 +526,8 @@
     "translations" : {
       "en" : "Save",
       "fr" : "Sauvegarder",
-      "es" : "Guardar",
-      "ru" : "Сохранить"
+      "ru" : "Сохранить",
+      "es" : "Guardar"
     }
   },
   "ds.cancel" : {
@@ -535,8 +535,8 @@
     "translations" : {
       "en" : "Cancel",
       "fr" : "Annuler",
-      "es" : "Cancelar",
-      "ru" : "Отмена"
+      "ru" : "Отмена",
+      "es" : "Cancelar"
     }
   },
   "ds.confirm-cancel" : {
@@ -544,8 +544,8 @@
     "translations" : {
       "en" : "Cancel",
       "fr" : "Annuler",
-      "es" : "Cancelar",
-      "ru" : "Отмена"
+      "ru" : "Отмена",
+      "es" : "Cancelar"
     }
   },
   "ds.confirm-ok" : {
@@ -553,8 +553,8 @@
     "translations" : {
       "en" : "Ok",
       "fr" : "Ok",
-      "es" : "Ok",
-      "ru" : "Ok"
+      "ru" : "Ok",
+      "es" : "Ok"
     }
   },
   "ds.confirm-title" : {
@@ -562,8 +562,8 @@
     "translations" : {
       "en" : "Are you sure?",
       "fr" : "Êtes-vous sûr?",
-      "es" : "¿Seguro?",
-      "ru" : "Вы уверены?"
+      "ru" : "Вы уверены?",
+      "es" : "¿Seguro?"
     }
   },
   "ds.history.pinned" : {
@@ -571,8 +571,8 @@
     "translations" : {
       "en" : null,
       "fr" : null,
-      "es" : null,
-      "ru" : null
+      "ru" : null,
+      "es" : null
     }
   },
   "ds.history.versions" : {
@@ -580,8 +580,8 @@
     "translations" : {
       "en" : null,
       "fr" : null,
-      "es" : null,
-      "ru" : null
+      "ru" : null,
+      "es" : null
     }
   },
   "ds.new-file" : {
@@ -589,8 +589,8 @@
     "translations" : {
       "en" : "+ New File",
       "fr" : "+ Nouveau fichier",
-      "es" : "+ Nuevo Archivo",
-      "ru" : "+ Новый файл"
+      "ru" : "+ Новый файл",
+      "es" : "+ Nuevo Archivo"
     }
   },
   "ds.search.placeholder" : {
@@ -598,8 +598,8 @@
     "translations" : {
       "en" : "Search...",
       "fr" : "Rechercher...",
-      "es" : "Buscar...",
-      "ru" : "Поиск ..."
+      "ru" : "Поиск ...",
+      "es" : "Buscar..."
     }
   },
   "ds.settings.document-history" : {
@@ -607,8 +607,8 @@
     "translations" : {
       "en" : null,
       "fr" : null,
-      "es" : null,
-      "ru" : null
+      "ru" : null,
+      "es" : null
     }
   },
   "ds.updated-at" : {
@@ -616,8 +616,8 @@
     "translations" : {
       "en" : "Updated: %s",
       "fr" : "Mis à jour: %s",
-      "es" : "Actualizado: %s",
-      "ru" : "Обновлено: %s"
+      "ru" : "Обновлено: %s",
+      "es" : "Actualizado: %s"
     }
   },
   "errors.auth.unauthorized" : {
@@ -625,8 +625,8 @@
     "translations" : {
       "en" : "Username or password seems to be wrong.",
       "fr" : "Le nom d'utilisateur ou le mot de passe semble être faux.",
-      "es" : "El nombre o la contraseña parece incorrecto.",
-      "ru" : "Неверное имя пользователя или пароль."
+      "ru" : "Неверное имя пользователя или пароль.",
+      "es" : "El nombre o la contraseña parece incorrecto."
     }
   },
   "errors.email-already-exists" : {
@@ -634,8 +634,8 @@
     "translations" : {
       "en" : "Email already used",
       "fr" : "Adresse e-mail déjà utilisée",
-      "es" : "Este correo ya está en uso",
-      "ru" : "Такой email уже используется"
+      "ru" : "Такой email уже используется",
+      "es" : "Este correo ya está en uso"
     }
   },
   "errors.email-invalid-confirmation" : {
@@ -643,44 +643,62 @@
     "translations" : {
       "en" : "Confirmation email must match",
       "fr" : "L'adresse e-mail de confirmation doit correspondre",
-      "es" : "El correo de confirmación debe coincidir",
-      "ru" : "Email для подтверждения должен совпадать"
+      "ru" : "Email для подтверждения должен совпадать",
+      "es" : "El correo de confirmación debe coincidir"
     }
   },
   "errors.generic" : {
-    "used-in" : [ "src/uxbox/main/ui.cljs:202", "src/uxbox/main/ui/settings/profile.cljs:38", "src/uxbox/main/ui/auth.cljs:91" ],
+    "used-in" : [ "src/uxbox/main/ui.cljs:201", "src/uxbox/main/ui/settings/profile.cljs:38", "src/uxbox/main/ui/auth.cljs:91" ],
     "translations" : {
       "en" : "Something wrong has happened.",
       "fr" : "Quelque chose c'est mal passé.",
-      "es" : "Ha ocurrido algún error.",
-      "ru" : "Что-то пошло не так."
+      "ru" : "Что-то пошло не так.",
+      "es" : "Ha ocurrido algún error."
     }
   },
   "errors.image-format-unsupported" : {
-    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:365", "src/uxbox/main/data/users.cljs:177", "src/uxbox/main/data/images.cljs:376" ],
+    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:370", "src/uxbox/main/data/users.cljs:177", "src/uxbox/main/data/images.cljs:376" ],
     "translations" : {
       "en" : "The image format is not supported (must be svg, jpg or png).",
       "fr" : "Le format d'image n'est pas supporté (doit être svg, jpg ou png).",
-      "es" : "No se reconoce el formato de imagen (debe ser svg, jpg o png).",
-      "ru" : "Формат изображения не поддерживается (должен быть svg, jpg или png)."
+      "ru" : "Формат изображения не поддерживается (должен быть svg, jpg или png).",
+      "es" : "No se reconoce el formato de imagen (debe ser svg, jpg o png)."
     }
   },
   "errors.image-too-large" : {
-    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:363", "src/uxbox/main/data/users.cljs:175", "src/uxbox/main/data/images.cljs:374" ],
+    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:368", "src/uxbox/main/data/users.cljs:175", "src/uxbox/main/data/images.cljs:374" ],
     "translations" : {
       "en" : "The image is too large to be inserted (must be under 5mb).",
       "fr" : "L'image est trop grande (doit être inférieure à 5 Mo).",
-      "es" : "La imagen es demasiado grande (debe tener menos de 5mb).",
-      "ru" : "Изображение слишком большое для вставки (должно быть меньше 5mb)."
+      "ru" : "Изображение слишком большое для вставки (должно быть меньше 5mb).",
+      "es" : "La imagen es demasiado grande (debe tener menos de 5mb)."
+    }
+  },
+  "errors.image-type-mismatch" : {
+    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:335", "src/uxbox/main/data/workspace/persistence.cljs:385", "src/uxbox/main/data/users.cljs:191", "src/uxbox/main/data/images.cljs:391" ],
+    "translations" : {
+      "en" : "Seems that the contents of the image does not match the file extension.",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Parece que el contenido de la imagen no coincide con la etensión del archivo."
+    }
+  },
+  "errors.image-type-not-allowed" : {
+    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:332", "src/uxbox/main/data/workspace/persistence.cljs:382", "src/uxbox/main/data/users.cljs:188", "src/uxbox/main/data/images.cljs:388" ],
+    "translations" : {
+      "en" : "Seems that this is not a valid image.",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Parece que no es una imagen válida."
     }
   },
   "errors.network" : {
-    "used-in" : [ "src/uxbox/main/ui.cljs:196" ],
+    "used-in" : [ "src/uxbox/main/ui.cljs:195" ],
     "translations" : {
       "en" : "Unable to connect to backend server.",
       "fr" : "Impossible de se connecter au serveur principal.",
-      "es" : "Ha sido imposible conectar con el servidor principal.",
-      "ru" : "Невозможно подключиться к серверу."
+      "ru" : "Невозможно подключиться к серверу.",
+      "es" : "Ha sido imposible conectar con el servidor principal."
     }
   },
   "errors.password-invalid-confirmation" : {
@@ -688,8 +706,8 @@
     "translations" : {
       "en" : "Confirmation password must match",
       "fr" : "Le mot de passe de confirmation doit correspondre",
-      "es" : "La contraseña de confirmación debe coincidir",
-      "ru" : "Пароль для подтверждения должен совпадать"
+      "ru" : "Пароль для подтверждения должен совпадать",
+      "es" : "La contraseña de confirmación debe coincidir"
     }
   },
   "errors.password-too-short" : {
@@ -697,8 +715,8 @@
     "translations" : {
       "en" : "Password should at least be 8 characters",
       "fr" : "Le mot de passe doit contenir au moins 8 caractères",
-      "es" : "La contraseña debe tener 8 caracteres como mínimo",
-      "ru" : "Пароль должен быть минимум 8 символов"
+      "ru" : "Пароль должен быть минимум 8 символов",
+      "es" : "La contraseña debe tener 8 caracteres como mínimo"
     }
   },
   "errors.registration-disabled" : {
@@ -706,17 +724,17 @@
     "translations" : {
       "en" : "The registration is currently disabled.",
       "fr" : "L'enregistrement est actuellement désactivé.",
-      "es" : "El registro está actualmente desactivado.",
-      "ru" : "Регистрация сейчас отключена."
+      "ru" : "Регистрация сейчас отключена.",
+      "es" : "El registro está actualmente desactivado."
     }
   },
   "errors.unexpected-error" : {
-    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:334", "src/uxbox/main/data/workspace/persistence.cljs:374", "src/uxbox/main/data/users.cljs:185", "src/uxbox/main/data/images.cljs:385", "src/uxbox/main/ui/settings/change_email.cljs:51", "src/uxbox/main/ui/workspace/sidebar/options/exports.cljs:65", "src/uxbox/main/ui/auth/register.cljs:54" ],
+    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:338", "src/uxbox/main/data/workspace/persistence.cljs:388", "src/uxbox/main/data/users.cljs:194", "src/uxbox/main/data/images.cljs:394", "src/uxbox/main/ui/settings/change_email.cljs:51", "src/uxbox/main/ui/workspace/sidebar/options/exports.cljs:65", "src/uxbox/main/ui/auth/register.cljs:54" ],
     "translations" : {
       "en" : "An unexpected error occurred.",
       "fr" : "Une erreur inattendue c'est produite",
-      "es" : "Ha ocurrido un error inesperado.",
-      "ru" : "Произошла ошибка."
+      "ru" : "Произошла ошибка.",
+      "es" : "Ha ocurrido un error inesperado."
     }
   },
   "errors.wrong-old-password" : {
@@ -724,8 +742,8 @@
     "translations" : {
       "en" : "Old password is incorrect",
       "fr" : "l'ancien mot de passe est incorrect",
-      "es" : "La contraseña anterior no es correcta",
-      "ru" : "Старый пароль неверный"
+      "ru" : "Старый пароль неверный",
+      "es" : "La contraseña anterior no es correcta"
     }
   },
   "generic.error" : {
@@ -733,8 +751,8 @@
     "translations" : {
       "en" : "An error has occurred",
       "fr" : null,
-      "es" : "Ha ocurrido un error",
-      "ru" : "Произошла ошибка"
+      "ru" : "Произошла ошибка",
+      "es" : "Ha ocurrido un error"
     }
   },
   "header.sitemap" : {
@@ -742,8 +760,8 @@
     "translations" : {
       "en" : "Sitemap",
       "fr" : null,
-      "es" : "Mapa del sitio",
-      "ru" : "Карта сайта"
+      "ru" : "Карта сайта",
+      "es" : "Mapa del sitio"
     }
   },
   "history.alert-message" : {
@@ -751,17 +769,17 @@
     "translations" : {
       "en" : "You are seeing version %s",
       "fr" : "Vous voyez la version %s",
-      "es" : "Estás viendo la versión %s",
-      "ru" : "Ваша версия %s"
+      "ru" : "Ваша версия %s",
+      "es" : "Estás viendo la versión %s"
     }
   },
   "image.loading" : {
-    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:341", "src/uxbox/main/data/workspace/persistence.cljs:382", "src/uxbox/main/data/users.cljs:191", "src/uxbox/main/data/images.cljs:393" ],
+    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:346", "src/uxbox/main/data/workspace/persistence.cljs:397", "src/uxbox/main/data/users.cljs:201", "src/uxbox/main/data/images.cljs:403" ],
     "translations" : {
       "en" : "Loading image...",
       "fr" : "Chargement de l'image...",
-      "es" : "Cargando imagen...",
-      "ru" : "Загружаю изображение ..."
+      "ru" : "Загружаю изображение ...",
+      "es" : "Cargando imagen..."
     }
   },
   "modal.create-color.new-color" : {
@@ -769,8 +787,8 @@
     "translations" : {
       "en" : "New Color",
       "fr" : "Nouvelle couleur",
-      "es" : "Nuevo color",
-      "ru" : "Новый цвет"
+      "ru" : "Новый цвет",
+      "es" : "Nuevo color"
     }
   },
   "profile.recovery.go-to-login" : {
@@ -778,8 +796,8 @@
     "translations" : {
       "en" : null,
       "fr" : null,
-      "es" : null,
-      "ru" : null
+      "ru" : null,
+      "es" : null
     }
   },
   "settings.cancel-and-keep-my-account" : {
@@ -787,17 +805,17 @@
     "translations" : {
       "en" : "Cancel and keep my account",
       "fr" : "Annuler et conserver mon compte",
-      "es" : "Cancelar y mantener mi cuenta",
-      "ru" : "Отменить и сохранить мой аккаунт"
+      "ru" : "Отменить и сохранить мой аккаунт",
+      "es" : "Cancelar y mantener mi cuenta"
     }
   },
   "settings.cancel-email-change" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:82" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:83" ],
     "translations" : {
       "en" : "Cancel",
       "fr" : "Annuler",
-      "es" : "Cancelar",
-      "ru" : "Отмена"
+      "ru" : "Отмена",
+      "es" : "Cancelar"
     }
   },
   "settings.change-email-info" : {
@@ -805,44 +823,44 @@
     "translations" : {
       "en" : "We'll send you an email to your current email “%s” to verify your identity.",
       "fr" : "Nous vous enverrons un e-mail à votre adresse actuelle “%s” pour vérifier votre identité.",
-      "es" : "Enviaremos un mensaje a tu correo actual “%s” para verificar tu identidad.",
-      "ru" : "Мы отправим письмо для подтверждения подлиности на текущий email адрес “%s”."
+      "ru" : "Мы отправим письмо для подтверждения подлиности на текущий email адрес “%s”.",
+      "es" : "Enviaremos un mensaje a tu correo actual “%s” para verificar tu identidad."
     }
   },
   "settings.change-email-info2" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:92" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:94" ],
     "translations" : {
       "en" : "We have sent you an email to “%s”. Please follow the instructions to verify the email.",
       "fr" : "Nous vous avons envoyé un e-mail à “%s”. Veuillez suivre les instructions pour vérifier l'e-mail.",
-      "es" : "Te hemos enviado un mensaje a “%s”. Por favor sigue las instrucciones para verificar tu correo.",
-      "ru" : "Мы отправили письмо на почту “%s”. Пожалуйста, следуйте инструкциям для подтверждения email адреса."
+      "ru" : "Мы отправили письмо на почту “%s”. Пожалуйста, следуйте инструкциям для подтверждения email адреса.",
+      "es" : "Te hemos enviado un mensaje a “%s”. Por favor sigue las instrucciones para verificar tu correo."
     }
   },
   "settings.change-email-info3" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:79" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:80" ],
     "translations" : {
       "en" : "There is a pending change of your email to “%s”.",
       "fr" : "Il y a un changement en attente de votre adresse e-mail “%s”.",
-      "es" : "Hay un cambio de correo pendiente a “%s”.",
-      "ru" : "Ваш email адреса будет сменен на “%s”."
+      "ru" : "Ваш email адреса будет сменен на “%s”.",
+      "es" : "Hay un cambio de correo pendiente a “%s”."
     }
   },
   "settings.change-email-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:74" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:75" ],
     "translations" : {
       "en" : "Change email",
       "fr" : "Changer adresse e-mail",
-      "es" : "Cambiar correo",
-      "ru" : "Сменить email адрес"
+      "ru" : "Сменить email адрес",
+      "es" : "Cambiar correo"
     }
   },
   "settings.change-email-submit-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:82" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:84" ],
     "translations" : {
       "en" : "Change email",
       "fr" : "Changer adresse e-mail",
-      "es" : "Cambiar correo",
-      "ru" : "Сменить email адрес"
+      "ru" : "Сменить email адрес",
+      "es" : "Cambiar correo"
     }
   },
   "settings.change-email-title" : {
@@ -850,26 +868,26 @@
     "translations" : {
       "en" : "Change your email",
       "fr" : "Changer adresse e-mail",
-      "es" : "Cambiar tu correo",
-      "ru" : "Сменить email адрес"
+      "ru" : "Сменить email адрес",
+      "es" : "Cambiar tu correo"
     }
   },
   "settings.close-modal-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:96" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:98" ],
     "translations" : {
       "en" : "Close",
       "fr" : "Fermer",
-      "es" : "Cerrar",
-      "ru" : "Закрыть"
+      "ru" : "Закрыть",
+      "es" : "Cerrar"
     }
   },
   "settings.confirm-email-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:79" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:80" ],
     "translations" : {
       "en" : "Verify new email",
       "fr" : "Vérifier la nouvelle adresse e-mail",
-      "es" : "Verificar el nuevo correo",
-      "ru" : "Подтвердить новый email адрес"
+      "ru" : "Подтвердить новый email адрес",
+      "es" : "Verificar el nuevo correo"
     }
   },
   "settings.confirm-password-label" : {
@@ -877,8 +895,8 @@
     "translations" : {
       "en" : "Confirm password",
       "fr" : "Confirmez mot de passe",
-      "es" : "Confirmar contraseña",
-      "ru" : "Подтвердите пароль"
+      "ru" : "Подтвердите пароль",
+      "es" : "Confirmar contraseña"
     }
   },
   "settings.delete-account-info" : {
@@ -886,8 +904,8 @@
     "translations" : {
       "en" : "By removing your account you’ll lose all your current projects and archives.",
       "fr" : "En supprimant votre compte, vous perdrez tous vos projets et archives actuels.",
-      "es" : "Si borras tu cuenta perderás todos tus proyectos y archivos.",
-      "ru" : "Удалив аккаунт Вы потеряете все прокты и архивы."
+      "ru" : "Удалив аккаунт Вы потеряете все прокты и архивы.",
+      "es" : "Si borras tu cuenta perderás todos tus proyectos y archivos."
     }
   },
   "settings.delete-account-title" : {
@@ -895,26 +913,26 @@
     "translations" : {
       "en" : "Are you sure you want to delete your account?",
       "fr" : "Voulez-vous vraiment supprimer votre compte?",
-      "es" : "¿Seguro que quieres borrar tu cuenta?",
-      "ru" : "Вы уверены, что хотите удалить аккаунт?"
+      "ru" : "Вы уверены, что хотите удалить аккаунт?",
+      "es" : "¿Seguro que quieres borrar tu cuenta?"
     }
   },
   "settings.email-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:68" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:69" ],
     "translations" : {
       "en" : "Email",
       "fr" : "E-mail",
-      "es" : "Correo",
-      "ru" : "Email"
+      "ru" : "Email",
+      "es" : "Correo"
     }
   },
   "settings.email-verification-pending" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:87" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:88" ],
     "translations" : {
       "en" : "There is a pending email validation.",
       "fr" : "Une validation par e-mail est en attente.",
-      "es" : "Hay una validación pendiente del correo.",
-      "ru" : "Подтверждение email адреса не выполнено."
+      "ru" : "Подтверждение email адреса не выполнено.",
+      "es" : "Hay una validación pendiente del correo."
     }
   },
   "settings.fullname-label" : {
@@ -922,8 +940,8 @@
     "translations" : {
       "en" : "Your name",
       "fr" : "Votre nom complet",
-      "es" : "Tu nombre",
-      "ru" : "Ваше имя"
+      "ru" : "Ваше имя",
+      "es" : "Tu nombre"
     }
   },
   "settings.language-change-title" : {
@@ -931,17 +949,17 @@
     "translations" : {
       "en" : "Language",
       "fr" : "Langue",
-      "es" : "Idioma",
-      "ru" : "Язык"
+      "ru" : "Язык",
+      "es" : "Idioma"
     }
   },
   "settings.language-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/options.cljs:55" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/options.cljs:56" ],
     "translations" : {
       "en" : "Select UI language",
       "fr" : "Sélectionner la langue de l'interface",
-      "es" : "Cambiar el idioma de la interfaz",
-      "ru" : "Выберите язык интерфейса"
+      "ru" : "Выберите язык интерфейса",
+      "es" : "Cambiar el idioma de la interfaz"
     }
   },
   "settings.multiple" : {
@@ -949,8 +967,8 @@
     "translations" : {
       "en" : "Mixed",
       "fr" : null,
-      "es" : "Varios",
-      "ru" : "Смешаный"
+      "ru" : "Смешаный",
+      "es" : "Varios"
     }
   },
   "settings.new-email-label" : {
@@ -958,8 +976,8 @@
     "translations" : {
       "en" : "New email",
       "fr" : "Nouvel e-mail",
-      "es" : "Nuevo correo",
-      "ru" : "Новый email адрес"
+      "ru" : "Новый email адрес",
+      "es" : "Nuevo correo"
     }
   },
   "settings.new-password-label" : {
@@ -967,8 +985,8 @@
     "translations" : {
       "en" : "New password",
       "fr" : "Nouveau mot de passe",
-      "es" : "Nueva contraseña",
-      "ru" : "Новый пароль"
+      "ru" : "Новый пароль",
+      "es" : "Nueva contraseña"
     }
   },
   "settings.notifications.email-changed-successfully" : {
@@ -976,8 +994,8 @@
     "translations" : {
       "en" : "Your email address has been updated successfully",
       "fr" : "Votre adresse e-mail a été mise à jour avec succès",
-      "es" : "Tu dirección de correo ha sido actualizada",
-      "ru" : "Ваш email адрес успешно обновлен"
+      "ru" : "Ваш email адрес успешно обновлен",
+      "es" : "Tu dirección de correo ha sido actualizada"
     }
   },
   "settings.notifications.email-not-verified" : {
@@ -985,8 +1003,8 @@
     "translations" : {
       "en" : "Your email address has not been verified yet. Please check your inbox at “%s” for a confirmation email.",
       "fr" : "Votre adresse e-mail n'a pas encore été vérifiée. Veuillez vérifier votre boîte de réception à “%s” pour un e-mail de confirmation.",
-      "es" : "Tu dirección de correo aún no ha sido verificada. Por favor, busca en tu correo “%s” un mensaje de confirmación.",
-      "ru" : "Ваш email адрес еще не подтвержден. Пожалуйста, проверьте наличие подтверждающего письма во входящих на “%s”."
+      "ru" : "Ваш email адрес еще не подтвержден. Пожалуйста, проверьте наличие подтверждающего письма во входящих на “%s”.",
+      "es" : "Tu dirección de correo aún no ha sido verificada. Por favor, busca en tu correo “%s” un mensaje de confirmación."
     }
   },
   "settings.notifications.email-verified-successfully" : {
@@ -994,8 +1012,8 @@
     "translations" : {
       "en" : "Your email address has been verified successfully",
       "fr" : "Votre adresse e-mail a été vérifiée avec succès",
-      "es" : "Tu dirección de correo ha sido verificada",
-      "ru" : "Ваш email адрес успешно подтвержден"
+      "ru" : "Ваш email адрес успешно подтвержден",
+      "es" : "Tu dirección de correo ha sido verificada"
     }
   },
   "settings.notifications.password-saved" : {
@@ -1003,8 +1021,8 @@
     "translations" : {
       "en" : "Password saved successfully!",
       "fr" : "Mot de passe enregistré avec succès!",
-      "es" : "¡Contraseña guardada!",
-      "ru" : "Пароль успешно сохранен!"
+      "ru" : "Пароль успешно сохранен!",
+      "es" : "¡Contraseña guardada!"
     }
   },
   "settings.notifications.profile-deletion-not-allowed" : {
@@ -1012,8 +1030,8 @@
     "translations" : {
       "en" : "You can't delete you profile. Reasign your teams before proceed.",
       "fr" : "Vous ne pouvez pas supprimer votre profil. Réassignez vos équipes avant de continuer.",
-      "es" : "No puedes borrar tu perfil. Reasigna tus equipos antes de seguir.",
-      "ru" : "Вы не можете удалить профиль. Сначала смените команду."
+      "ru" : "Вы не можете удалить профиль. Сначала смените команду.",
+      "es" : "No puedes borrar tu perfil. Reasigna tus equipos antes de seguir."
     }
   },
   "settings.notifications.profile-saved" : {
@@ -1021,8 +1039,8 @@
     "translations" : {
       "en" : "Profile saved successfully!",
       "fr" : "Profil enregistré avec succès!",
-      "es" : "Perfil guardado correctamente!",
-      "ru" : "Профиль успешно сохранен!"
+      "ru" : "Профиль успешно сохранен!",
+      "es" : "Perfil guardado correctamente!"
     }
   },
   "settings.old-password-label" : {
@@ -1030,8 +1048,8 @@
     "translations" : {
       "en" : "Old password",
       "fr" : "Ancien mot de passe",
-      "es" : "Contraseña anterior",
-      "ru" : "Старый пароль"
+      "ru" : "Старый пароль",
+      "es" : "Contraseña anterior"
     }
   },
   "settings.options" : {
@@ -1039,8 +1057,8 @@
     "translations" : {
       "en" : "OPTIONS",
       "fr" : "OPTIONS",
-      "es" : "OPCIONES",
-      "ru" : "ПАРАМЕТРЫ"
+      "ru" : "ПАРАМЕТРЫ",
+      "es" : "OPCIONES"
     }
   },
   "settings.password" : {
@@ -1048,8 +1066,8 @@
     "translations" : {
       "en" : "PASSWORD",
       "fr" : "MOT DE PASSE",
-      "es" : "CONTRASEÑA",
-      "ru" : "ПАРОЛЬ"
+      "ru" : "ПАРОЛЬ",
+      "es" : "CONTRASEÑA"
     }
   },
   "settings.password-change-title" : {
@@ -1057,8 +1075,8 @@
     "translations" : {
       "en" : "Change password",
       "fr" : "Changement de mot de passe",
-      "es" : "Cambiar contraseña",
-      "ru" : "Изменить пароль"
+      "ru" : "Изменить пароль",
+      "es" : "Cambiar contraseña"
     }
   },
   "settings.profile" : {
@@ -1066,71 +1084,71 @@
     "translations" : {
       "en" : "PROFILE",
       "fr" : "PROFIL",
-      "es" : "PERFIL",
-      "ru" : "ПРОФИЛЬ"
+      "ru" : "ПРОФИЛЬ",
+      "es" : "PERFIL"
     }
   },
   "settings.profile-submit-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/password.cljs:93", "src/uxbox/main/ui/settings/options.cljs:66", "src/uxbox/main/ui/settings/profile.cljs:90" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/password.cljs:93", "src/uxbox/main/ui/settings/options.cljs:67", "src/uxbox/main/ui/settings/profile.cljs:91" ],
     "translations" : {
       "en" : "Update settings",
       "fr" : "Mettre à jour les paramètres",
-      "es" : "Actualizar opciones",
-      "ru" : "Обновить настройки"
+      "ru" : "Обновить настройки",
+      "es" : "Actualizar opciones"
     }
   },
   "settings.remove-account-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:95" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:96" ],
     "translations" : {
       "en" : "Want to remove your account?",
       "fr" : "Vous souhaitez supprimer votre compte?",
-      "es" : "¿Quieres borrar tu cuenta?",
-      "ru" : "Хотите удалить свой аккаунт?"
+      "ru" : "Хотите удалить свой аккаунт?",
+      "es" : "¿Quieres borrar tu cuenta?"
     }
   },
   "settings.teams" : {
     "translations" : {
       "en" : "TEAMS",
       "fr" : "EQUIPES",
-      "es" : "EQUIPOS",
-      "ru" : "КОМАНДЫ"
+      "ru" : "КОМАНДЫ",
+      "es" : "EQUIPOS"
     },
     "unused" : true
   },
   "settings.theme-change-title" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/options.cljs:59" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/options.cljs:60" ],
     "translations" : {
       "en" : "UI theme",
       "fr" : "Thème de l'interface",
-      "es" : "Tema visual",
-      "ru" : "Тема интерфейса пользователя"
+      "ru" : "Тема интерфейса пользователя",
+      "es" : "Tema visual"
     }
   },
   "settings.theme-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/options.cljs:60" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/options.cljs:61" ],
     "translations" : {
       "en" : "Select theme",
       "fr" : "Sélectionnez un thème",
-      "es" : "Selecciona un tema",
-      "ru" : "Выберите тему"
+      "ru" : "Выберите тему",
+      "es" : "Selecciona un tema"
     }
   },
   "settings.update-photo-label" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:116" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/profile.cljs:117" ],
     "translations" : {
       "en" : "UPDATE",
       "fr" : "METTRE A JOUR",
-      "es" : "ACTUALIZAR",
-      "ru" : "ОБНОВИТЬ"
+      "ru" : "ОБНОВИТЬ",
+      "es" : "ACTUALIZAR"
     }
   },
   "settings.verification-sent-title" : {
-    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:87" ],
+    "used-in" : [ "src/uxbox/main/ui/settings/change_email.cljs:89" ],
     "translations" : {
       "en" : "Verification email sent",
       "fr" : "L'e-mail de vérification a été envoyé",
-      "es" : "Correo de verificación enviado",
-      "ru" : "Письмо для подтверждения email адреса отправлено"
+      "ru" : "Письмо для подтверждения email адреса отправлено",
+      "es" : "Correo de verificación enviado"
     }
   },
   "settings.yes-delete-my-account" : {
@@ -1138,8 +1156,8 @@
     "translations" : {
       "en" : "Yes, delete my account",
       "fr" : "Oui, supprimez mon compte",
-      "es" : "Si, borrar mi cuenta",
-      "ru" : "Да, удалить мой аккаунт"
+      "ru" : "Да, удалить мой аккаунт",
+      "es" : "Si, borrar mi cuenta"
     }
   },
   "viewer.empty-state" : {
@@ -1147,8 +1165,8 @@
     "translations" : {
       "en" : "No frames found on the page.",
       "fr" : "Aucun cadre trouvé sur la page.",
-      "es" : "No se ha encontrado ningún tablero.",
-      "ru" : "На странице не найдено ни одного кадра"
+      "ru" : "На странице не найдено ни одного кадра",
+      "es" : "No se ha encontrado ningún tablero."
     }
   },
   "viewer.frame-not-found" : {
@@ -1156,8 +1174,8 @@
     "translations" : {
       "en" : "Frame not found.",
       "fr" : "Cadre introuvable.",
-      "es" : "No se encuentra el tablero.",
-      "ru" : "Кадры не найдены."
+      "ru" : "Кадры не найдены.",
+      "es" : "No se encuentra el tablero."
     }
   },
   "viewer.header.dont-show-interactions" : {
@@ -1165,26 +1183,26 @@
     "translations" : {
       "en" : "Don't show interactions",
       "fr" : "Ne pas afficher les interactions",
-      "es" : "No mostrar interacciones",
-      "ru" : "Не показывать взаимодействия"
+      "ru" : "Не показывать взаимодействия",
+      "es" : "No mostrar interacciones"
     }
   },
   "viewer.header.edit-page" : {
-    "used-in" : [ "src/uxbox/main/ui/viewer/header.cljs:164" ],
+    "used-in" : [ "src/uxbox/main/ui/viewer/header.cljs:165" ],
     "translations" : {
       "en" : "Edit page",
       "fr" : "Editer la page",
-      "es" : "Editar página",
-      "ru" : "Редактировать страницу"
+      "ru" : "Редактировать страницу",
+      "es" : "Editar página"
     }
   },
   "viewer.header.fullscreen" : {
-    "used-in" : [ "src/uxbox/main/ui/viewer/header.cljs:175" ],
+    "used-in" : [ "src/uxbox/main/ui/viewer/header.cljs:176" ],
     "translations" : {
       "en" : "Full Screen",
       "fr" : "Plein écran",
-      "es" : "Pantalla completa",
-      "ru" : "Полный экран"
+      "ru" : "Полный экран",
+      "es" : "Pantalla completa"
     }
   },
   "viewer.header.share.copy-link" : {
@@ -1192,44 +1210,44 @@
     "translations" : {
       "en" : "Copy link",
       "fr" : "Copier lien",
-      "es" : "Copiar enlace",
-      "ru" : "Копировать ссылку"
+      "ru" : "Копировать ссылку",
+      "es" : "Copiar enlace"
     }
   },
   "viewer.header.share.create-link" : {
-    "used-in" : [ "src/uxbox/main/ui/viewer/header.cljs:121" ],
+    "used-in" : [ "src/uxbox/main/ui/viewer/header.cljs:122" ],
     "translations" : {
       "en" : "Create link",
       "fr" : "Créer lien",
-      "es" : "Crear enlace",
-      "ru" : "Создать ссылку"
+      "ru" : "Создать ссылку",
+      "es" : "Crear enlace"
     }
   },
   "viewer.header.share.placeholder" : {
-    "used-in" : [ "src/uxbox/main/ui/viewer/header.cljs:111" ],
+    "used-in" : [ "src/uxbox/main/ui/viewer/header.cljs:114" ],
     "translations" : {
       "en" : "Share link will appear here",
       "fr" : "Le lien de partage apparaîtra ici",
-      "es" : "El enlace para compartir aparecerá aquí",
-      "ru" : "Здесь будет ссылка для обмена"
+      "ru" : "Здесь будет ссылка для обмена",
+      "es" : "El enlace para compartir aparecerá aquí"
     }
   },
   "viewer.header.share.remove-link" : {
-    "used-in" : [ "src/uxbox/main/ui/viewer/header.cljs:119" ],
+    "used-in" : [ "src/uxbox/main/ui/viewer/header.cljs:120" ],
     "translations" : {
       "en" : "Remove link",
       "fr" : "Supprimer le lien",
-      "es" : "Eliminar enlace",
-      "ru" : "Удалить ссылку"
+      "ru" : "Удалить ссылку",
+      "es" : "Eliminar enlace"
     }
   },
   "viewer.header.share.subtitle" : {
-    "used-in" : [ "src/uxbox/main/ui/viewer/header.cljs:115" ],
+    "used-in" : [ "src/uxbox/main/ui/viewer/header.cljs:116" ],
     "translations" : {
       "en" : "Anyone with the link will have access",
       "fr" : "Toute personne disposant du lien aura accès",
-      "es" : "Cualquiera con el enlace podrá acceder",
-      "ru" : "Любой, у кого есть ссылка будет иметь доступ"
+      "ru" : "Любой, у кого есть ссылка будет иметь доступ",
+      "es" : "Cualquiera con el enlace podrá acceder"
     }
   },
   "viewer.header.share.title" : {
@@ -1237,8 +1255,8 @@
     "translations" : {
       "en" : "Share link",
       "fr" : "Lien de partage",
-      "es" : "Enlace",
-      "ru" : "Поделиться ссылкой"
+      "ru" : "Поделиться ссылкой",
+      "es" : "Enlace"
     }
   },
   "viewer.header.show-interactions" : {
@@ -1246,8 +1264,8 @@
     "translations" : {
       "en" : "Show interactions",
       "fr" : "Afficher les interactions",
-      "es" : "Mostrar interacciones",
-      "ru" : "Показывать взаимодействия"
+      "ru" : "Показывать взаимодействия",
+      "es" : "Mostrar interacciones"
     }
   },
   "viewer.header.show-interactions-on-click" : {
@@ -1255,17 +1273,17 @@
     "translations" : {
       "en" : "Show interactions on click",
       "fr" : "Afficher les interactions au clic",
-      "es" : "Mostrar interacciones al hacer click",
-      "ru" : "Показывать взаимодействия по клику"
+      "ru" : "Показывать взаимодействия по клику",
+      "es" : "Mostrar interacciones al hacer click"
     }
   },
   "viewer.header.sitemap" : {
-    "used-in" : [ "src/uxbox/main/ui/viewer/header.cljs:148" ],
+    "used-in" : [ "src/uxbox/main/ui/viewer/header.cljs:149" ],
     "translations" : {
       "en" : "Sitemap",
       "fr" : "Plan du site",
-      "es" : "Mapa del sitio",
-      "ru" : "План сайта"
+      "ru" : "План сайта",
+      "es" : "Mapa del sitio"
     }
   },
   "workspace.align.hcenter" : {
@@ -1273,8 +1291,8 @@
     "translations" : {
       "en" : "Align horizontal center",
       "fr" : "Aligner au centre",
-      "es" : "Alinear al centro",
-      "ru" : "Выровнять по горизонтали"
+      "ru" : "Выровнять по горизонтали",
+      "es" : "Alinear al centro"
     }
   },
   "workspace.align.hdistribute" : {
@@ -1282,8 +1300,8 @@
     "translations" : {
       "en" : "Distribute horizontal spacing",
       "fr" : "Répartir l'espacement horizontal",
-      "es" : "Distribuir espacio horizontal",
-      "ru" : "Распределить горизонтальное пространство"
+      "ru" : "Распределить горизонтальное пространство",
+      "es" : "Distribuir espacio horizontal"
     }
   },
   "workspace.align.hleft" : {
@@ -1291,8 +1309,8 @@
     "translations" : {
       "en" : "Align left",
       "fr" : "Aligner à gauche",
-      "es" : "Alinear a la izquierda",
-      "ru" : "Выровнять по левому краю"
+      "ru" : "Выровнять по левому краю",
+      "es" : "Alinear a la izquierda"
     }
   },
   "workspace.align.hright" : {
@@ -1300,8 +1318,8 @@
     "translations" : {
       "en" : "Align right",
       "fr" : "Aligner à droite",
-      "es" : "Alinear a la derecha",
-      "ru" : "Выровнять по правому краю"
+      "ru" : "Выровнять по правому краю",
+      "es" : "Alinear a la derecha"
     }
   },
   "workspace.align.vbottom" : {
@@ -1309,8 +1327,8 @@
     "translations" : {
       "en" : "Align bottom",
       "fr" : "Aligner en bas",
-      "es" : "Alinear abajo",
-      "ru" : "Выровнять по нижнему краю"
+      "ru" : "Выровнять по нижнему краю",
+      "es" : "Alinear abajo"
     }
   },
   "workspace.align.vcenter" : {
@@ -1318,8 +1336,8 @@
     "translations" : {
       "en" : "Align vertical center",
       "fr" : "Aligner au centre",
-      "es" : "Alinear al centro",
-      "ru" : "Выровнять по вертикали"
+      "ru" : "Выровнять по вертикали",
+      "es" : "Alinear al centro"
     }
   },
   "workspace.align.vdistribute" : {
@@ -1327,8 +1345,8 @@
     "translations" : {
       "en" : "Distribute vertical spacing",
       "fr" : "Répartir l'espacement vertical",
-      "es" : "Distribuir espacio vertical",
-      "ru" : "Распределить вертикальное пространство"
+      "ru" : "Распределить вертикальное пространство",
+      "es" : "Distribuir espacio vertical"
     }
   },
   "workspace.align.vtop" : {
@@ -1336,8 +1354,8 @@
     "translations" : {
       "en" : "Align top",
       "fr" : "Aligner en haut",
-      "es" : "Alinear arriba",
-      "ru" : "Выровнять по верхнему краю"
+      "ru" : "Выровнять по верхнему краю",
+      "es" : "Alinear arriba"
     }
   },
   "workspace.header.menu.disable-dynamic-alignment" : {
@@ -1345,8 +1363,8 @@
     "translations" : {
       "en" : "Disable dynamic alignment",
       "fr" : "Désactiver l'alignement dynamique",
-      "es" : "Desactivar alineamiento dinámico",
-      "ru" : "Отключить активное выравнивание"
+      "ru" : "Отключить активное выравнивание",
+      "es" : "Desactivar alineamiento dinámico"
     }
   },
   "workspace.header.menu.disable-snap-grid" : {
@@ -1354,8 +1372,8 @@
     "translations" : {
       "en" : "Disable snap to grid",
       "fr" : "Désactiver l'alignement sur la grille",
-      "es" : "Desactivar alinear a la rejilla",
-      "ru" : "Отключить привязку к сетке"
+      "ru" : "Отключить привязку к сетке",
+      "es" : "Desactivar alinear a la rejilla"
     }
   },
   "workspace.header.menu.enable-dynamic-alignment" : {
@@ -1363,8 +1381,8 @@
     "translations" : {
       "en" : "Enable dynamic aligment",
       "fr" : "Activer l'alignement dynamique",
-      "es" : "Activar alineamiento dinámico",
-      "ru" : "Включить активное выравнивание"
+      "ru" : "Включить активное выравнивание",
+      "es" : "Activar alineamiento dinámico"
     }
   },
   "workspace.header.menu.enable-snap-grid" : {
@@ -1372,8 +1390,8 @@
     "translations" : {
       "en" : "Snap to grid",
       "fr" : "Aligner sur la grille",
-      "es" : "Alinear a la rejilla",
-      "ru" : "Привяка к сетке"
+      "ru" : "Привяка к сетке",
+      "es" : "Alinear a la rejilla"
     }
   },
   "workspace.header.menu.hide-grid" : {
@@ -1381,8 +1399,8 @@
     "translations" : {
       "en" : "Hide grid",
       "fr" : "Masquer la grille",
-      "es" : "Ocultar rejilla",
-      "ru" : "Спрятать сетку"
+      "ru" : "Спрятать сетку",
+      "es" : "Ocultar rejilla"
     }
   },
   "workspace.header.menu.hide-layers" : {
@@ -1390,8 +1408,8 @@
     "translations" : {
       "en" : "Hide layers",
       "fr" : "Masquer les couches",
-      "es" : "Ocultar capas",
-      "ru" : "Спрятать слои"
+      "ru" : "Спрятать слои",
+      "es" : "Ocultar capas"
     }
   },
   "workspace.header.menu.hide-libraries" : {
@@ -1399,8 +1417,8 @@
     "translations" : {
       "en" : "Hide libraries",
       "fr" : "Masquer les librairies",
-      "es" : "Ocultar bibliotecas",
-      "ru" : "Спрятать библиотеки"
+      "ru" : "Спрятать библиотеки",
+      "es" : "Ocultar bibliotecas"
     }
   },
   "workspace.header.menu.hide-palette" : {
@@ -1408,8 +1426,8 @@
     "translations" : {
       "en" : "Hide color palette",
       "fr" : "Masquer la palette de couleurs",
-      "es" : "Ocultar paleta de colores",
-      "ru" : "Спрятать палитру цветов"
+      "ru" : "Спрятать палитру цветов",
+      "es" : "Ocultar paleta de colores"
     }
   },
   "workspace.header.menu.hide-rules" : {
@@ -1417,8 +1435,8 @@
     "translations" : {
       "en" : "Hide rules",
       "fr" : "Masquer les règles",
-      "es" : "Ocultar reglas",
-      "ru" : "Спрятать линейки"
+      "ru" : "Спрятать линейки",
+      "es" : "Ocultar reglas"
     }
   },
   "workspace.header.menu.show-grid" : {
@@ -1426,8 +1444,8 @@
     "translations" : {
       "en" : "Show grid",
       "fr" : "Montrer la grille",
-      "es" : "Mostrar rejilla",
-      "ru" : "Показать сетку"
+      "ru" : "Показать сетку",
+      "es" : "Mostrar rejilla"
     }
   },
   "workspace.header.menu.show-layers" : {
@@ -1435,8 +1453,8 @@
     "translations" : {
       "en" : "Show layers",
       "fr" : "Montrer les couches",
-      "es" : "Mostrar capas",
-      "ru" : "Показать слои"
+      "ru" : "Показать слои",
+      "es" : "Mostrar capas"
     }
   },
   "workspace.header.menu.show-libraries" : {
@@ -1444,8 +1462,8 @@
     "translations" : {
       "en" : "Show libraries",
       "fr" : "Montrer les librairies",
-      "es" : "Mostrar bibliotecas",
-      "ru" : "Показать библиотеки"
+      "ru" : "Показать библиотеки",
+      "es" : "Mostrar bibliotecas"
     }
   },
   "workspace.header.menu.show-palette" : {
@@ -1453,8 +1471,8 @@
     "translations" : {
       "en" : "Show color palette",
       "fr" : "Montrer la palette de couleurs",
-      "es" : "Mostrar paleta de colores",
-      "ru" : "Показать палитру цветов"
+      "ru" : "Показать палитру цветов",
+      "es" : "Mostrar paleta de colores"
     }
   },
   "workspace.header.menu.show-rules" : {
@@ -1462,8 +1480,8 @@
     "translations" : {
       "en" : "Show rules",
       "fr" : "Montrer les règles",
-      "es" : "Mostrar reglas",
-      "ru" : "Показать линейки"
+      "ru" : "Показать линейки",
+      "es" : "Mostrar reglas"
     }
   },
   "workspace.header.viewer" : {
@@ -1471,8 +1489,8 @@
     "translations" : {
       "en" : "View mode (Ctrl + P)",
       "fr" : "Mode visualisation (Ctrl + P)",
-      "es" : "Modo de visualización (Ctrl + P)",
-      "ru" : "Режим просмотра  (Ctrl + P)"
+      "ru" : "Режим просмотра  (Ctrl + P)",
+      "es" : "Modo de visualización (Ctrl + P)"
     }
   },
   "workspace.library.all" : {
@@ -1480,8 +1498,8 @@
     "translations" : {
       "en" : "All libraries",
       "fr" : "Toutes les librairies",
-      "es" : "Todas",
-      "ru" : "Все библиотеки"
+      "ru" : "Все библиотеки",
+      "es" : "Todas"
     }
   },
   "workspace.library.icons" : {
@@ -1489,8 +1507,8 @@
     "translations" : {
       "en" : "Icons",
       "fr" : "Icônes",
-      "es" : "Iconos",
-      "ru" : "Иконки"
+      "ru" : "Иконки",
+      "es" : "Iconos"
     }
   },
   "workspace.library.images" : {
@@ -1498,8 +1516,8 @@
     "translations" : {
       "en" : "Images",
       "fr" : "Images",
-      "es" : "Imágenes",
-      "ru" : "Изображения"
+      "ru" : "Изображения",
+      "es" : "Imágenes"
     }
   },
   "workspace.library.libraries" : {
@@ -1507,8 +1525,8 @@
     "translations" : {
       "en" : "Libraries",
       "fr" : "Librairies",
-      "es" : "Bibliotecas",
-      "ru" : "Библиотеки"
+      "ru" : "Библиотеки",
+      "es" : "Bibliotecas"
     }
   },
   "workspace.library.own" : {
@@ -1516,8 +1534,8 @@
     "translations" : {
       "en" : "My libraries",
       "fr" : "Mes librairies",
-      "es" : "Mis bibliotecas",
-      "ru" : "Мои библиотеки"
+      "ru" : "Мои библиотеки",
+      "es" : "Mis bibliotecas"
     }
   },
   "workspace.library.store" : {
@@ -1525,8 +1543,8 @@
     "translations" : {
       "en" : "Store libraries",
       "fr" : "Prédéfinies",
-      "es" : "Predefinidas",
-      "ru" : "Сохраненные библиотеки"
+      "ru" : "Сохраненные библиотеки",
+      "es" : "Predefinidas"
     }
   },
   "workspace.options.canvas-background" : {
@@ -1534,8 +1552,8 @@
     "translations" : {
       "en" : "Canvas background",
       "fr" : "Couleur de fond",
-      "es" : "Color de fondo",
-      "ru" : "Фон холста"
+      "ru" : "Фон холста",
+      "es" : "Color de fondo"
     }
   },
   "workspace.options.design" : {
@@ -1543,8 +1561,8 @@
     "translations" : {
       "en" : "Design",
       "fr" : "Conception",
-      "es" : "Diseño",
-      "ru" : "Дизайн"
+      "ru" : "Дизайн",
+      "es" : "Diseño"
     }
   },
   "workspace.options.export" : {
@@ -1573,8 +1591,8 @@
     "translations" : {
       "en" : "Fill",
       "fr" : "Remplissage",
-      "es" : "Relleno",
-      "ru" : "Заливка"
+      "ru" : "Заливка",
+      "es" : "Relleno"
     }
   },
   "workspace.options.grid.auto" : {
@@ -1582,8 +1600,8 @@
     "translations" : {
       "en" : "Auto",
       "fr" : "Automatique",
-      "es" : "Automático",
-      "ru" : "Авто"
+      "ru" : "Авто",
+      "es" : "Automático"
     }
   },
   "workspace.options.grid.column" : {
@@ -1591,8 +1609,8 @@
     "translations" : {
       "en" : "Columns",
       "fr" : "Colonnes",
-      "es" : "Columnas",
-      "ru" : "Колонки"
+      "ru" : "Колонки",
+      "es" : "Columnas"
     }
   },
   "workspace.options.grid.params.columns" : {
@@ -1600,8 +1618,8 @@
     "translations" : {
       "en" : "Columns",
       "fr" : "Colonnes",
-      "es" : "Columnas",
-      "ru" : "Колонки"
+      "ru" : "Колонки",
+      "es" : "Columnas"
     }
   },
   "workspace.options.grid.params.gutter" : {
@@ -1609,8 +1627,8 @@
     "translations" : {
       "en" : "Gutter",
       "fr" : "Gouttière",
-      "es" : "Espaciado",
-      "ru" : "Желоб"
+      "ru" : "Желоб",
+      "es" : "Espaciado"
     }
   },
   "workspace.options.grid.params.height" : {
@@ -1618,8 +1636,8 @@
     "translations" : {
       "en" : "Height",
       "fr" : "Hauteur",
-      "es" : "Altura",
-      "ru" : "Высота"
+      "ru" : "Высота",
+      "es" : "Altura"
     }
   },
   "workspace.options.grid.params.margin" : {
@@ -1627,8 +1645,8 @@
     "translations" : {
       "en" : "Margin",
       "fr" : "Marge",
-      "es" : "Margen",
-      "ru" : "Поле"
+      "ru" : "Поле",
+      "es" : "Margen"
     }
   },
   "workspace.options.grid.params.rows" : {
@@ -1636,8 +1654,8 @@
     "translations" : {
       "en" : "Rows",
       "fr" : "Lignes",
-      "es" : "Filas",
-      "ru" : "Строки"
+      "ru" : "Строки",
+      "es" : "Filas"
     }
   },
   "workspace.options.grid.params.set-default" : {
@@ -1645,8 +1663,8 @@
     "translations" : {
       "en" : "Set as default",
       "fr" : "Définir par défaut",
-      "es" : "Establecer valor por defecto",
-      "ru" : "Установить по умолчанию"
+      "ru" : "Установить по умолчанию",
+      "es" : "Establecer valor por defecto"
     }
   },
   "workspace.options.grid.params.size" : {
@@ -1654,8 +1672,8 @@
     "translations" : {
       "en" : "Size",
       "fr" : "Taille",
-      "es" : "Tamaño",
-      "ru" : "Размер"
+      "ru" : "Размер",
+      "es" : "Tamaño"
     }
   },
   "workspace.options.grid.params.type" : {
@@ -1663,8 +1681,8 @@
     "translations" : {
       "en" : "Type",
       "fr" : "Type",
-      "es" : "Tipo",
-      "ru" : "Тип"
+      "ru" : "Тип",
+      "es" : "Tipo"
     }
   },
   "workspace.options.grid.params.type.bottom" : {
@@ -1672,8 +1690,8 @@
     "translations" : {
       "en" : "Bottom",
       "fr" : "Bas",
-      "es" : "Abajo",
-      "ru" : "Низ"
+      "ru" : "Низ",
+      "es" : "Abajo"
     }
   },
   "workspace.options.grid.params.type.center" : {
@@ -1681,8 +1699,8 @@
     "translations" : {
       "en" : "Center",
       "fr" : "Centre",
-      "es" : "Centro",
-      "ru" : "Центр"
+      "ru" : "Центр",
+      "es" : "Centro"
     }
   },
   "workspace.options.grid.params.type.left" : {
@@ -1690,8 +1708,8 @@
     "translations" : {
       "en" : "Left",
       "fr" : "Gauche",
-      "es" : "Izquierda",
-      "ru" : "Левый"
+      "ru" : "Левый",
+      "es" : "Izquierda"
     }
   },
   "workspace.options.grid.params.type.right" : {
@@ -1699,8 +1717,8 @@
     "translations" : {
       "en" : "Right",
       "fr" : "Droite",
-      "es" : "Derecha",
-      "ru" : "Правый"
+      "ru" : "Правый",
+      "es" : "Derecha"
     }
   },
   "workspace.options.grid.params.type.stretch" : {
@@ -1708,8 +1726,8 @@
     "translations" : {
       "en" : "Stretch",
       "fr" : "Étirer",
-      "es" : "Estirar",
-      "ru" : "Растягивать"
+      "ru" : "Растягивать",
+      "es" : "Estirar"
     }
   },
   "workspace.options.grid.params.type.top" : {
@@ -1717,8 +1735,8 @@
     "translations" : {
       "en" : "Top",
       "fr" : "Haut",
-      "es" : "Arriba",
-      "ru" : "Верх"
+      "ru" : "Верх",
+      "es" : "Arriba"
     }
   },
   "workspace.options.grid.params.use-default" : {
@@ -1726,8 +1744,8 @@
     "translations" : {
       "en" : "Use default",
       "fr" : "Utiliser la valeur par défaut",
-      "es" : "Usar valor por defecto",
-      "ru" : "Использовать значение по умолчанию"
+      "ru" : "Использовать значение по умолчанию",
+      "es" : "Usar valor por defecto"
     }
   },
   "workspace.options.grid.params.width" : {
@@ -1735,8 +1753,8 @@
     "translations" : {
       "en" : "Width",
       "fr" : "Largeur",
-      "es" : "Ancho",
-      "ru" : "Ширина"
+      "ru" : "Ширина",
+      "es" : "Ancho"
     }
   },
   "workspace.options.grid.row" : {
@@ -1744,8 +1762,8 @@
     "translations" : {
       "en" : "Rows",
       "fr" : "Lignes",
-      "es" : "Filas",
-      "ru" : "Строки"
+      "ru" : "Строки",
+      "es" : "Filas"
     }
   },
   "workspace.options.grid.square" : {
@@ -1753,8 +1771,8 @@
     "translations" : {
       "en" : "Square",
       "fr" : "Carré",
-      "es" : "Cuadros",
-      "ru" : "Квадрат"
+      "ru" : "Квадрат",
+      "es" : "Cuadros"
     }
   },
   "workspace.options.grid.title" : {
@@ -1762,8 +1780,8 @@
     "translations" : {
       "en" : "Grid & Layouts",
       "fr" : "Grille & couches",
-      "es" : "Rejilla & Estructuras",
-      "ru" : "Сетка и Макеты"
+      "ru" : "Сетка и Макеты",
+      "es" : "Rejilla & Estructuras"
     }
   },
   "workspace.options.group-fill" : {
@@ -1771,8 +1789,8 @@
     "translations" : {
       "en" : "Group fill",
       "fr" : null,
-      "es" : "Relleno de grupo",
-      "ru" : "Заливка для группы"
+      "ru" : "Заливка для группы",
+      "es" : "Relleno de grupo"
     }
   },
   "workspace.options.group-stroke" : {
@@ -1780,8 +1798,8 @@
     "translations" : {
       "en" : "Group stroke",
       "fr" : null,
-      "es" : "Borde de grupo",
-      "ru" : "Обводка для группы"
+      "ru" : "Обводка для группы",
+      "es" : "Borde de grupo"
     }
   },
   "workspace.options.navigate-to" : {
@@ -1789,8 +1807,8 @@
     "translations" : {
       "en" : "Navigate to",
       "fr" : "Naviguer vers",
-      "es" : "Navegar a",
-      "ru" : "Перейти к"
+      "ru" : "Перейти к",
+      "es" : "Navegar a"
     }
   },
   "workspace.options.none" : {
@@ -1798,44 +1816,44 @@
     "translations" : {
       "en" : "None",
       "fr" : "Aucun",
-      "es" : "Ninguno",
-      "ru" : "Не задано"
+      "ru" : "Не задано",
+      "es" : "Ninguno"
     }
   },
   "workspace.options.position" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:144", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:125" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:146", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:125" ],
     "translations" : {
       "en" : "Position",
       "fr" : "Position",
-      "es" : "Posición",
-      "ru" : "Позиция"
+      "ru" : "Позиция",
+      "es" : "Posición"
     }
   },
   "workspace.options.prototype" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options.cljs:74" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options.cljs:76" ],
     "translations" : {
       "en" : "Prototype",
       "fr" : "Prototype",
-      "es" : "Prototipo",
-      "ru" : "Прототип"
+      "ru" : "Прототип",
+      "es" : "Prototipo"
     }
   },
   "workspace.options.radius" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:186" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:188" ],
     "translations" : {
       "en" : "Radius",
       "fr" : "Rayon",
-      "es" : "Radio",
-      "ru" : "Радиус"
+      "ru" : "Радиус",
+      "es" : "Radio"
     }
   },
   "workspace.options.rotation" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:163" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:165" ],
     "translations" : {
       "en" : "Rotation",
       "fr" : "Rotation",
-      "es" : "Rotación",
-      "ru" : "Вращение"
+      "ru" : "Вращение",
+      "es" : "Rotación"
     }
   },
   "workspace.options.select-a-shape" : {
@@ -1843,8 +1861,8 @@
     "translations" : {
       "en" : "Select a shape, artboard or group to drag a connection to other artboard.",
       "fr" : "Sélectionnez une forme, un plan de travail ou un groupe pour faire glisser une connexion vers un autre plan de travail.",
-      "es" : "Selecciona una figura, tablero o grupo para arrastrar una conexión a otro tablero.",
-      "ru" : "Выберите фигуру, рабочую область или группу чтобы перенести связь на другую рабочую область."
+      "ru" : "Выберите фигуру, рабочую область или группу чтобы перенести связь на другую рабочую область.",
+      "es" : "Selecciona una figura, tablero o grupo para arrastrar una conexión a otro tablero."
     }
   },
   "workspace.options.select-artboard" : {
@@ -1852,8 +1870,8 @@
     "translations" : {
       "en" : "Select artboard",
       "fr" : "Sélectionner un plan de travail",
-      "es" : "Selecciona un tablero",
-      "ru" : "Выберите рабочую область"
+      "ru" : "Выберите рабочую область",
+      "es" : "Selecciona un tablero"
     }
   },
   "workspace.options.selection-fill" : {
@@ -1861,8 +1879,8 @@
     "translations" : {
       "en" : "Selection fill",
       "fr" : null,
-      "es" : "Relleno de selección",
-      "ru" : "Заливка выбранного"
+      "ru" : "Заливка выбранного",
+      "es" : "Relleno de selección"
     }
   },
   "workspace.options.selection-stroke" : {
@@ -1870,17 +1888,17 @@
     "translations" : {
       "en" : "Selection stroke",
       "fr" : null,
-      "es" : "Borde de selección",
-      "ru" : "Обводка выбранного"
+      "ru" : "Обводка выбранного",
+      "es" : "Borde de selección"
     }
   },
   "workspace.options.size" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:114", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:98" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/measures.cljs:116", "src/uxbox/main/ui/workspace/sidebar/options/frame.cljs:98" ],
     "translations" : {
       "en" : "Size",
       "fr" : "Taille",
-      "es" : "Tamaño",
-      "ru" : "Размер"
+      "ru" : "Размер",
+      "es" : "Tamaño"
     }
   },
   "workspace.options.size-presets" : {
@@ -1888,8 +1906,8 @@
     "translations" : {
       "en" : "Size presets",
       "fr" : "Tailles prédéfinies",
-      "es" : "Tamaños predefinidos",
-      "ru" : "Предустановки для размеров"
+      "ru" : "Предустановки для размеров",
+      "es" : "Tamaños predefinidos"
     }
   },
   "workspace.options.stroke" : {
@@ -1897,8 +1915,8 @@
     "translations" : {
       "en" : "Stroke",
       "fr" : "Bordure",
-      "es" : "Borde",
-      "ru" : "Обводка"
+      "ru" : "Обводка",
+      "es" : "Borde"
     }
   },
   "workspace.options.stroke.center" : {
@@ -1906,8 +1924,8 @@
     "translations" : {
       "en" : "Center",
       "fr" : "Centre",
-      "es" : "Centro",
-      "ru" : "Центр"
+      "ru" : "Центр",
+      "es" : "Centro"
     }
   },
   "workspace.options.stroke.dashed" : {
@@ -1915,8 +1933,8 @@
     "translations" : {
       "en" : "Dashed",
       "fr" : "Tiré",
-      "es" : "Rayado",
-      "ru" : "Пунктирный"
+      "ru" : "Пунктирный",
+      "es" : "Rayado"
     }
   },
   "workspace.options.stroke.dotted" : {
@@ -1924,8 +1942,8 @@
     "translations" : {
       "en" : "Dotted",
       "fr" : "Pointillé",
-      "es" : "Punteado",
-      "ru" : "Точечный"
+      "ru" : "Точечный",
+      "es" : "Punteado"
     }
   },
   "workspace.options.stroke.inner" : {
@@ -1933,8 +1951,8 @@
     "translations" : {
       "en" : "Inside",
       "fr" : "Intérieur",
-      "es" : "Interior",
-      "ru" : "Внутрь"
+      "ru" : "Внутрь",
+      "es" : "Interior"
     }
   },
   "workspace.options.stroke.mixed" : {
@@ -1942,8 +1960,8 @@
     "translations" : {
       "en" : "Mixed",
       "fr" : "Mixte",
-      "es" : "Mezclado",
-      "ru" : "Смешаный"
+      "ru" : "Смешаный",
+      "es" : "Mezclado"
     }
   },
   "workspace.options.stroke.outer" : {
@@ -1951,8 +1969,8 @@
     "translations" : {
       "en" : "Outside",
       "fr" : "Extérieur",
-      "es" : "Exterior",
-      "ru" : "Наружу"
+      "ru" : "Наружу",
+      "es" : "Exterior"
     }
   },
   "workspace.options.stroke.solid" : {
@@ -1960,8 +1978,8 @@
     "translations" : {
       "en" : "Solid",
       "fr" : "Solide",
-      "es" : "Sólido",
-      "ru" : "Сплошной"
+      "ru" : "Сплошной",
+      "es" : "Sólido"
     }
   },
   "workspace.options.text-options.align-bottom" : {
@@ -1969,8 +1987,8 @@
     "translations" : {
       "en" : "Align bottom",
       "fr" : "Aligner en bas",
-      "es" : "Alinear abajo",
-      "ru" : "Выровнять низ"
+      "ru" : "Выровнять низ",
+      "es" : "Alinear abajo"
     }
   },
   "workspace.options.text-options.align-center" : {
@@ -1978,8 +1996,8 @@
     "translations" : {
       "en" : "Align center",
       "fr" : "Aligner au centre",
-      "es" : "Aliniear al centro",
-      "ru" : "Выравнивание по центру"
+      "ru" : "Выравнивание по центру",
+      "es" : "Aliniear al centro"
     }
   },
   "workspace.options.text-options.align-justify" : {
@@ -1987,8 +2005,8 @@
     "translations" : {
       "en" : "Justify",
       "fr" : "Justifier",
-      "es" : "Justificar",
-      "ru" : "Выравнивание по ширине"
+      "ru" : "Выравнивание по ширине",
+      "es" : "Justificar"
     }
   },
   "workspace.options.text-options.align-left" : {
@@ -1996,8 +2014,8 @@
     "translations" : {
       "en" : "Align left",
       "fr" : "Aligner à gauche",
-      "es" : "Alinear a la izquierda",
-      "ru" : "Выравнивание по левому краю"
+      "ru" : "Выравнивание по левому краю",
+      "es" : "Alinear a la izquierda"
     }
   },
   "workspace.options.text-options.align-middle" : {
@@ -2005,8 +2023,8 @@
     "translations" : {
       "en" : "Align middle",
       "fr" : "Aligner au milieu",
-      "es" : "Alinear al centro",
-      "ru" : "Выравнивание по центру"
+      "ru" : "Выравнивание по центру",
+      "es" : "Alinear al centro"
     }
   },
   "workspace.options.text-options.align-right" : {
@@ -2014,8 +2032,8 @@
     "translations" : {
       "en" : "Align right",
       "fr" : "Aligner à droite",
-      "es" : "Alinear a la derecha",
-      "ru" : "Выравнивание по правому краю"
+      "ru" : "Выравнивание по правому краю",
+      "es" : "Alinear a la derecha"
     }
   },
   "workspace.options.text-options.align-top" : {
@@ -2023,8 +2041,8 @@
     "translations" : {
       "en" : "Align top",
       "fr" : "Aligner en haut",
-      "es" : "Alinear arriba",
-      "ru" : "Выравнивание по верхнему краю"
+      "ru" : "Выравнивание по верхнему краю",
+      "es" : "Alinear arriba"
     }
   },
   "workspace.options.text-options.decoration" : {
@@ -2032,8 +2050,8 @@
     "translations" : {
       "en" : "Decoration",
       "fr" : "Décoration",
-      "es" : "Decoración",
-      "ru" : "Оформление"
+      "ru" : "Оформление",
+      "es" : "Decoración"
     }
   },
   "workspace.options.text-options.letter-spacing" : {
@@ -2041,8 +2059,8 @@
     "translations" : {
       "en" : "Letter Spacing",
       "fr" : "Espacement de caractères",
-      "es" : "Espaciado entre letras",
-      "ru" : "Межсимвольный интервал"
+      "ru" : "Межсимвольный интервал",
+      "es" : "Espaciado entre letras"
     }
   },
   "workspace.options.text-options.line-height" : {
@@ -2050,8 +2068,8 @@
     "translations" : {
       "en" : "Line height",
       "fr" : "Hauteur de ligne",
-      "es" : "Altura de línea",
-      "ru" : "Высота строки"
+      "ru" : "Высота строки",
+      "es" : "Altura de línea"
     }
   },
   "workspace.options.text-options.lowercase" : {
@@ -2059,8 +2077,8 @@
     "translations" : {
       "en" : "Lowercase",
       "fr" : "Minuscule",
-      "es" : "Minúsculas",
-      "ru" : "Нижний регистр"
+      "ru" : "Нижний регистр",
+      "es" : "Minúsculas"
     }
   },
   "workspace.options.text-options.none" : {
@@ -2068,8 +2086,8 @@
     "translations" : {
       "en" : "None",
       "fr" : "Aucune",
-      "es" : "Nada",
-      "ru" : "Не задано"
+      "ru" : "Не задано",
+      "es" : "Nada"
     }
   },
   "workspace.options.text-options.strikethrough" : {
@@ -2077,8 +2095,8 @@
     "translations" : {
       "en" : "Strikethrough",
       "fr" : "Barré",
-      "es" : "Tachado",
-      "ru" : "Перечеркнутый"
+      "ru" : "Перечеркнутый",
+      "es" : "Tachado"
     }
   },
   "workspace.options.text-options.text-case" : {
@@ -2086,8 +2104,8 @@
     "translations" : {
       "en" : "Case",
       "fr" : "Casse",
-      "es" : "Mayús/minús",
-      "ru" : "Регистр"
+      "ru" : "Регистр",
+      "es" : "Mayús/minús"
     }
   },
   "workspace.options.text-options.title" : {
@@ -2095,24 +2113,24 @@
     "translations" : {
       "en" : "Text",
       "fr" : "Texte",
-      "es" : "Texto",
-      "ru" : "Текст"
+      "ru" : "Текст",
+      "es" : "Texto"
     }
   },
   "workspace.options.text-options.title-group" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:374" ],
     "translations" : {
       "en" : "Group text",
-      "es" : "Texto de grupo",
-      "ru" : "Текст группы"
+      "ru" : "Текст группы",
+      "es" : "Texto de grupo"
     }
   },
   "workspace.options.text-options.title-selection" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/options/text.cljs:373" ],
     "translations" : {
       "en" : "Selection text",
-      "es" : "Texto de selección",
-      "ru" : "Выбранный текст"
+      "ru" : "Выбранный текст",
+      "es" : "Texto de selección"
     }
   },
   "workspace.options.text-options.titlecase" : {
@@ -2120,8 +2138,8 @@
     "translations" : {
       "en" : "Titlecase",
       "fr" : "Titre",
-      "es" : "Título",
-      "ru" : "Каждое слово с заглавной буквы"
+      "ru" : "Каждое слово с заглавной буквы",
+      "es" : "Título"
     }
   },
   "workspace.options.text-options.underline" : {
@@ -2129,8 +2147,8 @@
     "translations" : {
       "en" : "Underline",
       "fr" : "Souligner",
-      "es" : "Subrayado",
-      "ru" : "Подчеркнутый"
+      "ru" : "Подчеркнутый",
+      "es" : "Subrayado"
     }
   },
   "workspace.options.text-options.uppercase" : {
@@ -2138,8 +2156,8 @@
     "translations" : {
       "en" : "Uppercase",
       "fr" : "Majuscule",
-      "es" : "Mayúsculas",
-      "ru" : "Верхний регистр"
+      "ru" : "Верхний регистр",
+      "es" : "Mayúsculas"
     }
   },
   "workspace.options.text-options.vertical-align" : {
@@ -2147,8 +2165,8 @@
     "translations" : {
       "en" : "Vertical align",
       "fr" : "Alignement vertical",
-      "es" : "Alineación vertical",
-      "ru" : "Вертикальное выравнивание"
+      "ru" : "Вертикальное выравнивание",
+      "es" : "Alineación vertical"
     }
   },
   "workspace.options.use-play-button" : {
@@ -2156,8 +2174,8 @@
     "translations" : {
       "en" : "Use the play button at the header to run the prototype view.",
       "fr" : "Utilisez le bouton de lecture dans l'en-tête pour exécuter la vue du prototype.",
-      "es" : "Usa el botón de play de la cabecera para arrancar la vista de prototipo.",
-      "ru" : "Используй кнопку запуск в заголовке чтобы перейти на экран прототипа."
+      "ru" : "Используй кнопку запуск в заголовке чтобы перейти на экран прототипа.",
+      "es" : "Usa el botón de play de la cabecera para arrancar la vista de prototipo."
     }
   },
   "workspace.sidebar.icons" : {
@@ -2165,8 +2183,8 @@
     "translations" : {
       "en" : "Icons",
       "fr" : "Icône",
-      "es" : "Iconos",
-      "ru" : "Иконки"
+      "ru" : "Иконки",
+      "es" : "Iconos"
     }
   },
   "workspace.sidebar.sitemap" : {
@@ -2174,8 +2192,8 @@
     "translations" : {
       "en" : "Pages",
       "fr" : "Pages",
-      "es" : "Páginas",
-      "ru" : "Страницы"
+      "ru" : "Страницы",
+      "es" : "Páginas"
     }
   },
   "workspace.toolbar.circle" : {
@@ -2183,8 +2201,8 @@
     "translations" : {
       "en" : "Circle (E)",
       "fr" : "Cercle (E)",
-      "es" : "Círculo (E)",
-      "ru" : "Круг  (E)"
+      "ru" : "Круг  (E)",
+      "es" : "Círculo (E)"
     }
   },
   "workspace.toolbar.color-palette" : {
@@ -2192,8 +2210,8 @@
     "translations" : {
       "en" : "Color Palette (---)",
       "fr" : "Palette de couleurs (---)",
-      "es" : "Paleta de colores (---)",
-      "ru" : "Палитра цветов (---)"
+      "ru" : "Палитра цветов (---)",
+      "es" : "Paleta de colores (---)"
     }
   },
   "workspace.toolbar.curve" : {
@@ -2201,8 +2219,8 @@
     "translations" : {
       "en" : "Curve",
       "fr" : "Courbe",
-      "es" : "Curva",
-      "ru" : "Кривая"
+      "ru" : "Кривая",
+      "es" : "Curva"
     }
   },
   "workspace.toolbar.frame" : {
@@ -2210,8 +2228,8 @@
     "translations" : {
       "en" : "Artboard (A)",
       "fr" : "Plan de travail (A)",
-      "es" : "Tablero (A)",
-      "ru" : "Рабочая область (A)"
+      "ru" : "Рабочая область (A)",
+      "es" : "Tablero (A)"
     }
   },
   "workspace.toolbar.image" : {
@@ -2219,8 +2237,8 @@
     "translations" : {
       "en" : "Image (I)",
       "fr" : "Image (I)",
-      "es" : "Imagen (I)",
-      "ru" : "Изображение (I)"
+      "ru" : "Изображение (I)",
+      "es" : "Imagen (I)"
     }
   },
   "workspace.toolbar.libraries" : {
@@ -2228,8 +2246,8 @@
     "translations" : {
       "en" : "Libraries (Ctrl + Shift + L)",
       "fr" : "Librairies (Ctrl + Shift + L)",
-      "es" : "Bibliotecas (Ctrl + Mays + L)",
-      "ru" : "Библиотеки (Ctrl + Shift + L)"
+      "ru" : "Библиотеки (Ctrl + Shift + L)",
+      "es" : "Bibliotecas (Ctrl + Mays + L)"
     }
   },
   "workspace.toolbar.path" : {
@@ -2237,8 +2255,8 @@
     "translations" : {
       "en" : "Path",
       "fr" : "Chemin",
-      "es" : "Ruta",
-      "ru" : "Линия"
+      "ru" : "Линия",
+      "es" : "Ruta"
     }
   },
   "workspace.toolbar.rect" : {
@@ -2246,8 +2264,8 @@
     "translations" : {
       "en" : "Box (B)",
       "fr" : "Boîte (B)",
-      "es" : "Recuadro (B)",
-      "ru" : "Прямоугольник (B)"
+      "ru" : "Прямоугольник (B)",
+      "es" : "Recuadro (B)"
     }
   },
   "workspace.toolbar.text" : {
@@ -2255,8 +2273,8 @@
     "translations" : {
       "en" : "Text (T)",
       "fr" : "Texte (T)",
-      "es" : "Texto (T)",
-      "ru" : "Текст (T)"
+      "ru" : "Текст (T)",
+      "es" : "Texto (T)"
     }
   },
   "workspace.viewport.click-to-close-path" : {
@@ -2264,8 +2282,8 @@
     "translations" : {
       "en" : "Click to close the path",
       "fr" : "Cliquez pour fermer le chemin",
-      "es" : "Pulsar para cerrar la ruta",
-      "ru" : "Кликни чтобы закончить фигуру"
+      "ru" : "Кликни чтобы закончить фигуру",
+      "es" : "Pulsar para cerrar la ruta"
     }
   }
 }

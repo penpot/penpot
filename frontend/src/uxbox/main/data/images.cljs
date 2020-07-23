@@ -380,9 +380,19 @@
                              (on-uploaded %))
 
              on-error #(do (st/emit! dm/hide)
-                           (if (.-message %)
-                             (rx/of (dm/error (.-message %)))
-                             (rx/of (dm/error (tr "errors.unexpected-error")))))
+                           (let [msg (cond
+                                       (.-message %)
+                                       (.-message %)
+
+                                       (= (:code %) :image-type-not-allowed)
+                                       (tr "errors.image-type-not-allowed")
+
+                                       (= (:code %) :image-type-mismatch)
+                                       (tr "errors.image-type-mismatch")
+
+                                       :else
+                                       (tr "errors.unexpected-error"))]
+                             (rx/of (dm/error msg))))
 
              prepare
              (fn [file]
