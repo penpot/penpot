@@ -54,9 +54,24 @@
 ;; Workspace Initialization
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declare initialized)
+(declare file-initialized)
 
 ;; --- Initialize Workspace
+
+(s/def ::layout-flag
+  #{:sitemap
+    :sitemap-pages
+    :layers
+    :libraries
+    :document-history
+    :colorpalette
+    :element-options
+    :rules
+    :display-grid
+    :snap-grid
+    :dynamic-alignment})
+
+(s/def ::layout-flags (s/coll-of ::layout-flag))
 
 (def default-layout
   #{:sitemap
@@ -64,13 +79,13 @@
     :layers
     :element-options
     :rules
-    :dynamic-alignment
     :display-grid
-    :snap-grid})
+    :snap-grid
+    :dynamic-alignment})
 
 (s/def ::options-mode #{:design :prototype})
 
-(def workspace-default
+(def workspace-local-default
   {:zoom 1
    :flags #{}
    :selected (d/ordered-set)
@@ -81,7 +96,8 @@
    :options-mode :design
    :draw-interaction-to nil
    :left-sidebar? true
-   :right-sidebar? true})
+   :right-sidebar? true
+   :color-for-rename nil})
 
 (def initialize-layout
   (ptk/reify ::initialize-layout
@@ -89,12 +105,12 @@
     (update [_ state]
       (assoc state :workspace-layout default-layout))))
 
-(defn initialize
+(defn initialize-file
   [project-id file-id]
   (us/verify ::us/uuid project-id)
   (us/verify ::us/uuid file-id)
 
-  (ptk/reify ::initialize
+  (ptk/reify ::initialize-file
     ptk/UpdateEvent
     (update [_ state]
       (assoc state :workspace-presence {}))
@@ -118,9 +134,9 @@
        (->> stream
             (rx/filter #(= ::dwc/index-initialized %))
             (rx/map (constantly
-                     (initialized project-id file-id))))))))
+                     (file-initialized project-id file-id))))))))
 
-(defn- initialized
+(defn- file-initialized
   [project-id file-id]
   (ptk/reify ::initialized
     ptk/UpdateEvent
@@ -131,7 +147,7 @@
                   (assoc file :initialized true)
                   file))))))
 
-(defn finalize
+(defn finalize-file
   [project-id file-id]
   (ptk/reify ::finalize
     ptk/UpdateEvent
@@ -149,7 +165,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [page  (get-in state [:workspace-pages page-id])
-            local (get-in state [:workspace-cache page-id] workspace-default)]
+            local (get-in state [:workspace-cache page-id] workspace-local-default)]
         (-> state
             (assoc :current-page-id page-id   ; mainly used by events
                    :workspace-local local
@@ -276,6 +292,7 @@
 
 (defn- toggle-layout-flag
   [state flag]
+  (us/assert ::layout-flag flag)
   (update state :workspace-layout
           (fn [flags]
             (if (contains? flags flag)
@@ -289,19 +306,34 @@
                                                  :sitemap
                                                  :document-history
                                                  :libraries])))
-        right-sidebar? (not (empty? (keep layout [:icons
-                                                  :element-options])))]
+        right-sidebar? (not (empty? (keep layout [:element-options])))]
     (update-in state [:workspace-local]
                assoc :left-sidebar? left-sidebar?
                      :right-sidebar? right-sidebar?)))
 
+(defn- check-auto-flags
+  [state flags-to-toggle]
+  (update state :workspace-layout
+          (fn [flags]
+            (cond
+              (contains? (set flags-to-toggle) :assets)
+              (disj flags :sitemap :layers)
+
+              (contains? (set flags-to-toggle) :sitemap)
+              (disj flags :assets)
+
+              :else
+              flags))))
+
 (defn toggle-layout-flags
   [& flags]
+  (us/assert ::layout-flags flags)
   (ptk/reify ::toggle-layout-flags
     ptk/UpdateEvent
     (update [_ state]
       (-> (reduce toggle-layout-flag state flags)
-          (check-sidebars)))))
+          (check-sidebars)
+          (check-auto-flags flags)))))
 
 ;; --- Set element options mode
 
