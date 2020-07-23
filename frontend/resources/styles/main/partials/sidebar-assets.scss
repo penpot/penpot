@@ -1,0 +1,143 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
+// Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+
+.assets-bar {
+  display: flex;
+  flex-direction: column;
+
+  .assets-bar-title {
+    color: $color-gray-10;
+    font-size: $fs14;
+    margin: $small $small 0 $small;
+  }
+
+  .search-input {
+    background-color: $color-gray-50;
+    border: 1px solid $color-gray-30;
+    color: $color-gray-10;
+    font-size: $fs12;
+    margin: $small $small 0 $small;
+    padding: $x-small;
+
+    &:focus {
+      color: lighten($color-gray-10, 8%);
+      border-color: $color-primary !important;
+    }
+
+    &:hover {
+      border-color: $color-gray-20;
+    }
+
+  }
+
+  .input-select {
+    background-color: $color-gray-50;
+    color: $color-gray-10;
+    border: 1px solid transparent;
+    border-bottom-color: $color-gray-40;
+    padding: $x-small $x-small 0 $x-small;
+    margin: $small $small $medium $small;
+
+    &:focus {
+      color: lighten($color-gray-10, 8%);
+    }
+
+    option {
+      color: $color-gray-60;
+      background: $color-white;
+      font-size: $fs11;
+    }
+  }
+
+  .collapse-library {
+    margin-right: $small;
+    cursor: pointer;
+
+    &.open svg {
+      transform: rotate(90deg);
+    }
+  }
+
+  .asset-group {
+    background-color: $color-gray-60;
+    padding: $small;
+    font-size: $fs11;
+    color: $color-gray-20;
+
+    .group-title {
+      display: flex;
+
+      & span {
+        color: $color-gray-30;
+      }
+    }
+
+    .group-button {
+      margin-left: auto;
+      cursor: pointer;
+
+      & svg {
+        width: 0.7rem;
+        height: 0.7rem;
+        fill: #F0F0F0;
+      }
+    }
+
+    .group-grid {
+      margin-top: $small;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-auto-rows: 7vh;
+      column-gap: 0.5rem;
+      row-gap: 0.5rem;
+    }
+
+    .grid-cell {
+      background-color: $color-white;
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+
+      & img {
+        max-height: 100%;
+        max-width: 100%;
+        height: auto;
+        width: auto;
+      }
+    }
+
+    .cell-name {
+      background-color: $color-gray-60;
+      font-size: $fs9;
+      display: none;
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .grid-cell:hover {
+      border: 1px solid $color-primary;
+
+      & .cell-name {
+        display: block;
+      }
+    }
+
+    .context-menu {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+    }
+  }
+}

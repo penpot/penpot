@@ -1358,6 +1358,87 @@
       "es" : "Alinear arriba"
     }
   },
+  "workspace.assets.assets" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:144" ],
+    "translations" : {
+      "en" : "Assets",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Recursos"
+    }
+  },
+  "workspace.assets.box-filter-all" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:154" ],
+    "translations" : {
+      "en" : "All assets",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Todos"
+    }
+  },
+  "workspace.assets.box-filter-colors" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:156" ],
+    "translations" : {
+      "en" : "Colors",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Colores"
+    }
+  },
+  "workspace.assets.box-filter-graphics" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:155" ],
+    "translations" : {
+      "en" : "Graphics",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Gráficos"
+    }
+  },
+  "workspace.assets.colors" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:91" ],
+    "translations" : {
+      "en" : "Colors",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Colores"
+    }
+  },
+  "workspace.assets.delete" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:83" ],
+    "translations" : {
+      "en" : "Delete",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Borrar"
+    }
+  },
+  "workspace.assets.file-library" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:104" ],
+    "translations" : {
+      "en" : "File library",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Bilioteca del archivo"
+    }
+  },
+  "workspace.assets.graphics" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:68" ],
+    "translations" : {
+      "en" : "Graphics",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Gráficos"
+    }
+  },
+  "workspace.assets.search" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:147" ],
+    "translations" : {
+      "en" : "Search assets",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Buscar recursos"
+    }
+  },
   "workspace.header.menu.disable-dynamic-alignment" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:117" ],
     "translations" : {
@@ -2179,13 +2260,13 @@
     }
   },
   "workspace.sidebar.icons" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/icons.cljs:89" ],
     "translations" : {
       "en" : "Icons",
       "fr" : "Icône",
       "ru" : "Иконки",
       "es" : "Iconos"
-    }
+    },
+    "unused" : true
   },
   "workspace.sidebar.sitemap" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/sitemap.cljs:150" ],
@@ -2194,6 +2275,15 @@
       "fr" : "Pages",
       "ru" : "Страницы",
       "es" : "Páginas"
+    }
+  },
+  "workspace.toolbar.assets" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:105" ],
+    "translations" : {
+      "en" : "Assets (Ctrl + I)",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Recursos (Ctrl + I)"
     }
   },
   "workspace.toolbar.circle" : {
@@ -2206,7 +2296,7 @@
     }
   },
   "workspace.toolbar.color-palette" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:108" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:113" ],
     "translations" : {
       "en" : "Color Palette (---)",
       "fr" : "Palette de couleurs (---)",
@@ -2242,13 +2332,13 @@
     }
   },
   "workspace.toolbar.libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:100" ],
     "translations" : {
       "en" : "Libraries (Ctrl + Shift + L)",
       "fr" : "Librairies (Ctrl + Shift + L)",
       "ru" : "Библиотеки (Ctrl + Shift + L)",
       "es" : "Bibliotecas (Ctrl + Mays + L)"
-    }
+    },
+    "unused" : true
   },
   "workspace.toolbar.path" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/left_toolbar.cljs:88" ],

@@ -430,6 +430,23 @@
     (update [_ state]
       (update state :workspace-images assoc (:id item) item))))
 
+
+;; --- Delete image
+
+(defn delete-file-image
+  [file-id image-id]
+  (ptk/reify ::delete-file-image
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-images dissoc image-id))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [params {:file-id file-id
+                    :image-id image-id}]
+      (rp/mutation :delete-file-image params)))))
+
+
 ;; --- Helpers
 
 (defn purge-page

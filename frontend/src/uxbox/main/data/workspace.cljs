@@ -63,6 +63,7 @@
     :sitemap-pages
     :layers
     :libraries
+    :assets
     :document-history
     :colorpalette
     :element-options
@@ -74,9 +75,10 @@
 (s/def ::layout-flags (s/coll-of ::layout-flag))
 
 (def default-layout
-  #{:sitemap
-    :sitemap-pages
-    :layers
+  #{;; :sitemap
+    ;; :sitemap-pages
+    ;; :layers
+    :assets
     :element-options
     :rules
     :display-grid
@@ -305,7 +307,8 @@
         left-sidebar? (not (empty? (keep layout [:layers
                                                  :sitemap
                                                  :document-history
-                                                 :libraries])))
+                                                 :libraries
+                                                 :assets])))
         right-sidebar? (not (empty? (keep layout [:element-options])))]
     (update-in state [:workspace-local]
                assoc :left-sidebar? left-sidebar?
@@ -1434,8 +1437,10 @@
 
 ;; Persistence
 
+(def fetch-images dwp/fetch-images)
 (def add-image-from-url dwp/add-image-from-url)
 (def upload-image dwp/upload-image)
+(def delete-file-image dwp/delete-file-image)
 (def rename-page dwp/rename-page)
 (def delete-page dwp/delete-page)
 (def create-empty-page dwp/create-empty-page)

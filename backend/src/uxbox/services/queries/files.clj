@@ -169,7 +169,8 @@
 (def ^:private sql:file-images
   "select fi.*
      from file_image as fi
-    where fi.file_id = ?")
+    where fi.file_id = ?
+      and fi.deleted_at is null")
 
 (defn retrieve-file-images
   [conn {:keys [file-id] :as params}]

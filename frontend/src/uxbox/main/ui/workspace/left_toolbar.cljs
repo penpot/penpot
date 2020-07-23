@@ -96,10 +96,15 @@
          :class (when (contains? layout :layers) "selected")
          :on-click #(st/emit! (dw/toggle-layout-flags :sitemap :layers))}
         i/layers]
+       ;; [:li.tooltip.tooltip-right
+       ;;  {:alt (t locale "workspace.toolbar.libraries")
+       ;;   :class (when (contains? layout :libraries) "selected")
+       ;;   :on-click #(st/emit! (dw/toggle-layout-flags :libraries))}
+       ;;  i/icon-set]
        [:li.tooltip.tooltip-right
-        {:alt (t locale "workspace.toolbar.libraries")
-         :class (when (contains? layout :libraries) "selected")
-         :on-click #(st/emit! (dw/toggle-layout-flags :libraries))}
+        {:alt (t locale "workspace.toolbar.assets")
+         :class (when (contains? layout :assets) "selected")
+         :on-click #(st/emit! (dw/toggle-layout-flags :assets))}
         i/icon-set]
        [:li.tooltip.tooltip-right
         {:alt "History"}

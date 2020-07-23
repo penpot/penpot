@@ -79,6 +79,7 @@
 (def picker (icon-xref :picker))
 (def pin (icon-xref :pin))
 (def play (icon-xref :play))
+(def plus (icon-xref :plus))
 (def radius (icon-xref :radius))
 (def recent (icon-xref :recent))
 (def redo (icon-xref :redo))
