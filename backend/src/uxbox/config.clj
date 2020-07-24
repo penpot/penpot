@@ -43,8 +43,22 @@
    :allow-demo-users true
    :registration-enabled true
    :registration-domain-whitelist ""
-   :debug-humanize-transit true
-   })
+   :debug-humanize-transit true})
+
+   ;; LDAP auth disabled by default
+   ;:ldap-auth-host "ldap.mysupercompany.com"
+   ;:ldap-auth-port 636
+   ;:ldap-auth-version "3"
+   ;:ldap-bind-dn "cn=admin,dc=ldap,dc=mysupercompany,dc=com"
+   ;:ldap-bind-password "verysecure"
+   ;:ldap-auth-ssl false
+   ;:ldap-auth-starttls true
+   ;:ldap-auth-base-dn "ou=People,dc=ldap,dc=mysupercompany,dc=com"
+   ;:ldap-auth-user-query "(|(uid=$username)(mail=$username))"
+   ;:ldap-auth-username-attribute "uid"
+   ;:ldap-auth-email-attribute "mail"
+   ;:ldap-auth-fullname-attribute "displayname"
+   ;:ldap-auth-avatar-attribute "jpegPhoto"
 
 (s/def ::http-server-port ::us/integer)
 (s/def ::http-server-debug ::us/boolean)
@@ -78,6 +92,21 @@
 (s/def ::google-client-id ::us/string)
 (s/def ::google-client-secret ::us/string)
 
+(s/def ::ldap-auth-host ::us/string)
+(s/def ::ldap-auth-port ::us/integer)
+(s/def ::ldap-auth-version ::us/string)
+(s/def ::ldap-bind-dn ::us/string)
+(s/def ::ldap-bind-password ::us/string)
+(s/def ::ldap-auth-ssl ::us/boolean)
+(s/def ::ldap-auth-starttls ::us/boolean)
+(s/def ::ldap-auth-base-dn ::us/string)
+(s/def ::ldap-auth-user-query ::us/string)
+(s/def ::ldap-auth-username-attribute ::us/string)
+(s/def ::ldap-auth-email-attribute ::us/string)
+(s/def ::ldap-auth-fullname-attribute ::us/string)
+(s/def ::ldap-auth-avatar-attribute ::us/string)
+(s/def ::ldap-auth-isactivedirectory ::us/boolean)
+
 (s/def ::config
   (s/keys :opt-un [::http-server-cors
                    ::http-server-debug
@@ -105,7 +134,22 @@
                    ::debug-humanize-transit
                    ::allow-demo-users
                    ::registration-enabled
-                   ::image-process-max-threads]))
+                   ::image-process-max-threads
+
+                   ::ldap-auth-host
+                   ::ldap-auth-port
+                   ::ldap-auth-version
+                   ::ldap-bind-dn
+                   ::ldap-bind-password
+                   ::ldap-auth-ssl
+                   ::ldap-auth-starttls
+                   ::ldap-auth-base-dn
+                   ::ldap-auth-user-query
+                   ::ldap-auth-username-attribute
+                   ::ldap-auth-email-attribute
+                   ::ldap-auth-fullname-attribute
+                   ::ldap-auth-avatar-attribute
+                   ::ldap-auth-isactivedirectory]))
 
 (defn env->config
   [env]

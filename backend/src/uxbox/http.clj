@@ -19,6 +19,7 @@
    [uxbox.http.handlers :as handlers]
    [uxbox.http.auth :as auth]
    [uxbox.http.auth.google :as google]
+   [uxbox.http.auth.ldap :as ldap]
    [uxbox.http.middleware :as middleware]
    [uxbox.http.session :as session]
    [uxbox.http.ws :as ws]
@@ -48,6 +49,8 @@
                 :method :post}]
      ["/logout" {:handler auth/logout-handler
                  :method :post}]
+     ["/login-ldap" {:handler ldap/auth
+                     :method :post}]
 
      ["/w" {:middleware [session/auth]}
       ["/query/:type" {:get handlers/query-handler}]
