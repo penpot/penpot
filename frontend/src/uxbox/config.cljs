@@ -15,10 +15,12 @@
         puri   (obj/get config "publicURI")
         wuri   (obj/get config "workerURI")
         gcid   (obj/get config "googleClientID" true)
+        lwl    (obj/get config "loginWithLDAP" false)
         warn   (obj/get config "demoWarning" true)]
     (def default-language "en")
     (def demo-warning warn)
     (def google-client-id gcid)
+    (def login-with-ldap lwl)
     (def worker-uri wuri)
     (def public-uri puri)
     (def default-theme "default")))
