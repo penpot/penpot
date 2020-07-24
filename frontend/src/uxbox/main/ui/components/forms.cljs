@@ -121,12 +121,13 @@
        i/arrow-slide]]]))
 
 (mf/defc submit-button
-  [{:keys [label form] :as props}]
+  [{:keys [label form on-click] :as props}]
   (let [form (mf/use-ctx form-ctx)]
     [:input.btn-primary.btn-large
      {:name "submit"
       :class (when-not (:valid form) "btn-disabled")
       :disabled (not (:valid form))
+      :on-click on-click
       :value label
       :type "submit"}]))
 
