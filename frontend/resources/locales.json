@@ -107,6 +107,15 @@
       "ru" : "Вход"
     }
   },
+  "auth.login-with-ldap-submit-label" : {
+    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:108" ],
+    "translations" : {
+      "en" : "Sign in with LDAP",
+      "fr" : "",
+      "es" : "",
+      "ru" : "Вход через LDAP"
+    }
+  },
   "auth.login-subtitle" : {
     "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:89" ],
     "translations" : {
