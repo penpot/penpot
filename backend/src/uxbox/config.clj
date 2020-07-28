@@ -43,22 +43,22 @@
    :allow-demo-users true
    :registration-enabled true
    :registration-domain-whitelist ""
-   :debug-humanize-transit true})
+   :debug-humanize-transit true
 
-   ;; LDAP auth disabled by default
+   ;; LDAP auth disabled by default. Set ldap-auth-host to enable
    ;:ldap-auth-host "ldap.mysupercompany.com"
-   ;:ldap-auth-port 636
-   ;:ldap-auth-version "3"
+   ;:ldap-auth-port 389
+   :ldap-auth-version "3"
    ;:ldap-bind-dn "cn=admin,dc=ldap,dc=mysupercompany,dc=com"
    ;:ldap-bind-password "verysecure"
    ;:ldap-auth-ssl false
-   ;:ldap-auth-starttls true
+   ;:ldap-auth-starttls false
    ;:ldap-auth-base-dn "ou=People,dc=ldap,dc=mysupercompany,dc=com"
-   ;:ldap-auth-user-query "(|(uid=$username)(mail=$username))"
-   ;:ldap-auth-username-attribute "uid"
-   ;:ldap-auth-email-attribute "mail"
-   ;:ldap-auth-fullname-attribute "displayname"
-   ;:ldap-auth-avatar-attribute "jpegPhoto"
+   :ldap-auth-user-query "(|(uid=$username)(mail=$username))"
+   :ldap-auth-username-attribute "uid"
+   :ldap-auth-email-attribute "mail"
+   :ldap-auth-fullname-attribute "displayName"
+   :ldap-auth-avatar-attribute "jpegPhoto"})
 
 (s/def ::http-server-port ::us/integer)
 (s/def ::http-server-debug ::us/boolean)
