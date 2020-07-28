@@ -94,7 +94,6 @@
 
 (s/def ::ldap-auth-host ::us/string)
 (s/def ::ldap-auth-port ::us/integer)
-(s/def ::ldap-auth-version ::us/string)
 (s/def ::ldap-bind-dn ::us/string)
 (s/def ::ldap-bind-password ::us/string)
 (s/def ::ldap-auth-ssl ::us/boolean)
