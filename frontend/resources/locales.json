@@ -111,8 +111,8 @@
     "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:108" ],
     "translations" : {
       "en" : "Sign in with LDAP",
-      "fr" : "",
-      "es" : "",
+      "fr" : "Se connecter via LDAP",
+      "es" : "Entrar con LDAP",
       "ru" : "Вход через LDAP"
     }
   },
