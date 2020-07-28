@@ -53,7 +53,7 @@
   com.draines/postal {:mvn/version "2.0.3"
                       :exclusions [commons-codec/commons-codec]}
 
-  org.clojars.pntblnk/clj-ldap {:mvn/version"0.0.16"}
+  puppetlabs/clj-ldap {:mvn/version"0.3.0"}
 
   ;; exception printing
   io.aviso/pretty {:mvn/version "0.1.37"}

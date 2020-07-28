@@ -31,10 +31,10 @@
                (log/errorf e "Cannot connect to LDAP %s:%s"
                              (:ldap-auth-host cfg/config) (:ldap-auth-port cfg/config)))))
   :stop (when (realized? *ldap-pool)
-          (some-> *ldap-pool deref (client/close))))
+          (some-> *ldap-pool deref (.close))))
 
 (defn- auth-with-ldap [username password]
-  (when-let [conn (some-> *ldap-pool deref (client/get-connection))]
+  (when-some [conn (some-> *ldap-pool deref)]
     (let [user-search-query (replace-several (:ldap-auth-user-query cfg/config)
                                              "$username" username)
           user-attributes (-> cfg/config
@@ -43,21 +43,18 @@
                                             :ldap-auth-fullname-attribute
                                             :ldap-auth-avatar-attribute])
                               vals)]
-      (try
-        (when-some [user-entry (-> conn
-                                   (client/search
-                                     (:ldap-auth-base-dn cfg/config)
-                                     {:filter user-search-query
-                                      :sizelimit 1
-                                      :attributes user-attributes})
-                                   first)]
-          (when-not (client/bind? conn (:dn user-entry) password)
-            (ex/raise :type :authentication
-                      :code ::wrong-credentials))
-          (set/rename-keys user-entry {(keyword (:ldap-auth-avatar-attribute cfg/config)) :photo
-                                       (keyword (:ldap-auth-fullname-attribute cfg/config)) :fullname
-                                       (keyword (:ldap-auth-email-attribute cfg/config)) :email}))
-        (finally (client/release-connection @*ldap-pool conn))))))
+      (when-some [user-entry (-> conn
+                                 (client/search (:ldap-auth-base-dn cfg/config)
+                                                {:filter user-search-query
+                                                 :sizelimit 1
+                                                 :attributes user-attributes})
+                                 (first))]
+        (when-not (client/bind? conn (:dn user-entry) password)
+          (ex/raise :type :authentication
+                    :code ::wrong-credentials))
+        (set/rename-keys user-entry {(keyword (:ldap-auth-avatar-attribute cfg/config)) :photo
+                                     (keyword (:ldap-auth-fullname-attribute cfg/config)) :fullname
+                                     (keyword (:ldap-auth-email-attribute cfg/config)) :email})))))
 
 (defn auth [req]
   (let [data (:body-params req)
