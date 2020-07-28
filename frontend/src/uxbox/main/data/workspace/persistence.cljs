@@ -289,7 +289,7 @@
   (ptk/reify ::fetch-images
     ptk/WatchEvent
     (watch [_ state stream]
-      (->> (rp/query :file-images {:file-id file-id})
+      (->> (rp/query :images {:file-id file-id})
            (rx/map images-fetched)))))
 
 (defn images-fetched
@@ -299,6 +299,26 @@
     (update [_ state]
       (let [images (d/index-by :id images)]
         (assoc state :workspace-images images)))))
+
+;; --- Fetch Workspace Colors
+
+(declare colors-fetched)
+
+(defn fetch-colors
+  [file-id]
+  (ptk/reify ::fetch-colors
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/query :colors {:file-id file-id})
+           (rx/map colors-fetched)))))
+
+(defn colors-fetched
+  [colors]
+  (ptk/reify ::colors-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [colors (d/index-by :id colors)]
+        (assoc state :workspace-colors colors)))))
 
 
 ;; --- Upload Image

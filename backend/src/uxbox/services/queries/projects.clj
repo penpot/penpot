@@ -48,10 +48,19 @@
         and (ppr.is_admin = true or
              ppr.is_owner = true or
              ppr.can_edit = true)
+      union
+     select p.*,
+            (select count(*) from file as f
+              where f.project_id = p.id
+                and deleted_at is null)
+       from project as p
+      where p.team_id = uuid_nil()
+        and p.deleted_at is null
    )
    select *
      from projects
     where team_id = ?
+       or team_id = uuid_nil()
     order by modified_at desc")
 
 (def ^:private sql:project-by-id

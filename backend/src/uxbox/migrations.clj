@@ -59,7 +59,11 @@
 
     {:desc "Add session_id field to page_change table"
      :name "0011-add-session-id-field-to-page-change-table"
-     :fn (mg/resource "migrations/0011-add-session-id-field-to-page-change-table.sql")}]})
+     :fn (mg/resource "migrations/0011-add-session-id-field-to-page-change-table.sql")}
+
+    {:desc "Make libraries linked to a file"
+     :name "0012-make-libraries-linked-to-a-file"
+     :fn (mg/resource "migrations/0012-make-libraries-linked-to-a-file.sql")}]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Entry point

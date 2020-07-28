@@ -89,10 +89,24 @@
     [:div.asset-group
      [:div.group-title
        (tr "workspace.assets.colors")
-       [:div.group-button {:on-click add-color} i/plus]]]))
+       [:span (str "\u00A0(") (count colors) ")"] ;; Unicode 00A0 is non-breaking space
+       [:div.group-button {:on-click add-color} i/plus]]
+     [:div.group-list
+      (for [color (sort-by :name colors)]
+        [:div.group-list-item {:key (:name color)
+                               :on-context-menu #(println "context")}
+         [:div.color-block {:style {:background-color (:content color)}}]
+         (:name color)
+         (when-not (= (:name color) (:content color))
+           [:span (:content color)])])]]))
 
 (mf/defc library-toolbox
-  [{:keys [library-id images initial-open? search-term box-filter] :as props}]
+  [{:keys [library-id
+           images
+           colors
+           initial-open?
+           search-term
+           box-filter] :as props}]
   (let [open? (mf/use-state initial-open?)
         toggle-open #(swap! open? not)]
     [:div.tool-window
@@ -107,19 +121,23 @@
         (when (or (= box-filter :all) (= box-filter :graphics))
           [:& graphics-box {:library-id library-id :images images}])
         (when (or (= box-filter :all) (= box-filter :colors))
-          [:& colors-box {:colors {}}])])]))
+          [:& colors-box {:colors colors}])])]))
 
 (mf/defc assets-toolbox
   []
   (let [team-id (-> refs/workspace-project mf/deref :team-id)
         file-id (-> refs/workspace-file mf/deref :id)
         file-images (mf/deref refs/workspace-images)
+        file-colors (mf/deref refs/workspace-colors)
 
         state (mf/use-state {:search-term ""
                              :box-filter :all})
 
         filtered-images (filter #(matches-search (:name %) (:search-term @state))
                                 (vals file-images))
+
+        filtered-colors (filter #(matches-search (:name %) (:search-term @state))
+                                (vals file-colors))
 
         on-search-term-change (fn [event]
                                (let [value (-> (dom/get-target event)
@@ -135,7 +153,8 @@
     (mf/use-effect
      (mf/deps file-id)
      #(when file-id
-        (st/emit! (dw/fetch-images file-id))))
+        (st/emit! (dw/fetch-images file-id))
+        (st/emit! (dw/fetch-colors file-id))))
 
     [:div.assets-bar
 
@@ -158,6 +177,7 @@
 
      [:& library-toolbox {:library-id file-id
                           :images filtered-images
+                          :colors filtered-colors
                           :initial-open? true
                           :search-term (:search-term @state)
                           :box-filter (:box-filter @state)}]]))

@@ -33,7 +33,7 @@
 (s/def ::id ::us/uuid)
 (s/def ::name ::us/string)
 (s/def ::profile-id ::us/uuid)
-(s/def ::library-id ::us/uuid)
+(s/def ::file-id ::us/uuid)
 (s/def ::team-id ::us/uuid)
 (s/def ::url ::us/url)
 
@@ -112,7 +112,7 @@
 (declare persist-image-thumbnail-on-fs)
 
 (def valid-image-types?
-  #{"image/jpeg", "image/png", "image/webp"})
+  #{"image/jpeg", "image/png", "image/webp", "image/svg+xml"})
 
 (s/def :uxbox$upload/filename ::us/string)
 (s/def :uxbox$upload/size ::us/integer)
@@ -128,17 +128,17 @@
 (s/def ::content ::upload)
 
 (s/def ::add-image-from-url
-  (s/keys :req-un [::profile-id ::library-id ::url]
+  (s/keys :req-un [::profile-id ::file-id ::url]
           :opt-un [::id]))
 
 (s/def ::upload-image
-  (s/keys :req-un [::profile-id ::library-id ::name ::content]
+  (s/keys :req-un [::profile-id ::file-id ::name ::content]
           :opt-un [::id]))
 
 (sm/defmutation ::add-image-from-url
-  [{:keys [profile-id library-id url] :as params}]
+  [{:keys [profile-id file-id url] :as params}]
   (db/with-atomic [conn db/pool]
-    (let [lib (select-library-for-update conn library-id)]
+    (let [lib (select-library-for-update conn file-id)]
       (teams/check-edition-permissions! conn profile-id (:team-id lib))
       (let [content (images/download-image url)
             params' (merge params {:content content
@@ -146,14 +146,14 @@
         (create-image conn params')))))
 
 (sm/defmutation ::upload-image
-  [{:keys [profile-id library-id] :as params}]
+  [{:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn db/pool]
-    (let [lib (select-library-for-update conn library-id)]
+    (let [lib (select-library-for-update conn file-id)]
       (teams/check-edition-permissions! conn profile-id (:team-id lib))
       (create-image conn params))))
 
 (defn create-image
-  [conn {:keys [id content library-id name]}]
+  [conn {:keys [id content file-id name]}]
   (when-not (valid-image-types? (:content-type content))
     (ex/raise :type :validation
               :code :image-type-not-allowed
@@ -165,11 +165,15 @@
         opts  (assoc thumbnail-options
                     :input {:mtype (:mtype info)
                             :path path})
-        thumb (persist-image-thumbnail-on-fs opts)]
+        thumb (if-not (= (:mtype info) "image/svg+xml")
+                (persist-image-thumbnail-on-fs opts)
+                (assoc info
+                       :path path
+                       :quality 0))]
 
     (-> (db/insert! conn :image
                     {:id (or id (uuid/next))
-                     :library-id library-id
+                     :file-id file-id
                      :name name
                      :path (str path)
                      :width (:width info)

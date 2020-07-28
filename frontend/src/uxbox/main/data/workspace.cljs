@@ -75,10 +75,9 @@
 (s/def ::layout-flags (s/coll-of ::layout-flag))
 
 (def default-layout
-  #{;; :sitemap
-    ;; :sitemap-pages
-    ;; :layers
-    :assets
+  #{:sitemap
+    :sitemap-pages
+    :layers
     :element-options
     :rules
     :display-grid
@@ -1441,6 +1440,7 @@
 (def add-image-from-url dwp/add-image-from-url)
 (def upload-image dwp/upload-image)
 (def delete-file-image dwp/delete-file-image)
+(def fetch-colors dwp/fetch-colors)
 (def rename-page dwp/rename-page)
 (def delete-page dwp/delete-page)
 (def create-empty-page dwp/create-empty-page)

@@ -119,26 +119,27 @@
 (declare create-color)
 
 (s/def ::create-color
-  (s/keys :req-un [::profile-id ::name ::content ::library-id]
+  (s/keys :req-un [::profile-id ::name ::content ::file-id]
           :opt-un [::id]))
 
 (sm/defmutation ::create-color
-  [{:keys [profile-id library-id] :as params}]
+  [{:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn db/pool]
-    (let [lib (select-library-for-update conn library-id)]
-      (teams/check-edition-permissions! conn profile-id (:team-id lib))
-      (create-color conn params))))
+    (create-color conn params)))
+    ;; (let [lib (select-library-for-update conn library-id)]
+    ;;   (teams/check-edition-permissions! conn profile-id (:team-id lib))
+    ;;   (create-color conn params))))
 
 (def ^:private sql:create-color
-  "insert into color (id, name, library_id, content)
+  "insert into color (id, name, file_id, content)
    values ($1, $2, $3, $4) returning *")
 
 (defn create-color
-  [conn {:keys [id name library-id content]}]
+  [conn {:keys [id name file-id content]}]
   (let [id (or id (uuid/next))]
     (db/insert! conn :color {:id id
                              :name name
-                             :library-id library-id
+                             :file-id file-id
                              :content content})))
 
 

@@ -134,6 +134,31 @@
       }
     }
 
+    .group-list {
+      overflow-y: scroll;
+    }
+
+    .group-list-item {
+      display: flex;
+      align-items: center;
+      margin-top: $x-small;
+      font-size: $fs11;
+      color: $color-white;
+
+      & .color-block {
+        width: 20px;
+        height: 20px;
+        border-radius: 10px;
+        margin-right: $x-small;
+      }
+
+      & span {
+        margin-left: $x-small;
+        color: $color-gray-30;
+        text-transform: uppercase;
+      }
+    }
+
     .context-menu {
       position: absolute;
       top: 10px;

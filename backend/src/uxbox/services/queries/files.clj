@@ -53,6 +53,11 @@
         and (ppr.is_admin = true or
              ppr.is_owner = true or
              ppr.can_edit = true)
+      union
+     select p.*
+       from project as p
+      where p.team_id = uuid_nil()
+        and p.deleted_at is null
    )
    select distinct
           file.*,
@@ -80,23 +85,52 @@
     (mapv decode-row rows)))
 
 
-;; --- Query: Draft Files
+;; --- Query: Project Files
 
 (def ^:private sql:files
-  "select distinct
+  "with projects as (
+     select p.*
+       from project as p
+      inner join team_profile_rel as tpr on (tpr.team_id = p.team_id)
+      where tpr.profile_id = ?
+        and p.deleted_at is null
+        and (tpr.is_admin = true or
+             tpr.is_owner = true or
+             tpr.can_edit = true)
+      union
+     select p.*
+       from project as p
+      inner join project_profile_rel as ppr on (ppr.project_id = p.id)
+      where ppr.profile_id = ?
+        and p.deleted_at is null
+        and (ppr.is_admin = true or
+             ppr.is_owner = true or
+             ppr.can_edit = true)
+      union
+     select p.*
+       from project as p
+      where p.team_id = uuid_nil()
+        and p.deleted_at is null
+   )
+   select distinct
           f.*,
           array_agg(pg.id) over pages_w as pages,
           first_value(pg.data) over pages_w as data
      from file as f
-    inner join file_profile_rel as fp_r on (fp_r.file_id = f.id)
      left join page as pg on (f.id = pg.file_id)
-    where fp_r.profile_id = ?
-      and f.project_id = ?
+    where f.project_id = ?
+      and (exists (select *
+                    from file_profile_rel as fp_r
+                   where fp_r.profile_id = ?
+                     and fp_r.file_id = f.id
+                     and (fp_r.is_admin = true or
+                          fp_r.is_owner = true or
+                          fp_r.can_edit = true))
+           or exists (select *
+                        from projects as p
+                       where p.id = f.project_id))
       and f.deleted_at is null
       and pg.deleted_at is null
-      and (fp_r.is_admin = true or
-           fp_r.is_owner = true or
-           fp_r.can_edit = true)
    window pages_w as (partition by f.id order by pg.ordering
                       range between unbounded preceding
                                 and unbounded following)
@@ -108,7 +142,9 @@
 
 (sq/defquery ::files
   [{:keys [profile-id project-id] :as params}]
-  (->> (db/exec! db/pool [sql:files profile-id project-id])
+  (->> (db/exec! db/pool [sql:files
+                          profile-id profile-id
+                          project-id profile-id])
        (mapv decode-row)))
 
 ;; --- Query: File Permissions
@@ -136,7 +172,12 @@
      from project_profile_rel as ppr
     inner join file as f on (f.project_id = ppr.project_id)
     where f.id = ?
-      and ppr.profile_id = ?;")
+      and ppr.profile_id = ?
+   union all
+   select true, true, true
+     from file as f
+    inner join project as p on (f.project_id = p.id)
+      and p.team_id = uuid_nil();")
 
 (defn check-edition-permissions!
   [conn profile-id file-id]

@@ -60,6 +60,9 @@
 (def workspace-images
   (l/derived :workspace-images st/state))
 
+(def workspace-colors
+  (l/derived :workspace-colors st/state))
+
 (def workspace-users
   (l/derived :workspace-users st/state))
 

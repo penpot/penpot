@@ -21,7 +21,7 @@
 (s/def ::name ::us/string)
 (s/def ::profile-id ::us/uuid)
 (s/def ::team-id ::us/uuid)
-(s/def ::library-id ::us/uuid)
+(s/def ::file-id ::us/uuid)
 
 ;; --- Query: Image Librarys
 
@@ -77,32 +77,34 @@
 (declare retrieve-images)
 
 (s/def ::images
-  (s/keys :req-un [::profile-id ::library-id]))
+  (s/keys :req-un [::profile-id ::file-id]))
 
 ;; TODO: check if we can resolve url with transducer for reduce
 ;; garbage generation for each request
 
 (sq/defquery ::images
-  [{:keys [profile-id library-id] :as params}]
+  [{:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn db/pool]
-    (let [lib (retrieve-library conn library-id)]
-      (teams/check-read-permissions! conn profile-id (:team-id lib))
-      (->> (retrieve-images conn library-id)
-           (mapv #(images/resolve-urls % :path :uri))
-           (mapv #(images/resolve-urls % :thumb-path :thumb-uri))))))
+    (->> (retrieve-images conn file-id)
+         (mapv #(images/resolve-urls % :path :uri))
+         (mapv #(images/resolve-urls % :thumb-path :thumb-uri)))))
+    ;; (let [lib (retrieve-library conn file-id)]
+    ;;   (teams/check-read-permissions! conn profile-id (:team-id lib))
+    ;;   (->> (retrieve-images conn file-id)
+    ;;        (mapv #(images/resolve-urls % :path :uri))
+    ;;        (mapv #(images/resolve-urls % :thumb-path :thumb-uri))))))
 
 
 (def ^:private sql:images
-  "select img.*
+  "select *
      from image as img
-    inner join image_library as lib on (lib.id = img.library_id)
     where img.deleted_at is null
-      and img.library_id = ?
+      and img.file_id = ?
    order by created_at desc")
 
 (defn- retrieve-images
-  [conn library-id]
-  (db/exec! conn [sql:images library-id]))
+  [conn file-id]
+  (db/exec! conn [sql:images file-id]))
 
 
 
@@ -125,9 +127,9 @@
 
 (def ^:private sql:single-image
   "select img.*,
-          lib.team_id as team_id
+          file.team_id as team_id
      from image as img
-    inner join image_library as lib on (lib.id = img.library_id)
+    inner join file on (file.id = img.file_id)
     where img.deleted_at is null
       and img.id = ?
    order by created_at desc")

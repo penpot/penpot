@@ -62,7 +62,7 @@
                :is-admin true
                :can-edit true}))
 
-(defn- create-file
+(defn create-file
   [conn {:keys [id profile-id name project-id] :as params}]
   (let [id   (or id (uuid/next))
         file (db/insert! conn :file {:id id :project-id project-id :name name})]
@@ -70,7 +70,7 @@
          (create-file-profile conn))
     file))
 
-(defn- create-page
+(defn create-page
   [conn {:keys [file-id] :as params}]
   (let [id  (uuid/next)]
     (db/insert! conn :page
