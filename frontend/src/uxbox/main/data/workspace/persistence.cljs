@@ -448,7 +448,8 @@
   (ptk/reify ::image-created
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-images assoc (:id item) item))))
+      state)))
+      ;; (update state :workspace-images assoc (:id item) item))))
 
 
 ;; --- Delete image

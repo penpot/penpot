@@ -18,6 +18,7 @@
    [uxbox.common.geom.point :as gpt]
    [uxbox.main.ui.icons :as i]
    [uxbox.main.data.workspace :as dw]
+   [uxbox.main.data.images :as di]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.keyboard :as kbd]
@@ -28,8 +29,9 @@
    [uxbox.common.uuid :as uuid]
    [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.data :refer [classnames]]
-   [uxbox.main.ui.components.tab-container :refer [tab-container tab-element]]
    [uxbox.main.data.library :as dlib]
+   [uxbox.main.ui.components.tab-container :refer [tab-container tab-element]]
+   [uxbox.main.ui.components.file-uploader :refer [file-uploader]]
    [uxbox.main.ui.components.context-menu :refer [context-menu]]))
 
 (defn matches-search
@@ -47,32 +49,54 @@
                              :left nil
                              :image-id nil})
 
-        add-graphic #(println "añadir gráfico")
+        file-input (mf/use-ref nil)
+
+        add-graphic
+        #(dom/click (mf/ref-val file-input))
 
         delete-graphic
         #(st/emit! (dw/delete-file-image library-id (:image-id @state)))
 
-        on-context-menu (fn [image-id]
-                          (fn [event]
-                            (let [pos (dom/get-client-position event)
-                                  top (:y pos)
-                                  left (- (:x pos) 20)]
-                              (dom/prevent-default event)
-                              (swap! state assoc :menu-open true
-                                                 :top top
-                                                 :left left
-                                                 :image-id image-id))))]
+        on-files-selected
+        (fn [files]
+          (st/emit! (di/create-images library-id files)))
+
+        on-context-menu
+        (fn [image-id]
+          (fn [event]
+            (let [pos (dom/get-client-position event)
+                  top (:y pos)
+                  left (- (:x pos) 20)]
+              (dom/prevent-default event)
+              (swap! state assoc :menu-open true
+                     :top top
+                     :left left
+                     :image-id image-id))))
+
+        on-drag-start
+        (fn [uri]
+          (fn [event]
+            (dnd/set-data! event "text/uri-list" uri)
+            (dnd/set-allowed-effect! event "move")))]
 
     [:div.asset-group
      [:div.group-title
       (tr "workspace.assets.graphics")
       [:span (str "\u00A0(") (count images) ")"] ;; Unicode 00A0 is non-breaking space
-      [:div.group-button {:on-click add-graphic} i/plus]]
+      [:div.group-button {:on-click add-graphic}
+       i/plus
+       [:& file-uploader {:accept "image/jpeg,image/png,image/webp,image/svg+xml"
+                          :multi true
+                          :input-ref file-input
+                          :on-selected on-files-selected}]]]
      [:div.group-grid
        (for [image (sort-by :name images)]
          [:div.grid-cell {:key (:id image)
-                          :on-context-menu (on-context-menu (:id image))}
-          [:img {:src (:thumb-uri image)}]
+                          :draggable true
+                          :on-context-menu (on-context-menu (:id image))
+                          :on-drag-start (on-drag-start (:uri image))}
+          [:img {:src (:thumb-uri image)
+                 :draggable false}] ;; Also need to add css pointer-events: none
           [:div.cell-name (:name image)]])
        [:& context-menu
         {:selectable false

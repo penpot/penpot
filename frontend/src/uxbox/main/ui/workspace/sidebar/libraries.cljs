@@ -113,7 +113,7 @@
              (if (= section :icons)
                [:svg {:view-box (->> item :metadata :view-box (str/join " "))
                       :width (-> item :metadata :width)
-                      :height (-> item :metadat :height)
+                      :height (-> item :metadata :height)
                       :dangerouslySetInnerHTML {:__html (:content item)}}]
                [:img {:draggable false
                       :src (:thumb-uri item)}])

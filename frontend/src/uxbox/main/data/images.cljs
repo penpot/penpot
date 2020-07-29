@@ -353,7 +353,7 @@
 
 ;; --- Create Image
 (declare create-images-result)
-(def allowed-file-types #{"image/jpeg" "image/png" "image/webp"})
+(def allowed-file-types #{"image/jpeg" "image/png" "image/webp" "image/svg+xml"})
 (def max-file-size (* 5 1024 1024))
 
 ;; TODO: unify with upload-image at main/data/workspace/persistence.cljs
@@ -361,9 +361,9 @@
 ;; https://tree.taiga.io/project/uxboxproject/us/440
 
 (defn create-images
-  ([library-id files] (create-images library-id files identity))
-  ([library-id files on-uploaded]
-   (us/verify (s/nilable ::us/uuid) library-id)
+  ([file-id files] (create-images file-id files identity))
+  ([file-id files on-uploaded]
+   (us/verify (s/nilable ::us/uuid) file-id)
    (us/verify fn? on-uploaded)
    (ptk/reify ::create-images
      ptk/WatchEvent
@@ -397,7 +397,7 @@
              prepare
              (fn [file]
                {:name (.-name file)
-                :library-id library-id
+                :file-id file-id
                 :content file})]
 
          (st/emit! (dm/show {:content (tr "image.loading")
@@ -411,17 +411,17 @@
               (rx/reduce conj [])
               (rx/do on-success)
               (rx/mapcat identity)
-              (rx/map (partial create-images-result library-id))
+              (rx/map (partial create-images-result file-id))
               (rx/catch on-error)))))))
 
 ;; --- Image Created
 
 (defn create-images-result
-  [library-id item]
-  #_(us/verify ::image item)
+  [file-id image]
+  #_(us/verify ::image image)
   (ptk/reify ::create-images-result
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (update-in [:library-items :images library-id] #(into [item] %))))))
+          (assoc-in [:workspace-images (:id image)] image)))))
 

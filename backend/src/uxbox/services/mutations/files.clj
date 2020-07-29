@@ -172,7 +172,11 @@
         opts  (assoc imgs/thumbnail-options
                     :input {:mtype (:mtype info)
                             :path path})
-        thumb (imgs/persist-image-thumbnail-on-fs opts)]
+        thumb (if-not (= (:mtype info) "image/svg+xml")
+                (imgs/persist-image-thumbnail-on-fs opts)
+                (assoc info
+                       :path path
+                       :quality 0))]
 
     (-> (db/insert! conn :file-image
                     {:file-id file-id

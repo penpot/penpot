@@ -62,7 +62,7 @@
 
 ;; --- Rename Library
 
-(declare select-library-for-update)
+(declare select-file-for-update)
 
 (s/def ::rename-image-library
   (s/keys :req-un [::id ::profile-id ::name]))
@@ -70,15 +70,26 @@
 (sm/defmutation ::rename-image-library
   [{:keys [profile-id id name] :as params}]
   (db/with-atomic [conn db/pool]
-    (let [lib (select-library-for-update conn id)]
+    (let [lib (select-file-for-update conn id)]
       (teams/check-edition-permissions! conn profile-id (:team-id lib))
       (db/update! conn :image-library
                   {:name name}
                   {:id id}))))
 
-(defn- select-library-for-update
+(def ^:private sql:select-file-for-update
+  "select file.*,
+          project.team_id as team_id
+     from file
+    inner join project on (project.id = file.project_id)
+    where file.id = ?
+      for update of file")
+
+(defn- select-file-for-update
   [conn id]
-  (db/get-by-id conn :image-library id {:for-update true}))
+  (let [row (db/exec-one! conn [sql:select-file-for-update id])]
+    (when-not row
+      (ex/raise :type :not-found))
+    row))
 
 
 ;; --- Delete Library
@@ -91,7 +102,7 @@
 (sm/defmutation ::delete-image-library
   [{:keys [id profile-id] :as params}]
   (db/with-atomic [conn db/pool]
-    (let [lib (select-library-for-update conn id)]
+    (let [lib (select-file-for-update conn id)]
       (teams/check-edition-permissions! conn profile-id (:team-id lib))
 
       ;; Schedule object deletion
@@ -138,8 +149,8 @@
 (sm/defmutation ::add-image-from-url
   [{:keys [profile-id file-id url] :as params}]
   (db/with-atomic [conn db/pool]
-    (let [lib (select-library-for-update conn file-id)]
-      (teams/check-edition-permissions! conn profile-id (:team-id lib))
+    (let [file (select-file-for-update conn file-id)]
+      (teams/check-edition-permissions! conn profile-id (:team-id file))
       (let [content (images/download-image url)
             params' (merge params {:content content
                                    :name (:filename content)})]
@@ -148,8 +159,8 @@
 (sm/defmutation ::upload-image
   [{:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn db/pool]
-    (let [lib (select-library-for-update conn file-id)]
-      (teams/check-edition-permissions! conn profile-id (:team-id lib))
+    (let [file (select-file-for-update conn file-id)]
+      (teams/check-edition-permissions! conn profile-id (:team-id file))
       (create-image conn params))))
 
 (defn create-image
@@ -239,8 +250,6 @@
     (when-not row
       (ex/raise :type :not-found))
     row))
-
-
 
 ;; --- Delete Image
 
