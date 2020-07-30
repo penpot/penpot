@@ -25,7 +25,7 @@
 (defn- request-export
   [shape exports]
   (http/send! {:method :post
-               :uri "/export/bitmap"
+               :uri "/export"
                :response-type :blob
                :auth true
                :body {:page-id (:page-id shape)
@@ -140,7 +140,8 @@
            [:select.input-select {:value (name (:type export))
                                   :on-change (partial on-type-change index)}
             [:option {:value "png"} "PNG"]
-            [:option {:value "jpeg"} "JPEG"]]
+            [:option {:value "jpeg"} "JPEG"]
+            [:option {:value "svg"} "SVG"]]
            [:div.delete-icon {:on-click (partial delete-export index)}
             i/minus]])
 

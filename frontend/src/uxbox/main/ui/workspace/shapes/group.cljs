@@ -39,18 +39,21 @@
       [props]
       (let [shape (unchecked-get props "shape")
             frame (unchecked-get props "frame")
-            on-mouse-down   (mf/use-callback (mf/deps shape)
-                                             #(common/on-mouse-down % shape))
-            on-context-menu (mf/use-callback (mf/deps shape)
-                                             #(common/on-context-menu % shape))
 
-            childs-ref   (mf/use-memo (mf/deps shape)
-                                      #(refs/objects-by-id (:shapes shape)))
+            on-mouse-down
+            (mf/use-callback (mf/deps shape) #(common/on-mouse-down % shape))
+
+            on-context-menu
+            (mf/use-callback (mf/deps shape) #(common/on-context-menu % shape))
+
+            childs-ref   (mf/use-memo (mf/deps shape) #(refs/objects-by-id (:shapes shape)))
             childs       (mf/deref childs-ref)
 
-            is-child-selected-ref (mf/use-memo (mf/deps (:id shape))
-                                               #(refs/is-child-selected? (:id shape)))
-            is-child-selected?    (mf/deref is-child-selected-ref)
+            is-child-selected-ref
+            (mf/use-memo (mf/deps (:id shape)) #(refs/is-child-selected? (:id shape)))
+
+            is-child-selected?
+            (mf/deref is-child-selected-ref)
 
             on-double-click
             (mf/use-callback

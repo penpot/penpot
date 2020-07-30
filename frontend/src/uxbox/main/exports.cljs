@@ -66,6 +66,7 @@
       (let [childs (mapv #(get objects %) (:shapes shape))]
         [:& group-shape {:frame frame
                          :shape shape
+                         :is-child-selected? true
                          :childs childs}]))))
 
 (defn shape-wrapper-factory

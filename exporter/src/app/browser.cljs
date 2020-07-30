@@ -19,10 +19,10 @@
          :or {user-agent USER-AGENT
               scale 1}}]
   (let [[width height] viewport]
-    (.emulate page #js {:viewport #js {:width width
-                                       :height height
-                                       :deviceScaleFactor scale}
-                        :userAgent user-agent})))
+    (.emulate ^js page #js {:viewport #js {:width width
+                                           :height height
+                                           :deviceScaleFactor scale}
+                            :userAgent user-agent})))
 
 (defn navigate!
   ([page url] (navigate! page url nil))
@@ -36,10 +36,12 @@
 
 (defn screenshot
   ([frame] (screenshot frame nil))
-  ([frame {:keys [full-page? omit-background?]
+  ([frame {:keys [full-page? omit-background? type]
            :or {full-page? false
+                type "png"
                 omit-background? false}}]
    (.screenshot ^js frame #js {:fullPage full-page?
+                               :type (name type)
                                :omitBackground omit-background?})))
 
 (defn eval!
@@ -49,6 +51,10 @@
 (defn select
   [frame selector]
   (.$ ^js frame selector))
+
+(defn select-all
+  [frame selector]
+  (.$$ ^js frame selector))
 
 (defn set-cookie!
   [page {:keys [key value domain]}]

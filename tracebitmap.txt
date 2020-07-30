@@ -1,5 +1,8 @@
 How to trace a bitmap to svg in multiple colors:
 
+
+Dependencies: imagemagick, netpbm, potrace
+
 Generate the PPM format from PNG:
 
   convert download.png download.ppm

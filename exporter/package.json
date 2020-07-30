@@ -15,10 +15,12 @@
     "puppeteer": "^4.0.1",
     "puppeteer-cluster": "^0.21.0",
     "raw-body": "^2.4.1",
+    "svgo": "^1.3.2",
+    "xml-js": "^1.6.11",
     "xregexp": "^4.3.0"
   },
   "devDependencies": {
-    "shadow-cljs": "^2.10.13",
+    "shadow-cljs": "^2.10.17",
     "source-map-support": "^0.5.19"
   }
 }

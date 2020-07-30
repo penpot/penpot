@@ -30,7 +30,6 @@
          [:& shape-wrapper {:frame frame
                             :shape item
                             :key (:id item)}])
-
        (when (not is-child-selected?)
          [:rect {:transform transform
                  :x x
