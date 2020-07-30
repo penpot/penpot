@@ -449,7 +449,7 @@
   [path]
   (let [[basedir libraries] (read-file path)]
     (db/with-atomic [conn db/pool]
-      (let [project-id (create-project-if-not-exists conn {:name "Media loader"})]
+      (let [project-id (create-project-if-not-exists conn {:name "System libraries"})]
         (run! #(process-library conn basedir project-id %) libraries)))))
 
 (defn -main

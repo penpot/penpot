@@ -324,7 +324,7 @@
 ;; --- Upload Image
 
 (declare image-uploaded)
-(def allowed-file-types #{"image/jpeg" "image/png" "image/webp"})
+(def allowed-file-types #{"image/jpeg" "image/png" "image/webp" "image/svg+xml"})
 (def max-file-size (* 5 1024 1024))
 
 ;; TODO: unify with create-images at main/data/images.cljs

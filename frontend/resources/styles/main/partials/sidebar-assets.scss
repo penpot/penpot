@@ -15,16 +15,14 @@
     margin: $small $small 0 $small;
   }
 
-  .search-input {
-    background-color: $color-gray-50;
+  .search-block {
     border: 1px solid $color-gray-30;
-    color: $color-gray-10;
-    font-size: $fs12;
     margin: $small $small 0 $small;
     padding: $x-small;
+    display: flex;
+    align-items: center;
 
-    &:focus {
-      color: lighten($color-gray-10, 8%);
+    &:focus-within {
       border-color: $color-primary !important;
     }
 
@@ -32,6 +30,35 @@
       border-color: $color-gray-20;
     }
 
+    & .search-input {
+      background-color: $color-gray-50;
+      border: none;
+      color: $color-gray-10;
+      font-size: $fs12;
+      margin: 0;
+      padding: 0;
+      flex-grow: 1;
+
+      &:focus {
+        color: lighten($color-gray-10, 8%);
+      }
+    }
+
+    & .search-icon {
+      display: flex;
+      align-items: center;
+
+      svg {
+        fill: $color-gray-30;
+        height: 15px;
+        width: 15px;
+      }
+
+      &.close {
+        transform: rotate(45deg);
+        cursor: pointer;
+      }
+    }
   }
 
   .input-select {
@@ -104,6 +131,7 @@
       align-items: center;
       justify-content: center;
       position: relative;
+      cursor: pointer;
 
       & img {
         max-height: 100%;
@@ -136,6 +164,7 @@
     }
 
     .group-list {
+      max-height: 30rem;
       overflow-y: scroll;
     }
 
@@ -145,6 +174,7 @@
       margin-top: $x-small;
       font-size: $fs11;
       color: $color-white;
+      cursor: pointer;
 
       & .color-block {
         width: 20px;

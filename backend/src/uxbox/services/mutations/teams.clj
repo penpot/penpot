@@ -71,7 +71,8 @@
 (defn check-edition-permissions!
   [conn profile-id team-id]
   (let [row (db/exec-one! conn [sql:team-permissions profile-id team-id])]
-    (when-not (or (:can-edit row)
+    (when-not (or (= team-id uuid/zero)
+                  (:can-edit row)
                   (:is-admin row)
                   (:is-owner row))
       (ex/raise :type :validation

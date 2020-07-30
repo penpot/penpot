@@ -161,9 +161,10 @@
 
 (def ^:private sql:select-color-for-update
   "select c.*,
-          lib.team_id as team_id
+          p.team_id as team_id
      from color as c
-    inner join color_library as lib on (lib.id = c.library_id)
+    inner join file as f on f.id = c.file_id
+    inner join project as p on p.id = f.project_id
     where c.id = ?
       for update of c")
 
@@ -174,6 +175,26 @@
       (ex/raise :type :not-found))
     row))
 
+
+;; --- Mutation: Update Color
+
+(s/def ::update-color
+  (s/keys :req-un [::profile-id ::id ::content]))
+
+(sm/defmutation ::update-color
+  [{:keys [profile-id id content] :as params}]
+  (db/with-atomic [conn db/pool]
+    (let [clr (select-color-for-update conn id)
+          ;; IMPORTANT: if the previous name was equal to the hex content,
+          ;; we must rename it in addition to changing the value.
+          new-name (if (= (:name clr) (:content clr))
+                     content
+                     (:name clr))]
+      (teams/check-edition-permissions! conn profile-id (:team-id clr))
+      (db/update! conn :color
+                  {:name new-name
+                   :content content}
+                  {:id id}))))
 
 ;; --- Delete Color
 

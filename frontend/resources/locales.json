@@ -522,7 +522,7 @@
     }
   },
   "ds.button.save" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/library.cljs:55" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/library.cljs:55", "src/uxbox/main/ui/workspace/sidebar/assets.cljs:69" ],
     "translations" : {
       "en" : "Save",
       "fr" : "Sauvegarder",
@@ -657,7 +657,7 @@
     }
   },
   "errors.image-format-unsupported" : {
-    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:370", "src/uxbox/main/data/users.cljs:177", "src/uxbox/main/data/images.cljs:376" ],
+    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:390", "src/uxbox/main/data/users.cljs:177", "src/uxbox/main/data/images.cljs:376" ],
     "translations" : {
       "en" : "The image format is not supported (must be svg, jpg or png).",
       "fr" : "Le format d'image n'est pas supporté (doit être svg, jpg ou png).",
@@ -666,7 +666,7 @@
     }
   },
   "errors.image-too-large" : {
-    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:368", "src/uxbox/main/data/users.cljs:175", "src/uxbox/main/data/images.cljs:374" ],
+    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:388", "src/uxbox/main/data/users.cljs:175", "src/uxbox/main/data/images.cljs:374" ],
     "translations" : {
       "en" : "The image is too large to be inserted (must be under 5mb).",
       "fr" : "L'image est trop grande (doit être inférieure à 5 Mo).",
@@ -675,7 +675,7 @@
     }
   },
   "errors.image-type-mismatch" : {
-    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:335", "src/uxbox/main/data/workspace/persistence.cljs:385", "src/uxbox/main/data/users.cljs:191", "src/uxbox/main/data/images.cljs:391" ],
+    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:355", "src/uxbox/main/data/workspace/persistence.cljs:405", "src/uxbox/main/data/users.cljs:191", "src/uxbox/main/data/images.cljs:391" ],
     "translations" : {
       "en" : "Seems that the contents of the image does not match the file extension.",
       "fr" : "",
@@ -684,7 +684,7 @@
     }
   },
   "errors.image-type-not-allowed" : {
-    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:332", "src/uxbox/main/data/workspace/persistence.cljs:382", "src/uxbox/main/data/users.cljs:188", "src/uxbox/main/data/images.cljs:388" ],
+    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:352", "src/uxbox/main/data/workspace/persistence.cljs:402", "src/uxbox/main/data/users.cljs:188", "src/uxbox/main/data/images.cljs:388" ],
     "translations" : {
       "en" : "Seems that this is not a valid image.",
       "fr" : "",
@@ -729,7 +729,7 @@
     }
   },
   "errors.unexpected-error" : {
-    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:338", "src/uxbox/main/data/workspace/persistence.cljs:388", "src/uxbox/main/data/users.cljs:194", "src/uxbox/main/data/images.cljs:394", "src/uxbox/main/ui/settings/change_email.cljs:51", "src/uxbox/main/ui/workspace/sidebar/options/exports.cljs:65", "src/uxbox/main/ui/auth/register.cljs:54" ],
+    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:358", "src/uxbox/main/data/workspace/persistence.cljs:408", "src/uxbox/main/data/users.cljs:194", "src/uxbox/main/data/images.cljs:394", "src/uxbox/main/ui/settings/change_email.cljs:51", "src/uxbox/main/ui/workspace/sidebar/options/exports.cljs:65", "src/uxbox/main/ui/auth/register.cljs:54" ],
     "translations" : {
       "en" : "An unexpected error occurred.",
       "fr" : "Une erreur inattendue c'est produite",
@@ -774,7 +774,7 @@
     }
   },
   "image.loading" : {
-    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:346", "src/uxbox/main/data/workspace/persistence.cljs:397", "src/uxbox/main/data/users.cljs:201", "src/uxbox/main/data/images.cljs:403" ],
+    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:366", "src/uxbox/main/data/workspace/persistence.cljs:417", "src/uxbox/main/data/users.cljs:201", "src/uxbox/main/data/images.cljs:403" ],
     "translations" : {
       "en" : "Loading image...",
       "fr" : "Chargement de l'image...",
@@ -783,7 +783,7 @@
     }
   },
   "modal.create-color.new-color" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/library.cljs:49" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/library.cljs:49", "src/uxbox/main/ui/workspace/sidebar/assets.cljs:62" ],
     "translations" : {
       "en" : "New Color",
       "fr" : "Nouvelle couleur",
@@ -1359,7 +1359,7 @@
     }
   },
   "workspace.assets.assets" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:144" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:325" ],
     "translations" : {
       "en" : "Assets",
       "fr" : "",
@@ -1368,7 +1368,7 @@
     }
   },
   "workspace.assets.box-filter-all" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:154" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:342" ],
     "translations" : {
       "en" : "All assets",
       "fr" : "",
@@ -1377,7 +1377,7 @@
     }
   },
   "workspace.assets.box-filter-colors" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:156" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:344" ],
     "translations" : {
       "en" : "Colors",
       "fr" : "",
@@ -1386,7 +1386,7 @@
     }
   },
   "workspace.assets.box-filter-graphics" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:155" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:343" ],
     "translations" : {
       "en" : "Graphics",
       "fr" : "",
@@ -1395,7 +1395,7 @@
     }
   },
   "workspace.assets.colors" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:91" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:247" ],
     "translations" : {
       "en" : "Colors",
       "fr" : "",
@@ -1404,7 +1404,7 @@
     }
   },
   "workspace.assets.delete" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:83" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:136", "src/uxbox/main/ui/workspace/sidebar/assets.cljs:231" ],
     "translations" : {
       "en" : "Delete",
       "fr" : "",
@@ -1412,8 +1412,17 @@
       "es" : "Borrar"
     }
   },
+  "workspace.assets.edit" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:230" ],
+    "translations" : {
+      "en" : "Edit",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Editar"
+    }
+  },
   "workspace.assets.file-library" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:104" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:271" ],
     "translations" : {
       "en" : "File library",
       "fr" : "",
@@ -1422,7 +1431,7 @@
     }
   },
   "workspace.assets.graphics" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:68" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:113" ],
     "translations" : {
       "en" : "Graphics",
       "fr" : "",
@@ -1430,8 +1439,26 @@
       "es" : "Gráficos"
     }
   },
+  "workspace.assets.not-found" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:282" ],
+    "translations" : {
+      "en" : "No assets found",
+      "fr" : "",
+      "ru" : "",
+      "es" : "No se encontraron recursos"
+    }
+  },
+  "workspace.assets.rename" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:229" ],
+    "translations" : {
+      "en" : "Rename",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Renombrar"
+    }
+  },
   "workspace.assets.search" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:147" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:329" ],
     "translations" : {
       "en" : "Search assets",
       "fr" : "",

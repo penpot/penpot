@@ -49,7 +49,17 @@
   ;; Images
   {:name "Unsplash"
    :images {:path "./images/unsplash"
-            :regex #"^.*\.jpg$"}}
+            :regex #"^.*\.jpg$"}
+   :colors ["Chateau Green"    "#419860"
+            "Toast"            "#987567"
+            "Confetti"         "#EAC75B"
+            "Thunderbird"      "#C23D1F"
+            "Coffee Bean"      "#331113"
+            "Lavender Magenta" "#EF88DF"
+            "Persian Rose"     "#F536A6"
+            "Royal Blue"       "#5C4AEE"
+            "Biscay"           "#202362"
+            "Olivine"          "#98C277"]}
 
   ;; Colors
   {:name "Flat design"
