@@ -108,10 +108,10 @@
 (defn is-child-selected?
   [id]
   (letfn [(selector [state]
-            (let [page-id (get-in state [:workspace-page :id])
-                  objects (get-in state [:workspace-data page-id :objects])
+            (let [page-id  (get-in state [:workspace-page :id])
+                  objects  (get-in state [:workspace-data page-id :objects])
                   selected (get-in state [:workspace-local :selected])
-                  shape (get objects id)
+                  shape    (get objects id)
                   children (cph/get-children id objects)]
               (some selected children)))]
     (l/derived selector st/state)))

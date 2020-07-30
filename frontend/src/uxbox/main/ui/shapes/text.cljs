@@ -94,7 +94,11 @@
         (case type
           "root"
           (let [style (generate-root-styles (clj->js node))]
-            [:div.root.rich-text {:key index :style style} children])
+            [:div.root.rich-text
+             {:key index
+              :style style
+              :xmlns "http://www.w3.org/1999/xhtml"}
+             children])
 
           "paragraph-set"
           (let [style #js {:display "inline-block"
@@ -114,6 +118,13 @@
   (let [root (obj/get props "content")]
     (render-text-node root)))
 
+(defn- retrieve-colors
+  [shape]
+  (let [colors (into #{} (comp (map :fill)
+                               (filter string?))
+                     (tree-seq map? :children (:content shape)))]
+    (apply str (interpose "," colors))))
+
 (mf/defc text-shape
   {::mf/wrap-props false}
   [props]
@@ -122,6 +133,7 @@
         {:keys [id x y width height rotation content]} shape]
     [:foreignObject {:x x
                      :y y
+                     :data-colors (retrieve-colors shape)
                      :transform (geom/transform-matrix shape)
                      :id (str id)
                      :width width

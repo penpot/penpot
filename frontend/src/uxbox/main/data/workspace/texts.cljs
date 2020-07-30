@@ -112,7 +112,7 @@
                                 ret)))]
         (js->clj result :keywordize-keys true)))))
 
-(defn- nodes-seq
+(defn nodes-seq
   [match? node]
   (->> (tree-seq map? :children node)
        (filter match?)))
