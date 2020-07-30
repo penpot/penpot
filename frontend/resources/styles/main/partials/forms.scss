@@ -195,6 +195,7 @@ textarea {
   display: flex;
   flex-direction: column;
   position: relative;
+  justify-content: center;
 
   label {
     font-size: $fs10;

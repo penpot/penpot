@@ -283,6 +283,9 @@
       font-size: $fs12;
     }
 
+    &:hover {
+      border: 1px solid $color-gray-20;
+    }
 
   }
   .custom-select-dropdown {
@@ -361,9 +364,11 @@
   }
 
   .editable-select {
+    border: 1px solid transparent;
     position: relative;
     height: 38px;
     margin-right: $small;
+    max-height: 30px;
     position: relative;
     width: 60%;
 
@@ -399,7 +404,7 @@
 
     .dropdown-button {
       position: absolute;
-      top: 7px;
+      top: 4px;
       right: 0;
     }
 
@@ -417,6 +422,10 @@
         top: auto;
         color: #b1b2b5;
       }
+    }
+
+    &:hover {
+      border: 1px solid $color-gray-40;
     }
   }
 }
@@ -436,6 +445,7 @@
     padding-left: 0;
     color: #b1b2b5;
     background-color: transparent;
+    height: 30px;
   }
 }
 
@@ -669,20 +679,33 @@
 }
 
 .element-set-content .grid-option-main {
+  align-items: center;
   display: flex;
-  padding: 0.5rem 0;
+  padding: 0.3rem 0;
   border: 1px solid $color-black;
   border-radius: 4px;
+  height: 48px;
 
   &:hover {
-    background: #1F1F1F;
+    background: $color-gray-60;
+
+    .custom-select,
+    .editable-select,
+    input {
+      background-color: $color-gray-50;
+    }
   }
 
   & .custom-select {
     min-width: 4.75rem;
     height: 2rem;
-    border: none;
+    border-color: transparent;
     border-bottom: 1px solid #65666A;
+    max-height: 30px;
+
+    &:hover {
+      border: 1px solid $color-gray-40;
+    }
   }
 
   & .input-element {
@@ -784,8 +807,8 @@
       align-items: center;
       cursor: pointer;
       svg {
-        width: 20px;
-        height: 20px;
+        width: 12px;
+        height: 12px;
         fill: $color-gray-20;
       }
     }

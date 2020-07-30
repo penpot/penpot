@@ -144,7 +144,7 @@
            [:div.delete-icon {:on-click (partial delete-export index)}
             i/minus]])
 
-        [:div.btn-large.btn-icon-dark.download-button
+        [:div.btn-icon-dark.download-button
          {:on-click (when-not @loading? on-download)
           :class (dom/classnames
                   :btn-disabled @loading?)
