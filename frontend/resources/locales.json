@@ -377,6 +377,15 @@
       "es" : "Borrador"
     }
   },
+  "dashboard.header.libraries" : {
+    "used-in" : [ "src/uxbox/main/ui/dashboard/libraries.cljs:41" ],
+    "translations" : {
+      "en" : "Shared Libraries",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Bibliotecas Compartidas"
+    }
+  },
   "dashboard.header.new-file" : {
     "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:72" ],
     "translations" : {
@@ -540,7 +549,7 @@
     }
   },
   "dashboard.sidebar.drafts" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:128" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:129" ],
     "translations" : {
       "en" : "Drafts",
       "fr" : "Brouillons",
@@ -549,16 +558,16 @@
     }
   },
   "dashboard.sidebar.libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:134" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:135" ],
     "translations" : {
-      "en" : "Libraries",
-      "fr" : "Librairies",
-      "ru" : "Библиотеки",
-      "es" : "Bibliotecas"
+      "en" : "Shared Libraries",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Bibliotecas Compartidas"
     }
   },
   "dashboard.sidebar.recent" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:121" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:122" ],
     "translations" : {
       "en" : "Recent",
       "fr" : "Récent",
@@ -666,7 +675,7 @@
     }
   },
   "ds.search.placeholder" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:187" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:188" ],
     "translations" : {
       "en" : "Search...",
       "fr" : "Rechercher...",
@@ -720,7 +729,7 @@
     }
   },
   "errors.generic" : {
-    "used-in" : [ "src/uxbox/main/ui.cljs:201", "src/uxbox/main/ui/settings/profile.cljs:38", "src/uxbox/main/ui/auth.cljs:91" ],
+    "used-in" : [ "src/uxbox/main/ui.cljs:204", "src/uxbox/main/ui/settings/profile.cljs:38", "src/uxbox/main/ui/auth.cljs:91" ],
     "translations" : {
       "en" : "Something wrong has happened.",
       "fr" : "Quelque chose c'est mal passé.",
@@ -765,7 +774,7 @@
     }
   },
   "errors.network" : {
-    "used-in" : [ "src/uxbox/main/ui.cljs:195" ],
+    "used-in" : [ "src/uxbox/main/ui.cljs:198" ],
     "translations" : {
       "en" : "Unable to connect to backend server.",
       "fr" : "Impossible de se connecter au serveur principal.",
@@ -1071,7 +1080,7 @@
     }
   },
   "settings.notifications.email-not-verified" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard.cljs:113" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard.cljs:118" ],
     "translations" : {
       "en" : "Your email address has not been verified yet. Please check your inbox at “%s” for a confirmation email.",
       "fr" : "Votre adresse e-mail n'a pas encore été vérifiée. Veuillez vérifier votre boîte de réception à “%s” pour un e-mail de confirmation.",
