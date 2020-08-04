@@ -63,9 +63,14 @@
                :can-edit true}))
 
 (defn create-file
-  [conn {:keys [id profile-id name project-id] :as params}]
-  (let [id   (or id (uuid/next))
-        file (db/insert! conn :file {:id id :project-id project-id :name name})]
+  [conn {:keys [id profile-id name project-id shared?] :as params}]
+  (let [id      (or id (uuid/next))
+        shared? (or shared? false)
+        file (db/insert! conn :file
+                         {:id id
+                          :project-id project-id
+                          :name name
+                          :is-shared shared?})]
     (->> (assoc params :file-id id)
          (create-file-profile conn))
     file))
@@ -98,6 +103,26 @@
   [conn {:keys [id name] :as params}]
   (db/update! conn :file
               {:name name}
+              {:id id}))
+
+
+;; --- Mutation: Set File shared
+
+(declare set-file-shared)
+
+(s/def ::set-file-shared
+  (s/keys :req-un [::profile-id ::id ::is-shared]))
+
+(sm/defmutation ::set-file-shared
+  [{:keys [id profile-id] :as params}]
+  (db/with-atomic [conn db/pool]
+    (files/check-edition-permissions! conn profile-id id)
+    (set-file-shared conn params)))
+
+(defn- set-file-shared
+  [conn {:keys [id is-shared] :as params}]
+  (db/update! conn :file
+              {:is-shared is-shared}
               {:id id}))
 
 

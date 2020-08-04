@@ -1436,6 +1436,7 @@
 
 ;; Persistence
 
+(def set-file-shared dwp/set-file-shared)
 (def fetch-images dwp/fetch-images)
 (def add-image-from-url dwp/add-image-from-url)
 (def upload-image dwp/upload-image)

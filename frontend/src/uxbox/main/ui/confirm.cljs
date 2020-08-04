@@ -11,10 +11,11 @@
    [rumext.alpha :as mf]
    [uxbox.main.ui.modal :as modal]
    [uxbox.util.i18n :refer (tr)]
+   [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]))
 
 (mf/defc confirm-dialog
-  [{:keys [message on-accept on-cancel hint cancel-text accept-text] :as ctx}]
+  [{:keys [message on-accept on-cancel hint cancel-text accept-text not-danger?] :as ctx}]
   (let [message (or message (tr "ds.confirm-title"))
         cancel-text (or cancel-text (tr "ds.confirm-cancel"))
         accept-text (or accept-text (tr "ds.confirm-ok"))
@@ -45,5 +46,7 @@
 
         [:input.dialog-accept-button
          {:type "button"
+          :class (classnames :not-danger not-danger?)
           :value accept-text
           :on-click accept}]]]]]))
+
