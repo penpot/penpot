@@ -1433,8 +1433,9 @@
 ;; Persistence
 
 (def set-file-shared dwp/set-file-shared)
-(def fetch-media-library dwp/fetch-media-library)
-(def fetch-colors-library dwp/fetch-colors-library)
+(def fetch-shared-files dwp/fetch-shared-files)
+(def link-file-to-library dwp/link-file-to-library)
+(def unlink-file-from-library dwp/unlink-file-from-library)
 (def add-media-object-from-url dwp/add-media-object-from-url)
 (def upload-media-objects dwp/upload-media-objects)
 (def delete-media-object dwp/delete-media-object)

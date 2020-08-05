@@ -180,6 +180,13 @@
                                  "className"
                                  (str/camel (name key))))))
 
+(defn matches-search
+  [name search-term]
+  (if (str/empty? search-term)
+    true
+    (let [st (str/trim (str/lower search-term))
+          nm (str/trim (str/lower name))]
+      (str/includes? nm st))))
 
 ;; (defn coalesce
 ;;   [^number v ^number n]

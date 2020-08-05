@@ -148,32 +148,6 @@
        (mapv decode-row)))
 
 
-;; --- Query: Shared Files
-
-(def ^:private sql:shared-files
-  "select distinct
-          f.*,
-          array_agg(pg.id) over pages_w as pages,
-          first_value(pg.data) over pages_w as data
-     from file as f
-     left join page as pg on (f.id = pg.file_id)
-    where is_shared = true
-      and f.deleted_at is null
-      and pg.deleted_at is null
-   window pages_w as (partition by f.id order by pg.ordering
-                      range between unbounded preceding
-                                and unbounded following)
-    order by f.modified_at desc")
-
-(s/def ::shared-files
-  (s/keys :req-un [::profile-id]))
-
-(sq/defquery ::shared-files
-  [{:keys [profile-id] :as params}]
-  (->> (db/exec! db/pool [sql:shared-files])
-       (mapv decode-row)))
-
-
 ;; --- Query: File Permissions
 
 (def ^:private sql:file-permissions
@@ -236,6 +210,25 @@
                       range between unbounded preceding
                                 and unbounded following)")
 
+(defn retrieve-file
+  [conn id]
+  (let [row (db/exec-one! conn [sql:file id])]
+    (when-not row
+      (ex/raise :type :not-found))
+    (decode-row row)))
+
+(s/def ::file
+  (s/keys :req-un [::profile-id ::id]))
+
+(sq/defquery ::file
+  [{:keys [profile-id id] :as params}]
+  (db/with-atomic [conn db/pool]
+    (check-edition-permissions! conn profile-id id)
+    (retrieve-file conn id)))
+
+
+;; --- Query: File users
+
 (def ^:private sql:file-users
   "select pf.id, pf.fullname, pf.photo
      from profile as pf
@@ -248,13 +241,6 @@
     inner join project as p on (tpr.team_id = p.team_id)
     inner join file as f on (p.id = f.project_id)
     where f.id = ?")
-
-(defn retrieve-file
-  [conn id]
-  (let [row (db/exec-one! conn [sql:file id])]
-    (when-not row
-      (ex/raise :type :not-found))
-    (decode-row row)))
 
 (defn retrieve-file-users
   [conn id]
@@ -270,14 +256,93 @@
     (check-edition-permissions! conn profile-id id)
     (retrieve-file-users conn id)))
 
-(s/def ::file
-  (s/keys :req-un [::profile-id ::id]))
 
-(sq/defquery ::file
-  [{:keys [profile-id id] :as params}]
+;; --- Query: Shared Library Files
+
+(def ^:private sql:shared-files
+  "select distinct
+          f.*,
+          array_agg(pg.id) over pages_w as pages,
+          first_value(pg.data) over pages_w as data,
+          (select count(*) from color as c
+            where c.file_id = f.id
+              and c.deleted_at is null) as colors_count,
+          (select count(*) from media_object as m
+            where m.file_id = f.id
+              and m.is_local = false
+              and m.deleted_at is null) as graphics_count
+     from file as f
+     left join page as pg on (f.id = pg.file_id)
+    where is_shared = true
+      and f.deleted_at is null
+      and pg.deleted_at is null
+   window pages_w as (partition by f.id order by pg.ordering
+                      range between unbounded preceding
+                                and unbounded following)
+    order by f.modified_at desc")
+
+(s/def ::shared-files
+  (s/keys :req-un [::profile-id]))
+
+(sq/defquery ::shared-files
+  [{:keys [profile-id] :as params}]
+  (->> (db/exec! db/pool [sql:shared-files])
+       (mapv decode-row)))
+
+
+;; --- Query: File Libraries used by a File
+
+(def ^:private sql:file-libraries
+  "select fl.*,
+          array_agg(pg.id) over pages_w as pages,
+          first_value(pg.data) over pages_w as data
+     from file as fl
+     left join page as pg on (fl.id = pg.file_id)
+    inner join file_library_rel as flr on (flr.library_file_id = fl.id)
+    where flr.file_id = ?
+      and fl.deleted_at is null
+      and pg.deleted_at is null
+   window pages_w as (partition by fl.id order by pg.ordering
+                      range between unbounded preceding
+                                and unbounded following)")
+
+(defn retrieve-file-libraries
+  [conn file-id]
+  (->> (db/exec! conn [sql:file-libraries file-id])
+       (mapv decode-row)))
+
+(s/def ::file-libraries
+  (s/keys :req-un [::profile-id ::file-id]))
+
+(sq/defquery ::file-libraries
+  [{:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn db/pool]
-    (check-edition-permissions! conn profile-id id)
-    (retrieve-file conn id)))
+    (check-edition-permissions! conn profile-id file-id)
+    (retrieve-file-libraries conn file-id)))
+
+
+;; --- Query: Single File Library
+
+(def ^:private sql:file-library
+  "select fl.*
+     from file as fl
+    where fl.id = ?")
+
+(defn retrieve-file-library
+  [conn file-id]
+  (let [row (db/exec-one! conn [sql:file-library file-id])]
+    (when-not row
+      (ex/raise :type :not-found))
+    row))
+
+(s/def ::file-library
+  (s/keys :req-un [::profile-id ::file-id]))
+
+(sq/defquery ::file-library
+  [{:keys [profile-id file-id] :as params}]
+  (db/with-atomic [conn db/pool]
+    (check-edition-permissions! conn profile-id file-id) ;; TODO: this should check read permissions
+    (retrieve-file-library conn file-id)))
 
 
 ;; --- Helpers

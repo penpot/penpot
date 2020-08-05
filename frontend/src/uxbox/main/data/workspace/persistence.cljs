@@ -137,6 +137,7 @@
                    ::ordering
                    ::data]))
 
+(declare fetch-libraries-content)
 (declare bundle-fetched)
 
 (defn- fetch-bundle
@@ -147,10 +148,18 @@
       (->> (rx/zip (rp/query :file {:id file-id})
                    (rp/query :file-users {:id file-id})
                    (rp/query :project-by-id {:project-id project-id})
-                   (rp/query :pages {:file-id file-id}))
+                   (rp/query :pages {:file-id file-id})
+                   (rp/query :media-objects {:file-id file-id :is-local false})
+                   (rp/query :colors {:file-id file-id})
+                   (rp/query :file-libraries {:file-id file-id}))
            (rx/first)
-           (rx/map (fn [[file users project pages]]
-                     (bundle-fetched file users project pages)))
+           (rx/mapcat
+             (fn [bundle]
+               (->> (fetch-libraries-content (get bundle 6))
+                    (rx/map (fn [[lib-media-objects lib-colors]]
+                              (conj bundle lib-media-objects lib-colors))))))
+           (rx/map (fn [bundle]
+                     (apply bundle-fetched bundle)))
            (rx/catch (fn [{:keys [type code] :as error}]
                        (cond
                          (= :not-found type)
@@ -163,26 +172,77 @@
                          :else
                          (throw error))))))))
 
+(defn- fetch-libraries-content
+  [libraries]
+  (if (empty? libraries)
+    (rx/of [{} {}])
+    (rx/zip
+      (->> ;; fetch media-objects list of each library, and concatenate in a sequence
+           (apply rx/zip (for [library libraries]
+                           (->> (rp/query :media-objects {:file-id (:id library)
+                                                          :is-local false})
+                                (rx/map (fn [media-objects]
+                                          [(:id library) media-objects])))))
+
+           ;; reorganize the sequence as a map {library-id -> media-objects}
+           (rx/map (fn [media-list]
+                     (reduce (fn [result, [library-id media-objects]]
+                               (assoc result library-id media-objects))
+                             {}
+                             media-list))))
+
+      (->> ;; fetch colorss list of each library, and concatenate in a vector
+           (apply rx/zip (for [library libraries]
+                           (->> (rp/query :colors {:file-id (:id library)})
+                                (rx/map (fn [colors]
+                                          [(:id library) colors])))))
+
+           ;; reorganize the sequence as a map {library-id -> colors}
+           (rx/map (fn [colors-list]
+                     (reduce (fn [result, [library-id colors]]
+                               (assoc result library-id colors))
+                             {}
+                             colors-list)))))))
+
 (defn- bundle-fetched
-  [file users project pages]
+  [file users project pages media-objects colors libraries lib-media-objects lib-colors]
   (ptk/reify ::bundle-fetched
     IDeref
     (-deref [_]
       {:file file
        :users users
        :project project
-       :pages pages})
+       :pages pages
+       :media-objects media-objects
+       :colors colors
+       :libraries libraries})
 
     ptk/UpdateEvent
     (update [_ state]
-      (let [assoc-page #(assoc-in %1 [:workspace-pages (:id %2)] %2)]
+      (let [assoc-page
+            #(assoc-in %1 [:workspace-pages (:id %2)] %2)
+
+            assoc-media-objects
+            #(assoc-in %1 [:workspace-libraries %2 :media-objects]
+                       (get lib-media-objects %2))
+
+            assoc-colors
+            #(assoc-in %1 [:workspace-libraries %2 :colors]
+                       (get lib-colors %2))]
+
         (as-> state $$
           (assoc $$
-                 :workspace-file file
+                 :workspace-file (assoc file
+                                        :media-objects media-objects
+                                        :colors colors)
                  :workspace-users (d/index-by :id users)
                  :workspace-pages {}
-                 :workspace-project project)
+                 :workspace-project project
+                 :workspace-libraries (d/index-by :id libraries))
+          (reduce assoc-media-objects $$ (keys lib-media-objects))
+          (reduce assoc-colors $$ (keys lib-colors))
           (reduce assoc-page $$ pages))))))
+
 
 ;; --- Set File shared
 
@@ -199,6 +259,79 @@
       (let [params {:id id :is-shared is-shared}]
         (->> (rp/mutation :set-file-shared params)
              (rx/ignore))))))
+
+
+;; --- Fetch Shared Files
+
+(declare shared-files-fetched)
+
+(defn fetch-shared-files
+  []
+  (ptk/reify ::fetch-shared-files
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [params {}]
+        (->> (rp/query :shared-files params)
+             (rx/map shared-files-fetched))))))
+
+(defn shared-files-fetched
+  [files]
+  (us/verify (s/every ::file) files)
+  (ptk/reify ::shared-files-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [state (dissoc state :files)]
+        (assoc state :workspace-shared-files files)))))
+
+
+;; --- Link and unlink Files
+
+(declare file-linked)
+
+(defn link-file-to-library
+  [file-id library-id]
+  (ptk/reify ::link-file-to-library
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [params {:file-id file-id
+                    :library-id library-id}]
+        (->> (->> (rp/mutation :link-file-to-library params)
+                  (rx/mapcat
+                    #(rx/zip (rp/query :file-library {:file-id library-id})
+                             (rp/query :media-objects {:file-id library-id
+                                                       :is-local false})
+                             (rp/query :colors {:file-id library-id}))))
+             (rx/map file-linked))))))
+
+(defn file-linked
+  [[library media-objects colors]]
+  (ptk/reify ::file-linked
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-libraries (:id library)]
+                (assoc library
+                       :media-objects media-objects
+                       :colors colors)))))
+
+(declare file-unlinked)
+
+(defn unlink-file-from-library
+  [file-id library-id]
+  (ptk/reify ::unlink-file-from-library
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [params {:file-id file-id
+                    :library-id library-id}]
+        (->> (rp/mutation :unlink-file-from-library params)
+             (rx/map #(file-unlinked file-id library-id)))))))
+
+(defn file-unlinked
+  [file-id library-id]
+  (ptk/reify ::file-unlinked
+    ptk/UpdateEvent
+    (update [_ state]
+      (d/dissoc-in state [:workspace-libraries library-id]))))
+
 
 ;; --- Fetch Pages
 
@@ -298,46 +431,6 @@
                                (rx/of go-to-file)
                                (rx/empty))))))))))
 
-;; --- Fetch Workspace Media library
-
-(declare media-library-fetched)
-
-(defn fetch-media-library
-  [file-id]
-  (ptk/reify ::fetch-media-library
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (->> (rp/query :media-objects {:file-id file-id :is-local false})
-           (rx/map media-library-fetched)))))
-
-(defn media-library-fetched
-  [media-objects]
-  (ptk/reify ::media-library-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [media-objects (d/index-by :id media-objects)]
-        (assoc state :workspace-media-library media-objects)))))
-
-;; --- Fetch Workspace Colors library
-
-(declare colors-library-fetched)
-
-(defn fetch-colors-library
-  [file-id]
-  (ptk/reify ::fetch-colors-library
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (->> (rp/query :colors {:file-id file-id})
-           (rx/map colors-library-fetched)))))
-
-(defn colors-library-fetched
-  [colors]
-  (ptk/reify ::colors-library-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [colors (d/index-by :id colors)]
-        (assoc state :workspace-colors-library colors)))))
-
 
 ;; --- Upload local media objects
 
@@ -357,6 +450,8 @@
 
              on-error #(do (di/notify-finished-loading)
                            (di/process-error %))
+
+             is-library (not= file-id (:id (:workspace-file state)))
  
              prepare
              (fn [url]
@@ -370,7 +465,7 @@
               (rx/map prepare)
               (rx/mapcat #(rp/mutation! :add-media-object-from-url %))
               (rx/do on-success)
-              (rx/map (partial upload-media-objects-result file-id is-local))
+              (rx/map (partial upload-media-objects-result file-id is-local is-library))
               (rx/catch on-error)))))))
 
 (defn upload-media-objects
@@ -389,6 +484,8 @@
              on-error #(do (di/notify-finished-loading)
                            (di/process-error %))
 
+             is-library (not= file-id (:id (:workspace-file state)))
+
              prepare
              (fn [js-file]
                {:name (.-name js-file)
@@ -403,32 +500,43 @@
               (rx/map prepare)
               (rx/mapcat #(rp/mutation! :upload-media-object %))
               (rx/do on-success)
-              (rx/map (partial upload-media-objects-result file-id is-local))
+              (rx/map (partial upload-media-objects-result file-id is-local is-library))
               (rx/catch on-error)))))))
 
 (defn upload-media-objects-result
-  [file-id is-local media-object]
+  [file-id is-local is-library media-object]
   (us/verify ::us/uuid file-id)
   (us/verify ::us/boolean is-local)
   (us/verify ::cm/media-object media-object)
   (ptk/reify ::upload-media-objects-result
     ptk/UpdateEvent
     (update [_ state]
-      (if is-local
+      (if is-local ;; the media-object is local to the file, not for its library
         state
-        (assoc-in state
-                  [:workspace-media-library (:id media-object)]
-                  media-object)))))
+        (if is-library ;; the file is not the currently editing one, but a linked shared file
+          (update-in state
+                     [:workspace-libraries file-id :media-objects]
+                     #(conj % media-object))
+          (update-in state
+                     [:workspace-file :media-objects]
+                     #(conj % media-object)))))))
 
 
 ;; --- Delete media object
 
 (defn delete-media-object
-  [id]
+  [file-id id]
   (ptk/reify ::delete-media-object
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-media-library dissoc id))
+      (let [is-library (not= file-id (:id (:workspace-file state)))]
+        (if is-library
+          (update-in state
+                     [:workspace-libraries file-id :media-objects]
+                     (fn [media-objects] (filter #(not= (:id %) id) media-objects)))
+          (update-in state
+                     [:workspace-file :media-objects]
+                     (fn [media-objects] (filter #(not= (:id %) id) media-objects))))))
 
     ptk/WatchEvent
     (watch [_ state stream]

@@ -41,7 +41,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (assoc-in [:workspace-colors-library (:id color)] color)
+          (update-in [:workspace-file :colors] #(conj % color))
           (assoc-in [:workspace-local :color-for-rename] (:id color))))))
 
 (def clear-color-for-rename
@@ -67,7 +67,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (assoc-in [:workspace-colors-library (:id color)] color)))))
+          (update-in [:workspace-file :colors] #(d/replace-by-id % color))))))
 
 (declare update-color-result)
 
@@ -86,7 +86,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (assoc-in [:workspace-colors-library (:id color)] color)))))
+          (update-in [:workspace-file :colors] #(d/replace-by-id % color))))))
 
 (declare delete-color-result)
 
@@ -104,5 +104,6 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (d/dissoc-in [:workspace-colors-library color-id])))))
+          (update-in [:workspace-file :colors]
+                     (fn [colors] (filter #(not= (:id %) color-id) colors)))))))
 

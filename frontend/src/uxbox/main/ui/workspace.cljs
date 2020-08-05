@@ -18,7 +18,6 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.streams :as ms]
-   [uxbox.main.ui.confirm]
    [uxbox.main.ui.keyboard :as kbd]
    [uxbox.main.ui.hooks :as hooks]
    [uxbox.main.ui.workspace.viewport :refer [viewport coordinates]]

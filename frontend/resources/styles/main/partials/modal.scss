@@ -136,3 +136,156 @@
   }
 }
 
+.libraries-dialog {
+  width: 920px;
+  height: 664px;
+
+  .modal-content {
+    display: flex;
+    flex-grow: 1;
+    flex-direction: column;
+    padding: 0;
+  }
+
+  .libraries-header {
+    border-bottom: 1px solid $color-gray-20;
+    padding: 2rem 1rem 0.5rem 1rem;
+    display: flex;
+    justify-content: center;
+
+    .header-item {
+      cursor: pointer;
+      color: $color-gray-40;
+      font-size: $fs15;
+
+      &.active {
+        color: $color-gray-60;
+        border-bottom: 2px solid $color-primary;
+      }
+
+      &:not(:first-child) {
+        margin-left: 3rem;
+      }
+    }
+  }
+
+  .libraries-content {
+    display: flex;
+    justify-content: stretch;
+    align-items: stretch;
+    flex-grow: 1;
+    padding: 0 $size-4;
+    color: $color-gray-40;
+
+    .section {
+      flex-basis: 0;
+      flex-grow: 1;
+      padding: $size-4 0;
+      display: flex;
+      flex-direction: column;
+
+      &:not(:first-child) {
+        border-left: 1px solid $color-gray-20;
+      }
+    }
+
+    .section-title {
+      font-size: $fs15;
+      padding: 0 $size-4;
+    }
+
+    .section-list {
+      flex-basis: 0;
+      flex-grow: 1;
+      padding: 0 $size-4;
+      overflow: auto;
+
+      .section-list-item {
+        padding: $size-4 0;
+        border-bottom: 1px solid $color-gray-20;
+        position: relative;
+
+        .item-name {
+          color: $color-gray-60;
+          font-size: $fs14;
+        }
+
+        .item-contents {
+          color: $color-gray-40;
+          font-size: $fs12;
+        }
+
+        .item-button {
+          position: absolute;
+          top: $size-4;
+          right: 0;
+          border: 1px solid $color-primary;
+          border-radius: 2px;
+          width: 4.5rem;
+          background: $color-primary;
+          color: $color-black;
+          padding: $size-2;
+
+          &:hover {
+            color: $color-primary;
+            background: $color-black;
+          }
+        }
+      }
+    }
+
+    .section-list-empty {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 0 $size-4;
+      flex-grow: 1;
+
+      & svg {
+        fill: $color-gray-20;
+        height: 50px;
+        width: 50px;
+        margin-bottom: $size-4;
+      }
+    }
+
+    .libraries-search {
+      border: 1px solid $color-gray-30;
+      margin: $size-4;
+      padding: $x-small;
+      display: flex;
+      align-items: center;
+
+      &:focus-within {
+        border-color: $color-primary;
+      }
+
+      & .search-input {
+        border: none;
+        color: $color-gray-60;
+        font-size: $fs12;
+        margin: 0;
+        padding: 0;
+        flex-grow: 1;
+      }
+
+      & .search-icon {
+        display: flex;
+        align-items: center;
+
+        svg {
+          fill: $color-gray-30;
+          height: 16px;
+          width: 16px;
+        }
+
+        &.search-close {
+          transform: rotate(45deg);
+          cursor: pointer;
+        }
+      }
+    }
+  }
+}
+
