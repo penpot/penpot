@@ -156,6 +156,26 @@
 
       }
 
+      .item-badge {
+          background-color: $color-white;
+          border: 1px solid $color-gray-20;
+          border-radius: 4px;
+          position: absolute;
+          top: $x-small;
+          right: $x-small;
+          height: 32px;
+          width: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          svg {
+            fill: $color-gray-30;
+            height: 16px;
+            width: 16px;
+          }
+      }
+
       &.add-file {
         border: 1px dashed $color-gray-20;
         justify-content: center;

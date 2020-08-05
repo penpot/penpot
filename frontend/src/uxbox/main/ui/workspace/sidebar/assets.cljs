@@ -255,6 +255,7 @@
 
 (mf/defc library-toolbox
   [{:keys [library-id
+           shared?
            images
            colors
            initial-open?
@@ -268,7 +269,9 @@
        {:class (classnames :open @open?)
         :on-click toggle-open}
        i/arrow-slide]
-      [:span (tr "workspace.assets.file-library")]]
+      [:span (tr "workspace.assets.file-library")]
+      (when shared?
+        [:span.tool-badge (tr "workspace.assets.shared")])]
      (when @open?
        (let [show-graphics (and (or (= box-filter :all) (= box-filter :graphics))
                                  (or (> (count images) 0) (str/empty? search-term))) 
@@ -286,7 +289,8 @@
 (mf/defc assets-toolbox
   []
   (let [team-id (-> refs/workspace-project mf/deref :team-id)
-        file-id (-> refs/workspace-file mf/deref :id)
+        file (mf/deref refs/workspace-file)
+        file-id (:id file)
         file-images (mf/deref refs/workspace-images)
         file-colors (mf/deref refs/workspace-colors)
 
@@ -347,6 +351,7 @@
         ]]
 
      [:& library-toolbox {:library-id file-id
+                          :shared? (:is-shared file)
                           :images filtered-images
                           :colors filtered-colors
                           :initial-open? true

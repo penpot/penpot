@@ -55,6 +55,7 @@
 (def interaction (icon-xref :interaction))
 (def layers (icon-xref :layers))
 (def letter-spacing (icon-xref :letter-spacing))
+(def library (icon-xref :library))
 (def line (icon-xref :line))
 (def line-height (icon-xref :line-height))
 (def loader (icon-xref :loader))

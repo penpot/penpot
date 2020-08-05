@@ -372,7 +372,8 @@
       (files/create-file conn {:id id
                                :profile-id uuid/zero
                                :project-id project-id
-                               :name name})
+                               :name name
+                               :shared? true})
       (files/create-page conn {:file-id id}))
     id))
 

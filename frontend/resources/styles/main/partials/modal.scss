@@ -124,6 +124,15 @@
     &:hover {
       background: $color-danger-dark;
     }
+
+    &.not-danger {
+      background: $color-primary;
+      color: $color-gray-60;
+    }
+
+    &.not-danger:hover {
+      background: $color-primary-dark;
+    }
   }
 }
 

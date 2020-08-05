@@ -269,8 +269,44 @@
       "es" : "La solución de código abierto para diseñar y prototipar"
     }
   },
+  "dashboard.grid.add-shared" : {
+    "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:131", "src/uxbox/main/ui/workspace/header.cljs:147" ],
+    "translations" : {
+      "en" : "Add as Shared Library",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Añadir como Biblioteca Compartida"
+    }
+  },
+  "dashboard.grid.add-shared-accept" : {
+    "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:70", "src/uxbox/main/ui/workspace/header.cljs:70" ],
+    "translations" : {
+      "en" : "Add as Shared Library",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Añadir como Biblioteca Compartida"
+    }
+  },
+  "dashboard.grid.add-shared-hint" : {
+    "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:69", "src/uxbox/main/ui/workspace/header.cljs:69" ],
+    "translations" : {
+      "en" : "Once added as Shared Library, the assets of this file library will be available to be used among the rest of your files.",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Una vez añadido como Biblioteca Compartida, los recursos de este archivo estarán disponibles para ser usado por el resto de tus archivos."
+    }
+  },
+  "dashboard.grid.add-shared-message" : {
+    "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:68", "src/uxbox/main/ui/workspace/header.cljs:68" ],
+    "translations" : {
+      "en" : "Add “%s” as Shared Library",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Añadir “%s” como Biblioteca Compartida"
+    }
+  },
   "dashboard.grid.delete" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:62", "src/uxbox/main/ui/dashboard/grid.cljs:103" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:62", "src/uxbox/main/ui/dashboard/grid.cljs:128" ],
     "translations" : {
       "en" : "Delete",
       "fr" : "Supprimer",
@@ -279,7 +315,7 @@
     }
   },
   "dashboard.grid.empty-files" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:125" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:153" ],
     "translations" : {
       "en" : "You still have no files here",
       "fr" : "Vous n'avez encore aucun fichier ici",
@@ -287,8 +323,44 @@
       "es" : "Todavía no hay ningún archivo aquí"
     }
   },
+  "dashboard.grid.remove-shared" : {
+    "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:130", "src/uxbox/main/ui/workspace/header.cljs:145" ],
+    "translations" : {
+      "en" : "Remove as Shared Library",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Eliminar como Biblioteca Compartida"
+    }
+  },
+  "dashboard.grid.remove-shared-accept" : {
+    "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:81", "src/uxbox/main/ui/workspace/header.cljs:79" ],
+    "translations" : {
+      "en" : "Remove as Shared Library",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Eliminar como Biblioteca Compartida"
+    }
+  },
+  "dashboard.grid.remove-shared-hint" : {
+    "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:80", "src/uxbox/main/ui/workspace/header.cljs:78" ],
+    "translations" : {
+      "en" : "Once removed as Shared Library, the File Library of this file will stop being available to be used among the rest of your files.",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Una vez eliminado como Biblioteca Compartida, la Biblioteca de este archivo dejará de estar disponible para ser usada por el resto de tus archivos."
+    }
+  },
+  "dashboard.grid.remove-shared-message" : {
+    "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:79", "src/uxbox/main/ui/workspace/header.cljs:77" ],
+    "translations" : {
+      "en" : "Remove “%s” as Shared Library",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Añadir “%s” como Biblioteca Compartida"
+    }
+  },
   "dashboard.grid.rename" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:61", "src/uxbox/main/ui/dashboard/grid.cljs:102" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/project.cljs:61", "src/uxbox/main/ui/dashboard/grid.cljs:127" ],
     "translations" : {
       "en" : "Rename",
       "fr" : "Renommer",
@@ -303,6 +375,15 @@
       "fr" : "Brouillon",
       "ru" : "Черновик",
       "es" : "Borrador"
+    }
+  },
+  "dashboard.header.libraries" : {
+    "used-in" : [ "src/uxbox/main/ui/dashboard/libraries.cljs:41" ],
+    "translations" : {
+      "en" : "Shared Libraries",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Bibliotecas Compartidas"
     }
   },
   "dashboard.header.new-file" : {
@@ -468,7 +549,7 @@
     }
   },
   "dashboard.sidebar.drafts" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:128" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:129" ],
     "translations" : {
       "en" : "Drafts",
       "fr" : "Brouillons",
@@ -477,16 +558,16 @@
     }
   },
   "dashboard.sidebar.libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:134" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:135" ],
     "translations" : {
-      "en" : "Libraries",
-      "fr" : "Librairies",
-      "ru" : "Библиотеки",
-      "es" : "Bibliotecas"
+      "en" : "Shared Libraries",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Bibliotecas Compartidas"
     }
   },
   "dashboard.sidebar.recent" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:121" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:122" ],
     "translations" : {
       "en" : "Recent",
       "fr" : "Récent",
@@ -540,7 +621,7 @@
     }
   },
   "ds.confirm-cancel" : {
-    "used-in" : [ "src/uxbox/main/ui/confirm.cljs:19" ],
+    "used-in" : [ "src/uxbox/main/ui/confirm.cljs:20" ],
     "translations" : {
       "en" : "Cancel",
       "fr" : "Annuler",
@@ -549,7 +630,7 @@
     }
   },
   "ds.confirm-ok" : {
-    "used-in" : [ "src/uxbox/main/ui/confirm.cljs:20" ],
+    "used-in" : [ "src/uxbox/main/ui/confirm.cljs:21" ],
     "translations" : {
       "en" : "Ok",
       "fr" : "Ok",
@@ -558,7 +639,7 @@
     }
   },
   "ds.confirm-title" : {
-    "used-in" : [ "src/uxbox/main/ui/confirm.cljs:18" ],
+    "used-in" : [ "src/uxbox/main/ui/confirm.cljs:19" ],
     "translations" : {
       "en" : "Are you sure?",
       "fr" : "Êtes-vous sûr?",
@@ -585,7 +666,7 @@
     }
   },
   "ds.new-file" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:121", "src/uxbox/main/ui/dashboard/grid.cljs:127" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/grid.cljs:149", "src/uxbox/main/ui/dashboard/grid.cljs:155" ],
     "translations" : {
       "en" : "+ New File",
       "fr" : "+ Nouveau fichier",
@@ -594,7 +675,7 @@
     }
   },
   "ds.search.placeholder" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:187" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard/sidebar.cljs:188" ],
     "translations" : {
       "en" : "Search...",
       "fr" : "Rechercher...",
@@ -648,7 +729,7 @@
     }
   },
   "errors.generic" : {
-    "used-in" : [ "src/uxbox/main/ui.cljs:201", "src/uxbox/main/ui/settings/profile.cljs:38", "src/uxbox/main/ui/auth.cljs:91" ],
+    "used-in" : [ "src/uxbox/main/ui.cljs:204", "src/uxbox/main/ui/settings/profile.cljs:38", "src/uxbox/main/ui/auth.cljs:91" ],
     "translations" : {
       "en" : "Something wrong has happened.",
       "fr" : "Quelque chose c'est mal passé.",
@@ -657,7 +738,7 @@
     }
   },
   "errors.image-format-unsupported" : {
-    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:390", "src/uxbox/main/data/users.cljs:177", "src/uxbox/main/data/images.cljs:376" ],
+    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:406", "src/uxbox/main/data/users.cljs:177", "src/uxbox/main/data/images.cljs:376" ],
     "translations" : {
       "en" : "The image format is not supported (must be svg, jpg or png).",
       "fr" : "Le format d'image n'est pas supporté (doit être svg, jpg ou png).",
@@ -666,7 +747,7 @@
     }
   },
   "errors.image-too-large" : {
-    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:388", "src/uxbox/main/data/users.cljs:175", "src/uxbox/main/data/images.cljs:374" ],
+    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:404", "src/uxbox/main/data/users.cljs:175", "src/uxbox/main/data/images.cljs:374" ],
     "translations" : {
       "en" : "The image is too large to be inserted (must be under 5mb).",
       "fr" : "L'image est trop grande (doit être inférieure à 5 Mo).",
@@ -675,7 +756,7 @@
     }
   },
   "errors.image-type-mismatch" : {
-    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:355", "src/uxbox/main/data/workspace/persistence.cljs:405", "src/uxbox/main/data/users.cljs:191", "src/uxbox/main/data/images.cljs:391" ],
+    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:371", "src/uxbox/main/data/workspace/persistence.cljs:421", "src/uxbox/main/data/users.cljs:191", "src/uxbox/main/data/images.cljs:391" ],
     "translations" : {
       "en" : "Seems that the contents of the image does not match the file extension.",
       "fr" : "",
@@ -684,7 +765,7 @@
     }
   },
   "errors.image-type-not-allowed" : {
-    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:352", "src/uxbox/main/data/workspace/persistence.cljs:402", "src/uxbox/main/data/users.cljs:188", "src/uxbox/main/data/images.cljs:388" ],
+    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:368", "src/uxbox/main/data/workspace/persistence.cljs:418", "src/uxbox/main/data/users.cljs:188", "src/uxbox/main/data/images.cljs:388" ],
     "translations" : {
       "en" : "Seems that this is not a valid image.",
       "fr" : "",
@@ -693,7 +774,7 @@
     }
   },
   "errors.network" : {
-    "used-in" : [ "src/uxbox/main/ui.cljs:195" ],
+    "used-in" : [ "src/uxbox/main/ui.cljs:198" ],
     "translations" : {
       "en" : "Unable to connect to backend server.",
       "fr" : "Impossible de se connecter au serveur principal.",
@@ -729,7 +810,7 @@
     }
   },
   "errors.unexpected-error" : {
-    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:358", "src/uxbox/main/data/workspace/persistence.cljs:408", "src/uxbox/main/data/users.cljs:194", "src/uxbox/main/data/images.cljs:394", "src/uxbox/main/ui/settings/change_email.cljs:51", "src/uxbox/main/ui/workspace/sidebar/options/exports.cljs:65", "src/uxbox/main/ui/auth/register.cljs:54" ],
+    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:374", "src/uxbox/main/data/workspace/persistence.cljs:424", "src/uxbox/main/data/users.cljs:194", "src/uxbox/main/data/images.cljs:394", "src/uxbox/main/ui/settings/change_email.cljs:51", "src/uxbox/main/ui/workspace/sidebar/options/exports.cljs:65", "src/uxbox/main/ui/auth/register.cljs:54" ],
     "translations" : {
       "en" : "An unexpected error occurred.",
       "fr" : "Une erreur inattendue c'est produite",
@@ -756,7 +837,7 @@
     }
   },
   "header.sitemap" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:65" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:85" ],
     "translations" : {
       "en" : "Sitemap",
       "fr" : null,
@@ -774,7 +855,7 @@
     }
   },
   "image.loading" : {
-    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:366", "src/uxbox/main/data/workspace/persistence.cljs:417", "src/uxbox/main/data/users.cljs:201", "src/uxbox/main/data/images.cljs:403" ],
+    "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:382", "src/uxbox/main/data/workspace/persistence.cljs:433", "src/uxbox/main/data/users.cljs:201", "src/uxbox/main/data/images.cljs:403" ],
     "translations" : {
       "en" : "Loading image...",
       "fr" : "Chargement de l'image...",
@@ -999,7 +1080,7 @@
     }
   },
   "settings.notifications.email-not-verified" : {
-    "used-in" : [ "src/uxbox/main/ui/dashboard.cljs:113" ],
+    "used-in" : [ "src/uxbox/main/ui/dashboard.cljs:118" ],
     "translations" : {
       "en" : "Your email address has not been verified yet. Please check your inbox at “%s” for a confirmation email.",
       "fr" : "Votre adresse e-mail n'a pas encore été vérifiée. Veuillez vérifier votre boîte de réception à “%s” pour un e-mail de confirmation.",
@@ -1359,7 +1440,7 @@
     }
   },
   "workspace.assets.assets" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:325" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:331" ],
     "translations" : {
       "en" : "Assets",
       "fr" : "",
@@ -1368,7 +1449,7 @@
     }
   },
   "workspace.assets.box-filter-all" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:342" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:348" ],
     "translations" : {
       "en" : "All assets",
       "fr" : "",
@@ -1377,7 +1458,7 @@
     }
   },
   "workspace.assets.box-filter-colors" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:344" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:350" ],
     "translations" : {
       "en" : "Colors",
       "fr" : "",
@@ -1386,7 +1467,7 @@
     }
   },
   "workspace.assets.box-filter-graphics" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:343" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:349" ],
     "translations" : {
       "en" : "Graphics",
       "fr" : "",
@@ -1422,7 +1503,7 @@
     }
   },
   "workspace.assets.file-library" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:271" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:272" ],
     "translations" : {
       "en" : "File library",
       "fr" : "",
@@ -1440,7 +1521,7 @@
     }
   },
   "workspace.assets.not-found" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:282" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:287" ],
     "translations" : {
       "en" : "No assets found",
       "fr" : "",
@@ -1458,7 +1539,7 @@
     }
   },
   "workspace.assets.search" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:329" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:335" ],
     "translations" : {
       "en" : "Search assets",
       "fr" : "",
@@ -1466,8 +1547,17 @@
       "es" : "Buscar recursos"
     }
   },
+  "workspace.assets.shared" : {
+    "used-in" : [ "src/uxbox/main/ui/workspace/sidebar/assets.cljs:274" ],
+    "translations" : {
+      "en" : "SHARED",
+      "fr" : "",
+      "ru" : "",
+      "es" : "COMPARTIDA"
+    }
+  },
   "workspace.header.menu.disable-dynamic-alignment" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:117" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:139" ],
     "translations" : {
       "en" : "Disable dynamic alignment",
       "fr" : "Désactiver l'alignement dynamique",
@@ -1476,7 +1566,7 @@
     }
   },
   "workspace.header.menu.disable-snap-grid" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:89" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:111" ],
     "translations" : {
       "en" : "Disable snap to grid",
       "fr" : "Désactiver l'alignement sur la grille",
@@ -1485,7 +1575,7 @@
     }
   },
   "workspace.header.menu.enable-dynamic-alignment" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:118" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:140" ],
     "translations" : {
       "en" : "Enable dynamic aligment",
       "fr" : "Activer l'alignement dynamique",
@@ -1494,7 +1584,7 @@
     }
   },
   "workspace.header.menu.enable-snap-grid" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:90" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:112" ],
     "translations" : {
       "en" : "Snap to grid",
       "fr" : "Aligner sur la grille",
@@ -1503,7 +1593,7 @@
     }
   },
   "workspace.header.menu.hide-grid" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:82" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:104" ],
     "translations" : {
       "en" : "Hide grid",
       "fr" : "Masquer la grille",
@@ -1512,7 +1602,7 @@
     }
   },
   "workspace.header.menu.hide-layers" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:96" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:118" ],
     "translations" : {
       "en" : "Hide layers",
       "fr" : "Masquer les couches",
@@ -1521,7 +1611,7 @@
     }
   },
   "workspace.header.menu.hide-libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:110" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:132" ],
     "translations" : {
       "en" : "Hide libraries",
       "fr" : "Masquer les librairies",
@@ -1530,7 +1620,7 @@
     }
   },
   "workspace.header.menu.hide-palette" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:103" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:125" ],
     "translations" : {
       "en" : "Hide color palette",
       "fr" : "Masquer la palette de couleurs",
@@ -1539,7 +1629,7 @@
     }
   },
   "workspace.header.menu.hide-rules" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:75" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:97" ],
     "translations" : {
       "en" : "Hide rules",
       "fr" : "Masquer les règles",
@@ -1548,7 +1638,7 @@
     }
   },
   "workspace.header.menu.show-grid" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:83" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:105" ],
     "translations" : {
       "en" : "Show grid",
       "fr" : "Montrer la grille",
@@ -1557,7 +1647,7 @@
     }
   },
   "workspace.header.menu.show-layers" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:97" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:119" ],
     "translations" : {
       "en" : "Show layers",
       "fr" : "Montrer les couches",
@@ -1566,7 +1656,7 @@
     }
   },
   "workspace.header.menu.show-libraries" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:111" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:133" ],
     "translations" : {
       "en" : "Show libraries",
       "fr" : "Montrer les librairies",
@@ -1575,7 +1665,7 @@
     }
   },
   "workspace.header.menu.show-palette" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:104" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:126" ],
     "translations" : {
       "en" : "Show color palette",
       "fr" : "Montrer la palette de couleurs",
@@ -1584,7 +1674,7 @@
     }
   },
   "workspace.header.menu.show-rules" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:76" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:98" ],
     "translations" : {
       "en" : "Show rules",
       "fr" : "Montrer les règles",
@@ -1593,7 +1683,7 @@
     }
   },
   "workspace.header.viewer" : {
-    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:156" ],
+    "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:184" ],
     "translations" : {
       "en" : "View mode (Ctrl + P)",
       "fr" : "Mode visualisation (Ctrl + P)",

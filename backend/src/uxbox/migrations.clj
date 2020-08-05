@@ -63,7 +63,11 @@
 
     {:desc "Make libraries linked to a file"
      :name "0012-make-libraries-linked-to-a-file"
-     :fn (mg/resource "migrations/0012-make-libraries-linked-to-a-file.sql")}]})
+     :fn (mg/resource "migrations/0012-make-libraries-linked-to-a-file.sql")}
+
+    {:desc "Mark files shareable"
+     :name "0013-mark-files-shareable"
+     :fn (mg/resource "migrations/0013-mark-files-shareable.sql")}]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Entry point

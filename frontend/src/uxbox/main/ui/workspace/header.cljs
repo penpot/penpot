@@ -18,6 +18,8 @@
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
    [uxbox.main.ui.components.dropdown :refer [dropdown]]
+   [uxbox.main.ui.modal :as modal]
+   [uxbox.main.ui.confirm :refer [confirm-dialog]]
    [uxbox.main.ui.workspace.presence :as presence]
    [uxbox.util.i18n :as i18n :refer [t]]
    [uxbox.util.data :refer [classnames]]
@@ -58,13 +60,33 @@
 (mf/defc menu
   [{:keys [layout project file] :as props}]
   (let [show-menu? (mf/use-state false)
-        locale (i18n/use-locale)]
+        locale (i18n/use-locale)
+
+        add-shared-fn #(st/emit! nil (dw/set-file-shared (:id file) true))
+        on-add-shared
+        #(modal/show! confirm-dialog
+                        {:message (t locale "dashboard.grid.add-shared-message" (:name file))
+                         :hint (t locale "dashboard.grid.add-shared-hint")
+                         :accept-text (t locale "dashboard.grid.add-shared-accept")
+                         :not-danger? true
+                         :on-accept add-shared-fn})
+
+        remove-shared-fn #(st/emit! nil (dw/set-file-shared (:id file) false))
+        on-remove-shared
+        #(modal/show! confirm-dialog
+                        {:message (t locale "dashboard.grid.remove-shared-message" (:name file))
+                         :hint (t locale "dashboard.grid.remove-shared-hint")
+                         :accept-text (t locale "dashboard.grid.remove-shared-accept")
+                         :not-danger? false
+                         :on-accept remove-shared-fn})]
 
     [:div.menu-section
      [:div.btn-icon-dark.btn-small {:on-click #(reset! show-menu? true)} i/actions]
      [:div.project-tree {:alt (t locale "header.sitemap")}
       [:span.project-name (:name project) " /"]
       [:span (:name file)]]
+     (when (:is-shared file)
+       [:div.shared-badge i/library])
 
      [:& dropdown {:show @show-menu?
                    :on-close #(reset! show-menu? false)}
@@ -117,6 +139,12 @@
            (t locale "workspace.header.menu.disable-dynamic-alignment")
            (t locale "workspace.header.menu.enable-dynamic-alignment"))]
         [:span.shortcut "Ctrl+a"]]
+
+       (if (:is-shared file)
+         [:li {:on-click on-remove-shared}
+          [:span (t locale "dashboard.grid.remove-shared")]]
+         [:li {:on-click on-add-shared}
+          [:span (t locale "dashboard.grid.add-shared")]])
        ]]]))
 
 ;; --- Header Component

@@ -182,6 +182,22 @@
                  :workspace-project project)
           (reduce assoc-page $$ pages))))))
 
+;; --- Set File shared
+
+(defn set-file-shared
+  [id is-shared]
+  {:pre [(uuid? id) (boolean? is-shared)]}
+  (ptk/reify ::set-file-shared
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-file :is-shared] is-shared))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [params {:id id :is-shared is-shared}]
+        (->> (rp/mutation :set-file-shared params)
+             (rx/ignore))))))
+
 ;; --- Fetch Pages
 
 (declare page-fetched)

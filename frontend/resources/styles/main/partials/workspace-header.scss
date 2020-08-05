@@ -55,6 +55,23 @@
     align-items: center;
   }
 
+  .shared-badge {
+    margin-left: $x-small;
+    border: 1px solid $color-gray-20;
+    border-radius: 4px;
+    height: 16px;
+    width: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      fill: $color-gray-20;
+      height: 8px;
+      width: 8px;
+    }
+  }
+
   .users-section {
     display: flex;
   }

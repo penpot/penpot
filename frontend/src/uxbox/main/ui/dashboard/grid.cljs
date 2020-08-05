@@ -60,6 +60,28 @@
                      (dom/stop-propagation %)
                      (modal/show! confirm-dialog {:on-accept delete-fn}))
 
+        add-shared-fn #(st/emit! nil (dsh/set-file-shared (:id file) true))
+        on-add-shared
+        #(do
+           (dom/stop-propagation %)
+           (modal/show! confirm-dialog
+                        {:message (t locale "dashboard.grid.add-shared-message" (:name file))
+                         :hint (t locale "dashboard.grid.add-shared-hint")
+                         :accept-text (t locale "dashboard.grid.add-shared-accept")
+                         :not-danger? true
+                         :on-accept add-shared-fn}))
+
+        remove-shared-fn #(st/emit! nil (dsh/set-file-shared (:id file) false))
+        on-remove-shared
+        #(do
+           (dom/stop-propagation %)
+           (modal/show! confirm-dialog
+                        {:message (t locale "dashboard.grid.remove-shared-message" (:name file))
+                         :hint (t locale "dashboard.grid.remove-shared-hint")
+                         :accept-text (t locale "dashboard.grid.remove-shared-accept")
+                         :not-danger? false
+                         :on-accept remove-shared-fn}))
+
         on-blur #(let [name (-> % dom/get-target dom/get-value)]
                    (st/emit! (dsh/rename-file (:id file) name))
                    (swap! local assoc :edition false))
@@ -77,6 +99,9 @@
     [:div.grid-item.project-th {:on-click on-navigate}
      [:div.overlay]
      [:& grid-item-thumbnail {:file file}]
+     (when (:is-shared file)
+       [:div.item-badge
+         i/library])
      [:div.item-info
       (if (:edition @local)
         [:input.element-name {:type "text"
@@ -100,7 +125,10 @@
       [:& context-menu {:on-close on-menu-close
                         :show (:menu-open @local)
                         :options [[(t locale "dashboard.grid.rename") on-edit]
-                                  [(t locale "dashboard.grid.delete") on-delete]]}]]]))
+                                  [(t locale "dashboard.grid.delete") on-delete]
+                                  (if (:is-shared file)
+                                     [(t locale "dashboard.grid.remove-shared") on-remove-shared]
+                                     [(t locale "dashboard.grid.add-shared") on-add-shared])]}]]]))
 
 ;; --- Grid
 

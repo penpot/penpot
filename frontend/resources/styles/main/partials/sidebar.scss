@@ -90,6 +90,15 @@ $width-settings-bar: 15rem;
           font-size: $fs13;
         }
 
+        span.tool-badge {
+          border: 1px solid $color-primary;
+          border-radius: 2px;
+          font-size: $fs10;
+          color: $color-primary;
+          padding: 2px 4px;
+          margin-left: auto;
+        }
+
         .tool-window-icon {
           margin-right: $small;
           display: none;

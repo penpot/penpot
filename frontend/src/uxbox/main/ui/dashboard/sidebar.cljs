@@ -104,13 +104,14 @@
            selected-section
            selected-project-id
            selected-team-id] :as props}]
-  (let [home?   (and (= selected-section :dashboard-team)
-                     (= selected-team-id (:default-team-id profile)))
-        drafts? (and (= selected-section :dashboard-project)
-                     (= selected-team-id (:default-team-id profile))
-                     (= selected-project-id (:default-project-id profile)))
-        library? (and (str/starts-with? (name selected-section) "dashboard-library")
-                      (= selected-team-id (:default-team-id profile)))
+  (let [home?      (and (= selected-section :dashboard-team)
+                        (= selected-team-id (:default-team-id profile)))
+        drafts?    (and (= selected-section :dashboard-project)
+                        (= selected-team-id (:default-team-id profile))
+                        (= selected-project-id (:default-project-id profile)))
+        libraries? (= selected-section :dashboard-libraries)
+        ;; library? (and (str/starts-with? (name selected-section) "dashboard-library")
+        ;;               (= selected-team-id (:default-team-id profile)))
         locale (i18n/use-locale)]
     [:div.sidebar-team
      [:ul.library-elements.library-common
@@ -128,8 +129,8 @@
        [:span.element-title (t locale "dashboard.sidebar.drafts")]]
 
       [:li
-       {:on-click #(st/emit! (rt/nav :dashboard-library-icons-index {:team-id team-id}))
-        :class-name (when library? "current")}
+       {:on-click #(st/emit! (rt/nav :dashboard-libraries {:team-id team-id}))
+        :class-name (when libraries? "current")}
        i/icon-set
        [:span.element-title (t locale "dashboard.sidebar.libraries")]]]
 

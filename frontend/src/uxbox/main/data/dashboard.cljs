@@ -74,6 +74,7 @@
 (declare fetch-files)
 (declare fetch-projects)
 (declare fetch-recent-files)
+(declare fetch-shared-files)
 
 (def initialize-drafts
   (ptk/reify ::initialize-drafts
@@ -95,7 +96,7 @@
 (defn initialize-recent
   [team-id]
   (us/verify ::us/uuid team-id)
-  (ptk/reify ::initialize-team
+  (ptk/reify ::initialize-recent
     ptk/UpdateEvent
     (update [_ state]
       (update state :dashboard-local assoc
@@ -127,6 +128,25 @@
        (let [local (:dashboard-local state)]
          (rx/of (fetch-projects (:team-id local) nil)
                 (fetch-files (:project-id local)))))))
+
+
+(defn initialize-libraries
+  [team-id]
+  (us/verify ::us/uuid team-id)
+  (ptk/reify ::initialize-libraries
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :dashboard-local assoc
+              :project-for-edit nil
+              :project-id nil
+              :team-id team-id))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [local (:dashboard-local state)]
+        (rx/of (fetch-projects (:team-id local) nil)
+               (fetch-shared-files (:team-id local)))))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Fetching
@@ -196,6 +216,29 @@
   [files]
   (us/verify (s/every ::file) files)
   (ptk/reify ::files-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [state (dissoc state :files)
+            files (d/index-by :id files)]
+        (assoc state :files files)))))
+
+;; --- Fetch Shared Files
+
+(declare shared-files-fetched)
+
+(defn fetch-shared-files
+  []
+  (ptk/reify ::fetch-shared-files
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [params {}]
+        (->> (rp/query :shared-files params)
+             (rx/map shared-files-fetched))))))
+
+(defn shared-files-fetched
+  [files]
+  (us/verify (s/every ::file) files)
+  (ptk/reify ::shared-files-fetched
     ptk/UpdateEvent
     (update [_ state]
       (let [state (dissoc state :files)
@@ -333,11 +376,25 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [local (:dashboard-local state)
-            params {:id id :name name}]
+      (let [params {:id id :name name}]
         (->> (rp/mutation :rename-file params)
              (rx/ignore))))))
 
+;; --- Set File shared
+
+(defn set-file-shared
+  [id is-shared]
+  {:pre [(uuid? id) (boolean? is-shared)]}
+  (ptk/reify ::set-file-shared
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:files id :is-shared] is-shared))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [params {:id id :is-shared is-shared}]
+        (->> (rp/mutation :set-file-shared params)
+             (rx/ignore))))))
 
 ;; --- Create File
 

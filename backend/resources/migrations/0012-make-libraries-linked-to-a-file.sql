@@ -1,11 +1,3 @@
--- ALTER TABLE color_library
---   DROP COLUMN team_id,
---   DROP COLUMN name,
---   ADD COLUMN file_id uuid NOT NULL REFERENCES file(id) ON DELETE CASCADE;
---
--- CREATE INDEX color_library__file_id__idx
---     ON color_library(file_id);
-
 TRUNCATE TABLE color;
 TRUNCATE TABLE color_library CASCADE;
 TRUNCATE TABLE image;

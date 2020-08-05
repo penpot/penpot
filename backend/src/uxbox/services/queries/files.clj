@@ -147,6 +147,32 @@
                           project-id profile-id])
        (mapv decode-row)))
 
+
+;; --- Query: Shared Files
+
+(def ^:private sql:shared-files
+  "select distinct
+          f.*,
+          array_agg(pg.id) over pages_w as pages,
+          first_value(pg.data) over pages_w as data
+     from file as f
+     left join page as pg on (f.id = pg.file_id)
+    where is_shared = true
+      and f.deleted_at is null
+      and pg.deleted_at is null
+   window pages_w as (partition by f.id order by pg.ordering
+                      range between unbounded preceding
+                                and unbounded following)
+    order by f.modified_at desc")
+
+(s/def ::shared-files
+  (s/keys :req-un [::profile-id]))
+
+(sq/defquery ::shared-files
+  [{:keys [profile-id] :as params}]
+  (->> (db/exec! db/pool [sql:shared-files])
+       (mapv decode-row)))
+
 ;; --- Query: File Permissions
 
 (def ^:private sql:file-permissions
