@@ -33,7 +33,7 @@
 (s/def ::id ::us/uuid)
 (s/def ::name ::us/string)
 (s/def ::profile-id ::us/uuid)
-(s/def ::library-id ::us/uuid)
+(s/def ::file-id ::us/uuid)
 (s/def ::team-id ::us/uuid)
 (s/def ::url ::us/url)
 
@@ -62,7 +62,7 @@
 
 ;; --- Rename Library
 
-(declare select-library-for-update)
+(declare select-file-for-update)
 
 (s/def ::rename-image-library
   (s/keys :req-un [::id ::profile-id ::name]))
@@ -70,15 +70,26 @@
 (sm/defmutation ::rename-image-library
   [{:keys [profile-id id name] :as params}]
   (db/with-atomic [conn db/pool]
-    (let [lib (select-library-for-update conn id)]
+    (let [lib (select-file-for-update conn id)]
       (teams/check-edition-permissions! conn profile-id (:team-id lib))
       (db/update! conn :image-library
                   {:name name}
                   {:id id}))))
 
-(defn- select-library-for-update
+(def ^:private sql:select-file-for-update
+  "select file.*,
+          project.team_id as team_id
+     from file
+    inner join project on (project.id = file.project_id)
+    where file.id = ?
+      for update of file")
+
+(defn- select-file-for-update
   [conn id]
-  (db/get-by-id conn :image-library id {:for-update true}))
+  (let [row (db/exec-one! conn [sql:select-file-for-update id])]
+    (when-not row
+      (ex/raise :type :not-found))
+    row))
 
 
 ;; --- Delete Library
@@ -91,7 +102,7 @@
 (sm/defmutation ::delete-image-library
   [{:keys [id profile-id] :as params}]
   (db/with-atomic [conn db/pool]
-    (let [lib (select-library-for-update conn id)]
+    (let [lib (select-file-for-update conn id)]
       (teams/check-edition-permissions! conn profile-id (:team-id lib))
 
       ;; Schedule object deletion
@@ -112,7 +123,7 @@
 (declare persist-image-thumbnail-on-fs)
 
 (def valid-image-types?
-  #{"image/jpeg", "image/png", "image/webp"})
+  #{"image/jpeg", "image/png", "image/webp", "image/svg+xml"})
 
 (s/def :uxbox$upload/filename ::us/string)
 (s/def :uxbox$upload/size ::us/integer)
@@ -128,32 +139,32 @@
 (s/def ::content ::upload)
 
 (s/def ::add-image-from-url
-  (s/keys :req-un [::profile-id ::library-id ::url]
+  (s/keys :req-un [::profile-id ::file-id ::url]
           :opt-un [::id]))
 
 (s/def ::upload-image
-  (s/keys :req-un [::profile-id ::library-id ::name ::content]
+  (s/keys :req-un [::profile-id ::file-id ::name ::content]
           :opt-un [::id]))
 
 (sm/defmutation ::add-image-from-url
-  [{:keys [profile-id library-id url] :as params}]
+  [{:keys [profile-id file-id url] :as params}]
   (db/with-atomic [conn db/pool]
-    (let [lib (select-library-for-update conn library-id)]
-      (teams/check-edition-permissions! conn profile-id (:team-id lib))
+    (let [file (select-file-for-update conn file-id)]
+      (teams/check-edition-permissions! conn profile-id (:team-id file))
       (let [content (images/download-image url)
             params' (merge params {:content content
                                    :name (:filename content)})]
         (create-image conn params')))))
 
 (sm/defmutation ::upload-image
-  [{:keys [profile-id library-id] :as params}]
+  [{:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn db/pool]
-    (let [lib (select-library-for-update conn library-id)]
-      (teams/check-edition-permissions! conn profile-id (:team-id lib))
+    (let [file (select-file-for-update conn file-id)]
+      (teams/check-edition-permissions! conn profile-id (:team-id file))
       (create-image conn params))))
 
 (defn create-image
-  [conn {:keys [id content library-id name]}]
+  [conn {:keys [id content file-id name]}]
   (when-not (valid-image-types? (:content-type content))
     (ex/raise :type :validation
               :code :image-type-not-allowed
@@ -165,11 +176,15 @@
         opts  (assoc thumbnail-options
                     :input {:mtype (:mtype info)
                             :path path})
-        thumb (persist-image-thumbnail-on-fs opts)]
+        thumb (if-not (= (:mtype info) "image/svg+xml")
+                (persist-image-thumbnail-on-fs opts)
+                (assoc info
+                       :path path
+                       :quality 0))]
 
     (-> (db/insert! conn :image
                     {:id (or id (uuid/next))
-                     :library-id library-id
+                     :file-id file-id
                      :name name
                      :path (str path)
                      :width (:width info)
@@ -235,8 +250,6 @@
     (when-not row
       (ex/raise :type :not-found))
     row))
-
-
 
 ;; --- Delete Image
 

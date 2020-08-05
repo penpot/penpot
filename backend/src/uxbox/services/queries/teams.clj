@@ -30,7 +30,8 @@
 (defn check-edition-permissions!
   [conn profile-id team-id]
   (let [row (db/exec-one! conn [sql:team-permissions profile-id team-id])]
-    (when-not (or (:can-edit row)
+    (when-not (or (= team-id uuid/zero) ;; We can write global-project owned items
+                  (:can-edit row)
                   (:is-admin row)
                   (:is-owner row))
       (ex/raise :type :validation
@@ -39,10 +40,9 @@
 (defn check-read-permissions!
   [conn profile-id team-id]
   (let [row (db/exec-one! conn [sql:team-permissions profile-id team-id])]
-    (when-not (or (:can-edit row)
+    (when-not (or (= team-id uuid/zero) ;; We can read global-project owned items
+                  (:can-edit row)
                   (:is-admin row)
-                  (:is-owner row)
-                  ;; We can read global-project owned items
-                  (= team-id #uuid "00000000-0000-0000-0000-000000000000"))
+                  (:is-owner row))
       (ex/raise :type :validation
                 :code :not-authorized))))

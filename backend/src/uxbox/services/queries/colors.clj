@@ -28,9 +28,10 @@
 (s/def ::id ::us/uuid)
 (s/def ::profile-id ::us/uuid)
 (s/def ::team-id ::us/uuid)
+(s/def ::file-id ::us/uuid)
 (s/def ::library-id (s/nilable ::us/uuid))
 
-;; --- Query: Colors Librarys
+;; --- Query: Colors Libraries
 
 (def ^:private sql:libraries
   "select lib.*,
@@ -78,31 +79,31 @@
       (ex/raise :type :not-found))
     row))
 
-;; --- Query: Colors (by library)
+;; --- Query: Colors (by file)
 
 (declare retrieve-colors)
 
 (s/def ::colors
-  (s/keys :req-un [::profile-id ::library-id]))
+  (s/keys :req-un [::profile-id ::file-id]))
 
 (sq/defquery ::colors
-  [{:keys [profile-id library-id] :as params}]
+  [{:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn db/pool]
-    (let [lib (retrieve-library conn library-id)]
-      (teams/check-read-permissions! conn profile-id (:team-id lib))
-      (retrieve-colors conn library-id))))
+    (retrieve-colors conn file-id)))
+    ;; (let [lib (retrieve-library conn library-id)]
+    ;;   (teams/check-read-permissions! conn profile-id (:team-id lib))
+    ;;   (retrieve-colors conn library-id))))
 
 (def ^:private sql:colors
-  "select color.*
-     from color as color
-    inner join color_library as lib on (lib.id = color.library_id)
+  "select *
+     from color
     where color.deleted_at is null
-      and color.library_id = ?
+      and color.file_id = ?
    order by created_at desc")
 
 (defn- retrieve-colors
-  [conn library-id]
-  (db/exec! conn [sql:colors library-id]))
+  [conn file-id]
+  (db/exec! conn [sql:colors file-id]))
 
 
 ;; --- Query: Color (by ID)

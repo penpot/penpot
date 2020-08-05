@@ -25,7 +25,7 @@ $width-settings-bar: 15rem;
   }
 
   .settings-bar-inside {
-    align-items: center;
+    align-items: flex-start;
     display: grid;
     grid-template-columns: 100%;
 

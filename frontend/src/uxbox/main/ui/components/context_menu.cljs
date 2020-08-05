@@ -25,11 +25,15 @@
   (let [open? (gobj/get props "show")
         options (gobj/get props "options")
         is-selectable (gobj/get props "selectable")
-        selected (gobj/get props "selected")]
+        selected (gobj/get props "selected")
+        top (gobj/get props "top")
+        left (gobj/get props "left")]
     (when open?
       [:> dropdown' props
        [:div.context-menu {:class (classnames :is-open open?
-                                              :is-selectable is-selectable)}
+                                              :is-selectable is-selectable)
+                           :style {:top top
+                                   :left left}}
         [:ul.context-menu-items
          (for [[action-name action-handler] options]
            [:li.context-menu-item {:class (classnames :is-selected (and selected (= action-name selected)))

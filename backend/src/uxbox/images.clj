@@ -48,7 +48,7 @@
 
 (s/def ::width integer?)
 (s/def ::height integer?)
-(s/def ::format #{:jpeg :webp :png})
+(s/def ::format #{:jpeg :webp :png :svg})
 (s/def ::quality #(< 0 % 101))
 
 (s/def ::thumbnail-params
@@ -62,21 +62,24 @@
   (case format
     :png  ".png"
     :jpeg ".jpg"
-    :webp ".webp"))
+    :webp ".webp"
+    :svg  ".svg"))
 
 (defn format->mtype
   [format]
   (case format
     :png  "image/png"
     :jpeg "image/jpeg"
-    :webp "image/webp"))
+    :webp "image/webp"
+    :svg  "image/svg+xml"))
 
 (defn mtype->format
   [mtype]
   (case mtype
-    "image/jpeg" :jpeg
-    "image/webp" :webp
-    "image/png"  :png
+    "image/png"     :png
+    "image/jpeg"    :jpeg
+    "image/webp"    :webp
+    "image/svg+xml" :svg
     nil))
 
 (defn- generic-process
@@ -127,18 +130,21 @@
 (defmethod process :info
   [{:keys [input] :as params}]
   (us/assert ::input input)
-  (let [{:keys [path mtype]} input
-        instance (Info. (str path))
-        mtype'   (.getProperty instance "Mime type")]
-
-    (when (and (string? mtype)
-               (not= mtype mtype'))
-      (ex/raise :type :validation
-                :code :image-type-mismatch
-                :hint "Seems like you are uploading a file whose content does not match the extension."))
-    {:width  (.getImageWidth instance)
-     :height (.getImageHeight instance)
-     :mtype  mtype'}))
+  (let [{:keys [path mtype]} input]
+    (if (= mtype "image/svg+xml")
+      {:width 100
+       :height 100
+       :mtype mtype}
+      (let [instance (Info. (str path))
+            mtype'   (.getProperty instance "Mime type")]
+        (when (and (string? mtype)
+                   (not= mtype mtype'))
+          (ex/raise :type :validation
+                    :code :image-type-mismatch
+                    :hint "Seems like you are uploading a file whose content does not match the extension."))
+        {:width  (.getImageWidth instance)
+         :height (.getImageHeight instance)
+         :mtype  mtype'}))))
 
 (defmethod process :default
   [{:keys [cmd] :as params}]
@@ -164,13 +170,15 @@
 (defn resolve-urls
   [row src dst]
   (s/assert map? row)
-  (let [src (if (vector? src) src [src])
-        dst (if (vector? dst) dst [dst])
-        value (get-in row src)]
-    (if (empty? value)
-      row
-      (let [url (ust/public-uri media/media-storage value)]
-        (assoc-in row dst (str url))))))
+  (if (and src dst)
+    (let [src (if (vector? src) src [src])
+          dst (if (vector? dst) dst [dst])
+          value (get-in row src)]
+      (if (empty? value)
+        row
+        (let [url (ust/public-uri media/media-storage value)]
+          (assoc-in row dst (str url)))))
+    row))
 
 (defn- resolve-uri
   [storage row src dst]

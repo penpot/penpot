@@ -58,7 +58,10 @@
    (set-data! e "uxbox/data" data))
   ([e data-type data]
    (let [dt (.-dataTransfer e)]
-     (.setData dt data-type (t/encode data))
+     (if (or (str/starts-with? data-type "application")
+             (str/starts-with? data-type "uxbox"))
+       (.setData dt data-type (t/encode data))
+       (.setData dt data-type data))
      e)))
 
 (defn set-drag-image!

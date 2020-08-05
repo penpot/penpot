@@ -1,54 +1,68 @@
-{:icons
- [{:name "Material Design (Action)"
-   :path "./icons/material-action"
-   :regex #"^.*_48px\.svg$"}
+[
+  ;; Icons
+  {:name "Material Design (Action)"
+   :images {:path "./icons/material-action"
+            :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Alert)"
-   :path "./icons/material-alert"
-   :regex #"^.*_48px\.svg$"}
+   :images {:path "./icons/material-alert"
+            :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Av)"
-   :path "./icons/material-av"
-   :regex #"^.*_48px\.svg$"}
+   :images {:path "./icons/material-av"
+            :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Content)"
-   :path "./icons/material-content"
-   :regex #"^.*_48px\.svg$"}
+   :images {:path "./icons/material-content"
+            :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Device)"
-   :path "./icons/material-device"
-   :regex #"^.*_48px\.svg$"}
+   :images {:path "./icons/material-device"
+            :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Editor)"
-   :path "./icons/material-editor"
-   :regex #"^.*_48px\.svg$"}
+   :images {:path "./icons/material-editor"
+            :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (File)"
-   :path "./icons/material-file"
-   :regex #"^.*_48px\.svg$"}
+   :images {:path "./icons/material-file"
+            :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Hardware)"
-   :path "./icons/material-hardware"
-   :regex #"^.*_48px\.svg$"}
+   :images {:path "./icons/material-hardware"
+            :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Image)"
-   :path "./icons/material-image"
-   :regex #"^.*_48px\.svg$"}
+   :images {:path "./icons/material-image"
+            :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Maps)"
-   :path "./icons/material-maps"
-   :regex #"^.*_48px\.svg$"}
+   :images {:path "./icons/material-maps"
+            :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Navigation)"
-   :path "./icons/material-navigation"
-   :regex #"^.*_48px\.svg$"}
+   :images {:path "./icons/material-navigation"
+            :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Notification)"
-   :path "./icons/material-notification"
-   :regex #"^.*_48px\.svg$"}
+   :images {:path "./icons/material-notification"
+            :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Places)"
-   :path "./icons/material-places"
-   :regex #"^.*_48px\.svg$"}
+   :images {:path "./icons/material-places"
+            :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Social)"
-   :path "./icons/material-social"
-   :regex #"^.*_48px\.svg$"}
+   :images {:path "./icons/material-social"
+            :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Toggle)"
-   :path "./icons/material-toggle"
-   :regex #"^.*_48px\.svg$"}
-  ]
+   :images {:path "./icons/material-toggle"
+            :regex #"^.*_48px\.svg$"}}
 
- :colors
- [{:name "Flat design"
-   :id #uuid "00000000-0000-0000-0000-00000000001"
+  ;; Images
+  {:name "Unsplash"
+   :images {:path "./images/unsplash"
+            :regex #"^.*\.jpg$"}
+   :colors ["Chateau Green"    "#419860"
+            "Toast"            "#987567"
+            "Confetti"         "#EAC75B"
+            "Thunderbird"      "#C23D1F"
+            "Coffee Bean"      "#331113"
+            "Lavender Magenta" "#EF88DF"
+            "Persian Rose"     "#F536A6"
+            "Royal Blue"       "#5C4AEE"
+            "Biscay"           "#202362"
+            "Olivine"          "#98C277"]}
+
+  ;; Colors
+  {:name "Flat design"
    :colors ["turquoise-50" "#e8f8f5"
             "turquoise-100" "#d1f2eb"
             "turquoise-200" "#a3e4d7"
@@ -250,9 +264,7 @@
             "asbestos-800" "#515a5a"
             "asbestos-900" "#424949"]}
 
-
   {:name "Material design"
-   :id #uuid "00000000-0000-0000-0000-000000000020"
    :colors ["red-50" "#ffebee"
             "red-100" "#ffcdd2"
             "red-200" "#ef9a9a"
@@ -509,5 +521,4 @@
             "blue-grey-900" "#263238"
             "white" "#ffffff"
             "black" "#000000"]}
-  ]}
-
+]

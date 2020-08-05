@@ -106,8 +106,8 @@
   (mf/use-effect
    (mf/deps project-id file-id)
    (fn []
-     (st/emit! (dw/initialize project-id file-id))
-     #(st/emit! (dw/finalize project-id file-id))))
+     (st/emit! (dw/initialize-file project-id file-id))
+     #(st/emit! (dw/finalize-file project-id file-id))))
 
   (hooks/use-shortcuts dw/shortcuts)
 

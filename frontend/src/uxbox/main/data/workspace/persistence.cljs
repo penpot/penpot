@@ -289,7 +289,7 @@
   (ptk/reify ::fetch-images
     ptk/WatchEvent
     (watch [_ state stream]
-      (->> (rp/query :file-images {:file-id file-id})
+      (->> (rp/query :images {:file-id file-id})
            (rx/map images-fetched)))))
 
 (defn images-fetched
@@ -300,11 +300,31 @@
       (let [images (d/index-by :id images)]
         (assoc state :workspace-images images)))))
 
+;; --- Fetch Workspace Colors
+
+(declare colors-fetched)
+
+(defn fetch-colors
+  [file-id]
+  (ptk/reify ::fetch-colors
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/query :colors {:file-id file-id})
+           (rx/map colors-fetched)))))
+
+(defn colors-fetched
+  [colors]
+  (ptk/reify ::colors-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [colors (d/index-by :id colors)]
+        (assoc state :workspace-colors colors)))))
+
 
 ;; --- Upload Image
 
 (declare image-uploaded)
-(def allowed-file-types #{"image/jpeg" "image/png" "image/webp"})
+(def allowed-file-types #{"image/jpeg" "image/png" "image/webp" "image/svg+xml"})
 (def max-file-size (* 5 1024 1024))
 
 ;; TODO: unify with create-images at main/data/images.cljs
@@ -428,7 +448,25 @@
   (ptk/reify ::image-created
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-images assoc (:id item) item))))
+      state)))
+      ;; (update state :workspace-images assoc (:id item) item))))
+
+
+;; --- Delete image
+
+(defn delete-file-image
+  [file-id image-id]
+  (ptk/reify ::delete-file-image
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-images dissoc image-id))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [params {:file-id file-id
+                    :image-id image-id}]
+      (rp/mutation :delete-file-image params)))))
+
 
 ;; --- Helpers
 

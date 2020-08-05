@@ -62,7 +62,7 @@
                :is-admin true
                :can-edit true}))
 
-(defn- create-file
+(defn create-file
   [conn {:keys [id profile-id name project-id] :as params}]
   (let [id   (or id (uuid/next))
         file (db/insert! conn :file {:id id :project-id project-id :name name})]
@@ -70,7 +70,7 @@
          (create-file-profile conn))
     file))
 
-(defn- create-page
+(defn create-page
   [conn {:keys [file-id] :as params}]
   (let [id  (uuid/next)]
     (db/insert! conn :page
@@ -133,6 +133,7 @@
 (declare create-file-image)
 
 (s/def ::file-id ::us/uuid)
+(s/def ::image-id ::us/uuid)
 (s/def ::content ::imgs/upload)
 
 (s/def ::add-file-image-from-url
@@ -171,7 +172,11 @@
         opts  (assoc imgs/thumbnail-options
                     :input {:mtype (:mtype info)
                             :path path})
-        thumb (imgs/persist-image-thumbnail-on-fs opts)]
+        thumb (if-not (= (:mtype info) "image/svg+xml")
+                (imgs/persist-image-thumbnail-on-fs opts)
+                (assoc info
+                       :path path
+                       :quality 0))]
 
     (-> (db/insert! conn :file-image
                     {:file-id file-id
@@ -187,6 +192,33 @@
                      :thumb-mtype (:mtype thumb)})
         (images/resolve-urls :path :uri)
         (images/resolve-urls :thumb-path :thumb-uri))))
+
+
+;; --- Mutation: Delete File Image
+
+(declare mark-file-image-deleted)
+
+(s/def ::delete-file-image
+  (s/keys :req-un [::file-id ::image-id ::profile-id]))
+
+(sm/defmutation ::delete-file-image
+  [{:keys [file-id image-id profile-id] :as params}]
+  (db/with-atomic [conn db/pool]
+    (files/check-edition-permissions! conn profile-id file-id)
+
+    ;; Schedule object deletion
+    (tasks/submit! conn {:name "delete-object"
+                         :delay cfg/default-deletion-delay
+                         :props {:id image-id :type :file-image}})
+
+    (mark-file-image-deleted conn params)))
+
+(defn mark-file-image-deleted
+  [conn {:keys [image-id] :as params}]
+  (db/update! conn :file-image
+              {:deleted-at (dt/now)}
+              {:id image-id})
+  nil)
 
 
 ;; --- Mutation: Import from collection
