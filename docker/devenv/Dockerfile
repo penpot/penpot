@@ -105,6 +105,12 @@ RUN set -ex; \
     echo "uxbox ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 RUN set -ex; \
+    wget https://github.com/RazrFalcon/svgcleaner/releases/download/v0.9.5/svgcleaner_linux_x86_64_0.9.5.tar.gz; \
+    tar xvf svgcleaner_linux_x86_64_0.9.5.tar.gz; \
+    mv svgcleaner /usr/local/bin/; \
+    rm -rf svgcleaner_linux_x86_64_0.9.5.tar.gz;
+
+RUN set -ex; \
     wget "https://download.clojure.org/install/linux-install-$CLOJURE_VERSION.sh"; \
     chmod +x "linux-install-$CLOJURE_VERSION.sh"; \
     "./linux-install-$CLOJURE_VERSION.sh"; \
