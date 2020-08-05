@@ -254,8 +254,8 @@
         on-key-down
         (mf/use-callback
          (fn [event]
-           (let [bevent (.getBrowserEvent event)
-                 key (.-keyCode event)
+           (let [bevent (.getBrowserEvent ^js event)
+                 key (.-keyCode ^js event)
                  ctrl? (kbd/ctrl? event)
                  shift? (kbd/shift? event)
                  alt? (kbd/alt? event)
@@ -295,11 +295,11 @@
 
         on-mouse-move
         (fn [event]
-          (let [event (.getBrowserEvent event)
-                pt (dom/get-client-position event)
+          (let [event (.getBrowserEvent ^js event)
+                pt (dom/get-client-position ^js event)
                 pt (translate-point-to-viewport pt)
-                delta (gpt/point (.-movementX event)
-                                 (.-movementY event))]
+                delta (gpt/point (.-movementX ^js event)
+                                 (.-movementY ^js event))]
             (st/emit! (ms/->PointerEvent :delta delta
                                          (kbd/ctrl? event)
                                          (kbd/shift? event)
@@ -316,7 +316,7 @@
                  target (dom/get-target event)]
              (cond
                (kbd/ctrl? event)
-               (let [event (.getBrowserEvent event)
+               (let [event (.getBrowserEvent ^js event)
                      pos   @ms/mouse-position]
                  (dom/prevent-default event)
                  (dom/stop-propagation event)
@@ -325,7 +325,7 @@
                    (st/emit! (dw/increase-zoom pos))))
 
                (.contains ^js node target)
-               (let [event (.getBrowserEvent event)
+               (let [event (.getBrowserEvent ^js event)
                      delta (.-deltaY ^js event)
                      delta (/ delta @refs/selected-zoom)]
                  (dom/prevent-default event)

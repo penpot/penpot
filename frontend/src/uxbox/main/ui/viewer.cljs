@@ -69,8 +69,8 @@
         (fn [event]
           (when (kbd/ctrl? event)
             (dom/prevent-default event)
-            (let [event (.getBrowserEvent event)]
-              (if (pos? (.-deltaY event))
+            (let [event (.getBrowserEvent ^js event)]
+              (if (pos? (.-deltaY ^js event))
                 (st/emit! dv/decrease-zoom)
                 (st/emit! dv/increase-zoom)))))
 

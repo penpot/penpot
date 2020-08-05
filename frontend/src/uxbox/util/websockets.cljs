@@ -27,13 +27,13 @@
 (defn uri
   ([path] (uri path {}))
   ([path params]
-   (let [uri (.parse Uri cfg/public-uri)]
-     (.setPath uri path)
-     (if (= (.getScheme uri) "http")
-       (.setScheme uri "ws")
-       (.setScheme uri "wss"))
+   (let [uri (.parse ^js Uri cfg/public-uri)]
+     (.setPath ^js uri path)
+     (if (= (.getScheme ^js uri) "http")
+       (.setScheme ^js uri "ws")
+       (.setScheme ^js uri "wss"))
      (run! (fn [[k v]]
-             (.setParameterValue uri (name k) (str v)))
+             (.setParameterValue ^js uri (name k) (str v)))
            params)
      (.toString uri))))
 
@@ -55,8 +55,8 @@
       IWebSocket
       (-stream [_] sb)
       (-send [_ msg]
-        (when (.isOpen ws)
-          (.send ws msg)))
+        (when (.isOpen ^js ws)
+          (.send ^js ws msg)))
       (-close [_]
         (.close ws)
         (rx/end! sb)

@@ -53,8 +53,8 @@
              qdt (.createFromMap QueryData (-> qparams
                                                (d/remove-nil-vals)
                                                (clj->js)))]
-         (.setQueryData uri qdt)
-         (.toString uri))))))
+         (.setQueryData ^js uri qdt)
+         (.toString ^js uri))))))
 
 (defn create
   [routes]
@@ -70,7 +70,7 @@
 (defn query-params
   "Given goog.Uri, read query parameters into Clojure map."
   [^goog.Uri uri]
-  (let [q (.getQueryData uri)]
+  (let [^js q (.getQueryData uri)]
     (->> q
          (.getKeys)
          (map (juxt keyword #(.get q %)))
@@ -80,9 +80,9 @@
   "Given routing tree and current path, return match with possibly
   coerced parameters. Return nil if no match found."
   [router path]
-  (let [uri (.parse Uri path)]
-    (when-let [match (r/match-by-path router (.getPath uri))]
-      (let [qparams (parse-query-data (.getQueryData uri))
+  (let [uri (.parse ^js Uri path)]
+    (when-let [match (r/match-by-path router (.getPath ^js uri))]
+      (let [qparams (parse-query-data (.getQueryData ^js uri))
             params {:path (:path-params match) :query qparams}]
         (assoc match
                :params params
@@ -128,9 +128,9 @@
       (let [stoper  (rx/filter (ptk/type? ::initialize-history) stream)
             history (:history state)
             router  (:router state)]
-        (ts/schedule #(on-change router (.getToken history)))
+        (ts/schedule #(on-change router (.getToken ^js history)))
         (->> (rx/create (fn [sink]
-                           (let [key (e/listen history "navigate" #(sink (.-token %)))]
+                           (let [key (e/listen history "navigate" (fn [o] (sink (.-token ^js o))))]
                              (fn []
                                (bhistory/disable! history)
                                (e/unlistenByKey key)))))
