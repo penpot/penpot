@@ -1,5 +1,6 @@
 (ns uxbox.main.ui.modal
   (:require
+   [cuerdas.core :as str]
    [goog.events :as events]
    [rumext.alpha :as mf]
    [uxbox.main.store :as st]
@@ -28,28 +29,29 @@
   [event parent-ref]
   (let [parent (mf/ref-val parent-ref)
         current (dom/get-target event)]
-    (when (dom/equals? parent current)
+    ;; (js/console.log current (.-className ^js current))
+    (when (and (dom/equals? (.-firstElementChild ^js parent) current)
+               (str/includes? (.-className ^js current) "modal-overlay"))
       (dom/stop-propagation event)
       (dom/prevent-default event)
       (reset! state nil))))
 
 (mf/defc modal-wrapper
   [{:keys [component props]}]
+
   (mf/use-effect
    (fn []
      (let [key (events/listen js/document EventType.KEYDOWN on-esc-clicked)]
        #(events/unlistenByKey %))))
 
-  (let [classes (classnames :transparent (:transparent? props))
-        parent-ref (mf/use-ref nil)]
-    [:div.lightbox {:class classes
-                    :ref parent-ref
-                    :on-click #(on-parent-clicked % parent-ref)
-                    }
-     (mf/element component props)]))
+  (let [ref (mf/use-ref nil)]
+    [:div.modal-wrapper
+     {:ref ref
+      :on-click #(on-parent-clicked % ref)}
+     [:& component props]]))
 
 (mf/defc modal
-  [_]
+  []
   (when-let [{:keys [component props]} (mf/deref state)]
     [:& modal-wrapper {:component component
                        :props props

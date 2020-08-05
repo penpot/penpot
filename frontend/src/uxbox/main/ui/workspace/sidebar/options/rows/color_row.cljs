@@ -18,7 +18,8 @@
    [uxbox.main.ui.workspace.colorpicker :refer [colorpicker-modal]]
    [uxbox.common.data :as d]))
 
-(defn color-picker-callback [color handle-change-color disable-opacity]
+(defn color-picker-callback
+  [color handle-change-color disable-opacity]
   (fn [event]
     (let [x (.-clientX event)
           y (.-clientY event)
@@ -27,7 +28,6 @@
                  :on-change handle-change-color
                  :value (:value color)
                  :opacity (:opacity color)
-                 :transparent? true
                  :disable-opacity disable-opacity}]
       (modal/show! colorpicker-modal props))))
 
