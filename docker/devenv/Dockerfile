@@ -3,8 +3,8 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV NODE_VERSION=v12.18.2 \
-    CLOJURE_VERSION=1.10.1.536 \
+ENV NODE_VERSION=v12.18.3 \
+    CLOJURE_VERSION=1.10.1.619 \
     LANG=en_US.UTF-8 \
     LC_ALL=C.UTF-8
 
@@ -30,6 +30,8 @@ RUN set -ex; \
         python \
         build-essential \
         imagemagick \
+        netpbm \
+        potrace \
         webp \
         nginx \
         jq \

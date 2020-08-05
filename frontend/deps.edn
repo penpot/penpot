@@ -5,7 +5,7 @@
   com.cognitect/transit-cljs {:mvn/version "0.8.264"}
 
   environ/environ {:mvn/version "1.2.0"}
-  metosin/reitit-core {:mvn/version "0.5.2"}
+  metosin/reitit-core {:mvn/version "0.5.5"}
   expound/expound {:mvn/version "0.8.5"}
 
   danlentz/clj-uuid {:mvn/version "0.1.9"}
@@ -33,7 +33,7 @@
     funcool/datoteka {:mvn/version "1.2.0"}
     binaryage/devtools {:mvn/version "RELEASE"}
 
-    thheller/shadow-cljs {:mvn/version "2.10.13"}
+    thheller/shadow-cljs {:mvn/version "2.10.19"}
 
     lambdaisland/uri {:mvn/version "1.3.45"
                       :exclusions [org.clojure/data.json]}
