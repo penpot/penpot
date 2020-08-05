@@ -31,19 +31,19 @@
           (modal/hide!)
           (when on-cancel
             (on-cancel (dissoc ctx :on-accept :on-cancel))))]
-    [:div.lightbox-body.confirm-dialog
-     [:h3.confirm-dialog-title message]
-     (if hint [:span hint])
+    [:div.modal-overlay
+     [:div.modal.confirm-dialog
+      [:a.close {:on-click cancel} i/close]
+      [:div.modal-content
+       [:h3.dialog-title message]
+       (if hint [:span hint])
+       [:div.dialog-buttons
+        [:input.dialog-cancel-button
+         {:type "button"
+          :value cancel-text
+          :on-click cancel}]
 
-     [:div.confirm-dialog-buttons
-      [:input.confirm-dialog-cancel-button
-       {:type "button"
-        :value cancel-text
-        :on-click cancel}]
-
-      [:input.confirm-dialog-accept-button
-       {:type "button"
-        :value accept-text
-        :on-click accept}]]
-
-     [:a.close {:href "#" :on-click cancel} i/close]]))
+        [:input.dialog-accept-button
+         {:type "button"
+          :value accept-text
+          :on-click accept}]]]]]))

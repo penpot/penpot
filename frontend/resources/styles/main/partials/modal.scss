@@ -1,3 +1,23 @@
+.modal-wrapper {}
+
+.modal-overlay {
+  align-items: center;
+  background-color: $color-dark-bg;
+  display: flex;
+  justify-content: center;
+  position: fixed;
+  height: 100%;
+  left: 0;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+
+  &.transparent {
+    background-color: rgba($color-white, 0)
+  }
+}
+
+.modal,
 .generic-modal {
   background-color: $color-white;
   width: 565px;
@@ -53,3 +73,57 @@
 
   }
 }
+
+.confirm-dialog {
+  background-color: $color-white;
+  width: 23rem;
+
+  .modal-content {
+    padding: 20px 40px;
+  }
+
+  .dialog-title {
+    font-size: 24px;
+    color: $color-black;
+    font-weight: normal;
+    text-align: center;
+  }
+
+  .dialog-buttons {
+    display: flex;
+    flex-direction: row;
+    margin-top: 3rem;
+    width: 100%;
+  }
+
+  .dialog-cancel-button {
+    border: 1px solid $color-gray-30;
+    background: $color-canvas;
+    border-radius: 2px;
+    padding: 0.5rem;
+    margin-right: 1rem;
+    justify-content: space-evenly;
+    margin-bottom: 0;
+    width: 100%;
+    cursor: pointer;
+
+    &:hover {
+      background: $color-gray-20;
+    }
+  }
+
+  .dialog-accept-button {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid $color-danger;
+    background: $color-danger;
+    color: $color-white;
+    margin-bottom: 0;
+    cursor: pointer;
+
+    &:hover {
+      background: $color-danger-dark;
+    }
+  }
+}
+

@@ -101,8 +101,9 @@
   [props]
   (let [locale (mf/deref i18n/locale)
         profile (mf/deref refs/profile)]
-    [:section.generic-modal.change-email-modal
-     [:span.close {:on-click #(modal/hide!)} i/close]
-     (if (:pending-email profile)
-       [:& change-email-confirmation {:locale locale :profile profile}]
-       [:& change-email-form {:locale locale :profile profile}])]))
+    [:div.modal-overlay
+     [:div.generic-modal.change-email-modal
+      [:span.close {:on-click #(modal/hide!)} i/close]
+      (if (:pending-email profile)
+        [:& change-email-confirmation {:locale locale :profile profile}]
+        [:& change-email-form {:locale locale :profile profile}])]]))
