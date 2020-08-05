@@ -79,7 +79,11 @@
 
     {:desc "Truncate & alter tokens tables"
      :name "0016-truncate-and-alter-tokens-table"
-     :fn (mg/resource "migrations/0016-truncate-and-alter-tokens-table.sql")}]})
+     :fn (mg/resource "migrations/0016-truncate-and-alter-tokens-table.sql")}
+
+    {:desc "Link files to libraries"
+     :name "0017-link-files-to-libraries"
+     :fn (mg/resource "migrations/0017-link-files-to-libraries.sql")}]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Entry point

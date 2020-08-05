@@ -57,11 +57,11 @@
 (def workspace-project
   (l/derived :workspace-project st/state))
 
-(def workspace-media-library
-  (l/derived :workspace-media-library st/state))
+(def workspace-shared-files
+  (l/derived :workspace-shared-files st/state))
 
-(def workspace-colors-library
-  (l/derived :workspace-colors-library st/state))
+(def workspace-libraries
+  (l/derived :workspace-libraries st/state))
 
 (def workspace-users
   (l/derived :workspace-users st/state))

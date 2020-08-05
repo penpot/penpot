@@ -13,6 +13,30 @@
     color: $color-gray-10;
     font-size: $fs14;
     margin: $small $small 0 $small;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+
+    & .libraries-button {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+
+      svg {
+        fill: $color-gray-30;
+        height: 20px;
+        width: 20px;
+        padding-right: $x-small;
+      }
+    }
+
+    & .libraries-button:hover {
+      color: $color-primary;
+
+      & svg {
+        fill: $color-primary;
+      }
+    }
   }
 
   .search-block {
@@ -22,12 +46,12 @@
     display: flex;
     align-items: center;
 
-    &:focus-within {
-      border-color: $color-primary !important;
-    }
-
     &:hover {
       border-color: $color-gray-20;
+    }
+
+    &:focus-within {
+      border-color: $color-primary;
     }
 
     & .search-input {
@@ -50,8 +74,8 @@
 
       svg {
         fill: $color-gray-30;
-        height: 15px;
-        width: 15px;
+        height: 16px;
+        width: 16px;
       }
 
       &.close {

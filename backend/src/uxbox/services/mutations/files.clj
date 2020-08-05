@@ -123,7 +123,7 @@
               {:id id}))
 
 
-;; --- Mutation: Delete Project File
+;; --- Mutation: Delete File
 
 (declare mark-file-deleted)
 
@@ -148,4 +148,48 @@
               {:deleted-at (dt/now)}
               {:id id})
   nil)
+
+
+;; --- Mutation: Link file to library
+
+(declare link-file-to-library)
+
+(s/def ::link-file-to-library
+  (s/keys :req-un [::profile-id ::file-id ::library-id]))
+
+(sm/defmutation ::link-file-to-library
+  [{:keys [profile-id file-id library-id] :as params}]
+  (when (= file-id library-id)
+    (ex/raise :type :validation
+              :code :invalid-library
+              :hint "A file cannot be linked to itself"))
+  (db/with-atomic [conn db/pool]
+    (files/check-edition-permissions! conn profile-id file-id)
+    (link-file-to-library conn params)))
+
+(defn- link-file-to-library
+  [conn {:keys [file-id library-id] :as params}]
+  (db/insert! conn :file-library-rel
+              {:file-id file-id
+               :library-file-id library-id}))
+
+
+;; --- Mutation: Unlink file from library
+
+(declare unlink-file-from-library)
+
+(s/def ::unlink-file-from-library
+  (s/keys :req-un [::profile-id ::file-id ::library-id]))
+
+(sm/defmutation ::unlink-file-from-library
+  [{:keys [profile-id file-id library-id] :as params}]
+  (db/with-atomic [conn db/pool]
+    (files/check-edition-permissions! conn profile-id file-id)
+    (unlink-file-from-library conn params)))
+
+(defn- unlink-file-from-library
+  [conn {:keys [file-id library-id] :as params}]
+  (db/delete! conn :file-library-rel
+              {:file-id file-id
+               :library-file-id library-id}))
 

@@ -99,6 +99,22 @@ $width-settings-bar: 15rem;
           margin-left: auto;
         }
 
+        span.tool-link {
+          margin-left: auto;
+
+          svg {
+            fill: $color-gray-30;
+            height: 16px;
+            width: 16px;
+          }
+
+          &:hover {
+            svg {
+              fill: $color-primary;
+            }
+          }
+        }
+
         .tool-window-icon {
           margin-right: $small;
           display: none;

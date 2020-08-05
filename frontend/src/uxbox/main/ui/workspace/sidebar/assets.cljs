@@ -29,20 +29,14 @@
    [uxbox.util.timers :as timers]
    [uxbox.common.uuid :as uuid]
    [uxbox.util.i18n :as i18n :refer [tr]]
-   [uxbox.util.data :refer [classnames]]
+   [uxbox.util.data :refer [classnames matches-search]]
+   [uxbox.util.router :as rt]
    [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.colorpicker :refer [colorpicker most-used-colors]]
    [uxbox.main.ui.components.tab-container :refer [tab-container tab-element]]
    [uxbox.main.ui.components.file-uploader :refer [file-uploader]]
-   [uxbox.main.ui.components.context-menu :refer [context-menu]]))
-
-(defn matches-search
-  [name search-term]
-  (if (str/empty? search-term)
-    true
-    (let [st (str/trim (str/lower search-term))
-          nm (str/trim (str/lower name))]
-      (str/includes? nm st))))
+   [uxbox.main.ui.components.context-menu :refer [context-menu]]
+   [uxbox.main.ui.workspace.libraries :refer [libraries-dialog]]))
 
 (mf/defc modal-edit-color
   [{:keys [color-value on-accept on-cancel] :as ctx}]
@@ -72,7 +66,7 @@
          [:a.close {:href "#" :on-click cancel} i/close]]])))
 
 (mf/defc graphics-box
-  [{:keys [file-id media-objects] :as props}]
+  [{:keys [file-id local-library? media-objects] :as props}]
   (let [state (mf/use-state {:menu-open false
                              :top nil
                              :left nil
@@ -84,7 +78,7 @@
         #(dom/click (mf/ref-val file-input))
 
         delete-graphic
-        #(st/emit! (dw/delete-media-object (:object-id @state)))
+        #(st/emit! (dw/delete-media-object file-id (:object-id @state)))
 
         on-files-selected
         (fn [js-files]
@@ -93,14 +87,15 @@
         on-context-menu
         (fn [object-id]
           (fn [event]
-            (let [pos (dom/get-client-position event)
-                  top (:y pos)
-                  left (- (:x pos) 20)]
-              (dom/prevent-default event)
-              (swap! state assoc :menu-open true
-                     :top top
-                     :left left
-                     :object-id object-id))))
+            (when local-library?
+              (let [pos (dom/get-client-position event)
+                    top (:y pos)
+                    left (- (:x pos) 20)]
+                (dom/prevent-default event)
+                (swap! state assoc :menu-open true
+                       :top top
+                       :left left
+                       :object-id object-id)))))
 
         on-drag-start
         (fn [uri]
@@ -112,14 +107,15 @@
      [:div.group-title
       (tr "workspace.assets.graphics")
       [:span (str "\u00A0(") (count media-objects) ")"] ;; Unicode 00A0 is non-breaking space
-      [:div.group-button {:on-click add-graphic}
-       i/plus
-       [:& file-uploader {:accept cm/str-media-types
-                          :multi true
-                          :input-ref file-input
-                          :on-selected on-files-selected}]]]
+      (when local-library?
+        [:div.group-button {:on-click add-graphic}
+         i/plus
+         [:& file-uploader {:accept cm/str-media-types
+                            :multi true
+                            :input-ref file-input
+                            :on-selected on-files-selected}]])]
      [:div.group-grid
-       (for [object (sort-by :name media-objects)]
+       (for [object media-objects]
          [:div.grid-cell {:key (:id object)
                           :draggable true
                           :on-context-menu (on-context-menu (:id object))
@@ -127,17 +123,18 @@
           [:img {:src (:thumb-uri object)
                  :draggable false}] ;; Also need to add css pointer-events: none
           [:div.cell-name (:name object)]])
-       [:& context-menu
-        {:selectable false
-         :show (:menu-open @state)
-         :on-close #(swap! state assoc :menu-open false)
-         :top (:top @state)
-         :left (:left @state)
-         :options [[(tr "workspace.assets.delete") delete-graphic]]}]]]))
+       (when local-library?
+         [:& context-menu
+          {:selectable false
+           :show (:menu-open @state)
+           :on-close #(swap! state assoc :menu-open false)
+           :top (:top @state)
+           :left (:left @state)
+           :options [[(tr "workspace.assets.delete") delete-graphic]]}])]]))
 
 
 (mf/defc color-item
-  [{:keys [color file-id] :as props}]
+  [{:keys [color file-id local-library?] :as props}]
   (let [workspace-local @refs/workspace-local
         color-for-rename (:color-for-rename workspace-local)
 
@@ -189,14 +186,15 @@
 
         on-context-menu
         (fn [event]
-          (let [pos (dom/get-client-position event)
-                top (:y pos)
-                left (- (:x pos) 20)]
-            (dom/prevent-default event)
-            (swap! state assoc
-                   :menu-open true
-                   :top top
-                   :left left)))]
+          (when local-library?
+            (let [pos (dom/get-client-position event)
+                  top (:y pos)
+                  left (- (:x pos) 20)]
+              (dom/prevent-default event)
+              (swap! state assoc
+                     :menu-open true
+                     :top top
+                     :left left))))]
 
     (mf/use-effect
       (mf/deps (:editing @state))
@@ -220,18 +218,19 @@
         (:name color)
         (when-not (= (:name color) (:content color))
           [:span (:content color)])])
-     [:& context-menu
-       {:selectable false
-        :show (:menu-open @state)
-        :on-close #(swap! state assoc :menu-open false)
-        :top (:top @state)
-        :left (:left @state)
-        :options [[(tr "workspace.assets.rename") rename-color-clicked]
-                  [(tr "workspace.assets.edit") edit-color-clicked]
-                  [(tr "workspace.assets.delete") delete-color]]}]]))
+     (when local-library?
+       [:& context-menu
+         {:selectable false
+          :show (:menu-open @state)
+          :on-close #(swap! state assoc :menu-open false)
+          :top (:top @state)
+          :left (:left @state)
+          :options [[(tr "workspace.assets.rename") rename-color-clicked]
+                    [(tr "workspace.assets.edit") edit-color-clicked]
+                    [(tr "workspace.assets.delete") delete-color]]}])]))
 
 (mf/defc colors-box
-  [{:keys [file-id colors] :as props}]
+  [{:keys [file-id local-library? colors] :as props}]
   (let [add-color
         (fn [value opacity]
           (st/emit! (dcol/create-color file-id value)))
@@ -246,15 +245,18 @@
      [:div.group-title
        (tr "workspace.assets.colors")
        [:span (str "\u00A0(") (count colors) ")"] ;; Unicode 00A0 is non-breaking space
-       [:div.group-button {:on-click add-color-clicked} i/plus]]
+       (when local-library?
+         [:div.group-button {:on-click add-color-clicked} i/plus])]
      [:div.group-list
-      (for [color (sort-by :name colors)]
+      (for [color colors]
         [:& color-item {:key (:id color)
                         :color color
-                        :file-id file-id}])]]))
+                        :file-id file-id
+                        :local-library? local-library?}])]]))
 
 (mf/defc file-library-toolbox
-  [{:keys [file-id
+  [{:keys [library
+           local-library?
            shared?
            media-objects
            colors
@@ -262,26 +264,41 @@
            search-term
            box-filter] :as props}]
   (let [open? (mf/use-state initial-open?)
-        toggle-open #(swap! open? not)]
+        toggle-open #(swap! open? not)
+        router (mf/deref refs/router)
+        library-url (rt/resolve router :workspace
+                                {:project-id (:project-id library)
+                                 :file-id (:id library)}
+                                {:page-id (first (:pages library))})]
     [:div.tool-window
      [:div.tool-window-bar
       [:div.collapse-library
        {:class (classnames :open @open?)
         :on-click toggle-open}
        i/arrow-slide]
-      [:span (tr "workspace.assets.file-library")]
-      (when shared?
-        [:span.tool-badge (tr "workspace.assets.shared")])]
+      (if local-library?
+        [:*
+          [:span (tr "workspace.assets.file-library")]
+          (when shared?
+            [:span.tool-badge (tr "workspace.assets.shared")])]
+        [:*
+          [:span (:name library)]
+          [:span.tool-link
+           [:a {:href (str "#" library-url) :target "_blank"} i/chain]]])]
      (when @open?
        (let [show-graphics (and (or (= box-filter :all) (= box-filter :graphics))
-                                 (or (> (count media-objects) 0) (str/empty? search-term))) 
-              show-colors (and (or (= box-filter :all) (= box-filter :colors))
-                               (or (> (count colors) 0) (str/empty? search-term)))]
+                                (or (> (count media-objects) 0) (str/empty? search-term))) 
+             show-colors (and (or (= box-filter :all) (= box-filter :colors))
+                              (or (> (count colors) 0) (str/empty? search-term)))]
          [:div.tool-window-content
           (when show-graphics
-            [:& graphics-box {:file-id file-id :media-objects media-objects}])
+            [:& graphics-box {:file-id (:id library)
+                              :local-library? local-library?
+                              :media-objects media-objects}])
           (when show-colors
-            [:& colors-box {:file-id file-id :colors colors}])
+            [:& colors-box {:file-id (:id library)
+                            :local-library? local-library?
+                            :colors colors}])
           (when (and (not show-graphics) (not show-colors))
             [:div.asset-group
              [:div.group-title (tr "workspace.assets.not-found")]])]))]))
@@ -290,19 +307,27 @@
   []
   (let [team-id (-> refs/workspace-project mf/deref :team-id)
         file (mf/deref refs/workspace-file)
-        file-id (:id file)
-        file-media (mf/deref refs/workspace-media-library)
-        file-colors (mf/deref refs/workspace-colors-library)
+        libraries (mf/deref refs/workspace-libraries)
+        sorted-libraries (->> (vals libraries)
+                              (sort-by #(str/lower (:name %))))
 
         state (mf/use-state {:search-term ""
                              :box-filter :all})
 
-        filtered-media-objects (filter #(matches-search (:name %) (:search-term @state))
-                                       (vals file-media))
+        filtered-media-objects (fn [library-id]
+                                 (as-> libraries $$
+                                   (assoc $$ (:id file) file)
+                                   (get-in $$ [library-id :media-objects])
+                                   (filter #(matches-search (:name %) (:search-term @state)) $$)
+                                   (sort-by #(str/lower (:name %)) $$)))
 
-        filtered-colors (filter #(or (matches-search (:name %) (:search-term @state))
-                                     (matches-search (:content %) (:search-term @state)))
-                                (vals file-colors))
+        filtered-colors (fn [library-id]
+                          (as-> libraries $$
+                            (assoc $$ (:id file) file)
+                            (get-in $$ [library-id :colors])
+                            (filter #(or (matches-search (:name %) (:search-term @state))
+                                         (matches-search (:content %) (:search-term @state))) $$)
+                            (sort-by #(str/lower (:name %)) $$)))
 
         on-search-term-change (fn [event]
                                (let [value (-> (dom/get-target event)
@@ -318,17 +343,15 @@
                                                (d/read-string))]
                                  (swap! state assoc :box-filter value)))]
 
-    (mf/use-effect
-     (mf/deps file-id)
-     #(when file-id
-        (st/emit! (dw/fetch-media-library file-id))
-        (st/emit! (dw/fetch-colors-library file-id))))
-
     [:div.assets-bar
 
      [:div.tool-window
        [:div.tool-window-content
-        [:div.assets-bar-title (tr "workspace.assets.assets")]
+        [:div.assets-bar-title
+         (tr "workspace.assets.assets")
+         [:div.libraries-button {:on-click #(modal/show! libraries-dialog {})}
+          i/libraries
+          (tr "workspace.assets.libraries")]]
 
         [:div.search-block
           [:input.search-input
@@ -347,14 +370,25 @@
                                :on-change on-box-filter-change}
          [:option {:value ":all"} (tr "workspace.assets.box-filter-all")]
          [:option {:value ":graphics"} (tr "workspace.assets.box-filter-graphics")]
-         [:option {:value ":colors"} (tr "workspace.assets.box-filter-colors")]]
-        ]]
+         [:option {:value ":colors"} (tr "workspace.assets.box-filter-colors")]]]]
 
-     [:& file-library-toolbox {:file-id file-id
+     [:& file-library-toolbox {:key (:id file)
+                               :library file
+                               :local-library? true
                                :shared? (:is-shared file)
-                               :media-objects filtered-media-objects
-                               :colors filtered-colors
+                               :media-objects (filtered-media-objects (:id file))
+                               :colors (filtered-colors (:id file))
                                :initial-open? true
                                :search-term (:search-term @state)
-                               :box-filter (:box-filter @state)}]]))
+                               :box-filter (:box-filter @state)}]
+     (for [library sorted-libraries]
+       [:& file-library-toolbox {:key (:id library)
+                                 :library library
+                                 :local-library? false
+                                 :shared? (:is-shared library)
+                                 :media-objects (filtered-media-objects (:id library))
+                                 :colors (filtered-colors (:id library))
+                                 :initial-open? false
+                                 :search-term (:search-term @state)
+                                 :box-filter (:box-filter @state)}])]))
 

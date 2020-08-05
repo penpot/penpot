@@ -100,6 +100,15 @@
   [coll v]
   (index-of-pred coll #(= % v)))
 
+(defn replace-by-id
+  ([value]
+   (map (fn [item]
+          (if (= (:id item) (:id value))
+            value
+            item))))
+  ([coll value]
+   (sequence (replace-by-id value) coll)))
+
 (defn remove-nil-vals
   "Given a map, return a map removing key-value
   pairs when value is `nil`."
