@@ -14,7 +14,7 @@
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.db :as db]
-   [uxbox.images :as images]
+   [uxbox.media :as media]
    [uxbox.services.queries :as sq]
    [uxbox.util.blob :as blob]))
 
@@ -220,32 +220,32 @@
       (ex/raise :type :validation
                 :code :not-authorized))))
 
-;; --- Query: Images of the File
-
-(declare retrieve-file-images)
-
-(s/def ::file-images
-  (s/keys :req-un [::profile-id ::file-id]))
-
-(sq/defquery ::file-images
-  [{:keys [profile-id file-id] :as params}]
-  (db/with-atomic [conn db/pool]
-    (check-edition-permissions! conn profile-id file-id)
-    (retrieve-file-images conn params)))
-
-(def ^:private sql:file-images
-  "select fi.*
-     from file_image as fi
-    where fi.file_id = ?
-      and fi.deleted_at is null")
-
-(defn retrieve-file-images
-  [conn {:keys [file-id] :as params}]
-  (let [sqlv [sql:file-images file-id]
-        xf (comp (map #(images/resolve-urls % :path :uri))
-                 (map #(images/resolve-urls % :thumb-path :thumb-uri)))]
-    (->> (db/exec! conn sqlv)
-         (into [] xf))))
+;; ;; --- Query: Images of the File
+;;
+;; (declare retrieve-file-images)
+;;
+;; (s/def ::file-images
+;;   (s/keys :req-un [::profile-id ::file-id]))
+;;
+;; (sq/defquery ::file-images
+;;   [{:keys [profile-id file-id] :as params}]
+;;   (db/with-atomic [conn db/pool]
+;;     (check-edition-permissions! conn profile-id file-id)
+;;     (retrieve-file-images conn params)))
+;;
+;; (def ^:private sql:file-images
+;;   "select fi.*
+;;      from file_image as fi
+;;     where fi.file_id = ?
+;;       and fi.deleted_at is null")
+;;
+;; (defn retrieve-file-images
+;;   [conn {:keys [file-id] :as params}]
+;;   (let [sqlv [sql:file-images file-id]
+;;         xf (comp (map #(media/resolve-urls % :path :uri))
+;;                  (map #(media/resolve-urls % :thumb-path :thumb-uri)))]
+;;     (->> (db/exec! conn sqlv)
+;;          (into [] xf))))
 
 ;; --- Query: File (By ID)
 
@@ -284,7 +284,7 @@
 (defn retrieve-file-users
   [conn id]
   (->> (db/exec! conn [sql:file-users id id])
-       (mapv #(images/resolve-media-uris % [:photo :photo-uri]))))
+       (mapv #(media/resolve-media-uris % [:photo :photo-uri]))))
 
 (s/def ::file-users
   (s/keys :req-un [::profile-id ::id]))

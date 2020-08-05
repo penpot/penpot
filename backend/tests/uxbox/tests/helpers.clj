@@ -14,13 +14,12 @@
    [uxbox.services.mutations.teams :as teams]
    [uxbox.services.mutations.files :as files]
    [uxbox.services.mutations.pages :as pages]
-   [uxbox.services.mutations.images :as images]
-   [uxbox.services.mutations.icons :as icons]
+   ;; [uxbox.services.mutations.icons :as icons]
    [uxbox.services.mutations.colors :as colors]
    [uxbox.fixtures :as fixtures]
    [uxbox.migrations]
-   [uxbox.images]
    [uxbox.media]
+   [uxbox.media-storage]
    [uxbox.db :as db]
    [uxbox.util.blob :as blob]
    [uxbox.common.uuid :as uuid]
@@ -45,12 +44,12 @@
                           #'uxbox.db/pool
                           #'uxbox.redis/client
                           #'uxbox.redis/conn
-                          #'uxbox.images/semaphore
+                          #'uxbox.media/semaphore
                           #'uxbox.services.init/query-services
                           #'uxbox.services.init/mutation-services
                           #'uxbox.migrations/migrations
-                          #'uxbox.media/assets-storage
-                          #'uxbox.media/media-storage})
+                          #'uxbox.media-storage/assets-storage
+                          #'uxbox.media-storage/media-storage})
             (mount/swap {#'uxbox.config/config config
                          #'uxbox.db/pool pool})
             (mount/start)))
@@ -73,8 +72,8 @@
   (try
     (next)
     (finally
-      (ust/clear! uxbox.media/media-storage)
-      (ust/clear! uxbox.media/assets-storage))))
+      (ust/clear! uxbox.media-storage/media-storage)
+      (ust/clear! uxbox.media-storage/assets-storage))))
 
 (defn mk-uuid
   [prefix & args]
@@ -105,10 +104,11 @@
                                    :name (str "project" i)}))
 
 (defn create-file
-  [conn profile-id project-id i]
+  [conn profile-id project-id is-shared i]
   (#'files/create-file conn {:id (mk-uuid "file" i)
                              :profile-id profile-id
                              :project-id project-id
+                             :is-shared is-shared
                              :name (str "file" i)}))
 
 (defn create-page
@@ -120,23 +120,22 @@
                              :ordering i
                              :data cp/default-page-data}))
 
-
-(defn create-image-library
-  [conn team-id i]
-  (#'images/create-library conn {:id (mk-uuid "imgcoll" i)
-                                 :team-id team-id
-                                 :name (str "image library " i)}))
-
-(defn create-icon-library
-  [conn team-id i]
-  (#'icons/create-library conn {:id (mk-uuid "imgcoll" i)
-                                :team-id team-id
-                                :name (str "icon library " i)}))
-(defn create-color-library
-  [conn team-id i]
-  (#'colors/create-library conn {:id (mk-uuid "imgcoll" i)
-                                 :team-id team-id
-                                 :name (str "color library " i)}))
+;; (defn create-image-library
+;;   [conn team-id i]
+;;   (#'images/create-library conn {:id (mk-uuid "imgcoll" i)
+;;                                  :team-id team-id
+;;                                  :name (str "image library " i)}))
+;;
+;; (defn create-icon-library
+;;   [conn team-id i]
+;;   (#'icons/create-library conn {:id (mk-uuid "imgcoll" i)
+;;                                 :team-id team-id
+;;                                 :name (str "icon library " i)}))
+;; (defn create-color-library
+;;   [conn team-id i]
+;;   (#'colors/create-library conn {:id (mk-uuid "imgcoll" i)
+;;                                  :team-id team-id
+;;                                  :name (str "color library " i)}))
 
 (defn handle-error
   [^Throwable err]

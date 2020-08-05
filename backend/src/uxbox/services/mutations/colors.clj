@@ -30,92 +30,93 @@
 (s/def ::content ::us/string)
 
 
-;; --- Mutation: Create Library
+;; ;; --- Mutation: Create Library
+;;
+;; (declare create-library)
+;;
+;; (s/def ::create-color-library
+;;   (s/keys :req-un [::profile-id ::team-id ::name]
+;;           :opt-un [::id]))
+;;
+;; (sm/defmutation ::create-color-library
+;;   [{:keys [profile-id team-id] :as params}]
+;;   (db/with-atomic [conn db/pool]
+;;     (teams/check-edition-permissions! conn profile-id team-id)
+;;     (create-library conn params)))
+;;
+;; (defn create-library
+;;   [conn {:keys [id team-id name]}]
+;;   (let [id (or id (uuid/next))]
+;;     (db/insert! conn :color-library
+;;                 {:id id
+;;                  :team-id team-id
+;;                  :name name})))
+;;
 
-(declare create-library)
-
-(s/def ::create-color-library
-  (s/keys :req-un [::profile-id ::team-id ::name]
-          :opt-un [::id]))
-
-(sm/defmutation ::create-color-library
-  [{:keys [profile-id team-id] :as params}]
-  (db/with-atomic [conn db/pool]
-    (teams/check-edition-permissions! conn profile-id team-id)
-    (create-library conn params)))
-
-(defn create-library
-  [conn {:keys [id team-id name]}]
-  (let [id (or id (uuid/next))]
-    (db/insert! conn :color-library
-                {:id id
-                 :team-id team-id
-                 :name name})))
-
-
-;; --- Mutation: Rename Library
-
-(declare select-library-for-update)
-(declare rename-library)
-
-(s/def ::rename-color-library
-  (s/keys :req-un [::profile-id ::name ::id]))
-
-(sm/defmutation ::rename-color-library
-  [{:keys [id profile-id name] :as params}]
-  (db/with-atomic [conn db/pool]
-    (let [lib (select-library-for-update conn id)]
-      (teams/check-edition-permissions! conn profile-id (:team-id lib))
-      (rename-library conn id name))))
-
-(def ^:private sql:select-library-for-update
-  "select l.*
-     from color_library as l
-    where l.id = $1
-      for update")
-
-(def ^:private sql:rename-library
-  "update color_library
-      set name = $2
-    where id = $1")
-
-(defn- select-library-for-update
-  [conn id]
-  (db/get-by-id conn :color-library id {:for-update true}))
-
-(defn- rename-library
-  [conn id name]
-  (db/update! conn :color-library
-              {:name name}
-              {:id id}))
-
-
-;; --- Delete Library
-
-(declare delete-library)
-
-(s/def ::delete-color-library
-  (s/keys :req-un [::profile-id ::id]))
-
-(sm/defmutation ::delete-color-library
-  [{:keys [id profile-id] :as params}]
-  (db/with-atomic [conn db/pool]
-    (let [lib (select-library-for-update conn id)]
-      (teams/check-edition-permissions! conn profile-id (:team-id lib))
-
-      ;; Schedule object deletion
-      (tasks/submit! conn {:name "delete-object"
-                           :delay cfg/default-deletion-delay
-                           :props {:id id :type :color-library}})
-
-      (db/update! conn :color-library
-                  {:deleted-at (dt/now)}
-                  {:id id})
-      nil)))
+;; ;; --- Mutation: Rename Library
+;;
+;; (declare select-library-for-update)
+;; (declare rename-library)
+;;
+;; (s/def ::rename-color-library
+;;   (s/keys :req-un [::profile-id ::name ::id]))
+;;
+;; (sm/defmutation ::rename-color-library
+;;   [{:keys [id profile-id name] :as params}]
+;;   (db/with-atomic [conn db/pool]
+;;     (let [lib (select-library-for-update conn id)]
+;;       (teams/check-edition-permissions! conn profile-id (:team-id lib))
+;;       (rename-library conn id name))))
+;;
+;; (def ^:private sql:select-library-for-update
+;;   "select l.*
+;;      from color_library as l
+;;     where l.id = $1
+;;       for update")
+;;
+;; (def ^:private sql:rename-library
+;;   "update color_library
+;;       set name = $2
+;;     where id = $1")
+;;
+;; (defn- select-library-for-update
+;;   [conn id]
+;;   (db/get-by-id conn :color-library id {:for-update true}))
+;;
+;; (defn- rename-library
+;;   [conn id name]
+;;   (db/update! conn :color-library
+;;               {:name name}
+;;               {:id id}))
 
 
-;; --- Mutation: Create Color (Upload)
+;; ;; --- Delete Library
+;;
+;; (declare delete-library)
+;;
+;; (s/def ::delete-color-library
+;;   (s/keys :req-un [::profile-id ::id]))
+;;
+;; (sm/defmutation ::delete-color-library
+;;   [{:keys [id profile-id] :as params}]
+;;   (db/with-atomic [conn db/pool]
+;;     (let [lib (select-library-for-update conn id)]
+;;       (teams/check-edition-permissions! conn profile-id (:team-id lib))
+;;
+;;       ;; Schedule object deletion
+;;       (tasks/submit! conn {:name "delete-object"
+;;                            :delay cfg/default-deletion-delay
+;;                            :props {:id id :type :color-library}})
+;;
+;;       (db/update! conn :color-library
+;;                   {:deleted-at (dt/now)}
+;;                   {:id id})
+;;       nil)))
 
+
+;; --- Mutation: Create Color
+
+(declare select-file-for-update)
 (declare create-color)
 
 (s/def ::create-color
@@ -125,10 +126,9 @@
 (sm/defmutation ::create-color
   [{:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn db/pool]
-    (create-color conn params)))
-    ;; (let [lib (select-library-for-update conn library-id)]
-    ;;   (teams/check-edition-permissions! conn profile-id (:team-id lib))
-    ;;   (create-color conn params))))
+    (let [file (select-file-for-update conn file-id)]
+      (teams/check-edition-permissions! conn profile-id (:team-id file))
+      (create-color conn params))))
 
 (def ^:private sql:create-color
   "insert into color (id, name, file_id, content)
@@ -141,6 +141,21 @@
                              :name name
                              :file-id file-id
                              :content content})))
+
+(def ^:private sql:select-file-for-update
+  "select file.*,
+          project.team_id as team_id
+     from file
+    inner join project on (project.id = file.project_id)
+    where file.id = ?
+      for update of file")
+
+(defn- select-file-for-update
+  [conn id]
+  (let [row (db/exec-one! conn [sql:select-file-for-update id])]
+    (when-not row
+      (ex/raise :type :not-found))
+    row))
 
 
 ;; --- Mutation: Rename Color

@@ -14,7 +14,6 @@
    [uxbox.common.uuid :as uuid]
    [uxbox.db :as db]
    [uxbox.http :as http]
-   [uxbox.media :as media]
    [uxbox.services.mutations :as sm]
    [uxbox.services.queries :as sq]
    [uxbox.tests.helpers :as th]
@@ -29,7 +28,7 @@
         team-id (:default-team-id prof)
         proj-id (:default-project-id prof)
 
-        file  (th/create-file db/pool (:id prof) proj-id 1)
+        file  (th/create-file db/pool (:id prof) proj-id false 1)
         page  (th/create-page db/pool (:id prof) (:id file) 1)
         token (atom nil)]
 

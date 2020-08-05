@@ -17,7 +17,6 @@
    [uxbox.common.spec :as us]
    [uxbox.db :as db]
    [uxbox.tasks :as tasks]
-   [uxbox.media :as media]
    [uxbox.util.emails :as emails]))
 
 ;; --- Defaults

@@ -18,7 +18,7 @@
    [uxbox.common.spec :as us]
    [uxbox.config :as cfg]
    [uxbox.db :as db]
-   [uxbox.media :as media]
+   [uxbox.media-storage :as mst]
    [uxbox.util.blob :as blob]
    [uxbox.util.storage :as ust]))
 
@@ -39,8 +39,8 @@
   (run! (fn [item]
           (let [path1 (get item "path")
                 path2 (get item "thumb_path")]
-            (ust/delete! media/media-storage path1)
-            (ust/delete! media/media-storage path2)))
+            (ust/delete! mst/media-storage path1)
+            (ust/delete! mst/media-storage path2)))
         result))
 
 (defn- decode-row
