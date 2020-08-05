@@ -18,10 +18,10 @@
    [uxbox.common.uuid :as uuid]
    [uxbox.config :as cfg]
    [uxbox.db :as db]
-   [uxbox.images :as images]
-   [uxbox.media :as media]
+   ;; [uxbox.images :as images]
+   ;; [uxbox.media :as media]
    [uxbox.services.mutations :as sm]
-   [uxbox.services.mutations.images :as imgs]
+   ;; [uxbox.services.mutations.images :as imgs]
    [uxbox.services.mutations.projects :as proj]
    [uxbox.services.queries.files :as files]
    [uxbox.tasks :as tasks]
@@ -37,13 +37,14 @@
 (s/def ::project-id ::us/uuid)
 (s/def ::url ::us/url)
 
-;; --- Mutation: Create Project File
+;; --- Mutation: Create File
 
 (declare create-file)
 (declare create-page)
 
+(s/def ::is-shared boolean?)
 (s/def ::create-file
-  (s/keys :req-un [::profile-id ::name ::project-id]
+  (s/keys :req-un [::profile-id ::name ::project-id ::is-shared]
           :opt-un [::id]))
 
 (sm/defmutation ::create-file
@@ -63,14 +64,13 @@
                :can-edit true}))
 
 (defn create-file
-  [conn {:keys [id profile-id name project-id shared?] :as params}]
+  [conn {:keys [id profile-id name project-id is-shared] :as params}]
   (let [id      (or id (uuid/next))
-        shared? (or shared? false)
         file (db/insert! conn :file
                          {:id id
                           :project-id project-id
                           :name name
-                          :is-shared shared?})]
+                          :is-shared is-shared})]
     (->> (assoc params :file-id id)
          (create-file-profile conn))
     file))
@@ -153,135 +153,135 @@
   nil)
 
 
-;; --- Mutations: Create File Image (Upload and create from url)
-
-(declare create-file-image)
-
-(s/def ::file-id ::us/uuid)
-(s/def ::image-id ::us/uuid)
-(s/def ::content ::imgs/upload)
-
-(s/def ::add-file-image-from-url
-  (s/keys :req-un [::profile-id ::file-id ::url]
-          :opt-un [::id]))
-
-(s/def ::upload-file-image
-  (s/keys :req-un [::profile-id ::file-id ::name ::content]
-          :opt-un [::id]))
-
-(sm/defmutation ::add-file-image-from-url
-  [{:keys [profile-id file-id url] :as params}]
-  (db/with-atomic [conn db/pool]
-    (files/check-edition-permissions! conn profile-id file-id)
-    (let [content (images/download-image url)
-          params' (merge params {:content content
-                                 :name (:filename content)})]
-      (create-file-image conn params'))))
-
-(sm/defmutation ::upload-file-image
-  [{:keys [profile-id file-id] :as params}]
-  (db/with-atomic [conn db/pool]
-    (files/check-edition-permissions! conn profile-id file-id)
-    (create-file-image conn params)))
-
-(defn- create-file-image
-  [conn {:keys [content file-id name] :as params}]
-  (when-not (imgs/valid-image-types? (:content-type content))
-    (ex/raise :type :validation
-              :code :image-type-not-allowed
-              :hint "Seems like you are uploading an invalid image."))
-
-  (let [info  (images/run {:cmd :info :input {:path (:tempfile content)
-                                              :mtype (:content-type content)}})
-        path  (imgs/persist-image-on-fs content)
-        opts  (assoc imgs/thumbnail-options
-                    :input {:mtype (:mtype info)
-                            :path path})
-        thumb (if-not (= (:mtype info) "image/svg+xml")
-                (imgs/persist-image-thumbnail-on-fs opts)
-                (assoc info
-                       :path path
-                       :quality 0))]
-
-    (-> (db/insert! conn :file-image
-                    {:file-id file-id
-                     :name name
-                     :path (str path)
-                     :width (:width info)
-                     :height (:height info)
-                     :mtype  (:mtype info)
-                     :thumb-path (str (:path thumb))
-                     :thumb-width (:width thumb)
-                     :thumb-height (:height thumb)
-                     :thumb-quality (:quality thumb)
-                     :thumb-mtype (:mtype thumb)})
-        (images/resolve-urls :path :uri)
-        (images/resolve-urls :thumb-path :thumb-uri))))
-
-
-;; --- Mutation: Delete File Image
-
-(declare mark-file-image-deleted)
-
-(s/def ::delete-file-image
-  (s/keys :req-un [::file-id ::image-id ::profile-id]))
-
-(sm/defmutation ::delete-file-image
-  [{:keys [file-id image-id profile-id] :as params}]
-  (db/with-atomic [conn db/pool]
-    (files/check-edition-permissions! conn profile-id file-id)
-
-    ;; Schedule object deletion
-    (tasks/submit! conn {:name "delete-object"
-                         :delay cfg/default-deletion-delay
-                         :props {:id image-id :type :file-image}})
-
-    (mark-file-image-deleted conn params)))
-
-(defn mark-file-image-deleted
-  [conn {:keys [image-id] :as params}]
-  (db/update! conn :file-image
-              {:deleted-at (dt/now)}
-              {:id image-id})
-  nil)
-
-
-;; --- Mutation: Import from collection
-
-(declare copy-image)
-(declare import-image-to-file)
-
-(s/def ::import-image-to-file
-  (s/keys :req-un [::image-id ::file-id ::profile-id]))
-
-(sm/defmutation ::import-image-to-file
-  [{:keys [image-id file-id profile-id] :as params}]
-  (db/with-atomic [conn db/pool]
-    (files/check-edition-permissions! conn profile-id file-id)
-    (import-image-to-file conn params)))
-
-(defn- import-image-to-file
-  [conn {:keys [image-id file-id] :as params}]
-  (let [image      (db/get-by-id conn :image image-id)
-        image-path (copy-image (:path image))
-        thumb-path (copy-image (:thumb-path image))]
-
-    (-> (db/insert! conn :file-image
-                    {:file-id file-id
-                     :name (:name image)
-                     :path (str image-path)
-                     :width (:width image)
-                     :height (:height image)
-                     :mtype  (:mtype image)
-                     :thumb-path (str thumb-path)
-                     :thumb-width (:thumb-width image)
-                     :thumb-height (:thumb-height image)
-                     :thumb-quality (:thumb-quality image)
-                     :thumb-mtype (:thumb-mtype image)})
-        (images/resolve-urls :path :uri)
-        (images/resolve-urls :thumb-path :thumb-uri))))
-
-(defn- copy-image
-  [path]
-  (let [image-path (ust/lookup media/media-storage path)]
-    (ust/save! media/media-storage (fs/name image-path) image-path)))
+;; ;; --- Mutations: Create File Image (Upload and create from url)
+;;
+;; (declare create-file-image)
+;;
+;; (s/def ::file-id ::us/uuid)
+;; (s/def ::image-id ::us/uuid)
+;; (s/def ::content ::imgs/upload)
+;;
+;; (s/def ::add-file-image-from-url
+;;   (s/keys :req-un [::profile-id ::file-id ::url]
+;;           :opt-un [::id]))
+;;
+;; (s/def ::upload-file-image
+;;   (s/keys :req-un [::profile-id ::file-id ::name ::content]
+;;           :opt-un [::id]))
+;;
+;; (sm/defmutation ::add-file-image-from-url
+;;   [{:keys [profile-id file-id url] :as params}]
+;;   (db/with-atomic [conn db/pool]
+;;     (files/check-edition-permissions! conn profile-id file-id)
+;;     (let [content (images/download-image url)
+;;           params' (merge params {:content content
+;;                                  :name (:filename content)})]
+;;       (create-file-image conn params'))))
+;;
+;; (sm/defmutation ::upload-file-image
+;;   [{:keys [profile-id file-id] :as params}]
+;;   (db/with-atomic [conn db/pool]
+;;     (files/check-edition-permissions! conn profile-id file-id)
+;;     (create-file-image conn params)))
+;;
+;; (defn- create-file-image
+;;   [conn {:keys [content file-id name] :as params}]
+;;   (when-not (imgs/valid-image-types? (:content-type content))
+;;     (ex/raise :type :validation
+;;               :code :image-type-not-allowed
+;;               :hint "Seems like you are uploading an invalid image."))
+;;
+;;   (let [info  (images/run {:cmd :info :input {:path (:tempfile content)
+;;                                               :mtype (:content-type content)}})
+;;         path  (imgs/persist-image-on-fs content)
+;;         opts  (assoc imgs/thumbnail-options
+;;                     :input {:mtype (:mtype info)
+;;                             :path path})
+;;         thumb (if-not (= (:mtype info) "image/svg+xml")
+;;                 (imgs/persist-image-thumbnail-on-fs opts)
+;;                 (assoc info
+;;                        :path path
+;;                        :quality 0))]
+;;
+;;     (-> (db/insert! conn :file-image
+;;                     {:file-id file-id
+;;                      :name name
+;;                      :path (str path)
+;;                      :width (:width info)
+;;                      :height (:height info)
+;;                      :mtype  (:mtype info)
+;;                      :thumb-path (str (:path thumb))
+;;                      :thumb-width (:width thumb)
+;;                      :thumb-height (:height thumb)
+;;                      :thumb-quality (:quality thumb)
+;;                      :thumb-mtype (:mtype thumb)})
+;;         (images/resolve-urls :path :uri)
+;;         (images/resolve-urls :thumb-path :thumb-uri))))
+;;
+;;
+;; ;; --- Mutation: Delete File Image
+;;
+;; (declare mark-file-image-deleted)
+;;
+;; (s/def ::delete-file-image
+;;   (s/keys :req-un [::file-id ::image-id ::profile-id]))
+;;
+;; (sm/defmutation ::delete-file-image
+;;   [{:keys [file-id image-id profile-id] :as params}]
+;;   (db/with-atomic [conn db/pool]
+;;     (files/check-edition-permissions! conn profile-id file-id)
+;;
+;;     ;; Schedule object deletion
+;;     (tasks/submit! conn {:name "delete-object"
+;;                          :delay cfg/default-deletion-delay
+;;                          :props {:id image-id :type :file-image}})
+;;
+;;     (mark-file-image-deleted conn params)))
+;;
+;; (defn mark-file-image-deleted
+;;   [conn {:keys [image-id] :as params}]
+;;   (db/update! conn :file-image
+;;               {:deleted-at (dt/now)}
+;;               {:id image-id})
+;;   nil)
+;;
+;;
+;; ;; --- Mutation: Import from collection
+;;
+;; (declare copy-image)
+;; (declare import-image-to-file)
+;;
+;; (s/def ::import-image-to-file
+;;   (s/keys :req-un [::image-id ::file-id ::profile-id]))
+;;
+;; (sm/defmutation ::import-image-to-file
+;;   [{:keys [image-id file-id profile-id] :as params}]
+;;   (db/with-atomic [conn db/pool]
+;;     (files/check-edition-permissions! conn profile-id file-id)
+;;     (import-image-to-file conn params)))
+;;
+;; (defn- import-image-to-file
+;;   [conn {:keys [image-id file-id] :as params}]
+;;   (let [image      (db/get-by-id conn :image image-id)
+;;         image-path (copy-image (:path image))
+;;         thumb-path (copy-image (:thumb-path image))]
+;;
+;;     (-> (db/insert! conn :file-image
+;;                     {:file-id file-id
+;;                      :name (:name image)
+;;                      :path (str image-path)
+;;                      :width (:width image)
+;;                      :height (:height image)
+;;                      :mtype  (:mtype image)
+;;                      :thumb-path (str thumb-path)
+;;                      :thumb-width (:thumb-width image)
+;;                      :thumb-height (:thumb-height image)
+;;                      :thumb-quality (:thumb-quality image)
+;;                      :thumb-mtype (:thumb-mtype image)})
+;;         (images/resolve-urls :path :uri)
+;;         (images/resolve-urls :thumb-path :thumb-uri))))
+;;
+;; (defn- copy-image
+;;   [path]
+;;   (let [image-path (ust/lookup media/media-storage path)]
+;;     (ust/save! media/media-storage (fs/name image-path) image-path)))

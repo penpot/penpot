@@ -23,7 +23,6 @@
    [uxbox.db :as db]
    [uxbox.http]
    [uxbox.migrations]
-   [uxbox.media :as media]
    [uxbox.util.svg :as svg]
    [uxbox.util.transit :as t]
    [uxbox.util.blob :as blob]
@@ -32,8 +31,7 @@
    [uxbox.services.mutations.projects :as projects]
    [uxbox.services.mutations.files :as files]
    [uxbox.services.mutations.colors :as colors]
-   [uxbox.services.mutations.icons :as icons]
-   [uxbox.services.mutations.images :as images]
+   [uxbox.services.mutations.media :as media]
    [uxbox.util.storage :as ust])
   (:import
    java.io.Reader
@@ -164,7 +162,7 @@
 ;;   [conn {:keys [name] :as item}]
 ;;   (let [id (uuid/namespaced +images-uuid-ns+ name)]
 ;;     (log/info "Creating image library:" name)
-;;     (images/create-library conn {:id id
+;;     (media/create-library conn {:id id
 ;;                                  :team-id uuid/zero
 ;;                                  :name name})))
 ;;
@@ -188,7 +186,7 @@
 ;;                 ".png"  "image/png"
 ;;                 ".webp" "image/webp")]
 ;;     (log/info "Creating image" filename image-id)
-;;     (images/create-image conn {:content {:tempfile localpath
+;;     (media/create-image conn {:content {:tempfile localpath
 ;;                                          :filename filename
 ;;                                          :content-type mtype
 ;;                                          :size (.length file)}
@@ -298,19 +296,19 @@
                 ".webp" "image/webp"
                 ".svg"  "image/svg+xml")]
     (log/info "Creating image" filename image-id)
-    (images/create-image conn {:content {:tempfile localpath
-                                         :filename filename
-                                         :content-type mtype
-                                         :size (.length file)}
-                               :id image-id
-                               :file-id file-id
-                               :user uuid/zero
-                               :name filename})))
+    (media/create-media-object conn {:content {:tempfile localpath
+                                               :filename filename
+                                               :content-type mtype
+                                               :size (.length file)}
+                                     :id image-id
+                                     :file-id file-id
+                                     :name filename
+                                     :is-local false})))
 
 (defn- image-exists?
   [conn id]
   (s/assert ::us/uuid id)
-  (let [row (db/get-by-id conn :image id)]
+  (let [row (db/get-by-id conn :media-object id)]
     (if row true false)))
 
 (defn- import-image-if-not-exists
@@ -355,7 +353,7 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Libraries Importer
+;; Library files Importer
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- library-file-exists?

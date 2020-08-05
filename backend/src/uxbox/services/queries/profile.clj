@@ -10,7 +10,7 @@
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.db :as db]
-   [uxbox.images :as images]
+   [uxbox.media :as media]
    [uxbox.services.queries :as sq]
    [uxbox.common.uuid :as uuid]
    [uxbox.util.blob :as blob]))
@@ -78,7 +78,7 @@
 (defn retrieve-profile
   [conn id]
   (let [profile (some-> (retrieve-profile-data conn id)
-                        (images/resolve-urls :photo :photo-uri)
+                        (media/resolve-urls :photo :photo-uri)
                         (strip-private-attrs)
                         (merge (retrieve-additional-data conn id)))]
     (when (nil? profile)

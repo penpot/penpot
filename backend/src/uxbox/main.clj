@@ -28,7 +28,7 @@
   [& args]
   (require 'uxbox.config
            'uxbox.migrations
-           'uxbox.images
+           'uxbox.media
            'uxbox.http
            'uxbox.tasks)
   (mount/start))

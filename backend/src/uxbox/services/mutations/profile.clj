@@ -23,11 +23,11 @@
    [uxbox.config :as cfg]
    [uxbox.db :as db]
    [uxbox.emails :as emails]
-   [uxbox.images :as images]
    [uxbox.media :as media]
+   [uxbox.media-storage :as mst]
    [uxbox.services.tokens :as tokens]
    [uxbox.services.mutations :as sm]
-   [uxbox.services.mutations.images :as imgs]
+   [uxbox.services.mutations.media :as media-mutations]
    [uxbox.services.mutations.projects :as projects]
    [uxbox.services.mutations.teams :as teams]
    [uxbox.services.queries.profile :as profile]
@@ -266,20 +266,20 @@
 (declare upload-photo)
 (declare update-profile-photo)
 
-(s/def ::file ::imgs/upload)
+(s/def ::file ::media-mutations/upload)
 (s/def ::update-profile-photo
   (s/keys :req-un [::profile-id ::file]))
 
 (sm/defmutation ::update-profile-photo
   [{:keys [profile-id file] :as params}]
-  (when-not (imgs/valid-image-types? (:content-type file))
+  (when-not (media-mutations/valid-media-object-types? (:content-type file))
     (ex/raise :type :validation
-              :code :image-type-not-allowed
-              :hint "Seems like you are uploading an invalid image."))
+              :code :media-type-not-allowed
+              :hint "Seems like you are uploading an invalid media object"))
 
   (db/with-atomic [conn db/pool]
     (let [profile (profile/retrieve-profile conn profile-id)
-          _       (images/run {:cmd :info :input {:path (:tempfile file)
+          _       (media/run {:cmd :info :input {:path (:tempfile file)
                                                   :mtype (:content-type file)}})
           photo   (upload-photo conn params)]
 
@@ -295,7 +295,7 @@
   [conn {:keys [file profile-id]}]
   (let [prefix (-> (sodi.prng/random-bytes 8)
                    (sodi.util/bytes->b64s))
-        thumb  (images/run
+        thumb  (media/run
                  {:cmd :profile-thumbnail
                   :format :jpeg
                   :quality 85
@@ -303,8 +303,8 @@
                   :height 256
                   :input  {:path (fs/path (:tempfile file))
                            :mtype (:content-type file)}})
-        name   (str prefix (images/format->extension (:format thumb)))]
-    (ust/save! media/media-storage name (:data thumb))))
+        name   (str prefix (media/format->extension (:format thumb)))]
+    (ust/save! mst/media-storage name (:data thumb))))
 
 (defn- update-profile-photo
   [conn profile-id path]

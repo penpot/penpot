@@ -14,7 +14,7 @@
    [clojure.tools.logging :as log]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
-   [uxbox.media :as media]
+   [uxbox.media-storage :as mst]
    [uxbox.metrics :as mtx]
    [uxbox.util.storage :as ust]))
 
@@ -25,8 +25,8 @@
 (defn handler
   [{:keys [props] :as task}]
   (us/verify ::props props)
-  (when (ust/exists? media/media-storage (:path props))
-    (ust/delete! media/media-storage (:path props))
+  (when (ust/exists? mst/media-storage (:path props))
+    (ust/delete! mst/media-storage (:path props))
     (log/debug "Media " (:path props) " removed.")))
 
 (mtx/instrument-with-summary!

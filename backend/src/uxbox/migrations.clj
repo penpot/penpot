@@ -67,7 +67,11 @@
 
     {:desc "Mark files shareable"
      :name "0013-mark-files-shareable"
-     :fn (mg/resource "migrations/0013-mark-files-shareable.sql")}]})
+     :fn (mg/resource "migrations/0013-mark-files-shareable.sql")}
+
+    {:desc "Refactor media storage"
+     :name "0014-refactor-media-storage.sql"
+     :fn (mg/resource "migrations/0014-refactor-media-storage.sql")}]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Entry point

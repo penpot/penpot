@@ -15,7 +15,6 @@
    [uxbox.common.uuid :as uuid]
    [uxbox.config :as cfg]
    [uxbox.db :as db]
-   [uxbox.media :as media]
    [uxbox.migrations]
    [uxbox.services.mutations.profile :as profile]
    [uxbox.util.blob :as blob]))

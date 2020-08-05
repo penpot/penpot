@@ -16,10 +16,9 @@
    [uxbox.common.spec :as us]
    [uxbox.common.uuid :as uuid]
    [uxbox.db :as db]
-   [uxbox.images :as images]
-   [uxbox.media :as media]
    [uxbox.services.queries :as sq]
    [uxbox.services.queries.files :as files]
+   [uxbox.services.queries.media :as media-queries]
    [uxbox.services.queries.pages :as pages]
    [uxbox.util.blob :as blob]
    [uxbox.util.data :as data]))
@@ -52,7 +51,7 @@
   (db/with-atomic [conn db/pool]
     (let [page (pages/retrieve-page conn page-id)
           file (files/retrieve-file conn (:file-id page))
-          images (files/retrieve-file-images conn page)
+          images (media-queries/retrieve-media-objects conn (:file-id page) true)
           project (retrieve-project conn (:project-id file))]
       (if (string? share-token)
         (when (not= share-token (:share-token page))
