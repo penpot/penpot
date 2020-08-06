@@ -8,7 +8,6 @@
 ;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.services.tokens
-  (:refer-clojure :exclude [next])
   (:require
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
@@ -16,14 +15,11 @@
    [sodi.util]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
-   [uxbox.common.uuid :as uuid]
-   [uxbox.config :as cfg]
    [uxbox.util.time :as dt]
-   [uxbox.util.blob :as blob]
    [uxbox.db :as db]))
 
-(defn next
-  ([] (next 64))
+(defn next-token
+  ([] (next-token 64))
   ([n]
    (-> (sodi.prng/random-bytes n)
        (sodi.util/bytes->b64s))))
@@ -35,15 +31,16 @@
   [{:keys [content] :as row}]
   (when row
     (cond-> row
-      content (assoc :content (blob/decode content)))))
+      (db/pgobject? content)
+      (assoc :content (db/decode-transit-pgobject content)))))
 
 (defn create!
   ([conn payload] (create! conn payload {}))
   ([conn payload {:keys [valid] :or {valid default-duration}}]
-   (let [token (next)
+   (let [token (next-token)
          until (dt/plus (dt/now) (dt/duration valid))]
      (db/insert! conn :generic-token
-                 {:content (blob/encode payload)
+                 {:content (db/tjson payload)
                   :token token
                   :valid-until until})
      token)))

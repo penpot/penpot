@@ -71,7 +71,15 @@
 
     {:desc "Refactor media storage"
      :name "0014-refactor-media-storage.sql"
-     :fn (mg/resource "migrations/0014-refactor-media-storage.sql")}]})
+     :fn (mg/resource "migrations/0014-refactor-media-storage.sql")}
+
+    {:desc "Improve and partition task related tables"
+     :name "0015-improve-tasks-tables"
+     :fn (mg/resource "migrations/0015-improve-tasks-tables.sql")}
+
+    {:desc "Truncate & alter tokens tables"
+     :name "0016-truncate-and-alter-tokens-table"
+     :fn (mg/resource "migrations/0016-truncate-and-alter-tokens-table.sql")}]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Entry point

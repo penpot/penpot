@@ -23,23 +23,11 @@
    [uxbox.tasks.delete-profile]
    [uxbox.tasks.delete-object]
    [uxbox.tasks.impl :as impl]
-   [uxbox.util.time :as dt])
-  (:import
-   java.util.concurrent.ScheduledExecutorService
-   java.util.concurrent.Executors))
+   [uxbox.util.time :as dt]))
 
 ;; --- Scheduler Executor Initialization
 
-(defstate scheduler
-  :start (Executors/newScheduledThreadPool (int 1))
-  :stop (.shutdownNow ^ScheduledExecutorService scheduler))
-
 ;; --- State initialization
-
-;; TODO: missing self maintanance task; when the queue table is full
-;; of completed/failed task, the performance starts degrading
-;; linearly, so after some arbitrary number of tasks is processed, we
-;; need to perform a maintenance and delete some old tasks.
 
 (def ^:private tasks
   {"delete-profile" #'uxbox.tasks.delete-profile/handler
@@ -52,14 +40,12 @@
     :cron (dt/cron "1 1 */1 * * ? *")
     :fn #'uxbox.tasks.gc/remove-media}])
 
-(defstate tasks-worker
-  :start (impl/start-worker! {:tasks tasks
-                              :xtor scheduler})
-  :stop (impl/stop! tasks-worker))
+(defstate worker
+  :start (impl/start-worker! {:tasks tasks :name "worker1"})
+  :stop (impl/stop! worker))
 
 (defstate scheduler-worker
-  :start (impl/start-scheduler-worker! {:schedule schedule
-                                        :xtor scheduler})
+  :start (impl/start-scheduler-worker! {:schedule schedule})
   :stop (impl/stop! scheduler-worker))
 
 ;; --- Public API

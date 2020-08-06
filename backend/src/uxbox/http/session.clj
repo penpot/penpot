@@ -23,7 +23,7 @@
 
 (defn create
   [profile-id user-agent]
-  (let [id (tokens/next)]
+  (let [id (tokens/next-token)]
     (db/insert! db/pool :http-session {:id id
                                        :profile-id profile-id
                                        :user-agent user-agent})

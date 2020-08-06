@@ -6,8 +6,10 @@
     </Console>
   </Appenders>
   <Loggers>
-    <Logger name="io.vertx.sqlclient.impl.SocketConnectionBase" level="ERROR"/>
-    <Root level="info">
+    <Logger name="com.zaxxer.hikari" level="info" additivity="false"></Logger>
+    <Logger name="io.lettuce.core" level="info" additivity="false"></Logger>
+    <Logger name="io.netty" level="info" additivity="false"></Logger>
+    <Root level="debug">
       <AppenderRef ref="console"/>
     </Root>
   </Loggers>

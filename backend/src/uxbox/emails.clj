@@ -46,6 +46,7 @@
          email (email-factory data)]
      (tasks/submit! conn {:name "sendmail"
                           :delay 0
+                          :priority 200
                           :props email}))))
 
 ;; --- Emails

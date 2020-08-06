@@ -122,6 +122,11 @@
   (->> (encode message)
        (bytes->str)))
 
+(defn encode-verbose-str
+  [message]
+  (->> (encode message {:type :json-verbose})
+       (bytes->str)))
+
 ;; --- Helpers
 
 (defn str->bytes
