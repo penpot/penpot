@@ -6,6 +6,7 @@
 
 (ns uxbox.db
   (:require
+   [clojure.spec.alpha :as s]
    [clojure.data.json :as json]
    [clojure.string :as str]
    [clojure.tools.logging :as log]
@@ -17,15 +18,22 @@
    [next.jdbc.result-set :as jdbc-rs]
    [next.jdbc.sql :as jdbc-sql]
    [next.jdbc.sql.builder :as jdbc-bld]
-   [uxbox.metrics :as mtx]
    [uxbox.common.exceptions :as ex]
    [uxbox.config :as cfg]
+   [uxbox.metrics :as mtx]
+   [uxbox.util.time :as dt]
+   [uxbox.util.transit :as t]
    [uxbox.util.data :as data])
   (:import
    org.postgresql.util.PGobject
+   org.postgresql.util.PGInterval
    com.zaxxer.hikari.metrics.prometheus.PrometheusMetricsTrackerFactory
    com.zaxxer.hikari.HikariConfig
    com.zaxxer.hikari.HikariDataSource))
+
+(def initsql
+  (str "SET statement_timeout = 10000;\n"
+       "SET idle_in_transaction_session_timeout = 30000;"))
 
 (defn- create-datasource-config
   [cfg]
@@ -39,16 +47,27 @@
       (.setPoolName "main")
       (.setAutoCommit true)
       (.setReadOnly false)
-      (.setConnectionTimeout 30000) ;; 30seg
-      (.setValidationTimeout 5000)  ;; 5seg
-      (.setIdleTimeout 900000)      ;; 15min
+      (.setConnectionTimeout 8000)  ;; 8seg
+      (.setValidationTimeout 4000)  ;; 4seg
+      (.setIdleTimeout 300000)      ;; 5min
       (.setMaxLifetime 900000)      ;; 15min
-      (.setMinimumIdle 5)
-      (.setMaximumPoolSize 10)
+      (.setMinimumIdle 0)
+      (.setMaximumPoolSize 15)
+      (.setConnectionInitSql initsql)
       (.setMetricsTrackerFactory mfactory))
     (when username (.setUsername config username))
     (when password (.setPassword config password))
     config))
+
+(defn pool?
+  [v]
+  (instance? javax.sql.DataSource v))
+
+(s/def ::pool pool?)
+
+(defn pool-closed?
+  [pool]
+  (.isClosed ^com.zaxxer.hikari.HikariDataSource pool))
 
 (defn- create-pool
   [cfg]
@@ -135,6 +154,33 @@
   [v]
   (instance? PGobject v))
 
+(defn pginterval?
+  [v]
+  (instance? PGInterval v))
+
+(defn pginterval
+  [data]
+  (org.postgresql.util.PGInterval. ^String data))
+
+(defn interval
+  [data]
+  (cond
+    (integer? data)
+    (->> (/ data 1000.0)
+         (format "%s seconds")
+         (pginterval))
+
+    (string? data)
+    (pginterval data)
+
+    (dt/duration? data)
+    (->> (/ (.toMillis data) 1000.0)
+         (format "%s seconds")
+         (pginterval))
+
+    :else
+    (ex/raise :type :not-implemented)))
+
 (defn decode-pgobject
   [^PGobject obj]
   (let [typ (.getType obj)
@@ -143,6 +189,38 @@
             (= typ "jsonb"))
       (json/read-str val)
       val)))
+
+(defn decode-json-pgobject
+  [^PGobject o]
+  (let [typ (.getType o)
+        val (.getValue o)]
+    (if (or (= typ "json")
+            (= typ "jsonb"))
+      (json/read-str val :key-fn keyword)
+      val)))
+
+(defn decode-transit-pgobject
+  [^PGobject o]
+  (let [typ (.getType o)
+        val (.getValue o)]
+    (if (or (= typ "json")
+            (= typ "jsonb"))
+      (t/decode-str val)
+      val)))
+
+(defn tjson
+  "Encode as transit json."
+  [data]
+  (doto (org.postgresql.util.PGobject.)
+    (.setType "jsonb")
+    (.setValue (t/encode-verbose-str data))))
+
+(defn json
+  "Encode as plain json."
+  [data]
+  (doto (org.postgresql.util.PGobject.)
+    (.setType "jsonb")
+    (.setValue (json/write-str data))))
 
 ;; Instrumentation
 

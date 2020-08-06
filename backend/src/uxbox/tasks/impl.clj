@@ -10,6 +10,7 @@
 (ns uxbox.tasks.impl
   "Async tasks implementation."
   (:require
+   [cuerdas.core :as str]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
@@ -18,6 +19,7 @@
    [uxbox.common.uuid :as uuid]
    [uxbox.config :as cfg]
    [uxbox.db :as db]
+   [uxbox.util.async :as aa]
    [uxbox.util.blob :as blob]
    [uxbox.util.time :as dt])
   (:import
@@ -40,6 +42,7 @@
   sql:mark-as-retry
   "update task
       set scheduled_at = clock_timestamp() + '5 seconds'::interval,
+          modified_at = clock_timestamp(),
           error = ?,
           status = 'retry',
           retry_num = retry_num + 1
@@ -57,25 +60,29 @@
   (let [explain (ex-message error)]
     (db/update! conn :task
                 {:error explain
+                 :modified-at (dt/now)
                  :status "failed"}
                 {:id (:id task)})
     nil))
 
 (defn- mark-as-completed
   [conn task]
-  (db/update! conn :task
-              {:completed-at (dt/now)
-               :status "completed"}
-              {:id (:id task)})
-  nil)
+  (let [now (dt/now)]
+    (db/update! conn :task
+                {:completed-at now
+                 :modified-at now
+                 :status "completed"}
+                {:id (:id task)})
+    nil))
+
 
 (def ^:private
   sql:select-next-task
   "select * from task as t
     where t.scheduled_at <= now()
       and t.queue = ?
-      and (t.status = 'new' or (t.status = 'retry' and t.retry_num <= ?))
-    order by t.scheduled_at
+      and (t.status = 'new' or t.status = 'retry')
+    order by t.priority desc, t.scheduled_at
     limit 1
       for update skip locked")
 
@@ -83,12 +90,13 @@
   [{:keys [props] :as row}]
   (when row
     (cond-> row
-      props (assoc :props (blob/decode props)))))
+      (db/pgobject? props) (assoc :props (db/decode-transit-pgobject props)))))
+
 
 (defn- log-task-error
   [item err]
-  (log/error "Unhandled exception on task '" (:name item)
-             "' (retry:" (:retry-num item) ") \n"
+  (log/error (str/format "Unhandled exception on task '%s' (retry: %s)\n" (:name item) (:retry-num item))
+             (str/format "Props: %s\n" (pr-str (:props item)))
              (with-out-str
                (.printStackTrace ^Throwable err (java.io.PrintWriter. *out*)))))
 
@@ -101,38 +109,107 @@
         (log/warn "no task handler found for" (pr-str name))
         nil))))
 
-(defn- event-loop-fn
-  [{:keys [tasks] :as options}]
-  (let [queue (:queue options "default")
-        max-retries (:max-retries options 3)]
-    (db/with-atomic [conn db/pool]
-      (let [item (-> (db/exec-one! conn [sql:select-next-task queue max-retries])
-                     (decode-task-row))]
-        (when item
-          (log/info "Execute task" (:name item))
-          (try
-            (handle-task tasks item)
-            (mark-as-completed conn item)
-            ::handled
-            (catch Throwable e
-              (log-task-error item e)
-              (if (>= (:retry-num item) max-retries)
-                (mark-as-failed conn item e)
-                (mark-as-retry conn item e)))))))))
+(defn- run-task
+  [{:keys [tasks conn]} item]
+  (try
+    (log/debug (str/format "Started task '%s/%s'." (:name item) (:id item)))
+    (handle-task tasks item)
+    (log/debug (str/format "Finished task '%s/%s'." (:name item) (:id item)))
+    (mark-as-completed conn item)
+    (catch Exception e
+      (log-task-error item e)
+      (if (>= (:retry-num item) (:max-retries item))
+        (mark-as-failed conn item e)
+        (mark-as-retry conn item e)))))
 
-(defn- execute-worker-task
-  [{:keys [::stop ::xtor poll-interval]
+(defn- event-loop-fn
+  [{:keys [tasks] :as opts}]
+  (aa/thread-try
+   (db/with-atomic [conn db/pool]
+     (let [queue (:queue opts "default")
+           item  (-> (db/exec-one! conn [sql:select-next-task queue])
+                     (decode-task-row))
+           opts  (assoc opts :conn conn)]
+
+       (cond
+         (nil? item)
+         ::empty
+
+         (or (= "new" (:status item))
+             (= "retry" (:status item)))
+         (do
+           (run-task opts item)
+           ::handled)
+
+         :else
+         (do
+           (log/warn "Unexpected condition on worker event loop:" (pr-str item))
+           ::handled))))))
+
+(s/def ::poll-interval ::us/integer)
+(s/def ::fn (s/or :var var? :fn fn?))
+(s/def ::tasks (s/map-of string? ::fn))
+(s/def ::start-worker-params
+  (s/keys :req-un [::tasks]
+          :opt-un [::poll-interval]))
+
+(defn start-worker!
+  [{:keys [poll-interval]
     :or {poll-interval 5000}
     :as opts}]
-  (try
-    (when-not @stop
-      (let [res (event-loop-fn opts)]
-        (if (= res ::handled)
-          (px/schedule! xtor 0 (partial execute-worker-task opts))
-          (px/schedule! xtor poll-interval (partial execute-worker-task opts)))))
-    (catch Throwable e
-      (log/error "unexpected exception:" e)
-      (px/schedule! xtor poll-interval (partial execute-worker-task opts)))))
+  (us/assert ::start-worker-params opts)
+  (log/info (str/format "Starting worker '%s' on queue '%s'."
+                        (:name opts "anonymous")
+                        (:queue opts "default")))
+  (let [cch (a/chan 1)]
+    (a/go-loop []
+      (let [[val port] (a/alts! [cch (event-loop-fn opts)] :priority true)]
+        (cond
+          ;; Terminate the loop if close channel is closed or
+          ;; event-loop-fn returns nil.
+          (or (= port cch) (nil? val))
+          (log/info (str/format "Stop condition found. Shutdown worker: '%s'"
+                                (:name opts "anonymous")))
+
+          (db/pool-closed? db/pool)
+          (do
+            (log/info "Worker eventloop is aborted because pool is closed.")
+            (a/close! cch))
+
+          (and (instance? java.sql.SQLException val)
+               (contains? #{"08003" "08006" "08001" "08004"} (.getSQLState val)))
+          (do
+            (log/error "Connection error, trying resume in some instants.")
+            (a/<! (a/timeout poll-interval))
+            (recur))
+
+          (and (instance? java.sql.SQLException val)
+               (= "40001" (.getSQLState ^java.sql.SQLException val)))
+          (do
+            (log/debug "Serialization failure (retrying in some instants).")
+            (a/<! (a/timeout 1000))
+            (recur))
+
+          (instance? Exception val)
+          (do
+            (log/error "Unexpected error ocurried on polling the database." val)
+            (log/info "Trying resume operations in some instants.")
+            (a/<! (a/timeout poll-interval))
+            (recur))
+
+          (= ::handled val)
+          (recur)
+
+          (= ::empty val)
+          (do
+            (a/<! (a/timeout poll-interval))
+            (recur)))))
+
+    (reify
+      java.lang.AutoCloseable
+      (close [_]
+        (a/close! cch)))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Scheduled Tasks
@@ -178,7 +255,7 @@
         (log/info "Executing scheduled task" id)
         ((:fn task) task)))
 
-    (catch Throwable e
+    (catch Exception e
       (log-scheduled-task-error task e))
     (finally
       (schedule-task! xtor task))))
@@ -196,60 +273,33 @@
         task  (assoc task ::xtor xtor)]
     (px/schedule! xtor ms (partial execute-scheduled-task task))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Public API
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(s/def ::id string?)
-(s/def ::name string?)
-(s/def ::cron dt/cron?)
 (s/def ::fn (s/or :var var? :fn fn?))
+(s/def ::id string?)
+(s/def ::cron dt/cron?)
+;; (s/def ::xtor #(instance? ScheduledExecutorService %))
 (s/def ::props (s/nilable map?))
-(s/def ::xtor #(instance? ScheduledExecutorService %))
-
 (s/def ::scheduled-task
   (s/keys :req-un [::id ::cron ::fn]
           :opt-un [::props]))
 
-(s/def ::tasks (s/map-of string? ::fn))
 (s/def ::schedule (s/coll-of ::scheduled-task))
+(s/def ::start-scheduler-worker-params
+  (s/keys :req-un [::schedule]))
 
 (defn start-scheduler-worker!
-  [{:keys [schedule xtor] :as opts}]
-  (us/assert ::xtor xtor)
-  (us/assert ::schedule schedule)
-  (let [stop (atom false)]
+  [{:keys [schedule] :as opts}]
+  (us/assert ::start-scheduler-worker-params opts)
+  (let [xtor (Executors/newScheduledThreadPool (int 1))]
     (synchronize-schedule! schedule)
     (run! (partial schedule-task! xtor) schedule)
     (reify
       java.lang.AutoCloseable
       (close [_]
-        (reset! stop true)))))
-
-(defn start-worker!
-  [{:keys [tasks xtor poll-interval]
-    :or {poll-interval 5000}
-    :as opts}]
-  (us/assert ::tasks tasks)
-  (us/assert ::xtor xtor)
-  (us/assert number? poll-interval)
-  (let [stop (atom false)
-        opts (assoc opts
-                    ::xtor xtor
-                    ::stop stop)]
-    (px/schedule! xtor poll-interval (partial execute-worker-task opts))
-    (reify
-      java.lang.AutoCloseable
-      (close [_]
-        (reset! stop true)))))
+        (.shutdownNow ^ScheduledExecutorService xtor)))))
 
 (defn stop!
   [worker]
   (.close ^java.lang.AutoCloseable worker))
-
-
-
-
 
 ;; --- Submit API
 
@@ -258,30 +308,25 @@
   (s/or :int ::us/integer
         :duration dt/duration?))
 (s/def ::queue ::us/string)
+
 (s/def ::task-options
   (s/keys :req-un [::name]
           :opt-un [::delay ::props ::queue]))
 
 (def ^:private sql:insert-new-task
-  "insert into task (id, name, props, queue, scheduled_at)
-   values (?, ?, ?, ?, clock_timestamp()+cast(?::text as interval))
+  "insert into task (id, name, props, queue, priority, max_retries, scheduled_at)
+   values (?, ?, ?, ?, ?, ?, clock_timestamp() + ?)
    returning id")
 
-(defn- duration->pginterval
-  [^Duration d]
-  (->> (/ (.toMillis d) 1000.0)
-       (format "%s seconds")))
-
 (defn submit!
-  [conn {:keys [name delay props queue key]
-         :or {delay 0 props {} queue "default"}
+  [conn {:keys [name delay props queue priority max-retries key]
+         :or {delay 0 props {} queue "default" priority 100 max-retries 3}
          :as options}]
   (us/verify ::task-options options)
-  (let [duration   (dt/duration delay)
-        pginterval (duration->pginterval duration)
-        props      (blob/encode props)
-        id         (uuid/next)]
-    (log/info "Submit task" name "to be executed in" (str duration))
-    (db/exec-one! conn [sql:insert-new-task
-                        id name props queue pginterval])
+  (let [duration  (dt/duration delay)
+        interval  (db/interval duration)
+        props     (db/tjson props)
+        id        (uuid/next)]
+    (log/info (str/format "Submit task '%s' to be executed in '%s'." name (str duration)))
+    (db/exec-one! conn [sql:insert-new-task id name props queue priority max-retries interval])
     id))
