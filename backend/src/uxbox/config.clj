@@ -48,7 +48,6 @@
    ;; LDAP auth disabled by default. Set ldap-auth-host to enable
    ;:ldap-auth-host "ldap.mysupercompany.com"
    ;:ldap-auth-port 389
-   :ldap-auth-version "3"
    ;:ldap-bind-dn "cn=admin,dc=ldap,dc=mysupercompany,dc=com"
    ;:ldap-bind-password "verysecure"
    ;:ldap-auth-ssl false
@@ -104,7 +103,6 @@
 (s/def ::ldap-auth-email-attribute ::us/string)
 (s/def ::ldap-auth-fullname-attribute ::us/string)
 (s/def ::ldap-auth-avatar-attribute ::us/string)
-(s/def ::ldap-auth-isactivedirectory ::us/boolean)
 
 (s/def ::config
   (s/keys :opt-un [::http-server-cors
@@ -137,7 +135,6 @@
 
                    ::ldap-auth-host
                    ::ldap-auth-port
-                   ::ldap-auth-version
                    ::ldap-bind-dn
                    ::ldap-bind-password
                    ::ldap-auth-ssl
@@ -147,8 +144,7 @@
                    ::ldap-auth-username-attribute
                    ::ldap-auth-email-attribute
                    ::ldap-auth-fullname-attribute
-                   ::ldap-auth-avatar-attribute
-                   ::ldap-auth-isactivedirectory]))
+                   ::ldap-auth-avatar-attribute]))
 
 (defn env->config
   [env]
