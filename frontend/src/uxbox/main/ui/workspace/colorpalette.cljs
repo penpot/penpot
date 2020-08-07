@@ -14,7 +14,7 @@
    [okulary.core :as l]
    [rumext.alpha :as mf]
    [uxbox.common.math :as mth]
-   [uxbox.main.data.library :as dlib]
+   ;; [uxbox.main.data.library :as dlib]
    [uxbox.main.data.workspace :as udw]
    [uxbox.main.store :as st]
    [uxbox.main.ui.components.context-menu :refer [context-menu]]
@@ -112,8 +112,8 @@
 
         handle-click
         (mf/use-callback
-         (fn [library]
-           (st/emit! (dlib/select-library :palettes (:id library)))))]
+         (fn [library]))]
+           ;; (st/emit! (dlib/select-library :palettes (:id library)))))]
 
     (mf/use-layout-effect
      #(let [dom   (mf/ref-val container)
@@ -128,8 +128,8 @@
     (mf/use-effect
      (mf/deps selected)
      (fn []
-       (when selected
-         (st/emit! (dlib/retrieve-library-data :palettes selected)))))
+       (when selected)))
+         ;; (st/emit! (dlib/retrieve-library-data :palettes selected)))))
 
     [:div.color-palette {:class (when left-sidebar? "left-sidebar-open")}
      [:& context-menu
@@ -164,9 +164,9 @@
                      (:id (first palettes)))]
     (mf/use-effect
      (mf/deps team-id)
-     (fn []
-       (st/emit! (dlib/retrieve-libraries :palettes)
-                 (dlib/retrieve-libraries :palettes team-id))))
+     (fn []))
+       ;; (st/emit! (dlib/retrieve-libraries :palettes)
+       ;;           (dlib/retrieve-libraries :palettes team-id))))
 
     [:& palette {:left-sidebar? left-sidebar?
                  :selected selected

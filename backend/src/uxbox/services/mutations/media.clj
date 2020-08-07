@@ -37,67 +37,6 @@
 (s/def ::team-id ::us/uuid)
 (s/def ::url ::us/url)
 
-;; ;; --- Create Library
-;;
-;; (declare create-library)
-;;
-;; (s/def ::create-media-object-library
-;;   (s/keys :req-un [::profile-id ::team-id ::name]
-;;           :opt-un [::id]))
-;;
-;; (sm/defmutation ::create-media-object-library
-;;   [{:keys [profile-id team-id] :as params}]
-;;   (db/with-atomic [conn db/pool]
-;;     (teams/check-edition-permissions! conn profile-id team-id)
-;;     (create-library conn params)))
-;;
-;; (defn create-library
-;;   [conn {:keys [id team-id name]}]
-;;   (let [id (or id (uuid/next))]
-;;     (db/insert! conn :media-object-library
-;;                 {:id id
-;;                  :team-id team-id
-;;                  :name name})))
-;;
-;;
-;; ;; --- Rename Library
-;;
-;; (s/def ::rename-media-object-library
-;;   (s/keys :req-un [::id ::profile-id ::name]))
-;;
-;; (sm/defmutation ::rename-media-object-library
-;;   [{:keys [profile-id id name] :as params}]
-;;   (db/with-atomic [conn db/pool]
-;;     (let [lib (select-file-for-update conn id)]
-;;       (teams/check-edition-permissions! conn profile-id (:team-id lib))
-;;       (db/update! conn :media-object-library
-;;                   {:name name}
-;;                   {:id id}))))
-;;
-;;
-;; ;; --- Delete Library
-;;
-;; (declare delete-library)
-;;
-;; (s/def ::delete-media-object-library
-;;   (s/keys :req-un [::profile-id ::id]))
-;;
-;; (sm/defmutation ::delete-media-object-library
-;;   [{:keys [id profile-id] :as params}]
-;;   (db/with-atomic [conn db/pool]
-;;     (let [lib (select-file-for-update conn id)]
-;;       (teams/check-edition-permissions! conn profile-id (:team-id lib))
-;;
-;;       ;; Schedule object deletion
-;;       (tasks/submit! conn {:name "delete-object"
-;;                            :delay cfg/default-deletion-delay
-;;                            :props {:id id :type :media-object-library}})
-;;
-;;       (db/update! conn :media-object-library
-;;                   {:deleted-at (dt/now)}
-;;                   {:id id})
-;;       nil)))
-
 
 ;; --- Create Media object (Upload and create from url)
 

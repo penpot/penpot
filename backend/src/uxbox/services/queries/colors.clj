@@ -27,55 +27,7 @@
 (s/def ::profile-id ::us/uuid)
 (s/def ::team-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
-;; (s/def ::library-id (s/nilable ::us/uuid))
 
-;; ;; --- Query: Colors Libraries
-;;
-;; (def ^:private sql:libraries
-;;   "select lib.*,
-;;           (select count(*) from color where library_id = lib.id) as num_colors
-;;      from color_library as lib
-;;     where lib.team_id = ?
-;;       and lib.deleted_at is null
-;;     order by lib.created_at desc")
-;;
-;; (s/def ::color-libraries
-;;   (s/keys :req-un [::profile-id ::team-id]))
-;;
-;; (sq/defquery ::color-libraries
-;;   [{:keys [profile-id team-id]}]
-;;   (db/with-atomic [conn db/pool]
-;;     (teams/check-read-permissions! conn profile-id team-id)
-;;     (db/exec! conn [sql:libraries team-id])))
-;;
-;;
-;; ;; --- Query: Color Library
-;;
-;; (declare retrieve-library)
-;;
-;; (s/def ::color-library
-;;   (s/keys :req-un [::profile-id ::id]))
-;;
-;; (sq/defquery ::color-library
-;;   [{:keys [profile-id id]}]
-;;   (db/with-atomic [conn db/pool]
-;;     (let [lib (retrieve-library conn id)]
-;;       (teams/check-read-permissions! conn profile-id (:team-id lib))
-;;       lib)))
-;;
-;; (def ^:private sql:single-library
-;;   "select lib.*,
-;;           (select count(*) from color where library_id = lib.id) as num_colors
-;;      from color_library as lib
-;;     where lib.deleted_at is null
-;;       and lib.id = ?")
-;;
-;; (defn- retrieve-library
-;;   [conn id]
-;;   (let [row (db/exec-one! conn [sql:single-library id])]
-;;     (when-not row
-;;       (ex/raise :type :not-found))
-;;     row))
 
 ;; --- Query: Colors (by file)
 

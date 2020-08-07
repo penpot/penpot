@@ -18,7 +18,7 @@
   grid-template-columns: 40px 180px 1fr;
   height: 100vh;
 
-  & .library-bar {
+  & .dashboard-sidebar {
     grid-row: 2;
     grid-column: 1 / span 2;
     overflow: hidden;

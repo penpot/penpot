@@ -30,7 +30,6 @@
    [uxbox.common.uuid :as uuid]
    [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.data :refer [classnames]]
-   [uxbox.main.data.library :as dlib]
    [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.colorpicker :refer [colorpicker most-used-colors]]
    [uxbox.main.ui.components.tab-container :refer [tab-container tab-element]]
@@ -58,18 +57,19 @@
               (modal/hide!)
               (when on-cancel (on-cancel)))]
 
-      [:div.modal-create-color
-       [:h3.modal-create-color-title (tr "modal.create-color.new-color")]
-       [:& colorpicker {:value (:current-color @state)
-                        :colors (into-array @most-used-colors)
-                        :disable-opacity true
-                        :on-change #(swap! state assoc :current-color %)}]
+      [:div.modal-overlay.transparent
+        [:div.modal-create-color
+         [:h3.modal-create-color-title (tr "modal.create-color.new-color")]
+         [:& colorpicker {:value (:current-color @state)
+                          :colors (into-array @most-used-colors)
+                          :disable-opacity true
+                          :on-change #(swap! state assoc :current-color %)}]
 
-       [:input.btn-primary {:type "button"
-                            :value (tr "ds.button.save")
-                            :on-click accept}]
+         [:input.btn-primary {:type "button"
+                              :value (tr "ds.button.save")
+                              :on-click accept}]
 
-       [:a.close {:href "#" :on-click cancel} i/close]])))
+         [:a.close {:href "#" :on-click cancel} i/close]]])))
 
 (mf/defc graphics-box
   [{:keys [library-id media-objects] :as props}]

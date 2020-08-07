@@ -126,11 +126,11 @@
            (t locale "workspace.header.menu.show-palette"))]
         [:span.shortcut "Ctrl+p"]]
 
-       [:li {:on-click #(st/emit! (dw/toggle-layout-flags :libraries))}
+       [:li {:on-click #(st/emit! (dw/toggle-layout-flags :assets))}
         [:span
-         (if (contains? layout :libraries)
-           (t locale "workspace.header.menu.hide-libraries")
-           (t locale "workspace.header.menu.show-libraries"))]
+         (if (contains? layout :assets)
+           (t locale "workspace.header.menu.hide-assets")
+           (t locale "workspace.header.menu.show-assets"))]
         [:span.shortcut "Ctrl+i"]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :dynamic-alignment))}

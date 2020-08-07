@@ -64,22 +64,7 @@
      ["/" :dashboard-team]
      ["/search" :dashboard-search]
      ["/project/:project-id" :dashboard-project]
-     ["/libraries" :dashboard-libraries]
-
-     ;; ["/library"
-     ;;  ["/icons"
-     ;;   ["" { :name :dashboard-library-icons-index :section :icons}]
-     ;;   ["/:library-id" { :name :dashboard-library-icons :section :icons}]]
-     ;;
-     ;;  ["/images"
-     ;;   ["" { :name :dashboard-library-images-index :section :images}]
-     ;;   ["/:library-id" { :name :dashboard-library-images :section :images}]]
-     ;;
-     ;;  ["/palettes"
-     ;;   ["" { :name :dashboard-library-palettes-index :section :palettes}]
-     ;;   ["/:library-id" { :name :dashboard-library-palettes :section :palettes }]]]
-
-     ]]
+     ["/libraries" :dashboard-libraries]]]
 
    ["/workspace/:project-id/:file-id" :workspace]])
 
@@ -122,12 +107,6 @@
      :dashboard-team
      :dashboard-project
      :dashboard-libraries)
-     ;; :dashboard-library-icons
-     ;; :dashboard-library-icons-index
-     ;; :dashboard-library-images
-     ;; :dashboard-library-images-index
-     ;; :dashboard-library-palettes
-     ;; :dashboard-library-palettes-index)
     [:& dashboard {:route route}]
 
     :viewer

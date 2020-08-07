@@ -23,54 +23,6 @@
 (s/def ::team-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
 
-;; ;; --- Query: Media Libraries
-;;
-;; (def ^:private sql:libraries
-;;   "select lib.*,
-;;           (select count(*) from media where library_id = lib.id) as num_media
-;;      from media_library as lib
-;;     where lib.team_id = ?
-;;       and lib.deleted_at is null
-;;     order by lib.created_at desc")
-;;
-;; (s/def ::media-libraries
-;;   (s/keys :req-un [::profile-id ::team-id]))
-;;
-;; (sq/defquery ::media-libraries
-;;   [{:keys [profile-id team-id]}]
-;;   (db/with-atomic [conn db/pool]
-;;     (teams/check-read-permissions! conn profile-id team-id)
-;;     (db/exec! conn [sql:libraries team-id])))
-;;
-;;
-;; ;; --- Query: Media Library
-;;
-;; (declare retrieve-library)
-;;
-;; (s/def ::media-library
-;;   (s/keys :req-un [::profile-id ::id]))
-;;
-;; (sq/defquery ::media-library
-;;   [{:keys [profile-id id]}]
-;;   (db/with-atomic [conn db/pool]
-;;     (let [lib (retrieve-library conn id)]
-;;       (teams/check-read-permissions! conn profile-id (:team-id lib))
-;;       lib)))
-;;
-;; (def ^:private sql:single-library
-;;   "select lib.*,
-;;           (select count(*) from media where library_id = lib.id) as num_media
-;;      from media_library as lib
-;;     where lib.deleted_at is null
-;;       and lib.id = ?")
-;;
-;; (defn- retrieve-library
-;;   [conn id]
-;;   (let [row (db/exec-one! conn [sql:single-library id])]
-;;     (when-not row
-;;       (ex/raise :type :not-found))
-;;     row))
-
 
 ;; --- Query: Media objects (by file)
 

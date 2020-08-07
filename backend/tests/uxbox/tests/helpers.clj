@@ -120,23 +120,6 @@
                              :ordering i
                              :data cp/default-page-data}))
 
-;; (defn create-image-library
-;;   [conn team-id i]
-;;   (#'images/create-library conn {:id (mk-uuid "imgcoll" i)
-;;                                  :team-id team-id
-;;                                  :name (str "image library " i)}))
-;;
-;; (defn create-icon-library
-;;   [conn team-id i]
-;;   (#'icons/create-library conn {:id (mk-uuid "imgcoll" i)
-;;                                 :team-id team-id
-;;                                 :name (str "icon library " i)}))
-;; (defn create-color-library
-;;   [conn team-id i]
-;;   (#'colors/create-library conn {:id (mk-uuid "imgcoll" i)
-;;                                  :team-id team-id
-;;                                  :name (str "color library " i)}))
-
 (defn handle-error
   [^Throwable err]
   (if (instance? java.util.concurrent.ExecutionException err)
