@@ -105,6 +105,7 @@
                    ::debug-humanize-transit
                    ::allow-demo-users
                    ::registration-enabled
+                   ::registration-domain-whitelist
                    ::image-process-max-threads]))
 
 (defn env->config
