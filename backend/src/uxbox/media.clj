@@ -140,7 +140,7 @@
         (when (and (string? mtype)
                    (not= mtype mtype'))
           (ex/raise :type :validation
-                    :code :image-type-mismatch
+                    :code :media-type-mismatch
                     :hint "Seems like you are uploading a file whose content does not match the extension."))
         {:width  (.getImageWidth instance)
          :height (.getImageHeight instance)

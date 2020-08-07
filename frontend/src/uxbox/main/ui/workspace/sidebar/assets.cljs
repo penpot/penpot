@@ -18,7 +18,7 @@
    [uxbox.common.geom.point :as gpt]
    [uxbox.main.ui.icons :as i]
    [uxbox.main.data.workspace :as dw]
-   [uxbox.main.data.images :as di]
+   [uxbox.main.data.media :as di]
    [uxbox.main.data.colors :as dcol]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
@@ -72,11 +72,11 @@
        [:a.close {:href "#" :on-click cancel} i/close]])))
 
 (mf/defc graphics-box
-  [{:keys [library-id images] :as props}]
+  [{:keys [library-id media-objects] :as props}]
   (let [state (mf/use-state {:menu-open false
                              :top nil
                              :left nil
-                             :image-id nil})
+                             :object-id nil})
 
         file-input (mf/use-ref nil)
 
@@ -84,14 +84,14 @@
         #(dom/click (mf/ref-val file-input))
 
         delete-graphic
-        #(st/emit! (dw/delete-file-image library-id (:image-id @state)))
+        #(st/emit! (dw/delete-media-object (:object-id @state)))
 
         on-files-selected
         (fn [files]
-          (st/emit! (di/create-images library-id files)))
+          (st/emit! (di/create-media-objects library-id files)))
 
         on-context-menu
-        (fn [image-id]
+        (fn [object-id]
           (fn [event]
             (let [pos (dom/get-client-position event)
                   top (:y pos)
@@ -100,7 +100,7 @@
               (swap! state assoc :menu-open true
                      :top top
                      :left left
-                     :image-id image-id))))
+                     :object-id object-id))))
 
         on-drag-start
         (fn [uri]
@@ -111,7 +111,7 @@
     [:div.asset-group
      [:div.group-title
       (tr "workspace.assets.graphics")
-      [:span (str "\u00A0(") (count images) ")"] ;; Unicode 00A0 is non-breaking space
+      [:span (str "\u00A0(") (count media-objects) ")"] ;; Unicode 00A0 is non-breaking space
       [:div.group-button {:on-click add-graphic}
        i/plus
        [:& file-uploader {:accept "image/jpeg,image/png,image/webp,image/svg+xml"
@@ -119,14 +119,14 @@
                           :input-ref file-input
                           :on-selected on-files-selected}]]]
      [:div.group-grid
-       (for [image (sort-by :name images)]
-         [:div.grid-cell {:key (:id image)
+       (for [object (sort-by :name media-objects)]
+         [:div.grid-cell {:key (:id object)
                           :draggable true
-                          :on-context-menu (on-context-menu (:id image))
-                          :on-drag-start (on-drag-start (:uri image))}
-          [:img {:src (:thumb-uri image)
+                          :on-context-menu (on-context-menu (:id object))
+                          :on-drag-start (on-drag-start (:uri object))}
+          [:img {:src (:thumb-uri object)
                  :draggable false}] ;; Also need to add css pointer-events: none
-          [:div.cell-name (:name image)]])
+          [:div.cell-name (:name object)]])
        [:& context-menu
         {:selectable false
          :show (:menu-open @state)
@@ -256,7 +256,7 @@
 (mf/defc library-toolbox
   [{:keys [library-id
            shared?
-           images
+           media-objects
            colors
            initial-open?
            search-term
@@ -274,12 +274,12 @@
         [:span.tool-badge (tr "workspace.assets.shared")])]
      (when @open?
        (let [show-graphics (and (or (= box-filter :all) (= box-filter :graphics))
-                                 (or (> (count images) 0) (str/empty? search-term))) 
+                                 (or (> (count media-objects) 0) (str/empty? search-term))) 
               show-colors (and (or (= box-filter :all) (= box-filter :colors))
                                (or (> (count colors) 0) (str/empty? search-term)))]
          [:div.tool-window-content
           (when show-graphics
-            [:& graphics-box {:library-id library-id :images images}])
+            [:& graphics-box {:library-id library-id :media-objects media-objects}])
           (when show-colors
             [:& colors-box {:library-id library-id :colors colors}])
           (when (and (not show-graphics) (not show-colors))
@@ -291,14 +291,14 @@
   (let [team-id (-> refs/workspace-project mf/deref :team-id)
         file (mf/deref refs/workspace-file)
         file-id (:id file)
-        file-images (mf/deref refs/workspace-images)
+        file-media (mf/deref refs/workspace-media)
         file-colors (mf/deref refs/workspace-colors)
 
         state (mf/use-state {:search-term ""
                              :box-filter :all})
 
-        filtered-images (filter #(matches-search (:name %) (:search-term @state))
-                                (vals file-images))
+        filtered-media-objects (filter #(matches-search (:name %) (:search-term @state))
+                                       (vals file-media))
 
         filtered-colors (filter #(or (matches-search (:name %) (:search-term @state))
                                      (matches-search (:content %) (:search-term @state)))
@@ -321,7 +321,7 @@
     (mf/use-effect
      (mf/deps file-id)
      #(when file-id
-        (st/emit! (dw/fetch-images file-id))
+        (st/emit! (dw/fetch-media-objects file-id))
         (st/emit! (dw/fetch-colors file-id))))
 
     [:div.assets-bar
@@ -352,7 +352,7 @@
 
      [:& library-toolbox {:library-id file-id
                           :shared? (:is-shared file)
-                          :images filtered-images
+                          :media-objects filtered-media-objects
                           :colors filtered-colors
                           :initial-open? true
                           :search-term (:search-term @state)

@@ -57,8 +57,8 @@
 (def workspace-project
   (l/derived :workspace-project st/state))
 
-(def workspace-images
-  (l/derived :workspace-images st/state))
+(def workspace-media
+  (l/derived :workspace-media st/state))
 
 (def workspace-colors
   (l/derived :workspace-colors st/state))

@@ -77,7 +77,7 @@
 (declare retrieve-media-objects)
 (declare retrieve-file)
 
-(s/def ::is-local boolean?)
+(s/def ::is-local ::us/boolean)
 (s/def ::media-objects
   (s/keys :req-un [::profile-id ::file-id ::is-local]))
 
@@ -90,15 +90,18 @@
     (let [file (retrieve-file conn file-id)]
       (teams/check-read-permissions! conn profile-id (:team-id file))
       (->> (retrieve-media-objects conn file-id is-local)
-           (mapv #(media/resolve-urls % :path :uri))))))
+           (mapv #(media/resolve-urls % :path :uri))
+           (mapv #(media/resolve-urls % :thumb-path :thumb-uri))))))
 
 (def ^:private sql:media-objects
-  "select *
-     from media_object
-    where deleted_at is null
-      and file_id = ?
-      and is_local = ?
-   order by created_at desc")
+  "select obj.*,
+          thumb.path as thumb_path
+     from media_object as obj
+    inner join media_thumbnail as thumb on obj.id = thumb.media_object_id
+    where obj.deleted_at is null
+      and obj.file_id = ?
+      and obj.is_local = ?
+   order by obj.created_at desc")
 
 (defn retrieve-media-objects
   [conn file-id is-local]

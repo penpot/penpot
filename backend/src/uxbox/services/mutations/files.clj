@@ -42,7 +42,7 @@
 (declare create-file)
 (declare create-page)
 
-(s/def ::is-shared boolean?)
+(s/def ::is-shared ::us/boolean)
 (s/def ::create-file
   (s/keys :req-un [::profile-id ::name ::project-id ::is-shared]
           :opt-un [::id]))
@@ -188,7 +188,7 @@
 ;;   [conn {:keys [content file-id name] :as params}]
 ;;   (when-not (imgs/valid-image-types? (:content-type content))
 ;;     (ex/raise :type :validation
-;;               :code :image-type-not-allowed
+;;               :code :media-type-not-allowed
 ;;               :hint "Seems like you are uploading an invalid image."))
 ;;
 ;;   (let [info  (images/run {:cmd :info :input {:path (:tempfile content)
