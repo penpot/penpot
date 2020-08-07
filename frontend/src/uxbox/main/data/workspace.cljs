@@ -1166,14 +1166,14 @@
                (dws/select-shapes selected))))))
 
 (defn- image-uploaded
-  [{:keys [id name] :as image}]
-  (let [shape {:name name
+  [image]
+  (let [shape {:name (:name image)
                :metadata {:width (:width image)
                           :height (:height image)
-                          :uri (:uri image)
-                          :thumb-width (:thumb-width image)
-                          :thumb-height (:thumb-height image)
-                          :thumb-uri (:thumb-uri image)}}
+                          :uri (:uri image)}}
+                          ;; :thumb-width (:thumb-width image)
+                          ;; :thumb-height (:thumb-height image)
+                          ;; :thumb-uri (:thumb-uri image)}}
         aspect-ratio (/ (:width image) (:height image))]
     (st/emit! (create-and-add-shape :image shape aspect-ratio))))
 
@@ -1182,7 +1182,7 @@
   (ptk/reify ::paste-bin-impl
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (dwp/upload-image image image-uploaded)))))
+      (rx/of (dwp/upload-media-object image image-uploaded)))))
 
 (def paste
   (ptk/reify ::paste
@@ -1437,10 +1437,10 @@
 ;; Persistence
 
 (def set-file-shared dwp/set-file-shared)
-(def fetch-images dwp/fetch-images)
-(def add-image-from-url dwp/add-image-from-url)
-(def upload-image dwp/upload-image)
-(def delete-file-image dwp/delete-file-image)
+(def fetch-media-objects dwp/fetch-media-objects)
+(def add-media-object-from-url dwp/add-media-object-from-url)
+(def upload-media-object dwp/upload-media-object)
+(def delete-media-object dwp/delete-media-object)
 (def fetch-colors dwp/fetch-colors)
 (def rename-page dwp/rename-page)
 (def delete-page dwp/delete-page)

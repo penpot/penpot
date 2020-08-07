@@ -36,16 +36,16 @@
           (let [shape {:name name
                        :metadata {:width (:width image)
                                   :height (:height image)
-                                  :uri (:uri image)
-                                  :thumb-width (:thumb-width image)
-                                  :thumb-height (:thumb-height image)
-                                  :thumb-uri (:thumb-uri image)}}
+                                  :uri (:uri image)}}
+                                  ;; :thumb-width (:thumb-width image)
+                                  ;; :thumb-height (:thumb-height image)
+                                  ;; :thumb-uri (:thumb-uri image)}}
                 aspect-ratio (/ (:width image) (:height image))]
             (st/emit! (dw/create-and-add-shape :image shape aspect-ratio))))
 
         on-files-selected
         (fn [files]
-          (run! #(st/emit! (dw/upload-image % on-uploaded)) files))]
+          (run! #(st/emit! (dw/upload-media-object % on-uploaded)) files))]
 
     [:aside.left-toolbar
      [:div.left-toolbar-inside

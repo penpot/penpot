@@ -159,8 +159,8 @@
 (def allowed-file-types #{"image/jpeg" "image/png" "image/webp"})
 (def max-file-size (* 5 1024 1024))
 
-;; TODO: unify with create-images at main/data/images.cljs
-;;       and upload-image at main/data/workspace/persistence.cljs
+;; TODO: unify with create-media-objects at main/data/media.cljs
+;;       and upload-media-object at main/data/workspace/persistence.cljs
 ;; https://tree.taiga.io/project/uxboxproject/us/440
 
 (defn update-photo
@@ -172,9 +172,9 @@
       (let [check-file
             (fn [file]
               (when (> (.-size file) max-file-size)
-                (throw (ex-info (tr "errors.image-too-large") {})))
+                (throw (ex-info (tr "errors.media-too-large") {})))
               (when-not (contains? allowed-file-types (.-type file))
-                (throw (ex-info (tr "errors.image-format-unsupported") {})))
+                (throw (ex-info (tr "errors.media-format-unsupported") {})))
               file)
 
              on-success #(do (st/emit! dm/hide))
@@ -184,11 +184,11 @@
                                        (.-message %)
                                        (.-message %)
 
-                                       (= (:code %) :image-type-not-allowed)
-                                       (tr "errors.image-type-not-allowed")
+                                       (= (:code %) :media-type-not-allowed)
+                                       (tr "errors.media-type-not-allowed")
 
-                                       (= (:code %) :image-type-mismatch)
-                                       (tr "errors.image-type-mismatch")
+                                       (= (:code %) :media-type-mismatch)
+                                       (tr "errors.media-type-mismatch")
 
                                        :else
                                        (tr "errors.unexpected-error"))]
@@ -198,7 +198,7 @@
              (fn [file]
                {:file file})]
 
-      (st/emit! (dm/show {:content (tr "image.loading")
+      (st/emit! (dm/show {:content (tr "media.loading")
                           :type :info
                           :timeout nil}))
 

@@ -298,23 +298,23 @@
 
 ;; --- Fetch Workspace Images
 
-(declare images-fetched)
+(declare media-objects-fetched)
 
-(defn fetch-images
+(defn fetch-media-objects
   [file-id]
-  (ptk/reify ::fetch-images
+  (ptk/reify ::fetch-media-objects
     ptk/WatchEvent
     (watch [_ state stream]
-      (->> (rp/query :images {:file-id file-id})
-           (rx/map images-fetched)))))
+      (->> (rp/query :media-objects {:file-id file-id :is-local false})
+           (rx/map media-objects-fetched)))))
 
-(defn images-fetched
-  [images]
-  (ptk/reify ::images-fetched
+(defn media-objects-fetched
+  [media-objects]
+  (ptk/reify ::media-objects-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (let [images (d/index-by :id images)]
-        (assoc state :workspace-images images)))))
+      (let [media-objects (d/index-by :id media-objects)]
+        (assoc state :workspace-media media-objects)))))
 
 ;; --- Fetch Workspace Colors
 
@@ -337,21 +337,21 @@
         (assoc state :workspace-colors colors)))))
 
 
-;; --- Upload Image
+;; --- Upload local media objects
 
-(declare image-uploaded)
+(declare media-object-uploaded)
 (def allowed-file-types #{"image/jpeg" "image/png" "image/webp" "image/svg+xml"})
 (def max-file-size (* 5 1024 1024))
 
-;; TODO: unify with create-images at main/data/images.cljs
+;; TODO: unify with create-media-objects at main/data/media.cljs
 ;;       and update-photo at main/data/users.cljs
 ;; https://tree.taiga.io/project/uxboxproject/us/440
 
-(defn add-image-from-url
-  ([url] (add-image-from-url url identity))
+(defn add-media-object-from-url
+  ([url] (add-media-object-from-url url identity))
   ([url on-added]
    (us/verify fn? on-added)
-   (ptk/reify ::add-image-from-url
+   (ptk/reify ::add-media-object-from-url
      ptk/WatchEvent
      (watch [_ state stream]
        (let [file-id (get-in state [:workspace-page :file-id])
@@ -364,11 +364,11 @@
                                        (.-message %)
                                        (.-message %)
 
-                                       (= (:code %) :image-type-not-allowed)
-                                       (tr "errors.image-type-not-allowed")
+                                       (= (:code %) :media-type-not-allowed)
+                                       (tr "errors.media-type-not-allowed")
 
-                                       (= (:code %) :image-type-mismatch)
-                                       (tr "errors.image-type-mismatch")
+                                       (= (:code %) :media-type-mismatch)
+                                       (tr "errors.media-type-mismatch")
 
                                        :else
                                        (tr "errors.unexpected-error"))]
@@ -377,23 +377,24 @@
              prepare
              (fn [url]
                {:file-id file-id
-                :url url})]
+                :url url
+                :is-local true})]
 
-         (st/emit! (dm/show {:content (tr "image.loading")
+         (st/emit! (dm/show {:content (tr "media.loading")
                              :type :info
                              :timeout nil}))
          (->> (rx/of url)
               (rx/map prepare)
-              (rx/mapcat #(rp/mutation! :add-file-image-from-url %))
+              (rx/mapcat #(rp/mutation! :add-media-object-from-url %))
               (rx/do on-success)
-              (rx/map image-uploaded)
+              (rx/map media-object-uploaded)
               (rx/catch on-error)))))))
 
-(defn upload-image
-  ([file] (upload-image file identity))
+(defn upload-media-object
+  ([file] (upload-media-object file identity))
   ([file on-uploaded]
    (us/verify fn? on-uploaded)
-   (ptk/reify ::upload-image
+   (ptk/reify ::upload-media-object
      ptk/WatchEvent
      (watch [_ state stream]
        (let [file-id (get-in state [:workspace-page :file-id])
@@ -401,9 +402,9 @@
              check-file
              (fn [file]
               (when (> (.-size file) max-file-size)
-                (throw (ex-info (tr "errors.image-too-large") {})))
+                (throw (ex-info (tr "errors.media-too-large") {})))
               (when-not (contains? allowed-file-types (.-type file))
-                (throw (ex-info (tr "errors.image-format-unsupported") {})))
+                (throw (ex-info (tr "errors.media-format-unsupported") {})))
               file)
 
              on-success #(do (st/emit! dm/hide)
@@ -414,11 +415,11 @@
                                        (.-message %)
                                        (.-message %)
 
-                                       (= (:code %) :image-type-not-allowed)
-                                       (tr "errors.image-type-not-allowed")
+                                       (= (:code %) :media-type-not-allowed)
+                                       (tr "errors.media-type-not-allowed")
 
-                                       (= (:code %) :image-type-mismatch)
-                                       (tr "errors.image-type-mismatch")
+                                       (= (:code %) :media-type-mismatch)
+                                       (tr "errors.media-type-mismatch")
 
                                        :else
                                        (tr "errors.unexpected-error"))]
@@ -428,17 +429,18 @@
              (fn [file]
                {:name (.-name file)
                 :file-id file-id
-                :content file})]
+                :content file
+                :is-local true})]
 
-         (st/emit! (dm/show {:content (tr "image.loading")
+         (st/emit! (dm/show {:content (tr "media.loading")
                              :type :info
                              :timeout nil}))
          (->> (rx/of file)
               (rx/map check-file)
               (rx/map prepare)
-              (rx/mapcat #(rp/mutation! :upload-file-image %))
+              (rx/mapcat #(rp/mutation! :upload-media-object %))
               (rx/do on-success)
-              (rx/map image-uploaded)
+              (rx/map media-object-uploaded)
               (rx/catch on-error)))))))
 
 
@@ -448,40 +450,39 @@
 (s/def ::height ::us/number)
 (s/def ::mtype ::us/string)
 (s/def ::uri ::us/string)
-(s/def ::thumb-uri ::us/string)
+;; (s/def ::thumb-uri ::us/string)
 
-(s/def ::image
+(s/def ::media-object
   (s/keys :req-un [::id
                    ::name
                    ::width
                    ::height
-                   ::uri
-                   ::thumb-uri]))
+                   ::uri]))
+                   ;; ::thumb-uri]))
 
-(defn image-uploaded
+(defn media-object-uploaded
   [item]
-  (us/verify ::image item)
-  (ptk/reify ::image-created
+  (us/verify ::media-object item)
+  (ptk/reify ::media-object-uploaded
     ptk/UpdateEvent
     (update [_ state]
       state)))
-      ;; (update state :workspace-images assoc (:id item) item))))
+      ;; (update state :workspace-media assoc (:id item) item))))
 
 
-;; --- Delete image
+;; --- Delete media object
 
-(defn delete-file-image
-  [file-id image-id]
-  (ptk/reify ::delete-file-image
+(defn delete-media-object
+  [id]
+  (ptk/reify ::delete-media-object
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-images dissoc image-id))
+      (update state :workspace-media dissoc id))
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [params {:file-id file-id
-                    :image-id image-id}]
-      (rp/mutation :delete-file-image params)))))
+      (let [params {:id id}]
+        (rp/mutation :delete-media-object params)))))
 
 
 ;; --- Helpers

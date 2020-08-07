@@ -68,7 +68,7 @@
     (->> (http/send! {:method :post :uri uri})
          (rx/mapcat handle-response))))
 
-(defmethod mutation :upload-image
+(defmethod mutation :upload-media-object
   [id params]
   (let [form (js/FormData.)]
     (run! (fn [[key val]]
@@ -76,13 +76,13 @@
           (seq params))
     (send-mutation! id form)))
 
-(defmethod mutation :upload-file-image
-  [id params]
-  (let [form (js/FormData.)]
-    (run! (fn [[key val]]
-            (.append form (name key) val))
-          (seq params))
-    (send-mutation! id form)))
+;; (defmethod mutation :upload-file-image
+;;   [id params]
+;;   (let [form (js/FormData.)]
+;;     (run! (fn [[key val]]
+;;             (.append form (name key) val))
+;;           (seq params))
+;;     (send-mutation! id form)))
 
 (defmethod mutation :update-profile-photo
   [id params]

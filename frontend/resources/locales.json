@@ -737,7 +737,7 @@
       "es" : "Ha ocurrido algún error."
     }
   },
-  "errors.image-format-unsupported" : {
+  "errors.media-format-unsupported" : {
     "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:406", "src/uxbox/main/data/users.cljs:177", "src/uxbox/main/data/images.cljs:376" ],
     "translations" : {
       "en" : "The image format is not supported (must be svg, jpg or png).",
@@ -746,7 +746,7 @@
       "es" : "No se reconoce el formato de imagen (debe ser svg, jpg o png)."
     }
   },
-  "errors.image-too-large" : {
+  "errors.media-too-large" : {
     "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:404", "src/uxbox/main/data/users.cljs:175", "src/uxbox/main/data/images.cljs:374" ],
     "translations" : {
       "en" : "The image is too large to be inserted (must be under 5mb).",
@@ -755,7 +755,7 @@
       "es" : "La imagen es demasiado grande (debe tener menos de 5mb)."
     }
   },
-  "errors.image-type-mismatch" : {
+  "errors.media-type-mismatch" : {
     "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:371", "src/uxbox/main/data/workspace/persistence.cljs:421", "src/uxbox/main/data/users.cljs:191", "src/uxbox/main/data/images.cljs:391" ],
     "translations" : {
       "en" : "Seems that the contents of the image does not match the file extension.",
@@ -764,7 +764,7 @@
       "es" : "Parece que el contenido de la imagen no coincide con la etensión del archivo."
     }
   },
-  "errors.image-type-not-allowed" : {
+  "errors.media-type-not-allowed" : {
     "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:368", "src/uxbox/main/data/workspace/persistence.cljs:418", "src/uxbox/main/data/users.cljs:188", "src/uxbox/main/data/images.cljs:388" ],
     "translations" : {
       "en" : "Seems that this is not a valid image.",
@@ -854,7 +854,7 @@
       "es" : "Estás viendo la versión %s"
     }
   },
-  "image.loading" : {
+  "media.loading" : {
     "used-in" : [ "src/uxbox/main/data/workspace/persistence.cljs:382", "src/uxbox/main/data/workspace/persistence.cljs:433", "src/uxbox/main/data/users.cljs:201", "src/uxbox/main/data/images.cljs:403" ],
     "translations" : {
       "en" : "Loading image...",

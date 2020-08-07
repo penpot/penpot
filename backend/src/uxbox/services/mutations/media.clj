@@ -25,8 +25,8 @@
    [uxbox.util.time :as dt]))
 
 (def thumbnail-options
-  {:width 800
-   :height 800
+  {:width 100
+   :height 100
    :quality 85
    :format :jpeg})
 
@@ -122,7 +122,7 @@
 
 (s/def ::content ::upload)
 
-(s/def ::is-local boolean?)
+(s/def ::is-local ::us/boolean)
 
 (s/def ::add-media-object-from-url
   (s/keys :req-un [::profile-id ::file-id ::url ::is-local]
@@ -179,18 +179,18 @@
                                       :width (:width info)
                                       :height (:height info)
                                       :mtype  (:mtype info)})
-                         (media/resolve-urls :path :uri)
-                         (media/resolve-urls :thumb-path :thumb-uri))
+                         (media/resolve-urls :path :uri))
 
-        media-thumbnail (db/insert! conn :media-thumbnail
-                                    {:id (uuid/next)
-                                     :media-object-id media-object-id
-                                     :path (str (:path thumb))
-                                     :width (:width thumb)
-                                     :height (:height thumb)
-                                     :quality (:quality thumb)
-                                     :mtype (:mtype thumb)})]
-    media-object))
+        media-thumbnail (-> (db/insert! conn :media-thumbnail
+                                        {:id (uuid/next)
+                                         :media-object-id media-object-id
+                                         :path (str (:path thumb))
+                                         :width (:width thumb)
+                                         :height (:height thumb)
+                                         :quality (:quality thumb)
+                                         :mtype (:mtype thumb)})
+                            (media/resolve-urls :path :uri))]
+    (assoc media-object :thumb-uri (:uri media-thumbnail))))
 
 (def ^:private sql:select-file-for-update
   "select file.*,
