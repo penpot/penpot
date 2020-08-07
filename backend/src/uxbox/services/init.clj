@@ -14,7 +14,6 @@
 
 (defn- load-query-services
   []
-  ;; (require 'uxbox.services.queries.icons)
   (require 'uxbox.services.queries.media)
   (require 'uxbox.services.queries.colors)
   (require 'uxbox.services.queries.projects)
@@ -22,20 +21,17 @@
   (require 'uxbox.services.queries.pages)
   (require 'uxbox.services.queries.profile)
   (require 'uxbox.services.queries.recent-files)
-  (require 'uxbox.services.queries.viewer)
-  )
+  (require 'uxbox.services.queries.viewer))
 
 (defn- load-mutation-services
   []
   (require 'uxbox.services.mutations.demo)
-  ;; (require 'uxbox.services.mutations.icons)
   (require 'uxbox.services.mutations.media)
   (require 'uxbox.services.mutations.colors)
   (require 'uxbox.services.mutations.projects)
   (require 'uxbox.services.mutations.files)
   (require 'uxbox.services.mutations.pages)
-  (require 'uxbox.services.mutations.profile)
-  )
+  (require 'uxbox.services.mutations.profile))
 
 (defstate query-services
   :start (load-query-services))

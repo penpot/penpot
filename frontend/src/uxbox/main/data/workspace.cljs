@@ -62,7 +62,6 @@
   #{:sitemap
     :sitemap-pages
     :layers
-    :libraries
     :assets
     :document-history
     :colorpalette
@@ -306,7 +305,6 @@
         left-sidebar? (not (empty? (keep layout [:layers
                                                  :sitemap
                                                  :document-history
-                                                 :libraries
                                                  :assets])))
         right-sidebar? (not (empty? (keep layout [:element-options])))]
     (update-in state [:workspace-local]
@@ -1462,9 +1460,8 @@
 ;; Shortcuts impl https://github.com/ccampbell/mousetrap
 
 (def shortcuts
-  {"ctrl+m" #(st/emit! (toggle-layout-flags :sitemap))
-   "ctrl+i" #(st/emit! (toggle-layout-flags :libraries))
-   "ctrl+l" #(st/emit! (toggle-layout-flags :layers))
+  {"ctrl+i" #(st/emit! (toggle-layout-flags :assets))
+   "ctrl+l" #(st/emit! (toggle-layout-flags :sitemap :layers))
    "ctrl+shift+r" #(st/emit! (toggle-layout-flags :rules))
    "ctrl+a" #(st/emit! (toggle-layout-flags :dynamic-alignment))
    "ctrl+p" #(st/emit! (toggle-layout-flags :colorpalette))

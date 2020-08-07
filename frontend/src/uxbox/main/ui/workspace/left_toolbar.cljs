@@ -37,9 +37,6 @@
                        :metadata {:width (:width image)
                                   :height (:height image)
                                   :uri (:uri image)}}
-                                  ;; :thumb-width (:thumb-width image)
-                                  ;; :thumb-height (:thumb-height image)
-                                  ;; :thumb-uri (:thumb-uri image)}}
                 aspect-ratio (/ (:width image) (:height image))]
             (st/emit! (dw/create-and-add-shape :image shape aspect-ratio))))
 
@@ -96,11 +93,6 @@
          :class (when (contains? layout :layers) "selected")
          :on-click #(st/emit! (dw/toggle-layout-flags :sitemap :layers))}
         i/layers]
-       ;; [:li.tooltip.tooltip-right
-       ;;  {:alt (t locale "workspace.toolbar.libraries")
-       ;;   :class (when (contains? layout :libraries) "selected")
-       ;;   :on-click #(st/emit! (dw/toggle-layout-flags :libraries))}
-       ;;  i/icon-set]
        [:li.tooltip.tooltip-right
         {:alt (t locale "workspace.toolbar.assets")
          :class (when (contains? layout :assets) "selected")

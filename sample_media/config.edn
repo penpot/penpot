@@ -1,55 +1,55 @@
 [
   ;; Icons
   {:name "Material Design (Action)"
-   :images {:path "./icons/material-action"
-            :regex #"^.*_48px\.svg$"}}
+   :graphics {:path "./icons/material-action"
+              :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Alert)"
-   :images {:path "./icons/material-alert"
-            :regex #"^.*_48px\.svg$"}}
+   :graphics {:path "./icons/material-alert"
+              :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Av)"
-   :images {:path "./icons/material-av"
-            :regex #"^.*_48px\.svg$"}}
+   :graphics {:path "./icons/material-av"
+              :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Content)"
-   :images {:path "./icons/material-content"
-            :regex #"^.*_48px\.svg$"}}
+   :graphics {:path "./icons/material-content"
+              :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Device)"
-   :images {:path "./icons/material-device"
-            :regex #"^.*_48px\.svg$"}}
+   :graphics {:path "./icons/material-device"
+              :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Editor)"
-   :images {:path "./icons/material-editor"
-            :regex #"^.*_48px\.svg$"}}
+   :graphics {:path "./icons/material-editor"
+              :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (File)"
-   :images {:path "./icons/material-file"
-            :regex #"^.*_48px\.svg$"}}
+   :graphics {:path "./icons/material-file"
+              :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Hardware)"
-   :images {:path "./icons/material-hardware"
-            :regex #"^.*_48px\.svg$"}}
+   :graphics {:path "./icons/material-hardware"
+              :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Image)"
-   :images {:path "./icons/material-image"
-            :regex #"^.*_48px\.svg$"}}
+   :graphics {:path "./icons/material-image"
+              :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Maps)"
-   :images {:path "./icons/material-maps"
-            :regex #"^.*_48px\.svg$"}}
+   :graphics {:path "./icons/material-maps"
+              :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Navigation)"
-   :images {:path "./icons/material-navigation"
-            :regex #"^.*_48px\.svg$"}}
+   :graphics {:path "./icons/material-navigation"
+              :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Notification)"
-   :images {:path "./icons/material-notification"
-            :regex #"^.*_48px\.svg$"}}
+   :graphics {:path "./icons/material-notification"
+              :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Places)"
-   :images {:path "./icons/material-places"
-            :regex #"^.*_48px\.svg$"}}
+   :graphics {:path "./icons/material-places"
+              :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Social)"
-   :images {:path "./icons/material-social"
-            :regex #"^.*_48px\.svg$"}}
+   :graphics {:path "./icons/material-social"
+              :regex #"^.*_48px\.svg$"}}
   {:name "Material Design (Toggle)"
-   :images {:path "./icons/material-toggle"
-            :regex #"^.*_48px\.svg$"}}
+   :graphics {:path "./icons/material-toggle"
+              :regex #"^.*_48px\.svg$"}}
 
   ;; Images
   {:name "Unsplash"
-   :images {:path "./images/unsplash"
-            :regex #"^.*\.jpg$"}
+   :graphics {:path "./images/unsplash"
+              :regex #"^.*\.jpg$"}
    :colors ["Chateau Green"    "#419860"
             "Toast"            "#987567"
             "Confetti"         "#EAC75B"

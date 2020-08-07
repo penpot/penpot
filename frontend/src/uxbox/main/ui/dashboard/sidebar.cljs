@@ -114,7 +114,7 @@
         ;;               (= selected-team-id (:default-team-id profile)))
         locale (i18n/use-locale)]
     [:div.sidebar-team
-     [:ul.library-elements.library-common
+     [:ul.dashboard-elements.dashboard-common
       [:li.recent-projects
        {:on-click #(st/emit! (rt/nav :dashboard-team {:team-id team-id}))
         :class-name (when home? "current")}
@@ -139,7 +139,7 @@
       [:a.btn-icon-light.btn-small {:on-click #(st/emit! dsh/create-project)}
        i/close]]
 
-     [:ul.library-elements
+     [:ul.dashboard-elements
       [:& sidebar-projects
        {:selected-team-id selected-team-id
         :selected-project-id selected-project-id
@@ -178,8 +178,8 @@
             (dom/focus! search-input)
             (debounced-emit! (rt/nav :dashboard-search {:team-id team-id} {}))))]
 
-    [:div.library-bar
-     [:div.library-bar-inside
+    [:div.dashboard-sidebar
+     [:div.dashboard-sidebar-inside
       [:form.dashboard-search
        [:input.input-text
         {:key :images-search-box

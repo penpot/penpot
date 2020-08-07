@@ -22,65 +22,6 @@
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
-;; (t/deftest color-libraries-crud
-;;   (let [id      (uuid/next)
-;;         prof    (th/create-profile db/pool 2)
-;;         team-id (:default-team-id prof)
-;;         proj    (th/create-project db/pool (:id prof) team-id 2)]
-;;
-;;     (t/testing "create library file"
-;;       (let [data {::sm/type :create-file
-;;                   :profile-id (:id prof)
-;;                   :name "sample library"
-;;                   :project-id (:id proj)
-;;                   :id id
-;;                   :is-shared true}
-;;             out (th/try-on! (sm/handle data))]
-;;
-;;         ;; (th/print-result! out)
-;;         (t/is (nil? (:error out)))
-;;
-;;         (let [result (:result out)]
-;;           (t/is (= id (:id result)))
-;;           (t/is (= (:id proj) (:project-id result)))
-;;           (t/is (= (:name data) (:name result))))))
-;;
-;;     (t/testing "update library file"
-;;       (let [data {::sm/type :rename-color-library
-;;                   :name "renamed"
-;;                   :profile-id (:id prof)
-;;                   :id id}
-;;             out (th/try-on! (sm/handle data))]
-;;
-;;         ;; (th/print-result! out)
-;;         (t/is (nil? (:error out)))
-;;
-;;         (let [result (:result out)]
-;;           (t/is (= "renamed" (get-in result [:name]))))))
-;;
-;;     (t/testing "delete library"
-;;       (let [data {::sm/type :delete-color-library
-;;                   :profile-id (:id prof)
-;;                   :id id}
-;;
-;;             out (th/try-on! (sm/handle data))]
-;;
-;;         ;; (th/print-result! out)
-;;         (t/is (nil? (:error out)))
-;;         (t/is (nil? (:result out)))))
-;;
-;;     (t/testing "query libraries after delete"
-;;       (let [data {::sq/type :color-libraries
-;;                   :profile-id (:id prof)
-;;                   :team-id team-id}
-;;             out (th/try-on! (sq/handle data))]
-;;
-;;         ;; (th/print-result! out)
-;;         (t/is (nil? (:error out)))
-;;         (let [result (:result out)]
-;;           (t/is (= 0 (count result))))))
-;;     ))
-
 (t/deftest colors-crud
   (let [prof     (th/create-profile db/pool 1)
         team-id  (:default-team-id prof)
@@ -88,7 +29,7 @@
         file     (th/create-file db/pool (:id prof) (:id proj) true 1)
         color-id (uuid/next)]
 
-    (t/testing "upload color to library"
+    (t/testing "upload color to library file"
       (let [data {::sm/type :create-color
                   :id color-id
                   :profile-id (:id prof)

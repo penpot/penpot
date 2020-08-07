@@ -1619,13 +1619,13 @@
       "es" : "Ocultar capas"
     }
   },
-  "workspace.header.menu.hide-libraries" : {
+  "workspace.header.menu.hide-assets" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:132" ],
     "translations" : {
-      "en" : "Hide libraries",
-      "fr" : "Masquer les librairies",
-      "ru" : "Спрятать библиотеки",
-      "es" : "Ocultar bibliotecas"
+      "en" : "Hide assets",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Ocultar recursos"
     }
   },
   "workspace.header.menu.hide-palette" : {
@@ -1664,13 +1664,13 @@
       "es" : "Mostrar capas"
     }
   },
-  "workspace.header.menu.show-libraries" : {
+  "workspace.header.menu.show-assets" : {
     "used-in" : [ "src/uxbox/main/ui/workspace/header.cljs:133" ],
     "translations" : {
-      "en" : "Show libraries",
-      "fr" : "Montrer les librairies",
-      "ru" : "Показать библиотеки",
-      "es" : "Mostrar bibliotecas"
+      "en" : "Show assets",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Mostrar recursos"
     }
   },
   "workspace.header.menu.show-palette" : {

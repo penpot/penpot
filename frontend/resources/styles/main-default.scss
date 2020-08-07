@@ -27,7 +27,6 @@
 @import 'main/layouts/login';
 @import 'main/layouts/projects-page';
 @import 'main/layouts/recent-files-page';
-@import 'main/layouts/library-page';
 @import "main/layouts/not-found";
 @import "main/layouts/viewer";
 
@@ -51,13 +50,12 @@
 @import 'main/partials/color-palette';
 @import 'main/partials/colorpicker';
 @import 'main/partials/context-menu';
-@import 'main/partials/dashboard-bar';
 @import 'main/partials/dashboard-grid';
 @import 'main/partials/debug-icons-preview';
 @import 'main/partials/editable-label';
 @import 'main/partials/forms';
 @import 'main/partials/left-toolbar';
-@import 'main/partials/library-bar';
+@import 'main/partials/dashboard-sidebar';
 @import 'main/partials/loader';
 @import 'main/partials/main-bar';
 @import 'main/partials/modal';
@@ -77,4 +75,3 @@
 @import 'main/partials/user-settings';
 @import 'main/partials/workspace';
 @import 'main/partials/workspace-header';
-@import 'main/partials/workspace-libraries';

@@ -22,7 +22,6 @@
    [uxbox.main.ui.dashboard.project :refer [project-page]]
    [uxbox.main.ui.dashboard.recent-files :refer [recent-files-page]]
    [uxbox.main.ui.dashboard.libraries :refer [libraries-page]]
-   ;; [uxbox.main.ui.dashboard.library :refer [library-page]]
    [uxbox.main.ui.dashboard.profile :refer [profile-section]]
    [uxbox.util.router :as rt]
    [uxbox.util.i18n :as i18n :refer [t]]))
@@ -38,7 +37,6 @@
         route-name (get-in route [:data :name])
         team-id (get-in route [:params :path :team-id])
         project-id (get-in route [:params :path :project-id])]
-        ;; library-id (get-in route [:params :path :library-id])]
     (cond->
       {:search-term search-term}
 
@@ -51,12 +49,6 @@
       (= "drafts" project-id)
       (assoc :project-id (:default-project-id profile)))))
 
-      ;; (str/starts-with? (name route-name) "dashboard-library")
-      ;; (assoc :library-section (get-in route [:data :section]))
-      ;;
-      ;; (uuid-str? library-id)
-      ;; (assoc :library-id (uuid library-id)))))
-
 (declare global-notifications)
 
 
@@ -64,7 +56,6 @@
   [{:keys [route] :as props}]
   (let [profile (mf/deref refs/profile)
         page (get-in route [:data :name])
-        ;; {:keys [search-term team-id project-id library-id library-section] :as params}
         {:keys [search-term team-id project-id] :as params}
           (parse-params route profile)]
     [:*
@@ -88,17 +79,6 @@
 
          :dashboard-libraries
          [:& libraries-page {:team-id team-id}]
-
-         ;; (:dashboard-library-icons
-         ;;  :dashboard-library-icons-index
-         ;;  :dashboard-library-images
-         ;;  :dashboard-library-images-index
-         ;;  :dashboard-library-palettes
-         ;;  :dashboard-library-palettes-index)
-         ;; [:& library-page {:key (str library-id)
-         ;;                   :team-id team-id
-         ;;                   :library-id library-id
-         ;;                   :section library-section}]
 
          :dashboard-project
          [:& project-page {:team-id team-id

@@ -21,10 +21,6 @@
         {:keys [id x y width height rotation metadata]} shape
         transform (geom/transform-matrix shape)
         uri (:uri metadata)
-        ;; uri  (if (or (> (:thumb-width metadata) width)
-        ;;              (> (:thumb-height metadata) height))
-        ;;        (:thumb-uri metadata)
-        ;;        (:uri metadata))
 
         props (-> (attrs/extract-style-attrs shape)
                   (obj/merge!

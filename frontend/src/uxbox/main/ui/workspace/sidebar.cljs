@@ -15,7 +15,6 @@
    [uxbox.main.ui.workspace.sidebar.layers :refer [layers-toolbox]]
    [uxbox.main.ui.workspace.sidebar.options :refer [options-toolbox]]
    [uxbox.main.ui.workspace.sidebar.sitemap :refer [sitemap-toolbox]]
-   [uxbox.main.ui.workspace.sidebar.libraries :refer [libraries-toolbox]]
    [uxbox.main.ui.workspace.sidebar.assets :refer [assets-toolbox]]))
 
 ;; --- Left Sidebar (Component)
@@ -34,8 +33,6 @@
       [:& history-toolbox])
     (when (contains? layout :layers)
       [:& layers-toolbox {:page page}])
-    (when (contains? layout :libraries)
-      [:& libraries-toolbox])
     (when (contains? layout :assets)
       [:& assets-toolbox])]])
 

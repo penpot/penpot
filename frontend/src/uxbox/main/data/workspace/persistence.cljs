@@ -296,7 +296,7 @@
                                (rx/of go-to-file)
                                (rx/empty))))))))))
 
-;; --- Fetch Workspace Images
+;; --- Fetch Workspace Graphics
 
 (declare media-objects-fetched)
 

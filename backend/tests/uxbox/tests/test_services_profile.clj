@@ -93,20 +93,17 @@
           (t/is (= "en" (:lang result)))
           (t/is (= "dark" (:theme result))))))
 
-    ;; (t/testing "update photo"
-    ;;   (let [data {::sm/type :update-profile-photo
-    ;;               :profile-id (:id profile)
-    ;;               :file {:name "sample.jpg"
-    ;;                      :path "tests/uxbox/tests/_files/sample.jpg"
-    ;;                      :size 123123
-    ;;                      :mtype "image/jpeg"}}
-    ;;         out (th/try-on! (sm/handle data))]
+    (t/testing "update photo"
+      (let [data {::sm/type :update-profile-photo
+                  :profile-id (:id profile)
+                  :file {:filename "sample.jpg"
+                         :size 123123
+                         :tempfile "tests/uxbox/tests/_files/sample.jpg"
+                         :content-type "image/jpeg"}}
+            out (th/try-on! (sm/handle data))]
 
-    ;;     ;; (th/print-result! out)
-    ;;     (t/is (nil? (:error out)))
-
-    ;;     (let [result (:result out)]
-    ;;       (t/is (= (:id profile) (:id result))))))
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
     ))
 
 
