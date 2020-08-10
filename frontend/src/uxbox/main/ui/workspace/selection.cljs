@@ -198,7 +198,7 @@
                              :on-resize (partial on-resize position)
                              :transform transform
                              :rotation (:rotation shape)}
-               props (->> props (merge common-props) map->obj)]
+               props (map->obj (merge common-props props))]
            (case type
              :rotation (when (not= :frame (:type shape)) [:> rotation-handler props])
              :resize-point [:> resize-point-handler props]

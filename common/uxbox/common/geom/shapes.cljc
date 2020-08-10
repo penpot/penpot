@@ -768,6 +768,7 @@
                     (update $ :transform-inverse #(gmt/multiply stretch-matrix-inverse (or % (gmt/matrix))))
                     (assoc  $ :points (shape->points $))
                     (assoc  $ :selrect (points->selrect (:points $)))
+                    (update $ :selrect fix-invalid-rect-values)
                     (update $ :rotation #(mod (+ % (get-in $ [:modifiers :rotation] 0)) 360))
 
                     )]

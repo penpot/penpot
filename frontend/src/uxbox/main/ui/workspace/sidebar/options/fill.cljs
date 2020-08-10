@@ -86,7 +86,6 @@
                                   :editor editor
                                   :attrs converted-attrs}))
                      text-ids)))))]
-    (prn "fill-menu" ids values)
     (if show?
       [:div.element-set
        [:div.element-set-title

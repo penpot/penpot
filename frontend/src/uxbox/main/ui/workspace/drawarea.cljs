@@ -13,6 +13,7 @@
    [uxbox.main.store :as st]
    [uxbox.main.ui.workspace.shapes :as shapes]
    [uxbox.common.geom.shapes :as gsh]
+   [uxbox.common.data :as d]
    [uxbox.util.dom :as dom]
    [uxbox.util.i18n :as i18n :refer [t]]))
 
@@ -28,8 +29,11 @@
 
 (mf/defc generic-draw-area
   [{:keys [shape zoom]}]
-  (let [{:keys [x y width height]} (:selrect (gsh/transform-shape shape))]
-    (when (and x y)
+  (let [{:keys [x y width height] :as kk} (:selrect (gsh/transform-shape shape))]
+    (when (and x y
+               (not (d/nan? x))
+               (not (d/nan? y)))
+
       [:g
        [:& shapes/shape-wrapper {:shape shape}]
        [:rect.main {:x x :y y
