@@ -23,7 +23,6 @@
                               (st/emit!
                                 (some-> target
                                         (dom/get-files)
-                                        (array-seq)
                                         (opt-pick-one)
                                         (on-selected)))
                               (dom/clean-value! target)))]

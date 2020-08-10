@@ -111,7 +111,7 @@
 (defn get-files
   [e]
   (let [dt (.-dataTransfer e)]
-    (.-files dt)))
+    (array-seq (.-files dt))))
 
 (defn drop-side
   [e detect-center?]

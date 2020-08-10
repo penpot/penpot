@@ -272,15 +272,11 @@
 
 (sm/defmutation ::update-profile-photo
   [{:keys [profile-id file] :as params}]
-  (when-not (media-mutations/valid-media-object-types? (:content-type file))
-    (ex/raise :type :validation
-              :code :media-type-not-allowed
-              :hint "Seems like you are uploading an invalid media object"))
-
+  (media/validate-media-type (:content-type file))
   (db/with-atomic [conn db/pool]
     (let [profile (profile/retrieve-profile conn profile-id)
           _       (media/run {:cmd :info :input {:path (:tempfile file)
-                                                  :mtype (:content-type file)}})
+                                                 :mtype (:content-type file)}})
           photo   (upload-photo conn params)]
 
       ;; Schedule deletion of old photo

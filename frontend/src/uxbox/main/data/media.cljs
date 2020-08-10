@@ -24,16 +24,14 @@
 
 ;; --- Specs
 
+(s/def ::id uuid?)
 (s/def ::name string?)
 (s/def ::width number?)
 (s/def ::height number?)
-(s/def ::modified-at inst?)
 (s/def ::created-at inst?)
+(s/def ::modified-at inst?)
 (s/def ::mtype string?)
-;; (s/def ::thumbnail string?)
-(s/def ::id uuid?)
 (s/def ::uri string?)
-(s/def ::user-id uuid?)
 
 (s/def ::media-object
   (s/keys :req-un [::id
@@ -43,83 +41,49 @@
                    ::mtype
                    ::created-at
                    ::modified-at
-                   ::uri
-                   ;; ::thumb-uri
-                   ::user-id]))
+                   ::uri]))
 
-;; --- Create library Media Objects
+(s/def ::js-file #(instance? js/Blob %))
+(s/def ::js-files (s/coll-of ::js-file))
 
-(declare create-media-objects-result)
-(def allowed-file-types #{"image/jpeg" "image/png" "image/webp" "image/svg+xml"})
+(def allowed-media-types #{"image/jpeg" "image/png" "image/webp" "image/svg+xml"})
+(def str-media-types (str/join "," allowed-media-types))
 (def max-file-size (* 5 1024 1024))
 
-;; TODO: unify with upload-media-object at main/data/workspace/persistence.cljs
-;;       and update-photo at main/data/users.cljs
-;; https://tree.taiga.io/project/uxboxproject/us/440
+;; --- Utility functions
 
-(defn create-media-objects
-  ([file-id files] (create-media-objects file-id files identity))
-  ([file-id files on-uploaded]
-   (us/verify (s/nilable ::us/uuid) file-id)
-   (us/verify fn? on-uploaded)
-   (ptk/reify ::create-media-objects
-     ptk/WatchEvent
-     (watch [_ state stream]
-       (let [check-file
-             (fn [file]
-               (when (> (.-size file) max-file-size)
-                 (throw (ex-info (tr "errors.media-too-large") {})))
-               (when-not (contains? allowed-file-types (.-type file))
-                 (throw (ex-info (tr "errors.media-format-unsupported") {})))
-               file)
+(defn validate-file
+  ;; Check that a file obtained with the file javascript API is valid.
+  [file]
+  (when (> (.-size file) max-file-size)
+    (throw (ex-info (tr "errors.media-too-large") {})))
+  (when-not (contains? allowed-media-types (.-type file))
+    (throw (ex-info (tr "errors.media-format-unsupported") {})))
+  file)
 
-             on-success #(do (st/emit! dm/hide)
-                             (on-uploaded %))
+(defn notify-start-loading
+  []
+  (st/emit! (dm/show {:content (tr "media.loading")
+                      :type :info
+                      :timeout nil})))
 
-             on-error #(do (st/emit! dm/hide)
-                           (let [msg (cond
-                                       (.-message %)
-                                       (.-message %)
+(defn notify-finished-loading
+  []
+  (st/emit! dm/hide))
 
-                                       (= (:code %) :media-type-not-allowed)
-                                       (tr "errors.media-type-not-allowed")
+(defn process-error
+  [error]
+  (let [msg (cond
+              (.-message error)
+              (.-message error)
 
-                                       (= (:code %) :media-type-mismatch)
-                                       (tr "errors.media-type-mismatch")
+              (= (:code error) :media-type-not-allowed)
+              (tr "errors.media-type-not-allowed")
 
-                                       :else
-                                       (tr "errors.unexpected-error"))]
-                             (rx/of (dm/error msg))))
+              (= (:code error) :media-type-mismatch)
+              (tr "errors.media-type-mismatch")
 
-             prepare
-             (fn [file]
-               {:name (.-name file)
-                :file-id file-id
-                :content file
-                :is-local false})]
-
-         (st/emit! (dm/show {:content (tr "media.loading")
-                             :type :info
-                             :timeout nil}))
-
-         (->> (rx/from files)
-              (rx/map check-file)
-              (rx/map prepare)
-              (rx/mapcat #(rp/mutation! :upload-media-object %))
-              (rx/reduce conj [])
-              (rx/do on-success)
-              (rx/mapcat identity)
-              (rx/map (partial create-media-objects-result file-id))
-              (rx/catch on-error)))))))
-
-;; --- Media object Created
-
-(defn create-media-objects-result
-  [file-id media-object]
-  #_(us/verify ::media-object media-object)
-  (ptk/reify ::create-media-objects-result
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (assoc-in [:workspace-media (:id media-object)] media-object)))))
+              :else
+              (tr "errors.unexpected-error"))]
+    (rx/of (dm/error msg))))
 

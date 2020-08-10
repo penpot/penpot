@@ -169,6 +169,7 @@
                 selected
                 panning]} local
 
+        file (mf/deref refs/workspace-file)
         viewport-ref (mf/use-ref nil)
         last-position (mf/use-var nil)
 
@@ -354,9 +355,6 @@
                        :metadata {:width (:width image)
                                   :height (:height image)
                                   :uri (:uri image)}}
-                                  ;; :thumb-width (:thumb-width image)
-                                  ;; :thumb-height (:thumb-height image)
-                                  ;; :thumb-uri (:thumb-uri image)}}
                 aspect-ratio (/ (:width image) (:height image))]
             (st/emit! (dw/create-and-add-shape :image shape aspect-ratio))))
 
@@ -381,11 +379,11 @@
                   urls (filter #(and (not (str/blank? %))
                                      (not (str/starts-with? % "#")))
                                lines)]
-              (run! #(st/emit! (dw/add-media-object-from-url % on-uploaded)) urls))
+              (run! #(st/emit! (dw/add-media-object-from-url (:id file) true % on-uploaded)) urls))
 
             :else
-            (let [files (dnd/get-files event)]
-              (run! #(st/emit! (dw/upload-media-object % on-uploaded)) files))))
+            (let [js-files (dnd/get-files event)]
+              (st/emit! (dw/upload-media-objects (:id file) true js-files on-uploaded)))))
 
         on-resize
         (fn [event]

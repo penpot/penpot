@@ -35,8 +35,8 @@
                   :id object-id-1
                   :profile-id (:id prof)
                   :file-id (:id file)
-                  :url url
-                  :is-local true}
+                  :is-local true
+                  :url url}
             out (th/try-on! (sm/handle data))]
 
         ;; (th/print-result! out)
@@ -61,9 +61,9 @@
                   :id object-id-2
                   :profile-id (:id prof)
                   :file-id (:id file)
+                  :is-local true
                   :name "testfile"
-                  :content content
-                  :is-local true}
+                  :content content}
             out (th/try-on! (sm/handle data))]
 
         ;; (th/print-result! out)

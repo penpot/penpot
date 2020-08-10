@@ -1169,9 +1169,6 @@
                :metadata {:width (:width image)
                           :height (:height image)
                           :uri (:uri image)}}
-                          ;; :thumb-width (:thumb-width image)
-                          ;; :thumb-height (:thumb-height image)
-                          ;; :thumb-uri (:thumb-uri image)}}
         aspect-ratio (/ (:width image) (:height image))]
     (st/emit! (create-and-add-shape :image shape aspect-ratio))))
 
@@ -1180,7 +1177,8 @@
   (ptk/reify ::paste-bin-impl
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (dwp/upload-media-object image image-uploaded)))))
+      (let [file-id (get-in state [:workspace-page :file-id])]
+        (rx/of (dwp/upload-media-objects file-id true [image] image-uploaded))))))
 
 (def paste
   (ptk/reify ::paste
@@ -1435,16 +1433,17 @@
 ;; Persistence
 
 (def set-file-shared dwp/set-file-shared)
-(def fetch-media-objects dwp/fetch-media-objects)
+(def fetch-media-library dwp/fetch-media-library)
+(def fetch-colors-library dwp/fetch-colors-library)
 (def add-media-object-from-url dwp/add-media-object-from-url)
-(def upload-media-object dwp/upload-media-object)
+(def upload-media-objects dwp/upload-media-objects)
 (def delete-media-object dwp/delete-media-object)
-(def fetch-colors dwp/fetch-colors)
 (def rename-page dwp/rename-page)
 (def delete-page dwp/delete-page)
 (def create-empty-page dwp/create-empty-page)
 
 ;; Selection
+
 (def select-shape dws/select-shape)
 (def deselect-all dws/deselect-all)
 (def select-shapes dws/select-shapes)

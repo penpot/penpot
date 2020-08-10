@@ -17,8 +17,8 @@
    [uxbox.common.geom.shapes :as geom]
    [uxbox.common.geom.point :as gpt]
    [uxbox.main.ui.icons :as i]
-   [uxbox.main.data.workspace :as dw]
    [uxbox.main.data.media :as di]
+   [uxbox.main.data.workspace :as dw]
    [uxbox.main.data.colors :as dcol]
    [uxbox.main.refs :as refs]
    [uxbox.main.store :as st]
@@ -72,7 +72,7 @@
          [:a.close {:href "#" :on-click cancel} i/close]]])))
 
 (mf/defc graphics-box
-  [{:keys [library-id media-objects] :as props}]
+  [{:keys [file-id media-objects] :as props}]
   (let [state (mf/use-state {:menu-open false
                              :top nil
                              :left nil
@@ -87,8 +87,8 @@
         #(st/emit! (dw/delete-media-object (:object-id @state)))
 
         on-files-selected
-        (fn [files]
-          (st/emit! (di/create-media-objects library-id files)))
+        (fn [js-files]
+          (st/emit! (dw/upload-media-objects file-id false js-files)))
 
         on-context-menu
         (fn [object-id]
@@ -114,7 +114,7 @@
       [:span (str "\u00A0(") (count media-objects) ")"] ;; Unicode 00A0 is non-breaking space
       [:div.group-button {:on-click add-graphic}
        i/plus
-       [:& file-uploader {:accept "image/jpeg,image/png,image/webp,image/svg+xml"
+       [:& file-uploader {:accept di/str-media-types
                           :multi true
                           :input-ref file-input
                           :on-selected on-files-selected}]]]
@@ -137,7 +137,7 @@
 
 
 (mf/defc color-item
-  [{:keys [color library-id] :as props}]
+  [{:keys [color file-id] :as props}]
   (let [workspace-local @refs/workspace-local
         color-for-rename (:color-for-rename workspace-local)
 
@@ -150,15 +150,15 @@
 
         rename-color
         (fn [name]
-          (st/emit! (dcol/rename-color library-id (:id color) name)))
+          (st/emit! (dcol/rename-color file-id (:id color) name)))
 
         edit-color
         (fn [value opacity]
-          (st/emit! (dcol/update-color library-id (:id color) value)))
+          (st/emit! (dcol/update-color file-id (:id color) value)))
 
         delete-color
         (fn []
-          (st/emit! (dcol/delete-color library-id (:id color))))
+          (st/emit! (dcol/delete-color file-id (:id color))))
 
         rename-color-clicked
         (fn [event]
@@ -231,10 +231,10 @@
                   [(tr "workspace.assets.delete") delete-color]]}]]))
 
 (mf/defc colors-box
-  [{:keys [library-id colors] :as props}]
+  [{:keys [file-id colors] :as props}]
   (let [add-color
         (fn [value opacity]
-          (st/emit! (dcol/create-color library-id value)))
+          (st/emit! (dcol/create-color file-id value)))
 
         add-color-clicked
         (fn [event]
@@ -251,10 +251,10 @@
       (for [color (sort-by :name colors)]
         [:& color-item {:key (:id color)
                         :color color
-                        :library-id library-id}])]]))
+                        :file-id file-id}])]]))
 
-(mf/defc library-toolbox
-  [{:keys [library-id
+(mf/defc file-library-toolbox
+  [{:keys [file-id
            shared?
            media-objects
            colors
@@ -279,9 +279,9 @@
                                (or (> (count colors) 0) (str/empty? search-term)))]
          [:div.tool-window-content
           (when show-graphics
-            [:& graphics-box {:library-id library-id :media-objects media-objects}])
+            [:& graphics-box {:file-id file-id :media-objects media-objects}])
           (when show-colors
-            [:& colors-box {:library-id library-id :colors colors}])
+            [:& colors-box {:file-id file-id :colors colors}])
           (when (and (not show-graphics) (not show-colors))
             [:div.asset-group
              [:div.group-title (tr "workspace.assets.not-found")]])]))]))
@@ -291,8 +291,8 @@
   (let [team-id (-> refs/workspace-project mf/deref :team-id)
         file (mf/deref refs/workspace-file)
         file-id (:id file)
-        file-media (mf/deref refs/workspace-media)
-        file-colors (mf/deref refs/workspace-colors)
+        file-media (mf/deref refs/workspace-media-library)
+        file-colors (mf/deref refs/workspace-colors-library)
 
         state (mf/use-state {:search-term ""
                              :box-filter :all})
@@ -321,8 +321,8 @@
     (mf/use-effect
      (mf/deps file-id)
      #(when file-id
-        (st/emit! (dw/fetch-media-objects file-id))
-        (st/emit! (dw/fetch-colors file-id))))
+        (st/emit! (dw/fetch-media-library file-id))
+        (st/emit! (dw/fetch-colors-library file-id))))
 
     [:div.assets-bar
 
@@ -350,11 +350,11 @@
          [:option {:value ":colors"} (tr "workspace.assets.box-filter-colors")]]
         ]]
 
-     [:& library-toolbox {:library-id file-id
-                          :shared? (:is-shared file)
-                          :media-objects filtered-media-objects
-                          :colors filtered-colors
-                          :initial-open? true
-                          :search-term (:search-term @state)
-                          :box-filter (:box-filter @state)}]]))
+     [:& file-library-toolbox {:file-id file-id
+                               :shared? (:is-shared file)
+                               :media-objects filtered-media-objects
+                               :colors filtered-colors
+                               :initial-open? true
+                               :search-term (:search-term @state)
+                               :box-filter (:box-filter @state)}]]))
 

@@ -57,6 +57,9 @@
 ;; Related info on how thumbnails generation
 ;;  http://www.imagemagick.org/Usage/thumbnails/
 
+(def valid-media-types
+  #{"image/jpeg", "image/png", "image/webp", "image/svg+xml"})
+
 (defn format->extension
   [format]
   (case format
@@ -195,6 +198,13 @@
   (us/assert map? row)
   (us/assert (s/coll-of vector?) pairs)
   (reduce #(resolve-uri mst/media-storage %1 (nth %2 0) (nth %2 1)) row pairs))
+
+(defn validate-media-type
+  [media-type]
+  (when-not (valid-media-types media-type)
+    (ex/raise :type :validation
+              :code :media-type-not-allowed
+              :hint "Seems like you are uploading an invalid media object")))
 
 (defn download-media-object
   [url]
