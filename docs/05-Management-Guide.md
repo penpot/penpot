@@ -7,11 +7,13 @@
 **Only available at build time!**
 
 - `-e UXBOX_PUBLIC_URI=...` (defaults to `http://localhost:6060`)
+- `-e UXBOX_GOOGLE_CLIENT_ID=...` (defaults to `true`)
+- `-e UXBOX_LOGIN_WITH_LDAP=...` (defaults to `false`)
 - `-e UXBOX_DEMO_WARNING=...` (defaults to `true`)
 
 ## Backend configuration parameters ##
 
-Backend accepts a bunch of configuration parameters (detailed abowe),
+Backend accepts a bunch of configuration parameters (detailed above),
 that can be passed in different ways. The preferred one is using
 environment variables.
 
@@ -41,6 +43,19 @@ respective defaults):
 - `UXBOX_REGISTRATION_DOMAIN_WHITELIST=""` (comma-separated domains, defaults to `""` which means that all domains are allowed)
 - `UXBOX_DEBUG_HUMANIZE_TRANSIT=true`
 
+- `UXBOX_LDAP_AUTH_HOST=`     (default undefined)
+- `UXBOX_LDAP_AUTH_PORT=`     (default undefined)
+- `UXBOX_LDAP_AUTH_VERSION=3`
+- `UXBOX_LDAP_BIND_DN=`       (default undefined)
+- `UXBOX_LDAP_BIND_PASSWORD=` (default undefined)
+- `UXBOX_LDAP_AUTH_SSL=`      (default `false`)
+- `UXBOX_LDAP_AUTH_STARTTLS=` (default `false`)
+- `UXBOX_LDAP_AUTH_BASE_DN=`  (default undefined)
+- `UXBOX_LDAP_AUTH_USER_QUERY=(|(uid=$username)(mail=$username))`
+- `UXBOX_LDAP_AUTH_USERNAME_ATTRIBUTE=uid`
+- `UXBOX_LDAP_AUTH_EMAIL_ATTRIBUTE=mail`
+- `UXBOX_LDAP_AUTH_FULLNAME_ATTRIBUTE=displayName`
+- `UXBOX_LDAP_AUTH_AVATAR_ATTRIBUTE=jpegPhoto`
 
 ## REPL ##
 

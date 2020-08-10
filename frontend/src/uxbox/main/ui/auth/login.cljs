@@ -43,6 +43,7 @@
 (mf/defc login-form
   [{:keys [locale] :as props}]
   (let [error? (mf/use-state false)
+        submit-event (mf/use-var da/login)
 
         on-error
         (fn [form event]
@@ -53,7 +54,7 @@
           (reset! error? false)
           (let [params (with-meta (:clean-data form)
                          {:on-error on-error})]
-            (st/emit! (da/login params))))]
+            (st/emit! (@submit-event params))))]
 
     [:*
      (when @error?
@@ -78,7 +79,12 @@
         :help-icon i/eye
         :label (t locale "auth.password-label")}]
       [:& submit-button
-       {:label (t locale "auth.login-submit-label")}]]]))
+       {:label (t locale "auth.login-submit-label")
+        :on-click #(reset! submit-event da/login)}]
+      (when cfg/login-with-ldap
+        [:& submit-button
+         {:label (t locale "auth.login-with-ldap-submit-label")
+          :on-click #(reset! submit-event da/login-with-ldap)}])]]))
 
 (mf/defc login-page
   [{:keys [locale] :as props}]

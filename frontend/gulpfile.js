@@ -113,6 +113,7 @@ function readConfig(data) {
   const demoWarn = process.env.UXBOX_DEMO_WARNING;
   const deployDate = process.env.UXBOX_DEPLOY_DATE;
   const deployCommit = process.env.UXBOX_DEPLOY_COMMIT;
+  const loginWithLDAP = process.env.UXBOX_LOGIN_WITH_LDAP;
 
   let cfg = {
     demoWarning: demoWarn === "true"
@@ -128,6 +129,10 @@ function readConfig(data) {
 
   if (deployCommit !== undefined) {
     cfg.deployCommit = deployCommit;
+  }
+
+  if (loginWithLDAP !== undefined) {
+    cfg.loginWithLDAP = loginWithLDAP;
   }
 
   Object.assign(cfg, data);
