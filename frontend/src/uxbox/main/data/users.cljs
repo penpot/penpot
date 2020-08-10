@@ -15,6 +15,7 @@
    [uxbox.main.store :as st]
    [uxbox.main.repo :as rp]
    [uxbox.main.data.messages :as dm]
+   [uxbox.main.data.media :as di]
    [uxbox.util.router :as rt]
    [uxbox.util.i18n :as i18n :refer [tr]]
    [uxbox.util.storage :refer [storage]]
@@ -155,58 +156,28 @@
 
 ;; --- Update Photo
 
-(s/def ::file #(instance? js/File %))
-(def allowed-file-types #{"image/jpeg" "image/png" "image/webp"})
-(def max-file-size (* 5 1024 1024))
-
-;; TODO: unify with create-media-objects at main/data/media.cljs
-;;       and upload-media-object at main/data/workspace/persistence.cljs
-;; https://tree.taiga.io/project/uxboxproject/us/440
-
 (defn update-photo
   [file]
-  (us/verify ::file file)
+  (us/verify ::di/js-file file)
   (ptk/reify ::update-photo
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [check-file
+      (let [on-success di/notify-finished-loading
+
+            on-error #(do (di/notify-finished-loading)
+                          (di/process-error %))
+
+            prepare
             (fn [file]
-              (when (> (.-size file) max-file-size)
-                (throw (ex-info (tr "errors.media-too-large") {})))
-              (when-not (contains? allowed-file-types (.-type file))
-                (throw (ex-info (tr "errors.media-format-unsupported") {})))
-              file)
+              {:file file})]
 
-             on-success #(do (st/emit! dm/hide))
+        (di/notify-start-loading)
 
-             on-error #(do (st/emit! dm/hide)
-                           (let [msg (cond
-                                       (.-message %)
-                                       (.-message %)
-
-                                       (= (:code %) :media-type-not-allowed)
-                                       (tr "errors.media-type-not-allowed")
-
-                                       (= (:code %) :media-type-mismatch)
-                                       (tr "errors.media-type-mismatch")
-
-                                       :else
-                                       (tr "errors.unexpected-error"))]
-                             (rx/of (dm/error msg))))
-
-             prepare
-             (fn [file]
-               {:file file})]
-
-      (st/emit! (dm/show {:content (tr "media.loading")
-                          :type :info
-                          :timeout nil}))
-
-      (->> (rx/of file)
-           (rx/map check-file)
-           (rx/map prepare)
-           (rx/mapcat #(rp/mutation :update-profile-photo %))
-           (rx/do on-success)
-           (rx/map (constantly fetch-profile))
-           (rx/catch on-error))))))
+        (->> (rx/of file)
+             (rx/map di/validate-file)
+             (rx/map prepare)
+             (rx/mapcat #(rp/mutation :update-profile-photo %))
+             (rx/do on-success)
+             (rx/map (constantly fetch-profile))
+             (rx/catch on-error))))))
 

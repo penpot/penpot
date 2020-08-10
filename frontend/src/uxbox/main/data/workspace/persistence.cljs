@@ -18,6 +18,7 @@
    [uxbox.common.spec :as us]
    [uxbox.main.data.dashboard :as dd]
    [uxbox.main.data.messages :as dm]
+   [uxbox.main.data.media :as di]
    [uxbox.main.data.workspace.common :as dwc]
    [uxbox.main.repo :as rp]
    [uxbox.main.store :as st]
@@ -296,178 +297,127 @@
                                (rx/of go-to-file)
                                (rx/empty))))))))))
 
-;; --- Fetch Workspace Graphics
+;; --- Fetch Workspace Media library
 
-(declare media-objects-fetched)
+(declare media-library-fetched)
 
-(defn fetch-media-objects
+(defn fetch-media-library
   [file-id]
-  (ptk/reify ::fetch-media-objects
+  (ptk/reify ::fetch-media-library
     ptk/WatchEvent
     (watch [_ state stream]
       (->> (rp/query :media-objects {:file-id file-id :is-local false})
-           (rx/map media-objects-fetched)))))
+           (rx/map media-library-fetched)))))
 
-(defn media-objects-fetched
+(defn media-library-fetched
   [media-objects]
-  (ptk/reify ::media-objects-fetched
+  (ptk/reify ::media-library-fetched
     ptk/UpdateEvent
     (update [_ state]
       (let [media-objects (d/index-by :id media-objects)]
-        (assoc state :workspace-media media-objects)))))
+        (assoc state :workspace-media-library media-objects)))))
 
-;; --- Fetch Workspace Colors
+;; --- Fetch Workspace Colors library
 
-(declare colors-fetched)
+(declare colors-library-fetched)
 
-(defn fetch-colors
+(defn fetch-colors-library
   [file-id]
-  (ptk/reify ::fetch-colors
+  (ptk/reify ::fetch-colors-library
     ptk/WatchEvent
     (watch [_ state stream]
       (->> (rp/query :colors {:file-id file-id})
-           (rx/map colors-fetched)))))
+           (rx/map colors-library-fetched)))))
 
-(defn colors-fetched
+(defn colors-library-fetched
   [colors]
-  (ptk/reify ::colors-fetched
+  (ptk/reify ::colors-library-fetched
     ptk/UpdateEvent
     (update [_ state]
       (let [colors (d/index-by :id colors)]
-        (assoc state :workspace-colors colors)))))
+        (assoc state :workspace-colors-library colors)))))
 
 
 ;; --- Upload local media objects
 
-(declare media-object-uploaded)
-(def allowed-file-types #{"image/jpeg" "image/png" "image/webp" "image/svg+xml"})
-(def max-file-size (* 5 1024 1024))
-
-;; TODO: unify with create-media-objects at main/data/media.cljs
-;;       and update-photo at main/data/users.cljs
-;; https://tree.taiga.io/project/uxboxproject/us/440
+(declare upload-media-objects-result)
 
 (defn add-media-object-from-url
-  ([url] (add-media-object-from-url url identity))
-  ([url on-added]
+  ([file-id is-local url] (add-media-object-from-url file-id is-local url identity))
+  ([file-id is-local url on-added]
+   (us/verify ::us/url url)
    (us/verify fn? on-added)
+   (us/verify ::us/boolean is-local)
    (ptk/reify ::add-media-object-from-url
      ptk/WatchEvent
      (watch [_ state stream]
-       (let [file-id (get-in state [:workspace-page :file-id])
-
-             on-success #(do (st/emit! dm/hide)
+       (let [on-success #(do (di/notify-finished-loading)
                              (on-added %))
 
-             on-error #(do (st/emit! dm/hide)
-                           (let [msg (cond
-                                       (.-message %)
-                                       (.-message %)
-
-                                       (= (:code %) :media-type-not-allowed)
-                                       (tr "errors.media-type-not-allowed")
-
-                                       (= (:code %) :media-type-mismatch)
-                                       (tr "errors.media-type-mismatch")
-
-                                       :else
-                                       (tr "errors.unexpected-error"))]
-                             (rx/of (dm/error msg))))
-
+             on-error #(do (di/notify-finished-loading)
+                           (di/process-error %))
+ 
              prepare
              (fn [url]
                {:file-id file-id
-                :url url
-                :is-local true})]
+                :is-local is-local
+                :url url})]
 
-         (st/emit! (dm/show {:content (tr "media.loading")
-                             :type :info
-                             :timeout nil}))
+         (di/notify-start-loading)
+
          (->> (rx/of url)
               (rx/map prepare)
               (rx/mapcat #(rp/mutation! :add-media-object-from-url %))
               (rx/do on-success)
-              (rx/map media-object-uploaded)
+              (rx/map (partial upload-media-objects-result file-id is-local))
               (rx/catch on-error)))))))
 
-(defn upload-media-object
-  ([file] (upload-media-object file identity))
-  ([file on-uploaded]
+(defn upload-media-objects
+  ([file-id is-local js-files] (upload-media-objects file-id is-local js-files identity))
+  ([file-id is-local js-files on-uploaded]
+   (us/verify ::us/uuid file-id)
+   (us/verify ::us/boolean is-local)
+   (us/verify ::di/js-files js-files)
    (us/verify fn? on-uploaded)
-   (ptk/reify ::upload-media-object
+   (ptk/reify ::upload-media-objects
      ptk/WatchEvent
      (watch [_ state stream]
-       (let [file-id (get-in state [:workspace-page :file-id])
-
-             check-file
-             (fn [file]
-              (when (> (.-size file) max-file-size)
-                (throw (ex-info (tr "errors.media-too-large") {})))
-              (when-not (contains? allowed-file-types (.-type file))
-                (throw (ex-info (tr "errors.media-format-unsupported") {})))
-              file)
-
-             on-success #(do (st/emit! dm/hide)
+       (let [on-success #(do (di/notify-finished-loading)
                              (on-uploaded %))
 
-             on-error #(do (st/emit! dm/hide)
-                           (let [msg (cond
-                                       (.-message %)
-                                       (.-message %)
-
-                                       (= (:code %) :media-type-not-allowed)
-                                       (tr "errors.media-type-not-allowed")
-
-                                       (= (:code %) :media-type-mismatch)
-                                       (tr "errors.media-type-mismatch")
-
-                                       :else
-                                       (tr "errors.unexpected-error"))]
-                             (rx/of (dm/error msg))))
+             on-error #(do (di/notify-finished-loading)
+                           (di/process-error %))
 
              prepare
-             (fn [file]
-               {:name (.-name file)
+             (fn [js-file]
+               {:name (.-name js-file)
                 :file-id file-id
-                :content file
-                :is-local true})]
+                :content js-file
+                :is-local is-local})]
 
-         (st/emit! (dm/show {:content (tr "media.loading")
-                             :type :info
-                             :timeout nil}))
-         (->> (rx/of file)
-              (rx/map check-file)
+         (di/notify-start-loading)
+
+         (->> (rx/from js-files)
+              (rx/map di/validate-file)
               (rx/map prepare)
               (rx/mapcat #(rp/mutation! :upload-media-object %))
               (rx/do on-success)
-              (rx/map media-object-uploaded)
+              (rx/map (partial upload-media-objects-result file-id is-local))
               (rx/catch on-error)))))))
 
-
-(s/def ::id ::us/uuid)
-(s/def ::name ::us/string)
-(s/def ::width ::us/number)
-(s/def ::height ::us/number)
-(s/def ::mtype ::us/string)
-(s/def ::uri ::us/string)
-;; (s/def ::thumb-uri ::us/string)
-
-(s/def ::media-object
-  (s/keys :req-un [::id
-                   ::name
-                   ::width
-                   ::height
-                   ::uri]))
-                   ;; ::thumb-uri]))
-
-(defn media-object-uploaded
-  [item]
-  (us/verify ::media-object item)
-  (ptk/reify ::media-object-uploaded
+(defn upload-media-objects-result
+  [file-id is-local media-object]
+  (us/verify ::us/uuid file-id)
+  (us/verify ::us/boolean is-local)
+  (us/verify ::di/media-object media-object)
+  (ptk/reify ::upload-media-objects-result
     ptk/UpdateEvent
     (update [_ state]
-      state)))
-      ;; (update state :workspace-media assoc (:id item) item))))
+      (if is-local
+        state
+        (assoc-in state
+                  [:workspace-media-library (:id media-object)]
+                  media-object)))))
 
 
 ;; --- Delete media object
@@ -477,7 +427,7 @@
   (ptk/reify ::delete-media-object
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-media dissoc id))
+      (update state :workspace-media-library dissoc id))
 
     ptk/WatchEvent
     (watch [_ state stream]

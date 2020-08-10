@@ -85,7 +85,7 @@
 (defn get-files
   "Extract the files from dom node."
   [node]
-  (.-files node))
+  (array-seq (.-files node)))
 
 (defn checked?
   "Check if the node that represents a radio

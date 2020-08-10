@@ -12,6 +12,7 @@
   (:require
    [rumext.alpha :as mf]
    [uxbox.main.refs :as refs]
+   [uxbox.main.data.media :as di]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.store :as st]
    [uxbox.main.ui.components.file-uploader :refer [file-uploader]]
@@ -27,6 +28,7 @@
         selected-drawtool (mf/deref refs/selected-drawing-tool)
         select-drawtool #(st/emit! :interrupt
                                    (dw/select-for-drawing %))
+        file (mf/deref refs/workspace-file)
         locale (i18n/use-locale)
 
         on-image #(dom/click (mf/ref-val file-input))
@@ -41,8 +43,8 @@
             (st/emit! (dw/create-and-add-shape :image shape aspect-ratio))))
 
         on-files-selected
-        (fn [files]
-          (run! #(st/emit! (dw/upload-media-object % on-uploaded)) files))]
+        (fn [js-files]
+          (st/emit! (dw/upload-media-objects (:id file) true js-files on-uploaded)))]
 
     [:aside.left-toolbar
      [:div.left-toolbar-inside
@@ -72,7 +74,7 @@
          :on-click on-image}
         [:*
           i/image
-          [:& file-uploader {:accept "image/jpeg,image/png,image/webp"
+          [:& file-uploader {:accept di/str-media-types
                              :multi true
                              :input-ref file-input
                              :on-selected on-files-selected}]]]
