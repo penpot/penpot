@@ -32,7 +32,7 @@
 (def rotation-handler-size 25)
 (def resize-point-radius 4)
 (def resize-point-circle-radius 10)
-(def resize-point-rect-size 20)
+(def resize-point-rect-size 8)
 (def resize-side-height 8)
 (def selection-rect-color "#1FDEA7")
 (def selection-rect-width 1)
@@ -124,7 +124,8 @@
             :transform transform
             :on-mouse-down on-rotate}]))
 
-(mf/defc resize-point-handler [{:keys [cx cy zoom position on-resize transform rotation]}]
+(mf/defc resize-point-handler
+  [{:keys [cx cy zoom position on-resize transform rotation]}]
   (let [{cx' :x cy' :y} (gpt/transform (gpt/point cx cy) transform)
         rot-square (case position
                      :top-left 0
@@ -142,16 +143,6 @@
                :cx cx'
                :cy cy'}]
 
-     [:rect {:x cx
-             :y cy
-             :width (/ resize-point-rect-size zoom)
-             :height (/ resize-point-rect-size zoom)
-             :fill (if (debug? :resize-handler) "red" "transparent")
-             :on-mouse-down #(on-resize {:x cx' :y cy'} %)
-             :style {:cursor (if (#{:top-left :bottom-right} position)
-                               (cur/resize-nesw rotation) (cur/resize-nwse rotation))}
-             :transform (gmt/multiply transform
-                                      (gmt/rotate-matrix rot-square (gpt/point cx cy)))}]
      [:circle {:on-mouse-down #(on-resize {:x cx' :y cy'} %)
                :r (/ resize-point-circle-radius zoom)
                :fill (if (debug? :resize-handler) "red" "transparent")
