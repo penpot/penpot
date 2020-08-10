@@ -12,21 +12,26 @@
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
    [uxbox.common.data :as d]
-   [uxbox.main.ui.icons :as i]
+   [uxbox.common.math :as math]
    [uxbox.main.data.workspace.common :as dwc]
    [uxbox.main.store :as st]
+   [uxbox.main.ui.icons :as i]
    [uxbox.main.ui.modal :as modal]
    [uxbox.main.ui.workspace.colorpicker :refer [colorpicker-modal]]
+   [uxbox.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
    [uxbox.util.data :refer [classnames]]
    [uxbox.util.dom :as dom]
-   [uxbox.util.object :as obj]
    [uxbox.util.i18n :as i18n :refer [tr t]]
-   [uxbox.common.math :as math]
-   [uxbox.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]))
+   [uxbox.util.object :as obj]))
 
-(def stroke-attrs [:stroke-style :stroke-alignment :stroke-width :stroke-color :stroke-opacity])
+(def stroke-attrs
+  [:stroke-style
+   :stroke-alignment
+   :stroke-width
+   :stroke-color
+   :stroke-opacity])
 
-(defn- stroke-menu-memo-equals?
+(defn- stroke-menu-props-equals?
   [np op]
   (let [new-ids    (obj/get np "ids")
         old-ids    (obj/get op "ids")
@@ -57,7 +62,7 @@
     (pr-str value)))
 
 (mf/defc stroke-menu
-  {::mf/wrap [#(mf/memo' % stroke-menu-memo-equals?)]}
+  {::mf/wrap [#(mf/memo' % stroke-menu-props-equals?)]}
   [{:keys [ids type values] :as props}]
   (let [locale (i18n/use-locale)
         label (case type
