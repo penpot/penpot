@@ -52,6 +52,8 @@
         (handler (assoc request :profile-id profile-id))
         (handler request)))))
 
+;; TODO: maybe rename to wrap-session?
+
 (def auth
   {:nane ::auth
    :compile (constantly wrap-auth)})

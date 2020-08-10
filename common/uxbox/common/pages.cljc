@@ -219,8 +219,10 @@
      :name "root"
      :shapes []}}})
 
+(def default-color "#b1b2b5") ;; $color-gray-20
+
 (def default-shape-attrs
-  {:fill-color "#000000"
+  {:fill-color default-color
    :fill-opacity 1})
 
 (def default-frame-attrs
@@ -228,8 +230,6 @@
    :fill-color "#ffffff"
    :fill-opacity 1
    :shapes []})
-
-(def ^:private default-color "#b1b2b5") ;; $color-gray-20
 
 (def ^:private minimal-shapes
   [{:type :rect
