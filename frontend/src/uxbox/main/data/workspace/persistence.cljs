@@ -13,6 +13,7 @@
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]
    [uxbox.common.data :as d]
+   [uxbox.common.media :as cm]
    [uxbox.common.geom.point :as gpt]
    [uxbox.common.pages :as cp]
    [uxbox.common.spec :as us]
@@ -409,7 +410,7 @@
   [file-id is-local media-object]
   (us/verify ::us/uuid file-id)
   (us/verify ::us/boolean is-local)
-  (us/verify ::di/media-object media-object)
+  (us/verify ::cm/media-object media-object)
   (ptk/reify ::upload-media-objects-result
     ptk/UpdateEvent
     (update [_ state]

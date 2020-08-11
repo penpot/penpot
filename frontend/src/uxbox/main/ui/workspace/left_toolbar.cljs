@@ -11,8 +11,8 @@
 (ns uxbox.main.ui.workspace.left-toolbar
   (:require
    [rumext.alpha :as mf]
+   [uxbox.common.media :as cm]
    [uxbox.main.refs :as refs]
-   [uxbox.main.data.media :as di]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.store :as st]
    [uxbox.main.ui.components.file-uploader :refer [file-uploader]]
@@ -74,7 +74,7 @@
          :on-click on-image}
         [:*
           i/image
-          [:& file-uploader {:accept di/str-media-types
+          [:& file-uploader {:accept cm/str-media-types
                              :multi true
                              :input-ref file-input
                              :on-selected on-files-selected}]]]
