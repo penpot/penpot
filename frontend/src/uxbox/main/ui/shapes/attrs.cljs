@@ -21,7 +21,7 @@
 (defn extract-style-attrs
   [shape]
   (let [stroke-style (:stroke-style shape :none)
-        attrs #js {:fill (:fill-color shape nil)
+        attrs #js {:fill (or (:fill-color shape) "transparent")
                    :fillOpacity (:fill-opacity shape nil)
                    :rx (:rx shape nil)
                    :ry (:ry shape nil)}]
