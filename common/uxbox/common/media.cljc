@@ -13,7 +13,7 @@
    [cuerdas.core :as str]))
 
 (def valid-media-types
-  #{"image/jpeg", "image/png", "image/webp", "image/svg+xml"})
+  #{"image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"})
 
 (def str-media-types (str/join "," valid-media-types))
 
@@ -23,6 +23,7 @@
     :png  ".png"
     :jpeg ".jpg"
     :webp ".webp"
+    :gif ".gif"
     :svg  ".svg"))
 
 (defn format->mtype
@@ -31,6 +32,7 @@
     :png  "image/png"
     :jpeg "image/jpeg"
     :webp "image/webp"
+    :gif "image/gif"
     :svg  "image/svg+xml"))
 
 (defn mtype->format
@@ -39,6 +41,7 @@
     "image/png"     :png
     "image/jpeg"    :jpeg
     "image/webp"    :webp
+    "image/gif"     :gif
     "image/svg+xml" :svg
     nil))
 
