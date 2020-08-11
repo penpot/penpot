@@ -20,6 +20,7 @@
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.common.uuid :as uuid]
+   [uxbox.common.media :as cm]
    [uxbox.config :as cfg]
    [uxbox.db :as db]
    [uxbox.emails :as emails]
@@ -299,7 +300,7 @@
                   :height 256
                   :input  {:path (fs/path (:tempfile file))
                            :mtype (:content-type file)}})
-        name   (str prefix (media/format->extension (:format thumb)))]
+        name   (str prefix (cm/format->extension (:format thumb)))]
     (ust/save! mst/media-storage name (:data thumb))))
 
 (defn- update-profile-photo

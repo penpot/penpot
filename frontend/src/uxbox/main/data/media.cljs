@@ -12,6 +12,7 @@
    [potok.core :as ptk]
    [uxbox.common.spec :as us]
    [uxbox.common.data :as d]
+   [uxbox.common.media :as cm]
    [uxbox.main.data.messages :as dm]
    [uxbox.main.store :as st]
    [uxbox.main.repo :as rp]
@@ -24,40 +25,17 @@
 
 ;; --- Specs
 
-(s/def ::id uuid?)
-(s/def ::name string?)
-(s/def ::width number?)
-(s/def ::height number?)
-(s/def ::created-at inst?)
-(s/def ::modified-at inst?)
-(s/def ::mtype string?)
-(s/def ::uri string?)
-
-(s/def ::media-object
-  (s/keys :req-un [::id
-                   ::name
-                   ::width
-                   ::height
-                   ::mtype
-                   ::created-at
-                   ::modified-at
-                   ::uri]))
-
 (s/def ::js-file #(instance? js/Blob %))
 (s/def ::js-files (s/coll-of ::js-file))
-
-(def allowed-media-types #{"image/jpeg" "image/png" "image/webp" "image/svg+xml"})
-(def str-media-types (str/join "," allowed-media-types))
-(def max-file-size (* 5 1024 1024))
 
 ;; --- Utility functions
 
 (defn validate-file
   ;; Check that a file obtained with the file javascript API is valid.
   [file]
-  (when (> (.-size file) max-file-size)
+  (when (> (.-size file) cm/max-file-size)
     (throw (ex-info (tr "errors.media-too-large") {})))
-  (when-not (contains? allowed-media-types (.-type file))
+  (when-not (contains? cm/valid-media-types (.-type file))
     (throw (ex-info (tr "errors.media-format-unsupported") {})))
   file)
 

@@ -11,6 +11,7 @@
   (:require
    [clojure.spec.alpha :as s]
    [datoteka.core :as fs]
+   [uxbox.common.media :as cm]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.common.uuid :as uuid]
@@ -47,7 +48,7 @@
 
 (s/def :uxbox$upload/filename ::us/string)
 (s/def :uxbox$upload/size ::us/integer)
-(s/def :uxbox$upload/content-type media/valid-media-types)
+(s/def :uxbox$upload/content-type cm/valid-media-types)
 (s/def :uxbox$upload/tempfile any?)
 
 (s/def ::upload
@@ -154,7 +155,7 @@
 
         name  (str "thumbnail-"
                    (first (fs/split-ext (fs/name (:path input))))
-                   (media/format->extension (:format thumb)))
+                   (cm/format->extension (:format thumb)))
         path  (ust/save! mst/media-storage name (:data thumb))]
 
     (-> thumb

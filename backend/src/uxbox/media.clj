@@ -17,6 +17,7 @@
    [mount.core :refer [defstate]]
    [uxbox.config :as cfg]
    [uxbox.common.data :as d]
+   [uxbox.common.media :as cm]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
    [uxbox.media-storage :as mst]
@@ -40,15 +41,14 @@
 (s/def ::path (s/or :path fs/path?
                     :string string?
                     :file fs/file?))
-(s/def ::mtype string?)
 
 (s/def ::input
   (s/keys :req-un [::path]
-          :opt-un [::mtype]))
+          :opt-un [::cm/mtype]))
 
 (s/def ::width integer?)
 (s/def ::height integer?)
-(s/def ::format #{:jpeg :webp :png :svg})
+(s/def ::format #{:jpeg :webp :png})
 (s/def ::quality #(< 0 % 101))
 
 (s/def ::thumbnail-params
@@ -57,39 +57,11 @@
 ;; Related info on how thumbnails generation
 ;;  http://www.imagemagick.org/Usage/thumbnails/
 
-(def valid-media-types
-  #{"image/jpeg", "image/png", "image/webp", "image/svg+xml"})
-
-(defn format->extension
-  [format]
-  (case format
-    :png  ".png"
-    :jpeg ".jpg"
-    :webp ".webp"
-    :svg  ".svg"))
-
-(defn format->mtype
-  [format]
-  (case format
-    :png  "image/png"
-    :jpeg "image/jpeg"
-    :webp "image/webp"
-    :svg  "image/svg+xml"))
-
-(defn mtype->format
-  [mtype]
-  (case mtype
-    "image/png"     :png
-    "image/jpeg"    :jpeg
-    "image/webp"    :webp
-    "image/svg+xml" :svg
-    nil))
-
 (defn- generic-process
   [{:keys [input format quality operation] :as params}]
   (let [{:keys [path mtype]} input
-        format (or (mtype->format mtype) format)
-        ext    (format->extension format)
+        format (or (cm/mtype->format mtype) format)
+        ext    (cm/format->extension format)
         tmp (fs/create-tempfile :suffix ext)]
 
     (doto (ConvertCmd.)
@@ -99,7 +71,7 @@
       (fs/delete tmp)
       (assoc params
              :format format
-             :mtype  (format->mtype format)
+             :mtype  (cm/format->mtype format)
              :data   (ByteArrayInputStream. thumbnail-data)))))
 
 (defmulti process :cmd)
@@ -170,6 +142,9 @@
     (finally
       (.release semaphore))))
 
+
+;; --- Utility functions
+
 (defn resolve-urls
   [row src dst]
   (s/assert map? row)
@@ -201,7 +176,7 @@
 
 (defn validate-media-type
   [media-type]
-  (when-not (valid-media-types media-type)
+  (when-not (cm/valid-media-types media-type)
     (ex/raise :type :validation
               :code :media-type-not-allowed
               :hint "Seems like you are uploading an invalid media object")))
@@ -211,14 +186,14 @@
   (let [result (http/get! url {:as :byte-array})
         data (:body result)
         content-type (get (:headers result) "content-type")
-        format (mtype->format content-type)]
+        format (cm/mtype->format content-type)]
     (if (nil? format)
       (ex/raise :type :validation
                 :code :media-type-not-allowed
                 :hint "Seems like the url points to an invalid media object.")
       (let [tempfile (fs/create-tempfile)
             base-filename (first (fs/split-ext (fs/name tempfile)))
-            filename (str base-filename (format->extension format))]
+            filename (str base-filename (cm/format->extension format))]
         (with-open [ostream (io/output-stream tempfile)]
           (.write ostream data))
         {:filename filename

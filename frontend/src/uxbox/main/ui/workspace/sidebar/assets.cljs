@@ -13,11 +13,11 @@
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
    [uxbox.common.data :as d]
+   [uxbox.common.media :as cm]
    [uxbox.common.pages :as cp]
    [uxbox.common.geom.shapes :as geom]
    [uxbox.common.geom.point :as gpt]
    [uxbox.main.ui.icons :as i]
-   [uxbox.main.data.media :as di]
    [uxbox.main.data.workspace :as dw]
    [uxbox.main.data.colors :as dcol]
    [uxbox.main.refs :as refs]
@@ -114,7 +114,7 @@
       [:span (str "\u00A0(") (count media-objects) ")"] ;; Unicode 00A0 is non-breaking space
       [:div.group-button {:on-click add-graphic}
        i/plus
-       [:& file-uploader {:accept di/str-media-types
+       [:& file-uploader {:accept cm/str-media-types
                           :multi true
                           :input-ref file-input
                           :on-selected on-files-selected}]]]
