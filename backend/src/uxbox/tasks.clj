@@ -25,8 +25,6 @@
    [uxbox.tasks.impl :as impl]
    [uxbox.util.time :as dt]))
 
-;; --- Scheduler Executor Initialization
-
 ;; --- State initialization
 
 (def ^:private tasks
