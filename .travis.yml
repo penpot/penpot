@@ -1,7 +1,7 @@
+os: linux
 dist: xenial
 
 language: generic
-sudo: required
 
 cache:
   directories:
@@ -27,8 +27,10 @@ script:
   - ./manage.sh build-devenv
   - ./manage.sh run-frontend-tests
   - ./manage.sh run-backend-tests
-  - ./manage.sh build-images
-  - ./manage.sh run
+  - ./manage.sh build-frontend
+  - ./manage.sh build-backend
+  - ./manage.sh build-exporter
+  #- ./manage.sh run
 
 after_script:
   - docker images

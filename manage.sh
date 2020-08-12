@@ -45,6 +45,49 @@ function run-devenv {
     docker exec -ti uxbox-devenv-main /home/uxbox/start-tmux.sh
 }
 
+function run-all-tests {
+    run-frontend-tests
+    run-backend-tests
+}
+
+function run-frontend-tests {
+    build-devenv-if-not-exists;
+
+    local IMAGE=$DEVENV_IMGNAME:latest;
+
+    echo "Running development image $IMAGE to test frontend."
+    docker run -t --rm \
+           --mount source=`pwd`,type=bind,target=/home/uxbox/uxbox \
+           --mount source=${HOME}/.m2,type=bind,target=/home/uxbox/.m2 \
+           -w /home/uxbox/uxbox/frontend \
+           -e UXBOX_PUBLIC_URI=${UXBOX_PUBLIC_URI} \
+           -e UXBOX_GOOGLE_CLIENT_ID=${UXBOX_GOOGLE_CLIENT_ID} \
+           -e UXBOX_DEMO_WARNING=${UXBOX_DEMO_WARNING} \
+           -e UXBOX_DEPLOY_DATE=${UXBOX_DEPLOY_DATE} \
+           -e UXBOX_DEPLOY_COMMIT=${UXBOX_DEPLOY_COMMIT} \
+           -e UXBOX_THEME=${UXBOX_THEME} \
+           $IMAGE ./scripts/build-and-run-tests.sh
+}
+
+function run-backend-tests {
+    build-devenv-if-not-exists;
+
+    local IMAGE=$DEVENV_IMGNAME:latest;
+
+    echo "Running development image $IMAGE to test backend."
+    docker run -t --rm \
+           --mount source=`pwd`,type=bind,target=/home/uxbox/uxbox \
+           --mount source=${HOME}/.m2,type=bind,target=/home/uxbox/.m2 \
+           -w /home/uxbox/uxbox/backend \
+           -e UXBOX_PUBLIC_URI=${UXBOX_PUBLIC_URI} \
+           -e UXBOX_GOOGLE_CLIENT_ID=${UXBOX_GOOGLE_CLIENT_ID} \
+           -e UXBOX_DEMO_WARNING=${UXBOX_DEMO_WARNING} \
+           -e UXBOX_DEPLOY_DATE=${UXBOX_DEPLOY_DATE} \
+           -e UXBOX_DEPLOY_COMMIT=${UXBOX_DEPLOY_COMMIT} \
+           -e UXBOX_THEME=${UXBOX_THEME} \
+           $IMAGE ./scripts/run-tests-in-docker.sh
+}
+
 function build-frontend {
     build-devenv-if-not-exists;
 
@@ -114,6 +157,10 @@ function usage {
     echo "- run-all-tests                    Execute unit tests for both backend and frontend."
     echo "- run-frontend-tests               Execute unit tests for frontend only."
     echo "- run-backend-tests                Execute unit tests for backend only."
+    echo ""
+    echo "- build-frontend                   Build for frontend only."
+    echo "- build-backend                    Build for backend only."
+    echo "- build-exporter                   Build for exporter only."
 }
 
 case $1 in
@@ -139,15 +186,15 @@ case $1 in
 
     ## testin related commands
 
-    # run-all-tests)
-    #     run-all-tests ${@:2}
-    #     ;;
-    # run-frontend-tests)
-    #     run-frontend-tests ${@:2}
-    #     ;;
-    # run-backend-tests)
-    #     run-backend-tests ${@:2}
-    #     ;;
+    run-all-tests)
+        run-all-tests ${@:2}
+        ;;
+    run-frontend-tests)
+        run-frontend-tests ${@:2}
+        ;;
+    run-backend-tests)
+        run-backend-tests ${@:2}
+        ;;
 
     # production builds
     build-frontend)
