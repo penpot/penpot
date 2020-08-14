@@ -6,10 +6,7 @@
 // Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 .dashboard-grid {
-  display: flex;
-  flex-direction: column;
   font-size: $fs14;
-  height: 100%;
 
   .dashboard-title {
     position: relative;
@@ -68,284 +65,277 @@
 
   }
 
-  .dashboard-grid-content {
+  .dashboard-grid-row {
     display: flex;
-    height: 100%;
+    flex-wrap: wrap;
     width: 100%;
+    align-content: flex-start;
+  }
 
-    .dashboard-grid-row {
-      display: flex;
-      flex-wrap: wrap;
+  .grid-item {
+    align-items: center;
+    border: 1px solid lighten($color-gray-20, 13%);
+    border-radius: $br-small;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    height: 200px;
+    margin: $medium;
+    max-width: 300px;
+    min-width: 260px;
+    position: relative;
+    text-align: center;
+    width: 18%;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+
+    & .overlay {
+      border-radius: 4px;
+      border: 2px solid $color-primary;
+      height: 100%;
+      opacity: 0;
+      pointer-events: none;
+      position: absolute;
       width: 100%;
-      align-content: flex-start;
+      z-index: 1;
+    }
+    &:hover .overlay {
+      display: block;
+      opacity: 1;
     }
 
-    .grid-item {
-      align-items: center;
-      border: 1px solid lighten($color-gray-20, 13%);
-      border-radius: $br-small;
-      cursor: pointer;
+    &.small-item {
+      max-width: 12%;
+      min-width: 190px;
+      padding: $medium;
+      justify-content: center;
+    }
+
+    .grid-item-icon {
+      width:90px;
+      height:90px;
+    }
+
+    .item-info {
+      bottom: 0;
       display: flex;
       flex-direction: column;
-      flex-shrink: 0;
-      height: 200px;
-      margin: $medium;
-      max-width: 300px;
-      min-width: 260px;
-      position: relative;
-      text-align: center;
-      width: 18%;
-      box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+      left: 0;
+      padding: $small;
+      position: absolute;
+      text-align: left;
+      width: 100%;
 
-      & .overlay {
-        border-radius: 4px;
-        border: 2px solid $color-primary;
-        height: 100%;
-        opacity: 0;
-        pointer-events: none;
-        position: absolute;
+      h3 {
+        color: $color-gray-60;
+        font-size: $fs15;
+        font-weight: 400;
+        overflow: hidden;
+        padding: 0;
+        padding-right: $small;
+        text-overflow: ellipsis;
         width: 100%;
-        z-index: 1;
-      }
-      &:hover .overlay {
-        display: block;
-        opacity: 1;
+        white-space: nowrap;
       }
 
-      &.small-item {
-        max-width: 12%;
-        min-width: 190px;
-        padding: $medium;
-        justify-content: center;
-      }
-
-      .grid-item-icon {
-        width:90px;
-        height:90px;
-      }
-
-      .item-info {
-        bottom: 0;
-        display: flex;
-        flex-direction: column;
-        left: 0;
-        padding: $small;
-        position: absolute;
-        text-align: left;
+      span.date {
+        color: $color-gray-20;
+        font-size: $fs12;
+        overflow: hidden;
+        text-overflow: ellipsis;
         width: 100%;
-
-        h3 {
-          color: $color-gray-60;
-          font-size: $fs15;
-          font-weight: 400;
-          overflow: hidden;
-          padding: 0;
-          padding-right: $small;
-          text-overflow: ellipsis;
-          width: 100%;
-          white-space: nowrap;
-        }
-
-        span.date {
-          color: $color-gray-20;
-          font-size: $fs12;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          width: 100%;
-        }
-
       }
 
-      .item-badge {
-          background-color: $color-white;
-          border: 1px solid $color-gray-20;
-          border-radius: 4px;
-          position: absolute;
-          top: $x-small;
-          right: $x-small;
-          height: 32px;
-          width: 32px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+    }
 
-          svg {
-            fill: $color-gray-30;
-            height: 16px;
-            width: 16px;
-          }
-      }
-
-      &.add-file {
-        border: 1px dashed $color-gray-20;
-        justify-content: center;
-        box-shadow: none;
-
-        span {
-          color: $color-gray-60;
-          font-size: $fs15;
-        }
-
-        &:hover {
-          background-color: $color-white;
-          border: 2px solid $color-primary;
-        }
-
-      }
-
-      // PROJECTS, ELEMENTS & ICONS GRID
-      &.project-th {
+    .item-badge {
         background-color: $color-white;
-        // border: 2px solid $color-gray-10;
-
-        &:hover {
-          border-color: $color-primary;
-
-          .project-th-actions {
-            display: flex;
-          }
-        }
-
-        .project-th-actions {
-          align-items: center;
-          bottom: 0;
-          display: none;
-          left: 0;
-          justify-content: flex-end;
-          padding: $small;
-          position: absolute;
-          width: 100%;
-
-          svg {
-            fill: $color-gray-20;
-            height: 14px;
-            margin-right: $x-small;
-            width: 14px;
-          }
-
-          span {
-            color: $color-black;
-          }
-
-          .project-th-icon {
-            align-items: center;
-            display: flex;
-            margin-right: $small;
-
-            &.menu {
-              margin-right: 0;
-
-              svg {
-                fill: $color-gray-30;
-                margin-right: 0;
-              }
-
-              &:hover {
-                transform: scale(1.4);
-
-                svg {
-                  fill: $color-primary-dark;
-                }
-
-              }
-
-            }
-
-            &.delete {
-              margin-right: 0;
-
-              svg {
-                fill: $color-gray-30;
-                margin-right: 0;
-              }
-
-              &:hover {
-                transform: scale(1.4);
-
-                svg {
-                  fill: $color-danger;
-                }
-
-              }
-
-            }
-
-            &.edit {
-              margin-right: 0;
-
-              svg {
-                fill: $color-gray-30;
-              }
-
-              &:hover {
-                transform: scale(1.4);
-
-                svg {
-                  fill: $color-gray-60;
-                }
-
-              }
-
-            }
-
-          }
-
-        }
-
-        .project-th-actions.force-display {
-          display: flex;
-        }
-
-      }
-
-      // IMAGES SECTION
-      &.images-th {
-        border: 1px dashed $color-gray-20;
-        border-bottom: 2px solid lighten($color-gray-20, 12%);
-
-        &:hover {
-          border-color: $color-primary;
-        }
-
-      }
-
-      .grid-item-image {
+        border: 1px solid $color-gray-20;
+        border-radius: 4px;
+        position: absolute;
+        top: $x-small;
+        right: $x-small;
+        height: 32px;
+        width: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
 
         svg {
-          max-height: 100px;
-          max-width: 100px;
-          min-height: 40px;
-          min-width: 40px;
-          width: 8vw;
+          fill: $color-gray-30;
+          height: 16px;
+          width: 16px;
         }
+    }
 
+    &.add-file {
+      border: 1px dashed $color-gray-20;
+      justify-content: center;
+      box-shadow: none;
+
+      span {
+        color: $color-gray-60;
+        font-size: $fs15;
       }
 
-      .color-swatch {
-        border-top-left-radius: $br-medium;
-        border-top-right-radius: $br-medium;
-        height: 25%;
+      &:hover {
+        background-color: $color-white;
+        border: 2px solid $color-primary;
+      }
+
+    }
+
+    // PROJECTS, ELEMENTS & ICONS GRID
+    &.project-th {
+      background-color: $color-white;
+      // border: 2px solid $color-gray-10;
+
+      &:hover {
+        border-color: $color-primary;
+
+        .project-th-actions {
+          display: flex;
+        }
+      }
+
+      .project-th-actions {
+        align-items: center;
+        bottom: 0;
+        display: none;
         left: 0;
+        justify-content: flex-end;
+        padding: $small;
         position: absolute;
-        top: 0;
         width: 100%;
-      }
 
-      .color-data {
-        color: $color-gray-30;
-        margin-top: 15px;
-      }
-
-      .input-checkbox {
-        margin: 0;
-        position: absolute;
-        top: 10px;
-        right: 5px;
-
-        label {
-          margin: 0;
+        svg {
+          fill: $color-gray-20;
+          height: 14px;
+          margin-right: $x-small;
+          width: 14px;
         }
 
+        span {
+          color: $color-black;
+        }
+
+        .project-th-icon {
+          align-items: center;
+          display: flex;
+          margin-right: $small;
+
+          &.menu {
+            margin-right: 0;
+
+            svg {
+              fill: $color-gray-30;
+              margin-right: 0;
+            }
+
+            &:hover {
+              transform: scale(1.4);
+
+              svg {
+                fill: $color-primary-dark;
+              }
+
+            }
+
+          }
+
+          &.delete {
+            margin-right: 0;
+
+            svg {
+              fill: $color-gray-30;
+              margin-right: 0;
+            }
+
+            &:hover {
+              transform: scale(1.4);
+
+              svg {
+                fill: $color-danger;
+              }
+
+            }
+
+          }
+
+          &.edit {
+            margin-right: 0;
+
+            svg {
+              fill: $color-gray-30;
+            }
+
+            &:hover {
+              transform: scale(1.4);
+
+              svg {
+                fill: $color-gray-60;
+              }
+
+            }
+
+          }
+
+        }
+
+      }
+
+      .project-th-actions.force-display {
+        display: flex;
+      }
+
+    }
+
+    // IMAGES SECTION
+    &.images-th {
+      border: 1px dashed $color-gray-20;
+      border-bottom: 2px solid lighten($color-gray-20, 12%);
+
+      &:hover {
+        border-color: $color-primary;
+      }
+
+    }
+
+    .grid-item-image {
+
+      svg {
+        max-height: 100px;
+        max-width: 100px;
+        min-height: 40px;
+        min-width: 40px;
+        width: 8vw;
+      }
+
+    }
+
+    .color-swatch {
+      border-top-left-radius: $br-medium;
+      border-top-right-radius: $br-medium;
+      height: 25%;
+      left: 0;
+      position: absolute;
+      top: 0;
+      width: 100%;
+    }
+
+    .color-data {
+      color: $color-gray-30;
+      margin-top: 15px;
+    }
+
+    .input-checkbox {
+      margin: 0;
+      position: absolute;
+      top: 10px;
+      right: 5px;
+
+      label {
+        margin: 0;
       }
 
     }
@@ -476,7 +466,6 @@
     height: fit-content;
     margin: $size-4;
     padding: 3rem;
-    width: 100%;
 
     .grid-files-desc {
       color: $color-gray-60;

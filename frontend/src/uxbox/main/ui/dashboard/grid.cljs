@@ -141,7 +141,6 @@
                     (dom/prevent-default %)
                     (st/emit! (dsh/create-file id)))]
     [:section.dashboard-grid
-     [:div.dashboard-grid-content
       (if (> (count files) 0)
         [:div.dashboard-grid-row
          (when (not hide-new?)
@@ -152,4 +151,4 @@
         [:div.grid-files-empty
          [:div.grid-files-desc (t locale "dashboard.grid.empty-files")]
          [:div.grid-files-link
-          [:a.btn-secondary.btn-small {:on-click on-click} (t locale "ds.new-file")]]])]]))
+          [:a.btn-secondary.btn-small {:on-click on-click} (t locale "ds.new-file")]]])]))

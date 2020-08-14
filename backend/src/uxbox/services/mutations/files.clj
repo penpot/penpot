@@ -41,8 +41,8 @@
 
 (s/def ::is-shared ::us/boolean)
 (s/def ::create-file
-  (s/keys :req-un [::profile-id ::name ::project-id ::is-shared]
-          :opt-un [::id]))
+  (s/keys :req-un [::profile-id ::name ::project-id]
+          :opt-un [::id ::is-shared]))
 
 (sm/defmutation ::create-file
   [{:keys [profile-id project-id] :as params}]
@@ -61,7 +61,9 @@
                :can-edit true}))
 
 (defn create-file
-  [conn {:keys [id profile-id name project-id is-shared] :as params}]
+  [conn {:keys [id profile-id name project-id is-shared]
+         :or {is-shared false}
+         :as params}]
   (let [id      (or id (uuid/next))
         file (db/insert! conn :file
                          {:id id

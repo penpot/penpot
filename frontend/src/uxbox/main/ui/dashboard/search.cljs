@@ -33,7 +33,6 @@
 
     [:section.search-page
       [:section.dashboard-grid
-       [:div.dashboard-grid-content
         (cond
           (empty? search-term)
           [:div.grid-files-empty
@@ -48,5 +47,5 @@
            [:div.grid-files-desc (t locale "dashboard.search.no-matches-for" search-term)]]
 
           :else
-          [:& grid { :files search-result :hide-new? true}])]]]))
+          [:& grid { :files search-result :hide-new? true}])]]))
 

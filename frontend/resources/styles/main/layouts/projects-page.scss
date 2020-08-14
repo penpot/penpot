@@ -1,5 +1,6 @@
 .projects-page {
-    padding: 1rem;
-    height: 100%;
-    background-color: $color-white;
+  padding: 1rem;
+  background-color: $color-white;
+  flex: 1 0 0;
+  overflow-y: auto;
 }
