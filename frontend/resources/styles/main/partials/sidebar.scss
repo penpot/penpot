@@ -17,6 +17,7 @@ $width-settings-bar: 15rem;
   right: 0;
   width: $width-settings-bar;
   z-index: 10;
+  overflow-y: auto;
 
   &.settings-bar-left {
     border-left: none;
@@ -59,7 +60,6 @@ $width-settings-bar: 15rem;
 
 
     flex-direction: column;
-    overflow: hidden;
     padding-top: 40px;
     height: 100%;
 

@@ -118,6 +118,11 @@
     padding: $small;
     font-size: $fs11;
     color: $color-gray-20;
+    /* TODO: see if this is useful, or is better to leave only
+             one scroll bar in the whole sidebar
+             (also see .group-list) */
+    // max-height: 30rem;
+    // overflow-y: scroll;
 
     .group-title {
       display: flex;
@@ -187,10 +192,13 @@
       }
     }
 
-    .group-list {
-      max-height: 30rem;
-      overflow-y: scroll;
-    }
+    /* TODO: see if this is useful, or is better to leave only
+             one scroll bar in the whole sidebar
+             (also see .asset-group) */
+    // .group-list {
+    //   max-height: 30rem;
+    //   overflow-y: scroll;
+    // }
 
     .group-list-item {
       display: flex;
