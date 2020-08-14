@@ -23,11 +23,12 @@
 //#################################################
 
 @import 'common/base';
-@import 'main/layouts/main-layout';
 @import 'main/layouts/login';
+@import 'main/layouts/main-layout';
 @import 'main/layouts/projects-page';
 @import 'main/layouts/libraries-page';
 @import 'main/layouts/recent-files-page';
+@import 'main/layouts/search-page';
 @import "main/layouts/not-found";
 @import "main/layouts/viewer";
 
