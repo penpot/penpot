@@ -11,12 +11,12 @@ good amount of content (usually used for just test the application or
 perform performance tweaks on queries).
 
 In order to load fixtures, enter to the REPL environment executing the
-`bin/repl` script, and then execute `(uxbox.fixtures/run :small)`.
+`bin/repl` script, and then execute `(uxbox.fixtures/run {:preset :small})`.
 
 You also can execute this as a standalone script with:
 
 ```bash
-clojure -Adev -m uxbox.fixtures
+clojure -Adev -X:fn-fixtures
 ```
 
 NOTE: It is an optional step because the application can start with an
@@ -37,3 +37,11 @@ from there:
 (require 'uxbox.fixtures)
 (uxbox.fixtures/run :small)
 ```
+
+To access to the running process repl you usually will execute this
+command:
+
+```bash
+rlwrap netcat localhost 5555
+```
+

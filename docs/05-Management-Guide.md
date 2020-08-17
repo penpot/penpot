@@ -22,7 +22,7 @@ This is a probably incomplete list of available options (with
 respective defaults):
 
 - `UXBOX_HTTP_SERVER_PORT=6060`
-- `UXBOX_PUBLIC_URI=http://localhost:3449/`
+- `UXBOX_PUBLIC_URI=http://localhost:3449`
 - `UXBOX_DATABASE_USERNAME=` (default undefined, used from uri)
 - `UXBOX_DATABASE_PASSWORD=` (default undefined, used from uri)
 - `UXBOX_DATABASE_URI=postgresql://127.0.0.1/uxbox`
@@ -56,6 +56,7 @@ respective defaults):
 - `UXBOX_LDAP_AUTH_EMAIL_ATTRIBUTE=mail`
 - `UXBOX_LDAP_AUTH_FULLNAME_ATTRIBUTE=displayName`
 - `UXBOX_LDAP_AUTH_AVATAR_ATTRIBUTE=jpegPhoto`
+
 
 ## REPL ##
 
@@ -95,12 +96,12 @@ has all the material design icon collections).
 Then, you need to execute:
 
 ```bash
-clojure -Adev -m uxbox.media-loader ../path/to/config.edn
+clojure -Adev -X:fn-media-loader :path ../path/to/config.edn
 ```
 
 If you have a REPL access to the running process, you can execute it from there:
 
 ```clojure
 (require 'uxbox.media-loader)
-@(uxbox.media-loader/run "/path/to/config.edn")
+(uxbox.media-loader/run* "/path/to/config.edn")
 ```

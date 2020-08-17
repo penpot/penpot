@@ -74,6 +74,14 @@
     mockery/mockery {:mvn/version "0.1.4"}}
    :extra-paths ["tests"]}
 
+  :fn-media-loader
+  {:fn uxbox.cli.media-loader/run
+   :args {}}
+
+  :fn-fixtures
+  {:fn uxbox.cli.fixtures/run
+   :args {}}
+
   :lint
   {:main-opts ["-m" "clj-kondo.main"]}
 

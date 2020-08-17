@@ -3,6 +3,7 @@
 This guide intends to explain the essential details of the frontend
 application.
 
+
 ## Access to clojure from javascript console
 
 The uxbox namespace of the main application is exported, so that is
@@ -14,6 +15,7 @@ console (there is autocompletion for help):
 ```javascript
 uxbox.main.store.emit_BANG_(uxbox.main.data.workspace.reset_zoom)
 ```
+
 
 ## Visual debug mode and utilities
 
@@ -36,6 +38,7 @@ You can also activate or deactivate all visual aids with
 uxbox.util.debug.debug_all()
 uxbox.util.debug.debug_none()
 ```
+
 
 ## Debug state and objects
 

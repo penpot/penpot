@@ -85,18 +85,6 @@
                   {:unresolved-symbol
                    {:exclude ['(uxbox.services.mutations/defmutation)
                               '(uxbox.services.queries/defquery)
+                              '(uxbox.db/with-atomic)
                               '(promesa.core/let)]}}}})
        (kondo/print!))))
-
-;; (defn red
-;;   [items]
-;;   (as-> items $$
-;;     (reduce (fn [acc item]
-;;               (cp/process-changes acc (:changes item)))
-;;             cp/default-page-data
-;;             $$)))
-
-;; (defn update-page-data
-;;   [id data]
-;;   (let [data (blob/encode data)]
-;;     (db/query-one db/pool ["update page set data=$1 where id=$2" data id])))

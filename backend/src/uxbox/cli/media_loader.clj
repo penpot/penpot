@@ -7,36 +7,27 @@
 ;;
 ;; Copyright (c) 2016-2020 Andrey Antukh <niwi@niwi.nz>
 
-(ns uxbox.media-loader
+(ns uxbox.cli.media-loader
   "Media libraries importer (command line helper)."
   (:require
    [clojure.tools.logging :as log]
    [clojure.spec.alpha :as s]
-   [clojure.pprint :refer [pprint]]
    [clojure.java.io :as io]
-   [clojure.edn :as edn]
    [mount.core :as mount]
    [datoteka.core :as fs]
-   [cuerdas.core :as str]
    [uxbox.config]
    [uxbox.common.spec :as us]
    [uxbox.db :as db]
-   [uxbox.http]
+   [uxbox.media]
+   [uxbox.media-storage]
    [uxbox.migrations]
-   [uxbox.util.svg :as svg]
-   [uxbox.util.transit :as t]
-   [uxbox.util.blob :as blob]
    [uxbox.common.uuid :as uuid]
-   [uxbox.util.data :as data]
    [uxbox.services.mutations.projects :as projects]
    [uxbox.services.mutations.files :as files]
    [uxbox.services.mutations.colors :as colors]
-   [uxbox.services.mutations.media :as media]
-   [uxbox.util.storage :as ust])
+   [uxbox.services.mutations.media :as media])
   (:import
-   java.io.Reader
-   java.io.PushbackReader
-   org.im4java.core.Info))
+   java.io.PushbackReader))
 
 ;; --- Constants & Helpers
 
@@ -64,7 +55,6 @@
   ([] (exit! 0))
   ([code]
    (System/exit code)))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Graphics Importer
@@ -109,7 +99,7 @@
     media-object-id))
 
 (defn- import-graphics
-  [conn file-id {:keys [path regex] :as graphics}]
+  [conn file-id {:keys [path regex]}]
   (run! (fn [fpath]
           (when (re-matches regex (str fpath))
             (import-media-object-if-not-exists conn file-id fpath)))
@@ -151,7 +141,7 @@
     (if row true false)))
 
 (defn- create-library-file-if-not-exists
-  [conn project-id {:keys [name] :as library-file}]
+  [conn project-id {:keys [name]}]
   (let [id (uuid/namespaced +colors-uuid-ns+ name)]
     (when-not (library-file-exists? conn id)
       (log/info "Creating library-file:" name)
@@ -164,7 +154,7 @@
     id))
 
 (defn- process-library
-  [conn basedir project-id {:keys [name graphics colors] :as library}]
+  [conn basedir project-id {:keys [graphics colors] :as library}]
   (us/verify ::import-library library)
   (let [library-file-id (create-library-file-if-not-exists conn project-id library)]
     (when graphics
@@ -197,45 +187,47 @@
 
 (defn- validate-path
   [path]
-  (when-not path
-    (log/error "No path is provided")
-    (exit! -1))
-  (when-not (fs/exists? path)
-    (log/error "Path does not exists.")
-    (exit! -1))
-  (when (fs/directory? path)
-    (log/error "The provided path is a directory.")
-    (exit! -1))
-  (fs/path path))
+  (let [path (if (symbol? path) (str path) path)]
+    (log/infof "Trying to load config from '%s'." path)
+    (when-not path
+      (log/error "No path is provided")
+      (exit! -1))
+    (when-not (fs/exists? path)
+      (log/error "Path does not exists.")
+      (exit! -1))
+    (when (fs/directory? path)
+      (log/error "The provided path is a directory.")
+      (exit! -1))
+    (fs/path path)))
 
 (defn- read-file
   [path]
-  (let [reader (java.io.PushbackReader. (io/reader path))]
+  (let [reader (PushbackReader. (io/reader path))]
     [(fs/parent path)
      (read reader)]))
 
-(defn- start-system
-  []
-  (-> (mount/except #{#'uxbox.http/server})
-      (mount/start)))
-
-(defn- stop-system
-  []
-  (mount/stop))
-
-(defn run
+(defn run*
   [path]
   (let [[basedir libraries] (read-file path)]
     (db/with-atomic [conn db/pool]
       (let [project-id (create-project-if-not-exists conn {:name "System libraries"})]
         (run! #(process-library conn basedir project-id %) libraries)))))
 
-(defn -main
-  [& [path]]
+(defn run
+  [{:keys [path] :as params}]
+  (log/infof "Starting media loader.")
   (let [path (validate-path path)]
+
     (try
-      (start-system)
-      (run path)
+      (-> (mount/only #{#'uxbox.config/config
+                        #'uxbox.db/pool
+                        #'uxbox.migrations/migrations
+                        #'uxbox.media/semaphore
+                        #'uxbox.media-storage/media-storage})
+          (mount/start))
+      (run* path)
+      (catch Exception e
+        (log/errorf e "Unhandled exception."))
       (finally
-        (stop-system)))))
+        (mount/stop)))))
 

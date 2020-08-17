@@ -89,29 +89,39 @@ additional tasks.
 
 ### Frontend ###
 
-The frontend build process and the http server is located on the tmux
-**window 1**. **Shadow-cljs** is used for build and serve the frontend
-code. For more information, please refer to `02-Frontend-Developer-Guide.md`.
+The frontend build process is located on the tmux **window 1**.
+**Shadow-cljs** is used for build and serve the frontend code. For
+more information, please refer to `02-Frontend-Developer-Guide.md`.
 
-By default the **window 1** executes the shadow-cljs watch process, that starts
-a new JVM/Clojure instance if there is no one running. But you may also execute
-`shadow-cljs server`, that starts only the instance. And then, open another
-window with `Ctrl+c` and execute `shadow-cljs watch main` there. This way, the
-process that watches and recompiles connects to it and it restarts faster when
-your code changes.
+By default the **window 1** executes the shadow-cljs watch process,
+that starts a new JVM/Clojure instance if there is no one running.
 
-Finally, you can start a REPL linked to the instance and the current connected
-browser, by opening a third window with `Ctrl+c` and running
-`shadow-cljs cljs-repl main`.
+Finally, you can start a REPL linked to the instance and the current
+connected browser, by opening a third window with `Ctrl+c` and running
+`npx shadow-cljs cljs-repl main`.
+
+
+### Exporter ###
+
+The exporter app (clojurescript app running in nodejs) is located in
+**window 2**, and you can go directly to it using `ctrl+b 2` shortcut.
+
+There you will found the window split in two slices. On the top slice
+you will have the build process (using shadow-cljs in the same way as
+frontend application), and on the bot slice the script that launeches
+the node process.
+
+If some reason scripts does not stars correctly, you can manually
+execute `node target/app.js ` to start the exporter app.
 
 
 ### Backend ###
 
-The backend related environment is located in the tmux **window 2**,
+The backend related environment is located in the tmux **window 3**,
 and you can go directly to it using `ctrl+b 2` shortcut.
 
 By default the backend will be started in non-interactive mode for
-convenience but you can just press `Ctrl+c` and execute `./bin/repl`
+convenience but you can just press `Ctrl+c` and execute `./scripts/repl`
 for start the repl.
 
 On the REPL you have this helper functions:
