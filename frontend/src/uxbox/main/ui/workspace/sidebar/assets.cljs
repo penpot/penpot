@@ -12,6 +12,7 @@
    [okulary.core :as l]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
+   [uxbox.config :as cfg]
    [uxbox.common.data :as d]
    [uxbox.common.media :as cm]
    [uxbox.common.pages :as cp]
@@ -82,7 +83,10 @@
 
         on-files-selected
         (fn [js-files]
-          (st/emit! (dw/upload-media-objects file-id false js-files)))
+          (let [params {:file-id file-id
+                        :local? false
+                        :js-files js-files}]
+            (st/emit! (dw/upload-media-objects params))))
 
         on-context-menu
         (fn [object-id]
@@ -98,10 +102,9 @@
                        :object-id object-id)))))
 
         on-drag-start
-        (fn [uri]
-          (fn [event]
-            (dnd/set-data! event "text/uri-list" uri)
-            (dnd/set-allowed-effect! event "move")))]
+        (fn [path event]
+          (dnd/set-data! event "text/uri-list" (cfg/resolve-media-path path))
+          (dnd/set-allowed-effect! event "move"))]
 
     [:div.asset-group
      [:div.group-title
@@ -115,22 +118,23 @@
                             :input-ref file-input
                             :on-selected on-files-selected}]])]
      [:div.group-grid
-       (for [object media-objects]
-         [:div.grid-cell {:key (:id object)
-                          :draggable true
-                          :on-context-menu (on-context-menu (:id object))
-                          :on-drag-start (on-drag-start (:uri object))}
-          [:img {:src (:thumb-uri object)
-                 :draggable false}] ;; Also need to add css pointer-events: none
-          [:div.cell-name (:name object)]])
-       (when local-library?
-         [:& context-menu
-          {:selectable false
-           :show (:menu-open @state)
-           :on-close #(swap! state assoc :menu-open false)
-           :top (:top @state)
-           :left (:left @state)
-           :options [[(tr "workspace.assets.delete") delete-graphic]]}])]]))
+      (for [object media-objects]
+        [:div.grid-cell {:key (:id object)
+                         :draggable true
+                         :on-context-menu (on-context-menu (:id object))
+                         :on-drag-start (partial on-drag-start (:path object))}
+         [:img {:src (cfg/resolve-media-path (:thumb-path object))
+                :draggable false}] ;; Also need to add css pointer-events: none
+         [:div.cell-name (:name object)]])
+
+      (when local-library?
+        [:& context-menu
+         {:selectable false
+          :show (:menu-open @state)
+          :on-close #(swap! state assoc :menu-open false)
+          :top (:top @state)
+          :left (:left @state)
+          :options [[(tr "workspace.assets.delete") delete-graphic]]}])]]))
 
 
 (mf/defc color-item
@@ -287,7 +291,7 @@
            [:a {:href (str "#" library-url) :target "_blank"} i/chain]]])]
      (when @open?
        (let [show-graphics (and (or (= box-filter :all) (= box-filter :graphics))
-                                (or (> (count media-objects) 0) (str/empty? search-term))) 
+                                (or (> (count media-objects) 0) (str/empty? search-term)))
              show-colors (and (or (= box-filter :all) (= box-filter :colors))
                               (or (> (count colors) 0) (str/empty? search-term)))]
          [:div.tool-window-content

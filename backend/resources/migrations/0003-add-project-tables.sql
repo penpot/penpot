@@ -38,7 +38,6 @@ CREATE INDEX project_profile_rel__project_id__idx
     ON project_profile_rel(project_id);
 
 
-
 CREATE TABLE file (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   project_id uuid NOT NULL REFERENCES project(id) ON DELETE CASCADE,
@@ -76,7 +75,6 @@ CREATE INDEX file_profile_rel__file_id__idx
 CREATE TRIGGER file_profile_rel__modified_at__tgr
 BEFORE UPDATE ON file_profile_rel
    FOR EACH ROW EXECUTE PROCEDURE update_modified_at();
-
 
 CREATE TABLE file_image (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -168,7 +166,6 @@ BEFORE UPDATE ON page
    FOR EACH ROW EXECUTE PROCEDURE handle_page_update();
 
 
-
 CREATE TABLE page_version (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
 
@@ -220,3 +217,4 @@ CREATE INDEX page_change__page_id__idx
 CREATE TRIGGER page_change__modified_at__tgr
 BEFORE UPDATE ON page_change
    FOR EACH ROW EXECUTE PROCEDURE update_modified_at();
+

@@ -302,31 +302,3 @@
   (.close ^java.lang.AutoCloseable worker))
 
 ;; --- Submit API
-
-(s/def ::name ::us/string)
-(s/def ::delay
-  (s/or :int ::us/integer
-        :duration dt/duration?))
-(s/def ::queue ::us/string)
-
-(s/def ::task-options
-  (s/keys :req-un [::name]
-          :opt-un [::delay ::props ::queue]))
-
-(def ^:private sql:insert-new-task
-  "insert into task (id, name, props, queue, priority, max_retries, scheduled_at)
-   values (?, ?, ?, ?, ?, ?, clock_timestamp() + ?)
-   returning id")
-
-(defn submit!
-  [conn {:keys [name delay props queue priority max-retries key]
-         :or {delay 0 props {} queue "default" priority 100 max-retries 3}
-         :as options}]
-  (us/verify ::task-options options)
-  (let [duration  (dt/duration delay)
-        interval  (db/interval duration)
-        props     (db/tjson props)
-        id        (uuid/next)]
-    (log/info (str/format "Submit task '%s' to be executed in '%s'." name (str duration)))
-    (db/exec-one! conn [sql:insert-new-task id name props queue priority max-retries interval])
-    id))

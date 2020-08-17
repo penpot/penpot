@@ -14,12 +14,12 @@
    [reitit.ring :as rring]
    [ring.adapter.jetty9 :as jetty]
    [uxbox.config :as cfg]
-   [uxbox.http.debug :as debug]
-   [uxbox.http.errors :as errors]
-   [uxbox.http.handlers :as handlers]
    [uxbox.http.auth :as auth]
    [uxbox.http.auth.google :as google]
    [uxbox.http.auth.ldap :as ldap]
+   [uxbox.http.debug :as debug]
+   [uxbox.http.errors :as errors]
+   [uxbox.http.handlers :as handlers]
    [uxbox.http.middleware :as middleware]
    [uxbox.http.session :as session]
    [uxbox.http.ws :as ws]
@@ -52,28 +52,26 @@
      ["/login-ldap" {:handler ldap/auth
                      :method :post}]
 
-     ["/w" {:middleware [session/auth]}
+     ["/w" {:middleware [session/middleware]}
       ["/query/:type" {:get handlers/query-handler}]
       ["/mutation/:type" {:post handlers/mutation-handler}]]]]))
 
-(defstate app
-  :start (rring/ring-handler
-          (create-router)
-          (constantly {:status 404, :body ""})
-          {:middleware [[middleware/development-resources]
-                        [middleware/development-cors]
-                        [middleware/metrics]]}))
-
 (defn start-server
-  [cfg app]
+  []
   (let [wsockets {"/ws/notifications" ws/handler}
-        options  {:port (:http-server-port cfg)
+        options  {:port (:http-server-port cfg/config)
                   :h2c? true
                   :join? false
                   :allow-null-path-info true
-                  :websockets wsockets}]
-    (jetty/run-jetty app options)))
+                  :websockets wsockets}
+        handler  (rring/ring-handler
+                  (create-router)
+                  (constantly {:status 404, :body ""})
+                  {:middleware [[middleware/development-resources]
+                                [middleware/development-cors]
+                                [middleware/metrics]]})]
+    (jetty/run-jetty handler options)))
 
 (defstate server
-  :start (start-server cfg/config app)
+  :start (start-server)
   :stop (.stop server))

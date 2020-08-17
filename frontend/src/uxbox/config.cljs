@@ -23,4 +23,9 @@
     (def login-with-ldap lwl)
     (def worker-uri wuri)
     (def public-uri puri)
+    (def media-uri (str puri "/media"))
     (def default-theme "default")))
+
+(defn resolve-media-path
+  [path]
+  (str media-uri "/" path))

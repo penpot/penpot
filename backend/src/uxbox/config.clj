@@ -17,7 +17,7 @@
    [mount.core :refer [defstate]]
    [uxbox.common.exceptions :as ex]
    [uxbox.common.spec :as us]
-   [uxbox.util.time :as tm]))
+   [uxbox.util.time :as dt]))
 
 (def defaults
   {:http-server-port 6060
@@ -45,6 +45,12 @@
    :registration-domain-whitelist ""
    :debug-humanize-transit true
 
+   ;; This is the time should transcurr after the last page
+   ;; modification in order to make the file ellegible for
+   ;; trimming. The value only supports s(econds) m(inutes) and
+   ;; h(ours) as time unit.
+   :file-trimming-max-age "72h"
+
    ;; LDAP auth disabled by default. Set ldap-auth-host to enable
    ;:ldap-auth-host "ldap.mysupercompany.com"
    ;:ldap-auth-port 389
@@ -53,6 +59,7 @@
    ;:ldap-auth-ssl false
    ;:ldap-auth-starttls false
    ;:ldap-auth-base-dn "ou=People,dc=ldap,dc=mysupercompany,dc=com"
+
    :ldap-auth-user-query "(|(uid=$username)(mail=$username))"
    :ldap-auth-username-attribute "uid"
    :ldap-auth-email-attribute "mail"
@@ -103,6 +110,7 @@
 (s/def ::ldap-auth-email-attribute ::us/string)
 (s/def ::ldap-auth-fullname-attribute ::us/string)
 (s/def ::ldap-auth-avatar-attribute ::us/string)
+(s/def ::file-trimming-threshold ::dt/duration)
 
 (s/def ::config
   (s/keys :opt-un [::http-server-cors
@@ -128,6 +136,7 @@
                    ::smtp-password
                    ::smtp-tls
                    ::smtp-ssl
+                   ::file-trimming-max-age
                    ::debug-humanize-transit
                    ::allow-demo-users
                    ::registration-enabled
@@ -148,12 +157,13 @@
 
 (defn env->config
   [env]
-  (reduce-kv (fn [acc k v]
-               (cond-> acc
-                 (str/starts-with? (name k) "uxbox-")
-                 (assoc (keyword (subs (name k) 6)) v)))
-             {}
-             env))
+  (reduce-kv
+   (fn [acc k v]
+     (cond-> acc
+       (str/starts-with? (name k) "uxbox-")
+       (assoc (keyword (subs (name k) 6)) v)))
+   {}
+   env))
 
 (defn read-config
   [env]
@@ -174,4 +184,4 @@
   :start (read-config env))
 
 (def default-deletion-delay
-  (tm/duration {:hours 48}))
+  (dt/duration {:hours 48}))

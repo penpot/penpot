@@ -10,16 +10,22 @@
 (ns uxbox.http.session
   (:require
    [uxbox.db :as db]
-   [uxbox.services.tokens :as tokens]
-   [uxbox.common.uuid :as uuid]))
+   [uxbox.services.tokens :as tokens]))
+
+(defn extract-auth-token
+  [request]
+  (get-in request [:cookies "auth-token" :value]))
 
 (defn retrieve
-  "Retrieves a user id associated with the provided auth token."
-  [token]
+  [conn token]
   (when token
-    (-> (db/query db/pool :http-session {:id token})
-        (first)
+    (-> (db/exec-one! conn ["select profile_id from http_session where id = ?" token])
         (:profile-id))))
+
+(defn retrieve-from-request
+  [conn request]
+  (->> (extract-auth-token request)
+       (retrieve conn)))
 
 (defn create
   [profile-id user-agent]
@@ -39,21 +45,13 @@
   ([id opts]
    {"auth-token" (merge opts {:value id :path "/" :http-only true})}))
 
-(defn extract-auth-token
-  [req]
-  (get-in req [:cookies "auth-token" :value]))
-
-(defn wrap-auth
+(defn wrap-session
   [handler]
   (fn [request]
-    (let [token (get-in request [:cookies "auth-token" :value])
-          profile-id (retrieve token)]
-      (if profile-id
-        (handler (assoc request :profile-id profile-id))
-        (handler request)))))
+    (if-let [profile-id (retrieve-from-request db/pool request)]
+      (handler (assoc request :profile-id profile-id))
+      (handler request))))
 
-;; TODO: maybe rename to wrap-session?
-
-(def auth
-  {:nane ::auth
-   :compile (constantly wrap-auth)})
+(def middleware
+  {:nane ::middleware
+   :compile (constantly wrap-session)})

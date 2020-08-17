@@ -15,6 +15,7 @@ node_modules
 /backend/target/
 /backend/resources/public/media
 /backend/dist/
+/backend/logs/
 /backend/-
 /frontend/npm-debug.log
 /frontend/target/

@@ -71,8 +71,7 @@
 
 (defn parse-duration
   [s]
-  (assert (string? s))
-  (Duration/parse s))
+  (Duration/parse (str "PT" s)))
 
 (extend-protocol clojure.core/Inst
   java.time.Duration
@@ -84,6 +83,22 @@
 
 (defmethod print-dup Duration [o w]
   (print-method o w))
+
+(letfn [(conformer [v]
+          (cond
+            (duration? v) v
+            (string? v)
+            (try
+              (parse-duration v)
+              (catch java.time.format.DateTimeParseException e
+                ::s/invalid))
+
+            :else
+            ::s/invalid))
+        (unformer [v]
+          (subs (str v) 2))]
+  (s/def ::duration (s/conformer conformer unformer)))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Cron Expression

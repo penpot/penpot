@@ -349,12 +349,15 @@
                     (dnd/has-type? e "text/uri-list"))
             (dom/prevent-default e)))
 
+        ;; TODO: seems duplicated callback is the same as one located
+        ;; in left_toolbar
         on-uploaded
         (fn [{:keys [id name] :as image}]
           (let [shape {:name name
                        :metadata {:width (:width image)
                                   :height (:height image)
-                                  :uri (:uri image)}}
+                                  :id (:id image)
+                                  :path (:path image)}}
                 aspect-ratio (/ (:width image) (:height image))]
             (st/emit! (dw/create-and-add-shape :image shape aspect-ratio))))
 
@@ -379,11 +382,23 @@
                   urls (filter #(and (not (str/blank? %))
                                      (not (str/starts-with? % "#")))
                                lines)]
-              (run! #(st/emit! (dw/add-media-object-from-url (:id file) true % on-uploaded)) urls))
+              (->> urls
+                   (map (fn [uri]
+                          (with-meta {:file-id (:id file)
+                                      :local? true
+                                      :uri uri}
+                            {:on-success on-uploaded})))
+                   (map dw/upload-media-objects)
+                   (apply st/emit!)))
 
             :else
-            (let [js-files (dnd/get-files event)]
-              (st/emit! (dw/upload-media-objects (:id file) true js-files on-uploaded)))))
+            (let [js-files (dnd/get-files event)
+                  params   {:file-id (:id file)
+                            :local? true
+                            :js-files js-files}]
+              (st/emit! (dw/upload-media-objects
+                         (with-meta params
+                           {:on-success on-uploaded}))))))
 
         on-resize
         (fn [event]

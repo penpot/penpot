@@ -434,92 +434,83 @@
 
 ;; --- Upload local media objects
 
-(declare upload-media-objects-result)
+(s/def ::local? ::us/boolean)
+(s/def ::uri ::us/string)
 
-(defn add-media-object-from-url
-  ([file-id is-local url] (add-media-object-from-url file-id is-local url identity))
-  ([file-id is-local url on-added]
-   (us/verify ::us/url url)
-   (us/verify fn? on-added)
-   (us/verify ::us/boolean is-local)
-   (ptk/reify ::add-media-object-from-url
-     ptk/WatchEvent
-     (watch [_ state stream]
-       (let [on-success #(do (di/notify-finished-loading)
-                             (on-added %))
-
-             on-error #(do (di/notify-finished-loading)
-                           (di/process-error %))
-
-             is-library (not= file-id (:id (:workspace-file state)))
- 
-             prepare
-             (fn [url]
-               {:file-id file-id
-                :is-local is-local
-                :url url})]
-
-         (di/notify-start-loading)
-
-         (->> (rx/of url)
-              (rx/map prepare)
-              (rx/mapcat #(rp/mutation! :add-media-object-from-url %))
-              (rx/do on-success)
-              (rx/map (partial upload-media-objects-result file-id is-local is-library))
-              (rx/catch on-error)))))))
+(s/def ::upload-media-objects-params
+  (s/keys :req-un [::file-id ::local?]
+          :opt-un [::uri ::di/js-files]))
 
 (defn upload-media-objects
-  ([file-id is-local js-files] (upload-media-objects file-id is-local js-files identity))
-  ([file-id is-local js-files on-uploaded]
-   (us/verify ::us/uuid file-id)
-   (us/verify ::us/boolean is-local)
-   (us/verify ::di/js-files js-files)
-   (us/verify fn? on-uploaded)
+  [{:keys [file-id local? js-files uri] :as params}]
+  (us/assert ::upload-media-objects-params params)
    (ptk/reify ::upload-media-objects
      ptk/WatchEvent
      (watch [_ state stream]
-       (let [on-success #(do (di/notify-finished-loading)
-                             (on-uploaded %))
-
-             on-error #(do (di/notify-finished-loading)
-                           (di/process-error %))
+       (let [{:keys [on-success on-error]
+              :or {on-success identity}} (meta params)
 
              is-library (not= file-id (:id (:workspace-file state)))
-
-             prepare
+             prepare-js-file
              (fn [js-file]
                {:name (.-name js-file)
                 :file-id file-id
                 :content js-file
-                :is-local is-local})]
+                :is-local local?})
 
-         (di/notify-start-loading)
+             prepare-uri
+             (fn [uri]
+               {:file-id file-id
+                :is-local local?
+                :url uri})
 
-         (->> (rx/from js-files)
-              (rx/map di/validate-file)
-              (rx/map prepare)
-              (rx/mapcat #(rp/mutation! :upload-media-object %))
-              (rx/do on-success)
-              (rx/map (partial upload-media-objects-result file-id is-local is-library))
-              (rx/catch on-error)))))))
+             assoc-to-library
+             (fn [media-object state]
+               (cond
+                 (true? local?)
+                 state
 
-(defn upload-media-objects-result
-  [file-id is-local is-library media-object]
-  (us/verify ::us/uuid file-id)
-  (us/verify ::us/boolean is-local)
-  (us/verify ::cm/media-object media-object)
-  (ptk/reify ::upload-media-objects-result
-    ptk/UpdateEvent
-    (update [_ state]
-      (if is-local ;; the media-object is local to the file, not for its library
-        state
-        (if is-library ;; the file is not the currently editing one, but a linked shared file
-          (update-in state
-                     [:workspace-libraries file-id :media-objects]
-                     #(conj % media-object))
-          (update-in state
-                     [:workspace-file :media-objects]
-                     #(conj % media-object)))))))
+                 (true? is-library)
+                 (update-in state
+                            [:workspace-libraries file-id :media-objects]
+                            #(conj % media-object))
+
+                 :else
+                 (update-in state
+                            [:workspace-file :media-objects]
+                            #(conj % media-object))))]
+
+         (rx/concat
+          (rx/of (dm/show {:content (tr "media.loading")
+                           :type :info
+                           :timeout nil}))
+          (->> (if (string? uri)
+                 (->> (rx/of uri)
+                      (rx/map prepare-uri)
+                      (rx/mapcat #(rp/mutation! :add-media-object-from-url %)))
+                 (->> (rx/from js-files)
+                      (rx/map di/validate-file)
+                      (rx/map prepare-js-file)
+                      (rx/mapcat #(rp/mutation! :upload-media-object %))))
+               (rx/do on-success)
+               (rx/map (fn [mobj] (partial assoc-to-library mobj)))
+               (rx/catch (fn [error]
+                           (cond
+                             (= (:code error) :media-type-not-allowed)
+                             (rx/of (dm/error (tr "errors.media-type-not-allowed")))
+
+                             (= (:code error) :media-type-mismatch)
+                             (rx/of (dm/error (tr "errors.media-type-mismatch")))
+
+                             (fn? on-error)
+                             (do
+                               (on-error error)
+                               (rx/empty))
+
+                             :else
+                             (rx/throw error))))
+               (rx/finalize (fn []
+                              (st/emit! dm/hide)))))))))
 
 
 ;; --- Delete media object

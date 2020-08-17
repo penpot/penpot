@@ -534,7 +534,8 @@
             shape (-> (cp/make-minimal-shape type)
                       (merge data)
                       (geom/resize width height)
-                      (geom/absolute-move (gpt/point x y)))]
+                      (geom/absolute-move (gpt/point x y))
+                      (geom/transform-shape))]
 
         (rx/of (add-shape shape))))))
 
@@ -1177,8 +1178,13 @@
   (ptk/reify ::paste-bin-impl
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [file-id (get-in state [:workspace-page :file-id])]
-        (rx/of (dwp/upload-media-objects file-id true [image] image-uploaded))))))
+      (let [file-id (get-in state [:workspace-page :file-id])
+            params  {:file-id file-id
+                     :local? true
+                     :js-files [image]}]
+        (rx/of (dwp/upload-media-objects
+                (with-meta params
+                  {:on-success image-uploaded})))))))
 
 (def paste
   (ptk/reify ::paste
@@ -1436,7 +1442,6 @@
 (def fetch-shared-files dwp/fetch-shared-files)
 (def link-file-to-library dwp/link-file-to-library)
 (def unlink-file-from-library dwp/unlink-file-from-library)
-(def add-media-object-from-url dwp/add-media-object-from-url)
 (def upload-media-objects dwp/upload-media-objects)
 (def delete-media-object dwp/delete-media-object)
 (def rename-page dwp/rename-page)

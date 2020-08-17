@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.tasks.delete-object
   "Generic task for permanent deletion of objects."
@@ -41,44 +41,27 @@
   :id "tasks__delete_object"
   :help "Timing of remove-object task."})
 
-(defmethod handle-deletion :image
-  [conn {:keys [id] :as props}]
-  (let [sql "delete from image where id=? and deleted_at is not null"]
-    (db/exec-one! conn [sql id])))
-
-(defmethod handle-deletion :image-collection
-  [conn {:keys [id] :as props}]
-  (let [sql "delete from image_collection
-              where id=? and deleted_at is not null"]
-    (db/exec-one! conn [sql id])))
-
-(defmethod handle-deletion :icon
-  [conn {:keys [id] :as props}]
-  (let [sql "delete from icon where id=? and deleted_at is not null"]
-    (db/exec-one! conn [sql id])))
-
-(defmethod handle-deletion :icon-collection
-  [conn {:keys [id] :as props}]
-  (let [sql "delete from icon_collection
-              where id=? and deleted_at is not null"]
-    (db/exec-one! conn [sql id])))
-
 (defmethod handle-deletion :file
   [conn {:keys [id] :as props}]
   (let [sql "delete from file where id=? and deleted_at is not null"]
     (db/exec-one! conn [sql id])))
 
-(defmethod handle-deletion :file-image
+(defmethod handle-deletion :project
   [conn {:keys [id] :as props}]
-  (let [sql "delete from file_image where id=? and deleted_at is not null"]
+  (let [sql "delete from project where id=? and deleted_at is not null"]
+    (db/exec-one! conn [sql id])))
+
+(defmethod handle-deletion :media-object
+  [conn {:keys [id] :as props}]
+  (let [sql "delete from media_object where id=? and deleted_at is not null"]
+    (db/exec-one! conn [sql id])))
+
+(defmethod handle-deletion :color
+  [conn {:keys [id] :as props}]
+  (let [sql "delete from color where id=? and deleted_at is not null"]
     (db/exec-one! conn [sql id])))
 
 (defmethod handle-deletion :page
   [conn {:keys [id] :as props}]
   (let [sql "delete from page where id=? and deleted_at is not null"]
-    (db/exec-one! conn [sql id])))
-
-(defmethod handle-deletion :page-version
-  [conn {:keys [id] :as props}]
-  (let [sql "delete from page_version where id=? and deleted_at is not null"]
     (db/exec-one! conn [sql id])))

@@ -5,19 +5,24 @@
 ;; Copyright (c) 2020 Andrey Antukh <niwi@niwi.nz>
 
 (ns uxbox.util.async
-  (:require [clojure.core.async :as a]))
+  (:require
+   [clojure.spec.alpha :as s]
+   [clojure.tools.logging :as log]
+   [clojure.core.async :as a])
+  (:import
+   java.util.concurrent.Executor))
 
 (defmacro go-try
   [& body]
   `(a/go
      (try
        ~@body
-       (catch Throwable e# e#))))
+       (catch Exception e# e#))))
 
 (defmacro <?
   [ch]
   `(let [r# (a/<! ~ch)]
-     (if (instance? Throwable r#)
+     (if (instance? Exception r#)
        (throw r#)
        r#)))
 
@@ -26,6 +31,26 @@
   `(a/thread
      (try
        ~@body
-       (catch Throwable e#
+       (catch Exception e#
          e#))))
 
+
+(s/def ::executor #(instance? Executor %))
+
+(defn thread-call
+  [^Executor executor f]
+  (let [c (a/chan 1)]
+    (try
+      (.execute executor
+                (fn []
+                  (try
+                    (let [ret (try (f) (catch Exception e e))]
+                      (when-not (nil? ret)
+                        (a/>!! c ret)))
+                    (finally
+                      (a/close! c)))))
+      c
+      (catch java.util.concurrent.RejectedExecutionException e
+        (a/offer! c e)
+        (a/close! c)
+        c))))

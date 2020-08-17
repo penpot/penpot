@@ -93,37 +93,35 @@
                                              :mtype (:content-type content)}})
         path  (persist-media-object-on-fs content)
         opts  (assoc thumbnail-options
-                    :input {:mtype (:mtype info)
-                            :path path})
+                     :input {:mtype (:mtype info)
+                             :path path})
         thumb (if-not (= (:mtype info) "image/svg+xml")
                 (persist-media-thumbnail-on-fs opts)
                 (assoc info
                        :path path
                        :quality 0))
 
-        media-object-id (or id (uuid/next))
+        id (or id (uuid/next))
 
-        media-object (-> (db/insert! conn :media-object
-                                     {:id media-object-id
-                                      :file-id file-id
-                                      :is-local is-local
-                                      :name name
-                                      :path (str path)
-                                      :width (:width info)
-                                      :height (:height info)
-                                      :mtype  (:mtype info)})
-                         (media/resolve-urls :path :uri))
+        media-object (db/insert! conn :media-object
+                                 {:id id
+                                  :file-id file-id
+                                  :is-local is-local
+                                  :name name
+                                  :path (str path)
+                                  :width (:width info)
+                                  :height (:height info)
+                                  :mtype  (:mtype info)})
 
-        media-thumbnail (-> (db/insert! conn :media-thumbnail
-                                        {:id (uuid/next)
-                                         :media-object-id media-object-id
-                                         :path (str (:path thumb))
-                                         :width (:width thumb)
-                                         :height (:height thumb)
-                                         :quality (:quality thumb)
-                                         :mtype (:mtype thumb)})
-                            (media/resolve-urls :path :uri))]
-    (assoc media-object :thumb-uri (:uri media-thumbnail))))
+        media-thumbnail (db/insert! conn :media-thumbnail
+                                    {:id (uuid/next)
+                                     :media-object-id id
+                                     :path (str (:path thumb))
+                                     :width (:width thumb)
+                                     :height (:height thumb)
+                                     :quality (:quality thumb)
+                                     :mtype (:mtype thumb)})]
+    (assoc media-object :thumb-path (:path media-thumbnail))))
 
 (def ^:private sql:select-file-for-update
   "select file.*,
