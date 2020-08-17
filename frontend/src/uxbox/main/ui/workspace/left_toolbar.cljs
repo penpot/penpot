@@ -36,15 +36,20 @@
         on-uploaded
         (fn [{:keys [id name] :as image}]
           (let [shape {:name name
-                       :metadata {:width (:width image)
+                       :metadata {:width  (:width image)
                                   :height (:height image)
-                                  :uri (:uri image)}}
+                                  :id     (:id image)
+                                  :path   (:path image)}}
                 aspect-ratio (/ (:width image) (:height image))]
             (st/emit! (dw/create-and-add-shape :image shape aspect-ratio))))
 
         on-files-selected
         (fn [js-files]
-          (st/emit! (dw/upload-media-objects (:id file) true js-files on-uploaded)))]
+          (st/emit! (dw/upload-media-objects
+                     (with-meta {:file-id (:id file)
+                                 :local? true
+                                 :js-files js-files}
+                       {:on-success on-uploaded}))))]
 
     [:aside.left-toolbar
      [:div.left-toolbar-inside

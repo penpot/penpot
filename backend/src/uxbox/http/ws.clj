@@ -18,7 +18,7 @@
    [ring.middleware.params :refer [wrap-params]]
    [uxbox.common.spec :as us]
    [uxbox.db :as db]
-   [uxbox.http.session :refer [wrap-auth]]
+   [uxbox.http.session :refer [wrap-session]]
    [uxbox.services.notifications :as nf]))
 
 (s/def ::file-id ::us/uuid)
@@ -47,7 +47,7 @@
 
 (def handler
   (-> websocket
-      (wrap-auth)
+      (wrap-session)
       (wrap-keyword-params)
       (wrap-cookies)
       (wrap-params)))

@@ -1,15 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="info" monitorInterval="60">
+<Configuration status="info" monitorInterval="30">
   <Appenders>
     <Console name="console" target="SYSTEM_OUT">
-      <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+      <PatternLayout pattern="[%d{YYYY-MM-dd HH:mm:ss.SSS}] [%t] %level{length=1} %logger{36} - %msg%n"/>
     </Console>
+
+    <RollingFile name="file-debug" fileName="logs/app-debug.log" filePattern="logs/app-debug-%i.log">
+      <PatternLayout pattern="[%d{YYYY-MM-dd HH:mm:ss.SSS}] [%t] %level{length=1} %logger{36} - %msg%n"/>
+      <Policies>
+        <SizeBasedTriggeringPolicy size="50M"/>
+      </Policies>
+      <DefaultRolloverStrategy max="9"/>
+    </RollingFile>
+
+    <RollingFile name="file" fileName="logs/app.log" filePattern="logs/app-%i.log">
+      <PatternLayout pattern="[%d{YYYY-MM-dd HH:mm:ss.SSS}] [%t] %level{length=1} %logger{36} - %msg%n"/>
+      <Policies>
+        <SizeBasedTriggeringPolicy size="20M"/>
+      </Policies>
+      <DefaultRolloverStrategy max="9"/>
+    </RollingFile>
   </Appenders>
+
   <Loggers>
-    <Logger name="com.zaxxer.hikari" level="info" additivity="false"></Logger>
-    <Logger name="io.lettuce.core" level="info" additivity="false"></Logger>
-    <Logger name="io.netty" level="info" additivity="false"></Logger>
-    <Root level="debug">
+    <Logger name="com.zaxxer.hikari" level="error" additivity="false">
+      <AppenderRef ref="console"/>
+    </Logger>
+
+    <Logger name="io.lettuce" level="error" additivity="false" />
+
+    <Logger name="uxbox" level="debug" additivity="false">
+      <AppenderRef ref="file-debug" level="debug" />
+      <AppenderRef ref="file" level="info" />
+    </Logger>
+
+    <Root level="info">
       <AppenderRef ref="console"/>
     </Root>
   </Loggers>

@@ -19,9 +19,9 @@
    [uxbox.db :as db]))
 
 (defn next-token
-  ([] (next-token 64))
+  ([] (next-token 96))
   ([n]
-   (-> (sodi.prng/random-bytes n)
+   (-> (sodi.prng/random-nonce n)
        (sodi.util/bytes->b64s))))
 
 (def default-duration

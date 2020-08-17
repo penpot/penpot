@@ -104,7 +104,7 @@
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
-    ))
+    ))))
 
 
 #_(t/deftest profile-deletion

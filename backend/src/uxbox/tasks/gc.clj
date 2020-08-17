@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2016-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns uxbox.tasks.gc
   (:require
@@ -18,11 +18,30 @@
    [uxbox.common.spec :as us]
    [uxbox.config :as cfg]
    [uxbox.db :as db]
+   [uxbox.tasks :as tasks]
    [uxbox.media-storage :as mst]
    [uxbox.util.blob :as blob]
    [uxbox.util.storage :as ust]))
 
-(def ^:private sql:delete-items
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Task: Remove deleted media
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; The main purpose of this task is analize the `pending_to_delete`
+;; table. This table stores the references to the physical files on
+;; the file system thanks to `handle_delete()` trigger.
+
+;; Example:
+;; (1) You delete an media-object. (2) This media object is marked as
+;; deleted. (3) A task (`delete-object`) is scheduled for permanent
+;; delete the object.  - If that object stores media, the database
+;; will execute the `handle_delete()` trigger which will place
+;; filesystem paths into the `pendint_to_delete` table. (4) This
+;; task (`remove-deleted-media`) permanently delete the file from the
+;; filesystem when is executed (by scheduler).
+
+(def ^:private
+  sql:retrieve-peding-to-delete
   "with items_part as (
      select i.id
        from pending_to_delete as i
@@ -34,31 +53,24 @@
     where id in (select id from items_part)
    returning *")
 
-(defn- impl-remove-media
-  [result]
-  (run! (fn [item]
-          (let [path1 (get item "path")
-                path2 (get item "thumb_path")]
-            (ust/delete! mst/media-storage path1)
-            (ust/delete! mst/media-storage path2)))
-        result))
-
-(defn- decode-row
-  [{:keys [data] :as row}]
-  (cond-> row
-    (db/pgobject? data) (assoc :data (db/decode-pgobject data))))
-
-(defn- get-items
-  [conn]
-  (->> (db/exec! conn [sql:delete-items 10])
-       (map decode-row)
-       (map :data)))
-
-(defn remove-media
+(defn remove-deleted-media
   [{:keys [props] :as task}]
-  (db/with-atomic [conn db/pool]
-    (loop [result (get-items conn)]
-      (when-not (empty? result)
-        (impl-remove-media result)
-        (recur (get-items conn))))))
+  (letfn [(decode-row [{:keys [data] :as row}]
+            (cond-> row
+              (db/pgobject? data) (assoc :data (db/decode-pgobject data))))
+          (retrieve-items [conn]
+            (->> (db/exec! conn [sql:retrieve-peding-to-delete 10])
+                 (map decode-row)
+                 (map :data)))
+          (remove-media [rows]
+            (run! (fn [item]
+                    (let [path (get item "path")]
+                      (ust/delete! mst/media-storage path)))
+                  rows))]
+    (loop []
+      (let [rows (retrieve-items db/pool)]
+        (when-not (empty? rows)
+          (remove-media rows)
+          (recur))))))
+
 

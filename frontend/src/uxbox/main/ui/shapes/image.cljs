@@ -10,6 +10,7 @@
 (ns uxbox.main.ui.shapes.image
   (:require
    [rumext.alpha :as mf]
+   [uxbox.config :as cfg]
    [uxbox.common.geom.shapes :as geom]
    [uxbox.main.ui.shapes.attrs :as attrs]
    [uxbox.util.object :as obj]))
@@ -20,8 +21,7 @@
   (let [shape (unchecked-get props "shape")
         {:keys [id x y width height rotation metadata]} shape
         transform (geom/transform-matrix shape)
-        uri (:uri metadata)
-
+        uri       (cfg/resolve-media-path (:path metadata))
         props (-> (attrs/extract-style-attrs shape)
                   (obj/merge!
                    #js {:x x

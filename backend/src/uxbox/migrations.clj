@@ -83,7 +83,24 @@
 
     {:desc "Link files to libraries"
      :name "0017-link-files-to-libraries"
-     :fn (mg/resource "migrations/0017-link-files-to-libraries.sql")}]})
+     :fn (mg/resource "migrations/0017-link-files-to-libraries.sql")}
+
+    {:desc "Add file triming triggers"
+     :name "0018-add-file-trimming-triggers"
+     :fn (mg/resource "migrations/0018-add-file-trimming-triggers.sql")}
+
+    {:desc "Improve scheduled task tables"
+     :name "0019-add-improved-scheduled-tasks"
+     :fn (mg/resource "migrations/0019-add-improved-scheduled-tasks.sql")}
+
+    {:desc "Minor fixes to media object"
+     :name "0020-minor-fixes-to-media-object"
+     :fn (mg/resource "migrations/0020-minor-fixes-to-media-object.sql")}
+
+    {:desc "Improve http session tables"
+     :name "0021-http-session-improvements"
+     :fn (mg/resource "migrations/0021-http-session-improvements.sql")}
+    ]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Entry point

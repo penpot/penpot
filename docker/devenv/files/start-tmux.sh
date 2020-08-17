@@ -29,7 +29,7 @@ tmux send-keys -t uxbox './scripts/wait-and-start.sh' enter
 tmux new-window -t uxbox:3 -n 'backend'
 tmux select-window -t uxbox:3
 tmux send-keys -t uxbox 'cd uxbox/backend' enter C-l
-tmux send-keys -t uxbox './bin/start-dev' enter
+tmux send-keys -t uxbox './scripts/start-dev' enter
 
 tmux rename-window -t uxbox:0 'gulp'
 tmux select-window -t uxbox:0
