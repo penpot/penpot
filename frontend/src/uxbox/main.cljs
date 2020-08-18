@@ -12,7 +12,6 @@
    [hashp.core :include-macros true]
    [cljs.spec.alpha :as s]
    [beicon.core :as rx]
-   [goog.object :as gobj]
    [rumext.alpha :as mf]
    [uxbox.common.uuid :as uuid]
    [uxbox.main.data.auth :refer [logout]]
@@ -64,8 +63,8 @@
 
 (defn ^:export init
   []
-  (let [translations (obj/get js/window "uxboxTranslations")
-        themes (gobj/get js/window "uxboxThemes")]
+  (let [translations (obj/get js/window "appTranslations")
+        themes       (obj/get js/window "appThemes")]
     (i18n/init! translations)
     (theme/init! themes)
     (st/init)

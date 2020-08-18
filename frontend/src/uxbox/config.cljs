@@ -11,17 +11,15 @@
   (:require [uxbox.util.object :as obj]))
 
 (this-as global
-  (let [config (obj/get global "uxboxConfig" {})
-        wuri   (obj/get global "uxboxWorkerURI" "/js/worker.js")]
-    (def default-language "en")
-    (def demo-warning     (obj/get config "demoWarning" false))
-    (def google-client-id (obj/get config "googleClientID"))
-    (def login-with-ldap  (obj/get config "loginWithLDAP" false))
-    (def worker-uri       wuri)
-    (def public-uri       (or (obj/get config "publicURI")
-                              (.-origin ^js js/location)))
-    (def media-uri        (str public-uri "/media"))
-    (def default-theme    "default")))
+  (def default-language "en")
+  (def demo-warning     (obj/get global "appDemoWarning" false))
+  (def google-client-id (obj/get global "appGoogleClientID" nil))
+  (def login-with-ldap  (obj/get global "appLoginWithLDAP" false))
+  (def worker-uri       (obj/get global "appWorkerURI" "/js/worker.js"))
+  (def public-uri       (or (obj/get global "appPublicURI")
+                            (.-origin ^js js/location)))
+  (def media-uri        (str public-uri "/media"))
+  (def default-theme    "default"))
 
 (defn resolve-media-path
   [path]

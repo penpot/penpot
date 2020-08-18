@@ -150,22 +150,27 @@ function templatePipeline(options) {
   return function() {
     const input = options.input;
     const output = options.output;
+
     const ts = Math.floor(new Date());
-
     const th = process.env.UXBOX_THEME || "default";
-    const deployDate = process.env.UXBOX_DEPLOY_DATE;
-    const deployCommit = process.env.UXBOX_DEPLOY_COMMIT;
-
     const themes = ["default"];
+
     const locales = readLocales();
     const manifest = readManifest();
 
-    const defaultConf = `var uxboxConfig = {demoWarning: false, googleClientID: null, loginWithLDAP: null, publicURI: null};`
-    fs.writeFileSync(__dirname + "/resources/public/js/config.js", defaultConf)
+    const defaultConf = [
+      "var appDemoWarning = null;",
+      "var appLoginWithLDAP = null;",
+      "var appPublicURI = null;",
+      "var appGoogleClientID = null;",
+      "var appDeployDate = null;",
+      "var appDeployCommit = null;"
+    ];
+
+    fs.writeFileSync(__dirname + "/resources/public/js/config.js",
+                     defaultConf.join("\n"));
 
     const tmpl = mustache({
-      deployCommit,
-      deployDate,
       ts: ts,
       th: th,
       manifest: manifest,
