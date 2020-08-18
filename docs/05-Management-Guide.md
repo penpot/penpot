@@ -4,12 +4,8 @@
 
 ## Frontend configuration parameters ##
 
-**Only available at build time!**
+Not needed.
 
-- `-e UXBOX_PUBLIC_URI=...` (defaults to `http://localhost:6060`)
-- `-e UXBOX_GOOGLE_CLIENT_ID=...` (defaults to `true`)
-- `-e UXBOX_LOGIN_WITH_LDAP=...` (defaults to `false`)
-- `-e UXBOX_DEMO_WARNING=...` (defaults to `true`)
 
 ## Backend configuration parameters ##
 
@@ -21,41 +17,41 @@ environment variables.
 This is a probably incomplete list of available options (with
 respective defaults):
 
-- `UXBOX_HTTP_SERVER_PORT=6060`
-- `UXBOX_PUBLIC_URI=http://localhost:3449`
-- `UXBOX_DATABASE_USERNAME=` (default undefined, used from uri)
-- `UXBOX_DATABASE_PASSWORD=` (default undefined, used from uri)
-- `UXBOX_DATABASE_URI=postgresql://127.0.0.1/uxbox`
-- `UXBOX_MEDIA_DIRECTORY=resources/public/media`
-- `UXBOX_MEDIA_URI=http://localhost:6060/media/`
-- `UXBOX_ASSETS_DIRECTORY=resources/public/static`
-- `UXBOX_ASSETS_URI=ehttp://localhost:6060/static/`
-- `UXBOX_SENDMAIL_BACKEND=console`
-- `UXBOX_SENDMAIL_REPLY_TO=no-reply@nodomain.com`
-- `UXBOX_SENDMAIL_FROM=no-reply@nodomain.com`
-- `UXBOX_SMTP_HOST=`     (default undefined)
-- `UXBOX_SMTP_PORT=`     (default undefined)
-- `UXBOX_SMTP_USER=`     (default undefined)
-- `UXBOX_SMTP_PASSWORD=` (default undefined)
-- `UXBOX_SMTP_SSL=`      (default to `false`)
-- `UXBOX_SMTP_TLS=`      (default to `false`)
-- `UXBOX_REGISTRATION_ENABLED=true`
-- `UXBOX_REGISTRATION_DOMAIN_WHITELIST=""` (comma-separated domains, defaults to `""` which means that all domains are allowed)
-- `UXBOX_DEBUG_HUMANIZE_TRANSIT=true`
+- `APP_HTTP_SERVER_PORT=6060`
+- `APP_PUBLIC_URI=http://localhost:3449`
+- `APP_DATABASE_USERNAME=` (default undefined, used from uri)
+- `APP_DATABASE_PASSWORD=` (default undefined, used from uri)
+- `APP_DATABASE_URI=postgresql://127.0.0.1/app`
+- `APP_MEDIA_DIRECTORY=resources/public/media`
+- `APP_MEDIA_URI=http://localhost:6060/media/`
+- `APP_ASSETS_DIRECTORY=resources/public/static`
+- `APP_ASSETS_URI=ehttp://localhost:6060/static/`
+- `APP_SENDMAIL_BACKEND=console`
+- `APP_SENDMAIL_REPLY_TO=no-reply@nodomain.com`
+- `APP_SENDMAIL_FROM=no-reply@nodomain.com`
+- `APP_SMTP_HOST=`     (default undefined)
+- `APP_SMTP_PORT=`     (default undefined)
+- `APP_SMTP_USER=`     (default undefined)
+- `APP_SMTP_PASSWORD=` (default undefined)
+- `APP_SMTP_SSL=`      (default to `false`)
+- `APP_SMTP_TLS=`      (default to `false`)
+- `APP_REGISTRATION_ENABLED=true`
+- `APP_REGISTRATION_DOMAIN_WHITELIST=""` (comma-separated domains, defaults to `""` which means that all domains are allowed)
+- `APP_DEBUG_HUMANIZE_TRANSIT=true`
 
-- `UXBOX_LDAP_AUTH_HOST=`     (default undefined)
-- `UXBOX_LDAP_AUTH_PORT=`     (default undefined)
-- `UXBOX_LDAP_AUTH_VERSION=3`
-- `UXBOX_LDAP_BIND_DN=`       (default undefined)
-- `UXBOX_LDAP_BIND_PASSWORD=` (default undefined)
-- `UXBOX_LDAP_AUTH_SSL=`      (default `false`)
-- `UXBOX_LDAP_AUTH_STARTTLS=` (default `false`)
-- `UXBOX_LDAP_AUTH_BASE_DN=`  (default undefined)
-- `UXBOX_LDAP_AUTH_USER_QUERY=(|(uid=$username)(mail=$username))`
-- `UXBOX_LDAP_AUTH_USERNAME_ATTRIBUTE=uid`
-- `UXBOX_LDAP_AUTH_EMAIL_ATTRIBUTE=mail`
-- `UXBOX_LDAP_AUTH_FULLNAME_ATTRIBUTE=displayName`
-- `UXBOX_LDAP_AUTH_AVATAR_ATTRIBUTE=jpegPhoto`
+- `APP_LDAP_AUTH_HOST=`     (default undefined)
+- `APP_LDAP_AUTH_PORT=`     (default undefined)
+- `APP_LDAP_AUTH_VERSION=3`
+- `APP_LDAP_BIND_DN=`       (default undefined)
+- `APP_LDAP_BIND_PASSWORD=` (default undefined)
+- `APP_LDAP_AUTH_SSL=`      (default `false`)
+- `APP_LDAP_AUTH_STARTTLS=` (default `false`)
+- `APP_LDAP_AUTH_BASE_DN=`  (default undefined)
+- `APP_LDAP_AUTH_USER_QUERY=(|(uid=$username)(mail=$username))`
+- `APP_LDAP_AUTH_USERNAME_ATTRIBUTE=uid`
+- `APP_LDAP_AUTH_EMAIL_ATTRIBUTE=mail`
+- `APP_LDAP_AUTH_FULLNAME_ATTRIBUTE=displayName`
+- `APP_LDAP_AUTH_AVATAR_ATTRIBUTE=jpegPhoto`
 
 
 ## REPL ##
@@ -102,6 +98,6 @@ clojure -Adev -X:fn-media-loader :path ../path/to/config.edn
 If you have a REPL access to the running process, you can execute it from there:
 
 ```clojure
-(require 'uxbox.media-loader)
+(require 'app.cli.media-loader)
 (uxbox.media-loader/run* "/path/to/config.edn")
 ```

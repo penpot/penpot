@@ -11,7 +11,7 @@ good amount of content (usually used for just test the application or
 perform performance tweaks on queries).
 
 In order to load fixtures, enter to the REPL environment executing the
-`bin/repl` script, and then execute `(uxbox.fixtures/run {:preset :small})`.
+`bin/repl` script, and then execute `(app.cli.fixtures/run {:preset :small})`.
 
 You also can execute this as a standalone script with:
 
@@ -34,8 +34,8 @@ If you have a REPL access to the running process, you can execute it
 from there:
 
 ```clojure
-(require 'uxbox.fixtures)
-(uxbox.fixtures/run :small)
+(require 'app.cli.fixtures)
+(app.cli.fixtures/run :small)
 ```
 
 To access to the running process repl you usually will execute this

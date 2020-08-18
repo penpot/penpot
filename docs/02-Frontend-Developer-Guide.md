@@ -13,7 +13,7 @@ you can emit the event to reset zoom level by typing this at the
 console (there is autocompletion for help):
 
 ```javascript
-uxbox.main.store.emit_BANG_(uxbox.main.data.workspace.reset_zoom)
+app.main.store.emit_BANG_(app.main.data.workspace.reset_zoom)
 ```
 
 
@@ -26,7 +26,7 @@ some annotations on screen, to help understanding what's happening.
 To activate it, open the javascript console and type
 
 ```javascript
-uxbox.util.debug.toggle_debug("option")
+app.util.debug.toggle_debug("option")
 ```
 
 Current options are `bounding-boxes`, `group`, `events` and
@@ -35,8 +35,8 @@ Current options are `bounding-boxes`, `group`, `events` and
 You can also activate or deactivate all visual aids with
 
 ```javascript
-uxbox.util.debug.debug_all()
-uxbox.util.debug.debug_none()
+app.util.debug.debug_all()
+app.util.debug.debug_none()
 ```
 
 
@@ -46,11 +46,11 @@ There are also some useful functions to visualize the global state or
 any complex object. To use them from clojure:
 
 ```clojure
-(ns uxbox.util.debug)
+(ns app.util.debug)
 (logjs <msg> <var>) ; to print the value of a variable
 (tap <fn>) ; to include a function with side effect (e.g. logjs) in a transducer.
 
-(ns uxbox.main.store)
+(ns app.main.store)
 (dump-state) ; to print in console all the global state
 (dump-objects) ; to print in console all objects in workspace
 ```
@@ -58,8 +58,8 @@ any complex object. To use them from clojure:
 But last ones are most commonly used from javscript console:
 
 ```
-uxbox.main.store.dump_state()
-uxbox.main.store.dump_objects()
+app.main.store.dump_state()
+app.main.store.dump_objects()
 ```
 
 
@@ -71,17 +71,17 @@ format located in `resources/images/icons`. The gulp task will
 generate the sprite and the embedd it into the `index.html`.
 
 Then, you can reference the icon from the sprite using the
-`uxbox.builtins.icons/icon-xref` macro:
+`app.builtins.icons/icon-xref` macro:
 
 ```clojure
 (ns some.namespace
-  (:require-macros [uxbox.builtins.icons :refer [icon-xref]]))
+  (:require-macros [app.main.ui.icons :refer [icon-xref]]))
 
 (icon-xref :arrow)
 ```
 
 For performance reasons, all used icons are statically defined in the
-`src/uxbox/buitings/icons.cljs` file.
+`src/app/main/ui/icons.cljs` file.
 
 
 
@@ -96,7 +96,7 @@ looks like this:
 ```json
 {
   "auth.email-or-username" : {
-    "used-in" : [ "src/uxbox/main/ui/auth/login.cljs:61" ],
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:61" ],
     "translations" : {
       "en" : "Email or Username",
       "fr" : "adresse email ou nom d'utilisateur"
@@ -140,7 +140,7 @@ command for reformat the file, and track the usage locations (the
 "used-in" list) before commiting the file into the repository:
 
 ```bash
-clojure -Adev locales.clj collect src/uxbox/main/ resources/locales.json
+clojure -Adev locales.clj collect src/app/main/ resources/locales.json
 ```
 
 NOTE: Later, we will need to think and implement the way to export and
@@ -154,11 +154,11 @@ You have two aproaches for translate strings: one for general purpose
 and other specific for React components (that leverages reactivity for
 language changes).
 
-The `uxbox.util.i18n/tr` is the general purpose function. This is a
+The `app.util.i18n/tr` is the general purpose function. This is a
 simple use case example:
 
 ```clojure
-(require '[uxbox.util.i18n :refer [tr])
+(require '[app.util.i18n :refer [tr])
 
 (tr "auth.email-or-username")
 ;; => "Email or Username"
@@ -169,7 +169,7 @@ need to pass an additional parameter marked as counter in order to
 allow the system know when to show the plural:
 
 ```clojure
-(require '[uxbox.util.i18n :as i18n :refer [tr]])
+(require '[app.util.i18n :as i18n :refer [tr]])
 
 (tr "ds.num-projects" (i18n/c 10))
 ;; => "10 projects"
@@ -178,11 +178,11 @@ allow the system know when to show the plural:
 ;; => "1 project"
 ```
 
-For React components, you have `uxbox.util.i18n/use-locale` hook
-and the `uxbox.util.i18n/t` function:
+For React components, you have `app.util.i18n/use-locale` hook
+and the `app.util.i18n/t` function:
 
 ```clojure
-(require '[uxbox.util.i18n :as i18n :refer [t]])
+(require '[app.util.i18n :as i18n :refer [t]])
 
 (mf/defc my-component
   [props]

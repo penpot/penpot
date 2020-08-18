@@ -19,7 +19,7 @@ Example:
 This asserts are only executed on development mode. On production
 environment all assets like this will be ignored by runtime.
 
-**spec/assert**: using the `uxbox.common.spec/assert` macro.
+**spec/assert**: using the `app.common.spec/assert` macro.
 
 Also, if you are using clojure.spec, you have the spec based
 `clojure.spec.alpha/assert` macro. In the same way as the
@@ -30,7 +30,7 @@ Example:
 
 ````clojure
 (require '[clojure.spec.alpha :as s]
-         '[uxbox.common.spec :as us])
+         '[app.common.spec :as us])
 
 (s/def ::number number?)
 
@@ -46,14 +46,14 @@ completely removed.
 Example:
 
 ```clojure
-(require '[uxbox.common.spec :as us])
+(require '[app.common.spec :as us])
 
 (us/verify ::number 3)
 ```
 
 This macro enables you have assetions on production code.
 
-**Why don't use the `clojure.spec.alpha/assert` instead of the `uxbox.common.spec/assert`?**
+**Why don't use the `clojure.spec.alpha/assert` instead of the `app.common.spec/assert`?**
 
 The uxbox variant does not peforms additional runtime checks for know
 if asserts are disabled in "runtime". As a result it generates much
