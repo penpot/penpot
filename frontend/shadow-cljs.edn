@@ -13,10 +13,10 @@
 
    :modules
    {:shared {:entries []}
-    :main {:entries [uxbox.main]
+    :main {:entries [app.main]
            :depends-on #{:shared}
-           :init-fn uxbox.main/init}
-    :worker {:entries [uxbox.worker]
+           :init-fn app.main/init}
+    :worker {:entries [app.worker]
              :web-worker true
              :depends-on #{:shared}}}
    :compiler-options
@@ -35,7 +35,7 @@
   :tests
   {:target :node-test
    :output-to "target/tests.js"
-   :ns-regexp "^uxbox.test-"
+   :ns-regexp "^app.test-"
    :autorun true}}}
 
 

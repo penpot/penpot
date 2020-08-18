@@ -40,12 +40,12 @@ services:
       - 9090:9090
 
     environment:
-      - UXBOX_DATABASE_URI=postgresql://postgres/uxbox
-      - UXBOX_DATABASE_USERNAME=uxbox
-      - UXBOX_DATABASE_PASSWORD=uxbox
-      - UXBOX_SENDMAIL_BACKEND=smtp
-      - UXBOX_SMTP_HOST=smtp
-      - UXBOX_SMTP_PORT=25
+      - APP_DATABASE_URI=postgresql://postgres/uxbox
+      - APP_DATABASE_USERNAME=uxbox
+      - APP_DATABASE_PASSWORD=uxbox
+      - APP_SENDMAIL_BACKEND=smtp
+      - APP_SMTP_HOST=smtp
+      - APP_SMTP_PORT=25
 
   smtp:
     container_name: "uxbox-devenv-smtp"
@@ -75,7 +75,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   redis:
-    image: redis:6.0-rc3
+    image: redis:6.0.6
     hostname: "uxbox-devenv-redis"
     container_name: "uxbox-devenv-redis"
     restart: always

@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
-clojure -Adev -m uxbox.cli.collimp $@
+clojure -Adev -m app.cli.collimp $@
 

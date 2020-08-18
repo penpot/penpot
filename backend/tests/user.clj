@@ -15,16 +15,16 @@
    [clojure.pprint :refer [pprint]]
    [clojure.test :as test]
    [clojure.java.io :as io]
-   [uxbox.common.pages :as cp]
+   [app.common.pages :as cp]
    [clojure.repl :refer :all]
    [criterium.core :refer [quick-bench bench with-progress-reporting]]
    [clj-kondo.core :as kondo]
-   [uxbox.migrations]
-   [uxbox.db :as db]
-   [uxbox.metrics :as mtx]
-   [uxbox.util.storage :as st]
-   [uxbox.util.time :as tm]
-   [uxbox.util.blob :as blob]
+   [app.migrations]
+   [app.db :as db]
+   [app.metrics :as mtx]
+   [app.util.storage :as st]
+   [app.util.time :as tm]
+   [app.util.blob :as blob]
    [mount.core :as mount]))
 
 ;; --- Benchmarking Tools
@@ -49,7 +49,7 @@
 
 (defn- start
   []
-  (-> #_(mount/except #{#'uxbox.scheduled-jobs/scheduler})
+  (-> #_(mount/except #{#'app.scheduled-jobs/scheduler})
       (mount/start)))
 
 (defn- stop
@@ -62,7 +62,7 @@
   (repl/refresh :after 'user/start))
 
 (defn- run-tests
-  ([] (run-tests #"^uxbox.tests.*"))
+  ([] (run-tests #"^app.tests.*"))
   ([o]
    (repl/refresh)
    (cond
@@ -83,8 +83,8 @@
          :cache false
          :config {:linters
                   {:unresolved-symbol
-                   {:exclude ['(uxbox.services.mutations/defmutation)
-                              '(uxbox.services.queries/defquery)
-                              '(uxbox.db/with-atomic)
+                   {:exclude ['(app.services.mutations/defmutation)
+                              '(app.services.queries/defquery)
+                              '(app.db/with-atomic)
                               '(promesa.core/let)]}}}})
        (kondo/print!))))

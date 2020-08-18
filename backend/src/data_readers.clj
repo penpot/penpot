@@ -1,3 +1,3 @@
-{uxbox/instant uxbox.util.time/from-string
- uxbox/cron uxbox.util.time/cron
- uxbox/duration uxbox.util.time/duration}
+{app/instant app.util.time/from-string
+ app/cron app.util.time/cron
+ app/duration app.util.time/duration}

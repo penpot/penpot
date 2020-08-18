@@ -7,8 +7,8 @@
    [cuerdas.core :as str]
    [lambdaisland.glogi :as log]
    [promesa.core :as p]
-   [uxbox.common.exceptions :as exc :include-macros true]
-   [uxbox.common.spec :as us]))
+   [app.common.exceptions :as exc :include-macros true]
+   [app.common.spec :as us]))
 
 (s/def ::name ::us/string)
 (s/def ::page-id ::us/uuid)

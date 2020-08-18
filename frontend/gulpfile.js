@@ -152,7 +152,7 @@ function templatePipeline(options) {
     const output = options.output;
 
     const ts = Math.floor(new Date());
-    const th = process.env.UXBOX_THEME || "default";
+    const th = process.env.APP_THEME || "default";
     const themes = ["default"];
 
     const locales = readLocales();

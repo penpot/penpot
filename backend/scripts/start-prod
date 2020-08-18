@@ -2,4 +2,4 @@
 
 set -e
 
-clojure -O:jmx-remote -A:dev -J-Xms100m -J-Xmx100m -J-XX:+AlwaysPreTouch -J-XX:+UseBiasedLocking -J-Duxbox.enable-asserts=false -J-Dclojure.compiler.direct-linking=true -J-Dclojure.server.repl='{:port 5555 :accept clojure.core.server/repl}' -m uxbox.main
+clojure -O:jmx-remote -A:dev -J-Xms100m -J-Xmx100m -J-XX:+AlwaysPreTouch -J-XX:+UseBiasedLocking -J-Dapp.enable-asserts=false -J-Dclojure.compiler.direct-linking=true -J-Dclojure.server.repl='{:port 5555 :accept clojure.core.server/repl}' -m app.main

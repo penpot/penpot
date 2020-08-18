@@ -30,11 +30,11 @@
     <Logger name="io.lettuce" level="error" additivity="false" />
 
 
-    <Logger name="uxbox.cli" level="debug" additivity="false">
+    <Logger name="app.cli" level="debug" additivity="false">
       <AppenderRef ref="console"/>
     </Logger>
 
-    <Logger name="uxbox" level="debug" additivity="false">
+    <Logger name="app" level="debug" additivity="false">
       <AppenderRef ref="file-debug" level="debug" />
       <AppenderRef ref="file" level="info" />
     </Logger>

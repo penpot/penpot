@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
 set -xe
-clojure -Adev -m uxbox.tests.main;
+clojure -Adev -m app.tests.main;

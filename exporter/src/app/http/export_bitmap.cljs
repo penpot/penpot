@@ -6,10 +6,10 @@
    [lambdaisland.glogi :as log]
    [cljs.spec.alpha :as s]
    [promesa.core :as p]
-   [uxbox.common.exceptions :as exc :include-macros true]
-   [uxbox.common.data :as d]
-   [uxbox.common.pages :as cp]
-   [uxbox.common.spec :as us])
+   [app.common.exceptions :as exc :include-macros true]
+   [app.common.data :as d]
+   [app.common.pages :as cp]
+   [app.common.spec :as us])
   (:import
    goog.Uri))
 

@@ -80,11 +80,11 @@
    :args {}}
 
   :fn-media-loader
-  {:fn uxbox.cli.media-loader/run
+  {:fn app.cli.media-loader/run
    :args {}}
 
   :fn-fixtures
-  {:fn uxbox.cli.fixtures/run
+  {:fn app.cli.fixtures/run
    :args {}}
 
   :lint
