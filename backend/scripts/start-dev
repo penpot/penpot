@@ -4,7 +4,7 @@ set -e
 
 if [ ! -e ~/local/.fixtures-loaded ]; then
     echo "Loading fixtures..."
-    clojure -Adev -m app.fixtures
+    clojure -Adev -X:fn-fixtures
     touch ~/local/.fixtures-loaded
 fi
 
