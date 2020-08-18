@@ -12,13 +12,17 @@
     <section id="app" tabindex="1"></section>
     <section id="modal"></section>
     <script>
-      window.uxboxConfig = JSON.parse({{& config }});
-      window.uxboxTranslations = JSON.parse({{& translations }});
-      window.uxboxThemes = {{& themes }};
+     window.uxboxTranslations = JSON.parse({{& translations }});
+     window.uxboxThemes = {{& themes }};
+     window.uxboxDeployDate = "{{& deployDate }}";
+     window.uxboxDeployCommit = "{{& deployCommit }}";
     </script>
     {{# manifest}}
-      <script src="{{& shared}}"></script>
-      <script src="{{& main}}"></script>
+
+    <script>window.uxboxWorkerURI="{{& worker}}"</script>
+    <script src="{{& config}}"></script>
+    <script src="{{& shared}}"></script>
+    <script src="{{& main}}"></script>
     {{/manifest}}
   </body>
 </html>

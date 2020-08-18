@@ -108,44 +108,15 @@ function readLocales() {
   return JSON.stringify(result);
 }
 
-function readConfig(data) {
-  const googleClientID = process.env.UXBOX_GOOGLE_CLIENT_ID;
-  const demoWarn = process.env.UXBOX_DEMO_WARNING;
-  const deployDate = process.env.UXBOX_DEPLOY_DATE;
-  const deployCommit = process.env.UXBOX_DEPLOY_COMMIT;
-  const loginWithLDAP = process.env.UXBOX_LOGIN_WITH_LDAP;
-
-  let cfg = {
-    demoWarning: demoWarn === "true"
-  };
-
-  if (googleClientID !== undefined) {
-    cfg.googleClientID = googleClientID;
-  }
-
-  if (deployDate !== undefined) {
-    cfg.deployDate = deployDate;
-  }
-
-  if (deployCommit !== undefined) {
-    cfg.deployCommit = deployCommit;
-  }
-
-  if (loginWithLDAP !== undefined) {
-    cfg.loginWithLDAP = loginWithLDAP;
-  }
-
-  Object.assign(cfg, data);
-
-  return JSON.stringify(cfg);
-}
-
-function readManifest(publicURI) {
+function readManifest() {
   try {
     const path = __dirname + "/resources/public/js/manifest.json";
     const content = JSON.parse(fs.readFileSync(path, {encoding: "utf8"}));
 
-    const index = {};
+    const index = {
+      "config": "/js/config.js?ts=" + Date.now()
+    };
+
     for (let item of content) {
       index[item.name] = "/js/" + item["output-name"];
     };
@@ -154,6 +125,7 @@ function readManifest(publicURI) {
   } catch (e) {
     console.error("Error on reading manifest, using default.");
     return {
+      "config": "/js/config.js",
       "main": "/js/main.js",
       "shared": "/js/shared.js",
       "worker": "/js/worker.js"
@@ -180,24 +152,23 @@ function templatePipeline(options) {
     const output = options.output;
     const ts = Math.floor(new Date());
 
-    const publicURI = process.env.UXBOX_PUBLIC_URI || "http://localhost:3449";
     const th = process.env.UXBOX_THEME || "default";
+    const deployDate = process.env.UXBOX_DEPLOY_DATE;
+    const deployCommit = process.env.UXBOX_DEPLOY_COMMIT;
 
     const themes = ["default"];
-
     const locales = readLocales();
-    const manifest = readManifest(publicURI);
+    const manifest = readManifest();
 
-    const config = readConfig({
-      workerURI: manifest.worker,
-      publicURI: publicURI
-    });
+    const defaultConf = `var uxboxConfig = {demoWarning: false, googleClientID: null, loginWithLDAP: null, publicURI: null};`
+    fs.writeFileSync(__dirname + "/resources/public/js/config.js", defaultConf)
 
     const tmpl = mustache({
+      deployCommit,
+      deployDate,
       ts: ts,
       th: th,
       manifest: manifest,
-      config: JSON.stringify(config),
       translations: JSON.stringify(locales),
       themes: JSON.stringify(themes),
     });
