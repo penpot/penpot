@@ -70,6 +70,8 @@
                   {:middleware [[middleware/development-resources]
                                 [middleware/development-cors]
                                 [middleware/metrics]]})]
+    (log/infof "Http server listening on http://localhost:%s/"
+               (:http-server-port cfg/config))
     (jetty/run-jetty handler options)))
 
 (defstate server

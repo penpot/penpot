@@ -96,7 +96,7 @@
 
 (defmethod handle-message :connect
   [{:keys [file-id profile-id session-id output] :as ws} message]
-  (log/info (str "profile " profile-id " is connected to " file-id))
+  (log/debugf "profile '%s' is connected to file '%s'" profile-id file-id)
   (go-try
    (<? (update-presence file-id session-id profile-id))
    (let [members (<? (retrieve-presence file-id))]
@@ -104,7 +104,7 @@
 
 (defmethod handle-message :disconnect
   [{:keys [profile-id file-id session-id] :as ws} message]
-  (log/info (str "profile " profile-id " is disconnected from " file-id))
+  (log/debugf "profile '%s' is disconnected from '%s'" profile-id file-id)
   (go-try
    (<? (delete-presence file-id session-id profile-id))
    (let [members (<? (retrieve-presence file-id))]
@@ -124,7 +124,7 @@
 (defmethod handle-message :default
   [ws message]
   (a/go
-    (log/warn (str "received unexpected message: " message))))
+    (log/warnf "received unexpected message: " message)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WebSocket Handler
@@ -182,9 +182,7 @@
       (<? (start-loop! ws))
       (<? (handle-message ws {:type :disconnect}))
       (catch Throwable err
-        (log/error "Unexpected exception on websocket handler:\n"
-                   (with-out-str
-                     (.printStackTrace err (java.io.PrintWriter. *out*))))
+        (log/errorf err "Unexpected exception on websocket handler.")
         (disconnect! conn)))))
 
 (defrecord WebSocket [conn in out sub])

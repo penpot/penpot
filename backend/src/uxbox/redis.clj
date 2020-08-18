@@ -22,7 +22,6 @@
 (defn- create-client
   [config]
   (let [uri (:redis-uri config "redis://redis/0")]
-    (log/info "creating redis client with" uri)
     (redis/client uri)))
 
 (defstate client
