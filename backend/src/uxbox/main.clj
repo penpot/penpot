@@ -24,11 +24,17 @@
 
 ;; --- Entry point
 
-(defn -main
-  [& args]
+(defn run
+  [params]
   (require 'uxbox.config
            'uxbox.migrations
+           'uxbox.worker
            'uxbox.media
-           'uxbox.http
-           'uxbox.tasks)
+           'uxbox.http)
   (mount/start))
+
+
+
+(defn -main
+  [& args]
+  (run {}))
