@@ -75,7 +75,7 @@
    :extra-paths ["tests"]}
 
 
- {:fn-run
+  :fn-run
   {:fn app.main/run
    :args {}}
 
