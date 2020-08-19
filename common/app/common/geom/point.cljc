@@ -133,13 +133,16 @@
   [{x :x y :y :as p} {ox :x oy :y :as other}]
   (assert (point? p))
   (assert (point? other))
+
   (let [a (/ (+ (* x ox)
                 (* y oy))
              (* (length p)
                 (length other)))
-        a (mth/acos (if (< a -1) -1 (if (> a 1) 1 a)))]
-    (-> (mth/degrees a)
-        (mth/precision 6))))
+        a (mth/acos (if (< a -1) -1 (if (> a 1) 1 a)))
+        d (-> (mth/degrees a)
+              (mth/precision 6))]
+    (if (mth/nan? d) 0 d)))
+
 
 (defn update-angle
   "Update the angle of the point."

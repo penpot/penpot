@@ -558,7 +558,6 @@
 (defn calculate-rec-path-height
   "Calculates the height of a paralelogram given by the path"
   [path-shape]
-
   (let [p1 (get-in path-shape [:segments 2])
         p2 (get-in path-shape [:segments 3])
         p3 (get-in path-shape [:segments 4])
@@ -717,9 +716,11 @@
 (defn transform-rect-shape
   [shape]
   (let [;; Apply modifiers to the rect as a path so we have the end shape expected
-        shape-path (transform-apply-modifiers shape)
-        shape-center (center shape-path)
-        resize-vector (get-in shape [:modifiers :resize-vector] (gpt/point 1 1))
+        shape-path    (transform-apply-modifiers shape)
+        shape-center  (center shape-path)
+        resize-vector (-> (get-in shape [:modifiers :resize-vector] (gpt/point 1 1))
+                          (update :x #(if (zero? %) 1 %))
+                          (update :y #(if (zero? %) 1 %)))
 
         ;; Reverse the current transformation stack to get the base rectangle
         shape-path-temp (center-transform shape-path (:transform-inverse shape (gmt/matrix)))
@@ -729,6 +730,7 @@
         ;; This rectangle is the new data for the current rectangle. We want to change our rectangle
         ;; to have this width, height, x, y
         rec (center->rect shape-center (:width shape-path-temp-dim) (:height shape-path-temp-dim))
+        rec (fix-invalid-rect-values rec)
         rec-path (rect->path rec)
 
         ;; The next matrix is a series of transformations we have to do to the previous rec so that
@@ -740,22 +742,29 @@
 
         ;; When one of the axis is flipped we have to reverse the skew
         skew-angle (if (neg? (* (:x resize-vector) (:y resize-vector))) (- skew-angle) skew-angle )
+        skew-angle (if (mth/nan? skew-angle) 0 skew-angle)
+
 
         stretch-matrix (gmt/multiply stretch-matrix (gmt/skew-matrix skew-angle 0))
 
         h1 (calculate-rec-path-height shape-path-temp)
         h2 (calculate-rec-path-height (center-transform rec-path stretch-matrix))
-        stretch-matrix (gmt/multiply stretch-matrix (gmt/scale-matrix (gpt/point 1 (/ h1 h2))))
+        h3 (/ h1 h2)
+        h3 (if (mth/nan? h3) 1 h3)
 
-        rotation-angle (calculate-rec-path-rotation (center-transform rec-path stretch-matrix) shape-path-temp resize-vector)
+        stretch-matrix (gmt/multiply stretch-matrix (gmt/scale-matrix (gpt/point 1 h3)))
+
+        rotation-angle (calculate-rec-path-rotation (center-transform rec-path stretch-matrix)
+                                                    shape-path-temp resize-vector)
 
         stretch-matrix (gmt/multiply (gmt/rotate-matrix rotation-angle) stretch-matrix)
 
         ;; This is the inverse to be able to remove the transformation
         stretch-matrix-inverse (-> (gmt/matrix)
-                                   (gmt/scale (gpt/point 1 (/ h2 h1)))
+                                   (gmt/scale (gpt/point 1 h3))
                                    (gmt/skew (- skew-angle) 0)
                                    (gmt/rotate (- rotation-angle)))
+
 
         new-shape (as-> shape $
                     (merge  $ rec)
@@ -763,14 +772,12 @@
                     (update $ :y #(mth/precision % 0))
                     (update $ :width #(mth/precision % 0))
                     (update $ :height #(mth/precision % 0))
-                    (fix-invalid-rect-values $)
                     (update $ :transform #(gmt/multiply (or % (gmt/matrix)) stretch-matrix))
                     (update $ :transform-inverse #(gmt/multiply stretch-matrix-inverse (or % (gmt/matrix))))
                     (assoc  $ :points (shape->points $))
                     (assoc  $ :selrect (points->selrect (:points $)))
                     (update $ :selrect fix-invalid-rect-values)
-                    (update $ :rotation #(mod (+ % (get-in $ [:modifiers :rotation] 0)) 360))
-
+                    (update $ :rotation #(mod (+ (or % 0) (get-in $ [:modifiers :rotation] 0)) 360))
                     )]
     new-shape))
 
