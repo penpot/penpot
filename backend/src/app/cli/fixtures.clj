@@ -86,7 +86,7 @@
                                :fullname (str "Profile " index)
                                :password "123123"
                                :demo? true
-                               :email (str "profile" index ".test@app.io")})))
+                               :email (str "profile" index ".test@uxbox.io")})))
 
         create-profiles
         (fn [conn]
