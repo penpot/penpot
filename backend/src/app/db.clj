@@ -131,7 +131,7 @@
                 (:for-update opts)
                 (assoc :suffix "for update"))
          res  (exec-one! ds (jdbc-bld/for-query table params opts) opts)]
-     (when (:deleted-at res)
+     (when (or (:deleted-at res) (not res))
        (ex/raise :type :not-found))
      res)))
 
