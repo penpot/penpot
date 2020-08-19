@@ -14,24 +14,20 @@
    [app.db :as db]
    [app.common.spec :as us]
    [app.services.queries :as sq]
-   [app.services.queries.projects :refer [retrieve-projects]]
+   [app.services.queries.teams :as teams]
+   [app.services.queries.projects :as projects :refer [retrieve-projects]]
    [app.services.queries.files :refer [decode-row]]))
 
-(def ^:private sql:project-files-recent
+(def sql:project-recent-files
   "select distinct
           f.*,
           array_agg(pg.id) over pages_w as pages,
           first_value(pg.data) over pages_w as data
      from file as f
-    inner join file_profile_rel as fp_r on (fp_r.file_id = f.id)
      left join page as pg on (f.id = pg.file_id)
-    where fp_r.profile_id = ?
-      and f.project_id = ?
+    where f.project_id = ?
       and f.deleted_at is null
       and pg.deleted_at is null
-      and (fp_r.is_admin = true or
-           fp_r.is_owner = true or
-           fp_r.can_edit = true)
    window pages_w as (partition by f.id order by pg.ordering
                       range between unbounded preceding
                                 and unbounded following)
@@ -39,10 +35,11 @@
     limit 5")
 
 (defn recent-by-project
-  [profile-id project]
+  [conn profile-id project]
   (let [project-id (:id project)]
-    (->> (db/exec! db/pool [sql:project-files-recent profile-id project-id])
-         (mapv decode-row))))
+    (projects/check-edition-permissions! conn profile-id project)
+    (->> (db/exec! conn [sql:project-recent-files project-id])
+         (map decode-row))))
 
 (s/def ::team-id ::us/uuid)
 (s/def ::profile-id ::us/uuid)
@@ -52,9 +49,11 @@
 
 (sq/defquery ::recent-files
   [{:keys [profile-id team-id]}]
-  (->> (retrieve-projects db/pool profile-id team-id)
-       ;; Retrieve for each proyect the 5 more recent files
-       (map (partial recent-by-project profile-id))
-       ;; Change the structure so it's a map with project-id as keys
-       (flatten)
-       (group-by :project-id)))
+  (with-open [conn (db/open)]
+    (teams/check-read-permissions! conn profile-id team-id)
+    (->> (retrieve-projects conn team-id)
+         ;; Retrieve for each proyect the 5 more recent files
+         (map (partial recent-by-project conn profile-id))
+         ;; Change the structure so it's a map with project-id as keys
+         (flatten)
+         (group-by :project-id))))

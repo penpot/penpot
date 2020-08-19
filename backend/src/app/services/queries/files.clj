@@ -273,20 +273,23 @@
               and m.deleted_at is null) as graphics_count
      from file as f
      left join page as pg on (f.id = pg.file_id)
-    where is_shared = true
+    inner join project as p on (p.id = f.project_id)
+    where f.is_shared = true
       and f.deleted_at is null
       and pg.deleted_at is null
+      and p.deleted_at is null
+      and p.team_id = ?
    window pages_w as (partition by f.id order by pg.ordering
                       range between unbounded preceding
                                 and unbounded following)
     order by f.modified_at desc")
 
 (s/def ::shared-files
-  (s/keys :req-un [::profile-id]))
+  (s/keys :req-un [::profile-id ::team-id]))
 
 (sq/defquery ::shared-files
-  [{:keys [profile-id] :as params}]
-  (->> (db/exec! db/pool [sql:shared-files])
+  [{:keys [profile-id team-id] :as params}]
+  (->> (db/exec! db/pool [sql:shared-files team-id])
        (mapv decode-row)))
 
 
