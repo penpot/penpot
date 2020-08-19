@@ -33,10 +33,10 @@
 
 (defn- parse-params
   [route profile]
-  (let [search-term (get-in route [:params :query :search-term])
-        route-name (get-in route [:data :name])
-        team-id (get-in route [:params :path :team-id])
-        project-id (get-in route [:params :path :project-id])]
+  (let [route-name  (get-in route [:data :name])
+        search-term (get-in route [:params :query :search-term])
+        team-id     (get-in route [:params :path :team-id])
+        project-id  (get-in route [:params :path :project-id])]
     (cond->
       {:search-term search-term}
 
@@ -45,6 +45,8 @@
 
       (uuid-str? project-id)
       (assoc :project-id (uuid project-id))
+
+      ;; TODO: delete the usage of "drafts"
 
       (= "drafts" project-id)
       (assoc :project-id (:default-project-id profile)))))

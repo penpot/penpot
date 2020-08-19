@@ -266,13 +266,13 @@
 (declare shared-files-fetched)
 
 (defn fetch-shared-files
-  []
+  [{:keys [team-id] :as params}]
+  (us/assert ::us/uuid team-id)
   (ptk/reify ::fetch-shared-files
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [params {}]
-        (->> (rp/query :shared-files params)
-             (rx/map shared-files-fetched))))))
+      (->> (rp/query :shared-files params)
+           (rx/map shared-files-fetched)))))
 
 (defn shared-files-fetched
   [files]

@@ -163,9 +163,9 @@
   (ptk/reify ::fetch-projects
     ptk/WatchEvent
     (watch [_ state stream]
-      (->> (rp/query :projects-by-team {:team-id team-id})
+      (->> (rp/query :projects {:team-id team-id})
            (rx/map projects-fetched)
-           (rx/catch (fn [error]
+           #_(rx/catch (fn [error]
                        (rx/of (rt/nav' :auth-login))))))))
 
 (defn projects-fetched
@@ -224,26 +224,16 @@
 
 ;; --- Fetch Shared Files
 
-(declare shared-files-fetched)
-
 (defn fetch-shared-files
-  []
-  (ptk/reify ::fetch-shared-files
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [params {}]
-        (->> (rp/query :shared-files params)
-             (rx/map shared-files-fetched))))))
-
-(defn shared-files-fetched
-  [files]
-  (us/verify (s/every ::file) files)
-  (ptk/reify ::shared-files-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [state (dissoc state :files)
-            files (d/index-by :id files)]
-        (assoc state :files files)))))
+  [team-id]
+  (letfn [(on-fetched [files state]
+            (let [files (d/index-by :id files)]
+              (assoc state :files files)))]
+    (ptk/reify ::fetch-shared-files
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (->> (rp/query :shared-files {:team-id team-id})
+             (rx/map #(partial on-fetched %)))))))
 
 ;; --- Fetch recent files
 
