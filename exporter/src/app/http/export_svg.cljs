@@ -87,7 +87,7 @@
                                  :scale 4})
              (bwr/set-cookie! page cookie)
              (bwr/navigate! page uri)
-             (bwr/eval! page (js* "() => document.body.style.background = 'transparent'"))
+             ;; (bwr/eval! page (js* "() => document.body.style.background = 'transparent'"))
              page))
 
           (convert-to-ppm [pngpath]
