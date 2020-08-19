@@ -59,7 +59,7 @@
              (with-out-str
                 (.printStackTrace ^Throwable err (java.io.PrintWriter. *out*))))
   {:status 500
-   :body {:type :exception
+   :body {:type :internal-error
           :message (ex-message err)
           :data (ex-data err)}})
 
