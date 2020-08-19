@@ -84,7 +84,7 @@
   (letfn [(render-in-page [page {:keys [uri cookie] :as rctx}]
             (p/do!
              (bwr/emulate! page {:viewport [1920 1080]
-                                 :scale 2})
+                                 :scale 4})
              (bwr/set-cookie! page cookie)
              (bwr/navigate! page uri)
              (bwr/eval! page (js* "() => document.body.style.background = 'transparent'"))
@@ -227,7 +227,7 @@
 
           (render-svg [page]
             (p/let [dom   (bwr/select page "#screenshot")
-                    main  (bwr/eval! dom (fn [elem] (.-innerHTML ^js elem)))
+                    main  (bwr/eval! dom (fn [elem] (.-outerHTML ^js elem)))
                     nodes (process-text-nodes page)]
               (replace-nodes-on-main main nodes)))
 
