@@ -151,35 +151,21 @@
 
 ;; --- Error Handling
 
-(defn- on-error
-  "A default error handler."
-  [{:keys [type code] :as error}]
-  (reset! st/loader false)
-  (cond
-    (and (map? error)
-         (= :validation type)
-         (= :spec-validation code))
-    (do
-      (println "============ SERVER RESPONSE ERROR ================")
-      (println (:explain error))
-      (println "============ END SERVER RESPONSE ERROR ================"))
+(defmethod ptk/handle-error :validation
+  [error]
+  (js/console.error (if (map? error) (pr-str error) error))
+  (when-let [explain (:explain error)]
+    (println "============ SERVER RESPONSE ERROR ================")
+    (println explain)
+    (println "============ END SERVER RESPONSE ERROR ================")))
 
-    ;; Unauthorized or Auth timeout
-    (and (map? error)
-         (= :authentication type)
-         (= :unauthorized code))
-    (ts/schedule 0 #(st/emit! logout))
+(defmethod ptk/handle-error :authentication
+  [error]
+  (ts/schedule 0 #(st/emit! logout)))
 
-    ;; Network error
-    (and (map? error)
-         (= :unexpected type)
-         (= :abort code))
-    (ts/schedule 100 #(st/emit! (dm/error (tr "errors.network"))))
-
-    ;; Something else
-    :else
-    (do
-      (js/console.error error)
-      (ts/schedule 100 #(st/emit! (dm/error (tr "errors.generic")))))))
-
-(set! st/*on-error* on-error)
+(defmethod ptk/handle-error :default
+  [error]
+  (js/console.error (if (map? error) (pr-str error) error))
+  (ts/schedule 100 #(st/emit! (dm/show {:content "Something wrong has happened."
+                                        :type :error
+                                        :timeout 5000}))))

@@ -11,14 +11,18 @@
   danlentz/clj-uuid {:mvn/version "0.1.9"}
   frankiesardo/linked {:mvn/version "1.3.0"}
 
-  funcool/beicon {:mvn/version "2020.05.08-2"}
-  funcool/cuerdas {:mvn/version "2020.03.26-3"}
   funcool/lentes {:mvn/version "1.4.0-SNAPSHOT"}
 
+  funcool/beicon {:mvn/version "2020.05.08-2"}
+  funcool/cuerdas {:mvn/version "2020.03.26-3"}
   funcool/okulary {:mvn/version "2020.04.14-0"}
-  funcool/potok {:mvn/version "2.8.0-SNAPSHOT"}
+  funcool/potok {:mvn/version "2020.08.10-2"}
   funcool/promesa {:mvn/version "5.1.0"}
   funcool/rumext {:mvn/version "2020.05.22-1"}
+
+  lambdaisland/uri {:mvn/version "1.3.45"
+                    :exclusions [org.clojure/data.json]}
+
   }
  :aliases
  {:dev
@@ -34,9 +38,6 @@
     binaryage/devtools {:mvn/version "RELEASE"}
 
     thheller/shadow-cljs {:mvn/version "2.10.19"}
-
-    lambdaisland/uri {:mvn/version "1.3.45"
-                      :exclusions [org.clojure/data.json]}
 
     ;; i18n parsing
     carocad/parcera {:mvn/version "0.11.0"}

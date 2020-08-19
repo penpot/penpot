@@ -23,9 +23,12 @@
     (http/client-error? response)
     (rx/throw (:body response))
 
+    (http/server-error? response)
+    (rx/throw (:body response))
+
     :else
     (rx/throw {:type :unexpected
-               :code (:error response)})))
+               :response response})))
 
 (defn send-query!
   [id params]
