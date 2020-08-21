@@ -5,42 +5,31 @@
       <PatternLayout pattern="[%d{YYYY-MM-dd HH:mm:ss.SSS}] [%t] %level{length=1} %logger{36} - %msg%n"/>
     </Console>
 
-    <RollingFile name="file-debug" fileName="logs/app-debug.log" filePattern="logs/app-debug-%i.log">
+    <RollingFile name="main" fileName="logs/main.log" filePattern="logs/main-%i.log">
       <PatternLayout pattern="[%d{YYYY-MM-dd HH:mm:ss.SSS}] [%t] %level{length=1} %logger{36} - %msg%n"/>
       <Policies>
         <SizeBasedTriggeringPolicy size="50M"/>
       </Policies>
       <DefaultRolloverStrategy max="9"/>
     </RollingFile>
-
-    <RollingFile name="file" fileName="logs/app.log" filePattern="logs/app-%i.log">
-      <PatternLayout pattern="[%d{YYYY-MM-dd HH:mm:ss.SSS}] [%t] %level{length=1} %logger{36} - %msg%n"/>
-      <Policies>
-        <SizeBasedTriggeringPolicy size="20M"/>
-      </Policies>
-      <DefaultRolloverStrategy max="9"/>
-    </RollingFile>
   </Appenders>
 
   <Loggers>
-    <Logger name="com.zaxxer.hikari" level="error" additivity="false">
-      <AppenderRef ref="console"/>
-    </Logger>
-
+    <Logger name="com.zaxxer.hikari" level="error" additivity="false" />
+    <Logger name="org.eclipse.jetty" level="error" additivity="false" />
     <Logger name="io.lettuce" level="error" additivity="false" />
-
 
     <Logger name="app.cli" level="debug" additivity="false">
       <AppenderRef ref="console"/>
     </Logger>
 
     <Logger name="app" level="debug" additivity="false">
-      <AppenderRef ref="file-debug" level="debug" />
-      <AppenderRef ref="file" level="info" />
+      <AppenderRef ref="main" level="debug" />
     </Logger>
 
     <Root level="info">
-      <AppenderRef ref="console"/>
+      <AppenderRef ref="main" />
+      <!-- <AppenderRef ref="console" /> -->
     </Root>
   </Loggers>
 </Configuration>

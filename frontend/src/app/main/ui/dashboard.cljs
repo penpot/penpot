@@ -59,7 +59,7 @@
   (let [profile (mf/deref refs/profile)
         page (get-in route [:data :name])
         {:keys [search-term team-id project-id] :as params}
-          (parse-params route profile)]
+        (parse-params route profile)]
     [:*
      [:& global-notifications {:profile profile}]
      [:section.dashboard-layout
