@@ -97,7 +97,7 @@
         {:email (get data "email")
          :fullname (get data "name")})
       (catch Throwable e
-        (log/error "unexpected error on parsing response body from gitlab access tooken request" e)
+        (log/error "unexpected error on parsing response body from gitlab access token request" e)
         nil))))
 
 
