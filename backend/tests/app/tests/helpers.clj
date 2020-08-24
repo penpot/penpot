@@ -29,9 +29,9 @@
   []
   (doto (PGSimpleDataSource.)
     (.setServerName "postgres")
-    (.setDatabaseName "app_test")
-    (.setUser "app")
-    (.setPassword "app")))
+    (.setDatabaseName "uxbox_test")
+    (.setUser "uxbox")
+    (.setPassword "uxbox")))
 
 (defn state-init
   [next]

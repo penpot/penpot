@@ -31,7 +31,7 @@
           (t/is (= (:name data) (:name result))))))
 
     (t/testing "query a list of projects"
-      (let [data {::sq/type :projects-by-team
+      (let [data {::sq/type :projects
                   :team-id (:id team)
                   :profile-id (:id prof)}
             out (th/try-on! (sq/handle data))]
@@ -67,7 +67,7 @@
         (t/is (nil? (:result out)))))
 
     (t/testing "query a list of projects after delete"
-      (let [data {::sq/type :projects-by-team
+      (let [data {::sq/type :projects
                   :team-id (:id team)
                   :profile-id (:id prof)}
             out (th/try-on! (sq/handle data))]

@@ -22,9 +22,9 @@
 (def defaults
   {:http-server-port 6060
    :http-server-cors "http://localhost:3449"
-   :database-uri "postgresql://127.0.0.1/app"
-   :database-username "app"
-   :database-password "app"
+   :database-uri "postgresql://127.0.0.1/uxbox"
+   :database-username "uxbox"
+   :database-password "uxbox"
 
    :media-directory "resources/public/media"
    :assets-directory "resources/public/static"
@@ -178,7 +178,7 @@
   [env]
   (assoc (read-config env)
          :redis-uri "redis://redis/1"
-         :database-uri "postgresql://postgres/app_test"
+         :database-uri "postgresql://postgres/uxbox_test"
          :media-directory "/tmp/app/media"
          :assets-directory "/tmp/app/static"
          :migrations-verbose false))
