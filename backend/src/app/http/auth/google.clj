@@ -56,7 +56,7 @@
       (let [data (json/read-str (:body res))]
         (get data "access_token"))
       (catch Throwable e
-        (log/error "unexpected error on parsing response body from google access tooken request" e)
+        (log/error "unexpected error on parsing response body from google access token request" e)
         nil))))
 
 
@@ -79,7 +79,7 @@
         {:email (get data "email")
          :fullname (get data "name")})
       (catch Throwable e
-        (log/error "unexpected error on parsing response body from google access tooken request" e)
+        (log/error "unexpected error on parsing response body from google access token request" e)
         nil))))
 
 (defn auth
