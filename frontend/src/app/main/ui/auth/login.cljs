@@ -40,6 +40,13 @@
        (rx/subs (fn [{:keys [redirect-uri] :as rsp}]
                   (.replace js/location redirect-uri)))))
 
+(defn- login-with-gitlab
+  [event]
+  (dom/prevent-default event)
+  (->> (rp/mutation! :login-with-gitlab {})
+       (rx/subs (fn [{:keys [redirect-uri] :as rsp}]
+                  (.replace js/location redirect-uri)))))
+
 (mf/defc login-form
   [{:keys [locale] :as props}]
   (let [error? (mf/use-state false)
@@ -112,6 +119,13 @@
       [:a.btn-ocean.btn-large.btn-google-auth
        {:on-click login-with-google}
        "Login with Google"])
+
+    (when cfg/gitlab-client-id
+      [:a.btn-ocean.btn-large.btn-gitlab-auth
+       {:on-click login-with-gitlab}
+       [:img.logo
+        {:src "/images/icons/brand-gitlab.svg"}]
+       "Login with Gitlab"])
 
     [:div.links.demo
      [:div.link-entry

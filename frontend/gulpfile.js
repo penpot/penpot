@@ -163,6 +163,7 @@ function templatePipeline(options) {
       "var appLoginWithLDAP = null;",
       "var appPublicURI = null;",
       "var appGoogleClientID = null;",
+      "var appGitlabClientID = null;",
       "var appDeployDate = null;",
       "var appDeployCommit = null;"
     ];

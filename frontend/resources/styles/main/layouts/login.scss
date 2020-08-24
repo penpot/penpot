@@ -63,4 +63,15 @@
     margin-bottom: $medium;
     text-decoration: none;
   }
+
+  .btn-gitlab-auth {
+    margin-bottom: $medium;
+    text-decoration: none;
+
+    .logo {
+      width: 20px;
+      height: 20px;
+      margin-right: 1rem;
+    }
+  }
 }

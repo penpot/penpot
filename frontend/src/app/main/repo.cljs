@@ -71,6 +71,12 @@
     (->> (http/send! {:method :post :uri uri})
          (rx/mapcat handle-response))))
 
+(defmethod mutation :login-with-gitlab
+  [id params]
+  (let [uri (str cfg/public-uri "/api/oauth/gitlab")]
+    (->> (http/send! {:method :post :uri uri})
+      (rx/mapcat handle-response))))
+
 (defmethod mutation :upload-media-object
   [id params]
   (let [form (js/FormData.)]

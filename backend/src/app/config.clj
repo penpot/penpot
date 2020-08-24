@@ -98,6 +98,10 @@
 (s/def ::google-client-id ::us/string)
 (s/def ::google-client-secret ::us/string)
 
+(s/def ::gitlab-client-id ::us/string)
+(s/def ::gitlab-client-secret ::us/string)
+(s/def ::gitlab-base-uri ::us/string)
+
 (s/def ::ldap-auth-host ::us/string)
 (s/def ::ldap-auth-port ::us/integer)
 (s/def ::ldap-bind-dn ::us/string)
@@ -118,6 +122,9 @@
                    ::http-server-port
                    ::google-client-id
                    ::google-client-secret
+                   ::gitlab-client-id
+                   ::gitlab-client-secret
+                   ::gitlab-base-uri
                    ::public-uri
                    ::database-username
                    ::database-password
