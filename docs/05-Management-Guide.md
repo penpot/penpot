@@ -53,6 +53,9 @@ respective defaults):
 - `APP_LDAP_AUTH_FULLNAME_ATTRIBUTE=displayName`
 - `APP_LDAP_AUTH_AVATAR_ATTRIBUTE=jpegPhoto`
 
+- `APP_GITLAB_CLIENT_ID=`     (default undefined)
+- `APP_GITLAB_CLIENT_SECRET=` (default undefined)
+- `APP_GITLAB_BASE_URI=`      (default https://gitlab.com)
 
 ## REPL ##
 
