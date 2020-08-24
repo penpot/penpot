@@ -125,7 +125,7 @@
        {:on-click login-with-gitlab}
        [:img.logo
         {:src "/images/icons/brand-gitlab.svg"}]
-       "Login with Gitlab"])
+       (t locale "auth.login-with-gitlab-submit-label")])
 
     [:div.links.demo
      [:div.link-entry
