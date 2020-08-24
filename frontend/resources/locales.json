@@ -134,6 +134,15 @@
       "es" : "Entrar con LDAP"
     }
   },
+  "auth.login-with-gitlab-submit-label" : {
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:128" ],
+    "translations" : {
+      "en" : "Login with Gitlab",
+      "fr" : "Se connecter via Gitlab",
+      "ru" : "Вход через Gitlab",
+      "es" : "Entrar con Gitlab"
+    }
+  },
   "auth.new-password-label" : {
     "used-in" : [ "src/app/main/ui/auth/recovery.cljs:73" ],
     "translations" : {
