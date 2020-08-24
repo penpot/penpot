@@ -15,6 +15,7 @@
    [ring.adapter.jetty9 :as jetty]
    [app.config :as cfg]
    [app.http.auth :as auth]
+   [app.http.auth.gitlab :as gitlab]
    [app.http.auth.google :as google]
    [app.http.auth.ldap :as ldap]
    [app.http.debug :as debug]
@@ -40,7 +41,9 @@
 
      ["/oauth"
       ["/google" {:post google/auth}]
-      ["/google/callback" {:get google/callback}]]
+      ["/google/callback" {:get google/callback}]
+      ["/gitlab" {:post gitlab/auth}]
+      ["/gitlab/callback" {:get gitlab/callback}]]
 
      ["/echo" {:get handlers/echo-handler
                :post handlers/echo-handler}]
