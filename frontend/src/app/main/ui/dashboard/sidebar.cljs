@@ -131,7 +131,7 @@
       [:li
        {:on-click #(st/emit! (rt/nav :dashboard-libraries {:team-id team-id}))
         :class-name (when libraries? "current")}
-       i/icon-set
+       i/library
        [:span.element-title (t locale "dashboard.sidebar.libraries")]]]
 
      [:div.projects-row

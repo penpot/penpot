@@ -104,7 +104,7 @@
         {:alt (t locale "workspace.toolbar.assets")
          :class (when (contains? layout :assets) "selected")
          :on-click #(st/emit! (dw/toggle-layout-flags :assets))}
-        i/icon-set]
+        i/library]
        [:li.tooltip.tooltip-right
         {:alt "History"}
         i/undo-history]

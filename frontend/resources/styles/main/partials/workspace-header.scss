@@ -57,8 +57,6 @@
 
   .shared-badge {
     margin-left: $x-small;
-    border: 1px solid $color-gray-20;
-    border-radius: 4px;
     height: 16px;
     width: 16px;
     display: flex;
@@ -67,8 +65,8 @@
 
     svg {
       fill: $color-gray-20;
-      height: 8px;
-      width: 8px;
+      height: 12px;
+      width: 12px;
     }
   }
 
