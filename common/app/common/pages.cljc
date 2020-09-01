@@ -356,6 +356,12 @@
 (defmethod change-spec :del-media [_]
   (s/keys :req-un [::id]))
 
+(defmethod change-spec :add-component [_]
+  (s/keys :req-un [::id ::name ::new-shapes]))
+
+(defmethod change-spec :del-component [_]
+  (s/keys :req-un [::id]))
+
 (s/def ::change (s/multi-spec change-spec :type))
 (s/def ::changes (s/coll-of ::change))
 
@@ -472,6 +478,18 @@
                      :height 1}
            :points []
            :segments [])))
+
+(defn make-minimal-group
+  [frame-id selection-rect group-name]
+  {:id (uuid/next)
+   :type :group
+   :name group-name
+   :shapes []
+   :frame-id frame-id
+   :x (:x selection-rect)
+   :y (:y selection-rect)
+   :width (:width selection-rect)
+   :height (:height selection-rect)})
 
 (defn make-file-data
   ([] (make-file-data (uuid/next)))
@@ -744,6 +762,17 @@
 (defmethod process-change :del-media
   [data {:keys [id]}]
   (update data :media dissoc id))
+
+(defmethod process-change :add-component
+  [data {:keys [id name new-shapes]}]
+  (assoc-in data [:components id]
+            {:id id
+             :name name
+             :objects (d/index-by :id new-shapes)}))
+
+(defmethod process-change :del-component
+  [data {:keys [id]}]
+  (d/dissoc-in data [:components id]))
 
 (defmethod process-operation :set
   [shape op]

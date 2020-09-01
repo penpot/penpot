@@ -43,7 +43,9 @@
     :rect i/box
     :curve i/curve
     :text i/text
-    :group i/folder
+    :group (if (nil? (:component-id shape))
+             i/folder
+             i/component)
     nil))
 
 ;; --- Layer Name
@@ -186,6 +188,7 @@
     [:li {:on-context-menu on-context-menu
           :ref dref
           :class (dom/classnames
+                   :component (not (nil? (:component-id item)))
                    :dnd-over (= (:over dprops) :center)
                    :dnd-over-top (= (:over dprops) :top)
                    :dnd-over-bot (= (:over dprops) :bot)
@@ -285,7 +288,16 @@
 
 (defn- strip-objects
   [objects]
-  (let [strip-data #(select-keys % [:id :name :blocked :hidden :shapes :type :content :parent-id :metadata])]
+  (let [strip-data #(select-keys % [:id
+                                    :name
+                                    :blocked
+                                    :hidden
+                                    :shapes
+                                    :type
+                                    :content
+                                    :parent-id
+                                    :component-id
+                                    :metadata])]
     (persistent!
      (reduce-kv (fn [res id obj]
                   (assoc! res id (strip-data obj)))

@@ -31,6 +31,7 @@
 (def chat (icon-xref :chat))
 (def circle (icon-xref :circle))
 (def close (icon-xref :close))
+(def component (icon-xref :component))
 (def copy (icon-xref :copy))
 (def curve (icon-xref :curve))
 (def download (icon-xref :download))

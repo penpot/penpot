@@ -20,42 +20,42 @@
     margin-right: 8px;
     width: 13px;
   }
-  
+
   &.group {
     &.open {
       .toggle-content {
         flex-shrink: 0;
-        
+
         svg {
           transform: rotate(270deg);
         }
       }
     }
   }
-  
+
   &:hover {
     background-color: $color-primary;
-    
+
     svg {
       fill: $color-gray-60 !important;
     }
-    
+
     .element-icon,
     .element-actions {
-      
+
       svg {
         fill: $color-gray-60;
       }
     }
-    
+
     .element-actions > * {
       display: flex;
     }
-    
+
     span {
       color: $color-gray-60;
     }
-    
+
     .toggle-content {
       svg {
         fill: $color-gray-60;
@@ -64,13 +64,12 @@
   }
 
   &.selected {
-    
+
     svg {
       fill: $color-primary;
     }
-    
+
     .element-icon {
-      
       svg {
         fill: $color-primary;
       }
@@ -79,10 +78,10 @@
     span {
       color: $color-primary;
     }
-    
+
     &:hover {
       background-color: $color-primary;
-      
+
       .element-icon,
       .element-actions {
         svg {
@@ -95,17 +94,52 @@
       }
     }
   }
-  
+
   &.drag-top {
     border-top: 40px solid $color-gray-60 !important;
   }
-  
+
   &.drag-bottom {
     border-bottom: 40px solid $color-gray-60 !important;
   }
-  
+
   &.drag-inside {
     border: 2px solid $color-primary !important;
+  }
+}
+
+.element-list li.component {
+
+  .element-list-body {
+    .element-name {
+      color: $color-component;
+    }
+
+    svg {
+      fill: $color-component;
+    }
+
+    &.selected {
+      .element-name {
+        color: $color-component-highlight;
+      }
+
+      svg {
+        fill: $color-component-highlight;
+      }
+    }
+
+    &:hover {
+      background-color: $color-component-highlight;
+
+      .element-name {
+        color: $color-gray-60;
+      }
+
+      svg {
+        fill: $color-gray-60;
+      }
+    }
   }
 }
 
@@ -132,7 +166,7 @@ span.element-name {
   white-space: nowrap;
   width: 100%;
 }
-  
+
 .element-actions {
   display: flex;
   flex-shrink: 0;
@@ -149,13 +183,13 @@ span.element-name {
   > * {
     display: none;
   }
-  
+
   .toggle-element,
   .block-element {
     left: 0;
     position: absolute;
     top: 0;
-        
+
     &.selected {
       display: flex;
 
@@ -177,17 +211,17 @@ span.element-name {
 .toggle-content {
   margin-left: auto;
   width: 12px;
-  
+
   svg {
     fill: $color-gray-20;
     transform: rotate(90deg);
     width: 10px;
   }
-  
+
   &.inverse {
     svg { transform: rotate(270deg); }
   }
-  
+
   &:hover {
     svg {
       fill: $color-gray-60;

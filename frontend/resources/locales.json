@@ -288,7 +288,7 @@
     }
   },
   "dashboard.grid.add-shared" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:146", "src/app/main/ui/dashboard/grid.cljs:166" ],
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:166", "src/app/main/ui/workspace/header.cljs:146" ],
     "translations" : {
       "en" : "Add as Shared Library",
       "fr" : "",
@@ -297,7 +297,7 @@
     }
   },
   "dashboard.grid.add-shared-accept" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:69", "src/app/main/ui/dashboard/grid.cljs:95" ],
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:95", "src/app/main/ui/workspace/header.cljs:69" ],
     "translations" : {
       "en" : "Add as Shared Library",
       "fr" : "",
@@ -306,7 +306,7 @@
     }
   },
   "dashboard.grid.add-shared-hint" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:68", "src/app/main/ui/dashboard/grid.cljs:94" ],
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:94", "src/app/main/ui/workspace/header.cljs:68" ],
     "translations" : {
       "en" : "Once added as Shared Library, the assets of this file library will be available to be used among the rest of your files.",
       "fr" : "",
@@ -315,7 +315,7 @@
     }
   },
   "dashboard.grid.add-shared-message" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:67", "src/app/main/ui/dashboard/grid.cljs:93" ],
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:93", "src/app/main/ui/workspace/header.cljs:67" ],
     "translations" : {
       "en" : "Add “%s” as Shared Library",
       "fr" : "",
@@ -342,7 +342,7 @@
     }
   },
   "dashboard.grid.remove-shared" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:144", "src/app/main/ui/dashboard/grid.cljs:165" ],
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:165", "src/app/main/ui/workspace/header.cljs:144" ],
     "translations" : {
       "en" : "Remove as Shared Library",
       "fr" : "",
@@ -351,7 +351,7 @@
     }
   },
   "dashboard.grid.remove-shared-accept" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:78", "src/app/main/ui/dashboard/grid.cljs:114" ],
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:114", "src/app/main/ui/workspace/header.cljs:78" ],
     "translations" : {
       "en" : "Remove as Shared Library",
       "fr" : "",
@@ -360,7 +360,7 @@
     }
   },
   "dashboard.grid.remove-shared-hint" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:77", "src/app/main/ui/dashboard/grid.cljs:113" ],
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:113", "src/app/main/ui/workspace/header.cljs:77" ],
     "translations" : {
       "en" : "Once removed as Shared Library, the File Library of this file will stop being available to be used among the rest of your files.",
       "fr" : "",
@@ -369,7 +369,7 @@
     }
   },
   "dashboard.grid.remove-shared-message" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:76", "src/app/main/ui/dashboard/grid.cljs:112" ],
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:112", "src/app/main/ui/workspace/header.cljs:76" ],
     "translations" : {
       "en" : "Remove “%s” as Shared Library",
       "fr" : "",
@@ -621,6 +621,7 @@
     "unused" : true
   },
   "ds.button.save" : {
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:66" ],
     "translations" : {
       "en" : "Save",
       "fr" : "Sauvegarder",
@@ -774,7 +775,7 @@
     }
   },
   "errors.media-type-mismatch" : {
-    "used-in" : [ "src/app/main/data/media.cljs:62", "src/app/main/data/workspace/persistence.cljs:352" ],
+    "used-in" : [ "src/app/main/data/workspace/persistence.cljs:352", "src/app/main/data/media.cljs:62" ],
     "translations" : {
       "en" : "Seems that the contents of the image does not match the file extension.",
       "fr" : "",
@@ -783,7 +784,7 @@
     }
   },
   "errors.media-type-not-allowed" : {
-    "used-in" : [ "src/app/main/data/media.cljs:59", "src/app/main/data/workspace/persistence.cljs:349" ],
+    "used-in" : [ "src/app/main/data/workspace/persistence.cljs:349", "src/app/main/data/media.cljs:59" ],
     "translations" : {
       "en" : "Seems that this is not a valid image.",
       "fr" : "",
@@ -828,7 +829,7 @@
     }
   },
   "errors.unexpected-error" : {
-    "used-in" : [ "src/app/main/data/media.cljs:65", "src/app/main/ui/settings/change_email.cljs:51", "src/app/main/ui/auth/register.cljs:54", "src/app/main/ui/workspace/sidebar/options/exports.cljs:66" ],
+    "used-in" : [ "src/app/main/data/media.cljs:65", "src/app/main/ui/settings/change_email.cljs:51", "src/app/main/ui/workspace/sidebar/options/exports.cljs:66", "src/app/main/ui/auth/register.cljs:54" ],
     "translations" : {
       "en" : "An unexpected error occurred.",
       "fr" : "Une erreur inattendue c'est produite",
@@ -873,7 +874,7 @@
     }
   },
   "media.loading" : {
-    "used-in" : [ "src/app/main/data/media.cljs:44", "src/app/main/data/workspace/persistence.cljs:334" ],
+    "used-in" : [ "src/app/main/data/workspace/persistence.cljs:334", "src/app/main/data/media.cljs:44" ],
     "translations" : {
       "en" : "Loading image...",
       "fr" : "Chargement de l'image...",
@@ -882,6 +883,7 @@
     }
   },
   "modal.create-color.new-color" : {
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:59" ],
     "translations" : {
       "en" : "New Color",
       "fr" : "Nouvelle couleur",
@@ -1458,7 +1460,7 @@
     }
   },
   "workspace.assets.assets" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:374" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:476" ],
     "translations" : {
       "en" : "Assets",
       "fr" : "",
@@ -1467,7 +1469,7 @@
     }
   },
   "workspace.assets.box-filter-all" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:394" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:496" ],
     "translations" : {
       "en" : "All assets",
       "fr" : "",
@@ -1476,7 +1478,7 @@
     }
   },
   "workspace.assets.box-filter-colors" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:396" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:498" ],
     "translations" : {
       "en" : "Colors",
       "fr" : "",
@@ -1485,7 +1487,7 @@
     }
   },
   "workspace.assets.box-filter-graphics" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:395" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:497" ],
     "translations" : {
       "en" : "Graphics",
       "fr" : "",
@@ -1494,7 +1496,7 @@
     }
   },
   "workspace.assets.colors" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:247" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:324" ],
     "translations" : {
       "en" : "Colors",
       "fr" : "",
@@ -1502,8 +1504,17 @@
       "es" : "Colores"
     }
   },
+  "workspace.assets.components" : {
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:106" ],
+    "translations" : {
+      "en" : "Components",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Componentes"
+    }
+  },
   "workspace.assets.delete" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:125", "src/app/main/ui/workspace/sidebar/assets.cljs:224" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:125", "src/app/main/ui/workspace/sidebar/assets.cljs:210", "src/app/main/ui/workspace/sidebar/assets.cljs:304" ],
     "translations" : {
       "en" : "Delete",
       "fr" : "",
@@ -1512,7 +1523,7 @@
     }
   },
   "workspace.assets.edit" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:223" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:303" ],
     "translations" : {
       "en" : "Edit",
       "fr" : "",
@@ -1521,7 +1532,7 @@
     }
   },
   "workspace.assets.file-library" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:309" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:401" ],
     "translations" : {
       "en" : "File library",
       "fr" : "",
@@ -1530,7 +1541,7 @@
     }
   },
   "workspace.assets.graphics" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:99" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:184" ],
     "translations" : {
       "en" : "Graphics",
       "fr" : "",
@@ -1539,7 +1550,7 @@
     }
   },
   "workspace.assets.libraries" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:377" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:479" ],
     "translations" : {
       "en" : "Libraries",
       "fr" : "",
@@ -1548,7 +1559,7 @@
     }
   },
   "workspace.assets.not-found" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:339" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:440" ],
     "translations" : {
       "en" : "No assets found",
       "fr" : "",
@@ -1557,7 +1568,7 @@
     }
   },
   "workspace.assets.rename" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:222" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:302" ],
     "translations" : {
       "en" : "Rename",
       "fr" : "",
@@ -1566,7 +1577,7 @@
     }
   },
   "workspace.assets.search" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:381" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:483" ],
     "translations" : {
       "en" : "Search assets",
       "fr" : "",
@@ -1575,7 +1586,7 @@
     }
   },
   "workspace.assets.shared" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:311" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:403" ],
     "translations" : {
       "en" : "SHARED",
       "fr" : "",

@@ -13,6 +13,7 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.selection :as dws]
    [app.common.pages :as cp]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -68,7 +69,7 @@
         (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true}))))))
 
 (defn delete-color
-  [{:keys [id] :as color}]
+  [{:keys [id] :as params}]
   (us/assert ::us/uuid id)
   (ptk/reify ::delete-color
     ptk/WatchEvent
@@ -94,7 +95,7 @@
 
 
 (defn delete-media
-  [{:keys [id] :as media}]
+  [{:keys [id] :as params}]
   (us/assert ::us/uuid id)
   (ptk/reify ::delete-media
     ptk/WatchEvent
@@ -105,4 +106,119 @@
             uchg {:type :add-media
                   :object prev}]
         (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true}))))))
+
+(declare clone-shape)
+
+(def add-component
+  (ptk/reify ::add-component
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id  (:current-page-id state)
+            objects  (dwc/lookup-page-objects state page-id)
+            selected (get-in state [:workspace-local :selected])
+            shapes   (dws/shapes-for-grouping objects selected)]
+        (when-not (empty? shapes)
+          (let [;; If the selected shape is a group, we can use it. If not,
+                ;; we need to create a group before creating the component.
+                [group rchanges uchanges]
+                (if (and (= (count shapes) 1)
+                         (= (:type (first shapes)) :group))
+                  [(first shapes) [] []]
+                  (dws/prepare-create-group page-id shapes "Component-" true))
+
+                [new-shape new-shapes updated-shapes]
+                (clone-shape group nil objects)
+
+                rchanges (conj rchanges
+                               {:type :add-component
+                                :id (:id new-shape)
+                                :name (:name new-shape)
+                                :new-shapes new-shapes})
+
+                rchanges (into rchanges
+                               (map (fn [updated-shape]
+                                      {:type :mod-obj
+                                       :page-id page-id
+                                       :id (:id updated-shape)
+                                       :operations [{:type :set
+                                                     :attr :component-id
+                                                     :val (:component-id updated-shape)}]})
+                                    updated-shapes))
+
+                uchanges (conj uchanges
+                               {:type :del-component
+                                :id (:id new-shape)})
+
+                uchanges (into uchanges
+                               (map (fn [updated-shape]
+                                      {:type :mod-obj
+                                       :page-id page-id
+                                       :id (:id updated-shape)
+                                       :operations [{:type :set
+                                                     :attr :component-id
+                                                     :val nil}]})
+                                    updated-shapes))]
+
+            (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
+                   (dws/select-shapes (d/ordered-set (:id group))))))))))
+
+(defn- clone-shape
+  "Clone the shape and all children. Generate new ids and detach
+  from parent and frame. Update the original shapes to have links
+  to the new ones."
+  [shape parent-id objects]
+  (let [new-id (uuid/next)]
+    (if (nil? (:shapes shape))
+
+      ; TODO: unify this case with the empty child-ids case.
+      (let [new-shape (assoc shape
+                             :id new-id
+                             :parent-id parent-id
+                             :frame-id nil)]
+        [new-shape
+         [new-shape]
+         [(assoc shape :component-id (:id new-shape))]])
+
+      (loop [child-ids (seq (:shapes shape))
+             new-children []
+             updated-children []]
+
+        (if (empty? child-ids)
+          (let [new-shape (assoc shape
+                                 :id new-id
+                                 :parent-id parent-id
+                                 :frame-id nil
+                                 :shapes (map :id new-children))]
+            [new-shape
+             (conj new-children new-shape)
+             (conj updated-children
+                   (assoc shape :component-id (:id new-shape)))])
+
+          (let [child-id (first child-ids)
+                child (get objects child-id)
+
+                [new-child new-child-shapes updated-child-shapes]
+                (clone-shape child new-id objects)]
+
+          (recur
+            (next child-ids)
+            (into new-children new-child-shapes)
+            (into updated-children updated-child-shapes))))))))
+
+(defn delete-component
+  [{:keys [id] :as params}]
+  (ptk/reify ::delete-component
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [component (get-in state [:workspace-data :components id])
+
+            rchanges [{:type :del-component
+                       :id id}]
+
+            uchanges [{:type :add-component
+                       :id id
+                       :name (:name component)
+                       :new-shapes (:objects component)}]]
+
+        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 

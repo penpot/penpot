@@ -156,3 +156,35 @@
            :xmlnsXlink "http://www.w3.org/1999/xlink"
            :xmlns "http://www.w3.org/2000/svg"}
      [:& wrapper {:shape frame :view-box vbox}]]))
+
+;; TODO: unify with frame-svg?
+(mf/defc component-svg
+  {::mf/wrap [mf/memo]}
+  [{:keys [objects group zoom] :or {zoom 1} :as props}]
+  (let [modifier (-> (gpt/point (:x group) (:y group))
+                     (gpt/negate)
+                     (gmt/translate-matrix))
+
+        group-id (:id group)
+
+        modifier-ids (concat [group-id] (cph/get-children group-id objects))
+        update-fn #(assoc-in %1 [%2 :modifiers :displacement] modifier)
+        objects (reduce update-fn objects modifier-ids)
+        group (assoc-in group [:modifiers :displacement] modifier)
+
+        width  (* (:width group) zoom)
+        height (* (:height group) zoom)
+        vbox   (str "0 0 " (:width group 0)
+                    " "    (:height group 0))
+        wrapper (mf/use-memo
+                  (mf/deps objects)
+                  #(group-wrapper-factory objects))]
+
+    [:svg {:view-box vbox
+           :width width
+           :height height
+           :version "1.1"
+           :xmlnsXlink "http://www.w3.org/1999/xlink"
+           :xmlns "http://www.w3.org/2000/svg"}
+     [:& wrapper {:shape group :view-box vbox}]]))
+

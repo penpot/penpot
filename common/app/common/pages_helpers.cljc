@@ -15,7 +15,7 @@
 (defn get-children
   "Retrieve all children ids recursively for a given object"
   [id objects]
-  (let [shapes (get-in objects [id :shapes])]
+  (let [shapes (vec (get-in objects [id :shapes]))]
     (if shapes
       (d/concat shapes (mapcat #(get-children % objects) shapes))
       [])))

@@ -14,6 +14,7 @@
    [app.common.geom.shapes :as geom]
    [app.common.media :as cm]
    [app.common.pages :as cp]
+   [app.common.pages-helpers :as cph]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.data.workspace :as dw]
@@ -21,6 +22,7 @@
    [app.main.data.colors :as dc]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.exports :as exports]
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
@@ -37,6 +39,62 @@
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
+
+(mf/defc components-box
+  [{:keys [file-id local? components] :as props}]
+  (let [state (mf/use-state {:menu-open false
+                             :top nil
+                             :left nil
+                             :component-id nil})
+        on-delete
+        (mf/use-callback
+         (mf/deps state)
+         (fn []
+           (let [params {:id (:component-id @state)}]
+             (st/emit! (dwl/delete-component params)))))
+
+        on-context-menu
+        (mf/use-callback
+         (fn [component-id]
+           (fn [event]
+             (when local?
+               (let [pos (dom/get-client-position event)
+                     top (:y pos)
+                     left (- (:x pos) 20)]
+                 (dom/prevent-default event)
+                 (swap! state assoc :menu-open true
+                        :top top
+                        :left left
+                        :component-id component-id))))))
+
+        on-drag-start
+        (mf/use-callback
+         (fn [path event]
+           (dnd/set-data! event "text/uri-list" (cfg/resolve-media-path path))
+           (dnd/set-allowed-effect! event "move")))]
+
+    [:div.asset-group
+     [:div.group-title
+      (tr "workspace.assets.components")
+      [:span (str "\u00A0(") (count components) ")"]] ;; Unicode 00A0 is non-breaking space
+     [:div.group-grid.big
+      (for [component components]
+        [:div.grid-cell {:key (:id component)
+                         :draggable true
+                         :on-context-menu (on-context-menu (:id component))
+                         :on-drag-start (partial on-drag-start (:path component))}
+         [:& exports/component-svg {:group (get-in component [:objects (:id component)])
+                                    :objects (:objects component)}]
+         [:div.cell-name (:name component)]])
+
+      (when local?
+        [:& context-menu
+         {:selectable false
+          :show (:menu-open @state)
+          :on-close #(swap! state assoc :menu-open false)
+          :top (:top @state)
+          :left (:left @state)
+          :options [[(tr "workspace.assets.delete") on-delete]]}])]]))
 
 (mf/defc graphics-box
   [{:keys [file-id local? objects open? on-open on-close] :as props}]
@@ -125,7 +183,6 @@
             :top (:top @state)
             :left (:left @state)
             :options [[(tr "workspace.assets.delete") on-delete]]}])])]))
-
 
 (mf/defc color-item
   [{:keys [color local? locale file-id] :as props}]
@@ -287,32 +344,45 @@
                    (vals (get-in state [:workspace-libraries id :data :media])))))
              st/state =))
 
+(defn file-components-ref
+  [id]
+  (l/derived (fn [state]
+               (let [wfile (:workspace-file state)]
+                 (if (= (:id wfile) id)
+                   (vals (get-in wfile [:data :components]))
+                   (vals (get-in state [:workspace-libraries id :data :components])))))
+             st/state =))
+
 (defn apply-filters
   [coll filters]
-  (filter (fn [item]
-            (or (matches-search (:name item "!$!") (:term filters))
-                (matches-search (:value item "!$!") (:term filters))))
-          coll))
+  (->> coll
+    (filter (fn [item]
+              (or (matches-search (:name item "!$!") (:term filters))
+                  (matches-search (:value item "!$!") (:term filters)))))
+    (sort-by #(str/lower (:name %)))))
 
 (mf/defc file-library
   [{:keys [file local? open? filters locale] :as props}]
-  (let [open?       (mf/use-state open?)
-        shared?     (:is-shared file)
-        router      (mf/deref refs/router)
-        toggle-open #(swap! open? not)
+  (let [open?              (mf/use-state open?)
+        shared?            (:is-shared file)
+        router             (mf/deref refs/router)
+        toggle-open        #(swap! open? not)
 
         toggles (mf/use-state #{:graphics :colors})
 
-        url         (rt/resolve router :workspace
-                                {:project-id (:project-id file)
-                                 :file-id (:id file)}
-                                {:page-id (get-in file [:data :pages 0])})
+        url                (rt/resolve router :workspace
+                                       {:project-id (:project-id file)
+                                        :file-id (:id file)}
+                                       {:page-id (get-in file [:data :pages 0])})
 
-        colors-ref  (mf/use-memo (mf/deps (:id file)) #(file-colors-ref (:id file)))
-        colors      (apply-filters (mf/deref colors-ref) filters)
+        colors-ref         (mf/use-memo (mf/deps (:id file)) #(file-colors-ref (:id file)))
+        colors             (apply-filters (mf/deref colors-ref) filters)
 
-        media-ref   (mf/use-memo (mf/deps (:id file)) #(file-media-ref (:id file)))
-        media       (apply-filters (mf/deref media-ref) filters)]
+        media-ref          (mf/use-memo (mf/deps (:id file)) #(file-media-ref (:id file)))
+        media              (apply-filters (mf/deref media-ref) filters)
+
+        components-ref     (mf/use-memo (mf/deps (:id file)) #(file-components-ref (:id file)))
+        components         (apply-filters (mf/deref components-ref) filters)]
 
     [:div.tool-window
      [:div.tool-window-bar
@@ -332,15 +402,23 @@
            [:a {:href (str "#" url) :target "_blank"} i/chain]]])]
 
      (when @open?
-       (let [show-graphics? (and (or (= (:box filters) :all)
-                                     (= (:box filters) :graphics))
-                                 (or (> (count media) 0)
-                                     (str/empty? (:term filters))))
-             show-colors?   (and (or (= (:box filters) :all)
-                                     (= (:box filters) :colors))
-                                 (or (> (count colors) 0)
-                                     (str/empty? (:term filters))))]
+       (let [show-components?   (and (or (= (:box filters) :all)
+                                         (= (:box filters) :components))
+                                     (or (> (count components) 0)
+                                         (str/empty? (:term filters))))
+             show-graphics?     (and (or (= (:box filters) :all)
+                                         (= (:box filters) :graphics))
+                                     (or (> (count media) 0)
+                                         (str/empty? (:term filters))))
+             show-colors?       (and (or (= (:box filters) :all)
+                                         (= (:box filters) :colors))
+                                     (or (> (count colors) 0)
+                                         (str/empty? (:term filters))))]
          [:div.tool-window-content
+          (when show-components?
+            [:& components-box {:file-id (:id file)
+                                :local? local?
+                                :components components}])
           (when show-graphics?
             [:& graphics-box {:file-id (:id file)
                               :local? local?
@@ -357,9 +435,10 @@
                             :on-open #(swap! toggles conj :colors)
                             :on-close #(swap! toggles disj :colors)}])
 
-          (when (and (not show-graphics?) (not show-colors?))
+          (when (and (not show-components?) (not show-graphics?) (not show-colors?))
             [:div.asset-group
              [:div.group-title (t locale "workspace.assets.not-found")]])]))]))
+
 
 (mf/defc assets-toolbox
   [{:keys [team-id file] :as props}]
