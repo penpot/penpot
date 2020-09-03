@@ -52,6 +52,20 @@
   (-> (hex->rgb data)
       (conj opacity)))
 
+(defn hex->hsl [hex]
+  (try
+    (into [] (gcolor/hexToHsl hex))
+    (catch :default e (do
+                        (.log js/console e)
+                        [0 0 0]))))
+
+(defn hsl->rgb
+  [h s l]
+  (gcolor/hslToRgb h s l))
+
+(defn hsl->hex [h s l]
+  (gcolor/hslToHex h s l))
+
 (defn hex?
   [v]
   (and (string? v)

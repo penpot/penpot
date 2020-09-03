@@ -5,6 +5,201 @@
 // Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 // Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
+.colorpicker-v2 {
+    display: flex;
+    flex-direction: column;
+    width: 13rem;
+    padding: 0.5rem;
+    background-color: $color-white;
+    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+
+    .handler {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        border-radius: 6px;
+        z-index: 1;
+    }
+
+    .value-selector {
+        background-color: rgba(var(--hue));
+        position: relative;
+        height: 6.75rem;
+        width: 100%;
+
+        .handler {
+            box-shadow: rgb(255, 255, 255) 0px 0px 0px 1px inset;
+            transform: translate(-6px, -6px);
+            left: 50%;
+            top: 50%;
+        }
+    }
+
+    .value-selector::before {
+        content: "";
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to right, #fff, rgba(255,255,255,0));
+    }
+
+    .value-selector::after {
+        content: "";
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to top, #000, rgba(0,0,0,0));
+    }
+
+    .shade-selector {
+        display: grid;
+        justify-items: center;
+        align-items: center;
+        grid-template-areas: "color hue" "color opacity";
+        grid-template-columns: 2.5rem 1fr;
+        height: 3.5rem;
+        grid-row-gap: 0.5rem;
+    }
+
+    .color-bullet {
+        grid-area: color;
+        width: 20px;
+        height: 20px;
+        background-color: rgba(var(--color));
+        border-radius: 12px;
+        border: 1px solid $color-gray-10;
+    }
+
+    .hue-selector {
+        align-self: end;
+        grid-area: hue;
+        height: 0.5rem;
+        width: 100%;
+        background: linear-gradient(
+            to right, 
+            #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, 
+            #00f 67%, #f0f 83%, #f00 100%);
+        position: relative;
+    }
+
+    .hue-selector .handler,
+    .opacity-selector .handler {
+        background-color: rgb(248, 248, 248);
+        box-shadow: rgba(0, 0, 0, 0.37) 0px 1px 4px 0px;
+        transform: translate(-6px, -2px);
+        left: 50%;
+        cursor: pointer;
+    }
+
+    .opacity-selector {
+        align-self: start;
+        grid-area: opacity;
+        height: 0.5rem;
+        width: 100%;
+        position: relative;
+        background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=") left center;
+    }
+    
+    .opacity-selector::after {
+        content: "";
+        background: linear-gradient(to right, rgba(var(--color), 0) 0%, rgba(var(--color), 1.0) 100%);
+        position: absolute;
+        width: 100%;
+        height: 100%;
+    }
+
+    .color-values {
+        display: grid;
+        grid-template-columns: 3.5rem repeat(4, 1fr);
+        grid-row-gap: 0.25rem;
+        justify-items: center;
+        grid-column-gap: 0.25rem;
+
+        input {
+            width: 100%;
+            margin: 0;
+            border: 1px solid $color-gray-10;
+            border-radius: 2px;
+            font-size: $fs11;
+            height: 1.5rem;
+            padding: 0 $x-small;
+            color: $color-gray-40;
+        }
+
+        label {
+            font-size: $fs11;
+        }
+    }
+
+    .libraries {
+        border-top: 1px solid $color-gray-10;
+        padding-top: 0.5rem;
+        margin-top: 0.25rem;
+        
+        select {
+            background-image: url(/images/icons/arrow-down.svg);
+            background-repeat: no-repeat;
+            background-position: 95% 48%;
+            background-size: 10px;
+            margin: 0;
+            margin-bottom: 0.5rem;
+            width: 100%;
+            padding: 2px 0.25rem;
+            font-size: 0.75rem;
+            color: $color-gray-40;
+            border-color: $color-gray-10;
+            border-radius: 2px;
+
+            option {
+                padding: 0;
+            }
+        }
+
+        .selected-colors {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            justify-content: space-between;
+            margin-right: -8px;
+            overflow: scroll;
+            max-height: 5.5rem;
+        }
+
+        
+        .selected-colors::after {
+            content: "";
+            flex: auto;
+        }
+
+        .selected-colors .color-bullet {
+            grid-area: auto;
+            margin-bottom: 0.25rem;
+            cursor: pointer;
+
+            &:hover {
+                border-color: $color-primary;
+            }
+
+            &.button {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            &.button svg {
+                width: 12px;
+                height: 12px;
+                fill: $color-gray-30;
+            }
+
+            &.plus-button svg {
+                width: 8px;
+                height: 8px;
+                fill: $color-black;
+            }
+        }
+    }
+}
+
 .color-picker {
   display: flex;
   flex-direction: column;

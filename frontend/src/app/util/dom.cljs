@@ -203,3 +203,6 @@
   [b]
   {:pre [(blob? b)]}
   (js/URL.createObjectURL b))
+
+(defn set-css-property [node property value]
+  (.setProperty (.-style node) property value))
