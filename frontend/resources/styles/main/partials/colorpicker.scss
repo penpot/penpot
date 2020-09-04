@@ -26,6 +26,7 @@
         position: relative;
         height: 6.75rem;
         width: 100%;
+        cursor: pointer;
 
         .handler {
             box-shadow: rgb(255, 255, 255) 0px 0px 0px 1px inset;
@@ -59,6 +60,7 @@
         grid-template-columns: 2.5rem 1fr;
         height: 3.5rem;
         grid-row-gap: 0.5rem;
+        cursor: pointer;
     }
 
     .color-bullet {
@@ -80,6 +82,7 @@
             #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, 
             #00f 67%, #f0f 83%, #f00 100%);
         position: relative;
+        cursor: pointer;
     }
 
     .hue-selector .handler,
@@ -88,7 +91,6 @@
         box-shadow: rgba(0, 0, 0, 0.37) 0px 1px 4px 0px;
         transform: translate(-6px, -2px);
         left: 50%;
-        cursor: pointer;
     }
 
     .opacity-selector {
@@ -196,6 +198,19 @@
                 height: 8px;
                 fill: $color-black;
             }
+        }
+    }
+
+    .actions {
+        margin-top: 0.5rem;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+
+        .btn-primary {
+            height: 1.5rem;
+            padding: 0 2.5rem;
+            font-size: $fs12;
         }
     }
 }

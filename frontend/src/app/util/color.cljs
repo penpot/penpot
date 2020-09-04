@@ -43,10 +43,6 @@
   [v]
   (into [] (gcolor/hexToHsv v)))
 
-(defn hsv->hex
-  [[h s v]]
-  (gcolor/hsvToHex h s v))
-
 (defn hex->rgba
   [^string data ^number opacity]
   (-> (hex->rgb data)
@@ -60,13 +56,26 @@
                         [0 0 0]))))
 
 (defn hsl->rgb
-  [h s l]
+  [[h s l]]
   (gcolor/hslToRgb h s l))
 
-(defn hsl->hex [h s l]
+(defn hsl->hex
+  [[h s l]]
   (gcolor/hslToHex h s l))
 
 (defn hex?
   [v]
   (and (string? v)
        (re-seq #"^#[0-9A-Fa-f]{6}$" v)))
+
+(defn hsl->hsv
+  [[h s l]]
+  (gcolor/hslToHsv h s l))
+
+(defn hsv->hex
+  [[h s v]]
+  (gcolor/hsvToHex h s v))
+
+(defn hsv->hsl
+  [hsv]
+  (hex->hsl (hsv->hex hsv)))

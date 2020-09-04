@@ -38,6 +38,15 @@
         (rx/of #(assoc-in % [:workspace-local :color-for-rename] id)
                (dwc/commit-changes [rchg] [uchg] {:commit-local? true}))))))
 
+(defn add-recent-color
+  [color]
+  (us/assert ::us/string color)
+  (ptk/reify ::add-recent-color
+    ptk/WatchEvent
+    (watch [_ state s]
+      (let [rchg {:type :add-recent-color
+                  :color color}]
+        (rx/of (dwc/commit-changes [rchg] [] {:commit-local? true}))))))
 
 (def clear-color-for-rename
   (ptk/reify ::clear-color-for-rename
