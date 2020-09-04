@@ -33,7 +33,6 @@
     "mousetrap": "^1.6.5",
     "randomcolor": "^0.6.2",
     "react": "^16.13.1",
-    "react-color": "^2.18.1",
     "react-dom": "^16.13.1",
     "rxjs": "^7.0.0-beta.4",
     "slate": "^0.58.4",
