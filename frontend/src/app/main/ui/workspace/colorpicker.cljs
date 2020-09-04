@@ -303,7 +303,6 @@
        [:div.actions
         [:button.btn-primary.btn-large
          {:on-click (fn []
-                      (println "SAVE" @value-ref)
                       (on-accept @value-ref)
                       (modal/hide!))}
          "Save color"]])])
