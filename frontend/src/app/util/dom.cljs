@@ -206,3 +206,9 @@
 
 (defn set-css-property [node property value]
   (.setProperty (.-style node) property value))
+
+(defn capture-pointer [event]
+  (-> event get-target (.setPointerCapture (.-pointerId event))))
+
+(defn release-pointer [event]
+  (-> event get-target (.releasePointerCapture (.-pointerId event))))

@@ -29,6 +29,7 @@
    [app.main.ui.modal :as modal]
    [app.main.ui.shapes.icon :as icon]
    [app.main.ui.workspace.libraries :refer [libraries-dialog]]
+   [app.main.ui.workspace.colorpicker :refer [colorpicker-modal]]
    [app.util.data :refer [matches-search]]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
@@ -39,7 +40,7 @@
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
-(mf/defc modal-edit-color
+#_(mf/defc modal-edit-color
   [{:keys [color-value on-accept on-cancel] :as ctx}]
   (let [state (mf/use-state {:current-color color-value})]
     (letfn [(accept [event]
@@ -167,8 +168,8 @@
           (st/emit! (dwl/update-color (assoc color :name name))))
 
         edit-color
-        (fn [value opacity]
-          (st/emit! (dwl/update-color (assoc color :value name))))
+        (fn [value]
+          (st/emit! (dwl/update-color (assoc color :value value))))
 
         delete-color
         (fn []
@@ -197,9 +198,13 @@
 
         edit-color-clicked
         (fn [event]
-          (modal/show! modal-edit-color
-                       {:color-value (:value color)
-                        :on-accept edit-color}))
+          (modal/show! colorpicker-modal
+                       {:x (.-clientX event)
+                        :y (.-clientY event)
+                        :on-accept edit-color
+                        :value (:value color)
+                        :disable-opacity true
+                        :position :right}))
 
         on-context-menu
         (fn [event]
@@ -258,10 +263,13 @@
         (mf/use-callback
          (mf/deps file-id)
          (fn [event]
-           (modal/show! modal-edit-color
-                        {:color-value "#406280"
-
-                     :on-accept add-color})))]
+           (modal/show! colorpicker-modal
+                        {:x (.-clientX event)
+                         :y (.-clientY event)
+                         :on-accept add-color
+                         :value "#406280"
+                         :disable-opacity true
+                         :position :right})))]
     [:div.asset-group
      [:div.group-title
       (t locale "workspace.assets.colors")

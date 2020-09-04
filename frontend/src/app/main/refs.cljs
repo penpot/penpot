@@ -99,6 +99,12 @@
                  (get-in file [:data :colors])))
              st/state))
 
+(def workspace-recent-colors
+  (l/derived (fn [state]
+               (when-let [file (:workspace-file state)]
+                 (get-in file [:data :recent-colors])))
+             st/state))
+
 (def workspace-project
   (l/derived :workspace-project st/state))
 
