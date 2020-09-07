@@ -20,7 +20,7 @@
    [app.util.i18n :as i18n :refer [tr t]]
    [app.util.object :as obj]))
 
-(def fill-attrs [:fill-color :fill-opacity])
+(def fill-attrs [:fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file])
 
 (defn- fill-menu-props-equals?
   [np op]
@@ -52,7 +52,9 @@
                 (t locale "workspace.options.fill"))
 
         color {:value (:fill-color values)
-               :opacity (:fill-opacity values)}
+               :opacity (:fill-opacity values)
+               :id (:fill-color-ref-id values)
+               :file-id (:fill-color-ref-file values)}
 
         on-add
         (mf/use-callback
@@ -70,9 +72,11 @@
         on-change
         (mf/use-callback
          (mf/deps ids)
-         (fn [value opacity]
+         (fn [value opacity id file-id]
            (let [change #(cond-> %
-                           value (assoc :fill-color value)
+                           value (assoc :fill-color value
+                                        :fill-color-ref-id id
+                                        :fill-color-ref-file file-id)
                            opacity (assoc :fill-opacity opacity))
                  converted-attrs (cond-> {}
                                    value (assoc :fill value)

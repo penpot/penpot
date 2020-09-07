@@ -11,8 +11,6 @@
   (:require
    [rumext.alpha :as mf]
    [app.main.store :as st]
-   [app.main.ui.colorpicker :as cp]
-
    [cuerdas.core :as str]
    [app.util.dom :as dom]
    [app.util.color :as uc]
@@ -97,8 +95,9 @@
                             :left (str (* opacity 100) "%")}}]]))
 
 (defn as-color-components [value opacity]
-  (let [[r g b] (uc/hex->rgb (or value "000000"))
-        [h s v] (uc/hex->hsv (or value "000000"))]
+  (let [value (if (uc/hex? value) value "#000000")
+        [r g b] (uc/hex->rgb value)
+        [h s v] (uc/hex->hsv value)]
     {:hex (or value "000000")
      :alpha (or opacity 1)
      :r r :g g :b b
@@ -137,11 +136,19 @@
     ;; Load library colors when the select is changed
     (mf/use-effect
      (mf/deps @selected-library)
-     (fn [] (cond
-              (= @selected-library "recent") (reset! current-library-colors (reverse (or recent-colors [])))
-              (= @selected-library "file") (reset! current-library-colors (into [] (map :value (vals file-colors))))
-              :else ;; Library UUID
-              (reset! current-library-colors (into [] (map :value (vals (get-in shared-libs [(uuid @selected-library) :data :colors]))))))))
+     (fn []
+       (let [mapped-colors
+             (cond
+               (= @selected-library "recent")
+               (map #(hash-map :value %) (reverse (or recent-colors [])))
+
+               (= @selected-library "file")
+               (map #(select-keys % [:id :value]) (vals file-colors))
+
+               :else ;; Library UUID
+               (map #(merge {:file-id (uuid @selected-library)} (select-keys % [:id :value]))
+                    (vals (get-in shared-libs [(uuid @selected-library) :data :colors]))))]
+         (reset! current-library-colors (into [] mapped-colors)))))
 
     ;; If the file colors change and the file option is selected updates the state
     (mf/use-effect
@@ -153,7 +160,7 @@
     (mf/use-effect
      (fn [] #(st/emit! (dwl/add-recent-color @value-ref))))
 
-    [:div.colorpicker-v2 {:ref ref-picker}
+    [:div.colorpicker {:ref ref-picker}
      [:& value-selector {:hue (:h @current-color)
                          :saturation (:s @current-color)
                          :value (:v @current-color)
@@ -285,18 +292,18 @@
        [:div.color-bullet.button {:style {:background-color "white"}}
         i/palette]
 
-       (for [[idx color] (map-indexed vector @current-library-colors)]
+       (for [[idx {:keys [id file-id value]}] (map-indexed vector @current-library-colors)]
          [:div.color-bullet {:key (str "color-" idx)
                              :on-click (fn []
-                                         (swap! current-color assoc :hex color)
-                                         (reset! value-ref color)
-                                         (let [[r g b] (uc/hex->rgb color)
-                                               [h s v] (uc/hex->hsv color)]
+                                         (swap! current-color assoc :hex value)
+                                         (reset! value-ref value)
+                                         (let [[r g b] (uc/hex->rgb value)
+                                               [h s v] (uc/hex->hsv value)]
                                            (swap! current-color assoc
                                                   :r r :g g :b b
                                                   :h h :s s :v v)
-                                           (on-change color (:alpha @current-color))))
-                             :style {:background-color color}}])]
+                                           (on-change value (:alpha @current-color) id file-id)))
+                             :style {:background-color value}}])]
 
       ]
      (when on-accept
@@ -319,13 +326,9 @@
     [:div.modal-overlay.transparent
      [:div.colorpicker-tooltip
       {:style (clj->js style)}
-      #_[:& cp/colorpicker {:value (or value default)
-                            :opacity (or opacity 1)
-                            :colors (into-array @cp/most-used-colors)
-                            :on-change on-change
-                            :disable-opacity disable-opacity}]
       [:& colorpicker {:value (or value default)
                        :opacity (or opacity 1)
                        :on-change on-change
                        :on-accept on-accept
                        :disable-opacity disable-opacity}]]]))
+

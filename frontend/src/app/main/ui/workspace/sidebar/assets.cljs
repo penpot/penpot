@@ -20,7 +20,6 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.colorpicker :refer [colorpicker most-used-colors]]
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
@@ -39,33 +38,6 @@
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
-
-#_(mf/defc modal-edit-color
-  [{:keys [color-value on-accept on-cancel] :as ctx}]
-  (let [state (mf/use-state {:current-color color-value})]
-    (letfn [(accept [event]
-              (dom/prevent-default event)
-              (modal/hide!)
-              (when on-accept (on-accept (:current-color @state))))
-
-            (cancel [event]
-              (dom/prevent-default event)
-              (modal/hide!)
-              (when on-cancel (on-cancel)))]
-
-      [:div.modal-overlay.transparent
-        [:div.modal-create-color
-         [:h3.modal-create-color-title (tr "modal.create-color.new-color")]
-         [:& colorpicker {:value (:current-color @state)
-                          :colors (into-array @most-used-colors)
-                          :disable-opacity true
-                          :on-change #(swap! state assoc :current-color %)}]
-
-         [:input.btn-primary {:type "button"
-                              :value (tr "ds.button.save")
-                              :on-click accept}]
-
-         [:a.close {:href "#" :on-click cancel} i/close]]])))
 
 (mf/defc graphics-box
   [{:keys [file-id local? objects] :as props}]
