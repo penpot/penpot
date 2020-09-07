@@ -42,7 +42,7 @@ function run-devenv {
         start-devenv
     fi
 
-    docker exec -ti uxbox-devenv-main /home/uxbox/start-tmux.sh
+    docker exec -ti uxbox-devenv-main /home/start-tmux.sh
 }
 
 function build-frontend {
