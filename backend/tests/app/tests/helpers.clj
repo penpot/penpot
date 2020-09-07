@@ -1,3 +1,12 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
+
 (ns app.tests.helpers
   (:require
    [clojure.java.io :as io]
@@ -13,7 +22,6 @@
    [app.services.mutations.projects :as projects]
    [app.services.mutations.teams :as teams]
    [app.services.mutations.files :as files]
-   [app.services.mutations.pages :as pages]
    [app.services.mutations.colors :as colors]
    [app.migrations]
    [app.media]
@@ -90,9 +98,17 @@
 
 (defn create-team
   [conn profile-id i]
-  (#'teams/create-team conn {:id (mk-uuid "team" i)
-                             :profile-id profile-id
-                             :name (str "team" i)}))
+  (let [id (mk-uuid "team" i)
+        team (#'teams/create-team conn {:id id
+                                        :profile-id profile-id
+                                        :name (str "team" i)})]
+    (#'teams/create-team-profile conn
+                                 {:team-id id
+                                  :profile-id profile-id
+                                  :is-owner true
+                                  :is-admin true
+                                  :can-edit true})
+    team))
 
 (defn create-project
   [conn profile-id team-id i]
@@ -108,15 +124,6 @@
                              :project-id project-id
                              :is-shared is-shared
                              :name (str "file" i)}))
-
-(defn create-page
-  [conn profile-id file-id i]
-  (#'pages/create-page conn {:id (mk-uuid "page" i)
-                             :profile-id profile-id
-                             :file-id file-id
-                             :name (str "page" i)
-                             :ordering i
-                             :data cp/default-page-data}))
 
 (defn handle-error
   [^Throwable err]

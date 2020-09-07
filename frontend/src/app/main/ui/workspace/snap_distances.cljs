@@ -132,7 +132,7 @@
                                             :frame-id (:id frame)
                                             :rect (gsh/pad-selrec (areas side))})
                                   (rx/map #(set/difference % selected))
-                                  (rx/map #(->> % (map (partial get @refs/workspace-objects))))))]
+                                  (rx/map #(->> % (map (partial get @refs/workspace-page-objects))))))]
 
             (->> (query-side lt-side)
                  (rx/combine-latest vector (query-side gt-side)))))
@@ -213,29 +213,25 @@
                                   :coord coord
                                   :zoom zoom}])))
 
-(mf/defc snap-distances [{:keys [layout]}]
-  (let [page-id (mf/deref refs/workspace-page-id)
-        selected (mf/deref refs/selected-shapes)
-        shapes (->> (refs/objects-by-id selected)
-                    (mf/deref)
-                    (map gsh/transform-shape))
-        selrect (gsh/selection-rect shapes)
-        frame-id (-> shapes first :frame-id)
-        frame (mf/deref (refs/object-by-id frame-id))
-        zoom (mf/deref refs/selected-zoom)
-        current-transform (mf/deref refs/current-transform)
-        key (->> selected (map str) (str/join "-"))]
-
-    (when (and (contains? layout :dynamic-alignment)
-               (= current-transform :move)
-               (not (empty? selected)))
-        [:g.distance
-         (for [coord [:x :y]]
-           [:& shape-distance
-            {:key (str key (name coord))
-             :selrect selrect
-             :page-id page-id
-             :frame frame
-             :zoom zoom
-             :coord coord
-             :selected selected}])])))
+(mf/defc snap-distances
+  [{:keys [layout page-id zoom selected transform]}]
+  (when (and (contains? layout :dynamic-alignment)
+             (= transform :move)
+             (not (empty? selected)))
+    (let [shapes (->> (refs/objects-by-id selected)
+                      (mf/deref)
+                      (map gsh/transform-shape))
+          selrect  (gsh/selection-rect shapes)
+          frame-id (-> shapes first :frame-id)
+          frame    (mf/deref (refs/object-by-id frame-id))
+          key      (->> selected (map str) (str/join "-"))]
+      [:g.distance
+       (for [coord [:x :y]]
+         [:& shape-distance
+          {:key (str key (name coord))
+           :selrect selrect
+           :page-id page-id
+           :frame frame
+           :zoom zoom
+           :coord coord
+           :selected selected}])])))

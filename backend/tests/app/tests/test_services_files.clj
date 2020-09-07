@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 app Labs SL
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.tests.test-services-files
   (:require
@@ -70,7 +70,7 @@
           (t/is (= 1 (count result)))
           (t/is (= file-id (get-in result [0 :id])))
           (t/is (= "new name" (get-in result [0 :name])))
-          (t/is (= 1 (count (get-in result [0 :pages])))))))
+          (t/is (= 1 (count (get-in result [0 :data :pages])))))))
 
     (t/testing "query single file without users"
       (let [data {::sq/type :file
@@ -84,8 +84,7 @@
         (let [result (:result out)]
           (t/is (= file-id (:id result)))
           (t/is (= "new name" (:name result)))
-          (t/is (vector? (:pages result)))
-          (t/is (= 1 (count (:pages result))))
+          (t/is (= 1 (count (get-in result [:data :pages]))))
           (t/is (nil? (:users result))))))
 
     (t/testing "delete file"
@@ -128,5 +127,3 @@
         (let [result (:result out)]
           (t/is (= 0 (count result))))))
     ))
-
-;; TODO: delete file image

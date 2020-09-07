@@ -75,12 +75,10 @@
          (t locale "viewer.header.show-interactions-on-click")]]]]]))
 
 (mf/defc share-link
-  [{:keys [page] :as props}]
+  [{:keys [page token] :as props}]
   (let [show-dropdown? (mf/use-state false)
-        dropdown-ref (mf/use-ref)
-        token (:share-token page)
-
-        locale (i18n/use-locale)
+        dropdown-ref   (mf/use-ref)
+        locale         (mf/deref i18n/locale)
 
         create #(st/emit! dv/create-share-link)
         delete #(st/emit! dv/delete-share-link)
@@ -158,8 +156,11 @@
 
      [:div.options-zone
       [:& interactions-menu {:interactions-mode interactions-mode}]
+
       (when-not anonymous?
-        [:& share-link {:page (:page data)}])
+        [:& share-link {:token (:share-token data)
+                        :page  (:page data)}])
+
       (when-not anonymous?
         [:a.btn-text-basic.btn-small {:on-click on-edit}
          (t locale "viewer.header.edit-page")])

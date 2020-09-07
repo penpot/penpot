@@ -9,6 +9,7 @@
 
 (ns app.main.ui
   (:require
+   [expound.alpha :as expound]
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [potok.core :as ptk]
@@ -49,7 +50,7 @@
     ["/password" :settings-password]
     ["/options" :settings-options]]
 
-   ["/view/:page-id" :viewer]
+   ["/view/:file-id/:page-id" :viewer]
    ["/not-found" :not-found]
    ["/not-authorized" :not-authorized]
 
@@ -57,7 +58,7 @@
      ["/debug/icons-preview" :debug-icons-preview])
 
    ;; Used for export
-   ["/render-object/:page-id/:object-id" :render-object]
+   ["/render-object/:file-id/:page-id/:object-id" :render-object]
 
    ["/dashboard"
     ["/team/:team-id"
@@ -112,16 +113,20 @@
     :viewer
     (let [index (d/parse-integer (get-in route [:params :query :index]))
           token (get-in route [:params :query :token])
+          file-id (uuid (get-in route [:params :path :file-id]))
           page-id (uuid (get-in route [:params :path :page-id]))]
       [:& viewer-page {:page-id page-id
+                       :file-id file-id
                        :index index
                        :token token}])
 
     :render-object
     (do
-      (let [page-id (uuid (get-in route [:params :path :page-id]))
-            object-id  (uuid (get-in route [:params :path :object-id]))]
-        [:& render/render-object {:page-id page-id
+      (let [file-id   (uuid (get-in route [:params :path :file-id]))
+            page-id   (uuid (get-in route [:params :path :page-id]))
+            object-id (uuid (get-in route [:params :path :object-id]))]
+        [:& render/render-object {:file-id file-id
+                                  :page-id page-id
                                   :object-id object-id}]))
 
     :workspace
@@ -163,9 +168,18 @@
   [error]
   (ts/schedule 0 #(st/emit! logout)))
 
+(defmethod ptk/handle-error :assertion
+  [{:keys [data stack] :as error}]
+  (js/console.error stack)
+  (js/console.error (with-out-str
+                      (expound/printer data))))
+
 (defmethod ptk/handle-error :default
   [error]
-  (js/console.error (if (map? error) (pr-str error) error))
-  (ts/schedule 100 #(st/emit! (dm/show {:content "Something wrong has happened."
-                                        :type :error
-                                        :timeout 5000}))))
+  (if (instance? ExceptionInfo error)
+    (ptk/handle-error (ex-data error))
+    (do
+      (js/console.error (if (map? error) (pr-str error) error))
+      (ts/schedule 100 #(st/emit! (dm/show {:content "Something wrong has happened."
+                                            :type :error
+                                            :timeout 5000}))))))

@@ -125,8 +125,8 @@
 
      ptk/WatchEvent
      (watch [_ state stream]
-       (let [page-id (get-in state [:workspace-page :id])
-             objects (get-in state [:workspace-data page-id :objects])]
+       (let [page-id (:current-page-id state)
+             objects (dwc/lookup-page-objects state page-id)]
          (rx/of (dwc/expand-all-parents [id] objects)))))))
 
 (defn select-shapes
@@ -139,8 +139,8 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-id (get-in state [:workspace-page :id])
-            objects (get-in state [:workspace-data page-id :objects])]
+       (let [page-id (:current-page-id state)
+             objects (dwc/lookup-page-objects state page-id)]
         (rx/of (dwc/expand-all-parents ids objects))))))
 
 (def deselect-all
@@ -159,7 +159,7 @@
   (ptk/reify ::select-shapes-by-current-selrect
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-id (get-in state [:workspace-page :id])
+      (let [page-id (:current-page-id state)
             selrect (get-in state [:workspace-local :selrect])]
         (rx/merge
          (rx/of (update-selrect nil))
@@ -174,17 +174,19 @@
   (ptk/reify ::select-inside-group
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-id (:current-page-id state)
-            objects (get-in state [:workspace-data page-id :objects])
-            group (get objects group-id)
+      (let [page-id  (:current-page-id state)
+            objects  (dwc/lookup-page-objects state page-id)
+            group    (get objects group-id)
             children (map #(get objects %) (:shapes group))
+
+            ;; TODO: consider using d/seek instead of filter+first
             selected (->> children (filter #(geom/has-point? % position)) first)]
         (when selected
           (rx/of deselect-all (select-shape (:id selected))))))))
 
 
 ;; --- Duplicate Shapes
-(declare prepare-duplicate-changes)
+;; (declare prepare-duplicate-changes)
 (declare prepare-duplicate-change)
 (declare prepare-duplicate-frame-change)
 (declare prepare-duplicate-shape-change)
@@ -195,13 +197,13 @@
   "Prepare objects to paste: generate new id, give them unique names,
   move to the position of mouse pointer, and find in what frame they
   fit."
-  [objects names ids delta]
+  [objects page-id names ids delta]
   (loop [names names
          ids   (seq ids)
          chgs  []]
     (if ids
       (let [id     (first ids)
-            result (prepare-duplicate-change objects names id delta)
+            result (prepare-duplicate-change objects page-id names id delta)
             result (if (vector? result) result [result])]
         (recur
          (into names (map change->name) result)
@@ -210,24 +212,24 @@
       chgs)))
 
 (defn- prepare-duplicate-change
-  [objects names id delta]
+  [objects page-id names id delta]
   (let [obj (get objects id)]
     (if (= :frame (:type obj))
-      (prepare-duplicate-frame-change objects names obj delta)
-      (prepare-duplicate-shape-change objects names obj delta (:frame-id obj) (:parent-id obj)))))
+      (prepare-duplicate-frame-change objects page-id names obj delta)
+      (prepare-duplicate-shape-change objects page-id names obj delta (:frame-id obj) (:parent-id obj)))))
 
 (defn- prepare-duplicate-shape-change
-  [objects names obj delta frame-id parent-id]
-  (let [id (uuid/next)
-        name (generate-unique-name names (:name obj))
+  [objects page-id names obj delta frame-id parent-id]
+  (let [id          (uuid/next)
+        name        (generate-unique-name names (:name obj))
         renamed-obj (assoc obj :id id :name name)
-        moved-obj (geom/move renamed-obj delta)
-        frames   (cph/select-frames objects)
-        frame-id (if frame-id
-                   frame-id
-                   (dwc/calculate-frame-overlap frames moved-obj))
+        moved-obj   (geom/move renamed-obj delta)
+        frames      (cph/select-frames objects)
+        frame-id    (if frame-id
+                      frame-id
+                      (dwc/calculate-frame-overlap frames moved-obj))
 
-        parent-id (or parent-id frame-id)
+        parent-id   (or parent-id frame-id)
 
         children-changes
         (loop [names names
@@ -237,7 +239,7 @@
           (if (nil? cid)
             result
             (let [obj (get objects cid)
-                  changes (prepare-duplicate-shape-change objects names obj delta frame-id id)]
+                  changes (prepare-duplicate-shape-change objects page-id names obj delta frame-id id)]
               (recur
                (into names (map change->name changes))
                (into result changes)
@@ -249,6 +251,7 @@
                          (dissoc :shapes))]
     (into [{:type :add-obj
             :id id
+            :page-id page-id
             :old-id (:id obj)
             :frame-id frame-id
             :parent-id parent-id
@@ -256,25 +259,25 @@
           children-changes)))
 
 (defn- prepare-duplicate-frame-change
-  [objects names obj delta]
+  [objects page-id names obj delta]
   (let [frame-id   (uuid/next)
         frame-name (generate-unique-name names (:name obj))
-        sch (->> (map #(get objects %) (:shapes obj))
-                 (mapcat #(prepare-duplicate-shape-change objects names % delta frame-id frame-id)))
+        sch        (->> (map #(get objects %) (:shapes obj))
+                        (mapcat #(prepare-duplicate-shape-change objects page-id names % delta frame-id frame-id)))
 
-        renamed-frame (-> obj
-                          (assoc :id frame-id)
-                          (assoc :name frame-name)
-                          (assoc :frame-id uuid/zero)
-                          (dissoc :shapes))
-
-        moved-frame (geom/move renamed-frame delta)
+        frame     (-> obj
+                      (assoc :id frame-id)
+                      (assoc :name frame-name)
+                      (assoc :frame-id uuid/zero)
+                      (dissoc :shapes)
+                      (geom/move delta))
 
         fch {:type :add-obj
              :old-id (:id obj)
+             :page-id page-id
              :id frame-id
              :frame-id uuid/zero
-             :obj moved-frame}]
+             :obj frame}]
 
     (into [fch] sch)))
 
@@ -283,13 +286,14 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
+            objects  (dwc/lookup-page-objects state page-id)
+
             selected (get-in state [:workspace-local :selected])
-            objects  (get-in state [:workspace-data page-id :objects])
             delta    (gpt/point 0 0)
             unames   (retrieve-used-names objects)
 
-            rchanges (prepare-duplicate-changes objects unames selected delta)
-            uchanges (mapv #(array-map :type :del-obj :id (:id %))
+            rchanges (prepare-duplicate-changes objects page-id unames selected delta)
+            uchanges (mapv #(array-map :type :del-obj :page-id page-id :id (:id %))
                            (reverse rchanges))
 
             selected (->> rchanges

@@ -5,30 +5,29 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
-;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.main.ui.workspace.sidebar.layers
   (:require
-   [okulary.core :as l]
-   [rumext.alpha :as mf]
-   [beicon.core :as rx]
-   [app.main.ui.icons :as i]
    [app.common.data :as d]
-   [app.common.uuid :as uuid]
    [app.common.pages :as cp]
    [app.common.pages-helpers :as cph]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.hooks :as hooks]
+   [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
    [app.main.ui.shapes.icon :as icon]
-   [app.util.object :as obj]
    [app.util.dom :as dom]
-   [app.util.timers :as ts]
    [app.util.i18n :as i18n :refer [t]]
-   [app.util.perf :as perf]))
+   [app.util.object :as obj]
+   [app.util.perf :as perf]
+   [app.util.timers :as ts]
+   [beicon.core :as rx]
+   [okulary.core :as l]
+   [rumext.alpha :as mf]))
 
 ;; --- Helpers
 
@@ -305,15 +304,13 @@
 
 (mf/defc layers-toolbox
   {:wrap [mf/memo]}
-  [{:keys [page] :as props}]
+  []
   (let [locale   (mf/deref i18n/locale)
-        data     (mf/deref refs/workspace-data)
-        on-click #(st/emit! (dw/toggle-layout-flags :layers))]
+        page     (mf/deref refs/workspace-page)]
     [:div#layers.tool-window
      [:div.tool-window-bar
       [:div.tool-window-icon i/layers]
-      [:span (:name page)]
-      #_[:div.tool-window-close {:on-click on-click} i/close]]
+      [:span (:name page)]]
      [:div.tool-window-content
       [:& layers-tree-wrapper {:key (:id page)
-                               :objects (:objects data)}]]]))
+                               :objects (:objects page)}]]]))

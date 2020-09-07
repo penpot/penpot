@@ -5,8 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.main.ui.workspace.left-toolbar
   (:require
@@ -23,7 +22,7 @@
 ;; --- Component: Left toolbar
 
 (mf/defc left-toolbar
-  [{:keys [page layout] :as props}]
+  [{:keys [layout] :as props}]
   (let [file-input (mf/use-ref nil)
         selected-drawtool (mf/deref refs/selected-drawing-tool)
         select-drawtool #(st/emit! :interrupt

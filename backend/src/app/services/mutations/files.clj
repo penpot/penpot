@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2019-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.services.mutations.files
   (:require
@@ -14,16 +14,19 @@
    [promesa.core :as p]
    [app.common.exceptions :as ex]
    [app.common.pages :as cp]
+   [app.common.pages-migrations :as pmg]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
+   [app.redis :as redis]
    [app.services.mutations :as sm]
    [app.services.mutations.projects :as proj]
    [app.services.queries.files :as files]
    [app.tasks :as tasks]
    [app.util.blob :as blob]
    [app.util.storage :as ust]
+   [app.util.transit :as t]
    [app.util.time :as dt]))
 
 ;; --- Helpers & Specs
@@ -37,7 +40,6 @@
 ;; --- Mutation: Create File
 
 (declare create-file)
-(declare create-page)
 
 (s/def ::is-shared ::us/boolean)
 (s/def ::create-file
@@ -47,9 +49,7 @@
 (sm/defmutation ::create-file
   [{:keys [profile-id project-id] :as params}]
   (db/with-atomic [conn db/pool]
-    (let [file (create-file conn params)
-          page (create-page conn (assoc params :file-id (:id file)))]
-      (assoc file :pages [(:id page)]))))
+    (create-file conn params)))
 
 (defn- create-file-profile
   [conn {:keys [profile-id file-id] :as params}]
@@ -64,25 +64,17 @@
   [conn {:keys [id profile-id name project-id is-shared]
          :or {is-shared false}
          :as params}]
-  (let [id      (or id (uuid/next))
+  (let [id   (or id (uuid/next))
+        data (cp/make-file-data)
         file (db/insert! conn :file
                          {:id id
                           :project-id project-id
                           :name name
-                          :is-shared is-shared})]
+                          :is-shared is-shared
+                          :data (blob/encode data)})]
     (->> (assoc params :file-id id)
          (create-file-profile conn))
-    file))
-
-(defn create-page
-  [conn {:keys [file-id] :as params}]
-  (let [id  (uuid/next)]
-    (db/insert! conn :page
-                {:id id
-                 :file-id file-id
-                 :name "Page 1"
-                 :ordering 1
-                 :data (blob/encode cp/default-page-data)})))
+    (assoc file :data data)))
 
 
 ;; --- Mutation: Rename File
@@ -194,4 +186,94 @@
   (db/delete! conn :file-library-rel
               {:file-id file-id
                :library-file-id library-id}))
+
+
+
+
+
+
+;; A generic, Changes based (granular) file update method.
+
+(s/def ::changes
+  (s/coll-of map? :kind vector?))
+
+(s/def ::session-id ::us/uuid)
+(s/def ::revn ::us/integer)
+(s/def ::update-file
+  (s/keys :req-un [::id ::session-id ::profile-id ::revn ::changes]))
+
+(declare update-file)
+(declare retrieve-lagged-changes)
+(declare insert-change)
+
+(sm/defmutation ::update-file
+  [{:keys [id profile-id] :as params}]
+  (db/with-atomic [conn db/pool]
+    (let [{:keys [id] :as file} (db/get-by-id conn :file id {:for-update true})]
+      (files/check-edition-permissions! conn profile-id id)
+      (update-file conn file params))))
+
+(defn- update-file
+  [conn file params]
+  (when (> (:revn params)
+           (:revn file))
+    (ex/raise :type :validation
+              :code :revn-conflict
+              :hint "The incoming revision number is greater that stored version."
+              :context {:incoming-revn (:revn params)
+                        :stored-revn (:revn file)}))
+  (let [sid      (:session-id params)
+        changes  (:changes params)
+        file     (-> file
+                     (update :data blob/decode)
+                     (update :data pmg/migrate-data)
+                     (update :data cp/process-changes changes)
+                     (update :data blob/encode)
+                     (update :revn inc)
+                     (assoc :changes (blob/encode changes)
+                            :session-id sid))
+
+        chng     (insert-change conn file)
+        msg      {:type :file-change
+                  :profile-id (:profile-id params)
+                  :file-id (:id file)
+                  :session-id sid
+                  :revn (:revn file)
+                  :changes changes}]
+
+    @(redis/run! :publish {:channel (str (:id file))
+                           :message (t/encode-str msg)})
+
+    (db/update! conn :file
+                {:revn (:revn file)
+                 :data (:data file)}
+                {:id (:id file)})
+
+    (retrieve-lagged-changes conn chng params)))
+
+(defn- insert-change
+  [conn {:keys [revn data changes session-id] :as file}]
+  (let [id      (uuid/next)
+        file-id (:id file)]
+    (db/insert! conn :file-change
+                {:id id
+                 :session-id session-id
+                 :file-id file-id
+                 :revn revn
+                 :data data
+                 :changes changes})))
+
+(def ^:private
+  sql:lagged-changes
+  "select s.id, s.revn, s.file_id,
+          s.session_id, s.changes
+     from file_change as s
+    where s.file_id = ?
+      and s.revn > ?
+    order by s.created_at asc")
+
+(defn- retrieve-lagged-changes
+  [conn snapshot params]
+  (->> (db/exec! conn [sql:lagged-changes (:id params) (:revn params)])
+       (mapv files/decode-row)))
 

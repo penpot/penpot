@@ -12,6 +12,7 @@
    [mount.core :as mount :refer [defstate]]
    [app.db :as db]
    [app.config :as cfg]
+   [app.migrations.migration-0023 :as mg0023]
    [app.util.migrations :as mg]))
 
 (def +migrations+
@@ -100,6 +101,15 @@
     {:desc "Improve http session tables"
      :name "0021-http-session-improvements"
      :fn (mg/resource "migrations/0021-http-session-improvements.sql")}
+
+    {:desc "Refactor pages and files"
+     :name "0022-page-file-refactor"
+     :fn (mg/resource "migrations/0022-page-file-refactor.sql")}
+
+
+    {:desc "Adapt old pages and files to new format"
+     :name "0023-adapt-old-pages-and-files"
+     :fn mg0023/migrate}
     ]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

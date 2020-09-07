@@ -5,8 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2015-2017 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.main.ui.workspace.header
   (:require
@@ -150,15 +149,14 @@
 ;; --- Header Component
 
 (mf/defc header
-  [{:keys [file layout project] :as props}]
+  [{:keys [file layout project page-id] :as props}]
   (let [locale (i18n/use-locale)
         team-id (:team-id project)
         go-back #(st/emit! (rt/nav :dashboard-team {:team-id team-id}))
         zoom (mf/deref refs/selected-zoom)
-        page (mf/deref refs/workspace-page)
         locale (i18n/use-locale)
         router (mf/deref refs/router)
-        view-url (rt/resolve router :viewer {:page-id (:id page)} {:index 0})]
+        view-url (rt/resolve router :viewer {:page-id page-id :file-id (:id file)} {:index 0})]
     [:header.workspace-header
      [:div.main-icon
       [:a {:on-click go-back} i/logo-icon]]

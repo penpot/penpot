@@ -8,22 +8,26 @@
    [app.common.uuid :as uuid]
    [app.common.data :as d]))
 
-;; TODO: revisit this
+;; TODO: revisit this and rename to file-migrations
 
 (defmulti migrate :version)
 
 (defn migrate-data
   ([data]
-   (if (= (:version data) cp/page-version)
+   (if (= (:version data) cp/file-version)
      data
      (reduce #(migrate-data %1 %2 (inc %2))
              data
-             (range (:version data 0) cp/page-version))))
+             (range (:version data 0) cp/file-version))))
 
   ([data from-version to-version]
    (-> data
        (assoc :version to-version)
        (migrate))))
+
+(defn migrate-file
+  [file]
+  (update file :data migrate-data))
 
 ;; Default handler, noop
 (defmethod migrate :default [data] data)
@@ -37,49 +41,15 @@
      (into index (map #(vector % id) (:shapes obj []))))
    {} objects))
 
-(defmethod migrate 5
-  [data]
-  (update data :objects
-          (fn [objects]
-            (let [index (generate-child-parent-index objects)]
-              (d/mapm
-               (fn [id obj]
-                 (let [parent-id (get index id)]
-                   (assoc obj :parent-id parent-id)))
-               objects)))))
-
-;; We changed the internal model of the shapes so they have their
-;; selection rect and the vertices
-
-(defmethod migrate 4
-  [data]
-
-  (letfn [;; Creates a new property `points` that stores the
-          ;; transformed points inside the shape this will be used for
-          ;; the snaps and the selection rect
-          (calculate-shape-points [objects]
-            (->> objects
-                 (d/mapm
-                  (fn [id shape]
-                    (if (= (:id shape) uuid/zero)
-                      shape
-                      (assoc shape :points (gsh/shape->points shape)))))))
-
-          ;; Creates a new property `selrect` that stores the
-          ;; selection rect for the shape
-          (calculate-shape-selrects [objects]
-            (->> objects
-                 (d/mapm
-                  (fn [id shape]
-                    (if (= (:id shape) uuid/zero)
-                      shape
-                      (assoc shape :selrect (gsh/points->selrect (:points shape))))))))]
-    (-> data
-        ;; Adds vertices to shapes
-        (update :objects calculate-shape-points)
-
-        ;; Creates selection rects for shapes
-        (update :objects calculate-shape-selrects))))
-
+;; (defmethod migrate 5
+;;   [data]
+;;   (update data :objects
+;;           (fn [objects]
+;;             (let [index (generate-child-parent-index objects)]
+;;               (d/mapm
+;;                (fn [id obj]
+;;                  (let [parent-id (get index id)]
+;;                    (assoc obj :parent-id parent-id)))
+;;                objects)))))
 
 

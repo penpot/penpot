@@ -10,8 +10,11 @@
 (ns app.main.ui.workspace.presence
   (:require
    [rumext.alpha :as mf]
+   [beicon.core :as rx]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.util.time :as dt]
+   [app.util.timers :as tm]
    [app.util.router :as rt]))
 
 (def pointer-icon-path
@@ -52,12 +55,21 @@
 
 (mf/defc active-cursors
   {::mf/wrap [mf/memo]}
-  [{:keys [page] :as props}]
-  (let [sessions (mf/deref refs/workspace-presence)
+  [{:keys [page-id] :as props}]
+  (let [counter  (mf/use-state 0)
+        sessions (mf/deref refs/workspace-presence)
         sessions (->> (vals sessions)
-                      (filter #(= (:id page) (:page-id %))))]
+                      (filter #(= page-id (:page-id %)))
+                      (filter #(>= 3000 (- (inst-ms (dt/now)) (inst-ms (:updated-at %))))))]
+    (mf/use-effect
+     nil
+     (fn []
+       (let [sem (tm/schedule 1000 #(swap! counter inc))]
+         (fn [] (rx/dispose! sem)))))
+
     (for [session sessions]
-      [:& session-cursor {:session session :key (:id session)}])))
+      (when (:point session)
+        [:& session-cursor {:session session :key (:id session)}]))))
 
 (mf/defc session-widget
   [{:keys [session self?] :as props}]
@@ -72,10 +84,13 @@
 (mf/defc active-sessions
   {::mf/wrap [mf/memo]}
   []
-  (let [profile (mf/deref refs/profile)
+  (let [profile  (mf/deref refs/profile)
         sessions (mf/deref refs/workspace-presence)]
     [:ul.active-users
      (for [session (vals sessions)]
-       [:& session-widget {:session session :key (:id session)}])]))
+       [:& session-widget
+        {:session session
+         :self? (= (:id session) (:id profile))
+         :key (:id session)}])]))
 
 

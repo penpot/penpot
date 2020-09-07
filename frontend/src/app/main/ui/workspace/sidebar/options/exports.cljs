@@ -29,6 +29,7 @@
                :response-type :blob
                :auth true
                :body {:page-id (:page-id shape)
+                      :file-id  (:file-id shape)
                       :object-id (:id shape)
                       :name (:name shape)
                       :exports exports}}))
@@ -45,7 +46,7 @@
     (.remove link)))
 
 (mf/defc exports-menu
-  [{:keys [shape page] :as props}]
+  [{:keys [shape page-id file-id] :as props}]
   (let [locale   (mf/deref i18n/locale)
         exports  (:exports shape [])
         loading? (mf/use-state false)
@@ -56,7 +57,7 @@
          (fn [event]
            (dom/prevent-default event)
            (swap! loading? not)
-           (->> (request-export (assoc shape :page-id (:id page)) exports)
+           (->> (request-export (assoc shape :page-id page-id :file-id file-id) exports)
                 (rx/subs
                  (fn [{:keys [status body] :as response}]
                    (js/console.log status body)

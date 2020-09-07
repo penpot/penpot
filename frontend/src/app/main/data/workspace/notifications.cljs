@@ -9,26 +9,28 @@
 
 (ns app.main.data.workspace.notifications
   (:require
-   [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
-   [clojure.set :as set]
-   [potok.core :as ptk]
    [app.common.data :as d]
+   [app.common.geom.point :as gpt]
    [app.common.spec :as us]
+   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.persistence :as dwp]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.streams :as ms]
-   [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.persistence :as dwp]
    [app.util.avatars :as avatars]
-   [app.common.geom.point :as gpt]
    [app.util.time :as dt]
    [app.util.transit :as t]
-   [app.util.websockets :as ws]))
+   [app.util.websockets :as ws]
+   [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
+   [clojure.set :as set]
+   [potok.core :as ptk]))
+
+;; TODO: this module need to be revisited.
 
 (declare handle-presence)
 (declare handle-pointer-update)
-(declare handle-page-change)
+(declare handle-file-change)
 (declare handle-pointer-send)
 (declare send-keepalive)
 
@@ -62,7 +64,7 @@
                              (case type
                                :presence (handle-presence msg)
                                :pointer-update (handle-pointer-update msg)
-                               :page-change (handle-page-change msg)
+                               :file-change (handle-file-change msg)
                                ::unknown))))
 
               (->> stream
@@ -120,22 +122,29 @@
                     avail (set/difference presence-palette used)
                     color (or (first avail) "#000000")]
                 (assoc session :color color))))
+
+          (assign-session [sessions {:keys [id profile]}]
+            (let [session {:id id
+                           :fullname (:fullname profile)
+                           :updated-at (dt/now)
+                           :photo-uri (or (:photo-uri profile)
+                                          (avatars/generate {:name (:fullname profile)}))}
+                  session (assign-color sessions session)]
+              (assoc sessions id session)))
+
           (update-sessions [previous profiles]
-            (reduce (fn [current [session-id profile-id]]
-                      (let [profile (get profiles profile-id)
-                            session {:id session-id
-                                     :fullname (:fullname profile)
-                                     :photo-uri (or (:photo-uri profile)
-                                                    (avatars/generate {:name (:fullname profile)}))}
-                            session (assign-color current session)]
-                        (assoc current session-id session)))
-                    (select-keys previous (map first sessions))
-                    (filter (fn [[sid]] (not (contains? previous sid))) sessions)))]
+            (let [previous    (select-keys previous (map first sessions)) ; Initial clearing
+                  pending     (->> sessions
+                                   (filter #(not (contains? previous (first %))))
+                                   (map (fn [[session-id profile-id]]
+                                          {:id session-id
+                                           :profile (get profiles profile-id)})))]
+              (reduce assign-session previous pending)))]
 
     (ptk/reify ::handle-presence
       ptk/UpdateEvent
       (update [_ state]
-        (let [profiles  (:workspace-users state)]
+        (let [profiles (:workspace-users state)]
           (update state :workspace-presence update-sessions profiles))))))
 
 (defn handle-pointer-update
@@ -143,13 +152,12 @@
   (ptk/reify ::handle-pointer-update
     ptk/UpdateEvent
     (update [_ state]
-      (let [profile  (get-in state [:workspace-users profile-id])]
-        (update-in state [:workspace-presence session-id]
-                   (fn [session]
-                     (assoc session
-                            :point (gpt/point x y)
-                            :updated-at (dt/now)
-                            :page-id page-id)))))))
+      (update-in state [:workspace-presence session-id]
+                 (fn [session]
+                   (assoc session
+                          :point (gpt/point x y)
+                          :updated-at (dt/now)
+                          :page-id page-id))))))
 
 (defn handle-pointer-send
   [file-id point]
@@ -158,19 +166,24 @@
     (effect [_ state stream]
       (let [ws (get-in state [:ws file-id])
             sid (:session-id state)
-            pid (get-in state [:workspace-page :id])
+            pid (:current-page-id state)
             msg {:type :pointer-update
                  :page-id pid
                  :x (:x point)
                  :y (:y point)}]
         (ws/-send ws (t/encode msg))))))
 
-(defn handle-page-change
-  [msg]
-  (ptk/reify ::handle-page-change
+;; TODO: add specs
+
+(defn handle-file-change
+  [{:keys [file-id changes] :as msg}]
+  (ptk/reify ::handle-file-change
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (dwp/shapes-changes-persisted msg)
-             (dwc/update-page-indices (:page-id msg))))))
-
-
+      (let [page-ids (into #{} (comp (map :page-id)
+                                     (filter identity))
+                           changes)]
+        (rx/merge
+         (rx/of (dwp/shapes-changes-persisted file-id msg))
+         (when (seq page-ids)
+           (rx/from (map dwc/update-indices page-ids))))))))

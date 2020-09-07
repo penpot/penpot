@@ -65,19 +65,17 @@
     (assoc state page-id snap-data)))
 
 ;; Public API
-(defmethod impl/handler :snaps/create-index
-  [{:keys [file-id pages] :as message}]
-
+(defmethod impl/handler :snaps/initialize-index
+  [{:keys [file-id data] :as message}]
   ;; Create the index
   (letfn [(process-page [state page]
-            (let [id (:id page)
-                  objects (get-in page [:data :objects])]
+            (let [id      (:id page)
+                  objects (:objects page)]
               (index-page state id objects)))]
-    (swap! state #(reduce process-page % pages)))
-
-  ;; (log-state)
-  ;; Return nil so the worker will not answer anything back
-  nil)
+    (swap! state #(reduce process-page % (vals (:pages-index data))))
+    ;; (log-state)
+    ;; Return nil so the worker will not answer anything back
+    nil))
 
 (defmethod impl/handler :snaps/update-index
   [{:keys [page-id objects] :as message}]

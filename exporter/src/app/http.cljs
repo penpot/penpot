@@ -1,13 +1,15 @@
 (ns app.http
   (:require
    [app.http.export :refer [export-handler]]
+   [app.http.thumbnail :refer [thumbnail-handler]]
    [app.http.impl :as impl]
    [lambdaisland.glogi :as log]
    [promesa.core :as p]
    [reitit.core :as r]))
 
 (def routes
-  [["/export" {:handler export-handler}]])
+  [["/export/thumbnail" {:handler thumbnail-handler}]
+   ["/export" {:handler export-handler}]])
 
 (defn start!
   [extra]

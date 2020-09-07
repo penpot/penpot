@@ -21,18 +21,17 @@
 (def options-iref
   (l/derived :options refs/workspace-data))
 
-(defn use-change-color [page]
+(defn use-change-color [page-id]
   (mf/use-callback
-   (mf/deps page)
+   (mf/deps page-id)
    (fn [value]
      (st/emit! (dw/change-canvas-color value)))))
 
 (mf/defc options
-  [{:keys [page] :as props}]
-
+  [{:keys [page-id] :as props}]
   (let [locale (i18n/use-locale)
         options (mf/deref refs/workspace-page-options)
-        handle-change-color (use-change-color page)]
+        handle-change-color (use-change-color page-id)]
     [:div.element-set
      [:div.element-set-title (t locale "workspace.options.canvas-background")]
      [:div.element-set-content

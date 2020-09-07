@@ -37,7 +37,7 @@
 
 (mf/defc shape-options
   {::mf/wrap [#(mf/throttle % 60)]}
-  [{:keys [shape shapes-with-children page] :as props}]
+  [{:keys [shape shapes-with-children page-id file-id]}]
   [:*
    (case (:type shape)
      :frame [:& frame/options {:shape shape}]
@@ -50,12 +50,15 @@
      :curve [:& path/options {:shape shape}]
      :image [:& image/options {:shape shape}]
      nil)
-   [:& exports-menu {:shape shape :page page}]])
+   [:& exports-menu
+    {:shape shape
+     :page-id page-id
+     :file-id file-id}]])
 
 
 (mf/defc options-content
   {::mf/wrap [mf/memo]}
-  [{:keys [section shapes shapes-with-children page] :as props}]
+  [{:keys [selected section shapes shapes-with-children page-id file-id]}]
   (let [locale (mf/deref i18n/locale)]
     [:div.tool-window
      [:div.tool-window-content
@@ -65,10 +68,11 @@
                         :title (t locale "workspace.options.design")}
         [:div.element-options
          [:& align-options]
-         (case (count shapes)
-           0 [:& page/options {:page page}]
+         (case (count selected)
+           0 [:& page/options {:page-id page-id}]
            1 [:& shape-options {:shape (first shapes)
-                                :page page
+                                :page-id page-id
+                                :file-id file-id
                                 :shapes-with-children shapes-with-children}]
            [:& multiple/options {:shapes shapes-with-children}])]]
 
@@ -78,14 +82,20 @@
          [:& interactions-menu {:shape (first shapes)}]]]]]]))
 
 
+;; TODO: this need optimizations, selected-objects and
+;; selected-objects-with-children are derefed always but they only
+;; need on multiple selection in majority of cases
+
 (mf/defc options-toolbox
   {::mf/wrap [mf/memo]}
-  [{:keys [page local] :as props}]
+  [{:keys [page-id file-id local] :as props}]
   (let [section              (:options-mode local)
         shapes               (mf/deref refs/selected-objects)
         shapes-with-children (mf/deref refs/selected-objects-with-children)]
     [:& options-content {:shapes shapes
+                         :selected (:selected local)
                          :shapes-with-children shapes-with-children
-                         :page page
+                         :file-id file-id
+                         :page-id page-id
                          :section section}]))
 

@@ -163,6 +163,25 @@
      :else (recur (rest col1) col2 join-fn
                   (core/concat acc (map (partial join-fn (first col1)) col2))))))
 
+
+(def sentinel
+  #?(:clj (Object.)
+     :cljs (js/Object.)))
+
+(defn update-in-when
+  [m key-seq f & args]
+  (let [found (get-in m key-seq sentinel)]
+    (if-not (identical? sentinel found)
+      (assoc-in m key-seq (apply f found args))
+      m)))
+
+(defn update-when
+  [m key f & args]
+  (let [found (get m key sentinel)]
+    (if-not (identical? sentinel found)
+      (assoc m key (apply f found args))
+      m)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Parsing / Conversion
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

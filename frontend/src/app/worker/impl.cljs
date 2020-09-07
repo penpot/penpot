@@ -23,12 +23,12 @@
   [message]
   message)
 
-(defmethod handler :create-page-indices
+(defmethod handler :initialize-indices
   [message]
   (handler (-> message
-               (assoc :cmd :selection/create-index)))
+               (assoc :cmd :selection/initialize-index)))
   (handler (-> message
-               (assoc :cmd :snaps/create-index))))
+               (assoc :cmd :snaps/initialize-index))))
 
 (defmethod handler :update-page-indices
   [message]

@@ -11,14 +11,17 @@
   (:require
    [clojure.spec.alpha :as s]
    [promesa.core :as p]
+   [app.common.pages-migrations :as pmg]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
    [app.media :as media]
    [app.services.queries :as sq]
+   [app.services.queries.projects :as projects]
    [app.util.blob :as blob]))
 
 (declare decode-row)
+(declare decode-row-xf)
 
 ;; --- Helpers & Specs
 
@@ -31,6 +34,8 @@
 (s/def ::search-term ::us/string)
 
 ;; --- Query: Files search
+
+;; TODO: this query need to a good refactor
 
 (def ^:private sql:search-files
   "with projects as (
@@ -82,58 +87,16 @@
                                 profile-id team-id
                                 profile-id team-id
                                 search-term])]
-    (mapv decode-row rows)))
+    (into [] decode-row-xf rows)))
 
 
 ;; --- Query: Project Files
 
 (def ^:private sql:files
-  "with projects as (
-     select p.*
-       from project as p
-      inner join team_profile_rel as tpr on (tpr.team_id = p.team_id)
-      where tpr.profile_id = ?
-        and p.deleted_at is null
-        and (tpr.is_admin = true or
-             tpr.is_owner = true or
-             tpr.can_edit = true)
-      union
-     select p.*
-       from project as p
-      inner join project_profile_rel as ppr on (ppr.project_id = p.id)
-      where ppr.profile_id = ?
-        and p.deleted_at is null
-        and (ppr.is_admin = true or
-             ppr.is_owner = true or
-             ppr.can_edit = true)
-      union
-     select p.*
-       from project as p
-      where p.team_id = uuid_nil()
-        and p.deleted_at is null
-   )
-   select distinct
-          f.*,
-          array_agg(pg.id) over pages_w as pages,
-          first_value(pg.data) over pages_w as data
+  "select f.*
      from file as f
-     left join page as pg on (f.id = pg.file_id)
     where f.project_id = ?
-      and (exists (select *
-                    from file_profile_rel as fp_r
-                   where fp_r.profile_id = ?
-                     and fp_r.file_id = f.id
-                     and (fp_r.is_admin = true or
-                          fp_r.is_owner = true or
-                          fp_r.can_edit = true))
-           or exists (select *
-                        from projects as p
-                       where p.id = f.project_id))
       and f.deleted_at is null
-      and pg.deleted_at is null
-   window pages_w as (partition by f.id order by pg.ordering
-                      range between unbounded preceding
-                                and unbounded following)
     order by f.modified_at desc")
 
 (s/def ::project-id ::us/uuid)
@@ -142,10 +105,10 @@
 
 (sq/defquery ::files
   [{:keys [profile-id project-id] :as params}]
-  (->> (db/exec! db/pool [sql:files
-                          profile-id profile-id
-                          project-id profile-id])
-       (mapv decode-row)))
+  (with-open [conn (db/open)]
+    (let [project (db/get-by-id conn :project project-id)]
+      (projects/check-edition-permissions! conn profile-id project)
+      (into [] decode-row-xf (db/exec! conn [sql:files project-id])))))
 
 
 ;; --- Query: File Permissions
@@ -173,12 +136,7 @@
      from project_profile_rel as ppr
     inner join file as f on (f.project_id = ppr.project_id)
     where f.id = ?
-      and ppr.profile_id = ?
-   union all
-   select true, true, true
-     from file as f
-    inner join project as p on (f.project_id = p.id)
-      and p.team_id = uuid_nil();")
+      and ppr.profile_id = ?")
 
 (defn check-edition-permissions!
   [conn profile-id file-id]
@@ -198,24 +156,11 @@
 
 ;; --- Query: File (By ID)
 
-(def ^:private sql:file
-  "select f.*,
-          array_agg(pg.id) over pages_w as pages
-     from file as f
-     left join page as pg on (f.id = pg.file_id)
-    where f.id = ?
-      and f.deleted_at is null
-      and pg.deleted_at is null
-   window pages_w as (partition by f.id order by pg.ordering
-                      range between unbounded preceding
-                                and unbounded following)")
-
 (defn retrieve-file
   [conn id]
-  (let [row (db/exec-one! conn [sql:file id])]
-    (when-not row
-      (ex/raise :type :not-found))
-    (decode-row row)))
+  (let [file (db/get-by-id conn :file id)]
+    (-> (decode-row file)
+        (pmg/migrate-file))))
 
 (s/def ::file
   (s/keys :req-un [::profile-id ::id]))
@@ -226,6 +171,15 @@
     (check-edition-permissions! conn profile-id id)
     (retrieve-file conn id)))
 
+(s/def ::page
+  (s/keys :req-un [::profile-id ::id ::file-id]))
+
+(sq/defquery ::page
+  [{:keys [profile-id file-id id]}]
+  (db/with-atomic [conn db/pool]
+    (check-edition-permissions! conn profile-id file-id)
+    (let [file (retrieve-file conn file-id)]
+      (get-in file [:data :pages-index id]))))
 
 ;; --- Query: File users
 
@@ -256,14 +210,12 @@
     (check-edition-permissions! conn profile-id id)
     (retrieve-file-users conn id)))
 
-
 ;; --- Query: Shared Library Files
 
+;; TODO: remove the counts, because they are no longer needed.
+
 (def ^:private sql:shared-files
-  "select distinct
-          f.*,
-          array_agg(pg.id) over pages_w as pages,
-          first_value(pg.data) over pages_w as data,
+  "select f.*,
           (select count(*) from color as c
             where c.file_id = f.id
               and c.deleted_at is null) as colors_count,
@@ -272,16 +224,11 @@
               and m.is_local = false
               and m.deleted_at is null) as graphics_count
      from file as f
-     left join page as pg on (f.id = pg.file_id)
     inner join project as p on (p.id = f.project_id)
     where f.is_shared = true
       and f.deleted_at is null
-      and pg.deleted_at is null
       and p.deleted_at is null
       and p.team_id = ?
-   window pages_w as (partition by f.id order by pg.ordering
-                      range between unbounded preceding
-                                and unbounded following)
     order by f.modified_at desc")
 
 (s/def ::shared-files
@@ -289,30 +236,21 @@
 
 (sq/defquery ::shared-files
   [{:keys [profile-id team-id] :as params}]
-  (->> (db/exec! db/pool [sql:shared-files team-id])
-       (mapv decode-row)))
+  (into [] decode-row-xf (db/exec! db/pool [sql:shared-files team-id])))
 
 
 ;; --- Query: File Libraries used by a File
 
 (def ^:private sql:file-libraries
-  "select fl.*,
-          array_agg(pg.id) over pages_w as pages,
-          first_value(pg.data) over pages_w as data
+  "select fl.*
      from file as fl
-     left join page as pg on (fl.id = pg.file_id)
     inner join file_library_rel as flr on (flr.library_file_id = fl.id)
     where flr.file_id = ?
-      and fl.deleted_at is null
-      and pg.deleted_at is null
-   window pages_w as (partition by fl.id order by pg.ordering
-                      range between unbounded preceding
-                                and unbounded following)")
+      and fl.deleted_at is null")
 
 (defn retrieve-file-libraries
   [conn file-id]
-  (->> (db/exec! conn [sql:file-libraries file-id])
-       (mapv decode-row)))
+  (into [] decode-row-xf (db/exec! conn [sql:file-libraries file-id])))
 
 (s/def ::file-libraries
   (s/keys :req-un [::profile-id ::file-id]))
@@ -326,6 +264,8 @@
 
 ;; --- Query: Single File Library
 
+;; TODO: this looks like is duplicate of `::file`
+
 (def ^:private sql:file-library
   "select fl.*
      from file as fl
@@ -333,10 +273,10 @@
 
 (defn retrieve-file-library
   [conn file-id]
-  (let [row (db/exec-one! conn [sql:file-library file-id])]
-    (when-not row
+  (let [rows (db/exec! conn [sql:file-library file-id])]
+    (when-not (seq rows)
       (ex/raise :type :not-found))
-    row))
+    (first (sequence decode-row-xf rows))))
 
 (s/def ::file-library
   (s/keys :req-un [::profile-id ::file-id]))
@@ -351,8 +291,13 @@
 ;; --- Helpers
 
 (defn decode-row
-  [{:keys [pages data] :as row}]
+  [{:keys [pages data changes] :as row}]
   (when row
     (cond-> row
+      changes (assoc :changes (blob/decode changes))
       data (assoc :data (blob/decode data))
       pages (assoc :pages (vec (.getArray pages))))))
+
+(def decode-row-xf
+  (comp (map decode-row)
+        (map pmg/migrate-file)))

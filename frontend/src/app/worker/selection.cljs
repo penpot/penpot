@@ -26,16 +26,15 @@
 (declare index-object)
 (declare create-index)
 
-(defmethod impl/handler :selection/create-index
-  [{:keys [file-id pages] :as message}]
+(defmethod impl/handler :selection/initialize-index
+  [{:keys [file-id data] :as message}]
   (letfn [(index-page [state page]
-            (let [id (:id page)
-                  objects (get-in page [:data :objects])]
+            (let [id      (:id page)
+                  objects (:objects page)]
               (assoc state id (create-index objects))))
 
           (update-state [state]
-            (reduce index-page state pages))]
-
+            (reduce index-page state (vals (:pages-index data))))]
     (swap! state update-state)
     nil))
 
