@@ -205,7 +205,7 @@
   (js/URL.createObjectURL b))
 
 (defn set-css-property [node property value]
-  (.setProperty (.-style node) property value))
+  (.setProperty (.-style ^js node) property value))
 
 (defn capture-pointer [event]
   (-> event get-target (.setPointerCapture (.-pointerId event))))

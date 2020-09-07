@@ -22,20 +22,6 @@
    [okulary.core :as l]
    [app.main.refs :as refs]))
 
-(def recent-colors
-  (letfn [(selector [{:keys [objects]}]
-            (as-> {} $
-              (reduce (fn [acc shape]
-                        (-> acc
-                            (update (:fill-color shape) (fnil inc 0))
-                            (update (:stroke-color shape) (fnil inc 0))))
-                      $ (vals objects))
-              (reverse (sort-by second $))
-              (map first $)
-              (remove nil? $)))]
-    (l/derived selector st/state)))
-
-
 ;; --- Color Picker Modal
 
 (mf/defc value-selector [{:keys [hue saturation value on-change]}]
