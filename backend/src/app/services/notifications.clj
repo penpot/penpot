@@ -10,17 +10,17 @@
 (ns app.services.notifications
   "A websocket based notifications mechanism."
   (:require
-   [clojure.core.async :as a :refer [>! <!]]
-   [clojure.tools.logging :as log]
-   [promesa.core :as p]
-   [ring.adapter.jetty9 :as jetty]
    [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
    [app.db :as db]
-   [app.redis :as redis]
    [app.metrics :as mtx]
+   [app.redis :as redis]
    [app.util.time :as dt]
-   [app.util.transit :as t]))
+   [app.util.transit :as t]
+   [clojure.core.async :as a :refer [>! <!]]
+   [clojure.tools.logging :as log]
+   [promesa.core :as p]
+   [ring.adapter.jetty9 :as jetty]))
 
 (defmacro go-try
   [& body]
@@ -43,8 +43,6 @@
        ~@body
        (catch Throwable e#
          e#))))
-
-;; --- Redis Interactions
 
 (defn- publish
   [channel message]
@@ -187,14 +185,6 @@
 
 (defrecord WebSocket [conn in out sub])
 
-(defn- start-rcv-loop!
-  [{:keys [conn out] :as ws}]
-  (a/go-loop []
-    (let [val (a/<! out)]
-      (when-not (nil? val)
-        (jetty/send! conn (t/encode-str val))
-        (recur)))))
-
 (defonce metrics-active-connections
   (mtx/gauge {:id "notificatons__active_connections"
               :help "Active connections to the notifications service."}))
@@ -207,30 +197,42 @@
   [{:keys [file-id profile-id] :as params}]
   (let [in  (a/chan 32)
         out (a/chan 32)]
-    {:on-connect (fn [conn]
-                   (metrics-active-connections :inc)
-                   (let [xf  (map t/decode-str)
-                         sub (redis/subscribe (str file-id) xf)
-                         ws  (WebSocket. conn in out sub nil params)]
-                     (start-rcv-loop! ws)
-                     (a/go
-                       (a/<! (on-subscribed ws))
-                       (a/close! sub))))
+    {:on-connect
+     (fn [conn]
+       (metrics-active-connections :inc)
+       (let [xf  (map t/decode-str)
+             sub (redis/subscribe (str file-id) xf)
+             ws  (WebSocket. conn in out sub nil params)]
 
-     :on-error (fn [conn e]
-                 (a/close! out)
-                 (a/close! in))
+         ;; RCV LOOP
+         (a/go-loop []
+           (let [val (a/<! out)]
+             (when-not (nil? val)
+               (jetty/send! conn (t/encode-str val))
+               (recur))))
 
-     :on-close (fn [conn status-code reason]
-                 (metrics-active-connections :dec)
-                 (a/close! out)
-                 (a/close! in))
+         (a/go
+           (a/<! (on-subscribed ws))
+           (a/close! sub))))
 
-     :on-text (fn [ws message]
-                (metrics-message-counter :inc)
-                (let [message (t/decode-str message)]
-                  (a/>!! in message)))
+     :on-error
+     (fn [conn e]
+       (a/close! out)
+       (a/close! in))
 
-     :on-bytes (constantly nil)}))
+     :on-close
+     (fn [conn status-code reason]
+       (metrics-active-connections :dec)
+       (a/close! out)
+       (a/close! in))
+
+     :on-text
+     (fn [ws message]
+       (metrics-message-counter :inc)
+       (let [message (t/decode-str message)]
+         (a/>!! in message)))
+
+     :on-bytes
+     (constantly nil)}))
 
 

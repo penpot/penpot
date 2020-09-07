@@ -20,7 +20,8 @@
    (when-not (nil? obj)
      (unchecked-get obj k)))
   ([obj k default]
-   (or (get obj k) default)))
+   (let [result (get obj k)]
+     (if (undefined? result) default result))))
 
 (defn get-in
   [obj keys]

@@ -23,7 +23,7 @@
 (mf/defc interactions-menu
   [{:keys [shape] :as props}]
   (let [locale      (mf/deref i18n/locale)
-        objects     (deref refs/workspace-objects)
+        objects     (deref refs/workspace-page-objects)
         interaction (first (:interactions shape))  ; TODO: in the
                                                    ; future we may
                                                    ; have several

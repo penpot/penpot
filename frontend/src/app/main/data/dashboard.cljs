@@ -201,26 +201,17 @@
 
 ;; --- Fetch Files
 
-(declare files-fetched)
-
 (defn fetch-files
   [project-id]
-  (ptk/reify ::fetch-files
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [params {:project-id project-id}]
-        (->> (rp/query :files params)
-             (rx/map files-fetched))))))
-
-(defn files-fetched
-  [files]
-  (us/verify (s/every ::file) files)
-  (ptk/reify ::files-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [state (dissoc state :files)
-            files (d/index-by :id files)]
-        (assoc state :files files)))))
+  (us/assert ::us/uuid project-id)
+  (letfn [(on-fetched [files state]
+            (assoc state :files (d/index-by :id files)))]
+    (ptk/reify ::fetch-files
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (let [params {:project-id project-id}]
+          (->> (rp/query :files params)
+               (rx/map #(partial on-fetched %))))))))
 
 ;; --- Fetch Shared Files
 
@@ -241,14 +232,13 @@
 
 (defn fetch-recent-files
   [team-id]
+  (us/assert ::us/uuid team-id)
   (ptk/reify ::fetch-recent-files
     ptk/WatchEvent
     (watch [_ state stream]
       (let [params {:team-id team-id}]
         (->> (rp/query :recent-files params)
-             (rx/map recent-files-fetched)
-             (rx/catch (fn [e]
-                         (rx/of (rt/nav' :auth-login)))))))))
+             (rx/map recent-files-fetched))))))
 
 (defn recent-files-fetched
   [recent-files]
@@ -415,9 +405,10 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (rt/nav :workspace {:project-id (:project-id data)
-                                 :file-id (:id data)}
-                     {:page-id (first (:pages data))})))))
+      (let [pparams {:project-id (:project-id data)
+                     :file-id (:id data)}
+            qparams {:page-id (get-in data [:data :pages 0])}]
+        (rx/of (rt/nav :workspace pparams qparams))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -155,9 +155,8 @@
      [:span.right-arrow {:on-click on-right-arrow-click} i/arrow-slide]]))
 
 (mf/defc colorpalette
-  [{:keys [left-sidebar? project] :as props}]
-  (let [team-id  (:team-id project)
-        palettes (->> (mf/deref palettes-ref)
+  [{:keys [left-sidebar? team-id] :as props}]
+  (let [palettes (->> (mf/deref palettes-ref)
                       (vals)
                       (mapcat identity))
         selected (or (mf/deref selected-palette-ref)

@@ -73,7 +73,8 @@
   [objects]
   (mf/fnc shape-wrapper
     [{:keys [frame shape] :as props}]
-    (let [group-wrapper (mf/use-memo (mf/deps objects) #(group-wrapper-factory objects))]
+    (let [group-wrapper (mf/use-memo (mf/deps objects) #(group-wrapper-factory objects))
+          frame-wrapper (mf/use-memo (mf/deps objects) #(frame-wrapper-factory objects))]
       (when (and shape (not (:hidden shape)))
         (let [shape (geom/transform-shape frame shape)
               opts #js {:shape shape}]
@@ -85,6 +86,7 @@
             :path   [:> path/path-shape opts]
             :image  [:> image/image-shape opts]
             :circle [:> circle/circle-shape opts]
+            :frame  [:> frame-wrapper {:shape shape}]
             :group  [:> group-wrapper {:shape shape :frame frame}]
             nil))))))
 

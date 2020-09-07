@@ -9,26 +9,17 @@
 
 (ns app.services.queries.viewer
   (:require
-   [clojure.spec.alpha :as s]
-   [promesa.core :as p]
-   [promesa.exec :as px]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.common.uuid :as uuid]
    [app.db :as db]
    [app.services.queries :as sq]
    [app.services.queries.files :as files]
-   [app.services.queries.media :as media-queries]
-   [app.services.queries.pages :as pages]
-   [app.util.blob :as blob]
-   [app.util.data :as data]))
-
-;; --- Helpers & Specs
-
-(s/def ::id ::us/uuid)
-(s/def ::page-id ::us/uuid)
+   [clojure.spec.alpha :as s]))
 
 ;; --- Query: Viewer Bundle (by Page ID)
+
+(declare check-shared-token!)
+(declare retrieve-shared-token)
 
 (def ^:private
   sql:project
@@ -41,24 +32,45 @@
   [conn id]
   (db/exec-one! conn [sql:project id]))
 
+(s/def ::id ::us/uuid)
+(s/def ::file-id ::us/uuid)
+(s/def ::page-id ::us/uuid)
 (s/def ::share-token ::us/string)
+
 (s/def ::viewer-bundle
-  (s/keys :req-un [::page-id]
+  (s/keys :req-un [::file-id ::page-id]
           :opt-un [::profile-id ::share-token]))
 
 (sq/defquery ::viewer-bundle
-  [{:keys [profile-id page-id share-token] :as params}]
+  [{:keys [profile-id file-id page-id share-token] :as params}]
   (db/with-atomic [conn db/pool]
-    (let [page (pages/retrieve-page conn page-id)
-          file (files/retrieve-file conn (:file-id page))
-          images (media-queries/retrieve-media-objects conn (:file-id page) true)
-          project (retrieve-project conn (:project-id file))]
+    (let [file    (files/retrieve-file conn file-id)
+
+          project (retrieve-project conn (:project-id file))
+          page    (get-in file [:data :pages-index page-id])
+
+          bundle  {:file (dissoc file :data)
+                   :page (get-in file [:data :pages-index page-id])
+                   :project project}]
       (if (string? share-token)
-        (when (not= share-token (:share-token page))
-          (ex/raise :type :validation
-                    :code :not-authorized))
-        (files/check-edition-permissions! conn profile-id (:file-id page)))
-      {:page page
-       :file file
-       :images images
-       :project project})))
+        (do
+          (check-shared-token! conn file-id page-id share-token)
+          (assoc bundle :share-token share-token))
+        (let [token (retrieve-shared-token conn file-id page-id)]
+          (files/check-edition-permissions! conn profile-id file-id)
+          (assoc bundle :share-token token))))))
+
+(defn check-shared-token!
+  [conn file-id page-id token]
+  (let [sql "select exists(select 1 from file_share_token where file_id=? and page_id=? and token=?) as exists"]
+    (when-not (:exists (db/exec-one! conn [sql file-id page-id token]))
+      (ex/raise :type :validation
+                :code :not-authorized))))
+
+(defn retrieve-shared-token
+  [conn file-id page-id]
+  (let [sql "select * from file_share_token where file_id=? and page_id=?"]
+    (db/exec-one! conn [sql file-id page-id])))
+
+
+

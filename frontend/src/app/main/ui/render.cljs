@@ -65,6 +65,7 @@
          (mf/deps objects)
          #(exports/shape-wrapper-factory objects))
         ]
+
     [:svg {:id "screenshot"
            :view-box vbox
            :width width
@@ -77,17 +78,35 @@
        :group [:& group-wrapper {:shape object}]
        [:& shape-wrapper {:shape object}])]))
 
+(defn- adapt-root-frame
+  [objects object-id]
+  (if (uuid/zero? object-id)
+    (let [object   (get objects object-id)
+          shapes   (cph/select-toplevel-shapes objects {:include-frames? true})
+          srect    (geom/selection-rect shapes)
+          object   (merge object (select-keys srect [:x :y :width :height]))
+          object   (geom/transform-shape object)
+          object   (assoc object :fill-color "#f0f0f0")]
+      (assoc objects (:id object) object))
+    objects))
+
+
+;; NOTE: for now, it is ok download the entire file for render only
+;; single page but in a future we need consider to add a specific
+;; backend entry point for download only the data of single page.
 
 (mf/defc render-object
-  [{:keys [page-id object-id] :as props}]
-  (let [data (mf/use-state nil)]
+  [{:keys [file-id page-id object-id] :as props}]
+  (let [objects (mf/use-state nil)]
     (mf/use-effect
-     (fn []
-       (let [subs (->> (repo/query! :page {:id page-id})
-                       (rx/subs (fn [result]
-                                  (reset! data (:data result)))))]
-         #(rx/dispose! subs))))
-    (when @data
-      [:& object-svg {:objects (:objects @data)
+     #(let [subs (->> (repo/query! :file {:id file-id})
+                      (rx/subs (fn [{:keys [data]}]
+                                 (let [objs (get-in data [:pages-index page-id :objects])
+                                       objs (adapt-root-frame objs object-id)]
+                                   (reset! objects objs)))))]
+        (fn [] (rx/dispose! subs))))
+
+    (when @objects
+      [:& object-svg {:objects @objects
                       :object-id object-id
                       :zoom 1}])))

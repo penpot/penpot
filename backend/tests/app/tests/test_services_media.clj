@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 app Labs SL
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.tests.test-services-media
   (:require
@@ -30,7 +30,7 @@
         object-id-2 (uuid/next)]
 
     (t/testing "create media object from url to file"
-      (let [url "https://raw.githubusercontent.com/app/app/develop/frontend/resources/images/penpot-login.jpg"
+      (let [url "https://raw.githubusercontent.com/uxbox/uxbox/develop/sample_media/images/unsplash/anna-pelzer.jpg"
             data {::sm/type :add-media-object-from-url
                   :id object-id-1
                   :profile-id (:id prof)
@@ -45,12 +45,12 @@
         (t/is (= object-id-1 (get-in out [:result :id])))
         (t/is (not (nil? (get-in out [:result :name]))))
         (t/is (= "image/jpeg" (get-in out [:result :mtype])))
-        (t/is (= 787 (get-in out [:result :width])))
-        (t/is (= 2000 (get-in out [:result :height])))
+        (t/is (= 1024 (get-in out [:result :width])))
+        (t/is (= 683 (get-in out [:result :height])))
 
         (t/is (string? (get-in out [:result :path])))
-        (t/is (string? (get-in out [:result :uri])))
-        (t/is (string? (get-in out [:result :thumb-uri])))))
+        (t/is (string? (get-in out [:result :thumb-path])))
+        ))
 
     (t/testing "upload media object to file"
       (let [content {:filename "sample.jpg"
@@ -76,8 +76,7 @@
         (t/is (= 800 (get-in out [:result :height])))
 
         (t/is (string? (get-in out [:result :path])))
-        (t/is (string? (get-in out [:result :uri])))
-        (t/is (string? (get-in out [:result :thumb-uri])))))
+        (t/is (string? (get-in out [:result :thumb-path])))))
 
     (t/testing "list media objects by file"
       (let [data {::sq/type :media-objects
@@ -95,8 +94,7 @@
         (t/is (= 800 (get-in out [:result 0 :height])))
 
         (t/is (string? (get-in out [:result 0 :path])))
-        (t/is (string? (get-in out [:result 0 :uri])))
-        (t/is (string? (get-in out [:result 0 :thumb-uri])))))
+        (t/is (string? (get-in out [:result 0 :thumb-path])))))
 
     (t/testing "single media object"
       (let [data {::sq/type :media-object
@@ -111,8 +109,7 @@
         (t/is (= 800 (get-in out [:result :width])))
         (t/is (= 800 (get-in out [:result :height])))
 
-        (t/is (string? (get-in out [:result :path])))
-        (t/is (string? (get-in out [:result :uri])))))
+        (t/is (string? (get-in out [:result :path])))))
 
     (t/testing "delete media objects"
       (let [data {::sm/type :delete-media-object

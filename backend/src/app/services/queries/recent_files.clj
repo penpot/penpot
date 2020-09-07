@@ -16,21 +16,13 @@
    [app.services.queries :as sq]
    [app.services.queries.teams :as teams]
    [app.services.queries.projects :as projects :refer [retrieve-projects]]
-   [app.services.queries.files :refer [decode-row]]))
+   [app.services.queries.files :refer [decode-row-xf]]))
 
 (def sql:project-recent-files
-  "select distinct
-          f.*,
-          array_agg(pg.id) over pages_w as pages,
-          first_value(pg.data) over pages_w as data
+  "select f.*
      from file as f
-     left join page as pg on (f.id = pg.file_id)
     where f.project_id = ?
       and f.deleted_at is null
-      and pg.deleted_at is null
-   window pages_w as (partition by f.id order by pg.ordering
-                      range between unbounded preceding
-                                and unbounded following)
     order by f.modified_at desc
     limit 5")
 
@@ -38,8 +30,7 @@
   [conn profile-id project]
   (let [project-id (:id project)]
     (projects/check-edition-permissions! conn profile-id project)
-    (->> (db/exec! conn [sql:project-recent-files project-id])
-         (map decode-row))))
+    (into [] decode-row-xf (db/exec! conn [sql:project-recent-files project-id]))))
 
 (s/def ::team-id ::us/uuid)
 (s/def ::profile-id ::us/uuid)

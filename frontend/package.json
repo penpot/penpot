@@ -25,7 +25,7 @@
     "postcss": "^7.0.32",
     "rimraf": "^3.0.0",
     "sass": "^1.26.10",
-    "shadow-cljs": "^2.10.19"
+    "shadow-cljs": "^2.11.0"
   },
   "dependencies": {
     "date-fns": "^2.15.0",

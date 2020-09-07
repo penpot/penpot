@@ -49,7 +49,7 @@ services:
 
   smtp:
     container_name: "uxbox-devenv-smtp"
-    image: mwader/postfix-relay
+    image: mwader/postfix-relay:latest
     restart: always
     environment:
       - POSTFIX_myhostname=smtp.uxbox.io
@@ -75,7 +75,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   redis:
-    image: redis:6.0.6
+    image: redis:6
     hostname: "uxbox-devenv-redis"
     container_name: "uxbox-devenv-redis"
     restart: always

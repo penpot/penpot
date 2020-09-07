@@ -76,8 +76,9 @@
               where f.project_id = p.id
                 and deleted_at is null)
      from project as p
-    where team_id = ?
-    order by modified_at desc")
+    where p.team_id = ?
+      and p.deleted_at is null
+    order by p.modified_at desc")
 
 (defn retrieve-projects
   [conn team-id]

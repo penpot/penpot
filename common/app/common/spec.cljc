@@ -2,7 +2,10 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.common.spec
   "Data manipulation and query helper functions."
@@ -103,7 +106,11 @@
 
 (defn spec-assert
   [spec x]
-  (s/assert* spec x))
+  (if (s/valid? spec x)
+    x
+    (ex/raise :type :assertion
+              :data (s/explain-data spec x)
+              #?@(:cljs [:stack (.-stack (ex-info "assertion" {}))]))))
 
 (defmacro assert
   "Development only assertion macro."

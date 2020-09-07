@@ -68,8 +68,8 @@
     (d/index-of (:shapes prt) id)))
 
 (defn insert-at-index
-  [shapes index ids]
-  (let [[before after] (split-at index shapes)
+  [objects index ids]
+  (let [[before after] (split-at index objects)
         p? (set ids)]
     (d/concat []
               (remove p? before)

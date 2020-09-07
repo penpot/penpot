@@ -32,23 +32,23 @@
                :code (:error response)})))
 
 (defn- request-page
-  [id]
+  [file-id page-id]
   (let [uri "/api/w/query/page"]
     (p/create
      (fn [resolve reject]
        (->> (http/send! {:uri uri
-                         :query {:id id}
+                         :query {:file-id file-id :id page-id}
                          :method :get})
             (rx/mapcat handle-response)
             (rx/subs (fn [body]
-                       (resolve (:data body)))
+                       (resolve body))
                      (fn [error]
                        (reject error))))))))
 
 (defmethod impl/handler :thumbnails/generate
-  [{:keys [id] :as message}]
+  [{:keys [file-id page-id] :as message}]
   (p/then
-   (request-page id)
+   (request-page file-id page-id)
    (fn [data]
      (let [elem (mf/element exports/page-svg #js {:data data
                                                   :width "290"

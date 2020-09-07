@@ -116,6 +116,8 @@
 
 (declare remote-user-cursors)
 
+
+;; TODO: revisit the refs usage (vs props)
 (mf/defc shape-outlines
   {::mf/wrap-props false}
   [props]
@@ -135,13 +137,13 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [props]
-  (let [data     (mf/deref refs/workspace-data)
+  (let [data     (mf/deref refs/workspace-page)
         hover    (unchecked-get props "hover")
         selected (unchecked-get props "selected")
-        objects (:objects data)
-        root    (get objects uuid/zero)
-        shapes  (->> (:shapes root)
-                     (map #(get objects %)))]
+        objects  (:objects data)
+        root     (get objects uuid/zero)
+        shapes   (->> (:shapes root)
+                      (map #(get objects %)))]
     [:*
      [:g.shapes
       (for [item shapes]
@@ -157,9 +159,8 @@
                          :hover hover}]]))
 
 (mf/defc viewport
-  [{:keys [page local layout] :as props}]
-  (let [{:keys [drawing-tool
-                options-mode
+  [{:keys [page-id page local layout] :as props}]
+  (let [{:keys [options-mode
                 zoom
                 flags
                 vport
@@ -169,9 +170,12 @@
                 selected
                 panning]} local
 
-        file (mf/deref refs/workspace-file)
-        viewport-ref (mf/use-ref nil)
+        file          (mf/deref refs/workspace-file)
+        viewport-ref  (mf/use-ref nil)
         last-position (mf/use-var nil)
+        drawing       (mf/deref refs/workspace-drawing)
+        drawing-tool  (:tool drawing)
+        drawing-obj   (:object drawing)
 
         zoom (or zoom 1)
 
@@ -462,7 +466,7 @@
       :on-drop on-drop}
 
      [:g
-      [:& frames {:key (:id page)
+      [:& frames {:key page-id
                   :hover (:hover local)
                   :selected (:selected selected)}]
 
@@ -471,8 +475,8 @@
                                 :zoom zoom
                                 :edition edition}])
 
-      (when-let [drawing-shape (:drawing local)]
-        [:& draw-area {:shape drawing-shape
+      (when drawing-obj
+        [:& draw-area {:shape drawing-obj
                        :zoom zoom
                        :modifiers (:modifiers local)}])
 
@@ -481,17 +485,21 @@
 
       [:& snap-points {:layout layout
                        :transform (:transform local)
-                       :drawing (:drawing local)
+                       :drawing drawing-obj
                        :zoom zoom
-                       :page-id (:id page)
+                       :page-id page-id
                        :selected selected}]
 
-      [:& snap-distances {:layout layout}]
+      [:& snap-distances {:layout layout
+                          :zoom zoom
+                          :transform (:transform local)
+                          :selected selected
+                          :page-id page-id}]
 
       (when tooltip
         [:& cursor-tooltip {:zoom zoom :tooltip tooltip}])]
 
-     [:& presence/active-cursors {:page page}]
+     [:& presence/active-cursors {:page-id page-id}]
      [:& selection-rect {:data (:selrect local)}]
      (when (= options-mode :prototype)
        [:& interactions {:selected selected}])]))

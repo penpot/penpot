@@ -10,23 +10,23 @@
 (ns app.main.data.workspace.transforms
   "Events related with shapes transformations"
   (:require
-   [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
-   [beicon.core :as rx]
-   [potok.core :as ptk]
    [app.common.data :as d]
-   [app.common.spec :as us]
-   [app.common.pages :as cp]
-   [app.common.pages-helpers :as cph]
-   [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.selection :as dws]
-   [app.main.refs :as refs]
-   [app.main.store :as st]
-   [app.main.streams :as ms]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.main.snap :as snap]))
+   [app.common.pages :as cp]
+   [app.common.pages-helpers :as cph]
+   [app.common.spec :as us]
+   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.selection :as dws]
+   [app.main.refs :as refs]
+   [app.main.snap :as snap]
+   [app.main.store :as st]
+   [app.main.streams :as ms]
+   [beicon.core :as rx]
+   [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
+   [potok.core :as ptk]))
 
 ;; -- Declarations
 
@@ -135,10 +135,11 @@
       (watch [_ state stream]
         (let [current-pointer @ms/mouse-position
               initial-position (merge current-pointer initial)
-              stoper (rx/filter ms/mouse-up? stream)
-              page-id (get state :current-page-id)
-              resizing-shapes (map #(get-in state [:workspace-data page-id :objects %]) ids)
-              layout (get state :workspace-layout)]
+              stoper  (rx/filter ms/mouse-up? stream)
+              layout  (:workspace-layout state)
+              page-id (:current-page-id state)
+              objects (dwc/lookup-page-objects state page-id)
+              resizing-shapes (map #(get objects %) ids)]
           (rx/concat
            (->> ms/mouse-position
                 (rx/with-latest vector ms/mouse-position-shift)
@@ -148,12 +149,10 @@
                                     (rx/map #(conj current %)))))
                 (rx/mapcat (partial resize shape initial-position resizing-shapes))
                 (rx/take-until stoper))
-           #_(rx/empty)
            (rx/of (apply-modifiers ids)
                   finish-transform)))))))
 
 
-;; -- ROTATE
 (defn start-rotate
   [shapes]
   (ptk/reify ::start-rotate
@@ -164,10 +163,10 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [stoper (rx/filter ms/mouse-up? stream)
-            group  (gsh/selection-rect shapes)
-            group-center (gsh/center group)
-            initial-angle (gpt/angle @ms/mouse-position group-center)
+      (let [stoper          (rx/filter ms/mouse-up? stream)
+            group           (gsh/selection-rect shapes)
+            group-center    (gsh/center group)
+            initial-angle   (gpt/angle @ms/mouse-position group-center)
             calculate-angle (fn [pos ctrl?]
                               (let [angle (- (gpt/angle pos group-center) initial-angle)
                                     angle (if (neg? angle) (+ 360 angle) angle)
@@ -201,9 +200,9 @@
   (ptk/reify ::start-move-selected
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [initial @ms/mouse-position
+      (let [initial  (deref ms/mouse-position)
             selected (get-in state [:workspace-local :selected])
-            stopper (rx/filter ms/mouse-up? stream)]
+            stopper  (rx/filter ms/mouse-up? stream)]
         (->> ms/mouse-position
              (rx/take-until stopper)
              (rx/map #(gpt/to-vec initial %))
@@ -240,8 +239,8 @@
 
      ptk/WatchEvent
      (watch [_ state stream]
-       (let [page-id (get state :current-page-id)
-             objects (get-in state [:workspace-data page-id :objects])
+       (let [page-id (:current-page-id state)
+             objects (dwc/lookup-page-objects state page-id)
              ids     (if (nil? ids) (get-in state [:workspace-local :selected]) ids)
              shapes  (mapv #(get objects %) ids)
              stopper (rx/filter ms/mouse-up? stream)
@@ -342,22 +341,24 @@
      ptk/UpdateEvent
      (update [_ state]
        (let [page-id (:current-page-id state)
-             objects (get-in state [:workspace-data page-id :objects])
-             not-frame-id? (fn [shape-id]
-                             (let [shape (get objects shape-id)]
-                               (or recurse-frames? (not (= :frame (:type shape))))))
+             objects (dwc/lookup-page-objects state page-id)
+
+             not-frame-id?
+             (fn [shape-id]
+               (let [shape (get objects shape-id)]
+                 (or recurse-frames? (not (= :frame (:type shape))))))
+
+             ;; For each shape updates the modifiers given as arguments
+             update-shape
+             (fn [objects shape-id]
+               (update-in objects [shape-id :modifiers] #(merge % modifiers)))
 
              ;; ID's + Children but remove frame children if the flag is set to false
              ids-with-children (concat ids (mapcat #(cph/get-children % objects)
-                                                   (filter not-frame-id? ids)))
+                                                   (filter not-frame-id? ids)))]
 
-             ;; For each shape updates the modifiers given as arguments
-             update-shape (fn [state shape-id]
-                            (update-in
-                             state
-                             [:workspace-data page-id :objects shape-id :modifiers]
-                             #(merge % modifiers)))]
-         (reduce update-shape state ids-with-children))))))
+         (d/update-in-when state [:workspace-data :pages-index page-id :objects]
+                           #(reduce update-shape % ids-with-children)))))))
 
 (defn rotation-modifiers [center shape angle]
   (let [displacement (let [shape-center (gsh/center shape)]
@@ -376,25 +377,23 @@
    (set-rotation delta-rotation shapes (-> shapes gsh/selection-rect gsh/center)))
 
   ([delta-rotation shapes center]
-   (ptk/reify ::set-rotation
-     ptk/UpdateEvent
-     (update [_ state]
-       (let [page-id (:current-page-id state)]
-         (letfn [(rotate-shape [state angle shape center]
-                   (let [objects (get-in state [:workspace-data page-id :objects])
-                         path [:workspace-data page-id :objects (:id shape) :modifiers]
-                         modifiers (rotation-modifiers center shape angle)]
-                     (-> state
-                         (update-in path merge modifiers))))
+   (letfn [(rotate-shape [objects angle shape center]
+             (update-in objects [(:id shape) :modifiers] merge (rotation-modifiers center shape angle)))
 
-                 (rotate-around-center [state angle center shapes]
-                   (reduce #(rotate-shape %1 angle %2 center) state shapes))]
+           (rotate-around-center [objects angle center shapes]
+             (reduce #(rotate-shape %1 angle %2 center) objects shapes))
 
-           (let [objects (get-in state [:workspace-data page-id :objects])
-                 id->obj #(get objects %)
-                 get-children (fn [shape] (map id->obj (cph/get-children (:id shape) objects)))
-                 shapes (concat shapes (mapcat get-children shapes))]
-             (rotate-around-center state delta-rotation center shapes))))))))
+           (set-rotation [objects]
+             (let [id->obj #(get objects %)
+                   get-children (fn [shape] (map id->obj (cph/get-children (:id shape) objects)))
+                   shapes (concat shapes (mapcat get-children shapes))]
+               (rotate-around-center objects delta-rotation center shapes)))]
+
+     (ptk/reify ::set-rotation
+       ptk/UpdateEvent
+       (update [_ state]
+         (let [page-id (:current-page-id state)]
+           (d/update-in-when state [:workspace-data :pages-index page-id :objects] set-rotation)))))))
 
 (defn apply-modifiers
   [ids]
@@ -403,8 +402,9 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
-            objects0 (get-in state [:workspace-pages page-id :data :objects])
-            objects1 (get-in state [:workspace-data page-id :objects])
+
+            objects0 (get-in state [:workspace-file :data :pages-index page-id :objects])
+            objects1 (get-in state [:workspace-data :pages-index page-id :objects])
 
             ;; ID's + Children ID's
             ids-with-children (d/concat [] (mapcat #(cph/get-children % objects1) ids) ids)
@@ -413,7 +413,9 @@
             update-shape #(update %1 %2 gsh/transform-shape)
             objects2 (reduce update-shape objects1 ids-with-children)
 
-            regchg   {:type :reg-objects :shapes (vec ids)}
+            regchg   {:type :reg-objects
+                      :page-id page-id
+                      :shapes (vec ids)}
 
             ;; we need to generate redo chages from current
             ;; state (with current temporal values) to new state but
@@ -421,8 +423,8 @@
             ;; state (without temporal values in it, for this reason
             ;; we have 3 different objects references).
 
-            rchanges (conj (dwc/generate-changes objects1 objects2) regchg)
-            uchanges (conj (dwc/generate-changes objects2 objects0) regchg)
+            rchanges (conj (dwc/generate-changes page-id objects1 objects2) regchg)
+            uchanges (conj (dwc/generate-changes page-id objects2 objects0) regchg)
             ]
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})

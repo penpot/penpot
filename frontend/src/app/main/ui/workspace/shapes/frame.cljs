@@ -9,6 +9,7 @@
 
 (ns app.main.ui.workspace.shapes.frame
   (:require
+   [okulary.core :as l]
    [rumext.alpha :as mf]
    [app.common.data :as d]
    [app.main.constants :as c]
@@ -43,6 +44,10 @@
                (recur (first ids) (rest ids))
                false))))))
 
+(defn make-selected-ref
+  [id]
+  (l/derived #(contains? % id) refs/selected-shapes))
+
 (defn frame-wrapper-factory
   [shape-wrapper]
   (let [frame-shape (frame/frame-shape shape-wrapper)]
@@ -55,7 +60,7 @@
             objects (unchecked-get props "objects")
 
             selected-iref (mf/use-memo (mf/deps (:id shape))
-                                       #(refs/make-selected (:id shape)))
+                                       #(make-selected-ref (:id shape)))
             selected? (mf/deref selected-iref)
             zoom (mf/deref refs/selected-zoom)
 

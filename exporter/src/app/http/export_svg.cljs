@@ -249,13 +249,14 @@
 (s/def ::suffix ::us/string)
 (s/def ::type #{:svg})
 (s/def ::page-id ::us/uuid)
+(s/def ::file-id ::us/uuid)
 (s/def ::object-id ::us/uuid)
 (s/def ::scale ::us/number)
 (s/def ::token ::us/string)
 (s/def ::filename ::us/string)
 
 (s/def ::export-params
-  (s/keys :req-un [::name ::suffix ::type ::object-id ::page-id ::scale ::token]
+  (s/keys :req-un [::name ::suffix ::type ::object-id ::page-id ::file-id ::scale ::token]
           :opt-un [::filename]))
 
 (defn export

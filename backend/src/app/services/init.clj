@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2019-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.services.init
   "A initialization of services."
@@ -18,7 +18,6 @@
   (require 'app.services.queries.colors)
   (require 'app.services.queries.projects)
   (require 'app.services.queries.files)
-  (require 'app.services.queries.pages)
   (require 'app.services.queries.profile)
   (require 'app.services.queries.recent-files)
   (require 'app.services.queries.viewer))
@@ -30,7 +29,6 @@
   (require 'app.services.mutations.colors)
   (require 'app.services.mutations.projects)
   (require 'app.services.mutations.files)
-  (require 'app.services.mutations.pages)
   (require 'app.services.mutations.profile))
 
 (defstate query-services

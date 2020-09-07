@@ -9,11 +9,11 @@
 
 (ns app.main.ui.shapes.frame
   (:require
-   [rumext.alpha :as mf]
    [app.common.data :as d]
-   [app.main.ui.shapes.attrs :as attrs]
    [app.common.geom.shapes :as geom]
-   [app.util.object :as obj]))
+   [app.main.ui.shapes.attrs :as attrs]
+   [app.util.object :as obj]
+   [rumext.alpha :as mf]))
 
 (def frame-default-props {:fill-color "#ffffff"})
 
@@ -22,8 +22,8 @@
   (mf/fnc frame-shape
     {::mf/wrap-props false}
     [props]
-    (let [childs (unchecked-get props "childs")
-          shape  (unchecked-get props "shape")
+    (let [childs     (unchecked-get props "childs")
+          shape      (unchecked-get props "shape")
           {:keys [id x y width height]} shape
 
           props (-> (merge frame-default-props shape)
