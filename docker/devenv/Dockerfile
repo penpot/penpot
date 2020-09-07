@@ -23,7 +23,6 @@ RUN set -ex; \
         tmux \
         vim \
         curl \
-        zsh \
         bash \
         git \
         rlwrap \
@@ -93,14 +92,18 @@ RUN curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
     apt-get -qqy install postgresql-client-12 && \
     rm -rf /var/lib/apt/lists/*;
 
-COPY files/bashrc /root/.bashrc
-COPY files/vimrc /root/.vimrc
 COPY files/phantomjs-mock /usr/bin/phantomjs
+COPY files/bashrc        /root/.bashrc
+COPY files/vimrc         /root/.vimrc
+COPY files/tmux.conf     /root/.tmux.conf
+COPY files/start-tmux.sh /home/start-tmux.sh
+COPY files/entrypoint.sh /home/entrypoint.sh
+COPY files/init.sh       /home/init.sh
 
 ARG EXTERNAL_UID=1000
 
 RUN set -ex; \
-    useradd -m -g users -s /bin/zsh -u $EXTERNAL_UID uxbox; \
+    useradd -m -g users -s /bin/bash -u $EXTERNAL_UID uxbox; \
     passwd uxbox -d; \
     echo "uxbox ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
@@ -119,14 +122,6 @@ RUN set -ex; \
 USER uxbox
 WORKDIR /home/uxbox
 
-COPY files/bashrc /home/uxbox/.bashrc
-COPY files/zshrc /home/uxbox/.zshrc
-COPY files/vimrc /home/uxbox/.vimrc
-COPY files/start-tmux.sh /home/uxbox/start-tmux.sh
-COPY files/tmux.conf /home/uxbox/.tmux.conf
-COPY files/entrypoint.sh /home/uxbox/
-COPY files/init.sh /home/uxbox/
-
 RUN set -ex; \
     git clone https://github.com/creationix/nvm.git .nvm; \
     bash -c "source .nvm/nvm.sh && nvm install $NODE_VERSION"; \
@@ -140,5 +135,5 @@ EXPOSE 3449
 EXPOSE 6060
 EXPOSE 9090
 
-ENTRYPOINT ["zsh", "/home/uxbox/entrypoint.sh"]
-CMD ["/home/uxbox/init.sh"]
+ENTRYPOINT ["bash", "/home/entrypoint.sh"]
+CMD ["/home/init.sh"]

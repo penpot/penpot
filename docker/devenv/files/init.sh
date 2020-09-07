@@ -1,13 +1,10 @@
-#!/usr/bin/env zsh
+#!/usr/bin/env bash
 
 set -e;
-source ~/.zshrc
+source ~/.bashrc
 
 echo "[init.sh] Start nginx."
 sudo nginx
-
-echo "[init.sh] Setting up local permissions."
-sudo chown -R uxbox /home/uxbox/local
 
 echo "[init.sh] Ready!"
 tail -f /dev/null

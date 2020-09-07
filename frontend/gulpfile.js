@@ -232,8 +232,10 @@ gulp.task("copy:assets:fonts", function() {
 
 gulp.task("copy:assets", gulp.parallel("copy:assets:images", "copy:assets:fonts"));
 
-gulp.task("dev:dirs", function(next) {
-  mkdirp("./resources/public/css/").then(() => next())
+gulp.task("dev:dirs", async function(next) {
+  await mkdirp("./resources/public/css/");
+  await mkdirp("./resources/public/js/");
+  next();
 });
 
 gulp.task("watch:main", function() {

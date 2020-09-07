@@ -17,7 +17,6 @@ services:
     image: "uxbox-devenv"
     hostname: "uxbox-devenv-main"
     container_name: "uxbox-devenv-main"
-    command: "/home/uxbox/init.sh"
     stop_signal: SIGINT
 
     depends_on:
@@ -26,8 +25,7 @@ services:
       - redis
 
     volumes:
-      - "user_data:/home/uxbox/local"
-      - "${HOME}/.m2:/home/uxbox/.m2"
+      - "user_data:/home/uxbox/"
       - "${PWD}:/home/uxbox/uxbox"
       - ./files/nginx.conf:/etc/nginx/nginx.conf
 

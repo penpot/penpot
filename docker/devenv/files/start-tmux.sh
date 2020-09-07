@@ -1,7 +1,9 @@
-#!/usr/bin/env zsh
+#!/usr/bin/env bash
+
+cd ~;
 
 set -e;
-source ~/.zshrc
+source ~/.bashrc
 
 echo "[start-tmux.sh] Installing node dependencies"
 pushd ~/uxbox/frontend/
