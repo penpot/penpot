@@ -5,7 +5,7 @@
 // Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
 // Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-.colorpicker-v2 {
+.colorpicker {
     display: flex;
     flex-direction: column;
     width: 13rem;
@@ -215,152 +215,15 @@
     }
 }
 
-.color-picker {
-  display: flex;
-  flex-direction: column;
-
-  .picker-area {
-    display: flex;
-
-    /* Common stuff */
-    .picker-wrapper,
-    .slide-wrapper {
-      position: relative;
-    }
-    .picker-indicator,
-    .slide-indicator {
-      position: absolute;
-      left: 0;
-      top: 0;
-      pointer-events: none;
-      transition: none;
-    }
-    .picker,
-    .slide {
-      cursor: crosshair;
-      svg {
-        transition: none;
-      }
-    }
-  }
-
-  .inputs-area {
-    display: flex;
-    justify-content: space-around;
-    width: 200px;
-
-    .row-flex{
-      margin: 0;
-    }
-
-    > input {
-      width: 50%;
-    }
-
-    .input-text {
-      color: $color-gray-60;
-      font-size: $fs13;
-      margin: 5px;
-      padding: 5px;
-      width: 100%;
-    }
-
-  }
-
-  span {
-    color: $color-gray-20;
-    font-size: $fs12;
-  }
-
-
-  /* Default skin */
-
-  &.theme-default {
-    padding: 4px;
-    border-radius: 2px;
-    width: 230px;
-
-    .picker {
-      width: 200px;
-      height: 200px;
-    }
-
-    .slide {
-      width: 20px;
-      height: 200px;
-    }
-    .slide-wrapper {
-      margin-left: 4px;
-    }
-    .picker-indicator {
-      width: 5px;
-      height: 5px;
-      border: 2px solid darkblue;
-      border-radius: 4px;
-      opacity: .5;
-      background-color: white;
-    }
-    .slide-indicator {
-      width: 28px;
-      height: 10px;
-      left: -4px;
-      opacity: .6;
-      border: 4px solid lightblue;
-      border-radius: 4px;
-      background-color: white;
-    }
-
-    .inputs-area {
-      width: 230px;
-    }
-
-  }
-
-  /* Small skin */
-
-  &.theme-small {
-    border-radius: 2px;
-
-    .picker {
-      width: 170px;
-      height: 170px;
-    }
-
-    .slide {
-      width: 20px;
-      height: 170px;
-    }
-    .slide-wrapper {
-      margin-left: 4px;
-    }
-    .picker-indicator {
-      width: 5px;
-      height: 5px;
-      border: 2px solid darkblue;
-      border-radius: 4px;
-      opacity: .5;
-      background-color: white;
-    }
-    .slide-indicator {
-      width: 28px;
-      height: 10px;
-      left: -4px;
-      opacity: .6;
-      border: 4px solid lightblue;
-      border-radius: 4px;
-      background-color: white;
-    }
-
-  }
-
-}
-
-/* NEW COLOR PICKER */
-/* color th */
 .color-data {
   align-items: center;
   display: flex;
   position: relative;
+
+  .color-name {
+      font-size: $fs13;
+      margin: 5px 6px 0px 6px;
+  }
 
   .color-info {
     input {
@@ -428,13 +291,5 @@
       width: 100%;
     }
 
-  }
-}
-
-.chrome-picker {
-  font-family: inherit !important;
-
-  input {
-    margin-bottom: auto;
   }
 }

@@ -17,7 +17,6 @@
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.modal :as modal]
-   [app.main.ui.workspace.colorpicker :refer [colorpicker-modal]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
    [app.util.data :refer [classnames]]
    [app.util.dom :as dom]
@@ -29,6 +28,8 @@
    :stroke-alignment
    :stroke-width
    :stroke-color
+   :stroke-color-ref-id
+   :stroke-color-ref-file
    :stroke-opacity])
 
 (defn- stroke-menu-props-equals?
@@ -73,13 +74,17 @@
         show-options (not= (or (:stroke-style values) :none)  :none)
 
         current-stroke-color {:value (:stroke-color values)
-                              :opacity (:stroke-opacity values)}
+                              :opacity (:stroke-opacity values)
+                              :id (:stroke-color-ref-id values)
+                              :file-id (:stroke-color-ref-file values)}
 
         handle-change-stroke-color
-        (fn [value opacity]
+        (fn [value opacity id file-id]
           (let [change #(cond-> %
-                         value (assoc :stroke-color value)
-                         opacity (assoc :stroke-opacity opacity))]
+                          value (assoc :stroke-color value
+                                       :stroke-color-ref-id id
+                                       :stroke-color-ref-file file-id)
+                          opacity (assoc :stroke-opacity opacity))]
             (st/emit! (dwc/update-shapes ids change))))
 
         on-stroke-style-change

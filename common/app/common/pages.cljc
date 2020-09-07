@@ -68,6 +68,8 @@
 (s/def :internal.shape/collapsed boolean?)
 (s/def :internal.shape/content any?)
 (s/def :internal.shape/fill-color string?)
+(s/def :internal.shape/fill-color-ref-file uuid?)
+(s/def :internal.shape/fill-color-ref-id uuid?)
 (s/def :internal.shape/fill-opacity number?)
 (s/def :internal.shape/font-family string?)
 (s/def :internal.shape/font-size number?)
@@ -83,6 +85,8 @@
 (s/def :internal.shape/rx number?)
 (s/def :internal.shape/ry number?)
 (s/def :internal.shape/stroke-color string?)
+(s/def :internal.shape/stroke-color-ref-file uuid?)
+(s/def :internal.shape/stroke-color-ref-id uuid?)
 (s/def :internal.shape/stroke-opacity number?)
 (s/def :internal.shape/stroke-style #{:solid :dotted :dashed :mixed :none})
 (s/def :internal.shape/stroke-width number?)
@@ -133,6 +137,8 @@
                    :internal.shape/collapsed
                    :internal.shape/content
                    :internal.shape/fill-color
+                   :internal.shape/fill-color-ref-file
+                   :internal.shape/fill-color-ref-id
                    :internal.shape/fill-opacity
                    :internal.shape/font-family
                    :internal.shape/font-size
@@ -152,6 +158,8 @@
                    :internal.shape/y
                    :internal.shape/exports
                    :internal.shape/stroke-color
+                   :internal.shape/stroke-color-ref-file
+                   :internal.shape/stroke-color-ref-id
                    :internal.shape/stroke-opacity
                    :internal.shape/stroke-style
                    :internal.shape/stroke-width

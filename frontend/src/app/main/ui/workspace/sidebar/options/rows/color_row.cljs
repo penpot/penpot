@@ -16,7 +16,8 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.main.ui.modal :as modal]
    [app.main.ui.workspace.colorpicker :refer [colorpicker-modal]]
-   [app.common.data :as d]))
+   [app.common.data :as d]
+   [app.main.refs :as refs]))
 
 (defn color-picker-callback
   [color handle-change-color disable-opacity]
@@ -56,8 +57,18 @@
 (defn remove-multiple [v]
   (if (= v :multiple) nil v))
 
-(mf/defc color-row [{:keys [color on-change disable-opacity]}]
-  (let [default-color {:value "#000000" :opacity 1}
+(mf/defc color-row
+  [{:keys [color on-change disable-opacity]}]
+  (let [;;
+        file-colors (mf/deref refs/workspace-file-colors)
+        shared-libs (mf/deref refs/workspace-libraries)
+
+        get-color-name (fn [{:keys [id file-id]}]
+                         (let [src-colors (if file-id (get-in shared-libs [file-id :data :colors]) file-colors)]
+                           (get-in src-colors [id :name])))
+        ;;
+
+        default-color {:value "#000000" :opacity 1}
 
         parse-color (fn [color]
                       (-> (merge default-color color)
@@ -77,9 +88,9 @@
                          (swap! state assoc :opacity new-opacity)
                          (when on-change (on-change (remove-multiple value) new-opacity)))
 
-        handle-pick-color (fn [new-value new-opacity]
+        handle-pick-color (fn [new-value new-opacity id file-id]
                             (reset! state {:value new-value :opacity new-opacity})
-                            (when on-change (on-change new-value new-opacity)))
+                            (when on-change (on-change new-value new-opacity id file-id)))
 
         handle-value-change (fn [event]
                               (let [target (dom/get-target event)]
@@ -107,16 +118,20 @@
 
     [:div.row-flex.color-data
      [:span.color-th
-      {:style {:background-color (-> value value-to-background)}
+      {:style {:background-color (-> value value-to-background)
+               :border-radius (if (:id color) "10px" "inherit")}
        :on-click (color-picker-callback @state handle-pick-color disable-opacity)}
       (when (= value :multiple) "?")]
 
-     [:div.color-info
-      [:input {:value (-> value remove-hash)
-               :pattern "^[0-9a-fA-F]{0,6}$"
-               :placeholder (tr "settings.multiple")
-               :on-click select-all
-               :on-change handle-value-change}]]
+     (if (:id color)
+       [:div.color-info
+        [:div.color-name (str (get-color-name color))]]
+       [:div.color-info
+        [:input {:value (-> value remove-hash)
+                 :pattern "^[0-9a-fA-F]{0,6}$"
+                 :placeholder (tr "settings.multiple")
+                 :on-click select-all
+                 :on-change handle-value-change}]])
 
      (when (not disable-opacity)
        [:div.input-element
