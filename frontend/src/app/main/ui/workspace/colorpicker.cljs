@@ -18,9 +18,11 @@
    [app.common.math :as math]
    [app.common.uuid :refer [uuid]]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.colors :as dwc]
    [app.main.ui.modal :as modal]
    [okulary.core :as l]
-   [app.main.refs :as refs]))
+   [app.main.refs :as refs]
+   [app.util.i18n :as i18n :refer [t]]))
 
 ;; --- Color Picker Modal
 
@@ -100,9 +102,16 @@
         shared-libs (mf/deref refs/workspace-libraries)
         recent-colors (mf/deref refs/workspace-recent-colors)
 
+        locale    (mf/deref i18n/locale)
+
         value-ref (mf/use-var value)
 
-        on-change (or on-change identity)]
+        on-change (or on-change identity)
+
+        parse-selected (fn [selected]
+                         (if (#{"recent" "file"} selected)
+                           (keyword selected)
+                           (uuid selected)) )]
 
     ;; Update state when there is a change in the props upstream
     (mf/use-effect
@@ -140,7 +149,8 @@
     (mf/use-effect
      (mf/deps file-colors)
      (fn [] (when (= @selected-library "file")
-              (reset! current-library-colors (into [] (map :value (vals file-colors)))))))
+              (let [colors (map #(select-keys % [:id :value]) (vals file-colors))]
+                (reset! current-library-colors (into [] colors))))))
 
     ;; When closing the modal we update the recent-color list
     (mf/use-effect
@@ -263,8 +273,8 @@
                              (let [val (-> e dom/get-target dom/get-value)]
                                (reset! selected-library val)))
                 :value @selected-library} 
-       [:option {:value "recent"} "Recent colors"]
-       [:option {:value "file"} "File library"]
+       [:option {:value "recent"} (t locale "workspace.libraries.colors.recent-colors")]
+       [:option {:value "file"} (t locale "workspace.libraries.colors.file-library")]
        (for [[_ {:keys [name id]}] shared-libs]
          [:option {:key id
                    :value id} name])]
@@ -275,7 +285,8 @@
                                                 :on-click #(st/emit! (dwl/add-color (:hex @current-color)))}
           i/plus])
 
-       [:div.color-bullet.button {:style {:background-color "white"}}
+       [:div.color-bullet.button {:style {:background-color "white"}
+                                  :on-click #(st/emit! (dwc/show-palette (parse-selected @selected-library)))}
         i/palette]
 
        (for [[idx {:keys [id file-id value]}] (map-indexed vector @current-library-colors)]
@@ -298,7 +309,7 @@
          {:on-click (fn []
                       (on-accept @value-ref)
                       (modal/hide!))}
-         "Save color"]])])
+         (t locale "workspace.libraries.colors.save-color")]])])
   )
 
 (mf/defc colorpicker-modal

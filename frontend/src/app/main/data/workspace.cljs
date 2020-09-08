@@ -100,7 +100,9 @@
    :draw-interaction-to nil
    :left-sidebar? true
    :right-sidebar? true
-   :color-for-rename nil})
+   :color-for-rename nil
+   :selected-palette :recent
+   :selected-palette-size :big})
 
 (def initialize-layout
   (ptk/reify ::initialize-layout
