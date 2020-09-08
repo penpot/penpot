@@ -123,6 +123,10 @@
   width: 100%;
   height: 4.8rem;
   padding: 0.25rem;
+
+  &.size-small {
+      height: 3.5rem;
+  }
 }
 
 .color-palette-inside {
@@ -141,15 +145,37 @@
   flex-direction: column;
   flex-shrink: 0;
   position: relative;
-  flex-basis: 66px;
+
+  &.cell-big {
+      flex-basis: 66px;
+  }
+
+  &.cell-small {
+      flex-basis: 52px;
+  }
 
   .color {
     background-color: $color-gray-10;
     border: 2px solid $color-gray-60;
     border-radius: 50%;
     flex-shrink: 0;
-    padding: 1.5rem;
   }
+
+  &.cell-big .color {
+      width: 50px;
+      height: 50px;
+  }
+
+  &.cell-small .color {
+      width: 40px;
+      height: 40px;
+  }
+
+  .color.color-big {
+      width: 50px;
+      height: 50px;
+  }
+
   .color-text {
     color: $color-gray-20;
     font-size: $fs12;
@@ -263,3 +289,52 @@
     }
   }
 }
+
+ul.palette-menu {
+    left: 8px;
+    top: auto;
+    bottom: 4.5rem;
+    color: $color-black;
+
+    li {
+        position: relative;
+        padding: 5px 1.5rem;
+    }
+
+    hr {
+        margin: 0.5rem 0;
+    }
+
+    svg {
+        width: 9px;
+        height: 9px;
+        position: absolute;
+        left: 0.5rem;
+        top: 10px;
+    }
+
+    hr {
+        border-color: $color-gray-20;
+    }
+
+    .palette-library {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .color-sample {
+        display: flex;
+        flex-direction: row;
+        margin-top: 0.5rem;
+    }
+
+    .color-bullet {
+        width: 20px;
+        height: 20px;
+        border-radius: 12px;
+        border: 1px solid $color-gray-10;
+        margin-right: 5px;
+    }
+}
+

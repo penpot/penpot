@@ -107,3 +107,25 @@
           (update-in [:workspace-file :colors]
                      (fn [colors] (filter #(not= (:id %) color-id) colors)))))))
 
+(defn change-palette-size [size]
+  (s/assert #{:big :small} size)
+  (ptk/reify ::change-palette-size
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:workspace-local :selected-palette-size] size)))))
+
+(defn change-palette-selected [selected]
+  (ptk/reify ::change-palette-selected
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:workspace-local :selected-palette] selected)))))
+
+(defn show-palette [selected]
+  (ptk/reify ::change-palette-selected
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update :workspace-layout conj :colorpalette)
+          (assoc-in [:workspace-local :selected-palette] selected)))))

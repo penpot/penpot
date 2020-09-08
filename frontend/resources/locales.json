@@ -18,7 +18,7 @@
     }
   },
   "auth.create-demo-profile" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:116", "src/app/main/ui/auth/login.cljs:121" ],
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:135", "src/app/main/ui/auth/register.cljs:116" ],
     "translations" : {
       "en" : "Create demo account",
       "fr" : "Créer un compte de démonstration",
@@ -27,7 +27,7 @@
     }
   },
   "auth.create-demo-profile-label" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:113", "src/app/main/ui/auth/login.cljs:118" ],
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:132", "src/app/main/ui/auth/register.cljs:113" ],
     "translations" : {
       "en" : "Just wanna try it?",
       "fr" : "Vous voulez juste essayer?",
@@ -45,7 +45,7 @@
     }
   },
   "auth.email-label" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:82", "src/app/main/ui/auth/recovery_request.cljs:46", "src/app/main/ui/auth/login.cljs:74" ],
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:81", "src/app/main/ui/auth/register.cljs:82", "src/app/main/ui/auth/recovery_request.cljs:46" ],
     "translations" : {
       "en" : "Email",
       "fr" : "Adresse email",
@@ -54,7 +54,7 @@
     }
   },
   "auth.forgot-password" : {
-    "used-in" : [ "src/app/main/ui/auth/login.cljs:103" ],
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:110" ],
     "translations" : {
       "en" : "Forgot your password?",
       "fr" : "Mot de passe oublié?",
@@ -99,7 +99,7 @@
     }
   },
   "auth.login-submit-label" : {
-    "used-in" : [ "src/app/main/ui/auth/login.cljs:82" ],
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:89" ],
     "translations" : {
       "en" : "Sign in",
       "fr" : "Se connecter",
@@ -108,7 +108,7 @@
     }
   },
   "auth.login-subtitle" : {
-    "used-in" : [ "src/app/main/ui/auth/login.cljs:95" ],
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:102" ],
     "translations" : {
       "en" : "Enter your details below",
       "fr" : "Entrez vos informations ci-dessous",
@@ -117,21 +117,12 @@
     }
   },
   "auth.login-title" : {
-    "used-in" : [ "src/app/main/ui/auth/login.cljs:94" ],
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:101" ],
     "translations" : {
       "en" : "Great to see you again!",
       "fr" : "Ravi de vous revoir!",
       "ru" : "Рады видеть Вас снова!",
       "es" : "Encantados de volverte a ver"
-    }
-  },
-  "auth.login-with-ldap-submit-label" : {
-    "used-in" : [ "src/app/main/ui/auth/login.cljs:86" ],
-    "translations" : {
-      "en" : "Sign in with LDAP",
-      "fr" : "Se connecter via LDAP",
-      "ru" : "Вход через LDAP",
-      "es" : "Entrar con LDAP"
     }
   },
   "auth.login-with-gitlab-submit-label" : {
@@ -141,6 +132,15 @@
       "fr" : "Se connecter via Gitlab",
       "ru" : "Вход через Gitlab",
       "es" : "Entrar con Gitlab"
+    }
+  },
+  "auth.login-with-ldap-submit-label" : {
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:93" ],
+    "translations" : {
+      "en" : "Sign in with LDAP",
+      "fr" : "Se connecter via LDAP",
+      "ru" : "Вход через LDAP",
+      "es" : "Entrar con LDAP"
     }
   },
   "auth.new-password-label" : {
@@ -180,7 +180,7 @@
     }
   },
   "auth.password-label" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:86", "src/app/main/ui/auth/login.cljs:80" ],
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:87", "src/app/main/ui/auth/register.cljs:86" ],
     "translations" : {
       "en" : "Password",
       "fr" : "Mot de passe",
@@ -234,7 +234,7 @@
     }
   },
   "auth.register" : {
-    "used-in" : [ "src/app/main/ui/auth/login.cljs:109" ],
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:116" ],
     "translations" : {
       "en" : "Sign up here",
       "fr" : "Inscrivez-vous ici",
@@ -243,7 +243,7 @@
     }
   },
   "auth.register-label" : {
-    "used-in" : [ "src/app/main/ui/auth/login.cljs:106" ],
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:113" ],
     "translations" : {
       "en" : "No account yet?",
       "fr" : "Pas encore de compte?",
@@ -288,7 +288,7 @@
     }
   },
   "dashboard.grid.add-shared" : {
-    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:131", "src/app/main/ui/workspace/header.cljs:147" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:146", "src/app/main/ui/dashboard/grid.cljs:166" ],
     "translations" : {
       "en" : "Add as Shared Library",
       "fr" : "",
@@ -297,7 +297,7 @@
     }
   },
   "dashboard.grid.add-shared-accept" : {
-    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:70", "src/app/main/ui/workspace/header.cljs:70" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:69", "src/app/main/ui/dashboard/grid.cljs:95" ],
     "translations" : {
       "en" : "Add as Shared Library",
       "fr" : "",
@@ -306,7 +306,7 @@
     }
   },
   "dashboard.grid.add-shared-hint" : {
-    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:69", "src/app/main/ui/workspace/header.cljs:69" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:68", "src/app/main/ui/dashboard/grid.cljs:94" ],
     "translations" : {
       "en" : "Once added as Shared Library, the assets of this file library will be available to be used among the rest of your files.",
       "fr" : "",
@@ -315,7 +315,7 @@
     }
   },
   "dashboard.grid.add-shared-message" : {
-    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:68", "src/app/main/ui/workspace/header.cljs:68" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:67", "src/app/main/ui/dashboard/grid.cljs:93" ],
     "translations" : {
       "en" : "Add “%s” as Shared Library",
       "fr" : "",
@@ -324,7 +324,7 @@
     }
   },
   "dashboard.grid.delete" : {
-    "used-in" : [ "src/app/main/ui/dashboard/project.cljs:62", "src/app/main/ui/dashboard/grid.cljs:128" ],
+    "used-in" : [ "src/app/main/ui/dashboard/project.cljs:62", "src/app/main/ui/dashboard/grid.cljs:163" ],
     "translations" : {
       "en" : "Delete",
       "fr" : "Supprimer",
@@ -333,7 +333,7 @@
     }
   },
   "dashboard.grid.empty-files" : {
-    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:153" ],
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:190" ],
     "translations" : {
       "en" : "You still have no files here",
       "fr" : "Vous n'avez encore aucun fichier ici",
@@ -342,7 +342,7 @@
     }
   },
   "dashboard.grid.remove-shared" : {
-    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:130", "src/app/main/ui/workspace/header.cljs:145" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:144", "src/app/main/ui/dashboard/grid.cljs:165" ],
     "translations" : {
       "en" : "Remove as Shared Library",
       "fr" : "",
@@ -351,7 +351,7 @@
     }
   },
   "dashboard.grid.remove-shared-accept" : {
-    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:81", "src/app/main/ui/workspace/header.cljs:79" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:78", "src/app/main/ui/dashboard/grid.cljs:114" ],
     "translations" : {
       "en" : "Remove as Shared Library",
       "fr" : "",
@@ -360,7 +360,7 @@
     }
   },
   "dashboard.grid.remove-shared-hint" : {
-    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:80", "src/app/main/ui/workspace/header.cljs:78" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:77", "src/app/main/ui/dashboard/grid.cljs:113" ],
     "translations" : {
       "en" : "Once removed as Shared Library, the File Library of this file will stop being available to be used among the rest of your files.",
       "fr" : "",
@@ -369,7 +369,7 @@
     }
   },
   "dashboard.grid.remove-shared-message" : {
-    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:79", "src/app/main/ui/workspace/header.cljs:77" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:76", "src/app/main/ui/dashboard/grid.cljs:112" ],
     "translations" : {
       "en" : "Remove “%s” as Shared Library",
       "fr" : "",
@@ -378,7 +378,7 @@
     }
   },
   "dashboard.grid.rename" : {
-    "used-in" : [ "src/app/main/ui/dashboard/project.cljs:61", "src/app/main/ui/dashboard/grid.cljs:127" ],
+    "used-in" : [ "src/app/main/ui/dashboard/project.cljs:61", "src/app/main/ui/dashboard/grid.cljs:162" ],
     "translations" : {
       "en" : "Rename",
       "fr" : "Renommer",
@@ -540,7 +540,7 @@
     "unused" : true
   },
   "dashboard.search.no-matches-for" : {
-    "used-in" : [ "src/app/main/ui/dashboard/search.cljs:48" ],
+    "used-in" : [ "src/app/main/ui/dashboard/search.cljs:47" ],
     "translations" : {
       "en" : "No matches found for “%s“",
       "fr" : "Aucune correspondance pour “%s“",
@@ -549,7 +549,7 @@
     }
   },
   "dashboard.search.searching-for" : {
-    "used-in" : [ "src/app/main/ui/dashboard/search.cljs:44" ],
+    "used-in" : [ "src/app/main/ui/dashboard/search.cljs:43" ],
     "translations" : {
       "en" : "Searching for “%s“...",
       "fr" : "Recherche de “%s“...",
@@ -558,7 +558,7 @@
     }
   },
   "dashboard.search.type-something" : {
-    "used-in" : [ "src/app/main/ui/dashboard/search.cljs:40" ],
+    "used-in" : [ "src/app/main/ui/dashboard/search.cljs:39" ],
     "translations" : {
       "en" : "Type to search results",
       "fr" : "Écrivez pour rechercher",
@@ -621,13 +621,13 @@
     "unused" : true
   },
   "ds.button.save" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:62" ],
     "translations" : {
       "en" : "Save",
       "fr" : "Sauvegarder",
       "ru" : "Сохранить",
       "es" : "Guardar"
-    }
+    },
+    "unused" : true
   },
   "ds.cancel" : {
     "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:115" ],
@@ -684,7 +684,7 @@
     }
   },
   "ds.new-file" : {
-    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:149", "src/app/main/ui/dashboard/grid.cljs:155" ],
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:180", "src/app/main/ui/dashboard/grid.cljs:192" ],
     "translations" : {
       "en" : "+ New File",
       "fr" : "+ Nouveau fichier",
@@ -711,7 +711,7 @@
     }
   },
   "ds.updated-at" : {
-    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:46" ],
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:58" ],
     "translations" : {
       "en" : "Updated: %s",
       "fr" : "Mis à jour: %s",
@@ -720,7 +720,7 @@
     }
   },
   "errors.auth.unauthorized" : {
-    "used-in" : [ "src/app/main/ui/auth/login.cljs:63" ],
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:70" ],
     "translations" : {
       "en" : "Username or password seems to be wrong.",
       "fr" : "Le nom d'utilisateur ou le mot de passe semble être faux.",
@@ -747,7 +747,7 @@
     }
   },
   "errors.generic" : {
-    "used-in" : [ "src/app/main/ui.cljs:183", "src/app/main/ui/settings/profile.cljs:38", "src/app/main/ui/auth.cljs:91" ],
+    "used-in" : [ "src/app/main/ui/settings/profile.cljs:38", "src/app/main/ui/auth.cljs:91" ],
     "translations" : {
       "en" : "Something wrong has happened.",
       "fr" : "Quelque chose c'est mal passé.",
@@ -774,7 +774,7 @@
     }
   },
   "errors.media-type-mismatch" : {
-    "used-in" : [ "src/app/main/data/media.cljs:62" ],
+    "used-in" : [ "src/app/main/data/media.cljs:62", "src/app/main/data/workspace/persistence.cljs:352" ],
     "translations" : {
       "en" : "Seems that the contents of the image does not match the file extension.",
       "fr" : "",
@@ -783,7 +783,7 @@
     }
   },
   "errors.media-type-not-allowed" : {
-    "used-in" : [ "src/app/main/data/media.cljs:59" ],
+    "used-in" : [ "src/app/main/data/media.cljs:59", "src/app/main/data/workspace/persistence.cljs:349" ],
     "translations" : {
       "en" : "Seems that this is not a valid image.",
       "fr" : "",
@@ -792,13 +792,13 @@
     }
   },
   "errors.network" : {
-    "used-in" : [ "src/app/main/ui.cljs:177" ],
     "translations" : {
       "en" : "Unable to connect to backend server.",
       "fr" : "Impossible de se connecter au serveur principal.",
       "ru" : "Невозможно подключиться к серверу.",
       "es" : "Ha sido imposible conectar con el servidor principal."
-    }
+    },
+    "unused" : true
   },
   "errors.password-invalid-confirmation" : {
     "used-in" : [ "src/app/main/ui/settings/password.cljs:58" ],
@@ -828,7 +828,7 @@
     }
   },
   "errors.unexpected-error" : {
-    "used-in" : [ "src/app/main/data/media.cljs:65", "src/app/main/ui/settings/change_email.cljs:51", "src/app/main/ui/workspace/sidebar/options/exports.cljs:65", "src/app/main/ui/auth/register.cljs:54" ],
+    "used-in" : [ "src/app/main/data/media.cljs:65", "src/app/main/ui/settings/change_email.cljs:51", "src/app/main/ui/auth/register.cljs:54", "src/app/main/ui/workspace/sidebar/options/exports.cljs:66" ],
     "translations" : {
       "en" : "An unexpected error occurred.",
       "fr" : "Une erreur inattendue c'est produite",
@@ -855,7 +855,7 @@
     }
   },
   "header.sitemap" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:85" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:84" ],
     "translations" : {
       "en" : "Sitemap",
       "fr" : null,
@@ -873,7 +873,7 @@
     }
   },
   "media.loading" : {
-    "used-in" : [ "src/app/main/data/media.cljs:44" ],
+    "used-in" : [ "src/app/main/data/media.cljs:44", "src/app/main/data/workspace/persistence.cljs:334" ],
     "translations" : {
       "en" : "Loading image...",
       "fr" : "Chargement de l'image...",
@@ -882,13 +882,13 @@
     }
   },
   "modal.create-color.new-color" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:55" ],
     "translations" : {
       "en" : "New Color",
       "fr" : "Nouvelle couleur",
       "ru" : "Новый цвет",
       "es" : "Nuevo color"
-    }
+    },
+    "unused" : true
   },
   "profile.recovery.go-to-login" : {
     "used-in" : [ "src/app/main/ui/auth/recovery.cljs:96" ],
@@ -1062,7 +1062,7 @@
     }
   },
   "settings.multiple" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:137", "src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:117", "src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:126", "src/app/main/ui/workspace/sidebar/options/text.cljs:124", "src/app/main/ui/workspace/sidebar/options/text.cljs:227", "src/app/main/ui/workspace/sidebar/options/text.cljs:240" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:132", "src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:141", "src/app/main/ui/workspace/sidebar/options/text.cljs:124", "src/app/main/ui/workspace/sidebar/options/text.cljs:227", "src/app/main/ui/workspace/sidebar/options/text.cljs:240", "src/app/main/ui/workspace/sidebar/options/stroke.cljs:142" ],
     "translations" : {
       "en" : "Mixed",
       "fr" : null,
@@ -1098,7 +1098,7 @@
     }
   },
   "settings.notifications.email-not-verified" : {
-    "used-in" : [ "src/app/main/ui/dashboard.cljs:98" ],
+    "used-in" : [ "src/app/main/ui/dashboard.cljs:100" ],
     "translations" : {
       "en" : "Your email address has not been verified yet. Please check your inbox at “%s” for a confirmation email.",
       "fr" : "Votre adresse e-mail n'a pas encore été vérifiée. Veuillez vérifier votre boîte de réception à “%s” pour un e-mail de confirmation.",
@@ -1188,7 +1188,7 @@
     }
   },
   "settings.profile-submit-label" : {
-    "used-in" : [ "src/app/main/ui/settings/password.cljs:93", "src/app/main/ui/settings/options.cljs:67", "src/app/main/ui/settings/profile.cljs:91" ],
+    "used-in" : [ "src/app/main/ui/settings/options.cljs:67", "src/app/main/ui/settings/profile.cljs:91", "src/app/main/ui/settings/password.cljs:93" ],
     "translations" : {
       "en" : "Update settings",
       "fr" : "Mettre à jour les paramètres",
@@ -1260,7 +1260,7 @@
     }
   },
   "viewer.empty-state" : {
-    "used-in" : [ "src/app/main/ui/viewer.cljs:43" ],
+    "used-in" : [ "src/app/main/ui/viewer.cljs:42" ],
     "translations" : {
       "en" : "No frames found on the page.",
       "fr" : "Aucun cadre trouvé sur la page.",
@@ -1269,7 +1269,7 @@
     }
   },
   "viewer.frame-not-found" : {
-    "used-in" : [ "src/app/main/ui/viewer.cljs:47" ],
+    "used-in" : [ "src/app/main/ui/viewer.cljs:46" ],
     "translations" : {
       "en" : "Frame not found.",
       "fr" : "Cadre introuvable.",
@@ -1287,7 +1287,7 @@
     }
   },
   "viewer.header.edit-page" : {
-    "used-in" : [ "src/app/main/ui/viewer/header.cljs:165" ],
+    "used-in" : [ "src/app/main/ui/viewer/header.cljs:166" ],
     "translations" : {
       "en" : "Edit page",
       "fr" : "Editer la page",
@@ -1296,7 +1296,7 @@
     }
   },
   "viewer.header.fullscreen" : {
-    "used-in" : [ "src/app/main/ui/viewer/header.cljs:176" ],
+    "used-in" : [ "src/app/main/ui/viewer/header.cljs:177" ],
     "translations" : {
       "en" : "Full Screen",
       "fr" : "Plein écran",
@@ -1305,7 +1305,7 @@
     }
   },
   "viewer.header.share.copy-link" : {
-    "used-in" : [ "src/app/main/ui/viewer/header.cljs:113" ],
+    "used-in" : [ "src/app/main/ui/viewer/header.cljs:111" ],
     "translations" : {
       "en" : "Copy link",
       "fr" : "Copier lien",
@@ -1314,7 +1314,7 @@
     }
   },
   "viewer.header.share.create-link" : {
-    "used-in" : [ "src/app/main/ui/viewer/header.cljs:122" ],
+    "used-in" : [ "src/app/main/ui/viewer/header.cljs:120" ],
     "translations" : {
       "en" : "Create link",
       "fr" : "Créer lien",
@@ -1323,7 +1323,7 @@
     }
   },
   "viewer.header.share.placeholder" : {
-    "used-in" : [ "src/app/main/ui/viewer/header.cljs:114" ],
+    "used-in" : [ "src/app/main/ui/viewer/header.cljs:112" ],
     "translations" : {
       "en" : "Share link will appear here",
       "fr" : "Le lien de partage apparaîtra ici",
@@ -1332,7 +1332,7 @@
     }
   },
   "viewer.header.share.remove-link" : {
-    "used-in" : [ "src/app/main/ui/viewer/header.cljs:120" ],
+    "used-in" : [ "src/app/main/ui/viewer/header.cljs:118" ],
     "translations" : {
       "en" : "Remove link",
       "fr" : "Supprimer le lien",
@@ -1341,7 +1341,7 @@
     }
   },
   "viewer.header.share.subtitle" : {
-    "used-in" : [ "src/app/main/ui/viewer/header.cljs:116" ],
+    "used-in" : [ "src/app/main/ui/viewer/header.cljs:114" ],
     "translations" : {
       "en" : "Anyone with the link will have access",
       "fr" : "Toute personne disposant du lien aura accès",
@@ -1350,7 +1350,7 @@
     }
   },
   "viewer.header.share.title" : {
-    "used-in" : [ "src/app/main/ui/viewer/header.cljs:99", "src/app/main/ui/viewer/header.cljs:101", "src/app/main/ui/viewer/header.cljs:107" ],
+    "used-in" : [ "src/app/main/ui/viewer/header.cljs:97", "src/app/main/ui/viewer/header.cljs:99", "src/app/main/ui/viewer/header.cljs:105" ],
     "translations" : {
       "en" : "Share link",
       "fr" : "Lien de partage",
@@ -1377,7 +1377,7 @@
     }
   },
   "viewer.header.sitemap" : {
-    "used-in" : [ "src/app/main/ui/viewer/header.cljs:149" ],
+    "used-in" : [ "src/app/main/ui/viewer/header.cljs:147" ],
     "translations" : {
       "en" : "Sitemap",
       "fr" : "Plan du site",
@@ -1458,7 +1458,7 @@
     }
   },
   "workspace.assets.assets" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:328" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:374" ],
     "translations" : {
       "en" : "Assets",
       "fr" : "",
@@ -1467,7 +1467,7 @@
     }
   },
   "workspace.assets.box-filter-all" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:348" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:394" ],
     "translations" : {
       "en" : "All assets",
       "fr" : "",
@@ -1476,7 +1476,7 @@
     }
   },
   "workspace.assets.box-filter-colors" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:350" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:396" ],
     "translations" : {
       "en" : "Colors",
       "fr" : "",
@@ -1485,7 +1485,7 @@
     }
   },
   "workspace.assets.box-filter-graphics" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:349" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:395" ],
     "translations" : {
       "en" : "Graphics",
       "fr" : "",
@@ -1494,7 +1494,7 @@
     }
   },
   "workspace.assets.colors" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:240" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:247" ],
     "translations" : {
       "en" : "Colors",
       "fr" : "",
@@ -1503,7 +1503,7 @@
     }
   },
   "workspace.assets.delete" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:129", "src/app/main/ui/workspace/sidebar/assets.cljs:224" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:125", "src/app/main/ui/workspace/sidebar/assets.cljs:224" ],
     "translations" : {
       "en" : "Delete",
       "fr" : "",
@@ -1521,7 +1521,7 @@
     }
   },
   "workspace.assets.file-library" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:354" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:309" ],
     "translations" : {
       "en" : "File library",
       "fr" : "",
@@ -1530,7 +1530,7 @@
     }
   },
   "workspace.assets.graphics" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:106" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:99" ],
     "translations" : {
       "en" : "Graphics",
       "fr" : "",
@@ -1539,7 +1539,7 @@
     }
   },
   "workspace.assets.libraries" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:331" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:377" ],
     "translations" : {
       "en" : "Libraries",
       "fr" : "",
@@ -1548,7 +1548,7 @@
     }
   },
   "workspace.assets.not-found" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:281" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:339" ],
     "translations" : {
       "en" : "No assets found",
       "fr" : "",
@@ -1566,7 +1566,7 @@
     }
   },
   "workspace.assets.search" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:335" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:381" ],
     "translations" : {
       "en" : "Search assets",
       "fr" : "",
@@ -1575,7 +1575,7 @@
     }
   },
   "workspace.assets.shared" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:268" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:311" ],
     "translations" : {
       "en" : "SHARED",
       "fr" : "",
@@ -1584,7 +1584,7 @@
     }
   },
   "workspace.header.menu.disable-dynamic-alignment" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:139" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:138" ],
     "translations" : {
       "en" : "Disable dynamic alignment",
       "fr" : "Désactiver l'alignement dynamique",
@@ -1593,7 +1593,7 @@
     }
   },
   "workspace.header.menu.disable-snap-grid" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:111" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:110" ],
     "translations" : {
       "en" : "Disable snap to grid",
       "fr" : "Désactiver l'alignement sur la grille",
@@ -1602,7 +1602,7 @@
     }
   },
   "workspace.header.menu.enable-dynamic-alignment" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:140" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:139" ],
     "translations" : {
       "en" : "Enable dynamic aligment",
       "fr" : "Activer l'alignement dynamique",
@@ -1611,7 +1611,7 @@
     }
   },
   "workspace.header.menu.enable-snap-grid" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:112" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:111" ],
     "translations" : {
       "en" : "Snap to grid",
       "fr" : "Aligner sur la grille",
@@ -1620,7 +1620,7 @@
     }
   },
   "workspace.header.menu.hide-assets" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:132" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:131" ],
     "translations" : {
       "en" : "Hide assets",
       "fr" : "",
@@ -1629,7 +1629,7 @@
     }
   },
   "workspace.header.menu.hide-grid" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:104" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:103" ],
     "translations" : {
       "en" : "Hide grid",
       "fr" : "Masquer la grille",
@@ -1638,7 +1638,7 @@
     }
   },
   "workspace.header.menu.hide-layers" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:118" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:117" ],
     "translations" : {
       "en" : "Hide layers",
       "fr" : "Masquer les couches",
@@ -1647,7 +1647,7 @@
     }
   },
   "workspace.header.menu.hide-palette" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:125" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:124" ],
     "translations" : {
       "en" : "Hide color palette",
       "fr" : "Masquer la palette de couleurs",
@@ -1656,7 +1656,7 @@
     }
   },
   "workspace.header.menu.hide-rules" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:97" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:96" ],
     "translations" : {
       "en" : "Hide rules",
       "fr" : "Masquer les règles",
@@ -1665,7 +1665,7 @@
     }
   },
   "workspace.header.menu.show-assets" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:133" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:132" ],
     "translations" : {
       "en" : "Show assets",
       "fr" : "",
@@ -1674,7 +1674,7 @@
     }
   },
   "workspace.header.menu.show-grid" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:105" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:104" ],
     "translations" : {
       "en" : "Show grid",
       "fr" : "Montrer la grille",
@@ -1683,7 +1683,7 @@
     }
   },
   "workspace.header.menu.show-layers" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:119" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:118" ],
     "translations" : {
       "en" : "Show layers",
       "fr" : "Montrer les couches",
@@ -1692,7 +1692,7 @@
     }
   },
   "workspace.header.menu.show-palette" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:126" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:125" ],
     "translations" : {
       "en" : "Show color palette",
       "fr" : "Montrer la palette de couleurs",
@@ -1701,7 +1701,7 @@
     }
   },
   "workspace.header.menu.show-rules" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:98" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:97" ],
     "translations" : {
       "en" : "Show rules",
       "fr" : "Montrer les règles",
@@ -1710,7 +1710,7 @@
     }
   },
   "workspace.header.viewer" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:184" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:182" ],
     "translations" : {
       "en" : "View mode (Ctrl + P)",
       "fr" : "Mode visualisation (Ctrl + P)",
@@ -1719,7 +1719,7 @@
     }
   },
   "workspace.libraries.add" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:98" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:106" ],
     "translations" : {
       "en" : "Add",
       "fr" : "",
@@ -1728,7 +1728,7 @@
     }
   },
   "workspace.libraries.colors" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:55" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:62" ],
     "translations" : {
       "en" : "%s colors",
       "fr" : "",
@@ -1736,8 +1736,38 @@
       "es" : "%s colors"
     }
   },
+  "workspace.libraries.colors.big-thumbnails" : {
+    "used-in" : [ "src/app/main/ui/workspace/colorpalette.cljs:171" ],
+    "translations" : {
+      "en" : "Big thumbnails"
+    }
+  },
+  "workspace.libraries.colors.file-library" : {
+    "used-in" : [ "src/app/main/ui/workspace/colorpicker.cljs:277", "src/app/main/ui/workspace/colorpalette.cljs:149" ],
+    "translations" : {
+      "en" : "File library"
+    }
+  },
+  "workspace.libraries.colors.recent-colors" : {
+    "used-in" : [ "src/app/main/ui/workspace/colorpicker.cljs:276", "src/app/main/ui/workspace/colorpalette.cljs:159" ],
+    "translations" : {
+      "en" : "Recent colors"
+    }
+  },
+  "workspace.libraries.colors.save-color" : {
+    "used-in" : [ "src/app/main/ui/workspace/colorpicker.cljs:312" ],
+    "translations" : {
+      "en" : "Save color"
+    }
+  },
+  "workspace.libraries.colors.small-thumbnails" : {
+    "used-in" : [ "src/app/main/ui/workspace/colorpalette.cljs:176" ],
+    "translations" : {
+      "en" : "Small thumbnails"
+    }
+  },
   "workspace.libraries.file-library" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:61" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:69" ],
     "translations" : {
       "en" : "File library",
       "fr" : "",
@@ -1746,7 +1776,7 @@
     }
   },
   "workspace.libraries.graphics" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:52" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:59" ],
     "translations" : {
       "en" : "%s graphics",
       "fr" : "",
@@ -1755,7 +1785,7 @@
     }
   },
   "workspace.libraries.in-this-file" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:58" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:66" ],
     "translations" : {
       "en" : "LIBRARIES IN THIS FILE",
       "fr" : "",
@@ -1764,7 +1794,7 @@
     }
   },
   "workspace.libraries.libraries" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:140" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:147" ],
     "translations" : {
       "en" : "LIBRARIES",
       "fr" : "",
@@ -1773,7 +1803,7 @@
     }
   },
   "workspace.libraries.no-matches-for" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:104" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:112" ],
     "translations" : {
       "en" : "No matches found for “%s“",
       "fr" : "Aucune correspondance pour “%s“",
@@ -1782,7 +1812,7 @@
     }
   },
   "workspace.libraries.no-shared-libraries-available" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:103" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:111" ],
     "translations" : {
       "en" : "There are no Shared Libraries available",
       "fr" : "",
@@ -1791,7 +1821,7 @@
     }
   },
   "workspace.libraries.remove" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:72" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:80" ],
     "translations" : {
       "en" : "Remove",
       "fr" : "",
@@ -1800,7 +1830,7 @@
     }
   },
   "workspace.libraries.search-shared-libraries" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:79" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:87" ],
     "translations" : {
       "en" : "Search shared libraries",
       "fr" : "",
@@ -1809,7 +1839,7 @@
     }
   },
   "workspace.libraries.shared-libraries" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:76" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:84" ],
     "translations" : {
       "en" : "SHARED LIBRARIES",
       "fr" : "",
@@ -1818,7 +1848,7 @@
     }
   },
   "workspace.libraries.updates" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:144" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:151" ],
     "translations" : {
       "en" : "UPDATES",
       "fr" : "",
@@ -1881,7 +1911,7 @@
     "unused" : true
   },
   "workspace.options.canvas-background" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/page.cljs:37" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/page.cljs:36" ],
     "translations" : {
       "en" : "Canvas background",
       "fr" : "Couleur de fond",
@@ -1890,7 +1920,7 @@
     }
   },
   "workspace.options.design" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options.cljs:65" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options.cljs:68" ],
     "translations" : {
       "en" : "Design",
       "fr" : "Conception",
@@ -1899,21 +1929,21 @@
     }
   },
   "workspace.options.export" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/exports.cljs:122" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/exports.cljs:123" ],
     "translations" : {
       "en" : "Export",
       "ru" : "Экспорт"
     }
   },
   "workspace.options.export-object" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/exports.cljs:155" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/exports.cljs:156" ],
     "translations" : {
       "en" : "Export shape",
       "ru" : "Экспорт фигуры"
     }
   },
   "workspace.options.exporting-object" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/exports.cljs:154" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/exports.cljs:155" ],
     "translations" : {
       "en" : "Exporting...",
       "ru" : "Экспортирую ..."
@@ -2127,7 +2157,7 @@
     }
   },
   "workspace.options.group-stroke" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:70" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:71" ],
     "translations" : {
       "en" : "Group stroke",
       "fr" : null,
@@ -2154,7 +2184,7 @@
     }
   },
   "workspace.options.position" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/measures.cljs:146", "src/app/main/ui/workspace/sidebar/options/frame.cljs:125" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame.cljs:125", "src/app/main/ui/workspace/sidebar/options/measures.cljs:146" ],
     "translations" : {
       "en" : "Position",
       "fr" : "Position",
@@ -2163,7 +2193,7 @@
     }
   },
   "workspace.options.prototype" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options.cljs:76" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options.cljs:80" ],
     "translations" : {
       "en" : "Prototype",
       "fr" : "Prototype",
@@ -2217,7 +2247,7 @@
     }
   },
   "workspace.options.selection-stroke" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:69" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:70" ],
     "translations" : {
       "en" : "Selection stroke",
       "fr" : null,
@@ -2226,7 +2256,7 @@
     }
   },
   "workspace.options.size" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/measures.cljs:116", "src/app/main/ui/workspace/sidebar/options/frame.cljs:98" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame.cljs:98", "src/app/main/ui/workspace/sidebar/options/measures.cljs:116" ],
     "translations" : {
       "en" : "Size",
       "fr" : "Taille",
@@ -2244,7 +2274,7 @@
     }
   },
   "workspace.options.stroke" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:71" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:72" ],
     "translations" : {
       "en" : "Stroke",
       "fr" : "Bordure",
@@ -2253,7 +2283,7 @@
     }
   },
   "workspace.options.stroke.center" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:144" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:149" ],
     "translations" : {
       "en" : "Center",
       "fr" : "Centre",
@@ -2262,7 +2292,7 @@
     }
   },
   "workspace.options.stroke.dashed" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:154" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:159" ],
     "translations" : {
       "en" : "Dashed",
       "fr" : "Tiré",
@@ -2271,7 +2301,7 @@
     }
   },
   "workspace.options.stroke.dotted" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:153" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:158" ],
     "translations" : {
       "en" : "Dotted",
       "fr" : "Pointillé",
@@ -2280,7 +2310,7 @@
     }
   },
   "workspace.options.stroke.inner" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:145" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:150" ],
     "translations" : {
       "en" : "Inside",
       "fr" : "Intérieur",
@@ -2289,7 +2319,7 @@
     }
   },
   "workspace.options.stroke.mixed" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:155" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:160" ],
     "translations" : {
       "en" : "Mixed",
       "fr" : "Mixte",
@@ -2298,7 +2328,7 @@
     }
   },
   "workspace.options.stroke.outer" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:146" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:151" ],
     "translations" : {
       "en" : "Outside",
       "fr" : "Extérieur",
@@ -2307,7 +2337,7 @@
     }
   },
   "workspace.options.stroke.solid" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:152" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:157" ],
     "translations" : {
       "en" : "Solid",
       "fr" : "Solide",
@@ -2521,7 +2551,7 @@
     "unused" : true
   },
   "workspace.sidebar.sitemap" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/sitemap.cljs:150" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/sitemap.cljs:157" ],
     "translations" : {
       "en" : "Pages",
       "fr" : "Pages",
@@ -2530,7 +2560,7 @@
     }
   },
   "workspace.toolbar.assets" : {
-    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:99" ],
+    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:103" ],
     "translations" : {
       "en" : "Assets (Ctrl + I)",
       "fr" : "",
@@ -2539,7 +2569,7 @@
     }
   },
   "workspace.toolbar.circle" : {
-    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:63" ],
+    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:67" ],
     "translations" : {
       "en" : "Circle (E)",
       "fr" : "Cercle (E)",
@@ -2548,7 +2578,7 @@
     }
   },
   "workspace.toolbar.color-palette" : {
-    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:107" ],
+    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:111" ],
     "translations" : {
       "en" : "Color Palette (---)",
       "fr" : "Palette de couleurs (---)",
@@ -2557,7 +2587,7 @@
     }
   },
   "workspace.toolbar.curve" : {
-    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:82" ],
+    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:86" ],
     "translations" : {
       "en" : "Curve",
       "fr" : "Courbe",
@@ -2566,7 +2596,7 @@
     }
   },
   "workspace.toolbar.frame" : {
-    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:53" ],
+    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:57" ],
     "translations" : {
       "en" : "Artboard (A)",
       "fr" : "Plan de travail (A)",
@@ -2575,7 +2605,7 @@
     }
   },
   "workspace.toolbar.image" : {
-    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:73" ],
+    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:77" ],
     "translations" : {
       "en" : "Image (I)",
       "fr" : "Image (I)",
@@ -2593,7 +2623,7 @@
     "unused" : true
   },
   "workspace.toolbar.path" : {
-    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:87" ],
+    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:91" ],
     "translations" : {
       "en" : "Path",
       "fr" : "Chemin",
@@ -2602,7 +2632,7 @@
     }
   },
   "workspace.toolbar.rect" : {
-    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:58" ],
+    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:62" ],
     "translations" : {
       "en" : "Box (B)",
       "fr" : "Boîte (B)",
@@ -2611,7 +2641,7 @@
     }
   },
   "workspace.toolbar.text" : {
-    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:68" ],
+    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:72" ],
     "translations" : {
       "en" : "Text (T)",
       "fr" : "Texte (T)",
