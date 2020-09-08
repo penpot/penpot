@@ -142,7 +142,10 @@
                                        :id (:id updated-shape)
                                        :operations [{:type :set
                                                      :attr :component-id
-                                                     :val (:component-id updated-shape)}]})
+                                                     :val (:component-id updated-shape)}
+                                                    {:type :set
+                                                     :attr :shape-ref
+                                                     :val (:shape-ref updated-shape)}]})
                                     updated-shapes))
 
                 uchanges (conj uchanges
@@ -156,6 +159,9 @@
                                        :id (:id updated-shape)
                                        :operations [{:type :set
                                                      :attr :component-id
+                                                     :val nil}
+                                                    {:type :set
+                                                     :attr :shape-ref
                                                      :val nil}]})
                                     updated-shapes))]
 
@@ -174,10 +180,15 @@
       (let [new-shape (assoc shape
                              :id new-id
                              :parent-id parent-id
-                             :frame-id nil)]
-        [new-shape
-         [new-shape]
-         [(assoc shape :component-id (:id new-shape))]])
+                             :frame-id nil)
+
+            new-shapes [new-shape]
+
+            updated-shapes [(cond-> shape
+                              true (assoc :shape-ref (:id new-shape))
+                              (nil? parent-id) (assoc :component-id (:id new-shape)))]]
+
+        [new-shape new-shapes updated-shapes])
 
       (loop [child-ids (seq (:shapes shape))
              new-children []
@@ -188,11 +199,17 @@
                                  :id new-id
                                  :parent-id parent-id
                                  :frame-id nil
-                                 :shapes (map :id new-children))]
-            [new-shape
-             (conj new-children new-shape)
-             (conj updated-children
-                   (assoc shape :component-id (:id new-shape)))])
+                                 :shapes (map :id new-children))
+
+                new-shapes (conj new-children new-shape)
+
+                updated-shapes
+                (conj updated-children
+                      (cond-> shape
+                        true (assoc :shape-ref (:id new-shape))
+                        (nil? parent-id) (assoc :component-id (:id new-shape))))]
+
+            [new-shape new-shapes updated-shapes])
 
           (let [child-id (first child-ids)
                 child (get objects child-id)
@@ -213,7 +230,9 @@
       (let [component (get-in state [:workspace-data :components id])
 
             rchanges [{:type :del-component
-                       :id id}]
+                       :id id}
+                      {:type :sync-library
+                       :id (get-in state [:workspace-file :id])}]
 
             uchanges [{:type :add-component
                        :id id

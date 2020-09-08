@@ -12,6 +12,24 @@
    [app.common.data :as d]
    [app.common.uuid :as uuid]))
 
+(defn walk-pages
+  "Go through all pages of a file and apply a function to each one"
+  ;; The function receives two parameters (page-id and page), and
+  ;; returns the updated page.
+  [f data]
+  (update data :pages-index #(d/mapm f %)))
+
+(defn select-objects
+  "Get a list of all objects in a page that satisfy a condition"
+  [f page]
+  (filter f (vals (get page :objects))))
+
+(defn update-object-list
+  "Update multiple objects in a page at once"
+  [page objects-list]
+  (update page :objects
+          #(into % (d/index-by :id objects-list))))
+
 (defn get-children
   "Retrieve all children ids recursively for a given object"
   [id objects]
@@ -19,6 +37,11 @@
     (if shapes
       (d/concat shapes (mapcat #(get-children % objects) shapes))
       [])))
+
+(defn get-children-objects
+  "Retrieve all children objects recursively for a given object"
+  [id objects]
+  (map #(get objects %) (get-children id objects)))
 
 (defn is-shape-grouped
   "Checks if a shape is inside a group"
