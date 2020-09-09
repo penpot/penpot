@@ -33,49 +33,50 @@
 
 (defn draw-rule!
   [dctx {:keys [zoom size start count type] :or {count 200}}]
-  (let [txfm (- (* (- 0 start) zoom) 20)
-        minv (mth/round start)
-        maxv (mth/round (+ start (/ size zoom)))
-        step (calculate-step-size zoom)]
+  (when start
+      (let [txfm (- (* (- 0 start) zoom) 20)
+            minv (max (mth/round start) -10000)
+            maxv (min (mth/round (+ start (/ size zoom))) 10000)
+            step (calculate-step-size zoom)]
 
-    (if (= type :horizontal)
-      (.translate dctx txfm 0)
-      (.translate dctx 0 txfm))
+        (if (= type :horizontal)
+          (.translate dctx txfm 0)
+          (.translate dctx 0 txfm))
 
-    (obj/set! dctx "font" "12px sourcesanspro")
-    (obj/set! dctx "fillStyle" "#7B7D85")
-    (obj/set! dctx "strokeStyle" "#7B7D85")
-    (obj/set! dctx "textAlign" "center")
+        (obj/set! dctx "font" "12px sourcesanspro")
+        (obj/set! dctx "fillStyle" "#7B7D85")
+        (obj/set! dctx "strokeStyle" "#7B7D85")
+        (obj/set! dctx "textAlign" "center")
 
-    (loop [i minv]
-      (when (< i maxv)
-        (let [pos (+ (* i zoom) 0)]
-          (when (= (mod i step) 0)
-            (.save dctx)
-            (if (= type :horizontal)
-              (do
-                (.fillText dctx (str i) pos 13))
-              (do
-                (.translate dctx 12 pos)
-                (.rotate dctx (/ (* 270 js/Math.PI) 180))
-                (.fillText dctx (str i) 0 0)))
-            (.restore dctx))
-          (recur (inc i)))))
+        (loop [i minv]
+          (when (< i maxv)
+            (let [pos (+ (* i zoom) 0)]
+              (when (= (mod i step) 0)
+                (.save dctx)
+                (if (= type :horizontal)
+                  (do
+                    (.fillText dctx (str i) pos 13))
+                  (do
+                    (.translate dctx 12 pos)
+                    (.rotate dctx (/ (* 270 js/Math.PI) 180))
+                    (.fillText dctx (str i) 0 0)))
+                (.restore dctx))
+              (recur (inc i)))))
 
-    (let [path (js/Path2D.)]
-      (loop [i minv]
-        (if (> i maxv)
-          (.stroke dctx path)
-          (let [pos (+ (* i zoom) 0)]
-            (when (= (mod i step) 0)
-              (if (= type :horizontal)
-                (do
-                  (.moveTo path pos 17)
-                  (.lineTo path pos 20))
-                (do
-                  (.moveTo path 17 pos)
-                  (.lineTo path 20 pos))))
-            (recur (inc i))))))))
+        (let [path (js/Path2D.)]
+          (loop [i minv]
+            (if (> i maxv)
+              (.stroke dctx path)
+              (let [pos (+ (* i zoom) 0)]
+                (when (= (mod i step) 0)
+                  (if (= type :horizontal)
+                    (do
+                      (.moveTo path pos 17)
+                      (.lineTo path pos 20))
+                    (do
+                      (.moveTo path 17 pos)
+                      (.lineTo path 20 pos))))
+                (recur (inc i)))))))))
 
 
 (mf/defc horizontal-rule

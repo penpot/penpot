@@ -6,12 +6,16 @@
 
 (ns app.main.ui.shapes.text
   (:require
+   [promesa.core :as p]
+   [cuerdas.core :as str]
    [rumext.alpha :as mf]
+   [app.main.data.fetch :as df]
    [app.common.data :as d]
    [app.common.geom.shapes :as geom]
    [app.common.geom.matrix :as gmt]
    [app.main.fonts :as fonts]
-   [app.util.object :as obj]))
+   [app.util.object :as obj]
+   [clojure.set :as set]))
 
 ;; --- Text Editor Rendering
 
@@ -55,7 +59,8 @@
         base #js {:textDecoration text-decoration
                   :color fill
                   :opacity opacity
-                  :textTransform text-transform}]
+                  :textTransform text-transform
+                  :lineHeight "inherit"}]
 
     (when (and (string? letter-spacing)
                (pos? (alength letter-spacing)))
@@ -83,33 +88,69 @@
 
     base))
 
+(defn get-all-fonts [node]
+  (let [current-font (if (not (nil? (:font-id node)))
+                       #{(:font-id node)}
+                       #{})
+        children-font (map get-all-fonts (:children node))]
+    (reduce set/union (conj children-font current-font))))
+
+
+(defn fetch-font [font-id]
+  (let [{:keys [family variants]} (get @fonts/fontsdb font-id)]
+    (-> (js/fetch (fonts/gfont-url family variants))
+        (p/then (fn [res] (.text res))))))
+
+(defn embed-font [font-id]
+  (p/let [font-text (fetch-font font-id)
+          url-to-data (->> font-text
+                        (re-seq #"url\(([^)]+)\)")
+                        (map second)
+                        (map df/fetch-as-data-uri)
+                        (p/all))]
+    (reduce (fn [text [url data]] (str/replace text url data)) font-text url-to-data)))
+
 (defn- render-text-node
   ([node] (render-text-node 0 node))
   ([index {:keys [type text children] :as node}]
    (mf/html
-    (if (string? text)
-      (let [style (generate-text-styles (clj->js node))]
-        [:span {:style style :key index} text])
-      (let [children (map-indexed render-text-node children)]
-        (case type
-          "root"
-          (let [style (generate-root-styles (clj->js node))]
-            [:div.root.rich-text
-             {:key index
-              :style style
-              :xmlns "http://www.w3.org/1999/xhtml"}
-             children])
+    (let [embeded-fonts (mf/use-state nil)]
+      (mf/use-effect
+       (mf/deps node)
+       (fn []
+         (when (= type "root")
+           (let [font-to-embed (get-all-fonts node)
+                 embeded (map embed-font font-to-embed)]
+             (-> (p/all embeded)
+                 (p/then (fn [result] (reset! embeded-fonts (str/join "\n" result)))))))))
 
-          "paragraph-set"
-          (let [style #js {:display "inline-block"
-                           :width "100%"}]
-            [:div.paragraphs {:key index :style style} children])
+      (if (string? text)
+        (let [style (generate-text-styles (clj->js node))]
+          [:span {:style style :key index} text])
+        (let [children (map-indexed render-text-node children)]
+          (case type
+            "root"
+            (let [style (generate-root-styles (clj->js node))]
+              
+              [:div.root.rich-text
+               {:key index
+                :style style
+                :xmlns "http://www.w3.org/1999/xhtml"}
+               [:*
+                (when (not (nil? @embeded-fonts))
+                  [:style @embeded-fonts])
+                children]])
 
-          "paragraph"
-          (let [style (generate-paragraph-styles (clj->js node))]
-            [:p {:key index :style style} children])
+            "paragraph-set"
+            (let [style #js {:display "inline-block"
+                             :width "100%"}]
+              [:div.paragraphs {:key index :style style} children])
 
-          nil))))))
+            "paragraph"
+            (let [style (generate-paragraph-styles (clj->js node))]
+              [:p {:key index :style style} children])
+
+            nil)))))))
 
 (mf/defc text-content
   {::mf/wrap-props false

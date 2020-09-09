@@ -32,6 +32,7 @@
 (def resize-ns (cursor-fn :resize-h 90))
 (def rotate (cursor-fn :rotate 90))
 (def text (cursor-ref :text))
+(def picker (cursor-ref :picker 0 0 24))
 
 (mf/defc debug-preview
   {::mf/wrap-props false}

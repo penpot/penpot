@@ -102,7 +102,10 @@
    :right-sidebar? true
    :color-for-rename nil
    :selected-palette :recent
-   :selected-palette-size :big})
+   :selected-palette-size :big
+   :picking-color? false
+   :picked-color nil
+   :picked-color-select false})
 
 (def initialize-layout
   (ptk/reify ::initialize-layout

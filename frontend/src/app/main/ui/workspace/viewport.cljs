@@ -15,12 +15,15 @@
    [goog.events :as events]
    [potok.core :as ptk]
    [rumext.alpha :as mf]
+   [promesa.core :as p]
    [app.main.ui.icons :as i]
    [app.main.ui.cursors :as cur]
+   [app.main.ui.modal :as modal]
    [app.common.data :as d]
    [app.main.constants :as c]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.drawing :as dd]
+   [app.main.data.colors :as dwc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
@@ -168,14 +171,19 @@
                 edition
                 tooltip
                 selected
-                panning]} local
+                panning
+                picking-color?]} local
 
         file          (mf/deref refs/workspace-file)
         viewport-ref  (mf/use-ref nil)
+        canvas-ref    (mf/use-ref nil)
+        zoom-view-ref (mf/use-ref nil)
         last-position (mf/use-var nil)
         drawing       (mf/deref refs/workspace-drawing)
         drawing-tool  (:tool drawing)
         drawing-obj   (:object drawing)
+
+        pick-color (mf/use-state [255 255 255 255])
 
         zoom (or zoom 1)
 
@@ -410,7 +418,47 @@
                 prnt (dom/get-parent node)]
             (st/emit! (dw/update-viewport-size (dom/get-client-size prnt)))))
 
-        options (mf/deref refs/workspace-page-options)]
+        options (mf/deref refs/workspace-page-options)
+
+        on-mouse-move-picker
+        (fn [event]
+          (when-let [zoom-view-node (.getElementById js/document "picker-detail")]
+            (let [{brx :left bry :top} (dom/get-bounding-rect (mf/ref-val viewport-ref))
+                  x (- (.-clientX event) brx)
+                  y (- (.-clientY event) bry)
+
+                  zoom-context (.getContext zoom-view-node "2d")
+                  canvas-node (mf/ref-val canvas-ref)
+                  canvas-context (.getContext canvas-node "2d")
+                  pixel-data (.getImageData canvas-context x y 1 1)
+                  rgba (.-data pixel-data)
+                  r (obj/get rgba 0)
+                  g (obj/get rgba 1)
+                  b (obj/get rgba 2)
+                  a (obj/get rgba 3)
+
+                  area-data (.getImageData canvas-context (- x 25) (- y 20) 50 40)]
+
+              (-> (js/createImageBitmap area-data)
+                  (p/then (fn [image]
+                            ;; Draw area
+                            (obj/set! zoom-context "imageSmoothingEnabled" false)
+                            (.drawImage zoom-context image 0 0 200 160))))
+              (st/emit! (dwc/pick-color [r g b a])))))
+
+        on-mouse-down-picker
+        (fn [event]
+          (dom/prevent-default event)
+          (dom/stop-propagation event)
+          (st/emit! (dwc/pick-color-select true)))
+
+        on-mouse-up-picker
+        (fn [event]
+          (dom/prevent-default event)
+          (dom/stop-propagation event)
+          (st/emit! (dwc/pick-color-select false)
+                    (dwc/stop-picker))
+          (modal/disallow-click-outside!))]
 
     (mf/use-layout-effect
      (fn []
@@ -434,73 +482,103 @@
 
     (mf/use-layout-effect (mf/deps layout) on-resize)
 
-    [:svg.viewport
-     {:preserveAspectRatio "xMidYMid meet"
-      :width (:width vport 0)
-      :height (:height vport 0)
-      :view-box (str/join " " [(+ (:x vbox 0) (:left-offset vbox 0))
-                               (:y vbox 0)
-                               (:width vbox 0)
-                               (:height vbox 0)])
-      :ref viewport-ref
-      :class (when drawing-tool "drawing")
-      :style {:cursor (cond
-                        panning cur/hand
-                        (= drawing-tool :frame) cur/create-artboard
-                        (= drawing-tool :rect) cur/create-rectangle
-                        (= drawing-tool :circle) cur/create-ellipse
-                        (= drawing-tool :path) cur/pen
-                        (= drawing-tool :curve)cur/pencil
-                        drawing-tool cur/create-shape
-                        :else cur/pointer-inner)
-              :background-color (get options :background "#E8E9EA")}
-      :on-context-menu on-context-menu
-      :on-click on-click
-      :on-double-click on-double-click
-      :on-mouse-down on-mouse-down
-      :on-mouse-up on-mouse-up
-      :on-pointer-down on-pointer-down
-      :on-pointer-up on-pointer-up
-      :on-drag-enter on-drag-enter
-      :on-drag-over on-drag-over
-      :on-drop on-drop}
+    (mf/use-effect
+     (mf/deps props)
+     (fn []
+       (when picking-color?
+         (try
+           (let [svg-node (mf/ref-val viewport-ref)
+                 canvas-node (mf/ref-val canvas-ref)
+                 canvas-context (.getContext canvas-node "2d")
+                 xml (.serializeToString (js/XMLSerializer.) svg-node)
+                 content (str "data:image/svg+xml;base64," (js/btoa xml))
+                 img (js/Image.)]
+             (obj/set! img  "onload"
+                       (fn []
+                         (.drawImage canvas-context img 0 0)))
+             (obj/set! img "src" content))
+           (catch :default e (.error js/console e))))))
 
-     [:g
-      [:& frames {:key page-id
-                  :hover (:hover local)
-                  :selected (:selected selected)}]
+    [:*
 
-      (when (seq selected)
-        [:& selection-handlers {:selected selected
-                                :zoom zoom
-                                :edition edition}])
+     (when picking-color?
+       [:canvas {:ref canvas-ref
+                 :width (:width vport 0)
+                 :height (:height vport 0)
+                 :on-mouse-down on-mouse-down-picker
+                 :on-mouse-up on-mouse-up-picker
+                 :on-mouse-move on-mouse-move-picker
+                 :style {:position "absolute"
+                         :top 0
+                         :left 0
+                         :cursor cur/picker}}])
+     [:svg.viewport
+      {:preserveAspectRatio "xMidYMid meet"
+       :width (:width vport 0)
+       :height (:height vport 0)
+       :view-box (str/join " " [(+ (:x vbox 0) (:left-offset vbox 0))
+                                (:y vbox 0)
+                                (:width vbox 0)
+                                (:height vbox 0)])
+       :ref viewport-ref
+       :class (when drawing-tool "drawing")
+       :style {:cursor (cond
+                         panning cur/hand
+                         (= drawing-tool :frame) cur/create-artboard
+                         (= drawing-tool :rect) cur/create-rectangle
+                         (= drawing-tool :circle) cur/create-ellipse
+                         (= drawing-tool :path) cur/pen
+                         (= drawing-tool :curve)cur/pencil
+                         drawing-tool cur/create-shape
+                         :else cur/pointer-inner)
+               :background-color (get options :background "#E8E9EA")}
+       :on-context-menu on-context-menu
+       :on-click on-click
+       :on-double-click on-double-click
+       :on-mouse-down on-mouse-down
+       :on-mouse-up on-mouse-up
+       :on-pointer-down on-pointer-down
+       :on-pointer-up on-pointer-up
+       :on-drag-enter on-drag-enter
+       :on-drag-over on-drag-over
+       :on-drop on-drop}
 
-      (when drawing-obj
-        [:& draw-area {:shape drawing-obj
-                       :zoom zoom
-                       :modifiers (:modifiers local)}])
+      [:g
+       [:& frames {:key page-id
+                   :hover (:hover local)
+                   :selected (:selected selected)}]
 
-      (when (contains? layout :display-grid)
-        [:& frame-grid {:zoom zoom}])
+       (when (seq selected)
+         [:& selection-handlers {:selected selected
+                                 :zoom zoom
+                                 :edition edition}])
 
-      [:& snap-points {:layout layout
-                       :transform (:transform local)
-                       :drawing drawing-obj
-                       :zoom zoom
-                       :page-id page-id
-                       :selected selected}]
+       (when drawing-obj
+         [:& draw-area {:shape drawing-obj
+                        :zoom zoom
+                        :modifiers (:modifiers local)}])
 
-      [:& snap-distances {:layout layout
-                          :zoom zoom
-                          :transform (:transform local)
-                          :selected selected
-                          :page-id page-id}]
+       (when (contains? layout :display-grid)
+         [:& frame-grid {:zoom zoom}])
 
-      (when tooltip
-        [:& cursor-tooltip {:zoom zoom :tooltip tooltip}])]
+       [:& snap-points {:layout layout
+                        :transform (:transform local)
+                        :drawing drawing-obj
+                        :zoom zoom
+                        :page-id page-id
+                        :selected selected}]
 
-     [:& presence/active-cursors {:page-id page-id}]
-     [:& selection-rect {:data (:selrect local)}]
-     (when (= options-mode :prototype)
-       [:& interactions {:selected selected}])]))
+       [:& snap-distances {:layout layout
+                           :zoom zoom
+                           :transform (:transform local)
+                           :selected selected
+                           :page-id page-id}]
+
+       (when tooltip
+         [:& cursor-tooltip {:zoom zoom :tooltip tooltip}])]
+
+      [:& presence/active-cursors {:page-id page-id}]
+      [:& selection-rect {:data (:selrect local)}]
+      (when (= options-mode :prototype)
+        [:& interactions {:selected selected}])]]))
 

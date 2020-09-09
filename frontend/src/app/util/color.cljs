@@ -51,9 +51,7 @@
 (defn hex->hsl [hex]
   (try
     (into [] (gcolor/hexToHsl hex))
-    (catch :default e (do
-                        (.log js/console e)
-                        [0 0 0]))))
+    (catch :default e [0 0 0])))
 
 (defn hsl->rgb
   [[h s l]]

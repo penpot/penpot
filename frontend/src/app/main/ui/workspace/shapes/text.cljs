@@ -119,7 +119,8 @@
         base #js {:textDecoration text-decoration
                   :color fill
                   :opacity opacity
-                  :textTransform text-transform}]
+                  :textTransform text-transform
+                  :lineHeight "inherit"}]
 
     (when (and (string? letter-spacing)
                (pos? (alength letter-spacing)))

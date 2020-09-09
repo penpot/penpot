@@ -13,23 +13,43 @@
    [app.config :as cfg]
    [app.common.geom.shapes :as geom]
    [app.main.ui.shapes.attrs :as attrs]
-   [app.util.object :as obj]))
+   [app.util.object :as obj]
+   [app.main.data.fetch :as df]
+   [promesa.core :as p]))
 
 (mf/defc image-shape
   {::mf/wrap-props false}
   [props]
+
   (let [shape (unchecked-get props "shape")
         {:keys [id x y width height rotation metadata]} shape
-        transform (geom/transform-matrix shape)
-        uri       (cfg/resolve-media-path (:path metadata))
-        props (-> (attrs/extract-style-attrs shape)
-                  (obj/merge!
-                   #js {:x x
-                        :y y
-                        :transform transform
-                        :id (str "shape-" id)
-                        :preserveAspectRatio "none"
-                        :xlinkHref uri
-                        :width width
-                        :height height}))]
-    [:> "image" props]))
+        uri (cfg/resolve-media-path (:path metadata))
+        data-uri (mf/use-state nil)]
+
+    (mf/use-effect
+     (mf/deps shape)
+     (fn []
+       (-> (df/fetch-as-data-uri uri)
+           (p/then #(reset! data-uri (second %))))))
+
+    (let [transform (geom/transform-matrix shape)
+          props (-> (attrs/extract-style-attrs shape)
+                    (obj/merge!
+                     #js {:x x
+                          :y y
+                          :transform transform
+                          :id (str "shape-" id)
+                          :width width
+                          :height height
+                          :preserveAspectRatio "none"}))]
+      (if (nil? @data-uri)
+        [:> "rect" (obj/merge!
+                    props
+                    #js {:fill "#E8E9EA"
+                         :stroke "#000000"})]
+        [:> "image" (obj/merge!
+                     props
+                     #js {:xlinkHref @data-uri})]))
+    
+
+    ))

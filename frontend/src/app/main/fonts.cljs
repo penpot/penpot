@@ -114,6 +114,11 @@
     (unchecked-set node "type" "text/css")
     node))
 
+(defn gfont-url [family variants]
+  (let [base (str "https://fonts.googleapis.com/css?family=" family)
+        variants (str/join "," (map :id variants))]
+    (str base ":" variants "&display=block")))
+
 (defmulti ^:private load-font :backend)
 
 (defmethod load-font :builtin
@@ -126,10 +131,7 @@
   [{:keys [id family variants ::on-loaded] :as font}]
   (when (exists? js/window)
     (js/console.log "[debug:fonts]: loading google font" id)
-    (let [base (str "https://fonts.googleapis.com/css?family=" family)
-          variants (str/join "," (map :id variants))
-          uri (str base ":" variants "&display=block")
-          node (create-link-node uri)]
+    (let [node (create-link-node (gfont-url family variants))]
       (.addEventListener node "load" (fn [event] (when (fn? on-loaded)
                                                    (on-loaded id))))
       (.append (.-head js/document) node)

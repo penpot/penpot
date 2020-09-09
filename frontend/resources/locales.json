@@ -1743,19 +1743,19 @@
     }
   },
   "workspace.libraries.colors.file-library" : {
-    "used-in" : [ "src/app/main/ui/workspace/colorpicker.cljs:277", "src/app/main/ui/workspace/colorpalette.cljs:149" ],
+    "used-in" : [ "src/app/main/ui/workspace/colorpicker.cljs:314", "src/app/main/ui/workspace/colorpalette.cljs:149" ],
     "translations" : {
       "en" : "File library"
     }
   },
   "workspace.libraries.colors.recent-colors" : {
-    "used-in" : [ "src/app/main/ui/workspace/colorpicker.cljs:276", "src/app/main/ui/workspace/colorpalette.cljs:159" ],
+    "used-in" : [ "src/app/main/ui/workspace/colorpicker.cljs:313", "src/app/main/ui/workspace/colorpalette.cljs:159" ],
     "translations" : {
       "en" : "Recent colors"
     }
   },
   "workspace.libraries.colors.save-color" : {
-    "used-in" : [ "src/app/main/ui/workspace/colorpicker.cljs:312" ],
+    "used-in" : [ "src/app/main/ui/workspace/colorpicker.cljs:349" ],
     "translations" : {
       "en" : "Save color"
     }
