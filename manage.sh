@@ -45,51 +45,83 @@ function run-devenv {
     docker exec -ti uxbox-devenv-main /home/start-tmux.sh
 }
 
-function build-frontend {
+function build {
     build-devenv-if-not-exists;
-
     local IMAGE=$DEVENV_IMGNAME:latest;
+
+    docker volume create uxboxdev_user_data;
 
     echo "Running development image $IMAGE to build frontend."
     docker run -t --rm \
+           --mount source=uxboxdev_user_data,type=volume,target=/home/uxbox/ \
            --mount source=`pwd`,type=bind,target=/home/uxbox/uxbox \
-           --mount source=${HOME}/.m2,type=bind,target=/home/uxbox/.m2 \
-           -w /home/uxbox/uxbox/frontend \
-           $IMAGE ./scripts/build-app.sh
-}
-
-function build-exporter {
-    build-devenv-if-not-exists;
-
-    local IMAGE=$DEVENV_IMGNAME:latest;
-
-    echo "Running development image $IMAGE to build frontend."
-    docker run -t --rm \
-           --mount source=`pwd`,type=bind,target=/home/uxbox/uxbox \
-           --mount source=${HOME}/.m2,type=bind,target=/home/uxbox/.m2 \
-           -w /home/uxbox/uxbox/exporter \
+           -w /home/uxbox/uxbox/$1 \
            $IMAGE ./scripts/build.sh
 }
 
+function build-frontend {
+    build "frontend";
+}
+
+function build-exporter {
+    build "exporter";
+}
+
 function build-backend {
-    rm -rf ./backend/target/dist
-    mkdir -p ./backend/target/dist
+    build "backend";
+}
 
-    rsync -ar \
-          --exclude="/tests*" \
-          --exclude="/resources/public/media" \
-          --exclude="/file-uploads" \
-          --exclude="/target" \
-          --exclude="/scripts" \
-          --exclude="/.*" \
-          ./backend/ ./backend/target/dist/
+function build-bundle {
 
-    rsync -ar \
-          ./common/ ./backend/target/dist/common/
+    build "frontend";
+    build "exporter";
+    build "backend";
+
+    rm -rf ./bundle
+    mkdir -p ./bundle
+    mv ./frontend/target/dist ./bundle/frontend
+    mv ./backend/target/dist ./bundle/backend
+    mv ./exporter/target ./bundle/exporter
+
+    NAME="uxbox-$(date '+%Y.%m.%d-%H%M')"
+
+    pushd bundle/
+    tar -cvf ../$NAME.tar *;
+    popd
+
+    xz -vez4f -T4 $NAME.tar
 }
 
 function log-devenv {
     docker-compose -p uxboxdev -f docker/devenv/docker-compose.yaml logs -f --tail=50
+}
+
+function build-testenv {
+    local BUNDLE_FILE=$1;
+    local BUNDLE_FILE_PATH=`readlink -f $BUNDLE_FILE`;
+
+    echo "Building testenv with bundle: $BUNDLE_FILE_PATH."
+
+    if [ ! -f $BUNDLE_FILE ]; then
+        echo "File $BUNDLE_FILE does not exists."
+    fi
+
+    rm -rf ./docker/testenv/bundle;
+    mkdir -p ./docker/testenv/bundle;
+
+    pushd ./docker/testenv/bundle;
+    tar xvf $BUNDLE_FILE_PATH;
+    popd
+
+    pushd ./docker/testenv;
+    docker-compose -p uxbox-testenv -f ./docker-compose.yaml build
+    popd
+}
+
+function start-testenv {
+    pushd ./docker/testenv;
+    docker-compose -p uxbox-testenv -f ./docker-compose.yaml up
+    popd
 }
 
 function usage {
@@ -131,6 +163,18 @@ case $1 in
         log-devenv ${@:2}
         ;;
 
+
+    # Test Env
+    start-testenv)
+        start-testenv
+        ;;
+
+    build-testenv)
+        build-testenv ${@:2}
+        ;;
+
+
+
     ## testin related commands
 
     # run-all-tests)
@@ -154,6 +198,10 @@ case $1 in
 
     build-exporter)
         build-exporter
+        ;;
+
+    build-bundle)
+        build-bundle
         ;;
 
     *)

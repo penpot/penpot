@@ -1,0 +1,87 @@
+FROM debian:buster
+LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+ENV LANG=en_US.UTF-8 LC_ALL=C.UTF-8
+
+RUN set -ex; \
+    mkdir -p /etc/resolvconf/resolv.conf.d; \
+    echo "nameserver 8.8.8.8" > /etc/resolvconf/resolv.conf.d/tail;
+
+RUN set -ex; \
+    apt-get update && \
+    apt-get install -yq \
+        locales \
+        gnupg2 \
+        ca-certificates \
+        wget \
+        curl \
+        bash \
+        rlwrap \
+        imagemagick \
+        netpbm \
+        potrace \
+        gconf-service \
+        libasound2 \
+        libatk1.0-0 \
+        libatk-bridge2.0-0 \
+        libcairo2 \
+        libcups2 \
+        libdbus-1-3 \
+        libexpat1 \
+        libfontconfig1 \
+        libgcc1 \
+        libgconf-2-4 \
+        libgdk-pixbuf2.0-0 \
+        libglib2.0-0 \
+        libgtk-3-0 \
+        libnspr4 \
+        libpango-1.0-0 \
+        libpangocairo-1.0-0 \
+        libx11-6 \
+        libx11-xcb1 \
+        libxcb1 \
+        libxcb-dri3-0 \
+        libxcomposite1 \
+        libxcursor1 \
+        libxdamage1 \
+        libxext6 \
+        libxfixes3 \
+        libxi6 \
+        libxrandr2 \
+        libxrender1 \
+        libxss1 \
+        libxtst6 \
+        fonts-liberation \
+        libappindicator1 \
+        libnss3 \
+        libgbm1 \
+    ; \
+    rm -rf /var/lib/apt/lists/*;
+
+RUN set -ex; \
+    wget https://github.com/RazrFalcon/svgcleaner/releases/download/v0.9.5/svgcleaner_linux_x86_64_0.9.5.tar.gz; \
+    tar xvf svgcleaner_linux_x86_64_0.9.5.tar.gz; \
+    mv svgcleaner /usr/local/bin/; \
+    rm -rf svgcleaner_linux_x86_64_0.9.5.tar.gz;
+
+RUN set -ex; \
+    mkdir -p /tmp/node; \
+    cd /tmp/node; \
+    export PATH="$PATH:/usr/local/node-v12.18.3/bin"; \
+    wget https://nodejs.org/dist/v12.18.3/node-v12.18.3-linux-x64.tar.xz; \
+    tar xvf node-v12.18.3-linux-x64.tar.xz; \
+    mv /tmp/node/node-v12.18.3-linux-x64 /usr/local/node-v12.18.3; \
+    /usr/local/node-v12.18.3/bin/npm install -g yarn; \
+    rm -rf /tmp/node;
+
+WORKDIR /opt/app
+
+ADD ./bundle/exporter/ /opt/app/
+
+RUN set -ex; \
+    export PATH="$PATH:/usr/local/node-v12.18.3/bin"; \
+    yarn install;
+
+CMD ["/usr/local/node-v12.18.3/bin/node", "app.js"]

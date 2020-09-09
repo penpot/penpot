@@ -64,8 +64,15 @@ This will do the following:
 - Attaches to the **devenv** container and executes the tmux session.
 - The tmux session automatically starts all the necessary services.
 
+You can execute the individual steps manully if you want:
 
-## First steps with tmux ##
+```bash
+./manage.sh build-devenv # builds the devenv docker image
+./manage.sh start-devenv # starts background running containers
+./manage.sh run-devenv   # enters to new tmux session inside of one of the running containers
+./manage.sh stop-devenv  # stops background running containers
+./manage.sh drop-devenv  # removes all the volumes, containers and networks used by the devenv
+```
 
 Now having the the container running and tmux open inside the
 container, you are free to execute any commands and open many shells
@@ -78,16 +85,16 @@ current window.
 For more info: https://tmuxcheatsheet.com/
 
 
-## Inside the tmux session ##
+### Inside the tmux session
 
-### Styles ###
+#### gulp
 
 The styles and many related tasks are executed thanks to gulp and they are
 executed in the tmux **window 0**. This is a normal gulp watcher with some
 additional tasks.
 
 
-### Frontend ###
+#### shadow-cljs
 
 The frontend build process is located on the tmux **window 1**.
 **Shadow-cljs** is used for build and serve the frontend code. For
@@ -101,7 +108,7 @@ connected browser, by opening a third window with `Ctrl+c` and running
 `npx shadow-cljs cljs-repl main`.
 
 
-### Exporter ###
+#### exporter
 
 The exporter app (clojurescript app running in nodejs) is located in
 **window 2**, and you can go directly to it using `ctrl+b 2` shortcut.
@@ -115,7 +122,7 @@ If some reason scripts does not stars correctly, you can manually
 execute `node target/app.js ` to start the exporter app.
 
 
-### Backend ###
+#### backend
 
 The backend related environment is located in the tmux **window 3**,
 and you can go directly to it using `ctrl+b 2` shortcut.
@@ -137,3 +144,46 @@ later use `(restart)` again.
 
 For more information, please refer to: `03-Backend-Guide.md`.
 
+
+## Start the testenv ##
+
+The purpose of the testenv (Test Environment) is provide an easy way
+to get uxbox running in local pc without getting into the full
+development environment.
+
+As first step we still need to build devenv image because that image
+is used to produce the production-like bundle of the application:
+
+```bash
+./manage.sh build-devenv
+```
+
+Once the image is build, you no longer need to rebuilt it until the
+devenv image is changed and this happens we make some structural
+changes or upgrading some dependencies.
+
+Them, let's proceed to build the bundle (a directory that contains all
+the sources and dependencies of the platform ready to be deployed):
+
+```bash
+./manage.sh build-bundle
+```
+
+This will generate on current directory one file and one
+directory. The most important is the file like
+`uxbox-2020.09.09-1343.tar.xz`. 
+
+Then, let's proceed to build the docker images with the bundle
+generated from the previous step.
+
+```bash
+./manage.sh build-testenv ./uxbox-2020.09.09-1343.tar.xz
+```
+
+This will generate the necessary docker images ready to be executed.
+
+And finally, start the docker-compose:
+
+```bash
+./manage.sh start-devenv
+```
