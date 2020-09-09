@@ -36,7 +36,7 @@
   (if (= value :multiple) "transparent" value))
 
 (defn remove-hash [value]
-  (if (= value :multiple) "" (subs value 1)))
+  (if (or (nil? value) (= value :multiple)) "" (subs value 1)))
 
 (defn append-hash [value]
   (str "#" value))

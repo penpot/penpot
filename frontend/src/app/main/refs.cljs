@@ -80,6 +80,14 @@
 (def current-hover
   (l/derived :hover workspace-local))
 
+(def picking-color?
+  (l/derived :picking-color? workspace-local))
+
+(def picked-color
+  (l/derived :picked-color workspace-local))
+
+(def picked-color-select
+  (l/derived :picked-color-select workspace-local))
 
 (def workspace-layout
   (l/derived :workspace-layout st/state))

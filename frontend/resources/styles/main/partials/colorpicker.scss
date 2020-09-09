@@ -8,10 +8,53 @@
 .colorpicker {
     display: flex;
     flex-direction: column;
-    width: 13rem;
     padding: 0.5rem;
     background-color: $color-white;
     box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+
+    & > * {
+        width: 200px;
+    }
+
+    .top-actions {
+        display: flex;
+        margin-bottom: 0.25rem;
+
+        .picker-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+
+            &.active,
+            &:hover svg {
+                fill: $color-primary;
+            }
+
+            svg {
+                width: 14px;
+                height: 14px;
+            }
+        }
+    }
+
+    .picker-detail-wrapper {
+        position: relative;
+
+        .center-circle {
+            width: 14px;
+            height: 14px;
+            border: 2px solid $color-white;
+            border-radius: 8px;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-7px, -7px);
+            filter: drop-shadow(0px 4px 4px rgba(0, 0, 0, 0.25));
+        }
+    }
+    #picker-detail {
+        border: 1px solid $color-gray-10;
+    }
 
     .handler {
         position: absolute;
@@ -25,7 +68,6 @@
         background-color: rgba(var(--hue));
         position: relative;
         height: 6.75rem;
-        width: 100%;
         cursor: pointer;
 
         .handler {
@@ -137,6 +179,7 @@
         border-top: 1px solid $color-gray-10;
         padding-top: 0.5rem;
         margin-top: 0.25rem;
+        width: 200px;
         
         select {
             background-image: url(/images/icons/arrow-down.svg);
@@ -162,7 +205,8 @@
             grid-template-columns: repeat(8, 1fr);
             justify-content: space-between;
             margin-right: -8px;
-            overflow: scroll;
+            overflow-x: hidden;
+            overflow-y: auto;
             max-height: 5.5rem;
         }
 

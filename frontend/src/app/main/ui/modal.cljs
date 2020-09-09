@@ -10,6 +10,7 @@
   (:import goog.events.EventType))
 
 (defonce state (atom nil))
+(defonce can-click-outside (atom false))
 
 (defn show!
   [component props]
@@ -25,13 +26,12 @@
     (reset! state nil)
     (dom/stop-propagation event)))
 
-(defn- on-parent-clicked
-  [event parent-ref]
-  (let [parent (mf/ref-val parent-ref)
+(defn- on-click
+  [event wrapper-ref]
+  (let [wrapper (mf/ref-val wrapper-ref)
         current (dom/get-target event)]
-    ;; (js/console.log current (.-className ^js current))
-    (when (and (dom/equals? (.-firstElementChild ^js parent) current)
-               (str/includes? (.-className ^js current) "modal-overlay"))
+
+    (when (and (not @can-click-outside) (not (.contains wrapper current)))
       (dom/stop-propagation event)
       (dom/prevent-default event)
       (reset! state nil))))
@@ -39,15 +39,19 @@
 (mf/defc modal-wrapper
   [{:keys [component props]}]
 
-  (mf/use-effect
-   (fn []
-     (let [key (events/listen js/document EventType.KEYDOWN on-esc-clicked)]
-       #(events/unlistenByKey %))))
+  (let [wrapper-ref (mf/use-ref nil)]
+    (mf/use-effect
+     (fn []
+       (let [key (events/listen js/document EventType.KEYDOWN on-esc-clicked)]
+         #(events/unlistenByKey key))))
 
-  (let [ref (mf/use-ref nil)]
+    (mf/use-effect
+     (fn []
+       (let [key (events/listen js/document EventType.CLICK #(on-click % wrapper-ref))]
+         #(events/unlistenByKey key))))
+
     [:div.modal-wrapper
-     {:ref ref
-      :on-click #(on-parent-clicked % ref)}
+     {:ref wrapper-ref}
      [:& component props]]))
 
 (mf/defc modal
@@ -58,4 +62,8 @@
                        :key (random-uuid)}]))
 
 
+(defn allow-click-outside! []
+  (reset! can-click-outside true))
 
+(defn disallow-click-outside! []
+  (reset! can-click-outside false))

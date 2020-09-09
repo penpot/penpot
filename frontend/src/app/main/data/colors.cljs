@@ -129,3 +129,31 @@
       (-> state
           (update :workspace-layout conj :colorpalette)
           (assoc-in [:workspace-local :selected-palette] selected)))))
+
+(defn start-picker []
+  (ptk/reify ::start-picker
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:workspace-local :picking-color?] true)))))
+
+(defn stop-picker []
+  (ptk/reify ::stop-picker
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:workspace-local :picking-color?] false)))))
+
+(defn pick-color [rgba]
+  (ptk/reify ::pick-color
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:workspace-local :picked-color] rgba)))))
+
+(defn pick-color-select [value]
+  (ptk/reify ::pick-color
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:workspace-local :picked-color-select] value)))))

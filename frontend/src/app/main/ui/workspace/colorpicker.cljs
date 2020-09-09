@@ -102,6 +102,10 @@
         shared-libs (mf/deref refs/workspace-libraries)
         recent-colors (mf/deref refs/workspace-recent-colors)
 
+        picking-color? (mf/deref refs/picking-color?)
+        picked-color (mf/deref refs/picked-color)
+        picked-color-select (mf/deref refs/picked-color-select)
+
         locale    (mf/deref i18n/locale)
 
         value-ref (mf/use-var value)
@@ -154,37 +158,70 @@
 
     ;; When closing the modal we update the recent-color list
     (mf/use-effect
-     (fn [] #(st/emit! (dwl/add-recent-color @value-ref))))
+     (fn [] #(st/emit! (dwc/stop-picker)
+                       (dwl/add-recent-color @value-ref))))
+
+    (mf/use-effect
+     (mf/deps picking-color? picked-color)
+     (fn [] (when picking-color?
+              (let [[r g b] picked-color
+                    hex (uc/rgb->hex [r g b])
+                    [h s v] (uc/hex->hsv hex)]
+                (swap! current-color assoc
+                       :r r :g g :b b
+                       :h h :s s :v v
+                       :hex hex)
+                (when picked-color-select
+                  (on-change hex (:alpha @current-color)))))))
+
+    (mf/use-effect
+     (mf/deps picking-color? picked-color-select)
+     (fn [] (when picking-color?
+              (on-change (:hex @current-color) (:alpha @current-color)))))
 
     [:div.colorpicker {:ref ref-picker}
-     [:& value-selector {:hue (:h @current-color)
-                         :saturation (:s @current-color)
-                         :value (:v @current-color)
-                         :on-change (fn [s v]
-                                      (let [hex (uc/hsv->hex [(:h @current-color) s v])
-                                            [r g b] (uc/hex->rgb hex)]
-                                        (swap! current-color assoc
-                                               :hex hex
-                                               :r r :g g :b b
-                                               :s s :v v)
-                                        (reset! value-ref hex)
-                                        (on-change hex (:alpha @current-color))))}]
-     [:div.shade-selector
-      [:div.color-bullet]
-      [:& hue-selector {:hue (:h @current-color)
-                        :on-change (fn [h]
-                                     (let [hex (uc/hsv->hex [h (:s @current-color) (:v @current-color)])
-                                           [r g b] (uc/hex->rgb hex)]
-                                       (swap! current-color assoc
-                                              :hex hex
-                                              :r r :g g :b b
-                                              :h h )
-                                       (reset! value-ref hex)
-                                       (on-change hex (:alpha @current-color))))}]
-      [:& opacity-selector {:opacity (:alpha @current-color)
-                            :on-change (fn [alpha]
-                                         (swap! current-color assoc :alpha alpha)
-                                         (on-change (:hex @current-color) alpha))}]]
+     [:div.top-actions
+      [:button.picker-btn
+       {:class (when picking-color? "active")
+        :on-click (fn []
+                    (modal/allow-click-outside!)
+                    (st/emit! (dwc/start-picker)))}
+       i/picker]]
+
+     (if picking-color?
+       [:div.picker-detail-wrapper
+        [:div.center-circle]
+        [:canvas#picker-detail {:width 200
+                                :height 160}]]
+       [:& value-selector {:hue (:h @current-color)
+                           :saturation (:s @current-color)
+                           :value (:v @current-color)
+                           :on-change (fn [s v]
+                                        (let [hex (uc/hsv->hex [(:h @current-color) s v])
+                                              [r g b] (uc/hex->rgb hex)]
+                                          (swap! current-color assoc
+                                                 :hex hex
+                                                 :r r :g g :b b
+                                                 :s s :v v)
+                                          (reset! value-ref hex)
+                                          (on-change hex (:alpha @current-color))))}])
+     (when (not picking-color?)
+       [:div.shade-selector
+        [:div.color-bullet]
+        [:& hue-selector {:hue (:h @current-color)
+                          :on-change (fn [h]
+                                       (let [hex (uc/hsv->hex [h (:s @current-color) (:v @current-color)])
+                                             [r g b] (uc/hex->rgb hex)]
+                                         (swap! current-color assoc
+                                                :hex hex
+                                                :r r :g g :b b
+                                                :h h )
+                                         (reset! value-ref hex)
+                                         (on-change hex (:alpha @current-color))))}]
+        [:& opacity-selector {:opacity (:alpha @current-color)
+                              :on-change (fn [alpha]
+                                           (swap! current-color assoc :alpha alpha)
+                                           (on-change (:hex @current-color) alpha))}]])
 
      [:div.color-values
       [:input.hex-value {:id "hex-value"
@@ -320,12 +357,11 @@
                        :top (str (- y 50) "px")}
                 :right {:left (str (+ x 24) "px")
                         :top (str (- y 50) "px")})]
-    [:div.modal-overlay.transparent
-     [:div.colorpicker-tooltip
+    [:div.colorpicker-tooltip
       {:style (clj->js style)}
       [:& colorpicker {:value (or value default)
                        :opacity (or opacity 1)
                        :on-change on-change
                        :on-accept on-accept
-                       :disable-opacity disable-opacity}]]]))
+                       :disable-opacity disable-opacity}]]))
 
