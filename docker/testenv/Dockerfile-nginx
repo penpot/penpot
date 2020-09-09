@@ -1,0 +1,9 @@
+FROM nginx:latest
+LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
+
+ADD ./bundle/frontend /var/www/app/
+ADD ./files/nginx.conf /etc/nginx/nginx.conf
+ADD ./files/nginx-entrypoint.sh /entrypoint.sh
+
+ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
+CMD ["nginx", "-g", "daemon off;"]

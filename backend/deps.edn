@@ -98,6 +98,10 @@
   {:extra-deps {olical/depot {:mvn/version "1.8.4"}}
    :main-opts ["-m" "depot.outdated.main"]}
 
+  :jar
+  {:extra-deps {seancorfield/depstar {:mvn/version "RELEASE"}}
+   :main-opts ["-m" "hf.depstar.jar" "-S" "target/app.jar"]}
+
   :jmx-remote
   {:jvm-opts ["-Dcom.sun.management.jmxremote"
               "-Dcom.sun.management.jmxremote.port=9090"

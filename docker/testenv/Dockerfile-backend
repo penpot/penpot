@@ -1,0 +1,5 @@
+FROM azul/zulu-openjdk-debian:14
+LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
+ADD ./bundle/backend/ /opt/bundle/
+WORKDIR /opt/bundle
+CMD ["/bin/bash", "run.sh"]
