@@ -33,33 +33,6 @@
 (s/def ::set-of-string
   (s/every string? :kind set?))
 
-;; Duplicate from workspace.
-;; FIXME: Move these functions to a common place
-
-(defn interrupt? [e] (= e :interrupt))
-
-(defn- retrieve-used-names
-  [objects]
-  (into #{} (map :name) (vals objects)))
-
-(defn- extract-numeric-suffix
-  [basename]
-  (if-let [[match p1 p2] (re-find #"(.*)-([0-9]+)$" basename)]
-    [p1 (+ 1 (d/parse-integer p2))]
-    [basename 1]))
-
-(defn- generate-unique-name
-  "A unique name generator"
-  [used basename]
-  (s/assert ::set-of-string used)
-  (s/assert ::us/string basename)
-  (let [[prefix initial] (extract-numeric-suffix basename)]
-    (loop [counter initial]
-      (let [candidate (str prefix "-" counter)]
-        (if (contains? used candidate)
-          (recur (inc counter))
-          candidate)))))
-
 ;; --- Selection Rect
 
 (declare select-shapes-by-current-selrect)
@@ -88,7 +61,7 @@
     (ptk/reify ::handle-selection
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [stoper (rx/filter #(or (interrupt? %)
+        (let [stoper (rx/filter #(or (dwc/interrupt? %)
                                      (ms/mouse-up? %))
                                 stream)]
           (rx/concat
@@ -198,7 +171,9 @@
   (let [selrect   (geom/selection-rect shapes)
         frame-id  (-> shapes first :frame-id)
         parent-id (-> shapes first :parent-id)
-        group-name (if (and keep-name (= (count shapes) 1))
+        group-name (if (and keep-name
+                            (= (count shapes) 1)
+                            (= (:type (first shapes)) :group))
                      (:name (first shapes))
                      (name (gensym prefix)))]
     (-> (cp/make-minimal-group frame-id selrect group-name)
@@ -298,7 +273,7 @@
 (defn- prepare-duplicate-shape-change
   [objects page-id names obj delta frame-id parent-id]
   (let [id          (uuid/next)
-        name        (generate-unique-name names (:name obj))
+        name        (dwc/generate-unique-name names (:name obj))
         renamed-obj (assoc obj :id id :name name)
         moved-obj   (geom/move renamed-obj delta)
         frames      (cph/select-frames objects)
@@ -338,7 +313,7 @@
 (defn- prepare-duplicate-frame-change
   [objects page-id names obj delta]
   (let [frame-id   (uuid/next)
-        frame-name (generate-unique-name names (:name obj))
+        frame-name (dwc/generate-unique-name names (:name obj))
         sch        (->> (map #(get objects %) (:shapes obj))
                         (mapcat #(prepare-duplicate-shape-change objects page-id names % delta frame-id frame-id)))
 
@@ -367,7 +342,7 @@
 
             selected (get-in state [:workspace-local :selected])
             delta    (gpt/point 0 0)
-            unames   (retrieve-used-names objects)
+            unames   (dwc/retrieve-used-names objects)
 
             rchanges (prepare-duplicate-changes objects page-id unames selected delta)
             uchanges (mapv #(array-map :type :del-obj :page-id page-id :id (:id %))

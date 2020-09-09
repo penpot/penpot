@@ -69,8 +69,8 @@
 
         on-drag-start
         (mf/use-callback
-         (fn [path event]
-           (dnd/set-data! event "text/uri-list" (cfg/resolve-media-path path))
+         (fn [component-id event]
+           (dnd/set-data! event "app/component" component-id)
            (dnd/set-allowed-effect! event "move")))]
 
     [:div.asset-group
@@ -82,7 +82,7 @@
         [:div.grid-cell {:key (:id component)
                          :draggable true
                          :on-context-menu (on-context-menu (:id component))
-                         :on-drag-start (partial on-drag-start (:path component))}
+                         :on-drag-start (partial on-drag-start (:id component))}
          [:& exports/component-svg {:group (get-in component [:objects (:id component)])
                                     :objects (:objects component)}]
          [:div.cell-name (:name component)]])

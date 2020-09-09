@@ -12,11 +12,15 @@
    [app.common.data :as d]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.common.pages-helpers :as cph]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as geom]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.selection :as dws]
    [app.common.pages :as cp]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.main.streams :as ms]
    [app.util.color :as color]
    [app.util.i18n :refer [tr]]
    [beicon.core :as rx]
@@ -107,7 +111,7 @@
                   :object prev}]
         (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true}))))))
 
-(declare clone-shape)
+(declare make-component-shape)
 
 (def add-component
   (ptk/reify ::add-component
@@ -127,7 +131,7 @@
                   (dws/prepare-create-group page-id shapes "Component-" true))
 
                 [new-shape new-shapes updated-shapes]
-                (clone-shape group nil objects)
+                (make-component-shape group nil objects)
 
                 rchanges (conj rchanges
                                {:type :add-component
@@ -168,59 +172,23 @@
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
                    (dws/select-shapes (d/ordered-set (:id group))))))))))
 
-(defn- clone-shape
+(defn- make-component-shape
   "Clone the shape and all children. Generate new ids and detach
   from parent and frame. Update the original shapes to have links
   to the new ones."
   [shape parent-id objects]
-  (let [new-id (uuid/next)]
-    (if (nil? (:shapes shape))
+  (let [xf-new-shape (fn [new-shape original-shape]
+                       (assoc new-shape :frame-id nil))
 
-      ; TODO: unify this case with the empty child-ids case.
-      (let [new-shape (assoc shape
-                             :id new-id
-                             :parent-id parent-id
-                             :frame-id nil)
+        xf-original-shape (fn [original-shape new-shape]
+                            (cond-> original-shape
+                              true
+                              (assoc :shape-ref (:id new-shape))
 
-            new-shapes [new-shape]
+                              (nil? (:parent-id new-shape))
+                              (assoc :component-id (:id new-shape))))]
 
-            updated-shapes [(cond-> shape
-                              true (assoc :shape-ref (:id new-shape))
-                              (nil? parent-id) (assoc :component-id (:id new-shape)))]]
-
-        [new-shape new-shapes updated-shapes])
-
-      (loop [child-ids (seq (:shapes shape))
-             new-children []
-             updated-children []]
-
-        (if (empty? child-ids)
-          (let [new-shape (assoc shape
-                                 :id new-id
-                                 :parent-id parent-id
-                                 :frame-id nil
-                                 :shapes (map :id new-children))
-
-                new-shapes (conj new-children new-shape)
-
-                updated-shapes
-                (conj updated-children
-                      (cond-> shape
-                        true (assoc :shape-ref (:id new-shape))
-                        (nil? parent-id) (assoc :component-id (:id new-shape))))]
-
-            [new-shape new-shapes updated-shapes])
-
-          (let [child-id (first child-ids)
-                child (get objects child-id)
-
-                [new-child new-child-shapes updated-child-shapes]
-                (clone-shape child new-id objects)]
-
-          (recur
-            (next child-ids)
-            (into new-children new-child-shapes)
-            (into updated-children updated-child-shapes))))))))
+    (cph/clone-object shape parent-id objects xf-new-shape xf-original-shape)))
 
 (defn delete-component
   [{:keys [id] :as params}]
@@ -241,3 +209,145 @@
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 
+(defn instantiate-component
+  [id]
+  (us/assert ::us/uuid id)
+  (ptk/reify ::instantiate-component
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [component (get-in state [:workspace-data :components id])
+            component-shape (get-in component [:objects (:id component)])
+
+            orig-pos  (gpt/point (:x component-shape) (:y component-shape))
+            mouse-pos @ms/mouse-position
+            delta     (gpt/subtract mouse-pos orig-pos)
+
+            _ (js/console.log "orig-pos" (clj->js orig-pos))
+            _ (js/console.log "mouse-pos" (clj->js mouse-pos))
+            _ (js/console.log "delta" (clj->js delta))
+
+            page-id   (:current-page-id state)
+            objects   (dwc/lookup-page-objects state page-id)
+            unames    (dwc/retrieve-used-names objects)
+
+            all-frames (cph/select-frames objects)
+
+            xf-new-shape
+            (fn [new-shape original-shape]
+              (let [new-name ;; TODO: ojoooooooooo
+                    (dwc/generate-unique-name unames (:name new-shape))]
+
+                (cond-> new-shape
+                  true
+                  (as-> $
+                    (assoc $ :name new-name)
+                    (geom/move $ delta)
+                    (assoc $ :frame-id
+                           (dwc/calculate-frame-overlap all-frames $))
+                    (assoc $ :parent-id
+                           (or (:parent-id $) (:frame-id $)))
+                    (assoc $ :shape-ref (:id original-shape)))
+
+                  (nil? (:parent-id original-shape))
+                  (assoc :component-id (:id original-shape)))))
+
+            [new-shape new-shapes _]
+            (cph/clone-object component-shape
+                              nil
+                              (get component :objects)
+                              xf-new-shape)
+
+            rchanges (map (fn [obj]
+                            {:type :add-obj
+                             :id (:id obj)
+                             :page-id page-id
+                             :frame-id (:frame-id obj)
+                             :parent-id (:parent-id obj)
+                             :obj obj})
+                          new-shapes)
+
+            uchanges (map (fn [obj]
+                            {:type :del-obj
+                             :id (:id obj)
+                             :page-id page-id})
+                          new-shapes)]
+
+        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
+               (dws/select-shapes (d/ordered-set (:id new-shape))))))))
+
+(defn detach-component
+  [id]
+  (us/assert ::us/uuid id)
+  (ptk/reify ::detach-component
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id (:current-page-id state)
+            objects (dwc/lookup-page-objects state page-id)
+            root-id (cph/get-root-component id objects)
+
+            shapes (cph/get-object-with-children root-id objects)
+
+            rchanges (map (fn [obj]
+                            {:type :mod-obj
+                             :page-id page-id
+                             :id (:id obj)
+                             :operations [{:type :set
+                                           :attr :component-id
+                                           :val nil}
+                                          {:type :set
+                                           :attr :shape-ref
+                                           :val nil}]})
+                          shapes)
+
+            uchanges (map (fn [obj]
+                            {:type :mod-obj
+                             :page-id page-id
+                             :id (:id obj)
+                             :operations [{:type :set
+                                           :attr :component-id
+                                           :val (:component-id obj)}
+                                          {:type :set
+                                           :attr :shape-ref
+                                           :val (:shape-ref obj)}]})
+                          shapes)]
+
+        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
+
+(defn reset-component
+  [id]
+  [id]
+  (us/assert ::us/uuid id)
+  (ptk/reify ::reset-component
+    ptk/WatchEvent
+    (watch [_ state stream]
+      )))
+
+(defn update-component
+  [id]
+  [id]
+  (us/assert ::us/uuid id)
+  (ptk/reify ::update-component
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id        (:current-page-id state)
+            objects        (dwc/lookup-page-objects state page-id)
+            root-id        (cph/get-root-component id objects)
+            root-shape     (get objects id)
+            component-id   (get root-shape :component-id)
+            component-objs (dwc/lookup-component-objects state component-id)
+
+            shapes (cph/get-object-with-children root-id objects)
+
+            rchanges [{:type :update-component
+                       :id component-id
+                       :shapes shapes}
+                      {:type :sync-library
+                       :id (get-in state [:workspace-file :id])}]
+
+
+            uchanges [{:type :update-component
+                       :id component-id
+                       :shapes (vals component-objs)}]]
+
+        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
+ 

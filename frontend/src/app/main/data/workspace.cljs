@@ -48,10 +48,6 @@
 (s/def ::set-of-string
   (s/every string? :kind set?))
 
-;; --- Expose inner functions
-
-(defn interrupt? [e] (= e :interrupt))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace Initialization
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -956,7 +952,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (->> stream
-           (rx/filter interrupt?)
+           (rx/filter dwc/interrupt?)
            (rx/take 1)
            (rx/map (constantly clear-edition-mode))))))
 
@@ -985,7 +981,7 @@
      ptk/WatchEvent
      (watch [_ state stream]
        (let [cancel-event? (fn [event]
-                             (interrupt? event))
+                             (dwc/interrupt? event))
              stoper (rx/filter (ptk/type? ::clear-drawing) stream)]
          (->> (rx/filter cancel-event? stream)
               (rx/take 1)

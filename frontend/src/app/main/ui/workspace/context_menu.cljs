@@ -61,7 +61,10 @@
         do-unlock-shape #(st/emit! (dw/update-shape-flags id {:blocked false}))
         do-create-group #(st/emit! dw/group-selected)
         do-remove-group #(st/emit! dw/ungroup-selected)
-        do-add-component #(st/emit! dwl/add-component)]
+        do-add-component #(st/emit! dwl/add-component)
+        do-detach-component #(st/emit! (dwl/detach-component id))
+        do-reset-component #(st/emit! (dwl/reset-component id))
+        do-update-component #(st/emit! (dwl/update-component id))]
     [:*
      [:& menu-entry {:title "Copy"
                      :shortcut "Ctrl + c"
@@ -110,9 +113,18 @@
                        :on-click do-lock-shape}])
 
      [:& menu-separator]
-     [:& menu-entry {:title "Create component"
-                     :shortcut "Ctrl + K"
-                     :on-click do-add-component}]
+
+     (if (nil? (:shape-ref shape))
+       [:& menu-entry {:title "Create component"
+                       :shortcut "Ctrl + K"
+                       :on-click do-add-component}]
+       [:*
+         [:& menu-entry {:title "Detach instance"
+                         :on-click do-detach-component}]
+         [:& menu-entry {:title "Reset overrides"
+                         :on-click do-reset-component}]
+         [:& menu-entry {:title "Update master component"
+                         :on-click do-update-component}]])
 
      [:& menu-separator]
      [:& menu-entry {:title "Delete"

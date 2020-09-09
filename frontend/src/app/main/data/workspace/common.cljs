@@ -44,6 +44,11 @@
   ([state page-id]
    (get-in state [:workspace-data :pages-index page-id :options])))
 
+(defn interrupt? [e] (= e :interrupt))
+
+(defn lookup-component-objects
+  ([state component-id]
+   (get-in state [:workspace-data :components component-id :objects])))
 
 
 ;; --- Changes Handling
@@ -454,3 +459,4 @@
               objects  (lookup-page-objects state page-id)
               [rchanges uchanges] (impl-gen-changes objects page-id (seq ids))]
         (rx/of (commit-changes rchanges uchanges {:commit-local? true})))))))
+

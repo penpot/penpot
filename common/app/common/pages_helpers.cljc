@@ -30,6 +30,16 @@
   (update page :objects
           #(into % (d/index-by :id objects-list))))
 
+(defn get-root-component
+  "Get the root shape linked to the component for this shape, if any"
+  [id objects]
+  (let [obj (get objects id)]
+    (if-let [component-id (:component-id obj)]
+      id
+      (if-let [parent-id (:parent-id obj)]
+        (get-root-component parent-id obj)
+        nil))))
+
 (defn get-children
   "Retrieve all children ids recursively for a given object"
   [id objects]
@@ -42,6 +52,26 @@
   "Retrieve all children objects recursively for a given object"
   [id objects]
   (map #(get objects %) (get-children id objects)))
+
+(defn get-object-with-children
+  "Retrieve a list with an object and all of its children"
+  [id objects]
+  (map #(get objects %) (concat [id] (get-children id objects))))
+
+(defn walk-children
+  "Go through an object and all the children tree, and apply a
+  function to each one. Return the list of changed objects."
+  [id f objects]
+  (let [obj (get objects id)]
+    (if (nil? (:shapes obj))
+      [(apply f obj)]
+      (loop [children (map #(get objects %) (:shapes obj))
+             updated-children []]
+        (if (empty? children)
+          updated-children
+          (let [child (first children)]
+            (recur (rest children)
+                   (concat [(apply f child)] updated-children))))))))
 
 (defn is-shape-grouped
   "Checks if a shape is inside a group"
@@ -135,4 +165,55 @@
                      :else
                      (lazy-seq (loopfn (rest ids))))))]
     (loopfn (:shapes root))))
+
+(defn clone-object
+  "Gets a copy of the object and all its children, with new ids
+  and with the parent-children links correctly set. Admits functions
+  to make more transformations to the cloned objects and the
+  original ones.
+
+  Returns the cloned object, the list of all new objects (including
+  the cloned one), and possibly a list of original objects modified."
+  ([object parent-id objects xf-new-object]
+   (clone-object object parent-id objects xf-new-object identity))
+
+  ([object parent-id objects xf-new-object xf-original-object]
+   (let [new-id (uuid/next)]
+     (loop [child-ids (seq (:shapes object))
+            new-direct-children []
+            new-children []
+            updated-children []]
+
+       (if (empty? child-ids)
+         (let [new-object (cond-> object
+                            true
+                            (assoc :id new-id
+                                   :parent-id parent-id)
+
+                            (some? (:shapes object))
+                            (assoc :shapes (map :id new-direct-children)))
+
+               new-object (xf-new-object new-object object)
+
+               new-objects (concat [new-object] new-children)
+
+               updated-object (xf-original-object object new-object)
+
+               updated-objects (if (= object updated-object)
+                                 updated-children
+                                 (concat [updated-object] updated-children))]
+
+           [new-object new-objects updated-objects])
+
+         (let [child-id (first child-ids)
+               child (get objects child-id)
+
+               [new-child new-child-objects updated-child-objects]
+               (clone-object child new-id objects xf-new-object xf-original-object)]
+
+           (recur
+             (next child-ids)
+             (concat new-direct-children [new-child])
+             (concat new-children new-child-objects)
+             (concat updated-children updated-child-objects))))))))
 
