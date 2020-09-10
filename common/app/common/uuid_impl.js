@@ -18,12 +18,12 @@ goog.scope(function() {
   const self = app.common.uuid_impl;
 
   const fill = (() => {
-    if (typeof window === "object") {
+    if (typeof window === "object" && typeof window.crypto !== "undefined") {
       return (buf) => {
         window.crypto.getRandomValues(buf);
         return buf;
       };
-    } else if (typeof self === "object") {
+    } else if (typeof self === "object" && typeof self.crypto !== "undefined") {
       return (buf) => {
         self.crypto.getRandomValues(buf);
         return buf;

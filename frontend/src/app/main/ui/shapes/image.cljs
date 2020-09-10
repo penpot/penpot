@@ -14,6 +14,7 @@
    [app.common.geom.shapes :as geom]
    [app.main.ui.shapes.attrs :as attrs]
    [app.util.object :as obj]
+   [app.main.ui.context :as muc]
    [app.main.data.fetch :as df]
    [promesa.core :as p]))
 
@@ -24,13 +25,15 @@
   (let [shape (unchecked-get props "shape")
         {:keys [id x y width height rotation metadata]} shape
         uri (cfg/resolve-media-path (:path metadata))
-        data-uri (mf/use-state nil)]
+        embed-resources? (mf/use-ctx muc/embed-ctx)
+        data-uri (mf/use-state (when (not embed-resources?) uri))]
 
     (mf/use-effect
-     (mf/deps shape)
+     (mf/deps uri)
      (fn []
-       (-> (df/fetch-as-data-uri uri)
-           (p/then #(reset! data-uri (second %))))))
+       (if embed-resources?
+         (-> (df/fetch-as-data-uri uri)
+             (p/then #(reset! data-uri (second %)))))))
 
     (let [transform (geom/transform-matrix shape)
           props (-> (attrs/extract-style-attrs shape)
@@ -49,7 +52,4 @@
                          :stroke "#000000"})]
         [:> "image" (obj/merge!
                      props
-                     #js {:xlinkHref @data-uri})]))
-    
-
-    ))
+                     #js {:href @data-uri})]))))

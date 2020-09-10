@@ -19,7 +19,6 @@
    [app.common.uuid :refer [uuid]]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.colors :as dwc]
-   #_[app.main.ui.modal :as modal]
    [app.main.ui.modal :as modal]
    [okulary.core :as l]
    [app.main.refs :as refs]
