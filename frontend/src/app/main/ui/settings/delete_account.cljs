@@ -20,24 +20,27 @@
    [app.util.i18n :as i18n :refer [tr t]]))
 
 (mf/defc delete-account-modal
+  {::mf/register modal/components
+   ::mf/register-as :delete-account}
   [props]
   (let [locale (mf/deref i18n/locale)]
-    [:section.generic-modal.change-email-modal
-     [:span.close {:on-click #(modal/hide!)} i/close]
+    [:div.modal-overlay
+     [:section.generic-modal.change-email-modal
+      [:span.close {:on-click #(modal/hide!)} i/close]
 
-     [:section.modal-content.generic-form
-      [:h2 (t locale "settings.delete-account-title")]
+      [:section.modal-content.generic-form
+       [:h2 (t locale "settings.delete-account-title")]
 
-      [:& msgs/inline-banner
-       {:type :warning
-        :content (t locale "settings.delete-account-info")}]
+       [:& msgs/inline-banner
+        {:type :warning
+         :content (t locale "settings.delete-account-info")}]
 
-      [:div.button-row
-       [:button.btn-warning.btn-large
-        {:on-click #(do
-                      (modal/hide!)
-                      (st/emit! da/request-account-deletion))}
-        (t locale "settings.yes-delete-my-account")]
-       [:button.btn-secondary.btn-large
-        {:on-click #(modal/hide!)}
-        (t locale "settings.cancel-and-keep-my-account")]]]]))
+       [:div.button-row
+        [:button.btn-warning.btn-large
+         {:on-click #(do
+                       (modal/hide!)
+                       (st/emit! da/request-account-deletion))}
+         (t locale "settings.yes-delete-my-account")]
+        [:button.btn-secondary.btn-large
+         {:on-click #(modal/hide!)}
+         (t locale "settings.cancel-and-keep-my-account")]]]]]))

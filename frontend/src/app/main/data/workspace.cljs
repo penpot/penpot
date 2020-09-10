@@ -27,6 +27,7 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.transforms :as dwt]
+   [app.main.data.colors :as dwl]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.streams :as ms]
@@ -1546,5 +1547,7 @@
    "up" #(st/emit! (dwt/move-selected :up false))
    "down" #(st/emit! (dwt/move-selected :down false))
    "right" #(st/emit! (dwt/move-selected :right false))
-   "left" #(st/emit! (dwt/move-selected :left false))})
+   "left" #(st/emit! (dwt/move-selected :left false))
+
+   "i" #(st/emit! (dwl/picker-for-selected-shape ))})
 

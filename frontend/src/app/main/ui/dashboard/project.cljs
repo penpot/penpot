@@ -19,7 +19,6 @@
    [app.main.store :as st]
    [app.main.ui.modal :as modal]
    [app.main.ui.keyboard :as kbd]
-   [app.main.ui.confirm :refer [confirm-dialog]]
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.dashboard.grid :refer [grid]]))
 
@@ -49,7 +48,7 @@
         delete-fn #(do
                      (st/emit! (dsh/delete-project project-id))
                      (st/emit! (rt/nav :dashboard-team {:team-id team-id})))
-        on-delete #(modal/show! confirm-dialog {:on-accept delete-fn})]
+        on-delete #(modal/show! :confirm-dialog {:on-accept delete-fn})]
     [:header.main-bar
      (if (:is-default project)
        [:h1.dashboard-title (t locale "dashboard.header.draft")]

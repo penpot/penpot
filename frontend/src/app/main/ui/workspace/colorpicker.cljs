@@ -19,6 +19,7 @@
    [app.common.uuid :refer [uuid]]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.colors :as dwc]
+   #_[app.main.ui.modal :as modal]
    [app.main.ui.modal :as modal]
    [okulary.core :as l]
    [app.main.refs :as refs]
@@ -105,6 +106,7 @@
         picking-color? (mf/deref refs/picking-color?)
         picked-color (mf/deref refs/picked-color)
         picked-color-select (mf/deref refs/picked-color-select)
+        picked-shift? (mf/deref refs/picked-shift?)
 
         locale    (mf/deref i18n/locale)
 
@@ -158,8 +160,10 @@
 
     ;; When closing the modal we update the recent-color list
     (mf/use-effect
-     (fn [] #(st/emit! (dwc/stop-picker)
-                       (dwl/add-recent-color @value-ref))))
+     (fn [] (fn []
+              (st/emit! (dwc/stop-picker))
+              (when @value-ref
+                  (st/emit! (dwl/add-recent-color @value-ref))))))
 
     (mf/use-effect
      (mf/deps picking-color? picked-color)
@@ -172,12 +176,12 @@
                        :h h :s s :v v
                        :hex hex)
                 (when picked-color-select
-                  (on-change hex (:alpha @current-color)))))))
+                  (on-change hex (:alpha @current-color) picked-shift?))))))
 
     (mf/use-effect
      (mf/deps picking-color? picked-color-select)
-     (fn [] (when picking-color?
-              (on-change (:hex @current-color) (:alpha @current-color)))))
+     (fn [] (when (and picking-color? picked-color-select)
+              (on-change (:hex @current-color) (:alpha @current-color) picked-shift?))))
 
     [:div.colorpicker {:ref ref-picker}
      [:div.top-actions
@@ -350,13 +354,24 @@
   )
 
 (mf/defc colorpicker-modal
+  {::mf/register modal/components
+   ::mf/register-as :colorpicker}
   [{:keys [x y default value opacity page on-change disable-opacity position on-accept] :as props}]
   (let [position (or position :left)
-        style (case position
-                :left {:left (str (- x 270) "px")
-                       :top (str (- y 50) "px")}
-                :right {:left (str (+ x 24) "px")
-                        :top (str (- y 50) "px")})]
+        style (cond
+                (or (nil? x) (nil? y))
+                {:left "auto"
+                 :right "16rem"
+                 :top "4rem"}
+
+                (= position :left)
+                {:left (str (- x 270) "px")
+                 :top (str (- y 50) "px")}
+
+                :else
+                {:left (str (+ x 24) "px")
+                 :top (str (- y 50) "px")})
+        ]
     [:div.colorpicker-tooltip
       {:style (clj->js style)}
       [:& colorpicker {:value (or value default)

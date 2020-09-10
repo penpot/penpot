@@ -27,8 +27,6 @@
    [app.main.ui.keyboard :as kbd]
    [app.main.ui.modal :as modal]
    [app.main.ui.shapes.icon :as icon]
-   [app.main.ui.workspace.libraries :refer [libraries-dialog]]
-   [app.main.ui.workspace.colorpicker :refer [colorpicker-modal]]
    [app.util.data :refer [matches-search]]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
@@ -170,7 +168,7 @@
 
         edit-color-clicked
         (fn [event]
-          (modal/show! colorpicker-modal
+          (modal/show! :colorpicker
                        {:x (.-clientX event)
                         :y (.-clientY event)
                         :on-accept edit-color
@@ -235,7 +233,7 @@
         (mf/use-callback
          (mf/deps file-id)
          (fn [event]
-           (modal/show! colorpicker-modal
+           (modal/show! :colorpicker
                         {:x (.-clientX event)
                          :y (.-clientY event)
                          :on-accept add-color
@@ -372,7 +370,7 @@
        [:div.tool-window-content
         [:div.assets-bar-title
          (t locale "workspace.assets.assets")
-         [:div.libraries-button {:on-click #(modal/show! libraries-dialog {})}
+         [:div.libraries-button {:on-click #(modal/show! :libraries-dialog {})}
           i/libraries
           (t locale "workspace.assets.libraries")]]
 

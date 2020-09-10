@@ -19,7 +19,6 @@
    [app.main.store :as st]
    [app.main.ui.modal :as modal]
    [app.main.ui.keyboard :as kbd]
-   [app.main.ui.confirm :refer [confirm-dialog]]
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.dashboard.grid :refer [grid]]))
 

@@ -16,7 +16,6 @@
    [app.main.data.workspace.common :as dwc]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
-   [app.main.ui.modal :as modal]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
    [app.util.data :refer [classnames]]
    [app.util.dom :as dom]

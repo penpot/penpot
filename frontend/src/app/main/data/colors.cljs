@@ -10,6 +10,7 @@
    [beicon.core :as rx]
    [clojure.set :as set]
    [potok.core :as ptk]
+   [app.main.streams :as ms]
    [app.common.data :as d]
    [app.common.spec :as us]
    [app.main.repo :as rp]
@@ -18,8 +19,9 @@
    [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.time :as dt]
-   [app.common.uuid :as uuid]))
-
+   [app.common.uuid :as uuid]
+   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.texts :as dwt]))
 
 (declare create-color-result)
 
@@ -142,6 +144,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> state
+          (update :workspace-local dissoc :picked-color-select)
+          (update :workspace-local dissoc :picked-shift?)
           (assoc-in [:workspace-local :picking-color?] false)))))
 
 (defn pick-color [rgba]
@@ -151,9 +155,61 @@
       (-> state
           (assoc-in [:workspace-local :picked-color] rgba)))))
 
-(defn pick-color-select [value]
-  (ptk/reify ::pick-color
+(defn pick-color-select [value shift?]
+  (ptk/reify ::pick-color-select
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (assoc-in [:workspace-local :picked-color-select] value)))))
+          (assoc-in [:workspace-local :picked-color-select] value)
+          (assoc-in [:workspace-local :picked-shift?] shift?)))))
+
+
+(defn change-fill-selected [color]
+  (ptk/reify ::change-fill-selected
+    ptk/WatchEvent
+    (watch [_ state s]
+      (let [ids (get-in state [:workspace-local :selected])
+            objects (get-in state [:workspace-data :pages-index (:current-page-id state) :objects])
+            is-text? #(= :text (:type (get objects %)))
+            text-ids (filter is-text? ids)
+            shape-ids (filter (comp not is-text?) ids)
+            update-fn (fn [shape] (assoc shape :fill-color color))
+            editor (get-in state [:workspace-local :editor])
+            converted-attrs {:fill color}]
+        (rx/from (conj
+                  (map #(dwt/update-text-attrs {:id % :editor editor :attrs converted-attrs}) text-ids)
+                  (dwc/update-shapes shape-ids update-fn)))))))
+
+(defn change-stroke-selected [color]
+  (ptk/reify ::change-stroke-selected
+    ptk/WatchEvent
+    (watch [_ state s]
+      (let [ids (get-in state [:workspace-local :selected])
+            update-fn (fn [s]
+                        (cond-> s
+                          true
+                          (assoc :stroke-color color)
+
+                          (= (:stroke-style s) :none)
+                          (assoc :stroke-style "solid"
+                                 :stroke-width 1
+                                 :stroke-opacity 1)))]
+        (rx/of (dwc/update-shapes ids update-fn))))))
+
+(defn picker-for-selected-shape []
+  (let [handle-change-color (fn [color _ shift?]
+                              (st/emit!
+                               (if shift?
+                                 (change-stroke-selected color)
+                                 (change-fill-selected color)
+                                 )
+                               (fn [state] (update state :workspace-local dissoc :modal))))]
+    (ptk/reify ::start-picker
+      ptk/UpdateEvent
+      (update [_ state]
+        (-> state
+            (assoc-in [:workspace-local :picking-color?] true)
+            (assoc-in [:workspace-local :modal] {:id (random-uuid)
+                                                 :type :colorpicker
+                                                 :props {:on-change handle-change-color}
+                                                 :allow-click-outside true}))))))
