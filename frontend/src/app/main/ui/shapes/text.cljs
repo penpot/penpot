@@ -6,16 +6,17 @@
 
 (ns app.main.ui.shapes.text
   (:require
+   [clojure.set :as set]
    [promesa.core :as p]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
    [app.main.data.fetch :as df]
+   [app.main.fonts :as fonts]
+   [app.main.ui.context :as muc]
    [app.common.data :as d]
    [app.common.geom.shapes :as geom]
    [app.common.geom.matrix :as gmt]
-   [app.main.fonts :as fonts]
-   [app.util.object :as obj]
-   [clojure.set :as set]))
+   [app.util.object :as obj]))
 
 ;; --- Text Editor Rendering
 
@@ -114,11 +115,12 @@
   ([node] (render-text-node 0 node))
   ([index {:keys [type text children] :as node}]
    (mf/html
-    (let [embeded-fonts (mf/use-state nil)]
+    (let [embed-resources? (mf/use-ctx muc/embed-ctx)
+          embeded-fonts (mf/use-state nil)]
       (mf/use-effect
        (mf/deps node)
        (fn []
-         (when (= type "root")
+         (when (and embed-resources? (= type "root"))
            (let [font-to-embed (get-all-fonts node)
                  embeded (map embed-font font-to-embed)]
              (-> (p/all embeded)
