@@ -118,6 +118,8 @@
 
 
 (mf/defc libraries-dialog
+  {::mf/register modal/components
+   ::mf/register-as :libraries-dialog}
   [{:keys [] :as ctx}]
   (let [selected-tab (mf/use-state :libraries)
 

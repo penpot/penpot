@@ -26,7 +26,13 @@
    [app.util.router :as rt]
    [app.util.object :as obj]
    [app.util.storage :refer [storage]]
-   [app.util.timers :as ts]))
+   [app.util.timers :as ts]
+
+   ;; MODALS
+   [app.main.ui.settings.delete-account]
+   [app.main.ui.settings.change-email]
+   [app.main.ui.confirm]
+   [app.main.ui.workspace.colorpicker]))
 
 (declare reinit)
 

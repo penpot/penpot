@@ -450,14 +450,13 @@
         (fn [event]
           (dom/prevent-default event)
           (dom/stop-propagation event)
-          (st/emit! (dwc/pick-color-select true)))
+          (st/emit! (dwc/pick-color-select true (kbd/shift? event))))
 
         on-mouse-up-picker
         (fn [event]
           (dom/prevent-default event)
           (dom/stop-propagation event)
-          (st/emit! (dwc/pick-color-select false)
-                    (dwc/stop-picker))
+          (st/emit! (dwc/stop-picker))
           (modal/disallow-click-outside!))]
 
     (mf/use-layout-effect

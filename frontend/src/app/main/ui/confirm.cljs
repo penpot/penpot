@@ -15,6 +15,8 @@
    [app.util.dom :as dom]))
 
 (mf/defc confirm-dialog
+  {::mf/register modal/components
+   ::mf/register-as :confirm-dialog}
   [{:keys [message on-accept on-cancel hint cancel-text accept-text not-danger?] :as ctx}]
   (let [message (or message (tr "ds.confirm-title"))
         cancel-text (or cancel-text (tr "ds.confirm-cancel"))

@@ -98,6 +98,8 @@
     (t locale "settings.close-modal-label")]])
 
 (mf/defc change-email-modal
+  {::mf/register modal/components
+   ::mf/register-as :change-email}
   [props]
   (let [locale (mf/deref i18n/locale)
         profile (mf/deref refs/profile)]

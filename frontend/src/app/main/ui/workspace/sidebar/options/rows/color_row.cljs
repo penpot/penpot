@@ -15,7 +15,6 @@
    [app.util.data :refer [classnames]]
    [app.util.i18n :as i18n :refer [tr]]
    [app.main.ui.modal :as modal]
-   [app.main.ui.workspace.colorpicker :refer [colorpicker-modal]]
    [app.common.data :as d]
    [app.main.refs :as refs]))
 
@@ -30,7 +29,7 @@
                  :value (:value color)
                  :opacity (:opacity color)
                  :disable-opacity disable-opacity}]
-      (modal/show! colorpicker-modal props))))
+      (modal/show! :colorpicker props))))
 
 (defn value-to-background [value]
   (if (= value :multiple) "transparent" value))
@@ -142,12 +141,5 @@
                             :on-click select-all
                             :on-change handle-opacity-change
                             :min "0"
-                            :max "100"}]])
-
-     #_[:input.slidebar {:type "range"
-                       :min "0"
-                       :max "100"
-                       :value (-> opacity opacity->string)
-                       :step "1"
-                       :on-change handle-opacity-change}]]))
+                            :max "100"}]])]))
 

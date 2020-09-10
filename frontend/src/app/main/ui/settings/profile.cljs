@@ -21,8 +21,6 @@
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
    [app.main.ui.modal :as modal]
-   [app.main.ui.settings.change-email :refer [change-email-modal]]
-   [app.main.ui.settings.delete-account :refer [delete-account-modal]]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.i18n :as i18n :refer [tr t]]))
@@ -71,7 +69,7 @@
      (cond
        (nil? (:pending-email prof))
        [:div.change-email
-        [:a {:on-click #(modal/show! change-email-modal {})}
+        [:a {:on-click #(modal/show! :change-email {})}
          (t locale "settings.change-email-label")]]
 
        (not= (:pending-email prof) (:email prof))
@@ -92,7 +90,7 @@
 
      [:div.links
       [:div.link-item
-       [:a {:on-click #(modal/show! delete-account-modal {})}
+       [:a {:on-click #(modal/show! :delete-account {})}
         (t locale "settings.remove-account-label")]]]]))
 
 ;; --- Profile Photo Form

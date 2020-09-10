@@ -18,7 +18,6 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.modal :as modal]
-   [app.main.ui.confirm :refer [confirm-dialog]]
    [app.main.ui.workspace.presence :as presence]
    [app.util.i18n :as i18n :refer [t]]
    [app.util.data :refer [classnames]]
@@ -63,7 +62,7 @@
 
         add-shared-fn #(st/emit! nil (dw/set-file-shared (:id file) true))
         on-add-shared
-        #(modal/show! confirm-dialog
+        #(modal/show! :confirm-dialog
                         {:message (t locale "dashboard.grid.add-shared-message" (:name file))
                          :hint (t locale "dashboard.grid.add-shared-hint")
                          :accept-text (t locale "dashboard.grid.add-shared-accept")
@@ -72,7 +71,7 @@
 
         remove-shared-fn #(st/emit! nil (dw/set-file-shared (:id file) false))
         on-remove-shared
-        #(modal/show! confirm-dialog
+        #(modal/show! :confirm-dialog
                         {:message (t locale "dashboard.grid.remove-shared-message" (:name file))
                          :hint (t locale "dashboard.grid.remove-shared-hint")
                          :accept-text (t locale "dashboard.grid.remove-shared-accept")

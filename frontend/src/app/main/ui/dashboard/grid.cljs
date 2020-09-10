@@ -15,7 +15,6 @@
    [app.main.fonts :as fonts]
    [app.main.store :as st]
    [app.main.ui.components.context-menu :refer [context-menu]]
-   [app.main.ui.confirm :refer [confirm-dialog]]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
    [app.main.ui.modal :as modal]
@@ -73,7 +72,7 @@
          (mf/deps id)
          (fn [event]
            (dom/stop-propagation event)
-           (modal/show! confirm-dialog {:on-accept delete})))
+           (modal/show! :confirm-dialog {:on-accept delete})))
 
         on-navigate
         (mf/use-callback
@@ -89,7 +88,7 @@
          (mf/deps id)
          (fn [event]
            (dom/stop-propagation event)
-           (modal/show! confirm-dialog
+           (modal/show! :confirm-dialog
                         {:message (t locale "dashboard.grid.add-shared-message" (:name file))
                          :hint (t locale "dashboard.grid.add-shared-hint")
                          :accept-text (t locale "dashboard.grid.add-shared-accept")
@@ -108,7 +107,7 @@
          (mf/deps id)
          (fn [event]
            (dom/stop-propagation event)
-           (modal/show! confirm-dialog
+           (modal/show! :confirm-dialog
                         {:message (t locale "dashboard.grid.remove-shared-message" (:name file))
                          :hint (t locale "dashboard.grid.remove-shared-hint")
                          :accept-text (t locale "dashboard.grid.remove-shared-accept")

@@ -13,7 +13,6 @@
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.confirm :refer [confirm-dialog]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
@@ -34,7 +33,7 @@
         id          (:id page)
 
         delete-fn   (mf/use-callback (mf/deps id) #(st/emit! (dw/delete-page id)))
-        on-delete   (mf/use-callback (mf/deps id) #(modal/show! confirm-dialog {:on-accept delete-fn}))
+        on-delete   (mf/use-callback (mf/deps id) #(modal/show! :confirm-dialog {:on-accept delete-fn}))
         navigate-fn (mf/use-callback (mf/deps id) #(st/emit! (dw/go-to-page id)))
 
         on-double-click
