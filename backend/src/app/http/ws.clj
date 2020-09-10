@@ -27,14 +27,24 @@
 (s/def ::websocket-params
   (s/keys :req-un [::file-id ::session-id]))
 
+(def sql:retrieve-file
+  "select f.id as id,
+          p.team_id as team_id
+     from file as f
+     join project as p on (p.id = f.project_id)
+    where f.id = ?")
+
+(defn retrieve-file
+  [conn id]
+  (db/exec-one! conn [sql:retrieve-file id]))
+
 (defn websocket
   [{:keys [profile-id] :as req}]
   (let [params (us/conform ::websocket-params (:params req))
-        file   (db/get-by-id db/pool :file (:file-id params))
+        file   (retrieve-file db/pool (:file-id params))
         params (assoc params
                       :profile-id profile-id
-                      :file file)]
-
+                      :team-id (:team-id file))]
     (cond
       (not profile-id)
       {:error {:code 403 :message "Authentication required"}}

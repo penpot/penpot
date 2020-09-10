@@ -22,32 +22,38 @@
    io.lettuce.core.pubsub.api.sync.RedisPubSubCommands
    ))
 
-(defrecord Client [client uri]
-  java.lang.AutoCloseable
-  (close [_]
-    (.shutdown ^RedisClient client)))
+(defrecord Client [^RedisClient inner
+                   ^RedisURI uri]
+  clojure.lang.IDeref
+  (deref [_] inner)
 
-(defrecord Connection [^RedisAsyncCommands cmd]
   java.lang.AutoCloseable
   (close [_]
-    (let [conn (.getStatefulConnection cmd)]
-      (.close ^StatefulRedisConnection conn))))
+    (.shutdown inner)))
+
+(defrecord Connection [^StatefulRedisConnection inner
+                       ^RedisAsyncCommands cmd]
+  clojure.lang.IDeref
+  (deref [_] inner)
+
+  java.lang.AutoCloseable
+  (close [_]
+    (.close ^StatefulRedisConnection inner)))
 
 (defn client
   [uri]
-  (->Client (RedisClient/create) (RedisURI/create uri)))
+  (->Client (RedisClient/create)
+            (RedisURI/create uri)))
 
 (defn connect
-  [client]
-  (let [^RedisURI uri (:uri client)
-        ^RedisClient client (:client client)
-        ^StatefulRedisConnection conn (.connect client StringCodec/UTF8 uri)]
-    (->Connection (.async conn))))
+  [{:keys [uri] :as client}]
+  (let [conn (.connect ^RedisClient @client StringCodec/UTF8 ^RedisURI uri)]
+    (->Connection conn (.async ^StatefulRedisConnection conn))))
 
 (defn- impl-subscribe
-  [^String topic xf ^StatefulRedisPubSubConnection conn]
+  [topics xform ^StatefulRedisPubSubConnection conn]
   (let [cmd    (.sync conn)
-        output (a/chan 1 (comp (filter string?) xf))
+        output (a/chan 1 (comp (filter string?) xform))
         buffer (a/chan (a/sliding-buffer 64))
         sub    (reify RedisPubSubListener
                  (message [it pattern channel message])
@@ -60,8 +66,8 @@
                  (punsubscribed [it pattern count])
                  (subscribed [it channel count])
                  (unsubscribed [it channel count]))]
-    (.addListener conn sub)
 
+    ;; Start message event-loop (with keepalive mechanism)
     (a/go-loop []
       (let [[val port] (a/alts! [buffer (a/timeout 5000)])
             message (if (= port buffer) val ::keepalive)]
@@ -73,17 +79,20 @@
             (when (.isOpen conn)
               (.close conn))))))
 
-    (.subscribe ^RedisPubSubCommands cmd (into-array String [topic]))
+    ;; Synchronously subscribe to topics
+    (.addListener conn sub)
+    (.subscribe ^RedisPubSubCommands cmd topics)
+
+    ;; Return the output channel
     output))
 
 (defn subscribe
-  ([client topic]
-   (subscribe client topic (map identity)))
-  ([client topic xf]
-   (let [^RedisURI uri (:uri client)
-         ^RedisClient client (:client client)]
-     (->> (.connectPubSub client StringCodec/UTF8 uri)
-          (impl-subscribe topic xf)))))
+  [{:keys [uri] :as client} {:keys [topic topics xform]}]
+  (let [topics (if (vector? topics)
+                 (into-array String (map str topics))
+                 (into-array String [(str topics)]))]
+    (->> (.connectPubSub ^RedisClient @client StringCodec/UTF8 ^RedisURI uri)
+         (impl-subscribe topics xform))))
 
 (defn- resolve-to-bool
   [v]
