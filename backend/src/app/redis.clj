@@ -35,10 +35,8 @@
 ;; --- API FORWARD
 
 (defn subscribe
-  ([topic]
-   (redis/subscribe client topic))
-  ([topic xf]
-   (redis/subscribe client topic xf)))
+  [opts]
+  (redis/subscribe client opts))
 
 (defn run!
   [cmd params]
