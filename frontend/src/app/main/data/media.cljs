@@ -20,8 +20,7 @@
    [app.util.router :as rt]
    [app.common.uuid :as uuid]
    [app.util.time :as ts]
-   [app.util.router :as r]
-   [app.util.files :as files]))
+   [app.util.router :as r]))
 
 ;; --- Specs
 

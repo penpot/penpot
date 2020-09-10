@@ -14,7 +14,6 @@
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [app.common.geom.point :as gpt]
-   [app.util.blob :as blob]
    [app.util.transit :as ts]))
 
 ;; --- Deprecated methods

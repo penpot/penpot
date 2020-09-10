@@ -10,9 +10,10 @@
 (ns app.util.websockets
   "A interface to webworkers exposed functionality."
   (:require
-   [goog.events :as ev]
    [app.config :as cfg]
+   [app.util.transit :as t]
    [beicon.core :as rx]
+   [goog.events :as ev]
    [potok.core :as ptk])
   (:import
    goog.Uri
@@ -63,3 +64,11 @@
         (ev/unlistenByKey lk1)
         (ev/unlistenByKey lk2)
         (ev/unlistenByKey lk3)))))
+
+(defn message?
+  [msg]
+  (= (:type msg) :message))
+
+(defn send!
+  [ws msg]
+  (-send ws (t/encode msg)))

@@ -178,15 +178,12 @@
             objects  (dwc/lookup-page-objects state page-id)
             group    (get objects group-id)
             children (map #(get objects %) (:shapes group))
-
-            ;; TODO: consider using d/seek instead of filter+first
-            selected (->> children (filter #(geom/has-point? % position)) first)]
+            selected (d/seek #(geom/has-point? % position) children)]
         (when selected
           (rx/of deselect-all (select-shape (:id selected))))))))
 
 
 ;; --- Duplicate Shapes
-;; (declare prepare-duplicate-changes)
 (declare prepare-duplicate-change)
 (declare prepare-duplicate-frame-change)
 (declare prepare-duplicate-shape-change)
