@@ -20,7 +20,6 @@
    [app.main.ui.workspace.shapes.common :as common]
    [app.main.data.workspace.drawing :as dr]
    [app.util.dom :as dom]
-   [app.util.interop :as itr]
    [app.main.streams :as ms]
    [app.util.timers :as ts]))
 

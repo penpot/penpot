@@ -11,6 +11,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
+   [app.common.pages :as cp]
    [app.common.spec :as us]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.persistence :as dwp]
@@ -26,8 +27,7 @@
    [clojure.set :as set]
    [potok.core :as ptk]))
 
-;; TODO: this module need to be revisited.
-
+(declare process-message)
 (declare handle-presence)
 (declare handle-pointer-update)
 (declare handle-file-change)
@@ -57,30 +57,45 @@
               (->> (rx/timer interval interval)
                    (rx/map #(send-keepalive file-id)))
               (->> (ws/-stream wsession)
-                   (rx/filter #(= :message (:type %)))
+                   (rx/filter ws/message?)
                    (rx/map (comp t/decode :payload))
                    (rx/filter #(s/valid? ::message %))
-                   (rx/map (fn [{:keys [type] :as msg}]
-                             (case type
-                               :presence (handle-presence msg)
-                               :pointer-update (handle-pointer-update msg)
-                               :file-change (handle-file-change msg)
-                               ::unknown))))
-
+                   (rx/map process-message))
               (->> stream
                    (rx/filter ms/pointer-event?)
                    (rx/sample 50)
                    (rx/map #(handle-pointer-send file-id (:pt %)))))
-
              (rx/take-until stoper))))))
 
-(defn send-keepalive
+(defn- process-message
+  [{:keys [type] :as msg}]
+  (case type
+    :presence (handle-presence msg)
+    :pointer-update (handle-pointer-update msg)
+    :file-change (handle-file-change msg)
+    ::unknown))
+
+(defn- send-keepalive
   [file-id]
   (ptk/reify ::send-keepalive
     ptk/EffectEvent
     (effect [_ state stream]
       (when-let [ws (get-in state [:ws file-id])]
-        (ws/-send ws (t/encode {:type :keepalive}))))))
+        (ws/send! ws {:type :keepalive})))))
+
+(defn- handle-pointer-send
+  [file-id point]
+  (ptk/reify ::handle-pointer-update
+    ptk/EffectEvent
+    (effect [_ state stream]
+      (let [ws (get-in state [:ws file-id])
+            sid (:session-id state)
+            pid (:current-page-id state)
+            msg {:type :pointer-update
+                 :page-id pid
+                 :x (:x point)
+                 :y (:y point)}]
+        (ws/send! ws msg)))))
 
 ;; --- Finalize Websocket
 
@@ -159,24 +174,19 @@
                           :updated-at (dt/now)
                           :page-id page-id))))))
 
-(defn handle-pointer-send
-  [file-id point]
-  (ptk/reify ::handle-pointer-update
-    ptk/EffectEvent
-    (effect [_ state stream]
-      (let [ws (get-in state [:ws file-id])
-            sid (:session-id state)
-            pid (:current-page-id state)
-            msg {:type :pointer-update
-                 :page-id pid
-                 :x (:x point)
-                 :y (:y point)}]
-        (ws/-send ws (t/encode msg))))))
+(s/def ::type keyword?)
+(s/def ::profile-id uuid?)
+(s/def ::file-id uuid?)
+(s/def ::session-id uuid?)
+(s/def ::revn integer?)
+(s/def ::changes ::cp/changes)
 
-;; TODO: add specs
+(s/def ::file-change-event
+  (s/keys :req-un [::type ::profile-id ::file-id ::session-id ::revn ::changes]))
 
 (defn handle-file-change
   [{:keys [file-id changes] :as msg}]
+  (us/assert ::file-change-event msg)
   (ptk/reify ::handle-file-change
     ptk/WatchEvent
     (watch [_ state stream]
