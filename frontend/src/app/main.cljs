@@ -32,7 +32,8 @@
    [app.main.ui.settings.delete-account]
    [app.main.ui.settings.change-email]
    [app.main.ui.confirm]
-   [app.main.ui.workspace.colorpicker]))
+   [app.main.ui.workspace.colorpicker]
+   [app.main.ui.workspace.libraries]))
 
 (declare reinit)
 

@@ -16,49 +16,26 @@
    [app.main.ui.keyboard :as k]
    [app.util.dom :as dom]
    [app.main.refs :as refs]
-   [potok.core :as ptk])
+   [potok.core :as ptk]
+   [app.main.data.modal :as mdm])
   (:import goog.events.EventType))
 
 (defonce components (atom {}))
 
-(defn show-modal [id type props]
-  (ptk/reify ::show-modal
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (assoc-in [:workspace-local :modal] {:id id
-                                               :type type
-                                               :props props
-                                               :allow-click-outside false})))))
-
-(defn hide-modal []
-  (ptk/reify ::hide-modal
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (update :workspace-local dissoc :modal)))))
-
-(defn update-modal [options]
-  (ptk/reify ::hide-modal
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (update-in [:workspace-local :modal] merge options)))))
-
 (defn show!
   ([type props]
    (let [id    (random-uuid)]
-     (st/emit! (show-modal id type props)))))
+     (st/emit! (mdm/show-modal id type props)))))
 
 (defn allow-click-outside! []
-  (st/emit! (update-modal {:allow-click-outside true})))
+  (st/emit! (mdm/update-modal {:allow-click-outside true})))
 
 (defn disallow-click-outside! []
-  (st/emit! (update-modal {:allow-click-outside false})))
+  (st/emit! (mdm/update-modal {:allow-click-outside false})))
 
 (defn hide!
   []
-  (st/emit! (hide-modal)))
+  (st/emit! (mdm/hide-modal)))
 
 (defn- on-esc-clicked
   [event]
@@ -117,10 +94,11 @@
 
 
 (def modal-ref
-  (l/derived :modal refs/workspace-local))
+  (l/derived ::mdm/modal st/state))
 
 (mf/defc modal
   []
   (let [modal (mf/deref modal-ref)]
+    (println "modal" modal)
     (when modal [:& modal-wrapper {:data modal
                                    :key (:id modal)}])))

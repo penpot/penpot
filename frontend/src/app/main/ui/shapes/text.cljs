@@ -114,18 +114,18 @@
 (defn- render-text-node
   ([node] (render-text-node 0 node))
   ([index {:keys [type text children] :as node}]
-   (mf/html
-    (let [embed-resources? (mf/use-ctx muc/embed-ctx)
-          embeded-fonts (mf/use-state nil)]
-      (mf/use-effect
-       (mf/deps node)
-       (fn []
-         (when (and embed-resources? (= type "root"))
-           (let [font-to-embed (get-all-fonts node)
-                 embeded (map embed-font font-to-embed)]
-             (-> (p/all embeded)
-                 (p/then (fn [result] (reset! embeded-fonts (str/join "\n" result)))))))))
+   (let [embed-resources? (mf/use-ctx muc/embed-ctx)
+         embeded-fonts (mf/use-state nil)]
+     (mf/use-effect
+      (mf/deps node)
+      (fn []
+        (when (and embed-resources? (= type "root"))
+          (let [font-to-embed (get-all-fonts node)
+                embeded (map embed-font font-to-embed)]
+            (-> (p/all embeded)
+                (p/then (fn [result] (reset! embeded-fonts (str/join "\n" result)))))))))
 
+     (mf/html
       (if (string? text)
         (let [style (generate-text-styles (clj->js node))]
           [:span {:style style :key index} text])
@@ -138,10 +138,9 @@
                {:key index
                 :style style
                 :xmlns "http://www.w3.org/1999/xhtml"}
-               [:*
-                (when (not (nil? @embeded-fonts))
+               (when (not (nil? @embeded-fonts))
                   [:style @embeded-fonts])
-                children]])
+               children])
 
             "paragraph-set"
             (let [style #js {:display "inline-block"
