@@ -173,8 +173,6 @@ case $1 in
         build-testenv ${@:2}
         ;;
 
-
-
     ## testin related commands
 
     # run-all-tests)

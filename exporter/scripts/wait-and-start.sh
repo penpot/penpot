@@ -11,6 +11,6 @@ wait_file() {
   ((++wait_seconds))
 }
 
-wait_file "target/exporter.js" 120 && {
-  node target/exporter.js
+wait_file "target/app.js" 120 && {
+  node target/app.js
 }

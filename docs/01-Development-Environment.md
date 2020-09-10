@@ -171,7 +171,7 @@ the sources and dependencies of the platform ready to be deployed):
 
 This will generate on current directory one file and one
 directory. The most important is the file like
-`uxbox-2020.09.09-1343.tar.xz`. 
+`uxbox-2020.09.09-1343.tar.xz`.
 
 Then, let's proceed to build the docker images with the bundle
 generated from the previous step.
