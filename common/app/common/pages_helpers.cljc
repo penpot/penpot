@@ -174,6 +174,7 @@
 
   Returns the cloned object, the list of all new objects (including
   the cloned one), and possibly a list of original objects modified."
+
   ([object parent-id objects xf-new-object]
    (clone-object object parent-id objects xf-new-object identity))
 

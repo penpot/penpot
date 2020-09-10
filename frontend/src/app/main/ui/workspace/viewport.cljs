@@ -495,8 +495,8 @@
                                           (assoc :y final-y)))))
 
             (dnd/has-type? event "app/component")
-            (let [component-id (dnd/get-data event "app/component")]
-              (st/emit! (dwl/instantiate-component component-id)))
+            (let [{:keys [component-id file-id]} (dnd/get-data event "app/component")]
+              (st/emit! (dwl/instantiate-component file-id component-id)))
 
             (dnd/has-type? event "text/uri-list")
             (let [data (dnd/get-data event "text/uri-list")

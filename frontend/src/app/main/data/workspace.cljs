@@ -28,7 +28,7 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.transforms :as dwt]
-   [app.main.data.colors :as dwl]
+   [app.main.data.colors :as mdc]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.streams :as ms]
@@ -1130,8 +1130,14 @@
   (ptk/reify ::show-context-menu
     ptk/UpdateEvent
     (update [_ state]
-      (let [mdata {:position position
+      (let [page-id    (:current-page-id state)
+            objects    (dwc/lookup-page-objects state page-id)
+            root-id    (cph/get-root-component (:id shape) objects)
+            root-shape (get objects root-id)
+
+            mdata {:position position
                    :shape shape
+                   :root-shape root-shape
                    :selected (get-in state [:workspace-local :selected])}]
         (-> state
             (assoc-in [:workspace-local :context-menu] mdata))))
@@ -1467,5 +1473,5 @@
    "right" #(st/emit! (dwt/move-selected :right false))
    "left" #(st/emit! (dwt/move-selected :left false))
 
-   "i" #(st/emit! (dwl/picker-for-selected-shape ))})
+   "i" #(st/emit! (mdc/picker-for-selected-shape ))})
 

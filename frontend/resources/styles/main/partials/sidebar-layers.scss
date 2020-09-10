@@ -111,7 +111,7 @@
 .element-list li.component {
 
   .element-list-body {
-    .element-name {
+    span.element-name {
       color: $color-component;
     }
 
@@ -120,7 +120,7 @@
     }
 
     &.selected {
-      .element-name {
+      span.element-name {
         color: $color-component-highlight;
       }
 
@@ -132,7 +132,7 @@
     &:hover {
       background-color: $color-component-highlight;
 
-      .element-name {
+      span.element-name {
         color: $color-gray-60;
       }
 

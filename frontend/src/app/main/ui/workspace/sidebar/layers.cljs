@@ -297,6 +297,8 @@
                                     :content
                                     :parent-id
                                     :component-id
+                                    :component-file
+                                    :shape-ref
                                     :metadata])]
     (persistent!
      (reduce-kv (fn [res id obj]

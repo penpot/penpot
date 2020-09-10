@@ -176,9 +176,7 @@
         grid-auto-rows: 10vh;
 
         .grid-cell {
-          background-color: transparent;
-          border: 1px solid $color-gray-40;
-          border-radius: 4px;
+          padding: $x-small;
 
           & svg {
             height: 10vh;

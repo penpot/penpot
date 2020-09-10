@@ -50,8 +50,8 @@
         (mf/use-callback
          (mf/deps state)
          (fn []
-           (let [params {:id (:component-id @state)}]
-             (st/emit! (dwl/delete-component params)))))
+           (st/emit! (dwl/delete-component {:id (:component-id @state)}))
+           (st/emit! (dwl/sync-file {:file-id nil}))))
 
         on-context-menu
         (mf/use-callback
@@ -70,7 +70,8 @@
         on-drag-start
         (mf/use-callback
          (fn [component-id event]
-           (dnd/set-data! event "app/component" component-id)
+           (dnd/set-data! event "app/component" {:file-id (if local? nil file-id)
+                                                 :component-id component-id})
            (dnd/set-allowed-effect! event "move")))]
 
     [:div.asset-group
@@ -363,26 +364,26 @@
 
 (mf/defc file-library
   [{:keys [file local? open? filters locale] :as props}]
-  (let [open?              (mf/use-state open?)
-        shared?            (:is-shared file)
-        router             (mf/deref refs/router)
-        toggle-open        #(swap! open? not)
+  (let [open?          (mf/use-state open?)
+        shared?        (:is-shared file)
+        router         (mf/deref refs/router)
+        toggle-open    #(swap! open? not)
 
-        toggles (mf/use-state #{:graphics :colors})
+        toggles        (mf/use-state #{:graphics :colors})
 
-        url                (rt/resolve router :workspace
-                                       {:project-id (:project-id file)
-                                        :file-id (:id file)}
-                                       {:page-id (get-in file [:data :pages 0])})
+        url            (rt/resolve router :workspace
+                                   {:project-id (:project-id file)
+                                    :file-id (:id file)}
+                                   {:page-id (get-in file [:data :pages 0])})
 
-        colors-ref         (mf/use-memo (mf/deps (:id file)) #(file-colors-ref (:id file)))
-        colors             (apply-filters (mf/deref colors-ref) filters)
+        colors-ref     (mf/use-memo (mf/deps (:id file)) #(file-colors-ref (:id file)))
+        colors         (apply-filters (mf/deref colors-ref) filters)
 
-        media-ref          (mf/use-memo (mf/deps (:id file)) #(file-media-ref (:id file)))
-        media              (apply-filters (mf/deref media-ref) filters)
+        media-ref      (mf/use-memo (mf/deps (:id file)) #(file-media-ref (:id file)))
+        media          (apply-filters (mf/deref media-ref) filters)
 
-        components-ref     (mf/use-memo (mf/deps (:id file)) #(file-components-ref (:id file)))
-        components         (apply-filters (mf/deref components-ref) filters)]
+        components-ref (mf/use-memo (mf/deps (:id file)) #(file-components-ref (:id file)))
+        components     (apply-filters (mf/deref components-ref) filters)]
 
     [:div.tool-window
      [:div.tool-window-bar

@@ -16,6 +16,7 @@
    [potok.core :as ptk]
    [reitit.core :as r]
    [app.common.data :as d]
+   [app.config :as cfg]
    [app.util.browser-history :as bhistory]
    [app.util.timers :as ts])
   (:import
@@ -111,6 +112,19 @@
   ([id params qparams] (Navigate. id params qparams true)))
 
 (def navigate nav)
+
+(deftype NavigateNewWindow [id params qparams]
+  ptk/EffectEvent
+  (effect [_ state stream]
+    (let [router (:router state)
+          path   (resolve router id params qparams)
+          uri    (str cfg/public-uri "/#" path)]
+      (js/window.open uri "_blank"))))
+
+(defn nav-new-window
+  ([id] (nav-new-window id nil nil))
+  ([id params] (nav-new-window id params nil))
+  ([id params qparams] (NavigateNewWindow. id params qparams)))
 
 ;; --- History API
 
