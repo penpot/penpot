@@ -24,6 +24,21 @@
    [app.main.refs :as refs]
    [app.util.i18n :as i18n :refer [t]]))
 
+;; --- Refs
+
+(def picking-color?
+  (l/derived :picking-color? refs/workspace-local))
+
+(def picked-color
+  (l/derived :picked-color refs/workspace-local))
+
+(def picked-color-select
+  (l/derived :picked-color-select refs/workspace-local))
+
+(def picked-shift?
+  (l/derived :picked-shift? refs/workspace-local))
+
+
 ;; --- Color Picker Modal
 
 (mf/defc value-selector [{:keys [hue saturation value on-change]}]
@@ -102,10 +117,10 @@
         shared-libs (mf/deref refs/workspace-libraries)
         recent-colors (mf/deref refs/workspace-recent-colors)
 
-        picking-color? (mf/deref refs/picking-color?)
-        picked-color (mf/deref refs/picked-color)
-        picked-color-select (mf/deref refs/picked-color-select)
-        picked-shift? (mf/deref refs/picked-shift?)
+        picking-color? (mf/deref picking-color?)
+        picked-color (mf/deref picked-color)
+        picked-color-select (mf/deref picked-color-select)
+        picked-shift? (mf/deref picked-shift?)
 
         locale    (mf/deref i18n/locale)
 

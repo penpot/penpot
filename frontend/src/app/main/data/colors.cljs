@@ -21,7 +21,8 @@
    [app.util.time :as dt]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.texts :as dwt]))
+   [app.main.data.workspace.texts :as dwt]
+   [app.main.data.modal :as md]))
 
 (declare create-color-result)
 
@@ -201,15 +202,14 @@
                               (st/emit!
                                (if shift?
                                  (change-stroke-selected color)
-                                 (change-fill-selected color)
-                                 )
-                               (fn [state] (update state :workspace-local dissoc :modal))))]
+                                 (change-fill-selected color))
+                               (md/hide-modal)))]
     (ptk/reify ::start-picker
       ptk/UpdateEvent
       (update [_ state]
         (-> state
             (assoc-in [:workspace-local :picking-color?] true)
-            (assoc-in [:workspace-local :modal] {:id (random-uuid)
-                                                 :type :colorpicker
-                                                 :props {:on-change handle-change-color}
-                                                 :allow-click-outside true}))))))
+            (assoc ::md/modal {:id (random-uuid)
+                               :type :colorpicker
+                               :props {:on-change handle-change-color}
+                               :allow-click-outside true}))))))
