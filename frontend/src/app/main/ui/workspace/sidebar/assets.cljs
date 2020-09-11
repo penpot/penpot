@@ -18,6 +18,7 @@
    [app.config :as cfg]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.colors :as dc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.context-menu :refer [context-menu]]
@@ -124,7 +125,7 @@
 
 
 (mf/defc color-item
-  [{:keys [color local? locale] :as props}]
+  [{:keys [color local? locale file-id] :as props}]
   (let [rename?   (= (:color-for-rename @refs/workspace-local) (:id color))
         id        (:id color)
         input-ref (mf/use-ref)
@@ -132,6 +133,12 @@
                                  :top nil
                                  :left nil
                                  :editing rename?})
+
+        click-color
+        (fn [event]
+          (if (kbd/shift? event)
+            (st/emit! (dc/change-stroke-selected (:value color) id (if local? nil file-id)))
+            (st/emit! (dc/change-fill-selected (:value color) id (if local? nil file-id)))))
 
         rename-color
         (fn [name]
@@ -147,8 +154,9 @@
 
         rename-color-clicked
         (fn [event]
-          (dom/prevent-default event)
-          (swap! state assoc :editing true))
+          (when local?
+            (dom/prevent-default event)
+            (swap! state assoc :editing true)))
 
         input-blur
         (fn [event]
@@ -206,7 +214,8 @@
          :auto-focus true
          :default-value (:name color "")}]
        [:div.name-block
-        {:on-double-click rename-color-clicked}
+        {:on-double-click rename-color-clicked
+         :on-click click-color}
         (:name color)
         (when-not (= (:name color) (:value color))
           [:span (:value color)])])
@@ -250,6 +259,7 @@
       (for [color colors]
         [:& color-item {:key (:id color)
                         :color color
+                        :file-id file-id
                         :local? local?
                         :locale locale}])]]))
 
@@ -407,6 +417,7 @@
         {:key (:id file)
          :file file
          :local? false
+         :locale locale
          :open? false
          :filters @filters}])]))
 
