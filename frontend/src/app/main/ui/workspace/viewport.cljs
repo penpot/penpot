@@ -220,14 +220,14 @@
           (st/emit! (dwc/stop-picker))
           (modal/disallow-click-outside!))]
 
-    (mf/use-effect
+    (mf/use-layout-effect
      ;; Everytime we finish retrieving a new URL we redraw the canvas
      ;; so even if we're not finished the user can start to pick basic
      ;; shapes
-     (mf/deps fetch-pending)
+     (mf/deps props fetch-pending)
      (fn []
        (try
-         (timers/raf
+         (timers/schedule 100
           #(let [svg-node (mf/ref-val svg-ref)
                  canvas-node (mf/ref-val canvas-ref)
                  canvas-context (.getContext canvas-node "2d")
@@ -481,7 +481,6 @@
         (fn [event]
           (dom/prevent-default event)
           (cond
-
             (dnd/has-type? event "app/shape")
             (let [shape (dnd/get-data event "app/shape")
                   point (gpt/point (.-clientX event) (.-clientY event))
@@ -551,7 +550,8 @@
        [:& pixel-picker-overlay {:vport vport
                                  :vbox vbox
                                  :viewport-ref viewport-ref
-                                 :options options}])
+                                 :options options
+                                 :layout layout}])
 
      [:svg.viewport
       {:preserveAspectRatio "xMidYMid meet"
