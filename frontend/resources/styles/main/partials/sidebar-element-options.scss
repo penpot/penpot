@@ -373,7 +373,7 @@
     width: 60%;
 
     svg {
-      fill: $color-gray-40;
+      fill: $color-gray-10;
       height: 10px;
       width: 10px;
     }
@@ -383,6 +383,11 @@
       position: absolute;
       top: -1px;
       width: 60%;
+    }
+
+    input.input-text {
+        border: none;
+        background: none;
     }
 
     .input-select {
@@ -404,12 +409,12 @@
 
     .dropdown-button {
       position: absolute;
-      top: 4px;
       right: 0;
+      padding-right: 4px;
     }
 
     &.input-option {
-      height: 2rem;
+      height: 26px;
       border-bottom: 1px solid #64666A;
       width: 100%;
       margin-left: 0.25rem;
@@ -431,6 +436,15 @@
 }
 
 .element-set-content .grid-option-main  {
+  .editable-select {
+    height: 2rem;
+  }
+  .editable-select svg {
+      fill: $color-gray-40;
+  }
+  .dropdown-button {
+      top: 4px;
+  }
   .editable-select.input-option .input-text {
     padding: 0;
     padding-top: 0.18rem;
@@ -689,6 +703,7 @@
   &:hover {
     background: $color-gray-60;
 
+    
     .custom-select,
     .editable-select,
     input {

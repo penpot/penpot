@@ -20,6 +20,7 @@
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.fill :refer [fill-menu]]
+   [app.main.ui.components.editable-select :refer [editable-select]]
    [app.util.dom :as dom]
    [app.main.fonts :as fonts]
    [app.util.i18n :as i18n :refer [tr t]]
@@ -90,15 +91,13 @@
                 (fonts/ensure-loaded! new-font-id (partial change-font new-font-id))))))
 
         on-font-size-change
-        (fn [event]
-          (let [new-font-size (-> (dom/get-target event)
-                                  (dom/get-value))]
-            (when-not (str/empty? new-font-size)
-              (run! #(st/emit! (dwt/update-text-attrs
-                                 {:id %
-                                  :editor editor
-                                  :attrs {:font-size new-font-size}}))
-                    ids))))
+        (fn [new-font-size]
+          (when-not (str/empty? new-font-size)
+            (run! #(st/emit! (dwt/update-text-attrs
+                              {:id %
+                               :editor editor
+                               :attrs {:font-size (str new-font-size)}}))
+                  ids)))
 
         on-font-variant-change
         (fn [event]
@@ -125,28 +124,15 @@
        [:& font-select-optgroups]]]
 
      [:div.row-flex
-      [:div.editable-select
-       [:select.input-select {:value (attr->string font-size)
-                              :on-change on-font-size-change}
-        (when (= font-size :multiple)
-          [:option {:value ""} "--"])
-        [:option {:value "8"} "8"]
-        [:option {:value "9"} "9"]
-        [:option {:value "10"} "10"]
-        [:option {:value "11"} "11"]
-        [:option {:value "12"} "12"]
-        [:option {:value "14"} "14"]
-        [:option {:value "18"} "18"]
-        [:option {:value "24"} "24"]
-        [:option {:value "36"} "36"]
-        [:option {:value "48"} "48"]
-        [:option {:value "72"} "72"]]
-       [:input.input-text {:type "number"
-                           :min "0"
-                           :max "200"
-                           :value font-size
-                           :placeholder "--"
-                           :on-change on-font-size-change}]]
+      (let [size-options [8 9 10 11 12 14 18 24 36 48 72]
+            size-options (if (= font-size :multiple) (concat [{:value "" :label "--"}] size-options) size-options)]
+        [:& editable-select
+         {:value (attr->string font-size)
+          :class "input-option"
+          :options size-options
+          :type "number"
+          :placeholder "--"
+          :on-change on-font-size-change}])
 
       [:select.input-select {:value (attr->string font-variant-id)
                              :on-change on-font-variant-change}

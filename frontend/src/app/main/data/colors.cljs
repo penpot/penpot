@@ -197,7 +197,7 @@
                                  :stroke-color-ref-file file-id)
 
                           (= (:stroke-style s) :none)
-                          (assoc :stroke-style "solid"
+                          (assoc :stroke-style :solid
                                  :stroke-width 1
                                  :stroke-opacity 1)))]
         (rx/of (dwc/update-shapes ids update-fn))))))
