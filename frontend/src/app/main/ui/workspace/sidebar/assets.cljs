@@ -181,7 +181,7 @@
           (when local?
             (let [pos (dom/get-client-position event)
                   top (:y pos)
-                  left (- (:x pos) 20)]
+                  left (+ 10 (:x pos))]
               (dom/prevent-default event)
               (swap! state assoc
                      :menu-open true
@@ -250,7 +250,8 @@
       (for [color colors]
         [:& color-item {:key (:id color)
                         :color color
-                        :local? local?}])]]))
+                        :local? local?
+                        :locale locale}])]]))
 
 (defn file-colors-ref
   [id]
