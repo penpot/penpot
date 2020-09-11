@@ -42,8 +42,9 @@
   [{:keys [ids type values editor] :as props}]
   (let [locale    (mf/deref i18n/locale)
         shapes    (deref (refs/objects-by-id ids))
-        text-ids  (map :id (filter #(= (:type %) :text) shapes))
-        other-ids (map :id (filter #(not= (:type %) :text) shapes))
+        is-text? #(= (:type %) :text)
+        text-ids  (map :id (filter is-text? shapes))
+        other-ids (map :id (filter (comp not is-text?) shapes))
         show?     (not (nil? (:fill-color values)))
 
         label (case type
@@ -60,14 +61,29 @@
         (mf/use-callback
          (mf/deps ids)
          (fn [event]
-           (st/emit! (dwc/update-shapes ids #(assoc % :fill-color cp/default-color)))))
+           (when-not (empty? other-ids)
+             (st/emit! (dwc/update-shapes other-ids #(assoc % :fill-color cp/default-color))))
 
+           (when-not (empty? text-ids)
+             (run! #(st/emit! (dwt/update-text-attrs
+                               {:id %
+                                :editor editor
+                                :attrs {:fill cp/default-color}}))
+                   text-ids))))
 
         on-delete
         (mf/use-callback
          (mf/deps ids)
          (fn [event]
-           (st/emit! (dwc/update-shapes ids #(dissoc % :fill-color)))))
+           (when-not (empty? other-ids)
+             (st/emit! (dwc/update-shapes other-ids #(dissoc % :fill-color))))
+
+           (when-not (empty? text-ids)
+             (run! #(st/emit! (dwt/update-text-attrs
+                               {:id %
+                                :editor editor
+                                :attrs {:fill nil}}))
+                   text-ids))))
 
         on-change
         (mf/use-callback
