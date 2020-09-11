@@ -165,7 +165,7 @@
           (assoc-in [:workspace-local :picked-shift?] shift?)))))
 
 
-(defn change-fill-selected [color]
+(defn change-fill-selected [color id file-id]
   (ptk/reify ::change-fill-selected
     ptk/WatchEvent
     (watch [_ state s]
@@ -174,14 +174,17 @@
             is-text? #(= :text (:type (get objects %)))
             text-ids (filter is-text? ids)
             shape-ids (filter (comp not is-text?) ids)
-            update-fn (fn [shape] (assoc shape :fill-color color))
+            update-fn (fn [shape] (assoc shape
+                                         :fill-color color
+                                         :fill-color-ref-id id
+                                         :fill-color-ref-file file-id))
             editor (get-in state [:workspace-local :editor])
             converted-attrs {:fill color}]
         (rx/from (conj
                   (map #(dwt/update-text-attrs {:id % :editor editor :attrs converted-attrs}) text-ids)
                   (dwc/update-shapes shape-ids update-fn)))))))
 
-(defn change-stroke-selected [color]
+(defn change-stroke-selected [color id file-id]
   (ptk/reify ::change-stroke-selected
     ptk/WatchEvent
     (watch [_ state s]
@@ -189,7 +192,9 @@
             update-fn (fn [s]
                         (cond-> s
                           true
-                          (assoc :stroke-color color)
+                          (assoc :stroke-color color
+                                 :stroke-color-ref-id id
+                                 :stroke-color-ref-file file-id)
 
                           (= (:stroke-style s) :none)
                           (assoc :stroke-style "solid"
@@ -201,8 +206,8 @@
   (let [handle-change-color (fn [color _ shift?]
                               (st/emit!
                                (if shift?
-                                 (change-stroke-selected color)
-                                 (change-fill-selected color))
+                                 (change-stroke-selected color nil nil)
+                                 (change-fill-selected color nil nil))
                                (md/hide-modal)))]
     (ptk/reify ::start-picker
       ptk/UpdateEvent
