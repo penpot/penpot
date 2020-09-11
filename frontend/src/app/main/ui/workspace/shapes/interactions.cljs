@@ -175,11 +175,10 @@
 
 (mf/defc interactions
   [{:keys [selected] :as props}]
-  (let [data (mf/deref refs/workspace-data)
-        local (mf/deref refs/workspace-local)
+  (let [local (mf/deref refs/workspace-local)
         zoom (mf/deref refs/selected-zoom)
         current-transform (:transform local)
-        objects (:objects data)
+        objects (mf/deref refs/workspace-page-objects)
         active-shapes (filter #(first (get-click-interaction %)) (vals objects))
         selected-shapes (map #(get objects %) selected)
         draw-interaction-to (:draw-interaction-to local)
