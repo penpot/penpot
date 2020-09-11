@@ -1222,7 +1222,8 @@
   (let [shape {:name (:name image)
                :metadata {:width (:width image)
                           :height (:height image)
-                          :uri (:uri image)}}
+                          :id (:id image)
+                          :path (:path image)}}
         aspect-ratio (/ (:width image) (:height image))]
     (st/emit! (create-and-add-shape :image shape aspect-ratio))))
 
@@ -1231,7 +1232,7 @@
   (ptk/reify ::paste-bin-impl
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [file-id (get-in state [:workspace-page :file-id])
+      (let [file-id (get-in state [:workspace-file :id])
             params  {:file-id file-id
                      :local? true
                      :js-files [image]}]
