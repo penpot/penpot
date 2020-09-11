@@ -101,10 +101,12 @@
   (let [value (if (uc/hex? value) value "#000000")
         [r g b] (uc/hex->rgb value)
         [h s v] (uc/hex->hsv value)]
+    
     {:hex (or value "000000")
      :alpha (or opacity 1)
      :r r :g g :b b
-     :h h :s s :v v}))
+     :h h :s s :v v}
+    ))
 
 (mf/defc colorpicker
   [{:keys [value opacity on-change on-accept]}]
@@ -177,12 +179,12 @@
      (fn [] (fn []
               (st/emit! (dwc/stop-picker))
               (when @value-ref
-                  (st/emit! (dwl/add-recent-color @value-ref))))))
+                (st/emit! (dwl/add-recent-color @value-ref))))))
 
     (mf/use-effect
      (mf/deps picking-color? picked-color)
      (fn [] (when picking-color?
-              (let [[r g b] picked-color
+              (let [[r g b] (or picked-color [0 0 0])
                     hex (uc/rgb->hex [r g b])
                     [h s v] (uc/hex->hsv hex)]
                 (swap! current-color assoc
@@ -387,10 +389,10 @@
                  :top (str (- y 50) "px")})
         ]
     [:div.colorpicker-tooltip
-      {:style (clj->js style)}
-      [:& colorpicker {:value (or value default)
-                       :opacity (or opacity 1)
-                       :on-change on-change
-                       :on-accept on-accept
-                       :disable-opacity disable-opacity}]]))
+     {:style (clj->js style)}
+     [:& colorpicker {:value (or value default)
+                      :opacity (or opacity 1)
+                      :on-change on-change
+                      :on-accept on-accept
+                      :disable-opacity disable-opacity}]]))
 

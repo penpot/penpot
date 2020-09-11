@@ -99,6 +99,5 @@
 (mf/defc modal
   []
   (let [modal (mf/deref modal-ref)]
-    (println "modal" modal)
     (when modal [:& modal-wrapper {:data modal
                                    :key (:id modal)}])))
