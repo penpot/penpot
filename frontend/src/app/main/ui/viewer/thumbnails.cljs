@@ -98,6 +98,7 @@
   (let [expanded? (mf/use-state false)
         container (mf/use-ref)
         page-id   (get-in data [:page :id])
+        file-id   (get-in data [:file :id])
 
         on-close #(st/emit! dv/toggle-thumbnails-panel)
         selected (mf/use-var false)
@@ -110,7 +111,8 @@
         on-item-click
         (fn [event index]
           (compare-and-set! selected false true)
-          (st/emit! (rt/nav :viewer {:page-id page-id} {:index index}))
+          (st/emit! (rt/nav :viewer {:file-id file-id
+                                     :page-id page-id} {:index index}))
           (when @expanded?
             (on-close)))]
     [:& dropdown' {:on-close on-close
