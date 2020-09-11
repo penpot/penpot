@@ -114,7 +114,8 @@
           (st/emit! (dwc/update-shapes ids #(assoc %
                                                    :stroke-style :solid
                                                    :stroke-color "#000000"
-                                                   :stroke-opacity 1))))
+                                                   :stroke-opacity 1
+                                                   :stroke-width 1))))
 
         on-del-stroke
         (fn [event]
