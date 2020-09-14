@@ -117,8 +117,8 @@
 
     [:div.row-flex.color-data
      [:span.color-th
-      {:style {:background-color (-> value value-to-background)
-               :border-radius (if (:id color) "10px" "inherit")}
+      {:class (when (:id color) "color-name")
+       :style {:background-color (-> value value-to-background)}
        :on-click (color-picker-callback @state handle-pick-color disable-opacity)}
       (when (= value :multiple) "?")]
 

@@ -481,6 +481,10 @@
   margin: 5px 4px 0 0;
   width: 20px;
 
+  &.color-name {
+      border-radius: 10px;
+  }
+
   &.palette-th {
     align-items: center;
     border: 1px solid $color-gray-30;
