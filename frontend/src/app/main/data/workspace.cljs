@@ -152,8 +152,6 @@
                      (file-initialized project-id file-id))))
        ))))
 
-
-
 (defn- file-initialized
   [project-id file-id]
   (ptk/reify ::file-initialized
@@ -995,8 +993,6 @@
 ;; Event mainly used for handling user modification of the size of the
 ;; object from workspace sidebar options inputs.
 
-;; TODO: maybe replace directly with dwc/update-shapes?
-
 (defn update-dimensions
   [ids attr value]
   (us/verify (s/coll-of ::us/uuid) ids)
@@ -1012,17 +1008,14 @@
 
 (defn set-shape-proportion-lock
   [id lock]
-  (js/alert "TODO: broken")
-  #_(ptk/reify ::set-shape-proportion-lock
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [page-id (:current-page-id state)
-            shape (get-in state [:workspace-data page-id :objects id])]
-        (if-not lock
-          (assoc-in state [:workspace-data page-id :objects id :proportion-lock] lock))
-          (->> (geom/assign-proportions (assoc shape :proportion-lock lock))
-               (assoc-in state [:workspace-data page-id :objects id]))))))
-
+  (ptk/reify ::set-shape-proportion-lock
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (dwc/update-shapes [id] (fn [shape]
+                                       (if-not lock
+                                         (assoc shape :proportion-lock false)
+                                         (-> (assoc shape :proportion-lock true)
+                                             (geom/assign-proportions)))))))))
 ;; --- Update Shape Position
 
 (s/def ::x number?)
