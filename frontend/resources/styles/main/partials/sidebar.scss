@@ -134,11 +134,12 @@ $width-settings-bar: 15rem;
           }
 
         }
-
       }
+    }
 
-
-
+    .assets-bar .tool-window {
+        flex: none;
+        height: auto;
     }
   }
 }

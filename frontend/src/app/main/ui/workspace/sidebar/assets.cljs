@@ -39,7 +39,7 @@
    [rumext.alpha :as mf]))
 
 (mf/defc graphics-box
-  [{:keys [file-id local? objects] :as props}]
+  [{:keys [file-id local? objects open? on-open on-close] :as props}]
   (let [input-ref  (mf/use-ref nil)
         state      (mf/use-state {:menu-open false
                                   :top nil
@@ -48,7 +48,9 @@
 
         add-graphic
         (mf/use-callback
-         (fn [] (dom/click (mf/ref-val input-ref))))
+         (fn []
+           (on-open)
+           (dom/click (mf/ref-val input-ref))))
 
         on-media-uploaded
         (mf/use-callback
@@ -94,9 +96,9 @@
            (dnd/set-allowed-effect! event "move")))]
 
     [:div.asset-group
-     [:div.group-title
-      (tr "workspace.assets.graphics")
-      [:span (str "\u00A0(") (count objects) ")"] ;; Unicode 00A0 is non-breaking space
+     [:div.group-title {:class (when (not open?) "closed")}
+      [:span {:on-click #(if open? (on-close) (on-open))} i/arrow-slide (tr "workspace.assets.graphics")]
+      [:span.num-assets (str "\u00A0(") (count objects) ")"] ;; Unicode 00A0 is non-breaking space
       (when local?
         [:div.group-button {:on-click add-graphic}
          i/plus
@@ -104,24 +106,25 @@
                             :multi true
                             :input-ref input-ref
                             :on-selected on-selected}]])]
-     [:div.group-grid
-      (for [object objects]
-        [:div.grid-cell {:key (:id object)
-                         :draggable true
-                         :on-context-menu (on-context-menu (:id object))
-                         :on-drag-start (partial on-drag-start (:path object))}
-         [:img {:src (cfg/resolve-media-path (:thumb-path object))
-                :draggable false}] ;; Also need to add css pointer-events: none
-         [:div.cell-name (:name object)]])
+     (when open?
+       [:div.group-grid
+        (for [object objects]
+          [:div.grid-cell {:key (:id object)
+                           :draggable true
+                           :on-context-menu (on-context-menu (:id object))
+                           :on-drag-start (partial on-drag-start (:path object))}
+           [:img {:src (cfg/resolve-media-path (:thumb-path object))
+                  :draggable false}] ;; Also need to add css pointer-events: none
+           [:div.cell-name (:name object)]])
 
-      (when local?
-        [:& context-menu
-         {:selectable false
-          :show (:menu-open @state)
-          :on-close #(swap! state assoc :menu-open false)
-          :top (:top @state)
-          :left (:left @state)
-          :options [[(tr "workspace.assets.delete") on-delete]]}])]]))
+        (when local?
+          [:& context-menu
+           {:selectable false
+            :show (:menu-open @state)
+            :on-close #(swap! state assoc :menu-open false)
+            :top (:top @state)
+            :left (:left @state)
+            :options [[(tr "workspace.assets.delete") on-delete]]}])])]))
 
 
 (mf/defc color-item
@@ -231,7 +234,7 @@
                     [(t locale "workspace.assets.delete") delete-color]]}])]))
 
 (mf/defc colors-box
-  [{:keys [file-id local? colors locale] :as props}]
+  [{:keys [file-id local? colors locale open? on-open on-close] :as props}]
   (let [add-color
         (mf/use-callback
          (mf/deps file-id)
@@ -242,6 +245,7 @@
         (mf/use-callback
          (mf/deps file-id)
          (fn [event]
+           (on-open)
            (modal/show! :colorpicker
                         {:x (.-clientX event)
                          :y (.-clientY event)
@@ -250,18 +254,19 @@
                          :disable-opacity true
                          :position :right})))]
     [:div.asset-group
-     [:div.group-title
-      (t locale "workspace.assets.colors")
-      [:span (str "\u00A0(") (count colors) ")"] ;; Unicode 00A0 is non-breaking space
+     [:div.group-title {:class (when (not open?) "closed")}
+      [:span {:on-click #(if open? (on-close) (on-open))} i/arrow-slide (t locale "workspace.assets.colors")]
+      [:span.num-assets (str "\u00A0(") (count colors) ")"] ;; Unicode 00A0 is non-breaking space
       (when local?
         [:div.group-button {:on-click add-color-clicked} i/plus])]
-     [:div.group-list
-      (for [color colors]
-        [:& color-item {:key (:id color)
-                        :color color
-                        :file-id file-id
-                        :local? local?
-                        :locale locale}])]]))
+     (when open?
+       [:div.group-list
+        (for [color colors]
+          [:& color-item {:key (:id color)
+                          :color color
+                          :file-id file-id
+                          :local? local?
+                          :locale locale}])])]))
 
 (defn file-colors-ref
   [id]
@@ -296,6 +301,8 @@
         router      (mf/deref refs/router)
         toggle-open #(swap! open? not)
 
+        toggles (mf/use-state #{:graphics :colors})
+
         url         (rt/resolve router :workspace
                                 {:project-id (:project-id file)
                                  :file-id (:id file)}
@@ -306,6 +313,7 @@
 
         media-ref   (mf/use-memo (mf/deps (:id file)) #(file-media-ref (:id file)))
         media       (apply-filters (mf/deref media-ref) filters)]
+
     [:div.tool-window
      [:div.tool-window-bar
       [:div.collapse-library
@@ -336,12 +344,18 @@
           (when show-graphics?
             [:& graphics-box {:file-id (:id file)
                               :local? local?
-                              :objects media}])
+                              :objects media
+                              :open? (contains? @toggles :graphics)
+                              :on-open #(swap! toggles conj :graphics)
+                              :on-close #(swap! toggles disj :graphics)}])
           (when show-colors?
             [:& colors-box {:file-id (:id file)
                             :local? local?
                             :locale locale
-                            :colors colors}])
+                            :colors colors
+                            :open? (contains? @toggles :colors)
+                            :on-open #(swap! toggles conj :colors)
+                            :on-close #(swap! toggles disj :colors)}])
 
           (when (and (not show-graphics?) (not show-colors?))
             [:div.asset-group
@@ -404,20 +418,21 @@
          [:option {:value ":graphics"} (t locale "workspace.assets.box-filter-graphics")]
          [:option {:value ":colors"} (t locale "workspace.assets.box-filter-colors")]]]]
 
-     [:& file-library
-      {:file file
-       :locale locale
-       :local? true
-       :open? true
-       :filters @filters}]
+     [:div.libraries-wrapper
+      [:& file-library
+       {:file file
+        :locale locale
+        :local? true
+        :open? true
+        :filters @filters}]
 
-     (for [file (->> (vals libraries)
-                     (sort-by #(str/lower (:name %))))]
-       [:& file-library
-        {:key (:id file)
-         :file file
-         :local? false
-         :locale locale
-         :open? false
-         :filters @filters}])]))
+      (for [file (->> (vals libraries)
+                      (sort-by #(str/lower (:name %))))]
+        [:& file-library
+         {:key (:id file)
+          :file file
+          :local? false
+          :locale locale
+          :open? false
+          :filters @filters}])]]))
 
