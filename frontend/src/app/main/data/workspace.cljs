@@ -183,14 +183,10 @@
   (ptk/reify ::initialize-page
     ptk/UpdateEvent
     (update [_ state]
-      ;; TODO: looks workspace-page is unused
-      (let [page  (get-in state [:workspace-data :pages-index page-id])
-            local (get-in state [:workspace-cache page-id] workspace-local-default)]
+      (let [local (get-in state [:workspace-cache page-id] workspace-local-default)]
         (assoc state
                :current-page-id page-id   ; mainly used by events
-               :workspace-page page
-               :workspace-local local
-               )))))
+               :workspace-local local)))))
 
 (defn finalize-page
   [page-id]
@@ -201,7 +197,7 @@
       (let [local (:workspace-local state)]
         (-> state
             (assoc-in [:workspace-cache page-id] local)
-            (dissoc :current-page-id :workspace-page))))))
+            (dissoc :current-page-id))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace Page CRUD

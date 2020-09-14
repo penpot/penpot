@@ -165,7 +165,7 @@
 (def selected-objects
   (letfn [(selector [state]
             (let [selected (get-in state [:workspace-local :selected])
-                  page-id  (get-in state [:workspace-page :id])
+                  page-id  (:current-page-id state)
                   objects  (get-in state [:workspace-data :pages-index page-id :objects])]
               (mapv #(get objects %) selected)))]
     (l/derived selector st/state =)))
@@ -173,7 +173,7 @@
 (def selected-shapes-with-children
   (letfn [(selector [state]
             (let [selected (get-in state [:workspace-local :selected])
-                  page-id  (get-in state [:workspace-page :id])
+                  page-id  (:current-page-id state)
                   objects  (get-in state [:workspace-data :pages-index page-id :objects])
                   children (mapcat #(cph/get-children % objects) selected)]
               (into selected children)))]
@@ -184,7 +184,7 @@
 (def selected-objects-with-children
   (letfn [(selector [state]
             (let [selected (get-in state [:workspace-local :selected])
-                  page-id  (get-in state [:workspace-page :id])
+                  page-id  (:current-page-id state)
                   objects  (get-in state [:workspace-data :pages-index page-id :objects])
                   children (mapcat #(cph/get-children % objects) selected)
                   shapes   (into selected children)]
