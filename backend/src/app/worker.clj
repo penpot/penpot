@@ -15,8 +15,8 @@
    [app.db :as db]
    [app.tasks.delete-object]
    [app.tasks.delete-profile]
-   [app.tasks.gc]
    [app.tasks.remove-media]
+   [app.tasks.maintenance]
    [app.tasks.sendmail]
    [app.tasks.trim-file]
    [app.util.async :as aa]
@@ -53,18 +53,28 @@
 
 (def ^:private schedule
   [{:id "remove-deleted-media"
-    :cron (dt/cron "0 0 0 */1 * ? *") ;; daily
-    :fn #'app.tasks.gc/remove-deleted-media}
-   {:id "trim-file"
-    :cron (dt/cron "0 0 0 */1 * ? *") ;; daily
-    :fn #'app.tasks.trim-file/handler}
-   ])
+    :cron #app/cron "0 0 0 */1 * ? *" ;; daily
+    :fn #'app.tasks.remove-media/trim-media-storage}
 
+   {:id "trim-file"
+    :cron #app/cron "0 0 0 */1 * ? *" ;; daily
+    :fn #'app.tasks.trim-file/handler}
+
+   {:id "maintenance/delete-executed-tasks"
+    :cron #app/cron "0 0 */1 * * ?"  ;; hourly
+    :fn #'app.tasks.maintenance/delete-executed-tasks
+    :props {:max-age #app/duration "48h"}}
+
+   {:id "maintenance/delete-old-files-xlog"
+    :cron #app/cron "0 0 */1 * * ?"  ;; hourly
+    :fn #'app.tasks.maintenance/delete-old-files-xlog
+    :props {:max-age #app/duration "8h"}}
+   ])
 
 (defstate executor
   :start (thread-pool {:idle-timeout 10000
-                            :min-threads 0
-                            :max-threads 256})
+                       :min-threads 0
+                       :max-threads 256})
   :stop (stop! executor))
 
 (defstate worker
@@ -77,12 +87,12 @@
 
 (defstate scheduler-worker
   :start (start-scheduler-worker! {:schedule schedule
-                                        :executor executor})
+                                   :executor executor})
   :stop (stop! scheduler-worker))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Worker Impl
+;; Tasks Worker Impl
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private

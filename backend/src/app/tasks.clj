@@ -9,14 +9,14 @@
 
 (ns app.tasks
   (:require
-   [cuerdas.core :as str]
-   [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.config :as cfg]
    [app.db :as db]
+   [app.metrics :as mtx]
    [app.util.time :as dt]
-   [app.metrics :as mtx]))
+   [clojure.spec.alpha :as s]
+   [clojure.tools.logging :as log]))
 
 (s/def ::name ::us/string)
 (s/def ::delay
@@ -43,7 +43,7 @@
          interval  (db/interval duration)
          props     (db/tjson props)
          id        (uuid/next)]
-     (log/info (str/format "Submit task '%s' to be executed in '%s'." name (str duration)))
+     (log/infof "Submit task '%s' to be executed in '%s'." name (str duration))
      (db/exec-one! conn [sql:insert-new-task id name props queue priority max-retries interval])
      id)))
 
