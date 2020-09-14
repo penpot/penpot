@@ -53,14 +53,14 @@
 (defn duration
   [ms-or-obj]
   (cond
+    (string? ms-or-obj)
+    (Duration/parse (str "PT" ms-or-obj))
+
     (duration? ms-or-obj)
     ms-or-obj
 
     (integer? ms-or-obj)
     (Duration/ofMillis ms-or-obj)
-
-    (string? ms-or-obj)
-    (Duration/parse ms-or-obj)
 
     :else
     (obj->duration ms-or-obj)))
@@ -71,7 +71,7 @@
 
 (defn parse-duration
   [s]
-  (Duration/parse (str "PT" s)))
+  (Duration/parse s))
 
 (extend-protocol clojure.core/Inst
   java.time.Duration
@@ -79,7 +79,7 @@
 
 (defmethod print-method Duration
   [mv ^java.io.Writer writer]
-  (.write writer (str "#app/duration \"" (.toString ^Duration mv) "\"")))
+  (.write writer (str "#app/duration \"" (subs (str mv) 2) "\"")))
 
 (defmethod print-dup Duration [o w]
   (print-method o w))
