@@ -79,7 +79,7 @@
           (when (and save-undo? (not= uidx ::not-found))
             (rx/of (reset-undo uidx)))
 
-          (when save-undo?
+          (when (and save-undo? (seq undo-changes))
             (let [entry {:undo-changes undo-changes
                          :redo-changes changes}]
               (rx/of (append-undo entry))))))))))
