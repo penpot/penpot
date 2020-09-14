@@ -131,10 +131,11 @@
      [:& dropdown {:show (:show-menu @state)
                    :on-close #(swap! state assoc :show-menu false)}
       [:ul.workspace-context-menu.palette-menu
-       (for [cur-library (vals shared-libs)]
+       (for [[idx cur-library] (map-indexed vector (vals shared-libs))]
          (let [colors (-> cur-library (get-in [:data :colors]) vals)]
            [:li.palette-library
-            {:on-click #(st/emit! (mdc/change-palette-selected (:id cur-library)))}
+            {:key (str "library-" idx)
+             :on-click #(st/emit! (mdc/change-palette-selected (:id cur-library)))}
             (when (= selected (:id cur-library)) i/tick)
             [:div.library-name (str (:name cur-library) " " (str/format "(%s)" (count colors)))]
             [:div.color-sample

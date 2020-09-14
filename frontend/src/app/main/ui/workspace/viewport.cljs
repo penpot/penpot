@@ -220,14 +220,14 @@
           (st/emit! (dwc/stop-picker))
           (modal/disallow-click-outside!))]
 
-    (mf/use-layout-effect
+    (mf/use-effect
      ;; Everytime we finish retrieving a new URL we redraw the canvas
      ;; so even if we're not finished the user can start to pick basic
      ;; shapes
      (mf/deps props fetch-pending)
      (fn []
        (try
-         (timers/schedule 100
+         (timers/schedule
           #(let [svg-node (mf/ref-val svg-ref)
                  canvas-node (mf/ref-val canvas-ref)
                  canvas-context (.getContext canvas-node "2d")
