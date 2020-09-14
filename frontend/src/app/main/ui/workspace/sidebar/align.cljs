@@ -20,7 +20,7 @@
   (let [selected (mf/deref refs/selected-shapes)
 
         ;; don't need to watch objects, only read the value
-        objects  (:objects (deref refs/workspace-data))
+        objects  (deref refs/workspace-page-objects)
 
         disabled (cond
                    (empty? selected) true

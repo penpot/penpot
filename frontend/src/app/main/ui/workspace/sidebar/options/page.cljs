@@ -18,9 +18,6 @@
    [app.util.i18n :as i18n :refer [t]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]))
 
-(def options-iref
-  (l/derived :options refs/workspace-data))
-
 (defn use-change-color [page-id]
   (mf/use-callback
    (mf/deps page-id)
