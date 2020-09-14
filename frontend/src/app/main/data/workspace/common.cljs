@@ -187,7 +187,7 @@
   (ptk/reify ::rehash-shape-frame-relationship
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-id (get-in state [:workspace-page :id])
+      (let [page-id (:current-page-id state)
             objects (lookup-page-objects state page-id)
 
             shapes (cph/select-toplevel-shapes objects)
