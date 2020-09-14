@@ -17,7 +17,6 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
-   [app.main.ui.navigation :as nav]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t]]
    [app.util.router :as rt]))

@@ -18,7 +18,6 @@
    [app.main.store :as st]
    [app.main.ui.components.forms :refer [input submit-button form]]
    [app.main.ui.icons :as i]
-   [app.main.ui.navigation :as nav]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.i18n :as i18n :refer [tr t]]
