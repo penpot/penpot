@@ -121,12 +121,6 @@
 (def workspace-snap-data
   (l/derived :workspace-snap-data st/state))
 
-;; TODO: BROKEN  & TO BE REMOVED
-(def workspace-data
-  (-> #(let [page-id (get-in % [:workspace-page :id])]
-         (get-in % [:workspace-data page-id]))
-      (l/derived st/state)))
-
 (def workspace-page
   (l/derived (fn [state]
                (let [page-id (:current-page-id state)
