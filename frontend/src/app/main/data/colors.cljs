@@ -22,7 +22,8 @@
    [app.common.uuid :as uuid]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.texts :as dwt]
-   [app.main.data.modal :as md]))
+   [app.main.data.modal :as md]
+   [app.common.pages-helpers :as cph]))
 
 (declare create-color-result)
 
@@ -169,8 +170,11 @@
   (ptk/reify ::change-fill-selected
     ptk/WatchEvent
     (watch [_ state s]
-      (let [ids (get-in state [:workspace-local :selected])
+      (let [selected (get-in state [:workspace-local :selected])
             objects (get-in state [:workspace-data :pages-index (:current-page-id state) :objects])
+            children (mapcat #(cph/get-children % objects) selected)
+            ids (into selected children)
+
             is-text? #(= :text (:type (get objects %)))
             text-ids (filter is-text? ids)
             shape-ids (filter (comp not is-text?) ids)
@@ -188,7 +192,11 @@
   (ptk/reify ::change-stroke-selected
     ptk/WatchEvent
     (watch [_ state s]
-      (let [ids (get-in state [:workspace-local :selected])
+      (let [selected (get-in state [:workspace-local :selected])
+            objects (get-in state [:workspace-data :pages-index (:current-page-id state) :objects])
+            children (mapcat #(cph/get-children % objects) selected)
+            ids (into selected children)
+
             update-fn (fn [s]
                         (cond-> s
                           true

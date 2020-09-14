@@ -227,17 +227,17 @@
      (mf/deps props fetch-pending)
      (fn []
        (try
-         (timers/schedule
-          #(let [svg-node (mf/ref-val svg-ref)
-                 canvas-node (mf/ref-val canvas-ref)
-                 canvas-context (.getContext canvas-node "2d")
-                 xml (.serializeToString (js/XMLSerializer.) svg-node)
-                 content (str "data:image/svg+xml;base64," (js/btoa xml))
-                 img (js/Image.)]
-             (obj/set! img  "onload"
-                       (fn []
-                         (.drawImage canvas-context img 0 0)))
-             (obj/set! img "src" content)))
+         (let [canvas-node (mf/ref-val canvas-ref)
+               canvas-context (.getContext canvas-node "2d")
+               svg-node (mf/ref-val svg-ref)]
+           (timers/schedule
+            #(let [xml (.serializeToString (js/XMLSerializer.) svg-node)
+                   content (str "data:image/svg+xml;base64," (js/btoa xml))
+                   img (js/Image.)]
+               (obj/set! img  "onload"
+                         (fn []
+                           (.drawImage canvas-context img 0 0)))
+               (obj/set! img "src" content))))
          (catch :default e (.error js/console e)))))
 
     [:*
