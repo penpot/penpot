@@ -75,11 +75,13 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [pid (:current-page-id state)
-            prev-value (get-in state [:workspace-data pid :options :saved-grids type])]
+            prev-value (get-in state [:workspace-data :pages-index pid :options :saved-grids type])]
         (rx/of (dwc/commit-changes [{:type :set-option
+                                     :page-id pid
                                      :option [:saved-grids type]
                                      :value params}]
                                    [{:type :set-option
+                                     :page-id pid
                                      :option [:saved-grids type]
                                      :value prev-value}]
                                    {:commit-local? true}))))))

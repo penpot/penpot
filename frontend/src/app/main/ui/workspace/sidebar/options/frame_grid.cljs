@@ -10,6 +10,7 @@
 (ns app.main.ui.workspace.sidebar.options.frame-grid
   (:require
    [rumext.alpha :as mf]
+   [okulary.core :as l]
    [app.util.dom :as dom]
    [app.util.data :as d]
    [app.common.math :as mth]
@@ -25,6 +26,9 @@
    [app.main.ui.components.editable-select :refer [editable-select]]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.util.i18n :as i18n :refer [tr t]]))
+
+(def workspace-saved-grids
+  (l/derived :saved-grids refs/workspace-page-options))
 
 (mf/defc advanced-options [{:keys [visible? on-close children]}]
   (when visible?
@@ -229,7 +233,7 @@
 (mf/defc frame-grid [{:keys [shape]}]
   (let [locale (i18n/use-locale)
         id (:id shape)
-        default-grid-params (merge dw/default-grid-params (mf/deref refs/workspace-saved-grids))
+        default-grid-params (merge dw/default-grid-params (mf/deref workspace-saved-grids))
         handle-create-grid #(st/emit! (dw/add-frame-grid id))
         handle-remove-grid (fn [index] #(st/emit! (dw/remove-frame-grid id index)))
         handle-edit-grid (fn [index] #(st/emit! (dw/set-frame-grid id index %)))

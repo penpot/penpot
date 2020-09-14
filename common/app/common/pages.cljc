@@ -46,10 +46,38 @@
     (<= % max-safe-int)))
 
 ;; Page Options
+(s/def :internal.page.grid.color/value string?)
+(s/def :internal.page.grid.color/opacity number?)
 
-;; TODO: missing specs for :saved-grids
+(s/def :internal.page.grid/size ::safe-integer)
+(s/def :internal.page.grid/color
+  (s/keys :req-un [:internal.page.grid.color/value
+                   :internal.page.grid.color/opacity]))
+
+(s/def :internal.page.grid/type #{:stretch :left :center :right})
+(s/def :internal.page.grid/item-length (s/nilable ::safe-integer))
+(s/def :internal.page.grid/gutter (s/nilable ::safe-integer))
+(s/def :internal.page.grid/margin (s/nilable ::safe-integer))
+
+(s/def :internal.page.grid/square
+  (s/keys :req-un [:internal.page.grid/size
+                   :internal.page.grid/color]))
+
+(s/def :internal.page.grid/column
+  (s/keys :req-un [:internal.page.grid/size
+                   :internal.page.grid/color
+                   :internal.page.grid/type
+                   :internal.page.grid/item-length
+                   :internal.page.grid/gutter
+                   :internal.page.grid/margin]))
+
+(s/def :internal.page.grid/row :internal.page.grid/column)
 
 (s/def :internal.page.options/background string?)
+(s/def :internal.page.options/saved-grids
+  (s/keys :req-un [:internal.page.grid/square
+                   :internal.page.grid/row
+                   :internal.page.grid/column]))
 
 (s/def :internal.page/options
   (s/keys :opt-un [:internal.page.options/background]))
