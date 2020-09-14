@@ -140,10 +140,6 @@
 (def workspace-page-options
   (l/derived :options workspace-page))
 
-;; TODO: revisit
-(def workspace-saved-grids
-  (l/derived :saved-grids workspace-page-options))
-
 (def workspace-frames
   (l/derived cph/select-frames workspace-page-objects))
 
