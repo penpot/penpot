@@ -8,6 +8,8 @@
 .assets-bar {
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  height: 100%;
 
   .assets-bar-title {
     color: $color-gray-10;
@@ -125,10 +127,24 @@
     // overflow-y: scroll;
 
     .group-title {
-      display: flex;
+        display: flex;
+        cursor: pointer;
 
-      & span {
+      & .num-assets {
         color: $color-gray-30;
+      }
+
+      & svg {
+          height: 8px;
+          width: 8px;
+          fill: $color-gray-30;
+          margin-right: 4px;
+          transform: rotate(90deg);
+      }
+
+      &.closed svg {
+          transform: rotate(0deg);
+          transition: transform 0.3s;
       }
     }
 
@@ -140,6 +156,10 @@
         width: 0.7rem;
         height: 0.7rem;
         fill: #F0F0F0;
+      }
+
+      &:hover svg {
+          fill: $color-primary;
       }
     }
 
@@ -279,3 +299,10 @@
     font-weight: normal;
 }
 
+
+.libraries-wrapper {
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
