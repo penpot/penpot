@@ -20,8 +20,9 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]))
 
-(def page-version 5)
 (def file-version 1)
+(def max-safe-int 9007199254740991)
+(def min-safe-int -9007199254740991)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Page Transformation Changes
@@ -38,9 +39,13 @@
 (s/def ::string string?)
 (s/def ::type keyword?)
 (s/def ::uuid uuid?)
+(s/def ::safe-integer
+  #(and
+    (integer? %)
+    (>= % min-safe-int)
+    (<= % max-safe-int)))
 
 ;; Page Options
-
 
 ;; TODO: missing specs for :saved-grids
 
@@ -70,43 +75,43 @@
 (s/def :internal.shape/fill-color string?)
 (s/def :internal.shape/fill-color-ref-file (s/nilable uuid?))
 (s/def :internal.shape/fill-color-ref-id (s/nilable uuid?))
-(s/def :internal.shape/fill-opacity number?)
+(s/def :internal.shape/fill-opacity ::safe-integer)
 (s/def :internal.shape/font-family string?)
-(s/def :internal.shape/font-size number?)
+(s/def :internal.shape/font-size ::safe-integer)
 (s/def :internal.shape/font-style string?)
 (s/def :internal.shape/font-weight string?)
 (s/def :internal.shape/hidden boolean?)
-(s/def :internal.shape/letter-spacing number?)
-(s/def :internal.shape/line-height number?)
+(s/def :internal.shape/letter-spacing ::safe-integer)
+(s/def :internal.shape/line-height ::safe-integer)
 (s/def :internal.shape/locked boolean?)
 (s/def :internal.shape/page-id uuid?)
-(s/def :internal.shape/proportion number?)
+(s/def :internal.shape/proportion ::safe-integer)
 (s/def :internal.shape/proportion-lock boolean?)
-(s/def :internal.shape/rx number?)
-(s/def :internal.shape/ry number?)
+(s/def :internal.shape/rx ::safe-integer)
+(s/def :internal.shape/ry ::safe-integer)
 (s/def :internal.shape/stroke-color string?)
 (s/def :internal.shape/stroke-color-ref-file (s/nilable uuid?))
 (s/def :internal.shape/stroke-color-ref-id (s/nilable uuid?))
-(s/def :internal.shape/stroke-opacity number?)
+(s/def :internal.shape/stroke-opacity ::safe-integer)
 (s/def :internal.shape/stroke-style #{:solid :dotted :dashed :mixed :none})
-(s/def :internal.shape/stroke-width number?)
+(s/def :internal.shape/stroke-width ::safe-integer)
 (s/def :internal.shape/stroke-alignment #{:center :inner :outer})
 (s/def :internal.shape/text-align #{"left" "right" "center" "justify"})
-(s/def :internal.shape/x number?)
-(s/def :internal.shape/y number?)
-(s/def :internal.shape/cx number?)
-(s/def :internal.shape/cy number?)
-(s/def :internal.shape/width number?)
-(s/def :internal.shape/height number?)
+(s/def :internal.shape/x ::safe-integer)
+(s/def :internal.shape/y ::safe-integer)
+(s/def :internal.shape/cx ::safe-integer)
+(s/def :internal.shape/cy ::safe-integer)
+(s/def :internal.shape/width ::safe-integer)
+(s/def :internal.shape/height ::safe-integer)
 (s/def :internal.shape/index integer?)
 
-(s/def :internal.shape/x1 number?)
-(s/def :internal.shape/y1 number?)
-(s/def :internal.shape/x2 number?)
-(s/def :internal.shape/y2 number?)
+(s/def :internal.shape/x1 ::safe-integer)
+(s/def :internal.shape/y1 ::safe-integer)
+(s/def :internal.shape/x2 ::safe-integer)
+(s/def :internal.shape/y2 ::safe-integer)
 
 (s/def :internal.shape.export/suffix string?)
-(s/def :internal.shape.export/scale number?)
+(s/def :internal.shape.export/scale ::safe-integer)
 (s/def :internal.shape/export
   (s/keys :req-un [::type
                    :internal.shape.export/suffix
