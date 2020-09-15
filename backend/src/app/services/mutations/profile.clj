@@ -107,13 +107,21 @@
                 :code ::email-already-exists))
     params))
 
+(defn- derive-password
+  [password]
+  (hashers/derive password {:alg :bcrypt+sha512}))
+
+(defn- verify-password
+  [attempt password]
+  (hashers/check attempt password))
+
 (defn- create-profile
   "Create the profile entry on the database with limited input
   filling all the other fields with defaults."
   [conn {:keys [id fullname email password demo?] :as params}]
   (let [id    (or id (uuid/next))
         demo? (if (boolean? demo?) demo? false)
-        paswd (hashers/derive password {:alg :bcrypt+sha512})]
+        paswd (derive-password password)]
     (db/insert! conn :profile
                 {:id id
                  :fullname fullname
@@ -158,7 +166,7 @@
             (when (= (:password profile) "!")
               (ex/raise :type :validation
                         :code ::account-without-password))
-            (hashers/check password (:password profile)))
+            (verify-password password (:password profile)))
 
           (validate-profile [profile]
             (when-not profile
@@ -241,7 +249,7 @@
 (defn- validate-password!
   [conn {:keys [profile-id old-password] :as params}]
   (let [profile (profile/retrieve-profile-data conn profile-id)]
-    (when-not (hashers/check old-password (:password profile))
+    (when-not (verify-password old-password (:password profile))
       (ex/raise :type :validation
                 :code ::old-password-not-match))))
 
@@ -253,7 +261,7 @@
   (db/with-atomic [conn db/pool]
     (validate-password! conn params)
     (db/update! conn :profile
-                {:password (hashers/derive password {:alg :bcrypt+sha512})}
+                {:password (derive-password password)}
                 {:id profile-id})
     nil))
 
@@ -452,7 +460,7 @@
               (:profile-id tpayload)))
 
           (update-password [conn profile-id]
-            (let [pwd (hashers/derive password {:alg :bcrypt+sha512})]
+            (let [pwd (derive-password password)]
               (db/update! conn :profile {:password pwd} {:id profile-id})))
 
           (delete-token [conn token]
