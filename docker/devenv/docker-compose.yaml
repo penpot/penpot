@@ -41,7 +41,7 @@ services:
       - APP_DATABASE_URI=postgresql://postgres/uxbox
       - APP_DATABASE_USERNAME=uxbox
       - APP_DATABASE_PASSWORD=uxbox
-      - APP_SENDMAIL_BACKEND=smtp
+      - APP_SENDMAIL_BACKEND=console
       - APP_SMTP_HOST=smtp
       - APP_SMTP_PORT=25
 
