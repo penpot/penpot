@@ -113,7 +113,7 @@
 
 (defn- verify-password
   [attempt password]
-  (hashers/check attempt password))
+  (hashers/verify attempt password))
 
 (defn- create-profile
   "Create the profile entry on the database with limited input
@@ -166,7 +166,7 @@
             (when (= (:password profile) "!")
               (ex/raise :type :validation
                         :code ::account-without-password))
-            (verify-password password (:password profile)))
+            (:valid (verify-password password (:password profile))))
 
           (validate-profile [profile]
             (when-not profile
@@ -249,7 +249,7 @@
 (defn- validate-password!
   [conn {:keys [profile-id old-password] :as params}]
   (let [profile (profile/retrieve-profile-data conn profile-id)]
-    (when-not (verify-password old-password (:password profile))
+    (when-not (:valid (verify-password old-password (:password profile)))
       (ex/raise :type :validation
                 :code ::old-password-not-match))))
 
