@@ -271,7 +271,8 @@
   (ptk/reify ::append-undo
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:workspace-undo :items] (fnil conj-undo-entry []) entry))))
+      (let [state (update-in state [:workspace-undo :items] (fnil conj-undo-entry []) entry)]
+        (assoc-in state [:workspace-undo :index] (dec (count (get-in state [:workspace-undo :items]))))))))
 
 (def undo
   (ptk/reify ::undo
@@ -292,7 +293,7 @@
       (let [undo  (:workspace-undo state)
             items (:items undo)
             index (or (:index undo) (dec (count items)))]
-        (when-not (or (empty? items) (= index (dec items)))
+        (when-not (or (empty? items) (= index (dec (count items))))
           (let [changes (get-in items [(inc index) :redo-changes])]
             (rx/of (materialize-undo changes (inc index))
                    (commit-changes changes [] {:save-undo? false}))))))))

@@ -29,7 +29,7 @@
       [:& sitemap {:file file
                    :page-id page-id
                    :layout layout}])
-    #_(when (contains? layout :document-history)
+    (when (contains? layout :document-history)
         [:& history-toolbox])
     (when (contains? layout :layers)
       [:& layers-toolbox])
