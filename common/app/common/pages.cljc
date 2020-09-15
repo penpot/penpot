@@ -32,22 +32,28 @@
 
 (s/def ::frame-id uuid?)
 (s/def ::id uuid?)
-(s/def ::integer integer?)
 (s/def ::name string?)
 (s/def ::page-id uuid?)
 (s/def ::parent-id uuid?)
 (s/def ::string string?)
 (s/def ::type keyword?)
 (s/def ::uuid uuid?)
+
 (s/def ::safe-integer
   #(and
     (integer? %)
     (>= % min-safe-int)
     (<= % max-safe-int)))
 
+(s/def ::safe-number
+  #(and
+    (number? %)
+    (>= % min-safe-int)
+    (<= % max-safe-int)))
+
 ;; Page Options
 (s/def :internal.page.grid.color/value string?)
-(s/def :internal.page.grid.color/opacity number?)
+(s/def :internal.page.grid.color/opacity ::safe-number)
 
 (s/def :internal.page.grid/size ::safe-integer)
 (s/def :internal.page.grid/color
@@ -103,43 +109,43 @@
 (s/def :internal.shape/fill-color string?)
 (s/def :internal.shape/fill-color-ref-file (s/nilable uuid?))
 (s/def :internal.shape/fill-color-ref-id (s/nilable uuid?))
-(s/def :internal.shape/fill-opacity ::safe-integer)
+(s/def :internal.shape/fill-opacity ::safe-number)
 (s/def :internal.shape/font-family string?)
 (s/def :internal.shape/font-size ::safe-integer)
 (s/def :internal.shape/font-style string?)
 (s/def :internal.shape/font-weight string?)
 (s/def :internal.shape/hidden boolean?)
-(s/def :internal.shape/letter-spacing ::safe-integer)
-(s/def :internal.shape/line-height ::safe-integer)
+(s/def :internal.shape/letter-spacing ::safe-number)
+(s/def :internal.shape/line-height ::safe-number)
 (s/def :internal.shape/locked boolean?)
 (s/def :internal.shape/page-id uuid?)
-(s/def :internal.shape/proportion ::safe-integer)
+(s/def :internal.shape/proportion ::safe-number)
 (s/def :internal.shape/proportion-lock boolean?)
-(s/def :internal.shape/rx ::safe-integer)
-(s/def :internal.shape/ry ::safe-integer)
+(s/def :internal.shape/rx ::safe-number)
+(s/def :internal.shape/ry ::safe-number)
 (s/def :internal.shape/stroke-color string?)
 (s/def :internal.shape/stroke-color-ref-file (s/nilable uuid?))
 (s/def :internal.shape/stroke-color-ref-id (s/nilable uuid?))
-(s/def :internal.shape/stroke-opacity ::safe-integer)
+(s/def :internal.shape/stroke-opacity ::safe-number)
 (s/def :internal.shape/stroke-style #{:solid :dotted :dashed :mixed :none})
-(s/def :internal.shape/stroke-width ::safe-integer)
+(s/def :internal.shape/stroke-width ::safe-number)
 (s/def :internal.shape/stroke-alignment #{:center :inner :outer})
 (s/def :internal.shape/text-align #{"left" "right" "center" "justify"})
-(s/def :internal.shape/x ::safe-integer)
-(s/def :internal.shape/y ::safe-integer)
-(s/def :internal.shape/cx ::safe-integer)
-(s/def :internal.shape/cy ::safe-integer)
-(s/def :internal.shape/width ::safe-integer)
-(s/def :internal.shape/height ::safe-integer)
+(s/def :internal.shape/x ::safe-number)
+(s/def :internal.shape/y ::safe-number)
+(s/def :internal.shape/cx ::safe-number)
+(s/def :internal.shape/cy ::safe-number)
+(s/def :internal.shape/width ::safe-number)
+(s/def :internal.shape/height ::safe-number)
 (s/def :internal.shape/index integer?)
 
-(s/def :internal.shape/x1 ::safe-integer)
-(s/def :internal.shape/y1 ::safe-integer)
-(s/def :internal.shape/x2 ::safe-integer)
-(s/def :internal.shape/y2 ::safe-integer)
+(s/def :internal.shape/x1 ::safe-number)
+(s/def :internal.shape/y1 ::safe-number)
+(s/def :internal.shape/x2 ::safe-number)
+(s/def :internal.shape/y2 ::safe-number)
 
 (s/def :internal.shape.export/suffix string?)
-(s/def :internal.shape.export/scale ::safe-integer)
+(s/def :internal.shape.export/scale ::safe-number)
 (s/def :internal.shape/export
   (s/keys :req-un [::type
                    :internal.shape.export/suffix
@@ -230,12 +236,12 @@
 
 (s/def :internal.media-object/name ::string)
 (s/def :internal.media-object/path ::string)
-(s/def :internal.media-object/width ::integer)
-(s/def :internal.media-object/height ::integer)
+(s/def :internal.media-object/width ::safe-integer)
+(s/def :internal.media-object/height ::safe-integer)
 (s/def :internal.media-object/mtype ::string)
 (s/def :internal.media-object/thumb-path ::string)
-(s/def :internal.media-object/thumb-width ::integer)
-(s/def :internal.media-object/thumb-height ::integer)
+(s/def :internal.media-object/thumb-width ::safe-integer)
+(s/def :internal.media-object/thumb-height ::safe-integer)
 (s/def :internal.media-object/thumb-mtype ::string)
 
 (s/def ::media-object
