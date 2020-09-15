@@ -26,7 +26,6 @@
    [app.main.ui.workspace.rules :refer [horizontal-rule vertical-rule]]
    [app.main.ui.workspace.scroll :as scroll]
    [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
-   [app.main.ui.workspace.sidebar.history :refer [history-dialog]]
    [app.main.ui.workspace.viewport :refer [viewport coordinates]]
    [app.util.dom :as dom]
    [beicon.core :as rx]
@@ -49,8 +48,6 @@
                          :team-id (:team-id project)}])
 
      [:section.workspace-content {:class classes}
-      [:& history-dialog]
-
       [:section.workspace-viewport
        (when (contains? layout :rules)
          [:*

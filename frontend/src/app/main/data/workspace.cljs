@@ -383,10 +383,13 @@
           (fn [flags]
             (cond
               (contains? (set flags-to-toggle) :assets)
-              (disj flags :sitemap :layers)
+              (disj flags :sitemap :layers :document-history)
 
               (contains? (set flags-to-toggle) :sitemap)
-              (disj flags :assets)
+              (disj flags :assets :document-history)
+
+              (contains? (set flags-to-toggle) :document-history)
+              (disj flags :assets :sitemap :layers)
 
               :else
               flags))))

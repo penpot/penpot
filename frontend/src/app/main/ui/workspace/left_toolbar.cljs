@@ -105,7 +105,9 @@
          :on-click #(st/emit! (dw/toggle-layout-flags :assets))}
         i/library]
        [:li.tooltip.tooltip-right
-        {:alt "History"}
+        {:alt "History"
+         :class (when (contains? layout :document-history) "selected")
+         :on-click #(st/emit! (dw/toggle-layout-flags :document-history))}
         i/undo-history]
        [:li.tooltip.tooltip-right
         {:alt (t locale "workspace.toolbar.color-palette")
