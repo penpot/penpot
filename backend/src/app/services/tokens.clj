@@ -11,8 +11,8 @@
   (:require
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [sodi.prng]
-   [sodi.util]
+   [buddy.core.codecs :as bc]
+   [buddy.core.nonce :as bn]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.util.time :as dt]
@@ -21,8 +21,9 @@
 (defn next-token
   ([] (next-token 96))
   ([n]
-   (-> (sodi.prng/random-nonce n)
-       (sodi.util/bytes->b64s))))
+   (-> (bn/random-bytes n)
+       (bc/bytes->b64u)
+       (bc/bytes->str))))
 
 (def default-duration
   (dt/duration {:hours 48}))

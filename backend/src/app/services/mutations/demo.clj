@@ -11,8 +11,8 @@
   "A demo specific mutations."
   (:require
    [clojure.spec.alpha :as s]
-   [sodi.prng]
-   [sodi.util]
+   [buddy.core.codecs :as bc]
+   [buddy.core.nonce :as bn]
    [app.common.exceptions :as ex]
    [app.config :as cfg]
    [app.db :as db]
@@ -24,12 +24,13 @@
 
 (sm/defmutation ::create-demo-profile
   [_]
-  (let [id (uuid/next)
-        sem (System/currentTimeMillis)
+  (let [id       (uuid/next)
+        sem      (System/currentTimeMillis)
         email    (str "demo-" sem ".demo@nodomain.com")
         fullname (str "Demo User " sem)
-        password (-> (sodi.prng/random-bytes 12)
-                     (sodi.util/bytes->b64s))
+        password (-> (bn/random-bytes 12)
+                     (bc/bytes->b64u)
+                     (bc/bytes->str))
         params   {:id id
                   :email email
                   :fullname fullname

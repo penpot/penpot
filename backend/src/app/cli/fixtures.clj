@@ -12,7 +12,7 @@
   (:require
    [clojure.tools.logging :as log]
    [mount.core :as mount]
-   [sodi.pwhash :as pwhash]
+   [buddy.hashers :as hashers]
    [app.common.data :as d]
    [app.common.pages :as cp]
    [app.common.uuid :as uuid]
@@ -28,7 +28,7 @@
 
 ;; --- Profiles creation
 
-(def password (pwhash/derive "123123"))
+(def password (hashers/derive "123123"))
 
 (def preset-small
   {:num-teams 5

@@ -10,14 +10,14 @@
 (ns app.util.storage
   "A local filesystem storage implementation."
   (:require
+   [app.common.exceptions :as ex]
+   [buddy.core.codecs :as bc]
+   [buddy.core.nonce :as bn]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.core :as fs]
-   [datoteka.proto :as fp]
-   [sodi.prng :as sodi.prng]
-   [sodi.util :as sodi.util]
-   [app.common.exceptions :as ex])
+   [datoteka.proto :as fp])
   (:import
    java.io.ByteArrayInputStream
    java.io.InputStream
@@ -162,7 +162,7 @@
 (def ^:private prng
   (delay
     (doto (java.security.SecureRandom/getInstance "SHA1PRNG")
-      (.setSeed ^bytes (sodi.prng/random-bytes 64)))))
+      (.setSeed ^bytes (bn/random-bytes 64)))))
 
 (defn with-xf
   [storage xfm]
@@ -174,8 +174,9 @@
 (def random-path
   (map (fn [^Path path]
          (let [name (str (.getFileName path))
-               hash (-> (sodi.prng/random-bytes @prng 10)
-                        (sodi.util/bytes->b64s))
+               hash (-> (bn/random-bytes 10 @prng)
+                        (bc/bytes->b64u)
+                        (bc/bytes->str))
                tokens (re-seq #"[\w\d\-\_]{2}" hash)
                path-tokens (take 3 tokens)
                rest-tokens (drop 3 tokens)
