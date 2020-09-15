@@ -9,33 +9,32 @@
 
 (ns app.services.mutations.profile
   (:require
-   [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [datoteka.core :as fs]
-   [promesa.core :as p]
-   [promesa.exec :as px]
-   [sodi.prng]
-   [sodi.pwhash]
-   [sodi.util]
    [app.common.exceptions :as ex]
+   [app.common.media :as cm]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.common.media :as cm]
    [app.config :as cfg]
    [app.db :as db]
    [app.emails :as emails]
    [app.media :as media]
    [app.media-storage :as mst]
-   [app.services.tokens :as tokens]
    [app.services.mutations :as sm]
    [app.services.mutations.media :as media-mutations]
    [app.services.mutations.projects :as projects]
    [app.services.mutations.teams :as teams]
    [app.services.queries.profile :as profile]
+   [app.services.tokens :as tokens]
    [app.tasks :as tasks]
    [app.util.blob :as blob]
    [app.util.storage :as ust]
-   [app.util.time :as dt]))
+   [app.util.time :as dt]
+   [buddy.core.codecs :as bc]
+   [buddy.core.nonce :as bn]
+   [buddy.hashers :as hashers]
+   [clojure.spec.alpha :as s]
+   [cuerdas.core :as str]
+   [datoteka.core :as fs]))
+
 
 ;; --- Helpers & Specs
 
@@ -112,16 +111,16 @@
   "Create the profile entry on the database with limited input
   filling all the other fields with defaults."
   [conn {:keys [id fullname email password demo?] :as params}]
-  (let [id (or id (uuid/next))
+  (let [id    (or id (uuid/next))
         demo? (if (boolean? demo?) demo? false)
-        password (sodi.pwhash/derive password)]
+        paswd (hashers/derive password {:alg :bcrypt+sha512})]
     (db/insert! conn :profile
                 {:id id
                  :fullname fullname
                  :email (str/lower email)
                  :pending-email (if demo? nil email)
                  :photo ""
-                 :password password
+                 :password paswd
                  :is-demo demo?})))
 
 (defn- create-profile-relations
@@ -159,8 +158,7 @@
             (when (= (:password profile) "!")
               (ex/raise :type :validation
                         :code ::account-without-password))
-            (let [result (sodi.pwhash/verify password (:password profile))]
-              (:valid result)))
+            (hashers/check password (:password profile)))
 
           (validate-profile [profile]
             (when-not profile
@@ -242,9 +240,8 @@
 
 (defn- validate-password!
   [conn {:keys [profile-id old-password] :as params}]
-  (let [profile (profile/retrieve-profile-data conn profile-id)
-        result  (sodi.pwhash/verify old-password (:password profile))]
-    (when-not (:valid result)
+  (let [profile (profile/retrieve-profile-data conn profile-id)]
+    (when-not (hashers/check old-password (:password profile))
       (ex/raise :type :validation
                 :code ::old-password-not-match))))
 
@@ -256,10 +253,9 @@
   (db/with-atomic [conn db/pool]
     (validate-password! conn params)
     (db/update! conn :profile
-                {:password (sodi.pwhash/derive password)}
+                {:password (hashers/derive password {:alg :bcrypt+sha512})}
                 {:id profile-id})
     nil))
-
 
 
 ;; --- Mutation: Update Photo
@@ -290,8 +286,9 @@
 
 (defn- upload-photo
   [conn {:keys [file profile-id]}]
-  (let [prefix (-> (sodi.prng/random-bytes 8)
-                   (sodi.util/bytes->b64s))
+  (let [prefix (-> (bn/random-bytes 8)
+                   (bc/bytes->b64u)
+                   (bc/bytes->str))
         thumb  (media/run
                  {:cmd :profile-thumbnail
                   :format :jpeg
@@ -455,12 +452,11 @@
               (:profile-id tpayload)))
 
           (update-password [conn profile-id]
-            (let [pwd (sodi.pwhash/derive password)]
+            (let [pwd (hashers/derive password {:alg :bcrypt+sha512})]
               (db/update! conn :profile {:password pwd} {:id profile-id})))
 
           (delete-token [conn token]
             (db/delete! conn :generic-token {:token token}))]
-
 
     (db/with-atomic [conn db/pool]
       (->> (validate-token conn token)
