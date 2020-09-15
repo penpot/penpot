@@ -166,14 +166,14 @@
           (assoc-in [:workspace-local :picked-shift?] shift?)))))
 
 
-(defn change-fill-selected [color id file-id]
-  (ptk/reify ::change-fill-selected
+(defn change-fill [ids color id file-id]
+  (ptk/reify ::change-fill
     ptk/WatchEvent
     (watch [_ state s]
-      (let [selected (get-in state [:workspace-local :selected])
-            objects (get-in state [:workspace-data :pages-index (:current-page-id state) :objects])
-            children (mapcat #(cph/get-children % objects) selected)
-            ids (into selected children)
+      (let [pid (:current-page-id state)
+            objects (get-in state [:workspace-data :pages-index pid :objects])
+            children (mapcat #(cph/get-children % objects) ids)
+            ids (into ids children)
 
             is-text? #(= :text (:type (get objects %)))
             text-ids (filter is-text? ids)
@@ -183,19 +183,22 @@
                                          :fill-color-ref-id id
                                          :fill-color-ref-file file-id))
             editor (get-in state [:workspace-local :editor])
-            converted-attrs {:fill color}]
+            converted-attrs {:fill color}
+
+            reduce-fn (fn [state id]
+                        (update-in state [:workspace-data :pages-index pid :objects id]  update-fn))]
+
         (rx/from (conj
                   (map #(dwt/update-text-attrs {:id % :editor editor :attrs converted-attrs}) text-ids)
                   (dwc/update-shapes shape-ids update-fn)))))))
 
-(defn change-stroke-selected [color id file-id]
-  (ptk/reify ::change-stroke-selected
+(defn change-stroke [ids color id file-id]
+  (ptk/reify ::change-stroke
     ptk/WatchEvent
     (watch [_ state s]
-      (let [selected (get-in state [:workspace-local :selected])
-            objects (get-in state [:workspace-data :pages-index (:current-page-id state) :objects])
-            children (mapcat #(cph/get-children % objects) selected)
-            ids (into selected children)
+      (let [objects (get-in state [:workspace-data :pages-index (:current-page-id state) :objects])
+            children (mapcat #(cph/get-children % objects) ids)
+            ids (into ids children)
 
             update-fn (fn [s]
                         (cond-> s
@@ -211,12 +214,14 @@
         (rx/of (dwc/update-shapes ids update-fn))))))
 
 (defn picker-for-selected-shape []
+  ;; TODO: replace st/emit! by a subject push and set that in the WatchEvent
   (let [handle-change-color (fn [color _ shift?]
-                              (st/emit!
-                               (if shift?
-                                 (change-stroke-selected color nil nil)
-                                 (change-fill-selected color nil nil))
-                               (md/hide-modal)))]
+                              (let [ids (get-in @st/state [:workspace-local :selected])]
+                                (st/emit!
+                                 (if shift?
+                                   (change-stroke ids color nil nil)
+                                   (change-fill ids color nil nil))
+                                 (md/hide-modal))))]
     (ptk/reify ::start-picker
       ptk/UpdateEvent
       (update [_ state]
@@ -224,5 +229,5 @@
             (assoc-in [:workspace-local :picking-color?] true)
             (assoc ::md/modal {:id (random-uuid)
                                :type :colorpicker
-                               :props {:on-change handle-change-color}
+                               :props {:on-close handle-change-color}
                                :allow-click-outside true}))))))

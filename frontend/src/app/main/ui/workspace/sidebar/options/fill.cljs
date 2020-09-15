@@ -13,6 +13,7 @@
    [app.common.pages :as cp]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.colors :as dc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
@@ -37,14 +38,11 @@
          (= (:fill-opacity new-values)
             (:fill-opacity old-values)))))
 
+
 (mf/defc fill-menu
   {::mf/wrap [#(mf/memo' % fill-menu-props-equals?)]}
   [{:keys [ids type values editor] :as props}]
   (let [locale    (mf/deref i18n/locale)
-        shapes    (deref (refs/objects-by-id ids))
-        is-text? #(= (:type %) :text)
-        text-ids  (map :id (filter is-text? shapes))
-        other-ids (map :id (filter (comp not is-text?) shapes))
         show?     (not (nil? (:fill-color values)))
 
         label (case type
@@ -61,51 +59,32 @@
         (mf/use-callback
          (mf/deps ids)
          (fn [event]
-           (when-not (empty? other-ids)
-             (st/emit! (dwc/update-shapes other-ids #(assoc % :fill-color cp/default-color))))
-
-           (when-not (empty? text-ids)
-             (run! #(st/emit! (dwt/update-text-attrs
-                               {:id %
-                                :editor editor
-                                :attrs {:fill cp/default-color}}))
-                   text-ids))))
+           (st/emit! (dc/change-fill ids cp/default-color nil nil))))
 
         on-delete
         (mf/use-callback
          (mf/deps ids)
          (fn [event]
-           (when-not (empty? other-ids)
-             (st/emit! (dwc/update-shapes other-ids #(dissoc % :fill-color))))
-
-           (when-not (empty? text-ids)
-             (run! #(st/emit! (dwt/update-text-attrs
-                               {:id %
-                                :editor editor
-                                :attrs {:fill nil}}))
-                   text-ids))))
+           (st/emit! (dc/change-fill ids nil nil nil))))
 
         on-change
         (mf/use-callback
          (mf/deps ids)
          (fn [value opacity id file-id]
-           (let [change #(cond-> %
-                           value (assoc :fill-color value
-                                        :fill-color-ref-id id
-                                        :fill-color-ref-file file-id)
-                           opacity (assoc :fill-opacity opacity))
-                 converted-attrs (cond-> {}
-                                   value (assoc :fill value)
-                                   opacity (assoc :opacity opacity))]
+           (st/emit! (dc/change-fill ids value id file-id))))
 
-             (when-not (empty? other-ids)
-               (st/emit! (dwc/update-shapes ids change)))
-             (when-not (empty? text-ids)
-               (run! #(st/emit! (dwt/update-text-attrs
-                                 {:id %
-                                  :editor editor
-                                  :attrs converted-attrs}))
-                     text-ids)))))]
+        on-open-picker
+        (mf/use-callback
+         (mf/deps ids)
+         (fn [value opacity id file-id]
+           (st/emit! dwc/start-undo-transaction)))
+
+        on-close-picker
+        (mf/use-callback
+         (mf/deps ids)
+         (fn [value opacity id file-id]
+           (st/emit! dwc/commit-undo-transaction)))]
+
     (if show?
       [:div.element-set
        [:div.element-set-title
@@ -113,10 +92,14 @@
         [:div.add-page {:on-click on-delete} i/minus]]
 
        [:div.element-set-content
-        [:& color-row {:color color :on-change on-change}]]]
+        [:& color-row {:color color
+                       :on-change on-change
+                       :on-open on-open-picker
+                       :on-close on-close-picker}]]]
 
       [:div.element-set
        [:div.element-set-title
         [:span label]
         [:div.add-page {:on-click on-add} i/close]]])))
+
 

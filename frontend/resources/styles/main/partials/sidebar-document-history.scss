@@ -27,7 +27,7 @@
         overflow: auto;
         margin: 0.5rem;
 
-        &.selected {
+        &.transaction {
             border: 2px solid $color-primary;
         }
     }

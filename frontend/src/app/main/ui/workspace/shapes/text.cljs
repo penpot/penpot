@@ -15,6 +15,7 @@
    [rumext.alpha :as mf]
    [app.common.data :as d]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -273,9 +274,12 @@
         (fn []
           (let [lkey1 (events/listen js/document EventType.CLICK on-click)
                 lkey2 (events/listen js/document EventType.KEYUP on-key-up)]
-            (st/emit! (dwt/assign-editor id editor))
+            (st/emit! (dwt/assign-editor id editor)
+                      dwc/start-undo-transaction)
+
             #(do
-               (st/emit! (dwt/assign-editor id nil))
+               (st/emit! (dwt/assign-editor id nil)
+                         dwc/commit-undo-transaction)
                (events/unlistenByKey lkey1)
                (events/unlistenByKey lkey2))))
 

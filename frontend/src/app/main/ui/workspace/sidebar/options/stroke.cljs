@@ -119,7 +119,19 @@
 
         on-del-stroke
         (fn [event]
-          (st/emit! (dwc/update-shapes ids #(assoc % :stroke-style :none))))]
+          (st/emit! (dwc/update-shapes ids #(assoc % :stroke-style :none))))
+
+        on-open-picker
+        (mf/use-callback
+         (mf/deps ids)
+         (fn [value opacity id file-id]
+           (st/emit! dwc/start-undo-transaction)))
+
+        on-close-picker
+        (mf/use-callback
+         (mf/deps ids)
+         (fn [value opacity id file-id]
+           (st/emit! dwc/commit-undo-transaction)))]
 
     (if show-options
       [:div.element-set
@@ -130,7 +142,9 @@
        [:div.element-set-content
         ;; Stroke Color
         [:& color-row {:color current-stroke-color
-                       :on-change handle-change-stroke-color}]
+                       :on-change handle-change-stroke-color
+                       :on-open on-open-picker
+                       :on-close on-close-picker}]
 
         ;; Stroke Width, Alignment & Style
         [:div.row-flex

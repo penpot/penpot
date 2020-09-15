@@ -15,6 +15,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.common :as dwc]
    [app.util.i18n :as i18n :refer [t]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]))
 
@@ -28,12 +29,25 @@
   [{:keys [page-id] :as props}]
   (let [locale (i18n/use-locale)
         options (mf/deref refs/workspace-page-options)
-        handle-change-color (use-change-color page-id)]
+        handle-change-color (use-change-color page-id)
+
+        on-open
+        (mf/use-callback
+         (mf/deps page-id)
+         #(st/emit! dwc/start-undo-transaction))
+
+        on-close
+        (mf/use-callback
+         (mf/deps page-id)
+         #(st/emit! dwc/commit-undo-transaction))]
+
     [:div.element-set
      [:div.element-set-title (t locale "workspace.options.canvas-background")]
      [:div.element-set-content
       [:& color-row {:disable-opacity true
                      :color {:value (get options :background "#E8E9EA")
                              :opacity 1}
-                     :on-change handle-change-color}]]]))
+                     :on-change handle-change-color
+                     :on-open on-open
+                     :on-close on-close}]]]))
 

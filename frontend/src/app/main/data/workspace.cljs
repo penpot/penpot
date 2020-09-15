@@ -1456,6 +1456,7 @@
                   :option :background
                   :value color}]
                 [{:type :set-option
+                  :page-id page-id
                   :option :background
                   :value ccolor}]
                 {:commit-local? true}))))))
