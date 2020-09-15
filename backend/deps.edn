@@ -39,7 +39,7 @@
 
 
   buddy/buddy-core {:mvn/version "1.8.0"}
-  buddy/buddy-hashers {:mvn/version "1.5.1"}
+  buddy/buddy-hashers {:mvn/version "1.6.0"}
 
   lambdaisland/uri {:mvn/version "1.4.54"
                     :exclusions [org.clojure/data.json]}
