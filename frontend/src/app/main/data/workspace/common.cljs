@@ -265,14 +265,49 @@
           (update :workspace-undo dissoc :undo-index)
           (update-in [:workspace-undo :items] (fn [queue] (into [] (take (inc index) queue))))))))
 
+(defn- add-undo-entry [state entry]
+  (if entry
+    (let [state (update-in state [:workspace-undo :items] (fnil conj-undo-entry []) entry)]
+      (assoc-in state [:workspace-undo :index] (dec (count (get-in state [:workspace-undo :items])))))
+    state))
+
+(defn- accumulate-undo-entry [state {:keys [undo-changes redo-changes]}]
+  (-> state
+      (update-in [:workspace-undo :transaction :undo-changes] #(into undo-changes %))
+      (update-in [:workspace-undo :transaction :redo-changes] #(into % redo-changes))))
+
 (defn- append-undo
   [entry]
   (us/verify ::undo-entry entry)
   (ptk/reify ::append-undo
     ptk/UpdateEvent
     (update [_ state]
-      (let [state (update-in state [:workspace-undo :items] (fnil conj-undo-entry []) entry)]
-        (assoc-in state [:workspace-undo :index] (dec (count (get-in state [:workspace-undo :items]))))))))
+      (if (get-in state [:workspace-undo :transaction])
+        (accumulate-undo-entry state entry)
+        (add-undo-entry state entry)))))
+
+(def start-undo-transaction
+  (ptk/reify ::start-undo-transaction
+    ptk/UpdateEvent
+    (update [_ state]
+      ;; We commit the old transaction before starting the new one
+      (-> state
+          (add-undo-entry (get-in state [:workspace-undo :transaction]))
+          (assoc-in [:workspace-undo :transaction] {:undo-changes []
+                                                    :redo-changes []})))))
+(def discard-undo-transaction
+  (ptk/reify ::discard-undo-transaction
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-undo dissoc :transaction))))
+
+(def commit-undo-transaction
+  (ptk/reify ::commit-undo-transaction
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (add-undo-entry (get-in state [:workspace-undo :transaction]))
+          (update :workspace-undo dissoc :transaction)))))
 
 (def undo
   (ptk/reify ::undo

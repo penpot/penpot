@@ -136,12 +136,12 @@
                                  :top nil
                                  :left nil
                                  :editing rename?})
-
         click-color
         (fn [event]
-          (if (kbd/shift? event)
-            (st/emit! (dc/change-stroke-selected (:value color) id (if local? nil file-id)))
-            (st/emit! (dc/change-fill-selected (:value color) id (if local? nil file-id)))))
+          (let [ids (get-in @st/state [:workspace-local :selected])]
+            (if (kbd/shift? event)
+              (st/emit! (dc/change-stroke ids (:value color) id (if local? nil file-id)))
+              (st/emit! (dc/change-fill ids (:value color) id (if local? nil file-id))))))
 
         rename-color
         (fn [name]

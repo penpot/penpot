@@ -27,24 +27,40 @@
 (def workspace-undo
   (l/derived :workspace-undo st/state))
 
+(mf/defc undo-entry [{:keys [index entry objects is-transaction?] :or {is-transaction? false}}]
+  (let [{:keys [redo-changes]} entry]
+    [:li.undo-entry {:class (when is-transaction? "transaction")}
+     (for [[idx-change {:keys [type id operations]}] (map-indexed vector redo-changes)]
+       [:div.undo-entry-change
+        [:div.undo-entry-change-data (when type (str type)) " " (when id (str (get-in objects [id :name] (subs (str id) 0 8))))]
+        (when operations
+          [:div.undo-entry-change-data (str/join ", " (map (comp name :attr) operations))])])]))
+
 (mf/defc history-toolbox []
   (let [locale (mf/deref i18n/locale)
-        {:keys [items index]} (mf/deref workspace-undo)
+        {:keys [items index transaction]} (mf/deref workspace-undo)
         objects (mf/deref refs/workspace-page-objects)]
     [:div.history-toolbox
      [:div.history-toolbox-title "History"]
-     (when (> (count items) 0)
-       [:ul.undo-history
-        [:*
-         (when (or (nil? index) (>= index (count items))) [:hr.separator])
-         (for [[idx-entry {:keys [redo-changes]}] (->> items (map-indexed vector) reverse)]
-           [:*
-            (when (= index idx-entry) [:hr.separator {:data-index index}])
-            [:li.undo-entry {:key (str "entry-" idx-entry)}
-             (for [[idx-change {:keys [type id operations]}] (map-indexed vector redo-changes)]
-               [:div.undo-entry-change
-                [:div.undo-entry-change-data (when type (str type)) " " (when id (str (get-in objects [id :name] (subs (str id) 0 8))))]
-                (when operations
-                  [:div.undo-entry-change-data (str/join ", " (map (comp name :attr) operations))])])]])
-         (when (= index -1) [:hr.separator])]])]))
+     [:ul.undo-history
+      [:*
+       (when (and
+              (> (count items) 0)
+              (or (nil? index)
+                  (>= index (count items))))
+         [:hr.separator])
+
+       (when transaction
+         [:& undo-entry {:key (str "transaction")
+                         :objects objects
+                         :is-transaction? true
+                         :entry transaction}])
+
+       (for [[idx-entry entry] (->> items (map-indexed vector) reverse)]
+         [:*
+          (when (= index idx-entry) [:hr.separator {:data-index index}])
+          [:& undo-entry {:key (str "entry-" idx-entry)
+                          :objects objects
+                          :entry entry}]])
+       (when (= index -1) [:hr.separator])]]]))
 

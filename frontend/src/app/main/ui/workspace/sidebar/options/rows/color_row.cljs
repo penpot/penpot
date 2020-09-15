@@ -19,16 +19,18 @@
    [app.main.refs :as refs]))
 
 (defn color-picker-callback
-  [color handle-change-color disable-opacity]
+  [color handle-change-color handle-open handle-close disable-opacity]
   (fn [event]
     (let [x (.-clientX event)
           y (.-clientY event)
           props {:x x
                  :y y
                  :on-change handle-change-color
+                 :on-close handle-close
                  :value (:value color)
                  :opacity (:opacity color)
                  :disable-opacity disable-opacity}]
+      (handle-open)
       (modal/show! :colorpicker props))))
 
 (defn value-to-background [value]
@@ -57,7 +59,7 @@
   (if (= v :multiple) nil v))
 
 (mf/defc color-row
-  [{:keys [color on-change disable-opacity]}]
+  [{:keys [color on-change on-open on-close disable-opacity]}]
   (let [;;
         file-colors (mf/deref refs/workspace-file-colors)
         shared-libs (mf/deref refs/workspace-libraries)
@@ -91,6 +93,11 @@
                             (reset! state {:value new-value :opacity new-opacity})
                             (when on-change (on-change new-value new-opacity id file-id)))
 
+        handle-open (fn [] (when on-open (on-open)))
+
+        handle-close (fn [value opacity id file-id]
+                       (when on-close (on-close value opacity id file-id)))
+
         handle-value-change (fn [event]
                               (let [target (dom/get-target event)]
                                 (when (dom/valid? target)
@@ -119,7 +126,7 @@
      [:span.color-th
       {:class (when (:id color) "color-name")
        :style {:background-color (-> value value-to-background)}
-       :on-click (color-picker-callback @state handle-pick-color disable-opacity)}
+       :on-click (color-picker-callback @state handle-pick-color handle-open handle-close disable-opacity)}
       (when (= value :multiple) "?")]
 
      (if (:id color)

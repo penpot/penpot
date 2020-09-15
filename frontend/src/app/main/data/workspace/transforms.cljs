@@ -427,5 +427,7 @@
             uchanges (conj (dwc/generate-changes page-id objects2 objects0) regchg)
             ]
 
-        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
-               (dwc/rehash-shape-frame-relationship ids))))))
+        (rx/of dwc/start-undo-transaction
+               (dwc/commit-changes rchanges uchanges {:commit-local? true})
+               (dwc/rehash-shape-frame-relationship ids)
+               dwc/commit-undo-transaction)))))

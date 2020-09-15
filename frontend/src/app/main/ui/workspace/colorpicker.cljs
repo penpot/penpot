@@ -369,30 +369,41 @@
          (t locale "workspace.libraries.colors.save-color")]])])
   )
 
+(defn calculate-position
+  "Calculates the style properties for the given coordinates and position"
+  [position x y]
+  (cond
+    (or (nil? x) (nil? y)) {:left "auto" :right "16rem" :top "4rem"}
+    (= position :left) {:left (str (- x 270) "px") :top (str (- y 50) "px")}
+    :else {:left (str (+ x 24) "px") :top (str (- y 50) "px")}))
+
+
 (mf/defc colorpicker-modal
   {::mf/register modal/components
    ::mf/register-as :colorpicker}
-  [{:keys [x y default value opacity page on-change disable-opacity position on-accept] :as props}]
-  (let [position (or position :left)
-        style (cond
-                (or (nil? x) (nil? y))
-                {:left "auto"
-                 :right "16rem"
-                 :top "4rem"}
+  [{:keys [x y default value opacity page on-change on-close disable-opacity position on-accept] :as props}]
+  (let [dirty? (mf/use-var false)
+        last-change (mf/use-var nil)
+        position (or position :left)
+        style (calculate-position position x y)
 
-                (= position :left)
-                {:left (str (- x 270) "px")
-                 :top (str (- y 50) "px")}
+        handle-change (fn [new-value new-opacity op1 op2]
+                        (when (or (not= new-value value) (not= new-opacity opacity))
+                          (reset! dirty? true))
+                        (reset! last-change [new-value new-opacity op1 op2])
+                        (on-change new-value new-opacity op1 op2))]
 
-                :else
-                {:left (str (+ x 24) "px")
-                 :top (str (- y 50) "px")})
-        ]
+    (mf/use-effect
+     (fn []
+       #(when (and @dirty? on-close)
+          (when-let [[value opacity op1 op2] @last-change]
+            (on-close value opacity op1 op2)))))
+
     [:div.colorpicker-tooltip
      {:style (clj->js style)}
      [:& colorpicker {:value (or value default)
                       :opacity (or opacity 1)
-                      :on-change on-change
+                      :on-change handle-change
                       :on-accept on-accept
                       :disable-opacity disable-opacity}]]))
 
