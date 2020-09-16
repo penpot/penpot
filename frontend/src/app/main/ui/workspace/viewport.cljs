@@ -224,7 +224,7 @@
      ;; Everytime we finish retrieving a new URL we redraw the canvas
      ;; so even if we're not finished the user can start to pick basic
      ;; shapes
-     (mf/deps props fetch-pending)
+     (mf/deps fetch-pending)
      (fn []
        (try
          (let [canvas-node (mf/ref-val canvas-ref)

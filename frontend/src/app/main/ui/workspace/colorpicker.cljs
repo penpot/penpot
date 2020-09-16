@@ -401,7 +401,8 @@
                         (when (or (not= new-value value) (not= new-opacity opacity))
                           (reset! dirty? true))
                         (reset! last-change [new-value new-opacity op1 op2])
-                        (on-change new-value new-opacity op1 op2))]
+                        (when on-change
+                          (on-change new-value new-opacity op1 op2)))]
 
     (mf/use-effect
      (fn []
