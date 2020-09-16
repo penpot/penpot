@@ -59,7 +59,8 @@
                  :cursor (when (:interactions shape) "pointer")}
        [:& component {:shape shape
                       :frame frame
-                      :childs childs}]
+                      :childs childs
+                      :is-child-selected? true}]
        (when (and (:interactions shape) show-interactions?)
          [:rect {:x (- x 1)
                  :y (- y 1)
