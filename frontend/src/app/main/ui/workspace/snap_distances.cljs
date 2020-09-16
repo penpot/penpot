@@ -1,20 +1,28 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
+
 (ns app.main.ui.workspace.snap-distances
   (:require
-   [rumext.alpha :as mf]
-   [beicon.core :as rx]
+   [app.common.data :as d]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
+   [app.common.pages :as cp]
    [app.common.uuid :as uuid]
    [app.main.refs :as refs]
    [app.main.snap :as snap]
-   [app.util.geom.snap-points :as sp]
-   [app.common.geom.point :as gpt]
-
-   [cuerdas.core :as str]
-   [app.common.pages :as cp]
-   [app.common.data :as d]
-   [app.common.geom.shapes :as gsh]
-   [app.common.math :as mth]
    [app.main.worker :as uw]
-   [clojure.set :as set]))
+   [app.util.geom.snap-points :as sp]
+   [beicon.core :as rx]
+   [clojure.set :as set]
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
 (def ^:private line-color "#D383DA")
 (def ^:private segment-gap 2)
@@ -107,15 +115,14 @@
 (mf/defc shape-distance
   {::mf/wrap-props false}
   [props]
-  (let [frame (unchecked-get props "frame")
-        selrect (unchecked-get props "selrect")
-        page-id (unchecked-get props "page-id")
-        zoom (unchecked-get props "zoom")
-        coord (unchecked-get props "coord")
-        selected (unchecked-get props "selected")
-        ;{:keys [frame selrect page-id zoom coord selected]}
+  (let [frame      (unchecked-get props "frame")
+        selrect    (unchecked-get props "selrect")
+        page-id    (unchecked-get props "page-id")
+        zoom       (unchecked-get props "zoom")
+        coord      (unchecked-get props "coord")
+        selected   (unchecked-get props "selected")
 
-        subject (mf/use-memo #(rx/subject))
+        subject    (mf/use-memo #(rx/subject))
         to-measure (mf/use-state [])
 
         pair->distance+pair
@@ -226,26 +233,30 @@
                                   :zoom zoom}])))
 
 (mf/defc snap-distances
-  [{:keys [layout page-id zoom selected transform]}]
-  (let [selected-shapes (mf/deref (refs/objects-by-id selected))
-        frame-id (-> selected-shapes first :frame-id)
-        frame  (mf/deref (refs/object-by-id frame-id))]
-
+  {::mf/wrap-props false}
+  [props]
+  (let [layout          (unchecked-get props "layout")
+        page-id         (unchecked-get props "page-id")
+        zoom            (unchecked-get props "zoom")
+        selected        (unchecked-get props "selected")
+        transform       (unchecked-get props "transform")
+        selected-shapes (mf/deref (refs/objects-by-id selected))
+        frame-id        (-> selected-shapes first :frame-id)
+        frame           (mf/deref (refs/object-by-id frame-id))]
     (when (and (contains? layout :dynamic-alignment)
                (= transform :move)
                (not (empty? selected)))
-      (let [shapes (->> selected-shapes (map gsh/transform-shape))
-            selrect  (gsh/selection-rect shapes)
-            key      (->> selected (map str) (str/join "-"))]
+      (let [shapes  (map gsh/transform-shape selected-shapes)
+            selrect (gsh/selection-rect shapes)
+            key     (->> selected (map str) (str/join "-"))]
         [:g.distance
          [:& shape-distance
-            {:selrect selrect
-             :page-id page-id
-             :frame frame
-             :zoom zoom
-             :coord :x
-             :selected selected}]
-
+          {:selrect selrect
+           :page-id page-id
+           :frame frame
+           :zoom zoom
+           :coord :x
+           :selected selected}]
          [:& shape-distance
           {:selrect selrect
            :page-id page-id
