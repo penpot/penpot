@@ -86,11 +86,6 @@
 
 (s/def ::options-mode #{:design :prototype})
 
-(def workspace-file-local-default
-  {:left-sidebar? true
-   :right-sidebar? true
-   :color-for-rename nil})
-
 (def workspace-local-default
   {:zoom 1
    :flags #{}
@@ -123,8 +118,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc state
-             :workspace-presence {}
-             :workspace-file-local workspace-file-local-default))
+             :workspace-presence {}))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -373,9 +367,9 @@
                                                  :document-history
                                                  :assets])))
         right-sidebar? (not (empty? (keep layout [:element-options])))]
-    (update-in state [:workspace-local]
-               assoc :left-sidebar? left-sidebar?
-                     :right-sidebar? right-sidebar?)))
+    (update state :workspace-local
+            assoc :left-sidebar? left-sidebar?
+                  :right-sidebar? right-sidebar?)))
 
 (defn- check-auto-flags
   [state flags-to-toggle]
@@ -401,8 +395,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (-> (reduce toggle-layout-flag state flags)
-          (check-sidebars)
-          (check-auto-flags flags)))))
+          (check-auto-flags flags)
+          (check-sidebars)))))
 
 ;; --- Set element options mode
 
