@@ -38,6 +38,9 @@
 (def picked-shift?
   (l/derived :picked-shift? refs/workspace-local))
 
+(def viewport
+  (l/derived (comp :vport :workspace-local) st/state))
+
 
 ;; --- Color Picker Modal
 
@@ -371,21 +374,28 @@
 
 (defn calculate-position
   "Calculates the style properties for the given coordinates and position"
-  [position x y]
-  (cond
-    (or (nil? x) (nil? y)) {:left "auto" :right "16rem" :top "4rem"}
-    (= position :left) {:left (str (- x 270) "px") :top (str (- y 50) "px")}
-    :else {:left (str (+ x 24) "px") :top (str (- y 50) "px")}))
+  [{vh :height} position x y]
+  (let [;; picker height in pixels
+        h 360
+        ;; Checks for overflow outside the viewport height
+        overflow-fix (max 0 (+ y (- 50) h (- vh)))]
+    (cond
+      (or (nil? x) (nil? y)) {:left "auto" :right "16rem" :top "4rem"}
+      (= position :left) {:left (str (- x 270) "px")
+                          :top (str (- y 50 overflow-fix) "px")}
+      :else {:left (str (+ x 24) "px")
+             :top (str (- y 50 overflow-fix) "px")})))
 
 
 (mf/defc colorpicker-modal
   {::mf/register modal/components
    ::mf/register-as :colorpicker}
   [{:keys [x y default value opacity page on-change on-close disable-opacity position on-accept] :as props}]
-  (let [dirty? (mf/use-var false)
+  (let [vport (mf/deref viewport)
+        dirty? (mf/use-var false)
         last-change (mf/use-var nil)
         position (or position :left)
-        style (calculate-position position x y)
+        style (calculate-position vport position x y)
 
         handle-change (fn [new-value new-opacity op1 op2]
                         (when (or (not= new-value value) (not= new-opacity opacity))
