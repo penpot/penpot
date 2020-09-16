@@ -353,6 +353,7 @@
 (declare remove-ref)
 (declare update-attrs)
 (declare sync-attrs)
+(declare calc-new-pos)
 
 (defn reset-component
   [id]
@@ -465,7 +466,8 @@
   [root-shape page components]
   (let [objects (get page :objects)
         all-shapes (cph/get-object-with-children (:id root-shape) objects)
-        component (get components (:component-id root-shape))]
+        component (get components (:component-id root-shape))
+        root-component (get-in component [:objects (:shape-ref root-shape)])]
     (loop [shapes (seq all-shapes)
            rchanges []
            uchanges []]
@@ -473,19 +475,19 @@
         (if (nil? shape)
           [rchanges uchanges]
           (let [[shape-rchanges shape-uchanges]
-                (generate-sync-shape shape page component)]
+                (generate-sync-shape shape root-shape root-component page component)]
             (recur (next shapes)
                    (concat rchanges shape-rchanges)
                    (concat uchanges shape-uchanges))))))))
 
 (defn- generate-sync-shape
-  [shape page component]
+  [shape root-shape root-component page component]
   (if (nil? component)
     (remove-component-and-ref shape page)
     (let [component-shape (get (:objects component) (:shape-ref shape))]
       (if (nil? component-shape)
         (remove-ref shape page)
-        (update-attrs shape component-shape page)))))
+        (update-attrs shape component-shape root-shape root-component page)))))
 
 (defn- remove-component-and-ref
   [shape page]
@@ -530,34 +532,46 @@
                    :val (:shape-ref shape)}]}]])
 
 (defn- update-attrs
-  [shape component-shape page]
-  (loop [attrs (seq sync-attrs)
-         roperations []
-         uoperations []]
-    (let [attr (first attrs)]
-      (if (nil? attr)
-        (let [rchanges [{:type :mod-obj
-                         :page-id (:id page)
-                         :id (:id shape)
-                         :operations roperations}]
-              uchanges [{:type :mod-obj
-                         :page-id (:id page)
-                         :id (:id shape)
-                         :operations uoperations}]]
-          [rchanges uchanges])
-        (if-not (contains? shape attr)
-          (recur (next attrs)
-                 roperations
-                 uoperations)
-          (let [roperation {:type :set
-                            :attr attr
-                            :val (get component-shape attr)}
-                uoperation {:type :set
-                            :attr attr
-                            :val (get shape attr)}]
+  [shape component-shape root-shape root-component page]
+  (let [new-pos (calc-new-pos shape component-shape root-shape root-component)]
+    (loop [attrs (seq sync-attrs)
+           roperations [{:type :set
+                         :attr :x
+                         :val (:x new-pos)}
+                        {:type :set
+                         :attr :y
+                         :val (:y new-pos)}]
+           uoperations [{:type :set
+                         :attr :x
+                         :val (:x shape)}
+                        {:type :set
+                         :attr :y
+                         :val (:y shape)}]]
+
+      (let [attr (first attrs)]
+        (if (nil? attr)
+          (let [rchanges [{:type :mod-obj
+                           :page-id (:id page)
+                           :id (:id shape)
+                           :operations roperations}]
+                uchanges [{:type :mod-obj
+                           :page-id (:id page)
+                           :id (:id shape)
+                           :operations uoperations}]]
+            [rchanges uchanges])
+          (if-not (contains? shape attr)
             (recur (next attrs)
-                   (conj roperations roperation)
-                   (conj uoperations uoperation))))))))
+                   roperations
+                   uoperations)
+            (let [roperation {:type :set
+                              :attr attr
+                              :val (get component-shape attr)}
+                  uoperation {:type :set
+                              :attr attr
+                              :val (get shape attr)}]
+              (recur (next attrs)
+                     (conj roperations roperation)
+                     (conj uoperations uoperation)))))))))
 
 (def sync-attrs [:content
                  :fill-color
@@ -584,5 +598,16 @@
                  :width
                  :height
                  :interactions
-                 :points])
+                 :points
+                 :transform])
+
+(defn- calc-new-pos
+  [shape component-shape root-shape root-component]
+  (let [root-pos           (gpt/point (:x root-shape) (:y root-shape))
+        root-component-pos (gpt/point (:x root-component) (:y root-component))
+        component-pos      (gpt/point (:x component-shape) (:y component-shape))
+        delta              (gpt/subtract component-pos root-component-pos)
+        shape-pos          (gpt/point (:x shape) (:y shape))
+        new-pos            (gpt/add root-pos delta)]
+    new-pos))
 
