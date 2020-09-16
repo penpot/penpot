@@ -33,33 +33,6 @@
 (s/def ::set-of-string
   (s/every string? :kind set?))
 
-;; Duplicate from workspace.
-;; FIXME: Move these functions to a common place
-
-(defn interrupt? [e] (= e :interrupt))
-
-(defn- retrieve-used-names
-  [objects]
-  (into #{} (map :name) (vals objects)))
-
-(defn- extract-numeric-suffix
-  [basename]
-  (if-let [[match p1 p2] (re-find #"(.*)-([0-9]+)$" basename)]
-    [p1 (+ 1 (d/parse-integer p2))]
-    [basename 1]))
-
-(defn- generate-unique-name
-  "A unique name generator"
-  [used basename]
-  (s/assert ::set-of-string used)
-  (s/assert ::us/string basename)
-  (let [[prefix initial] (extract-numeric-suffix basename)]
-    (loop [counter initial]
-      (let [candidate (str prefix "-" counter)]
-        (if (contains? used candidate)
-          (recur (inc counter))
-          candidate)))))
-
 ;; --- Selection Rect
 
 (declare select-shapes-by-current-selrect)
@@ -88,7 +61,7 @@
     (ptk/reify ::handle-selection
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [stoper (rx/filter #(or (interrupt? %)
+        (let [stoper (rx/filter #(or (dwc/interrupt? %)
                                      (ms/mouse-up? %))
                                 stream)]
           (rx/concat
@@ -183,6 +156,88 @@
           (rx/of deselect-all (select-shape (:id selected))))))))
 
 
+;; --- Group shapes
+
+(defn shapes-for-grouping
+  [objects selected]
+  (->> selected
+       (map #(get objects %))
+       (filter #(not= :frame (:type %)))
+       (map #(assoc % ::index (cph/position-on-parent (:id %) objects)))
+       (sort-by ::index)))
+
+(defn- make-group
+  [shapes prefix keep-name]
+  (let [selrect   (geom/selection-rect shapes)
+        frame-id  (-> shapes first :frame-id)
+        parent-id (-> shapes first :parent-id)
+        group-name (if (and keep-name
+                            (= (count shapes) 1)
+                            (= (:type (first shapes)) :group))
+                     (:name (first shapes))
+                     (name (gensym prefix)))]
+    (-> (cp/make-minimal-group frame-id selrect group-name)
+        (geom/setup selrect)
+        (assoc :shapes (map :id shapes)))))
+
+(defn prepare-create-group
+  [page-id shapes prefix keep-name]
+  (let [group (make-group shapes prefix keep-name)
+        rchanges [{:type :add-obj
+                   :id (:id group)
+                   :page-id page-id
+                   :frame-id (:frame-id (first shapes))
+                   :parent-id (:parent-id (first shapes))
+                   :obj group
+                   :index (::index (first shapes))}
+                  {:type :mov-objects
+                   :page-id page-id
+                   :parent-id (:id group)
+                   :shapes (map :id shapes)}]
+
+        uchanges (conj
+                   (map (fn [obj] {:type :mov-objects
+                                   :page-id page-id
+                                   :parent-id (:parent-id obj)
+                                   :index (::index obj)
+                                   :shapes [(:id obj)]})
+                        shapes)
+                   {:type :del-obj
+                    :id (:id group)
+                    :page-id page-id})]
+    [group rchanges uchanges]))
+
+(defn prepare-remove-group
+  [page-id group objects]
+  (let [shapes    (:shapes group)
+        parent-id (cph/get-parent (:id group) objects)
+        parent    (get objects parent-id)
+        index-in-parent (->> (:shapes parent)
+                             (map-indexed vector)
+                             (filter #(#{(:id group)} (second %)))
+                             (ffirst))
+        rchanges [{:type :mov-objects
+                   :page-id page-id
+                   :parent-id parent-id
+                   :shapes shapes
+                   :index index-in-parent}]
+        uchanges [{:type :add-obj
+                   :page-id page-id
+                   :id (:id group)
+                   :frame-id (:frame-id group)
+                   :obj (assoc group :shapes [])}
+                  {:type :mov-objects
+                   :page-id page-id
+                   :parent-id (:id group)
+                   :shapes shapes}
+                  {:type :mov-objects
+                   :page-id page-id
+                   :parent-id parent-id
+                   :shapes [(:id group)]
+                   :index index-in-parent}]]
+    [rchanges uchanges]))
+
+
 ;; --- Duplicate Shapes
 (declare prepare-duplicate-change)
 (declare prepare-duplicate-frame-change)
@@ -218,7 +273,7 @@
 (defn- prepare-duplicate-shape-change
   [objects page-id names obj delta frame-id parent-id]
   (let [id          (uuid/next)
-        name        (generate-unique-name names (:name obj))
+        name        (dwc/generate-unique-name names (:name obj))
         renamed-obj (assoc obj :id id :name name)
         moved-obj   (geom/move renamed-obj delta)
         frames      (cph/select-frames objects)
@@ -258,7 +313,7 @@
 (defn- prepare-duplicate-frame-change
   [objects page-id names obj delta]
   (let [frame-id   (uuid/next)
-        frame-name (generate-unique-name names (:name obj))
+        frame-name (dwc/generate-unique-name names (:name obj))
         sch        (->> (map #(get objects %) (:shapes obj))
                         (mapcat #(prepare-duplicate-shape-change objects page-id names % delta frame-id frame-id)))
 
@@ -287,7 +342,7 @@
 
             selected (get-in state [:workspace-local :selected])
             delta    (gpt/point 0 0)
-            unames   (retrieve-used-names objects)
+            unames   (dwc/retrieve-used-names objects)
 
             rchanges (prepare-duplicate-changes objects page-id unames selected delta)
             uchanges (mapv #(array-map :type :del-obj :page-id page-id :id (:id %))

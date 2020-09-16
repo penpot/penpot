@@ -12,13 +12,52 @@
    [app.common.data :as d]
    [app.common.uuid :as uuid]))
 
+(defn walk-pages
+  "Go through all pages of a file and apply a function to each one"
+  ;; The function receives two parameters (page-id and page), and
+  ;; returns the updated page.
+  [f data]
+  (update data :pages-index #(d/mapm f %)))
+
+(defn select-objects
+  "Get a list of all objects in a page that satisfy a condition"
+  [f page]
+  (filter f (vals (get page :objects))))
+
+(defn update-object-list
+  "Update multiple objects in a page at once"
+  [page objects-list]
+  (update page :objects
+          #(into % (d/index-by :id objects-list))))
+
+(defn get-root-component
+  "Get the root shape linked to the component for this shape, if any"
+  [id objects]
+  (let [obj (get objects id)]
+    (if-let [component-id (:component-id obj)]
+      id
+      (if-let [parent-id (:parent-id obj)]
+        (get-root-component parent-id obj)
+        nil))))
+
 (defn get-children
   "Retrieve all children ids recursively for a given object"
   [id objects]
-  (let [shapes (get-in objects [id :shapes])]
+  ;; TODO: find why does this sometimes come as a list instead of vector
+  (let [shapes (vec (get-in objects [id :shapes]))]
     (if shapes
       (d/concat shapes (mapcat #(get-children % objects) shapes))
       [])))
+
+(defn get-children-objects
+  "Retrieve all children objects recursively for a given object"
+  [id objects]
+  (map #(get objects %) (get-children id objects)))
+
+(defn get-object-with-children
+  "Retrieve a list with an object and all of its children"
+  [id objects]
+  (map #(get objects %) (concat [id] (get-children id objects))))
 
 (defn is-shape-grouped
   "Checks if a shape is inside a group"
@@ -112,4 +151,56 @@
                      :else
                      (lazy-seq (loopfn (rest ids))))))]
     (loopfn (:shapes root))))
+
+(defn clone-object
+  "Gets a copy of the object and all its children, with new ids
+  and with the parent-children links correctly set. Admits functions
+  to make more transformations to the cloned objects and the
+  original ones.
+
+  Returns the cloned object, the list of all new objects (including
+  the cloned one), and possibly a list of original objects modified."
+
+  ([object parent-id objects update-new-object]
+   (clone-object object parent-id objects update-new-object identity))
+
+  ([object parent-id objects update-new-object update-original-object]
+   (let [new-id (uuid/next)]
+     (loop [child-ids (seq (:shapes object))
+            new-direct-children []
+            new-children []
+            updated-children []]
+
+       (if (empty? child-ids)
+         (let [new-object (cond-> object
+                            true
+                            (assoc :id new-id
+                                   :parent-id parent-id)
+
+                            (some? (:shapes object))
+                            (assoc :shapes (map :id new-direct-children)))
+
+               new-object (update-new-object new-object object)
+
+               new-objects (concat [new-object] new-children)
+
+               updated-object (update-original-object object new-object)
+
+               updated-objects (if (= object updated-object)
+                                 updated-children
+                                 (concat [updated-object] updated-children))]
+
+           [new-object new-objects updated-objects])
+
+         (let [child-id (first child-ids)
+               child (get objects child-id)
+
+               [new-child new-child-objects updated-child-objects]
+               (clone-object child new-id objects update-new-object update-original-object)]
+
+           (recur
+             (next child-ids)
+             (concat new-direct-children [new-child])
+             (concat new-children new-child-objects)
+             (concat updated-children updated-child-objects))))))))
 

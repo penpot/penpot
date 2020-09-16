@@ -20,6 +20,7 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.libraries :as dwl]
    [app.main.ui.hooks :refer [use-rxsub]]
    [app.main.ui.components.dropdown :refer [dropdown]]))
 
@@ -45,6 +46,7 @@
   [{:keys [mdata] :as props}]
   (let [{:keys [id] :as shape} (:shape mdata)
         selected (:selected mdata)
+        root-shape (:root-shape mdata)
 
         do-duplicate #(st/emit! dw/duplicate-selected)
         do-delete #(st/emit! dw/delete-selected)
@@ -59,7 +61,15 @@
         do-lock-shape #(st/emit! (dw/update-shape-flags id {:blocked true}))
         do-unlock-shape #(st/emit! (dw/update-shape-flags id {:blocked false}))
         do-create-group #(st/emit! dw/group-selected)
-        do-remove-group #(st/emit! dw/ungroup-selected)]
+        do-remove-group #(st/emit! dw/ungroup-selected)
+        do-add-component #(st/emit! dwl/add-component)
+        do-detach-component #(st/emit! (dwl/detach-component id))
+        do-reset-component #(st/emit! (dwl/reset-component id))
+        do-update-component #(do
+                               (st/emit! (dwl/update-component id))
+                               (st/emit! (dwl/sync-file {:file-id nil})))
+        do-navigate-component-file #(st/emit! (dwl/nav-to-component-file
+                                                (:component-file root-shape)))]
     [:*
      [:& menu-entry {:title "Copy"
                      :shortcut "Ctrl + c"
@@ -101,13 +111,29 @@
        [:& menu-entry {:title "Hide"
                        :on-click do-hide-shape}])
 
-
-
      (if (:blocked shape)
        [:& menu-entry {:title "Unlock"
                        :on-click do-unlock-shape}]
        [:& menu-entry {:title "Lock"
                        :on-click do-lock-shape}])
+
+     [:& menu-separator]
+
+     (if (nil? (:shape-ref shape))
+       [:& menu-entry {:title "Create component"
+                       :shortcut "Ctrl + K"
+                       :on-click do-add-component}]
+       [:*
+         [:& menu-entry {:title "Detach instance"
+                         :on-click do-detach-component}]
+         [:& menu-entry {:title "Reset overrides"
+                         :on-click do-reset-component}]
+         (if (nil? (:component-file root-shape))
+           [:& menu-entry {:title "Update master component"
+                           :on-click do-update-component}]
+           [:& menu-entry {:title "Go to master component file"
+                           :on-click do-navigate-component-file}])])
+
      [:& menu-separator]
      [:& menu-entry {:title "Delete"
                      :shortcut "Supr"

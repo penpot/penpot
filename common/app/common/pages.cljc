@@ -44,6 +44,9 @@
     (integer? %)
     (>= % min-safe-int)
     (<= % max-safe-int)))
+(s/def ::component-id uuid?)
+(s/def ::component-file uuid?)
+(s/def ::shape-ref uuid?)
 
 (s/def ::safe-number
   #(and
@@ -216,7 +219,10 @@
 
 (s/def ::shape
   (s/and ::minimal-shape ::shape-attrs
-         (s/keys :opt-un [::id])))
+         (s/keys :opt-un [::id
+                          ::component-id
+                          ::component-file
+                          ::shape-ref])))
 
 (s/def :internal.page/objects (s/map-of uuid? ::shape))
 
@@ -356,6 +362,18 @@
 (defmethod change-spec :del-media [_]
   (s/keys :req-un [::id]))
 
+(s/def :internal.changes.add-component/shapes
+  (s/coll-of ::shape))
+
+(defmethod change-spec :add-component [_]
+  (s/keys :req-un [::id ::name :internal.changes.add-component/shapes]))
+
+(defmethod change-spec :del-component [_]
+  (s/keys :req-un [::id]))
+
+(defmethod change-spec :update-component [_]
+  (s/keys :req-un [::id ::name :internal.changes.add-component/shapes]))
+
 (s/def ::change (s/multi-spec change-spec :type))
 (s/def ::changes (s/coll-of ::change))
 
@@ -472,6 +490,18 @@
                      :height 1}
            :points []
            :segments [])))
+
+(defn make-minimal-group
+  [frame-id selection-rect group-name]
+  {:id (uuid/next)
+   :type :group
+   :name group-name
+   :shapes []
+   :frame-id frame-id
+   :x (:x selection-rect)
+   :y (:y selection-rect)
+   :width (:width selection-rect)
+   :height (:height selection-rect)})
 
 (defn make-file-data
   ([] (make-file-data (uuid/next)))
@@ -744,6 +774,24 @@
 (defmethod process-change :del-media
   [data {:keys [id]}]
   (update data :media dissoc id))
+
+(defmethod process-change :add-component
+  [data {:keys [id name shapes]}]
+  (assoc-in data [:components id]
+            {:id id
+             :name name
+             :objects (d/index-by :id shapes)}))
+
+(defmethod process-change :del-component
+  [data {:keys [id]}]
+  (d/dissoc-in data [:components id]))
+
+(defmethod process-change :update-component
+  [data {:keys [id name shapes]}]
+  (update-in data [:components id]
+             #(assoc %
+                     :name name
+                     :objects (d/index-by :id shapes))))
 
 (defmethod process-operation :set
   [shape op]

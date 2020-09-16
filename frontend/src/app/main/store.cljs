@@ -67,4 +67,4 @@
 
 (defn ^:export dump-objects []
   (let [page-id (get @state :current-page-id)]
-    (logjs "state" (get-in @state [:workspace-data page-id :objects]))))
+    (logjs "state" (get-in @state [:workspace-data :pages-index page-id :objects]))))

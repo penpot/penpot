@@ -22,12 +22,13 @@
    [app.config :as cfg]
    [app.main.constants :as c]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.notifications :as dwn]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.transforms :as dwt]
-   [app.main.data.colors :as dwl]
+   [app.main.data.colors :as mdc]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.streams :as ms]
@@ -46,10 +47,6 @@
 (s/def ::shape-attrs ::cp/shape-attrs)
 (s/def ::set-of-string
   (s/every string? :kind set?))
-
-;; --- Expose inner functions
-
-(defn interrupt? [e] (= e :interrupt))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace Initialization
@@ -949,7 +946,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (->> stream
-           (rx/filter interrupt?)
+           (rx/filter dwc/interrupt?)
            (rx/take 1)
            (rx/map (constantly clear-edition-mode))))))
 
@@ -978,7 +975,7 @@
      ptk/WatchEvent
      (watch [_ state stream]
        (let [cancel-event? (fn [event]
-                             (interrupt? event))
+                             (dwc/interrupt? event))
              stoper (rx/filter (ptk/type? ::clear-drawing) stream)]
          (->> (rx/filter cancel-event? stream)
               (rx/take 1)
@@ -1127,8 +1124,14 @@
   (ptk/reify ::show-context-menu
     ptk/UpdateEvent
     (update [_ state]
-      (let [mdata {:position position
+      (let [page-id    (:current-page-id state)
+            objects    (dwc/lookup-page-objects state page-id)
+            root-id    (cph/get-root-component (:id shape) objects)
+            root-shape (get objects root-id)
+
+            mdata {:position position
                    :shape shape
+                   :root-shape root-shape
                    :selected (get-in state [:workspace-local :selected])}]
         (-> state
             (assoc-in [:workspace-local :context-menu] mdata))))
@@ -1260,70 +1263,19 @@
 ;; GROUPS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn group-shape
-  [id frame-id selected selection-rect]
-  {:id id
-   :type :group
-   :name (name (gensym "Group-"))
-   :shapes []
-   :frame-id frame-id
-   :x (:x selection-rect)
-   :y (:y selection-rect)
-   :width (:width selection-rect)
-   :height (:height selection-rect)})
-
 (def group-selected
   (ptk/reify ::group-selected
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [id       (uuid/next)
-            page-id  (:current-page-id state)
+      (let [page-id  (:current-page-id state)
             objects  (dwc/lookup-page-objects state page-id)
             selected (get-in state [:workspace-local :selected])
-            items    (->> selected
-                          (map #(get objects %))
-                          (filter #(not= :frame (:type %)))
-                          (map #(assoc % ::index (cph/position-on-parent (:id %) objects)))
-                          (sort-by ::index))]
-
-        (when (not-empty items)
-          (let [selrect   (geom/selection-rect items)
-                frame-id  (-> items first :frame-id)
-                parent-id (-> items first :parent-id)
-                group     (-> (group-shape id frame-id selected selrect)
-                              (geom/setup selrect))
-
-                index     (::index (first items))
-
-                rchanges  [{:type :add-obj
-                            :id id
-                            :page-id page-id
-                            :frame-id frame-id
-                            :parent-id parent-id
-                            :obj group
-                            :index index}
-                           {:type :mov-objects
-                            :page-id page-id
-                            :parent-id id
-                            :shapes (->> items
-                                         (map :id)
-                                         (into #{})
-                                         (vec))}]
-
-                uchanges
-                (reduce (fn [res obj]
-                          (conj res {:type :mov-objects
-                                     :page-id page-id
-                                     :parent-id (:parent-id obj)
-                                     :index (::index obj)
-                                     :shapes [(:id obj)]}))
-                        []
-                        items)
-
-                uchanges (conj uchanges {:type :del-obj :id id :page-id page-id})]
-
+            shapes   (dws/shapes-for-grouping objects selected)]
+        (when-not (empty? shapes)
+          (let [[group rchanges uchanges]
+                (dws/prepare-create-group page-id shapes "Group-" false)]
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
-                   (dws/select-shapes (d/ordered-set id)))))))))
+                   (dws/select-shapes (d/ordered-set (:id group))))))))))
 
 (def ungroup-selected
   (ptk/reify ::ungroup-selected
@@ -1336,34 +1288,11 @@
             group    (get objects group-id)]
         (when (and (= 1 (count selected))
                    (= (:type group) :group))
-          (let [shapes    (:shapes group)
-                parent-id (cph/get-parent group-id objects)
-                parent    (get objects parent-id)
-                index-in-parent (->> (:shapes parent)
-                                     (map-indexed vector)
-                                     (filter #(#{group-id} (second %)))
-                                     (ffirst))
-                rchanges [{:type :mov-objects
-                           :page-id page-id
-                           :parent-id parent-id
-                           :shapes shapes
-                           :index index-in-parent}]
-                uchanges [{:type :add-obj
-                           :page-id page-id
-                           :id group-id
-                           :frame-id (:frame-id group)
-                           :obj (assoc group :shapes [])}
-                          {:type :mov-objects
-                           :page-id page-id
-                           :parent-id group-id
-                           :shapes shapes}
-                          {:type :mov-objects
-                           :page-id page-id
-                           :parent-id parent-id
-                           :shapes [group-id]
-                           :index index-in-parent}]]
+          (let [[rchanges uchanges]
+                (dws/prepare-remove-group page-id group objects)]
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))))
 
+ 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interactions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1506,6 +1435,7 @@
    "+" #(st/emit! (increase-zoom nil))
    "-" #(st/emit! (decrease-zoom nil))
    "ctrl+g" #(st/emit! group-selected)
+   "ctrl+k" #(st/emit! dwl/add-component)
    "shift+g" #(st/emit! ungroup-selected)
    "shift+0" #(st/emit! reset-zoom)
    "shift+1" #(st/emit! zoom-to-fit-all)
@@ -1537,5 +1467,5 @@
    "right" #(st/emit! (dwt/move-selected :right false))
    "left" #(st/emit! (dwt/move-selected :left false))
 
-   "i" #(st/emit! (dwl/picker-for-selected-shape ))})
+   "i" #(st/emit! (mdc/picker-for-selected-shape ))})
 

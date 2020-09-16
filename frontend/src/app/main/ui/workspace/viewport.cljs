@@ -22,6 +22,7 @@
    [app.common.data :as d]
    [app.main.constants :as c]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.drawing :as dd]
    [app.main.data.colors :as dwc]
    [app.main.data.fetch :as mdf]
@@ -132,12 +133,16 @@
         hover     (or (unchecked-get props "hover") #{})
         outline?  (set/union selected hover)
         shapes    (->> (vals objects) (filter (comp outline? :id)))
-        transform (mf/deref refs/current-transform)]
+        transform (mf/deref refs/current-transform)
+        color (if (or (> (count shapes) 1) (nil? (:shape-ref (first shapes))))
+                "#31EFB8"
+                "#00E0FF")]
     (when (nil? transform)
       [:g.outlines
        (for [shape shapes]
          [:& outline {:key (str "outline-" (:id shape))
-                      :shape (gsh/transform-shape shape)}])])))
+                      :shape (gsh/transform-shape shape)
+                      :color color}])])))
 
 (mf/defc frames
   {::mf/wrap [mf/memo]
@@ -454,6 +459,7 @@
         on-drag-enter
         (fn [e]
           (when (or (dnd/has-type? e "app/shape")
+                    (dnd/has-type? e "app/component")
                     (dnd/has-type? e "Files")
                     (dnd/has-type? e "text/uri-list"))
             (dom/prevent-default e)))
@@ -461,6 +467,7 @@
         on-drag-over
         (fn [e]
           (when (or (dnd/has-type? e "app/shape")
+                    (dnd/has-type? e "app/component")
                     (dnd/has-type? e "Files")
                     (dnd/has-type? e "text/uri-list"))
             (dom/prevent-default e)))
@@ -490,6 +497,10 @@
               (st/emit! (dw/add-shape (-> shape
                                           (assoc :x final-x)
                                           (assoc :y final-y)))))
+
+            (dnd/has-type? event "app/component")
+            (let [{:keys [component-id file-id]} (dnd/get-data event "app/component")]
+              (st/emit! (dwl/instantiate-component file-id component-id)))
 
             (dnd/has-type? event "text/uri-list")
             (let [data (dnd/get-data event "text/uri-list")

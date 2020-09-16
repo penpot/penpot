@@ -170,6 +170,19 @@
       grid-auto-rows: 7vh;
       column-gap: 0.5rem;
       row-gap: 0.5rem;
+
+      &.big {
+        grid-template-columns: 1fr 1fr;
+        grid-auto-rows: 10vh;
+
+        .grid-cell {
+          padding: $x-small;
+
+          & svg {
+            height: 10vh;
+          }
+        }
+      }
     }
 
     .grid-cell {
