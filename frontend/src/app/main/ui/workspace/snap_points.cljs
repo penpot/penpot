@@ -1,11 +1,21 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
+
 (ns app.main.ui.workspace.snap-points
   (:require
-   [rumext.alpha :as mf]
-   [beicon.core :as rx]
+   [app.common.data :as d]
+   [app.common.geom.point :as gpt]
    [app.main.refs :as refs]
    [app.main.snap :as snap]
    [app.util.geom.snap-points :as sp]
-   [app.common.geom.point :as gpt]))
+   [beicon.core :as rx]
+   [rumext.alpha :as mf]))
 
 (def ^:private line-color "#D383DA")
 
@@ -60,13 +70,12 @@
 
     (mf/use-effect
      (fn []
-       (let [sub
-             (->> subject
-                  (rx/switch-map #(rx/combine-latest
-                                   concat
-                                   (get-snap :y %)
-                                   (get-snap :x %)))
-                  (rx/subs #(reset! state %)))]
+       (let [sub (->> subject
+                      (rx/switch-map #(rx/combine-latest
+                                       d/concat
+                                       (get-snap :y %)
+                                       (get-snap :x %)))
+                      (rx/subs #(reset! state %)))]
 
          ;; On unmount callback
          #(rx/dispose! sub))))
