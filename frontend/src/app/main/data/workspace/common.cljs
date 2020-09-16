@@ -242,9 +242,10 @@
 
 (defn- conj-undo-entry
   [undo data]
-  (let [undo (conj undo data)]
-    (if (> (count undo) MAX-UNDO-SIZE)
-      (into [] (take MAX-UNDO-SIZE undo))
+  (let [undo (conj undo data)
+        cnt  (count undo)]
+    (if (> cnt MAX-UNDO-SIZE)
+      (subvec undo (- cnt MAX-UNDO-SIZE))
       undo)))
 
 (defn- materialize-undo
@@ -265,13 +266,15 @@
           (update :workspace-undo dissoc :undo-index)
           (update-in [:workspace-undo :items] (fn [queue] (into [] (take (inc index) queue))))))))
 
-(defn- add-undo-entry [state entry]
+(defn- add-undo-entry
+  [state entry]
   (if entry
     (let [state (update-in state [:workspace-undo :items] (fnil conj-undo-entry []) entry)]
       (assoc-in state [:workspace-undo :index] (dec (count (get-in state [:workspace-undo :items])))))
     state))
 
-(defn- accumulate-undo-entry [state {:keys [undo-changes redo-changes]}]
+(defn- accumulate-undo-entry
+  [state {:keys [undo-changes redo-changes]}]
   (-> state
       (update-in [:workspace-undo :transaction :undo-changes] #(into undo-changes %))
       (update-in [:workspace-undo :transaction :redo-changes] #(into % redo-changes))))
