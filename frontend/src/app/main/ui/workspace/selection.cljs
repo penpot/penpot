@@ -34,10 +34,11 @@
 (def resize-point-circle-radius 10)
 (def resize-point-rect-size 8)
 (def resize-side-height 8)
-(def selection-rect-color "#1FDEA7")
+(def selection-rect-color-normal "#1FDEA7")
+(def selection-rect-color-component "#00E0FF")
 (def selection-rect-width 1)
 
-(mf/defc selection-rect [{:keys [transform rect zoom]}]
+(mf/defc selection-rect [{:keys [transform rect zoom color]}]
   (let [{:keys [x y width height]} rect]
     [:rect.main
      {:x x
@@ -45,7 +46,7 @@
       :width width
       :height height
       :transform transform
-      :style {:stroke selection-rect-color
+      :style {:stroke color
               :stroke-width (/ selection-rect-width zoom)
               :fill "transparent"}}]))
 
@@ -125,7 +126,7 @@
             :on-mouse-down on-rotate}]))
 
 (mf/defc resize-point-handler
-  [{:keys [cx cy zoom position on-resize transform rotation]}]
+  [{:keys [cx cy zoom position on-resize transform rotation color]}]
   (let [{cx' :x cy' :y} (gpt/transform (gpt/point cx cy) transform)
         rot-square (case position
                      :top-left 0
@@ -139,7 +140,7 @@
                        :vectorEffect "non-scaling-stroke"
                        }
                :fill "#FFFFFF"
-               :stroke "#1FDEA7"
+               :stroke color
                :cx cx'
                :cy cy'}]
 
@@ -173,6 +174,7 @@
   [props]
   (let [shape (obj/get props "shape")
         zoom  (obj/get props "zoom")
+        color (obj/get props "color")
         on-resize (obj/get props "on-resize")
         on-rotate (obj/get props "on-rotate")
         current-transform (mf/deref refs/current-transform)
@@ -186,8 +188,10 @@
        ;; Selection rect
        [:& selection-rect {:rect selrect
                            :transform transform
-                           :zoom zoom}]
-       [:& outline {:shape (geom/transform-shape shape)}]
+                           :zoom zoom
+                           :color color}]
+       [:& outline {:shape (geom/transform-shape shape)
+                    :color color}]
 
        ;; Handlers
        (for [{:keys [type position props]} (handlers-for-selection selrect)]
@@ -197,7 +201,8 @@
                              :on-rotate on-rotate
                              :on-resize (partial on-resize position)
                              :transform transform
-                             :rotation (:rotation shape)}
+                             :rotation (:rotation shape)
+                             :color color}
                props (map->obj (merge common-props props))]
            (case type
              :rotation (when (not= :frame (:type shape)) [:> rotation-handler props])
@@ -206,7 +211,7 @@
 
 ;; --- Selection Handlers (Component)
 (mf/defc path-edition-selection-handlers
-  [{:keys [shape modifiers zoom] :as props}]
+  [{:keys [shape modifiers zoom color] :as props}]
   (letfn [(on-mouse-down [event index]
             (dom/stop-propagation event)
             ;; TODO: this need code ux refactor
@@ -240,26 +245,26 @@
                      :key index
                      :on-mouse-down #(on-mouse-down % index)
                      :fill "#ffffff"
-                     :stroke "#1FDEA7"
+                     :stroke color
                      :style {:cursor cur/move-pointer}}]))])))
 
 ;; TODO: add specs for clarity
 
 (mf/defc text-edition-selection-handlers
-  [{:keys [shape zoom] :as props}]
+  [{:keys [shape zoom color] :as props}]
   (let [{:keys [x y width height]} shape]
     [:g.controls
      [:rect.main {:x x :y y
                   :transform (geom/transform-matrix shape)
                   :width width
                   :height height
-                  :style {:stroke "#1FDEA7"
+                  :style {:stroke color
                           :stroke-width "0.5"
                           :stroke-opacity "1"
                           :fill "transparent"}}]]))
 
 (mf/defc multiple-selection-handlers
-  [{:keys [shapes selected zoom] :as props}]
+  [{:keys [shapes selected zoom color] :as props}]
   (let [shape (geom/selection-rect shapes)
         shape-center (geom/center shape)
         on-resize (fn [current-position initial-position event]
@@ -272,13 +277,14 @@
     [:*
      [:& controls {:shape shape
                    :zoom zoom
+                   :color color
                    :on-resize on-resize
                    :on-rotate on-rotate}]
      (when (debug? :selection-center)
        [:circle {:cx (:x shape-center) :cy (:y shape-center) :r 5 :fill "yellow"}])]))
 
 (mf/defc single-selection-handlers
-  [{:keys [shape zoom] :as props}]
+  [{:keys [shape zoom color] :as props}]
   (let [shape-id (:id shape)
         shape (geom/transform-shape shape)
         shape' (if (debug? :simple-selection) (geom/selection-rect [shape]) shape)
@@ -293,6 +299,7 @@
     [:*
      [:& controls {:shape shape'
                    :zoom zoom
+                   :color color
                    :on-rotate on-rotate
                    :on-resize on-resize}]]))
 
@@ -304,7 +311,11 @@
         shapes (->> (mf/deref (refs/objects-by-id selected))
                     (remove nil?))
         num (count shapes)
-        {:keys [id type] :as shape} (first shapes)]
+        {:keys [id type] :as shape} (first shapes)
+
+        color (if (or (> num 1) (nil? (:shape-ref shape)))
+                selection-rect-color-normal
+                selection-rect-color-component)]
     (cond
       (zero? num)
       nil
@@ -312,18 +323,22 @@
       (> num 1)
       [:& multiple-selection-handlers {:shapes shapes
                                        :selected selected
-                                       :zoom zoom}]
+                                       :zoom zoom
+                                       :color color}]
 
       (and (= type :text)
            (= edition (:id shape)))
       [:& text-edition-selection-handlers {:shape shape
-                                           :zoom zoom}]
+                                           :zoom zoom
+                                           :color color}]
       (and (or (= type :path)
                (= type :curve))
            (= edition (:id shape)))
       [:& path-edition-selection-handlers {:shape shape
-                                           :zoom zoom}]
+                                           :zoom zoom
+                                           :color color}]
 
       :else
       [:& single-selection-handlers {:shape shape
-                                     :zoom zoom}])))
+                                     :zoom zoom
+                                     :color color}])))

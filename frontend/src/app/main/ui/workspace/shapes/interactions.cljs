@@ -158,7 +158,8 @@
                                :zoom zoom}]
 
        (when dest-shape
-         [:& outline {:shape dest-shape}])])))
+         [:& outline {:shape dest-shape
+                      :color "#31EFB8"}])])))
 
 
 (mf/defc interaction-handle

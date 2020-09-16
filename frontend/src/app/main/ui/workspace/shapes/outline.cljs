@@ -22,6 +22,7 @@
   [props]
   (let [zoom (mf/deref refs/selected-zoom)
         shape (unchecked-get props "shape")
+        color (unchecked-get props "color")
         transform (gsh/transform-matrix shape)
         {:keys [id x y width height]} shape
 
@@ -31,7 +32,7 @@
                        "rect")
 
         common {:fill "transparent"
-                :stroke "#31EFB8"
+                :stroke color
                 :strokeWidth (/ 1 zoom)
                 :pointerEvents "none"
                 :transform transform}
@@ -42,10 +43,10 @@
                  :cy (+ y (/ height 2))
                  :rx (/ width 2)
                  :ry (/ height 2)}
-                
+
                 (:curve :path)
                 {:d (path/render-path shape)}
-                
+
                 {:x x
                  :y y
                  :width width

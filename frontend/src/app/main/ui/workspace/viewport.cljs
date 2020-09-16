@@ -133,12 +133,16 @@
         hover     (or (unchecked-get props "hover") #{})
         outline?  (set/union selected hover)
         shapes    (->> (vals objects) (filter (comp outline? :id)))
-        transform (mf/deref refs/current-transform)]
+        transform (mf/deref refs/current-transform)
+        color (if (or (> (count shapes) 1) (nil? (:shape-ref (first shapes))))
+                "#31EFB8"
+                "#00E0FF")]
     (when (nil? transform)
       [:g.outlines
        (for [shape shapes]
          [:& outline {:key (str "outline-" (:id shape))
-                      :shape (gsh/transform-shape shape)}])])))
+                      :shape (gsh/transform-shape shape)
+                      :color color}])])))
 
 (mf/defc frames
   {::mf/wrap [mf/memo]
