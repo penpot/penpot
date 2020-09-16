@@ -104,8 +104,18 @@
                :x2 x2 :y2 y2
                :style {:stroke line-color :stroke-width (str (/ 1 zoom))}}])]))
 
-(mf/defc shape-distance [{:keys [frame selrect page-id zoom coord selected]}]
-  (let [subject (mf/use-memo #(rx/subject))
+(mf/defc shape-distance
+  {::mf/wrap-props false}
+  [props]
+  (let [frame (unchecked-get props "frame")
+        selrect (unchecked-get props "selrect")
+        page-id (unchecked-get props "page-id")
+        zoom (unchecked-get props "zoom")
+        coord (unchecked-get props "coord")
+        selected (unchecked-get props "selected")
+        ;{:keys [frame selrect page-id zoom coord selected]}
+
+        subject (mf/use-memo #(rx/subject))
         to-measure (mf/use-state [])
 
         pair->distance+pair
@@ -204,7 +214,9 @@
          ;; On unmount dispose
          #(rx/dispose! sub))))
 
-    (mf/use-effect (mf/deps selrect selected) #(rx/push! subject [selrect selected frame]))
+    (mf/use-effect
+     (mf/deps selrect)
+     #(rx/push! subject [selrect selected frame]))
 
     (for [[sr1 sr2] segments-to-display]
       [:& shape-distance-segment {:key (str/join "-" [(:x sr1) (:y sr1) (:x sr2) (:y sr2)])
@@ -215,23 +227,29 @@
 
 (mf/defc snap-distances
   [{:keys [layout page-id zoom selected transform]}]
-  (when (and (contains? layout :dynamic-alignment)
-             (= transform :move)
-             (not (empty? selected)))
-    (let [shapes (->> (refs/objects-by-id selected)
-                      (mf/deref)
-                      (map gsh/transform-shape))
-          selrect  (gsh/selection-rect shapes)
-          frame-id (-> shapes first :frame-id)
-          frame    (mf/deref (refs/object-by-id frame-id))
-          key      (->> selected (map str) (str/join "-"))]
-      [:g.distance
-       (for [coord [:x :y]]
+  (let [selected-shapes (mf/deref (refs/objects-by-id selected))
+        frame-id (-> selected-shapes first :frame-id)
+        frame  (mf/deref (refs/object-by-id frame-id))]
+
+    (when (and (contains? layout :dynamic-alignment)
+               (= transform :move)
+               (not (empty? selected)))
+      (let [shapes (->> selected-shapes (map gsh/transform-shape))
+            selrect  (gsh/selection-rect shapes)
+            key      (->> selected (map str) (str/join "-"))]
+        [:g.distance
          [:& shape-distance
-          {:key (str key (name coord))
-           :selrect selrect
+            {:selrect selrect
+             :page-id page-id
+             :frame frame
+             :zoom zoom
+             :coord :x
+             :selected selected}]
+
+         [:& shape-distance
+          {:selrect selrect
            :page-id page-id
            :frame frame
            :zoom zoom
-           :coord coord
-           :selected selected}])])))
+           :coord :y
+           :selected selected}]]))))
