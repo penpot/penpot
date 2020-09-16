@@ -71,7 +71,7 @@
         (mf/use-callback
          (mf/deps ids)
          (fn [value opacity id file-id]
-           (st/emit! (dc/change-fill ids value id file-id))))
+           (st/emit! (dc/change-fill ids value opacity id file-id))))
 
         on-open-picker
         (mf/use-callback

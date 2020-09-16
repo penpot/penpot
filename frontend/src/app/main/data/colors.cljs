@@ -166,31 +166,35 @@
           (assoc-in [:workspace-local :picked-shift?] shift?)))))
 
 
-(defn change-fill [ids color id file-id]
-  (ptk/reify ::change-fill
-    ptk/WatchEvent
-    (watch [_ state s]
-      (let [pid (:current-page-id state)
-            objects (get-in state [:workspace-data :pages-index pid :objects])
-            children (mapcat #(cph/get-children % objects) ids)
-            ids (into ids children)
+(defn change-fill
+  ([ids color id file-id]
+   (change-fill ids color 1 id file-id))
+  ([ids color opacity id file-id]
+   (ptk/reify ::change-fill
+     ptk/WatchEvent
+     (watch [_ state s]
+       (let [pid (:current-page-id state)
+             objects (get-in state [:workspace-data :pages-index pid :objects])
+             children (mapcat #(cph/get-children % objects) ids)
+             ids (into ids children)
 
-            is-text? #(= :text (:type (get objects %)))
-            text-ids (filter is-text? ids)
-            shape-ids (filter (comp not is-text?) ids)
-            update-fn (fn [shape] (assoc shape
-                                         :fill-color color
-                                         :fill-color-ref-id id
-                                         :fill-color-ref-file file-id))
-            editor (get-in state [:workspace-local :editor])
-            converted-attrs {:fill color}
+             is-text? #(= :text (:type (get objects %)))
+             text-ids (filter is-text? ids)
+             shape-ids (filter (comp not is-text?) ids)
+             update-fn (fn [shape] (assoc shape
+                                          :fill-color color
+                                          :fill-opacity opacity
+                                          :fill-color-ref-id id
+                                          :fill-color-ref-file file-id))
+             editor (get-in state [:workspace-local :editor])
+             converted-attrs {:fill color}
 
-            reduce-fn (fn [state id]
-                        (update-in state [:workspace-data :pages-index pid :objects id]  update-fn))]
+             reduce-fn (fn [state id]
+                         (update-in state [:workspace-data :pages-index pid :objects id]  update-fn))]
 
-        (rx/from (conj
-                  (map #(dwt/update-text-attrs {:id % :editor editor :attrs converted-attrs}) text-ids)
-                  (dwc/update-shapes shape-ids update-fn)))))))
+         (rx/from (conj
+                   (map #(dwt/update-text-attrs {:id % :editor editor :attrs converted-attrs}) text-ids)
+                   (dwc/update-shapes shape-ids update-fn))))))))
 
 (defn change-stroke [ids color id file-id]
   (ptk/reify ::change-stroke
