@@ -229,5 +229,5 @@
             (assoc-in [:workspace-local :picking-color?] true)
             (assoc ::md/modal {:id (random-uuid)
                                :type :colorpicker
-                               :props {:on-close handle-change-color}
+                               :props {:on-change handle-change-color}
                                :allow-click-outside true}))))))
