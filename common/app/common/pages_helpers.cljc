@@ -43,6 +43,7 @@
 (defn get-children
   "Retrieve all children ids recursively for a given object"
   [id objects]
+  ;; TODO: find why does this sometimes come as a list instead of vector
   (let [shapes (vec (get-in objects [id :shapes]))]
     (if shapes
       (d/concat shapes (mapcat #(get-children % objects) shapes))
@@ -57,21 +58,6 @@
   "Retrieve a list with an object and all of its children"
   [id objects]
   (map #(get objects %) (concat [id] (get-children id objects))))
-
-(defn walk-children
-  "Go through an object and all the children tree, and apply a
-  function to each one. Return the list of changed objects."
-  [id f objects]
-  (let [obj (get objects id)]
-    (if (nil? (:shapes obj))
-      [(apply f obj)]
-      (loop [children (map #(get objects %) (:shapes obj))
-             updated-children []]
-        (if (empty? children)
-          updated-children
-          (let [child (first children)]
-            (recur (rest children)
-                   (concat [(apply f child)] updated-children))))))))
 
 (defn is-shape-grouped
   "Checks if a shape is inside a group"
@@ -175,10 +161,10 @@
   Returns the cloned object, the list of all new objects (including
   the cloned one), and possibly a list of original objects modified."
 
-  ([object parent-id objects xf-new-object]
-   (clone-object object parent-id objects xf-new-object identity))
+  ([object parent-id objects update-new-object]
+   (clone-object object parent-id objects update-new-object identity))
 
-  ([object parent-id objects xf-new-object xf-original-object]
+  ([object parent-id objects update-new-object update-original-object]
    (let [new-id (uuid/next)]
      (loop [child-ids (seq (:shapes object))
             new-direct-children []
@@ -194,11 +180,11 @@
                             (some? (:shapes object))
                             (assoc :shapes (map :id new-direct-children)))
 
-               new-object (xf-new-object new-object object)
+               new-object (update-new-object new-object object)
 
                new-objects (concat [new-object] new-children)
 
-               updated-object (xf-original-object object new-object)
+               updated-object (update-original-object object new-object)
 
                updated-objects (if (= object updated-object)
                                  updated-children
@@ -210,7 +196,7 @@
                child (get objects child-id)
 
                [new-child new-child-objects updated-child-objects]
-               (clone-object child new-id objects xf-new-object xf-original-object)]
+               (clone-object child new-id objects update-new-object update-original-object)]
 
            (recur
              (next child-ids)

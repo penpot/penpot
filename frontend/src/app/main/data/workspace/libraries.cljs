@@ -138,7 +138,7 @@
                                {:type :add-component
                                 :id (:id new-shape)
                                 :name (:name new-shape)
-                                :new-shapes new-shapes})
+                                :shapes new-shapes})
 
                 rchanges (into rchanges
                                (map (fn [updated-shape]
@@ -184,18 +184,18 @@
   from parent and frame. Update the original shapes to have links
   to the new ones."
   [shape parent-id objects]
-  (let [xf-new-shape (fn [new-shape original-shape]
-                       (assoc new-shape :frame-id nil))
+  (let [update-new-shape (fn [new-shape original-shape]
+                           (assoc new-shape :frame-id nil))
 
-        xf-original-shape (fn [original-shape new-shape]
-                            (cond-> original-shape
-                              true
-                              (assoc :shape-ref (:id new-shape))
+        update-original-shape (fn [original-shape new-shape]
+                                (cond-> original-shape
+                                  true
+                                  (assoc :shape-ref (:id new-shape))
 
-                              (nil? (:parent-id new-shape))
-                              (assoc :component-id (:id new-shape))))]
+                                  (nil? (:parent-id new-shape))
+                                  (assoc :component-id (:id new-shape))))]
 
-    (cph/clone-object shape parent-id objects xf-new-shape xf-original-shape)))
+    (cph/clone-object shape parent-id objects update-new-shape update-original-shape)))
 
 (defn delete-component
   [{:keys [id] :as params}]
@@ -211,7 +211,7 @@
             uchanges [{:type :add-component
                        :id id
                        :name (:name component)
-                       :new-shapes (:objects component)}]]
+                       :shapes (vals (:objects component))}]]
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 
@@ -241,7 +241,7 @@
 
             all-frames (cph/select-frames objects)
 
-            xf-new-shape
+            update-new-shape
             (fn [new-shape original-shape]
               (let [new-name 
                     (dwc/generate-unique-name @unames (:name new-shape))]
@@ -269,7 +269,7 @@
             (cph/clone-object component-shape
                               nil
                               (get component :objects)
-                              xf-new-shape)
+                              update-new-shape)
 
             rchanges (map (fn [obj]
                             {:type :add-obj
@@ -396,16 +396,16 @@
             ;; Clone again the original shape and its children, maintaing
             ;; the ids of the cloned shapes. If the original shape has some
             ;; new child shapes, the cloned ones will have new generated ids.
-            xf-new-shape   (fn [new-shape original-shape]
-                             (cond-> new-shape
-                               true
-                               (assoc :frame-id nil)
+            update-new-shape (fn [new-shape original-shape]
+                               (cond-> new-shape
+                                 true
+                                 (assoc :frame-id nil)
 
-                               (some? (:shape-ref original-shape))
-                               (assoc :id (:shape-ref original-shape))))
+                                 (some? (:shape-ref original-shape))
+                                 (assoc :id (:shape-ref original-shape))))
 
             [new-shape new-shapes _]
-            (cph/clone-object root-shape nil objects xf-new-shape)
+            (cph/clone-object root-shape nil objects update-new-shape)
 
             rchanges [{:type :update-component
                        :id component-id

@@ -157,7 +157,6 @@
            :xmlns "http://www.w3.org/2000/svg"}
      [:& wrapper {:shape frame :view-box vbox}]]))
 
-;; TODO: unify with frame-svg?
 (mf/defc component-svg
   {::mf/wrap [mf/memo]}
   [{:keys [objects group zoom] :or {zoom 1} :as props}]

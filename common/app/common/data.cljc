@@ -182,13 +182,6 @@
       (assoc m key (apply f found args))
       m)))
 
-(defn assoc-in-when
-  [m key-seq v]
-  (let [found (get-in m key-seq sentinel)]
-    (if-not (identical? sentinel found)
-      (assoc-in m key-seq v)
-      m)))
-
 (defn assoc-when
   [m key v]
   (let [found (get m key sentinel)]

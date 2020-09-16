@@ -362,14 +362,17 @@
 (defmethod change-spec :del-media [_]
   (s/keys :req-un [::id]))
 
+(s/def :internal.changes.add-component/shapes
+  (s/coll-of ::shape))
+
 (defmethod change-spec :add-component [_]
-  (s/keys :req-un [::id ::name ::new-shapes]))
+  (s/keys :req-un [::id ::name :internal.changes.add-component/shapes]))
 
 (defmethod change-spec :del-component [_]
   (s/keys :req-un [::id]))
 
 (defmethod change-spec :update-component [_]
-  (s/keys :req-un [::id ::name ::shapes]))
+  (s/keys :req-un [::id ::name :internal.changes.add-component/shapes]))
 
 (s/def ::change (s/multi-spec change-spec :type))
 (s/def ::changes (s/coll-of ::change))
@@ -773,11 +776,11 @@
   (update data :media dissoc id))
 
 (defmethod process-change :add-component
-  [data {:keys [id name new-shapes]}]
+  [data {:keys [id name shapes]}]
   (assoc-in data [:components id]
             {:id id
              :name name
-             :objects (d/index-by :id new-shapes)}))
+             :objects (d/index-by :id shapes)}))
 
 (defmethod process-change :del-component
   [data {:keys [id]}]
