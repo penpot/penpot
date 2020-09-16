@@ -39,7 +39,7 @@
   (l/derived :picked-shift? refs/workspace-local))
 
 (def viewport
-  (l/derived (comp :vport :workspace-local) st/state))
+  (l/derived (l/in [:workspace-local :vport]) st/state))
 
 
 ;; --- Color Picker Modal
@@ -104,7 +104,7 @@
   (let [value (if (uc/hex? value) value "#000000")
         [r g b] (uc/hex->rgb value)
         [h s v] (uc/hex->hsv value)]
-    
+
     {:hex (or value "000000")
      :alpha (or opacity 1)
      :r r :g g :b b
