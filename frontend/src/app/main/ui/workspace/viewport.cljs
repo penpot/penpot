@@ -230,7 +230,7 @@
          (let [canvas-node (mf/ref-val canvas-ref)
                canvas-context (.getContext canvas-node "2d")
                svg-node (mf/ref-val svg-ref)]
-           (timers/schedule
+           (timers/schedule 100
             #(let [xml (.serializeToString (js/XMLSerializer.) svg-node)
                    content (str "data:image/svg+xml;base64," (js/btoa xml))
                    img (js/Image.)]
