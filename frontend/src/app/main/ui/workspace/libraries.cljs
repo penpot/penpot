@@ -9,6 +9,7 @@
   (:require
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
+   [okulary.core :as l]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t tr]]
    [app.util.data :refer [classnames matches-search]]
@@ -17,6 +18,9 @@
    [app.main.data.workspace :as dw]
    [app.main.ui.icons :as i]
    [app.main.ui.modal :as modal]))
+
+(def workspace-file
+  (l/derived :workspace-file st/state))
 
 (mf/defc libraries-tab
   [{:keys [file libraries shared-files] :as props}]
@@ -50,32 +54,30 @@
         (mf/use-callback (mf/deps file) #(st/emit! (dw/unlink-file-from-library (:id file) %)))
 
         contents-str
-        (fn [library graphics-count colors-count]
-          ;; Include a &nbsp; so this block has always some content
-          (str
-           (str/join " · "
-                     (cond-> []
-                       (< 0 graphics-count)
-                       (conj (tr "workspace.libraries.graphics" graphics-count))
+        (fn [library]
+          (let [graphics-count (count (get-in library [:data :media] []))
+                colors-count (count (get-in library [:data :colors] []))]
+            ;; Include a &nbsp; so this block has always some content
+            (str
+             (str/join " · "
+                       (cond-> []
+                         (< 0 graphics-count)
+                         (conj (tr "workspace.libraries.graphics" graphics-count))
 
-                       (< 0 colors-count)
-                       (conj (tr "workspace.libraries.colors" colors-count))))
-           "\u00A0"))]
+                         (< 0 colors-count)
+                         (conj (tr "workspace.libraries.colors" colors-count))))
+             "\u00A0")))]
     [:*
      [:div.section
       [:div.section-title (tr "workspace.libraries.in-this-file")]
       [:div.section-list
        [:div.section-list-item
         [:div.item-name (tr "workspace.libraries.file-library")]
-        [:div.item-contents (contents-str file
-                                          (count (:media-objects file))
-                                          (count (:colors file)))]]
+        [:div.item-contents (contents-str file)]]
        (for [library sorted-libraries]
          [:div.section-list-item {:key (:id library)}
           [:div.item-name (:name library)]
-          [:div.item-contents (contents-str library
-                                            (count (:media-objects library))
-                                            (count (:colors library)))]
+          [:div.item-contents (contents-str library)]
           [:input.item-button {:type "button"
                                :value (tr "workspace.libraries.remove")
                                :on-click #(unlink-library (:id library))}]])
@@ -99,9 +101,7 @@
          (for [file filtered-files]
            [:div.section-list-item {:key (:id file)}
             [:div.item-name (:name file)]
-            [:div.item-contents (contents-str file
-                                              (:graphics-count file)
-                                              (:colors-count file))]
+            [:div.item-contents (contents-str file)]
             [:input.item-button {:type "button"
                                  :value (tr "workspace.libraries.add")
                                  :on-click #(link-library (:id file))}]])]
@@ -125,7 +125,7 @@
 
         locale       (mf/deref i18n/locale)
         project      (mf/deref refs/workspace-project)
-        file         (mf/deref refs/workspace-file)
+        file         (mf/deref workspace-file)
         libraries    (mf/deref refs/workspace-libraries)
         shared-files (mf/deref refs/workspace-shared-files)
 
