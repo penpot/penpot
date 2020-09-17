@@ -419,13 +419,15 @@
 ;; --- Zoom Management
 
 (defn- impl-update-zoom
-  [{:keys [vbox vport] :as local} center zoom]
-  (let [new-zoom (if (fn? zoom) (zoom (:zoom local)) zoom)
+  [{:keys [vbox] :as local} center zoom]
+  (let [vbox (update vbox :x + (:left-offset vbox))
+        new-zoom (if (fn? zoom) (zoom (:zoom local)) zoom)
         old-zoom (:zoom local)
         center (if center center (geom/center vbox))
         scale (/ old-zoom new-zoom)
         mtx  (gmt/scale-matrix (gpt/point scale) center)
-        vbox' (geom/transform vbox mtx)]
+        vbox' (geom/transform vbox mtx)
+        vbox' (update vbox' :x - (:left-offset vbox))]
     (-> local
         (assoc :zoom new-zoom)
         (update :vbox merge (select-keys vbox' [:x :y :width :height])))))
