@@ -9,6 +9,7 @@
 
 (ns app.main.ui.workspace.header
   (:require
+   [okulary.core :as l]
    [rumext.alpha :as mf]
    [app.main.ui.icons :as i :include-macros true]
    [app.config :as cfg]
@@ -26,8 +27,37 @@
 
 ;; --- Zoom Widget
 
+(def workspace-persistence-ref
+  (l/derived :workspace-persistence st/state))
+
+(mf/defc persistence-state-widget
+  {::mf/wrap [mf/memo]}
+  [{:keys [locale]}]
+  (let [data (mf/deref workspace-persistence-ref)]
+    [:div.persistence-status-widget
+     (cond
+       (= :pending (:status data))
+       [:div.pending
+        [:span.label (t locale "workspace.header.unsaved")]]
+
+       (= :saving (:status data))
+       [:div.saving
+        [:span.icon i/toggle]
+        [:span.label (t locale "workspace.header.saving")]]
+
+       (= :saved (:status data))
+       [:div.saved
+        [:span.icon i/tick]
+        [:span.label (t locale "workspace.header.saved")]]
+
+       (= :error (:status data))
+       [:div.error {:title "There was an error saving the data. Please refresh if this persists."}
+        [:span.icon i/msg-warning]
+        [:span.label (t locale "workspace.header.save-error")]])]))
+
+
 (mf/defc zoom-widget
-  {:wrap [mf/memo]}
+  {::mf/wrap [mf/memo]}
   [{:keys [zoom
            on-increase
            on-decrease
@@ -58,25 +88,25 @@
 (mf/defc menu
   [{:keys [layout project file] :as props}]
   (let [show-menu? (mf/use-state false)
-        locale (i18n/use-locale)
+        locale     (mf/deref i18n/locale)
 
         add-shared-fn #(st/emit! nil (dw/set-file-shared (:id file) true))
         on-add-shared
         #(modal/show! :confirm-dialog
-                        {:message (t locale "dashboard.grid.add-shared-message" (:name file))
-                         :hint (t locale "dashboard.grid.add-shared-hint")
-                         :accept-text (t locale "dashboard.grid.add-shared-accept")
-                         :not-danger? true
-                         :on-accept add-shared-fn})
+                      {:message (t locale "dashboard.grid.add-shared-message" (:name file))
+                       :hint (t locale "dashboard.grid.add-shared-hint")
+                       :accept-text (t locale "dashboard.grid.add-shared-accept")
+                       :not-danger? true
+                       :on-accept add-shared-fn})
 
         remove-shared-fn #(st/emit! nil (dw/set-file-shared (:id file) false))
         on-remove-shared
         #(modal/show! :confirm-dialog
-                        {:message (t locale "dashboard.grid.remove-shared-message" (:name file))
-                         :hint (t locale "dashboard.grid.remove-shared-hint")
-                         :accept-text (t locale "dashboard.grid.remove-shared-accept")
-                         :not-danger? false
-                         :on-accept remove-shared-fn})]
+                      {:message (t locale "dashboard.grid.remove-shared-message" (:name file))
+                       :hint (t locale "dashboard.grid.remove-shared-hint")
+                       :accept-text (t locale "dashboard.grid.remove-shared-accept")
+                       :not-danger? false
+                       :on-accept remove-shared-fn})]
 
     [:div.menu-section
      [:div.btn-icon-dark.btn-small {:on-click #(reset! show-menu? true)} i/actions]
@@ -149,11 +179,10 @@
 
 (mf/defc header
   [{:keys [file layout project page-id] :as props}]
-  (let [locale (i18n/use-locale)
-        team-id (:team-id project)
+  (let [team-id (:team-id project)
         go-back #(st/emit! (rt/nav :dashboard-team {:team-id team-id}))
         zoom (mf/deref refs/selected-zoom)
-        locale (i18n/use-locale)
+        locale (mf/deref i18n/locale)
         router (mf/deref refs/router)
         view-url (rt/resolve router :viewer {:page-id page-id :file-id (:id file)} {:index 0})]
     [:header.workspace-header
@@ -168,6 +197,9 @@
       [:& presence/active-sessions]]
 
      [:div.options-section
+      [:& persistence-state-widget
+       {:locale locale}]
+
       [:& zoom-widget
        {:zoom zoom
         :on-increase #(st/emit! (dw/increase-zoom nil))
