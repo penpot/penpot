@@ -63,7 +63,7 @@
                    :page-id page-id
                    :frame-id frame-id
                    :coord coord
-                   :ranges [[value value]]})
+                   :ranges [[(- value 0.5) (+ value 0.5)]]})
          (rx/first)
          (rx/map (remove-from-snap-points filter-shapes))
          (rx/map flatten-to-points))))

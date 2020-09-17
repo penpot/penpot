@@ -11,6 +11,7 @@
   (:require
    [rumext.alpha :as mf]
    [app.main.refs :as refs]
+   [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.geom.shapes :as gsh]
    [app.util.geom.grid :as gg]))
@@ -24,19 +25,19 @@
        [:*
         (for [xs (range size frame-width size)]
           [:line {:key (str (:id frame) "-y-" xs)
-                  :x1 (+ x xs)
-                  :y1 y
-                  :x2 (+ x xs)
-                  :y2 (+ y frame-height)
+                  :x1 (mth/round (+ x xs))
+                  :y1 (mth/round y)
+                  :x2 (mth/round (+ x xs))
+                  :y2 (mth/round (+ y frame-height))
                   :style {:stroke color-value
                           :stroke-opacity color-opacity
                           :stroke-width (str (/ 1 zoom))}}])
         (for [ys (range size frame-height size)]
           [:line {:key (str (:id frame) "-x-" ys)
-                  :x1 x
-                  :y1 (+ y ys)
-                  :x2 (+ x frame-width)
-                  :y2 (+ y ys)
+                  :x1 (mth/round x)
+                  :y1 (mth/round (+ y ys))
+                  :x2 (mth/round (+ x frame-width))
+                  :y2 (mth/round (+ y ys))
                   :style {:stroke color-value
                           :stroke-opacity color-opacity
                           :stroke-width (str (/ 1 zoom))}}])]])))
@@ -54,12 +55,13 @@
                      :fill "transparent"})]
     [:g.grid
      (for [{:keys [x y width height]} (gg/grid-areas frame grid)]
-       [:rect {:key (str key "-" x "-" y)
-               :x x
-               :y y
-               :width width
-               :height height
-               :style style}])]))
+       (do
+         [:rect {:key (str key "-" x "-" y)
+                 :x (mth/round x)
+                 :y (mth/round y)
+                 :width (- (mth/round (+ x width)) (mth/round x))
+                 :height (- (mth/round (+ y height)) (mth/round y))
+                 :style style}]))]))
 
 (mf/defc grid-display-frame [{:keys [frame zoom]}]
   (let [grids (:grids frame)]
