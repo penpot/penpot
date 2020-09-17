@@ -80,6 +80,7 @@
                               (gpt/point v v))
                             scalev)]
               (-> shape
+                  (assoc ::click-draw? false)
                   (assoc-in [:modifiers :resize-vector] scalev)
                   (assoc-in [:modifiers :resize-origin] (gpt/point x y))
                   (assoc-in [:modifiers :resize-rotation] 0))))
@@ -112,7 +113,8 @@
                         (get-in [:workspace-drawing :object])
                         (geom/setup {:x (:x initial) :y (:y initial) :width 1 :height 1})
                         (assoc :frame-id fid)
-                        (assoc ::initialized? true))]
+                        (assoc ::initialized? true)
+                        (assoc ::click-draw? true))]
           (rx/concat
            ;; Add shape to drawing state
            (rx/of #(assoc-in state [:workspace-drawing :object] shape))
@@ -123,6 +125,7 @@
                           #(update-in % [:workspace-drawing :object] assoc :x x :y y))))
 
            (->> ms/mouse-position
+                (rx/filter #(> (gpt/distance % initial) 2))
                 (rx/with-latest vector ms/mouse-position-ctrl)
                 (rx/switch-map
                  (fn [[point :as current]]
@@ -269,15 +272,23 @@
         (rx/concat
          (rx/of dw/clear-drawing)
          (when (::initialized? shape)
-           (let [shape-min-width (case (:type shape)
-                                   :text 20
-                                   5)
-                 shape-min-height (case (:type shape)
-                                    :text 16
-                                    5)
+           (let [shape-click-width (case (:type shape)
+                                   :text 150
+                                   20)
+                 shape-click-height (case (:type shape)
+                                    :text 40
+                                    20)
+                 shape (if (::click-draw? shape)
+                         (-> shape
+                             (assoc-in [:modifiers :resize-vector]
+                                       (gpt/point shape-click-width shape-click-height))
+                             (assoc-in [:modifiers :resize-origin]
+                                       (gpt/point (:x shape) (:y shape))))
+                         shape)
                  shape (-> shape
                            geom/transform-shape
-                           (dissoc ::initialized?))                 ]
+                           (dissoc ::initialized?
+                                   ::click-draw?))]
              ;; Add & select the created shape to the workspace
              (rx/of dw/deselect-all
                     (dw/add-shape shape)))))))))
