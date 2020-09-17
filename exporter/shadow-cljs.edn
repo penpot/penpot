@@ -8,7 +8,7 @@
   [frankiesardo/linked "1.3.0"]]
 
  :source-paths ["src" "../common"]
- :nrepl {:port 3497}
+ :jvm-opts ["-Xmx512m" "-Xms512m"]
 
  :builds
  {:main
