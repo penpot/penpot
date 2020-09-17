@@ -10,6 +10,7 @@
 (ns app.main.ui.viewer.header
   (:require
    [rumext.alpha :as mf]
+   [cuerdas.core :as str]
    [app.main.ui.icons :as i]
    [app.main.data.messages :as dm]
    [app.main.data.viewer :as dv]
@@ -84,7 +85,8 @@
         delete #(st/emit! dv/delete-share-link)
 
         href (.-href js/location)
-        link (str href "&token=" token)
+        href (subs href 0 (str/index-of href "?"))
+        link (str href "?token=" token "&index=0")
 
         copy-link
         (fn [event]
