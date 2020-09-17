@@ -158,7 +158,7 @@
 
 (defmethod ptk/handle-error :validation
   [error]
-  (js/console.error (if (map? error) (pr-str error) error))
+  (js/console.error "handle-error(validation):" (if (map? error) (pr-str error) error))
   (when-let [explain (:explain error)]
     (println "============ SERVER RESPONSE ERROR ================")
     (println explain)
@@ -179,7 +179,8 @@
   (if (instance? ExceptionInfo error)
     (ptk/handle-error (ex-data error))
     (do
-      (js/console.error (if (map? error) (pr-str error) error))
+      (js/console.error "handle-error(default):"
+                        (if (map? error) (pr-str error) error))
       (ts/schedule 100 #(st/emit! (dm/show {:content "Something wrong has happened."
                                             :type :error
                                             :timeout 5000}))))))

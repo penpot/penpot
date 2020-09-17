@@ -159,7 +159,12 @@
   (ptk/reify ::finalize
     ptk/UpdateEvent
     (update [_ state]
-      (dissoc state :workspace-file :workspace-project :workspace-media-objects :workspace-users))
+      (dissoc state
+              :workspace-file
+              :workspace-project
+              :workspace-media-objects
+              :workspace-users
+              :workspace-persistence))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -1294,7 +1299,7 @@
                 (dws/prepare-remove-group page-id group objects)]
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))))
 
- 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interactions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

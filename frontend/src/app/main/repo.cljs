@@ -20,11 +20,16 @@
     (http/success? response)
     (rx/of (:body response))
 
-    (http/client-error? response)
+    (or (http/client-error? response)
+        (= 500 (:status response)))
     (rx/throw (:body response))
 
-    (http/server-error? response)
-    (rx/throw (:body response))
+    (= 502 (:status response))
+    (rx/throw {:type :bad-gateway
+               :body (:body response)})
+
+    (= 0 (:status response))
+    (rx/throw {:type :offline})
 
     :else
     (rx/throw {:type :unexpected

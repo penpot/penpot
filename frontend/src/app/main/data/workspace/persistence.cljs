@@ -32,59 +32,120 @@
 
 (declare persist-changes)
 (declare shapes-changes-persisted)
+(declare update-persistence-status)
 
 ;; --- Persistence
 
+
+
 (defn initialize-file-persistence
   [file-id]
-  (letfn [(enable-reload-stoper []
-            (obj/set! js/window "onbeforeunload" (constantly false)))
-          (disable-reload-stoper []
-            (obj/set! js/window "onbeforeunload" nil))]
-    (ptk/reify ::initialize-persistence
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (let [stoper   (rx/filter #(= ::finalize %) stream)
-              notifier (->> stream
-                            (rx/filter (ptk/type? ::dwc/commit-changes))
-                            (rx/debounce 2000)
-                            (rx/merge stoper))]
-          (rx/merge
-           (->> stream
-                (rx/filter (ptk/type? ::dwc/commit-changes))
-                (rx/map deref)
-                (rx/tap enable-reload-stoper)
-                (rx/buffer-until notifier)
-                (rx/map vec)
-                (rx/filter (complement empty?))
-                (rx/map #(persist-changes file-id %))
-                (rx/take-until (rx/delay 100 stoper)))
-           (->> stream
-                (rx/filter (ptk/type? ::changes-persisted))
-                (rx/tap disable-reload-stoper)
-                (rx/ignore)
-                (rx/take-until stoper))))))))
+  (ptk/reify ::initialize-persistence
+    ptk/EffectEvent
+    (effect [_ state stream]
+      (let [stoper   (rx/filter #(= ::finalize %) stream)
+            notifier (->> stream
+                          (rx/filter (ptk/type? ::dwc/commit-changes))
+                          (rx/debounce 2000)
+                          (rx/merge stoper))
+
+            on-dirty
+            (fn []
+              ;; Enable reload stoper
+              (obj/set! js/window "onbeforeunload" (constantly false))
+              (st/emit! (update-persistence-status {:status :pending})))
+
+            on-saving
+            (fn []
+              (st/emit! (update-persistence-status {:status :saving})))
+
+            on-saved
+            (fn []
+              ;; Disable reload stoper
+              (obj/set! js/window "onbeforeunload" nil)
+              (st/emit! (update-persistence-status {:status :saved})))]
+
+        (->> (rx/merge
+              (->> stream
+                   (rx/filter (ptk/type? ::dwc/commit-changes))
+                   (rx/map deref)
+                   (rx/tap on-dirty)
+                   (rx/buffer-until notifier)
+                   (rx/map vec)
+                   (rx/filter (complement empty?))
+                   (rx/map #(persist-changes file-id %))
+                   (rx/tap on-saving)
+                   (rx/take-until (rx/delay 100 stoper)))
+              (->> stream
+                   (rx/filter (ptk/type? ::changes-persisted))
+                   (rx/tap on-saved)
+                   (rx/ignore)
+                   (rx/take-until stoper)))
+             (rx/subs #(st/emit! %)))))))
 
 (defn persist-changes
   [file-id changes]
   (ptk/reify ::persist-changes
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [conj (fnil conj [])
+            chng {:id (uuid/next)
+                  :changes changes}]
+        (update-in state [:workspace-persistence :queue] conj chng)))
+
     ptk/WatchEvent
     (watch [_ state stream]
       (let [sid     (:session-id state)
-            file    (:workspace-file state)]
-        (when (= (:id file) file-id)
-          (let [changes (into [] (mapcat identity) changes)
-                params  {:id (:id file)
-                         :revn (:revn file)
-                         :session-id sid
-                         :changes changes}]
-            (->> (rp/mutation :update-file params)
-                 (rx/map (fn [lagged]
-                           (if (= #{sid} (into #{} (map :session-id) lagged))
-                             (map #(assoc % :changes []) lagged)
-                             lagged)))
-                 (rx/mapcat seq)
-                 (rx/map #(shapes-changes-persisted file-id %)))))))))
+            file    (:workspace-file state)
+            queue   (get-in state [:workspace-persistence :queue] [])
+            xf-cat  (comp (mapcat :changes)
+                          (mapcat identity))
+            changes (into [] xf-cat queue)
+            params  {:id (:id file)
+                     :revn (:revn file)
+                     :session-id sid
+                     :changes changes}
+
+            ids     (into #{} (map :id) queue)
+
+            update-persistence-queue
+            (fn [state]
+              (update-in state [:workspace-persistence :queue]
+                         (fn [items] (into [] (remove #(ids (:id %))) items))))
+
+            handle-response
+            (fn [lagged]
+              (let [lagged (cond->> lagged
+                             (= #{sid} (into #{} (map :session-id) lagged))
+                             (map #(assoc % :changes [])))]
+                (rx/concat
+                 (rx/of update-persistence-queue)
+                 (->> (rx/of lagged)
+                      (rx/mapcat seq)
+                      (rx/map #(shapes-changes-persisted file-id %))))))
+
+            on-error
+            (fn [error]
+              (rx/of (update-persistence-status {:status :error
+                                                 :reason (:type error)})))]
+
+        (when (= file-id (:id file))
+          (->> (rp/mutation :update-file params)
+               (rx/mapcat handle-response)
+               (rx/catch on-error)))))))
+
+
+(defn update-persistence-status
+  [{:keys [status reason]}]
+  (ptk/reify ::update-persistence-status
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-persistence
+              (fn [local]
+                (assoc local
+                       :reason reason
+                       :status status
+                       :updated-at (dt/now)))))))
 
 (s/def ::shapes-changes-persisted
   (s/keys :req-un [::revn ::cp/changes]))
