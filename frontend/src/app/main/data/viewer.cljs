@@ -82,7 +82,7 @@
          (vec))))
 
 (defn bundle-fetched
-  [{:keys [project file page] :as bundle}]
+  [{:keys [project file page share-token] :as bundle}]
   (us/verify ::bundle bundle)
   (ptk/reify ::file-fetched
     ptk/UpdateEvent
@@ -93,7 +93,8 @@
                                    :objects objects
                                    :file file
                                    :page page
-                                   :frames frames})))))
+                                   :frames frames
+                                   :share-token share-token})))))
 
 (def create-share-link
   (ptk/reify ::create-share-link
@@ -101,8 +102,8 @@
     (watch [_ state stream]
       (let [file-id (get-in state [:viewer-local :file-id])
             page-id (get-in state [:viewer-local :page-id])]
-        (->> (rp/mutation :create-file-share-token {:file-id file-id
-                                                    :page-id page-id})
+        (->> (rp/mutation! :create-file-share-token {:file-id file-id
+                                                     :page-id page-id})
              (rx/map (fn [{:keys [token]}]
                        #(assoc-in % [:viewer-data :share-token] token))))))))
 
@@ -233,8 +234,10 @@
       (let [page-id (get-in state [:viewer-local :page-id])
             file-id (get-in state [:viewer-local :file-id])
             frames  (get-in state [:viewer-data :frames])
+            share-token  (get-in state [:viewer-data :share-token])
             index   (d/index-of-pred frames #(= (:id %) frame-id))]
-        (rx/of (rt/nav :viewer {:page-id page-id :file-id file-id} {:index index}))))))
+        (rx/of (rt/nav :viewer {:page-id page-id :file-id file-id} {:token share-token
+                                                                    :index index}))))))
 
 ;; --- Shortcuts
 

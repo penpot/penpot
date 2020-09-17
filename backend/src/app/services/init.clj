@@ -29,7 +29,8 @@
   (require 'app.services.mutations.colors)
   (require 'app.services.mutations.projects)
   (require 'app.services.mutations.files)
-  (require 'app.services.mutations.profile))
+  (require 'app.services.mutations.profile)
+  (require 'app.services.mutations.viewer))
 
 (defstate query-services
   :start (load-query-services))
