@@ -219,7 +219,7 @@
 
 (defn picker-for-selected-shape []
   ;; TODO: replace st/emit! by a subject push and set that in the WatchEvent
-  (let [handle-change-color (fn [color _ shift?]
+  (let [handle-change-color (fn [color opacity id file-id shift?]
                               (let [ids (get-in @st/state [:workspace-local :selected])]
                                 (st/emit!
                                  (if shift?

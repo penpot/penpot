@@ -195,12 +195,12 @@
                        :h h :s s :v v
                        :hex hex)
                 (when picked-color-select
-                  (on-change hex (:alpha @current-color) picked-shift?))))))
+                  (on-change hex (:alpha @current-color) nil nil picked-shift?))))))
 
     (mf/use-effect
      (mf/deps picking-color? picked-color-select)
      (fn [] (when (and picking-color? picked-color-select)
-              (on-change (:hex @current-color) (:alpha @current-color) picked-shift?))))
+              (on-change (:hex @current-color) (:alpha @current-color) nil nil picked-shift?))))
 
     [:div.colorpicker {:ref ref-picker}
      [:div.top-actions
@@ -397,18 +397,18 @@
         position (or position :left)
         style (calculate-position vport position x y)
 
-        handle-change (fn [new-value new-opacity op1 op2]
+        handle-change (fn [new-value new-opacity id file-id shift-clicked?]
                         (when (or (not= new-value value) (not= new-opacity opacity))
                           (reset! dirty? true))
-                        (reset! last-change [new-value new-opacity op1 op2])
+                        (reset! last-change [new-value new-opacity id file-id])
                         (when on-change
-                          (on-change new-value new-opacity op1 op2)))]
+                          (on-change new-value new-opacity id file-id shift-clicked?)))]
 
     (mf/use-effect
      (fn []
        #(when (and @dirty? on-close)
-          (when-let [[value opacity op1 op2] @last-change]
-            (on-close value opacity op1 op2)))))
+          (when-let [[value opacity id file-id] @last-change]
+            (on-close value opacity id file-id)))))
 
     [:div.colorpicker-tooltip
      {:style (clj->js style)}
