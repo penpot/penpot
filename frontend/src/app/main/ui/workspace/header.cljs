@@ -94,7 +94,7 @@
          (if (contains? layout :rules)
            (t locale "workspace.header.menu.hide-rules")
            (t locale "workspace.header.menu.show-rules"))]
-        [:span.shortcut "Ctrl+r"]]
+        [:span.shortcut "Ctrl+shift+R"]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :display-grid))}
         [:span

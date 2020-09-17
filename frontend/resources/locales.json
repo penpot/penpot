@@ -1642,10 +1642,10 @@
   "workspace.header.menu.hide-grid" : {
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:103" ],
     "translations" : {
-      "en" : "Hide grid",
+      "en" : "Hide grids",
       "fr" : "Masquer la grille",
       "ru" : "Спрятать сетку",
-      "es" : "Ocultar rejilla"
+      "es" : "Ocultar rejillas"
     }
   },
   "workspace.header.menu.hide-layers" : {
