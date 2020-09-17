@@ -51,7 +51,7 @@
          (mf/deps state)
          (fn []
            (st/emit! (dwl/delete-component {:id (:component-id @state)}))
-           (st/emit! (dwl/sync-file {:file-id nil}))))
+           (st/emit! (dwl/sync-file nil))))
 
         on-context-menu
         (mf/use-callback

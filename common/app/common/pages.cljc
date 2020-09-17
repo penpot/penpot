@@ -368,11 +368,11 @@
 (defmethod change-spec :add-component [_]
   (s/keys :req-un [::id ::name :internal.changes.add-component/shapes]))
 
+(defmethod change-spec :mod-component [_]
+  (s/keys :req-un [::id ::name :internal.changes.add-component/shapes]))
+
 (defmethod change-spec :del-component [_]
   (s/keys :req-un [::id]))
-
-(defmethod change-spec :update-component [_]
-  (s/keys :req-un [::id ::name :internal.changes.add-component/shapes]))
 
 (s/def ::change (s/multi-spec change-spec :type))
 (s/def ::changes (s/coll-of ::change))
@@ -782,16 +782,16 @@
              :name name
              :objects (d/index-by :id shapes)}))
 
-(defmethod process-change :del-component
-  [data {:keys [id]}]
-  (d/dissoc-in data [:components id]))
-
-(defmethod process-change :update-component
+(defmethod process-change :mod-component
   [data {:keys [id name shapes]}]
   (update-in data [:components id]
              #(assoc %
                      :name name
                      :objects (d/index-by :id shapes))))
+
+(defmethod process-change :del-component
+  [data {:keys [id]}]
+  (d/dissoc-in data [:components id]))
 
 (defmethod process-operation :set
   [shape op]
