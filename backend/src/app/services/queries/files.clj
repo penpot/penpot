@@ -64,19 +64,12 @@
       where p.team_id = uuid_nil()
         and p.deleted_at is null
    )
-   select distinct
-          file.*,
-          array_agg(page.id) over pages_w as pages,
-          first_value(page.data) over pages_w as data
-     from file
-    inner join projects as pr on (file.project_id = pr.id)
-     left join page on (file.id = page.file_id)
-    where file.name ilike ('%' || ? || '%')
-      and file.deleted_at is null
-   window pages_w as (partition by file.id order by page.created_at
-                      range between unbounded preceding
-                                and unbounded following)
-    order by file.created_at asc")
+   select distinct f.*
+     from file as f
+    inner join projects as pr on (f.project_id = pr.id)
+    where f.name ilike ('%' || ? || '%')
+      and f.deleted_at is null
+    order by f.created_at asc")
 
 (s/def ::search-files
   (s/keys :req-un [::profile-id ::team-id ::search-term]))
