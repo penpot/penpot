@@ -345,6 +345,16 @@
             qparams {:page-id (first (get-in file [:data :pages]))}]
         (st/emit! (rt/nav-new-window :workspace pparams qparams))))))
 
+(defn ext-library-changed
+  [file-id changes]
+  (us/assert ::us/uuid file-id)
+  (us/assert ::cp/changes changes)
+  (ptk/reify ::ext-library-changed
+    ptk/UpdateEvent
+    (update [_ state]
+      (d/update-in-when state [:workspace-libraries file-id :data]
+                        cp/process-changes changes))))
+
 (declare generate-sync-file)
 (declare generate-sync-page)
 (declare generate-sync-shape-and-children)
@@ -407,12 +417,12 @@
             [new-shape new-shapes _]
             (cph/clone-object root-shape nil objects update-new-shape)
 
-            rchanges [{:type :update-component
+            rchanges [{:type :mod-component
                        :id component-id
                        :name (:name new-shape)
                        :shapes new-shapes}]
 
-            uchanges [{:type :update-component
+            uchanges [{:type :mod-component
                        :id component-id
                        :name (:name component-obj)
                        :shapes (vals component-objs)}]]
@@ -420,7 +430,7 @@
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 
 (defn sync-file
-  [{:keys [file-id] :as params}]
+  [file-id]
   (us/assert (s/nilable ::us/uuid) file-id)
   (ptk/reify ::sync-file
     ptk/WatchEvent
@@ -434,22 +444,25 @@
         (if (nil? file-id)
           (get-in state [:workspace-data :components])
           (get-in state [:workspace-libraries file-id :data :components]))]
-    (loop [pages (seq (vals (get-in state [:workspace-data :pages-index])))
-           rchanges []
-           uchanges []]
-      (let [page (first pages)]
-        (if (nil? page)
-          [rchanges uchanges]
-          (let [[page-rchanges page-uchanges]
-                (generate-sync-page page components)]
-            (recur (next pages)
-                   (concat rchanges page-rchanges)
-                   (concat uchanges page-uchanges))))))))
+    (when (some? components)
+      (loop [pages (seq (vals (get-in state [:workspace-data :pages-index])))
+             rchanges []
+             uchanges []]
+        (let [page (first pages)]
+          (if (nil? page)
+            [rchanges uchanges]
+            (let [[page-rchanges page-uchanges]
+                  (generate-sync-page file-id page components)]
+              (recur (next pages)
+                     (concat rchanges page-rchanges)
+                     (concat uchanges page-uchanges)))))))))
 
 (defn- generate-sync-page
-  [page components]
+  [file-id page components]
   (let [linked-shapes
-        (cph/select-objects #(some? (:component-id %)) page)]
+        (cph/select-objects #(and (some? (:component-id %))
+                                  (= (:component-file %) file-id))
+                                   page)]
     (loop [shapes (seq linked-shapes)
            rchanges []
            uchanges []]

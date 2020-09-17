@@ -15,6 +15,7 @@
    [app.common.spec :as us]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.persistence :as dwp]
+   [app.main.data.workspace.libraries :as dwl]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.streams :as ms]
@@ -31,6 +32,7 @@
 (declare handle-presence)
 (declare handle-pointer-update)
 (declare handle-file-change)
+(declare handle-library-change)
 (declare handle-pointer-send)
 (declare send-keepalive)
 
@@ -73,6 +75,7 @@
     :presence (handle-presence msg)
     :pointer-update (handle-pointer-update msg)
     :file-change (handle-file-change msg)
+    :library-change (handle-library-change msg)
     ::unknown))
 
 (defn- send-keepalive
@@ -197,3 +200,17 @@
          (rx/of (dwp/shapes-changes-persisted file-id msg))
          (when (seq page-ids)
            (rx/from (map dwc/update-indices page-ids))))))))
+
+(s/def ::library-change-event
+  (s/keys :req-un [::type ::profile-id ::file-id ::session-id ::revn ::changes]))
+
+(defn handle-library-change
+  [{:keys [file-id changes] :as msg}]
+  (us/assert ::library-change-event msg)
+  (ptk/reify ::handle-library-change
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (when (contains? (:workspace-libraries state) file-id)
+        (rx/of (dwl/ext-library-changed file-id changes)
+               (dwl/sync-file file-id))))))
+

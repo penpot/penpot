@@ -188,10 +188,6 @@
                :library-file-id library-id}))
 
 
-
-
-
-
 ;; A generic, Changes based (granular) file update method.
 
 (s/def ::changes
@@ -201,6 +197,13 @@
 (s/def ::revn ::us/integer)
 (s/def ::update-file
   (s/keys :req-un [::id ::session-id ::profile-id ::revn ::changes]))
+
+;; File changes that affect to the library, and must be notified
+;; to all clients using it.
+(def library-changes
+  #{:add-color :mod-color :del-color
+    :add-media :mod-media :del-media
+    :add-component :mod-component :del-component})
 
 (declare update-file)
 (declare retrieve-lagged-changes)
@@ -239,10 +242,26 @@
                   :file-id (:id file)
                   :session-id sid
                   :revn (:revn file)
-                  :changes changes}]
+                  :changes changes}
+
+        library-changes (filter #(library-changes (:type %)) changes)]
 
     @(redis/run! :publish {:channel (str (:id file))
                            :message (t/encode-str msg)})
+
+    (if (and (:is-shared file) (seq library-changes))
+      (let [{:keys [team-id] :as project}
+            (db/get-by-id conn :project (:project-id file))
+
+            msg {:type :library-change
+                 :profile-id (:profile-id params)
+                 :file-id (:id file)
+                 :session-id sid
+                 :revn (:revn file)
+                 :changes library-changes}]
+
+        @(redis/run! :publish {:channel (str team-id)
+                               :message (t/encode-str msg)})))
 
     (db/update! conn :file
                 {:revn (:revn file)

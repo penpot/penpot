@@ -67,7 +67,7 @@
         do-reset-component #(st/emit! (dwl/reset-component id))
         do-update-component #(do
                                (st/emit! (dwl/update-component id))
-                               (st/emit! (dwl/sync-file {:file-id nil})))
+                               (st/emit! (dwl/sync-file nil)))
         do-navigate-component-file #(st/emit! (dwl/nav-to-component-file
                                                 (:component-file root-shape)))]
     [:*
