@@ -167,7 +167,9 @@
     {:left (.-left ^js rect)
      :top (.-top ^js rect)
      :right (.-right ^js rect)
-     :bottom (.-bottom ^js rect)}))
+     :bottom (.-bottom ^js rect)
+     :width (.-width ^js rect)
+     :height (.-height ^js rect)}))
 
 (defn get-window-size
   []

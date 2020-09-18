@@ -9,6 +9,7 @@
 
 (ns app.main.ui.workspace.snap-points
   (:require
+   [app.common.math :as mth]
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.main.refs :as refs]
@@ -22,6 +23,8 @@
 (mf/defc snap-point
   [{:keys [point zoom]}]
   (let [{:keys [x y]} point
+        x (mth/round x)
+        y (mth/round y)
         cross-width (/ 3 zoom)]
     [:g
      [:line {:x1 (- x cross-width)
@@ -37,10 +40,10 @@
 
 (mf/defc snap-line
   [{:keys [snap point zoom]}]
-  [:line {:x1 (:x snap)
-          :y1 (:y snap)
-          :x2 (:x point)
-          :y2 (:y point)
+  [:line {:x1 (mth/round (:x snap))
+          :y1 (mth/round (:y snap))
+          :x2 (mth/round (:x point))
+          :y2 (mth/round (:y point))
           :style {:stroke line-color :stroke-width (str (/ 1 zoom))}
           :opacity 0.4}])
 

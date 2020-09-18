@@ -273,10 +273,10 @@
          (rx/of dw/clear-drawing)
          (when (::initialized? shape)
            (let [shape-click-width (case (:type shape)
-                                   :text 150
+                                   :text 3
                                    20)
                  shape-click-height (case (:type shape)
-                                    :text 40
+                                    :text 16
                                     20)
                  shape (if (::click-draw? shape)
                          (-> shape
@@ -285,10 +285,14 @@
                              (assoc-in [:modifiers :resize-origin]
                                        (gpt/point (:x shape) (:y shape))))
                          shape)
+
+                 shape (cond-> shape
+                         (= (:type shape) :text) (assoc :grow-type
+                                                        (if (::click-draw? shape) :auto-width :fixed)))
+
                  shape (-> shape
                            geom/transform-shape
-                           (dissoc ::initialized?
-                                   ::click-draw?))]
+                           (dissoc ::initialized? ::click-draw?))]
              ;; Add & select the created shape to the workspace
              (rx/of dw/deselect-all
                     (dw/add-shape shape)))))))))

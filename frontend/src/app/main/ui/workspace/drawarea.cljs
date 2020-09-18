@@ -29,7 +29,7 @@
 
 (mf/defc generic-draw-area
   [{:keys [shape zoom]}]
-  (let [{:keys [x y width height] :as kk} (:selrect (gsh/transform-shape shape))]
+  (let [{:keys [x y width height]} (:selrect (gsh/transform-shape shape))]
     (when (and x y
                (not (d/nan? x))
                (not (d/nan? y)))
