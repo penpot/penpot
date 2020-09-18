@@ -28,6 +28,7 @@
    [app.util.dom :as dom]
    [app.common.geom.shapes :as geom]
    [app.util.object :as obj]
+   [app.util.timers :as timers]
    ["slate" :as slate]
    ["slate-react" :as rslate])
   (:import
@@ -81,15 +82,21 @@
 ;; --- Text Editor Rendering
 
 (defn- generate-root-styles
-  [data]
-  (let [valign (obj/get data "vertical-align")
+  [data props]
+  (let [valign (obj/get data "vertical-align" "top")
+        talign (obj/get data "text-align")
+        shape  (obj/get props "shape")
         base   #js {:height "100%"
-                    :width "100%"
+                    :width (:width shape)
                     :display "flex"}]
     (cond-> base
       (= valign "top") (obj/set! "alignItems" "flex-start")
       (= valign "center") (obj/set! "alignItems" "center")
-      (= valign "bottom") (obj/set! "alignItems" "flex-end"))))
+      (= valign "bottom") (obj/set! "alignItems" "flex-end")
+      (= talign "left") (obj/set! "justifyContent" "flex-start")
+      (= talign "center") (obj/set! "justifyContent" "center")
+      (= talign "right") (obj/set! "justifyContent" "flex-end")
+      (= talign "justify") (obj/set! "justifyContent" "stretch"))))
 
 (defn- generate-paragraph-styles
   [data]
@@ -107,6 +114,7 @@
   (let [letter-spacing (obj/get data "letter-spacing")
         text-decoration (obj/get data "text-decoration")
         text-transform (obj/get data "text-transform")
+        line-height (obj/get data "line-height")
 
         font-id (obj/get data "font-id")
         font-variant-id (obj/get data "font-variant-id")
@@ -121,7 +129,7 @@
                   :color fill
                   :opacity opacity
                   :textTransform text-transform
-                  :lineHeight "inherit"}]
+                  :lineHeight (or line-height "inherit")}]
 
     (when (and (string? letter-spacing)
                (pos? (alength letter-spacing)))
@@ -157,7 +165,7 @@
         childs (obj/get props "children")
         data   (obj/get props "element")
         type   (obj/get data "type")
-        style  (generate-root-styles data)
+        style  (generate-root-styles data props)
         attrs  (obj/set! attrs "style" style)
         attrs  (obj/set! attrs "className" type)]
     [:> :div attrs childs]))
@@ -169,8 +177,13 @@
         childs (obj/get props "children")
         data   (obj/get props "element")
         type   (obj/get data "type")
+        shape (obj/get props "shape")
+
+        ;; The position absolute is used so the paragraph is "outside"
+        ;; the normal layout and can grow outside its parent
+        ;; We use this element to measure the size of the text
         style  #js {:display "inline-block"
-                    :width "100%"}
+                    :position "absolute"}
         attrs  (obj/set! attrs "style" style)
         attrs  (obj/set! attrs "className" type)]
     [:> :div attrs childs]))
@@ -196,9 +209,10 @@
     [:> :span attrs childs]))
 
 (defn- render-element
-  [props]
+  [shape props]
   (mf/html
-   (let [element (obj/get props "element")]
+   (let [element (obj/get props "element")
+         props (obj/merge! props #js {:shape shape})]
      (case (obj/get element "type")
        "root"          [:> editor-root-node props]
        "paragraph-set" [:> editor-paragraph-set-node props]
@@ -229,12 +243,13 @@
 (mf/defc text-shape-edit
   {::mf/wrap [mf/memo]}
   [{:keys [shape] :as props}]
-  (let [{:keys [id x y width height content]} shape
+  (let [{:keys [id x y width height content grow-type]} shape
 
         state    (mf/use-state #(parse-content content))
         editor   (mf/use-memo #(dwt/create-editor))
         self-ref      (mf/use-ref)
         selecting-ref (mf/use-ref)
+        measure-ref (mf/use-ref)
 
         on-close
         (fn []
@@ -297,8 +312,25 @@
 
     (mf/use-effect on-mount)
 
-    [:foreignObject {:transform (geom/transform-matrix shape)
-                     :x x :y y :width width :height height :ref self-ref}
+    (mf/use-effect
+     (mf/deps @state)
+     (fn []
+       (timers/schedule
+        #(if (#{:auto-width :auto-height} grow-type)
+          (let [self-node (mf/ref-val self-ref)
+                paragraph-node (dom/query self-node ".paragraph-set")]
+            (when paragraph-node
+              (let [{:keys [width height]} (dom/get-bounding-rect paragraph-node)]
+                (st/emit! (dw/update-shape id (if (= grow-type :auto-width)
+                                                {:width width :height height}
+                                                {:height height}))))))))))
+
+    [:foreignObject {:ref self-ref
+                     :transform (geom/transform-matrix shape)
+                     :x x :y y
+                     :width (if (= :auto-width grow-type) 10000 width)
+                     :height height}
+     [:style "span { line-height: inherit; }"]
      [:> rslate/Slate {:editor editor
                        :value @state
                        :on-change on-change}
@@ -308,7 +340,7 @@
         :on-focus on-focus
         :class "rich-text"
         :style {:cursor cur/text}
-        :render-element render-element
+        :render-element #(render-element shape %)
         :render-leaf render-text
         :on-mouse-up on-mouse-up
         :on-mouse-down on-mouse-down
@@ -317,4 +349,4 @@
                    (dom/stop-propagation event)
                    ;; WARN: monky patch
                    (obj/set! slate/Transforms "deselect" (constantly nil)))
-        :placeholder "Type some text here..."}]]]))
+        :placeholder (when (= :fixed grow-type) "Type some text here...")}]]]))

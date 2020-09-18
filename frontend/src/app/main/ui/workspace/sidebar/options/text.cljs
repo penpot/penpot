@@ -15,6 +15,7 @@
    [app.main.ui.icons :as i]
    [app.common.data :as d]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.texts :as dwt]
    [app.main.store :as st]
    [app.main.refs :as refs]
@@ -152,10 +153,15 @@
 
         on-change
         (fn [event new-align]
-          (run! #(st/emit! (dwt/update-paragraph-attrs
-                             {:id %
-                              :editor editor
-                              :attrs {:text-align new-align}}))
+          (run! #(st/emit!
+                  (dwt/update-root-attrs
+                   {:id %
+                    :editor editor
+                    :attrs {:text-align new-align}})
+                  (dwt/update-paragraph-attrs
+                   {:id %
+                    :editor editor
+                    :attrs {:text-align new-align}}))
                 ids))]
 
     ;; --- Align
@@ -226,35 +232,29 @@
         :placeholder (t locale "settings.multiple")
         :on-change #(on-change % :letter-spacing)}]]]))
 
-;; (mf/defc box-sizing-options
-;;   [{:keys [editor] :as props}]
-;;   [:div.align-icons
-;;    [:span.tooltip.tooltip-bottom
-;;     {:alt "Auto height"}
-;;     i/auto-height]
-;;    [:span.tooltip.tooltip-bottom
-;;     {:alt "Auto width"}
-;;     i/auto-width]
-;;    [:span.tooltip.tooltip-bottom
-;;     {:alt "Fixed size"}
-;;     i/auto-fix]])
-
-(mf/defc vertical-align-options
-  [{:keys [editor ids values locale] :as props}]
+(mf/defc additional-options
+  [{:keys [shapes editor ids values locale] :as props}]
   (let [{:keys [vertical-align]} values
 
+        to-single-value (fn [coll] (if (> (count coll) 1) nil (first coll)))
+
+        grow-type (->> shapes (map :grow-type) (into #{}) to-single-value)
+        
         vertical-align (or vertical-align "top")
 
+        on-change-grow
+        (fn [event grow-type]
+          (st/emit! (dwc/update-shapes ids #(assoc % :grow-type grow-type))))
+        
         on-change
         (fn [event new-align]
           (run! #(st/emit! (dwt/update-root-attrs
-                             {:id %
-                              :editor editor
-                              :attrs {:vertical-align new-align}}))
+                            {:id %
+                             :editor editor
+                             :attrs {:vertical-align new-align}}))
                 ids))]
 
     [:div.row-flex
-     [:span.element-set-subtitle (t locale "workspace.options.text-options.vertical-align")]
      [:div.align-icons
       [:span.tooltip.tooltip-bottom
        {:alt (t locale "workspace.options.text-options.align-top")
@@ -270,7 +270,24 @@
        {:alt (t locale "workspace.options.text-options.align-bottom")
         :class (dom/classnames :current (= "bottom" vertical-align))
         :on-click #(on-change % "bottom")}
-       i/align-bottom]]]))
+       i/align-bottom]]
+
+     [:div.align-icons
+      [:span.tooltip.tooltip-bottom
+       {:alt (t locale "workspace.options.text-options.grow-fixed")
+        :class (dom/classnames :current (= :fixed grow-type))
+        :on-click #(on-change-grow % :fixed)}
+       i/auto-fix]
+      [:span.tooltip.tooltip-bottom
+       {:alt (t locale "workspace.options.text-options.grow-auto-width")
+        :class (dom/classnames :current (= :auto-width grow-type))
+        :on-click #(on-change-grow % :auto-width)}
+       i/auto-width]
+      [:span.tooltip.tooltip-bottom
+       {:alt (t locale "workspace.options.text-options.grow-auto-height")
+        :class (dom/classnames :current (= :auto-height grow-type))
+        :on-click #(on-change-grow % :auto-height)}
+       i/auto-height]]]))
 
 (mf/defc text-decoration-options
   [{:keys [editor ids values locale] :as props}]
@@ -353,7 +370,8 @@
            spacing-values
            valign-values
            decoration-values
-           transform-values] :as props}]
+           transform-values
+           shapes] :as props}]
   (let [locale (mf/deref i18n/locale)
         label (case type
                 :multiple (t locale "workspace.options.text-options.title-selection")
@@ -365,7 +383,7 @@
      [:& font-options {:editor editor :ids ids :values font-values :locale locale}]
      [:& text-align-options {:editor editor :ids ids :values align-values :locale locale}]
      [:& spacing-options {:editor editor :ids ids :values spacing-values :locale locale}]
-     [:& vertical-align-options {:editor editor :ids ids :values valign-values :locale locale}]
+     [:& additional-options {:shapes shapes :editor editor :ids ids :values valign-values :locale locale}]
      [:& text-decoration-options {:editor editor :ids ids :values decoration-values :locale locale}]
      [:& text-transform-options {:editor editor :ids ids :values transform-values :locale locale}]]]))
 
@@ -432,4 +450,5 @@
                     :spacing-values spacing-values
                     :valign-values valign-values
                     :decoration-values decoration-values
-                    :transform-values transform-values}]]))
+                    :transform-values transform-values
+                    :shapes [shape]}]]))

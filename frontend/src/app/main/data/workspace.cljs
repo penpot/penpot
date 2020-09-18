@@ -1374,6 +1374,7 @@
 
 (defn change-canvas-color
   [color]
+  (s/assert string? color)
   (ptk/reify ::change-canvas-color
     ptk/WatchEvent
     (watch [_ state stream]

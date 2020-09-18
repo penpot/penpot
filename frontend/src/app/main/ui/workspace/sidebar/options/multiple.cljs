@@ -149,5 +149,6 @@
                       :spacing-values spacing-values
                       :valign-values valign-values
                       :decoration-values decoration-values
-                      :transform-values transform-values}])]))
+                      :transform-values transform-values
+                      :shapes shapes}])]))
 

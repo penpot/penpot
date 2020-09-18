@@ -22,14 +22,19 @@
 
 (defn- generate-root-styles
   [data]
-  (let [valign (obj/get data "vertical-align")
+  (let [valign (obj/get data "vertical-align" "top")
+        talign (obj/get data "text-align" "flex-start")
         base   #js {:height "100%"
                     :width "100%"
                     :display "flex"}]
     (cond-> base
       (= valign "top") (obj/set! "alignItems" "flex-start")
       (= valign "center") (obj/set! "alignItems" "center")
-      (= valign "bottom") (obj/set! "alignItems" "flex-end"))))
+      (= valign "bottom") (obj/set! "alignItems" "flex-end")
+      (= talign "left") (obj/set! "justifyContent" "flex-start")
+      (= talign "center") (obj/set! "justifyContent" "center")
+      (= talign "right") (obj/set! "justifyContent" "flex-end")
+      (= talign "justify") (obj/set! "justifyContent" "stretch"))))
 
 (defn- generate-paragraph-styles
   [data]
@@ -47,6 +52,7 @@
   (let [letter-spacing (obj/get data "letter-spacing")
         text-decoration (obj/get data "text-decoration")
         text-transform (obj/get data "text-transform")
+        line-height (obj/get data "line-height")
 
         font-id (obj/get data "font-id")
         font-variant-id (obj/get data "font-variant-id")
@@ -61,7 +67,7 @@
                   :color fill
                   :opacity opacity
                   :textTransform text-transform
-                  :lineHeight "inherit"}]
+                  :lineHeight (or line-height "inherit")}]
 
     (when (and (string? letter-spacing)
                (pos? (alength letter-spacing)))
@@ -128,7 +134,7 @@
 
     (if (string? text)
       (let [style (generate-text-styles (clj->js node))]
-        [:span {:style style :key index} text])
+        [:span {:style style :key index} (if (= text "") "\u00A0" text)])
       (let [children (map-indexed (fn [index node]
                                     (mf/element text-node {:index index :node node :key index}))
                                   children)]
@@ -145,8 +151,7 @@
              children])
 
           "paragraph-set"
-          (let [style #js {:display "inline-block"
-                           :width "100%"}]
+          (let [style #js {:display "inline-block"}]
               [:div.paragraphs {:key index :style style} children])
 
           "paragraph"

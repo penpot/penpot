@@ -2678,5 +2678,9 @@
       "ru" : "Кликни чтобы закончить фигуру",
       "es" : "Pulsar para cerrar la ruta"
     }
-  }
+  },
+
+  "workspace.options.text-options.grow-fixed": "Fixed",
+  "workspace.options.text-options.grow-auto-width": "Auto width",
+  "workspace.options.text-options.grow-auto-height": "Auto height"
 }
