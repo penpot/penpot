@@ -53,13 +53,15 @@
 (mf/defc text-wrapper
   {::mf/wrap-props false}
   [props]
-  (let [{:keys [id x1 y1 content group] :as shape} (unchecked-get props "shape")
+  (let [{:keys [id x1 y1 content group grow-type width height ] :as shape} (unchecked-get props "shape")
 
         selected  (mf/deref refs/selected-shapes)
         edition   (mf/deref refs/selected-edition)
         edition?  (= edition id)
         selected? (and (contains? selected id)
                        (= (count selected) 1))
+
+        calculate-size (mf/use-state false)
 
         on-mouse-down   #(handle-mouse-down % shape)
         on-context-menu #(common/on-context-menu % shape)
@@ -71,13 +73,26 @@
           (when selected?
             (st/emit! (dw/start-edition-mode (:id shape)))))]
 
+    (mf/use-effect
+     (mf/deps grow-type content width height)
+     (fn []
+       (reset! calculate-size true)
+       (timers/schedule 200 (fn [] (reset! calculate-size false)))))
+
     [:g.shape {:on-double-click on-double-click
                :on-mouse-down on-mouse-down
                :on-context-menu on-context-menu}
-     (if edition?
-       [:& text-shape-edit {:shape shape}]
-       [:& text/text-shape {:shape shape
-                            :selected? selected?}])]))
+     [:*
+      (when (and (not edition?) @calculate-size)
+        [:g {:opacity 0}
+         ;; We only render the component for its side-effect
+         [:& text-shape-edit {:shape shape
+                              :read-only? true}]])
+
+      (if edition?
+        [:& text-shape-edit {:shape shape}]
+        [:& text/text-shape {:shape shape
+                             :selected? selected?}])]]))
 
 ;; --- Text Editor Rendering
 
@@ -242,7 +257,7 @@
 
 (mf/defc text-shape-edit
   {::mf/wrap [mf/memo]}
-  [{:keys [shape] :as props}]
+  [{:keys [shape read-only?] :or {read-only? false} :as props}]
   (let [{:keys [id x y width height content grow-type]} shape
 
         state    (mf/use-state #(parse-content content))
@@ -253,7 +268,8 @@
 
         on-close
         (fn []
-          (st/emit! dw/clear-edition-mode))
+          (when (not read-only?)
+            (st/emit! dw/clear-edition-mode)))
 
         on-click
         (fn [event]
@@ -287,28 +303,31 @@
 
         on-mount
         (fn []
-          (let [lkey1 (events/listen js/document EventType.CLICK on-click)
-                lkey2 (events/listen js/document EventType.KEYUP on-key-up)]
-            (st/emit! (dwt/assign-editor id editor)
-                      dwc/start-undo-transaction)
+          (when (not read-only?)
+            (let [lkey1 (events/listen js/document EventType.CLICK on-click)
+                  lkey2 (events/listen js/document EventType.KEYUP on-key-up)]
+              (st/emit! (dwt/assign-editor id editor)
+                        dwc/start-undo-transaction)
 
-            #(do
-               (st/emit! (dwt/assign-editor id nil)
-                         dwc/commit-undo-transaction)
-               (events/unlistenByKey lkey1)
-               (events/unlistenByKey lkey2))))
+              #(do
+                 (st/emit! (dwt/assign-editor id nil)
+                           dwc/commit-undo-transaction)
+                 (events/unlistenByKey lkey1)
+                 (events/unlistenByKey lkey2)))))
 
         on-focus
         (fn [event]
-          (dwt/editor-select-all! editor))
+          (when (not read-only?)
+            (dwt/editor-select-all! editor)))
 
         on-change
         (mf/use-callback
          (fn [val]
-           (let [content (js->clj val :keywordize-keys true)
-                 content (first content)]
-             (st/emit! (dw/update-shape id {:content content}))
-             (reset! state val))))]
+           (when (not read-only?)
+             (let [content (js->clj val :keywordize-keys true)
+                   content (first content)]
+               (st/emit! (dw/update-shape id {:content content}))
+               (reset! state val)))))]
 
     (mf/use-effect on-mount)
 
@@ -335,7 +354,7 @@
                        :value @state
                        :on-change on-change}
       [:> rslate/Editable
-       {:auto-focus "true"
+       {:auto-focus (when (not read-only?) "true")
         :spell-check "false"
         :on-focus on-focus
         :class "rich-text"

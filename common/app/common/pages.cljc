@@ -621,7 +621,7 @@
 
               ;; Rotate the group shape change the data and rotate back again
               (-> group
-                  (assoc-in [:modifiers :rotation] (- (:rotation group)))
+                  (assoc-in [:modifiers :rotation] (- (:rotation group 0)))
                   (geom/transform-shape)
                   (merge (select-keys selrect [:x :y :width :height]))
                   (assoc-in [:modifiers :rotation] (:rotation group))
