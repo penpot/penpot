@@ -2670,6 +2670,30 @@
       "es" : "Texto (T)"
     }
   },
+  "workspace.updates.there-are-updates" : {
+    "translations" : {
+      "en" : "There are updates in shared libraries",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Hay actualizaciones en librerías compartidas"
+    }
+  },
+  "workspace.updates.update" : {
+    "translations" : {
+      "en" : "Update",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Actualizar"
+    }
+  },
+  "workspace.updates.dismiss" : {
+    "translations" : {
+      "en" : "Dismiss",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Ignorar"
+    }
+  },
   "workspace.viewport.click-to-close-path" : {
     "used-in" : [ "src/app/main/ui/workspace/drawarea.cljs:59" ],
     "translations" : {

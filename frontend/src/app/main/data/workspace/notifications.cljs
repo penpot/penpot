@@ -13,6 +13,7 @@
    [app.common.geom.point :as gpt]
    [app.common.pages :as cp]
    [app.common.spec :as us]
+   [app.main.data.messages :as dm]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.data.workspace.libraries :as dwl]
@@ -23,6 +24,7 @@
    [app.util.time :as dt]
    [app.util.transit :as t]
    [app.util.websockets :as ws]
+   [app.util.i18n :as i18n :refer [tr]]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [clojure.set :as set]
@@ -211,6 +213,16 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (when (contains? (:workspace-libraries state) file-id)
-        (rx/of (dwl/ext-library-changed file-id changes)
-               (dwl/sync-file file-id))))))
+        (let [do-update #(do
+                           (st/emit! (dwl/sync-file file-id))
+                           (st/emit! dm/hide))
+              do-dismiss #(st/emit! dm/hide)]
+          (rx/of (dwl/ext-library-changed file-id changes)
+                 (dm/info-dialog
+                   (tr "workspace.updates.there-are-updates")
+                   :inline-actions
+                   [{:label (tr "workspace.updates.update")
+                     :callback do-update}
+                    {:label (tr "workspace.updates.dismiss")
+                     :callback do-dismiss}])))))))
 

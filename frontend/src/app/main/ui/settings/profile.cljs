@@ -75,10 +75,12 @@
        (not= (:pending-email prof) (:email prof))
        [:& msgs/inline-banner
         {:type :info
-         :content (t locale "settings.change-email-info3" (:pending-email prof))}
-        [:div.btn-secondary.btn-small
-         {:on-click #(st/emit! udu/cancel-email-change)}
-         (t locale "settings.cancel-email-change")]]
+         :content (t locale "settings.change-email-info3" (:pending-email prof))
+         :actions [{:label (t locale "settings.cancel-email-change")
+                    :callback #(st/emit! udu/cancel-email-change)}]}]
+        ;; [:div.btn-secondary.btn-small
+        ;;  {:on-click #(st/emit! udu/cancel-email-change)}
+        ;;  (t locale "settings.cancel-email-change")]]
 
        :else
        [:& msgs/inline-banner

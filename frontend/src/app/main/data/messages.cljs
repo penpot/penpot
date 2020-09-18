@@ -23,6 +23,15 @@
 
 (def +animation-timeout+ 600)
 
+(s/def ::message-type #{:success :error :info :warning})
+(s/def ::message-position #{:fixed :floating :inline})
+(s/def ::message-status #{:visible :hide})
+(s/def ::message-controls #{:none :close :inline-actions :bottom-actions})
+(s/def ::label string?)
+(s/def ::callback fn?)
+(s/def ::message-action (s/keys :req-un [::label ::callback]))
+(s/def ::message-actions (s/nilable (s/coll-of ::message-action :kind vector?)))
+
 (defn show
   [data]
   (ptk/reify ::show
@@ -79,3 +88,11 @@
    (show {:content content
           :type :warning
           :timeout timeout})))
+
+(defn info-dialog
+  [content controls actions]
+  (show {:content content
+         :type :info
+         :controls controls
+         :actions actions}))
+
