@@ -28,9 +28,9 @@
   java-http-clj/java-http-clj {:mvn/version "0.4.1"}
 
   info.sunng/ring-jetty9-adapter {:mvn/version "0.14.0"}
-  seancorfield/next.jdbc {:mvn/version "1.1.582"}
+  seancorfield/next.jdbc {:mvn/version "1.1.588"}
   metosin/reitit-ring {:mvn/version "0.5.5"}
-  org.postgresql/postgresql {:mvn/version "42.2.15"}
+  org.postgresql/postgresql {:mvn/version "42.2.16"}
   com.zaxxer/HikariCP {:mvn/version "3.4.5"}
 
   funcool/datoteka {:mvn/version "1.2.0"}
@@ -40,6 +40,7 @@
 
   buddy/buddy-core {:mvn/version "1.8.0"}
   buddy/buddy-hashers {:mvn/version "1.6.0"}
+  buddy/buddy-sign {:mvn/version "3.2.0"}
 
   lambdaisland/uri {:mvn/version "1.4.54"
                     :exclusions [org.clojure/data.json]}
@@ -50,7 +51,7 @@
   org.im4java/im4java {:mvn/version "1.4.0"}
   org.lz4/lz4-java {:mvn/version "1.7.1"}
   com.github.spullara.mustache.java/compiler {:mvn/version "0.9.6"}
-  commons-io/commons-io {:mvn/version "2.7"}
+  commons-io/commons-io {:mvn/version "2.8.0"}
   com.draines/postal {:mvn/version "2.0.3"
                       :exclusions [commons-codec/commons-codec]}
 

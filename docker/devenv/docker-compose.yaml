@@ -15,7 +15,8 @@ services:
   main:
     privileged: true
     image: "uxbox-devenv"
-    hostname: "uxbox-devenv-main"
+    build:
+      context: "."
     container_name: "uxbox-devenv-main"
     stop_signal: SIGINT
 
@@ -56,7 +57,6 @@ services:
   postgres:
     image: postgres:12
     command: postgres -c config_file=/etc/postgresql.conf
-    hostname: "uxbox-devenv-postgres"
     container_name: "uxbox-devenv-postgres"
     restart: always
     stop_signal: SIGINT

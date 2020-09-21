@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -e
+set -ex
 
 if [ ! -e ~/.fixtures-loaded ]; then
     echo "Loading fixtures..."
@@ -8,6 +8,6 @@ if [ ! -e ~/.fixtures-loaded ]; then
     touch ~/.fixtures-loaded
 fi
 
-clojure -m app.main
+clojure -M -m app.main
 
 
