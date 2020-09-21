@@ -186,3 +186,23 @@
 (defn update-root-attrs
   [options]
   (update-attrs (assoc options :pred is-root-node? :split false)))
+
+(defn update-overflow-text [id value]
+  (ptk/reify ::update-overflow-text
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [page-id (:current-page-id state)]
+        (update-in state [:workspace-data :pages-index page-id :objects id] assoc :overflow-text value)))))
+
+
+(def start-edit-if-selected
+  (ptk/reify ::start-edit-if-selected
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [page-id (:current-page-id state)
+            objects  (get-in state [:workspace-data :pages-index page-id :objects])
+            selected (->> state :workspace-local :selected (map #(get objects %)))]
+        (cond-> state
+          (and (= 1 (count selected))
+               (= (-> selected first :type) :text))
+          (assoc-in [:workspace-local :edition] (-> selected first :id)))))))

@@ -61,8 +61,6 @@
         selected? (and (contains? selected id)
                        (= (count selected) 1))
 
-        calculate-size (mf/use-state false)
-
         on-mouse-down   #(handle-mouse-down % shape)
         on-context-menu #(common/on-context-menu % shape)
 
@@ -73,18 +71,13 @@
           (when selected?
             (st/emit! (dw/start-edition-mode (:id shape)))))]
 
-    (mf/use-effect
-     (mf/deps grow-type content width height)
-     (fn []
-       (reset! calculate-size true)
-       (timers/schedule 200 (fn [] (reset! calculate-size false)))))
-
     [:g.shape {:on-double-click on-double-click
                :on-mouse-down on-mouse-down
                :on-context-menu on-context-menu}
      [:*
-      (when (and (not edition?) @calculate-size)
-        [:g {:opacity 0}
+      (when (not edition?)
+        [:g {:opacity 0
+             :style {:pointer-events "none"}}
          ;; We only render the component for its side-effect
          [:& text-shape-edit {:shape shape
                               :read-only? true}]])
@@ -125,7 +118,7 @@
       lh (obj/set! "lineHeight" lh))))
 
 (defn- generate-text-styles
-  [data]
+  [data on-load-font]
   (let [letter-spacing (obj/get data "letter-spacing")
         text-decoration (obj/get data "text-decoration")
         text-transform (obj/get data "text-transform")
@@ -157,7 +150,7 @@
     (when (and (string? font-id)
                (pos? (alength font-id)))
       (let [font (get fontsdb font-id)]
-        (fonts/ensure-loaded! font-id)
+        (fonts/ensure-loaded! font-id on-load-font)
         (let [font-family (or (:family font)
                               (obj/get data "fontFamily"))
               font-variant (d/seek #(= font-variant-id (:id %))
@@ -219,7 +212,8 @@
   (let [attrs (obj/get props "attributes")
         childs (obj/get props "children")
         data   (obj/get props "leaf")
-        style  (generate-text-styles data)
+        on-load-font (obj/get props "on-load-font")
+        style  (generate-text-styles data on-load-font)
         attrs  (obj/set! attrs "style" style)]
     [:> :span attrs childs]))
 
@@ -235,9 +229,10 @@
        nil))))
 
 (defn- render-text
-  [props]
-  (mf/html
-   [:> editor-text-node props]))
+  [on-load-font]
+  (fn [props]
+    (mf/html
+     [:> editor-text-node (obj/merge! props #js {:on-load-font on-load-font})])))
 
 ;; --- Text Shape Edit
 
@@ -271,7 +266,7 @@
           (when (not read-only?)
             (st/emit! dw/clear-edition-mode)))
 
-        on-click
+        on-click-outside
         (fn [event]
           (dom/prevent-default event)
           (dom/stop-propagation event)
@@ -304,7 +299,7 @@
         on-mount
         (fn []
           (when (not read-only?)
-            (let [lkey1 (events/listen js/document EventType.CLICK on-click)
+            (let [lkey1 (events/listen js/document EventType.CLICK on-click-outside)
                   lkey2 (events/listen js/document EventType.KEYUP on-key-up)]
               (st/emit! (dwt/assign-editor id editor)
                         dwc/start-undo-transaction)
@@ -327,22 +322,42 @@
              (let [content (js->clj val :keywordize-keys true)
                    content (first content)]
                (st/emit! (dw/update-shape id {:content content}))
-               (reset! state val)))))]
+               (reset! state val)))))
+
+        loaded-fonts (mf/use-var 0)
+        on-load-font #(swap! loaded-fonts inc)]
 
     (mf/use-effect on-mount)
 
     (mf/use-effect
-     (mf/deps @state)
+     (mf/deps content)
+     (fn []
+       (reset! state (parse-content content))))
+
+    ;; Checks the size of the wrapper to update if it were necesary
+    (mf/use-effect
+     (mf/deps props @loaded-fonts)
      (fn []
        (timers/schedule
-        #(if (#{:auto-width :auto-height} grow-type)
-          (let [self-node (mf/ref-val self-ref)
-                paragraph-node (dom/query self-node ".paragraph-set")]
-            (when paragraph-node
-              (let [{:keys [width height]} (dom/get-bounding-rect paragraph-node)]
-                (st/emit! (dw/update-shape id (if (= grow-type :auto-width)
-                                                {:width width :height height}
-                                                {:height height}))))))))))
+        250 ;; We need to wait to the text to be rendered. Is there a better alternative?
+        #(let [self-node (mf/ref-val self-ref)
+               paragraph-node (when self-node (dom/query self-node ".paragraph-set"))]
+           (when paragraph-node
+             (let [{:keys [width height]} (dom/get-bounding-rect paragraph-node)]
+               (cond
+                 (and (:overflow-text shape) (not= :fixed (:grow-type shape)))
+                 (st/emit! (dwt/update-overflow-text id false))
+
+                 (and (= :fixed (:grow-type shape)) (not (:overflow-text shape)) (> height (:height shape)))
+                 (st/emit! (dwt/update-overflow-text id true))
+
+                 (and (= :fixed (:grow-type shape)) (:overflow-text shape) (<= height (:height shape)))
+                 (st/emit! (dwt/update-overflow-text id false)))
+
+               (if (#{:auto-width :auto-height} grow-type)
+                 (st/emit! (dw/update-shape id (if (= grow-type :auto-width)
+                                                 {:width width :height height}
+                                                 {:height height}))))))))))
 
     [:foreignObject {:ref self-ref
                      :transform (geom/transform-matrix shape)
@@ -358,9 +373,10 @@
         :spell-check "false"
         :on-focus on-focus
         :class "rich-text"
-        :style {:cursor cur/text}
+        :style {:cursor cur/text
+                :width (:width shape)}
         :render-element #(render-element shape %)
-        :render-leaf render-text
+        :render-leaf (render-text on-load-font)
         :on-mouse-up on-mouse-up
         :on-mouse-down on-mouse-down
         :on-blur (fn [event]

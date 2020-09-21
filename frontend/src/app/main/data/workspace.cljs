@@ -1456,7 +1456,8 @@
    "a" #(st/emit! (select-for-drawing :frame))
    "b" #(st/emit! (select-for-drawing :rect))
    "e" #(st/emit! (select-for-drawing :circle))
-   "t" #(st/emit! (select-for-drawing :text))
+   "t" #(st/emit! dwtxt/start-edit-if-selected
+                  (select-for-drawing :text))
    "ctrl+c" #(st/emit! copy-selected)
    "ctrl+v" #(st/emit! paste)
    "escape" #(st/emit! :interrupt deselect-all)
