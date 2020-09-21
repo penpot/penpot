@@ -86,6 +86,13 @@
 
     {:name "0023-adapt-old-pages-and-files"
      :fn mg0023/migrate}
+
+    {:name "0024-mod-profile-table"
+     :fn (mg/resource "app/migrations/sql/0024-mod-profile-table.sql")}
+
+    {:name "0025-del-generic-tokens-table"
+     :fn (mg/resource "app/migrations/sql/0025-del-generic-tokens-table.sql")}
+
     ]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

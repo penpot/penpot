@@ -9,23 +9,22 @@
 
 (ns app.http.auth.gitlab
   (:require
-   [clojure.data.json :as json]
-   [clojure.tools.logging :as log]
-   [lambdaisland.uri :as uri]
    [app.common.exceptions :as ex]
    [app.config :as cfg]
    [app.db :as db]
-   [app.services.tokens :as tokens]
-   [app.services.mutations :as sm]
    [app.http.session :as session]
-   [app.util.http :as http]))
+   [app.services.mutations :as sm]
+   [app.services.tokens :as tokens]
+   [app.util.http :as http]
+   [app.util.time :as dt]
+   [clojure.data.json :as json]
+   [clojure.tools.logging :as log]
+   [lambdaisland.uri :as uri]))
 
 
 (def default-base-gitlab-uri "https://gitlab.com")
 
-
 (def scope "read_user")
-
 
 (defn- build-redirect-url
   []
@@ -100,10 +99,12 @@
         (log/error "unexpected error on parsing response body from gitlab access token request" e)
         nil))))
 
-
 (defn auth
   [req]
-  (let [token  (tokens/create! db/pool {:type :gitlab-oauth})
+  (let [token  (tokens/generate
+                {:iss :gitlab-oauth
+                 :exp (dt/in-future "15m")})
+
         params {:client_id (:gitlab-client-id cfg/config)
                 :redirect_uri (build-redirect-url)
                 :response_type "code"
@@ -115,31 +116,27 @@
     {:status 200
      :body {:redirect-uri (str uri)}}))
 
-
 (defn callback
   [req]
   (let [token (get-in req [:params :state])
-        tdata (tokens/retrieve db/pool token)
+        tdata (tokens/verify token {:iss :gitlab-oauth})
         info  (some-> (get-in req [:params :code])
                       (get-access-token)
                       (get-user-info))]
 
-    (when (not= :gitlab-oauth (:type tdata))
-      (ex/raise :type :validation
-                :code ::tokens/invalid-token))
-
     (when-not info
       (ex/raise :type :authentication
-                :code ::unable-to-authenticate-with-gitlab))
+                :code :unable-to-authenticate-with-gitlab))
 
     (let [profile (sm/handle {::sm/type :login-or-register
                               :email (:email info)
                               :fullname (:fullname info)})
           uagent  (get-in req [:headers "user-agent"])
 
-          tdata   {:type :authentication
-                   :profile profile}
-          token   (tokens/create! db/pool tdata {:valid {:minutes 10}})
+          token   (tokens/generate
+                   {:iss :auth
+                    :exp (dt/in-future "15m")
+                    :profile-id (:id profile)})
 
           uri     (-> (uri/uri (:public-uri cfg/config))
                       (assoc :path "/#/auth/verify-token")

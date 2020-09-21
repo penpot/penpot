@@ -23,9 +23,9 @@
 (defonce components (atom {}))
 
 (defn show!
-  ([type props]
-   (let [id    (random-uuid)]
-     (st/emit! (mdm/show-modal id type props)))))
+  [type props]
+  (let [id    (random-uuid)]
+    (st/emit! (mdm/show-modal id type props))))
 
 (defn allow-click-outside! []
   (st/emit! (mdm/update-modal {:allow-click-outside true})))
@@ -36,6 +36,8 @@
 (defn hide!
   []
   (st/emit! (mdm/hide-modal)))
+
+(def hide (mdm/hide-modal))
 
 (defn- on-esc-clicked
   [event]

@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2016-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.services.mutations.profile
   (:require
@@ -34,7 +34,6 @@
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.core :as fs]))
-
 
 ;; --- Helpers & Specs
 
@@ -70,22 +69,22 @@
   [params]
   (when-not (:registration-enabled cfg/config)
     (ex/raise :type :restriction
-              :code ::registration-disabled))
+              :code :registration-disabled))
 
   (when-not (email-domain-in-whitelist? (:registration-domain-whitelist cfg/config)
                                         (:email params))
     (ex/raise :type :validation
-              :code ::email-domain-is-not-allowed))
+              :code :email-domain-is-not-allowed))
 
   (db/with-atomic [conn db/pool]
     (check-profile-existence! conn params)
     (let [profile (->> (create-profile conn params)
                        (create-profile-relations conn))
-          payload {:type :verify-email
-                   :profile-id (:id profile)
-                   :email (:email profile)}
-
-          token   (tokens/create! conn payload {:valid {:days 30}})]
+          token   (tokens/generate
+                   {:iss :verify-email
+                    :exp (dt/in-future "48h")
+                    :profile-id (:id profile)
+                    :email (:email profile)})]
 
       (emails/send! conn emails/register
                     {:to (:email profile)
@@ -104,7 +103,7 @@
         result (db/exec-one! conn [sql:profile-existence email])]
     (when (:val result)
       (ex/raise :type :validation
-                :code ::email-already-exists))
+                :code :email-already-exists))
     params))
 
 (defn- derive-password
@@ -119,16 +118,17 @@
   "Create the profile entry on the database with limited input
   filling all the other fields with defaults."
   [conn {:keys [id fullname email password demo?] :as params}]
-  (let [id    (or id (uuid/next))
-        demo? (if (boolean? demo?) demo? false)
-        paswd (derive-password password)]
+  (let [id       (or id (uuid/next))
+        demo?    (if (boolean? demo?) demo? false)
+        active?  (if demo? true false)
+        password (derive-password password)]
     (db/insert! conn :profile
                 {:id id
                  :fullname fullname
                  :email (str/lower email)
-                 :pending-email (if demo? nil email)
                  :photo ""
-                 :password paswd
+                 :password password
+                 :is-active active?
                  :is-demo demo?})))
 
 (defn- create-profile-relations
@@ -165,17 +165,21 @@
   (letfn [(check-password [profile password]
             (when (= (:password profile) "!")
               (ex/raise :type :validation
-                        :code ::account-without-password))
+                        :code :account-without-password))
             (:valid (verify-password password (:password profile))))
 
           (validate-profile [profile]
+            (when-not (:is-active profile)
+              (ex/raise :type :validation
+                        :code :wrong-credentials))
             (when-not profile
               (ex/raise :type :validation
-                        :code ::wrong-credentials))
+                        :code :wrong-credentials))
             (when-not (check-password profile password)
               (ex/raise :type :validation
-                        :code ::wrong-credentials))
+                        :code :wrong-credentials))
             profile)]
+
     (db/with-atomic [conn db/pool]
       (let [prof (-> (retrieve-profile-by-email conn email)
                      (validate-profile)
@@ -185,8 +189,8 @@
 
 (def sql:profile-by-email
   "select * from profile
-    where email=? and deleted_at is null
-      for update")
+    where email=?
+      and deleted_at is null")
 
 (defn- retrieve-profile-by-email
   [conn email]
@@ -207,7 +211,7 @@
                         {:id (uuid/next)
                          :fullname fullname
                          :email (str/lower email)
-                         :pending-email nil
+                         :is-active true
                          :photo ""
                          :password "!"
                          :is-demo false}))
@@ -251,7 +255,7 @@
   (let [profile (profile/retrieve-profile-data conn profile-id)]
     (when-not (:valid (verify-password old-password (:password profile)))
       (ex/raise :type :validation
-                :code ::old-password-not-match))))
+                :code :old-password-not-match))))
 
 (s/def ::update-profile-password
   (s/keys :req-un [::profile-id ::password ::old-password]))
@@ -317,8 +321,6 @@
 
 ;; --- Mutation: Request Email Change
 
-(declare select-profile-for-update)
-
 (s/def ::request-email-change
   (s/keys :req-un [::email]))
 
@@ -326,19 +328,15 @@
   [{:keys [profile-id email] :as params}]
   (db/with-atomic [conn db/pool]
     (let [email   (str/lower email)
-          profile (select-profile-for-update conn profile-id)
-          payload {:type :change-email
-                   :profile-id profile-id
-                   :email email}
-
-          token   (tokens/create! conn payload)]
+          profile (db/get-by-id conn :profile profile-id)
+          token   (tokens/generate
+                   {:iss :change-email
+                    :exp (dt/in-future "15m")
+                    :profile-id profile-id
+                    :email email})]
 
       (when (not= email (:email profile))
         (check-profile-existence! conn params))
-
-      (db/update! conn :profile
-                  {:pending-email email}
-                  {:id profile-id})
 
       (emails/send! conn emails/change-email
                     {:to (:email profile)
@@ -357,65 +355,51 @@
 ;; Generic mutation for perform token based verification for auth
 ;; domain.
 
+(defmulti process-token (fn [conn claims] (:iss claims)))
+
 (s/def ::verify-profile-token
   (s/keys :req-un [::token]))
 
 (sm/defmutation ::verify-profile-token
   [{:keys [token] :as params}]
-  (letfn [(handle-email-change [conn tdata]
-            (let [profile (select-profile-for-update conn (:profile-id tdata))]
-              (when (not= (:email tdata)
-                          (:pending-email profile))
-                (ex/raise :type :validation
-                          :code ::email-does-not-match))
-              (check-profile-existence! conn {:email (:pending-email profile)})
-              (db/update! conn :profile
-                            {:pending-email nil
-                             :email (:pending-email profile)}
-                            {:id (:id profile)})
-
-              tdata))
-
-          (handle-email-verify [conn tdata]
-            (let [profile (select-profile-for-update conn (:profile-id tdata))]
-              (when (or (not= (:email profile)
-                              (:pending-email profile))
-                        (not= (:email profile)
-                              (:email tdata)))
-                (ex/raise :type :validation
-                          :code ::tokens/invalid-token))
-
-              (db/update! conn :profile
-                          {:pending-email nil}
-                          {:id (:id profile)})
-              tdata))]
-
-    (db/with-atomic [conn db/pool]
-      (let [tdata (tokens/retrieve conn token {:delete true})]
-        (tokens/delete! conn token)
-        (case (:type tdata)
-          :change-email   (handle-email-change conn tdata)
-          :verify-email   (handle-email-verify conn tdata)
-          :authentication tdata
-          (ex/raise :type :validation
-                    :code ::tokens/invalid-token))))))
-
-;; --- Mutation: Cancel Email Change
-
-(s/def ::cancel-email-change
-  (s/keys :req-un [::profile-id]))
-
-(sm/defmutation ::cancel-email-change
-  [{:keys [profile-id] :as params}]
   (db/with-atomic [conn db/pool]
-    (let [profile (select-profile-for-update conn profile-id)]
-      (when (= (:email profile)
-               (:pending-email profile))
-        (ex/raise :type :validation
-                  :code ::unexpected-request))
+    (let [claims (tokens/verify token)]
+      (process-token conn claims))))
 
-      (db/update! conn :profile {:pending-email nil} {:id profile-id})
-      nil)))
+(defmethod process-token :change-email
+  [conn {:keys [profile-id email] :as claims}]
+  (let [profile (select-profile-for-update conn profile-id)]
+    (check-profile-existence! conn {:email email})
+    (db/update! conn :profile
+                {:email email}
+                {:id profile-id})
+    claims))
+
+(defmethod process-token :verify-email
+  [conn {:keys [profile-id] :as claims}]
+  (let [profile (select-profile-for-update conn profile-id)]
+    (when (:is-active profile)
+      (ex/raise :type :validation
+                :code :email-already-validated))
+    (when (not= (:email profile)
+                (:email claims))
+      (ex/raise :type :validation
+                :code :invalid-token))
+
+    (db/update! conn :profile
+                {:is-active true}
+                {:id (:id profile)})
+    claims))
+
+(defmethod process-token :auth
+  [conn claims]
+  claims)
+
+(defmethod process-token :default
+  [conn claims]
+  (ex/raise :type :validation
+            :code :invalid-token))
+
 
 ;; --- Mutation: Request Profile Recovery
 
@@ -425,9 +409,10 @@
 (sm/defmutation ::request-profile-recovery
   [{:keys [email] :as params}]
   (letfn [(create-recovery-token [conn {:keys [id] :as profile}]
-            (let [payload {:type :password-recovery-token
-                           :profile-id id}
-                  token   (tokens/create! conn payload)]
+            (let [token (tokens/generate
+                         {:iss :password-recovery
+                          :exp (dt/in-future "15m")
+                          :profile-id id})]
               (assoc profile :token token)))
 
           (send-email-notification [conn profile]
@@ -453,23 +438,16 @@
 (sm/defmutation ::recover-profile
   [{:keys [token password]}]
   (letfn [(validate-token [conn token]
-            (let [tpayload (tokens/retrieve conn token)]
-              (when (not= (:type tpayload) :password-recovery-token)
-                (ex/raise :type :validation
-                          :code ::tokens/invalid-token))
-              (:profile-id tpayload)))
+            (let [tdata (tokens/verify token {:iss :password-recovery})]
+              (:profile-id tdata)))
 
           (update-password [conn profile-id]
             (let [pwd (derive-password password)]
-              (db/update! conn :profile {:password pwd} {:id profile-id})))
-
-          (delete-token [conn token]
-            (db/delete! conn :generic-token {:token token}))]
+              (db/update! conn :profile {:password pwd} {:id profile-id})))]
 
     (db/with-atomic [conn db/pool]
       (->> (validate-token conn token)
            (update-password conn))
-      (delete-token conn token)
       nil)))
 
 
@@ -515,6 +493,6 @@
   (let [rows (db/exec! conn [sql:teams-ownership-check profile-id])]
     (when-not (empty? rows)
       (ex/raise :type :validation
-                :code ::owner-teams-with-people
+                :code :owner-teams-with-people
                 :hint "The user need to transfer ownership of owned teams."
                 :context {:teams (mapv :team-id rows)}))))

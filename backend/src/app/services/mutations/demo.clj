@@ -28,7 +28,7 @@
         sem      (System/currentTimeMillis)
         email    (str "demo-" sem ".demo@nodomain.com")
         fullname (str "Demo User " sem)
-        password (-> (bn/random-bytes 12)
+        password (-> (bn/random-bytes 16)
                      (bc/bytes->b64u)
                      (bc/bytes->str))
         params   {:id id

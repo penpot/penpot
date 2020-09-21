@@ -10,7 +10,14 @@
 (ns app.http.session
   (:require
    [app.db :as db]
-   [app.services.tokens :as tokens]))
+   [buddy.core.codecs :as bc]
+   [buddy.core.nonce :as bn]))
+
+(defn next-token
+  [n]
+  (-> (bn/random-nonce n)
+      (bc/bytes->b64u)
+      (bc/bytes->str)))
 
 (defn extract-auth-token
   [request]
@@ -29,7 +36,7 @@
 
 (defn create
   [profile-id user-agent]
-  (let [id (tokens/next-token)]
+  (let [id (next-token 64)]
     (db/insert! db/pool :http-session {:id id
                                        :profile-id profile-id
                                        :user-agent user-agent})

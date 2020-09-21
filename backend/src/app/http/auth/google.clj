@@ -9,16 +9,17 @@
 
 (ns app.http.auth.google
   (:require
-   [clojure.data.json :as json]
-   [clojure.tools.logging :as log]
-   [lambdaisland.uri :as uri]
    [app.common.exceptions :as ex]
    [app.config :as cfg]
    [app.db :as db]
-   [app.services.tokens :as tokens]
-   [app.services.mutations :as sm]
    [app.http.session :as session]
-   [app.util.http :as http]))
+   [app.services.mutations :as sm]
+   [app.services.tokens :as tokens]
+   [app.util.http :as http]
+   [app.util.time :as dt]
+   [clojure.data.json :as json]
+   [clojure.tools.logging :as log]
+   [lambdaisland.uri :as uri]))
 
 (def base-goauth-uri "https://accounts.google.com/o/oauth2/v2/auth")
 
@@ -84,7 +85,8 @@
 
 (defn auth
   [req]
-  (let [token  (tokens/create! db/pool {:type :google-oauth})
+  (let [token  (tokens/generate {:iss :google-oauth
+                                 :exp (dt/in-future "15m")})
         params {:scope scope
                 :access_type "offline"
                 :include_granted_scopes true
@@ -102,28 +104,24 @@
 (defn callback
   [req]
   (let [token (get-in req [:params :state])
-        tdata (tokens/retrieve db/pool token)
+        tdata (tokens/verify token {:iss :google-oauth})
         info  (some-> (get-in req [:params :code])
                       (get-access-token)
                       (get-user-info))]
 
-    (when (not= :google-oauth (:type tdata))
-      (ex/raise :type :validation
-                :code ::tokens/invalid-token))
-
     (when-not info
       (ex/raise :type :authentication
-                :code ::unable-to-authenticate-with-google))
+                :code :unable-to-authenticate-with-google))
 
     (let [profile (sm/handle {::sm/type :login-or-register
                               :email (:email info)
                               :fullname (:fullname info)})
           uagent  (get-in req [:headers "user-agent"])
 
-          tdata   {:type :authentication
-                   :profile profile}
-          token   (tokens/create! db/pool tdata {:valid {:minutes 10}})
-
+          token   (tokens/generate
+                   {:iss :auth
+                    :exp (dt/in-future "15m")
+                    :profile-id (:id profile)})
           uri     (-> (uri/uri (:public-uri cfg/config))
                       (assoc :path "/#/auth/verify-token")
                       (assoc :query (uri/map->query-string {:token token})))
@@ -133,4 +131,3 @@
        :headers {"location" (str uri)}
        :cookies (session/cookies sid)
        :body ""})))
-

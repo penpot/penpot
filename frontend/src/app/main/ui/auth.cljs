@@ -9,23 +9,23 @@
 
 (ns app.main.ui.auth
   (:require
-   [cljs.spec.alpha :as s]
-   [beicon.core :as rx]
-   [rumext.alpha :as mf]
-   [app.main.ui.icons :as i]
    [app.main.data.auth :as da]
-   [app.main.data.users :as du]
    [app.main.data.messages :as dm]
+   [app.main.data.users :as du]
+   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.auth.login :refer [login-page]]
    [app.main.ui.auth.recovery :refer [recovery-page]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page]]
    [app.main.ui.auth.register :refer [register-page]]
-   [app.main.repo :as rp]
-   [app.util.timers :as ts]
+   [app.main.ui.icons :as i]
    [app.util.forms :as fm]
    [app.util.i18n :as i18n :refer [tr t]]
-   [app.util.router :as rt]))
+   [app.util.router :as rt]
+   [app.util.timers :as ts]
+   [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
+   [rumext.alpha :as mf]))
 
 (mf/defc goodbye-page
   [{:keys [locale] :as props}]
@@ -50,23 +50,29 @@
         :auth-recovery [:& recovery-page {:locale locale
                                           :params (:query-params route)}])]]))
 
-(defn- handle-email-verified
+(defmulti handle-token (fn [token] (:iss token)))
+
+(defmethod handle-token :verify-email
   [data]
   (let [msg (tr "settings.notifications.email-verified-successfully")]
     (ts/schedule 100 #(st/emit! (dm/success msg)))
-    (st/emit! (rt/nav :settings-profile)
-              du/fetch-profile)))
+    (st/emit! (rt/nav :auth-login))))
 
-(defn- handle-email-changed
+(defmethod handle-token :change-email
   [data]
   (let [msg (tr "settings.notifications.email-changed-successfully")]
     (ts/schedule 100 #(st/emit! (dm/success msg)))
     (st/emit! (rt/nav :settings-profile)
               du/fetch-profile)))
 
-(defn- handle-authentication
+(defmethod handle-token :auth
   [tdata]
   (st/emit! (da/login-from-token tdata)))
+
+(defmethod handle-token :default
+  [tdata]
+  (js/console.log "Unhandled token:" (pr-str tdata))
+  (st/emit! (rt/nav :auth-login)))
 
 (mf/defc verify-token
   [{:keys [route] :as props}]
@@ -76,21 +82,22 @@
        (->> (rp/mutation :verify-profile-token {:token token})
             (rx/subs
              (fn [tdata]
-               (case (:type tdata)
-                 :verify-email   (handle-email-verified tdata)
-                 :change-email   (handle-email-changed tdata)
-                 :authentication (handle-authentication tdata)
-                 nil))
+               (handle-token tdata))
              (fn [error]
                (case (:code error)
-                 :app.services.mutations.profile/email-already-exists
+                 :email-already-exists
                  (let [msg (tr "errors.email-already-exists")]
                    (ts/schedule 100 #(st/emit! (dm/error msg)))
-                   (st/emit! (rt/nav :settings-profile)))
+                   (st/emit! (rt/nav :auth-login)))
+
+                 :email-already-validated
+                 (let [msg (tr "errors.email-already-validated")]
+                   (ts/schedule 100 #(st/emit! (dm/warn msg)))
+                   (st/emit! (rt/nav :auth-login)))
 
                  (let [msg (tr "errors.generic")]
                    (ts/schedule 100 #(st/emit! (dm/error msg)))
-                   (st/emit! (rt/nav :settings-profile)))))))))
+                   (st/emit! (rt/nav :auth-login)))))))))
 
     [:div.verify-token
      i/loader-pencil]))

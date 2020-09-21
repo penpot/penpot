@@ -25,6 +25,7 @@
    :database-uri "postgresql://127.0.0.1/uxbox"
    :database-username "uxbox"
    :database-password "uxbox"
+   :secret-key "default"
 
    :media-directory "resources/public/media"
    :assets-directory "resources/public/static"
@@ -77,6 +78,7 @@
 (s/def ::assets-directory ::us/string)
 (s/def ::media-uri ::us/string)
 (s/def ::media-directory ::us/string)
+(s/def ::secret-key ::us/string)
 (s/def ::sendmail-backend ::us/string)
 (s/def ::sendmail-backend-apikey ::us/string)
 (s/def ::sendmail-reply-to ::us/email)
@@ -133,6 +135,7 @@
                    ::assets-uri
                    ::media-directory
                    ::media-uri
+                   ::secret-key
                    ::sendmail-reply-to
                    ::sendmail-from
                    ::sendmail-backend

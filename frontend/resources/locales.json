@@ -1,6 +1,6 @@
 {
   "auth.already-have-account" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:106" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:115" ],
     "translations" : {
       "en" : "Already have an account?",
       "fr" : "Vous avez déjà un compte?",
@@ -18,7 +18,7 @@
     }
   },
   "auth.create-demo-profile" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:115", "src/app/main/ui/auth/login.cljs:135" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:124", "src/app/main/ui/auth/login.cljs:135" ],
     "translations" : {
       "en" : "Create demo account",
       "fr" : "Créer un compte de démonstration",
@@ -27,7 +27,7 @@
     }
   },
   "auth.create-demo-profile-label" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:112", "src/app/main/ui/auth/login.cljs:132" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:121", "src/app/main/ui/auth/login.cljs:132" ],
     "translations" : {
       "en" : "Just wanna try it?",
       "fr" : "Vous voulez juste essayer?",
@@ -36,7 +36,7 @@
     }
   },
   "auth.demo-warning" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:32" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:33" ],
     "translations" : {
       "en" : "This is a DEMO service, DO NOT USE for real work, the projects will be periodicaly wiped.",
       "fr" : "Il s'agit d'un service DEMO, NE PAS UTILISER pour un travail réel, les projets seront périodiquement supprimés.",
@@ -45,7 +45,7 @@
     }
   },
   "auth.email-label" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:81", "src/app/main/ui/auth/recovery_request.cljs:45", "src/app/main/ui/auth/login.cljs:81" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:90", "src/app/main/ui/auth/recovery_request.cljs:45", "src/app/main/ui/auth/login.cljs:81" ],
     "translations" : {
       "en" : "Email",
       "fr" : "Adresse email",
@@ -63,7 +63,7 @@
     }
   },
   "auth.fullname-label" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:75" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:84" ],
     "translations" : {
       "en" : "Full Name",
       "fr" : "Nom complet",
@@ -90,7 +90,7 @@
     }
   },
   "auth.login-here" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:109" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:118" ],
     "translations" : {
       "en" : "Login here",
       "fr" : "Se connecter ici",
@@ -179,8 +179,14 @@
       "es" : "Hemos enviado a tu buzón un enlace para recuperar tu contraseña."
     }
   },
+  "auth.notifications.validation-email-sent" : {
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:59", "src/app/main/ui/settings/change_email.cljs:55" ],
+    "translations" : {
+      "en" : "Verification email sent to %s; check your email!"
+    }
+  },
   "auth.password-label" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:85", "src/app/main/ui/auth/login.cljs:87" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:94", "src/app/main/ui/auth/login.cljs:87" ],
     "translations" : {
       "en" : "Password",
       "fr" : "Mot de passe",
@@ -189,7 +195,7 @@
     }
   },
   "auth.password-length-hint" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:84" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:93" ],
     "translations" : {
       "en" : "At least 8 characters",
       "fr" : "Au moins 8 caractères",
@@ -252,7 +258,7 @@
     }
   },
   "auth.register-submit-label" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:89" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:98" ],
     "translations" : {
       "en" : "Create an account",
       "fr" : "Créer un compte",
@@ -261,7 +267,7 @@
     }
   },
   "auth.register-subtitle" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:98" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:107" ],
     "translations" : {
       "en" : "It's free, it's Open Source",
       "fr" : "C'est gratuit, c'est Open Source",
@@ -270,7 +276,7 @@
     }
   },
   "auth.register-title" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:97" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:106" ],
     "translations" : {
       "en" : "Create an account",
       "fr" : "Créer un compte",
@@ -729,7 +735,7 @@
     }
   },
   "errors.email-already-exists" : {
-    "used-in" : [ "src/app/main/ui/auth.cljs:87", "src/app/main/ui/settings/change_email.cljs:47" ],
+    "used-in" : [ "src/app/main/ui/auth.cljs:90", "src/app/main/ui/settings/change_email.cljs:46" ],
     "translations" : {
       "en" : "Email already used",
       "fr" : "Adresse e-mail déjà utilisée",
@@ -737,8 +743,17 @@
       "es" : "Este correo ya está en uso"
     }
   },
+  "errors.email-already-validated" : {
+    "used-in" : [ "src/app/main/ui/auth.cljs:95" ],
+    "translations" : {
+      "en" : "Email already validated.",
+      "fr" : "Adresse e-mail déjà validé.",
+      "ru" : "Электронная почта уже подтверждена.",
+      "es" : "Este correo ya está validado."
+    }
+  },
   "errors.email-invalid-confirmation" : {
-    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:37" ],
+    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:36" ],
     "translations" : {
       "en" : "Confirmation email must match",
       "fr" : "L'adresse e-mail de confirmation doit correspondre",
@@ -747,7 +762,7 @@
     }
   },
   "errors.generic" : {
-    "used-in" : [ "src/app/main/ui/auth.cljs:91", "src/app/main/ui/settings/profile.cljs:36" ],
+    "used-in" : [ "src/app/main/ui/auth.cljs:99", "src/app/main/ui/settings/profile.cljs:36" ],
     "translations" : {
       "en" : "Something wrong has happened.",
       "fr" : "Quelque chose c'est mal passé.",
@@ -819,7 +834,7 @@
     }
   },
   "errors.registration-disabled" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:47" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:49" ],
     "translations" : {
       "en" : "The registration is currently disabled.",
       "fr" : "L'enregistrement est actuellement désactivé.",
@@ -828,7 +843,7 @@
     }
   },
   "errors.unexpected-error" : {
-    "used-in" : [ "src/app/main/data/media.cljs:64", "src/app/main/ui/workspace/sidebar/options/exports.cljs:66", "src/app/main/ui/auth/register.cljs:53", "src/app/main/ui/settings/change_email.cljs:51" ],
+    "used-in" : [ "src/app/main/data/media.cljs:64", "src/app/main/ui/workspace/sidebar/options/exports.cljs:66", "src/app/main/ui/auth/register.cljs:55", "src/app/main/ui/settings/change_email.cljs:50" ],
     "translations" : {
       "en" : "An unexpected error occurred.",
       "fr" : "Une erreur inattendue c'est produite",
@@ -918,7 +933,7 @@
     }
   },
   "settings.change-email-info" : {
-    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:67" ],
+    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:72" ],
     "translations" : {
       "en" : "We'll send you an email to your current email “%s” to verify your identity.",
       "fr" : "Nous vous enverrons un e-mail à votre adresse actuelle “%s” pour vérifier votre identité.",
@@ -926,23 +941,14 @@
       "es" : "Enviaremos un mensaje a tu correo actual “%s” para verificar tu identidad."
     }
   },
-  "settings.change-email-info2" : {
-    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:94" ],
-    "translations" : {
-      "en" : "We have sent you an email to “%s”. Please follow the instructions to verify the email.",
-      "fr" : "Nous vous avons envoyé un e-mail à “%s”. Veuillez suivre les instructions pour vérifier l'e-mail.",
-      "ru" : "Мы отправили письмо на почту “%s”. Пожалуйста, следуйте инструкциям для подтверждения email адреса.",
-      "es" : "Te hemos enviado un mensaje a “%s”. Por favor sigue las instrucciones para verificar tu correo."
-    }
-  },
   "settings.change-email-info3" : {
-    "used-in" : [ "src/app/main/ui/settings/profile.cljs:78" ],
     "translations" : {
-      "en" : "There is a pending change of your email to “%s”.",
-      "fr" : "Il y a un changement en attente de votre adresse e-mail “%s”.",
-      "ru" : "Ваш email адреса будет сменен на “%s”.",
-      "es" : "Hay un cambio de correo pendiente a “%s”."
-    }
+      "en" : null,
+      "fr" : null,
+      "es" : null,
+      "ru" : null
+    },
+    "used-in" : [ "src/app/main/ui/settings/profile.cljs:78" ]
   },
   "settings.change-email-label" : {
     "used-in" : [ "src/app/main/ui/settings/profile.cljs:73" ],
@@ -954,7 +960,7 @@
     }
   },
   "settings.change-email-submit-label" : {
-    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:84" ],
+    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:89" ],
     "translations" : {
       "en" : "Change email",
       "fr" : "Changer adresse e-mail",
@@ -963,7 +969,7 @@
     }
   },
   "settings.change-email-title" : {
-    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:63" ],
+    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:68" ],
     "translations" : {
       "en" : "Change your email",
       "fr" : "Changer adresse e-mail",
@@ -971,17 +977,8 @@
       "es" : "Cambiar tu correo"
     }
   },
-  "settings.close-modal-label" : {
-    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:98" ],
-    "translations" : {
-      "en" : "Close",
-      "fr" : "Fermer",
-      "ru" : "Закрыть",
-      "es" : "Cerrar"
-    }
-  },
   "settings.confirm-email-label" : {
-    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:80" ],
+    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:85" ],
     "translations" : {
       "en" : "Verify new email",
       "fr" : "Vérifier la nouvelle adresse e-mail",
@@ -1071,7 +1068,7 @@
     }
   },
   "settings.new-email-label" : {
-    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:75" ],
+    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:80" ],
     "translations" : {
       "en" : "New email",
       "fr" : "Nouvel e-mail",
@@ -1089,7 +1086,7 @@
     }
   },
   "settings.notifications.email-changed-successfully" : {
-    "used-in" : [ "src/app/main/ui/auth.cljs:62" ],
+    "used-in" : [ "src/app/main/ui/auth.cljs:63" ],
     "translations" : {
       "en" : "Your email address has been updated successfully",
       "fr" : "Votre adresse e-mail a été mise à jour avec succès",
@@ -1098,16 +1095,16 @@
     }
   },
   "settings.notifications.email-not-verified" : {
-    "used-in" : [ "src/app/main/ui/dashboard.cljs:100" ],
     "translations" : {
-      "en" : "Your email address has not been verified yet. Please check your inbox at “%s” for a confirmation email.",
-      "fr" : "Votre adresse e-mail n'a pas encore été vérifiée. Veuillez vérifier votre boîte de réception à “%s” pour un e-mail de confirmation.",
-      "ru" : "Ваш email адрес еще не подтвержден. Пожалуйста, проверьте наличие подтверждающего письма во входящих на “%s”.",
-      "es" : "Tu dirección de correo aún no ha sido verificada. Por favor, busca en tu correo “%s” un mensaje de confirmación."
-    }
+      "en" : null,
+      "fr" : null,
+      "es" : null,
+      "ru" : null
+    },
+    "used-in" : [ "src/app/main/ui/dashboard.cljs:100" ]
   },
   "settings.notifications.email-verified-successfully" : {
-    "used-in" : [ "src/app/main/ui/auth.cljs:55" ],
+    "used-in" : [ "src/app/main/ui/auth.cljs:57" ],
     "translations" : {
       "en" : "Your email address has been verified successfully",
       "fr" : "Votre adresse e-mail a été vérifiée avec succès",
@@ -1125,7 +1122,7 @@
     }
   },
   "settings.notifications.profile-deletion-not-allowed" : {
-    "used-in" : [ "src/app/main/data/auth.cljs:160" ],
+    "used-in" : [ "src/app/main/data/auth.cljs:157" ],
     "translations" : {
       "en" : "You can't delete you profile. Reasign your teams before proceed.",
       "fr" : "Vous ne pouvez pas supprimer votre profil. Réassignez vos équipes avant de continuer.",
@@ -1241,15 +1238,6 @@
       "es" : "ACTUALIZAR"
     }
   },
-  "settings.verification-sent-title" : {
-    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:89" ],
-    "translations" : {
-      "en" : "Verification email sent",
-      "fr" : "L'e-mail de vérification a été envoyé",
-      "ru" : "Письмо для подтверждения email адреса отправлено",
-      "es" : "Correo de verificación enviado"
-    }
-  },
   "settings.yes-delete-my-account" : {
     "used-in" : [ "src/app/main/ui/settings/delete_account.cljs:43" ],
     "translations" : {
@@ -1278,7 +1266,7 @@
     }
   },
   "viewer.header.dont-show-interactions" : {
-    "used-in" : [ "src/app/main/ui/viewer/header.cljs:67" ],
+    "used-in" : [ "src/app/main/ui/viewer/header.cljs:68" ],
     "translations" : {
       "en" : "Don't show interactions",
       "fr" : "Ne pas afficher les interactions",
@@ -1287,7 +1275,7 @@
     }
   },
   "viewer.header.edit-page" : {
-    "used-in" : [ "src/app/main/ui/viewer/header.cljs:166" ],
+    "used-in" : [ "src/app/main/ui/viewer/header.cljs:168" ],
     "translations" : {
       "en" : "Edit page",
       "fr" : "Editer la page",
@@ -1296,7 +1284,7 @@
     }
   },
   "viewer.header.fullscreen" : {
-    "used-in" : [ "src/app/main/ui/viewer/header.cljs:177" ],
+    "used-in" : [ "src/app/main/ui/viewer/header.cljs:179" ],
     "translations" : {
       "en" : "Full Screen",
       "fr" : "Plein écran",
@@ -1305,7 +1293,7 @@
     }
   },
   "viewer.header.share.copy-link" : {
-    "used-in" : [ "src/app/main/ui/viewer/header.cljs:111" ],
+    "used-in" : [ "src/app/main/ui/viewer/header.cljs:113" ],
     "translations" : {
       "en" : "Copy link",
       "fr" : "Copier lien",
@@ -1314,7 +1302,7 @@
     }
   },
   "viewer.header.share.create-link" : {
-    "used-in" : [ "src/app/main/ui/viewer/header.cljs:120" ],
+    "used-in" : [ "src/app/main/ui/viewer/header.cljs:122" ],
     "translations" : {
       "en" : "Create link",
       "fr" : "Créer lien",
@@ -1323,7 +1311,7 @@
     }
   },
   "viewer.header.share.placeholder" : {
-    "used-in" : [ "src/app/main/ui/viewer/header.cljs:112" ],
+    "used-in" : [ "src/app/main/ui/viewer/header.cljs:114" ],
     "translations" : {
       "en" : "Share link will appear here",
       "fr" : "Le lien de partage apparaîtra ici",
@@ -1332,7 +1320,7 @@
     }
   },
   "viewer.header.share.remove-link" : {
-    "used-in" : [ "src/app/main/ui/viewer/header.cljs:118" ],
+    "used-in" : [ "src/app/main/ui/viewer/header.cljs:120" ],
     "translations" : {
       "en" : "Remove link",
       "fr" : "Supprimer le lien",
@@ -1341,7 +1329,7 @@
     }
   },
   "viewer.header.share.subtitle" : {
-    "used-in" : [ "src/app/main/ui/viewer/header.cljs:114" ],
+    "used-in" : [ "src/app/main/ui/viewer/header.cljs:116" ],
     "translations" : {
       "en" : "Anyone with the link will have access",
       "fr" : "Toute personne disposant du lien aura accès",
@@ -1350,7 +1338,7 @@
     }
   },
   "viewer.header.share.title" : {
-    "used-in" : [ "src/app/main/ui/viewer/header.cljs:97", "src/app/main/ui/viewer/header.cljs:99", "src/app/main/ui/viewer/header.cljs:105" ],
+    "used-in" : [ "src/app/main/ui/viewer/header.cljs:99", "src/app/main/ui/viewer/header.cljs:101", "src/app/main/ui/viewer/header.cljs:107" ],
     "translations" : {
       "en" : "Share link",
       "fr" : "Lien de partage",
@@ -1359,7 +1347,7 @@
     }
   },
   "viewer.header.show-interactions" : {
-    "used-in" : [ "src/app/main/ui/viewer/header.cljs:71" ],
+    "used-in" : [ "src/app/main/ui/viewer/header.cljs:72" ],
     "translations" : {
       "en" : "Show interactions",
       "fr" : "Afficher les interactions",
@@ -1368,7 +1356,7 @@
     }
   },
   "viewer.header.show-interactions-on-click" : {
-    "used-in" : [ "src/app/main/ui/viewer/header.cljs:75" ],
+    "used-in" : [ "src/app/main/ui/viewer/header.cljs:76" ],
     "translations" : {
       "en" : "Show interactions on click",
       "fr" : "Afficher les interactions au clic",
@@ -1377,7 +1365,7 @@
     }
   },
   "viewer.header.sitemap" : {
-    "used-in" : [ "src/app/main/ui/viewer/header.cljs:147" ],
+    "used-in" : [ "src/app/main/ui/viewer/header.cljs:149" ],
     "translations" : {
       "en" : "Sitemap",
       "fr" : "Plan du site",
@@ -1761,7 +1749,7 @@
     }
   },
   "workspace.libraries.colors" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:62" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:68" ],
     "translations" : {
       "en" : "%s colors",
       "fr" : "",
@@ -1800,7 +1788,7 @@
     }
   },
   "workspace.libraries.file-library" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:69" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:75" ],
     "translations" : {
       "en" : "File library",
       "fr" : "",
@@ -1809,7 +1797,7 @@
     }
   },
   "workspace.libraries.graphics" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:59" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:65" ],
     "translations" : {
       "en" : "%s graphics",
       "fr" : "",
@@ -1818,7 +1806,7 @@
     }
   },
   "workspace.libraries.in-this-file" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:66" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:72" ],
     "translations" : {
       "en" : "LIBRARIES IN THIS FILE",
       "fr" : "",
@@ -1854,7 +1842,7 @@
     }
   },
   "workspace.libraries.remove" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:80" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:82" ],
     "translations" : {
       "en" : "Remove",
       "fr" : "",
@@ -1863,7 +1851,7 @@
     }
   },
   "workspace.libraries.search-shared-libraries" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:87" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:89" ],
     "translations" : {
       "en" : "Search shared libraries",
       "fr" : "",
@@ -1872,7 +1860,7 @@
     }
   },
   "workspace.libraries.shared-libraries" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:84" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:86" ],
     "translations" : {
       "en" : "SHARED LIBRARIES",
       "fr" : "",
