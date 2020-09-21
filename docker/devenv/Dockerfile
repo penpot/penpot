@@ -2,9 +2,10 @@ FROM debian:buster
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
+ARG EXTERNAL_UID=1000
 
-ENV NODE_VERSION=v12.18.3 \
-    CLOJURE_VERSION=1.10.1.641 \
+ENV NODE_VERSION=v12.18.4 \
+    CLOJURE_VERSION=1.10.1.681 \
     LANG=en_US.UTF-8 \
     LC_ALL=C.UTF-8
 
@@ -78,29 +79,25 @@ RUN set -ex; \
     ; \
     rm -rf /var/lib/apt/lists/*;
 
-RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0xB1998361219BD9C9 && \
-    echo "deb http://repos.azulsystems.com/debian stable  main" >> /etc/apt/sources.list.d/zulu.list && \
-    apt-get -qq update && \
-    apt-get -qqy install zulu-14 && \
-    rm -rf /var/lib/apt/lists/*;
+RUN set -ex; \
+    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0xB1998361219BD9C9; \
+    echo "deb http://repos.azulsystems.com/debian stable  main" >> /etc/apt/sources.list.d/zulu.list; \
+    apt-get -qq update; \
+    apt-get -qqy install zulu-14; \
+    rm -rf /var/lib/apt/lists/*; \
+    wget "https://download.clojure.org/install/linux-install-$CLOJURE_VERSION.sh"; \
+    chmod +x "linux-install-$CLOJURE_VERSION.sh"; \
+    "./linux-install-$CLOJURE_VERSION.sh"; \
+    rm -rf "linux-install-$CLOJURE_VERSION.sh"
 
 ENV JAVA_HOME=/usr/lib/jvm/zulu-14-amd64
 
-RUN curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - && \
-    echo "deb http://apt.postgresql.org/pub/repos/apt buster-pgdg main" >> /etc/apt/sources.list.d/postgresql.list && \
-    apt-get -qq update && \
-    apt-get -qqy install postgresql-client-12 && \
+RUN set -ex; \
+    curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -; \
+    echo "deb http://apt.postgresql.org/pub/repos/apt buster-pgdg main" >> /etc/apt/sources.list.d/postgresql.list; \
+    apt-get -qq update; \
+    apt-get -qqy install postgresql-client-12; \
     rm -rf /var/lib/apt/lists/*;
-
-COPY files/phantomjs-mock /usr/bin/phantomjs
-COPY files/bashrc        /root/.bashrc
-COPY files/vimrc         /root/.vimrc
-COPY files/tmux.conf     /root/.tmux.conf
-COPY files/start-tmux.sh /home/start-tmux.sh
-COPY files/entrypoint.sh /home/entrypoint.sh
-COPY files/init.sh       /home/init.sh
-
-ARG EXTERNAL_UID=1000
 
 RUN set -ex; \
     useradd -m -g users -s /bin/bash -u $EXTERNAL_UID uxbox; \
@@ -113,11 +110,13 @@ RUN set -ex; \
     mv svgcleaner /usr/local/bin/; \
     rm -rf svgcleaner_linux_x86_64_0.9.5.tar.gz;
 
-RUN set -ex; \
-    wget "https://download.clojure.org/install/linux-install-$CLOJURE_VERSION.sh"; \
-    chmod +x "linux-install-$CLOJURE_VERSION.sh"; \
-    "./linux-install-$CLOJURE_VERSION.sh"; \
-    rm -rf "linux-install-$CLOJURE_VERSION.sh"
+COPY files/phantomjs-mock /usr/bin/phantomjs
+COPY files/bashrc        /root/.bashrc
+COPY files/vimrc         /root/.vimrc
+COPY files/tmux.conf     /root/.tmux.conf
+COPY files/start-tmux.sh /home/start-tmux.sh
+COPY files/entrypoint.sh /home/entrypoint.sh
+COPY files/init.sh       /home/init.sh
 
 USER uxbox
 WORKDIR /home/uxbox

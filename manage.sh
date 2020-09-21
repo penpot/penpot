@@ -6,13 +6,9 @@ DEVENV_IMGNAME="uxbox-devenv"
 
 function build-devenv {
     echo "Building development image $DEVENV_IMGNAME:latest with UID $EXTERNAL_UID..."
-
     local EXTERNAL_UID=${1:-$(id -u)}
-
-    docker build --rm=true --force-rm \
-           -t $DEVENV_IMGNAME:latest \
-           --build-arg EXTERNAL_UID=$EXTERNAL_UID \
-           docker/devenv/;
+    docker-compose -p uxboxdev -f docker/devenv/docker-compose.yaml build \
+                   --force-rm --build-arg EXTERNAL_UID=$EXTERNAL_UID
 }
 
 function build-devenv-if-not-exists {
