@@ -126,7 +126,7 @@
             :on-mouse-down on-rotate}]))
 
 (mf/defc resize-point-handler
-  [{:keys [cx cy zoom position on-resize transform rotation color]}]
+  [{:keys [cx cy zoom position on-resize transform rotation color overflow-text]}]
   (let [{cx' :x cy' :y} (gpt/transform (gpt/point cx cy) transform)
         rot-square (case position
                      :top-left 0
@@ -140,7 +140,7 @@
                        :vectorEffect "non-scaling-stroke"
                        }
                :fill "#FFFFFF"
-               :stroke color
+               :stroke (if (and (= position :bottom-right) overflow-text) "red" color)
                :cx cx'
                :cy cy'}]
 
@@ -172,7 +172,7 @@
 (mf/defc controls
   {::mf/wrap-props false}
   [props]
-  (let [shape (obj/get props "shape")
+  (let [{:keys [overflow-text] :as shape} (obj/get props "shape")
         zoom  (obj/get props "zoom")
         color (obj/get props "color")
         on-resize (obj/get props "on-resize")
@@ -202,7 +202,8 @@
                              :on-resize (partial on-resize position)
                              :transform transform
                              :rotation (:rotation shape)
-                             :color color}
+                             :color color
+                             :overflow-text overflow-text}
                props (map->obj (merge common-props props))]
            (case type
              :rotation (when (not= :frame (:type shape)) [:> rotation-handler props])

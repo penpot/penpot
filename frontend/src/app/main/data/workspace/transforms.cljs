@@ -18,6 +18,7 @@
    [app.common.pages-helpers :as cph]
    [app.common.spec :as us]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.selection :as dws]
    [app.main.refs :as refs]
    [app.main.snap :as snap]
@@ -139,8 +140,12 @@
               layout  (:workspace-layout state)
               page-id (:current-page-id state)
               objects (dwc/lookup-page-objects state page-id)
-              resizing-shapes (map #(get objects %) ids)]
+              resizing-shapes (map #(get objects %) ids)
+              text-shapes-ids (->> resizing-shapes
+                                   (filter #(= :text (:type %)))
+                                   (map :id))]
           (rx/concat
+           (rx/of (dwc/update-shapes text-shapes-ids #(assoc % :grow-type :fixed)))
            (->> ms/mouse-position
                 (rx/with-latest vector ms/mouse-position-shift)
                 (rx/map normalize-proportion-lock)

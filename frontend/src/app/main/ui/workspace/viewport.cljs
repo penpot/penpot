@@ -308,7 +308,7 @@
              (st/emit! (ms/->MouseEvent :down ctrl? shift? alt?))
 
              (cond
-               (and (not edition) (= 1 (.-which event)))
+               (and (= 1 (.-which event)))
                (if drawing-tool
                  (st/emit! (dd/start-drawing drawing-tool))
                  (st/emit! dw/handle-selection))
