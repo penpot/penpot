@@ -250,6 +250,12 @@
     (map? content) (clj->js [content])
     :else (initial-text "")))
 
+(defn- content-size
+  [node]
+  (let [current (count (:text node))
+        children-count (->> node :children (map content-size) (reduce +))]
+    (+ current children-count)))
+
 (mf/defc text-shape-edit
   {::mf/wrap [mf/memo]}
   [{:keys [shape read-only?] :or {read-only? false} :as props}]
@@ -261,6 +267,8 @@
         selecting-ref (mf/use-ref)
         measure-ref (mf/use-ref)
 
+        content-var (mf/use-var content)
+
         on-close
         (fn []
           (when (not read-only?)
@@ -270,6 +278,7 @@
         (fn [event]
           (dom/prevent-default event)
           (dom/stop-propagation event)
+
           (let [sidebar (dom/get-element "settings-bar")
                 cpicker (dom/get-element-by-class "colorpicker-tooltip")
                 self    (mf/ref-val self-ref)
@@ -280,7 +289,10 @@
                           (and cpicker (.contains cpicker target)))
               (if selecting?
                 (mf/set-ref-val! selecting-ref false)
-                (on-close)))))
+                (on-close))))
+
+          (when (= 0 (content-size @content-var))
+            (st/emit! (dw/delete-shapes [id]))))
 
         on-mouse-down
         (fn [event]
@@ -322,7 +334,8 @@
              (let [content (js->clj val :keywordize-keys true)
                    content (first content)]
                (st/emit! (dw/update-shape id {:content content}))
-               (reset! state val)))))
+               (reset! state val)
+               (reset! content-var content)))))
 
         loaded-fonts (mf/use-var 0)
         on-load-font #(swap! loaded-fonts inc)]
@@ -332,7 +345,8 @@
     (mf/use-effect
      (mf/deps content)
      (fn []
-       (reset! state (parse-content content))))
+       (reset! state (parse-content content))
+       (reset! content-var content)))
 
     ;; Checks the size of the wrapper to update if it were necesary
     (mf/use-effect
@@ -352,12 +366,15 @@
                  (st/emit! (dwt/update-overflow-text id true))
 
                  (and (= :fixed (:grow-type shape)) (:overflow-text shape) (<= height (:height shape)))
-                 (st/emit! (dwt/update-overflow-text id false)))
+                 (st/emit! (dwt/update-overflow-text id false))
 
-               (if (#{:auto-width :auto-height} grow-type)
-                 (st/emit! (dw/update-shape id (if (= grow-type :auto-width)
-                                                 {:width width :height height}
-                                                 {:height height}))))))))))
+                 (= grow-type :auto-width)
+                 (st/emit! (dw/update-dimensions [id] :width width)
+                           (dw/update-dimensions [id] :height height))
+
+                 (= grow-type :auto-height)
+                 (st/emit! (dw/update-dimensions [id] :height height))
+                 )))))))
 
     [:foreignObject {:ref self-ref
                      :transform (geom/transform-matrix shape)
