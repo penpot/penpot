@@ -13,7 +13,7 @@
    [next.jdbc :as jdbc]))
 
 (s/def ::name string?)
-(s/def ::step (s/keys :req-un [::name ::desc ::fn]))
+(s/def ::step (s/keys :req-un [::name ::fn]))
 (s/def ::steps (s/every ::step :kind vector?))
 (s/def ::migrations
   (s/keys :req-un [::name ::steps]))

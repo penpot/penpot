@@ -45,3 +45,32 @@ command:
 rlwrap netcat localhost 5555
 ```
 
+## Migrations
+
+The database migrations are located in two directories:
+
+- `src/app/migrations` (contains migration scripts in clojure)
+- `src/app/migrations/sql` (contains the pure SQL migrations)
+
+The SQL migration naming consists in the following:
+
+```
+XXXX-<add|mod|del|drop|[...verb...]>-<table-name>-<any-additional-text>
+```
+
+Examples:
+
+```
+0025-del-generic-tokens-table
+0026-mod-profile-table-add-is-active-field
+```
+
+**NOTE**: if table name has more than one words, we still use `-` as a separator.
+
+If you need to have a global overview of the all schema of the database you can extract it
+using postgresql:
+
+```bash
+# (in the devenv environment)
+pg_dump -h postgres -s  > schema.sql
+```
