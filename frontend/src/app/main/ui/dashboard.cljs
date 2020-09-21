@@ -51,51 +51,33 @@
       (= "drafts" project-id)
       (assoc :project-id (:default-project-id profile)))))
 
-(declare global-notifications)
-
-
 (mf/defc dashboard
   [{:keys [route] :as props}]
   (let [profile (mf/deref refs/profile)
-        page (get-in route [:data :name])
-        {:keys [search-term team-id project-id] :as params}
-        (parse-params route profile)]
-    [:*
-     [:& global-notifications {:profile profile}]
-     [:section.dashboard-layout
-      [:div.main-logo
-        [:a {:on-click #(st/emit! (rt/nav :dashboard-team {:team-id team-id}))}
-         i/logo-icon]]
-      [:& profile-section {:profile profile}]
-      [:& sidebar {:team-id team-id
-                   :project-id project-id
-                   :section page
-                   :search-term search-term}]
-      [:div.dashboard-content
-       (case page
-         :dashboard-search
-         [:& search-page {:team-id team-id :search-term search-term}]
+        page    (get-in route [:data :name])
+        {:keys [search-term team-id project-id] :as params} (parse-params route profile)]
+    [:section.dashboard-layout
+     [:div.main-logo
+      [:a {:on-click #(st/emit! (rt/nav :dashboard-team {:team-id team-id}))}
+       i/logo-icon]]
+     [:& profile-section {:profile profile}]
+     [:& sidebar {:team-id team-id
+                  :project-id project-id
+                  :section page
+                  :search-term search-term}]
+     [:div.dashboard-content
+      (case page
+        :dashboard-search
+        [:& search-page {:team-id team-id :search-term search-term}]
 
-         :dashboard-team
-         [:& recent-files-page {:team-id team-id}]
+        :dashboard-team
+        [:& recent-files-page {:team-id team-id}]
 
-         :dashboard-libraries
-         [:& libraries-page {:team-id team-id}]
+        :dashboard-libraries
+        [:& libraries-page {:team-id team-id}]
 
-         :dashboard-project
-         [:& project-page {:team-id team-id
-                           :project-id project-id}])]]]))
+        :dashboard-project
+        [:& project-page {:team-id team-id
+                          :project-id project-id}])]]))
 
-
-(mf/defc global-notifications
-  [{:keys [profile] :as props}]
-  (let [locale  (mf/deref i18n/locale)]
-    (when (and profile
-               (not= uuid/zero (:id profile))
-               (= (:pending-email profile)
-                  (:email profile)))
-    [:section.banner.error.quick
-     [:div.content
-      [:div.icon i/msg-warning]
-      [:span (t locale "settings.notifications.email-not-verified" (:email profile))]]])))
 

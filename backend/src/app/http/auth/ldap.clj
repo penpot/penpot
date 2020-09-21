@@ -51,7 +51,7 @@
                                  (first))]
         (when-not (client/bind? conn (:dn user-entry) password)
           (ex/raise :type :authentication
-                    :code ::wrong-credentials))
+                    :code :wrong-credentials))
         (set/rename-keys user-entry {(keyword (:ldap-auth-avatar-attribute cfg/config)) :photo
                                      (keyword (:ldap-auth-fullname-attribute cfg/config)) :fullname
                                      (keyword (:ldap-auth-email-attribute cfg/config)) :email})))))

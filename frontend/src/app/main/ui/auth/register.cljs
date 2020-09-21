@@ -9,21 +9,22 @@
 
 (ns app.main.ui.auth.register
   (:require
-   [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [rumext.alpha :as mf]
    [app.config :as cfg]
-   [app.main.ui.icons :as i]
-   [app.main.data.auth :as uda]
-   [app.main.store :as st]
    [app.main.data.auth :as da]
+   [app.main.data.auth :as uda]
+   [app.main.data.messages :as dm]
+   [app.main.store :as st]
    [app.main.ui.components.forms :refer [input submit-button form]]
+   [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
    [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.i18n :refer [tr t]]
-   [app.util.router :as rt]))
-
+   [app.util.router :as rt]
+   [app.util.timers :as tm]
+   [cljs.spec.alpha :as s]
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
 (mf/defc demo-warning
   [_]
@@ -43,14 +44,20 @@
 (defn- on-error
   [form error]
   (case (:code error)
-    :app.services.mutations.profile/registration-disabled
-    (st/emit! (tr "errors.registration-disabled"))
+    :registration-disabled
+    (st/emit! (dm/error (tr "errors.registration-disabled")))
 
-    :app.services.mutations.profile/email-already-exists
+    :email-already-exists
     (swap! form assoc-in [:errors :email]
            {:message "errors.email-already-exists"})
 
-    (st/emit! (tr "errors.unexpected-error"))))
+    (st/emit! (dm/error (tr "errors.unexpected-error")))))
+
+(defn- on-success
+  [form data]
+  (let [msg (tr "auth.notifications.validation-email-sent" (:email data))]
+    (st/emit! (rt/nav :auth-login)
+              (dm/success msg))))
 
 (defn- validate
   [data]
@@ -61,7 +68,8 @@
 (defn- on-submit
   [form event]
   (let [data (with-meta (:clean-data form)
-               {:on-error (partial on-error form)})]
+               {:on-error (partial on-error form)
+                :on-success (partial on-success form)})]
     (st/emit! (uda/register data))))
 
 (mf/defc register-form

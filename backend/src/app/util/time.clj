@@ -29,9 +29,17 @@
   {:pre [(string? s)]}
   (Instant/parse s))
 
-(defn now
-  []
-  (Instant/now))
+(defn instant?
+  [v]
+  (instance? Instant v))
+
+(defn is-after?
+  [da db]
+  (.isAfter ^Instant da ^Instant db))
+
+(defn is-before?
+  [da db]
+  (.isBefore ^Instant da ^Instant db))
 
 (defn plus
   [d ta]
@@ -64,6 +72,14 @@
 
     :else
     (obj->duration ms-or-obj)))
+
+(defn now
+  []
+  (Instant/now))
+
+(defn in-future
+  [v]
+  (plus (now) (duration v)))
 
 (defn duration-between
   [t1 t2]

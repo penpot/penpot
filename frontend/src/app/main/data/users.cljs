@@ -114,10 +114,7 @@
                   on-success identity}} (meta data)]
         (->> (rp/mutation :request-email-change data)
              (rx/tap on-success)
-             (rx/map (constantly fetch-profile))
-             (rx/catch (fn [err]
-                         (on-error err)
-                         (rx/empty))))))))
+             (rx/catch on-error))))))
 
 ;; --- Cancel Email Change
 

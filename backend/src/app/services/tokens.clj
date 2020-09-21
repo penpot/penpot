@@ -9,70 +9,59 @@
 
 (ns app.services.tokens
   (:require
-   [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [buddy.core.codecs :as bc]
-   [buddy.core.nonce :as bn]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
+   [app.config :as cfg]
+   [app.db :as db]
    [app.util.time :as dt]
-   [app.db :as db]))
+   [app.util.transit :as t]
+   [buddy.core.codecs :as bc]
+   [buddy.core.kdf :as bk]
+   [buddy.core.nonce :as bn]
+   [buddy.sign.jwe :as jwe]
+   [clojure.spec.alpha :as s]
+   [clojure.tools.logging :as log]))
 
-(defn next-token
-  ([] (next-token 96))
-  ([n]
-   (-> (bn/random-bytes n)
-       (bc/bytes->b64u)
-       (bc/bytes->str))))
+(defn- derive-tokens-secret
+  [key]
+  (when (= key "default")
+    (log/warn "Using default APP_SECRET_KEY, the system will generate insecure tokens."))
+  (let [engine (bk/engine {:key key
+                           :salt "tokens"
+                           :alg :hkdf
+                           :digest :blake2b-512})]
+    (bk/get-bytes engine 32)))
 
-(def default-duration
-  (dt/duration {:hours 48}))
+(def secret
+  (delay (derive-tokens-secret (:secret-key cfg/config))))
 
-(defn- decode-row
-  [{:keys [content] :as row}]
-  (when row
-    (cond-> row
-      (db/pgobject? content)
-      (assoc :content (db/decode-transit-pgobject content)))))
+(defn generate
+  [claims]
+  (let [payload (t/encode claims)]
+    (jwe/encrypt payload @secret {:alg :a256kw :enc :a256gcm})))
 
-(defn create!
-  ([conn payload] (create! conn payload {}))
-  ([conn payload {:keys [valid] :or {valid default-duration}}]
-   (let [token (next-token)
-         until (dt/plus (dt/now) (dt/duration valid))]
-     (db/insert! conn :generic-token
-                 {:content (db/tjson payload)
-                  :token token
-                  :valid-until until})
-     token)))
-
-(defn delete!
-  [conn token]
-  (db/delete! conn :generic-token {:token token}))
-
-(defn retrieve
-  ([conn token] (retrieve conn token {}))
-  ([conn token {:keys [delete] :or {delete false}}]
-   (let [row (->> (db/query conn :generic-token {:token token})
-                  (map decode-row)
-                  (first))]
-
-     (when-not row
+(defn verify
+  ([token] (verify token nil))
+  ([token params]
+   (let [payload (jwe/decrypt token @secret {:alg :a256kw :enc :a256gcm})
+         claims  (t/decode payload)]
+     (when (and (dt/instant? (:exp claims))
+                (dt/is-before? (:exp claims) (dt/now)))
        (ex/raise :type :validation
-                 :code ::invalid-token))
-
-     ;; Validate the token expiration
-     (when (> (inst-ms (dt/now))
-              (inst-ms (:valid-until row)))
+                 :code :invalid-token
+                 :reason :token-expired
+                 :params params
+                 :claims claims))
+     (when (and (contains? params :iss)
+                (not= (:iss claims)
+                      (:iss params)))
        (ex/raise :type :validation
-                 :code ::invalid-token))
+                 :code :invalid-token
+                 :reason :invalid-issuer
+                 :claims claims
+                 :params params))
+     claims)))
 
-     (when delete
-       (db/delete! conn :generic-token {:token token}))
-
-     (-> row
-         (dissoc :content)
-         (merge (:content row))))))
 
 
 

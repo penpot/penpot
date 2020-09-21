@@ -9,9 +9,7 @@
 
 (ns app.main.ui.settings.change-email
   (:require
-   [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [rumext.alpha :as mf]
+   [app.common.spec :as us]
    [app.main.data.auth :as da]
    [app.main.data.messages :as dm]
    [app.main.data.users :as du]
@@ -21,12 +19,13 @@
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
    [app.main.ui.modal :as modal]
-   [app.util.dom :as dom]
-   [app.util.forms :as fm]
-   [app.util.i18n :as i18n :refer [tr t]]))
+   [app.util.i18n :as i18n :refer [tr t]]
+   [cljs.spec.alpha :as s]
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
-(s/def ::email-1 ::fm/email)
-(s/def ::email-2 ::fm/email)
+(s/def ::email-1 ::us/email)
+(s/def ::email-2 ::us/email)
 
 (defn- email-equality
   [data]
@@ -42,7 +41,7 @@
 (defn- on-error
   [form error]
   (cond
-    (= (:code error) :app.services.mutations.profile/email-already-exists)
+    (= (:code error) :email-already-exists)
     (swap! form (fn [data]
                   (let [error {:message (tr "errors.email-already-exists")}]
                     (assoc-in data [:errors :email-1] error))))
@@ -51,10 +50,16 @@
     (let [msg (tr "errors.unexpected-error")]
       (st/emit! (dm/error msg)))))
 
+(defn- on-success
+  [profile data]
+  (let [msg (tr "auth.notifications.validation-email-sent" (:email profile))]
+    (st/emit! (dm/info msg) modal/hide)))
+
 (defn- on-submit
-  [form event]
+  [profile form event]
   (let [data (with-meta {:email (get-in form [:clean-data :email-1])}
-               {:on-error (partial on-error form)})]
+               {:on-error (partial on-error form)
+                :on-success (partial on-success profile)})]
     (st/emit! (du/request-email-change data))))
 
 (mf/defc change-email-form
@@ -66,7 +71,7 @@
     {:type :info
      :content (t locale "settings.change-email-info" (:email profile))}]
 
-   [:& form {:on-submit on-submit
+   [:& form {:on-submit (partial on-submit profile)
              :spec ::email-change-form
              :validators [email-equality]
              :initial {}}
@@ -83,29 +88,14 @@
     [:& submit-button
      {:label (t locale "settings.change-email-submit-label")}]]])
 
-(mf/defc change-email-confirmation
-  [{:keys [locale profile] :as locale}]
-  [:section.modal-content.generic-form.confirmation
-   [:h2 (t locale "settings.verification-sent-title")]
-
-
-   [:& msgs/inline-banner
-    {:type :info
-     :content (t locale "settings.change-email-info2" (:email profile))}]
-
-   [:button.btn-primary.btn-large
-    {:on-click #(modal/hide!)}
-    (t locale "settings.close-modal-label")]])
-
 (mf/defc change-email-modal
   {::mf/register modal/components
    ::mf/register-as :change-email}
   [props]
-  (let [locale (mf/deref i18n/locale)
+  (let [locale  (mf/deref i18n/locale)
         profile (mf/deref refs/profile)]
     [:div.modal-overlay
      [:div.generic-modal.change-email-modal
       [:span.close {:on-click #(modal/hide!)} i/close]
-      (if (:pending-email profile)
-        [:& change-email-confirmation {:locale locale :profile profile}]
-        [:& change-email-form {:locale locale :profile profile}])]]))
+      [:& change-email-form {:locale locale :profile profile}]]]))
+

@@ -146,10 +146,7 @@
                   on-success identity}} (meta data)]
         (->> (rp/mutation :register-profile data)
              (rx/tap on-success)
-             (rx/map #(login data))
-             (rx/catch (fn [err]
-                         (on-error err)
-                         (rx/empty))))))))
+             (rx/catch on-error))))))
 
 
 ;; --- Request Account Deletion
