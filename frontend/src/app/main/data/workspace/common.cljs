@@ -75,14 +75,10 @@
 
      ptk/WatchEvent
      (watch [_ state stream]
-       (let [page-id (:current-page-id state)
-             uidx    (get-in state [:workspace-undo :index] ::not-found)]
+       (let [page-id (:current-page-id state)]
          (rx/concat
           (when (some :page-id changes)
             (rx/of (update-indices page-id)))
-
-          (when (and save-undo? (not= uidx ::not-found))
-            (rx/of (reset-undo uidx)))
 
           (when (and save-undo? (seq undo-changes))
             (let [entry {:undo-changes undo-changes
@@ -273,9 +269,16 @@
 
 (defn- add-undo-entry
   [state entry]
-  (if entry
-    (let [state (update-in state [:workspace-undo :items] (fnil conj-undo-entry []) entry)]
-      (assoc-in state [:workspace-undo :index] (dec (count (get-in state [:workspace-undo :items])))))
+  (if (and entry
+           (not-empty (:undo-changes entry))
+           (not-empty (:redo-changes entry)))
+    (let [index (get-in state [:workspace-undo :index] -1)
+          items (get-in state [:workspace-undo :items] [])
+          items (->> items (take (inc index)) (into []))
+          items (conj-undo-entry items entry)]
+      (-> state
+          (update :workspace-undo assoc :items items
+                                        :index (inc index))))
     state))
 
 (defn- accumulate-undo-entry
@@ -316,6 +319,16 @@
       (-> state
           (add-undo-entry (get-in state [:workspace-undo :transaction]))
           (update :workspace-undo dissoc :transaction)))))
+
+(def pop-undo-into-transaction
+  (ptk/reify ::last-undo-into-transaction
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [index (get-in state [:workspace-undo :index] -1)]
+
+        (cond-> state
+          (>= index 0) (accumulate-undo-entry (get-in state [:workspace-undo :items index]))
+          (>= index 0) (update-in [:workspace-undo :index] dec))))))
 
 (def undo
   (ptk/reify ::undo
@@ -399,17 +412,19 @@
             (let [id   (first ids)
                   obj1 (get objects id)
                   obj2 (f obj1)
+                  rch-operations (generate-operations obj1 obj2)
+                  uch-operations (generate-operations obj2 obj1)
                   rchg {:type :mod-obj
                         :page-id page-id
-                        :operations (generate-operations obj1 obj2)
+                        :operations rch-operations
                         :id id}
                   uchg {:type :mod-obj
                         :page-id page-id
-                        :operations (generate-operations obj2 obj1)
+                        :operations uch-operations
                         :id id}]
               (recur (next ids)
-                     (conj rch rchg)
-                     (conj uch uchg))))))))))
+                     (if (empty? rch-operations) rch (conj rch rchg))
+                     (if (empty? uch-operations) uch (conj uch uchg)))))))))))
 
 
 (defn update-shapes-recursive

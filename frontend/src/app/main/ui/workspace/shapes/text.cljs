@@ -357,24 +357,29 @@
         #(let [self-node (mf/ref-val self-ref)
                paragraph-node (when self-node (dom/query self-node ".paragraph-set"))]
            (when paragraph-node
-             (let [{:keys [width height]} (dom/get-bounding-rect paragraph-node)]
-               (cond
-                 (and (:overflow-text shape) (not= :fixed (:grow-type shape)))
-                 (st/emit! (dwt/update-overflow-text id false))
+             (let [{:keys [width height]} (dom/get-bounding-rect paragraph-node)
+                   undo-transaction (get-in @st/state [:workspaceundo :transaction])]
+               (when (not undo-transaction) (st/emit! dwc/start-undo-transaction))
+               (when (or (not= (:width shape) width)
+                         (not= (:height shape) height))
+                   (cond
+                     (and (:overflow-text shape) (not= :fixed (:grow-type shape)))
+                     (st/emit! (dwt/update-overflow-text id false))
 
-                 (and (= :fixed (:grow-type shape)) (not (:overflow-text shape)) (> height (:height shape)))
-                 (st/emit! (dwt/update-overflow-text id true))
+                     (and (= :fixed (:grow-type shape)) (not (:overflow-text shape)) (> height (:height shape)))
+                     (st/emit! (dwt/update-overflow-text id true))
 
-                 (and (= :fixed (:grow-type shape)) (:overflow-text shape) (<= height (:height shape)))
-                 (st/emit! (dwt/update-overflow-text id false))
+                     (and (= :fixed (:grow-type shape)) (:overflow-text shape) (<= height (:height shape)))
+                     (st/emit! (dwt/update-overflow-text id false))
 
-                 (= grow-type :auto-width)
-                 (st/emit! (dw/update-dimensions [id] :width width)
-                           (dw/update-dimensions [id] :height height))
+                     (= grow-type :auto-width)
+                     (st/emit! (dw/update-dimensions [id] :width width)
+                               (dw/update-dimensions [id] :height height))
 
-                 (= grow-type :auto-height)
-                 (st/emit! (dw/update-dimensions [id] :height height))
-                 )))))))
+                     (= grow-type :auto-height)
+                     (st/emit! (dw/update-dimensions [id] :height height))
+                     ))
+               (when (not undo-transaction) (st/emit! dwc/discard-undo-transaction))))))))
 
     [:foreignObject {:ref self-ref
                      :transform (geom/transform-matrix shape)

@@ -31,7 +31,7 @@
   (let [{:keys [redo-changes]} entry]
     [:li.undo-entry {:class (when is-transaction? "transaction")}
      (for [[idx-change {:keys [type id operations]}] (map-indexed vector redo-changes)]
-       [:div.undo-entry-change
+       [:div.undo-entry-change {:key (str "change-" idx-change)}
         [:div.undo-entry-change-data (when type (str type)) " " (when id (str (get-in objects [id :name] (subs (str id) 0 8))))]
         (when operations
           [:div.undo-entry-change-data (str/join ", " (map (comp name :attr) operations))])])]))
