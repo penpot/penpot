@@ -18,7 +18,8 @@
    [app.util.dom :as dom]
    [app.util.timers :as ts]
    [app.common.data :as d]
-   [clojure.set :as set]))
+   [clojure.set :as set]
+   [app.util.object :as obj]))
 
 (def google-fonts
   (preload-gfonts "fonts/gfonts.2020.04.23.json"))
@@ -152,4 +153,6 @@
        (load-font (assoc font ::on-loaded on-loaded))
        (swap! loaded conj id)))))
 
-
+(defn ready [cb]
+  (-> (obj/get-in js/document ["fonts" "ready"])
+      (p/then cb)))

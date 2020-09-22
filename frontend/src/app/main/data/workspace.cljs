@@ -1275,7 +1275,7 @@
           (.error js/console "ERROR" e))))))
 
 (defn as-content [text]
-  (let [paragraphs (->> (str/split text "\n")
+  (let [paragraphs (->> (str/lines text)
                         (map str/trim)
                         (mapv #(hash-map :type "paragraph"
                                          :children [{:text %}])))]
