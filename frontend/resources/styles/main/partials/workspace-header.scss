@@ -115,7 +115,22 @@
       &.project-name {
         color: $color-gray-20;
         margin-right: $x-small;
+        cursor: pointer;
+
+        &:hover {
+            color: $color-primary;
+        }
       }
+    }
+
+    .file-name {
+        margin: 0;
+        padding: 0;
+        border: none;
+        border-bottom: 1px solid $color-gray-10;
+        background: $color-gray-50;
+        color: $color-gray-10;
+        margin-bottom: -1px;
     }
   }
 

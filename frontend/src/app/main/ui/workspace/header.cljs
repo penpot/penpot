@@ -20,8 +20,10 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.modal :as modal]
    [app.main.ui.workspace.presence :as presence]
+   [app.main.ui.keyboard :as kbd]
    [app.util.i18n :as i18n :refer [t]]
    [app.util.data :refer [classnames]]
+   [app.util.dom :as dom]
    [app.common.math :as mth]
    [app.util.router :as rt]))
 
@@ -86,9 +88,13 @@
 ;; --- Header Users
 
 (mf/defc menu
-  [{:keys [layout project file] :as props}]
+  [{:keys [layout project file team-id] :as props}]
   (let [show-menu? (mf/use-state false)
+        editing? (mf/use-state false)
+
         locale     (mf/deref i18n/locale)
+
+        edit-input-ref (mf/use-ref nil)
 
         add-shared-fn #(st/emit! nil (dw/set-file-shared (:id file) true))
         on-add-shared
@@ -106,13 +112,42 @@
                        :hint (t locale "dashboard.grid.remove-shared-hint")
                        :accept-text (t locale "dashboard.grid.remove-shared-accept")
                        :not-danger? false
-                       :on-accept remove-shared-fn})]
+                       :on-accept remove-shared-fn})
+
+        handle-blur (fn [event]
+                      (let [value (-> edit-input-ref mf/ref-val dom/get-value)]
+                        (st/emit! (dw/rename-file (:id file) value)))
+                      (reset! editing? false))
+
+        handle-name-keydown (fn [event]
+                              (when (kbd/enter? event)
+                                (handle-blur event)))
+        start-editing-name (fn [event]
+                             (dom/prevent-default event)
+                             (reset! editing? true))]
+    (mf/use-effect
+     (mf/deps @editing?)
+     #(when @editing?
+        (dom/select-text! (mf/ref-val edit-input-ref))))
 
     [:div.menu-section
      [:div.btn-icon-dark.btn-small {:on-click #(reset! show-menu? true)} i/actions]
      [:div.project-tree {:alt (t locale "header.sitemap")}
-      [:span.project-name (:name project) " /"]
-      [:span (:name file)]]
+      [:span.project-name
+       {:on-click #(st/emit! (rt/navigate :dashboard-project {:team-id team-id
+                                                              :project-id (:project-id file)}))}
+       (:name project) " /"]
+      (if @editing?
+        [:input.file-name
+         {:type "text"
+          :ref edit-input-ref
+          :on-blur handle-blur
+          :on-key-down handle-name-keydown
+          :auto-focus true
+          :default-value (:name file "")}]
+        [:span
+         {:on-double-click start-editing-name}
+         (:name file)])]
      (when (:is-shared file)
        [:div.shared-badge i/library])
 
@@ -191,7 +226,8 @@
 
      [:& menu {:layout layout
                :project project
-               :file file}]
+               :file file
+               :team-id team-id}]
 
      [:div.users-section
       [:& presence/active-sessions]]
