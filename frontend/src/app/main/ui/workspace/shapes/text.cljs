@@ -57,6 +57,7 @@
 
         selected  (mf/deref refs/selected-shapes)
         edition   (mf/deref refs/selected-edition)
+        zoom      (mf/deref refs/selected-zoom)
         edition?  (= edition id)
         selected? (and (contains? selected id)
                        (= (count selected) 1))
@@ -80,10 +81,12 @@
              :style {:pointer-events "none"}}
          ;; We only render the component for its side-effect
          [:& text-shape-edit {:shape shape
+                              :zoom zoom
                               :read-only? true}]])
 
       (if edition?
-        [:& text-shape-edit {:shape shape}]
+        [:& text-shape-edit {:shape shape
+                             :zoom zoom}]
         [:& text/text-shape {:shape shape
                              :selected? selected?}])]]))
 
@@ -258,7 +261,7 @@
 
 (mf/defc text-shape-edit
   {::mf/wrap [mf/memo]}
-  [{:keys [shape read-only?] :or {read-only? false} :as props}]
+  [{:keys [shape zoom read-only?] :or {read-only? false} :as props}]
   (let [{:keys [id x y width height content grow-type]} shape
 
         state    (mf/use-state #(parse-content content))
@@ -349,15 +352,18 @@
 
     ;; Checks the size of the wrapper to update if it were necesary
     (mf/use-effect
-     (mf/deps props @loaded-fonts)
+     (mf/deps shape @loaded-fonts)
      (fn []
        (timers/schedule
         250 ;; We need to wait to the text to be rendered. Is there a better alternative?
         #(let [self-node (mf/ref-val self-ref)
                paragraph-node (when self-node (dom/query self-node ".paragraph-set"))]
            (when paragraph-node
-             (let [{:keys [width height]} (dom/get-bounding-rect paragraph-node)
-                   undo-transaction (get-in @st/state [:workspaceundo :transaction])]
+             (let [
+                   {bb-w :width bb-h :height} (dom/get-bounding-rect paragraph-node)
+                   width (max (/ bb-w zoom) 7)
+                   height (max (/ bb-h zoom) 16)
+                   undo-transaction (get-in @st/state [:workspace-undo :transaction])]
                (when (not undo-transaction) (st/emit! dwc/start-undo-transaction))
                (when (or (not= (:width shape) width)
                          (not= (:height shape) height))
