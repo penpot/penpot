@@ -121,7 +121,7 @@
       lh (obj/set! "lineHeight" lh))))
 
 (defn- generate-text-styles
-  [data on-load-font]
+  [data]
   (let [letter-spacing (obj/get data "letter-spacing")
         text-decoration (obj/get data "text-decoration")
         text-transform (obj/get data "text-transform")
@@ -153,7 +153,6 @@
     (when (and (string? font-id)
                (pos? (alength font-id)))
       (let [font (get fontsdb font-id)]
-        (fonts/ensure-loaded! font-id on-load-font)
         (let [font-family (or (:family font)
                               (obj/get data "fontFamily"))
               font-variant (d/seek #(= font-variant-id (:id %))
@@ -215,8 +214,7 @@
   (let [attrs (obj/get props "attributes")
         childs (obj/get props "children")
         data   (obj/get props "leaf")
-        on-load-font (obj/get props "on-load-font")
-        style  (generate-text-styles data on-load-font)
+        style  (generate-text-styles data)
         attrs  (obj/set! attrs "style" style)]
     [:> :span attrs childs]))
 
@@ -232,10 +230,9 @@
        nil))))
 
 (defn- render-text
-  [on-load-font]
-  (fn [props]
-    (mf/html
-     [:> editor-text-node (obj/merge! props #js {:on-load-font on-load-font})])))
+  [props]
+  (mf/html
+   [:> editor-text-node props]))
 
 ;; --- Text Shape Edit
 
@@ -337,10 +334,7 @@
                    content (first content)]
                (st/emit! (dw/update-shape id {:content content}))
                (reset! state val)
-               (reset! content-var content)))))
-
-        loaded-fonts (mf/use-var 0)
-        on-load-font #(swap! loaded-fonts inc)]
+               (reset! content-var content)))))]
 
     (mf/use-effect on-mount)
 
@@ -352,10 +346,10 @@
 
     ;; Checks the size of the wrapper to update if it were necesary
     (mf/use-effect
-     (mf/deps shape @loaded-fonts)
+     (mf/deps shape)
+
      (fn []
-       (timers/schedule
-        250 ;; We need to wait to the text to be rendered. Is there a better alternative?
+       (fonts/ready
         #(let [self-node (mf/ref-val self-ref)
                paragraph-node (when self-node (dom/query self-node ".paragraph-set"))]
            (when paragraph-node
@@ -367,23 +361,23 @@
                (when (not undo-transaction) (st/emit! dwc/start-undo-transaction))
                (when (or (not= (:width shape) width)
                          (not= (:height shape) height))
-                   (cond
-                     (and (:overflow-text shape) (not= :fixed (:grow-type shape)))
-                     (st/emit! (dwt/update-overflow-text id false))
+                 (cond
+                   (and (:overflow-text shape) (not= :fixed (:grow-type shape)))
+                   (st/emit! (dwt/update-overflow-text id false))
 
-                     (and (= :fixed (:grow-type shape)) (not (:overflow-text shape)) (> height (:height shape)))
-                     (st/emit! (dwt/update-overflow-text id true))
+                   (and (= :fixed (:grow-type shape)) (not (:overflow-text shape)) (> height (:height shape)))
+                   (st/emit! (dwt/update-overflow-text id true))
 
-                     (and (= :fixed (:grow-type shape)) (:overflow-text shape) (<= height (:height shape)))
-                     (st/emit! (dwt/update-overflow-text id false))
+                   (and (= :fixed (:grow-type shape)) (:overflow-text shape) (<= height (:height shape)))
+                   (st/emit! (dwt/update-overflow-text id false))
 
-                     (= grow-type :auto-width)
-                     (st/emit! (dw/update-dimensions [id] :width width)
-                               (dw/update-dimensions [id] :height height))
+                   (= grow-type :auto-width)
+                   (st/emit! (dw/update-dimensions [id] :width width)
+                             (dw/update-dimensions [id] :height height))
 
-                     (= grow-type :auto-height)
-                     (st/emit! (dw/update-dimensions [id] :height height))
-                     ))
+                   (= grow-type :auto-height)
+                   (st/emit! (dw/update-dimensions [id] :height height))
+                   ))
                (when (not undo-transaction) (st/emit! dwc/discard-undo-transaction))))))))
 
     [:foreignObject {:ref self-ref
@@ -403,7 +397,7 @@
         :style {:cursor cur/text
                 :width (:width shape)}
         :render-element #(render-element shape %)
-        :render-leaf (render-text on-load-font)
+        :render-leaf render-text
         :on-mouse-up on-mouse-up
         :on-mouse-down on-mouse-down
         :on-blur (fn [event]

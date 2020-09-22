@@ -199,8 +199,7 @@
   (ptk/reify ::start-edit-if-selected
     ptk/UpdateEvent
     (update [_ state]
-      (let [page-id (:current-page-id state)
-            objects  (get-in state [:workspace-data :pages-index page-id :objects])
+      (let [objects (dwc/lookup-page-objects state)
             selected (->> state :workspace-local :selected (map #(get objects %)))]
         (cond-> state
           (and (= 1 (count selected))

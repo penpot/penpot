@@ -297,13 +297,14 @@
         (accumulate-undo-entry state entry)
         (add-undo-entry state entry)))))
 
+(defonce empty-tx {:undo-changes [] :redo-changes []})
+
 (def start-undo-transaction
   (ptk/reify ::start-undo-transaction
     ptk/UpdateEvent
     (update [_ state]
       ;; We commit the old transaction before starting the new one
-      (let [empty-tx {:undo-changes [] :redo-changes []}
-            current-tx (get-in state [:workspace-undo :transaction])]
+      (let [current-tx (get-in state [:workspace-undo :transaction])]
         (cond-> state
           (nil? current-tx) (assoc-in [:workspace-undo :transaction] empty-tx))))))
 
