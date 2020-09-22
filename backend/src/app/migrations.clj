@@ -93,6 +93,11 @@
     {:name "0025-del-generic-tokens-table"
      :fn (mg/resource "app/migrations/sql/0025-del-generic-tokens-table.sql")}
 
+    {:name "0026-mod-file-library-rel-table-synced-date"
+     :fn (mg/resource "app/migrations/sql/0026-mod-file-library-rel-table-synced-date.sql")}
+
+    {:name "0027-mod-file-table-ignore-sync"
+     :fn (mg/resource "app/migrations/sql/0027-mod-file-table-ignore-sync.sql")}
     ]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

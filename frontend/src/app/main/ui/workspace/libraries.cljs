@@ -16,11 +16,31 @@
    [app.main.store :as st]
    [app.main.refs :as refs]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.libraries :as dwl]
    [app.main.ui.icons :as i]
    [app.main.ui.modal :as modal]))
 
 (def workspace-file
   (l/derived :workspace-file st/state))
+
+(defn contents-str
+  [library]
+  (let [components-count (count (get-in library [:data :components] []))
+        graphics-count (count (get-in library [:data :media] []))
+        colors-count (count (get-in library [:data :colors] []))]
+    ;; Include a &nbsp; so this block has always some content
+    (str
+      (str/join " · "
+                (cond-> []
+                  (< 0 components-count)
+                  (conj (tr "workspace.libraries.components" components-count))
+
+                  (< 0 graphics-count)
+                  (conj (tr "workspace.libraries.graphics" graphics-count))
+
+                  (< 0 colors-count)
+                  (conj (tr "workspace.libraries.colors" colors-count))))
+      "\u00A0")))
 
 (mf/defc libraries-tab
   [{:keys [file libraries shared-files] :as props}]
@@ -51,22 +71,7 @@
         (mf/use-callback (mf/deps file) #(st/emit! (dw/link-file-to-library (:id file) %)))
 
         unlink-library
-        (mf/use-callback (mf/deps file) #(st/emit! (dw/unlink-file-from-library (:id file) %)))
-
-        contents-str
-        (fn [library]
-          (let [graphics-count (count (get-in library [:data :media] []))
-                colors-count (count (get-in library [:data :colors] []))]
-            ;; Include a &nbsp; so this block has always some content
-            (str
-             (str/join " · "
-                       (cond-> []
-                         (< 0 graphics-count)
-                         (conj (tr "workspace.libraries.graphics" graphics-count))
-
-                         (< 0 colors-count)
-                         (conj (tr "workspace.libraries.colors" colors-count))))
-             "\u00A0")))]
+        (mf/use-callback (mf/deps file) #(st/emit! (dw/unlink-file-from-library (:id file) %)))]
     [:*
      [:div.section
       [:div.section-title (tr "workspace.libraries.in-this-file")]
@@ -113,8 +118,25 @@
 
 
 (mf/defc updates-tab
-  []
-  [:div])
+  [{:keys [file libraries] :as props}]
+  (let [libraries-need-sync (filter #(> (:modified-at %) (:synced-at %))
+                                        (vals libraries))
+        update-library #(st/emit! (dwl/sync-file %))]
+  [:div.section
+   (if (empty? libraries-need-sync)
+     [:div.section-list-empty
+      i/library
+      (tr "workspace.libraries.no-libraries-need-sync")]
+     [:*
+       [:div.section-title (tr "workspace.libraries.library")]
+       [:div.section-list
+        (for [library libraries-need-sync]
+          [:div.section-list-item {:key (:id library)}
+           [:div.item-name (:name library)]
+           [:div.item-contents (contents-str library)]
+           [:input.item-button {:type "button"
+                                :value (tr "workspace.libraries.update")
+                                :on-click #(update-library (:id library))}]])]])]))
 
 
 (mf/defc libraries-dialog
@@ -158,5 +180,6 @@
                              :libraries libraries
                              :shared-files shared-files}]
           :updates
-          [:& updates-tab {}])]]]]))
+          [:& updates-tab {:file file
+                           :libraries libraries}])]]]]))
 

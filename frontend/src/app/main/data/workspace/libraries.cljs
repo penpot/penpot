@@ -15,6 +15,7 @@
    [app.common.pages-helpers :as cph]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
+   [app.main.data.messages :as dm]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.selection :as dws]
    [app.common.pages :as cp]
@@ -24,6 +25,7 @@
    [app.util.color :as color]
    [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
+   [app.util.time :as dt]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
@@ -346,14 +348,16 @@
         (st/emit! (rt/nav-new-window :workspace pparams qparams))))))
 
 (defn ext-library-changed
-  [file-id changes]
+  [file-id modified-at changes]
   (us/assert ::us/uuid file-id)
   (us/assert ::cp/changes changes)
   (ptk/reify ::ext-library-changed
     ptk/UpdateEvent
     (update [_ state]
-      (d/update-in-when state [:workspace-libraries file-id :data]
-                        cp/process-changes changes))))
+      (-> state
+          (assoc-in [:workspace-libraries file-id :modified-at] modified-at)
+          (d/update-in-when [:workspace-libraries file-id :data]
+                            cp/process-changes changes)))))
 
 (declare generate-sync-file)
 (declare generate-sync-page)
@@ -433,10 +437,55 @@
   [file-id]
   (us/assert (s/nilable ::us/uuid) file-id)
   (ptk/reify ::sync-file
+    ptk/UpdateEvent
+    (update [_ state]
+      (if file-id
+        (assoc-in state [:workspace-libraries file-id :synced-at] (dt/now))
+        state))
+
     ptk/WatchEvent
     (watch [_ state stream]
       (let [[rchanges uchanges] (generate-sync-file state file-id)]
-        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
+        (rx/concat
+          (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))
+          (when file-id
+            (rp/mutation :update-sync
+                         {:file-id (get-in state [:workspace-file :id])
+                          :library-id file-id})))))))
+
+(def ignore-sync
+  (ptk/reify ::sync-file
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-file :ignore-sync-until] (dt/now)))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rp/mutation :ignore-sync
+                   {:file-id (get-in state [:workspace-file :id])
+                    :date (dt/now)}))))
+
+(defn notify-sync-file
+  [file-id]
+  (us/assert ::us/uuid file-id)
+  (ptk/reify ::notify-sync-file
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [libraries-need-sync (filter #(> (:modified-at %) (:synced-at %))
+                                        (vals (get state :workspace-libraries)))
+            do-update #(do (apply st/emit! (map (fn [library]
+                                                  (sync-file (:id library)))
+                                                libraries-need-sync))
+                           (st/emit! dm/hide))
+            do-dismiss #(do (st/emit! ignore-sync)
+                            (st/emit! dm/hide))]
+        (rx/of (dm/info-dialog
+                 (tr "workspace.updates.there-are-updates")
+                 :inline-actions
+                 [{:label (tr "workspace.updates.update")
+                   :callback do-update}
+                  {:label (tr "workspace.updates.dismiss")
+                   :callback do-dismiss}]))))))
 
 (defn- generate-sync-file
   [state file-id]
