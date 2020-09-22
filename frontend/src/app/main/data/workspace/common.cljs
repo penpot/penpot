@@ -302,10 +302,11 @@
     ptk/UpdateEvent
     (update [_ state]
       ;; We commit the old transaction before starting the new one
-      (-> state
-          (add-undo-entry (get-in state [:workspace-undo :transaction]))
-          (assoc-in [:workspace-undo :transaction] {:undo-changes []
-                                                    :redo-changes []})))))
+      (let [empty-tx {:undo-changes [] :redo-changes []}
+            current-tx (get-in state [:workspace-undo :transaction])]
+        (cond-> state
+          (nil? current-tx) (assoc-in [:workspace-undo :transaction] empty-tx))))))
+
 (def discard-undo-transaction
   (ptk/reify ::discard-undo-transaction
     ptk/UpdateEvent

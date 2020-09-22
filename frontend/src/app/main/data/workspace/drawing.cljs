@@ -294,8 +294,13 @@
                            geom/transform-shape
                            (dissoc ::initialized? ::click-draw?))]
              ;; Add & select the created shape to the workspace
-             (rx/of dw/deselect-all
-                    (dw/add-shape shape)))))))))
+             (rx/concat
+              (if (= :text (:type shape))
+                (rx/of dwc/start-undo-transaction)
+                (rx/empty))
+
+              (rx/of dw/deselect-all
+                     (dw/add-shape shape))))))))))
 
 (def close-drawing-path
   (ptk/reify ::close-drawing-path

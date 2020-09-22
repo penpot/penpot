@@ -1289,7 +1289,7 @@
     (watch [_ state stream]
       (let [id (uuid/next)
             {:keys [x y]} @ms/mouse-position
-            width (* 7 (count text))
+            width (min (* 7 (count text)) 700)
             height 16
             shape {:id id
                    :type :text
@@ -1304,7 +1304,7 @@
                              :height height}
                    :width width
                    :height height
-                   :grow-type :auto-width
+                   :grow-type (if (> (count text) 100) :auto-height :auto-width)
                    :content (as-content text)}]
         (rx/of dwc/start-undo-transaction
                dws/deselect-all

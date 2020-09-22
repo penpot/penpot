@@ -660,17 +660,18 @@
         ;; Normalize x/y vector coordinates because scale by 0 is infinite
         res-x (cond
                 (and (< res-x 0) (> res-x -0.01)) -0.01
-                (and (> res-x 0) (< res-x 0.01)) 0.01
+                (and (>= res-x 0) (< res-x 0.01)) 0.01
                 :else res-x)
 
         res-y (cond
                 (and (< res-y 0) (> res-y -0.01)) -0.01
-                (and (> res-y 0) (< res-y 0.01)) 0.01
+                (and (>= res-y 0) (< res-y 0.01)) 0.01
                 :else res-y)
 
         resize (gpt/point res-x res-y)
 
         origin (:resize-origin modifiers (gpt/point 0 0))
+
         resize-transform (:resize-transform modifiers (gmt/matrix))
         resize-transform-inverse (:resize-transform-inverse modifiers (gmt/matrix))
         rt-modif (:rotation modifiers 0)
