@@ -272,7 +272,9 @@
         on-close
         (fn []
           (when (not read-only?)
-            (st/emit! dw/clear-edition-mode)))
+            (st/emit! dw/clear-edition-mode))
+          (when (= 0 (content-size @content-var))
+            (st/emit! (dw/delete-shapes [id]))))
 
         on-click-outside
         (fn [event]
@@ -289,10 +291,7 @@
                           (and cpicker (.contains cpicker target)))
               (if selecting?
                 (mf/set-ref-val! selecting-ref false)
-                (on-close))))
-
-          (when (= 0 (content-size @content-var))
-            (st/emit! (dw/delete-shapes [id]))))
+                (on-close)))))
 
         on-mouse-down
         (fn [event]
