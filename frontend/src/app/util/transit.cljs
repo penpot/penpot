@@ -94,3 +94,10 @@
       (t/write w data))
     (catch :default e
       (throw e))))
+
+(defn transit?
+  "Checks if a string can be decoded with transit"
+  [str]
+  (try
+    (-> str decode nil? not)
+    (catch js/SyntaxError e false)))
