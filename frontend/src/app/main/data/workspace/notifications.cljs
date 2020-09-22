@@ -13,7 +13,6 @@
    [app.common.geom.point :as gpt]
    [app.common.pages :as cp]
    [app.common.spec :as us]
-   [app.main.data.messages :as dm]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.data.workspace.libraries :as dwl]
@@ -204,25 +203,21 @@
            (rx/from (map dwc/update-indices page-ids))))))))
 
 (s/def ::library-change-event
-  (s/keys :req-un [::type ::profile-id ::file-id ::session-id ::revn ::changes]))
+  (s/keys :req-un [::type
+                   ::profile-id
+                   ::file-id
+                   ::session-id
+                   ::revn
+                   ::modified-at
+                   ::changes]))
 
 (defn handle-library-change
-  [{:keys [file-id changes] :as msg}]
+  [{:keys [file-id modified-at changes] :as msg}]
   (us/assert ::library-change-event msg)
   (ptk/reify ::handle-library-change
     ptk/WatchEvent
     (watch [_ state stream]
       (when (contains? (:workspace-libraries state) file-id)
-        (let [do-update #(do
-                           (st/emit! (dwl/sync-file file-id))
-                           (st/emit! dm/hide))
-              do-dismiss #(st/emit! dm/hide)]
-          (rx/of (dwl/ext-library-changed file-id changes)
-                 (dm/info-dialog
-                   (tr "workspace.updates.there-are-updates")
-                   :inline-actions
-                   [{:label (tr "workspace.updates.update")
-                     :callback do-update}
-                    {:label (tr "workspace.updates.dismiss")
-                     :callback do-dismiss}])))))))
+        (rx/of (dwl/ext-library-changed file-id modified-at changes)
+               (dwl/notify-sync-file file-id))))))
 

@@ -153,7 +153,17 @@
               (fn [file]
                 (if (= (:id file) file-id)
                   (assoc file :initialized true)
-                  file))))))
+                  file))))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [ignore-until (get-in state [:workspace-file :ignore-sync-until])
+            needs-update? (some #(and (> (:modified-at %) (:synced-at %))
+                                      (or (not ignore-until)
+                                          (> (:modified-at %) ignore-until)))
+                                (vals (get state :workspace-libraries)))]
+        (when needs-update?
+          (rx/of (dwl/notify-sync-file file-id)))))))
 
 (defn finalize-file
   [project-id file-id]

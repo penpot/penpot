@@ -188,6 +188,47 @@
                :library-file-id library-id}))
 
 
+;; --- Mutation: Update syncrhonization status of a link
+
+(declare update-sync)
+
+(s/def ::update-sync
+  (s/keys :req-un [::profile-id ::file-id ::library-id]))
+
+(sm/defmutation ::update-sync
+  [{:keys [profile-id file-id library-id] :as params}]
+  (db/with-atomic [conn db/pool]
+    (files/check-edition-permissions! conn profile-id file-id)
+    (update-sync conn params)))
+
+(defn- update-sync
+  [conn {:keys [file-id library-id] :as params}]
+  (db/update! conn :file-library-rel
+              {:synced-at (dt/now)}
+              {:file-id file-id
+               :library-file-id library-id}))
+
+
+;; --- Mutation: Ignore updates in linked files
+
+(declare ignore-sync)
+
+(s/def ::ignore-sync
+  (s/keys :req-un [::profile-id ::file-id ::date]))
+
+(sm/defmutation ::ignore-sync
+  [{:keys [profile-id file-id date] :as params}]
+  (db/with-atomic [conn db/pool]
+    (files/check-edition-permissions! conn profile-id file-id)
+    (ignore-sync conn params)))
+
+(defn- ignore-sync
+  [conn {:keys [file-id date] :as params}]
+  (db/update! conn :file
+              {:ignore-sync-until date}
+              {:id file-id}))
+
+
 ;; A generic, Changes based (granular) file update method.
 
 (s/def ::changes
@@ -258,6 +299,7 @@
                  :file-id (:id file)
                  :session-id sid
                  :revn (:revn file)
+                 :modified-at (:modified-at file)
                  :changes library-changes}]
 
         @(redis/run! :publish {:channel (str team-id)

@@ -1,6 +1,6 @@
 {
   "auth.already-have-account" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:115" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:114" ],
     "translations" : {
       "en" : "Already have an account?",
       "fr" : "Vous avez déjà un compte?",
@@ -18,7 +18,7 @@
     }
   },
   "auth.create-demo-profile" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:124", "src/app/main/ui/auth/login.cljs:135" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:123", "src/app/main/ui/auth/login.cljs:135" ],
     "translations" : {
       "en" : "Create demo account",
       "fr" : "Créer un compte de démonstration",
@@ -27,7 +27,7 @@
     }
   },
   "auth.create-demo-profile-label" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:121", "src/app/main/ui/auth/login.cljs:132" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:120", "src/app/main/ui/auth/login.cljs:132" ],
     "translations" : {
       "en" : "Just wanna try it?",
       "fr" : "Vous voulez juste essayer?",
@@ -45,7 +45,7 @@
     }
   },
   "auth.email-label" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:90", "src/app/main/ui/auth/recovery_request.cljs:45", "src/app/main/ui/auth/login.cljs:81" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:89", "src/app/main/ui/auth/recovery_request.cljs:45", "src/app/main/ui/auth/login.cljs:81" ],
     "translations" : {
       "en" : "Email",
       "fr" : "Adresse email",
@@ -63,7 +63,7 @@
     }
   },
   "auth.fullname-label" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:84" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:83" ],
     "translations" : {
       "en" : "Full Name",
       "fr" : "Nom complet",
@@ -90,7 +90,7 @@
     }
   },
   "auth.login-here" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:118" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:117" ],
     "translations" : {
       "en" : "Login here",
       "fr" : "Se connecter ici",
@@ -180,13 +180,13 @@
     }
   },
   "auth.notifications.validation-email-sent" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:59", "src/app/main/ui/settings/change_email.cljs:55" ],
+    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:55", "src/app/main/ui/auth/register.cljs:58" ],
     "translations" : {
       "en" : "Verification email sent to %s; check your email!"
     }
   },
   "auth.password-label" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:94", "src/app/main/ui/auth/login.cljs:87" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:93", "src/app/main/ui/auth/login.cljs:87" ],
     "translations" : {
       "en" : "Password",
       "fr" : "Mot de passe",
@@ -195,7 +195,7 @@
     }
   },
   "auth.password-length-hint" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:93" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:92" ],
     "translations" : {
       "en" : "At least 8 characters",
       "fr" : "Au moins 8 caractères",
@@ -258,7 +258,7 @@
     }
   },
   "auth.register-submit-label" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:98" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:97" ],
     "translations" : {
       "en" : "Create an account",
       "fr" : "Créer un compte",
@@ -267,7 +267,7 @@
     }
   },
   "auth.register-subtitle" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:107" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:106" ],
     "translations" : {
       "en" : "It's free, it's Open Source",
       "fr" : "C'est gratuit, c'est Open Source",
@@ -276,7 +276,7 @@
     }
   },
   "auth.register-title" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:106" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:105" ],
     "translations" : {
       "en" : "Create an account",
       "fr" : "Créer un compte",
@@ -294,7 +294,7 @@
     }
   },
   "dashboard.grid.add-shared" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:175", "src/app/main/ui/dashboard/grid.cljs:165" ],
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:165", "src/app/main/ui/workspace/header.cljs:175" ],
     "translations" : {
       "en" : "Add as Shared Library",
       "fr" : "",
@@ -303,7 +303,7 @@
     }
   },
   "dashboard.grid.add-shared-accept" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:98", "src/app/main/ui/dashboard/grid.cljs:94" ],
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:94", "src/app/main/ui/workspace/header.cljs:98" ],
     "translations" : {
       "en" : "Add as Shared Library",
       "fr" : "",
@@ -312,7 +312,7 @@
     }
   },
   "dashboard.grid.add-shared-hint" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:97", "src/app/main/ui/dashboard/grid.cljs:93" ],
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:93", "src/app/main/ui/workspace/header.cljs:97" ],
     "translations" : {
       "en" : "Once added as Shared Library, the assets of this file library will be available to be used among the rest of your files.",
       "fr" : "",
@@ -321,7 +321,7 @@
     }
   },
   "dashboard.grid.add-shared-message" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:96", "src/app/main/ui/dashboard/grid.cljs:92" ],
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:92", "src/app/main/ui/workspace/header.cljs:96" ],
     "translations" : {
       "en" : "Add “%s” as Shared Library",
       "fr" : "",
@@ -348,7 +348,7 @@
     }
   },
   "dashboard.grid.remove-shared" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:173", "src/app/main/ui/dashboard/grid.cljs:164" ],
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:164", "src/app/main/ui/workspace/header.cljs:173" ],
     "translations" : {
       "en" : "Remove as Shared Library",
       "fr" : "",
@@ -357,7 +357,7 @@
     }
   },
   "dashboard.grid.remove-shared-accept" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:107", "src/app/main/ui/dashboard/grid.cljs:113" ],
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:113", "src/app/main/ui/workspace/header.cljs:107" ],
     "translations" : {
       "en" : "Remove as Shared Library",
       "fr" : "",
@@ -366,7 +366,7 @@
     }
   },
   "dashboard.grid.remove-shared-hint" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:106", "src/app/main/ui/dashboard/grid.cljs:112" ],
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:112", "src/app/main/ui/workspace/header.cljs:106" ],
     "translations" : {
       "en" : "Once removed as Shared Library, the File Library of this file will stop being available to be used among the rest of your files.",
       "fr" : "",
@@ -375,7 +375,7 @@
     }
   },
   "dashboard.grid.remove-shared-message" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:105", "src/app/main/ui/dashboard/grid.cljs:111" ],
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:111", "src/app/main/ui/workspace/header.cljs:105" ],
     "translations" : {
       "en" : "Remove “%s” as Shared Library",
       "fr" : "",
@@ -735,7 +735,7 @@
     }
   },
   "errors.email-already-exists" : {
-    "used-in" : [ "src/app/main/ui/auth.cljs:90", "src/app/main/ui/settings/change_email.cljs:46" ],
+    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:46", "src/app/main/ui/auth.cljs:89" ],
     "translations" : {
       "en" : "Email already used",
       "fr" : "Adresse e-mail déjà utilisée",
@@ -744,7 +744,7 @@
     }
   },
   "errors.email-already-validated" : {
-    "used-in" : [ "src/app/main/ui/auth.cljs:95" ],
+    "used-in" : [ "src/app/main/ui/auth.cljs:94" ],
     "translations" : {
       "en" : "Email already validated.",
       "fr" : "Adresse e-mail déjà validé.",
@@ -762,7 +762,7 @@
     }
   },
   "errors.generic" : {
-    "used-in" : [ "src/app/main/ui/auth.cljs:99", "src/app/main/ui/settings/profile.cljs:36" ],
+    "used-in" : [ "src/app/main/ui/settings/profile.cljs:36", "src/app/main/ui/auth.cljs:98" ],
     "translations" : {
       "en" : "Something wrong has happened.",
       "fr" : "Quelque chose c'est mal passé.",
@@ -834,7 +834,7 @@
     }
   },
   "errors.registration-disabled" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:49" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:48" ],
     "translations" : {
       "en" : "The registration is currently disabled.",
       "fr" : "L'enregistrement est actuellement désactivé.",
@@ -843,7 +843,7 @@
     }
   },
   "errors.unexpected-error" : {
-    "used-in" : [ "src/app/main/data/media.cljs:64", "src/app/main/ui/workspace/sidebar/options/exports.cljs:66", "src/app/main/ui/auth/register.cljs:55", "src/app/main/ui/settings/change_email.cljs:50" ],
+    "used-in" : [ "src/app/main/data/media.cljs:64", "src/app/main/ui/settings/change_email.cljs:50", "src/app/main/ui/workspace/sidebar/options/exports.cljs:66", "src/app/main/ui/auth/register.cljs:54" ],
     "translations" : {
       "en" : "An unexpected error occurred.",
       "fr" : "Une erreur inattendue c'est produite",
@@ -924,7 +924,7 @@
     }
   },
   "settings.cancel-email-change" : {
-    "used-in" : [ "src/app/main/ui/settings/profile.cljs:81" ],
+    "used-in" : [ "src/app/main/ui/settings/profile.cljs:79" ],
     "translations" : {
       "en" : "Cancel",
       "fr" : "Annuler",
@@ -942,13 +942,13 @@
     }
   },
   "settings.change-email-info3" : {
+    "used-in" : [ "src/app/main/ui/settings/profile.cljs:78" ],
     "translations" : {
       "en" : null,
       "fr" : null,
-      "es" : null,
-      "ru" : null
-    },
-    "used-in" : [ "src/app/main/ui/settings/profile.cljs:78" ]
+      "ru" : null,
+      "es" : null
+    }
   },
   "settings.change-email-label" : {
     "used-in" : [ "src/app/main/ui/settings/profile.cljs:73" ],
@@ -1023,7 +1023,7 @@
     }
   },
   "settings.email-verification-pending" : {
-    "used-in" : [ "src/app/main/ui/settings/profile.cljs:86" ],
+    "used-in" : [ "src/app/main/ui/settings/profile.cljs:88" ],
     "translations" : {
       "en" : "There is a pending email validation.",
       "fr" : "Une validation par e-mail est en attente.",
@@ -1098,10 +1098,10 @@
     "translations" : {
       "en" : null,
       "fr" : null,
-      "es" : null,
-      "ru" : null
+      "ru" : null,
+      "es" : null
     },
-    "used-in" : [ "src/app/main/ui/dashboard.cljs:100" ]
+    "unused" : true
   },
   "settings.notifications.email-verified-successfully" : {
     "used-in" : [ "src/app/main/ui/auth.cljs:57" ],
@@ -1131,7 +1131,7 @@
     }
   },
   "settings.notifications.profile-saved" : {
-    "used-in" : [ "src/app/main/ui/settings/profile.cljs:41", "src/app/main/ui/settings/options.cljs:37" ],
+    "used-in" : [ "src/app/main/ui/settings/options.cljs:37", "src/app/main/ui/settings/profile.cljs:41" ],
     "translations" : {
       "en" : "Profile saved successfully!",
       "fr" : "Profil enregistré avec succès!",
@@ -1185,7 +1185,7 @@
     }
   },
   "settings.profile-submit-label" : {
-    "used-in" : [ "src/app/main/ui/settings/profile.cljs:89", "src/app/main/ui/settings/password.cljs:93", "src/app/main/ui/settings/options.cljs:67" ],
+    "used-in" : [ "src/app/main/ui/settings/password.cljs:93", "src/app/main/ui/settings/options.cljs:67", "src/app/main/ui/settings/profile.cljs:91" ],
     "translations" : {
       "en" : "Update settings",
       "fr" : "Mettre à jour les paramètres",
@@ -1194,7 +1194,7 @@
     }
   },
   "settings.remove-account-label" : {
-    "used-in" : [ "src/app/main/ui/settings/profile.cljs:94" ],
+    "used-in" : [ "src/app/main/ui/settings/profile.cljs:96" ],
     "translations" : {
       "en" : "Want to remove your account?",
       "fr" : "Vous souhaitez supprimer votre compte?",
@@ -1230,7 +1230,7 @@
     }
   },
   "settings.update-photo-label" : {
-    "used-in" : [ "src/app/main/ui/settings/profile.cljs:115" ],
+    "used-in" : [ "src/app/main/ui/settings/profile.cljs:117" ],
     "translations" : {
       "en" : "UPDATE",
       "fr" : "METTRE A JOUR",
@@ -1740,7 +1740,7 @@
     }
   },
   "workspace.libraries.add" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:106" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:111" ],
     "translations" : {
       "en" : "Add",
       "fr" : "",
@@ -1749,7 +1749,7 @@
     }
   },
   "workspace.libraries.colors" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:68" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:42" ],
     "translations" : {
       "en" : "%s colors",
       "fr" : "",
@@ -1764,13 +1764,13 @@
     }
   },
   "workspace.libraries.colors.file-library" : {
-    "used-in" : [ "src/app/main/ui/workspace/colorpicker.cljs:337", "src/app/main/ui/workspace/colorpalette.cljs:150" ],
+    "used-in" : [ "src/app/main/ui/workspace/colorpalette.cljs:150", "src/app/main/ui/workspace/colorpicker.cljs:337" ],
     "translations" : {
       "en" : "File library"
     }
   },
   "workspace.libraries.colors.recent-colors" : {
-    "used-in" : [ "src/app/main/ui/workspace/colorpicker.cljs:336", "src/app/main/ui/workspace/colorpalette.cljs:160" ],
+    "used-in" : [ "src/app/main/ui/workspace/colorpalette.cljs:160", "src/app/main/ui/workspace/colorpicker.cljs:336" ],
     "translations" : {
       "en" : "Recent colors"
     }
@@ -1787,8 +1787,17 @@
       "en" : "Small thumbnails"
     }
   },
+  "workspace.libraries.components" : {
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:36" ],
+    "translations" : {
+      "en" : "%s components",
+      "fr" : "",
+      "ru" : "",
+      "es" : "%s componentes"
+    }
+  },
   "workspace.libraries.file-library" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:75" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:80" ],
     "translations" : {
       "en" : "File library",
       "fr" : "",
@@ -1797,7 +1806,7 @@
     }
   },
   "workspace.libraries.graphics" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:65" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:39" ],
     "translations" : {
       "en" : "%s graphics",
       "fr" : "",
@@ -1806,7 +1815,7 @@
     }
   },
   "workspace.libraries.in-this-file" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:72" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:77" ],
     "translations" : {
       "en" : "LIBRARIES IN THIS FILE",
       "fr" : "",
@@ -1815,7 +1824,7 @@
     }
   },
   "workspace.libraries.libraries" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:149" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:171" ],
     "translations" : {
       "en" : "LIBRARIES",
       "fr" : "",
@@ -1823,8 +1832,26 @@
       "es" : "BIBLIOTECAS"
     }
   },
+  "workspace.libraries.library" : {
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:131" ],
+    "translations" : {
+      "en" : "LIBRARY",
+      "fr" : "",
+      "ru" : "",
+      "es" : "BIBLIOTECA"
+    }
+  },
+  "workspace.libraries.no-libraries-need-sync" : {
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:129" ],
+    "translations" : {
+      "en" : "There are no Shared Libraries that need update",
+      "fr" : "",
+      "ru" : "",
+      "es" : "No hay bibliotecas que necesiten ser actualizadas"
+    }
+  },
   "workspace.libraries.no-matches-for" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:112" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:117" ],
     "translations" : {
       "en" : "No matches found for “%s“",
       "fr" : "Aucune correspondance pour “%s“",
@@ -1833,7 +1860,7 @@
     }
   },
   "workspace.libraries.no-shared-libraries-available" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:111" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:116" ],
     "translations" : {
       "en" : "There are no Shared Libraries available",
       "fr" : "",
@@ -1842,7 +1869,7 @@
     }
   },
   "workspace.libraries.remove" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:82" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:87" ],
     "translations" : {
       "en" : "Remove",
       "fr" : "",
@@ -1851,7 +1878,7 @@
     }
   },
   "workspace.libraries.search-shared-libraries" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:89" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:94" ],
     "translations" : {
       "en" : "Search shared libraries",
       "fr" : "",
@@ -1860,7 +1887,7 @@
     }
   },
   "workspace.libraries.shared-libraries" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:86" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:91" ],
     "translations" : {
       "en" : "SHARED LIBRARIES",
       "fr" : "",
@@ -1868,8 +1895,17 @@
       "es" : "BIBLIOTECAS COMPARTIDAS"
     }
   },
+  "workspace.libraries.update" : {
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:138" ],
+    "translations" : {
+      "en" : "Update",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Actualizar"
+    }
+  },
   "workspace.libraries.updates" : {
-    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:153" ],
+    "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:175" ],
     "translations" : {
       "en" : "UPDATES",
       "fr" : "",
@@ -2670,7 +2706,17 @@
       "es" : "Texto (T)"
     }
   },
+  "workspace.updates.dismiss" : {
+    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:487" ],
+    "translations" : {
+      "en" : "Dismiss",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Ignorar"
+    }
+  },
   "workspace.updates.there-are-updates" : {
+    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:483" ],
     "translations" : {
       "en" : "There are updates in shared libraries",
       "fr" : "",
@@ -2679,19 +2725,12 @@
     }
   },
   "workspace.updates.update" : {
+    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:485" ],
     "translations" : {
       "en" : "Update",
       "fr" : "",
       "ru" : "",
       "es" : "Actualizar"
-    }
-  },
-  "workspace.updates.dismiss" : {
-    "translations" : {
-      "en" : "Dismiss",
-      "fr" : "",
-      "ru" : "",
-      "es" : "Ignorar"
     }
   },
   "workspace.viewport.click-to-close-path" : {
