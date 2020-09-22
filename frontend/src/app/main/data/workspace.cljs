@@ -9,6 +9,7 @@
 
 (ns app.main.data.workspace
   (:require
+   [cuerdas.core :as str]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.geom.matrix :as gmt]
@@ -1236,22 +1237,80 @@
                 (with-meta params
                   {:on-success image-uploaded})))))))
 
+(declare paste-text)
+
 (def paste
   (ptk/reify ::paste
     ptk/WatchEvent
     (watch [_ state stream]
-      (->> (wapi/read-from-clipboard)
-           (rx/map t/decode)
-           (rx/filter #(= :copied-shapes (:type %)))
-           (rx/map #(select-keys % [:selected :objects]))
-           (rx/map paste-impl)
-           (rx/catch (partial instance? js/SyntaxError)
-             (fn [_]
-               (->> (wapi/read-image-from-clipboard)
-                    (rx/map paste-image-impl))))
-           (rx/catch (fn [err]
-                       (js/console.error "Clipboard error:" err)
-                       (rx/empty)))))))
+      (try
+        (let [clipboard-str (wapi/read-from-clipboard)
+
+              paste-transit-str
+              (->> clipboard-str
+                   (rx/filter t/transit?)
+                   (rx/map t/decode)
+                   (rx/filter #(= :copied-shapes (:type %)))
+                   (rx/map #(select-keys % [:selected :objects]))
+                   (rx/map paste-impl))
+
+              paste-plain-text-str
+              (->> clipboard-str
+                   (rx/filter (comp not empty?))
+                   (rx/map paste-text))
+
+              paste-image-str
+              (->> (wapi/read-image-from-clipboard)
+                   (rx/map paste-image-impl))]
+
+          (->> (rx/concat paste-transit-str
+                          paste-plain-text-str
+                          paste-image-str)
+               (rx/first)
+               (rx/catch
+                   (fn [err]
+                     (js/console.error "Clipboard error:" err)
+                     (rx/empty)))))
+        (catch :default e
+          (.error js/console "ERROR" e))))))
+
+(defn as-content [text]
+  (let [paragraphs (->> (str/split text "\n")
+                        (map str/trim)
+                        (mapv #(hash-map :type "paragraph"
+                                         :children [{:text %}])))]
+    {:type "root"
+     :children [{:type "paragraph-set" :children paragraphs}]}))
+
+(defn paste-text [text]
+  (s/assert string? text)
+  (ptk/reify ::paste-text
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [id (uuid/next)
+            {:keys [x y]} @ms/mouse-position
+            width (* 7 (count text))
+            height 16
+            shape {:id id
+                   :type :text
+                   :name "Text"
+                   :x x
+                   :y y
+                   :selrect {:x1 x :y1 y
+                             :x2 (+ x width)
+                             :y2 (+ y height)
+                             :x x :y y
+                             :width width
+                             :height height}
+                   :width width
+                   :height height
+                   :grow-type :auto-width
+                   :content (as-content text)}]
+        (rx/of dwc/start-undo-transaction
+               dws/deselect-all
+               (add-shape shape)
+               (dwc/rehash-shape-frame-relationship [id])
+               dwc/commit-undo-transaction)))))
 
 (defn update-shape-flags
   [id {:keys [blocked hidden] :as flags}]
