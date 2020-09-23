@@ -1,5 +1,6 @@
 (ns app.util.debug
-  "Debugging utils")
+  "Debugging utils"
+  (:require [cljs.pprint :refer [pprint]]))
 
 (def debug-options #{:bounding-boxes :group :events :rotation-handler :resize-handler :selection-center #_:simple-selection})
 
@@ -37,4 +38,7 @@
    (js/console.log str (clj->js val))
    val))
 
+(when (exists? js/window)
+  (set! (.-dbg ^js js/window) clj->js)
+  (set! (.-pp ^js js/window) pprint))
 

@@ -4,19 +4,6 @@ This guide intends to explain the essential details of the frontend
 application.
 
 
-## Access to clojure from javascript console
-
-The uxbox namespace of the main application is exported, so that is
-accessible from javascript console in Chrome developer tools. Object
-names and data types are converted to javascript style. For example
-you can emit the event to reset zoom level by typing this at the
-console (there is autocompletion for help):
-
-```javascript
-app.main.store.emit_BANG_(app.main.data.workspace.reset_zoom)
-```
-
-
 ## Visual debug mode and utilities
 
 Debugging a problem in the viewport algorithms for grouping and
@@ -39,6 +26,48 @@ app.util.debug.debug_all()
 app.util.debug.debug_none()
 ```
 
+## Traces and step-by-step debugging
+
+There are some useful functions to trace program execution:
+
+```clojure
+(println "message" expression)
+  ; Outputs data to the devtools console. Clojure variables are converted to string, as in (str) function.
+```
+
+```clojure
+(js/console.log "message" (clj->js expression))
+  ; Clojure values are converted to equivalent js objects, and displayed as a foldable widget in console.
+```
+
+```clojure
+(:require [cljs.pprint :refer [pprint]])
+(pprint expression)
+  ; Outputs a clojure value as a string, nicely formatted and with data type information.
+```
+
+Also we can insert breakpoints in the code with this function:
+
+```clojure
+(js-debugger)
+```
+
+You can also set a breakpoint from the sources tab in devtools. One way of locating a source file is to
+output a trace with (js/console.log) and then clicking in the source link that shows in the console.
+
+
+## Access to clojure from javascript console
+
+The uxbox namespace of the main application is exported, so that is
+accessible from javascript console in Chrome developer tools. Object
+names and data types are converted to javascript style. For example
+you can emit the event to reset zoom level by typing this at the
+console (there is autocompletion for help):
+
+```javascript
+app.main.store.emit_BANG_(app.main.data.workspace.reset_zoom)
+```
+
 
 ## Debug state and objects
 
@@ -57,9 +86,16 @@ any complex object. To use them from clojure:
 
 But last ones are most commonly used from javscript console:
 
-```
+```javascript
 app.main.store.dump_state()
 app.main.store.dump_objects()
+```
+
+And we have also exported `pprint` and `clj->js` functions for the console:
+
+```javascript
+pp(js_expression) // equivalent to cljs.pprint.pprint(js_expression)
+dbg(js_expression) // equivalent to cljs.core.clj__GT_js(js_expression)
 ```
 
 
