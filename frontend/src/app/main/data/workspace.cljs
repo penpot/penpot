@@ -895,7 +895,7 @@
             (let [curr (first moved)
                   prev (get objects (:id curr))
                   ops1 (dwc/generate-operations prev curr)
-                  ops2 (dwc/generate-operations curr prev)]
+                  ops2 (dwc/generate-operations curr prev true)]
               (recur (next moved)
                      (conj rchanges {:type :mod-obj
                                      :page-id page-id
@@ -942,7 +942,7 @@
             (let [curr (first moved)
                   prev (get objects (:id curr))
                   ops1 (dwc/generate-operations prev curr)
-                  ops2 (dwc/generate-operations curr prev)]
+                  ops2 (dwc/generate-operations curr prev true)]
               (recur (next moved)
                      (conj rchanges {:type :mod-obj
                                      :page-id page-id

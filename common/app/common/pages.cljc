@@ -213,6 +213,33 @@
                    :internal.shape/selrect
                    :internal.shape/points]))
 
+(def sync-attrs {:fill-color            :fill-group
+                 :fill-color-ref-file   :fill-group
+                 :fill-color-ref-id     :fill-group
+                 :fill-opacity          :fill-group
+                 :content               :text-content-group
+                 :font-family           :text-font-group
+                 :font-size             :text-font-group
+                 :font-style            :text-font-group
+                 :font-weight           :text-font-group
+                 :letter-spacing        :text-display-group
+                 :line-height           :text-display-group
+                 :text-align            :text-display-group
+                 :stroke-color          :stroke-group
+                 :stroke-color-ref-file :stroke-group
+                 :stroke-color-ref-id   :stroke-group
+                 :stroke-opacity        :stroke-group
+                 :stroke-style          :stroke-group
+                 :stroke-width          :stroke-group
+                 :stroke-alignment      :stroke-group
+                 :width                 :size-group
+                 :height                :size-group
+                 :proportion            :size-group
+                 :rx                    :radius-group
+                 :ry                    :radius-group
+                 :points                :points-group
+                 :transform             :transform-group})
+
 (s/def ::minimal-shape
   (s/keys :req-un [::type ::name]
           :opt-un [::id]))
@@ -286,10 +313,15 @@
 
 (s/def :internal.operations.set/attr keyword?)
 (s/def :internal.operations.set/val any?)
+(s/def :internal.operations.set/touched 
+  (s/nilable (s/every keyword? :kind set?)))
 
 (defmethod operation-spec :set [_]
   (s/keys :req-un [:internal.operations.set/attr
                    :internal.operations.set/val]))
+
+(defmethod operation-spec :set-touched [_]
+  (s/keys :req-un [:internal.operations.set/touched]))
 
 (defmulti change-spec :type)
 
@@ -795,11 +827,29 @@
 
 (defmethod process-operation :set
   [shape op]
-  (let [attr (:attr op)
-        val  (:val op)]
-    (if (nil? val)
-      (dissoc shape attr)
-      (assoc shape attr val))))
+  (let [attr   (:attr op)
+        val    (:val op)
+        ignore (:ignore-touched op)
+        shape-ref (:shape-ref shape)
+        group  (get sync-attrs attr)]
+
+    (cond-> shape
+      (nil? val)
+      (dissoc attr)
+
+      (some? val)
+      (assoc attr val)
+
+      (and shape-ref group (not ignore))
+      (update :touched #(conj (or % #{}) group)))))
+
+(defmethod process-operation :set-touched
+  [shape op]
+  (let [touched (:touched op)
+        shape-ref (:shape-ref shape)]
+    (if (or (nil? shape-ref) (nil? touched) (empty? touched))
+      (dissoc shape :touched)
+      (assoc shape :touched touched))))
 
 (defmethod process-operation :default
   [shape op]

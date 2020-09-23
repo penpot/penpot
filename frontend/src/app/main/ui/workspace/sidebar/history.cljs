@@ -34,7 +34,9 @@
        [:div.undo-entry-change {:key (str "change-" idx-change)}
         [:div.undo-entry-change-data (when type (str type)) " " (when id (str (get-in objects [id :name] (subs (str id) 0 8))))]
         (when operations
-          [:div.undo-entry-change-data (str/join ", " (map (comp name :attr) operations))])])]))
+          [:div.undo-entry-change-data (str/join ", "
+                                                 (map (comp name :attr)
+                                                      (filter #(= (:type %) :set) operations)))])])]))
 
 (mf/defc history-toolbox []
   (let [locale (mf/deref i18n/locale)

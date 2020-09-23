@@ -86,28 +86,33 @@
               (rx/of (append-undo entry))))))))))
 
 (defn generate-operations
-  [ma mb]
-  (let [ma-keys (set (keys ma))
-        mb-keys (set (keys mb))
-        added   (set/difference mb-keys ma-keys)
-        removed (set/difference ma-keys mb-keys)
-        both    (set/intersection ma-keys mb-keys)]
-    (d/concat
-     (mapv #(array-map :type :set :attr % :val (get mb %)) added)
-     (mapv #(array-map :type :set :attr % :val nil) removed)
-     (loop [items  (seq both)
-            result []]
-       (if items
-         (let [k   (first items)
-               vma (get ma k)
-               vmb (get mb k)]
-           (if (= vma vmb)
-             (recur (next items) result)
-             (recur (next items)
-                    (conj result {:type :set
-                                  :attr k
-                                  :val vmb}))))
-         result)))))
+  ([ma mb] (generate-operations ma mb false))
+  ([ma mb undo?]
+   (let [ops (let [ma-keys (set (keys ma))
+                   mb-keys (set (keys mb))
+                   added   (set/difference mb-keys ma-keys)
+                   removed (set/difference ma-keys mb-keys)
+                   both    (set/intersection ma-keys mb-keys)]
+               (d/concat
+                 (mapv #(array-map :type :set :attr % :val (get mb %)) added)
+                 (mapv #(array-map :type :set :attr % :val nil) removed)
+                 (loop [items  (seq both)
+                        result []]
+                   (if items
+                     (let [k   (first items)
+                           vma (get ma k)
+                           vmb (get mb k)]
+                       (if (= vma vmb)
+                         (recur (next items) result)
+                         (recur (next items)
+                                (conj result {:type :set
+                                              :attr k
+                                              :val vmb
+                                              :ignore-touched undo?}))))
+                     result))))]
+     (if undo?
+       (conj ops {:type :set-touched :touched (:touched mb)})
+       ops))))
 
 (defn generate-changes
   [page-id objects1 objects2]
@@ -415,7 +420,7 @@
                   obj1 (get objects id)
                   obj2 (f obj1)
                   rch-operations (generate-operations obj1 obj2)
-                  uch-operations (generate-operations obj2 obj1)
+                  uch-operations (generate-operations obj2 obj1 true)
                   rchg {:type :mod-obj
                         :page-id page-id
                         :operations rch-operations
@@ -456,7 +461,7 @@
                       obj1 (get objects id)
                       obj2 (f obj1)
                       rops (generate-operations obj1 obj2)
-                      uops (generate-operations obj2 obj1)
+                      uops (generate-operations obj2 obj1 true)
                       rchg {:type :mod-obj
                             :page-id page-id
                             :operations rops

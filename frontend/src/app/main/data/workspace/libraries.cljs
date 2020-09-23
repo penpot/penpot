@@ -366,7 +366,6 @@
 (declare remove-component-and-ref)
 (declare remove-ref)
 (declare update-attrs)
-(declare sync-attrs)
 (declare calc-new-pos)
 
 (defn reset-component
@@ -388,7 +387,7 @@
               (get-in state [:workspace-libraries file-id :data :components]))
 
             [rchanges uchanges]
-            (generate-sync-shape-and-children root-shape page components)]
+            (generate-sync-shape-and-children root-shape page components true)]
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 
@@ -418,18 +417,37 @@
                                  (some? (:shape-ref original-shape))
                                  (assoc :id (:shape-ref original-shape))))
 
-            [new-shape new-shapes _]
-            (cph/clone-object root-shape nil objects update-new-shape)
+            touch-shape (fn [original-shape _]
+                          (into {} original-shape))
 
-            rchanges [{:type :mod-component
+            [new-shape new-shapes original-shapes]
+            (cph/clone-object root-shape nil objects update-new-shape touch-shape)
+
+            rchanges (concat
+                       [{:type :mod-component
                        :id component-id
                        :name (:name new-shape)
                        :shapes new-shapes}]
+                       (map (fn [shape]
+                              {:type :mod-obj
+                               :page-id page-id
+                               :id (:id shape)
+                               :operations [{:type :set-touched
+                                             :touched nil}]})
+                            original-shapes))
 
-            uchanges [{:type :mod-component
-                       :id component-id
-                       :name (:name component-obj)
-                       :shapes (vals component-objs)}]]
+            uchanges (concat
+                       [{:type :mod-component
+                         :id component-id
+                         :name (:name component-obj)
+                         :shapes (vals component-objs)}]
+                       (map (fn [shape]
+                              {:type :mod-obj
+                               :page-id page-id
+                               :id (:id shape)
+                               :operations [{:type :set-touched
+                                             :touched (:touched shape)}]})
+                            original-shapes))]
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 
@@ -520,13 +538,13 @@
         (if (nil? shape)
           [rchanges uchanges]
           (let [[shape-rchanges shape-uchanges]
-                (generate-sync-shape-and-children shape page components)]
+                (generate-sync-shape-and-children shape page components false)]
             (recur (next shapes)
                    (concat rchanges shape-rchanges)
                    (concat uchanges shape-uchanges))))))))
 
 (defn- generate-sync-shape-and-children
-  [root-shape page components]
+  [root-shape page components reset-touched?]
   (let [objects (get page :objects)
         all-shapes (cph/get-object-with-children (:id root-shape) objects)
         component (get components (:component-id root-shape))
@@ -538,19 +556,24 @@
         (if (nil? shape)
           [rchanges uchanges]
           (let [[shape-rchanges shape-uchanges]
-                (generate-sync-shape shape root-shape root-component page component)]
+                (generate-sync-shape shape root-shape root-component page component reset-touched?)]
             (recur (next shapes)
                    (concat rchanges shape-rchanges)
                    (concat uchanges shape-uchanges))))))))
 
 (defn- generate-sync-shape
-  [shape root-shape root-component page component]
+  [shape root-shape root-component page component reset-touched?]
   (if (nil? component)
     (remove-component-and-ref shape page)
     (let [component-shape (get (:objects component) (:shape-ref shape))]
       (if (nil? component-shape)
         (remove-ref shape page)
-        (update-attrs shape component-shape root-shape root-component page)))))
+        (update-attrs shape
+                      component-shape
+                      root-shape
+                      root-component
+                      page
+                      reset-touched?)))))
 
 (defn- remove-component-and-ref
   [shape page]
@@ -565,7 +588,9 @@
                    :val nil}
                   {:type :set
                    :attr :shape-ref
-                   :val nil}]}]
+                   :val nil}
+                  {:type :set-touched
+                   :touched nil}]}]
    [{:type :mod-obj
      :page-id (:id page)
      :id (:id shape)
@@ -577,7 +602,9 @@
                    :val (:component-file shape)}
                   {:type :set
                    :attr :shape-ref
-                   :val (:shape-ref shape)}]}]])
+                   :val (:shape-ref shape)}
+                  {:type :set-touched
+                   :touched (:touched shape)}]}]])
 
 (defn- remove-ref
   [shape page]
@@ -586,18 +613,22 @@
      :id (:id shape)
      :operations [{:type :set
                    :attr :shape-ref
-                   :val nil}]}]
+                   :val nil}
+                  {:type :set-touched
+                   :touched nil}]}]
    [{:type :mod-obj
      :page-id (:id page)
      :id (:id shape)
      :operations [{:type :set
                    :attr :shape-ref
-                   :val (:shape-ref shape)}]}]])
+                   :val (:shape-ref shape)}
+                  {:type :set-touched
+                   :touched (:touched shape)}]}]])
 
 (defn- update-attrs
-  [shape component-shape root-shape root-component page]
+  [shape component-shape root-shape root-component page reset-touched?]
   (let [new-pos (calc-new-pos shape component-shape root-shape root-component)]
-    (loop [attrs (seq sync-attrs)
+    (loop [attrs (seq (keys cp/sync-attrs))
            roperations [{:type :set
                          :attr :x
                          :val (:x new-pos)}
@@ -613,7 +644,19 @@
 
       (let [attr (first attrs)]
         (if (nil? attr)
-          (let [rchanges [{:type :mod-obj
+          (let [roperations (if reset-touched?
+                              (conj roperations
+                                    {:type :set-touched
+                                     :touched nil})
+                              roperations)
+
+                uoperations (if reset-touched?
+                              (conj uoperations
+                                    {:type :set-touched
+                                     :touched (:touched shape)})
+                              uoperations)
+
+                rchanges [{:type :mod-obj
                            :page-id (:id page)
                            :id (:id shape)
                            :operations roperations}]
@@ -628,41 +671,22 @@
                    uoperations)
             (let [roperation {:type :set
                               :attr attr
-                              :val (get component-shape attr)}
+                              :val (get component-shape attr)
+                              :ignore-touched true}
                   uoperation {:type :set
                               :attr attr
-                              :val (get shape attr)}]
-              (recur (next attrs)
-                     (conj roperations roperation)
-                     (conj uoperations uoperation)))))))))
+                              :val (get shape attr)
+                              :ignore-touched true}
 
-(def sync-attrs [:content
-                 :fill-color
-                 :fill-color-ref-file
-                 :fill-color-ref-id
-                 :fill-opacity
-                 :font-family
-                 :font-size
-                 :font-style
-                 :font-weight
-                 :letter-spacing
-                 :line-height
-                 :proportion
-                 :rx
-                 :ry
-                 :stroke-color
-                 :stroke-color-ref-file
-                 :stroke-color-ref-id
-                 :stroke-opacity
-                 :stroke-style
-                 :stroke-width
-                 :stroke-alignment
-                 :text-align
-                 :width
-                 :height
-                 :interactions
-                 :points
-                 :transform])
+                  attr-group (get cp/sync-attrs attr)
+                  touched    (get shape :touched #{})]
+              (if (or (not (touched attr-group)) reset-touched?)
+                (recur (next attrs)
+                       (conj roperations roperation)
+                       (conj uoperations uoperation))
+                (recur (next attrs)
+                       roperations
+                       uoperations)))))))))
 
 (defn- calc-new-pos
   [shape component-shape root-shape root-component]
