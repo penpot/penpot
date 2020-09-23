@@ -475,56 +475,61 @@
         ;; TODO: seems duplicated callback is the same as one located
         ;; in left_toolbar
         on-uploaded
-        (fn [{:keys [id name] :as image}]
+        (fn [{:keys [id name] :as image} {:keys [x y]}]
           (let [shape {:name name
+                       :width (:width image)
+                       :height (:height image)
+                       :x (- x (/ (:width image) 2))
+                       :y (- y (/ (:height image) 2))
                        :metadata {:width (:width image)
                                   :height (:height image)
                                   :id (:id image)
                                   :path (:path image)}}
                 aspect-ratio (/ (:width image) (:height image))]
-            (st/emit! (dw/create-and-add-shape :image shape aspect-ratio))))
+            (st/emit! (dw/create-and-add-shape :image shape))))
 
         on-drop
         (fn [event]
           (dom/prevent-default event)
-          (cond
-            (dnd/has-type? event "app/shape")
-            (let [shape (dnd/get-data event "app/shape")
-                  point (gpt/point (.-clientX event) (.-clientY event))
-                  viewport-coord (translate-point-to-viewport point)
-                  final-x (- (:x viewport-coord) (/ (:width shape) 2))
-                  final-y (- (:y viewport-coord) (/ (:height shape) 2))]
-              (st/emit! (dw/add-shape (-> shape
-                                          (assoc :x final-x)
-                                          (assoc :y final-y)))))
+          (let [point (gpt/point (.-clientX event) (.-clientY event))
+                viewport-coord (translate-point-to-viewport point)]
+            (cond
+              (dnd/has-type? event "app/shape")
+              (let [shape (dnd/get-data event "app/shape")
+                    final-x (- (:x viewport-coord) (/ (:width shape) 2))
+                    final-y (- (:y viewport-coord) (/ (:height shape) 2))]
+                (st/emit! (dw/add-shape (-> shape
+                                            (assoc :x final-x)
+                                            (assoc :y final-y)))))
 
-            (dnd/has-type? event "app/component")
-            (let [{:keys [component-id file-id]} (dnd/get-data event "app/component")]
-              (st/emit! (dwl/instantiate-component file-id component-id)))
+              (dnd/has-type? event "app/component")
+              (let [{:keys [component-id file-id]} (dnd/get-data event "app/component")]
+                (st/emit! (dwl/instantiate-component file-id component-id)))
 
-            (dnd/has-type? event "text/uri-list")
-            (let [data (dnd/get-data event "text/uri-list")
-                  lines (str/lines data)
-                  urls (filter #(and (not (str/blank? %))
-                                     (not (str/starts-with? % "#")))
-                               lines)]
-              (->> urls
-                   (map (fn [uri]
-                          (with-meta {:file-id (:id file)
-                                      :local? true
-                                      :uri uri}
-                            {:on-success on-uploaded})))
-                   (map dw/upload-media-objects)
-                   (apply st/emit!)))
+              (dnd/has-type? event "text/uri-list")
+              (let [data (dnd/get-data event "text/uri-list")
+                    lines (str/lines data)
+                    urls (filter #(and (not (str/blank? %))
+                                       (not (str/starts-with? % "#")))
+                                 lines)]
+                (->> urls
+                     (map (fn [uri]
+                            (with-meta {:file-id (:id file)
+                                        :local? true
+                                        :uri uri}
+                              {:on-success #(on-uploaded % viewport-coord)})))
+                     (map dw/upload-media-objects)
+                     (apply st/emit!)))
 
-            :else
-            (let [js-files (dnd/get-files event)
-                  params   {:file-id (:id file)
-                            :local? true
-                            :js-files js-files}]
-              (st/emit! (dw/upload-media-objects
-                         (with-meta params
-                           {:on-success on-uploaded}))))))
+              :else
+              (let [js-files (dnd/get-files event)
+                    params   {:file-id (:id file)
+                              :local? true
+                              :js-files js-files
+                              }]
+                (st/emit! (dw/upload-media-objects
+                           (with-meta params
+                             {:on-success #(on-uploaded % viewport-coord)})))))))
 
         on-resize
         (fn [event]

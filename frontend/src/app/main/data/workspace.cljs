@@ -578,39 +578,26 @@
            (->> (rx/of (start-edition-mode id))
                 (rx/observe-on :async))))))))
 
-(defn- calculate-centered-box
-  [state aspect-ratio]
-  (if (>= aspect-ratio 1)
-    (let [vbox (get-in state [:workspace-local :vbox])
-          width (/ (:width vbox) 2)
-          height (/ width aspect-ratio)
-
-          x (+ (:x vbox) (/ width 2))
-          y (+ (:y vbox) (/ (- (:height vbox) height) 2))]
-
-      [width height x y])
-
-    (let [vbox (get-in state [:workspace-local :vbox])
-          height (/ (:height vbox) 2)
-          width (* height aspect-ratio)
-
-          y (+ (:y vbox) (/ height 2))
-          x (+ (:x vbox) (/ (- (:width vbox) width) 2))]
-
-      [width height x y])))
+(defn- viewport-center
+  [state]
+  (let [{:keys [x y width height]} (get-in state [:workspace-local :vbox])]
+    [(+ x (/ width 2)) (+ y (/ height 2))]))
 
 (defn create-and-add-shape
-  [type data aspect-ratio]
+  [type data]
   (ptk/reify ::create-and-add-shape
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [[width height x y] (calculate-centered-box state aspect-ratio)
+      (let [{:keys [width height]} data
+            [vbc-x vbc-y] (viewport-center state)
+
+            x (:x data (- vbc-x (/ width 2)))
+            y (:y data (- vbc-y (/ height 2)))
+
             shape (-> (cp/make-minimal-shape type)
                       (merge data)
-                      (geom/resize width height)
-                      (geom/absolute-move (gpt/point x y))
-                      (geom/transform-shape))]
-
+                      (merge {:x x :y y})
+                      (geom/setup-selrect))]        
         (rx/of (add-shape shape))))))
 
 ;; --- Update Shape Attrs
@@ -1243,13 +1230,18 @@
 
 (defn- image-uploaded
   [image]
-  (let [shape {:name (:name image)
-               :metadata {:width (:width image)
-                          :height (:height image)
+  (let [{:keys [x y]} @ms/mouse-position
+        {:keys [width height]} image
+        shape {:name (:name image)
+               :width width
+               :height height
+               :x (- x (/ width 2))
+               :y (- y (/ height 2))
+               :metadata {:width width
+                          :height height
                           :id (:id image)
-                          :path (:path image)}}
-        aspect-ratio (/ (:width image) (:height image))]
-    (st/emit! (create-and-add-shape :image shape aspect-ratio))))
+                          :path (:path image)}}]
+    (st/emit! (create-and-add-shape :image shape))))
 
 (defn- paste-image-impl
   [image]
@@ -1318,21 +1310,16 @@
             {:keys [x y]} @ms/mouse-position
             width (min (* 7 (count text)) 700)
             height 16
-            shape {:id id
-                   :type :text
-                   :name "Text"
-                   :x x
-                   :y y
-                   :selrect {:x1 x :y1 y
-                             :x2 (+ x width)
-                             :y2 (+ y height)
-                             :x x :y y
-                             :width width
-                             :height height}
-                   :width width
-                   :height height
-                   :grow-type (if (> (count text) 100) :auto-height :auto-width)
-                   :content (as-content text)}]
+            shape (geom/setup-selrect
+                   {:id id
+                    :type :text
+                    :name "Text"
+                    :x x
+                    :y y
+                    :width width
+                    :height height
+                    :grow-type (if (> (count text) 100) :auto-height :auto-width)
+                    :content (as-content text)})]
         (rx/of dwc/start-undo-transaction
                dws/deselect-all
                (add-shape shape)
