@@ -63,7 +63,7 @@
                       :key (or (str (:id color)) (:value color))
                       :on-click select-color}
      [:span.color {:style {:background (:value color)}}]
-     (when (= size :big) [:span.color-text (or (:name color) (:value color))])]))
+     (when (= size :big) [:span.color-text {:title (:name color) } (or (:name color) (:value color))])]))
 
 (mf/defc palette
   [{:keys [left-sidebar? current-colors recent-colors file-colors shared-libs selected size]}]

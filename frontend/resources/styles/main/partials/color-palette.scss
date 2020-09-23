@@ -179,6 +179,11 @@
   .color-text {
     color: $color-gray-20;
     font-size: $fs12;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 66px;
+    text-align: center;
   }
   &.current {
     .color {
