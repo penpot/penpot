@@ -237,12 +237,14 @@
                svg-node (mf/ref-val svg-ref)]
            (timers/schedule 100
             #(let [xml (.serializeToString (js/XMLSerializer.) svg-node)
-                   content (str "data:image/svg+xml;base64," (js/btoa xml))
-                   img (js/Image.)]
-               (obj/set! img  "onload"
-                         (fn []
-                           (.drawImage canvas-context img 0 0)))
-               (obj/set! img "src" content))))
+                   img-src (str "data:image/svg+xml;base64,"
+                                (-> xml js/encodeURIComponent js/unescape js/btoa))
+                   img (js/Image.)
+                   on-error (fn [err] (.error js/console "ERROR" err))
+                   on-load (fn [] (.drawImage canvas-context img 0 0))]
+               (.addEventListener img "error" on-error)
+               (.addEventListener img "load" on-load)
+               (obj/set! img "src" img-src))))
          (catch :default e (.error js/console e)))))
 
     [:*
