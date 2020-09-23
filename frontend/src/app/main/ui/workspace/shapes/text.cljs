@@ -23,6 +23,7 @@
    [app.main.ui.workspace.shapes.common :as common]
    [app.main.ui.shapes.text :as text]
    [app.main.ui.keyboard :as kbd]
+   [app.main.ui.context :as muc]
    [app.main.fonts :as fonts]
    [app.util.color :as color]
    [app.util.dom :as dom]
@@ -62,6 +63,8 @@
         selected? (and (contains? selected id)
                        (= (count selected) 1))
 
+        embed-resources? (mf/use-ctx muc/embed-ctx)
+
         on-mouse-down   #(handle-mouse-down % shape)
         on-context-menu #(common/on-context-menu % shape)
 
@@ -76,7 +79,7 @@
                :on-mouse-down on-mouse-down
                :on-context-menu on-context-menu}
      [:*
-      (when (not edition?)
+      (when (and (not edition?) (not embed-resources?))
         [:g {:opacity 0
              :style {:pointer-events "none"}}
          ;; We only render the component for its side-effect
@@ -127,7 +130,7 @@
         text-transform (obj/get data "text-transform")
         line-height (obj/get data "line-height")
 
-        font-id (obj/get data "font-id")
+        font-id (obj/get data "font-id" fonts/default-font)
         font-variant-id (obj/get data "font-variant-id")
 
         font-family (obj/get data "font-family")
