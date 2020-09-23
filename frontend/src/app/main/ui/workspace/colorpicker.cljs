@@ -194,6 +194,7 @@
                        :r r :g g :b b
                        :h h :s s :v v
                        :hex hex)
+                (reset! value-ref hex)
                 (when picked-color-select
                   (on-change hex (:alpha @current-color) nil nil picked-shift?))))))
 

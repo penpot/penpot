@@ -35,12 +35,14 @@
         on-uploaded
         (fn [{:keys [id name] :as image}]
           (let [shape {:name name
+                       :width  (:width image)
+                       :height (:height image)
                        :metadata {:width  (:width image)
                                   :height (:height image)
                                   :id     (:id image)
                                   :path   (:path image)}}
                 aspect-ratio (/ (:width image) (:height image))]
-            (st/emit! (dw/create-and-add-shape :image shape aspect-ratio))))
+            (st/emit! (dw/create-and-add-shape :image shape))))
 
         on-files-selected
         (fn [js-files]
