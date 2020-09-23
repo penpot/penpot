@@ -54,7 +54,7 @@
         text-transform (obj/get data "text-transform")
         line-height (obj/get data "line-height")
 
-        font-id (obj/get data "font-id")
+        font-id (obj/get data "font-id" fonts/default-font)
         font-variant-id (obj/get data "font-variant-id")
 
         font-family (obj/get data "font-family")
@@ -97,25 +97,46 @@
 
 (defn get-all-fonts [node]
   (let [current-font (if (not (nil? (:font-id node)))
-                       #{(:font-id node)}
+                       #{(select-keys node [:font-id :font-variant-id])}
                        #{})
         children-font (map get-all-fonts (:children node))]
     (reduce set/union (conj children-font current-font))))
 
 
-(defn fetch-font [font-id]
-  (let [{:keys [family variants]} (get @fonts/fontsdb font-id)]
-    (-> (js/fetch (fonts/gfont-url family variants))
+(defn fetch-font [font-id font-variant-id]
+  (let [font-url (fonts/font-url font-id font-variant-id)]
+    (-> (js/fetch font-url)
         (p/then (fn [res] (.text res))))))
 
-(defn embed-font [font-id]
-  (p/let [font-text (fetch-font font-id)
-          url-to-data (->> font-text
-                        (re-seq #"url\(([^)]+)\)")
-                        (map second)
-                        (map df/fetch-as-data-uri)
-                        (p/all))]
-    (reduce (fn [text [url data]] (str/replace text url data)) font-text url-to-data)))
+(defonce font-face-template "
+/* latin */
+@font-face {
+  font-family: '$0';
+  font-style: $3;
+  font-weight: $2;
+  font-display: block;
+  src: url(/fonts/%(0)s-$1.woff) format('woff');
+}
+")
+
+(defn get-local-font-css [font-id font-variant-id]
+  (let [{:keys [family variants]} (get @fonts/fontsdb font-id)
+        {:keys [name weight style]} (->> variants (filter #(= (:id %) font-variant-id)) first)
+        css-str (str/format font-face-template [family name weight style])]
+    (p/resolved css-str)))
+
+(defn embed-font [{:keys [font-id font-variant-id] :or {font-variant-id "regular"}}]
+  (let [{:keys [backend]} (get @fonts/fontsdb font-id)]
+    (p/let [font-text (case backend
+                        :google (fetch-font font-id font-variant-id)
+                        (get-local-font-css font-id font-variant-id))
+            url-to-data (->> font-text
+                             (re-seq #"url\(([^)]+)\)")
+                             (map second)
+                             (map df/fetch-as-data-uri)
+                             (p/all))]
+      (reduce (fn [text [url data]] (str/replace text url data)) font-text url-to-data))
+    ))
 
 (mf/defc text-node
   [{:keys [node index] :as props}]
@@ -128,6 +149,7 @@
      (fn []
        (when (and embed-resources? (= type "root"))
          (let [font-to-embed (get-all-fonts node)
+               font-to-embed (if (empty? font-to-embed) #{{:font-id fonts/default-font}} font-to-embed)
                embeded (map embed-font font-to-embed)]
            (-> (p/all embeded)
                (p/then (fn [result] (reset! embeded-fonts (str/join "\n" result)))))))))

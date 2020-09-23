@@ -21,6 +21,8 @@
    [clojure.set :as set]
    [app.util.object :as obj]))
 
+(defonce default-font "sourcesanspro")
+
 (def google-fonts
   (preload-gfonts "fonts/gfonts.2020.04.23.json"))
 
@@ -119,6 +121,12 @@
   (let [base (str "https://fonts.googleapis.com/css?family=" family)
         variants (str/join "," (map :id variants))]
     (str base ":" variants "&display=block")))
+
+(defn font-url [font-id font-variant-id]
+  (let [{:keys [backend family] :as entry} (get @fontsdb font-id)]
+    (case backend
+      :google (gfont-url family {:id font-variant-id})
+      (str "/fonts/" family "-" (or font-variant-id "regular") ".woff"))))
 
 (defmulti ^:private load-font :backend)
 
