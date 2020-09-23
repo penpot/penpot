@@ -186,7 +186,7 @@
 
                updated-object (update-original-object object new-object)
 
-               updated-objects (if (= object updated-object)
+               updated-objects (if (identical? object updated-object)
                                  updated-children
                                  (concat [updated-object] updated-children))]
 
