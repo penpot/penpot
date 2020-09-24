@@ -213,32 +213,35 @@
                    :internal.shape/selrect
                    :internal.shape/points]))
 
-(def sync-attrs {:fill-color            :fill-group
-                 :fill-color-ref-file   :fill-group
-                 :fill-color-ref-id     :fill-group
-                 :fill-opacity          :fill-group
-                 :content               :text-content-group
-                 :font-family           :text-font-group
-                 :font-size             :text-font-group
-                 :font-style            :text-font-group
-                 :font-weight           :text-font-group
-                 :letter-spacing        :text-display-group
-                 :line-height           :text-display-group
-                 :text-align            :text-display-group
-                 :stroke-color          :stroke-group
-                 :stroke-color-ref-file :stroke-group
-                 :stroke-color-ref-id   :stroke-group
-                 :stroke-opacity        :stroke-group
-                 :stroke-style          :stroke-group
-                 :stroke-width          :stroke-group
-                 :stroke-alignment      :stroke-group
-                 :width                 :size-group
-                 :height                :size-group
-                 :proportion            :size-group
-                 :rx                    :radius-group
-                 :ry                    :radius-group
-                 :points                :points-group
-                 :transform             :transform-group})
+(def component-sync-attrs {:fill-color            :fill-group
+                           :fill-color-ref-file   :fill-group
+                           :fill-color-ref-id     :fill-group
+                           :fill-opacity          :fill-group
+                           :content               :text-content-group
+                           :font-family           :text-font-group
+                           :font-size             :text-font-group
+                           :font-style            :text-font-group
+                           :font-weight           :text-font-group
+                           :letter-spacing        :text-display-group
+                           :line-height           :text-display-group
+                           :text-align            :text-display-group
+                           :stroke-color          :stroke-group
+                           :stroke-color-ref-file :stroke-group
+                           :stroke-color-ref-id   :stroke-group
+                           :stroke-opacity        :stroke-group
+                           :stroke-style          :stroke-group
+                           :stroke-width          :stroke-group
+                           :stroke-alignment      :stroke-group
+                           :width                 :size-group
+                           :height                :size-group
+                           :proportion            :size-group
+                           :rx                    :radius-group
+                           :ry                    :radius-group
+                           :points                :points-group
+                           :transform             :transform-group})
+
+(def color-sync-attrs [:fill-color
+                       :stroke-color])
 
 (s/def ::minimal-shape
   (s/keys :req-un [::type ::name]
@@ -831,7 +834,7 @@
         val    (:val op)
         ignore (:ignore-touched op)
         shape-ref (:shape-ref shape)
-        group  (get sync-attrs attr)]
+        group  (get component-sync-attrs attr)]
 
     (cond-> shape
       (nil? val)
