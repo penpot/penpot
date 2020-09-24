@@ -121,9 +121,13 @@
      [:& advanced-options {:visible? @open-shadow
                            :on-close #(reset! open-shadow false)}
       [:div.row-grid-2
-       [:select.input-select 
+       [:select.input-select
+        {:default-value (str (:style value))
+         :on-change (fn [event]
+                      (let [value (-> event dom/get-target dom/get-value d/read-string)]
+                        (st/emit! (dwc/update-shapes ids #(assoc-in % [:shadow index :style] value)))))}
         [:option {:value ":drop-shadow"} "Drop shadow"]
-        #_[:option {:value ":inner-shadow"} "Inner shadow"]]]
+        [:option {:value ":inner-shadow"} "Inner shadow"]]]
       
       [:div.row-grid-2
        [:div.input-element
@@ -177,7 +181,6 @@
 (mf/defc shadow-menu
   [{:keys [ids type values] :as props}]
 
-  (.log js/console "values" (clj->js values))
   (let [on-add-shadow
         (fn []
           (st/emit! (dwc/update-shapes ids #(update % :shadow (fnil conj []) (create-shadow)) )))]

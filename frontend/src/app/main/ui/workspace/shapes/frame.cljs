@@ -19,6 +19,7 @@
    [app.main.ui.workspace.shapes.common :as common]
    [app.main.data.workspace.selection :as dws]
    [app.main.ui.shapes.frame :as frame]
+   [app.main.ui.shapes.filters :as filters]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
@@ -96,7 +97,9 @@
             (mf/use-callback
              (mf/deps (:id shape))
              (fn []
-               (st/emit! (dws/change-hover-state (:id shape) false))))]
+               (st/emit! (dws/change-hover-state (:id shape) false))))
+
+            filter-id (filters/get-filter-id)]
 
         (when-not (:hidden shape)
           [:g {:class (when selected? "selected")
@@ -121,7 +124,8 @@
                    :on-mouse-over on-mouse-over
                    :on-mouse-out on-mouse-out}
             (:name shape)]
-           [:*
+           [:g.frame {:filter (filters/filter-str filter-id shape)}
+            [:& filters/filters {:filter-id filter-id :shape shape}]
             [:& frame-shape
              {:shape shape
               :childs children}]]])))))
