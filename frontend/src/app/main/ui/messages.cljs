@@ -65,7 +65,7 @@
         on-close #(st/emit! dm/hide)]
     (when message
       [:& banner (assoc message
-                        :position :floating
+                        :position (or (:position message) :floating)
                         :controls (if (some? (:controls message))
                                     (:controls message)
                                     (if (some? (:timeout message))

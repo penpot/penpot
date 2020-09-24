@@ -66,6 +66,7 @@
   ([content {:keys [timeout] :or {timeout 3000}}]
    (show {:content content
           :type :error
+          :position :fixed
           :timeout timeout})))
 
 (defn info
@@ -73,6 +74,7 @@
   ([content {:keys [timeout] :or {timeout 3000}}]
    (show {:content content
           :type :info
+          :position :fixed
           :timeout timeout})))
 
 (defn success
@@ -80,6 +82,7 @@
   ([content {:keys [timeout] :or {timeout 3000}}]
    (show {:content content
           :type :success
+          :position :fixed
           :timeout timeout})))
 
 (defn warn
@@ -87,6 +90,7 @@
   ([content {:keys [timeout] :or {timeout 3000}}]
    (show {:content content
           :type :warning
+          :position :fixed
           :timeout timeout})))
 
 (defn info-dialog
