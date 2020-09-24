@@ -12,7 +12,8 @@
    [rumext.alpha :as mf]
    [app.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
-   [app.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]))
+   [app.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]
+   [app.main.ui.workspace.sidebar.options.shadow :refer [shadow-menu]]))
 
 (mf/defc options
   {::mf/wrap [mf/memo]}
@@ -31,5 +32,8 @@
                     :values fill-values}]
      [:& stroke-menu {:ids ids
                       :type type
-                      :values stroke-values}]]))
+                      :values stroke-values}]
+     [:& shadow-menu {:ids ids
+                      :type type
+                      :values (select-keys shape [:shadow])}]]))
 

@@ -364,7 +364,8 @@ ul.slider-dots {
   position: relative;
   width: 75px;
 
-  &::after {
+  &::after,
+  .after {
     color: $color-gray-20;
     font-size: $fs12;
     height: 20px;
@@ -372,6 +373,11 @@ ul.slider-dots {
     right: 3px;
     top: 26%;
     width: 20px;
+  }
+
+  .after {
+      width: auto;
+      right: 6px;
   }
 
   // Input amounts

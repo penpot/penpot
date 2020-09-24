@@ -11,12 +11,15 @@
   "The main container for a frame in viewer mode"
   (:require
    [rumext.alpha :as mf]
+   [cuerdas.core :as str]
+   [app.common.uuid :as uuid]
    [app.common.data :as d]
    [app.common.pages :as cp]
    [app.common.pages-helpers :as cph]
    [app.main.data.viewer :as dv]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.group :as group]
@@ -53,10 +56,14 @@
 
           on-mouse-down (mf/use-callback
                          (mf/deps shape)
-                         #(on-mouse-down % shape))]
+                         #(on-mouse-down % shape))
+
+          filter-id (filters/get-filter-id)]
 
       [:g.shape {:on-mouse-down on-mouse-down
-                 :cursor (when (:interactions shape) "pointer")}
+                 :cursor (when (:interactions shape) "pointer")
+                 :filter (filters/filter-str filter-id shape)}
+       [:& filters/filters {:filter-id filter-id :shape shape}]
        [:& component {:shape shape
                       :frame frame
                       :childs childs

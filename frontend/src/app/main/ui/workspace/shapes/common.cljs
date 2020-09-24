@@ -14,6 +14,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.keyboard :as kbd]
+   [app.main.ui.shapes.filters :as filters]
    [app.util.dom :as dom]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
@@ -69,9 +70,12 @@
                          #(on-mouse-down % shape))
           on-context-menu (mf/use-callback
                            (mf/deps shape)
-                           #(on-context-menu % shape))]
+                           #(on-context-menu % shape))
+          filter-id (filters/get-filter-id)]
       [:g.shape {:on-mouse-down on-mouse-down
-                 :on-context-menu on-context-menu}
+                 :on-context-menu on-context-menu
+                 :filter (filters/filter-str filter-id shape)}
+       [:& filters/filters {:filter-id filter-id :shape shape}]
        [:& component {:shape shape}]])))
 
 

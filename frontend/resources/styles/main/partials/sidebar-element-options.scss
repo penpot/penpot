@@ -468,8 +468,8 @@
 }
 
 .color-th {
-  background-color: $color-gray-10;
-  border: 1px solid $color-gray-10;
+  background-color: $color-gray-30;
+  border: 1px solid $color-gray-30;
   border-radius: $br-small;
   cursor: pointer;
   display: flex;
@@ -765,6 +765,7 @@
   top: 0;
   width: 100%;
   opacity: 0.4;
+  z-index: 10;
 }
 
 .element-set-content .advanced-options {
@@ -775,6 +776,7 @@
   position: relative;
   top: 2px;
   width: calc(100% + 16px);
+  z-index: 20;
 }
 
 .btn-options {
@@ -815,7 +817,8 @@
   }
 }
 
-.exports-options {
+.exports-options,
+.shadow-options{
   .element-set-options-group {
     justify-content: space-between;
     .delete-icon {
@@ -840,4 +843,36 @@
   .download-button {
     margin-top: 10px;
   }
+}
+
+.shadow-options .color-row-wrap {
+    margin-left: 6px;
+    margin-top: 0.5rem;
+}
+
+.element-set-actions-button {
+    display: flex;
+    min-width: 30px;
+    min-height: 30px;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    svg {
+        width: 16px;
+        height: 16px;
+        fill: $color-gray-20;
+    }
+
+    &:hover svg {
+        fill: $color-primary;
+    }
+}
+.element-set-actions {
+    display: flex;
+    visibility: hidden;
+
+}
+
+.element-set-options-group:hover .element-set-actions {
+    visibility: visible;
 }

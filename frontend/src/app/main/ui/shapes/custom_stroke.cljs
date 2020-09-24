@@ -7,6 +7,7 @@
 (ns app.main.ui.shapes.custom-stroke
   (:require
    [rumext.alpha :as mf]
+   [app.common.uuid :as uuid]
    [app.common.geom.shapes :as geom]
    [app.util.object :as obj]))
 
@@ -21,7 +22,8 @@
   (let [shape (unchecked-get props "shape")
         base-props (unchecked-get props "base-props")
         elem-name (unchecked-get props "elem-name")
-        {:keys [id x y width height]} (geom/shape->rect-shape shape)
+        {:keys [x y width height]} (geom/shape->rect-shape shape)
+        id (uuid/next)
         stroke-style (:stroke-style shape :none)
         stroke-position (:stroke-alignment shape :center)]
     (cond

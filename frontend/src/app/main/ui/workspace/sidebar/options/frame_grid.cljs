@@ -20,6 +20,7 @@
    [app.main.data.workspace.grid :as dw]
    [app.util.geom.grid :as gg]
    [app.main.ui.icons :as i]
+   [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
    [app.main.ui.workspace.sidebar.options.rows.input-row :refer [input-row]]
    [app.main.ui.components.select :refer [select]]
@@ -29,16 +30,6 @@
 
 (def workspace-saved-grids
   (l/derived :saved-grids refs/workspace-page-options))
-
-(mf/defc advanced-options [{:keys [visible? on-close children]}]
-  (when visible?
-    [:*
-     [:div.focus-overlay {:on-click #(when on-close
-                                       (do
-                                         (dom/stop-propagation %)
-                                         (on-close)))}]
-     [:div.advanced-options {}
-      children]]))
 
 (defn- get-size-options [locale]
   [{:value :auto :label (t locale "workspace.options.grid.auto")}
@@ -253,4 +244,5 @@
                               :on-change (handle-edit-grid index)
                               :on-remove (handle-remove-grid index)
                               :on-save-grid handle-save-grid}])])]))
+
 
