@@ -48,16 +48,16 @@
 
 ;; --- Components
 (mf/defc palette-item
-  [{:keys [color size]}]
-  (let [select-color
+  [{:keys [color size local?]}]
+  (let [id (:id color)
+        file-id (:file-id color)
+        select-color
         (fn [event]
-          (if (kbd/shift? event)
-            (st/emit! (udw/update-color-on-selected-shapes {:stroke-color (:value color)
-                                                            :stroke-color-ref-file (:file-id color)
-                                                            :stroke-color-ref-id (:id color)}))
-            (st/emit! (udw/update-color-on-selected-shapes {:fill-color (:value color)
-                                                            :fill-color-ref-file (:file-id color)
-                                                            :fill-color-ref-id (:id color)}))))]
+          (println "item" id file-id)
+          (let [ids (get-in @st/state [:workspace-local :selected])]
+            (if (kbd/shift? event)
+              (st/emit! (mdc/change-stroke ids (:value color) id file-id))
+              (st/emit! (mdc/change-fill ids (:value color) id file-id)))))]
 
     [:div.color-cell {:class (str "cell-"(name size))
                       :key (or (str (:id color)) (:value color))
