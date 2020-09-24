@@ -11,8 +11,6 @@
   "The main container for a frame in viewer mode"
   (:require
    [rumext.alpha :as mf]
-   [cuerdas.core :as str]
-   [app.common.uuid :as uuid]
    [app.common.data :as d]
    [app.common.pages :as cp]
    [app.common.pages-helpers :as cph]

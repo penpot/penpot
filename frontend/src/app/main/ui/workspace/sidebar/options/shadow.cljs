@@ -18,7 +18,8 @@
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
    [app.main.ui.workspace.sidebar.options.rows.input-row :refer [input-row]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
-   [app.util.dom :as dom]))
+   [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [t]]))
 
 (defn create-shadow []
   (let [id (uuid/next)]
@@ -37,7 +38,8 @@
 
 (mf/defc shadow-entry
   [{:keys [ids index value]}]
-  (let [open-shadow (mf/use-state false)
+  (let [locale (i18n/use-locale)
+        open-shadow (mf/use-state false)
 
         basic-offset-x-ref (mf/use-ref nil)
         basic-offset-y-ref (mf/use-ref nil)
@@ -124,8 +126,8 @@
          :on-change (fn [event]
                       (let [value (-> event dom/get-target dom/get-value d/read-string)]
                         (st/emit! (dwc/update-shapes ids #(assoc-in % [:shadow index :style] value)))))}
-        [:option {:value ":drop-shadow"} "Drop shadow"]
-        [:option {:value ":inner-shadow"} "Inner shadow"]]]
+        [:option {:value ":drop-shadow"} (t locale "workspace.options.shadow-options.drop-shadow")]
+        [:option {:value ":inner-shadow"} (t locale "workspace.options.shadow-options.inner-shadow")]]]
       
       [:div.row-grid-2
        [:div.input-element
@@ -136,7 +138,7 @@
                             :on-click (select-text adv-offset-x-ref)
                             :on-change (update-attr index :offset-x valid-number? basic-offset-x-ref)
                             :default-value (:offset-x value)}]
-        [:span.after "X"]]
+        [:span.after (t locale "workspace.options.shadow-options.offsetx")]]
 
        [:div.input-element
         [:input.input-text {:type "number"
@@ -146,7 +148,7 @@
                             :on-click (select-text adv-offset-y-ref)
                             :on-change (update-attr index :offset-y valid-number? basic-offset-y-ref)
                             :default-value (:offset-y value)}]
-        [:span.after "Y"]]]
+        [:span.after (t locale "workspace.options.shadow-options.offsety")]]]
 
       [:div.row-grid-2
        [:div.input-element
@@ -158,7 +160,7 @@
                             :on-change (update-attr index :blur valid-number? basic-blur-ref)
                             :min 0
                             :default-value (:blur value)}]
-        [:span.after "Blur"]]
+        [:span.after (t locale "workspace.options.shadow-options.blur")]]
 
        [:div.input-element
         [:input.input-text {:type "number"
@@ -169,7 +171,7 @@
                             :on-change (update-attr index :spread valid-number?)
                             :min 0
                             :default-value (:spread value)}]
-        [:span.after "Spread"]]]
+        [:span.after (t locale "workspace.options.shadow-options.spread")]]]
 
       [:div.color-row-wrap
        [:& color-row {:color {:value (:color value) :opacity (:opacity value)}
@@ -179,12 +181,13 @@
 (mf/defc shadow-menu
   [{:keys [ids type values] :as props}]
 
-  (let [on-add-shadow
+  (let [locale (i18n/use-locale)
+        on-add-shadow
         (fn []
           (st/emit! (dwc/update-shapes ids #(update % :shadow (fnil conj []) (create-shadow)) )))]
     [:div.element-set.shadow-options
      [:div.element-set-title
-      [:span "Shadow"]
+      [:span (t locale "workspace.options.shadow-options.title")]
       [:div.add-page {:on-click on-add-shadow} i/close]]
 
      (when (seq (:shadow values))

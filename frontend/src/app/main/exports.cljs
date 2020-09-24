@@ -11,7 +11,6 @@
   "The main logic for SVG export functionality."
   (:require
    [rumext.alpha :as mf]
-   [cuerdas.core :as str]
    [app.common.uuid :as uuid]
    [app.common.pages :as cp]
    [app.common.pages-helpers :as cph]

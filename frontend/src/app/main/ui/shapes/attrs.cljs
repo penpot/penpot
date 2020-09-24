@@ -21,8 +21,7 @@
 (defn extract-style-attrs
   [shape]
   (let [stroke-style (:stroke-style shape :none)
-        attrs #js {;:filter (when (not= :frame (:type shape)) (str "url(#filter_" (:id shape) ")"))
-                   :fill (or (:fill-color shape) "transparent")
+        attrs #js {:fill (or (:fill-color shape) "transparent")
                    :fillOpacity (:fill-opacity shape nil)
                    :rx (:rx shape nil)
                    :ry (:ry shape nil)}]

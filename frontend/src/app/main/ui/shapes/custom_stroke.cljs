@@ -23,7 +23,7 @@
         base-props (unchecked-get props "base-props")
         elem-name (unchecked-get props "elem-name")
         {:keys [x y width height]} (geom/shape->rect-shape shape)
-        id (uuid/next)
+        stroke-id (mf/use-var (uuid/next))
         stroke-style (:stroke-style shape :none)
         stroke-position (:stroke-alignment shape :center)]
     (cond
@@ -34,7 +34,7 @@
       ;; Inner alignment: display the shape with double width stroke,
       ;; and clip the result with the original shape without stroke.
       (= stroke-position :inner)
-      (let [clip-id (str "clip-" id)
+      (let [clip-id (str "clip-" @stroke-id)
 
             clip-props (-> (obj/merge! #js {} base-props)
                            (obj/merge! #js {:stroke nil
@@ -61,7 +61,7 @@
       ;; without stroke
 
       (= stroke-position :outer)
-      (let [mask-id (str "mask-" id)
+      (let [mask-id (str "mask-" @stroke-id)
             stroke-width (.-strokeWidth ^js base-props)
             mask-props1 (-> (obj/merge! #js {} base-props)
                             (obj/merge! #js {:stroke "white"
