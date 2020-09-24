@@ -447,7 +447,8 @@
     (watch [_ state stream]
       (let [[rchanges uchanges] (generate-sync-file state file-id)]
         (rx/concat
-          (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))
+          (when rchanges
+            (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})))
           (when file-id
             (rp/mutation :update-sync
                          {:file-id (get-in state [:workspace-file :id])
