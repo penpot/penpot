@@ -17,6 +17,7 @@
    [app.main.store :as st]
    [app.main.ui.keyboard :as kbd]
    [app.main.ui.shapes.path :as path]
+   [app.main.ui.shapes.filters :as filters]
    [app.main.ui.workspace.shapes.common :as common]
    [app.main.data.workspace.drawing :as dr]
    [app.util.dom :as dom]
@@ -41,10 +42,13 @@
                              (do
                                (dom/stop-propagation event)
                                (dom/prevent-default event)
-                               (st/emit! (dw/start-edition-mode (:id shape)))))))]
+                               (st/emit! (dw/start-edition-mode (:id shape)))))))
+        filter-id (mf/use-var (filters/get-filter-id))]
 
     [:g.shape {:on-double-click on-double-click
                :on-mouse-down on-mouse-down
-               :on-context-menu on-context-menu}
+               :on-context-menu on-context-menu
+               :filter (filters/filter-str @filter-id shape)}
+     [:& filters/filters {:filter-id @filter-id :shape shape}]
      [:& path/path-shape {:shape shape :background? true}]]))
 

@@ -101,12 +101,14 @@
 
   (let [filter-bounds (->>
                        filters
-                       (filter #(= :drop-shadow (:type %)))
+                       (filter #(= :drop-shadow (:style %)))
                        (map (partial filter-bounds shape) ))
-        x1 (apply min (:x1 filter-bounds))
-        y1 (apply min (:y1 filter-bounds))
-        x2 (apply max (:x2 filter-bounds))
-        y2 (apply max (:y2 filter-bounds))]
+        ;; We add the selrect so the minimum size will be the selrect
+        filter-bounds (conj filter-bounds (:selrect shape))
+        x1 (apply min (map :x1 filter-bounds))
+        y1 (apply min (map :y1 filter-bounds))
+        x2 (apply max (map :x2 filter-bounds))
+        y2 (apply max (map :y2 filter-bounds))]
     [x1 y1 (- x2 x1) (- y2 y1)]))
 
 (mf/defc filters

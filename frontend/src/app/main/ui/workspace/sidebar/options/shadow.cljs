@@ -51,8 +51,6 @@
         remove-shadow-by-id
         (fn [values id] (->> values (filterv (fn [s] (not= (:id s) id)))))
 
-        
-
         on-remove-shadow
         (fn [id]
           (fn []
