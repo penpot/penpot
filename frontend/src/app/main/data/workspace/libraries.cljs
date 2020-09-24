@@ -30,6 +30,8 @@
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
 
+(declare sync-file)
+
 (defn add-color
   [color]
   (us/assert ::us/string color)
@@ -73,7 +75,8 @@
                   :color color}
             uchg {:type :mod-color
                   :color prev}]
-        (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true}))))))
+        (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true})
+               (sync-file nil))))))
 
 (defn delete-color
   [{:keys [id] :as params}]
@@ -359,10 +362,13 @@
           (d/update-in-when [:workspace-libraries file-id :data]
                             cp/process-changes changes)))))
 
-(declare generate-sync-file)
-(declare generate-sync-page)
-(declare generate-sync-shape-and-children)
-(declare generate-sync-shape)
+(declare generate-sync-components-file)
+(declare generate-sync-components-page)
+(declare generate-sync-components-shape-and-children)
+(declare generate-sync-components-shape)
+(declare generate-sync-colors-file)
+(declare generate-sync-colors-page)
+(declare generate-sync-colors-shape)
 (declare remove-component-and-ref)
 (declare remove-ref)
 (declare update-attrs)
@@ -387,7 +393,7 @@
               (get-in state [:workspace-libraries file-id :data :components]))
 
             [rchanges uchanges]
-            (generate-sync-shape-and-children root-shape page components true)]
+            (generate-sync-components-shape-and-children root-shape page components true)]
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 
@@ -463,7 +469,10 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [[rchanges uchanges] (generate-sync-file state file-id)]
+      (let [[rchanges1 uchanges1] (generate-sync-components-file state file-id)
+            [rchanges2 uchanges2] (generate-sync-colors-file state file-id)
+            rchanges (concat rchanges1 rchanges2)
+            uchanges (concat uchanges1 uchanges2)]
         (rx/concat
           (when rchanges
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})))
@@ -506,7 +515,7 @@
                   {:label (tr "workspace.updates.dismiss")
                    :callback do-dismiss}]))))))
 
-(defn- generate-sync-file
+(defn- generate-sync-components-file
   [state file-id]
   (let [components
         (if (nil? file-id)
@@ -520,17 +529,17 @@
           (if (nil? page)
             [rchanges uchanges]
             (let [[page-rchanges page-uchanges]
-                  (generate-sync-page file-id page components)]
+                  (generate-sync-components-page file-id page components)]
               (recur (next pages)
                      (concat rchanges page-rchanges)
                      (concat uchanges page-uchanges)))))))))
 
-(defn- generate-sync-page
+(defn- generate-sync-components-page
   [file-id page components]
   (let [linked-shapes
         (cph/select-objects #(and (some? (:component-id %))
                                   (= (:component-file %) file-id))
-                                   page)]
+                            page)]
     (loop [shapes (seq linked-shapes)
            rchanges []
            uchanges []]
@@ -538,12 +547,12 @@
         (if (nil? shape)
           [rchanges uchanges]
           (let [[shape-rchanges shape-uchanges]
-                (generate-sync-shape-and-children shape page components false)]
+                (generate-sync-components-shape-and-children shape page components false)]
             (recur (next shapes)
                    (concat rchanges shape-rchanges)
                    (concat uchanges shape-uchanges))))))))
 
-(defn- generate-sync-shape-and-children
+(defn- generate-sync-components-shape-and-children
   [root-shape page components reset-touched?]
   (let [objects (get page :objects)
         all-shapes (cph/get-object-with-children (:id root-shape) objects)
@@ -556,12 +565,12 @@
         (if (nil? shape)
           [rchanges uchanges]
           (let [[shape-rchanges shape-uchanges]
-                (generate-sync-shape shape root-shape root-component page component reset-touched?)]
+                (generate-sync-components-shape shape root-shape root-component page component reset-touched?)]
             (recur (next shapes)
                    (concat rchanges shape-rchanges)
                    (concat uchanges shape-uchanges))))))))
 
-(defn- generate-sync-shape
+(defn- generate-sync-components-shape
   [shape root-shape root-component page component reset-touched?]
   (if (nil? component)
     (remove-component-and-ref shape page)
@@ -628,7 +637,7 @@
 (defn- update-attrs
   [shape component-shape root-shape root-component page reset-touched?]
   (let [new-pos (calc-new-pos shape component-shape root-shape root-component)]
-    (loop [attrs (seq (keys cp/sync-attrs))
+    (loop [attrs (seq (keys cp/component-sync-attrs))
            roperations [{:type :set
                          :attr :x
                          :val (:x new-pos)}
@@ -678,7 +687,7 @@
                               :val (get shape attr)
                               :ignore-touched true}
 
-                  attr-group (get cp/sync-attrs attr)
+                  attr-group (get cp/component-sync-attrs attr)
                   touched    (get shape :touched #{})]
               (if (or (not (touched attr-group)) reset-touched?)
                 (recur (next attrs)
@@ -697,4 +706,83 @@
         shape-pos          (gpt/point (:x shape) (:y shape))
         new-pos            (gpt/add root-pos delta)]
     new-pos))
+
+(defn- generate-sync-colors-file
+  [state file-id]
+  (let [colors
+        (if (nil? file-id)
+          (get-in state [:workspace-data :colors])
+          (get-in state [:workspace-libraries file-id :data :colors]))]
+    (when (some? colors)
+      (loop [pages (seq (vals (get-in state [:workspace-data :pages-index])))
+             rchanges []
+             uchanges []]
+        (let [page (first pages)]
+          (if (nil? page)
+            [rchanges uchanges]
+            (let [[page-rchanges page-uchanges]
+                  (generate-sync-colors-page file-id page colors)]
+              (recur (next pages)
+                     (concat rchanges page-rchanges)
+                     (concat uchanges page-uchanges)))))))))
+
+(defn- generate-sync-colors-page
+  [file-id page colors]
+  (let [linked-color? (fn [shape]
+                        (some
+                          #(let [attr (name %)
+                                 attr-ref-id (keyword (str attr "-ref-id"))
+                                 attr-ref-file (keyword (str attr "-ref-file"))]
+                             (and (get shape attr-ref-id)
+                                  (= file-id (get shape attr-ref-file))))
+                          cp/color-sync-attrs))
+
+        linked-shapes (cph/select-objects linked-color? page)]
+    (loop [shapes (seq linked-shapes)
+           rchanges []
+           uchanges []]
+      (let [shape (first shapes)]
+        (if (nil? shape)
+          [rchanges uchanges]
+          (let [[shape-rchanges shape-uchanges]
+                (generate-sync-colors-shape shape page colors)]
+            (recur (next shapes)
+                   (concat rchanges shape-rchanges)
+                   (concat uchanges shape-uchanges))))))))
+
+(defn- generate-sync-colors-shape
+  [shape page colors]
+  (loop [attrs (seq cp/color-sync-attrs)
+         roperations []
+         uoperations []]
+    (let [attr (first attrs)]
+      (if (nil? attr)
+        (if (empty? roperations)
+          [[] []]
+          (let [rchanges [{:type :mod-obj
+                           :page-id (:id page)
+                           :id (:id shape)
+                           :operations roperations}]
+                uchanges [{:type :mod-obj
+                           :page-id (:id page)
+                           :id (:id shape)
+                           :operations uoperations}]]
+            [rchanges uchanges]))
+        (let [attr-ref-id (keyword (str (name attr) "-ref-id"))]
+          (if-not (contains? shape attr-ref-id)
+            (recur (next attrs)
+                   roperations
+                   uoperations)
+            (let [color (get colors (get shape attr-ref-id))
+                  roperation {:type :set
+                              :attr attr
+                              :val (:value color)
+                              :ignore-touched true}
+                  uoperation {:type :set
+                              :attr attr
+                              :val (get shape attr)
+                              :ignore-touched true}]
+              (recur (next attrs)
+                     (conj roperations roperation)
+                     (conj uoperations uoperation)))))))))
 
