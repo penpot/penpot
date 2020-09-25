@@ -80,7 +80,7 @@
   (xml/js2xml (clj->js data)))
 
 (defn- render-object
-  [browser {:keys [page-id object-id token scale suffix type]}]
+  [browser {:keys [page-id file-id object-id token scale suffix type]}]
   (letfn [(render-in-page [page {:keys [uri cookie] :as rctx}]
             (p/do!
              (bwr/emulate! page {:viewport [1920 1080]
@@ -235,7 +235,7 @@
             (p/let [page (render-in-page page rctx)]
               (render-svg page)))]
 
-    (let [path (str "/render-object/" page-id "/" object-id)
+    (let [path (str "/render-object/" file-id "/" page-id "/" object-id)
           uri  (doto (Uri. (:public-uri cfg/config))
                  (.setPath "/")
                  (.setFragment path))
