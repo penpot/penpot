@@ -394,7 +394,8 @@
          (rx/concat
           (rx/of (dm/show {:content (tr "media.loading")
                            :type :info
-                           :timeout nil}))
+                           :timeout nil
+                           :tag :media-loading}))
           (->> (if (string? uri)
                  (->> (rx/of uri)
                       (rx/map prepare-uri)
@@ -420,7 +421,7 @@
                              :else
                              (rx/throw error))))
                (rx/finalize (fn []
-                              (st/emit! dm/hide)))))))))
+                              (st/emit! (dm/hide-tag :media-loading))))))))))
 
 
 ;; --- Delete media object

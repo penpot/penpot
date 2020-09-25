@@ -27,6 +27,7 @@
 (s/def ::message-position #{:fixed :floating :inline})
 (s/def ::message-status #{:visible :hide})
 (s/def ::message-controls #{:none :close :inline-actions :bottom-actions})
+(s/def ::message-tag string?)
 (s/def ::label string?)
 (s/def ::callback fn?)
 (s/def ::message-action (s/keys :req-un [::label ::callback]))
@@ -52,7 +53,7 @@
   (ptk/reify ::hide
     ptk/UpdateEvent
     (update [_ state]
-      (update state :message assoc :status :hide))
+      (d/update-when state :message assoc :status :hide))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -60,6 +61,15 @@
         (->> (rx/of #(dissoc % :message))
              (rx/delay +animation-timeout+)
              (rx/take-until stoper))))))
+
+(defn hide-tag
+  [tag]
+  (ptk/reify ::hide-tag
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [message (get state :message)]
+        (when (= (:tag message) tag)
+          (rx/of hide))))))
 
 (defn error
   ([content] (error content {}))
