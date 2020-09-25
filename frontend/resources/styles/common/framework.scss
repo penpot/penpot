@@ -49,7 +49,7 @@
 .btn-secondary {
   @extend %btn;
   background: $color-white;
-  border: 1px solid $color-black;
+  border: 1px solid $color-gray-20;
   color: $color-black;
   &:hover {
     background: $color-primary;
@@ -97,16 +97,18 @@
 
 .btn-icon-light {
   @extend %btn;
-  background: $color-gray-10;
-  color: $color-gray-40;
+  background: $color-white;
+  border: 1px solid $color-gray-20;
+  color: $color-black;
   padding: $x-small;
   svg {
-    fill: $color-gray-40;
+    fill: $color-black;
   }
   &:hover {
     background: $color-primary;
+    border-color: $color-primary;
     svg {
-      fill: $color-gray-60;
+      fill: $color-black;
     }
   }
 }

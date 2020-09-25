@@ -53,16 +53,16 @@
 (def ^:private sql:default-team-and-project
   "select t.id
      from team as t
-    inner join team_profile_rel as tpr on (tpr.team_id = t.id)
-    where tpr.profile_id = ?
-      and tpr.is_owner is true
+    inner join team_profile_rel as tp on (tp.team_id = t.id)
+    where tp.profile_id = ?
+      and tp.is_owner is true
       and t.is_default is true
     union all
    select p.id
      from project as p
-    inner join project_profile_rel as tpr on (tpr.project_id = p.id)
-    where tpr.profile_id = ?
-      and tpr.is_owner is true
+    inner join project_profile_rel as tp on (tp.project_id = p.id)
+    where tp.profile_id = ?
+      and tp.is_owner is true
       and p.is_default is true")
 
 (defn retrieve-additional-data

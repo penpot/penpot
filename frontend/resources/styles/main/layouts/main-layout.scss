@@ -2,8 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-// Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+// This Source Code Form is "Incompatible With Secondary Licenses", as
+// defined by the Mozilla Public License, v. 2.0.
+//
+// Copyright (c) 2020 UXBOX Labs SL
 
 .main-content {
   display: flex;
@@ -14,23 +16,22 @@
 .dashboard-layout {
   background-color: $color-white;
   display: grid;
-  grid-template-rows: 40px 1fr;
+  grid-template-rows: 50px 1fr;
   grid-template-columns: 40px 180px 1fr;
   height: 100vh;
 
-  & .dashboard-sidebar {
-    grid-row: 2;
+  .dashboard-sidebar {
+    grid-row: 1 / span 2;
     grid-column: 1 / span 2;
     overflow: hidden;
   }
 
-  & .dashboard-content {
+  .dashboard-content {
     grid-row: 1 / span 2;
   }
 }
 
 .dashboard-content {
-  background-color: lighten($color-gray-10, 5%);
   display: flex;
   flex-direction: column;
 }

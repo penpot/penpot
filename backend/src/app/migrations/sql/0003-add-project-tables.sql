@@ -28,9 +28,6 @@ CREATE TABLE project_profile_rel (
   PRIMARY KEY (profile_id, project_id)
 );
 
-COMMENT ON TABLE project_profile_rel
-     IS 'Relation between projects and profiles (NM)';
-
 CREATE INDEX project_profile_rel__profile_id__idx
     ON project_profile_rel(profile_id);
 

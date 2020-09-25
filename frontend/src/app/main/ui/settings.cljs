@@ -16,7 +16,6 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.util.router :as rt]
-   [app.main.ui.dashboard.profile :refer [profile-section]]
    [app.main.ui.settings.header :refer [header]]
    [app.main.ui.settings.password :refer [password-page]]
    [app.main.ui.settings.options :refer [options-page]]

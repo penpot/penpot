@@ -208,7 +208,7 @@
     (watch [_ state stream]
       (->> (rx/zip (rp/query :file {:id file-id})
                    (rp/query :file-users {:id file-id})
-                   (rp/query :project-by-id {:project-id project-id})
+                   (rp/query :project {:id project-id})
                    (rp/query :file-libraries {:file-id file-id}))
            (rx/first)
            (rx/map (fn [bundle] (apply bundle-fetched bundle)))

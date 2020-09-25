@@ -1,0 +1,76 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// This Source Code Form is "Incompatible With Secondary Licenses", as
+// defined by the Mozilla Public License, v. 2.0.
+//
+// Copyright (c) 2020 UXBOX Labs SL
+
+.dashboard-grid-container {
+  background-color: $color-dashboard;
+  border-top-right-radius: $br-huge;
+  border-top-left-radius: $br-huge;
+  flex: 1 0 0;
+  margin-right: $small;
+  overflow-y: auto;
+
+
+  &.search {
+    margin-top: 10px;
+  }
+}
+
+.dashboard-project-row {
+  margin-bottom: $medium;
+
+  .project {
+    align-items: center;
+    background: $color-white;
+    border-radius: $br-small;
+    display: flex;
+    flex-direction: row;
+    margin-left: $medium;
+    margin-top: $medium;
+    padding: $x-small $x-small $x-small $small;
+    width: fit-content;
+    height: 40px;
+
+    .btn-secondary {
+      margin-left: $big;
+      height: 32px;
+    }
+
+    h2 {
+      cursor: pointer;
+      font-size: 15px;
+      line-height: 1rem;
+      font-weight: unset;
+      color: $color-black;
+      margin-right: $medium;
+    }
+
+    .info {
+      font-size: 15px;
+      line-height: 1rem;
+      font-weight: unset;
+      color: $color-gray-30;
+    }
+
+    .pin-icon {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      margin-right: 10px;
+      svg {
+        width: 15px;
+        height: 15px;
+        fill: $color-gray-20;
+      }
+
+      &.active {
+        svg { fill: $color-gray-50; }
+      }
+    }
+  }
+}

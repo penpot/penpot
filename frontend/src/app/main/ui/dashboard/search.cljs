@@ -5,47 +5,50 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2015-2017 Juan de la Cruz <delacruzgarciajuan@gmail.com>
-;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.main.ui.dashboard.search
   (:require
-   [okulary.core :as l]
-   [rumext.alpha :as mf]
+   [app.main.data.dashboard :as dd]
    [app.main.store :as st]
-   [app.main.data.dashboard :as dsh]
+   [app.main.ui.dashboard.grid :refer [grid]]
+   [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [t]]
-   [app.main.ui.dashboard.grid :refer [grid]]))
+   [okulary.core :as l]
+   [rumext.alpha :as mf]))
 
 ;; --- Component: Search
 
-(def search-result-ref
-  (-> #(get-in % [:dashboard-local :search-result])
-      (l/derived st/state)))
+(def result-ref
+  (l/derived (l/in [:dashboard-local :search-result]) st/state))
 
 (mf/defc search-page
-  [{:keys [team-id search-term] :as props}]
-  (let [search-result (mf/deref search-result-ref)
-        locale (i18n/use-locale)]
+  [{:keys [team search-term] :as props}]
+  (let [result (mf/deref result-ref)
+        locale (mf/deref i18n/locale)]
+
     (mf/use-effect
-     (mf/deps search-term)
-     #(st/emit! (dsh/initialize-search team-id search-term)))
+     (mf/deps team search-term)
+     (st/emitf (dd/search-files {:team-id (:id team)
+                                 :search-term search-term})))
 
-    [:section.search-page
-      [:section.dashboard-grid
-        (cond
-          (empty? search-term)
-          [:div.grid-files-empty
-           [:div.grid-files-desc (t locale "dashboard.search.type-something")]]
+    [:section.dashboard-grid-container.search
+     (cond
+       (empty? search-term)
+       [:div.grid-empty-placeholder
+        [:div.icon i/search]
+        [:div.text (t locale "dashboard.search.type-something")]]
 
-          (nil? search-result)
-          [:div.grid-files-empty
-           [:div.grid-files-desc (t locale "dashboard.search.searching-for" search-term)]]
+       (nil? result)
+       [:div.grid-empty-placeholder
+        [:div.icon i/search]
+        [:div.text  (t locale "dashboard.search.searching-for" search-term)]]
 
-          (empty? search-result)
-          [:div.grid-files-empty
-           [:div.grid-files-desc (t locale "dashboard.search.no-matches-for" search-term)]]
+       (empty? result)
+       [:div.grid-empty-placeholder
+        [:div.icon i/search]
+        [:div.text  (t locale "dashboard.search.no-matches-for" search-term)]]
 
-          :else
-          [:& grid { :files search-result :hide-new? true}])]]))
-
+       :else
+       [:& grid {:files result
+                 :hide-new? true}])]))

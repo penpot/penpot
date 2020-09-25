@@ -215,7 +215,7 @@
 (mf/defc header
   [{:keys [file layout project page-id] :as props}]
   (let [team-id (:team-id project)
-        go-back #(st/emit! (rt/nav :dashboard-team {:team-id team-id}))
+        go-back #(st/emit! (rt/nav :dashboard-projects {:team-id team-id}))
         zoom (mf/deref refs/selected-zoom)
         locale (mf/deref i18n/locale)
         router (mf/deref refs/router)

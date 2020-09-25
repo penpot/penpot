@@ -15,6 +15,7 @@
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.services.queries :as sq]
+   [app.services.queries.profile :as profile]
    [app.util.blob :as blob]))
 
 ;; --- Team Edition Permissions
@@ -43,3 +44,54 @@
     (when-not row
       (ex/raise :type :validation
                 :code :not-authorized))))
+
+
+;; --- Query: Teams
+
+(declare retrieve-teams)
+
+(s/def ::profile-id ::us/uuid)
+(s/def ::teams
+  (s/keys :req-un [::profile-id]))
+
+(sq/defquery ::teams
+  [{:keys [profile-id]}]
+  (with-open [conn (db/open)]
+    (retrieve-teams conn profile-id)))
+
+(def sql:teams
+  "select t.*,
+          tp.is_owner,
+          tp.is_admin,
+          tp.can_edit,
+          (t.id = ?) as is_default
+     from team_profile_rel as tp
+     join team as t on (t.id = tp.team_id)
+    where t.deleted_at is null
+      and tp.profile_id = ?
+    order by t.created_at asc")
+
+(defn retrieve-teams
+  [conn profile-id]
+  (let [defaults (profile/retrieve-additional-data conn profile-id)]
+    (db/exec! conn [sql:teams (:default-team-id defaults) profile-id])))
+
+;; --- Query: Projec by ID
+
+(declare retrieve-team-projects)
+(declare retrieve-team)
+
+(s/def ::id ::us/uuid)
+(s/def ::team
+  (s/keys :req-un [::profile-id ::id]))
+
+(sq/defquery ::team
+  [{:keys [profile-id id]}]
+  (with-open [conn (db/open)]
+    (retrieve-team conn profile-id id)))
+
+(defn- retrieve-team
+  [conn profile-id team-id]
+  (let [defaults (profile/retrieve-additional-data conn profile-id)
+        sql      (str "WITH teams AS (" sql:teams ") SELECT * FROM teams WHERE id=?")]
+    (db/exec-one! conn [sql (:default-team-id defaults) profile-id team-id])))

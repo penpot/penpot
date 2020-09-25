@@ -9,35 +9,34 @@
 
 (ns app.main.ui.dashboard.libraries
   (:require
-   [okulary.core :as l]
-   [rumext.alpha :as mf]
-   [app.main.ui.icons :as i]
-   [app.util.i18n :as i18n :refer [tr]]
-   [app.util.dom :as dom]
-   [app.util.router :as rt]
-   [app.main.data.dashboard :as dsh]
+   [app.main.data.dashboard :as dd]
    [app.main.store :as st]
-   [app.main.ui.modal :as modal]
-   [app.main.ui.keyboard :as kbd]
-   [app.main.ui.components.context-menu :refer [context-menu]]
-   [app.main.ui.dashboard.grid :refer [grid]]))
+   [app.main.ui.dashboard.grid :refer [grid]]
+   [app.main.ui.icons :as i]
+   [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [tr]]
+   [app.util.router :as rt]
+   [okulary.core :as l]
+   [rumext.alpha :as mf]))
 
-(def files-ref
-  (-> (comp vals :files)
-      (l/derived st/state)))
+(defn files-ref
+  [team-id]
+  (l/derived (l/in [:shared-files team-id]) st/state))
 
 (mf/defc libraries-page
-  [{:keys [section team-id] :as props}]
-  (let [files (->> (mf/deref files-ref)
-                   (sort-by :modified-at)
-                   (reverse))]
+  [{:keys [team] :as props}]
+  (let [files-ref (mf/use-memo (mf/deps (:id team)) #(files-ref (:id team)))
+        files-map (mf/deref files-ref)
+        files     (->> (vals files-map)
+                       (sort-by :modified-at)
+                       (reverse))]
     (mf/use-effect
-     (mf/deps section team-id)
-     #(st/emit! (dsh/initialize-libraries team-id)))
+     (mf/deps team)
+     #(st/emit! (dd/fetch-shared-files {:team-id (:id team)})))
 
     [:*
-      [:header.main-bar
-       [:h1.dashboard-title (tr "dashboard.header.libraries")]]
-      [:section.libraries-page
-       [:& grid {:files files :hide-new? true}]]]))
+     [:header.dashboard-header
+      [:h1.dashboard-title (tr "dashboard.header.libraries")]]
+     [:section.dashboard-grid-container
+      [:& grid {:files files :hide-new? true}]]]))
 
