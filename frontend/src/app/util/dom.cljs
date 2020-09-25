@@ -103,6 +103,10 @@
   [node]
   (set! (.-value node) ""))
 
+(defn set-value!
+  [node value]
+  (set! (.-value node) value))
+
 (defn select-text!
   [node]
   (.select node))

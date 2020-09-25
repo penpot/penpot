@@ -18,6 +18,7 @@
    [app.common.geom.shapes :as geom]
    [app.common.geom.point :as gpt]
    [app.common.geom.matrix :as gmt]
+   [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.icon :as icon]
@@ -77,18 +78,21 @@
           frame-wrapper (mf/use-memo (mf/deps objects) #(frame-wrapper-factory objects))]
       (when (and shape (not (:hidden shape)))
         (let [shape (geom/transform-shape frame shape)
-              opts #js {:shape shape}]
-          (case (:type shape)
-            :curve  [:> path/path-shape opts]
-            :text   [:> text/text-shape opts]
-            :icon   [:> icon/icon-shape opts]
-            :rect   [:> rect/rect-shape opts]
-            :path   [:> path/path-shape opts]
-            :image  [:> image/image-shape opts]
-            :circle [:> circle/circle-shape opts]
-            :frame  [:> frame-wrapper {:shape shape}]
-            :group  [:> group-wrapper {:shape shape :frame frame}]
-            nil))))))
+              opts #js {:shape shape}
+              filter-id (filters/get-filter-id)]
+          [:g {:filter (filters/filter-str filter-id shape)}
+           [:& filters/filters {:filter-id filter-id :shape shape}]
+           (case (:type shape)
+             :curve  [:> path/path-shape opts]
+             :text   [:> text/text-shape opts]
+             :icon   [:> icon/icon-shape opts]
+             :rect   [:> rect/rect-shape opts]
+             :path   [:> path/path-shape opts]
+             :image  [:> image/image-shape opts]
+             :circle [:> circle/circle-shape opts]
+             :frame  [:> frame-wrapper {:shape shape}]
+             :group  [:> group-wrapper {:shape shape :frame frame}]
+             nil)])))))
 
 (mf/defc page-svg
   {::mf/wrap [mf/memo]}

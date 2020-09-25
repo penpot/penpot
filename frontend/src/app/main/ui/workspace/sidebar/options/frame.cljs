@@ -22,7 +22,8 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
    [app.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]
-   [app.main.ui.workspace.sidebar.options.frame-grid :refer [frame-grid]]))
+   [app.main.ui.workspace.sidebar.options.frame-grid :refer [frame-grid]]
+   [app.main.ui.workspace.sidebar.options.shadow :refer [shadow-menu]]))
 
 (declare +size-presets+)
 
@@ -211,5 +212,8 @@
    [:& stroke-menu {:ids ids
                     :type type
                     :values stroke-values}]
+   [:& shadow-menu {:ids ids
+                    :type type
+                    :values (select-keys shape [:shadow])}]
    [:& frame-grid {:shape shape}]]))
 

@@ -70,7 +70,7 @@
                 :group (t locale "workspace.options.group-stroke")
                 (t locale "workspace.options.stroke"))
 
-        show-options (not= (or (:stroke-style values) :none)  :none)
+        show-options (not= (:stroke-style values :none) :none)
 
         current-stroke-color {:value (:stroke-color values)
                               :opacity (:stroke-opacity values)
