@@ -410,15 +410,15 @@
       "es" : "Bibliotecas Compartidas"
     }
   },
-  "dashboard.header.new-file" : {
-    "used-in" : [ "src/app/main/ui/dashboard/project.cljs:71" ],
+  "dashboard.sidebar.projects" : {
     "translations" : {
-      "en" : "+ New file",
-      "fr" : "+ Nouveau fichier",
-      "ru" : "+ Новый файл",
-      "es" : "+ Nuevo archivo"
+      "en" : "Projects",
+      "fr" : "Projetes",
+      "ru" : "Проекты",
+      "es" : "Proyectos"
     }
   },
+
   "dashboard.header.new-project" : {
     "used-in" : [ "src/app/main/ui/dashboard/recent_files.cljs:46" ],
     "translations" : {
@@ -689,7 +689,7 @@
     },
     "unused" : true
   },
-  "ds.new-file" : {
+  "dashboard.new-file" : {
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:179", "src/app/main/ui/dashboard/grid.cljs:191" ],
     "translations" : {
       "en" : "+ New File",

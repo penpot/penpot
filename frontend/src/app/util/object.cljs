@@ -9,7 +9,7 @@
 
 (ns app.util.object
   "A collection of helpers for work with javascript objects."
-  (:refer-clojure :exclude [set! get get-in assoc!])
+  (:refer-clojure :exclude [set! get get-in merge clone])
   (:require
    [cuerdas.core :as str]
    [goog.object :as gobj]
@@ -44,11 +44,21 @@
                :else (throw (js/Error. "unexpected input")))]
     (omit obj keys)))
 
+(defn clone
+  [a]
+  (js/Object.assign #js {} a))
+
 (defn merge!
   ([a b]
    (js/Object.assign a b))
   ([a b & more]
    (reduce merge! (merge! a b) more)))
+
+(defn merge
+  ([a b]
+   (js/Object.assign #js {} a b))
+  ([a b & more]
+   (reduce merge! (merge a b) more)))
 
 (defn set!
   [obj key value]

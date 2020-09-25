@@ -9,22 +9,23 @@
 
 (ns app.main.ui.dashboard
   (:require
-   [cuerdas.core :as str]
-   [rumext.alpha :as mf]
-   [app.main.ui.icons :as i]
    [app.common.exceptions :as ex]
-   [app.common.uuid :as uuid]
    [app.common.spec :as us]
-   [app.main.store :as st]
+   [app.common.uuid :as uuid]
+   [app.main.data.dashboard :as dd]
    [app.main.refs :as refs]
-   [app.main.ui.dashboard.sidebar :refer [sidebar]]
-   [app.main.ui.dashboard.search :refer [search-page]]
-   [app.main.ui.dashboard.project :refer [project-page]]
-   [app.main.ui.dashboard.recent-files :refer [recent-files-page]]
+   [app.main.store :as st]
+   [app.main.ui.dashboard.files :refer [files-section]]
    [app.main.ui.dashboard.libraries :refer [libraries-page]]
-   [app.main.ui.dashboard.profile :refer [profile-section]]
+   [app.main.ui.dashboard.projects :refer [projects-section]]
+   [app.main.ui.dashboard.search :refer [search-page]]
+   [app.main.ui.dashboard.sidebar :refer [sidebar]]
+   [app.main.ui.icons :as i]
+   [app.util.i18n :as i18n :refer [t]]
    [app.util.router :as rt]
-   [app.util.i18n :as i18n :refer [t]]))
+   [cuerdas.core :as str]
+   [okulary.core :as l]
+   [rumext.alpha :as mf]))
 
 (defn ^boolean uuid-str?
   [s]
@@ -44,40 +45,71 @@
       (assoc :team-id (uuid team-id))
 
       (uuid-str? project-id)
-      (assoc :project-id (uuid project-id))
+      (assoc :project-id (uuid project-id)))))
 
-      ;; TODO: delete the usage of "drafts"
+(defn- team-ref
+  [id]
+  (l/derived (l/in [:teams id]) st/state))
 
-      (= "drafts" project-id)
-      (assoc :project-id (:default-project-id profile)))))
+(defn- projects-ref
+  [team-id]
+  (l/derived (l/in [:projects team-id]) st/state))
+
+(mf/defc dashboard-content
+  [{:keys [team projects project section search-term] :as props}]
+  [:div.dashboard-content
+   (case section
+     :dashboard-projects
+     [:& projects-section {:team team
+                           :projects projects}]
+
+     :dashboard-files
+     (when project
+       [:& files-section {:team team :project project}])
+
+
+     :dashboard-search
+     [:& search-page {:team team
+                      :search-term search-term}]
+
+     :dashboard-libraries
+     [:& libraries-page {:team team}]
+
+     nil)])
 
 (mf/defc dashboard
   [{:keys [route] :as props}]
-  (let [profile (mf/deref refs/profile)
-        page    (get-in route [:data :name])
-        {:keys [search-term team-id project-id] :as params} (parse-params route profile)]
+  (let [profile      (mf/deref refs/profile)
+        section      (get-in route [:data :name])
+        params       (parse-params route profile)
+
+        project-id   (:project-id params)
+        team-id      (:team-id params)
+        search-term  (:search-term params)
+
+        projects-ref (mf/use-memo (mf/deps team-id) #(projects-ref team-id))
+        team-ref     (mf/use-memo (mf/deps team-id) #(team-ref team-id))
+
+        team         (mf/deref team-ref)
+        projects     (mf/deref projects-ref)
+        project      (get projects project-id)]
+
+    (mf/use-effect
+     (mf/deps team-id)
+     (fn []
+       (st/emit! (dd/fetch-team {:id team-id})
+                 (dd/fetch-projects {:team-id team-id}))))
+
     [:section.dashboard-layout
-     [:div.main-logo
-      [:a {:on-click #(st/emit! (rt/nav :dashboard-team {:team-id team-id}))}
-       i/logo-icon]]
-     [:& profile-section {:profile profile}]
-     [:& sidebar {:team-id team-id
-                  :project-id project-id
-                  :section page
+     [:& sidebar {:team team
+                  :projects projects
+                  :project project
+                  :section section
                   :search-term search-term}]
-     [:div.dashboard-content
-      (case page
-        :dashboard-search
-        [:& search-page {:team-id team-id :search-term search-term}]
-
-        :dashboard-team
-        [:& recent-files-page {:team-id team-id}]
-
-        :dashboard-libraries
-        [:& libraries-page {:team-id team-id}]
-
-        :dashboard-project
-        [:& project-page {:team-id team-id
-                          :project-id project-id}])]]))
-
+     (when team
+       [:& dashboard-content {:projects projects
+                              :project project
+                              :section section
+                              :search-term search-term
+                              :team team}])]))
 

@@ -1,0 +1,100 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// This Source Code Form is "Incompatible With Secondary Licenses", as
+// defined by the Mozilla Public License, v. 2.0.
+//
+// Copyright (c) 2020 UXBOX Labs SL
+
+.dashboard-header {
+  align-items: center;
+  background-color: $color-white;
+  display: flex;
+  height: 63px;
+  padding: $x-small $small;
+  position: relative;
+  z-index: 10;
+
+  .element-name {
+    margin-right: $small;
+  }
+
+  .btn-secondary {
+    flex-shrink: 0;
+    margin-left: auto;
+    z-index: 10;
+    height: 32px;
+  }
+
+  svg {
+    fill: $color-black;
+    height: 14px;
+    margin-right: $x-small;
+    width: 14px;
+  }
+
+  nav {
+    ul {
+      align-items: center;
+      bottom: 0;
+      display: flex;
+      font-size: $fs15;
+      justify-content: center;
+      margin: auto;
+      position: absolute;
+      width: 100%;
+      z-index: 1;
+    }
+
+    li {
+      a {
+        align-items: center;
+        border-bottom: 3px solid transparent;
+        color: $color-gray-30;
+        display: flex;
+        height: 40px;
+        padding: $x-small $big;
+        flex-basis: 140px;
+
+        &:hover {
+          color: $color-black;
+        }
+
+      }
+
+      &.current {
+        a {
+          color: $color-black;
+          border-color: $color-primary;
+        }
+      }
+    }
+  }
+
+  .dashboard-title {
+    color: $color-black;
+    display: flex;
+    flex-shrink: 0;
+    font-size: $fs18;
+    z-index: 10;
+  }
+
+  .icon {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    margin-left: $small;
+    z-index: 10;
+
+    svg {
+      fill: $color-gray-40;
+      width: 15px;
+      height: 15px;
+
+      &:hover {
+        fill: $color-primary-dark;
+      }
+    }
+  }
+}

@@ -18,19 +18,17 @@
    [app.services.queries.projects :as projects :refer [retrieve-projects]]
    [app.services.queries.files :refer [decode-row-xf]]))
 
-(def sql:project-recent-files
-  "select f.*
-     from file as f
-    where f.project_id = ?
-      and f.deleted_at is null
-    order by f.modified_at desc
-    limit 5")
-
-(defn recent-by-project
-  [conn profile-id project]
-  (let [project-id (:id project)]
-    (projects/check-edition-permissions! conn profile-id project)
-    (into [] decode-row-xf (db/exec! conn [sql:project-recent-files project-id]))))
+(def sql:recent-files
+  "with recent_files as (
+     select f.*, row_number() over w as row_num
+       from file as f
+       join project as p on (p.id = f.project_id)
+      where p.team_id = ?
+        and p.deleted_at is null
+     window w as (partition by f.project_id order by f.modified_at desc)
+      order by f.modified_at desc
+   )
+   select * from recent_files where row_num <= 6;")
 
 (s/def ::team-id ::us/uuid)
 (s/def ::profile-id ::us/uuid)
@@ -42,9 +40,7 @@
   [{:keys [profile-id team-id]}]
   (with-open [conn (db/open)]
     (teams/check-read-permissions! conn profile-id team-id)
-    (->> (retrieve-projects conn team-id)
-         ;; Retrieve for each proyect the 5 more recent files
-         (map (partial recent-by-project conn profile-id))
-         ;; Change the structure so it's a map with project-id as keys
-         (flatten)
-         (group-by :project-id))))
+    (let [files (db/exec! conn [sql:recent-files team-id])]
+      (into [] decode-row-xf files))))
+
+

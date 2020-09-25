@@ -78,7 +78,6 @@ VALUES ('00000000-0000-0000-0000-000000000000'::uuid,
         true);
 
 
-
 CREATE TABLE team_profile_rel (
   team_id uuid NOT NULL REFERENCES team(id) ON DELETE CASCADE,
   profile_id uuid NOT NULL REFERENCES profile(id) ON DELETE RESTRICT,

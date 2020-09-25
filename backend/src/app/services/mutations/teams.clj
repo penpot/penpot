@@ -15,6 +15,7 @@
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.services.mutations :as sm]
+   [app.services.mutations.projects :as projects]
    [app.util.blob :as blob]))
 
 ;; --- Helpers & Specs
@@ -27,6 +28,7 @@
 
 (declare create-team)
 (declare create-team-profile)
+(declare create-team-default-project)
 
 (s/def ::create-team
   (s/keys :req-un [::profile-id ::name]
@@ -35,8 +37,10 @@
 (sm/defmutation ::create-team
   [params]
   (db/with-atomic [conn db/pool]
-    (let [team (create-team conn params)]
-      (create-team-profile conn (assoc params :team-id (:id team)))
+    (let [team   (create-team conn params)
+          params (assoc params :team-id (:id team))]
+      (create-team-profile conn params)
+      (create-team-default-project conn params)
       team)))
 
 (defn create-team
@@ -57,3 +61,11 @@
                :is-owner true
                :is-admin true
                :can-edit true}))
+
+(defn create-team-default-project
+  [conn {:keys [team-id profile-id] :as params}]
+  (let [proj (projects/create-project conn {:team-id team-id
+                                            :name "Drafts"
+                                            :default? true})]
+    (projects/create-project-profile conn {:project-id (:id proj)
+                                           :profile-id profile-id})))

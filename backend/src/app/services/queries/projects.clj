@@ -60,7 +60,6 @@
 
 (s/def ::team-id ::us/uuid)
 (s/def ::profile-id ::us/uuid)
-
 (s/def ::projects
   (s/keys :req-un [::profile-id ::team-id]))
 
@@ -68,31 +67,37 @@
   [{:keys [profile-id team-id]}]
   (with-open [conn (db/open)]
     (teams/check-read-permissions! conn profile-id team-id)
-    (retrieve-projects conn team-id)))
+    (retrieve-projects conn profile-id team-id)))
 
 (def sql:projects
   "select p.*,
+          tpp.is_pinned,
           (select count(*) from file as f
-              where f.project_id = p.id
-                and deleted_at is null)
+            where f.project_id = p.id
+              and deleted_at is null) as count
      from project as p
+     left join team_project_profile_rel as tpp
+            on (tpp.project_id = p.id and
+                tpp.team_id = p.team_id and
+                tpp.profile_id = ?)
     where p.team_id = ?
       and p.deleted_at is null
     order by p.modified_at desc")
 
 (defn retrieve-projects
-  [conn team-id]
-  (db/exec! conn [sql:projects team-id]))
+  [conn profile-id team-id]
+  (db/exec! conn [sql:projects profile-id team-id]))
 
-;; --- Query: Projec by ID
 
-(s/def ::project-id ::us/uuid)
-(s/def ::project-by-id
-  (s/keys :req-un [::profile-id ::project-id]))
+;; --- Query: Project
 
-(sq/defquery ::project-by-id
-  [{:keys [profile-id project-id]}]
+(s/def ::id ::us/uuid)
+(s/def ::project
+  (s/keys :req-un [::profile-id ::id]))
+
+(sq/defquery ::project
+  [{:keys [profile-id id]}]
   (with-open [conn (db/open)]
-    (let [project (db/get-by-id conn :project project-id)]
+    (let [project (db/get-by-id conn :project id)]
       (check-edition-permissions! conn profile-id project)
       project)))

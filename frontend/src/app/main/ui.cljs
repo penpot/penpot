@@ -62,10 +62,10 @@
 
    ["/dashboard"
     ["/team/:team-id"
-     ["/" :dashboard-team]
+     ["/projects" :dashboard-projects]
      ["/search" :dashboard-search]
-     ["/project/:project-id" :dashboard-project]
-     ["/libraries" :dashboard-libraries]]]
+     ["/libraries" :dashboard-libraries]
+     ["/projects/:project-id" :dashboard-files]]]
 
    ["/workspace/:project-id/:file-id" :workspace]])
 
@@ -74,7 +74,9 @@
   (let [data (ex-data error)]
     (case (:type data)
       :not-found [:& not-found-page {:error data}]
-      [:span "Internal application errror"])))
+      (do
+        (ptk/handle-error error)
+        [:span "Internal application errror"]))))
 
 (mf/defc app
   {::mf/wrap [#(mf/catch % {:fallback app-error})]}
@@ -105,8 +107,8 @@
        ])
 
     (:dashboard-search
-     :dashboard-team
-     :dashboard-project
+     :dashboard-projects
+     :dashboard-files
      :dashboard-libraries)
     [:& dashboard {:route route}]
 

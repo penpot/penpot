@@ -51,6 +51,10 @@
    (apply ptk/emit! store (cons event events))
    nil))
 
+(defn emitf
+  [& events]
+  #(apply ptk/emit! store events))
+
 (def initial-state
   {:session-id (uuid/next)
    :profile (:profile storage)})

@@ -61,6 +61,7 @@
 
 (declare create-project)
 (declare create-project-profile)
+(declare create-team-project-profile)
 
 (s/def ::team-id ::us/uuid)
 (s/def ::create-project
@@ -70,9 +71,11 @@
 (sm/defmutation ::create-project
   [params]
   (db/with-atomic [conn db/pool]
-    (let [proj (create-project conn params)]
-      (create-project-profile conn (assoc params :project-id (:id proj)))
-      proj)))
+    (let [proj   (create-project conn params)
+          params (assoc params :project-id (:id proj))]
+      (create-project-profile conn params)
+      (create-team-project-profile conn params)
+      (assoc proj :is-pinned true))))
 
 (defn create-project
   [conn {:keys [id profile-id team-id name default?] :as params}]
@@ -93,7 +96,30 @@
                :is-admin true
                :can-edit true}))
 
+(defn create-team-project-profile
+  [conn {:keys [team-id project-id profile-id] :as params}]
+  (db/insert! conn :team-project-profile-rel
+              {:project-id project-id
+               :profile-id profile-id
+               :team-id team-id
+               :is-pinned true}))
 
+
+;; --- Mutation: Toggle Project Pin
+
+(s/def ::is-pinned ::us/boolean)
+(s/def ::toggle-project-pin
+  (s/keys :req-un [::profile-id ::id ::team-id ::is-pinned]))
+
+(sm/defmutation ::toggle-project-pin
+  [{:keys [id profile-id team-id is-pinned] :as params}]
+  (db/with-atomic [conn db/pool]
+    (db/update! conn :team-project-profile-rel
+                {:is-pinned is-pinned}
+                {:profile-id profile-id
+                 :project-id id
+                 :team-id team-id})
+    nil))
 
 ;; --- Mutation: Rename Project
 

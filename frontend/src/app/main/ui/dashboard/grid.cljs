@@ -10,8 +10,9 @@
 (ns app.main.ui.dashboard.grid
   (:require
    [app.common.uuid :as uuid]
+   [app.common.math :as mth]
    [app.config :as cfg]
-   [app.main.data.dashboard :as dsh]
+   [app.main.data.dashboard :as dd]
    [app.main.fonts :as fonts]
    [app.main.store :as st]
    [app.main.ui.components.context-menu :refer [context-menu]]
@@ -62,9 +63,9 @@
   (let [local  (mf/use-state {:menu-open false :edition false})
         locale (mf/deref i18n/locale)
 
-        delete     (mf/use-callback (mf/deps id) #(st/emit! nil (dsh/delete-file id)))
-        add-shared (mf/use-callback (mf/deps id) #(st/emit! (dsh/set-file-shared id true)))
-        del-shared (mf/use-callback (mf/deps id) #(st/emit! (dsh/set-file-shared id false)))
+        delete     (mf/use-callback (mf/deps id) #(st/emit! (dd/delete-file file)))
+        add-shared (mf/use-callback (mf/deps id) #(st/emit! (dd/set-file-shared id true)))
+        del-shared (mf/use-callback (mf/deps id) #(st/emit! (dd/set-file-shared id false)))
         on-close   (mf/use-callback #(swap! local assoc :menu-open false))
 
         on-delete
@@ -125,8 +126,9 @@
         (mf/use-callback
          (mf/deps id)
          (fn [event]
-           (let [name (-> event dom/get-target dom/get-value)]
-             (st/emit! (dsh/rename-file id name))
+           (let [name (-> event dom/get-target dom/get-value)
+                 file (assoc file :name name)]
+             (st/emit! (dd/rename-file file))
              (swap! local assoc :edition false))))
 
         on-key-down
@@ -164,19 +166,23 @@
                                      [(t locale "dashboard.grid.remove-shared") on-del-shared]
                                      [(t locale "dashboard.grid.add-shared") on-add-shared])]}]]]))
 
-;; --- Grid
+(mf/defc empty-placeholder
+  []
+  (let [locale (mf/deref i18n/locale)]
+    [:div.grid-empty-placeholder
+     [:div.icon i/file-html]
+     [:div.text (t locale "dashboard.grid.empty-files")]]))
 
 (mf/defc grid
   [{:keys [id opts files hide-new?] :as props}]
   (let [locale (mf/deref i18n/locale)
-        click  #(st/emit! (dsh/create-file id))]
+        click  #(st/emit! (dd/create-file id))]
     [:section.dashboard-grid
-     (cond
-       (pos? (count files))
+     (if (pos? (count files))
        [:div.dashboard-grid-row
         (when (not hide-new?)
           [:div.grid-item.add-file {:on-click click}
-           [:span (t locale "ds.new-file")]])
+           [:span (t locale "dashboard.new-file")]])
 
         (for [item files]
           [:& grid-item
@@ -184,8 +190,61 @@
             :file item
             :key (:id item)}])]
 
-       (zero? (count files))
-       [:div.grid-files-empty
-        [:div.grid-files-desc (t locale "dashboard.grid.empty-files")]
-        [:div.grid-files-link
-         [:a.btn-secondary.btn-small {:on-click click} (t locale "ds.new-file")]]])]))
+       [:& empty-placeholder])]))
+
+(mf/defc line-grid-row
+  [{:keys [locale files] :as props}]
+  (let [rowref   (mf/use-ref)
+
+        width    (mf/use-state 900)
+        limit    (mf/use-state 1)
+        itemsize 290]
+
+    (mf/use-layout-effect
+     (mf/deps width)
+     (fn []
+       (let [node   (mf/ref-val rowref)
+             obs    (new js/ResizeObserver
+                         (fn [entries x]
+                           (let [data  (first entries)
+                                 rect  (.-contentRect ^js data)]
+                             (reset! width (.-width ^js rect)))))
+
+             nitems (/ @width itemsize)
+             num    (mth/floor nitems)]
+
+         (.observe ^js obs node)
+
+         (cond
+           (< (* itemsize (count files)) @width)
+           (reset! limit num)
+
+           (< nitems (+ num 0.51))
+           (reset! limit (dec num))
+
+           :else
+           (reset! limit num))
+         (fn []
+           (.disconnect ^js obs)))))
+
+    [:div.grid-row.no-wrap {:ref rowref}
+     (for [item (take @limit files)]
+       [:& grid-item
+        {:id (:id item)
+         :file item
+         :key (:id item)}])
+     (when (> (count files) @limit)
+       [:div.grid-item.placeholder
+        [:div.placeholder-icon i/arrow-down]
+        [:div.placeholder-label "Show all files"]])]))
+
+(mf/defc line-grid
+  [{:keys [project-id opts files] :as props}]
+  (let [locale (mf/deref i18n/locale)
+        click  #(st/emit! (dd/create-file project-id))]
+    [:section.dashboard-grid
+     (if (pos? (count files))
+       [:& line-grid-row {:files files
+                          :locale locale}]
+       [:& empty-placeholder])]))
+
