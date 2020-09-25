@@ -99,7 +99,7 @@
              (fn []
                (st/emit! (dws/change-hover-state (:id shape) false))))
 
-            filter-id (mf/use-var (filters/get-filter-id))]
+            filter-id (mf/use-memo filters/get-filter-id)]
 
         (when-not (:hidden shape)
           [:g {:class (when selected? "selected")
@@ -124,8 +124,8 @@
                    :on-mouse-over on-mouse-over
                    :on-mouse-out on-mouse-out}
             (:name shape)]
-           [:g.frame {:filter (filters/filter-str @filter-id shape)}
-            [:& filters/filters {:filter-id @filter-id :shape shape}]
+           [:g.frame {:filter (filters/filter-str filter-id shape)}
+            [:& filters/filters {:filter-id filter-id :shape shape}]
             [:& frame-shape
              {:shape shape
               :childs children}]]])))))

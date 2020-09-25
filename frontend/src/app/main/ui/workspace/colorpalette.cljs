@@ -53,7 +53,6 @@
         file-id (:file-id color)
         select-color
         (fn [event]
-          (println "item" id file-id)
           (let [ids (get-in @st/state [:workspace-local :selected])]
             (if (kbd/shift? event)
               (st/emit! (mdc/change-stroke ids (:value color) id file-id))

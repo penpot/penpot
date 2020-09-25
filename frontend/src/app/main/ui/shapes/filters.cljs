@@ -133,13 +133,13 @@
               drop-shadow-filters (->> filters (filter #(= :drop-shadow (:style %))))
               drop-shadow-filters (->> drop-shadow-filters
                                        (map #(str "filter" (:id %)))
-                                       (concat ["BackgroundImageFix"])
+                                       (cons "BackgroundImageFix")
                                        (map add-in-filter drop-shadow-filters))
 
               inner-shadow-filters (->> filters (filter #(= :inner-shadow (:style %))))
               inner-shadow-filters (->> inner-shadow-filters
                                        (map #(str "filter" (:id %)))
-                                       (concat ["shape"])
+                                       (cons "shape")
                                        (map add-in-filter inner-shadow-filters))]
 
           [:*

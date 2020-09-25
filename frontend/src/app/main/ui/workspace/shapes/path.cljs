@@ -43,12 +43,12 @@
                                (dom/stop-propagation event)
                                (dom/prevent-default event)
                                (st/emit! (dw/start-edition-mode (:id shape)))))))
-        filter-id (mf/use-var (filters/get-filter-id))]
+        filter-id (mf/use-memo filters/get-filter-id)]
 
     [:g.shape {:on-double-click on-double-click
                :on-mouse-down on-mouse-down
                :on-context-menu on-context-menu
-               :filter (filters/filter-str @filter-id shape)}
-     [:& filters/filters {:filter-id @filter-id :shape shape}]
+               :filter (filters/filter-str filter-id shape)}
+     [:& filters/filters {:filter-id filter-id :shape shape}]
      [:& path/path-shape {:shape shape :background? true}]]))
 

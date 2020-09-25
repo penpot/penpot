@@ -71,11 +71,11 @@
           on-context-menu (mf/use-callback
                            (mf/deps shape)
                            #(on-context-menu % shape))
-          filter-id (mf/use-var (filters/get-filter-id))]
+          filter-id (mf/use-memo filters/get-filter-id)]
       [:g.shape {:on-mouse-down on-mouse-down
                  :on-context-menu on-context-menu
-                 :filter (filters/filter-str @filter-id shape)}
-       [:& filters/filters {:filter-id @filter-id :shape shape}]
+                 :filter (filters/filter-str filter-id shape)}
+       [:& filters/filters {:filter-id filter-id :shape shape}]
        [:& component {:shape shape}]])))
 
 
