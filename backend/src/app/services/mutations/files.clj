@@ -241,10 +241,13 @@
 
 ;; File changes that affect to the library, and must be notified
 ;; to all clients using it.
-(def library-changes
-  #{:add-color :mod-color :del-color
-    :add-media :mod-media :del-media
-    :add-component :mod-component :del-component})
+(defn library-change?
+  [change]
+  (or (#{:add-color :mod-color :del-color
+         :add-media :mod-media :del-media
+         :add-component :mod-component :del-component} (:type change))
+      (and (= (:type change) :mod-obj)
+           (some? (:component-id change)))))
 
 (declare update-file)
 (declare retrieve-lagged-changes)
@@ -285,12 +288,12 @@
                   :revn (:revn file)
                   :changes changes}
 
-        library-changes (filter #(library-changes (:type %)) changes)]
+        library-changes (filter library-change? changes)]
 
     @(redis/run! :publish {:channel (str (:id file))
                            :message (t/encode-str msg)})
 
-    (if (and (:is-shared file) (seq library-changes))
+    (when (and (:is-shared file) (seq library-changes))
       (let [{:keys [team-id] :as project}
             (db/get-by-id conn :project (:project-id file))
 
@@ -299,7 +302,7 @@
                  :file-id (:id file)
                  :session-id sid
                  :revn (:revn file)
-                 :modified-at (:modified-at file)
+                 :modified-at (dt/now)
                  :changes library-changes}]
 
         @(redis/run! :publish {:channel (str team-id)

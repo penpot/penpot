@@ -13,6 +13,8 @@
                :clj [clojure.edn :as r])
             #?(:cljs [cljs.core :as core]
                :clj [clojure.core :as core]))
+  #?(:cljs
+     (:require-macros [app.common.data]))
   #?(:clj
      (:import linked.set.LinkedSet)))
 
@@ -109,39 +111,11 @@
   ([coll value]
    (sequence (replace-by-id value) coll)))
 
-(defn remove-nil-vals
+(defn without-nils
   "Given a map, return a map removing key-value
   pairs when value is `nil`."
   [data]
   (into {} (remove (comp nil? second) data)))
-
-
-(defmacro without-nils
-  "A generic helper macro that removes nils from hash-map from
-  collection at compile time. If it is not possible (a symbol is
-  received), fallback to runtume nil removing procediment thanks to
-  `remove-nil-vals` function."
-  [param]
-  (cond
-    (symbol? param)
-    `(remove-nil-vals ~param)
-
-    (map? param)
-    `~(remove-nil-vals param)
-
-    :else
-    (throw (ex-info "Invalid arguments"
-                    {:type :internal
-                     :code :invalid-arguments}))))
-
-(defmacro hash-map
-  "A closure friendly macro for build nil-free hash-maps at compile
-  time."
-  [& kvpairs]
-  (let [data (->> (partition 2 kvpairs)
-                  (remove (comp nil? second))
-                  (mapcat identity))]
-    `(hash-map ~@data)))
 
 (defn without-keys
   "Return a map without the keys provided

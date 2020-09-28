@@ -122,6 +122,7 @@
 (s/def :internal.shape/line-height ::safe-number)
 (s/def :internal.shape/locked boolean?)
 (s/def :internal.shape/page-id uuid?)
+(s/def :internal.shape/component-id uuid?)
 (s/def :internal.shape/proportion ::safe-number)
 (s/def :internal.shape/proportion-lock boolean?)
 (s/def :internal.shape/rx ::safe-number)
@@ -235,6 +236,8 @@
                            :width                 :size-group
                            :height                :size-group
                            :proportion            :size-group
+                           :x                     :position-group
+                           :y                     :position-group
                            :rx                    :radius-group
                            :ry                    :radius-group
                            :points                :points-group
@@ -346,7 +349,7 @@
 (s/def ::operations (s/coll-of ::operation))
 
 (defmethod change-spec :mod-obj [_]
-  (s/keys :req-un [::id ::page-id ::operations]))
+  (s/keys :req-un [::id (or ::page-id ::component-id) ::operations]))
 
 (defmethod change-spec :del-obj [_]
   (s/keys :req-un [::id ::page-id]))
@@ -594,12 +597,14 @@
                                                  :else (cph/insert-at-index shapes index [id]))))))))))))
 
 (defmethod process-change :mod-obj
-  [data {:keys [id page-id operations] :as change}]
-  (d/update-in-when data [:pages-index page-id :objects]
-                    (fn [objects]
-                      (if-let [obj (get objects id)]
-                        (assoc objects id (reduce process-operation obj operations))
-                        objects))))
+  [data {:keys [id page-id component-id operations] :as change}]
+  (let [update-fn (fn [objects]
+                    (if-let [obj (get objects id)]
+                      (assoc objects id (reduce process-operation obj operations))
+                      objects))]
+    (if page-id
+      (d/update-in-when data [:pages-index page-id :objects] update-fn)
+      (d/update-in-when data [:components component-id :objects] update-fn))))
 
 (defmethod process-change :del-obj
   [data {:keys [page-id id] :as change}]
