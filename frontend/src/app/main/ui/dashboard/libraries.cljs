@@ -38,5 +38,5 @@
      [:header.dashboard-header
       [:h1.dashboard-title (tr "dashboard.header.libraries")]]
      [:section.dashboard-grid-container
-      [:& grid {:files files :hide-new? true}]]]))
+      [:& grid {:files files}]]]))
 

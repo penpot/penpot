@@ -332,6 +332,7 @@
          (for [item pinned-projects]
            [:& sidebar-project
             {:item item
+             :key (:id item)
              :id (:id item)
              :selected? (= (:id item) (:id project))}])]
         [:div.sidebar-empty-placeholder

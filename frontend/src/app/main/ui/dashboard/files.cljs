@@ -121,6 +121,5 @@
      [:& header {:team team :project project}]
      [:section.dashboard-grid-container
       [:& grid {:id (:id project)
-                :files files
-                :hide-new? true}]]]))
+                :files files}]]]))
 

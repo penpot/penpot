@@ -108,10 +108,10 @@
 ;; --- Mutation: Toggle Project Pin
 
 (s/def ::is-pinned ::us/boolean)
-(s/def ::toggle-project-pin
+(s/def ::update-project-pin
   (s/keys :req-un [::profile-id ::id ::team-id ::is-pinned]))
 
-(sm/defmutation ::toggle-project-pin
+(sm/defmutation ::update-project-pin
   [{:keys [id profile-id team-id is-pinned] :as params}]
   (db/with-atomic [conn db/pool]
     (db/update! conn :team-project-profile-rel
@@ -120,6 +120,7 @@
                  :project-id id
                  :team-id team-id})
     nil))
+
 
 ;; --- Mutation: Rename Project
 

@@ -28,6 +28,7 @@
 (s/def ::project-id ::us/uuid)
 (s/def ::created-at ::us/inst)
 (s/def ::modified-at ::us/inst)
+(s/def ::is-pinned ::us/boolean)
 
 (s/def ::team
   (s/keys :req-un [::id
@@ -41,7 +42,8 @@
                     ::team-id
                     ::profile-id
                     ::created-at
-                    ::modified-at]))
+                    ::modified-at
+                    ::is-pinned]))
 
 (s/def ::file
   (s/keys :req-un [::id
@@ -204,6 +206,7 @@
     (update [_ state]
       (assoc-in state [:dashboard-local :project-for-edit] nil))))
 
+
 (defn toggle-project-pin
   [{:keys [id is-pinned team-id] :as params}]
   (us/assert ::project params)
@@ -214,8 +217,9 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [params (select-keys params [:id :is-pinned :team-id])]
-        (->> (rp/mutation :toggle-project-pin params)
+      (let [project (get-in state [:projects team-id id])
+            params  (select-keys project [:id :is-pinned :team-id])]
+        (->> (rp/mutation :update-project-pin params)
              (rx/ignore))))))
 
 ;; --- Rename Project
