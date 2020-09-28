@@ -174,16 +174,11 @@
      [:div.text (t locale "dashboard.grid.empty-files")]]))
 
 (mf/defc grid
-  [{:keys [id opts files hide-new?] :as props}]
-  (let [locale (mf/deref i18n/locale)
-        click  #(st/emit! (dd/create-file id))]
+  [{:keys [id opts files] :as props}]
+  (let [locale (mf/deref i18n/locale)]
     [:section.dashboard-grid
      (if (pos? (count files))
-       [:div.dashboard-grid-row
-        (when (not hide-new?)
-          [:div.grid-item.add-file {:on-click click}
-           [:span (t locale "dashboard.new-file")]])
-
+       [:div.grid-row
         (for [item files]
           [:& grid-item
            {:id (:id item)

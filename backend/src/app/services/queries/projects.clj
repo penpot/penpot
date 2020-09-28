@@ -71,7 +71,7 @@
 
 (def sql:projects
   "select p.*,
-          tpp.is_pinned,
+          coalesce(tpp.is_pinned, false) as is_pinned,
           (select count(*) from file as f
             where f.project_id = p.id
               and deleted_at is null) as count
