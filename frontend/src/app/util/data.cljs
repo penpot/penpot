@@ -25,7 +25,7 @@
 
 (def index-by-id #(index-by :id %))
 
-(defn remove-nil-vals
+(defn without-nils
   "Given a map, return a map removing key-value
   pairs when value is `nil`."
   [data]

@@ -37,7 +37,7 @@
     (if-let [component-id (:component-id obj)]
       id
       (if-let [parent-id (:parent-id obj)]
-        (get-root-component parent-id obj)
+        (get-root-component parent-id objects)
         nil))))
 
 (defn get-children

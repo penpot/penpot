@@ -18,6 +18,7 @@
    [app.main.data.messages :as dm]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.libraries-helpers :as dwlh]
    [app.common.pages :as cp]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -117,8 +118,6 @@
                   :object prev}]
         (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true}))))))
 
-(declare make-component-shape)
-
 (def add-component
   (ptk/reify ::add-component
     ptk/WatchEvent
@@ -137,7 +136,7 @@
                   (dws/prepare-create-group page-id shapes "Component-" true))
 
                 [new-shape new-shapes updated-shapes]
-                (make-component-shape group nil objects)
+                (dwlh/make-component-shape group objects)
 
                 rchanges (conj rchanges
                                {:type :add-component
@@ -167,40 +166,23 @@
 
                 uchanges (into uchanges
                                (map (fn [updated-shape]
-                                      {:type :mod-obj
-                                       :page-id page-id
-                                       :id (:id updated-shape)
-                                       :operations [{:type :set
-                                                     :attr :component-id
-                                                     :val nil}
-                                                    {:type :set
-                                                     :attr :component-file
-                                                     :val nil}
-                                                    {:type :set
-                                                     :attr :shape-ref
-                                                     :val nil}]})
+                                      (let [original-shape (get objects (:id updated-shape))]
+                                        {:type :mod-obj
+                                         :page-id page-id
+                                         :id (:id updated-shape)
+                                         :operations [{:type :set
+                                                       :attr :component-id
+                                                       :val (:component-id original-shape)}
+                                                      {:type :set
+                                                       :attr :component-file
+                                                       :val (:component-file original-shape)}
+                                                      {:type :set
+                                                       :attr :shape-ref
+                                                       :val (:shape-ref original-shape)}]}))
                                     updated-shapes))]
 
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
                    (dws/select-shapes (d/ordered-set (:id group))))))))))
-
-(defn- make-component-shape
-  "Clone the shape and all children. Generate new ids and detach
-  from parent and frame. Update the original shapes to have links
-  to the new ones."
-  [shape parent-id objects]
-  (let [update-new-shape (fn [new-shape original-shape]
-                           (assoc new-shape :frame-id nil))
-
-        update-original-shape (fn [original-shape new-shape]
-                                (cond-> original-shape
-                                  true
-                                  (assoc :shape-ref (:id new-shape))
-
-                                  (nil? (:parent-id new-shape))
-                                  (assoc :component-id (:id new-shape))))]
-
-    (cph/clone-object shape parent-id objects update-new-shape update-original-shape)))
 
 (defn delete-component
   [{:keys [id] :as params}]
@@ -268,7 +250,13 @@
                   (assoc :component-id (:id original-shape))
 
                   (and (nil? (:parent-id original-shape)) (some? file-id))
-                  (assoc :component-file file-id))))
+                  (assoc :component-file file-id)
+
+                  (and (nil? (:parent-id original-shape)) (nil? file-id))
+                  (dissoc :component-file)
+
+                  (some? (:parent-id original-shape))
+                  (dissoc :component-id :component-file))))
 
             [new-shape new-shapes _]
             (cph/clone-object component-shape
@@ -362,18 +350,6 @@
           (d/update-in-when [:workspace-libraries file-id :data]
                             cp/process-changes changes)))))
 
-(declare generate-sync-components-file)
-(declare generate-sync-components-page)
-(declare generate-sync-components-shape-and-children)
-(declare generate-sync-components-shape)
-(declare generate-sync-colors-file)
-(declare generate-sync-colors-page)
-(declare generate-sync-colors-shape)
-(declare remove-component-and-ref)
-(declare remove-ref)
-(declare update-attrs)
-(declare calc-new-pos)
-
 (defn reset-component
   [id]
   (us/assert ::us/uuid id)
@@ -393,7 +369,12 @@
               (get-in state [:workspace-libraries file-id :data :components]))
 
             [rchanges uchanges]
-            (generate-sync-components-shape-and-children root-shape page components true)]
+            (dwlh/generate-sync-shape-and-children-components root-shape
+                                                              objects
+                                                              components
+                                                              (:id page)
+                                                              nil
+                                                              true)]
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 
@@ -419,6 +400,9 @@
                                (cond-> new-shape
                                  true
                                  (assoc :frame-id nil)
+
+                                 (= (:component-id original-shape) component-id)
+                                 (dissoc :component-id)
 
                                  (some? (:shape-ref original-shape))
                                  (assoc :id (:shape-ref original-shape))))
@@ -457,6 +441,8 @@
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 
+(declare sync-file-2nd-stage)
+
 (defn sync-file
   [file-id]
   (us/assert (s/nilable ::us/uuid) file-id)
@@ -469,17 +455,38 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [[rchanges1 uchanges1] (generate-sync-components-file state file-id)
-            [rchanges2 uchanges2] (generate-sync-colors-file state file-id)
-            rchanges (concat rchanges1 rchanges2)
-            uchanges (concat uchanges1 uchanges2)]
+      (let [[rchanges1 uchanges1] (dwlh/generate-sync-file-components state file-id)
+            [rchanges2 uchanges2] (dwlh/generate-sync-library-components state file-id)
+            [rchanges3 uchanges3] (dwlh/generate-sync-file-colors state file-id)
+            rchanges (concat rchanges1 rchanges2 rchanges3)
+            uchanges (concat uchanges1 uchanges2 uchanges3)]
         (rx/concat
           (when rchanges
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})))
           (when file-id
             (rp/mutation :update-sync
                          {:file-id (get-in state [:workspace-file :id])
-                          :library-id file-id})))))))
+                          :library-id file-id}))
+          (when (seq rchanges2)
+            (rx/of (sync-file-2nd-stage file-id))))))))
+
+(defn sync-file-2nd-stage
+  "If some components have been modified, we need to launch another synchronization
+  to update the instances of the changed components."
+  ;; TODO: this does not work if there are multiple nested components. Only the
+  ;;       first level will be updated.
+  ;;       To solve this properly, it would be better to launch another sync-file
+  ;;       recursively. But for this not to cause an infinite loop, we need to
+  ;;       implement updated-at at component level, to detect what components have
+  ;;       not changed, and then not to apply sync and terminate the loop.
+  [file-id]
+  (us/assert (s/nilable ::us/uuid) file-id)
+  (ptk/reify ::sync-file-2nd-stage
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [[rchanges uchanges] (dwlh/generate-sync-file-components state nil)]
+        (when rchanges
+          (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})))))))
 
 (def ignore-sync
   (ptk/reify ::sync-file
@@ -514,275 +521,4 @@
                    :callback do-update}
                   {:label (tr "workspace.updates.dismiss")
                    :callback do-dismiss}]))))))
-
-(defn- generate-sync-components-file
-  [state file-id]
-  (let [components
-        (if (nil? file-id)
-          (get-in state [:workspace-data :components])
-          (get-in state [:workspace-libraries file-id :data :components]))]
-    (when (some? components)
-      (loop [pages (seq (vals (get-in state [:workspace-data :pages-index])))
-             rchanges []
-             uchanges []]
-        (let [page (first pages)]
-          (if (nil? page)
-            [rchanges uchanges]
-            (let [[page-rchanges page-uchanges]
-                  (generate-sync-components-page file-id page components)]
-              (recur (next pages)
-                     (concat rchanges page-rchanges)
-                     (concat uchanges page-uchanges)))))))))
-
-(defn- generate-sync-components-page
-  [file-id page components]
-  (let [linked-shapes
-        (cph/select-objects #(and (some? (:component-id %))
-                                  (= (:component-file %) file-id))
-                            page)]
-    (loop [shapes (seq linked-shapes)
-           rchanges []
-           uchanges []]
-      (let [shape (first shapes)]
-        (if (nil? shape)
-          [rchanges uchanges]
-          (let [[shape-rchanges shape-uchanges]
-                (generate-sync-components-shape-and-children shape page components false)]
-            (recur (next shapes)
-                   (concat rchanges shape-rchanges)
-                   (concat uchanges shape-uchanges))))))))
-
-(defn- generate-sync-components-shape-and-children
-  [root-shape page components reset-touched?]
-  (let [objects (get page :objects)
-        all-shapes (cph/get-object-with-children (:id root-shape) objects)
-        component (get components (:component-id root-shape))
-        root-component (get-in component [:objects (:shape-ref root-shape)])]
-    (loop [shapes (seq all-shapes)
-           rchanges []
-           uchanges []]
-      (let [shape (first shapes)]
-        (if (nil? shape)
-          [rchanges uchanges]
-          (let [[shape-rchanges shape-uchanges]
-                (generate-sync-components-shape shape root-shape root-component page component reset-touched?)]
-            (recur (next shapes)
-                   (concat rchanges shape-rchanges)
-                   (concat uchanges shape-uchanges))))))))
-
-(defn- generate-sync-components-shape
-  [shape root-shape root-component page component reset-touched?]
-  (if (nil? component)
-    (remove-component-and-ref shape page)
-    (let [component-shape (get (:objects component) (:shape-ref shape))]
-      (if (nil? component-shape)
-        (remove-ref shape page)
-        (update-attrs shape
-                      component-shape
-                      root-shape
-                      root-component
-                      page
-                      reset-touched?)))))
-
-(defn- remove-component-and-ref
-  [shape page]
-  [[{:type :mod-obj
-     :page-id (:id page)
-     :id (:id shape)
-     :operations [{:type :set
-                   :attr :component-id
-                   :val nil}
-                  {:type :set
-                   :attr :component-file
-                   :val nil}
-                  {:type :set
-                   :attr :shape-ref
-                   :val nil}
-                  {:type :set-touched
-                   :touched nil}]}]
-   [{:type :mod-obj
-     :page-id (:id page)
-     :id (:id shape)
-     :operations [{:type :set
-                   :attr :component-id
-                   :val (:component-id shape)}
-                  {:type :set
-                   :attr :component-file
-                   :val (:component-file shape)}
-                  {:type :set
-                   :attr :shape-ref
-                   :val (:shape-ref shape)}
-                  {:type :set-touched
-                   :touched (:touched shape)}]}]])
-
-(defn- remove-ref
-  [shape page]
-  [[{:type :mod-obj
-     :page-id (:id page)
-     :id (:id shape)
-     :operations [{:type :set
-                   :attr :shape-ref
-                   :val nil}
-                  {:type :set-touched
-                   :touched nil}]}]
-   [{:type :mod-obj
-     :page-id (:id page)
-     :id (:id shape)
-     :operations [{:type :set
-                   :attr :shape-ref
-                   :val (:shape-ref shape)}
-                  {:type :set-touched
-                   :touched (:touched shape)}]}]])
-
-(defn- update-attrs
-  [shape component-shape root-shape root-component page reset-touched?]
-  (let [new-pos (calc-new-pos shape component-shape root-shape root-component)]
-    (loop [attrs (seq (keys cp/component-sync-attrs))
-           roperations [{:type :set
-                         :attr :x
-                         :val (:x new-pos)}
-                        {:type :set
-                         :attr :y
-                         :val (:y new-pos)}]
-           uoperations [{:type :set
-                         :attr :x
-                         :val (:x shape)}
-                        {:type :set
-                         :attr :y
-                         :val (:y shape)}]]
-
-      (let [attr (first attrs)]
-        (if (nil? attr)
-          (let [roperations (if reset-touched?
-                              (conj roperations
-                                    {:type :set-touched
-                                     :touched nil})
-                              roperations)
-
-                uoperations (if reset-touched?
-                              (conj uoperations
-                                    {:type :set-touched
-                                     :touched (:touched shape)})
-                              uoperations)
-
-                rchanges [{:type :mod-obj
-                           :page-id (:id page)
-                           :id (:id shape)
-                           :operations roperations}]
-                uchanges [{:type :mod-obj
-                           :page-id (:id page)
-                           :id (:id shape)
-                           :operations uoperations}]]
-            [rchanges uchanges])
-          (if-not (contains? shape attr)
-            (recur (next attrs)
-                   roperations
-                   uoperations)
-            (let [roperation {:type :set
-                              :attr attr
-                              :val (get component-shape attr)
-                              :ignore-touched true}
-                  uoperation {:type :set
-                              :attr attr
-                              :val (get shape attr)
-                              :ignore-touched true}
-
-                  attr-group (get cp/component-sync-attrs attr)
-                  touched    (get shape :touched #{})]
-              (if (or (not (touched attr-group)) reset-touched?)
-                (recur (next attrs)
-                       (conj roperations roperation)
-                       (conj uoperations uoperation))
-                (recur (next attrs)
-                       roperations
-                       uoperations)))))))))
-
-(defn- calc-new-pos
-  [shape component-shape root-shape root-component]
-  (let [root-pos           (gpt/point (:x root-shape) (:y root-shape))
-        root-component-pos (gpt/point (:x root-component) (:y root-component))
-        component-pos      (gpt/point (:x component-shape) (:y component-shape))
-        delta              (gpt/subtract component-pos root-component-pos)
-        shape-pos          (gpt/point (:x shape) (:y shape))
-        new-pos            (gpt/add root-pos delta)]
-    new-pos))
-
-(defn- generate-sync-colors-file
-  [state file-id]
-  (let [colors
-        (if (nil? file-id)
-          (get-in state [:workspace-data :colors])
-          (get-in state [:workspace-libraries file-id :data :colors]))]
-    (when (some? colors)
-      (loop [pages (seq (vals (get-in state [:workspace-data :pages-index])))
-             rchanges []
-             uchanges []]
-        (let [page (first pages)]
-          (if (nil? page)
-            [rchanges uchanges]
-            (let [[page-rchanges page-uchanges]
-                  (generate-sync-colors-page file-id page colors)]
-              (recur (next pages)
-                     (concat rchanges page-rchanges)
-                     (concat uchanges page-uchanges)))))))))
-
-(defn- generate-sync-colors-page
-  [file-id page colors]
-  (let [linked-color? (fn [shape]
-                        (some
-                          #(let [attr (name %)
-                                 attr-ref-id (keyword (str attr "-ref-id"))
-                                 attr-ref-file (keyword (str attr "-ref-file"))]
-                             (and (get shape attr-ref-id)
-                                  (= file-id (get shape attr-ref-file))))
-                          cp/color-sync-attrs))
-
-        linked-shapes (cph/select-objects linked-color? page)]
-    (loop [shapes (seq linked-shapes)
-           rchanges []
-           uchanges []]
-      (let [shape (first shapes)]
-        (if (nil? shape)
-          [rchanges uchanges]
-          (let [[shape-rchanges shape-uchanges]
-                (generate-sync-colors-shape shape page colors)]
-            (recur (next shapes)
-                   (concat rchanges shape-rchanges)
-                   (concat uchanges shape-uchanges))))))))
-
-(defn- generate-sync-colors-shape
-  [shape page colors]
-  (loop [attrs (seq cp/color-sync-attrs)
-         roperations []
-         uoperations []]
-    (let [attr (first attrs)]
-      (if (nil? attr)
-        (if (empty? roperations)
-          [[] []]
-          (let [rchanges [{:type :mod-obj
-                           :page-id (:id page)
-                           :id (:id shape)
-                           :operations roperations}]
-                uchanges [{:type :mod-obj
-                           :page-id (:id page)
-                           :id (:id shape)
-                           :operations uoperations}]]
-            [rchanges uchanges]))
-        (let [attr-ref-id (keyword (str (name attr) "-ref-id"))]
-          (if-not (contains? shape attr-ref-id)
-            (recur (next attrs)
-                   roperations
-                   uoperations)
-            (let [color (get colors (get shape attr-ref-id))
-                  roperation {:type :set
-                              :attr attr
-                              :val (:value color)
-                              :ignore-touched true}
-                  uoperation {:type :set
-                              :attr attr
-                              :val (get shape attr)
-                              :ignore-touched true}]
-              (recur (next attrs)
-                     (conj roperations roperation)
-                     (conj uoperations uoperation)))))))))
 
