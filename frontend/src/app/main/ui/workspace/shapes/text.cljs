@@ -24,6 +24,7 @@
    [app.main.ui.shapes.text :as text]
    [app.main.ui.keyboard :as kbd]
    [app.main.ui.context :as muc]
+   [app.main.ui.shapes.filters :as filters]
    [app.main.fonts :as fonts]
    [app.util.color :as color]
    [app.util.dom :as dom]
@@ -73,11 +74,15 @@
           (dom/stop-propagation event)
           (dom/prevent-default event)
           (when selected?
-            (st/emit! (dw/start-edition-mode (:id shape)))))]
+            (st/emit! (dw/start-edition-mode (:id shape)))))
+
+        filter-id (mf/use-memo filters/get-filter-id)]
 
     [:g.shape {:on-double-click on-double-click
                :on-mouse-down on-mouse-down
-               :on-context-menu on-context-menu}
+               :on-context-menu on-context-menu
+               :filter (filters/filter-str filter-id shape)}
+     [:& filters/filters {:filter-id filter-id :shape shape}]
      [:*
       (when (and (not edition?) (not embed-resources?))
         [:g {:opacity 0

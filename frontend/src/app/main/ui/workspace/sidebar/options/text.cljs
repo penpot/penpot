@@ -21,6 +21,7 @@
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.fill :refer [fill-menu]]
+   [app.main.ui.workspace.sidebar.options.shadow :refer [shadow-menu]]
    [app.main.ui.components.editable-select :refer [editable-select]]
    [app.util.dom :as dom]
    [app.main.fonts :as fonts]
@@ -442,6 +443,9 @@
                     :type type
                     :values converted-fill-values
                     :editor editor}]
+     [:& shadow-menu {:ids ids
+                      :type type
+                      :values (select-keys shape [:shadow])}]
      [:& text-menu {:ids ids
                     :type type
                     :editor editor
