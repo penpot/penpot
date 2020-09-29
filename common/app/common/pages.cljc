@@ -299,6 +299,31 @@
 (s/def :internal.file/recent-colors
   (s/coll-of ::string :kind vector?))
 
+(s/def :internal.typography/id ::id)
+(s/def :internal.typography/name ::string)
+(s/def :internal.typography/font-id ::string)
+(s/def :internal.typography/font-family ::string)
+(s/def :internal.typography/font-variant-id ::string)
+(s/def :internal.typography/font-size ::string)
+(s/def :internal.typography/font-weight ::string)
+(s/def :internal.typography/font-style ::string)
+(s/def :internal.typography/line-height ::string)
+(s/def :internal.typography/letter-spacing ::string)
+(s/def :internal.typography/text-transform ::string)
+
+(s/def ::typography
+  (s/keys :req-un [:internal.typography/id
+                   :internal.typography/name
+                   :internal.typography/font-id
+                   :internal.typography/font-family
+                   :internal.typography/font-variant-id
+                   :internal.typography/font-size
+                   :internal.typography/font-weight
+                   :internal.typography/font-style
+                   :internal.typography/line-height
+                   :internal.typography/letter-spacing
+                   :internal.typography/text-transform]))
+
 (s/def :internal.file/pages
   (s/coll-of ::uuid :kind vector?))
 
@@ -411,6 +436,17 @@
 
 (defmethod change-spec :del-component [_]
   (s/keys :req-un [::id]))
+
+(s/def :internal.changes.typography/typography ::typography)
+
+(defmethod change-spec :add-typography [_]
+  (s/keys :req-un [:internal.changes.typography/typography]))
+
+(defmethod change-spec :mod-typography [_]
+  (s/keys :req-un [:internal.changes.typography/typography]))
+
+(defmethod change-spec :del-typography [_]
+  (s/keys :req-un [:internal.typography/id]))
 
 (s/def ::change (s/multi-spec change-spec :type))
 (s/def ::changes (s/coll-of ::change))
@@ -803,6 +839,8 @@
                                     (subvec rc 1)
                                     rc)))))
 
+;; -- Media
+
 (defmethod process-change :add-media
   [data {:keys [object]}]
   (update data :media assoc (:id object) object))
@@ -814,6 +852,8 @@
 (defmethod process-change :del-media
   [data {:keys [id]}]
   (update data :media dissoc id))
+
+;; -- Components
 
 (defmethod process-change :add-component
   [data {:keys [id name shapes]}]
@@ -832,6 +872,22 @@
 (defmethod process-change :del-component
   [data {:keys [id]}]
   (d/dissoc-in data [:components id]))
+
+;; -- Typography
+
+(defmethod process-change :add-typography
+  [data {:keys [typography]}]
+  (update data :typography assoc (:id typography) typography))
+
+(defmethod process-change :mod-typography
+  [data {:keys [typography]}]
+  (d/update-in-when data [:typography (:id typography)] merge typography))
+
+(defmethod process-change :del-typography
+  [data {:keys [id]}]
+  (update data :typography dissoc id))
+
+;; -- Operations
 
 (defmethod process-operation :set
   [shape op]

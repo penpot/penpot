@@ -245,7 +245,8 @@
   [change]
   (or (#{:add-color :mod-color :del-color
          :add-media :mod-media :del-media
-         :add-component :mod-component :del-component} (:type change))
+         :add-component :mod-component :del-component
+         :add-typography :mod-typography :del-typography} (:type change))
       (and (= (:type change) :mod-obj)
            (some? (:component-id change)))))
 

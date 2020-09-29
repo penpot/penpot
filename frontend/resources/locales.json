@@ -2801,5 +2801,8 @@
       "ru" : "Кликни чтобы закончить фигуру",
       "es" : "Pulsar para cerrar la ruta"
     }
-  }
+  },
+
+  "workspace.assets.typography": "Typographies",
+  "workspace.libraries.typography": "%s typographies"
 }

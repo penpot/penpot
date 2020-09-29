@@ -289,12 +289,15 @@
           (dom/prevent-default event)
           (dom/stop-propagation event)
 
+
           (let [sidebar (dom/get-element "settings-bar")
+                assets (dom/get-element-by-class "assets-bar")
                 cpicker (dom/get-element-by-class "colorpicker-tooltip")
                 self    (mf/ref-val self-ref)
                 target  (dom/get-target event)
                 selecting? (mf/ref-val selecting-ref)]
             (when-not (or (.contains sidebar target)
+                          (.contains assets target)
                           (.contains self target)
                           (and cpicker (.contains cpicker target)))
               (if selecting?
@@ -340,7 +343,8 @@
            (when (not read-only?)
              (let [content (js->clj val :keywordize-keys true)
                    content (first content)]
-               (st/emit! (dw/update-shape id {:content content}))
+               ;; Append timestamp so we can react to cursor change events
+               (st/emit! (dw/update-shape id {:content (assoc content :ts (js->clj (.now js/Date)))}))
                (reset! state val)
                (reset! content-var content)))))]
 

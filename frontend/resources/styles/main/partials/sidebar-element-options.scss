@@ -69,8 +69,8 @@
       font-size: $fs13;
       padding: $small $x-small;
       width: 100%;
+      align-items: center;
     }
-
   }
 
   .element-list {
@@ -768,7 +768,7 @@
   z-index: 10;
 }
 
-.element-set-content .advanced-options {
+.advanced-options {
   background-color: #303236;
   border-radius: 4px;
   left: -8px;
@@ -875,4 +875,120 @@
 
 .element-set-options-group:hover .element-set-actions {
     visibility: visible;
+}
+
+
+.typography-entry {
+    margin: 0.5rem 0.3rem;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    .typography-selection-wrapper {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        flex: 1;
+        height: 100%;
+
+        &.is-selectable {
+            cursor: pointer;
+        }
+    }
+
+    .typography-sample {
+        font-size: 17px;
+        color: $color-white;
+        margin: 0 0.5rem;
+
+        font-family: sourcesanspro;
+        font-style: normal;
+        font-weight: normal;
+    }
+
+    .typography-name {
+        flex-grow: 1;
+        font-size: 11px;
+        margin-top: 4px;
+    }
+
+    .element-set-actions-button svg {
+        width: 10px;
+        height: 10px;
+    }
+}
+
+.asset-group {
+    .typography-entry {
+        margin: 0.25rem 0;
+    }
+
+    .element-set-content .font-option,
+    .element-set-content .size-option {
+        margin: 0.5rem 0;
+    }
+    .element-set-content .variant-option {
+        margin-left: 0.5rem;
+    }
+}
+
+.row-flex input.adv-typography-name {
+    font-size: 14px;
+    color: $color-gray-10;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    background: #303236;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+}
+
+
+
+.size-option .custom-select-dropdown {
+    position: fixed;
+    max-height: 15rem;
+    min-width: 6rem;
+    margin-top: 25px;
+    left: initial;
+}
+
+.typography-read-only-data {
+    font-size: 12px;
+    color: $color-white;
+
+    .typography-name {
+        font-size: 14px;
+    }
+    
+    .row-flex {
+        padding: 0.5rem 0;
+    }
+
+    .label {
+        color: $color-gray-30;
+
+        &::after {
+            content: ':';
+            margin-right: 0.25rem;
+        }
+    }
+
+    .go-to-lib-button {
+        transition: border 0.3s, color 0.3s;
+        text-align: center;
+        background: $color-gray-60;
+        padding: 0.5rem;
+        border-radius: 2px;
+        cursor: pointer;
+        font-size: 14px;
+        margin-top: 1rem;
+        border: 1px solid $color-gray-60;
+
+        &:hover {
+            border: 1px solid $color-primary;
+            color: $color-primary;
+        }
+    }
 }

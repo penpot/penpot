@@ -15,7 +15,6 @@
 (defn- load-query-services
   []
   (require 'app.services.queries.media)
-  (require 'app.services.queries.colors)
   (require 'app.services.queries.projects)
   (require 'app.services.queries.files)
   (require 'app.services.queries.profile)
@@ -26,7 +25,6 @@
   []
   (require 'app.services.mutations.demo)
   (require 'app.services.mutations.media)
-  (require 'app.services.mutations.colors)
   (require 'app.services.mutations.projects)
   (require 'app.services.mutations.files)
   (require 'app.services.mutations.profile)

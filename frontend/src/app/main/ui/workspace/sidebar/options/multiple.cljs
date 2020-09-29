@@ -144,11 +144,11 @@
        [:& text-menu {:ids text-ids
                       :type :multiple
                       :editor nil
-                      :font-values font-values
-                      :align-values align-values
-                      :spacing-values spacing-values
-                      :valign-values valign-values
-                      :decoration-values decoration-values
-                      :transform-values transform-values
+                      :values (merge font-values
+                                     align-values
+                                     spacing-values
+                                     valign-values
+                                     decoration-values
+                                     transform-values)
                       :shapes shapes}])]))
 
