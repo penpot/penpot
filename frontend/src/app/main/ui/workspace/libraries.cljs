@@ -27,7 +27,8 @@
   [library]
   (let [components-count (count (get-in library [:data :components] []))
         graphics-count (count (get-in library [:data :media] []))
-        colors-count (count (get-in library [:data :colors] []))]
+        colors-count (count (get-in library [:data :colors] []))
+        typography-count (count (get-in library [:data :typography] []))]
     ;; Include a &nbsp; so this block has always some content
     (str
       (str/join " · "
@@ -39,7 +40,10 @@
                   (conj (tr "workspace.libraries.graphics" graphics-count))
 
                   (< 0 colors-count)
-                  (conj (tr "workspace.libraries.colors" colors-count))))
+                  (conj (tr "workspace.libraries.colors" colors-count))
+
+                  (< 0 typography-count)
+                  (conj (tr "workspace.libraries.typography" typography-count))))
       "\u00A0")))
 
 (mf/defc libraries-tab

@@ -28,6 +28,7 @@
 (def auto-width (icon-xref :auto-width))
 (def box (icon-xref :box))
 (def chain (icon-xref :chain))
+(def unchain (icon-xref :unchain))
 (def chat (icon-xref :chat))
 (def circle (icon-xref :circle))
 (def close (icon-xref :close))

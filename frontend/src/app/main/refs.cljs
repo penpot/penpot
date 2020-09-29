@@ -97,6 +97,12 @@
                (get-in state [:workspace-data :recent-colors] []))
              st/state))
 
+(def workspace-file-typography
+  (l/derived (fn [state]
+               (when-let [file (:workspace-file state)]
+                 (get-in file [:data :typography])))
+             st/state))
+
 (def workspace-project
   (l/derived :workspace-project st/state))
 

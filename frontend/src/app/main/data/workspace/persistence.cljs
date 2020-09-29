@@ -300,8 +300,7 @@
                   (rx/mapcat
                     #(rx/zip (rp/query :file-library {:file-id library-id})
                              (rp/query :media-objects {:file-id library-id
-                                                       :is-local false})
-                             (rp/query :colors {:file-id library-id}))))
+                                                       :is-local false}))))
              (rx/map file-linked))))))
 
 (defn file-linked

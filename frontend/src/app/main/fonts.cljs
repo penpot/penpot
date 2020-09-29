@@ -96,6 +96,9 @@
 (register! :builtin local-fonts)
 (register! :google google-fonts)
 
+(defn get-font-data [id]
+  (get @fontsdb id))
+
 (defn resolve-variants
   [id]
   (get-in @fontsdb [id :variants]))
@@ -164,3 +167,8 @@
 (defn ready [cb]
   (-> (obj/get-in js/document ["fonts" "ready"])
       (p/then cb)))
+
+(defn get-default-variant [{:keys [variants]}]
+  (or
+   (d/seek #(or (= (:id %) "regular") (= (:name %) "regular")) variants)
+   (first variants)))

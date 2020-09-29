@@ -76,6 +76,8 @@
   [node]
   (.-value node))
 
+(def get-target-val (comp get-value get-target))
+
 (defn click
   "Click a node"
   [node]

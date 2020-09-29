@@ -25,29 +25,6 @@
    [app.main.data.modal :as md]
    [app.common.pages-helpers :as cph]))
 
-(declare create-color-result)
-
-(defn create-color
-  [file-id color]
-  (s/assert (s/nilable uuid?) file-id)
-  (ptk/reify ::create-color
-    ptk/WatchEvent
-    (watch [_ state s]
-
-      (->> (rp/mutation! :create-color {:file-id file-id
-                                        :content color
-                                        :name color})
-           (rx/map (partial create-color-result file-id))))))
-
-(defn create-color-result
-  [file-id color]
-  (ptk/reify ::create-color-result
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (update-in [:workspace-file :colors] #(conj % color))
-          (assoc-in [:workspace-local :color-for-rename] (:id color))))))
-
 (def clear-color-for-rename
   (ptk/reify ::clear-color-for-rename
     ptk/UpdateEvent
@@ -72,44 +49,6 @@
     (update [_ state]
       (-> state
           (update-in [:workspace-file :colors] #(d/replace-by-id % color))))))
-
-(declare update-color-result)
-
-(defn update-color
-  [file-id color-id content]
-  (ptk/reify ::update-color
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (->> (rp/mutation! :update-color {:id color-id
-                                        :content content})
-           (rx/map (partial update-color-result file-id))))))
-
-(defn update-color-result
-  [file-id color]
-  (ptk/reify ::update-color-result
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (update-in [:workspace-file :colors] #(d/replace-by-id % color))))))
-
-(declare delete-color-result)
-
-(defn delete-color
-  [file-id color-id]
-  (ptk/reify ::delete-color
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (->> (rp/mutation! :delete-color {:id color-id})
-           (rx/map #(delete-color-result file-id color-id))))))
-
-(defn delete-color-result
-  [file-id color-id]
-  (ptk/reify ::delete-color-result
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (update-in [:workspace-file :colors]
-                     (fn [colors] (filter #(not= (:id %) color-id) colors)))))))
 
 (defn change-palette-size [size]
   (s/assert #{:big :small} size)
