@@ -8,7 +8,7 @@
 
 # UXBOX #
 
-![UXBOX](https://piweek.com/images/projects/uxbox.jpg)
+![UXBOX](https://raw.githubusercontent.com/uxbox/uxbox/develop/docs/uxbox_screenshot.png)
 
 
 ## Introduction ##
