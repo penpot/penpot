@@ -76,50 +76,56 @@
   (let [page-id (get @state :current-page-id)]
     (logjs "state" (get-in @state [:workspace-data :pages-index page-id :objects]))))
 
-(defn ^:export dump-tree []
-  (let [page-id    (get @state :current-page-id)
-        objects    (get-in @state [:workspace-data :pages-index page-id :objects])
-        components (get-in @state [:workspace-data :components])
-        libraries  (get-in @state [:workspace-libraries])
-        root (d/seek #(nil? (:parent-id %)) (vals objects))]
+(defn ^:export dump-tree
+  ([] (dump-tree false))
+  ([show-touched]
+   (let [page-id    (get @state :current-page-id)
+         objects    (get-in @state [:workspace-data :pages-index page-id :objects])
+         components (get-in @state [:workspace-data :components])
+         libraries  (get-in @state [:workspace-libraries])
+         root (d/seek #(nil? (:parent-id %)) (vals objects))]
 
-    (letfn [(show-shape [shape-id level objects]
-              (let [shape (get objects shape-id)]
-                (println (str/pad (str (str/repeat "  " level)
-                                       (:name shape))
-                                  {:length 20
-                                   :type :right})
-                         (show-component shape objects))
-                (when (:shapes shape)
-                  (dorun (for [shape-id (:shapes shape)]
-                           (show-shape shape-id (inc level) objects))))))
+     (letfn [(show-shape [shape-id level objects]
+               (let [shape (get objects shape-id)]
+                 (println (str/pad (str (str/repeat "  " level)
+                                        (:name shape))
+                                   {:length 20
+                                    :type :right})
+                          (show-component shape objects))
+                 (when (and show-touched (seq (:touched shape)))
+                   (println (str (str/repeat "  " level)
+                                 "    "
+                                 (str (:touched shape)))))
+                 (when (:shapes shape)
+                   (dorun (for [shape-id (:shapes shape)]
+                            (show-shape shape-id (inc level) objects))))))
 
-            (show-component [shape objects]
-              (let [root-id           (cph/get-root-component (:id shape) objects)
-                    root-shape        (when root-id (get objects root-id))
-                    component-id      (when root-shape (:component-id root-shape))
-                    component-file-id (when root-shape (:component-file root-shape))
-                    component-file    (when component-file-id (get libraries component-file-id))
-                    shape-ref         (:shape-ref shape)
-                    component         (when component-id
-                                        (if component-file
-                                          (get-in component-file [:data :components component-id])
-                                          (get components component-id)))
-                    component-shape (when (and component shape-ref)
-                                      (get-in component [:objects shape-ref]))]
-                (if component-shape
-                  (str/format " %s--> %s%s"
-                       (if (:component-id shape) "#" "-")
-                       (when component-file (str/format "<%s> " (:name component-file)))
-                       (:name component-shape))
-                  "")))]
+             (show-component [shape objects]
+               (let [root-id           (cph/get-root-component (:id shape) objects)
+                     root-shape        (when root-id (get objects root-id))
+                     component-id      (when root-shape (:component-id root-shape))
+                     component-file-id (when root-shape (:component-file root-shape))
+                     component-file    (when component-file-id (get libraries component-file-id))
+                     shape-ref         (:shape-ref shape)
+                     component         (when component-id
+                                         (if component-file
+                                           (get-in component-file [:data :components component-id])
+                                           (get components component-id)))
+                     component-shape (when (and component shape-ref)
+                                       (get-in component [:objects shape-ref]))]
+                 (if component-shape
+                   (str/format " %s--> %s%s"
+                               (if (:component-id shape) "#" "-")
+                               (when component-file (str/format "<%s> " (:name component-file)))
+                               (:name component-shape))
+                   "")))]
 
-      (println "[Workspace]")
-      (show-shape (:id root) 0 objects)
+       (println "[Workspace]")
+       (show-shape (:id root) 0 objects)
 
-      (dorun (for [component (vals components)]
-               (do
-                 (println)
-                 (println (str/format "[%s]" (:name component)))
-                 (show-shape (:id component) 0 (:objects component))))))))
+       (dorun (for [component (vals components)]
+                (do
+                  (println)
+                  (println (str/format "[%s]" (:name component)))
+                  (show-shape (:id component) 0 (:objects component)))))))))
 
