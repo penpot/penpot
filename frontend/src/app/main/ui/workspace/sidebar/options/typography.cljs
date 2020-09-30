@@ -207,10 +207,23 @@
 
 
 (mf/defc typography-entry
-  [{:keys [typography read-only? on-select on-change on-deattach on-context-menu]}]
-  (let [open? (mf/use-state false)
+  [{:keys [typography read-only? on-select on-change on-deattach on-context-menu editting? focus-name?]}]
+  (let [open? (mf/use-state editting?)
         selected (mf/deref refs/selected-shapes)
-        hover-deattach (mf/use-state false)]
+        hover-deattach (mf/use-state false)
+        name-input-ref (mf/use-ref nil)]
+
+    (mf/use-effect
+     (mf/deps editting?)
+     (fn [] (reset! open? editting?)))
+
+    (mf/use-effect
+     (mf/deps focus-name?)
+     (fn []
+       (when-let [node (mf/ref-val name-input-ref)]
+         (dom/focus! node)
+         (dom/select-text! node))))
+
     [:*
      [:div.element-set-options-group.typography-entry
       [:div.typography-selection-wrapper
@@ -270,10 +283,8 @@
           [:div.row-flex
            [:input.element-name.adv-typography-name
             {:type "text"
+             :ref name-input-ref
              :value (:name typography)
              :on-change #(on-change {:name (dom/get-target-val %)})}]]]
          [:& typography-options {:values typography
-                                 :on-change on-change}]]
-        )
-
-      ]]))
+                                 :on-change on-change}]])]]))

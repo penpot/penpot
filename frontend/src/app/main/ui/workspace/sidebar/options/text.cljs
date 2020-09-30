@@ -303,4 +303,5 @@
      [:& text-menu {:ids ids
                     :type type
                     :values text-values
+                    :editor editor
                     :shapes [shape]}]]))

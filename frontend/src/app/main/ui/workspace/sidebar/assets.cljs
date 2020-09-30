@@ -338,6 +338,7 @@
                              :left nil})
 
         selected (mf/deref refs/selected-shapes)
+        local (deref refs/workspace-local)
 
         add-typography
         (mf/use-callback
@@ -357,7 +358,7 @@
                        {:typography-ref-file (when-not local? file-id)
                         :typography-ref-id (:id typography)}
                        (d/without-keys typography [:id :name]))]
-            (run! #(st/emit! (dwt/update-text-attrs {:id % :editor nil :attrs attrs}))
+            (run! #(st/emit! (dwt/update-text-attrs {:id % :editor (get-in local [:editors %]) :attrs attrs}))
                   selected)))
 
         on-context-menu
