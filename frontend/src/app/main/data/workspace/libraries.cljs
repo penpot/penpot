@@ -203,7 +203,7 @@
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 
 (defn instantiate-component
-  [file-id component-id]
+  [file-id component-id position]
   (us/assert (s/nilable ::us/uuid) file-id)
   (us/assert ::us/uuid component-id)
   (ptk/reify ::instantiate-component
@@ -215,12 +215,7 @@
             component-shape (get-in component [:objects (:id component)])
 
             orig-pos  (gpt/point (:x component-shape) (:y component-shape))
-            mouse-pos @ms/mouse-position
-            delta     (gpt/subtract mouse-pos orig-pos)
-
-            _ (js/console.log "orig-pos" (clj->js orig-pos))
-            _ (js/console.log "mouse-pos" (clj->js mouse-pos))
-            _ (js/console.log "delta" (clj->js delta))
+            delta     (gpt/subtract position orig-pos)
 
             page-id   (:current-page-id state)
             objects   (dwc/lookup-page-objects state page-id)
