@@ -505,8 +505,13 @@
                                             (assoc :y final-y)))))
 
               (dnd/has-type? event "app/component")
-              (let [{:keys [component-id file-id]} (dnd/get-data event "app/component")]
-                (st/emit! (dwl/instantiate-component file-id component-id)))
+              (let [{:keys [component file-id]} (dnd/get-data event "app/component")
+                    shape (get-in component [:objects (:id component)])
+                    final-x (- (:x viewport-coord) (/ (:width shape) 2))
+                    final-y (- (:y viewport-coord) (/ (:height shape) 2))]
+                (st/emit! (dwl/instantiate-component file-id
+                                                     (:id component)
+                                                     (gpt/point final-x final-y))))
 
               (dnd/has-type? event "text/uri-list")
               (let [data (dnd/get-data event "text/uri-list")

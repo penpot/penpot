@@ -69,9 +69,9 @@
 
         on-drag-start
         (mf/use-callback
-         (fn [component-id event]
+         (fn [component event]
            (dnd/set-data! event "app/component" {:file-id (if local? nil file-id)
-                                                 :component-id component-id})
+                                                 :component component})
            (dnd/set-allowed-effect! event "move")))]
 
     [:div.asset-group
@@ -83,7 +83,7 @@
         [:div.grid-cell {:key (:id component)
                          :draggable true
                          :on-context-menu (on-context-menu (:id component))
-                         :on-drag-start (partial on-drag-start (:id component))}
+                         :on-drag-start (partial on-drag-start component)}
          [:& exports/component-svg {:group (get-in component [:objects (:id component)])
                                     :objects (:objects component)}]
          [:div.cell-name (:name component)]])
