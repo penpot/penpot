@@ -283,7 +283,8 @@
           items (conj-undo-entry items entry)]
       (-> state
           (update :workspace-undo assoc :items items
-                                        :index (inc index))))
+                                        :index (min (inc index)
+                                                    (dec MAX-UNDO-SIZE)))))
     state))
 
 (defn- accumulate-undo-entry
