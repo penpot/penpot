@@ -81,8 +81,8 @@
             (let [[page-rchanges page-uchanges]
                   (generate-sync-page-components page library-id components)]
               (recur (next pages)
-                     (concat rchanges page-rchanges)
-                     (concat uchanges page-uchanges)))))))))
+                     (d/concat rchanges page-rchanges)
+                     (d/concat uchanges page-uchanges)))))))))
 
 
 (defn generate-sync-page-components
@@ -107,8 +107,8 @@
                                                              nil
                                                              false)]
             (recur (next shapes)
-                   (concat rchanges shape-rchanges)
-                   (concat uchanges shape-uchanges))))))))
+                   (d/concat rchanges shape-rchanges)
+                   (d/concat uchanges shape-uchanges))))))))
 
 
 (defn generate-sync-library-components
@@ -132,8 +132,8 @@
                   (generate-sync-component-components
                     local-component library-id components)]
               (recur (next local-components)
-                     (concat rchanges comp-rchanges)
-                     (concat uchanges comp-uchanges)))))))))
+                     (d/concat rchanges comp-rchanges)
+                     (d/concat uchanges comp-uchanges)))))))))
 
 
 (defn generate-sync-component-components
@@ -158,8 +158,8 @@
                                                              (:id local-component)
                                                              false)]
             (recur (next shapes)
-                   (concat rchanges shape-rchanges)
-                   (concat uchanges shape-uchanges))))))))
+                   (d/concat rchanges shape-rchanges)
+                   (d/concat uchanges shape-uchanges))))))))
 
 
 (defn generate-sync-shape-and-children-components
@@ -187,8 +187,8 @@
                   component-id
                   reset-touched?)]
             (recur (next shapes)
-                   (concat rchanges shape-rchanges)
-                   (concat uchanges shape-uchanges))))))))
+                   (d/concat rchanges shape-rchanges)
+                   (d/concat uchanges shape-uchanges))))))))
 
 (defn generate-sync-shape-components
   "Generate changes to synchronize one shape that is linked to other shape
@@ -368,8 +368,8 @@
             (let [[page-rchanges page-uchanges]
                   (generate-sync-page-colors library-id page colors)]
               (recur (next pages)
-                     (concat rchanges page-rchanges)
-                     (concat uchanges page-uchanges)))))))))
+                     (d/concat rchanges page-rchanges)
+                     (d/concat uchanges page-uchanges)))))))))
 
 (defn generate-sync-page-colors
   "Generate changes to synchronize all shapes in a particular page."
@@ -393,8 +393,8 @@
           (let [[shape-rchanges shape-uchanges]
                 (generate-sync-shape-colors shape page colors)]
             (recur (next shapes)
-                   (concat rchanges shape-rchanges)
-                   (concat uchanges shape-uchanges))))))))
+                   (d/concat rchanges shape-rchanges)
+                   (d/concat uchanges shape-uchanges))))))))
 
 (defn generate-sync-shape-colors
   "Generate changes to synchronize colors of one shape."

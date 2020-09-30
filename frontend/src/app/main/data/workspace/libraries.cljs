@@ -413,7 +413,7 @@
             [new-shape new-shapes original-shapes]
             (cph/clone-object root-shape nil objects update-new-shape touch-shape)
 
-            rchanges (concat
+            rchanges (d/concat
                        [{:type :mod-component
                        :id component-id
                        :name (:name new-shape)
@@ -426,7 +426,7 @@
                                              :touched nil}]})
                             original-shapes))
 
-            uchanges (concat
+            uchanges (d/concat
                        [{:type :mod-component
                          :id component-id
                          :name (:name component-obj)
@@ -458,8 +458,8 @@
       (let [[rchanges1 uchanges1] (dwlh/generate-sync-file-components state file-id)
             [rchanges2 uchanges2] (dwlh/generate-sync-library-components state file-id)
             [rchanges3 uchanges3] (dwlh/generate-sync-file-colors state file-id)
-            rchanges (concat rchanges1 rchanges2 rchanges3)
-            uchanges (concat uchanges1 uchanges2 uchanges3)]
+            rchanges (d/concat rchanges1 rchanges2 rchanges3)
+            uchanges (d/concat uchanges1 uchanges2 uchanges3)]
         (rx/concat
           (when rchanges
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})))
