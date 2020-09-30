@@ -9,24 +9,166 @@
 
 (ns app.main.data.workspace.libraries-helpers
   (:require
+   [cljs.spec.alpha :as s]
+   [app.common.spec :as us]
    [app.common.data :as d]
    [app.common.pages-helpers :as cph]
    [app.common.geom.point :as gpt]
-   [app.common.pages :as cp]))
+   [app.common.pages :as cp]
+   [app.util.text :as ut]))
 
-(declare generate-sync-file-components)
-(declare generate-sync-page-components)
-(declare generate-sync-library-components)
+(defonce empty-changes [[] []])
+
+(declare generate-sync-page)
+(declare generate-sync-shape)
+
 (declare generate-sync-component-components)
 (declare generate-sync-shape-and-children-components)
 (declare generate-sync-shape-components)
-(declare generate-sync-file-colors)
-(declare generate-sync-page-colors)
-(declare generate-sync-shape-colors)
 (declare remove-component-and-ref)
 (declare remove-ref)
 (declare update-attrs)
 (declare calc-new-pos)
+
+(defn generate-sync-file
+  "Generic method that given a type of asset will iterate through the file pages
+  and call synchronize"
+  [asset-type library-id state]
+
+  (s/assert #{:colors :components :typography} asset-type)
+  (s/assert (s/nilable ::us/uuid) library-id)
+
+  (let [library-items
+        (if (nil? library-id)
+          (get-in state [:workspace-data asset-type])
+          (get-in state [:workspace-libraries library-id :data asset-type]))]
+
+    (if (empty? library-items)
+      empty-changes
+
+      (loop [pages (vals (get-in state [:workspace-data :pages-index]))
+             rchanges []
+             uchanges []]
+        (if-let [page (first pages)]
+          (let [[page-rchanges page-uchanges]
+                (generate-sync-page asset-type library-id library-items page)]
+            (recur (next pages)
+                   (d/concat rchanges page-rchanges)
+                   (d/concat uchanges page-uchanges)))
+          [rchanges uchanges])))))
+
+(defn has-asset-reference-fn
+  [asset-type library-id]
+  (case asset-type
+    :components
+    (fn [shape] (and (some? (:component-id shape))
+                     (= (:component-file shape) library-id)))
+
+    :colors
+    (fn [shape] (some
+                 #(let [attr (name %)
+                        attr-ref-id (keyword (str attr "-ref-id"))
+                        attr-ref-file (keyword (str attr "-ref-file"))]
+                    (and (get shape attr-ref-id)
+                         (= library-id (get shape attr-ref-file))))
+                 cp/color-sync-attrs))
+
+    :typography
+    (fn [shape]
+      (and (= (:type shape) :text)
+           (->> shape
+                :content
+                ;; Check if any node in the content has a reference for the library
+                (ut/some-node
+                 #(and (some? (:typography-ref-id %))
+                       (= library-id (:typography-ref-file %)))))))))
+
+(defn generate-sync-page
+  [asset-type library-id library-items page]
+  (let [has-asset-reference? (has-asset-reference-fn asset-type library-id)
+        linked-shapes (cph/select-objects has-asset-reference? page)]
+    (loop [shapes (seq linked-shapes)
+           rchanges []
+           uchanges []]
+      (if-let [shape (first shapes)]
+        (let [[shape-rchanges shape-uchanges]
+              (generate-sync-shape asset-type library-id library-items page shape)]
+          (recur (next shapes)
+                 (d/concat rchanges shape-rchanges)
+                 (d/concat uchanges shape-uchanges)))
+        [rchanges uchanges]))))
+
+(defmulti generate-sync-shape (fn [type _ _ _ _ _] type))
+
+(defmethod generate-sync-shape :components
+  [_ library-id library-items page shape]
+  (let [root-shape shape
+        objects (:objects page)
+        components library-items
+        page-id nil
+        component-id (:id page)
+        reset-touched? false]
+    (generate-sync-shape-and-children-components root-shape objects components page-id component-id reset-touched?)))
+
+(defmethod generate-sync-shape :colors
+  [_ library-id library-items page shape]
+  (loop [attrs (seq cp/color-sync-attrs)
+         roperations []
+         uoperations []]
+    (let [attr (first attrs)]
+      (if (nil? attr)
+        (if (empty? roperations)
+          empty-changes
+          (let [rchanges [{:type :mod-obj
+                           :page-id (:id page)
+                           :id (:id shape)
+                           :operations roperations}]
+                uchanges [{:type :mod-obj
+                           :page-id (:id page)
+                           :id (:id shape)
+                           :operations uoperations}]]
+            [rchanges uchanges]))
+        (let [attr-ref-id (keyword (str (name attr) "-ref-id"))]
+          (if-not (contains? shape attr-ref-id)
+            (recur (next attrs)
+                   roperations
+                   uoperations)
+            (let [color (get library-items (get shape attr-ref-id))
+                  roperation {:type :set
+                              :attr attr
+                              :val (:value color)
+                              :ignore-touched true}
+                  uoperation {:type :set
+                              :attr attr
+                              :val (get shape attr)
+                              :ignore-touched true}]
+              (recur (next attrs)
+                     (conj roperations roperation)
+                     (conj uoperations uoperation)))))))))
+
+(defmethod generate-sync-shape :typography
+  [_ library-id library-items page shape]
+  (let [update-node (fn [node]
+                      (if-let [typography (get library-items (:typography-ref-id node))]
+                        (merge node (d/without-keys typography [:name :id]))
+                        node))
+        old-content (:content shape)
+        new-content (ut/map-node update-node old-content)
+        rchanges [{:type :mod-obj
+                   :page-id (:id page)
+                   :id (:id shape)
+                   :operations [{:type :set
+                                 :attr :content
+                                 :val new-content}]}]
+        lchanges [{:type :mod-obj
+                   :page-id (:id page)
+                   :id (:id shape)
+                   :operations [{:type :set
+                                 :attr :content
+                                 :val old-content}]}]]
+    (if (= new-content old-content)
+      empty-changes
+      [rchanges lchanges])))
 
 ;; ---- Create a new component ----
 
@@ -58,6 +200,8 @@
 
 
 ;; ---- Synchronize shapes with components
+
+(declare generate-sync-page-components)
 
 (defn generate-sync-file-components
   "Generate changes to synchronize all shapes in current file that are linked
@@ -121,7 +265,7 @@
           (get-in state [:workspace-data :components])
           (get-in state [:workspace-libraries library-id :data :components]))]
     (if (nil? components)
-      [[] []]
+      empty-changes
       (loop [local-components (seq (vals (get-in state [:workspace-data :components])))
              rchanges []
              uchanges []]
@@ -347,89 +491,4 @@
         new-pos            (gpt/add root-pos delta)]
     new-pos))
 
-
-;; ---- Synchronize shapes with colors
-
-(defn generate-sync-file-colors
-  "Generate changes to synchronize all shapes in current file that have
-  any color linked to some color in the given library."
-  [state library-id]
-  (let [colors
-        (if (nil? library-id)
-          (get-in state [:workspace-data :colors])
-          (get-in state [:workspace-libraries library-id :data :colors]))]
-    (when (some? colors)
-      (loop [pages (seq (vals (get-in state [:workspace-data :pages-index])))
-             rchanges []
-             uchanges []]
-        (let [page (first pages)]
-          (if (nil? page)
-            [rchanges uchanges]
-            (let [[page-rchanges page-uchanges]
-                  (generate-sync-page-colors library-id page colors)]
-              (recur (next pages)
-                     (d/concat rchanges page-rchanges)
-                     (d/concat uchanges page-uchanges)))))))))
-
-(defn generate-sync-page-colors
-  "Generate changes to synchronize all shapes in a particular page."
-  [library-id page colors]
-  (let [linked-color? (fn [shape]
-                        (some
-                          #(let [attr (name %)
-                                 attr-ref-id (keyword (str attr "-ref-id"))
-                                 attr-ref-file (keyword (str attr "-ref-file"))]
-                             (and (get shape attr-ref-id)
-                                  (= library-id (get shape attr-ref-file))))
-                          cp/color-sync-attrs))
-
-        linked-shapes (cph/select-objects linked-color? page)]
-    (loop [shapes (seq linked-shapes)
-           rchanges []
-           uchanges []]
-      (let [shape (first shapes)]
-        (if (nil? shape)
-          [rchanges uchanges]
-          (let [[shape-rchanges shape-uchanges]
-                (generate-sync-shape-colors shape page colors)]
-            (recur (next shapes)
-                   (d/concat rchanges shape-rchanges)
-                   (d/concat uchanges shape-uchanges))))))))
-
-(defn generate-sync-shape-colors
-  "Generate changes to synchronize colors of one shape."
-  [shape page colors]
-  (loop [attrs (seq cp/color-sync-attrs)
-         roperations []
-         uoperations []]
-    (let [attr (first attrs)]
-      (if (nil? attr)
-        (if (empty? roperations)
-          [[] []]
-          (let [rchanges [{:type :mod-obj
-                           :page-id (:id page)
-                           :id (:id shape)
-                           :operations roperations}]
-                uchanges [{:type :mod-obj
-                           :page-id (:id page)
-                           :id (:id shape)
-                           :operations uoperations}]]
-            [rchanges uchanges]))
-        (let [attr-ref-id (keyword (str (name attr) "-ref-id"))]
-          (if-not (contains? shape attr-ref-id)
-            (recur (next attrs)
-                   roperations
-                   uoperations)
-            (let [color (get colors (get shape attr-ref-id))
-                  roperation {:type :set
-                              :attr attr
-                              :val (:value color)
-                              :ignore-touched true}
-                  uoperation {:type :set
-                              :attr attr
-                              :val (get shape attr)
-                              :ignore-touched true}]
-              (recur (next attrs)
-                     (conj roperations roperation)
-                     (conj uoperations uoperation)))))))))
 
