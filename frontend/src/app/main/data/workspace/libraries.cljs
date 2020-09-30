@@ -461,6 +461,7 @@
             rchanges (d/concat rchanges1 rchanges2 rchanges3)
             uchanges (d/concat uchanges1 uchanges2 uchanges3)]
         (rx/concat
+          (rx/of (dm/hide-tag :sync-dialog))
           (when rchanges
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})))
           (when file-id
@@ -520,5 +521,6 @@
                  [{:label (tr "workspace.updates.update")
                    :callback do-update}
                   {:label (tr "workspace.updates.dismiss")
-                   :callback do-dismiss}]))))))
+                   :callback do-dismiss}]
+                 :sync-dialog))))))
 

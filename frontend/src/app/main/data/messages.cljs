@@ -104,9 +104,12 @@
           :timeout timeout})))
 
 (defn info-dialog
-  [content controls actions]
-  (show {:content content
-         :type :info
-         :controls controls
-         :actions actions}))
+  ([content controls actions]
+   (info-dialog content controls actions nil))
+  ([content controls actions tag]
+   (show {:content content
+          :type :info
+          :controls controls
+          :actions actions
+          :tag tag})))
 
