@@ -89,8 +89,8 @@
 
         to-single-value (fn [coll] (if (> (count coll) 1) nil (first coll)))
 
-        grow-type (->> shapes (map :grow-type) (into #{}) to-single-value)
-        
+        grow-type (->> shapes (map :grow-type) (remove nil?) (into #{}) to-single-value)
+
         vertical-align (or vertical-align "top")
 
         handle-change-grow
@@ -178,6 +178,7 @@
            editor
            values
            shapes] :as props}]
+
   (let [locale (mf/deref i18n/locale)
         typographies (mf/deref refs/workspace-file-typography)
         shared-libs (mf/deref refs/workspace-libraries)
@@ -202,12 +203,14 @@
 
         typography (cond
                      (and (:typography-ref-id values)
+                          (not= (:typography-ref-id values) :multiple)
                           (:typography-ref-file values))
                      (-> shared-libs
                          (get-in [(:typography-ref-file values) :data :typography (:typography-ref-id values)])
                          (assoc :file-id (:typography-ref-file values)))
 
-                     (:typography-ref-id values)
+                     (and (:typography-ref-id values)
+                          (not= (:typography-ref-id values) :multiple))
                      (get typographies (:typography-ref-id values)))
 
 
@@ -239,6 +242,7 @@
         opts #js {:editor editor
                   :ids ids
                   :values values
+                  :shapes shapes
                   :on-change (fn [attrs]
                                (run! #(emit-update! % attrs) ids))
                   :locale locale}]
@@ -248,10 +252,19 @@
       [:span label]
       [:div.add-page {:on-click handle-click} i/close]]
 
-     (if typography
+     (cond
+       typography
        [:& typography-entry {:typography typography
                              :on-deattach handle-deattach-typography
                              :on-change handle-change-typography}]
+
+       (= (:typography-ref-id values) :multiple)
+       [:div.multiple-typography
+        [:div.multiple-typography-text "Multiple typographies"]
+        [:div.multiple-typography-button {:on-click handle-deattach-typography
+                                          :title "Unlink all typographies"} i/unchain]]
+
+       :else
        [:> typography-options opts])
 
      [:div.element-set-content
@@ -276,7 +289,6 @@
 
         converted-fill-values {:fill-color (:fill fill-values)
                                :fill-opacity (:opacity fill-values)}
-
 
         text-values (merge
                      (dwt/current-root-values
