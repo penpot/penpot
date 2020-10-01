@@ -193,10 +193,12 @@
                                      (not (contains? layout :snap-grid)))
                                  (or (filter-shapes id)
                                      (not (contains? layout :dynamic-alignment)))))
-        shapes-points (->> shapes
-                           ;; Unroll all the possible snap-points
-                           (mapcat (partial sp/shape-snap-points))
+        shape (if (> (count shapes) 1)
+                (->> shapes (map gsh/transform-shape) gsh/selection-rect)
+                (->> shapes (first)))
 
+        shapes-points (->> shape
+                           (sp/shape-snap-points)
                            ;; Move the points in the translation vector
                            (map #(gpt/add % movev)))]
     (->> (rx/merge (closest-snap page-id frame-id shapes-points filter-shapes)
@@ -205,6 +207,5 @@
          (rx/reduce gpt/min)
          (rx/map #(or % (gpt/point 0 0)))
          (rx/map #(gpt/add movev %))
-         (rx/map #(gpt/round % 0))
-         )))
+         (rx/map #(gpt/round % 0)))))
 
