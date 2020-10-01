@@ -406,6 +406,10 @@
      :y miny
      :width (- maxx minx)
      :height (- maxy miny)
+     :points [(gpt/point minx miny)
+              (gpt/point maxx miny)
+              (gpt/point maxx maxy)
+              (gpt/point minx maxy)]
      :type :rect}))
 
 (defn translate-to-frame
@@ -674,7 +678,7 @@
 
         resize-transform (:resize-transform modifiers (gmt/matrix))
         resize-transform-inverse (:resize-transform-inverse modifiers (gmt/matrix))
-        rt-modif (:rotation modifiers 0)
+        rt-modif (or (:rotation modifiers) 0)
 
         shape (-> shape
                   (transform ds-modifier))
@@ -792,8 +796,8 @@
                     (assoc  $ :points (shape->points $))
                     (assoc  $ :selrect (points->selrect (:points $)))
                     (update $ :selrect fix-invalid-rect-values)
-                    (update $ :rotation #(mod (+ (or % 0) (get-in $ [:modifiers :rotation] 0)) 360))
-                    )]
+                    (update $ :rotation #(mod (+ (or % 0)
+                                                 (or (get-in $ [:modifiers :rotation]) 0)) 360)))]
     new-shape))
 
 (declare update-path-selrect)

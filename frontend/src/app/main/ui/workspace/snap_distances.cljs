@@ -172,7 +172,7 @@
                (map pair->distance+pair)
                (filter (comp pred? first))))
 
-        ;; Checks if the value is in a set of numbers with an error margin of 0.1
+        ;; Checks if the value is in a set of numbers with an error margin
         check-in-set
         (fn [value number-set]
           (->> number-set
