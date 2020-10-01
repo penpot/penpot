@@ -98,7 +98,7 @@
 
      [:div.row-flex
       (let [size-options [8 9 10 11 12 14 18 24 36 48 72]
-            size-options (if (= font-size :multiple) (into [{:value "" :label "--"}] size-options) size-options)]
+            size-options (if (= font-size :multiple) (into [""] size-options) size-options)]
         [:& editable-select
          {:value (attr->string font-size)
           :class "input-option size-option"
@@ -108,9 +108,10 @@
           :on-change on-font-size-change}])
 
       [:select.input-select.variant-option
-       {:value (attr->string font-variant-id)
+       {:disabled (= font-id :multiple)
+        :value (attr->string font-variant-id)
         :on-change on-font-variant-change}
-       (when (= font-size :multiple)
+       (when (or (= font-id :multiple) (= font-variant-id :multiple))
          [:option {:value ""} "--"])
        (for [variant (:variants font)]
          [:option {:value (:id variant)

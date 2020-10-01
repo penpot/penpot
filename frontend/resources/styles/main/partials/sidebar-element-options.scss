@@ -992,3 +992,39 @@
         }
     }
 }
+
+.multiple-typography {
+    margin: 0.5rem;
+    padding: 0.5rem;
+    border: 1px dashed $color-gray-30;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+
+    .multiple-typography-text,
+    .multiple-typography-button {
+        font-size: $fs13;
+        display: flex;
+        align-items: center;
+    }
+
+    .multiple-typography-button {
+        cursor: pointer;
+        svg {
+            transition: fill 0.3s;
+            width: 16px;
+            height: 16px;
+            fill: $color-gray-10;
+        }
+
+        &:hover svg {
+            fill: $color-primary;
+        }
+    }
+
+    svg {
+    }
+
+    .multiple-typography-button:hover svg {
+    }
+}
