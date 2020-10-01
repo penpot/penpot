@@ -18,8 +18,9 @@
    [app.main.data.workspace.texts :as dwt]
    [app.main.ui.components.editable-select :refer [editable-select]]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
-   [app.util.dom :as dom]
    [app.main.fonts :as fonts]
+   [app.util.dom :as dom]
+   [app.util.timers :as ts]
    [app.util.i18n :as i18n :refer [t]]))
 
 (defn- attr->string [value]
@@ -216,14 +217,18 @@
 
     (mf/use-effect
      (mf/deps editting?)
-     (fn [] (reset! open? editting?)))
+     (fn []
+       (when editting?
+         (reset! open? editting?))))
 
     (mf/use-effect
      (mf/deps focus-name?)
      (fn []
-       (when-let [node (mf/ref-val name-input-ref)]
-         (dom/focus! node)
-         (dom/select-text! node))))
+       (when focus-name?
+         (ts/schedule 100
+          #(when-let [node (mf/ref-val name-input-ref)]
+             (dom/focus! node)
+             (dom/select-text! node))))))
 
     [:*
      [:div.element-set-options-group.typography-entry

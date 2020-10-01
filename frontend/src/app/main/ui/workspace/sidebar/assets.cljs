@@ -380,10 +380,25 @@
          (mf/deps file-id)
          (fn [event] ))
 
-        handle-rename-typography-clicked (fn [])
-        handle-edit-typography-clicked (fn [] )
-        handle-delete-typography (fn []
-                                   (st/emit! (dwl/delete-typography (:id @state))))]
+        handle-rename-typography-clicked
+        (fn []
+          (st/emit! #(assoc-in % [:workspace-local :rename-typography] (:id @state))))
+
+        handle-edit-typography-clicked
+        (fn []
+          (st/emit! #(assoc-in % [:workspace-local :edit-typography] (:id @state))))
+
+        handle-delete-typography
+        (fn []
+          (st/emit! (dwl/delete-typography (:id @state))))]
+
+    (mf/use-effect
+     (mf/deps local)
+     (fn []
+       (when (:rename-typography local)
+         (st/emit! #(update % :workspace-local dissoc :rename-typography)))
+       (when (:edit-typography local)
+         (st/emit! #(update % :workspace-local dissoc :edit-typography)))))
 
     [:div.asset-group
      [:div.group-title {:class (when (not open?) "closed")}
@@ -403,14 +418,17 @@
                  [(t locale "workspace.assets.delete") handle-delete-typography]]}]
      (when open?
        [:div.group-list
-        (for [typography (sort-by (comp - :ts) typographies)]
+        (for [typography (sort-by :ts typographies)]
           [:& typography-entry
            {:key (:id typography)
             :typography typography
             :read-only? (not local?)
             :on-context-menu #(on-context-menu (:id typography) %)
             :on-change #(handle-change typography %)
-            :on-select #(handle-typography-selection typography)}])])]))
+            :on-select #(handle-typography-selection typography)
+            :editting? (or (= (:rename-typography local) (:id typography))
+                           (= (:edit-typography local) (:id typography)))
+            :focus-name? (= (:rename-typography local) (:id typography))}])])]))
 
 (defn file-colors-ref
   [id]
