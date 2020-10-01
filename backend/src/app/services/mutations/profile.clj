@@ -392,8 +392,9 @@
     claims))
 
 (defmethod process-token :auth
-  [conn claims]
-  claims)
+  [conn {:keys [profile-id] :as claims}]
+  (let [profile (profile/retrieve-profile conn profile-id)]
+    (assoc claims :profile profile)))
 
 (defmethod process-token :default
   [conn claims]
