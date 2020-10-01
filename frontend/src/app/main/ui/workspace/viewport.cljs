@@ -388,7 +388,8 @@
              (when-not (.-repeat bevent)
                (st/emit! (ms/->KeyboardEvent :down key ctrl? shift? alt?))
                (when (and (kbd/space? event)
-                          (not= "rich-text" (obj/get target "className")))
+                          (not= "rich-text" (obj/get target "className"))
+                          (not= "INPUT" (obj/get target "tagName")))
                  (handle-viewport-positioning viewport-ref))))))
 
         on-key-up
