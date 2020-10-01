@@ -16,7 +16,8 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as geom]
    [app.common.geom.matrix :as gmt]
-   [app.util.object :as obj]))
+   [app.util.object :as obj]
+   [app.util.text :as ut]))
 
 ;; --- Text Editor Rendering
 
@@ -54,7 +55,7 @@
         text-transform (obj/get data "text-transform")
         line-height (obj/get data "line-height")
 
-        font-id (obj/get data "font-id" fonts/default-font)
+        font-id (obj/get data "font-id" (:font-id ut/default-text-attrs))
         font-variant-id (obj/get data "font-variant-id")
 
         font-family (obj/get data "font-family")
@@ -149,7 +150,7 @@
      (fn []
        (when (and embed-resources? (= type "root"))
          (let [font-to-embed (get-all-fonts node)
-               font-to-embed (if (empty? font-to-embed) #{{:font-id fonts/default-font}} font-to-embed)
+               font-to-embed (if (empty? font-to-embed) #{ut/default-text-attrs} font-to-embed)
                embeded (map embed-font font-to-embed)]
            (-> (p/all embeded)
                (p/then (fn [result] (reset! embeded-fonts (str/join "\n" result)))))))))

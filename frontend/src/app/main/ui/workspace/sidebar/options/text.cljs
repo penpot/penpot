@@ -28,6 +28,7 @@
    [app.util.dom :as dom]
    [app.main.fonts :as fonts]
    [app.util.i18n :as i18n :refer [tr t]]
+   [app.util.text :as ut]
    ["slate" :refer [Transforms]]))
 
 (def text-typography-attrs [:typography-ref-id :typography-ref-file])
@@ -223,7 +224,7 @@
                                     (d/concat text-font-attrs
                                               text-spacing-attrs
                                               text-transform-attrs)))
-                 typography (merge dwl/default-typography setted-values)
+                 typography (merge ut/default-typography setted-values)
                  typography (generate-typography-name typography)]
              (let [id (uuid/next)]
                (st/emit! (dwl/add-typography (assoc typography :id id)))
@@ -255,14 +256,16 @@
      (cond
        typography
        [:& typography-entry {:typography typography
+                             :read-only? (some? (:typography-ref-file values))
+                             :file (get shared-libs (:typography-ref-file values))
                              :on-deattach handle-deattach-typography
                              :on-change handle-change-typography}]
 
        (= (:typography-ref-id values) :multiple)
        [:div.multiple-typography
-        [:div.multiple-typography-text "Multiple typographies"]
+        [:div.multiple-typography-text (t locale "workspace.libraries.text.multiple-typography")]
         [:div.multiple-typography-button {:on-click handle-deattach-typography
-                                          :title "Unlink all typographies"} i/unchain]]
+                                          :title (t locale "workspace.libraries.text.multiple-typography-tooltip")} i/unchain]]
 
        :else
        [:> typography-options opts])
