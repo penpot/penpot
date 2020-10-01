@@ -19,7 +19,8 @@
    [app.common.geom.shapes :as geom]
    [app.main.data.workspace.common :as dwc]
    [app.main.fonts :as fonts]
-   [app.util.object :as obj]))
+   [app.util.object :as obj]
+   [app.util.text :as ut]))
 
 (defn create-editor
   []
@@ -117,26 +118,12 @@
   (->> (tree-seq map? :children node)
        (filter match?)))
 
-(defonce default-text-attrs
-  {:name "Source Sans Pro Regular"
-   :font-id "sourcesanspro"
-   :font-family "sourcesanspro"
-   :font-variant-id "regular"
-   :font-size "14"
-   :font-weight "400"
-   :font-style "normal"
-   :line-height "1.2"
-   :letter-spacing "0"
-   :text-transform "none"
-   :text-align "left"
-   :text-decoration "none"})
-
 (defn- shape-current-values
   [shape pred attrs]
   (let [root  (:content shape)
         nodes (->> (nodes-seq pred root)
                    (map #(if (is-text-node? %)
-                           (merge default-text-attrs %)
+                           (merge ut/default-text-attrs %)
                            %)))]
     (geom/get-attrs-multi nodes attrs)))
 

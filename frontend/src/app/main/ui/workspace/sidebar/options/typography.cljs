@@ -20,8 +20,10 @@
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
    [app.main.fonts :as fonts]
    [app.util.dom :as dom]
+   [app.util.text :as ut]
    [app.util.timers :as ts]
-   [app.util.i18n :as i18n :refer [t]]))
+   [app.util.i18n :as i18n :refer [t]]
+   [app.util.router :as rt]))
 
 (defn- attr->string [value]
   (if (= value :multiple)
@@ -49,9 +51,9 @@
                 font-size
                 font-variant-id]} values
 
-        font-id (or font-id "sourcesanspro")
-        font-size (or font-size "14")
-        font-variant-id (or font-variant-id "regular")
+        font-id (or font-id (:font-id ut/default-text-attrs))
+        font-size (or font-size (:font-size ut/default-text-attrs))
+        font-variant-id (or font-variant-id (:font-variant-id ut/default-text-attrs))
 
         fonts     (mf/deref fonts/fontsdb)
         font      (get fonts font-id)
@@ -209,11 +211,21 @@
 
 
 (mf/defc typography-entry
-  [{:keys [typography read-only? on-select on-change on-deattach on-context-menu editting? focus-name?]}]
-  (let [open? (mf/use-state editting?)
+  [{:keys [typography read-only? on-select on-change on-deattach on-context-menu editting? focus-name? file]}]
+  (let [locale (mf/deref i18n/locale)
+        open? (mf/use-state editting?)
         selected (mf/deref refs/selected-shapes)
         hover-deattach (mf/use-state false)
-        name-input-ref (mf/use-ref nil)]
+        name-input-ref (mf/use-ref nil)
+
+        #_(rt/resolve router :workspace
+                      {:project-id (:project-id file)
+                       :file-id (:id file)}
+                      {:page-id (get-in file [:data :pages 0])})
+        handle-go-to-edit
+        (fn [] (st/emit! (rt/nav :workspace {:project-id (:project-id file)
+                                             :file-id (:id file)}
+                                 {:page-id (get-in file [:data :pages 0])})))]
 
     (mf/use-effect
      (mf/deps editting?)
@@ -240,7 +252,7 @@
         {:style {:font-family (:font-family typography)
                  :font-weight (:font-weight typography)
                  :font-style (:font-style typography)}}
-        "Ag"]
+        (t locale "workspace.assets.typography.sample")]
        [:div.typography-name (:name typography)]]
       [:div.element-set-actions
        (when on-deattach
@@ -262,27 +274,32 @@
           [:spang (:name typography)]]
 
          [:div.row-flex
-          [:span.label "Font"]
+          [:span.label (t locale "workspace.assets.typography.font-id")]
           [:span (:font-id typography)]]
 
          [:div.row-flex
-          [:span.label "Size"]
+          [:span.label (t locale "workspace.assets.typography.font-variant-id")]
+          [:span (:font-variant-id typography)]]
+
+         [:div.row-flex
+          [:span.label (t locale "workspace.assets.typography.font-size")]
           [:span (:font-size typography)]]
 
          [:div.row-flex
-          [:span.label "Line Height"]
+          [:span.label (t locale "workspace.assets.typography.line-height")]
           [:span (:line-height typography)]]
 
          [:div.row-flex
-          [:span.label "Letter spacing"]
+          [:span.label (t locale "workspace.assets.typography.letter-spacing")]
           [:span (:letter-spacing typography)]]
 
          [:div.row-flex
-          [:span.label "Text transform"]
+          [:span.label (t locale "workspace.assets.typography.text-transform")]
           [:span (:text-transform typography)]]
 
          [:div.go-to-lib-button
-          "Go to style library file to edit"]]
+          {:on-click handle-go-to-edit}
+          (t locale "workspace.assets.typography.go-to-edit")]]
 
         [:*
          [:div.element-set-content

@@ -28,6 +28,7 @@
    [app.main.fonts :as fonts]
    [app.util.color :as color]
    [app.util.dom :as dom]
+   [app.util.text :as ut]
    [app.common.geom.shapes :as geom]
    [app.util.object :as obj]
    [app.util.timers :as timers]
@@ -135,7 +136,7 @@
         text-transform (obj/get data "text-transform")
         line-height (obj/get data "line-height")
 
-        font-id (obj/get data "font-id" fonts/default-font)
+        font-id (obj/get data "font-id" (:font-id ut/default-text-attrs))
         font-variant-id (obj/get data "font-variant-id")
 
         font-family (obj/get data "font-family")
@@ -296,9 +297,9 @@
                 self    (mf/ref-val self-ref)
                 target  (dom/get-target event)
                 selecting? (mf/ref-val selecting-ref)]
-            (when-not (or (.contains sidebar target)
-                          (.contains assets target)
-                          (.contains self target)
+            (when-not (or (and sidebar (.contains sidebar target))
+                          (and assets  (.contains assets target))
+                          (and self    (.contains self target))
                           (and cpicker (.contains cpicker target)))
               (if selecting?
                 (mf/set-ref-val! selecting-ref false)

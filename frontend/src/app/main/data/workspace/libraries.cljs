@@ -520,19 +520,6 @@
                    :callback do-dismiss}]
                  :sync-dialog))))))
 
-
-(def default-typography
-  {:name "Source Sans Pro Regular"
-   :font-id "sourcesanspro"
-   :font-family "sourcesanspro"
-   :font-variant-id "regular"
-   :font-size "14"
-   :font-weight "400"
-   :font-style "normal"
-   :line-height "1.2"
-   :letter-spacing "0"
-   :text-transform "none"})
-
 (defn add-typography
   [typography]
   (let [typography (update typography :id #(or % (uuid/next)))]

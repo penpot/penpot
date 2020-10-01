@@ -21,8 +21,6 @@
    [clojure.set :as set]
    [app.util.object :as obj]))
 
-(defonce default-font "sourcesanspro")
-
 (def google-fonts
   (preload-gfonts "fonts/gfonts.2020.04.23.json"))
 

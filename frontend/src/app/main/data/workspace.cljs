@@ -73,10 +73,9 @@
 (s/def ::layout-flags (s/coll-of ::layout-flag))
 
 (def default-layout
-  #{;; :sitemap
-    ;; :sitemap-pages
-    ;; :layers
-    :assets
+  #{:sitemap
+    :sitemap-pages
+    :layers
     :element-options
     :rules
     :display-grid

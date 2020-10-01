@@ -38,6 +38,7 @@
    [app.util.i18n :as i18n :refer [tr t]]
    [app.util.router :as rt]
    [app.util.timers :as timers]
+   [app.util.text :as ut]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
@@ -330,7 +331,7 @@
                           :locale locale}])])]))
 
 (mf/defc typography-box
-  [{:keys [file-id local? typographies locale open? on-open on-close] :as props}]
+  [{:keys [file file-id local? typographies locale open? on-open on-close] :as props}]
 
   (let [state (mf/use-state {:detail-open? false
                              :menu-open? false
@@ -344,7 +345,7 @@
         (mf/use-callback
          (mf/deps file-id)
          (fn [value opacity]
-           (st/emit! (dwl/add-typography dwl/default-typography))))
+           (st/emit! (dwl/add-typography ut/default-typography))))
 
         handle-change
         (mf/use-callback
@@ -402,7 +403,7 @@
 
     [:div.asset-group
      [:div.group-title {:class (when (not open?) "closed")}
-      [:span {:on-click #(if open? (on-close) (on-open))} i/arrow-slide "Typography" #_(t locale "workspace.assets.typography")]
+      [:span {:on-click #(if open? (on-close) (on-open))} i/arrow-slide (t locale "workspace.assets.typography")]
       [:span.num-assets (str "\u00A0(") (count typographies) ")"] ;; Unicode 00A0 is non-breaking space
       (when local?
         [:div.group-button {:on-click add-typography} i/plus])]
@@ -422,6 +423,7 @@
           [:& typography-entry
            {:key (:id typography)
             :typography typography
+            :file file
             :read-only? (not local?)
             :on-context-menu #(on-context-menu (:id typography) %)
             :on-change #(handle-change typography %)
@@ -563,7 +565,8 @@
                             :on-close #(swap! toggles disj :colors)}])
 
           (when show-typography?
-            [:& typography-box {:file-id (:id file)
+            [:& typography-box {:file file
+                                :file-id (:id file)
                                 :local? local?
                                 :locale locale
                                 :typographies typographies
