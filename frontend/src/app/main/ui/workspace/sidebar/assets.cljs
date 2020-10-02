@@ -498,7 +498,7 @@
         colors         (apply-filters (mf/deref colors-ref) filters)
 
         typography-ref (mf/use-memo (mf/deps (:id file)) #(file-typography-ref (:id file)))
-        typographies (apply-filters (mf/deref typography-ref) filters)
+        typographies   (apply-filters (mf/deref typography-ref) filters)
 
         media-ref      (mf/use-memo (mf/deps (:id file)) #(file-media-ref (:id file)))
         media          (apply-filters (mf/deref media-ref) filters)
@@ -538,7 +538,7 @@
                                          (str/empty? (:term filters))))
              show-typography?   (and (or (= (:box filters) :all)
                                          (= (:box filters) :typographies))
-                                     (or (> (count colors) 0)
+                                     (or (> (count typographies) 0)
                                          (str/empty? (:term filters))))]
          [:div.tool-window-content
           (when show-components?
