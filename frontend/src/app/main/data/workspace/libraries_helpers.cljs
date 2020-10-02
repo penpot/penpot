@@ -101,13 +101,20 @@
                      (= (:component-file shape) library-id)))
 
     :colors
-    (fn [shape] (some
-                 #(let [attr (name %)
-                        attr-ref-id (keyword (str attr "-ref-id"))
-                        attr-ref-file (keyword (str attr "-ref-file"))]
-                    (and (get shape attr-ref-id)
-                         (= library-id (get shape attr-ref-file))))
-                 cp/color-sync-attrs))
+    (fn [shape] (if (= (:type shape) :text)
+                  (->> shape
+                       :content
+                       ;; Check if any node in the content has a reference for the library
+                       (ut/some-node
+                        #(and (some? (:fill-color-ref-id %))
+                              (= library-id (:fill-color-ref-file %)))))
+                  (some
+                   #(let [attr (name %)
+                          attr-ref-id (keyword (str attr "-ref-id"))
+                          attr-ref-file (keyword (str attr "-ref-file"))]
+                      (and (get shape attr-ref-id)
+                           (= library-id (get shape attr-ref-file))))
+                   cp/color-sync-attrs)))
 
     :typographies
     (fn [shape]
@@ -162,58 +169,8 @@
                                                  component-id
                                                  reset-touched?)))
 
-(defmethod generate-sync-shape :colors
-  [_ library-id library-items _ page-id component-id shape]
-
-  ;; Synchronize a shape that uses some colors of the library. The value of the
-  ;; color in the library is copied to the shape.
-  (loop [attrs (seq cp/color-sync-attrs)
-         roperations []
-         uoperations []]
-    (let [attr (first attrs)]
-      (if (nil? attr)
-        (if (empty? roperations)
-          empty-changes
-          (let [rchanges [(d/without-nils {:type :mod-obj
-                                           :page-id page-id
-                                           :component-id component-id
-                                           :id (:id shape)
-                                           :operations roperations})]
-                uchanges [(d/without-nils {:type :mod-obj
-                                           :page-id page-id
-                                           :component-id component-id
-                                           :id (:id shape)
-                                           :operations uoperations})]]
-            [rchanges uchanges]))
-        (let [attr-ref-id (keyword (str (name attr) "-ref-id"))]
-          (if (or (not (contains? shape attr-ref-id))
-                  (nil? (get library-items (get shape attr-ref-id))))
-            (recur (next attrs)
-                   roperations
-                   uoperations)
-            (let [color (get library-items (get shape attr-ref-id))
-                  roperation {:type :set
-                              :attr attr
-                              :val (:value color)
-                              :ignore-touched true}
-                  uoperation {:type :set
-                              :attr attr
-                              :val (get shape attr)
-                              :ignore-touched true}]
-              (recur (next attrs)
-                     (conj roperations roperation)
-                     (conj uoperations uoperation)))))))))
-
-(defmethod generate-sync-shape :typographies
-  [_ library-id library-items _ page-id component-id shape]
-
-  ;; Synchronize a shape that uses some typographies of the library. The attributes
-  ;; of the typography are copied to the shape."
-  (let [update-node (fn [node]
-                      (if-let [typography (get library-items (:typography-ref-id node))]
-                        (merge node (d/without-keys typography [:name :id]))
-                        node))
-        old-content (:content shape)
+(defn generate-sync-text-shape [shape page-id component-id update-node]
+  (let [old-content (:content shape)
         new-content (ut/map-node update-node old-content)
         rchanges [(d/without-nils {:type :mod-obj
                                    :page-id page-id
@@ -232,6 +189,64 @@
     (if (= new-content old-content)
       empty-changes
       [rchanges lchanges])))
+
+(defmethod generate-sync-shape :colors
+  [_ library-id library-items _ page-id component-id shape]
+
+  ;; Synchronize a shape that uses some colors of the library. The value of the
+  ;; color in the library is copied to the shape.
+  (if (= :text (:type shape))
+    (let [update-node (fn [node]
+                        (if-let [color (get library-items (:fill-color-ref-id node))]
+                          (assoc node :fill-color (:value color))
+                          node))]
+      (generate-sync-text-shape shape page-id component-id update-node))
+    (loop [attrs (seq cp/color-sync-attrs)
+           roperations []
+           uoperations []]
+      (let [attr (first attrs)]
+        (if (nil? attr)
+          (if (empty? roperations)
+            empty-changes
+            (let [rchanges [(d/without-nils {:type :mod-obj
+                                             :page-id page-id
+                                             :component-id component-id
+                                             :id (:id shape)
+                                             :operations roperations})]
+                  uchanges [(d/without-nils {:type :mod-obj
+                                             :page-id page-id
+                                             :component-id component-id
+                                             :id (:id shape)
+                                             :operations uoperations})]]
+              [rchanges uchanges]))
+          (let [attr-ref-id (keyword (str (name attr) "-ref-id"))]
+            (if-not (contains? shape attr-ref-id)
+              (recur (next attrs)
+                     roperations
+                     uoperations)
+              (let [color (get library-items (get shape attr-ref-id))
+                    roperation {:type :set
+                                :attr attr
+                                :val (:value color)
+                                :ignore-touched true}
+                    uoperation {:type :set
+                                :attr attr
+                                :val (get shape attr)
+                                :ignore-touched true}]
+                (recur (next attrs)
+                       (conj roperations roperation)
+                       (conj uoperations uoperation))))))))))
+
+(defmethod generate-sync-shape :typographies
+  [_ library-id library-items _ page-id component-id shape]
+
+  ;; Synchronize a shape that uses some typographies of the library. The attributes
+  ;; of the typography are copied to the shape."
+  (let [update-node (fn [node]
+                      (if-let [typography (get library-items (:typography-ref-id node))]
+                        (merge node (d/without-keys typography [:name :id]))
+                        node))]
+    (generate-sync-text-shape shape page-id component-id update-node)))
 
 
 ;; ---- Create a new component ----
