@@ -35,7 +35,7 @@
   and call synchronize"
   [asset-type library-id state]
 
-  (s/assert #{:colors :components :typography} asset-type)
+  (s/assert #{:colors :components :typographies} asset-type)
   (s/assert (s/nilable ::us/uuid) library-id)
 
   (let [library-items
@@ -73,7 +73,7 @@
                          (= library-id (get shape attr-ref-file))))
                  cp/color-sync-attrs))
 
-    :typography
+    :typographies
     (fn [shape]
       (and (= (:type shape) :text)
            (->> shape
@@ -146,7 +146,7 @@
                      (conj roperations roperation)
                      (conj uoperations uoperation)))))))))
 
-(defmethod generate-sync-shape :typography
+(defmethod generate-sync-shape :typographies
   [_ library-id library-items page shape]
   (let [update-node (fn [node]
                       (if-let [typography (get library-items (:typography-ref-id node))]

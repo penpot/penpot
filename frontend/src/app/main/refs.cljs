@@ -100,7 +100,7 @@
 (def workspace-file-typography
   (l/derived (fn [state]
                (when-let [file (:workspace-file state)]
-                 (get-in file [:data :typography])))
+                 (get-in file [:data :typographies])))
              st/state))
 
 (def workspace-project

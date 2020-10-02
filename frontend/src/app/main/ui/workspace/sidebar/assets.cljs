@@ -465,8 +465,8 @@
   (l/derived (fn [state]
                (let [wfile (:workspace-file state)]
                  (if (= (:id wfile) id)
-                   (vals (get-in wfile [:data :typography]))
-                   (vals (get-in state [:workspace-libraries id :data :typography])))))
+                   (vals (get-in wfile [:data :typographies]))
+                   (vals (get-in state [:workspace-libraries id :data :typographies])))))
              st/state =))
 
 (defn apply-filters
@@ -487,7 +487,7 @@
         toggles        (mf/use-state #{:components
                                        :graphics
                                        :colors
-                                       :typography})
+                                       :typographies})
 
         url            (rt/resolve router :workspace
                                    {:project-id (:project-id file)
@@ -537,7 +537,7 @@
                                      (or (> (count colors) 0)
                                          (str/empty? (:term filters))))
              show-typography?   (and (or (= (:box filters) :all)
-                                         (= (:box filters) :typography))
+                                         (= (:box filters) :typographies))
                                      (or (> (count colors) 0)
                                          (str/empty? (:term filters))))]
          [:div.tool-window-content
@@ -570,9 +570,9 @@
                                 :local? local?
                                 :locale locale
                                 :typographies typographies
-                                :open? (contains? @toggles :typography)
-                                :on-open #(swap! toggles conj :typography)
-                                :on-close #(swap! toggles disj :typography)}])
+                                :open? (contains? @toggles :typographies)
+                                :on-open #(swap! toggles conj :typographies)
+                                :on-close #(swap! toggles disj :typographies)}])
 
           (when (and (not show-components?) (not show-graphics?) (not show-colors?))
             [:div.asset-group
@@ -636,7 +636,7 @@
          [:option {:value ":components"} (t locale "workspace.assets.components")]
          [:option {:value ":graphics"} (t locale "workspace.assets.graphics")]
          [:option {:value ":colors"} (t locale "workspace.assets.colors")]
-         [:option {:value ":typography"} (t locale "workspace.assets.typography")]]]]
+         [:option {:value ":typographies"} (t locale "workspace.assets.typography")]]]]
 
      [:div.libraries-wrapper
       [:& file-library
