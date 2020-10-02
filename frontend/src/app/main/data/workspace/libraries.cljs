@@ -450,12 +450,14 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [[rchanges1 uchanges1] (dwlh/generate-sync-file-components state file-id)
-            [rchanges2 uchanges2] (dwlh/generate-sync-library-components state file-id)
+      (let [[rchanges1 uchanges1] (dwlh/generate-sync-file :components file-id state)
+            [rchanges2 uchanges2] (dwlh/generate-sync-library :components file-id state)
             [rchanges3 uchanges3] (dwlh/generate-sync-file :colors file-id state)
-            [rchanges4 uchanges4] (dwlh/generate-sync-file :typographies file-id state)
-            rchanges (d/concat rchanges1 rchanges2 rchanges3 rchanges4)
-            uchanges (d/concat uchanges1 uchanges2 uchanges3 uchanges4)]
+            [rchanges4 uchanges4] (dwlh/generate-sync-library :colors file-id state)
+            [rchanges5 uchanges5] (dwlh/generate-sync-file :typographies file-id state)
+            [rchanges6 uchanges6] (dwlh/generate-sync-library :typographies file-id state)
+            rchanges (d/concat rchanges1 rchanges2 rchanges3 rchanges4 rchanges5 rchanges6)
+            uchanges (d/concat uchanges1 uchanges2 uchanges3 uchanges4 uchanges5 uchanges6)]
         (rx/concat
           (rx/of (dm/hide-tag :sync-dialog))
           (when rchanges
@@ -464,7 +466,7 @@
             (rp/mutation :update-sync
                          {:file-id (get-in state [:workspace-file :id])
                           :library-id file-id}))
-          (when (seq rchanges2)
+          (when (or (seq rchanges2) (seq rchanges4) (seq rchanges6))
             (rx/of (sync-file-2nd-stage file-id))))))))
 
 (defn sync-file-2nd-stage
@@ -481,7 +483,7 @@
   (ptk/reify ::sync-file-2nd-stage
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [[rchanges uchanges] (dwlh/generate-sync-file-components state nil)]
+      (let [[rchanges uchanges] (dwlh/generate-sync-file :components nil state)]
         (when rchanges
           (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})))))))
 

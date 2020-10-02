@@ -19,7 +19,7 @@
 
 (defonce empty-changes [[] []])
 
-(declare generate-sync-page)
+(declare generate-sync-container)
 (declare generate-sync-shape)
 
 (declare generate-sync-component-components)
@@ -30,9 +30,11 @@
 (declare update-attrs)
 (declare calc-new-pos)
 
+;; ---- General library synchronization functions ----
+
 (defn generate-sync-file
-  "Generic method that given a type of asset will iterate through the file pages
-  and call synchronize"
+  "Generate changes to synchronize all shapes in all pages of the current file,
+  with the given asset of the given library."
   [asset-type library-id state]
 
   (s/assert #{:colors :components :typographies} asset-type)
@@ -51,13 +53,47 @@
              uchanges []]
         (if-let [page (first pages)]
           (let [[page-rchanges page-uchanges]
-                (generate-sync-page asset-type library-id library-items page)]
+                (generate-sync-container asset-type
+                                         library-id
+                                         library-items
+                                         page
+                                         (:id page)
+                                         nil)]
             (recur (next pages)
                    (d/concat rchanges page-rchanges)
                    (d/concat uchanges page-uchanges)))
           [rchanges uchanges])))))
 
+(defn generate-sync-library
+  "Generate changes to synchronize all shapes inside components of the current
+  file library, that use the given type of asset of the given library."
+  [asset-type library-id state]
+  (let [library-items
+        (if (nil? library-id)
+          (get-in state [:workspace-data asset-type])
+          (get-in state [:workspace-libraries library-id :data asset-type]))]
+    (if (empty? library-items)
+      empty-changes
+
+      (loop [local-components (seq (vals (get-in state [:workspace-data :components])))
+             rchanges []
+             uchanges []]
+        (if-let [local-component (first local-components)]
+          (let [[comp-rchanges comp-uchanges]
+                (generate-sync-container asset-type
+                                         library-id
+                                         library-items
+                                         local-component
+                                         nil
+                                         (:id local-component))]
+            (recur (next local-components)
+                   (d/concat rchanges comp-rchanges)
+                   (d/concat uchanges comp-uchanges)))
+          [rchanges uchanges])))))
+
 (defn has-asset-reference-fn
+  "Gets a function that checks if a shape uses some asset of the given type
+  in the given library."
   [asset-type library-id]
   (case asset-type
     :components
@@ -83,35 +119,54 @@
                  #(and (some? (:typography-ref-id %))
                        (= library-id (:typography-ref-file %)))))))))
 
-(defn generate-sync-page
-  [asset-type library-id library-items page]
+(defn generate-sync-container
+  "Generate changes to synchronize all shapes in a particular container
+  (a page or a component)."
+  [asset-type library-id library-items container page-id component-id]
   (let [has-asset-reference? (has-asset-reference-fn asset-type library-id)
-        linked-shapes (cph/select-objects has-asset-reference? page)]
+        linked-shapes (cph/select-objects has-asset-reference? container)]
     (loop [shapes (seq linked-shapes)
            rchanges []
            uchanges []]
       (if-let [shape (first shapes)]
         (let [[shape-rchanges shape-uchanges]
-              (generate-sync-shape asset-type library-id library-items page shape)]
+              (generate-sync-shape asset-type
+                                   library-id
+                                   library-items
+                                   (get container :objects)
+                                   page-id
+                                   component-id
+                                   shape)]
           (recur (next shapes)
                  (d/concat rchanges shape-rchanges)
                  (d/concat uchanges shape-uchanges)))
         [rchanges uchanges]))))
 
-(defmulti generate-sync-shape (fn [type _ _ _ _ _] type))
+(defmulti generate-sync-shape (fn [type _ _ _ _ _ _ _] type))
 
 (defmethod generate-sync-shape :components
-  [_ library-id library-items page shape]
+  [_ library-id library-items objects page-id component-id shape]
+
+  ;; Synchronize a shape that is the root instance of a component, and all of its
+  ;; children. All attributes of the component shape that have changed, and whose
+  ;; group have not been touched in the linked shape, will be copied to the shape.
+  ;; Any shape that is linked to a no-longer existent component shape will be
+  ;; detached.
   (let [root-shape shape
-        objects (:objects page)
         components library-items
-        page-id nil
-        component-id (:id page)
         reset-touched? false]
-    (generate-sync-shape-and-children-components root-shape objects components page-id component-id reset-touched?)))
+    (generate-sync-shape-and-children-components root-shape
+                                                 objects
+                                                 components
+                                                 page-id
+                                                 component-id
+                                                 reset-touched?)))
 
 (defmethod generate-sync-shape :colors
-  [_ library-id library-items page shape]
+  [_ library-id library-items _ page-id component-id shape]
+
+  ;; Synchronize a shape that uses some colors of the library. The value of the
+  ;; color in the library is copied to the shape.
   (loop [attrs (seq cp/color-sync-attrs)
          roperations []
          uoperations []]
@@ -119,14 +174,16 @@
       (if (nil? attr)
         (if (empty? roperations)
           empty-changes
-          (let [rchanges [{:type :mod-obj
-                           :page-id (:id page)
-                           :id (:id shape)
-                           :operations roperations}]
-                uchanges [{:type :mod-obj
-                           :page-id (:id page)
-                           :id (:id shape)
-                           :operations uoperations}]]
+          (let [rchanges [(d/without-nils {:type :mod-obj
+                                           :page-id page-id
+                                           :component-id component-id
+                                           :id (:id shape)
+                                           :operations roperations})]
+                uchanges [(d/without-nils {:type :mod-obj
+                                           :page-id page-id
+                                           :component-id component-id
+                                           :id (:id shape)
+                                           :operations uoperations})]]
             [rchanges uchanges]))
         (let [attr-ref-id (keyword (str (name attr) "-ref-id"))]
           (if-not (contains? shape attr-ref-id)
@@ -147,28 +204,34 @@
                      (conj uoperations uoperation)))))))))
 
 (defmethod generate-sync-shape :typographies
-  [_ library-id library-items page shape]
+  [_ library-id library-items _ page-id component-id shape]
+
+  ;; Synchronize a shape that uses some typographies of the library. The attributes
+  ;; of the typography are copied to the shape."
   (let [update-node (fn [node]
                       (if-let [typography (get library-items (:typography-ref-id node))]
                         (merge node (d/without-keys typography [:name :id]))
                         node))
         old-content (:content shape)
         new-content (ut/map-node update-node old-content)
-        rchanges [{:type :mod-obj
-                   :page-id (:id page)
-                   :id (:id shape)
-                   :operations [{:type :set
-                                 :attr :content
-                                 :val new-content}]}]
-        lchanges [{:type :mod-obj
-                   :page-id (:id page)
-                   :id (:id shape)
-                   :operations [{:type :set
-                                 :attr :content
-                                 :val old-content}]}]]
+        rchanges [(d/without-nils {:type :mod-obj
+                                   :page-id page-id
+                                   :component-id component-id
+                                   :id (:id shape)
+                                   :operations [{:type :set
+                                                 :attr :content
+                                                 :val new-content}]})]
+        lchanges [(d/without-nils {:type :mod-obj
+                                   :page-id page-id
+                                   :component-id component-id
+                                   :id (:id shape)
+                                   :operations [{:type :set
+                                                 :attr :content
+                                                 :val old-content}]})]]
     (if (= new-content old-content)
       empty-changes
       [rchanges lchanges])))
+
 
 ;; ---- Create a new component ----
 
@@ -199,118 +262,14 @@
     (cph/clone-object shape nil objects update-new-shape update-original-shape)))
 
 
-;; ---- Synchronize shapes with components
-
-(declare generate-sync-page-components)
-
-(defn generate-sync-file-components
-  "Generate changes to synchronize all shapes in current file that are linked
-  to some component in the given library. All attributes of the components
-  that have changed, and whose group have not been touched in the linked shape,
-  will be copied to the shape. Any shape that is linked to a no-longer
-  existent component will be detached."
-  [state library-id]
-  (let [components
-        (if (nil? library-id)
-          (get-in state [:workspace-data :components])
-          (get-in state [:workspace-libraries library-id :data :components]))]
-    (if (nil? components)
-      [[] []]
-      (loop [pages (seq (vals (get-in state [:workspace-data :pages-index])))
-             rchanges []
-             uchanges []]
-        (let [page (first pages)]
-          (if (nil? page)
-            [rchanges uchanges]
-            (let [[page-rchanges page-uchanges]
-                  (generate-sync-page-components page library-id components)]
-              (recur (next pages)
-                     (d/concat rchanges page-rchanges)
-                     (d/concat uchanges page-uchanges)))))))))
-
-
-(defn generate-sync-page-components
-  "Generate changes to synchronize all shapes in a particular page.
-  Same considerations as above."
-  [page library-id components]
-  (let [objects       (get page :objects)
-        linked-shapes (cph/select-objects #(and (some? (:component-id %))
-                                                (= (:component-file %) library-id))
-                                          page)]
-    (loop [shapes (seq linked-shapes)
-           rchanges []
-           uchanges []]
-      (let [shape (first shapes)]
-        (if (nil? shape)
-          [rchanges uchanges]
-          (let [[shape-rchanges shape-uchanges]
-                (generate-sync-shape-and-children-components shape
-                                                             objects
-                                                             components
-                                                             (:id page)
-                                                             nil
-                                                             false)]
-            (recur (next shapes)
-                   (d/concat rchanges shape-rchanges)
-                   (d/concat uchanges shape-uchanges))))))))
-
-
-(defn generate-sync-library-components
-  "Generate changes to synchronize all shapes inside components of the current
-  file library, that are linked to other component in the given library.
-  Same considerations as above."
-  [state library-id]
-  (let [components
-        (if (nil? library-id)
-          (get-in state [:workspace-data :components])
-          (get-in state [:workspace-libraries library-id :data :components]))]
-    (if (nil? components)
-      empty-changes
-      (loop [local-components (seq (vals (get-in state [:workspace-data :components])))
-             rchanges []
-             uchanges []]
-        (let [local-component (first local-components)]
-          (if (nil? local-component)
-            [rchanges uchanges]
-            (let [[comp-rchanges comp-uchanges]
-                  (generate-sync-component-components
-                    local-component library-id components)]
-              (recur (next local-components)
-                     (d/concat rchanges comp-rchanges)
-                     (d/concat uchanges comp-uchanges)))))))))
-
-
-(defn generate-sync-component-components
-  "Generate changes to synchronize all shapes in a particular component.
-  Same considerations as above."
-  [local-component library-id components]
-  (let [objects       (get local-component :objects)
-        linked-shapes (filter #(and (some? (:component-id %))
-                                    (= (:component-file %) library-id))
-                              (vals objects))]
-    (loop [shapes (seq linked-shapes)
-           rchanges []
-           uchanges []]
-      (let [shape (first shapes)]
-        (if (nil? shape)
-          [rchanges uchanges]
-          (let [[shape-rchanges shape-uchanges]
-                (generate-sync-shape-and-children-components shape
-                                                             objects
-                                                             components
-                                                             nil
-                                                             (:id local-component)
-                                                             false)]
-            (recur (next shapes)
-                   (d/concat rchanges shape-rchanges)
-                   (d/concat uchanges shape-uchanges))))))))
-
+;; ---- Component synchronization helpers ----
 
 (defn generate-sync-shape-and-children-components
   "Generate changes to synchronize one shape that is linked to a component,
   and all its children. If reset-touched? is false, same considerations as
-  above. If it's true, all attributes of the component that have changed
-  will be copied, and the 'touched' flags in the shapes will be cleared."
+  in generate-sync-shape :components. If it's true, all attributes of the
+  component that have changed will be copied, and the 'touched' flags in
+  the shapes will be cleared."
   [root-shape objects components page-id component-id reset-touched?]
   (let [all-shapes (cph/get-object-with-children (:id root-shape) objects)
         component (get components (:component-id root-shape))
