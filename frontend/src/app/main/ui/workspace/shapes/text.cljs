@@ -317,7 +317,9 @@
         (fn [event]
           (dom/stop-propagation event)
           (when (= (.-keyCode event) 27) ; ESC
-            (on-close)))
+            (do
+              (st/emit! :interrupt)
+              (on-close))))
 
         on-mount
         (fn []
