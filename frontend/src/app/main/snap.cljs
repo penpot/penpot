@@ -159,17 +159,18 @@
 
 (defn closest-distance-snap
   [page-id shapes objects movev]
-  (->> (rx/of shapes)
-       (rx/map #(vector (->> % first :frame-id (get objects))
-                        (-> % gsh/selection-rect (gsh/move movev))))
-       (rx/merge-map
-        (fn [[frame selrect]]
-          (let [areas (->> (gsh/selrect->areas (or (:selrect frame)
-                                                   (gsh/rect->rect-shape @refs/vbox)) selrect)
-                           (d/mapm #(select-shapes-area page-id shapes objects %2)))
-                snap-x (search-snap-distance selrect :x (:left areas) (:right areas))
-                snap-y (search-snap-distance selrect :y (:top areas) (:bottom areas))]
-            (rx/combine-latest snap->vector snap-y snap-x))))))
+  (let [frame-id (snap-frame-id shapes)
+        frame (get objects frame-id)
+        selrect (->> shapes (map #(gsh/move % movev)) gsh/selection-rect)]
+    (->> (rx/of (vector frame selrect))
+         (rx/merge-map
+          (fn [[frame selrect]]
+            (let [areas (->> (gsh/selrect->areas (or (:selrect frame)
+                                                     (gsh/rect->rect-shape @refs/vbox)) selrect)
+                             (d/mapm #(select-shapes-area page-id shapes objects %2)))
+                  snap-x (search-snap-distance selrect :x (:left areas) (:right areas))
+                  snap-y (search-snap-distance selrect :y (:top areas) (:bottom areas))]
+              (rx/combine-latest snap->vector snap-y snap-x)))))))
 
 (defn closest-snap-point
   [page-id shapes layout point]

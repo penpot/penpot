@@ -176,7 +176,7 @@
         check-in-set
         (fn [value number-set]
           (->> number-set
-               (some #(<= (mth/abs (- value %)) 0.5))))
+               (some #(<= (mth/abs (- value %)) 1))))
 
         ;; Left/Top shapes and right/bottom shapes (depends on `coord` parameter
         [lt-shapes gt-shapes] @to-measure
@@ -185,7 +185,6 @@
         lt-distances (->> lt-shapes (map distance-to-selrect) (filter pos?) (into #{}))
         gt-distances (->> gt-shapes (map distance-to-selrect) (filter pos?) (into #{}))
 
-
         ;; We'll show the distances that match a distance from the selrect
         show-candidate? #(check-in-set % (set/union lt-distances gt-distances))
 
@@ -193,11 +192,17 @@
         distance-coincidences (concat (get-shapes-match show-candidate? lt-shapes)
                                       (get-shapes-match show-candidate? gt-shapes))
 
+
         ;; Show the distances that either match one of the distances from the selrect
         ;; or are from the selrect and go to a shape on the left and to the right
-        show-distance? #(check-in-set % (into #{} (concat
-                                                   (map first distance-coincidences)
-                                                   (set/intersection lt-distances gt-distances))))
+        show-distance?
+        (fn [dist]
+          (let [distances-to-show
+                (->> (d/concat (mapv first distance-coincidences)
+                               (filterv #(check-in-set % lt-distances) gt-distances)
+                               (filterv #(check-in-set % gt-distances) lt-distances))
+                     (into #{}))]
+            (check-in-set dist distances-to-show)))
 
         ;; These are the segments whose distance will be displayed
 
