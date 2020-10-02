@@ -523,7 +523,8 @@
   (s/keys :req-un [::id ::name :internal.changes.add-component/shapes]))
 
 (defmethod change-spec :mod-component [_]
-  (s/keys :req-un [::id ::name :internal.changes.add-component/shapes]))
+  (s/keys :req-un [::id]
+          :opt-un [::name :internal.changes.add-component/shapes]))
 
 (defmethod change-spec :del-component [_]
   (s/keys :req-un [::id]))
@@ -964,9 +965,12 @@
 (defmethod process-change :mod-component
   [data {:keys [id name shapes]}]
   (update-in data [:components id]
-             #(assoc %
-                     :name name
-                     :objects (d/index-by :id shapes))))
+             #(cond-> %
+                (some? name)
+                (assoc :name name)
+
+                (some? shapes)
+                (assoc :objects (d/index-by :id shapes)))))
 
 (defmethod process-change :del-component
   [data {:keys [id]}]

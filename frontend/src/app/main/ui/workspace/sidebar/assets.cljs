@@ -29,6 +29,7 @@
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
+   [app.main.ui.components.editable-label :refer [editable-label]]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
@@ -47,6 +48,7 @@
 (mf/defc components-box
   [{:keys [file-id local? components open? on-open on-close] :as props}]
   (let [state (mf/use-state {:menu-open false
+                             :renaming nil
                              :top nil
                              :left nil
                              :component-id nil})
@@ -61,6 +63,25 @@
          (fn []
            (st/emit! (dwl/delete-component {:id (:component-id @state)}))
            (st/emit! (dwl/sync-file nil))))
+
+        on-rename
+        (mf/use-callback
+          (mf/deps state)
+          (fn []
+            (swap! state assoc :renaming (:component-id @state))))
+
+        do-rename
+        (mf/use-callback
+          (mf/deps state)
+          (fn [new-name]
+            (st/emit! (dwl/rename-component (:renaming @state) new-name))
+            (swap! state assoc :renaming nil)))
+
+        cancel-rename
+        (mf/use-callback
+          (mf/deps state)
+          (fn []
+            (swap! state assoc :renaming nil)))
 
         on-context-menu
         (mf/use-callback
@@ -90,13 +111,22 @@
      (when open?
        [:div.group-grid.big
         (for [component components]
-          [:div.grid-cell {:key (:id component)
-                           :draggable true
-                           :on-context-menu (on-context-menu (:id component))
-                           :on-drag-start (partial on-drag-start component)}
-           [:& exports/component-svg {:group (get-in component [:objects (:id component)])
-                                      :objects (:objects component)}]
-           [:div.cell-name (:name component)]])])
+          (let [renaming? (= (:renaming @state)(:id component))]
+            [:div.grid-cell {:key (:id component)
+                             :draggable true
+                             :on-context-menu (on-context-menu (:id component))
+                             :on-drag-start (partial on-drag-start component)}
+             [:& exports/component-svg {:group (get-in component [:objects (:id component)])
+                                        :objects (:objects component)}]
+             [:& editable-label
+              {:class-name (dom/classnames
+                             :cell-name true
+                             :editing renaming?)
+               :value (:name component)
+               :editing? renaming?
+               :disable-dbl-click? true
+               :on-change do-rename
+               :on-cancel cancel-rename}]]))])
 
      (when local?
        [:& context-menu
@@ -105,7 +135,8 @@
          :on-close #(swap! state assoc :menu-open false)
          :top (:top @state)
          :left (:left @state)
-         :options [[(tr "workspace.assets.duplicate") on-duplicate]
+         :options [[(tr "workspace.assets.rename") on-rename]
+                   [(tr "workspace.assets.duplicate") on-duplicate]
                    [(tr "workspace.assets.delete") on-delete]]}])]))
 
 (mf/defc graphics-box
