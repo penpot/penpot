@@ -110,9 +110,7 @@
 
         ;; We use sets to store points/lines so there are no points/lines repeated
         ;; can cause problems with react keys
-        snap-points (->> @state
-                         (mapcat add-point-to-snaps)
-                         (into #{}))
+        snap-points (into #{} (mapcat add-point-to-snaps) @state)
 
         snap-lines (into (process-snap-lines @state :x)
                          (process-snap-lines @state :y))]

@@ -198,10 +198,10 @@
         show-distance?
         (fn [dist]
           (let [distances-to-show
-                (->> (d/concat (mapv first distance-coincidences)
-                               (filterv #(check-in-set % lt-distances) gt-distances)
-                               (filterv #(check-in-set % gt-distances) lt-distances))
-                     (into #{}))]
+                (->> (d/concat #{}
+                               (map first distance-coincidences)
+                               (filter #(check-in-set % lt-distances) gt-distances)
+                               (filter #(check-in-set % gt-distances) lt-distances)))]
             (check-in-set dist distances-to-show)))
 
         ;; These are the segments whose distance will be displayed
