@@ -186,7 +186,8 @@
                                            :operations uoperations})]]
             [rchanges uchanges]))
         (let [attr-ref-id (keyword (str (name attr) "-ref-id"))]
-          (if-not (contains? shape attr-ref-id)
+          (if (or (not (contains? shape attr-ref-id))
+                  (nil? (get library-items (get shape attr-ref-id))))
             (recur (next attrs)
                    roperations
                    uoperations)
