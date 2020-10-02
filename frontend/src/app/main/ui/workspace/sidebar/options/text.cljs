@@ -207,7 +207,7 @@
                           (not= (:typography-ref-id values) :multiple)
                           (:typography-ref-file values))
                      (-> shared-libs
-                         (get-in [(:typography-ref-file values) :data :typography (:typography-ref-id values)])
+                         (get-in [(:typography-ref-file values) :data :typographies (:typography-ref-id values)])
                          (assoc :file-id (:typography-ref-file values)))
 
                      (and (:typography-ref-id values)

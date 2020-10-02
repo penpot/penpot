@@ -28,7 +28,7 @@
   (let [components-count (count (get-in library [:data :components] []))
         graphics-count (count (get-in library [:data :media] []))
         colors-count (count (get-in library [:data :colors] []))
-        typography-count (count (get-in library [:data :typography] []))]
+        typography-count (count (get-in library [:data :typographies] []))]
     ;; Include a &nbsp; so this block has always some content
     (str
       (str/join " · "

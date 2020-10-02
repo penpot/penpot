@@ -453,7 +453,7 @@
       (let [[rchanges1 uchanges1] (dwlh/generate-sync-file-components state file-id)
             [rchanges2 uchanges2] (dwlh/generate-sync-library-components state file-id)
             [rchanges3 uchanges3] (dwlh/generate-sync-file :colors file-id state)
-            [rchanges4 uchanges4] (dwlh/generate-sync-file :typography file-id state)
+            [rchanges4 uchanges4] (dwlh/generate-sync-file :typographies file-id state)
             rchanges (d/concat rchanges1 rchanges2 rchanges3 rchanges4)
             uchanges (d/concat uchanges1 uchanges2 uchanges3 uchanges4)]
         (rx/concat
@@ -543,7 +543,7 @@
   (ptk/reify ::update-typography
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [prev (get-in state [:workspace-data :typography (:id typography)])
+      (let [prev (get-in state [:workspace-data :typographies (:id typography)])
             rchg {:type :mod-typography
                   :typography typography}
             uchg {:type :mod-typography
@@ -557,7 +557,7 @@
   (ptk/reify ::delete-typography
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [prev (get-in state [:workspace-data :typography id])
+      (let [prev (get-in state [:workspace-data :typographies id])
             rchg {:type :del-typography
                   :id id}
             uchg {:type :add-typography

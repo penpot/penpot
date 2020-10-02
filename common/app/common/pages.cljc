@@ -877,15 +877,15 @@
 
 (defmethod process-change :add-typography
   [data {:keys [typography]}]
-  (update data :typography assoc (:id typography) typography))
+  (update data :typographies assoc (:id typography) typography))
 
 (defmethod process-change :mod-typography
   [data {:keys [typography]}]
-  (d/update-in-when data [:typography (:id typography)] merge typography))
+  (d/update-in-when data [:typographies (:id typography)] merge typography))
 
 (defmethod process-change :del-typography
   [data {:keys [id]}]
-  (update data :typography dissoc id))
+  (update data :typographies dissoc id))
 
 ;; -- Operations
 
