@@ -17,6 +17,7 @@
    [app.common.geom.shapes :as geom]
    [app.common.geom.matrix :as gmt]
    [app.util.object :as obj]
+   [app.util.color :as uc]
    [app.util.text :as ut]))
 
 ;; --- Text Editor Rendering
@@ -60,13 +61,22 @@
 
         font-family (obj/get data "font-family")
         font-size  (obj/get data "font-size")
+
+        ;; Old properties for backwards compatibility
         fill (obj/get data "fill")
-        opacity (obj/get data "opacity")
+        opacity (obj/get data "opacity" 1)
+
+        fill-color (obj/get data "fill-color" fill)
+        fill-opacity (obj/get data "fill-opacity" opacity)
+        fill-color-ref-id (obj/get data "fill-color-ref-id")
+        fill-color-ref-file (obj/get data "fill-color-ref-file")
+
+        [r g b a] (uc/hex->rgba fill-color fill-opacity)
+
         fontsdb (deref fonts/fontsdb)
 
         base #js {:textDecoration text-decoration
-                  :color fill
-                  :opacity opacity
+                  :color (str/format "rgba(%s, %s, %s, %s)" r g b a)
                   :textTransform text-transform
                   :lineHeight (or line-height "inherit")}]
 

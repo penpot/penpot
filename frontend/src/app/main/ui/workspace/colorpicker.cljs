@@ -318,7 +318,9 @@
                            :min 0
                            :step 0.1
                            :max 1
-                           :value (math/precision (:alpha @current-color) 2)
+                           :value (if (= (:alpha @current-color) :multiple)
+                                    ""
+                                    (math/precision (:alpha @current-color) 2))
                            :on-change (fn [e]
                                         (let [val (-> e dom/get-target dom/get-value (math/clamp 0 1))]
                                           (swap! current-color assoc :alpha val)

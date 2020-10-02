@@ -50,8 +50,7 @@
                                            extract-fn))]
                     (geom/get-attrs-multi (map mapfn shapes) (or attrs text-attrs))))
 
-        measure-values
-        (geom/get-attrs-multi shapes measure-attrs)
+        measure-values (geom/get-attrs-multi shapes measure-attrs)
 
         fill-values (extract {:attrs fill-attrs
                               :text-attrs ot/text-fill-attrs
