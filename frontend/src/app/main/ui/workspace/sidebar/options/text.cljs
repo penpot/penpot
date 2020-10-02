@@ -32,7 +32,7 @@
    ["slate" :refer [Transforms]]))
 
 (def text-typography-attrs [:typography-ref-id :typography-ref-file])
-(def text-fill-attrs [:fill :opacity])
+(def text-fill-attrs [:fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill :opacity ])
 (def text-font-attrs [:font-id :font-family :font-variant-id :font-size :font-weight :font-style])
 (def text-align-attrs [:text-align])
 (def text-spacing-attrs [:line-height :letter-spacing])
@@ -290,8 +290,10 @@
                       :shape shape
                       :attrs text-fill-attrs})
 
-        converted-fill-values {:fill-color (:fill fill-values)
-                               :fill-opacity (:opacity fill-values)}
+        fill-values (cond-> fill-values
+                      ;; Keep for backwards compatibility
+                      (:fill fill-values) (assoc :fill-color (:fill fill-values))
+                      (:opacity fill-values) (assoc :fill-opacity (:fill fill-values)))
 
         text-values (merge
                      (dwt/current-root-values
@@ -310,7 +312,7 @@
                         :values measure-values}]
      [:& fill-menu {:ids ids
                     :type type
-                    :values converted-fill-values
+                    :values fill-values
                     :editor editor}]
      [:& shadow-menu {:ids ids
                       :type type

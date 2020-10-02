@@ -120,19 +120,19 @@
              is-text? #(= :text (:type (get objects %)))
              text-ids (filter is-text? ids)
              shape-ids (filter (comp not is-text?) ids)
-             update-fn (fn [shape] (assoc shape
-                                          :fill-color color
-                                          :fill-opacity opacity
-                                          :fill-color-ref-id id
-                                          :fill-color-ref-file file-id))
-             editor (get-in state [:workspace-local :editor])
-             converted-attrs {:fill color}
 
+             attrs (cond-> {:fill-color color
+                            :fill-color-ref-id id
+                            :fill-color-ref-file file-id}
+                     (and opacity (not= opacity :multiple)) (assoc :fill-opacity opacity))
+
+             update-fn (fn [shape] (merge shape attrs))
+             editors (get-in state [:workspace-local :editors])
              reduce-fn (fn [state id]
                          (update-in state [:workspace-data :pages-index pid :objects id]  update-fn))]
 
          (rx/from (conj
-                   (map #(dwt/update-text-attrs {:id % :editor editor :attrs converted-attrs}) text-ids)
+                   (map #(dwt/update-text-attrs {:id % :editor (get editors %) :attrs attrs}) text-ids)
                    (dwc/update-shapes shape-ids update-fn))))))))
 
 (defn change-stroke [ids color id file-id]

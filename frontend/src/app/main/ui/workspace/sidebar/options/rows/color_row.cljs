@@ -67,7 +67,6 @@
         get-color-name (fn [{:keys [id file-id]}]
                          (let [src-colors (if file-id (get-in shared-libs [file-id :data :colors]) file-colors)]
                            (get-in src-colors [id :name])))
-        ;;
 
         default-color {:value "#000000" :opacity 1}
 
@@ -120,11 +119,10 @@
     (mf/use-effect
      (mf/deps color)
      #(reset! state (parse-color color)))
-        ;; is this necessary?
 
     [:div.row-flex.color-data
      [:span.color-th
-      {:class (when (:id color) "color-name")
+      {:class (when (and (:id color) (not= (:id color) :multiple)) "color-name")
        :style {:background-color (-> value value-to-background)}
        :on-click (color-picker-callback @state handle-pick-color handle-open handle-close disable-opacity)}
       (when (= value :multiple) "?")]
