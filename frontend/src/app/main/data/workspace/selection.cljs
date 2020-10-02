@@ -151,7 +151,13 @@
             objects  (dwc/lookup-page-objects state page-id)
             group    (get objects group-id)
             children (map #(get objects %) (:shapes group))
-            selected (d/seek #(geom/has-point? % position) children)]
+
+            ;; We need to reverse the children because if two children
+            ;; overlap we want to select the one that's over (and it's
+            ;; in the later vector position
+            selected (->> children
+                          reverse
+                          (d/seek #(geom/has-point? % position)))]
         (when selected
           (rx/of deselect-all (select-shape (:id selected))))))))
 
