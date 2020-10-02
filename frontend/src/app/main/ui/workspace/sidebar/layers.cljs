@@ -185,6 +185,12 @@
                               :index index
                               :name (:name item)})]
 
+    (mf/use-effect
+     (mf/deps selected?)
+     (fn []
+       (when selected?
+         (.scrollIntoView (mf/ref-val dref) false))))
+
     [:li {:on-context-menu on-context-menu
           :ref dref
           :class (dom/classnames

@@ -64,6 +64,7 @@
   }
 
   &.selected {
+    background-color: $colro-gray-60;
 
     svg {
       fill: $color-primary;
