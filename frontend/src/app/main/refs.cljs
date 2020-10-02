@@ -152,7 +152,7 @@
 (defn is-child-selected?
   [id]
   (letfn [(selector [state]
-            (let [page-id  :current-page-id
+            (let [page-id  (:current-page-id state)
                   objects  (get-in state [:workspace-data :pages-index page-id :objects])
                   selected (get-in state [:workspace-local :selected])
                   shape    (get objects id)
