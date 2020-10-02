@@ -20,9 +20,10 @@
   (update data :pages-index #(d/mapm f %)))
 
 (defn select-objects
-  "Get a list of all objects in a page that satisfy a condition"
-  [f page]
-  (filter f (vals (get page :objects))))
+  "Get a list of all objects in a container (a page or a component) that
+  satisfy a condition"
+  [f container]
+  (filter f (vals (get container :objects))))
 
 (defn update-object-list
   "Update multiple objects in a page at once"
