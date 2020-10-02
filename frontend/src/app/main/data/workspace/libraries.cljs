@@ -253,6 +253,25 @@
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
                    (dws/select-shapes (d/ordered-set (:id group))))))))))
 
+(defn rename-component
+  [id new-name]
+  (us/assert ::us/uuid id)
+  (us/assert ::us/string new-name)
+  (ptk/reify ::rename-component
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [component (get-in state [:workspace-data :components id])
+
+            rchanges [{:type :mod-component
+                       :id id
+                       :name new-name}]
+
+            uchanges [{:type :mod-component
+                       :id id
+                       :name (:name component)}]]
+
+        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
+
 (defn duplicate-component
   "Create a new component copied from the one with the given id."
   [{:keys [id] :as params}]
@@ -279,7 +298,7 @@
                        :id (:id new-shape)}]]
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
- 
+
 (defn delete-component
   "Delete the component with the given id, from the current file library."
   [{:keys [id] :as params}]

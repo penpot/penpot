@@ -213,9 +213,28 @@
       left: 0;
       bottom: 0;
       width: 100%;
+      padding: 3px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+
+      &.editing {
+        display: block;
+      }
+
+      .editable-label-input {
+        border: 1px solid $color-gray-20;
+        border-radius: 3px;
+        font-size: $fs11;
+        padding: 2px;
+        margin: 0;
+        height: unset;
+        width: 100%;
+      }
+
+      .editable-label-close {
+        display: none;
+      }
     }
 
     .grid-cell:hover {
