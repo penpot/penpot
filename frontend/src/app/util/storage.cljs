@@ -5,34 +5,43 @@
 ;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
 
 (ns app.util.storage
-  (:require [app.util.transit :as t]))
+  (:require
+   [app.util.transit :as t]
+   [app.util.timers :as tm]
+   [app.common.exceptions :as ex]))
 
 (defn- ^boolean is-worker?
   []
   (or (= *target* "nodejs")
       (not (exists? js/window))))
 
+(defn- decode
+  [v]
+  (ex/ignoring (t/decode v)))
+
+(def local
+  {:get #(decode (.getItem ^js js/localStorage (name %)))
+   :set #(.setItem ^js js/localStorage (name %1) (t/encode %2))})
+
+(def session
+  {:get #(decode (.getItem ^js js/sessionStorage (name %)))
+   :set #(.setItem ^js js/sessionStorage (name %1) (t/encode %2))})
+
 (defn- persist
-  [alias value]
+  [alias storage value]
   (when-not (is-worker?)
-    (let [key (name alias)
-          value (t/encode value)]
-      (.setItem js/localStorage key value))))
+    (tm/schedule-on-idle
+     (fn [] ((:set storage) alias value)))))
 
 (defn- load
-  [alias]
+  [alias storage]
   (when-not (is-worker?)
-    (let [data (.getItem js/localStorage (name alias))]
-      (try
-        (t/decode data)
-        (catch :default e
-          (js/console.error "Error on loading data from local storage." e)
-          nil)))))
+    ((:get storage) alias)))
 
 (defn- make-storage
-  [alias]
-  (let [data (atom (load alias))]
-    (add-watch data :sub #(persist alias %4))
+  [alias storage]
+  (let [data (atom (load alias storage))]
+    (add-watch data :sub #(persist alias storage %4))
     (reify
       Object
       (toString [_]
@@ -66,5 +75,9 @@
       (-lookup [_ key not-found]
         (get @data key not-found)))))
 
-(def storage
-  (make-storage "app"))
+
+(defonce storage
+  (make-storage "app" local))
+
+(defonce cache
+  (make-storage "cache" session))

@@ -16,9 +16,10 @@
    [app.util.transit :as t]))
 
 (defn- conditional-decode
-  [{:keys [body headers] :as response}]
+  [{:keys [body headers status] :as response}]
   (let [contentype (get headers "content-type")]
-    (if (str/starts-with? contentype "application/transit+json")
+    (if (and (str/starts-with? contentype "application/transit+json")
+             (pos? (count body)))
       (assoc response :body (t/decode body))
       response)))
 

@@ -20,6 +20,7 @@
    [app.main.ui.dashboard.projects :refer [projects-section]]
    [app.main.ui.dashboard.search :refer [search-page]]
    [app.main.ui.dashboard.sidebar :refer [sidebar]]
+   [app.main.ui.dashboard.team :refer [team-settings-page team-members-page]]
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [t]]
    [app.util.router :as rt]
@@ -56,7 +57,7 @@
   (l/derived (l/in [:projects team-id]) st/state))
 
 (mf/defc dashboard-content
-  [{:keys [team projects project section search-term] :as props}]
+  [{:keys [team projects project section search-term profile] :as props}]
   [:div.dashboard-content
    (case section
      :dashboard-projects
@@ -74,6 +75,12 @@
 
      :dashboard-libraries
      [:& libraries-page {:team team}]
+
+     :dashboard-team-members
+     [:& team-members-page {:team team :profile profile}]
+
+     :dashboard-team-settings
+     [:& team-settings-page {:team team :profile profile}]
 
      nil)])
 
@@ -96,18 +103,18 @@
 
     (mf/use-effect
      (mf/deps team-id)
-     (fn []
-       (st/emit! (dd/fetch-team {:id team-id})
-                 (dd/fetch-projects {:team-id team-id}))))
+     (st/emitf (dd/fetch-bundle {:id team-id})))
 
     [:section.dashboard-layout
      [:& sidebar {:team team
                   :projects projects
                   :project project
+                  :profile profile
                   :section section
                   :search-term search-term}]
      (when team
        [:& dashboard-content {:projects projects
+                              :profile profile
                               :project project
                               :section section
                               :search-term search-term

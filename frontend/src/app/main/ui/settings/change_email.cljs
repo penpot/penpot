@@ -12,14 +12,15 @@
    [app.common.spec :as us]
    [app.main.data.auth :as da]
    [app.main.data.messages :as dm]
+   [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.forms :refer [input submit-button form]]
+   [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
-   [app.main.ui.modal :as modal]
    [app.util.i18n :as i18n :refer [tr t]]
+   [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
@@ -47,55 +48,65 @@
                     (assoc-in data [:errors :email-1] error))))
 
     :else
-    (let [msg (tr "errors.unexpected-error")]
-      (st/emit! (dm/error msg)))))
+    (rx/throw error)))
 
 (defn- on-success
-  [profile data]
-  (let [msg (tr "auth.notifications.validation-email-sent" (:email profile))]
-    (st/emit! (dm/info msg) modal/hide)))
+  [form data]
+  (let [email   (get-in @form [:clean-data :email-1])
+        message (tr "auth.notifications.validation-email-sent" email)]
+    (st/emit! (dm/info message)
+              (modal/hide))))
 
 (defn- on-submit
-  [profile form event]
-  (let [data (with-meta {:email (get-in form [:clean-data :email-1])}
-               {:on-error (partial on-error form)
-                :on-success (partial on-success profile)})]
-    (st/emit! (du/request-email-change data))))
-
-(mf/defc change-email-form
-  [{:keys [locale profile] :as props}]
-  [:section.modal-content.generic-form
-   [:h2 (t locale "settings.change-email-title")]
-
-   [:& msgs/inline-banner
-    {:type :info
-     :content (t locale "settings.change-email-info" (:email profile))}]
-
-   [:& form {:on-submit (partial on-submit profile)
-             :spec ::email-change-form
-             :validators [email-equality]
-             :initial {}}
-    [:& input {:type "text"
-               :name :email-1
-               :label (t locale "settings.new-email-label")
-               :trim true}]
-
-    [:& input {:type "text"
-               :name :email-2
-               :label (t locale "settings.confirm-email-label")
-               :trim true}]
-
-    [:& submit-button
-     {:label (t locale "settings.change-email-submit-label")}]]])
+  [form event]
+  (let [params {:email (get-in @form [:clean-data :email-1])}
+        mdata  {:on-error (partial on-error form)
+                :on-success (partial on-success form)}]
+    (st/emit! (du/request-email-change (with-meta params mdata)))))
 
 (mf/defc change-email-modal
   {::mf/register modal/components
    ::mf/register-as :change-email}
-  [props]
+  []
   (let [locale  (mf/deref i18n/locale)
-        profile (mf/deref refs/profile)]
+        profile (mf/deref refs/profile)
+        form    (fm/use-form :spec ::email-change-form
+                             :validators [email-equality]
+                             :initial profile)
+        on-close
+        (mf/use-callback (st/emitf (modal/hide)))]
+
     [:div.modal-overlay
-     [:div.generic-modal.change-email-modal
-      [:span.close {:on-click #(modal/hide!)} i/close]
-      [:& change-email-form {:locale locale :profile profile}]]]))
+     [:div.modal-container.change-email-modal.form-container
+      [:& fm/form {:form form
+                   :on-submit on-submit}
+
+       [:div.modal-header
+        [:div.modal-header-title
+         [:h2 (t locale "dashboard.settings.change-email-title")]]
+        [:div.modal-close-button
+         {:on-click on-close} i/close]]
+
+       [:div.modal-content
+        [:& msgs/inline-banner
+         {:type :info
+          :content (t locale "dashboard.settings.change-email-info" (:email profile))}]
+
+        [:div.fields-row
+         [:& fm/input {:type "text"
+                       :name :email-1
+                       :label (t locale "dashboard.settings.new-email-label")
+                       :trim true}]]
+        [:div.fields-row
+         [:& fm/input {:type "text"
+                       :name :email-2
+                       :label (t locale "dashboard.settings.confirm-email-label")
+                       :trim true}]]]
+
+       [:div.modal-footer
+        [:div.action-buttons
+         [:& fm/submit-button
+          {:label (t locale "dashboard.settings.change-email-submit-label")}]]]]]]))
+
+
 

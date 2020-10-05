@@ -14,9 +14,11 @@ textarea {
   }
 }
 
+.form-container,
 .generic-form {
   display: flex;
   justify-content: center;
+  flex-direction: column;
 
   .forms-container {
     display: flex;
@@ -29,6 +31,18 @@ textarea {
     display: flex;
     flex-direction: column;
     // flex-basis: 368px;
+  }
+
+  .fields-row {
+    margin-bottom: 20px;
+    flex-direction: column;
+
+    .options {
+      display: flex;
+      justify-content: flex-end;
+      font-size: $fs14;
+      margin-top: 13px;
+    }
   }
 
   .field {
@@ -61,7 +75,7 @@ textarea {
 
   .links {
     display: flex;
-    font-size: $fs11;
+    font-size: $fs14;
     justify-content: space-between;
     margin-bottom: $medium;
 
@@ -72,13 +86,13 @@ textarea {
   }
 
   .link-entry {
-    font-size: $fs12;
+    font-size: $fs14;
     color: $color-gray-40;
     margin-bottom: 10px;
   }
 
   .link-entry a {
-    font-size: $fs12;
+    font-size: $fs14;
     color: $color-primary-dark;
   }
 }
@@ -93,7 +107,7 @@ textarea {
     border-radius: 2px;
     border: 1px solid $color-gray-20;
     color: $color-gray-60;
-    font-size: $fs12;
+    font-size: $fs14;
     height: 40px;
     margin: 0;
     padding: 15px 15px 0 15px;
@@ -109,7 +123,7 @@ textarea {
   }
 
   label {
-    font-size: $fs10;
+    font-size: $fs12;
     color: $color-gray-30;
     position: absolute;
     left: 15px;
@@ -181,13 +195,13 @@ textarea {
 
   .hint {
     padding: 4px;
-    font-size: $fs10;
+    font-size: $fs12;
   }
 
   .error {
     color: $color-danger;
     padding: 4px;
-    font-size: $fs10;
+    font-size: $fs12;
   }
 }
 
@@ -198,13 +212,13 @@ textarea {
   justify-content: center;
 
   label {
-    font-size: $fs10;
+    font-size: $fs12;
     color: $color-gray-30;
   }
 
   select {
     cursor: pointer;
-    font-size: $fs12;
+    font-size: $fs14;
     border: 0px;
     opacity: 0;
     z-index: 10;
@@ -224,6 +238,7 @@ textarea {
     justify-content: center;
     padding-top: 6px;
     padding-bottom: 6px;
+    padding-left: 15px;
 
   }
 
@@ -235,8 +250,6 @@ textarea {
     border-radius: 2px;
     border: 1px solid $color-gray-20;
     height: 40px;
-    padding-left: 15px;
-    padding-right: 15px;
 
     &.invalid {
       border-color: $color-danger;
@@ -261,7 +274,7 @@ textarea {
 
   .value {
     color: $color-gray-60;
-    font-size: $fs12;
+    font-size: $fs14;
     width: 100%;
     border: 0px;
     padding: 0px;
@@ -273,7 +286,8 @@ textarea {
     justify-content: center;
     align-items: center;
     padding-left: 10px;
-
+    padding-right: 10px;
+    pointer-events: none;
 
     svg {
       fill: $color-gray-30;
@@ -283,3 +297,4 @@ textarea {
     }
   }
 }
+

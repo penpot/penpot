@@ -9,11 +9,6 @@
 
 (ns app.main.ui
   (:require
-   [expound.alpha :as expound]
-   [beicon.core :as rx]
-   [cuerdas.core :as str]
-   [potok.core :as ptk]
-   [rumext.alpha :as mf]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
@@ -21,18 +16,22 @@
    [app.main.data.messages :as dm]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.auth :refer [auth verify-token]]
+   [app.main.ui.auth :refer [auth]]
+   [app.main.ui.auth.verify-token :refer [verify-token]]
+   [app.main.ui.cursors :as c]
    [app.main.ui.dashboard :refer [dashboard]]
    [app.main.ui.icons :as i]
-   [app.main.ui.cursors :as c]
    [app.main.ui.messages :as msgs]
+   [app.main.ui.render :as render]
    [app.main.ui.settings :as settings]
    [app.main.ui.static :refer [not-found-page not-authorized-page]]
    [app.main.ui.viewer :refer [viewer-page]]
-   [app.main.ui.render :as render]
    [app.main.ui.workspace :as workspace]
    [app.util.i18n :as i18n :refer [tr t]]
-   [app.util.timers :as ts]))
+   [app.util.timers :as ts]
+   [expound.alpha :as expound]
+   [potok.core :as ptk]
+   [rumext.alpha :as mf]))
 
 ;; --- Routes
 
@@ -60,12 +59,13 @@
    ;; Used for export
    ["/render-object/:file-id/:page-id/:object-id" :render-object]
 
-   ["/dashboard"
-    ["/team/:team-id"
-     ["/projects" :dashboard-projects]
-     ["/search" :dashboard-search]
-     ["/libraries" :dashboard-libraries]
-     ["/projects/:project-id" :dashboard-files]]]
+   ["/dashboard/team/:team-id"
+    ["/members" :dashboard-team-members]
+    ["/settings" :dashboard-team-settings]
+    ["/projects" :dashboard-projects]
+    ["/search" :dashboard-search]
+    ["/libraries" :dashboard-libraries]
+    ["/projects/:project-id" :dashboard-files]]
 
    ["/workspace/:project-id/:file-id" :workspace]])
 
@@ -109,7 +109,9 @@
     (:dashboard-search
      :dashboard-projects
      :dashboard-files
-     :dashboard-libraries)
+     :dashboard-libraries
+     :dashboard-team-members
+     :dashboard-team-settings)
     [:& dashboard {:route route}]
 
     :viewer
@@ -186,3 +188,9 @@
       (ts/schedule 100 #(st/emit! (dm/show {:content "Something wrong has happened."
                                             :type :error
                                             :timeout 5000}))))))
+
+;; (defonce foo
+;;   (do
+;;     (prn "attach listener")
+;;     (.addEventListener js/window "error" (fn [err] (ptk/handle-error (unchecked-get err "error"))))
+;;     1))

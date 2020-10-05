@@ -1,6 +1,6 @@
 {
   "auth.already-have-account" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:114" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:127" ],
     "translations" : {
       "en" : "Already have an account?",
       "fr" : "Vous avez déjà un compte?",
@@ -9,7 +9,7 @@
     }
   },
   "auth.confirm-password-label" : {
-    "used-in" : [ "src/app/main/ui/auth/recovery.cljs:76" ],
+    "used-in" : [ "src/app/main/ui/auth/recovery.cljs:77" ],
     "translations" : {
       "en" : "Confirm password",
       "fr" : "Confirmez mot de passe",
@@ -18,7 +18,7 @@
     }
   },
   "auth.create-demo-profile" : {
-    "used-in" : [ "src/app/main/ui/auth/login.cljs:135", "src/app/main/ui/auth/register.cljs:123" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:136", "src/app/main/ui/auth/login.cljs:147" ],
     "translations" : {
       "en" : "Create demo account",
       "fr" : "Créer un compte de démonstration",
@@ -27,7 +27,7 @@
     }
   },
   "auth.create-demo-profile-label" : {
-    "used-in" : [ "src/app/main/ui/auth/login.cljs:132", "src/app/main/ui/auth/register.cljs:120" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:133", "src/app/main/ui/auth/login.cljs:144" ],
     "translations" : {
       "en" : "Just wanna try it?",
       "fr" : "Vous voulez juste essayer?",
@@ -45,7 +45,7 @@
     }
   },
   "auth.email-label" : {
-    "used-in" : [ "src/app/main/ui/auth/login.cljs:81", "src/app/main/ui/auth/register.cljs:89", "src/app/main/ui/auth/recovery_request.cljs:45" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:101", "src/app/main/ui/auth/recovery_request.cljs:47", "src/app/main/ui/auth/login.cljs:92" ],
     "translations" : {
       "en" : "Email",
       "fr" : "Adresse email",
@@ -54,7 +54,7 @@
     }
   },
   "auth.forgot-password" : {
-    "used-in" : [ "src/app/main/ui/auth/login.cljs:110" ],
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:122" ],
     "translations" : {
       "en" : "Forgot your password?",
       "fr" : "Mot de passe oublié?",
@@ -63,7 +63,7 @@
     }
   },
   "auth.fullname-label" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:83" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:94" ],
     "translations" : {
       "en" : "Full Name",
       "fr" : "Nom complet",
@@ -72,7 +72,7 @@
     }
   },
   "auth.go-back-to-login" : {
-    "used-in" : [ "src/app/main/ui/auth/recovery_request.cljs:66" ],
+    "used-in" : [ "src/app/main/ui/auth/recovery_request.cljs:68" ],
     "translations" : {
       "en" : "Go back!",
       "fr" : "Retour!",
@@ -81,7 +81,7 @@
     }
   },
   "auth.goodbye-title" : {
-    "used-in" : [ "src/app/main/ui/auth.cljs:33" ],
+    "used-in" : [ "src/app/main/ui/auth.cljs:35" ],
     "translations" : {
       "en" : "Goodbye!",
       "fr" : "Au revoir!",
@@ -90,7 +90,7 @@
     }
   },
   "auth.login-here" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:117" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:130" ],
     "translations" : {
       "en" : "Login here",
       "fr" : "Se connecter ici",
@@ -99,7 +99,7 @@
     }
   },
   "auth.login-submit-label" : {
-    "used-in" : [ "src/app/main/ui/auth/login.cljs:89" ],
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:101" ],
     "translations" : {
       "en" : "Sign in",
       "fr" : "Se connecter",
@@ -108,7 +108,7 @@
     }
   },
   "auth.login-subtitle" : {
-    "used-in" : [ "src/app/main/ui/auth/login.cljs:102" ],
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:114" ],
     "translations" : {
       "en" : "Enter your details below",
       "fr" : "Entrez vos informations ci-dessous",
@@ -117,7 +117,7 @@
     }
   },
   "auth.login-title" : {
-    "used-in" : [ "src/app/main/ui/auth/login.cljs:101" ],
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:113" ],
     "translations" : {
       "en" : "Great to see you again!",
       "fr" : "Ravi de vous revoir!",
@@ -126,7 +126,7 @@
     }
   },
   "auth.login-with-gitlab-submit-label" : {
-    "used-in" : [ "src/app/main/ui/auth/login.cljs:128" ],
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:140" ],
     "translations" : {
       "en" : "Login with Gitlab",
       "fr" : "Se connecter via Gitlab",
@@ -135,7 +135,7 @@
     }
   },
   "auth.login-with-ldap-submit-label" : {
-    "used-in" : [ "src/app/main/ui/auth/login.cljs:93" ],
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:105" ],
     "translations" : {
       "en" : "Sign in with LDAP",
       "fr" : "Se connecter via LDAP",
@@ -153,7 +153,7 @@
     }
   },
   "auth.notifications.invalid-token-error" : {
-    "used-in" : [ "src/app/main/ui/auth/recovery.cljs:48" ],
+    "used-in" : [ "src/app/main/ui/auth/recovery.cljs:47" ],
     "translations" : {
       "en" : "The recovery token is invalid.",
       "fr" : "Le code de récupération n'est pas valide.",
@@ -162,7 +162,7 @@
     }
   },
   "auth.notifications.password-changed-succesfully" : {
-    "used-in" : [ "src/app/main/ui/auth/recovery.cljs:52" ],
+    "used-in" : [ "src/app/main/ui/auth/recovery.cljs:51" ],
     "translations" : {
       "en" : "Password successfully changed",
       "fr" : "Mot de passe changé avec succès",
@@ -171,7 +171,7 @@
     }
   },
   "auth.notifications.recovery-token-sent" : {
-    "used-in" : [ "src/app/main/ui/auth/recovery_request.cljs:32" ],
+    "used-in" : [ "src/app/main/ui/auth/recovery_request.cljs:30" ],
     "translations" : {
       "en" : "Password recovery link sent to your inbox.",
       "fr" : "Lien de récupération de mot de passe envoyé.",
@@ -179,14 +179,20 @@
       "es" : "Hemos enviado a tu buzón un enlace para recuperar tu contraseña."
     }
   },
+  "auth.notifications.team-invitation-accepted" : {
+    "used-in" : [ "src/app/main/ui/auth/verify_token.cljs:55", "src/app/main/ui/auth/register.cljs:50" ],
+    "translations" : {
+      "en" : "Joined the team succesfully"
+    }
+  },
   "auth.notifications.validation-email-sent" : {
-    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:55", "src/app/main/ui/auth/register.cljs:58" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:54", "src/app/main/ui/settings/change_email.cljs:56" ],
     "translations" : {
       "en" : "Verification email sent to %s; check your email!"
     }
   },
   "auth.password-label" : {
-    "used-in" : [ "src/app/main/ui/auth/login.cljs:87", "src/app/main/ui/auth/register.cljs:93" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:106", "src/app/main/ui/auth/login.cljs:99" ],
     "translations" : {
       "en" : "Password",
       "fr" : "Mot de passe",
@@ -195,7 +201,7 @@
     }
   },
   "auth.password-length-hint" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:92" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:105" ],
     "translations" : {
       "en" : "At least 8 characters",
       "fr" : "Au moins 8 caractères",
@@ -204,7 +210,7 @@
     }
   },
   "auth.recovery-request-submit-label" : {
-    "used-in" : [ "src/app/main/ui/auth/recovery_request.cljs:50" ],
+    "used-in" : [ "src/app/main/ui/auth/recovery_request.cljs:52" ],
     "translations" : {
       "en" : "Recover Password",
       "fr" : "Récupérer le mot de passe",
@@ -213,7 +219,7 @@
     }
   },
   "auth.recovery-request-subtitle" : {
-    "used-in" : [ "src/app/main/ui/auth/recovery_request.cljs:59" ],
+    "used-in" : [ "src/app/main/ui/auth/recovery_request.cljs:62" ],
     "translations" : {
       "en" : "We'll send you an email with instructions",
       "fr" : "Nous vous enverrons un e-mail avec des instructions",
@@ -222,7 +228,7 @@
     }
   },
   "auth.recovery-request-title" : {
-    "used-in" : [ "src/app/main/ui/auth/recovery_request.cljs:58" ],
+    "used-in" : [ "src/app/main/ui/auth/recovery_request.cljs:61" ],
     "translations" : {
       "en" : "Forgot your password?",
       "fr" : "Vous avez oublié votre mot de passe?",
@@ -231,7 +237,7 @@
     }
   },
   "auth.recovery-submit-label" : {
-    "used-in" : [ "src/app/main/ui/auth/recovery.cljs:79" ],
+    "used-in" : [ "src/app/main/ui/auth/recovery.cljs:80" ],
     "translations" : {
       "en" : "Change your password",
       "fr" : "Changez votre mot de passe",
@@ -240,7 +246,7 @@
     }
   },
   "auth.register" : {
-    "used-in" : [ "src/app/main/ui/auth/login.cljs:116" ],
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:128" ],
     "translations" : {
       "en" : "Sign up here",
       "fr" : "Inscrivez-vous ici",
@@ -249,7 +255,7 @@
     }
   },
   "auth.register-label" : {
-    "used-in" : [ "src/app/main/ui/auth/login.cljs:113" ],
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:125" ],
     "translations" : {
       "en" : "No account yet?",
       "fr" : "Pas encore de compte?",
@@ -258,7 +264,7 @@
     }
   },
   "auth.register-submit-label" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:97" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:110" ],
     "translations" : {
       "en" : "Create an account",
       "fr" : "Créer un compte",
@@ -267,7 +273,7 @@
     }
   },
   "auth.register-subtitle" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:106" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:118" ],
     "translations" : {
       "en" : "It's free, it's Open Source",
       "fr" : "C'est gratuit, c'est Open Source",
@@ -276,7 +282,7 @@
     }
   },
   "auth.register-title" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:105" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:117" ],
     "translations" : {
       "en" : "Create an account",
       "fr" : "Créer un compte",
@@ -285,7 +291,7 @@
     }
   },
   "auth.sidebar-tagline" : {
-    "used-in" : [ "src/app/main/ui/auth.cljs:42" ],
+    "used-in" : [ "src/app/main/ui/auth.cljs:46" ],
     "translations" : {
       "en" : "The open-source solution for design and prototyping.",
       "fr" : "La solution Open Source pour la conception et le prototypage.",
@@ -294,7 +300,7 @@
     }
   },
   "dashboard.grid.add-shared" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:210", "src/app/main/ui/dashboard/grid.cljs:167" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:210", "src/app/main/ui/dashboard/grid.cljs:174" ],
     "translations" : {
       "en" : "Add as Shared Library",
       "fr" : "",
@@ -303,7 +309,7 @@
     }
   },
   "dashboard.grid.add-shared-accept" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:104", "src/app/main/ui/dashboard/grid.cljs:95" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:104", "src/app/main/ui/dashboard/grid.cljs:113" ],
     "translations" : {
       "en" : "Add as Shared Library",
       "fr" : "",
@@ -312,7 +318,7 @@
     }
   },
   "dashboard.grid.add-shared-hint" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:103", "src/app/main/ui/dashboard/grid.cljs:94" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:103", "src/app/main/ui/dashboard/grid.cljs:112" ],
     "translations" : {
       "en" : "Once added as Shared Library, the assets of this file library will be available to be used among the rest of your files.",
       "fr" : "",
@@ -321,7 +327,7 @@
     }
   },
   "dashboard.grid.add-shared-message" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:102", "src/app/main/ui/dashboard/grid.cljs:93" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:102", "src/app/main/ui/dashboard/grid.cljs:110" ],
     "translations" : {
       "en" : "Add “%s” as Shared Library",
       "fr" : "",
@@ -330,7 +336,7 @@
     }
   },
   "dashboard.grid.delete" : {
-    "used-in" : [ "src/app/main/ui/dashboard/files.cljs:87", "src/app/main/ui/dashboard/grid.cljs:164" ],
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:171", "src/app/main/ui/dashboard/files.cljs:85" ],
     "translations" : {
       "en" : "Delete",
       "fr" : "Supprimer",
@@ -339,7 +345,7 @@
     }
   },
   "dashboard.grid.empty-files" : {
-    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:174" ],
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:181" ],
     "translations" : {
       "en" : "You still have no files here",
       "fr" : "Vous n'avez encore aucun fichier ici",
@@ -348,7 +354,7 @@
     }
   },
   "dashboard.grid.remove-shared" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:208", "src/app/main/ui/dashboard/grid.cljs:166" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:208", "src/app/main/ui/dashboard/grid.cljs:173" ],
     "translations" : {
       "en" : "Remove as Shared Library",
       "fr" : "",
@@ -357,7 +363,7 @@
     }
   },
   "dashboard.grid.remove-shared-accept" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:113", "src/app/main/ui/dashboard/grid.cljs:114" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:113", "src/app/main/ui/dashboard/grid.cljs:126" ],
     "translations" : {
       "en" : "Remove as Shared Library",
       "fr" : "",
@@ -366,7 +372,7 @@
     }
   },
   "dashboard.grid.remove-shared-hint" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:112", "src/app/main/ui/dashboard/grid.cljs:113" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:112", "src/app/main/ui/dashboard/grid.cljs:125" ],
     "translations" : {
       "en" : "Once removed as Shared Library, the File Library of this file will stop being available to be used among the rest of your files.",
       "fr" : "",
@@ -375,7 +381,7 @@
     }
   },
   "dashboard.grid.remove-shared-message" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:111", "src/app/main/ui/dashboard/grid.cljs:112" ],
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs:111", "src/app/main/ui/dashboard/grid.cljs:124" ],
     "translations" : {
       "en" : "Remove “%s” as Shared Library",
       "fr" : "",
@@ -384,7 +390,7 @@
     }
   },
   "dashboard.grid.rename" : {
-    "used-in" : [ "src/app/main/ui/dashboard/files.cljs:86", "src/app/main/ui/dashboard/grid.cljs:163" ],
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:170", "src/app/main/ui/dashboard/files.cljs:84" ],
     "translations" : {
       "en" : "Rename",
       "fr" : "Renommer",
@@ -392,13 +398,25 @@
       "es" : "Renombrar"
     }
   },
+  "dashboard.grid.show-all-files" : {
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:243" ],
+    "translations" : {
+      "en" : "Show all files"
+    }
+  },
   "dashboard.header.draft" : {
-    "used-in" : [ "src/app/main/ui/dashboard/files.cljs:80" ],
+    "used-in" : [ "src/app/main/ui/dashboard/files.cljs:72" ],
     "translations" : {
       "en" : "Draft",
       "fr" : "Brouillon",
       "ru" : "Черновик",
       "es" : "Borrador"
+    }
+  },
+  "dashboard.header.invite-profile" : {
+    "used-in" : [ "src/app/main/ui/dashboard/team.cljs:69" ],
+    "translations" : {
+      "en" : "Invite to team"
     }
   },
   "dashboard.header.libraries" : {
@@ -411,7 +429,7 @@
     }
   },
   "dashboard.header.new-project" : {
-    "used-in" : [ "src/app/main/ui/dashboard/projects.cljs:36" ],
+    "used-in" : [ "src/app/main/ui/dashboard/projects.cljs:35" ],
     "translations" : {
       "en" : "+ New project",
       "fr" : "+ Nouveau projet",
@@ -419,40 +437,19 @@
       "es" : "+ Nuevo proyecto"
     }
   },
-  "dashboard.header.profile-menu.logout" : {
-    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:376" ],
-    "translations" : {
-      "en" : "Exit",
-      "fr" : "Quitter",
-      "ru" : "Выход",
-      "es" : "Salir"
-    }
-  },
-  "dashboard.header.profile-menu.password" : {
-    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:372" ],
-    "translations" : {
-      "en" : "Password",
-      "fr" : "Mot de passe",
-      "ru" : "Пароль",
-      "es" : "Contraseña"
-    }
-  },
-  "dashboard.header.profile-menu.profile" : {
-    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:368" ],
-    "translations" : {
-      "en" : "Profile",
-      "fr" : "Profil",
-      "ru" : "Профиль",
-      "es" : "Perfil"
-    }
-  },
   "dashboard.header.project" : {
-    "used-in" : [ "src/app/main/ui/dashboard/files.cljs:82" ],
     "translations" : {
       "en" : "Project %s",
       "fr" : "Projet %s",
       "ru" : "Проект %s",
       "es" : "Proyecto %s"
+    },
+    "unused" : true
+  },
+  "dashboard.header.your-account" : {
+    "used-in" : [ "src/app/main/ui/settings.cljs:28" ],
+    "translations" : {
+      "en" : "Your account"
     }
   },
   "dashboard.library.add-item.icons" : {
@@ -536,13 +533,67 @@
     },
     "unused" : true
   },
+  "dashboard.logout" : {
+    "used-in" : [ "src/app/main/ui/settings.cljs:30", "src/app/main/ui/dashboard/sidebar.cljs:462" ],
+    "translations" : {
+      "en" : "Logout",
+      "fr" : "Quitter",
+      "ru" : "Выход",
+      "es" : "Salir"
+    }
+  },
   "dashboard.new-file" : {
-    "used-in" : [ "src/app/main/ui/dashboard/projects.cljs:110", "src/app/main/ui/dashboard/files.cljs:101" ],
+    "used-in" : [ "src/app/main/ui/dashboard/projects.cljs:107", "src/app/main/ui/dashboard/files.cljs:87" ],
     "translations" : {
       "en" : "+ New File",
       "fr" : "+ Nouveau fichier",
       "ru" : "+ Новый файл",
       "es" : "+ Nuevo Archivo"
+    }
+  },
+  "dashboard.notifications.email-changed-successfully" : {
+    "used-in" : [ "src/app/main/ui/auth/verify_token.cljs:42" ],
+    "translations" : {
+      "en" : "Your email address has been updated successfully",
+      "fr" : "Votre adresse e-mail a été mise à jour avec succès",
+      "ru" : "Ваш email адрес успешно обновлен",
+      "es" : "Tu dirección de correo ha sido actualizada"
+    }
+  },
+  "dashboard.notifications.email-verified-successfully" : {
+    "used-in" : [ "src/app/main/ui/auth/verify_token.cljs:36" ],
+    "translations" : {
+      "en" : "Your email address has been verified successfully",
+      "fr" : "Votre adresse e-mail a été vérifiée avec succès",
+      "ru" : "Ваш email адрес успешно подтвержден",
+      "es" : "Tu dirección de correo ha sido verificada"
+    }
+  },
+  "dashboard.notifications.password-saved" : {
+    "used-in" : [ "src/app/main/ui/settings/password.cljs:36" ],
+    "translations" : {
+      "en" : "Password saved successfully!",
+      "fr" : "Mot de passe enregistré avec succès!",
+      "ru" : "Пароль успешно сохранен!",
+      "es" : "¡Contraseña guardada!"
+    }
+  },
+  "dashboard.notifications.profile-deletion-not-allowed" : {
+    "used-in" : [ "src/app/main/ui/settings/delete_account.cljs:28" ],
+    "translations" : {
+      "en" : "You can't delete you profile. Reasign your teams before proceed.",
+      "fr" : "Vous ne pouvez pas supprimer votre profil. Réassignez vos équipes avant de continuer.",
+      "ru" : "Вы не можете удалить профиль. Сначала смените команду.",
+      "es" : "No puedes borrar tu perfil. Reasigna tus equipos antes de seguir."
+    }
+  },
+  "dashboard.notifications.profile-saved" : {
+    "used-in" : [ "src/app/main/ui/settings/profile.cljs:36", "src/app/main/ui/settings/options.cljs:36" ],
+    "translations" : {
+      "en" : "Profile saved successfully!",
+      "fr" : "Profil enregistré avec succès!",
+      "ru" : "Профиль успешно сохранен!",
+      "es" : "Perfil guardado correctamente!"
     }
   },
   "dashboard.search.no-matches-for" : {
@@ -572,8 +623,251 @@
       "es" : "Escribe algo para buscar"
     }
   },
+  "dashboard.settings.cancel-and-keep-my-account" : {
+    "used-in" : [ "src/app/main/ui/settings/delete_account.cljs:69" ],
+    "translations" : {
+      "en" : "Cancel and keep my account",
+      "fr" : "Annuler et conserver mon compte",
+      "ru" : "Отменить и сохранить мой аккаунт",
+      "es" : "Cancelar y mantener mi cuenta"
+    }
+  },
+  "dashboard.settings.cancel-email-change" : {
+    "translations" : {
+      "en" : "Cancel",
+      "fr" : "Annuler",
+      "ru" : "Отмена",
+      "es" : "Cancelar"
+    },
+    "unused" : true
+  },
+  "dashboard.settings.change-email-info" : {
+    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:93" ],
+    "translations" : {
+      "en" : "We'll send you an email to your current email “%s” to verify your identity.",
+      "fr" : "Nous vous enverrons un e-mail à votre adresse actuelle “%s” pour vérifier votre identité.",
+      "ru" : "Мы отправим письмо для подтверждения подлиности на текущий email адрес “%s”.",
+      "es" : "Enviaremos un mensaje a tu correo actual “%s” para verificar tu identidad."
+    }
+  },
+  "dashboard.settings.change-email-label" : {
+    "used-in" : [ "src/app/main/ui/settings/profile.cljs:77" ],
+    "translations" : {
+      "en" : "Change email",
+      "fr" : "Changer adresse e-mail",
+      "ru" : "Сменить email адрес",
+      "es" : "Cambiar correo"
+    }
+  },
+  "dashboard.settings.change-email-submit-label" : {
+    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:109" ],
+    "translations" : {
+      "en" : "Change email",
+      "fr" : "Changer adresse e-mail",
+      "ru" : "Сменить email адрес",
+      "es" : "Cambiar correo"
+    }
+  },
+  "dashboard.settings.change-email-title" : {
+    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:86" ],
+    "translations" : {
+      "en" : "Change your email",
+      "fr" : "Changer adresse e-mail",
+      "ru" : "Сменить email адрес",
+      "es" : "Cambiar tu correo"
+    }
+  },
+  "dashboard.settings.confirm-email-label" : {
+    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:103" ],
+    "translations" : {
+      "en" : "Verify new email",
+      "fr" : "Vérifier la nouvelle adresse e-mail",
+      "ru" : "Подтвердить новый email адрес",
+      "es" : "Verificar el nuevo correo"
+    }
+  },
+  "dashboard.settings.confirm-password-label" : {
+    "used-in" : [ "src/app/main/ui/settings/password.cljs:93" ],
+    "translations" : {
+      "en" : "Confirm password",
+      "fr" : "Confirmez mot de passe",
+      "ru" : "Подтвердите пароль",
+      "es" : "Confirmar contraseña"
+    }
+  },
+  "dashboard.settings.delete-account-info" : {
+    "used-in" : [ "src/app/main/ui/settings/delete_account.cljs:62" ],
+    "translations" : {
+      "en" : "By removing your account you’ll lose all your current projects and archives.",
+      "fr" : "En supprimant votre compte, vous perdrez tous vos projets et archives actuels.",
+      "ru" : "Удалив аккаунт Вы потеряете все прокты и архивы.",
+      "es" : "Si borras tu cuenta perderás todos tus proyectos y archivos."
+    }
+  },
+  "dashboard.settings.delete-account-title" : {
+    "used-in" : [ "src/app/main/ui/settings/delete_account.cljs:55" ],
+    "translations" : {
+      "en" : "Are you sure you want to delete your account?",
+      "fr" : "Voulez-vous vraiment supprimer votre compte?",
+      "ru" : "Вы уверены, что хотите удалить аккаунт?",
+      "es" : "¿Seguro que quieres borrar tu cuenta?"
+    }
+  },
+  "dashboard.settings.email-label" : {
+    "used-in" : [ "src/app/main/ui/settings/profile.cljs:72" ],
+    "translations" : {
+      "en" : "Email",
+      "fr" : "E-mail",
+      "ru" : "Email",
+      "es" : "Correo"
+    }
+  },
+  "dashboard.settings.fullname-label" : {
+    "used-in" : [ "src/app/main/ui/settings/profile.cljs:64" ],
+    "translations" : {
+      "en" : "Your name",
+      "fr" : "Votre nom complet",
+      "ru" : "Ваше имя",
+      "es" : "Tu nombre"
+    }
+  },
+  "dashboard.settings.language-change-title" : {
+    "used-in" : [ "src/app/main/ui/settings/options.cljs:54" ],
+    "translations" : {
+      "en" : "Language",
+      "fr" : "Langue",
+      "ru" : "Язык",
+      "es" : "Idioma"
+    }
+  },
+  "dashboard.settings.language-label" : {
+    "used-in" : [ "src/app/main/ui/settings/options.cljs:61" ],
+    "translations" : {
+      "en" : "Select UI language",
+      "fr" : "Sélectionner la langue de l'interface",
+      "ru" : "Выберите язык интерфейса",
+      "es" : "Cambiar el idioma de la interfaz"
+    }
+  },
+  "dashboard.settings.new-email-label" : {
+    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:98" ],
+    "translations" : {
+      "en" : "New email",
+      "fr" : "Nouvel e-mail",
+      "ru" : "Новый email адрес",
+      "es" : "Nuevo correo"
+    }
+  },
+  "dashboard.settings.new-password-label" : {
+    "used-in" : [ "src/app/main/ui/settings/password.cljs:87" ],
+    "translations" : {
+      "en" : "New password",
+      "fr" : "Nouveau mot de passe",
+      "ru" : "Новый пароль",
+      "es" : "Nueva contraseña"
+    }
+  },
+  "dashboard.settings.old-password-label" : {
+    "used-in" : [ "src/app/main/ui/settings/password.cljs:81" ],
+    "translations" : {
+      "en" : "Old password",
+      "fr" : "Ancien mot de passe",
+      "ru" : "Старый пароль",
+      "es" : "Contraseña anterior"
+    }
+  },
+  "dashboard.settings.password" : {
+    "translations" : {
+      "en" : "PASSWORD",
+      "fr" : "MOT DE PASSE",
+      "ru" : "ПАРОЛЬ",
+      "es" : "CONTRASEÑA"
+    },
+    "unused" : true
+  },
+  "dashboard.settings.password-change-title" : {
+    "used-in" : [ "src/app/main/ui/settings/password.cljs:76" ],
+    "translations" : {
+      "en" : "Change password",
+      "fr" : "Changement de mot de passe",
+      "ru" : "Изменить пароль",
+      "es" : "Cambiar contraseña"
+    }
+  },
+  "dashboard.settings.profile-submit-label" : {
+    "used-in" : [ "src/app/main/ui/settings/profile.cljs:80", "src/app/main/ui/settings/password.cljs:96", "src/app/main/ui/settings/options.cljs:72" ],
+    "translations" : {
+      "en" : "Update settings",
+      "fr" : "Mettre à jour les paramètres",
+      "ru" : "Обновить настройки",
+      "es" : "Actualizar opciones"
+    }
+  },
+  "dashboard.settings.remove-account-label" : {
+    "used-in" : [ "src/app/main/ui/settings/profile.cljs:85" ],
+    "translations" : {
+      "en" : "Want to remove your account?",
+      "fr" : "Vous souhaitez supprimer votre compte?",
+      "ru" : "Хотите удалить свой аккаунт?",
+      "es" : "¿Quieres borrar tu cuenta?"
+    }
+  },
+  "dashboard.settings.theme-change-title" : {
+    "used-in" : [ "src/app/main/ui/settings/options.cljs:65" ],
+    "translations" : {
+      "en" : "UI theme",
+      "fr" : "Thème de l'interface",
+      "ru" : "Тема интерфейса пользователя",
+      "es" : "Tema visual"
+    }
+  },
+  "dashboard.settings.theme-label" : {
+    "used-in" : [ "src/app/main/ui/settings/options.cljs:67" ],
+    "translations" : {
+      "en" : "Select theme",
+      "fr" : "Sélectionnez un thème",
+      "ru" : "Выберите тему",
+      "es" : "Selecciona un tema"
+    }
+  },
+  "dashboard.settings.update-photo-label" : {
+    "used-in" : [ "src/app/main/ui/settings/profile.cljs:106" ],
+    "translations" : {
+      "en" : "UPDATE",
+      "fr" : "METTRE A JOUR",
+      "ru" : "ОБНОВИТЬ",
+      "es" : "ACTUALIZAR"
+    }
+  },
+  "dashboard.settings.yes-delete-my-account" : {
+    "used-in" : [ "src/app/main/ui/settings/delete_account.cljs:67" ],
+    "translations" : {
+      "en" : "Yes, delete my account",
+      "fr" : "Oui, supprimez mon compte",
+      "ru" : "Да, удалить мой аккаунт",
+      "es" : "Si, borrar mi cuenta"
+    }
+  },
+  "dashboard.sidebar.create-team" : {
+    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:155" ],
+    "translations" : {
+      "en" : "+ Create new team"
+    }
+  },
+  "dashboard.sidebar.default-team-name" : {
+    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:328" ],
+    "translations" : {
+      "en" : "Your penpot"
+    }
+  },
+  "dashboard.sidebar.delete-team" : {
+    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:312" ],
+    "translations" : {
+      "en" : "Delete team"
+    }
+  },
   "dashboard.sidebar.drafts" : {
-    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:319" ],
+    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:405" ],
     "translations" : {
       "en" : "Drafts",
       "fr" : "Brouillons",
@@ -581,8 +875,14 @@
       "es" : "Borradores"
     }
   },
+  "dashboard.sidebar.leave-team" : {
+    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:305", "src/app/main/ui/dashboard/sidebar.cljs:308" ],
+    "translations" : {
+      "en" : "Leave team"
+    }
+  },
   "dashboard.sidebar.libraries" : {
-    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:325" ],
+    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:411" ],
     "translations" : {
       "en" : "Shared Libraries",
       "fr" : "",
@@ -590,8 +890,38 @@
       "es" : "Bibliotecas Compartidas"
     }
   },
+  "dashboard.sidebar.no-projects-placeholder" : {
+    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:426" ],
+    "translations" : {
+      "en" : "Pinned projects will appear here"
+    }
+  },
+  "dashboard.sidebar.passowrd" : {
+    "translations" : {
+      "en" : "Password"
+    },
+    "unused" : true
+  },
+  "dashboard.sidebar.password" : {
+    "used-in" : [ "src/app/main/ui/settings/sidebar.cljs:75", "src/app/main/ui/dashboard/sidebar.cljs:458" ],
+    "translations" : {
+      "en" : "Password",
+      "fr" : "Mot de passe",
+      "ru" : "Пароль",
+      "es" : "Contraseña"
+    }
+  },
+  "dashboard.sidebar.profile" : {
+    "used-in" : [ "src/app/main/ui/settings/sidebar.cljs:70", "src/app/main/ui/dashboard/sidebar.cljs:454" ],
+    "translations" : {
+      "en" : "Profile",
+      "fr" : "Profil",
+      "ru" : "Профиль",
+      "es" : "Perfil"
+    }
+  },
   "dashboard.sidebar.projects" : {
-    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:314" ],
+    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:400" ],
     "translations" : {
       "en" : "Projects",
       "fr" : "Projetes",
@@ -607,6 +937,39 @@
       "es" : "Reciente"
     },
     "unused" : true
+  },
+  "dashboard.sidebar.rename-team" : {
+    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:301" ],
+    "translations" : {
+      "en" : "Rename"
+    }
+  },
+  "dashboard.sidebar.settings" : {
+    "used-in" : [ "src/app/main/ui/settings/sidebar.cljs:80", "src/app/main/ui/dashboard/sidebar.cljs:299" ],
+    "translations" : {
+      "en" : "Settings",
+      "fr" : "Settings",
+      "ru" : "ПАРАМЕТРЫ",
+      "es" : "Configuración"
+    }
+  },
+  "dashboard.sidebar.switch-team" : {
+    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:140" ],
+    "translations" : {
+      "en" : "Switch Team"
+    }
+  },
+  "dashboard.sidebar.team-members" : {
+    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:298" ],
+    "translations" : {
+      "en" : "Members"
+    }
+  },
+  "dashboard.team.num-of-members" : {
+    "used-in" : [ "src/app/main/ui/dashboard/team.cljs:292" ],
+    "translations" : {
+      "en" : "%s members"
+    }
   },
   "ds.accept" : {
     "translations" : {
@@ -654,7 +1017,7 @@
     "unused" : true
   },
   "ds.confirm-cancel" : {
-    "used-in" : [ "src/app/main/ui/confirm.cljs:22" ],
+    "used-in" : [ "src/app/main/ui/confirm.cljs:28" ],
     "translations" : {
       "en" : "Cancel",
       "fr" : "Annuler",
@@ -663,7 +1026,7 @@
     }
   },
   "ds.confirm-ok" : {
-    "used-in" : [ "src/app/main/ui/confirm.cljs:23" ],
+    "used-in" : [ "src/app/main/ui/confirm.cljs:29" ],
     "translations" : {
       "en" : "Ok",
       "fr" : "Ok",
@@ -672,7 +1035,7 @@
     }
   },
   "ds.confirm-title" : {
-    "used-in" : [ "src/app/main/ui/confirm.cljs:21" ],
+    "used-in" : [ "src/app/main/ui/confirm.cljs:27", "src/app/main/ui/confirm.cljs:30" ],
     "translations" : {
       "en" : "Are you sure?",
       "fr" : "Êtes-vous sûr?",
@@ -680,26 +1043,8 @@
       "es" : "¿Seguro?"
     }
   },
-  "ds.history.pinned" : {
-    "translations" : {
-      "en" : null,
-      "fr" : null,
-      "ru" : null,
-      "es" : null
-    },
-    "unused" : true
-  },
-  "ds.history.versions" : {
-    "translations" : {
-      "en" : null,
-      "fr" : null,
-      "ru" : null,
-      "es" : null
-    },
-    "unused" : true
-  },
   "ds.search.placeholder" : {
-    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:151" ],
+    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:110" ],
     "translations" : {
       "en" : "Search...",
       "fr" : "Rechercher...",
@@ -707,17 +1052,8 @@
       "es" : "Buscar..."
     }
   },
-  "ds.settings.document-history" : {
-    "translations" : {
-      "en" : null,
-      "fr" : null,
-      "ru" : null,
-      "es" : null
-    },
-    "unused" : true
-  },
   "ds.updated-at" : {
-    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:58" ],
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:59" ],
     "translations" : {
       "en" : "Updated: %s",
       "fr" : "Mis à jour: %s",
@@ -726,7 +1062,7 @@
     }
   },
   "errors.auth.unauthorized" : {
-    "used-in" : [ "src/app/main/ui/auth/login.cljs:70" ],
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:82" ],
     "translations" : {
       "en" : "Username or password seems to be wrong.",
       "fr" : "Le nom d'utilisateur ou le mot de passe semble être faux.",
@@ -735,7 +1071,7 @@
     }
   },
   "errors.email-already-exists" : {
-    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:46", "src/app/main/ui/auth.cljs:89" ],
+    "used-in" : [ "src/app/main/ui/auth/verify_token.cljs:80", "src/app/main/ui/settings/change_email.cljs:47" ],
     "translations" : {
       "en" : "Email already used",
       "fr" : "Adresse e-mail déjà utilisée",
@@ -744,7 +1080,7 @@
     }
   },
   "errors.email-already-validated" : {
-    "used-in" : [ "src/app/main/ui/auth.cljs:94" ],
+    "used-in" : [ "src/app/main/ui/auth/verify_token.cljs:85" ],
     "translations" : {
       "en" : "Email already validated.",
       "fr" : "Adresse e-mail déjà validé.",
@@ -753,7 +1089,7 @@
     }
   },
   "errors.email-invalid-confirmation" : {
-    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:36" ],
+    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:37" ],
     "translations" : {
       "en" : "Confirmation email must match",
       "fr" : "L'adresse e-mail de confirmation doit correspondre",
@@ -762,7 +1098,7 @@
     }
   },
   "errors.generic" : {
-    "used-in" : [ "src/app/main/ui/settings/profile.cljs:36", "src/app/main/ui/auth.cljs:98" ],
+    "used-in" : [ "src/app/main/ui/auth/verify_token.cljs:89", "src/app/main/ui/settings/profile.cljs:40", "src/app/main/ui/settings/options.cljs:32" ],
     "translations" : {
       "en" : "Something wrong has happened.",
       "fr" : "Quelque chose c'est mal passé.",
@@ -789,7 +1125,7 @@
     }
   },
   "errors.media-type-mismatch" : {
-    "used-in" : [ "src/app/main/data/media.cljs:61", "src/app/main/data/workspace/persistence.cljs:413" ],
+    "used-in" : [ "src/app/main/data/workspace/persistence.cljs:413", "src/app/main/data/media.cljs:61" ],
     "translations" : {
       "en" : "Seems that the contents of the image does not match the file extension.",
       "fr" : "",
@@ -798,7 +1134,7 @@
     }
   },
   "errors.media-type-not-allowed" : {
-    "used-in" : [ "src/app/main/data/media.cljs:58", "src/app/main/data/workspace/persistence.cljs:410" ],
+    "used-in" : [ "src/app/main/data/workspace/persistence.cljs:410", "src/app/main/data/media.cljs:58" ],
     "translations" : {
       "en" : "Seems that this is not a valid image.",
       "fr" : "",
@@ -834,7 +1170,7 @@
     }
   },
   "errors.registration-disabled" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:48" ],
+    "used-in" : [ "src/app/main/ui/auth/register.cljs:39" ],
     "translations" : {
       "en" : "The registration is currently disabled.",
       "fr" : "L'enregistrement est actuellement désactivé.",
@@ -843,7 +1179,7 @@
     }
   },
   "errors.unexpected-error" : {
-    "used-in" : [ "src/app/main/data/media.cljs:64", "src/app/main/ui/settings/change_email.cljs:50", "src/app/main/ui/auth/register.cljs:54", "src/app/main/ui/workspace/sidebar/options/exports.cljs:66" ],
+    "used-in" : [ "src/app/main/data/media.cljs:64", "src/app/main/ui/workspace/sidebar/options/exports.cljs:66", "src/app/main/ui/auth/register.cljs:45" ],
     "translations" : {
       "en" : "An unexpected error occurred.",
       "fr" : "Une erreur inattendue c'est produite",
@@ -888,7 +1224,7 @@
     "unused" : true
   },
   "media.loading" : {
-    "used-in" : [ "src/app/main/data/media.cljs:43", "src/app/main/data/workspace/persistence.cljs:394" ],
+    "used-in" : [ "src/app/main/data/workspace/persistence.cljs:394", "src/app/main/data/media.cljs:43" ],
     "translations" : {
       "en" : "Loading image...",
       "fr" : "Chargement de l'image...",
@@ -908,158 +1244,14 @@
   "profile.recovery.go-to-login" : {
     "used-in" : [ "src/app/main/ui/auth/recovery.cljs:95" ],
     "translations" : {
-      "en" : null,
+      "en" : "Go to login",
       "fr" : null,
       "ru" : null,
       "es" : null
-    }
-  },
-  "settings.cancel-and-keep-my-account" : {
-    "used-in" : [ "src/app/main/ui/settings/delete_account.cljs:46" ],
-    "translations" : {
-      "en" : "Cancel and keep my account",
-      "fr" : "Annuler et conserver mon compte",
-      "ru" : "Отменить и сохранить мой аккаунт",
-      "es" : "Cancelar y mantener mi cuenta"
-    }
-  },
-  "settings.cancel-email-change" : {
-    "used-in" : [ "src/app/main/ui/settings/profile.cljs:79" ],
-    "translations" : {
-      "en" : "Cancel",
-      "fr" : "Annuler",
-      "ru" : "Отмена",
-      "es" : "Cancelar"
-    }
-  },
-  "settings.change-email-info" : {
-    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:72" ],
-    "translations" : {
-      "en" : "We'll send you an email to your current email “%s” to verify your identity.",
-      "fr" : "Nous vous enverrons un e-mail à votre adresse actuelle “%s” pour vérifier votre identité.",
-      "ru" : "Мы отправим письмо для подтверждения подлиности на текущий email адрес “%s”.",
-      "es" : "Enviaremos un mensaje a tu correo actual “%s” para verificar tu identidad."
-    }
-  },
-  "settings.change-email-info3" : {
-    "used-in" : [ "src/app/main/ui/settings/profile.cljs:78" ],
-    "translations" : {
-      "en" : null,
-      "fr" : null,
-      "ru" : null,
-      "es" : null
-    }
-  },
-  "settings.change-email-label" : {
-    "used-in" : [ "src/app/main/ui/settings/profile.cljs:73" ],
-    "translations" : {
-      "en" : "Change email",
-      "fr" : "Changer adresse e-mail",
-      "ru" : "Сменить email адрес",
-      "es" : "Cambiar correo"
-    }
-  },
-  "settings.change-email-submit-label" : {
-    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:89" ],
-    "translations" : {
-      "en" : "Change email",
-      "fr" : "Changer adresse e-mail",
-      "ru" : "Сменить email адрес",
-      "es" : "Cambiar correo"
-    }
-  },
-  "settings.change-email-title" : {
-    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:68" ],
-    "translations" : {
-      "en" : "Change your email",
-      "fr" : "Changer adresse e-mail",
-      "ru" : "Сменить email адрес",
-      "es" : "Cambiar tu correo"
-    }
-  },
-  "settings.confirm-email-label" : {
-    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:85" ],
-    "translations" : {
-      "en" : "Verify new email",
-      "fr" : "Vérifier la nouvelle adresse e-mail",
-      "ru" : "Подтвердить новый email адрес",
-      "es" : "Verificar el nuevo correo"
-    }
-  },
-  "settings.confirm-password-label" : {
-    "used-in" : [ "src/app/main/ui/settings/password.cljs:90" ],
-    "translations" : {
-      "en" : "Confirm password",
-      "fr" : "Confirmez mot de passe",
-      "ru" : "Подтвердите пароль",
-      "es" : "Confirmar contraseña"
-    }
-  },
-  "settings.delete-account-info" : {
-    "used-in" : [ "src/app/main/ui/settings/delete_account.cljs:36" ],
-    "translations" : {
-      "en" : "By removing your account you’ll lose all your current projects and archives.",
-      "fr" : "En supprimant votre compte, vous perdrez tous vos projets et archives actuels.",
-      "ru" : "Удалив аккаунт Вы потеряете все прокты и архивы.",
-      "es" : "Si borras tu cuenta perderás todos tus proyectos y archivos."
-    }
-  },
-  "settings.delete-account-title" : {
-    "used-in" : [ "src/app/main/ui/settings/delete_account.cljs:32" ],
-    "translations" : {
-      "en" : "Are you sure you want to delete your account?",
-      "fr" : "Voulez-vous vraiment supprimer votre compte?",
-      "ru" : "Вы уверены, что хотите удалить аккаунт?",
-      "es" : "¿Seguro que quieres borrar tu cuenta?"
-    }
-  },
-  "settings.email-label" : {
-    "used-in" : [ "src/app/main/ui/settings/profile.cljs:67" ],
-    "translations" : {
-      "en" : "Email",
-      "fr" : "E-mail",
-      "ru" : "Email",
-      "es" : "Correo"
-    }
-  },
-  "settings.email-verification-pending" : {
-    "used-in" : [ "src/app/main/ui/settings/profile.cljs:88" ],
-    "translations" : {
-      "en" : "There is a pending email validation.",
-      "fr" : "Une validation par e-mail est en attente.",
-      "ru" : "Подтверждение email адреса не выполнено.",
-      "es" : "Hay una validación pendiente del correo."
-    }
-  },
-  "settings.fullname-label" : {
-    "used-in" : [ "src/app/main/ui/settings/profile.cljs:59" ],
-    "translations" : {
-      "en" : "Your name",
-      "fr" : "Votre nom complet",
-      "ru" : "Ваше имя",
-      "es" : "Tu nombre"
-    }
-  },
-  "settings.language-change-title" : {
-    "used-in" : [ "src/app/main/ui/settings/options.cljs:50" ],
-    "translations" : {
-      "en" : "Language",
-      "fr" : "Langue",
-      "ru" : "Язык",
-      "es" : "Idioma"
-    }
-  },
-  "settings.language-label" : {
-    "used-in" : [ "src/app/main/ui/settings/options.cljs:56" ],
-    "translations" : {
-      "en" : "Select UI language",
-      "fr" : "Sélectionner la langue de l'interface",
-      "ru" : "Выберите язык интерфейса",
-      "es" : "Cambiar el idioma de la interfaz"
     }
   },
   "settings.multiple" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:138", "src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:147", "src/app/main/ui/workspace/sidebar/options/typography.cljs:98", "src/app/main/ui/workspace/sidebar/options/typography.cljs:148", "src/app/main/ui/workspace/sidebar/options/typography.cljs:161", "src/app/main/ui/workspace/sidebar/options/stroke.cljs:156" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:156", "src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:136", "src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:145", "src/app/main/ui/workspace/sidebar/options/typography.cljs:99", "src/app/main/ui/workspace/sidebar/options/typography.cljs:149", "src/app/main/ui/workspace/sidebar/options/typography.cljs:162" ],
     "translations" : {
       "en" : "Mixed",
       "fr" : null,
@@ -1067,140 +1259,14 @@
       "es" : "Varios"
     }
   },
-  "settings.new-email-label" : {
-    "used-in" : [ "src/app/main/ui/settings/change_email.cljs:80" ],
-    "translations" : {
-      "en" : "New email",
-      "fr" : "Nouvel e-mail",
-      "ru" : "Новый email адрес",
-      "es" : "Nuevo correo"
-    }
-  },
-  "settings.new-password-label" : {
-    "used-in" : [ "src/app/main/ui/settings/password.cljs:85" ],
-    "translations" : {
-      "en" : "New password",
-      "fr" : "Nouveau mot de passe",
-      "ru" : "Новый пароль",
-      "es" : "Nueva contraseña"
-    }
-  },
-  "settings.notifications.email-changed-successfully" : {
-    "used-in" : [ "src/app/main/ui/auth.cljs:63" ],
-    "translations" : {
-      "en" : "Your email address has been updated successfully",
-      "fr" : "Votre adresse e-mail a été mise à jour avec succès",
-      "ru" : "Ваш email адрес успешно обновлен",
-      "es" : "Tu dirección de correo ha sido actualizada"
-    }
-  },
-  "settings.notifications.email-not-verified" : {
-    "translations" : {
-      "en" : null,
-      "fr" : null,
-      "ru" : null,
-      "es" : null
-    },
-    "unused" : true
-  },
-  "settings.notifications.email-verified-successfully" : {
-    "used-in" : [ "src/app/main/ui/auth.cljs:57" ],
-    "translations" : {
-      "en" : "Your email address has been verified successfully",
-      "fr" : "Votre adresse e-mail a été vérifiée avec succès",
-      "ru" : "Ваш email адрес успешно подтвержден",
-      "es" : "Tu dirección de correo ha sido verificada"
-    }
-  },
-  "settings.notifications.password-saved" : {
-    "used-in" : [ "src/app/main/ui/settings/password.cljs:36" ],
-    "translations" : {
-      "en" : "Password saved successfully!",
-      "fr" : "Mot de passe enregistré avec succès!",
-      "ru" : "Пароль успешно сохранен!",
-      "es" : "¡Contraseña guardada!"
-    }
-  },
-  "settings.notifications.profile-deletion-not-allowed" : {
-    "used-in" : [ "src/app/main/data/auth.cljs:157" ],
-    "translations" : {
-      "en" : "You can't delete you profile. Reasign your teams before proceed.",
-      "fr" : "Vous ne pouvez pas supprimer votre profil. Réassignez vos équipes avant de continuer.",
-      "ru" : "Вы не можете удалить профиль. Сначала смените команду.",
-      "es" : "No puedes borrar tu perfil. Reasigna tus equipos antes de seguir."
-    }
-  },
-  "settings.notifications.profile-saved" : {
-    "used-in" : [ "src/app/main/ui/settings/options.cljs:37", "src/app/main/ui/settings/profile.cljs:41" ],
-    "translations" : {
-      "en" : "Profile saved successfully!",
-      "fr" : "Profil enregistré avec succès!",
-      "ru" : "Профиль успешно сохранен!",
-      "es" : "Perfil guardado correctamente!"
-    }
-  },
-  "settings.old-password-label" : {
-    "used-in" : [ "src/app/main/ui/settings/password.cljs:80" ],
-    "translations" : {
-      "en" : "Old password",
-      "fr" : "Ancien mot de passe",
-      "ru" : "Старый пароль",
-      "es" : "Contraseña anterior"
-    }
-  },
-  "settings.options" : {
-    "used-in" : [ "src/app/main/ui/settings/header.cljs:54" ],
-    "translations" : {
-      "en" : "OPTIONS",
-      "fr" : "OPTIONS",
-      "ru" : "ПАРАМЕТРЫ",
-      "es" : "OPCIONES"
-    }
-  },
-  "settings.password" : {
-    "used-in" : [ "src/app/main/ui/settings/header.cljs:49" ],
-    "translations" : {
-      "en" : "PASSWORD",
-      "fr" : "MOT DE PASSE",
-      "ru" : "ПАРОЛЬ",
-      "es" : "CONTRASEÑA"
-    }
-  },
-  "settings.password-change-title" : {
-    "used-in" : [ "src/app/main/ui/settings/password.cljs:75" ],
-    "translations" : {
-      "en" : "Change password",
-      "fr" : "Changement de mot de passe",
-      "ru" : "Изменить пароль",
-      "es" : "Cambiar contraseña"
-    }
-  },
   "settings.profile" : {
-    "used-in" : [ "src/app/main/ui/settings/header.cljs:44" ],
     "translations" : {
       "en" : "PROFILE",
       "fr" : "PROFIL",
       "ru" : "ПРОФИЛЬ",
       "es" : "PERFIL"
-    }
-  },
-  "settings.profile-submit-label" : {
-    "used-in" : [ "src/app/main/ui/settings/options.cljs:67", "src/app/main/ui/settings/profile.cljs:91", "src/app/main/ui/settings/password.cljs:93" ],
-    "translations" : {
-      "en" : "Update settings",
-      "fr" : "Mettre à jour les paramètres",
-      "ru" : "Обновить настройки",
-      "es" : "Actualizar opciones"
-    }
-  },
-  "settings.remove-account-label" : {
-    "used-in" : [ "src/app/main/ui/settings/profile.cljs:96" ],
-    "translations" : {
-      "en" : "Want to remove your account?",
-      "fr" : "Vous souhaitez supprimer votre compte?",
-      "ru" : "Хотите удалить свой аккаунт?",
-      "es" : "¿Quieres borrar tu cuenta?"
-    }
+    },
+    "unused" : true
   },
   "settings.teams" : {
     "translations" : {
@@ -1210,42 +1276,6 @@
       "es" : "EQUIPOS"
     },
     "unused" : true
-  },
-  "settings.theme-change-title" : {
-    "used-in" : [ "src/app/main/ui/settings/options.cljs:60" ],
-    "translations" : {
-      "en" : "UI theme",
-      "fr" : "Thème de l'interface",
-      "ru" : "Тема интерфейса пользователя",
-      "es" : "Tema visual"
-    }
-  },
-  "settings.theme-label" : {
-    "used-in" : [ "src/app/main/ui/settings/options.cljs:61" ],
-    "translations" : {
-      "en" : "Select theme",
-      "fr" : "Sélectionnez un thème",
-      "ru" : "Выберите тему",
-      "es" : "Selecciona un tema"
-    }
-  },
-  "settings.update-photo-label" : {
-    "used-in" : [ "src/app/main/ui/settings/profile.cljs:117" ],
-    "translations" : {
-      "en" : "UPDATE",
-      "fr" : "METTRE A JOUR",
-      "ru" : "ОБНОВИТЬ",
-      "es" : "ACTUALIZAR"
-    }
-  },
-  "settings.yes-delete-my-account" : {
-    "used-in" : [ "src/app/main/ui/settings/delete_account.cljs:43" ],
-    "translations" : {
-      "en" : "Yes, delete my account",
-      "fr" : "Oui, supprimez mon compte",
-      "ru" : "Да, удалить мой аккаунт",
-      "es" : "Si, borrar mi cuenta"
-    }
   },
   "viewer.empty-state" : {
     "used-in" : [ "src/app/main/ui/viewer.cljs:42" ],
@@ -1446,7 +1476,7 @@
     }
   },
   "workspace.assets.assets" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:613" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:615" ],
     "translations" : {
       "en" : "Assets",
       "fr" : "",
@@ -1455,7 +1485,7 @@
     }
   },
   "workspace.assets.box-filter-all" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:633" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:635" ],
     "translations" : {
       "en" : "All assets",
       "fr" : "",
@@ -1482,7 +1512,7 @@
     "unused" : true
   },
   "workspace.assets.colors" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:320", "src/app/main/ui/workspace/sidebar/assets.cljs:636" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:320", "src/app/main/ui/workspace/sidebar/assets.cljs:638" ],
     "translations" : {
       "en" : "Colors",
       "fr" : "",
@@ -1491,7 +1521,7 @@
     }
   },
   "workspace.assets.components" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:82", "src/app/main/ui/workspace/sidebar/assets.cljs:634" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:82", "src/app/main/ui/workspace/sidebar/assets.cljs:636" ],
     "translations" : {
       "en" : "Components",
       "fr" : "",
@@ -1518,7 +1548,7 @@
     }
   },
   "workspace.assets.file-library" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:517" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:518" ],
     "translations" : {
       "en" : "File library",
       "fr" : "",
@@ -1527,7 +1557,7 @@
     }
   },
   "workspace.assets.graphics" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:163", "src/app/main/ui/workspace/sidebar/assets.cljs:635" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:163", "src/app/main/ui/workspace/sidebar/assets.cljs:637" ],
     "translations" : {
       "en" : "Graphics",
       "fr" : "",
@@ -1536,7 +1566,7 @@
     }
   },
   "workspace.assets.libraries" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:616" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:618" ],
     "translations" : {
       "en" : "Libraries",
       "fr" : "",
@@ -1545,7 +1575,7 @@
     }
   },
   "workspace.assets.not-found" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:577" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:579" ],
     "translations" : {
       "en" : "No assets found",
       "fr" : "",
@@ -1563,7 +1593,7 @@
     }
   },
   "workspace.assets.search" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:620" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:622" ],
     "translations" : {
       "en" : "Search assets",
       "fr" : "",
@@ -1572,7 +1602,7 @@
     }
   },
   "workspace.assets.shared" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:519" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:520" ],
     "translations" : {
       "en" : "SHARED",
       "fr" : "",
@@ -1581,9 +1611,57 @@
     }
   },
   "workspace.assets.typography" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:406", "src/app/main/ui/workspace/sidebar/assets.cljs:637" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:406", "src/app/main/ui/workspace/sidebar/assets.cljs:639" ],
     "translations" : {
       "en" : "Typographies"
+    }
+  },
+  "workspace.assets.typography.font-id" : {
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:277" ],
+    "translations" : {
+      "en" : "Font"
+    }
+  },
+  "workspace.assets.typography.font-size" : {
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:285" ],
+    "translations" : {
+      "en" : "Size"
+    }
+  },
+  "workspace.assets.typography.font-variant-id" : {
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:281" ],
+    "translations" : {
+      "en" : "Variant"
+    }
+  },
+  "workspace.assets.typography.go-to-edit" : {
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:302" ],
+    "translations" : {
+      "en" : "Go to style library file to edit"
+    }
+  },
+  "workspace.assets.typography.letter-spacing" : {
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:293" ],
+    "translations" : {
+      "en" : "Letter Spacing"
+    }
+  },
+  "workspace.assets.typography.line-height" : {
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:289" ],
+    "translations" : {
+      "en" : "Line Height"
+    }
+  },
+  "workspace.assets.typography.sample" : {
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:255" ],
+    "translations" : {
+      "en" : "Ag"
+    }
+  },
+  "workspace.assets.typography.text-transform" : {
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:297" ],
+    "translations" : {
+      "en" : "Text Transform"
     }
   },
   "workspace.header.menu.disable-dynamic-alignment" : {
@@ -1770,19 +1848,19 @@
     }
   },
   "workspace.libraries.colors.file-library" : {
-    "used-in" : [ "src/app/main/ui/workspace/colorpicker.cljs:338", "src/app/main/ui/workspace/colorpalette.cljs:149" ],
+    "used-in" : [ "src/app/main/ui/workspace/colorpicker.cljs:340", "src/app/main/ui/workspace/colorpalette.cljs:149" ],
     "translations" : {
       "en" : "File library"
     }
   },
   "workspace.libraries.colors.recent-colors" : {
-    "used-in" : [ "src/app/main/ui/workspace/colorpicker.cljs:337", "src/app/main/ui/workspace/colorpalette.cljs:159" ],
+    "used-in" : [ "src/app/main/ui/workspace/colorpicker.cljs:339", "src/app/main/ui/workspace/colorpalette.cljs:159" ],
     "translations" : {
       "en" : "Recent colors"
     }
   },
   "workspace.libraries.colors.save-color" : {
-    "used-in" : [ "src/app/main/ui/workspace/colorpicker.cljs:373" ],
+    "used-in" : [ "src/app/main/ui/workspace/colorpicker.cljs:375" ],
     "translations" : {
       "en" : "Save color"
     }
@@ -1902,13 +1980,13 @@
     }
   },
   "workspace.libraries.text.multiple-typography" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:264" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:266" ],
     "translations" : {
       "en" : "Multiple typographies"
     }
   },
   "workspace.libraries.text.multiple-typography-tooltip" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:266" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:268" ],
     "translations" : {
       "en" : "Unlink all typographies"
     }
@@ -2265,7 +2343,7 @@
     }
   },
   "workspace.options.position" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame.cljs:126", "src/app/main/ui/workspace/sidebar/options/measures.cljs:146" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/measures.cljs:146", "src/app/main/ui/workspace/sidebar/options/frame.cljs:126" ],
     "translations" : {
       "en" : "Position",
       "fr" : "Position",
@@ -2379,7 +2457,7 @@
     }
   },
   "workspace.options.size" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame.cljs:99", "src/app/main/ui/workspace/sidebar/options/measures.cljs:116" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/measures.cljs:116", "src/app/main/ui/workspace/sidebar/options/frame.cljs:99" ],
     "translations" : {
       "en" : "Size",
       "fr" : "Taille",
@@ -2559,7 +2637,7 @@
     }
   },
   "workspace.options.text-options.letter-spacing" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:153" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:154" ],
     "translations" : {
       "en" : "Letter Spacing",
       "fr" : "Espacement de caractères",
@@ -2568,7 +2646,7 @@
     }
   },
   "workspace.options.text-options.line-height" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:140" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:141" ],
     "translations" : {
       "en" : "Line height",
       "fr" : "Hauteur de ligne",
@@ -2577,7 +2655,7 @@
     }
   },
   "workspace.options.text-options.lowercase" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:187" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:188" ],
     "translations" : {
       "en" : "Lowercase",
       "fr" : "Minuscule",
@@ -2586,7 +2664,7 @@
     }
   },
   "workspace.options.text-options.none" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:177", "src/app/main/ui/workspace/sidebar/options/text.cljs:153" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:153", "src/app/main/ui/workspace/sidebar/options/typography.cljs:178" ],
     "translations" : {
       "en" : "None",
       "fr" : "Aucune",
@@ -2604,7 +2682,7 @@
     }
   },
   "workspace.options.text-options.text-case" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:174" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:175" ],
     "translations" : {
       "en" : "Case",
       "fr" : "Casse",
@@ -2638,7 +2716,7 @@
     }
   },
   "workspace.options.text-options.titlecase" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:192" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:193" ],
     "translations" : {
       "en" : "Titlecase",
       "fr" : "Titre",
@@ -2656,7 +2734,7 @@
     }
   },
   "workspace.options.text-options.uppercase" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:182" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:183" ],
     "translations" : {
       "en" : "Uppercase",
       "fr" : "Majuscule",
@@ -2791,7 +2869,7 @@
     }
   },
   "workspace.updates.dismiss" : {
-    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:519" ],
+    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:521" ],
     "translations" : {
       "en" : "Dismiss",
       "fr" : "",
@@ -2800,7 +2878,7 @@
     }
   },
   "workspace.updates.there-are-updates" : {
-    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:515" ],
+    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:517" ],
     "translations" : {
       "en" : "There are updates in shared libraries",
       "fr" : "",
@@ -2809,7 +2887,7 @@
     }
   },
   "workspace.updates.update" : {
-    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:517" ],
+    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:519" ],
     "translations" : {
       "en" : "Update",
       "fr" : "",
@@ -2825,14 +2903,5 @@
       "ru" : "Кликни чтобы закончить фигуру",
       "es" : "Pulsar para cerrar la ruta"
     }
-  },
-
-  "workspace.assets.typography.sample": "Ag",
-  "workspace.assets.typography.font-id": "Font",
-  "workspace.assets.typography.font-size": "Size",
-  "workspace.assets.typography.font-variant-id": "Variant",
-  "workspace.assets.typography.line-height": "Line Height",
-  "workspace.assets.typography.letter-spacing": "Letter Spacing",
-  "workspace.assets.typography.text-transform": "Text Transform",
-  "workspace.assets.typography.go-to-edit": "Go to style library file to edit"
+  }
 }

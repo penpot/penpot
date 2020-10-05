@@ -35,12 +35,16 @@
 //#################################################
 
 @import 'common/framework';
+@import 'main/partials/modal';
+@import 'main/partials/forms';
+@import "main/partials/texts";
+@import 'main/partials/context-menu';
+@import 'main/partials/dropdown';
 
 //#################################################
 // Partials
 //#################################################
 
-@import "main/partials/texts";
 @import "main/partials/viewer";
 @import "main/partials/viewer-header";
 @import "main/partials/viewer-thumbnails";
@@ -48,17 +52,16 @@
 @import 'main/partials/activity-bar';
 @import 'main/partials/color-palette';
 @import 'main/partials/colorpicker';
-@import 'main/partials/context-menu';
 @import 'main/partials/dashboard';
 @import 'main/partials/dashboard-header';
 @import 'main/partials/dashboard-grid';
 @import 'main/partials/dashboard-sidebar';
+@import 'main/partials/dashboard-team';
+@import 'main/partials/dashboard-settings';
 @import 'main/partials/debug-icons-preview';
 @import 'main/partials/editable-label';
-@import 'main/partials/forms';
 @import 'main/partials/left-toolbar';
 @import 'main/partials/loader';
-@import 'main/partials/modal';
 @import 'main/partials/project-bar';
 @import 'main/partials/sidebar';
 @import 'main/partials/sidebar-align-options';

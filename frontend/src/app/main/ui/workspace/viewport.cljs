@@ -18,7 +18,7 @@
    [promesa.core :as p]
    [app.main.ui.icons :as i]
    [app.main.ui.cursors :as cur]
-   [app.main.ui.modal :as modal]
+   [app.main.data.modal :as modal]
    [app.common.data :as d]
    [app.main.constants :as c]
    [app.main.data.workspace :as dw]

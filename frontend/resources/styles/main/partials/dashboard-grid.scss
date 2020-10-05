@@ -71,6 +71,7 @@
       width: 100%;
       z-index: 1;
     }
+
     &:hover .overlay {
       display: block;
       opacity: 1;
@@ -116,6 +117,13 @@
         overflow: hidden;
         text-overflow: ellipsis;
         width: 100%;
+      }
+
+      .edit-wrapper {
+        .element-title {
+          padding: 3px;
+          height: 25px;
+        }
       }
 
     }

@@ -20,10 +20,9 @@
    [app.main.store :as st]
    [app.main.ui.messages :as msgs]
    [app.main.data.messages :as dm]
-   [app.main.ui.components.forms :refer [input submit-button form]]
+   [app.main.ui.components.forms :as fm]
    [app.util.object :as obj]
    [app.util.dom :as dom]
-   [app.util.forms :as fm]
    [app.util.i18n :refer [tr t]]
    [app.util.router :as rt]))
 
@@ -50,18 +49,31 @@
 (mf/defc login-form
   [{:keys [locale] :as props}]
   (let [error? (mf/use-state false)
-        submit-event (mf/use-var da/login)
+        form   (fm/use-form :spec ::login-form
+                            :inital {})
 
         on-error
         (fn [form event]
+          (js/console.log error?)
           (reset! error? true))
 
         on-submit
-        (fn [form event]
-          (reset! error? false)
-          (let [params (with-meta (:clean-data form)
-                         {:on-error on-error})]
-            (st/emit! (@submit-event params))))]
+        (mf/use-callback
+         (mf/deps form)
+         (fn [event]
+           (reset! error? false)
+           (let [params (with-meta (:clean-data @form)
+                          {:on-error on-error})]
+             (st/emit! (da/login params)))))
+
+        on-submit-ldap
+        (mf/use-callback
+         (mf/deps form)
+         (fn [event]
+           (reset! error? false)
+           (let [params (with-meta (:clean-data @form)
+                          {:on-error on-error})]
+             (st/emit! (da/login-with-ldap params)))))]
 
     [:*
      (when @error?
@@ -70,28 +82,28 @@
          :content (t locale "errors.auth.unauthorized")
          :on-close #(reset! error? false)}])
 
-     [:& form {:on-submit on-submit
-               :spec ::login-form
-               :initial {}}
-      [:& input
-       {:name :email
-        :type "text"
-        :tab-index "2"
-        :help-icon i/at
-        :label (t locale "auth.email-label")}]
-      [:& input
-       {:type "password"
-        :name :password
-        :tab-index "3"
-        :help-icon i/eye
-        :label (t locale "auth.password-label")}]
-      [:& submit-button
+     [:& fm/form {:on-submit on-submit :form form}
+      [:div.fields-row
+       [:& fm/input
+        {:name :email
+         :type "text"
+         :tab-index "2"
+         :help-icon i/at
+         :label (t locale "auth.email-label")}]]
+      [:div.fields-row
+       [:& fm/input
+        {:type "password"
+         :name :password
+         :tab-index "3"
+         :help-icon i/eye
+         :label (t locale "auth.password-label")}]]
+      [:& fm/submit-button
        {:label (t locale "auth.login-submit-label")
-        :on-click #(reset! submit-event da/login)}]
+        :on-click on-submit}]
       (when cfg/login-with-ldap
-        [:& submit-button
+        [:& fm/submit-button
          {:label (t locale "auth.login-with-ldap-submit-label")
-          :on-click #(reset! submit-event da/login-with-ldap)}])]]))
+          :on-click on-submit}])]]))
 
 (mf/defc login-page
   [{:keys [locale] :as props}]

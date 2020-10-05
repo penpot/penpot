@@ -164,7 +164,7 @@
                                  (if shift?
                                    (change-stroke ids color nil nil)
                                    (change-fill ids color nil nil))
-                                 (md/hide-modal))))]
+                                 (md/hide))))]
     (ptk/reify ::start-picker
       ptk/UpdateEvent
       (update [_ state]

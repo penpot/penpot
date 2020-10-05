@@ -14,7 +14,7 @@
    [app.util.dom :as dom]
    [app.util.data :refer [classnames]]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.main.ui.modal :as modal]
+   [app.main.data.modal :as modal]
    [app.common.data :as d]
    [app.main.refs :as refs]))
 

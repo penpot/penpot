@@ -17,15 +17,14 @@
    [app.main.data.auth :as uda]
    [app.main.data.messages :as dm]
    [app.main.store :as st]
-   [app.main.ui.components.forms :refer [input submit-button form]]
+   [app.main.ui.components.forms :as fm]
    [app.util.dom :as dom]
-   [app.util.forms :as fm]
    [app.util.i18n :as i18n :refer [t tr]]
    [app.util.router :as rt]))
 
-(s/def ::password-1 ::fm/not-empty-string)
-(s/def ::password-2 ::fm/not-empty-string)
-(s/def ::token ::fm/not-empty-string)
+(s/def ::password-1 ::us/not-empty-string)
+(s/def ::password-2 ::us/not-empty-string)
+(s/def ::token ::us/not-empty-string)
 
 (s/def ::recovery-form
   (s/keys :req-un [::password-1
@@ -54,29 +53,31 @@
 
 (defn- on-submit
   [form event]
-  (let [params (with-meta {:token (get-in form [:clean-data :token])
-                           :password (get-in form [:clean-data :password-2])}
-                 {:on-error (partial on-error form)
-                  :on-success (partial on-success form)})]
-    (st/emit! (uda/recover-profile params))))
+  (let [mdata  {:on-error on-error
+                :on-success on-success}
+        params {:token (get-in @form [:clean-data :token])
+                :password (get-in @form [:clean-data :password-2])}]
+    (st/emit! (uda/recover-profile (with-meta params mdata)))))
 
 (mf/defc recovery-form
   [{:keys [locale params] :as props}]
-  [:& form {:on-submit on-submit
-            :spec ::recovery-form
-            :validators [password-equality]
-            :initial params}
+  (let [form (fm/use-form :spec ::recovery-form
+                          :validators [password-equality]
+                          :initial params)]
+    [:& fm/form {:on-submit on-submit
+                 :form form}
+     [:div.fields-row
+      [:& fm/input {:type "password"
+                    :name :password-1
+                    :label (t locale "auth.new-password-label")}]]
 
-   [:& input {:type "password"
-              :name :password-1
-              :label (t locale "auth.new-password-label")}]
+     [:div.fields-row
+      [:& fm/input {:type "password"
+                    :name :password-2
+                    :label (t locale "auth.confirm-password-label")}]]
 
-   [:& input {:type "password"
-              :name :password-2
-              :label (t locale "auth.confirm-password-label")}]
-
-   [:& submit-button
-    {:label (t locale "auth.recovery-submit-label")}]])
+     [:& fm/submit-button
+      {:label (t locale "auth.recovery-submit-label")}]]))
 
 ;; --- Recovery Request Page
 
@@ -86,7 +87,6 @@
    [:div.form-container
     [:h1 "Forgot your password?"]
     [:div.subtitle "Please enter your new password"]
-
     [:& recovery-form {:locale locale :params params}]
 
     [:div.links
