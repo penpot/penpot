@@ -107,18 +107,23 @@
 
 ;; --- Mutation: Toggle Project Pin
 
+(def ^:private
+  sql:update-project-pin
+  "insert into team_project_profile_rel (team_id, project_id, profile_id, is_pinned)
+   values (?, ?, ?, ?)
+       on conflict (team_id, project_id, profile_id)
+       do update set is_pinned=?")
+
 (s/def ::is-pinned ::us/boolean)
+(s/def ::project-id ::us/uuid)
+
 (s/def ::update-project-pin
   (s/keys :req-un [::profile-id ::id ::team-id ::is-pinned]))
 
 (sm/defmutation ::update-project-pin
   [{:keys [id profile-id team-id is-pinned] :as params}]
   (db/with-atomic [conn db/pool]
-    (db/update! conn :team-project-profile-rel
-                {:is-pinned is-pinned}
-                {:profile-id profile-id
-                 :project-id id
-                 :team-id team-id})
+    (db/exec-one! conn [sql:update-project-pin team-id id profile-id is-pinned is-pinned])
     nil))
 
 

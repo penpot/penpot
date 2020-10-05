@@ -35,7 +35,8 @@
                   (:is-admin row)
                   (:is-owner row))
       (ex/raise :type :validation
-                :code :not-authorized))))
+                :code :not-authorized))
+    row))
 
 (defn check-read-permissions!
   [conn profile-id team-id]
@@ -43,7 +44,8 @@
     ;; when row is found this means that read permission is granted.
     (when-not row
       (ex/raise :type :validation
-                :code :not-authorized))))
+                :code :not-authorized))
+    row))
 
 
 ;; --- Query: Teams
@@ -76,9 +78,8 @@
   (let [defaults (profile/retrieve-additional-data conn profile-id)]
     (db/exec! conn [sql:teams (:default-team-id defaults) profile-id])))
 
-;; --- Query: Projec by ID
+;; --- Query: Team (by ID)
 
-(declare retrieve-team-projects)
 (declare retrieve-team)
 
 (s/def ::id ::us/uuid)
@@ -90,8 +91,42 @@
   (with-open [conn (db/open)]
     (retrieve-team conn profile-id id)))
 
-(defn- retrieve-team
+(defn retrieve-team
   [conn profile-id team-id]
   (let [defaults (profile/retrieve-additional-data conn profile-id)
-        sql      (str "WITH teams AS (" sql:teams ") SELECT * FROM teams WHERE id=?")]
-    (db/exec-one! conn [sql (:default-team-id defaults) profile-id team-id])))
+        sql      (str "WITH teams AS (" sql:teams ") SELECT * FROM teams WHERE id=?")
+        result   (db/exec-one! conn [sql (:default-team-id defaults) profile-id team-id])]
+    (when-not result
+      (ex/raise :type :not-found
+                :code :object-does-not-exists))
+    result))
+
+
+;; --- Query: Team Members
+
+(declare retrieve-team-members)
+
+(s/def ::team-id ::us/uuid)
+(s/def ::team-members
+  (s/keys :req-un [::profile-id ::team-id]))
+
+(sq/defquery ::team-members
+  [{:keys [profile-id team-id]}]
+  (with-open [conn (db/open)]
+    (check-edition-permissions! conn profile-id team-id)
+    (retrieve-team-members conn team-id)))
+
+(def sql:team-members
+  "select tp.*,
+          p.id,
+          p.email,
+          p.fullname as name,
+          p.photo,
+          p.is_active
+     from team_profile_rel as tp
+     join profile as p on (p.id = tp.profile_id)
+    where tp.team_id = ?")
+
+(defn retrieve-team-members
+  [conn team-id]
+  (db/exec! conn [sql:team-members team-id]))

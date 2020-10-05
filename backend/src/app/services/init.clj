@@ -28,7 +28,8 @@
   (require 'app.services.mutations.projects)
   (require 'app.services.mutations.files)
   (require 'app.services.mutations.profile)
-  (require 'app.services.mutations.viewer))
+  (require 'app.services.mutations.viewer)
+  (require 'app.services.mutations.verify-token))
 
 (defstate query-services
   :start (load-query-services))

@@ -25,6 +25,7 @@
        join project as p on (p.id = f.project_id)
       where p.team_id = ?
         and p.deleted_at is null
+        and f.deleted_at is null
      window w as (partition by f.project_id order by f.modified_at desc)
       order by f.modified_at desc
    )

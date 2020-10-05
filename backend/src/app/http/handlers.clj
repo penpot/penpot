@@ -20,7 +20,7 @@
   #{:create-demo-profile
     :logout
     :profile
-    :verify-profile-token
+    :verify-token
     :recover-profile
     :register-profile
     :request-profile-recovery

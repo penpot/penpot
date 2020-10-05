@@ -2,11 +2,15 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.services.queries.profile
   (:require
    [clojure.spec.alpha :as s]
+   [cuerdas.core :as str]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
@@ -86,6 +90,18 @@
                 :hint "Object doest not exists."))
 
     profile))
+
+
+(def sql:profile-by-email
+  "select * from profile
+    where email=?
+      and deleted_at is null")
+
+(defn retrieve-profile-data-by-email
+  [conn email]
+  (let [email (str/lower email)]
+    (db/exec-one! conn [sql:profile-by-email email])))
+
 
 ;; --- Attrs Helpers
 
