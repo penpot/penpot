@@ -38,7 +38,7 @@
     (if (string? v)
       (if (re-matches uuid-rx v)
         (uuid/uuid v)
-        (if (str/empty? v) nil ::s/invalid))
+        ::s/invalid)
       ::s/invalid)))
 
 (defn boolean-conformer
@@ -87,9 +87,21 @@
     v
     ::s/invalid))
 
+(defn keyword-conformer
+  [v]
+  (cond
+    (keyword? v)
+    v
+
+    (string? v)
+    (keyword v)
+
+    :else
+    ::s/invalid))
+
 ;; --- Default Specs
 
-(s/def ::keyword keyword?)
+(s/def ::keyword (s/conformer keyword-conformer name))
 (s/def ::inst inst?)
 (s/def ::string string?)
 (s/def ::email (s/conformer email-conformer str))
