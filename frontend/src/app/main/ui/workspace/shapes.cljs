@@ -11,6 +11,7 @@
   "A workspace specific shapes wrappers."
   (:require
    [rumext.alpha :as mf]
+   [okulary.core :as l]
    [beicon.core :as rx]
    [app.main.streams :as ms]
    [app.main.ui.hooks :as hooks]
@@ -21,6 +22,7 @@
    [app.main.ui.shapes.image :as image]
    [app.main.data.workspace.selection :as dws]
    [app.main.store :as st]
+   [app.main.refs :as refs]
 
    ;; Shapes that has some peculiarities are defined in its own
    ;; namespace under app.ui.workspace.shapes.* prefix, all the
@@ -68,18 +70,30 @@
    (fn []
      (st/emit! (dws/change-hover-state id false)))))
 
+(defn make-is-moving-ref
+  [id]
+  (let [check-moving (fn [local]
+                       (and (= :move (:transform local))
+                            (contains? (:selected local) id)))]
+    (l/derived check-moving refs/workspace-local)))
+
 (mf/defc shape-wrapper
   {::mf/wrap [#(mf/memo' % shape-wrapper-memo-equals?)]
    ::mf/wrap-props false}
   [props]
   (let [shape (unchecked-get props "shape")
         frame (unchecked-get props "frame")
+        ghost? (unchecked-get props "ghost?")
         shape (geom/transform-shape frame shape)
         opts #js {:shape shape
                   :frame frame}
         alt? (mf/use-state false)
         on-mouse-enter (use-mouse-enter shape)
-        on-mouse-leave (use-mouse-leave shape)]
+        on-mouse-leave (use-mouse-leave shape)
+
+        moving-iref (mf/use-memo (mf/deps (:id shape))
+                                   #(make-is-moving-ref (:id shape)))
+        moving? (mf/deref moving-iref)]
 
     (hooks/use-stream ms/keyboard-alt #(reset! alt? %))
 
@@ -88,7 +102,9 @@
        (fn []
          (on-mouse-leave))))
 
-    (when (and shape (not (:hidden shape)))
+    (when (and shape
+               (or ghost? (not moving?))
+               (not (:hidden shape)))
       [:g.shape-wrapper {:on-mouse-enter on-mouse-enter
                          :on-mouse-leave on-mouse-leave
                          :style {:cursor (if @alt? cur/duplicate nil)}}

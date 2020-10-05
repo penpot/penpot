@@ -49,6 +49,10 @@
 (def selected-shapes
   (l/derived :selected workspace-local))
 
+(defn make-selected-ref
+  [id]
+  (l/derived #(contains? % id) selected-shapes))
+
 (def selected-zoom
   (l/derived :zoom workspace-local))
 

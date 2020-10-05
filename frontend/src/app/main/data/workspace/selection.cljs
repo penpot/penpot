@@ -12,6 +12,7 @@
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]
+   [linked.set :as lks]
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
@@ -133,13 +134,18 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id (:current-page-id state)
-            selrect (get-in state [:workspace-local :selrect])]
+            selrect (get-in state [:workspace-local :selrect])
+            is-not-blocked (fn [shape-id] (not (get-in state [:workspace-data
+                                                              :pages-index page-id
+                                                              :objects shape-id
+                                                              :blocked] false)))]
         (rx/merge
          (rx/of (update-selrect nil))
          (when selrect
            (->> (uw/ask! {:cmd :selection/query
                           :page-id page-id
                           :rect selrect})
+                (rx/map #(into lks/empty-linked-set (filter is-not-blocked) %))
                 (rx/map select-shapes))))))))
 
 (defn select-inside-group

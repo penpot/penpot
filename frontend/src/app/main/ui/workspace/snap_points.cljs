@@ -56,10 +56,14 @@
           :opacity line-opacity}])
 
 (defn get-snap
-  [coord {:keys [shapes page-id filter-shapes]}]
+  [coord {:keys [shapes page-id filter-shapes local]}]
   (let [shape (if (> (count shapes) 1)
                 (->> shapes (map gsh/transform-shape) gsh/selection-rect)
                 (->> shapes (first)))
+
+        shape (if (:modifiers local)
+                (-> shape (assoc :modifiers (:modifiers local)) gsh/transform-shape)
+                shape)
 
         frame-id (snap/snap-frame-id shapes)]
 
@@ -104,7 +108,7 @@
                                         (hash-map coord fixedv (flip coord) maxv)]))))
 
 (mf/defc snap-feedback
-  [{:keys [shapes page-id filter-shapes zoom] :as props}]
+  [{:keys [shapes page-id filter-shapes zoom local] :as props}]
   (let [state (mf/use-state [])
         subject (mf/use-memo #(rx/subject))
 
@@ -129,7 +133,7 @@
          #(rx/dispose! sub))))
 
     (mf/use-effect
-     (mf/deps shapes)
+     (mf/deps shapes local)
      (fn []
        (rx/push! subject props)))
 
@@ -150,7 +154,7 @@
 
 (mf/defc snap-points
   {::mf/wrap [mf/memo]}
-  [{:keys [layout zoom selected page-id drawing transform] :as props}]
+  [{:keys [layout zoom selected page-id drawing transform local] :as props}]
   (let [shapes        (mf/deref (refs/objects-by-id selected))
         filter-shapes (mf/deref refs/selected-shapes-with-children)
         filter-shapes (fn [id]
@@ -166,5 +170,6 @@
       [:& snap-feedback {:shapes shapes
                          :page-id page-id
                          :filter-shapes filter-shapes
-                         :zoom zoom}])))
+                         :zoom zoom
+                         :local local}])))
 

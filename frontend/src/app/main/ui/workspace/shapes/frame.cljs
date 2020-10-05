@@ -45,9 +45,30 @@
                (recur (first ids) (rest ids))
                false))))))
 
-(defn make-selected-ref
-  [id]
-  (l/derived #(contains? % id) refs/selected-shapes))
+(mf/defc frame-title
+  [{:keys [frame on-double-click on-mouse-over on-mouse-out]}]
+  (let [zoom (mf/deref refs/selected-zoom)
+        inv-zoom    (/ 1 zoom)
+        {:keys [width x y]} frame
+        label-pos (gpt/point x (- y (/ 10 zoom)))]
+    [:text {:x 0
+            :y 0
+            :width width
+            :height 20
+            :class "workspace-frame-label"
+            ;; Ensure that the label has always the same font
+            ;; size, regardless of zoom
+            ;; https://css-tricks.com/transforms-on-svg-elements/
+            :transform (str
+                        "scale(" inv-zoom ", " inv-zoom ") "
+                        "translate(" (* zoom (:x label-pos)) ", "
+                        (* zoom (:y label-pos))
+                        ")")
+            ;; User may also select the frame with single click in the label
+            :on-click on-double-click
+            :on-mouse-over on-mouse-over
+            :on-mouse-out on-mouse-out}
+     (:name frame)]))
 
 (defn frame-wrapper-factory
   [shape-wrapper]
@@ -61,9 +82,8 @@
             objects (unchecked-get props "objects")
 
             selected-iref (mf/use-memo (mf/deps (:id shape))
-                                       #(make-selected-ref (:id shape)))
+                                       #(refs/make-selected-ref (:id shape)))
             selected? (mf/deref selected-iref)
-            zoom (mf/deref refs/selected-zoom)
 
             on-mouse-down   (mf/use-callback (mf/deps shape)
                                              #(common/on-mouse-down % shape))
@@ -71,13 +91,8 @@
                                              #(common/on-context-menu % shape))
 
             shape (geom/transform-shape shape)
-            {:keys [x y width height]} shape
-
-            inv-zoom    (/ 1 zoom)
             children    (mapv #(get objects %) (:shapes shape))
             ds-modifier (get-in shape [:modifiers :displacement])
-
-            label-pos (gpt/point x (- y (/ 10 zoom)))
 
             on-double-click
             (mf/use-callback
@@ -106,24 +121,11 @@
                :on-context-menu on-context-menu
                :on-double-click on-double-click
                :on-mouse-down on-mouse-down}
-           [:text {:x 0
-                   :y 0
-                   :width width
-                   :height 20
-                   :class "workspace-frame-label"
-                   ;; Ensure that the label has always the same font
-                   ;; size, regardless of zoom
-                   ;; https://css-tricks.com/transforms-on-svg-elements/
-                   :transform (str
-                               "scale(" inv-zoom ", " inv-zoom ") "
-                               "translate(" (* zoom (:x label-pos)) ", "
-                               (* zoom (:y label-pos))
-                               ")")
-                   ;; User may also select the frame with single click in the label
-                   :on-click on-double-click
-                   :on-mouse-over on-mouse-over
-                   :on-mouse-out on-mouse-out}
-            (:name shape)]
+
+           [:& frame-title {:frame shape
+                            :on-context-menu on-context-menu
+                            :on-double-click on-double-click
+                            :on-mouse-down on-mouse-down}]
            [:g.frame {:filter (filters/filter-str filter-id shape)}
             [:& filters/filters {:filter-id filter-id :shape shape}]
             [:& frame-shape

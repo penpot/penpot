@@ -57,13 +57,15 @@
   {::mf/wrap-props false}
   [props]
   (let [{:keys [id x1 y1 content group grow-type width height ] :as shape} (unchecked-get props "shape")
-
-        selected  (mf/deref refs/selected-shapes)
+        selected-iref (mf/use-memo (mf/deps (:id shape))
+                                   #(refs/make-selected-ref (:id shape)))
+        selected? (mf/deref selected-iref)
         edition   (mf/deref refs/selected-edition)
-        zoom      (mf/deref refs/selected-zoom)
+        current-transform (mf/deref refs/current-transform)
+
+        render-editor (mf/use-state false)
+
         edition?  (= edition id)
-        selected? (and (contains? selected id)
-                       (= (count selected) 1))
 
         embed-resources? (mf/use-ctx muc/embed-ctx)
 
@@ -79,23 +81,30 @@
 
         filter-id (mf/use-memo filters/get-filter-id)]
 
+    (mf/use-effect
+     (mf/deps shape edition selected? current-transform)
+     (fn [] (let [check? (and (#{:auto-width :auto-height} (:grow-type shape))
+                              selected?
+                              (not edition?)
+                              (not embed-resources?)
+                              (nil? current-transform))]
+              (timers/schedule #(reset! render-editor check?)))))
+
     [:g.shape {:on-double-click on-double-click
                :on-mouse-down on-mouse-down
                :on-context-menu on-context-menu
                :filter (filters/filter-str filter-id shape)}
      [:& filters/filters {:filter-id filter-id :shape shape}]
      [:*
-      (when (and (not edition?) (not embed-resources?))
+      (when @render-editor
         [:g {:opacity 0
              :style {:pointer-events "none"}}
          ;; We only render the component for its side-effect
          [:& text-shape-edit {:shape shape
-                              :zoom zoom
                               :read-only? true}]])
 
       (if edition?
-        [:& text-shape-edit {:shape shape
-                             :zoom zoom}]
+        [:& text-shape-edit {:shape shape}]
         [:& text/text-shape {:shape shape
                              :selected? selected?}])]]))
 
@@ -267,9 +276,9 @@
 
 (mf/defc text-shape-edit
   {::mf/wrap [mf/memo]}
-  [{:keys [shape zoom read-only?] :or {read-only? false} :as props}]
+  [{:keys [shape read-only?] :or {read-only? false} :as props}]
   (let [{:keys [id x y width height content grow-type]} shape
-
+        zoom     (mf/deref refs/selected-zoom)
         state    (mf/use-state #(parse-content content))
         editor   (mf/use-memo #(dwt/create-editor))
         self-ref      (mf/use-ref)

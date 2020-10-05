@@ -247,12 +247,16 @@
         transform       (unchecked-get props "transform")
         selected-shapes (mf/deref (refs/objects-by-id selected))
         frame-id        (-> selected-shapes first :frame-id)
-        frame           (mf/deref (refs/object-by-id frame-id))]
+        frame           (mf/deref (refs/object-by-id frame-id))
+        local           (mf/deref refs/workspace-local)
+
+        update-shape (fn [shape] (-> shape
+                                     (update :modifiers merge (:modifiers local))
+                                     gsh/transform-shape))]
     (when (and (contains? layout :dynamic-alignment)
                (= transform :move)
                (not (empty? selected)))
-      (let [shapes  (map gsh/transform-shape selected-shapes)
-            selrect (gsh/selection-rect shapes)
+      (let [selrect (->> selected-shapes (map  update-shape) gsh/selection-rect)
             key     (->> selected (map str) (str/join "-"))]
         [:g.distance
          [:& shape-distance

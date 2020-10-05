@@ -148,26 +148,35 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [props]
-  (let [data     (mf/deref refs/workspace-page)
-        hover    (unchecked-get props "hover")
+  (let [hover    (unchecked-get props "hover")
         selected (unchecked-get props "selected")
+        ids      (unchecked-get props "ids")
+        ghost?   (unchecked-get props "ghost?")
+        data     (mf/deref refs/workspace-page)
         objects  (:objects data)
         root     (get objects uuid/zero)
         shapes   (->> (:shapes root)
-                      (map #(get objects %)))]
+                      (map #(get objects %)))
+
+        shapes (if ids
+                 (->> ids (map #(get objects %)))
+                 shapes)]
     [:*
      [:g.shapes
       (for [item shapes]
         (if (= (:type item) :frame)
           [:& frame-wrapper {:shape item
                              :key (:id item)
-                             :objects objects}]
+                             :objects objects
+                             :ghost? ghost?}]
           [:& shape-wrapper {:shape item
-                             :key (:id item)}]))]
+                             :key (:id item)
+                             :ghost? ghost?}]))]
 
-     [:& shape-outlines {:objects objects
-                         :selected selected
-                         :hover hover}]]))
+     (when (not ghost?)
+       [:& shape-outlines {:objects objects
+                           :selected selected
+                           :hover hover}])]))
 
 (defn format-viewbox [vbox]
   (str/join " " [(+ (:x vbox 0) (:left-offset vbox 0))
@@ -285,6 +294,12 @@
                 selected
                 panning
                 picking-color?]} local
+
+        selrect-orig (->> (mf/deref refs/selected-objects)
+                          gsh/selection-rect)
+        selrect (-> selrect-orig
+                    (assoc :modifiers (:modifiers local))
+                    (gsh/transform-shape))
 
         file          (mf/deref refs/workspace-file)
         viewport-ref  (mf/use-ref nil)
@@ -610,6 +625,18 @@
                    :hover (:hover local)
                    :selected (:selected selected)}]
 
+       (when (= :move (:transform local))
+         [:svg.ghost
+          {:x (:x selrect)
+           :y (:y selrect)
+           :width (:width selrect)
+           :height (:height selrect)
+           :style {:pointer-events "none"}}
+
+          [:g {:transform (str/fmt "translate(%s,%s)" (- (:x selrect-orig)) (- (:y selrect-orig)))}
+           [:& frames {:ids selected
+                       :ghost? true}]]])
+
        (when (seq selected)
          [:& selection-handlers {:selected selected
                                  :zoom zoom
@@ -628,7 +655,8 @@
                         :drawing drawing-obj
                         :zoom zoom
                         :page-id page-id
-                        :selected selected}]
+                        :selected selected
+                        :local local}]
 
        [:& snap-distances {:layout layout
                            :zoom zoom

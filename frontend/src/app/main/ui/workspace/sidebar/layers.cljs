@@ -186,9 +186,9 @@
                               :name (:name item)})]
 
     (mf/use-effect
-     (mf/deps selected?)
+     (mf/deps selected)
      (fn []
-       (when selected?
+       (when (and (= (count selected) 1) selected?)
          (.scrollIntoView (mf/ref-val dref) false))))
 
     [:li {:on-context-menu on-context-menu
