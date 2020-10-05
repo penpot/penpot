@@ -257,9 +257,11 @@
                (rx/switch-map #(snap/closest-snap-move page-id shapes objects layout %))
                (rx/map #(gpt/round % 0))
                (rx/map gmt/translate-matrix)
-               (rx/map #(set-modifiers ids {:displacement %})))
+               (rx/map #(fn [state] (assoc-in state [:workspace-local :modifiers] {:displacement %}))))
 
-          (rx/of (apply-modifiers ids)
+          (rx/of (set-modifiers ids)
+                 (apply-modifiers ids)
+                 (fn [state] (update state :workspace-local dissoc :modifiers))
                  finish-transform)))))))
 
 (defn- get-displacement-with-grid
@@ -339,13 +341,15 @@
 ;; -- Apply modifiers
 
 (defn set-modifiers
+  ([ids] (set-modifiers ids nil true))
   ([ids modifiers] (set-modifiers ids modifiers true))
   ([ids modifiers recurse-frames?]
    (us/verify (s/coll-of uuid?) ids)
    (ptk/reify ::set-modifiers
      ptk/UpdateEvent
      (update [_ state]
-       (let [page-id (:current-page-id state)
+       (let [modifiers (or modifiers (get-in state [:workspace-local :modifiers] {}))
+             page-id (:current-page-id state)
              objects (dwc/lookup-page-objects state page-id)
 
              not-frame-id?
