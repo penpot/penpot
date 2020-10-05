@@ -9,16 +9,16 @@
 
 (ns app.main.ui.settings.password
   (:require
-   [rumext.alpha :as mf]
-   [cljs.spec.alpha :as s]
-   [app.main.ui.icons :as i]
-   [app.main.data.users :as udu]
+   [app.common.spec :as us]
    [app.main.data.messages :as dm]
-   [app.main.ui.components.forms :refer [input submit-button form]]
+   [app.main.data.users :as udu]
    [app.main.store :as st]
+   [app.main.ui.components.forms :as fm]
+   [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [app.util.forms :as fm]
-   [app.util.i18n :as i18n :refer [t tr]]))
+   [app.util.i18n :as i18n :refer [t tr]]
+   [cljs.spec.alpha :as s]
+   [rumext.alpha :as mf]))
 
 (defn- on-error
   [form error]
@@ -33,20 +33,20 @@
 
 (defn- on-success
   [form]
-  (let [msg (tr "settings.notifications.password-saved")]
+  (let [msg (tr "dashboard.notifications.password-saved")]
     (st/emit! (dm/success msg))))
 
 (defn- on-submit
   [form event]
   (dom/prevent-default event)
-  (let [params (with-meta (:clean-data form)
+  (let [params (with-meta (:clean-data @form)
                  {:on-success (partial on-success form)
                   :on-error (partial on-error form)})]
     (st/emit! (udu/update-password params))))
 
-(s/def ::password-1 ::fm/not-empty-string)
-(s/def ::password-2 ::fm/not-empty-string)
-(s/def ::password-old ::fm/not-empty-string)
+(s/def ::password-1 ::us/not-empty-string)
+(s/def ::password-2 ::us/not-empty-string)
+(s/def ::password-old ::us/not-empty-string)
 
 (defn- password-equality
   [data]
@@ -67,36 +67,38 @@
 
 (mf/defc password-form
   [{:keys [locale] :as props}]
-  [:& form {:class "password-form"
-            :on-submit on-submit
-            :spec ::password-form
-            :validators [password-equality]
-            :initial {}}
-   [:h2 (t locale "settings.password-change-title")]
+  (let [form (fm/use-form :spec ::password-form
+                          :validators [password-equality]
+                          :initial {})]
+    [:& fm/form {:class "password-form"
+                 :on-submit on-submit
+                 :form form}
+     [:h2 (t locale "dashboard.settings.password-change-title")]
+     [:div.fields-row
+      [:& fm/input
+       {:type "password"
+        :name :password-old
+        :label (t locale "dashboard.settings.old-password-label")}]]
 
-   [:& input
-    {:type "password"
-     :name :password-old
-     :label (t locale "settings.old-password-label")}]
+     [:div.fields-row
+      [:& fm/input
+       {:type "password"
+        :name :password-1
+        :label (t locale "dashboard.settings.new-password-label")}]]
 
-   [:& input
-    {:type "password"
-     :name :password-1
-     :label (t locale "settings.new-password-label")}]
+     [:div.fields-row
+      [:& fm/input
+       {:type "password"
+        :name :password-2
+        :label (t locale "dashboard.settings.confirm-password-label")}]]
 
-   [:& input
-    {:type "password"
-     :name :password-2
-     :label (t locale "settings.confirm-password-label")}]
-
-   [:& submit-button
-    {:label (t locale "settings.profile-submit-label")}]])
+     [:& fm/submit-button
+      {:label (t locale "dashboard.settings.profile-submit-label")}]]))
 
 ;; --- Password Page
 
 (mf/defc password-page
-  [props]
-  (let [locale (mf/deref i18n/locale)]
-    [:section.settings-password.generic-form
-     [:div.forms-container
-      [:& password-form {:locale locale}]]]))
+  [{:keys [locale]}]
+  [:section.dashboard-settings.form-container
+   [:div.form-container
+    [:& password-form {:locale locale}]]])

@@ -106,6 +106,7 @@
 
 (defn request-email-change
   [{:keys [email] :as data}]
+  (us/assert ::us/email email)
   (ptk/reify ::request-email-change
     ptk/WatchEvent
     (watch [_ state stream]

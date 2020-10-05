@@ -14,6 +14,9 @@
    [app.util.router :as rt]
    [app.util.time :as dt]
    [app.util.timers :as ts]
+   [app.util.avatars :as avatars]
+   [app.main.data.media :as di]
+   [app.main.data.messages :as dm]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
@@ -29,10 +32,12 @@
 (s/def ::created-at ::us/inst)
 (s/def ::modified-at ::us/inst)
 (s/def ::is-pinned ::us/boolean)
+(s/def ::photo ::us/string)
 
 (s/def ::team
   (s/keys :req-un [::id
                    ::name
+                   ::photo
                    ::created-at
                    ::modified-at]))
 
@@ -59,6 +64,13 @@
 
 ;; --- Fetch Team
 
+(defn assoc-team-avatar
+  [{:keys [photo name] :as team}]
+  (us/assert ::team team)
+  (cond-> team
+    (or (nil? photo) (empty? photo))
+    (assoc :photo (avatars/generate {:name name}))))
+
 (defn fetch-team
   [{:keys [id] :as params}]
   (letfn [(fetched [team state]
@@ -66,9 +78,21 @@
     (ptk/reify ::fetch-team
       ptk/WatchEvent
       (watch [_ state stream]
-        (->> (rp/query :team params)
-             (rx/map #(partial fetched %)))))))
+        (let [profile (:profile state)]
+          (->> (rp/query :team params)
+               (rx/map assoc-team-avatar)
+               (rx/map #(partial fetched %))))))))
 
+(defn fetch-team-members
+  [{:keys [id] :as params}]
+  (us/assert ::us/uuid id)
+  (letfn [(fetched [members state]
+            (assoc-in state [:team-members id] (d/index-by :id members)))]
+    (ptk/reify ::fetch-team-members
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (->> (rp/query :team-members {:team-id id})
+             (rx/map #(partial fetched %)))))))
 
 ;; --- Fetch Projects
 
@@ -82,6 +106,31 @@
       (watch [_ state stream]
         (->> (rp/query :projects {:team-id team-id})
              (rx/map #(partial fetched %)))))))
+
+(defn fetch-bundle
+  [{:keys [id] :as params}]
+  (us/assert ::us/uuid id)
+  (ptk/reify ::fetch-team
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [profile (:profile state)]
+        (->> (rx/merge (ptk/watch (fetch-team params) state stream)
+                       (ptk/watch (fetch-projects {:team-id id}) state stream))
+             (rx/catch (fn [{:keys [type code] :as error}]
+                         (cond
+                           (and (= :not-found type)
+                                (not= id (:default-team-id profile)))
+                           (rx/of (rt/nav :dashboard-projects {:team-id (:default-team-id profile)})
+                                  (dm/error "Team does not found"))
+
+                           (and (= :validation type)
+                                (= :not-authorized code)
+                                (not= id (:default-team-id profile)))
+                           (rx/of (rt/nav :dashboard-projects {:team-id (:default-team-id profile)})
+                                  (dm/error "Team does not found"))
+
+                           :else
+                           (rx/throw error)))))))))
 
 
 ;; --- Search Files
@@ -178,6 +227,114 @@
              :or {on-success identity
                   on-error identity}} (meta params)]
         (->> (rp/mutation! :create-team {:name name})
+             (rx/tap on-success)
+             (rx/catch on-error))))))
+
+(defn update-team
+  [{:keys [id name] :as params}]
+  (us/assert ::team params)
+  (ptk/reify ::update-team
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:teams id :name] name))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/mutation! :update-team params)
+           (rx/ignore)))))
+
+(defn update-team-photo
+  [{:keys [file team-id] :as params}]
+  (us/assert ::di/js-file file)
+  (us/assert ::us/uuid team-id)
+  (ptk/reify ::update-team-photo
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [on-success di/notify-finished-loading
+
+            on-error  #(do (di/notify-finished-loading)
+                           (di/process-error %))
+
+            prepare   #(hash-map :file % :team-id team-id)]
+
+        (di/notify-start-loading)
+
+        (->> (rx/of file)
+             (rx/map di/validate-file)
+             (rx/map prepare)
+             (rx/mapcat #(rp/mutation :update-team-photo %))
+             (rx/do on-success)
+             (rx/map #(fetch-team %))
+             (rx/catch on-error))))))
+
+(defn update-team-member-role
+  [{:keys [team-id role member-id] :as params}]
+  (us/assert ::us/uuid team-id)
+  (us/assert ::us/uuid member-id)
+  (us/assert ::us/keyword role)
+  (ptk/reify ::update-team-member-role
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/mutation! :update-team-member-role params)
+           (rx/mapcat #(rx/of (fetch-team-members {:id team-id})
+                              (fetch-team {:id team-id})))))))
+
+(defn delete-team-member
+  [{:keys [team-id member-id] :as params}]
+  (us/assert ::us/uuid team-id)
+  (us/assert ::us/uuid member-id)
+  (ptk/reify ::delete-team-member
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rp/mutation! :delete-team-member params)
+           (rx/mapcat #(rx/of (fetch-team-members {:id team-id})
+                              (fetch-team {:id team-id})))))))
+
+(defn leave-team
+  [{:keys [id reassign-to] :as params}]
+  (us/assert ::team params)
+  (us/assert (s/nilable ::us/uuid) reassign-to)
+  (ptk/reify ::leave-team
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [{:keys [on-success on-error]
+             :or {on-success identity
+                  on-error identity}} (meta params)]
+        (rx/concat
+         (when (uuid? reassign-to)
+           (->> (rp/mutation! :update-team-member-role {:team-id id
+                                                        :role :owner
+                                                        :member-id reassign-to})
+                (rx/ignore)))
+         (->> (rp/mutation! :leave-team {:id id})
+              (rx/tap on-success)
+              (rx/catch on-error)))))))
+
+(defn invite-team-member
+  [{:keys [team-id email role] :as params}]
+  (us/assert ::us/uuid team-id)
+  (us/assert ::us/email email)
+  (us/assert ::us/keyword role)
+  (ptk/reify ::invite-team-member
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [{:keys [on-success on-error]
+             :or {on-success identity
+                  on-error identity}} (meta params)]
+        (->> (rp/mutation! :invite-team-member params)
+             (rx/tap on-success)
+             (rx/catch on-error))))))
+
+(defn delete-team
+  [{:keys [id] :as params}]
+  (us/assert ::team params)
+  (ptk/reify ::delete-team
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [{:keys [on-success on-error]
+             :or {on-success identity
+                  on-error identity}} (meta params)]
+        (->> (rp/mutation! :delete-team {:id id})
              (rx/tap on-success)
              (rx/catch on-error))))))
 
@@ -289,12 +446,12 @@
 ;; --- Set File shared
 
 (defn set-file-shared
-  [id is-shared]
-  {:pre [(uuid? id) (boolean? is-shared)]}
+  [{:keys [id project-id is-shared] :as params}]
+  (us/assert ::file params)
   (ptk/reify ::set-file-shared
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:files id :is-shared] is-shared))
+      (assoc-in state [:files project-id id :is-shared] is-shared))
 
     ptk/WatchEvent
     (watch [_ state stream]

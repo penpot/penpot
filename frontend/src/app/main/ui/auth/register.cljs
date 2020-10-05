@@ -9,16 +9,16 @@
 
 (ns app.main.ui.auth.register
   (:require
+   [app.common.spec :as us]
    [app.config :as cfg]
    [app.main.data.auth :as da]
-   [app.main.data.auth :as uda]
+   [app.main.data.users :as du]
    [app.main.data.messages :as dm]
    [app.main.store :as st]
-   [app.main.ui.components.forms :refer [input submit-button form]]
+   [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
    [app.util.dom :as dom]
-   [app.util.forms :as fm]
    [app.util.i18n :refer [tr t]]
    [app.util.router :as rt]
    [app.util.timers :as tm]
@@ -31,15 +31,6 @@
   [:& msgs/inline-banner
    {:type :warning
     :content (tr "auth.demo-warning")}])
-
-(s/def ::fullname ::fm/not-empty-string)
-(s/def ::password ::fm/not-empty-string)
-(s/def ::email ::fm/email)
-
-(s/def ::register-form
-  (s/keys :req-un [::password
-                   ::fullname
-                   ::email]))
 
 (defn- on-error
   [form error]
@@ -55,9 +46,14 @@
 
 (defn- on-success
   [form data]
-  (let [msg (tr "auth.notifications.validation-email-sent" (:email data))]
-    (st/emit! (rt/nav :auth-login)
-              (dm/success msg))))
+  (if (and (:is-active data) (:claims data))
+    (let [message (tr "auth.notifications.team-invitation-accepted")]
+      (st/emit! (rt/nav :dashboard-projects {:team-id (get-in data [:claims :team-id])})
+                du/fetch-profile
+                (dm/success message)))
+    (let [message (tr "auth.notifications.validation-email-sent" (:email data))]
+      (st/emit! (rt/nav :auth-login)
+                (dm/success message)))))
 
 (defn- validate
   [data]
@@ -67,57 +63,74 @@
 
 (defn- on-submit
   [form event]
-  (let [data (with-meta (:clean-data form)
+  (let [data (with-meta (:clean-data @form)
                {:on-error (partial on-error form)
                 :on-success (partial on-success form)})]
-    (st/emit! (uda/register data))))
+    (st/emit! (da/register data))))
+
+(s/def ::fullname ::us/not-empty-string)
+(s/def ::password ::us/not-empty-string)
+(s/def ::email ::us/email)
+(s/def ::token ::us/not-empty-string)
+
+(s/def ::register-form
+  (s/keys :req-un [::password
+                   ::fullname
+                   ::email]
+          :opt-un [::token]))
 
 (mf/defc register-form
-  [{:keys [locale] :as props}]
-  [:& form {:on-submit on-submit
-            :spec ::register-form
-            :validators [validate]
-            :initial {}}
-   [:& input {:name :fullname
-              :tab-index "1"
-              :label (t locale "auth.fullname-label")
-              :type "text"}]
-   [:& input {:type "email"
-              :name :email
-              :tab-index "2"
-              :help-icon i/at
-              :label (t locale "auth.email-label")}]
-   [:& input {:name :password
-              :tab-index "3"
-              :hint (t locale "auth.password-length-hint")
-              :label (t locale "auth.password-label")
-              :type "password"}]
+  [{:keys [locale params] :as props}]
+  (let [initial (mf/use-memo (mf/deps params) (constantly params))
+        form    (fm/use-form :spec ::register-form
+                             :validators [validate]
+                             :initial initial)]
 
-   [:& submit-button
-    {:label (t locale "auth.register-submit-label")}]])
+    [:& fm/form {:on-submit on-submit
+                 :form form}
+     [:div.fields-row
+      [:& fm/input {:name :fullname
+                    :tab-index "1"
+                    :label (t locale "auth.fullname-label")
+                    :type "text"}]]
+     [:div.fields-row
+      [:& fm/input {:type "email"
+                    :name :email
+                    :tab-index "2"
+                    :help-icon i/at
+                    :label (t locale "auth.email-label")}]]
+     [:div.fields-row
+      [:& fm/input {:name :password
+                    :tab-index "3"
+                    :hint (t locale "auth.password-length-hint")
+                    :label (t locale "auth.password-label")
+                    :type "password"}]]
+
+     [:& fm/submit-button
+      {:label (t locale "auth.register-submit-label")}]]))
 
 ;; --- Register Page
 
 (mf/defc register-page
-  [{:keys [locale] :as props}]
-  [:section.generic-form
-   [:div.form-container
-    [:h1 (t locale "auth.register-title")]
-    [:div.subtitle (t locale "auth.register-subtitle")]
-    (when cfg/demo-warning
-      [:& demo-warning])
+  [{:keys [locale params] :as props}]
+  [:div.form-container
+   [:h1 (t locale "auth.register-title")]
+   [:div.subtitle (t locale "auth.register-subtitle")]
+   (when cfg/demo-warning
+     [:& demo-warning])
 
-    [:& register-form {:locale locale}]
+   [:& register-form {:locale locale
+                      :params params}]
 
-    [:div.links
-     [:div.link-entry
-      [:span (t locale "auth.already-have-account") " "]
-      [:a {:on-click #(st/emit! (rt/nav :auth-login))
-           :tab-index "4"}
-       (t locale "auth.login-here")]]
+   [:div.links
+    [:div.link-entry
+     [:span (t locale "auth.already-have-account") " "]
+     [:a {:on-click #(st/emit! (rt/nav :auth-login))
+          :tab-index "4"}
+      (t locale "auth.login-here")]]
 
-     [:div.link-entry
-      [:span (t locale "auth.create-demo-profile-label") " "]
-      [:a {:on-click #(st/emit! da/create-demo-profile)
-           :tab-index "5"}
-       (t locale "auth.create-demo-profile")]]]]])
+    [:div.link-entry
+     [:span (t locale "auth.create-demo-profile-label") " "]
+     [:a {:on-click #(st/emit! da/create-demo-profile)
+          :tab-index "5"}
+      (t locale "auth.create-demo-profile")]]]])

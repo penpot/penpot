@@ -56,84 +56,140 @@
   }
 }
 
-.change-email-modal {
-  h2 {
-    font-size: $fs14;
-    margin-bottom: 20px;
+// NEW GEN MODALS
+
+.modal-container {
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  width: 448px;
+  background-color: $color-dashboard;
+
+  .modal-header {
+    align-items: center;
+    background-color: $color-white;
+    border-radius: 8px 8px 0px 0px;
+    color: $color-black;
+    display: flex;
+    height: 63px;
+    justify-content: space-between;
   }
 
-  .confirmation {
-    .btn-primary {
-      margin-bottom: 30px;
-    }
+  .modal-header-title {
+    display: flex;
+    align-items: center;
+    font-size: $fs24;
+    padding-left: 16px;
 
-    .featured-note .icon svg {
-      fill: $color-success;
+    h2 {
+      margin: 0;
     }
+  }
 
+  .modal-close-button {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    height: 30px;
+    justify-content: center;
+    margin-right: 16px;
+    width: 30px;
+
+    svg {
+      transform: rotate(45deg);
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .modal-content {
+    display: flex;
+    flex-direction: column;
+    padding: 32px;
+    border-top: 1px solid $color-gray-10;
+    h3 {
+      color: $color-gray-40;
+      font-size: $fs16;
+    }
+  }
+
+  .modal-footer {
+    display: flex;
+    height: 63px;
+    padding: 0px 16px;
+    border-top: 1px solid $color-gray-10;
+
+    .action-buttons {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      justify-content: flex-end;
+      // border: 1px solid red;
+      align-items: center;
+
+      input {
+        margin-bottom: 0px;
+      }
+    }
+  }
+}
+
+.change-email-modal {
+  h2 {
+    font-size: $fs18
+  }
+
+  h3 {
+    margin-bottom: 15px;
+  }
+
+  .modal-footer .action-buttons {
+    justify-content: space-around;
   }
 }
 
 .confirm-dialog {
   background-color: $color-white;
-  width: 23rem;
 
-  .modal-content {
-    padding: 20px 40px;
+  p {
+    font-size: $fs14;
+    color: $color-gray-40;
   }
 
-  .dialog-title {
-    font-size: 24px;
-    color: $color-black;
-    font-weight: normal;
-    text-align: center;
-  }
-
-  .dialog-buttons {
+  .action-buttons {
     display: flex;
     flex-direction: row;
-    margin-top: 3rem;
     width: 100%;
+    font-size: $fs14;
   }
 
-  .dialog-cancel-button {
+  .cancel-button {
     border: 1px solid $color-gray-30;
     background: $color-canvas;
-    border-radius: 2px;
-    padding: 0.5rem;
-    margin-right: 1rem;
-    justify-content: space-evenly;
-    margin-bottom: 0;
-    width: 100%;
+    border-radius: 3px;
+    padding: 0.5rem 1rem;
     cursor: pointer;
+    margin-right: 8px;
 
     &:hover {
       background: $color-gray-20;
     }
   }
 
-  .dialog-accept-button {
-    width: 100%;
-    padding: 0.5rem;
+  .accept-button {
     border: 1px solid $color-danger;
+    border-radius: 3px;
     background: $color-danger;
     color: $color-white;
-    margin-bottom: 0;
     cursor: pointer;
+
+    padding: 0.5rem 1rem;
 
     &:hover {
       background: $color-danger-dark;
     }
-
-    &.not-danger {
-      background: $color-primary;
-      color: $color-gray-60;
-    }
-
-    &.not-danger:hover {
-      background: $color-primary-dark;
-    }
   }
+
 }
 
 .libraries-dialog {

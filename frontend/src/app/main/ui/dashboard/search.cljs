@@ -32,7 +32,7 @@
      (st/emitf (dd/search-files {:team-id (:id team)
                                  :search-term search-term})))
 
-    [:section.dashboard-grid-container.search
+    [:section.dashboard-container.search
      (cond
        (empty? search-term)
        [:div.grid-empty-placeholder

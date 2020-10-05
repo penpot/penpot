@@ -8,30 +8,54 @@
 ;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.main.data.modal
+  (:refer-clojure :exclude [update])
   (:require
-   [potok.core :as ptk]))
+   [potok.core :as ptk]
+   [app.main.store :as st]
+   [app.common.uuid :as uuid]
+   [cljs.core :as c]))
 
-(defn show-modal [id type props]
-  (ptk/reify ::show-modal
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (assoc ::modal {:id id
-                         :type type
-                         :props props
-                         :allow-click-outside false})))))
+(defonce components (atom {}))
 
-(defn hide-modal []
+(defn show
+  ([props]
+   (show (uuid/next) (:type props) props))
+  ([type props] (show (uuid/next) type props))
+  ([id type props]
+   (ptk/reify ::show-modal
+     ptk/UpdateEvent
+     (update [_ state]
+       (assoc state ::modal {:id id
+                            :type type
+                            :props props
+                            :allow-click-outside false})))))
+
+(defn hide
+  []
   (ptk/reify ::hide-modal
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (dissoc ::modal)))))
+      (dissoc state ::modal))))
 
-(defn update-modal [options]
+(defn update
+  [options]
   (ptk/reify ::update-modal
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (update ::modal merge options)))))
+      (c/update state ::modal merge options))))
 
+(defn show!
+  [type props]
+  (st/emit! (show type props)))
+
+(defn allow-click-outside!
+  []
+  (st/emit! (update {:allow-click-outside true})))
+
+(defn disallow-click-outside!
+  []
+  (st/emit! (update {:allow-click-outside false})))
+
+(defn hide!
+  []
+  (st/emit! (hide)))

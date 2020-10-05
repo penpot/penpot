@@ -18,7 +18,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.ui.icons :as i]
-   [app.main.ui.modal :as modal]))
+   [app.main.data.modal :as modal]))
 
 (def workspace-file
   (l/derived :workspace-file st/state))

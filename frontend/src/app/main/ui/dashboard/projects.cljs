@@ -24,14 +24,13 @@
    [app.util.router :as rt]
    [app.util.time :as dt]))
 
-;; --- Component: Recent files
-
 (mf/defc header
   {::mf/wrap [mf/memo]}
-  [{:keys [profile locale team] :as props}]
+  [{:keys [locale team] :as props}]
   (let [create #(st/emit! (dd/create-project {:team-id (:id team)}))]
     [:header.dashboard-header
-     [:h1.dashboard-title "Projects"]
+     [:div.dashboard-title
+      [:h1 "Projects"]]
      [:a.btn-secondary.btn-small {:on-click create}
       (t locale "dashboard.header.new-project")]]))
 
@@ -63,14 +62,12 @@
         on-nav
         (mf/use-callback
          (mf/deps project)
-         (fn []
-           (st/emit! (rt/nav :dashboard-files {:team-id (:team-id project)
-                                               :project-id (:id project)}))))
+         (st/emitf (rt/nav :dashboard-files {:team-id (:team-id project)
+                                             :project-id (:id project)})))
         toggle-pin
         (mf/use-callback
          (mf/deps project)
-         (fn []
-           (st/emit! (dd/toggle-project-pin project))))
+         (st/emitf (dd/toggle-project-pin project)))
 
         on-file-created
         (mf/use-callback
@@ -111,6 +108,7 @@
 
      [:& line-grid
       {:project-id (:id project)
+       :on-load-more on-nav
        :files files}]]))
 
 (mf/defc projects-section
@@ -129,7 +127,7 @@
       [:*
        [:& header {:locale locale
                    :team team}]
-       [:section.dashboard-grid-container
+       [:section.dashboard-container
         (for [project projects]
           [:& project-item {:project project
                             :locale locale

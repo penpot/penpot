@@ -25,54 +25,8 @@
     padding: 0;
 
     hr {
-      margin: 10px 15px;
       border-color: $color-gray-10;
-    }
-  }
-
-  .dropdown {
-    position: absolute;
-    max-height: 30rem;
-    overflow-y: auto;
-    background-color: $color-white;
-    border-radius: 4px;
-    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
-
-    hr {
-      margin: 0;
-      border-color: $color-gray-10;
-    }
-
-    li {
-      color: $color-gray-60;
-      cursor: pointer;
-      font-size: $fs14;
-      display: flex;
-      padding: 13px 16px;
-
-      &.title {
-        font-weight: 600;
-        cursor: default;
-      }
-
-      &.team-item {
-        display: flex;
-
-        .icon {
-          display: flex;
-          align-items: center;
-          padding-right: 10px;
-          svg {
-            width: 20px;
-            height: 20px;
-            fill: $color-gray-60;
-          }
-        }
-      }
-
-      &:hover {
-        background-color: $color-primary-lighter;
-      }
+      margin: 1rem 15px;
     }
   }
 
@@ -87,6 +41,10 @@
       z-index: 12;
       max-height: 30rem;
       min-width: 189px;
+
+      li {
+        height: 35px;
+      }
     }
 
     .options-dropdown {
@@ -126,28 +84,36 @@
       padding: 0px 10px;
       display: flex;
       flex-grow: 1;
+    }
 
-      .team-name {
-        flex-grow: 1;
+    .team-name {
+      flex-grow: 1;
+      display: flex;
+      align-items: center;
+
+      .team-icon {
         display: flex;
         align-items: center;
+        padding-right: 10px;
 
-        .team-text {
-          color: $color-gray-60;
+        svg {
+          width: 23px;
+          height: 23px;
+          fill: $color-gray-60;
+        }
+
+        img {
+          border-radius: 50%;
+          flex-shrink: 0;
+          height: 23px;
+          width: 23px;
         }
       }
 
-    }
-
-    .team-icon {
-      display: flex;
-      align-items: center;
-      padding-right: 10px;
-
-      svg {
-        width: 23px;
-        height: 23px;
-        fill: $color-gray-60;
+      .team-text {
+        color: $color-gray-60;
+        @include text-ellipsis;
+        width: 100px;
       }
     }
 
@@ -396,13 +362,13 @@
   align-items: center;
   cursor: pointer;
   display: flex;
-  padding: $small;
+  padding: 10px 15px;
   position: relative;
 
   span {
     @include text-ellipsis;
     color: $color-black;
-    margin: $small;
+    margin: 10px 5px;
     font-size: $fs12;
     max-width: 135px;
   }
@@ -416,22 +382,14 @@
 
   .dropdown {
     left: 15px;
-    bottom: 50px;
-    z-index: 12;
-    max-height: 30rem;
-    min-width: 189px;
-
-    position: absolute;
     bottom: 45px;
-    z-index: 12;
+    min-width: 189px;
     width: 170px;
 
     @include animation(0,.2s,fadeInUp);
 
     li {
-      display: flex;
-      align-items: center;
-      font-size: $fs13;
+      font-size: $fs12;
       padding: 5px 10px;
 
       svg {

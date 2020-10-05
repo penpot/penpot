@@ -11,7 +11,7 @@
   (:require
    [app.common.data :as d]
    [app.common.spec :as us]
-   [app.main.constants :as c]
+   [app.config :as cfg]
    [app.main.data.auth :as da]
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as dm]
@@ -19,10 +19,12 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.components.forms :refer [input submit-button form]]
+   [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
+   [app.main.ui.components.forms :as fm]
+   [app.main.ui.dashboard.team-form]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
-   [app.main.ui.modal :as modal]
+   [app.main.data.modal :as modal]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t tr]]
    [app.util.object :as obj]
@@ -34,55 +36,6 @@
    [goog.functions :as f]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
-
-(mf/defc sidebar-project-edition
-  [{:keys [item on-end] :as props}]
-  (let [name      (mf/use-state (:name item))
-        input-ref (mf/use-ref)
-
-        on-input
-        (mf/use-callback
-         (fn [event]
-           (->> event
-                (dom/get-target)
-                (dom/get-value)
-                (reset! name))))
-
-        on-cancel
-        (mf/use-callback
-         (fn []
-           (st/emit! dd/clear-project-for-edit)
-           (on-end)))
-
-        on-keyup
-        (mf/use-callback
-         (fn [event]
-           (cond
-             (kbd/esc? event)
-             (on-cancel)
-
-             (kbd/enter? event)
-             (let [name (-> event
-                            dom/get-target
-                            dom/get-value)]
-               (st/emit! dd/clear-project-for-edit
-                         (dd/rename-project (assoc item :name name)))
-               (on-end)))))]
-
-    (mf/use-effect
-     (fn []
-       (let [node (mf/ref-val input-ref)]
-         (dom/focus! node)
-         (dom/select-text! node))))
-
-    [:div.edit-wrapper
-     [:input.element-title {:value @name
-                            :ref input-ref
-                            :on-change on-input
-                            :on-key-down on-keyup}]
-     [:span.close {:on-click on-cancel} i/close]]))
-
-
 
 (mf/defc sidebar-project
   [{:keys [item selected?] :as props}]
@@ -97,23 +50,29 @@
          (fn []
            (st/emit! (rt/nav :dashboard-files {:team-id (:team-id item)
                                                :project-id (:id item)}))))
+
         on-dbl-click
-        (mf/use-callback #(reset! edition? true))]
+        (mf/use-callback #(reset! edition? true))
+
+        on-edit
+        (mf/use-callback
+         (mf/deps item)
+         (fn [name]
+           (st/emit! (dd/rename-project (assoc item :name name)))
+           (reset! edition? false)))]
 
     [:li {:on-click on-click
           :on-double-click on-dbl-click
           :class (when selected? "current")}
      (if @edition?
-       [:& sidebar-project-edition {:item item
-                                    :on-end #(reset! edition? false)}]
+       [:& inline-edition {:content (:name item)
+                           :on-end on-edit}]
        [:span.element-title (:name item)])]))
-
 
 (mf/defc sidebar-search
   [{:keys [search-term team-id locale] :as props}]
   (let [search-term (or search-term "")
-
-        emit! (mf/use-memo #(f/debounce st/emit! 500))
+        emit!       (mf/use-memo #(f/debounce st/emit! 500))
 
         on-search-focus
         (mf/use-callback
@@ -158,36 +117,223 @@
       {:on-click on-clear-click}
       i/close]]))
 
-(mf/defc sidebar-team-switch
-  [{:keys [team profile] :as props}]
+(mf/defc teams-selector-dropdown
+  [{:keys [team profile locale] :as props}]
   (let [show-dropdown? (mf/use-state false)
+        teams          (mf/use-state [])
 
-        show-team-opts-ddwn? (mf/use-state false)
-        show-teams-ddwn?     (mf/use-state false)
-        teams                (mf/use-state [])
+        on-create-clicked
+        (mf/use-callback
+         (st/emitf (modal/show :team-form {})))
 
-        on-nav
+        go-projects
+        (mf/use-callback #(st/emit! (rt/nav :dashboard-projects {:team-id %})))]
+
+    (mf/use-layout-effect
+     (mf/deps (:id team))
+     (fn []
+       (->> (rp/query! :teams)
+            (rx/map #(mapv dd/assoc-team-avatar %))
+            (rx/subs #(reset! teams %)))))
+
+    [:ul.dropdown.teams-dropdown
+     [:li.title (t locale "dashboard.sidebar.switch-team")]
+     [:hr]
+     [:li.team-name {:on-click (partial go-projects (:default-team-id profile))}
+      [:span.team-icon i/logo-icon]
+      [:span.team-text "Your penpot"]]
+
+     (for [team (remove :is-default @teams)]
+       [:* {:key (:id team)}
+        [:li.team-name {:on-click (partial go-projects (:id team))}
+         [:span.team-icon
+          [:img {:src (cfg/resolve-media-path (:photo team))}]]
+         [:span.team-text {:title (:name team)} (:name team)]]])
+
+     [:hr]
+     [:li.action {:on-click on-create-clicked}
+      (t locale "dashboard.sidebar.create-team")]]))
+
+(s/def ::member-id ::us/uuid)
+(s/def ::leave-modal-form
+  (s/keys :req-un [::member-id]))
+
+(mf/defc leave-and-reassign-modal
+  {::mf/register modal/components
+   ::mf/register-as ::leave-and-reassign
+   ::mf/props-spec ::kaka-de-vaca}
+  [{:keys [members profile team accept]}]
+  (let [form    (fm/use-form :spec ::leave-modal-form :initial {})
+        options (into [{:value "" :label "Select a member to promote"}]
+                      (map #(hash-map :name (:name %) :value (str (:id %))) members))
+
+        on-cancel
+        (mf/use-callback (st/emitf (modal/hide)))
+
+        on-accept
+        (mf/use-callback
+         (mf/deps form)
+         (fn [event]
+           (let [member-id (get-in @form [:clean-data :member-id])]
+             (accept member-id))))]
+
+    [:div.modal-overlay
+     [:div.modal-container.confirm-dialog
+      [:div.modal-header
+       [:div.modal-header-title
+        [:h2 "Before you leave"]]
+       [:div.modal-close-button
+        {:on-click on-cancel} i/close]]
+
+      [:div.modal-content.generic-form
+       [:p "You are " (:name team) " owner."]
+       [:p "Select an other member to promote before leave."]
+
+       [:& fm/form {:form form}
+        [:& fm/select {:name :member-id
+                       :options options}]]]
+
+      [:div.modal-footer
+       [:div.action-buttons
+        [:input.cancel-button
+         {:type "button"
+          :value "Cancel"
+          :on-click on-cancel}]
+
+        [:input.accept-button
+         {:type "button"
+          :class (when-not (:valid @form) "btn-disabled")
+          :disabled (not (:valid @form))
+          :value "Promoto and Leave"
+          :on-click on-accept}]]]]]))
+
+
+(mf/defc team-options-dropdown
+  [{:keys [team locale profile] :as props}]
+  (let [members (mf/use-state [])
+
+        go-members
+        (mf/use-callback
+         (mf/deps team)
+         (st/emitf (rt/nav :dashboard-team-members {:team-id (:id team)})))
+
+        go-settings
+        (mf/use-callback
+         (mf/deps team)
+         (st/emitf (rt/nav :dashboard-team-settings {:team-id (:id team)})))
+
+        go-projects
         (mf/use-callback #(st/emit! (rt/nav :dashboard-projects {:team-id %})))
 
         on-create-clicked
-        (mf/use-callback #(modal/show! :team-form {}))]
+        (mf/use-callback
+         (st/emitf (modal/show :team-form {})))
 
-    (mf/use-effect
-     (mf/deps (:id teams))
+        on-rename-clicked
+        (mf/use-callback
+         (mf/deps team)
+         (st/emitf (modal/show :team-form {:team team})))
+
+        on-leaved-success
+        (mf/use-callback
+         (mf/deps team profile)
+         (st/emitf (rt/nav :dashboard-projects {:team-id (:default-team-id profile)})))
+
+        leave-fn
+        (mf/use-callback
+         (mf/deps team)
+         (st/emitf (dd/leave-team (with-meta team {:on-success on-leaved-success}))))
+
+        leave-and-reassign-fn
+        (mf/use-callback
+         (mf/deps team)
+         (fn [member-id]
+           (let [team (assoc team :reassign-to member-id)]
+             (st/emit! (dd/leave-team (with-meta team {:on-success on-leaved-success}))))))
+
+        on-leave-clicked
+        (mf/use-callback
+         (mf/deps team)
+         (st/emitf (modal/show
+                    {:type :confirm
+                     :title "Leaving team"
+                     :message "Are you sure you want to leave this team?"
+                     :accept-label "Leave team"
+                     :on-accept leave-fn})))
+
+
+        on-leave-as-owner-clicked
+        (mf/use-callback
+         (mf/deps team @members)
+         (st/emitf (modal/show
+                    {:type ::leave-and-reassign
+                     :profile profile
+                     :team team
+                     :accept leave-and-reassign-fn
+                     :members @members})))
+
+        delete-fn
+        (mf/use-callback
+         (mf/deps team)
+         (st/emitf (dd/delete-team (with-meta team {:on-success on-leaved-success}))))
+
+        on-delete-clicked
+        (mf/use-callback
+         (mf/deps team)
+         (st/emitf (modal/show
+                    {:type :confirm
+                     :title "Deleting team"
+                     :message (str "Are you sure you want to delete this team?\n"
+                                   "All projects and files associated with team will be permanently deleted.")
+                     :accept-label "Delete team"
+                     :on-accept delete-fn})))]
+
+    (mf/use-layout-effect
+     (mf/deps (:id team))
      (fn []
-       (->> (rp/query! :teams)
-            (rx/subs #(reset! teams %)))))
+       (->> (rp/query! :team-members {:team-id (:id team)})
+            (rx/subs #(reset! members %)))))
+
+    [:ul.dropdown.options-dropdown
+     [:li {:on-click go-members} (t locale "dashboard.sidebar.team-members")]
+     [:li {:on-click go-settings} (t locale "dashboard.sidebar.settings")]
+     [:hr]
+     [:li {:on-click on-rename-clicked} (t locale "dashboard.sidebar.rename-team")]
+
+     (cond
+       (:is-owner team)
+       [:li {:on-click on-leave-as-owner-clicked} (t locale "dashboard.sidebar.leave-team")]
+
+       (> (count @members) 1)
+       [:li {:on-click on-leave-clicked}  (t locale "dashboard.sidebar.leave-team")])
+
+
+     (when (:is-owner team)
+       [:li {:on-click on-delete-clicked} (t locale "dashboard.sidebar.delete-team")])]))
+
+
+(mf/defc sidebar-team-switch
+  [{:keys [team profile locale] :as props}]
+  (let [show-dropdown? (mf/use-state false)
+
+        show-team-opts-ddwn? (mf/use-state false)
+        show-teams-ddwn?     (mf/use-state false)]
 
     [:div.sidebar-team-switch
      [:div.switch-content
       [:div.current-team
-       [:div.team-name
-        [:span.team-icon i/logo-icon]
-        (if (:is-default team)
-          [:span.team-text "Your penpot"]
-          [:span.team-text (:name team)])]
+       (if (:is-default team)
+         [:div.team-name
+          [:span.team-icon i/logo-icon]
+          [:span.team-text (t locale "dashboard.sidebar.default-team-name")]]
+         [:div.team-name
+          [:span.team-icon
+           [:img {:src (cfg/resolve-media-path (:photo team))}]]
+          [:span.team-text {:title (:name team)} (:name team)]])
+
        [:span.switch-icon {:on-click #(reset! show-teams-ddwn? true)}
         i/arrow-down]]
+
       (when-not (:is-default team)
         [:div.switch-options {:on-click #(reset! show-team-opts-ddwn? true)}
          i/actions])]
@@ -195,86 +341,15 @@
      ;; Teams Dropdown
      [:& dropdown {:show @show-teams-ddwn?
                    :on-close #(reset! show-teams-ddwn? false)}
-      [:ul.dropdown.teams-dropdown
-       [:li.title "Switch Team"]
-       [:hr]
-       [:li.team-item {:on-click (partial on-nav (:default-team-id profile))}
-        [:span.icon i/logo-icon]
-        [:span.text "Your penpot"]]
-
-       (for [team (remove :is-default @teams)]
-         [:* {:key (:id team)}
-          [:hr]
-          [:li.team-item {:on-click (partial on-nav (:id team))}
-           [:span.icon i/logo-icon]
-           [:span.text (:name team)]]])
-
-       [:hr]
-       [:li.action {:on-click on-create-clicked}
-        "+ Create new team"]]]
+      [:& teams-selector-dropdown {:team team
+                                   :profile profile
+                                   :locale locale}]]
 
      [:& dropdown {:show @show-team-opts-ddwn?
                    :on-close #(reset! show-team-opts-ddwn? false)}
-      [:ul.dropdown.options-dropdown
-       [:li "Members"]
-       [:li "Settings"]
-       [:hr]
-       [:li "Rename"]
-       [:li "Leave team"]
-       [:li "Delete team"]]]
-     ]))
-
-(s/def ::name ::us/not-empty-string)
-(s/def ::team-form
-  (s/keys :req-un [::name]))
-
-(mf/defc team-form-modal
-  {::mf/register modal/components
-   ::mf/register-as :team-form}
-  [props]
-  (let [locale (mf/deref i18n/locale)
-
-        on-success
-        (mf/use-callback
-         (fn [form response]
-           (modal/hide!)
-           (let [msg "Team created successfuly"]
-             (st/emit!
-              (dm/success msg)
-              (rt/nav :dashboard-projects {:team-id (:id response)})))))
-
-        on-error
-        (mf/use-callback
-         (fn [form response]
-           (let [msg "Error on creating team."]
-             (st/emit! (dm/error msg)))))
-
-        on-submit
-        (mf/use-callback
-         (fn [form]
-           (let [mdata  {:on-success (partial on-success form)
-                         :on-error   (partial on-error form)}
-                 params {:name (get-in form [:clean-data :name])}]
-             (st/emit! (dd/create-team (with-meta params mdata))))))]
-
-    [:div.modal-overlay
-     [:div.generic-modal.team-form-modal
-      [:span.close {:on-click #(modal/hide!)} i/close]
-      [:section.modal-content.generic-form
-       [:h2 "CREATE NEW TEAM"]
-
-       [:& form {:on-submit on-submit
-                 :spec ::team-form
-                 :initial {}}
-
-        [:& input {:type "text"
-                   :name :name
-                   :label "Enter new team name:"}]
-
-        [:div.buttons-row
-         [:& submit-button
-          {:label "Create team"}]]]]]]))
-
+      [:& team-options-dropdown {:team team
+                                 :profile profile
+                                 :locale locale}]]]))
 
 (mf/defc sidebar-content
   [{:keys [locale projects profile section team project search-term] :as props}]
@@ -283,15 +358,27 @@
              (d/seek :is-default)
              (:id))
 
-        team-id     (:id team)
         projects?   (= section :dashboard-projects)
         libs?       (= section :dashboard-libraries)
         drafts?     (and (= section :dashboard-files)
                          (= (:id project) default-project-id))
 
-        go-projects #(st/emit! (rt/nav :dashboard-projects {:team-id (:id team)}))
-        go-default  #(st/emit! (rt/nav :dashboard-files {:team-id (:id team) :project-id default-project-id}))
-        go-libs     #(st/emit! (rt/nav :dashboard-libraries {:team-id (:id team)}))
+        go-projects
+        (mf/use-callback
+         (mf/deps team)
+         (st/emitf (rt/nav :dashboard-projects {:team-id (:id team)})))
+
+        go-drafts
+        (mf/use-callback
+         (mf/deps team default-project-id)
+         (fn []
+           (st/emit! (rt/nav :dashboard-files
+                             {:team-id (:id team)
+                              :project-id default-project-id}))))
+        go-libs
+        (mf/use-callback
+         (mf/deps team)
+         (st/emitf (rt/nav :dashboard-libraries {:team-id (:id team)})))
 
         pinned-projects
         (->> (vals projects)
@@ -299,8 +386,7 @@
              (filter :is-pinned))]
 
     [:div.sidebar-content
-     [:& sidebar-team-switch {:team team :profile profile}]
-
+     [:& sidebar-team-switch {:team team :profile profile :locale locale}]
      [:hr]
      [:& sidebar-search {:search-term search-term
                          :team-id (:id team)
@@ -313,7 +399,7 @@
         i/recent
         [:span.element-title (t locale "dashboard.sidebar.projects")]]
 
-       [:li {:on-click go-default
+       [:li {:on-click go-drafts
              :class-name (when drafts? "current")}
         i/file-html
         [:span.element-title (t locale "dashboard.sidebar.drafts")]]
@@ -337,7 +423,7 @@
              :selected? (= (:id item) (:id project))}])]
         [:div.sidebar-empty-placeholder
          [:span.icon i/pin]
-         [:span.text "Pinned projects will appear here"]])]]))
+         [:span.text (t locale "dashboard.sidebar.no-projects-placeholder")]])]]))
 
 
 (mf/defc profile-section
@@ -365,30 +451,25 @@
       [:ul.dropdown
        [:li {:on-click (partial on-click :settings-profile)}
         [:span.icon i/user]
-        [:span.text (t locale "dashboard.header.profile-menu.profile")]]
+        [:span.text (t locale "dashboard.sidebar.profile")]]
        [:hr]
        [:li {:on-click (partial on-click :settings-password)}
         [:span.icon i/lock]
-        [:span.text (t locale "dashboard.header.profile-menu.password")]]
+        [:span.text (t locale "dashboard.sidebar.password")]]
        [:hr]
        [:li {:on-click (partial on-click da/logout)}
         [:span.icon i/exit]
-        [:span.text (t locale "dashboard.header.profile-menu.logout")]]]]]))
+        [:span.text (t locale "dashboard.logout")]]]]]))
 
 (mf/defc sidebar
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
   [props]
   (let [locale  (mf/deref i18n/locale)
-        profile (mf/deref refs/profile)
+        profile (obj/get props "profile")
         props   (-> (obj/clone props)
-                    (obj/set! "locale" locale)
-                    (obj/set! "profile" profile))]
-
+                    (obj/set! "locale" locale))]
     [:div.dashboard-sidebar
      [:div.sidebar-inside
       [:> sidebar-content props]
-      [:& profile-section {:profile profile
-                           :locale locale}]]]))
-
-
+      [:& profile-section {:profile profile :locale locale}]]]))

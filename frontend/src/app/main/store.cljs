@@ -5,6 +5,7 @@
 ;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.main.store
+  (:require-macros [app.main.store])
   (:require
    [beicon.core :as rx]
    [okulary.core :as l]

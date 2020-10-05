@@ -98,6 +98,14 @@
           (seq params))
     (send-mutation! id form)))
 
+(defmethod mutation :update-team-photo
+  [id params]
+  (let [form (js/FormData.)]
+    (run! (fn [[key val]]
+            (.append form (name key) val))
+          (seq params))
+    (send-mutation! id form)))
+
 (defmethod mutation :login
   [id params]
   (let [uri (str cfg/public-uri "/api/login")]

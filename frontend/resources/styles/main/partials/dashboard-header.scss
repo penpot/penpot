@@ -15,6 +15,7 @@
   padding: $x-small $small;
   position: relative;
   z-index: 10;
+  justify-content: space-between;
 
   .element-name {
     margin-right: $small;
@@ -22,7 +23,6 @@
 
   .btn-secondary {
     flex-shrink: 0;
-    margin-left: auto;
     z-index: 10;
     height: 32px;
   }
@@ -35,16 +35,17 @@
   }
 
   nav {
+    display: flex;
+    width: 300px;
+    justify-content: center;
+    z-index: 1;
+    margin-top: 39px;
+
     ul {
-      align-items: center;
-      bottom: 0;
       display: flex;
+      align-items: center;
       font-size: $fs15;
       justify-content: center;
-      margin: auto;
-      position: absolute;
-      width: 100%;
-      z-index: 1;
     }
 
     li {
@@ -63,7 +64,7 @@
 
       }
 
-      &.current {
+      &.active {
         a {
           color: $color-black;
           border-color: $color-primary;
@@ -73,11 +74,18 @@
   }
 
   .dashboard-title {
-    color: $color-black;
     display: flex;
-    flex-shrink: 0;
-    font-size: $fs18;
-    z-index: 10;
+    h1 {
+      color: $color-black;
+      display: flex;
+      flex-shrink: 0;
+      font-size: $fs18;
+      z-index: 10;
+    }
+
+    .context-menu.is-open {
+      margin-top: 10px;
+    }
   }
 
   .icon {

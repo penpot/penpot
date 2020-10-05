@@ -8,7 +8,9 @@
 ;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.util.timers
-  (:require [beicon.core :as rx]))
+  (:require
+   [beicon.core :as rx]
+   [promesa.core :as p]))
 
 (defn schedule
   ([func]
@@ -18,6 +20,11 @@
      (reify rx/IDisposable
        (-dispose [_]
          (js/clearTimeout sem))))))
+
+(defn asap
+  [f]
+  (-> (p/resolved nil)
+      (p/then f)))
 
 (defn interval
   [ms func]

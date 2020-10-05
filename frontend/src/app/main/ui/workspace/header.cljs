@@ -18,7 +18,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.modal :as modal]
+   [app.main.data.modal :as modal]
    [app.main.ui.workspace.presence :as presence]
    [app.main.ui.keyboard :as kbd]
    [app.util.i18n :as i18n :refer [t]]

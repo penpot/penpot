@@ -20,21 +20,22 @@
    [app.util.dom :as dom]))
 
 (def form-ctx (mf/create-context nil))
+(def use-form fm/use-form)
 
 (mf/defc input
   [{:keys [type label help-icon disabled name form hint trim] :as props}]
-  (let [form       (mf/use-ctx form-ctx)
+  (let [form       (or form (mf/use-ctx form-ctx))
 
         type'      (mf/use-state type)
         focus?     (mf/use-state false)
         locale     (mf/deref i18n/locale)
 
-        touched?   (get-in form [:touched name])
-        error      (get-in form [:errors name])
+        touched?   (get-in @form [:touched name])
+        error      (get-in @form [:errors name])
 
-        value      (get-in form [:data name] "")
+        value      (get-in @form [:data name] "")
 
-        help-icon' (cond 
+        help-icon' (cond
                      (and (= type "password")
                           (= @type' "password"))
                      i/eye
@@ -67,7 +68,7 @@
         on-blur
         (fn [event]
           (reset! focus? false)
-          (when-not (get-in form [:touched name])
+          (when-not (get-in @form [:touched name])
             (swap! form assoc-in [:touched name] true)))
 
         props (-> props
@@ -80,33 +81,33 @@
                          :type @type')
                   (obj/clj->props))]
 
-    [:div.field.custom-input
-      {:class klass}
-      [:*
-        [:label label]
-        [:> :input props]
-        (when help-icon'
-          [:div.help-icon
-           {:style {:cursor "pointer"}
-            :on-click (when (= "password" type)
-                        swap-text-password)}
-           help-icon'])
-       (cond
-         (and touched? (:message error))
-         [:span.error (t locale (:message error))]
+    [:div.custom-input
+     {:class klass}
+     [:*
+      [:label label]
+      [:> :input props]
+      (when help-icon'
+        [:div.help-icon
+         {:style {:cursor "pointer"}
+          :on-click (when (= "password" type)
+                      swap-text-password)}
+         help-icon'])
+      (cond
+        (and touched? (:message error))
+        [:span.error (t locale (:message error))]
 
-         (string? hint)
-         [:span.hint hint])]]))
+        (string? hint)
+        [:span.hint hint])]]))
 
 (mf/defc select
   [{:keys [options label name form default]
     :or {default ""}}]
-  (let [form (mf/use-ctx form-ctx)
-        value     (get-in form [:data name] default)
+  (let [form      (or form (mf/use-ctx form-ctx))
+        value     (get-in @form [:data name] default)
         cvalue    (d/seek #(= value (:value %)) options)
         on-change (fm/on-input-change form name)]
 
-    [:div.field.custom-select
+    [:div.custom-select
      [:select {:value value
                :on-change on-change}
       (for [item options]
@@ -122,34 +123,21 @@
 
 (mf/defc submit-button
   [{:keys [label form on-click] :as props}]
-  (let [form (mf/use-ctx form-ctx)]
+  (let [form (or form (mf/use-ctx form-ctx))]
     [:input.btn-primary.btn-large
      {:name "submit"
-      :class (when-not (:valid form) "btn-disabled")
-      :disabled (not (:valid form))
+      :class (when-not (:valid @form) "btn-disabled")
+      :disabled (not (:valid @form))
       :on-click on-click
       :value label
       :type "submit"}]))
 
 (mf/defc form
-  [{:keys [on-submit spec validators initial children class] :as props}]
-  (let [frm (fm/use-form :spec spec
-                         :validators validators
-                         :initial initial)]
-
-    (mf/use-effect
-     (mf/deps initial)
-     (fn []
-       (if (fn? initial)
-         (swap! frm update :data merge (initial))
-         (swap! frm update :data merge initial))))
-
-    [:& (mf/provider form-ctx) {:value frm}
+  [{:keys [on-submit form children class] :as props}]
+  (let [on-submit (or on-submit (constantly nil))]
+    [:& (mf/provider form-ctx) {:value form}
      [:form {:class class
              :on-submit (fn [event]
                           (dom/prevent-default event)
-                          (on-submit frm event))}
+                          (on-submit form event))}
       children]]))
-
-
-

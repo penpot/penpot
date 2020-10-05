@@ -9,31 +9,24 @@
 
 (ns app.main
   (:require
-   [hashp.core :include-macros true]
-   [cljs.spec.alpha :as s]
-   [beicon.core :as rx]
-   [rumext.alpha :as mf]
    [app.common.uuid :as uuid]
    [app.main.data.auth :refer [logout]]
    [app.main.data.users :as udu]
    [app.main.store :as st]
    [app.main.ui :as ui]
+   [app.main.ui.confirm]
    [app.main.ui.modal :refer [modal]]
    [app.main.worker]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n]
-   [app.util.theme :as theme]
-   [app.util.router :as rt]
    [app.util.object :as obj]
+   [app.util.router :as rt]
    [app.util.storage :refer [storage]]
+   [app.util.theme :as theme]
    [app.util.timers :as ts]
-
-   ;; MODALS
-   [app.main.ui.settings.delete-account]
-   [app.main.ui.settings.change-email]
-   [app.main.ui.confirm]
-   [app.main.ui.workspace.colorpicker]
-   [app.main.ui.workspace.libraries]))
+   [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
+   [rumext.alpha :as mf]))
 
 (declare reinit)
 

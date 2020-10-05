@@ -19,7 +19,7 @@
    [app.common.uuid :refer [uuid]]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.colors :as dwc]
-   [app.main.ui.modal :as modal]
+   [app.main.data.modal :as modal]
    [okulary.core :as l]
    [app.main.refs :as refs]
    [app.util.i18n :as i18n :refer [t]]))
@@ -335,7 +335,7 @@
       [:select {:on-change (fn [e]
                              (let [val (-> e dom/get-target dom/get-value)]
                                (reset! selected-library val)))
-                :value @selected-library} 
+                :value @selected-library}
        [:option {:value "recent"} (t locale "workspace.libraries.colors.recent-colors")]
        [:option {:value "file"} (t locale "workspace.libraries.colors.file-library")]
        (for [[_ {:keys [name id]}] shared-libs]

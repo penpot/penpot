@@ -10,12 +10,13 @@
 (ns app.main.ui.dashboard.files
   (:require
    [app.main.data.dashboard :as dd]
+   [app.main.data.modal :as modal]
    [app.main.store :as st]
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.dashboard.grid :refer [grid]]
+   [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
-   [app.main.ui.modal :as modal]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t]]
    [app.util.router :as rt]
@@ -24,9 +25,9 @@
 
 (mf/defc header
   [{:keys [team project] :as props}]
-  (let [local  (mf/use-state {:menu-open false
-                             :edition false})
-        locale (mf/deref i18n/locale)
+  (let [local      (mf/use-state {:menu-open false
+                                  :edition false})
+        locale     (mf/deref i18n/locale)
         project-id (:id project)
         team-id    (:id team)
 
@@ -39,21 +40,6 @@
         on-edit
         (mf/use-callback #(swap! local assoc :edition true :menu-open false))
 
-        on-blur
-        (mf/use-callback
-         (mf/deps project)
-         (fn [event]
-           (let [name (-> event dom/get-target dom/get-value)]
-             #_(st/emit! (dd/rename-project (:id project) name))
-             (swap! local assoc :edition false))))
-
-        on-key-down
-        (mf/use-callback
-         (mf/deps project)
-         (fn [event]
-           (cond
-             (kbd/enter? event) (on-blur event)
-             (kbd/esc? event) (swap! local assoc :edition false))))
 
         delete-fn
         (mf/use-callback
@@ -65,7 +51,12 @@
         on-delete
         (mf/use-callback
          (mf/deps project)
-         (fn [] (modal/show! :confirm-dialog {:on-accept delete-fn})))
+         (st/emitf (modal/show
+                    {:type :confirm
+                     :title "Deleting project"
+                     :message "Are you sure you wan't to delete this project?"
+                     :accept-label "Delete project"
+                     :on-accept delete-fn})))
 
         on-create-clicked
         (mf/use-callback
@@ -77,26 +68,21 @@
 
     [:header.dashboard-header
      (if (:is-default project)
-       [:h1.dashboard-title (t locale "dashboard.header.draft")]
-       [:*
-        [:h1.dashboard-title (t locale "dashboard.header.project" (:name project))]
-        [:div.icon {:on-click on-menu-click} i/actions]
-        [:& context-menu {:on-close on-menu-close
-                          :show (:menu-open @local)
-                          :options [[(t locale "dashboard.grid.rename") on-edit]
-                                    [(t locale "dashboard.grid.delete") on-delete]]}]
-        (if (:edition @local)
-          [:input.element-name {:type "text"
-                                :auto-focus true
-                                :on-key-down on-key-down
-                                :on-blur on-blur
-                                :default-value (:name project)}])])
-     #_[:ul.main-nav
-      [:li.current
-       [:a "PROJECTS"]]
-      [:li
-       [:a "MEMBERS"]]]
+       [:div.dashboard-title
+        [:h1 (t locale "dashboard.header.draft")]]
 
+       (if (:edition @local)
+         [:& inline-edition {:content (:name project)
+                             :on-end (fn [name]
+                                       (st/emit! (dd/rename-project (assoc project :name name)))
+                                       (swap! local assoc :edition false))}]
+         [:div.dashboard-title
+          [:h1 (:name project)]
+          [:div.icon {:on-click on-menu-click} i/actions]
+          [:& context-menu {:on-close on-menu-close
+                            :show (:menu-open @local)
+                            :options [[(t locale "dashboard.grid.rename") on-edit]
+                                      [(t locale "dashboard.grid.delete") on-delete]]}]]))
      [:a.btn-secondary.btn-small {:on-click on-create-clicked}
       (t locale "dashboard.new-file")]]))
 
@@ -119,7 +105,7 @@
 
     [:*
      [:& header {:team team :project project}]
-     [:section.dashboard-grid-container
+     [:section.dashboard-container
       [:& grid {:id (:id project)
                 :files files}]]]))
 
