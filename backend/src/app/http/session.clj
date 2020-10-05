@@ -7,6 +7,8 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
+;; TODO: move to services.
+
 (ns app.http.session
   (:require
    [app.db :as db]
