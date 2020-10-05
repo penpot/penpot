@@ -156,6 +156,9 @@
                                                      :attr :component-file
                                                      :val nil}
                                                     {:type :set
+                                                     :attr :component-root?
+                                                     :val (:component-root? updated-shape)}
+                                                    {:type :set
                                                      :attr :shape-ref
                                                      :val (:shape-ref updated-shape)}]})
                                     updated-shapes))
@@ -176,6 +179,9 @@
                                                       {:type :set
                                                        :attr :component-file
                                                        :val (:component-file original-shape)}
+                                                      {:type :set
+                                                       :attr :component-root?
+                                                       :val (:component-root? original-shape)}
                                                       {:type :set
                                                        :attr :shape-ref
                                                        :val (:shape-ref original-shape)}]}))
@@ -242,7 +248,8 @@
                     (assoc $ :shape-ref (:id original-shape)))
 
                   (nil? (:parent-id original-shape))
-                  (assoc :component-id (:id original-shape))
+                  (assoc :component-id (:id original-shape)
+                         :component-root? true)
 
                   (and (nil? (:parent-id original-shape)) (some? file-id))
                   (assoc :component-file file-id)
@@ -251,7 +258,7 @@
                   (dissoc :component-file)
 
                   (some? (:parent-id original-shape))
-                  (dissoc :component-id :component-file))))
+                  (dissoc :component-root?))))
 
             [new-shape new-shapes _]
             (cph/clone-object component-shape
@@ -285,9 +292,7 @@
     (watch [_ state stream]
       (let [page-id (:current-page-id state)
             objects (dwc/lookup-page-objects state page-id)
-            root-id (cph/get-root-component id objects)
-
-            shapes (cph/get-object-with-children root-id objects)
+            shapes (cph/get-object-with-children id objects)
 
             rchanges (map (fn [obj]
                             {:type :mod-obj
@@ -354,7 +359,6 @@
       (let [page-id        (:current-page-id state)
             page           (get-in state [:workspace-data :pages-index page-id])
             objects        (dwc/lookup-page-objects state page-id)
-            root-id        (cph/get-root-component id objects)
             root-shape     (get objects id)
             file-id        (get root-shape :component-file)
 
@@ -381,7 +385,6 @@
     (watch [_ state stream]
       (let [page-id        (:current-page-id state)
             objects        (dwc/lookup-page-objects state page-id)
-            root-id        (cph/get-root-component id objects)
             root-shape     (get objects id)
 
             component-id   (get root-shape :component-id)
@@ -483,7 +486,10 @@
   (ptk/reify ::sync-file-2nd-stage
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [[rchanges uchanges] (dwlh/generate-sync-file :components nil state)]
+      (let [[rchanges1 uchanges1] (dwlh/generate-sync-file :components nil state)
+            [rchanges2 uchanges2] (dwlh/generate-sync-library :components file-id state)
+            rchanges (d/concat rchanges1 rchanges2)
+            uchanges (d/concat uchanges1 uchanges2)]
         (when rchanges
           (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})))))))
 

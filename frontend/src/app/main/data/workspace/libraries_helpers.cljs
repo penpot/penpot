@@ -97,7 +97,7 @@
   [asset-type library-id]
   (case asset-type
     :components
-    (fn [shape] (and (some? (:component-id shape))
+    (fn [shape] (and (:component-root? shape)
                      (= (:component-file shape) library-id)))
 
     :colors
@@ -256,12 +256,20 @@
   from parent and frame. Update the original shapes to have links
   to the new ones."
   [shape objects]
+  (assert (nil? (:component-id shape)))
+  (assert (nil? (:component-file shape)))
+  (assert (nil? (:shape-ref shape)))
   (let [update-new-shape (fn [new-shape original-shape]
-                           (assoc new-shape :frame-id nil))
+                           (cond-> new-shape
+                             true
+                             (assoc :frame-id nil)
 
+                             (nil? (:parent-id new-shape))
+                             (assoc :component-root? true)))
+
+        ;; Make the original shape an instance of the new component.
         ;; If one of the original shape children already was a component
-        ;; instance, the 'instanceness' is copied into the new component,
-        ;; and the original shape now points to the new component.
+        ;; instance, the 'instanceness' is copied into the new component.
         update-original-shape (fn [original-shape new-shape]
                                 (cond-> original-shape
                                   true
@@ -269,11 +277,11 @@
 
                                   (nil? (:parent-id new-shape))
                                   (assoc :component-id (:id new-shape)
-                                         :component-file nil)
+                                         :component-file nil
+                                         :component-root? true)
 
                                   (some? (:parent-id new-shape))
-                                  (assoc :component-id nil
-                                         :component-file nil)))]
+                                  (dissoc :component-root?)))]
 
     (cph/clone-object shape nil objects update-new-shape update-original-shape)))
 

@@ -35,7 +35,7 @@
   "Get the root shape linked to the component for this shape, if any"
   [id objects]
   (let [obj (get objects id)]
-    (if-let [component-id (:component-id obj)]
+    (if-let [component-id (:component-root? obj)]
       id
       (if-let [parent-id (:parent-id obj)]
         (get-root-component parent-id objects)

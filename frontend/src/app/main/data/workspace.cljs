@@ -1149,11 +1149,9 @@
       (let [page-id    (:current-page-id state)
             objects    (dwc/lookup-page-objects state page-id)
             root-id    (cph/get-root-component (:id shape) objects)
-            root-shape (get objects root-id)
 
             mdata {:position position
                    :shape shape
-                   :root-shape root-shape
                    :selected (get-in state [:workspace-local :selected])}]
         (-> state
             (assoc-in [:workspace-local :context-menu] mdata))))

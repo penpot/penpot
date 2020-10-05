@@ -46,6 +46,7 @@
     (<= % max-safe-int)))
 (s/def ::component-id uuid?)
 (s/def ::component-file uuid?)
+(s/def ::component-root? boolean?)
 (s/def ::shape-ref uuid?)
 
 (s/def ::safe-number
@@ -122,7 +123,6 @@
 (s/def :internal.shape/line-height ::safe-number)
 (s/def :internal.shape/locked boolean?)
 (s/def :internal.shape/page-id uuid?)
-(s/def :internal.shape/component-id uuid?)
 (s/def :internal.shape/proportion ::safe-number)
 (s/def :internal.shape/proportion-lock boolean?)
 (s/def :internal.shape/rx ::safe-number)
@@ -255,6 +255,7 @@
          (s/keys :opt-un [::id
                           ::component-id
                           ::component-file
+                          ::component-root?
                           ::shape-ref])))
 
 (s/def :internal.page/objects (s/map-of uuid? ::shape))

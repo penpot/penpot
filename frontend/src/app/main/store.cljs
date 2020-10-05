@@ -89,7 +89,9 @@
      (letfn [(show-shape [shape-id level objects]
                (let [shape (get objects shape-id)]
                  (println (str/pad (str (str/repeat "  " level)
-                                        (:name shape))
+                                        (:name shape)
+                                        (when (seq (filter #(not= :position-group %)
+                                                           (:touched shape))) "*"))
                                    {:length 20
                                     :type :right})
                           (show-component shape objects))
@@ -102,24 +104,35 @@
                             (show-shape shape-id (inc level) objects))))))
 
              (show-component [shape objects]
-               (let [root-id           (cph/get-root-component (:id shape) objects)
-                     root-shape        (when root-id (get objects root-id))
-                     component-id      (when root-shape (:component-id root-shape))
-                     component-file-id (when root-shape (:component-file root-shape))
-                     component-file    (when component-file-id (get libraries component-file-id))
-                     shape-ref         (:shape-ref shape)
-                     component         (when component-id
-                                         (if component-file
-                                           (get-in component-file [:data :components component-id])
-                                           (get components component-id)))
-                     component-shape (when (and component shape-ref)
-                                       (get-in component [:objects shape-ref]))]
-                 (if component-shape
-                   (str/format " %s--> %s%s"
-                               (if (:component-id shape) "#" "-")
+               (if (nil? (:shape-ref shape))
+                 ""
+                 (let [root-id           (cph/get-root-component (:id shape) objects)
+                       root-shape        (when root-id (get objects root-id))
+                       component-id      (when root-shape (:component-id root-shape))
+                       component-file-id (when root-shape (:component-file root-shape))
+                       component-file    (when component-file-id (get libraries component-file-id))
+                       component         (when component-id
+                                           (if component-file
+                                             (get-in component-file [:data :components component-id])
+                                             (get components component-id)))
+                       component-shape   (when (and component (:shape-ref shape))
+                                           (get-in component [:objects (:shape-ref shape)]))]
+                   (str/format " %s--> %s%s%s"
+                               (if (:component-root? shape) "#" "-")
                                (when component-file (str/format "<%s> " (:name component-file)))
-                               (:name component-shape))
-                   "")))]
+                               (:name component-shape)
+                               (if (or (:component-root? shape)
+                                       (nil? (:component-id shape)))
+                                 ""
+                                 (let [component-id      (:component-id shape)
+                                       component-file-id (:component-file shape)
+                                       component-file    (when component-file-id (get libraries component-file-id))
+                                       component         (if component-file
+                                                           (get-in component-file [:data :components component-id])
+                                                           (get components component-id))]
+                                   (str/format " (%s%s)"
+                                               (when component-file (str/format "<%s> " (:name component-file)))
+                                               (:name component))))))))]
 
        (println "[Workspace]")
        (show-shape (:id root) 0 objects)
