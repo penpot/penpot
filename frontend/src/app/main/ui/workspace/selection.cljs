@@ -16,18 +16,20 @@
    [rumext.alpha :as mf]
    [rumext.util :refer [map->obj]]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.common :as dwc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.ui.cursors :as cur]
+   [app.common.math :as mth]
    [app.util.dom :as dom]
    [app.util.object :as obj]
    [app.common.geom.shapes :as geom]
    [app.common.geom.point :as gpt]
    [app.common.geom.matrix :as gmt]
    [app.util.debug :refer [debug?]]
-   [app.main.ui.workspace.shapes.outline :refer [outline]]))
-
+   [app.main.ui.workspace.shapes.outline :refer [outline]]
+   [app.main.ui.workspace.gradients :refer [gradient-handlers]]))
 
 (def rotation-handler-size 25)
 (def resize-point-radius 4)
@@ -168,7 +170,6 @@
                     :cursor (if (#{:left :right} position)
                               (cur/resize-ew rotation)
                               (cur/resize-ns rotation)) }}]))
-
 (mf/defc controls
   {::mf/wrap-props false}
   [props]
@@ -180,7 +181,9 @@
         current-transform (mf/deref refs/current-transform)
 
         selrect (geom/shape->rect-shape shape)
-        transform (geom/transform-matrix shape)]
+        transform (geom/transform-matrix shape)
+
+        tr-shape (geom/transform-shape shape)]
 
     (when (not (#{:move :rotate} current-transform))
       [:g.controls
@@ -190,8 +193,7 @@
                            :transform transform
                            :zoom zoom
                            :color color}]
-       [:& outline {:shape (geom/transform-shape shape)
-                    :color color}]
+       [:& outline {:shape tr-shape :color color}]
 
        ;; Handlers
        (for [{:keys [type position props]} (handlers-for-selection selrect)]
@@ -208,7 +210,11 @@
            (case type
              :rotation (when (not= :frame (:type shape)) [:> rotation-handler props])
              :resize-point [:> resize-point-handler props]
-             :resize-side [:> resize-side-handler props])))])))
+             :resize-side [:> resize-side-handler props])))
+
+       (when (= :rect (:type shape))
+           [:& gradient-handlers {:shape tr-shape
+                                  :zoom zoom}])])))
 
 ;; --- Selection Handlers (Component)
 (mf/defc path-edition-selection-handlers

@@ -199,3 +199,26 @@
 (defn center-points [points]
   (let [k (point (count points))]
     (reduce #(add %1 (divide %2 k)) (point) points)))
+
+(defn normal-left
+  "Returns the normal unit vector on the left side"
+  [{:keys [x y]}]
+  (unit (point (- y) x)))
+
+(defn normal-right
+  "Returns the normal unit vector on the right side"
+  [{:keys [x y]}]
+  (unit (point y (- x))))
+
+(defn point-line-distance
+  [point line-point1 line-point2]
+  (let [{x0 :x y0 :y} point
+        {x1 :x y1 :y} line-point1
+        {x2 :x y2 :y} line-point2
+        num (mth/abs
+             (+ (* x0 (- y2 y1))
+                (- (* y0 (- x2 x1)))
+                (* x2 y1)
+                (- (* y2 x1))))
+        dist (distance line-point2 line-point1)]
+    (/ num dist)))
