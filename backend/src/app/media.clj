@@ -10,19 +10,19 @@
 (ns app.media
   "Media postprocessing."
   (:require
+   [app.common.data :as d]
+   [app.common.exceptions :as ex]
+   [app.common.media :as cm]
+   [app.common.spec :as us]
+   [app.config :as cfg]
+   [app.media-storage :as mst]
+   [app.util.http :as http]
+   [app.util.storage :as ust]
    [clojure.core.async :as a]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [datoteka.core :as fs]
-   [mount.core :refer [defstate]]
-   [app.config :as cfg]
-   [app.common.data :as d]
-   [app.common.media :as cm]
-   [app.common.exceptions :as ex]
-   [app.common.spec :as us]
-   [app.media-storage :as mst]
-   [app.util.storage :as ust]
-   [app.util.http :as http])
+   [mount.core :refer [defstate]])
   (:import
    java.io.ByteArrayInputStream
    java.io.InputStream
@@ -33,6 +33,21 @@
 
 (defstate semaphore
   :start (Semaphore. (:image-process-max-threads cfg/config 1)))
+
+
+;; --- Generic specs
+
+(s/def :internal.http.upload/filename ::us/string)
+(s/def :internal.http.upload/size ::us/integer)
+(s/def :internal.http.upload/content-type cm/valid-media-types)
+(s/def :internal.http.upload/tempfile any?)
+
+(s/def ::upload
+  (s/keys :req-un [:internal.http.upload/filename
+                   :internal.http.upload/size
+                   :internal.http.upload/tempfile
+                   :internal.http.upload/content-type]))
+
 
 ;; --- Thumbnails Generation
 
