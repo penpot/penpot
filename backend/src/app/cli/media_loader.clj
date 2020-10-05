@@ -24,7 +24,6 @@
    [app.common.uuid :as uuid]
    [app.services.mutations.projects :as projects]
    [app.services.mutations.files :as files]
-   [app.services.mutations.colors :as colors]
    [app.services.mutations.media :as media])
   (:import
    java.io.PushbackReader))
