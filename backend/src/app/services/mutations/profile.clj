@@ -18,6 +18,7 @@
    [app.emails :as emails]
    [app.media :as media]
    [app.media-storage :as mst]
+   [app.http.session :as session]
    [app.services.mutations :as sm]
    [app.services.mutations.media :as media-mutations]
    [app.services.mutations.projects :as projects]
@@ -473,7 +474,14 @@
     (db/update! conn :profile
                 {:deleted-at (dt/now)}
                 {:id profile-id})
-    nil))
+
+    (with-meta {}
+      {:transform-response
+       (fn [request response]
+         (some-> (session/extract-auth-token request)
+                 (session/delete))
+         (assoc response
+                :cookies (session/cookies "" {:max-age -1})))})))
 
 (def ^:private sql:teams-ownership-check
   "with teams as (
