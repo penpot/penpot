@@ -1148,7 +1148,6 @@
     (update [_ state]
       (let [page-id    (:current-page-id state)
             objects    (dwc/lookup-page-objects state page-id)
-            root-id    (cph/get-root-component (:id shape) objects)
 
             mdata {:position position
                    :shape shape

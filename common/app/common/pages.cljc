@@ -236,12 +236,8 @@
                            :width                 :size-group
                            :height                :size-group
                            :proportion            :size-group
-                           :x                     :position-group
-                           :y                     :position-group
                            :rx                    :radius-group
-                           :ry                    :radius-group
-                           :points                :points-group
-                           :transform             :transform-group})
+                           :ry                    :radius-group})
 
 (def color-sync-attrs [:fill-color
                        :stroke-color])
@@ -892,21 +888,21 @@
 
 (defmethod process-operation :set
   [shape op]
-  (let [attr   (:attr op)
-        val    (:val op)
-        ignore (:ignore-touched op)
+  (let [attr      (:attr op)
+        val       (:val op)
+        ignore    (:ignore-touched op)
         shape-ref (:shape-ref shape)
-        group  (get component-sync-attrs attr)]
+        group     (get component-sync-attrs attr)]
 
     (cond-> shape
+      (and shape-ref group (not ignore) (not= val (get shape attr)))
+      (update :touched #(conj (or % #{}) group))
+
       (nil? val)
       (dissoc attr)
 
       (some? val)
-      (assoc attr val)
-
-      (and shape-ref group (not ignore))
-      (update :touched #(conj (or % #{}) group)))))
+      (assoc attr val))))
 
 (defmethod process-operation :set-touched
   [shape op]

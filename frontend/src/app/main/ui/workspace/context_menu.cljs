@@ -20,6 +20,7 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.ui.hooks :refer [use-rxsub]]
    [app.main.ui.components.dropdown :refer [dropdown]]))
@@ -65,8 +66,10 @@
         do-detach-component #(st/emit! (dwl/detach-component id))
         do-reset-component #(st/emit! (dwl/reset-component id))
         do-update-component #(do
+                               (st/emit! dwc/start-undo-transaction)
                                (st/emit! (dwl/update-component id))
-                               (st/emit! (dwl/sync-file nil)))
+                               (st/emit! (dwl/sync-file nil))
+                               (st/emit! dwc/commit-undo-transaction))
         do-navigate-component-file #(st/emit! (dwl/nav-to-component-file
                                                 (:component-file shape)))]
     [:*

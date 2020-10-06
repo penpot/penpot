@@ -106,8 +106,7 @@
              (show-component [shape objects]
                (if (nil? (:shape-ref shape))
                  ""
-                 (let [root-id           (cph/get-root-component (:id shape) objects)
-                       root-shape        (when root-id (get objects root-id))
+                 (let [root-shape        (cph/get-root-shape shape objects)
                        component-id      (when root-shape (:component-id root-shape))
                        component-file-id (when root-shape (:component-file root-shape))
                        component-file    (when component-file-id (get libraries component-file-id))
@@ -118,7 +117,9 @@
                        component-shape   (when (and component (:shape-ref shape))
                                            (get-in component [:objects (:shape-ref shape)]))]
                    (str/format " %s--> %s%s%s"
-                               (if (:component-root? shape) "#" "-")
+                               (cond (:component-root? shape) "#"
+                                     (:component-id shape) "@"
+                                     :else "-")
                                (when component-file (str/format "<%s> " (:name component-file)))
                                (:name component-shape)
                                (if (or (:component-root? shape)

@@ -89,7 +89,8 @@
         :default-value (:name shape "")}]
       [:span.element-name
        {:on-double-click on-click}
-       (:name shape "")])))
+       (:name shape "")
+       (when (seq (:touched shape)) " *")])))
 
 (defn- make-collapsed-iref
   [id]
@@ -305,6 +306,7 @@
                                     :component-id
                                     :component-file
                                     :shape-ref
+                                    :touched
                                     :metadata])]
     (persistent!
      (reduce-kv (fn [res id obj]
