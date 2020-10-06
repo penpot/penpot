@@ -24,11 +24,52 @@
 
 (declare generate-sync-component-components)
 (declare generate-sync-shape-and-children-components)
-(declare generate-sync-shape-components)
+(declare generate-sync-shape-inverse)
+(declare generate-sync-shape<-component)
+(declare generate-sync-shape->component)
 (declare remove-component-and-ref)
 (declare remove-ref)
+(declare reset-touched)
 (declare update-attrs)
 (declare calc-new-pos)
+
+
+;; ---- Create a new component ----
+
+(defn make-component-shape
+  "Clone the shape and all children. Generate new ids and detach
+  from parent and frame. Update the original shapes to have links
+  to the new ones."
+  [shape objects]
+  (assert (nil? (:component-id shape)))
+  (assert (nil? (:component-file shape)))
+  (assert (nil? (:shape-ref shape)))
+  (let [update-new-shape (fn [new-shape original-shape]
+                           (cond-> new-shape
+                             true
+                             (assoc :frame-id nil)
+
+                             (nil? (:parent-id new-shape))
+                             (assoc :component-root? true)))
+
+        ;; Make the original shape an instance of the new component.
+        ;; If one of the original shape children already was a component
+        ;; instance, the 'instanceness' is copied into the new component.
+        update-original-shape (fn [original-shape new-shape]
+                                (cond-> original-shape
+                                  true
+                                  (assoc :shape-ref (:id new-shape))
+
+                                  (nil? (:parent-id new-shape))
+                                  (assoc :component-id (:id new-shape)
+                                         :component-file nil
+                                         :component-root? true)
+
+                                  (some? (:parent-id new-shape))
+                                  (dissoc :component-root?)))]
+
+    (cph/clone-object shape nil objects update-new-shape update-original-shape)))
+
 
 ;; ---- General library synchronization functions ----
 
@@ -249,43 +290,6 @@
     (generate-sync-text-shape shape page-id component-id update-node)))
 
 
-;; ---- Create a new component ----
-
-(defn make-component-shape
-  "Clone the shape and all children. Generate new ids and detach
-  from parent and frame. Update the original shapes to have links
-  to the new ones."
-  [shape objects]
-  (assert (nil? (:component-id shape)))
-  (assert (nil? (:component-file shape)))
-  (assert (nil? (:shape-ref shape)))
-  (let [update-new-shape (fn [new-shape original-shape]
-                           (cond-> new-shape
-                             true
-                             (assoc :frame-id nil)
-
-                             (nil? (:parent-id new-shape))
-                             (assoc :component-root? true)))
-
-        ;; Make the original shape an instance of the new component.
-        ;; If one of the original shape children already was a component
-        ;; instance, the 'instanceness' is copied into the new component.
-        update-original-shape (fn [original-shape new-shape]
-                                (cond-> original-shape
-                                  true
-                                  (assoc :shape-ref (:id new-shape))
-
-                                  (nil? (:parent-id new-shape))
-                                  (assoc :component-id (:id new-shape)
-                                         :component-file nil
-                                         :component-root? true)
-
-                                  (some? (:parent-id new-shape))
-                                  (dissoc :component-root?)))]
-
-    (cph/clone-object shape nil objects update-new-shape update-original-shape)))
-
-
 ;; ---- Component synchronization helpers ----
 
 (defn generate-sync-shape-and-children-components
@@ -305,7 +309,7 @@
         (if (nil? shape)
           [rchanges uchanges]
           (let [[shape-rchanges shape-uchanges]
-                (generate-sync-shape-components
+                (generate-sync-shape<-component
                   shape
                   root-shape
                   root-component
@@ -317,7 +321,33 @@
                    (d/concat rchanges shape-rchanges)
                    (d/concat uchanges shape-uchanges))))))))
 
-(defn generate-sync-shape-components
+(defn generate-sync-shape-inverse
+  "Generate changes to update the component a shape is linked to, from
+  the values in the shape and all its children. It acts like the above
+  function with reset-touched? as true. Also clears the 'touched' flags
+  in the source shapes."
+  [root-shape objects components page-id]
+  (let [all-shapes (cph/get-object-with-children (:id root-shape) objects)
+        component (get components (:component-id root-shape))
+        root-component (get-in component [:objects (:shape-ref root-shape)])]
+    (loop [shapes (seq all-shapes)
+           rchanges []
+           uchanges []]
+      (let [shape (first shapes)]
+        (if (nil? shape)
+          [rchanges uchanges]
+          (let [[shape-rchanges shape-uchanges]
+                (generate-sync-shape->component
+                  shape
+                  root-shape
+                  root-component
+                  component
+                  page-id)]
+            (recur (next shapes)
+                   (d/concat rchanges shape-rchanges)
+                   (d/concat uchanges shape-uchanges))))))))
+
+(defn generate-sync-shape<-component
   "Generate changes to synchronize one shape that is linked to other shape
   inside a component. Same considerations as above about reset-touched?"
   [shape root-shape root-component component page-id component-id reset-touched?]
@@ -333,6 +363,33 @@
                       page-id
                       component-id
                       reset-touched?)))))
+
+(defn generate-sync-shape->component
+  "Generate changes to synchronize one shape inside a component, with other
+  shape that is linked to it."
+  [shape root-shape root-component component page-id]
+  (if (nil? component)
+    empty-changes
+    (let [component-shape (get (:objects component) (:shape-ref shape))]
+      (if (nil? component-shape)
+        empty-changes
+        (let [[rchanges1 uchanges1]
+              (update-attrs component-shape
+                            shape
+                            root-component
+                            root-shape
+                            nil
+                            (:id root-component)
+                            true)
+              [rchanges2 uchanges2]
+              (reset-touched shape
+                             page-id
+                             nil)]
+          [(d/concat rchanges1 rchanges2)
+           (d/concat uchanges2 uchanges2)])))))
+
+
+; ---- Operation generation helpers ----
 
 (defn remove-component-and-ref
   [shape page-id component-id]
@@ -386,6 +443,21 @@
                                    :attr :shape-ref
                                    :val (:shape-ref shape)}
                                   {:type :set-touched
+                                   :touched (:touched shape)}]})]])
+
+(defn reset-touched
+  [shape page-id component-id]
+  [[(d/without-nils {:type :mod-obj
+                     :id (:id shape)
+                     :page-id page-id
+                     :component-id component-id
+                     :operations [{:type :set-touched
+                                   :touched nil}]})]
+   [(d/without-nils {:type :mod-obj
+                     :id (:id shape)
+                     :page-id page-id
+                     :component-id component-id
+                     :operations [{:type :set-touched
                                    :touched (:touched shape)}]})]])
 
 (defn update-attrs

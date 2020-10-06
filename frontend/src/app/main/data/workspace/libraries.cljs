@@ -386,56 +386,18 @@
       (let [page-id        (:current-page-id state)
             objects        (dwc/lookup-page-objects state page-id)
             root-shape     (get objects id)
+            file-id        (get root-shape :component-file)
 
-            component-id   (get root-shape :component-id)
-            component-objs (dwc/lookup-component-objects state component-id)
-            component-obj  (get component-objs component-id)
+            components
+            (if (nil? file-id)
+              (get-in state [:workspace-data :components])
+              (get-in state [:workspace-libraries file-id :data :components]))
 
-            ;; Clone again the original shape and its children, maintaing
-            ;; the ids of the cloned shapes. If the original shape has some
-            ;; new child shapes, the cloned ones will have new generated ids.
-            update-new-shape (fn [new-shape original-shape]
-                               (cond-> new-shape
-                                 true
-                                 (assoc :frame-id nil)
-
-                                 (= (:component-id original-shape) component-id)
-                                 (dissoc :component-id)
-
-                                 (some? (:shape-ref original-shape))
-                                 (assoc :id (:shape-ref original-shape))))
-
-            touch-shape (fn [original-shape _]
-                          (into {} original-shape))
-
-            [new-shape new-shapes original-shapes]
-            (cph/clone-object root-shape nil objects update-new-shape touch-shape)
-
-            rchanges (d/concat
-                       [{:type :mod-component
-                       :id component-id
-                       :name (:name new-shape)
-                       :shapes new-shapes}]
-                       (map (fn [shape]
-                              {:type :mod-obj
-                               :page-id page-id
-                               :id (:id shape)
-                               :operations [{:type :set-touched
-                                             :touched nil}]})
-                            original-shapes))
-
-            uchanges (d/concat
-                       [{:type :mod-component
-                         :id component-id
-                         :name (:name component-obj)
-                         :shapes (vals component-objs)}]
-                       (map (fn [shape]
-                              {:type :mod-obj
-                               :page-id page-id
-                               :id (:id shape)
-                               :operations [{:type :set-touched
-                                             :touched (:touched shape)}]})
-                            original-shapes))]
+            [rchanges uchanges]
+            (dwlh/generate-sync-shape-inverse root-shape
+                                              objects
+                                              components
+                                              page-id)]
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 
