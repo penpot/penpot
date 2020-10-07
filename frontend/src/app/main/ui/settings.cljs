@@ -25,9 +25,9 @@
   [{:keys [locale] :as props}]
   (let [logout (constantly nil)]
     [:header.dashboard-header
-     [:h1.dashboard-title (t locale "dashboard.header.your-account")]
+     [:h1.dashboard-title (t locale "dashboard.your-account-title")]
      [:a.btn-secondary.btn-small {:on-click logout}
-      (t locale "dashboard.logout")]]))
+      (t locale "labels.logout")]]))
 
 (mf/defc settings
   [{:keys [route] :as props}]

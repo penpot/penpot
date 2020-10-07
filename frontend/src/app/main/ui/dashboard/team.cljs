@@ -56,17 +56,17 @@
 
     [:header.dashboard-header
      [:div.dashboard-title
-      [:h1 "Projects"]]
+      [:h1 (t locale "labels.members")]]
      [:nav
       [:ul
        [:li {:class (when members-section? "active")}
-        [:a {:on-click go-members} "MEMBERS"]]
+        [:a {:on-click go-members} (t locale "labels.members")]]
        [:li {:class (when settings-section? "active")}
-        [:a {:on-click go-settings} "SETTINGS"]]]]
+        [:a {:on-click go-settings} (t locale "labels.settings")]]]]
 
      (if members-section?
        [:a.btn-secondary.btn-small {:on-click invite-member}
-        (t locale "dashboard.header.invite-profile")]
+        (t locale "dashboard.invite-profile")]
        [:div])]))
 
 (s/def ::email ::us/email)
@@ -78,10 +78,10 @@
   {::mf/register modal/components
    ::mf/register-as ::invite-member}
   [{:keys [team] :as props}]
-  (let [roles   [{:value "" :label "Role"}
-                 {:value "admin" :label "Admin"}
-                 {:value "editor" :label "Editor"}
-                 {:value "viewer" :label "Viewer"}]
+  (let [roles   [{:value "" :label (tr "labels.role")}
+                 {:value "admin" :label (tr "labels.admin")}
+                 {:value "editor" :label (tr "labels.editor")}
+                 {:value "viewer" :label (tr "labels.viewer")}]
 
         initial (mf/use-memo (mf/deps team) (constantly {:team-id (:id team)}))
         form    (fm/use-form :spec ::invite-member-form
@@ -99,16 +99,14 @@
                  mdata  {:on-success (partial on-success form)}]
              (st/emit! (dd/invite-team-member (with-meta params mdata))))))]
 
-    (prn "invite-member-modal" @form)
-
     [:div.modal.dashboard-invite-modal.form-container
      [:& fm/form {:on-submit on-submit :form form}
       [:div.title
-       [:span.text "Invite a new team member"]]
+       [:span.text (tr "modals.invite-member.title")]]
 
       [:div.form-row
        [:& fm/input {:name :email
-                     :label "Introduce an email"}]
+                     :label (tr "labels.email")}]
        [:& fm/select {:name :role
                       :options roles}]]
 
@@ -141,9 +139,9 @@
          (mf/deps team member)
          (st/emitf (modal/show
                     {:type :confirm
-                     :title "Promoto to owner"
-                     :message "Are you sure you wan't to promote this user to owner?"
-                     :accept-label "Promote"
+                     :title (tr "modals.promote-owner-confirm.title")
+                     :message (tr "modals.promote-owner-confirm.message")
+                     :accept-label (tr "modals.promote-owner-confirm.accept")
                      :on-accept set-owner-fn})))
 
         delete-fn
@@ -154,9 +152,9 @@
          (mf/deps team member)
          (st/emitf (modal/show
                     {:type :confirm
-                     :title "Delete team member"
-                     :message "Are you sure wan't to delete this user from team?"
-                     :accept-label "Delete"
+                     :title (tr "modals.delete-team-member-confirm.title")
+                     :message  (tr "modals.delete-team-member-confirm.message")
+                     :accept-label (tr "modals.delete-team-member-confirm.accept")
                      :on-accept delete-fn})))]
 
 
@@ -167,16 +165,17 @@
       [:*
        (cond
          (:is-owner member)
-         [:span.label "Owner"]
+         [:span.label (tr "labels.owner")]
 
          (:is-admin member)
-         [:span.label "Admin"]
+         [:span.label (tr "labels.admin")]
 
          (:can-edit member)
-         [:span.label "Editor"]
+         [:span.label (tr "labels.editor")]
 
          :else
-         [:span.label "Viewer"])
+         [:span.label (tr "labels.viewer")])
+
        (when (and (not (:is-owner member))
                   (or (:is-admin team)
                       (:is-owner team)))
@@ -185,19 +184,19 @@
       [:& dropdown {:show @show?
                     :on-close #(reset! show? false)}
        [:ul.dropdown.options-dropdown
-        [:li {:on-click set-admin} "Admin"]
-        [:li {:on-click set-editor} "Editor"]
-        [:li {:on-click set-viewer} "Viewer"]
+        [:li {:on-click set-admin} (tr "labels.admin")]
+        [:li {:on-click set-editor} (tr "labels.editor")]
+        [:li {:on-click set-viewer} (tr "labels.viewer")]
         (when (:is-owner team)
           [:*
            [:hr]
-           [:li {:on-click set-owner} "Promote to owner"]])
+           [:li {:on-click set-owner} (tr "dashboard.promote-to-owner")]])
         [:hr]
         (when (and (or (:is-owner team)
                        (:is-admin team))
                    (not= (:id profile)
                          (:id member)))
-          [:li {:on-click delete} "Remove"])]]]]))
+          [:li {:on-click delete} (tr "labels.remove")])]]]]))
 
 
 (mf/defc team-members
@@ -209,9 +208,9 @@
                      (d/seek :is-owner))]
     [:div.dashboard-table
      [:div.table-header
-      [:div.table-field.name "Name"]
-      [:div.table-field.email "Email"]
-      [:div.table-field.permissions "Permissions"]]
+      [:div.table-field.name (tr "labels.name")]
+      [:div.table-field.email (tr "labels.email")]
+      [:div.table-field.permissions (tr "labels.permissions")]]
      [:div.table-rows
       [:& team-member {:member owner :team team :profile profile}]
       (for [item members]
@@ -272,7 +271,7 @@
       [:div.team-settings
        [:div.horizontal-blocks
         [:div.block.info-block
-         [:div.label "Team info"]
+         [:div.label (t locale "dashboard.team-info")]
          [:div.name (:name team)]
          [:div.icon
           [:span.update-overlay {:on-click on-image-click} i/exit]
@@ -283,16 +282,16 @@
                              :on-selected on-file-selected}]]]
 
         [:div.block.owner-block
-         [:div.label "Team members"]
+         [:div.label (t locale "dashboard.team-members")]
          [:div.owner
           [:span.icon [:img {:src (cfg/resolve-media-path (:photo-uri profile))}]]
           [:span.text (:fullname profile)]]
          [:div.summary
           [:span.icon i/user]
-          [:span.text (t locale "dashboard.team.num-of-members" (count members-map))]]]
+          [:span.text (t locale "dashboard.num-of-members" (count members-map))]]]
 
         [:div.block.stats-block
-         [:div.label "Team projects"]
+         [:div.label (t locale "dashboard.team-projects")]
          [:div.projects
           [:span.icon i/folder]
           [:span.text "4 projects"]]

@@ -37,7 +37,7 @@
     [:*
      [:header.dashboard-header
       [:div.dashboard-title
-       [:h1 (tr "dashboard.header.libraries")]]]
+       [:h1 (tr "dashboard.libraries-title")]]]
      [:section.dashboard-container
       [:& grid {:files files}]]]))
 

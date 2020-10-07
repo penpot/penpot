@@ -30,9 +30,9 @@
   (let [create #(st/emit! (dd/create-project {:team-id (:id team)}))]
     [:header.dashboard-header
      [:div.dashboard-title
-      [:h1 "Projects"]]
+      [:h1 (t locale "dashboard.projects-title")]]
      [:a.btn-secondary.btn-small {:on-click create}
-      (t locale "dashboard.header.new-project")]]))
+      (t locale "dashboard.new-project")]]))
 
 (defn files-ref
   [project-id]

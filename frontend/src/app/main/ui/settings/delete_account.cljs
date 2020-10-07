@@ -9,23 +9,23 @@
 
 (ns app.main.ui.settings.delete-account
   (:require
-   [cljs.spec.alpha :as s]
-   [beicon.core :as rx]
-   [rumext.alpha :as mf]
    [app.main.data.auth :as da]
    [app.main.data.messages :as dm]
+   [app.main.data.modal :as modal]
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
-   [app.main.data.modal :as modal]
+   [app.util.i18n :as i18n :refer [tr t]]
    [app.util.router :as rt]
-   [app.util.i18n :as i18n :refer [tr t]]))
+   [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
+   [rumext.alpha :as mf]))
 
 (defn on-error
   [{:keys [code] :as error}]
   (if (= :owner-teams-with-people code)
-    (let [msg (tr "dashboard.notifications.profile-deletion-not-allowed")]
+    (let [msg (tr "notifications.profile-deletion-not-allowed")]
       (rx/of (dm/error msg)))
     (rx/throw error)))
 
@@ -52,19 +52,19 @@
      [:div.modal-container.change-email-modal
       [:div.modal-header
        [:div.modal-header-title
-        [:h2 (t locale "dashboard.settings.delete-account-title")]]
+        [:h2 (t locale "modals.delete-account.title")]]
        [:div.modal-close-button
         {:on-click on-close} i/close]]
 
       [:div.modal-content
        [:& msgs/inline-banner
         {:type :warning
-         :content (t locale "dashboard.settings.delete-account-info")}]]
+         :content (t locale "modals.delete-account.info")}]]
 
       [:div.modal-footer
        [:div.action-buttons
         [:button.btn-warning.btn-large {:on-click on-accept}
-         (t locale "dashboard.settings.yes-delete-my-account")]
+         (t locale "modals.delete-account.confirm")]
         [:button.btn-secondary.btn-large {:on-click on-close}
-         (t locale "dashboard.settings.cancel-and-keep-my-account")]]]]]))
+         (t locale "modals.delete-account.cancel")]]]]]))
 

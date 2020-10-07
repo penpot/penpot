@@ -51,7 +51,7 @@
       (st/emit! (rt/nav :dashboard-projects {:team-id (get-in data [:claims :team-id])})
                 du/fetch-profile
                 (dm/success message)))
-    (let [message (tr "auth.notifications.validation-email-sent" (:email data))]
+    (let [message (tr "notifications.validation-email-sent" (:email data))]
       (st/emit! (rt/nav :auth-login)
                 (dm/success message)))))
 
@@ -91,23 +91,23 @@
      [:div.fields-row
       [:& fm/input {:name :fullname
                     :tab-index "1"
-                    :label (t locale "auth.fullname-label")
+                    :label (t locale "auth.fullname")
                     :type "text"}]]
      [:div.fields-row
       [:& fm/input {:type "email"
                     :name :email
                     :tab-index "2"
                     :help-icon i/at
-                    :label (t locale "auth.email-label")}]]
+                    :label (t locale "auth.email")}]]
      [:div.fields-row
       [:& fm/input {:name :password
                     :tab-index "3"
                     :hint (t locale "auth.password-length-hint")
-                    :label (t locale "auth.password-label")
+                    :label (t locale "auth.password")
                     :type "password"}]]
 
      [:& fm/submit-button
-      {:label (t locale "auth.register-submit-label")}]]))
+      {:label (t locale "auth.register-submit")}]]))
 
 ;; --- Register Page
 
@@ -130,7 +130,7 @@
       (t locale "auth.login-here")]]
 
     [:div.link-entry
-     [:span (t locale "auth.create-demo-profile-label") " "]
+     [:span (t locale "auth.create-demo-profile") " "]
      [:a {:on-click #(st/emit! da/create-demo-profile)
           :tab-index "5"}
       (t locale "auth.create-demo-profile")]]]])

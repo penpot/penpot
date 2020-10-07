@@ -89,20 +89,20 @@
          :type "text"
          :tab-index "2"
          :help-icon i/at
-         :label (t locale "auth.email-label")}]]
+         :label (t locale "auth.email")}]]
       [:div.fields-row
        [:& fm/input
         {:type "password"
          :name :password
          :tab-index "3"
          :help-icon i/eye
-         :label (t locale "auth.password-label")}]]
+         :label (t locale "auth.password")}]]
       [:& fm/submit-button
-       {:label (t locale "auth.login-submit-label")
+       {:label (t locale "auth.login-submit")
         :on-click on-submit}]
       (when cfg/login-with-ldap
         [:& fm/submit-button
-         {:label (t locale "auth.login-with-ldap-submit-label")
+         {:label (t locale "auth.login-with-ldap-submit")
           :on-click on-submit}])]]))
 
 (mf/defc login-page
@@ -122,7 +122,7 @@
        (t locale "auth.forgot-password")]]
 
      [:div.link-entry
-      [:span (t locale "auth.register-label") " "]
+      [:span (t locale "auth.register") " "]
       [:a {:on-click #(st/emit! (rt/nav :auth-register))
            :tab-index "6"}
        (t locale "auth.register")]]]
@@ -137,11 +137,11 @@
        {:on-click login-with-gitlab}
        [:img.logo
         {:src "/images/icons/brand-gitlab.svg"}]
-       (t locale "auth.login-with-gitlab-submit-label")])
+       (t locale "auth.login-with-gitlab-submit")])
 
     [:div.links.demo
      [:div.link-entry
-      [:span (t locale "auth.create-demo-profile-label") " "]
+      [:span (t locale "auth.create-demo-profile") " "]
       [:a {:on-click #(st/emit! da/create-demo-profile)
            :tab-index "6"}
        (t locale "auth.create-demo-profile")]]]]])

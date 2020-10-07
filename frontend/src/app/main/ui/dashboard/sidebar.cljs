@@ -107,7 +107,7 @@
       {:key :images-search-box
        :id "search-input"
        :type "text"
-       :placeholder (t locale "ds.search.placeholder")
+       :placeholder (t locale "dashboard.search-placeholder")
        :default-value search-term
        :auto-complete "off"
        :on-focus on-search-focus
@@ -137,11 +137,11 @@
             (rx/subs #(reset! teams %)))))
 
     [:ul.dropdown.teams-dropdown
-     [:li.title (t locale "dashboard.sidebar.switch-team")]
+     [:li.title (t locale "dashboard.switch-team")]
      [:hr]
      [:li.team-name {:on-click (partial go-projects (:default-team-id profile))}
       [:span.team-icon i/logo-icon]
-      [:span.team-text "Your penpot"]]
+      [:span.team-text (t locale "dashboard.your-penpot")]]
 
      (for [team (remove :is-default @teams)]
        [:* {:key (:id team)}
@@ -152,7 +152,7 @@
 
      [:hr]
      [:li.action {:on-click on-create-clicked}
-      (t locale "dashboard.sidebar.create-team")]]))
+      (t locale "dashboard.create-new-team")]]))
 
 (s/def ::member-id ::us/uuid)
 (s/def ::leave-modal-form
@@ -160,11 +160,10 @@
 
 (mf/defc leave-and-reassign-modal
   {::mf/register modal/components
-   ::mf/register-as ::leave-and-reassign
-   ::mf/props-spec ::kaka-de-vaca}
+   ::mf/register-as ::leave-and-reassign}
   [{:keys [members profile team accept]}]
   (let [form    (fm/use-form :spec ::leave-modal-form :initial {})
-        options (into [{:value "" :label "Select a member to promote"}]
+        options (into [{:value "" :label (tr "modals.leave-and-reassign.select-memeber-to-promote")}]
                       (map #(hash-map :name (:name %) :value (str (:id %))) members))
 
         on-cancel
@@ -181,13 +180,13 @@
      [:div.modal-container.confirm-dialog
       [:div.modal-header
        [:div.modal-header-title
-        [:h2 "Before you leave"]]
+        [:h2 (tr "modals.leave-and-reassign.title")]]
        [:div.modal-close-button
         {:on-click on-cancel} i/close]]
 
       [:div.modal-content.generic-form
-       [:p "You are " (:name team) " owner."]
-       [:p "Select an other member to promote before leave."]
+       [:p (tr "modals.leave-and-reassign.hint1" (:name team))]
+       [:p (tr "modals.leave-and-reassign.hint2")]
 
        [:& fm/form {:form form}
         [:& fm/select {:name :member-id
@@ -197,14 +196,14 @@
        [:div.action-buttons
         [:input.cancel-button
          {:type "button"
-          :value "Cancel"
+          :value (tr "labels.cancel")
           :on-click on-cancel}]
 
         [:input.accept-button
          {:type "button"
           :class (when-not (:valid @form) "btn-disabled")
           :disabled (not (:valid @form))
-          :value "Promoto and Leave"
+          :value (tr "modals.leave-and-reassign.promote-and-leave")
           :on-click on-accept}]]]]]))
 
 
@@ -256,11 +255,10 @@
          (mf/deps team)
          (st/emitf (modal/show
                     {:type :confirm
-                     :title "Leaving team"
-                     :message "Are you sure you want to leave this team?"
-                     :accept-label "Leave team"
+                     :title (t locale "modals.leave-confirm.title")
+                     :message (t locale "modals.leave-confirm.message")
+                     :accept-label (t locale "modals.leave-confirm.accept")
                      :on-accept leave-fn})))
-
 
         on-leave-as-owner-clicked
         (mf/use-callback
@@ -282,10 +280,9 @@
          (mf/deps team)
          (st/emitf (modal/show
                     {:type :confirm
-                     :title "Deleting team"
-                     :message (str "Are you sure you want to delete this team?\n"
-                                   "All projects and files associated with team will be permanently deleted.")
-                     :accept-label "Delete team"
+                     :title (t locale "modals.delete-team-confirm.title")
+                     :message (t locale "modals.delete-team-confirm.message")
+                     :accept-label (t locale "modals.delete-team-confirm.accept")
                      :on-accept delete-fn})))]
 
     (mf/use-layout-effect
@@ -295,21 +292,21 @@
             (rx/subs #(reset! members %)))))
 
     [:ul.dropdown.options-dropdown
-     [:li {:on-click go-members} (t locale "dashboard.sidebar.team-members")]
-     [:li {:on-click go-settings} (t locale "dashboard.sidebar.settings")]
+     [:li {:on-click go-members} (t locale "labels.members")]
+     [:li {:on-click go-settings} (t locale "labels.settings")]
      [:hr]
-     [:li {:on-click on-rename-clicked} (t locale "dashboard.sidebar.rename-team")]
+     [:li {:on-click on-rename-clicked} (t locale "labels.rename")]
 
      (cond
        (:is-owner team)
-       [:li {:on-click on-leave-as-owner-clicked} (t locale "dashboard.sidebar.leave-team")]
+       [:li {:on-click on-leave-as-owner-clicked} (t locale "dashboard.leave-team")]
 
        (> (count @members) 1)
-       [:li {:on-click on-leave-clicked}  (t locale "dashboard.sidebar.leave-team")])
+       [:li {:on-click on-leave-clicked}  (t locale "dashboard.leave-team")])
 
 
      (when (:is-owner team)
-       [:li {:on-click on-delete-clicked} (t locale "dashboard.sidebar.delete-team")])]))
+       [:li {:on-click on-delete-clicked} (t locale "dashboard.delete-team")])]))
 
 
 (mf/defc sidebar-team-switch
@@ -325,7 +322,7 @@
        (if (:is-default team)
          [:div.team-name
           [:span.team-icon i/logo-icon]
-          [:span.team-text (t locale "dashboard.sidebar.default-team-name")]]
+          [:span.team-text (t locale "dashboard.default-team-name")]]
          [:div.team-name
           [:span.team-icon
            [:img {:src (cfg/resolve-media-path (:photo team))}]]
@@ -397,18 +394,18 @@
         {:on-click go-projects
          :class-name (when projects? "current")}
         i/recent
-        [:span.element-title (t locale "dashboard.sidebar.projects")]]
+        [:span.element-title (t locale "labels.projects")]]
 
        [:li {:on-click go-drafts
              :class-name (when drafts? "current")}
         i/file-html
-        [:span.element-title (t locale "dashboard.sidebar.drafts")]]
+        [:span.element-title (t locale "labels.drafts")]]
 
 
        [:li {:on-click go-libs
              :class-name (when libs? "current")}
         i/library
-        [:span.element-title (t locale "dashboard.sidebar.libraries")]]]]
+        [:span.element-title (t locale "labels.shared-libraries")]]]]
 
      [:hr]
 
@@ -423,7 +420,7 @@
              :selected? (= (:id item) (:id project))}])]
         [:div.sidebar-empty-placeholder
          [:span.icon i/pin]
-         [:span.text (t locale "dashboard.sidebar.no-projects-placeholder")]])]]))
+         [:span.text (t locale "dashboard.no-projects-placeholder")]])]]))
 
 
 (mf/defc profile-section
@@ -451,15 +448,15 @@
       [:ul.dropdown
        [:li {:on-click (partial on-click :settings-profile)}
         [:span.icon i/user]
-        [:span.text (t locale "dashboard.sidebar.profile")]]
+        [:span.text (t locale "labels.profile")]]
        [:hr]
        [:li {:on-click (partial on-click :settings-password)}
         [:span.icon i/lock]
-        [:span.text (t locale "dashboard.sidebar.password")]]
+        [:span.text (t locale "labels.password")]]
        [:hr]
        [:li {:on-click (partial on-click da/logout)}
         [:span.icon i/exit]
-        [:span.text (t locale "dashboard.logout")]]]]]))
+        [:span.text (t locale "labels.logout")]]]]]))
 
 (mf/defc sidebar
   {::mf/wrap-props false

@@ -73,27 +73,27 @@
     [:& fm/form {:class "password-form"
                  :on-submit on-submit
                  :form form}
-     [:h2 (t locale "dashboard.settings.password-change-title")]
+     [:h2 (t locale "dashboard.password-change")]
      [:div.fields-row
       [:& fm/input
        {:type "password"
         :name :password-old
-        :label (t locale "dashboard.settings.old-password-label")}]]
+        :label (t locale "labels.old-password")}]]
 
      [:div.fields-row
       [:& fm/input
        {:type "password"
         :name :password-1
-        :label (t locale "dashboard.settings.new-password-label")}]]
+        :label (t locale "labels.new-password")}]]
 
      [:div.fields-row
       [:& fm/input
        {:type "password"
         :name :password-2
-        :label (t locale "dashboard.settings.confirm-password-label")}]]
+        :label (t locale "labels.confirm-password")}]]
 
      [:& fm/submit-button
-      {:label (t locale "dashboard.settings.profile-submit-label")}]]))
+      {:label (t locale "dashboard.update-settings")}]]))
 
 ;; --- Password Page
 

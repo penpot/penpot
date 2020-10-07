@@ -75,11 +75,13 @@
          (mf/deps file)
          (fn [event]
            (dom/stop-propagation event)
-           (st/emit! (modal/show {:type :confirm
-                                  :title "Deleting file"
-                                  :message "Are you sure you want to delete this file?"
-                                  :on-accept delete-fn
-                                  :accept-label "Delete file"}))))
+           (st/emit! (modal/show
+                      {:type :confirm
+                       :title (t locale "modals.delete-file-confirm.title")
+                       :message (t locale "modals.delete-file-confirm.message")
+                       :accept-label (t locale "modals.delete-file-confirm.accept")
+                       :on-accept delete-fn}))))
+
         on-navigate
         (mf/use-callback
          (mf/deps id)
@@ -107,10 +109,10 @@
            (dom/stop-propagation event)
            (st/emit! (modal/show
                       {:type :confirm
-                       :message (t locale "dashboard.grid.add-shared-message" (:name file))
-                       :title "Adding as shared library"
-                       :hint (t locale "dashboard.grid.add-shared-hint")
-                       :accept-label (t locale "dashboard.grid.add-shared-accept")
+                       :message (t locale "modals.add-shared-confirm.message" (:name file))
+                       :title (t locale "modals.add-shared-confirm.title")
+                       :hint (t locale "modals.add-shared-confirm.hint")
+                       :accept-label (t locale "modals.add-shared-confirm.accept")
                        :on-accept add-shared}))))
 
         on-del-shared
@@ -119,12 +121,13 @@
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (modal/show! :confirm
-                        {:title "Unsharing file"
-                         :message (t locale "dashboard.grid.remove-shared-message" (:name file))
-                         :hint (t locale "dashboard.grid.remove-shared-hint")
-                         :accept-label (t locale "dashboard.grid.remove-shared-accept")
-                         :on-accept del-shared})))
+           (st/emit! (modal/show
+                      {:type :confirm
+                       :title (t locale "modals.remove-shared-confirm.title")
+                       :message (t locale "modals.remove-shared-confirm.message" (:name file))
+                       :hint (t locale "modals.remove-shared-confirm.hint")
+                       :accept-label (t locale "modals.remove-shared-confirm.accept")
+                       :on-accept del-shared}))))
 
         on-menu-click
         (mf/use-callback
@@ -167,18 +170,18 @@
        i/actions]
       [:& context-menu {:on-close on-close
                         :show (:menu-open @local)
-                        :options [[(t locale "dashboard.grid.rename") on-edit]
-                                  [(t locale "dashboard.grid.delete") on-delete]
+                        :options [[(t locale "labels.rename") on-edit]
+                                  [(t locale "labels.delete") on-delete]
                                   (if (:is-shared file)
-                                     [(t locale "dashboard.grid.remove-shared") on-del-shared]
-                                     [(t locale "dashboard.grid.add-shared") on-add-shared])]}]]]))
+                                     [(t locale "dashboard.remove-shared") on-del-shared]
+                                     [(t locale "dashboard.add-shared") on-add-shared])]}]]]))
 
 (mf/defc empty-placeholder
   []
   (let [locale (mf/deref i18n/locale)]
     [:div.grid-empty-placeholder
      [:div.icon i/file-html]
-     [:div.text (t locale "dashboard.grid.empty-files")]]))
+     [:div.text (t locale "dashboard.empty-files")]]))
 
 (mf/defc grid
   [{:keys [id opts files] :as props}]
@@ -240,7 +243,7 @@
        [:div.grid-item.placeholder {:on-click on-load-more}
         [:div.placeholder-icon i/arrow-down]
         [:div.placeholder-label
-         (t locale "dashboard.grid.show-all-files")]])]))
+         (t locale "dashboard.show-all-files")]])]))
 
 (mf/defc line-grid
   [{:keys [project-id opts files on-load-more] :as props}]

@@ -53,9 +53,9 @@
          (mf/deps project)
          (st/emitf (modal/show
                     {:type :confirm
-                     :title "Deleting project"
-                     :message "Are you sure you wan't to delete this project?"
-                     :accept-label "Delete project"
+                     :title (t locale "modals.delete-project-confirm.title")
+                     :message (t locale "modals.delete-project-confirm.message")
+                     :accept-label (t locale "modals.delete-project-confirm.accept")
                      :on-accept delete-fn})))
 
         on-create-clicked
@@ -69,7 +69,7 @@
     [:header.dashboard-header
      (if (:is-default project)
        [:div.dashboard-title
-        [:h1 (t locale "dashboard.header.draft")]]
+        [:h1 (t locale "dashboard.draft-title")]]
 
        (if (:edition @local)
          [:& inline-edition {:content (:name project)
@@ -81,8 +81,8 @@
           [:div.icon {:on-click on-menu-click} i/actions]
           [:& context-menu {:on-close on-menu-close
                             :show (:menu-open @local)
-                            :options [[(t locale "dashboard.grid.rename") on-edit]
-                                      [(t locale "dashboard.grid.delete") on-delete]]}]]))
+                            :options [[(t locale "labels.rename") on-edit]
+                                      [(t locale "labels.delete") on-delete]]}]]))
      [:a.btn-secondary.btn-small {:on-click on-create-clicked}
       (t locale "dashboard.new-file")]]))
 

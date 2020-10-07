@@ -17,8 +17,6 @@
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
-;; --- Component: Search
-
 (def result-ref
   (l/derived (l/in [:dashboard-local :search-result]) st/state))
 
@@ -37,17 +35,17 @@
        (empty? search-term)
        [:div.grid-empty-placeholder
         [:div.icon i/search]
-        [:div.text (t locale "dashboard.search.type-something")]]
+        [:div.text (t locale "dashboard.type-something")]]
 
        (nil? result)
        [:div.grid-empty-placeholder
         [:div.icon i/search]
-        [:div.text  (t locale "dashboard.search.searching-for" search-term)]]
+        [:div.text  (t locale "dashboard.searching-for" search-term)]]
 
        (empty? result)
        [:div.grid-empty-placeholder
         [:div.icon i/search]
-        [:div.text  (t locale "dashboard.search.no-matches-for" search-term)]]
+        [:div.text  (t locale "dashboard.no-matches-for" search-term)]]
 
        :else
        [:& grid {:files result
