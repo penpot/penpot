@@ -9,8 +9,6 @@
 
 (ns app.main.ui.dashboard.projects
   (:require
-   [okulary.core :as l]
-   [rumext.alpha :as mf]
    [app.common.exceptions :as ex]
    [app.main.constants :as c]
    [app.main.data.dashboard :as dd]
@@ -22,7 +20,9 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t tr]]
    [app.util.router :as rt]
-   [app.util.time :as dt]))
+   [app.util.time :as dt]
+   [okulary.core :as l]
+   [rumext.alpha :as mf]))
 
 (mf/defc header
   {::mf/wrap [mf/memo]}
