@@ -88,7 +88,7 @@
           [:div.item-name (:name library)]
           [:div.item-contents (contents-str library)]
           [:input.item-button {:type "button"
-                               :value (tr "workspace.libraries.remove")
+                               :value (tr "labels.remove")
                                :on-click #(unlink-library (:id library))}]])
        ]]
      [:div.section

@@ -44,12 +44,12 @@
                  :form form}
      [:div.fields-row
       [:& fm/input {:name :email
-                    :label (t locale "auth.email-label")
+                    :label (t locale "auth.email")
                     :help-icon i/at
                     :type "text"}]]
 
      [:& fm/submit-button
-      {:label (t locale "auth.recovery-request-submit-label")}]]))
+      {:label (t locale "auth.recovery-request-submit")}]]))
 
 
 ;; --- Recovery Request Page

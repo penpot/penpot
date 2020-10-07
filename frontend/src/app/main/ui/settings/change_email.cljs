@@ -53,7 +53,7 @@
 (defn- on-success
   [form data]
   (let [email   (get-in @form [:clean-data :email-1])
-        message (tr "auth.notifications.validation-email-sent" email)]
+        message (tr "notifications.validation-email-sent" email)]
     (st/emit! (dm/info message)
               (modal/hide))))
 
@@ -83,30 +83,30 @@
 
        [:div.modal-header
         [:div.modal-header-title
-         [:h2 (t locale "dashboard.settings.change-email-title")]]
+         [:h2 (t locale "modals.change-email.title")]]
         [:div.modal-close-button
          {:on-click on-close} i/close]]
 
        [:div.modal-content
         [:& msgs/inline-banner
          {:type :info
-          :content (t locale "dashboard.settings.change-email-info" (:email profile))}]
+          :content (t locale "modals.change-email.info" (:email profile))}]
 
         [:div.fields-row
          [:& fm/input {:type "text"
                        :name :email-1
-                       :label (t locale "dashboard.settings.new-email-label")
+                       :label (t locale "modals.change-email.new-email")
                        :trim true}]]
         [:div.fields-row
          [:& fm/input {:type "text"
                        :name :email-2
-                       :label (t locale "dashboard.settings.confirm-email-label")
+                       :label (t locale "modals.change-email.confirm-email")
                        :trim true}]]]
 
        [:div.modal-footer
         [:div.action-buttons
          [:& fm/submit-button
-          {:label (t locale "dashboard.settings.change-email-submit-label")}]]]]]]))
+          {:label (t locale "modals.change-email.submit")}]]]]]]))
 
 
 

@@ -96,23 +96,34 @@
 
         edit-input-ref (mf/use-ref nil)
 
-        add-shared-fn #(st/emit! nil (dw/set-file-shared (:id file) true))
-        on-add-shared
-        #(modal/show! :confirm-dialog
-                      {:message (t locale "dashboard.grid.add-shared-message" (:name file))
-                       :hint (t locale "dashboard.grid.add-shared-hint")
-                       :accept-text (t locale "dashboard.grid.add-shared-accept")
-                       :not-danger? true
-                       :on-accept add-shared-fn})
+        add-shared-fn
+        (st/emitf (dw/set-file-shared (:id file) true))
 
-        remove-shared-fn #(st/emit! nil (dw/set-file-shared (:id file) false))
+        del-shared-fn
+        (st/emitf (dw/set-file-shared (:id file) false))
+
+        on-add-shared
+        (mf/use-fn
+         (mf/deps file)
+         (st/emitf (modal/show
+                    {:type :confirm
+                     :message (t locale "modals.add-shared-confirm.message" (:name file))
+                     :title (t locale "modals.add-shared-confirm.title")
+                     :hint (t locale "modals.add-shared-confirm.hint")
+                     :accept-label (t locale "modals.add-shared-confirm.accept")
+                     :on-accept add-shared-fn})))
+
         on-remove-shared
-        #(modal/show! :confirm-dialog
-                      {:message (t locale "dashboard.grid.remove-shared-message" (:name file))
-                       :hint (t locale "dashboard.grid.remove-shared-hint")
-                       :accept-text (t locale "dashboard.grid.remove-shared-accept")
-                       :not-danger? false
-                       :on-accept remove-shared-fn})
+        (mf/use-fn
+         (mf/deps file)
+         (st/emitf (modal/show
+                    {:type :confirm
+                     :title (t locale "modals.remove-shared-confirm.title")
+                     :message (t locale "modals.remove-shared-confirm.message" (:name file))
+                     :hint (t locale "modals.remove-shared-confirm.hint")
+                     :accept-label (t locale "modals.remove-shared-confirm.accept")
+                     :on-accept del-shared-fn})))
+
 
         handle-blur (fn [event]
                       (let [value (-> edit-input-ref mf/ref-val dom/get-value)]
@@ -132,7 +143,7 @@
 
     [:div.menu-section
      [:div.btn-icon-dark.btn-small {:on-click #(reset! show-menu? true)} i/actions]
-     [:div.project-tree {:alt (t locale "header.sitemap")}
+     [:div.project-tree {:alt (t locale "workspace.sitemap")}
       [:span.project-name
        {:on-click #(st/emit! (rt/navigate :dashboard-project {:team-id team-id
                                                               :project-id (:project-id file)}))}
@@ -205,9 +216,9 @@
 
        (if (:is-shared file)
          [:li {:on-click on-remove-shared}
-          [:span (t locale "dashboard.grid.remove-shared")]]
+          [:span (t locale "dashboard.remove-shared")]]
          [:li {:on-click on-add-shared}
-          [:span (t locale "dashboard.grid.add-shared")]])
+          [:span (t locale "dashboard.add-shared")]])
        ]]]))
 
 ;; --- Header Component

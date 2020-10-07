@@ -33,7 +33,7 @@
 
 (defn- on-success
   [form]
-  (st/emit! (dm/success (tr "dashboard.notifications.profile-saved"))))
+  (st/emit! (dm/success (tr "notifications.profile-saved"))))
 
 (defn- on-error
   [form error]
@@ -61,7 +61,7 @@
       [:& fm/input
        {:type "text"
         :name :fullname
-        :label (t locale "dashboard.settings.fullname-label")}]]
+        :label (t locale "dashboard.your-name")}]]
 
      [:div.fields-row
       [:& fm/input
@@ -69,20 +69,20 @@
         :name :email
         :disabled true
         :help-icon i/at
-        :label (t locale "dashboard.settings.email-label")}]
+        :label (t locale "dashboard.your-email")}]
 
       [:div.options
        [:div.change-email
         [:a {:on-click #(modal/show! :change-email {})}
-         (t locale "dashboard.settings.change-email-label")]]]]
+         (t locale "dashboard.change-email")]]]]
 
      [:& fm/submit-button
-      {:label (t locale "dashboard.settings.profile-submit-label")}]
+      {:label (t locale "dashboard.update-settings")}]
 
      [:div.links
       [:div.link-item
        [:a {:on-click #(modal/show! :delete-account {})}
-        (t locale "dashboard.settings.remove-account-label")]]]]))
+        (t locale "dashboard.remove-account")]]]]))
 
 ;; --- Profile Photo Form
 
@@ -103,7 +103,7 @@
 
     [:form.avatar-form
      [:div.image-change-field
-      [:span.update-overlay {:on-click on-image-click} (t locale "dashboard.settings.update-photo-label")]
+      [:span.update-overlay {:on-click on-image-click} (t locale "labels.update")]
       [:img {:src photo}]
       [:& file-uploader {:accept "image/jpeg,image/png"
                          :multi false

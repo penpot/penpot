@@ -33,7 +33,7 @@
 
 (defn- on-success
   [form]
-  (st/emit! (dm/success (tr "dashboard.notifications.profile-saved"))))
+  (st/emit! (dm/success (tr "notifications.profile-saved"))))
 
 (defn- on-submit
   [form event]
@@ -51,25 +51,25 @@
                  :on-submit on-submit
                  :form form}
 
-     [:h2 (t locale "dashboard.settings.language-change-title")]
+     [:h2 (t locale "labels.language")]
 
      [:div.fields-row
       [:& fm/select {:options [{:label "English" :value "en"}
                                {:label "Français" :value "fr"}
                                {:label "Español" :value "es"}
                                {:label "Русский" :value "ru"}]
-                     :label (t locale "dashboard.settings.language-label")
+                     :label (t locale "dashboard.select-ui-language")
                      :default "en"
                      :name :lang}]]
 
-     [:h2 (t locale "dashboard.settings.theme-change-title")]
+     [:h2 (t locale "dashboard.theme-change")]
      [:div.fields-row
-      [:& fm/select {:label (t locale "dashboard.settings.theme-label")
+      [:& fm/select {:label (t locale "dashboard.select-ui-theme")
                      :name :theme
                      :default "default"
                      :options [{:label "Default" :value "default"}]}]]
      [:& fm/submit-button
-      {:label (t locale "dashboard.settings.profile-submit-label")}]]))
+      {:label (t locale "dashboard.update-settings")}]]))
 
 ;; --- Password Page
 

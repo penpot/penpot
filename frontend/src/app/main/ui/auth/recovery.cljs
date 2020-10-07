@@ -69,15 +69,15 @@
      [:div.fields-row
       [:& fm/input {:type "password"
                     :name :password-1
-                    :label (t locale "auth.new-password-label")}]]
+                    :label (t locale "auth.new-password")}]]
 
      [:div.fields-row
       [:& fm/input {:type "password"
                     :name :password-2
-                    :label (t locale "auth.confirm-password-label")}]]
+                    :label (t locale "auth.confirm-password")}]]
 
      [:& fm/submit-button
-      {:label (t locale "auth.recovery-submit-label")}]]))
+      {:label (t locale "auth.recovery-submit")}]]))
 
 ;; --- Recovery Request Page
 

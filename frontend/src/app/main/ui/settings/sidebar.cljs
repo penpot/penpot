@@ -59,7 +59,7 @@
      [:div.sidebar-content-section
       [:div.back-to-dashboard {:on-click go-dashboard}
        [:span.icon i/arrow-down]
-       [:span.text "Dashboard"]]]
+       [:span.text (t locale "labels.dashboard")]]]
      [:hr]
 
      [:div.sidebar-content-section
@@ -67,17 +67,17 @@
        [:li {:class (when profile? "current")
              :on-click go-settings-profile}
         i/user
-        [:span.element-title (t locale "dashboard.sidebar.profile")]]
+        [:span.element-title (t locale "labels.profile")]]
 
        [:li {:class (when password? "current")
              :on-click go-settings-password}
         i/lock
-        [:span.element-title (t locale "dashboard.sidebar.password")]]
+        [:span.element-title (t locale "labels.password")]]
 
        [:li {:class (when options? "current")
              :on-click go-settings-options}
         i/tree
-        [:span.element-title (t locale "dashboard.sidebar.settings")]]]]]))
+        [:span.element-title (t locale "labels.settings")]]]]]))
 
 (mf/defc sidebar
   {::mf/wrap [mf/memo]}
