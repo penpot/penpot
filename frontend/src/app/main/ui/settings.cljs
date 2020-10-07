@@ -25,7 +25,8 @@
   [{:keys [locale] :as props}]
   (let [logout (constantly nil)]
     [:header.dashboard-header
-     [:h1.dashboard-title (t locale "dashboard.your-account-title")]
+     [:div.dashboard-title
+      [:h1 (t locale "dashboard.your-account-title")]]
      [:a.btn-secondary.btn-small {:on-click logout}
       (t locale "labels.logout")]]))
 
