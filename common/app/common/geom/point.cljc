@@ -211,6 +211,7 @@
   (unit (point y (- x))))
 
 (defn point-line-distance
+  "Returns the distance from a point to a line defined by two points"
   [point line-point1 line-point2]
   (let [{x0 :x y0 :y} point
         {x1 :x y1 :y} line-point1

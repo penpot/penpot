@@ -12,6 +12,10 @@
   #?(:cljs
      (:require [goog.math :as math])))
 
+(def PI
+  #?(:cljs (.-PI js/Math)
+     :clj Math/PI))
+
 (defn nan?
   [v]
   #?(:cljs (js/isNaN v)

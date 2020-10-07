@@ -212,7 +212,7 @@
              :resize-point [:> resize-point-handler props]
              :resize-side [:> resize-side-handler props])))
 
-       (when (= :rect (:type shape))
+       #_(when (= :rect (:type shape))
            [:& gradient-handlers {:shape tr-shape
                                   :zoom zoom}])])))
 
