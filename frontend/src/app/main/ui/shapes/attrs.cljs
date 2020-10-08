@@ -8,7 +8,9 @@
 ;; Copyright (c) 2016-2020 UXBOX Labs SL
 
 (ns app.main.ui.shapes.attrs
-  (:require [app.util.object :as obj]))
+  (:require
+   [cuerdas.core :as str]
+   [app.util.object :as obj]))
 
 (defn- stroke-type->dasharray
   [style]
@@ -19,16 +21,20 @@
     nil))
 
 (defn extract-style-attrs
-  [shape]
-  (let [stroke-style (:stroke-style shape :none)
-        attrs #js {:fill (or (:fill-color shape) "transparent")
-                   :fillOpacity (:fill-opacity shape nil)
-                   :rx (:rx shape nil)
-                   :ry (:ry shape nil)}]
-    (when (not= stroke-style :none)
-      (obj/merge! attrs
-                  #js {:stroke (:stroke-color shape nil)
-                       :strokeWidth (:stroke-width shape 1)
-                       :strokeOpacity (:stroke-opacity shape nil)
-                       :strokeDasharray (stroke-type->dasharray stroke-style)}))
-    attrs))
+  ([shape] (extract-style-attrs shape nil))
+  ([shape gradient-id]
+   (let [stroke-style (:stroke-style shape :none)
+         attrs #js {:rx (:rx shape nil)
+                    :ry (:ry shape nil)}
+         attrs (obj/merge! attrs
+                           (if gradient-id
+                             #js {:fill (str/format "url(#%s)" gradient-id)}
+                             #js {:fill (or (:fill-color shape) "transparent")
+                                  :fillOpacity (:fill-opacity shape nil)}))]
+     (when (not= stroke-style :none)
+       (obj/merge! attrs
+                   #js {:stroke (:stroke-color shape nil)
+                        :strokeWidth (:stroke-width shape 1)
+                        :strokeOpacity (:stroke-opacity shape nil)
+                        :strokeDasharray (stroke-type->dasharray stroke-style)}))
+     attrs)))

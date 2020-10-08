@@ -122,6 +122,9 @@
 (def uppercase (icon-xref :uppercase))
 (def user (icon-xref :user))
 (def tick (icon-xref :tick))
+(def picker-harmony (icon-xref :picker-harmony))
+(def picker-hsv (icon-xref :picker-hsv))
+(def picker-ramp (icon-xref :picker-ramp))
 
 (def loader-pencil
   (mf/html
