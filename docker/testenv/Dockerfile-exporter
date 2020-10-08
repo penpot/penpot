@@ -3,7 +3,9 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
+ENV LANG=en_US.UTF-8 \
+    LC_ALL=en_US.UTF-8 \
+    NODE_VERSION=v12.18.4
 
 RUN set -ex; \
     mkdir -p /etc/resolvconf/resolv.conf.d; \
@@ -78,11 +80,11 @@ RUN set -ex; \
 RUN set -ex; \
     mkdir -p /tmp/node; \
     cd /tmp/node; \
-    export PATH="$PATH:/usr/local/node-v12.18.4/bin"; \
-    wget https://nodejs.org/dist/v12.18.4/node-v12.18.4-linux-x64.tar.xz; \
-    tar xvf node-v12.18.4-linux-x64.tar.xz; \
-    mv /tmp/node/node-v12.18.4-linux-x64 /usr/local/node-v12.18.4; \
-    /usr/local/node-v12.18.4/bin/npm install -g yarn; \
+    export PATH="$PATH:/usr/local/nodejs/bin"; \
+    wget https://nodejs.org/dist/$NODE_VERSION/node-$NODE_VERSION-linux-x64.tar.xz; \
+    tar xvf node-$NODE_VERSION-linux-x64.tar.xz; \
+    mv /tmp/node/node-$NODE_VERSION-linux-x64 /usr/local/nodejs; \
+    /usr/local/nodejs/bin/npm install -g yarn; \
     rm -rf /tmp/node;
 
 WORKDIR /opt/app
@@ -90,7 +92,7 @@ WORKDIR /opt/app
 ADD ./bundle/exporter/ /opt/app/
 
 RUN set -ex; \
-    export PATH="$PATH:/usr/local/node-v12.18.4/bin"; \
+    export PATH="$PATH:/usr/local/nodejs/bin"; \
     yarn install;
 
-CMD ["/usr/local/node-v12.18.4/bin/node", "app.js"]
+CMD ["/usr/local/nodejs/bin/node", "app.js"]
