@@ -28,8 +28,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.matrix :as gmt]
    [app.util.debug :refer [debug?]]
-   [app.main.ui.workspace.shapes.outline :refer [outline]]
-   [app.main.ui.workspace.gradients :refer [gradient-handlers]]))
+   [app.main.ui.workspace.shapes.outline :refer [outline]]))
 
 (def rotation-handler-size 25)
 (def resize-point-radius 4)
@@ -210,11 +209,7 @@
            (case type
              :rotation (when (not= :frame (:type shape)) [:> rotation-handler props])
              :resize-point [:> resize-point-handler props]
-             :resize-side [:> resize-side-handler props])))
-
-       #_(when (= :rect (:type shape))
-           [:& gradient-handlers {:shape tr-shape
-                                  :zoom zoom}])])))
+             :resize-side [:> resize-side-handler props])))])))
 
 ;; --- Selection Handlers (Component)
 (mf/defc path-edition-selection-handlers

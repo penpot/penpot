@@ -43,11 +43,14 @@
       (st/emit! (dm/hide)))))
 
 (defn- on-click-outside
-  [event wrapper-ref allow-click-outside]
+  [event wrapper-ref type allow-click-outside]
   (let [wrapper (mf/ref-val wrapper-ref)
         current (dom/get-target event)]
 
-    (when (and wrapper (not allow-click-outside) (not (.contains wrapper current)))
+    (when (and wrapper
+               (not allow-click-outside)
+               (not (.contains wrapper current))
+               (not (= type (keyword (.getAttribute current "data-allow-click-modal")))))
       (dom/stop-propagation event)
       (dom/prevent-default event)
       (st/emit! (dm/hide)))))
@@ -61,7 +64,7 @@
 
         handle-click-outside
         (fn [event]
-          (on-click-outside event wrapper-ref (:allow-click-outside data)))]
+          (on-click-outside event wrapper-ref (:type data) (:allow-click-outside data)))]
 
     (mf/use-layout-effect
      (fn []

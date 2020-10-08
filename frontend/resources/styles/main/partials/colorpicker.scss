@@ -72,10 +72,16 @@
     margin-top: 0.5rem;
     margin-bottom: 1rem;
 
-    .gradient-background {
+    .gradient-background-wrapper {
       height: 100%;
       width: 100%;
       border: 1px solid $color-gray-10;
+      background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=") left center;
+    }
+
+    .gradient-background {
+      height: 100%;
+      width: 100%;
     }
 
     .gradient-stop-wrapper {
@@ -85,16 +91,21 @@
     }
 
     .gradient-stop {
+      display: grid;
+      grid-template-columns: 50% 50%;
       position: absolute;
-      width: 14px;
-      height: 14px;
+      width: 15px;
+      height: 15px;
       border-radius: 2px;
       border: 1px solid $color-gray-20;
       margin-top: -2px;
       margin-left: -7px;
       box-shadow: 0 2px 2px rgb(0 0 0 / 15%);
 
-      .selected {
+      background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=") left center;
+      background-color: $color-white;
+
+      &.active {
         border-color: $color-primary;
       }
     }

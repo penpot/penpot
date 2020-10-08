@@ -40,6 +40,7 @@
    [app.main.ui.workspace.snap-distances :refer [snap-distances]]
    [app.main.ui.workspace.frame-grid :refer [frame-grid]]
    [app.main.ui.workspace.shapes.outline :refer [outline]]
+   [app.main.ui.workspace.gradients :refer [gradient-handlers]]
    [app.common.math :as mth]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
@@ -641,6 +642,10 @@
          [:& selection-handlers {:selected selected
                                  :zoom zoom
                                  :edition edition}])
+
+       (when (= (count selected) 1)
+         [:& gradient-handlers {:id (first selected)
+                                :zoom zoom}])
 
        (when drawing-obj
          [:& draw-area {:shape drawing-obj

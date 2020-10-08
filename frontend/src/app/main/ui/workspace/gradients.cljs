@@ -13,13 +13,14 @@
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
    [beicon.core :as rx]
-   [app.main.data.workspace.common :as dwc]
-   [app.main.store :as st]
-   [app.main.streams :as ms]
    [app.common.math :as mth]
-   [app.util.dom :as dom]
    [app.common.geom.point :as gpt]
-   [app.common.geom.matrix :as gmt]))
+   [app.common.geom.matrix :as gmt]
+   [app.util.dom :as dom]
+   [app.main.store :as st]
+   [app.main.refs :as refs]
+   [app.main.streams :as ms]
+   [app.main.data.workspace.common :as dwc]))
 
 (def gradient-line-stroke-width 2)
 (def gradient-line-stroke-color "white")
@@ -114,7 +115,8 @@
            :on-mouse-down (partial on-mouse-down :to-p)
            :on-mouse-up (partial on-mouse-up :to-p)}]
 
-   [:rect {:x (- (:x point) (/ gradient-square-width 2 zoom))
+   [:rect {:data-allow-click-modal "colorpicker"
+           :x (- (:x point) (/ gradient-square-width 2 zoom))
            :y (- (:y point) (/ gradient-square-width 2 zoom))
            :rx (/ gradient-square-radius zoom)
            :width (/ gradient-square-width zoom)
@@ -220,73 +222,68 @@
        :on-mouse-up (partial on-mouse-up :to-p)}]]))
 
 (mf/defc gradient-handlers
-  [{:keys [shape zoom]}]
-  (let [{:keys [x y width height] :as sr} (:selrect shape)
-
-        state (mf/use-state (:fill-color-gradient shape default-gradient))
+  [{:keys [id zoom]}]
+  (let [shape (mf/deref (refs/object-by-id id))
+        {:keys [x y width height] :as sr} (:selrect shape)
+        gradient (:fill-color-gradient shape)
 
         [{start-color :color start-opacity :opacity}
-         {end-color :color end-opacity :opacity}] (:stops @state)
+         {end-color :color end-opacity :opacity}] (:stops gradient)
 
-        from-p (gpt/point (+ x (* width (:start-x @state)))
-                          (+ y (* height (:start-y @state))))
+        from-p (gpt/point (+ x (* width (:start-x gradient)))
+                          (+ y (* height (:start-y gradient))))
 
-        to-p   (gpt/point (+ x (* width (:end-x @state)))
-                          (+ y (* height (:end-y @state))))
+        to-p   (gpt/point (+ x (* width (:end-x gradient)))
+                          (+ y (* height (:end-y gradient))))
 
         gradient-vec (gpt/to-vec from-p to-p)
         gradient-length (gpt/length gradient-vec)
 
         width-v (-> gradient-vec
                     (gpt/normal-left)
-                    (gpt/multiply (gpt/point (* (:width @state) (/ gradient-length (/ height 2) ))))
+                    (gpt/multiply (gpt/point (* (:width gradient) (/ gradient-length (/ height 2) ))))
                     (gpt/multiply (gpt/point (/ width 2))))
 
         width-p (gpt/add from-p width-v)
 
+        change! (fn [change]
+                  (st/emit! (dwc/update-shapes
+                             [(:id shape)]
+                             #(update % :fill-color-gradient merge change))))
+
         on-change-start (fn [point]
                           (let [start-x (/ (- (:x point) x) width)
-                                start-y (/ (- (:y point) y) height)]
-                            (swap! state assoc
-                                   :start-x start-x
-                                   :start-y start-y )))
+                                start-y (/ (- (:y point) y) height)
+                                start-x (mth/precision start-x 2)
+                                start-y (mth/precision start-y 2)]
+                            (change! {:start-x start-x :start-y start-y})))
 
         on-change-finish (fn [point]
                            (let [end-x (/ (- (:x point) x) width)
-                                 end-y (/ (- (:y point) y) height)]
-                             (swap! state assoc
-                                    :end-x end-x
-                                    :end-y end-y)))
+                                 end-y (/ (- (:y point) y) height)
+
+                                 end-x (mth/precision end-x 2)
+                                 end-y (mth/precision end-y 2)]
+                             (change! {:end-x end-x :end-y end-y})))
 
         on-change-width (fn [point]
                           (let [scale-factor-y (/ gradient-length (/ height 2))
                                 norm-dist (/ (gpt/distance point from-p)
                                              (* (/ width 2) scale-factor-y))]
-                            (swap! state assoc :width norm-dist)))
+
+                            (change! {:width norm-dist})))
 
         on-change-stop-color (fn [offset color opacity] (println "change-color"))]
 
-    (mf/use-effect
-     (mf/deps shape)
-     (fn []
-       (reset! state (:fill-color-gradient shape default-gradient))))
-
-    (mf/use-effect
-     (mf/deps @state)
-     (fn []
-       (when (not= (:fill-color-gradient shape) @state)
-         (st/emit! (dwc/update-shapes
-                    [(:id shape)]
-                    #(assoc % :fill-color-gradient @state))))))
-
-    [:& gradient-handler-transformed
-     {:from-p from-p
-      :to-p to-p
-      :width-p (when (= :radial (:type @state)) width-p)
-      :from-color {:value start-color :opacity start-opacity}
-      :to-color {:value end-color :opacity end-opacity}
-      :zoom zoom
-      :on-change-start on-change-start
-      :on-change-finish on-change-finish
-      :on-change-width on-change-width
-      :on-change-stop-color on-change-stop-color}]))
+    (when gradient
+      [:& gradient-handler-transformed
+       {:from-p from-p
+        :to-p to-p
+        :width-p (when (= :radial (:type gradient)) width-p)
+        :from-color {:value start-color :opacity start-opacity}
+        :to-color {:value end-color :opacity end-opacity}
+        :zoom zoom
+        :on-change-start on-change-start
+        :on-change-finish on-change-finish
+        :on-change-width on-change-width
+        :on-change-stop-color on-change-stop-color}])))

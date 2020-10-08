@@ -10,16 +10,18 @@
 (ns app.main.ui.workspace.sidebar.options.rows.color-row
   (:require
    [rumext.alpha :as mf]
+   [cuerdas.core :as str]
    [app.common.math :as math]
    [app.util.dom :as dom]
    [app.util.data :refer [classnames]]
    [app.util.i18n :as i18n :refer [tr]]
    [app.main.data.modal :as modal]
    [app.common.data :as d]
-   [app.main.refs :as refs]))
+   [app.main.refs :as refs]
+   [app.util.color :as uc]))
 
 (defn color-picker-callback
-  [color handle-change-color handle-open handle-close disable-opacity]
+  [color handle-change-color handle-open handle-close]
   (fn [event]
     (let [x (.-clientX event)
           y (.-clientY event)
@@ -27,14 +29,22 @@
                  :y y
                  :on-change handle-change-color
                  :on-close handle-close
-                 :value (:value color)
-                 :opacity (:opacity color)
-                 :disable-opacity disable-opacity}]
+                 :data color}]
       (handle-open)
       (modal/show! :colorpicker props))))
 
-(defn value-to-background [value]
-  (if (= value :multiple) "transparent" value))
+
+;; TODO: REMOVE `VALUE` WHEN COLOR IS INTEGRATED
+(defn as-background [{:keys [color opacity gradient value] :as tt}]
+  (cond
+    (and gradient (not= :multiple gradient))
+    (uc/gradient->css gradient)
+
+    (not= color :multiple)
+    (let [[r g b] (uc/hex->rgb (or color value))]
+      (str/fmt "rgba(%s, %s, %s, %s)" r g b opacity))
+
+    :else "transparent"))
 
 (defn remove-hash [value]
   (if (or (nil? value) (= value :multiple)) "" (subs value 1)))
@@ -59,38 +69,39 @@
   (if (= v :multiple) nil v))
 
 (mf/defc color-row
-  [{:keys [color on-change on-open on-close disable-opacity]}]
-  (let [;;
-        file-colors (mf/deref refs/workspace-file-colors)
+  [{:keys [color on-change on-open on-close]}]
+  (let [file-colors (mf/deref refs/workspace-file-colors)
         shared-libs (mf/deref refs/workspace-libraries)
 
         get-color-name (fn [{:keys [id file-id]}]
                          (let [src-colors (if file-id (get-in shared-libs [file-id :data :colors]) file-colors)]
                            (get-in src-colors [id :name])))
 
-        default-color {:value "#000000" :opacity 1}
-
         parse-color (fn [color]
-                      (-> (merge default-color color)
-                          (update :value #(or % "#000000"))
-                          (update :opacity #(or % 1))))
+                      (-> color
+                          (update :color #(or % (:value color)))))
 
         state (mf/use-state (parse-color color))
 
-        value (:value @state)
+        value (:color @state)
         opacity (:opacity @state)
 
         change-value (fn [new-value]
-                       (swap! state assoc :value new-value)
+                       (swap! state assoc :color new-value)
                        (when on-change (on-change new-value (remove-multiple opacity))))
 
         change-opacity (fn [new-opacity]
                          (swap! state assoc :opacity new-opacity)
                          (when on-change (on-change (remove-multiple value) new-opacity)))
 
-        handle-pick-color (fn [new-value new-opacity id file-id]
-                            (reset! state {:value new-value :opacity new-opacity})
-                            (when on-change (on-change new-value new-opacity id file-id)))
+        ;;handle-pick-color (fn [new-value new-opacity id file-id]
+        ;;                    (reset! state {:color new-value :opacity new-opacity})
+        ;;                    (when on-change (on-change new-value new-opacity id file-id)))
+
+        handle-pick-color (fn [color]
+                            (reset! state color)
+                            (when on-change
+                              (on-change color)))
 
         handle-open (fn [] (when on-open (on-open)))
 
@@ -123,28 +134,38 @@
     [:div.row-flex.color-data
      [:span.color-th
       {:class (when (and (:id color) (not= (:id color) :multiple)) "color-name")
-       :style {:background-color (-> value value-to-background)}
-       :on-click (color-picker-callback @state handle-pick-color handle-open handle-close disable-opacity)}
+       :style {:background (as-background color)}
+       :on-click (color-picker-callback @state handle-pick-color handle-open handle-close)}
       (when (= value :multiple) "?")]
 
-     (if (:id color)
+     (cond
+       ;; Rendering a color with ID
+       (:id color)
        [:div.color-info
         [:div.color-name (str (get-color-name color))]]
-       [:div.color-info
-        [:input {:value (-> value remove-hash)
-                 :pattern "^[0-9a-fA-F]{0,6}$"
-                 :placeholder (tr "settings.multiple")
-                 :on-click select-all
-                 :on-change handle-value-change}]])
 
-     (when (not disable-opacity)
-       [:div.input-element
-        {:class (classnames :percentail (not= opacity :multiple))}
-        [:input.input-text {:type "number"
-                            :value (-> opacity opacity->string)
-                            :placeholder (tr "settings.multiple")
-                            :on-click select-all
-                            :on-change handle-opacity-change
-                            :min "0"
-                            :max "100"}]])]))
+       ;; Rendering a gradient
+       (:gradient color)
+       [:div.color-info
+        [:div.color-name (str (get-in color [:gradient :type]))]]
+
+       ;; Rendering a plain color/opacity
+       :else
+       [:*
+        [:div.color-info
+         [:input {:value (-> value remove-hash)
+                  :pattern "^[0-9a-fA-F]{0,6}$"
+                  :placeholder (tr "settings.multiple")
+                  :on-click select-all
+                  :on-change handle-value-change}]]
+
+        [:div.input-element
+         {:class (classnames :percentail (not= opacity :multiple))}
+         [:input.input-text {:type "number"
+                             :value (-> opacity opacity->string)
+                             :placeholder (tr "settings.multiple")
+                             :on-click select-all
+                             :on-change handle-opacity-change
+                             :min "0"
+                             :max "100"}]]])]))
 

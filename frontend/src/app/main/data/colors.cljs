@@ -104,6 +104,34 @@
           (assoc-in [:workspace-local :picked-color-select] value)
           (assoc-in [:workspace-local :picked-shift?] shift?)))))
 
+(defn change-fill2
+  ([ids color]
+   (ptk/reify ::change-fill
+     ptk/WatchEvent
+     (watch [_ state s]
+       (let [pid (:current-page-id state)
+             objects (get-in state [:workspace-data :pages-index pid :objects])
+             children (mapcat #(cph/get-children % objects) ids)
+             ids (into ids children)
+
+             is-text? #(= :text (:type (get objects %)))
+             text-ids (filter is-text? ids)
+             shape-ids (filter (comp not is-text?) ids)
+
+             attrs (cond-> {:fill-color (:color color)
+                            :fill-color-ref-id (:id color)
+                            :fill-color-ref-file (:file-id color)
+                            :fill-color-gradient (:gradient color)
+                            :fill-opacity (:opacity color)})
+
+             update-fn (fn [shape] (merge shape attrs))
+             editors (get-in state [:workspace-local :editors])
+             reduce-fn (fn [state id]
+                         (update-in state [:workspace-data :pages-index pid :objects id]  update-fn))]
+
+         (rx/from (conj
+                   (map #(dwt/update-text-attrs {:id % :editor (get editors %) :attrs attrs}) text-ids)
+                   (dwc/update-shapes shape-ids update-fn))))))))
 
 (defn change-fill
   ([ids color id file-id]
