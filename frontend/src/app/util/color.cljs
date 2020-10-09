@@ -90,3 +90,16 @@
         (str/fmt "linear-gradient(to bottom, %s)" stops-css)
         (str/fmt "radial-gradient(circle, %s)" stops-css))))
 
+;; TODO: REMOVE `VALUE` WHEN COLOR IS INTEGRATED
+(defn color->background [{:keys [color opacity gradient value]}]
+  (let [color (or color value)
+        opacity (or opacity 1)]
+    (cond
+      (and gradient (not= :multiple gradient))
+      (gradient->css gradient)
+
+      (not= color :multiple)
+      (let [[r g b] (hex->rgb (or color value))]
+        (str/fmt "rgba(%s, %s, %s, %s)" r g b opacity))
+
+      :else "transparent")))

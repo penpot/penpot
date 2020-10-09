@@ -163,6 +163,27 @@
                    (map #(dwt/update-text-attrs {:id % :editor (get editors %) :attrs attrs}) text-ids)
                    (dwc/update-shapes shape-ids update-fn))))))))
 
+(defn change-stroke2 [ids color]
+  (ptk/reify ::change-stroke
+    ptk/WatchEvent
+    (watch [_ state s]
+      (let [objects (get-in state [:workspace-data :pages-index (:current-page-id state) :objects])
+            children (mapcat #(cph/get-children % objects) ids)
+            ids (into ids children)
+
+            update-fn (fn [s]
+                        (cond-> s
+                          true
+                          (assoc :stroke-color (:color color)
+                                 :stroke-color-gradient (:gradient color)
+                                 :stroke-color-ref-id (:id color)
+                                 :stroke-color-ref-file (:file-id color))
+
+                          (= (:stroke-style s) :none)
+                          (assoc :stroke-style :solid
+                                 :stroke-width 1
+                                 :stroke-opacity 1)))]
+        (rx/of (dwc/update-shapes ids update-fn))))))
 (defn change-stroke [ids color id file-id]
   (ptk/reify ::change-stroke
     ptk/WatchEvent
@@ -186,13 +207,14 @@
 
 (defn picker-for-selected-shape []
   ;; TODO: replace st/emit! by a subject push and set that in the WatchEvent
-  (let [handle-change-color (fn [color opacity id file-id shift?]
-                              (let [ids (get-in @st/state [:workspace-local :selected])]
-                                (st/emit!
-                                 (if shift?
-                                   (change-stroke ids color nil nil)
-                                   (change-fill ids color nil nil))
-                                 (md/hide))))]
+  (let [handle-change-color
+        (fn [color shift?]
+          (let [ids (get-in @st/state [:workspace-local :selected])]
+            (st/emit!
+             (if shift?
+               (change-stroke2 ids color)
+               (change-fill2 ids color))
+             (md/hide))))]
     (ptk/reify ::start-picker
       ptk/UpdateEvent
       (update [_ state]

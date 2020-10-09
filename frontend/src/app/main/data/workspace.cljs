@@ -1444,22 +1444,23 @@
 
 (defn change-canvas-color
   [color]
-  (s/assert string? color)
+  ;; TODO: Create a color spec
+  #_(s/assert string? color)
   (ptk/reify ::change-canvas-color
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id (get state :current-page-id)
             options (dwc/lookup-page-options state page-id)
-            ccolor  (:background options)]
+            previus-color  (:background options)]
         (rx/of (dwc/commit-changes
                 [{:type :set-option
                   :page-id page-id
                   :option :background
-                  :value color}]
+                  :value (:color color)}]
                 [{:type :set-option
                   :page-id page-id
                   :option :background
-                  :value ccolor}]
+                  :value previus-color}]
                 {:commit-local? true}))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

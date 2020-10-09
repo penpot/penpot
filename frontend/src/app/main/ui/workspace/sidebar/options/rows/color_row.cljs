@@ -34,18 +34,6 @@
       (modal/show! :colorpicker props))))
 
 
-;; TODO: REMOVE `VALUE` WHEN COLOR IS INTEGRATED
-(defn as-background [{:keys [color opacity gradient value] :as tt}]
-  (cond
-    (and gradient (not= :multiple gradient))
-    (uc/gradient->css gradient)
-
-    (not= color :multiple)
-    (let [[r g b] (uc/hex->rgb (or color value))]
-      (str/fmt "rgba(%s, %s, %s, %s)" r g b opacity))
-
-    :else "transparent"))
-
 (defn remove-hash [value]
   (if (or (nil? value) (= value :multiple)) "" (subs value 1)))
 
@@ -99,6 +87,7 @@
         ;;                    (when on-change (on-change new-value new-opacity id file-id)))
 
         handle-pick-color (fn [color]
+                            (prn "handle-pick-color" color)
                             (reset! state color)
                             (when on-change
                               (on-change color)))
@@ -136,7 +125,7 @@
     [:div.row-flex.color-data
      [:span.color-th
       {:class (when (and (:id color) (not= (:id color) :multiple)) "color-name")
-       :style {:background (as-background color)}
+       :style {:background (uc/color->background color)}
        :on-click (color-picker-callback @state handle-pick-color handle-open handle-close)}
       (when (= value :multiple) "?")]
 
@@ -149,7 +138,10 @@
        ;; Rendering a gradient
        (:gradient color)
        [:div.color-info
-        [:div.color-name (str (get-in color [:gradient :type]))]]
+        [:div.color-name
+         (case (get-in color [:gradient :type])
+           :linear "Linear gradient"
+           :radial "Radial gradient")]]
 
        ;; Rendering a plain color/opacity
        :else
