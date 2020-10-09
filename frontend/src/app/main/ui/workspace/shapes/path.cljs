@@ -18,6 +18,7 @@
    [app.main.ui.keyboard :as kbd]
    [app.main.ui.shapes.path :as path]
    [app.main.ui.shapes.filters :as filters]
+   [app.main.ui.shapes.gradients :as grad]
    [app.main.ui.workspace.shapes.common :as common]
    [app.main.data.workspace.drawing :as dr]
    [app.util.dom :as dom]
@@ -43,6 +44,7 @@
                                (dom/stop-propagation event)
                                (dom/prevent-default event)
                                (st/emit! (dw/start-edition-mode (:id shape)))))))
+
         filter-id (mf/use-memo filters/get-filter-id)]
 
     [:g.shape {:on-double-click on-double-click
@@ -50,5 +52,14 @@
                :on-context-menu on-context-menu
                :filter (filters/filter-str filter-id shape)}
      [:& filters/filters {:filter-id filter-id :shape shape}]
-     [:& path/path-shape {:shape shape :background? true}]]))
+
+     (when (:fill-color-gradient shape)
+       [:& grad/gradient {:attr :fill-color-gradient
+                          :shape shape}])
+
+     (when (:stroke-color-gradient shape)
+       [:& grad/gradient {:attr :stroke-color-gradient
+                          :shape shape}])
+     [:& path/path-shape {:shape shape
+                          :background? true}]]))
 

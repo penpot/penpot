@@ -15,7 +15,9 @@
    [app.main.store :as st]
    [app.main.ui.keyboard :as kbd]
    [app.main.ui.shapes.filters :as filters]
+   [app.main.ui.shapes.gradients :as grad]
    [app.util.dom :as dom]
+   [app.common.uuid :as uuid]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]))
@@ -72,10 +74,21 @@
                            (mf/deps shape)
                            #(on-context-menu % shape))
           filter-id (mf/use-memo filters/get-filter-id)]
+
       [:g.shape {:on-mouse-down on-mouse-down
                  :on-context-menu on-context-menu
                  :filter (filters/filter-str filter-id shape)}
+
        [:& filters/filters {:filter-id filter-id :shape shape}]
+
+       (when (:fill-color-gradient shape)
+         [:& grad/gradient {:attr :fill-color-gradient
+                            :shape shape}])
+
+       (when (:stroke-color-gradient shape)
+         [:& grad/gradient {:attr :stroke-color-gradient
+                            :shape shape}])
+       
        [:& component {:shape shape}]])))
 
 

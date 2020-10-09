@@ -27,9 +27,7 @@
         {:keys [id x y width height]} shape
         transform (geom/transform-matrix shape)
 
-        gradient-id (when (:fill-color-gradient shape) (str (uuid/next)))
-
-        props (-> (attrs/extract-style-attrs shape gradient-id)
+        props (-> (attrs/extract-style-attrs shape)
                   (obj/merge!
                    #js {:x x
                         :y y
@@ -38,12 +36,6 @@
                         :width width
                         :height height}))]
 
-
-    [:*
-     (when gradient-id
-       [:& gradient {:id gradient-id
-                     :shape shape
-                     :gradient (:fill-color-gradient shape)}])
-     [:& shape-custom-stroke {:shape shape
-                              :base-props props
-                              :elem-name "rect"}]]))
+    [:& shape-custom-stroke {:shape shape
+                             :base-props props
+                             :elem-name "rect"}]))

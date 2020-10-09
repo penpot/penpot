@@ -11,11 +11,11 @@
   (:require
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
-   [goog.object :as gobj]
+   [app.util.object :as obj]
    [app.common.uuid :as uuid]
    [app.common.geom.point :as gpt]))
 
-(mf/defc linear-gradient [{:keys [id shape gradient]}]
+(mf/defc linear-gradient [{:keys [id gradient shape]}]
   (let [{:keys [x y width height]} shape]
     [:defs
      [:linearGradient {:id id
@@ -29,12 +29,11 @@
                 :stop-color color
                 :stop-opacity opacity}])]]))
 
-(mf/defc radial-gradient [{:keys [id shape gradient]}]
+(mf/defc radial-gradient [{:keys [id gradient shape]}]
   (let [{:keys [x y width height]} shape]
     [:defs
      (let [translate-vec (gpt/point (+ x (* width (:start-x gradient)))
                                     (+ y (* height (:start-y gradient))))
-
            
            gradient-vec (gpt/to-vec (gpt/point (* width (:start-x gradient))
                                                (* height (:start-y gradient)))
@@ -71,8 +70,14 @@
 (mf/defc gradient
   {::mf/wrap-props false}
   [props]
-  (let [gradient (gobj/get props "gradient")]
+  (let [attr (obj/get props "attr")
+        shape (obj/get props "shape")
+
+        id (str (name attr) "_" (:id shape))
+        gradient (get shape attr)
+        gradient-props #js {:id id
+                            :gradient gradient
+                            :shape shape}]
     (case (:type gradient)
-      :linear [:> linear-gradient props]
-      :radial [:> radial-gradient props]
-      nil)))
+      :linear [:> linear-gradient gradient-props]
+      :radial [:> radial-gradient gradient-props])))

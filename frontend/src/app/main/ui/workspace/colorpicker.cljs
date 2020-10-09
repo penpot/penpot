@@ -21,7 +21,7 @@
    [app.main.store :as st]
    [app.main.refs :as refs]
    [app.main.data.workspace.libraries :as dwl]
-   [app.main.data.colors :as dwc]
+   [app.main.data.colors :as dc]
    [app.main.data.modal :as modal]
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [t]]))
@@ -43,6 +43,8 @@
 (def viewport
   (l/derived (l/in [:workspace-local :vport]) st/state))
 
+(def editing-spot-state-ref
+  (l/derived (l/in [:workspace-local :editing-stop]) st/state))
 
 ;; --- Color Picker Modal
 
@@ -525,6 +527,8 @@
         picked-color-select (mf/deref picked-color-select)
         picked-shift? (mf/deref picked-shift?)
 
+        editing-spot-state (mf/deref editing-spot-state-ref)
+
         locale    (mf/deref i18n/locale)
 
         ;; data-ref (mf/use-var data)
@@ -558,7 +562,8 @@
         (fn [offset]
           (let [offset-color (get-in @state [:stops offset])]
             (swap! state assoc :current-color offset-color)
-            (swap! state assoc :editing-stop offset)))
+            (swap! state assoc :editing-stop offset)
+            (st/emit! (dc/select-gradient-stop offset))))
 
         on-activate-gradient
         (fn [type]
@@ -568,11 +573,11 @@
                 (swap! state assoc :type :color)
                 (swap! state dissoc :editing-stop :stops :gradient-data))
               (do
-                (swap! state assoc :type type)
+                (swap! state assoc :type type
+                       :gradient-data (create-gradient-data type))
                 (when (not (:stops @state))
                   (swap! state assoc
                          :editing-stop 0
-                         :gradient-data (create-gradient-data type)
                          :stops {0 (:current-color @state)
                                  1 (-> (:current-color @state)
                                        (assoc :alpha 0))}))))))]
@@ -631,7 +636,7 @@
     ;; When closing the modal we update the recent-color list
     #_(mf/use-effect
      (fn [] (fn []
-              (st/emit! (dwc/stop-picker))
+              (st/emit! (dc/stop-picker))
               (st/emit! (dwl/add-recent-color (state->data @state))))))
 
     (mf/use-effect
@@ -658,6 +663,16 @@
               (on-change (:hex current-color) (:alpha current-color) nil nil picked-shift?))))
 
     (mf/use-effect
+     (mf/deps editing-spot-state)
+     #(when (not= editing-spot-state (:editing-stop @state))
+        (handle-change-stop (or editing-spot-state 0))))
+
+    (mf/use-effect
+     (mf/deps data)
+     #(let [gradient-data (-> data data->state :gradient-data)]
+       (swap! state assoc :gradient-data gradient-data)))
+
+    (mf/use-effect
      (mf/deps @state)
      (fn []
        (on-change (state->data @state))))
@@ -669,7 +684,7 @@
         {:class (when picking-color? "active")
          :on-click (fn []
                      (modal/allow-click-outside!)
-                     (st/emit! (dwc/start-picker)))}
+                     (st/emit! (dc/start-picker)))}
         i/picker]
 
        [:div.gradients-buttons
@@ -735,7 +750,7 @@
            i/plus])
 
         [:div.color-bullet.button {:style {:background-color "white"}
-                                   :on-click #(st/emit! (dwc/show-palette (parse-selected @selected-library)))}
+                                   :on-click #(st/emit! (dc/show-palette (parse-selected @selected-library)))}
          i/palette]
 
         (for [[idx {:keys [id file-id value]}] (map-indexed vector @current-library-colors)]

@@ -68,17 +68,29 @@
 
         fill-color (obj/get data "fill-color" fill)
         fill-opacity (obj/get data "fill-opacity" opacity)
+        fill-color-gradient (obj/get data "fill-color-gradient" opacity)
+        fill-color-gradient (-> (js->clj fill-color-gradient :keywordize-keys true)
+                                (update :type keyword))
+
         fill-color-ref-id (obj/get data "fill-color-ref-id")
         fill-color-ref-file (obj/get data "fill-color-ref-file")
 
         [r g b a] (uc/hex->rgba fill-color fill-opacity)
+        background (if fill-color-gradient
+                     (uc/gradient->css (js->clj fill-color-gradient))
+                     (str/format "rgba(%s, %s, %s, %s)" r g b a))
 
         fontsdb (deref fonts/fontsdb)
 
         base #js {:textDecoration text-decoration
-                  :color (str/format "rgba(%s, %s, %s, %s)" r g b a)
+                  ;:color (str/format "rgba(%s, %s, %s, %s)" r g b a)
                   :textTransform text-transform
-                  :lineHeight (or line-height "inherit")}]
+                  :lineHeight (or line-height "inherit")
+
+                  :background background
+                  :WebkitTextFillColor "transparent"
+                  :WebkitBackgroundClip "text"
+                  }]
 
     (when (and (string? letter-spacing)
                (pos? (alength letter-spacing)))
@@ -167,7 +179,8 @@
 
     (if (string? text)
       (let [style (generate-text-styles (clj->js node))]
-        [:span {:style style :key index} (if (= text "") "\u00A0" text)])
+        [:span {:style style
+                :key (str index "-" (:fill-color node))} (if (= text "") "\u00A0" text)])
       (let [children (map-indexed (fn [index node]
                                     (mf/element text-node {:index index :node node :key index}))
                                   children)]

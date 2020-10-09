@@ -32,7 +32,7 @@
    ["slate" :refer [Transforms]]))
 
 (def text-typography-attrs [:typography-ref-id :typography-ref-file])
-(def text-fill-attrs [:fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill :opacity ])
+(def text-fill-attrs [:fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient :fill :opacity ])
 (def text-font-attrs [:font-id :font-family :font-variant-id :font-size :font-weight :font-style])
 (def text-align-attrs [:text-align])
 (def text-spacing-attrs [:line-height :letter-spacing])

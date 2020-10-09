@@ -129,7 +129,9 @@
 
     (mf/use-effect
      (mf/deps color)
-     #(reset! state (parse-color color)))
+     (fn []
+       (modal/update-props! :colorpicker {:data (parse-color color)})
+       (reset! state (parse-color color))))
 
     [:div.row-flex.color-data
      [:span.color-th

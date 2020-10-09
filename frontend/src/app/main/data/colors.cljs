@@ -202,3 +202,10 @@
                                :type :colorpicker
                                :props {:on-change handle-change-color}
                                :allow-click-outside true}))))))
+
+(defn select-gradient-stop [spot]
+  (ptk/reify ::start-picker
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:workspace-local :editing-stop] spot)))))

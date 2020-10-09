@@ -88,5 +88,5 @@
 
       (if (= type :linear)
         (str/fmt "linear-gradient(to bottom, %s)" stops-css)
-        (str/fmt "radial-gradient(circle, %s" stops-css))))
+        (str/fmt "radial-gradient(circle, %s)" stops-css))))
 
