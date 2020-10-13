@@ -1,0 +1,173 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// This Source Code Form is "Incompatible With Secondary Licenses", as
+// defined by the Mozilla Public License, v. 2.0.
+//
+// Copyright (c) 2020 UXBOX Labs SL
+
+.color-cell {
+  .color-bullet {
+    background-color: $color-white;
+    // Creates strange artifacts
+    border: 2px solid $color-gray-60;
+    // box-shadow: 0 0 0 2px $color-gray-60;
+    border-radius: 50%;
+  }
+
+  &.cell-big .color-bullet {
+    width: 50px;
+    height: 50px;
+  }
+
+  &.cell-small .color-bullet {
+    width: 40px;
+    height: 40px;
+  }
+
+  .color-bullet.color-big {
+    width: 50px;
+    height: 50px;
+  }
+
+}
+
+.color-cell.current {
+  .color-bullet {
+    border-color: $color-gray-50;
+  }
+}
+
+ul.palette-menu .color-bullet {
+  width: 20px;
+  height: 20px;
+  border-radius: 12px;
+  border: 1px solid $color-gray-10;
+  margin-right: 5px;
+  background-size: 8px;
+}
+.color-cell.add-color .color-bullet {
+  align-items: center;
+  background-color: $color-gray-50;
+  border: 3px dashed $color-gray-10;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+  padding: .6rem;
+
+  svg {
+    fill: $color-gray-10;
+    height: 30px;
+    width: 30px;
+  }
+}
+
+.colorpicker-content .color-bullet {
+  grid-area: color;
+  width: 20px;
+  height: 20px;
+  background-color: rgba(var(--color));
+  border-radius: 12px;
+  border: 1px solid $color-gray-10;
+  background-size: 8px;
+}
+
+.asset-group .group-list-item .color-bullet {
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  margin-right: $x-small;
+}
+
+.color-cell.add-color:hover .color-bullet {
+  border-color: $color-gray-30;
+
+  svg {
+    fill: $color-gray-30;
+  }
+}
+
+.color-bullet {
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+
+  background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=") left center;
+
+  & > * {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+
+.color-data .color-bullet {
+  background-color: $color-gray-30;
+  border: 1px solid $color-gray-30;
+  border-radius: $br-small;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $color-gray-10;
+  flex-shrink: 0;
+  height: 20px;
+  margin: 5px 4px 0 0;
+  width: 20px;
+
+  &.color-name {
+    border-radius: 10px;
+  }
+
+  &.palette-th {
+    align-items: center;
+    border: 1px solid $color-gray-30;
+    display: flex;
+    justify-content: center;
+
+    svg {
+      fill: $color-gray-30;
+      height: 16px;
+      width: 16px;
+    }
+
+    &:hover {
+      border-color: $color-primary;
+      svg {
+        fill: $color-primary;
+      }
+
+    }
+  }
+}
+
+.colorpicker-content .libraries .selected-colors .color-bullet {
+  grid-area: auto;
+  margin-bottom: 0.25rem;
+  cursor: pointer;
+
+  &:hover {
+    border-color: $color-primary;
+  }
+
+  &.button {
+    background: $color-white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &.button svg {
+    width: 12px;
+    height: 12px;
+    fill: $color-gray-30;
+  }
+
+  &.plus-button svg {
+    width: 8px;
+    height: 8px;
+    fill: $color-black;
+  }
+}

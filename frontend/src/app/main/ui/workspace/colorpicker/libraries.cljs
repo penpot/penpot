@@ -25,6 +25,7 @@
    [app.main.data.modal :as modal]
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [t]]
+   [app.main.ui.components.color-bullet :refer [color-bullet]]
    [app.main.ui.workspace.colorpicker.gradients :refer [gradients]]
    [app.main.ui.workspace.colorpicker.harmony :refer [harmony-selector]]
    [app.main.ui.workspace.colorpicker.hsva :refer [hsva-selector]]
@@ -53,13 +54,14 @@
        (let [mapped-colors
              (cond
                (= @selected-library "recent")
-               (map #(hash-map :value %) (reverse (or recent-colors [])))
+               ;; The `map?` check is to keep backwards compatibility. We transform from string to map
+               (map #(if (map? %) % (hash-map :color %)) (reverse (or recent-colors [])))
 
                (= @selected-library "file")
-               (map #(select-keys % [:id :value]) (vals file-colors))
+               (vals file-colors)
 
                :else ;; Library UUID
-               (map #(merge {:file-id (uuid @selected-library)} (select-keys % [:id :value]))
+               (map #(merge {:file-id (uuid @selected-library)})
                     (vals (get-in shared-libs [(uuid @selected-library) :data :colors]))))]
          (reset! current-library-colors (into [] mapped-colors)))))
 
@@ -94,7 +96,6 @@
        i/palette]
 
       (for [[idx color] (map-indexed vector @current-library-colors)]
-        [:div.color-bullet
-         {:key (str "color-" idx)
-          :on-click #(on-select-color color)
-          :style {:background (uc/color->background color)}}])]]))
+        [:& color-bullet {:key (str "color-" idx)
+                          :color color
+                          :on-click #(on-select-color color)}])]]))

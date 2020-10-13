@@ -56,31 +56,34 @@
     (<= % max-safe-int)))
 
 
-(s/def :internal.page.gradient.stop/color ::string)
-(s/def :internal.page.gradient.stop/opacity ::safe-number)
-(s/def :internal.page.gradient.stop/offset ::safe-number)
 
-(s/def :internal.page.gradient/start-x ::safe-number)
-(s/def :internal.page.gradient/start-y ::safe-number)
-(s/def :internal.page.gradient/end-x ::safe-number)
-(s/def :internal.page.gradient/end-y ::safe-number)
-(s/def :internal.page.gradient/width ::safe-number)
+(s/def :internal.gradient.stop/color ::string)
+(s/def :internal.gradient.stop/opacity ::safe-number)
+(s/def :internal.gradient.stop/offset ::safe-number)
 
-(s/def :internal.page.gradient/stop
-  (s/keys :req-un [:internal.page.gradient.stop/color
-                   :internal.page.gradient.stop/opacity
-                   :internal.page.gradient.stop/offset]))
+(s/def :internal.gradient/type #{:linear :radial})
+(s/def :internal.gradient/start-x ::safe-number)
+(s/def :internal.gradient/start-y ::safe-number)
+(s/def :internal.gradient/end-x ::safe-number)
+(s/def :internal.gradient/end-y ::safe-number)
+(s/def :internal.gradient/width ::safe-number)
 
-(s/def :internal.page.gradient/stops
-  (s/map-of ::safe-number :internal.page.gradient/stop))
+(s/def :internal.gradient/stop
+  (s/keys :req-un [:internal.gradient.stop/color
+                   :internal.gradient.stop/opacity
+                   :internal.gradient.stop/offset]))
+
+(s/def :internal.gradient/stops
+  (s/coll-of :internal.gradient/stop :kind vector?))
 
 (s/def ::gradient
-  (s/keys :req-un [:internal.page.gradient/start-x
-                   :internal.page.gradient/start-y
-                   :internal.page.gradient/end-x
-                   :internal.page.gradient/end-y
-                   :internal.page.gradient/width
-                   :internal.page.gradient/stops]))
+  (s/keys :req-un [:internal.gradient/type
+                   :internal.gradient/start-x
+                   :internal.gradient/start-y
+                   :internal.gradient/end-x
+                   :internal.gradient/end-y
+                   :internal.gradient/width
+                   :internal.gradient/stops]))
 
 ;; Page Options
 (s/def :internal.page.grid.color/value string?)
@@ -292,13 +295,26 @@
                    :internal.page/options
                    :internal.page/objects]))
 
+
 (s/def :internal.color/name ::string)
 (s/def :internal.color/value ::string)
+(s/def :internal.color/color ::string)
+(s/def :internal.color/opacity ::safe-number)
+(s/def :internal.color/gradient ::gradient)
 
 (s/def ::color
   (s/keys :req-un [::id
-                   :internal.color/name
-                   :internal.color/value]))
+                   :internal.color/name]
+          :opt-un [:internal.color/value
+                   :internal.color/color
+                   :internal.color/opacity
+                   :internal.color/gradient]))
+
+(s/def ::recent-color
+  (s/keys :opt-un [:internal.color/value
+                   :internal.color/color
+                   :internal.color/opacity
+                   :internal.color/gradient]))
 
 (s/def :internal.media-object/name ::string)
 (s/def :internal.media-object/path ::string)
@@ -324,7 +340,7 @@
   (s/map-of ::uuid ::color))
 
 (s/def :internal.file/recent-colors
-  (s/coll-of ::string :kind vector?))
+  (s/coll-of ::recent-color :kind vector?))
 
 (s/def :internal.typography/id ::id)
 (s/def :internal.typography/name ::string)
@@ -438,8 +454,10 @@
 (defmethod change-spec :del-color [_]
   (s/keys :req-un [::id]))
 
+(s/def :internal.changes.add-recent-color/color ::recent-color)
+
 (defmethod change-spec :add-recent-color [_]
-  (s/keys :req-un [:recent-color/color]))
+  (s/keys :req-un [:internal.changes.add-recent-color/color]))
 
 (s/def :internal.changes.media/object ::media-object)
 

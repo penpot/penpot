@@ -12,6 +12,7 @@
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
    [app.common.math :as math]
+   [app.main.ui.components.color-bullet :refer [color-bullet color-name]]
    [app.util.dom :as dom]
    [app.util.data :refer [classnames]]
    [app.util.i18n :as i18n :refer [tr]]
@@ -115,7 +116,9 @@
        (modal/update-props! :colorpicker {:data (parse-color color)})))
 
     [:div.row-flex.color-data
-     [:span.color-th
+     [:& color-bullet {:color color
+                       :on-click handle-click-color}]
+     #_[:span.color-th
       {:class (when (and (:id color) (not= (:id color) :multiple)) "color-name")
        :style {:background (uc/color->background color)}
        :on-click handle-click-color}

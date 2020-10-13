@@ -207,7 +207,7 @@
               (dom/set-css-property node "--saturation-grad-to" (format-hsl hsl-to)))))
 
     ;; When closing the modal we update the recent-color list
-    #_(mf/use-effect
+    (mf/use-effect
      (fn [] (fn []
               (st/emit! (dc/stop-picker))
               (st/emit! (dwl/add-recent-color (state->data @state))))))
@@ -276,6 +276,14 @@
                      :editing-stop (:editing-stop @state)
                      :on-select-stop handle-change-stop}]
 
+      [:div.colorpicker-tabs
+       [:div.colorpicker-tab {:class (when (= @active-tab :ramp) "active")
+                              :on-click (change-tab :ramp)} i/picker-ramp]
+       [:div.colorpicker-tab {:class (when (= @active-tab :harmony) "active")
+                              :on-click (change-tab :harmony)} i/picker-harmony]
+       [:div.colorpicker-tab {:class (when (= @active-tab :hsva) "active")
+                              :on-click (change-tab :hsva)} i/picker-hsv]]
+
       (if picking-color?
         [:div.picker-detail-wrapper
          [:div.center-circle]
@@ -299,13 +307,7 @@
 
       [:& libraries {:current-color current-color
                      :on-select-color on-select-library-color}]]
-     [:div.colorpicker-tabs
-      [:div.colorpicker-tab {:class (when (= @active-tab :ramp) "active")
-                             :on-click (change-tab :ramp)} i/picker-ramp]
-      [:div.colorpicker-tab {:class (when (= @active-tab :harmony) "active")
-                             :on-click (change-tab :harmony)} i/picker-harmony]
-      [:div.colorpicker-tab {:class (when (= @active-tab :hsva) "active")
-                             :on-click (change-tab :hsva)} i/picker-hsv]]
+
      (when on-accept
        [:div.actions
         [:button.btn-primary.btn-large

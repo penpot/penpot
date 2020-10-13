@@ -104,7 +104,7 @@
           (assoc-in [:workspace-local :picked-color-select] value)
           (assoc-in [:workspace-local :picked-shift?] shift?)))))
 
-(defn change-fill2
+(defn change-fill
   ([ids color]
    (ptk/reify ::change-fill
      ptk/WatchEvent
@@ -133,7 +133,7 @@
                    (map #(dwt/update-text-attrs {:id % :editor (get editors %) :attrs attrs}) text-ids)
                    (dwc/update-shapes shape-ids update-fn))))))))
 
-(defn change-fill
+#_(defn change-fill
   ([ids color id file-id]
    (change-fill ids color 1 id file-id))
   ([ids color opacity id file-id]
@@ -163,7 +163,7 @@
                    (map #(dwt/update-text-attrs {:id % :editor (get editors %) :attrs attrs}) text-ids)
                    (dwc/update-shapes shape-ids update-fn))))))))
 
-(defn change-stroke2 [ids color]
+(defn change-stroke [ids color]
   (ptk/reify ::change-stroke
     ptk/WatchEvent
     (watch [_ state s]
@@ -184,7 +184,8 @@
                                  :stroke-width 1
                                  :stroke-opacity 1)))]
         (rx/of (dwc/update-shapes ids update-fn))))))
-(defn change-stroke [ids color id file-id]
+
+#_(defn change-stroke [ids color id file-id]
   (ptk/reify ::change-stroke
     ptk/WatchEvent
     (watch [_ state s]
@@ -212,8 +213,8 @@
           (let [ids (get-in @st/state [:workspace-local :selected])]
             (st/emit!
              (if shift?
-               (change-stroke2 ids color)
-               (change-fill2 ids color))
+               (change-stroke ids color)
+               (change-fill ids color))
              (md/hide))))]
     (ptk/reify ::start-picker
       ptk/UpdateEvent

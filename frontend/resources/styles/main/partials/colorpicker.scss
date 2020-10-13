@@ -241,15 +241,6 @@
     }
   }
 
-  .color-bullet {
-    grid-area: color;
-    width: 20px;
-    height: 20px;
-    background-color: rgba(var(--color));
-    border-radius: 12px;
-    border: 1px solid $color-gray-10;
-  }
-
   .shade-selector {
     display: grid;
     justify-items: center;
@@ -339,34 +330,6 @@
     .selected-colors::after {
       content: "";
       flex: auto;
-    }
-
-    .selected-colors .color-bullet {
-      grid-area: auto;
-      margin-bottom: 0.25rem;
-      cursor: pointer;
-
-      &:hover {
-        border-color: $color-primary;
-      }
-
-      &.button {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      &.button svg {
-        width: 12px;
-        height: 12px;
-        fill: $color-gray-30;
-      }
-
-      &.plus-button svg {
-        width: 8px;
-        height: 8px;
-        fill: $color-black;
-      }
     }
   }
 
