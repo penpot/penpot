@@ -109,6 +109,7 @@
   ([content controls actions tag]
    (show {:content content
           :type :info
+          :position :floating
           :controls controls
           :actions actions
           :tag tag})))
