@@ -55,6 +55,33 @@
     (>= % min-safe-int)
     (<= % max-safe-int)))
 
+
+(s/def :internal.page.gradient.stop/color ::string)
+(s/def :internal.page.gradient.stop/opacity ::safe-number)
+(s/def :internal.page.gradient.stop/offset ::safe-number)
+
+(s/def :internal.page.gradient/start-x ::safe-number)
+(s/def :internal.page.gradient/start-y ::safe-number)
+(s/def :internal.page.gradient/end-x ::safe-number)
+(s/def :internal.page.gradient/end-y ::safe-number)
+(s/def :internal.page.gradient/width ::safe-number)
+
+(s/def :internal.page.gradient/stop
+  (s/keys :req-un [:internal.page.gradient.stop/color
+                   :internal.page.gradient.stop/opacity
+                   :internal.page.gradient.stop/offset]))
+
+(s/def :internal.page.gradient/stops
+  (s/map-of ::safe-number :internal.page.gradient/stop))
+
+(s/def ::gradient
+  (s/keys :req-un [:internal.page.gradient/start-x
+                   :internal.page.gradient/start-y
+                   :internal.page.gradient/end-x
+                   :internal.page.gradient/end-y
+                   :internal.page.gradient/width
+                   :internal.page.gradient/stops]))
+
 ;; Page Options
 (s/def :internal.page.grid.color/value string?)
 (s/def :internal.page.grid.color/opacity ::safe-number)
@@ -110,10 +137,13 @@
 (s/def :internal.shape/blocked boolean?)
 (s/def :internal.shape/collapsed boolean?)
 (s/def :internal.shape/content any?)
+
 (s/def :internal.shape/fill-color string?)
+(s/def :internal.shape/fill-opacity ::safe-number)
+(s/def :internal.shape/fill-gradient (s/nilable ::gradient))
 (s/def :internal.shape/fill-color-ref-file (s/nilable uuid?))
 (s/def :internal.shape/fill-color-ref-id (s/nilable uuid?))
-(s/def :internal.shape/fill-opacity ::safe-number)
+
 (s/def :internal.shape/font-family string?)
 (s/def :internal.shape/font-size ::safe-integer)
 (s/def :internal.shape/font-style string?)

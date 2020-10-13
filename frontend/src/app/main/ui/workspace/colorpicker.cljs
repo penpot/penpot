@@ -83,6 +83,7 @@
         gradient-data (select-keys gradient [:start-x :start-y
                                              :end-x :end-y
                                              :width])]
+
     (cond-> {:type type
              :current-color current-color}
       gradient (assoc :gradient-data gradient-data)
@@ -113,7 +114,7 @@
    :width  1.0})
 
 (mf/defc colorpicker
-  [{:keys [data on-change on-accept]}]
+  [{:keys [data disable-gradient disable-opacity on-change on-accept]}]
   (let [state (mf/use-state (data->state data))
         active-tab (mf/use-state :ramp #_:harmony #_:hsva)
         locale (mf/deref i18n/locale)
@@ -138,8 +139,9 @@
         handle-change-color
         (fn [changes]
           (let [editing-stop (:editing-stop @state)]
-            (swap! state update :current-color merge changes)
-            (swap! state update-in [:stops editing-stop] merge changes)
+            (swap! state #(cond-> %
+                              true (update :current-color merge changes)
+                              editing-stop (update-in [:stops editing-stop] merge changes)))
 
             #_(when (:hex changes)
               (reset! value-ref (:hex changes)))
@@ -150,10 +152,12 @@
 
         handle-change-stop
         (fn [offset]
-          (let [offset-color (get-in @state [:stops offset])]
-            (swap! state assoc :current-color offset-color)
-            (swap! state assoc :editing-stop offset)
-            (st/emit! (dc/select-gradient-stop offset))))
+          (when-let [offset-color (get-in @state [:stops offset])]
+            (do (swap! state assoc
+                       :current-color offset-color
+                       :editing-stop offset)
+
+                (st/emit! (dc/select-gradient-stop offset)))))
 
         on-select-library-color
         (fn [color] (prn "color" color))
@@ -210,20 +214,21 @@
 
     (mf/use-effect
      (mf/deps picking-color? picked-color)
-     (fn [] (when picking-color?
-              (let [[r g b] (or picked-color [0 0 0])
-                    hex (uc/rgb->hex [r g b])
-                    [h s v] (uc/hex->hsv hex)]
-                
-                (swap! state update :current-color assoc
-                       :r r :g g :b b
-                       :h h :s s :v v
-                       :hex hex)
+     (fn []
+       (when picking-color?
+         (let [[r g b] (or picked-color [0 0 0])
+               hex (uc/rgb->hex [r g b])
+               [h s v] (uc/hex->hsv hex)]
 
-                ;; TODO: UPDATE TO USE GRADIENTS
-                #_(reset! value-ref hex)
-                #_(when picked-color-select
-                  (on-change hex (:alpha current-color) nil nil picked-shift?))))))
+           (swap! state update :current-color assoc
+                  :r r :g g :b b
+                  :h h :s s :v v
+                  :hex hex)
+
+           ;; TODO: UPDATE TO USE GRADIENTS
+           #_(reset! value-ref hex)
+           #_(when picked-color-select
+               (on-change hex (:alpha current-color) nil nil picked-shift?))))))
 
     ;; TODO: UPDATE TO USE GRADIENTS
     #_(mf/use-effect
@@ -256,14 +261,15 @@
                      (st/emit! (dc/start-picker)))}
         i/picker]
 
-       [:div.gradients-buttons
-        [:button.gradient.linear-gradient
-         {:on-click (on-activate-gradient :linear-gradient)
-          :class (when (= :linear-gradient (:type @state)) "active")}]
+       (when (not disable-gradient)
+         [:div.gradients-buttons
+          [:button.gradient.linear-gradient
+           {:on-click (on-activate-gradient :linear-gradient)
+            :class (when (= :linear-gradient (:type @state)) "active")}]
 
-        [:button.gradient.radial-gradient
-         {:on-click (on-activate-gradient :radial-gradient)
-          :class (when (= :radial-gradient (:type @state)) "active")}]]]
+          [:button.gradient.radial-gradient
+           {:on-click (on-activate-gradient :radial-gradient)
+            :class (when (= :radial-gradient (:type @state)) "active")}]])]
 
       [:& gradients {:type (:type @state)
                      :stops (:stops @state)
@@ -275,12 +281,19 @@
          [:div.center-circle]
          [:canvas#picker-detail {:width 200 :height 160}]]
         (case @active-tab
-          :ramp [:& ramp-selector {:color current-color :on-change handle-change-color}]
-          :harmony [:& harmony-selector {:color current-color :on-change handle-change-color}]
-          :hsva [:& hsva-selector {:color current-color :on-change handle-change-color}]
+          :ramp [:& ramp-selector {:color current-color
+                                   :disable-opacity disable-opacity
+                                   :on-change handle-change-color}]
+          :harmony [:& harmony-selector {:color current-color
+                                         :disable-opacity disable-opacity
+                                         :on-change handle-change-color}]
+          :hsva [:& hsva-selector {:color current-color
+                                   :disable-opacity disable-opacity
+                                   :on-change handle-change-color}]
           nil))
 
       [:& color-inputs {:type (if (= @active-tab :hsva) :hsv :rgb)
+                        :disable-opacity disable-opacity
                         :color current-color
                         :on-change handle-change-color}]
 
@@ -321,7 +334,10 @@
 (mf/defc colorpicker-modal
   {::mf/register modal/components
    ::mf/register-as :colorpicker}
-  [{:keys [x y default data page position on-change on-close on-accept] :as props}]
+  [{:keys [x y default data page position
+           disable-gradient
+           disable-opacity
+           on-change on-close on-accept] :as props}]
   (let [vport (mf/deref viewport)
         dirty? (mf/use-var false)
         last-change (mf/use-var nil)
@@ -350,6 +366,8 @@
     [:div.colorpicker-tooltip
      {:style (clj->js style)}
      [:& colorpicker {:data data
+                      :disable-gradient disable-gradient
+                      :disable-opacity disable-opacity
                       :on-change handle-change
                       :on-accept on-accept}]]))
 

@@ -49,7 +49,7 @@
                             :top (str (* 100 (- 1 (/ value 255))) "%")}}]]))
 
 
-(mf/defc ramp-selector [{:keys [color on-change]}]
+(mf/defc ramp-selector [{:keys [color disable-opacity on-change]}]
   (let [{hue :h saturation :s value :v alpha :alpha} color
 
         on-change-value-saturation
@@ -86,7 +86,8 @@
                            :value hue
                            :on-change on-change-hue}]
 
-      [:& slider-selector {:class "opacity"
-                           :max-value 1
-                           :value alpha
-                           :on-change on-change-opacity}]]]))
+      (when (not disable-opacity)
+        [:& slider-selector {:class "opacity"
+                             :max-value 1
+                             :value alpha
+                             :on-change on-change-opacity}])]]))

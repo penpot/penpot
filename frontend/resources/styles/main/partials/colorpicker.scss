@@ -280,6 +280,10 @@
     justify-items: center;
     grid-column-gap: 0.25rem;
 
+    &.disable-opacity {
+      grid-template-columns: 3.5rem repeat(3, 1fr);
+    }
+
     input {
       width: 100%;
       margin: 0;

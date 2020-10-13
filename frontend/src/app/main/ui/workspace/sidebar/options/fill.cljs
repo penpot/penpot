@@ -63,13 +63,14 @@
         (mf/use-callback
          (mf/deps ids)
          (fn [event]
-           (st/emit! (dc/change-fill ids cp/default-color nil nil))))
+           (st/emit! (dc/change-fill2 ids {:color cp/default-color
+                                           :opacity 1}))))
 
         on-delete
         (mf/use-callback
          (mf/deps ids)
          (fn [event]
-           (st/emit! (dc/change-fill ids nil nil nil))))
+           (st/emit! (dc/change-fill2 ids nil))))
 
         on-change
         (mf/use-callback

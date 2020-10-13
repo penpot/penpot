@@ -19,6 +19,7 @@
    [app.main.ui.workspace.shapes.common :as common]
    [app.main.data.workspace.selection :as dws]
    [app.main.ui.shapes.frame :as frame]
+   [app.main.ui.shapes.gradients :as grad]
    [app.main.ui.shapes.filters :as filters]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
@@ -126,8 +127,18 @@
                             :on-context-menu on-context-menu
                             :on-double-click on-double-click
                             :on-mouse-down on-mouse-down}]
+
            [:g.frame {:filter (filters/filter-str filter-id shape)}
             [:& filters/filters {:filter-id filter-id :shape shape}]
+            
+            (when (:fill-color-gradient shape)
+              [:& grad/gradient {:attr :fill-color-gradient
+                                 :shape shape}])
+
+            (when (:stroke-color-gradient shape)
+              [:& grad/gradient {:attr :stroke-color-gradient
+                                 :shape shape}])
+
             [:& frame-shape
              {:shape shape
               :childs children}]]])))))

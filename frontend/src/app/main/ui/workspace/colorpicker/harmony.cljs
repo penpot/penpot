@@ -69,7 +69,7 @@
         y (+ (/ canvas-side 2) (* comp-y (/ canvas-side 2)))]
     (gpt/point x y)))
 
-(mf/defc harmony-selector [{:keys [color on-change]}]
+(mf/defc harmony-selector [{:keys [color disable-opacity on-change]}]
   (let [canvas-ref (mf/use-ref nil)
         {hue :h saturation :s value :v alpha :alpha} color
 
@@ -146,9 +146,10 @@
                            :max-value 255
                            :vertical true
                            :on-change on-change-value}]
-      [:& slider-selector {:class "opacity"
-                           :vertical? true
-                           :value alpha
-                           :max-value 1
-                           :vertical true
-                           :on-change on-change-opacity}]]]))
+      (when (not disable-opacity)
+        [:& slider-selector {:class "opacity"
+                             :vertical? true
+                             :value alpha
+                             :max-value 1
+                             :vertical true
+                             :on-change on-change-opacity}])]]))

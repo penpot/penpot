@@ -27,7 +27,7 @@
    [app.util.i18n :as i18n :refer [t]]
    [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]))
 
-(mf/defc hsva-selector [{:keys [color on-change]}]
+(mf/defc hsva-selector [{:keys [color disable-opacity on-change]}]
   (let [{hue :h saturation :s value :v alpha :alpha} color
         handle-change-slider (fn [key]
                                (fn [new-value]
@@ -52,6 +52,8 @@
      [:& slider-selector
       {:class "value" :reverse? true :max-value 255 :value value :on-change (handle-change-slider :v)}]
 
-     [:span.hsva-selector-label "A"]
-     [:& slider-selector
-      {:class "opacity" :max-value 1 :value alpha :on-change on-change-opacity}]]))
+     (when (not disable-opacity)
+       [:*
+        [:span.hsva-selector-label "A"]
+        [:& slider-selector
+         {:class "opacity" :max-value 1 :value alpha :on-change on-change-opacity}]])]))

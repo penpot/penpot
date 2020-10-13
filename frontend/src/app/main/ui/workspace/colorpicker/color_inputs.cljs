@@ -26,7 +26,7 @@
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [t]]))
 
-(mf/defc color-inputs [{:keys [type color on-change]}]
+(mf/defc color-inputs [{:keys [type color disable-opacity on-change]}]
   (let [{red :r green :g blue :b
          hue :h saturation :s value :v
          hex :hex alpha :alpha} color
@@ -94,6 +94,7 @@
                  (dom/set-value! node (math/round property-val)))))))))
 
     [:div.color-values
+     {:class (when disable-opacity "disable-opacity")}
      [:input {:id "hex-value"
                         :ref (:hex refs)
                         :default-value hex
@@ -150,14 +151,15 @@
                  :default-value value
                  :on-change (on-change-property :v 255)}]])
 
-     [:input.alpha-value {:id "alpha-value"
-                          :ref (:alpha refs)
-                          :type "number"
-                          :min 0
-                          :step 1
-                          :max 100
-                          :default-value (if (= alpha :multiple) "" (math/precision alpha 2))
-                          :on-change on-change-opacity}]
+     (when (not disable-opacity)
+       [:input.alpha-value {:id "alpha-value"
+                            :ref (:alpha refs)
+                            :type "number"
+                            :min 0
+                            :step 1
+                            :max 100
+                            :default-value (if (= alpha :multiple) "" (math/precision alpha 2))
+                            :on-change on-change-opacity}])
 
      [:label.hex-label {:for "hex-value"} "HEX"]
      (if (= type :rgb)
@@ -169,4 +171,5 @@
         [:label.red-label {:for "hue-value"} "H"]
         [:label.green-label {:for "saturation-value"} "S"]
         [:label.blue-label {:for "value-value"} "V"]])
-     [:label.alpha-label {:for "alpha-value"} "A"]]))
+     (when (not disable-opacity)
+       [:label.alpha-label {:for "alpha-value"} "A"])]))
