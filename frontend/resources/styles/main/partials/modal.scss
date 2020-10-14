@@ -177,16 +177,26 @@
   }
 
   .accept-button {
-    border: 1px solid $color-danger;
     border-radius: 3px;
-    background: $color-danger;
-    color: $color-white;
     cursor: pointer;
-
     padding: 0.5rem 1rem;
 
-    &:hover {
-      background: $color-danger-dark;
+    &.danger {
+      background: $color-danger;
+      border: 1px solid $color-danger;
+      color: $color-white;
+      &:hover {
+        background: $color-danger-dark;
+      }
+    }
+
+    &.primary {
+      background: $color-primary;
+      border: 1px solid $color-primary;
+      color: $color-black;
+      &:hover {
+        background: $color-primary-dark;
+      }
     }
   }
 
