@@ -1263,13 +1263,13 @@
   "modals.delete-project-confirm.message" : {
     "used-in" : [ "src/app/main/ui/dashboard/files.cljs:57" ],
     "translations" : {
-      "en" : "Are you sure you wan't to delete this project?"
+      "en" : "Are you sure you want to delete this project?"
     }
   },
   "modals.delete-project-confirm.title" : {
     "used-in" : [ "src/app/main/ui/dashboard/files.cljs:56" ],
     "translations" : {
-      "en" : "Deleting project"
+      "en" : "Delete project"
     }
   },
   "modals.delete-team-confirm.accept" : {
