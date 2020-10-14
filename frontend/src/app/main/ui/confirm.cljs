@@ -14,12 +14,20 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr t]]
+   [app.util.data :refer [classnames]]
    [rumext.alpha :as mf]))
 
 (mf/defc confirm-dialog
   {::mf/register modal/components
    ::mf/register-as :confirm}
-  [{:keys [message title on-accept on-cancel hint cancel-label accept-label] :as props}]
+  [{:keys [message
+           title
+           on-accept
+           on-cancel
+           hint
+           cancel-label
+           accept-label
+           accept-style] :as props}]
   (let [locale       (mf/deref i18n/locale)
 
         on-accept    (or on-accept identity)
@@ -27,6 +35,7 @@
         message      (or message (t locale "ds.confirm-title"))
         cancel-label (or cancel-label (tr "ds.confirm-cancel"))
         accept-label (or accept-label (tr "ds.confirm-ok"))
+        accept-style (or accept-style :danger)
         title        (or title (t locale "ds.confirm-title"))
 
         accept-fn
@@ -58,13 +67,16 @@
 
       [:div.modal-footer
        [:div.action-buttons
-        [:input.cancel-button
-         {:type "button"
-          :value cancel-label
-          :on-click cancel-fn}]
+        (when-not (empty? cancel-label)
+          [:input.cancel-button
+           {:type "button"
+            :value cancel-label
+            :on-click cancel-fn}])
 
         [:input.accept-button
-         {:type "button"
+         {:class (classnames :danger (= accept-style :danger)
+                             :primary (= accept-style :primary))
+          :type "button"
           :value accept-label
           :on-click accept-fn}]]]]]))
 

@@ -107,10 +107,12 @@
          (mf/deps file)
          (st/emitf (modal/show
                     {:type :confirm
-                     :message (t locale "modals.add-shared-confirm.message" (:name file))
-                     :title (t locale "modals.add-shared-confirm.title")
+                     :message ""
+                     :title (t locale "modals.add-shared-confirm.message" (:name file))
                      :hint (t locale "modals.add-shared-confirm.hint")
+                     :cancel-label ""
                      :accept-label (t locale "modals.add-shared-confirm.accept")
+                     :accept-style :primary
                      :on-accept add-shared-fn})))
 
         on-remove-shared
@@ -118,9 +120,10 @@
          (mf/deps file)
          (st/emitf (modal/show
                     {:type :confirm
-                     :title (t locale "modals.remove-shared-confirm.title")
-                     :message (t locale "modals.remove-shared-confirm.message" (:name file))
+                     :message ""
+                     :title (t locale "modals.remove-shared-confirm.message" (:name file))
                      :hint (t locale "modals.remove-shared-confirm.hint")
+                     :cancel-label ""
                      :accept-label (t locale "modals.remove-shared-confirm.accept")
                      :on-accept del-shared-fn})))
 

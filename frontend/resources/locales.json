@@ -1155,12 +1155,6 @@
       "es" : "Añadir “%s” como Biblioteca Compartida"
     }
   },
-  "modals.add-shared-confirm.title" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:111", "src/app/main/ui/dashboard/grid.cljs:113" ],
-    "translations" : {
-      "en" : "Adding shared library"
-    }
-  },
   "modals.change-email.confirm-email" : {
     "used-in" : [ "src/app/main/ui/settings/change_email.cljs:103" ],
     "translations" : {
@@ -1411,12 +1405,6 @@
       "fr" : "",
       "ru" : "",
       "es" : "Añadir “%s” como Biblioteca Compartida"
-    }
-  },
-  "modals.remove-shared-confirm.title" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:121", "src/app/main/ui/dashboard/grid.cljs:126" ],
-    "translations" : {
-      "en" : "Unshare file"
     }
   },
   "notifications.profile-deletion-not-allowed" : {
