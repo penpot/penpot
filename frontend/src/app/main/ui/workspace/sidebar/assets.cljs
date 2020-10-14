@@ -217,8 +217,9 @@
           (st/emit! (dwl/update-color (assoc color :name name))))
 
         edit-color
-        (fn [value]
-          (st/emit! (dwl/update-color (assoc color :color value))))
+        (fn [new-color]
+          (let [updated-color (merge new-color (select-keys color [:id :file-id :name]))]
+            (st/emit! (dwl/update-color updated-color))))
 
         delete-color
         (fn []
@@ -253,7 +254,6 @@
                         :y (.-clientY event)
                         :on-accept edit-color
                         :data color
-                        :disable-opacity true
                         :position :right}))
 
         on-context-menu
@@ -321,8 +321,8 @@
                         {:x (.-clientX event)
                          :y (.-clientY event)
                          :on-accept add-color
-                         :value "#406280"
-                         :disable-opacity true
+                         :data {:color "#406280"
+                                :opacity 1}
                          :position :right})))]
     [:div.asset-group
      [:div.group-title {:class (when (not open?) "closed")}
@@ -334,7 +334,12 @@
        [:div.group-list
         (for [color colors]
           [:& color-item {:key (:id color)
-                          :color color
+                          :color (if (:value color)
+                                   (-> color
+                                       (assoc :color (:value color)
+                                              :opacity 1)
+                                       (dissoc :value))                                   
+                                   color)
                           :file-id file-id
                           :local? local?
                           :locale locale}])])]))

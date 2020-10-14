@@ -25,8 +25,8 @@
    [app.main.data.modal :as modal]
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [t]]
+   [app.main.ui.components.color-bullet :refer [color-bullet]]
    [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]))
-
 
 (mf/defc value-saturation-selector [{:keys [hue saturation value on-change]}]
   (let [dragging? (mf/use-state false)
@@ -50,7 +50,8 @@
 
 
 (mf/defc ramp-selector [{:keys [color disable-opacity on-change]}]
-  (let [{hue :h saturation :s value :v alpha :alpha} color
+  (let [{hex :hex
+         hue :h saturation :s value :v alpha :alpha} color
 
         on-change-value-saturation
         (fn [new-saturation new-value]
@@ -80,7 +81,8 @@
        :on-change on-change-value-saturation}]
 
      [:div.shade-selector
-      [:div.color-bullet]
+      [:& color-bullet {:color {:color hex
+                                :opacity alpha}}]
       [:& slider-selector {:class "hue"
                            :max-value 360
                            :value hue

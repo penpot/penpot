@@ -25,7 +25,7 @@
                          :ry (:ry shape)}))
 
 (defn add-fill [attrs shape]
-  (let [fill-color-gradient-id (str "fill-color-gradient_" (:id shape))]
+  (let [fill-color-gradient-id (str "fill-color-gradient_" (:render-id shape))]
     (if (:fill-color-gradient shape)
       (obj/merge! attrs #js {:fill (str/format "url(#%s)" fill-color-gradient-id)})
       (obj/merge! attrs #js {:fill (or (:fill-color shape) "transparent")
@@ -33,7 +33,7 @@
 
 (defn add-stroke [attrs shape]
   (let [stroke-style (:stroke-style shape :none)
-        stroke-color-gradient-id (str "stroke-color-gradient_" (:id shape))]
+        stroke-color-gradient-id (str "stroke-color-gradient_" (:render-id shape))]
     (if (not= stroke-style :none)
       (if (:stroke-color-gradient shape)
         (obj/merge! attrs

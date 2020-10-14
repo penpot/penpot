@@ -49,8 +49,8 @@
            scale-factor-x (* scale-factor-y (:width gradient))
 
            scale-vec (gpt/point (* scale-factor-y (/ height 2))
-                                (* scale-factor-x (/ width 2))
-                                ) 
+                                (* scale-factor-x (/ width 2)))
+
            tr-translate (str/fmt "translate(%s, %s)" (:x translate-vec) (:y translate-vec))
            tr-rotate (str/fmt "rotate(%s)" angle)
            tr-scale (str/fmt "scale(%s, %s)" (:x scale-vec) (:y scale-vec))
@@ -72,8 +72,9 @@
   [props]
   (let [attr (obj/get props "attr")
         shape (obj/get props "shape")
+        render-id (obj/get props "render-id")
 
-        id (str (name attr) "_" (:id shape))
+        id (str (name attr) "_" render-id)
         gradient (get shape attr)
         gradient-props #js {:id id
                             :gradient gradient

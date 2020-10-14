@@ -869,7 +869,7 @@
 
 (defmethod process-change :mod-color
   [data {:keys [color]}]
-  (d/update-in-when data [:colors (:id color)] merge color))
+  (d/assoc-in-when data [:colors (:id color)] color))
 
 (defmethod process-change :del-color
   [data {:keys [id]}]
@@ -965,3 +965,4 @@
   (ex/raise :type :not-implemented
             :code :operation-not-implemented
             :context {:type (:type op)}))
+

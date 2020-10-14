@@ -68,7 +68,6 @@ ul.palette-menu .color-bullet {
   grid-area: color;
   width: 20px;
   height: 20px;
-  background-color: rgba(var(--color));
   border-radius: 12px;
   border: 1px solid $color-gray-10;
   background-size: 8px;
@@ -95,6 +94,7 @@ ul.palette-menu .color-bullet {
   overflow: hidden;
 
   background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=") left center;
+  background-color: $color-white;
 
   & > * {
     width: 100%;

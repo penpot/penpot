@@ -306,16 +306,15 @@
                         :on-change handle-change-color}]
 
       [:& libraries {:current-color current-color
-                     :on-select-color on-select-library-color}]]
+                     :on-select-color on-select-library-color}]
 
-     (when on-accept
-       [:div.actions
-        [:button.btn-primary.btn-large
-         {:on-click (fn []
-                      ;; TODO: REVIEW FOR GRADIENTS
-                      #_(on-accept @value-ref)
-                      (modal/hide!))}
-         (t locale "workspace.libraries.colors.save-color")]])])
+      (when on-accept
+        [:div.actions
+         [:button.btn-primary.btn-large
+          {:on-click (fn []
+                       (on-accept (state->data @state))
+                       (modal/hide!))}
+          (t locale "workspace.libraries.colors.save-color")]])]])
   )
 
 (defn calculate-position

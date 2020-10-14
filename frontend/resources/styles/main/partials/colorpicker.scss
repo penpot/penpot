@@ -443,13 +443,10 @@
 
   .colorpicker-tabs {
     display: flex;
-    margin-top: 0.25rem;
+    margin: 0.5rem 0;
+    border-radius: 5px;
+    border: 1px solid $color-gray-10;
     height: 2rem;
-    background-color: $color-gray-10;
-
-    .active {
-      background-color: $color-white;
-    }
 
     .colorpicker-tab {
       cursor: pointer;
@@ -461,9 +458,21 @@
       svg {
         width: 16px;
         height: 16px;
-        fill: $color-gray-30;
+        fill: $color-gray-20;
       }
     }
+
+    .active {
+      background-color: $color-gray-10;
+      svg {
+        fill: $color-gray-60;
+      }
+    }
+
+    :hover svg {
+      fill: $color-primary;
+    }
+
   }
 }
 

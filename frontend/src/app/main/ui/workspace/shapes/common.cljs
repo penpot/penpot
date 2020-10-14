@@ -73,22 +73,24 @@
           on-context-menu (mf/use-callback
                            (mf/deps shape)
                            #(on-context-menu % shape))
-          filter-id (mf/use-memo filters/get-filter-id)]
+          render-id (mf/use-memo #(str (uuid/next)))]
 
       [:g.shape {:on-mouse-down on-mouse-down
                  :on-context-menu on-context-menu
-                 :filter (filters/filter-str filter-id shape)}
+                 :filter (filters/filter-str (str "filter_" render-id) shape)}
 
-       [:& filters/filters {:filter-id filter-id :shape shape}]
+       [:& filters/filters {:filter-id (str "filter_" render-id) :shape shape}]
 
        (when (:fill-color-gradient shape)
          [:& grad/gradient {:attr :fill-color-gradient
+                            :render-id render-id
                             :shape shape}])
 
        (when (:stroke-color-gradient shape)
          [:& grad/gradient {:attr :stroke-color-gradient
+                            :render-id render-id
                             :shape shape}])
        
-       [:& component {:shape shape}]])))
+       [:& component {:shape (assoc shape :render-id render-id)}]])))
 
 
