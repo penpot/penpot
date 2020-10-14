@@ -297,10 +297,10 @@
 
 
 (s/def :internal.color/name ::string)
-(s/def :internal.color/value ::string)
-(s/def :internal.color/color ::string)
-(s/def :internal.color/opacity ::safe-number)
-(s/def :internal.color/gradient ::gradient)
+(s/def :internal.color/value (s/nilable ::string))
+(s/def :internal.color/color (s/nilable ::string))
+(s/def :internal.color/opacity (s/nilable ::safe-number))
+(s/def :internal.color/gradient (s/nilable ::gradient))
 
 (s/def ::color
   (s/keys :req-un [::id

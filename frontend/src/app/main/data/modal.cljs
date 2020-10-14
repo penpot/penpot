@@ -50,7 +50,9 @@
   (ptk/reify ::update-modal
     ptk/UpdateEvent
     (update [_ state]
-      (c/update state ::modal merge options))))
+      (cond-> state
+        (::modal state)
+        (c/update ::modal merge options)))))
 
 (defn show!
   [type props]

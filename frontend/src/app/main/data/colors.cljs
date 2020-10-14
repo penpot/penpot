@@ -133,36 +133,6 @@
                    (map #(dwt/update-text-attrs {:id % :editor (get editors %) :attrs attrs}) text-ids)
                    (dwc/update-shapes shape-ids update-fn))))))))
 
-#_(defn change-fill
-  ([ids color id file-id]
-   (change-fill ids color 1 id file-id))
-  ([ids color opacity id file-id]
-   (ptk/reify ::change-fill
-     ptk/WatchEvent
-     (watch [_ state s]
-       (let [pid (:current-page-id state)
-             objects (get-in state [:workspace-data :pages-index pid :objects])
-             children (mapcat #(cph/get-children % objects) ids)
-             ids (into ids children)
-
-             is-text? #(= :text (:type (get objects %)))
-             text-ids (filter is-text? ids)
-             shape-ids (filter (comp not is-text?) ids)
-
-             attrs (cond-> {:fill-color color
-                            :fill-color-ref-id id
-                            :fill-color-ref-file file-id}
-                     (and opacity (not= opacity :multiple)) (assoc :fill-opacity opacity))
-
-             update-fn (fn [shape] (merge shape attrs))
-             editors (get-in state [:workspace-local :editors])
-             reduce-fn (fn [state id]
-                         (update-in state [:workspace-data :pages-index pid :objects id]  update-fn))]
-
-         (rx/from (conj
-                   (map #(dwt/update-text-attrs {:id % :editor (get editors %) :attrs attrs}) text-ids)
-                   (dwc/update-shapes shape-ids update-fn))))))))
-
 (defn change-stroke [ids color]
   (ptk/reify ::change-stroke
     ptk/WatchEvent
@@ -185,49 +155,44 @@
                                  :stroke-opacity 1)))]
         (rx/of (dwc/update-shapes ids update-fn))))))
 
-#_(defn change-stroke [ids color id file-id]
-  (ptk/reify ::change-stroke
-    ptk/WatchEvent
-    (watch [_ state s]
-      (let [objects (get-in state [:workspace-data :pages-index (:current-page-id state) :objects])
-            children (mapcat #(cph/get-children % objects) ids)
-            ids (into ids children)
-
-            update-fn (fn [s]
-                        (cond-> s
-                          true
-                          (assoc :stroke-color color
-                                 :stroke-color-ref-id id
-                                 :stroke-color-ref-file file-id)
-
-                          (= (:stroke-style s) :none)
-                          (assoc :stroke-style :solid
-                                 :stroke-width 1
-                                 :stroke-opacity 1)))]
-        (rx/of (dwc/update-shapes ids update-fn))))))
-
 (defn picker-for-selected-shape []
-  ;; TODO: replace st/emit! by a subject push and set that in the WatchEvent
-  (let [handle-change-color
-        (fn [color shift?]
-          (let [ids (get-in @st/state [:workspace-local :selected])]
-            (st/emit!
-             (if shift?
-               (change-stroke ids color)
-               (change-fill ids color))
-             (md/hide))))]
-    (ptk/reify ::start-picker
+  (let [sub (rx/subject)]
+    (ptk/reify ::picker-for-selected-shape
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (let [ids (get-in state [:workspace-local :selected])
+              stop? (->> stream
+                         (rx/filter (ptk/type? ::stop-picker)))
+
+              update-events (fn [[color shift?]]
+                              (rx/of  (if shift?
+                                        (change-stroke ids color)
+                                        (change-fill ids color))
+                                      (stop-picker)))]
+          (rx/merge
+           ;; Stream that updates the stroke/width and stops if `esc` pressed
+           (->> sub
+                (rx/take-until stop?)
+                (rx/flat-map update-events))
+
+           ;; Hide the modal if the stop event is emitted
+           (->> stop?
+                (rx/first)
+                (rx/map #(md/hide))))))
+
       ptk/UpdateEvent
       (update [_ state]
-        (-> state
-            (assoc-in [:workspace-local :picking-color?] true)
-            (assoc ::md/modal {:id (random-uuid)
-                               :type :colorpicker
-                               :props {:on-change handle-change-color}
-                               :allow-click-outside true}))))))
+        (let [handle-change-color (fn [color shift?] (rx/push! sub [color shift?]))]
+          (-> state
+              (assoc-in [:workspace-local :picking-color?] true)
+              (assoc ::md/modal {:id (random-uuid)
+                                 :data {:color "#000000" :opacity 1}
+                                 :type :colorpicker
+                                 :props {:on-change handle-change-color}
+                                 :allow-click-outside true})))))))
 
 (defn select-gradient-stop [spot]
-  (ptk/reify ::start-picker
+  (ptk/reify ::select-gradient-stop
     ptk/UpdateEvent
     (update [_ state]
       (-> state

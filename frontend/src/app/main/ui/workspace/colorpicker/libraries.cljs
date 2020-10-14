@@ -32,7 +32,7 @@
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector]]
    [app.main.ui.workspace.colorpicker.color-inputs :refer [color-inputs]]))
 
-(mf/defc libraries [{:keys [current-color on-select-color]}]
+(mf/defc libraries [{:keys [current-color on-select-color on-add-library-color]}]
   (let [selected-library       (mf/use-state "recent")
         current-library-colors (mf/use-state [])
 
@@ -69,7 +69,7 @@
     (mf/use-effect
      (mf/deps file-colors)
      (fn [] (when (= @selected-library "file")
-              (let [colors (map #(select-keys % [:id :value]) (vals file-colors))]
+              (let [colors (vals file-colors)]
                 (reset! current-library-colors (into [] colors))))))
 
 
@@ -88,7 +88,7 @@
      [:div.selected-colors
       (when (= "file" @selected-library)
         [:div.color-bullet.button.plus-button {:style {:background-color "white"}
-                                               :on-click #(st/emit! (dwl/add-color current-color))}
+                                               :on-click on-add-library-color}
          i/plus])
 
       [:div.color-bullet.button {:style {:background-color "white"}

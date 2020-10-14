@@ -121,14 +121,15 @@
 
         ref-picker (mf/use-ref)
 
+        dirty? (mf/use-var false)
+        last-color (mf/use-var data)
+
         picking-color? (mf/deref picking-color?)
         picked-color (mf/deref picked-color)
         picked-color-select (mf/deref picked-color-select)
         picked-shift? (mf/deref picked-shift?)
 
         editing-spot-state (mf/deref editing-spot-state-ref)
-
-        ;; data-ref (mf/use-var data)
 
         current-color (:current-color @state)
 
@@ -140,15 +141,9 @@
         (fn [changes]
           (let [editing-stop (:editing-stop @state)]
             (swap! state #(cond-> %
-                              true (update :current-color merge changes)
-                              editing-stop (update-in [:stops editing-stop] merge changes)))
-
-            #_(when (:hex changes)
-              (reset! value-ref (:hex changes)))
-
-            ;; TODO: CHANGE TO SUPPORT GRADIENTS
-            #_(on-change (:hex changes (:hex current-color))
-                       (:alpha changes (:alpha current-color)))))
+                            true (update :current-color merge changes)
+                            editing-stop (update-in [:stops editing-stop] merge changes)))
+            (reset! dirty? true)))
 
         handle-change-stop
         (fn [offset]
@@ -160,11 +155,15 @@
                 (st/emit! (dc/select-gradient-stop offset)))))
 
         on-select-library-color
-        (fn [color] (prn "color" color))
+        (fn [color] (reset! state (data->state color)))
+
+        on-add-library-color
+        (fn [color] (st/emit! (dwl/add-color (state->data @state))))
 
         on-activate-gradient
         (fn [type]
           (fn []
+            (reset! dirty? true)
             (if (= type (:type @state))
               (do
                 (swap! state assoc :type :color)
@@ -178,13 +177,6 @@
                          :stops {0 (:current-color @state)
                                  1 (-> (:current-color @state)
                                        (assoc :alpha 0))}))))))]
-
-    ;; Update state when there is a change in the props upstream
-    ;; TODO: Review for gradients
-    #_(mf/use-effect
-     (mf/deps value opacity)
-     (fn []
-       (swap! state assoc current-color (as-color-components value opacity))))
 
     ;; Updates the CSS color variable when there is a change in the color
     (mf/use-effect
@@ -208,48 +200,47 @@
 
     ;; When closing the modal we update the recent-color list
     (mf/use-effect
-     (fn [] (fn []
-              (st/emit! (dc/stop-picker))
-              (st/emit! (dwl/add-recent-color (state->data @state))))))
+     #(fn []
+        (st/emit! (dc/stop-picker))
+        (when @last-color
+          (st/emit! (dwl/add-recent-color @last-color)))))
 
+    ;; Updates color when used el pixel picker
     (mf/use-effect
-     (mf/deps picking-color? picked-color)
+     (mf/deps picking-color? picked-color-select)
      (fn []
-       (when picking-color?
-         (let [[r g b] (or picked-color [0 0 0])
+       (when (and picking-color? picked-color-select)
+         (let [[r g b alpha] picked-color
                hex (uc/rgb->hex [r g b])
                [h s v] (uc/hex->hsv hex)]
+           (handle-change-color {:hex hex
+                                 :r r :g g :b b
+                                 :h h :s s :v v
+                                 :alpha alpha})))))
 
-           (swap! state update :current-color assoc
-                  :r r :g g :b b
-                  :h h :s s :v v
-                  :hex hex)
-
-           ;; TODO: UPDATE TO USE GRADIENTS
-           #_(reset! value-ref hex)
-           #_(when picked-color-select
-               (on-change hex (:alpha current-color) nil nil picked-shift?))))))
-
-    ;; TODO: UPDATE TO USE GRADIENTS
-    #_(mf/use-effect
-     (mf/deps picking-color? picked-color-select)
-     (fn [] (when (and picking-color? picked-color-select)
-              (on-change (:hex current-color) (:alpha current-color) nil nil picked-shift?))))
-
+    ;; Changes when another gradient handler is selected
     (mf/use-effect
      (mf/deps editing-spot-state)
      #(when (not= editing-spot-state (:editing-stop @state))
         (handle-change-stop (or editing-spot-state 0))))
 
+    ;; Changes on the viewport when moving a gradient handler
     (mf/use-effect
      (mf/deps data)
      #(if-let [gradient-data (-> data data->state :gradient-data)]
-        (swap! state assoc :gradient-data gradient-data)))
+        (do
+          (reset! dirty? true)
+          (swap! state assoc :gradient-data gradient-data))))
 
+    ;; Send the properties to the store
     (mf/use-effect
      (mf/deps @state)
      (fn []
-       (on-change (state->data @state))))
+       (if @dirty?
+         (let [color (state->data @state)]
+           (reset! dirty? false)
+           (reset! last-color color)
+           (on-change color)))))
 
     [:div.colorpicker {:ref ref-picker}
      [:div.colorpicker-content
@@ -306,7 +297,8 @@
                         :on-change handle-change-color}]
 
       [:& libraries {:current-color current-color
-                     :on-select-color on-select-library-color}]
+                     :on-select-color on-select-library-color
+                     :on-add-library-color on-add-library-color}]
 
       (when on-accept
         [:div.actions

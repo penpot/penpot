@@ -29,7 +29,7 @@
       border: none;
       cursor: pointer;
 
-      &.active,
+      &.active svg,
       &:hover svg {
         fill: $color-primary;
       }
