@@ -67,7 +67,7 @@
 
       [:div.modal-footer
        [:div.action-buttons
-        (when-not (empty? cancel-label)
+        (when-not (= cancel-label :omit)
           [:input.cancel-button
            {:type "button"
             :value cancel-label
