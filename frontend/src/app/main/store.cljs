@@ -100,7 +100,7 @@
                                  (str (:touched shape)))))
                  (when (:shapes shape)
                    (dorun (for [shape-id (:shapes shape)]
-                            (show-shape shape-id (inc level) objects))))))
+                            (show-shape shape-id (inc level) objects)))))))
 
              (show-component [shape objects]
                (if (nil? (:shape-ref shape))
