@@ -245,7 +245,8 @@
                    :internal.shape/height
                    :internal.shape/interactions
                    :internal.shape/selrect
-                   :internal.shape/points]))
+                   :internal.shape/points
+                   :internal.shape/masked-group?]))
 
 (def component-sync-attrs {:fill-color            :fill-group
                            :fill-color-ref-file   :fill-group
@@ -270,7 +271,8 @@
                            :height                :size-group
                            :proportion            :size-group
                            :rx                    :radius-group
-                           :ry                    :radius-group})
+                           :ry                    :radius-group
+                           :masked-group?         :mask-group})
 
 (s/def ::minimal-shape
   (s/keys :req-un [::type ::name]

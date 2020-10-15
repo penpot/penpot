@@ -10,9 +10,12 @@
 (ns app.main.ui.shapes.group
   (:require
    [rumext.alpha :as mf]
+   [cuerdas.core :as str]
    [app.main.ui.shapes.attrs :as attrs]
    [app.util.debug :refer [debug?]]
    [app.common.geom.shapes :as geom]))
+
+(def mask-id-ctx (mf/create-context nil))
 
 (defn group-shape
   [shape-wrapper]
@@ -22,14 +25,26 @@
     (let [frame  (unchecked-get props "frame")
           shape  (unchecked-get props "shape")
           childs (unchecked-get props "childs")
+          mask   (if (:masked-group? shape)
+                   (first childs)
+                   nil)
+          childs (if (:masked-group? shape)
+                   (rest childs)
+                   childs)
           is-child-selected? (unchecked-get props "is-child-selected?")
           {:keys [id x y width height]} shape
           transform (geom/transform-matrix shape)]
       [:g
-       (for [item childs]
-         [:& shape-wrapper {:frame frame
-                            :shape item
-                            :key (:id item)}])
+       (when mask
+         [:defs
+          [:mask {:id (:id mask)}
+           [:& shape-wrapper {:frame frame
+                              :shape mask}]]])
+       [:& (mf/provider mask-id-ctx) {:value (str/fmt "url(#%s)" (:id mask))}
+        (for [item childs]
+          [:& shape-wrapper {:frame frame
+                             :shape item
+                             :key (:id item)}])]
        (when (not is-child-selected?)
          [:rect {:transform transform
                  :x x

@@ -69,6 +69,7 @@
 (def logo-icon (icon-xref :uxbox-logo-icon))
 (def lowercase (icon-xref :lowercase))
 (def mail (icon-xref :mail))
+(def mask (icon-xref :mask))
 (def minus (icon-xref :minus))
 (def move (icon-xref :move))
 (def msg-error (icon-xref :msg-error))
