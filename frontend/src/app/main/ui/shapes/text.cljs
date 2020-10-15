@@ -13,6 +13,7 @@
    [app.main.data.fetch :as df]
    [app.main.fonts :as fonts]
    [app.main.ui.context :as muc]
+   [app.main.ui.shapes.group :refer [mask-id-ctx]]
    [app.common.data :as d]
    [app.common.geom.shapes :as geom]
    [app.common.geom.matrix :as gmt]
@@ -224,6 +225,7 @@
   [props]
   (let [shape     (unchecked-get props "shape")
         selected? (unchecked-get props "selected?")
+        mask-id (mf/use-ctx mask-id-ctx)
         {:keys [id x y width height rotation content]} shape]
     [:foreignObject {:x x
                      :y y
@@ -231,6 +233,7 @@
                      :transform (geom/transform-matrix shape)
                      :id (str id)
                      :width width
-                     :height height}
+                     :height height
+                     :mask mask-id}
      [:& text-content {:content (:content shape)}]]))
 

@@ -1369,6 +1369,69 @@
                 (dws/prepare-remove-group page-id group objects)]
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))))
 
+(def mask-group
+  (ptk/reify ::mask-group
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id  (:current-page-id state)
+            objects  (dwc/lookup-page-objects state page-id)
+            selected (get-in state [:workspace-local :selected])
+            shapes   (dws/shapes-for-grouping objects selected)]
+        (when-not (empty? shapes)
+          (let [;; If the selected shape is a group, we can use it. If not,
+                ;; create a new group and set it as masked.
+                [group rchanges uchanges]
+                (if (and (= (count shapes) 1)
+                         (= (:type (first shapes)) :group))
+                  [(first shapes) [] []]
+                  (dws/prepare-create-group page-id shapes "Group-" true))
+
+                rchanges (conj rchanges
+                          {:type :mod-obj
+                           :page-id page-id
+                           :id (:id group)
+                           :operations [{:type :set
+                                         :attr :masked-group?
+                                         :val true}]})
+
+                uchanges (conj rchanges
+                          {:type :mod-obj
+                           :page-id page-id
+                           :id (:id group)
+                           :operations [{:type :set
+                                         :attr :masked-group?
+                                         :val nil}]})]
+
+            (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
+                   (dws/select-shapes (d/ordered-set (:id group))))))))))
+
+(def unmask-group
+  (ptk/reify ::unmask-group
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id  (:current-page-id state)
+            objects  (dwc/lookup-page-objects state page-id)
+            selected (get-in state [:workspace-local :selected])]
+        (when (= (count selected) 1)
+          (let [group (get objects (first selected))
+
+                rchanges [{:type :mod-obj
+                           :page-id page-id
+                           :id (:id group)
+                           :operations [{:type :set
+                                         :attr :masked-group?
+                                         :val nil}]}]
+
+                uchanges [{:type :mod-obj
+                           :page-id page-id
+                           :id (:id group)
+                           :operations [{:type :set
+                                         :attr :masked-group?
+                                         :val (:masked-group? group)}]}]]
+
+            (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
+                   (dws/select-shapes (d/ordered-set (:id group))))))))))
+ 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interactions
@@ -1514,6 +1577,7 @@
    "+" #(st/emit! (increase-zoom nil))
    "-" #(st/emit! (decrease-zoom nil))
    "ctrl+g" #(st/emit! group-selected)
+   "ctrl+shift+m" #(st/emit! mask-group)
    "ctrl+k" #(st/emit! dwl/add-component)
    "shift+g" #(st/emit! ungroup-selected)
    "shift+0" #(st/emit! reset-zoom)

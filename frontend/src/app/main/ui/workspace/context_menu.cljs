@@ -62,6 +62,8 @@
         do-unlock-shape #(st/emit! (dw/update-shape-flags id {:blocked false}))
         do-create-group #(st/emit! dw/group-selected)
         do-remove-group #(st/emit! dw/ungroup-selected)
+        do-mask-group #(st/emit! dw/mask-group)
+        do-unmask-group #(st/emit! dw/unmask-group)
         do-add-component #(st/emit! dwl/add-component)
         do-detach-component #(st/emit! (dwl/detach-component id))
         do-reset-component #(st/emit! (dwl/reset-component id))
@@ -98,14 +100,26 @@
      [:& menu-separator]
 
      (when (> (count selected) 1)
-       [:& menu-entry {:title "Group"
-                       :shortcut "Ctrl + g"
-                       :on-click do-create-group}])
+       [:*
+        [:& menu-entry {:title "Group"
+                        :shortcut "Ctrl + g"
+                        :on-click do-create-group}]
+        [:& menu-entry {:title "Mask"
+                        :shortcut "Ctrl + Shift + M"
+                        :on-click do-mask-group}]])
 
      (when (and (= (count selected) 1) (= (:type shape) :group))
-       [:& menu-entry {:title "Ungroup"
-                       :shortcut "Shift + g"
-                       :on-click do-remove-group}])
+       [:*
+         [:& menu-entry {:title "Ungroup"
+                         :shortcut "Shift + g"
+                         :on-click do-remove-group}]
+         (if (:masked-group? shape)
+           [:& menu-entry {:title "Unmask"
+                           :shortcut "Ctrl + Shift + M"
+                           :on-click do-unmask-group}]
+           [:& menu-entry {:title "Mask"
+                           :shortcut "Ctrl + Shift + M"
+                           :on-click do-mask-group}])])
 
      (if (:hidden shape)
        [:& menu-entry {:title "Show"

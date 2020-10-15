@@ -43,9 +43,11 @@
     :rect i/box
     :curve i/curve
     :text i/text
-    :group (if (nil? (:component-id shape))
-             i/folder
-             i/component)
+    :group (if (some? (:component-id shape))
+             i/component
+             (if (:masked-group? shape)
+               i/mask
+               i/folder))
     nil))
 
 ;; --- Layer Name
@@ -196,6 +198,7 @@
           :ref dref
           :class (dom/classnames
                    :component (not (nil? (:component-id item)))
+                   :masked (:masked-group? item)
                    :dnd-over (= (:over dprops) :center)
                    :dnd-over-top (= (:over dprops) :top)
                    :dnd-over-bot (= (:over dprops) :bot)
@@ -307,7 +310,8 @@
                                     :component-file
                                     :shape-ref
                                     :touched
-                                    :metadata])]
+                                    :metadata
+                                    :masked-group?])]
     (persistent!
      (reduce-kv (fn [res id obj]
                   (assoc! res id (strip-data obj)))

@@ -12,6 +12,7 @@
    [rumext.alpha :as mf]
    [app.common.geom.shapes :as geom]
    [app.main.ui.shapes.attrs :as attrs]
+   [app.main.ui.shapes.group :refer [mask-id-ctx]]
    [app.util.object :as obj]))
 
 (mf/defc icon-shape
@@ -20,6 +21,7 @@
   (let [shape (unchecked-get props "shape")
         {:keys [id x y width height metadata rotation content]} shape
 
+        mask-id (mf/use-ctx mask-id-ctx)
         transform (geom/transform-matrix shape)
         vbox      (apply str (interpose " " (:view-box metadata)))
 
@@ -33,6 +35,7 @@
                         :height height
                         :viewBox vbox
                         :preserveAspectRatio "none"
+                        :mask mask-id
                         :dangerouslySetInnerHTML #js {:__html content}}))]
     [:g {:transform transform}
      [:> "svg" props]]))
@@ -41,7 +44,9 @@
   [{:keys [shape] :as props}]
   (let [{:keys [content id metadata]} shape
         view-box (apply str (interpose " " (:view-box metadata)))
+        mask-id (mf/use-ctx mask-id-ctx)
         props {:viewBox view-box
                :id (str "shape-" id)
+               :mask mask-id
                :dangerouslySetInnerHTML #js {:__html content}}]
     [:& "svg" props]))

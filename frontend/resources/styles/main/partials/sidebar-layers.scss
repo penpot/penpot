@@ -144,6 +144,47 @@
   }
 }
 
+.element-list li.masked {
+  .element-children {
+    li:first-child {
+      position: relative;
+
+      &::before {
+        content: "^";
+        font-size: $fs18;
+        font-family: opensans;
+        font-weight: lighter;
+        position: absolute;
+        top: -5px;
+        left: -5px;
+      }
+    }
+
+    li:last-child {
+      border-left: none;
+      position: relative;
+
+      &::before {
+        content: " ";
+        border-left: 1px solid $color-gray-40;
+        height: 1rem;
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+
+      &::after {
+        content: " ";
+        border-bottom: 1px solid $color-gray-40;
+        width: 0.3rem;
+        position: absolute;
+        top: 1rem;
+        left: 0;
+      }
+    }
+  }
+}
+
 .element-icon {
   svg {
     fill: $color-gray-30;
