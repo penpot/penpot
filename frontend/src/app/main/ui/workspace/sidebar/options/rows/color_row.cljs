@@ -20,7 +20,7 @@
    [app.util.color :as uc]
    [app.main.refs :as refs]
    [app.main.data.modal :as modal]
-   [app.main.ui.components.color-bullet :refer [color-bullet color-name]]))
+   [app.main.ui.components.color-bullet :as cb]))
 
 (defn color-picker-callback
   [color disable-gradient disable-opacity handle-change-color handle-open handle-close]
@@ -127,7 +127,7 @@
        (modal/update-props! :colorpicker {:data (parse-color color)})))
 
     [:div.row-flex.color-data
-     [:& color-bullet {:color color
+     [:& cb/color-bullet {:color color
                        :on-click handle-click-color}]
 
      (cond
@@ -140,10 +140,7 @@
        (and (not (uc/multiple? color))
             (:gradient color) (get-in color [:gradient :type]))
        [:div.color-info
-        [:div.color-name
-         (case (get-in color [:gradient :type])
-           :linear "Linear gradient"
-           :radial "Radial gradient")]]
+        [:div.color-name (cb/gradient-type->string (get-in color [:gradient :type]))]]
 
        ;; Rendering a plain color/opacity
        :else

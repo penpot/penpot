@@ -28,7 +28,7 @@
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
    [app.main.ui.workspace.sidebar.options.typography :refer [typography-entry]]
-   [app.main.ui.components.color-bullet :refer [color-bullet color-name gradient-type->string]]
+   [app.main.ui.components.color-bullet :as bc]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
    [app.main.data.modal :as modal]
@@ -201,7 +201,7 @@
                                  :editing rename?})
 
         default-name (cond
-                       (:gradient color) (gradient-type->string (:gradient color))
+                       (:gradient color) (bc/gradient-type->string (get-in color [:gradient :type]))
                        (:color color) (:color color)
                        :else (:value color))
 
@@ -276,7 +276,7 @@
          nil))
 
     [:div.group-list-item {:on-context-menu on-context-menu}
-     [:& color-bullet {:color color}]
+     [:& bc/color-bullet {:color color}]
 
      (if (:editing @state)
        [:input.element-name

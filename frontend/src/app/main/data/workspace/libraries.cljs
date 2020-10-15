@@ -33,15 +33,18 @@
 
 (declare sync-file)
 
+(defn default-color-name [color]
+  (or (:color color)
+      (case (get-in color [:gradient :type])
+        :linear (tr "workspace.gradients.linear")
+        :radial (tr "workspace.gradients.radial"))))
+
 (defn add-color
   [color]
   (let [id   (uuid/next)
         color (assoc color
                      :id id
-                     :name (or (:color color)
-                               (case (get-in color [:gradient :type])
-                                 :linear "Linear gradient"
-                                 :radial "Radial gradient")))]
+                     :name (default-color-name color))]
     (us/assert ::cp/color color)
     (ptk/reify ::add-color
       ptk/WatchEvent

@@ -19,7 +19,7 @@
    [app.main.data.workspace :as udw]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.components.color-bullet :refer [color-bullet color-name]]
+   [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
    [app.util.color :refer [hex->rgb]]
@@ -61,8 +61,8 @@
 
     [:div.color-cell {:class (str "cell-"(name size))
                       :on-click select-color}
-     [:& color-bullet {:color color}]
-     [:& color-name {:color color :size size}]]))
+     [:& cb/color-bullet {:color color}]
+     [:& cb/color-name {:color color :size size}]]))
 
 (mf/defc palette
   [{:keys [left-sidebar? current-colors recent-colors file-colors shared-libs selected size]}]
@@ -139,8 +139,8 @@
             [:div.library-name (str (:name cur-library) " " (str/format "(%s)" (count colors)))]
             [:div.color-sample
              (for [[idx {:keys [id color]}] (map-indexed vector (take 7 colors))]
-               [:& color-bullet {:key (str "color-" idx)
-                                 :color color}])]]))
+               [:& cb/color-bullet {:key (str "color-" idx)
+                                    :color color}])]]))
 
 
        [:li.palette-library
@@ -150,8 +150,8 @@
                                 (str/format " (%s)" (count file-colors)))]
         [:div.color-sample
          (for [[idx color] (map-indexed vector (take 7 (vals file-colors))) ]
-           [:& color-bullet {:key (str "color-" idx)
-                             :color color}])]]
+           [:& cb/color-bullet {:key (str "color-" idx)
+                                :color color}])]]
 
        [:li.palette-library
         {:on-click #(st/emit! (mdc/change-palette-selected :recent))}
@@ -160,8 +160,8 @@
                                 (str/format " (%s)" (count recent-colors)))]
         [:div.color-sample
          (for [[idx color] (map-indexed vector (take 7 (reverse recent-colors))) ]
-           [:& color-bullet {:key (str "color-" idx)
-                             :color color}])]]
+           [:& cb/color-bullet {:key (str "color-" idx)
+                                :color color}])]]
 
        [:hr.dropdown-separator]
 
