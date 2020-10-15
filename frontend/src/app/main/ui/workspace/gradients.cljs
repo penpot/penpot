@@ -38,6 +38,9 @@
 (def editing-spot-ref
   (l/derived (l/in [:workspace-local :editing-stop]) st/state))
 
+(def current-gradient-ref
+  (l/derived (l/in [:workspace-local :current-gradient]) st/state))
+
 (mf/defc shadow [{:keys [id x y width height offset]}]
   [:filter {:id id
             :x x
@@ -228,16 +231,14 @@
        :on-mouse-down (partial on-mouse-down :to-p)
        :on-mouse-up (partial on-mouse-up :to-p)}]]))
 
-(def modal-type-ref
-  (l/derived (comp :type ::modal/modal) st/state))
 
 (mf/defc gradient-handlers
   [{:keys [id zoom]}]
   (let [shape (mf/deref (refs/object-by-id id))
-        {:keys [x y width height] :as sr} (:selrect shape)
-        gradient (:fill-color-gradient shape)
-        modal (mf/deref modal-type-ref)
+        gradient (mf/deref current-gradient-ref)
         editing-spot (mf/deref editing-spot-ref)
+
+        {:keys [x y width height] :as sr} (:selrect shape)
 
         [{start-color :color start-opacity :opacity}
          {end-color :color end-opacity :opacity}] (:stops gradient)
@@ -258,10 +259,8 @@
 
         width-p (gpt/add from-p width-v)
 
-        change! (fn [change]
-                  (st/emit! (dwc/update-shapes
-                             [(:id shape)]
-                             #(update % :fill-color-gradient merge change))))
+        change! (fn [changes]
+                  (st/emit! (dc/update-gradient changes)))
 
         on-change-start (fn [point]
                           (let [start-x (/ (- (:x point) x) width)
@@ -285,7 +284,7 @@
 
                             (change! {:width norm-dist})))]
 
-    (when (and gradient (= modal :colorpicker))
+    (when (and gradient (= id (:shape-id gradient)))
       [:& gradient-handler-transformed
        {:editing editing-spot
         :from-p from-p

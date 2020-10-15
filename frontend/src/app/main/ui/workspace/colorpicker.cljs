@@ -52,6 +52,9 @@
 (def editing-spot-state-ref
   (l/derived (l/in [:workspace-local :editing-stop]) st/state))
 
+(def current-gradient-ref
+  (l/derived (l/in [:workspace-local :current-gradient]) st/state))
+
 ;; --- Color Picker Modal
 
 (defn color->components [value opacity]
@@ -130,6 +133,7 @@
         picked-shift? (mf/deref picked-shift?)
 
         editing-spot-state (mf/deref editing-spot-state-ref)
+        current-gradient (mf/deref current-gradient-ref)
 
         current-color (:current-color @state)
 
@@ -144,6 +148,13 @@
                             true (update :current-color merge changes)
                             editing-stop (update-in [:stops editing-stop] merge changes)))
             (reset! dirty? true)))
+
+        handle-click-picker (fn []
+                              (if picking-color?
+                                (do (modal/disallow-click-outside!)
+                                    (st/emit! (dc/stop-picker)))
+                                (do (modal/allow-click-outside!)
+                                    (st/emit! (dc/start-picker)))))
 
         handle-change-stop
         (fn [offset]
@@ -169,10 +180,10 @@
             (if (= type (:type @state))
               (do
                 (swap! state assoc :type :color)
-                (swap! state dissoc :editing-stop :stops :gradient-data))
-              (do
-                (swap! state assoc :type type
-                       :gradient-data (create-gradient-data type))
+                (swap! state dissoc :editing-stop :stops :gradient-data)
+                (st/emit! (dc/stop-gradient)))
+              (let [gradient-data (create-gradient-data type)]
+                (swap! state assoc :type type :gradient-data gradient-data)
                 (when (not (:stops @state))
                   (swap! state assoc
                          :editing-stop 0
@@ -228,11 +239,25 @@
 
     ;; Changes on the viewport when moving a gradient handler
     (mf/use-effect
-     (mf/deps data)
-     #(if-let [gradient-data (-> data data->state :gradient-data)]
-        (do
-          (reset! dirty? true)
-          (swap! state assoc :gradient-data gradient-data))))
+     (mf/deps current-gradient)
+     (fn []
+       (when current-gradient
+         (let [gradient-data (select-keys current-gradient [:start-x :start-y
+                                                            :end-x :end-y
+                                                            :width])]
+           (when (not= (:gradient-data @state) gradient-data)
+             (do
+               (reset! dirty? true)
+               (swap! state assoc :gradient-data gradient-data)))))))
+
+    ;; Check if we've opened a color with gradient
+    (mf/use-effect
+     (fn []
+       (when (:gradient data)
+         (st/emit! (dc/start-gradient (:gradient data))))
+
+       ;; on-unmount we stop the handlers
+       #(st/emit! (dc/stop-gradient))))
 
     ;; Send the properties to the store
     (mf/use-effect
@@ -242,6 +267,8 @@
          (let [color (state->data @state)]
            (reset! dirty? false)
            (reset! last-color color)
+           (when (:gradient color)
+             (st/emit! (dc/start-gradient (:gradient color))))
            (on-change color)))))
 
     [:div.colorpicker {:ref ref-picker}
@@ -249,9 +276,7 @@
       [:div.top-actions
        [:button.picker-btn
         {:class (when picking-color? "active")
-         :on-click (fn []
-                     (modal/allow-click-outside!)
-                     (st/emit! (dc/start-picker)))}
+         :on-click handle-click-picker}
         i/picker]
 
        (when (not disable-gradient)
@@ -310,8 +335,7 @@
           {:on-click (fn []
                        (on-accept (state->data @state))
                        (modal/hide!))}
-          (t locale "workspace.libraries.colors.save-color")]])]])
-  )
+          (t locale "workspace.libraries.colors.save-color")]])]]))
 
 (defn calculate-position
   "Calculates the style properties for the given coordinates and position"

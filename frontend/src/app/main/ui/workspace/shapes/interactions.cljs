@@ -32,7 +32,7 @@
   (do
     (dom/stop-propagation event)
     (when-not (empty? selected)
-      (st/emit! dw/deselect-all))
+      (st/emit! (dw/deselect-all)))
     (st/emit! (dw/select-shape id))
     (st/emit! (dw/start-create-interaction))))
 

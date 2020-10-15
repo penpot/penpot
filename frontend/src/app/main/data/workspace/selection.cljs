@@ -67,7 +67,7 @@
                                      (ms/mouse-up? %))
                                 stream)]
           (rx/concat
-           (rx/of deselect-all)
+           (rx/of (deselect-all))
            (->> ms/mouse-position
                 (rx/scan (fn [data pos]
                            (if data
@@ -118,20 +118,26 @@
              objects (dwc/lookup-page-objects state page-id)]
         (rx/of (dwc/expand-all-parents ids objects))))))
 
-(def deselect-all
+(defn deselect-all 
   "Clear all possible state of drawing, edition
-  or any similar action taken by the user."
-  (ptk/reify ::deselect-all
-    ptk/UpdateEvent
-    (update [_ state]
+  or any similar action taken by the user.
+  When `check-modal` the method will check if a modal is opened
+  and not deselect if it's true"
+  ([] (deselect-all false))
 
-      ;; Only deselect if there is no modal openned
-      (cond-> state
-        (not (::md/modal state))
-        (update :workspace-local
-                #(-> %
-                     (assoc :selected (d/ordered-set))
-                     (dissoc :selected-frame)))))))
+  ([check-modal]
+   (ptk/reify ::deselect-all
+     ptk/UpdateEvent
+     (update [_ state]
+
+       ;; Only deselect if there is no modal openned
+       (cond-> state
+         (or (not check-modal)
+             (not (::md/modal state)))
+         (update :workspace-local
+                 #(-> %
+                      (assoc :selected (d/ordered-set))
+                      (dissoc :selected-frame))))))))
 
 ;; --- Select Shapes (By selrect)
 

@@ -100,7 +100,7 @@
              (mf/deps (:id shape))
              (fn [event]
                (dom/prevent-default event)
-               (st/emit! dw/deselect-all
+               (st/emit! (dw/deselect-all)
                          (dw/select-shape (:id shape)))))
 
             on-mouse-over

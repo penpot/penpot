@@ -191,6 +191,29 @@
                                  :props {:on-change handle-change-color}
                                  :allow-click-outside true})))))))
 
+(defn start-gradient [gradient]
+  (ptk/reify ::start-gradient
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [id (first (get-in state [:workspace-local :selected]))]
+        (-> state
+            (assoc-in [:workspace-local :current-gradient] gradient)
+            (assoc-in [:workspace-local :current-gradient :shape-id] id))))))
+
+(defn stop-gradient []
+  (ptk/reify ::stop-gradient
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update :workspace-local dissoc :current-gradient)))))
+
+(defn update-gradient [changes]
+  (ptk/reify ::update-gradient
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update-in [:workspace-local :current-gradient] merge changes)))))
+
 (defn select-gradient-stop [spot]
   (ptk/reify ::select-gradient-stop
     ptk/UpdateEvent
