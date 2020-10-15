@@ -364,7 +364,8 @@
   (ptk/reify ::reset-component
     ptk/WatchEvent
     (watch [_ state stream]
-      (js/console.info "##### RESET-COMPONENT of shape" (str id))
+      ;; ===== Uncomment this to debug =====
+      ;; (js/console.info "##### RESET-COMPONENT of shape" (str id))
       (let [page-id (:current-page-id state)
             page    (get-in state [:workspace-data :pages-index page-id])
             objects (dwc/lookup-page-objects state page-id)
@@ -377,10 +378,11 @@
                                                 state
                                                 true)
 
-            _ (js/console.info "shape" (:name shape) "<- component" (:name component))
-            _ (js/console.debug "all-shapes" (clj->js all-shapes))
-            _ (js/console.debug "component" (clj->js component))
-            _ (js/console.debug "root-component" (clj->js root-component))
+            ;; ===== Uncomment this to debug =====
+            ;; _ (js/console.info "shape" (:name shape) "<- component" (:name component))
+            ;; _ (js/console.debug "all-shapes" (clj->js all-shapes))
+            ;; _ (js/console.debug "component" (clj->js component))
+            ;; _ (js/console.debug "root-component" (clj->js root-component))
 
             [rchanges uchanges]
             (dwlh/generate-sync-shape-and-children-components shape
@@ -391,7 +393,8 @@
                                                               nil
                                                               true)]
 
-        (js/console.debug "rchanges" (clj->js rchanges))
+        ;; ===== Uncomment this to debug =====
+        ;; (js/console.debug "rchanges" (clj->js rchanges))
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 
@@ -401,7 +404,8 @@
   (ptk/reify ::update-component
     ptk/WatchEvent
     (watch [_ state stream]
-      (js/console.info "##### UPDATE-COMPONENT of shape" (str id))
+      ;; ===== Uncomment this to debug =====
+      ;; (js/console.info "##### UPDATE-COMPONENT of shape" (str id))
       (let [page-id (:current-page-id state)
             objects (dwc/lookup-page-objects state page-id)
             shape   (get objects id)
@@ -413,10 +417,11 @@
                                                 state
                                                 true)
 
-            _ (js/console.info "shape" (:name shape) "-> component" (:name component))
-            _ (js/console.debug "all-shapes" (clj->js all-shapes))
-            _ (js/console.debug "component" (clj->js component))
-            _ (js/console.debug "root-component" (clj->js root-component))
+            ;; ===== Uncomment this to debug =====
+            ;; _ (js/console.info "shape" (:name shape) "-> component" (:name component))
+            ;; _ (js/console.debug "all-shapes" (clj->js all-shapes))
+            ;; _ (js/console.debug "component" (clj->js component))
+            ;; _ (js/console.debug "root-component" (clj->js root-component))
 
             [rchanges uchanges]
             (dwlh/generate-sync-shape-inverse shape
@@ -425,7 +430,8 @@
                                               root-component
                                               page-id)]
 
-        (js/console.debug "rchanges" (clj->js rchanges))
+        ;; ===== Uncomment this to debug =====
+        ;; (js/console.debug "rchanges" (clj->js rchanges))
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 
@@ -443,7 +449,8 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (js/console.info "##### SYNC-FILE" (str (or file-id "local")))
+      ;; ===== Uncomment this to debug =====
+      ;; (js/console.info "##### SYNC-FILE" (str (or file-id "local")))
       (let [[rchanges1 uchanges1] (dwlh/generate-sync-file :components file-id state)
             [rchanges2 uchanges2] (dwlh/generate-sync-library :components file-id state)
             [rchanges3 uchanges3] (dwlh/generate-sync-file :colors file-id state)
@@ -452,7 +459,8 @@
             [rchanges6 uchanges6] (dwlh/generate-sync-library :typographies file-id state)
             rchanges (d/concat rchanges1 rchanges2 rchanges3 rchanges4 rchanges5 rchanges6)
             uchanges (d/concat uchanges1 uchanges2 uchanges3 uchanges4 uchanges5 uchanges6)]
-        (js/console.debug "rchanges" (clj->js rchanges))
+        ;; ===== Uncomment this to debug =====
+        ;; (js/console.debug "rchanges" (clj->js rchanges))
         (rx/concat
           (rx/of (dm/hide-tag :sync-dialog))
           (when rchanges
@@ -478,13 +486,15 @@
   (ptk/reify ::sync-file-2nd-stage
     ptk/WatchEvent
     (watch [_ state stream]
-      (js/console.info "##### SYNC-FILE" (str (or file-id "local")) "(2nd stage)")
+      ;; ===== Uncomment this to debug =====
+      ;; (js/console.info "##### SYNC-FILE" (str (or file-id "local")) "(2nd stage)")
       (let [[rchanges1 uchanges1] (dwlh/generate-sync-file :components nil state)
             [rchanges2 uchanges2] (dwlh/generate-sync-library :components file-id state)
             rchanges (d/concat rchanges1 rchanges2)
             uchanges (d/concat uchanges1 uchanges2)]
         (when rchanges
-          (js/console.debug "rchanges" (clj->js rchanges))
+          ;; ===== Uncomment this to debug =====
+          ;; (js/console.debug "rchanges" (clj->js rchanges))
           (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})))))))
 
 (def ignore-sync

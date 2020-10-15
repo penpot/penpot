@@ -422,14 +422,17 @@
   "Generate changes to synchronize one shape inside a component, with other
   shape that is linked to it."
   [shape root-shape root-component component page-id]
-  (js/console.log "component" (clj->js component))
+  ;; ===== Uncomment this to debug =====
+  ;; (js/console.log "component" (clj->js component))
   (if (nil? component)
     empty-changes
     (let [component-shape (get (:objects component) (:shape-ref shape))]
-      (js/console.log "component-shape" (clj->js component-shape))
+      ;; ===== Uncomment this to debug =====
+      ;; (js/console.log "component-shape" (clj->js component-shape))
       (if (nil? component-shape)
         empty-changes
-        (let [_(js/console.info "update" (:name shape) "->" (:name component-shape))
+        (let [;; ===== Uncomment this to debug =====
+              ;; _(js/console.info "update" (:name shape) "->" (:name component-shape))
               [rchanges1 uchanges1]
               (update-attrs component-shape
                             shape

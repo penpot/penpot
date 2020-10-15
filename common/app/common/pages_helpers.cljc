@@ -58,7 +58,7 @@
 (defn get-object-with-children
   "Retrieve a list with an object and all of its children"
   [id objects]
-  (map #(get objects %) (d/concat [id] (get-children id objects))))
+  (map #(get objects %) (cons id (get-children id objects))))
 
 (defn is-shape-grouped
   "Checks if a shape is inside a group"

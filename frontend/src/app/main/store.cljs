@@ -90,8 +90,7 @@
                (let [shape (get objects shape-id)]
                  (println (str/pad (str (str/repeat "  " level)
                                         (:name shape)
-                                        (when (seq (filter #(not= :position-group %)
-                                                           (:touched shape))) "*"))
+                                        (when (seq (:touched shape)) "*")
                                    {:length 20
                                     :type :right})
                           (show-component shape objects))
