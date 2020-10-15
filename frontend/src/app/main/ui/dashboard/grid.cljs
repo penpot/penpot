@@ -112,7 +112,7 @@
                        :message ""
                        :title (t locale "modals.add-shared-confirm.message" (:name file))
                        :hint (t locale "modals.add-shared-confirm.hint")
-                       :cancel-label ""
+                       :cancel-label :omit
                        :accept-label (t locale "modals.add-shared-confirm.accept")
                        :accept-style :primary
                        :on-accept add-shared}))))
@@ -128,7 +128,7 @@
                        :message ""
                        :title (t locale "modals.remove-shared-confirm.message" (:name file))
                        :hint (t locale "modals.remove-shared-confirm.hint")
-                       :cancel-label ""
+                       :cancel-label :omit
                        :accept-label (t locale "modals.remove-shared-confirm.accept")
                        :on-accept del-shared}))))
 
