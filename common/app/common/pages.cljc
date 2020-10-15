@@ -46,6 +46,7 @@
     (<= % max-safe-int)))
 (s/def ::component-id uuid?)
 (s/def ::component-file uuid?)
+(s/def ::component-root? boolean?)
 (s/def ::shape-ref uuid?)
 
 (s/def ::safe-number
@@ -122,7 +123,6 @@
 (s/def :internal.shape/line-height ::safe-number)
 (s/def :internal.shape/locked boolean?)
 (s/def :internal.shape/page-id uuid?)
-(s/def :internal.shape/component-id uuid?)
 (s/def :internal.shape/proportion ::safe-number)
 (s/def :internal.shape/proportion-lock boolean?)
 (s/def :internal.shape/rx ::safe-number)
@@ -236,12 +236,8 @@
                            :width                 :size-group
                            :height                :size-group
                            :proportion            :size-group
-                           :x                     :position-group
-                           :y                     :position-group
                            :rx                    :radius-group
-                           :ry                    :radius-group
-                           :points                :points-group
-                           :transform             :transform-group})
+                           :ry                    :radius-group})
 
 (def color-sync-attrs [:fill-color
                        :stroke-color])
@@ -255,6 +251,7 @@
          (s/keys :opt-un [::id
                           ::component-id
                           ::component-file
+                          ::component-root?
                           ::shape-ref])))
 
 (s/def :internal.page/objects (s/map-of uuid? ::shape))
@@ -891,21 +888,21 @@
 
 (defmethod process-operation :set
   [shape op]
-  (let [attr   (:attr op)
-        val    (:val op)
-        ignore (:ignore-touched op)
+  (let [attr      (:attr op)
+        val       (:val op)
+        ignore    (:ignore-touched op)
         shape-ref (:shape-ref shape)
-        group  (get component-sync-attrs attr)]
+        group     (get component-sync-attrs attr)]
 
     (cond-> shape
+      (and shape-ref group (not ignore) (not= val (get shape attr)))
+      (update :touched #(conj (or % #{}) group))
+
       (nil? val)
       (dissoc attr)
 
       (some? val)
-      (assoc attr val)
-
-      (and shape-ref group (not ignore))
-      (update :touched #(conj (or % #{}) group)))))
+      (assoc attr val))))
 
 (defmethod process-operation :set-touched
   [shape op]

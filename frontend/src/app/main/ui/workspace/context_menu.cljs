@@ -20,6 +20,7 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.ui.hooks :refer [use-rxsub]]
    [app.main.ui.components.dropdown :refer [dropdown]]))
@@ -46,7 +47,6 @@
   [{:keys [mdata] :as props}]
   (let [{:keys [id] :as shape} (:shape mdata)
         selected (:selected mdata)
-        root-shape (:root-shape mdata)
 
         do-duplicate #(st/emit! dw/duplicate-selected)
         do-delete #(st/emit! dw/delete-selected)
@@ -66,10 +66,12 @@
         do-detach-component #(st/emit! (dwl/detach-component id))
         do-reset-component #(st/emit! (dwl/reset-component id))
         do-update-component #(do
+                               (st/emit! dwc/start-undo-transaction)
                                (st/emit! (dwl/update-component id))
-                               (st/emit! (dwl/sync-file nil)))
+                               (st/emit! (dwl/sync-file nil))
+                               (st/emit! dwc/commit-undo-transaction))
         do-navigate-component-file #(st/emit! (dwl/nav-to-component-file
-                                                (:component-file root-shape)))]
+                                                (:component-file shape)))]
     [:*
      [:& menu-entry {:title "Copy"
                      :shortcut "Ctrl + c"
@@ -117,28 +119,30 @@
        [:& menu-entry {:title "Lock"
                        :on-click do-lock-shape}])
 
-     [:& menu-separator]
-
-     (if (nil? (:shape-ref shape))
-       [:& menu-entry {:title "Create component"
-                       :shortcut "Ctrl + K"
-                       :on-click do-add-component}]
+     (when (nil? (:shape-ref shape))
        [:*
-         [:& menu-entry {:title "Detach instance"
-                         :on-click do-detach-component}]
-         [:& menu-entry {:title "Reset overrides"
-                         :on-click do-reset-component}]
-         (if (nil? (:component-file root-shape))
-           [:& menu-entry {:title "Update master component"
-                           :on-click do-update-component}]
-           [:& menu-entry {:title "Go to master component file"
-                           :on-click do-navigate-component-file}])])
+        [:& menu-separator]
+        [:& menu-entry {:title "Create component"
+                        :shortcut "Ctrl + K"
+                        :on-click do-add-component}]])
+
+     (when (:component-id shape)
+       [:*
+        [:& menu-separator]
+        [:& menu-entry {:title "Detach instance"
+                        :on-click do-detach-component}]
+        [:& menu-entry {:title "Reset overrides"
+                        :on-click do-reset-component}]
+        (if (nil? (:component-file shape))
+          [:& menu-entry {:title "Update master component"
+                          :on-click do-update-component}]
+          [:& menu-entry {:title "Go to master component file"
+                          :on-click do-navigate-component-file}])])
 
      [:& menu-separator]
      [:& menu-entry {:title "Delete"
                      :shortcut "Supr"
-                     :on-click do-delete}]
-     ]))
+                     :on-click do-delete}]]))
 
 (mf/defc viewport-context-menu
   [{:keys [mdata] :as props}]

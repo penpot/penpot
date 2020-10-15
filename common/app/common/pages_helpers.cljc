@@ -31,15 +31,15 @@
   (update page :objects
           #(into % (d/index-by :id objects-list))))
 
-(defn get-root-component
-  "Get the root shape linked to the component for this shape, if any"
-  [id objects]
-  (let [obj (get objects id)]
-    (if-let [component-id (:component-id obj)]
-      id
-      (if-let [parent-id (:parent-id obj)]
-        (get-root-component parent-id objects)
-        nil))))
+(defn get-root-shape
+  "Get the root shape linked to a component for this shape, if any"
+  [shape objects]
+  (if (:component-root? shape)
+    shape
+    (if-let [parent-id (:parent-id shape)]
+      (get-root-shape (get objects (:parent-id shape))
+                      objects)
+      nil)))
 
 (defn get-children
   "Retrieve all children ids recursively for a given object"
@@ -58,7 +58,7 @@
 (defn get-object-with-children
   "Retrieve a list with an object and all of its children"
   [id objects]
-  (map #(get objects %) (concat [id] (get-children id objects))))
+  (map #(get objects %) (cons id (get-children id objects))))
 
 (defn is-shape-grouped
   "Checks if a shape is inside a group"
