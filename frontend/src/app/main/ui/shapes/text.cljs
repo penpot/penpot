@@ -68,9 +68,10 @@
 
         fill-color (obj/get data "fill-color" fill)
         fill-opacity (obj/get data "fill-opacity" opacity)
-        fill-color-gradient (obj/get data "fill-color-gradient" opacity)
-        fill-color-gradient (-> (js->clj fill-color-gradient :keywordize-keys true)
-                                (update :type keyword))
+        fill-color-gradient (obj/get data "fill-color-gradient" nil)
+        fill-color-gradient (when fill-color-gradient
+                              (-> (js->clj fill-color-gradient :keywordize-keys true)
+                                  (update :type keyword)))
 
         fill-color-ref-id (obj/get data "fill-color-ref-id")
         fill-color-ref-file (obj/get data "fill-color-ref-file")
@@ -83,14 +84,9 @@
         fontsdb (deref fonts/fontsdb)
 
         base #js {:textDecoration text-decoration
-                  ;:color (str/format "rgba(%s, %s, %s, %s)" r g b a)
                   :textTransform text-transform
                   :lineHeight (or line-height "inherit")
-
-                  :background background
-                  :WebkitTextFillColor "transparent"
-                  :WebkitBackgroundClip "text"
-                  }]
+                  "--text-color" background}]
 
     (when (and (string? letter-spacing)
                (pos? (alength letter-spacing)))
@@ -179,8 +175,7 @@
 
     (if (string? text)
       (let [style (generate-text-styles (clj->js node))]
-        [:span {:style style
-                :key (str index "-" (:fill-color node))} (if (= text "") "\u00A0" text)])
+        [:span.text-node {:style style} (if (= text "") "\u00A0" text)])
       (let [children (map-indexed (fn [index node]
                                     (mf/element text-node {:index index :node node :key index}))
                                   children)]
@@ -192,13 +187,15 @@
              {:key index
               :style style
               :xmlns "http://www.w3.org/1999/xhtml"}
-             (when (not (nil? @embeded-fonts))
-               [:style @embeded-fonts])
+             [:*
+              [:style ".text-node { background: var(--text-color); -webkit-text-fill-color: transparent; -webkit-background-clip: text;"]
+              (when (not (nil? @embeded-fonts))
+                [:style @embeded-fonts])]
              children])
 
           "paragraph-set"
           (let [style #js {:display "inline-block"}]
-              [:div.paragraphs {:key index :style style} children])
+            [:div.paragraphs {:key index :style style} children])
 
           "paragraph"
           (let [style (generate-paragraph-styles (clj->js node))]

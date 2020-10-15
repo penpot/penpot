@@ -29,7 +29,10 @@
    [app.util.object :as obj]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as geom]))
+   [app.common.geom.shapes :as geom]
+   [app.common.uuid :as uuid]
+   [app.main.ui.shapes.gradients :as grad]
+   [app.main.ui.context :as muc]))
 
 (defn on-mouse-down
   [event {:keys [interactions] :as shape}]
@@ -56,25 +59,29 @@
                          (mf/deps shape)
                          #(on-mouse-down % shape))
 
-          filter-id (filters/get-filter-id)]
+          render-id (mf/use-memo #(str (uuid/next)))]
 
-      [:g.shape {:on-mouse-down on-mouse-down
-                 :cursor (when (:interactions shape) "pointer")
-                 :filter (filters/filter-str filter-id shape)}
-       [:& filters/filters {:filter-id filter-id :shape shape}]
-       [:& component {:shape shape
-                      :frame frame
-                      :childs childs
-                      :is-child-selected? true}]
-       (when (and (:interactions shape) show-interactions?)
-         [:rect {:x (- x 1)
-                 :y (- y 1)
-                 :width (+ width 2)
-                 :height (+ height 2)
-                 :fill "#31EFB8"
-                 :stroke "#31EFB8"
-                 :stroke-width 1
-                 :fill-opacity 0.2}])])))
+      [:& (mf/provider muc/render-ctx) {:value render-id}
+       [:g.shape {:on-mouse-down on-mouse-down
+                  :cursor (when (:interactions shape) "pointer")
+                  :filter (filters/filter-str (str "filter_" render-id) shape)}
+        [:defs
+         [:& filters/filters {:shape shape}]
+         [:& grad/gradient   {:shape shape :attr :fill-color-gradient}]
+         [:& grad/gradient   {:shape shape :attr :stroke-color-gradient}]]
+        [:& component {:shape shape
+                       :frame frame
+                       :childs childs
+                       :is-child-selected? true}]
+        (when (and (:interactions shape) show-interactions?)
+          [:rect {:x (- x 1)
+                  :y (- y 1)
+                  :width (+ width 2)
+                  :height (+ height 2)
+                  :fill "#31EFB8"
+                  :stroke "#31EFB8"
+                  :stroke-width 1
+                  :fill-opacity 0.2}])]])))
 
 (defn frame-wrapper
   [shape-container show-interactions?]

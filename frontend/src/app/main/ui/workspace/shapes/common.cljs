@@ -20,7 +20,8 @@
    [app.common.uuid :as uuid]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as geom]))
+   [app.common.geom.shapes :as geom]
+   [app.main.ui.context :as muc]))
 
 (defn- on-mouse-down
   [event {:keys [id type] :as shape}]
@@ -75,22 +76,15 @@
                            #(on-context-menu % shape))
           render-id (mf/use-memo #(str (uuid/next)))]
 
-      [:g.shape {:on-mouse-down on-mouse-down
-                 :on-context-menu on-context-menu
-                 :filter (filters/filter-str (str "filter_" render-id) shape)}
+      [:& (mf/provider muc/render-ctx) {:value render-id}
+       [:g.shape {:on-mouse-down on-mouse-down
+                  :on-context-menu on-context-menu
+                  :filter (filters/filter-str (str "filter_" render-id) shape)}
+        [:defs
+         [:& filters/filters {:shape shape}]
+         [:& grad/gradient   {:shape shape :attr :fill-color-gradient}]
+         [:& grad/gradient   {:shape shape :attr :stroke-color-gradient}]]
 
-       [:& filters/filters {:filter-id (str "filter_" render-id) :shape shape}]
-
-       (when (:fill-color-gradient shape)
-         [:& grad/gradient {:attr :fill-color-gradient
-                            :render-id render-id
-                            :shape shape}])
-
-       (when (:stroke-color-gradient shape)
-         [:& grad/gradient {:attr :stroke-color-gradient
-                            :render-id render-id
-                            :shape shape}])
-       
-       [:& component {:shape (assoc shape :render-id render-id)}]])))
+        [:& component {:shape shape}]]])))
 
 

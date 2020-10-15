@@ -290,6 +290,8 @@
                       :shape shape
                       :attrs text-fill-attrs})
 
+        fill-values (d/update-in-when fill-values [:fill-color-gradient :type] keyword)
+
         fill-values (cond-> fill-values
                       ;; Keep for backwards compatibility
                       (:fill fill-values) (assoc :fill-color (:fill fill-values))

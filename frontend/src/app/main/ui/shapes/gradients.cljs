@@ -13,6 +13,7 @@
    [cuerdas.core :as str]
    [app.util.object :as obj]
    [app.common.uuid :as uuid]
+   [app.main.ui.context :as muc]
    [app.common.geom.point :as gpt]))
 
 (mf/defc linear-gradient [{:keys [id gradient shape]}]
@@ -32,7 +33,8 @@
 (mf/defc radial-gradient [{:keys [id gradient shape]}]
   (let [{:keys [x y width height]} shape]
     [:defs
-     (let [translate-vec (gpt/point (+ x (* width (:start-x gradient)))
+     (let [[x y] (if (= (:type shape) :frame) [0 0] [x y])
+           translate-vec (gpt/point (+ x (* width (:start-x gradient)))
                                     (+ y (* height (:start-y gradient))))
            
            gradient-vec (gpt/to-vec (gpt/point (* width (:start-x gradient))
@@ -72,13 +74,13 @@
   [props]
   (let [attr (obj/get props "attr")
         shape (obj/get props "shape")
-        render-id (obj/get props "render-id")
-
+        render-id (mf/use-ctx muc/render-ctx)
         id (str (name attr) "_" render-id)
         gradient (get shape attr)
         gradient-props #js {:id id
                             :gradient gradient
                             :shape shape}]
-    (case (:type gradient)
-      :linear [:> linear-gradient gradient-props]
-      :radial [:> radial-gradient gradient-props])))
+    (when gradient
+      (case (:type gradient)
+        :linear [:> linear-gradient gradient-props]
+        :radial [:> radial-gradient gradient-props]))))

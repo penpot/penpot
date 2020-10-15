@@ -13,6 +13,7 @@
    [cuerdas.core :as str]
    [okulary.core :as l]
    [promesa.core :as p]
+   [beicon.core :as rx]
    [goog.events :as events]
    [app.common.uuid :as uuid]
    [app.util.timers :as timers]
@@ -53,6 +54,19 @@
           [:& shape-wrapper {:shape item
                              :key (:id item)}]))]]))
 
+(defn draw-picker-canvas [svg-node canvas-node]
+  (let [canvas-context (.getContext canvas-node "2d")
+        xml (.serializeToString (js/XMLSerializer.) svg-node)
+        img-src (str "data:image/svg+xml;base64,"
+                     (-> xml js/encodeURIComponent js/unescape js/btoa))
+        img (js/Image.)
+
+        on-error (fn [err] (.error js/console "ERROR" err))
+        on-load (fn [] (.drawImage canvas-context img 0 0))]
+    (.addEventListener img "error" on-error)
+    (.addEventListener img "load" on-load)
+    (obj/set! img "src" img-src)))
+
 (mf/defc pixel-overlay
   {::mf/wrap-props false}
   [props]
@@ -63,6 +77,8 @@
         svg-ref       (mf/use-ref nil)
         canvas-ref    (mf/use-ref nil)
         fetch-pending (mf/deref (mdf/pending-ref))
+
+        update-canvas-stream (rx/subject)
 
         handle-keydown
         (fn [event]
@@ -117,26 +133,30 @@
          #(events/unlistenByKey listener))))
 
     (mf/use-effect
-     ;; Everytime we finish retrieving a new URL we redraw the canvas
-     ;; so even if we're not finished the user can start to pick basic
-     ;; shapes
-     (mf/deps fetch-pending)
      (fn []
-       (try
-         (let [canvas-node (mf/ref-val canvas-ref)
-               canvas-context (.getContext canvas-node "2d")
-               svg-node (mf/ref-val svg-ref)]
-           (timers/schedule 100
-                            #(let [xml (.serializeToString (js/XMLSerializer.) svg-node)
-                                   img-src (str "data:image/svg+xml;base64,"
-                                                (-> xml js/encodeURIComponent js/unescape js/btoa))
-                                   img (js/Image.)
-                                   on-error (fn [err] (.error js/console "ERROR" err))
-                                   on-load (fn [] (.drawImage canvas-context img 0 0))]
-                               (.addEventListener img "error" on-error)
-                               (.addEventListener img "load" on-load)
-                               (obj/set! img "src" img-src))))
-         (catch :default e (.error js/console e)))))
+       (let [sub (->> update-canvas-stream
+                      (rx/debounce 10)
+                      (rx/subs #(draw-picker-canvas (mf/ref-val svg-ref)
+                                                    (mf/ref-val canvas-ref))))]
+
+         #(rx/dispose! sub))))
+
+    (mf/use-effect
+     (mf/deps svg-ref canvas-ref)
+     (fn []
+       (when (and svg-ref canvas-ref)
+
+         (let [config (clj->js {:attributes true
+                                :childList true
+                                :subtree true
+                                :characterData true})
+               on-svg-change (fn [mutation-list] (rx/push! update-canvas-stream :update))
+               observer (js/MutationObserver. on-svg-change)]
+
+           (.observe observer (mf/ref-val svg-ref) config)
+
+           ;; Disconnect on unmount
+           #(.disconnect observer)))))
 
     [:*
      [:div.overlay
@@ -154,6 +174,7 @@
                :width (:width vport 0)
                :height (:height vport 0)
                :style {:display "none"}}]
+
      [:& (mf/provider muc/embed-ctx) {:value true}
       [:svg.viewport
        {:ref svg-ref

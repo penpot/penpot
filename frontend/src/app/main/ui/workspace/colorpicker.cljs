@@ -369,15 +369,7 @@
                         (reset! dirty? (not= data new-data))
                         (reset! last-change new-data)
                         (when on-change
-                          (on-change new-data)))
-
-        ;; handle-change (fn [new-value new-opacity id file-id shift-clicked?]
-        ;;                 (when (or (not= new-value value) (not= new-opacity opacity))
-        ;;                   (reset! dirty? true))
-        ;;                 (reset! last-change [new-value new-opacity id file-id])
-        ;;                 (when on-change
-        ;;                   (on-change new-value new-opacity id file-id shift-clicked?)))
-        ]
+                          (on-change new-data)))]
 
     (mf/use-effect
      (fn []

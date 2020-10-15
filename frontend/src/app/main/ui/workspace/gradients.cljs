@@ -284,7 +284,9 @@
 
                             (change! {:width norm-dist})))]
 
-    (when (and gradient (= id (:shape-id gradient)))
+    (when (and gradient
+               (= id (:shape-id gradient))
+               (not= (:type shape) :text))
       [:& gradient-handler-transformed
        {:editing editing-spot
         :from-p from-p

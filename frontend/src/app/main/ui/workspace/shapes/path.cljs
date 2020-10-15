@@ -23,7 +23,10 @@
    [app.main.data.workspace.drawing :as dr]
    [app.util.dom :as dom]
    [app.main.streams :as ms]
-   [app.util.timers :as ts]))
+   [app.util.timers :as ts]
+   [app.common.uuid :as uuid]
+   [app.main.ui.shapes.gradients :as grad]
+   [app.main.ui.context :as muc]))
 
 (mf/defc path-wrapper
   {::mf/wrap-props false}
@@ -45,21 +48,18 @@
                                (dom/prevent-default event)
                                (st/emit! (dw/start-edition-mode (:id shape)))))))
 
-        filter-id (mf/use-memo filters/get-filter-id)]
+        render-id (mf/use-memo #(str (uuid/next)))]
 
-    [:g.shape {:on-double-click on-double-click
-               :on-mouse-down on-mouse-down
-               :on-context-menu on-context-menu
-               :filter (filters/filter-str filter-id shape)}
-     [:& filters/filters {:filter-id filter-id :shape shape}]
+    [:& (mf/provider muc/render-ctx) {:value render-id}
+     [:g.shape {:on-double-click on-double-click
+                :on-mouse-down on-mouse-down
+                :on-context-menu on-context-menu
+                :filter (filters/filter-str (str "filter_" render-id) shape)}
+      [:defs
+       [:& filters/filters {:shape shape}]
+       [:& grad/gradient   {:shape shape :attr :fill-color-gradient}]
+       [:& grad/gradient   {:shape shape :attr :stroke-color-gradient}]]
 
-     (when (:fill-color-gradient shape)
-       [:& grad/gradient {:attr :fill-color-gradient
-                          :shape shape}])
-
-     (when (:stroke-color-gradient shape)
-       [:& grad/gradient {:attr :stroke-color-gradient
-                          :shape shape}])
-     [:& path/path-shape {:shape shape
-                          :background? true}]]))
+      [:& path/path-shape {:shape shape
+                           :background? true}]]]))
 

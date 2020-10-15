@@ -26,7 +26,9 @@
    [app.main.ui.shapes.path :as path]
    [app.main.ui.shapes.rect :as rect]
    [app.main.ui.shapes.text :as text]
-   [app.main.ui.shapes.group :as group]))
+   [app.main.ui.shapes.group :as group]
+   [app.main.ui.shapes.gradients :as grad]
+   [app.main.ui.context :as muc]))
 
 (def ^:private default-color "#E8E9EA") ;; $color-canvas
 
@@ -55,8 +57,14 @@
     (mf/fnc frame-wrapper
       [{:keys [shape] :as props}]
       (let [childs (mapv #(get objects %) (:shapes shape))
-            shape  (geom/transform-shape shape)]
-        [:& frame-shape {:shape shape :childs childs}]))))
+            shape  (geom/transform-shape shape)
+            render-id (mf/use-memo #(str (uuid/next)))]
+        [:& (mf/provider muc/render-ctx) {:value render-id}
+         [:g.frame
+          [:defs
+           [:& grad/gradient   {:shape shape :attr :fill-color-gradient}]
+           [:& grad/gradient   {:shape shape :attr :stroke-color-gradient}]]
+          [:& frame-shape {:shape shape :childs childs}]]]))))
 
 (defn group-wrapper-factory
   [objects]
@@ -79,20 +87,24 @@
       (when (and shape (not (:hidden shape)))
         (let [shape (geom/transform-shape frame shape)
               opts #js {:shape shape}
-              filter-id (filters/get-filter-id)]
-          [:g {:filter (filters/filter-str filter-id shape)}
-           [:& filters/filters {:filter-id filter-id :shape shape}]
-           (case (:type shape)
-             :curve  [:> path/path-shape opts]
-             :text   [:> text/text-shape opts]
-             :icon   [:> icon/icon-shape opts]
-             :rect   [:> rect/rect-shape opts]
-             :path   [:> path/path-shape opts]
-             :image  [:> image/image-shape opts]
-             :circle [:> circle/circle-shape opts]
-             :frame  [:> frame-wrapper {:shape shape}]
-             :group  [:> group-wrapper {:shape shape :frame frame}]
-             nil)])))))
+              render-id (mf/use-memo #(str (uuid/next)))]
+          [:& (mf/provider muc/render-ctx) {:value render-id}
+           [:g {:filter (filters/filter-str (str "filter_" render-id) shape)}
+            [:defs
+             [:& filters/filters {:shape shape}]
+             [:& grad/gradient   {:shape shape :attr :fill-color-gradient}]
+             [:& grad/gradient   {:shape shape :attr :stroke-color-gradient}]]
+            (case (:type shape)
+              :curve  [:> path/path-shape opts]
+              :text   [:> text/text-shape opts]
+              :icon   [:> icon/icon-shape opts]
+              :rect   [:> rect/rect-shape opts]
+              :path   [:> path/path-shape opts]
+              :image  [:> image/image-shape opts]
+              :circle [:> circle/circle-shape opts]
+              :frame  [:> frame-wrapper {:shape shape}]
+              :group  [:> group-wrapper {:shape shape :frame frame}]
+              nil)]])))))
 
 (mf/defc page-svg
   {::mf/wrap [mf/memo]}

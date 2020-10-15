@@ -123,45 +123,42 @@
 
         [filter-x filter-y filter-width filter-height] (get-filters-bounds shape filters)]
     (when (seq filters)
-      [:defs
-       [:filter {:id filter-id
-                 :x filter-x :y filter-y
-                 :width filter-width :height filter-height
-                 :filterUnits "userSpaceOnUse"
-                 :color-interpolation-filters "sRGB"}
+      [:filter {:id filter-id
+                :x filter-x :y filter-y
+                :width filter-width :height filter-height
+                :filterUnits "userSpaceOnUse"
+                :color-interpolation-filters "sRGB"}
 
-        (let [;; Add as a paramter the input filter
-              drop-shadow-filters (->> filters (filter #(= :drop-shadow (:style %))))
-              drop-shadow-filters (->> drop-shadow-filters
-                                       (map #(str "filter" (:id %)))
-                                       (cons "BackgroundImageFix")
-                                       (map add-in-filter drop-shadow-filters))
+       (let [;; Add as a paramter the input filter
+             drop-shadow-filters (->> filters (filter #(= :drop-shadow (:style %))))
+             drop-shadow-filters (->> drop-shadow-filters
+                                      (map #(str "filter" (:id %)))
+                                      (cons "BackgroundImageFix")
+                                      (map add-in-filter drop-shadow-filters))
 
-              inner-shadow-filters (->> filters (filter #(= :inner-shadow (:style %))))
-              inner-shadow-filters (->> inner-shadow-filters
+             inner-shadow-filters (->> filters (filter #(= :inner-shadow (:style %))))
+             inner-shadow-filters (->> inner-shadow-filters
                                        (map #(str "filter" (:id %)))
                                        (cons "shape")
                                        (map add-in-filter inner-shadow-filters))]
 
-          [:*
-           [:feFlood {:flood-opacity 0 :result "BackgroundImageFix"}]
-           (for [{:keys [id type] :as filter} drop-shadow-filters]
-             [:& drop-shadow-filter {:key id
+         [:*
+          [:feFlood {:flood-opacity 0 :result "BackgroundImageFix"}]
+          (for [{:keys [id type] :as filter} drop-shadow-filters]
+            [:& drop-shadow-filter {:key id
+                                    :filter-id filter-id
+                                    :filter filter
+                                    :shape shape}])
+
+          [:feBlend {:mode "normal"
+                     :in "SourceGraphic"
+                     :in2 (if (seq drop-shadow-filters)
+                            (str "filter" (:id (last drop-shadow-filters)))
+                            "BackgroundImageFix")
+                     :result "shape"}]
+
+          (for [{:keys [id type] :as filter} inner-shadow-filters]
+            [:& inner-shadow-filter {:key id
                                      :filter-id filter-id
                                      :filter filter
-                                     :shape shape}])
-
-           [:feBlend {:mode "normal"
-                      :in "SourceGraphic"
-                      :in2 (if (seq drop-shadow-filters)
-                             (str "filter" (:id (last drop-shadow-filters)))
-                             "BackgroundImageFix")
-                      :result "shape"}]
-
-           (for [{:keys [id type] :as filter} inner-shadow-filters]
-             [:& inner-shadow-filter {:key id
-                                     :filter-id filter-id
-                                     :filter filter
-                                     :shape shape}])
-           ])
-        ]])))
+                                     :shape shape}])])])))

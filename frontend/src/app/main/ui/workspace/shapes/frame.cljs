@@ -26,7 +26,9 @@
    [app.common.geom.shapes :as geom]
    [app.util.dom :as dom]
    [app.main.streams :as ms]
-   [app.util.timers :as ts]))
+   [app.util.timers :as ts]
+   [app.main.ui.context :as muc]
+   [app.common.uuid :as uuid]))
 
 (defn- frame-wrapper-factory-equals?
   [np op]
@@ -115,7 +117,7 @@
              (fn []
                (st/emit! (dws/change-hover-state (:id shape) false))))
 
-            filter-id (mf/use-memo filters/get-filter-id)]
+            render-id (mf/use-memo #(str (uuid/next)))]
 
         (when-not (:hidden shape)
           [:g {:class (when selected? "selected")
@@ -128,18 +130,14 @@
                             :on-double-click on-double-click
                             :on-mouse-down on-mouse-down}]
 
-           [:g.frame {:filter (filters/filter-str filter-id shape)}
-            [:& filters/filters {:filter-id filter-id :shape shape}]
-            
-            (when (:fill-color-gradient shape)
-              [:& grad/gradient {:attr :fill-color-gradient
-                                 :shape shape}])
+           [:& (mf/provider muc/render-ctx) {:value render-id}
+            [:g.frame {:filter (filters/filter-str (str "filter_" render-id) shape)}
+             [:defs
+              [:& filters/filters {:shape shape}]
+              [:& grad/gradient   {:shape shape :attr :fill-color-gradient}]
+              [:& grad/gradient   {:shape shape :attr :stroke-color-gradient}]]
 
-            (when (:stroke-color-gradient shape)
-              [:& grad/gradient {:attr :stroke-color-gradient
-                                 :shape shape}])
-
-            [:& frame-shape
-             {:shape shape
-              :childs children}]]])))))
+             [:& frame-shape
+              {:shape shape
+               :childs children}]]]])))))
 

@@ -9,8 +9,10 @@
 
 (ns app.main.ui.shapes.attrs
   (:require
+   [rumext.alpha :as mf]
    [cuerdas.core :as str]
-   [app.util.object :as obj]))
+   [app.util.object :as obj]
+   [app.main.ui.context :as muc]))
 
 (defn- stroke-type->dasharray
   [style]
@@ -24,16 +26,16 @@
   (obj/merge! attrs #js {:rx (:rx shape)
                          :ry (:ry shape)}))
 
-(defn add-fill [attrs shape]
-  (let [fill-color-gradient-id (str "fill-color-gradient_" (:render-id shape))]
+(defn add-fill [attrs shape render-id]
+  (let [fill-color-gradient-id (str "fill-color-gradient_" render-id)]
     (if (:fill-color-gradient shape)
       (obj/merge! attrs #js {:fill (str/format "url(#%s)" fill-color-gradient-id)})
       (obj/merge! attrs #js {:fill (or (:fill-color shape) "transparent")
                              :fillOpacity (:fill-opacity shape nil)}))))
 
-(defn add-stroke [attrs shape]
+(defn add-stroke [attrs shape render-id]
   (let [stroke-style (:stroke-style shape :none)
-        stroke-color-gradient-id (str "stroke-color-gradient_" (:render-id shape))]
+        stroke-color-gradient-id (str "stroke-color-gradient_" render-id)]
     (if (not= stroke-style :none)
       (if (:stroke-color-gradient shape)
         (obj/merge! attrs
@@ -49,7 +51,8 @@
 
 (defn extract-style-attrs
   ([shape]
-   (-> (obj/new)
-       (add-border-radius shape)
-       (add-fill shape)
-       (add-stroke shape))))
+   (let [render-id (mf/use-ctx muc/render-ctx)]
+     (-> (obj/new)
+         (add-border-radius shape)
+         (add-fill shape render-id)
+         (add-stroke shape render-id)))))
