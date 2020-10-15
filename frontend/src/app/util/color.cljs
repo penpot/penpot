@@ -103,3 +103,9 @@
         (str/fmt "rgba(%s, %s, %s, %s)" r g b opacity))
 
       :else "transparent")))
+
+(defn multiple? [{:keys [value color gradient]}]
+  (or (= value :multiple)
+      (= color :multiple)
+      (= gradient :multiple)
+      (and gradient color)))

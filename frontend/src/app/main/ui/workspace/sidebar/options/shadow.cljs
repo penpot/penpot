@@ -174,7 +174,11 @@
         [:span.after (t locale "workspace.options.shadow-options.spread")]]]
 
       [:div.color-row-wrap
-       [:& color-row {:color {:value (:color value) :opacity (:opacity value)}
+       [:& color-row {:color (if (string? (:color value))
+                               ;; Support for old format colors
+                               {:color (:color value) :opacity (:opacity value)}
+                               (:color value))
+                      :disable-gradient true
                       :on-change (update-color index)
                       :on-open #(st/emit! dwc/start-undo-transaction)
                       :on-close #(st/emit! dwc/commit-undo-transaction)}]]]]))

@@ -155,7 +155,9 @@
                 (st/emit! (dc/select-gradient-stop offset)))))
 
         on-select-library-color
-        (fn [color] (reset! state (data->state color)))
+        (fn [color]
+          (reset! dirty? true)
+          (reset! state (data->state color)))
 
         on-add-library-color
         (fn [color] (st/emit! (dwl/add-color (state->data @state))))
@@ -216,7 +218,7 @@
            (handle-change-color {:hex hex
                                  :r r :g g :b b
                                  :h h :s s :v v
-                                 :alpha alpha})))))
+                                 :alpha (/ alpha 255)})))))
 
     ;; Changes when another gradient handler is selected
     (mf/use-effect
@@ -297,6 +299,8 @@
                         :on-change handle-change-color}]
 
       [:& libraries {:current-color current-color
+                     :disable-gradient disable-gradient
+                     :disable-opacity disable-opacity
                      :on-select-color on-select-library-color
                      :on-add-library-color on-add-library-color}]
 

@@ -101,14 +101,17 @@
                                 (assoc-in [:params :item-length] item-length)))))
 
         handle-change-color
-        (fn [value opacity]
-          (emit-changes! #(-> %
-                              (assoc-in [:params :color :value] value)
-                              (assoc-in [:params :color :opacity] opacity))))
+        (fn [color]
+          (emit-changes! #(-> % (assoc-in [:params :color] color))))
 
         handle-use-default
         (fn []
-          (emit-changes! #(hash-map :params ((:type grid) default-grid-params))))
+          (let [params ((:type grid) default-grid-params)
+                color (or (get-in params [:color :value]) (get-in params [:color :color]))
+                params (-> params
+                           (assoc-in [:color :color] color)
+                           (update :color dissoc :value))]
+            (emit-changes! #(hash-map :params params))))
 
         handle-set-as-default
         (fn []
@@ -214,6 +217,7 @@
                         :on-change (handle-change :params :margin)}]])
 
       [:& color-row {:color (:color params)
+                     :disable-gradient true
                      :on-change handle-change-color}]
       [:div.row-flex
        [:button.btn-options {:disabled is-default

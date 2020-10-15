@@ -9,32 +9,20 @@
 
 (ns app.main.ui.components.color-bullet
   (:require
-   #_[beicon.core :as rx]
-   #_[goog.events :as events]
-   #_[okulary.core :as l]
    [rumext.alpha :as mf]
-   [app.util.color :as uc]
-   #_[cuerdas.core :as str]
-   #_[app.common.math :as mth]
-   #_[app.main.data.colors :as mdc]
-   #_[app.main.data.workspace :as udw]
-   #_[app.main.store :as st]
-   #_[app.main.ui.components.dropdown :refer [dropdown]]
-   #_[app.main.ui.icons :as i]
-   #_[app.main.ui.keyboard :as kbd]
-   #_[app.util.color :refer [hex->rgb]]
-   #_[app.util.dom :as dom]
-   #_[app.util.object :as obj]
-   #_[app.main.refs :as refs]
-   #_[app.util.i18n :as i18n :refer [t]]))
+   [app.util.color :as uc]))
 
 (mf/defc color-bullet [{:keys [color on-click]}]
-  (let [color (if (string? color) {:color color :opacity 1} color)]
-    [:div.color-bullet {:on-click #(when on-click (on-click %))}
-     (when (not (:gradient color))
-       [:div.color-bullet-left {:style {:background (uc/color->background (assoc color :opacity 1))}}])
+  (if (uc/multiple? color)
+    [:div.color-bullet.multiple {:on-click #(when on-click (on-click %))}]
 
-     [:div.color-bullet-right {:style {:background (uc/color->background color)}}]]))
+    ;; No multiple selection
+    (let [color (if (string? color) {:color color :opacity 1} color)]
+      [:div.color-bullet {:on-click #(when on-click (on-click %))}
+       (when (not (:gradient color))
+         [:div.color-bullet-left {:style {:background (uc/color->background (assoc color :opacity 1))}}])
+
+       [:div.color-bullet-right {:style {:background (uc/color->background color)}}]])))
 
 (defn gradient-type->string [{:keys [type]}]
   (case type

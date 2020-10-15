@@ -22,6 +22,7 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.modal :as md]
    [app.main.streams :as ms]
    [app.main.worker :as uw]))
 
@@ -123,9 +124,14 @@
   (ptk/reify ::deselect-all
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-local #(-> %
-                                          (assoc :selected (d/ordered-set))
-                                          (dissoc :selected-frame))))))
+
+      ;; Only deselect if there is no modal openned
+      (cond-> state
+        (not (::md/modal state))
+        (update :workspace-local
+                #(-> %
+                     (assoc :selected (d/ordered-set))
+                     (dissoc :selected-frame)))))))
 
 ;; --- Select Shapes (By selrect)
 

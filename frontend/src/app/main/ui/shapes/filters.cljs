@@ -25,8 +25,9 @@
     (str/fmt "url(#$0)" [filter-id])))
 
 (mf/defc color-matrix
-  [{:keys [color opacity]}]
-  (let [[r g b a] (color/hex->rgba color opacity)
+  [{:keys [color]}]
+  (let [{:keys [color opacity]} color
+        [r g b a] (color/hex->rgba color opacity)
         [r g b] [(/ r 255) (/ g 255) (/ b 255)]]
     [:feColorMatrix
      {:type "matrix"
@@ -36,7 +37,7 @@
   [{:keys [filter-id filter shape]}]
 
   (let [{:keys [x y width height]} (:selrect shape)
-        {:keys [id in-filter color opacity offset-x offset-y blur spread]} filter]
+        {:keys [id in-filter color offset-x offset-y blur spread]} filter]
     [:*
      [:feColorMatrix {:in "SourceAlpha" :type "matrix"
                       :values "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"}]
@@ -48,7 +49,7 @@
 
      [:feOffset {:dx offset-x :dy offset-y}]
      [:feGaussianBlur {:stdDeviation (/ blur 2)}]
-     [:& color-matrix {:color color :opacity opacity}]
+     [:& color-matrix {:color color}]
 
      [:feBlend {:mode "normal"
                 :in2 in-filter
@@ -58,7 +59,7 @@
   [{:keys [filter-id filter shape]}]
 
   (let [{:keys [x y width height]} (:selrect shape)
-        {:keys [id in-filter color opacity offset-x offset-y blur spread]} filter]
+        {:keys [id in-filter color offset-x offset-y blur spread]} filter]
     [:*
      [:feColorMatrix {:in "SourceAlpha" :type "matrix"
                       :values "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
@@ -78,7 +79,7 @@
                     :k2 "-1"
                     :k3 "1"}]
 
-     [:& color-matrix {:color color :opacity opacity}]
+     [:& color-matrix {:color color}]
 
      [:feBlend {:mode "normal"
                 :in2 in-filter

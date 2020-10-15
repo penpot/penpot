@@ -102,6 +102,13 @@ ul.palette-menu .color-bullet {
   }
 }
 
+.color-data .color-bullet.multiple {
+  background: transparent;
+
+  &::before {
+    content: "?"
+  }
+}
 
 .color-data .color-bullet {
   background-color: $color-gray-30;

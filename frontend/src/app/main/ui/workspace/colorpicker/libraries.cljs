@@ -32,7 +32,8 @@
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector]]
    [app.main.ui.workspace.colorpicker.color-inputs :refer [color-inputs]]))
 
-(mf/defc libraries [{:keys [current-color on-select-color on-add-library-color]}]
+(mf/defc libraries [{:keys [current-color on-select-color on-add-library-color
+                            disable-gradient disable-opacity]}]
   (let [selected-library       (mf/use-state "recent")
         current-library-colors (mf/use-state [])
 
@@ -45,7 +46,11 @@
         (fn [selected]
           (if (#{"recent" "file"} selected)
             (keyword selected)
-            (uuid selected)) )]
+            (uuid selected)) )
+
+        check-valid-color? (fn [color]
+                             (and (or (not disable-gradient) (not (:gradient color)))
+                                  (or (not disable-opacity) (= 1 (:opacity color)))))]
 
     ;; Load library colors when the select is changed
     (mf/use-effect
@@ -63,14 +68,14 @@
                :else ;; Library UUID
                (map #(merge {:file-id (uuid @selected-library)})
                     (vals (get-in shared-libs [(uuid @selected-library) :data :colors]))))]
-         (reset! current-library-colors (into [] mapped-colors)))))
+         (reset! current-library-colors (into [] (filter check-valid-color?) mapped-colors)))))
 
     ;; If the file colors change and the file option is selected updates the state
     (mf/use-effect
      (mf/deps file-colors)
      (fn [] (when (= @selected-library "file")
               (let [colors (vals file-colors)]
-                (reset! current-library-colors (into [] colors))))))
+                (reset! current-library-colors (into [] (filter check-valid-color?) colors))))))
 
 
     [:div.libraries

@@ -12,14 +12,15 @@
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
    [app.common.math :as math]
-   [app.main.ui.components.color-bullet :refer [color-bullet color-name]]
+   [app.common.pages :as cp]
+   [app.common.data :as d]
    [app.util.dom :as dom]
    [app.util.data :refer [classnames]]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.main.data.modal :as modal]
-   [app.common.data :as d]
+   [app.util.color :as uc]
    [app.main.refs :as refs]
-   [app.util.color :as uc]))
+   [app.main.data.modal :as modal]
+   [app.main.ui.components.color-bullet :refer [color-bullet color-name]]))
 
 (defn color-picker-callback
   [color disable-gradient disable-opacity handle-change-color handle-open handle-close]
@@ -73,7 +74,9 @@
                           (update :color #(or % (:value color)))))
 
         change-value (fn [new-value]
-                       (when on-change (on-change (assoc color :color new-value))))
+                       (when on-change (on-change (-> color
+                                                      (assoc :color new-value)
+                                                      (dissoc :gradient)))))
 
         change-opacity (fn [new-opacity]
                          (when on-change (on-change (assoc color :opacity new-opacity))))
@@ -107,8 +110,16 @@
 
         handle-click-color (mf/use-callback
                             (mf/deps color)
-                            (color-picker-callback color disable-gradient disable-opacity
-                                                   handle-pick-color handle-open handle-close))]
+                            (let [;; If multiple, we change to default color
+                                  color (if (uc/multiple? color)
+                                          {:color cp/default-color :opacity 1}
+                                          color)]
+                              (color-picker-callback color
+                                                     disable-gradient
+                                                     disable-opacity
+                                                     handle-pick-color
+                                                     handle-open
+                                                     handle-close)))]
 
     (mf/use-effect
      (mf/deps color)
@@ -118,11 +129,6 @@
     [:div.row-flex.color-data
      [:& color-bullet {:color color
                        :on-click handle-click-color}]
-     #_[:span.color-th
-      {:class (when (and (:id color) (not= (:id color) :multiple)) "color-name")
-       :style {:background (uc/color->background color)}
-       :on-click handle-click-color}
-      (when (= (:color color) :multiple) "?")]
 
      (cond
        ;; Rendering a color with ID
@@ -131,7 +137,8 @@
         [:div.color-name (str (get-color-name color))]]
 
        ;; Rendering a gradient
-       (and (:gradient color) (get-in color [:gradient :type]))
+       (and (not (uc/multiple? color))
+            (:gradient color) (get-in color [:gradient :type]))
        [:div.color-info
         [:div.color-name
          (case (get-in color [:gradient :type])
@@ -142,13 +149,16 @@
        :else
        [:*
         [:div.color-info
-         [:input {:value (-> color :color remove-hash)
+         [:input {:value (if (uc/multiple? color)
+                           ""
+                           (-> color :color remove-hash))
                   :pattern "^[0-9a-fA-F]{0,6}$"
                   :placeholder (tr "settings.multiple")
                   :on-click select-all
                   :on-change handle-value-change}]]
 
-        (when (not disable-opacity)
+        (when (and (not disable-opacity)
+                   (not (:gradient color)))
           [:div.input-element
            {:class (classnames :percentail (not= (:opacity color) :multiple))}
            [:input.input-text {:type "number"

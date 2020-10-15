@@ -18,7 +18,9 @@
 
 (mf/defc square-grid [{:keys [frame zoom grid] :as props}]
   (let [{:keys [color size] :as params} (-> grid :params)
-        {color-value :value color-opacity :opacity} (-> grid :params :color)
+        {color-value :color color-opacity :opacity} (-> grid :params :color)
+        ;; Support for old color format
+        color-value (or color-value (:value (get-in grid [:params :color :value])))
         {frame-width :width frame-height :height :keys [x y]} frame]
     (when (> size 0)
       [:g.grid
@@ -43,7 +45,9 @@
                           :stroke-width (str (/ 1 zoom))}}])]])))
 
 (mf/defc layout-grid [{:keys [key frame zoom grid]}]
-  (let [{color-value :value color-opacity :opacity} (-> grid :params :color)
+  (let [{color-value :color color-opacity :opacity} (-> grid :params :color)
+        ;; Support for old color format
+        color-value (or color-value (:value (get-in grid [:params :color :value])))
         gutter (-> grid :params :gutter)
         gutter? (and (not (nil? gutter)) (not= gutter 0))
 
