@@ -19,7 +19,8 @@
 
     ;; No multiple selection
     (let [color (if (string? color) {:color color :opacity 1} color)]
-      [:div.color-bullet {:on-click #(when on-click (on-click %))}
+      [:div.color-bullet {:class (when (:id color) "is-library-color")
+                          :on-click #(when on-click (on-click %))}
        (when (not (:gradient color))
          [:div.color-bullet-left {:style {:background (uc/color->background (assoc color :opacity 1))}}])
 

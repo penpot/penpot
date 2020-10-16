@@ -110,6 +110,10 @@ ul.palette-menu .color-bullet {
   }
 }
 
+.color-data .color-bullet.is-library-color {
+  border-radius: 50%;
+}
+
 .color-data .color-bullet {
   background-color: $color-gray-30;
   border: 1px solid $color-gray-30;

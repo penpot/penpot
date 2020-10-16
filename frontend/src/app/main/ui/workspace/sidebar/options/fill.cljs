@@ -21,7 +21,12 @@
    [app.util.i18n :as i18n :refer [tr t]]
    [app.util.object :as obj]))
 
-(def fill-attrs [:fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient])
+(def fill-attrs
+  [:fill-color
+   :fill-opacity
+   :fill-color-ref-id
+   :fill-color-ref-file
+   :fill-color-gradient])
 
 (defn- fill-menu-props-equals?
   [np op]
@@ -33,13 +38,7 @@
         old-values (obj/get op "values")]
     (and (= new-ids old-ids)
          (= new-editor old-editor)
-         (= (:fill-color new-values)
-            (:fill-color old-values))
-         (= (:fill-opacity new-values)
-            (:fill-opacity old-values))
-         (= (:fill-color-gradient new-values)
-            (:fill-color-gradient old-values)))))
-
+         (every? #(identical? (% new-values) (% old-values)) fill-attrs))))
 
 (mf/defc fill-menu
   {::mf/wrap [#(mf/memo' % fill-menu-props-equals?)]}

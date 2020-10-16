@@ -50,9 +50,7 @@
 ;; --- Components
 (mf/defc palette-item
   [{:keys [color size local?]}]
-  (let [id (:id color)
-        file-id (:file-id color)
-        select-color
+  (let [select-color
         (fn [event]
           (let [ids (get-in @st/state [:workspace-local :selected])]
             (if (kbd/shift? event)

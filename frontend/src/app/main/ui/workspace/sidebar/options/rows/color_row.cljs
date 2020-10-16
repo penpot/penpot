@@ -128,7 +128,7 @@
 
     [:div.row-flex.color-data
      [:& cb/color-bullet {:color color
-                       :on-click handle-click-color}]
+                          :on-click handle-click-color}]
 
      (cond
        ;; Rendering a color with ID

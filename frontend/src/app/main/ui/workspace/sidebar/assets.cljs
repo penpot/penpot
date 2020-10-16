@@ -336,7 +336,7 @@
           (let [color (cond-> color
                         (:value color) (assoc :color (:value color) :opacity 1)
                         (:value color) (dissoc :value)
-                        true (assoc :file-id file-id))]
+                        true (assoc :file-id (when (not local?) file-id)))]
             [:& color-item {:key (:id color)
                             :color color
                             :local? local?
