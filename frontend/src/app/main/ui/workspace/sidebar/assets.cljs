@@ -391,7 +391,9 @@
 
         handle-delete-typography
         (fn []
-          (st/emit! (dwl/delete-typography (:id @state))))]
+          (st/emit! (dwl/delete-typography (:id @state))))
+
+        editting-id (or (:rename-typography local) (:edit-typography local))]
 
     (mf/use-effect
      (mf/deps local)
@@ -428,8 +430,7 @@
             :on-context-menu #(on-context-menu (:id typography) %)
             :on-change #(handle-change typography %)
             :on-select #(handle-typography-selection typography)
-            :editting? (or (= (:rename-typography local) (:id typography))
-                           (= (:edit-typography local) (:id typography)))
+            :editting? (= editting-id (:id typography))
             :focus-name? (= (:rename-typography local) (:id typography))}])])]))
 
 (defn file-colors-ref

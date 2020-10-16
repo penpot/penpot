@@ -768,6 +768,17 @@
   z-index: 10;
 }
 
+.advanced-options-wrapper {
+  position: absolute;
+  width: 100%;
+  padding-right: 1.5rem;
+  padding-left: 0.25rem;
+}
+
+.element-options .advanced-options-wrapper {
+  padding-right: 1rem;
+}
+
 .advanced-options {
   background-color: #303236;
   border-radius: 4px;

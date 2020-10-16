@@ -533,20 +533,21 @@
                  :sync-dialog))))))
 
 (defn add-typography
-  [typography]
-  (let [typography (update typography :id #(or % (uuid/next)))]
-    (us/assert ::cp/typography typography)
-    (ptk/reify ::add-typography
-      ptk/WatchEvent
-      (watch [_ state s]
-        (let [rchg {:type :add-typography
-                    :typography (assoc typography :ts (.now js/Date))}
-              uchg {:type :del-typography
-                    :id (:id typography)}]
-          (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true})
-                 #(assoc-in %
-                            [:workspace-local :rename-typography]
-                            (:id typography))))))))
+  ([typography] (add-typography typography true))
+  ([typography edit?]
+   (let [typography (update typography :id #(or % (uuid/next)))]
+     (us/assert ::cp/typography typography)
+     (ptk/reify ::add-typography
+       ptk/WatchEvent
+       (watch [_ state s]
+         (let [rchg {:type :add-typography
+                     :typography (assoc typography :ts (.now js/Date))}
+               uchg {:type :del-typography
+                     :id (:id typography)}]
+           (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true})
+                  #(cond-> %
+                     edit?
+                     (assoc-in [:workspace-local :rename-typography] (:id typography))))))))))
 
 (defn update-typography
   [typography]
