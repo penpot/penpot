@@ -19,6 +19,15 @@
 
 (defonce empty-changes [[] []])
 
+(defonce color-sync-attrs
+  [[:fill-color-ref-id   :color    :fill-color]
+   [:fill-color-ref-id   :gradient :fill-color-gradient]
+   [:fill-color-ref-id   :opacity  :fill-opacity]
+
+   [:stroke-color-ref-id :color    :stroke-color]
+   [:stroke-color-ref-id :gradient :stroke-color-gradient]
+   [:stroke-color-ref-id :opacity  :stroke-opacity]])
+
 (declare generate-sync-container)
 (declare generate-sync-shape)
 (declare has-asset-reference-fn)
@@ -176,15 +185,17 @@
                        :content
                        ;; Check if any node in the content has a reference for the library
                        (ut/some-node
-                        #(and (some? (:fill-color-ref-id %))
-                              (= library-id (:fill-color-ref-file %)))))
+                        #(or (and (some? (:stroke-color-ref-id %))
+                                  (= library-id (:stroke-color-ref-file %)))
+                             (and (some? (:fill-color-ref-id %))
+                                  (= library-id (:fill-color-ref-file %))))))
                   (some
                    #(let [attr (name %)
                           attr-ref-id (keyword (str attr "-ref-id"))
                           attr-ref-file (keyword (str attr "-ref-file"))]
                       (and (get shape attr-ref-id)
                            (= library-id (get shape attr-ref-file))))
-                   cp/color-sync-attrs)))
+                   (map #(nth % 2) color-sync-attrs))))
 
     :typographies
     (fn [shape]
@@ -238,6 +249,7 @@
       empty-changes
       [rchanges lchanges])))
 
+
 (defmethod generate-sync-shape :colors
   [_ library-id state _ page-id component-id shape]
 
@@ -247,13 +259,16 @@
     (if (= :text (:type shape))
       (let [update-node (fn [node]
                           (if-let [color (get colors (:fill-color-ref-id node))]
-                            (assoc node :fill-color (:value color))
+                            (assoc node
+                                   :fill-color (:color color)
+                                   :fill-opacity (:opacity color)
+                                   :fill-color-gradient (:gradient color))
                             node))]
         (generate-sync-text-shape shape page-id component-id update-node))
-      (loop [attrs (seq cp/color-sync-attrs)
+      (loop [attrs (seq color-sync-attrs)
              roperations []
              uoperations []]
-        (let [attr (first attrs)]
+        (let [[attr-ref-id color-attr attr] (first attrs)]
           (if (nil? attr)
             (if (empty? roperations)
               empty-changes
@@ -268,23 +283,22 @@
                                                :id (:id shape)
                                                :operations uoperations})]]
                 [rchanges uchanges]))
-            (let [attr-ref-id (keyword (str (name attr) "-ref-id"))]
-              (if-not (contains? shape attr-ref-id)
+            (if-not (contains? shape attr-ref-id)
+              (recur (next attrs)
+                     roperations
+                     uoperations)
+              (let [color (get colors (get shape attr-ref-id))
+                    roperation {:type :set
+                                :attr attr
+                                :val (color-attr color)
+                                :ignore-touched true}
+                    uoperation {:type :set
+                                :attr attr
+                                :val (get shape attr)
+                                :ignore-touched true}]
                 (recur (next attrs)
-                       roperations
-                       uoperations)
-                (let [color (get colors (get shape attr-ref-id))
-                      roperation {:type :set
-                                  :attr attr
-                                  :val (:value color)
-                                  :ignore-touched true}
-                      uoperation {:type :set
-                                  :attr attr
-                                  :val (get shape attr)
-                                  :ignore-touched true}]
-                  (recur (next attrs)
-                         (conj roperations roperation)
-                         (conj uoperations uoperation)))))))))))
+                       (conj roperations roperation)
+                       (conj uoperations uoperation))))))))))
 
 (defmethod generate-sync-shape :typographies
   [_ library-id state _ page-id component-id shape]

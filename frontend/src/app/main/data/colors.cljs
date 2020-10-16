@@ -138,7 +138,8 @@
   (ptk/reify ::change-stroke
     ptk/WatchEvent
     (watch [_ state s]
-      (let [objects (get-in state [:workspace-data :pages-index (:current-page-id state) :objects])
+      (let [pid (:current-page-id state)
+            objects (get-in state [:workspace-data :pages-index pid :objects])
             not-frame (fn [shape-id] (not= (get-in objects [shape-id :type]) :frame))
             children (->> ids (filter not-frame) (mapcat #(cph/get-children % objects)))
             ids (into ids children)

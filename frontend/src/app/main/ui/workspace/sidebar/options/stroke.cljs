@@ -40,16 +40,7 @@
         new-values (obj/get np "values")
         old-values (obj/get op "values")]
     (and (= new-ids old-ids)
-         (identical? (:stroke-style new-values)
-                     (:stroke-style old-values))
-         (identical? (:stroke-alignment new-values)
-                     (:stroke-alignment old-values))
-         (identical? (:stroke-width new-values)
-                     (:stroke-width old-values))
-         (identical? (:stroke-color new-values)
-                     (:stroke-color old-values))
-         (identical? (:stroke-opacity new-values)
-                     (:stroke-opacity old-values)))))
+         (every? #(identical? (% new-values) (% old-values)) stroke-attrs))))
 
 (defn- width->string [width]
   (if (= width :multiple)

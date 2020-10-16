@@ -272,9 +272,6 @@
                            :rx                    :radius-group
                            :ry                    :radius-group})
 
-(def color-sync-attrs [:fill-color
-                       :stroke-color])
-
 (s/def ::minimal-shape
   (s/keys :req-un [::type ::name]
           :opt-un [::id]))
