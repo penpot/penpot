@@ -467,47 +467,6 @@
   margin-bottom: 0;
 }
 
-.color-th {
-  background-color: $color-gray-30;
-  border: 1px solid $color-gray-30;
-  border-radius: $br-small;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: $color-gray-10;
-  flex-shrink: 0;
-  height: 20px;
-  margin: 5px 4px 0 0;
-  width: 20px;
-
-  &.color-name {
-      border-radius: 10px;
-  }
-
-  &.palette-th {
-    align-items: center;
-    border: 1px solid $color-gray-30;
-    display: flex;
-    justify-content: center;
-
-    svg {
-      fill: $color-gray-30;
-      height: 16px;
-      width: 16px;
-    }
-
-    &:hover {
-      border-color: $color-primary;
-      svg {
-        fill: $color-primary;
-      }
-
-    }
-
-  }
-}
-
 .presets {
   .custom-select-dropdown {
     width: 200px;

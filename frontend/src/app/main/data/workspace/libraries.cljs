@@ -33,25 +33,32 @@
 
 (declare sync-file)
 
+(defn default-color-name [color]
+  (or (:color color)
+      (case (get-in color [:gradient :type])
+        :linear (tr "workspace.gradients.linear")
+        :radial (tr "workspace.gradients.radial"))))
+
 (defn add-color
   [color]
-  (us/assert ::us/string color)
-  (ptk/reify ::add-color
-    ptk/WatchEvent
-    (watch [_ state s]
-      (let [id   (uuid/next)
-            rchg {:type :add-color
-                  :color {:id id
-                          :name color
-                          :value color}}
-            uchg {:type :del-color
-                  :id id}]
-        (rx/of #(assoc-in % [:workspace-local :color-for-rename] id)
-               (dwc/commit-changes [rchg] [uchg] {:commit-local? true}))))))
+  (let [id   (uuid/next)
+        color (assoc color
+                     :id id
+                     :name (default-color-name color))]
+    (us/assert ::cp/color color)
+    (ptk/reify ::add-color
+      ptk/WatchEvent
+      (watch [_ state s]
+        (let [rchg {:type :add-color
+                    :color color}
+              uchg {:type :del-color
+                    :id id}]
+          (rx/of #(assoc-in % [:workspace-local :color-for-rename] id)
+                 (dwc/commit-changes [rchg] [uchg] {:commit-local? true})))))))
 
 (defn add-recent-color
   [color]
-  (us/assert ::us/string color)
+  (us/assert ::cp/recent-color color)
   (ptk/reify ::add-recent-color
     ptk/WatchEvent
     (watch [_ state s]

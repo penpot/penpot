@@ -29,7 +29,8 @@
    [app.util.object :as obj]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as geom]))
+   [app.common.geom.shapes :as geom]
+   [app.main.ui.shapes.shape :refer [shape-container]]))
 
 (defn on-mouse-down
   [event {:keys [interactions] :as shape}]
@@ -54,14 +55,11 @@
 
           on-mouse-down (mf/use-callback
                          (mf/deps shape)
-                         #(on-mouse-down % shape))
+                         #(on-mouse-down % shape))]
 
-          filter-id (filters/get-filter-id)]
-
-      [:g.shape {:on-mouse-down on-mouse-down
-                 :cursor (when (:interactions shape) "pointer")
-                 :filter (filters/filter-str filter-id shape)}
-       [:& filters/filters {:filter-id filter-id :shape shape}]
+      [:> shape-container {:shape shape
+                           :on-mouse-down on-mouse-down
+                           :cursor (when (:interactions shape) "pointer")}
        [:& component {:shape shape
                       :frame frame
                       :childs childs

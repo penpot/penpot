@@ -741,7 +741,7 @@
     (watch [_ state stream]
       (let [selected (get-in state [:workspace-local :selected])]
         (rx/of (delete-shapes selected)
-               dws/deselect-all)))))
+               (dws/deselect-all))))))
 
 ;; --- Shape Vertical Ordering
 
@@ -1318,7 +1318,7 @@
                     :grow-type (if (> (count text) 100) :auto-height :auto-width)
                     :content (as-content text)})]
         (rx/of dwc/start-undo-transaction
-               dws/deselect-all
+               (dws/deselect-all)
                (add-shape shape)
                (dwc/rehash-shape-frame-relationship [id])
                dwc/commit-undo-transaction)))))
@@ -1444,22 +1444,23 @@
 
 (defn change-canvas-color
   [color]
-  (s/assert string? color)
+  ;; TODO: Create a color spec
+  #_(s/assert string? color)
   (ptk/reify ::change-canvas-color
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id (get state :current-page-id)
             options (dwc/lookup-page-options state page-id)
-            ccolor  (:background options)]
+            previus-color  (:background options)]
         (rx/of (dwc/commit-changes
                 [{:type :set-option
                   :page-id page-id
                   :option :background
-                  :value color}]
+                  :value (:color color)}]
                 [{:type :set-option
                   :page-id page-id
                   :option :background
-                  :value ccolor}]
+                  :value previus-color}]
                 {:commit-local? true}))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1530,7 +1531,7 @@
                   (select-for-drawing :text))
    "ctrl+c" #(st/emit! copy-selected)
    "ctrl+v" #(st/emit! paste)
-   "escape" #(st/emit! :interrupt deselect-all)
+   "escape" #(st/emit! :interrupt (deselect-all true))
    "del" #(st/emit! delete-selected)
    "backspace" #(st/emit! delete-selected)
    "ctrl+up" #(st/emit! (vertical-order-selected :up))

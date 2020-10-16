@@ -19,6 +19,7 @@
    [app.main.data.workspace :as udw]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
    [app.util.color :refer [hex->rgb]]
@@ -55,14 +56,13 @@
         (fn [event]
           (let [ids (get-in @st/state [:workspace-local :selected])]
             (if (kbd/shift? event)
-              (st/emit! (mdc/change-stroke ids (:value color) id file-id))
-              (st/emit! (mdc/change-fill ids (:value color) id file-id)))))]
+              (st/emit! (mdc/change-stroke ids color))
+              (st/emit! (mdc/change-fill ids color)))))]
 
     [:div.color-cell {:class (str "cell-"(name size))
-                      :key (or (str (:id color)) (:value color))
                       :on-click select-color}
-     [:span.color {:style {:background (:value color)}}]
-     (when (= size :big) [:span.color-text {:title (:name color) } (or (:name color) (:value color))])]))
+     [:& cb/color-bullet {:color color}]
+     [:& cb/color-name {:color color :size size}]]))
 
 (mf/defc palette
   [{:keys [left-sidebar? current-colors recent-colors file-colors shared-libs selected size]}]
@@ -138,9 +138,9 @@
             (when (= selected (:id cur-library)) i/tick)
             [:div.library-name (str (:name cur-library) " " (str/format "(%s)" (count colors)))]
             [:div.color-sample
-             (for [[idx {:keys [id value]}] (map-indexed vector (take 7 colors))]
-               [:div.color-bullet {:key (str "color-" idx)
-                                   :style {:background-color value}}])]]))
+             (for [[idx {:keys [id color]}] (map-indexed vector (take 7 colors))]
+               [:& cb/color-bullet {:key (str "color-" idx)
+                                    :color color}])]]))
 
 
        [:li.palette-library
@@ -149,9 +149,9 @@
         [:div.library-name (str (t locale "workspace.libraries.colors.file-library")
                                 (str/format " (%s)" (count file-colors)))]
         [:div.color-sample
-         (for [[idx {:keys [value]}] (map-indexed vector (take 7 (vals file-colors))) ]
-           [:div.color-bullet {:key (str "color-" idx)
-                               :style {:background-color value}}])]]
+         (for [[idx color] (map-indexed vector (take 7 (vals file-colors))) ]
+           [:& cb/color-bullet {:key (str "color-" idx)
+                                :color color}])]]
 
        [:li.palette-library
         {:on-click #(st/emit! (mdc/change-palette-selected :recent))}
@@ -159,9 +159,9 @@
         [:div.library-name (str (t locale "workspace.libraries.colors.recent-colors")
                                 (str/format " (%s)" (count recent-colors)))]
         [:div.color-sample
-         (for [[idx value] (map-indexed vector (take 7 (reverse recent-colors))) ]
-           [:div.color-bullet {:key (str "color-" idx)
-                               :style {:background-color value}}])]]
+         (for [[idx color] (map-indexed vector (take 7 (reverse recent-colors))) ]
+           [:& cb/color-bullet {:key (str "color-" idx)
+                                :color color}])]]
 
        [:hr.dropdown-separator]
 
@@ -191,14 +191,8 @@
 
      [:span.right-arrow {:on-click on-right-arrow-click} i/arrow-slide]]))
 
-(defn recent->colors [recent-colors]
-  (map #(hash-map :value %) (reverse (or recent-colors []))))
-
-(defn file->colors [file-colors]
-  (map #(select-keys % [:id :value :name]) (vals file-colors)))
-
 (defn library->colors [shared-libs selected]
-  (map #(merge {:file-id selected} (select-keys % [:id :value :name]))
+  (map #(merge {:file-id selected} %)
        (vals (get-in shared-libs [selected :data :colors]))))
 
 (mf/defc colorpalette
@@ -217,21 +211,21 @@
        (reset! current-library-colors
                (into []
                      (cond
-                       (= selected :recent) (recent->colors recent-colors)
-                       (= selected :file)   (file->colors file-colors)
+                       (= selected :recent) (reverse recent-colors)
+                       (= selected :file)   (vals file-colors)
                        :else                (library->colors shared-libs selected))))))
 
     (mf/use-effect
      (mf/deps recent-colors)
      (fn []
        (when (= selected :recent)
-         (reset! current-library-colors (into [] (recent->colors recent-colors))))))
+         (reset! current-library-colors (reverse recent-colors)))))
 
     (mf/use-effect
      (mf/deps file-colors)
      (fn []
        (when (= selected :file)
-         (reset! current-library-colors (into [] (file->colors file-colors))))))
+         (reset! current-library-colors (into [] (vals file-colors))))))
 
     [:& palette {:left-sidebar? left-sidebar?
                  :current-colors @current-library-colors

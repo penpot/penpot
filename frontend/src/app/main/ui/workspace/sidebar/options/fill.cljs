@@ -21,7 +21,7 @@
    [app.util.i18n :as i18n :refer [tr t]]
    [app.util.object :as obj]))
 
-(def fill-attrs [:fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file])
+(def fill-attrs [:fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient])
 
 (defn- fill-menu-props-equals?
   [np op]
@@ -36,42 +36,47 @@
          (= (:fill-color new-values)
             (:fill-color old-values))
          (= (:fill-opacity new-values)
-            (:fill-opacity old-values)))))
+            (:fill-opacity old-values))
+         (= (:fill-color-gradient new-values)
+            (:fill-color-gradient old-values)))))
 
 
 (mf/defc fill-menu
   {::mf/wrap [#(mf/memo' % fill-menu-props-equals?)]}
   [{:keys [ids type values editor] :as props}]
   (let [locale    (mf/deref i18n/locale)
-        show?     (not (nil? (:fill-color values)))
+        show?     (or (not (nil? (:fill-color values)))
+                      (not (nil? (:fill-color-gradient values))))
 
         label (case type
                 :multiple (t locale "workspace.options.selection-fill")
                 :group (t locale "workspace.options.group-fill")
                 (t locale "workspace.options.fill"))
 
-        color {:value (:fill-color values)
+        color {:color (:fill-color values)
                :opacity (:fill-opacity values)
                :id (:fill-color-ref-id values)
-               :file-id (:fill-color-ref-file values)}
+               :file-id (:fill-color-ref-file values)
+               :gradient (:fill-color-gradient values)}
 
         on-add
         (mf/use-callback
          (mf/deps ids)
          (fn [event]
-           (st/emit! (dc/change-fill ids cp/default-color nil nil))))
+           (st/emit! (dc/change-fill ids {:color cp/default-color
+                                           :opacity 1}))))
 
         on-delete
         (mf/use-callback
          (mf/deps ids)
          (fn [event]
-           (st/emit! (dc/change-fill ids nil nil nil))))
+           (st/emit! (dc/change-fill ids nil))))
 
         on-change
         (mf/use-callback
          (mf/deps ids)
-         (fn [value opacity id file-id]
-           (st/emit! (dc/change-fill ids value opacity id file-id))))
+         (fn [color]
+           (st/emit! (dc/change-fill ids color))))
 
         on-open-picker
         (mf/use-callback

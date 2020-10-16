@@ -25,8 +25,9 @@
     (str/fmt "url(#$0)" [filter-id])))
 
 (mf/defc color-matrix
-  [{:keys [color opacity]}]
-  (let [[r g b a] (color/hex->rgba color opacity)
+  [{:keys [color]}]
+  (let [{:keys [color opacity]} color
+        [r g b a] (color/hex->rgba color opacity)
         [r g b] [(/ r 255) (/ g 255) (/ b 255)]]
     [:feColorMatrix
      {:type "matrix"
@@ -36,7 +37,7 @@
   [{:keys [filter-id filter shape]}]
 
   (let [{:keys [x y width height]} (:selrect shape)
-        {:keys [id in-filter color opacity offset-x offset-y blur spread]} filter]
+        {:keys [id in-filter color offset-x offset-y blur spread]} filter]
     [:*
      [:feColorMatrix {:in "SourceAlpha" :type "matrix"
                       :values "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"}]
@@ -48,7 +49,7 @@
 
      [:feOffset {:dx offset-x :dy offset-y}]
      [:feGaussianBlur {:stdDeviation (/ blur 2)}]
-     [:& color-matrix {:color color :opacity opacity}]
+     [:& color-matrix {:color color}]
 
      [:feBlend {:mode "normal"
                 :in2 in-filter
@@ -58,7 +59,7 @@
   [{:keys [filter-id filter shape]}]
 
   (let [{:keys [x y width height]} (:selrect shape)
-        {:keys [id in-filter color opacity offset-x offset-y blur spread]} filter]
+        {:keys [id in-filter color offset-x offset-y blur spread]} filter]
     [:*
      [:feColorMatrix {:in "SourceAlpha" :type "matrix"
                       :values "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
@@ -78,7 +79,7 @@
                     :k2 "-1"
                     :k3 "1"}]
 
-     [:& color-matrix {:color color :opacity opacity}]
+     [:& color-matrix {:color color}]
 
      [:feBlend {:mode "normal"
                 :in2 in-filter
@@ -122,45 +123,42 @@
 
         [filter-x filter-y filter-width filter-height] (get-filters-bounds shape filters)]
     (when (seq filters)
-      [:defs
-       [:filter {:id filter-id
-                 :x filter-x :y filter-y
-                 :width filter-width :height filter-height
-                 :filterUnits "userSpaceOnUse"
-                 :color-interpolation-filters "sRGB"}
+      [:filter {:id filter-id
+                :x filter-x :y filter-y
+                :width filter-width :height filter-height
+                :filterUnits "userSpaceOnUse"
+                :color-interpolation-filters "sRGB"}
 
-        (let [;; Add as a paramter the input filter
-              drop-shadow-filters (->> filters (filter #(= :drop-shadow (:style %))))
-              drop-shadow-filters (->> drop-shadow-filters
-                                       (map #(str "filter" (:id %)))
-                                       (cons "BackgroundImageFix")
-                                       (map add-in-filter drop-shadow-filters))
+       (let [;; Add as a paramter the input filter
+             drop-shadow-filters (->> filters (filter #(= :drop-shadow (:style %))))
+             drop-shadow-filters (->> drop-shadow-filters
+                                      (map #(str "filter" (:id %)))
+                                      (cons "BackgroundImageFix")
+                                      (map add-in-filter drop-shadow-filters))
 
-              inner-shadow-filters (->> filters (filter #(= :inner-shadow (:style %))))
-              inner-shadow-filters (->> inner-shadow-filters
+             inner-shadow-filters (->> filters (filter #(= :inner-shadow (:style %))))
+             inner-shadow-filters (->> inner-shadow-filters
                                        (map #(str "filter" (:id %)))
                                        (cons "shape")
                                        (map add-in-filter inner-shadow-filters))]
 
-          [:*
-           [:feFlood {:flood-opacity 0 :result "BackgroundImageFix"}]
-           (for [{:keys [id type] :as filter} drop-shadow-filters]
-             [:& drop-shadow-filter {:key id
+         [:*
+          [:feFlood {:flood-opacity 0 :result "BackgroundImageFix"}]
+          (for [{:keys [id type] :as filter} drop-shadow-filters]
+            [:& drop-shadow-filter {:key id
+                                    :filter-id filter-id
+                                    :filter filter
+                                    :shape shape}])
+
+          [:feBlend {:mode "normal"
+                     :in "SourceGraphic"
+                     :in2 (if (seq drop-shadow-filters)
+                            (str "filter" (:id (last drop-shadow-filters)))
+                            "BackgroundImageFix")
+                     :result "shape"}]
+
+          (for [{:keys [id type] :as filter} inner-shadow-filters]
+            [:& inner-shadow-filter {:key id
                                      :filter-id filter-id
                                      :filter filter
-                                     :shape shape}])
-
-           [:feBlend {:mode "normal"
-                      :in "SourceGraphic"
-                      :in2 (if (seq drop-shadow-filters)
-                             (str "filter" (:id (last drop-shadow-filters)))
-                             "BackgroundImageFix")
-                      :result "shape"}]
-
-           (for [{:keys [id type] :as filter} inner-shadow-filters]
-             [:& inner-shadow-filter {:key id
-                                     :filter-id filter-id
-                                     :filter filter
-                                     :shape shape}])
-           ])
-        ]])))
+                                     :shape shape}])])])))

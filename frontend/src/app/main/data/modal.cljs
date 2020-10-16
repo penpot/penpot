@@ -29,6 +29,14 @@
                             :type type
                             :props props
                             :allow-click-outside false})))))
+(defn update-props
+  ([type props]
+   (ptk/reify ::show-modal
+     ptk/UpdateEvent
+     (update [_ state]
+       (cond-> state
+         (::modal state)
+         (update-in [::modal :props] merge props))))))
 
 (defn hide
   []
@@ -42,11 +50,17 @@
   (ptk/reify ::update-modal
     ptk/UpdateEvent
     (update [_ state]
-      (c/update state ::modal merge options))))
+      (cond-> state
+        (::modal state)
+        (c/update ::modal merge options)))))
 
 (defn show!
   [type props]
   (st/emit! (show type props)))
+
+(defn update-props!
+  [type props]
+  (st/emit! (update-props type props)))
 
 (defn allow-click-outside!
   []

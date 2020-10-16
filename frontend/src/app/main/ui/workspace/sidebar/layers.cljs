@@ -143,10 +143,10 @@
               (st/emit! (dw/select-shape id true))
 
               (> (count selected) 1)
-              (st/emit! dw/deselect-all
+              (st/emit! (dw/deselect-all)
                         (dw/select-shape id))
               :else
-              (st/emit! dw/deselect-all
+              (st/emit! (dw/deselect-all)
                         (dw/select-shape id)))))
 
         on-context-menu
@@ -160,7 +160,7 @@
         on-drag
         (fn [{:keys [id]}]
           (when (not (contains? selected id))
-            (st/emit! dw/deselect-all
+            (st/emit! (dw/deselect-all)
                       (dw/select-shape id))))
 
         on-drop

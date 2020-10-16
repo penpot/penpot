@@ -28,6 +28,7 @@
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
    [app.main.ui.workspace.sidebar.options.typography :refer [typography-entry]]
+   [app.main.ui.components.color-bullet :as bc]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
    [app.main.data.modal :as modal]
@@ -190,7 +191,7 @@
             :options [[(tr "workspace.assets.delete") on-delete]]}])])]))
 
 (mf/defc color-item
-  [{:keys [color local? locale file-id] :as props}]
+  [{:keys [color local? locale] :as props}]
   (let [rename?   (= (:color-for-rename @refs/workspace-local) (:id color))
         id        (:id color)
         input-ref (mf/use-ref)
@@ -198,20 +199,27 @@
                                  :top nil
                                  :left nil
                                  :editing rename?})
+
+        default-name (cond
+                       (:gradient color) (bc/gradient-type->string (get-in color [:gradient :type]))
+                       (:color color) (:color color)
+                       :else (:value color))
+
         click-color
         (fn [event]
           (let [ids (get-in @st/state [:workspace-local :selected])]
             (if (kbd/shift? event)
-              (st/emit! (dc/change-stroke ids (:value color) id (if local? nil file-id)))
-              (st/emit! (dc/change-fill ids (:value color) id (if local? nil file-id))))))
+              (st/emit! (dc/change-stroke ids color))
+              (st/emit! (dc/change-fill ids color)))))
 
         rename-color
         (fn [name]
           (st/emit! (dwl/update-color (assoc color :name name))))
 
         edit-color
-        (fn [value]
-          (st/emit! (dwl/update-color (assoc color :value value))))
+        (fn [new-color]
+          (let [updated-color (merge new-color (select-keys color [:id :file-id :name]))]
+            (st/emit! (dwl/update-color updated-color))))
 
         delete-color
         (fn []
@@ -245,8 +253,7 @@
                        {:x (.-clientX event)
                         :y (.-clientY event)
                         :on-accept edit-color
-                        :value (:value color)
-                        :disable-opacity true
+                        :data color
                         :position :right}))
 
         on-context-menu
@@ -269,7 +276,8 @@
          nil))
 
     [:div.group-list-item {:on-context-menu on-context-menu}
-     [:div.color-block {:style {:background-color (:value color)}}]
+     [:& bc/color-bullet {:color color}]
+
      (if (:editing @state)
        [:input.element-name
         {:type "text"
@@ -278,12 +286,13 @@
          :on-key-down input-key-down
          :auto-focus true
          :default-value (:name color "")}]
+
        [:div.name-block
         {:on-double-click rename-color-clicked
          :on-click click-color}
         (:name color)
-        (when-not (= (:name color) (:value color))
-          [:span (:value color)])])
+        (when-not (= (:name color) default-name)
+          [:span default-name])])
      (when local?
        [:& context-menu
          {:selectable false
@@ -312,8 +321,8 @@
                         {:x (.-clientX event)
                          :y (.-clientY event)
                          :on-accept add-color
-                         :value "#406280"
-                         :disable-opacity true
+                         :data {:color "#406280"
+                                :opacity 1}
                          :position :right})))]
     [:div.asset-group
      [:div.group-title {:class (when (not open?) "closed")}
@@ -324,11 +333,14 @@
      (when open?
        [:div.group-list
         (for [color colors]
-          [:& color-item {:key (:id color)
-                          :color color
-                          :file-id file-id
-                          :local? local?
-                          :locale locale}])])]))
+          (let [color (cond-> color
+                        (:value color) (assoc :color (:value color) :opacity 1)
+                        (:value color) (dissoc :value)
+                        true (assoc :file-id file-id))]
+            [:& color-item {:key (:id color)
+                            :color color
+                            :local? local?
+                            :locale locale}]))])]))
 
 (mf/defc typography-box
   [{:keys [file file-id local? typographies locale open? on-open on-close] :as props}]

@@ -20,10 +20,10 @@
   (:import goog.events.EventType))
 
 (defn- on-esc-clicked
-  [event]
-  (when (k/esc? event)
-    (st/emit! (dm/hide))
-    (dom/stop-propagation event)))
+  [event allow-click-outside]
+  (when (and (k/esc? event) (not allow-click-outside))
+    (do (dom/stop-propagation event)
+        (st/emit! (dm/hide)))))
 
 (defn- on-pop-state
   [event]
@@ -43,11 +43,14 @@
       (st/emit! (dm/hide)))))
 
 (defn- on-click-outside
-  [event wrapper-ref allow-click-outside]
+  [event wrapper-ref type allow-click-outside]
   (let [wrapper (mf/ref-val wrapper-ref)
         current (dom/get-target event)]
 
-    (when (and wrapper (not allow-click-outside) (not (.contains wrapper current)))
+    (when (and wrapper
+               (not allow-click-outside)
+               (not (.contains wrapper current))
+               (not (= type (keyword (.getAttribute current "data-allow-click-modal")))))
       (dom/stop-propagation event)
       (dom/prevent-default event)
       (st/emit! (dm/hide)))))
@@ -59,16 +62,23 @@
   (let [data        (unchecked-get props "data")
         wrapper-ref (mf/use-ref nil)
 
+        allow-click-outside (:allow-click-outside data)
+
         handle-click-outside
         (fn [event]
-          (on-click-outside event wrapper-ref (:allow-click-outside data)))]
+          (on-click-outside event wrapper-ref (:type data) allow-click-outside))
+
+        handle-keydown
+        (fn [event]
+          (on-esc-clicked event allow-click-outside))]
 
     (mf/use-layout-effect
+     (mf/deps allow-click-outside)
      (fn []
-       (let [keys [(events/listen js/document EventType.KEYDOWN  on-esc-clicked)
+       (let [keys [(events/listen js/document EventType.KEYDOWN  handle-keydown)
                    (events/listen js/window   EventType.POPSTATE on-pop-state)
                    (events/listen js/document EventType.CLICK    handle-click-outside)]]
-         #(for [key keys]
+         #(doseq [key keys]
             (events/unlistenByKey key)))))
 
     [:div.modal-wrapper {:ref wrapper-ref}

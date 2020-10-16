@@ -11,11 +11,12 @@
   (:require
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
-   [goog.object :as gobj]
+   [app.util.object :as obj]
    [app.common.uuid :as uuid]
+   [app.main.ui.context :as muc]
    [app.common.geom.point :as gpt]))
 
-(mf/defc linear-gradient [{:keys [id shape gradient]}]
+(mf/defc linear-gradient [{:keys [id gradient shape]}]
   (let [{:keys [x y width height]} shape]
     [:defs
      [:linearGradient {:id id
@@ -29,12 +30,12 @@
                 :stop-color color
                 :stop-opacity opacity}])]]))
 
-(mf/defc radial-gradient [{:keys [id shape gradient]}]
+(mf/defc radial-gradient [{:keys [id gradient shape]}]
   (let [{:keys [x y width height]} shape]
     [:defs
-     (let [translate-vec (gpt/point (+ x (* width (:start-x gradient)))
+     (let [[x y] (if (= (:type shape) :frame) [0 0] [x y])
+           translate-vec (gpt/point (+ x (* width (:start-x gradient)))
                                     (+ y (* height (:start-y gradient))))
-
            
            gradient-vec (gpt/to-vec (gpt/point (* width (:start-x gradient))
                                                (* height (:start-y gradient)))
@@ -50,8 +51,8 @@
            scale-factor-x (* scale-factor-y (:width gradient))
 
            scale-vec (gpt/point (* scale-factor-y (/ height 2))
-                                (* scale-factor-x (/ width 2))
-                                ) 
+                                (* scale-factor-x (/ width 2)))
+
            tr-translate (str/fmt "translate(%s, %s)" (:x translate-vec) (:y translate-vec))
            tr-rotate (str/fmt "rotate(%s)" angle)
            tr-scale (str/fmt "scale(%s, %s)" (:x scale-vec) (:y scale-vec))
@@ -71,8 +72,15 @@
 (mf/defc gradient
   {::mf/wrap-props false}
   [props]
-  (let [gradient (gobj/get props "gradient")]
-    (case (:type gradient)
-      :linear [:> linear-gradient props]
-      :radial [:> radial-gradient props]
-      nil)))
+  (let [attr (obj/get props "attr")
+        shape (obj/get props "shape")
+        render-id (mf/use-ctx muc/render-ctx)
+        id (str (name attr) "_" render-id)
+        gradient (get shape attr)
+        gradient-props #js {:id id
+                            :gradient gradient
+                            :shape shape}]
+    (when gradient
+      (case (:type gradient)
+        :linear [:> linear-gradient gradient-props]
+        :radial [:> radial-gradient gradient-props]))))

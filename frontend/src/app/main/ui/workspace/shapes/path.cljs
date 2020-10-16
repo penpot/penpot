@@ -11,18 +11,19 @@
   (:require
    [rumext.alpha :as mf]
    [app.common.data :as d]
+   [app.util.dom :as dom]
+   [app.util.timers :as ts]
+   [app.main.streams :as ms]
    [app.main.constants :as c]
-   [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.data.workspace :as dw]
+   [app.main.data.workspace.drawing :as dr]
    [app.main.ui.keyboard :as kbd]
    [app.main.ui.shapes.path :as path]
    [app.main.ui.shapes.filters :as filters]
-   [app.main.ui.workspace.shapes.common :as common]
-   [app.main.data.workspace.drawing :as dr]
-   [app.util.dom :as dom]
-   [app.main.streams :as ms]
-   [app.util.timers :as ts]))
+   [app.main.ui.shapes.shape :refer [shape-container]]
+   [app.main.ui.workspace.shapes.common :as common]))
 
 (mf/defc path-wrapper
   {::mf/wrap-props false}
@@ -42,13 +43,13 @@
                              (do
                                (dom/stop-propagation event)
                                (dom/prevent-default event)
-                               (st/emit! (dw/start-edition-mode (:id shape)))))))
-        filter-id (mf/use-memo filters/get-filter-id)]
+                               (st/emit! (dw/start-edition-mode (:id shape)))))))]
 
-    [:g.shape {:on-double-click on-double-click
-               :on-mouse-down on-mouse-down
-               :on-context-menu on-context-menu
-               :filter (filters/filter-str filter-id shape)}
-     [:& filters/filters {:filter-id filter-id :shape shape}]
-     [:& path/path-shape {:shape shape :background? true}]]))
+    [:> shape-container {:shape shape
+                         :on-double-click on-double-click
+                         :on-mouse-down on-mouse-down
+                         :on-context-menu on-context-menu}
+
+     [:& path/path-shape {:shape shape
+                          :background? true}]]))
 

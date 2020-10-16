@@ -21,7 +21,7 @@
 
 (defonce ^:private default-square-params
   {:size 16
-   :color {:value "#59B9E2"
+   :color {:color "#59B9E2"
            :opacity 0.2}})
 
 (defonce ^:private default-layout-params
@@ -30,7 +30,7 @@
    :item-length nil
    :gutter 8
    :margin 0
-   :color {:value "#DE4762"
+   :color {:color "#DE4762"
            :opacity 0.1}})
 
 (defonce default-grid-params

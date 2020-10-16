@@ -12,3 +12,5 @@
    [rumext.alpha :as mf]))
 
 (def embed-ctx (mf/create-context false))
+
+(def render-ctx (mf/create-context nil))

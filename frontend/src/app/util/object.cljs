@@ -15,6 +15,8 @@
    [goog.object :as gobj]
    ["lodash/omit" :as omit]))
 
+(defn new [] #js {})
+
 (defn get
   ([obj k]
    (when-not (nil? obj)

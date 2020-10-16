@@ -14,6 +14,7 @@
    [app.common.data :as d]
    [app.common.math :as math]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.colors :as dc]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
@@ -29,7 +30,8 @@
    :stroke-color
    :stroke-color-ref-id
    :stroke-color-ref-file
-   :stroke-opacity])
+   :stroke-opacity
+   :stroke-color-gradient])
 
 (defn- stroke-menu-props-equals?
   [np op]
@@ -72,19 +74,17 @@
 
         show-options (not= (:stroke-style values :none) :none)
 
-        current-stroke-color {:value (:stroke-color values)
+        current-stroke-color {:color (:stroke-color values)
                               :opacity (:stroke-opacity values)
                               :id (:stroke-color-ref-id values)
-                              :file-id (:stroke-color-ref-file values)}
+                              :file-id (:stroke-color-ref-file values)
+                              :gradient (:stroke-color-gradient values)}
 
         handle-change-stroke-color
-        (fn [value opacity id file-id]
-          (let [change #(cond-> %
-                          value (assoc :stroke-color value
-                                       :stroke-color-ref-id id
-                                       :stroke-color-ref-file file-id)
-                          opacity (assoc :stroke-opacity opacity))]
-            (st/emit! (dwc/update-shapes ids change))))
+        (mf/use-callback
+         (mf/deps ids)
+         (fn [color]
+           (st/emit! (dc/change-stroke ids color))))
 
         on-stroke-style-change
         (fn [event]

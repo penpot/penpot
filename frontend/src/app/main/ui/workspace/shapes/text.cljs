@@ -9,32 +9,34 @@
 
 (ns app.main.ui.workspace.shapes.text
   (:require
-   [cuerdas.core :as str]
+   ["slate" :as slate]
+   ["slate-react" :as rslate]
    [goog.events :as events]
    [goog.object :as gobj]
+   [cuerdas.core :as str]
    [rumext.alpha :as mf]
+   [beicon.core :as rx]
+   [app.util.color :as color]
+   [app.util.dom :as dom]
+   [app.util.text :as ut]
+   [app.util.object :as obj]
+   [app.util.color :as uc]
+   [app.util.timers :as timers]
    [app.common.data :as d]
+   [app.common.geom.shapes :as geom]
+   [app.main.refs :as refs]
+   [app.main.store :as st]
+   [app.main.fonts :as fonts]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.texts :as dwt]
-   [app.main.refs :as refs]
-   [app.main.store :as st]
    [app.main.ui.cursors :as cur]
    [app.main.ui.workspace.shapes.common :as common]
    [app.main.ui.shapes.text :as text]
    [app.main.ui.keyboard :as kbd]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.filters :as filters]
-   [app.main.fonts :as fonts]
-   [app.util.color :as color]
-   [app.util.dom :as dom]
-   [app.util.text :as ut]
-   [app.common.geom.shapes :as geom]
-   [app.util.object :as obj]
-   [app.util.color :as uc]
-   [app.util.timers :as timers]
-   ["slate" :as slate]
-   ["slate-react" :as rslate])
+   [app.main.ui.shapes.shape :refer [shape-container]])
   (:import
    goog.events.EventType
    goog.events.KeyCodes))
@@ -78,9 +80,7 @@
           (dom/stop-propagation event)
           (dom/prevent-default event)
           (when selected?
-            (st/emit! (dw/start-edition-mode (:id shape)))))
-
-        filter-id (mf/use-memo filters/get-filter-id)]
+            (st/emit! (dw/start-edition-mode (:id shape)))))]
 
     (mf/use-effect
      (mf/deps shape edition selected? current-transform)
@@ -88,26 +88,25 @@
                               selected?
                               (not edition?)
                               (not embed-resources?)
-                              (nil? current-transform))]
-              (timers/schedule #(reset! render-editor check?)))))
+                              (nil? current-transform))
+                  result (timers/schedule #(reset! render-editor check?))]
+              #(rx/dispose! result))))
 
-    [:g.shape {:on-double-click on-double-click
-               :on-mouse-down on-mouse-down
-               :on-context-menu on-context-menu
-               :filter (filters/filter-str filter-id shape)}
-     [:& filters/filters {:filter-id filter-id :shape shape}]
-     [:*
-      (when @render-editor
-        [:g {:opacity 0
-             :style {:pointer-events "none"}}
-         ;; We only render the component for its side-effect
-         [:& text-shape-edit {:shape shape
-                              :read-only? true}]])
+    [:> shape-container {:shape shape
+                         :on-double-click on-double-click
+                         :on-mouse-down on-mouse-down
+                         :on-context-menu on-context-menu}
+     (when @render-editor
+       [:g {:opacity 0
+            :style {:pointer-events "none"}}
+        ;; We only render the component for its side-effect
+        [:& text-shape-edit {:shape shape
+                             :read-only? true}]])
 
-      (if edition?
-        [:& text-shape-edit {:shape shape}]
-        [:& text/text-shape {:shape shape
-                             :selected? selected?}])]]))
+     (if edition?
+       [:& text-shape-edit {:shape shape}]
+       [:& text/text-shape {:shape shape
+                            :selected? selected?}])]))
 
 ;; --- Text Editor Rendering
 
@@ -158,17 +157,25 @@
 
         fill-color (obj/get data "fill-color" fill)
         fill-opacity (obj/get data "fill-opacity" opacity)
+        fill-color-gradient (obj/get data "fill-color-gradient" nil)
+        fill-color-gradient (when fill-color-gradient
+                              (-> (js->clj fill-color-gradient :keywordize-keys true)
+                                  (update :type keyword)))
+
         fill-color-ref-id (obj/get data "fill-color-ref-id")
         fill-color-ref-file (obj/get data "fill-color-ref-file")
 
         [r g b a] (uc/hex->rgba fill-color fill-opacity)
+        background (if fill-color-gradient
+                     (uc/gradient->css (js->clj fill-color-gradient))
+                     (str/format "rgba(%s, %s, %s, %s)" r g b a))
 
         fontsdb (deref fonts/fontsdb)
 
         base #js {:textDecoration text-decoration
-                  :color (str/format "rgba(%s, %s, %s, %s)" r g b a)
                   :textTransform text-transform
-                  :lineHeight (or line-height "inherit")}]
+                  :lineHeight (or line-height "inherit")
+                  "--text-color" background}]
 
     (when (and (string? letter-spacing)
                (pos? (alength letter-spacing)))
@@ -243,7 +250,9 @@
         childs (obj/get props "children")
         data   (obj/get props "leaf")
         style  (generate-text-styles data)
-        attrs  (obj/set! attrs "style" style)]
+        attrs  (-> attrs
+                   (obj/set! "style" style)
+                   (obj/set! "className" "text-node"))]
     [:> :span attrs childs]))
 
 (defn- render-element
@@ -283,6 +292,14 @@
   (let [current (count (:text node))
         children-count (->> node :children (map content-size) (reduce +))]
     (+ current children-count)))
+
+(defn fix-gradients
+  "Fix for the gradient types that need to be keywords"
+  [content]
+  (let [fix-node
+        (fn [node]
+          (d/update-in-when node [:fill-color-gradient :type] keyword))]
+    (ut/map-node fix-node content)))
 
 (mf/defc text-shape-edit
   {::mf/wrap [mf/memo]}
@@ -364,7 +381,8 @@
          (fn [val]
            (when (not read-only?)
              (let [content (js->clj val :keywordize-keys true)
-                   content (first content)]
+                   content (first content)
+                   content (fix-gradients content)]
                ;; Append timestamp so we can react to cursor change events
                (st/emit! (dw/update-shape id {:content (assoc content :ts (js->clj (.now js/Date)))}))
                (reset! state val)
@@ -419,7 +437,8 @@
                      :x x :y y
                      :width (if (= :auto-width grow-type) 10000 width)
                      :height height}
-     [:style "span { line-height: inherit; }"]
+     [:style "span { line-height: inherit; }
+              .text-node { background: var(--text-color); -webkit-text-fill-color: transparent; -webkit-background-clip: text;"]
      [:> rslate/Slate {:editor editor
                        :value @state
                        :on-change on-change}

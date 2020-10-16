@@ -241,13 +241,6 @@
       color: $color-white;
       cursor: pointer;
 
-      & .color-block {
-        width: 20px;
-        height: 20px;
-        border-radius: 10px;
-        margin-right: $x-small;
-      }
-
       & span {
         margin-left: $x-small;
         color: $color-gray-30;

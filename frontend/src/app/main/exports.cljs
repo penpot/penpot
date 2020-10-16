@@ -26,7 +26,8 @@
    [app.main.ui.shapes.path :as path]
    [app.main.ui.shapes.rect :as rect]
    [app.main.ui.shapes.text :as text]
-   [app.main.ui.shapes.group :as group]))
+   [app.main.ui.shapes.group :as group]
+   [app.main.ui.shapes.shape :refer [shape-container]]))
 
 (def ^:private default-color "#E8E9EA") ;; $color-canvas
 
@@ -56,7 +57,8 @@
       [{:keys [shape] :as props}]
       (let [childs (mapv #(get objects %) (:shapes shape))
             shape  (geom/transform-shape shape)]
-        [:& frame-shape {:shape shape :childs childs}]))))
+        [:> shape-container {:shape shape}
+         [:& frame-shape {:shape shape :childs childs}]]))))
 
 (defn group-wrapper-factory
   [objects]
@@ -78,10 +80,8 @@
           frame-wrapper (mf/use-memo (mf/deps objects) #(frame-wrapper-factory objects))]
       (when (and shape (not (:hidden shape)))
         (let [shape (geom/transform-shape frame shape)
-              opts #js {:shape shape}
-              filter-id (filters/get-filter-id)]
-          [:g {:filter (filters/filter-str filter-id shape)}
-           [:& filters/filters {:filter-id filter-id :shape shape}]
+              opts #js {:shape shape}]
+          [:> shape-container {:shape shape}
            (case (:type shape)
              :curve  [:> path/path-shape opts]
              :text   [:> text/text-shape opts]

@@ -40,15 +40,15 @@
   [{:keys [shape shapes-with-children page-id file-id]}]
   [:*
    (case (:type shape)
-     :frame [:& frame/options {:shape shape}]
-     :group [:& group/options {:shape shape :shape-with-children shapes-with-children}]
-     :text [:& text/options {:shape shape}]
-     :rect [:& rect/options {:shape shape}]
-     :icon [:& icon/options {:shape shape}]
+     :frame  [:& frame/options {:shape shape}]
+     :group  [:& group/options {:shape shape :shape-with-children shapes-with-children}]
+     :text   [:& text/options {:shape shape}]
+     :rect   [:& rect/options {:shape shape}]
+     :icon   [:& icon/options {:shape shape}]
      :circle [:& circle/options {:shape shape}]
-     :path [:& path/options {:shape shape}]
-     :curve [:& path/options {:shape shape}]
-     :image [:& image/options {:shape shape}]
+     :path   [:& path/options {:shape shape}]
+     :curve  [:& path/options {:shape shape}]
+     :image  [:& image/options {:shape shape}]
      nil)
    [:& exports-menu
     {:shape shape

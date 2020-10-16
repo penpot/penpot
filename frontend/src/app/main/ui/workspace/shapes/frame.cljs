@@ -19,13 +19,13 @@
    [app.main.ui.workspace.shapes.common :as common]
    [app.main.data.workspace.selection :as dws]
    [app.main.ui.shapes.frame :as frame]
-   [app.main.ui.shapes.filters :as filters]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
    [app.util.dom :as dom]
    [app.main.streams :as ms]
-   [app.util.timers :as ts]))
+   [app.util.timers :as ts]
+   [app.main.ui.shapes.shape :refer [shape-container]]))
 
 (defn- frame-wrapper-factory-equals?
   [np op]
@@ -99,7 +99,7 @@
              (mf/deps (:id shape))
              (fn [event]
                (dom/prevent-default event)
-               (st/emit! dw/deselect-all
+               (st/emit! (dw/deselect-all)
                          (dw/select-shape (:id shape)))))
 
             on-mouse-over
@@ -112,9 +112,7 @@
             (mf/use-callback
              (mf/deps (:id shape))
              (fn []
-               (st/emit! (dws/change-hover-state (:id shape) false))))
-
-            filter-id (mf/use-memo filters/get-filter-id)]
+               (st/emit! (dws/change-hover-state (:id shape) false))))]
 
         (when-not (:hidden shape)
           [:g {:class (when selected? "selected")
@@ -126,8 +124,8 @@
                             :on-context-menu on-context-menu
                             :on-double-click on-double-click
                             :on-mouse-down on-mouse-down}]
-           [:g.frame {:filter (filters/filter-str filter-id shape)}
-            [:& filters/filters {:filter-id filter-id :shape shape}]
+
+           [:> shape-container {:shape shape}
             [:& frame-shape
              {:shape shape
               :childs children}]]])))))
