@@ -191,7 +191,7 @@
             :options [[(tr "workspace.assets.delete") on-delete]]}])])]))
 
 (mf/defc color-item
-  [{:keys [color local? locale file-id] :as props}]
+  [{:keys [color local? locale] :as props}]
   (let [rename?   (= (:color-for-rename @refs/workspace-local) (:id color))
         id        (:id color)
         input-ref (mf/use-ref)
@@ -333,16 +333,14 @@
      (when open?
        [:div.group-list
         (for [color colors]
-          [:& color-item {:key (:id color)
-                          :color (if (:value color)
-                                   (-> color
-                                       (assoc :color (:value color)
-                                              :opacity 1)
-                                       (dissoc :value))                                   
-                                   color)
-                          :file-id file-id
-                          :local? local?
-                          :locale locale}])])]))
+          (let [color (cond-> color
+                        (:value color) (assoc :color (:value color) :opacity 1)
+                        (:value color) (dissoc :value)
+                        true (assoc :file-id file-id))]
+            [:& color-item {:key (:id color)
+                            :color color
+                            :local? local?
+                            :locale locale}]))])]))
 
 (mf/defc typography-box
   [{:keys [file file-id local? typographies locale open? on-open on-close] :as props}]
