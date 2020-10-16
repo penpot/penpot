@@ -7,5 +7,33 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.shapes.shape)
+(ns app.main.ui.shapes.shape
+  (:require
+   [rumext.alpha :as mf]
+   [app.util.object :as obj]
+   [app.common.uuid :as uuid]
+   [app.main.ui.shapes.filters :as filters]
+   [app.main.ui.shapes.gradients :as grad]
+   [app.main.ui.context :as muc]))
 
+(mf/defc shape-container
+  {::mf/wrap-props false}
+  [props]
+
+  (let [shape (unchecked-get props "shape")
+        children (unchecked-get props "children")
+        render-id (mf/use-memo #(str (uuid/next)))
+        filter-id (str "filter_" render-id)
+        group-props (-> props
+                        (obj/clone)
+                        (obj/without ["shape" "children"])
+                        (obj/set! "className" "shape")
+                        (obj/set! "filter" (filters/filter-str filter-id shape)))]
+    [:& (mf/provider muc/render-ctx) {:value render-id}
+     [:> :g group-props
+      [:defs
+        [:& filters/filters {:shape shape :filter-id filter-id}]
+        [:& grad/gradient   {:shape shape :attr :fill-color-gradient}]
+        [:& grad/gradient   {:shape shape :attr :stroke-color-gradient}]]
+
+      children]]))

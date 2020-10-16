@@ -19,16 +19,13 @@
    [app.main.ui.workspace.shapes.common :as common]
    [app.main.data.workspace.selection :as dws]
    [app.main.ui.shapes.frame :as frame]
-   [app.main.ui.shapes.gradients :as grad]
-   [app.main.ui.shapes.filters :as filters]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
    [app.util.dom :as dom]
    [app.main.streams :as ms]
    [app.util.timers :as ts]
-   [app.main.ui.context :as muc]
-   [app.common.uuid :as uuid]))
+   [app.main.ui.shapes.shape :refer [shape-container]]))
 
 (defn- frame-wrapper-factory-equals?
   [np op]
@@ -115,9 +112,7 @@
             (mf/use-callback
              (mf/deps (:id shape))
              (fn []
-               (st/emit! (dws/change-hover-state (:id shape) false))))
-
-            render-id (mf/use-memo #(str (uuid/next)))]
+               (st/emit! (dws/change-hover-state (:id shape) false))))]
 
         (when-not (:hidden shape)
           [:g {:class (when selected? "selected")
@@ -130,14 +125,8 @@
                             :on-double-click on-double-click
                             :on-mouse-down on-mouse-down}]
 
-           [:& (mf/provider muc/render-ctx) {:value render-id}
-            [:g.frame {:filter (filters/filter-str (str "filter_" render-id) shape)}
-             [:defs
-              [:& filters/filters {:shape shape}]
-              [:& grad/gradient   {:shape shape :attr :fill-color-gradient}]
-              [:& grad/gradient   {:shape shape :attr :stroke-color-gradient}]]
-
-             [:& frame-shape
-              {:shape shape
-               :childs children}]]]])))))
+           [:> shape-container {:shape shape}
+            [:& frame-shape
+             {:shape shape
+              :childs children}]]])))))
 

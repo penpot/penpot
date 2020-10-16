@@ -9,35 +9,34 @@
 
 (ns app.main.ui.workspace.shapes.text
   (:require
-   [cuerdas.core :as str]
+   ["slate" :as slate]
+   ["slate-react" :as rslate]
    [goog.events :as events]
    [goog.object :as gobj]
+   [cuerdas.core :as str]
    [rumext.alpha :as mf]
+   [beicon.core :as rx]
+   [app.util.color :as color]
+   [app.util.dom :as dom]
+   [app.util.text :as ut]
+   [app.util.object :as obj]
+   [app.util.color :as uc]
+   [app.util.timers :as timers]
    [app.common.data :as d]
+   [app.common.geom.shapes :as geom]
+   [app.main.refs :as refs]
+   [app.main.store :as st]
+   [app.main.fonts :as fonts]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.texts :as dwt]
-   [app.main.refs :as refs]
-   [app.main.store :as st]
    [app.main.ui.cursors :as cur]
    [app.main.ui.workspace.shapes.common :as common]
    [app.main.ui.shapes.text :as text]
    [app.main.ui.keyboard :as kbd]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.filters :as filters]
-   [app.main.fonts :as fonts]
-   [app.util.color :as color]
-   [app.util.dom :as dom]
-   [app.util.text :as ut]
-   [app.common.geom.shapes :as geom]
-   [app.util.object :as obj]
-   [app.util.color :as uc]
-   [app.util.timers :as timers]
-   ["slate" :as slate]
-   ["slate-react" :as rslate]
-   [app.common.uuid :as uuid]
-   [app.main.ui.shapes.gradients :as grad]
-   [app.main.ui.context :as muc])
+   [app.main.ui.shapes.shape :refer [shape-container]])
   (:import
    goog.events.EventType
    goog.events.KeyCodes))
@@ -81,9 +80,7 @@
           (dom/stop-propagation event)
           (dom/prevent-default event)
           (when selected?
-            (st/emit! (dw/start-edition-mode (:id shape)))))
-
-        render-id (mf/use-memo #(str (uuid/next)))]
+            (st/emit! (dw/start-edition-mode (:id shape)))))]
 
     (mf/use-effect
      (mf/deps shape edition selected? current-transform)
@@ -91,30 +88,25 @@
                               selected?
                               (not edition?)
                               (not embed-resources?)
-                              (nil? current-transform))]
-              (timers/schedule #(reset! render-editor check?)))))
+                              (nil? current-transform))
+                  result (timers/schedule #(reset! render-editor check?))]
+              #(rx/dispose! result))))
 
-    [:& (mf/provider muc/render-ctx) {:value render-id}
-     [:g.shape {:on-double-click on-double-click
-                :on-mouse-down on-mouse-down
-                :on-context-menu on-context-menu
-                :filter (filters/filter-str (str "filter_" render-id) shape)}
-      [:defs
-       [:& filters/filters {:shape shape}]
-       [:& grad/gradient   {:shape shape :attr :fill-color-gradient}]
-       [:& grad/gradient   {:shape shape :attr :stroke-color-gradient}]]
-      [:*
-       (when @render-editor
-         [:g {:opacity 0
-              :style {:pointer-events "none"}}
-          ;; We only render the component for its side-effect
-          [:& text-shape-edit {:shape shape
-                               :read-only? true}]])
+    [:> shape-container {:shape shape
+                         :on-double-click on-double-click
+                         :on-mouse-down on-mouse-down
+                         :on-context-menu on-context-menu}
+     (when @render-editor
+       [:g {:opacity 0
+            :style {:pointer-events "none"}}
+        ;; We only render the component for its side-effect
+        [:& text-shape-edit {:shape shape
+                             :read-only? true}]])
 
-       (if edition?
-         [:& text-shape-edit {:shape shape}]
-         [:& text/text-shape {:shape shape
-                              :selected? selected?}])]]]))
+     (if edition?
+       [:& text-shape-edit {:shape shape}]
+       [:& text/text-shape {:shape shape
+                            :selected? selected?}])]))
 
 ;; --- Text Editor Rendering
 

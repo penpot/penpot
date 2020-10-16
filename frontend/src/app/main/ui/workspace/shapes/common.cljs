@@ -14,14 +14,11 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.keyboard :as kbd]
-   [app.main.ui.shapes.filters :as filters]
-   [app.main.ui.shapes.gradients :as grad]
    [app.util.dom :as dom]
-   [app.common.uuid :as uuid]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
-   [app.main.ui.context :as muc]))
+   [app.main.ui.shapes.shape :refer [shape-container]]))
 
 (defn- on-mouse-down
   [event {:keys [id type] :as shape}]
@@ -73,18 +70,11 @@
                          #(on-mouse-down % shape))
           on-context-menu (mf/use-callback
                            (mf/deps shape)
-                           #(on-context-menu % shape))
-          render-id (mf/use-memo #(str (uuid/next)))]
+                           #(on-context-menu % shape))]
 
-      [:& (mf/provider muc/render-ctx) {:value render-id}
-       [:g.shape {:on-mouse-down on-mouse-down
-                  :on-context-menu on-context-menu
-                  :filter (filters/filter-str (str "filter_" render-id) shape)}
-        [:defs
-         [:& filters/filters {:shape shape}]
-         [:& grad/gradient   {:shape shape :attr :fill-color-gradient}]
-         [:& grad/gradient   {:shape shape :attr :stroke-color-gradient}]]
-
-        [:& component {:shape shape}]]])))
+      [:> shape-container {:shape shape
+                           :on-mouse-down on-mouse-down
+                           :on-context-menu on-context-menu}
+       [:& component {:shape shape}]])))
 
 
