@@ -150,12 +150,14 @@
       position: relative;
 
       &::before {
-        content: "^";
-        font-size: $fs18;
-        font-family: opensans;
-        font-weight: lighter;
+        content: " ";
+        border-right: 1px solid $color-gray-40;
+        border-top: 1px solid $color-gray-40;
         position: absolute;
-        top: -5px;
+        width: 0.5rem;
+        height: 0.5rem;
+        transform: rotate(-45deg);
+        top: -1px;
         left: -5px;
       }
     }
@@ -167,18 +169,11 @@
       &::before {
         content: " ";
         border-left: 1px solid $color-gray-40;
-        height: 1rem;
-        position: absolute;
-        top: 0;
-        left: 0;
-      }
-
-      &::after {
-        content: " ";
         border-bottom: 1px solid $color-gray-40;
+        height: 1rem;
         width: 0.3rem;
         position: absolute;
-        top: 1rem;
+        top: 0;
         left: 0;
       }
     }
