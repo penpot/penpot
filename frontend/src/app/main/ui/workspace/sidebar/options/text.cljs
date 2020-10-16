@@ -215,7 +215,7 @@
                      (get typographies (:typography-ref-id values)))
 
 
-        handle-click
+        on-convert-to-typography
         (mf/use-callback
          (mf/deps values)
          (fn [event]
@@ -227,7 +227,7 @@
                  typography (merge ut/default-typography setted-values)
                  typography (generate-typography-name typography)]
              (let [id (uuid/next)]
-               (st/emit! (dwl/add-typography (assoc typography :id id)))
+               (st/emit! (dwl/add-typography (assoc typography :id id) false))
                (run! #(emit-update! % {:typography-ref-id id}) ids)))))
 
         handle-deattach-typography
@@ -251,7 +251,8 @@
     [:div.element-set
      [:div.element-set-title
       [:span label]
-      [:div.add-page {:on-click handle-click} i/close]]
+      (when (not typography)
+        [:div.add-page {:on-click on-convert-to-typography} i/close])]
 
      (cond
        typography
