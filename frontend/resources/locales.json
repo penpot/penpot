@@ -1441,7 +1441,7 @@
     }
   },
   "settings.multiple" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:153", "src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:163", "src/app/main/ui/workspace/sidebar/options/typography.cljs:99", "src/app/main/ui/workspace/sidebar/options/typography.cljs:149", "src/app/main/ui/workspace/sidebar/options/typography.cljs:162", "src/app/main/ui/workspace/sidebar/options/stroke.cljs:156" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:153", "src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:163", "src/app/main/ui/workspace/sidebar/options/typography.cljs:99", "src/app/main/ui/workspace/sidebar/options/typography.cljs:149", "src/app/main/ui/workspace/sidebar/options/typography.cljs:162", "src/app/main/ui/workspace/sidebar/options/stroke.cljs:147" ],
     "translations" : {
       "en" : "Mixed",
       "fr" : null,
@@ -1666,7 +1666,7 @@
     }
   },
   "workspace.assets.assets" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:629" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:628" ],
     "translations" : {
       "en" : "Assets",
       "fr" : "",
@@ -1675,7 +1675,7 @@
     }
   },
   "workspace.assets.box-filter-all" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:649" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:648" ],
     "translations" : {
       "en" : "All assets",
       "fr" : "",
@@ -1702,7 +1702,7 @@
     "unused" : true
   },
   "workspace.assets.colors" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:329", "src/app/main/ui/workspace/sidebar/assets.cljs:652" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:329", "src/app/main/ui/workspace/sidebar/assets.cljs:651" ],
     "translations" : {
       "en" : "Colors",
       "fr" : "",
@@ -1711,7 +1711,7 @@
     }
   },
   "workspace.assets.components" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:83", "src/app/main/ui/workspace/sidebar/assets.cljs:650" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:83", "src/app/main/ui/workspace/sidebar/assets.cljs:649" ],
     "translations" : {
       "en" : "Components",
       "fr" : "",
@@ -1738,7 +1738,7 @@
     }
   },
   "workspace.assets.file-library" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:532" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:531" ],
     "translations" : {
       "en" : "File library",
       "fr" : "",
@@ -1747,7 +1747,7 @@
     }
   },
   "workspace.assets.graphics" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:164", "src/app/main/ui/workspace/sidebar/assets.cljs:651" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:164", "src/app/main/ui/workspace/sidebar/assets.cljs:650" ],
     "translations" : {
       "en" : "Graphics",
       "fr" : "",
@@ -1756,7 +1756,7 @@
     }
   },
   "workspace.assets.libraries" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:632" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:631" ],
     "translations" : {
       "en" : "Libraries",
       "fr" : "",
@@ -1765,7 +1765,7 @@
     }
   },
   "workspace.assets.not-found" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:593" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:592" ],
     "translations" : {
       "en" : "No assets found",
       "fr" : "",
@@ -1783,7 +1783,7 @@
     }
   },
   "workspace.assets.search" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:636" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:635" ],
     "translations" : {
       "en" : "Search assets",
       "fr" : "",
@@ -1792,7 +1792,7 @@
     }
   },
   "workspace.assets.shared" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:534" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:533" ],
     "translations" : {
       "en" : "SHARED",
       "fr" : "",
@@ -1801,7 +1801,7 @@
     }
   },
   "workspace.assets.typography" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:420", "src/app/main/ui/workspace/sidebar/assets.cljs:653" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:420", "src/app/main/ui/workspace/sidebar/assets.cljs:652" ],
     "translations" : {
       "en" : "Typographies"
     }
@@ -1855,13 +1855,13 @@
     }
   },
   "workspace.gradients.linear" : {
-    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:39", "src/app/main/ui/components/color_bullet.cljs:30" ],
+    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:39", "src/app/main/ui/components/color_bullet.cljs:31" ],
     "translations" : {
       "en" : "Linear gradient"
     }
   },
   "workspace.gradients.radial" : {
-    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:40", "src/app/main/ui/components/color_bullet.cljs:31" ],
+    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:40", "src/app/main/ui/components/color_bullet.cljs:32" ],
     "translations" : {
       "en" : "Radial gradient"
     }
@@ -2044,19 +2044,19 @@
     }
   },
   "workspace.libraries.colors.big-thumbnails" : {
-    "used-in" : [ "src/app/main/ui/workspace/colorpalette.cljs:171" ],
+    "used-in" : [ "src/app/main/ui/workspace/colorpalette.cljs:169" ],
     "translations" : {
       "en" : "Big thumbnails"
     }
   },
   "workspace.libraries.colors.file-library" : {
-    "used-in" : [ "src/app/main/ui/workspace/colorpicker/libraries.cljs:87", "src/app/main/ui/workspace/colorpalette.cljs:149" ],
+    "used-in" : [ "src/app/main/ui/workspace/colorpicker/libraries.cljs:87", "src/app/main/ui/workspace/colorpalette.cljs:147" ],
     "translations" : {
       "en" : "File library"
     }
   },
   "workspace.libraries.colors.recent-colors" : {
-    "used-in" : [ "src/app/main/ui/workspace/colorpicker/libraries.cljs:86", "src/app/main/ui/workspace/colorpalette.cljs:159" ],
+    "used-in" : [ "src/app/main/ui/workspace/colorpicker/libraries.cljs:86", "src/app/main/ui/workspace/colorpalette.cljs:157" ],
     "translations" : {
       "en" : "Recent colors"
     }
@@ -2068,7 +2068,7 @@
     }
   },
   "workspace.libraries.colors.small-thumbnails" : {
-    "used-in" : [ "src/app/main/ui/workspace/colorpalette.cljs:176" ],
+    "used-in" : [ "src/app/main/ui/workspace/colorpalette.cljs:174" ],
     "translations" : {
       "en" : "Small thumbnails"
     }
@@ -2173,13 +2173,13 @@
     }
   },
   "workspace.libraries.text.multiple-typography" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:266" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:267" ],
     "translations" : {
       "en" : "Multiple typographies"
     }
   },
   "workspace.libraries.text.multiple-typography-tooltip" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:268" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:269" ],
     "translations" : {
       "en" : "Unlink all typographies"
     }
@@ -2302,7 +2302,7 @@
     }
   },
   "workspace.options.fill" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/fill.cljs:54" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/fill.cljs:53" ],
     "translations" : {
       "en" : "Fill",
       "fr" : "Remplissage",
@@ -2500,7 +2500,7 @@
     }
   },
   "workspace.options.group-fill" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/fill.cljs:53" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/fill.cljs:52" ],
     "translations" : {
       "en" : "Group fill",
       "fr" : null,
@@ -2509,7 +2509,7 @@
     }
   },
   "workspace.options.group-stroke" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:72" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:63" ],
     "translations" : {
       "en" : "Group stroke",
       "fr" : null,
@@ -2590,7 +2590,7 @@
     }
   },
   "workspace.options.selection-fill" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/fill.cljs:52" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/fill.cljs:51" ],
     "translations" : {
       "en" : "Selection fill",
       "fr" : null,
@@ -2599,7 +2599,7 @@
     }
   },
   "workspace.options.selection-stroke" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:71" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:62" ],
     "translations" : {
       "en" : "Selection stroke",
       "fr" : null,
@@ -2668,7 +2668,7 @@
     }
   },
   "workspace.options.stroke" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:73" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:64" ],
     "translations" : {
       "en" : "Stroke",
       "fr" : "Bordure",
@@ -2677,7 +2677,7 @@
     }
   },
   "workspace.options.stroke.center" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:163" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:154" ],
     "translations" : {
       "en" : "Center",
       "fr" : "Centre",
@@ -2686,7 +2686,7 @@
     }
   },
   "workspace.options.stroke.dashed" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:173" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:164" ],
     "translations" : {
       "en" : "Dashed",
       "fr" : "Tiré",
@@ -2695,7 +2695,7 @@
     }
   },
   "workspace.options.stroke.dotted" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:172" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:163" ],
     "translations" : {
       "en" : "Dotted",
       "fr" : "Pointillé",
@@ -2704,7 +2704,7 @@
     }
   },
   "workspace.options.stroke.inner" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:164" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:155" ],
     "translations" : {
       "en" : "Inside",
       "fr" : "Intérieur",
@@ -2713,7 +2713,7 @@
     }
   },
   "workspace.options.stroke.mixed" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:174" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:165" ],
     "translations" : {
       "en" : "Mixed",
       "fr" : "Mixte",
@@ -2722,7 +2722,7 @@
     }
   },
   "workspace.options.stroke.outer" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:165" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:156" ],
     "translations" : {
       "en" : "Outside",
       "fr" : "Extérieur",
@@ -2731,7 +2731,7 @@
     }
   },
   "workspace.options.stroke.solid" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:171" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:162" ],
     "translations" : {
       "en" : "Solid",
       "fr" : "Solide",
@@ -3070,8 +3070,230 @@
       "es" : "Texto (T)"
     }
   },
+  "workspace.undo.empty" : {
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:272" ],
+    "translations" : {
+      "en" : "There are no history changes so far"
+    }
+  },
+  "workspace.undo.entry.delete" : {
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:110" ],
+    "translations" : {
+      "en" : "Deleted %s"
+    }
+  },
+  "workspace.undo.entry.modify" : {
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:109" ],
+    "translations" : {
+      "en" : "Modified %s"
+    }
+  },
+  "workspace.undo.entry.move" : {
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:111" ],
+    "translations" : {
+      "en" : "Moved objects"
+    }
+  },
+  "workspace.undo.entry.multiple.circle" : {
+    "translations" : {
+      "en" : "circles"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.multiple.color" : {
+    "translations" : {
+      "en" : "color assets"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.multiple.component" : {
+    "translations" : {
+      "en" : "components"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.multiple.curve" : {
+    "translations" : {
+      "en" : "curves"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.multiple.frame" : {
+    "translations" : {
+      "en" : "artboard"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.multiple.group" : {
+    "translations" : {
+      "en" : "groups"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.multiple.image" : {
+    "translations" : {
+      "en" : "images"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.multiple.media" : {
+    "translations" : {
+      "en" : "graphic assets"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.multiple.multiple" : {
+    "translations" : {
+      "en" : "objects"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.multiple.page" : {
+    "translations" : {
+      "en" : "pages"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.multiple.path" : {
+    "translations" : {
+      "en" : "paths"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.multiple.rect" : {
+    "translations" : {
+      "en" : "rectangles"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.multiple.shape" : {
+    "translations" : {
+      "en" : "shapes"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.multiple.text" : {
+    "translations" : {
+      "en" : "texts"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.multiple.typography" : {
+    "translations" : {
+      "en" : "typography assets"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.new" : {
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:108" ],
+    "translations" : {
+      "en" : "New %s"
+    }
+  },
+  "workspace.undo.entry.single.circle" : {
+    "translations" : {
+      "en" : "circle"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.single.color" : {
+    "translations" : {
+      "en" : "color asset"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.single.component" : {
+    "translations" : {
+      "en" : "component"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.single.curve" : {
+    "translations" : {
+      "en" : "curve"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.single.frame" : {
+    "translations" : {
+      "en" : "frame"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.single.group" : {
+    "translations" : {
+      "en" : "group"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.single.image" : {
+    "translations" : {
+      "en" : "image"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.single.media" : {
+    "translations" : {
+      "en" : "graphic asset"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.single.multiple" : {
+    "translations" : {
+      "en" : "object"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.single.page" : {
+    "translations" : {
+      "en" : "page"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.single.path" : {
+    "translations" : {
+      "en" : "path"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.single.rect" : {
+    "translations" : {
+      "en" : "rectangle"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.single.shape" : {
+    "translations" : {
+      "en" : "shape"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.single.text" : {
+    "translations" : {
+      "en" : "text"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.single.typography" : {
+    "translations" : {
+      "en" : "typography asset"
+    },
+    "unused" : true
+  },
+  "workspace.undo.entry.unknown" : {
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:112" ],
+    "translations" : {
+      "en" : "Operation over %s"
+    }
+  },
+  "workspace.undo.title" : {
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:268" ],
+    "translations" : {
+      "en" : "History"
+    }
+  },
   "workspace.updates.dismiss" : {
-    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:538" ],
+    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:542" ],
     "translations" : {
       "en" : "Dismiss",
       "fr" : "",
@@ -3080,7 +3302,7 @@
     }
   },
   "workspace.updates.there-are-updates" : {
-    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:534" ],
+    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:538" ],
     "translations" : {
       "en" : "There are updates in shared libraries",
       "fr" : "",
@@ -3089,7 +3311,7 @@
     }
   },
   "workspace.updates.update" : {
-    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:536" ],
+    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:540" ],
     "translations" : {
       "en" : "Update",
       "fr" : "",
