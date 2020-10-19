@@ -41,10 +41,6 @@
       z-index: 12;
       max-height: 30rem;
       min-width: 189px;
-
-      li {
-        height: 35px;
-      }
     }
 
     .options-dropdown {
@@ -370,7 +366,7 @@
     @include text-ellipsis;
     color: $color-black;
     margin: 10px 5px;
-    font-size: $fs12;
+    font-size: $fs14;
     max-width: 135px;
   }
 
@@ -390,7 +386,8 @@
     @include animation(0,.2s,fadeInUp);
 
     li {
-      font-size: $fs12;
+      height: 40px;
+      font-size: $fs14;
       padding: 5px 10px;
 
       svg {
