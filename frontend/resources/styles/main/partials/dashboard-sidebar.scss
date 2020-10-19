@@ -81,9 +81,10 @@
     }
 
     .current-team {
-      padding: 0px 10px;
       display: flex;
       flex-grow: 1;
+      font-size: $fs14;
+      padding: 0px 10px;
     }
 
     .team-name {

@@ -40,6 +40,20 @@ $base-lh-sm: 1.33;
 $title-lh: 1.25;
 $title-lh-sm: 1.15;
 
+// Work Sans
+@include font-face("worksans","WorkSans-ExtraLight", "100");
+@include font-face("worksans","WorkSans-ExtraLightitalic","100",italic);
+@include font-face("worksans","WorkSans-Light","200");
+@include font-face("worksans","WorkSans-LightItalic","200",italic);
+@include font-face("worksans","WorkSans-Regular",normal);
+@include font-face("worksans","WorkSans-Italic",normal,italic);
+@include font-face("worksans","WorkSans-SemiBold","500");
+@include font-face("worksans","WorkSans-SemiBoldItalic","500",italic);
+@include font-face("worksans","WorkSans-Bold",bold);
+@include font-face("worksans","WorkSans-BoldItalic",bold,italic);
+@include font-face("worksans","WorkSans-Black","900");
+@include font-face("worksans","WorkSans-BlackItalic","900",italic);
+
 // Source Sans Pro
 @include font-face("sourcesanspro","sourcesanspro-extralight", "100");
 @include font-face("sourcesanspro","sourcesanspro-extralightitalic","100",italic);

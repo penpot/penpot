@@ -449,11 +449,9 @@
        [:li {:on-click (partial on-click :settings-profile)}
         [:span.icon i/user]
         [:span.text (t locale "labels.profile")]]
-       [:hr]
        [:li {:on-click (partial on-click :settings-password)}
         [:span.icon i/lock]
         [:span.text (t locale "labels.password")]]
-       [:hr]
        [:li {:on-click (partial on-click da/logout)}
         [:span.icon i/exit]
         [:span.text (t locale "labels.logout")]]]]]))
