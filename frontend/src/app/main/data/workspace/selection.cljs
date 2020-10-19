@@ -244,7 +244,10 @@
                    :page-id page-id
                    :parent-id parent-id
                    :shapes shapes
-                   :index index-in-parent}]
+                   :index index-in-parent}
+                  {:type :del-obj
+                   :page-id page-id
+                   :id (:id group)}]
         uchanges [{:type :add-obj
                    :page-id page-id
                    :id (:id group)
