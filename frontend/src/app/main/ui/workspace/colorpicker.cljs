@@ -346,10 +346,10 @@
         overflow-fix (max 0 (+ y (- 50) h (- vh)))]
     (cond
       (or (nil? x) (nil? y)) {:left "auto" :right "16rem" :top "4rem"}
-      (= position :left) {:left (str (- x 270) "px")
+      (= position :left) {:left (str (- x 250) "px")
                           :top (str (- y 50 overflow-fix) "px")}
-      :else {:left (str (+ x 24) "px")
-             :top (str (- y 50 overflow-fix) "px")})))
+      :else {:left (str (+ x 80) "px")
+             :top (str (- y 70 overflow-fix) "px")})))
 
 
 (mf/defc colorpicker-modal
