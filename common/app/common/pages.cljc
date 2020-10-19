@@ -749,7 +749,6 @@
 
     (d/update-in-when data [:pages-index page-id :objects] reg-objects)))
 
-
 (defmethod process-change :mov-objects
   [data {:keys [parent-id shapes index page-id] :as change}]
   (letfn [(is-valid-move? [objects shape-id]
@@ -761,34 +760,40 @@
             (let [prev-shapes (or prev-shapes [])]
               (if index
                 (cph/insert-at-index prev-shapes index shapes)
-                (reduce (fn [acc id]
-                          (if (some #{id} acc)
-                            acc
-                            (conj acc id)))
-                        prev-shapes
-                        shapes))))
+                (cph/append-at-the-end prev-shapes shapes))))
+
+          (check-insert-items [prev-shapes parent index shapes]
+            (if-not (:masked-group? parent)
+              (insert-items prev-shapes index shapes)
+              ;; For masked groups, the first shape is the mask
+              ;; and it cannot be moved.
+              (let [mask-id (first prev-shapes)
+                    other-ids (rest prev-shapes)
+                    not-mask-shapes (strip-id shapes mask-id)
+                    new-index (if (nil? index) nil (max (dec index) 0))
+                    new-shapes (insert-items other-ids new-index not-mask-shapes)]
+                (d/concat [mask-id] new-shapes))))
 
           (strip-id [coll id]
             (filterv #(not= % id) coll))
 
-        (remove-from-old-parent [cpindex objects shape-id]
-          (let [prev-parent-id (get cpindex shape-id)]
-            ;; Do nothing if the parent id of the shape is the same as
-            ;; the new destination target parent id.
-            (if (= prev-parent-id parent-id)
-              objects
-              (loop [sid shape-id
-                     pid prev-parent-id
-                     objects objects]
-                (let [obj (get objects pid)]
-                  (if (and (= 1 (count (:shapes obj)))
-                           (= sid (first (:shapes obj)))
-                           (= :group (:type obj)))
-                    (recur pid
-                           (:parent-id obj)
-                           (dissoc objects pid))
-                    (update-in objects [pid :shapes] strip-id sid)))))))
-
+          (remove-from-old-parent [cpindex objects shape-id]
+            (let [prev-parent-id (get cpindex shape-id)]
+              ;; Do nothing if the parent id of the shape is the same as
+              ;; the new destination target parent id.
+              (if (= prev-parent-id parent-id)
+                objects
+                (loop [sid shape-id
+                       pid prev-parent-id
+                       objects objects]
+                  (let [obj (get objects pid)]
+                    (if (and (= 1 (count (:shapes obj)))
+                             (= sid (first (:shapes obj)))
+                             (= :group (:type obj)))
+                      (recur pid
+                             (:parent-id obj)
+                             (dissoc objects pid))
+                      (update-in objects [pid :shapes] strip-id sid)))))))
 
           (update-parent-id [objects id]
             (update objects id assoc :parent-id parent-id))
@@ -820,7 +825,7 @@
 
               (if valid?
                 (as-> objects $
-                  (update-in $ [parent-id :shapes] insert-items index shapes)
+                  (update-in $ [parent-id :shapes] check-insert-items parent index shapes)
                   (reduce update-parent-id $ shapes)
                   (reduce (partial remove-from-old-parent cpindex) $ shapes)
                   (reduce (partial update-frame-ids frm-id) $ (get-in $ [parent-id :shapes])))

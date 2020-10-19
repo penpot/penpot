@@ -105,7 +105,7 @@
                         :shortcut "Ctrl + g"
                         :on-click do-create-group}]
         [:& menu-entry {:title "Mask"
-                        :shortcut "Ctrl + Shift + M"
+                        :shortcut "Ctrl + M"
                         :on-click do-mask-group}]])
 
      (when (and (= (count selected) 1) (= (:type shape) :group))
@@ -115,10 +115,10 @@
                          :on-click do-remove-group}]
          (if (:masked-group? shape)
            [:& menu-entry {:title "Unmask"
-                           :shortcut "Ctrl + Shift + M"
+                           :shortcut "Shift + M"
                            :on-click do-unmask-group}]
            [:& menu-entry {:title "Mask"
-                           :shortcut "Ctrl + Shift + M"
+                           :shortcut "Ctrl + M"
                            :on-click do-mask-group}])])
 
      (if (:hidden shape)
