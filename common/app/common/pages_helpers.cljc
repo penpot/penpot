@@ -116,6 +116,15 @@
               ids
               (remove p? after))))
 
+(defn append-at-the-end
+  [prev-ids ids]
+  (reduce (fn [acc id]
+            (if (some #{id} acc)
+              acc
+              (conj acc id)))
+          prev-ids
+          ids))
+
 (defn select-toplevel-shapes
   ([objects] (select-toplevel-shapes objects nil))
   ([objects {:keys [include-frames?] :or {include-frames? false}}]
