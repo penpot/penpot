@@ -88,7 +88,7 @@
 
     .zoom-dropdown {
       top: 45px;
-      left: -40px;
+      left: 48px;
     }
   }
 
@@ -138,7 +138,7 @@
     position: absolute;
     top: 40px;
     left: 40px;
-    width: 230px;
+    width: 270px;
     z-index: 12;
     @include animation(0,.2s,fadeInDown);
 
@@ -148,7 +148,7 @@
 
     li {
       cursor: pointer;
-      font-size: $fs12;
+      font-size: $fs14;
       padding: $small $x-small;
       display: flex;
       justify-content: space-between;

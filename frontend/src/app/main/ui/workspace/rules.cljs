@@ -43,7 +43,7 @@
           (.translate dctx txfm 0)
           (.translate dctx 0 txfm))
 
-        (obj/set! dctx "font" "12px sourcesanspro")
+        (obj/set! dctx "font" "12px worksans")
         (obj/set! dctx "fillStyle" "#7B7D85")
         (obj/set! dctx "strokeStyle" "#7B7D85")
         (obj/set! dctx "textAlign" "center")
