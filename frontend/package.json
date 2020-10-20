@@ -6,7 +6,7 @@
   "license": "SEE LICENSE IN <LICENSE>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/app/app"
+    "url": "https://github.com/uxbox/uxbox"
   },
   "browserslist": [
     "defaults"
@@ -25,7 +25,7 @@
     "postcss": "^7.0.32",
     "rimraf": "^3.0.0",
     "sass": "^1.26.10",
-    "shadow-cljs": "^2.11.0"
+    "shadow-cljs": "2.11.5"
   },
   "dependencies": {
     "date-fns": "^2.15.0",
@@ -34,7 +34,7 @@
     "randomcolor": "^0.6.2",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
-    "rxjs": "^7.0.0-beta.4",
+    "rxjs": "7.0.0-beta.4",
     "slate": "^0.58.4",
     "slate-react": "^0.58.4",
     "source-map-support": "^0.5.16",
