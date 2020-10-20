@@ -3016,6 +3016,12 @@
       "es" : "Paleta de colores (---)"
     }
   },
+   "workspace.toolbar.comments" : {
+    "translations" : {
+      "en" : "Comments",
+      "es" : "Comentarios"
+    }
+  },
   "workspace.toolbar.curve" : {
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:88" ],
     "translations" : {

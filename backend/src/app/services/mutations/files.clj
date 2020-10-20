@@ -21,7 +21,7 @@
    [app.db :as db]
    [app.redis :as redis]
    [app.services.mutations :as sm]
-   [app.services.mutations.projects :as proj]
+   [app.services.queries.projects :as proj]
    [app.services.queries.files :as files]
    [app.tasks :as tasks]
    [app.util.blob :as blob]
@@ -49,6 +49,7 @@
 (sm/defmutation ::create-file
   [{:keys [profile-id project-id] :as params}]
   (db/with-atomic [conn db/pool]
+    (proj/check-edition-permissions! conn profile-id project-id)
     (create-file conn params)))
 
 (defn- create-file-profile

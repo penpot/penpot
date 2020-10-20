@@ -9,49 +9,49 @@
 
 (ns app.main.ui.workspace.viewport
   (:require
-   [clojure.set :as set]
-   [cuerdas.core :as str]
-   [beicon.core :as rx]
-   [goog.events :as events]
-   [potok.core :as ptk]
-   [rumext.alpha :as mf]
-   [promesa.core :as p]
-   [app.main.ui.icons :as i]
-   [app.main.ui.cursors :as cur]
-   [app.main.data.modal :as modal]
    [app.common.data :as d]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
+   [app.common.uuid :as uuid]
    [app.main.constants :as c]
-   [app.main.data.workspace :as dw]
-   [app.main.data.workspace.libraries :as dwl]
-   [app.main.data.workspace.drawing :as dd]
    [app.main.data.colors :as dwc]
    [app.main.data.fetch :as mdf]
+   [app.main.data.modal :as modal]
+   [app.main.data.workspace :as dw]
+   [app.main.data.workspace.drawing :as dd]
+   [app.main.data.workspace.libraries :as dwl]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
-   [app.main.ui.keyboard :as kbd]
+   [app.main.ui.context :as muc]
+   [app.main.ui.cursors :as cur]
    [app.main.ui.hooks :as hooks]
+   [app.main.ui.icons :as i]
+   [app.main.ui.keyboard :as kbd]
+   [app.main.ui.workspace.drawarea :refer [draw-area]]
+   [app.main.ui.workspace.frame-grid :refer [frame-grid]]
+   [app.main.ui.workspace.presence :as presence]
+   [app.main.ui.workspace.selection :refer [selection-handlers]]
    [app.main.ui.workspace.shapes :refer [shape-wrapper frame-wrapper]]
    [app.main.ui.workspace.shapes.interactions :refer [interactions]]
-   [app.main.ui.workspace.drawarea :refer [draw-area]]
-   [app.main.ui.workspace.selection :refer [selection-handlers]]
-   [app.main.ui.workspace.presence :as presence]
-   [app.main.ui.workspace.snap-points :refer [snap-points]]
-   [app.main.ui.workspace.snap-distances :refer [snap-distances]]
-   [app.main.ui.workspace.frame-grid :refer [frame-grid]]
    [app.main.ui.workspace.shapes.outline :refer [outline]]
    [app.main.ui.workspace.gradients :refer [gradient-handlers]]
    [app.main.ui.workspace.colorpicker.pixel-overlay :refer [pixel-overlay]]
-   [app.common.math :as mth]
+   [app.main.ui.workspace.snap-distances :refer [snap-distances]]
+   [app.main.ui.workspace.snap-points :refer [snap-points]]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.object :as obj]
-   [app.main.ui.context :as muc]
-   [app.common.geom.shapes :as gsh]
-   [app.common.geom.point :as gpt]
    [app.util.perf :as perf]
-   [app.common.uuid :as uuid]
-   [app.util.timers :as timers])
+   [app.util.timers :as timers]
+   [beicon.core :as rx]
+   [clojure.set :as set]
+   [cuerdas.core :as str]
+   [goog.events :as events]
+   [potok.core :as ptk]
+   [promesa.core :as p]
+   [rumext.alpha :as mf])
   (:import goog.events.EventType))
 
 ;; --- Coordinates Widget
@@ -306,7 +306,8 @@
                (st/emit! (ms/->KeyboardEvent :down key ctrl? shift? alt?))
                (when (and (kbd/space? event)
                           (not= "rich-text" (obj/get target "className"))
-                          (not= "INPUT" (obj/get target "tagName")))
+                          (not= "INPUT" (obj/get target "tagName"))
+                          (not= "TEXTAREA" (obj/get target "tagName")))
                  (handle-viewport-positioning viewport-ref))))))
 
         on-key-up
