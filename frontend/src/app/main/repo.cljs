@@ -20,20 +20,24 @@
     (http/success? response)
     (rx/of (:body response))
 
-    (or (http/client-error? response)
-        (= 500 (:status response)))
+    (= (:status response) 400)
     (rx/throw (:body response))
 
-    (= 502 (:status response))
-    (rx/throw {:type :bad-gateway
-               :body (:body response)})
+    (= (:status response) 401)
+    (rx/throw {:type :authentication
+               :code :not-authenticated})
+
+    (= (:status response) 403)
+    (rx/throw {:type :authorization
+               :code :not-authorized})
 
     (= 0 (:status response))
     (rx/throw {:type :offline})
 
     :else
-    (rx/throw {:type :unexpected
-               :response response})))
+    (rx/throw {:type :internal-error
+               :status (:status response)
+               :body (:body response)})))
 
 (defn send-query!
   [id params]
