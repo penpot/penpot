@@ -61,6 +61,7 @@
   #{:sitemap
     :sitemap-pages
     :layers
+    :comments
     :assets
     :document-history
     :colorpalette
@@ -396,7 +397,7 @@
                                                  :sitemap
                                                  :document-history
                                                  :assets])))
-        right-sidebar? (not (empty? (keep layout [:element-options])))]
+        right-sidebar? (not (empty? (keep layout [:element-options :comments])))]
     (update state :workspace-local
             assoc :left-sidebar? left-sidebar?
                   :right-sidebar? right-sidebar?)))
@@ -405,28 +406,36 @@
   [state flags-to-toggle]
   (update state :workspace-layout
           (fn [flags]
-            (cond
-              (contains? (set flags-to-toggle) :assets)
-              (disj flags :sitemap :layers :document-history)
+            (cond-> flags
+              (contains? flags-to-toggle :assets)
+              (disj :sitemap :layers :document-history)
 
-              (contains? (set flags-to-toggle) :sitemap)
-              (disj flags :assets :document-history)
+              (contains? flags-to-toggle :sitemap)
+              (disj :assets :document-history)
 
-              (contains? (set flags-to-toggle) :document-history)
-              (disj flags :assets :sitemap :layers)
+              (contains? flags-to-toggle :document-history)
+              (disj :assets :sitemap :layers)
 
-              :else
-              flags))))
+              (contains? flags-to-toggle :document-history)
+              (disj :assets :sitemap :layers)
+
+              (and (contains? flags-to-toggle :comments)
+                   (contains? flags :comments))
+              (disj :element-options)
+
+              (and (contains? flags-to-toggle :comments)
+                   (not (contains? flags :comments)))
+              (conj :element-options)))))
 
 (defn toggle-layout-flags
   [& flags]
-  (us/assert ::layout-flags flags)
-  (ptk/reify ::toggle-layout-flags
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> (reduce toggle-layout-flag state flags)
-          (check-auto-flags flags)
-          (check-sidebars)))))
+  (let [flags (into #{} flags)]
+    (ptk/reify ::toggle-layout-flags
+      ptk/UpdateEvent
+      (update [_ state]
+        (-> (reduce toggle-layout-flag state flags)
+            (check-auto-flags flags)
+            (check-sidebars))))))
 
 ;; --- Set element options mode
 
@@ -597,7 +606,7 @@
             shape (-> (cp/make-minimal-shape type)
                       (merge data)
                       (merge {:x x :y y})
-                      (geom/setup-selrect))]        
+                      (geom/setup-selrect))]
         (rx/of (add-shape shape))))))
 
 ;; --- Update Shape Attrs
@@ -701,7 +710,7 @@
                           group-ids)))
                     #{}
                     ids)
- 
+
             rchanges
             (d/concat
               (reduce (fn [res id]
@@ -1522,7 +1531,7 @@
 
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
                    (dws/select-shapes (d/ordered-set (:id group))))))))))
- 
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interactions

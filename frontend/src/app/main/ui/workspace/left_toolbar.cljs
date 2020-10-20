@@ -93,26 +93,33 @@
         {:alt (t locale "workspace.toolbar.path")
          :class (when (= selected-drawtool :path) "selected")
          :on-click (partial select-drawtool :path)}
-        i/curve]]
+        i/curve]
+
+       [:li.tooltip.tooltip-right
+        {:alt (t locale "workspace.toolbar.comments")
+         :class (when (contains? layout :comments) "selected")
+         :on-click (st/emitf (dw/toggle-layout-flags :comments))
+         }
+        i/chat]]
 
       [:ul.left-toolbar-options.panels
        [:li.tooltip.tooltip-right
         {:alt "Layers"
          :class (when (contains? layout :layers) "selected")
-         :on-click #(st/emit! (dw/toggle-layout-flags :sitemap :layers))}
+         :on-click (st/emitf (dw/toggle-layout-flags :sitemap :layers))}
         i/layers]
        [:li.tooltip.tooltip-right
         {:alt (t locale "workspace.toolbar.assets")
          :class (when (contains? layout :assets) "selected")
-         :on-click #(st/emit! (dw/toggle-layout-flags :assets))}
+         :on-click (st/emitf (dw/toggle-layout-flags :assets))}
         i/library]
        [:li.tooltip.tooltip-right
         {:alt "History"
          :class (when (contains? layout :document-history) "selected")
-         :on-click #(st/emit! (dw/toggle-layout-flags :document-history))}
+         :on-click (st/emitf (dw/toggle-layout-flags :document-history))}
         i/undo-history]
        [:li.tooltip.tooltip-right
         {:alt (t locale "workspace.toolbar.color-palette")
          :class (when (contains? layout :colorpalette) "selected")
-         :on-click #(st/emit! (dw/toggle-layout-flags :colorpalette))}
+         :on-click (st/emitf (dw/toggle-layout-flags :colorpalette))}
         i/palette]]]]))

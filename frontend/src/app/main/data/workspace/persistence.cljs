@@ -26,6 +26,7 @@
    [app.util.router :as rt]
    [app.util.time :as dt]
    [app.util.transit :as t]
+   [app.util.avatars :as avatars]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
@@ -224,6 +225,12 @@
                          :else
                          (throw error))))))))
 
+(defn assoc-profile-avatar
+  [{:keys [photo fullname] :as profile}]
+  (cond-> profile
+    (or (nil? photo) (empty? photo))
+    (assoc :photo (avatars/generate {:name fullname}))))
+
 (defn- bundle-fetched
   [file users project libraries]
   (ptk/reify ::bundle-fetched
@@ -236,13 +243,14 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state
-             :workspace-undo {}
-             :workspace-project project
-             :workspace-file file
-             :workspace-data (:data file)
-             :workspace-users (d/index-by :id users)
-             :workspace-libraries (d/index-by :id libraries)))))
+      (let [users (map assoc-profile-avatar users)]
+        (assoc state
+               :workspace-undo {}
+               :workspace-project project
+               :workspace-file file
+               :workspace-data (:data file)
+               :workspace-users (d/index-by :id users)
+               :workspace-libraries (d/index-by :id libraries))))))
 
 
 ;; --- Set File shared

@@ -11,6 +11,7 @@
   (:require
    ["date-fns/format" :as df-format]
    ["date-fns/formatDistanceToNow" :as df-format-distance]
+   ["date-fns/formatDistanceToNowStrict" :as df-format-distance-strict]
    ["date-fns/locale/fr" :as df-fr-locale]
    ["date-fns/locale/en-US" :as df-en-locale]
    ["date-fns/locale/es" :as df-es-locale]
@@ -44,7 +45,8 @@
   ([v {:keys [seconds? locale]
        :or {seconds? true
             locale "default"}}]
-   (df-format-distance v
-                       #js {:includeSeconds seconds?
-                            :addSuffix true
-                            :locale (gobj/get locales locale)})))
+   (when v
+     (df-format-distance-strict v
+                         #js {:includeSeconds seconds?
+                              :addSuffix true
+                              :locale (gobj/get locales locale)}))))

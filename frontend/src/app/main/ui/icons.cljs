@@ -126,6 +126,8 @@
 (def picker-harmony (icon-xref :picker-harmony))
 (def picker-hsv (icon-xref :picker-hsv))
 (def picker-ramp (icon-xref :picker-ramp))
+(def checkbox-checked (icon-xref :checkbox-checked))
+(def checkbox-unchecked (icon-xref :checkbox-unchecked))
 
 (def loader-pencil
   (mf/html

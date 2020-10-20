@@ -108,6 +108,8 @@
     {:name "0030-mod-file-table-add-missing-index"
      :fn (mg/resource "app/migrations/sql/0030-mod-file-table-add-missing-index.sql")}
 
+    {:name "0031-add-conversation-related-tables"
+     :fn (mg/resource "app/migrations/sql/0031-add-conversation-related-tables.sql")}
     ]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

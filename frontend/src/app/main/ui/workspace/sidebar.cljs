@@ -11,6 +11,7 @@
   (:require
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
+   [app.main.ui.workspace.comments :refer [comments-sidebar]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox]]
    [app.main.ui.workspace.sidebar.layers :refer [layers-toolbox]]
    [app.main.ui.workspace.sidebar.options :refer [options-toolbox]]
@@ -47,4 +48,6 @@
       [:& options-toolbox
        {:page-id page-id
         :file-id file-id
-        :local local}])]])
+        :local local}])
+    (when (contains? layout :comments)
+      [:& comments-sidebar])]])
