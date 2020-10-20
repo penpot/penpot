@@ -1450,13 +1450,16 @@
                   [(first shapes) [] []]
                   (dws/prepare-create-group page-id shapes "Group-" true))
 
-                rchanges (conj rchanges
-                          {:type :mod-obj
-                           :page-id page-id
-                           :id (:id group)
-                           :operations [{:type :set
-                                         :attr :masked-group?
-                                         :val true}]})
+                rchanges (d/concat rchanges
+                          [{:type :mod-obj
+                            :page-id page-id
+                            :id (:id group)
+                            :operations [{:type :set
+                                          :attr :masked-group?
+                                          :val true}]}
+                           {:type :reg-objects
+                            :page-id page-id
+                            :shapes [(:id group)]}])
 
                 uchanges (conj rchanges
                           {:type :mod-obj

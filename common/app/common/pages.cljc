@@ -736,7 +736,10 @@
                                      (assoc :modifiers
                                             (rotation-modifiers gcenter % (- (:rotation group 0))))
                                      (geom/transform-shape))))
-                  selrect (-> (into [] gxfm (:shapes group))
+                  inner-shapes (if (:masked-group? group)
+                                 [(first (:shapes group))]
+                                 (:shapes group))
+                  selrect (-> (into [] gxfm inner-shapes)
                               (geom/selection-rect))]
 
               ;; Rotate the group shape change the data and rotate back again
