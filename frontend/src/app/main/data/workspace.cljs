@@ -1464,7 +1464,31 @@
                            :id (:id group)
                            :operations [{:type :set
                                          :attr :masked-group?
-                                         :val nil}]})]
+                                         :val nil}]})
+
+                ;; If the mask has the default color, change it automatically
+                ;; to white, to have an opaque mask by default (user may change
+                ;; it later to have different degrees of transparency).
+                mask (first shapes)
+                rchanges (if (not= (:fill-color mask) cp/default-color)
+                           rchanges
+                           (conj rchanges
+                                 {:type :mod-obj
+                                  :page-id page-id
+                                  :id (:id mask)
+                                  :operations [{:type :set
+                                                :attr :fill-color
+                                                :val "#ffffff"}]}))
+
+                uchanges (if (not= (:fill-color mask) cp/default-color)
+                           uchanges
+                           (conj uchanges
+                                 {:type :mod-obj
+                                  :page-id page-id
+                                  :id (:id mask)
+                                  :operations [{:type :set
+                                                :attr :fill-color
+                                                :val (:fill-color mask)}]}))]
 
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
                    (dws/select-shapes (d/ordered-set (:id group))))))))))
