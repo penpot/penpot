@@ -37,7 +37,9 @@
       [:g
        (when mask
          [:defs
-          [:mask {:id (:id mask)}
+          [:mask {:id (:id mask)
+                  :width width
+                  :height height}
            [:& shape-wrapper {:frame frame
                               :shape mask}]]])
        [:& (mf/provider mask-id-ctx) {:value (str/fmt "url(#%s)" (:id mask))}
