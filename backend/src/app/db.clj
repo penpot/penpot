@@ -190,6 +190,18 @@
   [data]
   (org.postgresql.util.PGInterval. ^String data))
 
+(defn savepoint
+  ([^Connection conn]
+   (.setSavepoint conn))
+  ([^Connection conn label]
+   (.setSavepoint conn (name label))))
+
+(defn rollback!
+  ([^Connection conn]
+   (.rollback conn))
+  ([^Connection conn ^Savepoint sp]
+   (.rollback conn sp)))
+
 (defn interval
   [data]
   (cond
