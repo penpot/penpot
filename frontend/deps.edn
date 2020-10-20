@@ -5,22 +5,20 @@
   com.cognitect/transit-cljs {:mvn/version "0.8.264"}
 
   environ/environ {:mvn/version "1.2.0"}
-  metosin/reitit-core {:mvn/version "0.5.5"}
-  expound/expound {:mvn/version "0.8.5"}
+  metosin/reitit-core {:mvn/version "0.5.6"}
+  expound/expound {:mvn/version "0.8.6"}
 
   danlentz/clj-uuid {:mvn/version "0.1.9"}
   frankiesardo/linked {:mvn/version "1.3.0"}
-
-  funcool/lentes {:mvn/version "1.4.0-SNAPSHOT"}
 
   funcool/beicon {:mvn/version "2020.05.08-2"}
   funcool/cuerdas {:mvn/version "2020.03.26-3"}
   funcool/okulary {:mvn/version "2020.04.14-0"}
   funcool/potok {:mvn/version "2020.08.10-2"}
   funcool/promesa {:mvn/version "6.0.0"}
-  funcool/rumext {:mvn/version "2020.10.06-0"}
+  funcool/rumext {:mvn/version "2020.10.14-1"}
 
-  lambdaisland/uri {:mvn/version "1.3.45"
+  lambdaisland/uri {:mvn/version "1.4.54"
                     :exclusions [org.clojure/data.json]}
 
   }
@@ -37,7 +35,7 @@
     funcool/datoteka {:mvn/version "1.2.0"}
     binaryage/devtools {:mvn/version "RELEASE"}
 
-    thheller/shadow-cljs {:mvn/version "2.11.4"}
+    thheller/shadow-cljs {:mvn/version "2.11.5"}
 
     ;; i18n parsing
     carocad/parcera {:mvn/version "0.11.0"}
