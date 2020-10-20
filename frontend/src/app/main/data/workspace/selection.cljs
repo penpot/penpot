@@ -177,7 +177,7 @@
                           reverse
                           (d/seek #(geom/has-point? % position)))]
         (when selected
-          (rx/of deselect-all (select-shape (:id selected))))))))
+          (rx/of (deselect-all) (select-shape (:id selected))))))))
 
 
 ;; --- Group shapes
