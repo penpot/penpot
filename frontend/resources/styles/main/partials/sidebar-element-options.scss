@@ -61,15 +61,21 @@
   .element-set {
     border-bottom: 1px solid $color-gray-60;
     color: $color-gray-20;
-    margin: 0 $x-small;
+    padding: $small $x-small;
 
     .element-set-title {
-      color: $color-gray-10;
+      color: $color-gray-20;
       display: flex;
       font-size: $fs13;
-      padding: $small $x-small;
+      padding: $x-small;
       width: 100%;
       align-items: center;
+    }
+
+    &:hover {
+      .element-set-title {
+        color: $color-gray-10;
+      }
     }
   }
 
@@ -185,7 +191,7 @@
     background-color: $color-gray-50;
     border: 1px solid transparent;
     border-bottom-color: $color-gray-40;
-    color: $color-gray-10;
+    color: $color-white;
     font-size: $fs12;
     margin: $x-small;
     padding: $x-small;
@@ -217,7 +223,7 @@
   }
 
   .element-set-subtitle {
-    color: $color-gray-10;
+    color: $color-gray-20;
     font-size: $fs11;
     width: 12rem;
   }

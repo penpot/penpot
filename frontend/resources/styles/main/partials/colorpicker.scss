@@ -13,7 +13,7 @@
 .colorpicker-content {
   display: flex;
   flex-direction: column;
-  padding: 0.5rem;
+  padding: $small;
 
   & > * {
     width: 200px;
@@ -21,7 +21,7 @@
 
   .top-actions {
     display: flex;
-    margin-bottom: 0.25rem;
+    margin-bottom: $x-small;
     justify-content: space-between;
 
     .picker-btn {
@@ -50,7 +50,7 @@
       margin: 0;
       border: 1px solid $color-gray-20;
       border-radius: 2px;
-      margin-left: 0.25rem;
+      margin-left: $x-small;
     }
 
     .active {
@@ -69,8 +69,8 @@
   .gradient-stops {
     height: 10px;
     display: flex;
-    margin-top: 0.5rem;
-    margin-bottom: 1rem;
+    margin-top: $small;
+    margin-bottom: $medium;
 
     .gradient-background-wrapper {
       height: 100%;
@@ -303,11 +303,12 @@
       background-position: 95% 48%;
       background-size: 10px;
       margin: 0;
-      margin-bottom: 0.5rem;
+      margin-bottom: $small;
       width: 100%;
-      padding: 2px 0.25rem;
+      padding: $x-small 0.25rem;
       font-size: 0.75rem;
       color: $color-gray-40;
+      cursor: pointer;
       border-color: $color-gray-10;
       border-radius: 2px;
 
@@ -443,7 +444,7 @@
 
   .colorpicker-tabs {
     display: flex;
-    margin: 0.5rem 0;
+    margin-bottom: $small;
     border-radius: 5px;
     border: 1px solid $color-gray-10;
     height: 2rem;
@@ -491,7 +492,7 @@
       background-color: $color-gray-50;
       border: 1px solid $color-gray-30;
       border-radius: $br-small;
-      color: $color-gray-20;
+      color: $color-white;
       height: 20px;
       margin: 5px 0 0 0;
       padding: 0 $x-small;
