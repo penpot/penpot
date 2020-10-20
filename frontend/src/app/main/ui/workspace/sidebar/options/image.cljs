@@ -10,7 +10,9 @@
 (ns app.main.ui.workspace.sidebar.options.image
   (:require
    [rumext.alpha :as mf]
-   [app.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]))
+   [app.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
+   [app.main.ui.workspace.sidebar.options.shadow :refer [shadow-menu]]
+   [app.main.ui.workspace.sidebar.options.blur :refer [blur-menu]]))
 
 (mf/defc options
   [{:keys [shape] :as props}]
@@ -20,4 +22,9 @@
     [:*
      [:& measures-menu {:ids ids
                         :type type
-                        :values measure-values}]]))
+                        :values measure-values}]
+     [:& shadow-menu {:ids ids
+                      :values (select-keys shape [:shadow])}]
+
+     [:& blur-menu {:ids ids
+                    :values (select-keys shape [:blur])}]]))

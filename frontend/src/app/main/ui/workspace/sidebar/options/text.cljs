@@ -25,6 +25,7 @@
    [app.main.ui.workspace.sidebar.options.fill :refer [fill-menu]]
    [app.main.ui.workspace.sidebar.options.shadow :refer [shadow-menu]]
    [app.main.ui.workspace.sidebar.options.typography :refer [typography-entry typography-options]]
+   [app.main.ui.workspace.sidebar.options.blur :refer [blur-menu]]
    [app.util.dom :as dom]
    [app.main.fonts :as fonts]
    [app.util.i18n :as i18n :refer [tr t]]
@@ -318,8 +319,9 @@
                     :values fill-values
                     :editor editor}]
      [:& shadow-menu {:ids ids
-                      :type type
                       :values (select-keys shape [:shadow])}]
+     [:& blur-menu {:ids ids
+                    :values (select-keys shape [:blur])}]
      [:& text-menu {:ids ids
                     :type type
                     :values text-values

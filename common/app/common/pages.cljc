@@ -55,7 +55,7 @@
     (>= % min-safe-int)
     (<= % max-safe-int)))
 
-
+;; GRADIENTS
 
 (s/def :internal.gradient.stop/color ::string)
 (s/def :internal.gradient.stop/opacity ::safe-number)
@@ -84,6 +84,63 @@
                    :internal.gradient/end-y
                    :internal.gradient/width
                    :internal.gradient/stops]))
+
+
+;;; COLORS
+
+(s/def :internal.color/name ::string)
+(s/def :internal.color/value (s/nilable ::string))
+(s/def :internal.color/color (s/nilable ::string))
+(s/def :internal.color/opacity (s/nilable ::safe-number))
+(s/def :internal.color/gradient (s/nilable ::gradient))
+
+(s/def ::color
+  (s/keys :opt-un [::id
+                   :internal.color/name
+                   :internal.color/value
+                   :internal.color/color
+                   :internal.color/opacity
+                   :internal.color/gradient]))
+
+
+
+;;; SHADOW EFFECT
+
+(s/def :internal.shadow/id uuid?)
+(s/def :internal.shadow/style #{:drop-shadow :inner-shadow})
+(s/def :internal.shadow/color ::color)
+(s/def :internal.shadow/offset-x ::safe-number)
+(s/def :internal.shadow/offset-y ::safe-number)
+(s/def :internal.shadow/blur ::safe-number)
+(s/def :internal.shadow/spread ::safe-number)
+(s/def :internal.shadow/hidden boolean?)
+
+(s/def :internal.shadow/shadow
+  (s/keys :req-un [:internal.shadow/id
+                   :internal.shadow/style
+                   :internal.shadow/color
+                   :internal.shadow/offset-x
+                   :internal.shadow/offset-y
+                   :internal.shadow/blur
+                   :internal.shadow/spread
+                   :internal.shadow/hidden]))
+
+(s/def ::shadow
+  (s/coll-of :internal.shadow/shadow :kind vector?))
+
+
+;;; BLUR EFFECT
+
+(s/def :internal.blur/id uuid?)
+(s/def :internal.blur/type #{:layer-blur})
+(s/def :internal.blur/value ::safe-number)
+(s/def :internal.blur/hidden boolean?)
+
+(s/def ::blur
+  (s/keys :req-un [:internal.blur/id
+                   :internal.blur/type
+                   :internal.blur/value
+                   :internal.blur/hidden]))
 
 ;; Page Options
 (s/def :internal.page.grid.color/value string?)
@@ -175,6 +232,8 @@
 (s/def :internal.shape/width ::safe-number)
 (s/def :internal.shape/height ::safe-number)
 (s/def :internal.shape/index integer?)
+(s/def :internal.shape/shadow ::shadow)
+(s/def :internal.shape/blur ::blur)
 
 (s/def :internal.shape/x1 ::safe-number)
 (s/def :internal.shape/y1 ::safe-number)
@@ -246,7 +305,9 @@
                    :internal.shape/interactions
                    :internal.shape/selrect
                    :internal.shape/points
-                   :internal.shape/masked-group?]))
+                   :internal.shape/masked-group?
+                   :internal.shape/shadow
+                   :internal.shape/blur]))
 
 (def component-sync-attrs {:fill-color            :fill-group
                            :fill-color-ref-file   :fill-group
@@ -294,20 +355,6 @@
                    :internal.page/options
                    :internal.page/objects]))
 
-
-(s/def :internal.color/name ::string)
-(s/def :internal.color/value (s/nilable ::string))
-(s/def :internal.color/color (s/nilable ::string))
-(s/def :internal.color/opacity (s/nilable ::safe-number))
-(s/def :internal.color/gradient (s/nilable ::gradient))
-
-(s/def ::color
-  (s/keys :req-un [::id
-                   :internal.color/name]
-          :opt-un [:internal.color/value
-                   :internal.color/color
-                   :internal.color/opacity
-                   :internal.color/gradient]))
 
 (s/def ::recent-color
   (s/keys :opt-un [:internal.color/value

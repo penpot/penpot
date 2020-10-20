@@ -12,6 +12,7 @@
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
    [app.util.color :as color]
+   [app.common.data :as d]
    [app.common.math :as mth]
    [app.common.uuid :as uuid]))
 
@@ -21,7 +22,8 @@
 (defn filter-str
   [filter-id shape]
 
-  (when (seq (:shadow shape))
+  (when (or (seq (->> (:shadow shape) (remove :hidden)))
+            (and (:blur shape) (-> shape :blur :hidden not)))
     (str/fmt "url(#$0)" [filter-id])))
 
 (mf/defc color-matrix
@@ -34,10 +36,9 @@
       :values (str/fmt "0 0 0 0 $0 0 0 0 0 $1 0 0 0 0 $2 0 0 0 $3 0" [r g b a])}]))
 
 (mf/defc drop-shadow-filter
-  [{:keys [filter-id filter shape]}]
+  [{:keys [filter-in filter-id params]}]
 
-  (let [{:keys [x y width height]} (:selrect shape)
-        {:keys [id in-filter color offset-x offset-y blur spread]} filter]
+  (let [{:keys [color offset-x offset-y blur spread]} params]
     [:*
      [:feColorMatrix {:in "SourceAlpha" :type "matrix"
                       :values "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"}]
@@ -45,21 +46,20 @@
        [:feMorphology {:radius spread
                        :operator "dilate"
                        :in "SourceAlpha"
-                       :result (str "filter" id)}])
+                       :result filter-id}])
 
      [:feOffset {:dx offset-x :dy offset-y}]
      [:feGaussianBlur {:stdDeviation (/ blur 2)}]
      [:& color-matrix {:color color}]
 
      [:feBlend {:mode "normal"
-                :in2 in-filter
-                :result (str "filter" id)}]]))
+                :in2 filter-in
+                :result filter-id}]]))
 
 (mf/defc inner-shadow-filter
-  [{:keys [filter-id filter shape]}]
+  [{:keys [filter-in filter-id params]}]
 
-  (let [{:keys [x y width height]} (:selrect shape)
-        {:keys [id in-filter color offset-x offset-y blur spread]} filter]
+  (let [{:keys [color offset-x offset-y blur spread]} params]
     [:*
      [:feColorMatrix {:in "SourceAlpha" :type "matrix"
                       :values "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
@@ -69,7 +69,7 @@
        [:feMorphology {:radius spread
                        :operator "erode"
                        :in "SourceAlpha"
-                       :result (str "filter" id)}])
+                       :result filter-id}])
 
      [:feOffset {:dx offset-x :dy offset-y}]
      [:feGaussianBlur {:stdDeviation (/ blur 2)}]
@@ -82,12 +82,36 @@
      [:& color-matrix {:color color}]
 
      [:feBlend {:mode "normal"
-                :in2 in-filter
-                :result (str "filter" id)}]]))
+                :in2 filter-in
+                :result filter-id}]]))
 
-(defn filter-bounds [shape filter]
+(mf/defc background-blur-filter
+  [{:keys [filter-id filter-in params]}]
+  [:*
+   [:feGaussianBlur {:in "BackgroundImage"
+                     :stdDeviation (/ (:value params) 2)}]
+   [:feComposite {:in2 "SourceAlpha"
+                  :operator "in"
+                  :result filter-id}]])
+
+(mf/defc layer-blur-filter
+  [{:keys [filter-id params]}]
+
+  [:feGaussianBlur {:stdDeviation (/ (:value params) 2)
+                    :result filter-id}])
+
+(mf/defc image-fix-filter [{:keys [filter-id]}]
+  [:feFlood {:flood-opacity 0 :result filter-id}])
+
+(mf/defc blend-filters [{:keys [filter-id filter-in]}]
+  [:feBlend {:mode "normal"
+             :in "SourceGraphic"
+             :in2 filter-in
+             :result filter-id}])
+
+(defn filter-bounds [shape filter-entry]
   (let [{:keys [x y width height]} (:selrect shape)
-        {:keys [offset-x offset-y blur spread] :or {offset-x 0 offset-y 0 blur 0 spread 0}} filter
+        {:keys [offset-x offset-y blur spread] :or {offset-x 0 offset-y 0 blur 0 spread 0}} (:params filter-entry)
         filter-x (min x (+ x offset-x (- spread) (- blur) -5))
         filter-y (min y (+ y offset-y (- spread) (- blur) -5))
         filter-width (+ width (mth/abs offset-x) (* spread 2) (* blur 2) 10)
@@ -98,67 +122,83 @@
      :y2 (+ filter-y filter-height)}))
 
 (defn get-filters-bounds
-  [shape filters]
+  [shape filters blur-value]
 
-  (let [filter-bounds (->>
-                       filters
-                       (filter #(= :drop-shadow (:style %)))
-                       (map (partial filter-bounds shape) ))
+  (let [filter-bounds (->> filters
+                           (filter #(= :drop-shadow (:type %)))
+                           (map (partial filter-bounds shape) ))
         ;; We add the selrect so the minimum size will be the selrect
         filter-bounds (conj filter-bounds (:selrect shape))
         x1 (apply min (map :x1 filter-bounds))
         y1 (apply min (map :y1 filter-bounds))
         x2 (apply max (map :x2 filter-bounds))
-        y2 (apply max (map :y2 filter-bounds))]
+        y2 (apply max (map :y2 filter-bounds))
+
+        x1 (- x1 (* blur-value 2))
+        x2 (+ x2 (* blur-value 2))
+        y1 (- y1 (* blur-value 2))
+        y2 (+ y2 (* blur-value 2))]
     [x1 y1 (- x2 x1) (- y2 y1)]))
+
+(defn blur-filters [type value]
+  (->> [value]
+       (remove :hidden)
+       (filter #(= (:type %) type))
+       (map #(hash-map :id (str "filter_" (:id %))
+                       :type (:type %)
+                       :params %))))
+
+(defn shadow-filters [type filters]
+  (->> filters
+       (remove :hidden)
+       (filter #(= (:style %) type))
+       (map #(hash-map :id (str "filter_" (:id %))
+                       :type (:style %)
+                       :params %))))
+
+(mf/defc filter-entry [{:keys [entry]}]
+  (let [props #js {:filter-id (:id entry)
+                   :filter-in (:filter-in entry)
+                   :params (:params entry)}]
+    (case (:type entry)
+      :drop-shadow [:> drop-shadow-filter props]
+      :inner-shadow [:> inner-shadow-filter props]
+      :background-blur [:> background-blur-filter props]
+      :layer-blur [:> layer-blur-filter props]
+      :image-fix [:> image-fix-filter props]
+      :blend-filters [:> blend-filters props])))
 
 (mf/defc filters
   [{:keys [filter-id shape]}]
 
-  (let [add-in-filter
-        (fn [filter in-filter]
-          (assoc filter :in-filter in-filter))
+  (let [filters (d/concat
+                 []
+                 [{:id "BackgroundImageFix" :type :image-fix}]
 
-        filters (->> shape :shadow (filter (comp not :hidden)))
+                 ;; Background blur won't work in current SVG specification
+                 ;; We can revisit this in the future
+                 #_(->> shape :blur   (blur-filters   :background-blur))
 
-        [filter-x filter-y filter-width filter-height] (get-filters-bounds shape filters)]
-    (when (seq filters)
-      [:filter {:id filter-id
-                :x filter-x :y filter-y
-                :width filter-width :height filter-height
-                :filterUnits "userSpaceOnUse"
-                :color-interpolation-filters "sRGB"}
+                 (->> shape :shadow (shadow-filters :drop-shadow))
+                 [{:id "shape" :type :blend-filters}]
+                 (->> shape :shadow (shadow-filters :inner-shadow))
+                 (->> shape :blur   (blur-filters   :layer-blur)))
 
-       (let [;; Add as a paramter the input filter
-             drop-shadow-filters (->> filters (filter #(= :drop-shadow (:style %))))
-             drop-shadow-filters (->> drop-shadow-filters
-                                      (map #(str "filter" (:id %)))
-                                      (cons "BackgroundImageFix")
-                                      (map add-in-filter drop-shadow-filters))
+        ;; Adds the previous filter as `filter-in` parameter
+        filters (map #(assoc %1 :filter-in %2) filters (cons nil (map :id filters)))
 
-             inner-shadow-filters (->> filters (filter #(= :inner-shadow (:style %))))
-             inner-shadow-filters (->> inner-shadow-filters
-                                       (map #(str "filter" (:id %)))
-                                       (cons "shape")
-                                       (map add-in-filter inner-shadow-filters))]
+        [filter-x filter-y filter-width filter-height] (get-filters-bounds shape filters (or (-> shape :blur :value) 0))]
 
-         [:*
-          [:feFlood {:flood-opacity 0 :result "BackgroundImageFix"}]
-          (for [{:keys [id type] :as filter} drop-shadow-filters]
-            [:& drop-shadow-filter {:key id
-                                    :filter-id filter-id
-                                    :filter filter
-                                    :shape shape}])
+    [:*
+     (when (> (count filters) 2)
+       [:filter {:id filter-id
+                 :x filter-x
+                 :y filter-y
+                 :width filter-width
+                 :height filter-height
+                 :filterUnits "userSpaceOnUse"
+                 :color-interpolation-filters "sRGB"}
 
-          [:feBlend {:mode "normal"
-                     :in "SourceGraphic"
-                     :in2 (if (seq drop-shadow-filters)
-                            (str "filter" (:id (last drop-shadow-filters)))
-                            "BackgroundImageFix")
-                     :result "shape"}]
+        (for [entry filters]
+          [:& filter-entry {:entry entry}])])]))
 
-          (for [{:keys [id type] :as filter} inner-shadow-filters]
-            [:& inner-shadow-filter {:key id
-                                     :filter-id filter-id
-                                     :filter filter
-                                     :shape shape}])])])))

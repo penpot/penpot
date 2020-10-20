@@ -163,6 +163,17 @@
   }
 }
 
+.element-set-title-actions {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  justify-content: flex-end;
+
+  .add-page {
+    margin: 0;
+  }
+}
+
 .collapse-pages {
   margin-left: $small;
 
