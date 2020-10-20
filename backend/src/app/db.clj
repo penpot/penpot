@@ -10,6 +10,7 @@
 (ns app.db
   (:require
    [app.common.exceptions :as ex]
+   [app.common.geom.point :as gpt]
    [app.config :as cfg]
    [app.metrics :as mtx]
    [app.util.data :as data]
@@ -31,6 +32,10 @@
    com.zaxxer.hikari.HikariConfig
    com.zaxxer.hikari.HikariDataSource
    com.zaxxer.hikari.metrics.prometheus.PrometheusMetricsTrackerFactory
+   java.sql.Connection
+   java.sql.Savepoint
+   org.postgresql.jdbc.PgArray
+   org.postgresql.geometric.PGpoint
    org.postgresql.util.PGInterval
    org.postgresql.util.PGobject))
 
@@ -161,6 +166,26 @@
   [v]
   (instance? PGInterval v))
 
+(defn pgpoint?
+  [v]
+  (instance? PGpoint v))
+
+(defn pgarray?
+  [v]
+  (instance? PgArray v))
+
+(defn pgarray-of-uuid?
+  [v]
+  (and (pgarray? v) (= "uuid" (.getBaseTypeName ^PgArray v))))
+
+(defn pgpoint
+  [p]
+  (PGpoint. (:x p) (:y p)))
+
+(defn decode-pgpoint
+  [^PGpoint v]
+  (gpt/point (.-x v) (.-y v)))
+
 (defn pginterval
   [data]
   (org.postgresql.util.PGInterval. ^String data))
@@ -224,6 +249,14 @@
   (doto (org.postgresql.util.PGobject.)
     (.setType "jsonb")
     (.setValue (json/write-str data))))
+
+(defn pgarray->set
+  [v]
+  (set (.getArray ^PgArray v)))
+
+(defn pgarray->vector
+  [v]
+  (vec (.getArray ^PgArray v)))
 
 ;; Instrumentation
 
