@@ -9,6 +9,7 @@
 
 (ns app.main.ui
   (:require
+   [app.config :as cfg]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
@@ -29,6 +30,8 @@
    [app.main.ui.workspace :as workspace]
    [app.util.i18n :as i18n :refer [tr t]]
    [app.util.timers :as ts]
+   [cuerdas.core :as str]
+   [cljs.spec.alpha :as s]
    [expound.alpha :as expound]
    [potok.core :as ptk]
    [rumext.alpha :as mf]))
@@ -162,35 +165,74 @@
 
 (defmethod ptk/handle-error :validation
   [error]
-  (js/console.error "handle-error(validation):" (if (map? error) (pr-str error) error))
+  (ts/schedule
+   (st/emitf (dm/show {:content "Unexpected validation error."
+                       :type :error
+                       :timeout 5000})))
   (when-let [explain (:explain error)]
-    (println "============ SERVER RESPONSE ERROR ================")
-    (println explain)
-    (println "============ END SERVER RESPONSE ERROR ================")))
+    (js/console.group "Server Error")
+    (js/console.error (if (map? error) (pr-str error) error))
+    (js/console.error explain)
+    (js/console.endGroup "Server Error")))
+
 
 (defmethod ptk/handle-error :authentication
   [error]
   (ts/schedule 0 #(st/emit! logout)))
 
+(defmethod ptk/handle-error :authorization
+  [error]
+  (ts/schedule 0 #(st/emit! logout)))
+
 (defmethod ptk/handle-error :assertion
-  [{:keys [data stack] :as error}]
-  (js/console.error stack)
-  (js/console.error (with-out-str
-                      (expound/printer data))))
+  [{:keys [data stack message context] :as error}]
+  (js/console.group message)
+  (js/console.info (str/format "ns: '%s'\nname: '%s'\nfile: '%s:%s'"
+                                (:ns context)
+                                (:name context)
+                                (str cfg/public-uri "/js/cljs-runtime/" (:file context))
+                                (:line context)))
+  (js/console.groupCollapsed "Stack Trace")
+  (js/console.info stack)
+  (js/console.groupEnd "Stack Trace")
+
+  (js/console.error (with-out-str (expound/printer data)))
+  (js/console.groupEnd message))
 
 (defmethod ptk/handle-error :default
   [error]
+  (js/console.log error)
   (if (instance? ExceptionInfo error)
     (ptk/handle-error (ex-data error))
     (do
-      (js/console.error "handle-error(default):"
-                        (if (map? error) (pr-str error) error))
-      (ts/schedule 100 #(st/emit! (dm/show {:content "Something wrong has happened."
-                                            :type :error
-                                            :timeout 5000}))))))
+      (js/console.group "Generic Error:")
+      (ex/ignoring
+       (js/console.error (pr-str error))
+       (js/console.error (.-stack error)))
+      (js/console.groupEnd "Generic error")
+      (ts/schedule (st/emitf (dm/show
+                              {:content "Something wrong has happened."
+                               :type :error
+                               :timeout 5000}))))))
 
-;; (defonce foo
-;;   (do
-;;     (prn "attach listener")
-;;     (.addEventListener js/window "error" (fn [err] (ptk/handle-error (unchecked-get err "error"))))
-;;     1))
+(defmethod ptk/handle-error :internal-error
+  [{:keys [status] :as error}]
+  (cond
+    (= status 429)
+    (ts/schedule
+     (st/emitf (dm/show {:content "Too many requests, wait a little bit and retry."
+                         :type :error
+                         :timeout 5000})))
+
+    :else
+    (ts/schedule
+     (st/emitf (dm/show {:content "Unable to connect to backend, wait a little bit and refresh."
+                         :type :error})))))
+
+(defonce uncaught-error-handler
+  (letfn [(on-error [event]
+            (ptk/handle-error (unchecked-get event "error"))
+            (.preventDefault ^js event))]
+    (.addEventListener js/window "error" on-error)
+    (fn []
+      (.removeEventListener js/window "error" on-error))))
