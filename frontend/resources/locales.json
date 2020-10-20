@@ -26,6 +26,15 @@
       "es" : "¿Quieres probar?"
     }
   },
+  "auth.create-demo-account" : {
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:144", "src/app/main/ui/auth/login.cljs:147", "src/app/main/ui/auth/register.cljs:133", "src/app/main/ui/auth/register.cljs:136" ],
+    "translations" : {
+      "en" : "Create demo account",
+      "fr" : "Vous voulez juste essayer?",
+      "ru" : "Хотите попробовать?",
+      "es" : "Crear cuanta de prueba"
+    }
+  },
   "auth.demo-warning" : {
     "used-in" : [ "src/app/main/ui/auth/register.cljs:33" ],
     "translations" : {

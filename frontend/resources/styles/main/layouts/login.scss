@@ -52,10 +52,14 @@
   background-color: $color-white;
 
   .form-container {
-    width: 368px;
+    width: 412px;
 
     .btn-ocean {
       margin-top: $x-big;
+    }
+
+    form {
+      margin: 2rem 0;
     }
   }
 

@@ -125,7 +125,7 @@
       [:span (t locale "auth.register") " "]
       [:a {:on-click #(st/emit! (rt/nav :auth-register))
            :tab-index "6"}
-       (t locale "auth.register")]]]
+       (t locale "auth.register-submit")]]]
 
     (when cfg/google-client-id
       [:a.btn-ocean.btn-large.btn-google-auth
@@ -144,4 +144,4 @@
       [:span (t locale "auth.create-demo-profile") " "]
       [:a {:on-click #(st/emit! da/create-demo-profile)
            :tab-index "6"}
-       (t locale "auth.create-demo-profile")]]]]])
+       (t locale "auth.create-demo-account")]]]]])
