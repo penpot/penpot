@@ -23,7 +23,8 @@
    [app.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
    [app.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]
    [app.main.ui.workspace.sidebar.options.frame-grid :refer [frame-grid]]
-   [app.main.ui.workspace.sidebar.options.shadow :refer [shadow-menu]]))
+   [app.main.ui.workspace.sidebar.options.shadow :refer [shadow-menu]]
+   [app.main.ui.workspace.sidebar.options.blur :refer [blur-menu]]))
 
 (declare +size-presets+)
 
@@ -204,16 +205,17 @@
   (let [ids [(:id shape)]
         type (:type shape)
         stroke-values (select-keys shape stroke-attrs)]
-  [:*
-   [:& measures-menu {:shape shape}]
-   [:& fill-menu {:ids ids
-                  :type type
-                  :values (select-keys shape fill-attrs)}]
-   [:& stroke-menu {:ids ids
+    [:*
+     [:& measures-menu {:shape shape}]
+     [:& fill-menu {:ids ids
                     :type type
-                    :values stroke-values}]
-   [:& shadow-menu {:ids ids
-                    :type type
-                    :values (select-keys shape [:shadow])}]
-   [:& frame-grid {:shape shape}]]))
+                    :values (select-keys shape fill-attrs)}]
+     [:& stroke-menu {:ids ids
+                      :type type
+                      :values stroke-values}]
+     [:& shadow-menu {:ids ids
+                      :values (select-keys shape [:shadow])}]
+     [:& blur-menu {:ids ids
+                    :values (select-keys shape [:blur])}]
+     [:& frame-grid {:shape shape}]]))
 

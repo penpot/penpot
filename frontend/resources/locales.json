@@ -2271,6 +2271,24 @@
     },
     "unused" : true
   },
+  "workspace.options.blur-options.background-blur" : {
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/blur.cljs:78" ],
+    "translations" : {
+      "en" : "Background"
+    }
+  },
+  "workspace.options.blur-options.layer-blur" : {
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/blur.cljs:77" ],
+    "translations" : {
+      "en" : "Layer"
+    }
+  },
+  "workspace.options.blur-options.title" : {
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/blur.cljs:107" ],
+    "translations" : {
+      "en" : "Blur"
+    }
+  },
   "workspace.options.canvas-background" : {
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/page.cljs:45" ],
     "translations" : {

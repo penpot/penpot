@@ -16,6 +16,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.workspace.shapes.common :as common]
+   [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.group :as group]
    [app.util.dom :as dom]
    [app.main.streams :as ms]
@@ -72,11 +73,10 @@
                (dom/prevent-default event)
                (st/emit! (dw/select-inside-group (:id shape) @ms/mouse-position))))]
 
-        [:g.shape
-         {:on-mouse-down on-mouse-down
-          :on-context-menu on-context-menu
-          :on-double-click on-double-click}
-
+        [:> shape-container {:shape shape
+                             :on-mouse-down on-mouse-down
+                             :on-context-menu on-context-menu
+                             :on-double-click on-double-click}
          [:& group-shape
           {:frame frame
            :shape shape

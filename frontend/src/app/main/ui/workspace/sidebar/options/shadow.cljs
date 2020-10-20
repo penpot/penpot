@@ -16,7 +16,6 @@
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
-   [app.main.ui.workspace.sidebar.options.rows.input-row :refer [input-row]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t]]))
@@ -25,8 +24,7 @@
   (let [id (uuid/next)]
     {:id id
      :style :drop-shadow
-     :color "#000000"
-     :opacity 0.2
+     :color {:color "#000000" :opacity 0.2}
      :offset-x 4
      :offset-y 4
      :blur 4
@@ -183,7 +181,7 @@
                       :on-open #(st/emit! dwc/start-undo-transaction)
                       :on-close #(st/emit! dwc/commit-undo-transaction)}]]]]))
 (mf/defc shadow-menu
-  [{:keys [ids type values] :as props}]
+  [{:keys [ids values] :as props}]
 
   (let [locale (i18n/use-locale)
         on-add-shadow
