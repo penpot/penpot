@@ -268,8 +268,9 @@
   }
 
   .custom-select {
-    cursor: pointer;
     border: 1px solid $color-gray-40;
+    border-radius: $br-small;
+    cursor: pointer;
     padding: $x-small $big $x-small $x-small;
     position: relative;
 
@@ -295,16 +296,17 @@
 
   }
   .custom-select-dropdown {
-    position: absolute;
-    left: 0;
-    z-index: 12;
-    max-height: 30rem;
-    min-width: 7rem;
-    overflow-y: auto;
-
     background-color: $color-white;
     border-radius: $br-small;
     box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
+    left: 0;
+    max-height: 30rem;
+    min-width: 7rem;
+    position: absolute;
+    overflow-y: auto;
+    top: 30px;
+    z-index: 12;
+
 
     .presets {
       width: 200px;
@@ -834,8 +836,8 @@
     align-items: center;
     cursor: pointer;
     svg {
-        width: 16px;
-        height: 16px;
+        width: 12px;
+        height: 12px;
         fill: $color-gray-20;
     }
 

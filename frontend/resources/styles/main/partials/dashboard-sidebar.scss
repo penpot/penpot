@@ -48,7 +48,7 @@
       top: 50px;
       z-index: 12;
       max-height: 30rem;
-      min-width: 110px;
+      min-width: 116px;
     }
 
     .switch-content {
@@ -86,6 +86,7 @@
     .team-name {
       flex-grow: 1;
       display: flex;
+      height: 48px;
       align-items: center;
 
       .team-icon {
