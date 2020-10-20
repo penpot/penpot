@@ -215,9 +215,10 @@
        (let [node   (mf/ref-val rowref)
              obs    (new js/ResizeObserver
                          (fn [entries x]
-                           (let [data  (first entries)
-                                 rect  (.-contentRect ^js data)]
-                             (reset! width (.-width ^js rect)))))
+                           (ts/raf (fn []
+                                     (let [data  (first entries)
+                                           rect  (.-contentRect ^js data)]
+                                       (reset! width (.-width ^js rect)))))))
 
              nitems (/ @width itemsize)
              num    (mth/floor nitems)]
