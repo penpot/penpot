@@ -5,7 +5,7 @@
   com.cognitect/transit-cljs {:mvn/version "0.8.264"}
 
   environ/environ {:mvn/version "1.2.0"}
-  metosin/reitit-core {:mvn/version "0.5.6"}
+  metosin/reitit-core {:mvn/version "0.5.9"}
   expound/expound {:mvn/version "0.8.6"}
 
   danlentz/clj-uuid {:mvn/version "0.1.9"}
@@ -42,7 +42,7 @@
     org.antlr/antlr4-runtime {:mvn/version "4.7"}}}
 
   :outdated
-  {:extra-deps {olical/depot {:mvn/version "1.8.4"}}
+  {:extra-deps {olical/depot {:mvn/version "RELEASE"}}
    :main-opts ["-m" "depot.outdated.main"]}
 
   :repl
