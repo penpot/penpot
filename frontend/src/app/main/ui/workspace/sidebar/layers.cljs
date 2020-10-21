@@ -331,8 +331,7 @@
 (mf/defc layers-toolbox
   {:wrap [mf/memo]}
   []
-  (let [locale   (mf/deref i18n/locale)
-        page     (mf/deref refs/workspace-page)]
+  (let [page     (mf/deref refs/workspace-page)]
     [:div#layers.tool-window
      [:div.tool-window-bar
       [:div.tool-window-icon i/layers]

@@ -29,6 +29,7 @@
 @import 'main/layouts/main-layout';
 @import "main/layouts/not-found";
 @import "main/layouts/viewer";
+@import "main/layouts/handoff";
 
 //#################################################
 // Commons
@@ -80,3 +81,4 @@
 @import 'main/partials/workspace-header';
 @import 'main/partials/workspace-comments';
 @import 'main/partials/color-bullet';
+@import "main/partials/handoff";

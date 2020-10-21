@@ -17,7 +17,7 @@
 (def align-middle (icon-xref :align-middle))
 (def align-top (icon-xref :align-top))
 (def alignment (icon-xref :alignment))
-(def arrow (icon-xref :arrow))
+#_(def arrow (icon-xref :arrow))
 (def arrow-down (icon-xref :arrow-down))
 (def arrow-end (icon-xref :arrow-end))
 (def arrow-slide (icon-xref :arrow-slide))
@@ -91,7 +91,7 @@
 (def rotate (icon-xref :rotate))
 (def ruler (icon-xref :ruler))
 (def ruler-tool (icon-xref :ruler-tool))
-(def save (icon-xref :save))
+#_(def save (icon-xref :save))
 (def search (icon-xref :search))
 (def shape-halign-center (icon-xref :shape-halign-center))
 (def shape-halign-left (icon-xref :shape-halign-left))
@@ -128,6 +128,7 @@
 (def picker-ramp (icon-xref :picker-ramp))
 (def checkbox-checked (icon-xref :checkbox-checked))
 (def checkbox-unchecked (icon-xref :checkbox-unchecked))
+(def code (icon-xref :code))
 
 (def loader-pencil
   (mf/html
@@ -149,9 +150,10 @@
 (mf/defc debug-icons-preview
   {::mf/wrap-props false}
   [props]
-  [:section.debug-icons-preview
+  [:section.debug-icons-preview {:style {:background-color "black"}}
    (for [[key val] (sort-by first (ns-publics 'app.main.ui.icons))]
      (when (not= key 'debug-icons-preview)
-       [:div.icon-item {:key key}
+       [:div.icon-item {:key key
+                        :style {:fill "white"}}
         (deref val)
         [:span (pr-str key)]]))])

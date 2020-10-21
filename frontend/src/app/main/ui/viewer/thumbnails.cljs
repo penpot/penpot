@@ -94,7 +94,7 @@
     [:span.name (:name frame)]]])
 
 (mf/defc thumbnails-panel
-  [{:keys [data index] :as props}]
+  [{:keys [data index screen] :as props}]
   (let [expanded? (mf/use-state false)
         container (mf/use-ref)
         page-id   (get-in data [:page :id])
@@ -111,7 +111,7 @@
         on-item-click
         (fn [event index]
           (compare-and-set! selected false true)
-          (st/emit! (rt/nav :viewer {:file-id file-id
+          (st/emit! (rt/nav screen {:file-id file-id
                                      :page-id page-id} {:index index}))
           (when @expanded?
             (on-close)))]

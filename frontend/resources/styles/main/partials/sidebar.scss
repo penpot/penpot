@@ -115,6 +115,25 @@ $width-settings-bar: 16rem;
           }
         }
 
+        .tool-window-bar-icon {
+          height: 15px;
+
+          svg {
+            width: 15px;
+            height: 15px;
+          }
+        }
+
+        &.big {
+          height: 3rem;
+          padding-bottom: 1rem;
+        }
+
+        .tool-window-bar-title {
+          font-size: $fs14;
+          margin-left: 0.5rem;
+        }
+
         .tool-window-icon {
           margin-right: $small;
           display: none;
