@@ -55,13 +55,11 @@ services:
       - OPENDKIM_DOMAINS=smtp.uxbox.io
 
   postgres:
-    image: postgres:12
+    image: postgres:13
     command: postgres -c config_file=/etc/postgresql.conf
     container_name: "uxbox-devenv-postgres"
     restart: always
     stop_signal: SIGINT
-    ports:
-      - 5432:5432
     environment:
       - POSTGRES_INITDB_ARGS=--data-checksums
       - POSTGRES_DB=uxbox
@@ -77,6 +75,3 @@ services:
     hostname: "uxbox-devenv-redis"
     container_name: "uxbox-devenv-redis"
     restart: always
-
-    ports:
-      - 6379:6379
