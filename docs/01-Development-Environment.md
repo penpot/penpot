@@ -185,5 +185,5 @@ This will generate the necessary docker images ready to be executed.
 And finally, start the docker-compose:
 
 ```bash
-./manage.sh start-devenv
+./manage.sh start-testenv
 ```
