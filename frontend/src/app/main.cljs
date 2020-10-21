@@ -24,9 +24,14 @@
    [app.util.storage :refer [storage]]
    [app.util.theme :as theme]
    [app.util.timers :as ts]
+   [app.util.logging :as log]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]))
+
+(log/initialize!)
+(log/set-level! :root :warn)
+(log/set-level! :app :info)
 
 (declare reinit)
 
@@ -78,4 +83,3 @@
 (defn ^:dev/after-load after-load
   []
   (reinit))
-
