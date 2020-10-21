@@ -46,14 +46,23 @@
             on-context-menu
             (mf/use-callback (mf/deps shape) #(common/on-context-menu % shape))
 
-            childs-ref   (mf/use-memo (mf/deps shape) #(refs/objects-by-id (:shapes shape)))
-            childs       (mf/deref childs-ref)
+            childs-ref       (mf/use-memo (mf/deps shape) #(refs/objects-by-id (:shapes shape)))
+            childs           (mf/deref childs-ref)
 
             is-child-selected-ref
             (mf/use-memo (mf/deps (:id shape)) #(refs/is-child-selected? (:id shape)))
 
             is-child-selected?
             (mf/deref is-child-selected-ref)
+
+            mask-id (when (:masked-group? shape) (first (:shapes shape)))
+
+            is-mask-selected-ref
+            (mf/use-memo (mf/deps mask-id)
+                         #(refs/make-selected-ref mask-id))
+
+            is-mask-selected?
+            (mf/deref is-mask-selected-ref)
 
             on-double-click
             (mf/use-callback
@@ -72,5 +81,6 @@
           {:frame frame
            :shape shape
            :childs childs
-           :is-child-selected? is-child-selected?}]]))))
+           :is-child-selected? is-child-selected?
+           :expand-mask is-mask-selected?}]]))))
 

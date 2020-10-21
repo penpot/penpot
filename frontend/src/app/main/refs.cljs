@@ -159,7 +159,6 @@
             (let [page-id  (:current-page-id state)
                   objects  (get-in state [:workspace-data :pages-index page-id :objects])
                   selected (get-in state [:workspace-local :selected])
-                  shape    (get objects id)
                   children (cph/get-children id objects)]
               (some selected children)))]
     (l/derived selector st/state)))

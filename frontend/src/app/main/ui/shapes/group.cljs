@@ -22,15 +22,16 @@
   (mf/fnc group-shape
     {::mf/wrap-props false}
     [props]
-    (let [frame  (unchecked-get props "frame")
-          shape  (unchecked-get props "shape")
-          childs (unchecked-get props "childs")
-          mask   (if (:masked-group? shape)
-                   (first childs)
-                   nil)
-          childs (if (:masked-group? shape)
-                   (rest childs)
-                   childs)
+    (let [frame       (unchecked-get props "frame")
+          shape       (unchecked-get props "shape")
+          childs      (unchecked-get props "childs")
+          expand-mask (unchecked-get props "expand-mask")
+          mask        (if (and (:masked-group? shape) (not expand-mask))
+                        (first childs)
+                        nil)
+          childs      (if (and (:masked-group? shape) (not expand-mask))
+                        (rest childs)
+                        childs)
           is-child-selected? (unchecked-get props "is-child-selected?")
           {:keys [id x y width height]} shape
           transform (geom/transform-matrix shape)]
