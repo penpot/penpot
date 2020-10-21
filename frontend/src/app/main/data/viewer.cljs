@@ -51,7 +51,11 @@
                                   :page-id page-id
                                   :file-id file-id
                                   :interactions-mode :hide
-                                  :show-interactions? false}))
+                                  :show-interactions? false
+
+                                  :selected #{}
+                                  :collapsed #{}
+                                  :hover #{}}))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -170,24 +174,25 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [route (:route state)
+            screen (-> route :data :name keyword)
             qparams (get-in route [:params :query])
             pparams (get-in route [:params :path])
             index   (d/parse-integer (:index qparams))]
         (when (pos? index)
-          (rx/of (rt/nav :viewer pparams (assoc qparams :index (dec index)))))))))
+          (rx/of (rt/nav screen pparams (assoc qparams :index (dec index)))))))))
 
 (def select-next-frame
   (ptk/reify ::select-prev-frame
     ptk/WatchEvent
     (watch [_ state stream]
       (let [route (:route state)
+            screen (-> route :data :name keyword)
             qparams (get-in route [:params :query])
             pparams (get-in route [:params :path])
             index   (d/parse-integer (:index qparams))
-
             total   (count (get-in state [:viewer-data :frames]))]
         (when (< index (dec total))
-          (rx/of (rt/nav :viewer pparams (assoc qparams :index (inc index)))))))))
+          (rx/of (rt/nav screen pparams (assoc qparams :index (inc index)))))))))
 
 (defn set-interactions-mode
   [mode]
@@ -249,3 +254,36 @@
    "shift+2" #(st/emit! zoom-to-200)
    "left" #(st/emit! select-prev-frame)
    "right" #(st/emit! select-next-frame)})
+
+
+(defn deselect-all []
+  (ptk/reify ::deselect-all
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:viewer-local :selected] #{}))))
+
+(defn select-shape
+  ([id] (select-shape id false))
+  ([id toggle?]
+   (ptk/reify ::select-shape
+     ptk/UpdateEvent
+     (update [_ state]
+       (-> state
+           (assoc-in [:viewer-local :selected] #{id}))))))
+
+;; TODO
+(defn collapse-all []
+  (ptk/reify ::collapse-all))
+
+(defn toggle-collapse [id]
+  (ptk/reify ::toggle-collapse
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [toggled? (contains? (get-in state [:viewer-local :collapsed]) id)]
+        (update-in state [:viewer-local :collapsed] (if toggled? disj conj) id)))))
+
+(defn hover-shape [id hover?]
+  (ptk/reify ::hover-shape
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:viewer-local :hover] (if hover? conj disj) id))))

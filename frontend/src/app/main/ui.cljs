@@ -27,6 +27,7 @@
    [app.main.ui.settings :as settings]
    [app.main.ui.static :refer [not-found-page not-authorized-page]]
    [app.main.ui.viewer :refer [viewer-page]]
+   [app.main.ui.viewer.handoff :refer [handoff]]
    [app.main.ui.workspace :as workspace]
    [app.util.i18n :as i18n :refer [tr t]]
    [app.util.timers :as ts]
@@ -53,6 +54,7 @@
     ["/options" :settings-options]]
 
    ["/view/:file-id/:page-id" :viewer]
+   ["/handoff/:file-id/:page-id" :handoff]
    ["/not-found" :not-found]
    ["/not-authorized" :not-authorized]
 
@@ -126,6 +128,14 @@
                        :file-id file-id
                        :index index
                        :token token}])
+
+    :handoff
+    (let [index (d/parse-integer (get-in route [:params :query :index]))
+          file-id (uuid (get-in route [:params :path :file-id]))
+          page-id (uuid (get-in route [:params :path :page-id]))]
+      [:& handoff {:page-id page-id
+                   :file-id file-id
+                   :index index}])
 
     :render-object
     (do

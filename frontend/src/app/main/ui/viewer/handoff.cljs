@@ -7,9 +7,16 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.viewer
+(ns app.main.ui.viewer.handoff
   (:require
+   [rumext.alpha :as mf]
+   [beicon.core :as rx]
+   [goog.events :as events]
+   [okulary.core :as l]
    [app.common.exceptions :as ex]
+   [app.util.data :refer [classnames]]
+   [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [t tr]]
    [app.main.data.viewer :as dv]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -18,18 +25,19 @@
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
    [app.main.ui.viewer.header :refer [header]]
-   [app.main.ui.viewer.shapes :refer [frame-svg]]
    [app.main.ui.viewer.thumbnails :refer [thumbnails-panel]]
-   [app.util.data :refer [classnames]]
-   [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [t tr]]
-   [beicon.core :as rx]
-   [goog.events :as events]
-   [okulary.core :as l]
-   [rumext.alpha :as mf])
+
+   [app.main.ui.viewer.handoff.render :refer [render-frame-svg]]
+   [app.main.ui.viewer.handoff.layers-sidebar :refer [layers-sidebar]]
+   [app.main.ui.viewer.handoff.attributes-sidebar :refer [attributes-sidebar]])
   (:import goog.events.EventType))
 
-(mf/defc main-panel
+(defn handle-select-frame [frame]
+  #(do (dom/prevent-default %)
+       (dom/stop-propagation %)
+       (st/emit! (dv/select-shape (:id frame)))))
+
+(mf/defc render-panel
   [{:keys [data local index]}]
   (let [locale  (mf/deref i18n/locale)
         frames  (:frames data [])
@@ -46,23 +54,19 @@
         [:span (t locale "viewer.frame-not-found")]]
 
        :else
-       [:& frame-svg {:frame frame
-                      :show-interactions? (:show-interactions? local)
-                      :zoom (:zoom local)
-                      :objects objects}])]))
+       [:*
+        [:& layers-sidebar {:frame frame}]
+        [:div.handoff-svg-wrapper {:on-click (handle-select-frame frame)}
+         [:& render-frame-svg {:frame-id (:id frame)
+                               :zoom (:zoom local)
+                               :objects objects}]]
+        [:& attributes-sidebar]])]))
 
-(mf/defc viewer-content
+(mf/defc handoff-content
   [{:keys [data local index] :as props}]
   (let [container (mf/use-ref)
 
         [toggle-fullscreen fullscreen?] (hooks/use-fullscreen container)
-
-        on-click
-        (fn [event]
-          (dom/stop-propagation event)
-          (let [mode (get local :interactions-mode)]
-            (when (= mode :show-on-click)
-              (st/emit! dv/flash-interactions))))
 
         on-mouse-wheel
         (fn [event]
@@ -85,37 +89,33 @@
     (mf/use-effect on-mount)
     (hooks/use-shortcuts dv/shortcuts)
 
-    [:div.viewer-layout {:class (classnames :fullscreen fullscreen?)
+    [:div.handoff-layout {:class (classnames :fullscreen fullscreen?)
                          :ref container}
-
      [:& header {:data data
                  :toggle-fullscreen toggle-fullscreen
                  :fullscreen? fullscreen?
                  :local local
                  :index index
-                 :screen :viewer}]
-     [:div.viewer-content {:on-click on-click}
+                 :screen :handoff}]
+     [:div.viewer-content
       (when (:show-thumbnails local)
-        [:& thumbnails-panel {:screen :viewer
-                              :index index
-                              :data data}])
-      [:& main-panel {:data data
-                      :local local
-                      :index index}]]]))
+        [:& thumbnails-panel {:index index
+                              :data data
+                              :screen :handoff}])
+      [:& render-panel {:data data
+                        :local local
+                        :index index}]]]))
 
-
-;; --- Component: Viewer Page
-
-(mf/defc viewer-page
-  [{:keys [file-id page-id index token] :as props}]
+(mf/defc handoff
+  [{:keys [file-id page-id index] :as props}]
   (mf/use-effect
-   (mf/deps file-id page-id token)
+   (mf/deps file-id page-id)
    (fn []
      (st/emit! (dv/initialize props))))
 
   (let [data (mf/deref refs/viewer-data)
         local (mf/deref refs/viewer-local)]
     (when data
-      [:& viewer-content {:index index
-                          :local local
-                          :data data}])))
+      [:& handoff-content {:index index
+                           :local local
+                           :data data}])))

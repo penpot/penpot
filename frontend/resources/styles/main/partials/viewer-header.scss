@@ -4,7 +4,7 @@
   border-bottom: 1px solid  $color-gray-60;
   display: flex;
   height: 40px;
-  padding: $x-small $medium $x-small 55px;
+  padding: 0 $medium 0 55px;
   position: relative;
   z-index: 12;
   justify-content: space-between;
@@ -106,6 +106,36 @@
 
     .counters {
       margin-left: $size-3;
+    }
+  }
+
+  .mode-zone {
+    display: flex;
+    height: 100%;
+
+    .mode-zone-button {
+      background: inherit;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      height: 100%;
+      width: 40px;
+
+      svg {
+        fill: $color-gray-20;
+        width: 24px;
+        height: 24px;
+      }
+
+      &.active {
+        background: $color-gray-60;
+        svg {
+          fill: $color-primary;
+        }
+      }
     }
   }
 
