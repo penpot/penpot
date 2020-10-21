@@ -4,8 +4,8 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 ARG DEBIAN_FRONTEND=noninteractive
 ARG EXTERNAL_UID=1000
 
-ENV NODE_VERSION=v12.18.4 \
-    CLOJURE_VERSION=1.10.1.697 \
+ENV NODE_VERSION=v12.19.0 \
+    CLOJURE_VERSION=1.10.1.716 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
@@ -107,7 +107,7 @@ RUN set -ex; \
     curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -; \
     echo "deb http://apt.postgresql.org/pub/repos/apt buster-pgdg main" >> /etc/apt/sources.list.d/postgresql.list; \
     apt-get -qq update; \
-    apt-get -qqy install postgresql-client-12; \
+    apt-get -qqy install postgresql-client-13; \
     rm -rf /var/lib/apt/lists/*;
 
 RUN set -ex; \
