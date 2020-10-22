@@ -36,7 +36,7 @@
   (let [color (if (string? color) {:color color :opacity 1} color)
         {:keys [name color opacity gradient]} color
         color-str (or name color (gradient-type->string (:type gradient)))]
-    (when (= size :big)
+    (when (or (not size) (= size :big))
       [:span.color-text {:on-click #(when on-click (on-click %))
                          :on-double-click #(when on-double-click (on-double-click %))
                          :title name } color-str])))

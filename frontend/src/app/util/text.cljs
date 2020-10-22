@@ -1,4 +1,6 @@
-(ns app.util.text)
+(ns app.util.text
+  (:require
+   [cuerdas.core :as str]))
 
 (defonce default-text-attrs
   {:font-id "sourcesanspro"
@@ -11,7 +13,9 @@
    :letter-spacing "0"
    :text-transform "none"
    :text-align "left"
-   :text-decoration "none"})
+   :text-decoration "none"
+   :fill-color "#000000"
+   :fill-opacity 1})
 
 (def typography-fields
   [:font-id
@@ -38,3 +42,20 @@
   [map-fn node]
   (cond-> (map-fn node)
     (:children node) (update :children (fn [children] (mapv #(map-node map-fn %) children)))))
+
+(defn content->text
+  [node]
+  (str
+   (if (:children node)
+     (str/join (if (= "paragraph-set" (:type node)) "\n" "") (map content->text (:children node)))
+     (:text node ""))))
+
+(defn search-text-attrs
+  [node attrs]
+
+  (let [rec-fn
+        (fn rec-fn [current node]
+          (let [current (reduce rec-fn current (:children node []))]
+            (merge current
+                   (select-keys node attrs))))]
+    (rec-fn {} node)))

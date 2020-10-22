@@ -3360,5 +3360,73 @@
       "ru" : "Кликни чтобы закончить фигуру",
       "es" : "Pulsar para cerrar la ruta"
     }
-  }
+  },
+
+    
+    "handoff.tabs.info": "Info",
+    "handoff.tabs.code": "Code",
+
+    "handoff.attributes.color.hex": "HEX",
+    "handoff.attributes.color.rgba": "RGBA",
+    "handoff.attributes.color.hsla": "HSLA",
+
+    "handoff.attributes.layout": "Layout",
+
+    "handoff.attributes.layout.width": "Width",
+    "handoff.attributes.layout.height": "Height",
+    "handoff.attributes.layout.left": "Left",
+    "handoff.attributes.layout.top": "Top",
+    "handoff.attributes.layout.rotation": "Rotation",
+
+    "handoff.attributes.fill": "Fill",
+
+    "handoff.attributes.stroke": "Stroke",
+    "handoff.attributes.stroke.width": "Width",
+
+    "handoff.attributes.stroke.style.solid": "Solid",
+    "handoff.attributes.stroke.style.dotted": "Dotted",
+    "handoff.attributes.stroke.style.dashed": "Dashed",
+    "handoff.attributes.stroke.style.mixed": "Mixed",
+    "handoff.attributes.stroke.style.none": "None",
+
+    "handoff.attributes.stroke.alignment.center": "Center",
+    "handoff.attributes.stroke.alignment.inner": "Inner",
+    "handoff.attributes.stroke.alignment.outer": "Outer",
+
+    "handoff.attributes.shadow": "Shadow",
+
+    "handoff.attributes.shadow.shorthand.offset-x": "X",
+    "handoff.attributes.shadow.shorthand.offset-y": "Y",
+    "handoff.attributes.shadow.shorthand.blur": "B",
+    "handoff.attributes.shadow.shorthand.spread": "S",
+
+    "handoff.attributes.shadow.style.inner-shadow": "Inner",
+    "handoff.attributes.shadow.style.drop-shadow": "Drop",
+
+    "handoff.attributes.blur": "Blur",
+    "handoff.attributes.blur.value": "Value",
+
+    "handoff.attributes.image.width": "Width",
+    "handoff.attributes.image.height": "Height",
+    "handoff.attributes.image.download": "Dowload source image",
+
+    "handoff.attributes.typography": "Typography",
+    "handoff.attributes.typography.font-family": "Font Family",
+    "handoff.attributes.typography.font-style": "Font Style",
+    "handoff.attributes.typography.font-size": "Font Size",
+    "handoff.attributes.typography.line-height": "Line Height",
+    "handoff.attributes.typography.letter-spacing": "Letter Spacing",
+    "handoff.attributes.typography.text-decoration": "Text Decoration",
+    "handoff.attributes.typography.text-transform": "Text Transform",
+
+    "handoff.attributes.content": "Content",
+
+    "handoff.attributes.typography.text-decoration.none": "None",
+    "handoff.attributes.typography.text-decoration.underline": "Underline",
+    "handoff.attributes.typography.text-decoration.strikethrough": "Strikethrough",
+
+    "handoff.attributes.typography.text-transform.none": "None",
+    "handoff.attributes.typography.text-transform.uppercase": "Upper Case",
+    "handoff.attributes.typography.text-transform.lowercase": "Lower Case",
+    "handoff.attributes.typography.text-transform.titlecase": "Title Case"
 }

@@ -43,6 +43,12 @@
         frames  (:frames data [])
         objects (:objects data)
         frame   (get frames index)]
+
+    (mf/use-effect
+     (mf/deps index)
+     (fn []
+       (st/emit! (dv/select-shape (:id frame)))))
+
     [:section.viewer-preview
      (cond
        (empty? frames)
@@ -60,7 +66,7 @@
          [:& render-frame-svg {:frame-id (:id frame)
                                :zoom (:zoom local)
                                :objects objects}]]
-        [:& attributes-sidebar]])]))
+        [:& attributes-sidebar {:frame frame}]])]))
 
 (mf/defc handoff-content
   [{:keys [data local index] :as props}]

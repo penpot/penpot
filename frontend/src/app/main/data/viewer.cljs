@@ -93,12 +93,13 @@
     (update [_ state]
       (let [objects (:objects page)
             frames  (extract-frames objects)]
-        (assoc state :viewer-data {:project project
-                                   :objects objects
-                                   :file file
-                                   :page page
-                                   :frames frames
-                                   :share-token share-token})))))
+        (-> state
+            (assoc :viewer-data {:project project
+                                 :objects objects
+                                 :file file
+                                 :page page
+                                 :frames frames
+                                 :share-token share-token}))))))
 
 (def create-share-link
   (ptk/reify ::create-share-link
