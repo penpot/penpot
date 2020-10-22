@@ -17,29 +17,30 @@
    [app.common.pages-helpers :as cph]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
+   [app.main.data.colors :as dc]
+   [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
-   [app.main.data.colors :as dc]
+   [app.main.exports :as exports]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.exports :as exports]
+   [app.main.ui.components.color-bullet :as bc]
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
-   [app.main.ui.workspace.sidebar.options.typography :refer [typography-entry]]
-   [app.main.ui.components.color-bullet :as bc]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
-   [app.main.data.modal :as modal]
    [app.main.ui.shapes.icon :as icon]
+   [app.main.ui.workspace.sidebar.options.typography :refer [typography-entry]]
    [app.util.data :refer [matches-search]]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr t]]
    [app.util.router :as rt]
-   [app.util.timers :as timers]
    [app.util.text :as ut]
+   [app.util.timers :as timers]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
@@ -593,17 +594,18 @@
 
 
 (mf/defc assets-toolbox
-  [{:keys [team-id file] :as props}]
+  []
   (let [libraries (mf/deref refs/workspace-libraries)
+        file      (mf/deref refs/workspace-file)
         locale    (mf/deref i18n/locale)
+        team-id   (mf/use-ctx ctx/current-team-id)
         filters   (mf/use-state {:term "" :box :all})
 
         on-search-term-change
         (mf/use-callback
          (mf/deps team-id)
          (fn [event]
-           (let [value (-> (dom/get-target event)
-                           (dom/get-value))]
+           (let [value (dom/get-target-val event)]
              (swap! filters assoc :term value))))
 
         on-search-clear-click

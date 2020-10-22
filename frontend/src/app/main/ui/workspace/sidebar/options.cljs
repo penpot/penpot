@@ -16,6 +16,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.align :refer [align-options]]
    [app.main.ui.workspace.sidebar.options.circle :as circle]
@@ -88,8 +89,10 @@
 
 (mf/defc options-toolbox
   {::mf/wrap [mf/memo]}
-  [{:keys [page-id file-id local] :as props}]
+  [{:keys [local] :as props}]
   (let [section              (:options-mode local)
+        page-id              (mf/use-ctx ctx/current-page-id)
+        file-id              (mf/use-ctx ctx/current-file-id)
         shapes               (mf/deref refs/selected-objects)
         shapes-with-children (mf/deref refs/selected-objects-with-children)]
     [:& options-content {:shapes shapes

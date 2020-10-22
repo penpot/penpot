@@ -9,24 +9,25 @@
 
 (ns app.main.ui.workspace.colorpalette
   (:require
-   [beicon.core :as rx]
-   [goog.events :as events]
-   [okulary.core :as l]
-   [rumext.alpha :as mf]
-   [cuerdas.core :as str]
    [app.common.math :as mth]
    [app.main.data.colors :as mdc]
    [app.main.data.workspace :as udw]
+   [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.color-bullet :as cb]
+   [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
    [app.util.color :refer [hex->rgb]]
    [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [t]]
    [app.util.object :as obj]
-   [app.main.refs :as refs]
-   [app.util.i18n :as i18n :refer [t]]))
+   [beicon.core :as rx]
+   [cuerdas.core :as str]
+   [goog.events :as events]
+   [okulary.core :as l]
+   [rumext.alpha :as mf]))
 
 ;; --- Refs
 
@@ -194,8 +195,9 @@
        (vals (get-in shared-libs [selected :data :colors]))))
 
 (mf/defc colorpalette
-  [{:keys [left-sidebar? team-id]}]
-  (let [recent-colors (mf/deref refs/workspace-recent-colors)
+  [{:keys [left-sidebar?]}]
+  (let [team-id       (mf/use-ctx ctx/current-team-id)
+        recent-colors (mf/deref refs/workspace-recent-colors)
         file-colors   (mf/deref refs/workspace-file-colors)
         shared-libs   (mf/deref refs/workspace-libraries)
         selected      (or (mf/deref selected-palette-ref) :recent)

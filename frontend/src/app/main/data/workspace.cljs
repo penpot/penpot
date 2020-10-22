@@ -190,9 +190,12 @@
   (ptk/reify ::initialize-page
     ptk/UpdateEvent
     (update [_ state]
-      (let [local (get-in state [:workspace-cache page-id] workspace-local-default)]
+      (let [local (get-in state [:workspace-cache page-id] workspace-local-default)
+            page  (-> (get-in state [:workspace-data :pages-index page-id])
+                      (select-keys [:id :name]))]
         (assoc state
                :current-page-id page-id   ; mainly used by events
+               :trimmed-page page
                :workspace-local local)))))
 
 (defn finalize-page
@@ -204,7 +207,7 @@
       (let [local (:workspace-local state)]
         (-> state
             (assoc-in [:workspace-cache page-id] local)
-            (dissoc :current-page-id))))))
+            (dissoc :current-page-id :workspace-local :trimmed-page))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace Page CRUD

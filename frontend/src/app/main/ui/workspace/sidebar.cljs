@@ -23,34 +23,28 @@
 
 (mf/defc left-sidebar
   {:wrap [mf/memo]}
-  [{:keys [layout page-id file project] :as props}]
+  [{:keys [layout ] :as props}]
   [:aside.settings-bar.settings-bar-left
    [:div.settings-bar-inside
     {:data-layout (str/join "," layout)}
     (when (contains? layout :layers)
       [:*
-       [:& sitemap {:file file
-                    :page-id page-id
-                    :layout layout}]
+       [:& sitemap {:layout layout}]
        [:& layers-toolbox]])
 
     (when (contains? layout :document-history)
       [:& history-toolbox])
 
     (when (contains? layout :assets)
-      [:& assets-toolbox {:team-id (:team-id project)
-                          :file file}])]])
+      [:& assets-toolbox])]])
 
 ;; --- Right Sidebar (Component)
 
 (mf/defc right-sidebar
-  [{:keys [layout page-id file-id local] :as props}]
+  [{:keys [local] :as props}]
   (let [drawing-tool (:tool (mf/deref refs/workspace-drawing))]
-    [:aside#settings-bar.settings-bar
+    [:aside.settings-bar
      [:div.settings-bar-inside
       (if (= drawing-tool :comments)
         [:& comments-sidebar]
-        [:& options-toolbox
-         {:page-id page-id
-          :file-id file-id
-          :local local}])]]))
+        [:& options-toolbox {:local local}])]]))
