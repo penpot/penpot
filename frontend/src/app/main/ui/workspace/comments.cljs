@@ -358,7 +358,7 @@
   (l/derived :workspace-comments st/state))
 
 (mf/defc comments-layer
-  [{:keys [vbox vport zoom file-id page-id] :as props}]
+  [{:keys [vbox vport zoom file-id page-id drawing] :as props}]
   (let [pos-x       (* (- (:x vbox)) zoom)
         pos-y       (* (- (:y vbox)) zoom)
         profile     (mf/deref refs/profile)
@@ -390,7 +390,7 @@
           [:& thread-comments {:thread thread
                                :zoom zoom}]))
 
-      (when-let [draft (:draft local)]
+      (when-let [draft (:comment drawing)]
         [:& draft-thread {:draft draft :zoom zoom}])]]))
 
 

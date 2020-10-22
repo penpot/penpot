@@ -21,7 +21,6 @@
    [app.main.ui.keyboard :as kbd]
    [app.main.ui.workspace.colorpalette :refer [colorpalette]]
    [app.main.ui.workspace.colorpicker]
-   [app.main.ui.workspace.comments :refer [comments-layer]]
    [app.main.ui.workspace.context-menu :refer [context-menu]]
    [app.main.ui.workspace.header :refer [header]]
    [app.main.ui.workspace.left-toolbar :refer [left-toolbar]]
@@ -53,14 +52,6 @@
 
      [:section.workspace-content {:class classes}
       [:section.workspace-viewport
-       (when (contains? layout :comments)
-         [:& comments-layer {:vbox (:vbox local)
-                             :vport (:vport local)
-                             :zoom (:zoom local)
-                             :page-id page-id
-                             :file-id (:id file)}
-          ])
-
        (when (contains? layout :rules)
          [:*
           [:div.empty-rule-square]

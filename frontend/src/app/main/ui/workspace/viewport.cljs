@@ -29,15 +29,16 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
+   [app.main.ui.workspace.colorpicker.pixel-overlay :refer [pixel-overlay]]
+   [app.main.ui.workspace.comments :refer [comments-layer]]
    [app.main.ui.workspace.drawarea :refer [draw-area]]
    [app.main.ui.workspace.frame-grid :refer [frame-grid]]
+   [app.main.ui.workspace.gradients :refer [gradient-handlers]]
    [app.main.ui.workspace.presence :as presence]
    [app.main.ui.workspace.selection :refer [selection-handlers]]
    [app.main.ui.workspace.shapes :refer [shape-wrapper frame-wrapper]]
    [app.main.ui.workspace.shapes.interactions :refer [interactions]]
    [app.main.ui.workspace.shapes.outline :refer [outline]]
-   [app.main.ui.workspace.gradients :refer [gradient-handlers]]
-   [app.main.ui.workspace.colorpicker.pixel-overlay :refer [pixel-overlay]]
    [app.main.ui.workspace.snap-distances :refer [snap-distances]]
    [app.main.ui.workspace.snap-points :refer [snap-points]]
    [app.util.dom :as dom]
@@ -229,7 +230,8 @@
              (cond
                (and (= 1 (.-which event)))
                (if drawing-tool
-                 (st/emit! (dd/start-drawing drawing-tool))
+                 (when (not= drawing-tool :comments)
+                   (st/emit! (dd/start-drawing drawing-tool)))
                  (st/emit! dw/handle-selection))
 
                (and (not edition)
@@ -495,6 +497,16 @@
                           :options options
                           :layout layout}])
 
+     (when (= drawing-tool :comments)
+       [:& comments-layer {:vbox (:vbox local)
+                           :vport (:vport local)
+                           :zoom (:zoom local)
+                           :drawing drawing
+                           :page-id page-id
+                           :file-id (:id file)}
+        ])
+
+
      [:svg.viewport
       {:preserveAspectRatio "xMidYMid meet"
        :width (:width vport 0)
@@ -504,6 +516,7 @@
        :class (when drawing-tool "drawing")
        :style {:cursor (cond
                          panning cur/hand
+                         (= drawing-tool :comments) cur/hand
                          (= drawing-tool :frame) cur/create-artboard
                          (= drawing-tool :rect) cur/create-rectangle
                          (= drawing-tool :circle) cur/create-ellipse
@@ -523,7 +536,9 @@
        :on-drag-over on-drag-over
        :on-drop on-drop}
 
-      [:g
+      [:g {:style {:pointer-events (if (contains? layout :comments)
+                                     "none"
+                                     "auto")}}
        [:& frames {:key page-id
                    :hover (:hover local)
                    :selected (:selected selected)}]

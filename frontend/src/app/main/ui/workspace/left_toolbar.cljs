@@ -25,9 +25,9 @@
   [{:keys [layout] :as props}]
   (let [file-input (mf/use-ref nil)
         selected-drawtool (mf/deref refs/selected-drawing-tool)
-        select-drawtool #(st/emit! :interrupt
-                                   (dw/select-for-drawing %))
-        file (mf/deref refs/workspace-file)
+        select-drawtool   #(st/emit! :interrupt (dw/select-for-drawing %))
+
+        file   (mf/deref refs/workspace-file)
         locale (i18n/use-locale)
 
         on-image #(dom/click (mf/ref-val file-input))
@@ -97,26 +97,25 @@
 
        [:li.tooltip.tooltip-right
         {:alt (t locale "workspace.toolbar.comments")
-         :class (when (contains? layout :comments) "selected")
-         :on-click (st/emitf :interrupt (dw/toggle-layout-flags :comments))
-         }
+         :class (when (= selected-drawtool :comments) "selected")
+         :on-click (partial select-drawtool :comments)}
         i/chat]]
 
       [:ul.left-toolbar-options.panels
        [:li.tooltip.tooltip-right
         {:alt "Layers"
          :class (when (contains? layout :layers) "selected")
-         :on-click (st/emitf (dw/toggle-layout-flags :sitemap :layers))}
+         :on-click (st/emitf (dw/ensure-layout :layers))}
         i/layers]
        [:li.tooltip.tooltip-right
         {:alt (t locale "workspace.toolbar.assets")
          :class (when (contains? layout :assets) "selected")
-         :on-click (st/emitf (dw/toggle-layout-flags :assets))}
+         :on-click (st/emitf (dw/ensure-layout :assets))}
         i/library]
        [:li.tooltip.tooltip-right
         {:alt "History"
          :class (when (contains? layout :document-history) "selected")
-         :on-click (st/emitf (dw/toggle-layout-flags :document-history))}
+         :on-click (st/emitf (dw/ensure-layout :document-history))}
         i/undo-history]
        [:li.tooltip.tooltip-right
         {:alt (t locale "workspace.toolbar.color-palette")

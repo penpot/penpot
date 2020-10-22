@@ -148,16 +148,20 @@
 
 (mf/defc sitemap
   [{:keys [file page-id layout] :as props}]
-  (let [create   (mf/use-callback #(st/emit! dw/create-empty-page))
-        collapse (mf/use-callback #(st/emit! (dw/toggle-layout-flags :sitemap-pages)))
-        locale   (mf/deref i18n/locale)]
+  (let [create      (mf/use-callback #(st/emit! dw/create-empty-page))
+        locale      (mf/deref i18n/locale)
+        show-pages? (mf/use-state true)
+
+        toggle-pages
+        (mf/use-callback #(reset! show-pages? not))]
+
     [:div.sitemap.tool-window
      [:div.tool-window-bar
       [:span (t locale "workspace.sidebar.sitemap")]
       [:div.add-page {:on-click create} i/close]
-      [:div.collapse-pages {:on-click collapse} i/arrow-slide]]
+      [:div.collapse-pages {:on-click toggle-pages} i/arrow-slide]]
 
-     (when (contains? layout :sitemap-pages)
+     (when @show-pages?
        [:div.tool-window-content
         [:& pages-list
          {:file file
