@@ -35,12 +35,33 @@
 (defn get-root-shape
   "Get the root shape linked to a component for this shape, if any"
   [shape objects]
-  (if (:component-root? shape)
+  (if (:component-id shape)
     shape
     (if-let [parent-id (:parent-id shape)]
       (get-root-shape (get objects (:parent-id shape))
                       objects)
       nil)))
+
+(defn get-container
+  [page-id component-id local-file]
+  (if (some? page-id)
+    (get-in local-file [:pages-index page-id])
+    (get-in local-file [:components component-id])))
+
+(defn get-shape
+  [container shape-id]
+  (get-in container [:objects shape-id]))
+
+(defn get-component
+  [component-id file-id local-file libraries]
+  (let [file (if (nil? file-id)
+               local-file
+               (get-in libraries [file-id :data]))]
+    (get-in file [:components component-id])))
+
+(defn get-component-root
+  [component]
+  (get-in component [:objects (:id component)]))
 
 (defn get-children
   "Retrieve all children ids recursively for a given object"

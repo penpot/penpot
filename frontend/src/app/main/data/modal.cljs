@@ -20,18 +20,20 @@
 (defn show
   ([props]
    (show (uuid/next) (:type props) props))
-  ([type props] (show (uuid/next) type props))
+  ([type props]
+   (show (uuid/next) type props))
   ([id type props]
    (ptk/reify ::show-modal
      ptk/UpdateEvent
      (update [_ state]
        (assoc state ::modal {:id id
-                            :type type
-                            :props props
-                            :allow-click-outside false})))))
+                             :type type
+                             :props props
+                             :allow-click-outside false})))))
+
 (defn update-props
   ([type props]
-   (ptk/reify ::show-modal
+   (ptk/reify ::update-modal-props
      ptk/UpdateEvent
      (update [_ state]
        (cond-> state
