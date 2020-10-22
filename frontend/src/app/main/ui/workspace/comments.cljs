@@ -124,7 +124,7 @@
                (not (empty? @content)))
        [:div.buttons
         [:input.btn-primary {:type "button" :value "Post" :on-click on-submit}]
-        [:input.btn-warning {:type "button" :value "Cancel" :on-click on-cancel}]])]))
+        [:input.btn-secondary {:type "button" :value "Cancel" :on-click on-cancel}]])]))
 
 (mf/defc draft-thread
   [{:keys [draft zoom] :as props}]
@@ -191,7 +191,7 @@
                             :on-change on-change}]
      [:div.buttons
       [:input.btn-primary {:type "button" :value "Post" :on-click on-submit*}]
-      [:input.btn-warning {:type "button" :value "Cancel" :on-click on-cancel}]]]))
+      [:input.btn-secondary {:type "button" :value "Cancel" :on-click on-cancel}]]]))
 
 
 (mf/defc comment-item

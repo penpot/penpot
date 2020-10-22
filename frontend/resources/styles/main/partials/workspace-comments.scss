@@ -24,7 +24,7 @@
     box-sizing: border-box;
     box-shadow: 0px 4px 4px rgba($color-black, 0.25);
 
-    font-size: $fs12;
+    font-size: $fs13;
     width: 30px;
     height: 30px;
     border-radius: 50%;
@@ -52,11 +52,11 @@
     box-sizing: border-box;
     box-shadow: 0px 2px 8px rgba($color-black, 0.25);
     border-radius: 2px;
-    min-width: 200px;
-    max-width: 200px;
+    min-width: 250px;
+    max-width: 250px;
 
     .comments {
-      max-height: 305px;
+      max-height: 320px;
     }
 
     hr {
@@ -77,13 +77,14 @@
     }
 
     textarea {
-      padding: 4px 8px;
-      resize: none;
-      font-family: "sourcesanspro", sans-serif;
-      font-size: $fs10;
+      font-family: "worksans", sans-serif;
+      font-size: $fs13;
+      min-height: 32px;
       outline: none;
-      width: 100%;
       overflow: hidden;
+      padding: $small;
+      resize: none;
+      width: 100%;
     }
 
     .buttons {
@@ -127,7 +128,7 @@
         .fullname {
           font-weight: 700;
           color: $color-gray-60;
-          font-size: $fs10;
+          font-size: $fs13;
 
           @include text-ellipsis;
           width: 110px;
@@ -135,7 +136,7 @@
         }
         .timeago {
           margin-top: -2px;
-          font-size: $fs9;
+          font-size: $fs11;
           color: $color-gray-30;
         }
       }
@@ -148,8 +149,8 @@
         img {
           border-radius: 50%;
           flex-shrink: 0;
-          height: 20px;
-          width: 20px;
+          height: 24px;
+          width: 24px;
         }
       }
 
@@ -190,9 +191,9 @@
     }
 
     .content {
-      margin: 7px 0px;
+      margin: $medium 0;
       // margin-left: 26px;
-      font-size: $fs10;
+      font-size: $fs13;
       color: $color-black;
       .text {
         margin-left: 26px;
