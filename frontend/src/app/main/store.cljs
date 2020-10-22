@@ -85,8 +85,9 @@
            (logjs "state")))))
 
 (defn ^:export dump-tree
-  ([] (dump-tree false))
-  ([show-touched]
+  ([] (dump-tree false false))
+  ([show-ids] (dump-tree show-ids false))
+  ([show-ids show-touched]
    (let [page-id    (get @state :current-page-id)
          objects    (get-in @state [:workspace-data :pages-index page-id :objects])
          components (get-in @state [:workspace-data :components])
@@ -98,6 +99,7 @@
                  (println (str/pad (str (str/repeat "  " level)
                                         (:name shape)
                                         (when (seq (:touched shape)) "*")
+                                        (when show-ids (str/format " <%s>" (:id shape))))
                                    {:length 20
                                     :type :right})
                           (show-component shape objects))
@@ -107,7 +109,7 @@
                                  (str (:touched shape)))))
                  (when (:shapes shape)
                    (dorun (for [shape-id (:shapes shape)]
-                            (show-shape shape-id (inc level) objects)))))))
+                            (show-shape shape-id (inc level) objects))))))
 
              (show-component [shape objects]
                (if (nil? (:shape-ref shape))
@@ -129,7 +131,8 @@
                                (when component-file (str/format "<%s> " (:name component-file)))
                                (:name component-shape)
                                (if (or (:component-root? shape)
-                                       (nil? (:component-id shape)))
+                                       (nil? (:component-id shape))
+                                       true)
                                  ""
                                  (let [component-id      (:component-id shape)
                                        component-file-id (:component-file shape)
