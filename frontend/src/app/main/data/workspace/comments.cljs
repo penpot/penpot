@@ -36,7 +36,6 @@
    [clojure.set :as set]
    [potok.core :as ptk]))
 
-
 (s/def ::comment-thread any?)
 (s/def ::comment any?)
 
