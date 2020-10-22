@@ -98,7 +98,7 @@
        [:li.tooltip.tooltip-right
         {:alt (t locale "workspace.toolbar.comments")
          :class (when (contains? layout :comments) "selected")
-         :on-click (st/emitf (dw/toggle-layout-flags :comments))
+         :on-click (st/emitf :interrupt (dw/toggle-layout-flags :comments))
          }
         i/chat]]
 
