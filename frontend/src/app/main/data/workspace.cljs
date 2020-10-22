@@ -9,7 +9,6 @@
 
 (ns app.main.data.workspace
   (:require
-   [cuerdas.core :as str]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.geom.matrix :as gmt]
@@ -22,6 +21,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.constants :as c]
+   [app.main.data.colors :as mdc]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.notifications :as dwn]
@@ -29,11 +29,11 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.transforms :as dwt]
-   [app.main.data.colors :as mdc]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.worker :as uw]
+   [app.util.logging :as log]
    [app.util.router :as rt]
    [app.util.timers :as ts]
    [app.util.transit :as t]
@@ -41,8 +41,11 @@
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [clojure.set :as set]
+   [clojure.set :as set]
+   [cuerdas.core :as str]
    [potok.core :as ptk]))
 
+;; (log/set-level! :trace)
 ;; --- Specs
 
 (s/def ::shape-attrs ::cp/shape-attrs)
@@ -59,7 +62,6 @@
 
 (s/def ::layout-flag
   #{:sitemap
-    :sitemap-pages
     :layers
     :comments
     :assets
@@ -75,7 +77,6 @@
 
 (def default-layout
   #{:sitemap
-    :sitemap-pages
     :layers
     :element-options
     :rules
@@ -381,59 +382,47 @@
 
 ;; --- Toggle layout flag
 
-(defn- toggle-layout-flag
-  [state flag]
-  (us/assert ::layout-flag flag)
-  (update state :workspace-layout
-          (fn [flags]
-            (if (contains? flags flag)
-              (disj flags flag)
-              (conj flags flag)))))
+(def layout-flags
+  {:assets
+   {:del #{:sitemap :layers :document-history }
+    :add #{:assets}}
 
-(defn- check-sidebars
-  [state]
-  (let [layout (:workspace-layout state)
-        left?  (seq (keep layout [:layers :sitemap :document-history :assets]))
-        right? (seq (keep layout [:element-options :comments]))]
+   :document-history
+   {:del #{:assets :layers :sitemap}
+    :add #{:document-history}}
 
-    (update state :workspace-local
-            assoc :left-sidebar? (boolean left?)
-                  :right-sidebar? (boolean right?))))
+   :layers
+   {:del #{:document-history :assets}
+    :add #{:sitemap :layers}}})
 
-(defn- check-auto-flags
-  [state flags-to-toggle]
-  (update state :workspace-layout
-          (fn [flags]
-            (cond-> flags
-              (contains? flags-to-toggle :assets)
-              (disj :sitemap :layers :document-history)
+(defn- ensure-layout
+  [layout]
+  (assert (contains? layout-flags layout)
+          (str "unexpected layout name: " layout))
+  (ptk/reify ::ensure-layout
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-layout
+              (fn [stored]
+                (let [todel (get-in layout-flags [layout :del] #{})
+                      toadd (get-in layout-flags [layout :add] #{})]
+                  (-> stored
+                      (set/difference todel)
+                      (set/union toadd))))))))
 
-              (contains? flags-to-toggle :sitemap)
-              (disj :assets :document-history)
-
-              (contains? flags-to-toggle :document-history)
-              (disj :assets :sitemap :layers)
-
-              (contains? flags-to-toggle :document-history)
-              (disj :assets :sitemap :layers)
-
-              (contains? flags-to-toggle :comments)
-              (as-> $ (if (contains? flags :comments)
-                        (disj $ :element-options)
-                        (conj $ :element-options)))
-
-              (contains? flags-to-toggle :element-options)
-              (disj :comments)))))
-
-(defn toggle-layout-flags
+(defn- toggle-layout-flags
   [& flags]
-  (let [flags (into #{} flags)]
-    (ptk/reify ::toggle-layout-flags
-      ptk/UpdateEvent
-      (update [_ state]
-        (-> (reduce toggle-layout-flag state flags)
-            (check-auto-flags flags)
-            (check-sidebars))))))
+  (ptk/reify ::toggle-layout-flags
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-layout
+              (fn [stored]
+                (reduce (fn [flags flag]
+                          (if (contains? flags flag)
+                            (disj flags flag)
+                            (conj flags flag)))
+                        stored
+                        (into #{} flags)))))))
 
 ;; --- Set element options mode
 
@@ -1057,8 +1046,6 @@
     (update [_ state]
       (update state :workspace-drawing dissoc :tool :object))))
 
-(declare toggle-layout-flags)
-
 (defn select-for-drawing
   ([tool] (select-for-drawing tool nil))
   ([tool data]
@@ -1071,12 +1058,16 @@
      (watch [_ state stream]
        (let [stoper (rx/filter (ptk/type? ::clear-drawing) stream)]
          (rx/merge
-          (rx/of (toggle-layout-flags :element-options))
-          (->> stream
-               (rx/filter dwc/interrupt?)
-               (rx/take 1)
-               (rx/map (constantly clear-drawing))
-               (rx/take-until stoper))))))))
+          (rx/of (dws/deselect-all))
+
+          ;; NOTE: comments are a special case and they manage they
+          ;; own interrupt cycle.
+          (when (not= tool :comments)
+            (->> stream
+                 (rx/filter dwc/interrupt?)
+                 (rx/take 1)
+                 (rx/map (constantly clear-drawing))
+                 (rx/take-until stoper)))))))))
 
 ;; --- Update Dimensions
 

@@ -40,7 +40,6 @@
 (s/def ::comment any?)
 
 (declare create-draft-thread)
-(declare clear-draft-thread)
 (declare retrieve-comment-threads)
 (declare refresh-comment-thread)
 (declare handle-interrupt)
@@ -75,16 +74,17 @@
   (ptk/reify ::handle-interrupt
     ptk/UpdateEvent
     (update [_ state]
-      (let [local (:workspace-comments state)]
+      (let [local   (:workspace-comments state)
+            drawing (:workspace-drawing state)]
         (cond
-          (:draft local)
-          (update state :workspace-comments dissoc :draft)
+          (:comment drawing)
+          (update state :workspace-drawing dissoc :comment)
 
           (:open local)
           (update state :workspace-comments dissoc :open)
 
           :else
-          state)))))
+          (dissoc state :workspace-drawing))))))
 
 ;; Event responsible of the what should be executed when user clicked
 ;; on the comments layer. An option can be create a new draft thread,
@@ -98,15 +98,16 @@
       (let [local (:workspace-comments state)]
         (if (:open local)
           (update state :workspace-comments dissoc :open)
-          (update state :workspace-comments assoc
-                  :draft {:position position :content ""}))))))
+          (update state :workspace-drawing assoc
+                  :comment {:position position :content ""}))))))
 
 (defn create-thread
   [data]
   (letfn [(created [{:keys [id comment] :as thread} state]
             (-> state
                 (update :comment-threads assoc id (dissoc thread :comment))
-                (update :workspace-comments assoc :draft nil :open id)
+                (update :workspace-comments assoc :open id)
+                (update :workspace-drawing dissoc :comment)
                 (update-in [:comments id] assoc (:id comment) comment)))]
 
     (ptk/reify ::create-thread
@@ -247,28 +248,25 @@
   (ptk/reify ::open-thread
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-comments assoc :open id :draft nil))))
+      (-> state
+          (update :workspace-comments assoc :open id)
+          (update :workspace-drawing dissoc :comment)))))
 
 (defn close-thread
   []
   (ptk/reify ::open-thread
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-comments dissoc :open :draft))))
-
-
-(defn- clear-draft-thread
-  [state]
-  (update state :workspace-comments dissoc :draft))
-
-;; TODO: add specs
+      (-> state
+          (update :workspace-comments dissoc :open)
+          (update :workspace-drawing dissoc :comment)))))
 
 (defn update-draft-thread
   [data]
   (ptk/reify ::update-draft-thread
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-comments assoc :draft data))))
+      (update state :workspace-drawing assoc :comment data))))
 
 (defn update-filters
   [{:keys [main resolved]}]
