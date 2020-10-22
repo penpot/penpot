@@ -24,7 +24,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
-   [app.main.ui.context :as muc]
+   [app.main.ui.context :as ctx]
    [app.main.ui.cursors :as cur]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
@@ -188,7 +188,7 @@
                  (:height vbox 0)]))
 
 (mf/defc viewport
-  [{:keys [page-id page local layout] :as props}]
+  [{:keys [local layout file] :as props}]
   (let [{:keys [options-mode
                 zoom
                 flags
@@ -200,21 +200,21 @@
                 panning
                 picking-color?]} local
 
-        selrect-orig (->> (mf/deref refs/selected-objects)
-                          gsh/selection-rect)
-        selrect (-> selrect-orig
-                    (assoc :modifiers (:modifiers local))
-                    (gsh/transform-shape))
+        page-id       (mf/use-ctx ctx/current-page-id)
+        selrect-orig  (->> (mf/deref refs/selected-objects)
+                           (gsh/selection-rect))
+        selrect       (-> selrect-orig
+                          (assoc :modifiers (:modifiers local))
+                          (gsh/transform-shape))
 
-        file          (mf/deref refs/workspace-file)
         viewport-ref  (mf/use-ref nil)
         zoom-view-ref (mf/use-ref nil)
         last-position (mf/use-var nil)
         drawing       (mf/deref refs/workspace-drawing)
         drawing-tool  (:tool drawing)
         drawing-obj   (:object drawing)
+        zoom          (or zoom 1)
 
-        zoom (or zoom 1)
 
         on-mouse-down
         (mf/use-callback
@@ -226,7 +226,6 @@
                  shift? (kbd/shift? event)
                  alt? (kbd/alt? event)]
              (st/emit! (ms/->MouseEvent :down ctrl? shift? alt?))
-
              (cond
                (and (= 1 (.-which event)))
                (if drawing-tool
@@ -509,6 +508,7 @@
 
      [:svg.viewport
       {:preserveAspectRatio "xMidYMid meet"
+       :key page-id
        :width (:width vport 0)
        :height (:height vport 0)
        :view-box (format-viewbox vbox)

@@ -8,7 +8,6 @@
 ;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.main.ui.workspace.comments
-  (:refer-clojure :exclude [comment])
   (:require
    [app.config :as cfg]
    [app.main.data.workspace :as dw]
@@ -17,6 +16,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
+   [app.main.ui.context :as ctx]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.data.modal :as modal]
    [app.main.ui.hooks :as hooks]
@@ -25,6 +25,7 @@
    [app.main.ui.workspace.colorpicker]
    [app.main.ui.workspace.context-menu :refer [context-menu]]
    [app.util.time :as dt]
+   [app.util.timers :as tm]
    [app.util.dom :as dom]
    [app.util.object :as obj]
    [beicon.core :as rx]
@@ -401,11 +402,18 @@
 (mf/defc sidebar-group-item
   [{:keys [item] :as props}]
   (let [profile (get @refs/workspace-users (:owner-id item))
+        page-id (mf/use-ctx ctx/current-page-id)
+        file-id (mf/use-ctx ctx/current-file-id)
+
         on-click
         (mf/use-callback
-         (mf/deps item)
-         (st/emitf (dwcm/center-to-comment-thread item)
-                   (dwcm/open-thread item)))]
+         (mf/deps item page-id)
+         (fn []
+           (when (not= page-id (:page-id item))
+             (st/emit! (dw/go-to-page (:page-id item))))
+           (tm/schedule
+            (st/emitf (dwcm/center-to-comment-thread item)
+                      (dwcm/open-thread item)))))]
 
     [:div.comment {:on-click on-click}
      [:div.author
