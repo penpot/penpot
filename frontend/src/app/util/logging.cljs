@@ -39,16 +39,21 @@
 
 (def root (get-logger :root))
 
+
 (def levels
   {:off     Level/OFF
+   :shout   Level/SHOUT
    :error   Level/SEVERE
-   :warn    Level/WARNING
+   :severe  Level/SEVERE
    :warning Level/WARNING
+   :warn    Level/WARNING
    :info    Level/INFO
+   :config  Level/CONFIG
    :debug   Level/FINE
-   :trace   Level/FINER
    :fine    Level/FINE
    :finer   Level/FINER
+   :trace   Level/FINER
+   :finest  Level/FINEST
    :all     Level/ALL})
 
 (def colors
@@ -87,7 +92,8 @@
     :info "INF"
     :warn "WRN"
     :warning "WRN"
-    :error "ERR"))
+    :error "ERR"
+    (subs (.-name ^Level (get levels l)) 0 3)))
 
 (defn- make-log-record
   [level message name exception]
