@@ -57,6 +57,7 @@
 
     .comments {
       max-height: 320px;
+      overflow-y: auto;
     }
 
     hr {
@@ -205,8 +206,8 @@
 
 
   .comment-options-dropdown {
-    top: 0px;
-    right: -160px;
+    top: 7px;
+    right: 7px;
     width: 150px;
 
     border: 1px solid #B1B2B5;
