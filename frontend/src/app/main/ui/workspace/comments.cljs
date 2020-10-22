@@ -197,13 +197,20 @@
 (mf/defc comment-item
   [{:keys [comment thread] :as props}]
   (let [profile  (get @refs/workspace-users (:owner-id comment))
-        options? (mf/use-state false)
+
+        options  (mf/use-state false)
         edition? (mf/use-state false)
+
+        on-show-options
+        (mf/use-callback #(reset! options true))
+
+        on-hide-options
+        (mf/use-callback #(reset! options false))
 
         on-edit-clicked
         (mf/use-callback
          (fn []
-           (reset! options? false)
+           (reset! options false)
            (reset! edition? true)))
 
         on-delete-comment
@@ -259,7 +266,7 @@
             [:span i/checkbox-unchecked])])
 
        [:div.options
-        [:div.options-icon {:on-click #(swap! options? not)} i/actions]]]
+        [:div.options-icon {:on-click on-show-options} i/actions]]]
 
       [:div.content
        (if @edition?
@@ -268,8 +275,8 @@
                         :on-cancel on-cancel}]
          [:span.text (:content comment)])]]
 
-     [:& dropdown {:show @options?
-                   :on-close identity}
+     [:& dropdown {:show @options
+                   :on-close on-hide-options}
       [:ul.dropdown.comment-options-dropdown
        [:li {:on-click on-edit-clicked} "Edit"]
        (if thread
@@ -277,8 +284,8 @@
          [:li {:on-click on-delete-comment} "Delete comment"])]]]))
 
 (defn comments-ref
-  [thread-id]
-  (l/derived (l/in [:comments thread-id]) st/state))
+  [{:keys [id] :as thread}]
+  (l/derived (l/in [:comments id]) st/state))
 
 (mf/defc thread-comments
   [{:keys [thread zoom]}]
@@ -287,12 +294,11 @@
         pos-x (+ (* (:x pos) zoom) 14)
         pos-y (- (* (:y pos) zoom) 14)
 
-
-        comments-ref (mf/use-memo (mf/deps (:id thread)) #(comments-ref (:id thread)))
+        comments-ref (mf/use-memo (mf/deps thread) #(comments-ref thread))
         comments-map (mf/deref comments-ref)
         comments     (->> (vals comments-map)
                           (sort-by :created-at))
-        comment     (first comments)]
+        comment      (first comments)]
 
     (mf/use-effect
      (st/emitf (dwcm/update-comment-thread-status thread)))
