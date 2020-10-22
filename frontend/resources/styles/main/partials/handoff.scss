@@ -14,3 +14,213 @@
   align-items: center;
   justify-content: center;
 }
+
+.attributes-block {
+  user-select: text;
+
+  border-bottom: 1px solid $color-gray-60;
+  padding-bottom: 0.5rem;
+  font-size: $fs12;
+
+  .attributes-copy-button {
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s;
+    position: absolute;
+    right: 0;
+    top: 0;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+
+    svg {
+      width: 16px;
+      height: 16px;
+      fill: $color-gray-20;
+      transition: fill 0.3s;
+
+      &:hover {
+        fill: $color-primary;
+      }
+    }
+  }
+  
+  .attributes-label {
+    color: $color-gray-20;
+  }
+
+  .attributes-value {
+    color: $color-white;
+  }
+
+  .attributes-block-title {
+    position: relative;
+    color: $color-gray-10;
+    padding: 0.5rem;
+    font-size: $fs14;
+
+    .attributes-copy-button {
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+    }
+  }
+
+  .attributes-unit-row {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    padding: 1rem 0.5rem;
+
+    .attributes-label,
+    .attributes-value {
+      width: 50%;
+    }
+    .attributes-copy-button {
+      padding: 1rem 0.5rem;
+      margin-top: 0.25rem;
+    }
+  }
+
+  .attributes-color-row {
+    display: flex;
+    padding: 1rem 0;
+    position: relative;
+    align-items: center;
+
+    .attributes-color-display {
+      display: flex;
+    }
+
+    .color-bullet {
+      width: 24px;
+      height: 24px;
+    }
+    .attributes-copy-button {
+      padding: 1rem 0.5rem;
+      margin-top: 0.25rem;
+    }
+
+    & > * {
+      margin: 0 0.5rem;
+    }
+
+    & :last-child {
+      margin-right: 0;
+    }
+
+    select {
+      font-size: $fs12;
+      margin: 0;
+      background: none;
+      color: $color-gray-20;
+      border: none;
+      border-bottom: 1px solid $color-gray-30;
+      padding: 0 1rem 0.25rem 0.25rem;
+      margin-top: 2px;
+      background-image: url("/images/icons/arrow-down-white.svg");
+      background-repeat: no-repeat;
+      background-position: 95% 48%;
+      background-size: 10px;
+      cursor: pointer;
+
+      option {
+        padding: 1rem;
+        background-color: $color-gray-50;
+        border: none;
+      }
+    }
+  }
+
+  .attributes-content-row {
+    position: relative;
+    margin: 0.5rem;
+    width: calc(100% - 1rem);
+
+    .attributes-content {
+      overflow-y: auto;
+      max-height: 10rem;
+      background: $color-gray-60;
+      border-radius: 4px;
+      padding: 1rem 0.5rem;
+      color: $color-gray-10;
+      white-space: pre-wrap;
+    }
+  }
+
+  .attributes-image-row {
+    position: relative;
+    display: flex;
+    padding: 0.25rem;
+    align-items: center;
+    justify-content: center;
+    margin: 0.5rem;
+    background: $color-gray-60;
+    border-radius: 4px;
+
+    width: calc(100% - 1rem);
+    min-height: 5rem;
+    img {
+      max-height: 8rem;
+      width: auto;
+    }
+  }
+
+  .attributes-shadow-row {
+    position: relative;
+    display: flex;
+    margin: 0.5rem;
+    padding-right: 2rem;
+    justify-content: space-between;
+
+    & > :first-child {
+      color: $color-gray-10;
+    }
+
+    .attributes-shadow {
+      display: flex;
+
+      .attributes-label {
+        margin-right: 2px;
+      }
+    }
+  }
+
+  .attributes-stroke-row {
+    position: relative;
+    display: flex;
+    margin: 0.5rem;
+    padding-right: 2rem;
+    justify-content: space-between;
+  }
+
+  .download-button {
+    display: block;
+    text-align: center;
+    border: 1px solid $color-gray-60;
+    background-color: $color-gray-60;
+    padding: 0.5rem 1rem;
+    color: $color-gray-10;
+    width: calc(100% - 1rem);
+    border-radius: 4px;
+    margin: 0.5rem;
+    cursor: pointer;
+
+    &:hover {
+      background-color: $color-primary;
+      color: $color-black;
+    }
+  }
+
+  .attributes-block-title,
+  .attributes-unit-row,
+  .attributes-color-row,
+  .attributes-shadow-row,
+  .attributes-stroke-row {
+    &:hover .attributes-copy-button {
+      visibility: visible;
+      opacity: 1;
+    }
+  }
+                                               
+}

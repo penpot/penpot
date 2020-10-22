@@ -46,7 +46,7 @@
           (let [hover (get-in state [:viewer-local :hover])
                 objects (get-in state [:viewer-data :page :objects])
                 resolve-shape #(get objects %)]
-            (map resolve-shape hover)))]
+            (mapv resolve-shape hover)))]
     #(l/derived hover->shapes st/state)))
 
 (mf/defc selection-feedback [{:keys [frame]}]
