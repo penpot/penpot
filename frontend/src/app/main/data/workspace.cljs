@@ -393,14 +393,12 @@
 (defn- check-sidebars
   [state]
   (let [layout (:workspace-layout state)
-        left-sidebar? (not (empty? (keep layout [:layers
-                                                 :sitemap
-                                                 :document-history
-                                                 :assets])))
-        right-sidebar? (not (empty? (keep layout [:element-options :comments])))]
+        left?  (seq (keep layout [:layers :sitemap :document-history :assets]))
+        right? (seq (keep layout [:element-options :comments]))]
+
     (update state :workspace-local
-            assoc :left-sidebar? left-sidebar?
-                  :right-sidebar? right-sidebar?)))
+            assoc :left-sidebar? (boolean left?)
+                  :right-sidebar? (boolean right?))))
 
 (defn- check-auto-flags
   [state flags-to-toggle]
@@ -419,13 +417,13 @@
               (contains? flags-to-toggle :document-history)
               (disj :assets :sitemap :layers)
 
-              (and (contains? flags-to-toggle :comments)
-                   (contains? flags :comments))
-              (disj :element-options)
+              (contains? flags-to-toggle :comments)
+              (as-> $ (if (contains? flags :comments)
+                        (disj $ :element-options)
+                        (conj $ :element-options)))
 
-              (and (contains? flags-to-toggle :comments)
-                   (not (contains? flags :comments)))
-              (conj :element-options)))))
+              (contains? flags-to-toggle :element-options)
+              (disj :comments)))))
 
 (defn toggle-layout-flags
   [& flags]
@@ -1059,6 +1057,8 @@
     (update [_ state]
       (update state :workspace-drawing dissoc :tool :object))))
 
+(declare toggle-layout-flags)
+
 (defn select-for-drawing
   ([tool] (select-for-drawing tool nil))
   ([tool data]
@@ -1069,13 +1069,14 @@
 
      ptk/WatchEvent
      (watch [_ state stream]
-       (let [cancel-event? (fn [event]
-                             (dwc/interrupt? event))
-             stoper (rx/filter (ptk/type? ::clear-drawing) stream)]
-         (->> (rx/filter cancel-event? stream)
-              (rx/take 1)
-              (rx/map (constantly clear-drawing))
-              (rx/take-until stoper)))))))
+       (let [stoper (rx/filter (ptk/type? ::clear-drawing) stream)]
+         (rx/merge
+          (rx/of (toggle-layout-flags :element-options))
+          (->> stream
+               (rx/filter dwc/interrupt?)
+               (rx/take 1)
+               (rx/map (constantly clear-drawing))
+               (rx/take-until stoper))))))))
 
 ;; --- Update Dimensions
 
