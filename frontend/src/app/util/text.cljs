@@ -50,6 +50,36 @@
      (str/join (if (= "paragraph-set" (:type node)) "\n" "") (map content->text (:children node)))
      (:text node ""))))
 
+(defn parse-style-text-blocks
+  [node attrs]
+  (letfn
+      [(rec-style-text-map [acc node style]
+         (let [node-style (merge style (select-keys node attrs))
+               head (or (-> acc first) [{} ""])
+               [head-style head-text] head
+
+               new-acc
+               (cond
+                 (:children node)
+                 (reduce #(rec-style-text-map %1 %2 node-style) acc (:children node))
+
+                 (not= head-style node-style)
+                 (cons [node-style (:text node "")] acc)
+
+                 :else
+                 (cons [node-style (str head-text "" (:text node))] (rest acc)))
+
+               ;; We add an end-of-line when finish a paragraph
+               new-acc
+               (if (= (:type node) "paragraph")
+                 (let [[hs ht] (first new-acc)]
+                   (cons [hs (str ht "\n")] (rest new-acc)))
+                 new-acc)]
+           new-acc))]
+
+    (-> (rec-style-text-map [] node {})
+        reverse)))
+
 (defn search-text-attrs
   [node attrs]
 

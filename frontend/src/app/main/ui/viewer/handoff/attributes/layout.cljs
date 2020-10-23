@@ -15,7 +15,6 @@
 
 
 (mf/defc layout-panel [{:keys [shapes]}]
-  (prn "???" shapes)
   [:*
    [:div.attributes-block
     [:div.attributes-block-title
