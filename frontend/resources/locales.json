@@ -3366,6 +3366,16 @@
     "handoff.tabs.info": "Info",
     "handoff.tabs.code": "Code",
 
+    "handoff.tabs.code.selected.frame": "Artboard",
+    "handoff.tabs.code.selected.group": "Group",
+    "handoff.tabs.code.selected.rect": "Rectangle",
+    "handoff.tabs.code.selected.circle": "Circle",
+    "handoff.tabs.code.selected.path": "Path",
+    "handoff.tabs.code.selected.curve": "Curve",
+    "handoff.tabs.code.selected.image": "Image",
+    "handoff.tabs.code.selected.text": "Text",
+    "handoff.tabs.code.selected.multiple": "%s Selected",
+
     "handoff.attributes.color.hex": "HEX",
     "handoff.attributes.color.rgba": "RGBA",
     "handoff.attributes.color.hsla": "HSLA",

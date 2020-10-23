@@ -53,6 +53,11 @@
     (into [] (gcolor/hexToHsl hex))
     (catch :default e [0 0 0])))
 
+(defn hex->hsla
+  [^string data ^number opacity]
+  (-> (hex->hsl data)
+      (conj opacity)))
+
 (defn hsl->rgb
   [[h s l]]
   (gcolor/hslToRgb h s l))

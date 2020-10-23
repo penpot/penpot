@@ -22,6 +22,14 @@
   padding-bottom: 0.5rem;
   font-size: $fs12;
 
+  .attributes-text-block {
+    border-bottom: 1px solid $color-gray-60;
+  }
+
+  & :last-child{
+    border-bottom: none;
+  }
+
   .attributes-copy-button {
     visibility: hidden;
     opacity: 0;
@@ -139,12 +147,17 @@
 
     .attributes-content {
       overflow-y: auto;
-      max-height: 10rem;
+      max-height: 5rem;
       background: $color-gray-60;
       border-radius: 4px;
       padding: 1rem 0.5rem;
       color: $color-gray-10;
       white-space: pre-wrap;
+    }
+
+    .attributes-copy-button {
+      padding: 0.5rem;
+      margin-top: 0.25rem;
     }
   }
 
@@ -194,6 +207,16 @@
     justify-content: space-between;
   }
 
+  .attributes-typography-row {
+    position: relative;
+    margin: 0.5rem;
+    padding-right: 2rem;
+
+    .typography-sample {
+      font-size: $fs16;
+    }
+  }
+
   .download-button {
     display: block;
     text-align: center;
@@ -216,7 +239,9 @@
   .attributes-unit-row,
   .attributes-color-row,
   .attributes-shadow-row,
-  .attributes-stroke-row {
+  .attributes-stroke-row,
+  .attributes-typography-row,
+  .attributes-content-row {
     &:hover .attributes-copy-button {
       visibility: visible;
       opacity: 1;

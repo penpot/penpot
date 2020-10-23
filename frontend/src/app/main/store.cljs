@@ -77,6 +77,13 @@
   (let [page-id (get @state :current-page-id)]
     (logjs "state" (get-in @state [:workspace-data :pages-index page-id :objects]))))
 
+(defn ^:export dump-object [name]
+  (let [page-id (get @state :current-page-id)]
+    (let [objects (get-in @state [:workspace-data :pages-index page-id :objects])
+          target (d/seek (fn [[id shape]] (= name (:name shape))) objects)]
+      (->> target
+           (logjs "state")))))
+
 (defn ^:export dump-tree
   ([] (dump-tree false))
   ([show-touched]
