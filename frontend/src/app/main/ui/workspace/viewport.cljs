@@ -471,8 +471,8 @@
        (let [node (mf/ref-val viewport-ref)
              prnt (dom/get-parent node)
 
-             key1 (events/listen js/document EventType.KEYDOWN on-key-down)
-             key2 (events/listen js/document EventType.KEYUP on-key-up)
+             key1 (events/listen (dom/get-root) EventType.KEYDOWN on-key-down)
+             key2 (events/listen (dom/get-root) EventType.KEYUP on-key-up)
              key3 (events/listen node EventType.MOUSEMOVE on-mouse-move)
              ;; bind with passive=false to allow the event to be cancelled
              ;; https://stackoverflow.com/a/57582286/3219895
