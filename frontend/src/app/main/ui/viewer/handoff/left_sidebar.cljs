@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.viewer.handoff.layers-sidebar
+(ns app.main.ui.viewer.handoff.left-sidebar
   (:require
    [rumext.alpha :as mf]
    [okulary.core :as l]
@@ -45,29 +45,22 @@
         toggle-collapse
         (fn [event]
           (dom/stop-propagation event)
-          (if (and expanded? (kbd/shift? event))
-            (st/emit! (dv/collapse-all))
-            (st/emit! (dv/toggle-collapse id))))
+          (st/emit! (dv/toggle-collapse id)))
 
         select-shape
         (fn [event]
           (dom/prevent-default event)
           (let [id (:id item)]
-            (st/emit! (dv/select-shape id))
-            #_(cond
-              (or (:blocked item)
-                  (:hidden item))
-              nil
+            (cond
+              (.-ctrlKey event)
+              (st/emit! (dv/toggle-selection id))
 
               (.-shiftKey event)
-              (st/emit! (dv/select-shape id true))
+              (st/emit! (dv/shift-select-to id))
 
-              (> (count selected) 1)
-              (st/emit! (dv/deselect-all)
-                        (dv/select-shape id))
               :else
-              (st/emit! (dv/deselect-all)
-                        (dv/select-shape id)))))
+              (st/emit! (dv/select-shape id)))
+            ))
         ]
 
     (mf/use-effect
@@ -105,7 +98,7 @@
               :objects objects
               :key (:id item)}]))])]))
 
-(mf/defc layers-sidebar [{:keys [frame]}]
+(mf/defc left-sidebar [{:keys [frame]}]
   (let [page (mf/deref page-ref)
         selected (mf/deref selected-shapes)
         objects (:objects page)]

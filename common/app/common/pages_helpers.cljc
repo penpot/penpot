@@ -214,3 +214,36 @@
              (concat new-children new-child-objects)
              (concat updated-children updated-child-objects))))))))
 
+
+(defn indexed-shapes
+  "Retrieves a list with the indexes for each element in the layer tree.
+   This will be used for shift+selection."
+  [objects]
+  (let [rec-index
+        (fn rec-index [cur-idx id]
+          (let [object (get objects id)
+                red-fn
+                (fn [cur-idx id]
+                  (let [[prev-idx _] (first cur-idx)
+                        prev-idx (or prev-idx 0)
+                        cur-idx (conj cur-idx [(inc prev-idx) id])]
+                    (rec-index cur-idx id)))]
+            (reduce red-fn cur-idx (reverse (:shapes object)))))]
+    (into {} (rec-index '() uuid/zero))))
+
+
+(defn expand-region-selection
+  "Given a selection selects all the shapes between the first and last in
+   an indexed manner (shift selection)"
+  [objects selection]
+  (let [indexed-shapes (indexed-shapes objects)
+        filter-indexes (->> indexed-shapes
+                            (filter (comp selection second))
+                            (map first))
+
+        from (apply min filter-indexes)
+        to (apply max filter-indexes)]
+    (->> indexed-shapes
+         (filter (fn [[idx _]] (and (>= idx from) (<= idx to))))
+         (map second)
+         (into #{}))))

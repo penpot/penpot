@@ -26,10 +26,9 @@
    [app.main.ui.keyboard :as kbd]
    [app.main.ui.viewer.header :refer [header]]
    [app.main.ui.viewer.thumbnails :refer [thumbnails-panel]]
-
    [app.main.ui.viewer.handoff.render :refer [render-frame-svg]]
-   [app.main.ui.viewer.handoff.layers-sidebar :refer [layers-sidebar]]
-   [app.main.ui.viewer.handoff.attributes-sidebar :refer [attributes-sidebar]])
+   [app.main.ui.viewer.handoff.left-sidebar :refer [left-sidebar]]
+   [app.main.ui.viewer.handoff.right-sidebar :refer [right-sidebar]])
   (:import goog.events.EventType))
 
 (defn handle-select-frame [frame]
@@ -47,7 +46,8 @@
     (mf/use-effect
      (mf/deps index)
      (fn []
-       (st/emit! (dv/select-shape (:id frame)))))
+       (st/emit! (dv/set-current-frame (:id frame))
+                 (dv/select-shape (:id frame)))))
 
     [:section.viewer-preview
      (cond
@@ -61,12 +61,12 @@
 
        :else
        [:*
-        [:& layers-sidebar {:frame frame}]
+        [:& left-sidebar {:frame frame}]
         [:div.handoff-svg-wrapper {:on-click (handle-select-frame frame)}
          [:& render-frame-svg {:frame-id (:id frame)
                                :zoom (:zoom local)
                                :objects objects}]]
-        [:& attributes-sidebar {:frame frame}]])]))
+        [:& right-sidebar {:frame frame}]])]))
 
 (mf/defc handoff-content
   [{:keys [data local index] :as props}]
