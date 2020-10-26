@@ -17,22 +17,22 @@
       "es" : "Confirmar contraseña"
     }
   },
-  "auth.create-demo-profile" : {
-    "used-in" : [ "src/app/main/ui/auth/login.cljs:144", "src/app/main/ui/auth/login.cljs:147", "src/app/main/ui/auth/register.cljs:133", "src/app/main/ui/auth/register.cljs:136" ],
-    "translations" : {
-      "en" : "Just wanna try it?",
-      "fr" : "Vous voulez juste essayer?",
-      "ru" : "Хотите попробовать?",
-      "es" : "¿Quieres probar?"
-    }
-  },
   "auth.create-demo-account" : {
-    "used-in" : [ "src/app/main/ui/auth/login.cljs:144", "src/app/main/ui/auth/login.cljs:147", "src/app/main/ui/auth/register.cljs:133", "src/app/main/ui/auth/register.cljs:136" ],
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:147" ],
     "translations" : {
       "en" : "Create demo account",
       "fr" : "Vous voulez juste essayer?",
       "ru" : "Хотите попробовать?",
       "es" : "Crear cuanta de prueba"
+    }
+  },
+  "auth.create-demo-profile" : {
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:144", "src/app/main/ui/auth/register.cljs:133", "src/app/main/ui/auth/register.cljs:136" ],
+    "translations" : {
+      "en" : "Just wanna try it?",
+      "fr" : "Vous voulez juste essayer?",
+      "ru" : "Хотите попробовать?",
+      "es" : "¿Quieres probar?"
     }
   },
   "auth.demo-warning" : {
@@ -240,7 +240,7 @@
     }
   },
   "auth.register" : {
-    "used-in" : [ "src/app/main/ui/auth/login.cljs:125", "src/app/main/ui/auth/login.cljs:128" ],
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:125" ],
     "translations" : {
       "en" : "No account yet?",
       "fr" : "Pas encore de compte?",
@@ -249,7 +249,7 @@
     }
   },
   "auth.register-submit" : {
-    "used-in" : [ "src/app/main/ui/auth/register.cljs:110" ],
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:128", "src/app/main/ui/auth/register.cljs:110" ],
     "translations" : {
       "en" : "Create an account",
       "fr" : "Créer un compte",
@@ -587,7 +587,7 @@
     }
   },
   "dashboard.show-all-files" : {
-    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:249" ],
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:250" ],
     "translations" : {
       "en" : "Show all files",
       "es" : "Ver todos los ficheros"
@@ -820,7 +820,7 @@
     }
   },
   "errors.media-type-mismatch" : {
-    "used-in" : [ "src/app/main/data/media.cljs:61", "src/app/main/data/workspace/persistence.cljs:413" ],
+    "used-in" : [ "src/app/main/data/media.cljs:61", "src/app/main/data/workspace/persistence.cljs:421" ],
     "translations" : {
       "en" : "Seems that the contents of the image does not match the file extension.",
       "fr" : "",
@@ -829,7 +829,7 @@
     }
   },
   "errors.media-type-not-allowed" : {
-    "used-in" : [ "src/app/main/data/media.cljs:58", "src/app/main/data/workspace/persistence.cljs:410" ],
+    "used-in" : [ "src/app/main/data/media.cljs:58", "src/app/main/data/workspace/persistence.cljs:418" ],
     "translations" : {
       "en" : "Seems that this is not a valid image.",
       "fr" : "",
@@ -898,6 +898,360 @@
       "fr" : null,
       "ru" : "Произошла ошибка",
       "es" : "Ha ocurrido un error"
+    }
+  },
+  "handoff.attributes.blur" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/blur.cljs:33" ],
+    "translations" : {
+      "en" : "Blur"
+    }
+  },
+  "handoff.attributes.blur.value" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/blur.cljs:39" ],
+    "translations" : {
+      "en" : "Value"
+    }
+  },
+  "handoff.attributes.color.hex" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/common.cljs:72" ],
+    "translations" : {
+      "en" : "HEX"
+    }
+  },
+  "handoff.attributes.color.hsla" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/common.cljs:78" ],
+    "translations" : {
+      "en" : "HSLA"
+    }
+  },
+  "handoff.attributes.color.rgba" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/common.cljs:75" ],
+    "translations" : {
+      "en" : "RGBA"
+    }
+  },
+  "handoff.attributes.content" : {
+    "translations" : {
+      "en" : "Content"
+    },
+    "unused" : true
+  },
+  "handoff.attributes.fill" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/fill.cljs:58" ],
+    "translations" : {
+      "en" : "Fill"
+    }
+  },
+  "handoff.attributes.image.download" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/image.cljs:44" ],
+    "translations" : {
+      "en" : "Dowload source image"
+    }
+  },
+  "handoff.attributes.image.height" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/image.cljs:36" ],
+    "translations" : {
+      "en" : "Height"
+    }
+  },
+  "handoff.attributes.image.width" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/image.cljs:31" ],
+    "translations" : {
+      "en" : "Width"
+    }
+  },
+  "handoff.attributes.layout" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/layout.cljs:76" ],
+    "translations" : {
+      "en" : "Layout"
+    }
+  },
+  "handoff.attributes.layout.height" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/layout.cljs:36" ],
+    "translations" : {
+      "en" : "Height"
+    }
+  },
+  "handoff.attributes.layout.left" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/layout.cljs:44" ],
+    "translations" : {
+      "en" : "Left"
+    }
+  },
+  "handoff.attributes.layout.rotation" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/layout.cljs:60" ],
+    "translations" : {
+      "en" : "Rotation"
+    }
+  },
+  "handoff.attributes.layout.top" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/layout.cljs:52" ],
+    "translations" : {
+      "en" : "Top"
+    }
+  },
+  "handoff.attributes.layout.width" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/layout.cljs:29" ],
+    "translations" : {
+      "en" : "Width"
+    }
+  },
+  "handoff.attributes.shadow" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/shadow.cljs:71" ],
+    "translations" : {
+      "en" : "Shadow"
+    }
+  },
+  "handoff.attributes.shadow.shorthand.blur" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/shadow.cljs:44" ],
+    "translations" : {
+      "en" : "B"
+    }
+  },
+  "handoff.attributes.shadow.shorthand.offset-x" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/shadow.cljs:36" ],
+    "translations" : {
+      "en" : "X"
+    }
+  },
+  "handoff.attributes.shadow.shorthand.offset-y" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/shadow.cljs:40" ],
+    "translations" : {
+      "en" : "Y"
+    }
+  },
+  "handoff.attributes.shadow.shorthand.spread" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/shadow.cljs:48" ],
+    "translations" : {
+      "en" : "S"
+    }
+  },
+  "handoff.attributes.shadow.style.drop-shadow" : {
+    "translations" : {
+      "en" : "Drop"
+    },
+    "unused" : true
+  },
+  "handoff.attributes.shadow.style.inner-shadow" : {
+    "translations" : {
+      "en" : "Inner"
+    },
+    "unused" : true
+  },
+  "handoff.attributes.stroke" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/stroke.cljs:75" ],
+    "translations" : {
+      "en" : "Stroke"
+    }
+  },
+  "handoff.attributes.stroke.alignment.center" : {
+    "translations" : {
+      "en" : "Center"
+    },
+    "unused" : true
+  },
+  "handoff.attributes.stroke.alignment.inner" : {
+    "translations" : {
+      "en" : "Inner"
+    },
+    "unused" : true
+  },
+  "handoff.attributes.stroke.alignment.outer" : {
+    "translations" : {
+      "en" : "Outer"
+    },
+    "unused" : true
+  },
+  "handoff.attributes.stroke.style.dashed" : {
+    "translations" : {
+      "en" : "Dashed"
+    },
+    "unused" : true
+  },
+  "handoff.attributes.stroke.style.dotted" : {
+    "translations" : {
+      "en" : "Dotted"
+    },
+    "unused" : true
+  },
+  "handoff.attributes.stroke.style.mixed" : {
+    "translations" : {
+      "en" : "Mixed"
+    },
+    "unused" : true
+  },
+  "handoff.attributes.stroke.style.none" : {
+    "translations" : {
+      "en" : "None"
+    },
+    "unused" : true
+  },
+  "handoff.attributes.stroke.style.solid" : {
+    "translations" : {
+      "en" : "Solid"
+    },
+    "unused" : true
+  },
+  "handoff.attributes.stroke.width" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/stroke.cljs:57" ],
+    "translations" : {
+      "en" : "Width"
+    }
+  },
+  "handoff.attributes.typography" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/text.cljs:159" ],
+    "translations" : {
+      "en" : "Typography"
+    }
+  },
+  "handoff.attributes.typography.font-family" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/text.cljs:89" ],
+    "translations" : {
+      "en" : "Font Family"
+    }
+  },
+  "handoff.attributes.typography.font-size" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/text.cljs:101" ],
+    "translations" : {
+      "en" : "Font Size"
+    }
+  },
+  "handoff.attributes.typography.font-style" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/text.cljs:95" ],
+    "translations" : {
+      "en" : "Font Style"
+    }
+  },
+  "handoff.attributes.typography.letter-spacing" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/text.cljs:113" ],
+    "translations" : {
+      "en" : "Letter Spacing"
+    }
+  },
+  "handoff.attributes.typography.line-height" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/text.cljs:107" ],
+    "translations" : {
+      "en" : "Line Height"
+    }
+  },
+  "handoff.attributes.typography.text-decoration" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/text.cljs:119" ],
+    "translations" : {
+      "en" : "Text Decoration"
+    }
+  },
+  "handoff.attributes.typography.text-decoration.none" : {
+    "translations" : {
+      "en" : "None"
+    },
+    "unused" : true
+  },
+  "handoff.attributes.typography.text-decoration.strikethrough" : {
+    "translations" : {
+      "en" : "Strikethrough"
+    },
+    "unused" : true
+  },
+  "handoff.attributes.typography.text-decoration.underline" : {
+    "translations" : {
+      "en" : "Underline"
+    },
+    "unused" : true
+  },
+  "handoff.attributes.typography.text-transform" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/text.cljs:125" ],
+    "translations" : {
+      "en" : "Text Transform"
+    }
+  },
+  "handoff.attributes.typography.text-transform.lowercase" : {
+    "translations" : {
+      "en" : "Lower Case"
+    },
+    "unused" : true
+  },
+  "handoff.attributes.typography.text-transform.none" : {
+    "translations" : {
+      "en" : "None"
+    },
+    "unused" : true
+  },
+  "handoff.attributes.typography.text-transform.titlecase" : {
+    "translations" : {
+      "en" : "Title Case"
+    },
+    "unused" : true
+  },
+  "handoff.attributes.typography.text-transform.uppercase" : {
+    "translations" : {
+      "en" : "Upper Case"
+    },
+    "unused" : true
+  },
+  "handoff.tabs.code" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/right_sidebar.cljs:78" ],
+    "translations" : {
+      "en" : "Code"
+    }
+  },
+  "handoff.tabs.code.selected.circle" : {
+    "translations" : {
+      "en" : "Circle"
+    },
+    "unused" : true
+  },
+  "handoff.tabs.code.selected.curve" : {
+    "translations" : {
+      "en" : "Curve"
+    },
+    "unused" : true
+  },
+  "handoff.tabs.code.selected.frame" : {
+    "translations" : {
+      "en" : "Artboard"
+    },
+    "unused" : true
+  },
+  "handoff.tabs.code.selected.group" : {
+    "translations" : {
+      "en" : "Group"
+    },
+    "unused" : true
+  },
+  "handoff.tabs.code.selected.image" : {
+    "translations" : {
+      "en" : "Image"
+    },
+    "unused" : true
+  },
+  "handoff.tabs.code.selected.multiple" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/right_sidebar.cljs:65" ],
+    "translations" : {
+      "en" : "%s Selected"
+    }
+  },
+  "handoff.tabs.code.selected.path" : {
+    "translations" : {
+      "en" : "Path"
+    },
+    "unused" : true
+  },
+  "handoff.tabs.code.selected.rect" : {
+    "translations" : {
+      "en" : "Rectangle"
+    },
+    "unused" : true
+  },
+  "handoff.tabs.code.selected.text" : {
+    "translations" : {
+      "en" : "Text"
+    },
+    "unused" : true
+  },
+  "handoff.tabs.info" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/right_sidebar.cljs:74" ],
+    "translations" : {
+      "en" : "Info"
     }
   },
   "history.alert-message" : {
@@ -982,7 +1336,7 @@
     }
   },
   "labels.logout" : {
-    "used-in" : [ "src/app/main/ui/settings.cljs:31", "src/app/main/ui/dashboard/sidebar.cljs:459" ],
+    "used-in" : [ "src/app/main/ui/settings.cljs:31", "src/app/main/ui/dashboard/sidebar.cljs:457" ],
     "translations" : {
       "en" : "Logout",
       "fr" : "Quitter",
@@ -1030,7 +1384,7 @@
     }
   },
   "labels.password" : {
-    "used-in" : [ "src/app/main/ui/settings/sidebar.cljs:75", "src/app/main/ui/dashboard/sidebar.cljs:455" ],
+    "used-in" : [ "src/app/main/ui/settings/sidebar.cljs:75", "src/app/main/ui/dashboard/sidebar.cljs:454" ],
     "translations" : {
       "en" : "Password",
       "fr" : "Mot de passe",
@@ -1120,7 +1474,7 @@
     }
   },
   "media.loading" : {
-    "used-in" : [ "src/app/main/data/media.cljs:43", "src/app/main/data/workspace/persistence.cljs:394" ],
+    "used-in" : [ "src/app/main/data/media.cljs:43", "src/app/main/data/workspace/persistence.cljs:402" ],
     "translations" : {
       "en" : "Loading image...",
       "fr" : "Chargement de l'image...",
@@ -1244,6 +1598,33 @@
       "ru" : "Вы уверены, что хотите удалить аккаунт?",
       "es" : "¿Seguro que quieres borrar tu cuenta?"
     }
+  },
+  "modals.delete-comment-thread.accept" : {
+    "translations" : {
+      "en" : null,
+      "fr" : null,
+      "es" : null,
+      "ru" : null
+    },
+    "used-in" : [ "src/app/main/ui/workspace/comments.cljs:236" ]
+  },
+  "modals.delete-comment-thread.message" : {
+    "translations" : {
+      "en" : null,
+      "fr" : null,
+      "es" : null,
+      "ru" : null
+    },
+    "used-in" : [ "src/app/main/ui/workspace/comments.cljs:235" ]
+  },
+  "modals.delete-comment-thread.title" : {
+    "translations" : {
+      "en" : null,
+      "fr" : null,
+      "es" : null,
+      "ru" : null
+    },
+    "used-in" : [ "src/app/main/ui/workspace/comments.cljs:234" ]
   },
   "modals.delete-file-confirm.accept" : {
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:82" ],
@@ -1477,7 +1858,7 @@
     "unused" : true
   },
   "viewer.empty-state" : {
-    "used-in" : [ "src/app/main/ui/viewer.cljs:42" ],
+    "used-in" : [ "src/app/main/ui/viewer/handoff.cljs:56", "src/app/main/ui/viewer.cljs:42" ],
     "translations" : {
       "en" : "No frames found on the page.",
       "fr" : "Aucun cadre trouvé sur la page.",
@@ -1486,7 +1867,7 @@
     }
   },
   "viewer.frame-not-found" : {
-    "used-in" : [ "src/app/main/ui/viewer.cljs:46" ],
+    "used-in" : [ "src/app/main/ui/viewer/handoff.cljs:60", "src/app/main/ui/viewer.cljs:46" ],
     "translations" : {
       "en" : "Frame not found.",
       "fr" : "Cadre introuvable.",
@@ -1504,7 +1885,7 @@
     }
   },
   "viewer.header.edit-page" : {
-    "used-in" : [ "src/app/main/ui/viewer/header.cljs:168" ],
+    "used-in" : [ "src/app/main/ui/viewer/header.cljs:183" ],
     "translations" : {
       "en" : "Edit page",
       "fr" : "Editer la page",
@@ -1513,7 +1894,7 @@
     }
   },
   "viewer.header.fullscreen" : {
-    "used-in" : [ "src/app/main/ui/viewer/header.cljs:179" ],
+    "used-in" : [ "src/app/main/ui/viewer/header.cljs:194" ],
     "translations" : {
       "en" : "Full Screen",
       "fr" : "Plein écran",
@@ -1594,7 +1975,7 @@
     }
   },
   "viewer.header.sitemap" : {
-    "used-in" : [ "src/app/main/ui/viewer/header.cljs:149" ],
+    "used-in" : [ "src/app/main/ui/viewer/header.cljs:156" ],
     "translations" : {
       "en" : "Sitemap",
       "fr" : "Plan du site",
@@ -1675,7 +2056,7 @@
     }
   },
   "workspace.assets.assets" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:628" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:630" ],
     "translations" : {
       "en" : "Assets",
       "fr" : "",
@@ -1684,7 +2065,7 @@
     }
   },
   "workspace.assets.box-filter-all" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:648" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:650" ],
     "translations" : {
       "en" : "All assets",
       "fr" : "",
@@ -1711,7 +2092,7 @@
     "unused" : true
   },
   "workspace.assets.colors" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:329", "src/app/main/ui/workspace/sidebar/assets.cljs:651" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:330", "src/app/main/ui/workspace/sidebar/assets.cljs:653" ],
     "translations" : {
       "en" : "Colors",
       "fr" : "",
@@ -1720,7 +2101,7 @@
     }
   },
   "workspace.assets.components" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:83", "src/app/main/ui/workspace/sidebar/assets.cljs:649" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:84", "src/app/main/ui/workspace/sidebar/assets.cljs:651" ],
     "translations" : {
       "en" : "Components",
       "fr" : "",
@@ -1729,7 +2110,7 @@
     }
   },
   "workspace.assets.delete" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:103", "src/app/main/ui/workspace/sidebar/assets.cljs:191", "src/app/main/ui/workspace/sidebar/assets.cljs:305", "src/app/main/ui/workspace/sidebar/assets.cljs:433" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:104", "src/app/main/ui/workspace/sidebar/assets.cljs:192", "src/app/main/ui/workspace/sidebar/assets.cljs:306", "src/app/main/ui/workspace/sidebar/assets.cljs:434" ],
     "translations" : {
       "en" : "Delete",
       "fr" : "",
@@ -1738,7 +2119,7 @@
     }
   },
   "workspace.assets.edit" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:304", "src/app/main/ui/workspace/sidebar/assets.cljs:432" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:305", "src/app/main/ui/workspace/sidebar/assets.cljs:433" ],
     "translations" : {
       "en" : "Edit",
       "fr" : "",
@@ -1747,7 +2128,7 @@
     }
   },
   "workspace.assets.file-library" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:531" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:532" ],
     "translations" : {
       "en" : "File library",
       "fr" : "",
@@ -1756,7 +2137,7 @@
     }
   },
   "workspace.assets.graphics" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:164", "src/app/main/ui/workspace/sidebar/assets.cljs:650" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:165", "src/app/main/ui/workspace/sidebar/assets.cljs:652" ],
     "translations" : {
       "en" : "Graphics",
       "fr" : "",
@@ -1765,7 +2146,7 @@
     }
   },
   "workspace.assets.libraries" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:631" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:633" ],
     "translations" : {
       "en" : "Libraries",
       "fr" : "",
@@ -1774,7 +2155,7 @@
     }
   },
   "workspace.assets.not-found" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:592" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:593" ],
     "translations" : {
       "en" : "No assets found",
       "fr" : "",
@@ -1783,7 +2164,7 @@
     }
   },
   "workspace.assets.rename" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:303", "src/app/main/ui/workspace/sidebar/assets.cljs:431" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:304", "src/app/main/ui/workspace/sidebar/assets.cljs:432" ],
     "translations" : {
       "en" : "Rename",
       "fr" : "",
@@ -1792,7 +2173,7 @@
     }
   },
   "workspace.assets.search" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:635" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:637" ],
     "translations" : {
       "en" : "Search assets",
       "fr" : "",
@@ -1801,7 +2182,7 @@
     }
   },
   "workspace.assets.shared" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:533" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:534" ],
     "translations" : {
       "en" : "SHARED",
       "fr" : "",
@@ -1810,7 +2191,7 @@
     }
   },
   "workspace.assets.typography" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:420", "src/app/main/ui/workspace/sidebar/assets.cljs:652" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:421", "src/app/main/ui/workspace/sidebar/assets.cljs:654" ],
     "translations" : {
       "en" : "Typographies"
     }
@@ -1852,7 +2233,7 @@
     }
   },
   "workspace.assets.typography.sample" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:255" ],
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/text.cljs:65", "src/app/main/ui/workspace/sidebar/options/typography.cljs:255" ],
     "translations" : {
       "en" : "Ag"
     }
@@ -2053,19 +2434,19 @@
     }
   },
   "workspace.libraries.colors.big-thumbnails" : {
-    "used-in" : [ "src/app/main/ui/workspace/colorpalette.cljs:169" ],
+    "used-in" : [ "src/app/main/ui/workspace/colorpalette.cljs:170" ],
     "translations" : {
       "en" : "Big thumbnails"
     }
   },
   "workspace.libraries.colors.file-library" : {
-    "used-in" : [ "src/app/main/ui/workspace/colorpicker/libraries.cljs:87", "src/app/main/ui/workspace/colorpalette.cljs:147" ],
+    "used-in" : [ "src/app/main/ui/workspace/colorpicker/libraries.cljs:87", "src/app/main/ui/workspace/colorpalette.cljs:148" ],
     "translations" : {
       "en" : "File library"
     }
   },
   "workspace.libraries.colors.recent-colors" : {
-    "used-in" : [ "src/app/main/ui/workspace/colorpicker/libraries.cljs:86", "src/app/main/ui/workspace/colorpalette.cljs:157" ],
+    "used-in" : [ "src/app/main/ui/workspace/colorpicker/libraries.cljs:86", "src/app/main/ui/workspace/colorpalette.cljs:158" ],
     "translations" : {
       "en" : "Recent colors"
     }
@@ -2077,7 +2458,7 @@
     }
   },
   "workspace.libraries.colors.small-thumbnails" : {
-    "used-in" : [ "src/app/main/ui/workspace/colorpalette.cljs:174" ],
+    "used-in" : [ "src/app/main/ui/workspace/colorpalette.cljs:175" ],
     "translations" : {
       "en" : "Small thumbnails"
     }
@@ -2182,13 +2563,13 @@
     }
   },
   "workspace.libraries.text.multiple-typography" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:267" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:268" ],
     "translations" : {
       "en" : "Multiple typographies"
     }
   },
   "workspace.libraries.text.multiple-typography-tooltip" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:269" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:270" ],
     "translations" : {
       "en" : "Unlink all typographies"
     }
@@ -2272,19 +2653,19 @@
     "unused" : true
   },
   "workspace.options.blur-options.background-blur" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/blur.cljs:78" ],
     "translations" : {
       "en" : "Background"
-    }
+    },
+    "unused" : true
   },
   "workspace.options.blur-options.layer-blur" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/blur.cljs:77" ],
     "translations" : {
       "en" : "Layer"
-    }
+    },
+    "unused" : true
   },
   "workspace.options.blur-options.title" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/blur.cljs:107" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/blur.cljs:56" ],
     "translations" : {
       "en" : "Blur"
     }
@@ -2299,7 +2680,7 @@
     }
   },
   "workspace.options.design" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options.cljs:68" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options.cljs:69" ],
     "translations" : {
       "en" : "Design",
       "fr" : "Conception",
@@ -2563,7 +2944,7 @@
     }
   },
   "workspace.options.position" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame.cljs:126", "src/app/main/ui/workspace/sidebar/options/measures.cljs:146" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame.cljs:127", "src/app/main/ui/workspace/sidebar/options/measures.cljs:146" ],
     "translations" : {
       "en" : "Position",
       "fr" : "Position",
@@ -2572,7 +2953,7 @@
     }
   },
   "workspace.options.prototype" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options.cljs:80" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options.cljs:81" ],
     "translations" : {
       "en" : "Prototype",
       "fr" : "Prototype",
@@ -2635,49 +3016,49 @@
     }
   },
   "workspace.options.shadow-options.blur" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:163" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:161" ],
     "translations" : {
       "en" : "Blur"
     }
   },
   "workspace.options.shadow-options.drop-shadow" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:129" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:127" ],
     "translations" : {
       "en" : "Drop shadow"
     }
   },
   "workspace.options.shadow-options.inner-shadow" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:130" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:128" ],
     "translations" : {
       "en" : "Inner shadow"
     }
   },
   "workspace.options.shadow-options.offsetx" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:141" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:139" ],
     "translations" : {
       "en" : "X"
     }
   },
   "workspace.options.shadow-options.offsety" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:151" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:149" ],
     "translations" : {
       "en" : "Y"
     }
   },
   "workspace.options.shadow-options.spread" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:174" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:172" ],
     "translations" : {
       "en" : "Spread"
     }
   },
   "workspace.options.shadow-options.title" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:194" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:192" ],
     "translations" : {
       "en" : "Shadow"
     }
   },
   "workspace.options.size" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame.cljs:99", "src/app/main/ui/workspace/sidebar/options/measures.cljs:116" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame.cljs:100", "src/app/main/ui/workspace/sidebar/options/measures.cljs:116" ],
     "translations" : {
       "en" : "Size",
       "fr" : "Taille",
@@ -2686,7 +3067,7 @@
     }
   },
   "workspace.options.size-presets" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame.cljs:81" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame.cljs:82" ],
     "translations" : {
       "en" : "Size presets",
       "fr" : "Tailles prédéfinies",
@@ -2767,7 +3148,7 @@
     }
   },
   "workspace.options.text-options.align-bottom" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:118" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:119" ],
     "translations" : {
       "en" : "Align bottom",
       "fr" : "Aligner en bas",
@@ -2776,7 +3157,7 @@
     }
   },
   "workspace.options.text-options.align-center" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:71" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:72" ],
     "translations" : {
       "en" : "Align center",
       "fr" : "Aligner au centre",
@@ -2785,7 +3166,7 @@
     }
   },
   "workspace.options.text-options.align-justify" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:81" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:82" ],
     "translations" : {
       "en" : "Justify",
       "fr" : "Justifier",
@@ -2794,7 +3175,7 @@
     }
   },
   "workspace.options.text-options.align-left" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:66" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:67" ],
     "translations" : {
       "en" : "Align left",
       "fr" : "Aligner à gauche",
@@ -2803,7 +3184,7 @@
     }
   },
   "workspace.options.text-options.align-middle" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:113" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:114" ],
     "translations" : {
       "en" : "Align middle",
       "fr" : "Aligner au milieu",
@@ -2812,7 +3193,7 @@
     }
   },
   "workspace.options.text-options.align-right" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:76" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:77" ],
     "translations" : {
       "en" : "Align right",
       "fr" : "Aligner à droite",
@@ -2821,7 +3202,7 @@
     }
   },
   "workspace.options.text-options.align-top" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:108" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:109" ],
     "translations" : {
       "en" : "Align top",
       "fr" : "Aligner en haut",
@@ -2830,7 +3211,7 @@
     }
   },
   "workspace.options.text-options.decoration" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:150" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:151" ],
     "translations" : {
       "en" : "Decoration",
       "fr" : "Décoration",
@@ -2839,19 +3220,19 @@
     }
   },
   "workspace.options.text-options.grow-auto-height" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:135" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:136" ],
     "translations" : {
       "en" : "Auto height"
     }
   },
   "workspace.options.text-options.grow-auto-width" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:130" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:131" ],
     "translations" : {
       "en" : "Auto width"
     }
   },
   "workspace.options.text-options.grow-fixed" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:125" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:126" ],
     "translations" : {
       "en" : "Fixed"
     }
@@ -2884,7 +3265,7 @@
     }
   },
   "workspace.options.text-options.none" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:178", "src/app/main/ui/workspace/sidebar/options/text.cljs:153" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:178", "src/app/main/ui/workspace/sidebar/options/text.cljs:154" ],
     "translations" : {
       "en" : "None",
       "fr" : "Aucune",
@@ -2893,7 +3274,7 @@
     }
   },
   "workspace.options.text-options.strikethrough" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:165" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:166" ],
     "translations" : {
       "en" : "Strikethrough",
       "fr" : "Barré",
@@ -2911,7 +3292,7 @@
     }
   },
   "workspace.options.text-options.title" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:189" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:190" ],
     "translations" : {
       "en" : "Text",
       "fr" : "Texte",
@@ -2920,7 +3301,7 @@
     }
   },
   "workspace.options.text-options.title-group" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:188" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:189" ],
     "translations" : {
       "en" : "Group text",
       "ru" : "Текст группы",
@@ -2928,7 +3309,7 @@
     }
   },
   "workspace.options.text-options.title-selection" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:187" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:188" ],
     "translations" : {
       "en" : "Selection text",
       "ru" : "Выбранный текст",
@@ -2945,7 +3326,7 @@
     }
   },
   "workspace.options.text-options.underline" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:159" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:160" ],
     "translations" : {
       "en" : "Underline",
       "fr" : "Souligner",
@@ -2990,7 +3371,7 @@
     "unused" : true
   },
   "workspace.sidebar.sitemap" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/sitemap.cljs:156" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/sitemap.cljs:164" ],
     "translations" : {
       "en" : "Pages",
       "fr" : "Pages",
@@ -3008,7 +3389,7 @@
     }
   },
   "workspace.toolbar.assets" : {
-    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:105" ],
+    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:111" ],
     "translations" : {
       "en" : "Assets (Ctrl + I)",
       "fr" : "",
@@ -3026,7 +3407,7 @@
     }
   },
   "workspace.toolbar.color-palette" : {
-    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:115" ],
+    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:121" ],
     "translations" : {
       "en" : "Color Palette (---)",
       "fr" : "Palette de couleurs (---)",
@@ -3034,7 +3415,8 @@
       "es" : "Paleta de colores (---)"
     }
   },
-   "workspace.toolbar.comments" : {
+  "workspace.toolbar.comments" : {
+    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:99" ],
     "translations" : {
       "en" : "Comments",
       "es" : "Comentarios"
@@ -3104,25 +3486,25 @@
     }
   },
   "workspace.undo.empty" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:272" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:290" ],
     "translations" : {
       "en" : "There are no history changes so far"
     }
   },
   "workspace.undo.entry.delete" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:110" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:121" ],
     "translations" : {
       "en" : "Deleted %s"
     }
   },
   "workspace.undo.entry.modify" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:109" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:120" ],
     "translations" : {
       "en" : "Modified %s"
     }
   },
   "workspace.undo.entry.move" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:111" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:122" ],
     "translations" : {
       "en" : "Moved objects"
     }
@@ -3218,7 +3600,7 @@
     "unused" : true
   },
   "workspace.undo.entry.new" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:108" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:119" ],
     "translations" : {
       "en" : "New %s"
     }
@@ -3314,13 +3696,13 @@
     "unused" : true
   },
   "workspace.undo.entry.unknown" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:112" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:123" ],
     "translations" : {
       "en" : "Operation over %s"
     }
   },
   "workspace.undo.title" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:268" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:286" ],
     "translations" : {
       "en" : "History"
     }
@@ -3360,83 +3742,5 @@
       "ru" : "Кликни чтобы закончить фигуру",
       "es" : "Pulsar para cerrar la ruta"
     }
-  },
-
-    
-    "handoff.tabs.info": "Info",
-    "handoff.tabs.code": "Code",
-
-    "handoff.tabs.code.selected.frame": "Artboard",
-    "handoff.tabs.code.selected.group": "Group",
-    "handoff.tabs.code.selected.rect": "Rectangle",
-    "handoff.tabs.code.selected.circle": "Circle",
-    "handoff.tabs.code.selected.path": "Path",
-    "handoff.tabs.code.selected.curve": "Curve",
-    "handoff.tabs.code.selected.image": "Image",
-    "handoff.tabs.code.selected.text": "Text",
-    "handoff.tabs.code.selected.multiple": "%s Selected",
-
-    "handoff.attributes.color.hex": "HEX",
-    "handoff.attributes.color.rgba": "RGBA",
-    "handoff.attributes.color.hsla": "HSLA",
-
-    "handoff.attributes.layout": "Layout",
-
-    "handoff.attributes.layout.width": "Width",
-    "handoff.attributes.layout.height": "Height",
-    "handoff.attributes.layout.left": "Left",
-    "handoff.attributes.layout.top": "Top",
-    "handoff.attributes.layout.rotation": "Rotation",
-
-    "handoff.attributes.fill": "Fill",
-
-    "handoff.attributes.stroke": "Stroke",
-    "handoff.attributes.stroke.width": "Width",
-
-    "handoff.attributes.stroke.style.solid": "Solid",
-    "handoff.attributes.stroke.style.dotted": "Dotted",
-    "handoff.attributes.stroke.style.dashed": "Dashed",
-    "handoff.attributes.stroke.style.mixed": "Mixed",
-    "handoff.attributes.stroke.style.none": "None",
-
-    "handoff.attributes.stroke.alignment.center": "Center",
-    "handoff.attributes.stroke.alignment.inner": "Inner",
-    "handoff.attributes.stroke.alignment.outer": "Outer",
-
-    "handoff.attributes.shadow": "Shadow",
-
-    "handoff.attributes.shadow.shorthand.offset-x": "X",
-    "handoff.attributes.shadow.shorthand.offset-y": "Y",
-    "handoff.attributes.shadow.shorthand.blur": "B",
-    "handoff.attributes.shadow.shorthand.spread": "S",
-
-    "handoff.attributes.shadow.style.inner-shadow": "Inner",
-    "handoff.attributes.shadow.style.drop-shadow": "Drop",
-
-    "handoff.attributes.blur": "Blur",
-    "handoff.attributes.blur.value": "Value",
-
-    "handoff.attributes.image.width": "Width",
-    "handoff.attributes.image.height": "Height",
-    "handoff.attributes.image.download": "Dowload source image",
-
-    "handoff.attributes.typography": "Typography",
-    "handoff.attributes.typography.font-family": "Font Family",
-    "handoff.attributes.typography.font-style": "Font Style",
-    "handoff.attributes.typography.font-size": "Font Size",
-    "handoff.attributes.typography.line-height": "Line Height",
-    "handoff.attributes.typography.letter-spacing": "Letter Spacing",
-    "handoff.attributes.typography.text-decoration": "Text Decoration",
-    "handoff.attributes.typography.text-transform": "Text Transform",
-
-    "handoff.attributes.content": "Content",
-
-    "handoff.attributes.typography.text-decoration.none": "None",
-    "handoff.attributes.typography.text-decoration.underline": "Underline",
-    "handoff.attributes.typography.text-decoration.strikethrough": "Strikethrough",
-
-    "handoff.attributes.typography.text-transform.none": "None",
-    "handoff.attributes.typography.text-transform.uppercase": "Upper Case",
-    "handoff.attributes.typography.text-transform.lowercase": "Lower Case",
-    "handoff.attributes.typography.text-transform.titlecase": "Title Case"
+  }
 }
