@@ -74,12 +74,8 @@
   (logjs "state" @state))
 
 (defn ^:export dump-objects []
-  (let [page-id (get @state :current-page-id)
-        objects (get-in @state [:workspace-data :pages-index page-id :objects])]
-    (logjs "index" (->> (cph/indexed-shapes objects)
-                        (d/mapm (fn [k id] (get objects id)))
-                        (map (fn [[idx obj]] (str idx " - " (:name obj))))))
-    (logjs "state" objects)))
+  (let [page-id (get @state :current-page-id)]
+    (logjs "state" (get-in @state [:workspace-data :pages-index page-id :objects]))))
 
 (defn ^:export dump-object [name]
   (let [page-id (get @state :current-page-id)]
