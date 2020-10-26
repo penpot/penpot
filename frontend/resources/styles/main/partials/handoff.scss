@@ -96,6 +96,11 @@
     position: relative;
     align-items: center;
 
+    .color-text {
+      width: 3rem;
+      text-transform: uppercase;
+    }
+
     .attributes-color-display {
       display: flex;
     }

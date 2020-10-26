@@ -10,100 +10,75 @@
 (ns app.main.ui.viewer.handoff.attributes.layout
   (:require
    [rumext.alpha :as mf]
+   [cuerdas.core :as str]
+   [app.util.i18n :refer [t]]
+   [app.common.math :as mth]
    [app.main.ui.icons :as i]
-   [app.main.ui.components.color-bullet :refer [color-bullet color-name]]))
+   [app.main.ui.viewer.handoff.attributes.common :refer [copy-cb]]))
 
+(defn copy-layout [shape]
+  (copy-cb shape
+           [:width :height :x :y :rotation]
+           :to-prop {:x "left" :y "top" :rotation "transform"}
+           :format {:rotation #(str/fmt "rotate(%sdeg)" %)}))
 
-(mf/defc layout-panel [{:keys [shapes]}]
+(mf/defc layout-block
+  [{:keys [shape locale]}]
   [:*
-   [:div.attributes-block
-    [:div.attributes-block-title
-     [:div.attributes-block-title-text "Layout"]
-     [:button.attributes-copy-button i/copy]]
+   [:div.attributes-unit-row
+    [:div.attributes-label (t locale "handoff.attributes.layout.width")]
+    [:div.attributes-value (mth/precision (:width shape) 2) "px"]
+    [:button.attributes-copy-button
+     {:on-click (copy-cb shape :width)}
+     i/copy]]
 
-    [:div.attributes-unit-row
-     [:div.attributes-label "Width"]
-     [:div.attributes-value "100px"]
-     [:button.attributes-copy-button i/copy]]
+   [:div.attributes-unit-row
+    [:div.attributes-label (t locale "handoff.attributes.layout.height")]
+    [:div.attributes-value (mth/precision (:height shape) 2) "px"]
+    [:button.attributes-copy-button
+     {:on-click (copy-cb shape :height)}
+     i/copy]]
 
-    [:div.attributes-unit-row
-     [:div.attributes-label "Height"]
-     [:div.attributes-value "100px"]
-     [:button.attributes-copy-button i/copy]]
+   (when (not= (:x shape) 0)
+     [:div.attributes-unit-row
+      [:div.attributes-label (t locale "handoff.attributes.layout.left")]
+      [:div.attributes-value (mth/precision (:x shape) 2) "px"]
+      [:button.attributes-copy-button
+       {:on-click (copy-cb shape :x :to-prop "left")}
+       i/copy]])
+   
+   (when (not= (:y shape) 0)
+     [:div.attributes-unit-row
+      [:div.attributes-label (t locale "handoff.attributes.layout.top")]
+      [:div.attributes-value (mth/precision (:y shape) 2) "px"]
+      [:button.attributes-copy-button
+       {:on-click (copy-cb shape :y :to-prop "top")}
+       i/copy]])
 
-    [:div.attributes-unit-row
-     [:div.attributes-label "Top"]
-     [:div.attributes-value "100px"]
-     [:button.attributes-copy-button i/copy]]
+   (when (not= (:rotation shape 0) 0)
+     [:div.attributes-unit-row
+      [:div.attributes-label (t locale "handoff.attributes.layout.rotation")]
+      [:div.attributes-value (mth/precision (:rotation shape) 2) "deg"]
+      [:button.attributes-copy-button
+       {:on-click (copy-cb shape
+                           :rotation
+                           :to-prop "transform"
+                           :format #(str/fmt "rotate(%sdeg)" %))}
+       i/copy]])])
 
-    [:div.attributes-unit-row
-     [:div.attributes-label "Left"]
-     [:div.attributes-value "100px"]
-     [:button.attributes-copy-button i/copy]]]
 
-   [:div.attributes-block
-    [:div.attributes-block-title
-     [:div.attributes-block-title-text "Fill"]
-     [:button.attributes-copy-button i/copy]]
+(mf/defc layout-panel
+  [{:keys [shapes locale]}]
+  (let [handle-copy (when (= (count shapes) 1)
+                      (copy-layout (first shapes)))]
+    [:div.attributes-block
+     [:div.attributes-block-title
+      [:div.attributes-block-title-text (t locale "handoff.attributes.layout")]
+      (when handle-copy
+        [:button.attributes-copy-button
+         {:on-click handle-copy}
+         i/copy])]
 
-    [:div.attributes-shadow-row
-     [:div.attributes-label "Drop"]
-     [:div.attributes-shadow
-      [:div.attributes-label "X"]
-      [:div.attributes-value "4"]]
-
-     [:div.attributes-shadow
-      [:div.attributes-label "Y"]
-      [:div.attributes-value "4"]]
-
-     [:div.attributes-shadow
-      [:div.attributes-label "B"]
-      [:div.attributes-value "0"]]
-
-     [:div.attributes-shadow
-      [:div.attributes-label "B"]
-      [:div.attributes-value "0"]]
-
-     [:button.attributes-copy-button i/copy]]
-
-    [:div.attributes-color-row
-     [:& color-bullet {:color {:color "#000000" :opacity 0.5}}]
-
-     [:*
-      [:div "#000000"]
-      [:div "100%"]]
-
-     [:select
-      [:option "Hex"]
-      [:option "RGBA"]
-      [:option "HSLA"]]
-
-     [:button.attributes-copy-button i/copy]]
-
-    [:div.attributes-stroke-row
-     [:div.attributes-label "Width"]
-     [:div.attributes-value "1px"]
-     [:div.attributes-value "Solid"]
-     [:div.attributes-label "Center"]
-     [:button.attributes-copy-button i/copy]]]
-
-   [:div.attributes-block
-    [:div.attributes-block-title
-     [:div.attributes-block-title-text "Content"]
-     [:button.attributes-copy-button i/copy]]
-
-    [:div.attributes-content-row
-     [:div.attributes-content
-      "Hi, how are you"]
-     [:button.attributes-copy-button i/copy]]]
-
-   [:div.attributes-block
-    [:div.attributes-image-row
-     [:div.attributes-image
-      #_[:img {:src "https://www.publico.es/tremending/wp-content/uploads/2019/05/Cxagv.jpg"}]
-      #_[:img {:src "https://i.blogs.es/3861b2/grumpy-cat/1366_2000.png"}]
-      [:img {:src "https://abs.twimg.com/favicons/twitter.ico"}]
-      ]]
-    [:button.download-button "Dowload source image"]]
-
-   ])
+     (for [shape shapes]
+       [:& layout-block {:shape shape
+                         :locale locale}])]))

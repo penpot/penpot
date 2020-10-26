@@ -150,10 +150,9 @@
 (mf/defc debug-icons-preview
   {::mf/wrap-props false}
   [props]
-  [:section.debug-icons-preview {:style {:background-color "black"}}
+  [:section.debug-icons-preview
    (for [[key val] (sort-by first (ns-publics 'app.main.ui.icons))]
      (when (not= key 'debug-icons-preview)
-       [:div.icon-item {:key key
-                        :style {:fill "white"}}
+       [:div.icon-item {:key key}
         (deref val)
         [:span (pr-str key)]]))])

@@ -20,7 +20,8 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.util.router :as rt]
-   [app.common.uuid :as uuid]))
+   [app.common.uuid :as uuid]
+   [app.common.pages-helpers :as cph]))
 
 ;; --- Specs
 
@@ -242,20 +243,17 @@
             frames  (get-in state [:viewer-data :frames])
             share-token  (get-in state [:viewer-data :share-token])
             index   (d/index-of-pred frames #(= (:id %) frame-id))]
-        (rx/of (rt/nav :viewer {:page-id page-id :file-id file-id} {:token share-token
-                                                                    :index index}))))))
+        (rx/of (rt/nav :viewer
+                       {:page-id page-id
+                        :file-id file-id}
+                       {:token share-token
+                        :index index}))))))
 
-;; --- Shortcuts
-
-(def shortcuts
-  {"+" #(st/emit! increase-zoom)
-   "-" #(st/emit! decrease-zoom)
-   "shift+0" #(st/emit! zoom-to-50)
-   "shift+1" #(st/emit! reset-zoom)
-   "shift+2" #(st/emit! zoom-to-200)
-   "left" #(st/emit! select-prev-frame)
-   "right" #(st/emit! select-next-frame)})
-
+(defn set-current-frame [frame-id]
+  (ptk/reify ::current-frame
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:viewer-data :current-frame-id] frame-id))))
 
 (defn deselect-all []
   (ptk/reify ::deselect-all
@@ -264,17 +262,49 @@
       (assoc-in state [:viewer-local :selected] #{}))))
 
 (defn select-shape
-  ([id] (select-shape id false))
-  ([id toggle?]
+  ([id]
    (ptk/reify ::select-shape
      ptk/UpdateEvent
      (update [_ state]
        (-> state
            (assoc-in [:viewer-local :selected] #{id}))))))
 
-;; TODO
-(defn collapse-all []
-  (ptk/reify ::collapse-all))
+(defn toggle-selection
+  [id]
+  (ptk/reify ::toggle-selection
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [selected (get-in state [:viewer-local :selected])]
+        (cond-> state
+          (not (selected id)) (update-in [:viewer-local :selected] conj id)
+          (selected id)       (update-in [:viewer-local :selected] disj id))))))
+
+(defn shift-select-to
+  [id]
+  (ptk/reify ::shift-select-to
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [objects (get-in state [:viewer-data :objects])
+            selection (-> state
+                          (get-in [:viewer-local :selected] #{})
+                          (conj id))]
+        (-> state
+            (assoc-in [:viewer-local :selected]
+                      (cph/expand-region-selection objects selection)))))))
+
+(defn select-all
+  []
+  (ptk/reify ::shift-select-to
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [objects (get-in state [:viewer-data :objects])
+            frame-id (get-in state [:viewer-data :current-frame-id])
+            selection (->> objects
+                           (filter #(= (:frame-id (second %)) frame-id))
+                           (map first)
+                           (into #{frame-id}))]
+        (-> state
+            (assoc-in [:viewer-local :selected] selection))))))
 
 (defn toggle-collapse [id]
   (ptk/reify ::toggle-collapse
@@ -288,3 +318,17 @@
     ptk/UpdateEvent
     (update [_ state]
       (update-in state [:viewer-local :hover] (if hover? conj disj) id))))
+
+
+;; --- Shortcuts
+
+(def shortcuts
+  {"+" #(st/emit! increase-zoom)
+   "-" #(st/emit! decrease-zoom)
+   "ctrl+a" #(st/emit! (select-all))
+   "shift+0" #(st/emit! zoom-to-50)
+   "shift+1" #(st/emit! reset-zoom)
+   "shift+2" #(st/emit! zoom-to-200)
+   "left" #(st/emit! select-prev-frame)
+   "right" #(st/emit! select-next-frame)})
+

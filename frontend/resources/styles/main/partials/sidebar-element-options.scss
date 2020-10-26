@@ -571,14 +571,13 @@
   svg {
     cursor: pointer;
     height: 20px;
-    stroke: $color-gray-40;
-    stroke-width: 30px;
+    fill: $color-gray-40;
     width: 20px;
   }
 
   &:hover {
     svg {
-      stroke: $color-gray-10;
+      fill: $color-gray-10;
     }
   }
 }

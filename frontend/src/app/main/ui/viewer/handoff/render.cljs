@@ -44,10 +44,17 @@
        (st/emit! (dv/hover-shape id hover?)))))
 
 (defn select-shape [{:keys [type id]}]
-  #(when-not (#{:group :frame} type)
-     (dom/prevent-default %)
-     (dom/stop-propagation %)
-     (st/emit! (dv/select-shape id))))
+  (fn [event]
+    (when-not (#{:group :frame} type)
+      (do
+        (dom/stop-propagation event)
+        (dom/prevent-default event)
+        (cond
+          (.-shiftKey event)
+          (st/emit! (dv/toggle-selection id))
+
+          :else
+          (st/emit! (dv/select-shape id)))))))
 
 (defn shape-wrapper-factory
   [component]
