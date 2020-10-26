@@ -31,8 +31,8 @@
 
         on-mount
         (fn []
-          (let [lkey1 (events/listen js/document EventType.CLICK on-click)
-                lkey2 (events/listen js/document EventType.KEYUP on-keyup)]
+          (let [lkey1 (events/listen (dom/get-root) EventType.CLICK on-click)
+                lkey2 (events/listen (dom/get-root) EventType.KEYUP on-keyup)]
             #(do
                (events/unlistenByKey lkey1)
                (events/unlistenByKey lkey2))))]

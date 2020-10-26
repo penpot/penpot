@@ -129,7 +129,7 @@
 
     (mf/use-effect
      (fn []
-       (let [listener (events/listen js/document EventType.KEYDOWN  handle-keydown)]
+       (let [listener (events/listen (dom/get-root) EventType.KEYDOWN  handle-keydown)]
          #(events/unlistenByKey listener))))
 
     (mf/use-effect

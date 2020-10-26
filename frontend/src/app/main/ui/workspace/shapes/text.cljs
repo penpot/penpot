@@ -360,8 +360,8 @@
         on-mount
         (fn []
           (when (not read-only?)
-            (let [lkey1 (events/listen js/document EventType.CLICK on-click-outside)
-                  lkey2 (events/listen js/document EventType.KEYUP on-key-up)]
+            (let [lkey1 (events/listen (dom/get-root) EventType.CLICK on-click-outside)
+                  lkey2 (events/listen (dom/get-root) EventType.KEYUP on-key-up)]
               (st/emit! (dwt/assign-editor id editor)
                         dwc/start-undo-transaction)
 

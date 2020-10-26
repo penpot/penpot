@@ -219,3 +219,6 @@
 
 (defn release-pointer [event]
   (-> event get-target (.releasePointerCapture (.-pointerId event))))
+ 
+(defn get-root []
+  (query js/document "#app"))
