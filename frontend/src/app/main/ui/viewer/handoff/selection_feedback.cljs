@@ -11,33 +11,22 @@
   (:require
    [rumext.alpha :as mf]
    [okulary.core :as l]
-   #_[app.util.object :as obj]
-   #_[app.common.data :as d]
-   #_[app.common.pages :as cp]
-   #_[app.common.pages-helpers :as cph]
-   #_[app.common.geom.matrix :as gmt]
-   #_[app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   #_[app.main.refs :as refs]
-   [app.main.store :as st]
-   #_[app.main.data.viewer :as dv]
-   #_[app.main.ui.shapes.filters :as filters]
-   #_[app.main.ui.shapes.circle :as circle]
-   #_[app.main.ui.shapes.frame :as frame]
-   #_[app.main.ui.shapes.group :as group]
-   #_[app.main.ui.shapes.icon :as icon]
-   #_[app.main.ui.shapes.image :as image]
-   #_[app.main.ui.shapes.path :as path]
-   #_[app.main.ui.shapes.rect :as rect]
-   #_[app.main.ui.shapes.text :as text]
-   #_[app.main.ui.shapes.shape :refer [shape-container]]))
+   [app.main.store :as st]))
 
 (def selection-rect-color-normal "#1FDEA7")
 (def selection-rect-color-component "#00E0FF")
 (def selection-rect-width 1)
 
-#_(def hover-ref
-  (l/derived (l/in [:viewer-local :hover]) st/state))
+(defn make-selected-shapes-iref
+  []
+  (let [selected->shapes
+        (fn [state]
+          (let [selected (get-in state [:viewer-local :selected])
+                objects (get-in state [:viewer-data :page :objects])
+                resolve-shape #(get objects %)]
+            (mapv resolve-shape selected)))]
+    #(l/derived selected->shapes st/state)))
 
 (defn make-hover-shapes-iref
   []
@@ -49,17 +38,29 @@
             (mapv resolve-shape hover)))]
     #(l/derived hover->shapes st/state)))
 
+(mf/defc selection-rect [{:keys [shape]}]
+  (let [{:keys [x y width height]} (:selrect shape)]
+    [:rect {:x x
+            :y y
+            :width width
+            :height height
+            :fill "transparent"
+            :stroke selection-rect-color-normal
+            :stroke-width selection-rect-width
+            :pointer-events "none"}]))
+
 (mf/defc selection-feedback [{:keys [frame]}]
   (let [hover-shapes-ref (mf/use-memo (make-hover-shapes-iref))
         hover-shapes (->> (mf/deref hover-shapes-ref)
-                          (map #(gsh/translate-to-frame % frame)))]
-    (for [shape hover-shapes]
-      (let [{:keys [x y width height]} (:selrect shape)]
-        [:rect {:x x
-                :y y
-                :width width
-                :height height
-                :fill "transparent"
-                :stroke selection-rect-color-normal
-                :stroke-width selection-rect-width
-                :pointer-events "none"}]))))
+                          (map #(gsh/translate-to-frame % frame)))
+        
+        selected-shapes-ref (mf/use-memo (make-selected-shapes-iref))
+        selected-shapes (->> (mf/deref selected-shapes-ref)
+                             (map #(gsh/translate-to-frame % frame)))]
+
+    [:*
+     (for [shape hover-shapes]
+       [:& selection-rect {:shape shape}])
+
+     (for [shape selected-shapes]
+       [:& selection-rect {:shape shape}])]))
