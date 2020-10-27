@@ -8,14 +8,17 @@
 ;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.main.ui.confirm
+  (:import goog.events.EventType)
   (:require
+   [rumext.alpha :as mf]
+   [goog.events :as events]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
+   [app.main.ui.keyboard :as k]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr t]]
-   [app.util.data :refer [classnames]]
-   [rumext.alpha :as mf]))
+   [app.util.data :refer [classnames]]))
 
 (mf/defc confirm-dialog
   {::mf/register modal/components
@@ -51,6 +54,18 @@
            (dom/prevent-default event)
            (st/emit! (modal/hide))
            (on-cancel props)))]
+
+    (mf/use-effect
+     (fn []
+       (let [on-keydown
+             (fn [event]
+               (when (k/enter? event)
+                 (do (dom/prevent-default event)
+                     (dom/stop-propagation event)
+                     (st/emit! (modal/hide))
+                     (on-accept props))))
+             key (events/listen (dom/get-root) EventType.KEYDOWN on-keydown)]
+         #(events/unlistenByKey key))))
 
     [:div.modal-overlay
      [:div.modal-container.confirm-dialog
