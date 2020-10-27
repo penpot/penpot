@@ -272,7 +272,7 @@
 
 (def ^:private change->name #(get-in % [:obj :name]))
 
-(defn- prepare-duplicate-changes
+(defn prepare-duplicate-changes
   "Prepare objects to paste: generate new id, give them unique names,
   move to the position of mouse pointer, and find in what frame they
   fit."
