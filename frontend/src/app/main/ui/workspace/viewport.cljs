@@ -135,7 +135,10 @@
         selected  (or (unchecked-get props "selected") #{})
         hover     (or (unchecked-get props "hover") #{})
         outline?  (set/union selected hover)
-        shapes    (->> (vals objects) (filter (comp outline? :id)))
+        show-outline? (fn [shape] (and (not (:hidden shape))
+                                       (not (:blocked shape))
+                                       (outline? (:id shape))))
+        shapes    (->> (vals objects) (filter show-outline?))
         transform (mf/deref refs/current-transform)
         color (if (or (> (count shapes) 1) (nil? (:shape-ref (first shapes))))
                 "#31EFB8"
