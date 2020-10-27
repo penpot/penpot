@@ -1282,6 +1282,13 @@
                (rx/catch on-copy-error)
                (rx/ignore)))))))
 
+(defn selected-frame? [state]
+  (let [selected (get-in state [:workspace-local :selected])
+        page-id (:current-page-id state)
+        objects (dwc/lookup-page-objects state page-id)]
+    (and (and (= 1 (count selected))
+              (= :frame (get-in objects [(first selected) :type]))))))
+
 (defn- paste-impl
   [{:keys [selected objects] :as data}]
   (ptk/reify ::paste-impl
@@ -1293,14 +1300,17 @@
             mouse-pos @ms/mouse-position
 
             page-id (:current-page-id state)
-            frame-id (-> (dwc/lookup-page-objects state page-id)
-                         (cph/frame-id-by-position  mouse-pos))
 
-            objects (d/mapm (fn [_ v] (assoc v
-                                             :frame-id frame-id
-                                             :parent-id frame-id)) objects)
+            page-objects (dwc/lookup-page-objects state page-id)
+            page-selected (get-in state [:workspace-local :selected])
 
-            delta     (gpt/subtract mouse-pos orig-pos)
+            [frame-id delta] (if (selected-frame? state)
+                               [(first page-selected)
+                                (get page-objects (first page-selected))]
+                               [(cph/frame-id-by-position page-objects mouse-pos)
+                                (gpt/subtract mouse-pos orig-pos)])
+
+            objects (d/mapm (fn [_ v] (assoc v :frame-id frame-id :parent-id frame-id)) objects)
 
             page-id   (:current-page-id state)
             unames    (-> (dwc/lookup-page-objects state page-id)
