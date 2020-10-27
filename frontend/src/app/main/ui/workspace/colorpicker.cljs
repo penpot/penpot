@@ -167,11 +167,12 @@
 
         on-select-library-color
         (fn [color]
-          (reset! dirty? true)
-          (reset! state (data->state color)))
+          (reset! state (data->state color))
+          (on-change color))
 
         on-add-library-color
-        (fn [color] (st/emit! (dwl/add-color (state->data @state))))
+        (fn [color]
+          (st/emit! (dwl/add-color (state->data @state))))
 
         on-activate-gradient
         (fn [type]
