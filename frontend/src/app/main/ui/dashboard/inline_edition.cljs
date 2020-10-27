@@ -38,6 +38,12 @@
            (dom/prevent-default event)
            (dom/stop-propagation event)))
 
+        on-blur
+        (mf/use-callback
+         (fn [event]
+           (let [name (dom/get-target-val event)]
+             (on-end name))))
+
         on-keyup
         (mf/use-callback
          (fn [event]
@@ -60,7 +66,8 @@
                             :ref input-ref
                             :on-click on-click
                             :on-change on-input
-                            :on-key-down on-keyup}]
+                            :on-key-down on-keyup
+                            :on-blur on-blur}]
      [:span.close {:on-click on-cancel} i/close]]))
 
 
