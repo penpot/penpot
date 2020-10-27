@@ -294,7 +294,7 @@
 
 (defn select-all
   []
-  (ptk/reify ::shift-select-to
+  (ptk/reify ::select-all
     ptk/UpdateEvent
     (update [_ state]
       (let [objects (get-in state [:viewer-data :objects])
