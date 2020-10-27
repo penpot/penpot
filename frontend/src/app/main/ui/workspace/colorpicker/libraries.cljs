@@ -66,8 +66,10 @@
                (vals file-colors)
 
                :else ;; Library UUID
-               (map #(merge {:file-id (uuid @selected-library)})
-                    (vals (get-in shared-libs [(uuid @selected-library) :data :colors]))))]
+               (->> (get-in shared-libs [(uuid @selected-library) :data :colors])
+                    (vals)
+                    (map #(merge % {:file-id (uuid @selected-library)}))))]
+
          (reset! current-library-colors (into [] (filter check-valid-color?) mapped-colors)))))
 
     ;; If the file colors change and the file option is selected updates the state
