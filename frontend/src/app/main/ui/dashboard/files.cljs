@@ -63,7 +63,7 @@
          (mf/deps project)
          (fn [event]
            (dom/prevent-default event)
-           (st/emit! (dd/create-file (:id project)))))]
+           (st/emit! (dd/create-file {:project-id (:id project)}))))]
 
 
     [:header.dashboard-header
