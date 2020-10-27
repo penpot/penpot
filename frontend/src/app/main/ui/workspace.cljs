@@ -88,7 +88,10 @@
        (st/emitf (dw/finalize-page page-id))))
 
     (when page
-      [:& workspace-content {:file file :layout layout :local local}])))
+      [:& workspace-content {:key page-id
+                             :file file
+                             :layout layout
+                             :local local}])))
 
 (mf/defc workspace-loader
   []

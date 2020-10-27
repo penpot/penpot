@@ -190,7 +190,10 @@
   (ptk/reify ::initialize-page
     ptk/UpdateEvent
     (update [_ state]
-      (let [local (get-in state [:workspace-cache page-id] workspace-local-default)
+      (let [prev-local (get state :workspace-local)
+            local (-> state
+                      (get-in [:workspace-cache page-id] workspace-local-default)
+                      (merge (select-keys prev-local [:vbox :vport :zoom])))
             page  (-> (get-in state [:workspace-data :pages-index page-id])
                       (select-keys [:id :name]))]
         (assoc state
@@ -311,7 +314,7 @@
                   objects (dwc/lookup-page-objects state page-id)
                   shapes  (cph/select-toplevel-shapes objects {:include-frames? true})
                   srect   (geom/selection-rect shapes)
-                  local   (assoc local :vport size)]
+                  local   (assoc local :vport size :zoom 1)]
               (cond
                 (or (not (mth/finite? (:width srect)))
                     (not (mth/finite? (:height srect))))

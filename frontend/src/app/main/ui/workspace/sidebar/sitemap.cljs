@@ -34,7 +34,7 @@
         id          (:id page)
 
         delete-fn   (mf/use-callback (mf/deps id) #(st/emit! (dw/delete-page id)))
-        on-delete   (mf/use-callback (mf/deps id) #(modal/show! :confirm-dialog {:on-accept delete-fn}))
+        on-delete   (mf/use-callback (mf/deps id) #(modal/show! :confirm {:on-accept delete-fn}))
         navigate-fn (mf/use-callback (mf/deps id) #(st/emit! (dw/go-to-page id)))
 
         on-double-click
