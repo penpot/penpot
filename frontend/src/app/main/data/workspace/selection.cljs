@@ -304,10 +304,6 @@
         renamed-obj (assoc obj :id id :name name)
         moved-obj   (geom/move renamed-obj delta)
         frames      (cph/select-frames objects)
-        frame-id    (if frame-id
-                      frame-id
-                      (dwc/calculate-frame-overlap frames moved-obj))
-
         parent-id   (or parent-id frame-id)
 
         children-changes

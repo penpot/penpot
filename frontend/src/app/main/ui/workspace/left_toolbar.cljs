@@ -42,7 +42,7 @@
                                   :id     (:id image)
                                   :path   (:path image)}}
                 aspect-ratio (/ (:width image) (:height image))]
-            (st/emit! (dw/create-and-add-shape :image shape))))
+            (st/emit! (dw/create-and-add-shape :image 0 0 shape))))
 
         on-files-selected
         (fn [js-files]

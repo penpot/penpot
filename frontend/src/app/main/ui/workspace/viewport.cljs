@@ -408,7 +408,7 @@
                                   :id (:id image)
                                   :path (:path image)}}
                 aspect-ratio (/ (:width image) (:height image))]
-            (st/emit! (dw/create-and-add-shape :image shape))))
+            (st/emit! (dw/create-and-add-shape :image x y shape))))
 
         on-drop
         (fn [event]

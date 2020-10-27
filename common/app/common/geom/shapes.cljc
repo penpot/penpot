@@ -11,7 +11,6 @@
   (:require
    [clojure.spec.alpha :as s]
    [app.common.spec :as us]
-   [app.common.pages-helpers :as cph]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
@@ -58,10 +57,17 @@
         (update :points #(mapv inc-point %))
         (update :segments #(mapv inc-point %)))))
 
+;; Duplicated from pages-helpers to remove cyclic dependencies
+(defn get-children [id objects]
+  (let [shapes (vec (get-in objects [id :shapes]))]
+    (if shapes
+      (d/concat shapes (mapcat #(get-children % objects) shapes))
+      [])))
+
 (defn recursive-move
   "Move the shape and all its recursive children."
   [shape dpoint objects]
-  (let [children-ids (cph/get-children (:id shape) objects)
+  (let [children-ids (get-children (:id shape) objects)
         children (map #(get objects %) children-ids)]
     (map #(move % dpoint) (cons shape children))))
 

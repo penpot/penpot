@@ -10,7 +10,8 @@
 (ns app.common.pages-helpers
   (:require
    [app.common.data :as d]
-   [app.common.uuid :as uuid]))
+   [app.common.uuid :as uuid]
+   [app.common.geom.shapes :as gsh]))
 
 (defn walk-pages
   "Go through all pages of a file and apply a function to each one"
@@ -247,3 +248,11 @@
          (filter (fn [[idx _]] (and (>= idx from) (<= idx to))))
          (map second)
          (into #{}))))
+
+(defn frame-id-by-position [objects position]
+  (let [frames (select-frames objects)]
+    (or
+     (->> frames
+          (d/seek #(gsh/has-point? % position))
+          :id)
+     uuid/zero)))

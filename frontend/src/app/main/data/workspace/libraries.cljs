@@ -241,7 +241,7 @@
             objects   (dwc/lookup-page-objects state page-id)
             unames    (atom (dwc/retrieve-used-names objects))
 
-            all-frames (cph/select-frames objects)
+            frame-id (cph/frame-id-by-position objects (gpt/add orig-pos delta))
 
             update-new-shape
             (fn [new-shape original-shape]
@@ -255,8 +255,7 @@
                   (as-> $
                     (assoc $ :name new-name)
                     (geom/move $ delta)
-                    (assoc $ :frame-id
-                           (dwc/calculate-frame-overlap all-frames $))
+                    (assoc $ :frame-id frame-id)
                     (assoc $ :parent-id
                            (or (:parent-id $) (:frame-id $)))
                     (assoc $ :shape-ref (:id original-shape))
