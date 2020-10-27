@@ -1694,6 +1694,7 @@
                   (select-for-drawing :text))
    "ctrl+c" #(st/emit! copy-selected)
    "ctrl+v" #(st/emit! paste)
+   "ctrl+x" #(st/emit! copy-selected delete-selected)
    "escape" #(st/emit! :interrupt (deselect-all true))
    "del" #(st/emit! delete-selected)
    "backspace" #(st/emit! delete-selected)
