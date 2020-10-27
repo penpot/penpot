@@ -192,7 +192,7 @@
      (mf/deps selected)
      (fn []
        (when (and (= (count selected) 1) selected?)
-         (.scrollIntoView (mf/ref-val dref) false))))
+         (.scrollIntoView (mf/ref-val dref) #js {:block "nearest", :behavior "smooth"}))))
 
     [:li {:on-context-menu on-context-menu
           :ref dref
