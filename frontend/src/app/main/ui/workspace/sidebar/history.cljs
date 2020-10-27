@@ -187,6 +187,10 @@
           (single? (filter #(= :group (first %)) (:delete operations)))
           (-> entries (get (first (filter #(= :group (first %)) (:delete operations)))) (last))
 
+          ;; If there is a move of shapes will have priority
+          (single? (:move operations))
+          (-> entries (get (first (:move operations))) (last))
+
           ;; Otherwise we could have the same operation between several
           ;; types (i.e: delete various shapes). If that happens we return
           ;; the operation with `:multiple` id

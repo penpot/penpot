@@ -549,11 +549,8 @@
             unames   (dwc/retrieve-used-names objects)
             name     (dwc/generate-unique-name unames (:name shape))
 
-            frames   (cph/select-frames objects)
-
-            frame-id (if (= :frame (:type shape))
-                       uuid/zero
-                       (dwc/calculate-frame-overlap frames shape))
+            frame-id (or (:frame-id attrs)
+                         (cph/frame-id-by-position objects attrs))
 
             shape    (merge
                       (if (= :frame (:type shape))
@@ -561,8 +558,7 @@
                         cp/default-shape-attrs)
                       (assoc shape
                              :id id
-                             :name name
-                             :frame-id frame-id))
+                             :name name))
 
             rchange  {:type :add-obj
                       :id id
@@ -586,19 +582,25 @@
     [(+ x (/ width 2)) (+ y (/ height 2))]))
 
 (defn create-and-add-shape
-  [type data]
+  [type frame-x frame-y data]
   (ptk/reify ::create-and-add-shape
     ptk/WatchEvent
     (watch [_ state stream]
       (let [{:keys [width height]} data
+
             [vbc-x vbc-y] (viewport-center state)
 
             x (:x data (- vbc-x (/ width 2)))
             y (:y data (- vbc-y (/ height 2)))
 
+            page-id (:current-page-id state)
+            frame-id (-> (dwc/lookup-page-objects state page-id)
+                         (cph/frame-id-by-position {:x frame-x :y frame-y}))
+
             shape (-> (cp/make-minimal-shape type)
                       (merge data)
                       (merge {:x x :y y})
+                      (assoc :frame-id frame-id)
                       (geom/setup-selrect))]
         (rx/of (add-shape shape))))))
 
@@ -1243,16 +1245,26 @@
 
 (def copy-selected
   (letfn [(prepare-selected [objects selected]
-            (let [data (reduce #(prepare %1 objects %2) {} selected)]
+            (let [data (reduce #(prepare %1 objects selected %2) {} selected)]
               {:type :copied-shapes
                :selected selected
                :objects data}))
 
-          (prepare [result objects id]
-            (let [obj (get objects id)]
+          (maybe-translate [shape objects selected]
+            (if (and (not= (:type shape) :frame)
+                     (not (contains? selected (:frame-id shape))))
+              ;; When the parent frame is not selected we change to relative
+              ;; coordinates
+              (let [frame (get objects (:frame-id shape))]
+                (geom/translate-to-frame shape frame))
+              shape))
+
+          (prepare [result objects selected id]
+            (let [obj (-> (get objects id)
+                          (maybe-translate objects selected))]
               (as-> result $$
                 (assoc $$ id obj)
-                (reduce #(prepare %1 objects %2) $$ (:shapes obj)))))
+                (reduce #(prepare %1 objects selected %2) $$ (:shapes obj)))))
 
           (on-copy-error [error]
             (js/console.error "Clipboard blocked:" error)
@@ -1279,6 +1291,15 @@
             wrapper   (geom/selection-rect selected-objs)
             orig-pos  (gpt/point (:x1 wrapper) (:y1 wrapper))
             mouse-pos @ms/mouse-position
+
+            page-id (:current-page-id state)
+            frame-id (-> (dwc/lookup-page-objects state page-id)
+                         (cph/frame-id-by-position  mouse-pos))
+
+            objects (d/mapm (fn [_ v] (assoc v
+                                             :frame-id frame-id
+                                             :parent-id frame-id)) objects)
+
             delta     (gpt/subtract mouse-pos orig-pos)
 
             page-id   (:current-page-id state)
@@ -1309,7 +1330,7 @@
                           :height height
                           :id (:id image)
                           :path (:path image)}}]
-    (st/emit! (create-and-add-shape :image shape))))
+    (st/emit! (create-and-add-shape :image x y shape))))
 
 (defn- paste-image-impl
   [image]
@@ -1378,12 +1399,16 @@
             {:keys [x y]} @ms/mouse-position
             width (min (* 7 (count text)) 700)
             height 16
+            page-id (:current-page-id state)
+            frame-id (-> (dwc/lookup-page-objects state page-id)
+                         (cph/frame-id-by-position @ms/mouse-position))
             shape (geom/setup-selrect
                    {:id id
                     :type :text
                     :name "Text"
                     :x x
                     :y y
+                    :frame-id frame-id
                     :width width
                     :height height
                     :grow-type (if (> (count text) 100) :auto-height :auto-width)
@@ -1391,7 +1416,6 @@
         (rx/of dwc/start-undo-transaction
                (dws/deselect-all)
                (add-shape shape)
-               (dwc/rehash-shape-frame-relationship [id])
                dwc/commit-undo-transaction)))))
 
 (defn update-shape-flags

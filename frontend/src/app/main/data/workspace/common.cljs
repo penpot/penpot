@@ -155,55 +155,6 @@
 
 ;; --- Common Helpers & Events
 
-(defn- calculate-frame-overlap
-  [frames shape]
-  (let [xf      (comp
-                 (filter #(geom/overlaps? % (:selrect shape)))
-                 (take 1))
-        frame   (first (into [] xf frames))]
-    (or (:id frame) uuid/zero)))
-
-(defn- calculate-shape-to-frame-relationship-changes
-  [page-id frames shapes]
-  (loop [shape  (first shapes)
-         shapes (rest shapes)
-         rch    []
-         uch    []]
-    (if (nil? shape)
-      [rch uch]
-      (let [fid (calculate-frame-overlap frames shape)]
-        (if (not= fid (:frame-id shape))
-          (recur (first shapes)
-                 (rest shapes)
-                 (conj rch {:type :mov-objects
-                            :page-id page-id
-                            :parent-id fid
-                            :shapes [(:id shape)]})
-                 (conj uch {:type :mov-objects
-                            :page-id page-id
-                            :parent-id (:frame-id shape)
-                            :shapes [(:id shape)]}))
-          (recur (first shapes)
-                 (rest shapes)
-                 rch
-                 uch))))))
-
-(defn rehash-shape-frame-relationship
-  [ids]
-  (ptk/reify ::rehash-shape-frame-relationship
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [page-id (:current-page-id state)
-            objects (lookup-page-objects state page-id)
-
-            shapes (cph/select-toplevel-shapes objects)
-            frames (cph/select-frames objects)
-
-            [rch uch] (calculate-shape-to-frame-relationship-changes page-id frames shapes)]
-        (when-not (empty? rch)
-          (rx/of (commit-changes rch uch {:commit-local? true})))))))
-
-
 (defn get-frame-at-point
   [objects point]
   (let [frames (cph/select-frames objects)]

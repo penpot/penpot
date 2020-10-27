@@ -70,6 +70,13 @@
             :on-mouse-out on-mouse-out}
      (:name frame)]))
 
+(defn make-is-moving-ref
+  [id]
+  (let [check-moving (fn [local]
+                       (and (= :move (:transform local))
+                            (contains? (:selected local) id)))]
+    (l/derived check-moving refs/workspace-local)))
+
 (defn frame-wrapper-factory
   [shape-wrapper]
   (let [frame-shape (frame/frame-shape shape-wrapper)]
@@ -80,6 +87,11 @@
       [props]
       (let [shape   (unchecked-get props "shape")
             objects (unchecked-get props "objects")
+            ghost? (unchecked-get props "ghost?")
+
+            moving-iref (mf/use-memo (mf/deps (:id shape))
+                                     #(make-is-moving-ref (:id shape)))
+            moving? (mf/deref moving-iref)
 
             selected-iref (mf/use-memo (mf/deps (:id shape))
                                        #(refs/make-selected-ref (:id shape)))
@@ -114,7 +126,9 @@
              (fn []
                (st/emit! (dws/change-hover-state (:id shape) false))))]
 
-        (when-not (:hidden shape)
+        (when (and shape
+                   (or ghost? (not moving?))
+                   (not (:hidden shape)))
           [:g {:class (when selected? "selected")
                :on-context-menu on-context-menu
                :on-double-click on-double-click
