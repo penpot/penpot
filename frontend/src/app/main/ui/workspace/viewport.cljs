@@ -461,8 +461,10 @@
         on-resize
         (fn [event]
           (let [node (mf/ref-val viewport-ref)
-                prnt (dom/get-parent node)]
-            (st/emit! (dw/update-viewport-size (dom/get-client-size prnt)))))
+                prnt (dom/get-parent node)
+                size (dom/get-client-size prnt)]
+            ;; We schedule the event so it fires after `initialize-page` event
+            (timers/schedule #(st/emit! (dw/update-viewport-size size)))))
 
         options (mf/deref refs/workspace-page-options)]
 
@@ -471,20 +473,26 @@
        (let [node (mf/ref-val viewport-ref)
              prnt (dom/get-parent node)
 
-             key1 (events/listen (dom/get-root) EventType.KEYDOWN on-key-down)
-             key2 (events/listen (dom/get-root) EventType.KEYUP on-key-up)
-             key3 (events/listen node EventType.MOUSEMOVE on-mouse-move)
-             ;; bind with passive=false to allow the event to be cancelled
-             ;; https://stackoverflow.com/a/57582286/3219895
-             key4 (events/listen js/window EventType.WHEEL on-mouse-wheel #js {:passive false})
-             key5 (events/listen js/window EventType.RESIZE on-resize)]
-         (st/emit! (dw/initialize-viewport (dom/get-client-size prnt)))
+             keys [(events/listen (dom/get-root) EventType.KEYDOWN on-key-down)
+                   (events/listen (dom/get-root) EventType.KEYUP on-key-up)
+                   (events/listen node EventType.MOUSEMOVE on-mouse-move)
+                   ;; bind with passive=false to allow the event to be cancelled
+                   ;; https://stackoverflow.com/a/57582286/3219895
+                   (events/listen js/window EventType.WHEEL on-mouse-wheel #js {:passive false})
+                   (events/listen js/window EventType.RESIZE on-resize)]]
+
          (fn []
-           (events/unlistenByKey key1)
-           (events/unlistenByKey key2)
-           (events/unlistenByKey key3)
-           (events/unlistenByKey key4)
-           (events/unlistenByKey key5)))))
+           (doseq [key keys]
+             (events/unlistenByKey key))))))
+
+    (mf/use-layout-effect
+     (fn []
+       (mf/deps page-id)
+       (let [node (mf/ref-val viewport-ref)
+             prnt (dom/get-parent node)
+             size (dom/get-client-size prnt)]
+         ;; We schedule the event so it fires after `initialize-page` event
+         (timers/schedule #(st/emit! (dw/initialize-viewport size))))))
 
     (mf/use-layout-effect (mf/deps layout) on-resize)
 
