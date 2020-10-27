@@ -19,6 +19,7 @@
    [app.main.streams :as ms]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
+   [app.util.i18n :refer [t] :as i18n]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.libraries :as dwl]
@@ -45,12 +46,14 @@
 
 (mf/defc shape-context-menu
   [{:keys [mdata] :as props}]
-  (let [{:keys [id] :as shape} (:shape mdata)
+  (let [locale (mf/deref i18n/locale)
+        {:keys [id] :as shape} (:shape mdata)
         selected (:selected mdata)
 
         do-duplicate #(st/emit! dw/duplicate-selected)
         do-delete #(st/emit! dw/delete-selected)
         do-copy #(st/emit! dw/copy-selected)
+        do-cut #(st/emit! dw/copy-selected dw/delete-selected)
         do-paste #(st/emit! dw/paste)
         do-bring-forward #(st/emit! (dw/vertical-order-selected :up))
         do-bring-to-front #(st/emit! (dw/vertical-order-selected :top))
@@ -75,46 +78,49 @@
         do-navigate-component-file #(st/emit! (dwl/nav-to-component-file
                                                 (:component-file shape)))]
     [:*
-     [:& menu-entry {:title "Copy"
+     [:& menu-entry {:title (t locale "workspace.shape.menu.copy")
                      :shortcut "Ctrl + c"
                      :on-click do-copy}]
-     [:& menu-entry {:title "Paste"
+     [:& menu-entry {:title (t locale "workspace.shape.menu.cut")
+                     :shortcut "Ctrl + x"
+                     :on-click do-cut}]
+     [:& menu-entry {:title (t locale "workspace.shape.menu.paste")
                      :shortcut "Ctrl + v"
                      :on-click do-paste}]
-     [:& menu-entry {:title "Duplicate"
+     [:& menu-entry {:title (t locale "workspace.shape.menu.duplicate")
                      :shortcut "Ctrl + d"
                      :on-click do-duplicate}]
      [:& menu-separator]
-     [:& menu-entry {:title "Bring forward"
+     [:& menu-entry {:title (t locale "workspace.shape.menu.forward")
                      :shortcut "Ctrl + ↑"
                      :on-click do-bring-forward}]
-     [:& menu-entry {:title "Bring to front"
+     [:& menu-entry {:title (t locale "workspace.shape.menu.front")
                      :shortcut "Ctrl + Shift + ↑"
                      :on-click do-bring-to-front}]
-     [:& menu-entry {:title "Send backward"
+     [:& menu-entry {:title (t locale "workspace.shape.menu.backward")
                      :shortcut "Ctrl + ↓"
                      :on-click do-send-backward}]
-     [:& menu-entry {:title "Send to back"
+     [:& menu-entry {:title (t locale "workspace.shape.menu.back")
                      :shortcut "Ctrl + Shift + ↓"
                      :on-click do-send-to-back}]
      [:& menu-separator]
 
      (when (> (count selected) 1)
        [:*
-        [:& menu-entry {:title "Group"
+        [:& menu-entry {:title (t locale "workspace.shape.menu.group")
                         :shortcut "Ctrl + g"
                         :on-click do-create-group}]
-        [:& menu-entry {:title "Mask"
+        [:& menu-entry {:title (t locale "workspace.shape.menu.mask")
                         :shortcut "Ctrl + M"
                         :on-click do-mask-group}]])
 
      (when (and (= (count selected) 1) (= (:type shape) :group))
        [:*
-         [:& menu-entry {:title "Ungroup"
+         [:& menu-entry {:title (t locale "workspace.shape.menu.ungroup")
                          :shortcut "Shift + g"
                          :on-click do-remove-group}]
          (if (:masked-group? shape)
-           [:& menu-entry {:title "Unmask"
+           [:& menu-entry {:title (t locale "workspace.shape.menu.unmask")
                            :shortcut "Shift + M"
                            :on-click do-unmask-group}]
            [:& menu-entry {:title "Mask"
@@ -122,47 +128,48 @@
                            :on-click do-mask-group}])])
 
      (if (:hidden shape)
-       [:& menu-entry {:title "Show"
+       [:& menu-entry {:title (t locale "workspace.shape.menu.show")
                        :on-click do-show-shape}]
-       [:& menu-entry {:title "Hide"
+       [:& menu-entry {:title (t locale "workspace.shape.menu.hide")
                        :on-click do-hide-shape}])
 
      (if (:blocked shape)
-       [:& menu-entry {:title "Unlock"
+       [:& menu-entry {:title (t locale "workspace.shape.menu.unlock")
                        :on-click do-unlock-shape}]
-       [:& menu-entry {:title "Lock"
+       [:& menu-entry {:title (t locale "workspace.shape.menu.lock")
                        :on-click do-lock-shape}])
 
      (when (nil? (:shape-ref shape))
        [:*
         [:& menu-separator]
-        [:& menu-entry {:title "Create component"
+        [:& menu-entry {:title (t locale "workspace.shape.menu.create-component")
                         :shortcut "Ctrl + K"
                         :on-click do-add-component}]])
 
      (when (:component-id shape)
        [:*
         [:& menu-separator]
-        [:& menu-entry {:title "Detach instance"
+        [:& menu-entry {:title (t locale "workspace.shape.menu.detach-instance")
                         :on-click do-detach-component}]
-        [:& menu-entry {:title "Reset overrides"
+        [:& menu-entry {:title (t locale "workspace.shape.menu.reset-overrides")
                         :on-click do-reset-component}]
         (if (nil? (:component-file shape))
-          [:& menu-entry {:title "Update master component"
+          [:& menu-entry {:title (t locale "workspace.shape.menu.update-master")
                           :on-click do-update-component}]
-          [:& menu-entry {:title "Go to master component file"
+          [:& menu-entry {:title (t locale "workspace.shape.menu.go-master")
                           :on-click do-navigate-component-file}])])
 
      [:& menu-separator]
-     [:& menu-entry {:title "Delete"
+     [:& menu-entry {:title (t locale "workspace.shape.menu.delete")
                      :shortcut "Supr"
                      :on-click do-delete}]]))
 
 (mf/defc viewport-context-menu
   [{:keys [mdata] :as props}]
-  (let [do-paste #(st/emit! dw/paste)]
+  (let [locale (mf/deref i18n/locale)
+        do-paste #(st/emit! dw/paste)]
     [:*
-     [:& menu-entry {:title "Paste"
+     [:& menu-entry {:title (t locale "workspace.shape.menu.paste")
                      :shortcut "Ctrl + v"
                      :on-click do-paste}]]))
 

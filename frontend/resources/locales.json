@@ -721,7 +721,7 @@
     "unused" : true
   },
   "ds.confirm-cancel" : {
-    "used-in" : [ "src/app/main/ui/confirm.cljs:36" ],
+    "used-in" : [ "src/app/main/ui/confirm.cljs:39" ],
     "translations" : {
       "en" : "Cancel",
       "fr" : "Annuler",
@@ -730,7 +730,7 @@
     }
   },
   "ds.confirm-ok" : {
-    "used-in" : [ "src/app/main/ui/confirm.cljs:37" ],
+    "used-in" : [ "src/app/main/ui/confirm.cljs:40" ],
     "translations" : {
       "en" : "Ok",
       "fr" : "Ok",
@@ -739,7 +739,7 @@
     }
   },
   "ds.confirm-title" : {
-    "used-in" : [ "src/app/main/ui/confirm.cljs:35", "src/app/main/ui/confirm.cljs:39" ],
+    "used-in" : [ "src/app/main/ui/confirm.cljs:38", "src/app/main/ui/confirm.cljs:42" ],
     "translations" : {
       "en" : "Are you sure?",
       "fr" : "Êtes-vous sûr?",
@@ -1600,31 +1600,31 @@
     }
   },
   "modals.delete-comment-thread.accept" : {
+    "used-in" : [ "src/app/main/ui/workspace/comments.cljs:236" ],
     "translations" : {
       "en" : null,
       "fr" : null,
-      "es" : null,
-      "ru" : null
-    },
-    "used-in" : [ "src/app/main/ui/workspace/comments.cljs:236" ]
+      "ru" : null,
+      "es" : null
+    }
   },
   "modals.delete-comment-thread.message" : {
+    "used-in" : [ "src/app/main/ui/workspace/comments.cljs:235" ],
     "translations" : {
       "en" : null,
       "fr" : null,
-      "es" : null,
-      "ru" : null
-    },
-    "used-in" : [ "src/app/main/ui/workspace/comments.cljs:235" ]
+      "ru" : null,
+      "es" : null
+    }
   },
   "modals.delete-comment-thread.title" : {
+    "used-in" : [ "src/app/main/ui/workspace/comments.cljs:234" ],
     "translations" : {
       "en" : null,
       "fr" : null,
-      "es" : null,
-      "ru" : null
-    },
-    "used-in" : [ "src/app/main/ui/workspace/comments.cljs:234" ]
+      "ru" : null,
+      "es" : null
+    }
   },
   "modals.delete-file-confirm.accept" : {
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:82" ],
@@ -2440,19 +2440,19 @@
     }
   },
   "workspace.libraries.colors.file-library" : {
-    "used-in" : [ "src/app/main/ui/workspace/colorpicker/libraries.cljs:87", "src/app/main/ui/workspace/colorpalette.cljs:148" ],
+    "used-in" : [ "src/app/main/ui/workspace/colorpicker/libraries.cljs:89", "src/app/main/ui/workspace/colorpalette.cljs:148" ],
     "translations" : {
       "en" : "File library"
     }
   },
   "workspace.libraries.colors.recent-colors" : {
-    "used-in" : [ "src/app/main/ui/workspace/colorpicker/libraries.cljs:86", "src/app/main/ui/workspace/colorpalette.cljs:158" ],
+    "used-in" : [ "src/app/main/ui/workspace/colorpicker/libraries.cljs:88", "src/app/main/ui/workspace/colorpalette.cljs:158" ],
     "translations" : {
       "en" : "Recent colors"
     }
   },
   "workspace.libraries.colors.save-color" : {
-    "used-in" : [ "src/app/main/ui/workspace/colorpicker.cljs:338" ],
+    "used-in" : [ "src/app/main/ui/workspace/colorpicker.cljs:339" ],
     "translations" : {
       "en" : "Save color"
     }
@@ -3361,6 +3361,138 @@
       "es" : "Usa el botón de play de la cabecera para arrancar la vista de prototipo."
     }
   },
+  "workspace.shape.menu.back" : {
+    "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:103" ],
+    "translations" : {
+      "en" : "Send to back"
+    }
+  },
+  "workspace.shape.menu.backward" : {
+    "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:100" ],
+    "translations" : {
+      "en" : "Send backward"
+    }
+  },
+  "workspace.shape.menu.copy" : {
+    "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:81" ],
+    "translations" : {
+      "en" : "Copy"
+    }
+  },
+  "workspace.shape.menu.create-component" : {
+    "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:145" ],
+    "translations" : {
+      "en" : "Create component"
+    }
+  },
+  "workspace.shape.menu.cut" : {
+    "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:84" ],
+    "translations" : {
+      "en" : "Cut"
+    }
+  },
+  "workspace.shape.menu.delete" : {
+    "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:163" ],
+    "translations" : {
+      "en" : "Delete"
+    }
+  },
+  "workspace.shape.menu.detach-instance" : {
+    "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:152" ],
+    "translations" : {
+      "en" : "Detach instance"
+    }
+  },
+  "workspace.shape.menu.duplicate" : {
+    "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:90" ],
+    "translations" : {
+      "en" : "Duplicate"
+    }
+  },
+  "workspace.shape.menu.forward" : {
+    "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:94" ],
+    "translations" : {
+      "en" : "Bring forward"
+    }
+  },
+  "workspace.shape.menu.front" : {
+    "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:97" ],
+    "translations" : {
+      "en" : "Bring to front"
+    }
+  },
+  "workspace.shape.menu.go-master" : {
+    "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:159" ],
+    "translations" : {
+      "en" : "Go to master component file"
+    }
+  },
+  "workspace.shape.menu.group" : {
+    "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:110" ],
+    "translations" : {
+      "en" : "Group"
+    }
+  },
+  "workspace.shape.menu.hide" : {
+    "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:133" ],
+    "translations" : {
+      "en" : "Hide"
+    }
+  },
+  "workspace.shape.menu.lock" : {
+    "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:139" ],
+    "translations" : {
+      "en" : "Lock"
+    }
+  },
+  "workspace.shape.menu.mask" : {
+    "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:113" ],
+    "translations" : {
+      "en" : "Mask"
+    }
+  },
+  "workspace.shape.menu.paste" : {
+    "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:87", "src/app/main/ui/workspace/context_menu.cljs:172" ],
+    "translations" : {
+      "en" : "Paste"
+    }
+  },
+  "workspace.shape.menu.reset-overrides" : {
+    "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:154" ],
+    "translations" : {
+      "en" : "Reset overrides"
+    }
+  },
+  "workspace.shape.menu.show" : {
+    "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:131" ],
+    "translations" : {
+      "en" : "Show"
+    }
+  },
+  "workspace.shape.menu.ungroup" : {
+    "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:119" ],
+    "translations" : {
+      "en" : "Ungroup"
+    }
+  },
+  "workspace.shape.menu.unlock" : {
+    "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:137" ],
+    "translations" : {
+      "en" : "Unlock"
+    }
+  },
+  "workspace.shape.menu.unmask" : {
+    "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:123" ],
+    "translations" : {
+      "en" : "Unmask"
+    }
+  },
+  "workspace.shape.menu.update-master" : {
+    "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:157" ],
+    "translations" : {
+      "en" : "Update master component"
+    }
+  },
   "workspace.sidebar.icons" : {
     "translations" : {
       "en" : "Icons",
@@ -3486,7 +3618,7 @@
     }
   },
   "workspace.undo.empty" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:290" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:294" ],
     "translations" : {
       "en" : "There are no history changes so far"
     }
@@ -3702,13 +3834,13 @@
     }
   },
   "workspace.undo.title" : {
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:286" ],
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:290" ],
     "translations" : {
       "en" : "History"
     }
   },
   "workspace.updates.dismiss" : {
-    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:542" ],
+    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:541" ],
     "translations" : {
       "en" : "Dismiss",
       "fr" : "",
@@ -3717,7 +3849,7 @@
     }
   },
   "workspace.updates.there-are-updates" : {
-    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:538" ],
+    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:537" ],
     "translations" : {
       "en" : "There are updates in shared libraries",
       "fr" : "",
@@ -3726,7 +3858,7 @@
     }
   },
   "workspace.updates.update" : {
-    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:540" ],
+    "used-in" : [ "src/app/main/data/workspace/libraries.cljs:539" ],
     "translations" : {
       "en" : "Update",
       "fr" : "",
