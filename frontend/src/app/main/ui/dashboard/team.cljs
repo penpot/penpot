@@ -56,7 +56,10 @@
 
     [:header.dashboard-header
      [:div.dashboard-title
-      [:h1 (t locale "labels.members")]]
+      [:h1 (cond
+             members-section? (t locale "labels.members")
+             settings-section? (t locale "labels.settings")
+             nil)]]
      [:nav
       [:ul
        [:li {:class (when members-section? "active")}
@@ -285,7 +288,7 @@
          [:div.label (t locale "dashboard.team-members")]
          [:div.owner
           [:span.icon [:img {:src (cfg/resolve-media-path (:photo-uri profile))}]]
-          [:span.text (:fullname profile)]]
+          [:span.text (str (:fullname profile) " ("  (t locale "labels.owner") ")") ]]
          [:div.summary
           [:span.icon i/user]
           [:span.text (t locale "dashboard.num-of-members" (count members-map))]]]
