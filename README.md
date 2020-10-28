@@ -8,6 +8,8 @@
 
 # PENPOT #
 
+We’re excited to share that Uxbox is now Penpot! We’re changing the name, but keeping the same project essence. Stay in the loop for more news comming early 2021. Alpha release is close!
+
 ![PENPOT](https://raw.githubusercontent.com/penpot/penpot/develop/docs/screenshot.png)
 
 
@@ -18,8 +20,6 @@ currently at an early development stage but we are working hard to
 bring you the beta version as soon as possible. Follow the project
 progress in Twitter or Github and stay tuned!
 
-[See SVG specification](https://www.w3.org/Graphics/SVG/)
-
 
 ## SVG based ##
 
@@ -27,6 +27,7 @@ Penpot works with SVG, a standard format, for all your designs and
 prototypes . This means that all your stuff in Penpot is portable and
 editable in many other vector tools and easy to use on the web.
 
+[See SVG specification](https://www.w3.org/Graphics/SVG/)
 
 ## Contributing ##
 
