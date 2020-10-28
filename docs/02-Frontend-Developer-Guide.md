@@ -124,7 +124,7 @@ Some keys ara treated as special cases for helping in debugging:
 
 ## Access to clojure from javascript console
 
-The uxbox namespace of the main application is exported, so that is
+The penpot namespace of the main application is exported, so that is
 accessible from javascript console in Chrome developer tools. Object
 names and data types are converted to javascript style. For example
 you can emit the event to reset zoom level by typing this at the

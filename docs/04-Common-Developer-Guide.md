@@ -6,7 +6,7 @@ and backend, such as: code style hints, architecture dicisions, etc...
 
 ## Assertions ##
 
-UXBOX source code has this types of assertions:
+Penpot source code has this types of assertions:
 
 **assert**: just using the clojure builtin `assert` macro.
 
@@ -55,7 +55,7 @@ This macro enables you have assetions on production code.
 
 **Why don't use the `clojure.spec.alpha/assert` instead of the `app.common.spec/assert`?**
 
-The uxbox variant does not peforms additional runtime checks for know
+The Penpot variant does not peforms additional runtime checks for know
 if asserts are disabled in "runtime". As a result it generates much
 simplier code at development and production builds.
 
