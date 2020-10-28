@@ -72,8 +72,9 @@
         (when handle-copy-shadow
           [:button.attributes-copy-button {:on-click handle-copy-shadow} i/copy])]
 
-       (for [shape shapes]
-         (for [shadow (:shadow shape)]
-           [:& shadow-block {:shape shape
-                             :locale locale
-                             :shadow shadow}]))])))
+       [:div.attributes-shadow-blocks
+        (for [shape shapes]
+          (for [shadow (:shadow shape)]
+            [:& shadow-block {:shape shape
+                              :locale locale
+                              :shadow shadow}]))]])))
