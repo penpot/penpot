@@ -10,6 +10,7 @@
 (ns app.main.ui.workspace.presence
   (:require
    [rumext.alpha :as mf]
+   [cuerdas.core :as str]
    [beicon.core :as rx]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -24,34 +25,39 @@
 
 (mf/defc session-cursor
   [{:keys [session] :as props}]
-  (let [point     (:point session)
+  (let [zoom      (mf/deref refs/selected-zoom)
+        point     (:point session)
         color     (:color session "#000000")
-        transform (str "translate(" (:x point) "," (:y point) ") scale(4)")]
+        transform (str/fmt "translate(%s, %s) scale(%s)" (:x point) (:y point) (/ 4 zoom))]
     [:g.multiuser-cursor {:transform transform}
      [:path {:fill color
              :d pointer-icon-path
              :font-family "sans-serif"}]
      [:g {:transform "translate(0 -291.708)"}
-      [:rect {:width "21.415"
-              :height "5.292"
-              :x "6.849"
-              :y "291.755"
+      [:rect {:width 25
+              :height 5
+              :x 7
+              :y 291.5
               :fill color
-              :fill-opacity ".893"
+              :fill-opacity 0.8
               :paint-order "stroke fill markers"
-              :rx ".794"
-              :ry ".794"}]
-      [:text {:x "9.811"
-              :y "295.216"
+              :rx 1
+              :ry 1}]
+      [:text {:x 8
+              :y 295
+              :width 25
+              :height 5
+              :overflow "hidden"
               :fill "#fff"
-              :stroke-width ".265"
+              :stroke-width 1
               :font-family "Open Sans"
-              :font-size"2.91"
-              :font-weight "400"
-              :letter-spacing"0"
-              :style {:line-height "1.25"}
-              :word-spacing "0"}
-       (:fullname session)]]]))
+              :font-size 3
+              :font-weight 400
+              :letter-spacing 0
+              :style { :line-height 1.25 }
+              :word-spacing 0}
+       (str (str/slice (:fullname session) 0 14)
+            (when (> (count (:fullname session)) 14) "..."))]]]))
 
 (mf/defc active-cursors
   {::mf/wrap [mf/memo]}
