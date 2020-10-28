@@ -15,7 +15,10 @@
    [app.common.pages-helpers :as cph]
    [app.common.geom.point :as gpt]
    [app.common.pages :as cp]
+   [app.util.logging :as log]
    [app.util.text :as ut]))
+
+(log/set-level! :warn)
 
 (defonce empty-changes [[] []])
 
@@ -97,9 +100,12 @@
   "Generate changes to synchronize all shapes in all pages of the current file,
   with the given asset of the given library."
   [asset-type library-id state]
-
   (s/assert #{:colors :components :typographies} asset-type)
   (s/assert (s/nilable ::us/uuid) library-id)
+
+  (log/info :msg "Sync local file with library"
+            :asset-type asset-type
+            :library (str (or library-id "local")))
 
   (let [library-items
         (if (nil? library-id)
@@ -129,7 +135,11 @@
   "Generate changes to synchronize all shapes inside components of the current
   file library, that use the given type of asset of the given library."
   [asset-type library-id state]
-  ;; (js/console.info "--- SYNC local library " (str asset-type) " from library " (str (or library-id "nil")))
+
+  (log/info :msg "Sync local components with library"
+            :asset-type asset-type
+            :library (str (or library-id "local")))
+
   (let [library-items
         (if (nil? library-id)
           (get-in state [:workspace-data asset-type])
@@ -157,6 +167,11 @@
   "Generate changes to synchronize all shapes in a particular container
   (a page or a component) that are linked to the given library."
   [asset-type library-id state container page-id component-id]
+
+  (if page-id
+    (log/debug :msg "Sync page in local file" :page-id page-id)
+    (log/debug :msg "Sync component in local library" :component-id component-id))
+
   (let [has-asset-reference? (has-asset-reference-fn asset-type library-id)
         linked-shapes (cph/select-objects has-asset-reference? container)]
     (loop [shapes (seq linked-shapes)
@@ -336,6 +351,7 @@
   If reset? is true, all changed attributes will be copied and the 'touched'
   flags in the instance shape will be cleared."
   [page-id component-id shape-id local-file libraries reset?]
+  (log/debug :msg "Sync shape and children" :shape (str shape-id) :reset? reset?)
   (let [container      (cph/get-container page-id component-id local-file)
         shape          (cph/get-shape container shape-id)
         component      (cph/get-component (:component-id shape)
@@ -356,6 +372,9 @@
 
 (defn- generate-sync-shape-and-children-normal
   [page-id component-id container shape component root-shape root-component reset?]
+  (log/trace :msg "Sync shape (normal)"
+             :shape (str (:name shape))
+             :component (:name component))
   (let [[rchanges uchanges]
         (generate-sync-shape<-component shape
                                         root-shape
@@ -399,6 +418,9 @@
 
 (defn- generate-sync-shape-and-children-nested
   [page-id component-id container shape component root-shape root-component reset?]
+  (log/trace :msg "Sync shape (nested)"
+             :shape (str (:name shape))
+             :component (:name component))
   (let [component-shape (d/seek #(= (:shape-ref %)
                                     (:shape-ref shape))
                                 (vals (:objects component)))
@@ -447,6 +469,7 @@
   And if the component shapes are, in turn, instances of a second component,
   their 'touched' flags will be set accordingly."
   [page-id shape-id local-file libraries]
+  (log/debug :msg "Sync inverse shape and children" :shape (str shape-id))
   (let [page           (cph/get-container page-id nil local-file)
         shape          (cph/get-shape page shape-id)
         component      (cph/get-component (:component-id shape)
@@ -464,6 +487,9 @@
 
 (defn- generate-sync-shape-inverse-normal
   [page shape component root-shape root-component]
+  (log/trace :msg "Sync shape inverse (normal)"
+             :shape (str (:name shape))
+             :component (:name component))
   (let [[rchanges uchanges]
         (generate-sync-shape->component shape
                                         root-shape
@@ -499,6 +525,9 @@
 
 (defn- generate-sync-shape-inverse-nested
   [page shape component root-shape root-component]
+  (log/trace :msg "Sync shape inverse (nested)"
+             :shape (str (:name shape))
+             :component (:name component))
   (let [component-shape (d/seek #(= (:shape-ref %)
                                     (:shape-ref shape))
                                 (vals (:objects component)))
@@ -558,18 +587,12 @@
   "Generate changes to synchronize one shape inside a component, with other
   shape that is linked to it."
   [shape root-shape root-component component page-id]
-  ;; ===== Uncomment this to debug =====
-  ;; (js/console.log "component" (clj->js component))
   (if (nil? component)
     empty-changes
     (let [component-shape (get (:objects component) (:shape-ref shape))]
-      ;; ===== Uncomment this to debug =====
-      ;; (js/console.log "component-shape" (clj->js component-shape))
       (if (nil? component-shape)
         empty-changes
-        (let [;; ===== Uncomment this to debug =====
-              ;; _(js/console.info "update" (:name shape) "->" (:name component-shape))
-              [rchanges1 uchanges1]
+        (let [[rchanges1 uchanges1]
               (update-attrs component-shape
                             shape
                             root-component
@@ -680,13 +703,11 @@
                      set-touched? false
                      copy-touched? false}}]
 
-  ;; === Uncomment this to debug synchronization ===
-  ;; (println "SYNC"
-  ;;          (:name origin-shape)
-  ;;          "->"
-  ;;          (if page-id "[W]" "[C]")
-  ;;          (:name dest-shape)
-  ;;          (str options))
+  (log/info :msg (str "SYNC "
+                      (:name origin-shape)
+                      " -> "
+                      (if page-id "[W] " "[C] ")
+                      (:name dest-shape)))
 
   (let [; The position attributes need a special sync algorith, because we do
         ; not synchronize the absolute position, but the position relative of

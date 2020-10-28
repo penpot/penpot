@@ -27,9 +27,12 @@
    [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.time :as dt]
+   [app.util.logging :as log]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
+
+(log/set-level! :warn)
 
 (declare sync-file)
 
@@ -438,7 +441,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       ;; ===== Uncomment this to debug =====
-      ;; (js/console.info "##### RESET-COMPONENT of shape" (str id))
+      (log/info :msg "RESET-COMPONENT of shape" :id (str id))
       (let [[rchanges uchanges]
             (dwlh/generate-sync-shape-and-children-components (get state :current-page-id)
                                                               nil
@@ -447,7 +450,7 @@
                                                               (get state :workspace-libraries)
                                                               true)]
         ;; ===== Uncomment this to debug =====
-        ;; (js/console.debug "rchanges" (clj->js rchanges))
+        (log/debug :msg "RESET-COMPONENT finished" :js/rchanges rchanges)
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 
@@ -461,7 +464,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       ;; ===== Uncomment this to debug =====
-      ;; (js/console.info "##### UPDATE-COMPONENT of shape" (str id))
+      (log/info :msg "UPDATE-COMPONENT of shape" :id (str id))
       (let [page-id (:current-page-id state)
             objects (dwc/lookup-page-objects state page-id)
             shape   (get objects id)
@@ -474,7 +477,7 @@
                                               (get state :workspace-libraries))]
 
         ;; ===== Uncomment this to debug =====
-        ;; (js/console.debug "rchanges" (clj->js rchanges))
+        (log/debug :msg "UPDATE-COMPONENT finished" :js/rchanges rchanges)
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 
@@ -497,7 +500,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       ;; ===== Uncomment this to debug =====
-      (js/console.info "##### SYNC-FILE" (str (or file-id "local")))
+      (log/info :msg "SYNC-FILE" :file (str (or file-id "local")))
       (let [library-changes [(dwlh/generate-sync-library :components file-id state)
                              (dwlh/generate-sync-library :colors file-id state)
                              (dwlh/generate-sync-library :typographies file-id state)]
@@ -511,7 +514,7 @@
                                (->> library-changes (remove nil?) (map second) (flatten))
                                (->> file-changes (remove nil?) (map second) (flatten)))]
         ;; ===== Uncomment this to debug =====
-        ;; (js/console.debug "rchanges" (clj->js rchanges))
+        (log/debug :msg "SYNC-FILE finished" :js/rchanges rchanges)
         (rx/concat
           (rx/of (dm/hide-tag :sync-dialog))
           (when rchanges
@@ -538,14 +541,14 @@
     ptk/WatchEvent
     (watch [_ state stream]
       ;; ===== Uncomment this to debug =====
-      (js/console.info "##### SYNC-FILE" (str (or file-id "local")) "(2nd stage)")
+      (log/info :msg "SYNC-FILE (2nd stage)" :file (str (or file-id "local")))
       (let [[rchanges1 uchanges1] (dwlh/generate-sync-file :components nil state)
             [rchanges2 uchanges2] (dwlh/generate-sync-library :components file-id state)
             rchanges (d/concat rchanges1 rchanges2)
             uchanges (d/concat uchanges1 uchanges2)]
         (when rchanges
           ;; ===== Uncomment this to debug =====
-          ;; (js/console.debug "rchanges" (clj->js rchanges))
+          (log/debug :msg "SYNC-FILE (2nd stage) finished" :js/rchanges rchanges)
           (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})))))))
 
 (def ignore-sync
