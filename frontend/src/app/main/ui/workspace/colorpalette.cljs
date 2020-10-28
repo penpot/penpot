@@ -191,8 +191,10 @@
      [:span.right-arrow {:on-click on-right-arrow-click} i/arrow-slide]]))
 
 (defn library->colors [shared-libs selected]
-  (map #(merge {:file-id selected} %)
-       (vals (get-in shared-libs [selected :data :colors]))))
+  (map #(merge % {:file-id selected})
+       (-> shared-libs
+           (get-in [selected :data :colors])
+           (vals))))
 
 (mf/defc colorpalette
   [{:keys [left-sidebar?]}]
