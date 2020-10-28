@@ -56,7 +56,7 @@
 
                                   :selected #{}
                                   :collapsed #{}
-                                  :hover #{}}))
+                                  :hover nil}))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -317,8 +317,7 @@
   (ptk/reify ::hover-shape
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:viewer-local :hover] (if hover? conj disj) id))))
-
+      (assoc-in state [:viewer-local :hover] (when hover? id)))))
 
 ;; --- Shortcuts
 

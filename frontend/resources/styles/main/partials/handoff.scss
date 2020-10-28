@@ -108,6 +108,8 @@
     .color-bullet {
       width: 24px;
       height: 24px;
+      border-radius: $br-small;
+      border: 1px solid $color-gray-60;
     }
     .attributes-copy-button {
       padding: 1rem 0.5rem;
@@ -252,5 +254,12 @@
       opacity: 1;
     }
   }
-                                               
+
+  .attributes-shadow-block {
+    border-top: 1px solid $color-gray-60;
+  }
+
+  .attributes-shadow-blocks :first-child {
+    border-top: none;
+  }
 }
