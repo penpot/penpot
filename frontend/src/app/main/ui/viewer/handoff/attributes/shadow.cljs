@@ -12,20 +12,12 @@
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
    [app.util.i18n :refer [t]]
-   [app.util.color :as uc]
+   [app.util.code-gen :as cg]
    [app.main.ui.icons :as i]
    [app.main.ui.viewer.handoff.attributes.common :refer [copy-cb color-row]]))
 
 (defn has-shadow? [shape]
   (:shadow shape))
-
-(defn shadow->css [shadow]
-  (let [{:keys [style offset-x offset-y blur spread]} shadow
-        css-color (uc/color->background (:color shadow))]
-    (str
-     (if (= style :inner-shadow) "inset " "")
-     (str/fmt "%spx %spx %spx %spx %s" offset-x offset-y blur spread css-color))))
-
 
 (mf/defc shadow-block [{:keys [shape locale shadow]}]
   (let [color-format (mf/use-state :hex)]
@@ -52,7 +44,7 @@
        {:on-click (copy-cb shadow
                            :style
                            :to-prop "box-shadow"
-                           :format #(shadow->css shadow))}
+                           :format #(cg/shadow->css shadow))}
        i/copy]]
      [:& color-row {:color (:color shadow)
                     :format @color-format
@@ -64,7 +56,7 @@
                              (copy-cb (first shapes)
                                       :shadow
                                       :to-prop "box-shadow"
-                                      :format #(str/join ", " (map shadow->css (:shadow (first shapes))))))]
+                                      :format #(str/join ", " (map cg/shadow->css (:shadow (first shapes))))))]
     (when (seq shapes)
       [:div.attributes-block
        [:div.attributes-block-title

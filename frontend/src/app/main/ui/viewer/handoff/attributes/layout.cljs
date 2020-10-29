@@ -18,8 +18,8 @@
 
 (defn copy-layout [shape]
   (copy-cb shape
-           [:width :height :x :y :rotation]
-           :to-prop {:x "left" :y "top" :rotation "transform"}
+           [:width :height :x :y :radius :rx]
+           :to-prop {:x "left" :y "top" :rotation "transform" :rx "border-radius"}
            :format {:rotation #(str/fmt "rotate(%sdeg)" %)}))
 
 (mf/defc layout-block
@@ -53,6 +53,14 @@
       [:div.attributes-value (mth/precision (:y shape) 2) "px"]
       [:button.attributes-copy-button
        {:on-click (copy-cb shape :y :to-prop "top")}
+       i/copy]])
+
+   (when (not= (:rx shape) 0)
+     [:div.attributes-unit-row
+      [:div.attributes-label (t locale "handoff.attributes.layout.radius")]
+      [:div.attributes-value (mth/precision (:rx shape) 2) "px"]
+      [:button.attributes-copy-button
+       {:on-click (copy-cb shape :rx :to-prop "border-radius")}
        i/copy]])
 
    (when (not= (:rotation shape 0) 0)
