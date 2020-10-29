@@ -2118,6 +2118,14 @@
       "es" : "Borrar"
     }
   },
+  "workspace.assets.duplicate" : {
+    "translations" : {
+      "en" : "Duplicate",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Duplicar"
+    }
+  },
   "workspace.assets.edit" : {
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:305", "src/app/main/ui/workspace/sidebar/assets.cljs:433" ],
     "translations" : {
