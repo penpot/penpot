@@ -21,7 +21,6 @@
    [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.circle :as circle]
-   [app.main.ui.shapes.icon :as icon]
    [app.main.ui.shapes.image :as image]
    [app.main.ui.shapes.path :as path]
    [app.main.ui.shapes.rect :as rect]
@@ -85,7 +84,6 @@
            (case (:type shape)
              :curve  [:> path/path-shape opts]
              :text   [:> text/text-shape opts]
-             :icon   [:> icon/icon-shape opts]
              :rect   [:> rect/rect-shape opts]
              :path   [:> path/path-shape opts]
              :image  [:> image/image-shape opts]

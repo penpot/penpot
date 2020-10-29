@@ -32,7 +32,6 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
-   [app.main.ui.shapes.icon :as icon]
    [app.main.ui.workspace.sidebar.options.typography :refer [typography-entry]]
    [app.util.data :refer [matches-search]]
    [app.util.dom :as dom]

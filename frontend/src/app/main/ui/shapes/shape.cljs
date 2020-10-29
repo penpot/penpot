@@ -29,6 +29,7 @@
         group-props (-> props
                         (obj/clone)
                         (obj/without ["shape" "children"])
+                        (obj/set! "id" (str "shape-" (:id shape)))
                         (obj/set! "className" "shape")
                         (obj/set! "filter" (filters/filter-str filter-id shape)))]
     [:& (mf/provider muc/render-ctx) {:value render-id}

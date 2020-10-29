@@ -19,7 +19,6 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
-   [app.main.ui.shapes.icon :as icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t]]
    [app.util.object :as obj]
@@ -35,7 +34,6 @@
   [{:keys [shape] :as props}]
   (case (:type shape)
     :frame i/artboard
-    :icon [:& icon/icon-svg {:shape shape}]
     :image i/image
     :line i/line
     :circle i/circle

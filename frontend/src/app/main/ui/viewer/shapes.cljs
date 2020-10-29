@@ -21,7 +21,6 @@
    [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.group :as group]
-   [app.main.ui.shapes.icon :as icon]
    [app.main.ui.shapes.image :as image]
    [app.main.ui.shapes.path :as path]
    [app.main.ui.shapes.rect :as rect]
@@ -86,10 +85,6 @@
   [show-interactions?]
   (generic-wrapper-factory rect/rect-shape show-interactions?))
 
-(defn icon-wrapper
-  [show-interactions?]
-  (generic-wrapper-factory icon/icon-shape show-interactions?))
-
 (defn image-wrapper
   [show-interactions?]
   (generic-wrapper-factory image/image-shape show-interactions?))
@@ -142,7 +137,6 @@
   [objects show-interactions?]
   (let [path-wrapper   (path-wrapper show-interactions?)
         text-wrapper   (text-wrapper show-interactions?)
-        icon-wrapper   (icon-wrapper show-interactions?)
         rect-wrapper   (rect-wrapper show-interactions?)
         image-wrapper  (image-wrapper show-interactions?)
         circle-wrapper (circle-wrapper show-interactions?)]
@@ -160,7 +154,6 @@
             (case (:type shape)
               :curve  [:> path-wrapper opts]
               :text   [:> text-wrapper opts]
-              :icon   [:> icon-wrapper opts]
               :rect   [:> rect-wrapper opts]
               :path   [:> path-wrapper opts]
               :image  [:> image-wrapper opts]

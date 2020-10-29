@@ -52,7 +52,6 @@
         props (-> (attrs/extract-style-attrs shape)
                   (obj/merge!
                    #js {:transform transform
-                        :id (str "shape-" id)
                         :d pdata}))]
     (if background?
       [:g {:mask mask-id}
