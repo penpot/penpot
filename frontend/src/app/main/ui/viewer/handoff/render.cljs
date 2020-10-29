@@ -26,7 +26,6 @@
    [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.group :as group]
-   [app.main.ui.shapes.icon :as icon]
    [app.main.ui.shapes.image :as image]
    [app.main.ui.shapes.path :as path]
    [app.main.ui.shapes.rect :as rect]
@@ -111,7 +110,6 @@
   [objects show-interactions?]
   (let [path-wrapper   (shape-wrapper-factory path/path-shape)
         text-wrapper   (shape-wrapper-factory text/text-shape)
-        icon-wrapper   (shape-wrapper-factory icon/icon-shape)
         rect-wrapper   (shape-wrapper-factory rect/rect-shape)
         image-wrapper  (shape-wrapper-factory image/image-shape)
         circle-wrapper (shape-wrapper-factory circle/circle-shape)]
@@ -130,7 +128,6 @@
             (case (:type shape)
               :curve  [:> path-wrapper opts]
               :text   [:> text-wrapper opts]
-              :icon   [:> icon-wrapper opts]
               :rect   [:> rect-wrapper opts]
               :path   [:> path-wrapper opts]
               :image  [:> image-wrapper opts]
@@ -163,7 +160,8 @@
                       (mf/deps objects)
                       #(frame-container-factory objects))]
 
-    [:svg {:view-box vbox
+    [:svg {:id "svg-frame"
+           :view-box vbox
            :width width
            :height height
            :version "1.1"

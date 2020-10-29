@@ -44,7 +44,7 @@
              :letter-spacing
              :text-decoration
              :text-transform]
-   :to-prop {:fill-color "color" }
+   :to-prop {:fill-color "color"}
    :format  {:font-family #(str "'" % "'")
              :font-style #(str "'" % "'")
              :font-size #(str % "px")
@@ -125,7 +125,7 @@
         shape-format  (->> text-shape-style vals (map :format) (reduce merge))
 
 
-        text-values (->> (ut/search-text-attrs (:content shape) (:props style-text))
+        text-values (->> (ut/search-text-attrs (:content shape) (conj (:props style-text) :fill-color-gradient))
                          (merge ut/default-text-attrs))]
 
     (str/join

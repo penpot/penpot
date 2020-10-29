@@ -10,31 +10,38 @@
 (ns app.main.ui.viewer.handoff.code
   (:require
    ["highlight.js" :as hljs]
+   ["js-beautify" :as beautify]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
    [app.util.i18n :as i18n]
    [app.util.color :as uc]
+   [app.util.dom :as dom]
    [app.util.webapi :as wapi]
    [app.util.code-gen :as cg]
    [app.main.ui.icons :as i]
    [app.common.geom.shapes :as gsh]))
 
-(def svg-example
-  "<rect
-  x=\"629\"
-  y=\"169\"
-  width=\"176\"
-  height=\"211\"
-  fill=\"#ffffff\"
-  fill-opacity=\"1\">
-</rect>")
-
-
 (defn generate-markup-code [type shapes]
-  svg-example)
+  (let [frame (dom/query js/document "#svg-frame")
+        markup-shape
+        (fn [shape]
+          (let [selector (str "#shape-" (:id shape) (when (= :text (:type shape)) " .root"))]
+            (when-let [el (and frame (dom/query frame selector))]
+              (str
+               (str/fmt "<!-- %s -->" (:name shape))
+               (.-outerHTML el)))))]
+    (->> shapes
+         (map markup-shape )
+         (remove nil?)
+         (str/join "\n\n"))))
 
 (mf/defc code-block [{:keys [code type]}]
-  (let [block-ref (mf/use-ref)]
+  (let [code (-> code
+                 (str/replace "<defs></defs>" "")
+                 (str/replace "><" ">\n<"))
+        code (cond-> code
+               (= type "svg") (beautify/html #js {"indent_size" 2}))
+        block-ref (mf/use-ref)]
     (mf/use-effect
      (mf/deps code type block-ref)
      (fn []
@@ -52,7 +59,7 @@
                     (map #(gsh/translate-to-frame % frame)))
 
         style-code (cg/generate-style-code @style-type shapes)
-        markup-code (generate-markup-code @markup-type shapes)]
+        markup-code (mf/use-memo (mf/deps shapes) #(generate-markup-code @markup-type shapes))]
     [:div.element-options
      [:div.code-block
       [:div.code-row-lang
@@ -74,7 +81,7 @@
       [:div.code-row-lang
        [:select.code-selection
         [:option "SVG"]
-        #_[:option "HTML"]]
+        [:option "HTML"]]
 
        [:button.attributes-copy-button
         {:on-click #(wapi/write-to-clipboard markup-code)}
@@ -85,5 +92,3 @@
                        :code markup-code}]]]
 
      ]))
-
-

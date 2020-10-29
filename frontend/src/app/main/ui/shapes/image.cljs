@@ -43,7 +43,6 @@
                      #js {:x x
                           :y y
                           :transform transform
-                          :id (str "shape-" id)
                           :width width
                           :height height
                           :preserveAspectRatio "none"

@@ -18,7 +18,6 @@
    [app.main.ui.cursors :as cur]
    [app.main.ui.shapes.rect :as rect]
    [app.main.ui.shapes.circle :as circle]
-   [app.main.ui.shapes.icon :as icon]
    [app.main.ui.shapes.image :as image]
    [app.main.data.workspace.selection :as dws]
    [app.main.store :as st]
@@ -40,7 +39,6 @@
 (declare frame-wrapper)
 
 (def circle-wrapper (common/generic-wrapper-factory circle/circle-shape))
-(def icon-wrapper (common/generic-wrapper-factory icon/icon-shape))
 (def image-wrapper (common/generic-wrapper-factory image/image-shape))
 (def rect-wrapper (common/generic-wrapper-factory rect/rect-shape))
 
@@ -113,7 +111,6 @@
          :path [:> path/path-wrapper opts]
          :text [:> text/text-wrapper opts]
          :group [:> group-wrapper opts]
-         :icon [:> icon-wrapper opts]
          :rect [:> rect-wrapper opts]
          :image [:> image-wrapper opts]
          :circle [:> circle-wrapper opts]

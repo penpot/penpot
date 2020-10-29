@@ -30,6 +30,7 @@
   "dependencies": {
     "date-fns": "^2.15.0",
     "highlight.js": "^10.3.1",
+    "js-beautify": "^1.13.0",
     "map-stream": "0.0.7",
     "mousetrap": "^1.6.5",
     "randomcolor": "^0.6.2",
