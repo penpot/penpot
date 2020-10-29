@@ -177,54 +177,87 @@
                      :font-size (/ font-size zoom)}}
       size-label]]))
 
-
-(mf/defc distance-display [{:keys [type from to zoom]}]
-  (let [h-lines (let [y (+ (:y from) (/ (:height from) 2))]
-                  (->> (calculate-distance-lines (:x1 from) (:x2 from) (:x1 to) (:x2 to))
-                       (map (fn [[start end]] [start y end y]))))
-
-        v-lines (let [x (+ (:x from) (/ (:width from) 2))]
-                  (->> (calculate-distance-lines (:y1 from) (:y2 from) (:y1 to) (:y2 to))
-                       (map (fn [[start end]] [x start x end]))))
-
-        lines (d/concat [] v-lines h-lines)
-
-        distance-pill-width (/ distance-pill-width zoom)
+(mf/defc distance-display-pill [{:keys [x y zoom distance frame]}]
+  (let [distance-pill-width (/ distance-pill-width zoom)
         distance-pill-height (/ distance-pill-height zoom)
         distance-line-stroke (/ distance-line-stroke zoom)
         font-size (/ font-size zoom)
         text-padding (/ 3 zoom)
-        distance-border-radius (/ distance-border-radius zoom)]
+        distance-border-radius (/ distance-border-radius zoom)
+
+        {frame-width :width frame-height :height} frame
+
+        rect-x (- x (/ distance-pill-width 2))
+        rect-y (- y (/ distance-pill-height 2))
+
+        text-x x
+        text-y (+ y text-padding)
+
+        offset-x (cond (< rect-x 0) (- rect-x)
+                       (> (+ rect-x distance-pill-width) frame-width) (- frame-width (+ rect-x distance-pill-width))
+                       :else 0)
+
+        offset-y (cond (< rect-y 0) (- rect-y)
+                       (> (+ rect-y distance-pill-height) frame-height) (- frame-height (+ rect-y distance-pill-height))
+                       :else 0)
+
+        ]
+    [:g.distance-pill
+     [:rect {:x (+ rect-x offset-x)
+             :y (+ rect-y offset-y)
+             :rx distance-border-radius
+             :ry distance-border-radius
+             :width distance-pill-width
+             :height distance-pill-height
+             :style {:fill distance-color}}]
+
+     [:text {:x (+ text-x offset-x)
+             :y (+ text-y offset-y)
+             :rx distance-border-radius
+             :ry distance-border-radius
+             :text-anchor "middle"
+             :width distance-pill-width
+             :height distance-pill-height
+             :style {:fill distance-text-color
+                     :font-size font-size}}
+      distance]])
+  )
+
+(mf/defc distance-display [{:keys [type from to zoom frame]}]
+  (let [fixed-x (if (gsh/fully-contained? from to)
+                  (+ (:x to) (/ (:width to) 2))
+                  (+ (:x from) (/ (:width from) 2)))
+        fixed-y (if (gsh/fully-contained? from to)
+                  (+ (:y to) (/ (:height to) 2))
+                  (+ (:y from) (/ (:height from) 2)))
+
+        v-lines (->> (calculate-distance-lines (:y1 from) (:y2 from) (:y1 to) (:y2 to))
+                     (map (fn [[start end]] [fixed-x start fixed-x end])))
+
+        h-lines (->> (calculate-distance-lines (:x1 from) (:x2 from) (:x1 to) (:x2 to))
+                     (map (fn [[start end]] [start fixed-y end fixed-y])))
+
+        lines (d/concat [] v-lines h-lines)]
 
     (for [[x1 y1 x2 y2] lines]
       (let [center-x (+ x1 (/ (- x2 x1) 2))
-            center-y (+ y1 (/ (- y2 y1) 2))]
+            center-y (+ y1 (/ (- y2 y1) 2))
+            distance (gpt/distance (gpt/point x1 y1) (gpt/point x2 y2))]
         [:g.distance-line {:key (str "line-%s-%s-%s-%s" x1 y1 x2 y2)}
-         [:line {:x1 x1
-                 :y1 y1
-                 :x2 x2
-                 :y2 y2
-                 :style {:stroke distance-color
-                         :stroke-width distance-line-stroke}}]
-         [:rect {:x (- center-x (/ distance-pill-width 2))
-                 :y (- center-y (/ distance-pill-height 2))
-                 :rx distance-border-radius
-                 :ry distance-border-radius
-                 :width distance-pill-width
-                 :height distance-pill-height
-                 :style {:fill distance-color}}]
+         [:line
+          {:x1 x1
+           :y1 y1
+           :x2 x2
+           :y2 y2
+           :style {:stroke distance-color
+                   :stroke-width distance-line-stroke}}]
 
-         [:text {:x center-x
-                 :y (+ center-y text-padding)
-                 :rx distance-border-radius
-                 :ry distance-border-radius
-                 :text-anchor "middle"
-                 :width distance-pill-width
-                 :height distance-pill-height
-                 :style {:fill distance-text-color
-                         :font-size font-size}}
-          (str (mth/round
-                (gpt/distance (gpt/point x1 y1) (gpt/point x2 y2))) "px")]]))))
+         [:& distance-display-pill
+          {:x center-x
+           :y center-y
+           :zoom zoom
+           :distance (str (mth/round distance) "px")
+           :frame frame}]]))))
 
 (mf/defc selection-feedback [{:keys [frame]}]
   (let [zoom (mf/deref selected-zoom)
@@ -246,11 +279,11 @@
 
        (if (and (not-empty selected-shapes) (not hover-shape))
          [:g.hover-shapes
-          [:& distance-display {:from (frame->selrect frame) :to selrect :zoom zoom}]]
+          [:& distance-display {:from (frame->selrect frame) :to selrect :zoom zoom :frame frame}]]
 
          (let [hover-selrect (-> hover-shape (gsh/translate-to-frame frame) :selrect)]
            [:g.hover-shapes
             [:& selection-rect {:type :hover :selrect hover-selrect :zoom zoom}]
             [:& size-display {:selrect hover-selrect :zoom zoom}]
-            [:& distance-display {:from hover-selrect :to selrect :zoom zoom}]]))])))
+            [:& distance-display {:from hover-selrect :to selrect :zoom zoom :frame frame}]]))])))
 
