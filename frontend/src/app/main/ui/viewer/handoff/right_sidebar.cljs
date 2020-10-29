@@ -15,8 +15,9 @@
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
+   [app.main.ui.workspace.sidebar.layers :refer [element-icon]]
    [app.main.ui.viewer.handoff.attributes :refer [attributes]]
-   [app.main.ui.workspace.sidebar.layers :refer [element-icon]]))
+   [app.main.ui.viewer.handoff.code :refer [code]]))
 
 (defn make-selected-shapes-iref
   []
@@ -28,28 +29,9 @@
             (mapv resolve-shape selected)))]
     #(l/derived selected->shapes st/state)))
 
-(mf/defc attributes-panel [{:keys [frame shapes]}]
-  (let [type (if (= (count shapes) 1)
-               (-> shapes first :type)
-               :multiple)]
-    (let [options (case type
-                    :multiple [:fill :stroke :image :text :shadow :blur]
-                    :frame    [:layout :fill]
-                    :group    [:layout]
-                    :rect     [:layout :fill :stroke :shadow :blur]
-                    :circle   [:layout :fill :stroke :shadow :blur]
-                    :path     [:layout :fill :stroke :shadow :blur]
-                    :curve    [:layout :fill :stroke :shadow :blur]
-                    :image    [:image :layout :shadow :blur]
-                    :text     [:layout :text :shadow :blur])]
-      [:& attributes {:frame frame
-                      :shapes shapes
-                      :options options}])))
 
-(mf/defc code-panel []
-  [:div.element-options])
-
-(mf/defc right-sidebar [{:keys [frame]}]
+(mf/defc right-sidebar
+  [{:keys [frame]}]
   (let [locale (mf/deref i18n/locale)
         section (mf/use-state :info #_:code)
         selected-ref (mf/use-memo (make-selected-shapes-iref))
@@ -72,8 +54,9 @@
           [:& tab-container {:on-change-tab #(reset! section %)
                              :selected @section}
            [:& tab-element {:id :info :title (t locale "handoff.tabs.info")}
-            [:& attributes-panel {:frame frame
-                                  :shapes shapes}]]
+            [:& attributes {:frame frame
+                            :shapes shapes}]]
 
            [:& tab-element {:id :code :title (t locale "handoff.tabs.code")}
-            [:& code-panel]]]]])]]))
+            [:& code {:frame frame
+                      :shapes shapes}]]]]])]]))
