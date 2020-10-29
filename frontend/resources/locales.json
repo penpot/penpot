@@ -978,6 +978,12 @@
       "en" : "Left"
     }
   },
+  "handoff.attributes.layout.radius" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/layout.cljs:60" ],
+    "translations" : {
+      "en" : "Radius"
+    }
+  },
   "handoff.attributes.layout.rotation" : {
     "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/layout.cljs:60" ],
     "translations" : {

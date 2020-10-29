@@ -10,31 +10,33 @@
 (ns app.main.ui.viewer.handoff.code
   (:require
    ["highlight.js" :as hljs]
+   [cuerdas.core :as str]
    [rumext.alpha :as mf]
    [app.util.i18n :as i18n]
+   [app.util.color :as uc]
+   [app.util.webapi :as wapi]
+   [app.util.code-gen :as cg]
    [app.main.ui.icons :as i]
    [app.common.geom.shapes :as gsh]))
 
-(def css-example
-  "/* text layer name */
-.shape {
-    width: 142px;
-    height: 40px;
-    border-radius: 20px;
-    background-color: var(--tiffany-blue);
-}")
-
 (def svg-example
-  "<g class=\"shape\">
-  <rect fill=\"#ffffff\" fill-opacity=\"1\" x=\"629\" y=\"169\" id=\"shape-eee5fa10-5336-11ea-
-8394-2dd26e322db3\" width=\"176\" height=\"211\">
-  </rect>
-</g>")
+  "<rect
+  x=\"629\"
+  y=\"169\"
+  width=\"176\"
+  height=\"211\"
+  fill=\"#ffffff\"
+  fill-opacity=\"1\">
+</rect>")
+
+
+(defn generate-markup-code [type shapes]
+  svg-example)
 
 (mf/defc code-block [{:keys [code type]}]
   (let [block-ref (mf/use-ref)]
     (mf/use-effect
-     (mf/deps block-ref)
+     (mf/deps code type block-ref)
      (fn []
        (hljs/highlightBlock (mf/ref-val block-ref))))
     [:pre.code-display {:class type
@@ -42,39 +44,46 @@
 
 (mf/defc code
   [{:keys [shapes frame]}]
-  (let [locale (mf/deref i18n/locale)
+  (let [style-type (mf/use-state "css")
+        markup-type (mf/use-state "svg")
+
+        locale (mf/deref i18n/locale)
         shapes (->> shapes
-                    (map #(gsh/translate-to-frame % frame)))]
+                    (map #(gsh/translate-to-frame % frame)))
+
+        style-code (cg/generate-style-code @style-type shapes)
+        markup-code (generate-markup-code @markup-type shapes)]
     [:div.element-options
      [:div.code-block
       [:div.code-row-lang
        [:select.code-selection
-        [:option "CSS"]
-        [:option "SASS"]
-        [:option "Less"]
-        [:option "Stylus"]]
+        [:option {:value "css"} "CSS"]
+        #_[:option {:value "sass"} "SASS"]
+        #_[:option {:value "less"} "Less"]
+        #_[:option {:value "stylus"} "Stylus"]]
 
        [:button.attributes-copy-button
-        {:on-click #(prn "??")}
+        {:on-click #(wapi/write-to-clipboard style-code)}
         i/copy]]
 
       [:div.code-row-display
-       [:& code-block {:type "css"
-                       :code css-example}]]]
+       [:& code-block {:type @style-type
+                       :code style-code}]]]
 
      [:div.code-block
       [:div.code-row-lang
        [:select.code-selection
         [:option "SVG"]
-        [:option "HTML"]]
+        #_[:option "HTML"]]
 
        [:button.attributes-copy-button
-        {:on-click #(prn "??")}
+        {:on-click #(wapi/write-to-clipboard markup-code)}
         i/copy]]
 
       [:div.code-row-display
-       [:& code-block {:type "svg"
-                       :code svg-example}]]]
+       [:& code-block {:type @markup-type
+                       :code markup-code}]]]
 
      ]))
+
 

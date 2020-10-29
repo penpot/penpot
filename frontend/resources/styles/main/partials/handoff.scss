@@ -264,8 +264,10 @@
   }
 }
 
-
 .code-block {
+  margin-top: 0.5rem;
+  border-top: 1px solid $color-gray-60;
+
   .code-row-lang {
     position: relative;
     display: flex;
@@ -307,6 +309,7 @@
       overflow: hidden;
       white-space: pre-wrap;
       background: $color-gray-60;
+      user-select: text;
 
       .hljs-attr {
         color: #a6e22e;
@@ -319,5 +322,8 @@
       }
     }
   }
-  
+}
+
+.element-options :first-child {
+  border-top: none;
 }

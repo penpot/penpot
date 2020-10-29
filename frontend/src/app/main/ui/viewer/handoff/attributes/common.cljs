@@ -16,38 +16,13 @@
    [app.util.color :as uc]
    [app.common.math :as mth]
    [app.main.ui.icons :as i]
+   [app.util.code-gen :as code]
    [app.util.webapi :as wapi]
    [app.main.ui.components.color-bullet :refer [color-bullet color-name]]))
 
-(defn copy-cb [values properties & {:keys [to-prop format] :or {to-prop {}}}]
+(defn copy-cb [values properties & {:keys [to-prop format] :as params}]
   (fn [event]
-    (let [
-          ;; We allow the :format and :to-prop to be a map for different properties
-          ;; or just a value for a single property. This code transform a single
-          ;; property to a uniform one
-          properties (if-not (coll? properties) [properties] properties)
-
-          format (if (not (map? format))
-                   (into {} (map #(vector % format) properties))
-                   format)
-
-          to-prop (if (not (map? to-prop))
-                    (into {} (map #(vector % to-prop) properties))
-                    to-prop)
-
-          default-format (fn [value] (str (mth/precision value 2) "px"))
-          format-property (fn [prop]
-                            (let [css-prop (or (prop to-prop) (name prop))]
-                              (str/fmt "  %s: %s;" css-prop ((or (prop format) default-format) (prop values) values))))
-
-          text-props (->> properties
-                          (remove #(let [value (get values %)]
-                                     (or (nil? value) (= value 0))))
-                          (map format-property)
-                          (str/join "\n"))
-
-          result (str/fmt "{\n%s\n}" text-props)]
-
+    (let [result (code/generate-css-props values properties params)]
       (wapi/write-to-clipboard result))))
 
 (mf/defc color-row [{:keys [color format on-copy on-change-format]}]
@@ -79,3 +54,4 @@
 
      (when on-copy
        [:button.attributes-copy-button {:on-click on-copy} i/copy])]))
+
