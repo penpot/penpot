@@ -93,6 +93,16 @@
 
     (cph/clone-object shape nil objects update-new-shape update-original-shape)))
 
+(defn duplicate-component
+  "Clone the root shape of the component and all children. Generate new
+  ids from all of them."
+  [component]
+  (let [component-root (cph/get-component-root component)]
+    (cph/clone-object component-root
+                      nil
+                      (get component :objects)
+                      identity)))
+
 
 ;; ---- General library synchronization functions ----
 

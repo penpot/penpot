@@ -51,6 +51,11 @@
                              :top nil
                              :left nil
                              :component-id nil})
+        on-duplicate
+        (mf/use-callback
+         (mf/deps state)
+         (st/emitf (dwl/duplicate-component {:id (:component-id @state)})))
+
         on-delete
         (mf/use-callback
          (mf/deps state)
@@ -101,7 +106,8 @@
          :on-close #(swap! state assoc :menu-open false)
          :top (:top @state)
          :left (:left @state)
-         :options [[(tr "workspace.assets.delete") on-delete]]}])]))
+         :options [[(tr "workspace.assets.duplicate") on-duplicate]
+                   [(tr "workspace.assets.delete") on-delete]]}])]))
 
 (mf/defc graphics-box
   [{:keys [file-id local? objects open? on-open on-close] :as props}]

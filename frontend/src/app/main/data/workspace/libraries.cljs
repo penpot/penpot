@@ -253,6 +253,33 @@
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
                    (dws/select-shapes (d/ordered-set (:id group))))))))))
 
+(defn duplicate-component
+  "Create a new component copied from the one with the given id."
+  [{:keys [id] :as params}]
+  (ptk/reify ::duplicate-component
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [component      (cph/get-component id
+                                              nil
+                                              (get state :workspace-data)
+                                              nil)
+            all-components (vals (get-in state [:workspace-data :components]))
+            unames         (set (map :name all-components))
+            new-name       (dwc/generate-unique-name unames (:name component))
+
+            [new-shape new-shapes updated-shapes]
+            (dwlh/duplicate-component component)
+
+            rchanges [{:type :add-component
+                       :id (:id new-shape)
+                       :name new-name
+                       :shapes new-shapes}]
+
+            uchanges [{:type :del-component
+                       :id (:id new-shape)}]]
+
+        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
+ 
 (defn delete-component
   "Delete the component with the given id, from the current file library."
   [{:keys [id] :as params}]
