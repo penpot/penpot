@@ -139,14 +139,16 @@
        [:& menu-entry {:title (t locale "workspace.shape.menu.lock")
                        :on-click do-lock-shape}])
 
-     (when (nil? (:shape-ref shape))
+     (when (or (nil? (:shape-ref shape))
+               (> (count selected) 1))
        [:*
         [:& menu-separator]
         [:& menu-entry {:title (t locale "workspace.shape.menu.create-component")
                         :shortcut "Ctrl + K"
                         :on-click do-add-component}]])
 
-     (when (:component-id shape)
+     (when (and (:component-id shape)
+                (= (count selected) 1))
        [:*
         [:& menu-separator]
         [:& menu-entry {:title (t locale "workspace.shape.menu.detach-instance")
