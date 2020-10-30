@@ -33,7 +33,7 @@
 (mf/defc right-sidebar
   [{:keys [frame]}]
   (let [locale (mf/deref i18n/locale)
-        section (mf/use-state #_:info :code)
+        section (mf/use-state :info #_:code)
         selected-ref (mf/use-memo (make-selected-shapes-iref))
         shapes (mf/deref selected-ref)]
     [:aside.settings-bar.settings-bar-right

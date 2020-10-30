@@ -16,13 +16,13 @@
    [app.util.color :as uc]
    [app.common.math :as mth]
    [app.main.ui.icons :as i]
-   [app.util.code-gen :as code]
+   [app.util.code-gen :as cg]
    [app.util.webapi :as wapi]
    [app.main.ui.components.color-bullet :refer [color-bullet color-name]]))
 
 (defn copy-cb [values properties & {:keys [to-prop format] :as params}]
   (fn [event]
-    (let [result (code/generate-css-props values properties params)]
+    (let [result (cg/generate-css-props values properties params)]
       (wapi/write-to-clipboard result))))
 
 (mf/defc color-row [{:keys [color format on-copy on-change-format]}]

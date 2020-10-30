@@ -55,7 +55,7 @@
        {:on-click (copy-cb shape :y :to-prop "top")}
        i/copy]])
 
-   (when (not= (:rx shape) 0)
+   (when (and (:rx shape) (not= (:rx shape) 0))
      [:div.attributes-unit-row
       [:div.attributes-label (t locale "handoff.attributes.layout.radius")]
       [:div.attributes-value (mth/precision (:rx shape) 2) "px"]
