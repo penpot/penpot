@@ -434,6 +434,12 @@
   (let [component-shape (d/seek #(= (:shape-ref %)
                                     (:shape-ref shape))
                                 (vals (:objects component)))
+        root-shape (if (:component-id shape)
+                     shape
+                     root-shape)
+        root-component (if (:component-id shape)
+                         component-shape
+                         root-component)
 
         [rchanges uchanges]
         (update-attrs shape
@@ -541,6 +547,12 @@
   (let [component-shape (d/seek #(= (:shape-ref %)
                                     (:shape-ref shape))
                                 (vals (:objects component)))
+        root-shape (if (:component-id shape)
+                     shape
+                     root-shape)
+        root-component (if (:component-id shape)
+                         component-shape
+                         root-component)
 
         [rchanges uchanges]
         (update-attrs component-shape
