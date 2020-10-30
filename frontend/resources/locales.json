@@ -2693,6 +2693,12 @@
       "es" : "Color de fondo"
     }
   },
+  "workspace.options.component" : {
+    "translations" : {
+      "en" : "Component",
+      "es" : "Componente"
+    }
+  },
   "workspace.options.design" : {
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options.cljs:69" ],
     "translations" : {

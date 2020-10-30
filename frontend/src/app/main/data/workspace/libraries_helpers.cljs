@@ -345,13 +345,6 @@
     (get-in state [:workspace-data asset-type])
     (get-in state [:workspace-libraries library-id :data asset-type])))
 
-(defn- get-component
-  [state file-id component-id]
-  (let [components (if (nil? file-id)
-                     (get-in state [:workspace-data :components])
-                     (get-in state [:workspace-libraries file-id :data :components]))]
-    (get components component-id)))
-
 (defn generate-sync-shape-and-children-components
   "Generate changes to synchronize one shape that the root of a component
   instance, and all its children, from the given component.

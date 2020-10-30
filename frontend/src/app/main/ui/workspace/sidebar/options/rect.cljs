@@ -28,6 +28,7 @@
      [:& measures-menu {:ids ids
                         :type type
                         :values measure-values}]
+
      [:& fill-menu {:ids ids
                     :type type
                     :values fill-values}]
