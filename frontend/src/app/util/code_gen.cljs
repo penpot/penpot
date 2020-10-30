@@ -14,9 +14,31 @@
    [app.util.text :as ut]
    [app.util.color :as uc]))
 
-(declare format-fill-color)
-(declare format-stroke)
-(declare shadow->css)
+(defn shadow->css [shadow]
+  (let [{:keys [style offset-x offset-y blur spread]} shadow
+        css-color (uc/color->background (:color shadow))]
+    (str
+     (if (= style :inner-shadow) "inset " "")
+     (str/fmt "%spx %spx %spx %spx %s" offset-x offset-y blur spread css-color))))
+
+
+(defn format-fill-color [_ shape]
+  (let [color {:color (:fill-color shape)
+               :opacity (:fill-opacity shape)
+               :gradient (:fill-color-gradient shape)
+               :id (:fill-ref-id shape)
+               :file-id (:fill-ref-file-id shape)}]
+    (uc/color->background color)))
+
+(defn format-stroke [_ shape]
+  (let [width (:stroke-width shape)
+        style (name (:stroke-style shape))
+        color {:color (:stroke-color shape)
+               :opacity (:stroke-opacity shape)
+               :gradient (:stroke-color-gradient shape)
+               :id (:stroke-ref-id shape)
+               :file-id (:stroke-ref-file-id shape)}]
+    (str/format "%spx %s %s" width style (uc/color->background color))))
 
 (def styles-data
   {:layout {:props   [:width :height :x :y :radius :rx]
@@ -53,32 +75,6 @@
              :text-decoration name
              :text-transform name
              :fill-color format-fill-color}})
-
-(defn shadow->css [shadow]
-  (let [{:keys [style offset-x offset-y blur spread]} shadow
-        css-color (uc/color->background (:color shadow))]
-    (str
-     (if (= style :inner-shadow) "inset " "")
-     (str/fmt "%spx %spx %spx %spx %s" offset-x offset-y blur spread css-color))))
-
-
-(defn format-fill-color [_ shape]
-  (let [color {:color (:fill-color shape)
-               :opacity (:fill-opacity shape)
-               :gradient (:fill-color-gradient shape)
-               :id (:fill-ref-id shape)
-               :file-id (:fill-ref-file-id shape)}]
-    (uc/color->background color)))
-
-(defn format-stroke [_ shape]
-  (let [width (:stroke-width shape)
-        style (name (:stroke-style shape))
-        color {:color (:stroke-color shape)
-               :opacity (:stroke-opacity shape)
-               :gradient (:stroke-color-gradient shape)
-               :id (:stroke-ref-id shape)
-               :file-id (:stroke-ref-file-id shape)}]
-    (str/format "%spx %s %s" width style (uc/color->background color))))
 
 
 (defn generate-css-props [values properties params]
