@@ -17,6 +17,7 @@
    [app.main.data.workspace.texts :as dwt]
    [app.main.ui.workspace.sidebar.options.multiple :refer [get-shape-attrs]]
    [app.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
+   [app.main.ui.workspace.sidebar.options.component :refer [component-attrs component-menu]]
    [app.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
    [app.main.ui.workspace.sidebar.options.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]
@@ -58,6 +59,9 @@
                                         nil)
                                      shape-with-children)
                                 [:rx :ry]))
+
+        component-values
+        (select-keys shape component-attrs)
 
         fill-values
         (geom/get-attrs-multi shape-with-children fill-attrs)
@@ -136,13 +140,15 @@
                         :ids-with-children ids-with-children
                         :type type
                         :values measure-values}]
+     [:& component-menu {:ids [id]
+                         :values component-values}]
      [:& fill-menu {:ids ids-with-children
                     :type type
                     :values fill-values}]
 
      [:& blur-menu {:ids [id]
                     :values (select-keys shape [:blur])}]
-     
+
      (when-not (empty? other-ids)
        [:& stroke-menu {:ids other-ids
                         :type type

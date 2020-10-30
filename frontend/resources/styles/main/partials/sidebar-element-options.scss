@@ -295,6 +295,7 @@
     }
 
   }
+
   .custom-select-dropdown {
     background-color: $color-white;
     border-radius: $br-small;
@@ -306,7 +307,6 @@
     overflow-y: auto;
     top: 30px;
     z-index: 12;
-
 
     .presets {
       width: 200px;
@@ -468,6 +468,37 @@
     color: #b1b2b5;
     background-color: transparent;
     height: 30px;
+  }
+}
+
+.element-set-content .component-row {
+  display: flex;
+  align-items: center;
+  font-size: $fs12;
+  color: $color-gray-10;
+
+  svg {
+    fill: $color-gray-20;
+    height: 16px;
+    width: 16px;
+    margin-right: $small;
+  }
+
+  .row-actions {
+    margin-left: auto;
+    cursor: pointer;
+
+    svg {
+      fill: $color-gray-20;
+      height: 8px;
+      width: 8px;
+    }
+
+    .context-menu-items {
+      right: 0.5rem;
+      left: unset;
+      top: 0;
+    }
   }
 }
 
@@ -920,8 +951,6 @@
     border-left: none;
     border-right: none;
 }
-
-
 
 .size-option .custom-select-dropdown {
     position: fixed;

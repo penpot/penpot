@@ -53,9 +53,9 @@
   (get-in container [:objects shape-id]))
 
 (defn get-component
-  [component-id file-id local-file libraries]
+  [component-id file-id local-library libraries]
   (let [file (if (nil? file-id)
-               local-file
+               local-library
                (get-in libraries [file-id :data]))]
     (get-in file [:components component-id])))
 
