@@ -32,11 +32,12 @@
 
 (mf/defc right-sidebar
   [{:keys [frame]}]
-  (let [locale (mf/deref i18n/locale)
+  (let [expanded (mf/use-state false)
+        locale (mf/deref i18n/locale)
         section (mf/use-state :info #_:code)
         selected-ref (mf/use-memo (make-selected-shapes-iref))
         shapes (mf/deref selected-ref)]
-    [:aside.settings-bar.settings-bar-right
+    [:aside.settings-bar.settings-bar-right {:class (when @expanded "expanded")}
      [:div.settings-bar-inside
       (when (seq shapes)
         [:div.tool-window
@@ -51,7 +52,9 @@
              [:span.tool-window-bar-title (->> shapes first :type name (str "handoff.tabs.code.selected.") (t locale))]])
           ]
          [:div.tool-window-content
-          [:& tab-container {:on-change-tab #(reset! section %)
+          [:& tab-container {:on-change-tab #(do
+                                               (reset! expanded false)
+                                               (reset! section %))
                              :selected @section}
            [:& tab-element {:id :info :title (t locale "handoff.tabs.info")}
             [:& attributes {:frame frame
@@ -59,4 +62,5 @@
 
            [:& tab-element {:id :code :title (t locale "handoff.tabs.code")}
             [:& code {:frame frame
-                      :shapes shapes}]]]]])]]))
+                      :shapes shapes
+                      :on-expand #(swap! expanded not)}]]]]])]]))

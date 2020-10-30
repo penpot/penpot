@@ -63,9 +63,10 @@
        [:*
         [:& left-sidebar {:frame frame}]
         [:div.handoff-svg-wrapper {:on-click (handle-select-frame frame)}
-         [:& render-frame-svg {:frame-id (:id frame)
-                               :zoom (:zoom local)
-                               :objects objects}]]
+         [:div.handoff-svg-container
+          [:& render-frame-svg {:frame-id (:id frame)
+                                :zoom (:zoom local)
+                                :objects objects}]]]
         [:& right-sidebar {:frame frame}]])]))
 
 (mf/defc handoff-content

@@ -77,34 +77,38 @@
              :fill-color format-fill-color}})
 
 
-(defn generate-css-props [values properties params]
-  (let [{:keys [to-prop format tab-size] :or {to-prop {} tab-size 0}} params
-        ;; We allow the :format and :to-prop to be a map for different properties
-        ;; or just a value for a single property. This code transform a single
-        ;; property to a uniform one
-        properties (if-not (coll? properties) [properties] properties)
+(defn generate-css-props
+  ([values properties]
+   (generate-css-props values properties nil))
 
-        format (if (not (map? format))
-                 (into {} (map #(vector % format) properties))
-                 format)
+  ([values properties params]
+   (let [{:keys [to-prop format tab-size] :or {to-prop {} tab-size 0}} params
+         ;; We allow the :format and :to-prop to be a map for different properties
+         ;; or just a value for a single property. This code transform a single
+         ;; property to a uniform one
+         properties (if-not (coll? properties) [properties] properties)
 
-        to-prop (if (not (map? to-prop))
-                  (into {} (map #(vector % to-prop) properties))
-                  to-prop)
+         format (if (not (map? format))
+                  (into {} (map #(vector % format) properties))
+                  format)
 
-        default-format (fn [value] (str (mth/precision value 2) "px"))
-        format-property (fn [prop]
-                          (let [css-prop (or (prop to-prop) (name prop))
-                                format-fn (or (prop format) default-format)]
-                            (str
-                             (str/repeat " " tab-size)
-                             (str/fmt "%s: %s;" css-prop (format-fn (prop values) values)))))]
+         to-prop (if (not (map? to-prop))
+                   (into {} (map #(vector % to-prop) properties))
+                   to-prop)
 
-    (->> properties
-         (remove #(let [value (get values %)]
-                    (or (nil? value) (= value 0))))
-         (map format-property)
-         (str/join "\n"))))
+         default-format (fn [value] (str (mth/precision value 2) "px"))
+         format-property (fn [prop]
+                           (let [css-prop (or (prop to-prop) (name prop))
+                                 format-fn (or (prop format) default-format)]
+                             (str
+                              (str/repeat " " tab-size)
+                              (str/fmt "%s: %s;" css-prop (format-fn (prop values) values)))))]
+
+     (->> properties
+          (remove #(let [value (get values %)]
+                     (or (nil? value) (= value 0))))
+          (map format-property)
+          (str/join "\n")))))
 
 (defn shape->properties [shape]
   (let [props   (->> styles-data vals (mapcat :props))

@@ -9,17 +9,16 @@
 
 (ns app.main.ui.viewer.handoff.code
   (:require
-   ["highlight.js" :as hljs]
    ["js-beautify" :as beautify]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
    [app.util.i18n :as i18n]
-   [app.util.color :as uc]
    [app.util.dom :as dom]
-   [app.util.webapi :as wapi]
    [app.util.code-gen :as cg]
    [app.main.ui.icons :as i]
-   [app.common.geom.shapes :as gsh]))
+   [app.common.geom.shapes :as gsh]
+   [app.main.ui.components.copy-button :refer [copy-button]]
+   [app.main.ui.components.code-block :refer [code-block]]))
 
 (defn generate-markup-code [type shapes]
   (let [frame (dom/query js/document "#svg-frame")
@@ -35,22 +34,15 @@
          (remove nil?)
          (str/join "\n\n"))))
 
-(mf/defc code-block [{:keys [code type]}]
+(defn format-code [code type]
   (let [code (-> code
                  (str/replace "<defs></defs>" "")
-                 (str/replace "><" ">\n<"))
-        code (cond-> code
-               (= type "svg") (beautify/html #js {"indent_size" 2}))
-        block-ref (mf/use-ref)]
-    (mf/use-effect
-     (mf/deps code type block-ref)
-     (fn []
-       (hljs/highlightBlock (mf/ref-val block-ref))))
-    [:pre.code-display {:class type
-                        :ref block-ref} code]))
+                 (str/replace "><" ">\n<"))]
+    (cond-> code
+      (= type "svg") (beautify/html #js {"indent_size" 2}))))
 
 (mf/defc code
-  [{:keys [shapes frame]}]
+  [{:keys [shapes frame on-expand]}]
   (let [style-type (mf/use-state "css")
         markup-type (mf/use-state "svg")
 
@@ -58,8 +50,11 @@
         shapes (->> shapes
                     (map #(gsh/translate-to-frame % frame)))
 
-        style-code (cg/generate-style-code @style-type shapes)
-        markup-code (mf/use-memo (mf/deps shapes) #(generate-markup-code @markup-type shapes))]
+        style-code (-> (cg/generate-style-code @style-type shapes)
+                       (format-code "css"))
+
+        markup-code (-> (mf/use-memo (mf/deps shapes) #(generate-markup-code @markup-type shapes))
+                        (format-code "svg"))]
     [:div.element-options
      [:div.code-block
       [:div.code-row-lang
@@ -69,9 +64,11 @@
         #_[:option {:value "less"} "Less"]
         #_[:option {:value "stylus"} "Stylus"]]
 
-       [:button.attributes-copy-button
-        {:on-click #(wapi/write-to-clipboard style-code)}
-        i/copy]]
+       [:button.expand-button
+        {:on-click on-expand }
+        i/full-screen]
+
+       [:& copy-button { :data style-code }]]
 
       [:div.code-row-display
        [:& code-block {:type @style-type
@@ -83,9 +80,11 @@
         [:option "SVG"]
         [:option "HTML"]]
 
-       [:button.attributes-copy-button
-        {:on-click #(wapi/write-to-clipboard markup-code)}
-        i/copy]]
+       [:button.expand-button
+        {:on-click on-expand}
+        i/full-screen]
+
+       [:& copy-button { :data markup-code }]]
 
       [:div.code-row-display
        [:& code-block {:type @markup-type

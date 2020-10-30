@@ -13,29 +13,30 @@
    [cuerdas.core :as str]
    [app.util.i18n :refer [t]]
    [app.main.ui.icons :as i]
-   [app.main.ui.viewer.handoff.attributes.common :refer [copy-cb]]))
+   [app.util.code-gen :as cg]
+   [app.main.ui.components.copy-button :refer [copy-button]]))
 
 (defn has-blur? [shape]
   (:blur shape))
 
-(defn copy-blur [shape]
-  (copy-cb shape
-           :blur
-           :to-prop "filter"
-           :format #(str/fmt "blur(%spx)" (:value %))))
+(defn copy-data [shape]
+  (cg/generate-css-props
+   shape
+   :blur
+   {:to-prop "filter"
+    :format #(str/fmt "blur(%spx)" (:value %))}))
 
 (mf/defc blur-panel [{:keys [shapes locale]}]
-  (let [shapes (->> shapes (filter has-blur?))
-        handle-copy (when (= (count shapes) 1) (copy-blur (first shapes)))]
+  (let [shapes (->> shapes (filter has-blur?))]
     (when (seq shapes)
       [:div.attributes-block
        [:div.attributes-block-title
         [:div.attributes-block-title-text (t locale "handoff.attributes.blur")]
-        (when handle-copy
-          [:button.attributes-copy-button {:on-click handle-copy} i/copy])]
+        (when (= (count shapes) 1)
+          [:& copy-button {:data (copy-data (first shapes))}])]
 
        (for [shape shapes]
          [:div.attributes-unit-row
           [:div.attributes-label (t locale "handoff.attributes.blur.value")]
           [:div.attributes-value (-> shape :blur :value) "px"]
-          [:button.attributes-copy-button {:on-click (copy-blur shape)} i/copy]])])))
+          [:& copy-button {:data (copy-data shape)}]])])))
