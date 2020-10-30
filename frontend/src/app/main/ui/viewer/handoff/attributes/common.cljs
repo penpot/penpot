@@ -18,14 +18,10 @@
    [app.main.ui.icons :as i]
    [app.util.code-gen :as cg]
    [app.util.webapi :as wapi]
+   [app.main.ui.components.copy-button :refer [copy-button]]
    [app.main.ui.components.color-bullet :refer [color-bullet color-name]]))
 
-(defn copy-cb [values properties & {:keys [to-prop format] :as params}]
-  (fn [event]
-    (let [result (cg/generate-css-props values properties params)]
-      (wapi/write-to-clipboard result))))
-
-(mf/defc color-row [{:keys [color format on-copy on-change-format]}]
+(mf/defc color-row [{:keys [color format copy-data on-change-format]}]
   (let [locale (mf/deref i18n/locale)]
     [:div.attributes-color-row
      [:& color-bullet {:color color}]
@@ -52,6 +48,6 @@
         [:option {:value "hsla"}
          (t locale "handoff.attributes.color.hsla")]])
 
-     (when on-copy
-       [:button.attributes-copy-button {:on-click on-copy} i/copy])]))
+     (when copy-data
+       [:& copy-button {:data copy-data}])]))
 

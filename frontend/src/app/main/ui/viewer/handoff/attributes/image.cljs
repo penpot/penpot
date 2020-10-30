@@ -14,7 +14,8 @@
    [app.config :as cfg]
    [app.util.i18n :refer [t]]
    [app.main.ui.icons :as i]
-   [app.main.ui.viewer.handoff.attributes.common :refer [copy-cb]]))
+   [app.util.code-gen :as cg]
+   [app.main.ui.components.copy-button :refer [copy-button]]))
 
 (defn has-image? [shape]
   (and (= (:type shape) :image)))
@@ -30,12 +31,12 @@
        [:div.attributes-unit-row
         [:div.attributes-label (t locale "handoff.attributes.image.width")]
         [:div.attributes-value (-> shape :metadata :width) "px"]
-        [:button.attributes-copy-button {:on-click (copy-cb shape :width)} i/copy]]
+        [:& copy-button {:data (cg/generate-css-props shape :width)}]]
 
        [:div.attributes-unit-row
         [:div.attributes-label (t locale "handoff.attributes.image.height")]
         [:div.attributes-value (-> shape :metadata :height) "px"]
-        [:button.attributes-copy-button {:on-click (copy-cb shape :height)} i/copy]]
+        [:& copy-button {:data (cg/generate-css-props shape :height)}]]
 
        (let [filename (last (str/split (-> shape :metadata :path) "/"))]
          [:a.download-button {:target "_blank"

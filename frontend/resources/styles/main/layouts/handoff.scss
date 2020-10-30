@@ -1,3 +1,5 @@
+$width-settings-bar: 16rem;
+
 .handoff-layout {
   display: grid;
   grid-template-rows: 40px auto;
@@ -28,6 +30,42 @@
   }
 }
 
-.handoff-layout .settings-bar.settings-bar-left {
-  left: 0;
+.handoff-layout {
+  .viewer-preview {
+    flex-wrap: nowrap;
+  }
+  .settings-bar {
+    transition: width 0.2s;
+    &.expanded {
+      width: $width-settings-bar * 3;
+    }
+
+    &.settings-bar-right,
+    &.settings-bar-left {
+      position: relative;
+      left: unset;
+      right: unset;
+
+      .settings-bar-inside {
+        padding-top: 0.5rem;
+      }
+    }
+  }
+
+  .handoff-svg-wrapper {
+    flex: 1;
+    overflow: hidden;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  .handoff-svg-container {
+    display: grid;
+    width: 100%;
+    height: calc(100% - 35px);
+    overflow: auto;
+    align-items: center;
+    justify-content: safe center;
+    margin: 0 auto;
+  }
 }
