@@ -22,8 +22,8 @@
   {:color (:stroke-color shape)
    :opacity (:stroke-opacity shape)
    :gradient (:stroke-color-gradient shape)
-   :id (:stroke-ref-id shape)
-   :file-id (:stroke-ref-file-id shape)})
+   :id (:stroke-color-ref-id shape)
+   :file-id (:stroke-color-ref-file shape)})
 
 (defn format-stroke [shape]
   (let [width (:stroke-width shape)

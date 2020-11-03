@@ -104,9 +104,32 @@
 
   .attributes-color-row {
     display: flex;
+    flex-direction: column;
     padding: 1rem 0;
     position: relative;
-    align-items: center;
+
+    .attributes-color-id {
+      display: flex;
+      align-items: center;
+
+      & > * {
+        margin: 0 0.5rem;
+      }
+      margin-bottom: 0.5rem;
+    }
+
+    .attributes-color-value {
+      display: flex;
+      align-items: center;
+
+      & > * {
+        margin: 0 0.5rem;
+      }
+
+      & :last-child {
+        margin-right: 0;
+      }
+    }
 
     .color-text {
       width: 3rem;
@@ -123,17 +146,13 @@
       border-radius: $br-small;
       border: 1px solid $color-gray-60;
     }
+
+    .hide-color .color-bullet {
+      visibility: hidden;
+    }
     .copy-button {
       padding: 1rem 0.5rem;
       margin-top: 0.25rem;
-    }
-
-    & > * {
-      margin: 0 0.5rem;
-    }
-
-    & :last-child {
-      margin-right: 0;
     }
 
     select {
@@ -226,6 +245,22 @@
     justify-content: space-between;
   }
 
+  .attributes-typography-name-row {
+    position: relative;
+    margin-top: 0.5rem;
+    border: 1px solid $color-black;
+    border-radius: 4px;
+    margin: 0.5rem;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    .copy-button {
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+    }
+  }
+
   .attributes-typography-row {
     position: relative;
     margin: 0.5rem;
@@ -234,6 +269,7 @@
     .typography-sample {
       font-size: $fs16;
     }
+
   }
 
   .download-button {
@@ -260,7 +296,8 @@
   .attributes-shadow-row,
   .attributes-stroke-row,
   .attributes-typography-row,
-  .attributes-content-row {
+  .attributes-content-row,
+  .attributes-typography-name-row {
     &:hover {
       .expand-button,
       .copy-button {
@@ -343,6 +380,6 @@
   }
 }
 
-.element-options :first-child {
+.element-options > :first-child {
   border-top: none;
 }

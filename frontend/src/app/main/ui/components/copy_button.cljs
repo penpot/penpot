@@ -22,7 +22,7 @@
      (fn []
        (when @just-copied
          (let [sub (timers/schedule 1000 #(reset! just-copied false))]
-           ;; On umounto we dispose the timer
+           ;; On unmount we dispose the timer
            #(rx/-dispose sub)))))
 
     [:button.copy-button

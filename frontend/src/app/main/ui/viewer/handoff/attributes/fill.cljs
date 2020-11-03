@@ -23,8 +23,8 @@
   {:color (:fill-color shape)
    :opacity (:fill-opacity shape)
    :gradient (:fill-color-gradient shape)
-   :id (:fill-ref-id shape)
-   :file-id (:fill-ref-file-id shape)})
+   :id (:fill-color-ref-id shape)
+   :file-id (:fill-color-ref-file shape)})
 
 (defn has-color? [shape]
   (and
