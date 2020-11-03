@@ -953,11 +953,12 @@
 }
 
 .size-option .custom-select-dropdown {
-    position: fixed;
+    cursor: pointer;
     max-height: 16rem;
     min-width: 6rem;
     margin-top: 25px;
     left: initial;
+    top: 0;
 }
 
 .typography-read-only-data {

@@ -92,7 +92,7 @@
     color: $color-gray-10;
     border: 1px solid transparent;
     border-bottom-color: $color-gray-40;
-    padding: $x-small $x-small 0 $x-small;
+    padding: $x-small;
     margin: $small $small $medium $small;
 
     &:focus {
@@ -102,7 +102,7 @@
     option {
       color: $color-gray-60;
       background: $color-white;
-      font-size: $fs11;
+      font-size: $fs12;
     }
   }
 
@@ -186,12 +186,13 @@
     }
 
     .grid-cell {
-      background-color: $color-white;
+      background-color: $color-canvas;
       border-radius: 4px;
       overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
+      padding: $small;
       position: relative;
       cursor: pointer;
 
