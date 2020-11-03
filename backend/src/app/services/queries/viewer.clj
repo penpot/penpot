@@ -49,9 +49,12 @@
           project (retrieve-project conn (:project-id file))
           page    (get-in file [:data :pages-index page-id])
 
-          bundle  {:file (dissoc file :data)
+          file-library (select-keys (:data file) [:colors :media :typographies])
+          bundle  {:file (-> (dissoc file :data)
+                             (merge file-library))
                    :page (get-in file [:data :pages-index page-id])
-                   :project project}]
+                   :project project}
+          ]
       (if (string? share-token)
         (do
           (check-shared-token! conn file-id page-id share-token)
