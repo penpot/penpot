@@ -247,8 +247,7 @@
     position: absolute;
     left: 0;
     z-index: 12;
-    width: 200px;
-    max-height: 30rem;
+    max-height: 31rem;
     min-width: 7rem;
     overflow-y: auto;
 
@@ -261,7 +260,7 @@
       cursor: pointer;
       font-size: $fs14;
       display: flex;
-      padding: $small $small $small 25px;
+      padding: $small $medium $small 25px;
 
       &.selected {
         background-image: url(/images/icons/tick.svg);
