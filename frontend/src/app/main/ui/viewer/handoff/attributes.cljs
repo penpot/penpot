@@ -12,6 +12,7 @@
    [rumext.alpha :as mf]
    [app.util.i18n :as i18n]
    [app.common.geom.shapes :as gsh]
+   [app.main.ui.viewer.handoff.exports :refer [exports]]
    [app.main.ui.viewer.handoff.attributes.layout :refer [layout-panel]]
    [app.main.ui.viewer.handoff.attributes.fill :refer [fill-panel]]
    [app.main.ui.viewer.handoff.attributes.stroke :refer [stroke-panel]]
@@ -32,7 +33,7 @@
    :text     [:layout :text :shadow :blur]})
 
 (mf/defc attributes
-  [{:keys [shapes frame]}]
+  [{:keys [page-id file-id shapes frame]}]
   (let [locale  (mf/deref i18n/locale)
         shapes  (->> shapes (map #(gsh/translate-to-frame % frame)))
         type    (if (= (count shapes) 1) (-> shapes first :type) :multiple)
@@ -49,5 +50,9 @@
              :text   text-panel)
         {:shapes shapes
          :frame frame
-         :locale locale}])]))
-
+         :locale locale}])
+     (when-not (= :multiple type)
+       [:& exports
+        {:shape (first shapes)
+         :page-id page-id
+         :file-id file-id}])]))

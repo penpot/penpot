@@ -37,7 +37,7 @@
        (st/emit! (dv/select-shape (:id frame)))))
 
 (mf/defc render-panel
-  [{:keys [data local index]}]
+  [{:keys [data local index page-id file-id]}]
   (let [locale  (mf/deref i18n/locale)
         frames  (:frames data [])
         objects (:objects data)
@@ -67,12 +67,14 @@
           [:& render-frame-svg {:frame-id (:id frame)
                                 :zoom (:zoom local)
                                 :objects objects}]]]
-        [:& right-sidebar {:frame frame}]])]))
+        [:& right-sidebar {:frame frame
+                           :page-id page-id
+                           :file-id file-id}]])]))
 
 (mf/defc handoff-content
-  [{:keys [data local index] :as props}]
-  (let [container (mf/use-ref)
+  [{:keys [data local index page-id file-id] :as props}]
 
+  (let [container (mf/use-ref)
         [toggle-fullscreen fullscreen?] (hooks/use-fullscreen container)
 
         on-mouse-wheel
@@ -111,7 +113,9 @@
                               :screen :handoff}])
       [:& render-panel {:data data
                         :local local
-                        :index index}]]]))
+                        :index index
+                        :page-id page-id
+                        :file-id file-id}]]]))
 
 (mf/defc handoff
   [{:keys [file-id page-id index] :as props}]
@@ -123,6 +127,8 @@
   (let [data (mf/deref refs/viewer-data)
         local (mf/deref refs/viewer-local)]
     (when data
-      [:& handoff-content {:index index
+      [:& handoff-content {:file-id file-id
+                           :page-id page-id
+                           :index index
                            :local local
                            :data data}])))
