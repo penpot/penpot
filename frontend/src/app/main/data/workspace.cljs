@@ -43,6 +43,7 @@
    [clojure.set :as set]
    [clojure.set :as set]
    [cuerdas.core :as str]
+   [cljs.pprint :refer [pprint]]
    [potok.core :as ptk]))
 
 ;; (log/set-level! :trace)
@@ -84,6 +85,19 @@
     :snap-grid
     :dynamic-alignment})
 
+(def layout-flags
+  {:assets
+   {:del #{:sitemap :layers :document-history }
+    :add #{:assets}}
+
+   :document-history
+   {:del #{:assets :layers :sitemap}
+    :add #{:document-history}}
+
+   :layers
+   {:del #{:document-history :assets}
+    :add #{:sitemap :layers}}})
+
 (s/def ::options-mode #{:design :prototype})
 
 (def workspace-local-default
@@ -103,11 +117,22 @@
    :picked-color nil
    :picked-color-select false})
 
-(def initialize-layout
+(declare ensure-layout)
+
+(defn initialize-layout
+  [layout]
+  (us/verify (s/nilable ::us/string) layout)
   (ptk/reify ::initialize-layout
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :workspace-layout default-layout))))
+      (assoc state :workspace-layout default-layout))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (when layout
+        (let [layout-flag (keyword layout)]
+          (when (contains? layout-flags layout-flag)
+            (rx/of (ensure-layout layout-flag))))))))
 
 (defn initialize-file
   [project-id file-id]
@@ -388,20 +413,7 @@
 
 ;; --- Toggle layout flag
 
-(def layout-flags
-  {:assets
-   {:del #{:sitemap :layers :document-history }
-    :add #{:assets}}
-
-   :document-history
-   {:del #{:assets :layers :sitemap}
-    :add #{:document-history}}
-
-   :layers
-   {:del #{:document-history :assets}
-    :add #{:sitemap :layers}}})
-
-(defn- ensure-layout
+(defn ensure-layout
   [layout]
   (assert (contains? layout-flags layout)
           (str "unexpected layout name: " layout))
@@ -416,7 +428,7 @@
                       (set/difference todel)
                       (set/union toadd))))))))
 
-(defn- toggle-layout-flags
+(defn toggle-layout-flags
   [& flags]
   (ptk/reify ::toggle-layout-flags
     ptk/UpdateEvent
@@ -1187,6 +1199,18 @@
             qparams    {:page-id page-id}]
         (rx/of (rt/nav :workspace pparams qparams))))))
 
+(defn go-to-layout
+  [layout]
+  (us/verify ::layout-flag layout)
+  (ptk/reify ::go-to-layout
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [project-id (get-in state [:workspace-project :id])
+            file-id    (get-in state [:workspace-file :id])
+            page-id    (get-in state [:current-page-id])
+            pparams    {:file-id file-id :project-id project-id}
+            qparams    {:page-id page-id :layout (name layout)}]
+        (rx/of (rt/nav :workspace pparams qparams))))))
 
 (def go-to-file
   (ptk/reify ::go-to-file

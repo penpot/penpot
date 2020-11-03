@@ -3447,6 +3447,11 @@
       "en" : "Go to master component file"
     }
   },
+  "workspace.shape.menu.show-master" : {
+    "translations" : {
+      "en" : "Show master component"
+    }
+  },
   "workspace.shape.menu.group" : {
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:110" ],
     "translations" : {

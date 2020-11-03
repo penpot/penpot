@@ -443,7 +443,8 @@
       (let [file (get-in state [:workspace-libraries file-id])
             pparams {:project-id (:project-id file)
                      :file-id (:id file)}
-            qparams {:page-id (first (get-in file [:data :pages]))}]
+            qparams {:page-id (first (get-in file [:data :pages]))
+                     :layout :assets}]
         (st/emit! (rt/nav-new-window :workspace pparams qparams))))))
 
 (defn ext-library-changed
