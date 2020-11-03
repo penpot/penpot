@@ -15,6 +15,7 @@
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.components.context-menu :refer [context-menu]]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.libraries :as dwl]
    [app.util.i18n :as i18n :refer [t]]
@@ -52,6 +53,7 @@
                                (st/emit! (dwl/update-component id))
                                (st/emit! (dwl/sync-file nil))
                                (st/emit! dwc/commit-undo-transaction))
+        do-show-component #(st/emit! (dw/go-to-layout :assets))
         do-navigate-component-file #(st/emit! (dwl/nav-to-component-file
                                                 (:component-file values)))]
     (when show?
@@ -65,12 +67,18 @@
          [:div.row-actions
           {:on-click on-menu-click}
           i/actions
+          ;; WARNING: this menu is the same as the shape context menu.
+          ;;          If you change it, you must change equally the file
+          ;;          app/main/ui/workspace/context_menu.cljs
           [:& context-menu {:on-close on-menu-close
                             :show (:menu-open @local)
-                            :options [[(t locale "workspace.shape.menu.detach-instance") do-detach-component]
-                                      [(t locale "workspace.shape.menu.reset-overrides") do-reset-component]
-                                      (if (:component-file values)
-                                        [(t locale "workspace.shape.menu.go-master") do-navigate-component-file]
-                                        [(t locale "workspace.shape.menu.update-master") do-update-component])]
-         }]]]]])))
+                            :options (if (nil? (:component-file values))
+                                       [[(t locale "workspace.shape.menu.detach-instance") do-detach-component]
+                                        [(t locale "workspace.shape.menu.reset-overrides") do-reset-component]
+                                        [(t locale "workspace.shape.menu.update-master") do-update-component]
+                                        [(t locale "workspace.shape.menu.show-master") do-show-component]]
+
+                                       [[(t locale "workspace.shape.menu.detach-instance") do-detach-component]
+                                        [(t locale "workspace.shape.menu.reset-overrides") do-reset-component]
+                                        [(t locale "workspace.shape.menu.go-master") do-navigate-component-file]])}]]]]])))
 
