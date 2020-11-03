@@ -43,7 +43,7 @@
    [clojure.set :as set]
    [clojure.set :as set]
    [cuerdas.core :as str]
-   [cljs.pprint :refer [pprint]]
+   ;; [cljs.pprint :refer [pprint]]
    [potok.core :as ptk]))
 
 ;; (log/set-level! :trace)
@@ -125,7 +125,9 @@
   (ptk/reify ::initialize-layout
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :workspace-layout default-layout))
+      (update state :worskpace-layout
+              (fn [layout]
+                (merge default-layout layout))))
 
     ptk/WatchEvent
     (watch [_ state stream]
