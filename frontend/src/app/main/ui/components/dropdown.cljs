@@ -20,7 +20,7 @@
           (if ref
             (let [target (dom/get-target event)
                   parent (mf/ref-val ref)]
-              (when-not (.contains parent target)
+              (when-not (or (not parent) (.contains parent target))
                 (on-close)))
             (on-close)))
 

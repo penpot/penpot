@@ -216,7 +216,7 @@
                                 (filter #(show-distance? (distance-to-selrect %)))
                                 (map #(vector selrect (:selrect %))))
 
-        segments-to-display (concat other-shapes-segments selection-segments)]
+        segments-to-display (d/concat #{} other-shapes-segments selection-segments)]
 
     (mf/use-effect
      (fn []
