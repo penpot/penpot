@@ -210,6 +210,7 @@
                           (assoc :modifiers (:modifiers local))
                           (gsh/transform-shape))
 
+        alt?          (mf/use-state false)
         viewport-ref  (mf/use-ref nil)
         zoom-view-ref (mf/use-ref nil)
         last-position (mf/use-var nil)
@@ -498,6 +499,7 @@
          (timers/schedule #(st/emit! (dw/initialize-viewport size))))))
 
     (mf/use-layout-effect (mf/deps layout) on-resize)
+    (hooks/use-stream ms/keyboard-alt #(reset! alt? %))
 
     [:*
      (when picking-color?
@@ -513,9 +515,7 @@
                            :zoom (:zoom local)
                            :drawing drawing
                            :page-id page-id
-                           :file-id (:id file)}
-        ])
-
+                           :file-id (:id file)}])
 
      [:svg.viewport
       {:preserveAspectRatio "xMidYMid meet"
@@ -569,7 +569,8 @@
        (when (seq selected)
          [:& selection-handlers {:selected selected
                                  :zoom zoom
-                                 :edition edition}])
+                                 :edition edition
+                                 :show-distances (and (not (:transform local)) @alt?)}])
 
        (when (= (count selected) 1)
          [:& gradient-handlers {:id (first selected)
