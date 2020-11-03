@@ -31,7 +31,7 @@
 
 
 (mf/defc right-sidebar
-  [{:keys [frame]}]
+  [{:keys [frame page-id file-id]}]
   (let [expanded (mf/use-state false)
         locale (mf/deref i18n/locale)
         section (mf/use-state :info #_:code)
@@ -57,7 +57,9 @@
                                                (reset! section %))
                              :selected @section}
            [:& tab-element {:id :info :title (t locale "handoff.tabs.info")}
-            [:& attributes {:frame frame
+            [:& attributes {:page-id page-id
+                            :file-id file-id
+                            :frame frame
                             :shapes shapes}]]
 
            [:& tab-element {:id :code :title (t locale "handoff.tabs.code")}
