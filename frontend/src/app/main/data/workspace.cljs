@@ -1150,7 +1150,6 @@
   (us/verify ::us/uuid id)
   (us/verify ::us/integer index)
   (us/verify gpt/point? delta)
-  (js/alert "TODO: broken")
   #_(ptk/reify ::update-path
     ptk/UpdateEvent
     (update [_ state]

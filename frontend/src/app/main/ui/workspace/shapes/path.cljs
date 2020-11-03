@@ -30,15 +30,18 @@
   [props]
   (let [shape (unchecked-get props "shape")
         hover? (or (mf/deref refs/current-hover) #{})
+
         on-mouse-down   (mf/use-callback
                          (mf/deps shape)
                          #(common/on-mouse-down % shape))
         on-context-menu (mf/use-callback
                          (mf/deps shape)
                          #(common/on-context-menu % shape))
+
         on-double-click (mf/use-callback
                          (mf/deps shape)
                          (fn [event]
+                           (prn "?? PATH")
                            (when (and (not (::dr/initialized? shape)) (hover? (:id shape)))
                              (do
                                (dom/stop-propagation event)

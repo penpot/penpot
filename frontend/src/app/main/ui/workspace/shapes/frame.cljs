@@ -110,6 +110,7 @@
             (mf/use-callback
              (mf/deps (:id shape))
              (fn [event]
+               (prn "?? FRAME")
                (dom/prevent-default event)
                (st/emit! (dw/deselect-all)
                          (dw/select-shape (:id shape)))))
@@ -131,7 +132,7 @@
                    (not (:hidden shape)))
           [:g {:class (when selected? "selected")
                :on-context-menu on-context-menu
-               :on-double-click on-double-click
+               ;; :on-double-click on-double-click
                :on-mouse-down on-mouse-down}
 
            [:& frame-title {:frame shape
