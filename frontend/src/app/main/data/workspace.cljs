@@ -1757,6 +1757,7 @@
    "e" #(st/emit! (select-for-drawing :circle))
    "t" #(st/emit! dwtxt/start-edit-if-selected
                   (select-for-drawing :text))
+   "w" #(st/emit! (select-for-drawing :path))
    "ctrl+c" #(st/emit! copy-selected)
    "ctrl+v" #(st/emit! paste)
    "ctrl+x" #(st/emit! copy-selected delete-selected)

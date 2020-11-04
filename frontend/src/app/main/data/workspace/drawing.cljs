@@ -65,3 +65,6 @@
                ;; default
                box/handle-drawing-box)))))
 
+;; Export
+(def close-drawing-path path/close-drawing-path)
+

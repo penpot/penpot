@@ -19,7 +19,7 @@
 
 (def handle-drawing-path
   (letfn [(stoper-event? [{:keys [type shift] :as event}]
-            (or (= event :path/end-path-drawing)
+            (or (= event ::end-path-drawing)
                 (= event :interrupt)
                 (and (ms/mouse-event? event)
                      (or (= type :double-click)
@@ -109,8 +109,12 @@
             (rx/of finish-drawing-path
                    common/handle-finish-drawing))))))))
 
-(def close-drawing-path
+(defn close-drawing-path []
   (ptk/reify ::close-drawing-path
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-drawing :object :close?] true))))
+      (assoc-in state [:workspace-drawing :object :close?] true))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of ::end-path-drawing))))
