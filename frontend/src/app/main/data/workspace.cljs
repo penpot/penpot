@@ -85,7 +85,7 @@
     :snap-grid
     :dynamic-alignment})
 
-(def layout-flags
+(def layout-names
   {:assets
    {:del #{:sitemap :layers :document-history }
     :add #{:assets}}
@@ -120,21 +120,20 @@
 (declare ensure-layout)
 
 (defn initialize-layout
-  [layout]
-  (us/verify (s/nilable ::us/string) layout)
+  [layout-name]
+  (us/verify (s/nilable ::us/keyword) layout-name)
   (ptk/reify ::initialize-layout
     ptk/UpdateEvent
     (update [_ state]
-      (update state :worskpace-layout
+      (update state :workspace-layout
               (fn [layout]
-                (merge default-layout layout))))
+                (or layout default-layout))))
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (when layout
-        (let [layout-flag (keyword layout)]
-          (when (contains? layout-flags layout-flag)
-            (rx/of (ensure-layout layout-flag))))))))
+      (if (and layout-name (contains? layout-names layout-name))
+        (rx/of (ensure-layout layout-name))
+        (rx/of (ensure-layout :layers))))))
 
 (defn initialize-file
   [project-id file-id]
@@ -416,16 +415,16 @@
 ;; --- Toggle layout flag
 
 (defn ensure-layout
-  [layout]
-  (assert (contains? layout-flags layout)
-          (str "unexpected layout name: " layout))
+  [layout-name]
+  (assert (contains? layout-names layout-name)
+          (str "unexpected layout name: " layout-name))
   (ptk/reify ::ensure-layout
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-layout
               (fn [stored]
-                (let [todel (get-in layout-flags [layout :del] #{})
-                      toadd (get-in layout-flags [layout :add] #{})]
+                (let [todel (get-in layout-names [layout-name :del] #{})
+                      toadd (get-in layout-names [layout-name :add] #{})]
                   (-> stored
                       (set/difference todel)
                       (set/union toadd))))))))
