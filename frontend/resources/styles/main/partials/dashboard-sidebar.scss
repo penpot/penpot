@@ -40,11 +40,11 @@
       top: 50px;
       z-index: 12;
       max-height: 30rem;
-      min-width: 189px;
+      min-width: 230px;
     }
 
     .options-dropdown {
-      left: 80px;
+      left: 117px;
       top: 50px;
       z-index: 12;
       max-height: 30rem;
@@ -63,7 +63,7 @@
     .switch-options {
       display: flex;
       max-width: 22px;
-      min-width: 22px;
+      min-width: 28px;
       border-left: 1px solid $color-gray-10;
       justify-content: center;
       align-items: center;
@@ -111,7 +111,7 @@
       .team-text {
         color: $color-gray-60;
         @include text-ellipsis;
-        width: 100px;
+        width: 130px;
       }
     }
 
