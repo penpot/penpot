@@ -439,6 +439,7 @@
     [:div.profile-section {:on-click #(reset! show true)}
      [:img {:src photo}]
      [:span (:fullname profile)]
+     i/arrow-down
 
      [:& dropdown {:on-close #(reset! show false)
                    :show @show}

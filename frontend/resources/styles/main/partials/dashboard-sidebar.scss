@@ -368,7 +368,7 @@
     color: $color-black;
     margin: 10px 5px;
     font-size: $fs14;
-    max-width: 135px;
+    max-width: 160px;
   }
 
   img {
@@ -376,6 +376,13 @@
     flex-shrink: 0;
     height: 25px;
     width: 25px;
+  }
+
+  svg {
+    height: 10px;
+    margin-left: auto;
+    margin-right: $small;
+    width: 10px;
   }
 
   .dropdown {
