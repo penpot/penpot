@@ -92,10 +92,12 @@
                  :toggle-fullscreen toggle-fullscreen
                  :fullscreen? fullscreen?
                  :local local
-                 :index index}]
+                 :index index
+                 :screen :viewer}]
      [:div.viewer-content {:on-click on-click}
       (when (:show-thumbnails local)
-        [:& thumbnails-panel {:index index
+        [:& thumbnails-panel {:screen :viewer
+                              :index index
                               :data data}])
       [:& main-panel {:data data
                       :local local

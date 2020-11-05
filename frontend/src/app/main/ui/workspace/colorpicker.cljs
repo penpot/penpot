@@ -10,19 +10,27 @@
 (ns app.main.ui.workspace.colorpicker
   (:require
    [rumext.alpha :as mf]
-   [app.main.store :as st]
+   [okulary.core :as l]
    [cuerdas.core :as str]
-   [app.util.dom :as dom]
-   [app.util.color :as uc]
-   [app.main.ui.icons :as i]
+   [app.common.geom.point :as gpt]
    [app.common.math :as math]
    [app.common.uuid :refer [uuid]]
-   [app.main.data.workspace.libraries :as dwl]
-   [app.main.data.colors :as dwc]
-   [app.main.ui.modal :as modal]
-   [okulary.core :as l]
+   [app.util.dom :as dom]
+   [app.util.color :as uc]
+   [app.util.object :as obj]
+   [app.main.store :as st]
    [app.main.refs :as refs]
-   [app.util.i18n :as i18n :refer [t]]))
+   [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.colors :as dc]
+   [app.main.data.modal :as modal]
+   [app.main.ui.icons :as i]
+   [app.util.i18n :as i18n :refer [t]]
+   [app.main.ui.workspace.colorpicker.gradients :refer [gradients]]
+   [app.main.ui.workspace.colorpicker.harmony :refer [harmony-selector]]
+   [app.main.ui.workspace.colorpicker.hsva :refer [hsva-selector]]
+   [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector]]
+   [app.main.ui.workspace.colorpicker.color-inputs :refer [color-inputs]]
+   [app.main.ui.workspace.colorpicker.libraries :refer [libraries]]))
 
 ;; --- Refs
 
@@ -41,66 +49,15 @@
 (def viewport
   (l/derived (l/in [:workspace-local :vport]) st/state))
 
+(def editing-spot-state-ref
+  (l/derived (l/in [:workspace-local :editing-stop]) st/state))
+
+(def current-gradient-ref
+  (l/derived (l/in [:workspace-local :current-gradient]) st/state))
 
 ;; --- Color Picker Modal
 
-(mf/defc value-selector [{:keys [hue saturation value on-change]}]
-  (let [dragging? (mf/use-state false)
-        calculate-pos
-        (fn [ev]
-          (let [{:keys [left right top bottom]} (-> ev dom/get-target dom/get-bounding-rect)
-                {:keys [x y]} (-> ev dom/get-client-position)
-                px (math/clamp (/ (- x left) (- right left)) 0 1)
-                py (* 255 (- 1 (math/clamp (/ (- y top) (- bottom top)) 0 1)))]
-            (on-change px py)))]
-    [:div.value-selector
-     {:on-mouse-down #(reset! dragging? true)
-      :on-mouse-up #(reset! dragging? false)
-      :on-pointer-down (partial dom/capture-pointer)
-      :on-pointer-up (partial dom/release-pointer)
-      :on-click calculate-pos
-      :on-mouse-move #(when @dragging? (calculate-pos %))}
-     [:div.handler {:style {:pointer-events "none"
-                            :left (str (* 100 saturation) "%")
-                            :top (str (* 100 (- 1 (/ value 255))) "%")}}]]))
-
-(mf/defc hue-selector [{:keys [hue on-change]}]
-  (let [dragging? (mf/use-state false)
-        calculate-pos
-        (fn [ev]
-          (let [{:keys [left right]} (-> ev dom/get-target dom/get-bounding-rect)
-                {:keys [x]} (-> ev dom/get-client-position)
-                px (math/clamp (/ (- x left) (- right left)) 0 1)]
-            (on-change (* px 360))))]
-    [:div.hue-selector
-     {:on-mouse-down #(reset! dragging? true)
-      :on-mouse-up #(reset! dragging? false)
-      :on-pointer-down (partial dom/capture-pointer)
-      :on-pointer-up (partial dom/release-pointer)
-      :on-click calculate-pos
-      :on-mouse-move #(when @dragging? (calculate-pos %))}
-     [:div.handler {:style {:pointer-events "none"
-                            :left (str (* (/ hue 360) 100) "%")}}]]))
-
-(mf/defc opacity-selector [{:keys [opacity on-change]}]
-  (let [dragging? (mf/use-state false)
-        calculate-pos
-        (fn [ev]
-          (let [{:keys [left right]} (-> ev dom/get-target dom/get-bounding-rect)
-                {:keys [x]} (-> ev dom/get-client-position)
-                px (math/clamp (/ (- x left) (- right left)) 0 1)]
-            (on-change px)))]
-    [:div.opacity-selector
-     {:on-mouse-down #(reset! dragging? true)
-      :on-mouse-up #(reset! dragging? false)
-      :on-pointer-down (partial dom/capture-pointer)
-      :on-pointer-up (partial dom/release-pointer)
-      :on-click calculate-pos
-      :on-mouse-move #(when @dragging? (calculate-pos %))}
-     [:div.handler {:style {:pointer-events "none"
-                            :left (str (* opacity 100) "%")}}]]))
-
-(defn as-color-components [value opacity]
+(defn color->components [value opacity]
   (let [value (if (uc/hex? value) value "#000000")
         [r g b] (uc/hex->rgb value)
         [h s v] (uc/hex->hsv value)]
@@ -108,270 +65,278 @@
     {:hex (or value "000000")
      :alpha (or opacity 1)
      :r r :g g :b b
-     :h h :s s :v v}
-    ))
+     :h h :s s :v v}))
+
+(defn data->state [{:keys [color opacity gradient]}]
+  (let [type (cond
+               (nil? gradient) :color
+               (= :linear (:type gradient)) :linear-gradient
+               (= :radial (:type gradient)) :radial-gradient)
+
+        parse-stop (fn [{:keys [offset color opacity]}]
+                     (vector offset (color->components color opacity)))
+
+        stops (when gradient
+                (map parse-stop (:stops gradient)))
+
+        current-color (if (nil? gradient)
+                        (color->components color opacity)
+                        (-> stops first second))
+
+        gradient-data (select-keys gradient [:start-x :start-y
+                                             :end-x :end-y
+                                             :width])]
+
+    (cond-> {:type type
+             :current-color current-color}
+      gradient (assoc :gradient-data gradient-data)
+      stops    (assoc :stops (into {} stops))
+      stops    (assoc :editing-stop (-> stops first first)))))
+
+(defn state->data [{:keys [type current-color stops gradient-data]}]
+  (if (= type :color)
+    {:color (:hex current-color)
+     :opacity (:alpha current-color)}
+
+    (let [gradient-type (case type
+                          :linear-gradient :linear
+                          :radial-gradient :radial)
+          parse-stop (fn [[offset {:keys [hex alpha]}]]
+                       (hash-map :offset offset
+                                 :color hex
+                                 :opacity alpha))]
+      {:gradient (-> {:type gradient-type
+                      :stops (mapv parse-stop stops)}
+                     (merge gradient-data))})))
+
+(defn create-gradient-data [type]
+  {:start-x 0.5
+   :start-y (if (= type :linear-gradient) 0.0 0.5)
+   :end-x   0.5
+   :end-y   1
+   :width  1.0})
 
 (mf/defc colorpicker
-  [{:keys [value opacity on-change on-accept]}]
-  (let [current-color (mf/use-state (as-color-components value opacity))
-        selected-library (mf/use-state "recent")
-        current-library-colors (mf/use-state [])
+  [{:keys [data disable-gradient disable-opacity on-change on-accept]}]
+  (let [state (mf/use-state (data->state data))
+        active-tab (mf/use-state :ramp #_:harmony #_:hsva)
+        locale (mf/deref i18n/locale)
+
         ref-picker (mf/use-ref)
 
-        file-colors (mf/deref refs/workspace-file-colors)
-        shared-libs (mf/deref refs/workspace-libraries)
-        recent-colors (mf/deref refs/workspace-recent-colors)
+        dirty? (mf/use-var false)
+        last-color (mf/use-var data)
 
         picking-color? (mf/deref picking-color?)
         picked-color (mf/deref picked-color)
         picked-color-select (mf/deref picked-color-select)
         picked-shift? (mf/deref picked-shift?)
 
-        locale    (mf/deref i18n/locale)
+        editing-spot-state (mf/deref editing-spot-state-ref)
+        current-gradient (mf/deref current-gradient-ref)
 
-        value-ref (mf/use-var value)
+        current-color (:current-color @state)
 
-        on-change (or on-change identity)
+        change-tab
+        (fn [tab]
+          #(reset! active-tab tab))
 
-        parse-selected (fn [selected]
-                         (if (#{"recent" "file"} selected)
-                           (keyword selected)
-                           (uuid selected)) )]
+        handle-change-color
+        (fn [changes]
+          (let [editing-stop (:editing-stop @state)]
+            (swap! state #(cond-> %
+                            true (update :current-color merge changes)
+                            editing-stop (update-in [:stops editing-stop] merge changes)))
+            (reset! dirty? true)))
 
-    ;; Update state when there is a change in the props upstream
-    (mf/use-effect
-     (mf/deps value opacity)
-     (fn []
-       (reset! current-color (as-color-components value opacity))))
+        handle-click-picker (fn []
+                              (if picking-color?
+                                (do (modal/disallow-click-outside!)
+                                    (st/emit! (dc/stop-picker)))
+                                (do (modal/allow-click-outside!)
+                                    (st/emit! (dc/start-picker)))))
+
+        handle-change-stop
+        (fn [offset]
+          (when-let [offset-color (get-in @state [:stops offset])]
+            (do (swap! state assoc
+                       :current-color offset-color
+                       :editing-stop offset)
+
+                (st/emit! (dc/select-gradient-stop offset)))))
+
+        on-select-library-color
+        (fn [color]
+          (reset! state (data->state color))
+          (on-change color))
+
+        on-add-library-color
+        (fn [color]
+          (st/emit! (dwl/add-color (state->data @state))))
+
+        on-activate-gradient
+        (fn [type]
+          (fn []
+            (reset! dirty? true)
+            (if (= type (:type @state))
+              (do
+                (swap! state assoc :type :color)
+                (swap! state dissoc :editing-stop :stops :gradient-data)
+                (st/emit! (dc/stop-gradient)))
+              (let [gradient-data (create-gradient-data type)]
+                (swap! state assoc :type type :gradient-data gradient-data)
+                (when (not (:stops @state))
+                  (swap! state assoc
+                         :editing-stop 0
+                         :stops {0 (:current-color @state)
+                                 1 (-> (:current-color @state)
+                                       (assoc :alpha 0))}))))))]
 
     ;; Updates the CSS color variable when there is a change in the color
     (mf/use-effect
-     (mf/deps @current-color)
+     (mf/deps current-color)
      (fn [] (let [node (mf/ref-val ref-picker)
-                  rgb [(:r @current-color) (:g @current-color) (:b @current-color)]
-                  hue-rgb (uc/hsv->rgb [(:h @current-color) 1.0 255])]
+                  {:keys [r g b h s v]} current-color
+                  rgb [r g b]
+                  hue-rgb (uc/hsv->rgb [h 1.0 255])
+                  hsl-from (uc/hsv->hsl [h 0.0 v])
+                  hsl-to (uc/hsv->hsl [h 1.0 v])
+
+                  format-hsl (fn [[h s l]]
+                               (str/fmt "hsl(%s, %s, %s)"
+                                        h
+                                        (str (* s 100) "%")
+                                        (str (* l 100) "%")))]
               (dom/set-css-property node "--color" (str/join ", " rgb))
-              (dom/set-css-property node "--hue" (str/join ", " hue-rgb)))))
-
-    ;; Load library colors when the select is changed
-    (mf/use-effect
-     (mf/deps @selected-library)
-     (fn []
-       (let [mapped-colors
-             (cond
-               (= @selected-library "recent")
-               (map #(hash-map :value %) (reverse (or recent-colors [])))
-
-               (= @selected-library "file")
-               (map #(select-keys % [:id :value]) (vals file-colors))
-
-               :else ;; Library UUID
-               (map #(merge {:file-id (uuid @selected-library)} (select-keys % [:id :value]))
-                    (vals (get-in shared-libs [(uuid @selected-library) :data :colors]))))]
-         (reset! current-library-colors (into [] mapped-colors)))))
-
-    ;; If the file colors change and the file option is selected updates the state
-    (mf/use-effect
-     (mf/deps file-colors)
-     (fn [] (when (= @selected-library "file")
-              (let [colors (map #(select-keys % [:id :value]) (vals file-colors))]
-                (reset! current-library-colors (into [] colors))))))
+              (dom/set-css-property node "--hue-rgb" (str/join ", " hue-rgb))
+              (dom/set-css-property node "--saturation-grad-from" (format-hsl hsl-from))
+              (dom/set-css-property node "--saturation-grad-to" (format-hsl hsl-to)))))
 
     ;; When closing the modal we update the recent-color list
     (mf/use-effect
-     (fn [] (fn []
-              (st/emit! (dwc/stop-picker))
-              (when @value-ref
-                (st/emit! (dwl/add-recent-color @value-ref))))))
+     #(fn []
+        (st/emit! (dc/stop-picker))
+        (when @last-color
+          (st/emit! (dwl/add-recent-color @last-color)))))
 
-    (mf/use-effect
-     (mf/deps picking-color? picked-color)
-     (fn [] (when picking-color?
-              (let [[r g b] (or picked-color [0 0 0])
-                    hex (uc/rgb->hex [r g b])
-                    [h s v] (uc/hex->hsv hex)]
-                (swap! current-color assoc
-                       :r r :g g :b b
-                       :h h :s s :v v
-                       :hex hex)
-                (reset! value-ref hex)
-                (when picked-color-select
-                  (on-change hex (:alpha @current-color) nil nil picked-shift?))))))
-
+    ;; Updates color when used el pixel picker
     (mf/use-effect
      (mf/deps picking-color? picked-color-select)
-     (fn [] (when (and picking-color? picked-color-select)
-              (on-change (:hex @current-color) (:alpha @current-color) nil nil picked-shift?))))
+     (fn []
+       (when (and picking-color? picked-color-select)
+         (let [[r g b alpha] picked-color
+               hex (uc/rgb->hex [r g b])
+               [h s v] (uc/hex->hsv hex)]
+           (handle-change-color {:hex hex
+                                 :r r :g g :b b
+                                 :h h :s s :v v
+                                 :alpha (/ alpha 255)})))))
+
+    ;; Changes when another gradient handler is selected
+    (mf/use-effect
+     (mf/deps editing-spot-state)
+     #(when (not= editing-spot-state (:editing-stop @state))
+        (handle-change-stop (or editing-spot-state 0))))
+
+    ;; Changes on the viewport when moving a gradient handler
+    (mf/use-effect
+     (mf/deps current-gradient)
+     (fn []
+       (when current-gradient
+         (let [gradient-data (select-keys current-gradient [:start-x :start-y
+                                                            :end-x :end-y
+                                                            :width])]
+           (when (not= (:gradient-data @state) gradient-data)
+             (do
+               (reset! dirty? true)
+               (swap! state assoc :gradient-data gradient-data)))))))
+
+    ;; Check if we've opened a color with gradient
+    (mf/use-effect
+     (fn []
+       (when (:gradient data)
+         (st/emit! (dc/start-gradient (:gradient data))))
+
+       ;; on-unmount we stop the handlers
+       #(st/emit! (dc/stop-gradient))))
+
+    ;; Send the properties to the store
+    (mf/use-effect
+     (mf/deps @state)
+     (fn []
+       (if @dirty?
+         (let [color (state->data @state)]
+           (reset! dirty? false)
+           (reset! last-color color)
+           (when (:gradient color)
+             (st/emit! (dc/start-gradient (:gradient color))))
+           (on-change color)))))
 
     [:div.colorpicker {:ref ref-picker}
-     [:div.top-actions
-      [:button.picker-btn
-       {:class (when picking-color? "active")
-        :on-click (fn []
-                    (modal/allow-click-outside!)
-                    (st/emit! (dwc/start-picker)))}
-       i/picker]]
+     [:div.colorpicker-content
+      [:div.top-actions
+       [:button.picker-btn
+        {:class (when picking-color? "active")
+         :on-click handle-click-picker}
+        i/picker]
 
-     (if picking-color?
-       [:div.picker-detail-wrapper
-        [:div.center-circle]
-        [:canvas#picker-detail {:width 200
-                                :height 160}]]
-       [:& value-selector {:hue (:h @current-color)
-                           :saturation (:s @current-color)
-                           :value (:v @current-color)
-                           :on-change (fn [s v]
-                                        (let [hex (uc/hsv->hex [(:h @current-color) s v])
-                                              [r g b] (uc/hex->rgb hex)]
-                                          (swap! current-color assoc
-                                                 :hex hex
-                                                 :r r :g g :b b
-                                                 :s s :v v)
-                                          (reset! value-ref hex)
-                                          (on-change hex (:alpha @current-color))))}])
-     (when (not picking-color?)
-       [:div.shade-selector
-        [:div.color-bullet]
-        [:& hue-selector {:hue (:h @current-color)
-                          :on-change (fn [h]
-                                       (let [hex (uc/hsv->hex [h (:s @current-color) (:v @current-color)])
-                                             [r g b] (uc/hex->rgb hex)]
-                                         (swap! current-color assoc
-                                                :hex hex
-                                                :r r :g g :b b
-                                                :h h )
-                                         (reset! value-ref hex)
-                                         (on-change hex (:alpha @current-color))))}]
-        [:& opacity-selector {:opacity (:alpha @current-color)
-                              :on-change (fn [alpha]
-                                           (swap! current-color assoc :alpha alpha)
-                                           (on-change (:hex @current-color) alpha))}]])
+       (when (not disable-gradient)
+         [:div.gradients-buttons
+          [:button.gradient.linear-gradient
+           {:on-click (on-activate-gradient :linear-gradient)
+            :class (when (= :linear-gradient (:type @state)) "active")}]
 
-     [:div.color-values
-      [:input.hex-value {:id "hex-value"
-                         :value (:hex @current-color)
-                         :on-change (fn [e]
-                                      (let [val (-> e dom/get-target dom/get-value)
-                                            val (if (= (first val) \#) val (str \# val))]
-                                        (swap! current-color assoc :hex val)
-                                        (when (uc/hex? val)
-                                          (reset! value-ref val)
-                                          (let [[r g b] (uc/hex->rgb val)
-                                                [h s v] (uc/hex->hsv val)]
-                                            (swap! current-color assoc
-                                                   :r r :g g :b b
-                                                   :h h :s s :v v)
-                                            (on-change val (:alpha @current-color))))))}]
-      [:input.red-value {:id "red-value"
-                         :type "number"
-                         :min 0
-                         :max 255
-                         :value (:r @current-color)
-                         :on-change (fn [e]
-                                      (let [val (-> e dom/get-target dom/get-value (math/clamp 0 255))]
-                                        (swap! current-color assoc :r val)
-                                        (when (not (nil? val))
-                                          (let [{:keys [g b]} @current-color
-                                                hex (uc/rgb->hex [val g b])
-                                                [h s v] (uc/hex->hsv hex)]
-                                            (reset! value-ref hex)
-                                            (swap! current-color assoc
-                                                   :hex hex
-                                                   :h h :s s :v v)
-                                            (on-change hex (:alpha @current-color))))))}]
-      [:input.green-value {:id "green-value"
-                           :type "number"
-                           :min 0
-                           :max 255
-                           :value (:g @current-color)
-                           :on-change (fn [e]
-                                        (let [val (-> e dom/get-target dom/get-value (math/clamp 0 255))]
-                                          (swap! current-color assoc :g val)
-                                          (when (not (nil? val))
-                                            (let [{:keys [r b]} @current-color
-                                                  hex (uc/rgb->hex [r val b])
-                                                  [h s v] (uc/hex->hsv hex)]
-                                              (reset! value-ref hex)
-                                              (swap! current-color assoc
-                                                     :hex hex
-                                                     :h h :s s :v v)
-                                              (on-change hex (:alpha @current-color))))))}]
-      [:input.blue-value {:id "blue-value"
-                          :type "number"
-                          :min 0
-                          :max 255
-                          :value (:b @current-color)
-                          :on-change (fn [e]
-                                       (let [val (-> e dom/get-target dom/get-value (math/clamp 0 255))]
-                                         (swap! current-color assoc :b val)
-                                         (when (not (nil? val))
-                                           (let [{:keys [r g]} @current-color
-                                                 hex (uc/rgb->hex [r g val])
-                                                 [h s v] (uc/hex->hsv hex)]
-                                             (reset! value-ref hex)
-                                             (swap! current-color assoc
-                                                    :hex hex
-                                                    :h h :s s :v v)
-                                             (on-change hex (:alpha @current-color))))))}]
-      [:input.alpha-value {:id "alpha-value"
-                           :type "number"
-                           :min 0
-                           :step 0.1
-                           :max 1
-                           :value (math/precision (:alpha @current-color) 2)
-                           :on-change (fn [e]
-                                        (let [val (-> e dom/get-target dom/get-value (math/clamp 0 1))]
-                                          (swap! current-color assoc :alpha val)
-                                          (on-change (:hex @current-color) val)))}]
-      [:label.hex-label {:for "hex-value"} "HEX"]
-      [:label.red-label {:for "red-value"} "R"]
-      [:label.green-label {:for "green-value"} "G"]
-      [:label.blue-label {:for "blue-value"} "B"]
-      [:label.alpha-label {:for "alpha-value"} "A"]]
+          [:button.gradient.radial-gradient
+           {:on-click (on-activate-gradient :radial-gradient)
+            :class (when (= :radial-gradient (:type @state)) "active")}]])]
 
-     [:div.libraries
-      [:select {:on-change (fn [e]
-                             (let [val (-> e dom/get-target dom/get-value)]
-                               (reset! selected-library val)))
-                :value @selected-library} 
-       [:option {:value "recent"} (t locale "workspace.libraries.colors.recent-colors")]
-       [:option {:value "file"} (t locale "workspace.libraries.colors.file-library")]
-       (for [[_ {:keys [name id]}] shared-libs]
-         [:option {:key id
-                   :value id} name])]
+      [:& gradients {:type (:type @state)
+                     :stops (:stops @state)
+                     :editing-stop (:editing-stop @state)
+                     :on-select-stop handle-change-stop}]
 
-      [:div.selected-colors
-       (when (= "file" @selected-library)
-         [:div.color-bullet.button.plus-button {:style {:background-color "white"}
-                                                :on-click #(st/emit! (dwl/add-color (:hex @current-color)))}
-          i/plus])
+      [:div.colorpicker-tabs
+       [:div.colorpicker-tab {:class (when (= @active-tab :ramp) "active")
+                              :on-click (change-tab :ramp)} i/picker-ramp]
+       [:div.colorpicker-tab {:class (when (= @active-tab :harmony) "active")
+                              :on-click (change-tab :harmony)} i/picker-harmony]
+       [:div.colorpicker-tab {:class (when (= @active-tab :hsva) "active")
+                              :on-click (change-tab :hsva)} i/picker-hsv]]
 
-       [:div.color-bullet.button {:style {:background-color "white"}
-                                  :on-click #(st/emit! (dwc/show-palette (parse-selected @selected-library)))}
-        i/palette]
+      (if picking-color?
+        [:div.picker-detail-wrapper
+         [:div.center-circle]
+         [:canvas#picker-detail {:width 200 :height 160}]]
+        (case @active-tab
+          :ramp [:& ramp-selector {:color current-color
+                                   :disable-opacity disable-opacity
+                                   :on-change handle-change-color}]
+          :harmony [:& harmony-selector {:color current-color
+                                         :disable-opacity disable-opacity
+                                         :on-change handle-change-color}]
+          :hsva [:& hsva-selector {:color current-color
+                                   :disable-opacity disable-opacity
+                                   :on-change handle-change-color}]
+          nil))
 
-       (for [[idx {:keys [id file-id value]}] (map-indexed vector @current-library-colors)]
-         [:div.color-bullet {:key (str "color-" idx)
-                             :on-click (fn []
-                                         (swap! current-color assoc :hex value)
-                                         (reset! value-ref value)
-                                         (let [[r g b] (uc/hex->rgb value)
-                                               [h s v] (uc/hex->hsv value)]
-                                           (swap! current-color assoc
-                                                  :r r :g g :b b
-                                                  :h h :s s :v v)
-                                           (on-change value (:alpha @current-color) id file-id)))
-                             :style {:background-color value}}])]
+      [:& color-inputs {:type (if (= @active-tab :hsva) :hsv :rgb)
+                        :disable-opacity disable-opacity
+                        :color current-color
+                        :on-change handle-change-color}]
 
-      ]
-     (when on-accept
-       [:div.actions
-        [:button.btn-primary.btn-large
-         {:on-click (fn []
-                      (on-accept @value-ref)
-                      (modal/hide!))}
-         (t locale "workspace.libraries.colors.save-color")]])])
-  )
+      [:& libraries {:current-color current-color
+                     :disable-gradient disable-gradient
+                     :disable-opacity disable-opacity
+                     :on-select-color on-select-library-color
+                     :on-add-library-color on-add-library-color}]
+
+      (when on-accept
+        [:div.actions
+         [:button.btn-primary.btn-large
+          {:on-click (fn []
+                       (on-accept (state->data @state))
+                       (modal/hide!))}
+          (t locale "workspace.libraries.colors.save-color")]])]]))
 
 (defn calculate-position
   "Calculates the style properties for the given coordinates and position"
@@ -382,40 +347,41 @@
         overflow-fix (max 0 (+ y (- 50) h (- vh)))]
     (cond
       (or (nil? x) (nil? y)) {:left "auto" :right "16rem" :top "4rem"}
-      (= position :left) {:left (str (- x 270) "px")
+      (= position :left) {:left (str (- x 250) "px")
                           :top (str (- y 50 overflow-fix) "px")}
-      :else {:left (str (+ x 24) "px")
-             :top (str (- y 50 overflow-fix) "px")})))
+      :else {:left (str (+ x 80) "px")
+             :top (str (- y 70 overflow-fix) "px")})))
 
 
 (mf/defc colorpicker-modal
   {::mf/register modal/components
    ::mf/register-as :colorpicker}
-  [{:keys [x y default value opacity page on-change on-close disable-opacity position on-accept] :as props}]
+  [{:keys [x y default data page position
+           disable-gradient
+           disable-opacity
+           on-change on-close on-accept] :as props}]
   (let [vport (mf/deref viewport)
         dirty? (mf/use-var false)
         last-change (mf/use-var nil)
         position (or position :left)
         style (calculate-position vport position x y)
 
-        handle-change (fn [new-value new-opacity id file-id shift-clicked?]
-                        (when (or (not= new-value value) (not= new-opacity opacity))
-                          (reset! dirty? true))
-                        (reset! last-change [new-value new-opacity id file-id])
+        handle-change (fn [new-data shift-clicked?]
+                        (reset! dirty? (not= data new-data))
+                        (reset! last-change new-data)
                         (when on-change
-                          (on-change new-value new-opacity id file-id shift-clicked?)))]
+                          (on-change new-data)))]
 
     (mf/use-effect
      (fn []
-       #(when (and @dirty? on-close)
-          (when-let [[value opacity id file-id] @last-change]
-            (on-close value opacity id file-id)))))
+       #(when (and @dirty? @last-change on-close)
+          (on-close @last-change))))
 
     [:div.colorpicker-tooltip
      {:style (clj->js style)}
-     [:& colorpicker {:value (or value default)
-                      :opacity (or opacity 1)
+     [:& colorpicker {:data data
+                      :disable-gradient disable-gradient
+                      :disable-opacity disable-opacity
                       :on-change handle-change
-                      :on-accept on-accept
-                      :disable-opacity disable-opacity}]]))
+                      :on-accept on-accept}]]))
 

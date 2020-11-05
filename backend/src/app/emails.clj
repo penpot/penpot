@@ -74,3 +74,16 @@
 (def change-email
   "Password change confirmation email"
   (emails/build ::change-email default-context))
+
+(s/def :internal.emails.invite-to-team/invited-by ::us/string)
+(s/def :internal.emails.invite-to-team/team ::us/string)
+(s/def :internal.emails.invite-to-team/token ::us/string)
+
+(s/def ::invite-to-team
+  (s/keys :keys [:internal.emails.invite-to-team/invited-by
+                 :internal.emails.invite-to-team/token
+                 :internal.emails.invite-to-team/team]))
+
+(def invite-to-team
+  "Teams member invitation email."
+  (emails/build ::invite-to-team default-context))

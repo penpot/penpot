@@ -10,7 +10,8 @@
 (ns app.common.pages-helpers
   (:require
    [app.common.data :as d]
-   [app.common.uuid :as uuid]))
+   [app.common.uuid :as uuid]
+   [app.common.geom.shapes :as gsh]))
 
 (defn walk-pages
   "Go through all pages of a file and apply a function to each one"
@@ -20,9 +21,10 @@
   (update data :pages-index #(d/mapm f %)))
 
 (defn select-objects
-  "Get a list of all objects in a page that satisfy a condition"
-  [f page]
-  (filter f (vals (get page :objects))))
+  "Get a list of all objects in a container (a page or a component) that
+  satisfy a condition"
+  [f container]
+  (filter f (vals (get container :objects))))
 
 (defn update-object-list
   "Update multiple objects in a page at once"
@@ -30,15 +32,15 @@
   (update page :objects
           #(into % (d/index-by :id objects-list))))
 
-(defn get-root-component
-  "Get the root shape linked to the component for this shape, if any"
-  [id objects]
-  (let [obj (get objects id)]
-    (if-let [component-id (:component-id obj)]
-      id
-      (if-let [parent-id (:parent-id obj)]
-        (get-root-component parent-id obj)
-        nil))))
+(defn get-root-shape
+  "Get the root shape linked to a component for this shape, if any"
+  [shape objects]
+  (if (:component-root? shape)
+    shape
+    (if-let [parent-id (:parent-id shape)]
+      (get-root-shape (get objects (:parent-id shape))
+                      objects)
+      nil)))
 
 (defn get-children
   "Retrieve all children ids recursively for a given object"
@@ -57,7 +59,7 @@
 (defn get-object-with-children
   "Retrieve a list with an object and all of its children"
   [id objects]
-  (map #(get objects %) (concat [id] (get-children id objects))))
+  (map #(get objects %) (cons id (get-children id objects))))
 
 (defn is-shape-grouped
   "Checks if a shape is inside a group"
@@ -114,6 +116,15 @@
               (remove p? before)
               ids
               (remove p? after))))
+
+(defn append-at-the-end
+  [prev-ids ids]
+  (reduce (fn [acc id]
+            (if (some #{id} acc)
+              acc
+              (conj acc id)))
+          prev-ids
+          ids))
 
 (defn select-toplevel-shapes
   ([objects] (select-toplevel-shapes objects nil))
@@ -186,7 +197,7 @@
 
                updated-object (update-original-object object new-object)
 
-               updated-objects (if (= object updated-object)
+               updated-objects (if (identical? object updated-object)
                                  updated-children
                                  (concat [updated-object] updated-children))]
 
@@ -204,3 +215,44 @@
              (concat new-children new-child-objects)
              (concat updated-children updated-child-objects))))))))
 
+
+(defn indexed-shapes
+  "Retrieves a list with the indexes for each element in the layer tree.
+   This will be used for shift+selection."
+  [objects]
+  (let [rec-index
+        (fn rec-index [cur-idx id]
+          (let [object (get objects id)
+                red-fn
+                (fn [cur-idx id]
+                  (let [[prev-idx _] (first cur-idx)
+                        prev-idx (or prev-idx 0)
+                        cur-idx (conj cur-idx [(inc prev-idx) id])]
+                    (rec-index cur-idx id)))]
+            (reduce red-fn cur-idx (reverse (:shapes object)))))]
+    (into {} (rec-index '() uuid/zero))))
+
+
+(defn expand-region-selection
+  "Given a selection selects all the shapes between the first and last in
+   an indexed manner (shift selection)"
+  [objects selection]
+  (let [indexed-shapes (indexed-shapes objects)
+        filter-indexes (->> indexed-shapes
+                            (filter (comp selection second))
+                            (map first))
+
+        from (apply min filter-indexes)
+        to (apply max filter-indexes)]
+    (->> indexed-shapes
+         (filter (fn [[idx _]] (and (>= idx from) (<= idx to))))
+         (map second)
+         (into #{}))))
+
+(defn frame-id-by-position [objects position]
+  (let [frames (select-frames objects)]
+    (or
+     (->> frames
+          (d/seek #(gsh/has-point? % position))
+          :id)
+     uuid/zero)))

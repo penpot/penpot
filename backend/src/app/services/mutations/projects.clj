@@ -16,6 +16,7 @@
    [app.config :as cfg]
    [app.db :as db]
    [app.services.mutations :as sm]
+   [app.services.queries.projects :as proj]
    [app.tasks :as tasks]
    [app.util.blob :as blob]))
 
@@ -25,42 +26,12 @@
 (s/def ::name ::us/string)
 (s/def ::profile-id ::us/uuid)
 
-;; --- Permissions Checks
-
-(def ^:private sql:project-permissions
-  "select tpr.is_owner,
-          tpr.is_admin,
-          tpr.can_edit
-     from team_profile_rel as tpr
-    inner join project as p on (p.team_id = tpr.team_id)
-    where p.id = ?
-      and tpr.profile_id = ?
-   union all
-   select ppr.is_owner,
-          ppr.is_admin,
-          ppr.can_edit
-     from project_profile_rel as ppr
-    where ppr.project_id = ?
-      and ppr.profile_id = ?")
-
-(defn check-edition-permissions!
-  [conn profile-id project-id]
-  (let [rows (db/exec! conn [sql:project-permissions
-                             project-id profile-id
-                             project-id profile-id])]
-    (when (empty? rows)
-      (ex/raise :type :not-found))
-    (when-not (or (some :can-edit rows)
-                  (some :is-admin rows)
-                  (some :is-owner rows))
-      (ex/raise :type :validation
-                :code :not-authorized))))
-
 
 ;; --- Mutation: Create Project
 
 (declare create-project)
 (declare create-project-profile)
+(declare create-team-project-profile)
 
 (s/def ::team-id ::us/uuid)
 (s/def ::create-project
@@ -70,9 +41,11 @@
 (sm/defmutation ::create-project
   [params]
   (db/with-atomic [conn db/pool]
-    (let [proj (create-project conn params)]
-      (create-project-profile conn (assoc params :project-id (:id proj)))
-      proj)))
+    (let [proj   (create-project conn params)
+          params (assoc params :project-id (:id proj))]
+      (create-project-profile conn params)
+      (create-team-project-profile conn params)
+      (assoc proj :is-pinned true))))
 
 (defn create-project
   [conn {:keys [id profile-id team-id name default?] :as params}]
@@ -93,6 +66,35 @@
                :is-admin true
                :can-edit true}))
 
+(defn create-team-project-profile
+  [conn {:keys [team-id project-id profile-id] :as params}]
+  (db/insert! conn :team-project-profile-rel
+              {:project-id project-id
+               :profile-id profile-id
+               :team-id team-id
+               :is-pinned true}))
+
+
+;; --- Mutation: Toggle Project Pin
+
+(def ^:private
+  sql:update-project-pin
+  "insert into team_project_profile_rel (team_id, project_id, profile_id, is_pinned)
+   values (?, ?, ?, ?)
+       on conflict (team_id, project_id, profile_id)
+       do update set is_pinned=?")
+
+(s/def ::is-pinned ::us/boolean)
+(s/def ::project-id ::us/uuid)
+
+(s/def ::update-project-pin
+  (s/keys :req-un [::profile-id ::id ::team-id ::is-pinned]))
+
+(sm/defmutation ::update-project-pin
+  [{:keys [id profile-id team-id is-pinned] :as params}]
+  (db/with-atomic [conn db/pool]
+    (db/exec-one! conn [sql:update-project-pin team-id id profile-id is-pinned is-pinned])
+    nil))
 
 
 ;; --- Mutation: Rename Project
@@ -106,7 +108,7 @@
   [{:keys [id profile-id name] :as params}]
   (db/with-atomic [conn db/pool]
     (let [project (db/get-by-id conn :project id {:for-update true})]
-      (check-edition-permissions! conn profile-id id)
+      (proj/check-edition-permissions! conn profile-id id)
       (db/update! conn :project
                   {:name name}
                   {:id id}))))
@@ -121,7 +123,7 @@
 (sm/defmutation ::delete-project
   [{:keys [id profile-id] :as params}]
   (db/with-atomic [conn db/pool]
-    (check-edition-permissions! conn profile-id id)
+    (proj/check-edition-permissions! conn profile-id id)
 
     ;; Schedule object deletion
     (tasks/submit! conn {:name "delete-object"

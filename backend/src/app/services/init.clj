@@ -15,9 +15,9 @@
 (defn- load-query-services
   []
   (require 'app.services.queries.media)
-  (require 'app.services.queries.colors)
   (require 'app.services.queries.projects)
   (require 'app.services.queries.files)
+  (require 'app.services.queries.comments)
   (require 'app.services.queries.profile)
   (require 'app.services.queries.recent-files)
   (require 'app.services.queries.viewer))
@@ -26,11 +26,12 @@
   []
   (require 'app.services.mutations.demo)
   (require 'app.services.mutations.media)
-  (require 'app.services.mutations.colors)
   (require 'app.services.mutations.projects)
   (require 'app.services.mutations.files)
+  (require 'app.services.mutations.comments)
   (require 'app.services.mutations.profile)
-  (require 'app.services.mutations.viewer))
+  (require 'app.services.mutations.viewer)
+  (require 'app.services.mutations.verify-token))
 
 (defstate query-services
   :start (load-query-services))

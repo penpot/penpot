@@ -8,37 +8,122 @@
 // Copyright (c) 2020 UXBOX Labs SL
 
 .history-toolbox {
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 .history-toolbox-title {
-    color: $color-gray-10;
-    font-size: $fs14;
-    padding: 0.5rem;
+  color: $color-gray-10;
+  font-size: $fs14;
+  padding: 0.5rem;
 }
 
-.undo-history {
+.history-entry-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+
+  .history-entry-empty-icon {
+    margin-bottom: 1rem;
+    svg {
+      width: 32px;
+      height: 32px;
+      fill: $color-gray-40;
+    }
+  }
+
+  .history-entry-empty-msg {
+    color: $color-gray-30;
     font-size: $fs12;
-    color: $color-gray-10;
+  }
+}
 
-    .undo-entry {
-        max-height: 10rem;
-        overflow: auto;
-        margin: 0.5rem;
+.history-entries {
+  font-size: $fs12;
+  color: $color-gray-20;
+  fill: $color-gray-20;
+}
 
-        &.transaction {
-            border: 2px solid $color-primary;
-        }
+.history-entry {
+  border: 1px solid $color-gray-60;
+  border-radius: 4px;
+  margin: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem;
+  cursor: pointer;
+
+  transition: border 0.2s;
+
+  &.disabled {
+    opacity: 0.5;
+  }
+
+  &.current {
+    background-color: $color-gray-60;
+  }
+
+  &.hover {
+    border-color: $color-primary;
+  }
+}
+
+.history-entry-summary {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  * {
+    display: flex;
+  }
+}
+
+.history-entry-summary-icon {
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.history-entry-summary-text {
+  flex: 1;
+  margin: 0 0.5rem;
+  margin-top: 2px;
+}
+
+.history-entry-summary-button {
+  opacity: 0;
+  transition: transform 0.2s;
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .show-detail &,
+  .hover & {
+    opacity: 1;
+  }
+
+  .show-detail & {
+    transform: rotate(90deg);
+  }
+}
+
+.history-entry-detail {
+  display: none;
+
+  .show-detail & {
+    display: block;
+    padding: 1rem 0 0.5rem 0;
+  }
+
+  .history-entry-details-list {
+    margin: 0;
+
+    li {
+      margin-bottom: 0.5rem;
     }
-
-    .undo-entry-change {
-        background-color: #1F1F1F;
-        padding: 0.5rem;
-    }
-
-    .separator {
-        margin: 0.5rem;
-        border-color: $color-primary;
-    }
+  }
 }

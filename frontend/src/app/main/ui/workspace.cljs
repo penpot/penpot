@@ -19,93 +19,79 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
+   [app.main.ui.context :as ctx]
    [app.main.ui.workspace.colorpalette :refer [colorpalette]]
+   [app.main.ui.workspace.colorpicker]
    [app.main.ui.workspace.context-menu :refer [context-menu]]
    [app.main.ui.workspace.header :refer [header]]
    [app.main.ui.workspace.left-toolbar :refer [left-toolbar]]
+   [app.main.ui.workspace.libraries]
    [app.main.ui.workspace.rules :refer [horizontal-rule vertical-rule]]
    [app.main.ui.workspace.scroll :as scroll]
    [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
    [app.main.ui.workspace.viewport :refer [viewport coordinates]]
    [app.util.dom :as dom]
    [beicon.core :as rx]
+   [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
 ;; --- Workspace
 
-(mf/defc workspace-content
-  [{:keys [page-id file layout project] :as params}]
-  (let [local          (mf/deref refs/workspace-local)
-        left-sidebar?  (:left-sidebar? local)
-        right-sidebar? (:right-sidebar? local)
-        classes        (dom/classnames
-                        :no-tool-bar-right (not right-sidebar?)
-                        :no-tool-bar-left (not left-sidebar?))]
+(mf/defc workspace-rules
+  {::mf/wrap-props false}
+  [props]
+  (let [local (unchecked-get props "local")]
     [:*
-     (when (:colorpalette layout)
-       [:& colorpalette {:left-sidebar? left-sidebar?
-                         :team-id (:team-id project)}])
+     [:div.empty-rule-square]
+     [:& horizontal-rule {:zoom (:zoom local)
+                          :vbox (:vbox local)
+                          :vport (:vport local)}]
+     [:& vertical-rule {:zoom (:zoom local 1)
+                        :vbox (:vbox local)
+                        :vport (:vport local)}]
+     [:& coordinates]]))
 
-     [:section.workspace-content {:class classes}
-      [:section.workspace-viewport
-       (when (contains? layout :rules)
-         [:*
-          [:div.empty-rule-square]
-          [:& horizontal-rule {:zoom (:zoom local)
-                               :vbox (:vbox local)
-                               :vport (:vport local)}]
-          [:& vertical-rule {:zoom (:zoom local 1)
-                             :vbox (:vbox local)
-                             :vport (:vport local)}]
-          [:& coordinates]])
+(mf/defc workspace-content
+  [{:keys [file layout local] :as params}]
+  [:*
+   ;; TODO: left-sidebar option is obsolete because left-sidebar now
+   ;; is always visible.
+   (when (:colorpalette layout)
+     [:& colorpalette {:left-sidebar? true}])
 
-       [:& viewport {:page-id page-id
-                     :key (str page-id)
-                     :file file
-                     :local local
-                     :layout layout}]]]
+   [:section.workspace-content
+    [:section.workspace-viewport
+     (when (contains? layout :rules)
+       [:& workspace-rules {:local local}])
 
-     [:& left-toolbar {:layout layout}]
+     [:& viewport {:file file
+                   :local local
+                   :layout layout}]]]
 
-     ;; Aside
-     (when left-sidebar?
-       [:& left-sidebar
-        {:file file
-         :page-id page-id
-         :project project
-         :layout layout}])
-     (when right-sidebar?
-       [:& right-sidebar
-        {:page-id page-id
-         :file-id (:id file)
-         :local local
-         :layout layout}])]))
+   [:& left-toolbar {:layout layout}]
 
-(defn trimmed-page-ref
-  [id]
-  (l/derived (fn [state]
-               (let [page-id (:current-page-id state)
-                     data    (:workspace-data state)]
-                 (select-keys (get-in data [:pages-index page-id]) [:id :name])))
-             st/state =))
+   ;; Aside
+   [:& left-sidebar {:layout layout}]
+   [:& right-sidebar {:local local}]])
+
+(def trimmed-page-ref (l/derived :trimmed-page st/state =))
 
 (mf/defc workspace-page
-  [{:keys [project file layout page-id] :as props}]
-  (mf/use-effect
-   (mf/deps page-id)
-   (fn []
-     (st/emit! (dw/initialize-page page-id))
-     #(st/emit! (dw/finalize-page page-id))))
+  [{:keys [file layout page-id] :as props}]
+  (let [local (mf/deref refs/workspace-local)
+        page  (mf/deref trimmed-page-ref)]
+    (mf/use-layout-effect
+     (mf/deps page-id)
+     (fn []
+       (st/emit! (dw/initialize-page page-id))
+       (st/emitf (dw/finalize-page page-id))))
 
-  (let [page-ref (mf/use-memo (mf/deps page-id) #(trimmed-page-ref page-id))
-        page     (mf/deref page-ref)]
     (when page
-      [:& workspace-content {:page page
-                             :page-id (:id page)
-                             :project project
+      [:& workspace-content {:key page-id
                              :file file
-                             :layout layout}])))
+                             :layout layout
+                             :local local}])))
 
 (mf/defc workspace-loader
   []
@@ -120,7 +106,7 @@
    (mf/deps project-id file-id)
    (fn []
      (st/emit! (dw/initialize-file project-id file-id))
-     #(st/emit! (dw/finalize-file project-id file-id))))
+     (st/emitf (dw/finalize-file project-id file-id))))
 
   (hooks/use-shortcuts dw/shortcuts)
 
@@ -128,19 +114,21 @@
         project (mf/deref refs/workspace-project)
         layout  (mf/deref refs/workspace-layout)]
 
-    [:section#workspace
-     [:& header {:file file
-                 :page-id page-id
-                 :project project
-                 :layout layout}]
+    [:& (mf/provider ctx/current-file-id) {:value (:id file)}
+     [:& (mf/provider ctx/current-team-id) {:value (:team-id project)}
+      [:& (mf/provider ctx/current-project-id) {:value (:id project)}
+       [:& (mf/provider ctx/current-page-id) {:value page-id}
 
-     [:& context-menu]
+        [:section#workspace
+         [:& header {:file file
+                     :page-id page-id
+                     :project project
+                     :layout layout}]
 
-     (if (and (and file project)
-              (:initialized file))
+         [:& context-menu]
 
-       [:& workspace-page {:page-id page-id
-                           :project project
-                           :file file
-                           :layout layout}]
-       [:& workspace-loader])]))
+         (if (and (and file project)
+                  (:initialized file))
+           [:& workspace-page {:page-id page-id :file file :layout layout}]
+           [:& workspace-loader])]]]]]))
+

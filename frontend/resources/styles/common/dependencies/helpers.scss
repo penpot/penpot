@@ -6,11 +6,11 @@
 // Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
 // Padding & Margin sizes
-$x-small: 5px;
-$small: 10px;
-$medium: 15px;
+$x-small: 4px;
+$small: 8px;
+$medium: 16px;
 $big: 20px;
-$x-big: 30px;
+$x-big: 32px;
 
 // New sizes
 $size-1: 0.25rem;
@@ -24,6 +24,7 @@ $size-6: 2rem;
 $br-small: 3px;
 $br-medium: 5px;
 $br-big: 8px;
+$br-huge: 12px;
 
 // Alignments
 .text-left {

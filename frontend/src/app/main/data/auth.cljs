@@ -151,19 +151,17 @@
 
 ;; --- Request Account Deletion
 
-(def request-account-deletion
-  (letfn [(on-error [{:keys [code] :as error}]
-            (if (= :app.services.mutations.profile/owner-teams-with-people code)
-              (let [msg (tr "settings.notifications.profile-deletion-not-allowed")]
-                (rx/of (dm/error msg)))
-              (rx/empty)))]
-    (ptk/reify ::request-account-deletion
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (rx/concat
-         (->> (rp/mutation :delete-profile {})
-              (rx/map #(rt/nav :auth-goodbye))
-              (rx/catch on-error)))))))
+(defn request-account-deletion
+  [params]
+  (ptk/reify ::request-account-deletion
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [{:keys [on-error on-success]
+             :or {on-error identity
+                  on-success identity}} (meta params)]
+        (->> (rp/mutation :delete-profile {})
+             (rx/tap on-success)
+             (rx/catch on-error))))))
 
 ;; --- Recovery Request
 

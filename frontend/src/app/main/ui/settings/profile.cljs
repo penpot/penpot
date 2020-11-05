@@ -9,91 +9,80 @@
 
 (ns app.main.ui.settings.profile
   (:require
-   [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [rumext.alpha :as mf]
+   [app.common.spec :as us]
    [app.main.data.messages :as dm]
-   [app.main.data.users :as udu]
+   [app.main.data.modal :as modal]
+   [app.main.data.users :as du]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.forms :refer [input submit-button form]]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
+   [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
-   [app.main.ui.modal :as modal]
    [app.util.dom :as dom]
-   [app.util.forms :as fm]
-   [app.util.i18n :as i18n :refer [tr t]]))
+   [app.util.i18n :as i18n :refer [tr t]]
+   [cljs.spec.alpha :as s]
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
-(s/def ::fullname ::fm/not-empty-string)
-(s/def ::email ::fm/email)
+(s/def ::fullname ::us/not-empty-string)
+(s/def ::email ::us/email)
 
 (s/def ::profile-form
   (s/keys :req-un [::fullname ::lang ::theme ::email]))
 
+(defn- on-success
+  [form]
+  (st/emit! (dm/success (tr "notifications.profile-saved"))))
+
 (defn- on-error
-  [error form]
+  [form error]
   (st/emit! (dm/error (tr "errors.generic"))))
 
 (defn- on-submit
   [form event]
-  (let [data (:clean-data form)
-        on-success #(st/emit! (dm/success (tr "settings.notifications.profile-saved")))
-        on-error #(on-error % form)]
-    (st/emit! (udu/update-profile (with-meta data
-                                    {:on-success on-success
-                                     :on-error on-error})))))
+  (let [data  (:clean-data @form)
+        mdata {:on-success (partial on-success form)
+               :on-error (partial on-error form)}]
+    (st/emit! (du/update-profile (with-meta data mdata)))))
+
 
 ;; --- Profile Form
 
 (mf/defc profile-form
   [{:keys [locale] :as props}]
-  (let [prof (mf/deref refs/profile)]
-    [:& form {:on-submit on-submit
-              :class "profile-form"
-              :spec ::profile-form
-              :initial prof}
-     [:& input
-      {:type "text"
-       :name :fullname
-       :label (t locale "settings.fullname-label")
-       :trim true}]
+  (let [profile (mf/deref refs/profile)
+        form    (fm/use-form :spec ::profile-form
+                             :initial profile)]
+    [:& fm/form {:on-submit on-submit
+                 :form form
+                 :class "profile-form"}
+     [:div.fields-row
+      [:& fm/input
+       {:type "text"
+        :name :fullname
+        :label (t locale "dashboard.your-name")}]]
 
-     [:& input
-      {:type "email"
-       :name :email
-       :disabled true
-       :help-icon i/at
-       :label (t locale "settings.email-label")}]
+     [:div.fields-row
+      [:& fm/input
+       {:type "email"
+        :name :email
+        :disabled true
+        :help-icon i/at
+        :label (t locale "dashboard.your-email")}]
 
-     (cond
-       (nil? (:pending-email prof))
+      [:div.options
        [:div.change-email
         [:a {:on-click #(modal/show! :change-email {})}
-         (t locale "settings.change-email-label")]]
+         (t locale "dashboard.change-email")]]]]
 
-       (not= (:pending-email prof) (:email prof))
-       [:& msgs/inline-banner
-        {:type :info
-         :content (t locale "settings.change-email-info3" (:pending-email prof))
-         :actions [{:label (t locale "settings.cancel-email-change")
-                    :callback #(st/emit! udu/cancel-email-change)}]}]
-        ;; [:div.btn-secondary.btn-small
-        ;;  {:on-click #(st/emit! udu/cancel-email-change)}
-        ;;  (t locale "settings.cancel-email-change")]]
-
-       :else
-       [:& msgs/inline-banner
-        {:type :info
-         :content (t locale "settings.email-verification-pending")}])
-
-     [:& submit-button
-      {:label (t locale "settings.profile-submit-label")}]
+     [:& fm/submit-button
+      {:label (t locale "dashboard.update-settings")}]
 
      [:div.links
       [:div.link-item
        [:a {:on-click #(modal/show! :delete-account {})}
-        (t locale "settings.remove-account-label")]]]]))
+        (t locale "dashboard.remove-account")]]]]))
 
 ;; --- Profile Photo Form
 
@@ -110,11 +99,11 @@
 
         on-file-selected
         (fn [file]
-          (st/emit! (udu/update-photo file)))]
+          (st/emit! (du/update-photo file)))]
 
     [:form.avatar-form
      [:div.image-change-field
-      [:span.update-overlay {:on-click on-image-click} (t locale "settings.update-photo-label")]
+      [:span.update-overlay {:on-click on-image-click} (t locale "labels.update")]
       [:img {:src photo}]
       [:& file-uploader {:accept "image/jpeg,image/png"
                          :multi false
@@ -124,10 +113,9 @@
 ;; --- Profile Page
 
 (mf/defc profile-page
-  {::mf/wrap-props false}
-  [props]
-  (let [locale (i18n/use-locale)]
-    [:section.settings-profile.generic-form
-     [:div.forms-container
-      [:& profile-photo-form {:locale locale}]
-      [:& profile-form {:locale locale}]]]))
+  [{:keys [locale]}]
+  [:div.dashboard-settings
+   [:div.form-container.two-columns
+    [:& profile-photo-form {:locale locale}]
+    [:& profile-form {:locale locale}]]])
+

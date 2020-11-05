@@ -9,31 +9,47 @@
 
 (ns app.main.ui.settings
   (:require
-   [cuerdas.core :as str]
-   [potok.core :as ptk]
-   [rumext.alpha :as mf]
-   [app.main.ui.icons :as i]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.util.router :as rt]
-   [app.main.ui.dashboard.profile :refer [profile-section]]
-   [app.main.ui.settings.header :refer [header]]
-   [app.main.ui.settings.password :refer [password-page]]
    [app.main.ui.settings.options :refer [options-page]]
-   [app.main.ui.settings.profile :refer [profile-page]]))
+   [app.main.ui.settings.password :refer [password-page]]
+   [app.main.ui.settings.profile :refer [profile-page]]
+   [app.main.ui.settings.sidebar :refer [sidebar]]
+   [app.main.ui.settings.change-email]
+   [app.main.ui.settings.delete-account]
+   [app.util.i18n :as i18n :refer [t]]
+   [rumext.alpha :as mf]))
+
+(mf/defc header
+  {::mf/wrap [mf/memo]}
+  [{:keys [locale] :as props}]
+  (let [logout (constantly nil)]
+    [:header.dashboard-header
+     [:div.dashboard-title
+      [:h1 (t locale "dashboard.your-account-title")]]
+     [:a.btn-secondary.btn-small {:on-click logout}
+      (t locale "labels.logout")]]))
 
 (mf/defc settings
   [{:keys [route] :as props}]
   (let [section (get-in route [:data :name])
-        profile (mf/deref refs/profile)]
-    [:main.settings-main
-     [:div.settings-content
-      [:& header {:section section :profile profile}]
-      (case section
-        :settings-profile (mf/element profile-page)
-        :settings-password (mf/element password-page)
-        :settings-options (mf/element options-page))]]))
+        profile (mf/deref refs/profile)
+        locale  (mf/deref i18n/locale)]
+    [:section.dashboard-layout
+     [:& sidebar {:profile profile
+                  :locale locale
+                  :section section}]
 
+     [:div.dashboard-content
+      [:& header {:locale locale}]
+      [:section.dashboard-container
+       (case section
+         :settings-profile
+         [:& profile-page {:locale locale}]
 
+         :settings-password
+         [:& password-page {:locale locale}]
 
+         :settings-options
+         [:& options-page {:locale locale}])]]]))
 

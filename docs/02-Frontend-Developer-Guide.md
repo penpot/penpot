@@ -26,19 +26,22 @@ app.util.debug.debug_all()
 app.util.debug.debug_none()
 ```
 
-## Traces and step-by-step debugging
+## Logging, Tracing & Debugging
 
-There are some useful functions to trace program execution:
+As a traditional way for debugging and tracing you have the followimg approach:
+
+
+Print data to the devtool console using clojurescript helper:
+**prn**. This helper automatically formats the clojure and js data
+structures as plain EDN for easy visual inspection of the data and the
+type of the data.
 
 ```clojure
-(println "message" expression)
-  ; Outputs data to the devtools console. Clojure variables are converted to string, as in (str) function.
+(prn "message" expression)
 ```
 
-```clojure
-(js/console.log "message" (clj->js expression))
-  ; Clojure values are converted to equivalent js objects, and displayed as a foldable widget in console.
-```
+An alternative is using the pprint function, usefull for pretty
+printing a medium-big data sturcture for completly understand it.
 
 ```clojure
 (:require [cljs.pprint :refer [pprint]])
@@ -46,19 +49,82 @@ There are some useful functions to trace program execution:
   ; Outputs a clojure value as a string, nicely formatted and with data type information.
 ```
 
+Use the js native functions for printing data.  The clj->js converts
+the clojure data sturcture to js data sturcture and it is
+inspeccionable in the devtools console.
+
+```clojure
+(js/console.log "message" (clj->js expression))
+```
+
+
 Also we can insert breakpoints in the code with this function:
 
 ```clojure
 (js-debugger)
 ```
 
-You can also set a breakpoint from the sources tab in devtools. One way of locating a source file is to
-output a trace with (js/console.log) and then clicking in the source link that shows in the console.
+You can also set a breakpoint from the sources tab in devtools. One
+way of locating a source file is to output a trace with
+(js/console.log) and then clicking in the source link that shows in
+the console.
+
+
+### Logging framework
+
+Additionally to the traditional way of putting traces in the code, we
+have a logging framework with steroids. It is usefull for casual
+debugging (as replacement for a `prn` and `js/console.log`) and as a
+permanent traces in the code.
+
+You have the ability to specify the logging level per namespace and
+all logging is ellided in production build.
+
+Lets start with a simple example:
+
+```clojure
+(ns some.ns
+  (:require [app.util.logging :as log]))
+
+;; This function sets the level to the current namespace; messages
+;; with level behind this will not be printed.
+(log/set-level! :info)
+
+
+;; Log some data; The `app.util.logging` has the following
+;; functions/macros:
+
+(log/error :msg "error message")
+(log/warn :msg "warn message")
+(log/info :msg "info message")
+(log/debug :msg "debug message")
+(log/trace :msg "trace message")
+```
+
+Each macro accept arbitrary number of key values pairs:
+
+```clojure
+(log/info :foo "bar" :msg "test" :value 1 :items #{1 2 3})
+```
+
+Some keys ara treated as special cases for helping in debugging:
+
+```clojure
+;; The special case for :js/whatever; if you namespace the key
+;; with `js/`, the variable will be printed as javascript
+;; inspectionable object.
+
+(let [foobar {:a 1 :b 2}]
+  (log/info :msg "Some data" :js/data foobar))
+
+;; The special case for `:err`; If you attach this key, the
+;; exception stack trace is printed as additional log entry.
+```
 
 
 ## Access to clojure from javascript console
 
-The uxbox namespace of the main application is exported, so that is
+The penpot namespace of the main application is exported, so that is
 accessible from javascript console in Chrome developer tools. Object
 names and data types are converted to javascript style. For example
 you can emit the event to reset zoom level by typing this at the

@@ -8,7 +8,9 @@
 ;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.config
-  (:require [app.util.object :as obj]))
+  (:require
+   [app.util.object :as obj]
+   [cuerdas.core :as str]))
 
 (this-as global
   (def default-language "en")
@@ -24,4 +26,7 @@
 
 (defn resolve-media-path
   [path]
-  (str media-uri "/" path))
+  (when path
+    (if (str/starts-with? path "data:")
+      path
+      (str media-uri "/" path))))

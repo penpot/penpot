@@ -6,7 +6,7 @@
 
 (ns app.common.data
   "Data manipulation and query helper functions."
-  (:refer-clojure :exclude [concat read-string])
+  (:refer-clojure :exclude [concat read-string hash-map])
   (:require [clojure.set :as set]
             [linked.set :as lks]
             #?(:cljs [cljs.reader :as r]
@@ -109,7 +109,7 @@
   ([coll value]
    (sequence (replace-by-id value) coll)))
 
-(defn remove-nil-vals
+(defn without-nils
   "Given a map, return a map removing key-value
   pairs when value is `nil`."
   [data]

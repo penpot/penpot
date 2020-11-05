@@ -2,12 +2,22 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.db
   (:require
-   [clojure.spec.alpha :as s]
+   [app.common.exceptions :as ex]
+   [app.common.geom.point :as gpt]
+   [app.config :as cfg]
+   [app.metrics :as mtx]
+   [app.util.data :as data]
+   [app.util.time :as dt]
+   [app.util.transit :as t]
    [clojure.data.json :as json]
+   [clojure.spec.alpha :as s]
    [clojure.string :as str]
    [clojure.tools.logging :as log]
    [lambdaisland.uri :refer [uri]]
@@ -17,19 +27,17 @@
    [next.jdbc.optional :as jdbc-opt]
    [next.jdbc.result-set :as jdbc-rs]
    [next.jdbc.sql :as jdbc-sql]
-   [next.jdbc.sql.builder :as jdbc-bld]
-   [app.common.exceptions :as ex]
-   [app.config :as cfg]
-   [app.metrics :as mtx]
-   [app.util.time :as dt]
-   [app.util.transit :as t]
-   [app.util.data :as data])
+   [next.jdbc.sql.builder :as jdbc-bld])
   (:import
-   org.postgresql.util.PGobject
-   org.postgresql.util.PGInterval
-   com.zaxxer.hikari.metrics.prometheus.PrometheusMetricsTrackerFactory
    com.zaxxer.hikari.HikariConfig
-   com.zaxxer.hikari.HikariDataSource))
+   com.zaxxer.hikari.HikariDataSource
+   com.zaxxer.hikari.metrics.prometheus.PrometheusMetricsTrackerFactory
+   java.sql.Connection
+   java.sql.Savepoint
+   org.postgresql.jdbc.PgArray
+   org.postgresql.geometric.PGpoint
+   org.postgresql.util.PGInterval
+   org.postgresql.util.PGobject))
 
 (def initsql
   (str "SET statement_timeout = 10000;\n"
@@ -158,9 +166,41 @@
   [v]
   (instance? PGInterval v))
 
+(defn pgpoint?
+  [v]
+  (instance? PGpoint v))
+
+(defn pgarray?
+  [v]
+  (instance? PgArray v))
+
+(defn pgarray-of-uuid?
+  [v]
+  (and (pgarray? v) (= "uuid" (.getBaseTypeName ^PgArray v))))
+
+(defn pgpoint
+  [p]
+  (PGpoint. (:x p) (:y p)))
+
+(defn decode-pgpoint
+  [^PGpoint v]
+  (gpt/point (.-x v) (.-y v)))
+
 (defn pginterval
   [data]
   (org.postgresql.util.PGInterval. ^String data))
+
+(defn savepoint
+  ([^Connection conn]
+   (.setSavepoint conn))
+  ([^Connection conn label]
+   (.setSavepoint conn (name label))))
+
+(defn rollback!
+  ([^Connection conn]
+   (.rollback conn))
+  ([^Connection conn ^Savepoint sp]
+   (.rollback conn sp)))
 
 (defn interval
   [data]
@@ -221,6 +261,14 @@
   (doto (org.postgresql.util.PGobject.)
     (.setType "jsonb")
     (.setValue (json/write-str data))))
+
+(defn pgarray->set
+  [v]
+  (set (.getArray ^PgArray v)))
+
+(defn pgarray->vector
+  [v]
+  (vec (.getArray ^PgArray v)))
 
 ;; Instrumentation
 

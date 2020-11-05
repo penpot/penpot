@@ -17,7 +17,7 @@
   .zoom-dropdown {
     position: absolute;
     z-index: 12;
-    width: 160px;
+    width: 210px;
 
     background-color: $color-white;
     border-radius: $br-small;
@@ -26,13 +26,13 @@
     li {
       color: $color-gray-60;
       cursor: pointer;
-      font-size: $fs12;
+      font-size: $fs14;
       display: flex;
       padding: $small;
 
       span {
-        color: $color-gray-40;
-        font-size: $fs12;
+        color: $color-gray-20;
+        font-size: $fs14;
         margin-left: auto;
       }
 

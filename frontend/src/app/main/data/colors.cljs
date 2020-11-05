@@ -25,29 +25,6 @@
    [app.main.data.modal :as md]
    [app.common.pages-helpers :as cph]))
 
-(declare create-color-result)
-
-(defn create-color
-  [file-id color]
-  (s/assert (s/nilable uuid?) file-id)
-  (ptk/reify ::create-color
-    ptk/WatchEvent
-    (watch [_ state s]
-
-      (->> (rp/mutation! :create-color {:file-id file-id
-                                        :content color
-                                        :name color})
-           (rx/map (partial create-color-result file-id))))))
-
-(defn create-color-result
-  [file-id color]
-  (ptk/reify ::create-color-result
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (update-in [:workspace-file :colors] #(conj % color))
-          (assoc-in [:workspace-local :color-for-rename] (:id color))))))
-
 (def clear-color-for-rename
   (ptk/reify ::clear-color-for-rename
     ptk/UpdateEvent
@@ -72,44 +49,6 @@
     (update [_ state]
       (-> state
           (update-in [:workspace-file :colors] #(d/replace-by-id % color))))))
-
-(declare update-color-result)
-
-(defn update-color
-  [file-id color-id content]
-  (ptk/reify ::update-color
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (->> (rp/mutation! :update-color {:id color-id
-                                        :content content})
-           (rx/map (partial update-color-result file-id))))))
-
-(defn update-color-result
-  [file-id color]
-  (ptk/reify ::update-color-result
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (update-in [:workspace-file :colors] #(d/replace-by-id % color))))))
-
-(declare delete-color-result)
-
-(defn delete-color
-  [file-id color-id]
-  (ptk/reify ::delete-color
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (->> (rp/mutation! :delete-color {:id color-id})
-           (rx/map #(delete-color-result file-id color-id))))))
-
-(defn delete-color-result
-  [file-id color-id]
-  (ptk/reify ::delete-color-result
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (update-in [:workspace-file :colors]
-                     (fn [colors] (filter #(not= (:id %) color-id) colors)))))))
 
 (defn change-palette-size [size]
   (s/assert #{:big :small} size)
@@ -165,51 +104,53 @@
           (assoc-in [:workspace-local :picked-color-select] value)
           (assoc-in [:workspace-local :picked-shift?] shift?)))))
 
-
 (defn change-fill
-  ([ids color id file-id]
-   (change-fill ids color 1 id file-id))
-  ([ids color opacity id file-id]
+  ([ids color]
    (ptk/reify ::change-fill
      ptk/WatchEvent
      (watch [_ state s]
        (let [pid (:current-page-id state)
              objects (get-in state [:workspace-data :pages-index pid :objects])
-             children (mapcat #(cph/get-children % objects) ids)
+             not-frame (fn [shape-id] (not= (get-in objects [shape-id :type]) :frame))
+             children (->> ids (filter not-frame) (mapcat #(cph/get-children % objects)))
              ids (into ids children)
 
              is-text? #(= :text (:type (get objects %)))
              text-ids (filter is-text? ids)
              shape-ids (filter (comp not is-text?) ids)
-             update-fn (fn [shape] (assoc shape
-                                          :fill-color color
-                                          :fill-opacity opacity
-                                          :fill-color-ref-id id
-                                          :fill-color-ref-file file-id))
-             editor (get-in state [:workspace-local :editor])
-             converted-attrs {:fill color}
 
+             attrs (cond-> {:fill-color (:color color)
+                            :fill-color-ref-id (:id color)
+                            :fill-color-ref-file (:file-id color)
+                            :fill-color-gradient (:gradient color)
+                            :fill-opacity (:opacity color)})
+
+             update-fn (fn [shape] (merge shape attrs))
+             editors (get-in state [:workspace-local :editors])
              reduce-fn (fn [state id]
                          (update-in state [:workspace-data :pages-index pid :objects id]  update-fn))]
 
          (rx/from (conj
-                   (map #(dwt/update-text-attrs {:id % :editor editor :attrs converted-attrs}) text-ids)
+                   (map #(dwt/update-text-attrs {:id % :editor (get editors %) :attrs attrs}) text-ids)
                    (dwc/update-shapes shape-ids update-fn))))))))
 
-(defn change-stroke [ids color id file-id]
+(defn change-stroke [ids color]
   (ptk/reify ::change-stroke
     ptk/WatchEvent
     (watch [_ state s]
-      (let [objects (get-in state [:workspace-data :pages-index (:current-page-id state) :objects])
-            children (mapcat #(cph/get-children % objects) ids)
+      (let [pid (:current-page-id state)
+            objects (get-in state [:workspace-data :pages-index pid :objects])
+            not-frame (fn [shape-id] (not= (get-in objects [shape-id :type]) :frame))
+            children (->> ids (filter not-frame) (mapcat #(cph/get-children % objects)))
             ids (into ids children)
 
             update-fn (fn [s]
                         (cond-> s
                           true
-                          (assoc :stroke-color color
-                                 :stroke-color-ref-id id
-                                 :stroke-color-ref-file file-id)
+                          (assoc :stroke-color (:color color)
+                                 :stroke-color-gradient (:gradient color)
+                                 :stroke-color-ref-id (:id color)
+                                 :stroke-color-ref-file (:file-id color))
 
                           (= (:stroke-style s) :none)
                           (assoc :stroke-style :solid
@@ -218,20 +159,67 @@
         (rx/of (dwc/update-shapes ids update-fn))))))
 
 (defn picker-for-selected-shape []
-  ;; TODO: replace st/emit! by a subject push and set that in the WatchEvent
-  (let [handle-change-color (fn [color opacity id file-id shift?]
-                              (let [ids (get-in @st/state [:workspace-local :selected])]
-                                (st/emit!
-                                 (if shift?
-                                   (change-stroke ids color nil nil)
-                                   (change-fill ids color nil nil))
-                                 (md/hide-modal))))]
-    (ptk/reify ::start-picker
+  (let [sub (rx/subject)]
+    (ptk/reify ::picker-for-selected-shape
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (let [ids (get-in state [:workspace-local :selected])
+              stop? (->> stream
+                         (rx/filter (ptk/type? ::stop-picker)))
+
+              update-events (fn [[color shift?]]
+                              (rx/of  (if shift?
+                                        (change-stroke ids color)
+                                        (change-fill ids color))
+                                      (stop-picker)))]
+          (rx/merge
+           ;; Stream that updates the stroke/width and stops if `esc` pressed
+           (->> sub
+                (rx/take-until stop?)
+                (rx/flat-map update-events))
+
+           ;; Hide the modal if the stop event is emitted
+           (->> stop?
+                (rx/first)
+                (rx/map #(md/hide))))))
+
       ptk/UpdateEvent
       (update [_ state]
+        (let [handle-change-color (fn [color shift?] (rx/push! sub [color shift?]))]
+          (-> state
+              (assoc-in [:workspace-local :picking-color?] true)
+              (assoc ::md/modal {:id (random-uuid)
+                                 :data {:color "#000000" :opacity 1}
+                                 :type :colorpicker
+                                 :props {:on-change handle-change-color}
+                                 :allow-click-outside true})))))))
+
+(defn start-gradient [gradient]
+  (ptk/reify ::start-gradient
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [id (first (get-in state [:workspace-local :selected]))]
         (-> state
-            (assoc-in [:workspace-local :picking-color?] true)
-            (assoc ::md/modal {:id (random-uuid)
-                               :type :colorpicker
-                               :props {:on-change handle-change-color}
-                               :allow-click-outside true}))))))
+            (assoc-in [:workspace-local :current-gradient] gradient)
+            (assoc-in [:workspace-local :current-gradient :shape-id] id))))))
+
+(defn stop-gradient []
+  (ptk/reify ::stop-gradient
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update :workspace-local dissoc :current-gradient)))))
+
+(defn update-gradient [changes]
+  (ptk/reify ::update-gradient
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update-in [:workspace-local :current-gradient] merge changes)))))
+
+(defn select-gradient-stop [spot]
+  (ptk/reify ::select-gradient-stop
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:workspace-local :editing-stop] spot)))))

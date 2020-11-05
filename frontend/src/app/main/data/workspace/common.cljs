@@ -86,28 +86,33 @@
               (rx/of (append-undo entry))))))))))
 
 (defn generate-operations
-  [ma mb]
-  (let [ma-keys (set (keys ma))
-        mb-keys (set (keys mb))
-        added   (set/difference mb-keys ma-keys)
-        removed (set/difference ma-keys mb-keys)
-        both    (set/intersection ma-keys mb-keys)]
-    (d/concat
-     (mapv #(array-map :type :set :attr % :val (get mb %)) added)
-     (mapv #(array-map :type :set :attr % :val nil) removed)
-     (loop [items  (seq both)
-            result []]
-       (if items
-         (let [k   (first items)
-               vma (get ma k)
-               vmb (get mb k)]
-           (if (= vma vmb)
-             (recur (next items) result)
-             (recur (next items)
-                    (conj result {:type :set
-                                  :attr k
-                                  :val vmb}))))
-         result)))))
+  ([ma mb] (generate-operations ma mb false))
+  ([ma mb undo?]
+   (let [ops (let [ma-keys (set (keys ma))
+                   mb-keys (set (keys mb))
+                   added   (set/difference mb-keys ma-keys)
+                   removed (set/difference ma-keys mb-keys)
+                   both    (set/intersection ma-keys mb-keys)]
+               (d/concat
+                 (mapv #(array-map :type :set :attr % :val (get mb %)) added)
+                 (mapv #(array-map :type :set :attr % :val nil) removed)
+                 (loop [items  (seq both)
+                        result []]
+                   (if items
+                     (let [k   (first items)
+                           vma (get ma k)
+                           vmb (get mb k)]
+                       (if (= vma vmb)
+                         (recur (next items) result)
+                         (recur (next items)
+                                (conj result {:type :set
+                                              :attr k
+                                              :val vmb
+                                              :ignore-touched undo?}))))
+                     result))))]
+     (if undo?
+       (conj ops {:type :set-touched :touched (:touched mb)})
+       ops))))
 
 (defn generate-changes
   [page-id objects1 objects2]
@@ -149,55 +154,6 @@
                   :objects objects})))))
 
 ;; --- Common Helpers & Events
-
-(defn- calculate-frame-overlap
-  [frames shape]
-  (let [xf      (comp
-                 (filter #(geom/overlaps? % (:selrect shape)))
-                 (take 1))
-        frame   (first (into [] xf frames))]
-    (or (:id frame) uuid/zero)))
-
-(defn- calculate-shape-to-frame-relationship-changes
-  [page-id frames shapes]
-  (loop [shape  (first shapes)
-         shapes (rest shapes)
-         rch    []
-         uch    []]
-    (if (nil? shape)
-      [rch uch]
-      (let [fid (calculate-frame-overlap frames shape)]
-        (if (not= fid (:frame-id shape))
-          (recur (first shapes)
-                 (rest shapes)
-                 (conj rch {:type :mov-objects
-                            :page-id page-id
-                            :parent-id fid
-                            :shapes [(:id shape)]})
-                 (conj uch {:type :mov-objects
-                            :page-id page-id
-                            :parent-id (:frame-id shape)
-                            :shapes [(:id shape)]}))
-          (recur (first shapes)
-                 (rest shapes)
-                 rch
-                 uch))))))
-
-(defn rehash-shape-frame-relationship
-  [ids]
-  (ptk/reify ::rehash-shape-frame-relationship
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [page-id (:current-page-id state)
-            objects (lookup-page-objects state page-id)
-
-            shapes (cph/select-toplevel-shapes objects)
-            frames (cph/select-frames objects)
-
-            [rch uch] (calculate-shape-to-frame-relationship-changes page-id frames shapes)]
-        (when-not (empty? rch)
-          (rx/of (commit-changes rch uch {:commit-local? true})))))))
-
 
 (defn get-frame-at-point
   [objects point]
@@ -278,7 +234,8 @@
           items (conj-undo-entry items entry)]
       (-> state
           (update :workspace-undo assoc :items items
-                                        :index (inc index))))
+                                        :index (min (inc index)
+                                                    (dec MAX-UNDO-SIZE)))))
     state))
 
 (defn- accumulate-undo-entry
@@ -415,7 +372,7 @@
                   obj1 (get objects id)
                   obj2 (f obj1)
                   rch-operations (generate-operations obj1 obj2)
-                  uch-operations (generate-operations obj2 obj1)
+                  uch-operations (generate-operations obj2 obj1 true)
                   rchg {:type :mod-obj
                         :page-id page-id
                         :operations rch-operations
@@ -456,7 +413,7 @@
                       obj1 (get objects id)
                       obj2 (f obj1)
                       rops (generate-operations obj1 obj2)
-                      uops (generate-operations obj2 obj1)
+                      uops (generate-operations obj2 obj1 true)
                       rchg {:type :mod-obj
                             :page-id page-id
                             :operations rops

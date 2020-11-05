@@ -61,16 +61,22 @@
   .element-set {
     border-bottom: 1px solid $color-gray-60;
     color: $color-gray-20;
-    margin: 0 $x-small;
+    padding: $small $x-small;
 
     .element-set-title {
-      color: $color-gray-10;
+      color: $color-gray-20;
       display: flex;
       font-size: $fs13;
-      padding: $small $x-small;
+      padding: $x-small;
       width: 100%;
+      align-items: center;
     }
 
+    &:hover {
+      .element-set-title {
+        color: $color-gray-10;
+      }
+    }
   }
 
   .element-list {
@@ -185,7 +191,7 @@
     background-color: $color-gray-50;
     border: 1px solid transparent;
     border-bottom-color: $color-gray-40;
-    color: $color-gray-10;
+    color: $color-white;
     font-size: $fs12;
     margin: $x-small;
     padding: $x-small;
@@ -217,7 +223,7 @@
   }
 
   .element-set-subtitle {
-    color: $color-gray-10;
+    color: $color-gray-20;
     font-size: $fs11;
     width: 12rem;
   }
@@ -262,8 +268,9 @@
   }
 
   .custom-select {
-    cursor: pointer;
     border: 1px solid $color-gray-40;
+    border-radius: $br-small;
+    cursor: pointer;
     padding: $x-small $big $x-small $x-small;
     position: relative;
 
@@ -289,16 +296,17 @@
 
   }
   .custom-select-dropdown {
-    position: absolute;
-    left: 0;
-    z-index: 12;
-    max-height: 30rem;
-    min-width: 7rem;
-    overflow-y: auto;
-
     background-color: $color-white;
     border-radius: $br-small;
     box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
+    left: 0;
+    max-height: 30rem;
+    min-width: 7rem;
+    position: absolute;
+    overflow-y: auto;
+    top: 30px;
+    z-index: 12;
+
 
     .presets {
       width: 200px;
@@ -467,47 +475,6 @@
   margin-bottom: 0;
 }
 
-.color-th {
-  background-color: $color-gray-30;
-  border: 1px solid $color-gray-30;
-  border-radius: $br-small;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: $color-gray-10;
-  flex-shrink: 0;
-  height: 20px;
-  margin: 5px 4px 0 0;
-  width: 20px;
-
-  &.color-name {
-      border-radius: 10px;
-  }
-
-  &.palette-th {
-    align-items: center;
-    border: 1px solid $color-gray-30;
-    display: flex;
-    justify-content: center;
-
-    svg {
-      fill: $color-gray-30;
-      height: 16px;
-      width: 16px;
-    }
-
-    &:hover {
-      border-color: $color-primary;
-      svg {
-        fill: $color-primary;
-      }
-
-    }
-
-  }
-}
-
 .presets {
   .custom-select-dropdown {
     width: 200px;
@@ -604,14 +571,13 @@
   svg {
     cursor: pointer;
     height: 20px;
-    stroke: $color-gray-40;
-    stroke-width: 30px;
+    fill: $color-gray-40;
     width: 20px;
   }
 
   &:hover {
     svg {
-      stroke: $color-gray-10;
+      fill: $color-gray-10;
     }
   }
 }
@@ -768,7 +734,18 @@
   z-index: 10;
 }
 
-.element-set-content .advanced-options {
+.advanced-options-wrapper {
+  position: absolute;
+  width: 100%;
+  padding-right: 1.5rem;
+  padding-left: 0.25rem;
+}
+
+.element-options .advanced-options-wrapper {
+  padding-right: 1rem;
+}
+
+.advanced-options {
   background-color: #303236;
   border-radius: 4px;
   left: -8px;
@@ -858,8 +835,8 @@
     align-items: center;
     cursor: pointer;
     svg {
-        width: 16px;
-        height: 16px;
+        width: 12px;
+        height: 12px;
         fill: $color-gray-20;
     }
 
@@ -875,4 +852,156 @@
 
 .element-set-options-group:hover .element-set-actions {
     visibility: visible;
+}
+
+
+.typography-entry {
+    margin: 0.5rem 0.3rem;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    .typography-selection-wrapper {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        flex: 1;
+        height: 100%;
+
+        &.is-selectable {
+            cursor: pointer;
+        }
+    }
+
+    .typography-sample {
+        font-size: 17px;
+        color: $color-white;
+        margin: 0 0.5rem;
+
+        font-family: sourcesanspro;
+        font-style: normal;
+        font-weight: normal;
+    }
+
+    .typography-name {
+        flex-grow: 1;
+        font-size: 11px;
+        margin-top: 4px;
+    }
+
+    .element-set-actions-button svg {
+        width: 10px;
+        height: 10px;
+    }
+}
+
+.asset-group {
+    .typography-entry {
+        margin: 0.25rem 0;
+    }
+
+    .element-set-content .font-option,
+    .element-set-content .size-option {
+        margin: 0.5rem 0;
+    }
+    .element-set-content .variant-option {
+        margin-left: 0.5rem;
+    }
+}
+
+.row-flex input.adv-typography-name {
+    font-size: 14px;
+    color: $color-gray-10;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    background: #303236;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+}
+
+
+
+.size-option .custom-select-dropdown {
+    position: fixed;
+    max-height: 16rem;
+    min-width: 6rem;
+    margin-top: 25px;
+    left: initial;
+}
+
+.typography-read-only-data {
+    font-size: 12px;
+    color: $color-white;
+
+    .typography-name {
+        font-size: 14px;
+    }
+    
+    .row-flex {
+        padding: 0.5rem 0;
+    }
+
+    .label {
+        color: $color-gray-30;
+
+        &::after {
+            content: ':';
+            margin-right: 0.25rem;
+        }
+    }
+
+    .go-to-lib-button {
+        transition: border 0.3s, color 0.3s;
+        text-align: center;
+        background: $color-gray-60;
+        padding: 0.5rem;
+        border-radius: 2px;
+        cursor: pointer;
+        font-size: 14px;
+        margin-top: 1rem;
+        border: 1px solid $color-gray-60;
+
+        &:hover {
+            border: 1px solid $color-primary;
+            color: $color-primary;
+        }
+    }
+}
+
+.multiple-typography {
+    margin: 0.5rem;
+    padding: 0.5rem;
+    border: 1px dashed $color-gray-30;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+
+    .multiple-typography-text,
+    .multiple-typography-button {
+        font-size: $fs13;
+        display: flex;
+        align-items: center;
+    }
+
+    .multiple-typography-button {
+        cursor: pointer;
+        svg {
+            transition: fill 0.3s;
+            width: 16px;
+            height: 16px;
+            fill: $color-gray-10;
+        }
+
+        &:hover svg {
+            fill: $color-primary;
+        }
+    }
+
+    svg {
+    }
+
+    .multiple-typography-button:hover svg {
+    }
 }

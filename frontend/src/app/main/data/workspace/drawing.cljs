@@ -299,7 +299,7 @@
                 (rx/of dwc/start-undo-transaction)
                 (rx/empty))
 
-              (rx/of dw/deselect-all
+              (rx/of (dw/deselect-all)
                      (dw/add-shape shape))))))))))
 
 (def close-drawing-path

@@ -98,6 +98,18 @@
 
     {:name "0027-mod-file-table-ignore-sync"
      :fn (mg/resource "app/migrations/sql/0027-mod-file-table-ignore-sync.sql")}
+
+    {:name "0028-add-team-project-profile-rel-table"
+     :fn (mg/resource "app/migrations/sql/0028-add-team-project-profile-rel-table.sql")}
+
+    {:name "0029-del-project-profile-rel-indexes"
+     :fn (mg/resource "app/migrations/sql/0029-del-project-profile-rel-indexes.sql")}
+
+    {:name "0030-mod-file-table-add-missing-index"
+     :fn (mg/resource "app/migrations/sql/0030-mod-file-table-add-missing-index.sql")}
+
+    {:name "0031-add-conversation-related-tables"
+     :fn (mg/resource "app/migrations/sql/0031-add-conversation-related-tables.sql")}
     ]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -11,7 +11,6 @@
   (:require
    [clojure.spec.alpha :as s]
    [app.common.spec :as us]
-   [app.common.pages-helpers :as cph]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
@@ -58,10 +57,17 @@
         (update :points #(mapv inc-point %))
         (update :segments #(mapv inc-point %)))))
 
+;; Duplicated from pages-helpers to remove cyclic dependencies
+(defn get-children [id objects]
+  (let [shapes (vec (get-in objects [id :shapes]))]
+    (if shapes
+      (d/concat shapes (mapcat #(get-children % objects) shapes))
+      [])))
+
 (defn recursive-move
   "Move the shape and all its recursive children."
   [shape dpoint objects]
-  (let [children-ids (cph/get-children (:id shape) objects)
+  (let [children-ids (get-children (:id shape) objects)
         children (map #(get objects %) children-ids)]
     (map #(move % dpoint) (cons shape children))))
 
@@ -406,6 +412,10 @@
      :y miny
      :width (- maxx minx)
      :height (- maxy miny)
+     :points [(gpt/point minx miny)
+              (gpt/point maxx miny)
+              (gpt/point maxx maxy)
+              (gpt/point minx maxy)]
      :type :rect}))
 
 (defn translate-to-frame
@@ -674,7 +684,7 @@
 
         resize-transform (:resize-transform modifiers (gmt/matrix))
         resize-transform-inverse (:resize-transform-inverse modifiers (gmt/matrix))
-        rt-modif (:rotation modifiers 0)
+        rt-modif (or (:rotation modifiers) 0)
 
         shape (-> shape
                   (transform ds-modifier))
@@ -792,8 +802,8 @@
                     (assoc  $ :points (shape->points $))
                     (assoc  $ :selrect (points->selrect (:points $)))
                     (update $ :selrect fix-invalid-rect-values)
-                    (update $ :rotation #(mod (+ (or % 0) (get-in $ [:modifiers :rotation] 0)) 360))
-                    )]
+                    (update $ :rotation #(mod (+ (or % 0)
+                                                 (or (get-in $ [:modifiers :rotation]) 0)) 360)))]
     new-shape))
 
 (declare update-path-selrect)

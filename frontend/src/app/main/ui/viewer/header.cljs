@@ -122,7 +122,7 @@
            (t locale "viewer.header.share.create-link")])]]]]))
 
 (mf/defc header
-  [{:keys [data index local fullscreen? toggle-fullscreen] :as props}]
+  [{:keys [data index local fullscreen? toggle-fullscreen screen] :as props}]
   (let [{:keys [project file page frames]} data
         total (count frames)
         on-click #(st/emit! dv/toggle-thumbnails-panel)
@@ -141,7 +141,14 @@
         on-edit #(st/emit! (rt/nav :workspace
                                    {:project-id project-id
                                     :file-id file-id}
-                                   {:page-id page-id}))]
+                                   {:page-id page-id}))
+
+        change-screen
+        (fn [screen]
+          (st/emit!
+           (rt/nav screen
+                   {:file-id file-id :page-id page-id}
+                   {:index index})))]
     [:header.viewer-header
      [:div.main-icon
       [:a {:on-click on-edit} i/logo-icon]]
@@ -155,6 +162,14 @@
       [:span.page-name (:name page)]
       [:span.dropdown-button i/arrow-down]
       [:span.counters (str (inc index) " / " total)]]
+
+     [:div.mode-zone
+      [:button.mode-zone-button {:on-click #(when (not= screen :viewer)
+                                              (change-screen :viewer))
+                                 :class (when (= screen :viewer) "active")} i/play]
+      [:button.mode-zone-button {:on-click #(when (not= screen :handoff)
+                                              (change-screen :handoff))
+                                 :class (when (= screen :handoff) "active")} i/code]]
 
      [:div.options-zone
       [:& interactions-menu {:interactions-mode interactions-mode}]

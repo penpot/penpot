@@ -13,7 +13,12 @@
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-stroke]]
    [app.common.geom.shapes :as geom]
-   [app.util.object :as obj]))
+   [app.util.object :as obj]
+   [app.main.ui.shapes.gradients :refer [gradient]]
+
+   [cuerdas.core :as str]
+   [app.common.uuid :as uuid]
+   [app.common.geom.point :as gpt]))
 
 (mf/defc rect-shape
   {::mf/wrap-props false}
@@ -21,6 +26,7 @@
   (let [shape (unchecked-get props "shape")
         {:keys [id x y width height]} shape
         transform (geom/transform-matrix shape)
+
         props (-> (attrs/extract-style-attrs shape)
                   (obj/merge!
                    #js {:x x
@@ -33,4 +39,3 @@
     [:& shape-custom-stroke {:shape shape
                              :base-props props
                              :elem-name "rect"}]))
-

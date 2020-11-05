@@ -10,14 +10,16 @@
 (ns app.main.ui.dashboard.grid
   (:require
    [app.common.uuid :as uuid]
+   [app.common.math :as mth]
    [app.config :as cfg]
-   [app.main.data.dashboard :as dsh]
+   [app.main.data.dashboard :as dd]
    [app.main.fonts :as fonts]
    [app.main.store :as st]
    [app.main.ui.components.context-menu :refer [context-menu]]
+   [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
-   [app.main.ui.modal :as modal]
+   [app.main.data.modal :as modal]
    [app.main.worker :as wrk]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t tr]]
@@ -59,20 +61,26 @@
 (mf/defc grid-item
   {:wrap [mf/memo]}
   [{:keys [id file] :as props}]
-  (let [local  (mf/use-state {:menu-open false :edition false})
-        locale (mf/deref i18n/locale)
+  (let [local    (mf/use-state {:menu-open false :edition false})
+        locale   (mf/deref i18n/locale)
+        on-close (mf/use-callback #(swap! local assoc :menu-open false))
 
-        delete     (mf/use-callback (mf/deps id) #(st/emit! nil (dsh/delete-file id)))
-        add-shared (mf/use-callback (mf/deps id) #(st/emit! (dsh/set-file-shared id true)))
-        del-shared (mf/use-callback (mf/deps id) #(st/emit! (dsh/set-file-shared id false)))
-        on-close   (mf/use-callback #(swap! local assoc :menu-open false))
+        delete-fn
+        (mf/use-callback
+         (mf/deps file)
+         (st/emitf (dd/delete-file file)))
 
         on-delete
         (mf/use-callback
-         (mf/deps id)
+         (mf/deps file)
          (fn [event]
            (dom/stop-propagation event)
-           (modal/show! :confirm-dialog {:on-accept delete})))
+           (st/emit! (modal/show
+                      {:type :confirm
+                       :title (t locale "modals.delete-file-confirm.title")
+                       :message (t locale "modals.delete-file-confirm.message")
+                       :accept-label (t locale "modals.delete-file-confirm.accept")
+                       :on-accept delete-fn}))))
 
         on-navigate
         (mf/use-callback
@@ -83,72 +91,79 @@
                  qparams {:page-id (first (get-in file [:data :pages]))}]
              (st/emit! (rt/nav :workspace pparams qparams)))))
 
+
+        add-shared
+        (mf/use-callback
+         (mf/deps file)
+         (st/emitf (dd/set-file-shared (assoc file :is-shared true))))
+
+        del-shared
+        (mf/use-callback
+         (mf/deps file)
+         (st/emitf (dd/set-file-shared (assoc file :is-shared false))))
+
         on-add-shared
         (mf/use-callback
-         (mf/deps id)
+         (mf/deps file)
          (fn [event]
            (dom/stop-propagation event)
-           (modal/show! :confirm-dialog
-                        {:message (t locale "dashboard.grid.add-shared-message" (:name file))
-                         :hint (t locale "dashboard.grid.add-shared-hint")
-                         :accept-text (t locale "dashboard.grid.add-shared-accept")
-                         :not-danger? true
-                         :on-accept add-shared})))
-
-        on-edit
-        (mf/use-callback
-         (mf/deps id)
-         (fn [event]
-           (dom/stop-propagation event)
-           (swap! local assoc :edition true)))
+           (st/emit! (modal/show
+                      {:type :confirm
+                       :message ""
+                       :title (t locale "modals.add-shared-confirm.message" (:name file))
+                       :hint (t locale "modals.add-shared-confirm.hint")
+                       :cancel-label :omit
+                       :accept-label (t locale "modals.add-shared-confirm.accept")
+                       :accept-style :primary
+                       :on-accept add-shared}))))
 
         on-del-shared
         (mf/use-callback
-         (mf/deps id)
+         (mf/deps file)
          (fn [event]
+           (dom/prevent-default event)
            (dom/stop-propagation event)
-           (modal/show! :confirm-dialog
-                        {:message (t locale "dashboard.grid.remove-shared-message" (:name file))
-                         :hint (t locale "dashboard.grid.remove-shared-hint")
-                         :accept-text (t locale "dashboard.grid.remove-shared-accept")
-                         :not-danger? false
-                         :on-accept del-shared})))
+           (st/emit! (modal/show
+                      {:type :confirm
+                       :message ""
+                       :title (t locale "modals.remove-shared-confirm.message" (:name file))
+                       :hint (t locale "modals.remove-shared-confirm.hint")
+                       :cancel-label :omit
+                       :accept-label (t locale "modals.remove-shared-confirm.accept")
+                       :on-accept del-shared}))))
 
         on-menu-click
         (mf/use-callback
-         (mf/deps id)
+         (mf/deps file)
          (fn [event]
+           (dom/prevent-default event)
            (dom/stop-propagation event)
            (swap! local assoc :menu-open true)))
 
-        on-blur
+        edit
         (mf/use-callback
-         (mf/deps id)
-         (fn [event]
-           (let [name (-> event dom/get-target dom/get-value)]
-             (st/emit! (dsh/rename-file id name))
-             (swap! local assoc :edition false))))
+         (mf/deps file)
+         (fn [name]
+           (st/emit! (dd/rename-file (assoc file :name name)))
+           (swap! local assoc :edition false)))
 
-        on-key-down
+        on-edit
         (mf/use-callback
-         #(cond
-            (kbd/enter? %) (on-blur %)
-            (kbd/esc? %) (swap! local assoc :edition false)))
+         (mf/deps file)
+         (fn [event]
+           (dom/stop-propagation event)
+           (swap! local assoc :edition true)))
 
         ]
     [:div.grid-item.project-th {:on-click on-navigate}
      [:div.overlay]
      [:& grid-item-thumbnail {:file file}]
      (when (:is-shared file)
-       [:div.item-badge
-         i/library])
+       [:div.item-badge i/library])
      [:div.item-info
       (if (:edition @local)
-        [:input.element-name {:type "text"
-                              :auto-focus true
-                              :on-key-down on-key-down
-                              :on-blur on-blur
-                              :default-value (:name file)}]
+        [:& inline-edition {:content (:name file)
+                            :on-end edit}]
         [:h3 (:name file)])
       [:& grid-item-metadata {:modified-at (:modified-at file)}]]
      [:div.project-th-actions {:class (dom/classnames
@@ -158,34 +173,89 @@
        i/actions]
       [:& context-menu {:on-close on-close
                         :show (:menu-open @local)
-                        :options [[(t locale "dashboard.grid.rename") on-edit]
-                                  [(t locale "dashboard.grid.delete") on-delete]
+                        :options [[(t locale "labels.rename") on-edit]
+                                  [(t locale "labels.delete") on-delete]
                                   (if (:is-shared file)
-                                     [(t locale "dashboard.grid.remove-shared") on-del-shared]
-                                     [(t locale "dashboard.grid.add-shared") on-add-shared])]}]]]))
+                                     [(t locale "dashboard.remove-shared") on-del-shared]
+                                     [(t locale "dashboard.add-shared") on-add-shared])]}]]]))
 
-;; --- Grid
+(mf/defc empty-placeholder
+  []
+  (let [locale (mf/deref i18n/locale)]
+    [:div.grid-empty-placeholder
+     [:div.icon i/file-html]
+     [:div.text (t locale "dashboard.empty-files")]]))
 
 (mf/defc grid
-  [{:keys [id opts files hide-new?] :as props}]
-  (let [locale (mf/deref i18n/locale)
-        click  #(st/emit! (dsh/create-file id))]
+  [{:keys [id opts files] :as props}]
+  (let [locale (mf/deref i18n/locale)]
     [:section.dashboard-grid
-     (cond
-       (pos? (count files))
-       [:div.dashboard-grid-row
-        (when (not hide-new?)
-          [:div.grid-item.add-file {:on-click click}
-           [:span (t locale "ds.new-file")]])
-
+     (if (pos? (count files))
+       [:div.grid-row
         (for [item files]
           [:& grid-item
            {:id (:id item)
             :file item
             :key (:id item)}])]
 
-       (zero? (count files))
-       [:div.grid-files-empty
-        [:div.grid-files-desc (t locale "dashboard.grid.empty-files")]
-        [:div.grid-files-link
-         [:a.btn-secondary.btn-small {:on-click click} (t locale "ds.new-file")]]])]))
+       [:& empty-placeholder])]))
+
+(mf/defc line-grid-row
+  [{:keys [locale files on-load-more] :as props}]
+  (let [rowref   (mf/use-ref)
+
+        width    (mf/use-state 900)
+        limit    (mf/use-state 1)
+
+        itemsize 290]
+
+    (mf/use-layout-effect
+     (mf/deps width)
+     (fn []
+       (let [node   (mf/ref-val rowref)
+             obs    (new js/ResizeObserver
+                         (fn [entries x]
+                           (ts/raf (fn []
+                                     (let [data  (first entries)
+                                           rect  (.-contentRect ^js data)]
+                                       (reset! width (.-width ^js rect)))))))
+
+             nitems (/ @width itemsize)
+             num    (mth/floor nitems)]
+
+         (.observe ^js obs node)
+
+         (cond
+           (< (* itemsize (count files)) @width)
+           (reset! limit num)
+
+           (< nitems (+ num 0.51))
+           (reset! limit (dec num))
+
+           :else
+           (reset! limit num))
+         (fn []
+           (.disconnect ^js obs)))))
+
+    [:div.grid-row.no-wrap {:ref rowref}
+     (for [item (take @limit files)]
+       [:& grid-item
+        {:id (:id item)
+         :file item
+         :key (:id item)}])
+     (when (> (count files) @limit)
+       [:div.grid-item.placeholder {:on-click on-load-more}
+        [:div.placeholder-icon i/arrow-down]
+        [:div.placeholder-label
+         (t locale "dashboard.show-all-files")]])]))
+
+(mf/defc line-grid
+  [{:keys [project-id opts files on-load-more] :as props}]
+  (let [locale (mf/deref i18n/locale)]
+    [:section.dashboard-grid
+     (if (pos? (count files))
+       [:& line-grid-row {:files files
+                          :on-load-more on-load-more
+                          :locale locale}]
+       [:& empty-placeholder])]))
+

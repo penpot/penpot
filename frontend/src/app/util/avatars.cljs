@@ -15,7 +15,7 @@
 
 (defn generate
   [{:keys [name color size]
-    :or {color "#303236" size 128}}]
+    :or {color "#000000" size 128}}]
   (let [parts   (str/words (str/upper name))
         letters (if (= 1 (count parts))
                   (ffirst parts)

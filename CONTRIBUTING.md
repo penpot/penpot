@@ -1,14 +1,14 @@
 # Contributing Guide #
 
-Thank you for your interest in contributing to UXBox. This is a
-generic guide that details how to contribute to UXBox in a way that is
+Thank you for your interest in contributing to Penpot. This is a
+generic guide that details how to contribute to Penpot in a way that is
 efficient for everyone. If you want a specific documentation for
 different parts of the platform, please refer to `docs/` directory.
 
 
 ## Reporting Bugs ##
 
-We are using [GitHub Issues](https://github.com/uxbox/uxbox/issues)
+We are using [GitHub Issues](https://github.com/penpot/penpot/issues)
 for our public bugs. We keep a close eye on this and try to make it
 clear when we have an internal fix in progress. Before filing a new
 task, try to make sure your problem doesn't already exist.

@@ -233,6 +233,38 @@
            (rx/first)
            (rx/map #(start-move from-position))))))
 
+(defn calculate-frame-for-move [ids]
+  (ptk/reify ::calculate-frame-for-move
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [position @ms/mouse-position
+            page-id (:current-page-id state)
+            objects (dwc/lookup-page-objects state page-id)
+            frame-id (cph/frame-id-by-position objects position)
+
+            moving-shapes (->> ids
+                               (map #(get objects %))
+                               (remove #(= (:frame-id %) frame-id)))
+
+            rch [{:type :mov-objects
+                  :page-id page-id
+                  :parent-id frame-id
+                  :shapes (mapv :id moving-shapes)}]
+
+            moving-shapes-by-frame-id (group-by :frame-id moving-shapes)
+
+            uch (->> moving-shapes-by-frame-id
+                     (mapv (fn [[frame-id shapes]]
+                             {:type :mov-objects
+                              :page-id page-id
+                              :parent-id frame-id
+                              :shapes (mapv :id shapes)})))]
+
+        (when-not (empty? rch)
+          (rx/of dwc/pop-undo-into-transaction
+                 (dwc/commit-changes rch uch {:commit-local? true})
+                 dwc/commit-undo-transaction))))))
+
 (defn start-move
   ([from-position] (start-move from-position nil))
   ([from-position ids]
@@ -257,9 +289,12 @@
                (rx/switch-map #(snap/closest-snap-move page-id shapes objects layout %))
                (rx/map #(gpt/round % 0))
                (rx/map gmt/translate-matrix)
-               (rx/map #(set-modifiers ids {:displacement %})))
+               (rx/map #(fn [state] (assoc-in state [:workspace-local :modifiers] {:displacement %}))))
 
-          (rx/of (apply-modifiers ids)
+          (rx/of (set-modifiers ids)
+                 (apply-modifiers ids)
+                 (calculate-frame-for-move ids)
+                 (fn [state] (update state :workspace-local dissoc :modifiers))
                  finish-transform)))))))
 
 (defn- get-displacement-with-grid
@@ -339,13 +374,15 @@
 ;; -- Apply modifiers
 
 (defn set-modifiers
+  ([ids] (set-modifiers ids nil true))
   ([ids modifiers] (set-modifiers ids modifiers true))
   ([ids modifiers recurse-frames?]
    (us/verify (s/coll-of uuid?) ids)
    (ptk/reify ::set-modifiers
      ptk/UpdateEvent
      (update [_ state]
-       (let [page-id (:current-page-id state)
+       (let [modifiers (or modifiers (get-in state [:workspace-local :modifiers] {}))
+             page-id (:current-page-id state)
              objects (dwc/lookup-page-objects state page-id)
 
              not-frame-id?
@@ -429,10 +466,8 @@
             ;; we have 3 different objects references).
 
             rchanges (conj (dwc/generate-changes page-id objects1 objects2) regchg)
-            uchanges (conj (dwc/generate-changes page-id objects2 objects0) regchg)
-            ]
+            uchanges (conj (dwc/generate-changes page-id objects2 objects0) regchg)]
 
         (rx/of dwc/start-undo-transaction
                (dwc/commit-changes rchanges uchanges {:commit-local? true})
-               (dwc/rehash-shape-frame-relationship ids)
                dwc/commit-undo-transaction)))))

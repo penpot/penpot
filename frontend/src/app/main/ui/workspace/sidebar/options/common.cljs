@@ -19,6 +19,7 @@
     (when visible?
       [:*
        [:div.focus-overlay {:on-click handle-click}]
-       [:div.advanced-options {}
-        children]])))
+       [:div.advanced-options-wrapper
+        [:div.advanced-options {}
+         children]]])))
 

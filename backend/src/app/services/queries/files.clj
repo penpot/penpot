@@ -33,6 +33,61 @@
 (s/def ::team-id ::us/uuid)
 (s/def ::search-term ::us/string)
 
+
+;; --- Query: File Permissions
+
+(def ^:private sql:file-permissions
+  "select fpr.is_owner,
+          fpr.is_admin,
+          fpr.can_edit
+     from file_profile_rel as fpr
+    where fpr.file_id = ?
+      and fpr.profile_id = ?
+   union all
+   select tpr.is_owner,
+          tpr.is_admin,
+          tpr.can_edit
+     from team_profile_rel as tpr
+    inner join project as p on (p.team_id = tpr.team_id)
+    inner join file as f on (p.id = f.project_id)
+    where f.id = ?
+      and tpr.profile_id = ?
+   union all
+   select ppr.is_owner,
+          ppr.is_admin,
+          ppr.can_edit
+     from project_profile_rel as ppr
+    inner join file as f on (f.project_id = ppr.project_id)
+    where f.id = ?
+      and ppr.profile_id = ?")
+
+(defn check-edition-permissions!
+  [conn profile-id file-id]
+  (let [rows (db/exec! conn [sql:file-permissions
+                             file-id profile-id
+                             file-id profile-id
+                             file-id profile-id])]
+    (when (empty? rows)
+      (ex/raise :type :not-found))
+
+    (when-not (or (some :can-edit rows)
+                  (some :is-admin rows)
+                  (some :is-owner rows))
+      (ex/raise :type :validation
+                :code :not-authorized))))
+
+
+(defn check-read-permissions!
+  [conn profile-id file-id]
+  (let [rows (db/exec! conn [sql:file-permissions
+                             file-id profile-id
+                             file-id profile-id
+                             file-id profile-id])]
+    (when-not (seq rows)
+      (ex/raise :type :validation
+                :code :not-authorized))))
+
+
 ;; --- Query: Files search
 
 ;; TODO: this query need to a good refactor
@@ -99,52 +154,8 @@
 (sq/defquery ::files
   [{:keys [profile-id project-id] :as params}]
   (with-open [conn (db/open)]
-    (let [project (db/get-by-id conn :project project-id)]
-      (projects/check-edition-permissions! conn profile-id project)
-      (into [] decode-row-xf (db/exec! conn [sql:files project-id])))))
-
-
-;; --- Query: File Permissions
-
-(def ^:private sql:file-permissions
-  "select fpr.is_owner,
-          fpr.is_admin,
-          fpr.can_edit
-     from file_profile_rel as fpr
-    where fpr.file_id = ?
-      and fpr.profile_id = ?
-   union all
-   select tpr.is_owner,
-          tpr.is_admin,
-          tpr.can_edit
-     from team_profile_rel as tpr
-    inner join project as p on (p.team_id = tpr.team_id)
-    inner join file as f on (p.id = f.project_id)
-    where f.id = ?
-      and tpr.profile_id = ?
-   union all
-   select ppr.is_owner,
-          ppr.is_admin,
-          ppr.can_edit
-     from project_profile_rel as ppr
-    inner join file as f on (f.project_id = ppr.project_id)
-    where f.id = ?
-      and ppr.profile_id = ?")
-
-(defn check-edition-permissions!
-  [conn profile-id file-id]
-  (let [rows (db/exec! conn [sql:file-permissions
-                             file-id profile-id
-                             file-id profile-id
-                             file-id profile-id])]
-    (when (empty? rows)
-      (ex/raise :type :not-found))
-
-    (when-not (or (some :can-edit rows)
-                  (some :is-admin rows)
-                  (some :is-owner rows))
-      (ex/raise :type :validation
-                :code :not-authorized))))
+    (projects/check-read-permissions! conn profile-id project-id)
+    (into [] decode-row-xf (db/exec! conn [sql:files project-id]))))
 
 
 ;; --- Query: File (By ID)

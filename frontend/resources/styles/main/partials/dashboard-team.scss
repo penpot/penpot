@@ -1,0 +1,241 @@
+
+.dashboard-invite-modal {
+  top: 65px;
+  right: 13px;
+  padding: 14px;
+  box-shadow: 0px 4px 8px rgba($color-black, 0.25);
+  border-radius: 8px;
+  width: 414px;
+  position: fixed;
+
+  form {
+    width: 100%;
+  }
+
+  .form-row {
+    display: flex;
+    flex-direction: row;
+    margin: 15px 0px;
+  }
+
+  .custom-input {
+    width: 272px;
+    margin-right: 10px;
+  }
+
+  .custom-select {
+    width: 103px
+  }
+
+  .action-buttons {
+    display: flex;
+    justify-content: center;
+    input[type=submit] {
+      margin-bottom: 0px;
+    }
+  }
+
+  .title {
+    color: $color-black;
+  }
+}
+
+.dashboard-team-members {
+  .table-field {
+    // border: 1px solid red;
+    &.name {
+      width: 43%;
+      min-width: 300px;
+    }
+
+    &.email {
+      width: 43%;
+      min-width: 300px;
+    }
+
+    &.permissions {
+      min-width: 120px;
+      user-select: none;
+      cursor: default;
+      position: relative;
+    }
+  }
+
+  .dropdown {
+    position: absolute;
+    max-height: 30rem;
+    overflow-y: auto;
+    background-color: $color-white;
+    border-radius: 4px;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
+    z-index: 12;
+    top: 30px;
+    left: 0px;
+    width: 125px;
+
+    hr {
+      margin: 0;
+      border-color: $color-gray-10;
+    }
+
+    li {
+      display: flex;
+      align-items: center;
+      color: $color-gray-60;
+      cursor: pointer;
+      font-size: $fs12;
+      height: 31px;
+      padding: 5px 16px;
+
+      &.title {
+        font-weight: 600;
+        cursor: default;
+      }
+
+      &:hover {
+        background-color: $color-primary-lighter;
+      }
+    }
+  }
+
+}
+
+.dashboard-team-settings {
+
+  .team-settings {
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .horizontal-blocks {
+      display: flex;
+      max-width: 1010px;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .block {
+      display: flex;
+      max-width: 324px;
+      width: 324px;
+      height: 100px;
+      background-color: $color-white;
+      flex-direction: column;
+      padding: 12px;
+
+      .label {
+        font-size: 13px;
+        color: $color-gray-30;
+      }
+    }
+
+    .info-block {
+      position: relative;
+
+      .name {
+        margin-top: 10px;
+        font-size: $fs32;
+        color: $color-black;
+        @include text-ellipsis;
+        margin-right: 90px;
+      }
+
+      .icon {
+        position: absolute;
+        padding: 15px;
+        width: 100px;
+        height: 100px;
+        right: 0px;
+        top: 0px;
+
+        img {
+          border-radius: 50%;
+          width: 70px;
+          height: 70px;
+        }
+
+        .update-overlay {
+          opacity: 0;
+          cursor: pointer;
+          position: absolute;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          width: 70px;
+          height: 70px;
+          border-radius: 50%;
+          color: $color-white;
+          background: $color-primary-dark;
+          z-index: 14;
+
+          svg { fill: $color-white; }
+        }
+
+        &:hover {
+          .update-overlay {
+            opacity: 1;
+          }
+        }
+      }
+    }
+
+    .owner-block {
+      img {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+      }
+
+      svg {
+        width: 12px;
+        height: 12px;
+        fill: $color-primary-dark;
+      }
+
+      .owner {
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        color: $color-black;
+        .icon {
+          margin-right: 12px;
+        }
+      }
+
+      .summary {
+        margin-top: 5px;
+        color: $color-primary-dark;
+        .icon {
+          padding: 0px 10px;
+          margin-right: 12px;
+        }
+      }
+    }
+
+    .stats-block {
+      svg {
+        fill: $color-black;
+      }
+
+      .projects,
+      .files {
+        margin-top: 7px;
+        display: flex;
+        align-items: center;
+        color: $color-black;
+
+        .icon {
+          display: flex;
+          align-items: center;
+          padding: 0px 2px;
+          margin-right: 14px;
+        }
+      }
+    }
+  }
+}

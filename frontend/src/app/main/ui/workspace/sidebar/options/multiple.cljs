@@ -15,14 +15,7 @@
    [app.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
    [app.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]
-   [app.main.ui.workspace.sidebar.options.text :refer [text-fill-attrs
-                                                         text-font-attrs
-                                                         text-align-attrs
-                                                         text-spacing-attrs
-                                                         text-valign-attrs
-                                                         text-decoration-attrs
-                                                         text-transform-attrs
-                                                         text-menu]]))
+   [app.main.ui.workspace.sidebar.options.text :as ot]))
 
 (defn get-shape-attrs
   [shape attrs text-attrs convert-attrs extract-fn]
@@ -47,88 +40,33 @@
         text-ids (map :id (filter #(= (:type %) :text) shapes))
         other-ids (map :id (filter #(not= (:type %) :text) shapes))
 
-        measure-values
-        (geom/get-attrs-multi shapes measure-attrs)
+        extract (fn [{:keys [attrs text-attrs convert-attrs extract-fn]}]
+                  (let [mapfn
+                        (fn [shape]
+                          (get-shape-attrs shape
+                                           attrs
+                                           text-attrs
+                                           convert-attrs
+                                           extract-fn))]
+                    (geom/get-attrs-multi (map mapfn shapes) (or attrs text-attrs))))
 
-        fill-values
-        (geom/get-attrs-multi (map #(get-shape-attrs
-                                      %
-                                      fill-attrs
-                                      text-fill-attrs
-                                      fill-attrs
-                                      dwt/current-text-values)
-                                   shapes)
-                              fill-attrs)
+        measure-values (geom/get-attrs-multi shapes measure-attrs)
 
-        stroke-values
-        (geom/get-attrs-multi (map #(get-shape-attrs
-                                      %
-                                      stroke-attrs
-                                      nil
-                                      nil
-                                      nil)
-                                   shapes)
-                              stroke-attrs)
+        fill-values (extract {:attrs fill-attrs
+                              :text-attrs ot/text-fill-attrs
+                              :convert-attrs fill-attrs
+                              :extract-fn dwt/current-text-values})
 
-        font-values
-        (geom/get-attrs-multi (map #(get-shape-attrs
-                                      %
-                                      nil
-                                      text-font-attrs
-                                      nil
-                                      dwt/current-text-values)
-                                   shapes)
-                              text-font-attrs)
+        stroke-values (extract {:attrs stroke-attrs})
 
-        align-values
-        (geom/get-attrs-multi (map #(get-shape-attrs
-                                      %
-                                      nil
-                                      text-align-attrs
-                                      nil
-                                      dwt/current-paragraph-values)
-                                   shapes)
-                              text-align-attrs)
+        root-values (extract {:text-attrs ot/root-attrs
+                              :extract-fn dwt/current-root-values})
 
-        spacing-values
-        (geom/get-attrs-multi (map #(get-shape-attrs
-                                      %
-                                      nil
-                                      text-spacing-attrs
-                                      nil
-                                      dwt/current-text-values)
-                                   shapes)
-                              text-spacing-attrs)
+        paragraph-values (extract {:text-attrs ot/paragraph-attrs
+                                   :extract-fn dwt/current-paragraph-values})
 
-        valign-values
-        (geom/get-attrs-multi (map #(get-shape-attrs
-                                      %
-                                      nil
-                                      text-valign-attrs
-                                      nil
-                                      dwt/current-root-values)
-                                   shapes)
-                              text-valign-attrs)
-
-        decoration-values
-        (geom/get-attrs-multi (map #(get-shape-attrs
-                                      %
-                                      nil
-                                      text-decoration-attrs
-                                      nil
-                                      dwt/current-text-values)
-                                   shapes)
-                              text-decoration-attrs)
-
-        transform-values
-        (geom/get-attrs-multi (map #(get-shape-attrs
-                                      %
-                                      nil
-                                      text-transform-attrs
-                                      nil
-                                      dwt/current-text-values)
-                                   shapes)
-                              text-transform-attrs)]
+        text-values (extract {:text-attrs ot/text-attrs
+                              :extract-fn dwt/current-text-values})]
     [:*
      [:& measures-menu {:ids ids
                         :type :multiple
@@ -141,14 +79,11 @@
                         :type :multiple
                         :values stroke-values}])
      (when-not (empty? text-ids)
-       [:& text-menu {:ids text-ids
-                      :type :multiple
-                      :editor nil
-                      :font-values font-values
-                      :align-values align-values
-                      :spacing-values spacing-values
-                      :valign-values valign-values
-                      :decoration-values decoration-values
-                      :transform-values transform-values
-                      :shapes shapes}])]))
+       [:& ot/text-menu {:ids text-ids
+                         :type :multiple
+                         :editor nil
+                         :values (merge root-values
+                                        paragraph-values
+                                        text-values)
+                         :shapes shapes}])]))
 

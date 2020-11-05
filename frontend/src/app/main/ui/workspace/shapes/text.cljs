@@ -9,30 +9,34 @@
 
 (ns app.main.ui.workspace.shapes.text
   (:require
-   [cuerdas.core :as str]
+   ["slate" :as slate]
+   ["slate-react" :as rslate]
    [goog.events :as events]
    [goog.object :as gobj]
+   [cuerdas.core :as str]
    [rumext.alpha :as mf]
+   [beicon.core :as rx]
+   [app.util.color :as color]
+   [app.util.dom :as dom]
+   [app.util.text :as ut]
+   [app.util.object :as obj]
+   [app.util.color :as uc]
+   [app.util.timers :as timers]
    [app.common.data :as d]
+   [app.common.geom.shapes :as geom]
+   [app.main.refs :as refs]
+   [app.main.store :as st]
+   [app.main.fonts :as fonts]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.texts :as dwt]
-   [app.main.refs :as refs]
-   [app.main.store :as st]
    [app.main.ui.cursors :as cur]
    [app.main.ui.workspace.shapes.common :as common]
    [app.main.ui.shapes.text :as text]
    [app.main.ui.keyboard :as kbd]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.filters :as filters]
-   [app.main.fonts :as fonts]
-   [app.util.color :as color]
-   [app.util.dom :as dom]
-   [app.common.geom.shapes :as geom]
-   [app.util.object :as obj]
-   [app.util.timers :as timers]
-   ["slate" :as slate]
-   ["slate-react" :as rslate])
+   [app.main.ui.shapes.shape :refer [shape-container]])
   (:import
    goog.events.EventType
    goog.events.KeyCodes))
@@ -56,13 +60,15 @@
   {::mf/wrap-props false}
   [props]
   (let [{:keys [id x1 y1 content group grow-type width height ] :as shape} (unchecked-get props "shape")
-
-        selected  (mf/deref refs/selected-shapes)
+        selected-iref (mf/use-memo (mf/deps (:id shape))
+                                   #(refs/make-selected-ref (:id shape)))
+        selected? (mf/deref selected-iref)
         edition   (mf/deref refs/selected-edition)
-        zoom      (mf/deref refs/selected-zoom)
+        current-transform (mf/deref refs/current-transform)
+
+        render-editor (mf/use-state false)
+
         edition?  (= edition id)
-        selected? (and (contains? selected id)
-                       (= (count selected) 1))
 
         embed-resources? (mf/use-ctx muc/embed-ctx)
 
@@ -74,29 +80,33 @@
           (dom/stop-propagation event)
           (dom/prevent-default event)
           (when selected?
-            (st/emit! (dw/start-edition-mode (:id shape)))))
+            (st/emit! (dw/start-edition-mode (:id shape)))))]
 
-        filter-id (mf/use-memo filters/get-filter-id)]
+    (mf/use-effect
+     (mf/deps shape edition selected? current-transform)
+     (fn [] (let [check? (and (#{:auto-width :auto-height} (:grow-type shape))
+                              selected?
+                              (not edition?)
+                              (not embed-resources?)
+                              (nil? current-transform))
+                  result (timers/schedule #(reset! render-editor check?))]
+              #(rx/dispose! result))))
 
-    [:g.shape {:on-double-click on-double-click
-               :on-mouse-down on-mouse-down
-               :on-context-menu on-context-menu
-               :filter (filters/filter-str filter-id shape)}
-     [:& filters/filters {:filter-id filter-id :shape shape}]
-     [:*
-      (when (and (not edition?) (not embed-resources?))
-        [:g {:opacity 0
-             :style {:pointer-events "none"}}
-         ;; We only render the component for its side-effect
-         [:& text-shape-edit {:shape shape
-                              :zoom zoom
-                              :read-only? true}]])
-
-      (if edition?
+    [:> shape-container {:shape shape
+                         :on-double-click on-double-click
+                         :on-mouse-down on-mouse-down
+                         :on-context-menu on-context-menu}
+     (when @render-editor
+       [:g {:opacity 0
+            :style {:pointer-events "none"}}
+        ;; We only render the component for its side-effect
         [:& text-shape-edit {:shape shape
-                             :zoom zoom}]
-        [:& text/text-shape {:shape shape
-                             :selected? selected?}])]]))
+                             :read-only? true}]])
+
+     (if edition?
+       [:& text-shape-edit {:shape shape}]
+       [:& text/text-shape {:shape shape
+                            :selected? selected?}])]))
 
 ;; --- Text Editor Rendering
 
@@ -135,20 +145,37 @@
         text-transform (obj/get data "text-transform")
         line-height (obj/get data "line-height")
 
-        font-id (obj/get data "font-id" fonts/default-font)
+        font-id (obj/get data "font-id" (:font-id ut/default-text-attrs))
         font-variant-id (obj/get data "font-variant-id")
 
         font-family (obj/get data "font-family")
         font-size  (obj/get data "font-size")
+
+        ;; Old properties for backwards compatibility
         fill (obj/get data "fill")
-        opacity (obj/get data "opacity")
+        opacity (obj/get data "opacity" 1)
+
+        fill-color (obj/get data "fill-color" fill)
+        fill-opacity (obj/get data "fill-opacity" opacity)
+        fill-color-gradient (obj/get data "fill-color-gradient" nil)
+        fill-color-gradient (when fill-color-gradient
+                              (-> (js->clj fill-color-gradient :keywordize-keys true)
+                                  (update :type keyword)))
+
+        fill-color-ref-id (obj/get data "fill-color-ref-id")
+        fill-color-ref-file (obj/get data "fill-color-ref-file")
+
+        [r g b a] (uc/hex->rgba fill-color fill-opacity)
+        background (if fill-color-gradient
+                     (uc/gradient->css (js->clj fill-color-gradient))
+                     (str/format "rgba(%s, %s, %s, %s)" r g b a))
+
         fontsdb (deref fonts/fontsdb)
 
         base #js {:textDecoration text-decoration
-                  :color fill
-                  :opacity opacity
                   :textTransform text-transform
-                  :lineHeight (or line-height "inherit")}]
+                  :lineHeight (or line-height "inherit")
+                  "--text-color" background}]
 
     (when (and (string? letter-spacing)
                (pos? (alength letter-spacing)))
@@ -223,7 +250,9 @@
         childs (obj/get props "children")
         data   (obj/get props "leaf")
         style  (generate-text-styles data)
-        attrs  (obj/set! attrs "style" style)]
+        attrs  (-> attrs
+                   (obj/set! "style" style)
+                   (obj/set! "className" "text-node"))]
     [:> :span attrs childs]))
 
 (defn- render-element
@@ -264,11 +293,19 @@
         children-count (->> node :children (map content-size) (reduce +))]
     (+ current children-count)))
 
+(defn fix-gradients
+  "Fix for the gradient types that need to be keywords"
+  [content]
+  (let [fix-node
+        (fn [node]
+          (d/update-in-when node [:fill-color-gradient :type] keyword))]
+    (ut/map-node fix-node content)))
+
 (mf/defc text-shape-edit
   {::mf/wrap [mf/memo]}
-  [{:keys [shape zoom read-only?] :or {read-only? false} :as props}]
+  [{:keys [shape read-only?] :or {read-only? false} :as props}]
   (let [{:keys [id x y width height content grow-type]} shape
-
+        zoom     (mf/deref refs/selected-zoom)
         state    (mf/use-state #(parse-content content))
         editor   (mf/use-memo #(dwt/create-editor))
         self-ref      (mf/use-ref)
@@ -289,13 +326,16 @@
           (dom/prevent-default event)
           (dom/stop-propagation event)
 
+
           (let [sidebar (dom/get-element "settings-bar")
+                assets (dom/get-element-by-class "assets-bar")
                 cpicker (dom/get-element-by-class "colorpicker-tooltip")
                 self    (mf/ref-val self-ref)
                 target  (dom/get-target event)
                 selecting? (mf/ref-val selecting-ref)]
-            (when-not (or (.contains sidebar target)
-                          (.contains self target)
+            (when-not (or (and sidebar (.contains sidebar target))
+                          (and assets  (.contains assets target))
+                          (and self    (.contains self target))
                           (and cpicker (.contains cpicker target)))
               (if selecting?
                 (mf/set-ref-val! selecting-ref false)
@@ -313,13 +353,15 @@
         (fn [event]
           (dom/stop-propagation event)
           (when (= (.-keyCode event) 27) ; ESC
-            (on-close)))
+            (do
+              (st/emit! :interrupt)
+              (on-close))))
 
         on-mount
         (fn []
           (when (not read-only?)
-            (let [lkey1 (events/listen js/document EventType.CLICK on-click-outside)
-                  lkey2 (events/listen js/document EventType.KEYUP on-key-up)]
+            (let [lkey1 (events/listen (dom/get-root) EventType.CLICK on-click-outside)
+                  lkey2 (events/listen (dom/get-root) EventType.KEYUP on-key-up)]
               (st/emit! (dwt/assign-editor id editor)
                         dwc/start-undo-transaction)
 
@@ -339,8 +381,10 @@
          (fn [val]
            (when (not read-only?)
              (let [content (js->clj val :keywordize-keys true)
-                   content (first content)]
-               (st/emit! (dw/update-shape id {:content content}))
+                   content (first content)
+                   content (fix-gradients content)]
+               ;; Append timestamp so we can react to cursor change events
+               (st/emit! (dw/update-shape id {:content (assoc content :ts (js->clj (.now js/Date)))}))
                (reset! state val)
                (reset! content-var content)))))]
 
@@ -393,7 +437,8 @@
                      :x x :y y
                      :width (if (= :auto-width grow-type) 10000 width)
                      :height height}
-     [:style "span { line-height: inherit; }"]
+     [:style "span { line-height: inherit; }
+              .text-node { background: var(--text-color); -webkit-text-fill-color: transparent; -webkit-background-clip: text;"]
      [:> rslate/Slate {:editor editor
                        :value @state
                        :on-change on-change}

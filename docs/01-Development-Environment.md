@@ -1,6 +1,6 @@
 # Developer Guide #
 
-This is a generic "getting started" guide for the uxbox platform. It
+This is a generic "getting started" guide for the Penpot platform. It
 intends to explain how to get the development environment up and
 running with many additional tips.
 
@@ -148,7 +148,7 @@ For more information, please refer to: `03-Backend-Guide.md`.
 ## Start the testenv ##
 
 The purpose of the testenv (Test Environment) is provide an easy way
-to get uxbox running in local pc without getting into the full
+to get Penpot running in local pc without getting into the full
 development environment.
 
 As first step we still need to build devenv image because that image
@@ -185,5 +185,5 @@ This will generate the necessary docker images ready to be executed.
 And finally, start the docker-compose:
 
 ```bash
-./manage.sh start-devenv
+./manage.sh start-testenv
 ```

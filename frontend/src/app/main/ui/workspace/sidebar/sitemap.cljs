@@ -10,13 +10,14 @@
 (ns app.main.ui.workspace.sidebar.sitemap
   (:require
    [app.common.data :as d]
+   [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
-   [app.main.ui.modal :as modal]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t]]
    [app.util.router :as rt]
@@ -33,7 +34,7 @@
         id          (:id page)
 
         delete-fn   (mf/use-callback (mf/deps id) #(st/emit! (dw/delete-page id)))
-        on-delete   (mf/use-callback (mf/deps id) #(modal/show! :confirm-dialog {:on-accept delete-fn}))
+        on-delete   (mf/use-callback (mf/deps id) #(modal/show! :confirm {:on-accept delete-fn}))
         navigate-fn (mf/use-callback (mf/deps id) #(st/emit! (dw/go-to-page id)))
 
         on-double-click
@@ -131,9 +132,10 @@
 ;; --- Pages List
 
 (mf/defc pages-list
-  [{:keys [file current-page-id] :as props}]
-  (let [pages      (:pages file)
-        deletable? (> (count pages) 1)]
+  [{:keys [file] :as props}]
+  (let [pages           (:pages file)
+        deletable?      (> (count pages) 1)
+        current-page-id (mf/use-ctx ctx/current-page-id)]
     [:ul.element-list
      [:& hooks/sortable-container {}
       (for [[index page-id] (d/enumerate pages)]
@@ -147,19 +149,22 @@
 ;; --- Sitemap Toolbox
 
 (mf/defc sitemap
-  [{:keys [file page-id layout] :as props}]
-  (let [create   (mf/use-callback #(st/emit! dw/create-empty-page))
-        collapse (mf/use-callback #(st/emit! (dw/toggle-layout-flags :sitemap-pages)))
-        locale   (mf/deref i18n/locale)]
+  [{:keys [layout] :as props}]
+  (let [create      (mf/use-callback #(st/emit! dw/create-empty-page))
+        locale      (mf/deref i18n/locale)
+        show-pages? (mf/use-state true)
+
+        file        (mf/deref refs/workspace-file)
+
+        toggle-pages
+        (mf/use-callback #(reset! show-pages? not))]
+
     [:div.sitemap.tool-window
      [:div.tool-window-bar
       [:span (t locale "workspace.sidebar.sitemap")]
       [:div.add-page {:on-click create} i/close]
-      [:div.collapse-pages {:on-click collapse} i/arrow-slide]]
+      [:div.collapse-pages {:on-click toggle-pages} i/arrow-slide]]
 
-     (when (contains? layout :sitemap-pages)
+     (when @show-pages?
        [:div.tool-window-content
-        [:& pages-list
-         {:file file
-          :key (:id file)
-          :current-page-id page-id}]])]))
+        [:& pages-list {:file file :key (:id file)}]])]))

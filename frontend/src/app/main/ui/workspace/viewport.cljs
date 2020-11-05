@@ -9,47 +9,50 @@
 
 (ns app.main.ui.workspace.viewport
   (:require
-   [clojure.set :as set]
-   [cuerdas.core :as str]
-   [beicon.core :as rx]
-   [goog.events :as events]
-   [potok.core :as ptk]
-   [rumext.alpha :as mf]
-   [promesa.core :as p]
-   [app.main.ui.icons :as i]
-   [app.main.ui.cursors :as cur]
-   [app.main.ui.modal :as modal]
    [app.common.data :as d]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
+   [app.common.uuid :as uuid]
    [app.main.constants :as c]
-   [app.main.data.workspace :as dw]
-   [app.main.data.workspace.libraries :as dwl]
-   [app.main.data.workspace.drawing :as dd]
    [app.main.data.colors :as dwc]
    [app.main.data.fetch :as mdf]
+   [app.main.data.modal :as modal]
+   [app.main.data.workspace :as dw]
+   [app.main.data.workspace.drawing :as dd]
+   [app.main.data.workspace.libraries :as dwl]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
-   [app.main.ui.keyboard :as kbd]
+   [app.main.ui.context :as ctx]
+   [app.main.ui.cursors :as cur]
    [app.main.ui.hooks :as hooks]
+   [app.main.ui.icons :as i]
+   [app.main.ui.keyboard :as kbd]
+   [app.main.ui.workspace.colorpicker.pixel-overlay :refer [pixel-overlay]]
+   [app.main.ui.workspace.comments :refer [comments-layer]]
+   [app.main.ui.workspace.drawarea :refer [draw-area]]
+   [app.main.ui.workspace.frame-grid :refer [frame-grid]]
+   [app.main.ui.workspace.gradients :refer [gradient-handlers]]
+   [app.main.ui.workspace.presence :as presence]
+   [app.main.ui.workspace.selection :refer [selection-handlers]]
    [app.main.ui.workspace.shapes :refer [shape-wrapper frame-wrapper]]
    [app.main.ui.workspace.shapes.interactions :refer [interactions]]
-   [app.main.ui.workspace.drawarea :refer [draw-area]]
-   [app.main.ui.workspace.selection :refer [selection-handlers]]
-   [app.main.ui.workspace.presence :as presence]
-   [app.main.ui.workspace.snap-points :refer [snap-points]]
-   [app.main.ui.workspace.snap-distances :refer [snap-distances]]
-   [app.main.ui.workspace.frame-grid :refer [frame-grid]]
    [app.main.ui.workspace.shapes.outline :refer [outline]]
-   [app.common.math :as mth]
+   [app.main.ui.workspace.snap-distances :refer [snap-distances]]
+   [app.main.ui.workspace.snap-points :refer [snap-points]]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.object :as obj]
-   [app.main.ui.context :as muc]
-   [app.common.geom.shapes :as gsh]
-   [app.common.geom.point :as gpt]
    [app.util.perf :as perf]
-   [app.common.uuid :as uuid]
-   [app.util.timers :as timers])
+   [app.util.timers :as timers]
+   [beicon.core :as rx]
+   [clojure.set :as set]
+   [cuerdas.core :as str]
+   [goog.events :as events]
+   [potok.core :as ptk]
+   [promesa.core :as p]
+   [rumext.alpha :as mf])
   (:import goog.events.EventType))
 
 ;; --- Coordinates Widget
@@ -132,7 +135,10 @@
         selected  (or (unchecked-get props "selected") #{})
         hover     (or (unchecked-get props "hover") #{})
         outline?  (set/union selected hover)
-        shapes    (->> (vals objects) (filter (comp outline? :id)))
+        show-outline? (fn [shape] (and (not (:hidden shape))
+                                       (not (:blocked shape))
+                                       (outline? (:id shape))))
+        shapes    (->> (vals objects) (filter show-outline?))
         transform (mf/deref refs/current-transform)
         color (if (or (> (count shapes) 1) (nil? (:shape-ref (first shapes))))
                 "#31EFB8"
@@ -148,26 +154,35 @@
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
   [props]
-  (let [data     (mf/deref refs/workspace-page)
-        hover    (unchecked-get props "hover")
+  (let [hover    (unchecked-get props "hover")
         selected (unchecked-get props "selected")
+        ids      (unchecked-get props "ids")
+        ghost?   (unchecked-get props "ghost?")
+        data     (mf/deref refs/workspace-page)
         objects  (:objects data)
         root     (get objects uuid/zero)
         shapes   (->> (:shapes root)
-                      (map #(get objects %)))]
+                      (map #(get objects %)))
+
+        shapes (if ids
+                 (->> ids (map #(get objects %)))
+                 shapes)]
     [:*
      [:g.shapes
       (for [item shapes]
         (if (= (:type item) :frame)
           [:& frame-wrapper {:shape item
                              :key (:id item)
-                             :objects objects}]
+                             :objects objects
+                             :ghost? ghost?}]
           [:& shape-wrapper {:shape item
-                             :key (:id item)}]))]
+                             :key (:id item)
+                             :ghost? ghost?}]))]
 
-     [:& shape-outlines {:objects objects
-                         :selected selected
-                         :hover hover}]]))
+     (when (not ghost?)
+       [:& shape-outlines {:objects objects
+                           :selected selected
+                           :hover hover}])]))
 
 (defn format-viewbox [vbox]
   (str/join " " [(+ (:x vbox 0) (:left-offset vbox 0))
@@ -175,106 +190,8 @@
                  (:width vbox 0)
                  (:height vbox 0)]))
 
-(mf/defc pixel-picker-overlay
-  {::mf/wrap-props false}
-  [props]
-  (let [vport (unchecked-get props "vport")
-        vbox (unchecked-get props "vbox")
-        viewport-ref (unchecked-get props "viewport-ref")
-        options (unchecked-get props "options")
-        svg-ref       (mf/use-ref nil)
-        canvas-ref    (mf/use-ref nil)
-        fetch-pending (mf/deref (mdf/pending-ref))
-
-        on-mouse-move-picker
-        (fn [event]
-          (when-let [zoom-view-node (.getElementById js/document "picker-detail")]
-            (let [{brx :left bry :top} (dom/get-bounding-rect (mf/ref-val viewport-ref))
-                  x (- (.-clientX event) brx)
-                  y (- (.-clientY event) bry)
-
-                  zoom-context (.getContext zoom-view-node "2d")
-                  canvas-node (mf/ref-val canvas-ref)
-                  canvas-context (.getContext canvas-node "2d")
-                  pixel-data (.getImageData canvas-context x y 1 1)
-                  rgba (.-data pixel-data)
-                  r (obj/get rgba 0)
-                  g (obj/get rgba 1)
-                  b (obj/get rgba 2)
-                  a (obj/get rgba 3)
-
-                  area-data (.getImageData canvas-context (- x 25) (- y 20) 50 40)]
-
-              (-> (js/createImageBitmap area-data)
-                  (p/then (fn [image]
-                            ;; Draw area
-                            (obj/set! zoom-context "imageSmoothingEnabled" false)
-                            (.drawImage zoom-context image 0 0 200 160))))
-              (st/emit! (dwc/pick-color [r g b a])))))
-
-        on-mouse-down-picker
-        (fn [event]
-          (dom/prevent-default event)
-          (dom/stop-propagation event)
-          (st/emit! (dwc/pick-color-select true (kbd/shift? event))))
-
-        on-mouse-up-picker
-        (fn [event]
-          (dom/prevent-default event)
-          (dom/stop-propagation event)
-          (st/emit! (dwc/stop-picker))
-          (modal/disallow-click-outside!))]
-
-    (mf/use-effect
-     ;; Everytime we finish retrieving a new URL we redraw the canvas
-     ;; so even if we're not finished the user can start to pick basic
-     ;; shapes
-     (mf/deps fetch-pending)
-     (fn []
-       (try
-         (let [canvas-node (mf/ref-val canvas-ref)
-               canvas-context (.getContext canvas-node "2d")
-               svg-node (mf/ref-val svg-ref)]
-           (timers/schedule 100
-            #(let [xml (.serializeToString (js/XMLSerializer.) svg-node)
-                   img-src (str "data:image/svg+xml;base64,"
-                                (-> xml js/encodeURIComponent js/unescape js/btoa))
-                   img (js/Image.)
-                   on-error (fn [err] (.error js/console "ERROR" err))
-                   on-load (fn [] (.drawImage canvas-context img 0 0))]
-               (.addEventListener img "error" on-error)
-               (.addEventListener img "load" on-load)
-               (obj/set! img "src" img-src))))
-         (catch :default e (.error js/console e)))))
-
-    [:*
-     [:div.overlay
-      {:style {:position "absolute"
-               :top 0
-               :left 0
-               :width "100%"
-               :height "100%"
-               :cursor cur/picker}
-       :on-mouse-down on-mouse-down-picker
-       :on-mouse-up on-mouse-up-picker
-       :on-mouse-move on-mouse-move-picker}]
-     [:canvas {:ref canvas-ref
-               :width (:width vport 0)
-               :height (:height vport 0)
-               :style {:display "none"}}]
-     [:& (mf/provider muc/embed-ctx) {:value true}
-      [:svg.viewport
-       {:ref svg-ref
-        :preserveAspectRatio "xMidYMid meet"
-        :width (:width vport 0)
-        :height (:height vport 0)
-        :view-box (format-viewbox vbox)
-        :style {:display "none"
-                :background-color (get options :background "#E8E9EA")}}
-       [:& frames]]]]))
-
 (mf/defc viewport
-  [{:keys [page-id page local layout] :as props}]
+  [{:keys [local layout file] :as props}]
   (let [{:keys [options-mode
                 zoom
                 flags
@@ -286,17 +203,21 @@
                 panning
                 picking-color?]} local
 
-        file          (mf/deref refs/workspace-file)
+        page-id       (mf/use-ctx ctx/current-page-id)
+        selrect-orig  (->> (mf/deref refs/selected-objects)
+                           (gsh/selection-rect))
+        selrect       (-> selrect-orig
+                          (assoc :modifiers (:modifiers local))
+                          (gsh/transform-shape))
+
         viewport-ref  (mf/use-ref nil)
         zoom-view-ref (mf/use-ref nil)
         last-position (mf/use-var nil)
         drawing       (mf/deref refs/workspace-drawing)
         drawing-tool  (:tool drawing)
         drawing-obj   (:object drawing)
+        zoom          (or zoom 1)
 
-        pick-color (mf/use-state [255 255 255 255])
-
-        zoom (or zoom 1)
 
         on-mouse-down
         (mf/use-callback
@@ -308,11 +229,11 @@
                  shift? (kbd/shift? event)
                  alt? (kbd/alt? event)]
              (st/emit! (ms/->MouseEvent :down ctrl? shift? alt?))
-
              (cond
                (and (= 1 (.-which event)))
                (if drawing-tool
-                 (st/emit! (dd/start-drawing drawing-tool))
+                 (when (not= drawing-tool :comments)
+                   (st/emit! (dd/start-drawing drawing-tool)))
                  (st/emit! dw/handle-selection))
 
                (and (not edition)
@@ -388,7 +309,9 @@
              (when-not (.-repeat bevent)
                (st/emit! (ms/->KeyboardEvent :down key ctrl? shift? alt?))
                (when (and (kbd/space? event)
-                          (not= "rich-text" (obj/get target "className")))
+                          (not= "rich-text" (obj/get target "className"))
+                          (not= "INPUT" (obj/get target "tagName"))
+                          (not= "TEXTAREA" (obj/get target "tagName")))
                  (handle-viewport-positioning viewport-ref))))))
 
         on-key-up
@@ -488,7 +411,7 @@
                                   :id (:id image)
                                   :path (:path image)}}
                 aspect-ratio (/ (:width image) (:height image))]
-            (st/emit! (dw/create-and-add-shape :image shape))))
+            (st/emit! (dw/create-and-add-shape :image x y shape))))
 
         on-drop
         (fn [event]
@@ -505,8 +428,13 @@
                                             (assoc :y final-y)))))
 
               (dnd/has-type? event "app/component")
-              (let [{:keys [component-id file-id]} (dnd/get-data event "app/component")]
-                (st/emit! (dwl/instantiate-component file-id component-id)))
+              (let [{:keys [component file-id]} (dnd/get-data event "app/component")
+                    shape (get-in component [:objects (:id component)])
+                    final-x (- (:x viewport-coord) (/ (:width shape) 2))
+                    final-y (- (:y viewport-coord) (/ (:height shape) 2))]
+                (st/emit! (dwl/instantiate-component file-id
+                                                     (:id component)
+                                                     (gpt/point final-x final-y))))
 
               (dnd/has-type? event "text/uri-list")
               (let [data (dnd/get-data event "text/uri-list")
@@ -536,8 +464,10 @@
         on-resize
         (fn [event]
           (let [node (mf/ref-val viewport-ref)
-                prnt (dom/get-parent node)]
-            (st/emit! (dw/update-viewport-size (dom/get-client-size prnt)))))
+                prnt (dom/get-parent node)
+                size (dom/get-client-size prnt)]
+            ;; We schedule the event so it fires after `initialize-page` event
+            (timers/schedule #(st/emit! (dw/update-viewport-size size)))))
 
         options (mf/deref refs/workspace-page-options)]
 
@@ -546,33 +476,50 @@
        (let [node (mf/ref-val viewport-ref)
              prnt (dom/get-parent node)
 
-             key1 (events/listen js/document EventType.KEYDOWN on-key-down)
-             key2 (events/listen js/document EventType.KEYUP on-key-up)
-             key3 (events/listen node EventType.MOUSEMOVE on-mouse-move)
-             ;; bind with passive=false to allow the event to be cancelled
-             ;; https://stackoverflow.com/a/57582286/3219895
-             key4 (events/listen js/window EventType.WHEEL on-mouse-wheel #js {:passive false})
-             key5 (events/listen js/window EventType.RESIZE on-resize)]
-         (st/emit! (dw/initialize-viewport (dom/get-client-size prnt)))
+             keys [(events/listen (dom/get-root) EventType.KEYDOWN on-key-down)
+                   (events/listen (dom/get-root) EventType.KEYUP on-key-up)
+                   (events/listen node EventType.MOUSEMOVE on-mouse-move)
+                   ;; bind with passive=false to allow the event to be cancelled
+                   ;; https://stackoverflow.com/a/57582286/3219895
+                   (events/listen js/window EventType.WHEEL on-mouse-wheel #js {:passive false})
+                   (events/listen js/window EventType.RESIZE on-resize)]]
+
          (fn []
-           (events/unlistenByKey key1)
-           (events/unlistenByKey key2)
-           (events/unlistenByKey key3)
-           (events/unlistenByKey key4)
-           (events/unlistenByKey key5)))))
+           (doseq [key keys]
+             (events/unlistenByKey key))))))
+
+    (mf/use-layout-effect
+     (fn []
+       (mf/deps page-id)
+       (let [node (mf/ref-val viewport-ref)
+             prnt (dom/get-parent node)
+             size (dom/get-client-size prnt)]
+         ;; We schedule the event so it fires after `initialize-page` event
+         (timers/schedule #(st/emit! (dw/initialize-viewport size))))))
 
     (mf/use-layout-effect (mf/deps layout) on-resize)
 
     [:*
      (when picking-color?
-       [:& pixel-picker-overlay {:vport vport
-                                 :vbox vbox
-                                 :viewport-ref viewport-ref
-                                 :options options
-                                 :layout layout}])
+       [:& pixel-overlay {:vport vport
+                          :vbox vbox
+                          :viewport-ref viewport-ref
+                          :options options
+                          :layout layout}])
+
+     (when (= drawing-tool :comments)
+       [:& comments-layer {:vbox (:vbox local)
+                           :vport (:vport local)
+                           :zoom (:zoom local)
+                           :drawing drawing
+                           :page-id page-id
+                           :file-id (:id file)}
+        ])
+
 
      [:svg.viewport
       {:preserveAspectRatio "xMidYMid meet"
+       :key page-id
        :width (:width vport 0)
        :height (:height vport 0)
        :view-box (format-viewbox vbox)
@@ -580,6 +527,7 @@
        :class (when drawing-tool "drawing")
        :style {:cursor (cond
                          panning cur/hand
+                         (= drawing-tool :comments) cur/hand
                          (= drawing-tool :frame) cur/create-artboard
                          (= drawing-tool :rect) cur/create-rectangle
                          (= drawing-tool :circle) cur/create-ellipse
@@ -599,15 +547,33 @@
        :on-drag-over on-drag-over
        :on-drop on-drop}
 
-      [:g
+      [:g {:style {:pointer-events (if (contains? layout :comments)
+                                     "none"
+                                     "auto")}}
        [:& frames {:key page-id
                    :hover (:hover local)
                    :selected (:selected selected)}]
+
+       (when (= :move (:transform local))
+         [:svg.ghost
+          {:x (:x selrect)
+           :y (:y selrect)
+           :width (:width selrect)
+           :height (:height selrect)
+           :style {:pointer-events "none"}}
+
+          [:g {:transform (str/fmt "translate(%s,%s)" (- (:x selrect-orig)) (- (:y selrect-orig)))}
+           [:& frames {:ids selected
+                       :ghost? true}]]])
 
        (when (seq selected)
          [:& selection-handlers {:selected selected
                                  :zoom zoom
                                  :edition edition}])
+
+       (when (= (count selected) 1)
+         [:& gradient-handlers {:id (first selected)
+                                :zoom zoom}])
 
        (when drawing-obj
          [:& draw-area {:shape drawing-obj
@@ -622,7 +588,8 @@
                         :drawing drawing-obj
                         :zoom zoom
                         :page-id page-id
-                        :selected selected}]
+                        :selected selected
+                        :local local}]
 
        [:& snap-distances {:layout layout
                            :zoom zoom

@@ -52,7 +52,7 @@
        (r/match->path match)
        (let [uri (.parse goog.Uri (r/match->path match))
              qdt (.createFromMap QueryData (-> qparams
-                                               (d/remove-nil-vals)
+                                               (d/without-nils)
                                                (clj->js)))]
          (.setQueryData ^js uri qdt)
          (.toString ^js uri))))))

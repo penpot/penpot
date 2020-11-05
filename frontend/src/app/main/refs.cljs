@@ -49,6 +49,10 @@
 (def selected-shapes
   (l/derived :selected workspace-local))
 
+(defn make-selected-ref
+  [id]
+  (l/derived #(contains? % id) selected-shapes))
+
 (def selected-zoom
   (l/derived :zoom workspace-local))
 
@@ -95,6 +99,12 @@
 (def workspace-recent-colors
   (l/derived (fn [state]
                (get-in state [:workspace-data :recent-colors] []))
+             st/state))
+
+(def workspace-file-typography
+  (l/derived (fn [state]
+               (when-let [file (:workspace-file state)]
+                 (get-in file [:data :typographies])))
              st/state))
 
 (def workspace-project
@@ -146,10 +156,9 @@
 (defn is-child-selected?
   [id]
   (letfn [(selector [state]
-            (let [page-id  :current-page-id
+            (let [page-id  (:current-page-id state)
                   objects  (get-in state [:workspace-data :pages-index page-id :objects])
                   selected (get-in state [:workspace-local :selected])
-                  shape    (get objects id)
                   children (cph/get-children id objects)]
               (some selected children)))]
     (l/derived selector st/state)))

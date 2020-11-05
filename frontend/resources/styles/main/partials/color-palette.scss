@@ -2,8 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-// Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+// This Source Code Form is "Incompatible With Secondary Licenses", as
+// defined by the Mozilla Public License, v. 2.0.
+//
+// Copyright (c) 2020 UXBOX Labs SL
 
 .color-palette {
   @include animation(0,.5s,fadeInUp);
@@ -49,8 +51,8 @@
   }
 
   &.left-sidebar-open {
-      left: 280px;
-      width: calc(100% - 280px);
+      left: 303px;
+      width: calc(100% - 303px);
   }
 
   & .context-menu-items {
@@ -121,7 +123,7 @@
   display: flex;
   overflow: hidden;
   width: 100%;
-  height: 4.8rem;
+  height: 5rem;
   padding: 0.25rem;
 
   &.size-small {
@@ -154,28 +156,6 @@
       flex-basis: 52px;
   }
 
-  .color {
-    background-color: $color-gray-10;
-    border: 2px solid $color-gray-60;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  &.cell-big .color {
-      width: 50px;
-      height: 50px;
-  }
-
-  &.cell-small .color {
-      width: 40px;
-      height: 40px;
-  }
-
-  .color.color-big {
-      width: 50px;
-      height: 50px;
-  }
-
   .color-text {
     color: $color-gray-20;
     font-size: $fs12;
@@ -184,11 +164,9 @@
     text-overflow: ellipsis;
     width: 66px;
     text-align: center;
+    margin-top: 0.25rem;
   }
   &.current {
-    .color {
-      border-color: $color-gray-50;
-    }
     .color-text {
       color: $color-gray-50;
       font-weight: bold;
@@ -215,31 +193,11 @@
   }
   &.add-color {
     margin-left: 1.5rem;
-    .color {
-      align-items: center;
-      background-color: $color-gray-50;
-      border: 3px dashed $color-gray-10;
-      cursor: pointer;
-      display: flex;
-      justify-content: center;
-      margin-bottom: 1rem;
-      padding: .6rem;
-      svg {
-        fill: $color-gray-10;
-        height: 30px;
-        width: 30px;
-      }
-    }
+
     .color-text {
       font-weight: bold;
     }
     &:hover {
-      .color {
-        border-color: $color-gray-30;
-        svg {
-          fill: $color-gray-30;
-        }
-      }
       .color-text {
         color: $color-gray-40;
       }
@@ -334,12 +292,5 @@ ul.palette-menu {
         margin-top: 0.5rem;
     }
 
-    .color-bullet {
-        width: 20px;
-        height: 20px;
-        border-radius: 12px;
-        border: 1px solid $color-gray-10;
-        margin-right: 5px;
-    }
 }
 

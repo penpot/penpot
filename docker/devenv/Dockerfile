@@ -4,18 +4,16 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 ARG DEBIAN_FRONTEND=noninteractive
 ARG EXTERNAL_UID=1000
 
-ENV NODE_VERSION=v12.18.4 \
-    CLOJURE_VERSION=1.10.1.681 \
+ENV NODE_VERSION=v12.19.0 \
+    CLOJURE_VERSION=1.10.1.727 \
     LANG=en_US.UTF-8 \
-    LC_ALL=C.UTF-8
+    LC_ALL=en_US.UTF-8
 
 RUN set -ex; \
     mkdir -p /etc/resolvconf/resolv.conf.d; \
-    echo "nameserver 8.8.8.8" > /etc/resolvconf/resolv.conf.d/tail;
-
-RUN set -ex; \
-    apt-get update && \
-    apt-get install -yq \
+    echo "nameserver 8.8.8.8" > /etc/resolvconf/resolv.conf.d/tail; \
+    apt-get -qq update; \
+    apt-get -qqy install --no-install-recommends \
         locales \
         gnupg2 \
         ca-certificates \
@@ -27,6 +25,19 @@ RUN set -ex; \
         bash \
         git \
         rlwrap \
+    ; \
+    echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
+    locale-gen; \
+    rm -rf /var/lib/apt/lists/*;
+
+RUN set -ex; \
+    useradd -m -g users -s /bin/bash -u $EXTERNAL_UID uxbox; \
+    passwd uxbox -d; \
+    echo "uxbox ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+RUN set -ex; \
+    apt-get -qq update; \
+    apt-get -qqy install --no-install-recommends \
         python \
         build-essential \
         imagemagick \
@@ -40,8 +51,8 @@ RUN set -ex; \
     rm -rf /var/lib/apt/lists/*;
 
 RUN set -ex; \
-    apt-get update && \
-    apt-get install -yq \
+    apt-get -qq update; \
+    apt-get -qqy install \
         gconf-service \
         libasound2 \
         libatk1.0-0 \
@@ -80,29 +91,24 @@ RUN set -ex; \
     rm -rf /var/lib/apt/lists/*;
 
 RUN set -ex; \
-    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0xB1998361219BD9C9; \
-    echo "deb http://repos.azulsystems.com/debian stable  main" >> /etc/apt/sources.list.d/zulu.list; \
+    mkdir -p /usr/share/man/man1; \
+    mkdir -p /usr/share/man/man7; \
+    wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | apt-key add -; \
+    echo "deb https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ buster main" >> /etc/apt/sources.list.d/adoptopenjdk.list; \
     apt-get -qq update; \
-    apt-get -qqy install zulu-14; \
+    apt-get -qqy install adoptopenjdk-15-hotspot; \
     rm -rf /var/lib/apt/lists/*; \
     wget "https://download.clojure.org/install/linux-install-$CLOJURE_VERSION.sh"; \
     chmod +x "linux-install-$CLOJURE_VERSION.sh"; \
     "./linux-install-$CLOJURE_VERSION.sh"; \
     rm -rf "linux-install-$CLOJURE_VERSION.sh"
 
-ENV JAVA_HOME=/usr/lib/jvm/zulu-14-amd64
-
 RUN set -ex; \
     curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -; \
     echo "deb http://apt.postgresql.org/pub/repos/apt buster-pgdg main" >> /etc/apt/sources.list.d/postgresql.list; \
     apt-get -qq update; \
-    apt-get -qqy install postgresql-client-12; \
+    apt-get -qqy install postgresql-client-13; \
     rm -rf /var/lib/apt/lists/*;
-
-RUN set -ex; \
-    useradd -m -g users -s /bin/bash -u $EXTERNAL_UID uxbox; \
-    passwd uxbox -d; \
-    echo "uxbox ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 RUN set -ex; \
     wget https://github.com/RazrFalcon/svgcleaner/releases/download/v0.9.5/svgcleaner_linux_x86_64_0.9.5.tar.gz; \
@@ -111,12 +117,12 @@ RUN set -ex; \
     rm -rf svgcleaner_linux_x86_64_0.9.5.tar.gz;
 
 COPY files/phantomjs-mock /usr/bin/phantomjs
-COPY files/bashrc        /root/.bashrc
-COPY files/vimrc         /root/.vimrc
-COPY files/tmux.conf     /root/.tmux.conf
-COPY files/start-tmux.sh /home/start-tmux.sh
-COPY files/entrypoint.sh /home/entrypoint.sh
-COPY files/init.sh       /home/init.sh
+COPY files/bashrc         /root/.bashrc
+COPY files/vimrc          /root/.vimrc
+COPY files/tmux.conf      /root/.tmux.conf
+COPY files/start-tmux.sh  /home/start-tmux.sh
+COPY files/entrypoint.sh  /home/entrypoint.sh
+COPY files/init.sh        /home/init.sh
 
 USER uxbox
 WORKDIR /home/uxbox
@@ -134,5 +140,5 @@ EXPOSE 3449
 EXPOSE 6060
 EXPOSE 9090
 
-ENTRYPOINT ["bash", "/home/entrypoint.sh"]
+ENTRYPOINT ["/home/entrypoint.sh"]
 CMD ["/home/init.sh"]

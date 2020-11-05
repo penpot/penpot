@@ -12,6 +12,7 @@
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]
+   [linked.set :as lks]
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
@@ -21,6 +22,7 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.modal :as md]
    [app.main.streams :as ms]
    [app.main.worker :as uw]))
 
@@ -65,7 +67,7 @@
                                      (ms/mouse-up? %))
                                 stream)]
           (rx/concat
-           (rx/of deselect-all)
+           (rx/of (deselect-all))
            (->> ms/mouse-position
                 (rx/scan (fn [data pos]
                            (if data
@@ -116,15 +118,26 @@
              objects (dwc/lookup-page-objects state page-id)]
         (rx/of (dwc/expand-all-parents ids objects))))))
 
-(def deselect-all
+(defn deselect-all 
   "Clear all possible state of drawing, edition
-  or any similar action taken by the user."
-  (ptk/reify ::deselect-all
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-local #(-> %
-                                          (assoc :selected (d/ordered-set))
-                                          (dissoc :selected-frame))))))
+  or any similar action taken by the user.
+  When `check-modal` the method will check if a modal is opened
+  and not deselect if it's true"
+  ([] (deselect-all false))
+
+  ([check-modal]
+   (ptk/reify ::deselect-all
+     ptk/UpdateEvent
+     (update [_ state]
+
+       ;; Only deselect if there is no modal openned
+       (cond-> state
+         (or (not check-modal)
+             (not (::md/modal state)))
+         (update :workspace-local
+                 #(-> %
+                      (assoc :selected (d/ordered-set))
+                      (dissoc :selected-frame))))))))
 
 ;; --- Select Shapes (By selrect)
 
@@ -133,13 +146,18 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id (:current-page-id state)
-            selrect (get-in state [:workspace-local :selrect])]
+            selrect (get-in state [:workspace-local :selrect])
+            is-not-blocked (fn [shape-id] (not (get-in state [:workspace-data
+                                                              :pages-index page-id
+                                                              :objects shape-id
+                                                              :blocked] false)))]
         (rx/merge
          (rx/of (update-selrect nil))
          (when selrect
            (->> (uw/ask! {:cmd :selection/query
                           :page-id page-id
                           :rect selrect})
+                (rx/map #(into lks/empty-linked-set (filter is-not-blocked) %))
                 (rx/map select-shapes))))))))
 
 (defn select-inside-group
@@ -151,9 +169,15 @@
             objects  (dwc/lookup-page-objects state page-id)
             group    (get objects group-id)
             children (map #(get objects %) (:shapes group))
-            selected (d/seek #(geom/has-point? % position) children)]
+
+            ;; We need to reverse the children because if two children
+            ;; overlap we want to select the one that's over (and it's
+            ;; in the later vector position
+            selected (->> children
+                          reverse
+                          (d/seek #(geom/has-point? % position)))]
         (when selected
-          (rx/of deselect-all (select-shape (:id selected))))))))
+          (rx/of (deselect-all) (select-shape (:id selected))))))))
 
 
 ;; --- Group shapes
@@ -220,7 +244,10 @@
                    :page-id page-id
                    :parent-id parent-id
                    :shapes shapes
-                   :index index-in-parent}]
+                   :index index-in-parent}
+                  {:type :del-obj
+                   :page-id page-id
+                   :id (:id group)}]
         uchanges [{:type :add-obj
                    :page-id page-id
                    :id (:id group)
@@ -245,7 +272,7 @@
 
 (def ^:private change->name #(get-in % [:obj :name]))
 
-(defn- prepare-duplicate-changes
+(defn prepare-duplicate-changes
   "Prepare objects to paste: generate new id, give them unique names,
   move to the position of mouse pointer, and find in what frame they
   fit."
@@ -277,10 +304,6 @@
         renamed-obj (assoc obj :id id :name name)
         moved-obj   (geom/move renamed-obj delta)
         frames      (cph/select-frames objects)
-        frame-id    (if frame-id
-                      frame-id
-                      (dwc/calculate-frame-overlap frames moved-obj))
-
         parent-id   (or parent-id frame-id)
 
         children-changes

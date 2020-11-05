@@ -1,3 +1,12 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// This Source Code Form is "Incompatible With Secondary Licenses", as
+// defined by the Mozilla Public License, v. 2.0.
+//
+// Copyright (c) 2020 UXBOX Labs SL
+
 .context-menu {
     position: relative;
     visibility: hidden;
@@ -27,7 +36,7 @@
 .context-menu-action {
     color: $color-black;
     display: block;
-    font-size: $fs12;
+    font-size: $fs14;
     padding: $size-2 $size-4;
     text-align: left;
     white-space: nowrap;
@@ -35,7 +44,7 @@
     &:hover {
         color: $color-black;
         background-color: $color-primary-lighter;
-    } 
+    }
 }
 
 .context-menu.is-selectable {
@@ -49,6 +58,6 @@
         background-position: 5% 48%;
         background-size: 10px;
         font-weight: bold;
-    } 
+    }
 }
 

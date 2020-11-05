@@ -2,53 +2,96 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
-;; Copyright (c) 2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.main.ui.confirm
+  (:import goog.events.EventType)
   (:require
-   [app.main.ui.icons :as i]
    [rumext.alpha :as mf]
-   [app.main.ui.modal :as modal]
-   [app.util.i18n :refer (tr)]
-   [app.util.data :refer [classnames]]
-   [app.util.dom :as dom]))
+   [goog.events :as events]
+   [app.main.data.modal :as modal]
+   [app.main.store :as st]
+   [app.main.ui.icons :as i]
+   [app.main.ui.keyboard :as k]
+   [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [tr t]]
+   [app.util.data :refer [classnames]]))
 
 (mf/defc confirm-dialog
   {::mf/register modal/components
-   ::mf/register-as :confirm-dialog}
-  [{:keys [message on-accept on-cancel hint cancel-text accept-text not-danger?] :as ctx}]
-  (let [message (or message (tr "ds.confirm-title"))
-        cancel-text (or cancel-text (tr "ds.confirm-cancel"))
-        accept-text (or accept-text (tr "ds.confirm-ok"))
+   ::mf/register-as :confirm}
+  [{:keys [message
+           title
+           on-accept
+           on-cancel
+           hint
+           cancel-label
+           accept-label
+           accept-style] :as props}]
+  (let [locale       (mf/deref i18n/locale)
 
-        accept
-        (fn [event]
-          (dom/prevent-default event)
-          (modal/hide!)
-          (on-accept (dissoc ctx :on-accept :on-cancel)))
+        on-accept    (or on-accept identity)
+        on-cancel    (or on-cancel identity)
+        message      (or message (t locale "ds.confirm-title"))
+        cancel-label (or cancel-label (tr "ds.confirm-cancel"))
+        accept-label (or accept-label (tr "ds.confirm-ok"))
+        accept-style (or accept-style :danger)
+        title        (or title (t locale "ds.confirm-title"))
 
-        cancel
-        (fn [event]
-          (dom/prevent-default event)
-          (modal/hide!)
-          (when on-cancel
-            (on-cancel (dissoc ctx :on-accept :on-cancel))))]
+        accept-fn
+        (mf/use-callback
+         (fn [event]
+           (dom/prevent-default event)
+           (st/emit! (modal/hide))
+           (on-accept props)))
+
+        cancel-fn
+        (mf/use-callback
+         (fn [event]
+           (dom/prevent-default event)
+           (st/emit! (modal/hide))
+           (on-cancel props)))]
+
+    (mf/use-effect
+     (fn []
+       (let [on-keydown
+             (fn [event]
+               (when (k/enter? event)
+                 (do (dom/prevent-default event)
+                     (dom/stop-propagation event)
+                     (st/emit! (modal/hide))
+                     (on-accept props))))
+             key (events/listen (dom/get-root) EventType.KEYDOWN on-keydown)]
+         #(events/unlistenByKey key))))
+
     [:div.modal-overlay
-     [:div.modal.confirm-dialog
-      [:a.close {:on-click cancel} i/close]
-      [:div.modal-content
-       [:h3.dialog-title message]
-       (if hint [:span hint])
-       [:div.dialog-buttons
-        [:input.dialog-cancel-button
-         {:type "button"
-          :value cancel-text
-          :on-click cancel}]
+     [:div.modal-container.confirm-dialog
+      [:div.modal-header
+       [:div.modal-header-title
+        [:h2 title]]
+       [:div.modal-close-button
+        {:on-click cancel-fn} i/close]]
 
-        [:input.dialog-accept-button
-         {:type "button"
-          :class (classnames :not-danger not-danger?)
-          :value accept-text
-          :on-click accept}]]]]]))
+      [:div.modal-content
+       [:h3 message]
+       (when (string? hint)
+         [:p hint])]
+
+      [:div.modal-footer
+       [:div.action-buttons
+        (when-not (= cancel-label :omit)
+          [:input.cancel-button
+           {:type "button"
+            :value cancel-label
+            :on-click cancel-fn}])
+
+        [:input.accept-button
+         {:class (classnames :danger (= accept-style :danger)
+                             :primary (= accept-style :primary))
+          :type "button"
+          :value accept-label
+          :on-click accept-fn}]]]]]))
 

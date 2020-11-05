@@ -18,7 +18,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.ui.icons :as i]
-   [app.main.ui.modal :as modal]))
+   [app.main.data.modal :as modal]))
 
 (def workspace-file
   (l/derived :workspace-file st/state))
@@ -27,7 +27,8 @@
   [library]
   (let [components-count (count (get-in library [:data :components] []))
         graphics-count (count (get-in library [:data :media] []))
-        colors-count (count (get-in library [:data :colors] []))]
+        colors-count (count (get-in library [:data :colors] []))
+        typography-count (count (get-in library [:data :typographies] []))]
     ;; Include a &nbsp; so this block has always some content
     (str
       (str/join " · "
@@ -39,7 +40,10 @@
                   (conj (tr "workspace.libraries.graphics" graphics-count))
 
                   (< 0 colors-count)
-                  (conj (tr "workspace.libraries.colors" colors-count))))
+                  (conj (tr "workspace.libraries.colors" colors-count))
+
+                  (< 0 typography-count)
+                  (conj (tr "workspace.libraries.typography" typography-count))))
       "\u00A0")))
 
 (mf/defc libraries-tab
@@ -84,7 +88,7 @@
           [:div.item-name (:name library)]
           [:div.item-contents (contents-str library)]
           [:input.item-button {:type "button"
-                               :value (tr "workspace.libraries.remove")
+                               :value (tr "labels.remove")
                                :on-click #(unlink-library (:id library))}]])
        ]]
      [:div.section

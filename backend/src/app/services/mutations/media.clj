@@ -46,19 +46,7 @@
 (declare persist-media-object-on-fs)
 (declare persist-media-thumbnail-on-fs)
 
-(s/def :app$upload/filename ::us/string)
-(s/def :app$upload/size ::us/integer)
-(s/def :app$upload/content-type cm/valid-media-types)
-(s/def :app$upload/tempfile any?)
-
-(s/def ::upload
-  (s/keys :req-un [:app$upload/filename
-                   :app$upload/size
-                   :app$upload/tempfile
-                   :app$upload/content-type]))
-
-(s/def ::content ::upload)
-
+(s/def ::content ::media/upload)
 (s/def ::is-local ::us/boolean)
 
 (s/def ::add-media-object-from-url

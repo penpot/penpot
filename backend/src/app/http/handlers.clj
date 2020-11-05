@@ -20,7 +20,7 @@
   #{:create-demo-profile
     :logout
     :profile
-    :verify-profile-token
+    :verify-token
     :recover-profile
     :register-profile
     :request-profile-recovery
@@ -34,8 +34,7 @@
                     {::sq/type type})
         data (cond-> data
                (:profile-id req) (assoc :profile-id (:profile-id req)))]
-    (if (or (:profile-id req)
-            (contains? unauthorized-services type))
+    (if (or (:profile-id req) (contains? unauthorized-services type))
       {:status 200
        :body (sq/handle (with-meta data {:req req}))}
       {:status 403
@@ -51,18 +50,14 @@
                     {::sm/type type})
         data (cond-> data
                (:profile-id req) (assoc :profile-id (:profile-id req)))]
-    (if (or (:profile-id req)
-            (contains? unauthorized-services type))
-      (let [body (sm/handle (with-meta data {:req req}))]
-        (if (= type :delete-profile)
-          (do
-            (some-> (session/extract-auth-token req)
-                    (session/delete))
-            {:status 204
-             :cookies (session/cookies "" {:max-age -1})
-             :body ""})
-          {:status 200
-           :body body}))
+    (if (or (:profile-id req) (contains? unauthorized-services type))
+      (let [result (sm/handle (with-meta data {:req req}))
+            mdata  (meta result)
+            resp   {:status (if (nil? (seq result)) 204 200)
+                    :body result}]
+        (cond->> resp
+          (:transform-response mdata) ((:transform-response mdata) req)))
+
       {:status 403
        :body {:type :authentication
               :code :unauthorized}})))

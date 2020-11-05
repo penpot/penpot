@@ -46,6 +46,7 @@
     (<= % max-safe-int)))
 (s/def ::component-id uuid?)
 (s/def ::component-file uuid?)
+(s/def ::component-root? boolean?)
 (s/def ::shape-ref uuid?)
 
 (s/def ::safe-number
@@ -53,6 +54,93 @@
     (number? %)
     (>= % min-safe-int)
     (<= % max-safe-int)))
+
+;; GRADIENTS
+
+(s/def :internal.gradient.stop/color ::string)
+(s/def :internal.gradient.stop/opacity ::safe-number)
+(s/def :internal.gradient.stop/offset ::safe-number)
+
+(s/def :internal.gradient/type #{:linear :radial})
+(s/def :internal.gradient/start-x ::safe-number)
+(s/def :internal.gradient/start-y ::safe-number)
+(s/def :internal.gradient/end-x ::safe-number)
+(s/def :internal.gradient/end-y ::safe-number)
+(s/def :internal.gradient/width ::safe-number)
+
+(s/def :internal.gradient/stop
+  (s/keys :req-un [:internal.gradient.stop/color
+                   :internal.gradient.stop/opacity
+                   :internal.gradient.stop/offset]))
+
+(s/def :internal.gradient/stops
+  (s/coll-of :internal.gradient/stop :kind vector?))
+
+(s/def ::gradient
+  (s/keys :req-un [:internal.gradient/type
+                   :internal.gradient/start-x
+                   :internal.gradient/start-y
+                   :internal.gradient/end-x
+                   :internal.gradient/end-y
+                   :internal.gradient/width
+                   :internal.gradient/stops]))
+
+
+;;; COLORS
+
+(s/def :internal.color/name ::string)
+(s/def :internal.color/value (s/nilable ::string))
+(s/def :internal.color/color (s/nilable ::string))
+(s/def :internal.color/opacity (s/nilable ::safe-number))
+(s/def :internal.color/gradient (s/nilable ::gradient))
+
+(s/def ::color
+  (s/keys :opt-un [::id
+                   :internal.color/name
+                   :internal.color/value
+                   :internal.color/color
+                   :internal.color/opacity
+                   :internal.color/gradient]))
+
+
+
+;;; SHADOW EFFECT
+
+(s/def :internal.shadow/id uuid?)
+(s/def :internal.shadow/style #{:drop-shadow :inner-shadow})
+(s/def :internal.shadow/color ::color)
+(s/def :internal.shadow/offset-x ::safe-number)
+(s/def :internal.shadow/offset-y ::safe-number)
+(s/def :internal.shadow/blur ::safe-number)
+(s/def :internal.shadow/spread ::safe-number)
+(s/def :internal.shadow/hidden boolean?)
+
+(s/def :internal.shadow/shadow
+  (s/keys :req-un [:internal.shadow/id
+                   :internal.shadow/style
+                   :internal.shadow/color
+                   :internal.shadow/offset-x
+                   :internal.shadow/offset-y
+                   :internal.shadow/blur
+                   :internal.shadow/spread
+                   :internal.shadow/hidden]))
+
+(s/def ::shadow
+  (s/coll-of :internal.shadow/shadow :kind vector?))
+
+
+;;; BLUR EFFECT
+
+(s/def :internal.blur/id uuid?)
+(s/def :internal.blur/type #{:layer-blur})
+(s/def :internal.blur/value ::safe-number)
+(s/def :internal.blur/hidden boolean?)
+
+(s/def ::blur
+  (s/keys :req-un [:internal.blur/id
+                   :internal.blur/type
+                   :internal.blur/value
+                   :internal.blur/hidden]))
 
 ;; Page Options
 (s/def :internal.page.grid.color/value string?)
@@ -109,10 +197,13 @@
 (s/def :internal.shape/blocked boolean?)
 (s/def :internal.shape/collapsed boolean?)
 (s/def :internal.shape/content any?)
+
 (s/def :internal.shape/fill-color string?)
+(s/def :internal.shape/fill-opacity ::safe-number)
+(s/def :internal.shape/fill-gradient (s/nilable ::gradient))
 (s/def :internal.shape/fill-color-ref-file (s/nilable uuid?))
 (s/def :internal.shape/fill-color-ref-id (s/nilable uuid?))
-(s/def :internal.shape/fill-opacity ::safe-number)
+
 (s/def :internal.shape/font-family string?)
 (s/def :internal.shape/font-size ::safe-integer)
 (s/def :internal.shape/font-style string?)
@@ -141,6 +232,8 @@
 (s/def :internal.shape/width ::safe-number)
 (s/def :internal.shape/height ::safe-number)
 (s/def :internal.shape/index integer?)
+(s/def :internal.shape/shadow ::shadow)
+(s/def :internal.shape/blur ::blur)
 
 (s/def :internal.shape/x1 ::safe-number)
 (s/def :internal.shape/y1 ::safe-number)
@@ -211,7 +304,36 @@
                    :internal.shape/height
                    :internal.shape/interactions
                    :internal.shape/selrect
-                   :internal.shape/points]))
+                   :internal.shape/points
+                   :internal.shape/masked-group?
+                   :internal.shape/shadow
+                   :internal.shape/blur]))
+
+(def component-sync-attrs {:fill-color            :fill-group
+                           :fill-color-ref-file   :fill-group
+                           :fill-color-ref-id     :fill-group
+                           :fill-opacity          :fill-group
+                           :content               :text-content-group
+                           :font-family           :text-font-group
+                           :font-size             :text-font-group
+                           :font-style            :text-font-group
+                           :font-weight           :text-font-group
+                           :letter-spacing        :text-display-group
+                           :line-height           :text-display-group
+                           :text-align            :text-display-group
+                           :stroke-color          :stroke-group
+                           :stroke-color-ref-file :stroke-group
+                           :stroke-color-ref-id   :stroke-group
+                           :stroke-opacity        :stroke-group
+                           :stroke-style          :stroke-group
+                           :stroke-width          :stroke-group
+                           :stroke-alignment      :stroke-group
+                           :width                 :size-group
+                           :height                :size-group
+                           :proportion            :size-group
+                           :rx                    :radius-group
+                           :ry                    :radius-group
+                           :masked-group?         :mask-group})
 
 (s/def ::minimal-shape
   (s/keys :req-un [::type ::name]
@@ -222,6 +344,7 @@
          (s/keys :opt-un [::id
                           ::component-id
                           ::component-file
+                          ::component-root?
                           ::shape-ref])))
 
 (s/def :internal.page/objects (s/map-of uuid? ::shape))
@@ -232,13 +355,12 @@
                    :internal.page/options
                    :internal.page/objects]))
 
-(s/def :internal.color/name ::string)
-(s/def :internal.color/value ::string)
 
-(s/def ::color
-  (s/keys :req-un [::id
-                   :internal.color/name
-                   :internal.color/value]))
+(s/def ::recent-color
+  (s/keys :opt-un [:internal.color/value
+                   :internal.color/color
+                   :internal.color/opacity
+                   :internal.color/gradient]))
 
 (s/def :internal.media-object/name ::string)
 (s/def :internal.media-object/path ::string)
@@ -264,7 +386,32 @@
   (s/map-of ::uuid ::color))
 
 (s/def :internal.file/recent-colors
-  (s/coll-of ::string :kind vector?))
+  (s/coll-of ::recent-color :kind vector?))
+
+(s/def :internal.typography/id ::id)
+(s/def :internal.typography/name ::string)
+(s/def :internal.typography/font-id ::string)
+(s/def :internal.typography/font-family ::string)
+(s/def :internal.typography/font-variant-id ::string)
+(s/def :internal.typography/font-size ::string)
+(s/def :internal.typography/font-weight ::string)
+(s/def :internal.typography/font-style ::string)
+(s/def :internal.typography/line-height ::string)
+(s/def :internal.typography/letter-spacing ::string)
+(s/def :internal.typography/text-transform ::string)
+
+(s/def ::typography
+  (s/keys :req-un [:internal.typography/id
+                   :internal.typography/name
+                   :internal.typography/font-id
+                   :internal.typography/font-family
+                   :internal.typography/font-variant-id
+                   :internal.typography/font-size
+                   :internal.typography/font-weight
+                   :internal.typography/font-style
+                   :internal.typography/line-height
+                   :internal.typography/letter-spacing
+                   :internal.typography/text-transform]))
 
 (s/def :internal.file/pages
   (s/coll-of ::uuid :kind vector?))
@@ -286,10 +433,15 @@
 
 (s/def :internal.operations.set/attr keyword?)
 (s/def :internal.operations.set/val any?)
+(s/def :internal.operations.set/touched 
+  (s/nilable (s/every keyword? :kind set?)))
 
 (defmethod operation-spec :set [_]
   (s/keys :req-un [:internal.operations.set/attr
                    :internal.operations.set/val]))
+
+(defmethod operation-spec :set-touched [_]
+  (s/keys :req-un [:internal.operations.set/touched]))
 
 (defmulti change-spec :type)
 
@@ -311,7 +463,7 @@
 (s/def ::operations (s/coll-of ::operation))
 
 (defmethod change-spec :mod-obj [_]
-  (s/keys :req-un [::id ::page-id ::operations]))
+  (s/keys :req-un [::id (or ::page-id ::component-id) ::operations]))
 
 (defmethod change-spec :del-obj [_]
   (s/keys :req-un [::id ::page-id]))
@@ -348,8 +500,10 @@
 (defmethod change-spec :del-color [_]
   (s/keys :req-un [::id]))
 
+(s/def :internal.changes.add-recent-color/color ::recent-color)
+
 (defmethod change-spec :add-recent-color [_]
-  (s/keys :req-un [:recent-color/color]))
+  (s/keys :req-un [:internal.changes.add-recent-color/color]))
 
 (s/def :internal.changes.media/object ::media-object)
 
@@ -373,6 +527,17 @@
 
 (defmethod change-spec :del-component [_]
   (s/keys :req-un [::id]))
+
+(s/def :internal.changes.typography/typography ::typography)
+
+(defmethod change-spec :add-typography [_]
+  (s/keys :req-un [:internal.changes.typography/typography]))
+
+(defmethod change-spec :mod-typography [_]
+  (s/keys :req-un [:internal.changes.typography/typography]))
+
+(defmethod change-spec :del-typography [_]
+  (s/keys :req-un [:internal.typography/id]))
 
 (s/def ::change (s/multi-spec change-spec :type))
 (s/def ::changes (s/coll-of ::change))
@@ -559,12 +724,14 @@
                                                  :else (cph/insert-at-index shapes index [id]))))))))))))
 
 (defmethod process-change :mod-obj
-  [data {:keys [id page-id operations] :as change}]
-  (d/update-in-when data [:pages-index page-id :objects]
-                    (fn [objects]
-                      (if-let [obj (get objects id)]
-                        (assoc objects id (reduce process-operation obj operations))
-                        objects))))
+  [data {:keys [id page-id component-id operations] :as change}]
+  (let [update-fn (fn [objects]
+                    (if-let [obj (get objects id)]
+                      (assoc objects id (reduce process-operation obj operations))
+                      objects))]
+    (if page-id
+      (d/update-in-when data [:pages-index page-id :objects] update-fn)
+      (d/update-in-when data [:components component-id :objects] update-fn))))
 
 (defmethod process-change :del-obj
   [data {:keys [page-id id] :as change}]
@@ -616,7 +783,10 @@
                                      (assoc :modifiers
                                             (rotation-modifiers gcenter % (- (:rotation group 0))))
                                      (geom/transform-shape))))
-                  selrect (-> (into [] gxfm (:shapes group))
+                  inner-shapes (if (:masked-group? group)
+                                 [(first (:shapes group))]
+                                 (:shapes group))
+                  selrect (-> (into [] gxfm inner-shapes)
                               (geom/selection-rect))]
 
               ;; Rotate the group shape change the data and rotate back again
@@ -629,7 +799,6 @@
 
     (d/update-in-when data [:pages-index page-id :objects] reg-objects)))
 
-
 (defmethod process-change :mov-objects
   [data {:keys [parent-id shapes index page-id] :as change}]
   (letfn [(is-valid-move? [objects shape-id]
@@ -641,34 +810,40 @@
             (let [prev-shapes (or prev-shapes [])]
               (if index
                 (cph/insert-at-index prev-shapes index shapes)
-                (reduce (fn [acc id]
-                          (if (some #{id} acc)
-                            acc
-                            (conj acc id)))
-                        prev-shapes
-                        shapes))))
+                (cph/append-at-the-end prev-shapes shapes))))
+
+          (check-insert-items [prev-shapes parent index shapes]
+            (if-not (:masked-group? parent)
+              (insert-items prev-shapes index shapes)
+              ;; For masked groups, the first shape is the mask
+              ;; and it cannot be moved.
+              (let [mask-id (first prev-shapes)
+                    other-ids (rest prev-shapes)
+                    not-mask-shapes (strip-id shapes mask-id)
+                    new-index (if (nil? index) nil (max (dec index) 0))
+                    new-shapes (insert-items other-ids new-index not-mask-shapes)]
+                (d/concat [mask-id] new-shapes))))
 
           (strip-id [coll id]
             (filterv #(not= % id) coll))
 
-        (remove-from-old-parent [cpindex objects shape-id]
-          (let [prev-parent-id (get cpindex shape-id)]
-            ;; Do nothing if the parent id of the shape is the same as
-            ;; the new destination target parent id.
-            (if (= prev-parent-id parent-id)
-              objects
-              (loop [sid shape-id
-                     pid prev-parent-id
-                     objects objects]
-                (let [obj (get objects pid)]
-                  (if (and (= 1 (count (:shapes obj)))
-                           (= sid (first (:shapes obj)))
-                           (= :group (:type obj)))
-                    (recur pid
-                           (:parent-id obj)
-                           (dissoc objects pid))
-                    (update-in objects [pid :shapes] strip-id sid)))))))
-
+          (remove-from-old-parent [cpindex objects shape-id]
+            (let [prev-parent-id (get cpindex shape-id)]
+              ;; Do nothing if the parent id of the shape is the same as
+              ;; the new destination target parent id.
+              (if (= prev-parent-id parent-id)
+                objects
+                (loop [sid shape-id
+                       pid prev-parent-id
+                       objects objects]
+                  (let [obj (get objects pid)]
+                    (if (and (= 1 (count (:shapes obj)))
+                             (= sid (first (:shapes obj)))
+                             (= :group (:type obj)))
+                      (recur pid
+                             (:parent-id obj)
+                             (dissoc objects pid))
+                      (update-in objects [pid :shapes] strip-id sid)))))))
 
           (update-parent-id [objects id]
             (update objects id assoc :parent-id parent-id))
@@ -700,7 +875,7 @@
 
               (if valid?
                 (as-> objects $
-                  (update-in $ [parent-id :shapes] insert-items index shapes)
+                  (update-in $ [parent-id :shapes] check-insert-items parent index shapes)
                   (reduce update-parent-id $ shapes)
                   (reduce (partial remove-from-old-parent cpindex) $ shapes)
                   (reduce (partial update-frame-ids frm-id) $ (get-in $ [parent-id :shapes])))
@@ -748,7 +923,7 @@
 
 (defmethod process-change :mod-color
   [data {:keys [color]}]
-  (d/update-in-when data [:colors (:id color)] merge color))
+  (d/assoc-in-when data [:colors (:id color)] color))
 
 (defmethod process-change :del-color
   [data {:keys [id]}]
@@ -763,6 +938,8 @@
                                     (subvec rc 1)
                                     rc)))))
 
+;; -- Media
+
 (defmethod process-change :add-media
   [data {:keys [object]}]
   (update data :media assoc (:id object) object))
@@ -774,6 +951,8 @@
 (defmethod process-change :del-media
   [data {:keys [id]}]
   (update data :media dissoc id))
+
+;; -- Components
 
 (defmethod process-change :add-component
   [data {:keys [id name shapes]}]
@@ -793,16 +972,51 @@
   [data {:keys [id]}]
   (d/dissoc-in data [:components id]))
 
+;; -- Typography
+
+(defmethod process-change :add-typography
+  [data {:keys [typography]}]
+  (update data :typographies assoc (:id typography) typography))
+
+(defmethod process-change :mod-typography
+  [data {:keys [typography]}]
+  (d/update-in-when data [:typographies (:id typography)] merge typography))
+
+(defmethod process-change :del-typography
+  [data {:keys [id]}]
+  (update data :typographies dissoc id))
+
+;; -- Operations
+
 (defmethod process-operation :set
   [shape op]
-  (let [attr (:attr op)
-        val  (:val op)]
-    (if (nil? val)
-      (dissoc shape attr)
-      (assoc shape attr val))))
+  (let [attr      (:attr op)
+        val       (:val op)
+        ignore    (:ignore-touched op)
+        shape-ref (:shape-ref shape)
+        group     (get component-sync-attrs attr)]
+
+    (cond-> shape
+      (and shape-ref group (not ignore) (not= val (get shape attr)))
+      (update :touched #(conj (or % #{}) group))
+
+      (nil? val)
+      (dissoc attr)
+
+      (some? val)
+      (assoc attr val))))
+
+(defmethod process-operation :set-touched
+  [shape op]
+  (let [touched (:touched op)
+        shape-ref (:shape-ref shape)]
+    (if (or (nil? shape-ref) (nil? touched) (empty? touched))
+      (dissoc shape :touched)
+      (assoc shape :touched touched))))
 
 (defmethod process-operation :default
   [shape op]
   (ex/raise :type :not-implemented
             :code :operation-not-implemented
             :context {:type (:type op)}))
+

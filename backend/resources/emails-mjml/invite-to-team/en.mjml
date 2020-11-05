@@ -1,0 +1,59 @@
+<mjml>
+  <mj-head>
+    <mj-font name="Source Sans Pro" href="https://fonts.googleapis.com/css?family=Source%20Sans%20Pro" />
+    <mj-attributes>
+      <mj-text font-family="Source Sans Pro, sans-serif" font-size="16px" color="#000000" line-height="150%" />
+      <mj-button background-color="#31EFB8" color="#1F1F1F" font-family="Source Sans Pro, sans-serif" font-size="16px" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#E5E5E5">
+    <mj-section padding="0">
+      <mj-column>
+        <mj-image src="{{ public-uri }}/images/email/uxbox-title.png"
+                  width="97px" height="32px" align="left" padding="16px" />
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#FFFFFF">
+      <mj-column>
+        <mj-text font-size="24px" font-weight="600">Hello!</mj-text>
+        <mj-text>
+          {{invited-by}} has invited you to join the team “{{ team }}”.
+        </mj-text>
+        <mj-button href="{{ public-uri }}/#/auth/verify-token?token={{token}}">
+          Accept invite
+        </mj-button>
+        <mj-text>Enjoy!</mj-text>
+        <mj-text>The UXBOX team.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="24px 0 0 0">
+      <mj-column width="425px">
+        <mj-text align="center" font-size="14px" color="#64666A">
+          UXBOX is the first Open Source prototyping platform that will be embraced by multidisciplinary teams.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="0">
+      <mj-column>
+        <mj-social icon-size="24px" mode="horizontal">
+          <mj-social-element src="{{ public-uri }}/images/email/logo-uxbox.png" href="https://uxbox.io/" padding="0 8px" />
+          <mj-social-element src="{{ public-uri }}/images/email/logo-twitter.png" href="https://twitter.com/penpot" padding="0 8px" />
+          <mj-social-element src="{{ public-uri }}/images/email/logo-github.png" href="https://github.com/uxbox/" padding="0 8px" />
+          <mj-social-element src="{{ public-uri }}/images/email/logo-instagram.png" href="https://instagram.com/uxbox/" padding="0 8px" />
+          <mj-social-element src="{{ public-uri }}/images/email/logo-taiga.png" href="https://tree.taiga.io/project/uxbox" padding="0 8px" />
+        </mj-social>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="0 0 24px 0">
+      <mj-column>
+        <mj-text align="center" font-size="14px" color="#64666A" line-height="150%">
+          UXBOX © 2020 | Made with &lt;3 and Open Source
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+  </mg-body>
+</mjml>

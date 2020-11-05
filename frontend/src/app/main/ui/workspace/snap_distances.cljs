@@ -172,11 +172,11 @@
                (map pair->distance+pair)
                (filter (comp pred? first))))
 
-        ;; Checks if the value is in a set of numbers with an error margin of 0.1
+        ;; Checks if the value is in a set of numbers with an error margin
         check-in-set
         (fn [value number-set]
           (->> number-set
-               (some #(<= (mth/abs (- value %)) 0.5))))
+               (some #(<= (mth/abs (- value %)) 1))))
 
         ;; Left/Top shapes and right/bottom shapes (depends on `coord` parameter
         [lt-shapes gt-shapes] @to-measure
@@ -185,7 +185,6 @@
         lt-distances (->> lt-shapes (map distance-to-selrect) (filter pos?) (into #{}))
         gt-distances (->> gt-shapes (map distance-to-selrect) (filter pos?) (into #{}))
 
-
         ;; We'll show the distances that match a distance from the selrect
         show-candidate? #(check-in-set % (set/union lt-distances gt-distances))
 
@@ -193,11 +192,17 @@
         distance-coincidences (concat (get-shapes-match show-candidate? lt-shapes)
                                       (get-shapes-match show-candidate? gt-shapes))
 
+
         ;; Show the distances that either match one of the distances from the selrect
         ;; or are from the selrect and go to a shape on the left and to the right
-        show-distance? #(check-in-set % (into #{} (concat
-                                                   (map first distance-coincidences)
-                                                   (set/intersection lt-distances gt-distances))))
+        show-distance?
+        (fn [dist]
+          (let [distances-to-show
+                (->> (d/concat #{}
+                               (map first distance-coincidences)
+                               (filter #(check-in-set % lt-distances) gt-distances)
+                               (filter #(check-in-set % gt-distances) lt-distances)))]
+            (check-in-set dist distances-to-show)))
 
         ;; These are the segments whose distance will be displayed
 
@@ -242,12 +247,16 @@
         transform       (unchecked-get props "transform")
         selected-shapes (mf/deref (refs/objects-by-id selected))
         frame-id        (-> selected-shapes first :frame-id)
-        frame           (mf/deref (refs/object-by-id frame-id))]
+        frame           (mf/deref (refs/object-by-id frame-id))
+        local           (mf/deref refs/workspace-local)
+
+        update-shape (fn [shape] (-> shape
+                                     (update :modifiers merge (:modifiers local))
+                                     gsh/transform-shape))]
     (when (and (contains? layout :dynamic-alignment)
                (= transform :move)
                (not (empty? selected)))
-      (let [shapes  (map gsh/transform-shape selected-shapes)
-            selrect (gsh/selection-rect shapes)
+      (let [selrect (->> selected-shapes (map  update-shape) gsh/selection-rect)
             key     (->> selected (map str) (str/join "-"))]
         [:g.distance
          [:& shape-distance

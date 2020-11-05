@@ -19,7 +19,8 @@
    [app.common.geom.shapes :as geom]
    [app.main.data.workspace.common :as dwc]
    [app.main.fonts :as fonts]
-   [app.util.object :as obj]))
+   [app.util.object :as obj]
+   [app.util.text :as ut]))
 
 (defn create-editor
   []
@@ -120,7 +121,10 @@
 (defn- shape-current-values
   [shape pred attrs]
   (let [root  (:content shape)
-        nodes (nodes-seq pred root)]
+        nodes (->> (nodes-seq pred root)
+                   (map #(if (is-text-node? %)
+                           (merge ut/default-text-attrs %)
+                           %)))]
     (geom/get-attrs-multi nodes attrs)))
 
 (defn current-text-values

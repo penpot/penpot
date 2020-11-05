@@ -43,9 +43,11 @@
     :rect i/box
     :curve i/curve
     :text i/text
-    :group (if (nil? (:component-id shape))
-             i/folder
-             i/component)
+    :group (if (some? (:component-id shape))
+             i/component
+             (if (:masked-group? shape)
+               i/mask
+               i/folder))
     nil))
 
 ;; --- Layer Name
@@ -89,7 +91,8 @@
         :default-value (:name shape "")}]
       [:span.element-name
        {:on-double-click on-click}
-       (:name shape "")])))
+       (:name shape "")
+       (when (seq (:touched shape)) " *")])))
 
 (defn- make-collapsed-iref
   [id]
@@ -142,10 +145,10 @@
               (st/emit! (dw/select-shape id true))
 
               (> (count selected) 1)
-              (st/emit! dw/deselect-all
+              (st/emit! (dw/deselect-all)
                         (dw/select-shape id))
               :else
-              (st/emit! dw/deselect-all
+              (st/emit! (dw/deselect-all)
                         (dw/select-shape id)))))
 
         on-context-menu
@@ -159,7 +162,7 @@
         on-drag
         (fn [{:keys [id]}]
           (when (not (contains? selected id))
-            (st/emit! dw/deselect-all
+            (st/emit! (dw/deselect-all)
                       (dw/select-shape id))))
 
         on-drop
@@ -185,10 +188,17 @@
                               :index index
                               :name (:name item)})]
 
+    (mf/use-effect
+     (mf/deps selected)
+     (fn []
+       (when (and (= (count selected) 1) selected?)
+         (.scrollIntoView (mf/ref-val dref) #js {:block "nearest", :behavior "smooth"}))))
+
     [:li {:on-context-menu on-context-menu
           :ref dref
           :class (dom/classnames
                    :component (not (nil? (:component-id item)))
+                   :masked (:masked-group? item)
                    :dnd-over (= (:over dprops) :center)
                    :dnd-over-top (= (:over dprops) :top)
                    :dnd-over-bot (= (:over dprops) :bot)
@@ -299,7 +309,9 @@
                                     :component-id
                                     :component-file
                                     :shape-ref
-                                    :metadata])]
+                                    :touched
+                                    :metadata
+                                    :masked-group?])]
     (persistent!
      (reduce-kv (fn [res id obj]
                   (assoc! res id (strip-data obj)))
@@ -319,8 +331,7 @@
 (mf/defc layers-toolbox
   {:wrap [mf/memo]}
   []
-  (let [locale   (mf/deref i18n/locale)
-        page     (mf/deref refs/workspace-page)]
+  (let [page     (mf/deref refs/workspace-page)]
     [:div#layers.tool-window
      [:div.tool-window-bar
       [:div.tool-window-icon i/layers]

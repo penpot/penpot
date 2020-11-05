@@ -13,10 +13,13 @@
    [app.main.data.fetch :as df]
    [app.main.fonts :as fonts]
    [app.main.ui.context :as muc]
+   [app.main.ui.shapes.group :refer [mask-id-ctx]]
    [app.common.data :as d]
    [app.common.geom.shapes :as geom]
    [app.common.geom.matrix :as gmt]
-   [app.util.object :as obj]))
+   [app.util.object :as obj]
+   [app.util.color :as uc]
+   [app.util.text :as ut]))
 
 ;; --- Text Editor Rendering
 
@@ -54,20 +57,37 @@
         text-transform (obj/get data "text-transform")
         line-height (obj/get data "line-height")
 
-        font-id (obj/get data "font-id" fonts/default-font)
+        font-id (obj/get data "font-id" (:font-id ut/default-text-attrs))
         font-variant-id (obj/get data "font-variant-id")
 
         font-family (obj/get data "font-family")
         font-size  (obj/get data "font-size")
+
+        ;; Old properties for backwards compatibility
         fill (obj/get data "fill")
-        opacity (obj/get data "opacity")
+        opacity (obj/get data "opacity" 1)
+
+        fill-color (obj/get data "fill-color" fill)
+        fill-opacity (obj/get data "fill-opacity" opacity)
+        fill-color-gradient (obj/get data "fill-color-gradient" nil)
+        fill-color-gradient (when fill-color-gradient
+                              (-> (js->clj fill-color-gradient :keywordize-keys true)
+                                  (update :type keyword)))
+
+        fill-color-ref-id (obj/get data "fill-color-ref-id")
+        fill-color-ref-file (obj/get data "fill-color-ref-file")
+
+        [r g b a] (uc/hex->rgba fill-color fill-opacity)
+        background (if fill-color-gradient
+                     (uc/gradient->css (js->clj fill-color-gradient))
+                     (str/format "rgba(%s, %s, %s, %s)" r g b a))
+
         fontsdb (deref fonts/fontsdb)
 
         base #js {:textDecoration text-decoration
-                  :color fill
-                  :opacity opacity
                   :textTransform text-transform
-                  :lineHeight (or line-height "inherit")}]
+                  :lineHeight (or line-height "inherit")
+                  "--text-color" background}]
 
     (when (and (string? letter-spacing)
                (pos? (alength letter-spacing)))
@@ -149,14 +169,14 @@
      (fn []
        (when (and embed-resources? (= type "root"))
          (let [font-to-embed (get-all-fonts node)
-               font-to-embed (if (empty? font-to-embed) #{{:font-id fonts/default-font}} font-to-embed)
+               font-to-embed (if (empty? font-to-embed) #{ut/default-text-attrs} font-to-embed)
                embeded (map embed-font font-to-embed)]
            (-> (p/all embeded)
                (p/then (fn [result] (reset! embeded-fonts (str/join "\n" result)))))))))
 
     (if (string? text)
       (let [style (generate-text-styles (clj->js node))]
-        [:span {:style style :key index} (if (= text "") "\u00A0" text)])
+        [:span.text-node {:style style} (if (= text "") "\u00A0" text)])
       (let [children (map-indexed (fn [index node]
                                     (mf/element text-node {:index index :node node :key index}))
                                   children)]
@@ -168,13 +188,15 @@
              {:key index
               :style style
               :xmlns "http://www.w3.org/1999/xhtml"}
-             (when (not (nil? @embeded-fonts))
-               [:style @embeded-fonts])
+             [:*
+              [:style ".text-node { background: var(--text-color); -webkit-text-fill-color: transparent; -webkit-background-clip: text;"]
+              (when (not (nil? @embeded-fonts))
+                [:style @embeded-fonts])]
              children])
 
           "paragraph-set"
           (let [style #js {:display "inline-block"}]
-              [:div.paragraphs {:key index :style style} children])
+            [:div.paragraphs {:key index :style style} children])
 
           "paragraph"
           (let [style (generate-paragraph-styles (clj->js node))]
@@ -203,6 +225,7 @@
   [props]
   (let [shape     (unchecked-get props "shape")
         selected? (unchecked-get props "selected?")
+        mask-id (mf/use-ctx mask-id-ctx)
         {:keys [id x y width height rotation content]} shape]
     [:foreignObject {:x x
                      :y y
@@ -210,6 +233,7 @@
                      :transform (geom/transform-matrix shape)
                      :id (str id)
                      :width width
-                     :height height}
+                     :height height
+                     :mask mask-id}
      [:& text-content {:content (:content shape)}]]))
 

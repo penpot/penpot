@@ -44,8 +44,9 @@
     [:div.element-set
      [:div.element-set-title (t locale "workspace.options.canvas-background")]
      [:div.element-set-content
-      [:& color-row {:disable-opacity true
-                     :color {:value (get options :background "#E8E9EA")
+      [:& color-row {:disable-gradient true
+                     :disable-opacity true
+                     :color {:color (get options :background "#E8E9EA")
                              :opacity 1}
                      :on-change handle-change-color
                      :on-open on-open

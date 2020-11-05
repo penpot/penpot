@@ -18,40 +18,45 @@
 
 ;; --- Check Project Permissions
 
-;; This SQL checks if the: (1) project is part of the team where the
-;; profile has edition permissions or (2) the profile has direct
-;; edition access granted to this project.
-
-(def sql:project-permissions
-  "select tp.can_edit,
-          tp.is_admin,
-          tp.is_owner
-     from team_profile_rel as tp
-    where tp.profile_id = ?
-      and tp.team_id = ?
-    union
-   select pp.can_edit,
-          pp.is_admin,
-          pp.is_owner
-     from project_profile_rel as pp
-    where pp.profile_id = ?
-      and pp.project_id = ?;")
+(def ^:private sql:project-permissions
+  "select tpr.is_owner,
+          tpr.is_admin,
+          tpr.can_edit
+     from team_profile_rel as tpr
+    inner join project as p on (p.team_id = tpr.team_id)
+    where p.id = ?
+      and tpr.profile_id = ?
+   union all
+   select ppr.is_owner,
+          ppr.is_admin,
+          ppr.can_edit
+     from project_profile_rel as ppr
+    where ppr.project_id = ?
+      and ppr.profile_id = ?")
 
 (defn check-edition-permissions!
-  [conn profile-id project]
+  [conn profile-id project-id]
   (let [rows (db/exec! conn [sql:project-permissions
-                             profile-id
-                             (:team-id project)
-                             profile-id
-                             (:id project)])]
+                             project-id profile-id
+                             project-id profile-id])]
     (when (empty? rows)
       (ex/raise :type :not-found))
-
     (when-not (or (some :can-edit rows)
                   (some :is-admin rows)
                   (some :is-owner rows))
       (ex/raise :type :validation
                 :code :not-authorized))))
+
+(defn check-read-permissions!
+  [conn profile-id project-id]
+  (let [rows (db/exec! conn [sql:project-permissions
+                             project-id profile-id
+                             project-id profile-id])]
+
+    (when-not (seq rows)
+      (ex/raise :type :validation
+                :code :not-authorized))))
+
 
 
 ;; --- Query: Projects
@@ -60,7 +65,6 @@
 
 (s/def ::team-id ::us/uuid)
 (s/def ::profile-id ::us/uuid)
-
 (s/def ::projects
   (s/keys :req-un [::profile-id ::team-id]))
 
@@ -68,31 +72,37 @@
   [{:keys [profile-id team-id]}]
   (with-open [conn (db/open)]
     (teams/check-read-permissions! conn profile-id team-id)
-    (retrieve-projects conn team-id)))
+    (retrieve-projects conn profile-id team-id)))
 
 (def sql:projects
   "select p.*,
+          coalesce(tpp.is_pinned, false) as is_pinned,
           (select count(*) from file as f
-              where f.project_id = p.id
-                and deleted_at is null)
+            where f.project_id = p.id
+              and deleted_at is null) as count
      from project as p
+     left join team_project_profile_rel as tpp
+            on (tpp.project_id = p.id and
+                tpp.team_id = p.team_id and
+                tpp.profile_id = ?)
     where p.team_id = ?
       and p.deleted_at is null
     order by p.modified_at desc")
 
 (defn retrieve-projects
-  [conn team-id]
-  (db/exec! conn [sql:projects team-id]))
+  [conn profile-id team-id]
+  (db/exec! conn [sql:projects profile-id team-id]))
 
-;; --- Query: Projec by ID
 
-(s/def ::project-id ::us/uuid)
-(s/def ::project-by-id
-  (s/keys :req-un [::profile-id ::project-id]))
+;; --- Query: Project
 
-(sq/defquery ::project-by-id
-  [{:keys [profile-id project-id]}]
+(s/def ::id ::us/uuid)
+(s/def ::project
+  (s/keys :req-un [::profile-id ::id]))
+
+(sq/defquery ::project
+  [{:keys [profile-id id]}]
   (with-open [conn (db/open)]
-    (let [project (db/get-by-id conn :project project-id)]
-      (check-edition-permissions! conn profile-id project)
+    (let [project (db/get-by-id conn :project id)]
+      (check-read-permissions! conn profile-id id)
       project)))

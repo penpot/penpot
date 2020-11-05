@@ -1,4 +1,4 @@
-FROM azul/zulu-openjdk-debian:14
+FROM adoptopenjdk/openjdk15:debianslim-jre
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 ADD ./bundle/backend/ /opt/bundle/
 WORKDIR /opt/bundle

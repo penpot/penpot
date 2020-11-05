@@ -76,6 +76,8 @@
   [node]
   (.-value node))
 
+(def get-target-val (comp get-value get-target))
+
 (defn click
   "Click a node"
   [node]
@@ -217,3 +219,6 @@
 
 (defn release-pointer [event]
   (-> event get-target (.releasePointerCapture (.-pointerId event))))
+ 
+(defn get-root []
+  (query js/document "#app"))

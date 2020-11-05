@@ -25,7 +25,7 @@
 
 (def index-by-id #(index-by :id %))
 
-(defn remove-nil-vals
+(defn without-nils
   "Given a map, return a map removing key-value
   pairs when value is `nil`."
   [data]
@@ -110,6 +110,14 @@
                (reduced x)
                not-found))
            not-found coll)))
+
+(defn remove-equal-values [m1 m2]
+  (if (and (map? m1) (map? m2) (not (nil? m1)) (not (nil? m2)))
+    (->> m1
+         (remove (fn [[k v]] (= (k m2) v)))
+         (into {}))
+    m1))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Numbers Parsing

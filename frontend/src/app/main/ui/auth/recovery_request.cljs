@@ -9,45 +9,48 @@
 
 (ns app.main.ui.auth.recovery-request
   (:require
-   [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [rumext.alpha :as mf]
    [app.common.spec :as us]
    [app.main.data.auth :as uda]
    [app.main.data.messages :as dm]
    [app.main.store :as st]
-   [app.main.ui.components.forms :refer [input submit-button form]]
+   [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [app.util.forms :as fm]
    [app.util.i18n :as i18n :refer [tr t]]
-   [app.util.router :as rt]))
+   [app.util.router :as rt]
+   [cljs.spec.alpha :as s]
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
 (s/def ::email ::us/email)
 (s/def ::recovery-request-form (s/keys :req-un [::email]))
 
+(defn- on-success
+  []
+  (st/emit! (dm/info (tr "auth.notifications.recovery-token-sent"))
+            (rt/nav :auth-login)))
+
 (defn- on-submit
   [form event]
-  (let [on-success #(st/emit!
-                     (dm/info (tr "auth.notifications.recovery-token-sent"))
-                     (rt/nav :auth-login))
-        params     (with-meta (:clean-data form)
-                     {:on-success on-success})]
+  (let [params (with-meta (:clean-data @form)
+                 {:on-success on-success})]
     (st/emit! (uda/request-profile-recovery params))))
 
 (mf/defc recovery-form
   [{:keys [locale] :as props}]
-  [:& form {:on-submit on-submit
-            :spec ::recovery-request-form
-            :initial {}}
+  (let [form (fm/use-form :spec ::recovery-request-form
+                          :initial {})]
+    [:& fm/form {:on-submit on-submit
+                 :form form}
+     [:div.fields-row
+      [:& fm/input {:name :email
+                    :label (t locale "auth.email")
+                    :help-icon i/at
+                    :type "text"}]]
 
-   [:& input {:name :email
-              :label (t locale "auth.email-label")
-              :help-icon i/at
-              :type "text"}]
+     [:& fm/submit-button
+      {:label (t locale "auth.recovery-request-submit")}]]))
 
-   [:& submit-button
-    {:label (t locale "auth.recovery-request-submit-label")}]])
 
 ;; --- Recovery Request Page
 
@@ -57,7 +60,6 @@
    [:div.form-container
     [:h1 (t locale "auth.recovery-request-title")]
     [:div.subtitle (t locale "auth.recovery-request-subtitle")]
-
     [:& recovery-form {:locale locale}]
 
     [:div.links

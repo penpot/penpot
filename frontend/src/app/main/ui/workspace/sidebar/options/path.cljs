@@ -13,7 +13,8 @@
    [app.common.data :as d]
    [app.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
    [app.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]
-   [app.main.ui.workspace.sidebar.options.shadow :refer [shadow-menu]]))
+   [app.main.ui.workspace.sidebar.options.shadow :refer [shadow-menu]]
+   [app.main.ui.workspace.sidebar.options.blur :refer [blur-menu]]))
 
 (mf/defc options
   [{:keys [shape] :as props}]
@@ -28,5 +29,6 @@
                       :type type
                       :values stroke-values}]
      [:& shadow-menu {:ids ids
-                      :type type
-                      :values (select-keys shape [:shadow])}]]))
+                      :values (select-keys shape [:shadow])}]
+     [:& blur-menu {:ids ids
+                    :values (select-keys shape [:blur])}]]))

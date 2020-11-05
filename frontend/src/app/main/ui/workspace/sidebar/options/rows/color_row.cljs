@@ -10,31 +10,33 @@
 (ns app.main.ui.workspace.sidebar.options.rows.color-row
   (:require
    [rumext.alpha :as mf]
+   [cuerdas.core :as str]
    [app.common.math :as math]
+   [app.common.pages :as cp]
+   [app.common.data :as d]
    [app.util.dom :as dom]
    [app.util.data :refer [classnames]]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.main.ui.modal :as modal]
-   [app.common.data :as d]
-   [app.main.refs :as refs]))
+   [app.util.color :as uc]
+   [app.main.refs :as refs]
+   [app.main.data.modal :as modal]
+   [app.main.ui.components.color-bullet :as cb]))
 
 (defn color-picker-callback
-  [color handle-change-color handle-open handle-close disable-opacity]
+  [color disable-gradient disable-opacity handle-change-color handle-open handle-close]
   (fn [event]
     (let [x (.-clientX event)
           y (.-clientY event)
           props {:x x
                  :y y
+                 :disable-gradient disable-gradient
+                 :disable-opacity disable-opacity
                  :on-change handle-change-color
                  :on-close handle-close
-                 :value (:value color)
-                 :opacity (:opacity color)
-                 :disable-opacity disable-opacity}]
+                 :data color}]
       (handle-open)
       (modal/show! :colorpicker props))))
 
-(defn value-to-background [value]
-  (if (= value :multiple) "transparent" value))
 
 (defn remove-hash [value]
   (if (or (nil? value) (= value :multiple)) "" (subs value 1)))
@@ -59,39 +61,28 @@
   (if (= v :multiple) nil v))
 
 (mf/defc color-row
-  [{:keys [color on-change on-open on-close disable-opacity]}]
-  (let [;;
-        file-colors (mf/deref refs/workspace-file-colors)
+  [{:keys [color disable-gradient disable-opacity on-change on-open on-close]}]
+  (let [file-colors (mf/deref refs/workspace-file-colors)
         shared-libs (mf/deref refs/workspace-libraries)
 
         get-color-name (fn [{:keys [id file-id]}]
                          (let [src-colors (if file-id (get-in shared-libs [file-id :data :colors]) file-colors)]
                            (get-in src-colors [id :name])))
-        ;;
-
-        default-color {:value "#000000" :opacity 1}
 
         parse-color (fn [color]
-                      (-> (merge default-color color)
-                          (update :value #(or % "#000000"))
-                          (update :opacity #(or % 1))))
-
-        state (mf/use-state (parse-color color))
-
-        value (:value @state)
-        opacity (:opacity @state)
+                      (-> color
+                          (update :color #(or % (:value color)))))
 
         change-value (fn [new-value]
-                       (swap! state assoc :value new-value)
-                       (when on-change (on-change new-value (remove-multiple opacity))))
+                       (when on-change (on-change (-> color
+                                                      (assoc :color new-value)
+                                                      (dissoc :gradient)))))
 
         change-opacity (fn [new-opacity]
-                         (swap! state assoc :opacity new-opacity)
-                         (when on-change (on-change (remove-multiple value) new-opacity)))
+                         (when on-change (on-change (assoc color :opacity new-opacity))))
 
-        handle-pick-color (fn [new-value new-opacity id file-id]
-                            (reset! state {:value new-value :opacity new-opacity})
-                            (when on-change (on-change new-value new-opacity id file-id)))
+        handle-pick-color (fn [color]
+                            (when on-change (on-change color)))
 
         handle-open (fn [] (when on-open (on-open)))
 
@@ -115,38 +106,63 @@
                                         change-opacity))))
 
         select-all (fn [event]
-                     (dom/select-text! (dom/get-target event)))]
+                     (dom/select-text! (dom/get-target event)))
+
+        handle-click-color (mf/use-callback
+                            (mf/deps color)
+                            (let [;; If multiple, we change to default color
+                                  color (if (uc/multiple? color)
+                                          {:color cp/default-color :opacity 1}
+                                          color)]
+                              (color-picker-callback color
+                                                     disable-gradient
+                                                     disable-opacity
+                                                     handle-pick-color
+                                                     handle-open
+                                                     handle-close)))]
 
     (mf/use-effect
      (mf/deps color)
-     #(reset! state (parse-color color)))
-        ;; is this necessary?
+     (fn []
+       (modal/update-props! :colorpicker {:data (parse-color color)})))
 
     [:div.row-flex.color-data
-     [:span.color-th
-      {:class (when (:id color) "color-name")
-       :style {:background-color (-> value value-to-background)}
-       :on-click (color-picker-callback @state handle-pick-color handle-open handle-close disable-opacity)}
-      (when (= value :multiple) "?")]
+     [:& cb/color-bullet {:color color
+                          :on-click handle-click-color}]
 
-     (if (:id color)
+     (cond
+       ;; Rendering a color with ID
+       (:id color)
        [:div.color-info
         [:div.color-name (str (get-color-name color))]]
-       [:div.color-info
-        [:input {:value (-> value remove-hash)
-                 :pattern "^[0-9a-fA-F]{0,6}$"
-                 :placeholder (tr "settings.multiple")
-                 :on-click select-all
-                 :on-change handle-value-change}]])
 
-     (when (not disable-opacity)
-       [:div.input-element
-        {:class (classnames :percentail (not= opacity :multiple))}
-        [:input.input-text {:type "number"
-                            :value (-> opacity opacity->string)
-                            :placeholder (tr "settings.multiple")
-                            :on-click select-all
-                            :on-change handle-opacity-change
-                            :min "0"
-                            :max "100"}]])]))
+       ;; Rendering a gradient
+       (and (not (uc/multiple? color))
+            (:gradient color) (get-in color [:gradient :type]))
+       [:div.color-info
+        [:div.color-name (cb/gradient-type->string (get-in color [:gradient :type]))]]
+
+       ;; Rendering a plain color/opacity
+       :else
+       [:*
+        [:div.color-info
+         [:input {:value (if (uc/multiple? color)
+                           ""
+                           (-> color :color remove-hash))
+                  :pattern "^[0-9a-fA-F]{0,6}$"
+                  :placeholder (tr "settings.multiple")
+                  :on-click select-all
+                  :on-change handle-value-change}]]
+
+        (when (and (not disable-opacity)
+                   (not (:gradient color)))
+          [:div.input-element
+           {:class (classnames :percentail (not= (:opacity color) :multiple))}
+           [:input.input-text {:type "number"
+                               :value (-> color :opacity opacity->string)
+                               :placeholder (tr "settings.multiple")
+                               :on-click select-all
+                               :on-change handle-opacity-change
+                               :min "0"
+                               :max "100"}]])])]))
 

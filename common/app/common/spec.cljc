@@ -12,11 +12,16 @@
   (:refer-clojure :exclude [assert])
   #?(:cljs (:require-macros [app.common.spec :refer [assert]]))
   (:require
-   #?(:clj [clojure.spec.alpha :as s]
+   #?(:clj  [clojure.spec.alpha :as s]
       :cljs [cljs.spec.alpha :as s])
+
+   #?(:clj  [clojure.spec.test.alpha :as stest]
+      :cljs [cljs.spec.test.alpha :as stest])
+
    [expound.alpha :as expound]
    [app.common.uuid :as uuid]
    [app.common.exceptions :as ex]
+   [app.common.geom.point :as gpt]
    [cuerdas.core :as str]))
 
 (s/check-asserts true)
@@ -38,7 +43,7 @@
     (if (string? v)
       (if (re-matches uuid-rx v)
         (uuid/uuid v)
-        (if (str/empty? v) nil ::s/invalid))
+        ::s/invalid)
       ::s/invalid)))
 
 (defn boolean-conformer
@@ -87,9 +92,21 @@
     v
     ::s/invalid))
 
+(defn keyword-conformer
+  [v]
+  (cond
+    (keyword? v)
+    v
+
+    (string? v)
+    (keyword v)
+
+    :else
+    ::s/invalid))
+
 ;; --- Default Specs
 
-(s/def ::keyword keyword?)
+(s/def ::keyword (s/conformer keyword-conformer name))
 (s/def ::inst inst?)
 (s/def ::string string?)
 (s/def ::email (s/conformer email-conformer str))
@@ -101,27 +118,54 @@
 (s/def ::not-empty-string (s/and string? #(not (str/empty? %))))
 (s/def ::url string?)
 (s/def ::fn fn?)
+(s/def ::point gpt/point?)
 
 ;; --- Macros
 
 (defn spec-assert
-  [spec x]
+  [spec x message]
   (if (s/valid? spec x)
     x
     (ex/raise :type :assertion
               :data (s/explain-data spec x)
-              #?@(:cljs [:stack (.-stack (ex-info "assertion" {}))]))))
+              :message message
+              #?@(:cljs [:stack (.-stack (ex-info message {}))]))))
+
+(defn spec-assert*
+  [spec x message context]
+  (if (s/valid? spec x)
+    x
+    (ex/raise :type :assertion
+              :data (s/explain-data spec x)
+              :context context
+              :message message
+              #?@(:cljs [:stack (.-stack (ex-info message {}))]))))
+
 
 (defmacro assert
   "Development only assertion macro."
   [spec x]
   (when *assert*
-    `(spec-assert ~spec ~x)))
+    (let [nsdata  (:ns &env)
+          context (when nsdata
+                    {:ns (str (:name nsdata))
+                     :name (pr-str spec)
+                     :line (:line &env)
+                     :file (:file (:meta nsdata))})
+          message (str "Spec Assertion: '" (pr-str spec) "'")]
+      `(spec-assert* ~spec ~x ~message ~context))))
 
 (defmacro verify
   "Always active assertion macro (does not obey to :elide-asserts)"
   [spec x]
-  `(spec-assert ~spec ~x))
+  (let [nsdata  (:ns &env)
+        context (when nsdata
+                  {:ns (str (:name nsdata))
+                   :name (pr-str spec)
+                   :line (:line &env)
+                   :file (:file (:meta nsdata))})
+        message (str "Spec Assertion: '" (pr-str spec) "'")]
+    `(spec-assert* ~spec ~x ~message ~context)))
 
 ;; --- Public Api
 
@@ -136,3 +180,14 @@
                                     (expound/printer edata))
                          :data (::s/problems edata)))))
     result))
+
+(defmacro instrument!
+  [& {:keys [sym spec]}]
+  (when *assert*
+    (let [message (str "Spec failed on: " sym)]
+      `(let [origf# ~sym
+             mdata# (meta (var ~sym))]
+         (set! ~sym (fn [& params#]
+                      (spec-assert* ~spec params# ~message mdata#)
+                      (apply origf# params#)))))))
+

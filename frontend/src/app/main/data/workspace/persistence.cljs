@@ -26,6 +26,7 @@
    [app.util.router :as rt]
    [app.util.time :as dt]
    [app.util.transit :as t]
+   [app.util.avatars :as avatars]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
@@ -208,7 +209,7 @@
     (watch [_ state stream]
       (->> (rx/zip (rp/query :file {:id file-id})
                    (rp/query :file-users {:id file-id})
-                   (rp/query :project-by-id {:project-id project-id})
+                   (rp/query :project {:id project-id})
                    (rp/query :file-libraries {:file-id file-id}))
            (rx/first)
            (rx/map (fn [bundle] (apply bundle-fetched bundle)))
@@ -224,6 +225,12 @@
                          :else
                          (throw error))))))))
 
+(defn assoc-profile-avatar
+  [{:keys [photo fullname] :as profile}]
+  (cond-> profile
+    (or (nil? photo) (empty? photo))
+    (assoc :photo (avatars/generate {:name fullname}))))
+
 (defn- bundle-fetched
   [file users project libraries]
   (ptk/reify ::bundle-fetched
@@ -236,13 +243,14 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state
-             :workspace-undo {}
-             :workspace-project project
-             :workspace-file file
-             :workspace-data (:data file)
-             :workspace-users (d/index-by :id users)
-             :workspace-libraries (d/index-by :id libraries)))))
+      (let [users (map assoc-profile-avatar users)]
+        (assoc state
+               :workspace-undo {}
+               :workspace-project project
+               :workspace-file file
+               :workspace-data (:data file)
+               :workspace-users (d/index-by :id users)
+               :workspace-libraries (d/index-by :id libraries))))))
 
 
 ;; --- Set File shared
@@ -300,8 +308,7 @@
                   (rx/mapcat
                     #(rx/zip (rp/query :file-library {:file-id library-id})
                              (rp/query :media-objects {:file-id library-id
-                                                       :is-local false})
-                             (rp/query :colors {:file-id library-id}))))
+                                                       :is-local false}))))
              (rx/map file-linked))))))
 
 (defn file-linked
@@ -394,7 +401,8 @@
          (rx/concat
           (rx/of (dm/show {:content (tr "media.loading")
                            :type :info
-                           :timeout nil}))
+                           :timeout nil
+                           :tag :media-loading}))
           (->> (if (string? uri)
                  (->> (rx/of uri)
                       (rx/map prepare-uri)
@@ -420,7 +428,7 @@
                              :else
                              (rx/throw error))))
                (rx/finalize (fn []
-                              (st/emit! dm/hide)))))))))
+                              (st/emit! (dm/hide-tag :media-loading))))))))))
 
 
 ;; --- Delete media object

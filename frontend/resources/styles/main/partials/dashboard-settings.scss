@@ -1,0 +1,124 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// This Source Code Form is "Incompatible With Secondary Licenses", as
+// defined by the Mozilla Public License, v. 2.0.
+//
+// Copyright (c) 2020 UXBOX Labs SL
+
+.dashboard-sidebar {
+  &.settings {
+    .back-to-dashboard {
+      padding: 12px 18px;
+      font-size: $fs14;
+      cursor: pointer;
+      display: flex;
+
+      .icon {
+        display: flex;
+        align-items: center;
+        margin-right: 14px;
+      }
+
+      .text {
+        color: $color-gray-60;
+      }
+
+      svg {
+        fill: $color-gray-60;
+        transform: rotate(90deg);
+        width: 12px;
+        height: 12px;
+      }
+    }
+  }
+}
+
+
+.dashboard-settings {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+
+  .form-container {
+    margin-top: 50px;
+    display: flex;
+    max-width: 368px;
+    width: 100%;
+
+    &.two-columns {
+      max-width: 536px;
+      justify-content: space-between;
+      flex-direction: row;
+    }
+  }
+
+  .avatar-form {
+    display: flex;
+    flex-direction: column;
+    width: 120px;
+    min-width: 120px;
+
+    img {
+      border-radius: 50%;
+      flex-shrink: 0;
+      height: 120px;
+      margin-right: $medium;
+      width: 120px;
+    }
+
+    .image-change-field {
+      position: relative;
+      width: 120px;
+      height: 120px;
+
+      .update-overlay {
+        opacity: 0;
+        cursor: pointer;
+        position: absolute;
+        width: 121px;
+        height: 121px;
+        border-radius: 50%;
+        font-size: $fs24;
+        color: $color-white;
+        line-height: 120px;
+        text-align: center;
+        background: $color-primary-dark;
+        z-index: 14;
+      }
+
+      input[type=file] {
+        width: 120px;
+        height: 120px;
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+        top: 0;
+        z-index: 15;
+      }
+
+      &:hover {
+        img {display: none;}
+        .update-overlay {opacity: 1};
+      }
+    }
+  }
+
+  .profile-form {
+    display: flex;
+    flex-direction: column;
+    max-width: 368px;
+    width: 100%;
+  }
+
+  .options-form,
+  .password-form {
+    h2 {
+      font-size: $fs14;
+      margin-bottom: 20px;
+    }
+  }
+
+}

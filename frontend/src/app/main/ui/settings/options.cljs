@@ -9,69 +9,72 @@
 
 (ns app.main.ui.settings.options
   (:require
-   [rumext.alpha :as mf]
-   [cljs.spec.alpha :as s]
-   [app.main.ui.icons :as i]
-   [app.main.data.users :as udu]
+   [app.common.spec :as us]
    [app.main.data.messages :as dm]
-   [app.main.ui.components.forms :refer [select submit-button form]]
+   [app.main.data.users :as du]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.forms :as fm]
+   [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [app.util.forms :as fm]
-   [app.util.i18n :as i18n :refer [t tr]]))
+   [app.util.i18n :as i18n :refer [t tr]]
+   [cljs.spec.alpha :as s]
+   [rumext.alpha :as mf]))
 
-(s/def ::lang (s/nilable ::fm/not-empty-string))
-(s/def ::theme (s/nilable ::fm/not-empty-string))
+(s/def ::lang (s/nilable ::us/not-empty-string))
+(s/def ::theme (s/nilable ::us/not-empty-string))
 
 (s/def ::options-form
   (s/keys :opt-un [::lang ::theme]))
 
 (defn- on-error
-  [form error])
+  [form error]
+  (st/emit! (dm/error (tr "errors.generic"))))
+
+(defn- on-success
+  [form]
+  (st/emit! (dm/success (tr "notifications.profile-saved"))))
 
 (defn- on-submit
   [form event]
-  (dom/prevent-default event)
-  (let [data (:clean-data form)
-        on-success #(st/emit! (dm/success (tr "settings.notifications.profile-saved")))
-        on-error #(on-error % form)]
-    (st/emit! (udu/update-profile (with-meta data
-                                    {:on-success on-success
-                                     :on-error on-error})))))
+  (let [data  (:clean-data @form)
+        mdata {:on-success (partial on-success form)
+               :on-error (partial on-error form)}]
+    (st/emit! (du/update-profile (with-meta data mdata)))))
 
 (mf/defc options-form
-  [{:keys [locale profile] :as props}]
-  [:& form {:class "options-form"
-            :on-submit on-submit
-            :spec ::options-form
-            :initial profile}
+  [{:keys [locale] :as props}]
+  (let [profile (mf/deref refs/profile)
+        form    (fm/use-form :spec ::options-form
+                             :initial profile)]
+    [:& fm/form {:class "options-form"
+                 :on-submit on-submit
+                 :form form}
 
-   [:h2 (t locale "settings.language-change-title")]
+     [:h2 (t locale "labels.language")]
 
-   [:& select {:options [{:label "English" :value "en"}
-                         {:label "Français" :value "fr"}
-                         {:label "Español" :value "es"}
-                         {:label "Русский" :value "ru"}]
-               :label (t locale "settings.language-label")
-               :default "en"
-               :name :lang}]
+     [:div.fields-row
+      [:& fm/select {:options [{:label "English" :value "en"}
+                               {:label "Français" :value "fr"}
+                               {:label "Español" :value "es"}
+                               {:label "Русский" :value "ru"}]
+                     :label (t locale "dashboard.select-ui-language")
+                     :default "en"
+                     :name :lang}]]
 
-   [:h2 (t locale "settings.theme-change-title")]
-   [:& select {:label (t locale "settings.theme-label")
-               :name :theme
-               :default "default"
-               :options [{:label "Default" :value "default"}]}]
-
-   [:& submit-button
-    {:label (t locale "settings.profile-submit-label")}]])
+     [:h2 (t locale "dashboard.theme-change")]
+     [:div.fields-row
+      [:& fm/select {:label (t locale "dashboard.select-ui-theme")
+                     :name :theme
+                     :default "default"
+                     :options [{:label "Default" :value "default"}]}]]
+     [:& fm/submit-button
+      {:label (t locale "dashboard.update-settings")}]]))
 
 ;; --- Password Page
 
 (mf/defc options-page
-  [props]
-  (let [locale (mf/deref i18n/locale)
-        profile (mf/deref refs/profile)]
-    [:section.settings-options.generic-form
-     [:div.forms-container
-      [:& options-form {:locale locale :profile profile}]]]))
+  [{:keys [locale]}]
+  [:div.dashboard-settings
+   [:div.form-container
+    [:& options-form {:locale locale}]]])

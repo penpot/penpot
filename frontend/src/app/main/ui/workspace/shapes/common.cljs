@@ -14,11 +14,11 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.keyboard :as kbd]
-   [app.main.ui.shapes.filters :as filters]
    [app.util.dom :as dom]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as geom]))
+   [app.common.geom.shapes :as geom]
+   [app.main.ui.shapes.shape :refer [shape-container]]))
 
 (defn- on-mouse-down
   [event {:keys [id type] :as shape}]
@@ -47,7 +47,7 @@
               (st/emit! (dw/select-shape id true)))
             (do
               (when-not (or (empty? selected) (kbd/shift? event))
-                (st/emit! dw/deselect-all))
+                (st/emit! (dw/deselect-all)))
               (st/emit! (dw/select-shape id))))
 
           (st/emit! (dw/start-move-selected)))))))
@@ -70,12 +70,11 @@
                          #(on-mouse-down % shape))
           on-context-menu (mf/use-callback
                            (mf/deps shape)
-                           #(on-context-menu % shape))
-          filter-id (mf/use-memo filters/get-filter-id)]
-      [:g.shape {:on-mouse-down on-mouse-down
-                 :on-context-menu on-context-menu
-                 :filter (filters/filter-str filter-id shape)}
-       [:& filters/filters {:filter-id filter-id :shape shape}]
+                           #(on-context-menu % shape))]
+
+      [:> shape-container {:shape shape
+                           :on-mouse-down on-mouse-down
+                           :on-context-menu on-context-menu}
        [:& component {:shape shape}]])))
 
 

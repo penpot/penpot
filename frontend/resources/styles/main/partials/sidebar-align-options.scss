@@ -8,7 +8,7 @@
 .align-options {
   display: flex;
   border-bottom: solid 1px $color-gray-60;
-  height: 37px;
+  height: 40px;
   padding: 0 $x-small;
 
   .align-group {
@@ -22,7 +22,9 @@
   }
 
   .align-button {
+    align-items: center;
     cursor: pointer;
+    display: flex;
     padding: $small $x-small;
     svg {
       height: 16px;

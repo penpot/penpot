@@ -9,23 +9,25 @@
 
 (ns app.main.ui.workspace.colorpalette
   (:require
-   [beicon.core :as rx]
-   [goog.events :as events]
-   [okulary.core :as l]
-   [rumext.alpha :as mf]
-   [cuerdas.core :as str]
    [app.common.math :as mth]
    [app.main.data.colors :as mdc]
    [app.main.data.workspace :as udw]
+   [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
    [app.util.color :refer [hex->rgb]]
    [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [t]]
    [app.util.object :as obj]
-   [app.main.refs :as refs]
-   [app.util.i18n :as i18n :refer [t]]))
+   [beicon.core :as rx]
+   [cuerdas.core :as str]
+   [goog.events :as events]
+   [okulary.core :as l]
+   [rumext.alpha :as mf]))
 
 ;; --- Refs
 
@@ -49,20 +51,17 @@
 ;; --- Components
 (mf/defc palette-item
   [{:keys [color size local?]}]
-  (let [id (:id color)
-        file-id (:file-id color)
-        select-color
+  (let [select-color
         (fn [event]
           (let [ids (get-in @st/state [:workspace-local :selected])]
             (if (kbd/shift? event)
-              (st/emit! (mdc/change-stroke ids (:value color) id file-id))
-              (st/emit! (mdc/change-fill ids (:value color) id file-id)))))]
+              (st/emit! (mdc/change-stroke ids color))
+              (st/emit! (mdc/change-fill ids color)))))]
 
     [:div.color-cell {:class (str "cell-"(name size))
-                      :key (or (str (:id color)) (:value color))
                       :on-click select-color}
-     [:span.color {:style {:background (:value color)}}]
-     (when (= size :big) [:span.color-text {:title (:name color) } (or (:name color) (:value color))])]))
+     [:& cb/color-bullet {:color color}]
+     [:& cb/color-name {:color color :size size}]]))
 
 (mf/defc palette
   [{:keys [left-sidebar? current-colors recent-colors file-colors shared-libs selected size]}]
@@ -138,9 +137,9 @@
             (when (= selected (:id cur-library)) i/tick)
             [:div.library-name (str (:name cur-library) " " (str/format "(%s)" (count colors)))]
             [:div.color-sample
-             (for [[idx {:keys [id value]}] (map-indexed vector (take 7 colors))]
-               [:div.color-bullet {:key (str "color-" idx)
-                                   :style {:background-color value}}])]]))
+             (for [[idx {:keys [id color]}] (map-indexed vector (take 7 colors))]
+               [:& cb/color-bullet {:key (str "color-" idx)
+                                    :color color}])]]))
 
 
        [:li.palette-library
@@ -149,9 +148,9 @@
         [:div.library-name (str (t locale "workspace.libraries.colors.file-library")
                                 (str/format " (%s)" (count file-colors)))]
         [:div.color-sample
-         (for [[idx {:keys [value]}] (map-indexed vector (take 7 (vals file-colors))) ]
-           [:div.color-bullet {:key (str "color-" idx)
-                               :style {:background-color value}}])]]
+         (for [[idx color] (map-indexed vector (take 7 (vals file-colors))) ]
+           [:& cb/color-bullet {:key (str "color-" idx)
+                                :color color}])]]
 
        [:li.palette-library
         {:on-click #(st/emit! (mdc/change-palette-selected :recent))}
@@ -159,9 +158,9 @@
         [:div.library-name (str (t locale "workspace.libraries.colors.recent-colors")
                                 (str/format " (%s)" (count recent-colors)))]
         [:div.color-sample
-         (for [[idx value] (map-indexed vector (take 7 (reverse recent-colors))) ]
-           [:div.color-bullet {:key (str "color-" idx)
-                               :style {:background-color value}}])]]
+         (for [[idx color] (map-indexed vector (take 7 (reverse recent-colors))) ]
+           [:& cb/color-bullet {:key (str "color-" idx)
+                                :color color}])]]
 
        [:hr.dropdown-separator]
 
@@ -191,19 +190,16 @@
 
      [:span.right-arrow {:on-click on-right-arrow-click} i/arrow-slide]]))
 
-(defn recent->colors [recent-colors]
-  (map #(hash-map :value %) (reverse (or recent-colors []))))
-
-(defn file->colors [file-colors]
-  (map #(select-keys % [:id :value :name]) (vals file-colors)))
-
 (defn library->colors [shared-libs selected]
-  (map #(merge {:file-id selected} (select-keys % [:id :value :name]))
-       (vals (get-in shared-libs [selected :data :colors]))))
+  (map #(merge % {:file-id selected})
+       (-> shared-libs
+           (get-in [selected :data :colors])
+           (vals))))
 
 (mf/defc colorpalette
-  [{:keys [left-sidebar? team-id]}]
-  (let [recent-colors (mf/deref refs/workspace-recent-colors)
+  [{:keys [left-sidebar?]}]
+  (let [team-id       (mf/use-ctx ctx/current-team-id)
+        recent-colors (mf/deref refs/workspace-recent-colors)
         file-colors   (mf/deref refs/workspace-file-colors)
         shared-libs   (mf/deref refs/workspace-libraries)
         selected      (or (mf/deref selected-palette-ref) :recent)
@@ -217,21 +213,21 @@
        (reset! current-library-colors
                (into []
                      (cond
-                       (= selected :recent) (recent->colors recent-colors)
-                       (= selected :file)   (file->colors file-colors)
+                       (= selected :recent) (reverse recent-colors)
+                       (= selected :file)   (vals file-colors)
                        :else                (library->colors shared-libs selected))))))
 
     (mf/use-effect
      (mf/deps recent-colors)
      (fn []
        (when (= selected :recent)
-         (reset! current-library-colors (into [] (recent->colors recent-colors))))))
+         (reset! current-library-colors (reverse recent-colors)))))
 
     (mf/use-effect
      (mf/deps file-colors)
      (fn []
        (when (= selected :file)
-         (reset! current-library-colors (into [] (file->colors file-colors))))))
+         (reset! current-library-colors (into [] (vals file-colors))))))
 
     [:& palette {:left-sidebar? left-sidebar?
                  :current-colors @current-library-colors

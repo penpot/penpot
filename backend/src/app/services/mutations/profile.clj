@@ -18,32 +18,30 @@
    [app.emails :as emails]
    [app.media :as media]
    [app.media-storage :as mst]
+   [app.http.session :as session]
    [app.services.mutations :as sm]
-   [app.services.mutations.media :as media-mutations]
    [app.services.mutations.projects :as projects]
    [app.services.mutations.teams :as teams]
    [app.services.queries.profile :as profile]
    [app.services.tokens :as tokens]
+   [app.services.mutations.verify-token :refer [process-token]]
    [app.tasks :as tasks]
    [app.util.blob :as blob]
    [app.util.storage :as ust]
    [app.util.time :as dt]
-   [buddy.core.codecs :as bc]
-   [buddy.core.nonce :as bn]
    [buddy.hashers :as hashers]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [datoteka.core :as fs]))
+   [cuerdas.core :as str]))
 
 ;; --- Helpers & Specs
 
 (s/def ::email ::us/email)
-(s/def ::fullname ::us/string)
-(s/def ::lang ::us/string)
+(s/def ::fullname ::us/not-empty-string)
+(s/def ::lang ::us/not-empty-string)
 (s/def ::path ::us/string)
 (s/def ::profile-id ::us/uuid)
-(s/def ::password ::us/string)
-(s/def ::old-password ::us/string)
+(s/def ::password ::us/not-empty-string)
+(s/def ::old-password ::us/not-empty-string)
 (s/def ::theme ::us/string)
 
 ;; --- Mutation: Register Profile
@@ -51,22 +49,15 @@
 (declare check-profile-existence!)
 (declare create-profile)
 (declare create-profile-relations)
+(declare email-domain-in-whitelist?)
 
+(s/def ::token ::us/not-empty-string)
 (s/def ::register-profile
-  (s/keys :req-un [::email ::password ::fullname]))
-
-(defn email-domain-in-whitelist?
-  "Returns true if email's domain is in the given whitelist or if given
-  whitelist is an empty string."
-  [whitelist email]
-  (if (str/blank? whitelist)
-    true
-    (let [domains (str/split whitelist #",\s*")
-          email-domain (second (str/split email #"@"))]
-      (contains? (set domains) email-domain))))
+  (s/keys :req-un [::email ::password ::fullname]
+          :opt-un [::token]))
 
 (sm/defmutation ::register-profile
-  [params]
+  [{:keys [token] :as params}]
   (when-not (:registration-enabled cfg/config)
     (ex/raise :type :restriction
               :code :registration-disabled))
@@ -79,25 +70,68 @@
   (db/with-atomic [conn db/pool]
     (check-profile-existence! conn params)
     (let [profile (->> (create-profile conn params)
-                       (create-profile-relations conn))
-          token   (tokens/generate
-                   {:iss :verify-email
-                    :exp (dt/in-future "48h")
-                    :profile-id (:id profile)
-                    :email (:email profile)})]
+                       (create-profile-relations conn))]
 
-      (emails/send! conn emails/register
-                    {:to (:email profile)
-                     :name (:fullname profile)
-                     :token token})
-      profile)))
+      (if token
+        ;; If token comes in params, this is because the user comes
+        ;; from team-invitation process; in this case we revalidate
+        ;; the token and process the token claims again with the new
+        ;; profile data.
+        (let [claims (tokens/verify token {:iss :team-invitation})
+              claims (assoc claims :member-id  (:id profile))
+              params (assoc params :profile-id (:id profile))]
+          (process-token conn params claims)
+
+          ;; Automatically mark the created profile as active because
+          ;; we already have the verification of email with the
+          ;; team-invitation token.
+          (db/update! conn :profile
+                      {:is-active true}
+                      {:id (:id profile)})
+
+          ;; Return profile data and create http session for
+          ;; automatically login the profile.
+          (with-meta (assoc profile
+                            :is-active true
+                            :claims claims)
+            {:transform-response
+             (fn [request response]
+               (let [uagent (get-in request [:headers "user-agent"])
+                     id     (session/create (:id profile) uagent)]
+                 (assoc response
+                        :cookies (session/cookies id))))}))
+
+        ;; If no token is provided, send a verification email
+        (let [token (tokens/generate
+                     {:iss :verify-email
+                      :exp (dt/in-future "48h")
+                      :profile-id (:id profile)
+                      :email (:email profile)})]
+
+          (emails/send! conn emails/register
+                        {:to (:email profile)
+                         :name (:fullname profile)
+                         :token token})
+
+          profile)))))
+
+
+(defn email-domain-in-whitelist?
+  "Returns true if email's domain is in the given whitelist or if given
+  whitelist is an empty string."
+  [whitelist email]
+  (if (str/blank? whitelist)
+    true
+    (let [domains (str/split whitelist #",\s*")
+          email-domain (second (str/split email #"@"))]
+      (contains? (set domains) email-domain))))
 
 (def ^:private sql:profile-existence
   "select exists (select * from profile
                    where email = ?
                      and deleted_at is null) as val")
 
-(defn- check-profile-existence!
+(defn check-profile-existence!
   [conn {:keys [email] :as params}]
   (let [email  (str/lower email)
         result (db/exec-one! conn [sql:profile-existence email])]
@@ -151,8 +185,6 @@
 
 ;; --- Mutation: Login
 
-(declare retrieve-profile-by-email)
-
 (s/def ::email ::us/email)
 (s/def ::scope ::us/string)
 
@@ -181,21 +213,11 @@
             profile)]
 
     (db/with-atomic [conn db/pool]
-      (let [prof (-> (retrieve-profile-by-email conn email)
+      (let [prof (-> (profile/retrieve-profile-data-by-email conn email)
                      (validate-profile)
                      (profile/strip-private-attrs))
             addt (profile/retrieve-additional-data conn (:id prof))]
         (merge prof addt)))))
-
-(def sql:profile-by-email
-  "select * from profile
-    where email=?
-      and deleted_at is null")
-
-(defn- retrieve-profile-by-email
-  [conn email]
-  (let [email (str/lower email)]
-    (db/exec-one! conn [sql:profile-by-email email])))
 
 
 ;; --- Mutation: Register if not exists
@@ -221,7 +243,7 @@
                  (create-profile-relations conn)))]
 
     (db/with-atomic [conn db/pool]
-      (let [profile (retrieve-profile-by-email conn email)
+      (let [profile (profile/retrieve-profile-data-by-email conn email)
             profile (if profile
                       (populate-additional-data conn profile)
                       (register-profile conn params))]
@@ -272,10 +294,9 @@
 
 ;; --- Mutation: Update Photo
 
-(declare upload-photo)
 (declare update-profile-photo)
 
-(s/def ::file ::media-mutations/upload)
+(s/def ::file ::media/upload)
 (s/def ::update-profile-photo
   (s/keys :req-un [::profile-id ::file]))
 
@@ -286,7 +307,7 @@
     (let [profile (profile/retrieve-profile conn profile-id)
           _       (media/run {:cmd :info :input {:path (:tempfile file)
                                                  :mtype (:content-type file)}})
-          photo   (upload-photo conn params)]
+          photo   (teams/upload-photo conn params)]
 
       ;; Schedule deletion of old photo
       (when (and (string? (:photo profile))
@@ -295,22 +316,6 @@
                              :props {:path (:photo profile)}}))
       ;; Save new photo
       (update-profile-photo conn profile-id photo))))
-
-(defn- upload-photo
-  [conn {:keys [file profile-id]}]
-  (let [prefix (-> (bn/random-bytes 8)
-                   (bc/bytes->b64u)
-                   (bc/bytes->str))
-        thumb  (media/run
-                 {:cmd :profile-thumbnail
-                  :format :jpeg
-                  :quality 85
-                  :width 256
-                  :height 256
-                  :input  {:path (fs/path (:tempfile file))
-                           :mtype (:content-type file)}})
-        name   (str prefix (cm/format->extension (:format thumb)))]
-    (ust/save! mst/media-storage name (:data thumb))))
 
 (defn- update-profile-photo
   [conn profile-id path]
@@ -345,62 +350,9 @@
                      :token token})
       nil)))
 
-(defn- select-profile-for-update
+(defn select-profile-for-update
   [conn id]
   (db/get-by-id conn :profile id {:for-update true}))
-
-
-;; --- Mutation: Verify Profile Token
-
-;; Generic mutation for perform token based verification for auth
-;; domain.
-
-(defmulti process-token (fn [conn claims] (:iss claims)))
-
-(s/def ::verify-profile-token
-  (s/keys :req-un [::token]))
-
-(sm/defmutation ::verify-profile-token
-  [{:keys [token] :as params}]
-  (db/with-atomic [conn db/pool]
-    (let [claims (tokens/verify token)]
-      (process-token conn claims))))
-
-(defmethod process-token :change-email
-  [conn {:keys [profile-id email] :as claims}]
-  (let [profile (select-profile-for-update conn profile-id)]
-    (check-profile-existence! conn {:email email})
-    (db/update! conn :profile
-                {:email email}
-                {:id profile-id})
-    claims))
-
-(defmethod process-token :verify-email
-  [conn {:keys [profile-id] :as claims}]
-  (let [profile (select-profile-for-update conn profile-id)]
-    (when (:is-active profile)
-      (ex/raise :type :validation
-                :code :email-already-validated))
-    (when (not= (:email profile)
-                (:email claims))
-      (ex/raise :type :validation
-                :code :invalid-token))
-
-    (db/update! conn :profile
-                {:is-active true}
-                {:id (:id profile)})
-    claims))
-
-(defmethod process-token :auth
-  [conn {:keys [profile-id] :as claims}]
-  (let [profile (profile/retrieve-profile conn profile-id)]
-    (assoc claims :profile profile)))
-
-(defmethod process-token :default
-  [conn claims]
-  (ex/raise :type :validation
-            :code :invalid-token))
-
 
 ;; --- Mutation: Request Profile Recovery
 
@@ -424,7 +376,7 @@
 
     (db/with-atomic [conn db/pool]
       (some->> email
-               (retrieve-profile-by-email conn)
+               (profile/retrieve-profile-data-by-email conn)
                (create-recovery-token conn)
                (send-email-notification conn))
       nil)))
@@ -473,7 +425,14 @@
     (db/update! conn :profile
                 {:deleted-at (dt/now)}
                 {:id profile-id})
-    nil))
+
+    (with-meta {}
+      {:transform-response
+       (fn [request response]
+         (some-> (session/extract-auth-token request)
+                 (session/delete))
+         (assoc response
+                :cookies (session/cookies "" {:max-age -1})))})))
 
 (def ^:private sql:teams-ownership-check
   "with teams as (

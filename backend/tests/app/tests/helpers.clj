@@ -22,7 +22,6 @@
    [app.services.mutations.projects :as projects]
    [app.services.mutations.teams :as teams]
    [app.services.mutations.files :as files]
-   [app.services.mutations.colors :as colors]
    [app.migrations]
    [app.media]
    [app.media-storage]

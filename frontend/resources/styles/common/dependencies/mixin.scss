@@ -112,19 +112,6 @@
     }
 }
 
-// Collection fonts
-
-@mixin font-face-collection($style-name, $file, $weight: unquote("normal"), $style: unquote("normal") ) {
-    $filepath: "/fonts/collection/" + $file;
-    @font-face {
-        font-family: "#{$style-name}";
-        src: url($filepath + ".eot");
-        src: url($filepath + ".eot?#iefix") format('embedded-opentype'), url($filepath + ".woff") format('woff'), url($filepath + ".ttf")  format('truetype'), url($filepath + ".svg#" + $style-name + "") format('svg');
-        font-weight: unquote($weight);
-        font-style: unquote($style);
-    }
-}
-
 @mixin tooltipShow {
   &:hover {
     .icon-tooltip {

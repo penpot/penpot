@@ -6,14 +6,14 @@
   "license": "SEE LICENSE IN <LICENSE>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/app/app"
+    "url": "https://github.com/penpot/penpot"
   },
   "browserslist": [
     "defaults"
   ],
   "scripts": {},
   "devDependencies": {
-    "autoprefixer": "^9.8.6",
+    "autoprefixer": "^10.0.1",
     "clean-css": "^4.2.3",
     "gulp": "4.0.2",
     "gulp-gzip": "^1.4.2",
@@ -22,21 +22,21 @@
     "gulp-rename": "^2.0.0",
     "gulp-svg-sprite": "^1.5.0",
     "mkdirp": "^1.0.4",
-    "postcss": "^7.0.32",
+    "postcss": "^8.1.2",
     "rimraf": "^3.0.0",
     "sass": "^1.26.10",
-    "shadow-cljs": "^2.11.0"
+    "shadow-cljs": "2.11.5"
   },
   "dependencies": {
     "date-fns": "^2.15.0",
     "map-stream": "0.0.7",
     "mousetrap": "^1.6.5",
     "randomcolor": "^0.6.2",
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1",
-    "rxjs": "^7.0.0-beta.4",
-    "slate": "^0.58.4",
-    "slate-react": "^0.58.4",
+    "react": "17.0.1",
+    "react-dom": "17.0.1",
+    "rxjs": "7.0.0-beta.4",
+    "slate": "^0.59.0",
+    "slate-react": "^0.59.0",
     "source-map-support": "^0.5.16",
     "tdigest": "^0.1.1",
     "xregexp": "^4.3.0"

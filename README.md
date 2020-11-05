@@ -6,14 +6,14 @@
 [![Managed with Taiga.io](https://img.shields.io/badge/managed%20with-TAIGA.io-709f14.svg)](https://tree.taiga.io/project/uxbox/ "Managed with Taiga.io")
 
 
-# UXBOX #
+# PENPOT #
 
-![UXBOX](https://piweek.com/images/projects/uxbox.jpg)
+![PENPOT](https://raw.githubusercontent.com/penpot/penpot/develop/docs/screenshot.png)
 
 
 ## Introduction ##
 
-The open-source solution for design and prototyping. UXBOX is
+The open-source solution for design and prototyping. PENPOT is
 currently at an early development stage but we are working hard to
 bring you the beta version as soon as possible. Follow the project
 progress in Twitter or Github and stay tuned!
@@ -23,8 +23,8 @@ progress in Twitter or Github and stay tuned!
 
 ## SVG based ##
 
-UXBOX works with SVG, a standard format, for all your designs and
-prototypes . This means that all your stuff in UXBOX is portable and
+Penpot works with SVG, a standard format, for all your designs and
+prototypes . This means that all your stuff in Penpot is portable and
 editable in many other vector tools and easy to use on the web.
 
 
@@ -34,7 +34,7 @@ editable in many other vector tools and easy to use on the web.
 
 We love the open source software community. Contributing is our
 passion and because of this, we'll be glad if you want to participate
-and improve UXBOX. All your awesome ideas and code are welcome!
+and improve Penpot. All your awesome ideas and code are welcome!
 
 Please refer to the [Contributing Guide](./CONTRIBUTING.md)
 
