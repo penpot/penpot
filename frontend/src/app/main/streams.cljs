@@ -26,6 +26,11 @@
   [v]
   (instance? MouseEvent v))
 
+(defn mouse-down?
+  [v]
+  (and (mouse-event? v)
+       (= :down (:type v))))
+
 (defn mouse-up?
   [v]
   (and (mouse-event? v)

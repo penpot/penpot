@@ -18,34 +18,34 @@
 
 (def simplify-tolerance 0.3)
 
-(def handle-drawing-curve
-  (letfn [(stoper-event? [{:keys [type shift] :as event}]
-            (ms/mouse-event? event) (= type :up))
+(defn stoper-event? [{:keys [type shift] :as event}]
+  (ms/mouse-event? event) (= type :up))
 
-          (initialize-drawing [state]
-            (assoc-in state [:workspace-drawing :object :initialized?] true))
+(defn initialize-drawing [state]
+  (assoc-in state [:workspace-drawing :object :initialized?] true))
 
-          (insert-point-segment [state point]
-            (update-in state [:workspace-drawing :object :segments] (fnil conj []) point))
+(defn insert-point-segment [state point]
+  (update-in state [:workspace-drawing :object :segments] (fnil conj []) point))
 
-          (finish-drawing-curve [state]
-            (update-in
-             state [:workspace-drawing :object]
-             (fn [shape]
-               (-> shape
-                   (update :segments #(path/simplify % simplify-tolerance))
-                   (gsh/update-path-selrect)))))]
+(defn finish-drawing-curve [state]
+  (update-in
+   state [:workspace-drawing :object]
+   (fn [shape]
+     (-> shape
+         (update :segments #(path/simplify % simplify-tolerance))
+         (gsh/update-path-selrect)))))
 
-    (ptk/reify ::handle-drawing-curve
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (let [{:keys [flags]} (:workspace-local state)
-              stoper (rx/filter stoper-event? stream)
-              mouse  (rx/sample 10 ms/mouse-position)]
-          (rx/concat
-           (rx/of initialize-drawing)
-           (->> mouse
-                (rx/map (fn [pt] #(insert-point-segment % pt)))
-                (rx/take-until stoper))
-           (rx/of finish-drawing-curve
-                  common/handle-finish-drawing)))))))
+(defn handle-drawing-curve []
+  (ptk/reify ::handle-drawing-curve
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [{:keys [flags]} (:workspace-local state)
+            stoper (rx/filter stoper-event? stream)
+            mouse  (rx/sample 10 ms/mouse-position)]
+        (rx/concat
+         (rx/of initialize-drawing)
+         (->> mouse
+              (rx/map (fn [pt] #(insert-point-segment % pt)))
+              (rx/take-until stoper))
+         (rx/of finish-drawing-curve
+                common/handle-finish-drawing))))))

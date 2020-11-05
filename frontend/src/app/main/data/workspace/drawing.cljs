@@ -57,13 +57,13 @@
     (watch [_ state stream]
       (rx/of (case type
                :path
-               path/handle-drawing-path
+               (path/handle-drawing-path)
 
                :curve
-               curve/handle-drawing-curve
+               (curve/handle-drawing-curve)
 
                ;; default
-               box/handle-drawing-box)))))
+               (box/handle-drawing-box))))))
 
 ;; Export
 (def close-drawing-path path/close-drawing-path)
