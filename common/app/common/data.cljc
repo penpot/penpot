@@ -136,6 +136,16 @@
   [mfn coll]
   (into {} (map (fn [[key val]] [key (mfn key val)]) coll)))
 
+(defn filterm
+  "Filter values of a map that satisfy a predicate"
+  [pred coll]
+  (into {} (filter pred coll)))
+
+(defn removem
+  "Remove values of a map that satisfy a predicate"
+  [pred coll]
+  (into {} (remove pred coll)))
+
 (defn map-perm
   "Maps a function to each pair of values that can be combined inside the
   function without repetition.

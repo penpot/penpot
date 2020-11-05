@@ -631,7 +631,9 @@
 
 (mf/defc assets-toolbox
   []
-  (let [libraries (mf/deref refs/workspace-libraries)
+  (let [libraries (->> (mf/deref refs/workspace-libraries)
+                       (vals)
+                       (remove :is-indirect))
         file      (mf/deref refs/workspace-file)
         locale    (mf/deref i18n/locale)
         team-id   (mf/use-ctx ctx/current-team-id)
@@ -697,7 +699,7 @@
         :open? true
         :filters @filters}]
 
-      (for [file (->> (vals libraries)
+      (for [file (->> libraries
                       (sort-by #(str/lower (:name %))))]
         [:& file-library
          {:key (:id file)

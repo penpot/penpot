@@ -247,6 +247,7 @@
 
 (def ^:private sql:file-libraries
   "select fl.*,
+          ? as is_indirect,
           flr.synced_at as synced_at
      from file as fl
     inner join file_library_rel as flr on (flr.library_file_id = fl.id)
@@ -254,8 +255,23 @@
       and fl.deleted_at is null")
 
 (defn retrieve-file-libraries
-  [conn file-id]
-  (into [] decode-row-xf (db/exec! conn [sql:file-libraries file-id])))
+  [conn is-indirect file-id]
+  (let [direct-libraries
+        (into [] decode-row-xf (db/exec! conn [sql:file-libraries is-indirect file-id]))
+
+        select-distinct
+        (fn [used-libraries new-libraries]
+          (remove (fn [new-library]
+                    (some #(= (:id %) (:id new-library)) used-libraries))
+                  new-libraries))]
+
+    (reduce (fn [used-libraries library]
+              (concat used-libraries
+                      (select-distinct
+                        used-libraries
+                        (retrieve-file-libraries conn true (:id library)))))
+            direct-libraries
+            direct-libraries)))
 
 (s/def ::file-libraries
   (s/keys :req-un [::profile-id ::file-id]))
@@ -264,7 +280,7 @@
   [{:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn db/pool]
     (check-edition-permissions! conn profile-id file-id)
-    (retrieve-file-libraries conn file-id)))
+    (retrieve-file-libraries conn false file-id)))
 
 
 ;; --- Query: Single File Library
