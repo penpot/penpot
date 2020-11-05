@@ -393,18 +393,15 @@
        [:li.recent-projects
         {:on-click go-projects
          :class-name (when projects? "current")}
-        i/recent
         [:span.element-title (t locale "labels.projects")]]
 
        [:li {:on-click go-drafts
              :class-name (when drafts? "current")}
-        i/file-html
         [:span.element-title (t locale "labels.drafts")]]
 
 
        [:li {:on-click go-libs
              :class-name (when libs? "current")}
-        i/library
         [:span.element-title (t locale "labels.shared-libraries")]]]]
 
      [:hr]
