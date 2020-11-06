@@ -963,14 +963,14 @@
              :objects (d/index-by :id shapes)}))
 
 (defmethod process-change :mod-component
-  [data {:keys [id name shapes]}]
+  [data {:keys [id name objects]}]
   (update-in data [:components id]
              #(cond-> %
                 (some? name)
                 (assoc :name name)
 
-                (some? shapes)
-                (assoc :objects (d/index-by :id shapes)))))
+                (some? objects)
+                (assoc :objects objects))))
 
 (defmethod process-change :del-component
   [data {:keys [id]}]
