@@ -261,14 +261,20 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [component (get-in state [:workspace-data :components id])
+            objects (get component :objects)
+            new-objects (assoc-in objects
+                                  [(:id component) :name]
+                                  new-name)
 
             rchanges [{:type :mod-component
                        :id id
-                       :name new-name}]
+                       :name new-name
+                       :objects new-objects}]
 
             uchanges [{:type :mod-component
                        :id id
-                       :name (:name component)}]]
+                       :name (:name component)
+                       :objects objects}]]
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 
