@@ -17,6 +17,7 @@
    [goog.object :as gobj]
    [potok.core :as ptk]
    [app.common.geom.shapes :as geom]
+   [app.common.attrs :as attrs]
    [app.main.data.workspace.common :as dwc]
    [app.main.fonts :as fonts]
    [app.util.object :as obj]
@@ -125,7 +126,7 @@
                    (map #(if (is-text-node? %)
                            (merge ut/default-text-attrs %)
                            %)))]
-    (geom/get-attrs-multi nodes attrs)))
+    (attrs/get-attrs-multi nodes attrs)))
 
 (defn current-text-values
   [{:keys [editor default attrs shape]}]

@@ -44,7 +44,7 @@
                                                         (if (:click-draw? shape) :auto-width :fixed)))
 
                  shape (-> shape
-                           gsh/transform-shape
+                           (gsh/transform-shape)
                            (dissoc :initialized? :click-draw?))]
              ;; Add & select the created shape to the workspace
              (rx/concat

@@ -122,7 +122,8 @@
                              (mf/deps objects)
                              #(group-container-factory objects))]
         (when (and shape (not (:hidden shape)))
-          (let [shape (geom/transform-shape frame shape)
+          (let [shape (-> (geom/transform-shape shape)
+                          (geom/translate-to-frame frame))
                 opts #js {:shape shape
                           :frame frame}]
             (case (:type shape)

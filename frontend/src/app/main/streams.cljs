@@ -41,6 +41,11 @@
   (and (mouse-event? v)
        (= :click (:type v))))
 
+(defn mouse-double-click?
+  [v]
+  (and (mouse-event? v)
+       (= :double-click (:type v))))
+
 (defrecord PointerEvent [source pt ctrl shift alt])
 
 (defn pointer-event?

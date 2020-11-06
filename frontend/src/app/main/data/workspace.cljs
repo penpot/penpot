@@ -13,7 +13,8 @@
    [app.common.exceptions :as ex]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as geom]
+   [app.common.geom.shapes :as gsh]
+   [app.common.geom.align :as gal]
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages-helpers :as cph]
@@ -339,7 +340,7 @@
             (let [page-id (:current-page-id state)
                   objects (dwc/lookup-page-objects state page-id)
                   shapes  (cph/select-toplevel-shapes objects {:include-frames? true})
-                  srect   (geom/selection-rect shapes)
+                  srect   (gsh/selection-rect shapes)
                   local   (assoc local :vport size :zoom 1)]
               (cond
                 (or (not (mth/finite? (:width srect)))
@@ -348,7 +349,7 @@
 
                 (or (> (:width srect) width)
                     (> (:height srect) height))
-                (let [srect (geom/adjust-to-viewport size srect {:padding 40})
+                (let [srect (gal/adjust-to-viewport size srect {:padding 40})
                       zoom  (/ (:width size) (:width srect))]
                   (-> local
                       (assoc :zoom zoom)
@@ -471,10 +472,10 @@
   (let [vbox (update vbox :x + (:left-offset vbox))
         new-zoom (if (fn? zoom) (zoom (:zoom local)) zoom)
         old-zoom (:zoom local)
-        center (if center center (geom/center vbox))
+        center (if center center (gsh/center vbox))
         scale (/ old-zoom new-zoom)
         mtx  (gmt/scale-matrix (gpt/point scale) center)
-        vbox' (geom/transform vbox mtx)
+        vbox' (gsh/transform vbox mtx)
         vbox' (update vbox' :x - (:left-offset vbox))]
     (-> local
         (assoc :zoom new-zoom)
@@ -510,14 +511,14 @@
       (let [page-id (:current-page-id state)
             objects (dwc/lookup-page-objects state page-id)
             shapes  (cph/select-toplevel-shapes objects {:include-frames? true})
-            srect   (geom/selection-rect shapes)]
+            srect   (gsh/selection-rect shapes)]
 
         (if (or (mth/nan? (:width srect))
                 (mth/nan? (:height srect)))
           state
           (update state :workspace-local
                   (fn [{:keys [vbox vport] :as local}]
-                    (let [srect (geom/adjust-to-viewport vport srect {:padding 40})
+                    (let [srect (gal/adjust-to-viewport vport srect {:padding 40})
                           zoom  (/ (:width vport) (:width srect))]
                       (-> local
                           (assoc :zoom zoom)
@@ -534,10 +535,10 @@
                 objects (dwc/lookup-page-objects state page-id)
                 srect   (->> selected
                              (map #(get objects %))
-                             (geom/selection-rect))]
+                             (gsh/selection-rect))]
             (update state :workspace-local
                     (fn [{:keys [vbox vport] :as local}]
-                      (let [srect (geom/adjust-to-viewport vport srect {:padding 40})
+                      (let [srect (gal/adjust-to-viewport vport srect {:padding 40})
                             zoom  (/ (:width vport) (:width srect))]
                         (-> local
                             (assoc :zoom zoom)
@@ -614,8 +615,8 @@
                       (merge data)
                       (merge {:x x :y y})
                       (assoc :frame-id frame-id)
-                      (geom/setup-selrect))]
         (rx/of (add-shape shape))))))
+                      (gsh/setup-selrect))]
 
 ;; --- Update Shape Attrs
 

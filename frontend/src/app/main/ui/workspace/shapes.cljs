@@ -82,7 +82,8 @@
   (let [shape (unchecked-get props "shape")
         frame (unchecked-get props "frame")
         ghost? (unchecked-get props "ghost?")
-        shape (geom/transform-shape frame shape)
+        shape (-> (geom/transform-shape shape)
+                  (geom/translate-to-frame frame))
         opts #js {:shape shape
                   :frame frame}
         alt? (mf/use-state false)

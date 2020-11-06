@@ -11,6 +11,7 @@
   (:require
    [rumext.alpha :as mf]
    [app.common.geom.shapes :as geom]
+   [app.common.attrs :as attrs]
    [app.main.data.workspace.texts :as dwt]
    [app.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
@@ -48,9 +49,9 @@
                                            text-attrs
                                            convert-attrs
                                            extract-fn))]
-                    (geom/get-attrs-multi (map mapfn shapes) (or attrs text-attrs))))
+                    (attrs/get-attrs-multi (map mapfn shapes) (or attrs text-attrs))))
 
-        measure-values (geom/get-attrs-multi shapes measure-attrs)
+        measure-values (attrs/get-attrs-multi shapes measure-attrs)
 
         fill-values (extract {:attrs fill-attrs
                               :text-attrs ot/text-fill-attrs
