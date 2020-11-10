@@ -74,7 +74,8 @@
          ;; Initial SNAP
          (->> (snap/closest-snap-point page-id [shape] layout initial)
               (rx/map (fn [{:keys [x y]}]
-                        #(update-in % [:workspace-drawing :object] assoc :x x :y y))))
+                        #(update-in % [:workspace-drawing :object] gsh/absolute-move (gpt/point x y))
+                        )))
 
          (->> ms/mouse-position
               (rx/filter #(> (gpt/distance % initial) 2))

@@ -45,7 +45,7 @@
   (let [shapes (cph/select-toplevel-shapes objects {:include-frames? true})]
     (->> (gsh/selection-rect shapes)
          (gal/adjust-to-viewport vport)
-         (gsh/fix-invalid-rect-values))))
+         #_(gsh/fix-invalid-rect-values))))
 
 (declare shape-wrapper-factory)
 

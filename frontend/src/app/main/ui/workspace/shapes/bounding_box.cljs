@@ -42,7 +42,7 @@
     (let [shape (unchecked-get props "shape")
           frame (unchecked-get props "frame")
           selrect (-> shape :selrect)
-          shape-center (geom/center shape)
+          shape-center (geom/center-shape shape)
           line-color (rdcolor #js {:seed (str (:id shape))})
           zoom (mf/deref refs/selected-zoom)]
       [:g.bounding-box

@@ -11,6 +11,7 @@
   (:require
    [beicon.core :as rx]
    [potok.core :as ptk]
+   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.main.streams :as ms]
    [app.util.geom.path :as path]
@@ -27,13 +28,18 @@
 (defn insert-point-segment [state point]
   (update-in state [:workspace-drawing :object :segments] (fnil conj []) point))
 
+(defn update-selrect [{:keys [segments] :as shape}]
+  (let [points (->> segments
+                    (map #(apply gpt/point %)))]
+    (assoc shape :selrect (gsh/points->selrect points))))
+
 (defn finish-drawing-curve [state]
   (update-in
    state [:workspace-drawing :object]
    (fn [shape]
      (-> shape
          (update :segments #(path/simplify % simplify-tolerance))
-         (gsh/update-path-selrect)))))
+         (update-selrect)))))
 
 (defn handle-drawing-curve []
   (ptk/reify ::handle-drawing-curve

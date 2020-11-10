@@ -13,9 +13,15 @@
    [potok.core :as ptk]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.selection :as dws]
    [app.main.streams :as ms]))
+
+(def clear-drawing
+  (ptk/reify ::clear-drawing
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-drawing dissoc :tool :object))))
 
 (def handle-finish-drawing
   (ptk/reify ::handle-finish-drawing
@@ -23,7 +29,7 @@
     (watch [_ state stream]
       (let [shape (get-in state [:workspace-drawing :object])]
         (rx/concat
-         (rx/of dw/clear-drawing)
+         (rx/of clear-drawing)
          (when (:initialized? shape)
            (let [shape-click-width (case (:type shape)
                                      :text 3
@@ -52,5 +58,5 @@
                 (rx/of dwc/start-undo-transaction)
                 (rx/empty))
 
-              (rx/of (dw/deselect-all)
-                     (dw/add-shape shape))))))))))
+              (rx/of (dws/deselect-all)
+                     (dwc/add-shape shape))))))))))

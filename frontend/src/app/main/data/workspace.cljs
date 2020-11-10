@@ -14,6 +14,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.proportions :as gpr]
    [app.common.geom.align :as gal]
    [app.common.math :as mth]
    [app.common.pages :as cp]
@@ -30,6 +31,7 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.transforms :as dwt]
+   [app.main.data.workspace.drawing :as dwd]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.streams :as ms]
@@ -472,10 +474,10 @@
   (let [vbox (update vbox :x + (:left-offset vbox))
         new-zoom (if (fn? zoom) (zoom (:zoom local)) zoom)
         old-zoom (:zoom local)
-        center (if center center (gsh/center vbox))
+        center (if center center (gsh/center-rect vbox))
         scale (/ old-zoom new-zoom)
         mtx  (gmt/scale-matrix (gpt/point scale) center)
-        vbox' (gsh/transform vbox mtx)
+        vbox' (gsh/transform-rect vbox mtx)
         vbox' (update vbox' :x - (:left-offset vbox))]
     (-> local
         (assoc :zoom new-zoom)
@@ -546,50 +548,6 @@
 
 ;; --- Add shape to Workspace
 
-(declare start-edition-mode)
-
-(defn add-shape
-  [attrs]
-  (us/verify ::shape-attrs attrs)
-  (ptk/reify ::add-shape
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [page-id  (:current-page-id state)
-            objects  (dwc/lookup-page-objects state page-id)
-
-            id       (uuid/next)
-            shape    (geom/setup-proportions attrs)
-
-            unames   (dwc/retrieve-used-names objects)
-            name     (dwc/generate-unique-name unames (:name shape))
-
-            frame-id (or (:frame-id attrs)
-                         (cph/frame-id-by-position objects attrs))
-
-            shape    (merge
-                      (if (= :frame (:type shape))
-                        cp/default-frame-attrs
-                        cp/default-shape-attrs)
-                      (assoc shape
-                             :id id
-                             :name name))
-
-            rchange  {:type :add-obj
-                      :id id
-                      :page-id page-id
-                      :frame-id frame-id
-                      :obj shape}
-            uchange  {:type :del-obj
-                      :page-id page-id
-                      :id id}]
-
-        (rx/concat
-         (rx/of (dwc/commit-changes [rchange] [uchange] {:commit-local? true})
-                (dws/select-shapes (d/ordered-set id)))
-         (when (= :text (:type attrs))
-           (->> (rx/of (start-edition-mode id))
-                (rx/observe-on :async))))))))
-
 (defn- viewport-center
   [state]
   (let [{:keys [x y width height]} (get-in state [:workspace-local :vbox])]
@@ -615,8 +573,8 @@
                       (merge data)
                       (merge {:x x :y y})
                       (assoc :frame-id frame-id)
-        (rx/of (add-shape shape))))))
                       (gsh/setup-selrect))]
+        (rx/of (dwc/add-shape shape))))))
 
 ;; --- Update Shape Attrs
 
@@ -954,7 +912,7 @@
 
 (defn align-objects
   [axis]
-  (us/verify ::geom/align-axis axis)
+  (us/verify ::gal/align-axis axis)
   (ptk/reify :align-objects
     ptk/WatchEvent
     (watch [_ state stream]
@@ -992,17 +950,17 @@
   [objects object-id axis]
   (let [object (get objects object-id)
         frame (get objects (:frame-id object))]
-    (geom/align-to-rect object frame axis objects)))
+    (gal/align-to-rect object frame axis objects)))
 
 (defn align-objects-list
   [objects selected axis]
   (let [selected-objs (map #(get objects %) selected)
-        rect (geom/selection-rect selected-objs)]
-    (mapcat #(geom/align-to-rect % rect axis objects) selected-objs)))
+        rect (gsh/selection-rect selected-objs)]
+    (mapcat #(gal/align-to-rect % rect axis objects) selected-objs)))
 
 (defn distribute-objects
   [axis]
-  (us/verify ::geom/dist-axis axis)
+  (us/verify ::gal/dist-axis axis)
   (ptk/reify :align-objects
     ptk/WatchEvent
     (watch [_ state stream]
@@ -1010,7 +968,7 @@
             objects  (dwc/lookup-page-objects state page-id)
             selected (get-in state [:workspace-local :selected])
             moved    (-> (map #(get objects %) selected)
-                         (geom/distribute-space axis objects))]
+                         (gal/distribute-space axis objects))]
         (loop [moved    (seq moved)
                rchanges []
                uchanges []]
@@ -1035,62 +993,6 @@
                                      :operations ops2
                                      :id (:id curr)})))))))))
 
-;; --- Start shape "edition mode"
-
-(declare clear-edition-mode)
-
-(defn start-edition-mode
-  [id]
-  (us/assert ::us/uuid id)
-  (ptk/reify ::start-edition-mode
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-local :edition] id))
-
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (->> stream
-           (rx/filter dwc/interrupt?)
-           (rx/take 1)
-           (rx/map (constantly clear-edition-mode))))))
-
-(def clear-edition-mode
-  (ptk/reify ::clear-edition-mode
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-local dissoc :edition))))
-
-;; --- Select for Drawing
-
-(def clear-drawing
-  (ptk/reify ::clear-drawing
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-drawing dissoc :tool :object))))
-
-(defn select-for-drawing
-  ([tool] (select-for-drawing tool nil))
-  ([tool data]
-   (ptk/reify ::select-for-drawing
-     ptk/UpdateEvent
-     (update [_ state]
-       (update state :workspace-drawing assoc :tool tool :object data))
-
-     ptk/WatchEvent
-     (watch [_ state stream]
-       (let [stoper (rx/filter (ptk/type? ::clear-drawing) stream)]
-         (rx/merge
-          (rx/of (dws/deselect-all))
-
-          ;; NOTE: comments are a special case and they manage they
-          ;; own interrupt cycle.
-          (when (not= tool :comments)
-            (->> stream
-                 (rx/filter dwc/interrupt?)
-                 (rx/take 1)
-                 (rx/map (constantly clear-drawing))
-                 (rx/take-until stoper)))))))))
-
 ;; --- Update Dimensions
 
 ;; Event mainly used for handling user modification of the size of the
@@ -1104,7 +1006,7 @@
   (ptk/reify ::update-dimensions
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (dwc/update-shapes ids #(geom/resize-rect % attr value))))))
+      (rx/of (dwc/update-shapes ids #(gsh/resize-rect % attr value))))))
 
 
 ;; --- Shape Proportions
@@ -1118,7 +1020,7 @@
                                        (if-not lock
                                          (assoc shape :proportion-lock false)
                                          (-> (assoc shape :proportion-lock true)
-                                             (geom/assign-proportions)))))))))
+                                             (gpr/assign-proportions)))))))))
 ;; --- Update Shape Position
 
 (s/def ::x number?)
@@ -1157,7 +1059,7 @@
       (let [page-id (:current-page-id state)]
         (-> state
             (update-in [:workspace-data page-id :objects id :segments index] gpt/add delta)
-            (update-in [:workspace-data page-id :objects id] geom/update-path-selrect))))))
+            (update-in [:workspace-data page-id :objects id] gsh/update-path-selrect))))))
 
 ;; --- Shape attrs (Layers Sidebar)
 
@@ -1290,7 +1192,7 @@
               ;; When the parent frame is not selected we change to relative
               ;; coordinates
               (let [frame (get objects (:frame-id shape))]
-                (geom/translate-to-frame shape frame))
+                (gsh/translate-to-frame shape frame))
               shape))
 
           (prepare [result objects selected id]
@@ -1329,7 +1231,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [selected-objs (map #(get objects %) selected)
-            wrapper   (geom/selection-rect selected-objs)
+            wrapper   (gsh/selection-rect selected-objs)
             orig-pos  (gpt/point (:x1 wrapper) (:y1 wrapper))
             mouse-pos @ms/mouse-position
 
@@ -1359,7 +1261,7 @@
                           (map #(get-in % [:obj :id]))
                           (into (d/ordered-set)))]
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
-               (dws/select-shapes selected))))))
+               (dwc/select-shapes selected))))))
 
 (defn- image-uploaded
   [image]
@@ -1446,7 +1348,7 @@
             page-id (:current-page-id state)
             frame-id (-> (dwc/lookup-page-objects state page-id)
                          (cph/frame-id-by-position @ms/mouse-position))
-            shape (geom/setup-selrect
+            shape (gsh/setup-selrect
                    {:id id
                     :type :text
                     :name "Text"
@@ -1459,7 +1361,7 @@
                     :content (as-content text)})]
         (rx/of dwc/start-undo-transaction
                (dws/deselect-all)
-               (add-shape shape)
+               (dwc/add-shape shape)
                dwc/commit-undo-transaction)))))
 
 (defn update-shape-flags
@@ -1490,7 +1392,7 @@
         (when-not (empty? shapes)
           (let [[group rchanges uchanges] (dws/prepare-create-group page-id shapes "Group-" false)]
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
-                   (dws/select-shapes (d/ordered-set (:id group))))))))))
+                   (dwc/select-shapes (d/ordered-set (:id group))))))))))
 
 (def ungroup-selected
   (ptk/reify ::ungroup-selected
@@ -1568,7 +1470,7 @@
                                                 :val (:fill-color mask)}]}))]
 
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
-                   (dws/select-shapes (d/ordered-set (:id group))))))))))
+                   (dwc/select-shapes (d/ordered-set (:id group))))))))))
 
 (def unmask-group
   (ptk/reify ::unmask-group
@@ -1595,7 +1497,7 @@
                                          :val (:masked-group? group)}]}]]
 
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
-                   (dws/select-shapes (d/ordered-set (:id group))))))))))
+                   (dwc/select-shapes (d/ordered-set (:id group))))))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1718,10 +1620,14 @@
 
 (def select-shape dws/select-shape)
 (def deselect-all dws/deselect-all)
-(def select-shapes dws/select-shapes)
+(def select-shapes dwc/select-shapes)
 (def duplicate-selected dws/duplicate-selected)
 (def handle-selection dws/handle-selection)
 (def select-inside-group dws/select-inside-group)
+(def select-for-drawing dwd/select-for-drawing)
+(def clear-edition-mode dwc/clear-edition-mode)
+(def add-shape dwc/add-shape)
+(def start-edition-mode dwc/start-edition-mode)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1753,12 +1659,12 @@
    "ctrl+shift+z" #(st/emit! dwc/redo)
    "ctrl+y" #(st/emit! dwc/redo)
    "ctrl+q" #(st/emit! dwc/reinitialize-undo)
-   "a" #(st/emit! (select-for-drawing :frame))
-   "b" #(st/emit! (select-for-drawing :rect))
-   "e" #(st/emit! (select-for-drawing :circle))
+   "a" #(st/emit! (dwd/select-for-drawing :frame))
+   "b" #(st/emit! (dwd/select-for-drawing :rect))
+   "e" #(st/emit! (dwd/select-for-drawing :circle))
    "t" #(st/emit! dwtxt/start-edit-if-selected
-                  (select-for-drawing :text))
-   "w" #(st/emit! (select-for-drawing :path))
+                  (dwd/select-for-drawing :text))
+   "w" #(st/emit! (dwd/select-for-drawing :path))
    "ctrl+c" #(st/emit! copy-selected)
    "ctrl+v" #(st/emit! paste)
    "ctrl+x" #(st/emit! copy-selected delete-selected)
@@ -1778,4 +1684,3 @@
    "right" #(st/emit! (dwt/move-selected :right false))
    "left" #(st/emit! (dwt/move-selected :left false))
    "i" #(st/emit! (mdc/picker-for-selected-shape ))})
-

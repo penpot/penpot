@@ -232,8 +232,9 @@
              (st/emit! (ms/->MouseEvent :down ctrl? shift? alt?))
              (cond
                (and (= 1 (.-which event)))
+
                (if drawing-tool
-                 (when (not= drawing-tool :comments)
+                 (when (not (#{:comments :path} drawing-tool))
                    (st/emit! (dd/start-drawing drawing-tool)))
                  (st/emit! dw/handle-selection))
 

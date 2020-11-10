@@ -15,10 +15,12 @@
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-stroke]]
    [app.main.ui.shapes.group :refer [mask-id-ctx]]
    [app.common.geom.shapes :as geom]
-   [app.util.object :as obj]))
+   [app.util.object :as obj]
+   [app.util.geom.path :as ugp]))
 
 ;; --- Path Shape
 
+;; LEGACY FORMAT
 (defn- render-path
   [{:keys [segments close?] :as shape}]
   (let [numsegs (count segments)]
@@ -45,10 +47,14 @@
   [props]
   (let [shape (unchecked-get props "shape")
         background? (unchecked-get props "background?")
-        {:keys [id x y width height]} (geom/shape->rect-shape shape)
+        ;; {:keys [id x y width height]} (geom/shape->rect-shape shape)
+        {:keys [id x y width height]} (:selrect shape)
         mask-id (mf/use-ctx mask-id-ctx)
         transform (geom/transform-matrix shape)
-        pdata (render-path shape)
+        pdata (if (:content shape)
+                (ugp/content->path (:content shape))
+                (render-path shape))
+
         props (-> (attrs/extract-style-attrs shape)
                   (obj/merge!
                    #js {:transform transform

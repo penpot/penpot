@@ -80,7 +80,8 @@
 (defn start-resize
   [handler initial ids shape]
   (letfn [(resize [shape initial resizing-shapes [point lock? point-snap]]
-            (let [{:keys [width height rotation]} shape
+            (let [{:keys [width height]} (:selrect shape)
+                  {:keys [rotation]} shape
                   shapev (-> (gpt/point width height))
 
                   rotation (if (#{:curve :path} (:type shape)) 0 rotation)
@@ -101,9 +102,11 @@
                   shape-transform (:transform shape (gmt/matrix))
                   shape-transform-inverse (:transform-inverse shape (gmt/matrix))
 
+                  shape-center (gsh/center-shape shape)
+
                   ;; Resize origin point given the selected handler
-                  origin  (-> (handler-resize-origin shape handler)
-                              (gsh/transform-shape-point shape shape-transform))]
+                  origin  (-> (handler-resize-origin (:selrect shape) handler)
+                              (gsh/transform-point-center shape-center shape-transform))]
 
               (rx/of (set-modifiers ids
                                     {:resize-vector scalev
@@ -170,7 +173,7 @@
     (watch [_ state stream]
       (let [stoper          (rx/filter ms/mouse-up? stream)
             group           (gsh/selection-rect shapes)
-            group-center    (gsh/center group)
+            group-center    (gsh/center-selrect group)
             initial-angle   (gpt/angle @ms/mouse-position group-center)
             calculate-angle (fn [pos ctrl?]
                               (let [angle (- (gpt/angle pos group-center) initial-angle)
@@ -403,7 +406,7 @@
                            #(reduce update-shape % ids-with-children)))))))
 
 (defn rotation-modifiers [center shape angle]
-  (let [displacement (let [shape-center (gsh/center shape)]
+  (let [displacement (let [shape-center (gsh/center-shape shape)]
                        (-> (gmt/matrix)
                            (gmt/rotate angle center)
                            (gmt/rotate (- angle) shape-center)))]
@@ -416,7 +419,7 @@
 
 (defn set-rotation
   ([delta-rotation shapes]
-   (set-rotation delta-rotation shapes (-> shapes gsh/selection-rect gsh/center)))
+   (set-rotation delta-rotation shapes (-> shapes gsh/selection-rect gsh/center-selrect)))
 
   ([delta-rotation shapes center]
    (letfn [(rotate-shape [objects angle shape center]

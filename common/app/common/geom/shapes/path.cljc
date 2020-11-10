@@ -16,6 +16,8 @@
    [app.common.math :as mth]
    [app.common.data :as d]))
 
+(defn segments->points [segments]
+  segments)
+
 (defn content->points [content]
   (map #(gpt/point (-> % :param :x) (-> % :param :y)) content))
-

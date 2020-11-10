@@ -181,7 +181,7 @@
         on-rotate (obj/get props "on-rotate")
         current-transform (mf/deref refs/current-transform)
 
-        selrect (geom/shape->rect-shape shape)
+        selrect (:selrect shape)
         transform (geom/transform-matrix shape)
 
         tr-shape (geom/transform-shape shape)]
@@ -269,8 +269,8 @@
 
 (mf/defc multiple-selection-handlers
   [{:keys [shapes selected zoom color show-distances] :as props}]
-  (let [shape (geom/selection-rect shapes)
-        shape-center (geom/center shape)
+  (let [shape (geom/setup {:type :rect} (geom/selection-rect shapes))
+        shape-center (geom/center-shape shape)
 
         hover-id (-> (mf/deref refs/current-hover) first)
         hover-id (when-not (d/seek #(= hover-id (:id %)) shapes) hover-id)

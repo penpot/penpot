@@ -20,8 +20,12 @@
    [app.common.uuid :as uuid]
    [app.main.worker :as uw]
    [app.util.timers :as ts]
-   [app.common.geom.shapes :as geom]))
+   [app.common.geom.proportions :as gpr]
+   [app.common.geom.shapes :as gsh]))
 
+(s/def ::shape-attrs ::cp/shape-attrs)
+(s/def ::set-of-string (s/every string? :kind set?))
+(s/def ::ordered-set-of-uuid (s/every uuid? :kind d/ordered-set?))
 ;; --- Protocols
 
 (declare setup-selection-index)
@@ -158,7 +162,7 @@
 (defn get-frame-at-point
   [objects point]
   (let [frames (cph/select-frames objects)]
-    (d/seek #(geom/has-point? % point) frames)))
+    (d/seek #(gsh/has-point? % point) frames)))
 
 
 (defn- extract-numeric-suffix
@@ -171,8 +175,6 @@
   [objects]
   (into #{} (map :name) (vals objects)))
 
-(s/def ::set-of-string
-  (s/every string? :kind set?))
 
 (defn generate-unique-name
   "A unique name generator"
@@ -434,3 +436,85 @@
               [rchanges uchanges] (impl-gen-changes objects page-id (seq ids))]
         (rx/of (commit-changes rchanges uchanges {:commit-local? true})))))))
 
+
+(defn select-shapes
+  [ids]
+  (us/verify ::ordered-set-of-uuid ids)
+  (ptk/reify ::select-shapes
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :selected] ids))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+       (let [page-id (:current-page-id state)
+             objects (lookup-page-objects state page-id)]
+         (rx/of (expand-all-parents ids objects))))))
+
+;; --- Start shape "edition mode"
+
+(declare clear-edition-mode)
+
+(defn start-edition-mode
+  [id]
+  (us/assert ::us/uuid id)
+  (ptk/reify ::start-edition-mode
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :edition] id))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> stream
+           (rx/filter interrupt?)
+           (rx/take 1)
+           (rx/map (constantly clear-edition-mode))))))
+
+(def clear-edition-mode
+  (ptk/reify ::clear-edition-mode
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-local dissoc :edition))))
+
+
+(defn add-shape
+  [attrs]
+  (us/verify ::shape-attrs attrs)
+  (ptk/reify ::add-shape
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id  (:current-page-id state)
+            objects  (lookup-page-objects state page-id)
+
+            id       (uuid/next)
+            shape    (gpr/setup-proportions attrs)
+
+            unames   (retrieve-used-names objects)
+            name     (generate-unique-name unames (:name shape))
+
+            frame-id (or (:frame-id attrs)
+                         (cph/frame-id-by-position objects attrs))
+
+            shape    (merge
+                      (if (= :frame (:type shape))
+                        cp/default-frame-attrs
+                        cp/default-shape-attrs)
+                      (assoc shape
+                             :id id
+                             :name name))
+
+            rchange  {:type :add-obj
+                      :id id
+                      :page-id page-id
+                      :frame-id frame-id
+                      :obj shape}
+            uchange  {:type :del-obj
+                      :page-id page-id
+                      :id id}]
+
+        (rx/concat
+         (rx/of (commit-changes [rchange] [uchange] {:commit-local? true})
+                (select-shapes (d/ordered-set id)))
+         (when (= :text (:type attrs))
+           (->> (rx/of (start-edition-mode id))
+                (rx/observe-on :async))))))))

@@ -41,11 +41,10 @@
 
 (when *assert*
   (defonce debug-subscription
-    (as-> stream $
-      #_(rx/filter ptk/event? $)
-      (rx/filter (fn [s] (debug? :events)) $)
-      (rx/subscribe $ (fn [event]
-                        (println "[stream]: " (repr-event event)))))))
+    (->> stream
+         (rx/filter ptk/event?)
+         (rx/filter (fn [s] (debug? :events)))
+         (rx/subs #(println "[stream]: " (repr-event %))))))
 (defn emit!
   ([] nil)
   ([event]
@@ -72,6 +71,11 @@
 
 (defn ^:export dump-state []
   (logjs "state" @state))
+
+(defn ^:export get-state [str-path]
+  (let [path (->> (str/split str-path " ")
+                  (map d/read-string))]
+    (clj->js (get-in @state path))))
 
 (defn ^:export dump-objects []
   (let [page-id (get @state :current-page-id)]

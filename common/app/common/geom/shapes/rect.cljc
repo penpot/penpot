@@ -18,66 +18,97 @@
    [app.common.math :as mth]
    [app.common.data :as d]))
 
-;; --- SHAPE -> RECT
+(defn rect->points [{:keys [x y width height]}]
+  [(gpt/point x y)
+   (gpt/point (+ x width) y)
+   (gpt/point (+ x width) (+ y height))
+   (gpt/point x (+ y height))])
 
-(defn- rect->rect-shape
-  [{:keys [x y width height] :as shape}]
-  (assoc shape
-         :x1 x
-         :y1 y
-         :x2 (+ x width)
-         :y2 (+ y height)))
-
-(defn- path->rect-shape
-  [{:keys [segments] :as shape}]
-  (merge shape
-         {:type :rect}
-         (:selrect shape)))
-
-(defn shape->rect-shape
-  "Coerce shape to rect like shape."
-
-  [{:keys [type] :as shape}]
-  (case type
-    (:curve :path) (path->rect-shape shape)
-    (rect->rect-shape shape)))
-
-;; Shape->PATH
-
-(declare rect->path)
-
-(defn shape->path
-  [shape]
-  (case (:type shape)
-    (:curve :path) shape
-    (rect->path shape)))
-
-(defn rect->path
-  [{:keys [x y width height] :as shape}]
-
-  (let [points [(gpt/point x y)
-                (gpt/point (+ x width) y)
-                (gpt/point (+ x width) (+ y height))
-                (gpt/point x (+ y height))
-                (gpt/point x y)]]
-    (-> shape
-        (assoc :type :path)
-        (assoc :segments points))))
-
-;; -- Points
-
-(defn points->selrect [points]
+(defn points->rect [points]
   (let [minx (transduce (map :x) min ##Inf points)
         miny (transduce (map :y) min ##Inf points)
         maxx (transduce (map :x) max ##-Inf points)
         maxy (transduce (map :y) max ##-Inf points)]
-    {:x1 minx
-     :y1 miny
-     :x2 maxx
-     :y2 maxy
-     :x minx
+    {:x minx
      :y miny
      :width (- maxx minx)
-     :height (- maxy miny)
-     :type :rect}))
+     :height (- maxy miny)}))
 
+(defn points->selrect [points]
+  (let [{:keys [x y width height] :as rect} (points->rect points)]
+    (assoc rect
+           :x1 x
+           :x2 (+ x width)
+           :y1 y
+           :y2 (+ y height))))
+
+(defn rect->selrect [rect]
+  (-> rect rect->points points->selrect))
+
+;; --- SHAPE -> RECT
+#_(
+   (defn- rect->rect-shape
+     [{:keys [x y width height] :as shape}]
+     (assoc shape
+            :x1 x
+            :y1 y
+            :x2 (+ x width)
+            :y2 (+ y height)))
+
+   (defn- path->rect-shape
+     [{:keys [segments] :as shape}]
+     (merge shape
+            {:type :rect}
+            (:selrect shape)))
+
+   (defn shape->rect-shape
+     "Coerce shape to rect like shape."
+
+     [{:keys [type] :as shape}]
+     (case type
+       (:curve :path) (path->rect-shape shape)
+       (rect->rect-shape shape)))
+
+   ;; Shape->PATH
+
+   (declare rect->path)
+
+   (defn shape->path
+     [shape]
+     (case (:type shape)
+       (:curve :path) shape
+       (rect->path shape)))
+
+   (defn rect->path
+     [{:keys [x y width height] :as shape}]
+
+     (let [points [(gpt/point x y)
+                   (gpt/point (+ x width) y)
+                   (gpt/point (+ x width) (+ y height))
+                   (gpt/point x (+ y height))
+                   (gpt/point x y)]]
+       (-> shape
+           (assoc :type :path)
+           (assoc :segments points))))
+
+   ;; -- Points
+
+   (defn points->selrect [points]
+     (let [minx (transduce (map :x) min ##Inf points)
+           miny (transduce (map :y) min ##Inf points)
+           maxx (transduce (map :x) max ##-Inf points)
+           maxy (transduce (map :y) max ##-Inf points)]
+       {:x1 minx
+        :y1 miny
+        :x2 maxx
+        :y2 maxy
+        :x minx
+        :y miny
+        :width (- maxx minx)
+        :height (- maxy miny)
+        :type :rect}))
+
+   
+
+   
+   )

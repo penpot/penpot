@@ -19,31 +19,19 @@
    [app.common.math :as mth]
    [app.common.data :as d]))
 
-(defn- nilf
-  "Returns a new function that if you pass nil as any argument will
-  return nil"
-  [f]
-  (fn [& args]
-    (if (some nil? args)
-      nil
-      (apply f args))))
-
 ;; --- Relative Movement
-
-(declare move-rect)
-(declare move-path)
-
-(defn -chk
-  "Function that checks if a number is nil or nan. Will return 0 when not
-  valid and the number otherwise."
-  [v]
-  (if (or (not v) (mth/nan? v)) 0 v))
 
 (defn move
   "Move the shape relativelly to its current
   position applying the provided delta."
   [shape {dx :x dy :y}]
-  (let [inc-x (nilf (fn [x] (+ (-chk x) (-chk dx))))
+  (let [dx (d/check-num dx)
+        dy (d/check-num dy)]
+    (-> shape
+        (assoc-in [:modifiers :displacement] (gmt/translate-matrix (gpt/point dx dy)))
+        (gtr/transform-shape)))
+
+  #_(let [inc-x (nilf (fn [x] (+ (-chk x) (-chk dx))))
         inc-y (nilf (fn [y] (+ (-chk y) (-chk dy))))
         inc-point (nilf (fn [p] (-> p
                                     (update :x inc-x)
@@ -60,57 +48,20 @@
         (update :points #(mapv inc-point %))
         (update :segments #(mapv inc-point %)))))
 
-;; Duplicated from pages-helpers to remove cyclic dependencies
-(defn get-children [id objects]
-  (let [shapes (vec (get-in objects [id :shapes]))]
-    (if shapes
-      (d/concat shapes (mapcat #(get-children % objects) shapes))
-      [])))
-
-(defn recursive-move
-  "Move the shape and all its recursive children."
-  [shape dpoint objects]
-  (let [children-ids (get-children (:id shape) objects)
-        children (map #(get objects %) children-ids)]
-    (map #(move % dpoint) (cons shape children))))
-
 ;; --- Absolute Movement
 
 (declare absolute-move-rect)
 
 (defn absolute-move
   "Move the shape to the exactly specified position."
-  [shape position]
-  (case (:type shape)
-    (:curve :path) shape
-    (absolute-move-rect shape position)))
-
-(defn- absolute-move-rect
-  "A specialized function for absolute moviment
-  for rect-like shapes."
-  [shape {:keys [x y] :as pos}]
-  (let [dx (if x (- (-chk x) (-chk (:x shape))) 0)
-        dy (if y (- (-chk y) (-chk (:y shape))) 0)]
+  [shape {:keys [x y]}]
+  (let [dx (- (d/check-num x) (-> shape :selrect :x))
+        dy (- (d/check-num y) (-> shape :selrect :y))]
     (move shape (gpt/point dx dy))))
-
-;; --- Proportions
-
-(declare assign-proportions-path)
-(declare assign-proportions-rect)
-
-(defn assign-proportions
-  [{:keys [type] :as shape}]
-  (case type
-    :path (assign-proportions-path shape)
-    (assign-proportions-rect shape)))
-
-(defn- assign-proportions-rect
-  [{:keys [width height] :as shape}]
-  (assoc shape :proportion (/ width height)))
 
 ;; --- Paths
 
-(defn update-path-point
+#_(defn update-path-point
   "Update a concrete point in the path.
 
   The point should exists before, this function
@@ -118,34 +69,9 @@
   [shape index point]
   (assoc-in shape [:segments index] point))
 
-;; --- Setup Proportions
-
-(declare setup-proportions-const)
-(declare setup-proportions-image)
-
-(defn setup-proportions
-  [shape]
-  (case (:type shape)
-    :icon (setup-proportions-image shape)
-    :image (setup-proportions-image shape)
-    :text shape
-    (setup-proportions-const shape)))
-
-(defn setup-proportions-image
-  [{:keys [metadata] :as shape}]
-  (let [{:keys [width height]} metadata]
-    (assoc shape
-           :proportion (/ width height)
-           :proportion-lock false)))
-
-(defn setup-proportions-const
-  [shape]
-  (assoc shape
-         :proportion 1
-         :proportion-lock false))
 
 ;; --- Resize (Dimensions)
-
+;;; TODO: CHANGE TO USE THE MODIFIERS
 (defn resize
   [shape width height]
   (us/assert map? shape)
@@ -177,28 +103,21 @@
     (resize shape (:width new-size) (:height new-size))))
 
 ;; --- Setup (Initialize)
-
-(declare setup-rect)
-(declare setup-image)
-
-(defn setup
-  "A function that initializes the first coordinates for
-  the shape. Used mainly for draw operations."
-  [shape props]
-  (case (:type shape)
-    :image (setup-image shape props)
-    (setup-rect shape props)))
+;; FIXME: Is this the correct place for these functions?
 
 (defn- setup-rect
   "A specialized function for setup rect-like shapes."
   [shape {:keys [x y width height]}]
-  (as-> shape $
-    (assoc $ :x x
-             :y y
-             :width width
-             :height height)
-    (assoc $ :points (gtr/shape->points $))
-    (assoc $ :selrect (gpr/points->selrect (:points $)))))
+  (let [rect    {:x x :y y :width width :height height}
+        points  (gpr/rect->points rect)
+        selrect (gpr/points->selrect points)]
+    (assoc shape
+           :x x
+           :y y
+           :width width
+           :height height
+           :points points
+           :selrect selrect)))
 
 (defn- setup-image
   [{:keys [metadata] :as shape} {:keys [x y width height] :as props}]
@@ -208,26 +127,26 @@
                       (:height metadata))
        :proportion-lock true)))
 
+(defn setup
+  "A function that initializes the first coordinates for
+  the shape. Used mainly for draw operations."
+  [shape props]
+  (case (:type shape)
+    :image (setup-image shape props)
+    (setup-rect shape props)))
 
 ;; --- Resolve Shape
 
-(declare resolve-rect-shape)
-(declare translate-from-frame)
-(declare translate-to-frame)
-
-(defn resolve-shape
-  [objects shape]
-  (case (:type shape)
-    :rect (resolve-rect-shape objects shape)
-    :group (resolve-rect-shape objects shape)
-    :frame (resolve-rect-shape objects shape)))
-
-(defn- resolve-rect-shape
-  [objects {:keys [parent] :as shape}]
-  (loop [pobj (get objects parent)]
-    (if (= :frame (:type pobj))
-      (translate-from-frame shape pobj)
-      (recur (get objects (:parent pobj))))))
+;; (declare resolve-rect-shape)
+;; (declare translate-from-frame)
+;; (declare translate-to-frame)
+;; 
+;; (defn resolve-shape
+;;   [objects shape]
+;;   (loop [pobj (get objects parent)]
+;;     (if (= :frame (:type pobj))
+;;       (translate-from-frame shape pobj)
+;;       (recur (get objects (:parent pobj))))))
 
 
 ;; --- Outer Rect
@@ -236,24 +155,8 @@
   "Returns a rect that contains all the shapes and is aware of the
   rotation of each shape. Mainly used for multiple selection."
   [shapes]
-  (let [shapes (map :selrect shapes)
-        minx   (transduce (map :x1) min ##Inf shapes)
-        miny   (transduce (map :y1) min ##Inf shapes)
-        maxx   (transduce (map :x2) max ##-Inf shapes)
-        maxy   (transduce (map :y2) max ##-Inf shapes)]
-    {:x1 minx
-     :y1 miny
-     :x2 maxx
-     :y2 maxy
-     :x minx
-     :y miny
-     :width (- maxx minx)
-     :height (- maxy miny)
-     :points [(gpt/point minx miny)
-              (gpt/point maxx miny)
-              (gpt/point maxx maxy)
-              (gpt/point minx maxy)]
-     :type :rect}))
+  (let [points (->> shapes (mapcat :points))]
+    (gpr/points->selrect points)))
 
 (defn translate-to-frame
   [shape {:keys [x y] :as frame}]
@@ -269,18 +172,20 @@
   "Check if a shape is contained in the
   provided selection rect."
   [shape selrect]
-  (let [{sx1 :x1 sx2 :x2 sy1 :y1 sy2 :y2} (gpr/shape->rect-shape selrect)
-        {rx1 :x1 rx2 :x2 ry1 :y1 ry2 :y2} (gpr/shape->rect-shape shape)]
+  (let [{sx1 :x1 sx2 :x2 sy1 :y1 sy2 :y2} selrect
+        {rx1 :x1 rx2 :x2 ry1 :y1 ry2 :y2} (:selrect shape)]
     (and (neg? (- sy1 ry1))
          (neg? (- sx1 rx1))
          (pos? (- sy2 ry2))
          (pos? (- sx2 rx2)))))
 
+;; TODO: This not will work for rotated shapes
 (defn overlaps?
   "Check if a shape overlaps with provided selection rect."
-  [shape selrect]
-  (let [{sx1 :x1 sx2 :x2 sy1 :y1 sy2 :y2} (gpr/shape->rect-shape selrect)
-        {rx1 :x1 rx2 :x2 ry1 :y1 ry2 :y2} (gpr/shape->rect-shape shape)]
+  [shape rect]
+  (let [{sx1 :x1 sx2 :x2 sy1 :y1 sy2 :y2} (gpr/rect->selrect rect)
+        {rx1 :x1 rx2 :x2 ry1 :y1 ry2 :y2} (gpr/points->selrect (:points shape))]
+
     (and (< rx1 sx2)
          (> rx2 sx1)
          (< ry1 sy2)
@@ -368,23 +273,29 @@
 
 (defn setup-selrect [{:keys [x y width height] :as shape}]
   (-> shape
-      (assoc :selrect {:x x :y y
-                       :width width :height height
-                       :x1 x :y1 y
-                       :x2 (+ x width) :y2 (+ y height)})))
+      (assoc :selrect
+             {:x x :y y
+              :width width :height height
+              :x1 x :y1 y
+              :x2 (+ x width) :y2 (+ y height)})))
 
 
 ;; EXPORTS
-(def center gco/center)
+(defn center-shape [shape] (gco/center-shape shape))
+(defn center-selrect [selrect] (gco/center-selrect selrect))
+(defn center-rect [rect] (gco/center-rect rect))
 
-(def shape->rect-shape gpr/shape->rect-shape)
-(def fix-invalid-rect-values gtr/fix-invalid-rect-values)
-(def rect->rect-shape gpr/rect->rect-shape)
-(def points->selrect gpr/points->selrect)
+(defn rect->selrect [rect] (gpr/rect->selrect rect))
 
-(def transform-shape-point gtr/transform-shape-point)
-(def update-path-selrect gtr/update-path-selrect)
-(def transform gtr/transform)
+#_(def shape->rect-shape gpr/shape->rect-shape)
+#_(def fix-invalid-rect-values gtr/fix-invalid-rect-values)
+#_(def rect->rect-shape gpr/rect->rect-shape)
+(defn points->selrect [points] (gpr/points->selrect points))
+
+#_(def transform-shape-point gtr/transform-shape-point)
+#_(def update-path-selrect gtr/update-path-selrect)
+#_(def transform gtr/transform)
 (defn transform-shape [shape] (gtr/transform-shape shape))
-(def transform-matrix gtr/transform-matrix)
-
+(defn transform-matrix [shape] (gtr/transform-matrix shape))
+(defn transform-point-center [point center transform] (gtr/transform-point-center point center transform))
+(defn transform-rect [rect mtx] (gtr/transform-rect rect mtx))

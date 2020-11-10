@@ -17,32 +17,30 @@
    [app.common.math :as mth]
    [app.common.data :as d]))
 
-;; --- Center
+(defn center-rect
+  [{:keys [x y width height]}]
+  (gpt/point (+ x (/ width 2))
+             (+ y (/ height 2))))
 
-(declare center-rect)
-(declare center-path)
+(defn center-selrect
+  "Calculate the center of the shape."
+  [selrect]
+  (center-rect selrect))
 
-(defn center
+(defn center-shape
   "Calculate the center of the shape."
   [shape]
-  (case (:type shape)
-    :curve (center-path shape)
-    :path (center-path shape)
-    (center-rect shape)))
+  (center-rect (:selrect shape)))
 
-(defn- center-rect
-  [{:keys [x y width height] :as shape}]
-  (gpt/point (+ x (/ width 2)) (+ y (/ height 2))))
+(defn center-points [points]
+  (let [minx (transduce (map :x) min ##Inf points)
+        miny (transduce (map :y) min ##Inf points)
+        maxx (transduce (map :x) max ##-Inf points)
+        maxy (transduce (map :y) max ##-Inf points)]
+    (gpt/point (/ (+ minx maxx) 2)
+               (/ (+ miny maxy) 2))))
 
-(defn- center-path
-  [{:keys [segments] :as shape}]
-  (let [minx (apply min (map :x segments))
-        miny (apply min (map :y segments))
-        maxx (apply max (map :x segments))
-        maxy (apply max (map :y segments))]
-    (gpt/point (/ (+ minx maxx) 2) (/ (+ miny maxy) 2))))
-
-(defn center->rect
+(defn make-centered-rect
   "Creates a rect given a center and a width and height"
   [center width height]
   {:x (- (:x center) (/ width 2))
@@ -50,3 +48,30 @@
    :width width
    :height height})
 
+;; --- Center
+#_(
+   (declare center-rect)
+   (declare center-path)
+
+   
+
+   
+
+   (defn- center-path
+     [{:keys [segments] :as shape}]
+     (let [minx (apply min (map :x segments))
+           miny (apply min (map :y segments))
+           maxx (apply max (map :x segments))
+           maxy (apply max (map :y segments))]
+       (gpt/point (/ (+ minx maxx) 2) (/ (+ miny maxy) 2))))
+
+   (defn center->rect
+     "Creates a rect given a center and a width and height"
+     [center width height]
+     {:x (- (:x center) (/ width 2))
+      :y (- (:y center) (/ height 2))
+      :width width
+      :height height})
+
+   
+   )

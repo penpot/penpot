@@ -65,8 +65,7 @@
 
 (defn- create-index
   [objects]
-  (let [shapes (->> (cph/select-toplevel-shapes objects {:include-frames? true})
-                    (map #(merge % (select-keys % [:x :y :width :height]))))
+  (let [shapes (cph/select-toplevel-shapes objects {:include-frames? true})
         bounds (geom/selection-rect shapes)
         bounds #js {:x (:x bounds)
                     :y (:y bounds)
@@ -77,7 +76,8 @@
             shapes)))
 
 (defn- index-object
-  [index {:keys [id x y width height] :as obj}]
-  (let [rect #js {:x x :y y :width width :height height}]
+  [index obj]
+  (let [{:keys [id x y width height]} (:selrect obj)
+        rect #js {:x x :y y :width width :height height}]
     (qdt/insert index rect obj)))
 

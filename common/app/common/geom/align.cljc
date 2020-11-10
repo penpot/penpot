@@ -10,11 +10,7 @@
 (ns app.common.geom.align
   (:require
    [clojure.spec.alpha :as s]
-   [app.common.spec :as us]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.matrix :as gmt]
-   [app.common.geom.point :as gpt]
-   [app.common.math :as mth]
    [app.common.data :as d]))
 
 ;; --- Alignment
@@ -22,6 +18,20 @@
 (s/def ::align-axis #{:hleft :hcenter :hright :vtop :vcenter :vbottom})
 
 (declare calc-align-pos)
+
+;; Duplicated from pages-helpers to remove cyclic dependencies
+(defn- get-children [id objects]
+  (let [shapes (vec (get-in objects [id :shapes]))]
+    (if shapes
+      (d/concat shapes (mapcat #(get-children % objects) shapes))
+      [])))
+
+(defn- recursive-move
+  "Move the shape and all its recursive children."
+  [shape dpoint objects]
+  (let [children-ids (get-children (:id shape) objects)
+        children (map #(get objects %) children-ids)]
+    (map #(gsh/move % dpoint) (cons shape children))))
 
 (defn align-to-rect
   "Move the shape so that it is aligned with the given rectangle
@@ -34,7 +44,7 @@
         align-pos (calc-align-pos wrapper-rect rect axis)
         delta {:x (- (:x align-pos) (:x wrapper-rect))
                :y (- (:y align-pos) (:y wrapper-rect))}]
-    (gsh/recursive-move shape delta objects)))
+    (recursive-move shape delta objects)))
 
 (defn calc-align-pos
   [wrapper-rect rect axis]
@@ -80,7 +90,7 @@
         ; The rectangle that wraps the whole selection
         wrapper-rect (gsh/selection-rect shapes)
         ; Sort shapes by the center point in the given axis
-        sorted-shapes (sort-by #(coord (gsh/center %)) shapes)
+        sorted-shapes (sort-by #(coord (gsh/center-shape %)) shapes)
         ; Each shape wrapped in its own rectangle
         wrapped-shapes (map #(gsh/selection-rect [%]) sorted-shapes)
         ; The total space between shapes
@@ -106,7 +116,7 @@
                                 new-pos
                                 (conj deltas delta)))))]
 
-        (mapcat #(gsh/recursive-move %1 {coord %2 other-coord 0} objects)
+        (mapcat #(recursive-move %1 {coord %2 other-coord 0} objects)
                 sorted-shapes deltas)))))
 
 ;; Adjusto to viewport
