@@ -1,1 +1,1 @@
-CREATE DATABASE uxbox_test;
+CREATE DATABASE penpot_test;

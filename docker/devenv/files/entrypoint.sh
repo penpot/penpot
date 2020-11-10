@@ -2,11 +2,11 @@
 
 set -e
 
-sudo cp /root/.bashrc /home/uxbox/.bashrc
-sudo cp /root/.vimrc /home/uxbox/.vimrc
-sudo cp /root/.tmux.conf /home/uxbox/.tmux.conf
+sudo cp /root/.bashrc /home/penpot/.bashrc
+sudo cp /root/.vimrc /home/penpot/.vimrc
+sudo cp /root/.tmux.conf /home/penpot/.tmux.conf
 
-source /home/uxbox/.bashrc
-sudo chown uxbox:users /home/uxbox
+source /home/penpot/.bashrc
+sudo chown penpot:users /home/penpot
 
 exec "$@"
