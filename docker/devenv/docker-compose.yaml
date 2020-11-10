@@ -22,7 +22,6 @@ services:
 
     depends_on:
       - postgres
-      - smtp
       - redis
 
     volumes:
@@ -42,17 +41,6 @@ services:
       - APP_DATABASE_URI=postgresql://postgres/penpot
       - APP_DATABASE_USERNAME=penpot
       - APP_DATABASE_PASSWORD=penpot
-      - APP_SENDMAIL_BACKEND=console
-      - APP_SMTP_HOST=smtp
-      - APP_SMTP_PORT=25
-
-  smtp:
-    container_name: "penpot-devenv-smtp"
-    image: mwader/postfix-relay:latest
-    restart: always
-    environment:
-      - POSTFIX_myhostname=smtp.penpot.io
-      - OPENDKIM_DOMAINS=smtp.penpot.io
 
   postgres:
     image: postgres:13

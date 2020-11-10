@@ -37,9 +37,9 @@
 
    :image-process-max-threads 2
 
-   :sendmail-backend "console"
-   :sendmail-reply-to "no-reply@example.com"
-   :sendmail-from "no-reply@example.com"
+   :smtp-enable false
+   :smtp-default-reply-to "no-reply@example.com"
+   :smtp-default-from "no-reply@example.com"
 
    :allow-demo-users true
    :registration-enabled true
@@ -79,13 +79,12 @@
 (s/def ::media-uri ::us/string)
 (s/def ::media-directory ::us/string)
 (s/def ::secret-key ::us/string)
-(s/def ::sendmail-backend ::us/string)
-(s/def ::sendmail-backend-apikey ::us/string)
-(s/def ::sendmail-reply-to ::us/email)
-(s/def ::sendmail-from ::us/email)
+(s/def ::smtp-enable ::us/boolean)
+(s/def ::smtp-default-reply-to ::us/email)
+(s/def ::smtp-default-from ::us/email)
 (s/def ::smtp-host ::us/string)
 (s/def ::smtp-port ::us/integer)
-(s/def ::smtp-user (s/nilable ::us/string))
+(s/def ::smtp-username (s/nilable ::us/string))
 (s/def ::smtp-password (s/nilable ::us/string))
 (s/def ::smtp-tls ::us/boolean)
 (s/def ::smtp-ssl ::us/boolean)
@@ -136,13 +135,12 @@
                    ::media-directory
                    ::media-uri
                    ::secret-key
-                   ::sendmail-reply-to
-                   ::sendmail-from
-                   ::sendmail-backend
-                   ::sendmail-backend-apikey
+                   ::smtp-default-from
+                   ::smtp-default-reply-to
+                   ::smtp-enable
                    ::smtp-host
                    ::smtp-port
-                   ::smtp-user
+                   ::smtp-username
                    ::smtp-password
                    ::smtp-tls
                    ::smtp-ssl
@@ -198,3 +196,14 @@
 
 (def default-deletion-delay
   (dt/duration {:hours 48}))
+
+(defn smtp
+  [cfg]
+  {:host (:smtp-host cfg "localhost")
+   :port (:smtp-port cfg 25)
+   :default-reply-to (:smtp-default-reply-to cfg)
+   :default-from (:smtp-default-from cfg)
+   :tls (:smtp-tls cfg)
+   :username (:smtp-username cfg)
+   :password (:smtp-password cfg)})
+

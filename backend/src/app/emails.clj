@@ -29,25 +29,20 @@
 ;; --- Public API
 
 (defn render
-  [email context]
-  (let [defaults {:from (:sendmail-from cfg/config)
-                  :reply-to (:sendmail-reply-to cfg/config)}]
-    (email (merge defaults context))))
+  [email-factory context]
+  (email-factory context))
 
 (defn send!
   "Schedule the email for sending."
-  ([email context] (send! db/pool email context))
-  ([conn email-factory context]
-   (us/verify fn? email-factory)
-   (us/verify map? context)
-   (let [defaults {:from (:sendmail-from cfg/config)
-                   :reply-to (:sendmail-reply-to cfg/config)}
-         data (merge defaults context)
-         email (email-factory data)]
-     (tasks/submit! conn {:name "sendmail"
-                          :delay 0
-                          :priority 200
-                          :props email}))))
+  [conn email-factory context]
+  (us/verify fn? email-factory)
+  (us/verify map? context)
+  (let [email (email-factory context)]
+    (tasks/submit! conn {:name "sendmail"
+                         :delay 0
+                         :max-retries 1
+                         :priority 200
+                         :props email})))
 
 ;; --- Emails
 
@@ -57,7 +52,7 @@
 
 (def register
   "A new profile registration welcome email."
-  (emails/build ::register default-context))
+  (emails/template-factory ::register default-context))
 
 (s/def ::token ::us/string)
 (s/def ::password-recovery
@@ -65,7 +60,7 @@
 
 (def password-recovery
   "A password recovery notification email."
-  (emails/build ::password-recovery default-context))
+  (emails/template-factory ::password-recovery default-context))
 
 (s/def ::pending-email ::us/email)
 (s/def ::change-email
@@ -73,7 +68,7 @@
 
 (def change-email
   "Password change confirmation email"
-  (emails/build ::change-email default-context))
+  (emails/template-factory ::change-email default-context))
 
 (s/def :internal.emails.invite-to-team/invited-by ::us/string)
 (s/def :internal.emails.invite-to-team/team ::us/string)
@@ -86,4 +81,4 @@
 
 (def invite-to-team
   "Teams member invitation email."
-  (emails/build ::invite-to-team default-context))
+  (emails/template-factory ::invite-to-team default-context))
