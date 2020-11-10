@@ -14,10 +14,10 @@ volumes:
 services:
   main:
     privileged: true
-    image: "uxbox-devenv"
+    image: "penpot-devenv"
     build:
       context: "."
-    container_name: "uxbox-devenv-main"
+    container_name: "penpot-devenv-main"
     stop_signal: SIGINT
 
     depends_on:
@@ -26,8 +26,8 @@ services:
       - redis
 
     volumes:
-      - "user_data:/home/uxbox/"
-      - "${PWD}:/home/uxbox/uxbox"
+      - "user_data:/home/penpot/"
+      - "${PWD}:/home/penpot/penpot"
       - ./files/nginx.conf:/etc/nginx/nginx.conf
 
     ports:
@@ -39,32 +39,32 @@ services:
       - 9090:9090
 
     environment:
-      - APP_DATABASE_URI=postgresql://postgres/uxbox
-      - APP_DATABASE_USERNAME=uxbox
-      - APP_DATABASE_PASSWORD=uxbox
+      - APP_DATABASE_URI=postgresql://postgres/penpot
+      - APP_DATABASE_USERNAME=penpot
+      - APP_DATABASE_PASSWORD=penpot
       - APP_SENDMAIL_BACKEND=console
       - APP_SMTP_HOST=smtp
       - APP_SMTP_PORT=25
 
   smtp:
-    container_name: "uxbox-devenv-smtp"
+    container_name: "penpot-devenv-smtp"
     image: mwader/postfix-relay:latest
     restart: always
     environment:
-      - POSTFIX_myhostname=smtp.uxbox.io
-      - OPENDKIM_DOMAINS=smtp.uxbox.io
+      - POSTFIX_myhostname=smtp.penpot.io
+      - OPENDKIM_DOMAINS=smtp.penpot.io
 
   postgres:
     image: postgres:13
     command: postgres -c config_file=/etc/postgresql.conf
-    container_name: "uxbox-devenv-postgres"
+    container_name: "penpot-devenv-postgres"
     restart: always
     stop_signal: SIGINT
     environment:
       - POSTGRES_INITDB_ARGS=--data-checksums
-      - POSTGRES_DB=uxbox
-      - POSTGRES_USER=uxbox
-      - POSTGRES_PASSWORD=uxbox
+      - POSTGRES_DB=penpot
+      - POSTGRES_USER=penpot
+      - POSTGRES_PASSWORD=penpot
     volumes:
       - ./files/postgresql.conf:/etc/postgresql.conf
       - ./files/postgresql_init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -72,6 +72,6 @@ services:
 
   redis:
     image: redis:6
-    hostname: "uxbox-devenv-redis"
-    container_name: "uxbox-devenv-redis"
+    hostname: "penpot-devenv-redis"
+    container_name: "penpot-devenv-redis"
     restart: always
