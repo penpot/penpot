@@ -46,7 +46,7 @@ function scssPipeline(options) {
 
   const touch = (_path) => {
     return new Promise((resolve, reject) => {
-      return fs.utimes(file.path, new Date(), new Date(), () => {
+      return fs.utimes(_path, new Date(), new Date(), () => {
         resolve(_path);
       });
     })
@@ -78,7 +78,7 @@ function scssPipeline(options) {
       .then(() => render(input))
       .then((res) => postprocess(res, input, output))
       .then(async (res) => {
-        await write(output, res);
+        await write(output, res.css);
         await touch(output);
         return res;
       })
