@@ -172,7 +172,6 @@
   [{:keys [debug] :or {debug false} :as opts}]
   (let [props   (opts->props opts)
         session (Session/getInstance props)]
-    (prn "kaka" props)
     (.setDebug session debug)
     session))
 
