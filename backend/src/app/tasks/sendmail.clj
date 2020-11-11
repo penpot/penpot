@@ -28,16 +28,6 @@
                 (println "******** end email "(:id email) "**********"))]
       (log/info out))))
 
-(defn adapt-config
-  [cfg]
-  {:host (:smtp-host cfg "localhost")
-   :port (:smtp-port cfg 25)
-   :default-reply-to (:smtp-default-reply-to cfg)
-   :default-from (:smtp-default-from cfg)
-   :tls (:smtp-tls cfg)
-   :username (:smtp-username cfg)
-   :password (:smtp-password cfg)})
-
 (defn handler
   {:app.tasks/name "sendmail"}
   [{:keys [props] :as task}]
