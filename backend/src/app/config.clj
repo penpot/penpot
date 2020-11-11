@@ -170,7 +170,7 @@
    (fn [acc k v]
      (cond-> acc
        (str/starts-with? (name k) "penpot-")
-       (assoc (keyword (subs (name k) 6)) v)
+       (assoc (keyword (subs (name k) 7)) v)
 
        (str/starts-with? (name k) "app-")
        (assoc (keyword (subs (name k) 4)) v)))
