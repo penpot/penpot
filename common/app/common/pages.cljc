@@ -435,6 +435,14 @@
                    :internal.file/recent-colors
                    :internal.file/media]))
 
+(s/def ::container-type #{:page :component})
+
+(s/def ::container
+  (s/keys :req-un [::container-type
+                   ::id
+                   ::name
+                   :internal.page/objects]))
+
 (defmulti operation-spec :type)
 
 (s/def :internal.operations.set/attr keyword?)
@@ -461,9 +469,9 @@
 (s/def :internal.changes.add-obj/obj ::shape)
 
 (defmethod change-spec :add-obj [_]
-  (s/keys :req-un [::id ::page-id ::frame-id
+  (s/keys :req-un [::id (or ::page-id ::component-id)
                    :internal.changes.add-obj/obj]
-          :opt-un [::parent-id]))
+          :opt-un [::parent-id ::frame-id]))
 
 (s/def ::operation (s/multi-spec operation-spec :type))
 (s/def ::operations (s/coll-of ::operation))
@@ -472,16 +480,17 @@
   (s/keys :req-un [::id (or ::page-id ::component-id) ::operations]))
 
 (defmethod change-spec :del-obj [_]
-  (s/keys :req-un [::id ::page-id]))
+  (s/keys :req-un [::id (or ::page-id ::component-id)]))
 
 (s/def :internal.changes.reg-objects/shapes
   (s/coll-of uuid? :kind vector?))
 
 (defmethod change-spec :reg-objects [_]
-  (s/keys :req-un [::page-id :internal.changes.reg-objects/shapes]))
+  (s/keys :req-un [(or ::page-id ::component-id)
+                   :internal.changes.reg-objects/shapes]))
 
 (defmethod change-spec :mov-objects [_]
-  (s/keys :req-un [::page-id ::parent-id :internal.shape/shapes]
+  (s/keys :req-un [(or ::page-id ::component-id) ::parent-id :internal.shape/shapes]
           :opt-un [::index]))
 
 (defmethod change-spec :add-page [_]
@@ -701,26 +710,26 @@
                           (assoc data :options (d/dissoc-in (:options data) path)))))))
 
 (defmethod process-change :add-obj
-  [data {:keys [id obj page-id frame-id parent-id index] :as change}]
-  (d/update-in-when data [:pages-index page-id]
-                    (fn [data]
-                      (let [parent-id (or parent-id frame-id)
-                            objects (:objects data)]
-                        (when (and (contains? objects parent-id)
-                                   (contains? objects frame-id))
-                          (let [obj (assoc obj
-                                           :frame-id frame-id
-                                           :parent-id parent-id
-                                           :id id)]
-                            (-> data
-                                (update :objects assoc id obj)
-                                (update-in [:objects parent-id :shapes]
-                                           (fn [shapes]
-                                             (let [shapes (or shapes [])]
-                                               (cond
-                                                 (some #{id} shapes) shapes
-                                                 (nil? index) (conj shapes id)
-                                                 :else (cph/insert-at-index shapes index [id]))))))))))))
+  [data {:keys [id obj page-id component-id frame-id parent-id index] :as change}]
+  (let [update-fn (fn [data]
+                    (let [parent-id (or parent-id frame-id)
+                          objects (:objects data)]
+                      (let [obj (assoc obj
+                                       :frame-id frame-id
+                                       :parent-id parent-id
+                                       :id id)]
+                        (-> data
+                            (update :objects assoc id obj)
+                            (update-in [:objects parent-id :shapes]
+                                       (fn [shapes]
+                                         (let [shapes (or shapes [])]
+                                           (cond
+                                             (some #{id} shapes) shapes
+                                             (nil? index) (conj shapes id)
+                                             :else (cph/insert-at-index shapes index [id])))))))))]
+    (if page-id
+      (d/update-in-when data [:pages-index page-id] update-fn)
+      (d/update-in-when data [:components component-id] update-fn))))
 
 (defmethod process-change :mod-obj
   [data {:keys [id page-id component-id operations] :as change}]
@@ -733,8 +742,8 @@
       (d/update-in-when data [:components component-id :objects] update-fn))))
 
 (defmethod process-change :del-obj
-  [data {:keys [page-id id] :as change}]
-  (letfn [(delete-object [objects id]
+  [data {:keys [page-id component-id id] :as change}]
+  (letfn [(delete-object [objects]
             (if-let [target (get objects id)]
               (let [parent-id (cph/get-parent id objects)
                     frame-id  (:frame-id target)
@@ -752,7 +761,9 @@
                                            ; dependend objects
                   (as-> $ (reduce delete-object $ (:shapes target)))))
               objects))]
-    (d/update-in-when data [:pages-index page-id :objects] delete-object id)))
+    (if page-id
+      (d/update-in-when data [:pages-index page-id :objects] delete-object)
+      (d/update-in-when data [:components component-id :objects] delete-object))))
 
 (defn rotation-modifiers
   [center shape angle]
@@ -765,7 +776,7 @@
 
 ;; reg-objects operation "regenerates" the values for the parent groups
 (defmethod process-change :reg-objects
-  [data {:keys [page-id shapes]}]
+  [data {:keys [page-id component-id shapes]}]
   (letfn [(reg-objects [objects]
             (reduce #(update %1 %2 update-group %1) objects
                     (sequence (comp
@@ -797,10 +808,12 @@
                   (assoc-in [:modifiers :rotation] (:rotation group 0))
                   (geom/transform-shape))))]
 
-    (d/update-in-when data [:pages-index page-id :objects] reg-objects)))
+    (if page-id
+      (d/update-in-when data [:pages-index page-id :objects] reg-objects)
+      (d/update-in-when data [:components component-id :objects] reg-objects))))
 
 (defmethod process-change :mov-objects
-  [data {:keys [parent-id shapes index page-id] :as change}]
+  [data {:keys [parent-id shapes index page-id component-id] :as change}]
   (letfn [(is-valid-move? [objects shape-id]
             (let [invalid-targets (cph/calculate-invalid-targets shape-id objects)]
               (and (not (invalid-targets parent-id))
@@ -881,7 +894,9 @@
                   (reduce (partial update-frame-ids frm-id) $ (get-in $ [parent-id :shapes])))
                 objects)))]
 
-    (d/update-in-when data [:pages-index page-id :objects] move-objects)))
+    (if page-id
+      (d/update-in-when data [:pages-index page-id :objects] move-objects)
+      (d/update-in-when data [:components component-id :objects] move-objects))))
 
 (defmethod process-change :add-page
   [data {:keys [id name page]}]

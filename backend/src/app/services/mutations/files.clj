@@ -251,7 +251,8 @@
          :add-media :mod-media :del-media
          :add-component :mod-component :del-component
          :add-typography :mod-typography :del-typography} (:type change))
-      (and (= (:type change) :mod-obj)
+      (and (#{:add-obj :mod-obj :del-obj
+              :reg-objects :mov-objects} (:type change))
            (some? (:component-id change)))))
 
 (declare update-file)
