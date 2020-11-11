@@ -126,6 +126,7 @@
                    ::gitlab-client-id
                    ::gitlab-client-secret
                    ::gitlab-base-uri
+                   ::redis-uri
                    ::public-uri
                    ::database-username
                    ::database-password
