@@ -158,19 +158,6 @@ function templatePipeline(options) {
     const locales = readLocales();
     const manifest = readManifest();
 
-    const defaultConf = [
-      "var appDemoWarning = null;",
-      "var appLoginWithLDAP = null;",
-      "var appPublicURI = null;",
-      "var appGoogleClientID = null;",
-      "var appGitlabClientID = null;",
-      "var appDeployDate = null;",
-      "var appDeployCommit = null;"
-    ];
-
-    fs.writeFileSync(__dirname + "/resources/public/js/config.js",
-                     defaultConf.join("\n"));
-
     const tmpl = mustache({
       ts: ts,
       th: th,
