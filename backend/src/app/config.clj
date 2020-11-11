@@ -37,7 +37,7 @@
 
    :image-process-max-threads 2
 
-   :smtp-enable false
+   :smtp-enabled false
    :smtp-default-reply-to "no-reply@example.com"
    :smtp-default-from "no-reply@example.com"
 
@@ -79,7 +79,7 @@
 (s/def ::media-uri ::us/string)
 (s/def ::media-directory ::us/string)
 (s/def ::secret-key ::us/string)
-(s/def ::smtp-enable ::us/boolean)
+(s/def ::smtp-enabled ::us/boolean)
 (s/def ::smtp-default-reply-to ::us/email)
 (s/def ::smtp-default-from ::us/email)
 (s/def ::smtp-host ::us/string)
@@ -138,7 +138,7 @@
                    ::secret-key
                    ::smtp-default-from
                    ::smtp-default-reply-to
-                   ::smtp-enable
+                   ::smtp-enabled
                    ::smtp-host
                    ::smtp-port
                    ::smtp-username
@@ -205,6 +205,7 @@
    :default-reply-to (:smtp-default-reply-to cfg)
    :default-from (:smtp-default-from cfg)
    :tls (:smtp-tls cfg)
+   :enabled (:smtp-enabled cfg)
    :username (:smtp-username cfg)
    :password (:smtp-password cfg)})
 

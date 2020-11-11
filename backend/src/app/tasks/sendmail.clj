@@ -17,9 +17,9 @@
    [app.metrics :as mtx]))
 
 (defn- send-console!
-  [cfg email]
+  [config email]
   (let [baos (java.io.ByteArrayOutputStream.)
-        mesg (emails/smtp-message cfg email)]
+        mesg (emails/smtp-message config email)]
     (.writeTo mesg baos)
     (let [out (with-out-str
                 (println "email console dump:")
@@ -31,10 +31,10 @@
 (defn handler
   {:app.tasks/name "sendmail"}
   [{:keys [props] :as task}]
-  (if (:smtp-enable cfg/config)
-    (-> (cfg/smtp cfg/config)
-        (emails/send! props))
-    (send-console! props)))
+  (let [config (cfg/smtp cfg/config)]
+    (if (:enabled config)
+      (emails/send! config props)
+      (send-console! config props))))
 
 (mtx/instrument-with-summary!
  {:var #'handler
