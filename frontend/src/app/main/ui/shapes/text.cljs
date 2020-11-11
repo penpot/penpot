@@ -231,7 +231,6 @@
                      :y y
                      :data-colors (retrieve-colors shape)
                      :transform (geom/transform-matrix shape)
-                     :id (str id)
                      :width width
                      :height height
                      :mask mask-id}

@@ -16,6 +16,11 @@ $width-settings-bar: 16rem;
   position: fixed;
   right: 0;
   width: $width-settings-bar;
+
+  &.expanded {
+    width: $width-settings-bar * 3;
+  }
+
   z-index: 10;
   overflow-y: auto;
 

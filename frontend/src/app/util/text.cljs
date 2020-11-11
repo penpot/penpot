@@ -3,7 +3,9 @@
    [cuerdas.core :as str]))
 
 (defonce default-text-attrs
-  {:font-id "sourcesanspro"
+  {:typography-ref-file nil
+   :typography-ref-id nil
+   :font-id "sourcesanspro"
    :font-family "sourcesanspro"
    :font-variant-id "regular"
    :font-size "14"

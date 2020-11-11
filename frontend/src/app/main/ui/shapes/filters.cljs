@@ -97,7 +97,7 @@
 (mf/defc layer-blur-filter
   [{:keys [filter-id params]}]
 
-  [:feGaussianBlur {:stdDeviation (/ (:value params) 2)
+  [:feGaussianBlur {:stdDeviation (:value params)
                     :result filter-id}])
 
 (mf/defc image-fix-filter [{:keys [filter-id]}]

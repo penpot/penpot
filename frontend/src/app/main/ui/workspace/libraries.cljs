@@ -7,6 +7,7 @@
 
 (ns app.main.ui.workspace.libraries
   (:require
+   [app.common.data :as d]
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -142,7 +143,6 @@
                                 :value (tr "workspace.libraries.update")
                                 :on-click #(update-library (:id library))}]])]])]))
 
-
 (mf/defc libraries-dialog
   {::mf/register modal/components
    ::mf/register-as :libraries-dialog}
@@ -152,7 +152,9 @@
         locale       (mf/deref i18n/locale)
         project      (mf/deref refs/workspace-project)
         file         (mf/deref workspace-file)
-        libraries    (mf/deref refs/workspace-libraries)
+        libraries    (->> (mf/deref refs/workspace-libraries)
+                          (d/removem (fn [[key val]]
+                                       (:is-indirect val))))
         shared-files (mf/deref refs/workspace-shared-files)
 
         change-tab   #(reset! selected-tab %)

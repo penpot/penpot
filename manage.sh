@@ -2,12 +2,12 @@
 set -e
 
 REV=`git log -n 1 --pretty=format:%h -- docker/`
-DEVENV_IMGNAME="uxbox-devenv"
+DEVENV_IMGNAME="penpot-devenv"
 
 function build-devenv {
     echo "Building development image $DEVENV_IMGNAME:latest with UID $EXTERNAL_UID..."
     local EXTERNAL_UID=${1:-$(id -u)}
-    docker-compose -p uxboxdev -f docker/devenv/docker-compose.yaml build \
+    docker-compose -p penpotdev -f docker/devenv/docker-compose.yaml build \
                    --force-rm --build-arg EXTERNAL_UID=$EXTERNAL_UID
 }
 
@@ -19,39 +19,39 @@ function build-devenv-if-not-exists {
 
 function start-devenv {
     build-devenv-if-not-exists $@;
-    docker-compose -p uxboxdev -f docker/devenv/docker-compose.yaml up -d;
+    docker-compose -p penpotdev -f docker/devenv/docker-compose.yaml up -d;
 }
 
 function stop-devenv {
-    docker-compose -p uxboxdev -f docker/devenv/docker-compose.yaml stop -t 2;
+    docker-compose -p penpotdev -f docker/devenv/docker-compose.yaml stop -t 2;
 }
 
 function drop-devenv {
-    docker-compose -p uxboxdev -f docker/devenv/docker-compose.yaml down -t 2 -v;
+    docker-compose -p penpotdev -f docker/devenv/docker-compose.yaml down -t 2 -v;
 
     echo "Clean old development image $DEVENV_IMGNAME..."
     docker images $DEVENV_IMGNAME -q | awk '{print $3}' | xargs --no-run-if-empty docker rmi
 }
 
 function run-devenv {
-    if [[ ! $(docker ps -f "name=uxbox-devenv-main" -q) ]]; then
+    if [[ ! $(docker ps -f "name=penpot-devenv-main" -q) ]]; then
         start-devenv
     fi
 
-    docker exec -ti uxbox-devenv-main /home/start-tmux.sh
+    docker exec -ti penpot-devenv-main /home/start-tmux.sh
 }
 
 function build {
     build-devenv-if-not-exists;
     local IMAGE=$DEVENV_IMGNAME:latest;
 
-    docker volume create uxboxdev_user_data;
+    docker volume create penpotdev_user_data;
 
     echo "Running development image $IMAGE to build frontend."
     docker run -t --rm \
-           --mount source=uxboxdev_user_data,type=volume,target=/home/uxbox/ \
-           --mount source=`pwd`,type=bind,target=/home/uxbox/uxbox \
-           -w /home/uxbox/uxbox/$1 \
+           --mount source=penpotdev_user_data,type=volume,target=/home/penpot/ \
+           --mount source=`pwd`,type=bind,target=/home/penpot/penpot \
+           -w /home/penpot/penpot/$1 \
            $IMAGE ./scripts/build.sh
 }
 
@@ -79,7 +79,7 @@ function build-bundle {
     mv ./backend/target/dist ./bundle/backend
     mv ./exporter/target ./bundle/exporter
 
-    NAME="uxbox-$(date '+%Y.%m.%d-%H%M')"
+    NAME="penpot-$(date '+%Y.%m.%d-%H%M')"
 
     pushd bundle/
     tar -cvf ../$NAME.tar *;
@@ -89,7 +89,7 @@ function build-bundle {
 }
 
 function log-devenv {
-    docker-compose -p uxboxdev -f docker/devenv/docker-compose.yaml logs -f --tail=50
+    docker-compose -p penpotdev -f docker/devenv/docker-compose.yaml logs -f --tail=50
 }
 
 function build-testenv {
@@ -110,18 +110,18 @@ function build-testenv {
     popd
 
     pushd ./docker/testenv;
-    docker-compose -p uxbox-testenv -f ./docker-compose.yaml build
+    docker-compose -p penpot-testenv -f ./docker-compose.yaml build
     popd
 }
 
 function start-testenv {
     pushd ./docker/testenv;
-    docker-compose -p uxbox-testenv -f ./docker-compose.yaml up
+    docker-compose -p penpot-testenv -f ./docker-compose.yaml up
     popd
 }
 
 function usage {
-    echo "UXBOX build & release manager v$REV"
+    echo "PENPOT build & release manager v$REV"
     echo "USAGE: $0 OPTION"
     echo "Options:"
     # echo "- clean                            Stop and clean up docker containers"

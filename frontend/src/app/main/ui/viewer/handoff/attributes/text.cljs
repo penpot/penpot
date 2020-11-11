@@ -11,6 +11,7 @@
   (:require
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
+   [okulary.core :as l]
    [app.util.data :as d]
    [app.util.i18n :refer [t]]
    [app.util.color :as uc]
@@ -18,10 +19,23 @@
    [app.main.fonts :as fonts]
    [app.main.ui.icons :as i]
    [app.util.webapi :as wapi]
-   [app.main.ui.viewer.handoff.attributes.common :refer [copy-cb color-row]]))
+   [app.main.ui.viewer.handoff.attributes.common :refer [color-row]]
+   [app.util.code-gen :as cg]
+   [app.main.store :as st]
+   [app.main.ui.components.copy-button :refer [copy-button]]))
 
 (defn has-text? [shape]
   (:content shape))
+
+(def file-typographies-ref
+  (l/derived (l/in [:viewer-data :file :typographies]) st/state))
+
+(defn make-typographies-library-ref [file-id]
+  (let [get-library
+        (fn [state]
+          (get-in state [:viewer-libraries file-id :data :typographies]))]
+    #(l/derived get-library st/state)))
+
 
 (def properties [:fill-color
                  :fill-color-gradient
@@ -37,100 +51,117 @@
   {:color (:fill-color shape)
    :opacity (:fill-opacity shape)
    :gradient (:fill-color-gradient shape)
-   :id (:fill-ref-id shape)
-   :file-id (:fill-ref-file-id shape)})
+   :id (:fill-color-ref-id shape)
+   :file-id (:fill-color-ref-file shape)})
 
-(defn format-style [color]
-  {:font-family #(str "'" % "'")
-   :font-style #(str "'" % "'")
-   :font-size #(str % "px")
-   :line-height #(str % "px")
-   :letter-spacing #(str % "px")
-   :text-decoration name
-   :text-transform name
-   :fill-color #(uc/color->background color)
-   :fill-color-gradient #(uc/color->background color)})
+(def params
+  {:to-prop {:fill-color "color"
+             :fill-color-gradient "color"}
+   :format  {:font-family #(str "'" % "'")
+             :font-style #(str "'" % "'")
+             :font-size #(str % "px")
+             :line-height #(str % "px")
+             :letter-spacing #(str % "px")
+             :text-decoration name
+             :text-transform name
+             :fill-color #(-> %2 shape->color uc/color->background)
+             :fill-color-gradient #(-> %2 shape->color uc/color->background)}})
+
+(defn copy-style-data
+  ([style]
+   (cg/generate-css-props style properties params))
+  ([style & properties]
+   (cg/generate-css-props style properties params)))
 
 (mf/defc typography-block [{:keys [shape locale text style full-style]}]
-  (let [color-format (mf/use-state :hex)
+  (let [typography-library-ref (mf/use-memo
+                                (mf/deps (:typography-ref-file style))
+                                (make-typographies-library-ref (:typography-ref-file style)))
+        typography-library (mf/deref typography-library-ref)
+
+        file-typographies (mf/deref file-typographies-ref)
+
+        color-format (mf/use-state :hex)
         color (shape->color style)
-        to-prop {:fill-color "color"
-                 :fill-color-gradient "color"}]
+
+        typography (get (or typography-library file-typographies) (:typography-ref-id style))]
+
     [:div.attributes-text-block
-     [:div.attributes-typography-row
-      [:div.typography-sample
-       {:style {:font-family (:font-family full-style)
-                :font-weight (:font-weight full-style)
-                :font-style (:font-style full-style)}}
-       (t locale "workspace.assets.typography.sample")]
-      [:button.attributes-copy-button
-       {:on-click (copy-cb style properties
-                           :to-prop to-prop
-                           :format (format-style color))}
-       i/copy]]
+     (if (:typography-ref-id style)
+       [:div.attributes-typography-name-row
+        [:div.typography-entry
+         [:div.typography-sample
+          {:style {:font-family (:font-family typography)
+                   :font-weight (:font-weight typography)
+                   :font-style (:font-style typography)}}
+          (t locale "workspace.assets.typography.sample")]]
+        [:div.typography-entry-name (:name typography)]
+        [:& copy-button {:data (copy-style-data typography)}]]
+
+       [:div.attributes-typography-row
+        [:div.typography-sample
+         {:style {:font-family (:font-family full-style)
+                  :font-weight (:font-weight full-style)
+                  :font-style (:font-style full-style)}}
+         (t locale "workspace.assets.typography.sample")]
+        [:& copy-button {:data (copy-style-data style)}]])
 
      [:div.attributes-content-row
       [:pre.attributes-content (str/trim text)]
-      [:button.attributes-copy-button
-       {:on-click #(wapi/write-to-clipboard (str/trim text))}
-       i/copy]]
+      [:& copy-button {:data (str/trim text)}]]
 
      (when (or (:fill-color style) (:fill-color-gradient style))
        [:& color-row {:format @color-format
-                      :on-change-format #(reset! color-format %)
                       :color (shape->color style)
-                      :on-copy (copy-cb style
-                                        [:fill-color :fill-color-gradient]
-                                        :to-prop to-prop
-                                        :format (format-style color))}])
+                      :copy-data (copy-style-data style :fill-color :fill-color-gradient)
+                      :on-change-format #(reset! color-format %)}])
 
      (when (:font-id style)
        [:div.attributes-unit-row
         [:div.attributes-label (t locale "handoff.attributes.typography.font-family")]
         [:div.attributes-value (-> style :font-id fonts/get-font-data :name)]
-        [:button.attributes-copy-button {:on-click (copy-cb style :font-family :format identity)} i/copy]])
+        [:& copy-button {:data (copy-style-data style :font-family)}]])
 
      (when (:font-style style)
        [:div.attributes-unit-row
         [:div.attributes-label (t locale "handoff.attributes.typography.font-style")]
         [:div.attributes-value (str (:font-style style))]
-        [:button.attributes-copy-button {:on-click (copy-cb style :font-style :format identity)} i/copy]])
+        [:& copy-button {:data (copy-style-data style :font-style)}]])
 
      (when (:font-size style)
        [:div.attributes-unit-row
         [:div.attributes-label (t locale "handoff.attributes.typography.font-size")]
         [:div.attributes-value (str (:font-size style)) "px"]
-        [:button.attributes-copy-button {:on-click (copy-cb style :font-size :format #(str % "px"))} i/copy]])
+        [:& copy-button {:data (copy-style-data style :font-size)}]])
 
      (when (:line-height style)
        [:div.attributes-unit-row
         [:div.attributes-label (t locale "handoff.attributes.typography.line-height")]
         [:div.attributes-value (str (:line-height style)) "px"]
-        [:button.attributes-copy-button {:on-click (copy-cb style :line-height :format #(str % "px"))} i/copy]])
+        [:& copy-button {:data (copy-style-data style :line-height)}]])
 
      (when (:letter-spacing style)
        [:div.attributes-unit-row
         [:div.attributes-label (t locale "handoff.attributes.typography.letter-spacing")]
         [:div.attributes-value (str (:letter-spacing style)) "px"]
-        [:button.attributes-copy-button {:on-click (copy-cb style :letter-spacing :format #(str % "px"))} i/copy]])
+        [:& copy-button {:data (copy-style-data style :letter-spacing)}]])
 
      (when (:text-decoration style)
        [:div.attributes-unit-row
         [:div.attributes-label (t locale "handoff.attributes.typography.text-decoration")]
         [:div.attributes-value (->> style :text-decoration (str "handoff.attributes.typography.text-decoration.") (t locale))]
-        [:button.attributes-copy-button {:on-click (copy-cb style :text-decoration :format name)} i/copy]])
+        [:& copy-button {:data (copy-style-data style :text-decoration)}]])
 
      (when (:text-transform style)
        [:div.attributes-unit-row
         [:div.attributes-label (t locale "handoff.attributes.typography.text-transform")]
         [:div.attributes-value (->> style :text-transform (str "handoff.attributes.typography.text-transform.") (t locale))]
-        [:button.attributes-copy-button {:on-click (copy-cb style :text-transform :format name)} i/copy]])]))
+        [:& copy-button {:data (copy-style-data style :text-transform)}]])]))
 
 
 (mf/defc text-block [{:keys [shape locale]}]
   (let [font (ut/search-text-attrs (:content shape)
                                    (keys ut/default-text-attrs))
-
         style-text-blocks (->> (keys ut/default-text-attrs)
                                (ut/parse-style-text-blocks (:content shape))
                                (remove (fn [[style text]] (str/empty? (str/trim text))))

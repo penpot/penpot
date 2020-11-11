@@ -31,7 +31,6 @@
                     (obj/merge!
                      #js {:x 0
                           :y 0
-                          :id (str "shape-" id)
                           :width width
                           :height height}))]
       [:svg {:x x :y y :width width :height height

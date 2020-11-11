@@ -99,8 +99,10 @@
    i/loader-pencil])
 
 (mf/defc workspace
-  [{:keys [project-id file-id page-id] :as props}]
-  (mf/use-effect #(st/emit! dw/initialize-layout))
+  [{:keys [project-id file-id page-id layout-name] :as props}]
+  (mf/use-effect
+    (mf/deps layout-name)
+    #(st/emit! (dw/initialize-layout layout-name)))
 
   (mf/use-effect
    (mf/deps project-id file-id)

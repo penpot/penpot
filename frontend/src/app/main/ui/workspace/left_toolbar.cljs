@@ -105,17 +105,17 @@
        [:li.tooltip.tooltip-right
         {:alt "Layers"
          :class (when (contains? layout :layers) "selected")
-         :on-click (st/emitf (dw/ensure-layout :layers))}
+         :on-click (st/emitf (dw/go-to-layout :layers))}
         i/layers]
        [:li.tooltip.tooltip-right
         {:alt (t locale "workspace.toolbar.assets")
          :class (when (contains? layout :assets) "selected")
-         :on-click (st/emitf (dw/ensure-layout :assets))}
+         :on-click (st/emitf (dw/go-to-layout :assets))}
         i/library]
        [:li.tooltip.tooltip-right
         {:alt "History"
          :class (when (contains? layout :document-history) "selected")
-         :on-click (st/emitf (dw/ensure-layout :document-history))}
+         :on-click (st/emitf (dw/go-to-layout :document-history))}
         i/undo-history]
        [:li.tooltip.tooltip-right
         {:alt (t locale "workspace.toolbar.color-palette")

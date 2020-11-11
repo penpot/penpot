@@ -54,7 +54,6 @@
                  :y y
                  :fill (if (debug? :group) "red" "transparent")
                  :opacity 0.5
-                 :id (str "group-" id)
                  :width width
                  :height height}])])))
 

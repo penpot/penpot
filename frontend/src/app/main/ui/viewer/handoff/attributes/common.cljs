@@ -11,71 +11,69 @@
   (:require
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
+   [okulary.core :as l]
+   [app.common.math :as mth]
    [app.util.dom :as dom]
    [app.util.i18n :refer [t] :as i18n]
    [app.util.color :as uc]
-   [app.common.math :as mth]
-   [app.main.ui.icons :as i]
+   [app.util.code-gen :as cg]
    [app.util.webapi :as wapi]
+   [app.main.ui.icons :as i]
+   [app.main.store :as st]
+   [app.main.ui.components.copy-button :refer [copy-button]]
    [app.main.ui.components.color-bullet :refer [color-bullet color-name]]))
 
-(defn copy-cb [values properties & {:keys [to-prop format] :or {to-prop {}}}]
-  (fn [event]
-    (let [
-          ;; We allow the :format and :to-prop to be a map for different properties
-          ;; or just a value for a single property. This code transform a single
-          ;; property to a uniform one
-          properties (if-not (coll? properties) [properties] properties)
 
-          format (if (not (map? format))
-                   (into {} (map #(vector % format) properties))
-                   format)
+(def file-colors-ref
+  (l/derived (l/in [:viewer-data :file :colors]) st/state))
 
-          to-prop (if (not (map? to-prop))
-                    (into {} (map #(vector % to-prop) properties))
-                    to-prop)
+(defn make-colors-library-ref [file-id]
+  (let [get-library
+        (fn [state]
+          (get-in state [:viewer-libraries file-id :data :colors]))]
+    #(l/derived get-library st/state)))
 
-          default-format (fn [value] (str (mth/precision value 2) "px"))
-          format-property (fn [prop]
-                            (let [css-prop (or (prop to-prop) (name prop))]
-                              (str/fmt "  %s: %s;" css-prop ((or (prop format) default-format) (prop values) values))))
+(mf/defc color-row [{:keys [color format copy-data on-change-format]}]
+  (let [locale (mf/deref i18n/locale)
 
-          text-props (->> properties
-                          (remove #(let [value (get values %)]
-                                     (or (nil? value) (= value 0))))
-                          (map format-property)
-                          (str/join "\n"))
+        colors-library-ref (mf/use-memo
+                            (mf/deps (:file-id color))
+                            (make-colors-library-ref (:file-id color)))
+        colors-library (mf/deref colors-library-ref)
 
-          result (str/fmt "{\n%s\n}" text-props)]
+        file-colors (mf/deref file-colors-ref)
 
-      (wapi/write-to-clipboard result))))
-
-(mf/defc color-row [{:keys [color format on-copy on-change-format]}]
-  (let [locale (mf/deref i18n/locale)]
+        color-library-name (get-in (or colors-library file-colors) [(:id color) :name])]
     [:div.attributes-color-row
-     [:& color-bullet {:color color}]
+     (when color-library-name
+       [:div.attributes-color-id
+        [:& color-bullet {:color color}]
+        [:div color-library-name]])
 
-     (if (:gradient color)
-       [:& color-name {:color color}]
-       (case format
-         :rgba (let [[r g b a] (->> (uc/hex->rgba (:color color) (:opacity color)) (map #(mth/precision % 2)))]
-                 [:div (str/fmt "%s, %s, %s, %s" r g b a)])
-         :hsla (let [[h s l a] (->> (uc/hex->hsla (:color color) (:opacity color)) (map #(mth/precision % 2)))]
-                 [:div (str/fmt "%s, %s, %s, %s" h s l a)])
-         [:*
-          [:& color-name {:color color}]
-          (when-not (:gradient color) [:div (str (* 100 (:opacity color)) "%")])]))
+     [:div.attributes-color-value {:class (when color-library-name "hide-color")}
+      [:& color-bullet {:color color}]
 
-     (when-not (and on-change-format (:gradient color))
-       [:select {:on-change #(-> (dom/get-target-val %) keyword on-change-format)}
-        [:option {:value "hex"}
-         (t locale "handoff.attributes.color.hex")]
+      (if (:gradient color)
+        [:& color-name {:color color}]
+        (case format
+          :rgba (let [[r g b a] (->> (uc/hex->rgba (:color color) (:opacity color)) (map #(mth/precision % 2)))]
+                  [:div (str/fmt "%s, %s, %s, %s" r g b a)])
+          :hsla (let [[h s l a] (->> (uc/hex->hsla (:color color) (:opacity color)) (map #(mth/precision % 2)))]
+                  [:div (str/fmt "%s, %s, %s, %s" h s l a)])
+          [:*
+           [:& color-name {:color color}]
+           (when-not (:gradient color) [:div (str (* 100 (:opacity color)) "%")])]))
 
-        [:option {:value "rgba"}
-         (t locale "handoff.attributes.color.rgba")]
+      (when-not (and on-change-format (:gradient color))
+        [:select {:on-change #(-> (dom/get-target-val %) keyword on-change-format)}
+         [:option {:value "hex"}
+          (t locale "handoff.attributes.color.hex")]
 
-        [:option {:value "hsla"}
-         (t locale "handoff.attributes.color.hsla")]])
+         [:option {:value "rgba"}
+          (t locale "handoff.attributes.color.rgba")]
 
-     (when on-copy
-       [:button.attributes-copy-button {:on-click on-copy} i/copy])]))
+         [:option {:value "hsla"}
+          (t locale "handoff.attributes.color.hsla")]])]
+     (when copy-data
+       [:& copy-button {:data copy-data}])]))
+

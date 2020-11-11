@@ -12,23 +12,32 @@
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
    [app.util.i18n :refer [t]]
-   [app.util.color :as uc]
+   [app.util.code-gen :as cg]
    [app.main.ui.icons :as i]
-   [app.main.ui.viewer.handoff.attributes.common :refer [copy-cb color-row]]))
+   [app.util.code-gen :as cg]
+   [app.main.ui.components.copy-button :refer [copy-button]]
+   [app.main.ui.viewer.handoff.attributes.common :refer [color-row]]))
 
 (defn has-shadow? [shape]
   (:shadow shape))
 
-(defn shadow->css [shadow]
-  (let [{:keys [style offset-x offset-y blur spread]} shadow
-        css-color (uc/color->background (:color shadow))]
-    (str
-     (if (= style :inner-shadow) "inset " "")
-     (str/fmt "%spx %spx %spx %spx %s" offset-x offset-y blur spread css-color))))
+(defn shape-copy-data [shape]
+  (cg/generate-css-props
+   shape
+   :shadow
+   {:to-prop "box-shadow"
+    :format #(str/join ", " (map cg/shadow->css (:shadow shape)))}))
 
+(defn shadow-copy-data [shadow]
+  (cg/generate-css-props
+   shadow
+   :style
+   {:to-prop "box-shadow"
+    :format #(cg/shadow->css shadow)}))
 
 (mf/defc shadow-block [{:keys [shape locale shadow]}]
-  (let [color-format (mf/use-state :hex)]
+  (let [color-format (mf/use-state :hex)
+        copy-data (shadow-copy-data shadow)]
     [:div.attributes-shadow-block
      [:div.attributes-shadow-row
       [:div.attributes-label (->> shadow :style name (str "handoff.attributes.shadow.style.") (t locale))]
@@ -48,32 +57,24 @@
        [:div.attributes-label (t locale "handoff.attributes.shadow.shorthand.spread")]
        [:div.attributes-value (str (:spread shadow))]]
 
-      [:button.attributes-copy-button
-       {:on-click (copy-cb shadow
-                           :style
-                           :to-prop "box-shadow"
-                           :format #(shadow->css shadow))}
-       i/copy]]
+      [:& copy-button {:data (shadow-copy-data shadow)}]]
+
      [:& color-row {:color (:color shadow)
                     :format @color-format
                     :on-change-format #(reset! color-format %)}]]))
 
 (mf/defc shadow-panel [{:keys [shapes locale]}]
-  (let [shapes (->> shapes (filter has-shadow?))
-        handle-copy-shadow (when (= (count shapes) 1)
-                             (copy-cb (first shapes)
-                                      :shadow
-                                      :to-prop "box-shadow"
-                                      :format #(str/join ", " (map shadow->css (:shadow (first shapes))))))]
+  (let [shapes (->> shapes (filter has-shadow?))]
     (when (seq shapes)
       [:div.attributes-block
        [:div.attributes-block-title
         [:div.attributes-block-title-text (t locale "handoff.attributes.shadow")]
-        (when handle-copy-shadow
-          [:button.attributes-copy-button {:on-click handle-copy-shadow} i/copy])]
+        (when (= (count shapes) 1)
+          [:& copy-button {:data (shape-copy-data (first shapes))}])]
 
-       (for [shape shapes]
-         (for [shadow (:shadow shape)]
-           [:& shadow-block {:shape shape
-                             :locale locale
-                             :shadow shadow}]))])))
+       [:div.attributes-shadow-blocks
+        (for [shape shapes]
+          (for [shadow (:shadow shape)]
+            [:& shadow-block {:shape shape
+                              :locale locale
+                              :shadow shadow}]))]])))

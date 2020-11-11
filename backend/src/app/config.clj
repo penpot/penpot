@@ -22,24 +22,24 @@
 (def defaults
   {:http-server-port 6060
    :http-server-cors "http://localhost:3449"
-   :database-uri "postgresql://127.0.0.1/uxbox"
-   :database-username "uxbox"
-   :database-password "uxbox"
+   :database-uri "postgresql://127.0.0.1/penpot"
+   :database-username "penpot"
+   :database-password "penpot"
    :secret-key "default"
 
    :media-directory "resources/public/media"
    :assets-directory "resources/public/static"
 
    :public-uri "http://localhost:3449/"
-   :redis-uri "redis://redis/0"
+   :redis-uri "redis://localhost/0"
    :media-uri "http://localhost:3449/media/"
    :assets-uri "http://localhost:3449/static/"
 
    :image-process-max-threads 2
 
-   :sendmail-backend "console"
-   :sendmail-reply-to "no-reply@example.com"
-   :sendmail-from "no-reply@example.com"
+   :smtp-enabled false
+   :smtp-default-reply-to "no-reply@example.com"
+   :smtp-default-from "no-reply@example.com"
 
    :allow-demo-users true
    :registration-enabled true
@@ -79,13 +79,12 @@
 (s/def ::media-uri ::us/string)
 (s/def ::media-directory ::us/string)
 (s/def ::secret-key ::us/string)
-(s/def ::sendmail-backend ::us/string)
-(s/def ::sendmail-backend-apikey ::us/string)
-(s/def ::sendmail-reply-to ::us/email)
-(s/def ::sendmail-from ::us/email)
+(s/def ::smtp-enabled ::us/boolean)
+(s/def ::smtp-default-reply-to ::us/email)
+(s/def ::smtp-default-from ::us/email)
 (s/def ::smtp-host ::us/string)
 (s/def ::smtp-port ::us/integer)
-(s/def ::smtp-user (s/nilable ::us/string))
+(s/def ::smtp-username (s/nilable ::us/string))
 (s/def ::smtp-password (s/nilable ::us/string))
 (s/def ::smtp-tls ::us/boolean)
 (s/def ::smtp-ssl ::us/boolean)
@@ -127,6 +126,7 @@
                    ::gitlab-client-id
                    ::gitlab-client-secret
                    ::gitlab-base-uri
+                   ::redis-uri
                    ::public-uri
                    ::database-username
                    ::database-password
@@ -136,13 +136,12 @@
                    ::media-directory
                    ::media-uri
                    ::secret-key
-                   ::sendmail-reply-to
-                   ::sendmail-from
-                   ::sendmail-backend
-                   ::sendmail-backend-apikey
+                   ::smtp-default-from
+                   ::smtp-default-reply-to
+                   ::smtp-enabled
                    ::smtp-host
                    ::smtp-port
-                   ::smtp-user
+                   ::smtp-username
                    ::smtp-password
                    ::smtp-tls
                    ::smtp-ssl
@@ -170,8 +169,8 @@
   (reduce-kv
    (fn [acc k v]
      (cond-> acc
-       (str/starts-with? (name k) "uxbox-")
-       (assoc (keyword (subs (name k) 6)) v)
+       (str/starts-with? (name k) "penpot-")
+       (assoc (keyword (subs (name k) 7)) v)
 
        (str/starts-with? (name k) "app-")
        (assoc (keyword (subs (name k) 4)) v)))
@@ -188,7 +187,7 @@
   [env]
   (assoc (read-config env)
          :redis-uri "redis://redis/1"
-         :database-uri "postgresql://postgres/uxbox_test"
+         :database-uri "postgresql://postgres/penpot_test"
          :media-directory "/tmp/app/media"
          :assets-directory "/tmp/app/static"
          :migrations-verbose false))
@@ -198,3 +197,15 @@
 
 (def default-deletion-delay
   (dt/duration {:hours 48}))
+
+(defn smtp
+  [cfg]
+  {:host (:smtp-host cfg "localhost")
+   :port (:smtp-port cfg 25)
+   :default-reply-to (:smtp-default-reply-to cfg)
+   :default-from (:smtp-default-from cfg)
+   :tls (:smtp-tls cfg)
+   :enabled (:smtp-enabled cfg)
+   :username (:smtp-username cfg)
+   :password (:smtp-password cfg)})
+

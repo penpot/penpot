@@ -12,6 +12,7 @@
    [rumext.alpha :as mf]
    [app.util.i18n :as i18n]
    [app.common.geom.shapes :as gsh]
+   [app.main.ui.viewer.handoff.exports :refer [exports]]
    [app.main.ui.viewer.handoff.attributes.layout :refer [layout-panel]]
    [app.main.ui.viewer.handoff.attributes.fill :refer [fill-panel]]
    [app.main.ui.viewer.handoff.attributes.stroke :refer [stroke-panel]]
@@ -20,13 +21,23 @@
    [app.main.ui.viewer.handoff.attributes.image :refer [image-panel]]
    [app.main.ui.viewer.handoff.attributes.text :refer [text-panel]]))
 
-(mf/defc attributes
-  [{:keys [shapes frame options]}]
-  (let [locale (mf/deref i18n/locale)
-        shapes (->> shapes
-                    (map #(gsh/translate-to-frame % frame)))
+(def type->options
+  {:multiple [:fill :stroke :image :text :shadow :blur]
+   :frame    [:layout :fill]
+   :group    [:layout]
+   :rect     [:layout :fill :stroke :shadow :blur]
+   :circle   [:layout :fill :stroke :shadow :blur]
+   :path     [:layout :fill :stroke :shadow :blur]
+   :curve    [:layout :fill :stroke :shadow :blur]
+   :image    [:image :layout :shadow :blur]
+   :text     [:layout :text :shadow :blur]})
 
-        shape (first shapes)]
+(mf/defc attributes
+  [{:keys [page-id file-id shapes frame]}]
+  (let [locale  (mf/deref i18n/locale)
+        shapes  (->> shapes (map #(gsh/translate-to-frame % frame)))
+        type    (if (= (count shapes) 1) (-> shapes first :type) :multiple)
+        options (type->options type)]
     [:div.element-options
      (for [option options]
        [:> (case option
@@ -39,5 +50,9 @@
              :text   text-panel)
         {:shapes shapes
          :frame frame
-         :locale locale}])]))
-
+         :locale locale}])
+     (when-not (= :multiple type)
+       [:& exports
+        {:shape (first shapes)
+         :page-id page-id
+         :file-id file-id}])]))

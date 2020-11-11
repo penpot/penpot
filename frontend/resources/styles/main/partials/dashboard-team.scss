@@ -71,7 +71,7 @@
     z-index: 12;
     top: 30px;
     left: 0px;
-    width: 125px;
+    width: 168px;
 
     hr {
       margin: 0;
@@ -83,7 +83,7 @@
       align-items: center;
       color: $color-gray-60;
       cursor: pointer;
-      font-size: $fs12;
+      font-size: $fs14;
       height: 31px;
       padding: 5px 16px;
 
@@ -123,7 +123,6 @@
       display: flex;
       max-width: 324px;
       width: 324px;
-      height: 100px;
       background-color: $color-white;
       flex-direction: column;
       padding: 12px;
@@ -139,7 +138,7 @@
 
       .name {
         margin-top: 10px;
-        font-size: $fs32;
+        font-size: $fs28;
         color: $color-black;
         @include text-ellipsis;
         margin-right: 90px;

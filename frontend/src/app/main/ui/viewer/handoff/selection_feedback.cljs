@@ -10,15 +10,30 @@
 (ns app.main.ui.viewer.handoff.selection-feedback
   (:require
    [rumext.alpha :as mf]
+   [cuerdas.core :as str]
    [okulary.core :as l]
+   [app.common.data :as d]
+   [app.common.math :as mth]
    [app.common.geom.shapes :as gsh]
-   [app.main.store :as st]))
+   [app.common.geom.point :as gpt]
+   [app.main.store :as st]
+   [app.main.ui.measurements :refer [selection-guides size-display measurement]]))
 
-(def selection-rect-color-normal "#1FDEA7")
-(def selection-rect-color-component "#00E0FF")
+;; ------------------------------------------------
+;; CONSTANTS
+;; ------------------------------------------------
+
+(def select-color "#1FDEA7")
 (def selection-rect-width 1)
+(def select-guide-width 1)
+(def select-guide-dasharray 5)
+
+;; ------------------------------------------------
+;; LENSES
+;; ------------------------------------------------
 
 (defn make-selected-shapes-iref
+  "Creates a lens to the current selected shapes"
   []
   (let [selected->shapes
         (fn [state]
@@ -29,38 +44,67 @@
     #(l/derived selected->shapes st/state)))
 
 (defn make-hover-shapes-iref
+  "Creates a lens to the shapes the user is making hover"
   []
   (let [hover->shapes
         (fn [state]
           (let [hover (get-in state [:viewer-local :hover])
-                objects (get-in state [:viewer-data :page :objects])
-                resolve-shape #(get objects %)]
-            (mapv resolve-shape hover)))]
+                objects (get-in state [:viewer-data :page :objects])]
+            (get objects hover)))]
     #(l/derived hover->shapes st/state)))
 
-(mf/defc selection-rect [{:keys [shape]}]
-  (let [{:keys [x y width height]} (:selrect shape)]
-    [:rect {:x x
-            :y y
-            :width width
-            :height height
-            :fill "transparent"
-            :stroke selection-rect-color-normal
-            :stroke-width selection-rect-width
-            :pointer-events "none"}]))
+(def selected-zoom
+  (l/derived (l/in [:viewer-local :zoom]) st/state))
+
+;; ------------------------------------------------
+;; HELPERS
+;; ------------------------------------------------
+
+(defn frame->selrect [frame]
+  {:x1 0
+   :y1 0
+   :x2 (:width frame)
+   :y2 (:height frame)
+   :width (:width frame)
+   :height (:height frame)})
+
+;; ------------------------------------------------
+;; COMPONENTS
+;; ------------------------------------------------
+
+(mf/defc selection-rect [{:keys [frame selrect zoom]}]
+  (let [{:keys [x y width height]} selrect
+        selection-rect-width (/ selection-rect-width zoom)]
+    [:g.selection-rect
+     [:rect {:x x
+             :y y
+             :width width
+             :height height
+             :style {:fill "transparent"
+                     :stroke select-color
+                     :stroke-width selection-rect-width}}]]))
 
 (mf/defc selection-feedback [{:keys [frame]}]
-  (let [hover-shapes-ref (mf/use-memo (make-hover-shapes-iref))
-        hover-shapes (->> (mf/deref hover-shapes-ref)
-                          (map #(gsh/translate-to-frame % frame)))
-        
+  (let [zoom (mf/deref selected-zoom)
+
+        hover-shapes-ref (mf/use-memo (make-hover-shapes-iref))
+        hover-shape (-> (mf/deref hover-shapes-ref)
+                        (gsh/translate-to-frame frame))
+
         selected-shapes-ref (mf/use-memo (make-selected-shapes-iref))
         selected-shapes (->> (mf/deref selected-shapes-ref)
-                             (map #(gsh/translate-to-frame % frame)))]
+                             (map #(gsh/translate-to-frame % frame)))
 
-    [:*
-     (for [shape hover-shapes]
-       [:& selection-rect {:shape shape}])
+        selrect (gsh/selection-rect selected-shapes)]
 
-     (for [shape selected-shapes]
-       [:& selection-rect {:shape shape}])]))
+    (when (seq selected-shapes)
+      [:g.selection-feedback {:pointer-events "none"}
+       [:g.selected-shapes
+        [:& selection-guides {:selrect selrect :frame frame :zoom zoom}]
+        [:& selection-rect {:selrect selrect :zoom zoom}]
+        [:& size-display {:selrect selrect :zoom zoom}]]
+
+       [:& measurement {:bounds frame
+                        :selected-shapes selected-shapes
+                        :hover-shape hover-shape
+                        :zoom zoom}]])))

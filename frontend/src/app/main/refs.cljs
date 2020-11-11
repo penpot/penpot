@@ -39,7 +39,6 @@
 
 ;; ---- Workspace refs
 
-
 (def workspace-local
   (l/derived :workspace-local st/state))
 
@@ -55,7 +54,6 @@
 
 (def selected-zoom
   (l/derived :zoom workspace-local))
-
 
 (def selected-drawing-tool
   (l/derived :tool workspace-drawing))
@@ -89,7 +87,6 @@
                      (assoc :pages (get-in file [:data :pages])))))
              st/state =))
 
-
 (def workspace-file-colors
   (l/derived (fn [state]
                (when-let [file (:workspace-file state)]
@@ -112,6 +109,15 @@
 
 (def workspace-shared-files
   (l/derived :workspace-shared-files st/state))
+
+(def workspace-local-library
+  (l/derived (fn [state]
+               (select-keys (get state :workspace-data)
+                            [:colors
+                             :media
+                             :typographies
+                             :components]))
+             st/state))
 
 (def workspace-libraries
   (l/derived :workspace-libraries st/state))

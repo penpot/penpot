@@ -116,8 +116,9 @@
         ;; can cause problems with react keys
         snap-points (into #{} (mapcat add-point-to-snaps) @state)
 
-        snap-lines (into (process-snap-lines @state :x)
-                         (process-snap-lines @state :y))]
+        snap-lines (->> (into (process-snap-lines @state :x)
+                              (process-snap-lines @state :y))
+                        (into #{}))]
 
     (mf/use-effect
      (fn []

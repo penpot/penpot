@@ -149,10 +149,12 @@
     :workspace
     (let [project-id (uuid (get-in route [:params :path :project-id]))
           file-id (uuid (get-in route [:params :path :file-id]))
-          page-id (uuid (get-in route [:params :query :page-id]))]
+          page-id (uuid (get-in route [:params :query :page-id]))
+          layout-name (get-in route [:params :query :layout])]
       [:& workspace/workspace {:project-id project-id
                                :file-id file-id
                                :page-id page-id
+                               :layout-name (keyword layout-name)
                                :key file-id}])
 
     :not-authorized

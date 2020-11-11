@@ -13,7 +13,9 @@
    [app.util.i18n :refer [t]]
    [app.util.color :as uc]
    [app.main.ui.icons :as i]
-   [app.main.ui.viewer.handoff.attributes.common :refer [copy-cb color-row]]))
+   [app.util.code-gen :as cg]
+   [app.main.ui.components.copy-button :refer [copy-button]]
+   [app.main.ui.viewer.handoff.attributes.common :refer [color-row]]))
 
 (def fill-attributes [:fill-color :fill-color-gradient])
 
@@ -21,8 +23,8 @@
   {:color (:fill-color shape)
    :opacity (:fill-opacity shape)
    :gradient (:fill-color-gradient shape)
-   :id (:fill-ref-id shape)
-   :file-id (:fill-ref-file-id shape)})
+   :id (:fill-color-ref-id shape)
+   :file-id (:fill-color-ref-file shape)})
 
 (defn has-color? [shape]
   (and
@@ -30,36 +32,31 @@
    (or (:fill-color shape)
        (:fill-color-gradient shape))))
 
+(defn copy-data [shape]
+  (cg/generate-css-props
+   shape
+   fill-attributes
+   {:to-prop "background"
+    :format #(uc/color->background (shape->color shape))}))
+
 (mf/defc fill-block [{:keys [shape locale]}]
   (let [color-format (mf/use-state :hex)
-        color (shape->color shape)
-        handle-copy (copy-cb shape
-                             fill-attributes
-                             :to-prop "background"
-                             :format #(uc/color->background color))]
+        color (shape->color shape)]
 
     [:& color-row {:color color
                    :format @color-format
                    :on-change-format #(reset! color-format %)
-                   :on-copy handle-copy}]))
+                   :copy-data (copy-data shape)}]))
 
 (mf/defc fill-panel
   [{:keys [shapes locale]}]
-  (let [shapes (->> shapes (filter has-color?))
-        handle-copy (when (= (count shapes) 1)
-                      (copy-cb (first shapes)
-                               fill-attributes
-                               :to-prop "background"
-                               :format #(-> shapes first shape->color uc/color->background)))]
-
+  (let [shapes (->> shapes (filter has-color?))]
     (when (seq shapes)
       [:div.attributes-block
        [:div.attributes-block-title
         [:div.attributes-block-title-text (t locale "handoff.attributes.fill")]
-        (when handle-copy
-          [:button.attributes-copy-button
-           {:on-click handle-copy}
-           i/copy])]
+        (when (= (count shapes) 1)
+          [:& copy-button {:data (copy-data (first shapes))}])]
 
        (for [shape shapes]
          [:& fill-block {:key (str "fill-block-" (:id shape))

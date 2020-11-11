@@ -14,13 +14,22 @@
    [app.util.i18n :refer [t]]
    [app.common.math :as mth]
    [app.main.ui.icons :as i]
-   [app.main.ui.viewer.handoff.attributes.common :refer [copy-cb]]))
+   [app.util.code-gen :as cg]
+   [app.main.ui.components.copy-button :refer [copy-button]]))
 
-(defn copy-layout [shape]
-  (copy-cb shape
-           [:width :height :x :y :rotation]
-           :to-prop {:x "left" :y "top" :rotation "transform"}
-           :format {:rotation #(str/fmt "rotate(%sdeg)" %)}))
+(def properties [:width :height :x :y :radius :rx])
+(def params
+  {:to-prop {:x "left"
+             :y "top"
+             :rotation "transform"
+             :rx "border-radius"}
+   :format  {:rotation #(str/fmt "rotate(%sdeg)" %)}})
+
+(defn copy-data
+  ([shape]
+   (apply copy-data shape properties))
+  ([shape & properties]
+   (cg/generate-css-props shape properties params)))
 
 (mf/defc layout-block
   [{:keys [shape locale]}]
@@ -28,57 +37,46 @@
    [:div.attributes-unit-row
     [:div.attributes-label (t locale "handoff.attributes.layout.width")]
     [:div.attributes-value (mth/precision (:width shape) 2) "px"]
-    [:button.attributes-copy-button
-     {:on-click (copy-cb shape :width)}
-     i/copy]]
+    [:& copy-button {:data (copy-data shape :width)}]]
 
    [:div.attributes-unit-row
     [:div.attributes-label (t locale "handoff.attributes.layout.height")]
     [:div.attributes-value (mth/precision (:height shape) 2) "px"]
-    [:button.attributes-copy-button
-     {:on-click (copy-cb shape :height)}
-     i/copy]]
+    [:& copy-button {:data (copy-data shape :height)}]]
 
    (when (not= (:x shape) 0)
      [:div.attributes-unit-row
       [:div.attributes-label (t locale "handoff.attributes.layout.left")]
       [:div.attributes-value (mth/precision (:x shape) 2) "px"]
-      [:button.attributes-copy-button
-       {:on-click (copy-cb shape :x :to-prop "left")}
-       i/copy]])
+      [:& copy-button {:data (copy-data shape :x)}]])
    
    (when (not= (:y shape) 0)
      [:div.attributes-unit-row
       [:div.attributes-label (t locale "handoff.attributes.layout.top")]
       [:div.attributes-value (mth/precision (:y shape) 2) "px"]
-      [:button.attributes-copy-button
-       {:on-click (copy-cb shape :y :to-prop "top")}
-       i/copy]])
+      [:& copy-button {:data (copy-data shape :y)}]])
+
+   (when (and (:rx shape) (not= (:rx shape) 0))
+     [:div.attributes-unit-row
+      [:div.attributes-label (t locale "handoff.attributes.layout.radius")]
+      [:div.attributes-value (mth/precision (:rx shape) 2) "px"]
+      [:& copy-button {:data (copy-data shape :rx)}]])
 
    (when (not= (:rotation shape 0) 0)
      [:div.attributes-unit-row
       [:div.attributes-label (t locale "handoff.attributes.layout.rotation")]
       [:div.attributes-value (mth/precision (:rotation shape) 2) "deg"]
-      [:button.attributes-copy-button
-       {:on-click (copy-cb shape
-                           :rotation
-                           :to-prop "transform"
-                           :format #(str/fmt "rotate(%sdeg)" %))}
-       i/copy]])])
+      [:& copy-button {:data (copy-data shape :rotation)}]])])
 
 
 (mf/defc layout-panel
   [{:keys [shapes locale]}]
-  (let [handle-copy (when (= (count shapes) 1)
-                      (copy-layout (first shapes)))]
-    [:div.attributes-block
-     [:div.attributes-block-title
-      [:div.attributes-block-title-text (t locale "handoff.attributes.layout")]
-      (when handle-copy
-        [:button.attributes-copy-button
-         {:on-click handle-copy}
-         i/copy])]
+  [:div.attributes-block
+   [:div.attributes-block-title
+    [:div.attributes-block-title-text (t locale "handoff.attributes.layout")]
+    (when (= (count shapes) 1)
+      [:& copy-button {:data (copy-data (first shapes))}])]
 
-     (for [shape shapes]
-       [:& layout-block {:shape shape
-                         :locale locale}])]))
+   (for [shape shapes]
+     [:& layout-block {:shape shape
+                       :locale locale}])])

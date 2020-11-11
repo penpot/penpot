@@ -56,7 +56,7 @@
 
                                   :selected #{}
                                   :collapsed #{}
-                                  :hover #{}}))
+                                  :hover nil}))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -72,8 +72,10 @@
       (let [params (cond-> {:page-id page-id
                             :file-id file-id}
                      (string? token) (assoc :share-token token))]
-        (->> (rp/query :viewer-bundle params)
-             (rx/map bundle-fetched)
+        (->> (rx/zip (rp/query :viewer-bundle params)
+                     (rp/query :file-libraries {:file-id file-id}))
+             (rx/first)
+             (rx/map #(apply bundle-fetched %))
              #_(rx/catch (fn [error-data]
                          (rx/of (rt/nav :not-found)))))))))
 
@@ -87,7 +89,7 @@
          (vec))))
 
 (defn bundle-fetched
-  [{:keys [project file page share-token] :as bundle}]
+  [{:keys [project file page share-token] :as bundle} libraries]
   (us/verify ::bundle bundle)
   (ptk/reify ::file-fetched
     ptk/UpdateEvent
@@ -95,7 +97,8 @@
       (let [objects (:objects page)
             frames  (extract-frames objects)]
         (-> state
-            (assoc :viewer-data {:project project
+            (assoc :viewer-libraries (into {} (map #(vector (:id %) %) libraries))
+                   :viewer-data {:project project
                                  :objects objects
                                  :file file
                                  :page page
@@ -317,8 +320,7 @@
   (ptk/reify ::hover-shape
     ptk/UpdateEvent
     (update [_ state]
-      (update-in state [:viewer-local :hover] (if hover? conj disj) id))))
-
+      (assoc-in state [:viewer-local :hover] (when hover? id)))))
 
 ;; --- Shortcuts
 

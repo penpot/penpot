@@ -4,7 +4,7 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 ARG DEBIAN_FRONTEND=noninteractive
 ARG EXTERNAL_UID=1000
 
-ENV NODE_VERSION=v12.19.0 \
+ENV NODE_VERSION=v14.15.0 \
     CLOJURE_VERSION=1.10.1.727 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
@@ -31,9 +31,9 @@ RUN set -ex; \
     rm -rf /var/lib/apt/lists/*;
 
 RUN set -ex; \
-    useradd -m -g users -s /bin/bash -u $EXTERNAL_UID uxbox; \
-    passwd uxbox -d; \
-    echo "uxbox ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+    useradd -m -g users -s /bin/bash -u $EXTERNAL_UID penpot; \
+    passwd penpot -d; \
+    echo "penpot ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 RUN set -ex; \
     apt-get -qq update; \
@@ -124,8 +124,8 @@ COPY files/start-tmux.sh  /home/start-tmux.sh
 COPY files/entrypoint.sh  /home/entrypoint.sh
 COPY files/init.sh        /home/init.sh
 
-USER uxbox
-WORKDIR /home/uxbox
+USER penpot
+WORKDIR /home/penpot
 
 RUN set -ex; \
     git clone https://github.com/creationix/nvm.git .nvm; \

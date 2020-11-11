@@ -15,8 +15,9 @@
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
+   [app.main.ui.workspace.sidebar.layers :refer [element-icon]]
    [app.main.ui.viewer.handoff.attributes :refer [attributes]]
-   [app.main.ui.workspace.sidebar.layers :refer [element-icon]]))
+   [app.main.ui.viewer.handoff.code :refer [code]]))
 
 (defn make-selected-shapes-iref
   []
@@ -28,33 +29,15 @@
             (mapv resolve-shape selected)))]
     #(l/derived selected->shapes st/state)))
 
-(mf/defc attributes-panel [{:keys [frame shapes]}]
-  (let [type (if (= (count shapes) 1)
-               (-> shapes first :type)
-               :multiple)]
-    (let [options (case type
-                    :multiple [:fill :stroke :image :text :shadow :blur]
-                    :frame    [:layout :fill]
-                    :group    [:layout]
-                    :rect     [:layout :fill :stroke :shadow :blur]
-                    :circle   [:layout :fill :stroke :shadow :blur]
-                    :path     [:layout :fill :stroke :shadow :blur]
-                    :curve    [:layout :fill :stroke :shadow :blur]
-                    :image    [:image :layout :shadow :blur]
-                    :text     [:layout :text :shadow :blur])]
-      [:& attributes {:frame frame
-                      :shapes shapes
-                      :options options}])))
 
-(mf/defc code-panel []
-  [:div.element-options])
-
-(mf/defc right-sidebar [{:keys [frame]}]
-  (let [locale (mf/deref i18n/locale)
+(mf/defc right-sidebar
+  [{:keys [frame page-id file-id]}]
+  (let [expanded (mf/use-state false)
+        locale (mf/deref i18n/locale)
         section (mf/use-state :info #_:code)
         selected-ref (mf/use-memo (make-selected-shapes-iref))
         shapes (mf/deref selected-ref)]
-    [:aside.settings-bar.settings-bar-right
+    [:aside.settings-bar.settings-bar-right {:class (when @expanded "expanded")}
      [:div.settings-bar-inside
       (when (seq shapes)
         [:div.tool-window
@@ -69,11 +52,17 @@
              [:span.tool-window-bar-title (->> shapes first :type name (str "handoff.tabs.code.selected.") (t locale))]])
           ]
          [:div.tool-window-content
-          [:& tab-container {:on-change-tab #(reset! section %)
+          [:& tab-container {:on-change-tab #(do
+                                               (reset! expanded false)
+                                               (reset! section %))
                              :selected @section}
            [:& tab-element {:id :info :title (t locale "handoff.tabs.info")}
-            [:& attributes-panel {:frame frame
-                                  :shapes shapes}]]
+            [:& attributes {:page-id page-id
+                            :file-id file-id
+                            :frame frame
+                            :shapes shapes}]]
 
            [:& tab-element {:id :code :title (t locale "handoff.tabs.code")}
-            [:& code-panel]]]]])]]))
+            [:& code {:frame frame
+                      :shapes shapes
+                      :on-expand #(swap! expanded not)}]]]]])]]))

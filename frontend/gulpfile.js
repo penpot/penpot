@@ -46,7 +46,7 @@ function scssPipeline(options) {
 
   const touch = (_path) => {
     return new Promise((resolve, reject) => {
-      return fs.utimes(file.path, new Date(), new Date(), () => {
+      return fs.utimes(_path, new Date(), new Date(), () => {
         resolve(_path);
       });
     })
@@ -78,7 +78,7 @@ function scssPipeline(options) {
       .then(() => render(input))
       .then((res) => postprocess(res, input, output))
       .then(async (res) => {
-        await write(output, res);
+        await write(output, res.css);
         await touch(output);
         return res;
       })
@@ -157,19 +157,6 @@ function templatePipeline(options) {
 
     const locales = readLocales();
     const manifest = readManifest();
-
-    const defaultConf = [
-      "var appDemoWarning = null;",
-      "var appLoginWithLDAP = null;",
-      "var appPublicURI = null;",
-      "var appGoogleClientID = null;",
-      "var appGitlabClientID = null;",
-      "var appDeployDate = null;",
-      "var appDeployCommit = null;"
-    ];
-
-    fs.writeFileSync(__dirname + "/resources/public/js/config.js",
-                     defaultConf.join("\n"));
 
     const tmpl = mustache({
       ts: ts,

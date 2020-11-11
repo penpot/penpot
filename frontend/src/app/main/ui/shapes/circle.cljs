@@ -33,8 +33,7 @@
                         :cy cy
                         :rx rx
                         :ry ry
-                        :transform transform
-                        :id (str "shape-" id)}))]
+                        :transform transform}))]
 
     [:& shape-custom-stroke {:shape shape
                              :base-props props

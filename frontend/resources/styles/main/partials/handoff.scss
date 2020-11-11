@@ -15,6 +15,42 @@
   justify-content: center;
 }
 
+.expand-button,
+.copy-button {
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.3s;
+  position: absolute;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+
+  svg {
+    width: 16px;
+    height: 16px;
+    fill: $color-gray-20;
+    transition: fill 0.3s;
+
+    &:hover {
+      fill: $color-primary;
+    }
+  }
+}
+
+.expand-button {
+  right: 24px;
+  top: -1px;
+
+  svg {
+    transform: rotate(45deg);
+  }
+}
+.copy-button {
+  right: 0;
+  top: 0;
+}
+
 .attributes-block {
   user-select: text;
 
@@ -30,30 +66,6 @@
     border-bottom: none;
   }
 
-  .attributes-copy-button {
-    visibility: hidden;
-    opacity: 0;
-    transition: opacity 0.3s;
-    position: absolute;
-    right: 0;
-    top: 0;
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-
-    svg {
-      width: 16px;
-      height: 16px;
-      fill: $color-gray-20;
-      transition: fill 0.3s;
-
-      &:hover {
-        fill: $color-primary;
-      }
-    }
-  }
-  
   .attributes-label {
     color: $color-gray-20;
   }
@@ -68,7 +80,7 @@
     padding: 0.5rem;
     font-size: $fs14;
 
-    .attributes-copy-button {
+    .copy-button {
       padding: 0.5rem;
       margin-top: 0.25rem;
     }
@@ -84,7 +96,7 @@
     .attributes-value {
       width: 50%;
     }
-    .attributes-copy-button {
+    .copy-button {
       padding: 1rem 0.5rem;
       margin-top: 0.25rem;
     }
@@ -92,9 +104,32 @@
 
   .attributes-color-row {
     display: flex;
+    flex-direction: column;
     padding: 1rem 0;
     position: relative;
-    align-items: center;
+
+    .attributes-color-id {
+      display: flex;
+      align-items: center;
+
+      & > * {
+        margin: 0 0.5rem;
+      }
+      margin-bottom: 0.5rem;
+    }
+
+    .attributes-color-value {
+      display: flex;
+      align-items: center;
+
+      & > * {
+        margin: 0 0.5rem;
+      }
+
+      & :last-child {
+        margin-right: 0;
+      }
+    }
 
     .color-text {
       width: 3rem;
@@ -108,18 +143,16 @@
     .color-bullet {
       width: 24px;
       height: 24px;
+      border-radius: $br-small;
+      border: 1px solid $color-gray-60;
     }
-    .attributes-copy-button {
+
+    .hide-color .color-bullet {
+      visibility: hidden;
+    }
+    .copy-button {
       padding: 1rem 0.5rem;
       margin-top: 0.25rem;
-    }
-
-    & > * {
-      margin: 0 0.5rem;
-    }
-
-    & :last-child {
-      margin-right: 0;
     }
 
     select {
@@ -160,7 +193,7 @@
       white-space: pre-wrap;
     }
 
-    .attributes-copy-button {
+    .copy-button {
       padding: 0.5rem;
       margin-top: 0.25rem;
     }
@@ -212,6 +245,22 @@
     justify-content: space-between;
   }
 
+  .attributes-typography-name-row {
+    position: relative;
+    margin-top: 0.5rem;
+    border: 1px solid $color-black;
+    border-radius: 4px;
+    margin: 0.5rem;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    .copy-button {
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+    }
+  }
+
   .attributes-typography-row {
     position: relative;
     margin: 0.5rem;
@@ -220,6 +269,7 @@
     .typography-sample {
       font-size: $fs16;
     }
+
   }
 
   .download-button {
@@ -246,11 +296,90 @@
   .attributes-shadow-row,
   .attributes-stroke-row,
   .attributes-typography-row,
-  .attributes-content-row {
-    &:hover .attributes-copy-button {
-      visibility: visible;
-      opacity: 1;
+  .attributes-content-row,
+  .attributes-typography-name-row {
+    &:hover {
+      .expand-button,
+      .copy-button {
+        visibility: visible;
+        opacity: 1;
+      }
     }
   }
-                                               
+
+  .attributes-shadow-block {
+    border-top: 1px solid $color-gray-60;
+  }
+
+  .attributes-shadow-blocks :first-child {
+    border-top: none;
+  }
+}
+
+.code-block {
+  margin-top: 0.5rem;
+  border-top: 1px solid $color-gray-60;
+
+  .code-row-lang {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    margin: 0.5rem;
+
+    &:hover {
+      .expand-button,
+      .copy-button {
+        visibility: visible;
+        opacity: 1;
+      }
+    }
+
+    .code-selection {
+      height: 100%;
+      margin: 0;
+      padding: 0.5rem;
+      width: 4.5rem;
+      font-size: $fs12;
+      background: $color-gray-50;
+      color: $color-gray-10;
+      border-radius: 2px;
+      border: 1px solid $color-gray-30;
+      background-image: url("/images/icons/arrow-down-white.svg");
+      background-repeat: no-repeat;
+      background-position: 90% 48%;
+      background-size: 8px;
+    }
+    .expand-button,
+    .copy-button {
+      margin-top: 8px;
+    }
+  }
+
+  .code-row-display {
+    margin: 0.5rem;
+    font-size: $fs14;
+
+    .code-display {
+      border-radius: 4px;
+      padding: 1rem;
+      overflow: hidden;
+      white-space: pre-wrap;
+      background: $color-gray-60;
+      user-select: text;
+
+      .hljs-attr {
+        color: #a6e22e;
+      }
+      .hljs-comment {
+        color: $color-gray-30;
+      }
+      .hljs-string {
+        color: #66d9ef;
+      }
+    }
+  }
+}
+
+.element-options > :first-child {
+  border-top: none;
 }

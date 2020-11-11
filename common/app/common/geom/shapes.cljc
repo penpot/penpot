@@ -542,6 +542,14 @@
          (< ry1 sy2)
          (> ry2 sy1))))
 
+(defn fully-contained?
+  "Checks if one rect is fully inside the other"
+  [rect other]
+  (and (<= (:x1 rect) (:x1 other))
+       (>= (:x2 rect) (:x2 other))
+       (<= (:y1 rect) (:y1 other))
+       (>= (:y2 rect) (:y2 other))))
+
 (defn has-point?
   [shape position]
   (let [{:keys [x y]} position
@@ -956,3 +964,4 @@
                        :width width :height height
                        :x1 x :y1 y
                        :x2 (+ x width) :y2 (+ y height)})))
+

@@ -75,6 +75,7 @@
                                (st/emit! (dwl/update-component id))
                                (st/emit! (dwl/sync-file nil))
                                (st/emit! dwc/commit-undo-transaction))
+        do-show-component #(st/emit! (dw/go-to-layout :assets))
         do-navigate-component-file #(st/emit! (dwl/nav-to-component-file
                                                 (:component-file shape)))]
     [:*
@@ -139,25 +140,38 @@
        [:& menu-entry {:title (t locale "workspace.shape.menu.lock")
                        :on-click do-lock-shape}])
 
-     (when (nil? (:shape-ref shape))
+     (when (or (nil? (:shape-ref shape))
+               (> (count selected) 1))
        [:*
         [:& menu-separator]
         [:& menu-entry {:title (t locale "workspace.shape.menu.create-component")
                         :shortcut "Ctrl + K"
                         :on-click do-add-component}]])
 
-     (when (:component-id shape)
-       [:*
-        [:& menu-separator]
-        [:& menu-entry {:title (t locale "workspace.shape.menu.detach-instance")
-                        :on-click do-detach-component}]
-        [:& menu-entry {:title (t locale "workspace.shape.menu.reset-overrides")
-                        :on-click do-reset-component}]
-        (if (nil? (:component-file shape))
+     (when (and (:component-id shape)
+                (= (count selected) 1))
+       ;; WARNING: this menu is the same as the context menu at the sidebar.
+       ;;          If you change it, you must change equally the file
+       ;;          app/main/ui/workspace/sidebar/options/component.cljs
+       (if (nil? (:component-file shape))
+         [:*
+          [:& menu-separator]
+          [:& menu-entry {:title (t locale "workspace.shape.menu.detach-instance")
+                          :on-click do-detach-component}]
+          [:& menu-entry {:title (t locale "workspace.shape.menu.reset-overrides")
+                          :on-click do-reset-component}]
           [:& menu-entry {:title (t locale "workspace.shape.menu.update-master")
                           :on-click do-update-component}]
+          [:& menu-entry {:title (t locale "workspace.shape.menu.show-master")
+                          :on-click do-show-component}]]
+         [:*
+          [:& menu-separator]
+          [:& menu-entry {:title (t locale "workspace.shape.menu.detach-instance")
+                          :on-click do-detach-component}]
+          [:& menu-entry {:title (t locale "workspace.shape.menu.reset-overrides")
+                          :on-click do-reset-component}]
           [:& menu-entry {:title (t locale "workspace.shape.menu.go-master")
-                          :on-click do-navigate-component-file}])])
+                          :on-click do-navigate-component-file}]]))
 
      [:& menu-separator]
      [:& menu-entry {:title (t locale "workspace.shape.menu.delete")

@@ -25,18 +25,19 @@
   background-color:#2C233E;
   background-image: url("/images/penpot-login.jpg");
   background-size: cover;
+  background-position: center;
 
   .tagline {
     text-align: center;
     width: 280px;
-    font-size: $fs24;
+    font-size: $fs18;
     margin-top: 25px;
-    color: white;
+    color: #2C233E;
   }
 
   .logo {
     svg {
-      fill: white;
+      fill: #2C233E;
       width: 200px;
       height: 80px;
     }

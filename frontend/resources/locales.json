@@ -978,6 +978,12 @@
       "en" : "Left"
     }
   },
+  "handoff.attributes.layout.radius" : {
+    "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/layout.cljs:60" ],
+    "translations" : {
+      "en" : "Radius"
+    }
+  },
   "handoff.attributes.layout.rotation" : {
     "used-in" : [ "src/app/main/ui/viewer/handoff/attributes/layout.cljs:60" ],
     "translations" : {
@@ -2118,6 +2124,14 @@
       "es" : "Borrar"
     }
   },
+  "workspace.assets.duplicate" : {
+    "translations" : {
+      "en" : "Duplicate",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Duplicar"
+    }
+  },
   "workspace.assets.edit" : {
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:305", "src/app/main/ui/workspace/sidebar/assets.cljs:433" ],
     "translations" : {
@@ -2677,6 +2691,12 @@
       "fr" : "Couleur de fond",
       "ru" : "Фон холста",
       "es" : "Color de fondo"
+    }
+  },
+  "workspace.options.component" : {
+    "translations" : {
+      "en" : "Component",
+      "es" : "Componente"
     }
   },
   "workspace.options.design" : {
@@ -3425,6 +3445,11 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:159" ],
     "translations" : {
       "en" : "Go to master component file"
+    }
+  },
+  "workspace.shape.menu.show-master" : {
+    "translations" : {
+      "en" : "Show master component"
     }
   },
   "workspace.shape.menu.group" : {

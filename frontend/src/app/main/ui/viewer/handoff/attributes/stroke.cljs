@@ -14,14 +14,16 @@
    [app.util.i18n :refer [t]]
    [app.util.color :as uc]
    [app.main.ui.icons :as i]
-   [app.main.ui.viewer.handoff.attributes.common :refer [copy-cb color-row]]))
+   [app.util.code-gen :as cg]
+   [app.main.ui.components.copy-button :refer [copy-button]]
+   [app.main.ui.viewer.handoff.attributes.common :refer [color-row]]))
 
 (defn shape->color [shape]
   {:color (:stroke-color shape)
    :opacity (:stroke-opacity shape)
    :gradient (:stroke-color-gradient shape)
-   :id (:stroke-ref-id shape)
-   :file-id (:stroke-ref-file-id shape)})
+   :id (:stroke-color-ref-id shape)
+   :file-id (:stroke-color-ref-file shape)})
 
 (defn format-stroke [shape]
   (let [width (:stroke-width shape)
@@ -33,49 +35,46 @@
   (and (:stroke-style shape)
        (not= (:stroke-style shape) :none)))
 
+(defn copy-stroke-data [shape]
+  (cg/generate-css-props
+   shape
+   :stroke-style
+   {:to-prop "border"
+    :format #(format-stroke shape)}))
+
+(defn copy-color-data [shape]
+  (cg/generate-css-props
+   shape
+   :stroke-color
+   {:to-prop "border-color"
+    :format #(uc/color->background (shape->color shape))}))
+
 (mf/defc stroke-block
   [{:keys [shape locale]}]
   (let [color-format (mf/use-state :hex)
-        color (shape->color shape)
-        handle-copy-stroke (copy-cb shape
-                                    :stroke-style
-                                    :to-prop "border"
-                                    :format #(format-stroke shape))
-
-        handle-copy-color (copy-cb shape
-                                   :stroke-color
-                                   :to-prop "border-color"
-                                   :format #(uc/color->background color))]
-
+        color (shape->color shape)]
     [:*
      [:& color-row {:color color
                     :format @color-format
-                    :on-change-format #(reset! color-format %)
-                    :on-copy handle-copy-color}]
+                    :copy-data (copy-color-data shape)
+                    :on-change-format #(reset! color-format %)}]
 
      [:div.attributes-stroke-row
       [:div.attributes-label (t locale "handoff.attributes.stroke.width")]
       [:div.attributes-value (:stroke-width shape) "px"]
       [:div.attributes-value (->> shape :stroke-style name (str "handoff.attributes.stroke.style.") (t locale))]
       [:div.attributes-label (->> shape :stroke-alignment name (str "handoff.attributes.stroke.alignment.") (t locale))]
-      [:button.attributes-copy-button {:on-click handle-copy-stroke} i/copy]]]))
+      [:& copy-button {:data (copy-stroke-data shape)}]]]))
 
 (mf/defc stroke-panel
   [{:keys [shapes locale]}]
-  (let [shapes (->> shapes (filter has-stroke?))
-        handle-copy (when (= (count shapes) 1)
-                      (copy-cb (first shapes)
-                               :stroke-style
-                               :to-prop "border"
-                               :format #(format-stroke (first shapes))))]
-
+  (let [shapes (->> shapes (filter has-stroke?))]
     (when (seq shapes)
       [:div.attributes-block
        [:div.attributes-block-title
         [:div.attributes-block-title-text (t locale "handoff.attributes.stroke")]
-        (when handle-copy
-          [:button.attributes-copy-button
-           {:on-click handle-copy} i/copy])]
+        (when (= (count shapes) 1)
+          [:& copy-button {:data (copy-stroke-data (first shapes))}])]
 
        (for [shape shapes]
          [:& stroke-block {:key (str "stroke-color-" (:id shape))

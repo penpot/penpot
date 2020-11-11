@@ -15,6 +15,8 @@
    [potok.core :as ptk]
    [rumext.alpha :as mf]
    [rumext.util :refer [map->obj]]
+   [app.common.uuid :as uuid]
+   [app.util.data :as d]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.refs :as refs]
@@ -28,7 +30,8 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.matrix :as gmt]
    [app.util.debug :refer [debug?]]
-   [app.main.ui.workspace.shapes.outline :refer [outline]]))
+   [app.main.ui.workspace.shapes.outline :refer [outline]]
+   [app.main.ui.measurements :as msr]))
 
 (def rotation-handler-size 25)
 (def resize-point-radius 4)
@@ -138,8 +141,7 @@
      [:circle {:r (/ resize-point-radius zoom)
                :style {:fillOpacity "1"
                        :strokeWidth "1px"
-                       :vectorEffect "non-scaling-stroke"
-                       }
+                       :vectorEffect "non-scaling-stroke"}
                :fill "#FFFFFF"
                :stroke (if (and (= position :bottom-right) overflow-text) "red" color)
                :cx cx'
@@ -266,9 +268,16 @@
                           :fill "transparent"}}]]))
 
 (mf/defc multiple-selection-handlers
-  [{:keys [shapes selected zoom color] :as props}]
+  [{:keys [shapes selected zoom color show-distances] :as props}]
   (let [shape (geom/selection-rect shapes)
         shape-center (geom/center shape)
+
+        hover-id (-> (mf/deref refs/current-hover) first)
+        hover-id (when-not (d/seek #(= hover-id (:id %)) shapes) hover-id)
+        hover-shape (mf/deref (refs/object-by-id hover-id))
+
+        vbox (mf/deref refs/vbox)
+
         on-resize (fn [current-position initial-position event]
                     (dom/stop-propagation event)
                     (st/emit! (dw/start-resize current-position initial-position selected shape)))
@@ -282,13 +291,29 @@
                    :color color
                    :on-resize on-resize
                    :on-rotate on-rotate}]
+
+     (when show-distances
+       [:& msr/measurement {:bounds vbox
+                            :selected-shapes shapes
+                            :hover-shape hover-shape
+                            :zoom zoom}])
+
      (when (debug? :selection-center)
        [:circle {:cx (:x shape-center) :cy (:y shape-center) :r 5 :fill "yellow"}])]))
 
 (mf/defc single-selection-handlers
-  [{:keys [shape zoom color] :as props}]
+  [{:keys [shape zoom color show-distances] :as props}]
   (let [shape-id (:id shape)
         shape (geom/transform-shape shape)
+
+        frame (mf/deref (refs/object-by-id (:frame-id shape)))
+        frame (when-not (= (:id frame) uuid/zero) frame)
+        vbox (mf/deref refs/vbox)
+
+        hover-id (-> (mf/deref refs/current-hover) first)
+        hover-id (when-not (= shape-id hover-id) hover-id)
+        hover-shape (mf/deref (refs/object-by-id hover-id))
+
         shape' (if (debug? :simple-selection) (geom/selection-rect [shape]) shape)
         on-resize (fn [current-position initial-position event]
                     (dom/stop-propagation event)
@@ -303,10 +328,17 @@
                    :zoom zoom
                    :color color
                    :on-rotate on-rotate
-                   :on-resize on-resize}]]))
+                   :on-resize on-resize}]
+
+     (when show-distances
+       [:& msr/measurement {:bounds vbox
+                            :frame frame
+                            :selected-shapes [shape]
+                            :hover-shape hover-shape
+                            :zoom zoom}])]))
 
 (mf/defc selection-handlers
-  [{:keys [selected edition zoom] :as props}]
+  [{:keys [selected edition zoom show-distances] :as props}]
   (let [;; We need remove posible nil values because on shape
         ;; deletion many shape will reamin selected and deleted
         ;; in the same time for small instant of time
@@ -326,7 +358,8 @@
       [:& multiple-selection-handlers {:shapes shapes
                                        :selected selected
                                        :zoom zoom
-                                       :color color}]
+                                       :color color
+                                       :show-distances show-distances}]
 
       (and (= type :text)
            (= edition (:id shape)))
@@ -343,4 +376,5 @@
       :else
       [:& single-selection-handlers {:shape shape
                                      :zoom zoom
-                                     :color color}])))
+                                     :color color
+                                     :show-distances show-distances}])))
