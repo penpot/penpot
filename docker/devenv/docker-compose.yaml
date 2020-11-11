@@ -41,6 +41,7 @@ services:
       - APP_DATABASE_URI=postgresql://postgres/penpot
       - APP_DATABASE_USERNAME=penpot
       - APP_DATABASE_PASSWORD=penpot
+      - APP_REDIS_URI=redis://redis/0
 
   postgres:
     image: postgres:13

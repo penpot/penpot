@@ -31,7 +31,7 @@
    :assets-directory "resources/public/static"
 
    :public-uri "http://localhost:3449/"
-   :redis-uri "redis://redis/0"
+   :redis-uri "redis://localhost/0"
    :media-uri "http://localhost:3449/media/"
    :assets-uri "http://localhost:3449/static/"
 
