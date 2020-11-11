@@ -209,11 +209,16 @@
         subj (render-email-template-part :subj id context)
         text (render-email-template-part :txt id context)
         html (render-email-template-part :html id context)]
+    (when (or (not subj)
+              (not text)
+              (not html))
+      (ex/raise :type :internal
+                :code :missing-email-templates))
     {:subject subj
-     :body [{:type "text/html"
-             :content html}
-            {:type "text/plain"
-             :content text}]}))
+     :body [{:type "text/plain"
+             :content text}
+            {:type "text/html"
+             :content html}]}))
 
 (s/def ::priority #{:high :low})
 (s/def ::to (s/or :sigle ::us/email
