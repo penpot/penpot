@@ -22,9 +22,9 @@
 (def defaults
   {:http-server-port 6060
    :http-server-cors "http://localhost:3449"
-   :database-uri "postgresql://127.0.0.1/uxbox"
-   :database-username "uxbox"
-   :database-password "uxbox"
+   :database-uri "postgresql://127.0.0.1/penpot"
+   :database-username "penpot"
+   :database-password "penpot"
    :secret-key "default"
 
    :media-directory "resources/public/media"
@@ -168,7 +168,7 @@
   (reduce-kv
    (fn [acc k v]
      (cond-> acc
-       (str/starts-with? (name k) "uxbox-")
+       (str/starts-with? (name k) "penpot-")
        (assoc (keyword (subs (name k) 6)) v)
 
        (str/starts-with? (name k) "app-")
@@ -186,7 +186,7 @@
   [env]
   (assoc (read-config env)
          :redis-uri "redis://redis/1"
-         :database-uri "postgresql://postgres/uxbox_test"
+         :database-uri "postgresql://postgres/penpot_test"
          :media-directory "/tmp/app/media"
          :assets-directory "/tmp/app/static"
          :migrations-verbose false))
