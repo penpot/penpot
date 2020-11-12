@@ -10,11 +10,9 @@
 (ns app.main.ui.icons
   (:require [rumext.alpha]))
 
-(def base-uri "/images/svg-sprite/symbol/svg/sprite.symbol.svg#icon-")
-
 (defmacro icon-xref
   [id]
-  (let [href (str base-uri (name id))]
+  (let [href (str "#icon-" (name id))]
     `(rumext.alpha/html
       [:svg {:width 500 :height 500}
        [:use {:xlinkHref ~href}]])))
