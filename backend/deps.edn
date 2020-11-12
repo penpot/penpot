@@ -37,7 +37,6 @@
   funcool/promesa {:mvn/version "5.1.0"}
   funcool/cuerdas {:mvn/version "2020.03.26-3"}
 
-
   buddy/buddy-core {:mvn/version "1.8.0"}
   buddy/buddy-hashers {:mvn/version "1.6.0"}
   buddy/buddy-sign {:mvn/version "3.2.0"}
