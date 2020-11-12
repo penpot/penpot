@@ -27,6 +27,7 @@
 (defn run
   [params]
   (require 'app.config
+           'app.srepl.server
            'app.migrations
            'app.worker
            'app.media
