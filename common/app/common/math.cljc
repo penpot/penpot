@@ -23,7 +23,7 @@
 
 (defn finite?
   [v]
-  #?(:cljs (js/isFinite v)
+  #?(:cljs (and (not (nil? v)) (js/isFinite v))
      :clj (Double/isFinite v)))
 
 (defn abs

@@ -23,7 +23,8 @@
   "Returns a transformation matrix without changing the shape properties.
   The result should be used in a `transform` attribute in svg"
   ([{:keys [x y] :as shape}]
-   (let [shape-center (gco/center-shape shape)]
+   (let [shape-center (or (gco/center-shape shape)
+                          (gpt/point 0 0))]
      (-> (gmt/matrix)
          (gmt/translate shape-center)
          (gmt/multiply (:transform shape (gmt/matrix)))

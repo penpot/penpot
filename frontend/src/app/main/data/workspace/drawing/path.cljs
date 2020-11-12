@@ -14,15 +14,12 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.main.streams :as ms]
-   [app.util.geom.path :as path]
+   [app.util.geom.path :as ugp]
    [app.main.data.workspace.drawing.common :as common]))
 
 (defn finish-event? [{:keys [type shift] :as event}]
   (or (= event ::end-path-drawing)
       (= event :interrupt)
-      #_(and (ms/mouse-event? event)
-           (or (= type :double-click)
-               (= type :context-menu)))
       (and (ms/keyboard-event? event)
            (= type :down)
            (= 13 (:key event)))))
@@ -78,26 +75,105 @@
           (assoc-in [:workspace-drawing :object :last-point] nil)
           (update-in [:workspace-drawing :object] calculate-selrect)))))
 
+(defn preview-next-point [{:keys [x y]}]
+  (ptk/reify ::add-node
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [point {:x x :y y}
+            {:keys [last-point prev-handler]} (get-in state [:workspace-drawing :object])
+
+            command (cond
+                      (and last-point (not prev-handler))
+                      {:command :line-to
+                       :params point}
+
+                      (and last-point prev-handler)
+                      {:command :curve-to
+                       :params (ugp/make-curve-params point prev-handler)}
+
+                      :else
+                      nil)
+            ]
+        (-> state
+            (assoc-in  [:workspace-drawing :object :preview] command))))))
+
 (defn add-node [{:keys [x y]}]
   (ptk/reify ::add-node
     ptk/UpdateEvent
     (update [_ state]
       (let [point {:x x :y y}
-            last-point (get-in state [:workspace-drawing :object :last-point])
-            command (if last-point
+            {:keys [last-point prev-handler]} (get-in state [:workspace-drawing :object])
+
+            command (cond
+                      (and last-point (not prev-handler))
                       {:command :line-to
                        :params point}
+
+                      (and last-point prev-handler)
+                      {:command :curve-to
+                       :params (ugp/make-curve-params point prev-handler)}
+
+                      :else
                       {:command :move-to
-                       :params point})]
+                       :params point})
+            ]
         (-> state
-            (assoc-in [:workspace-drawing :object :last-point] point)
-            (update-in [:workspace-drawing :object :content] (fnil conj []) command))))))
+            (assoc-in  [:workspace-drawing :object :last-point] point)
+            (update-in [:workspace-drawing :object] dissoc :prev-handler)
+            (update-in [:workspace-drawing :object :content] (fnil conj []) command)
+            (update-in [:workspace-drawing :object] calculate-selrect))))))
 
 (defn drag-handler [{:keys [x y]}]
   (ptk/reify ::drag-handler
     ptk/UpdateEvent
     (update [_ state]
-      (-> state))))
+      (let [change-handler (fn [content]
+                             (let [last-idx (dec (count content))
+                                   last (get content last-idx nil)
+                                   prev (get content (dec last-idx) nil)
+                                   {last-x :x last-y :y} (:params last)
+                                   opposite (when last (ugp/opposite-handler (gpt/point last-x last-y) (gpt/point x y)))]
+
+                               (cond
+                                 (and prev (= (:command last) :line-to))
+                                 (-> content
+                                     (assoc last-idx {:command :curve-to
+                                                      :params {:x (-> last :params :x)
+                                                               :y (-> last :params :y)
+                                                               :c1x (-> prev :params :x)
+                                                               :c1y (-> prev :params :y)
+                                                               :c2x (-> last :params :x)
+                                                               :c2y (-> last :params :y)}})
+                                     (update-in
+                                      [last-idx :params]
+                                      #(-> %
+                                           (assoc :c2x (:x opposite)
+                                                  :c2y (:y opposite)))))
+
+                                 (= (:command last) :curve-to)
+                                 (update-in content
+                                            [last-idx :params]
+                                            #(-> %
+                                                 (assoc :c2x (:x opposite)
+                                                        :c2y (:y opposite))))
+                                 :else
+                                 content))
+
+
+                             )
+            handler (gpt/point x y)]
+        (-> state
+            (update-in [:workspace-drawing :object :content] change-handler)
+            (assoc-in [:workspace-drawing :object :drag-handler] handler))))))
+
+(defn finish-drag []
+  (ptk/reify ::finish-drag
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [handler (get-in state [:workspace-drawing :object :drag-handler])]
+        (-> state
+            (update-in [:workspace-drawing :object] dissoc :drag-handler)
+            (assoc-in [:workspace-drawing :object :prev-handler] handler))))))
 
 (defn make-click-stream
   [stream down-event]
@@ -115,8 +191,9 @@
                          (rx/map #(drag-handler %)))]
     (->> (rx/timer 400)
          (rx/merge-map #(rx/concat
-                         (add-node down-event)
-                         drag-events)))))
+                         (rx/of (add-node down-event))
+                         drag-events
+                         (rx/of (finish-drag)))))))
 
 (defn make-dbl-click-stream
   [stream down-event]
@@ -133,26 +210,32 @@
     (watch [_ state stream]
 
       ;; clicks stream<[MouseEvent, Position]>
-      (let [
-            
-            mouse-down    (->> stream (rx/filter ms/mouse-down?))
+      (let [mouse-down    (->> stream (rx/filter ms/mouse-down?))
             finish-events (->> stream (rx/filter finish-event?))
 
-            events (->> mouse-down
-                        (rx/take-until finish-events)
-                        (rx/throttle 100)
-                        (rx/with-latest merge ms/mouse-position)
+            mousemove-events
+            (->> ms/mouse-position
+                 (rx/take-until finish-events)
+                 (rx/throttle 100)
+                 (rx/map #(preview-next-point %)))
 
-                        ;; We change to the stream that emits the first event
-                        (rx/switch-map
-                         #(rx/race (make-click-stream stream %)
-                                   (make-drag-stream stream %)
-                                   (make-dbl-click-stream stream %))))]
+            mousedown-events
+            (->> mouse-down
+                 (rx/take-until finish-events)
+                 (rx/throttle 100)
+                 (rx/with-latest merge ms/mouse-position)
+
+                 ;; We change to the stream that emits the first event
+                 (rx/switch-map
+                  #(rx/race (make-click-stream stream %)
+                            (make-drag-stream stream %)
+                            (make-dbl-click-stream stream %))))]
 
 
         (rx/concat
          (rx/of (init-path))
-         events
+         (rx/merge mousemove-events
+                   mousedown-events)
          (rx/of (finish-path))
          (rx/of common/handle-finish-drawing)))
       

@@ -19,8 +19,12 @@
 
 (defn center-rect
   [{:keys [x y width height]}]
-  (gpt/point (+ x (/ width 2))
-             (+ y (/ height 2))))
+  (when (and (mth/finite? x)
+             (mth/finite? y)
+             (mth/finite? width)
+             (mth/finite? height))
+    (gpt/point (+ x (/ width 2))
+               (+ y (/ height 2)))))
 
 (defn center-selrect
   "Calculate the center of the shape."

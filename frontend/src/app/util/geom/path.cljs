@@ -11,6 +11,7 @@
   (:require
    [cuerdas.core :as str]
    [app.common.data :as d]
+   [app.common.geom.point :as gpt]
    [app.util.geom.path-impl-simplify :as impl-simplify]))
 
 (defn simplify
@@ -192,10 +193,29 @@
        (map command->string)
        (str/join "")))
 
-#_(let [path "M.343 15.974a.514.514 0 01-.317-.321c-.023-.07-.026-.23-.026-1.43 0-1.468-.001-1.445.09-1.586.02-.032 1.703-1.724 3.74-3.759a596.805 596.805 0 003.7-3.716c0-.009-.367-.384-.816-.833a29.9 29.9 0 01-.817-.833c0-.01.474-.49 1.054-1.07l1.053-1.053.948.946.947.947 1.417-1.413C12.366.806 12.765.418 12.856.357c.238-.161.52-.28.792-.334.17-.034.586-.03.76.008.801.173 1.41.794 1.57 1.603.03.15.03.569 0 .718a2.227 2.227 0 01-.334.793c-.061.09-.45.49-1.496 1.54L12.734 6.1l.947.948.947.947-1.053 1.054c-.58.58-1.061 1.054-1.07 1.054-.01 0-.384-.368-.833-.817-.45-.45-.824-.817-.834-.817-.009 0-1.68 1.666-3.716 3.701a493.093 493.093 0 01-3.759 3.74c-.14.091-.117.09-1.59.089-1.187 0-1.366-.004-1.43-.027zm6.024-4.633a592.723 592.723 0 003.663-3.68c0-.02-1.67-1.69-1.69-1.69-.01 0-1.666 1.648-3.68 3.663L.996 13.297v.834c0 .627.005.839.02.854.015.014.227.02.854.02h.833l3.664-3.664z"
-      content (path->content path)
-      new-path (content->path content)
-      ]
-  (prn "path" path)
-  (.log js/console "?? 1" (clj->js content))
-  (prn "?? 2" (= path new-path) new-path))
+(defn make-curve-params
+  ([point]
+   (make-curve-params point point point))
+
+  ([point handler] (make-curve-params point handler point))
+
+  ([point h1 h2]
+   {:x (:x point)
+    :y (:y point)
+    :c1x (:x h1)
+    :c1y (:y h1)
+    :c2x (:x h2)
+    :c2y (:y h2)}))
+
+(defn opposite-handler
+  [point handler]
+  (let [phv (gpt/to-vec point handler)
+        opposite (gpt/add point (gpt/negate phv))]
+    opposite))
+
+(defn extract-handlers [content]
+  (let [extract (fn [{param1 :params :as cmd1} {param2 :params :as cmd2}]
+                  {:point (gpt/point (:x param1) (:y param1))
+                   :prev  (when (:c2x param1) (gpt/point (:c2x param1) (:c2y param1)))
+                   :next  (when (:c1x param2) (gpt/point (:c1x param2) (:c1y param2)))})]
+    (map extract content (d/concat [] (rest content) [nil]))))
