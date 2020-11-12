@@ -9,14 +9,15 @@
     <link rel="icon" href="/images/favicon.png" />
   </head>
   <body>
+    {{>../public/images/sprites/symbol/svg/sprite.symbol.svg}}
     <section id="app" tabindex="1"></section>
     <section id="modal"></section>
     <script>
-     window.appTranslations = JSON.parse({{& translations }});
-     window.appThemes = {{& themes }};
+     window.appTranslations = JSON.parse({{& translations}});
+     window.appThemes = {{& themes}};
     </script>
-    {{# manifest}}
 
+    {{# manifest}}
     <script>window.appWorkerURI="{{& worker}}"</script>
     <script src="{{& config}}"></script>
     <script src="{{& shared}}"></script>
