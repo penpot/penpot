@@ -13,7 +13,6 @@
    [app.common.spec :as us]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.path :as gpa]
    [app.common.math :as mth]
    [app.common.data :as d]))
 

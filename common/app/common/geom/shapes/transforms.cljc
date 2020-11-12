@@ -89,39 +89,43 @@
     :else scale))
 
 
-(defn modifiers->transform [current-transform center modifiers]
-  (let [ds-modifier (:displacement modifiers (gmt/matrix))
-        {res-x :x res-y :y} (:resize-vector modifiers (gpt/point 1 1))
+(defn modifiers->transform
+  ([center modifiers]
+   (modifiers->transform (gmt/matrix) center modifiers))
 
-        ;; Normalize x/y vector coordinates because scale by 0 is infinite
-        res-x (normalize-scale res-x)
-        res-y (normalize-scale res-y)
-        resize (gpt/point res-x res-y)
+  ([current-transform center modifiers]
+   (let [ds-modifier (:displacement modifiers (gmt/matrix))
+         {res-x :x res-y :y} (:resize-vector modifiers (gpt/point 1 1))
 
-        origin (:resize-origin modifiers (gpt/point 0 0))
+         ;; Normalize x/y vector coordinates because scale by 0 is infinite
+         res-x (normalize-scale res-x)
+         res-y (normalize-scale res-y)
+         resize (gpt/point res-x res-y)
 
-        resize-transform (:resize-transform modifiers (gmt/matrix))
-        resize-transform-inverse (:resize-transform-inverse modifiers (gmt/matrix))
-        rt-modif (or (:rotation modifiers) 0)
+         origin (:resize-origin modifiers (gpt/point 0 0))
 
-        transform (-> (gmt/matrix)
+         resize-transform (:resize-transform modifiers (gmt/matrix))
+         resize-transform-inverse (:resize-transform-inverse modifiers (gmt/matrix))
+         rt-modif (or (:rotation modifiers) 0)
 
-            ;; Applies the current resize transformation
-            (gmt/translate origin)
-            (gmt/multiply resize-transform)
-            (gmt/scale resize)
-            (gmt/multiply resize-transform-inverse)
-            (gmt/translate (gpt/negate origin))
+         transform (-> (gmt/matrix)
 
-            ;; Applies the stacked transformations
-            (gmt/translate center)
-            (gmt/multiply (gmt/rotate-matrix rt-modif))
-            #_(gmt/multiply current-transform)
-            (gmt/translate (gpt/negate center))
+                       ;; Applies the current resize transformation
+                       (gmt/translate origin)
+                       (gmt/multiply resize-transform)
+                       (gmt/scale resize)
+                       (gmt/multiply resize-transform-inverse)
+                       (gmt/translate (gpt/negate origin))
 
-            ;; Displacement
-            (gmt/multiply ds-modifier))]
-    transform))
+                       ;; Applies the stacked transformations
+                       (gmt/translate center)
+                       (gmt/multiply (gmt/rotate-matrix rt-modif))
+                       #_(gmt/multiply current-transform)
+                       (gmt/translate (gpt/negate center))
+
+                       ;; Displacement
+                       (gmt/multiply ds-modifier))]
+     transform)))
 
 (defn- calculate-skew-angle
   "Calculates the skew angle of the paralelogram given by the points"
@@ -210,28 +214,31 @@
     [stretch-matrix stretch-matrix-inverse]))
 
 
-(defn set-points-path
-  [shape points]
-  (let [shape (reduce (fn [acc [idx {:keys [x y]}]]
-                        (-> acc
-                            (assoc-in [:content idx :params :x] x)
-                            (assoc-in [:content idx :params :y] y))) shape (d/enumerate points))
+(defn apply-transform-path
+  [shape transform]
+  (let [content (gpa/transform-content (:content shape) transform)
+        points (gpa/content->points content)
+        rotation (mod (+ (:rotation shape 0)
+                         (or (get-in shape [:modifiers :rotation]) 0))
+                      360)
+        selrect (gpa/content->selrect content)]
+    (assoc shape
+           :content content
+           :points points
+           :selrect selrect
+           :rotation rotation)))
 
-        shape (assoc shape
-                     :points points
-                     :selrect (gpr/points->selrect points))]
-    shape))
-
-(defn set-points-curve
-  [shape points]
+(defn apply-transform-curve
+  [shape transform]
   shape)
 
-(defn set-points-rect
+(defn apply-transform-rect
   "Given a new set of points transformed, set up the rectangle so it keeps
   its properties. We adjust de x,y,width,height and create a custom transform"
-  [shape points]
+  [shape transform]
   ;;
-  (let [center (gco/center-points points)
+  (let [points (-> shape :points (transform-points transform))
+        center (gco/center-points points)
 
         ;; Reverse the current transformation stack to get the base rectangle
         tr-inverse      (:transform-inverse shape (gmt/matrix))
@@ -259,18 +266,18 @@
                     (update $ :transform #(gmt/multiply (or % (gmt/matrix)) matrix))
                     (update $ :transform-inverse #(gmt/multiply matrix-inverse (or % (gmt/matrix))))
                     (assoc  $ :points (into [] points))
-                    (assoc  $ :selrect (gpr/rect->selrect rect-shape) #_(gpr/points->selrect points))
+                    (assoc  $ :selrect (gpr/rect->selrect rect-shape))
                     (update $ :rotation #(mod (+ (or % 0)
                                                  (or (get-in $ [:modifiers :rotation]) 0)) 360)))]
     new-shape))
 
-(defn set-points [shape points]
-  (let [set-points-fn
+(defn apply-transform [shape transform]
+  (let [apply-transform-fn
         (case (:type shape)
-          :path  set-points-path
-          :curve set-points-curve
-          set-points-rect)]
-    (set-points-fn shape points)))
+          :path  apply-transform-path
+          :curve apply-transform-curve
+          apply-transform-rect)]
+    (apply-transform-fn shape transform)))
 
 (defn set-flip [shape modifiers]
   (cond-> shape
@@ -279,13 +286,11 @@
 
 (defn transform-shape [shape]
   (if (:modifiers shape)
-    (let [points    (:points shape (shape->points shape))
-          center    (gco/center-points points)
-          transform (modifiers->transform (:transform shape (gmt/matrix)) center (:modifiers shape))
-          tr-points (transform-points points transform)]
+    (let [center    (gco/center-shape shape)
+          transform (modifiers->transform (:transform shape (gmt/matrix)) center (:modifiers shape))]
       (-> shape
           (set-flip (:modifiers shape))
-          (set-points tr-points)
+          (apply-transform transform)
           (dissoc :modifiers)))
     shape))
 

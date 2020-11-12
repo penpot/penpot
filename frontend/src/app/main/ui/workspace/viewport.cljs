@@ -204,11 +204,14 @@
                 picking-color?]} local
 
         page-id       (mf/use-ctx ctx/current-page-id)
-        selrect-orig  (->> (mf/deref refs/selected-objects)
-                           (gsh/selection-rect))
-        selrect       (-> selrect-orig
-                          (assoc :modifiers (:modifiers local))
-                          (gsh/transform-shape))
+
+        selected-objects (mf/deref refs/selected-objects)
+        selrect-orig     (->> selected-objects
+                              (gsh/selection-rect))
+        selrect          (->> selected-objects
+                              (map #(assoc % :modifiers (:modifiers local)))
+                              (map gsh/transform-shape)
+                              (gsh/selection-rect))
 
         alt?          (mf/use-state false)
         viewport-ref  (mf/use-ref nil)
@@ -266,18 +269,18 @@
 
         on-pointer-down
         (mf/use-callback
-          (fn [event]
+         (fn [event]
            (let [target (dom/get-target event)]
-             ; Capture mouse pointer to detect the movements even if cursor
-             ; leaves the viewport or the browser itself
-             ; https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture
+                                        ; Capture mouse pointer to detect the movements even if cursor
+                                        ; leaves the viewport or the browser itself
+                                        ; https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture
              (.setPointerCapture target (.-pointerId event)))))
 
         on-pointer-up
         (mf/use-callback
-          (fn [event]
+         (fn [event]
            (let [target (dom/get-target event)]
-             ; Release pointer on mouse up
+                                        ; Release pointer on mouse up
              (.releasePointerCapture target (.-pointerId event)))))
 
         on-click

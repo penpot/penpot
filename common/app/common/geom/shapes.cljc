@@ -16,6 +16,7 @@
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.geom.shapes.rect :as gpr]
+   [app.common.geom.shapes.path :as gsp]
    [app.common.math :as mth]
    [app.common.data :as d]))
 
@@ -299,3 +300,7 @@
 (defn transform-matrix [shape] (gtr/transform-matrix shape))
 (defn transform-point-center [point center transform] (gtr/transform-point-center point center transform))
 (defn transform-rect [rect mtx] (gtr/transform-rect rect mtx))
+
+;; PATHS
+(defn content->points [content] (gsp/content->points content))
+(defn content->selrect [content] (gsp/content->selrect content))

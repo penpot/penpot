@@ -50,14 +50,9 @@
 
 
 (defn calculate-selrect [shape]
-  (let [points (->> shape
-                    :content
-                    (mapv #(gpt/point
-                            (-> % :params :x)
-                            (-> % :params :y))))]
-    (assoc shape
-           :points points
-           :selrect (gsh/points->selrect points))))
+  (assoc shape
+         :points (gsh/content->points (:content shape))
+         :selrect (gsh/content->selrect (:content shape))))
 
 (defn init-path []
   (ptk/reify ::init-path

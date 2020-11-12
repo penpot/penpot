@@ -135,3 +135,6 @@
   (if (< num from)
     from
     (if (> num to) to num)))
+
+(defn almost-zero? [num]
+  (< (abs num) 1e-8))

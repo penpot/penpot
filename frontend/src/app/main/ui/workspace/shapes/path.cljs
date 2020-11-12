@@ -24,7 +24,8 @@
    [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.workspace.shapes.common :as common]
-   [app.util.geom.path :as ugp]))
+   [app.util.geom.path :as ugp]
+   [app.common.geom.shapes.path :as gsp]))
 
 (mf/defc path-wrapper
   {::mf/wrap-props false}
@@ -53,7 +54,6 @@
                          :on-double-click on-double-click
                          :on-mouse-down on-mouse-down
                          :on-context-menu on-context-menu}
-
      [:& path/path-shape {:shape shape
                           :background? true}]]))
 

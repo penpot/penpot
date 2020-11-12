@@ -39,7 +39,10 @@
 
      :else
      (throw (ex-info "Invalid arguments" {:v v}))))
-  ([x y] (Point. x y)))
+  ([x y]
+   ;;(assert (not (nil? x)))
+   ;;(assert (not (nil? y)))
+   (Point. x y)))
 
 (defn add
   "Returns the addition of the supplied value to both
