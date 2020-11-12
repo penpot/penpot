@@ -60,11 +60,9 @@
 ;; HELPERS
 ;; ------------------------------------------------
 
-(defn frame->selrect [frame]
-  {:x1 0
-   :y1 0
-   :x2 (:width frame)
-   :y2 (:height frame)
+(defn frame->bounds [frame]
+  {:x 0
+   :y 0
    :width (:width frame)
    :height (:height frame)})
 
@@ -88,23 +86,24 @@
   (let [zoom (mf/deref selected-zoom)
 
         hover-shapes-ref (mf/use-memo (make-hover-shapes-iref))
-        hover-shape (-> (mf/deref hover-shapes-ref)
+        hover-shape (-> (or (mf/deref hover-shapes-ref) frame)
                         (gsh/translate-to-frame frame))
 
         selected-shapes-ref (mf/use-memo (make-selected-shapes-iref))
         selected-shapes (->> (mf/deref selected-shapes-ref)
                              (map #(gsh/translate-to-frame % frame)))
 
-        selrect (gsh/selection-rect selected-shapes)]
+        selrect (gsh/selection-rect selected-shapes)
+        bounds (frame->bounds frame)]
 
     (when (seq selected-shapes)
       [:g.selection-feedback {:pointer-events "none"}
        [:g.selected-shapes
-        [:& selection-guides {:selrect selrect :frame frame :zoom zoom}]
+        [:& selection-guides {:bounds bounds :selrect selrect :zoom zoom}]
         [:& selection-rect {:selrect selrect :zoom zoom}]
         [:& size-display {:selrect selrect :zoom zoom}]]
 
-       [:& measurement {:bounds frame
+       [:& measurement {:bounds bounds
                         :selected-shapes selected-shapes
                         :hover-shape hover-shape
                         :zoom zoom}]])))
