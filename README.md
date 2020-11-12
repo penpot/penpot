@@ -8,7 +8,7 @@
 
 # PENPOT #
 
-We’re excited to share that Uxbox is now Penpot! We’re changing the name, but keeping the same project essence. Stay in the loop for more news comming early 2021. Alpha release is close!
+We’re excited to share that Uxbox is now Penpot! We’re changing the name, but keeping the same project essence. Stay in the loop for more news coming early 2021. Alpha release is close!
 
 ![PENPOT](https://raw.githubusercontent.com/penpot/penpot/develop/docs/screenshot.png)
 
