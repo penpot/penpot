@@ -81,7 +81,7 @@
 (mf/defc path-editor
   [{:keys [shape zoom]}]
 
-  (let [points (:points shape)
+  (let [points (gsp/content->points (:content shape))
         drag-handler (:drag-handler shape)
         prev-handler (:prev-handler shape)
         last-command (last (:content shape))

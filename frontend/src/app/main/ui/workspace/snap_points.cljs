@@ -58,7 +58,7 @@
 (defn get-snap
   [coord {:keys [shapes page-id filter-shapes local]}]
   (let [shape (if (> (count shapes) 1)
-                (->> shapes (map gsh/transform-shape) gsh/selection-rect)
+                (->> shapes (map gsh/transform-shape) gsh/selection-rect (gsh/setup {:type :rect}))
                 (->> shapes (first)))
 
         shape (if (:modifiers local)

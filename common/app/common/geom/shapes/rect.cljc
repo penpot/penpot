@@ -44,6 +44,20 @@
 (defn rect->selrect [rect]
   (-> rect rect->points points->selrect))
 
+(defn join-selrects [selrects]
+  (let [minx (transduce (map :x1) min ##Inf selrects)
+        miny (transduce (map :y1) min ##Inf selrects)
+        maxx (transduce (map :x2) max ##-Inf selrects)
+        maxy (transduce (map :y2) max ##-Inf selrects)]
+    {:x minx
+     :y miny
+     :x1 minx
+     :y1 miny
+     :x2 maxx
+     :y2 maxy
+     :width (- maxx minx)
+     :height (- maxy miny)}))
+
 ;; --- SHAPE -> RECT
 #_(
    (defn- rect->rect-shape

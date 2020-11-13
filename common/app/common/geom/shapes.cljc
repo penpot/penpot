@@ -156,8 +156,9 @@
   "Returns a rect that contains all the shapes and is aware of the
   rotation of each shape. Mainly used for multiple selection."
   [shapes]
-  (let [points (->> shapes (mapcat :points))]
-    (gpr/points->selrect points)))
+  (->> shapes
+       (map :selrect)
+       (gpr/join-selrects)))
 
 (defn translate-to-frame
   [shape {:keys [x y] :as frame}]

@@ -195,7 +195,7 @@
                                  (or (filter-shapes id)
                                      (not (contains? layout :dynamic-alignment)))))
         shape (if (> (count shapes) 1)
-                (->> shapes (map gsh/transform-shape) gsh/selection-rect)
+                (->> shapes (map gsh/transform-shape) gsh/selection-rect (gsh/setup {:type :rect}))
                 (->> shapes (first)))
 
         shapes-points (->> shape

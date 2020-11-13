@@ -285,14 +285,14 @@
     (< (get-in modifiers [:resize-vector :y]) 0) (update :flip-y not)))
 
 (defn transform-shape [shape]
-  (if (:modifiers shape)
-    (let [center    (gco/center-shape shape)
-          transform (modifiers->transform (:transform shape (gmt/matrix)) center (:modifiers shape))]
-      (-> shape
-          (set-flip (:modifiers shape))
-          (apply-transform transform)
-          (dissoc :modifiers)))
-    shape))
+  (let [center (gco/center-shape shape)]
+    (if (and (:modifiers shape) center)
+      (let [transform (modifiers->transform (:transform shape (gmt/matrix)) center (:modifiers shape))]
+        (-> shape
+            (set-flip (:modifiers shape))
+            (apply-transform transform)
+            (dissoc :modifiers)))
+      shape)))
 
 #_(defn transform-shape
     "Transform the shape properties given the modifiers"
