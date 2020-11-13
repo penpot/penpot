@@ -164,12 +164,12 @@
       [:span.counters (str (inc index) " / " total)]]
 
      [:div.mode-zone
-      [:button.mode-zone-button {:on-click #(when (not= screen :viewer)
+      [:button.mode-zone-button.tooltip.tooltip-bottom {:on-click #(when (not= screen :viewer)
                                               (change-screen :viewer))
-                                 :class (when (= screen :viewer) "active")} i/play]
-      [:button.mode-zone-button {:on-click #(when (not= screen :handoff)
+                                 :class (when (= screen :viewer) "active") :alt "View mode"} i/play]
+      [:button.mode-zone-button.tooltip.tooltip-bottom {:on-click #(when (not= screen :handoff)
                                               (change-screen :handoff))
-                                 :class (when (= screen :handoff) "active")} i/code]]
+                                 :class (when (= screen :handoff) "active") :alt "Code mode"} i/code]]
 
      [:div.options-zone
       [:& interactions-menu {:interactions-mode interactions-mode}]

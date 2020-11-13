@@ -59,7 +59,7 @@
 // NEW GEN MODALS
 
 .modal-container {
-  border-radius: 8px;
+  border-radius: $br-medium;
   display: flex;
   flex-direction: column;
   width: 448px;
@@ -78,10 +78,12 @@
   .modal-header-title {
     display: flex;
     align-items: center;
-    font-size: $fs24;
+    font-size: $fs18;
     padding-left: 16px;
 
     h2 {
+      font-size: $fs18;
+      font-weight: 400;
       margin: 0;
     }
   }
@@ -204,8 +206,9 @@
 }
 
 .libraries-dialog {
-  width: 920px;
+  border-radius: $br-medium;
   height: 664px;
+  width: 920px;
 
   .modal-content {
     display: flex;
@@ -319,9 +322,9 @@
     }
 
     .libraries-search {
-      border: 1px solid $color-gray-30;
+      border: 1px solid $color-gray-20;
       margin: $size-4;
-      padding: $x-small;
+      padding: $x-small $small;
       display: flex;
       align-items: center;
 
