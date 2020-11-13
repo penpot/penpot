@@ -34,21 +34,18 @@
 
 ;; -- MIGRATIONS --
 
-(defn- generate-child-parent-index
-  [objects]
-  (reduce-kv
-   (fn [index id obj]
-     (into index (map #(vector % id) (:shapes obj []))))
-   {} objects))
+;; Ensure that all :shape attributes on shapes are vectors.
 
-;; (defmethod migrate 5
-;;   [data]
-;;   (update data :objects
-;;           (fn [objects]
-;;             (let [index (generate-child-parent-index objects)]
-;;               (d/mapm
-;;                (fn [id obj]
-;;                  (let [parent-id (get index id)]
-;;                    (assoc obj :parent-id parent-id)))
-;;                objects)))))
+(defmethod migrate 2
+  [data]
+  (letfn [(update-object [id object]
+            (d/update-when object :shapes
+                           (fn [shapes]
+                             (if (seq? shapes)
+                               (into [] shapes)
+                               shapes))))
 
+          (update-page [id page]
+            (update page :objects #(d/mapm update-object %)))]
+
+    (update data :pages-index #(d/mapm update-page %))))

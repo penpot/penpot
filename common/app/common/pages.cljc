@@ -20,7 +20,7 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]))
 
-(def file-version 1)
+(def file-version 2)
 (def max-safe-int 9007199254740991)
 (def min-safe-int -9007199254740991)
 
@@ -268,7 +268,7 @@
   (s/every :internal.shape/point :kind vector?))
 
 (s/def :internal.shape/shapes
-  (s/every uuid?))
+  (s/every uuid? :kind vector?))
 
 (s/def ::shape-attrs
   (s/keys :opt-un [:internal.shape/blocked
@@ -295,7 +295,7 @@
                    :internal.shape/x
                    :internal.shape/y
                    :internal.shape/exports
-                   ;; :internal.shape/shapes
+                   :internal.shape/shapes
                    :internal.shape/stroke-color
                    :internal.shape/stroke-color-ref-file
                    :internal.shape/stroke-color-ref-id
