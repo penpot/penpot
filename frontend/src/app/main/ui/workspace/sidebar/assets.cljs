@@ -667,7 +667,7 @@
         [:div.assets-bar-title
          (t locale "workspace.assets.assets")
          [:div.libraries-button {:on-click #(modal/show! :libraries-dialog {})}
-          i/libraries
+          i/text-align-justify
           (t locale "workspace.assets.libraries")]]
 
         [:div.search-block
