@@ -9,11 +9,15 @@
 
 .color-cell {
   .color-bullet {
-    background-color: $color-white;
+    background-color: transparent;
     // Creates strange artifacts
     border: 2px solid $color-gray-60;
     // box-shadow: 0 0 0 2px $color-gray-60;
     border-radius: 50%;
+
+    &:hover {
+      border-color: $color-primary;
+    }
   }
 
   &.cell-big .color-bullet {
@@ -74,10 +78,11 @@ ul.palette-menu .color-bullet {
 }
 
 .asset-group .group-list-item .color-bullet {
-  width: 20px;
-  height: 20px;
+  border: 1px solid $color-gray-20;
   border-radius: 10px;
+  height: 20px;
   margin-right: $x-small;
+  width: 20px;
 }
 
 .color-cell.add-color:hover .color-bullet {
