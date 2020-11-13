@@ -117,6 +117,7 @@
 
   .asset-group {
     background-color: $color-gray-60;
+    border-top: 1px solid $color-gray-50;
     padding: $small;
     font-size: $fs12;
     color: $color-gray-20;
@@ -164,10 +165,10 @@
     }
 
     .group-grid {
-      margin-top: $small;
+      margin-top: $medium;
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      grid-auto-rows: 7vh;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      grid-auto-rows: 6vh;
       column-gap: 0.5rem;
       row-gap: 0.5rem;
 
@@ -252,6 +253,10 @@
     //   max-height: 30rem;
     //   overflow-y: scroll;
     // }
+
+    .group-list {
+      margin-top: $medium;
+    }
 
     .group-list-item {
       display: flex;

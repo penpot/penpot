@@ -260,8 +260,10 @@
     }
 
     .section-title {
+      color: $color-black;
       font-size: $fs15;
       padding: 0 $size-4;
+      font-weight: 500;
     }
 
     .section-list {

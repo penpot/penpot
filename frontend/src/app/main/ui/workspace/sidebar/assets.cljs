@@ -570,7 +570,7 @@
             [:span.tool-badge (t locale "workspace.assets.shared")])]
         [:*
           [:span (:name file)]
-          [:span.tool-link
+          [:span.tool-link.tooltip.tooltip-left {:alt "Open library file"}
            [:a {:href (str "#" url) :target "_blank"} i/chain]]])]
 
      (when @open?
