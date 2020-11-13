@@ -56,7 +56,7 @@
   "auth.forgot-password" : {
     "used-in" : [ "src/app/main/ui/auth/login.cljs:122" ],
     "translations" : {
-      "en" : "Forgot your password?",
+      "en" : "Forgot password?",
       "fr" : "Mot de passe oublié?",
       "ru" : "Забыли пароль?",
       "es" : "¿Olvidaste tu contraseña?"
@@ -224,7 +224,7 @@
   "auth.recovery-request-title" : {
     "used-in" : [ "src/app/main/ui/auth/recovery_request.cljs:61" ],
     "translations" : {
-      "en" : "Forgot your password?",
+      "en" : "Forgot password?",
       "fr" : "Vous avez oublié votre mot de passe?",
       "ru" : "Забыли пароль?",
       "es" : "¿Olvidaste tu contraseña?"
