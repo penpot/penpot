@@ -1001,6 +1001,16 @@ input[type=range]:focus::-ms-fill-upper {
     }
   }
 
+ &.tooltip-left {
+    &:hover {
+      &::after {
+        left: unset;
+        right: 130%;
+        top: 15%;
+      }
+    }
+  }
+
   &.tooltip-hover {
     &:hover {
       &::after {

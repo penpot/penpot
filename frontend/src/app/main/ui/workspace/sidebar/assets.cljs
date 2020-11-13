@@ -570,7 +570,7 @@
             [:span.tool-badge (t locale "workspace.assets.shared")])]
         [:*
           [:span (:name file)]
-          [:span.tool-link
+          [:span.tool-link.tooltip.tooltip-left {:alt "Open library file"}
            [:a {:href (str "#" url) :target "_blank"} i/chain]]])]
 
      (when @open?
@@ -667,7 +667,7 @@
         [:div.assets-bar-title
          (t locale "workspace.assets.assets")
          [:div.libraries-button {:on-click #(modal/show! :libraries-dialog {})}
-          i/libraries
+          i/text-align-justify
           (t locale "workspace.assets.libraries")]]
 
         [:div.search-block

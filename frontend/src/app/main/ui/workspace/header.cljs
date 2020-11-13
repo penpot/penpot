@@ -258,7 +258,7 @@
         :on-zoom-fit #(st/emit! dw/zoom-to-fit-all)
         :on-zoom-selected #(st/emit! dw/zoom-to-selected-shape)}]
 
-      [:a.btn-icon-dark.btn-small
+      [:a.btn-icon-dark.btn-small.tooltip.tooltip-bottom
        {;; :target "__blank"
         :alt (t locale "workspace.header.viewer")
         :href (str "#" view-url)} i/play]]]))

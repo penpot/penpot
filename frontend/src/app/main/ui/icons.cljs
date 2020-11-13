@@ -49,6 +49,7 @@
 (def grid (icon-xref :grid))
 (def grid-snap (icon-xref :grid-snap))
 (def icon-empty (icon-xref :icon-empty))
+(def icon-list (icon-xref :icon-list))
 (def icon-lock (icon-xref :icon-lock))
 (def icon-set (icon-xref :icon-set))
 (def image (icon-xref :image))

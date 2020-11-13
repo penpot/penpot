@@ -26,9 +26,9 @@
 
       svg {
         fill: $color-gray-30;
-        height: 20px;
-        width: 20px;
-        padding-right: $x-small;
+        height: 16px;
+        width: 16px;
+        padding-right: 6px;
       }
     }
 
@@ -44,7 +44,7 @@
   .search-block {
     border: 1px solid $color-gray-30;
     margin: $small $small 0 $small;
-    padding: $x-small;
+    padding: $x-small $small;
     display: flex;
     align-items: center;
 
@@ -117,6 +117,7 @@
 
   .asset-group {
     background-color: $color-gray-60;
+    border-top: 1px solid $color-gray-50;
     padding: $small;
     font-size: $fs12;
     color: $color-gray-20;
@@ -164,10 +165,10 @@
     }
 
     .group-grid {
-      margin-top: $small;
+      margin-top: $medium;
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      grid-auto-rows: 7vh;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      grid-auto-rows: 6vh;
       column-gap: 0.5rem;
       row-gap: 0.5rem;
 
@@ -252,6 +253,10 @@
     //   max-height: 30rem;
     //   overflow-y: scroll;
     // }
+
+    .group-list {
+      margin-top: $medium;
+    }
 
     .group-list-item {
       display: flex;
