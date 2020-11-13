@@ -21,7 +21,7 @@
 (defstate server
   :start (ccs/start-server
           {:address "127.0.0.1"
-           :port 6061
+           :port 6062
            :name "main"
            :accept 'app.srepl.server/repl})
   :stop (ccs/stop-server "main"))
