@@ -209,6 +209,11 @@
       .label { color: $color-danger; }
       .icon svg { fill: $color-danger; }
     }
+
+    &.pending {
+      .label { color: $color-warning; }
+      .icon svg { fill: $color-warning; }
+    }
   }
 
   .icon {
