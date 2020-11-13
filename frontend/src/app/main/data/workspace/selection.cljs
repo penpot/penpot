@@ -118,7 +118,7 @@
              objects (dwc/lookup-page-objects state page-id)]
         (rx/of (dwc/expand-all-parents ids objects))))))
 
-(defn deselect-all 
+(defn deselect-all
   "Clear all possible state of drawing, edition
   or any similar action taken by the user.
   When `check-modal` the method will check if a modal is opened
@@ -202,7 +202,7 @@
                      (name (gensym prefix)))]
     (-> (cp/make-minimal-group frame-id selrect group-name)
         (geom/setup selrect)
-        (assoc :shapes (map :id shapes)))))
+        (assoc :shapes (mapv :id shapes)))))
 
 (defn prepare-create-group
   [page-id shapes prefix keep-name]
@@ -217,15 +217,15 @@
                   {:type :mov-objects
                    :page-id page-id
                    :parent-id (:id group)
-                   :shapes (map :id shapes)}]
+                   :shapes (mapv :id shapes)}]
 
         uchanges (conj
-                   (map (fn [obj] {:type :mov-objects
-                                   :page-id page-id
-                                   :parent-id (:parent-id obj)
-                                   :index (::index obj)
-                                   :shapes [(:id obj)]})
-                        shapes)
+                   (mapv (fn [obj] {:type :mov-objects
+                                    :page-id page-id
+                                    :parent-id (:parent-id obj)
+                                    :index (::index obj)
+                                    :shapes [(:id obj)]})
+                         shapes)
                    {:type :del-obj
                     :id (:id group)
                     :page-id page-id})]
