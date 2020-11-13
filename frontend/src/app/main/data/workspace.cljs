@@ -1479,8 +1479,7 @@
             selected (get-in state [:workspace-local :selected])
             shapes   (dws/shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
-          (let [[group rchanges uchanges]
-                (dws/prepare-create-group page-id shapes "Group-" false)]
+          (let [[group rchanges uchanges] (dws/prepare-create-group page-id shapes "Group-" false)]
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
                    (dws/select-shapes (d/ordered-set (:id group))))))))))
 

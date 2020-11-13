@@ -262,10 +262,13 @@
                    :internal.shape/height]))
 
 (s/def :internal.shape/point
-  (s/keys :req-un [:internal.shape/x :internal.shape/y]))
+  (s/and (s/keys :req-un [:internal.shape/x :internal.shape/y]) gpt/point?))
 
 (s/def :internal.shape/points
-  (s/coll-of :internal.shape/point :kind vector?))
+  (s/every :internal.shape/point :kind vector?))
+
+(s/def :internal.shape/shapes
+  (s/every uuid? :kind vector?))
 
 (s/def ::shape-attrs
   (s/keys :opt-un [:internal.shape/blocked
@@ -292,6 +295,7 @@
                    :internal.shape/x
                    :internal.shape/y
                    :internal.shape/exports
+                   :internal.shape/shapes
                    :internal.shape/stroke-color
                    :internal.shape/stroke-color-ref-file
                    :internal.shape/stroke-color-ref-id
@@ -433,7 +437,7 @@
 
 (s/def :internal.operations.set/attr keyword?)
 (s/def :internal.operations.set/val any?)
-(s/def :internal.operations.set/touched 
+(s/def :internal.operations.set/touched
   (s/nilable (s/every keyword? :kind set?)))
 
 (defmethod operation-spec :set [_]
@@ -475,7 +479,7 @@
   (s/keys :req-un [::page-id :internal.changes.reg-objects/shapes]))
 
 (defmethod change-spec :mov-objects [_]
-  (s/keys :req-un [::page-id ::parent-id ::shapes]
+  (s/keys :req-un [::page-id ::parent-id :internal.shape/shapes]
           :opt-un [::index]))
 
 (defmethod change-spec :add-page [_]
