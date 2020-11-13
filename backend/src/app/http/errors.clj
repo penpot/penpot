@@ -16,6 +16,12 @@
   (fn [err & rest]
     (:type (ex-data err))))
 
+
+(defmethod handle-exception :authorization
+  [err req]
+  {:status 403
+   :body (ex-data err)})
+
 (defmethod handle-exception :validation
   [err req]
   (let [header (get-in req [:headers "accept"])

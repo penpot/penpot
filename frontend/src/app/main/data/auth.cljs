@@ -120,7 +120,8 @@
       (reset! storage {})
       (i18n/set-default-locale!))))
 
-(def logout
+(defn logout
+  []
   (ptk/reify ::logout
     ptk/WatchEvent
     (watch [_ state stream]

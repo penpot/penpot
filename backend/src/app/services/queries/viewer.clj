@@ -35,40 +35,39 @@
 (s/def ::id ::us/uuid)
 (s/def ::file-id ::us/uuid)
 (s/def ::page-id ::us/uuid)
-(s/def ::share-token ::us/string)
+(s/def ::token ::us/string)
 
 (s/def ::viewer-bundle
   (s/keys :req-un [::file-id ::page-id]
-          :opt-un [::profile-id ::share-token]))
+          :opt-un [::profile-id ::token]))
 
 (sq/defquery ::viewer-bundle
-  [{:keys [profile-id file-id page-id share-token] :as params}]
+  [{:keys [profile-id file-id page-id token] :as params}]
   (db/with-atomic [conn db/pool]
     (let [file    (files/retrieve-file conn file-id)
-
           project (retrieve-project conn (:project-id file))
           page    (get-in file [:data :pages-index page-id])
-
-          file-library (select-keys (:data file) [:colors :media :typographies])
-          bundle  {:file (-> (dissoc file :data)
-                             (merge file-library))
-                   :page (get-in file [:data :pages-index page-id])
-                   :project project}
-          ]
-      (if (string? share-token)
+          file    (merge (dissoc file :data)
+                         (select-keys (:data file) [:colors :media :typographies]))
+          libs    (files/retrieve-file-libraries conn false file-id)
+          bundle  {:file file
+                   :page page
+                   :project project
+                   :libraries libs}]
+      (if (string? token)
         (do
-          (check-shared-token! conn file-id page-id share-token)
-          (assoc bundle :share-token share-token))
-        (let [token (retrieve-shared-token conn file-id page-id)]
-          (files/check-edition-permissions! conn profile-id file-id)
-          (assoc bundle :share-token token))))))
+          (check-shared-token! conn file-id page-id token)
+          (assoc bundle :token token))
+        (let [stoken (retrieve-shared-token conn file-id page-id)]
+          (files/check-read-permissions! conn profile-id file-id)
+          (assoc bundle :share-token (:token stoken)))))))
 
 (defn check-shared-token!
   [conn file-id page-id token]
   (let [sql "select exists(select 1 from file_share_token where file_id=? and page_id=? and token=?) as exists"]
     (when-not (:exists (db/exec-one! conn [sql file-id page-id token]))
-      (ex/raise :type :validation
-                :code :not-authorized))))
+      (ex/raise :type :authorization
+                :code :unauthorized-token))))
 
 (defn retrieve-shared-token
   [conn file-id page-id]
