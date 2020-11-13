@@ -26,6 +26,14 @@
   [v]
   (instance? Point v))
 
+(defn ^boolean point-like?
+  [{:keys [x y] :as v}]
+  (and (map? v)
+       (not (nil? x))
+       (not (nil? y))
+       (number? x)
+       (number? y)))
+
 (defn point
   "Create a Point instance."
   ([] (Point. 0 0))
@@ -36,6 +44,9 @@
 
      (number? v)
      (Point. v v)
+
+     (point-like? v)
+     (Point. (:x v) (:y v))
 
      :else
      (throw (ex-info "Invalid arguments" {:v v}))))

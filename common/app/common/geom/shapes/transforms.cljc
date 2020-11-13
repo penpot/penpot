@@ -226,7 +226,8 @@
            :content content
            :points points
            :selrect selrect
-           :rotation rotation)))
+           ;;:rotation rotation
+           )))
 
 (defn apply-transform-curve
   [shape transform]

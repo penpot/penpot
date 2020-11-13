@@ -21,7 +21,10 @@
   segments)
 
 (defn content->points [content]
-  (mapv #(gpt/point (-> % :params :x) (-> % :params :y)) content))
+  (->> content
+       (map #(when (-> % :params :x) (gpt/point (-> % :params :x) (-> % :params :y))))
+       (remove nil?)
+       (into [])))
 
 ;; https://medium.com/@Acegikmo/the-ever-so-lovely-b%C3%A9zier-curve-eb27514da3bf
 ;; https://en.wikipedia.org/wiki/Bernstein_polynomial
@@ -105,6 +108,7 @@
   (let [calc-extremities
         (fn [command prev]
           (case (:command command)
+            :close-path []
             :move-to [(command->point command)]
 
             ;; If it's a line we add the beginning point and endpoint

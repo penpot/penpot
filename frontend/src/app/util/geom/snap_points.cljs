@@ -30,7 +30,6 @@
 (defn shape-snap-points
   [shape]
   (let [shape (gsh/transform-shape shape)]
-
     (case (:type shape)
       :frame (-> shape :selrect frame-snap-points)
       (:path :curve) (-> shape :selrect selrect-snap-points)

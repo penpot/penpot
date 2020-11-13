@@ -11,12 +11,101 @@
   (:require
    [beicon.core :as rx]
    [potok.core :as ptk]
+   [app.common.math :as mth]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.main.streams :as ms]
+   [app.util.data :as d]
    [app.util.geom.path :as ugp]
+   [app.main.streams :as ms]
    [app.main.data.workspace.drawing.common :as common]))
 
+;;;;
+
+(def close-path-distance 5)
+
+(defn seek-start-path [content]
+  (->> content
+       reverse
+       (d/seek (fn [{cmd :command}] (= cmd :move-to)))
+       :params))
+
+(defn next-node
+  "Calculates the next-node to be inserted."
+  [shape position prev-point prev-handler]
+  (let [last-command (-> shape :content last :command)
+        start-point  (-> shape :content seek-start-path)
+
+        add-line?   (and prev-point (not prev-handler) (not= last-command :close-path))
+        add-curve?  (and prev-point prev-handler (not= last-command :close-path))
+        close-path? (and start-point
+                         (< (mth/abs (gpt/distance (gpt/point start-point)
+                                                   (gpt/point position)))
+                            close-path-distance))]
+    (cond
+      close-path? {:command :close-path
+                   :params []}
+      add-line?   {:command :line-to
+                   :params position}
+      add-curve?  {:command :curve-to
+                   :params (ugp/make-curve-params position prev-handler)}
+      :else       {:command :move-to
+                   :params position})))
+
+(defn append-node
+  "Creates a new node in the path. Usualy used when drawing."
+  [shape position prev-point prev-handler]
+  (let [command (next-node shape position prev-point prev-handler)]
+    (as-> shape $
+      (update $ :content (fnil conj []) command)
+      (update $ :selrect (gsh/content->selrect (:content $))))))
+
+(defn suffix-keyword [kw suffix]
+  (let [strkw (if kw (name kw) "")]
+    (keyword (str strkw suffix))))
+
+;; handler-type => :prev :next
+(defn move-handler [shape index handler-type match-opposite? position]
+  (let [content (:content shape)
+        [command next-command] (-> (d/with-next content) (nth index))
+
+        update-command
+        (fn [{cmd :command params :params :as command} param-prefix prev-command]
+          (if (#{:line-to :curve-to} cmd)
+            (let [command (if (= cmd :line-to)
+                            {:command :curve-to
+                             :params (ugp/make-curve-params params (:params prev-command))}
+                            command)]
+              (-> command
+                  (update :params assoc
+                          (suffix-keyword param-prefix "x") (:x position)
+                          (suffix-keyword param-prefix "y") (:y position))))
+            command))
+
+        update-content
+        (fn [shape index prefix]
+          (if (contains? (:content shape) index)
+            (let [prev-command (get-in shape [:content (dec index)])]
+              (update-in shape [:content index] update-command prefix prev-command))
+
+            shape))]
+
+    (cond-> shape
+      (= :prev handler-type)
+      (update-content index :c2)
+
+      (and (= :next handler-type) next-command)
+      (update-content (inc index) :c1)
+
+      match-opposite?
+      (move-handler
+       index
+       (if (= handler-type :prev) :next :prev)
+       false
+       (ugp/opposite-handler (gpt/point (:params command))
+                             (gpt/point position))))))
+
+
+;;;;
 (defn finish-event? [{:keys [type shift] :as event}]
   (or (= event ::end-path-drawing)
       (= event :interrupt)
@@ -74,92 +163,37 @@
   (ptk/reify ::add-node
     ptk/UpdateEvent
     (update [_ state]
-      (let [point {:x x :y y}
-            {:keys [last-point prev-handler]} (get-in state [:workspace-drawing :object])
-
-            command (cond
-                      (and last-point (not prev-handler))
-                      {:command :line-to
-                       :params point}
-
-                      (and last-point prev-handler)
-                      {:command :curve-to
-                       :params (ugp/make-curve-params point prev-handler)}
-
-                      :else
-                      nil)
-            ]
-        (-> state
-            (assoc-in  [:workspace-drawing :object :preview] command))))))
+      (let [position (gpt/point x y)
+            {:keys [last-point prev-handler] :as shape} (get-in state [:workspace-drawing :object])
+            command (next-node shape position last-point prev-handler)]
+        (assoc-in state [:workspace-drawing :object :preview] command)))))
 
 (defn add-node [{:keys [x y]}]
   (ptk/reify ::add-node
     ptk/UpdateEvent
     (update [_ state]
-      (let [point {:x x :y y}
-            {:keys [last-point prev-handler]} (get-in state [:workspace-drawing :object])
 
-            command (cond
-                      (and last-point (not prev-handler))
-                      {:command :line-to
-                       :params point}
-
-                      (and last-point prev-handler)
-                      {:command :curve-to
-                       :params (ugp/make-curve-params point prev-handler)}
-
-                      :else
-                      {:command :move-to
-                       :params point})
-            ]
-        (-> state
-            (assoc-in  [:workspace-drawing :object :last-point] point)
-            (update-in [:workspace-drawing :object] dissoc :prev-handler)
-            (update-in [:workspace-drawing :object :content] (fnil conj []) command)
-            (update-in [:workspace-drawing :object] calculate-selrect))))))
+      (let [position (gpt/point x y)
+            {:keys [last-point prev-handler]} (get-in state [:workspace-drawing :object])]
+        (update-in
+         state
+         [:workspace-drawing :object]
+         #(-> %
+              (append-node position last-point prev-handler)
+              (assoc :last-point position)
+              (dissoc :prev-handler)))))))
 
 (defn drag-handler [{:keys [x y]}]
   (ptk/reify ::drag-handler
     ptk/UpdateEvent
     (update [_ state]
-      (let [change-handler (fn [content]
-                             (let [last-idx (dec (count content))
-                                   last (get content last-idx nil)
-                                   prev (get content (dec last-idx) nil)
-                                   {last-x :x last-y :y} (:params last)
-                                   opposite (when last (ugp/opposite-handler (gpt/point last-x last-y) (gpt/point x y)))]
 
-                               (cond
-                                 (and prev (= (:command last) :line-to))
-                                 (-> content
-                                     (assoc last-idx {:command :curve-to
-                                                      :params {:x (-> last :params :x)
-                                                               :y (-> last :params :y)
-                                                               :c1x (-> prev :params :x)
-                                                               :c1y (-> prev :params :y)
-                                                               :c2x (-> last :params :x)
-                                                               :c2y (-> last :params :y)}})
-                                     (update-in
-                                      [last-idx :params]
-                                      #(-> %
-                                           (assoc :c2x (:x opposite)
-                                                  :c2y (:y opposite)))))
-
-                                 (= (:command last) :curve-to)
-                                 (update-in content
-                                            [last-idx :params]
-                                            #(-> %
-                                                 (assoc :c2x (:x opposite)
-                                                        :c2y (:y opposite))))
-                                 :else
-                                 content))
-
-
-                             )
-            handler (gpt/point x y)]
+      (let [position (gpt/point x y)
+            shape (get-in state [:workspace-drawing :object])
+            index (dec (count (:content shape)))]
         (-> state
-            (update-in [:workspace-drawing :object :content] change-handler)
-            (assoc-in [:workspace-drawing :object :drag-handler] handler))))))
+            (update-in [:workspace-drawing :object] move-handler index :next true position)
+            (assoc-in [:workspace-drawing :object :drag-handler] position))))))
 
 (defn finish-drag []
   (ptk/reify ::finish-drag
