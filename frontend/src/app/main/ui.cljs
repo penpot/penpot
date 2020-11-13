@@ -178,7 +178,7 @@
 (defmethod ptk/handle-error :validation
   [error]
   (ts/schedule
-   (st/emitf (dm/show {:content "Unexpected validation error."
+   (st/emitf (dm/show {:content "Unexpected validation error (server side)."
                        :type :error
                        :timeout 5000})))
   (when-let [explain (:explain error)]
@@ -190,11 +190,13 @@
 
 (defmethod ptk/handle-error :authentication
   [error]
-  (ts/schedule 0 #(st/emit! logout)))
+  (ts/schedule 0 #(st/emit! (logout))))
 
 (defmethod ptk/handle-error :authorization
   [error]
-  (ts/schedule 0 #(st/emit! logout)))
+  (ts/schedule
+   (st/emitf (dm/show {:content "Not authorized to see this content."
+                       :type :error}))))
 
 (defmethod ptk/handle-error :assertion
   [{:keys [data stack message context] :as error}]

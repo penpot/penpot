@@ -71,13 +71,10 @@
     (watch [_ state stream]
       (let [params (cond-> {:page-id page-id
                             :file-id file-id}
-                     (string? token) (assoc :share-token token))]
-        (->> (rx/zip (rp/query :viewer-bundle params)
-                     (rp/query :file-libraries {:file-id file-id}))
+                     (string? token) (assoc :token token))]
+        (->> (rp/query :viewer-bundle params)
              (rx/first)
-             (rx/map #(apply bundle-fetched %))
-             #_(rx/catch (fn [error-data]
-                         (rx/of (rt/nav :not-found)))))))))
+             (rx/map bundle-fetched))))))
 
 (defn- extract-frames
   [objects]
@@ -89,7 +86,7 @@
          (vec))))
 
 (defn bundle-fetched
-  [{:keys [project file page share-token] :as bundle} libraries]
+  [{:keys [project file page share-token token libraries] :as bundle}]
   (us/verify ::bundle bundle)
   (ptk/reify ::file-fetched
     ptk/UpdateEvent
@@ -103,6 +100,7 @@
                                  :file file
                                  :page page
                                  :frames frames
+                                 :token token
                                  :share-token share-token}))))))
 
 (def create-share-link
@@ -244,12 +242,12 @@
       (let [page-id (get-in state [:viewer-local :page-id])
             file-id (get-in state [:viewer-local :file-id])
             frames  (get-in state [:viewer-data :frames])
-            share-token  (get-in state [:viewer-data :share-token])
+            token   (get-in state [:viewer-data :token])
             index   (d/index-of-pred frames #(= (:id %) frame-id))]
         (rx/of (rt/nav :viewer
                        {:page-id page-id
                         :file-id file-id}
-                       {:token share-token
+                       {:token token
                         :index index}))))))
 
 (defn set-current-frame [frame-id]
