@@ -32,6 +32,7 @@
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.drawing :as dwd]
+   [app.main.data.workspace.drawing.path :as dwdp]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.streams :as ms]
@@ -1628,6 +1629,8 @@
 (def clear-edition-mode dwc/clear-edition-mode)
 (def add-shape dwc/add-shape)
 (def start-edition-mode dwc/start-edition-mode)
+
+(defn start-path-edit [id] (dwdp/start-path-edit id))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

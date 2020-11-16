@@ -213,9 +213,3 @@
         opposite (gpt/add point (gpt/negate phv))]
     opposite))
 
-(defn extract-handlers [content]
-  (let [extract (fn [{param1 :params :as cmd1} {param2 :params :as cmd2}]
-                  {:point (gpt/point (:x param1) (:y param1))
-                   :prev  (when (:c2x param1) (gpt/point (:c2x param1) (:c2y param1)))
-                   :next  (when (:c1x param2) (gpt/point (:c1x param2) (:c1y param2)))})]
-    (map extract content (d/concat [] (rest content) [nil]))))

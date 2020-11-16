@@ -225,3 +225,76 @@
     padding: $x-small;
   }
 }
+
+.viewport-actions {
+  position: absolute;
+  margin-left: auto;
+  width: 100%;
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+
+  .path-actions {
+    display: flex;
+    flex-direction: row;
+    background: white;
+    border-radius: 3px;
+    padding: 0.5rem;
+    border: 1px solid $color-gray-20;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .viewport-actions-group {
+    display: flex;
+    flex-direction: row;
+    border-right: 1px solid $color-gray-20;
+  }
+
+  .viewport-actions-entry {
+    width: 27px;
+    height: 20px;
+    margin: 0 0.25rem;
+    cursor: pointer;
+
+    svg {
+      width: 27px;
+      height: 20px;
+    }
+
+    &:hover svg {
+      fill: $color-primary;
+    }
+
+    &.disabled {
+      opacity: 0.3;
+
+      &:hover svg {
+        fill: initial;
+      }
+    }
+  }
+
+  .viewport-actions-entry-wide {
+    width: 27px;
+    height: 20px;
+
+    svg {
+      width: 27px;
+      height: 20px;
+    }
+  }
+
+  .path-actions > :first-child .viewport-actions-entry {
+    margin-left: 0;
+  }
+
+  .path-actions > :last-child {
+    border: none;
+  }
+
+  .path-actions > :last-child .viewport-actions-entry {
+    margin-right: 0;
+  }
+}

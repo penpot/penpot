@@ -128,6 +128,14 @@
 (def checkbox-checked (icon-xref :checkbox-checked))
 (def checkbox-unchecked (icon-xref :checkbox-unchecked))
 (def code (icon-xref :code))
+(def nodes-add (icon-xref :nodes-add))
+(def nodes-corner (icon-xref :nodes-corner))
+(def nodes-curve (icon-xref :nodes-curve))
+(def nodes-join (icon-xref :nodes-join))
+(def nodes-merge (icon-xref :nodes-merge))
+(def nodes-remove (icon-xref :nodes-remove))
+(def nodes-separate (icon-xref :nodes-separate))
+(def nodes-snap (icon-xref :nodes-snap))
 
 (def loader-pencil
   (mf/html

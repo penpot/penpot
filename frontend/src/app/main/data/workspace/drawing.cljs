@@ -99,6 +99,6 @@
                (box/handle-drawing-box))))))
 
 ;; Export
-(def close-drawing-path path/close-drawing-path)
+#_(def close-drawing-path path/close-drawing-path)
 
 

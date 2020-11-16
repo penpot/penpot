@@ -1,4 +1,4 @@
-;; This Source Code Form is subject to the terms of the Mozilla Public
+; This Source Code Form is subject to the terms of the Mozilla Public
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
@@ -52,7 +52,8 @@
    [goog.events :as events]
    [potok.core :as ptk]
    [promesa.core :as p]
-   [rumext.alpha :as mf])
+   [rumext.alpha :as mf]
+   [app.main.ui.workspace.shapes.path :refer [path-actions]])
   (:import goog.events.EventType))
 
 ;; --- Coordinates Widget
@@ -222,7 +223,6 @@
         drawing-obj   (:object drawing)
         zoom          (or zoom 1)
 
-
         on-mouse-down
         (mf/use-callback
          (mf/deps drawing-tool edition)
@@ -234,15 +234,13 @@
                  alt? (kbd/alt? event)]
              (st/emit! (ms/->MouseEvent :down ctrl? shift? alt?))
              (cond
-               (and (= 1 (.-which event)))
-
+               (and (= 1 (.-which event)) (not edition))
                (if drawing-tool
                  (when (not (#{:comments :path} drawing-tool))
                    (st/emit! (dd/start-drawing drawing-tool)))
                  (st/emit! dw/handle-selection))
 
-               (and (not edition)
-                    (= 2 (.-which event)))
+               (and (= 2 (.-which event)))
                (handle-viewport-positioning viewport-ref)))))
 
         on-context-menu
@@ -294,12 +292,16 @@
 
         on-double-click
         (mf/use-callback
+         (mf/deps edition)
          (fn [event]
            (dom/stop-propagation event)
            (let [ctrl? (kbd/ctrl? event)
                  shift? (kbd/shift? event)
                  alt? (kbd/alt? event)]
-             (st/emit! (ms/->MouseEvent :double-click ctrl? shift? alt?)))))
+             (st/emit! (ms/->MouseEvent :double-click ctrl? shift? alt?))
+
+             (if edition
+               (st/emit! dw/clear-edition-mode)))))
 
         on-key-down
         (mf/use-callback
@@ -610,3 +612,13 @@
       (when (= options-mode :prototype)
         [:& interactions {:selected selected}])]]))
 
+
+(mf/defc viewport-actions []
+  (let [edition (mf/deref refs/selected-edition)
+        selected (mf/deref refs/selected-objects)
+        shape (-> selected first)]
+    (when (and (= (count selected) 1)
+               (= (:id shape) edition)
+               (= :path (:type shape)))
+      [:div.viewport-actions
+       [:& path-actions {:shape shape}]])))

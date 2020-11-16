@@ -10,22 +10,40 @@
 (ns app.main.ui.workspace.shapes.path
   (:require
    [rumext.alpha :as mf]
-   [app.common.data :as d]
+   [okulary.core :as l]
+   [app.util.data :as d]
    [app.util.dom :as dom]
    [app.util.timers :as ts]
+   [app.main.refs :as refs]
    [app.main.streams :as ms]
    [app.main.constants :as c]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.drawing :as dr]
+   [app.main.data.workspace.drawing.path :as drp]
    [app.main.ui.keyboard :as kbd]
    [app.main.ui.shapes.path :as path]
    [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.workspace.shapes.common :as common]
    [app.util.geom.path :as ugp]
-   [app.common.geom.shapes.path :as gsp]))
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes.path :as gsp]
+   [app.main.ui.cursors :as cur]
+   [app.main.ui.icons :as i]))
+
+(def primary-color "#1FDEA7")
+(def secondary-color "#DB00FF")
+(def black-color "#000000")
+(def white-color "#FFFFFF")
+(def gray-color "#B1B2B5")
+
+(def edit-path-ref
+  (l/derived :edit-path refs/workspace-local))
+
+(def content-modifiers-ref
+  (l/derived :content-modifiers edit-path-ref))
 
 (mf/defc path-wrapper
   {::mf/wrap-props false}
@@ -43,12 +61,15 @@
         on-double-click (mf/use-callback
                          (mf/deps shape)
                          (fn [event]
-                           (prn "?? PATH")
-                           (when (and (not (::dr/initialized? shape)) (hover? (:id shape)))
+                           (when (not (::dr/initialized? shape))
                              (do
                                (dom/stop-propagation event)
                                (dom/prevent-default event)
-                               (st/emit! (dw/start-edition-mode (:id shape)))))))]
+                               (st/emit! (dw/start-edition-mode (:id shape))
+                                         (dw/start-path-edit (:id shape)))))))
+
+        content-modifiers (mf/deref content-modifiers-ref)
+        shape (update shape :content gsp/apply-content-modifiers content-modifiers)]
 
     [:> shape-container {:shape shape
                          :on-double-click on-double-click
@@ -57,75 +78,142 @@
      [:& path/path-shape {:shape shape
                           :background? true}]]))
 
+(mf/defc path-actions [{:keys [shape]}]
+  [:div.path-actions
+   [:div.viewport-actions-group
+    [:div.viewport-actions-entry i/nodes-add]
+    [:div.viewport-actions-entry i/nodes-remove]]
 
-(mf/defc path-handler [{:keys [point handler zoom selected]}]
+   [:div.viewport-actions-group
+    [:div.viewport-actions-entry i/nodes-merge]
+    [:div.viewport-actions-entry i/nodes-join]
+    [:div.viewport-actions-entry i/nodes-separate]]
+
+   [:div.viewport-actions-group
+    [:div.viewport-actions-entry i/nodes-corner]
+    [:div.viewport-actions-entry i/nodes-curve]]
+
+   [:div.viewport-actions-group
+    [:div.viewport-actions-entry i/nodes-snap]]])
+
+
+(mf/defc path-preview [{:keys [zoom command from]}]
+  (when (not= :move-to (:command command))
+    [:path {:style {:fill "transparent"
+                    :stroke secondary-color
+                    :stroke-width (/ 1 zoom)}
+            :d (ugp/content->path [{:command :move-to
+                                    :params {:x (:x from)
+                                             :y (:y from)}}
+                                   command])}]))
+
+(mf/defc path-point [{:keys [index position stroke-color fill-color zoom]}]
+  (let [{:keys [x y]} position
+        on-click (fn [event]
+                   (dom/stop-propagation event)
+                   (dom/prevent-default event))
+        on-mouse-down (fn [event]
+                        (dom/stop-propagation event)
+                        (dom/prevent-default event)
+                        (st/emit! (drp/start-move-path-point index)))]
+    [:circle
+     {:cx x
+      :cy y
+      :r (/ 3 zoom)
+      :on-click on-click
+      :on-mouse-down on-mouse-down
+      :style {:cursor cur/resize-alt
+              :stroke-width (/ 1 zoom)
+              :stroke (or stroke-color black-color)
+              :fill (or fill-color white-color)}}]))
+
+(mf/defc path-handler [{:keys [index point handler zoom selected type]}]
   (when (and point handler)
-    (let [{:keys [x y]} handler]
-      [:g.handler
+    (let [{:keys [x y]} handler
+          on-click (fn [event]
+                     (dom/stop-propagation event)
+                     (dom/prevent-default event))
+          on-mouse-down (fn [event]
+                          (dom/stop-propagation event)
+                          (dom/prevent-default event)
+                          (st/emit! (drp/start-move-handler index type)))]
+      [:g.handler {:class (name type)}
        [:line
         {:x1 (:x point)
          :y1 (:y point)
          :x2 x
          :y2 y
-         :style {:stroke "#B1B2B5"
+         :style {:stroke gray-color
                  :stroke-width (/ 1 zoom)}}]
        [:rect
         {:x (- x (/ 3 zoom))
          :y (- y (/ 3 zoom))
          :width (/ 6 zoom)
          :height (/ 6 zoom)
-         :style {:stroke-width (/ 1 zoom)
-                 :stroke (if selected "#000000" "#1FDEA7")
-                 :fill (if selected "#1FDEA7" "#FFFFFF")}}]])))
+         :on-click on-click
+         :on-mouse-down on-mouse-down
+         :style {:cursor cur/resize-alt
+                 :stroke-width (/ 1 zoom)
+                 :stroke (if selected black-color primary-color)
+                 :fill (if selected primary-color white-color)}}]])))
 
 (mf/defc path-editor
   [{:keys [shape zoom]}]
 
-  (let [points (gsp/content->points (:content shape))
-        drag-handler (:drag-handler shape)
-        prev-handler (:prev-handler shape)
-        last-command (last (:content shape))
-        selected false
+  (let [{:keys [content]} shape
+        {:keys [drag-handler prev-handler preview content-modifiers]} (mf/deref edit-path-ref)
+        content (gsp/apply-content-modifiers content content-modifiers)
+        points (gsp/content->points content)
+        last-command (last content)
         last-p (last points)
-        handlers (ugp/extract-handlers (:content shape))
-        handlers (if (and prev-handler (not drag-handler))
-                   (conj handlers {:point last-p :prev prev-handler})
-                   handlers)
-        ]
+        selected false]
 
     [:g.path-editor
-     (when (and (:preview shape) (not (:drag-handler shape)))
-       [:*
-        [:path {:style {:fill "transparent"
-                        :stroke "#DB00FF"
-                        :stroke-width (/ 1 zoom)}
-                :d (ugp/content->path [{:command :move-to
-                                        :params {:x (:x last-p)
-                                                 :y (:y last-p)}}
-                                       (:preview shape)])}]
-        [:circle
-         {:cx (-> shape :preview :params :x)
-          :cy (-> shape :preview :params :y)
-          :r (/ 3 zoom)
-          :style {:stroke-width (/ 1 zoom)
-                  :stroke "#DB00FF"
-                  :fill "#FFFFFF"}}]])
+     (when (and preview (not drag-handler))
+       [:g.preview {:style {:pointer-events "none"}}
+        [:& path-preview {:command preview
+                          :from last-p
+                          :zoom zoom}]
+        [:& path-point {:position (:params preview)
+                        :fill-color secondary-color
+                        :zoom zoom}]])
 
-     (for [{:keys [point prev next]} handlers]
-       [:*
-        [:& path-handler {:point point
-                          :handler prev
-                          :zoom zoom
-                          :type :prev
-                          :selected false}]
-        [:& path-handler {:point point
-                          :handler next
-                          :zoom zoom
-                          :type :next
-                          :selected false}]])
+     (for [[index [cmd next]] (d/enumerate (d/with-next content))]
+       (let [point (gpt/point (:params cmd))]
+         [:g.path-node
+          (when (= :curve-to (:command cmd))
+            [:& path-handler {:point point
+                              :handler (gpt/point (-> cmd :params :c2x) (-> cmd :params :c2y))
+                              :zoom zoom
+                              :type :prev
+                              :index index
+                              :selected false}])
+
+          (when (= :curve-to (:command next))
+            [:& path-handler {:point point
+                              :handler (gpt/point (-> next :params :c1x) (-> next :params :c1y))
+                              :zoom zoom
+                              :type :next
+                              :index index
+                              :selected false}])
+
+          (when (and (= index (dec (count content)))
+                     prev-handler (not drag-handler))
+            [:& path-handler {:point point
+                              :handler prev-handler
+                              :zoom zoom
+                              :type :prev
+                              :index index
+                              :selected false}])
+
+          [:& path-point {:position point
+                          :stroke-color (when-not selected primary-color)
+                          :fill-color (when selected primary-color)
+                          :index index
+                          :zoom zoom}]]))
 
      (when drag-handler
-       [:*
+       [:g.drag-handler
         (when (not= :move-to (:command last-command))
           [:& path-handler {:point last-p
                             :handler (ugp/opposite-handler last-p drag-handler)
@@ -136,14 +224,4 @@
                           :handler drag-handler
                           :zoom zoom
                           :type :drag
-                          :selected false}]])
-
-     (for [{:keys [x y] :as point} points]
-       [:circle
-        {:cx x
-         :cy y
-         :r (/ 3 zoom)
-         :style {:stroke-width (/ 1 zoom)
-                 :stroke (if selected "#000000" "#1FDEA7")
-                 :fill (if selected "#1FDEA7" "#FFFFFF")}
-         }])]))
+                          :selected false}]])]))

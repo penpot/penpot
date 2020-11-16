@@ -17,7 +17,9 @@
    [app.util.data :as d]
    [app.util.geom.path :as ugp]
    [app.main.streams :as ms]
-   [app.main.data.workspace.drawing.common :as common]))
+   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.drawing.common :as common]
+   [app.common.geom.shapes.path :as gsp]))
 
 ;;;;
 
@@ -149,14 +151,14 @@
     (update [_ state]
       (-> state
           (assoc-in [:workspace-drawing :object :initialized?] true)
-          (assoc-in [:workspace-drawing :object :last-point] nil)))))
+          (assoc-in [:workspace-local :edit-path :last-point] nil)))))
 
 (defn finish-path []
   (ptk/reify ::finish-path
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (assoc-in [:workspace-drawing :object :last-point] nil)
+          (update :workspace-local dissoc :edit-path)
           (update-in [:workspace-drawing :object] calculate-selrect)))))
 
 (defn preview-next-point [{:keys [x y]}]
@@ -164,9 +166,9 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [position (gpt/point x y)
-            {:keys [last-point prev-handler] :as shape} (get-in state [:workspace-drawing :object])
+            {:keys [last-point prev-handler] :as shape} (get-in state [:workspace-local :edit-path])
             command (next-node shape position last-point prev-handler)]
-        (assoc-in state [:workspace-drawing :object :preview] command)))))
+        (assoc-in state [:workspace-local :edit-path :preview] command)))))
 
 (defn add-node [{:keys [x y]}]
   (ptk/reify ::add-node
@@ -174,14 +176,11 @@
     (update [_ state]
 
       (let [position (gpt/point x y)
-            {:keys [last-point prev-handler]} (get-in state [:workspace-drawing :object])]
-        (update-in
-         state
-         [:workspace-drawing :object]
-         #(-> %
-              (append-node position last-point prev-handler)
-              (assoc :last-point position)
-              (dissoc :prev-handler)))))))
+            {:keys [last-point prev-handler]} (get-in state [:workspace-local :edit-path])]
+        (-> state
+            (assoc-in  [:workspace-local :edit-path :last-point] position)
+            (update-in [:workspace-local :edit-path] dissoc :prev-handler)
+            (update-in [:workspace-drawing :object] append-node position last-point prev-handler))))))
 
 (defn drag-handler [{:keys [x y]}]
   (ptk/reify ::drag-handler
@@ -193,16 +192,16 @@
             index (dec (count (:content shape)))]
         (-> state
             (update-in [:workspace-drawing :object] move-handler index :next true position)
-            (assoc-in [:workspace-drawing :object :drag-handler] position))))))
+            (assoc-in [:workspace-local :edit-path :drag-handler] position))))))
 
 (defn finish-drag []
   (ptk/reify ::finish-drag
     ptk/UpdateEvent
     (update [_ state]
-      (let [handler (get-in state [:workspace-drawing :object :drag-handler])]
+      (let [handler (get-in state [:workspace-local :edit-path :drag-handler])]
         (-> state
-            (update-in [:workspace-drawing :object] dissoc :drag-handler)
-            (assoc-in [:workspace-drawing :object :prev-handler] handler))))))
+            (update-in [:workspace-local :edit-path] dissoc :drag-handler)
+            (assoc-in [:workspace-local :edit-path :prev-handler] handler))))))
 
 (defn make-click-stream
   [stream down-event]
@@ -238,7 +237,6 @@
     ptk/WatchEvent
     (watch [_ state stream]
 
-      ;; clicks stream<[MouseEvent, Position]>
       (let [mouse-down    (->> stream (rx/filter ms/mouse-down?))
             finish-events (->> stream (rx/filter finish-event?))
 
@@ -266,10 +264,7 @@
          (rx/merge mousemove-events
                    mousedown-events)
          (rx/of (finish-path))
-         (rx/of common/handle-finish-drawing)))
-      
-
-      )))
+         (rx/of common/handle-finish-drawing))))))
 
 #_(def handle-drawing-path
   (ptk/reify ::handle-drawing-path
@@ -331,7 +326,7 @@
           (rx/of finish-drawing-path
                  common/handle-finish-drawing)))))))
 
-(defn close-drawing-path []
+#_(defn close-drawing-path []
   (ptk/reify ::close-drawing-path
     ptk/UpdateEvent
     (update [_ state]
@@ -340,3 +335,121 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (rx/of ::end-path-drawing))))
+
+
+(defn stop-path-edit []
+  (ptk/reify ::stop-path-edit
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-local dissoc :edit-path))))
+
+(defn start-path-edit
+  [id]
+  (ptk/reify ::start-path-edit
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :edit-path] {}))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> stream
+           (rx/filter #(= % :interrupt))
+           (rx/take 1)
+           (rx/map #(stop-path-edit))))))
+
+(defn modify-point [index dx dy]
+  (ptk/reify ::modify-point
+
+    ptk/UpdateEvent
+    (update [_ state]
+
+      (-> state
+          (update-in [:workspace-local :edit-path :content-modifiers (inc index)] assoc
+                     :c1x dx :c1y dy)
+          (update-in [:workspace-local :edit-path :content-modifiers index] assoc
+                     :x dx :y dy :c2x dx :c2y dy)
+          ))))
+
+(defn modify-handler [index type dx dy]
+  (ptk/reify ::modify-point
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [s1 (if (= type :prev) -1 1)
+            s2 (if (= type :prev) 1 -1)]
+        (-> state
+            (update-in [:workspace-local :edit-path :content-modifiers (inc index)] assoc
+                       :c1x (* s1 dx) :c1y (* s1 dy))
+            (update-in [:workspace-local :edit-path :content-modifiers index] assoc
+                       :c2x (* s2 dx) :c2y (* s2 dy) ))
+        ))))
+
+(defn apply-content-modifiers []
+  (ptk/reify ::apply-content-modifiers
+    ;;ptk/UpdateEvent
+    ;;(update [_ state]
+    ;;  (update-in state [:workspace-local :edit-path] dissoc :content-modifiers))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [id (get-in state [:workspace-local :edition])
+            page-id (:current-page-id state)
+            old-content (get-in state [:workspace-data :pages-index page-id :objects id :content])
+            old-selrect (get-in state [:workspace-data :pages-index page-id :objects id :selrect])
+            content-modifiers (get-in state [:workspace-local :edit-path :content-modifiers])
+            new-content (gsp/apply-content-modifiers old-content content-modifiers)
+            new-selrect (gsh/content->selrect new-content)
+            rch [{:type :mod-obj
+                  :id id
+                  :page-id page-id
+                  :operations [{:type :set :attr :content :val new-content}
+                               {:type :set :attr :selrect :val new-selrect}]}]
+
+            uch [{:type :mod-obj
+                  :id id
+                  :page-id page-id
+                  :operations [{:type :set :attr :content :val old-content}
+                               {:type :set :attr :selrect :val old-selrect}]}]]
+
+        (rx/of (dwc/commit-changes rch uch {:commit-local? true})
+               (fn [state] (update-in state [:workspace-local :edit-path] dissoc :content-modifiers)))))))
+
+(defn start-move-path-point
+  [index]
+  (ptk/reify ::start-move-path-point
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [start-point @ms/mouse-position
+            start-delta-x (get-in state [:workspace-local :edit-path :content-modifiers index :x] 0)
+            start-delta-y (get-in state [:workspace-local :edit-path :content-modifiers index :y] 0)]
+        (rx/concat
+         (->> ms/mouse-position
+              (rx/take-until (->> stream (rx/filter ms/mouse-up?)))
+              (rx/map #(modify-point
+                        index
+                        (+ start-delta-x (- (:x %) (:x start-point)))
+                        (+ start-delta-y (- (:y %) (:y start-point))))))
+         (rx/concat (rx/of (apply-content-modifiers)))
+         )))))
+
+(defn start-move-handler
+  [index type]
+  (ptk/reify ::start-move-handler
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [[cx cy] (if (= :prev type) [:c2x :c2y] [:c1x :c1y])
+            cidx (if (= :prev type) index (inc index))
+
+            start-point @ms/mouse-position
+            start-delta-x (get-in state [:workspace-local :edit-path :content-modifiers cidx cx] 0)
+            start-delta-y (get-in state [:workspace-local :edit-path :content-modifiers cidx cy] 0)]
+
+        (rx/concat
+         (->> ms/mouse-position
+              (rx/take-until (->> stream (rx/filter ms/mouse-up?)))
+              (rx/map #(modify-handler
+                        index
+                        type
+                        (+ start-delta-x (- (:x %) (:x start-point)))
+                        (+ start-delta-y (- (:y %) (:y start-point)))))
+              )
+         (rx/concat (rx/of (apply-content-modifiers))))))))

@@ -31,7 +31,8 @@
    [app.common.geom.matrix :as gmt]
    [app.util.debug :refer [debug?]]
    [app.main.ui.workspace.shapes.outline :refer [outline]]
-   [app.main.ui.measurements :as msr]))
+   [app.main.ui.measurements :as msr]
+   [app.main.ui.workspace.shapes.path :refer [path-editor]]))
 
 (def rotation-handler-size 25)
 (def resize-point-radius 4)
@@ -366,8 +367,13 @@
       [:& text-edition-selection-handlers {:shape shape
                                            :zoom zoom
                                            :color color}]
-      (and (or (= type :path)
-               (= type :curve))
+
+      (= (= type :path)
+         (= edition (:id shape)))
+      [:& path-editor {:zoom zoom
+                       :shape shape}]
+
+      (and (= type :curve)
            (= edition (:id shape)))
       [:& path-edition-selection-handlers {:shape shape
                                            :zoom zoom
