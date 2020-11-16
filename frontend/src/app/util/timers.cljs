@@ -33,16 +33,28 @@
       (-dispose [_]
         (js/clearInterval sem)))))
 
+(if (and (exists? js/window) (.-requestIdleCallback js/window))
+  (do
+    (def ^:private request-idle-callback #(js/requestIdleCallback %))
+    (def ^:private cancel-idle-callback #(js/cancelIdleCallback %)))
+  (do
+    (def ^:private request-idle-callback #(js/setTimeout % 100))
+    (def ^:private cancel-idle-callback #(js/cancelTimeout %))))
+
 (defn schedule-on-idle
   [func]
-  (let [sem (js/requestIdleCallback #(func))]
+  (let [sem (request-idle-callback #(func))]
     (reify rx/IDisposable
       (-dispose [_]
-        (js/cancelIdleCallback sem)))))
+        (cancel-idle-callback sem)))))
+
+(def ^:private request-animation-frame
+  (or (and (exists? js/window) (.-requestAnimationFrame js/window))
+      #(js/setTimeout % 16)))
 
 (defn raf
   [f]
-  (js/window.requestAnimationFrame f))
+  (request-animation-frame f))
 
 (defn idle-then-raf
   [f]
