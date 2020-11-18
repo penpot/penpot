@@ -226,17 +226,17 @@
   .element-set-subtitle {
     color: $color-gray-20;
     font-size: $fs11;
-    width: 12rem;
+    width: 64px;
   }
 
   .lock-size {
     cursor: pointer;
-    width: 20%;
+    margin: auto;
 
     svg {
       fill: $color-gray-20;
-      height: 15px;
-      width: 15px;
+      height: 14px;
+      width: 14px;
 
       &:hover {
         fill: $color-primary;
