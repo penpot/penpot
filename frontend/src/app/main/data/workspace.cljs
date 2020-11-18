@@ -144,6 +144,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (assoc state
+             :current-file-id file-id
+             :current-project-id project-id
              :workspace-presence {}))
 
     ptk/WatchEvent

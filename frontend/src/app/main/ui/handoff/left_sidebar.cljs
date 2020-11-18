@@ -7,18 +7,18 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.viewer.handoff.left-sidebar
+(ns app.main.ui.handoff.left-sidebar
   (:require
-   [rumext.alpha :as mf]
-   [okulary.core :as l]
    [app.common.data :as d]
    [app.common.uuid :as uuid]
-   [app.main.store :as st]
-   [app.util.dom :as dom]
    [app.main.data.viewer :as dv]
+   [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
-   [app.main.ui.workspace.sidebar.layers :refer [element-icon layer-name frame-wrapper]]))
+   [app.main.ui.workspace.sidebar.layers :refer [element-icon layer-name frame-wrapper]]
+   [app.util.dom :as dom]
+   [okulary.core :as l]
+   [rumext.alpha :as mf]))
 
 (def selected-shapes
   (l/derived (comp :selected :viewer-local) st/state))
@@ -29,7 +29,7 @@
 (defn- make-collapsed-iref
   [id]
   #(-> (l/in [:viewer-local :collapsed id])
-       (l/derived st/state) ))
+       (l/derived st/state)))
 
 (mf/defc layer-item
   [{:keys [index item selected objects disable-collapse?] :as props}]

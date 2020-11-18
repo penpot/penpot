@@ -37,8 +37,6 @@
 
 ;; --- Persistence
 
-
-
 (defn initialize-file-persistence
   [file-id]
   (ptk/reify ::initialize-persistence
@@ -225,12 +223,6 @@
                          :else
                          (throw error))))))))
 
-(defn assoc-profile-avatar
-  [{:keys [photo fullname] :as profile}]
-  (cond-> profile
-    (or (nil? photo) (empty? photo))
-    (assoc :photo (avatars/generate {:name fullname}))))
-
 (defn- bundle-fetched
   [file users project libraries]
   (ptk/reify ::bundle-fetched
@@ -243,7 +235,7 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (let [users (map assoc-profile-avatar users)]
+      (let [users (map avatars/assoc-profile-avatar users)]
         (assoc state
                :workspace-undo {}
                :workspace-project project

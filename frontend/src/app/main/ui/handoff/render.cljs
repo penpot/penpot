@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.viewer.handoff.render
+(ns app.main.ui.handoff.render
   "The main container for a frame in handoff mode"
   (:require
    [rumext.alpha :as mf]
@@ -30,7 +30,7 @@
    [app.main.ui.shapes.path :as path]
    [app.main.ui.shapes.rect :as rect]
    [app.main.ui.shapes.text :as text]
-   [app.main.ui.viewer.handoff.selection-feedback :refer [selection-feedback]]
+   [app.main.ui.handoff.selection-feedback :refer [selection-feedback]]
    [app.main.ui.shapes.shape :refer [shape-container]]))
 
 (declare shape-container-factory)

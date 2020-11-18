@@ -76,3 +76,7 @@
 (defn clj->props
   [props]
   (clj->js props :keyword-fn props-key-fn))
+
+(defn ^boolean in?
+  [obj prop]
+  (js* "~{} in ~{}" prop obj))

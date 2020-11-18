@@ -50,8 +50,11 @@
           file    (merge (dissoc file :data)
                          (select-keys (:data file) [:colors :media :typographies]))
           libs    (files/retrieve-file-libraries conn false file-id)
+          users   (files/retrieve-file-users conn file-id)
+
           bundle  {:file file
                    :page page
+                   :users users
                    :project project
                    :libraries libs}]
       (if (string? token)
