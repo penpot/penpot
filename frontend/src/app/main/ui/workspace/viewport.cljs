@@ -199,6 +199,7 @@
                 vport
                 vbox
                 edition
+                edit-path
                 tooltip
                 selected
                 panning
@@ -221,6 +222,7 @@
         drawing       (mf/deref refs/workspace-drawing)
         drawing-tool  (:tool drawing)
         drawing-obj   (:object drawing)
+        drawing-path? (and edition (= :draw (get-in edit-path [edition :edit-mode])))
         zoom          (or zoom 1)
 
         on-mouse-down
@@ -292,7 +294,7 @@
 
         on-double-click
         (mf/use-callback
-         (mf/deps edition)
+         (mf/deps edition edit-path)
          (fn [event]
            (dom/stop-propagation event)
            (let [ctrl? (kbd/ctrl? event)
@@ -300,7 +302,7 @@
                  alt? (kbd/alt? event)]
              (st/emit! (ms/->MouseEvent :double-click ctrl? shift? alt?))
 
-             (if edition
+             (if (not drawing-path?) 
                (st/emit! dw/clear-edition-mode)))))
 
         on-key-down
@@ -431,6 +433,7 @@
                     final-x (- (:x viewport-coord) (/ (:width shape) 2))
                     final-y (- (:y viewport-coord) (/ (:height shape) 2))]
                 (st/emit! (dw/add-shape (-> shape
+                                            (assoc :id (uuid/next))
                                             (assoc :x final-x)
                                             (assoc :y final-y)))))
 
@@ -537,7 +540,7 @@
                          (= drawing-tool :frame) cur/create-artboard
                          (= drawing-tool :rect) cur/create-rectangle
                          (= drawing-tool :circle) cur/create-ellipse
-                         (= drawing-tool :path) cur/pen
+                         (or (= drawing-tool :path) drawing-path?) cur/pen
                          (= drawing-tool :curve)cur/pencil
                          drawing-tool cur/create-shape
                          :else cur/pointer-inner)

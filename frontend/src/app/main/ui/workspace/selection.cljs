@@ -368,8 +368,8 @@
                                            :zoom zoom
                                            :color color}]
 
-      (= (= type :path)
-         (= edition (:id shape)))
+      (and (= type :path)
+           (= edition (:id shape)))
       [:& path-editor {:zoom zoom
                        :shape shape}]
 

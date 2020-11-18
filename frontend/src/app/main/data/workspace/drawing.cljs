@@ -45,8 +45,9 @@
             (rx/of (start-drawing :path)))
 
           ;; NOTE: comments are a special case and they manage they
-          ;; own interrupt cycle.
-          (when (not= tool :comments)
+          ;; own interrupt cycle.q
+          (when (and (not= tool :comments)
+                     (not= tool :path))
             (->> stream
                  (rx/filter dwc/interrupt?)
                  (rx/take 1)
@@ -90,7 +91,7 @@
     (watch [_ state stream]
       (rx/of (case type
                :path
-               (path/handle-drawing-path)
+               (path/handle-new-shape)
 
                :curve
                (curve/handle-drawing-curve)

@@ -8,8 +8,7 @@
 ;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.main.ui.cursors
-  (:require-macros [app.main.ui.cursors :refer [cursor-ref
-                                                  cursor-fn]])
+  (:require-macros [app.main.ui.cursors :refer [cursor-ref cursor-fn]])
   (:require [rumext.alpha :as mf]
             [cuerdas.core :as str]
             [app.util.timers :as ts]))
@@ -33,6 +32,9 @@
 (def rotate (cursor-fn :rotate 90))
 (def text (cursor-ref :text))
 (def picker (cursor-ref :picker 0 0 24))
+(def pointer-node (cursor-ref :pointer-node 0 0 10 32))
+(def pointer-move (cursor-ref :pointer-move 0 0 10 42))
+(def pen-node (cursor-ref :pen-node 0 0 10 36))
 
 (mf/defc debug-preview
   {::mf/wrap-props false}
@@ -49,8 +51,11 @@
             [:div {:style {:width "100px"
                            :height "100px"
                            :background-image (-> value (str/replace #"(url\(.*\)).*" "$1"))
-                           :background-size "cover"
+                           :background-size "contain"
+                           :background-repeat "no-repeat"
+                           :background-position "center"
                            :cursor value}}]
 
             [:span {:style {:white-space "nowrap"
                             :margin-right "1rem"}} (pr-str key)]])))]))
+

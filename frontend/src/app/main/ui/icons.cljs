@@ -136,6 +136,8 @@
 (def nodes-remove (icon-xref :nodes-remove))
 (def nodes-separate (icon-xref :nodes-separate))
 (def nodes-snap (icon-xref :nodes-snap))
+(def pen (icon-xref :pen))
+(def pointer-inner (icon-xref :pointer-inner))
 
 (def loader-pencil
   (mf/html

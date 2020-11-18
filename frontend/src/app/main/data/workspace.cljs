@@ -1632,12 +1632,23 @@
 
 (defn start-path-edit [id] (dwdp/start-path-edit id))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shortcuts
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Shortcuts impl https://github.com/ccampbell/mousetrap
+
+(defn esc-pressed []
+  (ptk/reify :esc-pressed
+    ptk/WatchEvent
+    (watch [_ state stream]
+      ;;  Not interrupt when we're editing a path
+      (let [edition-id (get-in state [:workspace-local :edition])
+            path-edit-mode (get-in state [:workspace-local :edit-path edition-id :edit-mode])]
+        (if-not (= :draw path-edit-mode)
+          (rx/of :interrupt
+                 (deselect-all true))
+          (rx/empty))))))
 
 (def shortcuts
   {"ctrl+i" #(st/emit! (toggle-layout-flags :assets))
@@ -1671,7 +1682,7 @@
    "ctrl+c" #(st/emit! copy-selected)
    "ctrl+v" #(st/emit! paste)
    "ctrl+x" #(st/emit! copy-selected delete-selected)
-   "escape" #(st/emit! :interrupt (deselect-all true))
+   "escape" #(st/emit! (esc-pressed))
    "del" #(st/emit! delete-selected)
    "backspace" #(st/emit! delete-selected)
    "ctrl+up" #(st/emit! (vertical-order-selected :up))

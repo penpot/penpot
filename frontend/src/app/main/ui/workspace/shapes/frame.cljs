@@ -110,7 +110,6 @@
             (mf/use-callback
              (mf/deps (:id shape))
              (fn [event]
-               (prn "?? FRAME")
                (dom/prevent-default event)
                (st/emit! (dw/deselect-all)
                          (dw/select-shape (:id shape)))))

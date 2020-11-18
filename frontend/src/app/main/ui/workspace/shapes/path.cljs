@@ -39,11 +39,25 @@
 (def white-color "#FFFFFF")
 (def gray-color "#B1B2B5")
 
-(def edit-path-ref
-  (l/derived :edit-path refs/workspace-local))
 
-(def content-modifiers-ref
-  (l/derived :content-modifiers edit-path-ref))
+
+(def current-edit-path-ref
+  (let [selfn (fn [local]
+                (let [id (:edition local)]
+                  (get-in local [:edit-path id])))]
+    (l/derived selfn refs/workspace-local)))
+
+(defn make-edit-path-ref [id]
+  (mf/use-memo
+   (mf/deps id)
+   (let [selfn #(get-in % [:edit-path id])]
+     #(l/derived selfn refs/workspace-local))))
+
+(defn make-content-modifiers-ref [id]
+  (mf/use-memo
+   (mf/deps id)
+   (let [selfn #(get-in % [:edit-path id :content-modifiers])]
+     #(l/derived selfn refs/workspace-local))))
 
 (mf/defc path-wrapper
   {::mf/wrap-props false}
@@ -67,11 +81,14 @@
                                (dom/prevent-default event)
                                (st/emit! (dw/start-edition-mode (:id shape))
                                          (dw/start-path-edit (:id shape)))))))
-
+        content-modifiers-ref (make-content-modifiers-ref (:id shape))
         content-modifiers (mf/deref content-modifiers-ref)
+        editing-id (mf/deref refs/selected-edition)
+        editing? (= editing-id (:id shape))
         shape (update shape :content gsp/apply-content-modifiers content-modifiers)]
 
     [:> shape-container {:shape shape
+                         :pointer-events (when editing? "none")
                          :on-double-click on-double-click
                          :on-mouse-down on-mouse-down
                          :on-context-menu on-context-menu}
@@ -79,22 +96,30 @@
                           :background? true}]]))
 
 (mf/defc path-actions [{:keys [shape]}]
-  [:div.path-actions
-   [:div.viewport-actions-group
-    [:div.viewport-actions-entry i/nodes-add]
-    [:div.viewport-actions-entry i/nodes-remove]]
+  (let [id (mf/deref refs/selected-edition)
+        {:keys [edit-mode selected snap-toggled] :as all} (mf/deref current-edit-path-ref)]
+    [:div.path-actions
+     [:div.viewport-actions-group
+      [:div.viewport-actions-entry {:class (when (= edit-mode :draw) "is-toggled")
+                                    :on-click #(st/emit! (drp/change-edit-mode :draw))} i/pen]
+      [:div.viewport-actions-entry {:class (when (= edit-mode :move) "is-toggled")
+                                    :on-click #(st/emit! (drp/change-edit-mode :move))} i/pointer-inner]]
+     
+     [:div.viewport-actions-group
+      [:div.viewport-actions-entry {:class "is-disabled"} i/nodes-add]
+      [:div.viewport-actions-entry {:class "is-disabled"} i/nodes-remove]]
 
-   [:div.viewport-actions-group
-    [:div.viewport-actions-entry i/nodes-merge]
-    [:div.viewport-actions-entry i/nodes-join]
-    [:div.viewport-actions-entry i/nodes-separate]]
+     [:div.viewport-actions-group
+      [:div.viewport-actions-entry {:class "is-disabled"} i/nodes-merge]
+      [:div.viewport-actions-entry {:class "is-disabled"} i/nodes-join]
+      [:div.viewport-actions-entry {:class "is-disabled"} i/nodes-separate]]
 
-   [:div.viewport-actions-group
-    [:div.viewport-actions-entry i/nodes-corner]
-    [:div.viewport-actions-entry i/nodes-curve]]
+     [:div.viewport-actions-group
+      [:div.viewport-actions-entry {:class "is-disabled"} i/nodes-corner]
+      [:div.viewport-actions-entry {:class "is-disabled"} i/nodes-curve]]
 
-   [:div.viewport-actions-group
-    [:div.viewport-actions-entry i/nodes-snap]]])
+     [:div.viewport-actions-group
+      [:div.viewport-actions-entry {:class (when snap-toggled "is-toggled")} i/nodes-snap]]]))
 
 
 (mf/defc path-preview [{:keys [zoom command from]}]
@@ -107,36 +132,58 @@
                                              :y (:y from)}}
                                    command])}]))
 
-(mf/defc path-point [{:keys [index position stroke-color fill-color zoom]}]
+(mf/defc path-point [{:keys [index position stroke-color fill-color zoom edit-mode selected]}]
   (let [{:keys [x y]} position
         on-click (fn [event]
-                   (dom/stop-propagation event)
-                   (dom/prevent-default event))
-        on-mouse-down (fn [event]
-                        (dom/stop-propagation event)
-                        (dom/prevent-default event)
-                        (st/emit! (drp/start-move-path-point index)))]
-    [:circle
-     {:cx x
-      :cy y
-      :r (/ 3 zoom)
-      :on-click on-click
-      :on-mouse-down on-mouse-down
-      :style {:cursor cur/resize-alt
-              :stroke-width (/ 1 zoom)
-              :stroke (or stroke-color black-color)
-              :fill (or fill-color white-color)}}]))
+                   (cond
+                     (= edit-mode :move)
+                     (do
+                       (dom/stop-propagation event)
+                       (dom/prevent-default event)
+                       (st/emit! (drp/select-node index)))))
 
-(mf/defc path-handler [{:keys [index point handler zoom selected type]}]
+        on-mouse-down (fn [event]
+                        (cond
+                          (= edit-mode :move)
+                          (do
+                            (dom/stop-propagation event)
+                            (dom/prevent-default event)
+                            (st/emit! (drp/start-move-path-point index)))))]
+    [:g.path-point
+     [:circle.path-point
+      {:cx x
+       :cy y
+       :r (/ 3 zoom)
+       :style { ;; :cursor cur/resize-alt
+               :stroke-width (/ 1 zoom)
+               :stroke (or stroke-color black-color)
+               :fill (or fill-color white-color)}}]
+     [:circle {:cx x
+               :cy y
+               :r (/ 10 zoom)
+               :on-click on-click
+               :on-mouse-down on-mouse-down
+               :style {:fill "transparent"}}]]
+    ))
+
+(mf/defc path-handler [{:keys [index point handler zoom selected type edit-mode]}]
   (when (and point handler)
     (let [{:keys [x y]} handler
           on-click (fn [event]
-                     (dom/stop-propagation event)
-                     (dom/prevent-default event))
+                     (cond
+                       (= edit-mode :move)
+                       (do
+                         (dom/stop-propagation event)
+                         (dom/prevent-default event)
+                         (drp/select-handler index type))))
+
           on-mouse-down (fn [event]
-                          (dom/stop-propagation event)
-                          (dom/prevent-default event)
-                          (st/emit! (drp/start-move-handler index type)))]
+                          (cond
+                            (= edit-mode :move)
+                            (do
+                              (dom/stop-propagation event)
+                              (dom/prevent-default event)
+                              (st/emit! (drp/start-move-handler index type)))))]
       [:g.handler {:class (name type)}
        [:line
         {:x1 (:x point)
@@ -150,23 +197,30 @@
          :y (- y (/ 3 zoom))
          :width (/ 6 zoom)
          :height (/ 6 zoom)
-         :on-click on-click
-         :on-mouse-down on-mouse-down
-         :style {:cursor cur/resize-alt
+         
+         :style {;; :cursor cur/resize-alt
                  :stroke-width (/ 1 zoom)
                  :stroke (if selected black-color primary-color)
-                 :fill (if selected primary-color white-color)}}]])))
+                 :fill (if selected primary-color white-color)}}]
+
+       [:circle {:cx x
+                 :cy y
+                 :r (/ 10 zoom)
+                 :on-click on-click
+                 :on-mouse-down on-mouse-down
+                 :style {:fill "transparent"}}]])))
 
 (mf/defc path-editor
   [{:keys [shape zoom]}]
 
   (let [{:keys [content]} shape
-        {:keys [drag-handler prev-handler preview content-modifiers]} (mf/deref edit-path-ref)
+        edit-path-ref (make-edit-path-ref (:id shape))
+        {:keys [edit-mode selected drag-handler prev-handler preview content-modifiers]} (mf/deref edit-path-ref)
+        selected (or selected #{})
         content (gsp/apply-content-modifiers content content-modifiers)
         points (gsp/content->points content)
         last-command (last content)
-        last-p (last points)
-        selected false]
+        last-p (last points)]
 
     [:g.path-editor
      (when (and preview (not drag-handler))
@@ -187,7 +241,8 @@
                               :zoom zoom
                               :type :prev
                               :index index
-                              :selected false}])
+                              :selected (selected [index :prev])
+                              :edit-mode edit-mode}])
 
           (when (= :curve-to (:command next))
             [:& path-handler {:point point
@@ -195,7 +250,8 @@
                               :zoom zoom
                               :type :next
                               :index index
-                              :selected false}])
+                              :selected (selected [index :next])
+                              :edit-mode edit-mode}])
 
           (when (and (= index (dec (count content)))
                      prev-handler (not drag-handler))
@@ -204,13 +260,15 @@
                               :zoom zoom
                               :type :prev
                               :index index
-                              :selected false}])
+                              :selected (selected index)
+                              :edit-mode edit-mode}])
 
           [:& path-point {:position point
-                          :stroke-color (when-not selected primary-color)
-                          :fill-color (when selected primary-color)
+                          :stroke-color (when-not (selected index) primary-color)
+                          :fill-color (when (selected index) primary-color)
                           :index index
-                          :zoom zoom}]]))
+                          :zoom zoom
+                          :edit-mode edit-mode}]]))
 
      (when drag-handler
        [:g.drag-handler

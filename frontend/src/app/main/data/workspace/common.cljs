@@ -461,7 +461,14 @@
   (ptk/reify ::start-edition-mode
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-local :edition] id))
+      (let [page-id (:current-page-id state)
+            objects (get-in state [:workspace-data :pages-index page-id :objects])]
+        ;; Can only edit objects that exist
+        (if (contains? objects id)
+          (-> state
+              (assoc-in [:workspace-local :selected] #{id})
+              (assoc-in [:workspace-local :edition] id))
+          state)))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -486,7 +493,7 @@
       (let [page-id  (:current-page-id state)
             objects  (lookup-page-objects state page-id)
 
-            id       (uuid/next)
+            id       (or (:id attrs) (uuid/next))
             shape    (gpr/setup-proportions attrs)
 
             unames   (retrieve-used-names objects)

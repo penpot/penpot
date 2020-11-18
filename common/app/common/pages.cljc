@@ -611,8 +611,7 @@
     :stroke-alignment :center
     :stroke-width 2
     :stroke-color "#000000"
-    :stroke-opacity 1
-    :segments []}
+    :stroke-opacity 1}
 
    {:type :frame
     :name "Artboard"
@@ -632,8 +631,7 @@
     :stroke-alignment :center
     :stroke-width 2
     :stroke-color "#000000"
-    :stroke-opacity 1
-    :segments []}
+    :stroke-opacity 1}
 
    {:type :text
     :name "Text"
@@ -646,22 +644,24 @@
       (ex/raise :type :assertion
                 :code :shape-type-not-implemented
                 :context {:type type}))
-    (assoc shape
-           :id (uuid/next)
-           :x 0
-           :y 0
-           :width 1
-           :height 1
-           :selrect {:x 0
-                     :x1 0
-                     :x2 1
-                     :y 0
-                     :y1 0
-                     :y2 1
-                     :width 1
-                     :height 1}
-           :points []
-           :segments [])))
+
+    (cond-> shape
+      :always
+      (assoc :id (uuid/next))
+
+      (not #{:path :curve})
+      (assoc :x 0
+             :y 0
+             :width 1
+             :height 1
+             :selrect {:x 0
+                       :y 0
+                       :x1 0
+                       :y1 0
+                       :x2 1
+                       :y2 1
+                       :width 1
+                       :height 1}))))
 
 (defn make-minimal-group
   [frame-id selection-rect group-name]
