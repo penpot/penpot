@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.viewer.handoff.selection-feedback
+(ns app.main.ui.handoff.selection-feedback
   (:require
    [rumext.alpha :as mf]
    [cuerdas.core :as str]

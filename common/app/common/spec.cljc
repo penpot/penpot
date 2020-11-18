@@ -119,6 +119,7 @@
 (s/def ::url string?)
 (s/def ::fn fn?)
 (s/def ::point gpt/point?)
+(s/def ::id ::uuid)
 
 ;; --- Macros
 

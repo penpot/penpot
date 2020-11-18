@@ -14,6 +14,7 @@
 (def embed-ctx (mf/create-context false))
 (def render-ctx (mf/create-context nil))
 
+(def current-route (mf/create-context nil))
 (def current-team-id (mf/create-context nil))
 (def current-project-id (mf/create-context nil))
 (def current-page-id (mf/create-context nil))

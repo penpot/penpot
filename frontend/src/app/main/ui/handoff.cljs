@@ -7,28 +7,27 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.viewer.handoff
+(ns app.main.ui.handoff
   (:require
-   [rumext.alpha :as mf]
-   [beicon.core :as rx]
-   [goog.events :as events]
-   [okulary.core :as l]
    [app.common.exceptions :as ex]
-   [app.util.data :refer [classnames]]
-   [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [t tr]]
    [app.main.data.viewer :as dv]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.components.fullscreen :as fs]
+   [app.main.ui.handoff.left-sidebar :refer [left-sidebar]]
+   [app.main.ui.handoff.render :refer [render-frame-svg]]
+   [app.main.ui.handoff.right-sidebar :refer [right-sidebar]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
    [app.main.ui.viewer.header :refer [header]]
    [app.main.ui.viewer.thumbnails :refer [thumbnails-panel]]
-   [app.main.ui.viewer.handoff.render :refer [render-frame-svg]]
-   [app.main.ui.viewer.handoff.left-sidebar :refer [left-sidebar]]
-   [app.main.ui.viewer.handoff.right-sidebar :refer [right-sidebar]])
+   [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [t tr]]
+   [beicon.core :as rx]
+   [goog.events :as events]
+   [okulary.core :as l]
+   [rumext.alpha :as mf])
   (:import goog.events.EventType))
 
 (defn handle-select-frame [frame]
@@ -37,7 +36,7 @@
        (st/emit! (dv/select-shape (:id frame)))))
 
 (mf/defc render-panel
-  [{:keys [data local index page-id file-id]}]
+  [{:keys [data state index page-id file-id]}]
   (let [locale  (mf/deref i18n/locale)
         frames  (:frames data [])
         objects (:objects data)
@@ -65,26 +64,23 @@
         [:div.handoff-svg-wrapper {:on-click (handle-select-frame frame)}
          [:div.handoff-svg-container
           [:& render-frame-svg {:frame-id (:id frame)
-                                :zoom (:zoom local)
+                                :zoom (:zoom state)
                                 :objects objects}]]]
         [:& right-sidebar {:frame frame
                            :page-id page-id
                            :file-id file-id}]])]))
 
 (mf/defc handoff-content
-  [{:keys [data local index page-id file-id] :as props}]
-
-  (let [container (mf/use-ref)
-        [toggle-fullscreen fullscreen?] (hooks/use-fullscreen container)
-
-        on-mouse-wheel
-        (fn [event]
-          (when (kbd/ctrl? event)
-            (dom/prevent-default event)
-            (let [event (.getBrowserEvent ^js event)]
-              (if (pos? (.-deltaY ^js event))
-                (st/emit! dv/decrease-zoom)
-                (st/emit! dv/increase-zoom)))))
+  [{:keys [data state index page-id file-id] :as props}]
+  (let [on-mouse-wheel
+        (mf/use-callback
+         (fn [event]
+           (when (kbd/ctrl? event)
+             (dom/prevent-default event)
+             (let [event (.getBrowserEvent ^js event)]
+               (if (pos? (.-deltaY ^js event))
+                 (st/emit! dv/decrease-zoom)
+                 (st/emit! dv/increase-zoom))))))
 
         on-mount
         (fn []
@@ -98,37 +94,39 @@
     (mf/use-effect on-mount)
     (hooks/use-shortcuts dv/shortcuts)
 
-    [:div.handoff-layout {:class (classnames :fullscreen fullscreen?)
-                         :ref container}
-     [:& header {:data data
-                 :toggle-fullscreen toggle-fullscreen
-                 :fullscreen? fullscreen?
-                 :local local
-                 :index index
-                 :screen :handoff}]
-     [:div.viewer-content
-      (when (:show-thumbnails local)
-        [:& thumbnails-panel {:index index
-                              :data data
-                              :screen :handoff}])
-      [:& render-panel {:data data
-                        :local local
-                        :index index
-                        :page-id page-id
-                        :file-id file-id}]]]))
+    [:& fs/fullscreen-wrapper {}
+     [:div.handoff-layout
+      [:& header
+       {:data data
+        :state state
+        :index index
+        :section :handoff}]
+      [:div.viewer-content
+       (when (:show-thumbnails state)
+         [:& thumbnails-panel {:index index
+                               :data data
+                               :screen :handoff}])
+       [:& render-panel {:data data
+                         :state state
+                         :index index
+                         :page-id page-id
+                         :file-id file-id}]]]]))
 
 (mf/defc handoff
-  [{:keys [file-id page-id index] :as props}]
+  [{:keys [file-id page-id index token] :as props}]
+
   (mf/use-effect
-   (mf/deps file-id page-id)
+   (mf/deps file-id page-id token)
    (fn []
      (st/emit! (dv/initialize props))))
 
-  (let [data (mf/deref refs/viewer-data)
-        local (mf/deref refs/viewer-local)]
-    (when data
-      [:& handoff-content {:file-id file-id
-                           :page-id page-id
-                           :index index
-                           :local local
-                           :data data}])))
+  (let [data  (mf/deref refs/viewer-data)
+        state (mf/deref refs/viewer-local)]
+
+    (when (and data state)
+      [:& handoff-content
+       {:file-id file-id
+        :page-id page-id
+        :index index
+        :state state
+        :data data}])))

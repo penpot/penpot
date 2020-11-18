@@ -12,362 +12,54 @@
    [app.config :as cfg]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.comments :as dwcm]
-   [app.main.data.workspace.common :as dwc]
+   [app.main.data.comments :as dcm]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.streams :as ms]
    [app.main.ui.context :as ctx]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.data.modal :as modal]
-   [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
-   [app.main.ui.keyboard :as kbd]
-   [app.main.ui.workspace.colorpicker]
-   [app.main.ui.workspace.context-menu :refer [context-menu]]
+   [app.main.ui.comments :as cmt]
    [app.util.time :as dt]
    [app.util.timers :as tm]
    [app.util.dom :as dom]
-   [app.util.object :as obj]
-   [beicon.core :as rx]
    [app.util.i18n :as i18n :refer [t tr]]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
-(declare group-threads-by-page)
-(declare apply-filters)
-
-(mf/defc resizing-textarea
-  {::mf/wrap-props false}
-  [props]
-  (let [value       (obj/get props "value" "")
-        on-focus    (obj/get props "on-focus")
-        on-blur     (obj/get props "on-blur")
-        placeholder (obj/get props "placeholder")
-        on-change   (obj/get props "on-change")
-
-        on-esc      (obj/get props "on-esc")
-
-        ref         (mf/use-ref)
-        ;; state       (mf/use-state value)
-
-        on-key-down
-        (mf/use-callback
-         (fn [event]
-           (when (and (kbd/esc? event)
-                      (fn? on-esc))
-             (on-esc event))))
-
-        on-change*
-        (mf/use-callback
-         (mf/deps on-change)
-         (fn [event]
-           (let [content (dom/get-target-val event)]
-             (on-change content))))]
-
-
-    (mf/use-layout-effect
-     nil
-     (fn []
-       (let [node (mf/ref-val ref)]
-         (set! (.-height (.-style node)) "0")
-         (set! (.-height (.-style node)) (str (+ 2 (.-scrollHeight node)) "px")))))
-
-    [:textarea
-     {:ref ref
-      :on-key-down on-key-down
-      :on-focus on-focus
-      :on-blur on-blur
-      :value value
-      :placeholder placeholder
-      :on-change on-change*}]))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Workspace
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(mf/defc reply-form
-  [{:keys [thread] :as props}]
-  (let [show-buttons? (mf/use-state false)
-        content       (mf/use-state "")
-
-        on-focus
-        (mf/use-callback
-         #(reset! show-buttons? true))
-
-        on-blur
-        (mf/use-callback
-         #(reset! show-buttons? false))
-
-        on-change
-        (mf/use-callback
-         #(reset! content %))
-
-        on-cancel
-        (mf/use-callback
-         #(do (reset! content "")
-              (reset! show-buttons? false)))
-
-        on-submit
-        (mf/use-callback
-         (mf/deps thread @content)
-         (fn []
-           (st/emit! (dwcm/add-comment thread @content))
-           (on-cancel)))]
-
-    [:div.reply-form
-     [:& resizing-textarea {:value @content
-                            :placeholder "Reply"
-                            :on-blur on-blur
-                            :on-focus on-focus
-                            :on-change on-change}]
-     (when (or @show-buttons?
-               (not (empty? @content)))
-       [:div.buttons
-        [:input.btn-primary {:type "button" :value "Post" :on-click on-submit}]
-        [:input.btn-secondary {:type "button" :value "Cancel" :on-click on-cancel}]])]))
-
-(mf/defc draft-thread
-  [{:keys [draft zoom] :as props}]
-  (let [position (:position draft)
-        content  (:content draft)
-        pos-x    (* (:x position) zoom)
-        pos-y    (* (:y position) zoom)
-
-        on-esc
-        (mf/use-callback
-         (mf/deps draft)
-         (st/emitf :interrupt))
-
-        on-change
-        (mf/use-callback
-         (mf/deps draft)
-         (fn [content]
-           (st/emit! (dwcm/update-draft-thread (assoc draft :content content)))))
-
-        on-submit
-        (mf/use-callback
-         (mf/deps draft)
-         (st/emitf (dwcm/create-thread draft)))]
-
-    [:*
-     [:div.thread-bubble
-      {:style {:top (str pos-y "px")
-               :left (str pos-x "px")}}
-      [:span "?"]]
-     [:div.thread-content
-      {:style {:top (str (- pos-y 14) "px")
-               :left (str (+ pos-x 14) "px")}}
-      [:div.reply-form
-       [:& resizing-textarea {:placeholder "Write new comment"
-                              :value content
-                              :on-esc on-esc
-                              :on-change on-change}]
-       [:div.buttons
-        [:input.btn-primary
-         {:on-click on-submit
-          :type "button"
-          :value "Post"}]
-        [:input.btn-secondary
-         {:on-click on-esc
-          :type "button"
-          :value "Cancel"}]]]]]))
-
-
-(mf/defc edit-form
-  [{:keys [content on-submit on-cancel] :as props}]
-  (let [content (mf/use-state content)
-
-        on-change
-        (mf/use-callback
-         #(reset! content %))
-
-        on-submit*
-        (mf/use-callback
-         (mf/deps @content)
-         (fn [] (on-submit @content)))]
-
-    [:div.reply-form.edit-form
-     [:& resizing-textarea {:value @content
-                            :on-change on-change}]
-     [:div.buttons
-      [:input.btn-primary {:type "button" :value "Post" :on-click on-submit*}]
-      [:input.btn-secondary {:type "button" :value "Cancel" :on-click on-cancel}]]]))
-
-
-(mf/defc comment-item
-  [{:keys [comment thread] :as props}]
-  (let [profile  (get @refs/workspace-users (:owner-id comment))
-
-        options  (mf/use-state false)
-        edition? (mf/use-state false)
-
-        on-show-options
-        (mf/use-callback #(reset! options true))
-
-        on-hide-options
-        (mf/use-callback #(reset! options false))
-
-        on-edit-clicked
-        (mf/use-callback
-         (fn []
-           (reset! options false)
-           (reset! edition? true)))
-
-        on-delete-comment
-        (mf/use-callback
-         (mf/deps comment)
-         (st/emitf (dwcm/delete-comment comment)))
-
-        delete-thread
-        (mf/use-callback
-         (mf/deps thread)
-         (st/emitf (dwcm/close-thread)
-                   (dwcm/delete-comment-thread thread)))
-
-
-        on-delete-thread
-        (mf/use-callback
-         (mf/deps thread)
-         (st/emitf (modal/show
-                      {:type :confirm
-                       :title (tr "modals.delete-comment-thread.title")
-                       :message (tr "modals.delete-comment-thread.message")
-                       :accept-label (tr "modals.delete-comment-thread.accept")
-                       :on-accept delete-thread})))
-
-        on-submit
-        (mf/use-callback
-         (mf/deps comment thread)
-         (fn [content]
-           (reset! edition? false)
-           (st/emit! (dwcm/update-comment (assoc comment :content content)))))
-
-        on-cancel
-        (mf/use-callback #(reset! edition? false))
-
-        toggle-resolved
-        (mf/use-callback
-         (mf/deps thread)
-         (st/emitf (dwcm/update-comment-thread (update thread :is-resolved not))))]
-
-    [:div.comment-container
-     [:div.comment
-      [:div.author
-       [:div.avatar
-        [:img {:src (cfg/resolve-media-path (:photo profile))}]]
-       [:div.name
-        [:div.fullname (:fullname profile)]
-        [:div.timeago (dt/timeago (:modified-at comment))]]
-
-       (when (some? thread)
-         [:div.options-resolve {:on-click toggle-resolved}
-          (if (:is-resolved thread)
-            [:span i/checkbox-checked]
-            [:span i/checkbox-unchecked])])
-
-       [:div.options
-        [:div.options-icon {:on-click on-show-options} i/actions]]]
-
-      [:div.content
-       (if @edition?
-         [:& edit-form {:content (:content comment)
-                        :on-submit on-submit
-                        :on-cancel on-cancel}]
-         [:span.text (:content comment)])]]
-
-     [:& dropdown {:show @options
-                   :on-close on-hide-options}
-      [:ul.dropdown.comment-options-dropdown
-       [:li {:on-click on-edit-clicked} "Edit"]
-       (if thread
-         [:li {:on-click on-delete-thread} "Delete thread"]
-         [:li {:on-click on-delete-comment} "Delete comment"])]]]))
-
-(defn comments-ref
-  [{:keys [id] :as thread}]
-  (l/derived (l/in [:comments id]) st/state))
-
-(mf/defc thread-comments
-  [{:keys [thread zoom]}]
-  (let [ref   (mf/use-ref)
-        pos   (:position thread)
-        pos-x (+ (* (:x pos) zoom) 14)
-        pos-y (- (* (:y pos) zoom) 14)
-
-        comments-ref (mf/use-memo (mf/deps thread) #(comments-ref thread))
-        comments-map (mf/deref comments-ref)
-        comments     (->> (vals comments-map)
-                          (sort-by :created-at))
-        comment      (first comments)]
-
-    (mf/use-effect
-     (st/emitf (dwcm/update-comment-thread-status thread)))
-
-    (mf/use-effect
-     (mf/deps thread)
-     (st/emitf (dwcm/retrieve-comments (:id thread))))
-
-    (mf/use-layout-effect
-     (mf/deps thread comments-map)
-     (fn []
-       (when-let [node (mf/ref-val ref)]
-         (.scrollIntoView ^js node))))
-
-    [:div.thread-content
-     {:style {:top (str pos-y "px")
-              :left (str pos-x "px")}}
-
-     [:div.comments
-      [:& comment-item {:comment comment
-                        :thread thread}]
-      (for [item (rest comments)]
-        [:*
-         [:hr]
-         [:& comment-item {:comment item}]])
-      [:div {:ref ref}]]
-     [:& reply-form {:thread thread}]]))
-
-(mf/defc thread-bubble
-  {::mf/wrap [mf/memo]}
-  [{:keys [thread zoom open?] :as params}]
-  (let [pos   (:position thread)
-        pos-x (* (:x pos) zoom)
-        pos-y (* (:y pos) zoom)
-
-        on-open-toggle
-        (mf/use-callback
-         (mf/deps thread open?)
-         (fn []
-           (if open?
-             (st/emit! (dwcm/close-thread))
-             (st/emit! (dwcm/open-thread thread)))))]
-
-    [:div.thread-bubble
-     {:style {:top (str pos-y "px")
-              :left (str pos-x "px")}
-      :class (dom/classnames
-              :resolved (:is-resolved thread)
-              :unread (pos? (:count-unread-comments thread)))
-      :on-click on-open-toggle}
-     [:span (:seqn thread)]]))
-
 (def threads-ref
   (l/derived :comment-threads st/state))
-
-(def workspace-comments-ref
-  (l/derived :workspace-comments st/state))
 
 (mf/defc comments-layer
   [{:keys [vbox vport zoom file-id page-id drawing] :as props}]
   (let [pos-x       (* (- (:x vbox)) zoom)
         pos-y       (* (- (:y vbox)) zoom)
+
         profile     (mf/deref refs/profile)
-        local       (mf/deref workspace-comments-ref)
+        local       (mf/deref refs/comments-local)
         threads-map (mf/deref threads-ref)
+
         threads     (->> (vals threads-map)
                          (filter #(= (:page-id %) page-id))
-                         (apply-filters local profile))]
+                         (dcm/apply-filters local profile))
+
+        on-bubble-click
+        (fn [{:keys [id] :as thread}]
+          (if (= (:open local) id)
+            (st/emit! (dcm/close-thread))
+            (st/emit! (dcm/open-thread thread))))
+
+        on-draft-cancel
+        (mf/use-callback
+         (st/emitf :interrupt))
+
+        on-draft-submit
+        (mf/use-callback
+         (fn [draft]
+           (st/emit! (dcm/create-thread draft)
+                     #_(dcm/close-thread))))
+        ]
+
 
     (mf/use-effect
      (mf/deps file-id)
@@ -377,22 +69,27 @@
          (st/emit! ::dwcm/finalize))))
 
     [:div.workspace-comments
-     {:style {:width (str (:width vport) "px")
-              :height (str (:height vport) "px")}}
-     [:div.threads {:style {:transform (str/format "translate(%spx, %spx)" pos-x pos-y)}}
-      (for [item threads]
-        [:& thread-bubble {:thread item
-                           :zoom zoom
-                           :open? (= (:id item) (:open local))
-                           :key (:seqn item)}])
+     [:div.comments-layer
+      {:style {:width (str (:width vport) "px")
+               :height (str (:height vport) "px")}}
+      [:div.threads {:style {:transform (str/format "translate(%spx, %spx)" pos-x pos-y)}}
+       (for [item threads]
+         [:& cmt/thread-bubble {:thread item
+                                :zoom zoom
+                                :on-click on-bubble-click
+                                :open? (= (:id item) (:open local))
+                                :key (:seqn item)}])
 
-      (when-let [id (:open local)]
-        (when-let [thread (get threads-map id)]
-          [:& thread-comments {:thread thread
-                               :zoom zoom}]))
+       (when-let [id (:open local)]
+         (when-let [thread (get threads-map id)]
+           [:& cmt/thread-comments {:thread thread
+                                    :zoom zoom}]))
 
-      (when-let [draft (:comment drawing)]
-        [:& draft-thread {:draft draft :zoom zoom}])]]))
+       (when-let [draft (:comment drawing)]
+         [:& cmt/draft-thread {:draft draft
+                               :on-cancel on-draft-cancel
+                               :on-submit on-draft-submit
+                               :zoom zoom}])]]]))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -413,7 +110,7 @@
              (st/emit! (dw/go-to-page (:page-id item))))
            (tm/schedule
             (st/emitf (dwcm/center-to-comment-thread item)
-                      (dwcm/open-thread item)))))]
+                      (dcm/open-thread item)))))]
 
     [:div.comment {:on-click on-click}
      [:div.author
@@ -461,41 +158,49 @@
 
 (mf/defc sidebar-options
   [{:keys [local] :as props}]
-  (let [filter-yours
-        (mf/use-callback
-         (mf/deps local)
-         (st/emitf (dwcm/update-filters {:main :yours})))
+  (let [{cmode :mode cshow :show} (mf/deref refs/comments-local)
+        locale (mf/deref i18n/locale)
 
-        filter-all
+        update-mode
         (mf/use-callback
-         (mf/deps local)
-         (st/emitf (dwcm/update-filters {:main :all})))
+         (fn [mode]
+           (st/emit! (dcm/update-filters {:mode mode}))))
 
-        toggle-resolved
+        update-show
         (mf/use-callback
-         (mf/deps local)
-         (st/emitf (dwcm/update-filters {:resolved (not (:filter-resolved local))})))]
+         (fn [mode]
+           (st/emit! (dcm/update-filters {:show mode}))))]
 
-  [:ul.dropdown.sidebar-options-dropdown
-   [:li {:on-click filter-all} "All"]
-   [:li {:on-click filter-yours} "Only yours"]
-   [:hr]
-   (if (:filter-resolved local)
-     [:li {:on-click toggle-resolved} "Show resolved comments"]
-     [:li {:on-click toggle-resolved} "Hide resolved comments"])]))
+    [:ul.dropdown.with-check.sidebar-options-dropdown
+     [:li {:class (dom/classnames :selected (or (= :all cmode) (nil? cmode)))
+           :on-click #(update-mode :all)}
+      [:span.icon i/tick]
+      [:span.label (t locale "labels.show-all-comments")]]
+
+     [:li {:class (dom/classnames :selected (= :yours cmode))
+           :on-click #(update-mode :yours)}
+      [:span.icon i/tick]
+      [:span.label (t locale "labels.show-your-comments")]]
+
+     [:hr]
+
+     [:li {:class (dom/classnames :selected (= :pending cshow))
+           :on-click #(update-show (if (= :pending cshow) :all :pending))}
+      [:span.icon i/tick]
+      [:span.label (t locale "labels.hide-resolved-comments")]]]))
 
 (mf/defc comments-sidebar
   []
   (let [threads-map (mf/deref threads-ref)
         profile     (mf/deref refs/profile)
-        local       (mf/deref workspace-comments-ref)
+        local       (mf/deref refs/comments-local)
         options?    (mf/use-state false)
 
         tgroups     (->> (vals threads-map)
                          (sort-by :modified-at)
                          (reverse)
-                         (apply-filters local profile)
-                         (group-threads-by-page))]
+                         (dcm/apply-filters local profile)
+                         (dcm/group-threads-by-page))]
 
     [:div.workspace-comments.workspace-comments-sidebar
      [:div.sidebar-title
@@ -519,31 +224,4 @@
            [:& sidebar-item {:group tgroup
                              :key (:page-id tgroup)}]])])]))
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Helpers
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- group-threads-by-page
-  [threads]
-  (letfn [(group-by-page [result thread]
-            (let [current (first result)]
-              (if (= (:page-id current) (:page-id thread))
-                (cons (update current :items conj thread)
-                      (rest result))
-                (cons {:page-id (:page-id thread) :items [thread]}
-                      result))))]
-    (reverse
-     (reduce group-by-page nil threads))))
-
-(defn- apply-filters
-  [local profile threads]
-  (cond->> threads
-    (true? (:filter-resolved local))
-    (filter (fn [item]
-              (or (not (:is-resolved item))
-                  (= (:id item) (:open local)))))
-
-    (= :yours (:filter local))
-    (filter #(contains? (:participants %) (:id profile)))))
 

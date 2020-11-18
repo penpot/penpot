@@ -10,6 +10,8 @@
 (ns app.util.webapi
   "HTML5 web api helpers."
   (:require
+   [app.common.exceptions :as ex]
+   [app.util.object :as obj]
    [promesa.core :as p]
    [beicon.core :as rx]
    [cuerdas.core :as str]
@@ -97,8 +99,26 @@
 
 (defn request-fullscreen
   [el]
-  (.requestFullscreen el))
+  (cond
+    (obj/in? el "requestFullscreen")
+    (.requestFullscreen el)
+
+    (obj/in? el "webkitRequestFullscreen")
+    (.webkitRequestFullscreen el)
+
+    :else
+    (ex/raise :type :not-supported
+              :hint "seems like the current browset does not support fullscreen api.")))
 
 (defn exit-fullscreen
   []
-  (.exitFullscreen js/document))
+  (cond
+    (obj/in? js/document "exitFullscreen")
+    (.exitFullscreen js/document)
+
+    (obj/in? js/document "webkitExitFullscreen")
+    (.webkitExitFullscreen js/document)
+
+    :else
+    (ex/raise :type :not-supported
+              :hint "seems like the current browset does not support fullscreen api.")))

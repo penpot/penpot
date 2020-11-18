@@ -1608,28 +1608,19 @@
   "modals.delete-comment-thread.accept" : {
     "used-in" : [ "src/app/main/ui/workspace/comments.cljs:236" ],
     "translations" : {
-      "en" : null,
-      "fr" : null,
-      "ru" : null,
-      "es" : null
+      "en" : "Delete conversation"
     }
   },
   "modals.delete-comment-thread.message" : {
     "used-in" : [ "src/app/main/ui/workspace/comments.cljs:235" ],
     "translations" : {
-      "en" : null,
-      "fr" : null,
-      "ru" : null,
-      "es" : null
+      "en" : "Are you sure you want to delete this conversation? All comments in this thread will be deleted."
     }
   },
   "modals.delete-comment-thread.title" : {
     "used-in" : [ "src/app/main/ui/workspace/comments.cljs:234" ],
     "translations" : {
-      "en" : null,
-      "fr" : null,
-      "ru" : null,
-      "es" : null
+      "en" : "Delete conversation"
     }
   },
   "modals.delete-file-confirm.accept" : {
@@ -1881,6 +1872,10 @@
       "es" : "No se encuentra el tablero."
     }
   },
+  "labels.show-all-comments": "Show all comments",
+  "labels.show-your-comments": "Show only yours comments",
+  "labels.hide-resolved-comments": "Hide resolved comments",
+
   "viewer.header.dont-show-interactions" : {
     "used-in" : [ "src/app/main/ui/viewer/header.cljs:68" ],
     "translations" : {

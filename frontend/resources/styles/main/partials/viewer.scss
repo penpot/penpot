@@ -7,18 +7,17 @@
 }
 
 .viewer-preview {
-  height: 100vh;
+  height: calc(100vh - 40px);
 
   grid-row: 1 / span 2;
   grid-column: 1 / span 1;
 
-  overflow: scroll;
+  overflow: auto;
 
   display: flex;
   justify-content: center;
   align-items: center;
   flex-flow: wrap;
-
 
   .empty-state {
     justify-content: center;

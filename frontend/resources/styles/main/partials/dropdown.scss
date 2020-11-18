@@ -11,7 +11,7 @@
     border-color: $color-gray-10;
   }
 
-  li {
+  > li {
     display: flex;
     align-items: center;
     color: $color-gray-60;
@@ -20,6 +20,12 @@
     height: 40px;
     padding: 5px 16px;
 
+    svg {
+      fill: $color-gray-20;
+      height: 12px;
+      width: 12px;
+    }
+
     &.title {
       font-weight: 600;
       cursor: default;
@@ -27,6 +33,29 @@
 
     &:hover {
       background-color: $color-primary-lighter;
+    }
+  }
+
+
+  &.with-check {
+    > li {
+      padding: 5px 10px;
+    }
+
+    > li:not(.selected) {
+      svg { display: none; }
+    }
+
+    svg {
+      fill: $color-gray-50;
+    }
+
+    .icon {
+      display: flex;
+      align-items: center;
+      width: 25px;
+      height: 25px;
+      margin-right: 7px;
     }
   }
 }

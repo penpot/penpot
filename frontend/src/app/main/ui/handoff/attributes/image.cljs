@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.viewer.handoff.attributes.image
+(ns app.main.ui.handoff.attributes.image
   (:require
    [rumext.alpha :as mf]
    [cuerdas.core :as str]

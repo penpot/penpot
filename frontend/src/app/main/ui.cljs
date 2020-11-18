@@ -13,6 +13,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
+   [app.common.spec :as us]
    [app.main.data.auth :refer [logout]]
    [app.main.data.messages :as dm]
    [app.main.refs :as refs]
@@ -20,6 +21,7 @@
    [app.main.ui.auth :refer [auth]]
    [app.main.ui.auth.verify-token :refer [verify-token]]
    [app.main.ui.cursors :as c]
+   [app.main.ui.context :as ctx]
    [app.main.ui.dashboard :refer [dashboard]]
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
@@ -27,7 +29,7 @@
    [app.main.ui.settings :as settings]
    [app.main.ui.static :refer [not-found-page not-authorized-page]]
    [app.main.ui.viewer :refer [viewer-page]]
-   [app.main.ui.viewer.handoff :refer [handoff]]
+   [app.main.ui.handoff :refer [handoff]]
    [app.main.ui.workspace :as workspace]
    [app.util.i18n :as i18n :refer [tr t]]
    [app.util.timers :as ts]
@@ -38,6 +40,19 @@
    [rumext.alpha :as mf]))
 
 ;; --- Routes
+
+(s/def ::page-id ::us/uuid)
+(s/def ::file-id ::us/uuid)
+(s/def ::viewer-path-params
+  (s/keys :req-un [::file-id ::page-id]))
+
+(s/def ::section ::us/keyword)
+(s/def ::index ::us/integer)
+(s/def ::token (s/nilable ::us/string))
+
+(s/def ::viewer-query-params
+  (s/keys :req-un [::index]
+          :opt-un [::token ::section]))
 
 (def routes
   [["/auth"
@@ -53,8 +68,17 @@
     ["/password" :settings-password]
     ["/options" :settings-options]]
 
-   ["/view/:file-id/:page-id" :viewer]
-   ["/handoff/:file-id/:page-id" :handoff]
+   ["/view/:file-id/:page-id"
+    {:name :viewer
+     :conform
+     {:path-params ::viewer-path-params
+      :query-params ::viewer-query-params}}]
+
+   ["/handoff/:file-id/:page-id"
+    {:name :handoff
+     :conform {:path-params ::viewer-path-params
+               :query-params ::viewer-query-params}}]
+
    ["/not-found" :not-found]
    ["/not-authorized" :not-authorized]
 
@@ -86,84 +110,88 @@
 (mf/defc app
   {::mf/wrap [#(mf/catch % {:fallback app-error})]}
   [{:keys [route] :as props}]
-  (case (get-in route [:data :name])
-    (:auth-login
-     :auth-register
-     :auth-goodbye
-     :auth-recovery-request
-     :auth-recovery)
-    [:& auth {:route route}]
 
-    :auth-verify-token
-    [:& verify-token {:route route}]
+  [:& (mf/provider ctx/current-route) {:value route}
+   (case (get-in route [:data :name])
+     (:auth-login
+      :auth-register
+      :auth-goodbye
+      :auth-recovery-request
+      :auth-recovery)
+     [:& auth {:route route}]
 
-    (:settings-profile
-     :settings-password
-     :settings-options)
-    [:& settings/settings {:route route}]
+     :auth-verify-token
+     [:& verify-token {:route route}]
 
-    :debug-icons-preview
-    (when *assert*
-      [:div.debug-preview
-       [:h1 "Cursors"]
-       [:& c/debug-preview]
-       [:h1 "Icons"]
-       [:& i/debug-icons-preview]
-       ])
+     (:settings-profile
+      :settings-password
+      :settings-options)
+     [:& settings/settings {:route route}]
 
-    (:dashboard-search
-     :dashboard-projects
-     :dashboard-files
-     :dashboard-libraries
-     :dashboard-team-members
-     :dashboard-team-settings)
-    [:& dashboard {:route route}]
+     :debug-icons-preview
+     (when *assert*
+       [:div.debug-preview
+        [:h1 "Cursors"]
+        [:& c/debug-preview]
+        [:h1 "Icons"]
+        [:& i/debug-icons-preview]
+        ])
 
-    :viewer
-    (let [index (d/parse-integer (get-in route [:params :query :index]))
-          token (get-in route [:params :query :token])
-          file-id (uuid (get-in route [:params :path :file-id]))
-          page-id (uuid (get-in route [:params :path :page-id]))]
-      [:& viewer-page {:page-id page-id
-                       :file-id file-id
-                       :index index
-                       :token token}])
+     (:dashboard-search
+      :dashboard-projects
+      :dashboard-files
+      :dashboard-libraries
+      :dashboard-team-members
+      :dashboard-team-settings)
+     [:& dashboard {:route route}]
 
-    :handoff
-    (let [index (d/parse-integer (get-in route [:params :query :index]))
-          file-id (uuid (get-in route [:params :path :file-id]))
-          page-id (uuid (get-in route [:params :path :page-id]))]
-      [:& handoff {:page-id page-id
-                   :file-id file-id
-                   :index index}])
+     :viewer
+     (let [index   (get-in route [:query-params :index])
+           token   (get-in route [:query-params :token])
+           section (get-in route [:query-params :section] :interactions)
+           file-id (get-in route [:path-params :file-id])
+           page-id (get-in route [:path-params :page-id])]
+       [:& viewer-page {:page-id page-id
+                        :file-id file-id
+                        :section section
+                        :index index
+                        :token token}])
 
-    :render-object
-    (do
-      (let [file-id   (uuid (get-in route [:params :path :file-id]))
-            page-id   (uuid (get-in route [:params :path :page-id]))
-            object-id (uuid (get-in route [:params :path :object-id]))]
-        [:& render/render-object {:file-id file-id
-                                  :page-id page-id
-                                  :object-id object-id}]))
+     :handoff
+     (let [file-id (get-in route [:path-params :file-id])
+           page-id (get-in route [:path-params :page-id])
+           index   (get-in route [:query-params :index])]
+       [:& handoff {:page-id page-id
+                    :file-id file-id
+                    :index index}])
 
-    :workspace
-    (let [project-id (uuid (get-in route [:params :path :project-id]))
-          file-id (uuid (get-in route [:params :path :file-id]))
-          page-id (uuid (get-in route [:params :query :page-id]))
-          layout-name (get-in route [:params :query :layout])]
-      [:& workspace/workspace {:project-id project-id
-                               :file-id file-id
-                               :page-id page-id
-                               :layout-name (keyword layout-name)
-                               :key file-id}])
+     :render-object
+     (do
+       (let [file-id   (uuid (get-in route [:params :path :file-id]))
+             page-id   (uuid (get-in route [:params :path :page-id]))
+             object-id (uuid (get-in route [:params :path :object-id]))]
+         [:& render/render-object {:file-id file-id
+                                   :page-id page-id
+                                   :object-id object-id}]))
 
-    :not-authorized
-    [:& not-authorized-page]
+     :workspace
+     (let [project-id (uuid (get-in route [:params :path :project-id]))
+           file-id (uuid (get-in route [:params :path :file-id]))
+           page-id (uuid (get-in route [:params :query :page-id]))
+           layout-name (get-in route [:params :query :layout])]
+       [:& workspace/workspace {:project-id project-id
+                                :file-id file-id
+                                :page-id page-id
+                                :layout-name (keyword layout-name)
+                                :key file-id}])
 
-    :not-found
-    [:& not-found-page]
+     :not-authorized
+     [:& not-authorized-page]
 
-    nil))
+     :not-found
+     [:& not-found-page]
+
+     nil)])
 
 (mf/defc app-wrapper
   []
@@ -229,7 +257,7 @@
                                :type :error
                                :timeout 5000}))))))
 
-(defmethod ptk/handle-error :internal-error
+(defmethod ptk/handle-error :server-error
   [{:keys [status] :as error}]
   (cond
     (= status 429)
@@ -242,6 +270,13 @@
     (ts/schedule
      (st/emitf (dm/show {:content "Unable to connect to backend, wait a little bit and refresh."
                          :type :error})))))
+
+
+(defmethod ptk/handle-error :not-found
+  [{:keys [status] :as error}]
+  (ts/schedule
+   (st/emitf (dm/show {:content "Resource not found."
+                       :type :warning}))))
 
 (defonce uncaught-error-handler
   (letfn [(on-error [event]

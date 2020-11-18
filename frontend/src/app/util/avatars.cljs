@@ -35,3 +35,9 @@
     (.fillText context letters (/ size 2) (/ size 1.5))
 
     (.toDataURL canvas)))
+
+(defn assoc-profile-avatar
+  [{:keys [photo fullname] :as profile}]
+  (cond-> profile
+    (or (nil? photo) (empty? photo))
+    (assoc :photo (generate {:name fullname}))))

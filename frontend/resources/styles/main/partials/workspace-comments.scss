@@ -1,14 +1,29 @@
-.workspace-comments {
+.viewer-comments {
   width: 100%;
   height: 100%;
-  grid-column: 1/span 2;
-  grid-row: 1/span 2;
   z-index: 1000;
-  pointer-events: none;
-  overflow: hidden;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+}
 
-  .threads {
-    position: relative;
+.viewer-comments, .workspace-comments {
+
+  .comments-layer {
+
+    width: 100%;
+    height: 100%;
+    grid-column: 1/span 2;
+    grid-row: 1/span 2;
+    z-index: 1000;
+    pointer-events: none;
+    overflow: hidden;
+
+    .threads {
+      position: absolute;
+      top: 0px;
+      left: 0px;
+    }
   }
 
   .thread-bubble {
@@ -104,8 +119,6 @@
     }
   }
 
-
-
   .comment-container {
     position: relative;
   }
@@ -132,7 +145,7 @@
           font-size: $fs13;
 
           @include text-ellipsis;
-          width: 110px;
+          width: 150px;
 
         }
         .timeago {
