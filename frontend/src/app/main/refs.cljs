@@ -207,3 +207,7 @@
 
 (def viewer-local
   (l/derived :viewer-local st/state))
+
+(def comments-local
+  (l/derived :comments-local st/state))
+

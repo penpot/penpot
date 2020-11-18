@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.viewer.handoff.right-sidebar
+(ns app.main.ui.handoff.right-sidebar
   (:require
    [rumext.alpha :as mf]
    [okulary.core :as l]
@@ -16,8 +16,8 @@
    [app.main.ui.icons :as i]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
    [app.main.ui.workspace.sidebar.layers :refer [element-icon]]
-   [app.main.ui.viewer.handoff.attributes :refer [attributes]]
-   [app.main.ui.viewer.handoff.code :refer [code]]))
+   [app.main.ui.handoff.attributes :refer [attributes]]
+   [app.main.ui.handoff.code :refer [code]]))
 
 (defn make-selected-shapes-iref
   []

@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.viewer.handoff.code
+(ns app.main.ui.handoff.code
   (:require
    ["js-beautify" :as beautify]
    [cuerdas.core :as str]

@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.viewer.handoff.attributes.text
+(ns app.main.ui.handoff.attributes.text
   (:require
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
@@ -19,7 +19,7 @@
    [app.main.fonts :as fonts]
    [app.main.ui.icons :as i]
    [app.util.webapi :as wapi]
-   [app.main.ui.viewer.handoff.attributes.common :refer [color-row]]
+   [app.main.ui.handoff.attributes.common :refer [color-row]]
    [app.util.code-gen :as cg]
    [app.main.store :as st]
    [app.main.ui.components.copy-button :refer [copy-button]]))

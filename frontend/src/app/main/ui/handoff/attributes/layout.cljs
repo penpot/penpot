@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.viewer.handoff.attributes.layout
+(ns app.main.ui.handoff.attributes.layout
   (:require
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
@@ -49,7 +49,7 @@
       [:div.attributes-label (t locale "handoff.attributes.layout.left")]
       [:div.attributes-value (mth/precision (:x shape) 2) "px"]
       [:& copy-button {:data (copy-data shape :x)}]])
-   
+
    (when (not= (:y shape) 0)
      [:div.attributes-unit-row
       [:div.attributes-label (t locale "handoff.attributes.layout.top")]

@@ -203,6 +203,8 @@
 (defn retrieve-file-users
   [conn id]
   (->> (db/exec! conn [sql:file-users id id])
+       ;; TODO: seems like the frontend is no longer uses :photo-uri,
+       ;; so this can be removed probably.
        (mapv #(media/resolve-media-uris % [:photo :photo-uri]))))
 
 (s/def ::file-users

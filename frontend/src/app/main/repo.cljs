@@ -31,11 +31,14 @@
     (rx/throw {:type :authorization
                :code :not-authorized})
 
+    (= (:status response) 404)
+    (rx/throw (:body response))
+
     (= 0 (:status response))
     (rx/throw {:type :offline})
 
     :else
-    (rx/throw {:type :internal-error
+    (rx/throw {:type :server-error
                :status (:status response)
                :body (:body response)})))
 

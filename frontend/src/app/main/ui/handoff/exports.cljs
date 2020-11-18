@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.viewer.handoff.exports
+(ns app.main.ui.handoff.exports
   (:require
    [rumext.alpha :as mf]
    [beicon.core :as rx]
@@ -59,7 +59,7 @@
            (swap! exports (fn [exports]
                             (let [[before after] (split-at index exports)]
                               (d/concat [] before (rest after)))))))
-        
+
         on-scale-change
         (mf/use-callback
          (mf/deps shape)
@@ -68,7 +68,7 @@
                  value   (dom/get-value target)
                  value   (d/parse-double value)]
              (swap! exports assoc-in [index :scale] value))))
-        
+
         on-suffix-change
         (mf/use-callback
          (mf/deps shape)
@@ -76,7 +76,7 @@
            (let [target  (dom/get-target event)
                  value   (dom/get-value target)]
              (swap! exports assoc-in [index :suffix] value))))
-        
+
         on-type-change
         (mf/use-callback
          (mf/deps shape)

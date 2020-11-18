@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.viewer.handoff.attributes.fill
+(ns app.main.ui.handoff.attributes.fill
   (:require
    [rumext.alpha :as mf]
    [app.util.i18n :refer [t]]
@@ -15,7 +15,7 @@
    [app.main.ui.icons :as i]
    [app.util.code-gen :as cg]
    [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.viewer.handoff.attributes.common :refer [color-row]]))
+   [app.main.ui.handoff.attributes.common :refer [color-row]]))
 
 (def fill-attributes [:fill-color :fill-color-gradient])
 

@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.viewer.handoff.attributes.stroke
+(ns app.main.ui.handoff.attributes.stroke
   (:require
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
@@ -16,7 +16,7 @@
    [app.main.ui.icons :as i]
    [app.util.code-gen :as cg]
    [app.main.ui.components.copy-button :refer [copy-button]]
-   [app.main.ui.viewer.handoff.attributes.common :refer [color-row]]))
+   [app.main.ui.handoff.attributes.common :refer [color-row]]))
 
 (defn shape->color [shape]
   {:color (:stroke-color shape)

@@ -10,6 +10,7 @@
 (ns app.main
   (:require
    [app.common.uuid :as uuid]
+   [app.common.spec :as us]
    [app.main.data.auth :refer [logout]]
    [app.main.data.users :as udu]
    [app.main.store :as st]
@@ -35,12 +36,26 @@
 
 (declare reinit)
 
+(s/def ::any any?)
+
+(defn match-path
+  [router path]
+  (when-let [match (rt/match router path)]
+    (if-let [conform (get-in match [:data :conform])]
+      (let [spath  (get conform :path-params ::any)
+            squery (get conform :query-params ::any)]
+        (-> (dissoc match :params)
+            (assoc :path-params (us/conform spath (get match :path-params))
+                   :query-params (us/conform squery (get match :query-params)))))
+      match)))
+
 (defn on-navigate
   [router path]
-  (let [match (rt/match router path)
+  (let [match   (match-path router path)
         profile (:profile storage)
         authed? (and (not (nil? profile))
                      (not= (:id profile) uuid/zero))]
+
     (cond
       (and (or (= path "")
                (nil? match))
