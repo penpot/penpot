@@ -179,7 +179,7 @@
   (a page or a component) that are linked to the given library."
   [asset-type library-id state container]
 
-  (if (= (:container-type container) :page)
+  (if (cph/page? container)
     (log/debug :msg "Sync page in local file" :page-id (:id container))
     (log/debug :msg "Sync component in local library" :component-id (:id container)))
 
@@ -250,36 +250,36 @@
                               (get state :workspace-libraries)
                               false))
 
-(defn- generate-sync-text-shape [shape page-id component-id update-node]
+(defn- generate-sync-text-shape [shape container update-node]
   (let [old-content (:content shape)
         new-content (ut/map-node update-node old-content)
-        rchanges [(d/without-nils {:type :mod-obj
-                                   :page-id page-id
-                                   :component-id component-id
-                                   :id (:id shape)
-                                   :operations [{:type :set
-                                                 :attr :content
-                                                 :val new-content}]})]
-        lchanges [(d/without-nils {:type :mod-obj
-                                   :page-id page-id
-                                   :component-id component-id
-                                   :id (:id shape)
-                                   :operations [{:type :set
-                                                 :attr :content
-                                                 :val old-content}]})]]
+        rchanges [(as-> {:type :mod-obj
+                         :id (:id shape)
+                         :operations [{:type :set
+                                       :attr :content
+                                       :val new-content}]} $
+                    (if (cph/page? container)
+                      (assoc $ :page-id (:id container))
+                      (assoc $ :component-id (:id container))))]
+        uchanges [(as-> {:type :mod-obj
+                         :id (:id shape)
+                         :operations [{:type :set
+                                       :attr :content
+                                       :val old-content}]} $
+                    (if (cph/page? container)
+                      (assoc $ :page-id (:id container))
+                      (assoc $ :component-id (:id container))))]]
+
     (if (= new-content old-content)
       empty-changes
-      [rchanges lchanges])))
-
+      [rchanges uchanges])))
 
 (defmethod generate-sync-shape :colors
   [_ library-id state container shape]
 
   ;; Synchronize a shape that uses some colors of the library. The value of the
   ;; color in the library is copied to the shape.
-  (let [page-id      (when (cph/is-page container) (:id container))
-        component-id (when (cph/is-component container) (:id container))
-        colors       (get-assets library-id :colors state)]
+  (let [colors       (get-assets library-id :colors state)]
     (if (= :text (:type shape))
       (let [update-node (fn [node]
                           (if-let [color (get colors (:fill-color-ref-id node))]
@@ -288,7 +288,7 @@
                                    :fill-opacity (:opacity color)
                                    :fill-color-gradient (:gradient color))
                             node))]
-        (generate-sync-text-shape shape page-id component-id update-node))
+        (generate-sync-text-shape shape container update-node))
       (loop [attrs (seq color-sync-attrs)
              roperations []
              uoperations []]
@@ -296,16 +296,18 @@
           (if (nil? attr)
             (if (empty? roperations)
               empty-changes
-              (let [rchanges [(d/without-nils {:type :mod-obj
-                                               :page-id page-id
-                                               :component-id component-id
-                                               :id (:id shape)
-                                               :operations roperations})]
-                    uchanges [(d/without-nils {:type :mod-obj
-                                               :page-id page-id
-                                               :component-id component-id
-                                               :id (:id shape)
-                                               :operations uoperations})]]
+              (let [rchanges [(as-> {:type :mod-obj
+                                     :id (:id shape)
+                                     :operations roperations} $
+                                (if (cph/page? container)
+                                  (assoc $ :page-id (:id container))
+                                  (assoc $ :component-id (:id container))))]
+                    uchanges [(as-> {:type :mod-obj
+                                     :id (:id shape)
+                                     :operations uoperations} $
+                                (if (cph/page? container)
+                                  (assoc $ :page-id (:id container))
+                                  (assoc $ :component-id (:id container))))]]
                 [rchanges uchanges]))
             (if-not (contains? shape attr-ref-id)
               (recur (next attrs)
@@ -329,14 +331,12 @@
 
   ;; Synchronize a shape that uses some typographies of the library. The attributes
   ;; of the typography are copied to the shape."
-  (let [page-id      (when (cph/is-page container) (:id container))
-        component-id (when (cph/is-component container) (:id container))
-        typographies (get-assets library-id :typographies state)
+  (let [typographies (get-assets library-id :typographies state)
         update-node (fn [node]
                       (if-let [typography (get typographies (:typography-ref-id node))]
                         (merge node (d/without-keys typography [:name :id]))
                         node))]
-    (generate-sync-text-shape shape page-id component-id update-node)))
+    (generate-sync-text-shape shape container update-node)))
 
 
 ;; ---- Component synchronization helpers ----
@@ -764,36 +764,38 @@
 
 (defn- remove-shape
   [shape container]
-  (let [page-id      (when (cph/is-page container) (:id container))
-        component-id (when (cph/is-component container) (:id container))
-
-        objects    (get container :objects)
+  (let [objects    (get container :objects)
         parents    (cph/get-parents (:id shape) objects)
         children   (cph/get-children (:id shape) objects)
 
         add-change (fn [id]
                      (let [shape' (get objects id)]
-                       (d/without-nils {:type :add-obj
-                                        :id id
-                                        :page-id page-id
-                                        :component-id component-id
-                                        :index (cph/position-on-parent id objects)
-                                        :frame-id (:frame-id shape')
-                                        :parent-id (:parent-id shape')
-                                        :obj shape'})))
+                       (as-> {:type :add-obj
+                              :id id
+                              :index (cph/position-on-parent id objects)
+                              :parent-id (:parent-id shape')
+                              :obj shape'} $
+                         (cond-> $
+                           (:frame-id shape')
+                           (assoc :frame-id (:frame-id shape')))
+                         (if (cph/page? container)
+                           (assoc $ :page-id (:id container))
+                           (assoc $ :component-id (:id container))))))
 
-        rchanges [(d/without-nils {:type :del-obj
-                                   :page-id page-id
-                                   :component-id component-id
-                                   :id (:id shape)})]
+        rchanges [(as-> {:type :del-obj
+                         :id (:id shape)} $
+                    (if (cph/page? container)
+                      (assoc $ :page-id (:id container))
+                      (assoc $ :component-id (:id container))))]
 
         uchanges (d/concat
                    [(add-change (:id shape))]
                    (map add-change children)
-                   [(d/without-nils {:type :reg-objects
-                                     :page-id page-id
-                                     :component-id component-id
-                                     :shapes (vec parents)})])]
+                   [(as-> {:type :reg-objects
+                           :shapes (vec parents)} $
+                      (if (cph/page? container)
+                        (assoc $ :page-id (:id container))
+                        (assoc $ :component-id (:id container))))])]
     [rchanges uchanges]))
 
 (defn- move-shape
@@ -804,102 +806,102 @@
                       index-before
                       " -> "
                       index-after))
-  (let [page-id      (when (cph/is-page container) (:id container))
-        component-id (when (cph/is-component container) (:id container))]
-    (let [rchanges [(d/without-nils {:type :mov-objects
-                                     :parent-id (:parent-id shape)
-                                     :shapes [(:id shape)]
-                                     :index index-after
-                                     :page-id page-id
-                                     :component-id component-id})]
-          uchanges [(d/without-nils {:type :mov-objects
-                                     :parent-id (:parent-id shape)
-                                     :shapes [(:id shape)]
-                                     :index index-before
-                                     :page-id page-id
-                                     :component-id component-id})]]
-      [rchanges uchanges])))
+  (let [rchanges [(as-> {:type :mov-objects
+                         :parent-id (:parent-id shape)
+                         :shapes [(:id shape)]
+                         :index index-after} $
+                    (if (cph/page? container)
+                      (assoc $ :page-id (:id container))
+                      (assoc $ :component-id (:id container))))]
+        uchanges [(as-> {:type :mov-objects
+                         :parent-id (:parent-id shape)
+                         :shapes [(:id shape)]
+                         :index index-before} $
+                    (if (cph/page? container)
+                      (assoc $ :page-id (:id container))
+                      (assoc $ :component-id (:id container))))]]
+    [rchanges uchanges]))
 
 (defn- remove-component-and-ref
   [shape container]
-  (let [page-id      (when (cph/is-page container) (:id container))
-        component-id (when (cph/is-component container) (:id container))]
-    [[(d/without-nils {:type :mod-obj
-                       :id (:id shape)
-                       :page-id page-id
-                       :component-id component-id
-                       :operations [{:type :set
-                                     :attr :component-root?
-                                     :val nil}
-                                    {:type :set
-                                     :attr :component-id
-                                     :val nil}
-                                    {:type :set
-                                     :attr :component-file
-                                     :val nil}
-                                    {:type :set
-                                     :attr :shape-ref
-                                     :val nil}
-                                    {:type :set-touched
-                                     :touched nil}]})]
-     [(d/without-nils {:type :mod-obj
-                       :id (:id shape)
-                       :page-id page-id
-                       :component-id component-id
-                       :operations [{:type :set
-                                     :attr :component-root?
-                                     :val (:component-root? shape)}
-                                    {:type :set
-                                     :attr :component-id
-                                     :val (:component-id shape)}
-                                    {:type :set
-                                     :attr :component-file
-                                     :val (:component-file shape)}
-                                    {:type :set
-                                     :attr :shape-ref
-                                     :val (:shape-ref shape)}
-                                    {:type :set-touched
-                                     :touched (:touched shape)}]})]]))
+  [[(as-> {:type :mod-obj
+           :id (:id shape)
+           :operations [{:type :set
+                         :attr :component-root?
+                         :val nil}
+                        {:type :set
+                         :attr :component-id
+                         :val nil}
+                        {:type :set
+                         :attr :component-file
+                         :val nil}
+                        {:type :set
+                         :attr :shape-ref
+                         :val nil}
+                        {:type :set-touched
+                         :touched nil}]} $
+      (if (cph/page? container)
+        (assoc $ :page-id (:id container))
+        (assoc $ :component-id (:id container))))]
+   [(as-> {:type :mod-obj
+           :id (:id shape)
+           :operations [{:type :set
+                         :attr :component-root?
+                         :val (:component-root? shape)}
+                        {:type :set
+                         :attr :component-id
+                         :val (:component-id shape)}
+                        {:type :set
+                         :attr :component-file
+                         :val (:component-file shape)}
+                        {:type :set
+                         :attr :shape-ref
+                         :val (:shape-ref shape)}
+                        {:type :set-touched
+                         :touched (:touched shape)}]} $
+      (if (cph/page? container)
+        (assoc $ :page-id (:id container))
+        (assoc $ :component-id (:id container))))]])
 
 (defn- remove-ref
   [shape container]
-  (let [page-id      (when (cph/is-page container) (:id container))
-        component-id (when (cph/is-component container) (:id container))]
-    [[(d/without-nils {:type :mod-obj
-                       :id (:id shape)
-                       :page-id page-id
-                       :component-id component-id
-                       :operations [{:type :set
-                                     :attr :shape-ref
-                                     :val nil}
-                                    {:type :set-touched
-                                     :touched nil}]})]
-     [(d/without-nils {:type :mod-obj
-                       :id (:id shape)
-                       :page-id page-id
-                       :component-id component-id
-                       :operations [{:type :set
-                                     :attr :shape-ref
-                                     :val (:shape-ref shape)}
-                                    {:type :set-touched
-                                     :touched (:touched shape)}]})]]))
+  [[(as-> {:type :mod-obj
+           :id (:id shape)
+           :operations [{:type :set
+                         :attr :shape-ref
+                         :val nil}
+                        {:type :set-touched
+                         :touched nil}]} $
+      (if (cph/page? container)
+        (assoc $ :page-id (:id container))
+        (assoc $ :component-id (:id container))))]
+   [(as-> {:type :mod-obj
+           :id (:id shape)
+           :operations [{:type :set
+                         :attr :shape-ref
+                         :val (:shape-ref shape)}
+                        {:type :set-touched
+                         :touched (:touched shape)}]} $
+      (if (cph/page? container)
+        (assoc $ :page-id (:id container))
+        (assoc $ :component-id (:id container))))]])
 
 (defn- reset-touched
   [shape container]
-  (let [page-id      (when (cph/is-page container) (:id container))
-        component-id (when (cph/is-component container) (:id container))]
-    [[(d/without-nils {:type :mod-obj
-                       :id (:id shape)
-                       :page-id page-id
-                       :component-id component-id
-                       :operations [{:type :set-touched
-                                     :touched nil}]})]
-     [(d/without-nils {:type :mod-obj
-                       :id (:id shape)
-                       :page-id page-id
-                       :component-id component-id
-                       :operations [{:type :set-touched
-                                     :touched (:touched shape)}]})]]))
+  [[(as-> {:type :mod-obj
+           :id (:id shape)
+           :operations [{:type :set-touched
+                         :touched nil}]} $
+      (if (cph/page? container)
+        (assoc $ :page-id (:id container))
+        (assoc $ :component-id (:id container))))]
+   [(as-> {:type :mod-obj
+           :id (:id shape)
+           :operations [{:type :set-touched
+                         :touched (:touched shape)}]} $
+      (if (cph/page? container)
+        (assoc $ :page-id (:id container))
+        (assoc $ :component-id (:id container))))]])
 
 (defn- update-attrs
   "The main function that implements the sync algorithm. Copy
@@ -920,13 +922,10 @@
   (log/info :msg (str "SYNC "
                       (:name origin-shape)
                       " -> "
-                      (if (cph/is-page container) "[P] " "[C] ")
+                      (if (cph/page? container) "[P] " "[C] ")
                       (:name dest-shape)))
 
-  (let [page-id      (when (cph/is-page container) (:id container))
-        component-id (when (cph/is-component container) (:id container))
-
-        ; The position attributes need a special sync algorith, because we do
+  (let [; The position attributes need a special sync algorith, because we do
         ; not synchronize the absolute position, but the position relative of
         ; the container shape of the component.
         new-pos   (calc-new-pos dest-shape origin-shape dest-root origin-root)
@@ -966,16 +965,18 @@
                               :else
                               uoperations)
 
-                rchanges [(d/without-nils {:type :mod-obj
-                                           :id (:id dest-shape)
-                                           :page-id page-id
-                                           :component-id component-id
-                                           :operations roperations})]
-                uchanges [(d/without-nils {:type :mod-obj
-                                           :id (:id dest-shape)
-                                           :page-id page-id
-                                           :component-id component-id
-                                           :operations uoperations})]]
+                rchanges [(as-> {:type :mod-obj
+                                 :id (:id dest-shape)
+                                 :operations roperations} $
+                            (if (cph/page? container)
+                              (assoc $ :page-id (:id container))
+                              (assoc $ :component-id (:id container))))]
+                uchanges [(as-> {:type :mod-obj
+                                 :id (:id dest-shape)
+                                 :operations uoperations} $
+                            (if (cph/page? container)
+                              (assoc $ :page-id (:id container))
+                              (assoc $ :component-id (:id container))))]]
             [rchanges uchanges])
 
           (if-not (contains? dest-shape attr)

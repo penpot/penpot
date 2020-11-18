@@ -43,24 +43,24 @@
       nil)))
 
 (defn make-container
-  [page-or-component container-type]
+  [page-or-component type]
   (assoc page-or-component
-         :container-type container-type))
+         :type type))
 
-(defn is-page
+(defn page?
   [container]
-  (= (:container-type container) :page))
+  (= (:type container) :page))
 
-(defn is-component
+(defn component?
   [container]
-  (= (:container-type container) :component))
+  (= (:type container) :component))
 
 (defn get-container
-  [container-id container-type local-file]
-  (-> (if (= container-type :page)
-        (get-in local-file [:pages-index container-id])
-        (get-in local-file [:components container-id]))
-      (assoc :container-type container-type)))
+  [id type local-file]
+  (-> (if (= type :page)
+        (get-in local-file [:pages-index id])
+        (get-in local-file [:components id]))
+      (assoc :type type)))
 
 (defn get-shape
   [container shape-id]

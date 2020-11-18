@@ -435,10 +435,10 @@
                    :internal.file/recent-colors
                    :internal.file/media]))
 
-(s/def ::container-type #{:page :component})
+(s/def :internal.container/type #{:page :component})
 
 (s/def ::container
-  (s/keys :req-un [::container-type
+  (s/keys :req-un [:internal.container/type
                    ::id
                    ::name
                    :internal.page/objects]))
