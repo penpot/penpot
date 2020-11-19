@@ -39,23 +39,27 @@
     limit 10")
 
 (defn retrieve-candidates
+  "Retrieves a list of ids of files that are candidates to be trimed. A
+  file is considered candidate when some time passes whith no
+  modification."
   [conn]
   (let [interval (:file-trimming-max-age cfg/config)]
     (->> (db/exec! conn [sql:retrieve-files-to-trim interval])
          (map :id))))
 
+
+(def collect-media-xf
+  (comp (map :data)
+        (map :objects)
+        (mapcat vals)
+        (filter #(= :image (:type %)))
+        (map :metadata)
+        (map :id)))
+
+
 (defn collect-used-media
   [pages]
-  (let [xf (comp (filter #(= :image (:type %)))
-                 (map :metadata)
-                 (map :id))]
-    (reduce conj #{} (->> pages
-                          (map :data)
-                          (map :objects)
-                          (mapcat vals)
-                          (filter #(= :image (:type %)))
-                          (map :metadata)
-                          (map :id)))))
+  (into #{} collect-media-xf pages))
 
 (defn process-file
   [file-id]
@@ -64,17 +68,17 @@
     (let [mobjs  (db/query conn :media-object {:file-id file-id})
           pages  (->> (db/query conn :page {:file-id file-id})
                       (map decode-row))
-          used   (collect-used-media pages)
-          unused (into #{} (comp (map :id)
-                                 (remove #(contains? used %))) mobjs)]
+          used   (into #{} collect-media-xf pages)
+          unused (into #{} (comp (map :id) (remove #(contains? used %))) mobjs)]
+
       (log/debugf "Collected media ids: '%s'." (pr-str used))
       (log/debugf "Unused media ids: '%s'." (pr-str unused))
-
       (db/update! conn :file
                   {:has-media-trimmed true}
                   {:id file-id})
 
       (doseq [id unused]
+        ;; TODO: add task batching
         (tasks/submit! conn {:name "delete-object"
                              ;; :delay cfg/default-deletion-delay
                              :delay 10000
