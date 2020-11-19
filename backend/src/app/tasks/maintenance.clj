@@ -22,6 +22,9 @@
 ;; Task: Delete Executed Tasks
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; This tasks perform a cleanup of already executed tasks from the
+;; database.
+
 (s/def ::max-age ::dt/duration)
 (s/def ::delete-completed-tasks
   (s/keys :req-un [::max-age]))
