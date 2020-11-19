@@ -398,13 +398,15 @@
                              :page-id page-id
                              :frame-id (:frame-id obj)
                              :parent-id (:parent-id obj)
+                             :ignore-touched true
                              :obj obj})
                           new-shapes)
 
             uchanges (map (fn [obj]
                             {:type :del-obj
                              :id (:id obj)
-                             :page-id page-id})
+                             :page-id page-id
+                             :ignore-touched true})
                           new-shapes)]
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})

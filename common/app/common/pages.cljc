@@ -340,6 +340,7 @@
                            :rx                    :radius-group
                            :ry                    :radius-group
                            :masked-group?         :mask-group})
+                           ;; shapes-group is handled differently
 
 (s/def ::minimal-shape
   (s/keys :req-un [::type ::name]
@@ -468,30 +469,52 @@
 
 (s/def :internal.changes.add-obj/obj ::shape)
 
+(defn- valid-container-id-frame?
+  [o]
+  (or (and (contains? o :page-id)
+           (not (contains? o :component-id))
+           (some? (:frame-id o)))
+      (and (contains? o :component-id)
+           (not (contains? o :page-id))
+           (nil? (:frame-id o)))))
+
+(defn- valid-container-id?
+  [o]
+  (or (and (contains? o :page-id)
+           (not (contains? o :component-id)))
+      (and (contains? o :component-id)
+           (not (contains? o :page-id)))))
+
 (defmethod change-spec :add-obj [_]
-  (s/keys :req-un [::id (or ::page-id ::component-id)
-                   :internal.changes.add-obj/obj]
-          :opt-un [::parent-id ::frame-id]))
+  (s/and (s/keys :req-un [::id :internal.changes.add-obj/obj]
+                 :opt-un [::page-id ::component-id ::parent-id ::frame-id])
+         valid-container-id-frame?))
 
 (s/def ::operation (s/multi-spec operation-spec :type))
 (s/def ::operations (s/coll-of ::operation))
 
 (defmethod change-spec :mod-obj [_]
-  (s/keys :req-un [::id (or ::page-id ::component-id) ::operations]))
+  (s/and (s/keys :req-un [::id ::operations]
+                 :opt-un [::page-id ::component-id])
+         valid-container-id?))
 
 (defmethod change-spec :del-obj [_]
-  (s/keys :req-un [::id (or ::page-id ::component-id)]))
+  (s/and (s/keys :req-un [::id]
+                 :opt-un [::page-id ::component-id])
+         valid-container-id?))
 
 (s/def :internal.changes.reg-objects/shapes
   (s/coll-of uuid? :kind vector?))
 
 (defmethod change-spec :reg-objects [_]
-  (s/keys :req-un [(or ::page-id ::component-id)
-                   :internal.changes.reg-objects/shapes]))
+  (s/and (s/keys :req-un [:internal.changes.reg-objects/shapes]
+                 :opt-un [::page-id ::component-id])
+         valid-container-id?))
 
 (defmethod change-spec :mov-objects [_]
-  (s/keys :req-un [(or ::page-id ::component-id) ::parent-id :internal.shape/shapes]
-          :opt-un [::index]))
+  (s/and (s/keys :req-un [::parent-id :internal.shape/shapes]
+                 :opt-un [::page-id ::component-id ::index])
+         valid-container-id?))
 
 (defmethod change-spec :add-page [_]
   (s/or :empty (s/keys :req-un [::id ::name])
@@ -710,7 +733,8 @@
                           (assoc data :options (d/dissoc-in (:options data) path)))))))
 
 (defmethod process-change :add-obj
-  [data {:keys [id obj page-id component-id frame-id parent-id index] :as change}]
+  [data {:keys [id obj page-id component-id frame-id parent-id
+                index ignore-touched] :as change}]
   (let [update-fn (fn [data]
                     (let [parent-id (or parent-id frame-id)
                           objects (:objects data)]
@@ -726,7 +750,13 @@
                                            (cond
                                              (some #{id} shapes) shapes
                                              (nil? index) (conj shapes id)
-                                             :else (cph/insert-at-index shapes index [id])))))))))]
+                                             :else (cph/insert-at-index shapes index [id])))))
+                            (cond->
+                              (and (:shape-ref (get-in data [:objects parent-id]))
+                                   (not= parent-id frame-id)
+                                   (not ignore-touched))
+                              (update-in [:objects parent-id :touched]
+                                         cph/set-touched-group :shapes-group))))))]
     (if page-id
       (d/update-in-when data [:pages-index page-id] update-fn)
       (d/update-in-when data [:components component-id] update-fn))))
@@ -742,7 +772,7 @@
       (d/update-in-when data [:components component-id :objects] update-fn))))
 
 (defmethod process-change :del-obj
-  [data {:keys [page-id component-id id] :as change}]
+  [data {:keys [page-id component-id id ignore-touched] :as change}]
   (letfn [(delete-object [objects]
             (if-let [target (get objects id)]
               (let [parent-id (cph/get-parent id objects)
@@ -753,6 +783,9 @@
                   (and (not= parent-id frame-id)
                        (= :group (:type parent)))
                   (update-in [parent-id :shapes] (fn [s] (filterv #(not= % id) s)))
+
+                  (and (:shape-ref parent) (not ignore-touched))
+                  (update-in [parent-id :touched] cph/set-touched-group :shapes-group)
 
                   (contains? objects frame-id)
                   (update-in [frame-id :shapes] (fn [s] (filterv #(not= % id) s)))
@@ -813,7 +846,7 @@
       (d/update-in-when data [:components component-id :objects] reg-objects))))
 
 (defmethod process-change :mov-objects
-  [data {:keys [parent-id shapes index page-id component-id] :as change}]
+  [data {:keys [parent-id shapes index page-id component-id ignore-touched] :as change}]
   (letfn [(is-valid-move? [objects shape-id]
             (let [invalid-targets (cph/calculate-invalid-targets shape-id objects)]
               (and (not (invalid-targets parent-id))
@@ -840,6 +873,14 @@
           (strip-id [coll id]
             (filterv #(not= % id) coll))
 
+          (add-to-parent [parent index shapes]
+            (cond-> parent
+              true
+              (update :shapes check-insert-items parent index shapes)
+
+              (and (:shape-ref parent) (= (:type parent) :group) (not ignore-touched))
+              (update :touched cph/set-touched-group :shapes-group)))
+
           (remove-from-old-parent [cpindex objects shape-id]
             (let [prev-parent-id (get cpindex shape-id)]
               ;; Do nothing if the parent id of the shape is the same as
@@ -856,7 +897,15 @@
                       (recur pid
                              (:parent-id obj)
                              (dissoc objects pid))
-                      (update-in objects [pid :shapes] strip-id sid)))))))
+                      (cond-> objects
+                        true
+                        (update-in [pid :shapes] strip-id sid)
+
+                        (and (:shape-ref obj)
+                             (= (:type obj) :group)
+                             (not ignore-touched))
+                        (update-in [pid :touched]
+                                   cph/set-touched-group :shapes-group))))))))
 
           (update-parent-id [objects id]
             (update objects id assoc :parent-id parent-id))
@@ -888,7 +937,7 @@
 
               (if valid?
                 (as-> objects $
-                  (update-in $ [parent-id :shapes] check-insert-items parent index shapes)
+                  (update $ parent-id #(add-to-parent % index shapes))
                   (reduce update-parent-id $ shapes)
                   (reduce (partial remove-from-old-parent cpindex) $ shapes)
                   (reduce (partial update-frame-ids frm-id) $ (get-in $ [parent-id :shapes])))
@@ -1016,7 +1065,7 @@
 
     (cond-> shape
       (and shape-ref group (not ignore) (not= val (get shape attr)))
-      (update :touched #(conj (or % #{}) group))
+      (update :touched cph/set-touched-group group)
 
       (nil? val)
       (dissoc attr)

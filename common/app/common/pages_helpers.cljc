@@ -49,6 +49,7 @@
 
 (defn page?
   [container]
+  (assert (some? (:type container)))
   (= (:type container) :page))
 
 (defn component?
@@ -297,3 +298,12 @@
           (d/seek #(gsh/has-point? % position))
           :id)
      uuid/zero)))
+
+(defn set-touched-group
+  [touched group]
+  (conj (or touched #{}) group))
+
+(defn touched-group?
+  [shape group]
+  ((or (:touched shape) #{}) group))
+
