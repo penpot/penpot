@@ -560,7 +560,6 @@
 
 
 ; ---- Operation generation helpers ----
-
 (defn- compare-children
   [children-inst children-master only-inst-cb only-master-cb both-cb moved-cb inverse?]
   (loop [children-inst (seq (or children-inst []))
@@ -764,6 +763,9 @@
 
 (defn- remove-shape
   [shape container]
+  (log/info :msg (str "REMOVE-SHAPE "
+                      (if (cph/page? container) "[P] " "[C] ")
+                      (:name shape)))
   (let [objects    (get container :objects)
         parents    (cph/get-parents (:id shape) objects)
         children   (cph/get-children (:id shape) objects)
@@ -801,6 +803,7 @@
 (defn- move-shape
   [shape index-before index-after container]
   (log/info :msg (str "MOVE "
+                      (if (cph/page? container) "[P] " "[C] ")
                       (:name shape)
                       " "
                       index-before
@@ -824,6 +827,9 @@
 
 (defn- remove-component-and-ref
   [shape container]
+  (log/info :msg (str "REMOVE-COMPONENT-AND-REF "
+                      (if (cph/page? container) "[P] " "[C] ")
+                      (:name shape)))
   [[(as-> {:type :mod-obj
            :id (:id shape)
            :operations [{:type :set
@@ -865,6 +871,9 @@
 
 (defn- remove-ref
   [shape container]
+  (log/info :msg (str "REMOVE-REF "
+                      (if (cph/page? container) "[P] " "[C] ")
+                      (:name shape)))
   [[(as-> {:type :mod-obj
            :id (:id shape)
            :operations [{:type :set
@@ -888,6 +897,9 @@
 
 (defn- reset-touched
   [shape container]
+  (log/info :msg (str "RESET-TOUCHED "
+                      (if (cph/page? container) "[P] " "[C] ")
+                      (:name shape)))
   [[(as-> {:type :mod-obj
            :id (:id shape)
            :operations [{:type :set-touched
