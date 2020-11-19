@@ -1706,7 +1706,6 @@
 (def link-file-to-library dwp/link-file-to-library)
 (def unlink-file-from-library dwp/unlink-file-from-library)
 (def upload-media-objects dwp/upload-media-objects)
-(def delete-media-object dwp/delete-media-object)
 
 ;; Selection
 
