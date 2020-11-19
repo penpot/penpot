@@ -110,6 +110,9 @@
 
     {:name "0031-add-conversation-related-tables"
      :fn (mg/resource "app/migrations/sql/0031-add-conversation-related-tables.sql")}
+
+    {:name "0032-del-unused-tables"
+     :fn (mg/resource "app/migrations/sql/0032-del-unused-tables.sql")}
     ]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
