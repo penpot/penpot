@@ -623,23 +623,15 @@
     :stroke-color "#000000"
     :stroke-opacity 0}
 
-   {:type :curve
-    :name "Path"
-    :fill-color "#000000"
-    :fill-opacity 0
-    :stroke-style :solid
-    :stroke-alignment :center
-    :stroke-width 2
-    :stroke-color "#000000"
-    :stroke-opacity 1}
-
    {:type :text
     :name "Text"
     :content nil}])
 
 (defn make-minimal-shape
   [type]
-  (let [shape (d/seek #(= type (:type %)) minimal-shapes)]
+  (let [type (cond (= type :curve) :path
+                   :else type)
+        shape (d/seek #(= type (:type %)) minimal-shapes)]
     (when-not shape
       (ex/raise :type :assertion
                 :code :shape-type-not-implemented
@@ -649,7 +641,7 @@
       :always
       (assoc :id (uuid/next))
 
-      (not #{:path :curve})
+      (not= :path (:type shape))
       (assoc :x 0
              :y 0
              :width 1
@@ -771,6 +763,7 @@
     {:rotation angle
      :displacement displacement}))
 
+;; reg-objects operation "regenerates" the values for the parent groups
 (defmethod process-change :reg-objects
   [data {:keys [page-id shapes]}]
   (letfn [(reg-objects [objects]

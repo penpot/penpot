@@ -30,11 +30,6 @@
   [selrect]
   (center-rect selrect))
 
-(defn center-shape
-  "Calculate the center of the shape."
-  [shape]
-  (center-rect (:selrect shape)))
-
 (defn center-points [points]
   (let [minx (transduce (map :x) min ##Inf points)
         miny (transduce (map :y) min ##Inf points)
@@ -43,6 +38,11 @@
     (gpt/point (/ (+ minx maxx) 2)
                (/ (+ miny maxy) 2))))
 
+(defn center-shape
+  "Calculate the center of the shape."
+  [shape]
+  (center-rect (:selrect shape)))
+
 (defn make-centered-rect
   "Creates a rect given a center and a width and height"
   [center width height]
@@ -50,31 +50,3 @@
    :y (- (:y center) (/ height 2))
    :width width
    :height height})
-
-;; --- Center
-#_(
-   (declare center-rect)
-   (declare center-path)
-
-   
-
-   
-
-   (defn- center-path
-     [{:keys [segments] :as shape}]
-     (let [minx (apply min (map :x segments))
-           miny (apply min (map :y segments))
-           maxx (apply max (map :x segments))
-           maxy (apply max (map :y segments))]
-       (gpt/point (/ (+ minx maxx) 2) (/ (+ miny maxy) 2))))
-
-   (defn center->rect
-     "Creates a rect given a center and a width and height"
-     [center width height]
-     {:x (- (:x center) (/ width 2))
-      :y (- (:y center) (/ height 2))
-      :width width
-      :height height})
-
-   
-   )

@@ -32,6 +32,4 @@
   (let [shape (gsh/transform-shape shape)]
     (case (:type shape)
       :frame (-> shape :selrect frame-snap-points)
-      (:path :curve) (-> shape :selrect selrect-snap-points)
-      (into #{(gsh/center-shape shape)} (:points shape)))
-    ))
+      (into #{(gsh/center-shape shape)} (:points shape)))))

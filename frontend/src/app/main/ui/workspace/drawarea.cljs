@@ -45,31 +45,3 @@
                            :fill "transparent"
                            :stroke-width (/ 1 zoom)}}])))
 
-#_(mf/defc path-draw-area
-  [{:keys [shape] :as props}]
-  (let [locale (i18n/use-locale)
-        on-click
-        (fn [event]
-          (dom/stop-propagation event)
-          (st/emit! (dw/assign-cursor-tooltip nil)
-                    (dd/close-drawing-path)))
-
-        on-mouse-enter
-        (fn [event]
-          (let [msg (t locale "workspace.viewport.click-to-close-path")]
-            (st/emit! (dw/assign-cursor-tooltip msg))))
-
-        on-mouse-leave
-        (fn [event]
-          (st/emit! (dw/assign-cursor-tooltip nil)))]
-
-    [:g.drawing
-     [:& shapes/shape-wrapper {:shape shape}]
-     #_(when (not= :curve (:type shape))
-         [:circle.close-bezier
-          {:cx x
-           :cy y
-           :r 5
-           :on-click on-click
-           :on-mouse-enter on-mouse-enter
-           :on-mouse-leave on-mouse-leave}])]))

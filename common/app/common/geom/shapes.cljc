@@ -30,24 +30,7 @@
         dy (d/check-num dy)]
     (-> shape
         (assoc-in [:modifiers :displacement] (gmt/translate-matrix (gpt/point dx dy)))
-        (gtr/transform-shape)))
-
-  #_(let [inc-x (nilf (fn [x] (+ (-chk x) (-chk dx))))
-        inc-y (nilf (fn [y] (+ (-chk y) (-chk dy))))
-        inc-point (nilf (fn [p] (-> p
-                                    (update :x inc-x)
-                                    (update :y inc-y))))]
-    (-> shape
-        (update :x inc-x)
-        (update :y inc-y)
-        (update-in [:selrect :x] inc-x)
-        (update-in [:selrect :x1] inc-x)
-        (update-in [:selrect :x2] inc-x)
-        (update-in [:selrect :y] inc-y)
-        (update-in [:selrect :y1] inc-y)
-        (update-in [:selrect :y2] inc-y)
-        (update :points #(mapv inc-point %))
-        (update :segments #(mapv inc-point %)))))
+        (gtr/transform-shape))))
 
 ;; --- Absolute Movement
 
@@ -59,17 +42,6 @@
   (let [dx (- (d/check-num x) (-> shape :selrect :x))
         dy (- (d/check-num y) (-> shape :selrect :y))]
     (move shape (gpt/point dx dy))))
-
-;; --- Paths
-
-#_(defn update-path-point
-  "Update a concrete point in the path.
-
-  The point should exists before, this function
-  does not adds it automatically."
-  [shape index point]
-  (assoc-in shape [:segments index] point))
-
 
 ;; --- Resize (Dimensions)
 ;;; TODO: CHANGE TO USE THE MODIFIERS
@@ -135,20 +107,6 @@
   (case (:type shape)
     :image (setup-image shape props)
     (setup-rect shape props)))
-
-;; --- Resolve Shape
-
-;; (declare resolve-rect-shape)
-;; (declare translate-from-frame)
-;; (declare translate-to-frame)
-;; 
-;; (defn resolve-shape
-;;   [objects shape]
-;;   (loop [pobj (get objects parent)]
-;;     (if (= :frame (:type pobj))
-;;       (translate-from-frame shape pobj)
-;;       (recur (get objects (:parent pobj))))))
-
 
 ;; --- Outer Rect
 

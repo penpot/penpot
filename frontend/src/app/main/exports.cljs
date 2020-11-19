@@ -84,7 +84,6 @@
               opts #js {:shape shape}]
           [:> shape-container {:shape shape}
            (case (:type shape)
-             :curve  [:> path/path-shape opts]
              :text   [:> text/text-shape opts]
              :rect   [:> rect/rect-shape opts]
              :path   [:> path/path-shape opts]

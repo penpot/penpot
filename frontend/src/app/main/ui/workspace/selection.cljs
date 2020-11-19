@@ -215,44 +215,6 @@
              :resize-side [:> resize-side-handler props])))])))
 
 ;; --- Selection Handlers (Component)
-(mf/defc path-edition-selection-handlers
-  [{:keys [shape modifiers zoom color] :as props}]
-  (letfn [(on-mouse-down [event index]
-            (dom/stop-propagation event)
-            ;; TODO: this need code ux refactor
-            (let [stoper (get-edition-stream-stoper)
-                  stream (->> (ms/mouse-position-deltas @ms/mouse-position)
-                              (rx/take-until stoper))]
-              ;; (when @refs/selected-alignment
-              ;;   (st/emit! (dw/initial-path-point-align (:id shape) index)))
-              (rx/subscribe stream #(on-handler-move % index))))
-
-          (get-edition-stream-stoper []
-            (let [stoper? #(and (ms/mouse-event? %) (= (:type %) :up))]
-              (rx/merge
-               (rx/filter stoper? st/stream)
-               (->> st/stream
-                    (rx/filter #(= % :interrupt))
-                    (rx/take 1)))))
-
-          (on-handler-move [delta index]
-            (st/emit! (dw/update-path (:id shape) index delta)))]
-
-    (let [transform (geom/transform-matrix shape)
-          displacement (:displacement modifiers)
-          segments (cond->> (:segments shape)
-                     displacement (map #(gpt/transform % displacement)))]
-      [:g.controls
-       (for [[index {:keys [x y]}] (map-indexed vector segments)]
-         (let [{:keys [x y]} (gpt/transform (gpt/point x y) transform)]
-           [:circle {:cx x :cy y
-                     :r (/ 6.0 zoom)
-                     :key index
-                     :on-mouse-down #(on-mouse-down % index)
-                     :fill "#ffffff"
-                     :stroke color
-                     :style {:cursor cur/move-pointer}}]))])))
-
 ;; TODO: add specs for clarity
 
 (mf/defc text-edition-selection-handlers
@@ -371,12 +333,6 @@
            (= edition (:id shape)))
       [:& path-editor {:zoom zoom
                        :shape shape}]
-
-      (and (= type :curve)
-           (= edition (:id shape)))
-      [:& path-edition-selection-handlers {:shape shape
-                                           :zoom zoom
-                                           :color color}]
 
       :else
       [:& single-selection-handlers {:shape shape

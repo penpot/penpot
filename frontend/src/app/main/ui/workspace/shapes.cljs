@@ -108,7 +108,6 @@
                          :on-mouse-leave on-mouse-leave
                          :style {:cursor (if @alt? cur/duplicate nil)}}
        (case (:type shape)
-         :curve [:> path/path-wrapper opts]
          :path [:> path/path-wrapper opts]
          :text [:> text/text-wrapper opts]
          :group [:> group-wrapper opts]

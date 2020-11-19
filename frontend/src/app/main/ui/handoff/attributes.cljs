@@ -28,7 +28,6 @@
    :rect     [:layout :fill :stroke :shadow :blur]
    :circle   [:layout :fill :stroke :shadow :blur]
    :path     [:layout :fill :stroke :shadow :blur]
-   :curve    [:layout :fill :stroke :shadow :blur]
    :image    [:image :layout :shadow :blur]
    :text     [:layout :text :shadow :blur]})
 

@@ -28,10 +28,15 @@
 (defn insert-point-segment [state point]
   (update-in state [:workspace-drawing :object :segments] (fnil conj []) point))
 
-(defn update-selrect [{:keys [segments] :as shape}]
-  (let [points (->> segments
-                    (map #(apply gpt/point %)))]
-    (assoc shape :selrect (gsh/points->selrect points))))
+(defn curve-to-path [{:keys [segments] :as shape}]
+  (let [content (path/segments->content segments)
+        selrect (gsh/content->selrect content)
+        points (gsh/rect->points selrect)]
+    (-> shape
+        (dissoc :segments)
+        (assoc :content content)
+        (assoc :selrect selrect)
+        (assoc :points points))))
 
 (defn finish-drawing-curve [state]
   (update-in
@@ -39,7 +44,7 @@
    (fn [shape]
      (-> shape
          (update :segments #(path/simplify % simplify-tolerance))
-         (update-selrect)))))
+         (curve-to-path)))))
 
 (defn handle-drawing-curve []
   (ptk/reify ::handle-drawing-curve

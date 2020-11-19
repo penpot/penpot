@@ -28,7 +28,7 @@
 
         outline-type (case (:type shape)
                        :circle "ellipse"
-                       (:curve :path) "path"
+                       :path "path"
                        "rect")
 
         common {:fill "transparent"
@@ -44,7 +44,7 @@
                  :rx (/ width 2)
                  :ry (/ height 2)}
 
-                (:curve :path)
+                :path
                 {:d (path/render-path shape)}
 
                 {:x x

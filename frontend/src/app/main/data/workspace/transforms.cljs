@@ -84,7 +84,7 @@
                   {:keys [rotation]} shape
                   shapev (-> (gpt/point width height))
 
-                  rotation (if (#{:curve :path} (:type shape)) 0 rotation)
+                  rotation (if (= :path (:type shape)) 0 rotation)
 
                   ;; Vector modifiers depending on the handler
                   handler-modif (let [[x y] (handler-modifiers handler)] (gpt/point x y))

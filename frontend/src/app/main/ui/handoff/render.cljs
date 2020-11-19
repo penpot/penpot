@@ -127,7 +127,6 @@
                 opts #js {:shape shape
                           :frame frame}]
             (case (:type shape)
-              :curve  [:> path-wrapper opts]
               :text   [:> text-wrapper opts]
               :rect   [:> rect-wrapper opts]
               :path   [:> path-wrapper opts]

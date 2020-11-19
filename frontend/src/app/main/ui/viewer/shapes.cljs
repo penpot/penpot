@@ -153,7 +153,6 @@
                           (geom/translate-to-frame frame))
                 opts #js {:shape shape}]
             (case (:type shape)
-              :curve  [:> path-wrapper opts]
               :text   [:> text-wrapper opts]
               :rect   [:> rect-wrapper opts]
               :path   [:> path-wrapper opts]
