@@ -22,6 +22,10 @@
 ;; Task: Remove Media
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Task responsible of explicit action of removing a media from file
+;; system. Mainly used for profile photo change; when we really know
+;; that the previous photo becomes unused.
+
 (s/def ::path ::us/not-empty-string)
 (s/def ::props
   (s/keys :req-un [::path]))
