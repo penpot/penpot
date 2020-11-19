@@ -55,13 +55,3 @@
   [conn {:keys [id] :as props}]
   (let [sql "delete from media_object where id=? and deleted_at is not null"]
     (db/exec-one! conn [sql id])))
-
-(defmethod handle-deletion :color
-  [conn {:keys [id] :as props}]
-  (let [sql "delete from color where id=? and deleted_at is not null"]
-    (db/exec-one! conn [sql id])))
-
-(defmethod handle-deletion :page
-  [conn {:keys [id] :as props}]
-  (let [sql "delete from page where id=? and deleted_at is not null"]
-    (db/exec-one! conn [sql id])))

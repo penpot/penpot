@@ -162,11 +162,14 @@
     (files/check-edition-permissions! conn profile-id file-id)
     (link-file-to-library conn params)))
 
+(def sql:link-file-to-library
+  "insert into file_library_rel (file_id, library_file_id)
+   values (?, ?)
+       on conflict do nothing;")
+
 (defn- link-file-to-library
   [conn {:keys [file-id library-id] :as params}]
-  (db/insert! conn :file-library-rel
-              {:file-id file-id
-               :library-file-id library-id}))
+  (db/exec-one! conn [sql:link-file-to-library file-id library-id]))
 
 
 ;; --- Mutation: Unlink file from library
