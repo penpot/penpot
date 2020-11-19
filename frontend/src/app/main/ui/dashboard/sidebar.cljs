@@ -450,7 +450,7 @@
        [:li {:on-click (partial on-click :settings-password)}
         [:span.icon i/lock]
         [:span.text (t locale "labels.password")]]
-       [:li {:on-click (partial on-click da/logout)}
+       [:li {:on-click (partial on-click (da/logout))}
         [:span.icon i/exit]
         [:span.text (t locale "labels.logout")]]]]]))
 
