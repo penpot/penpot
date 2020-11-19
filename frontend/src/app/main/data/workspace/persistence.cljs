@@ -422,18 +422,6 @@
                (rx/finalize (fn []
                               (st/emit! (dm/hide-tag :media-loading))))))))))
 
-
-;; --- Delete media object
-
-(defn delete-media-object
-  [file-id id]
-  (ptk/reify ::delete-media-object
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [params {:id id}]
-        (rp/mutation :delete-media-object params)))))
-
-
 ;; --- Helpers
 
 (defn purge-page
