@@ -157,7 +157,8 @@
   rotation of each shape. Mainly used for multiple selection."
   [shapes]
   (->> shapes
-       (map :selrect)
+       (gtr/transform-shape)
+       (map (comp gpr/points->selrect :points))
        (gpr/join-selrects)))
 
 (defn translate-to-frame
@@ -288,15 +289,9 @@
 (defn center-rect [rect] (gco/center-rect rect))
 
 (defn rect->selrect [rect] (gpr/rect->selrect rect))
-
-#_(def shape->rect-shape gpr/shape->rect-shape)
-#_(def fix-invalid-rect-values gtr/fix-invalid-rect-values)
-#_(def rect->rect-shape gpr/rect->rect-shape)
+(defn rect->points [rect] (gpr/rect->points rect))
 (defn points->selrect [points] (gpr/points->selrect points))
 
-#_(def transform-shape-point gtr/transform-shape-point)
-#_(def update-path-selrect gtr/update-path-selrect)
-#_(def transform gtr/transform)
 (defn transform-shape [shape] (gtr/transform-shape shape))
 (defn transform-matrix [shape] (gtr/transform-matrix shape))
 (defn transform-point-center [point center transform] (gtr/transform-point-center point center transform))

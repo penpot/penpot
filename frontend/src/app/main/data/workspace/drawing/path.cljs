@@ -47,6 +47,11 @@
        (cd/seek (fn [{cmd :command}] (= cmd :move-to)))
        :params))
 
+(defn update-selrect [shape]
+  (let [selrect (gsh/content->selrect (:content shape))
+        points (gsh/rect->points selrect)]
+    (assoc shape :points points :selrect selrect)))
+
 (defn next-node
   "Calculates the next-node to be inserted."
   [shape position prev-point prev-handler]
@@ -66,14 +71,10 @@
 (defn append-node
   "Creates a new node in the path. Usualy used when drawing."
   [shape position prev-point prev-handler]
-  (let [command (next-node shape position prev-point prev-handler)
-        content (:content shape [])
-        content (conj content command)]
+  (let [command (next-node shape position prev-point prev-handler)]
     (-> shape
-        (assoc :content content)
-        (assoc :selrect (gsh/content->selrect content))
-        ;; TODO: REMOVE POINTS
-        (assoc :points (gsh/content->points content)))))
+        (update :content (fnil conj []) command)
+        (update-selrect))))
 
 (defn suffix-keyword
   [kw suffix]
@@ -105,7 +106,7 @@
                   content (-> shape :content (update index update-command prefix prev-command))]
               (-> shape
                   (assoc :content content)
-                  (assoc :selrect (gsh/content->selrect content))))
+                  (update-selrect)))
             shape))]
 
     (cond-> shape
@@ -131,11 +132,6 @@
            (= type :down)
            ;; TODO: Enter now finish path but can finish drawing/editing as well
            (= enter-keycode (:key event)))))
-
-(defn calculate-selrect [shape]
-  (assoc shape
-         :points (gsh/content->points (:content shape))
-         :selrect (gsh/content->selrect (:content shape))))
 
 
 ;; EVENTS
@@ -402,20 +398,30 @@
             page-id (:current-page-id state)
             old-content (get-in state [:workspace-data :pages-index page-id :objects id :content])
             old-selrect (get-in state [:workspace-data :pages-index page-id :objects id :selrect])
+            old-points (get-in state [:workspace-data :pages-index page-id :objects id :points])
             content-modifiers (get-in state [:workspace-local :edit-path id :content-modifiers])
             new-content (gsp/apply-content-modifiers old-content content-modifiers)
             new-selrect (gsh/content->selrect new-content)
+            new-points (gsh/rect->points new-selrect)
             rch [{:type :mod-obj
                   :id id
                   :page-id page-id
                   :operations [{:type :set :attr :content :val new-content}
-                               {:type :set :attr :selrect :val new-selrect}]}]
+                               {:type :set :attr :selrect :val new-selrect}
+                               {:type :set :attr :points  :val new-points}]}
+                 {:type :reg-objects
+                  :page-id page-id
+                  :shapes [id]}]
 
             uch [{:type :mod-obj
                   :id id
                   :page-id page-id
                   :operations [{:type :set :attr :content :val old-content}
-                               {:type :set :attr :selrect :val old-selrect}]}]]
+                               {:type :set :attr :selrect :val old-selrect}
+                               {:type :set :attr :points  :val old-points}]}
+                 {:type :reg-objects
+                  :page-id page-id
+                  :shapes [id]}]]
 
         (rx/of (dwc/commit-changes rch uch {:commit-local? true})
                (fn [state] (update-in state [:workspace-local :edit-path id] dissoc :content-modifiers)))))))
@@ -428,20 +434,30 @@
             page-id (:current-page-id state)
             old-content (get-in state [:workspace-local :edit-path id :old-content])
             old-selrect (gsh/content->selrect old-content)
+            old-points  (gsh/rect->points old-content)
             new-content (get-in state [:workspace-data :pages-index page-id :objects id :content])
             new-selrect (get-in state [:workspace-data :pages-index page-id :objects id :selrect])
+            new-points  (get-in state [:workspace-data :pages-index page-id :objects id :points])
 
             rch [{:type :mod-obj
                   :id id
                   :page-id page-id
                   :operations [{:type :set :attr :content :val new-content}
-                               {:type :set :attr :selrect :val new-selrect}]}]
+                               {:type :set :attr :selrect :val new-selrect}
+                               {:type :set :attr :points  :val new-points}]}
+                 {:type :reg-objects
+                  :page-id page-id
+                  :shapes [id]}]
 
             uch [{:type :mod-obj
                   :id id
                   :page-id page-id
                   :operations [{:type :set :attr :content :val old-content}
-                               {:type :set :attr :selrect :val old-selrect}]}]]
+                               {:type :set :attr :selrect :val old-selrect}
+                               {:type :set :attr :points  :val old-points}]}
+                 {:type :reg-objects
+                  :page-id page-id
+                  :shapes [id]}]]
 
         (rx/of (dwc/commit-changes rch uch {:commit-local? true}))))))
 

@@ -798,10 +798,10 @@
 
               ;; Rotate the group shape change the data and rotate back again
               (-> group
-                  (assoc-in [:modifiers :rotation] (- (:rotation group 0)))
-                  (geom/transform-shape)
+                  (assoc :selrect selrect)
+                  (assoc :points (geom/rect->points selrect))
                   (merge (select-keys selrect [:x :y :width :height]))
-                  (assoc-in [:modifiers :rotation] (:rotation group))
+                  (assoc-in [:modifiers :rotation] (:rotation group 0))
                   (geom/transform-shape))))]
 
     (d/update-in-when data [:pages-index page-id :objects] reg-objects)))

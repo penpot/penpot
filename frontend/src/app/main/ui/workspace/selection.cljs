@@ -270,7 +270,7 @@
 
 (mf/defc multiple-selection-handlers
   [{:keys [shapes selected zoom color show-distances] :as props}]
-  (let [shape (geom/setup {:type :rect} (geom/selection-rect shapes))
+  (let [shape (geom/setup {:type :rect} (geom/selection-rect (->> shapes (map geom/transform-shape))))
         shape-center (geom/center-shape shape)
 
         hover-id (-> (mf/deref refs/current-hover) first)
@@ -315,7 +315,7 @@
         hover-id (when-not (= shape-id hover-id) hover-id)
         hover-shape (mf/deref (refs/object-by-id hover-id))
 
-        shape' (if (debug? :simple-selection) (geom/selection-rect [shape]) shape)
+        shape' (if (debug? :simple-selection) (geom/setup {:type :rect} (geom/selection-rect [shape])) shape)
         on-resize (fn [current-position initial-position event]
                     (dom/stop-propagation event)
                     (st/emit! (dw/start-resize current-position initial-position #{shape-id} shape')))
@@ -323,7 +323,6 @@
         on-rotate
         #(do (dom/stop-propagation %)
              (st/emit! (dw/start-rotate [shape])))]
-
     [:*
      [:& controls {:shape shape'
                    :zoom zoom

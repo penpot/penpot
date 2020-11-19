@@ -108,6 +108,8 @@
          resize-transform-inverse (:resize-transform-inverse modifiers (gmt/matrix))
          rt-modif (or (:rotation modifiers) 0)
 
+         center (gpt/transform center ds-modifier)
+
          transform (-> (gmt/matrix)
 
                        ;; Applies the current resize transformation
@@ -120,7 +122,6 @@
                        ;; Applies the stacked transformations
                        (gmt/translate center)
                        (gmt/multiply (gmt/rotate-matrix rt-modif))
-                       #_(gmt/multiply current-transform)
                        (gmt/translate (gpt/negate center))
 
                        ;; Displacement
@@ -186,7 +187,7 @@
         stretch-matrix (gmt/multiply stretch-matrix (gmt/skew-matrix skew-angle 0))
 
         h1 (calculate-height points-temp)
-        h2 (calculate-height (transform-points points-temp center stretch-matrix))
+        h2 (calculate-height (transform-points points-rec center stretch-matrix))
         h3 (/ h1 h2)
         h3 (if (mth/nan? h3) 1 h3)
 
@@ -200,15 +201,10 @@
 
         stretch-matrix (gmt/multiply (gmt/rotate-matrix rotation-angle) stretch-matrix)
 
-        stretch-matrix (-> (gmt/matrix)
-                           (gmt/rotate rotation-angle)
-                           (gmt/skew skew-angle 0)
-                           (gmt/scale (gpt/point 1 h3)))
-        
 
         ;; This is the inverse to be able to remove the transformation
         stretch-matrix-inverse (-> (gmt/matrix)
-                                   (gmt/scale (gpt/point 1 h3))
+                                   (gmt/scale (gpt/point 1 (/ 1 h3)))
                                    (gmt/skew (- skew-angle) 0)
                                    (gmt/rotate (- rotation-angle)))]
     [stretch-matrix stretch-matrix-inverse]))
@@ -217,17 +213,15 @@
 (defn apply-transform-path
   [shape transform]
   (let [content (gpa/transform-content (:content shape) transform)
-        points (gpa/content->points content)
+        selrect (gpa/content->selrect content)
+        points (gpr/rect->points selrect)
         rotation (mod (+ (:rotation shape 0)
                          (or (get-in shape [:modifiers :rotation]) 0))
-                      360)
-        selrect (gpa/content->selrect content)]
+                      360)]
     (assoc shape
            :content content
            :points points
-           :selrect selrect
-           ;;:rotation rotation
-           )))
+           :selrect selrect)))
 
 (defn apply-transform-curve
   [shape transform]
@@ -255,22 +249,19 @@
                                                 (:height points-temp-dim))
         rect-points     (gpr/rect->points rect-shape)
 
-        [matrix matrix-inverse] (calculate-adjust-matrix points-temp rect-points (:flip-x shape) (:flip-y shape))
-        ;;[matrix matrix-inverse] [(gmt/matrix) (gmt/matrix)]
-
-        new-shape (as-> shape $
-                    (merge  $ rect-shape)
-                    (update $ :x #(mth/precision % 0))
-                    (update $ :y #(mth/precision % 0))
-                    (update $ :width #(mth/precision % 0))
-                    (update $ :height #(mth/precision % 0))
-                    (update $ :transform #(gmt/multiply (or % (gmt/matrix)) matrix))
-                    (update $ :transform-inverse #(gmt/multiply matrix-inverse (or % (gmt/matrix))))
-                    (assoc  $ :points (into [] points))
-                    (assoc  $ :selrect (gpr/rect->selrect rect-shape))
-                    (update $ :rotation #(mod (+ (or % 0)
-                                                 (or (get-in $ [:modifiers :rotation]) 0)) 360)))]
-    new-shape))
+        [matrix matrix-inverse] (calculate-adjust-matrix points-temp rect-points (:flip-x shape) (:flip-y shape))]
+    (as-> shape $
+      (merge  $ rect-shape)
+      (update $ :x #(mth/precision % 0))
+      (update $ :y #(mth/precision % 0))
+      (update $ :width #(mth/precision % 0))
+      (update $ :height #(mth/precision % 0))
+      (update $ :transform #(gmt/multiply (or % (gmt/matrix)) matrix))
+      (update $ :transform-inverse #(gmt/multiply matrix-inverse (or % (gmt/matrix))))
+      (assoc  $ :points (into [] points))
+      (assoc  $ :selrect (gpr/rect->selrect rect-shape))
+      (update $ :rotation #(mod (+ (or % 0)
+                                   (or (get-in $ [:modifiers :rotation]) 0)) 360)))))
 
 (defn apply-transform [shape transform]
   (let [apply-transform-fn
@@ -281,9 +272,11 @@
     (apply-transform-fn shape transform)))
 
 (defn set-flip [shape modifiers]
-  (cond-> shape
-    (< (get-in modifiers [:resize-vector :x]) 0) (update :flip-x not)
-    (< (get-in modifiers [:resize-vector :y]) 0) (update :flip-y not)))
+  (let [rx (get-in modifiers [:resize-vector :x])
+        ry (get-in modifiers [:resize-vector :y])]
+    (cond-> shape
+      (and rx (< rx 0)) (update :flip-x not)
+      (and ry (< ry 0)) (update :flip-y not))))
 
 (defn transform-shape [shape]
   (let [center (gco/center-shape shape)]
