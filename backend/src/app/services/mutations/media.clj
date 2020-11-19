@@ -38,7 +38,6 @@
 (s/def ::team-id ::us/uuid)
 (s/def ::url ::us/url)
 
-
 ;; --- Create Media object (Upload and create from url)
 
 (declare create-media-object)

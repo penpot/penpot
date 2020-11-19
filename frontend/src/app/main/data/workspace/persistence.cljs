@@ -287,51 +287,28 @@
 
 ;; --- Link and unlink Files
 
-(declare file-linked)
-
 (defn link-file-to-library
   [file-id library-id]
   (ptk/reify ::link-file-to-library
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [params {:file-id file-id
-                    :library-id library-id}]
-        (->> (->> (rp/mutation :link-file-to-library params)
-                  (rx/mapcat
-                    #(rx/zip (rp/query :file-library {:file-id library-id})
-                             (rp/query :media-objects {:file-id library-id
-                                                       :is-local false}))))
-             (rx/map file-linked))))))
-
-(defn file-linked
-  [[library media-objects colors]]
-  (ptk/reify ::file-linked
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-libraries (:id library)]
-                (assoc library
-                       :media-objects media-objects
-                       :colors colors)))))
-
-(declare file-unlinked)
+      (let [fetched #(assoc-in %2 [:workspace-libraries (:id %1)] %1)
+            params  {:file-id file-id
+                     :library-id library-id}]
+        (->> (rp/mutation :link-file-to-library params)
+             (rx/mapcat #(rp/query :file {:id library-id}))
+             (rx/map #(partial fetched %)))))))
 
 (defn unlink-file-from-library
   [file-id library-id]
   (ptk/reify ::unlink-file-from-library
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [params {:file-id file-id
-                    :library-id library-id}]
+      (let [unlinked #(d/dissoc-in % [:workspace-libraries library-id])
+            params   {:file-id file-id
+                      :library-id library-id}]
         (->> (rp/mutation :unlink-file-from-library params)
-             (rx/map #(file-unlinked file-id library-id)))))))
-
-(defn file-unlinked
-  [file-id library-id]
-  (ptk/reify ::file-unlinked
-    ptk/UpdateEvent
-    (update [_ state]
-      (d/dissoc-in state [:workspace-libraries library-id]))))
-
+             (rx/map (constantly unlinked)))))))
 
 ;; --- Fetch Pages
 
