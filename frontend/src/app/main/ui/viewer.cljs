@@ -106,8 +106,8 @@
                        (dcm/close-thread)))))
         ]
 
-    [:div.viewer-comments {:on-click on-click}
-     [:div.comments-layer
+    [:div.comments-section {:on-click on-click}
+     [:div.viewer-comments-container
       [:div.threads
        (for [item threads]
          [:& cmt/thread-bubble {:thread item

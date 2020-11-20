@@ -36,8 +36,13 @@
 
     (.toDataURL canvas)))
 
-(defn assoc-profile-avatar
-  [{:keys [photo fullname] :as profile}]
-  (cond-> profile
+(defn assoc-avatar
+  [{:keys [photo] :as object} key]
+  (cond-> object
     (or (nil? photo) (empty? photo))
-    (assoc :photo (generate {:name fullname}))))
+    (assoc :photo (generate {:name (get object key)}))))
+
+(defn assoc-profile-avatar
+  [object]
+  (assoc-avatar object :fullname))
+

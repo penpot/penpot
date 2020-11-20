@@ -55,8 +55,8 @@
     (update [_ state]
       (assoc state :profile
              (cond-> data
-               (nil? (:photo-uri data))
-               (assoc :photo-uri (avatars/generate {:name fullname}))
+               (empty? (:photo data))
+               (assoc :photo (avatars/generate {:name fullname}))
 
                (nil? (:lang data))
                (assoc :lang cfg/default-language)

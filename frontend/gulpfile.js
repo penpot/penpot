@@ -1,20 +1,21 @@
 const fs = require("fs");
-const path = require("path");
 const l = require("lodash");
+const path = require("path");
 
 const gulp = require("gulp");
-const gulpSass = require("gulp-sass");
+const gulpConcat = require("gulp-concat");
 const gulpGzip = require("gulp-gzip");
 const gulpMustache = require("gulp-mustache");
-const gulpRename = require("gulp-rename");
-const svgSprite = require("gulp-svg-sprite");
 const gulpPostcss = require("gulp-postcss");
+const gulpRename = require("gulp-rename");
+const gulpSass = require("gulp-sass");
+const svgSprite = require("gulp-svg-sprite");
 
+const autoprefixer = require("autoprefixer")
+const clean = require("postcss-clean");
 const mkdirp = require("mkdirp");
 const rimraf = require("rimraf");
 const sass = require("sass");
-const autoprefixer = require("autoprefixer")
-const clean = require("postcss-clean");
 
 const mapStream = require("map-stream");
 const paths = {};
@@ -52,7 +53,8 @@ function readManifest() {
     const content = JSON.parse(fs.readFileSync(path, {encoding: "utf8"}));
 
     const index = {
-      "config": "/js/config.js?ts=" + Date.now()
+      "config": "/js/config.js?ts=" + Date.now(),
+      "polyfills": "js/polyfills.js?ts=" + Date.now(),
     };
 
     for (let item of content) {
@@ -64,6 +66,7 @@ function readManifest() {
     console.error("Error on reading manifest, using default.");
     return {
       "config": "/js/config.js",
+      "polyfills": "js/polyfills.js",
       "main": "/js/main.js",
       "shared": "/js/shared.js",
       "worker": "/js/worker.js"
@@ -123,7 +126,7 @@ gulp.task("scss", function() {
     .pipe(gulpSass().on('error', gulpSass.logError))
     .pipe(gulpPostcss([
       autoprefixer,
-      clean({format: "keep-breaks", level: 1})
+      // clean({format: "keep-breaks", level: 1})
     ]))
     .pipe(gulp.dest(paths.output + "css/"));
 });
@@ -141,6 +144,12 @@ gulp.task("template:main", templatePipeline({
 }));
 
 gulp.task("templates", gulp.series("svg:sprite", "template:main"));
+
+gulp.task("polyfills", function() {
+  return gulp.src(paths.resources + "polyfills/*.js")
+    .pipe(gulpConcat("polyfills.js"))
+    .pipe(gulp.dest(paths.output + "js/"));
+});
 
 /***********************************************
  * Development
@@ -177,7 +186,7 @@ gulp.task("watch:main", function() {
              gulp.series("templates"));
 });
 
-gulp.task("build", gulp.parallel("scss", "templates", "copy:assets"));
+gulp.task("build", gulp.parallel("polyfills", "scss", "templates", "copy:assets"));
 gulp.task("watch", gulp.series("dev:dirs", "build", "watch:main"));
 
 /***********************************************

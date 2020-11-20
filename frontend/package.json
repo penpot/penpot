@@ -15,6 +15,7 @@
   "devDependencies": {
     "autoprefixer": "^10.0.1",
     "gulp": "4.0.2",
+    "gulp-concat": "^2.6.1",
     "gulp-gzip": "^1.4.2",
     "gulp-mustache": "^5.0.0",
     "gulp-postcss": "^9.0.0",

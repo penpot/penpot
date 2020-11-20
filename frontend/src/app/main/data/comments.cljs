@@ -40,11 +40,14 @@
 (s/def ::count-unread-comments ::us/integer)
 (s/def ::created-at ::us/inst)
 (s/def ::file-id ::us/uuid)
+(s/def ::file-name ::us/string)
 (s/def ::modified-at ::us/inst)
 (s/def ::owner-id ::us/uuid)
 (s/def ::page-id ::us/uuid)
+(s/def ::page-name ::us/string)
 (s/def ::participants (s/every ::us/uuid :kind set?))
 (s/def ::position ::us/point)
+(s/def ::project-id ::us/uuid)
 (s/def ::seqn ::us/integer)
 (s/def ::thread-id ::us/uuid)
 
@@ -52,15 +55,18 @@
   (s/keys :req-un [::us/id
                    ::page-id
                    ::file-id
+                   ::project-id
+                   ::page-name
+                   ::file-name
                    ::seqn
                    ::content
                    ::participants
-                   ::count-unread-comments
-                   ::count-comments
                    ::created-at
                    ::modified-at
                    ::owner-id
-                   ::position]))
+                   ::position]
+          :opt-un [::count-unread-comments
+                   ::count-comments]))
 
 (s/def ::comment
   (s/keys :req-un [::us/id
@@ -92,20 +98,18 @@
       ptk/WatchEvent
       (watch [_ state stream]
         (->> (rp/mutation :create-comment-thread params)
+             (rx/mapcat #(rp/query :comment-thread {:file-id (:file-id %) :id (:id %)}))
              (rx/map #(partial created %)))))))
 
 (defn update-comment-thread-status
   [{:keys [id] :as thread}]
   (us/assert ::comment-thread thread)
   (ptk/reify ::update-comment-thread-status
-    ptk/UpdateEvent
-    (update [_ state]
-      (d/update-in-when state [:comment-threads id] assoc :count-unread-comments 0))
-
     ptk/WatchEvent
     (watch [_ state stream]
-      (->> (rp/mutation :update-comment-thread-status {:id id})
-           (rx/ignore)))))
+      (let [done #(d/update-in-when % [:comment-threads id] assoc :count-unread-comments 0)]
+        (->> (rp/mutation :update-comment-thread-status {:id id})
+             (rx/map (constantly done)))))))
 
 
 (defn update-comment-thread
@@ -211,6 +215,18 @@
         (->> (rp/query :comments {:thread-id thread-id})
              (rx/map #(partial fetched %)))))))
 
+(defn retrieve-unread-comment-threads
+  "A event used mainly in dashboard for retrieve all unread threads of a team."
+  [team-id]
+  (us/assert ::us/uuid team-id)
+  (ptk/reify ::retrieve-unread-comment-threads
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [fetched #(assoc %2 :comment-threads (d/index-by :id %1))]
+        (->> (rp/query :unread-comment-threads {:team-id team-id})
+             (rx/map #(partial fetched %)))))))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Local State
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -221,6 +237,7 @@
   (ptk/reify ::open-thread
     ptk/UpdateEvent
     (update [_ state]
+      (prn "open-thread" id)
       (-> state
           (update :comments-local assoc :open id)
           (update :workspace-drawing dissoc :comment)))))
@@ -230,6 +247,7 @@
   (ptk/reify ::close-thread
     ptk/UpdateEvent
     (update [_ state]
+      (prn "close-thread")
       (-> state
           (update :comments-local dissoc :open :draft)
           (update :workspace-drawing dissoc :comment)))))
@@ -282,10 +300,30 @@
               (if (= (:page-id current) (:page-id thread))
                 (cons (update current :items conj thread)
                       (rest result))
-                (cons {:page-id (:page-id thread) :items [thread]}
+                (cons {:page-id (:page-id thread)
+                       :page-name (:page-name thread)
+                       :items [thread]}
                       result))))]
     (reverse
      (reduce group-by-page nil threads))))
+
+
+(defn group-threads-by-file-and-page
+  [threads]
+  (letfn [(group-by-file-and-page [result thread]
+            (let [current (first result)]
+              (if (and (= (:page-id current) (:page-id thread))
+                       (= (:file-id current) (:file-id thread)))
+                (cons (update current :items conj thread)
+                      (rest result))
+                (cons {:page-id (:page-id thread)
+                       :page-name (:page-name thread)
+                       :file-id (:file-id thread)
+                       :file-name (:file-name thread)
+                       :items [thread]}
+                      result))))]
+    (reverse
+     (reduce group-by-file-and-page nil threads))))
 
 (defn apply-filters
   [cstate profile threads]

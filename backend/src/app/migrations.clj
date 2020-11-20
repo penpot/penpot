@@ -113,6 +113,9 @@
 
     {:name "0032-del-unused-tables"
      :fn (mg/resource "app/migrations/sql/0032-del-unused-tables.sql")}
+
+    {:name "0033-mod-comment-thread-table"
+     :fn (mg/resource "app/migrations/sql/0033-mod-comment-thread-table.sql")}
     ]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

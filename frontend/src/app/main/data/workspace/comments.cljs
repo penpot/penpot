@@ -14,10 +14,12 @@
    [app.common.math :as mth]
    [app.common.spec :as us]
    [app.main.constants :as c]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.comments :as dcm]
    [app.main.store :as st]
    [app.main.streams :as ms]
+   [app.util.router :as rt]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
@@ -82,12 +84,31 @@
     (update [_ state]
       (update state :workspace-local
               (fn [{:keys [vbox vport zoom] :as local}]
+                (prn "center-to-comment-thread" vbox)
                 (let [pw (/ 50 zoom)
                       ph (/ 200 zoom)
                       nw (mth/round (- (/ (:width vbox) 2) pw))
                       nh (mth/round (- (/ (:height vbox) 2) ph))
                       nx (- (:x position) nw)
                       ny (- (:y position) nh)]
-                  (update local :vbox assoc :x nx :y ny)))))))
 
 
+                   (update local :vbox assoc :x nx :y ny)))))))
+
+(defn navigate
+  [{:keys [project-id file-id page-id] :as thread}]
+  (us/assert ::dcm/comment-thread thread)
+  (ptk/reify ::navigate
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [pparams {:project-id (:project-id thread)
+                     :file-id (:file-id thread)}
+            qparams {:page-id (:page-id thread)}]
+        (rx/merge
+         (rx/of (rt/nav :workspace pparams qparams)
+                (dw/select-for-drawing :comments))
+         (->> stream
+              (rx/filter (ptk/type? ::dw/initialize-viewport))
+              (rx/take 1)
+              (rx/mapcat #(rx/of (center-to-comment-thread thread)
+                                 (dcm/open-thread thread)))))))))
