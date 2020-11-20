@@ -20,28 +20,6 @@
 
 ;; --- Path Shape
 
-;; LEGACY FORMAT
-(defn- render-path
-  [{:keys [segments close?] :as shape}]
-  (let [numsegs (count segments)]
-    (loop [buffer []
-           index 0]
-      (cond
-        (>= index numsegs)
-        (if close?
-          (str/join " " (conj buffer "Z"))
-          (str/join " " buffer))
-
-        (zero? index)
-        (let [{:keys [x y] :as segment} (nth segments index)
-              buffer (conj buffer (str/istr "M~{x},~{y}"))]
-          (recur buffer (inc index)))
-
-        :else
-        (let [{:keys [x y] :as segment} (nth segments index)
-              buffer (conj buffer (str/istr "L~{x},~{y}"))]
-          (recur buffer (inc index)))))))
-
 (mf/defc path-shape
   {::mf/wrap-props false}
   [props]
@@ -51,10 +29,7 @@
         {:keys [id x y width height]} (:selrect shape)
         mask-id (mf/use-ctx mask-id-ctx)
         transform (geom/transform-matrix shape)
-        pdata (if (:content shape)
-                (ugp/content->path (:content shape))
-                (render-path shape))
-
+        pdata (ugp/content->path (:content shape))
         props (-> (attrs/extract-style-attrs shape)
                   (obj/merge!
                    #js {:transform transform

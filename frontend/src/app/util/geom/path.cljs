@@ -213,18 +213,3 @@
         opposite (gpt/add point (gpt/negate phv))]
     opposite))
 
-(defn segments->content [segments]
-  (let [initial (first segments)
-        closed? (= (first segments) (last segments))
-        lines (if closed?
-                (take (- (count segments) 2) (rest segments))
-                (rest segments))]
-
-    (d/concat [{:command :move-to
-                :params (select-keys initial [:x :y])}]
-              (->> lines
-                   (mapv #(hash-map :command :line-to
-                                    :params (select-keys % [:x :y]))))
-
-              (when closed?
-                [{:command :close-path}]))))

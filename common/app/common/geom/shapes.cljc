@@ -233,12 +233,11 @@
 
 
 (defn setup-selrect [{:keys [x y width height] :as shape}]
-  (-> shape
-      (assoc :selrect
-             {:x x :y y
-              :width width :height height
-              :x1 x :y1 y
-              :x2 (+ x width) :y2 (+ y height)})))
+  (let [selrect (gpr/rect->selrect shape)
+        points  (gpr/rect->points shape)]
+    (-> shape
+        (assoc :selrect selrect
+               :points points))))
 
 
 ;; EXPORTS

@@ -2,6 +2,7 @@
   (:require
    [app.common.pages :as cp]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.path :as gsp]
    [app.common.geom.point :as gpt]
    [app.common.geom.matrix :as gmt]
    [app.common.spec :as us]
@@ -35,7 +36,6 @@
 ;; -- MIGRATIONS --
 
 ;; Ensure that all :shape attributes on shapes are vectors.
-
 (defmethod migrate 2
   [data]
   (letfn [(update-object [id object]
@@ -44,6 +44,66 @@
                              (if (seq? shapes)
                                (into [] shapes)
                                shapes))))
+
+          (update-page [id page]
+            (update page :objects #(d/mapm update-object %)))]
+
+    (update data :pages-index #(d/mapm update-page %))))
+
+;; Changes paths formats
+(defmethod migrate 3
+  [data]
+  (letfn [(migrate-path [shape]
+            (if-not (contains? shape :content)
+              (let [content (gsp/segments->content (:segments shape) (:close? shape))
+                    selrect (gsh/content->selrect content)
+                    points (gsh/rect->points selrect)]
+                (-> shape
+                    (dissoc :segments)
+                    (dissoc :close?)
+                    (assoc :content content)
+                    (assoc :selrect selrect)
+                    (assoc :points points)))
+              ;; If the shape contains :content is already in the new format
+              shape))
+
+          (fix-frames-selrects [frame]
+            (if (= (:id frame) uuid/zero)
+              frame
+              (let [frame-rect (select-keys frame [:x :y :width :height])]
+                (-> frame
+                    (assoc :selrect (gsh/rect->selrect frame-rect))
+                    (assoc :points (gsh/rect->points frame-rect))))))
+
+          (fix-empty-points [shape]
+            (let [shape (cond-> shape
+                          (empty? (:selrect shape)) (gsh/setup-selrect))]
+              (cond-> shape
+                (empty? (:points shape))
+                (assoc :points (gsh/rect->points (:selrect shape))))))
+
+          (update-object [id object]
+            (cond-> object
+              (= :curve (:type object))
+              (assoc :type :path)
+
+              (or (#{:curve :path} (:type object)))
+              (migrate-path)
+
+              (= :frame (:type object))
+              (fix-frames-selrects)
+
+              (and (empty? (:points object)) (not= (:id object) uuid/zero))
+              (fix-empty-points)
+
+              :always
+              (->
+               ;; Setup an empty transformation to re-calculate selrects
+               ;; and points data
+               (assoc :modifiers {:displacement (gmt/matrix)})
+               (gsh/transform-shape))
+
+              ))
 
           (update-page [id page]
             (update page :objects #(d/mapm update-object %)))]

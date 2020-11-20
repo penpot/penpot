@@ -20,7 +20,7 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]))
 
-(def file-version 2)
+(def file-version 3)
 (def max-safe-int 9007199254740991)
 (def min-safe-int -9007199254740991)
 

@@ -13,6 +13,7 @@
    [potok.core :as ptk]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.shapes.path :as gsp]
    [app.main.streams :as ms]
    [app.util.geom.path :as path]
    [app.main.data.workspace.drawing.common :as common]))
@@ -29,7 +30,7 @@
   (update-in state [:workspace-drawing :object :segments] (fnil conj []) point))
 
 (defn curve-to-path [{:keys [segments] :as shape}]
-  (let [content (path/segments->content segments)
+  (let [content (gsp/segments->content segments)
         selrect (gsh/content->selrect content)
         points (gsh/rect->points selrect)]
     (-> shape

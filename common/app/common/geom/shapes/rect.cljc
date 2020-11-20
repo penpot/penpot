@@ -24,10 +24,10 @@
    (gpt/point x (+ y height))])
 
 (defn points->rect [points]
-  (let [minx (transduce (map :x) min ##Inf points)
-        miny (transduce (map :y) min ##Inf points)
-        maxx (transduce (map :x) max ##-Inf points)
-        maxy (transduce (map :y) max ##-Inf points)]
+  (let [minx (transduce (comp (map :x) (remove nil?)) min ##Inf points)
+        miny (transduce (comp (map :y) (remove nil?)) min ##Inf points)
+        maxx (transduce (comp (map :x) (remove nil?)) max ##-Inf points)
+        maxy (transduce (comp (map :y) (remove nil?)) max ##-Inf points)]
     {:x minx
      :y miny
      :width (- maxx minx)
@@ -45,10 +45,10 @@
   (-> rect rect->points points->selrect))
 
 (defn join-selrects [selrects]
-  (let [minx (transduce (map :x1) min ##Inf selrects)
-        miny (transduce (map :y1) min ##Inf selrects)
-        maxx (transduce (map :x2) max ##-Inf selrects)
-        maxy (transduce (map :y2) max ##-Inf selrects)]
+  (let [minx (transduce (comp (map :x1) (remove nil?)) min ##Inf selrects)
+        miny (transduce (comp (map :y1) (remove nil?)) min ##Inf selrects)
+        maxx (transduce (comp (map :x2) (remove nil?)) max ##-Inf selrects)
+        maxy (transduce (comp (map :y2) (remove nil?)) max ##-Inf selrects)]
     {:x minx
      :y miny
      :x1 minx

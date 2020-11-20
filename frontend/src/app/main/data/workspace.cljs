@@ -1046,22 +1046,6 @@
         (rx/of (dwt/set-modifiers [id] {:displacement displ})
                (dwt/apply-modifiers [id]))))))
 
-;; --- Path Modifications
-
-(defn update-path
-  "Update a concrete point in the path shape."
-  [id index delta]
-  (us/verify ::us/uuid id)
-  (us/verify ::us/integer index)
-  (us/verify gpt/point? delta)
-  #_(ptk/reify ::update-path
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [page-id (:current-page-id state)]
-        (-> state
-            (update-in [:workspace-data page-id :objects id :segments index] gpt/add delta)
-            (update-in [:workspace-data page-id :objects id] gsh/update-path-selrect))))))
-
 ;; --- Shape attrs (Layers Sidebar)
 
 (defn toggle-collapse

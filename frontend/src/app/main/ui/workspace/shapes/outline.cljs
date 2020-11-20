@@ -13,8 +13,8 @@
    [app.common.geom.shapes :as gsh]
    [app.util.object :as obj]
    [rumext.util :refer [map->obj]]
-   [app.main.ui.shapes.path :as path]
-   [app.main.refs :as refs]))
+   [app.main.refs :as refs]
+   [app.util.geom.path :as ugp]))
 
 
 (mf/defc outline
@@ -45,7 +45,7 @@
                  :ry (/ height 2)}
 
                 :path
-                {:d (path/render-path shape)}
+                {:d (ugp/content->path (:content shape))}
 
                 {:x x
                  :y y

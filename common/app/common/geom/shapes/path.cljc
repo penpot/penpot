@@ -161,3 +161,20 @@
                      (:c2y params) (update-in [index :params :c2y] + (:c2y params)))
                    content))]
     (reduce red-fn content modifiers)))
+
+(defn segments->content
+  ([segments]
+   (segments->content segments false))
+
+  ([segments closed?]
+   (let [initial (first segments)
+         lines (rest segments)]
+
+     (d/concat [{:command :move-to
+                 :params (select-keys initial [:x :y])}]
+               (->> lines
+                    (mapv #(hash-map :command :line-to
+                                     :params (select-keys % [:x :y]))))
+
+               (when closed?
+                 [{:command :close-path}])))))
