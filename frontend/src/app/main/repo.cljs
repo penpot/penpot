@@ -91,6 +91,12 @@
     (->> (http/send! {:method :post :uri uri})
       (rx/mapcat handle-response))))
 
+(defmethod mutation :login-with-github
+  [id params]
+  (let [uri (str cfg/public-uri "/api/oauth/github")]
+    (->> (http/send! {:method :post :uri uri})
+         (rx/mapcat handle-response))))
+
 (defmethod mutation :upload-media-object
   [id params]
   (let [form (js/FormData.)]

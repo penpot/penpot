@@ -12,6 +12,7 @@
    [app.config :as cfg]
    [app.http.auth :as auth]
    [app.http.auth.gitlab :as gitlab]
+   [app.http.auth.github :as github]
    [app.http.auth.google :as google]
    [app.http.auth.ldap :as ldap]
    [app.http.errors :as errors]
@@ -43,7 +44,9 @@
       ["/google" {:post google/auth}]
       ["/google/callback" {:get google/callback}]
       ["/gitlab" {:post gitlab/auth}]
-      ["/gitlab/callback" {:get gitlab/callback}]]
+      ["/gitlab/callback" {:get gitlab/callback}]
+      ["/github" {:post github/auth}]
+      ["/github/callback" {:get github/callback}]]
 
      ["/echo" {:get handlers/echo-handler
                :post handlers/echo-handler}]

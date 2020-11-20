@@ -110,6 +110,9 @@
 (s/def ::gitlab-client-secret ::us/string)
 (s/def ::gitlab-base-uri ::us/string)
 
+(s/def ::github-client-id ::us/string)
+(s/def ::github-client-secret ::us/string)
+
 (s/def ::ldap-auth-host ::us/string)
 (s/def ::ldap-auth-port ::us/integer)
 (s/def ::ldap-bind-dn ::us/string)
@@ -131,6 +134,8 @@
                    ::google-client-secret
                    ::gitlab-client-id
                    ::gitlab-client-secret
+                   ::github-client-id
+                   ::github-client-secret
                    ::gitlab-base-uri
                    ::redis-uri
                    ::public-uri

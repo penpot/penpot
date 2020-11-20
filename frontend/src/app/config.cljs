@@ -68,6 +68,7 @@
   (def demo-warning     (obj/get global "appDemoWarning" false))
   (def google-client-id (obj/get global "appGoogleClientID" nil))
   (def gitlab-client-id (obj/get global "appGitlabClientID" nil))
+  (def github-client-id (obj/get global "appGithubClientID" nil))
   (def login-with-ldap  (obj/get global "appLoginWithLDAP" false))
   (def worker-uri       (obj/get global "appWorkerURI" "/js/worker.js"))
   (def public-uri       (or (obj/get global "appPublicURI")
