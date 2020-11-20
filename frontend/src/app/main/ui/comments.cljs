@@ -148,7 +148,7 @@
                :left (str (+ pos-x 14) "px")}
        :on-click dom/stop-propagation}
       [:div.reply-form
-       [:& resizing-textarea {:placeholder "Write new comment"
+       [:& resizing-textarea {:placeholder (tr "labels.write-new-comment")
                               :value (or content "")
                               :on-esc on-esc
                               :on-change on-change}]
@@ -267,10 +267,10 @@
      [:& dropdown {:show @options
                    :on-close on-hide-options}
       [:ul.dropdown.comment-options-dropdown
-       [:li {:on-click on-edit-clicked} "Edit"]
+       [:li {:on-click on-edit-clicked} (tr "labels.edit")]
        (if thread
-         [:li {:on-click on-delete-thread} "Delete thread"]
-         [:li {:on-click on-delete-comment} "Delete comment"])]]]))
+         [:li {:on-click on-delete-thread} (tr "labels.delete-comment-thread")]
+         [:li {:on-click on-delete-comment} (tr "labels.delete-comment")])]]]))
 
 (defn comments-ref
   [{:keys [id] :as thread}]
@@ -289,12 +289,13 @@
                           (sort-by :created-at))
         comment      (first comments)]
 
-    (mf/use-effect
-     (st/emitf (dcm/update-comment-thread-status thread)))
+    (mf/use-layout-effect
+     (mf/deps thread)
+     (st/emitf (dcm/retrieve-comments (:id thread))))
 
     (mf/use-effect
      (mf/deps thread)
-     (st/emitf (dcm/retrieve-comments (:id thread))))
+     (st/emitf (dcm/update-comment-thread-status thread)))
 
     (mf/use-layout-effect
      (mf/deps thread comments-map)
@@ -338,3 +339,62 @@
               :unread (pos? (:count-unread-comments thread)))
       :on-click on-click*}
      [:span (:seqn thread)]]))
+
+(mf/defc comment-thread
+  [{:keys [item users on-click] :as props}]
+  (let [profile (get users (:owner-id item))
+
+        on-click*
+        (mf/use-callback
+         (mf/deps item)
+         (fn [event]
+           (dom/stop-propagation event)
+           (dom/prevent-default event)
+           (when (fn? on-click)
+             (on-click item))))]
+
+    [:div.comment {:on-click on-click*}
+     [:div.author
+      [:div.thread-bubble
+       {:class (dom/classnames
+                :resolved (:is-resolved item)
+                :unread (pos? (:count-unread-comments item)))}
+       (:seqn item)]
+      [:div.avatar
+       [:img {:src (cfg/resolve-media-path (:photo profile))}]]
+      [:div.name
+       [:div.fullname (:fullname profile) ", "]
+       [:div.timeago (dt/timeago (:modified-at item))]]]
+     [:div.content
+      [:span.text (:content item)]]
+     [:div.content.replies
+      (let [unread (:count-unread-comments item ::none)
+            total  (:count-comments item 1)]
+        [:*
+         (when (> total 1)
+           (if (= total 2)
+             [:span.total-replies "1 reply"]
+             [:span.total-replies (str (dec total) " replies")]))
+
+         (when (and (> total 1) (> unread 0))
+           (if (= unread 1)
+             [:span.new-replies "1 new reply"]
+             [:span.new-replies (str unread " new replies")]))])]]))
+
+(mf/defc comment-thread-group
+  [{:keys [group users on-thread-click]}]
+  [:div.thread-group
+   (if (:file-name group)
+     [:div.section-title
+      [:span.label.filename (:file-name group) ", "]
+      [:span.label (:page-name group)]]
+     [:div.section-title
+      [:span.icon i/file-html]
+      [:span.label (:page-name group)]])
+   [:div.threads
+    (for [item (:items group)]
+      [:& comment-thread
+       {:item item
+        :on-click on-thread-click
+        :users users
+        :key (:id item)}])]])

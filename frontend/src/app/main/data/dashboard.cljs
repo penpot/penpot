@@ -64,13 +64,6 @@
 
 ;; --- Fetch Team
 
-(defn assoc-team-avatar
-  [{:keys [photo name] :as team}]
-  (us/assert ::team team)
-  (cond-> team
-    (or (nil? photo) (empty? photo))
-    (assoc :photo (avatars/generate {:name name}))))
-
 (defn fetch-team
   [{:keys [id] :as params}]
   (letfn [(fetched [team state]
@@ -80,18 +73,34 @@
       (watch [_ state stream]
         (let [profile (:profile state)]
           (->> (rp/query :team params)
-               (rx/map assoc-team-avatar)
+               (rx/map #(avatars/assoc-avatar % :name))
                (rx/map #(partial fetched %))))))))
 
 (defn fetch-team-members
   [{:keys [id] :as params}]
   (us/assert ::us/uuid id)
   (letfn [(fetched [members state]
-            (assoc-in state [:team-members id] (d/index-by :id members)))]
+            (->> (map #(avatars/assoc-avatar % :name) members)
+                 (d/index-by :id)
+                 (assoc-in state [:team-members id])))]
     (ptk/reify ::fetch-team-members
       ptk/WatchEvent
       (watch [_ state stream]
         (->> (rp/query :team-members {:team-id id})
+             (rx/map #(partial fetched %)))))))
+
+
+(defn fetch-team-users
+  [{:keys [id] :as params}]
+  (us/assert ::us/uuid id)
+  (letfn [(fetched [users state]
+            (->> (map #(avatars/assoc-avatar % :fullname) users)
+                 (d/index-by :id)
+                 (assoc-in state [:team-users id])))]
+    (ptk/reify ::fetch-team-users
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (->> (rp/query :team-users {:team-id id})
              (rx/map #(partial fetched %)))))))
 
 ;; --- Fetch Projects
@@ -115,7 +124,8 @@
     (watch [_ state stream]
       (let [profile (:profile state)]
         (->> (rx/merge (ptk/watch (fetch-team params) state stream)
-                       (ptk/watch (fetch-projects {:team-id id}) state stream))
+                       (ptk/watch (fetch-projects {:team-id id}) state stream)
+                       (ptk/watch (fetch-team-users params) state stream))
              (rx/catch (fn [{:keys [type code] :as error}]
                          (cond
                            (and (= :not-found type)

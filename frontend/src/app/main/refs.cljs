@@ -208,6 +208,9 @@
 (def viewer-local
   (l/derived :viewer-local st/state))
 
+(def comment-threads
+  (l/derived :comment-threads st/state))
+
 (def comments-local
   (l/derived :comments-local st/state))
 

@@ -195,6 +195,12 @@
     union
    select pf.id, pf.fullname, pf.photo
      from profile as pf
+    inner join project_profile_rel as ppr on (ppr.profile_id = pf.id)
+    inner join file as f on (f.project_id = ppr.project_id)
+    where f.id = ?
+    union
+   select pf.id, pf.fullname, pf.photo
+     from profile as pf
     inner join team_profile_rel as tpr on (tpr.profile_id = pf.id)
     inner join project as p on (tpr.team_id = p.team_id)
     inner join file as f on (p.id = f.project_id)
@@ -202,7 +208,7 @@
 
 (defn retrieve-file-users
   [conn id]
-  (db/exec! conn [sql:file-users id id]))
+  (db/exec! conn [sql:file-users id id id]))
 
 (s/def ::file-users
   (s/keys :req-un [::profile-id ::id]))
@@ -215,17 +221,8 @@
 
 ;; --- Query: Shared Library Files
 
-;; TODO: remove the counts, because they are no longer needed.
-
 (def ^:private sql:shared-files
-  "select f.*,
-          (select count(*) from color as c
-            where c.file_id = f.id
-              and c.deleted_at is null) as colors_count,
-          (select count(*) from media_object as m
-            where m.file_id = f.id
-              and m.is_local = false
-              and m.deleted_at is null) as graphics_count
+  "select f.*
      from file as f
     inner join project as p on (p.id = f.project_id)
     where f.is_shared = true

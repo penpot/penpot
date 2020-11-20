@@ -1,31 +1,4 @@
-.viewer-comments {
-  width: 100%;
-  height: 100%;
-  z-index: 1000;
-  position: absolute;
-  top: 0px;
-  left: 0px;
-}
-
-.viewer-comments, .workspace-comments {
-
-  .comments-layer {
-
-    width: 100%;
-    height: 100%;
-    grid-column: 1/span 2;
-    grid-row: 1/span 2;
-    z-index: 1000;
-    pointer-events: none;
-    overflow: hidden;
-
-    .threads {
-      position: absolute;
-      top: 0px;
-      left: 0px;
-    }
-  }
-
+.comments-section {
   .thread-bubble {
     position: absolute;
     display: flex;
@@ -101,6 +74,8 @@
       padding: $small;
       resize: none;
       width: 100%;
+      border-radius: 2px;
+      border: 1px solid $color-gray-10;
     }
 
     .buttons {
@@ -142,7 +117,7 @@
         .fullname {
           font-weight: 700;
           color: $color-gray-60;
-          font-size: $fs13;
+          font-size: $fs10;
 
           @include text-ellipsis;
           width: 150px;
@@ -150,7 +125,7 @@
         }
         .timeago {
           margin-top: -2px;
-          font-size: $fs11;
+          font-size: $fs10;
           color: $color-gray-30;
         }
       }
@@ -163,8 +138,8 @@
         img {
           border-radius: 50%;
           flex-shrink: 0;
-          height: 24px;
-          width: 24px;
+          height: 20px;
+          width: 20px;
         }
       }
 
@@ -205,9 +180,8 @@
     }
 
     .content {
-      margin: $medium 0;
-      // margin-left: 26px;
-      font-size: $fs13;
+      margin: 10px 0;
+      font-size: $fs10;
       color: $color-black;
       .text {
         margin-left: 26px;
@@ -225,51 +199,51 @@
 
     border: 1px solid #B1B2B5;
   }
-
 }
 
-.workspace-comments-sidebar {
-  pointer-events: auto;
+.workspace-comment-threads-sidebar-header {
+  display: flex;
+  background-color: $color-black;
+  height: 34px;
+  align-items: center;
+  padding: 0px 9px;
+  color: $color-gray-10;
+  font-size: $fs12;
+  justify-content: space-between;
 
-  .sidebar-title {
+  .options {
     display: flex;
-    background-color: $color-black;
-    height: 34px;
-    align-items: center;
-    padding: 0px 9px;
-    color: $color-gray-10;
-    font-size: $fs12;
-    justify-content: space-between;
+    margin-right: 3px;
+    cursor: pointer;
 
-    .options {
+    .label {
+      padding-right: 8px;
+    }
+
+    .icon {
       display: flex;
-      margin-right: 3px;
-      cursor: pointer;
+      align-items: center;
+    }
 
-      .label {
-        padding-right: 8px;
-      }
-
-      .icon {
-        display: flex;
-        align-items: center;
-      }
-
-      svg {
-        fill: $color-gray-10;
-        width: 10px;
-        height: 10px;
-      }
+    svg {
+      fill: $color-gray-10;
+      width: 10px;
+      height: 10px;
     }
   }
 
-  .sidebar-options-dropdown {
+  .dropdown {
     top: 80px;
     right: 7px;
   }
+}
 
-  .threads {
 
+
+.comment-threads-section {
+  pointer-events: auto;
+
+  .thread-groups {
     hr {
       border: 0;
       height: 1px;
@@ -278,7 +252,7 @@
     }
   }
 
-  .page-section {
+  .thread-group {
     display: flex;
     flex-direction: column;
     font-size: $fs12;
@@ -292,6 +266,9 @@
       }
 
       .label {
+        &.filename {
+          font-weight: 700;
+        }
       }
 
       svg {
@@ -312,6 +289,7 @@
   }
 
   .comment {
+    cursor: pointer;
     .author {
       margin-bottom: 10px;
       .name {
@@ -351,3 +329,118 @@
     }
   }
 }
+
+
+.viewer-comments-container {
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+}
+
+.workspace-comments-container {
+  width: 100%;
+  height: 100%;
+  grid-column: 1/span 2;
+  grid-row: 1/span 2;
+  z-index: 1000;
+  pointer-events: none;
+  overflow: hidden;
+
+  .threads {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+  }
+}
+
+.dashboard-comments-section {
+  width: 25px;
+  height: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: $color-dashboard;
+  border-radius: 3px;
+  position: relative;
+
+  .button {
+    width: 25px;
+    height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: $color-dashboard;
+    border-radius: 3px;
+
+    svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    &.unread {
+      background-color: $color-warning;
+    }
+
+    &.open {
+      background-color: $color-black;
+      svg { fill: $color-primary; }
+    }
+  }
+
+  .dropdown {
+    width: 233px;
+    bottom: 35px;
+    left: 0px;
+    border-radius: 3px;
+  }
+
+  .header {
+    display: flex;
+    height: 40px;
+    align-items: center;
+    padding: 0px 11px;
+
+    h3 {
+      font-weight: 400;
+      color: $color-black;
+      font-size: $fs12;
+      line-height: $fs18;
+      flex-grow: 1;
+    }
+
+    .close {
+      display: flex;
+      align-items: center;
+    }
+
+
+    svg {
+      width: 15px;
+      height: 15px;
+      transform: rotate(45deg);
+    }
+  }
+
+  .thread-groups-placeholder {
+    padding: 16px;
+  }
+
+  .thread-group {
+    .section-title {
+      color: $color-black;
+    }
+  }
+
+  .comment {
+    .author .name .fullname {
+      color: $color-gray-40;
+    }
+    .content {
+      color: $color-black;
+    }
+  }
+}
+

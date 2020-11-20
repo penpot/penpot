@@ -60,7 +60,6 @@
                      #_(dcm/close-thread))))
         ]
 
-
     (mf/use-effect
      (mf/deps file-id)
      (fn []
@@ -68,8 +67,8 @@
        (fn []
          (st/emit! ::dwcm/finalize))))
 
-    [:div.workspace-comments
-     [:div.comments-layer
+    [:div.comments-section
+     [:div.workspace-comments-container
       {:style {:width (str (:width vport) "px")
                :height (str (:height vport) "px")}}
       [:div.threads {:style {:transform (str/format "translate(%spx, %spx)" pos-x pos-y)}}
@@ -96,66 +95,6 @@
 ;; Sidebar
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(mf/defc sidebar-group-item
-  [{:keys [item] :as props}]
-  (let [profile (get @refs/workspace-users (:owner-id item))
-        page-id (mf/use-ctx ctx/current-page-id)
-        file-id (mf/use-ctx ctx/current-file-id)
-
-        on-click
-        (mf/use-callback
-         (mf/deps item page-id)
-         (fn []
-           (when (not= page-id (:page-id item))
-             (st/emit! (dw/go-to-page (:page-id item))))
-           (tm/schedule
-            (st/emitf (dwcm/center-to-comment-thread item)
-                      (dcm/open-thread item)))))]
-
-    [:div.comment {:on-click on-click}
-     [:div.author
-      [:div.thread-bubble
-       {:class (dom/classnames
-                :resolved (:is-resolved item)
-                :unread (pos? (:count-unread-comments item)))}
-       (:seqn item)]
-      [:div.avatar
-       [:img {:src (cfg/resolve-media-path (:photo profile))}]]
-      [:div.name
-       [:div.fullname (:fullname profile) ", "]
-       [:div.timeago (dt/timeago (:modified-at item))]]]
-     [:div.content
-      [:span.text (:content item)]]
-     [:div.content.replies
-      (let [unread (:count-unread-comments item ::none)
-            total  (:count-comments item 1)]
-        [:*
-         (when (> total 1)
-           (if (= total 2)
-             [:span.total-replies "1 reply"]
-             [:span.total-replies (str (dec total) " replies")]))
-
-         (when (and (> total 1) (> unread 0))
-           (if (= unread 1)
-             [:span.new-replies "1 new reply"]
-             [:span.new-replies (str unread " new replies")]))])]]))
-
-(defn page-name-ref
-  [id]
-  (l/derived (l/in [:workspace-data :pages-index id :name]) st/state))
-
-(mf/defc sidebar-item
-  [{:keys [group]}]
-  (let [page-name-ref (mf/use-memo (mf/deps (:page-id group)) #(page-name-ref (:page-id group)))
-        page-name     (mf/deref page-name-ref)]
-    [:div.page-section
-     [:div.section-title
-      [:span.icon i/file-html]
-      [:span.label page-name]]
-     [:div.comments-container
-      (for [item (:items group)]
-        [:& sidebar-group-item {:item item :key (:id item)}])]]))
-
 (mf/defc sidebar-options
   [{:keys [local] :as props}]
   (let [{cmode :mode cshow :show} (mf/deref refs/comments-local)
@@ -171,7 +110,7 @@
          (fn [mode]
            (st/emit! (dcm/update-filters {:show mode}))))]
 
-    [:ul.dropdown.with-check.sidebar-options-dropdown
+    [:ul.dropdown.with-check
      [:li {:class (dom/classnames :selected (or (= :all cmode) (nil? cmode)))
            :on-click #(update-mode :all)}
       [:span.icon i/tick]
@@ -193,6 +132,7 @@
   []
   (let [threads-map (mf/deref threads-ref)
         profile     (mf/deref refs/profile)
+        users       (mf/deref refs/workspace-users)
         local       (mf/deref refs/comments-local)
         options?    (mf/use-state false)
 
@@ -200,28 +140,45 @@
                          (sort-by :modified-at)
                          (reverse)
                          (dcm/apply-filters local profile)
-                         (dcm/group-threads-by-page))]
+                         (dcm/group-threads-by-page))
 
-    [:div.workspace-comments.workspace-comments-sidebar
-     [:div.sidebar-title
+        page-id     (mf/use-ctx ctx/current-page-id)
+
+        on-thread-click
+        (mf/use-callback
+         (fn [thread]
+           (when (not= page-id (:page-id thread))
+             (st/emit! (dw/go-to-page (:page-id thread))))
+           (tm/schedule
+            (st/emitf (dwcm/center-to-comment-thread thread)
+                      (dcm/open-thread thread)))))]
+
+    [:div.comments-section.comment-threads-section
+     [:div.workspace-comment-threads-sidebar-header
       [:div.label "Comments"]
       [:div.options {:on-click #(reset! options? true)}
-       [:div.label (case (:filter local)
+       [:div.label (case (:mode local)
                      (nil :all) "All"
                      :yours     "Only yours")]
-       [:div.icon i/arrow-down]]]
+       [:div.icon i/arrow-down]]
 
-     [:& dropdown {:show @options?
-                   :on-close #(reset! options? false)}
-      [:& sidebar-options {:local local}]]
+      [:& dropdown {:show @options?
+                    :on-close #(reset! options? false)}
+       [:& sidebar-options {:local local}]]]
 
      (when (seq tgroups)
-       [:div.threads
-        [:& sidebar-item {:group (first tgroups)}]
+       [:div.thread-groups
+        [:& cmt/comment-thread-group
+         {:group (first tgroups)
+          :on-thread-click on-thread-click
+          :users users}]
         (for [tgroup (rest tgroups)]
           [:*
            [:hr]
-           [:& sidebar-item {:group tgroup
-                             :key (:page-id tgroup)}]])])]))
+           [:& cmt/comment-thread-group
+            {:group tgroup
+             :on-thread-click on-thread-click
+             :users users
+             :key (:page-id tgroup)}]])])]))
 
 

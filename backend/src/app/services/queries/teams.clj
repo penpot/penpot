@@ -130,3 +130,38 @@
 (defn retrieve-team-members
   [conn team-id]
   (db/exec! conn [sql:team-members team-id]))
+
+;; --- Query: Team Users
+
+;; This is a similar query to team members but can contain more data
+;; because some user can be explicitly added to project or file (not
+;; implemented in UI)
+
+(def sql:team-users
+  "select pf.id, pf.fullname, pf.photo
+     from profile as pf
+    inner join team_profile_rel as tpr on (tpr.profile_id = pf.id)
+    where tpr.team_id = ?
+    union
+   select pf.id, pf.fullname, pf.photo
+     from profile as pf
+    inner join project_profile_rel as ppr on (ppr.profile_id = pf.id)
+    inner join project as p on (ppr.project_id = p.id)
+    where p.team_id = ?
+   union
+   select pf.id, pf.fullname, pf.photo
+     from profile as pf
+    inner join file_profile_rel as fpr on (fpr.profile_id = pf.id)
+    inner join file as f on (fpr.file_id = f.id)
+    inner join project as p on (f.project_id = p.id)
+    where p.team_id = ?")
+
+(s/def ::team-users
+  (s/keys :req-un [::profile-id ::team-id]))
+
+(sq/defquery ::team-users
+  [{:keys [profile-id team-id]}]
+  (with-open [conn (db/open)]
+    (check-edition-permissions! conn profile-id team-id)
+    (db/exec! conn [sql:team-users team-id team-id team-id])))
+

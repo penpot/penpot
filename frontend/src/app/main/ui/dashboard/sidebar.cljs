@@ -15,21 +15,24 @@
    [app.main.data.auth :as da]
    [app.main.data.dashboard :as dd]
    [app.main.data.messages :as dm]
+   [app.main.data.modal :as modal]
+   [app.main.data.comments :as dcm]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.components.forms :as fm]
+   [app.main.ui.dashboard.comments :refer [comments-section]]
+   [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.team-form]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
-   [app.main.data.modal :as modal]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t tr]]
    [app.util.object :as obj]
    [app.util.router :as rt]
    [app.util.time :as dt]
+   [app.util.avatars :as avatars]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
@@ -133,7 +136,8 @@
      (mf/deps (:id team))
      (fn []
        (->> (rp/query! :teams)
-            (rx/map #(mapv dd/assoc-team-avatar %))
+            (rx/map (fn [teams]
+                      (mapv #(avatars/assoc-avatar % :name) teams)))
             (rx/subs #(reset! teams %)))))
 
     [:ul.dropdown.teams-dropdown
@@ -421,12 +425,9 @@
 
 
 (mf/defc profile-section
-  [{:keys [profile locale] :as props}]
+  [{:keys [profile locale team] :as props}]
   (let [show  (mf/use-state false)
-        photo (:photo-uri profile "")
-        photo (if (str/empty? photo)
-                "/images/avatar.jpg"
-                photo)
+        photo (cfg/resolve-media-path (:photo profile))
 
         on-click
         (mf/use-callback
@@ -436,10 +437,10 @@
              (st/emit! (rt/nav section))
              (st/emit! section))))]
 
-    [:div.profile-section {:on-click #(reset! show true)}
-     [:img {:src photo}]
-     [:span (:fullname profile)]
-     i/arrow-down
+    [:div.profile-section
+     [:div.profile {:on-click #(reset! show true)}
+      [:img {:src photo}]
+      [:span (:fullname profile)]
 
      [:& dropdown {:on-close #(reset! show false)
                    :show @show}
@@ -452,17 +453,25 @@
         [:span.text (t locale "labels.password")]]
        [:li {:on-click (partial on-click (da/logout))}
         [:span.icon i/exit]
-        [:span.text (t locale "labels.logout")]]]]]))
+        [:span.text (t locale "labels.logout")]]]]]
+
+     (when (and team profile)
+       [:& comments-section {:profile profile
+                             :team team}])]))
 
 (mf/defc sidebar
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
   [props]
   (let [locale  (mf/deref i18n/locale)
+        team    (obj/get props "team")
         profile (obj/get props "profile")
         props   (-> (obj/clone props)
                     (obj/set! "locale" locale))]
     [:div.dashboard-sidebar
      [:div.sidebar-inside
       [:> sidebar-content props]
-      [:& profile-section {:profile profile :locale locale}]]]))
+      [:& profile-section
+       {:profile profile
+        :team team
+        :locale locale}]]]))
