@@ -460,6 +460,19 @@
       "es" : "+ Nuevo proyecto"
     }
   },
+
+  "labels.num-of-projects" : {
+    "translations" : {
+      "en" : ["1 project", "%s projects"]
+    }
+  },
+
+  "labels.num-of-files" : {
+    "translations" : {
+      "en" : ["1 file", "%s files"]
+    }
+  },
+
   "dashboard.no-matches-for" : {
     "used-in" : [ "src/app/main/ui/dashboard/search.cljs:48" ],
     "translations" : {

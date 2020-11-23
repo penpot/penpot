@@ -122,9 +122,6 @@
 (def workspace-libraries
   (l/derived :workspace-libraries st/state))
 
-(def workspace-users
-  (l/derived :workspace-users st/state))
-
 (def workspace-presence
   (l/derived :workspace-presence st/state))
 
@@ -213,4 +210,7 @@
 
 (def comments-local
   (l/derived :comments-local st/state))
+
+(def users
+  (l/derived :users st/state))
 

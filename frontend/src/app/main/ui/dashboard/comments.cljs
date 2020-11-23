@@ -35,14 +35,8 @@
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
-
-(defn team-members-ref
-  [{:keys [id] :as team}]
-  (l/derived (l/in [:team-users id]) st/state))
-
 (mf/defc comments-section
   [{:keys [profile team]}]
-
   (mf/use-effect
    (mf/deps team)
    (st/emitf (dcm/retrieve-unread-comment-threads (:id team))))
@@ -51,16 +45,13 @@
         show-dropdown  (mf/use-fn #(reset! show-dropdown? true))
         hide-dropdown  (mf/use-fn #(reset! show-dropdown? false))
         threads-map    (mf/deref refs/comment-threads)
-
-        users-ref      (mf/use-memo (mf/deps team) #(team-members-ref team))
-        users          (mf/deref users-ref)
+        users          (mf/deref refs/users)
 
         tgroups        (->> (vals threads-map)
                             (sort-by :modified-at)
                             (reverse)
                             (dcm/apply-filters {} profile)
                             (dcm/group-threads-by-file-and-page))
-
 
         on-navigate
         (mf/use-callback

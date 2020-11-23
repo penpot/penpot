@@ -203,7 +203,6 @@
               :workspace-file
               :workspace-project
               :workspace-media-objects
-              :workspace-users
               :workspace-persistence))
 
     ptk/WatchEvent

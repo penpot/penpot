@@ -14,6 +14,7 @@
    [app.db :as db]
    [app.services.queries :as sq]
    [app.services.queries.files :as files]
+   [app.services.queries.teams :as teams]
    [clojure.spec.alpha :as s]))
 
 ;; --- Query: Viewer Bundle (by Page ID)
@@ -50,13 +51,14 @@
           file    (merge (dissoc file :data)
                          (select-keys (:data file) [:colors :media :typographies]))
           libs    (files/retrieve-file-libraries conn false file-id)
-          users   (files/retrieve-file-users conn file-id)
+          users   (teams/retrieve-users conn (:team-id project))
 
           bundle  {:file file
                    :page page
                    :users users
                    :project project
                    :libraries libs}]
+
       (if (string? token)
         (do
           (check-shared-token! conn file-id page-id token)

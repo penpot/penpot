@@ -25,7 +25,7 @@
    [app.main.ui.dashboard.team-form]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [t tr]]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.time :as dt]
    [cljs.spec.alpha :as s]
@@ -34,7 +34,7 @@
 
 (mf/defc header
   {::mf/wrap [mf/memo]}
-  [{:keys [section locale team] :as props}]
+  [{:keys [section team] :as props}]
   (let [go-members
         (mf/use-callback
          (mf/deps team)
@@ -57,19 +57,19 @@
     [:header.dashboard-header
      [:div.dashboard-title
       [:h1 (cond
-             members-section? (t locale "labels.members")
-             settings-section? (t locale "labels.settings")
+             members-section? (tr "labels.members")
+             settings-section? (tr "labels.settings")
              nil)]]
      [:nav
       [:ul
        [:li {:class (when members-section? "active")}
-        [:a {:on-click go-members} (t locale "labels.members")]]
+        [:a {:on-click go-members} (tr "labels.members")]]
        [:li {:class (when settings-section? "active")}
-        [:a {:on-click go-settings} (t locale "labels.settings")]]]]
+        [:a {:on-click go-settings} (tr "labels.settings")]]]]
 
      (if members-section?
        [:a.btn-secondary.btn-small {:on-click invite-member}
-        (t locale "dashboard.invite-profile")]
+        (tr "dashboard.invite-profile")]
        [:div])]))
 
 (s/def ::email ::us/email)
@@ -220,13 +220,12 @@
         [:& team-member {:member item :team team :profile profile :key (:id item)}])]]))
 
 (defn- members-ref
-  [team-id]
-  (l/derived (l/in [:team-members team-id]) st/state))
+  [{:keys [id] :as team}]
+  (l/derived (l/in [:team-members id]) st/state))
 
 (mf/defc team-members-page
   [{:keys [team profile] :as props}]
-  (let [locale      (mf/deref i18n/locale)
-        members-ref (mf/use-memo (mf/deps team) #(members-ref (:id team)))
+  (let [members-ref (mf/use-memo (mf/deps team) #(members-ref team))
         members-map (mf/deref members-ref)]
 
     (mf/use-effect
@@ -234,23 +233,29 @@
      (st/emitf (dd/fetch-team-members team)))
 
     [:*
-     [:& header {:locale locale
-                 :section :dashboard-team-members
+     [:& header {:section :dashboard-team-members
                  :team team}]
      [:section.dashboard-container.dashboard-team-members
-      [:& team-members {:locale locale
-                        :profile profile
+      [:& team-members {:profile profile
                         :team team
                         :members-map members-map}]]]))
 
+(defn- stats-ref
+  [{:keys [id] :as team}]
+  (l/derived (l/in [:team-stats id]) st/state))
 
 (mf/defc team-settings-page
   [{:keys [team profile] :as props}]
-  (let [locale      (mf/deref i18n/locale)
-        finput      (mf/use-ref)
+  (let [finput      (mf/use-ref)
 
-        members-ref (mf/use-memo (mf/deps team) #(members-ref (:id team)))
+        members-ref (mf/use-memo (mf/deps team) #(members-ref team))
         members-map (mf/deref members-ref)
+
+        owner       (->> (vals members-map)
+                         (d/seek :is-owner))
+
+        stats-ref   (mf/use-memo (mf/deps team) #(stats-ref team))
+        stats       (mf/deref stats-ref)
 
         on-image-click
         (mf/use-callback #(dom/click (mf/ref-val finput)))
@@ -264,17 +269,17 @@
 
     (mf/use-effect
      (mf/deps team)
-     (st/emitf (dd/fetch-team-members team)))
+     (st/emitf (dd/fetch-team-members team)
+               (dd/fetch-team-stats team)))
 
     [:*
-     [:& header {:locale locale
-                 :section :dashboard-team-settings
+     [:& header {:section :dashboard-team-settings
                  :team team}]
      [:section.dashboard-container.dashboard-team-settings
       [:div.team-settings
        [:div.horizontal-blocks
         [:div.block.info-block
-         [:div.label (t locale "dashboard.team-info")]
+         [:div.label (tr "dashboard.team-info")]
          [:div.name (:name team)]
          [:div.icon
           [:span.update-overlay {:on-click on-image-click} i/exit]
@@ -285,19 +290,19 @@
                              :on-selected on-file-selected}]]]
 
         [:div.block.owner-block
-         [:div.label (t locale "dashboard.team-members")]
+         [:div.label (tr "dashboard.team-members")]
          [:div.owner
-          [:span.icon [:img {:src (cfg/resolve-media-path (:photo-uri profile))}]]
-          [:span.text (str (:fullname profile) " ("  (t locale "labels.owner") ")") ]]
+          [:span.icon [:img {:src (cfg/resolve-media-path (:photo owner))}]]
+          [:span.text (str (:name owner) " ("  (tr "labels.owner") ")") ]]
          [:div.summary
           [:span.icon i/user]
-          [:span.text (t locale "dashboard.num-of-members" (count members-map))]]]
+          [:span.text (tr "dashboard.num-of-members" (count members-map))]]]
 
         [:div.block.stats-block
-         [:div.label (t locale "dashboard.team-projects")]
+         [:div.label (tr "dashboard.team-projects")]
          [:div.projects
           [:span.icon i/folder]
-          [:span.text "4 projects"]]
+          [:span.text (tr "labels.num-of-projects" (i18n/c (:projects stats)))]]
          [:div.files
           [:span.icon i/file-html]
-          [:span.text "4 files"]]]]]]]))
+          [:span.text (tr "labels.num-of-files" (i18n/c (:files stats)))]]]]]]]))
