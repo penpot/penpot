@@ -184,7 +184,7 @@
 
 (mf/defc comment-item
   [{:keys [comment thread users] :as props}]
-  (let [owner    (get (or users @refs/workspace-users) (:owner-id comment))
+  (let [owner    (get users (:owner-id comment))
         profile  (mf/use-state refs/profile)
         options  (mf/use-state false)
         edition? (mf/use-state false)
