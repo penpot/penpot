@@ -171,69 +171,79 @@
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :rules))}
         [:span
          (if (contains? layout :rules)
-           (t locale "workspace.header.menu.hide-rules")
-           (t locale "workspace.header.menu.show-rules"))]
+           (tr "workspace.header.menu.hide-rules")
+           (tr "workspace.header.menu.show-rules"))]
         [:span.shortcut "Ctrl+shift+R"]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :display-grid))}
         [:span
          (if (contains? layout :display-grid)
-           (t locale "workspace.header.menu.hide-grid")
-           (t locale "workspace.header.menu.show-grid"))]
+           (tr "workspace.header.menu.hide-grid")
+           (tr "workspace.header.menu.show-grid"))]
         [:span.shortcut "Ctrl+'"]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :snap-grid))}
         [:span
          (if (contains? layout :snap-grid)
-           (t locale "workspace.header.menu.disable-snap-grid")
-           (t locale "workspace.header.menu.enable-snap-grid"))]
+           (tr "workspace.header.menu.disable-snap-grid")
+           (tr "workspace.header.menu.enable-snap-grid"))]
         [:span.shortcut "Ctrl+Shift+'"]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :sitemap :layers))}
         [:span
          (if (or (contains? layout :sitemap) (contains? layout :layers))
-           (t locale "workspace.header.menu.hide-layers")
-           (t locale "workspace.header.menu.show-layers"))]
+           (tr "workspace.header.menu.hide-layers")
+           (tr "workspace.header.menu.show-layers"))]
         [:span.shortcut "Ctrl+l"]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :colorpalette))}
         [:span
          (if (contains? layout :colorpalette)
-           (t locale "workspace.header.menu.hide-palette")
-           (t locale "workspace.header.menu.show-palette"))]
+           (tr "workspace.header.menu.hide-palette")
+           (tr "workspace.header.menu.show-palette"))]
         [:span.shortcut "Ctrl+p"]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :assets))}
         [:span
          (if (contains? layout :assets)
-           (t locale "workspace.header.menu.hide-assets")
-           (t locale "workspace.header.menu.show-assets"))]
+           (tr "workspace.header.menu.hide-assets")
+           (tr "workspace.header.menu.show-assets"))]
         [:span.shortcut "Ctrl+i"]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :dynamic-alignment))}
         [:span
          (if (contains? layout :dynamic-alignment)
-           (t locale "workspace.header.menu.disable-dynamic-alignment")
-           (t locale "workspace.header.menu.enable-dynamic-alignment"))]
+           (tr "workspace.header.menu.disable-dynamic-alignment")
+           (tr "workspace.header.menu.enable-dynamic-alignment"))]
         [:span.shortcut "Ctrl+a"]]
 
        (if (:is-shared file)
          [:li {:on-click on-remove-shared}
-          [:span (t locale "dashboard.remove-shared")]]
+          [:span (tr "dashboard.remove-shared")]]
          [:li {:on-click on-add-shared}
-          [:span (t locale "dashboard.add-shared")]])
+          [:span (tr "dashboard.add-shared")]])
        ]]]))
 
 ;; --- Header Component
 
 (mf/defc header
   [{:keys [file layout project page-id] :as props}]
-  (let [team-id (:team-id project)
-        go-back #(st/emit! (rt/nav :dashboard-projects {:team-id team-id}))
-        zoom (mf/deref refs/selected-zoom)
-        locale (mf/deref i18n/locale)
-        router (mf/deref refs/router)
-        view-url (rt/resolve router :viewer {:page-id page-id :file-id (:id file)} {:index 0})]
+  (let [team-id  (:team-id project)
+        zoom     (mf/deref refs/selected-zoom)
+        router   (mf/deref refs/router)
+        params   {:page-id page-id :file-id (:id file)}
+        view-url (rt/resolve router :viewer params {:index 0})
+
+        go-back
+        (mf/use-callback
+         (mf/deps project)
+         (st/emitf (rt/nav :dashboard-projects {:team-id team-id})))
+
+        go-viewer
+        (mf/use-callback
+         (mf/deps file page-id)
+         (st/emitf (dw/go-to-viewer params)))]
+
     [:header.workspace-header
      [:div.main-icon
       [:a {:on-click go-back} i/logo-icon]]
@@ -259,7 +269,8 @@
         :on-zoom-selected #(st/emit! dw/zoom-to-selected-shape)}]
 
       [:a.btn-icon-dark.btn-small.tooltip.tooltip-bottom
-       {;; :target "__blank"
-        :alt (t locale "workspace.header.viewer")
-        :href (str "#" view-url)} i/play]]]))
+       {:alt (tr "workspace.header.viewer")
+        :href (str "#" view-url)
+        :on-click go-viewer}
+       i/play]]]))
 

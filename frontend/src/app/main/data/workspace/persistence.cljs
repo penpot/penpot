@@ -43,10 +43,11 @@
     ptk/EffectEvent
     (effect [_ state stream]
       (let [stoper   (rx/filter #(= ::finalize %) stream)
+            forcer   (rx/filter #(= ::force-persist %) stream)
             notifier (->> stream
                           (rx/filter (ptk/type? ::dwc/commit-changes))
                           (rx/debounce 2000)
-                          (rx/merge stoper))
+                          (rx/merge stoper forcer))
 
             on-dirty
             (fn []
