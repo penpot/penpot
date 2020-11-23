@@ -36,6 +36,7 @@
         pos-y       (* (- (:y vbox)) zoom)
 
         profile     (mf/deref refs/profile)
+        users       (mf/deref refs/workspace-users)
         local       (mf/deref refs/comments-local)
         threads-map (mf/deref threads-ref)
 
@@ -56,9 +57,7 @@
         on-draft-submit
         (mf/use-callback
          (fn [draft]
-           (st/emit! (dcm/create-thread draft)
-                     #_(dcm/close-thread))))
-        ]
+           (st/emit! (dcm/create-thread draft))))]
 
     (mf/use-effect
      (mf/deps file-id)
@@ -82,6 +81,7 @@
        (when-let [id (:open local)]
          (when-let [thread (get threads-map id)]
            [:& cmt/thread-comments {:thread thread
+                                    :users users
                                     :zoom zoom}]))
 
        (when-let [draft (:comment drawing)]
@@ -158,8 +158,8 @@
       [:div.label "Comments"]
       [:div.options {:on-click #(reset! options? true)}
        [:div.label (case (:mode local)
-                     (nil :all) "All"
-                     :yours     "Only yours")]
+                     (nil :all) (tr "labels.all")
+                     :yours     (tr "labels.only-yours"))]
        [:div.icon i/arrow-down]]
 
       [:& dropdown {:show @options?

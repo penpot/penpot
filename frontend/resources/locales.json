@@ -1275,6 +1275,12 @@
       "en" : "Admin"
     }
   },
+  "labels.all" : {
+    "used-in" : [ "src/app/main/ui/workspace/comments.cljs:161" ],
+    "translations" : {
+      "en" : "All"
+    }
+  },
   "labels.cancel" : {
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:203" ],
     "translations" : {
@@ -1285,7 +1291,7 @@
     }
   },
   "labels.comments" : {
-    "used-in" : [ "src/app/main/ui/dashboard/comments.cljs:75" ],
+    "used-in" : [ "src/app/main/ui/dashboard/comments.cljs:80" ],
     "translations" : {
       "en" : "Comments"
     }
@@ -1315,13 +1321,13 @@
     }
   },
   "labels.delete-comment" : {
-    "used-in" : [ "src/app/main/ui/comments.cljs:273" ],
+    "used-in" : [ "src/app/main/ui/comments.cljs:274" ],
     "translations" : {
       "en" : "Delete comment"
     }
   },
   "labels.delete-comment-thread" : {
-    "used-in" : [ "src/app/main/ui/comments.cljs:272" ],
+    "used-in" : [ "src/app/main/ui/comments.cljs:273" ],
     "translations" : {
       "en" : "Delete thread"
     }
@@ -1336,7 +1342,7 @@
     }
   },
   "labels.edit" : {
-    "used-in" : [ "src/app/main/ui/comments.cljs:270" ],
+    "used-in" : [ "src/app/main/ui/comments.cljs:271" ],
     "translations" : {
       "en" : "Edit"
     }
@@ -1405,10 +1411,10 @@
     }
   },
   "labels.no-comments-available" : {
+    "used-in" : [ "src/app/main/ui/dashboard/comments.cljs:104" ],
     "translations" : {
       "en" : "No comments"
-    },
-    "unused" : true
+    }
   },
   "labels.old-password" : {
     "used-in" : [ "src/app/main/ui/settings/password.cljs:81" ],
@@ -1417,6 +1423,12 @@
       "fr" : "Ancien mot de passe",
       "ru" : "Старый пароль",
       "es" : "Contraseña anterior"
+    }
+  },
+  "labels.only-yours" : {
+    "used-in" : [ "src/app/main/ui/workspace/comments.cljs:162" ],
+    "translations" : {
+      "en" : "Only yours"
     }
   },
   "labels.owner" : {
@@ -1660,19 +1672,19 @@
     }
   },
   "modals.delete-comment-thread.accept" : {
-    "used-in" : [ "src/app/main/ui/comments.cljs:222" ],
+    "used-in" : [ "src/app/main/ui/comments.cljs:223" ],
     "translations" : {
       "en" : "Delete conversation"
     }
   },
   "modals.delete-comment-thread.message" : {
-    "used-in" : [ "src/app/main/ui/comments.cljs:221" ],
+    "used-in" : [ "src/app/main/ui/comments.cljs:222" ],
     "translations" : {
       "en" : "Are you sure you want to delete this conversation? All comments in this thread will be deleted."
     }
   },
   "modals.delete-comment-thread.title" : {
-    "used-in" : [ "src/app/main/ui/comments.cljs:220" ],
+    "used-in" : [ "src/app/main/ui/comments.cljs:221" ],
     "translations" : {
       "en" : "Delete conversation"
     }
