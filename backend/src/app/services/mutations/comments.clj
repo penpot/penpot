@@ -233,6 +233,11 @@
 
       (files/check-read-permissions! conn profile-id (:file-id thread))
 
+      ;; Don't allow edit comments to not owners
+      (when-not (= (:owner-id thread) profile-id)
+        (ex/raise :type :validation
+                  :code :not-allowed))
+
       (db/update! conn :comment
                   {:content content
                    :modified-at (dt/now)}
@@ -253,8 +258,8 @@
 (sm/defmutation ::delete-comment-thread
   [{:keys [profile-id id] :as params}]
   (db/with-atomic [conn db/pool]
-    (let [cthr (db/get-by-id conn :comment-thread id {:for-update true})]
-      (when-not (= (:owner-id cthr) profile-id)
+    (let [thread (db/get-by-id conn :comment-thread id {:for-update true})]
+      (when-not (= (:owner-id thread) profile-id)
         (ex/raise :type :validation
                   :code :not-allowed))
       (db/delete! conn :comment-thread {:id id})

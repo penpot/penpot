@@ -184,7 +184,8 @@
 
 (mf/defc comment-item
   [{:keys [comment thread users] :as props}]
-  (let [profile  (get (or users @refs/workspace-users) (:owner-id comment))
+  (let [owner    (get (or users @refs/workspace-users) (:owner-id comment))
+        profile  (mf/use-state refs/profile)
         options  (mf/use-state false)
         edition? (mf/use-state false)
 
@@ -243,9 +244,9 @@
      [:div.comment
       [:div.author
        [:div.avatar
-        [:img {:src (cfg/resolve-media-path (:photo profile))}]]
+        [:img {:src (cfg/resolve-media-path (:photo owner))}]]
        [:div.name
-        [:div.fullname (:fullname profile)]
+        [:div.fullname (:fullname owner)]
         [:div.timeago (dt/timeago (:modified-at comment))]]
 
        (when (some? thread)
@@ -253,9 +254,9 @@
           (if (:is-resolved thread)
             [:span i/checkbox-checked]
             [:span i/checkbox-unchecked])])
-
-       [:div.options
-        [:div.options-icon {:on-click on-show-options} i/actions]]]
+       (when (= (:id profile) (:id owner))
+         [:div.options
+          [:div.options-icon {:on-click on-show-options} i/actions]])]
 
       [:div.content
        (if @edition?
@@ -342,7 +343,7 @@
 
 (mf/defc comment-thread
   [{:keys [item users on-click] :as props}]
-  (let [profile (get users (:owner-id item))
+  (let [owner (get users (:owner-id item))
 
         on-click*
         (mf/use-callback
@@ -361,9 +362,9 @@
                 :unread (pos? (:count-unread-comments item)))}
        (:seqn item)]
       [:div.avatar
-       [:img {:src (cfg/resolve-media-path (:photo profile))}]]
+       [:img {:src (cfg/resolve-media-path (:photo owner))}]]
       [:div.name
-       [:div.fullname (:fullname profile) ", "]
+       [:div.fullname (:fullname owner) ", "]
        [:div.timeago (dt/timeago (:modified-at item))]]]
      [:div.content
       [:span.text (:content item)]]
