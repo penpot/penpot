@@ -163,7 +163,7 @@
     (ptk/reify ::handle-presence
       ptk/UpdateEvent
       (update [_ state]
-        (let [profiles (:workspace-users state)]
+        (let [profiles (:users state)]
           (update state :workspace-presence update-sessions profiles))))))
 
 (defn handle-pointer-update

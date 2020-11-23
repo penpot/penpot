@@ -207,7 +207,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (->> (rx/zip (rp/query :file {:id file-id})
-                   (rp/query :file-users {:id file-id})
+                   (rp/query :team-users {:file-id file-id})
                    (rp/query :project {:id project-id})
                    (rp/query :file-libraries {:file-id file-id}))
            (rx/first)
@@ -238,11 +238,11 @@
     (update [_ state]
       (let [users (map avatars/assoc-profile-avatar users)]
         (assoc state
+               :users (d/index-by :id users)
                :workspace-undo {}
                :workspace-project project
                :workspace-file file
                :workspace-data (:data file)
-               :workspace-users (d/index-by :id users)
                :workspace-libraries (d/index-by :id libraries))))))
 
 

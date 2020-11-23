@@ -11,6 +11,7 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.repo :as rp]
+   [app.main.data.users :as du]
    [app.util.router :as rt]
    [app.util.time :as dt]
    [app.util.timers :as ts]
@@ -89,18 +90,14 @@
         (->> (rp/query :team-members {:team-id id})
              (rx/map #(partial fetched %)))))))
 
-
-(defn fetch-team-users
-  [{:keys [id] :as params}]
+(defn fetch-team-stats
+  [{:keys [id] :as team}]
   (us/assert ::us/uuid id)
-  (letfn [(fetched [users state]
-            (->> (map #(avatars/assoc-avatar % :fullname) users)
-                 (d/index-by :id)
-                 (assoc-in state [:team-users id])))]
-    (ptk/reify ::fetch-team-users
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (->> (rp/query :team-users {:team-id id})
+  (ptk/reify ::fetch-team-members
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [fetched #(assoc-in %2 [:team-stats id] %1)]
+        (->> (rp/query :team-stats {:team-id id})
              (rx/map #(partial fetched %)))))))
 
 ;; --- Fetch Projects
@@ -125,7 +122,7 @@
       (let [profile (:profile state)]
         (->> (rx/merge (ptk/watch (fetch-team params) state stream)
                        (ptk/watch (fetch-projects {:team-id id}) state stream)
-                       (ptk/watch (fetch-team-users params) state stream))
+                       (ptk/watch (du/fetch-users {:team-id id}) state stream))
              (rx/catch (fn [{:keys [type code] :as error}]
                          (cond
                            (and (= :not-found type)

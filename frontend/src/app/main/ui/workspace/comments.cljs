@@ -36,7 +36,7 @@
         pos-y       (* (- (:y vbox)) zoom)
 
         profile     (mf/deref refs/profile)
-        users       (mf/deref refs/workspace-users)
+        users       (mf/deref refs/users)
         local       (mf/deref refs/comments-local)
         threads-map (mf/deref threads-ref)
 
@@ -132,7 +132,7 @@
   []
   (let [threads-map (mf/deref threads-ref)
         profile     (mf/deref refs/profile)
-        users       (mf/deref refs/workspace-users)
+        users       (mf/deref refs/users)
         local       (mf/deref refs/comments-local)
         options?    (mf/use-state false)
 
