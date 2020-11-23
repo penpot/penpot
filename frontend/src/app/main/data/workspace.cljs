@@ -1225,6 +1225,15 @@
             qparams {:page-id page-id}]
         (rx/of (rt/nav :workspace pparams qparams))))))
 
+
+(defn go-to-viewer
+  [{:keys [file-id page-id] :as params}]
+  (ptk/reify ::go-to-viewer
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of ::dwp/force-persist
+             (rt/nav :viewer params {:index 0})))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Context Menu
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1769,6 +1778,5 @@
    "down" #(st/emit! (dwt/move-selected :down false))
    "right" #(st/emit! (dwt/move-selected :right false))
    "left" #(st/emit! (dwt/move-selected :left false))
-
    "i" #(st/emit! (mdc/picker-for-selected-shape ))})
 
