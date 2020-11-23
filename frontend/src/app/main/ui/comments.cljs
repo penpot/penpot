@@ -36,6 +36,8 @@
         placeholder (obj/get props "placeholder")
         on-change   (obj/get props "on-change")
         on-esc      (obj/get props "on-esc")
+        autofocus?  (obj/get props "autofocus")
+
         ref         (mf/use-ref)
 
         on-key-down
@@ -62,6 +64,7 @@
 
     [:textarea
      {:ref ref
+      :auto-focus autofocus?
       :on-key-down on-key-down
       :on-focus on-focus
       :on-blur on-blur
@@ -150,6 +153,7 @@
       [:div.reply-form
        [:& resizing-textarea {:placeholder (tr "labels.write-new-comment")
                               :value (or content "")
+                              :autofocus true
                               :on-esc on-esc
                               :on-change on-change}]
        [:div.buttons
