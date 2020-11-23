@@ -39,21 +39,23 @@
 (s/def ::type keyword?)
 (s/def ::uuid uuid?)
 
+(s/def ::component-id uuid?)
+(s/def ::component-file uuid?)
+(s/def ::component-root? boolean?)
+(s/def ::shape-ref uuid?)
+
 (s/def ::safe-integer
   #(and
     (integer? %)
     (>= % min-safe-int)
     (<= % max-safe-int)))
-(s/def ::component-id uuid?)
-(s/def ::component-file uuid?)
-(s/def ::component-root? boolean?)
-(s/def ::shape-ref uuid?)
 
 (s/def ::safe-number
   #(and
     (number? %)
     (>= % min-safe-int)
     (<= % max-safe-int)))
+
 
 ;; GRADIENTS
 
