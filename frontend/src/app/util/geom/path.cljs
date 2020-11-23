@@ -10,7 +10,8 @@
 (ns app.util.geom.path
   (:require
    [cuerdas.core :as str]
-   [app.common.data :as d]
+   [app.util.data :as d]
+   [app.common.data :as cd]
    [app.common.geom.point :as gpt]
    [app.util.geom.path-impl-simplify :as impl-simplify]))
 
@@ -208,8 +209,81 @@
     :c2y (:y h2)}))
 
 (defn opposite-handler
+  "Calculates the coordinates of the opposite handler"
   [point handler]
-  (let [phv (gpt/to-vec point handler)
-        opposite (gpt/add point (gpt/negate phv))]
-    opposite))
+  (let [phv (gpt/to-vec point handler)]
+    (gpt/add point (gpt/negate phv))))
 
+(defn opposite-handler-keep-distance
+  "Calculates the coordinates of the opposite handler but keeping the old distance"
+  [point handler old-opposite]
+  (let [old-distance (gpt/distance point old-opposite)
+        phv (gpt/to-vec point handler)
+        phv2 (gpt/multiply
+              (gpt/unit (gpt/negate phv))
+              (gpt/point old-distance))]
+    (gpt/add point phv2)))
+
+(defn apply-content-modifiers [content modifiers]
+  (letfn [(apply-to-index [content [index params]]
+            (if (contains? content index)
+              (cond-> content
+                (and
+                 (or (:c1x params) (:c1y params) (:c2x params) (:c2y params))
+                 (= :line-to (get-in content [index :params :command])))
+                (-> (assoc-in [index :command] :curve-to)
+                    (assoc-in [index :params] :curve-to) (make-curve-params
+                                                          (get-in content [index :params])
+                                                          (get-in content [(dec index) :params])))
+
+                (:x params) (update-in [index :params :x] + (:x params))
+                (:y params) (update-in [index :params :y] + (:y params))
+
+                (:c1x params) (update-in [index :params :c1x] + (:c1x params))
+                (:c1y params) (update-in [index :params :c1y] + (:c1y params))
+
+                (:c2x params) (update-in [index :params :c2x] + (:c2x params))
+                (:c2y params) (update-in [index :params :c2y] + (:c2y params)))
+              content))]
+    (reduce apply-to-index content modifiers)))
+
+(defn command->point [{{:keys [x y]} :params}]
+  (gpt/point x y))
+
+(defn content->points [content]
+  (->> content
+       (map #(when (-> % :params :x) (gpt/point (-> % :params :x) (-> % :params :y))))
+       (remove nil?)
+       (into [])))
+
+(defn content->handlers [content]
+  (->> (d/with-prev content) ;; [cmd, prev]
+       (d/enumerate) ;; [idx [cmd, prev]]
+
+       (mapcat (fn [[index [cur-cmd prev-cmd]]]
+                 (if (and prev-cmd
+                          (= :curve-to (:command cur-cmd)))
+                   (let [cur-pos (command->point cur-cmd)
+                         pre-pos (command->point prev-cmd)]
+                     [[pre-pos [index :c1]]
+                      [cur-pos [index :c2]]])
+                   [])))
+
+       (group-by first)
+       (cd/mapm #(mapv second %2))))
+
+(defn opposite-index [content index prefix]
+  (let [point (if (= prefix :c2)
+                (command->point (nth content index))
+                (command->point (nth content (dec index))))
+
+        handlers (-> (content->handlers content)
+                     (get point))
+
+        opposite-prefix (if (= prefix :c1) :c2 :c1)
+
+        result (when (<= (count handlers) 2)
+                 (->> handlers
+                      (d/seek (fn [[index prefix]] (= prefix opposite-prefix)))
+                      (first)))]
+    result))

@@ -248,4 +248,7 @@
 ;;                        nil
 ;;                        (throw e#)))))))
 
-
+(defn prefix-keyword [prefix kw]
+  (let [prefix (if (keyword? prefix) (name prefix) prefix)
+        kw     (if (keyword? kw) (name kw) kw)]
+    (keyword (str prefix kw))))

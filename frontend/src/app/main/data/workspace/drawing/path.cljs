@@ -12,6 +12,7 @@
    [beicon.core :as rx]
    [potok.core :as ptk]
    [app.common.math :as mth]
+   [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.util.data :as ud]
@@ -28,11 +29,16 @@
 
 ;; PRIVATE METHODS
 
-(defn get-path-id [state]
+(defn get-path-id
+  "Retrieves the currently editing path id"
+  [state]
   (or (get-in state [:workspace-local :edition])
       (get-in state [:workspace-drawing :object :id])))
 
-(defn get-path [state & path]
+(defn get-path
+  "Retrieves the location of the path object and additionaly can pass
+  the arguments. This location can be used in get-in, assoc-in... functions"
+  [state & path]
   (let [edit-id (get-in state [:workspace-local :edition])
         page-id (:current-page-id state)]
     (cd/concat
@@ -41,13 +47,9 @@
        [:workspace-drawing :object])
      path)))
 
-(defn last-start-path [content]
-  (->> content
-       reverse
-       (cd/seek (fn [{cmd :command}] (= cmd :move-to)))
-       :params))
-
-(defn update-selrect [shape]
+(defn update-selrect
+  "Updates the selrect and points for a path"
+  [shape]
   (let [selrect (gsh/content->selrect (:content shape))
         points (gsh/rect->points selrect)]
     (assoc shape :points points :selrect selrect)))
@@ -56,8 +58,6 @@
   "Calculates the next-node to be inserted."
   [shape position prev-point prev-handler]
   (let [last-command (-> shape :content last :command)
-        start-point  (-> shape :content last-start-path)
-
         add-line?   (and prev-point (not prev-handler) (not= last-command :close-path))
         add-curve?  (and prev-point prev-handler (not= last-command :close-path))]
     (cond
@@ -76,53 +76,17 @@
         (update :content (fnil conj []) command)
         (update-selrect))))
 
-(defn suffix-keyword
-  [kw suffix]
-  (let [strkw (if kw (name kw) "")]
-    (keyword (str strkw suffix))))
+(defn move-handler-modifiers [content index prefix match-opposite? dx dy]
+  (let [[cx cy] (if (= prefix :c1) [:c1x :c1y] [:c2x :c2y])
+        [ocx ocy] (if (= prefix :c1) [:c2x :c2y] [:c1x :c1y])
+        opposite-index (ugp/opposite-index content index prefix)]
 
-(defn move-handler
-  [shape index handler-type match-opposite? position]
-  (let [content (:content shape)
-        [command next-command] (-> (ud/with-next content) (nth index))
+    (cond-> {}
+      :always
+      (update index assoc cx dx cy dy)
 
-        update-command
-        (fn [{cmd :command params :params :as command} param-prefix prev-command]
-          (if (#{:line-to :curve-to} cmd)
-            (let [command (if (= cmd :line-to)
-                            {:command :curve-to
-                             :params (ugp/make-curve-params params (:params prev-command))}
-                            command)]
-              (-> command
-                  (update :params assoc
-                          (suffix-keyword param-prefix "x") (:x position)
-                          (suffix-keyword param-prefix "y") (:y position))))
-            command))
-
-        update-content
-        (fn [shape index prefix]
-          (if (contains? (:content shape) index)
-            (let [prev-command (get-in shape [:content (dec index)])
-                  content (-> shape :content (update index update-command prefix prev-command))]
-              (-> shape
-                  (assoc :content content)
-                  (update-selrect)))
-            shape))]
-
-    (cond-> shape
-      (= :prev handler-type)
-      (update-content index :c2)
-
-      (and (= :next handler-type) next-command)
-      (update-content (inc index) :c1)
-
-      match-opposite?
-      (move-handler
-       index
-       (if (= handler-type :prev) :next :prev)
-       false
-       (ugp/opposite-handler (gpt/point (:params command))
-                             (gpt/point position))))))
+      (and match-opposite? opposite-index)
+      (update opposite-index assoc ocx (- dx) ocy (- dy)))))
 
 (defn end-path-event? [{:keys [type shift] :as event}]
   (or (= event ::end-path)
@@ -175,29 +139,58 @@
             (update-in [:workspace-local :edit-path id] dissoc :prev-handler)
             (update-in (get-path state) append-node position last-point prev-handler))))))
 
+(defn start-drag-handler []
+  (ptk/reify ::start-drag-handler
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [content (get-in state (get-path state :content))
+            index (dec (count content))
+            command (get-in state (get-path state :content index :command))
+
+            make-curve
+            (fn [command]
+              (let [params (ugp/make-curve-params
+                            (get-in content [index :params])
+                            (get-in content [(dec index) :params]))]
+                (-> command
+                    (assoc :command :curve-to :params params))))]
+
+        (cond-> state
+          (= command :line-to)
+          (update-in (get-path state :content index) make-curve))))))
+
 (defn drag-handler [{:keys [x y]}]
   (ptk/reify ::drag-handler
     ptk/UpdateEvent
     (update [_ state]
 
       (let [id (get-path-id state)
-            position (gpt/point x y)
+            handler-position (gpt/point x y)
             shape (get-in state (get-path state))
-            index (dec (count (:content shape)))]
+            content (:content shape)
+            index (dec (count content))
+            node-position (ugp/command->point (nth content index))
+            {dx :x dy :y} (gpt/subtract handler-position node-position)
+            match-opposite? true
+            modifiers (move-handler-modifiers content (inc index) :c1 match-opposite? dx dy)]
         (-> state
-            (update-in (get-path state) move-handler index :next true position)
-            (assoc-in [:workspace-local :edit-path id :prev-handler] position)
-            (assoc-in [:workspace-local :edit-path id :drag-handler] position))))))
+            (assoc-in [:workspace-local :edit-path id :content-modifiers] modifiers)
+            (assoc-in [:workspace-local :edit-path id :prev-handler] handler-position)
+            (assoc-in [:workspace-local :edit-path id :drag-handler] handler-position))))))
 
 (defn finish-drag []
   (ptk/reify ::finish-drag
     ptk/UpdateEvent
     (update [_ state]
       (let [id (get-path-id state)
+            modifiers (get-in state [:workspace-local :edit-path id :content-modifiers])
             handler (get-in state [:workspace-local :edit-path id :drag-handler])]
         (-> state
+            (update-in (get-path state :content) ugp/apply-content-modifiers modifiers)
             (update-in [:workspace-local :edit-path id] dissoc :drag-handler)
-            (assoc-in  [:workspace-local :edit-path id :prev-handler] handler))))
+            (update-in [:workspace-local :edit-path id] dissoc :content-modifiers)
+            (assoc-in  [:workspace-local :edit-path id :prev-handler] handler)
+            (update-in (get-path state) update-selrect))))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -205,6 +198,76 @@
             handler (get-in state [:workspace-local :edit-path id :prev-handler])]
         ;; Update the preview because can be outdated after the dragging
         (rx/of (preview-next-point handler))))))
+
+(defn close-path [position]
+  (ptk/reify ::close-path
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (add-node position)
+             ::end-path))))
+
+(defn close-path-drag-start [position]
+  (ptk/reify ::close-path-drag-start
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [zoom (get-in state [:workspace-local :zoom])
+            threshold (/ 5 zoom)
+            check-if-dragging
+            (fn [current-position]
+              (let [start   (gpt/point position)
+                    current (gpt/point current-position)]
+                (>= (gpt/distance start current) 100)))
+
+            stop-stream
+            (->> stream (rx/filter #(or (end-path-event? %)
+                                        (ms/mouse-up? %))))
+
+            position-stream
+            (->> ms/mouse-position
+                 (rx/take-until stop-stream)
+                 (rx/throttle 50))
+
+            drag-events-stream
+            (->> position-stream
+                 (rx/map #(drag-handler %)))]
+
+
+        (rx/concat
+         (rx/of (close-path position))
+
+         (->> position-stream
+              (rx/filter check-if-dragging)
+              (rx/take 1)
+              (rx/merge-map
+               #(rx/concat
+                 (rx/of (start-drag-handler))
+                 drag-events-stream
+                 (rx/of (finish-drag))))))))))
+
+(defn close-path-drag-end [position]
+  (ptk/reify ::close-path-drag-end))
+
+(defn path-pointer-enter [position]
+  (ptk/reify ::path-pointer-enter))
+
+(defn path-pointer-leave [position]
+  (ptk/reify ::path-pointer-leave))
+
+(defn start-path-from-point [position]
+  (ptk/reify ::start-path-from-point
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [mouse-up    (->> stream (rx/filter #(or (end-path-event? %)
+                                                    (ms/mouse-up? %))))
+            drag-events (->> ms/mouse-position
+                             (rx/take-until mouse-up)
+                             (rx/map #(drag-handler %)))]
+
+        (rx/concat (rx/of (add-node position))
+                   (rx/of (start-drag-handler))
+                   drag-events
+                   (rx/of (finish-drag))))
+      )))
 
 ;; EVENT STREAMS
 
@@ -218,13 +281,15 @@
 
 (defn make-drag-stream
   [stream down-event]
-  (let [mouse-up    (->> stream (rx/filter ms/mouse-up?))
+  (let [mouse-up    (->> stream (rx/filter #(or (end-path-event? %)
+                                                (ms/mouse-up? %))))
         drag-events (->> ms/mouse-position
                          (rx/take-until mouse-up)
                          (rx/map #(drag-handler %)))]
     (->> (rx/timer 400)
          (rx/merge-map #(rx/concat
                          (rx/of (add-node down-event))
+                         (rx/of (start-drag-handler))
                          drag-events
                          (rx/of (finish-drag)))))))
 
@@ -237,14 +302,27 @@
         #(rx/of (add-node down-event)
                 ::end-path))))
 
+(defn make-node-events-stream
+  [stream]
+  (->> (rx/merge
+        (->> stream (rx/filter (ptk/type? ::close-path)))
+        (->> stream (rx/filter (ptk/type? ::close-path-drag-start))))
+       (rx/take 1)
+       (rx/merge-map #(rx/empty))))
+
 ;; MAIN ENTRIES
 
 (defn handle-drawing-path
   [id]
   (ptk/reify ::handle-drawing-path
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [id (get-path-id state)]
+        (-> state
+            (assoc-in [:workspace-local :edit-path id :edit-mode] :draw))))
+
     ptk/WatchEvent
     (watch [_ state stream]
-
       (let [mouse-down    (->> stream (rx/filter ms/mouse-down?))
             end-path-events (->> stream (rx/filter end-path-event?))
 
@@ -264,7 +342,8 @@
 
                  ;; We change to the stream that emits the first event
                  (rx/switch-map
-                  #(rx/race (make-click-stream stream %)
+                  #(rx/race (make-node-events-stream stream)
+                            (make-click-stream stream %)
                             (make-drag-stream stream %)
                             (make-dbl-click-stream stream %))))]
 
@@ -274,67 +353,6 @@
                         mousedown-events)
               (rx/of (finish-path id))))))))
 
-
-
-#_(def handle-drawing-path
-  (ptk/reify ::handle-drawing-path
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [{:keys [flags]} (:workspace-local state)
-
-            last-point (volatile! @ms/mouse-position)
-
-            stoper (->> (rx/filter stoper-event? stream)
-                        (rx/share))
-
-            mouse (rx/sample 10 ms/mouse-position)
-
-            points (->> stream
-                        (rx/filter ms/mouse-click?)
-                        (rx/filter #(false? (:shift %)))
-                        (rx/with-latest vector mouse)
-                        (rx/map second))
-
-            counter (rx/merge (rx/scan #(inc %) 1 points) (rx/of 1))
-
-            stream' (->> mouse
-                         (rx/with-latest vector ms/mouse-position-ctrl)
-                         (rx/with-latest vector counter)
-                         (rx/map flatten))
-
-            imm-transform #(vector (- % 7) (+ % 7) %)
-            immanted-zones (vec (concat
-                                 (map imm-transform (range 0 181 15))
-                                 (map (comp imm-transform -) (range 0 181 15))))
-
-            align-position (fn [angle pos]
-                             (reduce (fn [pos [a1 a2 v]]
-                                       (if (< a1 angle a2)
-                                         (reduced (gpt/update-angle pos v))
-                                         pos))
-                                     pos
-                                     immanted-zones))]
-
-        (rx/merge
-         (rx/of #(initialize-drawing % @last-point))
-
-         (->> points
-              (rx/take-until stoper)
-              (rx/map (fn [pt] #(insert-point-segment % pt))))
-
-         (rx/concat
-          (->> stream'
-               (rx/take-until stoper)
-               (rx/map (fn [[point ctrl? index :as xxx]]
-                         (let [point (if ctrl?
-                                       (as-> point $
-                                         (gpt/subtract $ @last-point)
-                                         (align-position (gpt/angle $) $)
-                                         (gpt/add $ @last-point))
-                                       point)]
-                           #(update-point-segment % index point)))))
-          (rx/of finish-drawing-path
-                 common/handle-finish-drawing)))))))
 
 
 (defn stop-path-edit []
@@ -363,12 +381,12 @@
            (rx/take 1)
            (rx/map #(stop-path-edit))))))
 
-(defn modify-point [index dx dy]
+(defn modify-point [index prefix dx dy]
   (ptk/reify ::modify-point
-
     ptk/UpdateEvent
     (update [_ state]
-      (let [id (get-in state [:workspace-local :edition])]
+      (let [id (get-in state [:workspace-local :edition])
+            [cx cy] (if (= prefix :c1) [:c1x :c1y] [:c2x :c2y])]
         (-> state
             (update-in [:workspace-local :edit-path id :content-modifiers (inc index)] assoc
                        :c1x dx :c1y dy)
@@ -376,19 +394,22 @@
                        :x dx :y dy :c2x dx :c2y dy)
             )))))
 
-(defn modify-handler [index type dx dy]
+(defn modify-handler [id index prefix dx dy match-opposite?]
   (ptk/reify ::modify-point
     ptk/UpdateEvent
     (update [_ state]
-      (let [id (get-in state [:workspace-local :edition])]
-        (let [s1 (if (= type :prev) -1 1)
-              s2 (if (= type :prev) 1 -1)]
-          (-> state
-              (update-in [:workspace-local :edit-path id :content-modifiers (inc index)] assoc
-                         :c1x (* s1 dx) :c1y (* s1 dy))
-              (update-in [:workspace-local :edit-path id :content-modifiers index] assoc
-                         :c2x (* s2 dx) :c2y (* s2 dy) ))
-          )))))
+      (let [content (get-in state (get-path state :content))
+            [cx cy] (if (= prefix :c1) [:c1x :c1y] [:c2x :c2y])
+            [ocx ocy] (if (= prefix :c1) [:c2x :c2y] [:c1x :c1y])
+            opposite-index (ugp/opposite-index content index prefix)]
+        (cond-> state
+          :always
+          (update-in [:workspace-local :edit-path id :content-modifiers index] assoc
+                     cx dx cy dy)
+
+          (and match-opposite? opposite-index)
+          (update-in [:workspace-local :edit-path id :content-modifiers opposite-index] assoc
+                     ocx (- dx) ocy (- dy)))))))
 
 (defn apply-content-modifiers []
   (ptk/reify ::apply-content-modifiers
@@ -400,7 +421,7 @@
             old-selrect (get-in state [:workspace-data :pages-index page-id :objects id :selrect])
             old-points (get-in state [:workspace-data :pages-index page-id :objects id :points])
             content-modifiers (get-in state [:workspace-local :edit-path id :content-modifiers])
-            new-content (gsp/apply-content-modifiers old-content content-modifiers)
+            new-content (ugp/apply-content-modifiers old-content content-modifiers)
             new-selrect (gsh/content->selrect new-content)
             new-points (gsh/rect->points new-selrect)
             rch [{:type :mod-obj
@@ -478,46 +499,82 @@
           (= mode :draw) (rx/of :interrupt)
           :else (rx/of (finish-path id)))))))
 
+(defn move-path-point [start-point end-point]
+  (ptk/reify ::move-point
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [id (get-path-id state)
+            content (get-in state (get-path state :content))
+
+            {dx :x dy :y} (gpt/subtract end-point start-point)
+
+            handler-indices (-> (ugp/content->handlers content)
+                                (get start-point))
+
+            command-for-point (fn [[index command]]
+                                (let [point (ugp/command->point command)]
+                                  (= point start-point)))
+
+            point-indices (->> (d/enumerate content)
+                               (filter command-for-point)
+                               (map first))
+
+
+            point-reducer (fn [modifiers index]
+                            (-> modifiers
+                                (assoc-in [index :x] dx)
+                                (assoc-in [index :y] dy)))
+
+            handler-reducer (fn [modifiers [index prefix]]
+                              (let [cx (ud/prefix-keyword prefix :x)
+                                    cy (ud/prefix-keyword prefix :y)]
+                                (-> modifiers
+                                    (assoc-in [index cx] dx)
+                                    (assoc-in [index cy] dy))))
+
+            modifiers (as-> (get-in state [:workspace-local :edit-path id :content-modifiers] {}) $
+                        (reduce point-reducer $ point-indices)
+                        (reduce handler-reducer $ handler-indices))]
+
+        (assoc-in state [:workspace-local :edit-path id :content-modifiers] modifiers)))))
+
 (defn start-move-path-point
-  [index]
+  [position]
   (ptk/reify ::start-move-path-point
     ptk/WatchEvent
+    ;; TODO REWRITE
     (watch [_ state stream]
-      (let [id (get-in state [:workspace-local :edition])
-            start-point @ms/mouse-position
-            start-delta-x (get-in state [:workspace-local :edit-path id :content-modifiers index :x] 0)
-            start-delta-y (get-in state [:workspace-local :edit-path id :content-modifiers index :y] 0)]
+      (let [stopper (->> stream (rx/filter ms/mouse-up?))]
         (rx/concat
          (->> ms/mouse-position
-              (rx/take-until (->> stream (rx/filter ms/mouse-up?)))
-              (rx/map #(modify-point
-                        index
-                        (+ start-delta-x (- (:x %) (:x start-point)))
-                        (+ start-delta-y (- (:y %) (:y start-point))))))
-         (rx/concat (rx/of (apply-content-modifiers)))
-         )))))
+              (rx/take-until stopper)
+              (rx/map #(move-path-point position %)))
+         (rx/of (apply-content-modifiers)))))))
 
 (defn start-move-handler
-  [index type]
+  [index prefix]
   (ptk/reify ::start-move-handler
     ptk/WatchEvent
     (watch [_ state stream]
       (let [id (get-in state [:workspace-local :edition])
-            [cx cy] (if (= :prev type) [:c2x :c2y] [:c1x :c1y])
-            cidx (if (= :prev type) index (inc index))
-
+            [cx cy] (if (= prefix :c1) [:c1x :c1y] [:c2x :c2y])
             start-point @ms/mouse-position
-            start-delta-x (get-in state [:workspace-local :edit-path id :content-modifiers cidx cx] 0)
-            start-delta-y (get-in state [:workspace-local :edit-path id :content-modifiers cidx cy] 0)]
+            start-delta-x (get-in state [:workspace-local :edit-path id :content-modifiers index cx] 0)
+            start-delta-y (get-in state [:workspace-local :edit-path id :content-modifiers index cy] 0)]
 
         (rx/concat
          (->> ms/mouse-position
               (rx/take-until (->> stream (rx/filter ms/mouse-up?)))
-              (rx/map #(modify-handler
-                        index
-                        type
-                        (+ start-delta-x (- (:x %) (:x start-point)))
-                        (+ start-delta-y (- (:y %) (:y start-point)))))
+              (rx/with-latest vector ms/mouse-position-alt)
+              (rx/map
+               (fn [[pos alt?]]
+                 (modify-handler
+                  id
+                  index
+                  prefix
+                  (+ start-delta-x (- (:x pos) (:x start-point)))
+                  (+ start-delta-y (- (:y pos) (:y start-point)))
+                  (not alt?))))
               )
          (rx/concat (rx/of (apply-content-modifiers))))))))
 
@@ -568,13 +625,21 @@
         (-> state
             (update-in [:workspace-local :edit-path id :selected] (fnil conj #{}) [index type]))))))
 
-(defn select-node [index]
+(defn select-node [position]
   (ptk/reify ::select-node
     ptk/UpdateEvent
     (update [_ state]
       (let [id (get-in state [:workspace-local :edition])]
         (-> state
-            (update-in [:workspace-local :edit-path id :selected] (fnil conj #{}) index))))))
+            (update-in [:workspace-local :edit-path id :selected-node] (fnil conj #{}) position))))))
+
+(defn deselect-node [position]
+  (ptk/reify ::deselect-node
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [id (get-in state [:workspace-local :edition])]
+        (-> state
+            (update-in [:workspace-local :edit-path id :selected-node] (fnil disj #{}) position))))))
 
 (defn add-to-selection-handler [index type]
   (ptk/reify ::add-to-selection-handler
@@ -629,5 +694,4 @@
               (rx/filter (ptk/type? ::finish-path))
               (rx/take 1)
               (rx/observe-on :async)
-              (rx/map #(handle-new-shape-result shape-id)))
-         )))))
+              (rx/map #(handle-new-shape-result shape-id))))))))

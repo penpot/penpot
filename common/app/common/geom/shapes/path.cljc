@@ -17,9 +17,6 @@
    [app.common.math :as mth]
    [app.common.data :as d]))
 
-(defn segments->points [segments]
-  segments)
-
 (defn content->points [content]
   (->> content
        (map #(when (-> % :params :x) (gpt/point (-> % :params :x) (-> % :params :y))))
@@ -146,21 +143,6 @@
             (not (nil? c2x)) (set-tr :c2x :c2y)))]
 
     (mapv #(update % :params transform-params) content)))
-
-(defn apply-content-modifiers [content modifiers]
-  (let [red-fn (fn [content [index params]]
-                 (if (contains? content index)
-                   (cond-> content
-                     (:x params) (update-in [index :params :x] + (:x params))
-                     (:y params) (update-in [index :params :y] + (:y params))
-
-                     (:c1x params) (update-in [index :params :c1x] + (:c1x params))
-                     (:c1y params) (update-in [index :params :c1y] + (:c1y params))
-
-                     (:c2x params) (update-in [index :params :c2x] + (:c2x params))
-                     (:c2y params) (update-in [index :params :c2y] + (:c2y params)))
-                   content))]
-    (reduce red-fn content modifiers)))
 
 (defn segments->content
   ([segments]
