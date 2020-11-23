@@ -9,23 +9,21 @@
 
 (ns app.main.ui.workspace.header
   (:require
-   [okulary.core :as l]
-   [rumext.alpha :as mf]
-   [app.main.ui.icons :as i :include-macros true]
+   [app.common.math :as mth]
    [app.config :as cfg]
-   [app.main.data.history :as udh]
+   [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.data.modal :as modal]
-   [app.main.ui.workspace.presence :as presence]
+   [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
-   [app.util.i18n :as i18n :refer [t]]
-   [app.util.data :refer [classnames]]
+   [app.main.ui.workspace.presence :refer [active-sessions]]
    [app.util.dom :as dom]
-   [app.common.math :as mth]
-   [app.util.router :as rt]))
+   [app.util.i18n :as i18n :refer [tr]]
+   [app.util.router :as rt]
+   [okulary.core :as l]
+   [rumext.alpha :as mf]))
 
 ;; --- Zoom Widget
 
@@ -34,28 +32,28 @@
 
 (mf/defc persistence-state-widget
   {::mf/wrap [mf/memo]}
-  [{:keys [locale]}]
+  []
   (let [data (mf/deref workspace-persistence-ref)]
     [:div.persistence-status-widget
      (cond
        (= :pending (:status data))
        [:div.pending
-        [:span.label (t locale "workspace.header.unsaved")]]
+        [:span.label (tr "workspace.header.unsaved")]]
 
        (= :saving (:status data))
        [:div.saving
         [:span.icon i/toggle]
-        [:span.label (t locale "workspace.header.saving")]]
+        [:span.label (tr "workspace.header.saving")]]
 
        (= :saved (:status data))
        [:div.saved
         [:span.icon i/tick]
-        [:span.label (t locale "workspace.header.saved")]]
+        [:span.label (tr "workspace.header.saved")]]
 
        (= :error (:status data))
        [:div.error {:title "There was an error saving the data. Please refresh if this persists."}
         [:span.icon i/msg-warning]
-        [:span.label (t locale "workspace.header.save-error")]])]))
+        [:span.label (tr "workspace.header.save-error")]])]))
 
 
 (mf/defc zoom-widget
@@ -108,10 +106,10 @@
          (st/emitf (modal/show
                     {:type :confirm
                      :message ""
-                     :title (t locale "modals.add-shared-confirm.message" (:name file))
-                     :hint (t locale "modals.add-shared-confirm.hint")
+                     :title (tr "modals.add-shared-confirm.message" (:name file))
+                     :hint (tr "modals.add-shared-confirm.hint")
                      :cancel-label :omit
-                     :accept-label (t locale "modals.add-shared-confirm.accept")
+                     :accept-label (tr "modals.add-shared-confirm.accept")
                      :accept-style :primary
                      :on-accept add-shared-fn})))
 
@@ -121,10 +119,10 @@
          (st/emitf (modal/show
                     {:type :confirm
                      :message ""
-                     :title (t locale "modals.remove-shared-confirm.message" (:name file))
-                     :hint (t locale "modals.remove-shared-confirm.hint")
+                     :title (tr "modals.remove-shared-confirm.message" (:name file))
+                     :hint (tr "modals.remove-shared-confirm.hint")
                      :cancel-label :omit
-                     :accept-label (t locale "modals.remove-shared-confirm.accept")
+                     :accept-label (tr "modals.remove-shared-confirm.accept")
                      :on-accept del-shared-fn})))
 
 
@@ -146,7 +144,7 @@
 
     [:div.menu-section
      [:div.btn-icon-dark.btn-small {:on-click #(reset! show-menu? true)} i/actions]
-     [:div.project-tree {:alt (t locale "workspace.sitemap")}
+     [:div.project-tree {:alt (tr "workspace.sitemap")}
       [:span.project-name
        {:on-click #(st/emit! (rt/navigate :dashboard-project {:team-id team-id
                                                               :project-id (:project-id file)}))}
@@ -254,11 +252,10 @@
                :team-id team-id}]
 
      [:div.users-section
-      [:& presence/active-sessions]]
+      [:& active-sessions]]
 
      [:div.options-section
-      [:& persistence-state-widget
-       {:locale locale}]
+      [:& persistence-state-widget]
 
       [:& zoom-widget
        {:zoom zoom
