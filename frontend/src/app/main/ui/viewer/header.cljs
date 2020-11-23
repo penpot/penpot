@@ -200,6 +200,7 @@
                            {:page-id page-id})))
         navigate
         (mf/use-callback
+         (mf/deps file-id page-id)
          (fn [section]
            (st/emit!
             (case section
