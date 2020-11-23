@@ -9,19 +9,21 @@
 
 (ns app.main.data.viewer
   (:require
-   [cljs.spec.alpha :as s]
-   [beicon.core :as rx]
-   [potok.core :as ptk]
+   [app.common.data :as d]
+   [app.common.exceptions :as ex]
+   [app.common.pages :as cp]
+   [app.common.pages-helpers :as cph]
+   [app.common.spec :as us]
+   [app.common.uuid :as uuid]
    [app.main.constants :as c]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.common.spec :as us]
-   [app.common.pages :as cp]
-   [app.common.data :as d]
-   [app.common.exceptions :as ex]
+   [app.main.data.comments :as dcm]
+   [app.util.avatars :as avatars]
    [app.util.router :as rt]
-   [app.common.uuid :as uuid]
-   [app.common.pages-helpers :as cph]))
+   [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
+   [potok.core :as ptk]))
 
 ;; --- General Specs
 
@@ -149,7 +151,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [objects (:objects page)
-            frames  (extract-frames objects)]
+            frames  (extract-frames objects)
+            users   (map #(avatars/assoc-avatar % :fullname) users)]
         (-> state
             (assoc :viewer-libraries (d/index-by :id libraries)
                    :viewer-data {:project project
@@ -240,7 +243,9 @@
             pparams (:path-params route)
             index   (:index qparams)]
         (when (pos? index)
-          (rx/of (rt/nav screen pparams (assoc qparams :index (dec index)))))))))
+          (rx/of
+           (dcm/close-thread)
+           (rt/nav screen pparams (assoc qparams :index (dec index)))))))))
 
 (def select-next-frame
   (ptk/reify ::select-prev-frame
@@ -253,7 +258,9 @@
             index   (:index qparams)
             total   (count (get-in state [:viewer-data :frames]))]
         (when (< index (dec total))
-          (rx/of (rt/nav screen pparams (assoc qparams :index (inc index)))))))))
+          (rx/of
+           (dcm/close-thread)
+           (rt/nav screen pparams (assoc qparams :index (inc index)))))))))
 
 (s/def ::interactions-mode #{:hide :show :show-on-click})
 
@@ -387,12 +394,12 @@
 ;; --- Shortcuts
 
 (def shortcuts
-  {"+" #(st/emit! increase-zoom)
-   "-" #(st/emit! decrease-zoom)
-   "ctrl+a" #(st/emit! (select-all))
-   "shift+0" #(st/emit! zoom-to-50)
-   "shift+1" #(st/emit! reset-zoom)
-   "shift+2" #(st/emit! zoom-to-200)
-   "left" #(st/emit! select-prev-frame)
-   "right" #(st/emit! select-next-frame)})
+  {"+"       (st/emitf increase-zoom)
+   "-"       (st/emitf decrease-zoom)
+   "ctrl+a"  (st/emitf (select-all))
+   "shift+0" (st/emitf zoom-to-50)
+   "shift+1" (st/emitf reset-zoom)
+   "shift+2" (st/emitf zoom-to-200)
+   "left"    (st/emitf select-prev-frame)
+   "right"   (st/emitf select-next-frame)})
 

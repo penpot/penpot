@@ -78,7 +78,7 @@
 
         on-click
         (mf/use-callback
-         (mf/deps cstate data)
+         (mf/deps cstate data frame)
          (fn [event]
            (dom/stop-propagation event)
            (if (some? (:open cstate))
@@ -98,13 +98,11 @@
 
         on-draft-submit
         (mf/use-callback
+         (mf/deps frame)
          (fn [draft]
            (let [params (update draft :position gpt/transform modifier2)]
-             ;; (prn "on-draft-submit" params)
-
              (st/emit! (dcm/create-thread params)
-                       (dcm/close-thread)))))
-        ]
+                       (dcm/close-thread)))))]
 
     [:div.comments-section {:on-click on-click}
      [:div.viewer-comments-container

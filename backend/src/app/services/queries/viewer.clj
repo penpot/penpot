@@ -24,7 +24,7 @@
 
 (def ^:private
   sql:project
-  "select p.id, p.name
+  "select p.id, p.name, p.team_id
      from project as p
     where p.id = ?
       and p.deleted_at is null")
