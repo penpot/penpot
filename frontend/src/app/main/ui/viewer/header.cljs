@@ -194,6 +194,7 @@
 
         on-edit
         (mf/use-callback
+         (mf/deps project-id file-id page-id)
          (st/emitf (rt/nav :workspace
                            {:project-id project-id
                             :file-id file-id}
