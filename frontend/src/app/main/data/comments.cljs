@@ -237,7 +237,6 @@
   (ptk/reify ::open-thread
     ptk/UpdateEvent
     (update [_ state]
-      (prn "open-thread" id)
       (-> state
           (update :comments-local assoc :open id)
           (update :workspace-drawing dissoc :comment)))))
@@ -247,7 +246,6 @@
   (ptk/reify ::close-thread
     ptk/UpdateEvent
     (update [_ state]
-      (prn "close-thread")
       (-> state
           (update :comments-local dissoc :open :draft)
           (update :workspace-drawing dissoc :comment)))))
