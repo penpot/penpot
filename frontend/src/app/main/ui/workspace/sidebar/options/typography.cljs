@@ -135,7 +135,7 @@
           (let [new-spacing (dom/get-target-val event)]
             (on-change {attr new-spacing})))]
 
-    [:div.row-flex
+    [:div.spacing-options
      [:div.input-icon
       [:span.icon-before.tooltip.tooltip-bottom
        {:alt (t locale "workspace.options.text-options.line-height")}
@@ -171,29 +171,27 @@
         handle-change
         (fn [event type]
           (on-change {:text-transform type}))]
-    [:div.row-flex
-     [:span.element-set-subtitle (t locale "workspace.options.text-options.text-case")]
-     [:div.align-icons
-      [:span.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.text-options.none")
-        :class (dom/classnames :current (= "none" text-transform))
-        :on-click #(handle-change % "none")}
-       i/minus]
-      [:span.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.text-options.uppercase")
-        :class (dom/classnames :current (= "uppercase" text-transform))
-        :on-click #(handle-change % "uppercase")}
-       i/uppercase]
-      [:span.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.text-options.lowercase")
-        :class (dom/classnames :current (= "lowercase" text-transform))
-        :on-click #(handle-change % "lowercase")}
-       i/lowercase]
-      [:span.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.text-options.titlecase")
-        :class (dom/classnames :current (= "capitalize" text-transform))
-        :on-click #(handle-change % "capitalize")}
-       i/titlecase]]]))
+    [:div.align-icons
+     [:span.tooltip.tooltip-bottom
+      {:alt (t locale "workspace.options.text-options.none")
+       :class (dom/classnames :current (= "none" text-transform))
+       :on-click #(handle-change % "none")}
+      i/minus]
+     [:span.tooltip.tooltip-bottom
+      {:alt (t locale "workspace.options.text-options.uppercase")
+       :class (dom/classnames :current (= "uppercase" text-transform))
+       :on-click #(handle-change % "uppercase")}
+      i/uppercase]
+     [:span.tooltip.tooltip-bottom
+      {:alt (t locale "workspace.options.text-options.lowercase")
+       :class (dom/classnames :current (= "lowercase" text-transform))
+       :on-click #(handle-change % "lowercase")}
+      i/lowercase]
+     [:span.tooltip.tooltip-bottom
+      {:alt (t locale "workspace.options.text-options.titlecase")
+       :class (dom/classnames :current (= "capitalize" text-transform))
+       :on-click #(handle-change % "capitalize")}
+      i/titlecase]]))
 
 (mf/defc typography-options
   [{:keys [ids editor values on-change]}]
@@ -206,8 +204,9 @@
 
     [:div.element-set-content
      [:> font-options opts]
-     [:> spacing-options opts]
-     [:> text-transform-options opts]]))
+     [:div.row-flex
+      [:> spacing-options opts]
+      [:> text-transform-options opts]]]))
 
 
 (mf/defc typography-entry

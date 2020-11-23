@@ -373,9 +373,10 @@ ul.slider-dots {
     font-size: $fs12;
     height: 20px;
     position: absolute;
-    right: 3px;
+    right: $small;
+    text-align: right;
     top: 26%;
-    width: 20px;
+    width: 18px;
   }
 
   .after {
@@ -539,7 +540,7 @@ input.element-name {
   @extend .input-text;
   background-image: url("/images/icons/arrow-down-white.svg");
   background-repeat: no-repeat;
-  background-position: 95% 48%;
+  background-position: calc(100% - 4px) 48%;
   background-size: 10px;
   cursor: pointer;
 

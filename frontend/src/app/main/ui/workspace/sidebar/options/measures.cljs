@@ -114,13 +114,6 @@
       (when (options :size)
         [:div.row-flex
          [:span.element-set-subtitle (t locale "workspace.options.size")]
-         [:div.lock-size {:class (classnames
-                                   :selected (true? proportion-lock)
-                                   :disabled (= proportion-lock :multiple))
-                          :on-click on-proportion-lock-change}
-          (if proportion-lock
-            i/lock
-            i/unlock)]
          [:div.input-element.width
           [:input.input-text {:type "number"
                               :min "0"
@@ -138,7 +131,15 @@
                               :placeholder "--"
                               :on-click select-all
                               :on-change on-height-change
-                              :value (attr->string :height values)}]]])
+                              :value (attr->string :height values)}]]
+
+         [:div.lock-size {:class (classnames
+                                   :selected (true? proportion-lock)
+                                   :disabled (= proportion-lock :multiple))
+                          :on-click on-proportion-lock-change}
+          (if proportion-lock
+            i/lock
+            i/unlock)]])
 
       ;; POSITION
       (when (options :position)

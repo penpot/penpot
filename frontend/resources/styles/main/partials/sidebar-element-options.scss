@@ -226,17 +226,17 @@
   .element-set-subtitle {
     color: $color-gray-20;
     font-size: $fs11;
-    width: 12rem;
+    width: 64px;
   }
 
   .lock-size {
     cursor: pointer;
-    width: 20%;
+    margin: auto;
 
     svg {
       fill: $color-gray-20;
-      height: 15px;
-      width: 15px;
+      height: 14px;
+      width: 14px;
 
       &:hover {
         fill: $color-primary;
@@ -518,16 +518,15 @@
 }
 
 .align-icons {
-  border: 1px solid $color-gray-60;
-  border-radius: $br-small;
   cursor: pointer;
   display: flex;
   flex: 1;
-  justify-content: space-between;
-  margin-left: $small;
-  padding: $small;
+  justify-content: flex-end;
+  margin: $small 0 $small $small;
+  padding: 0 $x-small;
 
   &:first-child {
+    justify-content: space-between;
     margin-left: 0;
   }
 
@@ -542,8 +541,8 @@
 
     svg {
       fill: $color-gray-30;
-      height: 15px;
-      width: 15px;
+      height: 14px;
+      width: 14px;
     }
 
     &:hover,
@@ -651,12 +650,12 @@
     display: flex;
     height: 18px;
     position: relative;
-    width: 18px;
+    width: 14px;
 
     svg {
       fill: $color-gray-30;
-      height: 16px;
-      width: 16px;
+      height: 14px;
+      width: 14px;
     }
   }
 }
@@ -925,6 +924,10 @@
         width: 10px;
         height: 10px;
     }
+}
+
+.spacing-options {
+  display: flex;
 }
 
 .asset-group {
