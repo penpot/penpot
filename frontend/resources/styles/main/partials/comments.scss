@@ -40,11 +40,11 @@
     box-sizing: border-box;
     box-shadow: 0px 2px 8px rgba($color-black, 0.25);
     border-radius: 2px;
-    min-width: 250px;
-    max-width: 250px;
+    min-width: 280px;
+    max-width: 280px;
 
     .comments {
-      max-height: 320px;
+      max-height: 420px;
       min-height: 105px;
       overflow-y: auto;
     }
@@ -52,7 +52,7 @@
     hr {
       border: 0;
       height: 1px;
-      background-color: #e3e3e3;
+      background-color: $color-gray-20;
       margin: 0px 10px;
     }
   }
@@ -86,7 +86,7 @@
 
       input {
         margin: 0px;
-        font-size: $fs12;
+        font-size: $fs14;
 
         &:not(:last-child) {
           margin-right: 6px;
@@ -102,7 +102,7 @@
   .comment {
     display: flex;
     flex-direction: column;
-    padding: 10px;
+    padding: $medium $small;
 
     .author {
       display: flex;
@@ -118,15 +118,15 @@
         .fullname {
           font-weight: 700;
           color: $color-gray-60;
-          font-size: $fs10;
+          font-size: $fs13;
 
           @include text-ellipsis;
-          width: 150px;
+          width: 174px;
 
         }
         .timeago {
           margin-top: -2px;
-          font-size: $fs10;
+          font-size: $fs12;
           color: $color-gray-30;
         }
       }
@@ -139,8 +139,8 @@
         img {
           border-radius: 50%;
           flex-shrink: 0;
-          height: 20px;
-          width: 20px;
+          height: 24px;
+          width: 24px;
         }
       }
 
@@ -162,8 +162,8 @@
 
       .options {
         position: absolute;
-        right: 0px;
-        top: 0px;
+        right: -2px;
+        top: 2px;
         height: 16px;
         display: flex;
         align-items: center;
@@ -171,8 +171,8 @@
 
         .options-icon {
           svg {
-            width: 10px;
-            height: 10px;
+            width: 14px;
+            height: 14px;
             fill: $color-black;
           }
         }
@@ -181,11 +181,11 @@
     }
 
     .content {
-      margin: 10px 0;
-      font-size: $fs10;
+      margin: $medium 0;
+      font-size: $fs14;
       color: $color-black;
       .text {
-        margin-left: 26px;
+        margin: 0 $small 0 26px;
         white-space: pre-wrap;
         display: inline-block;
       }
@@ -248,7 +248,7 @@
     hr {
       border: 0;
       height: 1px;
-      background-color: #1f1f2f;
+      background-color: $color-gray-30;
       margin: 0px 0px;
     }
   }
@@ -283,8 +283,8 @@
   .thread-bubble {
     position: unset;
     transform: unset;
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     margin-right: 6px;
     box-shadow: unset;
   }
@@ -292,15 +292,13 @@
   .comment {
     cursor: pointer;
     .author {
-      margin-bottom: 10px;
+      margin-bottom: $medium;
       .name {
         display: flex;
-        flex-direction: row;
-        align-items: center;
 
         .fullname {
           width: unset;
-          max-width: 100px;
+          max-width: 170px;
           color: $color-gray-20;
           padding-right: 3px;
         }
@@ -316,7 +314,7 @@
       color: $color-white;
 
       &.replies {
-        margin-left: 26px;
+        margin: 0 $small 0 26px;
         display: flex;
         .total-replies {
           margin-right: 9px;
@@ -392,7 +390,7 @@
   }
 
   .dropdown {
-    width: 233px;
+    width: 280px;
     bottom: 35px;
     left: 0px;
     border-radius: 3px;
@@ -407,7 +405,7 @@
     h3 {
       font-weight: 400;
       color: $color-black;
-      font-size: $fs12;
+      font-size: $fs14;
       line-height: $fs18;
       flex-grow: 1;
     }
