@@ -44,18 +44,26 @@
     (move shape (gpt/point dx dy))))
 
 ;; --- Resize (Dimensions)
-;;; TODO: CHANGE TO USE THE MODIFIERS
+;; Fixme: Improve using modifiers instead of calculating the selrect/points
 (defn resize
   [shape width height]
   (us/assert map? shape)
   (us/assert number? width)
   (us/assert number? height)
-  (-> shape
-      (assoc :width width :height height)
-      (update :selrect (fn [selrect]
-                         (assoc selrect
-                                :x2 (+ (:x1 selrect) width)
-                                :y2 (+ (:y1 selrect) height))))))
+  (let [selrect (-> (:selrect shape)
+                    (assoc :width width)
+                    (assoc :height height)
+                    (assoc :x2 (+ (-> shape :selrect :x1) width))
+                    (assoc :y2 (+ (-> shape :selrect :y1) height)))
+
+        center (gco/center-selrect selrect)
+        points (-> selrect gpr/rect->points (gtr/transform-points center (:transform shape)))]
+
+    (-> shape
+        (assoc :width width)
+        (assoc :height height)
+        (assoc :selrect selrect)
+        (assoc :points points))))
 
 (defn resize-rect
   [shape attr value]

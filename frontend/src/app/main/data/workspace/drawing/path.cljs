@@ -101,12 +101,7 @@
 ;; EVENTS
 
 (defn init-path [id]
-  (ptk/reify ::init-path
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          #_(assoc-in [:workspace-drawing :object :initialized?] true)
-          #_(assoc-in [:workspace-local :edit-path :last-point] nil)))))
+  (ptk/reify ::init-path))
 
 (defn finish-path [id]
   (ptk/reify ::finish-path
@@ -347,13 +342,11 @@
                             (make-drag-stream stream %)
                             (make-dbl-click-stream stream %))))]
 
-        (->> (rx/concat
-              (rx/of (init-path id))
-              (rx/merge mousemove-events
-                        mousedown-events)
-              (rx/of (finish-path id))))))))
-
-
+        (rx/concat
+         (rx/of (init-path id))
+         (rx/merge mousemove-events
+                   mousedown-events)
+         (rx/of (finish-path id)))))))
 
 (defn stop-path-edit []
   (ptk/reify ::stop-path-edit
@@ -417,13 +410,13 @@
     (watch [_ state stream]
       (let [id (get-in state [:workspace-local :edition])
             page-id (:current-page-id state)
-            old-content (get-in state [:workspace-data :pages-index page-id :objects id :content])
-            old-selrect (get-in state [:workspace-data :pages-index page-id :objects id :selrect])
-            old-points (get-in state [:workspace-data :pages-index page-id :objects id :points])
-            content-modifiers (get-in state [:workspace-local :edit-path id :content-modifiers])
+            shape (get-in state [:workspace-data :pages-index page-id :objects id])
+            {old-content :content old-selrect :selrect old-points :points} shape
+            content-modifiers (get-in state [:workspace-local :edit-path id :content-modifiers] {})
             new-content (ugp/apply-content-modifiers old-content content-modifiers)
             new-selrect (gsh/content->selrect new-content)
             new-points (gsh/rect->points new-selrect)
+
             rch [{:type :mod-obj
                   :id id
                   :page-id page-id
@@ -456,9 +449,8 @@
             old-content (get-in state [:workspace-local :edit-path id :old-content])
             old-selrect (gsh/content->selrect old-content)
             old-points  (gsh/rect->points old-content)
-            new-content (get-in state [:workspace-data :pages-index page-id :objects id :content])
-            new-selrect (get-in state [:workspace-data :pages-index page-id :objects id :selrect])
-            new-points  (get-in state [:workspace-data :pages-index page-id :objects id :points])
+            shape (get-in state [:workspace-data :pages-index page-id :objects id])
+            {new-content :content new-selrect :selrect new-points :points} shape
 
             rch [{:type :mod-obj
                   :id id
@@ -491,7 +483,6 @@
             content (get-in state (get-path state :content))
             old-content (get-in state [:workspace-local :edit-path id :old-content])
             mode (get-in state [:workspace-local :edit-path id :edit-mode])]
-        
 
         (cond
           (not= content old-content) (rx/of (save-path-content)
