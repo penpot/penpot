@@ -109,3 +109,18 @@
             (update page :objects #(d/mapm update-object %)))]
 
     (update data :pages-index #(d/mapm update-page %))))
+
+(defmethod migrate 4
+  [data]
+  (letfn [(update-object [id object]
+            (cond-> object
+              (= (:id object) uuid/zero)
+              (assoc :points []
+                     :selrect {:x 0 :y 0
+                               :width 1 :height 1
+                               :x1 0 :y1 0
+                               :x2 1 :y2 1})))
+
+          (update-page [id page]
+            (update page :objects #(d/mapm update-object %)))]
+    (update data :pages-index #(d/mapm update-page %))))
