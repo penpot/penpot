@@ -15,7 +15,8 @@
    [app.common.pages :as cp]
    [app.common.pages-helpers :as cph]
    [app.common.math :as mth]
-   [app.common.geom.shapes :as geom]
+   [app.common.geom.shapes :as gsh]
+   [app.common.geom.align :as gal]
    [app.common.geom.point :as gpt]
    [app.common.geom.matrix :as gmt]
    [app.main.ui.shapes.filters :as filters]
@@ -42,9 +43,9 @@
 (defn- calculate-dimensions
   [{:keys [objects] :as data} vport]
   (let [shapes (cph/select-toplevel-shapes objects {:include-frames? true})]
-    (->> (geom/selection-rect shapes)
-         (geom/adjust-to-viewport vport)
-         (geom/fix-invalid-rect-values))))
+    (->> (gsh/selection-rect shapes)
+         (gal/adjust-to-viewport vport)
+         #_(gsh/fix-invalid-rect-values))))
 
 (declare shape-wrapper-factory)
 
@@ -55,7 +56,7 @@
     (mf/fnc frame-wrapper
       [{:keys [shape] :as props}]
       (let [childs (mapv #(get objects %) (:shapes shape))
-            shape  (geom/transform-shape shape)]
+            shape  (gsh/transform-shape shape)]
         [:> shape-container {:shape shape}
          [:& frame-shape {:shape shape :childs childs}]]))))
 
@@ -78,11 +79,11 @@
     (let [group-wrapper (mf/use-memo (mf/deps objects) #(group-wrapper-factory objects))
           frame-wrapper (mf/use-memo (mf/deps objects) #(frame-wrapper-factory objects))]
       (when (and shape (not (:hidden shape)))
-        (let [shape (geom/transform-shape frame shape)
+        (let [shape (-> (gsh/transform-shape shape)
+                        (gsh/translate-to-frame frame))
               opts #js {:shape shape}]
           [:> shape-container {:shape shape}
            (case (:type shape)
-             :curve  [:> path/path-shape opts]
              :text   [:> text/text-shape opts]
              :rect   [:> rect/rect-shape opts]
              :path   [:> path/path-shape opts]

@@ -13,8 +13,8 @@
    [app.common.geom.shapes :as gsh]
    [app.util.object :as obj]
    [rumext.util :refer [map->obj]]
-   [app.main.ui.shapes.path :as path]
-   [app.main.refs :as refs]))
+   [app.main.refs :as refs]
+   [app.util.geom.path :as ugp]))
 
 
 (mf/defc outline
@@ -28,7 +28,7 @@
 
         outline-type (case (:type shape)
                        :circle "ellipse"
-                       (:curve :path) "path"
+                       :path "path"
                        "rect")
 
         common {:fill "transparent"
@@ -44,8 +44,8 @@
                  :rx (/ width 2)
                  :ry (/ height 2)}
 
-                (:curve :path)
-                {:d (path/render-path shape)}
+                :path
+                {:d (ugp/content->path (:content shape))}
 
                 {:x x
                  :y y

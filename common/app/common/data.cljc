@@ -7,12 +7,14 @@
 (ns app.common.data
   "Data manipulation and query helper functions."
   (:refer-clojure :exclude [concat read-string hash-map])
-  (:require [clojure.set :as set]
-            [linked.set :as lks]
-            #?(:cljs [cljs.reader :as r]
-               :clj [clojure.edn :as r])
-            #?(:cljs [cljs.core :as core]
-               :clj [clojure.core :as core]))
+  (:require
+   [clojure.set :as set]
+   [linked.set :as lks]
+   [app.common.math :as mth]
+   #?(:cljs [cljs.reader :as r]
+      :clj [clojure.edn :as r])
+   #?(:cljs [cljs.core :as core]
+      :clj [clojure.core :as core]))
   #?(:clj
      (:import linked.set.LinkedSet)))
 
@@ -261,3 +263,21 @@
 (defn coalesce
   [val default]
   (or val default))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Data Parsing / Conversion
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn nilf
+  "Returns a new function that if you pass nil as any argument will
+  return nil"
+  [f]
+  (fn [& args]
+    (if (some nil? args)
+      nil
+      (apply f args))))
+
+(defn check-num
+  "Function that checks if a number is nil or nan. Will return 0 when not
+  valid and the number otherwise."
+  [v]
+  (if (or (not v) (mth/nan? v)) 0 v))

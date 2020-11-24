@@ -251,7 +251,7 @@
 
 
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
-                   (dws/select-shapes (d/ordered-set (:id group))))))))))
+                   (dwc/select-shapes (d/ordered-set (:id group))))))))))
 
 (defn rename-component
   [id new-name]
@@ -407,7 +407,7 @@
                           new-shapes)]
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
-               (dws/select-shapes (d/ordered-set (:id new-shape))))))))
+               (dwc/select-shapes (d/ordered-set (:id new-shape))))))))
 
 (defn detach-component
   "Remove all references to components in the shape with the given id,

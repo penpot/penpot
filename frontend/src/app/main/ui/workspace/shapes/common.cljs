@@ -23,6 +23,7 @@
 (defn- on-mouse-down
   [event {:keys [id type] :as shape}]
   (let [selected @refs/selected-shapes
+        edition @refs/selected-edition
         selected? (contains? selected id)
         drawing? @refs/selected-drawing-tool
         button (.-which (.-nativeEvent event))]
@@ -35,9 +36,8 @@
         nil
 
         (= type :frame)
-        (when selected?
-          (dom/stop-propagation event)
-          (st/emit! (dw/start-move-selected)))
+        (do (dom/stop-propagation event)
+            (st/emit! (dw/start-move-selected)))
 
         :else
         (do
@@ -50,7 +50,8 @@
                 (st/emit! (dw/deselect-all)))
               (st/emit! (dw/select-shape id))))
 
-          (st/emit! (dw/start-move-selected)))))))
+          (when (not= edition id)
+            (st/emit! (dw/start-move-selected))))))))
 
 (defn on-context-menu
   [event shape]

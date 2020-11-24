@@ -149,10 +149,10 @@
             shape (unchecked-get props "shape")
             frame (unchecked-get props "frame")]
         (when (and shape (not (:hidden shape)))
-          (let [shape (geom/transform-shape frame shape)
+          (let [shape (-> (geom/transform-shape shape)
+                          (geom/translate-to-frame frame))
                 opts #js {:shape shape}]
             (case (:type shape)
-              :curve  [:> path-wrapper opts]
               :text   [:> text-wrapper opts]
               :rect   [:> rect-wrapper opts]
               :path   [:> path-wrapper opts]

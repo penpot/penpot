@@ -11,6 +11,7 @@
 (ns app.main.ui.workspace.sidebar.options.group
   (:require
    [rumext.alpha :as mf]
+   [app.common.attrs :as attrs]
    [app.common.geom.shapes :as geom]
    [app.common.pages-helpers :as cph]
    [app.main.refs :as refs]
@@ -43,7 +44,7 @@
         (merge
           ;; All values extracted from the group shape, except
           ;; border radius, that needs to be looked up from children
-          (geom/get-attrs-multi (map #(get-shape-attrs
+          (attrs/get-attrs-multi (map #(get-shape-attrs
                                         %
                                         measure-attrs
                                         nil
@@ -51,7 +52,7 @@
                                         nil)
                                      [shape])
                                 measure-attrs)
-          (geom/get-attrs-multi (map #(get-shape-attrs
+          (attrs/get-attrs-multi (map #(get-shape-attrs
                                         %
                                         [:rx :ry]
                                         nil
@@ -64,10 +65,10 @@
         (select-keys shape component-attrs)
 
         fill-values
-        (geom/get-attrs-multi shape-with-children fill-attrs)
+        (attrs/get-attrs-multi shape-with-children fill-attrs)
 
         stroke-values
-        (geom/get-attrs-multi (map #(get-shape-attrs
+        (attrs/get-attrs-multi (map #(get-shape-attrs
                                       %
                                       stroke-attrs
                                       nil
@@ -77,7 +78,7 @@
                               stroke-attrs)
 
         font-values
-        (geom/get-attrs-multi (map #(get-shape-attrs
+        (attrs/get-attrs-multi (map #(get-shape-attrs
                                       %
                                       nil
                                       text-font-attrs
@@ -87,7 +88,7 @@
                               text-font-attrs)
 
         align-values
-        (geom/get-attrs-multi (map #(get-shape-attrs
+        (attrs/get-attrs-multi (map #(get-shape-attrs
                                       %
                                       nil
                                       text-align-attrs
@@ -97,7 +98,7 @@
                               text-align-attrs)
 
         spacing-values
-        (geom/get-attrs-multi (map #(get-shape-attrs
+        (attrs/get-attrs-multi (map #(get-shape-attrs
                                       %
                                       nil
                                       text-spacing-attrs
@@ -107,7 +108,7 @@
                               text-spacing-attrs)
 
         valign-values
-        (geom/get-attrs-multi (map #(get-shape-attrs
+        (attrs/get-attrs-multi (map #(get-shape-attrs
                                       %
                                       nil
                                       text-valign-attrs
@@ -117,7 +118,7 @@
                               text-valign-attrs)
 
         decoration-values
-        (geom/get-attrs-multi (map #(get-shape-attrs
+        (attrs/get-attrs-multi (map #(get-shape-attrs
                                       %
                                       nil
                                       text-decoration-attrs
@@ -127,7 +128,7 @@
                               text-decoration-attrs)
 
         transform-values
-        (geom/get-attrs-multi (map #(get-shape-attrs
+        (attrs/get-attrs-multi (map #(get-shape-attrs
                                       %
                                       nil
                                       text-transform-attrs

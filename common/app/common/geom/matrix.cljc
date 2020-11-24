@@ -121,3 +121,13 @@
   ([m angle-x angle-y p]
    (multiply m (skew-matrix angle-x angle-y p))))
 
+(defn m-equal [m1 m2 threshold]
+  (let [th-eq (fn [a b] (<= (mth/abs (- a b)) threshold))
+        {m1a :a m1b :b m1c :c m1d :d m1e :e m1f :f} m1
+        {m2a :a m2b :b m2c :c m2d :d m2e :e m2f :f} m2]
+    (and (th-eq m1a m2a)
+         (th-eq m1b m2b)
+         (th-eq m1c m2c)
+         (th-eq m1d m2d)
+         (th-eq m1e m2e)
+         (th-eq m1f m2f))))

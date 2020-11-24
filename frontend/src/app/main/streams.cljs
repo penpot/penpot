@@ -26,6 +26,11 @@
   [v]
   (instance? MouseEvent v))
 
+(defn mouse-down?
+  [v]
+  (and (mouse-event? v)
+       (= :down (:type v))))
+
 (defn mouse-up?
   [v]
   (and (mouse-event? v)
@@ -35,6 +40,11 @@
   [v]
   (and (mouse-event? v)
        (= :click (:type v))))
+
+(defn mouse-double-click?
+  [v]
+  (and (mouse-event? v)
+       (= :double-click (:type v))))
 
 (defrecord PointerEvent [source pt ctrl shift alt])
 

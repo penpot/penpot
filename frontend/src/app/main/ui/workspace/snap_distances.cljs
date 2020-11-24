@@ -141,8 +141,9 @@
         (fn [[selrect selected frame]]
           (let [lt-side (if (= coord :x) :left :top)
                 gt-side (if (= coord :x) :right :bottom)
-                areas (gsh/selrect->areas (or (:selrect frame)
-                                              (gsh/rect->rect-shape @refs/vbox)) selrect)
+                container-selrec (or (:selrect frame)
+                                     (gsh/rect->selrect @refs/vbox))
+                areas (gsh/selrect->areas container-selrec selrect)
                 query-side (fn [side]
                              (->> (uw/ask! {:cmd :selection/query
                                             :page-id page-id

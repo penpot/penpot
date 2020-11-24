@@ -20,7 +20,7 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]))
 
-(def file-version 2)
+(def file-version 3)
 (def max-safe-int 9007199254740991)
 (def min-safe-int -9007199254740991)
 
@@ -273,7 +273,9 @@
   (s/every uuid? :kind vector?))
 
 (s/def ::shape-attrs
-  (s/keys :opt-un [:internal.shape/blocked
+  (s/keys :req-un [:internal.shape/selrect
+                   :internal.shape/points]
+          :opt-un [:internal.shape/blocked
                    :internal.shape/collapsed
                    :internal.shape/content
                    :internal.shape/fill-color
@@ -309,8 +311,6 @@
                    :internal.shape/width
                    :internal.shape/height
                    :internal.shape/interactions
-                   :internal.shape/selrect
-                   :internal.shape/points
                    :internal.shape/masked-group?
                    :internal.shape/shadow
                    :internal.shape/blur]))
@@ -611,8 +611,7 @@
     :stroke-alignment :center
     :stroke-width 2
     :stroke-color "#000000"
-    :stroke-opacity 1
-    :segments []}
+    :stroke-opacity 1}
 
    {:type :frame
     :name "Artboard"
@@ -624,44 +623,37 @@
     :stroke-color "#000000"
     :stroke-opacity 0}
 
-   {:type :curve
-    :name "Path"
-    :fill-color "#000000"
-    :fill-opacity 0
-    :stroke-style :solid
-    :stroke-alignment :center
-    :stroke-width 2
-    :stroke-color "#000000"
-    :stroke-opacity 1
-    :segments []}
-
    {:type :text
     :name "Text"
     :content nil}])
 
 (defn make-minimal-shape
   [type]
-  (let [shape (d/seek #(= type (:type %)) minimal-shapes)]
+  (let [type (cond (= type :curve) :path
+                   :else type)
+        shape (d/seek #(= type (:type %)) minimal-shapes)]
     (when-not shape
       (ex/raise :type :assertion
                 :code :shape-type-not-implemented
                 :context {:type type}))
-    (assoc shape
-           :id (uuid/next)
-           :x 0
-           :y 0
-           :width 1
-           :height 1
-           :selrect {:x 0
-                     :x1 0
-                     :x2 1
-                     :y 0
-                     :y1 0
-                     :y2 1
-                     :width 1
-                     :height 1}
-           :points []
-           :segments [])))
+
+    (cond-> shape
+      :always
+      (assoc :id (uuid/next))
+
+      (not= :path (:type shape))
+      (assoc :x 0
+             :y 0
+             :width 1
+             :height 1
+             :selrect {:x 0
+                       :y 0
+                       :x1 0
+                       :y1 0
+                       :x2 1
+                       :y2 1
+                       :width 1
+                       :height 1}))))
 
 (defn make-minimal-group
   [frame-id selection-rect group-name]
@@ -764,13 +756,14 @@
 
 (defn rotation-modifiers
   [center shape angle]
-  (let [displacement (let [shape-center (geom/center shape)]
+  (let [displacement (let [shape-center (geom/center-shape shape)]
                        (-> (gmt/matrix)
                            (gmt/rotate angle center)
                            (gmt/rotate (- angle) shape-center)))]
     {:rotation angle
      :displacement displacement}))
 
+;; reg-objects operation "regenerates" the values for the parent groups
 (defmethod process-change :reg-objects
   [data {:keys [page-id shapes]}]
   (letfn [(reg-objects [objects]
@@ -783,7 +776,7 @@
                                (distinct))
                               shapes)))
           (update-group [group objects]
-            (let [gcenter (geom/center group)
+            (let [gcenter (geom/center-shape group)
                   gxfm    (comp
                            (map #(get objects %))
                            (map #(-> %
@@ -798,10 +791,10 @@
 
               ;; Rotate the group shape change the data and rotate back again
               (-> group
-                  (assoc-in [:modifiers :rotation] (- (:rotation group 0)))
-                  (geom/transform-shape)
+                  (assoc :selrect selrect)
+                  (assoc :points (geom/rect->points selrect))
                   (merge (select-keys selrect [:x :y :width :height]))
-                  (assoc-in [:modifiers :rotation] (:rotation group))
+                  (assoc-in [:modifiers :rotation] (:rotation group 0))
                   (geom/transform-shape))))]
 
     (d/update-in-when data [:pages-index page-id :objects] reg-objects)))

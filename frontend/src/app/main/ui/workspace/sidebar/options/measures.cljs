@@ -43,11 +43,15 @@
 
         old-shapes (deref (refs/objects-by-id ids))
         frames (map #(deref (refs/object-by-id (:frame-id %))) old-shapes)
-        shapes (map gsh/transform-shape frames old-shapes)
 
-        values (cond-> values
-                 (not= (:x values) :multiple) (assoc :x (:x (:selrect (first shapes))))
-                 (not= (:y values) :multiple) (assoc :y (:y (:selrect (first shapes)))))
+        shapes (as-> old-shapes $
+                 (map gsh/transform-shape $)
+                 (map gsh/translate-to-frame $ frames))
+
+        values (let [{:keys [x y]} (-> shapes first :points gsh/points->selrect)]
+                 (cond-> values
+                   (not= (:x values) :multiple) (assoc :x x)
+                   (not= (:y values) :multiple) (assoc :y y)))
 
         proportion-lock (:proportion-lock values)
 
@@ -65,7 +69,7 @@
 
         do-position-change
         (fn [shape' frame' value attr]
-          (let [from (-> shape' :selrect attr)
+          (let [from (-> shape' :points gsh/points->selrect attr)
                 to (+ value (attr frame'))
                 target (+ (attr shape') (- to from))]
             (st/emit! (udw/update-position (:id shape') {attr target}))))

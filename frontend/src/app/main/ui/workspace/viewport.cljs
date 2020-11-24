@@ -1,4 +1,4 @@
-;; This Source Code Form is subject to the terms of the Mozilla Public
+; This Source Code Form is subject to the terms of the Mozilla Public
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
@@ -52,7 +52,8 @@
    [goog.events :as events]
    [potok.core :as ptk]
    [promesa.core :as p]
-   [rumext.alpha :as mf])
+   [rumext.alpha :as mf]
+   [app.main.ui.workspace.shapes.path :refer [path-actions]])
   (:import goog.events.EventType))
 
 ;; --- Coordinates Widget
@@ -198,17 +199,21 @@
                 vport
                 vbox
                 edition
+                edit-path
                 tooltip
                 selected
                 panning
                 picking-color?]} local
 
         page-id       (mf/use-ctx ctx/current-page-id)
-        selrect-orig  (->> (mf/deref refs/selected-objects)
-                           (gsh/selection-rect))
-        selrect       (-> selrect-orig
-                          (assoc :modifiers (:modifiers local))
-                          (gsh/transform-shape))
+
+        selected-objects (mf/deref refs/selected-objects)
+        selrect-orig     (->> selected-objects
+                              (gsh/selection-rect))
+        selrect          (->> selected-objects
+                              (map #(assoc % :modifiers (:modifiers local)))
+                              (map gsh/transform-shape)
+                              (gsh/selection-rect))
 
         alt?          (mf/use-state false)
         viewport-ref  (mf/use-ref nil)
@@ -217,8 +222,8 @@
         drawing       (mf/deref refs/workspace-drawing)
         drawing-tool  (:tool drawing)
         drawing-obj   (:object drawing)
+        drawing-path? (and edition (= :draw (get-in edit-path [edition :edit-mode])))
         zoom          (or zoom 1)
-
 
         on-mouse-down
         (mf/use-callback
@@ -231,14 +236,13 @@
                  alt? (kbd/alt? event)]
              (st/emit! (ms/->MouseEvent :down ctrl? shift? alt?))
              (cond
-               (and (= 1 (.-which event)))
+               (and (= 1 (.-which event)) (not edition))
                (if drawing-tool
-                 (when (not= drawing-tool :comments)
+                 (when (not (#{:comments :path} drawing-tool))
                    (st/emit! (dd/start-drawing drawing-tool)))
                  (st/emit! dw/handle-selection))
 
-               (and (not edition)
-                    (= 2 (.-which event)))
+               (and (= 2 (.-which event)))
                (handle-viewport-positioning viewport-ref)))))
 
         on-context-menu
@@ -265,18 +269,18 @@
 
         on-pointer-down
         (mf/use-callback
-          (fn [event]
+         (fn [event]
            (let [target (dom/get-target event)]
-             ; Capture mouse pointer to detect the movements even if cursor
-             ; leaves the viewport or the browser itself
-             ; https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture
+                                        ; Capture mouse pointer to detect the movements even if cursor
+                                        ; leaves the viewport or the browser itself
+                                        ; https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture
              (.setPointerCapture target (.-pointerId event)))))
 
         on-pointer-up
         (mf/use-callback
-          (fn [event]
+         (fn [event]
            (let [target (dom/get-target event)]
-             ; Release pointer on mouse up
+                                        ; Release pointer on mouse up
              (.releasePointerCapture target (.-pointerId event)))))
 
         on-click
@@ -290,12 +294,16 @@
 
         on-double-click
         (mf/use-callback
+         (mf/deps edition edit-path)
          (fn [event]
            (dom/stop-propagation event)
            (let [ctrl? (kbd/ctrl? event)
                  shift? (kbd/shift? event)
                  alt? (kbd/alt? event)]
-             (st/emit! (ms/->MouseEvent :double-click ctrl? shift? alt?)))))
+             (st/emit! (ms/->MouseEvent :double-click ctrl? shift? alt?))
+
+             (if (not drawing-path?) 
+               (st/emit! dw/clear-edition-mode)))))
 
         on-key-down
         (mf/use-callback
@@ -425,6 +433,7 @@
                     final-x (- (:x viewport-coord) (/ (:width shape) 2))
                     final-y (- (:y viewport-coord) (/ (:height shape) 2))]
                 (st/emit! (dw/add-shape (-> shape
+                                            (assoc :id (uuid/next))
                                             (assoc :x final-x)
                                             (assoc :y final-y)))))
 
@@ -527,12 +536,12 @@
        :class (when drawing-tool "drawing")
        :style {:cursor (cond
                          panning cur/hand
-                         (= drawing-tool :comments) cur/hand
+                         (= drawing-tool :comments) cur/comments
                          (= drawing-tool :frame) cur/create-artboard
                          (= drawing-tool :rect) cur/create-rectangle
                          (= drawing-tool :circle) cur/create-ellipse
-                         (= drawing-tool :path) cur/pen
-                         (= drawing-tool :curve)cur/pencil
+                         (or (= drawing-tool :path) drawing-path?) cur/pen
+                         (= drawing-tool :curve) cur/pencil
                          drawing-tool cur/create-shape
                          :else cur/pointer-inner)
                :background-color (get options :background "#E8E9EA")}
@@ -606,3 +615,13 @@
       (when (= options-mode :prototype)
         [:& interactions {:selected selected}])]]))
 
+
+(mf/defc viewport-actions []
+  (let [edition (mf/deref refs/selected-edition)
+        selected (mf/deref refs/selected-objects)
+        shape (-> selected first)]
+    (when (and (= (count selected) 1)
+               (= (:id shape) edition)
+               (= :path (:type shape)))
+      [:div.viewport-actions
+       [:& path-actions {:shape shape}]])))

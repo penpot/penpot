@@ -39,7 +39,6 @@
     :circle i/circle
     :path i/curve
     :rect i/box
-    :curve i/curve
     :text i/text
     :group (if (some? (:component-id shape))
              i/component

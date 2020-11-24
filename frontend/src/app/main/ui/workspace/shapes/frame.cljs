@@ -131,7 +131,7 @@
                    (not (:hidden shape)))
           [:g {:class (when selected? "selected")
                :on-context-menu on-context-menu
-               :on-double-click on-double-click
+               ;; :on-double-click on-double-click
                :on-mouse-down on-mouse-down}
 
            [:& frame-title {:frame shape
