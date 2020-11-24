@@ -351,9 +351,7 @@
                           ::component-id
                           ::component-file
                           ::component-root?
-                          ::shape-ref]
-                 :req-un [:internal.shape/selrect
-                          :internal.shape/points])))
+                          ::shape-ref])))
 
 (s/def :internal.page/objects (s/map-of uuid? ::shape))
 
