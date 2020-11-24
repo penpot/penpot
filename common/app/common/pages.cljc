@@ -273,9 +273,9 @@
   (s/every uuid? :kind vector?))
 
 (s/def ::shape-attrs
-  (s/keys :req-un [:internal.shape/selrect
-                   :internal.shape/points]
-          :opt-un [:internal.shape/blocked
+  (s/keys :opt-un [:internal.shape/selrect
+                   :internal.shape/points
+                   :internal.shape/blocked
                    :internal.shape/collapsed
                    :internal.shape/content
                    :internal.shape/fill-color
@@ -351,7 +351,9 @@
                           ::component-id
                           ::component-file
                           ::component-root?
-                          ::shape-ref])))
+                          ::shape-ref]
+                 :req-un [:internal.shape/selrect
+                          :internal.shape/points])))
 
 (s/def :internal.page/objects (s/map-of uuid? ::shape))
 
