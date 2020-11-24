@@ -35,6 +35,7 @@
 (def pointer-node (cursor-ref :pointer-node 0 0 10 32))
 (def pointer-move (cursor-ref :pointer-move 0 0 10 42))
 (def pen-node (cursor-ref :pen-node 0 0 10 36))
+(def comments (cursor-ref :comments 0 2 20))
 
 (mf/defc debug-preview
   {::mf/wrap-props false}
@@ -58,4 +59,3 @@
 
             [:span {:style {:white-space "nowrap"
                             :margin-right "1rem"}} (pr-str key)]])))]))
-

@@ -536,12 +536,12 @@
        :class (when drawing-tool "drawing")
        :style {:cursor (cond
                          panning cur/hand
-                         (= drawing-tool :comments) cur/hand
+                         (= drawing-tool :comments) cur/comments
                          (= drawing-tool :frame) cur/create-artboard
                          (= drawing-tool :rect) cur/create-rectangle
                          (= drawing-tool :circle) cur/create-ellipse
                          (or (= drawing-tool :path) drawing-path?) cur/pen
-                         (= drawing-tool :curve)cur/pencil
+                         (= drawing-tool :curve) cur/pencil
                          drawing-tool cur/create-shape
                          :else cur/pointer-inner)
                :background-color (get options :background "#E8E9EA")}
