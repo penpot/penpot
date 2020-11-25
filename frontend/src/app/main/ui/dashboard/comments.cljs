@@ -92,4 +92,5 @@
                :key (:page-id tgroup)}]])]
 
          [:div.thread-groups-placeholder
+          i/chat
           (tr "labels.no-comments-available")])]]]))

@@ -424,7 +424,19 @@
   }
 
   .thread-groups-placeholder {
-    padding: 16px;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    font-size: $fs14;
+    padding: $big;
+    text-align: center;
+
+    svg {
+      fill: $color-gray-20;
+      height: 24px;
+      margin-bottom: $small;
+      width: 24px;
+    }
   }
 
   .thread-group {
