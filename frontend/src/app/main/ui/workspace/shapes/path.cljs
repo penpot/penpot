@@ -169,8 +169,7 @@
       {:cx x
        :cy y
        :r (if (or selected? hover?) (/ 3.5 zoom) (/ 3 zoom))
-       :style {:cursor (when (= edit-mode :draw) cur/pen-node)
-               :stroke-width (/ 1 zoom)
+       :style {:stroke-width (/ 1 zoom)
                :stroke (cond (or selected? hover?) black-color
                              preview? secondary-color
                              :else primary-color)
@@ -183,7 +182,10 @@
                :on-mouse-down on-mouse-down
                :on-mouse-enter on-enter
                :on-mouse-leave on-leave
-               :style {:fill "transparent"}}]]))
+               :style {:cursor (cond
+                                 (and (not last-p?) (= edit-mode :draw)) cur/pen-node
+                                 (= edit-mode :move) cur/pointer-node)
+                       :fill "transparent"}}]]))
 
 (mf/defc path-handler [{:keys [index prefix point handler zoom selected? hover? edit-mode]}]
   (when (and point handler)
@@ -227,8 +229,7 @@
          :width (/ 6 zoom)
          :height (/ 6 zoom)
          
-         :style {:cursor cur/pointer-move
-                 :stroke-width (/ 1 zoom)
+         :style {:stroke-width (/ 1 zoom)
                  :stroke (cond (or selected? hover?) black-color
                                :else primary-color)
                  :fill (cond selected? primary-color
@@ -240,7 +241,8 @@
                  :on-mouse-down on-mouse-down
                  :on-mouse-enter on-enter
                  :on-mouse-leave on-leave
-                 :style {:fill "transparent"}}]])))
+                 :style {:cursor (when (= edit-mode :move) cur/pointer-move)
+                         :fill "transparent"}}]])))
 
 (mf/defc path-preview [{:keys [zoom command from]}]
   [:g.preview {:style {:pointer-events "none"}}

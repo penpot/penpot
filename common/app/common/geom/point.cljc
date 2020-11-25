@@ -55,6 +55,11 @@
    ;;(assert (not (nil? y)))
    (Point. x y)))
 
+(defn angle->point [{:keys [x y]} angle distance]
+  (point
+   (+ x (* distance (mth/cos angle)))
+   (- y (* distance (mth/sin angle)))))
+
 (defn add
   "Returns the addition of the supplied value to both
   coordinates of the point as a new point."

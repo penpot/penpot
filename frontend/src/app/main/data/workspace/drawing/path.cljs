@@ -20,6 +20,7 @@
    [app.common.data :as cd]
    [app.util.geom.path :as ugp]
    [app.main.streams :as ms]
+   [app.main.store :as st]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing.common :as common]
    [app.common.geom.shapes.path :as gsp]))
@@ -67,7 +68,7 @@
 
 ;; CONSTANTS
 (defonce enter-keycode 13)
-(defonce drag-threshold 2)
+(defonce drag-threshold 5)
 
 ;; PRIVATE METHODS
 
@@ -95,6 +96,25 @@
   (let [selrect (gsh/content->selrect (:content shape))
         points (gsh/rect->points selrect)]
     (assoc shape :points points :selrect selrect)))
+
+(defn closest-angle [angle]
+  (cond
+    (or  (> angle 337.5)  (<= angle 22.5))  0
+    (and (> angle 22.5)   (<= angle 67.5))  45
+    (and (> angle 67.5)   (<= angle 112.5)) 90
+    (and (> angle 112.5)	(<= angle 157.5)) 135
+    (and (> angle 157.5)	(<= angle 202.5)) 180
+    (and (> angle 202.5)	(<= angle 247.5)) 225
+    (and (> angle 247.5)	(<= angle 292.5)) 270
+    (and (> angle 292.5)	(<= angle 337.5)) 315))
+
+(defn position-fixed-angle [point from-point]
+  (if (and from-point point)
+    (let [angle (mod (+ 360 (- (gpt/angle point from-point))) 360)
+          to-angle (closest-angle angle)
+          distance (gpt/distance point from-point)]
+      (gpt/angle->point from-point (mth/radians to-angle) distance))
+    point))
 
 (defn next-node
   "Calculates the next-node to be inserted."
@@ -177,6 +197,21 @@
   (fn [current]
     (>= (gpt/distance start current) (/ drag-threshold zoom))))
 
+(defn drag-stream [to-stream]
+  (let [start @ms/mouse-position
+        zoom  (get-in @st/state [:workspace-local :zoom] 1)
+        mouse-up (->> st/stream (rx/filter #(ms/mouse-up? %)))]
+    (->> ms/mouse-position
+         (rx/take-until mouse-up)
+         (rx/filter (dragging? start zoom))
+         (rx/take 1)
+         (rx/merge-map (fn [] to-stream)))))
+
+(defn position-stream []
+  (->> ms/mouse-position
+       (rx/with-latest merge (->> ms/mouse-position-shift (rx/map #(hash-map :shift? %))))
+       (rx/with-latest merge (->> ms/mouse-position-alt (rx/map #(hash-map :alt? %))))))
+
 ;; EVENTS
 
 (defn init-path []
@@ -190,24 +225,31 @@
         (-> state
             (update-in [:workspace-local :edit-path id] clean-edit-state))))))
 
-(defn preview-next-point [{:keys [x y]}]
+(defn preview-next-point [{:keys [x y shift?]}]
   (ptk/reify ::preview-next-point
     ptk/UpdateEvent
     (update [_ state]
       (let [id (get-path-id state)
-            position (gpt/point x y)
+            fix-angle? shift?
+            last-point (get-in state [:workspace-local :edit-path id :last-point])
+            position (cond-> (gpt/point x y)
+                       fix-angle? (position-fixed-angle last-point))
+
             shape (get-in state (get-path state))
             {:keys [last-point prev-handler]} (get-in state [:workspace-local :edit-path id])
             command (next-node shape position last-point prev-handler)]
         (assoc-in state [:workspace-local :edit-path id :preview] command)))))
 
-(defn add-node [{:keys [x y]}]
+(defn add-node [{:keys [x y shift?]}]
   (ptk/reify ::add-node
     ptk/UpdateEvent
     (update [_ state]
       (let [id (get-path-id state)
-            position (gpt/point x y)
-            {:keys [last-point prev-handler]} (get-in state [:workspace-local :edit-path id])]
+            fix-angle? shift?
+            {:keys [last-point prev-handler]} (get-in state [:workspace-local :edit-path id])
+            position (cond-> (gpt/point x y)
+                       fix-angle? (position-fixed-angle last-point))
+            ]
         (if-not (= last-point position)
           (-> state
               (assoc-in  [:workspace-local :edit-path id :last-point] position)
@@ -301,16 +343,12 @@
 
         (rx/concat
          (rx/of (add-node position))
-
-         (->> position-stream
-              (rx/filter (dragging? start-position zoom))
-              (rx/take 1)
-              (rx/merge-map
-               #(rx/concat
-                 (rx/of (start-drag-handler))
-                 drag-events-stream
-                 (rx/of (finish-drag))
-                 (rx/of (close-path-drag-end)))))
+         (drag-stream
+          (rx/concat
+           (rx/of (start-drag-handler))
+           drag-events-stream
+           (rx/of (finish-drag))
+           (rx/of (close-path-drag-end))))
          (rx/of (finish-path "close-path")))))))
 
 (defn close-path-drag-end []
@@ -338,16 +376,21 @@
   (ptk/reify ::start-path-from-point
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [mouse-up    (->> stream (rx/filter #(or (end-path-event? %)
+      (let [start-point @ms/mouse-position
+            zoom (get-in state [:workspace-local :zoom])
+            mouse-up    (->> stream (rx/filter #(or (end-path-event? %)
                                                     (ms/mouse-up? %))))
             drag-events (->> ms/mouse-position
                              (rx/take-until mouse-up)
                              (rx/map #(drag-handler %)))]
 
-        (rx/concat (rx/of (add-node position))
-                   (rx/of (start-drag-handler))
-                   drag-events
-                   (rx/of (finish-drag)))))))
+        (rx/concat
+         (rx/of (add-node position))
+         (drag-stream
+          (rx/concat
+           (rx/of (start-drag-handler))
+           drag-events
+           (rx/of (finish-drag)))))))))
 
 (defn make-corner []
   (ptk/reify ::make-corner
@@ -389,14 +432,6 @@
 
 ;; EVENT STREAMS
 
-(defn make-click-stream
-  [stream down-event]
-  (->> stream
-       (rx/filter ms/mouse-click?)
-       #_(rx/debounce 200)
-       (rx/first)
-       (rx/map #(add-node down-event))))
-
 (defn make-drag-stream
   [stream down-event zoom]
   (let [mouse-up    (->> stream (rx/filter #(or (end-path-event? %)
@@ -407,16 +442,11 @@
 
     (rx/concat
      (rx/of (add-node down-event))
-
-     (->> ms/mouse-position
-          (rx/take-until mouse-up)
-          (rx/filter (dragging? (gpt/point down-event) zoom))
-          (rx/take 1)
-          (rx/merge-map
-           #(rx/concat
-             (rx/of (start-drag-handler))
-             drag-events
-             (rx/of (finish-drag))))))))
+     (drag-stream
+      (rx/concat
+       (rx/of (start-drag-handler))
+       drag-events
+       (rx/of (finish-drag)))))))
 
 (defn make-node-events-stream
   [stream]
@@ -444,7 +474,7 @@
 
             ;; Mouse move preview
             mousemove-events
-            (->> ms/mouse-position
+            (->> (position-stream)
                  (rx/take-until end-path-events)
                  (rx/map #(preview-next-point %)))
 
@@ -452,7 +482,7 @@
             mousedown-events
             (->> mouse-down
                  (rx/take-until end-path-events)
-                 (rx/with-latest merge ms/mouse-position)
+                 (rx/with-latest merge (position-stream))
 
                  ;; We change to the stream that emits the first event
                  (rx/switch-map
@@ -608,22 +638,14 @@
     (watch [_ state stream]
       (let [start-position @ms/mouse-position
             stopper (->> stream (rx/filter ms/mouse-up?))
-            zoom (get-in state [:workspace-local :zoom])
+            zoom (get-in state [:workspace-local :zoom])]
 
-            move-point-stream
-            (fn [] (rx/concat
-                    (->> ms/mouse-position
-                         (rx/take-until stopper)
-                         (rx/map #(move-path-point position %)))
-                    (rx/of (apply-content-modifiers))))]
-
-        (->> ms/mouse-position
-             (rx/take-until stopper)
-             (rx/filter (dragging? start-position zoom))
-             (rx/take 1)
-             (rx/merge-map #(move-point-stream)))
-        
-        ))))
+        (drag-stream
+         (rx/concat
+          (->> ms/mouse-position
+               (rx/take-until stopper)
+               (rx/map #(move-path-point position %)))
+          (rx/of (apply-content-modifiers))))))))
 
 (defn start-move-handler
   [index prefix]
@@ -636,21 +658,21 @@
             start-delta-x (get-in state [:workspace-local :edit-path id :content-modifiers index cx] 0)
             start-delta-y (get-in state [:workspace-local :edit-path id :content-modifiers index cy] 0)]
 
-        (rx/concat
-         (->> ms/mouse-position
-              (rx/take-until (->> stream (rx/filter ms/mouse-up?)))
-              (rx/with-latest vector ms/mouse-position-alt)
-              (rx/map
-               (fn [[pos alt?]]
-                 (modify-handler
-                  id
-                  index
-                  prefix
-                  (+ start-delta-x (- (:x pos) (:x start-point)))
-                  (+ start-delta-y (- (:y pos) (:y start-point)))
-                  (not alt?))))
-              )
-         (rx/concat (rx/of (apply-content-modifiers))))))))
+        (drag-stream
+         (rx/concat
+          (->> ms/mouse-position
+               (rx/take-until (->> stream (rx/filter ms/mouse-up?)))
+               (rx/with-latest vector ms/mouse-position-alt)
+               (rx/map
+                (fn [[pos alt?]]
+                  (modify-handler
+                   id
+                   index
+                   prefix
+                   (+ start-delta-x (- (:x pos) (:x start-point)))
+                   (+ start-delta-y (- (:y pos) (:y start-point)))
+                   (not alt?)))))
+          (rx/concat (rx/of (apply-content-modifiers)))))))))
 
 (defn start-draw-mode []
   (ptk/reify ::start-draw-mode
