@@ -23,11 +23,12 @@
    (gpt/point (+ x width) (+ y height))
    (gpt/point x (+ y height))])
 
-(defn points->rect [points]
-  (let [minx (transduce (comp (map :x) (remove nil?)) min ##Inf points)
-        miny (transduce (comp (map :y) (remove nil?)) min ##Inf points)
-        maxx (transduce (comp (map :x) (remove nil?)) max ##-Inf points)
-        maxy (transduce (comp (map :y) (remove nil?)) max ##-Inf points)]
+(defn points->rect
+  [points]
+  (let [minx (transduce gco/map-x-xf min ##Inf points)
+        miny (transduce gco/map-y-xf min ##Inf points)
+        maxx (transduce gco/map-x-xf max ##-Inf points)
+        maxy (transduce gco/map-y-xf max ##-Inf points)]
     {:x minx
      :y miny
      :width (- maxx minx)
