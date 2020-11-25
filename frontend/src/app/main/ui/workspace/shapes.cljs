@@ -90,23 +90,21 @@
         on-mouse-enter (use-mouse-enter shape)
         on-mouse-leave (use-mouse-leave shape)
 
+        alt? (hooks/use-rxsub ms/keyboard-alt)
+
         moving-iref (mf/use-memo (mf/deps (:id shape))
                                    #(make-is-moving-ref (:id shape)))
         moving? (mf/deref moving-iref)]
 
-    (hooks/use-stream ms/keyboard-alt #(reset! alt? %))
-
     (mf/use-effect
-     (fn []
-       (fn []
-         (on-mouse-leave))))
+     (constantly on-mouse-leave))
 
     (when (and shape
                (or ghost? (not moving?))
                (not (:hidden shape)))
       [:g.shape-wrapper {:on-mouse-enter on-mouse-enter
                          :on-mouse-leave on-mouse-leave
-                         :style {:cursor (if @alt? cur/duplicate nil)}}
+                         :style {:cursor (if alt? cur/duplicate nil)}}
        (case (:type shape)
          :path [:> path/path-wrapper opts]
          :text [:> text/text-wrapper opts]
