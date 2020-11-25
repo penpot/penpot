@@ -148,17 +148,18 @@
   (assert (point? p))
   (assert (point? other))
 
-  (if (or (= 0 (length p))
-          (= 0 (length other)))
-    0
-    (let [a (/ (+ (* x ox)
-                  (* y oy))
-               (* (length p)
-                  (length other)))
-          a (mth/acos (if (< a -1) -1 (if (> a 1) 1 a)))
-          d (-> (mth/degrees a)
-                (mth/precision 6))]
-      (if (mth/nan? d) 0 d))))
+  (let [length-p (length p)
+        length-other (length other)]
+    (if (or (mth/almost-zero? length-p)
+            (mth/almost-zero? length-other))
+      0
+      (let [a (/ (+ (* x ox)
+                    (* y oy))
+                 (* length-p length-other))
+            a (mth/acos (if (< a -1) -1 (if (> a 1) 1 a)))
+            d (-> (mth/degrees a)
+                  (mth/precision 6))]
+        (if (mth/nan? d) 0 d)))))
 
 
 (defn update-angle

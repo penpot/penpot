@@ -167,7 +167,7 @@
 
         h1 (calculate-height points-temp)
         h2 (calculate-height (transform-points points-rec center stretch-matrix))
-        h3 (/ h1 h2)
+        h3 (if-not (mth/almost-zero? h2) (/ h1 h2) 1)
         h3 (if (mth/nan? h3) 1 h3)
 
         stretch-matrix (gmt/multiply stretch-matrix (gmt/scale-matrix (gpt/point 1 h3)))
