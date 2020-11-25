@@ -14,6 +14,7 @@
    [app.common.data :as d]
    [app.common.pages-helpers :as cph]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as geom]
    [app.common.pages :as cp]
    [app.util.logging :as log]
    [app.util.text :as ut]))
@@ -50,7 +51,7 @@
 (declare move-shape)
 (declare change-touched)
 (declare update-attrs)
-(declare calc-new-pos)
+(declare reposition-shape)
 
 
 ;; ---- Create a new component ----
@@ -658,16 +659,13 @@
                                 (cph/get-parents parent-shape (:objects container))))
 
         update-new-shape (fn [new-shape original-shape]
-                           (let [new-pos (calc-new-pos new-shape
-                                                       original-shape
-                                                       root-instance
-                                                       root-master)]
+                           (let [new-shape (reposition-shape new-shape
+                                                             root-master
+                                                             root-instance)]
                              (cond-> new-shape
                                true
                                (assoc :shape-ref (:id original-shape)
-                                      :frame-id (:frame-id parent-shape)
-                                      :x (:x new-pos)
-                                      :y (:y new-pos))
+                                      :frame-id (:frame-id parent-shape))
 
                                (:component-id original-shape)
                                (assoc :component-id (:component-id original-shape))
@@ -736,13 +734,9 @@
                                 (cph/get-parents component-parent-shape (:objects component))))
 
         update-new-shape (fn [new-shape original-shape]
-                           (let [new-pos (calc-new-pos new-shape
-                                                       original-shape
-                                                       root-master
-                                                       root-instance)]
-                             (assoc new-shape
-                                    :x (:x new-pos)
-                                    :y (:y new-pos))))
+                           (reposition-shape new-shape
+                                             root-instance
+                                             root-master))
 
         update-original-shape (fn [original-shape new-shape]
                                 (if-not (:shape-ref original-shape)
@@ -966,23 +960,17 @@
                       (if (cph/page? container) "[P] " "[C] ")
                       (:name dest-shape)))
 
-  (let [; The position attributes need a special sync algorith, because we do
-        ; not synchronize the absolute position, but the position relative of
-        ; the container shape of the component.
-        new-pos   (calc-new-pos dest-shape origin-shape dest-root origin-root)
-        touched   (get dest-shape :touched #{})]
+  (let [; To synchronize geometry attributes we need to make a prior
+        ; operation, because coordinates are absolute, but we need to
+        ; sync only the position relative to the origin of the component.
+        ; We solve this by moving the origin shape so it is aligned with
+        ; the dest root before syncing.
+        origin-shape (reposition-shape origin-shape origin-root dest-root)
+        touched      (get dest-shape :touched #{})]
 
-    (loop [attrs (seq (keys (dissoc cp/component-sync-attrs :x :y)))
-           roperations (if (or (not= (:x new-pos) (:x dest-shape))
-                               (not= (:y new-pos) (:y dest-shape)))
-                         [{:type :set :attr :x :val (:x new-pos)}
-                          {:type :set :attr :y :val (:y new-pos)}]
-                         [])
-           uoperations (if (or (not= (:x new-pos) (:x dest-shape))
-                               (not= (:y new-pos) (:y dest-shape)))
-                         [{:type :set :attr :x :val (:x dest-shape)}
-                          {:type :set :attr :y :val (:y dest-shape)}]
-                         [])]
+    (loop [attrs (seq (keys cp/component-sync-attrs))
+           roperations []
+           uoperations []]
 
       (let [attr (first attrs)]
         (if (nil? attr)
@@ -1042,13 +1030,13 @@
                        (conj roperations roperation)
                        (conj uoperations uoperation))))))))))
 
-(defn- calc-new-pos
-  [dest-shape origin-shape dest-root origin-root]
-  (let [root-pos        (gpt/point (:x dest-root) (:y dest-root))
-        origin-root-pos (gpt/point (:x origin-root) (:y origin-root))
-        origin-pos      (gpt/point (:x origin-shape) (:y origin-shape))
-        delta           (gpt/subtract origin-pos origin-root-pos)
-        shape-pos       (gpt/point (:x dest-shape) (:y dest-shape))
-        new-pos         (gpt/add root-pos delta)]
-    new-pos))
+(defn- reposition-shape
+  [shape origin-root dest-root]
+  (let [shape-pos (fn [shape]
+                    (gpt/point (get-in shape [:selrect :x])
+                               (get-in shape [:selrect :y])))
 
+        origin-root-pos (shape-pos origin-root)
+        dest-root-pos   (shape-pos dest-root)
+        delta           (gpt/subtract dest-root-pos origin-root-pos)]
+    (geom/move shape delta)))

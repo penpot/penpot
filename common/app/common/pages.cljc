@@ -294,8 +294,6 @@
                    :internal.shape/proportion-lock
                    :internal.shape/rx
                    :internal.shape/ry
-                   :internal.shape/cx
-                   :internal.shape/cy
                    :internal.shape/x
                    :internal.shape/y
                    :internal.shape/exports
@@ -319,7 +317,7 @@
                            :fill-color-ref-file   :fill-group
                            :fill-color-ref-id     :fill-group
                            :fill-opacity          :fill-group
-                           :content               :text-content-group
+                           :content               :content-group
                            :font-family           :text-font-group
                            :font-size             :text-font-group
                            :font-style            :text-font-group
@@ -334,11 +332,19 @@
                            :stroke-style          :stroke-group
                            :stroke-width          :stroke-group
                            :stroke-alignment      :stroke-group
-                           :width                 :size-group
-                           :height                :size-group
-                           :proportion            :size-group
-                           :rx                    :radius-group
-                           :ry                    :radius-group
+                           :selrect               :geometry-group
+                           :points                :geometry-group
+                           :locked                :geometry-group
+                           :proportion            :geometry-group
+                           :proportion-lock       :geometry-group
+                           :rx                    :geometry-group
+                           :ry                    :geometry-group
+                           :x                     :geometry-group
+                           :y                     :geometry-group
+                           :width                 :geometry-group
+                           :height                :geometry-group
+                           :transform             :geometry-group
+                           :transform-inverse     :geometry-group
                            :masked-group?         :mask-group})
                            ;; shapes-group is handled differently
 
@@ -1074,7 +1080,12 @@
         group     (get component-sync-attrs attr)]
 
     (cond-> shape
-      (and shape-ref group (not ignore) (not= val (get shape attr)))
+      (and shape-ref group (not ignore) (not= val (get shape attr))
+           ;; FIXME: it's difficult to tell if the geometry changes affect
+           ;;        an individual shape inside the component, or are for
+           ;;        the whole component (in which case we shouldn't set
+           ;;        touched). For the moment we disable geometry touched.
+           (not= group :geometry-group))
       (update :touched cph/set-touched-group group)
 
       (nil? val)
