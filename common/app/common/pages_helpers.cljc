@@ -42,11 +42,26 @@
                       objects)
       nil)))
 
+(defn make-container
+  [page-or-component type]
+  (assoc page-or-component
+         :type type))
+
+(defn page?
+  [container]
+  (assert (some? (:type container)))
+  (= (:type container) :page))
+
+(defn component?
+  [container]
+  (= (:type container) :component))
+
 (defn get-container
-  [page-id component-id local-file]
-  (if (some? page-id)
-    (get-in local-file [:pages-index page-id])
-    (get-in local-file [:components component-id])))
+  [id type local-file]
+  (-> (if (= type :page)
+        (get-in local-file [:pages-index id])
+        (get-in local-file [:components id]))
+      (assoc :type type)))
 
 (defn get-shape
   [container shape-id]
@@ -58,6 +73,12 @@
                local-library
                (get-in libraries [file-id :data]))]
     (get-in file [:components component-id])))
+
+(defn is-master-of
+  [shape-master shape-inst]
+  (and (:shape-ref shape-inst)
+       (or (= (:shape-ref shape-inst) (:id shape-master))
+           (= (:shape-ref shape-inst) (:shape-ref shape-master)))))
 
 (defn get-component-root
   [component]
@@ -75,12 +96,12 @@
 (defn get-children-objects
   "Retrieve all children objects recursively for a given object"
   [id objects]
-  (map #(get objects %) (get-children id objects)))
+  (mapv #(get objects %) (get-children id objects)))
 
 (defn get-object-with-children
-  "Retrieve a list with an object and all of its children"
+  "Retrieve a vector with an object and all of its children"
   [id objects]
-  (map #(get objects %) (cons id (get-children id objects))))
+  (mapv #(get objects %) (cons id (get-children id objects))))
 
 (defn is-shape-grouped
   "Checks if a shape is inside a group"
@@ -210,17 +231,17 @@
                                    :parent-id parent-id)
 
                             (some? (:shapes object))
-                            (assoc :shapes (map :id new-direct-children)))
+                            (assoc :shapes (mapv :id new-direct-children)))
 
                new-object (update-new-object new-object object)
 
-               new-objects (concat [new-object] new-children)
+               new-objects (d/concat [new-object] new-children)
 
                updated-object (update-original-object object new-object)
 
                updated-objects (if (identical? object updated-object)
                                  updated-children
-                                 (concat [updated-object] updated-children))]
+                                 (d/concat [updated-object] updated-children))]
 
            [new-object new-objects updated-objects])
 
@@ -232,9 +253,9 @@
 
            (recur
              (next child-ids)
-             (concat new-direct-children [new-child])
-             (concat new-children new-child-objects)
-             (concat updated-children updated-child-objects))))))))
+             (d/concat new-direct-children [new-child])
+             (d/concat new-children new-child-objects)
+             (d/concat updated-children updated-child-objects))))))))
 
 
 (defn indexed-shapes
@@ -277,3 +298,12 @@
           (d/seek #(gsh/has-point? % position))
           :id)
      uuid/zero)))
+
+(defn set-touched-group
+  [touched group]
+  (conj (or touched #{}) group))
+
+(defn touched-group?
+  [shape group]
+  ((or (:touched shape) #{}) group))
+

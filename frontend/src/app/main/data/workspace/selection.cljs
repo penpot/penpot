@@ -330,6 +330,7 @@
             :old-id (:id obj)
             :frame-id frame-id
             :parent-id parent-id
+            :ignore-touched true
             :obj (dissoc reframed-obj :shapes)}]
           children-changes)))
 

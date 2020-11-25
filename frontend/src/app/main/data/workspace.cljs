@@ -711,6 +711,7 @@
               (reduce (fn [res id]
                         (let [children    (cph/get-children id objects)
                               parents     (cph/get-parents id objects)
+                              parent      (get objects (first parents))
                               add-change  (fn [id]
                                             (let [item (get objects id)]
                                               {:type :add-obj
@@ -726,7 +727,13 @@
                                     (map add-change children)
                                     [{:type :reg-objects
                                       :page-id page-id
-                                      :shapes (vec parents)}])))
+                                      :shapes (vec parents)}]
+                                    (when (some? parent)
+                                      [{:type :mod-obj
+                                        :page-id page-id
+                                        :id (:id parent)
+                                        :operations [{:type :set-touched
+                                                      :touched (:touched parent)}]}]))))
                       []
                       ids)
               (map #(array-map

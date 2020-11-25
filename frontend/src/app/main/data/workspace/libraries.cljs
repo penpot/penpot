@@ -32,6 +32,7 @@
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
 
+;; Change this to :info :debug or :trace to debug this module
 (log/set-level! :warn)
 
 (declare sync-file)
@@ -397,13 +398,15 @@
                              :page-id page-id
                              :frame-id (:frame-id obj)
                              :parent-id (:parent-id obj)
+                             :ignore-touched true
                              :obj obj})
                           new-shapes)
 
             uchanges (map (fn [obj]
                             {:type :del-obj
                              :id (:id obj)
-                             :page-id page-id})
+                             :page-id page-id
+                             :ignore-touched true})
                           new-shapes)]
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
@@ -493,16 +496,18 @@
   (ptk/reify ::reset-component
     ptk/WatchEvent
     (watch [_ state stream]
-      ;; ===== Uncomment this to debug =====
       (log/info :msg "RESET-COMPONENT of shape" :id (str id))
-      (let [[rchanges uchanges]
-            (dwlh/generate-sync-shape-and-children-components (get state :current-page-id)
-                                                              nil
-                                                              id
-                                                              (get state :workspace-data)
-                                                              (get state :workspace-libraries)
-                                                              true)]
-        ;; ===== Uncomment this to debug =====
+      (let [local-file (get state :workspace-data)
+            libraries  (get state :workspace-libraries)
+            container  (cph/get-container (get state :current-page-id)
+                                          :page
+                                          local-file)
+            [rchanges uchanges]
+            (dwlh/generate-sync-shape-direct container
+                                             id
+                                             local-file
+                                             libraries
+                                             true)]
         (log/debug :msg "RESET-COMPONENT finished" :js/rchanges rchanges)
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
@@ -516,7 +521,6 @@
   (ptk/reify ::update-component
     ptk/WatchEvent
     (watch [_ state stream]
-      ;; ===== Uncomment this to debug =====
       (log/info :msg "UPDATE-COMPONENT of shape" :id (str id))
       (let [page-id (:current-page-id state)
             objects (dwc/lookup-page-objects state page-id)
@@ -529,7 +533,6 @@
                                               (get state :workspace-data)
                                               (get state :workspace-libraries))]
 
-        ;; ===== Uncomment this to debug =====
         (log/debug :msg "UPDATE-COMPONENT finished" :js/rchanges rchanges)
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
@@ -552,7 +555,6 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      ;; ===== Uncomment this to debug =====
       (log/info :msg "SYNC-FILE" :file (str (or file-id "local")))
       (let [library-changes [(dwlh/generate-sync-library :components file-id state)
                              (dwlh/generate-sync-library :colors file-id state)
@@ -566,7 +568,6 @@
             uchanges (d/concat []
                                (->> library-changes (remove nil?) (map second) (flatten))
                                (->> file-changes (remove nil?) (map second) (flatten)))]
-        ;; ===== Uncomment this to debug =====
         (log/debug :msg "SYNC-FILE finished" :js/rchanges rchanges)
         (rx/concat
           (rx/of (dm/hide-tag :sync-dialog))
@@ -593,14 +594,12 @@
   (ptk/reify ::sync-file-2nd-stage
     ptk/WatchEvent
     (watch [_ state stream]
-      ;; ===== Uncomment this to debug =====
       (log/info :msg "SYNC-FILE (2nd stage)" :file (str (or file-id "local")))
       (let [[rchanges1 uchanges1] (dwlh/generate-sync-file :components nil state)
             [rchanges2 uchanges2] (dwlh/generate-sync-library :components file-id state)
             rchanges (d/concat rchanges1 rchanges2)
             uchanges (d/concat uchanges1 uchanges2)]
         (when rchanges
-          ;; ===== Uncomment this to debug =====
           (log/debug :msg "SYNC-FILE (2nd stage) finished" :js/rchanges rchanges)
           (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})))))))
 
