@@ -60,8 +60,8 @@
         dropdown-ref   (mf/use-ref)
         locale         (mf/deref i18n/locale)
 
-        create #(st/emit! dv/create-share-link)
-        delete #(st/emit! dv/delete-share-link)
+        create (st/emitf (dv/create-share-link))
+        delete (st/emitf (dv/delete-share-link))
 
         href (.-href js/location)
         href (subs href 0 (str/index-of href "?"))
