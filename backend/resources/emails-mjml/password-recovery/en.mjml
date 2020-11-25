@@ -47,10 +47,10 @@
     <mj-section padding="0">
       <mj-column>
         <mj-social icon-size="24px" mode="horizontal">
-          <mj-social-element src="{{ public-uri }}/images/email/logo-uxbox.png" href="https://uxbox.io/" padding="0 8px" />
-          <mj-social-element src="{{ public-uri }}/images/email/logo-twitter.png" href="https://twitter.com/penpot" padding="0 8px" />
-          <mj-social-element src="{{ public-uri }}/images/email/logo-github.png" href="https://github.com/uxbox/" padding="0 8px" />
-          <mj-social-element src="{{ public-uri }}/images/email/logo-instagram.png" href="https://instagram.com/uxbox/" padding="0 8px" />
+          <mj-social-element src="{{ public-uri }}/images/email/logo-uxbox.png" href="https://penpot.app/" padding="0 8px" />
+          <mj-social-element src="{{ public-uri }}/images/email/logo-twitter.png" href="https://twitter.com/penpotapp" padding="0 8px" />
+          <mj-social-element src="{{ public-uri }}/images/email/logo-github.png" href="https://github.com/penpot/" padding="0 8px" />
+          <mj-social-element src="{{ public-uri }}/images/email/logo-instagram.png" href="https://instagram.com/penpotapp/" padding="0 8px" />
           <mj-social-element src="{{ public-uri }}/images/email/logo-taiga.png" href="https://tree.taiga.io/project/uxbox" padding="0 8px" />
         </mj-social>
       </mj-column>
