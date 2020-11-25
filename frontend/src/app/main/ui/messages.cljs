@@ -9,27 +9,17 @@
 
 (ns app.main.ui.messages
   (:require
-   [rumext.alpha :as mf]
-   [clojure.spec.alpha :as s]
-   [app.common.uuid :as uuid]
    [app.common.spec :as us]
-   [app.main.ui.icons :as i]
+   [app.common.uuid :as uuid]
    [app.main.data.messages :as dm]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.util.data :refer [classnames]]
+   [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [t]]
-   [app.util.timers :as ts]))
+   [rumext.alpha :as mf]))
 
 (mf/defc banner
   [{:keys [type position status controls content actions on-close] :as props}]
-  (us/assert ::dm/message-type type)
-  (us/assert ::dm/message-position position)
-  (us/assert ::dm/message-status status)
-  (us/assert ::dm/message-controls controls)
-  (us/assert ::dm/message-actions actions)
-  (us/assert (s/nilable ::us/fn) on-close)
   [:div.banner {:class (dom/classnames
                          :warning  (= type :warning)
                          :error    (= type :error)
@@ -62,7 +52,7 @@
 (mf/defc notifications
   []
   (let [message  (mf/deref refs/message)
-        on-close #(st/emit! dm/hide)]
+        on-close (st/emitf dm/hide)]
     (when message
       [:& banner (assoc message
                         :position (or (:position message) :fixed)
