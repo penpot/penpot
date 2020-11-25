@@ -10,6 +10,7 @@
 (ns app.util.geom.path
   (:require
    [cuerdas.core :as str]
+   [app.common.data :as cd]
    [app.util.data :as d]
    [app.common.data :as cd]
    [app.common.geom.point :as gpt]
@@ -247,8 +248,10 @@
               content))]
     (reduce apply-to-index content modifiers)))
 
-(defn command->point [{{:keys [x y]} :params}]
-  (gpt/point x y))
+(defn command->point [command]
+  (when-not (nil? command)
+    (let [{{:keys [x y]} :params} command]
+      (gpt/point x y))))
 
 (defn content->points [content]
   (->> content
@@ -256,23 +259,37 @@
        (remove nil?)
        (into [])))
 
-(defn content->handlers [content]
-  (->> (d/with-prev content) ;; [cmd, prev]
-       (d/enumerate) ;; [idx [cmd, prev]]
+(defn get-handler [{:keys [params] :as command} prefix]
+  (let [cx (d/prefix-keyword prefix :x)
+        cy (d/prefix-keyword prefix :y)]
+    (when (and command
+               (contains? params cx)
+               (contains? params cy))
+      (gpt/point (get params cx)
+                 (get params cy)))))
 
-       (mapcat (fn [[index [cur-cmd prev-cmd]]]
-                 (if (and prev-cmd
-                          (= :curve-to (:command cur-cmd)))
+(defn content->handlers
+  "Retrieve a map where for every point will retrieve a list of
+  the handlers that are associated with that point.
+  point -> [[index, prefix]]"
+  [content]
+  (->> (d/with-prev content)
+       (d/enumerate)
+
+       (mapcat (fn [[index [cur-cmd pre-cmd]]]
+                 (if (and pre-cmd (= :curve-to (:command cur-cmd)))
                    (let [cur-pos (command->point cur-cmd)
-                         pre-pos (command->point prev-cmd)]
-                     [[pre-pos [index :c1]]
-                      [cur-pos [index :c2]]])
+                         pre-pos (command->point pre-cmd)]
+                     (-> [[pre-pos [index :c1]]
+                          [cur-pos [index :c2]]]))
                    [])))
 
        (group-by first)
        (cd/mapm #(mapv second %2))))
 
-(defn opposite-index [content index prefix]
+(defn opposite-index
+  "Calculate sthe opposite index given a prefix and an index"
+  [content index prefix]
   (let [point (if (= prefix :c2)
                 (command->point (nth content index))
                 (command->point (nth content (dec index))))
@@ -280,10 +297,99 @@
         handlers (-> (content->handlers content)
                      (get point))
 
-        opposite-prefix (if (= prefix :c1) :c2 :c1)
+        opposite-prefix (if (= prefix :c1) :c2 :c1)]
+    (when (<= (count handlers) 2)
+      (->> handlers
+           (d/seek (fn [[index prefix]] (= prefix opposite-prefix)))
+           (first)))))
 
-        result (when (<= (count handlers) 2)
-                 (->> handlers
-                      (d/seek (fn [[index prefix]] (= prefix opposite-prefix)))
-                      (first)))]
-    result))
+(defn remove-line-curves
+  "Remove all curves that have both handlers in the same position that the
+  beggining and end points. This makes them really line-to commands"
+  [content]
+  (let [with-prev (d/enumerate (d/with-prev content))
+        process-command
+        (fn [content [index [command prev]]]
+
+          (let [cur-point (command->point command)
+                pre-point (command->point prev)
+                handler-c1 (get-handler command :c1)
+                handler-c2 (get-handler command :c2)]
+            (if (and (= :curve-to (:command command))
+                     (= cur-point handler-c2)
+                     (= pre-point handler-c1))
+              (assoc content index {:command :line-to
+                                    :params cur-point})
+              content)))]
+
+    (reduce process-command content with-prev)))
+
+(defn make-corner-point
+  "Changes the content to make a point a 'corner'"
+  [content point]
+  (let [handlers (-> (content->handlers content)
+                     (get point))
+        change-content
+        (fn [content [index prefix]]
+          (let [cx (d/prefix-keyword prefix :x)
+                cy (d/prefix-keyword prefix :y)]
+            (-> content
+                (assoc-in [index :params cx] (:x point))
+                (assoc-in [index :params cy] (:y point)))))]
+    (as-> content $
+      (reduce change-content $ handlers)
+      (remove-line-curves $))))
+
+(defn make-curve-point
+  "Changes the content to make the point a 'curve'. The handlers will be positioned
+  in the same vector that results from te previous->next points but with fixed length."
+  [content point]
+  (let [content-next (d/enumerate (d/with-prev-next content))
+
+        make-curve
+        (fn [command previous]
+          (if (= :line-to (:command command))
+            (let [cur-point (command->point command)
+                  pre-point (command->point previous)]
+              (-> command
+                  (assoc :command :curve-to)
+                  (assoc :params (make-curve-params cur-point pre-point))))
+            command))
+
+        update-handler
+        (fn [command prefix handler]
+          (if (= :curve-to (:command command))
+            (let [cx (d/prefix-keyword prefix :x)
+                  cy (d/prefix-keyword prefix :y)]
+              (-> command
+                  (assoc-in [:params cx] (:x handler))
+                  (assoc-in [:params cy] (:y handler))))
+            command))
+
+        calculate-vector
+        (fn [point next prev]
+          (let [base-vector (if (or (nil? next) (nil? prev))
+                              (-> (gpt/to-vec point (or next prev))
+                                  (gpt/normal-left))
+                              (gpt/to-vec next prev))]
+            (-> base-vector
+                (gpt/unit)
+                (gpt/multiply (gpt/point 100)))))
+
+        redfn (fn [content [index [command prev next]]]
+                (if (= point (command->point command))
+                  (let [prev-point (if (= :move-to (:command command)) nil (command->point prev))
+                        next-point (if (= :move-to (:command next)) nil (command->point next))
+                        handler-vector (calculate-vector point next-point prev-point)
+                        handler (gpt/add point handler-vector)
+                        handler-opposite (gpt/add point (gpt/negate handler-vector))]
+                    (-> content
+                        (cd/update-when index make-curve prev)
+                        (cd/update-when index update-handler :c2 handler)
+                        (cd/update-when (inc index) make-curve command)
+                        (cd/update-when (inc index) update-handler :c1 handler-opposite)))
+
+                  content))]
+    (as-> content $
+      (reduce redfn $ content-next)
+      (remove-line-curves $))))

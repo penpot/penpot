@@ -236,3 +236,7 @@
 
 (defn get-root []
   (query js/document "#app"))
+
+(defn ^boolean class? [node class-name]
+  (let [class-list (.-classList ^js node)]
+    (.contains ^js class-list class-name)))

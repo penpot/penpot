@@ -294,7 +294,7 @@
 
         on-double-click
         (mf/use-callback
-         (mf/deps edition edit-path)
+         (mf/deps drawing-path?)
          (fn [event]
            (dom/stop-propagation event)
            (let [ctrl? (kbd/ctrl? event)
