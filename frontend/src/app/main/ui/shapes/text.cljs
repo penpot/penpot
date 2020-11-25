@@ -2,24 +2,27 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.main.ui.shapes.text
   (:require
-   [clojure.set :as set]
-   [promesa.core :as p]
-   [cuerdas.core :as str]
-   [rumext.alpha :as mf]
+   [app.common.data :as d]
+   [app.common.geom.matrix :as gmt]
+   [app.common.geom.shapes :as geom]
    [app.main.data.fetch :as df]
    [app.main.fonts :as fonts]
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.group :refer [mask-id-ctx]]
-   [app.common.data :as d]
-   [app.common.geom.shapes :as geom]
-   [app.common.geom.matrix :as gmt]
-   [app.util.object :as obj]
    [app.util.color :as uc]
-   [app.util.text :as ut]))
+   [app.util.object :as obj]
+   [app.util.text :as ut]
+   [clojure.set :as set]
+   [cuerdas.core :as str]
+   [promesa.core :as p]
+   [rumext.alpha :as mf]))
 
 ;; --- Text Editor Rendering
 
@@ -31,12 +34,12 @@
                     :width "100%"
                     :display "flex"}]
     (cond-> base
-      (= valign "top") (obj/set! "alignItems" "flex-start")
-      (= valign "center") (obj/set! "alignItems" "center")
-      (= valign "bottom") (obj/set! "alignItems" "flex-end")
-      (= talign "left") (obj/set! "justifyContent" "flex-start")
-      (= talign "center") (obj/set! "justifyContent" "center")
-      (= talign "right") (obj/set! "justifyContent" "flex-end")
+      (= valign "top")     (obj/set! "alignItems" "flex-start")
+      (= valign "center")  (obj/set! "alignItems" "center")
+      (= valign "bottom")  (obj/set! "alignItems" "flex-end")
+      (= talign "left")    (obj/set! "justifyContent" "flex-start")
+      (= talign "center")  (obj/set! "justifyContent" "center")
+      (= talign "right")   (obj/set! "justifyContent" "flex-end")
       (= talign "justify") (obj/set! "justifyContent" "stretch"))))
 
 (defn- generate-paragraph-styles
@@ -52,19 +55,19 @@
 
 (defn- generate-text-styles
   [data]
-  (let [letter-spacing (obj/get data "letter-spacing")
+  (let [letter-spacing  (obj/get data "letter-spacing")
         text-decoration (obj/get data "text-decoration")
-        text-transform (obj/get data "text-transform")
-        line-height (obj/get data "line-height")
+        text-transform  (obj/get data "text-transform")
+        line-height     (obj/get data "line-height")
 
-        font-id (obj/get data "font-id" (:font-id ut/default-text-attrs))
+        font-id         (obj/get data "font-id" (:font-id ut/default-text-attrs))
         font-variant-id (obj/get data "font-variant-id")
 
-        font-family (obj/get data "font-family")
-        font-size  (obj/get data "font-size")
+        font-family     (obj/get data "font-family")
+        font-size       (obj/get data "font-size")
 
         ;; Old properties for backwards compatibility
-        fill (obj/get data "fill")
+        fill    (obj/get data "fill")
         opacity (obj/get data "opacity" 1)
 
         fill-color (obj/get data "fill-color" fill)
