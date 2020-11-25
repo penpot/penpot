@@ -30,11 +30,16 @@
   [selrect]
   (center-rect selrect))
 
+(def map-x-xf (comp (map :x) (remove nil?)))
+(def map-y-xf (comp (map :y) (remove nil?)))
+
 (defn center-points [points]
-  (let [minx (transduce (map :x) min ##Inf points)
-        miny (transduce (map :y) min ##Inf points)
-        maxx (transduce (map :x) max ##-Inf points)
-        maxy (transduce (map :y) max ##-Inf points)]
+  (let [ptx  (into [] map-x-xf points)
+        pty  (into [] map-y-xf points)
+        minx (reduce min ##Inf ptx)
+        miny (reduce min ##Inf pty)
+        maxx (reduce max ##-Inf ptx)
+        maxy (reduce max ##-Inf pty)]
     (gpt/point (/ (+ minx maxx) 2)
                (/ (+ miny maxy) 2))))
 
