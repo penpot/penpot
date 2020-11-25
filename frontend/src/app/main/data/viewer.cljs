@@ -71,11 +71,14 @@
   (ptk/reify ::initialize
     ptk/UpdateEvent
     (update [_ state]
-      (update state :viewer-local
-              (fn [lstate]
-                (if (nil? lstate)
-                  default-local-state
-                  lstate))))
+      (-> state
+          (assoc :current-file-id file-id)
+          (assoc :current-page-id page-id)
+          (update :viewer-local
+                  (fn [lstate]
+                    (if (nil? lstate)
+                      default-local-state
+                      lstate)))))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -98,8 +101,34 @@
                             :file-id file-id}
                      (string? token) (assoc :token token))]
         (->> (rp/query :viewer-bundle params)
-             (rx/first)
              (rx/map bundle-fetched))))))
+
+(defn- extract-frames
+  [objects]
+  (let [root (get objects uuid/zero)]
+    (into [] (comp (map #(get objects %))
+                   (filter #(= :frame (:type %))))
+          (reverse (:shapes root)))))
+
+(defn bundle-fetched
+  [{:keys [project file page share-token token libraries users] :as bundle}]
+  (us/verify ::bundle bundle)
+  (ptk/reify ::file-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [objects (:objects page)
+            frames  (extract-frames objects)
+            users   (map #(avatars/assoc-avatar % :fullname) users)]
+        (assoc state
+               :viewer-libraries (d/index-by :id libraries)
+               :viewer-data {:project project
+                             :objects objects
+                             :users (d/index-by :id users)
+                             :file file
+                             :page page
+                             :frames frames
+                             :token token
+                             :share-token share-token})))))
 
 (defn fetch-comment-threads
   [{:keys [file-id page-id] :as params}]
@@ -135,56 +164,30 @@
         (->> (rp/query :comments {:thread-id thread-id})
              (rx/map #(partial fetched %)))))))
 
-(defn- extract-frames
-  [objects]
-  (let [root (get objects uuid/zero)]
-    (->> (:shapes root)
-         (map #(get objects %))
-         (filter #(= :frame (:type %)))
-         (reverse)
-         (vec))))
-
-(defn bundle-fetched
-  [{:keys [project file page share-token token libraries users] :as bundle}]
-  (us/verify ::bundle bundle)
-  (ptk/reify ::file-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [objects (:objects page)
-            frames  (extract-frames objects)
-            users   (map #(avatars/assoc-avatar % :fullname) users)]
-        (-> state
-            (assoc :viewer-libraries (d/index-by :id libraries)
-                   :viewer-data {:project project
-                                 :objects objects
-                                 :users (d/index-by :id users)
-                                 :file file
-                                 :page page
-                                 :frames frames
-                                 :token token
-                                 :share-token share-token}))))))
-
-(def create-share-link
+(defn create-share-link
+  []
   (ptk/reify ::create-share-link
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [file-id (get-in state [:viewer-local :file-id])
-            page-id (get-in state [:viewer-local :page-id])]
+      (let [file-id (:current-file-id state)
+            page-id (:current-page-id state)]
         (->> (rp/mutation! :create-file-share-token {:file-id file-id
                                                      :page-id page-id})
              (rx/map (fn [{:keys [token]}]
                        #(assoc-in % [:viewer-data :share-token] token))))))))
 
-(def delete-share-link
+(defn delete-share-link
+  []
   (ptk/reify ::delete-share-link
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [file-id (get-in state [:viewer-local :file-id])
-            page-id (get-in state [:viewer-local :page-id])
-            token   (get-in state [:viewer-data :share-token])]
-        (->> (rp/mutation :delete-file-share-token {:file-id file-id
-                                                    :page-id page-id
-                                                    :token token})
+      (let [file-id (:current-file-id state)
+            page-id (:current-page-id state)
+            token   (get-in state [:viewer-data :share-token])
+            params  {:file-id file-id
+                     :page-id page-id
+                     :token token}]
+        (->> (rp/mutation :delete-file-share-token params)
              (rx/map (fn [_] #(update % :viewer-data dissoc :share-token))))))))
 
 ;; --- Zoom Management
