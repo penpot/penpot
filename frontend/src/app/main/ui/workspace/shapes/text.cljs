@@ -11,32 +11,32 @@
   (:require
    ["slate" :as slate]
    ["slate-react" :as rslate]
-   [goog.events :as events]
-   [goog.object :as gobj]
-   [cuerdas.core :as str]
-   [rumext.alpha :as mf]
-   [beicon.core :as rx]
-   [app.util.color :as color]
-   [app.util.dom :as dom]
-   [app.util.text :as ut]
-   [app.util.object :as obj]
-   [app.util.color :as uc]
-   [app.util.timers :as timers]
    [app.common.data :as d]
    [app.common.geom.shapes :as geom]
-   [app.main.refs :as refs]
-   [app.main.store :as st]
-   [app.main.fonts :as fonts]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.texts :as dwt]
-   [app.main.ui.cursors :as cur]
-   [app.main.ui.workspace.shapes.common :as common]
-   [app.main.ui.shapes.text :as text]
-   [app.main.ui.keyboard :as kbd]
+   [app.main.fonts :as fonts]
+   [app.main.refs :as refs]
+   [app.main.store :as st]
    [app.main.ui.context :as muc]
+   [app.main.ui.cursors :as cur]
+   [app.main.ui.keyboard :as kbd]
    [app.main.ui.shapes.filters :as filters]
-   [app.main.ui.shapes.shape :refer [shape-container]])
+   [app.main.ui.shapes.shape :refer [shape-container]]
+   [app.main.ui.shapes.text :as text]
+   [app.main.ui.workspace.shapes.common :as common]
+   [app.util.color :as color]
+   [app.util.color :as uc]
+   [app.util.dom :as dom]
+   [app.util.object :as obj]
+   [app.util.text :as ut]
+   [app.util.timers :as timers]
+   [beicon.core :as rx]
+   [cuerdas.core :as str]
+   [goog.events :as events]
+   [goog.object :as gobj]
+   [rumext.alpha :as mf])
   (:import
    goog.events.EventType
    goog.events.KeyCodes))
@@ -59,38 +59,40 @@
 (mf/defc text-wrapper
   {::mf/wrap-props false}
   [props]
-  (let [{:keys [id x1 y1 content group grow-type width height ] :as shape} (unchecked-get props "shape")
-        selected-iref (mf/use-memo (mf/deps (:id shape))
-                                   #(refs/make-selected-ref (:id shape)))
-        selected? (mf/deref selected-iref)
-        edition   (mf/deref refs/selected-edition)
+  (let [shape             (unchecked-get props "shape")
+        selected-iref     (mf/use-memo (mf/deps (:id shape))
+                                       #(refs/make-selected-ref (:id shape)))
+        selected?         (mf/deref selected-iref)
+        edition           (mf/deref refs/selected-edition)
         current-transform (mf/deref refs/current-transform)
+        render-editor     (mf/use-state false)
 
-        render-editor (mf/use-state false)
+        edition?          (= edition (:id shape))
 
-        edition?  (= edition id)
+        embed-resources?  (mf/use-ctx muc/embed-ctx)
 
-        embed-resources? (mf/use-ctx muc/embed-ctx)
-
-        on-mouse-down   #(handle-mouse-down % shape)
-        on-context-menu #(common/on-context-menu % shape)
+        on-mouse-down     #(handle-mouse-down % shape)
+        on-context-menu   #(common/on-context-menu % shape)
 
         on-double-click
         (fn [event]
           (dom/stop-propagation event)
           (dom/prevent-default event)
           (when selected?
-            (st/emit! (dw/start-edition-mode (:id shape)))))]
+            (st/emit! (dw/start-edition-mode (:id shape)))))
+
+        check?
+        (and (#{:auto-width :auto-height} (:grow-type shape))
+             selected?
+             (not edition?)
+             (not embed-resources?)
+             (nil? current-transform))]
 
     (mf/use-effect
-     (mf/deps shape edition selected? current-transform)
-     (fn [] (let [check? (and (#{:auto-width :auto-height} (:grow-type shape))
-                              selected?
-                              (not edition?)
-                              (not embed-resources?)
-                              (nil? current-transform))
-                  result (timers/schedule #(reset! render-editor check?))]
-              #(rx/dispose! result))))
+     (mf/deps check?)
+     (fn []
+       (let [sem (timers/schedule #(reset! render-editor check?))]
+         #(rx/dispose! sem))))
 
     [:> shape-container {:shape shape
                          :on-double-click on-double-click
