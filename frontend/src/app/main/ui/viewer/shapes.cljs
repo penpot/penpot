@@ -38,6 +38,7 @@
       :navigate
       (let [frame-id (:destination interaction)]
         (st/emit! (dv/go-to-frame frame-id)))
+
       nil)))
 
 (defn generic-wrapper-factory

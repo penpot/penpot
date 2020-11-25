@@ -87,7 +87,7 @@
 
 (defn index-of-pred
   [coll pred]
-  (loop [c (first coll)
+  (loop [c    (first coll)
          coll (rest coll)
          index 0]
     (if (nil? c)

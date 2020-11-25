@@ -322,7 +322,8 @@
     (watch [_ state stream]
       (let [frames  (get-in state [:viewer-data :frames])
             index   (d/index-of-pred frames #(= (:id %) frame-id))]
-        (rx/of (go-to-frame-by-index index))))))
+        (when index
+          (rx/of (go-to-frame-by-index index)))))))
 
 (defn set-current-frame [frame-id]
   (ptk/reify ::current-frame
