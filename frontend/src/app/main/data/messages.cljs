@@ -9,32 +9,46 @@
 
 (ns app.main.data.messages
   (:require
-   [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
-   [potok.core :as ptk]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.pages :as cp]
    [app.common.spec :as us]
-   [app.config :as cfg]))
+   [app.config :as cfg]
+   [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
+   [potok.core :as ptk]))
 
 (declare hide)
 (declare show)
 
 (def +animation-timeout+ 600)
 
-(s/def ::message-type #{:success :error :info :warning})
-(s/def ::message-position #{:fixed :floating :inline})
-(s/def ::message-status #{:visible :hide})
-(s/def ::message-controls #{:none :close :inline-actions :bottom-actions})
-(s/def ::message-tag string?)
-(s/def ::label string?)
+(s/def ::type #{:success :error :info :warning})
+(s/def ::position #{:fixed :floating :inline})
+(s/def ::status #{:visible :hide})
+(s/def ::controls #{:none :close :inline-actions :bottom-actions})
+
+(s/def ::tag ::us/string)
+(s/def ::label ::us/string)
 (s/def ::callback fn?)
-(s/def ::message-action (s/keys :req-un [::label ::callback]))
-(s/def ::message-actions (s/nilable (s/coll-of ::message-action :kind vector?)))
+(s/def ::action (s/keys :req-un [::label ::callback]))
+(s/def ::actions (s/every ::message-action :kind vector?))
+(s/def ::timeout ::us/integer)
+(s/def ::content ::us/string)
+
+(s/def ::message
+  (s/keys :req-un [::type]
+          :opt-un [::status
+                   ::position
+                   ::controls
+                   ::tag
+                   ::timeout
+                   ::actions
+                   ::status]))
 
 (defn show
   [data]
+  (us/verify ::message data)
   (ptk/reify ::show
     ptk/UpdateEvent
     (update [_ state]
