@@ -1426,7 +1426,7 @@
   "labels.no-comments-available" : {
     "used-in" : [ "src/app/main/ui/dashboard/comments.cljs:104" ],
     "translations" : {
-      "en" : "No comments"
+      "en" : "You have no pending comment notifications"
     }
   },
   "labels.old-password" : {
