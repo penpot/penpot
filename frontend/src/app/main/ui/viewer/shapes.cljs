@@ -58,7 +58,7 @@
 
       [:> shape-container {:shape shape
                            :on-mouse-down on-mouse-down
-                           :cursor (when (:interactions shape) "pointer")}
+                           :cursor (when (seq (:interactions shape)) "pointer")}
        [:& component {:shape shape
                       :frame frame
                       :childs childs
