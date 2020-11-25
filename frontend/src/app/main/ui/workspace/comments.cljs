@@ -166,7 +166,7 @@
                     :on-close #(reset! options? false)}
        [:& sidebar-options {:local local}]]]
 
-     (when (seq tgroups)
+     (if (seq tgroups)
        [:div.thread-groups
         [:& cmt/comment-thread-group
          {:group (first tgroups)
@@ -179,6 +179,10 @@
             {:group tgroup
              :on-thread-click on-thread-click
              :users users
-             :key (:page-id tgroup)}]])])]))
+             :key (:page-id tgroup)}]])]
+         
+       [:div.thread-groups-placeholder
+        i/chat
+        (tr "labels.no-comments-available")])]))
 
 

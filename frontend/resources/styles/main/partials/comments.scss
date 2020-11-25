@@ -423,28 +423,12 @@
     }
   }
 
-  .thread-groups-placeholder {
-    align-items: center;
-    display: flex;
-    flex-direction: column;
-    font-size: $fs14;
-    padding: $big;
-    text-align: center;
-
-    svg {
-      fill: $color-gray-20;
-      height: 24px;
-      margin-bottom: $small;
-      width: 24px;
-    }
-  }
-
   .thread-group {
     .section-title {
       color: $color-black;
     }
   }
-
+  
   .comment {
     .author .name .fullname {
       color: $color-gray-40;
@@ -452,6 +436,22 @@
     .content {
       color: $color-black;
     }
+  }
+}
+
+.thread-groups-placeholder {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  font-size: $fs12;
+  padding: $big;
+  text-align: center;
+
+  svg {
+    fill: $color-gray-20;
+    height: 24px;
+    margin-bottom: $big;
+    width: 24px;
   }
 }
 
