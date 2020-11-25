@@ -735,28 +735,38 @@
 (defmethod process-change :add-obj
   [data {:keys [id obj page-id component-id frame-id parent-id
                 index ignore-touched] :as change}]
-  (let [update-fn (fn [data]
-                    (let [parent-id (or parent-id frame-id)
-                          objects (:objects data)]
-                      (let [obj (assoc obj
-                                       :frame-id frame-id
-                                       :parent-id parent-id
-                                       :id id)]
-                        (-> data
-                            (update :objects assoc id obj)
-                            (update-in [:objects parent-id :shapes]
-                                       (fn [shapes]
-                                         (let [shapes (or shapes [])]
-                                           (cond
-                                             (some #{id} shapes) shapes
-                                             (nil? index) (conj shapes id)
-                                             :else (cph/insert-at-index shapes index [id])))))
-                            (cond->
-                              (and (:shape-ref (get-in data [:objects parent-id]))
+  (letfn [(update-fn [data]
+            (let [parent-id (or parent-id frame-id)
+                  objects   (:objects data)]
+              (let [obj (assoc obj
+                               :frame-id frame-id
+                               :parent-id parent-id
+                               :id id)]
+                (if (and (contains? objects parent-id)
+                         (contains? objects frame-id))
+                  (-> data
+                      (update :objects assoc id obj)
+                      (update-in [:objects parent-id :shapes]
+                                 (fn [shapes]
+                                   (let [shapes (or shapes [])]
+                                     (cond
+                                       (some #{id} shapes)
+                                       shapes
+
+                                       (nil? index)
+                                       (if (= :frame (:type obj))
+                                         (d/concat [id] shapes)
+                                         (conj shapes id))
+
+                                       :else
+                                       (cph/insert-at-index shapes index [id])))))
+
+                      (cond-> (and (:shape-ref (get-in data [:objects parent-id]))
                                    (not= parent-id frame-id)
                                    (not ignore-touched))
-                              (update-in [:objects parent-id :touched]
-                                         cph/set-touched-group :shapes-group))))))]
+                        (update-in [:objects parent-id :touched]
+                                   cph/set-touched-group :shapes-group)))
+                  data))))]
     (if page-id
       (d/update-in-when data [:pages-index page-id] update-fn)
       (d/update-in-when data [:components component-id] update-fn))))
