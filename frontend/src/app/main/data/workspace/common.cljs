@@ -188,6 +188,29 @@
           (recur (inc counter))
           candidate)))))
 
+;; --- Shape attrs (Layers Sidebar)
+
+(defn toggle-collapse
+  [id]
+  (ptk/reify ::toggle-collapse
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-local :expanded id] not))))
+
+(defn expand-collapse
+  [id]
+  (ptk/reify ::expand-collapse
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :expanded id] true))))
+
+(def collapse-all
+  (ptk/reify ::collapse-all
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-local dissoc :expanded))))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Undo / Redo
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

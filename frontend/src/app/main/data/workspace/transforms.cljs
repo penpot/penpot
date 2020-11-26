@@ -266,7 +266,8 @@
         (when-not (empty? rch)
           (rx/of dwc/pop-undo-into-transaction
                  (dwc/commit-changes rch uch {:commit-local? true})
-                 dwc/commit-undo-transaction))))))
+                 dwc/commit-undo-transaction
+                 (dwc/expand-collapse frame-id)))))))
 
 (defn start-move
   ([from-position] (start-move from-position nil))

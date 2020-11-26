@@ -14,6 +14,7 @@
    [app.common.pages-helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.common :as dwc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.hooks :as hooks]
@@ -112,8 +113,8 @@
         (fn [event]
           (dom/stop-propagation event)
           (if (and expanded? (kbd/shift? event))
-            (st/emit! dw/collapse-all)
-            (st/emit! (dw/toggle-collapse id))))
+            (st/emit! dwc/collapse-all)
+            (st/emit! (dwc/toggle-collapse id))))
 
         toggle-blocking
         (fn [event]
@@ -173,7 +174,7 @@
         on-hold
         (fn []
           (when-not expanded?
-            (st/emit! (dw/toggle-collapse (:id item)))))
+            (st/emit! (dwc/toggle-collapse (:id item)))))
 
         [dprops dref] (hooks/use-sortable
                        :data-type "app/layer"
