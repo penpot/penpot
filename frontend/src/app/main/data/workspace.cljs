@@ -1429,7 +1429,7 @@
                             :page-id page-id
                             :shapes [(:id group)]}])
 
-                uchanges (conj rchanges
+                uchanges (conj uchanges
                           {:type :mod-obj
                            :page-id page-id
                            :id (:id group)
