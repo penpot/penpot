@@ -27,7 +27,6 @@
    [app.main.ui.workspace.left-toolbar :refer [left-toolbar]]
    [app.main.ui.workspace.libraries]
    [app.main.ui.workspace.rules :refer [horizontal-rule vertical-rule]]
-   [app.main.ui.workspace.scroll :as scroll]
    [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
    [app.main.ui.workspace.viewport :refer [viewport viewport-actions coordinates]]
    [app.util.dom :as dom]
