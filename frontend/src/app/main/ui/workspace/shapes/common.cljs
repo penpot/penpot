@@ -27,6 +27,7 @@
         selected? (contains? selected id)
         drawing? @refs/selected-drawing-tool
         button (.-which (.-nativeEvent event))]
+
     (when-not (:blocked shape)
       (cond
         (not= 1 button)
@@ -36,8 +37,9 @@
         nil
 
         (= type :frame)
-        (do (dom/stop-propagation event)
-            (st/emit! (dw/start-move-selected)))
+        (when selected?
+          (do (dom/stop-propagation event)
+              (st/emit! (dw/start-move-selected))))
 
         :else
         (do
