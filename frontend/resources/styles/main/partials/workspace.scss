@@ -263,6 +263,7 @@
     border-radius: 3px;
 
     svg {
+      pointer-events: none;
       width: 20px;
       height: 20px;
     }

@@ -93,7 +93,7 @@
         {:alt (t locale "workspace.toolbar.path")
          :class (when (= selected-drawtool :path) "selected")
          :on-click (partial select-drawtool :path)}
-        i/curve]
+        i/pen]
 
        [:li.tooltip.tooltip-right
         {:alt (t locale "workspace.toolbar.comments")

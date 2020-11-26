@@ -11,6 +11,7 @@
   "The main logic for SVG export functionality."
   (:require
    [rumext.alpha :as mf]
+   [cuerdas.core :as str]
    [app.common.uuid :as uuid]
    [app.common.pages :as cp]
    [app.common.pages-helpers :as cph]
@@ -42,10 +43,15 @@
 
 (defn- calculate-dimensions
   [{:keys [objects] :as data} vport]
-  (let [shapes (cph/select-toplevel-shapes objects {:include-frames? true})]
-    (->> (gsh/selection-rect shapes)
-         (gal/adjust-to-viewport vport)
-         #_(gsh/fix-invalid-rect-values))))
+  (let [shapes (cph/select-toplevel-shapes objects {:include-frames? true})
+        to-finite (fn [val fallback] (if (not (mth/finite? val)) fallback val))
+        rect (->> (gsh/selection-rect shapes)
+                  (gal/adjust-to-viewport vport))]
+    (-> rect
+        (update :x to-finite 0)
+        (update :y to-finite 0)
+        (update :width to-finite 10000)
+        (update :height to-finite 10000))))
 
 (declare shape-wrapper-factory)
 
@@ -93,21 +99,20 @@
              :group  [:> group-wrapper {:shape shape :frame frame}]
              nil)])))))
 
+(defn get-viewbox [{:keys [x y width height] :or {x 0 y 0 width 100 height 100}}]
+  (str/fmt "%s %s %s %s" x y width height))
+
 (mf/defc page-svg
   {::mf/wrap [mf/memo]}
   [{:keys [data width height] :as props}]
   (let [objects (:objects data)
-        vport   {:width width :height height}
-
-        dim     (calculate-dimensions data vport)
         root    (get objects uuid/zero)
         shapes  (->> (:shapes root)
                      (map #(get objects %)))
 
-        vbox    (str (:x dim 0) " "
-                     (:y dim 0) " "
-                     (:width dim 100) " "
-                     (:height dim 100))
+        vport   {:width width :height height}
+        dim     (calculate-dimensions data vport)
+        vbox    (get-viewbox dim)
         background-color (get-in data [:options :background] default-color)
         frame-wrapper
         (mf/use-memo
