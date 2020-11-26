@@ -10,21 +10,21 @@
 (ns app.main.ui.workspace.context-menu
   "A workspace specific context menu (mouse right click)."
   (:require
-   [beicon.core :as rx]
-   [okulary.core :as l]
-   [potok.core :as ptk]
-   [rumext.alpha :as mf]
-   [app.main.store :as st]
-   [app.main.refs :as refs]
-   [app.main.streams :as ms]
-   [app.main.ui.icons :as i]
-   [app.util.dom :as dom]
-   [app.util.i18n :refer [t] :as i18n]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.refs :as refs]
+   [app.main.store :as st]
+   [app.main.streams :as ms]
+   [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.hooks :refer [use-rxsub]]
-   [app.main.ui.components.dropdown :refer [dropdown]]))
+   [app.main.ui.icons :as i]
+   [app.util.dom :as dom]
+   [app.util.i18n :refer [t] :as i18n]
+   [beicon.core :as rx]
+   [okulary.core :as l]
+   [potok.core :as ptk]
+   [rumext.alpha :as mf]))
 
 (def menu-ref
   (l/derived :context-menu refs/workspace-local))
