@@ -86,7 +86,6 @@
                   (geom/translate-to-frame frame))
         opts #js {:shape shape
                   :frame frame}
-        alt? (mf/use-state false)
         on-mouse-enter (use-mouse-enter shape)
         on-mouse-leave (use-mouse-leave shape)
 
