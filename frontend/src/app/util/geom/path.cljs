@@ -368,7 +368,7 @@
 
         calculate-vector
         (fn [point next prev]
-          (let [base-vector (if (or (nil? next) (nil? prev))
+          (let [base-vector (if (or (nil? next) (nil? prev) (= next prev))
                               (-> (gpt/to-vec point (or next prev))
                                   (gpt/normal-left))
                               (gpt/to-vec next prev))]

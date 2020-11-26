@@ -333,10 +333,6 @@
 
      (when drag-handler
        [:g.drag-handler {:pointer-events "none"}
-        (when (not= :move-to (:command last-command))
-          [:& path-handler {:point last-p
-                            :handler (ugp/opposite-handler last-p drag-handler)
-                            :zoom zoom}])
         [:& path-handler {:point last-p
                           :handler drag-handler
                           :zoom zoom}]])]))
