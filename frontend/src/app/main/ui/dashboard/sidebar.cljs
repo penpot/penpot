@@ -322,7 +322,7 @@
 
     [:div.sidebar-team-switch
      [:div.switch-content
-      [:div.current-team
+      [:div.current-team {:on-click #(reset! show-teams-ddwn? true)}
        (if (:is-default team)
          [:div.team-name
           [:span.team-icon i/logo-icon]
@@ -332,7 +332,7 @@
            [:img {:src (cfg/resolve-media-path (:photo team))}]]
           [:span.team-text {:title (:name team)} (:name team)]])
 
-       [:span.switch-icon {:on-click #(reset! show-teams-ddwn? true)}
+       [:span.switch-icon
         i/arrow-down]]
 
       (when-not (:is-default team)
