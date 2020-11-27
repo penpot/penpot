@@ -11,6 +11,7 @@
   (:require
    [rumext.alpha :as mf]
    [app.common.data :as d]
+   [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.editable-select :refer [editable-select]]
    [app.util.dom :as dom]))
@@ -42,10 +43,9 @@
                            (or (not min) (>= value min))
                            (or (not max) (<= value max)))
                   (on-change value))))]
-        [:input.input-text
-         {:placeholder placeholder
-          :type "number"
-          :on-change handle-change
-          :value (or value "")}]))
-    
-    ]])
+        [:> numeric-input {:placeholder placeholder
+                           :min (when min (str min))
+                           :max (when max (str max))
+                           :on-change handle-change
+                           :value (or value "")}]))]])
+
