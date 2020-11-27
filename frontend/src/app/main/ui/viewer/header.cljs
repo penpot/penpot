@@ -192,6 +192,16 @@
         (mf/use-callback
          (st/emitf dv/toggle-thumbnails-panel))
 
+        on-goback
+        (mf/use-callback
+         (mf/deps project-id file-id page-id anonymous?)
+         (fn []
+           (if anonymous?
+             (st/emit! (rt/nav :login))
+             (st/emit! (rt/nav :workspace
+                               {:project-id project-id
+                                :file-id file-id}
+                               {:page-id page-id})))))
         on-edit
         (mf/use-callback
          (mf/deps project-id file-id page-id)
@@ -220,7 +230,7 @@
 
     [:header.viewer-header
      [:div.main-icon
-      [:a {:on-click on-edit} i/logo-icon]]
+      [:a {:on-click on-goback} i/logo-icon]]
 
      [:div.sitemap-zone {:alt (t locale "viewer.header.sitemap")
                          :on-click on-click}
