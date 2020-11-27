@@ -1014,7 +1014,7 @@
   (ptk/reify ::update-dimensions
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (dwc/update-shapes ids #(gsh/resize-rect % attr value))))))
+      (rx/of (dwc/update-shapes ids #(gsh/resize-rect % attr value) {:reg-objects? true})))))
 
 
 ;; --- Shape Proportions

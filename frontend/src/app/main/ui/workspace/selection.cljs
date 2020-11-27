@@ -32,7 +32,7 @@
    [app.util.debug :refer [debug?]]
    [app.main.ui.workspace.shapes.outline :refer [outline]]
    [app.main.ui.measurements :as msr]
-   [app.main.ui.workspace.shapes.path :refer [path-editor]]))
+   [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]))
 
 (def rotation-handler-size 25)
 (def resize-point-radius 4)
@@ -65,52 +65,47 @@
     :position :top-left
     :props {:cx x :cy y}}
 
-   ;; TOP
+   {:type :rotation
+    :position :top-right
+    :props {:cx (+ x width) :cy y}}
+
+   {:type :resize-point
+    :position :top-right
+    :props {:cx (+ x width) :cy y}}
+
+   {:type :rotation
+    :position :bottom-right
+    :props {:cx (+ x width) :cy (+ y height)}}
+
+   {:type :resize-point
+    :position :bottom-right
+    :props {:cx (+ x width) :cy (+ y height)}}
+
+   {:type :rotation
+    :position :bottom-left
+    :props {:cx x :cy (+ y height)}}
+
+   {:type :resize-point
+    :position :bottom-left
+    :props {:cx x :cy (+ y height)}}
+
    {:type :resize-side
     :position :top
     :props {:x x :y y :length width :angle 0 }}
 
-   ;; TOP-RIGHT
-   {:type :rotation
-    :position :top-right
-    :props {:cx (+ x width) :cy y}}
-
-   {:type :resize-point
-    :position :top-right
-    :props {:cx (+ x width) :cy y}}
-
-   ;; RIGHT
    {:type :resize-side
     :position :right
     :props {:x (+ x width) :y y :length height :angle 90 }}
 
-   ;; BOTTOM-RIGHT
-   {:type :rotation
-    :position :bottom-right
-    :props {:cx (+ x width) :cy (+ y height)}}
-
-   {:type :resize-point
-    :position :bottom-right
-    :props {:cx (+ x width) :cy (+ y height)}}
-
-   ;; BOTTOM
    {:type :resize-side
     :position :bottom
     :props {:x (+ x width) :y (+ y height) :length width :angle 180 }}
 
-   ;; BOTTOM-LEFT
-   {:type :rotation
-    :position :bottom-left
-    :props {:cx x :cy (+ y height)}}
-
-   {:type :resize-point
-    :position :bottom-left
-    :props {:cx x :cy (+ y height)}}
-
-   ;; LEFT
    {:type :resize-side
     :position :left
-    :props {:x x :y (+ y height) :length height :angle 270 }}])
+    :props {:x x :y (+ y height) :length height :angle 270 }}
+
+   ])
 
 (mf/defc rotation-handler [{:keys [cx cy transform position rotation zoom on-rotate]}]
   (let [size (/ rotation-handler-size zoom)
@@ -160,11 +155,13 @@
 (mf/defc resize-side-handler [{:keys [x y length angle zoom position rotation transform on-resize]}]
   (let [res-point (if (#{:top :bottom} position)
                     {:y y}
-                    {:x x})]
-    [:rect {:x (+ x (/ resize-point-rect-size zoom))
+                    {:x x})
+        width length #_(max 0 (- length (/ (* resize-point-rect-size 2) zoom)))
+        height (/ resize-side-height zoom)]
+    [:rect {:x x
             :y (- y (/ resize-side-height 2 zoom))
-            :width (max 0 (- length (/ (* resize-point-rect-size 2) zoom)))
-            :height (/ resize-side-height zoom)
+            :width width
+            :height height
             :transform (gmt/multiply transform
                                      (gmt/rotate-matrix angle (gpt/point x y)))
             :on-mouse-down #(on-resize res-point %)
@@ -183,7 +180,7 @@
         current-transform (mf/deref refs/current-transform)
 
         selrect (:selrect shape)
-        transform (geom/transform-matrix shape)
+        transform (geom/transform-matrix shape {:no-flip true})
 
         tr-shape (geom/transform-shape shape)]
 

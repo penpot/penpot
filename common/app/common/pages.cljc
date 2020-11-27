@@ -44,18 +44,33 @@
 (s/def ::component-root? boolean?)
 (s/def ::shape-ref uuid?)
 
-(s/def ::safe-integer
-  #(and
-    (integer? %)
-    (>= % min-safe-int)
-    (<= % max-safe-int)))
+(s/def ::safe-integer ::us/safe-integer)
+(s/def ::safe-number ::us/safe-number)
 
-(s/def ::safe-number
-  #(and
-    (number? %)
-    (>= % min-safe-int)
-    (<= % max-safe-int)))
+(s/def :internal.matrix/a ::us/safe-number)
+(s/def :internal.matrix/b ::us/safe-number)
+(s/def :internal.matrix/c ::us/safe-number)
+(s/def :internal.matrix/d ::us/safe-number)
+(s/def :internal.matrix/e ::us/safe-number)
+(s/def :internal.matrix/f ::us/safe-number)
 
+(s/def ::matrix
+  (s/and (s/keys :req-un [:internal.matrix/a
+                          :internal.matrix/b
+                          :internal.matrix/c
+                          :internal.matrix/d
+                          :internal.matrix/e
+                          :internal.matrix/f])
+         gmt/matrix?))
+
+
+(s/def :internal.point/x ::us/safe-number)
+(s/def :internal.point/y ::us/safe-number)
+
+(s/def ::point
+  (s/and (s/keys :req-un [:internal.point/x
+                          :internal.point/y])
+         gpt/point?))
 
 ;; GRADIENTS
 
@@ -252,7 +267,6 @@
 (s/def :internal.shape/exports
   (s/coll-of :internal.shape/export :kind vector?))
 
-
 (s/def :internal.shape/selrect
   (s/keys :req-un [:internal.shape/x
                    :internal.shape/y
@@ -263,14 +277,14 @@
                    :internal.shape/width
                    :internal.shape/height]))
 
-(s/def :internal.shape/point
-  (s/and (s/keys :req-un [:internal.shape/x :internal.shape/y]) gpt/point?))
-
 (s/def :internal.shape/points
-  (s/every :internal.shape/point :kind vector?))
+  (s/every ::point :kind vector?))
 
 (s/def :internal.shape/shapes
   (s/every uuid? :kind vector?))
+
+(s/def :internal.shape/transform ::matrix)
+(s/def :internal.shape/transform-inverse ::matrix)
 
 (s/def ::shape-attrs
   (s/keys :opt-un [:internal.shape/selrect
@@ -306,6 +320,8 @@
                    :internal.shape/stroke-width
                    :internal.shape/stroke-alignment
                    :internal.shape/text-align
+                   :internal.shape/transform
+                   :internal.shape/transform-inverse
                    :internal.shape/width
                    :internal.shape/height
                    :internal.shape/interactions
@@ -781,7 +797,9 @@
   [data {:keys [id page-id component-id operations] :as change}]
   (let [update-fn (fn [objects]
                     (if-let [obj (get objects id)]
-                      (assoc objects id (reduce process-operation obj operations))
+                      (let [result (reduce process-operation obj operations)]
+                        (us/verify ::shape result)
+                        (assoc objects id result))
                       objects))]
     (if page-id
       (d/update-in-when data [:pages-index page-id :objects] update-fn)

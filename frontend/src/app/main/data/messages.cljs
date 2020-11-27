@@ -28,12 +28,12 @@
 (s/def ::status #{:visible :hide})
 (s/def ::controls #{:none :close :inline-actions :bottom-actions})
 
-(s/def ::tag ::us/string)
+(s/def ::tag (s/or :str ::us/string :kw ::us/keyword))
 (s/def ::label ::us/string)
 (s/def ::callback fn?)
 (s/def ::action (s/keys :req-un [::label ::callback]))
 (s/def ::actions (s/every ::message-action :kind vector?))
-(s/def ::timeout ::us/integer)
+(s/def ::timeout (s/nilable ::us/integer))
 (s/def ::content ::us/string)
 
 (s/def ::message

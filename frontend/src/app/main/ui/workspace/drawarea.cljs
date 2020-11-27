@@ -12,7 +12,7 @@
    [app.main.data.workspace.drawing :as dd]
    [app.main.store :as st]
    [app.main.ui.workspace.shapes :as shapes]
-   [app.main.ui.workspace.shapes.path :refer [path-editor]]
+   [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]
    [app.common.geom.shapes :as gsh]
    [app.common.data :as d]
    [app.util.dom :as dom]
