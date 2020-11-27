@@ -66,7 +66,7 @@
                                commit-local? false}
                           :as opts}]
    (us/verify ::cp/changes changes)
-   (us/verify ::cp/changes undo-changes)
+   ;; (us/verify ::cp/changes undo-changes)
    (ptk/reify ::commit-changes
      cljs.core/IDeref
      (-deref [_] changes)
