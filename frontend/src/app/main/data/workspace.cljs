@@ -1053,21 +1053,6 @@
         (rx/of (dwt/set-modifiers [id] {:displacement displ})
                (dwt/apply-modifiers [id]))))))
 
-;; --- Shape attrs (Layers Sidebar)
-
-(defn toggle-collapse
-  [id]
-  (ptk/reify ::toggle-collapse
-    ptk/UpdateEvent
-    (update [_ state]
-      (update-in state [:workspace-local :expanded id] not))))
-
-(def collapse-all
-  (ptk/reify ::collapse-all
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-local dissoc :expanded))))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Navigation
