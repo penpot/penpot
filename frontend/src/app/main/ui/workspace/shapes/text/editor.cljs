@@ -117,8 +117,13 @@
   [shape props]
   (mf/html
    (let [element (obj/get props "element")
-         props (obj/merge! props #js {:shape shape})]
-     (case (obj/get element "type")
+         type    (obj/get element "type")
+         props   (obj/merge! props #js {:shape shape})
+         props   (cond-> props
+                   (= type "root") (obj/set! "key" "root")
+                   (= type "paragraph-set") (obj/set! "key" "paragraph-set"))]
+
+     (case type
        "root"          [:> editor-root-node props]
        "paragraph-set" [:> editor-paragraph-set-node props]
        "paragraph"     [:> editor-paragraph-node props]
@@ -138,13 +143,12 @@
   [props ref]
   (let [shape (unchecked-get props "shape")
         node-ref (unchecked-get props "node-ref")
-        ;; read-only? (or (unchecked-get props "read-only?") false)
         
         {:keys [id x y width height content grow-type]} shape
         zoom     (mf/deref refs/selected-zoom)
         state    (mf/use-state #(parse-content content))
         editor   (mf/use-memo #(dwt/create-editor))
-        ;;self-ref      (mf/use-ref)
+        self-ref      (mf/use-ref)
         selecting-ref (mf/use-ref)
         measure-ref (mf/use-ref)
 
@@ -164,7 +168,7 @@
           (let [sidebar (dom/get-element "settings-bar")
                 assets (dom/get-element-by-class "assets-bar")
                 cpicker (dom/get-element-by-class "colorpicker-tooltip")
-                self    (when node-ref (mf/ref-val node-ref))
+                self    (mf/ref-val self-ref)
                 target  (dom/get-target event)
                 selecting? (mf/ref-val selecting-ref)]
             (when-not (or (and sidebar (.contains sidebar target))
@@ -227,7 +231,7 @@
        (reset! state (parse-content content))
        (reset! content-var content)))
 
-    [:foreignObject {:ref ref
+    [:foreignObject {:ref self-ref
                      :transform (gsh/transform-matrix shape)
                      :x x :y y
                      :width  (if (#{:auto-width} grow-type) 10000 width)

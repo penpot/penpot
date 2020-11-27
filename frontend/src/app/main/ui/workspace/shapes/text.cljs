@@ -10,6 +10,7 @@
 (ns app.main.ui.workspace.shapes.text
   (:require
    [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.texts :as dwt]
@@ -40,14 +41,11 @@
 
 ;; --- Text Wrapper for workspace
 
-(defn handle-shape-resize [{:keys [name id selrect grow-type overflow-text]} new-width new-height]
+(defn handle-shape-resize [{:keys [id selrect grow-type overflow-text]} new-width new-height]
   (let [{shape-width :width shape-height :height} selrect
         undo-transaction (get-in @st/state [:workspace-undo :transaction])]
     (when (not undo-transaction) (st/emit! dwc/start-undo-transaction))
-    (when (and (> new-width 0)
-               (> new-height 0)
-               (or (not= shape-width new-width)
-                   (not= shape-height new-height)))
+    (when (and (> new-width 0) (> new-height 0))
       (cond
         (and overflow-text (not= :fixed grow-type))
         (st/emit! (dwt/update-overflow-text id false))
@@ -58,17 +56,19 @@
         (and (= :fixed grow-type) overflow-text (<= new-height shape-height))
         (st/emit! (dwt/update-overflow-text id false))
 
-        (= grow-type :auto-width)
+        (and (or (not= shape-width new-width)
+                 (not= shape-height new-height))
+             (= grow-type :auto-width))
         (st/emit! (dw/update-dimensions [id] :width new-width)
                   (dw/update-dimensions [id] :height new-height))
 
-        (= grow-type :auto-height)
+        (and (not= shape-height new-height) (= grow-type :auto-height))
         (st/emit! (dw/update-dimensions [id] :height new-height))))
     (when (not undo-transaction) (st/emit! dwc/discard-undo-transaction))))
 
-(defn resize-observer [shape root query]
+(defn resize-observer [{:keys [id selrect grow-type overflow-text] :as shape} root query]
   (mf/use-effect
-   (mf/deps shape root query)
+   (mf/deps id selrect grow-type overflow-text root query)
    (fn []
      (let [on-change (fn [entries]
                        (when (seq entries)
@@ -77,7 +77,7 @@
                          (timers/raf
                           #(let [width  (obj/get-in entries [0 "contentRect" "width"])
                                  height (obj/get-in entries [0 "contentRect" "height"])]
-                             (handle-shape-resize shape width height)))))
+                             (handle-shape-resize shape (mth/ceil width) (mth/ceil height))))))
            observer (js/ResizeObserver. on-change)
            node (when root (dom/query root query))]
        (when node (.observe observer node))
@@ -106,12 +106,9 @@
         handle-double-click (use-double-click shape selected?)
 
         text-ref (mf/use-ref nil)
-        text-node (mf/ref-val text-ref)
-        edit-text-ref (mf/use-ref nil)
-        edit-text-node (mf/ref-val edit-text-ref)]
+        text-node (mf/ref-val text-ref)]
 
     (resize-observer shape text-node ".paragraph-set")
-    (resize-observer shape edit-text-node ".paragraph-set")
 
     [:> shape-container {:shape shape}
      [:& text/text-shape {:key "text-shape"
@@ -121,7 +118,6 @@
                           :style {:display (when edition? "none")}}]
      (when edition?
        [:& editor/text-shape-edit {:key "editor"
-                                   :ref edit-text-ref
                                    :shape shape}])
 
      (when-not edition?

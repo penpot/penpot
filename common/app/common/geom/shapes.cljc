@@ -44,26 +44,29 @@
     (move shape (gpt/point dx dy))))
 
 ;; --- Resize (Dimensions)
-;; Fixme: Improve using modifiers instead of calculating the selrect/points
 (defn resize
   [shape width height]
   (us/assert map? shape)
   (us/assert number? width)
   (us/assert number? height)
-  (let [selrect (-> (:selrect shape)
-                    (assoc :width width)
-                    (assoc :height height)
-                    (assoc :x2 (+ (-> shape :selrect :x1) width))
-                    (assoc :y2 (+ (-> shape :selrect :y1) height)))
 
-        center (gco/center-selrect selrect)
-        points (-> selrect gpr/rect->points (gtr/transform-points center (:transform shape)))]
+  (let [shape-transform (:transform shape (gmt/matrix))
+        shape-transform-inv (:transform-inverse shape (gmt/matrix))
+        shape-center (gco/center-shape shape)
+        {sr-width :width sr-height :height} (:selrect shape)
+        origin (-> (gpt/point (:selrect shape))
+                   (gtr/transform-point-center shape-center shape-transform))
+
+        scalev (gpt/divide (gpt/point width height)
+                           (gpt/point sr-width sr-height))]
 
     (-> shape
-        (assoc :width width)
-        (assoc :height height)
-        (assoc :selrect selrect)
-        (assoc :points points))))
+        (update :modifiers assoc
+                :resize-vector scalev
+                :resize-origin origin
+                :resize-transform shape-transform
+                :resize-transform-inverse shape-transform-inv)
+        (gtr/transform-shape))))
 
 (defn resize-rect
   [shape attr value]
@@ -258,7 +261,10 @@
 (defn points->selrect [points] (gpr/points->selrect points))
 
 (defn transform-shape [shape] (gtr/transform-shape shape))
-(defn transform-matrix [shape] (gtr/transform-matrix shape))
+(defn transform-matrix
+  ([shape] (gtr/transform-matrix shape))
+  ([shape options] (gtr/transform-matrix shape options)))
+
 (defn transform-point-center [point center transform] (gtr/transform-point-center point center transform))
 (defn transform-rect [rect mtx] (gtr/transform-rect rect mtx))
 
