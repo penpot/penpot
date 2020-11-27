@@ -557,10 +557,10 @@
         components     (apply-filters (mf/deref components-ref) filters)]
 
     [:div.tool-window
-     [:div.tool-window-bar
+     [:div.tool-window-bar.library-bar
+      {:on-click toggle-open}
       [:div.collapse-library
-       {:class (dom/classnames :open @open?)
-        :on-click toggle-open}
+       {:class (dom/classnames :open @open?)}
        i/arrow-slide]
 
       (if local?
@@ -571,7 +571,10 @@
         [:*
           [:span (:name file)]
           [:span.tool-link.tooltip.tooltip-left {:alt "Open library file"}
-           [:a {:href (str "#" url) :target "_blank"} i/chain]]])]
+           [:a {:href (str "#" url)
+                :target "_blank"
+                :on-click dom/stop-propagation}
+            i/chain]]])]
 
      (when @open?
        (let [show-components?   (and (or (= (:box filters) :all)
