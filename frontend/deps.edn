@@ -16,7 +16,7 @@
   funcool/okulary {:mvn/version "2020.04.14-0"}
   funcool/potok {:mvn/version "2020.08.10-2"}
   funcool/promesa {:mvn/version "6.0.0"}
-  funcool/rumext {:mvn/version "2020.10.14-1"}
+  funcool/rumext {:mvn/version "2020.11.27-0"}
 
   lambdaisland/uri {:mvn/version "1.4.54"
                     :exclusions [org.clojure/data.json]}

@@ -32,7 +32,7 @@
    [app.util.debug :refer [debug?]]
    [app.main.ui.workspace.shapes.outline :refer [outline]]
    [app.main.ui.measurements :as msr]
-   [app.main.ui.workspace.shapes.path :refer [path-editor]]))
+   [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]))
 
 (def rotation-handler-size 25)
 (def resize-point-radius 4)

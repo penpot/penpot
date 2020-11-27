@@ -382,33 +382,33 @@
    (ptk/reify ::update-shapes
      ptk/WatchEvent
      (watch [_ state stream]
-      (let [page-id (:current-page-id state)
-            objects (lookup-page-objects state page-id)]
-        (loop [ids (seq ids)
-               rch []
-               uch []]
-          (if (nil? ids)
-            (rx/of (commit-changes
-                    (cond-> rch reg-objects? (conj {:type :reg-objects :page-id page-id :shapes (vec ids)}))
-                    (cond-> uch reg-objects? (conj {:type :reg-objects :page-id page-id :shapes (vec ids)}))
-                    {:commit-local? true}))
+       (let [page-id (:current-page-id state)
+             objects (lookup-page-objects state page-id)]
+         (loop [ids (seq ids)
+                rch []
+                uch []]
+           (if (nil? ids)
+             (rx/of (commit-changes
+                     (cond-> rch reg-objects? (conj {:type :reg-objects :page-id page-id :shapes (vec ids)}))
+                     (cond-> uch reg-objects? (conj {:type :reg-objects :page-id page-id :shapes (vec ids)}))
+                     {:commit-local? true}))
 
-            (let [id   (first ids)
-                  obj1 (get objects id)
-                  obj2 (f obj1)
-                  rch-operations (generate-operations obj1 obj2)
-                  uch-operations (generate-operations obj2 obj1 true)
-                  rchg {:type :mod-obj
-                        :page-id page-id
-                        :operations rch-operations
-                        :id id}
-                  uchg {:type :mod-obj
-                        :page-id page-id
-                        :operations uch-operations
-                        :id id}]
-              (recur (next ids)
-                     (if (empty? rch-operations) rch (conj rch rchg))
-                     (if (empty? uch-operations) uch (conj uch uchg)))))))))))
+             (let [id   (first ids)
+                   obj1 (get objects id)
+                   obj2 (f obj1)
+                   rch-operations (generate-operations obj1 obj2)
+                   uch-operations (generate-operations obj2 obj1 true)
+                   rchg {:type :mod-obj
+                         :page-id page-id
+                         :operations rch-operations
+                         :id id}
+                   uchg {:type :mod-obj
+                         :page-id page-id
+                         :operations uch-operations
+                         :id id}]
+               (recur (next ids)
+                      (if (empty? rch-operations) rch (conj rch rchg))
+                      (if (empty? uch-operations) uch (conj uch uchg)))))))))))
 
 
 (defn update-shapes-recursive

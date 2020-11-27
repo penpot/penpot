@@ -9,18 +9,15 @@
 
 (ns app.main.ui.workspace.shapes.group
   (:require
-   [rumext.alpha :as mf]
-   [app.common.data :as d]
-   [app.main.constants :as c]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.workspace.shapes.common :as common]
-   [app.main.ui.shapes.shape :refer [shape-container]]
-   [app.main.ui.shapes.group :as group]
-   [app.util.dom :as dom]
    [app.main.streams :as ms]
-   [app.util.timers :as ts]))
+   [app.main.ui.shapes.group :as group]
+   [app.main.ui.shapes.shape :refer [shape-container]]
+   [app.main.ui.workspace.effects :as we]
+   [app.util.dom :as dom]
+   [rumext.alpha :as mf]))
 
 (defn- group-wrapper-factory-equals?
   [np op]
@@ -30,6 +27,14 @@
         o-frame (unchecked-get op "frame")]
     (and (= n-frame o-frame)
          (= n-shape o-shape))))
+
+(defn use-double-click [{:keys [id]}]
+  (mf/use-callback
+   (mf/deps id)
+   (fn [event]
+     (dom/stop-propagation event)
+     (dom/prevent-default event)
+     (st/emit! (dw/select-inside-group id @ms/mouse-position)))))
 
 (defn group-wrapper-factory
   [shape-wrapper]
@@ -41,14 +46,8 @@
       (let [shape (unchecked-get props "shape")
             frame (unchecked-get props "frame")
 
-            on-mouse-down
-            (mf/use-callback (mf/deps shape) #(common/on-mouse-down % shape))
-
-            on-context-menu
-            (mf/use-callback (mf/deps shape) #(common/on-context-menu % shape))
-
-            childs-ref       (mf/use-memo (mf/deps shape) #(refs/objects-by-id (:shapes shape)))
-            childs           (mf/deref childs-ref)
+            childs-ref (mf/use-memo (mf/deps shape) #(refs/objects-by-id (:shapes shape)))
+            childs     (mf/deref childs-ref)
 
             is-child-selected-ref
             (mf/use-memo (mf/deps (:id shape)) #(refs/is-child-selected? (:id shape)))
@@ -59,24 +58,23 @@
             mask-id (when (:masked-group? shape) (first (:shapes shape)))
 
             is-mask-selected-ref
-            (mf/use-memo (mf/deps mask-id)
-                         #(refs/make-selected-ref mask-id))
+            (mf/use-memo (mf/deps mask-id) #(refs/make-selected-ref mask-id))
 
             is-mask-selected?
             (mf/deref is-mask-selected-ref)
 
-            on-double-click
-            (mf/use-callback
-             (mf/deps (:id shape))
-             (fn [event]
-               (dom/stop-propagation event)
-               (dom/prevent-default event)
-               (st/emit! (dw/select-inside-group (:id shape) @ms/mouse-position))))]
+            handle-mouse-down (we/use-mouse-down shape)
+            handle-context-menu (we/use-context-menu shape)
+            handle-pointer-enter (we/use-pointer-enter shape)
+            handle-pointer-leave (we/use-pointer-leave shape)
+            handle-double-click (use-double-click shape)]
 
         [:> shape-container {:shape shape
-                             :on-mouse-down on-mouse-down
-                             :on-context-menu on-context-menu
-                             :on-double-click on-double-click}
+                             :on-mouse-down handle-mouse-down
+                             :on-context-menu handle-context-menu
+                             :on-pointer-enter handle-pointer-enter
+                             :on-pointer-leave handle-pointer-leave
+                             :on-double-click handle-double-click}
          [:& group-shape
           {:frame frame
            :shape shape

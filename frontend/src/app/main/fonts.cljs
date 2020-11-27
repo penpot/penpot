@@ -170,3 +170,8 @@
   (or
    (d/seek #(or (= (:id %) "regular") (= (:name %) "regular")) variants)
    (first variants)))
+
+(defn fetch-font [font-id font-variant-id]
+  (let [font-url (font-url font-id font-variant-id)]
+    (-> (js/fetch font-url)
+        (p/then (fn [res] (.text res))))))

@@ -53,7 +53,7 @@
    [potok.core :as ptk]
    [promesa.core :as p]
    [rumext.alpha :as mf]
-   [app.main.ui.workspace.shapes.path :refer [path-actions]])
+   [app.main.ui.workspace.shapes.path.actions :refer [path-actions]])
   (:import goog.events.EventType))
 
 ;; --- Coordinates Widget

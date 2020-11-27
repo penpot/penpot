@@ -19,7 +19,6 @@
    [app.main.ui.shapes.rect :as rect]
    [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.image :as image]
-   [app.main.data.workspace.selection :as dws]
    [app.main.store :as st]
    [app.main.refs :as refs]
 
@@ -54,20 +53,6 @@
       (and (identical? n-shape o-shape)
            (identical? n-frame o-frame)))))
 
-(defn use-mouse-enter
-  [{:keys [id] :as shape}]
-  (mf/use-callback
-   (mf/deps id)
-   (fn []
-     (st/emit! (dws/change-hover-state id true)))))
-
-(defn use-mouse-leave
-  [{:keys [id] :as shape}]
-  (mf/use-callback
-   (mf/deps id)
-   (fn []
-     (st/emit! (dws/change-hover-state id false)))))
-
 (defn make-is-moving-ref
   [id]
   (let [check-moving (fn [local]
@@ -86,8 +71,6 @@
                   (geom/translate-to-frame frame))
         opts #js {:shape shape
                   :frame frame}
-        on-mouse-enter (use-mouse-enter shape)
-        on-mouse-leave (use-mouse-leave shape)
 
         alt? (hooks/use-rxsub ms/keyboard-alt)
 
@@ -95,15 +78,10 @@
                                    #(make-is-moving-ref (:id shape)))
         moving? (mf/deref moving-iref)]
 
-    (mf/use-effect
-     (constantly on-mouse-leave))
-
     (when (and shape
                (or ghost? (not moving?))
                (not (:hidden shape)))
-      [:g.shape-wrapper {:on-mouse-enter on-mouse-enter
-                         :on-mouse-leave on-mouse-leave
-                         :style {:cursor (if alt? cur/duplicate nil)}}
+      [:g.shape-wrapper {:style {:cursor (if alt? cur/duplicate nil)}}
        (case (:type shape)
          :path [:> path/path-wrapper opts]
          :text [:> text/text-wrapper opts]
