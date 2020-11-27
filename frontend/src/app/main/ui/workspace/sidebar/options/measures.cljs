@@ -20,6 +20,7 @@
    [app.common.geom.point :as gpt]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.common :as dwc]
+   [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.common.math :as math]
    [app.util.i18n :refer [t] :as i18n]))
 
@@ -119,23 +120,20 @@
         [:div.row-flex
          [:span.element-set-subtitle (t locale "workspace.options.size")]
          [:div.input-element.width
-          [:input.input-text {:type "number"
-                              :min "0"
-                              :no-validate true
-                              :placeholder "--"
-                              :on-click select-all
-                              :on-change on-width-change
-                              :value (attr->string :width values)}]]
-
+          [:> numeric-input {:min "0"
+                             :no-validate true
+                             :placeholder "--"
+                             :on-click select-all
+                             :on-change on-width-change
+                             :value (attr->string :width values)}]]
 
          [:div.input-element.height
-          [:input.input-text {:type "number"
-                              :min "0"
-                              :no-validate true
-                              :placeholder "--"
-                              :on-click select-all
-                              :on-change on-height-change
-                              :value (attr->string :height values)}]]
+          [:> numeric-input {:min "0"
+                             :no-validate true
+                             :placeholder "--"
+                             :on-click select-all
+                             :on-change on-height-change
+                             :value (attr->string :height values)}]]
 
          [:div.lock-size {:class (classnames
                                    :selected (true? proportion-lock)
@@ -150,28 +148,25 @@
         [:div.row-flex
          [:span.element-set-subtitle (t locale "workspace.options.position")]
          [:div.input-element.Xaxis
-          [:input.input-text {:type "number"
-                              :no-validate true
-                              :placeholder "--"
-                              :on-click select-all
-                              :on-change on-pos-x-change
-                              :value (attr->string :x values)}]]
+          [:> numeric-input {:no-validate true
+                             :placeholder "--"
+                             :on-click select-all
+                             :on-change on-pos-x-change
+                             :value (attr->string :x values)}]]
          [:div.input-element.Yaxis
-          [:input.input-text {:type "number"
-                              :no-validate true
-                              :placeholder "--"
-                              :on-click select-all
-                              :on-change on-pos-y-change
-                              :value (attr->string :y values)}]]])
+          [:> numeric-input {:no-validate true
+                             :placeholder "--"
+                             :on-click select-all
+                             :on-change on-pos-y-change
+                             :value (attr->string :y values)}]]])
 
       ;; ROTATION
       (when (options :rotation)
         [:div.row-flex
          [:span.element-set-subtitle (t locale "workspace.options.rotation")]
          [:div.input-element.degrees
-          [:input.input-text
-           {:type "number"
-            :no-validate true
+          [:> numeric-input
+           {:no-validate true
             :min "0"
             :max "359"
             :placeholder "--"
@@ -192,9 +187,8 @@
         [:div.row-flex
          [:span.element-set-subtitle (t locale "workspace.options.radius")]
          [:div.input-element.pixels
-          [:input.input-text
-           {:type "number"
-            :placeholder "--"
+          [:> numeric-input
+           {:placeholder "--"
             :on-click select-all
             :on-change on-radius-change
             :value (attr->string :rx values)}]]

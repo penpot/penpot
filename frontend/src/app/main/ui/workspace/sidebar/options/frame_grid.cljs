@@ -23,6 +23,7 @@
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
    [app.main.ui.workspace.sidebar.options.rows.input-row :refer [input-row]]
+   [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.editable-select :refer [editable-select]]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -135,11 +136,10 @@
 
       (if (= type :square)
         [:div.input-element.pixels
-         [:input.input-text {:type "number"
-                             :min "1"
-                             :no-validate true
-                             :value (:size params)
-                             :on-change (handle-change-event :params :size)}]]
+         [:> numeric-input {:min "1"
+                            :no-validate true
+                            :value (:size params)
+                            :on-change (handle-change-event :params :size)}]]
         [:& editable-select {:value (:size params)
                              :type (when (number? (:size params)) "number" )
                              :class "input-option"

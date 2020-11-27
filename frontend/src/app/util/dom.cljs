@@ -75,6 +75,11 @@
   [node]
   (.-value node))
 
+(defn get-attribute
+  "Extract the value of one attribute of a dom node."
+  [node attr-name]
+  (.getAttribute node attr-name))
+
 (def get-target-val (comp get-value get-target))
 
 (defn click

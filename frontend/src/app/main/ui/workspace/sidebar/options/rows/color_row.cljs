@@ -20,7 +20,8 @@
    [app.util.color :as uc]
    [app.main.refs :as refs]
    [app.main.data.modal :as modal]
-   [app.main.ui.components.color-bullet :as cb]))
+   [app.main.ui.components.color-bullet :as cb]
+   [app.main.ui.components.numeric-input :refer [numeric-input]]))
 
 (defn color-picker-callback
   [color disable-gradient disable-opacity handle-change-color handle-open handle-close]
@@ -158,11 +159,10 @@
                    (not (:gradient color)))
           [:div.input-element
            {:class (classnames :percentail (not= (:opacity color) :multiple))}
-           [:input.input-text {:type "number"
-                               :value (-> color :opacity opacity->string)
-                               :placeholder (tr "settings.multiple")
-                               :on-click select-all
-                               :on-change handle-opacity-change
-                               :min "0"
-                               :max "100"}]])])]))
+           [:> numeric-input {:value (-> color :opacity opacity->string)
+                              :placeholder (tr "settings.multiple")
+                              :on-click select-all
+                              :on-change handle-opacity-change
+                              :min "0"
+                              :max "100"}]])])]))
 

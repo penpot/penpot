@@ -20,3 +20,5 @@
 (def esc? (is-keycode? 27))
 (def enter? (is-keycode? 13))
 (def space? (is-keycode? 32))
+(def up-arrow? (is-keycode? 38))
+(def down-arrow? (is-keycode? 40))
