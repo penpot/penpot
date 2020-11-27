@@ -136,12 +136,18 @@
             (->> data
                  (filter #(= page-id (:page-id %)))
                  (d/index-by :id)
-                 (assoc state :comment-threads)))]
+                 (assoc state :comment-threads)))
+          (on-error [err]
+            (if (= :authorization (:type err))
+              (rx/empty)
+              (rx/throw err)))]
+
     (ptk/reify ::fetch-comment-threads
       ptk/WatchEvent
       (watch [_ state stream]
         (->> (rp/query :comment-threads {:file-id file-id})
-             (rx/map #(partial fetched %)))))))
+             (rx/map #(partial fetched %))
+             (rx/catch on-error))))))
 
 (defn refresh-comment-thread
   [{:keys [id file-id] :as thread}]
