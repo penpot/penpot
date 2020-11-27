@@ -108,11 +108,14 @@
 
   .collapse-library {
     margin-right: $small;
-    cursor: pointer;
 
     &.open svg {
       transform: rotate(90deg);
     }
+  }
+
+  .library-bar {
+    cursor: pointer;
   }
 
   .asset-group {
