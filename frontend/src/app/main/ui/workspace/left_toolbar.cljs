@@ -66,7 +66,7 @@
          :on-click (partial select-drawtool :rect)}
         i/box]
        [:li.tooltip.tooltip-right
-        {:alt (t locale "workspace.toolbar.circle")
+        {:alt (t locale "workspace.toolbar.ellipse")
          :class (when (= selected-drawtool :circle) "selected")
          :on-click (partial select-drawtool :circle)}
         i/circle]
