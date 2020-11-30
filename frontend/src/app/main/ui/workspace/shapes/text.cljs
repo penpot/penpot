@@ -41,7 +41,8 @@
 
 ;; --- Text Wrapper for workspace
 
-(defn handle-shape-resize [{:keys [id selrect grow-type overflow-text]} new-width new-height]
+(defn handle-shape-resize
+  [{:keys [id selrect grow-type overflow-text]} new-width new-height]
   (let [{shape-width :width shape-height :height} selrect
         undo-transaction (get-in @st/state [:workspace-undo :transaction])]
     (when (not undo-transaction) (st/emit! dwc/start-undo-transaction))
@@ -59,11 +60,14 @@
         (and (or (not= shape-width new-width)
                  (not= shape-height new-height))
              (= grow-type :auto-width))
-        (st/emit! (dw/update-dimensions [id] :width new-width)
-                  (dw/update-dimensions [id] :height new-height))
+        (when (and (pos? shape-width)
+                   (pos? shape-height))
+          (st/emit! (dw/update-dimensions [id] :width new-width)
+                    (dw/update-dimensions [id] :height new-height)))
 
         (and (not= shape-height new-height) (= grow-type :auto-height))
-        (st/emit! (dw/update-dimensions [id] :height new-height))))
+        (when (pos? shape-height)
+          (st/emit! (dw/update-dimensions [id] :height new-height)))))
     (when (not undo-transaction) (st/emit! dwc/discard-undo-transaction))))
 
 (defn resize-observer [{:keys [id selrect grow-type overflow-text] :as shape} root query]
