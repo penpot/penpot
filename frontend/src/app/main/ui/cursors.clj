@@ -55,10 +55,14 @@
 (defn encode-svg-cursor
   [id rotation x y height]
   (let [svg-path  (str cursor-folder "/" (name id) ".svg")
-        data      (-> svg-path io/resource slurp parse-svg uri/percent-encode)
-        transform (if rotation (str " transform='rotate(" rotation ")'") "")]
+        data      (-> svg-path io/resource slurp parse-svg)
+        data      (uri/percent-encode data)
+
+        data (if rotation
+               (str/fmt "%3Cg transform='rotate(%s 8,8)'%3E%s%3C/g%3E" rotation data)
+               data)]
     (str "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='20px' "
-         "height='" height "px' " transform "%3E" data "%3C/svg%3E\") " x " " y ", auto")))
+         "height='" height "px' %3E" data "%3C/svg%3E\") " x " " y ", auto")))
 
 (defmacro cursor-ref
   "Creates a static cursor given its name, rotation and x/y hotspot"

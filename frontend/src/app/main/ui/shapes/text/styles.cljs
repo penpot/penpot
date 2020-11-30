@@ -35,27 +35,29 @@
       (= talign "justify") (obj/set! "justifyContent" "stretch"))))
 
 (defn generate-paragraph-set-styles
-  [data]
+  [data props]
   ;; The position absolute is used so the paragraph is "outside"
   ;; the normal layout and can grow outside its parent
   ;; We use this element to measure the size of the text
-  (let [base #js {:display "inline-block"
-                  :position "absolute"}]
+  (let [base #js {:display "inline-block"}]
     base))
 
 (defn generate-paragraph-styles
-  [data]
-  (let [base #js {:fontSize "14px"
+  [data props]
+  (let [shape  (obj/get props "shape")
+        grow-type (:grow-type shape)
+        base #js {:fontSize "14px"
                   :margin "inherit"
                   :lineHeight "1.2"}
         lh (obj/get data "line-height")
         ta (obj/get data "text-align")]
     (cond-> base
       ta (obj/set! "textAlign" ta)
-      lh (obj/set! "lineHeight" lh))))
+      lh (obj/set! "lineHeight" lh)
+      (= grow-type :auto-width) (obj/set! "whiteSpace" "pre"))))
 
 (defn generate-text-styles
-  [data]
+  [data props]
   (let [letter-spacing (obj/get data "letter-spacing")
         text-decoration (obj/get data "text-decoration")
         text-transform (obj/get data "text-transform")
@@ -82,7 +84,7 @@
         fill-color-ref-file (obj/get data "fill-color-ref-file")
 
         [r g b a] (uc/hex->rgba fill-color fill-opacity)
-        background (if fill-color-gradient
+        text-color (if fill-color-gradient
                      (uc/gradient->css (js->clj fill-color-gradient))
                      (str/format "rgba(%s, %s, %s, %s)" r g b a))
 
@@ -91,7 +93,8 @@
         base #js {:textDecoration text-decoration
                   :textTransform text-transform
                   :lineHeight (or line-height "inherit")
-                  "--text-color" background}]
+                  :color text-color
+                  "--text-color" text-color}]
 
     (when (and (string? letter-spacing)
                (pos? (alength letter-spacing)))
@@ -116,5 +119,6 @@
           (obj/set! base "fontFamily" font-family)
           (obj/set! base "fontStyle" font-style)
           (obj/set! base "fontWeight" font-weight))))
+
 
     base))

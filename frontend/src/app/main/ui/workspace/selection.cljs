@@ -156,10 +156,11 @@
   (let [res-point (if (#{:top :bottom} position)
                     {:y y}
                     {:x x})
-        width length #_(max 0 (- length (/ (* resize-point-rect-size 2) zoom)))
+        target-length (max 0 (- length (/ (* resize-point-rect-size 2) zoom)))
+        width (if (< target-length 6) length target-length)
         height (/ resize-side-height zoom)]
-    [:rect {:x x
-            :y (- y (/ resize-side-height 2 zoom))
+    [:rect {:x (+ x (/ (- length width) 2))
+            :y (- y (/ height 2))
             :width width
             :height height
             :transform (gmt/multiply transform
