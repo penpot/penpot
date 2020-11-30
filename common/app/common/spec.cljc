@@ -121,8 +121,8 @@
 (s/def ::point gpt/point?)
 (s/def ::id ::uuid)
 
-(def max-safe-int 9007199254740991)
-(def min-safe-int -9007199254740991)
+(def max-safe-int 1000000)
+(def min-safe-int -1000000)
 
 (s/def ::safe-integer
   #(and
