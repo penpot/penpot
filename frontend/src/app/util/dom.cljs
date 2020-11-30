@@ -245,3 +245,6 @@
 (defn ^boolean class? [node class-name]
   (let [class-list (.-classList ^js node)]
     (.contains ^js class-list class-name)))
+
+(defn get-user-agent []
+  (.-userAgent js/navigator))

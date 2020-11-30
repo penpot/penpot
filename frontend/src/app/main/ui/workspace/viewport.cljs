@@ -116,8 +116,7 @@
     (st/emit! dw/start-pan)
     (rx/subscribe stream
                   (fn [delta]
-                    (let [vbox (.. ^js node -viewBox -baseVal)
-                          zoom (gpt/point @refs/selected-zoom)
+                    (let [zoom (gpt/point @refs/selected-zoom)
                           delta (gpt/divide delta zoom)]
                       (st/emit! (dw/update-viewport-position
                                  {:x #(- % (:x delta))
@@ -352,10 +351,15 @@
         on-mouse-move
         (fn [event]
           (let [event (.getBrowserEvent ^js event)
-                pt (dom/get-client-position ^js event)
-                pt (translate-point-to-viewport pt)
-                delta (gpt/point (.-movementX ^js event)
-                                 (.-movementY ^js event))]
+                raw-pt (dom/get-client-position ^js event)
+                pt (translate-point-to-viewport raw-pt)
+
+                ;; We calculate the delta because Safari's MouseEvent.movementX/Y drop
+                ;; events
+                delta (if @last-position
+                        (gpt/subtract raw-pt @last-position)
+                        (gpt/point 0 0))]
+            (reset! last-position raw-pt)
             (st/emit! (ms/->PointerEvent :delta delta
                                          (kbd/ctrl? event)
                                          (kbd/shift? event)

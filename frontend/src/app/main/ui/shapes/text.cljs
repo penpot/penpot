@@ -26,7 +26,7 @@
   [{:keys [node index shape] :as props}]
   (let [embed-resources? (mf/use-ctx muc/embed-ctx)
         {:keys [type text children]} node
-
+        props #js {:shape shape}
         render-node
         (fn [index node]
           (mf/element text-node {:index index
@@ -35,29 +35,31 @@
                                  :shape shape}))]
 
     (if (string? text)
-      (let [style (sts/generate-text-styles (clj->js node))]
-        [:span.text-node {:style style} (if (= text "") "\u00A0" text)])
+      (let [style (sts/generate-text-styles (clj->js node) props)]
+        [:span {:style style
+                :className (when (:fill-color-gradient node) "gradient")}
+         (if (= text "") "\u00A0" text)])
 
       (let [children (map-indexed render-node children)]
         (case type
           "root"
-          (let [style (sts/generate-root-styles (clj->js node) #js {:shape shape})]
+          (let [style (sts/generate-root-styles (clj->js node) props)]
             [:div.root.rich-text
              {:key index
               :style style
               :xmlns "http://www.w3.org/1999/xhtml"}
              [:*
-              [:style ".text-node { background: var(--text-color); -webkit-text-fill-color: transparent; -webkit-background-clip: text;"]
+              [:style ".gradient { background: var(--text-color); -webkit-text-fill-color: transparent; -webkit-background-clip: text;"]
               (when embed-resources?
                 [ste/embed-fontfaces-style {:node node}])]
              children])
 
           "paragraph-set"
-          (let [style (sts/generate-paragraph-set-styles (clj->js node))]
+          (let [style (sts/generate-paragraph-set-styles (clj->js node) props)]
             [:div.paragraph-set {:key index :style style} children])
 
           "paragraph"
-          (let [style (sts/generate-paragraph-styles (clj->js node))]
+          (let [style (sts/generate-paragraph-styles (clj->js node) props)]
             [:p.paragraph {:key index :style style} children])
 
           nil)))))

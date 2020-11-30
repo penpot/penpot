@@ -115,11 +115,13 @@
     (resize-observer shape text-node ".paragraph-set")
 
     [:> shape-container {:shape shape}
-     [:& text/text-shape {:key "text-shape"
-                          :ref text-ref
-                          :shape shape
-                          :selected? selected?
-                          :style {:display (when edition? "none")}}]
+     ;; We keep hidden the shape when we're editing so it keeps track of the size
+     ;; and updates the selrect acordingly
+     [:g.text-shape {:opacity (when edition? 0)}
+      [:& text/text-shape {:key "text-shape"
+                           :ref text-ref
+                           :shape shape
+                           :selected? selected?}]]
      (when edition?
        [:& editor/text-shape-edit {:key "editor"
                                    :shape shape}])

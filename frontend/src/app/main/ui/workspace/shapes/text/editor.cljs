@@ -82,7 +82,7 @@
         data   (obj/get props "element")
         type   (obj/get data "type")
         shape (obj/get props "shape")
-        style  (sts/generate-paragraph-set-styles data)
+        style  (sts/generate-paragraph-set-styles data props)
         attrs  (-> (obj/get props "attributes")
                    (obj/set! "style" style)
                    (obj/set! "className" type))]
@@ -95,7 +95,7 @@
         childs (obj/get props "children")
         data   (obj/get props "element")
         type   (obj/get data "type")
-        style  (sts/generate-paragraph-styles data)
+        style  (sts/generate-paragraph-styles data props)
         attrs  (-> (obj/get props "attributes")
                    (obj/set! "style" style)
                    (obj/set! "className" type))]
@@ -106,10 +106,14 @@
   [props]
   (let [childs (obj/get props "children")
         data   (obj/get props "leaf")
-        style  (sts/generate-text-styles data)
+        type   (obj/get data "type")
+        style  (sts/generate-text-styles data props)
         attrs  (-> (obj/get props "attributes")
-                   (obj/set! "style" style)
-                   (obj/set! "className" "text-node"))]
+                   (obj/set! "style" style))
+        gradient (obj/get data "fill-color-gradient" nil)]
+    (if gradient
+      (obj/set! attrs "className" (str type " gradient"))
+      (obj/set! attrs "className" type))
     [:> :span attrs childs]))
 
 (defn- render-element
@@ -135,7 +139,7 @@
 
 ;; --- Text Shape Edit
 
-(mf/defc text-shape-edit
+(mf/defc text-shape-edit-html
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false
    ::mf/forward-ref true}
@@ -161,9 +165,6 @@
 
         on-click-outside
         (fn [event]
-          (dom/prevent-default event)
-          (dom/stop-propagation event)
-
           (let [sidebar (dom/get-element "settings-bar")
                 assets (dom/get-element-by-class "assets-bar")
                 cpicker (dom/get-element-by-class "colorpicker-tooltip")
@@ -174,9 +175,13 @@
                           (and assets  (.contains assets target))
                           (and self    (.contains self target))
                           (and cpicker (.contains cpicker target)))
-              (if selecting?
-                (mf/set-ref-val! selecting-ref false)
-                (on-close)))))
+              (do
+                (dom/prevent-default event)
+                (dom/stop-propagation event)
+
+                (if selecting?
+                  (mf/set-ref-val! selecting-ref false)
+                  (on-close))))))
 
         on-mouse-down
         (fn [event]
@@ -230,13 +235,9 @@
        (reset! state (parse-content content))
        (reset! content-var content)))
 
-    [:foreignObject {:ref self-ref
-                     :transform (gsh/transform-matrix shape)
-                     :x x :y y
-                     :width  (if (#{:auto-width} grow-type) 10000 width)
-                     :height (if (#{:auto-height :auto-width} grow-type) 10000 height)}
+    [:div.text-editor {:ref self-ref}
      [:style "span { line-height: inherit; }
-              .text-node { background: var(--text-color); -webkit-text-fill-color: transparent; -webkit-background-clip: text;"]
+              .gradient { background: var(--text-color); -webkit-text-fill-color: transparent; -webkit-background-clip: text;"]
      [:> rslate/Slate {:editor editor
                        :value @state
                        :on-change on-change}
@@ -257,3 +258,17 @@
                    ;; WARN: monky patch
                    (obj/set! slate/Transforms "deselect" (constantly nil)))
         :placeholder (when (= :fixed grow-type) "Type some text here...")}]]]))
+
+(mf/defc text-shape-edit
+  {::mf/wrap [mf/memo]
+   ::mf/wrap-props false
+   ::mf/forward-ref true}
+  [props ref]
+  (let [shape (unchecked-get props "shape")
+        {:keys [x y width height grow-type]} shape]
+    [:foreignObject {:transform (gsh/transform-matrix shape)
+                     :x x :y y
+                     :width  (if (#{:auto-width} grow-type) 10000 width)
+                     :height (if (#{:auto-height :auto-width} grow-type) 10000 height)}
+
+     [:& text-shape-edit-html {:shape shape}]]))
