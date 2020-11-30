@@ -67,27 +67,34 @@
                           :as opts}]
    (us/verify ::cp/changes changes)
    ;; (us/verify ::cp/changes undo-changes)
-   (ptk/reify ::commit-changes
-     cljs.core/IDeref
-     (-deref [_] changes)
 
-     ptk/UpdateEvent
-     (update [_ state]
-       (let [state (update-in state [:workspace-file :data] cp/process-changes changes)]
-         (cond-> state
-           commit-local? (update :workspace-data cp/process-changes changes))))
+   (let [error (volatile! nil)]
+     (ptk/reify ::commit-changes
+       cljs.core/IDeref
+       (-deref [_] changes)
 
-     ptk/WatchEvent
-     (watch [_ state stream]
-       (let [page-id (:current-page-id state)]
-         (rx/concat
-          (when (some :page-id changes)
-            (rx/of (update-indices page-id)))
+       ptk/UpdateEvent
+       (update [_ state]
+         (try
+           (let [state (update-in state [:workspace-file :data] cp/process-changes changes)]
+             (cond-> state
+               commit-local? (update :workspace-data cp/process-changes changes)))
+           (catch :default e
+             (vreset! error e)
+             state)))
 
-          (when (and save-undo? (seq undo-changes))
-            (let [entry {:undo-changes undo-changes
-                         :redo-changes changes}]
-              (rx/of (append-undo entry))))))))))
+       ptk/WatchEvent
+       (watch [_ state stream]
+         (when-not @error
+           (let [page-id (:current-page-id state)]
+             (rx/concat
+              (when (some :page-id changes)
+                (rx/of (update-indices page-id)))
+
+              (when (and save-undo? (seq undo-changes))
+                (let [entry {:undo-changes undo-changes
+                             :redo-changes changes}]
+                  (rx/of (append-undo entry))))))))))))
 
 (defn generate-operations
   ([ma mb] (generate-operations ma mb false))
