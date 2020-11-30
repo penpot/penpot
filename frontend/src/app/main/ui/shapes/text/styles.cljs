@@ -103,6 +103,7 @@
 
     (when (and (string? font-id)
                (pos? (alength font-id)))
+      (fonts/ensure-loaded! font-id)
       (let [font (get fontsdb font-id)]
         (let [font-family (or (:family font)
                               (obj/get data "fontFamily"))
