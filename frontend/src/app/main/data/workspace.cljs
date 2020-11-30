@@ -1596,6 +1596,7 @@
 ;; Selection
 
 (def select-shape dws/select-shape)
+(def select-all dws/select-all)
 (def deselect-all dws/deselect-all)
 (def select-shapes dwc/select-shapes)
 (def duplicate-selected dws/duplicate-selected)
@@ -1630,7 +1631,7 @@
   {"ctrl+i" #(st/emit! (toggle-layout-flags :assets))
    "ctrl+l" #(st/emit! (toggle-layout-flags :sitemap :layers))
    "ctrl+shift+r" #(st/emit! (toggle-layout-flags :rules))
-   "ctrl+a" #(st/emit! (toggle-layout-flags :dynamic-alignment))
+   "ctrl+a" #(st/emit! (select-all))
    "ctrl+p" #(st/emit! (toggle-layout-flags :colorpalette))
    "ctrl+'" #(st/emit! (toggle-layout-flags :display-grid))
    "ctrl+shift+'" #(st/emit! (toggle-layout-flags :snap-grid))
