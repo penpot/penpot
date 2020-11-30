@@ -125,9 +125,13 @@
                       (rx/map #(shapes-changes-persisted file-id %))))))
 
             on-error
-            (fn [error]
-              (rx/of (update-persistence-status {:status :error
-                                                 :reason (:type error)})))]
+            (fn [{:keys [type status] :as error}]
+              (if (and (= :server-error type)
+                       (= 502 status))
+                (rx/of (update-persistence-status {:status :error :reason type}))
+                (rx/of update-persistence-queue
+                       (update-persistence-status {:status :error :reason type}))))]
+
 
         (when (= file-id (:id file))
           (->> (rp/mutation :update-file params)
