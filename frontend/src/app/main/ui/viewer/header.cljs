@@ -213,20 +213,7 @@
         (mf/use-callback
          (mf/deps file-id page-id)
          (fn [section]
-           (st/emit!
-            (case section
-              :interactions
-              (rt/nav :viewer
-                      {:file-id file-id :page-id page-id}
-                      {:index index :section "interactions"})
-              :comments
-              (rt/nav :viewer
-                      {:file-id file-id :page-id page-id}
-                      {:index index :section "comments"})
-              :handoff
-              (rt/nav :handoff
-                      {:file-id file-id :page-id page-id}
-                      {:index index})))))]
+           (st/emit! (dv/go-to-section section))))]
 
     [:header.viewer-header
      [:div.main-icon
@@ -249,11 +236,12 @@
         :alt "View mode"}
        i/play]
 
-      [:button.mode-zone-button.tooltip.tooltip-bottom
-       {:on-click #(navigate :comments)
-        :class (dom/classnames :active (= section :comments))
-        :alt "Comments"}
-       i/chat]
+      (when-not anonymous?
+        [:button.mode-zone-button.tooltip.tooltip-bottom
+         {:on-click #(navigate :comments)
+          :class (dom/classnames :active (= section :comments))
+          :alt "Comments"}
+         i/chat])
 
       [:button.mode-zone-button.tooltip.tooltip-bottom
        {:on-click #(navigate :handoff)
