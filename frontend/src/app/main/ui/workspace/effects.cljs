@@ -60,8 +60,11 @@
            nil
 
            (= type :frame)
-           (do (dom/stop-propagation event)
+           (if selected?
+             (do
+               (dom/stop-propagation event)
                (st/emit! (dw/start-move-selected)))
+             (st/emit! (dw/deselect-all)))
 
            :else
            (do
