@@ -1651,7 +1651,7 @@
    "ctrl+y" #(st/emit! dwc/redo)
    "ctrl+q" #(st/emit! dwc/reinitialize-undo)
    "a" #(st/emit! (dwd/select-for-drawing :frame))
-   "b" #(st/emit! (dwd/select-for-drawing :rect))
+   "r" #(st/emit! (dwd/select-for-drawing :rect))
    "e" #(st/emit! (dwd/select-for-drawing :circle))
    "t" #(st/emit! dwtxt/start-edit-if-selected
                   (dwd/select-for-drawing :text))

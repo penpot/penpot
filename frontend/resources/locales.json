@@ -3635,13 +3635,13 @@
       "es" : "Recursos (Ctrl + I)"
     }
   },
-  "workspace.toolbar.circle" : {
+  "workspace.toolbar.ellipse" : {
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:69" ],
     "translations" : {
-      "en" : "Circle (E)",
-      "fr" : "Cercle (E)",
-      "ru" : "Круг  (E)",
-      "es" : "Círculo (E)"
+      "en" : "Ellipse (E)",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Elipse (E)"
     }
   },
   "workspace.toolbar.color-palette" : {
@@ -3708,10 +3708,10 @@
   "workspace.toolbar.rect" : {
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:64" ],
     "translations" : {
-      "en" : "Box (B)",
-      "fr" : "Boîte (B)",
-      "ru" : "Прямоугольник (B)",
-      "es" : "Recuadro (B)"
+      "en" : "Rectangle (R)",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Rectángulo (R)"
     }
   },
   "workspace.toolbar.text" : {
