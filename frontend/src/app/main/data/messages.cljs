@@ -21,7 +21,8 @@
 (declare hide)
 (declare show)
 
-(def +animation-timeout+ 600)
+(def default-animation-timeout 600)
+(def default-timeout 2000)
 
 (s/def ::type #{:success :error :info :warning})
 (s/def ::position #{:fixed :floating :inline})
@@ -73,7 +74,7 @@
     (watch [_ state stream]
       (let [stoper (rx/filter (ptk/type? ::show) stream)]
         (->> (rx/of #(dissoc % :message))
-             (rx/delay +animation-timeout+)
+             (rx/delay default-animation-timeout)
              (rx/take-until stoper))))))
 
 (defn hide-tag
@@ -87,7 +88,7 @@
 
 (defn error
   ([content] (error content {}))
-  ([content {:keys [timeout] :or {timeout 3000}}]
+  ([content {:keys [timeout] :or {timeout default-timeout}}]
    (show {:content content
           :type :error
           :position :fixed
@@ -95,7 +96,7 @@
 
 (defn info
   ([content] (info content {}))
-  ([content {:keys [timeout] :or {timeout 3000}}]
+  ([content {:keys [timeout] :or {timeout default-timeout}}]
    (show {:content content
           :type :info
           :position :fixed
@@ -103,7 +104,7 @@
 
 (defn success
   ([content] (success content {}))
-  ([content {:keys [timeout] :or {timeout 3000}}]
+  ([content {:keys [timeout] :or {timeout default-timeout}}]
    (show {:content content
           :type :success
           :position :fixed
@@ -111,7 +112,7 @@
 
 (defn warn
   ([content] (warn content {}))
-  ([content {:keys [timeout] :or {timeout 3000}}]
+  ([content {:keys [timeout] :or {timeout default-timeout}}]
    (show {:content content
           :type :warning
           :position :fixed
