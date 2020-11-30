@@ -807,7 +807,7 @@
 
 (defmethod process-change :del-obj
   [data {:keys [page-id component-id id ignore-touched] :as change}]
-  (letfn [(delete-object [objects]
+  (letfn [(delete-object [objects id]
             (if-let [target (get objects id)]
               (let [parent-id (cph/get-parent id objects)
                     frame-id  (:frame-id target)
@@ -829,8 +829,8 @@
                   (as-> $ (reduce delete-object $ (:shapes target)))))
               objects))]
     (if page-id
-      (d/update-in-when data [:pages-index page-id :objects] delete-object)
-      (d/update-in-when data [:components component-id :objects] delete-object))))
+      (d/update-in-when data [:pages-index page-id :objects] delete-object id)
+      (d/update-in-when data [:components component-id :objects] delete-object id))))
 
 (defn rotation-modifiers
   [center shape angle]
