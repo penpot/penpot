@@ -331,6 +331,22 @@
         (when index
           (rx/of (go-to-frame-by-index index)))))))
 
+
+(defn go-to-section
+  [section]
+  (ptk/reify ::go-to-section
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [route   (:route state)
+            screen  (-> route :data :name keyword)
+            pparams (:path-params route)
+            qparams (:query-params route)]
+        (rx/of
+         (if (= :handoff section)
+           (rt/nav :handoff pparams qparams)
+           (rt/nav :viewer pparams (assoc qparams :section section))))))))
+
+
 (defn set-current-frame [frame-id]
   (ptk/reify ::current-frame
     ptk/UpdateEvent

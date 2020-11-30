@@ -161,10 +161,13 @@
      :handoff
      (let [file-id (get-in route [:path-params :file-id])
            page-id (get-in route [:path-params :page-id])
-           index   (get-in route [:query-params :index])]
+           index   (get-in route [:query-params :index])
+           token   (get-in route [:query-params :token])]
+
        [:& handoff {:page-id page-id
                     :file-id file-id
-                    :index index}])
+                    :index index
+                    :token token}])
 
      :render-object
      (do
