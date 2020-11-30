@@ -2422,6 +2422,14 @@
       "es" : "Ocultar reglas"
     }
   },
+  "workspace.header.menu.select-all" : {
+    "translations" : {
+      "en" : "Select all",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Seleccionar todo"
+    }
+  },
   "workspace.header.menu.show-assets" : {
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:210" ],
     "translations" : {

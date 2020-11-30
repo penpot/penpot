@@ -208,12 +208,15 @@
            (tr "workspace.header.menu.show-assets"))]
         [:span.shortcut "Ctrl+i"]]
 
+       [:li {:on-click #(st/emit! (dw/select-all))}
+        [:span (tr "workspace.header.menu.select-all")]
+        [:span.shortcut "Ctrl+a"]]
+
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :dynamic-alignment))}
         [:span
          (if (contains? layout :dynamic-alignment)
            (tr "workspace.header.menu.disable-dynamic-alignment")
-           (tr "workspace.header.menu.enable-dynamic-alignment"))]
-        [:span.shortcut "Ctrl+a"]]
+           (tr "workspace.header.menu.enable-dynamic-alignment"))]]
 
        (if (:is-shared file)
          [:li {:on-click on-remove-shared}

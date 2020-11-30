@@ -118,6 +118,23 @@
              objects (dwc/lookup-page-objects state page-id)]
         (rx/of (dwc/expand-all-parents ids objects))))))
 
+(defn select-all
+  []
+  (ptk/reify ::select-all
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id (:current-page-id state)
+            objects (dwc/lookup-page-objects state page-id)
+            is-not-blocked (fn [shape-id] (not (get-in state [:workspace-data
+                                                              :pages-index page-id
+                                                              :objects shape-id
+                                                              :blocked] false)))]
+        (rx/of (->> (cph/select-toplevel-shapes objects)
+                    (map :id)
+                    (filter is-not-blocked)
+                    (into lks/empty-linked-set)
+                    (select-shapes)))))))
+
 (defn deselect-all
   "Clear all possible state of drawing, edition
   or any similar action taken by the user.
