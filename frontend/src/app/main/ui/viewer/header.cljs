@@ -179,6 +179,7 @@
   (let [{:keys [project file page frames]} data
 
         fullscreen (mf/use-ctx fs/fullscreen-context)
+
         total      (count frames)
         locale     (mf/deref i18n/locale)
         profile    (mf/deref refs/profile)
