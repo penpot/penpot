@@ -20,7 +20,6 @@
    [app.util.object :as obj]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.fonts :as fonts]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.texts :as dwt]
@@ -143,7 +142,7 @@
   [props ref]
   (let [shape (unchecked-get props "shape")
         node-ref (unchecked-get props "node-ref")
-        
+
         {:keys [id x y width height content grow-type]} shape
         zoom     (mf/deref refs/selected-zoom)
         state    (mf/use-state #(parse-content content))

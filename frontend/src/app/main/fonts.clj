@@ -18,10 +18,10 @@
   [variant]
   (cond
     (= "regular" variant)
-    {:name "regular" :weight "400" :style "normal"}
+    {:id "regular" :name "regular" :weight "400" :style "normal"}
 
     (= "italic" variant)
-    {:name "italic" :weight "400" :style "italic"}
+    {:id "italic" :name "italic" :weight "400" :style "italic"}
 
     :else
     (when-let [[a b c] (re-find #"^(\d+)(.*)$" variant)]
