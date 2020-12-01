@@ -7,10 +7,13 @@
 (ns app.common.data
   "Data manipulation and query helper functions."
   (:refer-clojure :exclude [concat read-string hash-map])
+  #?(:cljs
+     (:require-macros [app.common.data]))
   (:require
    [clojure.set :as set]
    [linked.set :as lks]
    [app.common.math :as mth]
+   #?(:clj [cljs.analyzer.api :as aapi])
    #?(:cljs [cljs.reader :as r]
       :clj [clojure.edn :as r])
    #?(:cljs [cljs.core :as core]
@@ -281,3 +284,39 @@
   valid and the number otherwise."
   [v]
   (if (or (not v) (mth/nan? v)) 0 v))
+
+
+(defmacro export
+  "A helper macro that allows reexport a var in a current namespace."
+  [v]
+  (if (boolean (:ns &env))
+
+    ;; Code for ClojureScript
+    (let [mdata    (aapi/resolve &env v)
+          arglists (second (get-in mdata [:meta :arglists]))
+          sym      (symbol (name v))
+          andsym   (symbol "&")]
+      (if (pos? (count arglists))
+        `(def
+           ~(with-meta sym (:meta mdata))
+           (fn ~@(for [args arglists]
+                   (if (some #(= andsym %) args)
+                     (let [[sargs dargs] (split-with #(not= andsym %) args)]
+                       `([~@sargs ~@dargs] (apply ~v ~@sargs ~@(rest dargs))))
+                     `([~@args] (~v ~@args))))))
+        `(def ~(with-meta sym (:meta mdata)) ~v)))
+
+    ;; Code for Clojure
+    (let [vr (resolve v)
+          m  (meta vr)
+          n  (:name m)
+          n  (with-meta n
+               (cond-> {}
+                 (:dynamic m) (assoc :dynamic true)
+                 (:protocol m) (assoc :protocol (:protocol m))))]
+      `(let [m# (meta ~vr)]
+         (def ~n (deref ~vr))
+         (alter-meta! (var ~n) merge (dissoc m# :name))
+         ;; (when (:macro m#)
+         ;;   (.setMacro (var ~n)))
+         ~vr))))
