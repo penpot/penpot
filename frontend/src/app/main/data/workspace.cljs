@@ -1576,36 +1576,38 @@
 
 ;; Transform
 
-(d/export dwt/start-rotate)
-(d/export dwt/start-resize)
-(d/export dwt/start-move-selected)
-(d/export dwt/move-selected)
-(d/export dwt/set-rotation)
-(d/export dwt/set-modifiers)
-(d/export dwt/apply-modifiers)
+(def start-rotate dwt/start-rotate)
+(def start-resize dwt/start-resize)
+(def start-move-selected dwt/start-move-selected)
+(def move-selected dwt/move-selected)
+
+(def set-rotation dwt/set-rotation)
+(def set-modifiers dwt/set-modifiers)
+(def apply-modifiers dwt/apply-modifiers)
 
 ;; Persistence
 
-(d/export dwp/set-file-shared)
-(d/export dwp/fetch-shared-files)
-(d/export dwp/link-file-to-library)
-(d/export dwp/unlink-file-from-library)
-(d/export dwp/upload-media-objects)
+(def set-file-shared dwp/set-file-shared)
+(def fetch-shared-files dwp/fetch-shared-files)
+(def link-file-to-library dwp/link-file-to-library)
+(def unlink-file-from-library dwp/unlink-file-from-library)
+(def upload-media-objects dwp/upload-media-objects)
 
 ;; Selection
 
-(d/export dws/select-shape)
-(d/export dws/select-all)
-(d/export dws/deselect-all)
-(d/export dwc/select-shapes)
-(d/export dws/duplicate-selected)
-(d/export dws/handle-selection)
-(d/export dws/select-inside-group)
-(d/export dwd/select-for-drawing)
-(d/export dwc/clear-edition-mode)
-(d/export dwc/add-shape)
-(d/export dwc/start-edition-mode)
-(d/export dwdp/start-path-edit)
+(def select-shape dws/select-shape)
+(def select-all dws/select-all)
+(def deselect-all dws/deselect-all)
+(def select-shapes dwc/select-shapes)
+(def duplicate-selected dws/duplicate-selected)
+(def handle-selection dws/handle-selection)
+(def select-inside-group dws/select-inside-group)
+(def select-for-drawing dwd/select-for-drawing)
+(def clear-edition-mode dwc/clear-edition-mode)
+(def add-shape dwc/add-shape)
+(def start-edition-mode dwc/start-edition-mode)
+
+(defn start-path-edit [id] (dwdp/start-path-edit id))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shortcuts
