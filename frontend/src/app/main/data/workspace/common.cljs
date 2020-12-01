@@ -511,7 +511,10 @@
   (ptk/reify ::clear-edition-mode
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-local dissoc :edition))))
+      (let [id (get-in state [:workspace-local :edition])]
+        (-> state
+            (update-in [:workspace-local :hover] disj id)
+            (update :workspace-local dissoc :edition))))))
 
 
 (defn add-shape
