@@ -38,8 +38,7 @@
   (if (:component-id shape)
     shape
     (if-let [parent-id (:parent-id shape)]
-      (get-root-shape (get objects (:parent-id shape))
-                      objects)
+      (get-root-shape (get objects parent-id) objects)
       nil)))
 
 (defn make-container
@@ -118,7 +117,7 @@
 
 (defn get-parents
   [shape-id objects]
-  (let [{:keys [parent-id] :as obj} (get objects shape-id)]
+  (let [{:keys [parent-id]} (get objects shape-id)]
     (when parent-id
       (lazy-seq (cons parent-id (get-parents parent-id objects))))))
 
@@ -252,10 +251,10 @@
                (clone-object child new-id objects update-new-object update-original-object)]
 
            (recur
-             (next child-ids)
-             (d/concat new-direct-children [new-child])
-             (d/concat new-children new-child-objects)
-             (d/concat updated-children updated-child-objects))))))))
+            (next child-ids)
+            (d/concat new-direct-children [new-child])
+            (d/concat new-children new-child-objects)
+            (d/concat updated-children updated-child-objects))))))))
 
 
 (defn indexed-shapes

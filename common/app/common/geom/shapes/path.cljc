@@ -9,9 +9,6 @@
 
 (ns app.common.geom.shapes.path
   (:require
-   [clojure.spec.alpha :as s]
-   [app.common.spec :as us]
-   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.rect :as gpr]
    [app.common.math :as mth]
@@ -136,7 +133,7 @@
                           py (:y tr-point))))
 
         transform-params
-        (fn [{:keys [x y c1x c1y c2x c2y] :as params}]
+        (fn [{:keys [x c1x c2x] :as params}]
           (cond-> params
             (not (nil? x))   (set-tr :x :y)
             (not (nil? c1x)) (set-tr :c1x :c1y)

@@ -15,9 +15,6 @@
    #?(:clj  [clojure.spec.alpha :as s]
       :cljs [cljs.spec.alpha :as s])
 
-   #?(:clj  [clojure.spec.test.alpha :as stest]
-      :cljs [cljs.spec.test.alpha :as stest])
-
    [expound.alpha :as expound]
    [app.common.uuid :as uuid]
    [app.common.exceptions :as ex]

@@ -9,13 +9,8 @@
 
 (ns app.common.geom.shapes.rect
   (:require
-   [clojure.spec.alpha :as s]
-   [app.common.spec :as us]
-   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.common :as gco]
-   [app.common.math :as mth]
-   [app.common.data :as d]))
+   [app.common.geom.shapes.common :as gco]))
 
 (defn rect->points [{:keys [x y width height]}]
   [(gpt/point x y)

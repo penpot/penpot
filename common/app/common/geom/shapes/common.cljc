@@ -9,12 +9,8 @@
 
 (ns app.common.geom.shapes.common
   (:require
-   [clojure.spec.alpha :as s]
-   [app.common.spec :as us]
-   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.math :as mth]
-   [app.common.data :as d]))
+   [app.common.math :as mth]))
 
 (defn center-rect
   [{:keys [x y width height]}]
