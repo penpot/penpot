@@ -12,7 +12,6 @@
   (:require
    #?(:cljs [cljs.core :as c]
       :clj [clojure.core :as c])
-   [cuerdas.core :as str]
    [app.common.math :as mth]))
 
 ;; --- Point Impl
@@ -196,7 +195,7 @@
 
 (defn transform
   "Transform a point applying a matrix transfomation."
-  [{:keys [x y] :as p} {:keys [a b c d e f] :as m}]
+  [{:keys [x y] :as p} {:keys [a b c d e f]}]
   (assert (point? p))
   (Point. (+ (* x a) (* y c) e)
           (+ (* x b) (* y d) f)))

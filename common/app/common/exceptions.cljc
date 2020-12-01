@@ -22,7 +22,7 @@
                    ::cause]))
 
 (defn error
-  [& {:keys [type code message hint cause] :as params}]
+  [& {:keys [message hint cause] :as params}]
   (s/assert ::error-params params)
   (let [message (or message hint "")
         payload (dissoc params :cause)]

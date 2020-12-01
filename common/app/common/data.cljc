@@ -10,7 +10,6 @@
   #?(:cljs
      (:require-macros [app.common.data]))
   (:require
-   [clojure.set :as set]
    [linked.set :as lks]
    [app.common.math :as mth]
    #?(:clj [cljs.analyzer.api :as aapi])
@@ -40,7 +39,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn dissoc-in
-  [m [k & ks :as keys]]
+  [m [k & ks]]
   (if ks
     (if-let [nextmap (get m k)]
       (let [newmap (dissoc-in nextmap ks)]
@@ -224,7 +223,7 @@
   #?(:cljs (js/parseInt v 10)
      :clj (try
             (Integer/parseInt v)
-            (catch Throwable e
+            (catch Throwable _
               nil))))
 
 (defn- impl-parse-double
@@ -232,7 +231,7 @@
   #?(:cljs (js/parseFloat v)
      :clj (try
             (Double/parseDouble v)
-            (catch Throwable e
+            (catch Throwable _
               nil))))
 
 (defn parse-integer

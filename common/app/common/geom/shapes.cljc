@@ -16,9 +16,7 @@
    [app.common.geom.shapes.path :as gsp]
    [app.common.geom.shapes.rect :as gpr]
    [app.common.geom.shapes.transforms :as gtr]
-   [app.common.math :as mth]
-   [app.common.spec :as us]
-   [clojure.spec.alpha :as s]))
+   [app.common.spec :as us]))
 
 ;; --- Relative Movement
 
@@ -104,7 +102,7 @@
            :selrect selrect)))
 
 (defn- setup-image
-  [{:keys [metadata] :as shape} {:keys [x y width height] :as props}]
+  [{:keys [metadata] :as shape} props]
   (-> (setup-rect shape props)
       (assoc
        :proportion (/ (:width metadata)
@@ -131,11 +129,11 @@
        (gpr/join-selrects)))
 
 (defn translate-to-frame
-  [shape {:keys [x y] :as frame}]
+  [shape {:keys [x y]}]
   (move shape (gpt/point (- x) (- y))))
 
 (defn translate-from-frame
-  [shape {:keys [x y] :as frame}]
+  [shape {:keys [x y]}]
   (move shape (gpt/point x y)))
 
 ;; --- Helpers
@@ -205,10 +203,8 @@
         (fn [x1 y1 x2 y2]
           {:x1 x1 :y1 y1 :x2 x2 :y2 y2 :x x1 :y y1
            :width (- x2 x1) :height (- y2 y1) :type :rect})
-        {frame-x1 :x1 frame-x2 :x2 frame-y1 :y1 frame-y2 :y2
-         frame-width :width frame-height :height} bounds
-        {sr-x1 :x1 sr-x2 :x2 sr-y1 :y1 sr-y2 :y2
-         sr-width :width sr-height :height} selrect]
+        {frame-x1 :x1 frame-x2 :x2 frame-y1 :y1 frame-y2 :y2} bounds
+        {sr-x1 :x1 sr-x2 :x2 sr-y1 :y1 sr-y2 :y2} selrect]
     {:left   (make-selrect frame-x1 sr-y1 sr-x1 sr-y2)
      :top    (make-selrect sr-x1 frame-y1 sr-x2 sr-y1)
      :right  (make-selrect sr-x2 sr-y1 frame-x2 sr-y2)
@@ -243,7 +239,7 @@
         (and (>= s1c2 s2c1) (<= s1c2 s2c2)))))
 
 
-(defn setup-selrect [{:keys [x y width height] :as shape}]
+(defn setup-selrect [shape]
   (let [selrect (gpr/rect->selrect shape)
         points  (gpr/rect->points shape)]
     (-> shape

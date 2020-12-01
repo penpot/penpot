@@ -592,6 +592,7 @@
        (when drawing-obj
          [:& draw-area {:shape drawing-obj
                         :zoom zoom
+                        :tool drawing-tool
                         :modifiers (:modifiers local)}])
 
        (when (contains? layout :display-grid)

@@ -36,9 +36,9 @@
   []
   (doto (PGSimpleDataSource.)
     (.setServerName "postgres")
-    (.setDatabaseName "uxbox_test")
-    (.setUser "uxbox")
-    (.setPassword "uxbox")))
+    (.setDatabaseName "penpot_test")
+    (.setUser "penpot")
+    (.setPassword "penpot")))
 
 (defn state-init
   [next]
@@ -91,7 +91,8 @@
   (let [params {:id (mk-uuid "profile" i)
                 :fullname (str "Profile " i)
                 :email (str "profile" i ".test@nodomain.com")
-                :password "123123"}]
+                :password "123123"
+                :demo? true}]
     (->> (#'profile/create-profile conn params)
          (#'profile/create-profile-relations conn))))
 

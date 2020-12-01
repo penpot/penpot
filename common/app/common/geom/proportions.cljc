@@ -7,17 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.common.geom.proportions
-  (:require
-   [clojure.spec.alpha :as s]
-   [app.common.spec :as us]
-   [app.common.geom.matrix :as gmt]
-   [app.common.geom.point :as gpt]
-   [app.common.geom.shapes.common :as gco]
-   [app.common.geom.shapes.transforms :as gtr]
-   [app.common.geom.shapes.rect :as gpr]
-   [app.common.math :as mth]
-   [app.common.data :as d]))
+(ns app.common.geom.proportions)
 
 ;; --- Proportions
 

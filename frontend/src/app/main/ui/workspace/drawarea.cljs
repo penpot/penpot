@@ -12,6 +12,7 @@
    [app.main.data.workspace.drawing :as dd]
    [app.main.store :as st]
    [app.main.ui.workspace.shapes :as shapes]
+   [app.main.ui.shapes.path :refer [path-shape]]
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]
    [app.common.geom.shapes :as gsh]
    [app.common.data :as d]
@@ -22,13 +23,14 @@
 (declare path-draw-area)
 
 (mf/defc draw-area
-  [{:keys [shape zoom] :as props}]
+  [{:keys [shape zoom tool] :as props}]
 
   [:g.draw-area
    [:& shapes/shape-wrapper {:shape shape}]
 
-   (case (:type shape)
+   (case tool
      :path      [:& path-editor {:shape shape :zoom zoom}]
+     :curve     [:& path-shape {:shape shape :zoom zoom}]
      #_:default [:& generic-draw-area {:shape shape :zoom zoom}])])
 
 (mf/defc generic-draw-area

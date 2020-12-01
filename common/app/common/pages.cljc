@@ -734,7 +734,7 @@
 
 ;; --- Changes Processing Impl
 
-(defmulti process-change (fn [data change] (:type change)))
+(defmulti process-change (fn [_ change] (:type change)))
 (defmulti process-operation (fn [_ op] (:type op)))
 
 (defn process-changes
@@ -756,45 +756,45 @@
 
 (defmethod process-change :add-obj
   [data {:keys [id obj page-id component-id frame-id parent-id
-                index ignore-touched] :as change}]
+                index ignore-touched]}]
   (letfn [(update-fn [data]
             (let [parent-id (or parent-id frame-id)
-                  objects   (:objects data)]
-              (let [obj (assoc obj
-                               :frame-id frame-id
-                               :parent-id parent-id
-                               :id id)]
-                (if (and (contains? objects parent-id)
-                         (contains? objects frame-id))
-                  (-> data
-                      (update :objects assoc id obj)
-                      (update-in [:objects parent-id :shapes]
-                                 (fn [shapes]
-                                   (let [shapes (or shapes [])]
-                                     (cond
-                                       (some #{id} shapes)
-                                       shapes
+                  objects   (:objects data)
+                  obj (assoc obj
+                             :frame-id frame-id
+                             :parent-id parent-id
+                             :id id)]
+              (if (and (contains? objects parent-id)
+                       (contains? objects frame-id))
+                (-> data
+                    (update :objects assoc id obj)
+                    (update-in [:objects parent-id :shapes]
+                               (fn [shapes]
+                                 (let [shapes (or shapes [])]
+                                   (cond
+                                     (some #{id} shapes)
+                                     shapes
 
-                                       (nil? index)
-                                       (if (= :frame (:type obj))
-                                         (d/concat [id] shapes)
-                                         (conj shapes id))
+                                     (nil? index)
+                                     (if (= :frame (:type obj))
+                                       (d/concat [id] shapes)
+                                       (conj shapes id))
 
-                                       :else
-                                       (cph/insert-at-index shapes index [id])))))
+                                     :else
+                                     (cph/insert-at-index shapes index [id])))))
 
-                      (cond-> (and (:shape-ref (get-in data [:objects parent-id]))
-                                   (not= parent-id frame-id)
-                                   (not ignore-touched))
-                        (update-in [:objects parent-id :touched]
-                                   cph/set-touched-group :shapes-group)))
-                  data))))]
+                    (cond-> (and (:shape-ref (get-in data [:objects parent-id]))
+                                 (not= parent-id frame-id)
+                                 (not ignore-touched))
+                      (update-in [:objects parent-id :touched]
+                                 cph/set-touched-group :shapes-group)))
+                data)))]
     (if page-id
       (d/update-in-when data [:pages-index page-id] update-fn)
       (d/update-in-when data [:components component-id] update-fn))))
 
 (defmethod process-change :mod-obj
-  [data {:keys [id page-id component-id operations] :as change}]
+  [data {:keys [id page-id component-id operations]}]
   (let [update-fn (fn [objects]
                     (if-let [obj (get objects id)]
                       (let [result (reduce process-operation obj operations)]
@@ -806,7 +806,7 @@
       (d/update-in-when data [:components component-id :objects] update-fn))))
 
 (defmethod process-change :del-obj
-  [data {:keys [page-id component-id id ignore-touched] :as change}]
+  [data {:keys [page-id component-id id ignore-touched]}]
   (letfn [(delete-object [objects id]
             (if-let [target (get objects id)]
               (let [parent-id (cph/get-parent id objects)
@@ -880,7 +880,7 @@
       (d/update-in-when data [:components component-id :objects] reg-objects))))
 
 (defmethod process-change :mov-objects
-  [data {:keys [parent-id shapes index page-id component-id ignore-touched] :as change}]
+  [data {:keys [parent-id shapes index page-id component-id ignore-touched]}]
   (letfn [(is-valid-move? [objects shape-id]
             (let [invalid-targets (cph/calculate-invalid-targets shape-id objects)]
               (and (not (invalid-targets parent-id))
@@ -961,7 +961,6 @@
                                   (keys objects))
                   cpindex (persistent! cpindex)
 
-                  parent  (get-in data [:objects parent-id])
                   parent  (get objects parent-id)
                   frame   (if (= :frame (:type parent))
                             parent
@@ -993,9 +992,9 @@
           (update :pages-index assoc id page)))
 
     (map? page)
-    (->> data
-         (update :pages conj (:id page)
-                 (update :pages-index assoc (:id page) page)))
+    (-> data
+        (update :pages conj (:id page))
+        (update :pages-index assoc (:id page) page))
 
     :else
     (ex/raise :type :conflict
@@ -1121,7 +1120,7 @@
       (assoc shape :touched touched))))
 
 (defmethod process-operation :default
-  [shape op]
+  [_ op]
   (ex/raise :type :not-implemented
             :code :operation-not-implemented
             :context {:type (:type op)}))

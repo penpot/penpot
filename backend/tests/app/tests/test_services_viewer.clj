@@ -78,12 +78,13 @@
         (let [error (ex-cause (:error out))
               error-data (ex-data error)]
           (t/is (th/ex-info? error))
-          (t/is (= (:type error-data) :not-found)))))
+          (t/is (= (:type error-data) :validation))
+          (t/is (= (:code error-data) :not-authorized)))))
 
     (t/testing "authenticated with token & profile"
       (let [data {::sq/type :viewer-bundle
                   :profile-id (:id prof2)
-                  :share-token @token
+                  :token @token
                   :file-id (:id file)
                   :page-id (get-in file [:data :pages 0])}
             out  (th/try-on! (sq/handle data))]
@@ -97,7 +98,7 @@
 
     (t/testing "authenticated with token"
       (let [data {::sq/type :viewer-bundle
-                  :share-token @token
+                  :token @token
                   :file-id (:id file)
                   :page-id (get-in file [:data :pages 0])}
             out  (th/try-on! (sq/handle data))]

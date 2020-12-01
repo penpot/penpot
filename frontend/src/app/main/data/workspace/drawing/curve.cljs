@@ -27,7 +27,22 @@
   (assoc-in state [:workspace-drawing :object :initialized?] true))
 
 (defn insert-point-segment [state point]
-  (update-in state [:workspace-drawing :object :segments] (fnil conj []) point))
+
+  (let [segments (-> state
+                     (get-in [:workspace-drawing :object :segments])
+                     (or [])
+                     (conj point))
+        content (gsp/segments->content segments)
+        selrect (gsh/content->selrect content)
+        points (gsh/rect->points selrect)]
+    (-> state
+        (update-in [:workspace-drawing :object] assoc
+                   :segments segments
+                   :content content
+                   :selrect selrect
+                   :points points))))
+
+
 
 (defn curve-to-path [{:keys [segments] :as shape}]
   (let [content (gsp/segments->content segments)
