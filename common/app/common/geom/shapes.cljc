@@ -9,16 +9,16 @@
 
 (ns app.common.geom.shapes
   (:require
-   [clojure.spec.alpha :as s]
-   [app.common.spec :as us]
+   [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes.common :as gco]
-   [app.common.geom.shapes.transforms :as gtr]
-   [app.common.geom.shapes.rect :as gpr]
    [app.common.geom.shapes.path :as gsp]
+   [app.common.geom.shapes.rect :as gpr]
+   [app.common.geom.shapes.transforms :as gtr]
    [app.common.math :as mth]
-   [app.common.data :as d]))
+   [app.common.spec :as us]
+   [clojure.spec.alpha :as s]))
 
 ;; --- Relative Movement
 
@@ -252,22 +252,17 @@
 
 
 ;; EXPORTS
-(defn center-shape [shape] (gco/center-shape shape))
-(defn center-selrect [selrect] (gco/center-selrect selrect))
-(defn center-rect [rect] (gco/center-rect rect))
-
-(defn rect->selrect [rect] (gpr/rect->selrect rect))
-(defn rect->points [rect] (gpr/rect->points rect))
-(defn points->selrect [points] (gpr/points->selrect points))
-
-(defn transform-shape [shape] (gtr/transform-shape shape))
-(defn transform-matrix
-  ([shape] (gtr/transform-matrix shape))
-  ([shape options] (gtr/transform-matrix shape options)))
-
-(defn transform-point-center [point center transform] (gtr/transform-point-center point center transform))
-(defn transform-rect [rect mtx] (gtr/transform-rect rect mtx))
+(d/export gco/center-shape)
+(d/export gco/center-selrect)
+(d/export gco/center-rect)
+(d/export gpr/rect->selrect)
+(d/export gpr/rect->points)
+(d/export gpr/points->selrect)
+(d/export gtr/transform-shape)
+(d/export gtr/transform-matrix)
+(d/export gtr/transform-point-center)
+(d/export gtr/transform-rect)
 
 ;; PATHS
-(defn content->points [content] (gsp/content->points content))
-(defn content->selrect [content] (gsp/content->selrect content))
+(d/export gsp/content->points)
+(d/export gsp/content->selrect)
