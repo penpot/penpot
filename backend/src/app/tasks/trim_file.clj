@@ -9,15 +9,12 @@
 
 (ns app.tasks.trim-file
   (:require
-   [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
-   [app.common.exceptions :as ex]
-   [app.common.spec :as us]
    [app.config :as cfg]
    [app.db :as db]
    [app.tasks :as tasks]
    [app.util.blob :as blob]
-   [app.util.time :as dt]))
+   [app.util.time :as dt]
+   [clojure.tools.logging :as log]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Task: Trim File
@@ -27,7 +24,7 @@
 ;; associated with file but not used by any page.
 
 (defn decode-row
-  [{:keys [data metadata changes] :as row}]
+  [{:keys [data] :as row}]
   (cond-> row
     (bytes? data) (assoc :data (blob/decode data))))
 
@@ -90,7 +87,7 @@
       nil)))
 
 (defn handler
-  [{:keys [props] :as task}]
+  [_task]
   (log/debug "Running 'trim-file' task.")
   (loop []
     (let [files (retrieve-candidates db/pool)]

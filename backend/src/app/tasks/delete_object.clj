@@ -10,13 +10,11 @@
 (ns app.tasks.delete-object
   "Generic task for permanent deletion of objects."
   (:require
-   [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
-   [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
    [app.metrics :as mtx]
-   [app.util.storage :as ust]))
+   [clojure.spec.alpha :as s]
+   [clojure.tools.logging :as log]))
 
 (s/def ::type keyword?)
 (s/def ::id ::us/uuid)
@@ -24,10 +22,10 @@
 (s/def ::props
   (s/keys :req-un [::id ::type]))
 
-(defmulti handle-deletion (fn [conn props] (:type props)))
+(defmulti handle-deletion (fn [_ props] (:type props)))
 
 (defmethod handle-deletion :default
-  [conn {:keys [type id] :as props}]
+  [_conn {:keys [type]}]
   (log/warn "no handler found for" type))
 
 (defn handler

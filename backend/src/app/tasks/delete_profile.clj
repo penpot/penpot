@@ -10,13 +10,11 @@
 (ns app.tasks.delete-profile
   "Task for permanent deletion of profiles."
   (:require
-   [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
-   [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
    [app.metrics :as mtx]
-   [app.util.storage :as ust]))
+   [clojure.spec.alpha :as s]
+   [clojure.tools.logging :as log]))
 
 (declare delete-profile-data)
 (declare delete-teams)
@@ -50,11 +48,6 @@
   (delete-teams conn profile-id)
   (delete-files conn profile-id)
   (delete-profile conn profile-id))
-
-(def ^:private sql:select-profile
-  "select id, is_demo, deleted_at
-     from profile
-    where id=? for update")
 
 (def ^:private sql:remove-owned-teams
   "with teams as (
