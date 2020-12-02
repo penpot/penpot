@@ -1,0 +1,68 @@
+---
+version: "3"
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.177.99.0/24
+
+volumes:
+  postgres_data:
+  user_data:
+  backend_data:
+
+services:
+  penpot-frontend:
+    image: "penpotapp/frontend:develop"
+    ports:
+      - 8080:80
+
+    volumes:
+      - backend_data:/opt/data
+
+    depends_on:
+      - penpot-backend
+      - penpot-exporter
+
+  penpot-backend:
+    image: "penpotapp/backend:develop"
+    volumes:
+      - backend_data:/opt/data
+
+    depends_on:
+      - penpot-postgres
+      - penpot-redis
+
+    environment:
+      - APP_DATABASE_URI=postgresql://penpot-postgres/penpot
+      - APP_DATABASE_USERNAME=penpot
+      - APP_DATABASE_PASSWORD=penpot
+      - APP_SMTP_ENABLED=false
+      - APP_REDIS_URI=redis://penpot-redis/0
+      - APP_MEDIA_DIRECTORY=/opt/data/media
+
+  penpot-exporter:
+    image: "penpotapp/exporter:develop"
+    environment:
+      - APP_PUBLIC_URI=http://penpot-frontend
+
+  penpot-postgres:
+    image: "postgres:13"
+    restart: always
+    stop_signal: SIGINT
+
+    environment:
+      - POSTGRES_INITDB_ARGS=--data-checksums
+      - POSTGRES_DB=penpot
+      - POSTGRES_USER=penpot
+      - POSTGRES_PASSWORD=penpot
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  penpot-redis:
+    image: redis:6
+    restart: always

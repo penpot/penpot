@@ -14,7 +14,7 @@ volumes:
 services:
   main:
     privileged: true
-    image: "penpot-devenv"
+    image: "penpotapp/devenv:latest"
     build:
       context: "."
     container_name: "penpot-devenv-main"
@@ -42,6 +42,7 @@ services:
       - APP_DATABASE_USERNAME=penpot
       - APP_DATABASE_PASSWORD=penpot
       - APP_REDIS_URI=redis://redis/0
+      - EXTERNAL_UID=${CURRENT_USER_ID}
 
   postgres:
     image: postgres:13
