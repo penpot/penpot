@@ -111,7 +111,7 @@
     (mf/fnc frame-container
       {::mf/wrap-props false}
       [props]
-      (let [shape (unchecked-get props "shape")
+      (let [shape  (obj/get props "shape")
             childs (mapv #(get objects %) (:shapes shape))
             shape  (geom/transform-shape shape)
             props  (obj/merge! #js {} props

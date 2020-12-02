@@ -8,31 +8,32 @@
 ;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.main.ui.workspace.shapes
-  "A workspace specific shapes wrappers."
+  "A workspace specific shapes wrappers.
+
+  Shapes that has some peculiarities are defined in its own
+  namespace under app.ui.workspace.shapes.* prefix, all the
+  others are defined using a generic wrapper implemented in
+  common."
   (:require
-   [rumext.alpha :as mf]
-   [okulary.core :as l]
-   [beicon.core :as rx]
+   [app.common.geom.shapes :as geom]
+   [app.main.refs :as refs]
+   [app.main.store :as st]
    [app.main.streams :as ms]
-   [app.main.ui.hooks :as hooks]
    [app.main.ui.cursors :as cur]
-   [app.main.ui.shapes.rect :as rect]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.image :as image]
-   [app.main.store :as st]
-   [app.main.refs :as refs]
-
-   ;; Shapes that has some peculiarities are defined in its own
-   ;; namespace under app.ui.workspace.shapes.* prefix, all the
-   ;; others are defined using a generic wrapper implemented in
-   ;; common.
+   [app.main.ui.shapes.rect :as rect]
    [app.main.ui.workspace.shapes.bounding-box :refer [bounding-box]]
    [app.main.ui.workspace.shapes.common :as common]
    [app.main.ui.workspace.shapes.frame :as frame]
    [app.main.ui.workspace.shapes.group :as group]
    [app.main.ui.workspace.shapes.path :as path]
    [app.main.ui.workspace.shapes.text :as text]
-   [app.common.geom.shapes :as geom]))
+   [app.util.object :as obj]
+   [beicon.core :as rx]
+   [okulary.core :as l]
+   [rumext.alpha :as mf]))
 
 (declare group-wrapper)
 (declare frame-wrapper)
@@ -43,10 +44,10 @@
 
 (defn- shape-wrapper-memo-equals?
   [np op]
-  (let [n-shape (unchecked-get np "shape")
-        o-shape (unchecked-get op "shape")
-        n-frame (unchecked-get np "frame")
-        o-frame (unchecked-get op "frame")]
+  (let [n-shape (obj/get np "shape")
+        o-shape (obj/get op "shape")
+        n-frame (obj/get np "frame")
+        o-frame (obj/get op "frame")]
     ;; (prn "shape-wrapper-memo-equals?" (identical? n-frame o-frame))
     (if (= (:type n-shape) :group)
       false
@@ -55,28 +56,28 @@
 
 (defn make-is-moving-ref
   [id]
-  (let [check-moving (fn [local]
-                       (and (= :move (:transform local))
-                            (contains? (:selected local) id)))]
-    (l/derived check-moving refs/workspace-local)))
+  (fn []
+    (let [check-moving (fn [local]
+                         (and (= :move (:transform local))
+                              (contains? (:selected local) id)))]
+      (l/derived check-moving refs/workspace-local))))
 
 (mf/defc shape-wrapper
   {::mf/wrap [#(mf/memo' % shape-wrapper-memo-equals?)]
    ::mf/wrap-props false}
   [props]
-  (let [shape (unchecked-get props "shape")
-        frame (unchecked-get props "frame")
-        ghost? (unchecked-get props "ghost?")
-        shape (-> (geom/transform-shape shape)
-                  (geom/translate-to-frame frame))
-        opts #js {:shape shape
-                  :frame frame}
+  (let [shape  (obj/get props "shape")
+        frame  (obj/get props "frame")
+        ghost? (obj/get props "ghost?")
+        shape  (-> (geom/transform-shape shape)
+                   (geom/translate-to-frame frame))
+        opts  #js {:shape shape
+                   :frame frame}
 
-        alt? (hooks/use-rxsub ms/keyboard-alt)
+        alt?   (hooks/use-rxsub ms/keyboard-alt)
 
-        moving-iref (mf/use-memo (mf/deps (:id shape))
-                                   #(make-is-moving-ref (:id shape)))
-        moving? (mf/deref moving-iref)]
+        moving-iref (mf/use-memo (mf/deps (:id shape)) (make-is-moving-ref (:id shape)))
+        moving?     (mf/deref moving-iref)]
 
     (when (and shape
                (or ghost? (not moving?))
