@@ -76,7 +76,7 @@
      (mf/deps allow-click-outside)
      (fn []
        (let [keys [(events/listen js/window      EventType.POPSTATE on-pop-state)
-                   (events/listen (dom/get-root) EventType.KEYDOWN  handle-keydown)
+                   (events/listen js/document    EventType.KEYDOWN  handle-keydown)
                    (events/listen (dom/get-root) EventType.CLICK    handle-click-outside)]]
          #(doseq [key keys]
             (events/unlistenByKey key)))))
