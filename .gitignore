@@ -26,6 +26,7 @@ node_modules
 /exporter/target
 /exporter/.shadow-cljs
 /docker/images/bundle
+/.clj-kondo/.cache
 /bundle*
 /media
 /deploy

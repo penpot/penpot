@@ -1,0 +1,11 @@
+{:lint-as {potok.core/reify clojure.core/reify
+           promesa.core/let clojure.core/let
+           app.db/with-atomic clojure.core/with-open}
+ :linters
+ {:unused-binding
+  {:exclude-destructured-as true}
+  :unresolved-symbol
+  {:exclude ['(app.services.mutations/defmutation)
+             '(app.services.queries/defquery)
+             ]}}}
+
