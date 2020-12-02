@@ -30,10 +30,16 @@ Frontend tests have to be compiled first, and then run with node.
 npx shadow-cljs compile tests && node target/tests.js
 ```
 
-## Linter
-
-We can execute the linter for the whole codebase with the following command
+Or run the watch (that automatically runs the test):
 
 ```bash
-npx clj-kondo --lint common:backend/src:frontend/src
+npx shadow-cljs watch tests
+```
+
+## Linter
+
+We can execute the linter for the whole codebase with the following command:
+
+```bash
+clj-kondo --lint common:backend/src:frontend/src
 ```

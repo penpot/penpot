@@ -54,12 +54,13 @@ development environment.**
 For start it, staying in this repository, execute:
 
 ```bash
+./manage.sh pull-devenv
 ./manage.sh run-devenv
 ```
 
 This will do the following:
 
-- Build the images if it is not done before.
+- Pulls the latest devenv image.
 - Starts all the containers in the background.
 - Attaches to the **devenv** container and executes the tmux session.
 - The tmux session automatically starts all the necessary services.
@@ -67,7 +68,7 @@ This will do the following:
 You can execute the individual steps manully if you want:
 
 ```bash
-./manage.sh build-devenv # builds the devenv docker image
+./manage.sh build-devenv # builds the devenv docker image (not necessary in normal sircumstances)
 ./manage.sh start-devenv # starts background running containers
 ./manage.sh run-devenv   # enters to new tmux session inside of one of the running containers
 ./manage.sh stop-devenv  # stops background running containers
@@ -143,47 +144,3 @@ If some exception is raised when code is reloaded, just use
 later use `(restart)` again.
 
 For more information, please refer to: `03-Backend-Guide.md`.
-
-
-## Start the testenv ##
-
-The purpose of the testenv (Test Environment) is provide an easy way
-to get Penpot running in local pc without getting into the full
-development environment.
-
-As first step we still need to build devenv image because that image
-is used to produce the production-like bundle of the application:
-
-```bash
-./manage.sh build-devenv
-```
-
-Once the image is build, you no longer need to rebuilt it until the
-devenv image is changed and this happens we make some structural
-changes or upgrading some dependencies.
-
-Them, let's proceed to build the bundle (a directory that contains all
-the sources and dependencies of the platform ready to be deployed):
-
-```bash
-./manage.sh build-bundle
-```
-
-This will generate on current directory one file and one
-directory. The most important is the file like
-`uxbox-2020.09.09-1343.tar.xz`.
-
-Then, let's proceed to build the docker images with the bundle
-generated from the previous step.
-
-```bash
-./manage.sh build-testenv ./uxbox-2020.09.09-1343.tar.xz
-```
-
-This will generate the necessary docker images ready to be executed.
-
-And finally, start the docker-compose:
-
-```bash
-./manage.sh start-testenv
-```
