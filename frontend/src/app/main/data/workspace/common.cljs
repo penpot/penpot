@@ -532,8 +532,12 @@
             unames   (retrieve-used-names objects)
             name     (generate-unique-name unames (:name shape))
 
-            frame-id (or (:frame-id attrs)
-                         (cph/frame-id-by-position objects attrs))
+
+
+            frame-id (if (= :frame (:type attrs))
+                       uuid/zero
+                       (or (:frame-id attrs)
+                           (cph/frame-id-by-position objects attrs)))
 
             shape    (merge
                       (if (= :frame (:type shape))
