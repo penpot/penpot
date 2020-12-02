@@ -475,6 +475,10 @@
                            (with-meta params
                              {:on-success #(on-uploaded % viewport-coord)})))))))
 
+        on-paste
+        (fn [event]
+          (st/emit! (dw/paste-from-event event)))
+
         on-resize
         (fn [event]
           (let [node (mf/ref-val viewport-ref)
@@ -496,7 +500,8 @@
                    ;; bind with passive=false to allow the event to be cancelled
                    ;; https://stackoverflow.com/a/57582286/3219895
                    (events/listen js/window EventType.WHEEL on-mouse-wheel #js {:passive false})
-                   (events/listen js/window EventType.RESIZE on-resize)]]
+                   (events/listen js/window EventType.RESIZE on-resize)
+                   (events/listen js/window EventType.PASTE on-paste)]]
 
          (fn []
            (doseq [key keys]

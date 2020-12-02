@@ -769,6 +769,14 @@
       "es" : "Actualizado: %s"
     }
   },
+  "errors.clipboard-not-implemented" : {
+    "translations" : {
+      "en" : "Your browser cannot do this operation, please use Ctrl-V",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Tu navegador no puede realizar esta operación, por favor usa Ctrl-V."
+    }
+  },
   "errors.auth.unauthorized" : {
     "used-in" : [ "src/app/main/ui/auth/login.cljs:82" ],
     "translations" : {

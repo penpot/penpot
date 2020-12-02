@@ -24,6 +24,7 @@
    [app.config :as cfg]
    [app.main.constants :as c]
    [app.main.data.colors :as mdc]
+   [app.main.data.messages :as dm]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.notifications :as dwn]
@@ -42,6 +43,7 @@
    [app.util.timers :as ts]
    [app.util.transit :as t]
    [app.util.webapi :as wapi]
+   [app.util.i18n :refer [tr] :as i18n]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [clojure.set :as set]
@@ -1016,7 +1018,6 @@
     (watch [_ state stream]
       (rx/of (dwc/update-shapes ids #(gsh/resize-rect % attr value) {:reg-objects? true})))))
 
-
 ;; --- Shape Proportions
 
 (defn set-shape-proportion-lock
@@ -1029,6 +1030,7 @@
                                          (assoc shape :proportion-lock false)
                                          (-> (assoc shape :proportion-lock true)
                                              (gpr/assign-proportions)))))))))
+
 ;; --- Update Shape Position
 
 (s/def ::x number?)
@@ -1052,6 +1054,21 @@
             displ   (gmt/translate-matrix (gpt/subtract pos cpos))]
         (rx/of (dwt/set-modifiers [id] {:displacement displ})
                (dwt/apply-modifiers [id]))))))
+
+;; --- Update Shape Flags
+
+(defn update-shape-flags
+  [id {:keys [blocked hidden] :as flags}]
+  (s/assert ::us/uuid id)
+  (s/assert ::shape-attrs flags)
+  (ptk/reify ::update-shape-flags
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (letfn [(update-fn [obj]
+                (cond-> obj
+                  (boolean? blocked) (assoc :blocked blocked)
+                  (boolean? hidden) (assoc :hidden hidden)))]
+        (rx/of (dwc/update-shapes-recursive [id] update-fn))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1195,6 +1212,68 @@
                (rx/catch on-copy-error)
                (rx/ignore)))))))
 
+(declare paste-shape)
+(declare paste-text)
+(declare paste-image)
+
+(def paste
+  (ptk/reify ::paste
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (try
+        (let [clipboard-str (wapi/read-from-clipboard)
+
+              paste-transit-str
+              (->> clipboard-str
+                   (rx/filter t/transit?)
+                   (rx/map t/decode)
+                   (rx/filter #(= :copied-shapes (:type %)))
+                   (rx/map #(select-keys % [:selected :objects]))
+                   (rx/map paste-shape))
+
+              paste-plain-text-str
+              (->> clipboard-str
+                   (rx/filter (comp not empty?))
+                   (rx/map paste-text))
+
+              paste-image-str
+              (->> (wapi/read-image-from-clipboard)
+                   (rx/map paste-image))]
+
+          (->> (rx/concat paste-transit-str
+                          paste-plain-text-str
+                          paste-image-str)
+               (rx/first)
+               (rx/catch
+                   (fn [err]
+                     (js/console.error "Clipboard error:" err)
+                     (rx/empty)))))
+        (catch :default e
+          (let [data (ex-data e)]
+            (if (:not-implemented data)
+              (rx/of (dm/warn (tr "errors.clipboard-not-implemented")))
+              (js/console.error "ERROR" e))))))))
+
+(defn paste-from-event
+  [event]
+  (ptk/reify ::paste-from-event
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (try
+        (let [paste-data (wapi/read-from-paste-event event)]
+          (when paste-data
+            (let [text-data    (wapi/extract-text paste-data)
+                  decoded-data (when (and paste-data (t/transit? text-data))
+                                 (t/decode text-data))]
+              (if (and decoded-data (= (:type decoded-data) :copied-shapes))
+                (rx/of (paste-shape decoded-data))
+                (if-not (empty? text-data)
+                  (rx/of (paste-text text-data))
+                  (let [images (wapi/extract-images paste-data)]
+                    (rx/from (map paste-image images))))))))
+        (catch :default err
+          (js/console.error "Clipboard error:" err))))))
+
 (defn selected-frame? [state]
   (let [selected (get-in state [:workspace-local :selected])
         page-id (:current-page-id state)
@@ -1202,9 +1281,9 @@
     (and (and (= 1 (count selected))
               (= :frame (get-in objects [(first selected) :type]))))))
 
-(defn- paste-impl
+(defn- paste-shape
   [{:keys [selected objects] :as data}]
-  (ptk/reify ::paste-impl
+  (ptk/reify ::paste-shape
     ptk/WatchEvent
     (watch [_ state stream]
       (let [selected-objs (map #(get objects %) selected)
@@ -1239,71 +1318,6 @@
                           (into (d/ordered-set)))]
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
                (dwc/select-shapes selected))))))
-
-(defn- image-uploaded
-  [image]
-  (let [{:keys [x y]} @ms/mouse-position
-        {:keys [width height]} image
-        shape {:name (:name image)
-               :width width
-               :height height
-               :x (- x (/ width 2))
-               :y (- y (/ height 2))
-               :metadata {:width width
-                          :height height
-                          :id (:id image)
-                          :path (:path image)}}]
-    (st/emit! (create-and-add-shape :image x y shape))))
-
-(defn- paste-image-impl
-  [image]
-  (ptk/reify ::paste-bin-impl
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [file-id (get-in state [:workspace-file :id])
-            params  {:file-id file-id
-                     :local? true
-                     :js-files [image]}]
-        (rx/of (dwp/upload-media-objects
-                (with-meta params
-                  {:on-success image-uploaded})))))))
-
-(declare paste-text)
-
-(def paste
-  (ptk/reify ::paste
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (try
-        (let [clipboard-str (wapi/read-from-clipboard)
-
-              paste-transit-str
-              (->> clipboard-str
-                   (rx/filter t/transit?)
-                   (rx/map t/decode)
-                   (rx/filter #(= :copied-shapes (:type %)))
-                   (rx/map #(select-keys % [:selected :objects]))
-                   (rx/map paste-impl))
-
-              paste-plain-text-str
-              (->> clipboard-str
-                   (rx/filter (comp not empty?))
-                   (rx/map paste-text))
-
-              paste-image-str
-              (->> (wapi/read-image-from-clipboard)
-                   (rx/map paste-image-impl))]
-
-          (->> (rx/concat paste-transit-str
-                          paste-plain-text-str
-                          paste-image-str)
-               (rx/first)
-               (rx/catch
-                   (fn [err]
-                     (js/console.error "Clipboard error:" err)
-                     (rx/empty)))))
-        (catch :default e
-          (.error js/console "ERROR" e))))))
 
 (defn as-content [text]
   (let [paragraphs (->> (str/lines text)
@@ -1341,18 +1355,33 @@
                (dwc/add-shape shape)
                dwc/commit-undo-transaction)))))
 
-(defn update-shape-flags
-  [id {:keys [blocked hidden] :as flags}]
-  (s/assert ::us/uuid id)
-  (s/assert ::shape-attrs flags)
-  (ptk/reify ::update-shape-flags
+(defn- image-uploaded
+  [image]
+  (let [{:keys [x y]} @ms/mouse-position
+        {:keys [width height]} image
+        shape {:name (:name image)
+               :width width
+               :height height
+               :x (- x (/ width 2))
+               :y (- y (/ height 2))
+               :metadata {:width width
+                          :height height
+                          :id (:id image)
+                          :path (:path image)}}]
+    (st/emit! (create-and-add-shape :image x y shape))))
+
+(defn- paste-image
+  [image]
+  (ptk/reify ::paste-bin-impl
     ptk/WatchEvent
     (watch [_ state stream]
-      (letfn [(update-fn [obj]
-                (cond-> obj
-                  (boolean? blocked) (assoc :blocked blocked)
-                  (boolean? hidden) (assoc :hidden hidden)))]
-        (rx/of (dwc/update-shapes-recursive [id] update-fn))))))
+      (let [file-id (get-in state [:workspace-file :id])
+            params  {:file-id file-id
+                     :local? true
+                     :js-files [image]}]
+        (rx/of (dwp/upload-media-objects
+                (with-meta params
+                  {:on-success image-uploaded})))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GROUPS
@@ -1663,7 +1692,6 @@
                   (dwd/select-for-drawing :text))
    "p" #(st/emit! (dwd/select-for-drawing :path))
    (c-mod "c") #(st/emit! copy-selected)
-   (c-mod "v") #(st/emit! paste)
    (c-mod "x") #(st/emit! copy-selected delete-selected)
    "escape" #(st/emit! (esc-pressed))
    "del" #(st/emit! delete-selected)
