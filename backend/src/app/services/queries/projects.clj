@@ -9,12 +9,12 @@
 
 (ns app.services.queries.projects
   (:require
-   [clojure.spec.alpha :as s]
-   [app.common.spec :as us]
    [app.common.exceptions :as ex]
+   [app.common.spec :as us]
    [app.db :as db]
    [app.services.queries :as sq]
-   [app.services.queries.teams :as teams]))
+   [app.services.queries.teams :as teams]
+   [clojure.spec.alpha :as s]))
 
 ;; --- Check Project Permissions
 

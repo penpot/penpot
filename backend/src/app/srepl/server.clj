@@ -1,10 +1,18 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
+
 (ns app.srepl.server
   "Server Repl."
   (:require
-   [clojure.pprint :refer [pprint]]
-   [clojure.main :as cm]
-   [clojure.core.server :as ccs]
    [app.srepl.main]
+   [clojure.core.server :as ccs]
+   [clojure.main :as cm]
    [mount.core :as mount :refer [defstate]]))
 
 (defn- repl-init

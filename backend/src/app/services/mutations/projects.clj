@@ -5,12 +5,10 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2019-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.services.mutations.projects
   (:require
-   [clojure.spec.alpha :as s]
-   [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
@@ -18,7 +16,7 @@
    [app.services.mutations :as sm]
    [app.services.queries.projects :as proj]
    [app.tasks :as tasks]
-   [app.util.blob :as blob]))
+   [clojure.spec.alpha :as s]))
 
 ;; --- Helpers & Specs
 
@@ -48,7 +46,7 @@
       (assoc proj :is-pinned true))))
 
 (defn create-project
-  [conn {:keys [id profile-id team-id name default?] :as params}]
+  [conn {:keys [id team-id name default?] :as params}]
   (let [id (or id (uuid/next))
         default? (if (boolean? default?) default? false)]
     (db/insert! conn :project
@@ -107,11 +105,10 @@
 (sm/defmutation ::rename-project
   [{:keys [id profile-id name] :as params}]
   (db/with-atomic [conn db/pool]
-    (let [project (db/get-by-id conn :project id {:for-update true})]
-      (proj/check-edition-permissions! conn profile-id id)
-      (db/update! conn :project
-                  {:name name}
-                  {:id id}))))
+    (proj/check-edition-permissions! conn profile-id id)
+    (db/update! conn :project
+                {:name name}
+                {:id id})))
 
 ;; --- Mutation: Delete Project
 
@@ -139,6 +136,6 @@
    returning id")
 
 (defn mark-project-deleted
-  [conn {:keys [id profile-id] :as params}]
+  [conn {:keys [id] :as params}]
   (db/exec! conn [sql:mark-project-deleted id])
   nil)

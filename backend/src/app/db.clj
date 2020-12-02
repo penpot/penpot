@@ -13,19 +13,15 @@
    [app.common.geom.point :as gpt]
    [app.config :as cfg]
    [app.metrics :as mtx]
-   [app.util.data :as data]
    [app.util.time :as dt]
    [app.util.transit :as t]
    [clojure.data.json :as json]
    [clojure.spec.alpha :as s]
    [clojure.string :as str]
-   [clojure.tools.logging :as log]
-   [lambdaisland.uri :refer [uri]]
    [mount.core :as mount :refer [defstate]]
    [next.jdbc :as jdbc]
    [next.jdbc.date-time :as jdbc-dt]
    [next.jdbc.optional :as jdbc-opt]
-   [next.jdbc.result-set :as jdbc-rs]
    [next.jdbc.sql :as jdbc-sql]
    [next.jdbc.sql.builder :as jdbc-bld])
   (:import
@@ -34,8 +30,8 @@
    com.zaxxer.hikari.metrics.prometheus.PrometheusMetricsTrackerFactory
    java.sql.Connection
    java.sql.Savepoint
-   org.postgresql.jdbc.PgArray
    org.postgresql.geometric.PGpoint
+   org.postgresql.jdbc.PgArray
    org.postgresql.util.PGInterval
    org.postgresql.util.PGobject))
 
@@ -82,6 +78,8 @@
   (let [dsc (create-datasource-config cfg)]
     (jdbc-dt/read-as-instant)
     (HikariDataSource. dsc)))
+
+(declare pool)
 
 (defstate pool
   :start (create-pool cfg/config)

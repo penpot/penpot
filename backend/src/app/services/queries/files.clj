@@ -5,20 +5,18 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2019-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.services.queries.files
   (:require
-   [clojure.spec.alpha :as s]
-   [promesa.core :as p]
-   [app.common.pages-migrations :as pmg]
    [app.common.exceptions :as ex]
+   [app.common.pages-migrations :as pmg]
    [app.common.spec :as us]
    [app.db :as db]
-   [app.media :as media]
    [app.services.queries :as sq]
    [app.services.queries.projects :as projects]
-   [app.util.blob :as blob]))
+   [app.util.blob :as blob]
+   [clojure.spec.alpha :as s]))
 
 (declare decode-row)
 (declare decode-row-xf)

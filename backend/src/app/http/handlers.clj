@@ -9,9 +9,6 @@
 
 (ns app.http.handlers
   (:require
-   [app.common.exceptions :as ex]
-   [app.emails :as emails]
-   [app.http.session :as session]
    [app.services.init]
    [app.services.mutations :as sm]
    [app.services.queries :as sq]))

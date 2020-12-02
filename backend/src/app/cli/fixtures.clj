@@ -10,17 +10,16 @@
 (ns app.cli.fixtures
   "A initial fixtures."
   (:require
-   [clojure.tools.logging :as log]
-   [mount.core :as mount]
-   [buddy.hashers :as hashers]
-   [app.common.data :as d]
    [app.common.pages :as cp]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
    [app.migrations]
    [app.services.mutations.profile :as profile]
-   [app.util.blob :as blob]))
+   [app.util.blob :as blob]
+   [buddy.hashers :as hashers]
+   [clojure.tools.logging :as log]
+   [mount.core :as mount]))
 
 (defn- mk-uuid
   [prefix & args]

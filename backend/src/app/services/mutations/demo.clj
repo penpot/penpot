@@ -10,17 +10,14 @@
 (ns app.services.mutations.demo
   "A demo specific mutations."
   (:require
-   [clojure.spec.alpha :as s]
-   [buddy.core.codecs :as bc]
-   [buddy.core.nonce :as bn]
-   [app.common.exceptions :as ex]
+   [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
    [app.services.mutations :as sm]
    [app.services.mutations.profile :as profile]
    [app.tasks :as tasks]
-   [app.common.uuid :as uuid]
-   [app.util.time :as tm]))
+   [buddy.core.codecs :as bc]
+   [buddy.core.nonce :as bn]))
 
 (sm/defmutation ::create-demo-profile
   [_]

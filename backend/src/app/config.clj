@@ -10,14 +10,12 @@
 (ns app.config
   "A configuration management."
   (:require
+   [app.common.spec :as us]
+   [app.util.time :as dt]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [cuerdas.core :as str]
    [environ.core :refer [env]]
-   [mount.core :refer [defstate]]
-   [app.common.exceptions :as ex]
-   [app.common.spec :as us]
-   [app.util.time :as dt]))
+   [mount.core :refer [defstate]]))
 
 (def defaults
   {:http-server-port 6060

@@ -25,7 +25,7 @@
 ;; --- Entry point
 
 (defn run
-  [params]
+  [_params]
   (require 'app.config
            'app.srepl.server
            'app.migrations
@@ -37,5 +37,5 @@
 
 
 (defn -main
-  [& args]
+  [& _args]
   (run {}))

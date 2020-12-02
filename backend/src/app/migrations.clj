@@ -9,11 +9,10 @@
 
 (ns app.migrations
   (:require
-   [mount.core :as mount :refer [defstate]]
    [app.db :as db]
-   [app.config :as cfg]
    [app.migrations.migration-0023 :as mg0023]
-   [app.util.migrations :as mg]))
+   [app.util.migrations :as mg]
+   [mount.core :as mount :refer [defstate]]))
 
 (def +migrations+
   {:name "uxbox-main"

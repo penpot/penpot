@@ -10,17 +10,13 @@
 (ns app.services.notifications
   "A websocket based notifications mechanism."
   (:require
-   [app.common.exceptions :as ex]
-   [app.common.uuid :as uuid]
    [app.db :as db]
    [app.metrics :as mtx]
    [app.redis :as redis]
    [app.util.async :as aa]
-   [app.util.time :as dt]
    [app.util.transit :as t]
    [clojure.core.async :as a]
    [clojure.tools.logging :as log]
-   [promesa.core :as p]
    [ring.adapter.jetty9 :as jetty]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -40,7 +36,7 @@
                 :help "A total number of messages handled by the notifications service."}))
 
 (defn websocket
-  [{:keys [file-id team-id profile-id] :as params}]
+  [{:keys [file-id team-id] :as params}]
   (let [in  (a/chan 32)
         out (a/chan 32)]
     {:on-connect
@@ -62,18 +58,18 @@
            (a/close! sub))))
 
      :on-error
-     (fn [conn e]
+     (fn [_conn _e]
        (a/close! out)
        (a/close! in))
 
      :on-close
-     (fn [conn status-code reason]
+     (fn [_conn _status _reason]
        (metrics-active-connections :dec)
        (a/close! out)
        (a/close! in))
 
      :on-text
-     (fn [ws message]
+     (fn [_ws message]
        (metrics-message-counter :inc)
        (let [message (t/decode-str message)]
          (a/>!! in message)))
@@ -165,8 +161,7 @@
 (defn- update-presence
   [file-id session-id profile-id]
   (aa/thread-try
-   (let [now (dt/now)
-         sql [sql:update-presence file-id session-id profile-id]]
+   (let [sql [sql:update-presence file-id session-id profile-id]]
      (db/exec-one! db/pool sql))))
 
 (defn- delete-presence
@@ -177,13 +172,13 @@
                                   :session-id session-id})))
 
 (defmulti handle-message
-  (fn [ws message] (:type message)))
+  (fn [_ message] (:type message)))
 
 ;; TODO: check permissions for join a file-id channel (probably using
 ;; single use token for avoid explicit database query).
 
 (defmethod handle-message :connect
-  [{:keys [file-id profile-id session-id output] :as ws} message]
+  [{:keys [file-id profile-id session-id] :as ws} _message]
   (log/debugf "profile '%s' is connected to file '%s'" profile-id file-id)
   (aa/go-try
    (aa/<? (update-presence file-id session-id profile-id))
@@ -191,7 +186,7 @@
      (aa/<? (publish file-id {:type :presence :sessions members})))))
 
 (defmethod handle-message :disconnect
-  [{:keys [profile-id file-id session-id] :as ws} message]
+  [{:keys [profile-id file-id session-id] :as ws} _message]
   (log/debugf "profile '%s' is disconnected from '%s'" profile-id file-id)
   (aa/go-try
    (aa/<? (delete-presence file-id session-id profile-id))
@@ -199,7 +194,7 @@
      (aa/<? (publish file-id {:type :presence :sessions members})))))
 
 (defmethod handle-message :keepalive
-  [{:keys [profile-id file-id session-id] :as ws} message]
+  [{:keys [profile-id file-id session-id] :as ws} _message]
   (update-presence file-id session-id profile-id))
 
 (defmethod handle-message :pointer-update
@@ -210,6 +205,6 @@
     (publish file-id message)))
 
 (defmethod handle-message :default
-  [ws message]
+  [_ws message]
   (a/go
-    (log/warnf "received unexpected message: " message)))
+    (log/warnf "received unexpected message: %s" message)))

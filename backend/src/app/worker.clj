@@ -68,8 +68,7 @@
    ])
 
 (defstate executor
-  :start (thread-pool {:idle-timeout 10000
-                       :min-threads 0
+  :start (thread-pool {:min-threads 0
                        :max-threads 256})
   :stop (stop! executor))
 
@@ -381,7 +380,7 @@
 (defn thread-pool
   ([] (thread-pool {}))
   ([{:keys [min-threads max-threads name]
-     :or {min-threads 0 max-threads 128 idle-timeout 60000}}]
+     :or {min-threads 0 max-threads 128}}]
    (let [executor (QueuedThreadPool. max-threads min-threads)]
      (.setName executor (or name "default-tp"))
      (.start executor)

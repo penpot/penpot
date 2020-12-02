@@ -1,17 +1,28 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
+
 (ns app.http.auth.ldap
   (:require
-    [clj-ldap.client :as client]
-    [clojure.set :as set]
-    [mount.core :refer [defstate]]
-    [app.common.exceptions :as ex]
-    [app.config :as cfg]
-    [app.services.mutations :as sm]
-    [app.http.session :as session]
-    [clojure.tools.logging :as log]))
-
+   [app.common.exceptions :as ex]
+   [app.config :as cfg]
+   [app.http.session :as session]
+   [app.services.mutations :as sm]
+   [clj-ldap.client :as client]
+   [clojure.set :as set]
+   [clojure.string]
+   [clojure.tools.logging :as log]
+   [mount.core :refer [defstate]]))
 
 (defn replace-several [s & {:as replacements}]
   (reduce-kv clojure.string/replace s replacements))
+
+(declare *ldap-pool)
 
 (defstate *ldap-pool
   :start (delay

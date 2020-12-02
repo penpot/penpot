@@ -9,9 +9,6 @@
 
 (ns app.services.mutations.files
   (:require
-   [clojure.spec.alpha :as s]
-   [datoteka.core :as fs]
-   [promesa.core :as p]
    [app.common.exceptions :as ex]
    [app.common.pages :as cp]
    [app.common.pages-migrations :as pmg]
@@ -21,13 +18,13 @@
    [app.db :as db]
    [app.redis :as redis]
    [app.services.mutations :as sm]
-   [app.services.queries.projects :as proj]
    [app.services.queries.files :as files]
+   [app.services.queries.projects :as proj]
    [app.tasks :as tasks]
    [app.util.blob :as blob]
-   [app.util.storage :as ust]
+   [app.util.time :as dt]
    [app.util.transit :as t]
-   [app.util.time :as dt]))
+   [clojure.spec.alpha :as s]))
 
 ;; --- Helpers & Specs
 
@@ -62,7 +59,7 @@
                :can-edit true}))
 
 (defn create-file
-  [conn {:keys [id profile-id name project-id is-shared]
+  [conn {:keys [id name project-id is-shared]
          :or {is-shared false}
          :as params}]
   (let [id   (or id (uuid/next))
@@ -286,7 +283,7 @@
                      (assoc :changes (blob/encode changes)
                             :session-id sid))
 
-        chng     (insert-change conn file)
+        _        (insert-change conn file)
         msg      {:type :file-change
                   :profile-id (:profile-id params)
                   :file-id (:id file)
@@ -319,7 +316,7 @@
                  :data (:data file)}
                 {:id (:id file)})
 
-    (retrieve-lagged-changes conn chng params)))
+    (retrieve-lagged-changes conn params)))
 
 (defn- insert-change
   [conn {:keys [revn data changes session-id] :as file}]
@@ -343,7 +340,7 @@
     order by s.created_at asc")
 
 (defn- retrieve-lagged-changes
-  [conn snapshot params]
+  [conn params]
   (->> (db/exec! conn [sql:lagged-changes (:id params) (:revn params)])
        (mapv files/decode-row)))
 
