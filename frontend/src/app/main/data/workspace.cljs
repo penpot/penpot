@@ -1621,8 +1621,7 @@
       (let [edition-id (get-in state [:workspace-local :edition])
             path-edit-mode (get-in state [:workspace-local :edit-path edition-id :edit-mode])]
         (if-not (= :draw path-edit-mode)
-          (rx/of :interrupt
-                 (deselect-all true))
+          (rx/of :interrupt (deselect-all true))
           (rx/empty))))))
 
 (defn c-mod
