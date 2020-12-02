@@ -9,19 +9,12 @@
 
 (ns app.services.queries.comments
   (:require
-   [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.common.uuid :as uuid]
-   [app.config :as cfg]
    [app.db :as db]
    [app.services.queries :as sq]
    [app.services.queries.files :as files]
    [app.services.queries.teams :as teams]
-   [app.util.time :as dt]
-   [app.util.transit :as t]
-   [clojure.spec.alpha :as s]
-   [datoteka.core :as fs]
-   [promesa.core :as p]))
+   [clojure.spec.alpha :as s]))
 
 (defn decode-row
   [{:keys [participants position] :as row}]
@@ -70,7 +63,7 @@
    window w as (partition by c.thread_id order by c.created_at asc)")
 
 (defn- retrieve-comment-threads
-  [conn {:keys [profile-id file-id team-id]}]
+  [conn {:keys [profile-id file-id]}]
   (files/check-read-permissions! conn profile-id file-id)
   (->> (db/exec! conn [sql:comment-threads profile-id file-id])
        (into [] (map decode-row))))

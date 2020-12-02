@@ -5,18 +5,16 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2019-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.services.queries.recent-files
   (:require
-   [clojure.spec.alpha :as s]
-   [promesa.core :as p]
-   [app.db :as db]
    [app.common.spec :as us]
+   [app.db :as db]
    [app.services.queries :as sq]
+   [app.services.queries.files :refer [decode-row-xf]]
    [app.services.queries.teams :as teams]
-   [app.services.queries.projects :as projects :refer [retrieve-projects]]
-   [app.services.queries.files :refer [decode-row-xf]]))
+   [clojure.spec.alpha :as s]))
 
 (def sql:recent-files
   "with recent_files as (

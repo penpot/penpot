@@ -9,21 +9,15 @@
 
 (ns app.services.mutations.comments
   (:require
-   [clojure.spec.alpha :as s]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.common.uuid :as uuid]
-   [app.config :as cfg]
    [app.db :as db]
    [app.services.mutations :as sm]
-   [app.services.queries.projects :as proj]
-   [app.services.queries.files :as files]
    [app.services.queries.comments :as comments]
-   [app.tasks :as tasks]
+   [app.services.queries.files :as files]
    [app.util.blob :as blob]
-   [app.util.storage :as ust]
-   [app.util.transit :as t]
-   [app.util.time :as dt]))
+   [app.util.time :as dt]
+   [clojure.spec.alpha :as s]))
 
 ;; --- Mutation: Create Comment Thread
 
@@ -66,14 +60,16 @@
                             :created-at now
                             :modified-at now
                             :seqn seqn
-                            :position (db/pgpoint position)})
-        ;; Create a comment entry
-        comment (db/insert! conn :comment
-                            {:thread-id (:id thread)
-                             :owner-id profile-id
-                             :created-at now
-                             :modified-at now
-                             :content content})]
+                            :position (db/pgpoint position)})]
+
+
+    ;; Create a comment entry
+    (db/insert! conn :comment
+                {:thread-id (:id thread)
+                 :owner-id profile-id
+                 :created-at now
+                 :modified-at now
+                 :content content})
 
     ;; Make the current thread as read.
     (upsert-comment-thread-status! conn profile-id (:id thread))

@@ -20,9 +20,9 @@
    [app.media-storage :as mst]
    [app.services.mutations :as sm]
    [app.services.mutations.projects :as projects]
+   [app.services.queries.profile :as profile]
    [app.services.queries.teams :as teams]
    [app.services.tokens :as tokens]
-   [app.services.queries.profile :as profile]
    [app.tasks :as tasks]
    [app.util.storage :as ust]
    [app.util.time :as dt]
@@ -58,7 +58,7 @@
       team)))
 
 (defn create-team
-  [conn {:keys [id profile-id name default?] :as params}]
+  [conn {:keys [id name default?] :as params}]
   (let [id (or id (uuid/next))
         default? (if (boolean? default?) default? false)]
     (db/insert! conn :team
@@ -268,7 +268,7 @@
       (assoc team :photo (str photo)))))
 
 (defn upload-photo
-  [conn {:keys [file profile-id]}]
+  [_conn {:keys [file]}]
   (let [prefix (-> (bn/random-bytes 8)
                    (bc/bytes->b64u)
                    (bc/bytes->str))

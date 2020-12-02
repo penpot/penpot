@@ -10,14 +10,11 @@
 (ns app.emails
   "Main api for send emails."
   (:require
-   [clojure.spec.alpha :as s]
-   [promesa.core :as p]
-   [app.config :as cfg]
-   [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.db :as db]
+   [app.config :as cfg]
    [app.tasks :as tasks]
-   [app.util.emails :as emails]))
+   [app.util.emails :as emails]
+   [clojure.spec.alpha :as s]))
 
 ;; --- Defaults
 

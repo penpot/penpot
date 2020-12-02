@@ -8,9 +8,6 @@
 ;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.metrics
-  (:require
-   [clojure.tools.logging :as log]
-   [cuerdas.core :as str])
   (:import
    io.prometheus.client.CollectorRegistry
    io.prometheus.client.Counter
@@ -172,7 +169,7 @@
                               (assoc mdata ::summary-original original)))))))
 
 (defn dump
-  [& args]
+  [& _args]
   (let [samples (.metricFamilySamples ^CollectorRegistry registry)
         writer  (StringWriter.)]
     (TextFormat/write004 writer samples)

@@ -5,18 +5,16 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.services.queries.teams
   (:require
-   [clojure.spec.alpha :as s]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.common.uuid :as uuid]
    [app.db :as db]
    [app.services.queries :as sq]
    [app.services.queries.profile :as profile]
-   [app.util.blob :as blob]))
+   [clojure.spec.alpha :as s]))
 
 ;; --- Team Edition Permissions
 

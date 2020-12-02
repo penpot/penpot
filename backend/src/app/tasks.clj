@@ -11,7 +11,6 @@
   (:require
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
    [app.db :as db]
    [app.metrics :as mtx]
    [app.util.time :as dt]

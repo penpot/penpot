@@ -5,27 +5,27 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2016-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.cli.media-loader
   "Media libraries importer (command line helper)."
-  (:require
-   [clojure.tools.logging :as log]
-   [clojure.spec.alpha :as s]
-   [clojure.java.io :as io]
-   [mount.core :as mount]
-   [datoteka.core :as fs]
-   [app.config]
+  #_(:require
    [app.common.spec :as us]
-   [app.db :as db]
-   [app.media]
-   [app.media-storage]
-   [app.migrations]
    [app.common.uuid :as uuid]
-   [app.services.mutations.projects :as projects]
+   [app.config]
+   [app.db :as db]
+   [app.media-storage]
+   [app.media]
+   [app.migrations]
    [app.services.mutations.files :as files]
-   [app.services.mutations.media :as media])
-  (:import
+   [app.services.mutations.media :as media]
+   [app.services.mutations.projects :as projects]
+   [clojure.java.io :as io]
+   [clojure.spec.alpha :as s]
+   [clojure.tools.logging :as log]
+   [datoteka.core :as fs]
+   [mount.core :as mount])
+  #_(:import
    java.io.PushbackReader))
 
 ;; --- Constants & Helpers

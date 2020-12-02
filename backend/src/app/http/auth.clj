@@ -9,20 +9,18 @@
 
 (ns app.http.auth
   (:require
-   [app.common.exceptions :as ex]
-   [app.common.uuid :as uuid]
    [app.http.session :as session]
    [app.services.mutations :as sm]))
 
 (defn login-handler
   [req]
-  (let [data   (:body-params req)
-        uagent (get-in req [:headers "user-agent"])]
-    (let [profile (sm/handle (assoc data ::sm/type :login))
-          id      (session/create (:id profile) uagent)]
-      {:status 200
-       :cookies (session/cookies id)
-       :body profile})))
+  (let [data    (:body-params req)
+        uagent  (get-in req [:headers "user-agent"])
+        profile (sm/handle (assoc data ::sm/type :login))
+        id      (session/create (:id profile) uagent)]
+    {:status 200
+     :cookies (session/cookies id)
+     :body profile}))
 
 (defn logout-handler
   [req]

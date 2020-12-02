@@ -1,9 +1,16 @@
 {:lint-as {potok.core/reify clojure.core/reify
            promesa.core/let clojure.core/let
            app.db/with-atomic clojure.core/with-open}
+ :output
+ {:exclude-files ["data_readers.clj"]}
+
  :linters
  {:unsorted-required-namespaces
   {:level :warning}
+
+  :unresolved-namespace
+  {:level :warning
+   :exclude [data_readers]}
 
   :single-key-in
   {:level :warning}
@@ -16,6 +23,7 @@
   :unresolved-symbol
   {:exclude ['(app.services.mutations/defmutation)
              '(app.services.queries/defquery)
+             '(app.util.dispatcher/defservice)
              '(mount.core/defstate)
              ]}}}
 

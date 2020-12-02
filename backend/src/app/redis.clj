@@ -7,13 +7,9 @@
 (ns app.redis
   (:refer-clojure :exclude [run!])
   (:require
-   [clojure.tools.logging :as log]
-   [lambdaisland.uri :refer [uri]]
-   [mount.core :as mount :refer [defstate]]
-   [app.common.exceptions :as ex]
    [app.config :as cfg]
-   [app.util.data :as data]
-   [app.util.redis :as redis])
+   [app.util.redis :as redis]
+   [mount.core :as mount :refer [defstate]])
   (:import
    java.lang.AutoCloseable))
 
@@ -24,9 +20,13 @@
   (let [uri (:redis-uri config "redis://redis/0")]
     (redis/client uri)))
 
+(declare client)
+
 (defstate client
   :start (create-client cfg/config)
   :stop (.close ^AutoCloseable client))
+
+(declare conn)
 
 (defstate conn
   :start (redis/connect client)

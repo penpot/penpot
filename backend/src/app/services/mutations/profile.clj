@@ -10,24 +10,20 @@
 (ns app.services.mutations.profile
   (:require
    [app.common.exceptions :as ex]
-   [app.common.media :as cm]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
    [app.emails :as emails]
-   [app.media :as media]
-   [app.media-storage :as mst]
    [app.http.session :as session]
+   [app.media :as media]
    [app.services.mutations :as sm]
    [app.services.mutations.projects :as projects]
    [app.services.mutations.teams :as teams]
+   [app.services.mutations.verify-token :refer [process-token]]
    [app.services.queries.profile :as profile]
    [app.services.tokens :as tokens]
-   [app.services.mutations.verify-token :refer [process-token]]
    [app.tasks :as tasks]
-   [app.util.blob :as blob]
-   [app.util.storage :as ust]
    [app.util.time :as dt]
    [buddy.hashers :as hashers]
    [clojure.spec.alpha :as s]
@@ -361,7 +357,7 @@
 
 (sm/defmutation ::request-profile-recovery
   [{:keys [email] :as params}]
-  (letfn [(create-recovery-token [conn {:keys [id] :as profile}]
+  (letfn [(create-recovery-token [{:keys [id] :as profile}]
             (let [token (tokens/generate
                          {:iss :password-recovery
                           :exp (dt/in-future "15m")
@@ -377,7 +373,7 @@
     (db/with-atomic [conn db/pool]
       (some->> email
                (profile/retrieve-profile-data-by-email conn)
-               (create-recovery-token conn)
+               (create-recovery-token)
                (send-email-notification conn))
       nil)))
 
@@ -390,7 +386,7 @@
 
 (sm/defmutation ::recover-profile
   [{:keys [token password]}]
-  (letfn [(validate-token [conn token]
+  (letfn [(validate-token [token]
             (let [tdata (tokens/verify token {:iss :password-recovery})]
               (:profile-id tdata)))
 
@@ -399,7 +395,7 @@
               (db/update! conn :profile {:password pwd} {:id profile-id})))]
 
     (db/with-atomic [conn db/pool]
-      (->> (validate-token conn token)
+      (->> (validate-token token)
            (update-password conn))
       nil)))
 

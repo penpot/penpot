@@ -11,7 +11,6 @@
   (:require
    [app.common.exceptions :as ex]
    [app.config :as cfg]
-   [app.db :as db]
    [app.http.session :as session]
    [app.services.mutations :as sm]
    [app.services.tokens :as tokens]
@@ -84,9 +83,8 @@
         nil))))
 
 (defn auth
-  [req]
-  (let [token  (tokens/generate {:iss :google-oauth
-                                 :exp (dt/in-future "15m")})
+  [_req]
+  (let [token  (tokens/generate {:iss :google-oauth :exp (dt/in-future "15m")})
         params {:scope scope
                 :access_type "offline"
                 :include_granted_scopes true
@@ -104,7 +102,7 @@
 (defn callback
   [req]
   (let [token (get-in req [:params :state])
-        tdata (tokens/verify token {:iss :google-oauth})
+        _     (tokens/verify token {:iss :google-oauth})
         info  (some-> (get-in req [:params :code])
                       (get-access-token)
                       (get-user-info))]

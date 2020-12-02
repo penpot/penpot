@@ -9,21 +9,18 @@
 
 (ns app.services.mutations.media
   (:require
-   [clojure.spec.alpha :as s]
-   [datoteka.core :as fs]
-   [app.common.media :as cm]
    [app.common.exceptions :as ex]
+   [app.common.media :as cm]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
    [app.db :as db]
    [app.media :as media]
+   [app.media-storage :as mst]
    [app.services.mutations :as sm]
    [app.services.queries.teams :as teams]
-   [app.tasks :as tasks]
-   [app.media-storage :as mst]
    [app.util.storage :as ust]
-   [app.util.time :as dt]))
+   [clojure.spec.alpha :as s]
+   [datoteka.core :as fs]))
 
 (def thumbnail-options
   {:width 100

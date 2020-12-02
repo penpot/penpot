@@ -10,14 +10,11 @@
 (ns app.media
   "Media postprocessing."
   (:require
-   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.media :as cm]
    [app.common.spec :as us]
    [app.config :as cfg]
-   [app.media-storage :as mst]
    [app.util.http :as http]
-   [app.util.storage :as ust]
    [clojure.core.async :as a]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
@@ -25,11 +22,12 @@
    [mount.core :refer [defstate]])
   (:import
    java.io.ByteArrayInputStream
-   java.io.InputStream
    java.util.concurrent.Semaphore
    org.im4java.core.ConvertCmd
-   org.im4java.core.Info
-   org.im4java.core.IMOperation))
+   org.im4java.core.IMOperation
+   org.im4java.core.Info))
+
+(declare semaphore)
 
 (defstate semaphore
   :start (Semaphore. (:image-process-max-threads cfg/config 1)))
@@ -73,7 +71,7 @@
 ;;  http://www.imagemagick.org/Usage/thumbnails/
 
 (defn- generic-process
-  [{:keys [input format quality operation] :as params}]
+  [{:keys [input format operation] :as params}]
   (let [{:keys [path mtype]} input
         format (or (cm/mtype->format mtype) format)
         ext    (cm/format->extension format)

@@ -2,23 +2,24 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.http.errors
   "A errors handling for the http server."
   (:require
    [clojure.tools.logging :as log]
-   [cuerdas.core :as str]
-   [app.metrics :as mtx]
-   [io.aviso.exception :as e]))
+   [cuerdas.core :as str]))
 
 (defmulti handle-exception
-  (fn [err & rest]
+  (fn [err & _rest]
     (:type (ex-data err))))
 
 
 (defmethod handle-exception :authorization
-  [err req]
+  [err _]
   {:status 403
    :body (ex-data err)})
 
@@ -38,13 +39,13 @@
        :body response})))
 
 (defmethod handle-exception :ratelimit
-  [err req]
+  [_ _]
   {:status 429
    :headers {"retry-after" 1000}
    :body ""})
 
 (defmethod handle-exception :not-found
-  [err req]
+  [err _]
   (let [response (ex-data err)]
     {:status 404
      :body response}))
@@ -54,7 +55,7 @@
   (handle-exception (.getCause ^Throwable err) req))
 
 (defmethod handle-exception :parse
-  [err req]
+  [err _]
   {:status 400
    :body {:type :parse
           :message (ex-message err)}})
