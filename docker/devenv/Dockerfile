@@ -24,6 +24,7 @@ RUN set -ex; \
         bash \
         git \
         rlwrap \
+        unzip \
     ; \
     echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
     locale-gen; \
@@ -131,8 +132,14 @@ RUN set -ex; \
     mv /tmp/node/node-$NODE_VERSION-linux-x64 /usr/local/nodejs; \
     chown -R root /usr/local/nodejs; \
     /usr/local/nodejs/bin/npm install -g yarn; \
-    /usr/local/nodejs/bin/yarn global add clj-kondo; \
     rm -rf /tmp/node;
+
+RUN set -ex; \
+    cd /tmp; \
+    wget https://github.com/borkdude/clj-kondo/releases/download/v2020.11.07/clj-kondo-2020.11.07-linux-amd64.zip; \
+    unzip clj-kondo-2020.11.07-linux-amd64.zip; \
+    mv clj-kondo /usr/local/bin/; \
+    rm clj-kondo-2020.11.07-linux-amd64.zip;
 
 EXPOSE 3447
 EXPOSE 3448
