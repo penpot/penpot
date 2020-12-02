@@ -2,21 +2,23 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.util.svg
   "Icons SVG parsing helpers."
   (:require
-   [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
+   [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.common.exceptions :as ex])
+   [clojure.spec.alpha :as s]
+   [cuerdas.core :as str])
   (:import
    org.jsoup.Jsoup
    org.jsoup.nodes.Attribute
    org.jsoup.nodes.Element
-   org.jsoup.nodes.Document
-   java.io.InputStream))
+   org.jsoup.nodes.Document))
 
 (s/def ::content string?)
 (s/def ::width ::us/number)
@@ -65,19 +67,19 @@
           content (.html element)
           attrs (parse-attrs element)]
       (assoc attrs :content content))
-    (catch java.lang.IllegalArgumentException e
+    (catch java.lang.IllegalArgumentException _e
       (ex/raise :type :validation
                 :code ::invalid-input
                 :message "Input does not seems to be a valid svg."))
-    (catch java.lang.NullPointerException e
+    (catch java.lang.NullPointerException _e
       (ex/raise :type :validation
                 :code ::invalid-input
                 :message "Input does not seems to be a valid svg."))
-    (catch org.jsoup.UncheckedIOException e
+    (catch org.jsoup.UncheckedIOException _e
       (ex/raise :type :validation
                 :code ::invalid-input
                 :message "Input does not seems to be a valid svg."))
-    (catch Exception e
+    (catch Exception _e
       (ex/raise :type :internal
                 :code ::unexpected))))
 

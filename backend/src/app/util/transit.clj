@@ -9,13 +9,11 @@
 
 (ns app.util.transit
   (:require
-   [cognitect.transit :as t]
-   [clojure.java.io :as io]
-   [linked.core :as lk]
-   [app.util.time :as dt]
-   [app.util.data :as data]
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.geom.matrix :as gmt])
+   [app.util.time :as dt]
+   [cognitect.transit :as t]
+   [linked.core :as lk])
   (:import
    linked.set.LinkedSet
    java.io.ByteArrayInputStream

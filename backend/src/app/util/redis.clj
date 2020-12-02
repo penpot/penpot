@@ -2,14 +2,17 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.util.redis
   "Asynchronous posgresql client."
   (:refer-clojure :exclude [run!])
   (:require
-   [promesa.core :as p]
-   [clojure.core.async :as a])
+   [clojure.core.async :as a]
+   [promesa.core :as p])
   (:import
    io.lettuce.core.RedisClient
    io.lettuce.core.RedisURI
@@ -18,7 +21,6 @@
    io.lettuce.core.api.StatefulRedisConnection
    io.lettuce.core.pubsub.RedisPubSubListener
    io.lettuce.core.pubsub.StatefulRedisPubSubConnection
-   io.lettuce.core.pubsub.api.async.RedisPubSubAsyncCommands
    io.lettuce.core.pubsub.api.sync.RedisPubSubCommands
    ))
 
@@ -87,7 +89,7 @@
     output))
 
 (defn subscribe
-  [{:keys [uri] :as client} {:keys [topic topics xform]}]
+  [{:keys [uri] :as client} {:keys [topics xform]}]
   (let [topics (if (vector? topics)
                  (into-array String (map str topics))
                  (into-array String [(str topics)]))]
@@ -100,7 +102,7 @@
     true
     false))
 
-(defmulti impl-run (fn [conn cmd parmas] cmd))
+(defmulti impl-run (fn [_ cmd _] cmd))
 
 (defn run!
   [conn cmd params]
