@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 export PATH=$HOME/.local/bin:/usr/local/nodejs/bin:$PATH
 
 alias l='ls --color -GFlh'

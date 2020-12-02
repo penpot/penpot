@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 
 source ~/.bashrc
+
 set -ex
 
 if [ -z "${TAG}" ]; then
-    export TAG=`git log -n 1 --pretty=format:%H -- ./`
+    export TAG=$(git log -n 1 --pretty=format:%H -- ./);
 fi
 
 yarn install

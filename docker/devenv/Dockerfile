@@ -150,6 +150,7 @@ EXPOSE 9090
 COPY files/start-tmux.sh  /home/start-tmux.sh
 COPY files/entrypoint.sh  /home/entrypoint.sh
 COPY files/init.sh        /home/init.sh
+COPY files/bashrc         /home/penpot/.bashrc
 
 ENTRYPOINT ["/home/entrypoint.sh"]
 CMD ["/home/init.sh"]

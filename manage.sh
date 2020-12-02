@@ -63,10 +63,8 @@ function run-devenv {
 function build {
     pull-devenv-if-not-exists;
     docker volume create $DEVENV_PNAME_user_data;
-
-    echo "Running development image $IMAGE to build frontend."
     docker run -t --rm \
-           --mount source=$DEVENV_PNAME_user_data,type=volume,target=/home/penpot/ \
+           --mount source=${DEVENV_PNAME}_user_data,type=volume,target=/home/penpot/ \
            --mount source=`pwd`,type=bind,target=/home/penpot/penpot \
            -e EXTERNAL_UID=$CURRENT_USER_ID \
            -w /home/penpot/penpot/$1 \
@@ -103,15 +101,19 @@ function build-bundle {
     echo $CURRENT_GIT_TAG > ./bundle/exporter/version.txt
     echo $CURRENT_GIT_TAG > ./bundle/version.txt
 
-    pushd bundle/
-    tar -cvf ../$name.tar *;
-    popd
+    local generate_tar=${PENPOT_BUILD_GENERATE_TAR:-"true"};
 
-    xz -vez1f -T4 $name.tar
+    if [ $generate_tar == "true" ]; then
+        pushd bundle/
+        tar -cvf ../$name.tar *;
+        popd
 
-    echo "##############################################################";
-    echo "# Generated $name.tar.xz";
-    echo "##############################################################";
+        xz -vez1f -T4 $name.tar
+
+        echo "##############################################################";
+        echo "# Generated $name.tar.xz";
+        echo "##############################################################";
+    fi
 }
 
 function build-image {
