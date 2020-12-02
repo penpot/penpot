@@ -2,13 +2,16 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2019 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.util.migrations
   (:require
-   [clojure.tools.logging :as log]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
+   [clojure.tools.logging :as log]
    [cuerdas.core :as str]
    [next.jdbc :as jdbc]))
 
@@ -45,7 +48,7 @@
       ((:fn migration) pool))))
 
 (defn- impl-migrate
-  [conn migrations {:keys [fake] :or {fake false}}]
+  [conn migrations _opts]
   (s/assert ::migrations migrations)
   (let [mname (:name migrations)
         steps (:steps migrations)]

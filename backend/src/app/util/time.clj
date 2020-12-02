@@ -5,12 +5,12 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2016-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.util.time
   (:require
-   [clojure.spec.alpha :as s]
    [app.common.exceptions :as ex]
+   [clojure.spec.alpha :as s]
    [cognitect.transit :as t])
   (:import
    java.time.Instant
@@ -106,7 +106,7 @@
             (string? v)
             (try
               (parse-duration v)
-              (catch java.time.format.DateTimeParseException e
+              (catch java.time.format.DateTimeParseException _e
                 ::s/invalid))
 
             :else

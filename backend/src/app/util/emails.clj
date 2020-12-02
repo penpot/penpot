@@ -5,27 +5,25 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2019-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.util.emails
   (:require
+   [app.common.exceptions :as ex]
+   [app.common.spec :as us]
+   [app.util.template :as tmpl]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [app.common.spec :as us]
-   [app.common.exceptions :as ex]
-   [app.util.template :as tmpl])
+   [cuerdas.core :as str])
   (:import
    java.util.Properties
-   javax.mail.Message
-   javax.mail.Transport
    javax.mail.Message$RecipientType
-   javax.mail.PasswordAuthentication
    javax.mail.Session
+   javax.mail.Transport
    javax.mail.internet.InternetAddress
-   javax.mail.internet.MimeMultipart
    javax.mail.internet.MimeBodyPart
-   javax.mail.internet.MimeMessage))
+   javax.mail.internet.MimeMessage
+   javax.mail.internet.MimeMultipart))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Email Building
@@ -205,8 +203,7 @@
 
 (defn- build-email-template
   [id context]
-  (let [lang (:lang context :en)
-        subj (render-email-template-part :subj id context)
+  (let [subj (render-email-template-part :subj id context)
         text (render-email-template-part :txt id context)
         html (render-email-template-part :html id context)]
     (when (or (not subj)
