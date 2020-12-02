@@ -13,6 +13,10 @@
    [app.common.geom.shapes.common :as gco]))
 
 (defn rect->points [{:keys [x y width height]}]
+  (assert (number? x))
+  (assert (number? y))
+  (assert (and (number? width) (> width 0)))
+  (assert (and (number? height) (> height 0)))
   [(gpt/point x y)
    (gpt/point (+ x width) y)
    (gpt/point (+ x width) (+ y height))

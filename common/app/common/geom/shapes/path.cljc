@@ -102,7 +102,6 @@
   (let [calc-extremities
         (fn [command prev]
           (case (:command command)
-            :close-path []
             :move-to [(command->point command)]
 
             ;; If it's a line we add the beginning point and endpoint
@@ -116,7 +115,8 @@
                        (curve-extremities (command->point prev)
                                           (command->point command)
                                           (command->point command :c1)
-                                          (command->point command :c2)))))
+                                          (command->point command :c2)))
+            []))
 
         extremities (mapcat calc-extremities
                             content
