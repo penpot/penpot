@@ -67,8 +67,9 @@ function build {
            --mount source=${DEVENV_PNAME}_user_data,type=volume,target=/home/penpot/ \
            --mount source=`pwd`,type=bind,target=/home/penpot/penpot \
            -e EXTERNAL_UID=$CURRENT_USER_ID \
+           -e SHADOWCLJS_EXTRA_PARAMS=$SHADOWCLJS_EXTRA_PARAMS \
            -w /home/penpot/penpot/$1 \
-           $DEVENV_IMGNAME:latest sudo -u penpot ./scripts/build.sh
+           $DEVENV_IMGNAME:latest sudo -EH -u penpot ./scripts/build.sh
 }
 
 function build-frontend {
