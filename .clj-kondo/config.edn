@@ -2,10 +2,20 @@
            promesa.core/let clojure.core/let
            app.db/with-atomic clojure.core/with-open}
  :linters
- {:unused-binding
-  {:exclude-destructured-as true}
+ {:unsorted-required-namespaces
+  {:level :warning}
+
+  :single-key-in
+  {:level :warning}
+
+  :unused-binding
+  {:exclude-destructured-as true
+   :exclude-destructured-keys-in-fn-args false
+   }
+
   :unresolved-symbol
   {:exclude ['(app.services.mutations/defmutation)
              '(app.services.queries/defquery)
+             '(mount.core/defstate)
              ]}}}
 
