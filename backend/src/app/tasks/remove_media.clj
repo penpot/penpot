@@ -73,7 +73,7 @@
    returning *")
 
 (defn trim-media-storage
-  [{:keys [props] :as task}]
+  [_task]
   (letfn [(decode-row [{:keys [data] :as row}]
             (cond-> row
               (db/pgobject? data) (assoc :data (db/decode-pgobject data))))

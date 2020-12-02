@@ -10,8 +10,6 @@
 (ns app.tasks.maintenance
   (:require
    [app.common.spec :as us]
-   [app.common.exceptions :as ex]
-   [app.config :as cfg]
    [app.db :as db]
    [app.metrics :as mtx]
    [app.util.time :as dt]
