@@ -945,36 +945,52 @@
             (update objects id assoc :parent-id parent-id))
 
           ;; Updates the frame-id references that might be outdated
-          (update-frame-ids [frame-id objects id]
-            (let [objects (assoc-in objects [id :frame-id] frame-id)
+          (assign-frame-id [frame-id objects id]
+            (let [objects (update objects id assoc :frame-id frame-id)
                   obj     (get objects id)]
               (cond-> objects
+                ;; If we moving frame, the parent frame is the root
+                ;; and we DO NOT NEED update children because the
+                ;; children will point correctly to the frame what we
+                ;; are currently moving
                 (not= :frame (:type obj))
-                (as-> $$ (reduce (partial update-frame-ids frame-id) $$ (:shapes obj))))))
+                (as-> $$ (reduce (partial assign-frame-id frame-id) $$ (:shapes obj))))))
 
           (move-objects [objects]
-            (let [valid?  (every? (partial is-valid-move? objects) shapes)
-                  cpindex (reduce (fn [index id]
-                                    (let [obj (get objects id)]
-                                      (assoc! index id (:parent-id obj))))
-                                  (transient {})
-                                  (keys objects))
-                  cpindex (persistent! cpindex)
+            (let [valid?   (every? (partial is-valid-move? objects) shapes)
 
-                  parent  (get objects parent-id)
-                  frame   (if (= :frame (:type parent))
-                            parent
-                            (get objects (:frame-id parent)))
+                  ;; Create a index of shape ids pointing to the
+                  ;; corresponding parents; used mainly for update old
+                  ;; parents after move operation.
+                  cpindex  (reduce (fn [index id]
+                                     (let [obj (get objects id)]
+                                       (assoc! index id (:parent-id obj))))
+                                   (transient {})
+                                   (keys objects))
+                  cpindex  (persistent! cpindex)
 
-                  frm-id  (:id frame)]
+                  parent   (get objects parent-id)
+                  frame-id (if (= :frame (:type parent))
+                             (:id parent)
+                             (:frame-id parent))]
 
-              (if valid?
+              (if (and valid? (seq shapes))
                 (as-> objects $
+                  ;; Add the new shapes to the parent object.
                   (update $ parent-id #(add-to-parent % index shapes))
+
+                  ;; Update each individual shapre link to the new parent
                   (reduce update-parent-id $ shapes)
+
+                  ;; Analyze the old parents and clear the old links
+                  ;; only if the new parrent is different form old
+                  ;; parent.
                   (reduce (partial remove-from-old-parent cpindex) $ shapes)
-                  (reduce (partial update-frame-ids frm-id) $ (get-in $ [parent-id :shapes])))
-                objects)))]
+
+                  ;; Ensure that all shapes of the new parent has a
+                  ;; correct link to the topside frame.
+                  (reduce (partial assign-frame-id frame-id) $ shapes))
+              objects)))]
 
     (if page-id
       (d/update-in-when data [:pages-index page-id :objects] move-objects)
