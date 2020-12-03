@@ -664,8 +664,13 @@
                                                              root-instance)]
                              (cond-> new-shape
                                true
-                               (assoc :shape-ref (:id original-shape)
-                                      :frame-id (:frame-id parent-shape))
+                               (assoc :frame-id (:frame-id parent-shape))
+
+                               (nil? (:shape-ref original-shape))
+                               (assoc :shape-ref (:id original-shape))
+
+                               (some? (:shape-ref original-shape))
+                               (assoc :shape-ref (:shape-ref original-shape))
 
                                (:component-id original-shape)
                                (assoc :component-id (:component-id original-shape))
@@ -685,7 +690,7 @@
         [new-shape new-shapes _]
         (cph/clone-object component-shape
                           (:id parent-shape)
-                          (get container :objects)
+                          (get component :objects)
                           update-new-shape
                           update-original-shape)
 

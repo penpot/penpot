@@ -764,8 +764,8 @@
                              :frame-id frame-id
                              :parent-id parent-id
                              :id id)]
-              (if (and (contains? objects parent-id)
-                       (contains? objects frame-id))
+              (if (and (or (nil? parent-id) (contains? objects parent-id))
+                       (or (nil? frame-id) (contains? objects frame-id)))
                 (-> data
                     (update :objects assoc id obj)
                     (update-in [:objects parent-id :shapes]
