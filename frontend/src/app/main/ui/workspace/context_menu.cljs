@@ -71,10 +71,10 @@
         do-detach-component #(st/emit! (dwl/detach-component id))
         do-reset-component #(st/emit! (dwl/reset-component id))
         do-update-component #(do
-                               (st/emit! dwc/start-undo-transaction)
+                               (st/emit! (dwc/start-undo-transaction))
                                (st/emit! (dwl/update-component id))
                                (st/emit! (dwl/sync-file nil))
-                               (st/emit! dwc/commit-undo-transaction))
+                               (st/emit! (dwc/commit-undo-transaction)))
         do-show-component #(st/emit! (dw/go-to-layout :assets))
         do-navigate-component-file #(st/emit! (dwl/nav-to-component-file
                                                 (:component-file shape)))]

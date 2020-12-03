@@ -34,12 +34,12 @@
         on-open
         (mf/use-callback
          (mf/deps page-id)
-         #(st/emit! dwc/start-undo-transaction))
+         #(st/emit! (dwc/start-undo-transaction)))
 
         on-close
         (mf/use-callback
          (mf/deps page-id)
-         #(st/emit! dwc/commit-undo-transaction))]
+         #(st/emit! (dwc/commit-undo-transaction)))]
 
     [:div.element-set
      [:div.element-set-title (t locale "workspace.options.canvas-background")]

@@ -288,7 +288,7 @@
 
 (defonce empty-tx {:undo-changes [] :redo-changes []})
 
-(def start-undo-transaction
+(defn start-undo-transaction []
   (ptk/reify ::start-undo-transaction
     ptk/UpdateEvent
     (update [_ state]
@@ -297,13 +297,13 @@
         (cond-> state
           (nil? current-tx) (assoc-in [:workspace-undo :transaction] empty-tx))))))
 
-(def discard-undo-transaction
+(defn discard-undo-transaction []
   (ptk/reify ::discard-undo-transaction
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-undo dissoc :transaction))))
 
-(def commit-undo-transaction
+(defn commit-undo-transaction []
   (ptk/reify ::commit-undo-transaction
     ptk/UpdateEvent
     (update [_ state]

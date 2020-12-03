@@ -18,7 +18,6 @@
    [app.common.pages-helpers :as cph]
    [app.common.spec :as us]
    [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.selection :as dws]
    [app.main.refs :as refs]
    [app.main.snap :as snap]
@@ -266,7 +265,7 @@
         (when-not (empty? rch)
           (rx/of dwc/pop-undo-into-transaction
                  (dwc/commit-changes rch uch {:commit-local? true})
-                 dwc/commit-undo-transaction
+                 (dwc/commit-undo-transaction)
                  (dwc/expand-collapse frame-id)))))))
 
 (defn start-move
@@ -472,6 +471,22 @@
             rchanges (conj (dwc/generate-changes page-id objects1 objects2) regchg)
             uchanges (conj (dwc/generate-changes page-id objects2 objects0) regchg)]
 
-        (rx/of dwc/start-undo-transaction
+        (rx/of (dwc/start-undo-transaction)
                (dwc/commit-changes rchanges uchanges {:commit-local? true})
-               dwc/commit-undo-transaction)))))
+               (dwc/commit-undo-transaction))))))
+
+;; --- Update Dimensions
+
+;; Event mainly used for handling user modification of the size of the
+;; object from workspace sidebar options inputs.
+
+(defn update-dimensions
+  [ids attr value]
+  (us/verify (s/coll-of ::us/uuid) ids)
+  (us/verify #{:width :height} attr)
+  (us/verify ::us/number value)
+  (ptk/reify ::update-dimensions
+    ptk/WatchEvent
+    (watch [_ state stream]
+      #_(prn "??? update-dimensions" ids attr value)
+      (rx/of (dwc/update-shapes ids #(gsh/resize-rect % attr value) {:reg-objects? true})))))

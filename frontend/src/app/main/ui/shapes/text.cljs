@@ -100,6 +100,7 @@
                      :width  (if (#{:auto-width} grow-type) 10000 width)
                      :height (if (#{:auto-height :auto-width} grow-type) 10000 height)
                      :mask mask-id
-                     :ref ref}
+                     :ref ref
+                     :pointer-events "none"}
      [:& text-content {:shape shape
                        :content (:content shape)}]]))

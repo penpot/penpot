@@ -12,7 +12,6 @@
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
    [app.main.ui.shapes.attrs :as attrs]
-   [app.util.debug :refer [debug?]]
    [app.common.geom.shapes :as geom]))
 
 (def mask-id-ctx (mf/create-context nil))
@@ -32,7 +31,6 @@
           childs      (if (and (:masked-group? shape) (not expand-mask))
                         (rest childs)
                         childs)
-          is-child-selected? (unchecked-get props "is-child-selected?")
           {:keys [id x y width height]} shape
           transform (geom/transform-matrix shape)]
       [:g
@@ -48,13 +46,6 @@
           [:& shape-wrapper {:frame frame
                              :shape item
                              :key (:id item)}])]
-       (when (not is-child-selected?)
-         [:rect {:transform transform
-                 :x x
-                 :y y
-                 :fill (if (debug? :group) "red" "transparent")
-                 :opacity 0.5
-                 :width width
-                 :height height}])])))
+       ])))
 
 

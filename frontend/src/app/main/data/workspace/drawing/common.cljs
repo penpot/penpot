@@ -55,7 +55,7 @@
              ;; Add & select the created shape to the workspace
              (rx/concat
               (if (= :text (:type shape))
-                (rx/of dwc/start-undo-transaction)
+                (rx/of (dwc/start-undo-transaction))
                 (rx/empty))
 
               (rx/of (dws/deselect-all)
