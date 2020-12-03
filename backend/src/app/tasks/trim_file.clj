@@ -9,6 +9,7 @@
 
 (ns app.tasks.trim-file
   (:require
+   [app.common.pages-migrations :as pmg]
    [app.config :as cfg]
    [app.db :as db]
    [app.tasks :as tasks]
@@ -29,7 +30,8 @@
     (bytes? data) (assoc :data (blob/decode data))))
 
 (def sql:retrieve-files-to-trim
-  "select id from file as f
+  "select f.id, f.data
+     from file as f
     where f.has_media_trimmed is false
       and f.modified_at < now() - ?::interval
     order by f.modified_at asc
@@ -40,39 +42,42 @@
   file is considered candidate when some time passes whith no
   modification."
   [conn]
-  (let [interval (:file-trimming-max-age cfg/config)]
-    (->> (db/exec! conn [sql:retrieve-files-to-trim interval])
-         (map :id))))
-
+  (let [threshold (:file-trimming-threshold cfg/config)
+        interval  (db/interval threshold)]
+    (db/exec! conn [sql:retrieve-files-to-trim interval])))
 
 (def collect-media-xf
-  (comp (map :data)
-        (map :objects)
-        (mapcat vals)
-        (filter #(= :image (:type %)))
-        (map :metadata)
-        (map :id)))
-
+  (comp
+   (map :objects)
+   (mapcat vals)
+   (filter #(= :image (:type %)))
+   (map :metadata)
+   (map :id)))
 
 (defn collect-used-media
-  [pages]
-  (into #{} collect-media-xf pages))
+  [data]
+  (-> #{}
+      (into collect-media-xf (vals (:pages-index data)))
+      (into collect-media-xf (vals (:components data)))
+      (into (keys (:media data)))))
 
 (defn process-file
-  [file-id]
-  (log/debugf "Processing file: '%s'." file-id)
+  [{:keys [id data] :as file}]
+  (log/debugf "Processing file: '%s'." id)
   (db/with-atomic [conn db/pool]
-    (let [mobjs  (db/query conn :media-object {:file-id file-id})
-          pages  (->> (db/query conn :page {:file-id file-id})
-                      (map decode-row))
-          used   (into #{} collect-media-xf pages)
-          unused (into #{} (comp (map :id) (remove #(contains? used %))) mobjs)]
+    (let [mobjs  (map :id (db/query conn :media-object {:file-id id}))
+          data   (-> (blob/decode data)
+                     (pmg/migrate-data))
+
+          used   (collect-used-media data)
+          unused (into #{} (remove #(contains? used %)) mobjs)]
 
       (log/debugf "Collected media ids: '%s'." (pr-str used))
       (log/debugf "Unused media ids: '%s'." (pr-str unused))
+
       (db/update! conn :file
                   {:has-media-trimmed true}
-                  {:id file-id})
+                  {:id id})
 
       (doseq [id unused]
         ;; TODO: add task batching

@@ -48,7 +48,7 @@
    ;; modification in order to make the file ellegible for
    ;; trimming. The value only supports s(econds) m(inutes) and
    ;; h(ours) as time unit.
-   :file-trimming-max-age "72h"
+   :file-trimming-threshold "72h"
 
    ;; LDAP auth disabled by default. Set ldap-auth-host to enable
    ;:ldap-auth-host "ldap.mysupercompany.com"
@@ -92,7 +92,9 @@
 (s/def ::debug-humanize-transit ::us/boolean)
 (s/def ::public-uri ::us/string)
 (s/def ::backend-uri ::us/string)
+
 (s/def ::image-process-max-threads ::us/integer)
+(s/def ::file-trimming-threshold ::dt/duration)
 
 (s/def ::google-client-id ::us/string)
 (s/def ::google-client-secret ::us/string)
@@ -113,7 +115,6 @@
 (s/def ::ldap-auth-email-attribute ::us/string)
 (s/def ::ldap-auth-fullname-attribute ::us/string)
 (s/def ::ldap-auth-avatar-attribute ::us/string)
-(s/def ::file-trimming-threshold ::dt/duration)
 
 (s/def ::config
   (s/keys :opt-un [::http-server-cors
@@ -143,7 +144,7 @@
                    ::smtp-password
                    ::smtp-tls
                    ::smtp-ssl
-                   ::file-trimming-max-age
+                   ::file-trimming-threshold
                    ::debug-humanize-transit
                    ::allow-demo-users
                    ::registration-enabled
