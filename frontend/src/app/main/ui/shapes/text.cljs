@@ -94,6 +94,7 @@
         {:keys [id x y width height content]} shape]
     [:foreignObject {:x x
                      :y y
+                     :id (:id shape)
                      :data-colors (retrieve-colors shape)
                      :transform (geom/transform-matrix shape)
                      :width  (if (#{:auto-width} grow-type) 10000 width)
