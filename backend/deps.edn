@@ -38,9 +38,9 @@
   funcool/promesa {:mvn/version "5.1.0"}
   funcool/cuerdas {:mvn/version "2020.03.26-3"}
 
-  buddy/buddy-core {:mvn/version "1.8.0"}
-  buddy/buddy-hashers {:mvn/version "1.6.0"}
-  buddy/buddy-sign {:mvn/version "3.2.0"}
+  buddy/buddy-core {:mvn/version "1.9.0"}
+  buddy/buddy-hashers {:mvn/version "1.7.0"}
+  buddy/buddy-sign {:mvn/version "3.3.0"}
 
   lambdaisland/uri {:mvn/version "1.4.54"
                     :exclusions [org.clojure/data.json]}

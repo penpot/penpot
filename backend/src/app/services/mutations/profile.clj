@@ -27,6 +27,7 @@
    [app.util.time :as dt]
    [buddy.hashers :as hashers]
    [clojure.spec.alpha :as s]
+   [clojure.tools.logging :as log]
    [cuerdas.core :as str]))
 
 ;; --- Helpers & Specs
@@ -138,11 +139,20 @@
 
 (defn- derive-password
   [password]
-  (hashers/derive password {:alg :bcrypt+sha512}))
+  (hashers/derive password
+                  {:alg :argon2id
+                   :memory 16384
+                   :iterations 20
+                   :parallelism 2}))
 
 (defn- verify-password
   [attempt password]
-  (hashers/verify attempt password))
+  (try
+    (hashers/verify attempt password)
+    (catch Exception e
+      (log/warnf e "Error on verify password (only informative, nothing affected to user).")
+      {:update false
+       :valid false})))
 
 (defn- create-profile
   "Create the profile entry on the database with limited input
