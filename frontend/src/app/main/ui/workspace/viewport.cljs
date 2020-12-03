@@ -263,8 +263,10 @@
              (st/emit! (ms/->MouseEvent :up ctrl? shift? alt?))
 
              (when (= 2 (.-which event))
-               (st/emit! dw/finish-pan
-                         ::finish-positioning)))))
+               (do
+                 (dom/prevent-default event)
+                 (st/emit! dw/finish-pan
+                           ::finish-positioning))))))
 
         on-pointer-down
         (mf/use-callback
