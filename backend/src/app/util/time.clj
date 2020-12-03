@@ -103,9 +103,10 @@
 (letfn [(conformer [v]
           (cond
             (duration? v) v
+
             (string? v)
             (try
-              (parse-duration v)
+              (duration v)
               (catch java.time.format.DateTimeParseException _e
                 ::s/invalid))
 
