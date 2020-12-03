@@ -201,14 +201,22 @@
 (defn selrect->areas [bounds selrect]
   (let [make-selrect
         (fn [x1 y1 x2 y2]
-          {:x1 x1 :y1 y1 :x2 x2 :y2 y2 :x x1 :y y1
-           :width (- x2 x1) :height (- y2 y1) :type :rect})
+          (let [x1 (min x1 x2)
+                x2 (max x1 x2)
+                y1 (min y1 y2)
+                y2 (max y1 y2)]
+            {:x1 x1 :y1 y1
+             :x2 x2 :y2 y2
+             :x x1  :y y1
+             :width (- x2 x1)
+             :height (- y2 y1)
+             :type :rect}))
         {frame-x1 :x1 frame-x2 :x2 frame-y1 :y1 frame-y2 :y2} bounds
         {sr-x1 :x1 sr-x2 :x2 sr-y1 :y1 sr-y2 :y2} selrect]
-    {:left   (make-selrect frame-x1 sr-y1 sr-x1 sr-y2)
-     :top    (make-selrect sr-x1 frame-y1 sr-x2 sr-y1)
-     :right  (make-selrect sr-x2 sr-y1 frame-x2 sr-y2)
-     :bottom (make-selrect sr-x1 sr-y2 sr-x2 frame-y2)}))
+    {:left   (make-selrect frame-x1 sr-y1 (- sr-x1 2) sr-y2)
+     :top    (make-selrect sr-x1 frame-y1 sr-x2 (- sr-y1 2))
+     :right  (make-selrect (+ sr-x2 2) sr-y1 frame-x2 sr-y2)
+     :bottom (make-selrect sr-x1 (+ sr-y2 2) sr-x2 frame-y2)}))
 
 (defn distance-selrect [selrect other]
   (let [{:keys [x1 y1]} other
