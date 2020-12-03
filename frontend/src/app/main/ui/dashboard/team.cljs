@@ -302,7 +302,7 @@
          [:div.label (tr "dashboard.team-projects")]
          [:div.projects
           [:span.icon i/folder]
-          [:span.text (tr "labels.num-of-projects" (i18n/c (:projects stats)))]]
+          [:span.text (tr "labels.num-of-projects" (i18n/c (dec (:projects stats))))]]
          [:div.files
           [:span.icon i/file-html]
           [:span.text (tr "labels.num-of-files" (i18n/c (:files stats)))]]]]]]]))
