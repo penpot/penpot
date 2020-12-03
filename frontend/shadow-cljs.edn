@@ -28,8 +28,7 @@
    {:compiler-options
     {:fn-invoke-direct true
      :source-map true
-     ;; :pseudo-names true
-     ;; :pretty-print true
+     :elide-asserts true
      :anon-fn-naming-policy :off
      :source-map-detail-level :all}}}
 
