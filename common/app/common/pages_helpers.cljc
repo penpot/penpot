@@ -10,8 +10,9 @@
 (ns app.common.pages-helpers
   (:require
    [app.common.data :as d]
-   [app.common.uuid :as uuid]
-   [app.common.geom.shapes :as gsh]))
+   [app.common.geom.shapes :as gsh]
+   [app.common.spec :as us]
+   [app.common.uuid :as uuid]))
 
 (defn walk-pages
   "Go through all pages of a file and apply a function to each one"
@@ -48,7 +49,7 @@
 
 (defn page?
   [container]
-  (assert (some? (:type container)))
+  (us/assert some? (:type container))
   (= (:type container) :page))
 
 (defn component?
@@ -246,6 +247,7 @@
 
          (let [child-id (first child-ids)
                child (get objects child-id)
+               _ (us/assert some? child)
 
                [new-child new-child-objects updated-child-objects]
                (clone-object child new-id objects update-new-object update-original-object)]

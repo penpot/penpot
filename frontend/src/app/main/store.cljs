@@ -148,7 +148,7 @@
                                                (when component-file (str/format "<%s> " (:name component-file)))
                                                (:name component))))))))]
 
-       (println "[Workspace]")
+       (println "[Page]")
        (show-shape (:id root) 0 objects)
 
        (dorun (for [component (vals components)]
