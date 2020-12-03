@@ -171,9 +171,9 @@
 
      :render-object
      (do
-       (let [file-id   (uuid (get-in route [:params :path :file-id]))
-             page-id   (uuid (get-in route [:params :path :page-id]))
-             object-id (uuid (get-in route [:params :path :object-id]))]
+       (let [file-id   (uuid (get-in route [:path-params :file-id]))
+             page-id   (uuid (get-in route [:path-params :page-id]))
+             object-id (uuid (get-in route [:path-params :object-id]))]
          [:& render/render-object {:file-id file-id
                                    :page-id page-id
                                    :object-id object-id}]))
