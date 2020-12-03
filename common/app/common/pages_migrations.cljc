@@ -55,7 +55,7 @@
             (if-not (contains? shape :content)
               (let [content (gsp/segments->content (:segments shape) (:close? shape))
                     selrect (gsh/content->selrect content)
-                    points (gsh/rect->points selrect)]
+                    points  (gsh/rect->points selrect)]
                 (-> shape
                     (dissoc :segments)
                     (dissoc :close?)
