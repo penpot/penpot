@@ -78,7 +78,7 @@
   [shape]
   (let [colors (->> shape :content
                     (tree-seq map? :children)
-                    (into #{} (comp (map :fill) (filter string?))))]
+                    (into #{} (comp (map :fill-color) (filter string?))))]
     (if (empty? colors)
       "#000000"
       (apply str (interpose "," colors)))))
