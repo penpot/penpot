@@ -1260,17 +1260,15 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (try
-        (let [paste-data (wapi/read-from-paste-event event)]
-          (when paste-data
-            (let [text-data    (wapi/extract-text paste-data)
-                  decoded-data (when (and paste-data (t/transit? text-data))
-                                 (t/decode text-data))]
-              (if (and decoded-data (= (:type decoded-data) :copied-shapes))
-                (rx/of (paste-shape decoded-data))
-                (if-not (empty? text-data)
-                  (rx/of (paste-text text-data))
-                  (let [images (wapi/extract-images paste-data)]
-                    (rx/from (map paste-image images))))))))
+        (let [paste-data    (wapi/read-from-paste-event event)
+              image-data    (wapi/extract-images paste-data)
+              text-data     (wapi/extract-text paste-data)
+              decoded-data  (and (t/transit? text-data) (t/decode text-data))]
+          (cond
+            (seq image-data)    (rx/from (map paste-image image-data))
+            decoded-data        (rx/of (paste-shape decoded-data))
+            (string? text-data) (rx/of (paste-text text-data))
+            :else               (rx/empty)))
         (catch :default err
           (js/console.error "Clipboard error:" err))))))
 
