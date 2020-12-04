@@ -140,8 +140,9 @@
        [:& menu-entry {:title (t locale "workspace.shape.menu.lock")
                        :on-click do-lock-shape}])
 
-     (when (or (nil? (:shape-ref shape))
-               (> (count selected) 1))
+     (when (and (or (nil? (:shape-ref shape))
+                    (> (count selected) 1))
+                (not= (:type shape) :frame))
        [:*
         [:& menu-separator]
         [:& menu-entry {:title (t locale "workspace.shape.menu.create-component")
