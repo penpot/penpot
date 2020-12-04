@@ -6,21 +6,27 @@
     <title>PENPOT - The Open-Source prototyping tool</title>
     <link id="theme" href="/css/main-{{& th}}.css?ts={{& ts}}" 
           rel="stylesheet" type="text/css" />
+
     <link rel="icon" href="/images/favicon.png" />
-  </head>
-  <body>
-    {{>../public/images/sprites/symbol/svg/sprite.symbol.svg}}
-    <section id="app" tabindex="1"></section>
-    <section id="modal"></section>
+
     <script>
-     window.appTranslations = JSON.parse({{& translations}});
-     window.appThemes = {{& themes}};
+      window.appTranslations = JSON.parse({{& translations}});
+      window.appThemes = {{& themes}};
+      window.appVersion = "%version%";
     </script>
 
     {{# manifest}}
     <script>window.appWorkerURI="{{& worker}}"</script>
     <script src="{{& config}}"></script>
     <script src="{{& polyfills}}"></script>
+    {{/manifest}}
+
+  </head>
+  <body>
+    {{>../public/images/sprites/symbol/svg/sprite.symbol.svg}}
+    <section id="app" tabindex="1"></section>
+    <section id="modal"></section>
+    {{# manifest}}
     <script src="{{& shared}}"></script>
     <script src="{{& main}}"></script>
     {{/manifest}}
