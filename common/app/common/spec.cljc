@@ -189,9 +189,7 @@
       (let [edata (s/explain-data spec data)]
         (throw (ex/error :type :validation
                          :code :spec-validation
-                         :explain (with-out-str
-                                    (expound/printer edata))
-                         :data (::s/problems edata)))))
+                         :data data))))
     result))
 
 (defmacro instrument!

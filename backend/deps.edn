@@ -34,6 +34,7 @@
   org.postgresql/postgresql {:mvn/version "42.2.16"}
   com.zaxxer/HikariCP {:mvn/version "3.4.5"}
 
+  funcool/log4j2-clojure {:mvn/version "2020.11.23-1"}
   funcool/datoteka {:mvn/version "1.2.0"}
   funcool/promesa {:mvn/version "5.1.0"}
   funcool/cuerdas {:mvn/version "2020.03.26-3"}

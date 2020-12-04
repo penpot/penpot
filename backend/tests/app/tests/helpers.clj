@@ -17,7 +17,7 @@
    [mount.core :as mount]
    [environ.core :refer [env]]
    [app.common.pages :as cp]
-   [app.services.init]
+   [app.services]
    [app.services.mutations.profile :as profile]
    [app.services.mutations.projects :as projects]
    [app.services.mutations.teams :as teams]
@@ -50,8 +50,8 @@
                           #'app.redis/client
                           #'app.redis/conn
                           #'app.media/semaphore
-                          #'app.services.init/query-services
-                          #'app.services.init/mutation-services
+                          #'app.services/query-services
+                          #'app.services/mutation-services
                           #'app.migrations/migrations
                           #'app.media-storage/assets-storage
                           #'app.media-storage/media-storage})

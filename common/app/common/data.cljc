@@ -6,7 +6,7 @@
 
 (ns app.common.data
   "Data manipulation and query helper functions."
-  (:refer-clojure :exclude [concat read-string hash-map])
+  (:refer-clojure :exclude [concat read-string hash-map merge])
   #?(:cljs
      (:require-macros [app.common.data]))
   (:require
@@ -209,6 +209,17 @@
     (if-not (identical? sentinel found)
       (assoc m key v)
       m)))
+
+(defn merge
+  "A faster merge."
+  [& maps]
+  (loop [res  (transient (first maps))
+         maps (next maps)]
+    (if (nil? maps)
+      (persistent! res)
+      (recur (reduce-kv assoc! res (first maps))
+             (next maps)))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Parsing / Conversion

@@ -9,6 +9,10 @@
 
 (ns app.http.handlers
   (:require
+   [app.common.data :as d]
+   [app.common.exceptions :as ex]
+   [app.emails :as emails]
+   [app.http.session :as session]
    [app.services.init]
    [app.services.mutations :as sm]
    [app.services.queries :as sq]))
@@ -25,36 +29,40 @@
     :login})
 
 (defn query-handler
-  [req]
-  (let [type (keyword (get-in req [:path-params :type]))
-        data (merge (:params req)
-                    {::sq/type type})
-        data (cond-> data
-               (:profile-id req) (assoc :profile-id (:profile-id req)))]
-    (if (or (:profile-id req) (contains? unauthorized-services type))
+  [{:keys [profile-id] :as request}]
+  (let [type (keyword (get-in request [:path-params :type]))
+        data (assoc (:params request) ::sq/type type)
+        data (if profile-id
+               (assoc data :profile-id profile-id)
+               (dissoc data :profile-id))]
+
+    (if (or (uuid? profile-id)
+            (contains? unauthorized-services type))
       {:status 200
-       :body (sq/handle (with-meta data {:req req}))}
+       :body (sq/handle (with-meta data {:req request}))}
       {:status 403
        :body {:type :authentication
               :code :unauthorized}})))
 
 (defn mutation-handler
-  [req]
-  (let [type (keyword (get-in req [:path-params :type]))
-        data (merge (:params req)
-                    (:body-params req)
-                    (:uploads req)
-                    {::sm/type type})
-        data (cond-> data
-               (:profile-id req) (assoc :profile-id (:profile-id req)))]
-    (if (or (:profile-id req) (contains? unauthorized-services type))
-      (let [result (sm/handle (with-meta data {:req req}))
+  [{:keys [profile-id] :as request}]
+  (let [type (keyword (get-in request [:path-params :type]))
+        data (d/merge (:params request)
+                      (:body-params request)
+                      (:uploads request)
+                      {::sm/type type})
+        data (if profile-id
+               (assoc data :profile-id profile-id)
+               (dissoc data :profile-id))]
+
+    (if (or (uuid? profile-id)
+            (contains? unauthorized-services type))
+      (let [result (sm/handle (with-meta data {:req request}))
             mdata  (meta result)
             resp   {:status (if (nil? (seq result)) 204 200)
                     :body result}]
         (cond->> resp
-          (:transform-response mdata) ((:transform-response mdata) req)))
-
+          (:transform-response mdata) ((:transform-response mdata) request)))
       {:status 403
        :body {:type :authentication
               :code :unauthorized}})))
