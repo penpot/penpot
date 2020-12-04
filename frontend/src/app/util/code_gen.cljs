@@ -25,9 +25,7 @@
 (defn format-fill-color [_ shape]
   (let [color {:color (:fill-color shape)
                :opacity (:fill-opacity shape)
-               :gradient (:fill-color-gradient shape)
-               :id (:fill-ref-id shape)
-               :file-id (:fill-ref-file-id shape)}]
+               :gradient (:fill-color-gradient shape)}]
     (uc/color->background color)))
 
 (defn format-stroke [_ shape]
@@ -35,9 +33,7 @@
         style (name (:stroke-style shape))
         color {:color (:stroke-color shape)
                :opacity (:stroke-opacity shape)
-               :gradient (:stroke-color-gradient shape)
-               :id (:stroke-ref-id shape)
-               :file-id (:stroke-ref-file-id shape)}]
+               :gradient (:stroke-color-gradient shape)}]
     (str/format "%spx %s %s" width style (uc/color->background color))))
 
 (def styles-data

@@ -18,8 +18,9 @@
    [app.tests.helpers :as th]))
 
 (t/deftest process-change-set-option
-  (let [page-id (uuid/custom 1 1)
-        data    (cp/make-file-data page-id)]
+  (let [file-id (uuid/custom 2 2)
+        page-id (uuid/custom 1 1)
+        data    (cp/make-file-data file-id page-id)]
     (t/testing "Sets option single"
       (let [chg {:type :set-option
                  :page-id page-id
@@ -83,8 +84,9 @@
     ))
 
 (t/deftest process-change-add-obj
-  (let [page-id (uuid/custom 1 1)
-        data    (cp/make-file-data page-id)
+  (let [file-id (uuid/custom 2 2)
+        page-id (uuid/custom 1 1)
+        data    (cp/make-file-data file-id page-id)
         id-a    (uuid/custom 2 1)
         id-b    (uuid/custom 2 2)
         id-c    (uuid/custom 2 3)]
@@ -136,8 +138,9 @@
     ))
 
 (t/deftest process-change-mod-obj
-  (let [page-id (uuid/custom 1 1)
-        data    (cp/make-file-data page-id)]
+  (let [file-id (uuid/custom 2 2)
+        page-id (uuid/custom 1 1)
+        data    (cp/make-file-data file-id page-id)]
     (t/testing "simple mod-obj"
       (let [chg  {:type :mod-obj
                   :page-id page-id
@@ -161,9 +164,10 @@
 
 
 (t/deftest process-change-del-obj
-  (let [page-id (uuid/custom 1 1)
+  (let [file-id (uuid/custom 2 2)
+        page-id (uuid/custom 1 1)
         id      (uuid/custom 2 1)
-        data    (cp/make-file-data page-id)
+        data    (cp/make-file-data file-id page-id)
         data    (-> data
                     (assoc-in [:pages-index page-id :objects uuid/zero :shapes] [id])
                     (assoc-in [:pages-index page-id :objects id]
@@ -205,8 +209,9 @@
         rect-d-id  (uuid/custom 0 8)
         rect-e-id  (uuid/custom 0 9)
 
+        file-id (uuid/custom 2 2)
         page-id (uuid/custom 1 1)
-        data    (cp/make-file-data page-id)
+        data    (cp/make-file-data file-id page-id)
 
         data    (update-in data [:pages-index page-id :objects]
                            #(-> %
@@ -417,6 +422,7 @@
         shape-2-id (uuid/custom 2 2)
         shape-3-id (uuid/custom 2 3)
         frame-id   (uuid/custom 1 1)
+        file-id    (uuid/custom 4 4)
         page-id    (uuid/custom 0 1)
 
         changes [{:type :add-obj
@@ -449,7 +455,7 @@
                   :obj {:type :rect
                         :name "Shape 3"}}
                  ]
-        data (cp/make-file-data page-id)
+        data (cp/make-file-data file-id page-id)
         data (cp/process-changes data changes)]
 
     (t/testing "preserve order on multiple shape mov 1"
@@ -513,6 +519,7 @@
         shape-3-id (uuid/custom 1 3)
         shape-4-id (uuid/custom 1 4)
         group-1-id (uuid/custom 1 5)
+        file-id    (uuid/custom 1 6)
         page-id    (uuid/custom 0 1)
 
         changes [{:type :add-obj
@@ -555,7 +562,7 @@
                   :parent-id group-1-id
                   :shapes [shape-1-id shape-2-id]}]
 
-        data (cp/make-file-data page-id)
+        data (cp/make-file-data file-id page-id)
         data (cp/process-changes data changes)]
 
     (t/testing "case 1"

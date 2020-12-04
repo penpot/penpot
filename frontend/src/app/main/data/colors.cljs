@@ -119,11 +119,11 @@
              text-ids (filter is-text? ids)
              shape-ids (filter (comp not is-text?) ids)
 
-             attrs (cond-> {:fill-color (:color color)
-                            :fill-color-ref-id (:id color)
-                            :fill-color-ref-file (:file-id color)
-                            :fill-color-gradient (:gradient color)
-                            :fill-opacity (:opacity color)})
+             attrs {:fill-color (:color color)
+                    :fill-color-ref-id (:id color)
+                    :fill-color-ref-file (:file-id color)
+                    :fill-color-gradient (:gradient color)
+                    :fill-opacity (:opacity color)}
 
              update-fn (fn [shape] (merge shape attrs))
              editors (get-in state [:workspace-local :editors])

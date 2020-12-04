@@ -76,8 +76,9 @@
       (assoc-in state [:workspace-local :color-for-rename] nil))))
 
 (defn update-color
-  [{:keys [id] :as color}]
+  [{:keys [id] :as color} file-id]
   (us/assert ::cp/color color)
+  (us/assert ::us/uuid file-id)
   (ptk/reify ::update-color
     ptk/WatchEvent
     (watch [_ state stream]
@@ -87,7 +88,7 @@
             uchg {:type :mod-color
                   :color prev}]
         (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true})
-               (sync-file nil))))))
+               (sync-file file-id))))))
 
 (defn delete-color
   [{:keys [id] :as params}]
@@ -164,9 +165,9 @@
                      (assoc-in [:workspace-local :rename-typography] (:id typography))))))))))
 
 (defn update-typography
-  [typography]
+  [typography file-id]
   (us/assert ::cp/typography typography)
-
+  (us/assert ::us/uuid file-id)
   (ptk/reify ::update-typography
     ptk/WatchEvent
     (watch [_ state stream]
@@ -176,7 +177,7 @@
             uchg {:type :mod-typography
                   :typography prev}]
         (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true})
-               (sync-file nil))))))
+               (sync-file file-id))))))
 
 (defn delete-typography
   [id]
@@ -196,7 +197,8 @@
   (ptk/reify ::add-component
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-id  (:current-page-id state)
+      (let [file-id  (:current-file-id state)
+            page-id  (:current-page-id state)
             objects  (dwc/lookup-page-objects state page-id)
             selected (get-in state [:workspace-local :selected])
             shapes   (dwg/shapes-for-grouping objects selected)]
@@ -210,7 +212,7 @@
                   (dwg/prepare-create-group page-id shapes "Component-" true))
 
                 [new-shape new-shapes updated-shapes]
-                (dwlh/make-component-shape group objects)
+                (dwlh/make-component-shape group objects file-id)
 
                 rchanges (conj rchanges
                                {:type :add-component
@@ -303,8 +305,8 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [component      (cp/get-component id
-                                              nil
-                                              (get state :workspace-data)
+                                             (:current-file-id state)
+                                             (dwlh/get-local-library state)
                                               nil)
             all-components (vals (get-in state [:workspace-data :components]))
             unames         (set (map :name all-components))
@@ -344,18 +346,18 @@
 
 (defn instantiate-component
   "Create a new shape in the current page, from the component with the given id
-  in the given file library (if file-id is nil, take it from the current file library)."
+  in the given file library / current file library."
   [file-id component-id position]
-  (us/assert (s/nilable ::us/uuid) file-id)
+  (us/assert ::us/uuid file-id)
   (us/assert ::us/uuid component-id)
   (us/assert ::us/point position)
   (ptk/reify ::instantiate-component
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [component (if (nil? file-id)
-                        (get-in state [:workspace-data :components component-id])
-                        (get-in state [:workspace-libraries file-id :data :components component-id]))
-            component-shape (get-in component [:objects (:id component)])
+      (let [local-library   (dwlh/get-local-library state)
+            libraries       (get state :workspace-libraries)
+            component       (cp/get-component component-id file-id local-library libraries)
+            component-shape (cp/get-shape component component-id)
 
             orig-pos  (gpt/point (:x component-shape) (:y component-shape))
             delta     (gpt/subtract position orig-pos)
@@ -387,18 +389,8 @@
 
                   (nil? (:parent-id original-shape))
                   (assoc :component-id (:id original-shape)
+                         :component-file file-id
                          :component-root? true)
-
-                  (and (nil? (:parent-id original-shape)) (some? file-id))
-                  (assoc :component-file file-id)
-
-                  (and (nil? (:parent-id original-shape)) (nil? file-id))
-                  (dissoc :component-file)
-
-                  (and (some? (:component-id original-shape))
-                       (nil? (:component-file original-shape))
-                       (some? file-id))
-                  (assoc :component-file file-id)
 
                   (some? (:parent-id original-shape))
                   (dissoc :component-root?))))
@@ -514,15 +506,15 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (log/info :msg "RESET-COMPONENT of shape" :id (str id))
-      (let [local-file (get state :workspace-data)
-            libraries  (get state :workspace-libraries)
-            container  (cp/get-container (get state :current-page-id)
-                                          :page
-                                          local-file)
+      (let [local-library (dwlh/get-local-library state)
+            libraries     (dwlh/get-libraries state)
+            container     (cp/get-container (get state :current-page-id)
+                                            :page
+                                            local-library)
             [rchanges uchanges]
             (dwlh/generate-sync-shape-direct container
                                              id
-                                             local-file
+                                             local-library
                                              libraries
                                              true)]
         (log/debug :msg "RESET-COMPONENT finished" :js/rchanges rchanges)
@@ -539,16 +531,11 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (log/info :msg "UPDATE-COMPONENT of shape" :id (str id))
-      (let [page-id (:current-page-id state)
-            objects (dwc/lookup-page-objects state page-id)
-            shape   (get objects id)
-            file-id (get shape :component-file)
-
-            [rchanges uchanges]
+      (let [[rchanges uchanges]
             (dwlh/generate-sync-shape-inverse (get state :current-page-id)
                                               id
-                                              (get state :workspace-data)
-                                              (get state :workspace-libraries))]
+                                              (dwlh/get-local-library state)
+                                              (dwlh/get-libraries state))]
 
         (log/debug :msg "UPDATE-COMPONENT finished" :js/rchanges rchanges)
 
@@ -562,17 +549,17 @@
   component of the library file, and copy the new values to the shapes.
   Do it also for shapes inside components of the local file library."
   [file-id]
-  (us/assert (s/nilable ::us/uuid) file-id)
+  (us/assert ::us/uuid file-id)
   (ptk/reify ::sync-file
     ptk/UpdateEvent
     (update [_ state]
-      (if file-id
+      (if (not= file-id (:current-file-id state))
         (assoc-in state [:workspace-libraries file-id :synced-at] (dt/now))
         state))
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (log/info :msg "SYNC-FILE" :file (str (or file-id "local")))
+      (log/info :msg "SYNC-FILE" :file (if (= file-id (:current-file-id state)) "local" (str file-id)))
       (let [library-changes [(dwlh/generate-sync-library :components file-id state)
                              (dwlh/generate-sync-library :colors file-id state)
                              (dwlh/generate-sync-library :typographies file-id state)]
@@ -590,7 +577,7 @@
           (rx/of (dm/hide-tag :sync-dialog))
           (when rchanges
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})))
-          (when file-id
+          (when (not= file-id (:current-file-id state))
             (rp/mutation :update-sync
                          {:file-id (get-in state [:workspace-file :id])
                           :library-id file-id}))
@@ -607,12 +594,12 @@
   ;;       implement updated-at at component level, to detect what components have
   ;;       not changed, and then not to apply sync and terminate the loop.
   [file-id]
-  (us/assert (s/nilable ::us/uuid) file-id)
+  (us/assert ::us/uuid file-id)
   (ptk/reify ::sync-file-2nd-stage
     ptk/WatchEvent
     (watch [_ state stream]
-      (log/info :msg "SYNC-FILE (2nd stage)" :file (str (or file-id "local")))
-      (let [[rchanges1 uchanges1] (dwlh/generate-sync-file :components nil state)
+      (log/info :msg "SYNC-FILE (2nd stage)" :file (if (= file-id (:current-file-id state)) "local" (str file-id)))
+      (let [[rchanges1 uchanges1] (dwlh/generate-sync-file :components file-id state)
             [rchanges2 uchanges2] (dwlh/generate-sync-library :components file-id state)
             rchanges (d/concat rchanges1 rchanges2)
             uchanges (d/concat uchanges1 uchanges2)]
@@ -621,7 +608,7 @@
           (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})))))))
 
 (def ignore-sync
-  (ptk/reify ::sync-file
+  (ptk/reify ::ignore-sync
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:workspace-file :ignore-sync-until] (dt/now)))

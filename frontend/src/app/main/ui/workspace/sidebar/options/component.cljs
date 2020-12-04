@@ -13,6 +13,7 @@
    [app.common.pages :as cp]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.data.workspace :as dw]
@@ -25,7 +26,9 @@
 
 (mf/defc component-menu
   [{:keys [ids values] :as props}]
-  (let [id     (first ids)
+  (let [current-file-id (mf/use-ctx ctx/current-file-id)
+
+        id     (first ids)
         locale (mf/deref i18n/locale)
         local  (mf/use-state {:menu-open false})
 
@@ -51,7 +54,7 @@
         do-update-component #(do
                                (st/emit! (dwc/start-undo-transaction))
                                (st/emit! (dwl/update-component id))
-                               (st/emit! (dwl/sync-file nil))
+                               (st/emit! (dwl/sync-file current-file-id))
                                (st/emit! (dwc/commit-undo-transaction)))
         do-show-component #(st/emit! (dw/go-to-layout :assets))
         do-navigate-component-file #(st/emit! (dwl/nav-to-component-file
@@ -72,7 +75,7 @@
           ;;          app/main/ui/workspace/context_menu.cljs
           [:& context-menu {:on-close on-menu-close
                             :show (:menu-open @local)
-                            :options (if (nil? (:component-file values))
+                            :options (if (= (:component-file values) current-file-id)
                                        [[(t locale "workspace.shape.menu.detach-instance") do-detach-component]
                                         [(t locale "workspace.shape.menu.reset-overrides") do-reset-component]
                                         [(t locale "workspace.shape.menu.update-master") do-update-component]

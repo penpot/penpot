@@ -11,7 +11,7 @@
   (:require
    [app.common.uuid :as uuid]))
 
-(def file-version 4)
+(def file-version 5)
 (def default-color "#b1b2b5") ;; $color-gray-20
 (def root uuid/zero)
 

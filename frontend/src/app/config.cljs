@@ -69,7 +69,7 @@
 (def platform  (parse-platform))
 
 (js/console.log
- (str/format "Welcome to pentpot! Version: '%s'" (:full version)))
+ (str/format "Welcome to penpot! Version: '%s'" (:full version)))
 
 ;; --- Helper Functions
 

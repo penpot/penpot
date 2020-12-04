@@ -132,12 +132,13 @@
    :height (:height selection-rect)})
 
 (defn make-file-data
-  ([] (make-file-data (uuid/next)))
-  ([id]
+  ([file-id] (make-file-data file-id(uuid/next)))
+  ([file-id page-id]
    (let [
          pd (assoc empty-page-data
-                   :id id
+                   :id page-id
                    :name "Page-1")]
      (-> empty-file-data
-         (update :pages conj id)
-         (update :pages-index assoc id pd)))))
+         (assoc :id file-id)
+         (update :pages conj page-id)
+         (update :pages-index assoc page-id pd)))))

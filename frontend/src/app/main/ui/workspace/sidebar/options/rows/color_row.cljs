@@ -21,6 +21,7 @@
    [app.main.refs :as refs]
    [app.main.data.modal :as modal]
    [app.main.ui.hooks :as h]
+   [app.main.ui.context :as ctx]
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.numeric-input :refer [numeric-input]]))
 
@@ -64,11 +65,14 @@
 
 (mf/defc color-row
   [{:keys [color disable-gradient disable-opacity on-change on-open on-close]}]
-  (let [file-colors (mf/deref refs/workspace-file-colors)
-        shared-libs (mf/deref refs/workspace-libraries)
+  (let [current-file-id (mf/use-ctx ctx/current-file-id)
+        file-colors     (mf/deref refs/workspace-file-colors)
+        shared-libs     (mf/deref refs/workspace-libraries)
 
         get-color-name (fn [{:keys [id file-id]}]
-                         (let [src-colors (if file-id (get-in shared-libs [file-id :data :colors]) file-colors)]
+                         (let [src-colors (if (= file-id current-file-id)
+                                            file-colors
+                                            (get-in shared-libs [file-id :data :colors]))]
                            (get-in src-colors [id :name])))
 
         parse-color (fn [color]

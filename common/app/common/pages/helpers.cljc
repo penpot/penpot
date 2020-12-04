@@ -58,6 +58,7 @@
 
 (defn get-container
   [id type local-file]
+  (assert (some? type))
   (-> (if (= type :page)
         (get-in local-file [:pages-index id])
         (get-in local-file [:components id]))
@@ -68,10 +69,11 @@
   (get-in container [:objects shape-id]))
 
 (defn get-component
-  [component-id file-id local-library libraries]
-  (let [file (if (nil? file-id)
+  [component-id library-id local-library libraries]
+  (assert (some? (:id local-library)))
+  (let [file (if (= library-id (:id local-library))
                local-library
-               (get-in libraries [file-id :data]))]
+               (get-in libraries [library-id :data]))]
     (get-in file [:components component-id])))
 
 (defn is-master-of

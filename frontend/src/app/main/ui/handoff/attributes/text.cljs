@@ -36,7 +36,6 @@
           (get-in state [:viewer-libraries file-id :data :typographies]))]
     #(l/derived get-library st/state)))
 
-
 (def properties [:fill-color
                  :fill-color-gradient
                  :font-family
