@@ -44,6 +44,7 @@
    [app.util.transit :as t]
    [app.util.webapi :as wapi]
    [app.util.i18n :refer [tr] :as i18n]
+   [app.util.dom :as dom]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [clojure.set :as set]
@@ -1674,6 +1675,9 @@
    "t" #(st/emit! dwtxt/start-edit-if-selected
                   (dwd/select-for-drawing :text))
    "p" #(st/emit! (dwd/select-for-drawing :path))
+   "k" (fn [event]
+         (let [image-upload (dom/get-element "image-upload")]
+           (dom/click image-upload)))
    (c-mod "c") #(st/emit! copy-selected)
    (c-mod "x") #(st/emit! copy-selected delete-selected)
    "escape" #(st/emit! (esc-pressed))

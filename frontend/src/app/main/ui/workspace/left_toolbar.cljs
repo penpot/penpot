@@ -80,10 +80,11 @@
          :on-click on-image}
         [:*
           i/image
-          [:& file-uploader {:accept cm/str-media-types
-                             :multi true
-                             :input-ref file-input
-                             :on-selected on-files-selected}]]]
+         [:& file-uploader {:input-id "image-upload"
+                            :accept cm/str-media-types
+                            :multi true
+                            :input-ref file-input
+                            :on-selected on-files-selected}]]]
        [:li.tooltip.tooltip-right
         {:alt (t locale "workspace.toolbar.curve")
          :class (when (= selected-drawtool :curve) "selected")

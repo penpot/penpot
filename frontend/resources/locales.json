@@ -3689,10 +3689,10 @@
   "workspace.toolbar.image" : {
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:79" ],
     "translations" : {
-      "en" : "Image (I)",
-      "fr" : "Image (I)",
-      "ru" : "Изображение (I)",
-      "es" : "Imagen (I)"
+      "en" : "Image (K)",
+      "fr" : "Image (K)",
+      "ru" : "Изображение (K)",
+      "es" : "Imagen (K)"
     }
   },
   "workspace.toolbar.libraries" : {
