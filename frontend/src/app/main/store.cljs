@@ -15,7 +15,7 @@
    [app.common.pages-helpers :as cph]
    [app.common.uuid :as uuid]
    [app.util.storage :refer [storage]]
-   [app.util.debug :refer [debug? logjs]]))
+   [app.util.debug :refer [debug? debug-exclude-events logjs]]))
 
 (enable-console-print!)
 
@@ -43,7 +43,8 @@
   (defonce debug-subscription
     (->> stream
          (rx/filter ptk/event?)
-         (rx/filter (fn [s] (debug? :events)))
+         (rx/filter (fn [s] (and (debug? :events)
+                                 (not (debug-exclude-events (ptk/type s))))))
          (rx/subs #(println "[stream]: " (repr-event %))))))
 (defn emit!
   ([] nil)

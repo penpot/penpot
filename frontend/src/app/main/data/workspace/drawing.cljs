@@ -39,8 +39,6 @@
      (watch [_ state stream]
        (let [stoper (rx/filter (ptk/type? ::clear-drawing) stream)]
          (rx/merge
-          (rx/of (dws/deselect-all))
-
           (when (= tool :path)
             (rx/of (start-drawing :path)))
 

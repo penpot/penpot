@@ -4,6 +4,11 @@
 
 (def debug-options #{:bounding-boxes :group :events :rotation-handler :resize-handler :selection-center #_:simple-selection})
 
+;; These events are excluded when we activate the :events flag
+(def debug-exclude-events
+  #{:app.main.data.workspace.notifications/handle-pointer-update
+    :app.main.data.workspace.selection/change-hover-state})
+
 (defonce ^:dynamic *debug* (atom #{}))
 
 (defn debug-all! [] (reset! *debug* debug-options))
