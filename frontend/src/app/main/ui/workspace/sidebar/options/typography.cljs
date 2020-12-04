@@ -270,7 +270,7 @@
       (if read-only?
         [:div.element-set-content.typography-read-only-data
          [:div.row-flex.typography-name
-          [:spang (:name typography)]]
+          [:span (:name typography)]]
 
          [:div.row-flex
           [:span.label (t locale "workspace.assets.typography.font-id")]
