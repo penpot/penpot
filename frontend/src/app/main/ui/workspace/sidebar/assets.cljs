@@ -313,7 +313,8 @@
          nil))
 
     [:div.group-list-item {:on-context-menu on-context-menu}
-     [:& bc/color-bullet {:color color}]
+     [:& bc/color-bullet {:color color
+                          :on-click click-color}]
 
      (if (:editing @state)
        [:input.element-name
