@@ -1003,21 +1003,6 @@
                                      :operations ops2
                                      :id (:id curr)})))))))))
 
-;; --- Update Dimensions
-
-;; Event mainly used for handling user modification of the size of the
-;; object from workspace sidebar options inputs.
-
-(defn update-dimensions
-  [ids attr value]
-  (us/verify (s/coll-of ::us/uuid) ids)
-  (us/verify #{:width :height} attr)
-  (us/verify ::us/number value)
-  (ptk/reify ::update-dimensions
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (rx/of (dwc/update-shapes ids #(gsh/resize-rect % attr value) {:reg-objects? true})))))
-
 ;; --- Shape Proportions
 
 (defn set-shape-proportion-lock
@@ -1348,10 +1333,10 @@
                     :height height
                     :grow-type (if (> (count text) 100) :auto-height :auto-width)
                     :content (as-content text)})]
-        (rx/of dwc/start-undo-transaction
+        (rx/of (dwc/start-undo-transaction)
                (dws/deselect-all)
                (dwc/add-shape shape)
-               dwc/commit-undo-transaction)))))
+               (dwc/commit-undo-transaction))))))
 
 (defn- image-uploaded
   [image]
@@ -1610,6 +1595,7 @@
 (d/export dwt/set-rotation)
 (d/export dwt/set-modifiers)
 (d/export dwt/apply-modifiers)
+(d/export dwt/update-dimensions)
 
 ;; Persistence
 

@@ -23,10 +23,14 @@
    [app.main.ui.workspace.shapes.common :as common]
    [app.main.ui.workspace.shapes.text.editor :as editor]
    [app.util.dom :as dom]
+   [app.util.logging :as log]
    [app.util.object :as obj]
    [app.util.timers :as timers]
    [beicon.core :as rx]
    [rumext.alpha :as mf]))
+
+;; Change this to :info :debug or :trace to debug this module
+(log/set-level! :warn)
 
 ;; --- Events
 
@@ -41,56 +45,10 @@
 
 ;; --- Text Wrapper for workspace
 
-(defn handle-shape-resize
-  [{:keys [id selrect grow-type overflow-text]} new-width new-height]
-  (let [{shape-width :width shape-height :height} selrect
-        undo-transaction (get-in @st/state [:workspace-undo :transaction])]
-    (when (not undo-transaction) (st/emit! dwc/start-undo-transaction))
-    (when (and (> new-width 0) (> new-height 0))
-      (cond
-        (and overflow-text (not= :fixed grow-type))
-        (st/emit! (dwt/update-overflow-text id false))
-
-        (and (= :fixed grow-type) (not overflow-text) (> new-height shape-height))
-        (st/emit! (dwt/update-overflow-text id true))
-
-        (and (= :fixed grow-type) overflow-text (<= new-height shape-height))
-        (st/emit! (dwt/update-overflow-text id false))
-
-        (and (or (not= shape-width new-width)
-                 (not= shape-height new-height))
-             (= grow-type :auto-width))
-        (when (and (pos? shape-width)
-                   (pos? shape-height))
-          (st/emit! (dw/update-dimensions [id] :width new-width)
-                    (dw/update-dimensions [id] :height new-height)))
-
-        (and (not= shape-height new-height) (= grow-type :auto-height))
-        (when (pos? shape-height)
-          (st/emit! (dw/update-dimensions [id] :height new-height)))))
-    (when (not undo-transaction) (st/emit! dwc/discard-undo-transaction))))
-
-(defn resize-observer [{:keys [id selrect grow-type overflow-text] :as shape} root query]
-  (mf/use-effect
-   (mf/deps id selrect grow-type overflow-text root query)
-   (fn []
-     (let [on-change (fn [entries]
-                       (when (seq entries)
-                         ;; RequestAnimationFrame so the "loop limit error" error is not thrown
-                         ;; https://stackoverflow.com/questions/49384120/resizeobserver-loop-limit-exceeded
-                         (timers/raf
-                          #(let [width  (obj/get-in entries [0 "contentRect" "width"])
-                                 height (obj/get-in entries [0 "contentRect" "height"])]
-                             (handle-shape-resize shape (mth/ceil width) (mth/ceil height))))))
-           observer (js/ResizeObserver. on-change)
-           node (when root (dom/query root query))]
-       (when node (.observe observer node))
-       #(.disconnect observer)))))
-
 (mf/defc text-wrapper
   {::mf/wrap-props false}
   [props]
-  (let [{:keys [id x y width height] :as shape} (unchecked-get props "shape")
+  (let [{:keys [id name x y width height] :as shape} (unchecked-get props "shape")
         selected-iref (mf/use-memo (mf/deps (:id shape))
                                    #(refs/make-selected-ref (:id shape)))
         selected? (mf/deref selected-iref)
@@ -109,21 +67,50 @@
         handle-pointer-leave (we/use-pointer-leave shape)
         handle-double-click (use-double-click shape selected?)
 
-        text-ref (mf/use-ref nil)
-        text-node (mf/ref-val text-ref)]
+        paragraph-ref (mf/use-state nil)
 
-    (resize-observer shape text-node ".paragraph-set")
+        handle-resize-text
+        (mf/use-callback
+         (mf/deps id)
+         (fn [entries]
+           (when (seq entries)
+             ;; RequestAnimationFrame so the "loop limit error" error is not thrown
+             ;; https://stackoverflow.com/questions/49384120/resizeobserver-loop-limit-exceeded
+             (timers/raf
+              #(let [width  (obj/get-in entries [0 "contentRect" "width"])
+                     height (obj/get-in entries [0 "contentRect" "height"])]
+                 (st/emit! (dwt/resize-text id (mth/ceil width) (mth/ceil height))))))))
+
+        text-ref-cb
+        (mf/use-callback
+         (mf/deps handle-resize-text)
+         (fn [node]
+           (when node
+             (let [obs-ref (atom nil)]
+               (timers/schedule
+                (fn []
+                  (when-let [ps-node (dom/query node ".paragraph-set")]
+                    (reset! paragraph-ref ps-node))))))))]
+
+    (mf/use-effect
+     (mf/deps @paragraph-ref handle-resize-text)
+     (fn []
+       (when-let [paragraph-node @paragraph-ref]
+         (let [observer (js/ResizeObserver. handle-resize-text)]
+           (log/debug :msg "Attach resize observer" :shape-id id :shape-name name)
+           (.observe observer paragraph-node)
+           #(.disconnect observer)))))
 
     [:> shape-container {:shape shape}
      ;; We keep hidden the shape when we're editing so it keeps track of the size
      ;; and updates the selrect acordingly
      [:g.text-shape {:opacity (when edition? 0)}
-      [:& text/text-shape {:key "text-shape"
-                           :ref text-ref
+      [:& text/text-shape {:key (str "text-shape" (:id shape))
+                           :ref text-ref-cb
                            :shape shape
                            :selected? selected?}]]
      (when edition?
-       [:& editor/text-shape-edit {:key "editor"
+       [:& editor/text-shape-edit {:key (str "editor" (:id shape))
                                    :shape shape}])
 
      (when-not edition?

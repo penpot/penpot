@@ -152,8 +152,8 @@
   [ids]
   (l/derived (fn [objects]
                (into [] (comp (map #(get objects %))
-                              (filter identity))
-                     (set ids)))
+                              (remove nil?))
+                     ids))
              workspace-page-objects =))
 
 (defn is-child-selected?

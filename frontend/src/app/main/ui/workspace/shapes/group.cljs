@@ -17,7 +17,9 @@
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.workspace.effects :as we]
    [app.util.dom :as dom]
-   [rumext.alpha :as mf]))
+   [rumext.alpha :as mf]
+   [app.common.geom.shapes :as gsh]
+   [app.util.debug :refer [debug?]]))
 
 (defn- group-wrapper-factory-equals?
   [np op]
@@ -46,6 +48,9 @@
       (let [shape (unchecked-get props "shape")
             frame (unchecked-get props "frame")
 
+            {:keys [id x y width height]} shape
+            transform (gsh/transform-matrix shape)
+
             childs-ref (mf/use-memo (mf/deps shape) #(refs/objects-by-id (:shapes shape)))
             childs     (mf/deref childs-ref)
 
@@ -69,16 +74,26 @@
             handle-pointer-leave (we/use-pointer-leave shape)
             handle-double-click (use-double-click shape)]
 
-        [:> shape-container {:shape shape
-                             :on-mouse-down handle-mouse-down
-                             :on-context-menu handle-context-menu
-                             :on-pointer-enter handle-pointer-enter
-                             :on-pointer-leave handle-pointer-leave
-                             :on-double-click handle-double-click}
-         [:& group-shape
-          {:frame frame
-           :shape shape
-           :childs childs
-           :is-child-selected? is-child-selected?
-           :expand-mask is-mask-selected?}]]))))
+        [:> shape-container {:shape shape}
+         [:g.group-shape
+          [:& group-shape
+           {:frame frame
+            :shape shape
+            :childs childs
+            :expand-mask is-mask-selected?}]
+
+          (when-not is-child-selected?
+            [:rect.group-actions
+             {:x x
+              :y y
+              :fill (if (debug? :group) "red" "transparent")
+              :opacity 0.5
+              :transform transform
+              :width width
+              :height height
+              :on-mouse-down handle-mouse-down
+              :on-context-menu handle-context-menu
+              :on-pointer-enter handle-pointer-enter
+              :on-pointer-leave handle-pointer-leave
+              :on-double-click handle-double-click}])]]))))
 

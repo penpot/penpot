@@ -204,11 +204,11 @@
           (let [lkey1 (events/listen (dom/get-root) EventType.CLICK on-click-outside)
                 lkey2 (events/listen (dom/get-root) EventType.KEYUP on-key-up)]
             (st/emit! (dwt/assign-editor id editor)
-                      dwc/start-undo-transaction)
+                      (dwc/start-undo-transaction))
 
             #(do
                (st/emit! (dwt/assign-editor id nil)
-                         dwc/commit-undo-transaction)
+                         (dwc/commit-undo-transaction))
                (events/unlistenByKey lkey1)
                (events/unlistenByKey lkey2))))
 

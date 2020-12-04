@@ -172,8 +172,8 @@
                                (:color value))
                       :disable-gradient true
                       :on-change (update-color index)
-                      :on-open #(st/emit! dwc/start-undo-transaction)
-                      :on-close #(st/emit! dwc/commit-undo-transaction)}]]]]))
+                      :on-open #(st/emit! (dwc/start-undo-transaction))
+                      :on-close #(st/emit! (dwc/commit-undo-transaction))}]]]]))
 (mf/defc shadow-menu
   [{:keys [ids values] :as props}]
 
