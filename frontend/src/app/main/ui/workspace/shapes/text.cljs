@@ -23,10 +23,14 @@
    [app.main.ui.workspace.shapes.common :as common]
    [app.main.ui.workspace.shapes.text.editor :as editor]
    [app.util.dom :as dom]
+   [app.util.logging :as log]
    [app.util.object :as obj]
    [app.util.timers :as timers]
    [beicon.core :as rx]
    [rumext.alpha :as mf]))
+
+;; Change this to :info :debug or :trace to debug this module
+(log/set-level! :warn)
 
 ;; --- Events
 
@@ -44,7 +48,7 @@
 (mf/defc text-wrapper
   {::mf/wrap-props false}
   [props]
-  (let [{:keys [id x y width height] :as shape} (unchecked-get props "shape")
+  (let [{:keys [id name x y width height] :as shape} (unchecked-get props "shape")
         selected-iref (mf/use-memo (mf/deps (:id shape))
                                    #(refs/make-selected-ref (:id shape)))
         selected? (mf/deref selected-iref)
@@ -63,7 +67,7 @@
         handle-pointer-leave (we/use-pointer-leave shape)
         handle-double-click (use-double-click shape selected?)
 
-        paragraph-ref (mf/use-var nil)
+        paragraph-ref (mf/use-state nil)
 
         handle-resize-text
         (mf/use-callback
@@ -93,9 +97,9 @@
      (fn []
        (when-let [paragraph-node @paragraph-ref]
          (let [observer (js/ResizeObserver. handle-resize-text)]
+           (log/debug :msg "Attach resize observer" :shape-id id :shape-name name)
            (.observe observer paragraph-node)
-           #(.disconnect observer)))
-       ))
+           #(.disconnect observer)))))
 
     [:> shape-container {:shape shape}
      ;; We keep hidden the shape when we're editing so it keeps track of the size
