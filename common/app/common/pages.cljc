@@ -352,13 +352,13 @@
                            :stroke-style          :stroke-group
                            :stroke-width          :stroke-group
                            :stroke-alignment      :stroke-group
+                           :rx                    :radius-group
+                           :ry                    :radius-group
                            :selrect               :geometry-group
                            :points                :geometry-group
                            :locked                :geometry-group
                            :proportion            :geometry-group
                            :proportion-lock       :geometry-group
-                           :rx                    :geometry-group
-                           :ry                    :geometry-group
                            :x                     :geometry-group
                            :y                     :geometry-group
                            :width                 :geometry-group
