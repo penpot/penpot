@@ -30,8 +30,8 @@
   (rring/router
    [["/metrics" {:get mtx/dump}]
     ["/api" {:middleware [[middleware/format-response-body]
-                          [middleware/errors errors/handle]
                           [middleware/parse-request-body]
+                          [middleware/errors errors/handle]
                           [middleware/params]
                           [middleware/multipart-params]
                           [middleware/keyword-params]

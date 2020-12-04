@@ -48,3 +48,7 @@
 (defmacro try
   [& exprs]
   `(try* (^:once fn* [] ~@exprs) identity))
+
+(defn ex-info?
+  [v]
+  (instance? #?(:clj clojure.lang.ExceptionInfo :cljs cljs.core.ExceptionInfo) v))

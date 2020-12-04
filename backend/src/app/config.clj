@@ -40,6 +40,8 @@
    :smtp-default-reply-to "no-reply@example.com"
    :smtp-default-from "no-reply@example.com"
 
+   :host "devenv"
+
    :allow-demo-users true
    :registration-enabled true
    :registration-domain-whitelist ""
@@ -78,6 +80,9 @@
 (s/def ::media-uri ::us/string)
 (s/def ::media-directory ::us/string)
 (s/def ::secret-key ::us/string)
+
+(s/def ::host ::us/string)
+(s/def ::error-report-webhook ::us/string)
 (s/def ::smtp-enabled ::us/boolean)
 (s/def ::smtp-default-reply-to ::us/email)
 (s/def ::smtp-default-from ::us/email)
@@ -135,6 +140,7 @@
                    ::assets-uri
                    ::media-directory
                    ::media-uri
+                   ::error-report-webhook
                    ::secret-key
                    ::smtp-default-from
                    ::smtp-default-reply-to
@@ -145,6 +151,7 @@
                    ::smtp-password
                    ::smtp-tls
                    ::smtp-ssl
+                   ::host
                    ::file-trimming-threshold
                    ::debug-humanize-transit
                    ::allow-demo-users

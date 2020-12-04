@@ -380,7 +380,7 @@
 (defn thread-pool
   ([] (thread-pool {}))
   ([{:keys [min-threads max-threads name]
-     :or {min-threads 0 max-threads 128}}]
+     :or {min-threads 0 max-threads 256}}]
    (let [executor (QueuedThreadPool. max-threads min-threads)]
      (.setName executor (or name "default-tp"))
      (.start executor)
