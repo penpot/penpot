@@ -57,14 +57,14 @@
     :fn #'app.tasks.trim-file/handler}
 
    {:id "maintenance/delete-executed-tasks"
-    :cron #app/cron "0 0 */1 * * ?"  ;; hourly
+    :cron #app/cron "0 0 0 */1 * ?"  ;; daily
     :fn #'app.tasks.maintenance/delete-executed-tasks
-    :props {:max-age #app/duration "48h"}}
+    :props {:max-age #app/duration "24h"}}
 
    {:id "maintenance/delete-old-files-xlog"
-    :cron #app/cron "0 0 */1 * * ?"  ;; hourly
+    :cron #app/cron "0 0 0 */1 * ?"  ;; daily
     :fn #'app.tasks.maintenance/delete-old-files-xlog
-    :props {:max-age #app/duration "8h"}}
+    :props {:max-age #app/duration "12h"}}
    ])
 
 (defstate executor
