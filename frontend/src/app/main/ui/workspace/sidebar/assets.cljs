@@ -51,6 +51,7 @@
                              :top nil
                              :left nil
                              :component-id nil})
+
         on-duplicate
         (mf/use-callback
          (mf/deps state)
@@ -61,7 +62,7 @@
          (mf/deps state)
          (fn []
            (st/emit! (dwl/delete-component {:id (:component-id @state)}))
-           (st/emit! (dwl/sync-file nil))))
+           (st/emit! (dwl/sync-file file-id))))
 
         on-rename
         (mf/use-callback
@@ -99,7 +100,7 @@
         on-drag-start
         (mf/use-callback
          (fn [component event]
-           (dnd/set-data! event "app/component" {:file-id (if local? nil file-id)
+           (dnd/set-data! event "app/component" {:file-id file-id
                                                  :component component})
            (dnd/set-allowed-effect! event "move")))]
 
@@ -260,7 +261,7 @@
                       [(tr "workspace.assets.delete") on-delete]]}])])]))
 
 (mf/defc color-item
-  [{:keys [color local? locale] :as props}]
+  [{:keys [color local? file-id locale] :as props}]
   (let [rename?   (= (:color-for-rename @refs/workspace-local) (:id color))
         id        (:id color)
         input-ref (mf/use-ref)
@@ -283,12 +284,12 @@
 
         rename-color
         (fn [name]
-          (st/emit! (dwl/update-color (assoc color :name name))))
+          (st/emit! (dwl/update-color (assoc color :name name) file-id)))
 
         edit-color
         (fn [new-color]
           (let [updated-color (merge new-color (select-keys color [:id :file-id :name]))]
-            (st/emit! (dwl/update-color updated-color))))
+            (st/emit! (dwl/update-color updated-color file-id))))
 
         delete-color
         (fn []
@@ -406,9 +407,10 @@
           (let [color (cond-> color
                         (:value color) (assoc :color (:value color) :opacity 1)
                         (:value color) (dissoc :value)
-                        true (assoc :file-id (when (not local?) file-id)))]
+                        true (assoc :file-id file-id))]
             [:& color-item {:key (:id color)
                             :color color
+                            :file-id file-id
                             :local? local?
                             :locale locale}]))])]))
 
@@ -433,12 +435,12 @@
         (mf/use-callback
          (mf/deps file-id)
          (fn [typography changes]
-           (st/emit! (dwl/update-typography (merge typography changes)))))
+           (st/emit! (dwl/update-typography (merge typography changes) file-id))))
 
         handle-typography-selection
         (fn [typography]
           (let [attrs (merge
-                       {:typography-ref-file (when-not local? file-id)
+                       {:typography-ref-file file-id
                         :typography-ref-id (:id typography)}
                        (d/without-keys typography [:id :name]))]
             (run! #(st/emit! (dwt/update-text-attrs {:id % :editor (get-in local [:editors %]) :attrs attrs}))

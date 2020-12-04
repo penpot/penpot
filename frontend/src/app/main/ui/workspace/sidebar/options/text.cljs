@@ -12,6 +12,7 @@
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
    [okulary.core :as l]
+   [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.common.data :as d]
    [app.common.uuid :as uuid]
@@ -177,6 +178,7 @@
            shapes] :as props}]
 
   (let [locale (mf/deref i18n/locale)
+        current-file-id (mf/use-ctx ctx/current-file-id)
         typographies (mf/deref refs/workspace-file-typography)
         shared-libs (mf/deref refs/workspace-libraries)
         label (case type
@@ -201,15 +203,15 @@
         typography (cond
                      (and (:typography-ref-id values)
                           (not= (:typography-ref-id values) :multiple)
-                          (:typography-ref-file values))
+                          (not= (:typography-ref-file values) current-file-id))
                      (-> shared-libs
                          (get-in [(:typography-ref-file values) :data :typographies (:typography-ref-id values)])
                          (assoc :file-id (:typography-ref-file values)))
 
                      (and (:typography-ref-id values)
-                          (not= (:typography-ref-id values) :multiple))
+                          (not= (:typography-ref-id values) :multiple)
+                          (= (:typography-ref-file values) current-file-id))
                      (get typographies (:typography-ref-id values)))
-
 
         on-convert-to-typography
         (mf/use-callback
@@ -234,7 +236,7 @@
 
         handle-change-typography
         (fn [changes]
-          (st/emit! (dwl/update-typography (merge typography changes))))
+          (st/emit! (dwl/update-typography (merge typography changes) current-file-id)))
 
         opts #js {:editor editor
                   :ids ids
@@ -253,7 +255,7 @@
      (cond
        typography
        [:& typography-entry {:typography typography
-                             :read-only? (some? (:typography-ref-file values))
+                             :read-only? (not= (:typography-ref-file values) current-file-id)
                              :file (get shared-libs (:typography-ref-file values))
                              :on-deattach handle-deattach-typography
                              :on-change handle-change-typography}]

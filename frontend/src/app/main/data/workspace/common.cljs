@@ -9,18 +9,22 @@
 
 (ns app.main.data.workspace.common
   (:require
-   [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
-   [clojure.set :as set]
-   [potok.core :as ptk]
    [app.common.data :as d]
+   [app.common.geom.proportions :as gpr]
+   [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.worker :as uw]
+   [app.util.logging :as log]
    [app.util.timers :as ts]
-   [app.common.geom.proportions :as gpr]
-   [app.common.geom.shapes :as gsh]))
+   [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
+   [clojure.set :as set]
+   [potok.core :as ptk]))
+
+;; Change this to :info :debug or :trace to debug this module
+(log/set-level! :warn)
 
 (s/def ::shape-attrs ::cp/shape-attrs)
 (s/def ::set-of-string (s/every string? :kind set?))
@@ -66,6 +70,9 @@
                           :as opts}]
    (us/verify ::cp/changes changes)
    ;; (us/verify ::cp/changes undo-changes)
+   (log/debug :msg "commit-changes"
+              :js/changes changes
+              :js/undo-changes undo-changes)
 
    (let [error (volatile! nil)]
      (ptk/reify ::commit-changes

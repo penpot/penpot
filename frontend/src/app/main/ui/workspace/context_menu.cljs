@@ -16,6 +16,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
+   [app.main.ui.context :as ctx]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.hooks :refer [use-rxsub]]
    [app.main.ui.icons :as i]
@@ -50,6 +51,8 @@
         {:keys [id] :as shape} (:shape mdata)
         selected (:selected mdata)
 
+        current-file-id (mf/use-ctx ctx/current-file-id)
+
         do-duplicate #(st/emit! dw/duplicate-selected)
         do-delete #(st/emit! dw/delete-selected)
         do-copy #(st/emit! dw/copy-selected)
@@ -73,7 +76,7 @@
         do-update-component #(do
                                (st/emit! (dwc/start-undo-transaction))
                                (st/emit! (dwl/update-component id))
-                               (st/emit! (dwl/sync-file nil))
+                               (st/emit! (dwl/sync-file current-file-id))
                                (st/emit! (dwc/commit-undo-transaction)))
         do-show-component #(st/emit! (dw/go-to-layout :assets))
         do-navigate-component-file #(st/emit! (dwl/nav-to-component-file
@@ -154,7 +157,7 @@
        ;; WARNING: this menu is the same as the context menu at the sidebar.
        ;;          If you change it, you must change equally the file
        ;;          app/main/ui/workspace/sidebar/options/component.cljs
-       (if (nil? (:component-file shape))
+       (if (= (:component-file shape) current-file-id)
          [:*
           [:& menu-separator]
           [:& menu-entry {:title (t locale "workspace.shape.menu.detach-instance")

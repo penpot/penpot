@@ -63,7 +63,7 @@
          :or {is-shared false}
          :as params}]
   (let [id   (or id (uuid/next))
-        data (cp/make-file-data)
+        data (cp/make-file-data id)
         file (db/insert! conn :file
                          {:id id
                           :project-id project-id
@@ -276,6 +276,7 @@
         changes  (:changes params)
         file     (-> file
                      (update :data blob/decode)
+                     (update :data assoc :id (:id file))
                      (update :data pmg/migrate-data)
                      (update :data cp/process-changes changes)
                      (update :data blob/encode)

@@ -35,7 +35,9 @@
 
 (defn migrate-file
   [file]
-  (update file :data migrate-data))
+  (-> file
+      (update :data assoc :id (:id file))
+      (update :data migrate-data)))
 
 ;; Default handler, noop
 (defmethod migrate :default [data] data)
@@ -120,3 +122,18 @@
 ;; We did rollback version 4 migration.
 ;; Keep this in order to remember the next version to be 5
 (defmethod migrate 4 [data] data)
+
+;; Put the id of the local file in :component-file in instances of local components
+(defmethod migrate 5
+  [data]
+  (letfn [(update-object [_ object]
+            (if (and (some? (:component-id object))
+                     (nil? (:component-file object)))
+              (assoc object :component-file (:id data))
+              object))
+
+          (update-page [_ page]
+            (update page :objects #(d/mapm update-object %)))]
+
+    (update data :pages-index #(d/mapm update-page %))))
+

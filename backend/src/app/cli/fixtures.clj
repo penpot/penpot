@@ -112,7 +112,7 @@
             (create-file [conn owner-id project-id index]
               (let [id (mk-uuid "file" project-id index)
                     name (str "file" index)
-                    data (cp/make-file-data)]
+                    data (cp/make-file-data id)]
                 (log/info "create file" id)
                 (db/insert! conn :file
                             {:id id
@@ -186,7 +186,7 @@
                     id         (mk-uuid "file" "draft" owner-id index)
                     name       (str "file" index)
                     project-id (:default-project-id owner)
-                    data       (cp/make-file-data)]
+                    data       (cp/make-file-data id)]
 
                 (log/info "create draft file" id)
                 (db/insert! conn :file

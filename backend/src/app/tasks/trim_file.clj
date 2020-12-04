@@ -67,6 +67,7 @@
   (db/with-atomic [conn db/pool]
     (let [mobjs  (map :id (db/query conn :media-object {:file-id id}))
           data   (-> (blob/decode data)
+                     (assoc :id id)
                      (pmg/migrate-data))
 
           used   (collect-used-media data)

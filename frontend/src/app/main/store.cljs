@@ -122,7 +122,7 @@
                  (let [root-shape        (cp/get-root-shape shape objects)
                        component-id      (when root-shape (:component-id root-shape))
                        component-file-id (when root-shape (:component-file root-shape))
-                       component-file    (when component-file-id (get libraries component-file-id))
+                       component-file    (when component-file-id (get libraries component-file-id nil))
                        component         (when component-id
                                            (if component-file
                                              (get-in component-file [:data :components component-id])
@@ -141,7 +141,7 @@
                                  ""
                                  (let [component-id      (:component-id shape)
                                        component-file-id (:component-file shape)
-                                       component-file    (when component-file-id (get libraries component-file-id))
+                                       component-file    (when component-file-id (get libraries component-file-id nil))
                                        component         (if component-file
                                                            (get-in component-file [:data :components component-id])
                                                            (get components component-id))]

@@ -112,7 +112,8 @@
 (def workspace-local-library
   (l/derived (fn [state]
                (select-keys (get state :workspace-data)
-                            [:colors
+                            [:id
+                             :colors
                              :media
                              :typographies
                              :components]))
