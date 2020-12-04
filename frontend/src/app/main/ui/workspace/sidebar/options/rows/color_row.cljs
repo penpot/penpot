@@ -20,6 +20,7 @@
    [app.util.color :as uc]
    [app.main.refs :as refs]
    [app.main.data.modal :as modal]
+   [app.main.ui.hooks :as h]
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.numeric-input :refer [numeric-input]]))
 
@@ -120,12 +121,15 @@
                                                      disable-opacity
                                                      handle-pick-color
                                                      handle-open
-                                                     handle-close)))]
+                                                     handle-close)))
+
+        prev-color (h/use-previous color)]
 
     (mf/use-effect
-     (mf/deps color)
+     (mf/deps color prev-color)
      (fn []
-       (modal/update-props! :colorpicker {:data (parse-color color)})))
+       (when (not= prev-color color)
+         (modal/update-props! :colorpicker {:data (parse-color color)}))))
 
     [:div.row-flex.color-data
      [:& cb/color-bullet {:color color

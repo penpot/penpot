@@ -214,3 +214,10 @@
   (mf/use-effect (fn []
                    (let [sub (->> stream (rx/subs on-subscribe))]
                      #(rx/dispose! sub)))))
+
+;; https://reactjs.org/docs/hooks-faq.html#how-to-get-the-previous-props-or-state
+(defn use-previous [value]
+  (let [ref (mf/use-ref)]
+    (mf/use-effect
+     #(mf/set-ref-val! ref value))
+    (mf/ref-val ref)))
