@@ -33,7 +33,7 @@
 (s/def ::label ::us/string)
 (s/def ::callback fn?)
 (s/def ::action (s/keys :req-un [::label ::callback]))
-(s/def ::actions (s/every ::message-action :kind vector?))
+(s/def ::actions (s/every ::action :kind vector?))
 (s/def ::timeout (s/nilable ::us/integer))
 (s/def ::content ::us/string)
 
