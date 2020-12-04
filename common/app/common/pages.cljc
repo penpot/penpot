@@ -217,7 +217,7 @@
 
 (s/def :internal.shape/fill-color string?)
 (s/def :internal.shape/fill-opacity ::safe-number)
-(s/def :internal.shape/fill-gradient (s/nilable ::gradient))
+(s/def :internal.shape/fill-color-gradient (s/nilable ::gradient))
 (s/def :internal.shape/fill-color-ref-file (s/nilable uuid?))
 (s/def :internal.shape/fill-color-ref-id (s/nilable uuid?))
 
@@ -235,6 +235,7 @@
 (s/def :internal.shape/rx ::safe-number)
 (s/def :internal.shape/ry ::safe-number)
 (s/def :internal.shape/stroke-color string?)
+(s/def :internal.shape/stroke-color-gradient (s/nilable ::gradient))
 (s/def :internal.shape/stroke-color-ref-file (s/nilable uuid?))
 (s/def :internal.shape/stroke-color-ref-id (s/nilable uuid?))
 (s/def :internal.shape/stroke-opacity ::safe-number)
@@ -293,9 +294,10 @@
                    :internal.shape/collapsed
                    :internal.shape/content
                    :internal.shape/fill-color
+                   :internal.shape/fill-opacity
+                   :internal.shape/fill-color-gradient
                    :internal.shape/fill-color-ref-file
                    :internal.shape/fill-color-ref-id
-                   :internal.shape/fill-opacity
                    :internal.shape/font-family
                    :internal.shape/font-size
                    :internal.shape/font-style
@@ -330,9 +332,10 @@
                    :internal.shape/blur]))
 
 (def component-sync-attrs {:fill-color            :fill-group
+                           :fill-opacity          :fill-group
+                           :fill-color-gradient   :fill-group
                            :fill-color-ref-file   :fill-group
                            :fill-color-ref-id     :fill-group
-                           :fill-opacity          :fill-group
                            :content               :content-group
                            :font-family           :text-font-group
                            :font-size             :text-font-group
@@ -342,6 +345,7 @@
                            :line-height           :text-display-group
                            :text-align            :text-display-group
                            :stroke-color          :stroke-group
+                           :stroke-color-gradient :stroke-group
                            :stroke-color-ref-file :stroke-group
                            :stroke-color-ref-id   :stroke-group
                            :stroke-opacity        :stroke-group
@@ -361,6 +365,8 @@
                            :height                :geometry-group
                            :transform             :geometry-group
                            :transform-inverse     :geometry-group
+                           :shadow                :shadow-group
+                           :blur                  :blur-group
                            :masked-group?         :mask-group})
                            ;; shapes-group is handled differently
 

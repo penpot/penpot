@@ -1013,27 +1013,23 @@
                               (assoc $ :component-id (:id container))))]]
             [rchanges uchanges])
 
-          (if-not (contains? dest-shape attr)
-            (recur (next attrs)
-                   roperations
-                   uoperations)
-            (let [roperation {:type :set
-                              :attr attr
-                              :val (get origin-shape attr)
-                              :ignore-touched (not set-touched?)}
-                  uoperation {:type :set
-                              :attr attr
-                              :val (get dest-shape attr)
-                              :ignore-touched (not set-touched?)}
+          (let [roperation {:type :set
+                            :attr attr
+                            :val (get origin-shape attr)
+                            :ignore-touched (not set-touched?)}
+                uoperation {:type :set
+                            :attr attr
+                            :val (get dest-shape attr)
+                            :ignore-touched (not set-touched?)}
 
-                  attr-group (get cp/component-sync-attrs attr)]
-              (if (and (touched attr-group) omit-touched?)
-                (recur (next attrs)
-                       roperations
-                       uoperations)
-                (recur (next attrs)
-                       (conj roperations roperation)
-                       (conj uoperations uoperation))))))))))
+                attr-group (get cp/component-sync-attrs attr)]
+            (if (and (touched attr-group) omit-touched?)
+              (recur (next attrs)
+                     roperations
+                     uoperations)
+              (recur (next attrs)
+                     (conj roperations roperation)
+                     (conj uoperations uoperation)))))))))
 
 (defn- reposition-shape
   [shape origin-root dest-root]
