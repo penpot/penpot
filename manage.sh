@@ -6,7 +6,7 @@ export DEVENV_IMGNAME="$ORGANIZATION/devenv";
 export DEVENV_PNAME="penpotdev";
 
 export CURRENT_USER_ID=$(id -u);
-export CURRENT_GIT_TAG=$(git describe --tags);
+export CURRENT_VERSION=$(git describe --tags);
 export CURRENT_GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
 
 function build-devenv {
@@ -95,12 +95,11 @@ function build-bundle {
     mv ./backend/target/dist ./bundle/backend
     mv ./exporter/target ./bundle/exporter
 
-    local name="penpot-$CURRENT_GIT_TAG";
+    local name="penpot-$CURRENT_VERSION";
+    echo $CURRENT_VERSION > ./bundle/version.txt
 
-    echo $CURRENT_GIT_TAG > ./bundle/frontend/version.txt
-    echo $CURRENT_GIT_TAG > ./bundle/backend/main/version.txt
-    echo $CURRENT_GIT_TAG > ./bundle/exporter/version.txt
-    echo $CURRENT_GIT_TAG > ./bundle/version.txt
+    sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./bundle/frontend/index.html;
+    sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./bundle/backend/main/app/config.clj;
 
     local generate_tar=${PENPOT_BUILD_GENERATE_TAR:-"true"};
 
@@ -124,12 +123,12 @@ function build-image {
 
     pushd ./docker/images;
     local docker_image="$ORGANIZATION/$image";
-    docker build -t $docker_image:$CURRENT_GIT_TAG -f Dockerfile.$image .;
+    docker build -t $docker_image:$CURRENT_VERSION -f Dockerfile.$image .;
     popd;
 }
 
 function build-images {
-    local bundle_file="penpot-$CURRENT_GIT_TAG.tar.xz";
+    local bundle_file="penpot-$CURRENT_VERSION.tar.xz";
 
     if [ ! -f $bundle_file ]; then
         echo "File '$bundle_file' does not exists.";
@@ -153,9 +152,9 @@ function build-images {
 
 function publish-snapshot {
     set -x
-    docker tag $ORGANIZATION/frontend:$CURRENT_GIT_TAG $ORGANIZATION/frontend:$CURRENT_GIT_BRANCH
-    docker tag $ORGANIZATION/backend:$CURRENT_GIT_TAG $ORGANIZATION/backend:$CURRENT_GIT_BRANCH
-    docker tag $ORGANIZATION/exporter:$CURRENT_GIT_TAG $ORGANIZATION/exporter:$CURRENT_GIT_BRANCH
+    docker tag $ORGANIZATION/frontend:$CURRENT_VERSION $ORGANIZATION/frontend:$CURRENT_GIT_BRANCH
+    docker tag $ORGANIZATION/backend:$CURRENT_VERSION $ORGANIZATION/backend:$CURRENT_GIT_BRANCH
+    docker tag $ORGANIZATION/exporter:$CURRENT_VERSION $ORGANIZATION/exporter:$CURRENT_GIT_BRANCH
 
     docker push $ORGANIZATION/frontend:$CURRENT_GIT_BRANCH;
     docker push $ORGANIZATION/backend:$CURRENT_GIT_BRANCH;

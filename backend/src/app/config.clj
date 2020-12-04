@@ -11,6 +11,7 @@
   "A configuration management."
   (:require
    [app.common.spec :as us]
+   [app.common.version :as v]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
@@ -196,6 +197,9 @@
 
 (def default-deletion-delay
   (dt/duration {:hours 48}))
+
+(def version
+  (delay (v/parse "%version%")))
 
 (defn smtp
   [cfg]
