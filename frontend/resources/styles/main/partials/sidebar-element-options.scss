@@ -760,30 +760,23 @@
   left: 0;
   position: absolute;
   top: 0;
-  width: 100%;
+  width: calc(100% - 8px);
   opacity: 0.4;
   z-index: 10;
 }
 
 .advanced-options-wrapper {
-  position: absolute;
   width: 100%;
-  padding-right: 1.5rem;
   padding-left: 0.25rem;
-}
-
-.element-options .advanced-options-wrapper {
-  padding-right: 1rem;
 }
 
 .advanced-options {
   background-color: #303236;
   border-radius: 4px;
-  left: -8px;
   padding: 0.5rem;
   position: relative;
   top: 2px;
-  width: calc(100% + 16px);
+  width: 100%;
   z-index: 20;
 }
 
@@ -918,6 +911,7 @@
         flex-grow: 1;
         font-size: 11px;
         margin-top: 4px;
+        white-space: nowrap;
     }
 
     .element-set-actions-button svg {
