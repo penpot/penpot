@@ -173,7 +173,7 @@
             :on-click select-all
             :on-change on-rotation-change
             :value (attr->string :rotation values)}]]
-         [:input.slidebar
+         #_[:input.slidebar
           {:type "range"
            :min "0"
            :max "359"
