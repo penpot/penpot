@@ -16,7 +16,7 @@
    [clojure.walk :as walk]
    [goog.object :as gobj]
    [potok.core :as ptk]
-   [app.common.geom.shapes :as geom]
+   [app.common.geom.shapes :as gsh]
    [app.common.attrs :as attrs]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.transforms :as dwt]
@@ -218,32 +218,28 @@
     (watch [_ state stream]
       (let [page-id (:current-page-id state)
             shape (get-in state [:workspace-data :pages-index page-id :objects id])
-            {:keys [selrect grow-type overflow-text]} shape
+            {:keys [selrect grow-type overflow-text]} (gsh/transform-shape shape)
             {shape-width :width shape-height :height} selrect
             undo-transaction (get-in state [:workspace-undo :transaction])
 
-            events (when (and (> new-width 0) (> new-height 0))
-                     (cond
-                       (and overflow-text (not= :fixed grow-type))
-                       [(update-overflow-text id false)]
+            events
+            (cond-> []
+              (and overflow-text (not= :fixed grow-type))
+              (conj (update-overflow-text id false))
 
-                       (and (= :fixed grow-type) (not overflow-text) (> new-height shape-height))
-                       [(update-overflow-text id true)]
+              (and (= :fixed grow-type) (not overflow-text) (> new-height shape-height))
+              (conj (update-overflow-text id true))
 
-                       (and (= :fixed grow-type) overflow-text (<= new-height shape-height))
-                       [(update-overflow-text id false)]
+              (and (= :fixed grow-type) overflow-text (<= new-height shape-height))
+              (conj (update-overflow-text id false))
 
-                       (and (or (not= shape-width new-width)
-                                (not= shape-height new-height))
-                            (= grow-type :auto-width))
-                       (when (and (pos? shape-width)
-                                  (pos? shape-height))
-                         [(dwt/update-dimensions [id] :width new-width)
-                          (dwt/update-dimensions [id] :height new-height)])
+              (and (or (not= shape-width new-width) (not= shape-height new-height))
+                   (= grow-type :auto-width))
+              (conj (dwt/update-dimensions [id] :width new-width)
+                    (dwt/update-dimensions [id] :height new-height))
 
-                       (and (not= shape-height new-height) (= grow-type :auto-height))
-                       (when (pos? shape-height)
-                         [(dwt/update-dimensions [id] :height new-height)])))]
+              (and (not= shape-height new-height) (= grow-type :auto-height))
+              (conj (dwt/update-dimensions [id] :height new-height)))]
 
         (if (not (empty? events))
           (rx/concat

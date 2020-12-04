@@ -488,5 +488,4 @@
   (ptk/reify ::update-dimensions
     ptk/WatchEvent
     (watch [_ state stream]
-      #_(prn "??? update-dimensions" ids attr value)
       (rx/of (dwc/update-shapes ids #(gsh/resize-rect % attr value) {:reg-objects? true})))))
