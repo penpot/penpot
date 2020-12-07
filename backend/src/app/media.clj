@@ -119,20 +119,20 @@
   [{:keys [input] :as params}]
   (us/assert ::input input)
   (let [{:keys [path mtype]} input]
-    (if (= mtype "image/svg+xml")
-      {:width 100
-       :height 100
-       :mtype mtype}
-      (let [instance (Info. (str path))
-            mtype'   (.getProperty instance "Mime type")]
-        (when (and (string? mtype)
-                   (not= mtype mtype'))
-          (ex/raise :type :validation
-                    :code :media-type-mismatch
-                    :hint "Seems like you are uploading a file whose content does not match the extension."))
-        {:width  (.getImageWidth instance)
-         :height (.getImageHeight instance)
-         :mtype  mtype'}))))
+    (let [instance (Info. (str path))
+
+          ;; SVG files are converted to PNG to extract their properties
+          mtype (if (= mtype "image/svg+xml") "image/png" mtype)
+          mtype'   (.getProperty instance "Mime type")]
+      (when (and (string? mtype)
+                 (not= mtype mtype'))
+        (ex/raise :type :validation
+                  :code :media-type-mismatch
+                  :hint (str "Seems like you are uploading a file whose content does not match the extension."
+                             "Expected: " mtype "Got: " mtype')))
+      {:width  (.getImageWidth instance)
+       :height (.getImageHeight instance)
+       :mtype  mtype'})))
 
 (defmethod process :default
   [{:keys [cmd] :as params}]

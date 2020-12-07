@@ -41,6 +41,7 @@ RUN set -ex; \
         python \
         build-essential \
         imagemagick \
+        librsvg2-bin \
         netpbm \
         potrace \
         webp \
