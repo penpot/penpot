@@ -262,3 +262,26 @@
             (apply-transform transform)
             (dissoc :modifiers)))
       shape)))
+
+(defn update-group-selrect [group children]
+  (let [shape-center (gco/center-shape group)
+
+        ;; Points for every shape inside the group
+        points (->> children (mapcat :points))
+
+        ;; Invert to get the points minus the transforms applied to the group
+        base-points (transform-points points shape-center (:transform-inverse group))
+
+        ;; Defines the new selection rect with its transformations
+        new-points (-> (gpr/points->selrect base-points)
+                       (gpr/rect->points)
+                       (transform-points shape-center (:transform group)))
+
+        ;; Calculte the new selrect
+        new-selrect (gpr/points->selrect base-points)]
+
+    ;; Updates the shape and the applytransform-rect will update the other properties
+    (-> group
+        (assoc :selrect new-selrect)
+        (assoc :points new-points)
+        (apply-transform-rect (gmt/matrix)))))

@@ -266,6 +266,7 @@
 (d/export gtr/transform-matrix)
 (d/export gtr/transform-point-center)
 (d/export gtr/transform-rect)
+(d/export gtr/update-group-selrect)
 
 ;; PATHS
 (d/export gsp/content->points)

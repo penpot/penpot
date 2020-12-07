@@ -42,7 +42,7 @@
 (defn center-shape
   "Calculate the center of the shape."
   [shape]
-  (center-rect (:selrect shape)))
+  (center-points (:points shape)))
 
 (defn make-centered-rect
   "Creates a rect given a center and a width and height"
