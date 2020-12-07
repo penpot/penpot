@@ -18,13 +18,14 @@
    [app.main.data.workspace.common :as dwc]
    [app.main.snap :as snap]
    [app.main.streams :as ms]
-   [app.main.data.workspace.drawing.common :as common]))
+   [app.main.data.workspace.drawing.common :as common]
+   [app.common.math :as mth]))
 
-(defn resize-shape [{:keys [x y width height] :as shape} point lock? point-snap]
+(defn resize-shape [{:keys [x y width height transform transform-inverse] :as shape} point lock?]
   (let [;; The new shape behaves like a resize on the bottom-right corner
         initial (gpt/point (+ x width) (+ y height))
         shapev  (gpt/point width height)
-        deltav  (gpt/to-vec initial point-snap)
+        deltav  (gpt/to-vec initial point)
         scalev  (gpt/divide (gpt/add shapev deltav) shapev)
         scalev  (if lock?
                   (let [v (max (:x scalev) (:y scalev))]
@@ -36,8 +37,15 @@
         (assoc-in [:modifiers :resize-origin] (gpt/point x y))
         (assoc-in [:modifiers :resize-rotation] 0))))
 
-(defn update-drawing [state point lock? point-snap]
-  (update-in state [:workspace-drawing :object] resize-shape point lock? point-snap))
+(defn update-drawing [state point lock?]
+  (update-in state [:workspace-drawing :object] resize-shape point lock?))
+
+(defn move-drawing
+  [{:keys [x y]}]
+  (fn [state]
+    (let [x (mth/precision x 0)
+          y (mth/precision y 0)]
+      (update-in state [:workspace-drawing :object] gsh/absolute-move (gpt/point x y)))))
 
 (defn handle-drawing-box []
   (ptk/reify ::handle-drawing-box
@@ -73,9 +81,7 @@
 
          ;; Initial SNAP
          (->> (snap/closest-snap-point page-id [shape] layout initial)
-              (rx/map (fn [{:keys [x y]}]
-                        #(update-in % [:workspace-drawing :object] gsh/absolute-move (gpt/point x y))
-                        )))
+              (rx/map move-drawing))
 
          (->> ms/mouse-position
               (rx/filter #(> (gpt/distance % initial) 2))
@@ -85,8 +91,8 @@
                  (->> (snap/closest-snap-point page-id [shape] layout point)
                       (rx/map #(conj current %)))))
               (rx/map
-               (fn [[pt ctrl? point-snap]]
-                 #(update-drawing % pt ctrl? point-snap)))
+               (fn [[_ ctrl? point]]
+                 #(update-drawing % point ctrl?)))
 
               (rx/take-until stoper))
          (rx/of common/handle-finish-drawing))))))
