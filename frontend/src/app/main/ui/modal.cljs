@@ -75,9 +75,10 @@
     (mf/use-layout-effect
      (mf/deps allow-click-outside)
      (fn []
-       (let [keys [(events/listen js/window      EventType.POPSTATE on-pop-state)
-                   (events/listen js/document    EventType.KEYDOWN  handle-keydown)
-                   (events/listen (dom/get-root) EventType.CLICK    handle-click-outside)]]
+       (let [keys [(events/listen js/window   EventType.POPSTATE    on-pop-state)
+                   (events/listen js/document EventType.KEYDOWN     handle-keydown)
+                   (events/listen js/document EventType.CLICK       handle-click-outside)
+                   (events/listen js/document EventType.CONTEXTMENU handle-click-outside)]]
          #(doseq [key keys]
             (events/unlistenByKey key)))))
 

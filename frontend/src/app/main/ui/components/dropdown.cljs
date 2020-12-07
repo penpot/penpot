@@ -31,11 +31,11 @@
 
         on-mount
         (fn []
-          (let [lkey1 (events/listen (dom/get-root) EventType.CLICK on-click)
-                lkey2 (events/listen (dom/get-root) EventType.KEYUP on-keyup)]
-            #(do
-               (events/unlistenByKey lkey1)
-               (events/unlistenByKey lkey2))))]
+          (let [keys [(events/listen js/document EventType.CLICK on-click)
+                      (events/listen js/document EventType.CONTEXTMENU on-click)
+                      (events/listen js/document EventType.KEYUP on-keyup)]]
+            #(doseq [key keys]
+               (events/unlistenByKey key))))]
 
     (mf/use-effect on-mount)
     children))
