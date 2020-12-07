@@ -14,7 +14,7 @@
    [app.common.data :as d]
    [app.common.pages-helpers :as cph]
    [app.common.exceptions :as ex]
-   [app.common.geom.shapes :as geom]
+   [app.common.geom.shapes :as gsh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.spec :as us]
@@ -840,7 +840,7 @@
 
 (defn rotation-modifiers
   [center shape angle]
-  (let [displacement (let [shape-center (geom/center-shape shape)]
+  (let [displacement (let [shape-center (gsh/center-shape shape)]
                        (-> (gmt/matrix)
                            (gmt/rotate angle center)
                            (gmt/rotate (- angle) shape-center)))]
@@ -860,26 +860,11 @@
                                (distinct))
                               shapes)))
           (update-group [group objects]
-            (let [gcenter (geom/center-shape group)
-                  gxfm    (comp
-                           (map #(get objects %))
-                           (map #(-> %
-                                     (assoc :modifiers
-                                            (rotation-modifiers gcenter % (- (:rotation group 0))))
-                                     (geom/transform-shape))))
-                  inner-shapes (if (:masked-group? group)
-                                 [(first (:shapes group))]
-                                 (:shapes group))
-                  selrect (-> (into [] gxfm inner-shapes)
-                              (geom/selection-rect))]
-
-              ;; Rotate the group shape change the data and rotate back again
-              (-> group
-                  (assoc :selrect selrect)
-                  (assoc :points (geom/rect->points selrect))
-                  (merge (select-keys selrect [:x :y :width :height]))
-                  (assoc-in [:modifiers :rotation] (:rotation group 0))
-                  (geom/transform-shape))))]
+            (let [children (->> (if (:masked-group? group)
+                                  [(first (:shapes group))]
+                                  (:shapes group))
+                                (map #(get objects %)))]
+              (gsh/update-group-selrect group children)))]
 
     (if page-id
       (d/update-in-when data [:pages-index page-id :objects] reg-objects)

@@ -9,7 +9,7 @@
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
    [app.util.debug :as debug]
-   [app.common.geom.shapes :as geom]
+   [app.common.geom.shapes :as gsh]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.util.debug :refer [debug?]]
@@ -35,16 +35,41 @@
              :stroke-width "1px"
              :stroke-opacity 0.5}]]))
 
+(mf/defc render-rect [{{:keys [x y width height]} :rect :keys [color]}]
+  [:rect  {:x x
+           :y y
+           :width width
+           :height height
+           :style {:stroke color
+                   :fill "transparent"
+                   :stroke-width "1px"
+                   :stroke-opacity 0.5
+                   :stroke-dasharray 4 
+                   :pointer-events "none"}}])
+
+(mf/defc render-rect-points [{:keys [points color]}]
+  (for [[p1 p2] (map vector points (concat (rest points) [(first points)]))]
+    [:line {:x1 (:x p1)
+            :y1 (:y p1)
+            :x2 (:x p2)
+            :y2 (:y p2)
+            :style {:stroke color
+                    :stroke-width "1px"}}]))
+
 (mf/defc bounding-box
   {::mf/wrap-props false}
   [props]
   (when (debug? :bounding-boxes)
-    (let [shape (unchecked-get props "shape")
+    (let [shape (-> (unchecked-get props "shape"))
           frame (unchecked-get props "frame")
-          selrect (-> shape :selrect)
-          shape-center (geom/center-shape shape)
+          selrect (gsh/points->selrect (-> shape :points))
+          shape-center (gsh/center-shape shape)
           line-color (rdcolor #js {:seed (str (:id shape))})
-          zoom (mf/deref refs/selected-zoom)]
+          zoom (mf/deref refs/selected-zoom)
+          childs-ref (mf/use-memo (mf/deps shape) #(refs/objects-by-id (:shapes shape)))
+          childs     (->> (mf/deref childs-ref)
+                          (map gsh/transform-shape))]
+
       [:g.bounding-box
        [:text {:x (:x selrect)
                :y (- (:y selrect) 5)
@@ -63,12 +88,8 @@
                           :zoom zoom
                           :color line-color}])
 
-       [:rect  {:x (:x selrect)
-                :y (:y selrect)
-                :width (:width selrect)
-                :height (:height selrect)
-                :style {:stroke line-color
-                        :fill "transparent"
-                        :stroke-width "1px"
-                        :stroke-opacity 0.5
-                        :pointer-events "none"}}]])))
+       [:& render-rect-points {:rect selrect
+                               :color line-color}]
+
+       [:& render-rect {:rect selrect
+                        :color line-color}]])))
