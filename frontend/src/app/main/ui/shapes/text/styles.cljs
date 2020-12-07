@@ -83,7 +83,13 @@
         fill-color-ref-id (obj/get data "fill-color-ref-id")
         fill-color-ref-file (obj/get data "fill-color-ref-file")
 
+        ;; Uncomment this to allow to remove text colors. This could break the texts that already exist
+        ;;[r g b a] (if (nil? fill-color)
+        ;;            [0 0 0 0] ;; Transparent color
+        ;;            (uc/hex->rgba fill-color fill-opacity))
+
         [r g b a] (uc/hex->rgba fill-color fill-opacity)
+
         text-color (if fill-color-gradient
                      (uc/gradient->css (js->clj fill-color-gradient))
                      (str/format "rgba(%s, %s, %s, %s)" r g b a))

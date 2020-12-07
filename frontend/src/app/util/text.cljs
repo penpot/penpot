@@ -16,7 +16,7 @@
    :text-transform "none"
    :text-align "left"
    :text-decoration "none"
-   :fill-color "#000000"
+   :fill-color nil
    :fill-opacity 1})
 
 (def typography-fields
