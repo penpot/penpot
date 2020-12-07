@@ -138,7 +138,7 @@
                  (d/index-by :id)
                  (assoc state :comment-threads)))
           (on-error [err]
-            (if (= :authorization (:type err))
+            (if (= :not-authorized (:code err))
               (rx/empty)
               (rx/throw err)))]
 
@@ -180,7 +180,7 @@
         (->> (rp/mutation! :create-file-share-token {:file-id file-id
                                                      :page-id page-id})
              (rx/map (fn [{:keys [token]}]
-                       #(assoc-in % [:viewer-data :share-token] token))))))))
+                       #(assoc-in % [:viewer-data :token] token))))))))
 
 (defn delete-share-link
   []
@@ -189,12 +189,12 @@
     (watch [_ state stream]
       (let [file-id (:current-file-id state)
             page-id (:current-page-id state)
-            token   (get-in state [:viewer-data :share-token])
+            token   (get-in state [:viewer-data :token])
             params  {:file-id file-id
                      :page-id page-id
                      :token token}]
         (->> (rp/mutation :delete-file-share-token params)
-             (rx/map (fn [_] #(update % :viewer-data dissoc :share-token))))))))
+             (rx/map (fn [_] #(update % :viewer-data dissoc :token))))))))
 
 ;; --- Zoom Management
 

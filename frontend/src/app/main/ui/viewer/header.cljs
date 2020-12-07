@@ -257,7 +257,7 @@
         nil)
 
       (when-not anonymous?
-        [:& share-link {:token (:share-token data)
+        [:& share-link {:token (:token data)
                         :page  (:page data)}])
 
       (when-not anonymous?

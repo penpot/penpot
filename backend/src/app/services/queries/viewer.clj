@@ -65,7 +65,7 @@
           (assoc bundle :token token))
         (let [stoken (retrieve-shared-token conn file-id page-id)]
           (files/check-read-permissions! conn profile-id file-id)
-          (assoc bundle :share-token (:token stoken)))))))
+          (assoc bundle :token (:token stoken)))))))
 
 (defn check-shared-token!
   [conn file-id page-id token]
