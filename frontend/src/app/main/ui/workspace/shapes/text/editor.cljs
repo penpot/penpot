@@ -37,7 +37,9 @@
    [{:type "root"
      :children [{:type "paragraph-set"
                  :children [{:type "paragraph"
-                             :children [{:text (or text "")}]}]}]}]))
+                             :children [{:fill-color "#000000"
+                                         :fill-opacity 1
+                                         :text (or text "")}]}]}]}]))
 (defn- parse-content
   [content]
   (cond
