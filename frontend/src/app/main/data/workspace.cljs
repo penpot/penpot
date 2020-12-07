@@ -1146,7 +1146,8 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (dws/select-shape (:id shape))))))
+      (rx/of (dws/deselect-all)
+             (dws/select-shape (:id shape))))))
 
 (def hide-context-menu
   (ptk/reify ::hide-context-menu

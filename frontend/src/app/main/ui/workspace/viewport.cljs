@@ -248,7 +248,6 @@
         (mf/use-callback
          (fn [event]
            (dom/prevent-default event)
-           (dom/stop-propagation event)
            (let [position (dom/get-client-position event)]
              (st/emit! (dw/show-context-menu {:position position})))))
 
@@ -287,7 +286,6 @@
         on-click
         (mf/use-callback
          (fn [event]
-           (dom/stop-propagation event)
            (let [ctrl? (kbd/ctrl? event)
                  shift? (kbd/shift? event)
                  alt? (kbd/alt? event)]

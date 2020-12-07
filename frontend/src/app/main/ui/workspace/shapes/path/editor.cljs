@@ -186,7 +186,7 @@
 
     (mf/use-layout-effect
      (fn []
-       (let [keys [(events/listen (dom/get-root) EventType.CLICK handle-click-outside)]]
+       (let [keys [(events/listen js/document EventType.CLICK handle-click-outside)]]
          #(doseq [key keys]
             (events/unlistenByKey key)))))
 
