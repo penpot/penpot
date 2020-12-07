@@ -56,6 +56,11 @@
      [:div.left-toolbar-inside
       [:ul.left-toolbar-options
        [:li.tooltip.tooltip-right
+        {:alt (t locale "workspace.toolbar.move")
+         :class (when (nil? selected-drawtool) "selected")
+         :on-click #(st/emit! :interrupt)}
+        i/pointer-inner]
+       [:li.tooltip.tooltip-right
         {:alt (t locale "workspace.toolbar.frame")
          :class (when (= selected-drawtool :frame) "selected")
          :on-click (partial select-drawtool :frame)}
