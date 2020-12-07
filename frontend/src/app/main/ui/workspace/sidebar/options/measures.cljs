@@ -189,6 +189,7 @@
          [:div.input-element.pixels
           [:> numeric-input
            {:placeholder "--"
+            :min "0"
             :on-click select-all
             :on-change on-radius-change
             :value (attr->string :rx values)}]]
