@@ -3644,7 +3644,7 @@
     }
   },
   "workspace.toolbar.ellipse" : {
-    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:69" ],
+    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:74" ],
     "translations" : {
       "en" : "Ellipse (E)",
       "fr" : "",
@@ -3662,7 +3662,7 @@
     }
   },
   "workspace.toolbar.comments" : {
-    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:99" ],
+    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:104" ],
     "translations" : {
       "en" : "Comments",
       "es" : "Comentarios"
@@ -3677,8 +3677,17 @@
       "es" : "Curva"
     }
   },
-  "workspace.toolbar.frame" : {
+  "workspace.toolbar.move" : {
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:59" ],
+    "translations" : {
+      "en" : "Move",
+      "fr" : "Déplacer",
+      "ru" : "Вытеснить",
+      "es" : "Mover"
+    }
+  },
+  "workspace.toolbar.frame" : {
+    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:64" ],
     "translations" : {
       "en" : "Artboard (A)",
       "fr" : "Plan de travail (A)",
@@ -3687,7 +3696,7 @@
     }
   },
   "workspace.toolbar.image" : {
-    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:79" ],
+    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:93" ],
     "translations" : {
       "en" : "Image (K)",
       "fr" : "Image (K)",
@@ -3705,7 +3714,7 @@
     "unused" : true
   },
   "workspace.toolbar.path" : {
-    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:93" ],
+    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:98" ],
     "translations" : {
       "en" : "Path",
       "fr" : "Chemin",
@@ -3714,7 +3723,7 @@
     }
   },
   "workspace.toolbar.rect" : {
-    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:64" ],
+    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:69" ],
     "translations" : {
       "en" : "Rectangle (R)",
       "fr" : "",
@@ -3723,7 +3732,7 @@
     }
   },
   "workspace.toolbar.text" : {
-    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:74" ],
+    "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:79" ],
     "translations" : {
       "en" : "Text (T)",
       "fr" : "Texte (T)",
