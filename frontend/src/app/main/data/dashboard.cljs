@@ -419,6 +419,8 @@
 
 ;; --- Delete File (by id)
 
+(declare delete-file-result)
+
 (defn delete-file
   [{:keys [id project-id] :as params}]
   (us/assert ::file params)
@@ -431,8 +433,18 @@
 
     ptk/WatchEvent
     (watch [_ state s]
-      (->> (rp/mutation :delete-file {:id id})
-           (rx/ignore)))))
+      (let [team-id (uuid/uuid (get-in state [:route :path-params :team-id]))]
+        (->> (rp/mutation :delete-file {:id id})
+             (rx/map #(delete-file-result team-id project-id)))))))
+
+(defn delete-file-result
+  [team-id project-id]
+
+  (ptk/reify ::delete-file
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update-in [:projects team-id project-id :count] dec)))))
 
 ;; --- Rename File
 
