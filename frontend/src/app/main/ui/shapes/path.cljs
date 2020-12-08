@@ -13,7 +13,6 @@
    [rumext.alpha :as mf]
    [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.custom-stroke :refer [shape-custom-stroke]]
-   [app.main.ui.shapes.group :refer [mask-id-ctx]]
    [app.common.geom.shapes :as geom]
    [app.util.object :as obj]
    [app.util.geom.path :as ugp]))
@@ -27,7 +26,6 @@
         background? (unchecked-get props "background?")
         ;; {:keys [id x y width height]} (geom/shape->rect-shape shape)
         {:keys [id x y width height]} (:selrect shape)
-        mask-id (mf/use-ctx mask-id-ctx)
         transform (geom/transform-matrix shape)
         pdata (ugp/content->path (:content shape))
         props (-> (attrs/extract-style-attrs shape)
@@ -35,7 +33,7 @@
                    #js {:transform transform
                         :d pdata}))]
     (if background?
-      [:g {:mask mask-id}
+      [:g
        [:path {:stroke "transparent"
                :fill "transparent"
                :stroke-width "20px"
@@ -45,6 +43,5 @@
                                 :elem-name "path"}]]
       [:& shape-custom-stroke {:shape shape
                                :base-props props
-                               :mask mask-id
                                :elem-name "path"}])))
 

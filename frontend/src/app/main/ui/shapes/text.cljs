@@ -12,7 +12,6 @@
    [cuerdas.core :as str]
    [rumext.alpha :as mf]
    [app.main.ui.context :as muc]
-   [app.main.ui.shapes.group :refer [mask-id-ctx]]
    [app.common.data :as d]
    [app.common.geom.shapes :as geom]
    [app.common.geom.matrix :as gmt]
@@ -90,7 +89,6 @@
   (let [shape     (unchecked-get props "shape")
         selected? (unchecked-get props "selected?")
         grow-type (:grow-type shape)
-        mask-id   (mf/use-ctx mask-id-ctx)
         {:keys [id x y width height content]} shape]
     [:foreignObject {:x x
                      :y y
@@ -99,7 +97,6 @@
                      :transform (geom/transform-matrix shape)
                      :width  (if (#{:auto-width} grow-type) 10000 width)
                      :height (if (#{:auto-height :auto-width} grow-type) 10000 height)
-                     :mask mask-id
                      :ref ref
                      :pointer-events "none"}
      [:& text-content {:shape shape
