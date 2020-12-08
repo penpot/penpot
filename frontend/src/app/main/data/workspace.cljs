@@ -1146,8 +1146,11 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (dws/deselect-all)
-             (dws/select-shape (:id shape))))))
+      (let [selected (get-in state [:workspace-local :selected])]
+        (if (selected (:id shape))
+          (rx/empty)
+          (rx/of (dws/deselect-all)
+                 (dws/select-shape (:id shape))))))))
 
 (def hide-context-menu
   (ptk/reify ::hide-context-menu
@@ -1478,14 +1481,20 @@
                            :id (:id group)
                            :operations [{:type :set
                                          :attr :masked-group?
-                                         :val nil}]}]
+                                         :val nil}]}
+                          {:type :reg-objects
+                           :page-id page-id
+                           :shapes [(:id group)]}]
 
                 uchanges [{:type :mod-obj
                            :page-id page-id
                            :id (:id group)
                            :operations [{:type :set
                                          :attr :masked-group?
-                                         :val (:masked-group? group)}]}]]
+                                         :val (:masked-group? group)}]}
+                          {:type :reg-objects
+                           :page-id page-id
+                           :shapes [(:id group)]}]]
 
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
                    (dwc/select-shapes (d/ordered-set (:id group))))))))))

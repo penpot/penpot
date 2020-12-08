@@ -18,56 +18,54 @@
 
 (mf/defc linear-gradient [{:keys [id gradient shape]}]
   (let [{:keys [x y width height]} shape]
-    [:defs
-     [:linearGradient {:id id
-                       :x1 (:start-x gradient)
-                       :y1 (:start-y gradient)
-                       :x2 (:end-x gradient)
-                       :y2 (:end-y gradient)}
-      (for [{:keys [offset color opacity]} (:stops gradient)]
-        [:stop {:key (str id "-stop-" offset)
-                :offset (or offset 0)
-                :stop-color color
-                :stop-opacity opacity}])]]))
+    [:linearGradient {:id id
+                      :x1 (:start-x gradient)
+                      :y1 (:start-y gradient)
+                      :x2 (:end-x gradient)
+                      :y2 (:end-y gradient)}
+     (for [{:keys [offset color opacity]} (:stops gradient)]
+       [:stop {:key (str id "-stop-" offset)
+               :offset (or offset 0)
+               :stop-color color
+               :stop-opacity opacity}])]))
 
 (mf/defc radial-gradient [{:keys [id gradient shape]}]
   (let [{:keys [x y width height]} shape]
-    [:defs
-     (let [[x y] (if (= (:type shape) :frame) [0 0] [x y])
-           translate-vec (gpt/point (+ x (* width (:start-x gradient)))
-                                    (+ y (* height (:start-y gradient))))
-           
-           gradient-vec (gpt/to-vec (gpt/point (* width (:start-x gradient))
-                                               (* height (:start-y gradient)))
-                                    (gpt/point (* width (:end-x gradient))
-                                               (* height (:end-y gradient))))
+    (let [[x y] (if (= (:type shape) :frame) [0 0] [x y])
+          translate-vec (gpt/point (+ x (* width (:start-x gradient)))
+                                   (+ y (* height (:start-y gradient))))
 
-           angle (gpt/angle gradient-vec
-                            (gpt/point 1 0))
+          gradient-vec (gpt/to-vec (gpt/point (* width (:start-x gradient))
+                                              (* height (:start-y gradient)))
+                                   (gpt/point (* width (:end-x gradient))
+                                              (* height (:end-y gradient))))
 
-           shape-height-vec (gpt/point 0 (/ height 2))
+          angle (gpt/angle gradient-vec
+                           (gpt/point 1 0))
 
-           scale-factor-y (/ (gpt/length gradient-vec) (/ height 2))
-           scale-factor-x (* scale-factor-y (:width gradient))
+          shape-height-vec (gpt/point 0 (/ height 2))
 
-           scale-vec (gpt/point (* scale-factor-y (/ height 2))
-                                (* scale-factor-x (/ width 2)))
+          scale-factor-y (/ (gpt/length gradient-vec) (/ height 2))
+          scale-factor-x (* scale-factor-y (:width gradient))
 
-           tr-translate (str/fmt "translate(%s, %s)" (:x translate-vec) (:y translate-vec))
-           tr-rotate (str/fmt "rotate(%s)" angle)
-           tr-scale (str/fmt "scale(%s, %s)" (:x scale-vec) (:y scale-vec))
-           transform (str/fmt "%s %s %s" tr-translate tr-rotate tr-scale)]
-       [:radialGradient {:id id
-                         :cx 0
-                         :cy 0
-                         :r 1
-                         :gradientUnits "userSpaceOnUse"
-                         :gradientTransform transform}
-        (for [{:keys [offset color opacity]} (:stops gradient)]
-          [:stop {:key (str id "-stop-" offset)
-                  :offset (or offset 0)
-                  :stop-color color
-                  :stop-opacity opacity}])])]))
+          scale-vec (gpt/point (* scale-factor-y (/ height 2))
+                               (* scale-factor-x (/ width 2)))
+
+          tr-translate (str/fmt "translate(%s, %s)" (:x translate-vec) (:y translate-vec))
+          tr-rotate (str/fmt "rotate(%s)" angle)
+          tr-scale (str/fmt "scale(%s, %s)" (:x scale-vec) (:y scale-vec))
+          transform (str/fmt "%s %s %s" tr-translate tr-rotate tr-scale)]
+      [:radialGradient {:id id
+                        :cx 0
+                        :cy 0
+                        :r 1
+                        :gradientUnits "userSpaceOnUse"
+                        :gradientTransform transform}
+       (for [{:keys [offset color opacity]} (:stops gradient)]
+         [:stop {:key (str id "-stop-" offset)
+                 :offset (or offset 0)
+                 :stop-color color
+                 :stop-opacity opacity}])])))
 
 (mf/defc gradient
   {::mf/wrap-props false}

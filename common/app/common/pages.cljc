@@ -860,11 +860,16 @@
                                (distinct))
                               shapes)))
           (update-group [group objects]
-            (let [children (->> (if (:masked-group? group)
-                                  [(first (:shapes group))]
-                                  (:shapes group))
-                                (map #(get objects %)))]
-              (gsh/update-group-selrect group children)))]
+            (let [children (->> group :shapes (map #(get objects %)))]
+              (if (:masked-group? group)
+                (let [mask (first children)]
+                  (-> group
+                      (merge (select-keys mask [:selrect :points]))
+                      (assoc :x (-> mask :selrect :x)
+                             :y (-> mask :selrect :y)
+                             :width (-> mask :selrect :width)
+                             :height (-> mask :selrect :height))))
+                (gsh/update-group-selrect group children))))]
 
     (if page-id
       (d/update-in-when data [:pages-index page-id :objects] reg-objects)

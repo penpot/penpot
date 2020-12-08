@@ -80,7 +80,8 @@
            {:frame frame
             :shape shape
             :childs childs
-            :expand-mask is-mask-selected?}]
+            :expand-mask is-mask-selected?
+            :pointer-events (when (not is-child-selected?) "none")}]
 
           (when-not is-child-selected?
             [:rect.group-actions

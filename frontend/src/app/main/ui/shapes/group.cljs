@@ -14,17 +14,16 @@
    [app.main.ui.shapes.attrs :as attrs]
    [app.common.geom.shapes :as geom]))
 
-(def mask-id-ctx (mf/create-context nil))
-
 (defn group-shape
   [shape-wrapper]
   (mf/fnc group-shape
     {::mf/wrap-props false}
     [props]
-    (let [frame       (unchecked-get props "frame")
-          shape       (unchecked-get props "shape")
-          childs      (unchecked-get props "childs")
-          expand-mask (unchecked-get props "expand-mask")
+    (let [frame          (unchecked-get props "frame")
+          shape          (unchecked-get props "shape")
+          childs         (unchecked-get props "childs")
+          expand-mask    (unchecked-get props "expand-mask")
+          pointer-events (unchecked-get props "pointer-events")
           mask        (if (and (:masked-group? shape) (not expand-mask))
                         (first childs)
                         nil)
@@ -33,7 +32,9 @@
                         childs)
           {:keys [id x y width height]} shape
           transform (geom/transform-matrix shape)]
-      [:g
+      [:g.group {:pointer-events pointer-events
+                 :mask (when (and mask (not expand-mask))
+                         (str/fmt "url(#%s)" (:id mask)))}
        (when mask
          [:defs
           [:mask {:id (:id mask)
@@ -41,11 +42,10 @@
                   :height height}
            [:& shape-wrapper {:frame frame
                               :shape mask}]]])
-       [:& (mf/provider mask-id-ctx) {:value (str/fmt "url(#%s)" (:id mask))}
-        (for [item childs]
-          [:& shape-wrapper {:frame frame
-                             :shape item
-                             :key (:id item)}])]
-       ])))
+       (for [item childs]
+         [:& shape-wrapper {:frame frame
+                            :shape item
+                            :key (:id item)}])])))
+
 
 
