@@ -166,7 +166,7 @@
       border-left: none;
       position: relative;
 
-      &::before {
+      &::after {
         content: " ";
         border-left: 1px solid $color-gray-40;
         border-bottom: 1px solid $color-gray-40;
