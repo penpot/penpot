@@ -194,9 +194,8 @@ $width-settings-bar: 16rem;
     display: flex;
     flex-direction: column;
     width: 100%;
-    border-top: 1px solid transparent;
-    border-bottom: 1px solid transparent;
-
+    padding-top: 1px;
+    padding-bottom: 1px;
 
     &.open {
 
