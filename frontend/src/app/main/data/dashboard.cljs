@@ -394,7 +394,9 @@
   (ptk/reify ::rename-project
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:projects team-id id :name] name))
+      (-> state
+          (assoc-in [:projects team-id id :name] name)
+          (update :dashboard-local dissoc :project-for-edit)))
 
     ptk/WatchEvent
     (watch [_ state stream]
