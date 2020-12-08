@@ -10,42 +10,37 @@
 (ns app.main.ui.shapes.group
   (:require
    [rumext.alpha :as mf]
-   [cuerdas.core :as str]
-   [app.main.ui.shapes.attrs :as attrs]
-   [app.common.geom.shapes :as geom]))
+   [app.main.ui.shapes.mask :refer [mask-str mask-factory]]))
 
 (defn group-shape
   [shape-wrapper]
-  (mf/fnc group-shape
-    {::mf/wrap-props false}
-    [props]
-    (let [frame          (unchecked-get props "frame")
-          shape          (unchecked-get props "shape")
-          childs         (unchecked-get props "childs")
-          expand-mask    (unchecked-get props "expand-mask")
-          pointer-events (unchecked-get props "pointer-events")
-          mask        (if (and (:masked-group? shape) (not expand-mask))
-                        (first childs)
-                        nil)
-          childs      (if (and (:masked-group? shape) (not expand-mask))
-                        (rest childs)
-                        childs)
-          {:keys [id x y width height]} shape
-          transform (geom/transform-matrix shape)]
-      [:g.group {:pointer-events pointer-events
-                 :mask (when (and mask (not expand-mask))
-                         (str/fmt "url(#%s)" (:id mask)))}
-       (when mask
-         [:defs
-          [:mask {:id (:id mask)
-                  :width width
-                  :height height}
+  (let [render-mask (mask-factory shape-wrapper)]
+    (mf/fnc group-shape
+      {::mf/wrap-props false}
+      [props]
+      (let [frame          (unchecked-get props "frame")
+            shape          (unchecked-get props "shape")
+            childs         (unchecked-get props "childs")
+            expand-mask    (unchecked-get props "expand-mask")
+            pointer-events (unchecked-get props "pointer-events")
+
+            {:keys [id x y width height]} shape
+
+            show-mask?     (and (:masked-group? shape) (not expand-mask))
+            mask           (when show-mask? (first childs))
+            childs         (if show-mask? (rest childs) childs)]
+
+        [:g.group
+         {:pointer-events pointer-events
+          :mask (when (and mask (not expand-mask)) (mask-str mask))}
+
+         (when mask
+           [:> render-mask #js {:frame frame :mask mask}])
+
+         (for [item childs]
            [:& shape-wrapper {:frame frame
-                              :shape mask}]]])
-       (for [item childs]
-         [:& shape-wrapper {:frame frame
-                            :shape item
-                            :key (:id item)}])])))
+                              :shape item
+                              :key (:id item)}])]))))
 
 
 
