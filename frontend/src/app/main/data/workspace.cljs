@@ -32,6 +32,7 @@
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.transforms :as dwt]
+   [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.drawing.path :as dwdp]
    [app.main.repo :as rp]
@@ -1011,11 +1012,12 @@
   (ptk/reify ::set-shape-proportion-lock
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (dwc/update-shapes [id] (fn [shape]
-                                       (if-not lock
-                                         (assoc shape :proportion-lock false)
-                                         (-> (assoc shape :proportion-lock true)
-                                             (gpr/assign-proportions)))))))))
+      (letfn [(assign-proportions [shape]
+                (if-not lock
+                  (assoc shape :proportion-lock false)
+                  (-> (assoc shape :proportion-lock true)
+                      (gpr/assign-proportions))))]
+        (rx/of (dwc/update-shapes [id] assign-proportions))))))
 
 ;; --- Update Shape Position
 
@@ -1371,135 +1373,6 @@
                 (with-meta params
                   {:on-success image-uploaded})))))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; GROUPS
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def group-selected
-  (ptk/reify ::group-selected
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [page-id  (:current-page-id state)
-            objects  (dwc/lookup-page-objects state page-id)
-            selected (get-in state [:workspace-local :selected])
-            shapes   (dws/shapes-for-grouping objects selected)]
-        (when-not (empty? shapes)
-          (let [[group rchanges uchanges] (dws/prepare-create-group page-id shapes "Group-" false)]
-            (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
-                   (dwc/select-shapes (d/ordered-set (:id group))))))))))
-
-(def ungroup-selected
-  (ptk/reify ::ungroup-selected
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [page-id  (:current-page-id state)
-            objects  (dwc/lookup-page-objects state page-id)
-            selected (get-in state [:workspace-local :selected])
-            group-id (first selected)
-            group    (get objects group-id)]
-        (when (and (= 1 (count selected))
-                   (= (:type group) :group))
-          (let [[rchanges uchanges]
-                (dws/prepare-remove-group page-id group objects)]
-            (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))))
-
-(def mask-group
-  (ptk/reify ::mask-group
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [page-id  (:current-page-id state)
-            objects  (dwc/lookup-page-objects state page-id)
-            selected (get-in state [:workspace-local :selected])
-            shapes   (dws/shapes-for-grouping objects selected)]
-        (when-not (empty? shapes)
-          (let [;; If the selected shape is a group, we can use it. If not,
-                ;; create a new group and set it as masked.
-                [group rchanges uchanges]
-                (if (and (= (count shapes) 1)
-                         (= (:type (first shapes)) :group))
-                  [(first shapes) [] []]
-                  (dws/prepare-create-group page-id shapes "Group-" true))
-
-                rchanges (d/concat rchanges
-                          [{:type :mod-obj
-                            :page-id page-id
-                            :id (:id group)
-                            :operations [{:type :set
-                                          :attr :masked-group?
-                                          :val true}]}
-                           {:type :reg-objects
-                            :page-id page-id
-                            :shapes [(:id group)]}])
-
-                uchanges (conj uchanges
-                          {:type :mod-obj
-                           :page-id page-id
-                           :id (:id group)
-                           :operations [{:type :set
-                                         :attr :masked-group?
-                                         :val nil}]})
-
-                ;; If the mask has the default color, change it automatically
-                ;; to white, to have an opaque mask by default (user may change
-                ;; it later to have different degrees of transparency).
-                mask (first shapes)
-                rchanges (if (not= (:fill-color mask) cp/default-color)
-                           rchanges
-                           (conj rchanges
-                                 {:type :mod-obj
-                                  :page-id page-id
-                                  :id (:id mask)
-                                  :operations [{:type :set
-                                                :attr :fill-color
-                                                :val "#ffffff"}]}))
-
-                uchanges (if (not= (:fill-color mask) cp/default-color)
-                           uchanges
-                           (conj uchanges
-                                 {:type :mod-obj
-                                  :page-id page-id
-                                  :id (:id mask)
-                                  :operations [{:type :set
-                                                :attr :fill-color
-                                                :val (:fill-color mask)}]}))]
-
-            (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
-                   (dwc/select-shapes (d/ordered-set (:id group))))))))))
-
-(def unmask-group
-  (ptk/reify ::unmask-group
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [page-id  (:current-page-id state)
-            objects  (dwc/lookup-page-objects state page-id)
-            selected (get-in state [:workspace-local :selected])]
-        (when (= (count selected) 1)
-          (let [group (get objects (first selected))
-
-                rchanges [{:type :mod-obj
-                           :page-id page-id
-                           :id (:id group)
-                           :operations [{:type :set
-                                         :attr :masked-group?
-                                         :val nil}]}
-                          {:type :reg-objects
-                           :page-id page-id
-                           :shapes [(:id group)]}]
-
-                uchanges [{:type :mod-obj
-                           :page-id page-id
-                           :id (:id group)
-                           :operations [{:type :set
-                                         :attr :masked-group?
-                                         :val (:masked-group? group)}]}
-                          {:type :reg-objects
-                           :page-id page-id
-                           :shapes [(:id group)]}]]
-
-            (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
-                   (dwc/select-shapes (d/ordered-set (:id group))))))))))
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interactions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1630,6 +1503,13 @@
 (d/export dwc/add-shape)
 (d/export dwc/start-edition-mode)
 (d/export dwdp/start-path-edit)
+
+;; Groups
+
+(d/export dwg/mask-group)
+(d/export dwg/unmask-group)
+(d/export dwg/group-selected)
+(d/export dwg/ungroup-selected)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shortcuts

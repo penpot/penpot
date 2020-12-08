@@ -17,7 +17,7 @@
    [app.common.geom.shapes :as geom]
    [app.main.data.messages :as dm]
    [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.libraries-helpers :as dwlh]
    [app.common.pages :as cp]
    [app.main.repo :as rp]
@@ -182,7 +182,7 @@
       (let [page-id  (:current-page-id state)
             objects  (dwc/lookup-page-objects state page-id)
             selected (get-in state [:workspace-local :selected])
-            shapes   (dws/shapes-for-grouping objects selected)]
+            shapes   (dwg/shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
           (let [;; If the selected shape is a group, we can use it. If not,
                 ;; we need to create a group before creating the component.
@@ -190,7 +190,7 @@
                 (if (and (= (count shapes) 1)
                          (= (:type (first shapes)) :group))
                   [(first shapes) [] []]
-                  (dws/prepare-create-group page-id shapes "Component-" true))
+                  (dwg/prepare-create-group page-id shapes "Component-" true))
 
                 [new-shape new-shapes updated-shapes]
                 (dwlh/make-component-shape group objects)
