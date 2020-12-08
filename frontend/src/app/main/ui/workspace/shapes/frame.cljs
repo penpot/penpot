@@ -73,8 +73,8 @@
             :class "workspace-frame-label"
             :transform (text-transform label-pos zoom)
             :on-click handle-click
-            :on-pointer-enter handle-pointer-enter
-            :on-pointer-leave handle-pointer-leave}
+            :on-pointer-over handle-pointer-enter
+            :on-pointer-out handle-pointer-leave}
      (:name frame)]))
 
 (defn make-is-moving-ref

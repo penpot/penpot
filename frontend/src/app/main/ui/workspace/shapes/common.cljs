@@ -22,6 +22,6 @@
       [:> shape-container {:shape shape
                            :on-mouse-down (we/use-mouse-down shape)
                            :on-context-menu (we/use-context-menu shape)
-                           :on-pointer-enter (we/use-pointer-enter shape)
-                           :on-pointer-leave (we/use-pointer-leave shape)}
+                           :on-pointer-over (we/use-pointer-enter shape)
+                           :on-pointer-out (we/use-pointer-leave shape)}
        [:& component {:shape shape}]])))
