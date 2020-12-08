@@ -350,7 +350,7 @@
           :opt-un [::uri ::di/js-files]))
 
 (defn upload-media-objects
-  [{:keys [file-id local? js-files uri] :as params}]
+  [{:keys [file-id local? js-files uri name] :as params}]
   (us/assert ::upload-media-objects-params params)
    (ptk/reify ::upload-media-objects
      ptk/WatchEvent
@@ -370,7 +370,8 @@
              (fn [uri]
                {:file-id file-id
                 :is-local local?
-                :url uri})]
+                :url uri
+                :name name})]
 
          (rx/concat
           (rx/of (dm/show {:content (tr "media.loading")

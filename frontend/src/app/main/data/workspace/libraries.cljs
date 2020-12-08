@@ -115,6 +115,24 @@
                   :id id}]
         (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true}))))))
 
+(defn rename-media
+  [id new-name]
+  (us/assert ::us/uuid id)
+  (us/assert ::us/string new-name)
+  (ptk/reify ::rename-media
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [object (get-in state [:workspace-data :media id])
+
+            rchanges [{:type :mod-media
+                       :object {:id id
+                                :name new-name}}]
+
+            uchanges [{:type :mod-media
+                       :object {:id id
+                                :name (:name object)}}]]
+
+        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 
 (defn delete-media
   [{:keys [id] :as params}]

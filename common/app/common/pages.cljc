@@ -416,6 +416,15 @@
                    :internal.media-object/mtype
                    :internal.media-object/thumb-path]))
 
+(s/def ::media-object-update
+  (s/keys :req-un  [::id]
+          :req-opt [::name
+                    :internal.media-object/name
+                    :internal.media-object/path
+                    :internal.media-object/width
+                    :internal.media-object/height
+                    :internal.media-object/mtype
+                    :internal.media-object/thumb-path]))
 
 (s/def :internal.file/colors
   (s/map-of ::uuid ::color))
@@ -576,8 +585,10 @@
 (defmethod change-spec :add-media [_]
   (s/keys :req-un [:internal.changes.media/object]))
 
+(s/def :internal.changes.media.mod/object ::media-object-update)
+
 (defmethod change-spec :mod-media [_]
-  (s/keys :req-un [:internal.changes.media/object]))
+  (s/keys :req-un [:internal.changes.media.mod/object]))
 
 (defmethod change-spec :del-media [_]
   (s/keys :req-un [::id]))

@@ -143,6 +143,7 @@
   [{:keys [file-id local? objects open? on-open on-close] :as props}]
   (let [input-ref  (mf/use-ref nil)
         state      (mf/use-state {:menu-open false
+                                  :renaming nil
                                   :top nil
                                   :left nil
                                   :object-id nil})
@@ -176,6 +177,25 @@
            (let [params {:id (:object-id @state)}]
              (st/emit! (dwl/delete-media params)))))
 
+        on-rename
+        (mf/use-callback
+          (mf/deps state)
+          (fn []
+            (swap! state assoc :renaming (:object-id @state))))
+
+        cancel-rename
+        (mf/use-callback
+          (mf/deps state)
+          (fn []
+            (swap! state assoc :renaming nil)))
+
+        do-rename
+        (mf/use-callback
+          (mf/deps state)
+          (fn [new-name]
+            (st/emit! (dwl/rename-media (:renaming @state) new-name))
+            (swap! state assoc :renaming nil)))
+
         on-context-menu
         (mf/use-callback
          (fn [object-id]
@@ -192,8 +212,9 @@
 
         on-drag-start
         (mf/use-callback
-         (fn [path event]
+         (fn [path name event]
            (dnd/set-data! event "text/uri-list" (cfg/resolve-media-path path))
+           (dnd/set-data! event "text/asset-name" name)
            (dnd/set-allowed-effect! event "move")))]
 
     [:div.asset-group
@@ -213,10 +234,21 @@
           [:div.grid-cell {:key (:id object)
                            :draggable true
                            :on-context-menu (on-context-menu (:id object))
-                           :on-drag-start (partial on-drag-start (:path object))}
+                           :on-drag-start (partial on-drag-start (:path object) (:name object))}
            [:img {:src (cfg/resolve-media-path (:thumb-path object))
                   :draggable false}] ;; Also need to add css pointer-events: none
-           [:div.cell-name (:name object)]])
+
+           #_[:div.cell-name (:name object)]
+           (let [renaming? (= (:renaming @state) (:id object))]
+             [:& editable-label
+              {:class-name (dom/classnames
+                            :cell-name true
+                            :editing renaming?)
+               :value (:name object)
+               :editing? renaming?
+               :disable-dbl-click? true
+               :on-change do-rename
+               :on-cancel cancel-rename}])])
 
         (when local?
           [:& context-menu
@@ -225,7 +257,8 @@
             :on-close #(swap! state assoc :menu-open false)
             :top (:top @state)
             :left (:left @state)
-            :options [[(tr "workspace.assets.delete") on-delete]]}])])]))
+            :options [[(tr "workspace.assets.rename") on-rename]
+                      [(tr "workspace.assets.delete") on-delete]]}])])]))
 
 (mf/defc color-item
   [{:keys [color local? locale] :as props}]
