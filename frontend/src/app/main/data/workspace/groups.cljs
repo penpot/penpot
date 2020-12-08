@@ -147,7 +147,19 @@
                                      :id (:id group)
                                      :operations [{:type :set
                                                    :attr :masked-group?
-                                                   :val true}]}
+                                                   :val true}
+                                                  {:type :set
+                                                   :attr :selrect
+                                                   :val (-> shapes first :selrect)}
+                                                  {:type :set
+                                                   :attr :points
+                                                   :val (-> shapes first :points)}
+                                                  {:type :set
+                                                   :attr :transform
+                                                   :val (-> shapes first :transform)}
+                                                  {:type :set
+                                                   :attr :transform-inverse
+                                                   :val (-> shapes first :transform-inverse)}]}
                                     {:type :reg-objects
                                      :page-id page-id
                                      :shapes [(:id group)]}])

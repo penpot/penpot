@@ -94,7 +94,7 @@
               :height height
               :on-mouse-down handle-mouse-down
               :on-context-menu handle-context-menu
-              :on-pointer-enter handle-pointer-enter
-              :on-pointer-leave handle-pointer-leave
+              :on-pointer-over handle-pointer-enter
+              :on-pointer-out handle-pointer-leave
               :on-double-click handle-double-click}])]]))))
 

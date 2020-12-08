@@ -314,11 +314,8 @@
 
 (defn change-hover-state
   [id value]
-  (letfn [(update-hover [items]
-            (if value
-              (conj items id)
-              (disj items id)))]
-    (ptk/reify ::change-hover-state
-      ptk/UpdateEvent
-      (update [_ state]
-        (update-in state [:workspace-local :hover] (fnil update-hover #{}))))))
+  (ptk/reify ::change-hover-state
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [hover-value (if value #{id} #{})]
+        (assoc-in state [:workspace-local :hover] hover-value)))))
