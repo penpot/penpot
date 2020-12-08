@@ -47,20 +47,20 @@
 
 (s/def ::add-media-object-from-url
   (s/keys :req-un [::profile-id ::file-id ::is-local ::url]
-          :opt-un [::id]))
+          :opt-un [::id ::name]))
 
 (s/def ::upload-media-object
   (s/keys :req-un [::profile-id ::file-id ::is-local ::name ::content]
           :opt-un [::id]))
 
 (sm/defmutation ::add-media-object-from-url
-  [{:keys [profile-id file-id url] :as params}]
+  [{:keys [profile-id file-id url name] :as params}]
   (db/with-atomic [conn db/pool]
     (let [file (select-file-for-update conn file-id)]
       (teams/check-edition-permissions! conn profile-id (:team-id file))
       (let [content (media/download-media-object url)
             params' (merge params {:content content
-                                   :name (:filename content)})]
+                                   :name (or name (:filename content))})]
         (create-media-object conn params')))))
 
 (sm/defmutation ::upload-media-object

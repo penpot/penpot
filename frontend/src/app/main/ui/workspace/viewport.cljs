@@ -452,6 +452,7 @@
 
               (dnd/has-type? event "text/uri-list")
               (let [data (dnd/get-data event "text/uri-list")
+                    name (dnd/get-data event "text/asset-name")
                     lines (str/lines data)
                     urls (filter #(and (not (str/blank? %))
                                        (not (str/starts-with? % "#")))
@@ -460,7 +461,8 @@
                      (map (fn [uri]
                             (with-meta {:file-id (:id file)
                                         :local? true
-                                        :uri uri}
+                                        :uri uri
+                                        :name name}
                               {:on-success #(on-uploaded % viewport-coord)})))
                      (map dw/upload-media-objects)
                      (apply st/emit!)))
