@@ -22,6 +22,7 @@
    [app.main.ui.auth.verify-token :refer [verify-token]]
    [app.main.ui.cursors :as c]
    [app.main.ui.context :as ctx]
+   [app.main.ui.onboarding]
    [app.main.ui.dashboard :refer [dashboard]]
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]

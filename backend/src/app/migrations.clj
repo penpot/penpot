@@ -115,6 +115,9 @@
 
     {:name "0033-mod-comment-thread-table"
      :fn (mg/resource "app/migrations/sql/0033-mod-comment-thread-table.sql")}
+
+    {:name "0034-mod-profile-table-add-props-field"
+     :fn (mg/resource "app/migrations/sql/0034-mod-profile-table-add-props-field.sql")}
     ]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
