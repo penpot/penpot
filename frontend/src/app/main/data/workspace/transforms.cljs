@@ -477,6 +477,34 @@
   (us/verify #{:width :height} attr)
   (us/verify ::us/number value)
   (ptk/reify ::update-dimensions
+    ptk/UpdateEvent
+    (update [_ state]
+
+      (let [page-id (:current-page-id state)
+            objects (dwc/lookup-page-objects state page-id)
+
+            update-children
+            (fn [objects ids modifiers]
+              (reduce #(assoc-in %1 [%2 :modifiers] modifiers) objects ids))
+
+            ;; For each shape updates the modifiers given as arguments
+            update-shape
+            (fn [objects shape-id]
+              (let [shape (get objects shape-id)
+                    modifier (gsh/resize-modifiers shape attr value)]
+                (-> objects
+                    (assoc-in [shape-id :modifiers] modifier)
+                    (cond-> (not (= :frame (:type shape)))
+                      (update-children (cp/get-children shape-id objects) modifier)))))]
+
+        (d/update-in-when
+         state
+         [:workspace-data :pages-index page-id :objects]
+         #(reduce update-shape % ids))))
+
     ptk/WatchEvent
     (watch [_ state stream]
-      (rx/of (dwc/update-shapes ids #(gsh/resize-rect % attr value) {:reg-objects? true})))))
+      (let [page-id (:current-page-id state)
+            objects (dwc/lookup-page-objects state page-id)
+            ids (d/concat [] ids (mapcat #(cp/get-children % objects) ids))]
+        (rx/of (apply-modifiers ids))))))

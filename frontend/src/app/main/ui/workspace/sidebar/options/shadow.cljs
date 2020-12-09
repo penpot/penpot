@@ -21,6 +21,8 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t]]))
 
+(def shadow-attrs [:shadow])
+
 (defn create-shadow []
   (let [id (uuid/next)]
     {:id id
@@ -49,13 +51,15 @@
         adv-blur-ref (mf/use-ref nil)
         adv-spread-ref (mf/use-ref nil)
 
-        remove-shadow-by-id
-        (fn [values id] (->> values (filterv (fn [s] (not= (:id s) id)))))
+        remove-shadow-by-index
+        (fn [values index] (->> (d/enumerate values)
+                                (filterv (fn [[idx s]] (not= idx index)))
+                                (mapv second)))
 
         on-remove-shadow
-        (fn [id]
+        (fn [index]
           (fn []
-            (st/emit! (dwc/update-shapes ids #(update % :shadow remove-shadow-by-id id) ))))
+            (st/emit! (dwc/update-shapes ids #(update % :shadow remove-shadow-by-index index) ))))
 
         select-text
         (fn [ref] (fn [event] (dom/select-text! (mf/ref-val ref))))
@@ -111,7 +115,7 @@
       [:div.element-set-actions
        [:div.element-set-actions-button {:on-click (toggle-visibility index)}
         (if (:hidden value) i/eye-closed i/eye)]
-       [:div.element-set-actions-button {:on-click (on-remove-shadow (:id value))}
+       [:div.element-set-actions-button {:on-click (on-remove-shadow index)}
         i/minus]]]
 
      [:& advanced-options {:visible? @open-shadow
@@ -175,21 +179,39 @@
                       :on-open #(st/emit! (dwc/start-undo-transaction))
                       :on-close #(st/emit! (dwc/commit-undo-transaction))}]]]]))
 (mf/defc shadow-menu
-  [{:keys [ids values] :as props}]
-
+  [{:keys [ids type values] :as props}]
   (let [locale (i18n/use-locale)
+        on-remove-all-shadows
+        (fn [event]
+          (st/emit! (dwc/update-shapes ids #(dissoc % :shadow) )))
+
         on-add-shadow
         (fn []
           (st/emit! (dwc/update-shapes ids #(update % :shadow (fnil conj []) (create-shadow)) )))]
     [:div.element-set.shadow-options
      [:div.element-set-title
-      [:span (t locale "workspace.options.shadow-options.title")]
-      [:div.add-page {:on-click on-add-shadow} i/close]]
+      [:span
+       (case type
+         :multiple (t locale "workspace.options.shadow-options.title.multiple")
+         :group (t locale "workspace.options.shadow-options.title.group")
+         (t locale "workspace.options.shadow-options.title"))]
 
-     (when (seq (:shadow values))
+      (when-not (= :multiple (:shadow values))
+        [:div.add-page {:on-click on-add-shadow} i/close])]
+
+     (cond
+       (= :multiple (:shadow values))
+       [:div.element-set-content
+        [:div.element-set-options-group
+         [:div.element-set-label (t locale "settings.multiple")]
+         [:div.element-set-actions
+          [:div.element-set-actions-button {:on-click on-remove-all-shadows}
+           i/minus]]]]
+
+       (not (empty? (:shadow values)))
        [:div.element-set-content
         (for [[index {:keys [id] :as value}] (d/enumerate (:shadow values []))]
-          [:& shadow-entry {:key (str "shadow-" id)
+          [:& shadow-entry {:key (str "shadow-" index)
                             :ids ids
                             :value value
                             :index index}])])]))

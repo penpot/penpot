@@ -868,6 +868,13 @@
         fill: $color-primary;
     }
 }
+
+.element-set-label {
+  font-size: $fs11;
+  padding: 0.5rem;
+  color: $color-gray-10;
+}
+
 .element-set-actions {
     display: flex;
     visibility: hidden;

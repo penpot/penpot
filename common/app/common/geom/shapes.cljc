@@ -42,31 +42,7 @@
     (move shape (gpt/point dx dy))))
 
 ;; --- Resize (Dimensions)
-(defn resize
-  [shape width height]
-  (us/assert map? shape)
-  (us/assert number? width)
-  (us/assert number? height)
-
-  (let [shape-transform (:transform shape (gmt/matrix))
-        shape-transform-inv (:transform-inverse shape (gmt/matrix))
-        shape-center (gco/center-shape shape)
-        {sr-width :width sr-height :height} (:selrect shape)
-        origin (-> (gpt/point (:selrect shape))
-                   (gtr/transform-point-center shape-center shape-transform))
-
-        scalev (gpt/divide (gpt/point width height)
-                           (gpt/point sr-width sr-height))]
-
-    (-> shape
-        (update :modifiers assoc
-                :resize-vector scalev
-                :resize-origin origin
-                :resize-transform shape-transform
-                :resize-transform-inverse shape-transform-inv)
-        (gtr/transform-shape))))
-
-(defn resize-rect
+(defn resize-modifiers
   [shape attr value]
   (us/assert map? shape)
   (us/assert #{:width :height} attr)
@@ -81,8 +57,24 @@
                          (assoc :height (/ value proportion)))
                      (-> size
                          (assoc :height value)
-                         (assoc :width (* value proportion)))))]
-    (resize shape (:width new-size) (:height new-size))))
+                         (assoc :width (* value proportion)))))
+        width (:width new-size)
+        height (:height new-size)
+
+        shape-transform (:transform shape (gmt/matrix))
+        shape-transform-inv (:transform-inverse shape (gmt/matrix))
+        shape-center (gco/center-shape shape)
+        {sr-width :width sr-height :height} (:selrect shape)
+
+        origin (-> (gpt/point (:selrect shape))
+                   (gtr/transform-point-center shape-center shape-transform))
+
+        scalev (gpt/divide (gpt/point width height)
+                           (gpt/point sr-width sr-height))]
+    {:resize-vector scalev
+     :resize-origin origin
+     :resize-transform shape-transform
+     :resize-transform-inverse shape-transform-inv}))
 
 ;; --- Setup (Initialize)
 ;; FIXME: Is this the correct place for these functions?

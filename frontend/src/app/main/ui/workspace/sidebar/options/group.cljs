@@ -15,20 +15,14 @@
    [app.common.geom.shapes :as geom]
    [app.main.refs :as refs]
    [app.main.data.workspace.texts :as dwt]
-   [app.main.ui.workspace.sidebar.options.multiple :refer [get-shape-attrs]]
+   [app.main.ui.workspace.sidebar.options.multiple :refer [get-shape-attrs extract]]
    [app.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.component :refer [component-attrs component-menu]]
    [app.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
    [app.main.ui.workspace.sidebar.options.blur :refer [blur-menu]]
+   [app.main.ui.workspace.sidebar.options.shadow :refer [shadow-menu]]
    [app.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]
-   [app.main.ui.workspace.sidebar.options.text :refer [text-fill-attrs
-                                                         text-font-attrs
-                                                         text-align-attrs
-                                                         text-spacing-attrs
-                                                         text-valign-attrs
-                                                         text-decoration-attrs
-                                                         text-transform-attrs
-                                                         text-menu]]))
+   [app.main.ui.workspace.sidebar.options.text :as ot]))
 
 (mf/defc options
   [{:keys [shape shape-with-children] :as props}]
@@ -76,65 +70,17 @@
                                    shape-with-children)
                               stroke-attrs)
 
-        font-values
-        (attrs/get-attrs-multi (map #(get-shape-attrs
-                                      %
-                                      nil
-                                      text-font-attrs
-                                      nil
-                                      dwt/current-text-values)
-                                   shape-with-children)
-                              text-font-attrs)
+        root-values (extract {:shapes shape-with-children
+                              :text-attrs ot/root-attrs
+                              :extract-fn dwt/current-root-values})
 
-        align-values
-        (attrs/get-attrs-multi (map #(get-shape-attrs
-                                      %
-                                      nil
-                                      text-align-attrs
-                                      nil
-                                      dwt/current-paragraph-values)
-                                   shape-with-children)
-                              text-align-attrs)
+        paragraph-values (extract {:shapes shape-with-children
+                                   :text-attrs ot/paragraph-attrs
+                                   :extract-fn dwt/current-paragraph-values})
 
-        spacing-values
-        (attrs/get-attrs-multi (map #(get-shape-attrs
-                                      %
-                                      nil
-                                      text-spacing-attrs
-                                      nil
-                                      dwt/current-text-values)
-                                   shape-with-children)
-                              text-spacing-attrs)
-
-        valign-values
-        (attrs/get-attrs-multi (map #(get-shape-attrs
-                                      %
-                                      nil
-                                      text-valign-attrs
-                                      nil
-                                      dwt/current-root-values)
-                                   shape-with-children)
-                              text-valign-attrs)
-
-        decoration-values
-        (attrs/get-attrs-multi (map #(get-shape-attrs
-                                      %
-                                      nil
-                                      text-decoration-attrs
-                                      nil
-                                      dwt/current-text-values)
-                                   shape-with-children)
-                              text-decoration-attrs)
-
-        transform-values
-        (attrs/get-attrs-multi (map #(get-shape-attrs
-                                      %
-                                      nil
-                                      text-transform-attrs
-                                      nil
-                                      dwt/current-text-values)
-                                   shape-with-children)
-                              text-transform-attrs)]
+        text-values (extract {:shapes shape-with-children
+                              :text-attrs ot/text-attrs
+                              :extract-fn dwt/current-text-values})]
     [:*
      [:& measures-menu {:ids [id]
                         :ids-with-children ids-with-children
@@ -146,7 +92,12 @@
                     :type type
                     :values fill-values}]
 
+     [:& shadow-menu {:ids [id]
+                      :type type
+                      :values (select-keys shape [:shadow])}]
+
      [:& blur-menu {:ids [id]
+                    :type type
                     :values (select-keys shape [:blur])}]
 
      (when-not (empty? other-ids)
@@ -154,13 +105,11 @@
                         :type type
                         :values stroke-values}])
      (when-not (empty? text-ids)
-       [:& text-menu {:ids text-ids
+       [:& ot/text-menu {:ids text-ids
                       :type type
                       :editor nil
-                      :font-values font-values
-                      :align-values align-values
-                      :spacing-values spacing-values
-                      :valign-values valign-values
-                      :decoration-values decoration-values
-                      :transform-values transform-values}])]))
+                      :shapes shape-with-children
+                      :values (merge root-values
+                                     paragraph-values
+                                     text-values)}])]))
 
