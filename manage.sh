@@ -62,7 +62,7 @@ function run-devenv {
 
 function build {
     pull-devenv-if-not-exists;
-    docker volume create $DEVENV_PNAME_user_data;
+    docker volume create ${DEVENV_PNAME}_user_data;
     docker run -t --rm \
            --mount source=${DEVENV_PNAME}_user_data,type=volume,target=/home/penpot/ \
            --mount source=`pwd`,type=bind,target=/home/penpot/penpot \
