@@ -219,15 +219,6 @@
     :else
     (ex/raise :type :not-implemented)))
 
-(defn decode-pgobject
-  [^PGobject obj]
-  (let [typ (.getType obj)
-        val (.getValue obj)]
-    (if (or (= typ "json")
-            (= typ "jsonb"))
-      (json/read-str val)
-      val)))
-
 (defn decode-json-pgobject
   [^PGobject o]
   (let [typ (.getType o)

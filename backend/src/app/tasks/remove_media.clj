@@ -76,7 +76,7 @@
   [_task]
   (letfn [(decode-row [{:keys [data] :as row}]
             (cond-> row
-              (db/pgobject? data) (assoc :data (db/decode-pgobject data))))
+              (db/pgobject? data) (assoc :data (db/decode-json-pgobject data))))
           (retrieve-items [conn]
             (->> (db/exec! conn [sql:retrieve-peding-to-delete 10])
                  (map decode-row)
