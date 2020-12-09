@@ -460,6 +460,16 @@
       "es" : "+ Nuevo proyecto"
     }
   },
+  "dashboard.title-search" : {
+    "used-in" : [ "src/app/main/ui/dashboard/search.cljs:37" ],
+    "translations" : {
+      "en" : "Search results",
+      "fr" : "Résultats de recherche",
+      "ru" : "Результаты поиска",
+      "es" : "Resultados de búsqueda"
+    }
+  },
+
   "dashboard.no-matches-for" : {
     "used-in" : [ "src/app/main/ui/dashboard/search.cljs:48" ],
     "translations" : {
