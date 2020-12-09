@@ -29,6 +29,7 @@
 (defn run
   [_params]
   (require 'app.srepl.server
+           'app.services
            'app.migrations
            'app.worker
            'app.media
