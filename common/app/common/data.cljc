@@ -213,7 +213,7 @@
 (defn merge
   "A faster merge."
   [& maps]
-  (loop [res  (transient (first maps))
+  (loop [res  (transient (or (first maps) {}))
          maps (next maps)]
     (if (nil? maps)
       (persistent! res)
