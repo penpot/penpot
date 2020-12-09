@@ -17,6 +17,7 @@
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
+
 (def result-ref
   (l/derived (l/in [:dashboard-local :search-result]) st/state))
 
@@ -30,23 +31,28 @@
      (st/emitf (dd/search-files {:team-id (:id team)
                                  :search-term search-term})))
 
-    [:section.dashboard-container.search
-     (cond
-       (empty? search-term)
-       [:div.grid-empty-placeholder
-        [:div.icon i/search]
-        [:div.text (t locale "dashboard.type-something")]]
+    [:*
+     [:header.dashboard-header
+      [:div.dashboard-title
+       [:h1 (t locale "dashboard.title-search")]]]
 
-       (nil? result)
-       [:div.grid-empty-placeholder
-        [:div.icon i/search]
-        [:div.text  (t locale "dashboard.searching-for" search-term)]]
+     [:section.dashboard-container.search
+      (cond
+        (empty? search-term)
+        [:div.grid-empty-placeholder
+         [:div.icon i/search]
+         [:div.text (t locale "dashboard.type-something")]]
 
-       (empty? result)
-       [:div.grid-empty-placeholder
-        [:div.icon i/search]
-        [:div.text  (t locale "dashboard.no-matches-for" search-term)]]
+        (nil? result)
+        [:div.grid-empty-placeholder
+         [:div.icon i/search]
+         [:div.text  (t locale "dashboard.searching-for" search-term)]]
 
-       :else
-       [:& grid {:files result
-                 :hide-new? true}])]))
+        (empty? result)
+        [:div.grid-empty-placeholder
+         [:div.icon i/search]
+         [:div.text  (t locale "dashboard.no-matches-for" search-term)]]
+
+        :else
+        [:& grid {:files result
+                  :hide-new? true}])]]))
