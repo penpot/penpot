@@ -13,6 +13,7 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.data.dashboard :as dd]
+   [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.files :refer [files-section]]
@@ -24,6 +25,7 @@
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [t]]
    [app.util.router :as rt]
+   [app.util.storage :refer [storage]]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
@@ -100,6 +102,11 @@
         team         (mf/deref team-ref)
         projects     (mf/deref projects-ref)
         project      (get projects project-id)]
+
+    (mf/use-effect
+     (fn []
+       (when (and profile (not (get-in profile [:props :onboarding-viewed])))
+         (st/emit! (modal/show {:type :onboarding})))))
 
     (mf/use-effect
      (mf/deps team-id)

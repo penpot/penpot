@@ -156,6 +156,16 @@
              (rx/ignore))))))
 
 
+(defn mark-onboarding-as-viewed
+  []
+  (ptk/reify ::mark-oboarding-as-viewed
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [{:keys [id] :as profile} (:profile state)]
+        (->> (rp/mutation :update-profile-props {:props {:onboarding-viewed true}})
+             (rx/map (constantly fetch-profile)))))))
+
+
 ;; --- Update Photo
 
 (defn update-photo
@@ -165,7 +175,6 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [on-success di/notify-finished-loading
-
             on-error #(do (di/notify-finished-loading)
                           (di/process-error %))
 

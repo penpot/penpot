@@ -61,6 +61,7 @@
   [props]
   (let [data        (unchecked-get props "data")
         wrapper-ref (mf/use-ref nil)
+        components  (mf/deref dm/components)
 
         allow-click-outside (:allow-click-outside data)
 
@@ -86,9 +87,7 @@
             (events/unlistenByKey key)))))
 
     [:div.modal-wrapper {:ref wrapper-ref}
-     (mf/element
-      (get @dm/components (:type data))
-      (:props data))]))
+     (mf/element (get components (:type data)) (:props data))]))
 
 
 (def modal-ref
@@ -97,5 +96,6 @@
 (mf/defc modal
   []
   (let [modal (mf/deref modal-ref)]
-    (when modal [:& modal-wrapper {:data modal
-                                   :key (:id modal)}])))
+    (when modal
+      [:& modal-wrapper {:data modal
+                         :key (:id modal)}])))

@@ -21,6 +21,10 @@
        (-dispose [_]
          (js/clearTimeout sem))))))
 
+(defn dispose!
+  [v]
+  (rx/dispose! v))
+
 (defn asap
   [f]
   (-> (p/resolved nil)

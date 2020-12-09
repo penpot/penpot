@@ -280,7 +280,7 @@
 
 (defn- validate-password!
   [conn {:keys [profile-id old-password] :as params}]
-  (let [profile (profile/retrieve-profile-data conn profile-id)]
+  (let [profile (db/get-by-id conn :profile profile-id)]
     (when-not (:valid (verify-password old-password (:password profile)))
       (ex/raise :type :validation
                 :code :old-password-not-match))))
@@ -310,7 +310,7 @@
   [{:keys [profile-id file] :as params}]
   (media/validate-media-type (:content-type file))
   (db/with-atomic [conn db/pool]
-    (let [profile (profile/retrieve-profile conn profile-id)
+    (let [profile (db/get-by-id conn :profile profile-id)
           _       (media/run {:cmd :info :input {:path (:tempfile file)
                                                  :mtype (:content-type file)}})
           photo   (teams/upload-photo conn params)]
@@ -407,6 +407,27 @@
     (db/with-atomic [conn db/pool]
       (->> (validate-token token)
            (update-password conn))
+      nil)))
+
+;; --- Mutation: Update Profile Props
+
+(s/def ::props map?)
+(s/def ::update-profile-props
+  (s/keys :req-un [::profile-id ::props]))
+
+(sm/defmutation ::update-profile-props
+  [{:keys [profile-id props]}]
+  (db/with-atomic [conn db/pool]
+    (let [profile (profile/retrieve-profile-data conn profile-id)
+          props   (reduce-kv (fn [props k v]
+                               (if (nil? v)
+                                 (dissoc props k)
+                                 (assoc props k v)))
+                             (:props profile)
+                             props)]
+      (db/update! conn :profile
+                  {:props (db/tjson props)}
+                  {:id profile-id})
       nil)))
 
 

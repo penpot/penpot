@@ -73,9 +73,15 @@
     {:default-team-id (:id team)
      :default-project-id (:id project)}))
 
+(defn decode-profile-row
+  [{:keys [props] :as row}]
+  (cond-> row
+    (db/pgobject? props) (assoc :props (db/decode-transit-pgobject props))))
+
 (defn retrieve-profile-data
   [conn id]
-  (db/get-by-id conn :profile id))
+  (-> (db/get-by-id conn :profile id)
+      (decode-profile-row)))
 
 (defn retrieve-profile
   [conn id]
@@ -97,7 +103,8 @@
 (defn retrieve-profile-data-by-email
   [conn email]
   (let [email (str/lower email)]
-    (db/exec-one! conn [sql:profile-by-email email])))
+    (-> (db/exec-one! conn [sql:profile-by-email email])
+        (decode-profile-row))))
 
 
 ;; --- Attrs Helpers

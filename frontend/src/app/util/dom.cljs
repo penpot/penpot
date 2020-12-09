@@ -29,6 +29,7 @@
   [e]
   (.-target e))
 
+
 (defn classnames
   [& params]
   (assert (even? (count params)))
@@ -38,6 +39,7 @@
                             acc))
                         []
                         (partition 2 params))))
+
 
 ;; --- New methods
 
