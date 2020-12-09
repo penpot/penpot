@@ -21,6 +21,8 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t]]))
 
+(def blur-attrs [:blur])
+
 (defn create-blur []
   (let [id (uuid/next)]
     {:id id
@@ -28,10 +30,11 @@
      :value 4
      :hidden false}))
 
-(mf/defc blur-menu [{:keys [ids values]}]
+(mf/defc blur-menu [{:keys [ids type values]}]
   (let [locale (i18n/use-locale)
         blur (:blur values)
         has-value? (not (nil? blur))
+        multiple? (= blur :multiple)
 
         change! (fn [update-fn] (st/emit! (dwc/update-shapes ids update-fn)))
 
@@ -53,18 +56,26 @@
 
     [:div.element-set
      [:div.element-set-title
-      [:span (t locale "workspace.options.blur-options.title")]
+      [:span
+       (case type
+         :multiple (t locale "workspace.options.blur-options.title.multiple")
+         :group (t locale "workspace.options.blur-options.title.group")
+         (t locale "workspace.options.blur-options.title"))]
+
       [:div.element-set-title-actions
-       (if has-value?
+       (when (and has-value? (not multiple?))
          [:div.add-page {:on-click handle-toggle-visibility} (if (:hidden blur) i/eye-closed i/eye)])
+
        (if has-value?
          [:div.add-page {:on-click handle-delete} i/minus]
          [:div.add-page {:on-click handle-add} i/close])]]
 
-     (when has-value?
+     (cond
+       has-value?
        [:div.element-set-content
         [:& input-row {:label "Value"
                        :class "pixels"
                        :min 0
                        :value (:value blur)
+                       :placeholder (t locale "settings.multiple")
                        :on-change handle-change}]])]))

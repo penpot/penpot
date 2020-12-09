@@ -74,7 +74,8 @@
                                 :page-id page-id
                                 :file-id file-id
                                 :shapes-with-children shapes-with-children}]
-           [:& multiple/options {:shapes shapes-with-children}])]]
+           [:& multiple/options {:shapes-with-children shapes-with-children
+                                 :shapes shapes}])]]
 
        [:& tab-element {:id :prototype
                         :title (t locale "workspace.options.prototype")}
