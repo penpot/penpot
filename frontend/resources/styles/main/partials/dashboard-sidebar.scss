@@ -370,8 +370,7 @@
     display: flex;
     flex-grow: 1;
 
-    span,
-    a {
+    span {
       @include text-ellipsis;
       color: $color-black;
       margin: 10px 5px;
@@ -420,11 +419,11 @@
   }
 }
 
-span.primary-badge {
+.primary-badge {
   border: 1px solid $color-primary;
   border-radius: 2px;
   font-size: $fs9 !important;
   font-weight: bold;
   color: $color-primary !important;
-  padding: 2px 2px;
+  padding: 2px 4px;
 }

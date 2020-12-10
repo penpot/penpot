@@ -223,6 +223,10 @@
           [:span (tr "dashboard.remove-shared")]]
          [:li {:on-click on-add-shared}
           [:span (tr "dashboard.add-shared")]])
+
+       [:li.feedback {:on-click #(.open js/window "https://github.com/penpot/penpot/discussions" "_blank")}
+        [:span (tr "workspace.header.menu.feedback")]
+        [:span.primary-badge "ALPHA"]]
        ]]]))
 
 ;; --- Header Component
