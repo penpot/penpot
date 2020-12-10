@@ -407,7 +407,7 @@
       padding: 2px $x-small;
       width: max-content;
     }
-    
+
     .modal-content {
       border: none;
       padding: $big 0;
@@ -445,6 +445,7 @@
       li {
         background-color: $color-gray-10;
         border-radius: 50%;
+        cursor: pointer;
         height: $small;
         margin-left: $small;
         width: $small;

@@ -16,49 +16,55 @@
    [app.main.data.users :as du]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm :refer [input submit-button form]]
+   [app.util.dom :as dom]
    [app.util.router :as rt]
    [app.util.timers :as tm]
    [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]))
 
+
+(mf/defc navigation-bullets
+  [{:keys [slide navigate total]}]
+  [:ul.step-dots
+   (for [i (range total)]
+     [:li {:class (dom/classnames :current (= slide i))
+           :on-click #(navigate i)}])])
+
+(mf/defc onboarding-start
+  [{:keys [next] :as props}]
+  [:div.modal-container.onboarding
+   [:div.modal-left
+    [:img {:src "images/pot.png" :border "0" :alt "Penpot"}]]
+   [:div.modal-right
+    [:div.modal-title
+     [:h2 "Welcome to Penpot!"]]
+    [:span.release "Alpha version 1.0"]
+    [:div.modal-content
+     [:p "We are very happy to introduce you to the very first Alpha 1.0 release."]
+     [:p "Penpot is still at development stage and there will be constant updates. We hope you enjoy the first stable version."]]
+    [:div.modal-navigation
+     [:button.btn-secondary {:on-click next} "Continue"]]]
+   [:img.deco {:src "images/deco-left.png" :border "0"}]
+   [:img.deco.right {:src "images/deco-right.png" :border "0"}]])
+
+(mf/defc onboarding-opensource
+  [{:keys [next] :as props}]
+  [:div.modal-container.onboarding.black
+   [:div.modal-left
+    [:img {:src "images/open-source.svg" :border "0" :alt "Open Source"}]]
+   [:div.modal-right
+    [:div.modal-title
+     [:h2 "Open Source Contributor?"]]
+    [:div.modal-content
+     [:p "Penpot is Open Source, made by and for the community. If you want to collaborate, you are more than welcome!"]
+     [:p "You can access the " [:a {:href "https://github.com/penpot" :target "_blank"} "project on github"] " and follow the contribution instructions :)"]]
+    [:div.modal-navigation
+     [:button.btn-secondary {:on-click next} "Continue"]]]])
+
 (defmulti render-slide :slide)
 
-(defmethod render-slide :start
-  [{:keys [navigate] :as props}]
-  (mf/html
-   [:div.modal-container.onboarding
-    [:div.modal-left
-     [:img {:src "images/pot.png" :border "0" :alt "Penpot"}]]
-    [:div.modal-right
-     [:div.modal-title
-      [:h2 "Welcome to Penpot!"]]
-     [:span.release "Alpha version 1.0"]
-     [:div.modal-content
-      [:p "We are very happy to introduce you to the very first Alpha 1.0 release."]
-      [:p "Penpot is still at development stage and there will be constant updates. We hope you enjoy the first stable version."]]
-     [:div.modal-navigation
-      [:button.btn-secondary {:on-click #(navigate :opensource)} "Continue"]]]
-    [:img.deco {:src "images/deco-left.png" :border "0"}]
-    [:img.deco.right {:src "images/deco-right.png" :border "0"}]]))
-
-
-(defmethod render-slide :opensource
-  [{:keys [navigate] :as props}]
-  (mf/html
-   [:div.modal-container.onboarding.black
-    [:div.modal-left
-     [:img {:src "images/open-source.svg" :border "0" :alt "Open Source"}]]
-    [:div.modal-right
-     [:div.modal-title
-      [:h2 "Open Source Contributor?"]]
-     [:div.modal-content
-      [:p "Penpot is Open Source, made by and for the community. If you want to collaborate, you are more than welcome!"]
-      [:p "You can access the " [:a {:href "https://github.com/penpot" :target "_blank"} "project on github"] " and follow the contribution instructions :)"]]
-     [:div.modal-navigation
-      [:button.btn-secondary {:on-click #(navigate :feature1)} "Continue"]]]]))
-
-(defmethod render-slide :feature1
-  [{:keys [navigate skip] :as props}]
+(defmethod render-slide 0
+  [{:keys [navigate skip slide] :as props}]
   (mf/html
    [:div.modal-container.onboarding.feature
     [:div.modal-left
@@ -70,16 +76,15 @@
       [:p "Create beautiful user interfaces in collaboration with all team members."]
       [:p "Maintain consistency at scale with components, libraries and design systems."]]
      [:div.modal-navigation
-      [:button.btn-secondary {:on-click #(navigate :feature2)} "Continue"]
+      [:button.btn-secondary {:on-click #(navigate 1)} "Continue"]
       [:span.skip {:on-click skip} "Skip"]
-      [:ul.step-dots
-       [:li.current]
-       [:li]
-       [:li]
-       [:li]]]]]))
+      [:& navigation-bullets
+       {:slide slide
+        :navigate navigate
+        :total 4}]]]]))
 
-(defmethod render-slide :feature2
-  [{:keys [navigate skip] :as props}]
+(defmethod render-slide 1
+  [{:keys [navigate slide skip] :as props}]
   (mf/html
    [:div.modal-container.onboarding.feature
     [:div.modal-left
@@ -91,16 +96,15 @@
       [:p "Create rich interactions to mimic the product behaviour."]
       [:p "Share to stakeholders, present proposals to your team and start user testing with your designs, all in one place."]]
      [:div.modal-navigation
-      [:button.btn-secondary {:on-click #(navigate :feature3)} "Continue"]
+      [:button.btn-secondary {:on-click #(navigate 2)} "Continue"]
       [:span.skip {:on-click skip} "Skip"]
-      [:ul.step-dots
-       [:li]
-       [:li.current]
-       [:li]
-       [:li]]]]]))
+      [:& navigation-bullets
+       {:slide slide
+        :navigate navigate
+        :total 4}]]]]))
 
-(defmethod render-slide :feature3
-  [{:keys [navigate skip] :as props}]
+(defmethod render-slide 2
+  [{:keys [navigate slide skip] :as props}]
   (mf/html
    [:div.modal-container.onboarding.feature
     [:div.modal-left
@@ -111,16 +115,15 @@
      [:div.modal-content
       [:p "All team members working simultaneously with real time design multiplayer and centralised comments, ideas and feedback right over the designs."]]
      [:div.modal-navigation
-      [:button.btn-secondary {:on-click #(navigate :feature4)} "Continue"]
+      [:button.btn-secondary {:on-click #(navigate 3)} "Continue"]
       [:span.skip {:on-click skip} "Skip"]
-      [:ul.step-dots
-       [:li]
-       [:li]
-       [:li.current]
-       [:li]]]]]))
+      [:& navigation-bullets
+       {:slide slide
+        :navigate navigate
+        :total 4}]]]]))
 
-(defmethod render-slide :feature4
-  [{:keys [navigate skip] :as props}]
+(defmethod render-slide 3
+  [{:keys [navigate slide skip] :as props}]
   (mf/html
    [:div.modal-container.onboarding.feature
     [:div.modal-left
@@ -132,13 +135,11 @@
       [:p "Sync the design and code of all your components and styles and get code snippets."]
       [:p "Get and provide code specifications like markup (SVG, HTML) or styles (CSS, Less, Stylus…)."]]
      [:div.modal-navigation
-      [:button.btn-secondary {:on-click skip} "Continue"]
-      [:span.skip {:on-click skip} "Skip"]
-      [:ul.step-dots
-       [:li]
-       [:li]
-       [:li]
-       [:li.current]]]]]))
+      [:button.btn-secondary {:on-click skip} "Start"]
+      [:& navigation-bullets
+       {:slide slide
+        :navigate navigate
+        :total 4}]]]]))
 
 (mf/defc onboarding-modal
   {::mf/register modal/components
@@ -168,11 +169,14 @@
 
     [:div.modal-overlay
      [:div.animated {:class @klass}
-      (render-slide
-       (assoc props
-              :slide @slide
-              :navigate navigate
-              :skip skip))]]))
+      (case @slide
+        :start      [:& onboarding-start {:next #(navigate :opensource)}]
+        :opensource [:& onboarding-opensource {:next #(navigate 0)}]
+        (render-slide
+         (assoc props
+                :slide @slide
+                :navigate navigate
+                :skip skip)))]]))
 
 (s/def ::name ::us/not-empty-string)
 (s/def ::team-form
