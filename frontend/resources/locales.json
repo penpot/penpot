@@ -1405,6 +1405,15 @@
       "es" : "Salir"
     }
   },
+  "labels.feedback" : {
+    "used-in" : [ "src/app/main/ui/settings.cljs:31", "src/app/main/ui/dashboard/sidebar.cljs:456" ],
+    "translations" : {
+      "en" : "Give feedback",
+      "fr" : "Donnez votre avis",
+      "ru" : "Дать обратную связь",
+      "es" : "Danos tu opinión"
+    }
+  },
   "labels.members" : {
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:299", "src/app/main/ui/dashboard/team.cljs:60", "src/app/main/ui/dashboard/team.cljs:66" ],
     "translations" : {

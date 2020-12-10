@@ -453,7 +453,11 @@
         [:span.text (t locale "labels.password")]]
        [:li {:on-click (partial on-click (da/logout))}
         [:span.icon i/exit]
-        [:span.text (t locale "labels.logout")]]]]]
+        [:span.text (t locale "labels.logout")]]
+       [:li.feedback
+        [:span.icon i/msg-info]
+        [:a.text {:href "https://github.com/penpot/penpot/discussions" :target "_blank"} (t locale "labels.feedback")]
+        [:span.primary-badge "ALPHA"]]]]]
 
      (when (and team profile)
        [:& comments-section {:profile profile
