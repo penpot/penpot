@@ -370,7 +370,8 @@
     display: flex;
     flex-grow: 1;
 
-    span {
+    span,
+    a {
       @include text-ellipsis;
       color: $color-black;
       margin: 10px 5px;
@@ -396,7 +397,6 @@
     left: 15px;
     bottom: 45px;
     min-width: 189px;
-    width: 170px;
 
     @include animation(0,.2s,fadeInUp);
 
@@ -412,6 +412,19 @@
         height: 12px;
         width: 12px;
       }
+
+      &.feedback {
+        border-top: 1px solid $color-gray-10;
+      }
     }
   }
+}
+
+span.primary-badge {
+  border: 1px solid $color-primary;
+  border-radius: 2px;
+  font-size: $fs9 !important;
+  font-weight: bold;
+  color: $color-primary !important;
+  padding: 2px 2px;
 }
