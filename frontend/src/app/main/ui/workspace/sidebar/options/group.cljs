@@ -13,7 +13,6 @@
    [rumext.alpha :as mf]
    [app.common.attrs :as attrs]
    [app.common.geom.shapes :as geom]
-   [app.common.pages-helpers :as cph]
    [app.main.refs :as refs]
    [app.main.data.workspace.texts :as dwt]
    [app.main.ui.workspace.sidebar.options.multiple :refer [get-shape-attrs]]

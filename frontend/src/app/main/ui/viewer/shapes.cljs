@@ -13,7 +13,6 @@
    [rumext.alpha :as mf]
    [app.common.data :as d]
    [app.common.pages :as cp]
-   [app.common.pages-helpers :as cph]
    [app.main.data.viewer :as dv]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -174,7 +173,7 @@
         update-fn    #(assoc-in %1 [%2 :modifiers :displacement] modifier)
 
         frame-id     (:id frame)
-        modifier-ids (d/concat [frame-id] (cph/get-children frame-id objects))
+        modifier-ids (d/concat [frame-id] (cp/get-children frame-id objects))
         objects      (reduce update-fn objects modifier-ids)
         frame        (assoc-in frame [:modifiers :displacement] modifier)
 

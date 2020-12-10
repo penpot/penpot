@@ -15,7 +15,6 @@
    [app.util.dom :as dom]
    [app.common.data :as d]
    [app.common.pages :as cp]
-   [app.common.pages-helpers :as cph]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
@@ -141,7 +140,7 @@
                          (gmt/translate-matrix))
 
         update-fn    #(assoc-in %1 [%2 :modifiers :displacement] modifier)
-        modifier-ids (d/concat [frame-id] (cph/get-children frame-id objects))]
+        modifier-ids (d/concat [frame-id] (cp/get-children frame-id objects))]
     (reduce update-fn objects modifier-ids)))
 
 (defn make-vbox [frame]

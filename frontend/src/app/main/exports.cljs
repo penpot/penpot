@@ -14,7 +14,6 @@
    [cuerdas.core :as str]
    [app.common.uuid :as uuid]
    [app.common.pages :as cp]
-   [app.common.pages-helpers :as cph]
    [app.common.math :as mth]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.align :as gal]
@@ -43,7 +42,7 @@
 
 (defn- calculate-dimensions
   [{:keys [objects] :as data} vport]
-  (let [shapes (cph/select-toplevel-shapes objects {:include-frames? true})
+  (let [shapes (cp/select-toplevel-shapes objects {:include-frames? true})
         to-finite (fn [val fallback] (if (not (mth/finite? val)) fallback val))
         rect (->> (gsh/selection-rect shapes)
                   (gal/adjust-to-viewport vport))]
@@ -144,7 +143,7 @@
 
         frame-id (:id frame)
 
-        modifier-ids (concat [frame-id] (cph/get-children frame-id objects))
+        modifier-ids (concat [frame-id] (cp/get-children frame-id objects))
         update-fn #(assoc-in %1 [%2 :modifiers :displacement] modifier)
         objects (reduce update-fn objects modifier-ids)
         frame (assoc-in frame [:modifiers :displacement] modifier)
@@ -174,7 +173,7 @@
 
         group-id (:id group)
 
-        modifier-ids (concat [group-id] (cph/get-children group-id objects))
+        modifier-ids (concat [group-id] (cp/get-children group-id objects))
         update-fn #(assoc-in %1 [%2 :modifiers :displacement] modifier)
         objects (reduce update-fn objects modifier-ids)
         group (assoc-in group [:modifiers :displacement] modifier)

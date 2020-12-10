@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.common.pages-helpers
+(ns app.common.pages.helpers
   (:require
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]

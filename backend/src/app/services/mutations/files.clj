@@ -11,7 +11,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.pages :as cp]
-   [app.common.pages-migrations :as pmg]
+   [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cfg]

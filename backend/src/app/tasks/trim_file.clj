@@ -9,7 +9,7 @@
 
 (ns app.tasks.trim-file
   (:require
-   [app.common.pages-migrations :as pmg]
+   [app.common.pages.migrations :as pmg]
    [app.config :as cfg]
    [app.db :as db]
    [app.tasks :as tasks]

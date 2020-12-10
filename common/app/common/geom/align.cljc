@@ -19,7 +19,7 @@
 
 (declare calc-align-pos)
 
-;; Duplicated from pages-helpers to remove cyclic dependencies
+;; Duplicated from pages/helpers to remove cyclic dependencies
 (defn- get-children [id objects]
   (let [shapes (vec (get-in objects [id :shapes]))]
     (if shapes

@@ -15,7 +15,6 @@
    [potok.core :as ptk]
    [app.common.data :as d]
    [app.common.pages :as cp]
-   [app.common.pages-helpers :as cph]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.worker :as uw]
@@ -168,7 +167,7 @@
 
 (defn get-frame-at-point
   [objects point]
-  (let [frames (cph/select-frames objects)]
+  (let [frames (cp/select-frames objects)]
     (d/seek #(gsh/has-point? % point) frames)))
 
 
@@ -366,7 +365,7 @@
       (let [expand-fn (fn [expanded]
                         (merge expanded
                           (->> ids
-                               (map #(cph/get-parents % objects))
+                               (map #(cp/get-parents % objects))
                                flatten
                                (filter #(not= % uuid/zero))
                                (map (fn [id] {id true}))
@@ -423,7 +422,7 @@
   (us/assert ::coll-of-uuid ids)
   (us/assert fn? f)
   (letfn [(impl-get-children [objects id]
-            (cons id (cph/get-children id objects)))
+            (cons id (cp/get-children id objects)))
 
           (impl-gen-changes [objects page-id ids]
             (loop [sids (seq ids)
@@ -537,7 +536,7 @@
             frame-id (if (= :frame (:type attrs))
                        uuid/zero
                        (or (:frame-id attrs)
-                           (cph/frame-id-by-position objects attrs)))
+                           (cp/frame-id-by-position objects attrs)))
 
             shape    (merge
                       (if (= :frame (:type shape))

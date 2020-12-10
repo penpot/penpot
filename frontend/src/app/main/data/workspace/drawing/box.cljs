@@ -14,7 +14,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.uuid :as uuid]
-   [app.common.pages-helpers :as cph]
+   [app.common.pages :as cp]
    [app.main.data.workspace.common :as dwc]
    [app.main.snap :as snap]
    [app.main.streams :as ms]
@@ -62,7 +62,7 @@
             objects (dwc/lookup-page-objects state page-id)
             layout  (get state :workspace-layout)
 
-            frames  (cph/select-frames objects)
+            frames  (cp/select-frames objects)
             fid     (or (->> frames
                              (filter #(gsh/has-point? % initial))
                              first

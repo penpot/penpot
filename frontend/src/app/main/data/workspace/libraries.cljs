@@ -12,7 +12,6 @@
    [app.common.data :as d]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.common.pages-helpers :as cph]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
    [app.main.data.messages :as dm]
@@ -303,7 +302,7 @@
   (ptk/reify ::duplicate-component
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [component      (cph/get-component id
+      (let [component      (cp/get-component id
                                               nil
                                               (get state :workspace-data)
                                               nil)
@@ -365,7 +364,7 @@
             objects   (dwc/lookup-page-objects state page-id)
             unames    (atom (dwc/retrieve-used-names objects))
 
-            frame-id (cph/frame-id-by-position objects (gpt/add orig-pos delta))
+            frame-id (cp/frame-id-by-position objects (gpt/add orig-pos delta))
 
             update-new-shape
             (fn [new-shape original-shape]
@@ -405,7 +404,7 @@
                   (dissoc :component-root?))))
 
             [new-shape new-shapes _]
-            (cph/clone-object component-shape
+            (cp/clone-object component-shape
                               nil
                               (get component :objects)
                               update-new-shape)
@@ -440,7 +439,7 @@
     (watch [_ state stream]
       (let [page-id (:current-page-id state)
             objects (dwc/lookup-page-objects state page-id)
-            shapes (cph/get-object-with-children id objects)
+            shapes (cp/get-object-with-children id objects)
 
             rchanges (map (fn [obj]
                             {:type :mod-obj
@@ -517,7 +516,7 @@
       (log/info :msg "RESET-COMPONENT of shape" :id (str id))
       (let [local-file (get state :workspace-data)
             libraries  (get state :workspace-libraries)
-            container  (cph/get-container (get state :current-page-id)
+            container  (cp/get-container (get state :current-page-id)
                                           :page
                                           local-file)
             [rchanges uchanges]

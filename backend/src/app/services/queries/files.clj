@@ -10,7 +10,7 @@
 (ns app.services.queries.files
   (:require
    [app.common.exceptions :as ex]
-   [app.common.pages-migrations :as pmg]
+   [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
    [app.db :as db]
    [app.services.queries :as sq]
