@@ -104,11 +104,6 @@
         project      (get projects project-id)]
 
     (mf/use-effect
-     (fn []
-       (when (and profile (not (get-in profile [:props :onboarding-viewed])))
-         (st/emit! (modal/show {:type :onboarding})))))
-
-    (mf/use-effect
      (mf/deps team-id)
      (st/emitf (dd/fetch-bundle {:id team-id})))
 
