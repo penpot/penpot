@@ -233,7 +233,9 @@
                  ctrl? (kbd/ctrl? event)
                  shift? (kbd/shift? event)
                  alt? (kbd/alt? event)]
-             (st/emit! (ms/->MouseEvent :down ctrl? shift? alt?))
+             (when (= 1 (.-which event))
+               (st/emit! (ms/->MouseEvent :down ctrl? shift? alt?)))
+
              (cond
                (and (= 1 (.-which event)) (not edition))
                (if drawing-tool
@@ -259,7 +261,8 @@
                  ctrl? (kbd/ctrl? event)
                  shift? (kbd/shift? event)
                  alt? (kbd/alt? event)]
-             (st/emit! (ms/->MouseEvent :up ctrl? shift? alt?))
+             (when (= 1 (.-which event))
+               (st/emit! (ms/->MouseEvent :up ctrl? shift? alt?)))
 
              (when (= 2 (.-which event))
                (do

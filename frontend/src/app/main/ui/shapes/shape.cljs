@@ -25,11 +25,14 @@
         children  (obj/get props "children")
         render-id (mf/use-memo #(str (uuid/next)))
         filter-id (str "filter_" render-id)
+        styles    (cond-> (obj/new)
+                    (:blocked shape) (obj/set! "pointerEvents" "none"))
         group-props (-> (obj/clone props)
                         (obj/without ["shape" "children"])
                         (obj/set! "id" (str "shape-" (:id shape)))
                         (obj/set! "className" (str "shape " (:type shape)))
-                        (obj/set! "filter" (filters/filter-str filter-id shape)))]
+                        (obj/set! "filter" (filters/filter-str filter-id shape))
+                        (obj/set! "style" styles))]
     [:& (mf/provider muc/render-ctx) {:value render-id}
      [:> :g group-props
       [:defs
