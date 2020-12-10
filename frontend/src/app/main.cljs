@@ -51,19 +51,11 @@
 
 (defn on-navigate
   [router path]
-  (let [match   (match-path router path)
-        profile (:profile storage)
-        authed? (and (not (nil? profile))
-                     (not= (:id profile) uuid/zero))]
-
+  (let [match   (match-path router path)]
     (cond
-      (and (or (= path "")
-               (nil? match))
-           (not authed?))
+      (or (= path "")
+          (nil? match))
       (st/emit! (rt/nav :auth-login))
-
-      (and (nil? match) authed?)
-      (st/emit! (rt/nav :dashboard-projects {:team-id (:default-team-id profile)}))
 
       (nil? match)
       (st/emit! (rt/nav :not-found))

@@ -47,7 +47,7 @@
                   (.replace js/location redirect-uri)))))
 
 (mf/defc login-form
-  [{:keys [locale] :as props}]
+  []
   (let [error? (mf/use-state false)
         form   (fm/use-form :spec ::login-form
                             :inital {})
@@ -79,7 +79,7 @@
      (when @error?
        [:& msgs/inline-banner
         {:type :warning
-         :content (t locale "errors.auth.unauthorized")
+         :content (tr "errors.auth.unauthorized")
          :on-close #(reset! error? false)}])
 
      [:& fm/form {:on-submit on-submit :form form}
@@ -89,43 +89,42 @@
          :type "text"
          :tab-index "2"
          :help-icon i/at
-         :label (t locale "auth.email")}]]
+         :label (tr "auth.email")}]]
       [:div.fields-row
        [:& fm/input
         {:type "password"
          :name :password
          :tab-index "3"
          :help-icon i/eye
-         :label (t locale "auth.password")}]]
+         :label (tr "auth.password")}]]
       [:& fm/submit-button
-       {:label (t locale "auth.login-submit")
+       {:label (tr "auth.login-submit")
         :on-click on-submit}]
       (when cfg/login-with-ldap
         [:& fm/submit-button
-         {:label (t locale "auth.login-with-ldap-submit")
+         {:label (tr "auth.login-with-ldap-submit")
           :on-click on-submit}])]]))
 
 (mf/defc login-page
-  [{:keys [locale] :as props}]
-
+  []
   [:div.generic-form.login-form
    [:div.form-container
-    [:h1 (t locale "auth.login-title")]
-    [:div.subtitle (t locale "auth.login-subtitle")]
+    [:h1 (tr "auth.login-title")]
+    [:div.subtitle (tr "auth.login-subtitle")]
 
-    [:& login-form {:locale locale}]
+    [:& login-form {}]
 
     [:div.links
      [:div.link-entry
       [:a {:on-click #(st/emit! (rt/nav :auth-recovery-request))
            :tab-index "5"}
-       (t locale "auth.forgot-password")]]
+       (tr "auth.forgot-password")]]
 
      [:div.link-entry
-      [:span (t locale "auth.register") " "]
+      [:span (tr "auth.register") " "]
       [:a {:on-click #(st/emit! (rt/nav :auth-register))
            :tab-index "6"}
-       (t locale "auth.register-submit")]]]
+       (tr "auth.register-submit")]]]
 
     (when cfg/google-client-id
       [:a.btn-ocean.btn-large.btn-google-auth
@@ -137,11 +136,11 @@
        {:on-click login-with-gitlab}
        [:img.logo
         {:src "/images/icons/brand-gitlab.svg"}]
-       (t locale "auth.login-with-gitlab-submit")])
+       (tr "auth.login-with-gitlab-submit")])
 
     [:div.links.demo
      [:div.link-entry
-      [:span (t locale "auth.create-demo-profile") " "]
-      [:a {:on-click #(st/emit! da/create-demo-profile)
+      [:span (tr "auth.create-demo-profile") " "]
+      [:a {:on-click (st/emitf da/create-demo-profile)
            :tab-index "6"}
-       (t locale "auth.create-demo-account")]]]]])
+       (tr "auth.create-demo-account")]]]]])
