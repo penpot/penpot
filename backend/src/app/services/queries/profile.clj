@@ -23,7 +23,6 @@
 
 (s/def ::email ::us/email)
 (s/def ::fullname ::us/string)
-(s/def ::metadata any?)
 (s/def ::old-password ::us/string)
 (s/def ::password ::us/string)
 (s/def ::path ::us/string)

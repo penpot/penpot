@@ -12,7 +12,6 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.pages :as cp]
-   [app.common.pages-helpers :as cph]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.constants :as c]
@@ -388,7 +387,7 @@
                           (conj id))]
         (-> state
             (assoc-in [:viewer-local :selected]
-                      (cph/expand-region-selection objects selection)))))))
+                      (cp/expand-region-selection objects selection)))))))
 
 (defn select-all
   []

@@ -6,24 +6,24 @@
 
 (ns app.main.data.colors
   (:require
-   [cljs.spec.alpha :as s]
-   [beicon.core :as rx]
-   [clojure.set :as set]
-   [potok.core :as ptk]
-   [app.main.streams :as ms]
    [app.common.data :as d]
+   [app.common.pages :as cp]
    [app.common.spec :as us]
+   [app.common.uuid :as uuid]
+   [app.main.data.modal :as md]
+   [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.texts :as dwt]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.main.streams :as ms]
    [app.util.color :as color]
    [app.util.i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.time :as dt]
-   [app.common.uuid :as uuid]
-   [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.texts :as dwt]
-   [app.main.data.modal :as md]
-   [app.common.pages-helpers :as cph]))
+   [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
+   [clojure.set :as set]
+   [potok.core :as ptk]))
 
 (def clear-color-for-rename
   (ptk/reify ::clear-color-for-rename
@@ -112,7 +112,7 @@
        (let [pid (:current-page-id state)
              objects (get-in state [:workspace-data :pages-index pid :objects])
              not-frame (fn [shape-id] (not= (get-in objects [shape-id :type]) :frame))
-             children (->> ids (filter not-frame) (mapcat #(cph/get-children % objects)))
+             children (->> ids (filter not-frame) (mapcat #(cp/get-children % objects)))
              ids (into ids children)
 
              is-text? #(= :text (:type (get objects %)))
@@ -141,7 +141,7 @@
       (let [pid (:current-page-id state)
             objects (get-in state [:workspace-data :pages-index pid :objects])
             not-frame (fn [shape-id] (not= (get-in objects [shape-id :type]) :frame))
-            children (->> ids (filter not-frame) (mapcat #(cph/get-children % objects)))
+            children (->> ids (filter not-frame) (mapcat #(cp/get-children % objects)))
             ids (into ids children)
 
             update-fn (fn [s]

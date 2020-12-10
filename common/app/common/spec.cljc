@@ -31,6 +31,9 @@
 (def uuid-rx
   #"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 
+(def max-safe-int (int 1e6))
+(def min-safe-int (int -1e6))
+
 ;; --- Conformers
 
 (defn- uuid-conformer
@@ -117,9 +120,6 @@
 (s/def ::fn fn?)
 (s/def ::point gpt/point?)
 (s/def ::id ::uuid)
-
-(def max-safe-int 1000000)
-(def min-safe-int -1000000)
 
 (s/def ::safe-integer
   #(and

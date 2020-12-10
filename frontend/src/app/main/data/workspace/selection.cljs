@@ -18,7 +18,6 @@
    [app.common.geom.shapes :as geom]
    [app.common.math :as mth]
    [app.common.pages :as cp]
-   [app.common.pages-helpers :as cph]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.common :as dwc]
@@ -129,7 +128,7 @@
                                                               :pages-index page-id
                                                               :objects shape-id
                                                               :blocked] false)))]
-        (rx/of (->> (cph/select-toplevel-shapes objects)
+        (rx/of (->> (cp/select-toplevel-shapes objects)
                     (map :id)
                     (filter is-not-blocked)
                     (into lks/empty-linked-set)
@@ -235,7 +234,7 @@
         name        (dwc/generate-unique-name names (:name obj))
         renamed-obj (assoc obj :id id :name name)
         moved-obj   (geom/move renamed-obj delta)
-        frames      (cph/select-frames objects)
+        frames      (cp/select-frames objects)
         parent-id   (or parent-id frame-id)
 
         children-changes

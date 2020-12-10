@@ -14,7 +14,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
-   [app.common.pages-helpers :as cph]
+   [app.common.pages :as cp]
    [app.main.data.viewer :as dv]
    [app.main.data.comments :as dcm]
    [app.main.refs :as refs]
@@ -143,7 +143,7 @@
 
         update-fn     #(assoc-in %1 [%2 :modifiers :displacement] modifier)
 
-        objects       (->> (d/concat [frame-id] (cph/get-children frame-id objects))
+        objects       (->> (d/concat [frame-id] (cp/get-children frame-id objects))
                            (reduce update-fn objects))
 
         interactions? (:interactions-show? state)

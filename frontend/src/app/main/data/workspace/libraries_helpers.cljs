@@ -12,7 +12,7 @@
    [cljs.spec.alpha :as s]
    [app.common.spec :as us]
    [app.common.data :as d]
-   [app.common.pages-helpers :as cph]
+   [app.common.pages :as cph] ;; TODO: remove this namespace
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
    [app.common.pages :as cp]

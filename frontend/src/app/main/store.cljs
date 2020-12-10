@@ -12,7 +12,7 @@
    [potok.core :as ptk]
    [cuerdas.core :as str]
    [app.common.data :as d]
-   [app.common.pages-helpers :as cph]
+   [app.common.pages :as cp]
    [app.common.uuid :as uuid]
    [app.util.storage :refer [storage]]
    [app.util.debug :refer [debug? debug-exclude-events logjs]]))
@@ -119,7 +119,7 @@
              (show-component [shape objects]
                (if (nil? (:shape-ref shape))
                  ""
-                 (let [root-shape        (cph/get-root-shape shape objects)
+                 (let [root-shape        (cp/get-root-shape shape objects)
                        component-id      (when root-shape (:component-id root-shape))
                        component-file-id (when root-shape (:component-file root-shape))
                        component-file    (when component-file-id (get libraries component-file-id))

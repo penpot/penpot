@@ -15,7 +15,6 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
-   [app.common.pages-helpers :as cph]
    [app.common.spec :as us]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.selection :as dws]
@@ -242,7 +241,7 @@
       (let [position @ms/mouse-position
             page-id (:current-page-id state)
             objects (dwc/lookup-page-objects state page-id)
-            frame-id (cph/frame-id-by-position objects position)
+            frame-id (cp/frame-id-by-position objects position)
 
             moving-shapes (->> ids
                                (map #(get objects %))
@@ -399,19 +398,11 @@
                (update-in objects [shape-id :modifiers] #(merge % modifiers)))
 
              ;; ID's + Children but remove frame children if the flag is set to false
-             ids-with-children (concat ids (mapcat #(cph/get-children % objects)
+             ids-with-children (concat ids (mapcat #(cp/get-children % objects)
                                                    (filter not-frame-id? ids)))]
 
          (d/update-in-when state [:workspace-data :pages-index page-id :objects]
                            #(reduce update-shape % ids-with-children)))))))
-
-(defn rotation-modifiers [center shape angle]
-  (let [displacement (let [shape-center (gsh/center-shape shape)]
-                       (-> (gmt/matrix)
-                           (gmt/rotate angle center)
-                           (gmt/rotate (- angle) shape-center)))]
-    {:rotation angle
-     :displacement displacement}))
 
 
 ;; Set-rotation is custom because applies different modifiers to each
@@ -423,14 +414,14 @@
 
   ([delta-rotation shapes center]
    (letfn [(rotate-shape [objects angle shape center]
-             (update-in objects [(:id shape) :modifiers] merge (rotation-modifiers center shape angle)))
+             (update-in objects [(:id shape) :modifiers] merge (gsh/rotation-modifiers center shape angle)))
 
            (rotate-around-center [objects angle center shapes]
              (reduce #(rotate-shape %1 angle %2 center) objects shapes))
 
            (set-rotation [objects]
              (let [id->obj #(get objects %)
-                   get-children (fn [shape] (map id->obj (cph/get-children (:id shape) objects)))
+                   get-children (fn [shape] (map id->obj (cp/get-children (:id shape) objects)))
                    shapes (concat shapes (mapcat get-children shapes))]
                (rotate-around-center objects delta-rotation center shapes)))]
 
@@ -452,7 +443,7 @@
             objects1 (get-in state [:workspace-data :pages-index page-id :objects])
 
             ;; ID's + Children ID's
-            ids-with-children (d/concat [] (mapcat #(cph/get-children % objects1) ids) ids)
+            ids-with-children (d/concat [] (mapcat #(cp/get-children % objects1) ids) ids)
 
             ;; For each shape applies the modifiers by transforming the objects
             update-shape #(update %1 %2 gsh/transform-shape)

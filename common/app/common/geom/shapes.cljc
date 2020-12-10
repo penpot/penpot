@@ -254,6 +254,15 @@
         (assoc :selrect selrect
                :points points))))
 
+(defn rotation-modifiers
+  [center shape angle]
+  (let [displacement (let [shape-center (gco/center-shape shape)]
+                       (-> (gmt/matrix)
+                           (gmt/rotate angle center)
+                           (gmt/rotate (- angle) shape-center)))]
+    {:rotation angle
+     :displacement displacement}))
+
 
 ;; EXPORTS
 (d/export gco/center-shape)

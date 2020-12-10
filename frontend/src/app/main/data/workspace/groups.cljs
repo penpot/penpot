@@ -3,7 +3,6 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
-   [app.common.pages-helpers :as cph]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.selection :as dws]
    [beicon.core :as rx]
@@ -14,7 +13,7 @@
   (->> selected
        (map #(get objects %))
        (filter #(not= :frame (:type %)))
-       (map #(assoc % ::index (cph/position-on-parent (:id %) objects)))
+       (map #(assoc % ::index (cp/position-on-parent (:id %) objects)))
        (sort-by ::index)))
 
 (defn- make-group
@@ -61,7 +60,7 @@
 (defn prepare-remove-group
   [page-id group objects]
   (let [shapes    (:shapes group)
-        parent-id (cph/get-parent (:id group) objects)
+        parent-id (cp/get-parent (:id group) objects)
         parent    (get objects parent-id)
         index-in-parent (->> (:shapes parent)
                              (map-indexed vector)

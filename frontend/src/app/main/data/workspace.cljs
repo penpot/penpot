@@ -18,7 +18,6 @@
    [app.common.geom.align :as gal]
    [app.common.math :as mth]
    [app.common.pages :as cp]
-   [app.common.pages-helpers :as cph]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
@@ -346,7 +345,7 @@
           (initialize [state local]
             (let [page-id (:current-page-id state)
                   objects (dwc/lookup-page-objects state page-id)
-                  shapes  (cph/select-toplevel-shapes objects {:include-frames? true})
+                  shapes  (cp/select-toplevel-shapes objects {:include-frames? true})
                   srect   (gsh/selection-rect shapes)
                   local   (assoc local :vport size :zoom 1)]
               (cond
@@ -517,7 +516,7 @@
     (update [_ state]
       (let [page-id (:current-page-id state)
             objects (dwc/lookup-page-objects state page-id)
-            shapes  (cph/select-toplevel-shapes objects {:include-frames? true})
+            shapes  (cp/select-toplevel-shapes objects {:include-frames? true})
             srect   (gsh/selection-rect shapes)]
 
         (if (or (mth/nan? (:width srect))
@@ -572,7 +571,7 @@
 
             page-id (:current-page-id state)
             frame-id (-> (dwc/lookup-page-objects state page-id)
-                         (cph/frame-id-by-position {:x frame-x :y frame-y}))
+                         (cp/frame-id-by-position {:x frame-x :y frame-y}))
 
             shape (-> (cp/make-minimal-shape type)
                       (merge data)
@@ -686,8 +685,8 @@
             rchanges
             (d/concat
               (reduce (fn [res id]
-                        (let [children (cph/get-children id objects)
-                              parents  (cph/get-parents id objects)
+                        (let [children (cp/get-children id objects)
+                              parents  (cp/get-parents id objects)
                               del-change #(array-map
                                             :type :del-obj
                                             :page-id page-id
@@ -713,15 +712,15 @@
             uchanges
             (d/concat
               (reduce (fn [res id]
-                        (let [children    (cph/get-children id objects)
-                              parents     (cph/get-parents id objects)
+                        (let [children    (cp/get-children id objects)
+                              parents     (cp/get-parents id objects)
                               parent      (get objects (first parents))
                               add-change  (fn [id]
                                             (let [item (get objects id)]
                                               {:type :add-obj
                                                :id (:id item)
                                                :page-id page-id
-                                               :index (cph/position-on-parent id objects)
+                                               :index (cp/position-on-parent id objects)
                                                :frame-id (:frame-id item)
                                                :parent-id (:parent-id item)
                                                :obj item}))]
@@ -802,7 +801,7 @@
                                 :frame-id (:frame-id obj)
                                 :page-id page-id
                                 :shapes [id]
-                                :index (cph/position-on-parent id objects)}))
+                                :index (cp/position-on-parent id objects)}))
                             selected)]
         ;; TODO: maybe missing the :reg-objects event?
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
@@ -826,7 +825,7 @@
                        (if (nil? ids)
                          (vec res)
                          (recur
-                          (conj res (cph/get-parent (first ids) objects))
+                          (conj res (cp/get-parent (first ids) objects))
                           (next ids))))
 
             groups-to-unmask
@@ -869,7 +868,7 @@
                                          {:type :mov-objects
                                           :parent-id (:parent-id obj)
                                           :page-id page-id
-                                          :index (cph/position-on-parent id objects)
+                                          :index (cp/position-on-parent id objects)
                                           :shapes [id]})))
                                [] (reverse ids))
                        [{:type :reg-objects
@@ -1289,7 +1288,7 @@
             [frame-id delta] (if (selected-frame? state)
                                [(first page-selected)
                                 (get page-objects (first page-selected))]
-                               [(cph/frame-id-by-position page-objects mouse-pos)
+                               [(cp/frame-id-by-position page-objects mouse-pos)
                                 (gpt/subtract mouse-pos orig-pos)])
 
             objects (d/mapm (fn [_ v] (assoc v :frame-id frame-id :parent-id frame-id)) objects)
@@ -1328,7 +1327,7 @@
             height 16
             page-id (:current-page-id state)
             frame-id (-> (dwc/lookup-page-objects state page-id)
-                         (cph/frame-id-by-position @ms/mouse-position))
+                         (cp/frame-id-by-position @ms/mouse-position))
             shape (gsh/setup-selrect
                    {:id id
                     :type :text

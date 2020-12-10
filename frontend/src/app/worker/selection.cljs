@@ -15,7 +15,6 @@
    [app.common.exceptions :as ex]
    [app.common.geom.shapes :as geom]
    [app.common.pages :as cp]
-   [app.common.pages-helpers :as cph]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.util.quadtree :as qdt]
@@ -65,7 +64,7 @@
 
 (defn- create-index
   [objects]
-  (let [shapes (cph/select-toplevel-shapes objects {:include-frames? true})
+  (let [shapes (cp/select-toplevel-shapes objects {:include-frames? true})
         bounds (geom/selection-rect shapes)
         bounds #js {:x (:x bounds)
                     :y (:y bounds)

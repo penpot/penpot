@@ -187,7 +187,6 @@
 (s/def ::version ::us/integer)
 (s/def ::revn ::us/integer)
 (s/def ::ordering ::us/integer)
-(s/def ::metadata (s/nilable ::cp/metadata))
 (s/def ::data ::cp/data)
 
 (s/def ::file ::dd/file)
