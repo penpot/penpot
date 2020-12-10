@@ -63,13 +63,11 @@
   [:div.dashboard-content
    (case section
      :dashboard-projects
-     [:& projects-section {:team team
-                           :projects projects}]
+     [:& projects-section {:team team :projects projects}]
 
      :dashboard-files
      (when project
        [:& files-section {:team team :project project}])
-
 
      :dashboard-search
      [:& search-page {:team team

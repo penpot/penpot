@@ -247,7 +247,7 @@
         children-changes
         (loop [names names
                result []
-               cid (first (:shapes obj))
+               cid  (first (:shapes obj))
                cids (rest (:shapes obj))]
           (if (nil? cid)
             result
