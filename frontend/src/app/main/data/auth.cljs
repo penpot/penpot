@@ -16,6 +16,7 @@
    [app.main.repo :as rp]
    [app.main.store :refer [initial-state]]
    [app.main.data.users :as du]
+   [app.main.data.modal :as modal]
    [app.main.data.messages :as dm]
    [app.util.router :as rt]
    [app.util.i18n :as i18n :refer [tr]]
@@ -28,13 +29,17 @@
 ;; --- Logged In
 
 (defn logged-in
-  [data]
+  [profile]
   (ptk/reify ::logged-in
     ptk/WatchEvent
     (watch [this state stream]
-      (let [team-id (:default-team-id data)]
-        (rx/of (du/profile-fetched data)
-               (rt/nav :dashboard-team {:team-id team-id}))))))
+      (let [team-id (:default-team-id profile)]
+        (rx/merge
+         (rx/of (du/profile-fetched profile)
+                (rt/nav :dashboard-projects {:team-id team-id}))
+         (when-not (get-in profile [:props :onboarding-viewed])
+           (->> (rx/of (modal/show {:type :onboarding}))
+                (rx/delay 1000))))))))
 
 ;; --- Login
 
@@ -60,9 +65,7 @@
         (->> (rx/timer 100)
              (rx/mapcat #(rp/mutation :login params))
              (rx/tap on-success)
-             (rx/catch (fn [err]
-                         (on-error err)
-                         (rx/empty)))
+             (rx/catch on-error)
              (rx/map logged-in))))))
 
 (defn login-from-token
