@@ -11,11 +11,12 @@
   "A http client with rx streams interface."
   (:refer-clojure :exclude [get])
   (:require
-   [cljs.core :as c]
+   [app.util.object :as obj]
+   [app.util.transit :as t]
    [beicon.core :as rx]
+   [cljs.core :as c]
    [clojure.string :as str]
-   [goog.events :as events]
-   [app.util.transit :as t])
+   [goog.events :as events])
   (:import
    [goog.net ErrorCode EventType]
    [goog.net.XhrIo ResponseType]
@@ -113,3 +114,20 @@
    (send! request nil))
   ([request options]
    (fetch request options)))
+
+(defn fetch-as-data-url
+  [url]
+  (->> (send! {:method :get :uri url} {:response-type :blob})
+       (rx/mapcat (fn [{:keys [body] :as rsp}]
+                    (let [reader (js/FileReader.)]
+                      (rx/create (fn [sink]
+                                   (obj/set! reader "onload" #(sink (reduced (.-result reader))))
+                                   (.readAsDataURL reader body))))))))
+
+
+
+(defn data-url->blob
+  [durl]
+  (->> (send! {:method :get :uri durl} {:response-type :blob})
+       (rx/map :body)
+       (rx/take 1)))

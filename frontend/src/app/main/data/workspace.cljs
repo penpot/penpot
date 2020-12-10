@@ -9,6 +9,7 @@
 
 (ns app.main.data.workspace
   (:require
+   [goog.string.path :as path]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.geom.matrix :as gmt]
@@ -44,7 +45,9 @@
    [app.util.transit :as t]
    [app.util.webapi :as wapi]
    [app.util.i18n :refer [tr] :as i18n]
+   [app.util.object :as obj]
    [app.util.dom :as dom]
+   [app.util.http :as http]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [clojure.set :as set]
@@ -1159,12 +1162,43 @@
 ;; Clipboard
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def copy-selected
-  (letfn [(prepare-selected [objects selected]
-            (let [data (reduce #(prepare %1 objects selected %2) {} selected)]
-              {:type :copied-shapes
-               :selected selected
-               :objects data}))
+
+(defn copy-selected
+  []
+  (letfn [;; Retrieve all ids of selected shapes with corresponding
+          ;; children; this is needed because each shape should be
+          ;; processed one by one because of async events (data url
+          ;; fetching).
+          (collect-object-ids [objects res id]
+            (let [obj (get objects id)]
+              (reduce (partial collect-object-ids objects)
+                      (assoc res id obj)
+                      (:shapes obj))))
+
+          ;; Prepare the shape object. Mainly needed for image shapes
+          ;; for retrieve the image data and convert it to the
+          ;; data-url.
+          (prepare-object [objects selected {:keys [type] :as obj}]
+            (let [obj (maybe-translate obj objects selected)]
+              (if (= type :image)
+                (let [path (get-in obj [:metadata :path])
+                      url  (cfg/resolve-media-path path)]
+                  (->> (http/fetch-as-data-url url)
+                       (rx/map #(assoc obj ::data %))
+                       (rx/take 1)))
+                (rx/of obj))))
+
+          ;; Collects all the items together and split images into a
+          ;; separated data structure for a more easy paste process.
+          (collect-data [res {:keys [id metadata] :as item}]
+            (let [res (update res :objects assoc id (dissoc item ::data))]
+              (if (= :image (:type item))
+                (let [img-part {:id   (:id metadata)
+                                :name (:name item)
+                                :file-name (path/baseName (:path metadata))
+                                :file-data (::data item)}]
+                  (update res :images conj img-part))
+                res)))
 
           (maybe-translate [shape objects selected]
             (if (and (not= (:type shape) :frame)
@@ -1175,13 +1209,6 @@
                 (gsh/translate-to-frame shape frame))
               shape))
 
-          (prepare [result objects selected id]
-            (let [obj (-> (get objects id)
-                          (maybe-translate objects selected))]
-              (as-> result $$
-                (assoc $$ id obj)
-                (reduce #(prepare %1 objects selected %2) $$ (:shapes obj)))))
-
           (on-copy-error [error]
             (js/console.error "Clipboard blocked:" error)
             (rx/empty))]
@@ -1191,10 +1218,16 @@
       (watch [_ state stream]
         (let [objects  (dwc/lookup-page-objects state)
               selected (get-in state [:workspace-local :selected])
-              cdata    (prepare-selected objects selected)]
-          (->> (t/encode cdata)
-               (wapi/write-to-clipboard)
-               (rx/from)
+              pdata    (reduce (partial collect-object-ids objects) {} selected)
+              initial  {:type :copied-shapes
+                        :selected selected
+                        :objects {}
+                        :images #{}}]
+          (->> (rx/from (seq (vals pdata)))
+               (rx/merge-map (partial prepare-object objects selected))
+               (rx/reduce collect-data initial)
+               (rx/map t/encode)
+               (rx/map wapi/write-to-clipboard)
                (rx/catch on-copy-error)
                (rx/ignore)))))))
 
@@ -1260,48 +1293,87 @@
 
 (defn selected-frame? [state]
   (let [selected (get-in state [:workspace-local :selected])
-        page-id (:current-page-id state)
-        objects (dwc/lookup-page-objects state page-id)]
+        page-id  (:current-page-id state)
+        objects  (dwc/lookup-page-objects state page-id)]
     (and (and (= 1 (count selected))
               (= :frame (get-in objects [(first selected) :type]))))))
 
 (defn- paste-shape
-  [{:keys [selected objects] :as data}]
-  (ptk/reify ::paste-shape
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [selected-objs (map #(get objects %) selected)
-            wrapper   (gsh/selection-rect selected-objs)
-            orig-pos  (gpt/point (:x1 wrapper) (:y1 wrapper))
-            mouse-pos @ms/mouse-position
+  [{:keys [selected objects images] :as data}]
+  (letfn [
+          ;; Given a file-id and img (part generated by the
+          ;; copy-selected event), uploads the new media.
+          (upload-media [file-id imgpart]
+            (->> (http/data-url->blob (:file-data imgpart))
+                 (rx/map
+                  (fn [blob]
+                    {:name (:name imgpart)
+                     :file-id file-id
+                     :content (list blob (:file-name imgpart))
+                     :is-local true}))
+                 (rx/mapcat #(rp/mutation! :upload-media-object %))
+                 (rx/map (fn [media]
+                           (assoc media :prev-id (:id imgpart))))))
 
-            page-id (:current-page-id state)
+          ;; Analyze the rchange and replace staled media and
+          ;; references to the previusly uploased new media-objects.
+          (process-rchange [media-idx item]
+            (if (= :image (get-in item [:obj :type]))
+              (update-in item [:obj :metadata]
+                         (fn [{:keys [id] :as mdata}]
+                           (let [mobj (get media-idx id)]
+                             (assoc mdata
+                                    :id (:id mobj)
+                                    :path (:path mobj)
+                                    :thumb-path (:thumb-path mobj)))))
+              item))
 
-            page-objects (dwc/lookup-page-objects state page-id)
-            page-selected (get-in state [:workspace-local :selected])
+          ;; Procceed with the standard shape paste procediment.
+          (do-paste [state mouse-pos media]
+            (let [media-idx     (d/index-by :prev-id media)
+                  selected-objs (map #(get objects %) selected)
+                  wrapper       (gsh/selection-rect selected-objs)
+                  orig-pos      (gpt/point (:x1 wrapper) (:y1 wrapper))
+                  page-id       (:current-page-id state)
 
-            [frame-id delta] (if (selected-frame? state)
-                               [(first page-selected)
-                                (get page-objects (first page-selected))]
-                               [(cp/frame-id-by-position page-objects mouse-pos)
-                                (gpt/subtract mouse-pos orig-pos)])
+                  page-objects  (dwc/lookup-page-objects state page-id)
+                  page-selected (get-in state [:workspace-local :selected])
 
-            objects (d/mapm (fn [_ v] (assoc v :frame-id frame-id :parent-id frame-id)) objects)
+                  [frame-id delta]
+                  (if (selected-frame? state)
+                    [(first page-selected)
+                     (get page-objects (first page-selected))]
+                    [(cph/frame-id-by-position page-objects mouse-pos)
+                     (gpt/subtract mouse-pos orig-pos)])
 
-            page-id   (:current-page-id state)
-            unames    (-> (dwc/lookup-page-objects state page-id)
-                          (dwc/retrieve-used-names))
+                  objects   (d/mapm (fn [_ v] (assoc v :frame-id frame-id :parent-id frame-id)) objects)
 
-            rchanges  (dws/prepare-duplicate-changes objects page-id unames selected delta)
-            uchanges  (mapv #(array-map :type :del-obj :page-id page-id :id (:id %))
-                            (reverse rchanges))
+                  page-id   (:current-page-id state)
+                  unames    (-> (dwc/lookup-page-objects state page-id)
+                                (dwc/retrieve-used-names))
 
-            selected (->> rchanges
-                          (filter #(selected (:old-id %)))
-                          (map #(get-in % [:obj :id]))
-                          (into (d/ordered-set)))]
-        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
-               (dwc/select-shapes selected))))))
+                  rchanges  (dws/prepare-duplicate-changes objects page-id unames selected delta)
+                  rchanges  (mapv (partial process-rchange media-idx) rchanges)
+                  uchanges  (mapv #(array-map :type :del-obj :page-id page-id :id (:id %))
+                                  (reverse rchanges))
+
+                  selected  (->> rchanges
+                                 (filter #(selected (:old-id %)))
+                                 (map #(get-in % [:obj :id]))
+                                 (into (d/ordered-set)))]
+
+              (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
+                     (dwc/select-shapes selected))))]
+    (ptk/reify ::paste-shape
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (let [file-id   (:current-file-id state)
+              mouse-pos (deref ms/mouse-position)]
+          (->> (rx/from (seq images))
+               (rx/merge-map (partial upload-media file-id))
+               (rx/reduce conj [])
+               (rx/mapcat (partial do-paste state mouse-pos))))))))
+
 
 (defn as-content [text]
   (let [paragraphs (->> (str/lines text)
@@ -1560,8 +1632,8 @@
    "k" (fn [event]
          (let [image-upload (dom/get-element "image-upload")]
            (dom/click image-upload)))
-   (c-mod "c") #(st/emit! copy-selected)
-   (c-mod "x") #(st/emit! copy-selected delete-selected)
+   (c-mod "c") #(st/emit! (copy-selected))
+   (c-mod "x") #(st/emit! (copy-selected) delete-selected)
    "escape" #(st/emit! (esc-pressed))
    "del" #(st/emit! delete-selected)
    "backspace" #(st/emit! delete-selected)

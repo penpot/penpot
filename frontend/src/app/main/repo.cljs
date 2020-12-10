@@ -93,7 +93,9 @@
   [id params]
   (let [form (js/FormData.)]
     (run! (fn [[key val]]
-            (.append form (name key) val))
+            (if (list? val)
+              (.append form (name key) (first val) (second val))
+              (.append form (name key) val)))
           (seq params))
     (send-mutation! id form)))
 
