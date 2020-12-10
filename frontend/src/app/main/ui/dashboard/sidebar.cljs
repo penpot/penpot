@@ -454,9 +454,9 @@
        [:li {:on-click (partial on-click (da/logout))}
         [:span.icon i/exit]
         [:span.text (t locale "labels.logout")]]
-       [:li.feedback
+       [:li.feedback {:on-click #(.open js/window "https://github.com/penpot/penpot/discussions" "_blank")}
         [:span.icon i/msg-info]
-        [:a.text {:href "https://github.com/penpot/penpot/discussions" :target "_blank"} (t locale "labels.feedback")]
+        [:span.text (t locale "labels.feedback")]
         [:span.primary-badge "ALPHA"]]]]]
 
      (when (and team profile)
