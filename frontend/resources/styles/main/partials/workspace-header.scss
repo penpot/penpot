@@ -171,6 +171,10 @@
       &:hover {
         background-color: $color-primary-lighter;
       }
+
+      &.feedback {
+        border-top: 1px solid $color-gray-10;
+      }
     }
   }
 
