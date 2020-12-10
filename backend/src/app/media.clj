@@ -32,7 +32,6 @@
 (defstate semaphore
   :start (Semaphore. (:image-process-max-threads cfg/config 1)))
 
-
 ;; --- Generic specs
 
 (s/def :internal.http.upload/filename ::us/string)
