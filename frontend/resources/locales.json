@@ -2377,22 +2377,13 @@
       "es" : "Desactivar alineamiento dinámico"
     }
   },
-  "workspace.header.menu.feedback" : {
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs:228" ],
-    "translations" : {
-      "en" : "Give feedback",
-      "fr" : "Donnez votre avis",
-      "ru" : "Дать обратную связь",
-      "es" : "Danos tu opinión"
-    }
-  },
   "workspace.header.menu.disable-snap-grid" : {
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:186" ],
     "translations" : {
-      "en" : "Give feedback",
+      "en" : "Disable snap to grid",
       "fr" : "Désactiver l'alignement sur la grille",
       "ru" : "Отключить привязку к сетке",
-      "es" : "Danos tu opinion"
+      "es" : "Desactivar alinear a la rejilla"
     }
   },
   "workspace.header.menu.enable-dynamic-alignment" : {
