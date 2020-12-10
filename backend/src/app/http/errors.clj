@@ -29,19 +29,18 @@
 (defmethod handle-exception :validation
   [err req]
   (let [header (get-in req [:headers "accept"])
-        edata  (ex-data err)]
+        error  (ex-data err)]
     (cond
       (and (str/starts-with? header "text/html")
-           (= :spec-validation (:code edata)))
+           (= :spec-validation (:code error)))
       {:status 400
        :headers {"content-type" "text/html"}
        :body (str "<pre style='font-size:16px'>"
-                  (with-out-str
-                    (:data edata))
+                  (:hint-verbose error)
                   "</pre>\n")}
       :else
       {:status 400
-       :body edata})))
+       :body error})))
 
 (defmethod handle-exception :ratelimit
   [_ _]

@@ -186,10 +186,16 @@
   [spec data]
   (let [result (s/conform spec data)]
     (when (= result ::s/invalid)
-      (let [edata (s/explain-data spec data)]
+      (let [edata (s/explain-data spec data)
+            nhint (with-out-str
+                    (s/explain-out edata))
+            vhint (with-out-str
+                    (expound/printer edata))]
         (throw (ex/error :type :validation
                          :code :spec-validation
-                         :data data))))
+                         :data data
+                         :hint nhint
+                         :hint-verbose vhint))))
     result))
 
 (defmacro instrument!

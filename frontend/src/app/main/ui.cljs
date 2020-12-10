@@ -214,6 +214,18 @@
    (st/emitf (dm/show {:content "Unexpected validation error (server side)."
                        :type :error
                        :timeout 5000})))
+  (when-let [explain (:hint-verbose error)]
+    (js/console.group "Server Error")
+    (js/console.error (if (map? error) (pr-str error) error))
+    (js/console.error explain)
+    (js/console.endGroup "Server Error")))
+
+(defmethod ptk/handle-error :spec-validation
+  [error]
+  (ts/schedule
+   (st/emitf (dm/show {:content "Unexpected validation error (server side)."
+                       :type :error
+                       :timeout 5000})))
   (when-let [explain (:explain error)]
     (js/console.group "Server Error")
     (js/console.error (if (map? error) (pr-str error) error))
