@@ -491,8 +491,9 @@
 
     svg {
       fill: $color-gray-20;
-      height: 8px;
-      width: 8px;
+      height: 12px;
+      margin-right: $x-small;
+      width: 12px;
     }
 
     .context-menu-items {
