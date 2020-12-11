@@ -15,6 +15,7 @@
    [app.common.pages.migrations :as pmg]
    [app.config :as cfg]
    [app.db :as db]
+   [app.metrics :as mtx]
    [app.tasks :as tasks]
    [app.util.blob :as blob]
    [app.util.time :as dt]
@@ -94,10 +95,16 @@
 
 (defn handler
   [_task]
-  (log/debug "running 'file-media-gc' task.")
   (db/with-atomic [conn db/pool]
     (loop []
       (let [files (retrieve-candidates conn)]
         (when (seq files)
           (run! (partial process-file conn) files)
           (recur))))))
+
+
+(mtx/instrument-with-summary!
+ {:var #'handler
+  :id "tasks__file_media_gc"
+  :help "Timing of task: file_media_gc"})
+

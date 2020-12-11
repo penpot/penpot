@@ -13,12 +13,13 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.tasks.clean-tasks-table]
    [app.tasks.delete-object]
    [app.tasks.delete-profile]
-   [app.tasks.maintenance]
+   [app.tasks.file-media-gc]
+   [app.tasks.file-xlog-gc]
    [app.tasks.remove-media]
    [app.tasks.sendmail]
-   [app.tasks.file-media-gc]
    [app.util.async :as aa]
    [app.util.time :as dt]
    [clojure.core.async :as a]
@@ -56,15 +57,13 @@
     :cron #app/cron "0 0 0 */1 * ? *" ;; daily
     :fn #'app.tasks.file-media-gc/handler}
 
-   {:id "maintenance/delete-executed-tasks"
+   {:id "file-xlog-gc"
     :cron #app/cron "0 0 0 */1 * ?"  ;; daily
-    :fn #'app.tasks.maintenance/delete-executed-tasks
-    :props {:max-age #app/duration "24h"}}
+    :fn #'app.tasks.file-xlog-gc/handler}
 
-   {:id "maintenance/delete-old-files-xlog"
+   {:id "clean-tasks-table"
     :cron #app/cron "0 0 0 */1 * ?"  ;; daily
-    :fn #'app.tasks.maintenance/delete-old-files-xlog
-    :props {:max-age #app/duration "12h"}}
+    :fn #'app.tasks.clean-tasks-table/handler}
    ])
 
 (defstate executor
