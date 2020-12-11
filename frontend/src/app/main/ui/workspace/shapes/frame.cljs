@@ -14,6 +14,7 @@
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.keyboard :as kbd]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.workspace.effects :as we]
@@ -44,9 +45,16 @@
   (mf/use-callback
    (mf/deps id)
    (fn [event]
+     (let [selected @refs/selected-shapes
+           selected? (contains? selected id)]
      (dom/prevent-default event)
-     (st/emit! (dw/deselect-all)
-               (dw/select-shape id)))))
+     (if selected?
+       (when (kbd/shift? event)
+         (st/emit! (dw/select-shape id true)))
+       (do
+         (when-not (or (empty? selected) (kbd/shift? event))
+           (st/emit! (dw/deselect-all)))
+         (st/emit! (dw/select-shape id))))))))
 
 ;; Ensure that the label has always the same font
 ;; size, regardless of zoom
@@ -72,7 +80,7 @@
             :height 20
             :class "workspace-frame-label"
             :transform (text-transform label-pos zoom)
-            :on-click handle-click
+            :on-mouse-down handle-click
             :on-pointer-over handle-pointer-enter
             :on-pointer-out handle-pointer-leave}
      (:name frame)]))

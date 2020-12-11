@@ -241,7 +241,7 @@
                (if drawing-tool
                  (when (not (#{:comments :path} drawing-tool))
                    (st/emit! (dd/start-drawing drawing-tool)))
-                 (st/emit! dw/handle-selection))
+                 (st/emit! (dw/handle-selection shift?)))
 
                (and (= 2 (.-which event)))
                (handle-viewport-positioning viewport-ref)))))

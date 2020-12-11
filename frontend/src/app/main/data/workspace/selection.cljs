@@ -46,7 +46,8 @@
     (update [_ state]
       (assoc-in state [:workspace-local :selrect] selrect))))
 
-(def handle-selection
+(defn handle-selection
+  [preserve?]
   (letfn [(data->selrect [data]
             (let [start (:start data)
                   stop (:stop data)
@@ -66,19 +67,20 @@
                                      (ms/mouse-up? %))
                                 stream)]
           (rx/concat
-           (rx/of (deselect-all))
-           (->> ms/mouse-position
-                (rx/scan (fn [data pos]
-                           (if data
-                             (assoc data :stop pos)
-                             {:start pos :stop pos}))
-                         nil)
-                (rx/map data->selrect)
-                (rx/filter #(or (> (:width %) 10)
-                                (> (:height %) 10)))
-                (rx/map update-selrect)
-                (rx/take-until stoper))
-           (rx/of select-shapes-by-current-selrect)))))))
+            (when-not preserve?
+              (rx/of (deselect-all)))
+            (->> ms/mouse-position
+                 (rx/scan (fn [data pos]
+                            (if data
+                              (assoc data :stop pos)
+                              {:start pos :stop pos}))
+                          nil)
+                 (rx/map data->selrect)
+                 (rx/filter #(or (> (:width %) 10)
+                                 (> (:height %) 10)))
+                 (rx/map update-selrect)
+                 (rx/take-until stoper))
+            (rx/of (select-shapes-by-current-selrect preserve?))))))))
 
 ;; --- Toggle shape's selection status (selected or deselected)
 
@@ -157,24 +159,29 @@
 
 ;; --- Select Shapes (By selrect)
 
-(def select-shapes-by-current-selrect
+(defn select-shapes-by-current-selrect
+  [preserve?]
   (ptk/reify ::select-shapes-by-current-selrect
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id (:current-page-id state)
+            selected (get-in state [:workspace-local :selected])
+            initial-set (if preserve?
+                          selected
+                          lks/empty-linked-set)
             selrect (get-in state [:workspace-local :selrect])
             is-not-blocked (fn [shape-id] (not (get-in state [:workspace-data
                                                               :pages-index page-id
                                                               :objects shape-id
                                                               :blocked] false)))]
         (rx/merge
-         (rx/of (update-selrect nil))
-         (when selrect
-           (->> (uw/ask! {:cmd :selection/query
-                          :page-id page-id
-                          :rect selrect})
-                (rx/map #(into lks/empty-linked-set (filter is-not-blocked) %))
-                (rx/map select-shapes))))))))
+          (rx/of (update-selrect nil))
+          (when selrect
+            (->> (uw/ask! {:cmd :selection/query
+                           :page-id page-id
+                           :rect selrect})
+                 (rx/map #(into initial-set (filter is-not-blocked) %))
+                 (rx/map select-shapes))))))))
 
 (defn select-inside-group
   [group-id position]
