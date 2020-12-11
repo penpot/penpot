@@ -18,7 +18,7 @@
    [app.tasks.maintenance]
    [app.tasks.remove-media]
    [app.tasks.sendmail]
-   [app.tasks.trim-file]
+   [app.tasks.file-media-gc]
    [app.util.async :as aa]
    [app.util.time :as dt]
    [clojure.core.async :as a]
@@ -52,9 +52,9 @@
     :cron #app/cron "0 0 0 */1 * ? *" ;; daily
     :fn #'app.tasks.remove-media/trim-media-storage}
 
-   {:id "trim-file"
+   {:id "file-media-gc"
     :cron #app/cron "0 0 0 */1 * ? *" ;; daily
-    :fn #'app.tasks.trim-file/handler}
+    :fn #'app.tasks.file-media-gc/handler}
 
    {:id "maintenance/delete-executed-tasks"
     :cron #app/cron "0 0 0 */1 * ?"  ;; daily
