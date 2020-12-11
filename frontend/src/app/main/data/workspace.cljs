@@ -1122,36 +1122,31 @@
 (s/def ::point gpt/point?)
 
 (defn show-context-menu
-  [{:keys [position] :as params}]
+  [{:keys [position shape] :as params}]
   (us/verify ::point position)
+  (us/verify (s/nilable ::cp/minimal-shape) shape)
   (ptk/reify ::show-context-menu
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:workspace-local :context-menu] {:position position}))))
+      (let [mdata (cond-> params
+                    (some? shape)
+                    (assoc :selected
+                           (get-in state [:workspace-local :selected])))]
+        (assoc-in state [:workspace-local :context-menu] mdata)))))
 
 (defn show-shape-context-menu
   [{:keys [position shape] :as params}]
   (us/verify ::point position)
   (us/verify ::cp/minimal-shape shape)
-  (ptk/reify ::show-context-menu
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [page-id    (:current-page-id state)
-            objects    (dwc/lookup-page-objects state page-id)
-
-            mdata {:position position
-                   :shape shape
-                   :selected (get-in state [:workspace-local :selected])}]
-        (-> state
-            (assoc-in [:workspace-local :context-menu] mdata))))
-
+  (ptk/reify ::show-shape-context-menu
     ptk/WatchEvent
     (watch [_ state stream]
       (let [selected (get-in state [:workspace-local :selected])]
-        (if (selected (:id shape))
-          (rx/empty)
-          (rx/of (dws/deselect-all)
-                 (dws/select-shape (:id shape))))))))
+        (rx/concat
+          (when-not (selected (:id shape))
+            (rx/of (dws/deselect-all)
+                   (dws/select-shape (:id shape))))
+          (rx/of (show-context-menu params)))))))
 
 (def hide-context-menu
   (ptk/reify ::hide-context-menu
