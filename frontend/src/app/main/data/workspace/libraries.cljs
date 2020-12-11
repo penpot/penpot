@@ -456,6 +456,9 @@
                                            :val nil}
                                           {:type :set
                                            :attr :shape-ref
+                                           :val nil}
+                                          {:type :set
+                                           :attr :touched
                                            :val nil}]})
                           shapes)
 
@@ -474,7 +477,10 @@
                                            :val (:component-root? obj)}
                                           {:type :set
                                            :attr :shape-ref
-                                           :val (:shape-ref obj)}]})
+                                           :val (:shape-ref obj)}
+                                          {:type :set
+                                           :attr :touched
+                                           :val (:touched obj)}]})
                           shapes)]
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
