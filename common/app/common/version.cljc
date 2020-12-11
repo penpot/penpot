@@ -15,13 +15,18 @@
 
 (defn parse
   [version]
-  (if (= version "%version%")
+  (cond
+    (= version "%version%")
     {:full "develop"
      :base "develop"
      :build 0
      :commit nil}
+
+    (string? version)
     (let [[base build commit] (str/split version #"-" 3)]
       {:full version
        :base base
        :build (d/parse-integer build)
-       :commit commit})))
+       :commit commit})
+
+    :else nil))
