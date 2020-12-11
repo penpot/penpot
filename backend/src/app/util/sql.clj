@@ -164,7 +164,7 @@
 (defn- process-param-tokens
   [sql]
   (let [cnt (java.util.concurrent.atomic.AtomicInteger. 1)]
-    (str/replace sql #"\?" (fn [& args]
+    (str/replace sql #"\?" (fn [& _args]
                              (str "$" (.getAndIncrement cnt))))))
 
 (def ^:private select-formatters

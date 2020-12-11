@@ -10,16 +10,14 @@
 (ns app.http.ws
   "Web Socket handlers"
   (:require
-   [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
-   [ring.adapter.jetty9 :as jetty]
-   [ring.middleware.cookies :refer [wrap-cookies]]
-   [ring.middleware.keyword-params :refer [wrap-keyword-params]]
-   [ring.middleware.params :refer [wrap-params]]
    [app.common.spec :as us]
    [app.db :as db]
    [app.http.session :refer [wrap-session]]
-   [app.services.notifications :as nf]))
+   [app.services.notifications :as nf]
+   [clojure.spec.alpha :as s]
+   [ring.middleware.cookies :refer [wrap-cookies]]
+   [ring.middleware.keyword-params :refer [wrap-keyword-params]]
+   [ring.middleware.params :refer [wrap-params]]))
 
 (s/def ::file-id ::us/uuid)
 (s/def ::session-id ::us/uuid)

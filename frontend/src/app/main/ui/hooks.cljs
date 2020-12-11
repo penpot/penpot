@@ -50,23 +50,6 @@
      (fn [] (mousetrap/reset))))
   nil)
 
-(defn use-fullscreen
-  [ref]
-  (let [state (mf/use-state (dom/fullscreen?))
-        change (mf/use-callback #(reset! state (dom/fullscreen?)))
-        toggle (mf/use-callback (mf/deps @state)
-                                #(let [el (mf/ref-val ref)]
-                                   (swap! state not)
-                                   (if @state
-                                     (wapi/exit-fullscreen)
-                                     (wapi/request-fullscreen el))))]
-    (mf/use-effect
-     (fn []
-       (.addEventListener js/document "fullscreenchange" change)
-       #(.removeEventListener js/document "fullscreenchange" change)))
-
-    [toggle @state]))
-
 (defn invisible-image
   []
   (let [img (js/Image.)
@@ -231,3 +214,10 @@
   (mf/use-effect (fn []
                    (let [sub (->> stream (rx/subs on-subscribe))]
                      #(rx/dispose! sub)))))
+
+;; https://reactjs.org/docs/hooks-faq.html#how-to-get-the-previous-props-or-state
+(defn use-previous [value]
+  (let [ref (mf/use-ref)]
+    (mf/use-effect
+     #(mf/set-ref-val! ref value))
+    (mf/ref-val ref)))

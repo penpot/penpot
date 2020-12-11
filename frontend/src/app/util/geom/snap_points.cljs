@@ -14,22 +14,22 @@
    [app.common.geom.shapes :as gsh]
    [app.common.geom.point :as gpt]))
 
-(defn- frame-snap-points [{:keys [x y width height] :as frame}]
-  (into #{(gpt/point x y)
-          (gpt/point (+ x (/ width 2)) y)
-          (gpt/point (+ x width) y)
+(defn- selrect-snap-points [{:keys [x y width height]}]
+  #{(gpt/point x y)
+    (gpt/point (+ x width) y)
+    (gpt/point (+ x width) (+ y height))
+    (gpt/point x (+ y height))})
+
+(defn- frame-snap-points [{:keys [x y width height] :as selrect}]
+  (into (selrect-snap-points selrect)
+        #{(gpt/point (+ x (/ width 2)) y)
           (gpt/point (+ x width) (+ y (/ height 2)))
-          (gpt/point (+ x width) (+ y height))
           (gpt/point (+ x (/ width 2)) (+ y height))
-          (gpt/point x (+ y height))
           (gpt/point x (+ y (/ height 2)))}))
 
 (defn shape-snap-points
   [shape]
-  (let [shape (gsh/transform-shape shape)
-        shape-center (gsh/center shape)]
-    (if (= :frame (:type shape))
-      (-> shape
-          (gsh/shape->rect-shape)
-          (frame-snap-points))
-      (into #{shape-center} (:points shape)))))
+  (let [shape (gsh/transform-shape shape)]
+    (case (:type shape)
+      :frame (-> shape :selrect frame-snap-points)
+      (into #{(gsh/center-shape shape)} (:points shape)))))

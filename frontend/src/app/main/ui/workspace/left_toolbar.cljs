@@ -56,6 +56,11 @@
      [:div.left-toolbar-inside
       [:ul.left-toolbar-options
        [:li.tooltip.tooltip-right
+        {:alt (t locale "workspace.toolbar.move")
+         :class (when (nil? selected-drawtool) "selected")
+         :on-click #(st/emit! :interrupt)}
+        i/pointer-inner]
+       [:li.tooltip.tooltip-right
         {:alt (t locale "workspace.toolbar.frame")
          :class (when (= selected-drawtool :frame) "selected")
          :on-click (partial select-drawtool :frame)}
@@ -66,7 +71,7 @@
          :on-click (partial select-drawtool :rect)}
         i/box]
        [:li.tooltip.tooltip-right
-        {:alt (t locale "workspace.toolbar.circle")
+        {:alt (t locale "workspace.toolbar.ellipse")
          :class (when (= selected-drawtool :circle) "selected")
          :on-click (partial select-drawtool :circle)}
         i/circle]
@@ -80,10 +85,11 @@
          :on-click on-image}
         [:*
           i/image
-          [:& file-uploader {:accept cm/str-media-types
-                             :multi true
-                             :input-ref file-input
-                             :on-selected on-files-selected}]]]
+         [:& file-uploader {:input-id "image-upload"
+                            :accept cm/str-media-types
+                            :multi true
+                            :input-ref file-input
+                            :on-selected on-files-selected}]]]
        [:li.tooltip.tooltip-right
         {:alt (t locale "workspace.toolbar.curve")
          :class (when (= selected-drawtool :curve) "selected")
@@ -93,7 +99,7 @@
         {:alt (t locale "workspace.toolbar.path")
          :class (when (= selected-drawtool :path) "selected")
          :on-click (partial select-drawtool :path)}
-        i/curve]
+        i/pen]
 
        [:li.tooltip.tooltip-right
         {:alt (t locale "workspace.toolbar.comments")

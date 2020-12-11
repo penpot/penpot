@@ -10,6 +10,8 @@
 (ns app.util.webapi
   "HTML5 web api helpers."
   (:require
+   [app.common.exceptions :as ex]
+   [app.util.object :as obj]
    [promesa.core :as p]
    [beicon.core :as rx]
    [cuerdas.core :as str]
@@ -77,12 +79,15 @@
   (let [cboard (unchecked-get js/navigator "clipboard")]
     (.writeText ^js cboard data)))
 
-(defn- read-from-clipboard
+(defn read-from-clipboard
   []
   (let [cboard (unchecked-get js/navigator "clipboard")]
-    (rx/from (.readText ^js cboard))))
+    (if (.-readText ^js cboard)
+      (rx/from (.readText ^js cboard))
+      (throw (ex-info "This browser does not implement read from clipboard protocol"
+                      {:not-implemented true})))))
 
-(defn- read-image-from-clipboard
+(defn read-image-from-clipboard
   []
   (let [cboard (unchecked-get js/navigator "clipboard")
         read-item (fn [item]
@@ -95,10 +100,50 @@
          (rx/mapcat identity)     ;; Convert each item into an emission
          (rx/switch-map read-item))))
 
+(defn read-from-paste-event
+  [event]
+  (let [target (.-target ^js event)]
+    (when (and (not (.-isContentEditable target)) ;; ignore when pasting into
+               (not= (.-tagName target) "INPUT")) ;; an editable control
+      (-> ^js event
+          (.getBrowserEvent)
+          (.-clipboardData)))))
+
+(defn extract-text
+  [clipboard-data]
+  (when clipboard-data
+    (.getData clipboard-data "text")))
+
+(defn extract-images
+  [clipboard-data]
+  (when clipboard-data
+    (let [file-list (-> (.-files ^js clipboard-data))]
+      (->> (range (.-length file-list))
+           (map #(.item file-list %))
+           (filter #(str/starts-with? (.-type %) "image/"))))))
+
 (defn request-fullscreen
   [el]
-  (.requestFullscreen el))
+  (cond
+    (obj/in? el "requestFullscreen")
+    (.requestFullscreen el)
+
+    (obj/in? el "webkitRequestFullscreen")
+    (.webkitRequestFullscreen el)
+
+    :else
+    (ex/raise :type :not-supported
+              :hint "seems like the current browset does not support fullscreen api.")))
 
 (defn exit-fullscreen
   []
-  (.exitFullscreen js/document))
+  (cond
+    (obj/in? js/document "exitFullscreen")
+    (.exitFullscreen js/document)
+
+    (obj/in? js/document "webkitExitFullscreen")
+    (.webkitExitFullscreen js/document)
+
+    :else
+    (ex/raise :type :not-supported
+              :hint "seems like the current browset does not support fullscreen api.")))

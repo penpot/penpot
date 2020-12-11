@@ -64,7 +64,7 @@
                      (dom/stop-propagation event)
                      (st/emit! (modal/hide))
                      (on-accept props))))
-             key (events/listen (dom/get-root) EventType.KEYDOWN on-keydown)]
+             key (events/listen js/document EventType.KEYDOWN on-keydown)]
          #(events/unlistenByKey key))))
 
     [:div.modal-overlay

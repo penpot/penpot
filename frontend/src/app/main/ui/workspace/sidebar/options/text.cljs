@@ -62,7 +62,7 @@
           (on-change {:text-align new-align}))]
 
     ;; --- Align
-    [:div.row-flex.align-icons
+    [:div.align-icons
      [:span.tooltip.tooltip-bottom
       {:alt (t locale "workspace.options.text-options.align-left")
        :class (dom/classnames :current (= "left" text-align))
@@ -85,58 +85,55 @@
       i/text-align-justify]]))
 
 
-(mf/defc additional-options
+(mf/defc vertical-align
   [{:keys [shapes editor ids values locale on-change] :as props}]
   (let [{:keys [vertical-align]} values
-
-        to-single-value (fn [coll] (if (> (count coll) 1) nil (first coll)))
-
-        grow-type (->> shapes (map :grow-type) (remove nil?) (into #{}) to-single-value)
-
         vertical-align (or vertical-align "top")
-
-        handle-change-grow
-        (fn [event grow-type]
-          (st/emit! (dwc/update-shapes ids #(assoc % :grow-type grow-type))))
-        
         handle-change
         (fn [event new-align]
           (on-change {:vertical-align new-align}))]
 
-    [:div.row-flex
-     [:div.align-icons
-      [:span.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.text-options.align-top")
-        :class (dom/classnames :current (= "top" vertical-align))
-        :on-click #(handle-change % "top")}
-       i/align-top]
-      [:span.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.text-options.align-middle")
-        :class (dom/classnames :current (= "center" vertical-align))
-        :on-click #(handle-change % "center")}
-       i/align-middle]
-      [:span.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.text-options.align-bottom")
-        :class (dom/classnames :current (= "bottom" vertical-align))
-        :on-click #(handle-change % "bottom")}
-       i/align-bottom]]
+    [:div.align-icons
+     [:span.tooltip.tooltip-bottom
+      {:alt (t locale "workspace.options.text-options.align-top")
+       :class (dom/classnames :current (= "top" vertical-align))
+       :on-click #(handle-change % "top")}
+      i/align-top]
+     [:span.tooltip.tooltip-bottom
+      {:alt (t locale "workspace.options.text-options.align-middle")
+       :class (dom/classnames :current (= "center" vertical-align))
+       :on-click #(handle-change % "center")}
+      i/align-middle]
+     [:span.tooltip.tooltip-bottom
+      {:alt (t locale "workspace.options.text-options.align-bottom")
+       :class (dom/classnames :current (= "bottom" vertical-align))
+       :on-click #(handle-change % "bottom")}
+      i/align-bottom]]))
 
-     [:div.align-icons
-      [:span.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.text-options.grow-fixed")
-        :class (dom/classnames :current (= :fixed grow-type))
-        :on-click #(handle-change-grow % :fixed)}
-       i/auto-fix]
-      [:span.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.text-options.grow-auto-width")
-        :class (dom/classnames :current (= :auto-width grow-type))
-        :on-click #(handle-change-grow % :auto-width)}
-       i/auto-width]
-      [:span.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.text-options.grow-auto-height")
-        :class (dom/classnames :current (= :auto-height grow-type))
-        :on-click #(handle-change-grow % :auto-height)}
-       i/auto-height]]]))
+(mf/defc grow-options
+  [{:keys [shapes editor ids values locale on-change] :as props}]
+  (let [to-single-value (fn [coll] (if (> (count coll) 1) nil (first coll)))
+        grow-type (->> shapes (map :grow-type) (remove nil?) (into #{}) to-single-value)
+        handle-change-grow
+        (fn [event grow-type]
+          (st/emit! (dwc/update-shapes ids #(assoc % :grow-type grow-type))))]
+
+    [:div.align-icons
+     [:span.tooltip.tooltip-bottom
+      {:alt (t locale "workspace.options.text-options.grow-fixed")
+       :class (dom/classnames :current (= :fixed grow-type))
+       :on-click #(handle-change-grow % :fixed)}
+      i/auto-fix]
+     [:span.tooltip.tooltip-bottom
+      {:alt (t locale "workspace.options.text-options.grow-auto-width")
+       :class (dom/classnames :current (= :auto-width grow-type))
+       :on-click #(handle-change-grow % :auto-width)}
+      i/auto-width]
+     [:span.tooltip.tooltip-bottom
+      {:alt (t locale "workspace.options.text-options.grow-auto-height")
+       :class (dom/classnames :current (= :auto-height grow-type))
+       :on-click #(handle-change-grow % :auto-height)}
+      i/auto-height]]))
 
 (mf/defc text-decoration-options
   [{:keys [editor ids values locale on-change] :as props}]
@@ -147,26 +144,24 @@
         handle-change
         (fn [event type]
           (on-change {:text-decoration type}))]
-    [:div.row-flex
-     [:span.element-set-subtitle (t locale "workspace.options.text-options.decoration")]
-     [:div.align-icons
-      [:span.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.text-options.none")
-        :class (dom/classnames :current (= "none" text-decoration))
-        :on-click #(handle-change % "none")}
-       i/minus]
+    [:div.align-icons
+     [:span.tooltip.tooltip-bottom
+      {:alt (t locale "workspace.options.text-options.none")
+       :class (dom/classnames :current (= "none" text-decoration))
+       :on-click #(handle-change % "none")}
+      i/minus]
 
-      [:span.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.text-options.underline")
-        :class (dom/classnames :current (= "underline" text-decoration))
-        :on-click #(handle-change % "underline")}
-       i/underline]
+     [:span.tooltip.tooltip-bottom
+      {:alt (t locale "workspace.options.text-options.underline")
+       :class (dom/classnames :current (= "underline" text-decoration))
+       :on-click #(handle-change % "underline")}
+      i/underline]
 
-      [:span.tooltip.tooltip-bottom
-       {:alt (t locale "workspace.options.text-options.strikethrough")
-        :class (dom/classnames :current (= "line-through" text-decoration))
-        :on-click #(handle-change % "line-through")}
-       i/strikethrough]]]))
+     [:span.tooltip.tooltip-bottom
+      {:alt (t locale "workspace.options.text-options.strikethrough")
+       :class (dom/classnames :current (= "line-through" text-decoration))
+       :on-click #(handle-change % "line-through")}
+      i/strikethrough]]))
 
 (defn generate-typography-name [{:keys [font-id font-variant-id] :as typography}]
   (let [{:keys [name]} (fonts/get-font-data font-id)]
@@ -273,9 +268,16 @@
        [:> typography-options opts])
 
      [:div.element-set-content
-      [:> text-align-options opts]
-      [:> additional-options opts]
-      [:> text-decoration-options opts]]]))
+
+      [:div.row-flex
+       [:> text-align-options opts]
+       [:> vertical-align opts]]
+
+      [:div.row-flex
+       [:> grow-options opts]
+       [:> text-decoration-options opts]]
+      
+      ]]))
 
 (mf/defc options
   [{:keys [shape] :as props}]

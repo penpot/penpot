@@ -15,8 +15,8 @@
    [app.util.worker :as uw]))
 
 (defn on-error
-  [instance error]
-  (js/console.error "Error on worker" (.-data error)))
+  [error]
+  (js/console.error "Error on worker" error))
 
 (defonce instance
   (when (not= *target* "nodejs")

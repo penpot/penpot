@@ -118,6 +118,33 @@
          (into {}))
     m1))
 
+(defn with-next
+  "Given a collectin will return a new collection where each element
+  is paried with the next item in the collection
+  (with-next (range 5)) => [[0 1] [1 2] [2 3] [3 4] [4 nil]"
+  [coll]
+  (map vector
+       coll
+       (concat [] (rest coll) [nil])))
+
+(defn with-prev
+  "Given a collectin will return a new collection where each element
+  is paried with the previous item in the collection
+  (with-prev (range 5)) => [[0 nil] [1 0] [2 1] [3 2] [4 3]"
+  [coll]
+  (map vector
+       coll
+       (concat [nil] coll)))
+
+(defn with-prev-next
+  "Given a collection will return a new collection where every item is paired
+  with the previous and the next item of a collection
+  (with-prev-next (range 5)) => [[0 nil 1] [1 0 2] [2 1 3] [3 2 4] [4 3 nil]"
+  [coll]
+  (map vector
+       coll
+       (concat [nil] coll)
+       (concat [] (rest coll) [nil])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Numbers Parsing
@@ -221,3 +248,7 @@
 ;;                        nil
 ;;                        (throw e#)))))))
 
+(defn prefix-keyword [prefix kw]
+  (let [prefix (if (keyword? prefix) (name prefix) prefix)
+        kw     (if (keyword? kw) (name kw) kw)]
+    (keyword (str prefix kw))))

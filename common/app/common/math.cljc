@@ -23,8 +23,8 @@
 
 (defn finite?
   [v]
-  #?(:cljs (js/isFinite v)
-     :clj (Double/isFinite v)))
+  #?(:cljs (and (not (nil? v)) (js/isFinite v))
+     :clj (and (not (nil? v)) (Double/isFinite v))))
 
 (defn abs
   [v]
@@ -135,3 +135,6 @@
   (if (< num from)
     from
     (if (> num to) to num)))
+
+(defn almost-zero? [num]
+  (< (abs num) 1e-8))

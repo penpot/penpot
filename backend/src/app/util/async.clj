@@ -6,9 +6,8 @@
 
 (ns app.util.async
   (:require
-   [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
-   [clojure.core.async :as a])
+   [clojure.core.async :as a]
+   [clojure.spec.alpha :as s])
   (:import
    java.util.concurrent.Executor))
 

@@ -37,18 +37,17 @@
 
 ;; --- Persistence
 
-
-
 (defn initialize-file-persistence
   [file-id]
   (ptk/reify ::initialize-persistence
     ptk/EffectEvent
     (effect [_ state stream]
       (let [stoper   (rx/filter #(= ::finalize %) stream)
+            forcer   (rx/filter #(= ::force-persist %) stream)
             notifier (->> stream
                           (rx/filter (ptk/type? ::dwc/commit-changes))
                           (rx/debounce 2000)
-                          (rx/merge stoper))
+                          (rx/merge stoper forcer))
 
             on-dirty
             (fn []
@@ -126,9 +125,13 @@
                       (rx/map #(shapes-changes-persisted file-id %))))))
 
             on-error
-            (fn [error]
-              (rx/of (update-persistence-status {:status :error
-                                                 :reason (:type error)})))]
+            (fn [{:keys [type status] :as error}]
+              (if (and (= :server-error type)
+                       (= 502 status))
+                (rx/of (update-persistence-status {:status :error :reason type}))
+                (rx/of update-persistence-queue
+                       (update-persistence-status {:status :error :reason type}))))]
+
 
         (when (= file-id (:id file))
           (->> (rp/mutation :update-file params)
@@ -184,7 +187,6 @@
 (s/def ::version ::us/integer)
 (s/def ::revn ::us/integer)
 (s/def ::ordering ::us/integer)
-(s/def ::metadata (s/nilable ::cp/metadata))
 (s/def ::data ::cp/data)
 
 (s/def ::file ::dd/file)
@@ -208,7 +210,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (->> (rx/zip (rp/query :file {:id file-id})
-                   (rp/query :file-users {:id file-id})
+                   (rp/query :team-users {:file-id file-id})
                    (rp/query :project {:id project-id})
                    (rp/query :file-libraries {:file-id file-id}))
            (rx/first)
@@ -225,12 +227,6 @@
                          :else
                          (throw error))))))))
 
-(defn assoc-profile-avatar
-  [{:keys [photo fullname] :as profile}]
-  (cond-> profile
-    (or (nil? photo) (empty? photo))
-    (assoc :photo (avatars/generate {:name fullname}))))
-
 (defn- bundle-fetched
   [file users project libraries]
   (ptk/reify ::bundle-fetched
@@ -243,13 +239,13 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (let [users (map assoc-profile-avatar users)]
+      (let [users (map avatars/assoc-profile-avatar users)]
         (assoc state
+               :users (d/index-by :id users)
                :workspace-undo {}
                :workspace-project project
                :workspace-file file
                :workspace-data (:data file)
-               :workspace-users (d/index-by :id users)
                :workspace-libraries (d/index-by :id libraries))))))
 
 
@@ -295,51 +291,28 @@
 
 ;; --- Link and unlink Files
 
-(declare file-linked)
-
 (defn link-file-to-library
   [file-id library-id]
   (ptk/reify ::link-file-to-library
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [params {:file-id file-id
-                    :library-id library-id}]
-        (->> (->> (rp/mutation :link-file-to-library params)
-                  (rx/mapcat
-                    #(rx/zip (rp/query :file-library {:file-id library-id})
-                             (rp/query :media-objects {:file-id library-id
-                                                       :is-local false}))))
-             (rx/map file-linked))))))
-
-(defn file-linked
-  [[library media-objects colors]]
-  (ptk/reify ::file-linked
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-libraries (:id library)]
-                (assoc library
-                       :media-objects media-objects
-                       :colors colors)))))
-
-(declare file-unlinked)
+      (let [fetched #(assoc-in %2 [:workspace-libraries (:id %1)] %1)
+            params  {:file-id file-id
+                     :library-id library-id}]
+        (->> (rp/mutation :link-file-to-library params)
+             (rx/mapcat #(rp/query :file {:id library-id}))
+             (rx/map #(partial fetched %)))))))
 
 (defn unlink-file-from-library
   [file-id library-id]
   (ptk/reify ::unlink-file-from-library
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [params {:file-id file-id
-                    :library-id library-id}]
+      (let [unlinked #(d/dissoc-in % [:workspace-libraries library-id])
+            params   {:file-id file-id
+                      :library-id library-id}]
         (->> (rp/mutation :unlink-file-from-library params)
-             (rx/map #(file-unlinked file-id library-id)))))))
-
-(defn file-unlinked
-  [file-id library-id]
-  (ptk/reify ::file-unlinked
-    ptk/UpdateEvent
-    (update [_ state]
-      (d/dissoc-in state [:workspace-libraries library-id]))))
-
+             (rx/map (constantly unlinked)))))))
 
 ;; --- Fetch Pages
 
@@ -376,7 +349,7 @@
           :opt-un [::uri ::di/js-files]))
 
 (defn upload-media-objects
-  [{:keys [file-id local? js-files uri] :as params}]
+  [{:keys [file-id local? js-files uri name] :as params}]
   (us/assert ::upload-media-objects-params params)
    (ptk/reify ::upload-media-objects
      ptk/WatchEvent
@@ -396,7 +369,8 @@
              (fn [uri]
                {:file-id file-id
                 :is-local local?
-                :url uri})]
+                :url uri
+                :name name})]
 
          (rx/concat
           (rx/of (dm/show {:content (tr "media.loading")
@@ -429,18 +403,6 @@
                              (rx/throw error))))
                (rx/finalize (fn []
                               (st/emit! (dm/hide-tag :media-loading))))))))))
-
-
-;; --- Delete media object
-
-(defn delete-media-object
-  [file-id id]
-  (ptk/reify ::delete-media-object
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [params {:id id}]
-        (rp/mutation :delete-media-object params)))))
-
 
 ;; --- Helpers
 

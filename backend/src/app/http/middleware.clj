@@ -5,20 +5,19 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2019-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.http.middleware
   (:require
-   [clojure.tools.logging :as log]
+   [app.common.exceptions :as ex]
+   [app.config :as cfg]
+   [app.metrics :as mtx]
+   [app.util.transit :as t]
    [ring.middleware.cookies :refer [wrap-cookies]]
    [ring.middleware.keyword-params :refer [wrap-keyword-params]]
    [ring.middleware.multipart-params :refer [wrap-multipart-params]]
    [ring.middleware.params :refer [wrap-params]]
-   [ring.middleware.resource :refer [wrap-resource]]
-   [app.metrics :as mtx]
-   [app.common.exceptions :as ex]
-   [app.config :as cfg]
-   [app.util.transit :as t]))
+   [ring.middleware.resource :refer [wrap-resource]]))
 
 (defn- wrap-parse-request-body
   [handler]
@@ -126,13 +125,13 @@
 
 (def development-cors
   {:name ::development-cors
-   :compile (fn [& args]
+   :compile (fn [& _args]
               (when *assert*
                 wrap-development-cors))})
 
 (def development-resources
   {:name ::development-resources
-   :compile (fn [& args]
+   :compile (fn [& _args]
               (when *assert*
                 #(wrap-resource % "public")))})
 

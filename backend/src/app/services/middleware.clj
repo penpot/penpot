@@ -10,13 +10,11 @@
 (ns app.services.middleware
   "Common middleware for services."
   (:require
-   [clojure.tools.logging :as log]
-   [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [expound.alpha :as expound]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.metrics :as mtx]))
+   [app.metrics :as mtx]
+   [clojure.spec.alpha :as s]
+   [cuerdas.core :as str]))
 
 (defn wrap-spec
   [handler]
@@ -45,7 +43,7 @@
 
 (defn- get-prefix
   [nsname]
-  (let [[a b c] (str/split nsname ".")]
+  (let [[_ _ c] (str/split nsname ".")]
     c))
 
 (defn wrap-metrics

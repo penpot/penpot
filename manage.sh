@@ -1,36 +1,55 @@
 #!/usr/bin/env bash
 set -e
 
-REV=`git log -n 1 --pretty=format:%h -- docker/`
-DEVENV_IMGNAME="penpot-devenv"
+export ORGANIZATION="penpotapp";
+export DEVENV_IMGNAME="$ORGANIZATION/devenv";
+export DEVENV_PNAME="penpotdev";
+
+export CURRENT_USER_ID=$(id -u);
+export CURRENT_VERSION=$(git describe --tags);
+export CURRENT_GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
 
 function build-devenv {
-    echo "Building development image $DEVENV_IMGNAME:latest with UID $EXTERNAL_UID..."
-    local EXTERNAL_UID=${1:-$(id -u)}
-    docker-compose -p penpotdev -f docker/devenv/docker-compose.yaml build \
-                   --force-rm --build-arg EXTERNAL_UID=$EXTERNAL_UID
+    echo "Building development image $DEVENV_IMGNAME:latest..."
+
+    pushd docker/devenv;
+    docker build -t $DEVENV_IMGNAME:latest .
+    popd;
 }
 
-function build-devenv-if-not-exists {
+function publish-devenv {
+    docker push $DEVENV_IMGNAME:latest
+}
+
+function pull-devenv {
+    set -ex
+    docker pull $DEVENV_IMGNAME:latest
+}
+
+function pull-devenv-if-not-exists {
     if [[ ! $(docker images $DEVENV_IMGNAME:latest -q) ]]; then
-        build-devenv $@
+        pull-devenv $@
     fi
 }
 
 function start-devenv {
-    build-devenv-if-not-exists $@;
-    docker-compose -p penpotdev -f docker/devenv/docker-compose.yaml up -d;
+    pull-devenv-if-not-exists $@;
+    docker-compose -p $DEVENV_PNAME -f docker/devenv/docker-compose.yaml up -d;
 }
 
 function stop-devenv {
-    docker-compose -p penpotdev -f docker/devenv/docker-compose.yaml stop -t 2;
+    docker-compose -p $DEVENV_PNAME -f docker/devenv/docker-compose.yaml stop -t 2;
 }
 
 function drop-devenv {
-    docker-compose -p penpotdev -f docker/devenv/docker-compose.yaml down -t 2 -v;
+    docker-compose -p $DEVENV_PNAME -f docker/devenv/docker-compose.yaml down -t 2 -v;
 
     echo "Clean old development image $DEVENV_IMGNAME..."
     docker images $DEVENV_IMGNAME -q | awk '{print $3}' | xargs --no-run-if-empty docker rmi
+}
+
+function log-devenv {
+    docker-compose -p $DEVENV_PNAME -f docker/devenv/docker-compose.yaml logs -f --tail=50
 }
 
 function run-devenv {
@@ -38,21 +57,19 @@ function run-devenv {
         start-devenv
     fi
 
-    docker exec -ti penpot-devenv-main /home/start-tmux.sh
+    docker exec -ti penpot-devenv-main sudo -EH -u penpot /home/start-tmux.sh
 }
 
 function build {
-    build-devenv-if-not-exists;
-    local IMAGE=$DEVENV_IMGNAME:latest;
-
-    docker volume create penpotdev_user_data;
-
-    echo "Running development image $IMAGE to build frontend."
+    pull-devenv-if-not-exists;
+    docker volume create ${DEVENV_PNAME}_user_data;
     docker run -t --rm \
-           --mount source=penpotdev_user_data,type=volume,target=/home/penpot/ \
+           --mount source=${DEVENV_PNAME}_user_data,type=volume,target=/home/penpot/ \
            --mount source=`pwd`,type=bind,target=/home/penpot/penpot \
+           -e EXTERNAL_UID=$CURRENT_USER_ID \
+           -e SHADOWCLJS_EXTRA_PARAMS=$SHADOWCLJS_EXTRA_PARAMS \
            -w /home/penpot/penpot/$1 \
-           $IMAGE ./scripts/build.sh
+           $DEVENV_IMGNAME:latest sudo -EH -u penpot ./scripts/build.sh
 }
 
 function build-frontend {
@@ -68,7 +85,6 @@ function build-backend {
 }
 
 function build-bundle {
-
     build "frontend";
     build "exporter";
     build "backend";
@@ -79,70 +95,106 @@ function build-bundle {
     mv ./backend/target/dist ./bundle/backend
     mv ./exporter/target ./bundle/exporter
 
-    NAME="penpot-$(date '+%Y.%m.%d-%H%M')"
+    local name="penpot-$CURRENT_VERSION";
+    echo $CURRENT_VERSION > ./bundle/version.txt
 
-    pushd bundle/
-    tar -cvf ../$NAME.tar *;
-    popd
+    sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./bundle/frontend/index.html;
+    sed -i -re "s/\%version\%/$CURRENT_VERSION/g" ./bundle/backend/main/app/config.clj;
 
-    xz -vez4f -T4 $NAME.tar
+    local generate_tar=${PENPOT_BUILD_GENERATE_TAR:-"true"};
+
+    if [ $generate_tar == "true" ]; then
+        pushd bundle/
+        tar -cvf ../$name.tar *;
+        popd
+
+        xz -vez1f -T4 $name.tar
+
+        echo "##############################################################";
+        echo "# Generated $name.tar.xz";
+        echo "##############################################################";
+    fi
 }
 
-function log-devenv {
-    docker-compose -p penpotdev -f docker/devenv/docker-compose.yaml logs -f --tail=50
+function build-image {
+    set -ex;
+
+    local image=$1;
+
+    pushd ./docker/images;
+    local docker_image="$ORGANIZATION/$image";
+    docker build -t $docker_image:$CURRENT_VERSION -f Dockerfile.$image .;
+    popd;
 }
 
-function build-testenv {
-    local BUNDLE_FILE=$1;
-    local BUNDLE_FILE_PATH=`readlink -f $BUNDLE_FILE`;
+function build-images {
+    local bundle_file="penpot-$CURRENT_VERSION.tar.xz";
 
-    echo "Building testenv with bundle: $BUNDLE_FILE_PATH."
-
-    if [ ! -f $BUNDLE_FILE ]; then
-        echo "File $BUNDLE_FILE does not exists."
+    if [ ! -f $bundle_file ]; then
+        echo "File '$bundle_file' does not exists.";
+        exit 1;
     fi
 
-    rm -rf ./docker/testenv/bundle;
-    mkdir -p ./docker/testenv/bundle;
+    rm -rf ./docker/images/bundle;
+    mkdir -p ./docker/images/bundle;
 
-    pushd ./docker/testenv/bundle;
-    tar xvf $BUNDLE_FILE_PATH;
+    local bundle_file_path=`readlink -f $bundle_file`;
+    echo "Building docker image from: $bundle_file_path.";
+
+    pushd ./docker/images/bundle;
+    tar xvf $bundle_file_path;
     popd
 
-    pushd ./docker/testenv;
-    docker-compose -p penpot-testenv -f ./docker-compose.yaml build
-    popd
+    build-image "backend";
+    build-image "frontend";
+    build-image "exporter";
 }
 
-function start-testenv {
-    pushd ./docker/testenv;
-    docker-compose -p penpot-testenv -f ./docker-compose.yaml up
-    popd
+function publish-snapshot {
+    set -x
+    docker tag $ORGANIZATION/frontend:$CURRENT_VERSION $ORGANIZATION/frontend:$CURRENT_GIT_BRANCH
+    docker tag $ORGANIZATION/backend:$CURRENT_VERSION $ORGANIZATION/backend:$CURRENT_GIT_BRANCH
+    docker tag $ORGANIZATION/exporter:$CURRENT_VERSION $ORGANIZATION/exporter:$CURRENT_GIT_BRANCH
+
+    docker push $ORGANIZATION/frontend:$CURRENT_GIT_BRANCH;
+    docker push $ORGANIZATION/backend:$CURRENT_GIT_BRANCH;
+    docker push $ORGANIZATION/exporter:$CURRENT_GIT_BRANCH;
 }
 
 function usage {
-    echo "PENPOT build & release manager v$REV"
+    echo "PENPOT build & release manager"
     echo "USAGE: $0 OPTION"
     echo "Options:"
     # echo "- clean                            Stop and clean up docker containers"
     # echo ""
-    echo "- build-devenv                     Build docker development oriented image; (can specify external user id in parameter)"
+    echo "- pull-devenv                      Pulls docker development oriented image"
+    echo "- build-devenv                     Build docker development oriented image"
     echo "- start-devenv                     Start the development oriented docker-compose service."
     echo "- stop-devenv                      Stops the development oriented docker-compose service."
     echo "- drop-devenv                      Remove the development oriented docker-compose containers, volumes and clean images."
     echo "- run-devenv                       Attaches to the running devenv container and starts development environment"
     echo "                                   based on tmux (frontend at localhost:3449, backend at localhost:6060)."
     echo ""
-    echo "- run-all-tests                    Execute unit tests for both backend and frontend."
-    echo "- run-frontend-tests               Execute unit tests for frontend only."
-    echo "- run-backend-tests                Execute unit tests for backend only."
+    # echo "- run-all-tests                    Execute unit tests for both backend and frontend."
+    # echo "- run-frontend-tests               Execute unit tests for frontend only."
+    # echo "- run-backend-tests                Execute unit tests for backend only."
 }
 
 case $1 in
     ## devenv related commands
+    pull-devenv)
+        pull-devenv ${@:2};
+        ;;
+
     build-devenv)
         build-devenv ${@:2}
         ;;
+
+
+    publish-devenv)
+        publish-devenv ${@:2}
+        ;;
+
     start-devenv)
         start-devenv ${@:2}
         ;;
@@ -157,16 +209,6 @@ case $1 in
         ;;
     log-devenv)
         log-devenv ${@:2}
-        ;;
-
-
-    # Test Env
-    start-testenv)
-        start-testenv
-        ;;
-
-    build-testenv)
-        build-testenv ${@:2}
         ;;
 
     ## testin related commands
@@ -196,6 +238,15 @@ case $1 in
 
     build-bundle)
         build-bundle
+        ;;
+
+    # Docker Image Tasks
+    build-images)
+        build-images;
+        ;;
+
+    publish-snapshot)
+        publish-snapshot ${@:2}
         ;;
 
     *)

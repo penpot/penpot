@@ -12,12 +12,11 @@
    [app.common.data :as d]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.common.pages-helpers :as cph]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
    [app.main.data.messages :as dm]
    [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.libraries-helpers :as dwlh]
    [app.common.pages :as cp]
    [app.main.repo :as rp]
@@ -32,6 +31,7 @@
    [cljs.spec.alpha :as s]
    [potok.core :as ptk]))
 
+;; Change this to :info :debug or :trace to debug this module
 (log/set-level! :warn)
 
 (declare sync-file)
@@ -114,6 +114,24 @@
                   :id id}]
         (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true}))))))
 
+(defn rename-media
+  [id new-name]
+  (us/assert ::us/uuid id)
+  (us/assert ::us/string new-name)
+  (ptk/reify ::rename-media
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [object (get-in state [:workspace-data :media id])
+
+            rchanges [{:type :mod-media
+                       :object {:id id
+                                :name new-name}}]
+
+            uchanges [{:type :mod-media
+                       :object {:id id
+                                :name (:name object)}}]]
+
+        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 
 (defn delete-media
   [{:keys [id] :as params}]
@@ -181,7 +199,7 @@
       (let [page-id  (:current-page-id state)
             objects  (dwc/lookup-page-objects state page-id)
             selected (get-in state [:workspace-local :selected])
-            shapes   (dws/shapes-for-grouping objects selected)]
+            shapes   (dwg/shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
           (let [;; If the selected shape is a group, we can use it. If not,
                 ;; we need to create a group before creating the component.
@@ -189,7 +207,7 @@
                 (if (and (= (count shapes) 1)
                          (= (:type (first shapes)) :group))
                   [(first shapes) [] []]
-                  (dws/prepare-create-group page-id shapes "Component-" true))
+                  (dwg/prepare-create-group page-id shapes "Component-" true))
 
                 [new-shape new-shapes updated-shapes]
                 (dwlh/make-component-shape group objects)
@@ -251,7 +269,7 @@
 
 
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
-                   (dws/select-shapes (d/ordered-set (:id group))))))))))
+                   (dwc/select-shapes (d/ordered-set (:id group))))))))))
 
 (defn rename-component
   [id new-name]
@@ -284,7 +302,7 @@
   (ptk/reify ::duplicate-component
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [component      (cph/get-component id
+      (let [component      (cp/get-component id
                                               nil
                                               (get state :workspace-data)
                                               nil)
@@ -346,7 +364,7 @@
             objects   (dwc/lookup-page-objects state page-id)
             unames    (atom (dwc/retrieve-used-names objects))
 
-            frame-id (cph/frame-id-by-position objects (gpt/add orig-pos delta))
+            frame-id (cp/frame-id-by-position objects (gpt/add orig-pos delta))
 
             update-new-shape
             (fn [new-shape original-shape]
@@ -386,7 +404,7 @@
                   (dissoc :component-root?))))
 
             [new-shape new-shapes _]
-            (cph/clone-object component-shape
+            (cp/clone-object component-shape
                               nil
                               (get component :objects)
                               update-new-shape)
@@ -397,17 +415,19 @@
                              :page-id page-id
                              :frame-id (:frame-id obj)
                              :parent-id (:parent-id obj)
+                             :ignore-touched true
                              :obj obj})
                           new-shapes)
 
             uchanges (map (fn [obj]
                             {:type :del-obj
                              :id (:id obj)
-                             :page-id page-id})
+                             :page-id page-id
+                             :ignore-touched true})
                           new-shapes)]
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
-               (dws/select-shapes (d/ordered-set (:id new-shape))))))))
+               (dwc/select-shapes (d/ordered-set (:id new-shape))))))))
 
 (defn detach-component
   "Remove all references to components in the shape with the given id,
@@ -419,7 +439,7 @@
     (watch [_ state stream]
       (let [page-id (:current-page-id state)
             objects (dwc/lookup-page-objects state page-id)
-            shapes (cph/get-object-with-children id objects)
+            shapes (cp/get-object-with-children id objects)
 
             rchanges (map (fn [obj]
                             {:type :mod-obj
@@ -493,16 +513,18 @@
   (ptk/reify ::reset-component
     ptk/WatchEvent
     (watch [_ state stream]
-      ;; ===== Uncomment this to debug =====
       (log/info :msg "RESET-COMPONENT of shape" :id (str id))
-      (let [[rchanges uchanges]
-            (dwlh/generate-sync-shape-and-children-components (get state :current-page-id)
-                                                              nil
-                                                              id
-                                                              (get state :workspace-data)
-                                                              (get state :workspace-libraries)
-                                                              true)]
-        ;; ===== Uncomment this to debug =====
+      (let [local-file (get state :workspace-data)
+            libraries  (get state :workspace-libraries)
+            container  (cp/get-container (get state :current-page-id)
+                                          :page
+                                          local-file)
+            [rchanges uchanges]
+            (dwlh/generate-sync-shape-direct container
+                                             id
+                                             local-file
+                                             libraries
+                                             true)]
         (log/debug :msg "RESET-COMPONENT finished" :js/rchanges rchanges)
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
@@ -516,7 +538,6 @@
   (ptk/reify ::update-component
     ptk/WatchEvent
     (watch [_ state stream]
-      ;; ===== Uncomment this to debug =====
       (log/info :msg "UPDATE-COMPONENT of shape" :id (str id))
       (let [page-id (:current-page-id state)
             objects (dwc/lookup-page-objects state page-id)
@@ -529,7 +550,6 @@
                                               (get state :workspace-data)
                                               (get state :workspace-libraries))]
 
-        ;; ===== Uncomment this to debug =====
         (log/debug :msg "UPDATE-COMPONENT finished" :js/rchanges rchanges)
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
@@ -552,7 +572,6 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      ;; ===== Uncomment this to debug =====
       (log/info :msg "SYNC-FILE" :file (str (or file-id "local")))
       (let [library-changes [(dwlh/generate-sync-library :components file-id state)
                              (dwlh/generate-sync-library :colors file-id state)
@@ -566,7 +585,6 @@
             uchanges (d/concat []
                                (->> library-changes (remove nil?) (map second) (flatten))
                                (->> file-changes (remove nil?) (map second) (flatten)))]
-        ;; ===== Uncomment this to debug =====
         (log/debug :msg "SYNC-FILE finished" :js/rchanges rchanges)
         (rx/concat
           (rx/of (dm/hide-tag :sync-dialog))
@@ -593,14 +611,12 @@
   (ptk/reify ::sync-file-2nd-stage
     ptk/WatchEvent
     (watch [_ state stream]
-      ;; ===== Uncomment this to debug =====
       (log/info :msg "SYNC-FILE (2nd stage)" :file (str (or file-id "local")))
       (let [[rchanges1 uchanges1] (dwlh/generate-sync-file :components nil state)
             [rchanges2 uchanges2] (dwlh/generate-sync-library :components file-id state)
             rchanges (d/concat rchanges1 rchanges2)
             uchanges (d/concat uchanges1 uchanges2)]
         (when rchanges
-          ;; ===== Uncomment this to debug =====
           (log/debug :msg "SYNC-FILE (2nd stage) finished" :js/rchanges rchanges)
           (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})))))))
 

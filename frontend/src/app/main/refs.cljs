@@ -13,7 +13,6 @@
    [beicon.core :as rx]
    [okulary.core :as l]
    [app.common.pages :as cp]
-   [app.common.pages-helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.constants :as c]
    [app.main.store :as st]))
@@ -122,9 +121,6 @@
 (def workspace-libraries
   (l/derived :workspace-libraries st/state))
 
-(def workspace-users
-  (l/derived :workspace-users st/state))
-
 (def workspace-presence
   (l/derived :workspace-presence st/state))
 
@@ -145,7 +141,7 @@
   (l/derived :options workspace-page))
 
 (def workspace-frames
-  (l/derived cph/select-frames workspace-page-objects))
+  (l/derived cp/select-frames workspace-page-objects))
 
 (defn object-by-id
   [id]
@@ -155,8 +151,8 @@
   [ids]
   (l/derived (fn [objects]
                (into [] (comp (map #(get objects %))
-                              (filter identity))
-                     (set ids)))
+                              (remove nil?))
+                     ids))
              workspace-page-objects =))
 
 (defn is-child-selected?
@@ -165,7 +161,7 @@
             (let [page-id  (:current-page-id state)
                   objects  (get-in state [:workspace-data :pages-index page-id :objects])
                   selected (get-in state [:workspace-local :selected])
-                  children (cph/get-children id objects)]
+                  children (cp/get-children id objects)]
               (some selected children)))]
     (l/derived selector st/state)))
 
@@ -184,7 +180,7 @@
             (let [selected (get-in state [:workspace-local :selected])
                   page-id  (:current-page-id state)
                   objects  (get-in state [:workspace-data :pages-index page-id :objects])
-                  children (mapcat #(cph/get-children % objects) selected)]
+                  children (mapcat #(cp/get-children % objects) selected)]
               (into selected children)))]
     (l/derived selector st/state =)))
 
@@ -195,7 +191,7 @@
             (let [selected (get-in state [:workspace-local :selected])
                   page-id  (:current-page-id state)
                   objects  (get-in state [:workspace-data :pages-index page-id :objects])
-                  children (mapcat #(cph/get-children % objects) selected)
+                  children (mapcat #(cp/get-children % objects) selected)
                   shapes   (into selected children)]
               (mapv #(get objects %) shapes)))]
     (l/derived selector st/state =)))
@@ -207,3 +203,13 @@
 
 (def viewer-local
   (l/derived :viewer-local st/state))
+
+(def comment-threads
+  (l/derived :comment-threads st/state))
+
+(def comments-local
+  (l/derived :comments-local st/state))
+
+(def users
+  (l/derived :users st/state))
+

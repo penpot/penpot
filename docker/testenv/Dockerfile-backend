@@ -1,5 +1,0 @@
-FROM adoptopenjdk/openjdk15:debianslim-jre
-LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
-ADD ./bundle/backend/ /opt/bundle/
-WORKDIR /opt/bundle
-CMD ["/bin/bash", "run.sh"]

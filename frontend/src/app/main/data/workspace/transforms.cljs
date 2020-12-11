@@ -15,10 +15,8 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
-   [app.common.pages-helpers :as cph]
    [app.common.spec :as us]
    [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.selection :as dws]
    [app.main.refs :as refs]
    [app.main.snap :as snap]
@@ -80,10 +78,11 @@
 (defn start-resize
   [handler initial ids shape]
   (letfn [(resize [shape initial resizing-shapes [point lock? point-snap]]
-            (let [{:keys [width height rotation]} shape
+            (let [{:keys [width height]} (:selrect shape)
+                  {:keys [rotation]} shape
                   shapev (-> (gpt/point width height))
 
-                  rotation (if (#{:curve :path} (:type shape)) 0 rotation)
+                  rotation (if (= :path (:type shape)) 0 rotation)
 
                   ;; Vector modifiers depending on the handler
                   handler-modif (let [[x y] (handler-modifiers handler)] (gpt/point x y))
@@ -101,9 +100,11 @@
                   shape-transform (:transform shape (gmt/matrix))
                   shape-transform-inverse (:transform-inverse shape (gmt/matrix))
 
+                  shape-center (gsh/center-shape shape)
+
                   ;; Resize origin point given the selected handler
-                  origin  (-> (handler-resize-origin shape handler)
-                              (gsh/transform-shape-point shape shape-transform))]
+                  origin  (-> (handler-resize-origin (:selrect shape) handler)
+                              (gsh/transform-point-center shape-center shape-transform))]
 
               (rx/of (set-modifiers ids
                                     {:resize-vector scalev
@@ -170,7 +171,7 @@
     (watch [_ state stream]
       (let [stoper          (rx/filter ms/mouse-up? stream)
             group           (gsh/selection-rect shapes)
-            group-center    (gsh/center group)
+            group-center    (gsh/center-selrect group)
             initial-angle   (gpt/angle @ms/mouse-position group-center)
             calculate-angle (fn [pos ctrl?]
                               (let [angle (- (gpt/angle pos group-center) initial-angle)
@@ -240,7 +241,7 @@
       (let [position @ms/mouse-position
             page-id (:current-page-id state)
             objects (dwc/lookup-page-objects state page-id)
-            frame-id (cph/frame-id-by-position objects position)
+            frame-id (cp/frame-id-by-position objects position)
 
             moving-shapes (->> ids
                                (map #(get objects %))
@@ -263,7 +264,8 @@
         (when-not (empty? rch)
           (rx/of dwc/pop-undo-into-transaction
                  (dwc/commit-changes rch uch {:commit-local? true})
-                 dwc/commit-undo-transaction))))))
+                 (dwc/commit-undo-transaction)
+                 (dwc/expand-collapse frame-id)))))))
 
 (defn start-move
   ([from-position] (start-move from-position nil))
@@ -396,19 +398,11 @@
                (update-in objects [shape-id :modifiers] #(merge % modifiers)))
 
              ;; ID's + Children but remove frame children if the flag is set to false
-             ids-with-children (concat ids (mapcat #(cph/get-children % objects)
+             ids-with-children (concat ids (mapcat #(cp/get-children % objects)
                                                    (filter not-frame-id? ids)))]
 
          (d/update-in-when state [:workspace-data :pages-index page-id :objects]
                            #(reduce update-shape % ids-with-children)))))))
-
-(defn rotation-modifiers [center shape angle]
-  (let [displacement (let [shape-center (gsh/center shape)]
-                       (-> (gmt/matrix)
-                           (gmt/rotate angle center)
-                           (gmt/rotate (- angle) shape-center)))]
-    {:rotation angle
-     :displacement displacement}))
 
 
 ;; Set-rotation is custom because applies different modifiers to each
@@ -416,18 +410,18 @@
 
 (defn set-rotation
   ([delta-rotation shapes]
-   (set-rotation delta-rotation shapes (-> shapes gsh/selection-rect gsh/center)))
+   (set-rotation delta-rotation shapes (-> shapes gsh/selection-rect gsh/center-selrect)))
 
   ([delta-rotation shapes center]
    (letfn [(rotate-shape [objects angle shape center]
-             (update-in objects [(:id shape) :modifiers] merge (rotation-modifiers center shape angle)))
+             (update-in objects [(:id shape) :modifiers] merge (gsh/rotation-modifiers center shape angle)))
 
            (rotate-around-center [objects angle center shapes]
              (reduce #(rotate-shape %1 angle %2 center) objects shapes))
 
            (set-rotation [objects]
              (let [id->obj #(get objects %)
-                   get-children (fn [shape] (map id->obj (cph/get-children (:id shape) objects)))
+                   get-children (fn [shape] (map id->obj (cp/get-children (:id shape) objects)))
                    shapes (concat shapes (mapcat get-children shapes))]
                (rotate-around-center objects delta-rotation center shapes)))]
 
@@ -449,7 +443,7 @@
             objects1 (get-in state [:workspace-data :pages-index page-id :objects])
 
             ;; ID's + Children ID's
-            ids-with-children (d/concat [] (mapcat #(cph/get-children % objects1) ids) ids)
+            ids-with-children (d/concat [] (mapcat #(cp/get-children % objects1) ids) ids)
 
             ;; For each shape applies the modifiers by transforming the objects
             update-shape #(update %1 %2 gsh/transform-shape)
@@ -468,6 +462,21 @@
             rchanges (conj (dwc/generate-changes page-id objects1 objects2) regchg)
             uchanges (conj (dwc/generate-changes page-id objects2 objects0) regchg)]
 
-        (rx/of dwc/start-undo-transaction
+        (rx/of (dwc/start-undo-transaction)
                (dwc/commit-changes rchanges uchanges {:commit-local? true})
-               dwc/commit-undo-transaction)))))
+               (dwc/commit-undo-transaction))))))
+
+;; --- Update Dimensions
+
+;; Event mainly used for handling user modification of the size of the
+;; object from workspace sidebar options inputs.
+
+(defn update-dimensions
+  [ids attr value]
+  (us/verify (s/coll-of ::us/uuid) ids)
+  (us/verify #{:width :height} attr)
+  (us/verify ::us/number value)
+  (ptk/reify ::update-dimensions
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of (dwc/update-shapes ids #(gsh/resize-rect % attr value) {:reg-objects? true})))))

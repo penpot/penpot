@@ -42,27 +42,30 @@
     }
   }
 
-  .header-icon {
-    align-items: center;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-
-    a {
-      height: 16px;
-      width: 16px;
-
-      svg {
-        fill: $color-gray-30;
-        height: 16px;
-        width: 16px;
-      }
+  .view-options {
+    .icon {
+      align-items: center;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
 
       &:hover {
-        svg {
+        > svg {
           fill: $color-primary;
         }
       }
+    }
+
+    svg {
+      fill: $color-gray-30;
+      height: 16px;
+      width: 16px;
+    }
+
+    .dropdown {
+      top: 40px;
+      left: 0px;
+      width: 260px;
     }
   }
 
@@ -92,12 +95,10 @@
       }
     }
 
-    .dropdown-button {
-      svg {
-        fill: $color-white;
-        height: 10px;
-        width: 10px;
-      }
+    .show-thumbnails-button svg {
+      fill: $color-white;
+      height: 10px;
+      width: 10px;
     }
 
     .page-name {
@@ -126,8 +127,8 @@
 
       svg {
         fill: $color-gray-20;
-        width: 24px;
-        height: 24px;
+        width: 20px;
+        height: 20px;
       }
 
       &.active {
@@ -172,7 +173,7 @@
     box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
     display: flex;
     flex-direction: column;
-    left: -180px;
+    left: -135px;
     position: absolute;
     padding: 1rem;
     top: 45px;
@@ -243,42 +244,9 @@
 
   }
 
-  .custom-select-dropdown {
-    position: absolute;
-    left: 0;
-    z-index: 12;
-    max-height: 31rem;
-    min-width: 7rem;
-    overflow-y: auto;
-
-    background-color: $color-white;
-    border-radius: $br-small;
-    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.25);
-
-    li {
-      color: $color-gray-60;
-      cursor: pointer;
-      font-size: $fs14;
-      display: flex;
-      padding: $small $medium $small 25px;
-
-      &.selected {
-        background-image: url(/images/icons/tick.svg);
-        background-repeat: no-repeat;
-        background-position: 5% 48%;
-        background-size: 10px;
-        font-weight: bold;
-      }
-
-      &:hover {
-        background-color: $color-primary-lighter;
-      }
-    }
-  }
-
   .zoom-dropdown {
-    left : 116px;
-    top: 45px;
+    left: 180px;
+    top: 40px;
   }
 
   .users-zone {

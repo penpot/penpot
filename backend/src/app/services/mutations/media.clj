@@ -9,21 +9,18 @@
 
 (ns app.services.mutations.media
   (:require
-   [clojure.spec.alpha :as s]
-   [datoteka.core :as fs]
-   [app.common.media :as cm]
    [app.common.exceptions :as ex]
+   [app.common.media :as cm]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
    [app.db :as db]
    [app.media :as media]
+   [app.media-storage :as mst]
    [app.services.mutations :as sm]
    [app.services.queries.teams :as teams]
-   [app.tasks :as tasks]
-   [app.media-storage :as mst]
    [app.util.storage :as ust]
-   [app.util.time :as dt]))
+   [clojure.spec.alpha :as s]
+   [datoteka.core :as fs]))
 
 (def thumbnail-options
   {:width 100
@@ -38,7 +35,6 @@
 (s/def ::team-id ::us/uuid)
 (s/def ::url ::us/url)
 
-
 ;; --- Create Media object (Upload and create from url)
 
 (declare create-media-object)
@@ -51,20 +47,20 @@
 
 (s/def ::add-media-object-from-url
   (s/keys :req-un [::profile-id ::file-id ::is-local ::url]
-          :opt-un [::id]))
+          :opt-un [::id ::name]))
 
 (s/def ::upload-media-object
   (s/keys :req-un [::profile-id ::file-id ::is-local ::name ::content]
           :opt-un [::id]))
 
 (sm/defmutation ::add-media-object-from-url
-  [{:keys [profile-id file-id url] :as params}]
+  [{:keys [profile-id file-id url name] :as params}]
   (db/with-atomic [conn db/pool]
     (let [file (select-file-for-update conn file-id)]
       (teams/check-edition-permissions! conn profile-id (:team-id file))
       (let [content (media/download-media-object url)
             params' (merge params {:content content
-                                   :name (:filename content)})]
+                                   :name (or name (:filename content))})]
         (create-media-object conn params')))))
 
 (sm/defmutation ::upload-media-object
@@ -147,56 +143,3 @@
     (-> thumb
         (dissoc :data :input)
         (assoc :path path))))
-
-;; --- Mutation: Rename Media object
-
-(declare select-media-object-for-update)
-
-(s/def ::rename-media-object
-  (s/keys :req-un [::id ::profile-id ::name]))
-
-(sm/defmutation ::rename-media-object
-  [{:keys [id profile-id name] :as params}]
-  (db/with-atomic [conn db/pool]
-    (let [obj (select-media-object-for-update conn id)]
-      (teams/check-edition-permissions! conn profile-id (:team-id obj))
-      (db/update! conn :media-object
-                  {:name name}
-                  {:id id}))))
-
-(def ^:private sql:select-media-object-for-update
-  "select obj.*,
-          p.team_id as team_id
-     from media_object as obj
-    inner join file as f on (f.id = obj.file_id)
-    inner join project as p on (p.id = f.project_id)
-    where obj.id = ?
-      for update of obj")
-
-(defn- select-media-object-for-update
-  [conn id]
-  (let [row (db/exec-one! conn [sql:select-media-object-for-update id])]
-    (when-not row
-      (ex/raise :type :not-found))
-    row))
-
-;; --- Delete Media object
-
-(s/def ::delete-media-object
-  (s/keys :req-un [::id ::profile-id]))
-
-(sm/defmutation ::delete-media-object
-  [{:keys [profile-id id] :as params}]
-  (db/with-atomic [conn db/pool]
-    (let [obj (select-media-object-for-update conn id)]
-      (teams/check-edition-permissions! conn profile-id (:team-id obj))
-
-      ;; Schedule object deletion
-      (tasks/submit! conn {:name "delete-object"
-                           :delay cfg/default-deletion-delay
-                           :props {:id id :type :media-object}})
-
-      (db/update! conn :media-object
-                  {:deleted-at (dt/now)}
-                  {:id id})
-      nil)))

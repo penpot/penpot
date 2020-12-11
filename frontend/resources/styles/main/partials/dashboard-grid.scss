@@ -180,7 +180,7 @@
 
       .project-th-actions {
         align-items: center;
-        bottom: 0;
+        bottom: 4px;
         display: none;
         left: 0;
         justify-content: flex-end;
@@ -190,9 +190,9 @@
 
         svg {
           fill: $color-gray-20;
-          height: 14px;
+          height: 18px;
           margin-right: $x-small;
-          width: 14px;
+          width: 18px;
         }
 
         span {
@@ -206,54 +206,21 @@
 
           &.menu {
             margin-right: 0;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-end;
+            flex-direction: column;
 
             svg {
-              fill: $color-gray-30;
+              fill: $color-gray-60;
               margin-right: 0;
             }
 
             &:hover {
-              transform: scale(1.4);
-
               svg {
                 fill: $color-primary-dark;
-              }
-
-            }
-
-          }
-
-          &.delete {
-            margin-right: 0;
-
-            svg {
-              fill: $color-gray-30;
-              margin-right: 0;
-            }
-
-            &:hover {
-              transform: scale(1.4);
-
-              svg {
-                fill: $color-danger;
-              }
-
-            }
-
-          }
-
-          &.edit {
-            margin-right: 0;
-
-            svg {
-              fill: $color-gray-30;
-            }
-
-            &:hover {
-              transform: scale(1.4);
-
-              svg {
-                fill: $color-gray-60;
               }
 
             }

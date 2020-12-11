@@ -5,23 +5,24 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2017-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.media-storage
   "A media storage impl for app."
   (:require
-   [mount.core :refer [defstate]]
-   [clojure.java.io :as io]
-   [cuerdas.core :as str]
-   [datoteka.core :as fs]
+   [app.config :refer [config]]
    [app.util.storage :as ust]
-   [app.config :refer [config]]))
+   [mount.core :refer [defstate]]))
 
 ;; --- State
+
+(declare assets-storage)
 
 (defstate assets-storage
   :start (ust/create {:base-path (:assets-directory config)
                       :base-uri (:assets-uri config)}))
+
+(declare media-storage)
 
 (defstate media-storage
   :start (ust/create {:base-path (:media-directory config)

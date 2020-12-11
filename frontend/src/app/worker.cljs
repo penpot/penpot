@@ -62,6 +62,7 @@
                                {:reply-to sender-id
                                 :payload result}))))
     (catch :default e
+      (.error js/console "error" e)
       (let [message {:reply-to sender-id
                      :error {:data (ex-data e)
                              :message (ex-message e)}}]

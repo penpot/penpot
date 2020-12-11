@@ -12,7 +12,6 @@
   (:require
    #?(:cljs [cljs.core :as c]
       :clj [clojure.core :as c])
-   [cuerdas.core :as str]
    [app.common.math :as mth]))
 
 ;; --- Point Impl
@@ -26,6 +25,14 @@
   [v]
   (instance? Point v))
 
+(defn ^boolean point-like?
+  [{:keys [x y] :as v}]
+  (and (map? v)
+       (not (nil? x))
+       (not (nil? y))
+       (number? x)
+       (number? y)))
+
 (defn point
   "Create a Point instance."
   ([] (Point. 0 0))
@@ -37,9 +44,20 @@
      (number? v)
      (Point. v v)
 
+     (point-like? v)
+     (Point. (:x v) (:y v))
+
      :else
      (throw (ex-info "Invalid arguments" {:v v}))))
-  ([x y] (Point. x y)))
+  ([x y]
+   ;;(assert (not (nil? x)))
+   ;;(assert (not (nil? y)))
+   (Point. x y)))
+
+(defn angle->point [{:keys [x y]} angle distance]
+  (point
+   (+ x (* distance (mth/cos angle)))
+   (- y (* distance (mth/sin angle)))))
 
 (defn add
   "Returns the addition of the supplied value to both
@@ -134,14 +152,18 @@
   (assert (point? p))
   (assert (point? other))
 
-  (let [a (/ (+ (* x ox)
-                (* y oy))
-             (* (length p)
-                (length other)))
-        a (mth/acos (if (< a -1) -1 (if (> a 1) 1 a)))
-        d (-> (mth/degrees a)
-              (mth/precision 6))]
-    (if (mth/nan? d) 0 d)))
+  (let [length-p (length p)
+        length-other (length other)]
+    (if (or (mth/almost-zero? length-p)
+            (mth/almost-zero? length-other))
+      0
+      (let [a (/ (+ (* x ox)
+                    (* y oy))
+                 (* length-p length-other))
+            a (mth/acos (if (< a -1) -1 (if (> a 1) 1 a)))
+            d (-> (mth/degrees a)
+                  (mth/precision 6))]
+        (if (mth/nan? d) 0 d)))))
 
 
 (defn update-angle
@@ -173,7 +195,7 @@
 
 (defn transform
   "Transform a point applying a matrix transfomation."
-  [{:keys [x y] :as p} {:keys [a b c d e f] :as m}]
+  [{:keys [x y] :as p} {:keys [a b c d e f]}]
   (assert (point? p))
   (Point. (+ (* x a) (* y c) e)
           (+ (* x b) (* y d) f)))

@@ -9,10 +9,7 @@
 
 (ns app.services.mutations.viewer
   (:require
-   [app.common.exceptions :as ex]
-   [app.common.pages :as cp]
    [app.common.spec :as us]
-   [app.config :as cfg]
    [app.db :as db]
    [app.services.mutations :as sm]
    [app.services.queries.files :as files]

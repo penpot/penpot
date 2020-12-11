@@ -9,7 +9,6 @@
 
 (ns app.common.geom.matrix
   (:require
-   [cuerdas.core :as str]
    [app.common.math :as mth]
    [app.common.geom.point :as gpt]))
 
@@ -21,8 +20,8 @@
     (str "matrix(" a "," b "," c "," d "," e "," f ")")))
 
 (defn multiply
-  ([{m1a :a m1b :b m1c :c m1d :d m1e :e m1f :f :as m1}
-    {m2a :a m2b :b m2c :c m2d :d m2e :e m2f :f :as m2}]
+  ([{m1a :a m1b :b m1c :c m1d :d m1e :e m1f :f}
+    {m2a :a m2b :b m2c :c m2d :d m2e :e m2f :f}]
    (Matrix.
     (+ (* m1a m2a) (* m1c m2b))
     (+ (* m1b m2a) (* m1d m2b))
@@ -34,8 +33,8 @@
    (reduce multiply (multiply m1 m2) others)))
 
 (defn substract
-  [{m1a :a m1b :b m1c :c m1d :d m1e :e m1f :f :as m1}
-   {m2a :a m2b :b m2c :c m2d :d m2e :e m2f :f :as m2}]
+  [{m1a :a m1b :b m1c :c m1d :d m1e :e m1f :f}
+   {m2a :a m2b :b m2c :c m2d :d m2e :e m2f :f}]
   (Matrix.
    (- m1a m2a) (- m1b m2b) (- m1c m2c)
    (- m1d m2d) (- m1e m2e) (- m1f m2f)))
@@ -88,7 +87,7 @@
 (defn skew-matrix
   ([angle-x angle-y point]
    (multiply (translate-matrix point)
-             (skew-matrix angle-y angle-y)
+             (skew-matrix angle-x angle-y)
              (translate-matrix (gpt/negate point))))
   ([angle-x angle-y]
    (let [m1 (mth/tan (mth/radians angle-x))
@@ -121,3 +120,13 @@
   ([m angle-x angle-y p]
    (multiply m (skew-matrix angle-x angle-y p))))
 
+(defn m-equal [m1 m2 threshold]
+  (let [th-eq (fn [a b] (<= (mth/abs (- a b)) threshold))
+        {m1a :a m1b :b m1c :c m1d :d m1e :e m1f :f} m1
+        {m2a :a m2b :b m2c :c m2d :d m2e :e m2f :f} m2]
+    (and (th-eq m1a m2a)
+         (th-eq m1b m2b)
+         (th-eq m1c m2c)
+         (th-eq m1d m2d)
+         (th-eq m1e m2e)
+         (th-eq m1f m2f))))

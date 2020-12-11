@@ -13,7 +13,6 @@
    [rumext.alpha :as mf]
    [app.common.data :as d]
    [app.common.pages :as cp]
-   [app.common.pages-helpers :as cph]
    [app.main.data.viewer :as dv]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -38,6 +37,7 @@
       :navigate
       (let [frame-id (:destination interaction)]
         (st/emit! (dv/go-to-frame frame-id)))
+
       nil)))
 
 (defn generic-wrapper-factory
@@ -58,7 +58,7 @@
 
       [:> shape-container {:shape shape
                            :on-mouse-down on-mouse-down
-                           :cursor (when (:interactions shape) "pointer")}
+                           :cursor (when (seq (:interactions shape)) "pointer")}
        [:& component {:shape shape
                       :frame frame
                       :childs childs
@@ -110,7 +110,7 @@
     (mf/fnc frame-container
       {::mf/wrap-props false}
       [props]
-      (let [shape (unchecked-get props "shape")
+      (let [shape  (obj/get props "shape")
             childs (mapv #(get objects %) (:shapes shape))
             shape  (geom/transform-shape shape)
             props  (obj/merge! #js {} props
@@ -149,10 +149,11 @@
             shape (unchecked-get props "shape")
             frame (unchecked-get props "frame")]
         (when (and shape (not (:hidden shape)))
-          (let [shape (geom/transform-shape frame shape)
+          (let [shape (-> (geom/transform-shape shape)
+                          (geom/translate-to-frame frame))
                 opts #js {:shape shape}]
             (case (:type shape)
-              :curve  [:> path-wrapper opts]
+              :frame  [:g.empty]
               :text   [:> text-wrapper opts]
               :rect   [:> rect-wrapper opts]
               :path   [:> path-wrapper opts]
@@ -172,7 +173,7 @@
         update-fn    #(assoc-in %1 [%2 :modifiers :displacement] modifier)
 
         frame-id     (:id frame)
-        modifier-ids (d/concat [frame-id] (cph/get-children frame-id objects))
+        modifier-ids (d/concat [frame-id] (cp/get-children frame-id objects))
         objects      (reduce update-fn objects modifier-ids)
         frame        (assoc-in frame [:modifiers :displacement] modifier)
 

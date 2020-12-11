@@ -9,23 +9,18 @@
 
 (ns app.main.ui.workspace.shapes.frame
   (:require
-   [okulary.core :as l]
-   [rumext.alpha :as mf]
-   [app.common.data :as d]
-   [app.main.constants :as c]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.workspace.shapes.common :as common]
-   [app.main.data.workspace.selection :as dws]
    [app.main.ui.shapes.frame :as frame]
-   [app.common.geom.matrix :as gmt]
-   [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as geom]
+   [app.main.ui.shapes.shape :refer [shape-container]]
+   [app.main.ui.workspace.effects :as we]
    [app.util.dom :as dom]
-   [app.main.streams :as ms]
    [app.util.timers :as ts]
-   [app.main.ui.shapes.shape :refer [shape-container]]))
+   [okulary.core :as l]
+   [rumext.alpha :as mf]))
 
 (defn- frame-wrapper-factory-equals?
   [np op]
@@ -45,29 +40,41 @@
                (recur (first ids) (rest ids))
                false))))))
 
+(defn use-select-shape [{:keys [id]}]
+  (mf/use-callback
+   (mf/deps id)
+   (fn [event]
+     (dom/prevent-default event)
+     (st/emit! (dw/deselect-all)
+               (dw/select-shape id)))))
+
+;; Ensure that the label has always the same font
+;; size, regardless of zoom
+;; https://css-tricks.com/transforms-on-svg-elements/
+(defn text-transform
+  [{:keys [x y]} zoom]
+  (let [inv-zoom (/ 1 zoom)]
+    (str
+     "scale(" inv-zoom ", " inv-zoom ") "
+     "translate(" (* zoom x) ", " (* zoom y) ")")))
+
 (mf/defc frame-title
-  [{:keys [frame on-double-click on-mouse-over on-mouse-out]}]
+  [{:keys [frame]}]
   (let [zoom (mf/deref refs/selected-zoom)
-        inv-zoom    (/ 1 zoom)
         {:keys [width x y]} frame
-        label-pos (gpt/point x (- y (/ 10 zoom)))]
+        label-pos (gpt/point x (- y (/ 10 zoom)))
+        handle-click (use-select-shape frame)
+        handle-pointer-enter (we/use-pointer-enter frame)
+        handle-pointer-leave (we/use-pointer-leave frame)]
     [:text {:x 0
             :y 0
             :width width
             :height 20
             :class "workspace-frame-label"
-            ;; Ensure that the label has always the same font
-            ;; size, regardless of zoom
-            ;; https://css-tricks.com/transforms-on-svg-elements/
-            :transform (str
-                        "scale(" inv-zoom ", " inv-zoom ") "
-                        "translate(" (* zoom (:x label-pos)) ", "
-                        (* zoom (:y label-pos))
-                        ")")
-            ;; User may also select the frame with single click in the label
-            :on-click on-double-click
-            :on-mouse-over on-mouse-over
-            :on-mouse-out on-mouse-out}
+            :transform (text-transform label-pos zoom)
+            :on-click handle-click
+            :on-pointer-over handle-pointer-enter
+            :on-pointer-out handle-pointer-leave}
      (:name frame)]))
 
 (defn make-is-moving-ref
@@ -97,47 +104,23 @@
                                        #(refs/make-selected-ref (:id shape)))
             selected? (mf/deref selected-iref)
 
-            on-mouse-down   (mf/use-callback (mf/deps shape)
-                                             #(common/on-mouse-down % shape))
-            on-context-menu (mf/use-callback (mf/deps shape)
-                                             #(common/on-context-menu % shape))
-
-            shape (geom/transform-shape shape)
+            shape (gsh/transform-shape shape)
             children    (mapv #(get objects %) (:shapes shape))
             ds-modifier (get-in shape [:modifiers :displacement])
 
-            on-double-click
-            (mf/use-callback
-             (mf/deps (:id shape))
-             (fn [event]
-               (dom/prevent-default event)
-               (st/emit! (dw/deselect-all)
-                         (dw/select-shape (:id shape)))))
-
-            on-mouse-over
-            (mf/use-callback
-             (mf/deps (:id shape))
-             (fn []
-               (st/emit! (dws/change-hover-state (:id shape) true))))
-
-            on-mouse-out
-            (mf/use-callback
-             (mf/deps (:id shape))
-             (fn []
-               (st/emit! (dws/change-hover-state (:id shape) false))))]
+            handle-context-menu (we/use-context-menu shape)
+            handle-double-click (use-select-shape shape)
+            handle-mouse-down (we/use-mouse-down shape)]
 
         (when (and shape
                    (or ghost? (not moving?))
                    (not (:hidden shape)))
           [:g {:class (when selected? "selected")
-               :on-context-menu on-context-menu
-               :on-double-click on-double-click
-               :on-mouse-down on-mouse-down}
+               :on-context-menu handle-context-menu
+               :on-double-click handle-double-click
+               :on-mouse-down   handle-mouse-down}
 
-           [:& frame-title {:frame shape
-                            :on-context-menu on-context-menu
-                            :on-double-click on-double-click
-                            :on-mouse-down on-mouse-down}]
+           [:& frame-title {:frame shape}]
 
            [:> shape-container {:shape shape}
             [:& frame-shape

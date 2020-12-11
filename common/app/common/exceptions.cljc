@@ -6,6 +6,8 @@
 
 (ns app.common.exceptions
   "A helpers for work with exceptions."
+  #?(:cljs
+     (:require-macros [app.common.exceptions]))
   (:require [clojure.spec.alpha :as s]))
 
 (s/def ::type keyword?)
@@ -22,7 +24,7 @@
                    ::cause]))
 
 (defn error
-  [& {:keys [type code message hint cause] :as params}]
+  [& {:keys [message hint cause] :as params}]
   (s/assert ::error-params params)
   (let [message (or message hint "")
         payload (dissoc params :cause)]
@@ -46,3 +48,7 @@
 (defmacro try
   [& exprs]
   `(try* (^:once fn* [] ~@exprs) identity))
+
+(defn ex-info?
+  [v]
+  (instance? #?(:clj clojure.lang.ExceptionInfo :cljs cljs.core.ExceptionInfo) v))

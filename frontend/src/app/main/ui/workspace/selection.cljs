@@ -31,7 +31,8 @@
    [app.common.geom.matrix :as gmt]
    [app.util.debug :refer [debug?]]
    [app.main.ui.workspace.shapes.outline :refer [outline]]
-   [app.main.ui.measurements :as msr]))
+   [app.main.ui.measurements :as msr]
+   [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]))
 
 (def rotation-handler-size 25)
 (def resize-point-radius 4)
@@ -64,52 +65,47 @@
     :position :top-left
     :props {:cx x :cy y}}
 
-   ;; TOP
+   {:type :rotation
+    :position :top-right
+    :props {:cx (+ x width) :cy y}}
+
+   {:type :resize-point
+    :position :top-right
+    :props {:cx (+ x width) :cy y}}
+
+   {:type :rotation
+    :position :bottom-right
+    :props {:cx (+ x width) :cy (+ y height)}}
+
+   {:type :resize-point
+    :position :bottom-right
+    :props {:cx (+ x width) :cy (+ y height)}}
+
+   {:type :rotation
+    :position :bottom-left
+    :props {:cx x :cy (+ y height)}}
+
+   {:type :resize-point
+    :position :bottom-left
+    :props {:cx x :cy (+ y height)}}
+
    {:type :resize-side
     :position :top
     :props {:x x :y y :length width :angle 0 }}
 
-   ;; TOP-RIGHT
-   {:type :rotation
-    :position :top-right
-    :props {:cx (+ x width) :cy y}}
-
-   {:type :resize-point
-    :position :top-right
-    :props {:cx (+ x width) :cy y}}
-
-   ;; RIGHT
    {:type :resize-side
     :position :right
     :props {:x (+ x width) :y y :length height :angle 90 }}
 
-   ;; BOTTOM-RIGHT
-   {:type :rotation
-    :position :bottom-right
-    :props {:cx (+ x width) :cy (+ y height)}}
-
-   {:type :resize-point
-    :position :bottom-right
-    :props {:cx (+ x width) :cy (+ y height)}}
-
-   ;; BOTTOM
    {:type :resize-side
     :position :bottom
     :props {:x (+ x width) :y (+ y height) :length width :angle 180 }}
 
-   ;; BOTTOM-LEFT
-   {:type :rotation
-    :position :bottom-left
-    :props {:cx x :cy (+ y height)}}
-
-   {:type :resize-point
-    :position :bottom-left
-    :props {:cx x :cy (+ y height)}}
-
-   ;; LEFT
    {:type :resize-side
     :position :left
-    :props {:x x :y (+ y height) :length height :angle 270 }}])
+    :props {:x x :y (+ y height) :length height :angle 270 }}
+
+   ])
 
 (mf/defc rotation-handler [{:keys [cx cy transform position rotation zoom on-rotate]}]
   (let [size (/ rotation-handler-size zoom)
@@ -159,11 +155,14 @@
 (mf/defc resize-side-handler [{:keys [x y length angle zoom position rotation transform on-resize]}]
   (let [res-point (if (#{:top :bottom} position)
                     {:y y}
-                    {:x x})]
-    [:rect {:x (+ x (/ resize-point-rect-size zoom))
-            :y (- y (/ resize-side-height 2 zoom))
-            :width (max 0 (- length (/ (* resize-point-rect-size 2) zoom)))
-            :height (/ resize-side-height zoom)
+                    {:x x})
+        target-length (max 0 (- length (/ (* resize-point-rect-size 2) zoom)))
+        width (if (< target-length 6) length target-length)
+        height (/ resize-side-height zoom)]
+    [:rect {:x (+ x (/ (- length width) 2))
+            :y (- y (/ height 2))
+            :width width
+            :height height
             :transform (gmt/multiply transform
                                      (gmt/rotate-matrix angle (gpt/point x y)))
             :on-mouse-down #(on-resize res-point %)
@@ -181,8 +180,8 @@
         on-rotate (obj/get props "on-rotate")
         current-transform (mf/deref refs/current-transform)
 
-        selrect (geom/shape->rect-shape shape)
-        transform (geom/transform-matrix shape)
+        selrect (:selrect shape)
+        transform (geom/transform-matrix shape {:no-flip true})
 
         tr-shape (geom/transform-shape shape)]
 
@@ -214,44 +213,6 @@
              :resize-side [:> resize-side-handler props])))])))
 
 ;; --- Selection Handlers (Component)
-(mf/defc path-edition-selection-handlers
-  [{:keys [shape modifiers zoom color] :as props}]
-  (letfn [(on-mouse-down [event index]
-            (dom/stop-propagation event)
-            ;; TODO: this need code ux refactor
-            (let [stoper (get-edition-stream-stoper)
-                  stream (->> (ms/mouse-position-deltas @ms/mouse-position)
-                              (rx/take-until stoper))]
-              ;; (when @refs/selected-alignment
-              ;;   (st/emit! (dw/initial-path-point-align (:id shape) index)))
-              (rx/subscribe stream #(on-handler-move % index))))
-
-          (get-edition-stream-stoper []
-            (let [stoper? #(and (ms/mouse-event? %) (= (:type %) :up))]
-              (rx/merge
-               (rx/filter stoper? st/stream)
-               (->> st/stream
-                    (rx/filter #(= % :interrupt))
-                    (rx/take 1)))))
-
-          (on-handler-move [delta index]
-            (st/emit! (dw/update-path (:id shape) index delta)))]
-
-    (let [transform (geom/transform-matrix shape)
-          displacement (:displacement modifiers)
-          segments (cond->> (:segments shape)
-                     displacement (map #(gpt/transform % displacement)))]
-      [:g.controls
-       (for [[index {:keys [x y]}] (map-indexed vector segments)]
-         (let [{:keys [x y]} (gpt/transform (gpt/point x y) transform)]
-           [:circle {:cx x :cy y
-                     :r (/ 6.0 zoom)
-                     :key index
-                     :on-mouse-down #(on-mouse-down % index)
-                     :fill "#ffffff"
-                     :stroke color
-                     :style {:cursor cur/move-pointer}}]))])))
-
 ;; TODO: add specs for clarity
 
 (mf/defc text-edition-selection-handlers
@@ -269,8 +230,8 @@
 
 (mf/defc multiple-selection-handlers
   [{:keys [shapes selected zoom color show-distances] :as props}]
-  (let [shape (geom/selection-rect shapes)
-        shape-center (geom/center shape)
+  (let [shape (geom/setup {:type :rect} (geom/selection-rect (->> shapes (map geom/transform-shape))))
+        shape-center (geom/center-shape shape)
 
         hover-id (-> (mf/deref refs/current-hover) first)
         hover-id (when-not (d/seek #(= hover-id (:id %)) shapes) hover-id)
@@ -314,7 +275,7 @@
         hover-id (when-not (= shape-id hover-id) hover-id)
         hover-shape (mf/deref (refs/object-by-id hover-id))
 
-        shape' (if (debug? :simple-selection) (geom/selection-rect [shape]) shape)
+        shape' (if (debug? :simple-selection) (geom/setup {:type :rect} (geom/selection-rect [shape])) shape)
         on-resize (fn [current-position initial-position event]
                     (dom/stop-propagation event)
                     (st/emit! (dw/start-resize current-position initial-position #{shape-id} shape')))
@@ -322,7 +283,6 @@
         on-rotate
         #(do (dom/stop-propagation %)
              (st/emit! (dw/start-rotate [shape])))]
-
     [:*
      [:& controls {:shape shape'
                    :zoom zoom
@@ -366,12 +326,11 @@
       [:& text-edition-selection-handlers {:shape shape
                                            :zoom zoom
                                            :color color}]
-      (and (or (= type :path)
-               (= type :curve))
+
+      (and (= type :path)
            (= edition (:id shape)))
-      [:& path-edition-selection-handlers {:shape shape
-                                           :zoom zoom
-                                           :color color}]
+      [:& path-editor {:zoom zoom
+                       :shape shape}]
 
       :else
       [:& single-selection-handlers {:shape shape

@@ -9,6 +9,8 @@
 
 (ns app.main
   (:require
+   [app.config :as cfg]
+   [clojure.tools.logging :as log]
    [mount.core :as mount]))
 
 (defn- enable-asserts
@@ -25,16 +27,16 @@
 ;; --- Entry point
 
 (defn run
-  [params]
-  (require 'app.config
+  [_params]
+  (require 'app.srepl.server
+           'app.services
            'app.migrations
            'app.worker
            'app.media
            'app.http)
-  (mount/start))
-
-
+  (mount/start)
+  (log/infof "Welcome to penpot! Version: '%s'." (:full @cfg/version)))
 
 (defn -main
-  [& args]
+  [& _args]
   (run {}))

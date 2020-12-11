@@ -9,12 +9,10 @@
 
 (ns app.tasks.sendmail
   (:require
-   [clojure.tools.logging :as log]
-   [app.common.data :as d]
-   [app.common.exceptions :as ex]
-   [app.util.emails :as emails]
    [app.config :as cfg]
-   [app.metrics :as mtx]))
+   [app.metrics :as mtx]
+   [app.util.emails :as emails]
+   [clojure.tools.logging :as log]))
 
 (defn- send-console!
   [config email]

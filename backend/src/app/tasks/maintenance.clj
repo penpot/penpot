@@ -10,8 +10,6 @@
 (ns app.tasks.maintenance
   (:require
    [app.common.spec :as us]
-   [app.common.exceptions :as ex]
-   [app.config :as cfg]
    [app.db :as db]
    [app.metrics :as mtx]
    [app.util.time :as dt]
@@ -21,6 +19,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Task: Delete Executed Tasks
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; This tasks perform a cleanup of already executed tasks from the
+;; database.
 
 (s/def ::max-age ::dt/duration)
 (s/def ::delete-completed-tasks

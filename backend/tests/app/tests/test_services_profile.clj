@@ -40,7 +40,7 @@
         (let [error (ex-cause (:error out))]
           (t/is (th/ex-info? error))
           (t/is (th/ex-of-type? error :validation))
-          (t/is (th/ex-of-code? error :app.services.mutations.profile/wrong-credentials)))))
+          (t/is (th/ex-of-code? error :wrong-credentials)))))
 
     (t/testing "success"
       (let [event {::sm/type :login

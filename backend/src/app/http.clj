@@ -9,31 +9,29 @@
 
 (ns app.http
   (:require
-   [clojure.tools.logging :as log]
-   [mount.core :as mount :refer [defstate]]
-   [reitit.ring :as rring]
-   [ring.adapter.jetty9 :as jetty]
    [app.config :as cfg]
    [app.http.auth :as auth]
    [app.http.auth.gitlab :as gitlab]
    [app.http.auth.google :as google]
    [app.http.auth.ldap :as ldap]
-   [app.http.debug :as debug]
    [app.http.errors :as errors]
    [app.http.handlers :as handlers]
    [app.http.middleware :as middleware]
    [app.http.session :as session]
    [app.http.ws :as ws]
    [app.metrics :as mtx]
-   [app.services.notifications :as usn]))
+   [clojure.tools.logging :as log]
+   [mount.core :as mount :refer [defstate]]
+   [reitit.ring :as rring]
+   [ring.adapter.jetty9 :as jetty]))
 
 (defn- create-router
   []
   (rring/router
    [["/metrics" {:get mtx/dump}]
     ["/api" {:middleware [[middleware/format-response-body]
-                          [middleware/errors errors/handle]
                           [middleware/parse-request-body]
+                          [middleware/errors errors/handle]
                           [middleware/params]
                           [middleware/multipart-params]
                           [middleware/keyword-params]

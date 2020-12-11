@@ -5,20 +5,18 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2019-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.services.queries.files
   (:require
-   [clojure.spec.alpha :as s]
-   [promesa.core :as p]
-   [app.common.pages-migrations :as pmg]
    [app.common.exceptions :as ex]
+   [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
    [app.db :as db]
-   [app.media :as media]
    [app.services.queries :as sq]
    [app.services.queries.projects :as projects]
-   [app.util.blob :as blob]))
+   [app.util.blob :as blob]
+   [clojure.spec.alpha :as s]))
 
 (declare decode-row)
 (declare decode-row-xf)
@@ -185,48 +183,11 @@
     (let [file (retrieve-file conn file-id)]
       (get-in file [:data :pages-index id]))))
 
-;; --- Query: File users
-
-(def ^:private sql:file-users
-  "select pf.id, pf.fullname, pf.photo
-     from profile as pf
-    inner join file_profile_rel as fpr on (fpr.profile_id = pf.id)
-    where fpr.file_id = ?
-    union
-   select pf.id, pf.fullname, pf.photo
-     from profile as pf
-    inner join team_profile_rel as tpr on (tpr.profile_id = pf.id)
-    inner join project as p on (tpr.team_id = p.team_id)
-    inner join file as f on (p.id = f.project_id)
-    where f.id = ?")
-
-(defn retrieve-file-users
-  [conn id]
-  (->> (db/exec! conn [sql:file-users id id])
-       (mapv #(media/resolve-media-uris % [:photo :photo-uri]))))
-
-(s/def ::file-users
-  (s/keys :req-un [::profile-id ::id]))
-
-(sq/defquery ::file-users
-  [{:keys [profile-id id] :as params}]
-  (db/with-atomic [conn db/pool]
-    (check-edition-permissions! conn profile-id id)
-    (retrieve-file-users conn id)))
 
 ;; --- Query: Shared Library Files
 
-;; TODO: remove the counts, because they are no longer needed.
-
 (def ^:private sql:shared-files
-  "select f.*,
-          (select count(*) from color as c
-            where c.file_id = f.id
-              and c.deleted_at is null) as colors_count,
-          (select count(*) from media_object as m
-            where m.file_id = f.id
-              and m.is_local = false
-              and m.deleted_at is null) as graphics_count
+  "select f.*
      from file as f
     inner join project as p on (p.id = f.project_id)
     where f.is_shared = true

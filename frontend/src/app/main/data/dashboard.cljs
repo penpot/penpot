@@ -11,6 +11,7 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.repo :as rp]
+   [app.main.data.users :as du]
    [app.util.router :as rt]
    [app.util.time :as dt]
    [app.util.timers :as ts]
@@ -64,13 +65,6 @@
 
 ;; --- Fetch Team
 
-(defn assoc-team-avatar
-  [{:keys [photo name] :as team}]
-  (us/assert ::team team)
-  (cond-> team
-    (or (nil? photo) (empty? photo))
-    (assoc :photo (avatars/generate {:name name}))))
-
 (defn fetch-team
   [{:keys [id] :as params}]
   (letfn [(fetched [team state]
@@ -80,18 +74,30 @@
       (watch [_ state stream]
         (let [profile (:profile state)]
           (->> (rp/query :team params)
-               (rx/map assoc-team-avatar)
+               (rx/map #(avatars/assoc-avatar % :name))
                (rx/map #(partial fetched %))))))))
 
 (defn fetch-team-members
   [{:keys [id] :as params}]
   (us/assert ::us/uuid id)
   (letfn [(fetched [members state]
-            (assoc-in state [:team-members id] (d/index-by :id members)))]
+            (->> (map #(avatars/assoc-avatar % :name) members)
+                 (d/index-by :id)
+                 (assoc-in state [:team-members id])))]
     (ptk/reify ::fetch-team-members
       ptk/WatchEvent
       (watch [_ state stream]
         (->> (rp/query :team-members {:team-id id})
+             (rx/map #(partial fetched %)))))))
+
+(defn fetch-team-stats
+  [{:keys [id] :as team}]
+  (us/assert ::us/uuid id)
+  (ptk/reify ::fetch-team-members
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [fetched #(assoc-in %2 [:team-stats id] %1)]
+        (->> (rp/query :team-stats {:team-id id})
              (rx/map #(partial fetched %)))))))
 
 ;; --- Fetch Projects
@@ -115,7 +121,8 @@
     (watch [_ state stream]
       (let [profile (:profile state)]
         (->> (rx/merge (ptk/watch (fetch-team params) state stream)
-                       (ptk/watch (fetch-projects {:team-id id}) state stream))
+                       (ptk/watch (fetch-projects {:team-id id}) state stream)
+                       (ptk/watch (du/fetch-users {:team-id id}) state stream))
              (rx/catch (fn [{:keys [type code] :as error}]
                          (cond
                            (and (= :not-found type)
@@ -387,7 +394,9 @@
   (ptk/reify ::rename-project
     ptk/UpdateEvent
     (update [_ state]
-      (assoc-in state [:projects team-id id :name] name))
+      (-> state
+          (assoc-in [:projects team-id id :name] name)
+          (update :dashboard-local dissoc :project-for-edit)))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -412,6 +421,8 @@
 
 ;; --- Delete File (by id)
 
+(declare delete-file-result)
+
 (defn delete-file
   [{:keys [id project-id] :as params}]
   (us/assert ::file params)
@@ -424,8 +435,18 @@
 
     ptk/WatchEvent
     (watch [_ state s]
-      (->> (rp/mutation :delete-file {:id id})
-           (rx/ignore)))))
+      (let [team-id (uuid/uuid (get-in state [:route :path-params :team-id]))]
+        (->> (rp/mutation :delete-file {:id id})
+             (rx/map #(delete-file-result team-id project-id)))))))
+
+(defn delete-file-result
+  [team-id project-id]
+
+  (ptk/reify ::delete-file
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update-in [:projects team-id project-id :count] dec)))))
 
 ;; --- Rename File
 

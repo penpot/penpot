@@ -194,6 +194,7 @@
     color: $color-white;
     font-size: $fs12;
     margin: $x-small;
+    min-width: 0;
     padding: $x-small;
     width: 100%;
 
@@ -225,17 +226,17 @@
   .element-set-subtitle {
     color: $color-gray-20;
     font-size: $fs11;
-    width: 12rem;
+    width: 64px;
   }
 
   .lock-size {
     cursor: pointer;
-    width: 20%;
+    margin: auto;
 
     svg {
       fill: $color-gray-20;
-      height: 15px;
-      width: 15px;
+      height: 14px;
+      width: 14px;
 
       &:hover {
         fill: $color-primary;
@@ -517,16 +518,15 @@
 }
 
 .align-icons {
-  border: 1px solid $color-gray-60;
-  border-radius: $br-small;
   cursor: pointer;
   display: flex;
   flex: 1;
-  justify-content: space-between;
-  margin-left: $small;
-  padding: $small;
+  justify-content: flex-end;
+  margin: $small 0 $small $small;
+  padding: 0 $x-small;
 
   &:first-child {
+    justify-content: space-between;
     margin-left: 0;
   }
 
@@ -541,8 +541,8 @@
 
     svg {
       fill: $color-gray-30;
-      height: 15px;
-      width: 15px;
+      height: 14px;
+      width: 14px;
     }
 
     &:hover,
@@ -650,12 +650,12 @@
     display: flex;
     height: 18px;
     position: relative;
-    width: 18px;
+    width: 14px;
 
     svg {
       fill: $color-gray-30;
-      height: 16px;
-      width: 16px;
+      height: 14px;
+      width: 14px;
     }
   }
 }
@@ -760,30 +760,23 @@
   left: 0;
   position: absolute;
   top: 0;
-  width: 100%;
+  width: calc(100% - 8px);
   opacity: 0.4;
   z-index: 10;
 }
 
 .advanced-options-wrapper {
-  position: absolute;
   width: 100%;
-  padding-right: 1.5rem;
   padding-left: 0.25rem;
-}
-
-.element-options .advanced-options-wrapper {
-  padding-right: 1rem;
 }
 
 .advanced-options {
   background-color: #303236;
   border-radius: 4px;
-  left: -8px;
   padding: 0.5rem;
   position: relative;
   top: 2px;
-  width: calc(100% + 16px);
+  width: 100%;
   z-index: 20;
 }
 
@@ -918,12 +911,17 @@
         flex-grow: 1;
         font-size: 11px;
         margin-top: 4px;
+        white-space: nowrap;
     }
 
     .element-set-actions-button svg {
         width: 10px;
         height: 10px;
     }
+}
+
+.spacing-options {
+  display: flex;
 }
 
 .asset-group {

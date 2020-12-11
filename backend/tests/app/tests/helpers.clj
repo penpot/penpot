@@ -17,7 +17,7 @@
    [mount.core :as mount]
    [environ.core :refer [env]]
    [app.common.pages :as cp]
-   [app.services.init]
+   [app.services]
    [app.services.mutations.profile :as profile]
    [app.services.mutations.projects :as projects]
    [app.services.mutations.teams :as teams]
@@ -36,9 +36,9 @@
   []
   (doto (PGSimpleDataSource.)
     (.setServerName "postgres")
-    (.setDatabaseName "uxbox_test")
-    (.setUser "uxbox")
-    (.setPassword "uxbox")))
+    (.setDatabaseName "penpot_test")
+    (.setUser "penpot")
+    (.setPassword "penpot")))
 
 (defn state-init
   [next]
@@ -50,8 +50,8 @@
                           #'app.redis/client
                           #'app.redis/conn
                           #'app.media/semaphore
-                          #'app.services.init/query-services
-                          #'app.services.init/mutation-services
+                          #'app.services/query-services
+                          #'app.services/mutation-services
                           #'app.migrations/migrations
                           #'app.media-storage/assets-storage
                           #'app.media-storage/media-storage})
@@ -91,7 +91,8 @@
   (let [params {:id (mk-uuid "profile" i)
                 :fullname (str "Profile " i)
                 :email (str "profile" i ".test@nodomain.com")
-                :password "123123"}]
+                :password "123123"
+                :demo? true}]
     (->> (#'profile/create-profile conn params)
          (#'profile/create-profile-relations conn))))
 

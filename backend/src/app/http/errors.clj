@@ -2,43 +2,55 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.http.errors
   "A errors handling for the http server."
   (:require
+   [app.common.exceptions :as ex]
    [clojure.tools.logging :as log]
    [cuerdas.core :as str]
-   [app.metrics :as mtx]
-   [io.aviso.exception :as e]))
+   [expound.alpha :as expound]))
 
 (defmulti handle-exception
-  (fn [err & rest]
-    (:type (ex-data err))))
+  (fn [err & _rest]
+    (let [edata (ex-data err)]
+      (or (:type edata)
+          (class err)))))
+
+(defmethod handle-exception :authorization
+  [err _]
+  {:status 403
+   :body (ex-data err)})
 
 (defmethod handle-exception :validation
   [err req]
   (let [header (get-in req [:headers "accept"])
-        response (ex-data err)]
+        edata  (ex-data err)]
     (cond
       (and (str/starts-with? header "text/html")
-           (= :spec-validation (:code response)))
+           (= :spec-validation (:code edata)))
       {:status 400
        :headers {"content-type" "text/html"}
-       :body (str "<pre style='font-size:16px'>" (:explain response) "</pre>\n")}
-
+       :body (str "<pre style='font-size:16px'>"
+                  (with-out-str
+                    (:data edata))
+                  "</pre>\n")}
       :else
       {:status 400
-       :body response})))
+       :body edata})))
 
 (defmethod handle-exception :ratelimit
-  [err req]
+  [_ _]
   {:status 429
    :headers {"retry-after" 1000}
    :body ""})
 
 (defmethod handle-exception :not-found
-  [err req]
+  [err _]
   (let [response (ex-data err)]
     {:status 404
      :body response}))
@@ -48,16 +60,43 @@
   (handle-exception (.getCause ^Throwable err) req))
 
 (defmethod handle-exception :parse
-  [err req]
+  [err _]
   {:status 400
    :body {:type :parse
           :message (ex-message err)}})
 
+(defn get-context-string
+  [err request]
+  (str
+   "=| uri:          " (pr-str (:uri request)) "\n"
+   "=| method:       " (pr-str (:request-method request)) "\n"
+   "=| path-params:  " (pr-str (:path-params request)) "\n"
+   "=| query-params: " (pr-str (:query-params request)) "\n"
+
+   (when-let [bparams (:body-params request)]
+     (str "=| body-params:  " (pr-str bparams) "\n"))
+
+   (when (ex/ex-info? err)
+     (str "=| ex-data:      " (pr-str (ex-data err)) "\n"))
+
+   "\n"))
+
+
+(defmethod handle-exception :assertion
+  [err request]
+  (let [{:keys [data] :as edata} (ex-data err)]
+    (log/errorf err
+                (str "Assertion error\n"
+                     (get-context-string err request)
+                     (with-out-str (expound/printer data))))
+    {:status 500
+     :body {:type :internal-error
+            :message "Assertion error"
+            :data (ex-data err)}}))
+
 (defmethod handle-exception :default
-  [err req]
-  (log/error "Unhandled exception on request:" (:path req) "\n"
-             (with-out-str
-                (.printStackTrace ^Throwable err (java.io.PrintWriter. *out*))))
+  [err request]
+  (log/errorf err (str "Internal Error\n" (get-context-string err request)))
   {:status 500
    :body {:type :internal-error
           :message (ex-message err)

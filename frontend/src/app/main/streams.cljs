@@ -26,6 +26,11 @@
   [v]
   (instance? MouseEvent v))
 
+(defn mouse-down?
+  [v]
+  (and (mouse-event? v)
+       (= :down (:type v))))
+
 (defn mouse-up?
   [v]
   (and (mouse-event? v)
@@ -35,6 +40,11 @@
   [v]
   (and (mouse-event? v)
        (= :click (:type v))))
+
+(defn mouse-double-click?
+  [v]
+  (and (mouse-event? v)
+       (= :double-click (:type v))))
 
 (defrecord PointerEvent [source pt ctrl shift alt])
 
@@ -91,13 +101,24 @@
     (rx/subscribe-with ob sub)
     sub))
 
+
+(defonce window-blur
+  (->> (rx/from-event js/window "blur")
+       (rx/share)))
+
 (defonce keyboard-alt
   (let [sub (rx/behavior-subject nil)
-        ob  (->> st/stream
-                 (rx/filter keyboard-event?)
-                 (rx/map :alt)
+        ob  (->> (rx/merge
+                  (->> st/stream
+                       (rx/filter keyboard-event?)
+                       (rx/map :alt))
+                  ;; Fix a situation caused by using `ctrl+alt` kind of shortcuts,
+                  ;; that makes keyboard-alt stream registring the key pressed but
+                  ;; on bluring the window (unfocus) the key down is never arrived.
+                  (->> window-blur
+                       (rx/map (constantly false))))
                  (rx/dedupe))]
-    (rx/subscribe-with ob sub)
+        (rx/subscribe-with ob sub)
     sub))
 
 (defn mouse-position-deltas

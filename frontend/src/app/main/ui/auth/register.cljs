@@ -133,4 +133,4 @@
      [:span (t locale "auth.create-demo-profile") " "]
      [:a {:on-click #(st/emit! da/create-demo-profile)
           :tab-index "5"}
-      (t locale "auth.create-demo-profile")]]]])
+      (t locale "auth.create-demo-account")]]]])

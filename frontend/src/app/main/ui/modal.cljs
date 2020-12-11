@@ -61,6 +61,7 @@
   [props]
   (let [data        (unchecked-get props "data")
         wrapper-ref (mf/use-ref nil)
+        components  (mf/deref dm/components)
 
         allow-click-outside (:allow-click-outside data)
 
@@ -75,16 +76,18 @@
     (mf/use-layout-effect
      (mf/deps allow-click-outside)
      (fn []
-       (let [keys [(events/listen js/window      EventType.POPSTATE on-pop-state)
-                   (events/listen (dom/get-root) EventType.KEYDOWN  handle-keydown)
-                   (events/listen (dom/get-root) EventType.CLICK    handle-click-outside)]]
+       (let [keys [(events/listen js/window   EventType.POPSTATE    on-pop-state)
+                   (events/listen js/document EventType.KEYDOWN     handle-keydown)
+
+                   ;; Changing to js/document breaks the color picker
+                   (events/listen (dom/get-root) EventType.CLICK       handle-click-outside)
+
+                   (events/listen js/document EventType.CONTEXTMENU handle-click-outside)]]
          #(doseq [key keys]
             (events/unlistenByKey key)))))
 
     [:div.modal-wrapper {:ref wrapper-ref}
-     (mf/element
-      (get @dm/components (:type data))
-      (:props data))]))
+     (mf/element (get components (:type data)) (:props data))]))
 
 
 (def modal-ref
@@ -93,5 +96,6 @@
 (mf/defc modal
   []
   (let [modal (mf/deref modal-ref)]
-    (when modal [:& modal-wrapper {:data modal
-                                   :key (:id modal)}])))
+    (when modal
+      [:& modal-wrapper {:data modal
+                         :key (:id modal)}])))

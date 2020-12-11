@@ -48,7 +48,6 @@
      :icon   [:& icon/options {:shape shape}]
      :circle [:& circle/options {:shape shape}]
      :path   [:& path/options {:shape shape}]
-     :curve  [:& path/options {:shape shape}]
      :image  [:& image/options {:shape shape}]
      nil)
    [:& exports-menu

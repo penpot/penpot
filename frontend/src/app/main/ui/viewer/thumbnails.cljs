@@ -111,8 +111,7 @@
         on-item-click
         (fn [event index]
           (compare-and-set! selected false true)
-          (st/emit! (rt/nav screen {:file-id file-id
-                                     :page-id page-id} {:index index}))
+          (st/emit! (dv/go-to-frame-by-index index))
           (when @expanded?
             (on-close)))]
     [:& dropdown' {:on-close on-close

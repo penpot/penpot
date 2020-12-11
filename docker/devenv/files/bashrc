@@ -1,12 +1,9 @@
-export PATH=$HOME/.local/bin:$PATH
+#!/usr/bin/env bash
+
+export PATH=/usr/local/nodejs/bin:$PATH
 
 alias l='ls --color -GFlh'
 alias rm='rm -r'
 alias ls='ls --color -F'
 alias lsd='ls -d *(/)'
 alias lsf='ls -h *(.)'
-
-export LEIN_FAST_TRAMPOLINE=y
-
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm

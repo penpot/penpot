@@ -20,6 +20,7 @@
    [app.main.data.workspace :as udw]
    [app.main.ui.icons :as i]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
    [app.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]
    [app.main.ui.workspace.sidebar.options.frame-grid :refer [frame-grid]]
@@ -51,7 +52,7 @@
         (fn [event attr]
           (let [value (-> (dom/get-target event)
                           (dom/get-value)
-                          (d/parse-integer 0))]
+                          (d/parse-integer 1))]
             (st/emit! (udw/update-dimensions [(:id shape)] attr value))))
 
         on-proportion-lock-change
@@ -104,43 +105,39 @@
           i/lock
           i/unlock)]
        [:div.input-element.pixels
-        [:input.input-text {:type "number"
-                            :min "0"
-                            :on-click select-all
-                            :on-change on-width-change
-                            :value (-> (:width shape)
-                                       (math/precision 2)
-                                       (d/coalesce-str "0"))}]]
+        [:> numeric-input {:min "1"
+                           :on-click select-all
+                           :on-change on-width-change
+                           :value (-> (:width shape)
+                                      (math/precision 2)
+                                      (d/coalesce-str "1"))}]]
 
 
        [:div.input-element.pixels
-        [:input.input-text {:type "number"
-                            :min "0"
-                            :on-click select-all
-                            :on-change on-height-change
-                            :value (-> (:height shape)
-                                       (math/precision 2)
-                                       (d/coalesce-str "0"))}]]]
+        [:> numeric-input {:min "1"
+                           :on-click select-all
+                           :on-change on-height-change
+                           :value (-> (:height shape)
+                                      (math/precision 2)
+                                      (d/coalesce-str "1"))}]]]
 
       ;; POSITION
       [:div.row-flex
        [:span.element-set-subtitle (tr "workspace.options.position")]
        [:div.input-element.pixels
-        [:input.input-text {:placeholder "x"
-                            :type "number"
-                            :on-click select-all
-                            :on-change on-pos-x-change
-                            :value (-> (:x shape)
-                                       (math/precision 2)
-                                       (d/coalesce-str "0"))}]]
+        [:> numeric-input {:placeholder "x"
+                           :on-click select-all
+                           :on-change on-pos-x-change
+                           :value (-> (:x shape)
+                                      (math/precision 2)
+                                      (d/coalesce-str "0"))}]]
        [:div.input-element.pixels
-        [:input.input-text {:placeholder "y"
-                            :type "number"
-                            :on-click select-all
-                            :on-change on-pos-y-change
-                            :value (-> (:y shape)
-                                       (math/precision 2)
-                                       (d/coalesce-str "0"))}]]]]]))
+        [:> numeric-input {:placeholder "y"
+                           :on-click select-all
+                           :on-change on-pos-y-change
+                           :value (-> (:y shape)
+                                      (math/precision 2)
+                                      (d/coalesce-str "0"))}]]]]]))
 
 (def +size-presets+
   [{:name "APPLE"}

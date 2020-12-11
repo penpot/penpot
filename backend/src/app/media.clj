@@ -10,14 +10,11 @@
 (ns app.media
   "Media postprocessing."
   (:require
-   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.media :as cm]
    [app.common.spec :as us]
    [app.config :as cfg]
-   [app.media-storage :as mst]
    [app.util.http :as http]
-   [app.util.storage :as ust]
    [clojure.core.async :as a]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
@@ -25,11 +22,12 @@
    [mount.core :refer [defstate]])
   (:import
    java.io.ByteArrayInputStream
-   java.io.InputStream
    java.util.concurrent.Semaphore
    org.im4java.core.ConvertCmd
-   org.im4java.core.Info
-   org.im4java.core.IMOperation))
+   org.im4java.core.IMOperation
+   org.im4java.core.Info))
+
+(declare semaphore)
 
 (defstate semaphore
   :start (Semaphore. (:image-process-max-threads cfg/config 1)))
@@ -73,7 +71,7 @@
 ;;  http://www.imagemagick.org/Usage/thumbnails/
 
 (defn- generic-process
-  [{:keys [input format quality operation] :as params}]
+  [{:keys [input format operation] :as params}]
   (let [{:keys [path mtype]} input
         format (or (cm/mtype->format mtype) format)
         ext    (cm/format->extension format)
@@ -160,41 +158,17 @@
 
 ;; --- Utility functions
 
-(defn resolve-urls
-  [row src dst]
-  (s/assert map? row)
-  (if (and src dst)
-    (let [src (if (vector? src) src [src])
-          dst (if (vector? dst) dst [dst])
-          value (get-in row src)]
-      (if (empty? value)
-        row
-        (let [url (ust/public-uri mst/media-storage value)]
-          (assoc-in row dst (str url)))))
-    row))
-
-(defn- resolve-uri
-  [storage row src dst]
-  (let [src (if (vector? src) src [src])
-        dst (if (vector? dst) dst [dst])
-        value (get-in row src)]
-    (if (empty? value)
-      row
-      (let [url (ust/public-uri mst/media-storage value)]
-        (assoc-in row dst (str url))))))
-
-(defn resolve-media-uris
-  [row & pairs]
-  (us/assert map? row)
-  (us/assert (s/coll-of vector?) pairs)
-  (reduce #(resolve-uri mst/media-storage %1 (nth %2 0) (nth %2 1)) row pairs))
-
 (defn validate-media-type
   [media-type]
   (when-not (cm/valid-media-types media-type)
     (ex/raise :type :validation
               :code :media-type-not-allowed
               :hint "Seems like you are uploading an invalid media object")))
+
+
+;; TODO: rewrite using jetty http client instead of jvm
+;; builtin (because builtin http client uses a lot of memory for the
+;; same operation.
 
 (defn download-media-object
   [url]

@@ -10,7 +10,7 @@
 (ns app.main.ui.workspace.sidebar.options.component
   (:require
    [rumext.alpha :as mf]
-   [app.common.pages-helpers :as cph]
+   [app.common.pages :as cp]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
@@ -32,10 +32,10 @@
         show?         (some? (:component-id values))
         local-library (mf/deref refs/workspace-local-library)
         libraries     (mf/deref refs/workspace-libraries)
-        component     (cph/get-component (:component-id values)
-                                         (:component-file values)
-                                         local-library
-                                         libraries)
+        component     (cp/get-component (:component-id values)
+                                        (:component-file values)
+                                        local-library
+                                        libraries)
 
         on-menu-click (mf/use-callback
                         (fn [event]
@@ -49,10 +49,10 @@
         do-detach-component #(st/emit! (dwl/detach-component id))
         do-reset-component #(st/emit! (dwl/reset-component id))
         do-update-component #(do
-                               (st/emit! dwc/start-undo-transaction)
+                               (st/emit! (dwc/start-undo-transaction))
                                (st/emit! (dwl/update-component id))
                                (st/emit! (dwl/sync-file nil))
-                               (st/emit! dwc/commit-undo-transaction))
+                               (st/emit! (dwc/commit-undo-transaction)))
         do-show-component #(st/emit! (dw/go-to-layout :assets))
         do-navigate-component-file #(st/emit! (dwl/nav-to-component-file
                                                 (:component-file values)))]

@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.util.storage
   "A local filesystem storage implementation."
@@ -16,17 +16,14 @@
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [datoteka.core :as fs]
-   [datoteka.proto :as fp])
+   [datoteka.core :as fs])
   (:import
    java.io.ByteArrayInputStream
    java.io.InputStream
    java.io.OutputStream
    java.net.URI
-   java.nio.file.Files
    java.nio.file.NoSuchFileException
-   java.nio.file.Path
-   java.security.MessageDigest))
+   java.nio.file.Path))
 
 (defn uri
   [v]
@@ -54,7 +51,7 @@
 (defn- transform-path
   [storage ^Path path]
   (if-let [xf (::xf storage)]
-    ((xf (fn [a b] b)) nil path)
+    ((xf (fn [_ b] b)) nil path)
     path))
 
 (defn blob
@@ -89,7 +86,7 @@
          (normalize-path (::base-path storage))
          (fs/delete))
     true
-    (catch java.nio.file.NoSuchFileException e
+    (catch NoSuchFileException _e
       false)))
 
 (defn clear!

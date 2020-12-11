@@ -12,6 +12,10 @@
       </Policies>
       <DefaultRolloverStrategy max="9"/>
     </RollingFile>
+
+    <CljFn name="error-reporter" ns="app.error-reporter" fn="enqueue">
+      <PatternLayout pattern="[%d{YYYY-MM-dd HH:mm:ss.SSS}] [%t] %level{length=1} %logger{36} - %msg%n"/>
+    </CljFn>
   </Appenders>
 
   <Loggers>
@@ -23,13 +27,17 @@
       <AppenderRef ref="console"/>
     </Logger>
 
+    <Logger name="app.error-reporter" level="debug" additivity="false">
+      <AppenderRef ref="console"/>
+    </Logger>
+
     <Logger name="app" level="debug" additivity="false">
       <AppenderRef ref="main" level="debug" />
+      <AppenderRef ref="error-reporter" level="error" />
     </Logger>
 
     <Root level="info">
       <AppenderRef ref="main" />
-      <!-- <AppenderRef ref="console" /> -->
     </Root>
   </Loggers>
 </Configuration>

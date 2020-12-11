@@ -16,8 +16,10 @@
    [clojure.walk :as walk]
    [goog.object :as gobj]
    [potok.core :as ptk]
-   [app.common.geom.shapes :as geom]
+   [app.common.geom.shapes :as gsh]
+   [app.common.attrs :as attrs]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.transforms :as dwt]
    [app.main.fonts :as fonts]
    [app.util.object :as obj]
    [app.util.text :as ut]))
@@ -125,7 +127,7 @@
                    (map #(if (is-text-node? %)
                            (merge ut/default-text-attrs %)
                            %)))]
-    (geom/get-attrs-multi nodes attrs)))
+    (attrs/get-attrs-multi nodes attrs)))
 
 (defn current-text-values
   [{:keys [editor default attrs shape]}]
@@ -209,3 +211,40 @@
           (and (= 1 (count selected))
                (= (-> selected first :type) :text))
           (assoc-in [:workspace-local :edition] (-> selected first :id)))))))
+
+(defn resize-text [id new-width new-height]
+  (ptk/reify ::resize-text
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id (:current-page-id state)
+            shape (get-in state [:workspace-data :pages-index page-id :objects id])
+            {:keys [selrect grow-type overflow-text]} (gsh/transform-shape shape)
+            {shape-width :width shape-height :height} selrect
+            undo-transaction (get-in state [:workspace-undo :transaction])
+
+            events
+            (cond-> []
+              (and overflow-text (not= :fixed grow-type))
+              (conj (update-overflow-text id false))
+
+              (and (= :fixed grow-type) (not overflow-text) (> new-height shape-height))
+              (conj (update-overflow-text id true))
+
+              (and (= :fixed grow-type) overflow-text (<= new-height shape-height))
+              (conj (update-overflow-text id false))
+
+              (and (or (not= shape-width new-width) (not= shape-height new-height))
+                   (= grow-type :auto-width))
+              (conj (dwt/update-dimensions [id] :width new-width)
+                    (dwt/update-dimensions [id] :height new-height))
+
+              (and (not= shape-height new-height) (= grow-type :auto-height))
+              (conj (dwt/update-dimensions [id] :height new-height)))]
+
+        (if (not (empty? events))
+          (rx/concat
+           (when (not undo-transaction)
+             (rx/of (dwc/start-undo-transaction)))
+           (rx/from events)
+           (when (not undo-transaction)
+             (rx/of (dwc/discard-undo-transaction)))))))))

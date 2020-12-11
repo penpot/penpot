@@ -81,13 +81,13 @@
         (mf/use-callback
          (mf/deps ids)
          (fn [value opacity id file-id]
-           (st/emit! dwc/start-undo-transaction)))
+           (st/emit! (dwc/start-undo-transaction))))
 
         on-close-picker
         (mf/use-callback
          (mf/deps ids)
          (fn [value opacity id file-id]
-           (st/emit! dwc/commit-undo-transaction)))]
+           (st/emit! (dwc/commit-undo-transaction))))]
 
     (if show?
       [:div.element-set

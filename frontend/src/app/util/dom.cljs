@@ -9,12 +9,11 @@
 
 (ns app.util.dom
   (:require
-   [goog.dom :as dom]
-   [cuerdas.core :as str]
-   [beicon.core :as rx]
-   [cuerdas.core :as str]
+   [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
-   [app.util.transit :as ts]))
+   [app.util.object :as obj]
+   [cuerdas.core :as str]
+   [goog.dom :as dom]))
 
 ;; --- Deprecated methods
 
@@ -30,6 +29,7 @@
   [e]
   (.-target e))
 
+
 (defn classnames
   [& params]
   (assert (even? (count params)))
@@ -39,6 +39,7 @@
                             acc))
                         []
                         (partition 2 params))))
+
 
 ;; --- New methods
 
@@ -76,6 +77,11 @@
   [node]
   (.-value node))
 
+(defn get-attribute
+  "Extract the value of one attribute of a dom node."
+  [node attr-name]
+  (.getAttribute node attr-name))
+
 (def get-target-val (comp get-value get-target))
 
 (defn click
@@ -111,11 +117,11 @@
 
 (defn select-text!
   [node]
-  (.select node))
+  (.select ^js node))
 
 (defn ^boolean equals?
   [node-a node-b]
-  (.isEqualNode node-a node-b))
+  (.isEqualNode ^js node-a node-b))
 
 (defn get-event-files
   "Extract the files from event instance."
@@ -162,6 +168,12 @@
         y (.-clientY event)]
     (gpt/point x y)))
 
+(defn get-offset-position
+  [event]
+  (let [x (.-offsetX event)
+        y (.-offsetY event)]
+    (gpt/point x y)))
+
 (defn get-client-size
   [node]
   {:width (.-clientWidth ^js node)
@@ -188,7 +200,16 @@
 
 (defn fullscreen?
   []
-  (boolean (.-fullscreenElement js/document)))
+  (cond
+    (obj/in? js/document "webkitFullscreenElement")
+    (boolean (.-webkitFullscreenElement js/document))
+
+    (obj/in? js/document "fullscreenElement")
+    (boolean (.-fullscreenElement js/document))
+
+    :else
+    (ex/raise :type :not-supported
+              :hint "seems like the current browset does not support fullscreen api.")))
 
 (defn ^boolean blob?
   [v]
@@ -219,6 +240,13 @@
 
 (defn release-pointer [event]
   (-> event get-target (.releasePointerCapture (.-pointerId event))))
- 
+
 (defn get-root []
   (query js/document "#app"))
+
+(defn ^boolean class? [node class-name]
+  (let [class-list (.-classList ^js node)]
+    (.contains ^js class-list class-name)))
+
+(defn get-user-agent []
+  (.-userAgent js/navigator))

@@ -12,24 +12,46 @@
   (:require
    [beicon.core :as rx]
    [potok.core :as ptk]
-   [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as geom]
+   [app.common.spec :as us]
    [app.common.pages :as cp]
    [app.common.uuid :as uuid]
-   [app.common.pages-helpers :as cph]
-   [app.common.uuid :as uuid]
-   [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
-   [app.main.snap :as snap]
-   [app.main.streams :as ms]
-   [app.util.geom.path :as path]))
+   [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.drawing.common :as common]
+   [app.main.data.workspace.drawing.path :as path]
+   [app.main.data.workspace.drawing.curve :as curve]
+   [app.main.data.workspace.drawing.box :as box]))
 
+(declare start-drawing)
 (declare handle-drawing)
-(declare handle-drawing-generic)
-(declare handle-drawing-path)
-(declare handle-drawing-curve)
-(declare handle-finish-drawing)
-(declare conditional-align)
+
+;; --- Select for Drawing
+
+(defn select-for-drawing
+  ([tool] (select-for-drawing tool nil))
+  ([tool data]
+   (ptk/reify ::select-for-drawing
+     ptk/UpdateEvent
+     (update [_ state]
+       (update state :workspace-drawing assoc :tool tool :object data))
+
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [stoper (rx/filter (ptk/type? ::clear-drawing) stream)]
+         (rx/merge
+          (when (= tool :path)
+            (rx/of (start-drawing :path)))
+
+          ;; NOTE: comments are a special case and they manage they
+          ;; own interrupt cycle.q
+          (when (and (not= tool :comments)
+                     (not= tool :path))
+            (->> stream
+                 (rx/filter dwc/interrupt?)
+                 (rx/take 1)
+                 (rx/map (constantly common/clear-drawing))
+                 (rx/take-until stoper)))))))))
+
 
 ;; NOTE/TODO: when an exception is raised in some point of drawing the
 ;; draw lock is not released so the user need to refresh in order to
@@ -38,20 +60,22 @@
 (defn start-drawing
   [type]
   {:pre [(keyword? type)]}
-  (let [id (uuid/next)]
+  (let [lock-id (uuid/next)]
     (ptk/reify ::start-drawing
       ptk/UpdateEvent
       (update [_ state]
-        (update-in state [:workspace-drawing :lock] #(if (nil? %) id %)))
+        (update-in state [:workspace-drawing :lock] #(if (nil? %) lock-id %)))
 
       ptk/WatchEvent
       (watch [_ state stream]
         (let [lock (get-in state [:workspace-drawing :lock])]
-          (when (= lock id)
-            (rx/merge (->> (rx/filter #(= % handle-finish-drawing) stream)
-                           (rx/take 1)
-                           (rx/map (fn [_] #(update % :workspace-drawing dissoc :lock))))
-                      (rx/of (handle-drawing type)))))))))
+          (when (= lock lock-id)
+            (rx/merge
+             (rx/of (handle-drawing type))
+             (->> stream
+                  (rx/filter (ptk/type? ::common/handle-finish-drawing) )
+                  (rx/first)
+                  (rx/map #(fn [state] (update state :workspace-drawing dissoc :lock)))))))))))
 
 (defn handle-drawing
   [type]
@@ -63,248 +87,15 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (case type
-        :path (rx/of handle-drawing-path)
-        :curve (rx/of handle-drawing-curve)
-        (rx/of handle-drawing-generic)))))
+      (rx/of (case type
+               :path
+               (path/handle-new-shape)
 
-(def handle-drawing-generic
-  (letfn [(resize-shape [{:keys [x y width height] :as shape} point lock? point-snap]
-            (let [;; The new shape behaves like a resize on the bottom-right corner
-                  initial (gpt/point (+ x width) (+ y height))
-                  shapev  (gpt/point width height)
-                  deltav  (gpt/to-vec initial point-snap)
-                  scalev  (gpt/divide (gpt/add shapev deltav) shapev)
-                  scalev  (if lock?
-                            (let [v (max (:x scalev) (:y scalev))]
-                              (gpt/point v v))
-                            scalev)]
-              (-> shape
-                  (assoc ::click-draw? false)
-                  (assoc-in [:modifiers :resize-vector] scalev)
-                  (assoc-in [:modifiers :resize-origin] (gpt/point x y))
-                  (assoc-in [:modifiers :resize-rotation] 0))))
+               :curve
+               (curve/handle-drawing-curve)
 
-          (update-drawing [state point lock? point-snap]
-            (update-in state [:workspace-drawing :object] resize-shape point lock? point-snap))]
-
-    (ptk/reify ::handle-drawing-generic
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (let [{:keys [flags]} (:workspace-local state)
-
-              stoper? #(or (ms/mouse-up? %) (= % :interrupt))
-              stoper  (rx/filter stoper? stream)
-              initial @ms/mouse-position
+               ;; default
+               (box/handle-drawing-box))))))
 
 
-              page-id (:current-page-id state)
-              objects (dwc/lookup-page-objects state page-id)
-              layout  (get state :workspace-layout)
-
-              frames  (cph/select-frames objects)
-              fid     (or (->> frames
-                               (filter #(geom/has-point? % initial))
-                               first
-                               :id)
-                          uuid/zero)
-
-              shape (-> state
-                        (get-in [:workspace-drawing :object])
-                        (geom/setup {:x (:x initial) :y (:y initial) :width 1 :height 1})
-                        (assoc :frame-id fid)
-                        (assoc ::initialized? true)
-                        (assoc ::click-draw? true))]
-          (rx/concat
-           ;; Add shape to drawing state
-           (rx/of #(assoc-in state [:workspace-drawing :object] shape))
-
-           ;; Initial SNAP
-           (->> (snap/closest-snap-point page-id [shape] layout initial)
-                (rx/map (fn [{:keys [x y]}]
-                          #(update-in % [:workspace-drawing :object] assoc :x x :y y))))
-
-           (->> ms/mouse-position
-                (rx/filter #(> (gpt/distance % initial) 2))
-                (rx/with-latest vector ms/mouse-position-ctrl)
-                (rx/switch-map
-                 (fn [[point :as current]]
-                   (->> (snap/closest-snap-point page-id [shape] layout point)
-                        (rx/map #(conj current %)))))
-                (rx/map
-                 (fn [[pt ctrl? point-snap]]
-                   #(update-drawing % pt ctrl? point-snap)))
-
-                (rx/take-until stoper))
-           (rx/of handle-finish-drawing)))))))
-
-(def handle-drawing-path
-  (letfn [(stoper-event? [{:keys [type shift] :as event}]
-            (or (= event :path/end-path-drawing)
-                (= event :interrupt)
-                (and (ms/mouse-event? event)
-                     (or (= type :double-click)
-                         (= type :context-menu)))
-                (and (ms/keyboard-event? event)
-                     (= type :down)
-                     (= 13 (:key event)))))
-
-          (initialize-drawing [state point]
-            (-> state
-                (assoc-in [:workspace-drawing :object :segments] [point point])
-                (assoc-in [:workspace-drawing :object ::initialized?] true)))
-
-          (insert-point-segment [state point]
-            (-> state
-                (update-in [:workspace-drawing :object :segments] (fnil conj []) point)))
-
-          (update-point-segment [state index point]
-            (let [segments (count (get-in state [:workspace-drawing :object :segments]))
-                  exists? (< -1 index segments)]
-              (cond-> state
-                exists? (assoc-in [:workspace-drawing :object :segments index] point))))
-
-          (finish-drawing-path [state]
-            (update-in
-             state [:workspace-drawing :object]
-             (fn [shape] (-> shape
-                           (update :segments #(vec (butlast %)))
-                           (geom/update-path-selrect)))))]
-
-    (ptk/reify ::handle-drawing-path
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (let [{:keys [flags]} (:workspace-local state)
-
-              last-point (volatile! @ms/mouse-position)
-
-              stoper (->> (rx/filter stoper-event? stream)
-                          (rx/share))
-
-              mouse (rx/sample 10 ms/mouse-position)
-
-              points (->> stream
-                          (rx/filter ms/mouse-click?)
-                          (rx/filter #(false? (:shift %)))
-                          (rx/with-latest vector mouse)
-                          (rx/map second))
-
-              counter (rx/merge (rx/scan #(inc %) 1 points) (rx/of 1))
-
-              stream' (->> mouse
-                          (rx/with-latest vector ms/mouse-position-ctrl)
-                          (rx/with-latest vector counter)
-                          (rx/map flatten))
-
-              imm-transform #(vector (- % 7) (+ % 7) %)
-              immanted-zones (vec (concat
-                                   (map imm-transform (range 0 181 15))
-                                   (map (comp imm-transform -) (range 0 181 15))))
-
-              align-position (fn [angle pos]
-                               (reduce (fn [pos [a1 a2 v]]
-                                         (if (< a1 angle a2)
-                                           (reduced (gpt/update-angle pos v))
-                                           pos))
-                                       pos
-                                       immanted-zones))]
-
-          (rx/merge
-           (rx/of #(initialize-drawing % @last-point))
-
-           (->> points
-                (rx/take-until stoper)
-                (rx/map (fn [pt] #(insert-point-segment % pt))))
-
-           (rx/concat
-            (->> stream'
-                 (rx/take-until stoper)
-                 (rx/map (fn [[point ctrl? index :as xxx]]
-                           (let [point (if ctrl?
-                                         (as-> point $
-                                           (gpt/subtract $ @last-point)
-                                           (align-position (gpt/angle $) $)
-                                           (gpt/add $ @last-point))
-                                         point)]
-                             #(update-point-segment % index point)))))
-            (rx/of finish-drawing-path
-                   handle-finish-drawing))))))))
-
-(def simplify-tolerance 0.3)
-
-(def handle-drawing-curve
-  (letfn [(stoper-event? [{:keys [type shift] :as event}]
-            (ms/mouse-event? event) (= type :up))
-
-          (initialize-drawing [state]
-            (assoc-in state [:workspace-drawing :object ::initialized?] true))
-
-          (insert-point-segment [state point]
-            (update-in state [:workspace-drawing :object :segments] (fnil conj []) point))
-
-          (finish-drawing-curve [state]
-            (update-in
-             state [:workspace-drawing :object]
-             (fn [shape]
-               (-> shape
-                   (update :segments #(path/simplify % simplify-tolerance))
-                   (geom/update-path-selrect)))))]
-
-    (ptk/reify ::handle-drawing-curve
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (let [{:keys [flags]} (:workspace-local state)
-              stoper (rx/filter stoper-event? stream)
-              mouse  (rx/sample 10 ms/mouse-position)]
-          (rx/concat
-           (rx/of initialize-drawing)
-           (->> mouse
-                (rx/map (fn [pt] #(insert-point-segment % pt)))
-                (rx/take-until stoper))
-           (rx/of finish-drawing-curve
-                  handle-finish-drawing)))))))
-
-(def handle-finish-drawing
-  (ptk/reify ::handle-finish-drawing
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [shape (get-in state [:workspace-drawing :object])]
-        (rx/concat
-         (rx/of dw/clear-drawing)
-         (when (::initialized? shape)
-           (let [shape-click-width (case (:type shape)
-                                   :text 3
-                                   20)
-                 shape-click-height (case (:type shape)
-                                    :text 16
-                                    20)
-                 shape (if (::click-draw? shape)
-                         (-> shape
-                             (assoc-in [:modifiers :resize-vector]
-                                       (gpt/point shape-click-width shape-click-height))
-                             (assoc-in [:modifiers :resize-origin]
-                                       (gpt/point (:x shape) (:y shape))))
-                         shape)
-
-                 shape (cond-> shape
-                         (= (:type shape) :text) (assoc :grow-type
-                                                        (if (::click-draw? shape) :auto-width :fixed)))
-
-                 shape (-> shape
-                           geom/transform-shape
-                           (dissoc ::initialized? ::click-draw?))]
-             ;; Add & select the created shape to the workspace
-             (rx/concat
-              (if (= :text (:type shape))
-                (rx/of dwc/start-undo-transaction)
-                (rx/empty))
-
-              (rx/of (dw/deselect-all)
-                     (dw/add-shape shape))))))))))
-
-(def close-drawing-path
-  (ptk/reify ::close-drawing-path
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:workspace-drawing :object :close?] true))))
 

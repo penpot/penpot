@@ -6,13 +6,17 @@
 
 (ns app.common.data
   "Data manipulation and query helper functions."
-  (:refer-clojure :exclude [concat read-string hash-map])
-  (:require [clojure.set :as set]
-            [linked.set :as lks]
-            #?(:cljs [cljs.reader :as r]
-               :clj [clojure.edn :as r])
-            #?(:cljs [cljs.core :as core]
-               :clj [clojure.core :as core]))
+  (:refer-clojure :exclude [concat read-string hash-map merge])
+  #?(:cljs
+     (:require-macros [app.common.data]))
+  (:require
+   [linked.set :as lks]
+   [app.common.math :as mth]
+   #?(:clj [cljs.analyzer.api :as aapi])
+   #?(:cljs [cljs.reader :as r]
+      :clj [clojure.edn :as r])
+   #?(:cljs [cljs.core :as core]
+      :clj [clojure.core :as core]))
   #?(:clj
      (:import linked.set.LinkedSet)))
 
@@ -35,7 +39,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn dissoc-in
-  [m [k & ks :as keys]]
+  [m [k & ks]]
   (if ks
     (if-let [nextmap (get m k)]
       (let [newmap (dissoc-in nextmap ks)]
@@ -85,7 +89,7 @@
 
 (defn index-of-pred
   [coll pred]
-  (loop [c (first coll)
+  (loop [c    (first coll)
          coll (rest coll)
          index 0]
     (if (nil? c)
@@ -206,6 +210,17 @@
       (assoc m key v)
       m)))
 
+(defn merge
+  "A faster merge."
+  [& maps]
+  (loop [res  (transient (or (first maps) {}))
+         maps (next maps)]
+    (if (nil? maps)
+      (persistent! res)
+      (recur (reduce-kv assoc! res (first maps))
+             (next maps)))))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Parsing / Conversion
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -219,7 +234,7 @@
   #?(:cljs (js/parseInt v 10)
      :clj (try
             (Integer/parseInt v)
-            (catch Throwable e
+            (catch Throwable _
               nil))))
 
 (defn- impl-parse-double
@@ -227,7 +242,7 @@
   #?(:cljs (js/parseFloat v)
      :clj (try
             (Double/parseDouble v)
-            (catch Throwable e
+            (catch Throwable _
               nil))))
 
 (defn parse-integer
@@ -261,3 +276,59 @@
 (defn coalesce
   [val default]
   (or val default))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Data Parsing / Conversion
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn nilf
+  "Returns a new function that if you pass nil as any argument will
+  return nil"
+  [f]
+  (fn [& args]
+    (if (some nil? args)
+      nil
+      (apply f args))))
+
+(defn check-num
+  "Function that checks if a number is nil or nan. Will return 0 when not
+  valid and the number otherwise."
+  [v]
+  (if (or (not v) (mth/nan? v)) 0 v))
+
+
+(defmacro export
+  "A helper macro that allows reexport a var in a current namespace."
+  [v]
+  (if (boolean (:ns &env))
+
+    ;; Code for ClojureScript
+    (let [mdata    (aapi/resolve &env v)
+          arglists (second (get-in mdata [:meta :arglists]))
+          sym      (symbol (name v))
+          andsym   (symbol "&")
+          procarg  #(if (= % andsym) % (gensym "param"))]
+      (if (pos? (count arglists))
+        `(def
+           ~(with-meta sym (:meta mdata))
+           (fn ~@(for [args arglists]
+                   (let [args (map procarg args)]
+                     (if (some #(= andsym %) args)
+                       (let [[sargs dargs] (split-with #(not= andsym %) args)]
+                         `([~@sargs ~@dargs] (apply ~v ~@sargs ~@(rest dargs))))
+                       `([~@args] (~v ~@args)))))))
+        `(def ~(with-meta sym (:meta mdata)) ~v)))
+
+    ;; Code for Clojure
+    (let [vr (resolve v)
+          m  (meta vr)
+          n  (:name m)
+          n  (with-meta n
+               (cond-> {}
+                 (:dynamic m) (assoc :dynamic true)
+                 (:protocol m) (assoc :protocol (:protocol m))))]
+      `(let [m# (meta ~vr)]
+         (def ~n (deref ~vr))
+         (alter-meta! (var ~n) merge (dissoc m# :name))
+         ;; (when (:macro m#)
+         ;;   (.setMacro (var ~n)))
+         ~vr))))

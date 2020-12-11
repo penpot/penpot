@@ -9,7 +9,6 @@
    [rumext.alpha :as mf]
    [app.common.uuid :as uuid]
    [app.common.geom.shapes :as geom]
-   [app.main.ui.shapes.group :refer [mask-id-ctx]]
    [app.util.object :as obj]))
 
 ; The SVG standard does not implement yet the 'stroke-alignment'
@@ -23,17 +22,15 @@
   (let [shape (unchecked-get props "shape")
         base-props (unchecked-get props "base-props")
         elem-name (unchecked-get props "elem-name")
-        {:keys [x y width height]} (geom/shape->rect-shape shape)
-        mask-id (mf/use-ctx mask-id-ctx)
+        ;; {:keys [x y width height]} (geom/shape->rect-shape shape)
+        {:keys [x y width height]} (:selrect shape)
         stroke-id (mf/use-var (uuid/next))
         stroke-style (:stroke-style shape :none)
         stroke-position (:stroke-alignment shape :center)]
     (cond
       ;; Center alignment (or no stroke): the default in SVG
       (or (= stroke-style :none) (= stroke-position :center))
-      [:> elem-name (cond-> (obj/merge! #js {} base-props)
-                      (some? mask-id)
-                      (obj/merge! #js {:mask mask-id}))]
+      [:> elem-name (obj/merge! #js {} base-props)]
 
       ;; Inner alignment: display the shape with double width stroke,
       ;; and clip the result with the original shape without stroke.
@@ -53,15 +50,10 @@
             shape-props (-> (obj/merge! #js {} base-props)
                             (obj/merge! #js {:strokeWidth (* stroke-width 2)
                                               :clipPath (str "url('#" clip-id "')")}))]
-        (if (nil? mask-id)
-          [:*
-           [:> "clipPath" #js {:id clip-id}
-            [:> elem-name clip-props]]
-           [:> elem-name shape-props]]
-          [:g {:mask mask-id}
-           [:> "clipPath" #js {:id clip-id}
-            [:> elem-name clip-props]]
-           [:> elem-name shape-props]]))
+        [:*
+         [:> "clipPath" #js {:id clip-id}
+          [:> elem-name clip-props]]
+         [:> elem-name shape-props]])
 
       ;; Outer alingmnent: display the shape in two layers. One
       ;; without stroke (only fill), and another one only with stroke
@@ -99,17 +91,10 @@
                                               :fill "none"
                                               :fillOpacity 0
                                               :mask (str "url('#" stroke-mask-id "')")}))]
-        (if (nil? mask-id)
-          [:*
-           [:mask {:id mask-id}
-            [:> elem-name mask-props1]
-            [:> elem-name mask-props2]]
-           [:> elem-name shape-props1]
-           [:> elem-name shape-props2]]
-          [:g {:mask mask-id}
-           [:mask {:id stroke-mask-id}
-            [:> elem-name mask-props1]
-            [:> elem-name mask-props2]]
-           [:> elem-name shape-props1]
-           [:> elem-name shape-props2]])))))
+        [:*
+         [:mask {:id stroke-mask-id}
+          [:> elem-name mask-props1]
+          [:> elem-name mask-props2]]
+         [:> elem-name shape-props1]
+         [:> elem-name shape-props2]]))))
 

@@ -15,9 +15,6 @@
    #?(:clj  [clojure.spec.alpha :as s]
       :cljs [cljs.spec.alpha :as s])
 
-   #?(:clj  [clojure.spec.test.alpha :as stest]
-      :cljs [cljs.spec.test.alpha :as stest])
-
    [expound.alpha :as expound]
    [app.common.uuid :as uuid]
    [app.common.exceptions :as ex]
@@ -33,6 +30,9 @@
 
 (def uuid-rx
   #"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+
+(def max-safe-int (int 1e6))
+(def min-safe-int (int -1e6))
 
 ;; --- Conformers
 
@@ -119,6 +119,19 @@
 (s/def ::url string?)
 (s/def ::fn fn?)
 (s/def ::point gpt/point?)
+(s/def ::id ::uuid)
+
+(s/def ::safe-integer
+  #(and
+    (integer? %)
+    (>= % min-safe-int)
+    (<= % max-safe-int)))
+
+(s/def ::safe-number
+  #(and
+    (number? %)
+    (>= % min-safe-int)
+    (<= % max-safe-int)))
 
 ;; --- Macros
 
@@ -176,9 +189,7 @@
       (let [edata (s/explain-data spec data)]
         (throw (ex/error :type :validation
                          :code :spec-validation
-                         :explain (with-out-str
-                                    (expound/printer edata))
-                         :data (::s/problems edata)))))
+                         :data data))))
     result))
 
 (defmacro instrument!

@@ -2,25 +2,29 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016-2019 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.main.data.users
   (:require
+   [app.config :as cfg]
+   [app.common.data :as d]
+   [app.common.spec :as us]
+   [app.main.data.media :as di]
+   [app.main.data.messages :as dm]
+   [app.main.repo :as rp]
+   [app.main.store :as st]
+   [app.util.avatars :as avatars]
+   [app.util.i18n :as i18n :refer [tr]]
+   [app.util.router :as rt]
+   [app.util.storage :refer [storage]]
+   [app.util.theme :as theme]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
-   [potok.core :as ptk]
-   [app.common.spec :as us]
-   [app.config :as cfg]
-   [app.main.store :as st]
-   [app.main.repo :as rp]
-   [app.main.data.messages :as dm]
-   [app.main.data.media :as di]
-   [app.util.router :as rt]
-   [app.util.i18n :as i18n :refer [tr]]
-   [app.util.storage :refer [storage]]
-   [app.util.avatars :as avatars]
-   [app.util.theme :as theme]))
+   [potok.core :as ptk]))
 
 ;; --- Common Specs
 
@@ -55,8 +59,8 @@
     (update [_ state]
       (assoc state :profile
              (cond-> data
-               (nil? (:photo-uri data))
-               (assoc :photo-uri (avatars/generate {:name fullname}))
+               (empty? (:photo data))
+               (assoc :photo (avatars/generate {:name fullname}))
 
                (nil? (:lang data))
                (assoc :lang cfg/default-language)
@@ -152,6 +156,16 @@
              (rx/ignore))))))
 
 
+(defn mark-onboarding-as-viewed
+  []
+  (ptk/reify ::mark-oboarding-as-viewed
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [{:keys [id] :as profile} (:profile state)]
+        (->> (rp/mutation :update-profile-props {:props {:onboarding-viewed true}})
+             (rx/map (constantly fetch-profile)))))))
+
+
 ;; --- Update Photo
 
 (defn update-photo
@@ -161,7 +175,6 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [on-success di/notify-finished-loading
-
             on-error #(do (di/notify-finished-loading)
                           (di/process-error %))
 
@@ -178,4 +191,19 @@
              (rx/do on-success)
              (rx/map (constantly fetch-profile))
              (rx/catch on-error))))))
+
+
+(defn fetch-users
+  [{:keys [team-id] :as params}]
+  (us/assert ::us/uuid team-id)
+  (letfn [(fetched [users state]
+            (->> (map #(avatars/assoc-avatar % :fullname) users)
+                 (d/index-by :id)
+                 (assoc state :users)))]
+    (ptk/reify ::fetch-team-users
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (->> (rp/query :team-users {:team-id team-id})
+             (rx/map #(partial fetched %)))))))
+
 

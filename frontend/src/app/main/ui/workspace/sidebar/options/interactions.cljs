@@ -11,7 +11,7 @@
   (:require
    [rumext.alpha :as mf]
    [app.common.data :as d]
-   [app.common.pages-helpers :as cph]
+   [app.common.pages :as cp]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -32,7 +32,7 @@
 
         destination (get objects (:destination interaction))
         frames      (mf/use-memo (mf/deps objects)
-                                 #(cph/select-frames objects))
+                                 #(cp/select-frames objects))
 
         show-frames-dropdown? (mf/use-state false)
 

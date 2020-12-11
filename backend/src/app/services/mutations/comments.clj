@@ -9,32 +9,27 @@
 
 (ns app.services.mutations.comments
   (:require
-   [clojure.spec.alpha :as s]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.common.uuid :as uuid]
-   [app.config :as cfg]
    [app.db :as db]
    [app.services.mutations :as sm]
-   [app.services.queries.projects :as proj]
-   [app.services.queries.files :as files]
    [app.services.queries.comments :as comments]
-   [app.tasks :as tasks]
+   [app.services.queries.files :as files]
    [app.util.blob :as blob]
-   [app.util.storage :as ust]
-   [app.util.transit :as t]
-   [app.util.time :as dt]))
+   [app.util.time :as dt]
+   [clojure.spec.alpha :as s]))
 
 ;; --- Mutation: Create Comment Thread
 
 (declare upsert-comment-thread-status!)
 (declare create-comment-thread)
+(declare retrieve-page-name)
 
+(s/def ::page-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
 (s/def ::profile-id ::us/uuid)
 (s/def ::position ::us/point)
 (s/def ::content ::us/string)
-(s/def ::page-id ::us/uuid)
 
 (s/def ::create-comment-thread
   (s/keys :req-un [::profile-id ::file-id ::position ::content ::page-id]))
@@ -53,25 +48,28 @@
 
 (defn- create-comment-thread*
   [conn {:keys [profile-id file-id page-id position content] :as params}]
-  (let [seqn (retrieve-next-seqn conn file-id)
-        now  (dt/now)
-
+  (let [seqn    (retrieve-next-seqn conn file-id)
+        now     (dt/now)
+        pname   (retrieve-page-name conn params)
         thread  (db/insert! conn :comment-thread
                            {:file-id file-id
                             :owner-id profile-id
                             :participants (db/tjson #{profile-id})
+                            :page-name pname
                             :page-id page-id
                             :created-at now
                             :modified-at now
                             :seqn seqn
-                            :position (db/pgpoint position)})
-        ;; Create a comment entry
-        comment (db/insert! conn :comment
-                            {:thread-id (:id thread)
-                             :owner-id profile-id
-                             :created-at now
-                             :modified-at now
-                             :content content})]
+                            :position (db/pgpoint position)})]
+
+
+    ;; Create a comment entry
+    (db/insert! conn :comment
+                {:thread-id (:id thread)
+                 :owner-id profile-id
+                 :created-at now
+                 :modified-at now
+                 :content content})
 
     ;; Make the current thread as read.
     (upsert-comment-thread-status! conn profile-id (:id thread))
@@ -81,10 +79,7 @@
                 {:comment-thread-seqn seqn}
                 {:id file-id})
 
-    (-> (assoc thread
-               :content content
-               :comment comment)
-        (comments/decode-row))))
+    (select-keys thread [:id :file-id :page-id])))
 
 (defn- create-comment-thread
   [conn params]
@@ -103,6 +98,12 @@
         (throw res)
 
         :else res))))
+
+(defn- retrieve-page-name
+  [conn {:keys [file-id page-id]}]
+  (let [{:keys [data]} (db/get-by-id conn :file file-id)
+        data           (blob/decode data)]
+    (get-in data [:pages-index page-id :name])))
 
 
 ;; --- Mutation: Update Comment Thread Status
@@ -164,13 +165,20 @@
   [{:keys [profile-id thread-id content] :as params}]
   (db/with-atomic [conn db/pool]
     (let [thread (-> (db/get-by-id conn :comment-thread thread-id {:for-update true})
-                     (comments/decode-row))]
+                     (comments/decode-row))
+          pname  (retrieve-page-name conn thread)]
 
       ;; Standard Checks
-      (when-not thread
-        (ex/raise :type :not-found))
+      (when-not thread (ex/raise :type :not-found))
 
+      ;; Permission Checks
       (files/check-read-permissions! conn profile-id (:file-id thread))
+
+      ;; Update the page-name cachedattribute on comment thread table.
+      (when (not= pname (:page-name thread))
+        (db/update! conn :comment-thread
+                    {:page-name pname}
+                    {:id thread-id}))
 
       ;; NOTE: is important that all timestamptz related fields are
       ;; created or updated on the database level for avoid clock
@@ -216,15 +224,24 @@
     (let [comment (db/get-by-id conn :comment id {:for-update true})
           _       (when-not comment (ex/raise :type :not-found))
           thread  (db/get-by-id conn :comment-thread (:thread-id comment) {:for-update true})
-          _       (when-not thread (ex/raise :type :not-found))]
+          _       (when-not thread (ex/raise :type :not-found))
+          pname   (retrieve-page-name conn thread)]
 
       (files/check-read-permissions! conn profile-id (:file-id thread))
+
+      ;; Don't allow edit comments to not owners
+      (when-not (= (:owner-id thread) profile-id)
+        (ex/raise :type :validation
+                  :code :not-allowed))
+
       (db/update! conn :comment
                   {:content content
                    :modified-at (dt/now)}
                   {:id (:id comment)})
+
       (db/update! conn :comment-thread
-                  {:modified-at (dt/now)}
+                  {:modified-at (dt/now)
+                   :page-name pname}
                   {:id (:id thread)})
       nil)))
 
@@ -237,12 +254,13 @@
 (sm/defmutation ::delete-comment-thread
   [{:keys [profile-id id] :as params}]
   (db/with-atomic [conn db/pool]
-    (let [cthr (db/get-by-id conn :comment-thread id {:for-update true})]
-      (when-not (= (:owner-id cthr) profile-id)
+    (let [thread (db/get-by-id conn :comment-thread id {:for-update true})]
+      (when-not (= (:owner-id thread) profile-id)
         (ex/raise :type :validation
                   :code :not-allowed))
       (db/delete! conn :comment-thread {:id id})
       nil)))
+
 
 ;; --- Mutation: Delete comment
 

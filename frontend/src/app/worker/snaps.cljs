@@ -12,7 +12,6 @@
    [okulary.core :as l]
    [app.common.uuid :as uuid]
    [app.common.pages :as cp]
-   [app.common.pages-helpers :as cph]
    [app.common.data :as d]
    [app.worker.impl :as impl]
    [app.util.range-tree :as rt]
@@ -46,7 +45,7 @@
   (let [frame-shapes (->> (vals objects)
                           (filter :frame-id)
                           (group-by :frame-id))
-        frame-shapes (->> (cph/select-frames objects)
+        frame-shapes (->> (cp/select-frames objects)
                           (reduce #(update %1 (:id %2) conj %2) frame-shapes))]
 
     (d/mapm (fn [frame-id shapes] {:x (create-coord-data frame-id shapes :x)

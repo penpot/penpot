@@ -13,7 +13,6 @@
    [app.config :as cfg]
    [app.common.geom.shapes :as geom]
    [app.main.ui.shapes.attrs :as attrs]
-   [app.main.ui.shapes.group :refer [mask-id-ctx]]
    [app.util.object :as obj]
    [app.main.ui.context :as muc]
    [app.main.data.fetch :as df]
@@ -27,7 +26,6 @@
         {:keys [id x y width height rotation metadata]} shape
         uri (cfg/resolve-media-path (:path metadata))
         embed-resources? (mf/use-ctx muc/embed-ctx)
-        mask-id (mf/use-ctx mask-id-ctx)
         data-uri (mf/use-state (when (not embed-resources?) uri))]
 
     (mf/use-effect
@@ -45,8 +43,7 @@
                           :transform transform
                           :width width
                           :height height
-                          :preserveAspectRatio "none"
-                          :mask mask-id}))]
+                          :preserveAspectRatio "none"}))]
       (if (nil? @data-uri)
         [:> "rect" (obj/merge!
                     props

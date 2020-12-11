@@ -9,11 +9,10 @@
 
 (ns app.migrations
   (:require
-   [mount.core :as mount :refer [defstate]]
    [app.db :as db]
-   [app.config :as cfg]
    [app.migrations.migration-0023 :as mg0023]
-   [app.util.migrations :as mg]))
+   [app.util.migrations :as mg]
+   [mount.core :as mount :refer [defstate]]))
 
 (def +migrations+
   {:name "uxbox-main"
@@ -110,6 +109,15 @@
 
     {:name "0031-add-conversation-related-tables"
      :fn (mg/resource "app/migrations/sql/0031-add-conversation-related-tables.sql")}
+
+    {:name "0032-del-unused-tables"
+     :fn (mg/resource "app/migrations/sql/0032-del-unused-tables.sql")}
+
+    {:name "0033-mod-comment-thread-table"
+     :fn (mg/resource "app/migrations/sql/0033-mod-comment-thread-table.sql")}
+
+    {:name "0034-mod-profile-table-add-props-field"
+     :fn (mg/resource "app/migrations/sql/0034-mod-profile-table-add-props-field.sql")}
     ]})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

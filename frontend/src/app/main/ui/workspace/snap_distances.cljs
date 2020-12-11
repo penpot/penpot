@@ -141,15 +141,19 @@
         (fn [[selrect selected frame]]
           (let [lt-side (if (= coord :x) :left :top)
                 gt-side (if (= coord :x) :right :bottom)
-                areas (gsh/selrect->areas (or (:selrect frame)
-                                              (gsh/rect->rect-shape @refs/vbox)) selrect)
+                container-selrec (or (:selrect frame)
+                                     (gsh/rect->selrect @refs/vbox))
+                areas (gsh/selrect->areas container-selrec selrect)
                 query-side (fn [side]
-                             (->> (uw/ask! {:cmd :selection/query
-                                            :page-id page-id
-                                            :frame-id (:id frame)
-                                            :rect (gsh/pad-selrec (areas side))})
-                                  (rx/map #(set/difference % selected))
-                                  (rx/map #(->> % (map (partial get @refs/workspace-page-objects))))))]
+                             (let [rect (gsh/pad-selrec (areas side))]
+                               (if (and (> (:width rect) 0) (> (:height rect) 0))
+                                 (->> (uw/ask! {:cmd :selection/query
+                                                :page-id page-id
+                                                :frame-id (:id frame)
+                                                :rect rect})
+                                      (rx/map #(set/difference % selected))
+                                      (rx/map #(->> % (map (partial get @refs/workspace-page-objects)))))
+                                 (rx/of nil))))]
 
             (->> (query-side lt-side)
                  (rx/combine-latest vector (query-side gt-side)))))
@@ -192,24 +196,28 @@
         distance-coincidences (concat (get-shapes-match show-candidate? lt-shapes)
                                       (get-shapes-match show-candidate? gt-shapes))
 
+        ;; Stores the distance candidates to be shown
+        distance-candidates (d/concat
+                             #{}
+                             (map first distance-coincidences)
+                             (filter #(check-in-set % lt-distances) gt-distances)
+                             (filter #(check-in-set % gt-distances) lt-distances))
+
+        ;; Of these candidates we keep only the smaller to be displayed
+        min-distance (apply min distance-candidates)
 
         ;; Show the distances that either match one of the distances from the selrect
         ;; or are from the selrect and go to a shape on the left and to the right
-        show-distance?
-        (fn [dist]
-          (let [distances-to-show
-                (->> (d/concat #{}
-                               (map first distance-coincidences)
-                               (filter #(check-in-set % lt-distances) gt-distances)
-                               (filter #(check-in-set % gt-distances) lt-distances)))]
-            (check-in-set dist distances-to-show)))
+        show-distance? #(check-in-set % #{min-distance})
 
         ;; These are the segments whose distance will be displayed
 
-        ;; First segments from segments different that the selectio
+        ;; First segments from segments different that the selection
         other-shapes-segments (->> distance-coincidences
+                                   (filter #(show-distance? (first %)))
                                    (map second) ;; Retrieves list of [shape,shape] tuples
                                    (map #(mapv :selrect %))) ;; Changes [shape,shape] to [selrec,selrec]
+
 
         ;; Segments from the selection to the other shapes
         selection-segments (->> (concat lt-shapes gt-shapes)

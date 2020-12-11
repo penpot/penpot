@@ -15,13 +15,16 @@
    [potok.core :as ptk]
    [app.common.data :as d]
    [app.common.pages :as cp]
-   [app.common.pages-helpers :as cph]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.worker :as uw]
    [app.util.timers :as ts]
-   [app.common.geom.shapes :as geom]))
+   [app.common.geom.proportions :as gpr]
+   [app.common.geom.shapes :as gsh]))
 
+(s/def ::shape-attrs ::cp/shape-attrs)
+(s/def ::set-of-string (s/every string? :kind set?))
+(s/def ::ordered-set-of-uuid (s/every uuid? :kind d/ordered-set?))
 ;; --- Protocols
 
 (declare setup-selection-index)
@@ -62,28 +65,35 @@
                                commit-local? false}
                           :as opts}]
    (us/verify ::cp/changes changes)
-   (us/verify ::cp/changes undo-changes)
-   (ptk/reify ::commit-changes
-     cljs.core/IDeref
-     (-deref [_] changes)
+   ;; (us/verify ::cp/changes undo-changes)
 
-     ptk/UpdateEvent
-     (update [_ state]
-       (let [state (update-in state [:workspace-file :data] cp/process-changes changes)]
-         (cond-> state
-           commit-local? (update :workspace-data cp/process-changes changes))))
+   (let [error (volatile! nil)]
+     (ptk/reify ::commit-changes
+       cljs.core/IDeref
+       (-deref [_] changes)
 
-     ptk/WatchEvent
-     (watch [_ state stream]
-       (let [page-id (:current-page-id state)]
-         (rx/concat
-          (when (some :page-id changes)
-            (rx/of (update-indices page-id)))
+       ptk/UpdateEvent
+       (update [_ state]
+         (try
+           (let [state (update-in state [:workspace-file :data] cp/process-changes changes)]
+             (cond-> state
+               commit-local? (update :workspace-data cp/process-changes changes)))
+           (catch :default e
+             (vreset! error e)
+             state)))
 
-          (when (and save-undo? (seq undo-changes))
-            (let [entry {:undo-changes undo-changes
-                         :redo-changes changes}]
-              (rx/of (append-undo entry))))))))))
+       ptk/WatchEvent
+       (watch [_ state stream]
+         (when-not @error
+           (let [page-id (:current-page-id state)]
+             (rx/concat
+              (when (some :page-id changes)
+                (rx/of (update-indices page-id)))
+
+              (when (and save-undo? (seq undo-changes))
+                (let [entry {:undo-changes undo-changes
+                             :redo-changes changes}]
+                  (rx/of (append-undo entry))))))))))))
 
 (defn generate-operations
   ([ma mb] (generate-operations ma mb false))
@@ -157,8 +167,8 @@
 
 (defn get-frame-at-point
   [objects point]
-  (let [frames (cph/select-frames objects)]
-    (d/seek #(geom/has-point? % point) frames)))
+  (let [frames (cp/select-frames objects)]
+    (d/seek #(gsh/has-point? % point) frames)))
 
 
 (defn- extract-numeric-suffix
@@ -171,8 +181,6 @@
   [objects]
   (into #{} (map :name) (vals objects)))
 
-(s/def ::set-of-string
-  (s/every string? :kind set?))
 
 (defn generate-unique-name
   "A unique name generator"
@@ -185,6 +193,29 @@
         (if (contains? used candidate)
           (recur (inc counter))
           candidate)))))
+
+;; --- Shape attrs (Layers Sidebar)
+
+(defn toggle-collapse
+  [id]
+  (ptk/reify ::toggle-collapse
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-local :expanded id] not))))
+
+(defn expand-collapse
+  [id]
+  (ptk/reify ::expand-collapse
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :expanded id] true))))
+
+(def collapse-all
+  (ptk/reify ::collapse-all
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-local dissoc :expanded))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Undo / Redo
@@ -256,7 +287,7 @@
 
 (defonce empty-tx {:undo-changes [] :redo-changes []})
 
-(def start-undo-transaction
+(defn start-undo-transaction []
   (ptk/reify ::start-undo-transaction
     ptk/UpdateEvent
     (update [_ state]
@@ -265,13 +296,13 @@
         (cond-> state
           (nil? current-tx) (assoc-in [:workspace-undo :transaction] empty-tx))))))
 
-(def discard-undo-transaction
+(defn discard-undo-transaction []
   (ptk/reify ::discard-undo-transaction
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-undo dissoc :transaction))))
 
-(def commit-undo-transaction
+(defn commit-undo-transaction []
   (ptk/reify ::commit-undo-transaction
     ptk/UpdateEvent
     (update [_ state]
@@ -334,7 +365,7 @@
       (let [expand-fn (fn [expanded]
                         (merge expanded
                           (->> ids
-                               (map #(cph/get-parents % objects))
+                               (map #(cp/get-parents % objects))
                                flatten
                                (filter #(not= % uuid/zero))
                                (map (fn [id] {id true}))
@@ -357,33 +388,33 @@
    (ptk/reify ::update-shapes
      ptk/WatchEvent
      (watch [_ state stream]
-      (let [page-id (:current-page-id state)
-            objects (lookup-page-objects state page-id)]
-        (loop [ids (seq ids)
-               rch []
-               uch []]
-          (if (nil? ids)
-            (rx/of (commit-changes
-                    (cond-> rch reg-objects? (conj {:type :reg-objects :page-id page-id :shapes (vec ids)}))
-                    (cond-> uch reg-objects? (conj {:type :reg-objects :page-id page-id :shapes (vec ids)}))
-                    {:commit-local? true}))
+       (let [page-id (:current-page-id state)
+             objects (lookup-page-objects state page-id)]
+         (loop [ids (seq ids)
+                rch []
+                uch []]
+           (if (nil? ids)
+             (rx/of (commit-changes
+                     (cond-> rch reg-objects? (conj {:type :reg-objects :page-id page-id :shapes (vec ids)}))
+                     (cond-> uch reg-objects? (conj {:type :reg-objects :page-id page-id :shapes (vec ids)}))
+                     {:commit-local? true}))
 
-            (let [id   (first ids)
-                  obj1 (get objects id)
-                  obj2 (f obj1)
-                  rch-operations (generate-operations obj1 obj2)
-                  uch-operations (generate-operations obj2 obj1 true)
-                  rchg {:type :mod-obj
-                        :page-id page-id
-                        :operations rch-operations
-                        :id id}
-                  uchg {:type :mod-obj
-                        :page-id page-id
-                        :operations uch-operations
-                        :id id}]
-              (recur (next ids)
-                     (if (empty? rch-operations) rch (conj rch rchg))
-                     (if (empty? uch-operations) uch (conj uch uchg)))))))))))
+             (let [id   (first ids)
+                   obj1 (get objects id)
+                   obj2 (f obj1)
+                   rch-operations (generate-operations obj1 obj2)
+                   uch-operations (generate-operations obj2 obj1 true)
+                   rchg {:type :mod-obj
+                         :page-id page-id
+                         :operations rch-operations
+                         :id id}
+                   uchg {:type :mod-obj
+                         :page-id page-id
+                         :operations uch-operations
+                         :id id}]
+               (recur (next ids)
+                      (if (empty? rch-operations) rch (conj rch rchg))
+                      (if (empty? uch-operations) uch (conj uch uchg)))))))))))
 
 
 (defn update-shapes-recursive
@@ -391,7 +422,7 @@
   (us/assert ::coll-of-uuid ids)
   (us/assert fn? f)
   (letfn [(impl-get-children [objects id]
-            (cons id (cph/get-children id objects)))
+            (cons id (cp/get-children id objects)))
 
           (impl-gen-changes [objects page-id ids]
             (loop [sids (seq ids)
@@ -434,3 +465,99 @@
               [rchanges uchanges] (impl-gen-changes objects page-id (seq ids))]
         (rx/of (commit-changes rchanges uchanges {:commit-local? true})))))))
 
+
+(defn select-shapes
+  [ids]
+  (us/verify ::ordered-set-of-uuid ids)
+  (ptk/reify ::select-shapes
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :selected] ids))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+       (let [page-id (:current-page-id state)
+             objects (lookup-page-objects state page-id)]
+         (rx/of (expand-all-parents ids objects))))))
+
+;; --- Start shape "edition mode"
+
+(declare clear-edition-mode)
+
+(defn start-edition-mode
+  [id]
+  (us/assert ::us/uuid id)
+  (ptk/reify ::start-edition-mode
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [page-id (:current-page-id state)
+            objects (get-in state [:workspace-data :pages-index page-id :objects])]
+        ;; Can only edit objects that exist
+        (if (contains? objects id)
+          (-> state
+              (assoc-in [:workspace-local :selected] #{id})
+              (assoc-in [:workspace-local :edition] id))
+          state)))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> stream
+           (rx/filter interrupt?)
+           (rx/take 1)
+           (rx/map (constantly clear-edition-mode))))))
+
+(def clear-edition-mode
+  (ptk/reify ::clear-edition-mode
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [id (get-in state [:workspace-local :edition])]
+        (-> state
+            (update-in [:workspace-local :hover] disj id)
+            (update :workspace-local dissoc :edition))))))
+
+
+(defn add-shape
+  [attrs]
+  (us/verify ::shape-attrs attrs)
+  (ptk/reify ::add-shape
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id  (:current-page-id state)
+            objects  (lookup-page-objects state page-id)
+
+            id       (or (:id attrs) (uuid/next))
+            shape    (gpr/setup-proportions attrs)
+
+            unames   (retrieve-used-names objects)
+            name     (generate-unique-name unames (:name shape))
+
+
+
+            frame-id (if (= :frame (:type attrs))
+                       uuid/zero
+                       (or (:frame-id attrs)
+                           (cp/frame-id-by-position objects attrs)))
+
+            shape    (merge
+                      (if (= :frame (:type shape))
+                        cp/default-frame-attrs
+                        cp/default-shape-attrs)
+                      (assoc shape
+                             :id id
+                             :name name))
+
+            rchange  {:type :add-obj
+                      :id id
+                      :page-id page-id
+                      :frame-id frame-id
+                      :obj shape}
+            uchange  {:type :del-obj
+                      :page-id page-id
+                      :id id}]
+
+        (rx/concat
+         (rx/of (commit-changes [rchange] [uchange] {:commit-local? true})
+                (select-shapes (d/ordered-set id)))
+         (when (= :text (:type attrs))
+           (->> (rx/of (start-edition-mode id))
+                (rx/observe-on :async))))))))

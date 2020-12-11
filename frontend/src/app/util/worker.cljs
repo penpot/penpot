@@ -38,10 +38,12 @@
                        (fn [event]
                          (let [data (.-data event)
                                data (t/decode data)]
-                           (rx/push! bus data))))
+                           (if (:error data)
+                             (on-error (:error data))
+                             (rx/push! bus data)))))
     (.addEventListener ins "error"
                        (fn [error]
-                         (on-error wrk error)))
+                         (on-error wrk (.-data error))))
 
     wrk))
 

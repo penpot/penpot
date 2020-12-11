@@ -10,21 +10,21 @@
 (ns app.main.ui.workspace.context-menu
   "A workspace specific context menu (mouse right click)."
   (:require
-   [beicon.core :as rx]
-   [okulary.core :as l]
-   [potok.core :as ptk]
-   [rumext.alpha :as mf]
-   [app.main.store :as st]
-   [app.main.refs :as refs]
-   [app.main.streams :as ms]
-   [app.main.ui.icons :as i]
-   [app.util.dom :as dom]
-   [app.util.i18n :refer [t] :as i18n]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.refs :as refs]
+   [app.main.store :as st]
+   [app.main.streams :as ms]
+   [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.hooks :refer [use-rxsub]]
-   [app.main.ui.components.dropdown :refer [dropdown]]))
+   [app.main.ui.icons :as i]
+   [app.util.dom :as dom]
+   [app.util.i18n :refer [t] :as i18n]
+   [beicon.core :as rx]
+   [okulary.core :as l]
+   [potok.core :as ptk]
+   [rumext.alpha :as mf]))
 
 (def menu-ref
   (l/derived :context-menu refs/workspace-local))
@@ -71,10 +71,10 @@
         do-detach-component #(st/emit! (dwl/detach-component id))
         do-reset-component #(st/emit! (dwl/reset-component id))
         do-update-component #(do
-                               (st/emit! dwc/start-undo-transaction)
+                               (st/emit! (dwc/start-undo-transaction))
                                (st/emit! (dwl/update-component id))
                                (st/emit! (dwl/sync-file nil))
-                               (st/emit! dwc/commit-undo-transaction))
+                               (st/emit! (dwc/commit-undo-transaction)))
         do-show-component #(st/emit! (dw/go-to-layout :assets))
         do-navigate-component-file #(st/emit! (dwl/nav-to-component-file
                                                 (:component-file shape)))]
@@ -140,8 +140,9 @@
        [:& menu-entry {:title (t locale "workspace.shape.menu.lock")
                        :on-click do-lock-shape}])
 
-     (when (or (nil? (:shape-ref shape))
-               (> (count selected) 1))
+     (when (and (or (nil? (:shape-ref shape))
+                    (> (count selected) 1))
+                (not= (:type shape) :frame))
        [:*
         [:& menu-separator]
         [:& menu-entry {:title (t locale "workspace.shape.menu.create-component")

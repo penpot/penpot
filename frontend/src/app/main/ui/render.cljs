@@ -14,7 +14,6 @@
    [rumext.alpha :as mf]
    [app.common.uuid :as uuid]
    [app.common.pages :as cp]
-   [app.common.pages-helpers :as cph]
    [app.common.math :as mth]
    [app.common.geom.shapes :as geom]
    [app.common.geom.point :as gpt]
@@ -34,7 +33,7 @@
                      (gpt/negate)
                      (gmt/translate-matrix))
 
-        mod-ids  (cons frame-id (cph/get-children frame-id objects))
+        mod-ids  (cons frame-id (cp/get-children frame-id objects))
         updt-fn  #(-> %1
                       (assoc-in [%2 :modifiers :displacement] modifier)
                       (update %2 geom/transform-shape))
@@ -82,7 +81,7 @@
   [objects object-id]
   (if (uuid/zero? object-id)
     (let [object   (get objects object-id)
-          shapes   (cph/select-toplevel-shapes objects {:include-frames? true})
+          shapes   (cp/select-toplevel-shapes objects {:include-frames? true})
           srect    (geom/selection-rect shapes)
           object   (merge object (select-keys srect [:x :y :width :height]))
           object   (geom/transform-shape object)

@@ -18,7 +18,6 @@
    [app.common.geom.shapes :as geom]
    [app.common.math :as mth]
    [app.common.pages :as cp]
-   [app.common.pages-helpers :as cph]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.common :as dwc]
@@ -118,7 +117,24 @@
              objects (dwc/lookup-page-objects state page-id)]
         (rx/of (dwc/expand-all-parents ids objects))))))
 
-(defn deselect-all 
+(defn select-all
+  []
+  (ptk/reify ::select-all
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id (:current-page-id state)
+            objects (dwc/lookup-page-objects state page-id)
+            is-not-blocked (fn [shape-id] (not (get-in state [:workspace-data
+                                                              :pages-index page-id
+                                                              :objects shape-id
+                                                              :blocked] false)))]
+        (rx/of (->> (cp/select-toplevel-shapes objects)
+                    (map :id)
+                    (filter is-not-blocked)
+                    (into lks/empty-linked-set)
+                    (select-shapes)))))))
+
+(defn deselect-all
   "Clear all possible state of drawing, edition
   or any similar action taken by the user.
   When `check-modal` the method will check if a modal is opened
@@ -180,91 +196,6 @@
           (rx/of (deselect-all) (select-shape (:id selected))))))))
 
 
-;; --- Group shapes
-
-(defn shapes-for-grouping
-  [objects selected]
-  (->> selected
-       (map #(get objects %))
-       (filter #(not= :frame (:type %)))
-       (map #(assoc % ::index (cph/position-on-parent (:id %) objects)))
-       (sort-by ::index)))
-
-(defn- make-group
-  [shapes prefix keep-name]
-  (let [selrect   (geom/selection-rect shapes)
-        frame-id  (-> shapes first :frame-id)
-        parent-id (-> shapes first :parent-id)
-        group-name (if (and keep-name
-                            (= (count shapes) 1)
-                            (= (:type (first shapes)) :group))
-                     (:name (first shapes))
-                     (name (gensym prefix)))]
-    (-> (cp/make-minimal-group frame-id selrect group-name)
-        (geom/setup selrect)
-        (assoc :shapes (map :id shapes)))))
-
-(defn prepare-create-group
-  [page-id shapes prefix keep-name]
-  (let [group (make-group shapes prefix keep-name)
-        rchanges [{:type :add-obj
-                   :id (:id group)
-                   :page-id page-id
-                   :frame-id (:frame-id (first shapes))
-                   :parent-id (:parent-id (first shapes))
-                   :obj group
-                   :index (::index (first shapes))}
-                  {:type :mov-objects
-                   :page-id page-id
-                   :parent-id (:id group)
-                   :shapes (map :id shapes)}]
-
-        uchanges (conj
-                   (map (fn [obj] {:type :mov-objects
-                                   :page-id page-id
-                                   :parent-id (:parent-id obj)
-                                   :index (::index obj)
-                                   :shapes [(:id obj)]})
-                        shapes)
-                   {:type :del-obj
-                    :id (:id group)
-                    :page-id page-id})]
-    [group rchanges uchanges]))
-
-(defn prepare-remove-group
-  [page-id group objects]
-  (let [shapes    (:shapes group)
-        parent-id (cph/get-parent (:id group) objects)
-        parent    (get objects parent-id)
-        index-in-parent (->> (:shapes parent)
-                             (map-indexed vector)
-                             (filter #(#{(:id group)} (second %)))
-                             (ffirst))
-        rchanges [{:type :mov-objects
-                   :page-id page-id
-                   :parent-id parent-id
-                   :shapes shapes
-                   :index index-in-parent}
-                  {:type :del-obj
-                   :page-id page-id
-                   :id (:id group)}]
-        uchanges [{:type :add-obj
-                   :page-id page-id
-                   :id (:id group)
-                   :frame-id (:frame-id group)
-                   :obj (assoc group :shapes [])}
-                  {:type :mov-objects
-                   :page-id page-id
-                   :parent-id (:id group)
-                   :shapes shapes}
-                  {:type :mov-objects
-                   :page-id page-id
-                   :parent-id parent-id
-                   :shapes [(:id group)]
-                   :index index-in-parent}]]
-    [rchanges uchanges]))
-
-
 ;; --- Duplicate Shapes
 (declare prepare-duplicate-change)
 (declare prepare-duplicate-frame-change)
@@ -303,7 +234,7 @@
         name        (dwc/generate-unique-name names (:name obj))
         renamed-obj (assoc obj :id id :name name)
         moved-obj   (geom/move renamed-obj delta)
-        frames      (cph/select-frames objects)
+        frames      (cp/select-frames objects)
         parent-id   (or parent-id frame-id)
 
         children-changes
@@ -330,6 +261,7 @@
             :old-id (:id obj)
             :frame-id frame-id
             :parent-id parent-id
+            :ignore-touched true
             :obj (dissoc reframed-obj :shapes)}]
           children-changes)))
 
@@ -381,11 +313,8 @@
 
 (defn change-hover-state
   [id value]
-  (letfn [(update-hover [items]
-            (if value
-              (conj items id)
-              (disj items id)))]
-    (ptk/reify ::change-hover-state
-      ptk/UpdateEvent
-      (update [_ state]
-        (update-in state [:workspace-local :hover] (fnil update-hover #{}))))))
+  (ptk/reify ::change-hover-state
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [hover-value (if value #{id} #{})]
+        (assoc-in state [:workspace-local :hover] hover-value)))))

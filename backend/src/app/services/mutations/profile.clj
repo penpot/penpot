@@ -10,27 +10,24 @@
 (ns app.services.mutations.profile
   (:require
    [app.common.exceptions :as ex]
-   [app.common.media :as cm]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
    [app.emails :as emails]
-   [app.media :as media]
-   [app.media-storage :as mst]
    [app.http.session :as session]
+   [app.media :as media]
    [app.services.mutations :as sm]
    [app.services.mutations.projects :as projects]
    [app.services.mutations.teams :as teams]
+   [app.services.mutations.verify-token :refer [process-token]]
    [app.services.queries.profile :as profile]
    [app.services.tokens :as tokens]
-   [app.services.mutations.verify-token :refer [process-token]]
    [app.tasks :as tasks]
-   [app.util.blob :as blob]
-   [app.util.storage :as ust]
    [app.util.time :as dt]
    [buddy.hashers :as hashers]
    [clojure.spec.alpha :as s]
+   [clojure.tools.logging :as log]
    [cuerdas.core :as str]))
 
 ;; --- Helpers & Specs
@@ -142,11 +139,20 @@
 
 (defn- derive-password
   [password]
-  (hashers/derive password {:alg :bcrypt+sha512}))
+  (hashers/derive password
+                  {:alg :argon2id
+                   :memory 16384
+                   :iterations 20
+                   :parallelism 2}))
 
 (defn- verify-password
   [attempt password]
-  (hashers/verify attempt password))
+  (try
+    (hashers/verify attempt password)
+    (catch Exception e
+      (log/warnf e "Error on verify password (only informative, nothing affected to user).")
+      {:update false
+       :valid false})))
 
 (defn- create-profile
   "Create the profile entry on the database with limited input
@@ -274,7 +280,7 @@
 
 (defn- validate-password!
   [conn {:keys [profile-id old-password] :as params}]
-  (let [profile (profile/retrieve-profile-data conn profile-id)]
+  (let [profile (db/get-by-id conn :profile profile-id)]
     (when-not (:valid (verify-password old-password (:password profile)))
       (ex/raise :type :validation
                 :code :old-password-not-match))))
@@ -304,7 +310,7 @@
   [{:keys [profile-id file] :as params}]
   (media/validate-media-type (:content-type file))
   (db/with-atomic [conn db/pool]
-    (let [profile (profile/retrieve-profile conn profile-id)
+    (let [profile (db/get-by-id conn :profile profile-id)
           _       (media/run {:cmd :info :input {:path (:tempfile file)
                                                  :mtype (:content-type file)}})
           photo   (teams/upload-photo conn params)]
@@ -361,7 +367,7 @@
 
 (sm/defmutation ::request-profile-recovery
   [{:keys [email] :as params}]
-  (letfn [(create-recovery-token [conn {:keys [id] :as profile}]
+  (letfn [(create-recovery-token [{:keys [id] :as profile}]
             (let [token (tokens/generate
                          {:iss :password-recovery
                           :exp (dt/in-future "15m")
@@ -377,7 +383,7 @@
     (db/with-atomic [conn db/pool]
       (some->> email
                (profile/retrieve-profile-data-by-email conn)
-               (create-recovery-token conn)
+               (create-recovery-token)
                (send-email-notification conn))
       nil)))
 
@@ -390,7 +396,7 @@
 
 (sm/defmutation ::recover-profile
   [{:keys [token password]}]
-  (letfn [(validate-token [conn token]
+  (letfn [(validate-token [token]
             (let [tdata (tokens/verify token {:iss :password-recovery})]
               (:profile-id tdata)))
 
@@ -399,8 +405,29 @@
               (db/update! conn :profile {:password pwd} {:id profile-id})))]
 
     (db/with-atomic [conn db/pool]
-      (->> (validate-token conn token)
+      (->> (validate-token token)
            (update-password conn))
+      nil)))
+
+;; --- Mutation: Update Profile Props
+
+(s/def ::props map?)
+(s/def ::update-profile-props
+  (s/keys :req-un [::profile-id ::props]))
+
+(sm/defmutation ::update-profile-props
+  [{:keys [profile-id props]}]
+  (db/with-atomic [conn db/pool]
+    (let [profile (profile/retrieve-profile-data conn profile-id)
+          props   (reduce-kv (fn [props k v]
+                               (if (nil? v)
+                                 (dissoc props k)
+                                 (assoc props k v)))
+                             (:props profile)
+                             props)]
+      (db/update! conn :profile
+                  {:props (db/tjson props)}
+                  {:id profile-id})
       nil)))
 
 

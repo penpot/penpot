@@ -77,6 +77,7 @@
     }
 
     .current-team {
+      cursor: pointer;
       display: flex;
       flex-grow: 1;
       font-size: $fs14;
@@ -118,7 +119,6 @@
     .switch-icon {
       display: flex;
       align-items: center;
-      cursor: pointer;
 
       svg {
         width: 10px;
@@ -363,26 +363,32 @@
   padding: 10px 15px;
   position: relative;
 
-  span {
-    @include text-ellipsis;
-    color: $color-black;
-    margin: 10px 5px;
-    font-size: $fs14;
-    max-width: 160px;
-  }
+  .profile {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    flex-grow: 1;
 
-  img {
-    border-radius: 50%;
-    flex-shrink: 0;
-    height: 25px;
-    width: 25px;
-  }
+    span {
+      @include text-ellipsis;
+      color: $color-black;
+      margin: 10px 5px;
+      font-size: $fs14;
+      max-width: 160px;
+    }
 
-  svg {
-    height: 10px;
-    margin-left: auto;
-    margin-right: $small;
-    width: 10px;
+    img {
+      border-radius: 50%;
+      flex-shrink: 0;
+      height: 25px;
+      width: 25px;
+    }
+    svg {
+      height: 10px;
+      margin-left: auto;
+      margin-right: $small;
+      width: 10px;
+    }
   }
 
   .dropdown {
@@ -400,6 +406,8 @@
 
       svg {
         fill: $color-gray-20;
+        margin-right: $small;
+
         height: 12px;
         width: 12px;
       }

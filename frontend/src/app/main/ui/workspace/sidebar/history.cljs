@@ -129,7 +129,6 @@
     :rect i/box
     :circle i/circle
     :text i/text
-    :curve i/curve
     :path i/curve
     :frame i/artboard
     :group i/folder
@@ -141,7 +140,7 @@
     i/layers))
 
 (defn is-shape? [type]
-  #{:shape :rect :circle :text :curve :path :frame :group})
+  #{:shape :rect :circle :text :path :frame :group})
 
 (defn parse-entry [{:keys [redo-changes]}]
   (->> redo-changes

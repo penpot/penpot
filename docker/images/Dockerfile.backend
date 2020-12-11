@@ -1,0 +1,21 @@
+FROM debian:buster-slim
+LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
+
+ENV LANG='en_US.UTF-8' LC_ALL='en_US.UTF-8'
+
+RUN set -ex; \
+    apt-get -qq update; \
+    apt-get -qqy --no-install-recommends install wget locales ca-certificates imagemagick webp gnupg2; \
+    echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
+    locale-gen; \
+    mkdir -p /usr/share/man/man1; \
+    mkdir -p /usr/share/man/man7; \
+    wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | apt-key add -; \
+    echo "deb https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ buster main" >> /etc/apt/sources.list.d/adoptopenjdk.list; \
+    apt-get -qq update; \
+    apt-get -qqy install adoptopenjdk-15-hotspot; \
+    rm -rf /var/lib/apt/lists/*;
+
+ADD ./bundle/backend/ /opt/bundle/
+WORKDIR /opt/bundle
+CMD ["/bin/bash", "run.sh"]

@@ -15,12 +15,11 @@
    [app.db :as db]
    [app.tasks.delete-object]
    [app.tasks.delete-profile]
-   [app.tasks.remove-media]
    [app.tasks.maintenance]
+   [app.tasks.remove-media]
    [app.tasks.sendmail]
    [app.tasks.trim-file]
    [app.util.async :as aa]
-   [app.util.blob :as blob]
    [app.util.time :as dt]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
@@ -31,10 +30,7 @@
    org.eclipse.jetty.util.thread.QueuedThreadPool
    java.util.concurrent.ExecutorService
    java.util.concurrent.Executors
-   java.util.concurrent.Executor
-   java.time.Duration
-   java.time.Instant
-   java.util.Date))
+   java.time.Instant))
 
 (declare start-scheduler-worker!)
 (declare start-worker!)
@@ -61,19 +57,18 @@
     :fn #'app.tasks.trim-file/handler}
 
    {:id "maintenance/delete-executed-tasks"
-    :cron #app/cron "0 0 */1 * * ?"  ;; hourly
+    :cron #app/cron "0 0 0 */1 * ?"  ;; daily
     :fn #'app.tasks.maintenance/delete-executed-tasks
-    :props {:max-age #app/duration "48h"}}
+    :props {:max-age #app/duration "24h"}}
 
    {:id "maintenance/delete-old-files-xlog"
-    :cron #app/cron "0 0 */1 * * ?"  ;; hourly
+    :cron #app/cron "0 0 0 */1 * ?"  ;; daily
     :fn #'app.tasks.maintenance/delete-old-files-xlog
-    :props {:max-age #app/duration "8h"}}
+    :props {:max-age #app/duration "12h"}}
    ])
 
 (defstate executor
-  :start (thread-pool {:idle-timeout 10000
-                       :min-threads 0
+  :start (thread-pool {:min-threads 0
                        :max-threads 256})
   :stop (stop! executor))
 
@@ -149,7 +144,7 @@
         nil))))
 
 (defn- run-task
-  [{:keys [tasks conn]} item]
+  [{:keys [tasks]} item]
   (try
     (log/debugf "Started task '%s/%s/%s'." (:name item) (:id item) (:retry-num item))
     (handle-task tasks item)
@@ -187,7 +182,7 @@
       for update skip locked")
 
 (defn- event-loop-fn*
-  [{:keys [tasks executor batch-size] :as opts}]
+  [{:keys [executor batch-size] :as opts}]
   (db/with-atomic [conn db/pool]
     (let [queue (:queue opts "default")
           items (->> (db/exec! conn [sql:select-next-tasks queue batch-size])
@@ -222,7 +217,7 @@
           :opt-un [::poll-interval]))
 
 (defn start-worker!
-  [{:keys [poll-interval executor]
+  [{:keys [poll-interval]
     :or {poll-interval 5000}
     :as opts}]
   (us/assert ::start-worker-params opts)
@@ -290,7 +285,7 @@
        do update set cron_expr=?")
 
 (defn- synchronize-schedule-item
-  [conn {:keys [id cron] :as item}]
+  [conn {:keys [id cron]}]
   (let [cron (str cron)]
     (log/debugf "Initialize scheduled task '%s' (cron: '%s')." id cron)
     (db/exec-one! conn [sql:upsert-scheduled-task id cron cron])))
@@ -311,7 +306,7 @@
     (.printStackTrace ^Throwable error (java.io.PrintWriter. *out*))))
 
 (defn- execute-scheduled-task
-  [{:keys [scheduler executor] :as opts} {:keys [id cron] :as task}]
+  [{:keys [executor] :as opts} {:keys [id] :as task}]
   (letfn [(run-task [conn]
             (try
               (when (db/exec-one! conn [sql:lock-scheduled-task id])
@@ -384,8 +379,8 @@
 
 (defn thread-pool
   ([] (thread-pool {}))
-  ([{:keys [min-threads max-threads idle-timeout name]
-     :or {min-threads 0 max-threads 128 idle-timeout 60000}}]
+  ([{:keys [min-threads max-threads name]
+     :or {min-threads 0 max-threads 256}}]
    (let [executor (QueuedThreadPool. max-threads min-threads)]
      (.setName executor (or name "default-tp"))
      (.start executor)

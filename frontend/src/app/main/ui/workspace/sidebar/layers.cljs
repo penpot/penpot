@@ -11,9 +11,9 @@
   (:require
    [app.common.data :as d]
    [app.common.pages :as cp]
-   [app.common.pages-helpers :as cph]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.common :as dwc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.hooks :as hooks]
@@ -39,7 +39,6 @@
     :circle i/circle
     :path i/curve
     :rect i/box
-    :curve i/curve
     :text i/text
     :group (if (some? (:component-id shape))
              i/component
@@ -113,8 +112,8 @@
         (fn [event]
           (dom/stop-propagation event)
           (if (and expanded? (kbd/shift? event))
-            (st/emit! dw/collapse-all)
-            (st/emit! (dw/toggle-collapse id))))
+            (st/emit! dwc/collapse-all)
+            (st/emit! (dwc/toggle-collapse id))))
 
         toggle-blocking
         (fn [event]
@@ -168,13 +167,13 @@
           (if (= side :center)
             (st/emit! (dw/relocate-selected-shapes (:id item) 0))
             (let [to-index  (if (= side :top) (inc index) index)
-                  parent-id (cph/get-parent (:id item) objects)]
+                  parent-id (cp/get-parent (:id item) objects)]
               (st/emit! (dw/relocate-selected-shapes parent-id to-index)))))
 
         on-hold
         (fn []
           (when-not expanded?
-            (st/emit! (dw/toggle-collapse (:id item)))))
+            (st/emit! (dwc/toggle-collapse (:id item)))))
 
         [dprops dref] (hooks/use-sortable
                        :data-type "app/layer"
@@ -245,7 +244,7 @@
         old-obs (unchecked-get oprops "objects")]
     (and (= new-itm old-itm)
          (identical? new-idx old-idx)
-         (let [childs (cph/get-children (:id new-itm) new-obs)
+         (let [childs (cp/get-children (:id new-itm) new-obs)
                childs' (conj childs (:id new-itm))]
            (and (or (= new-sel old-sel)
                     (not (or (boolean (some new-sel childs'))

@@ -11,11 +11,12 @@
   "The main logic for SVG export functionality."
   (:require
    [rumext.alpha :as mf]
+   [cuerdas.core :as str]
    [app.common.uuid :as uuid]
    [app.common.pages :as cp]
-   [app.common.pages-helpers :as cph]
    [app.common.math :as mth]
-   [app.common.geom.shapes :as geom]
+   [app.common.geom.shapes :as gsh]
+   [app.common.geom.align :as gal]
    [app.common.geom.point :as gpt]
    [app.common.geom.matrix :as gmt]
    [app.main.ui.shapes.filters :as filters]
@@ -41,10 +42,15 @@
 
 (defn- calculate-dimensions
   [{:keys [objects] :as data} vport]
-  (let [shapes (cph/select-toplevel-shapes objects {:include-frames? true})]
-    (->> (geom/selection-rect shapes)
-         (geom/adjust-to-viewport vport)
-         (geom/fix-invalid-rect-values))))
+  (let [shapes (cp/select-toplevel-shapes objects {:include-frames? true})
+        to-finite (fn [val fallback] (if (not (mth/finite? val)) fallback val))
+        rect (->> (gsh/selection-rect shapes)
+                  (gal/adjust-to-viewport vport))]
+    (-> rect
+        (update :x to-finite 0)
+        (update :y to-finite 0)
+        (update :width to-finite 10000)
+        (update :height to-finite 10000))))
 
 (declare shape-wrapper-factory)
 
@@ -55,7 +61,7 @@
     (mf/fnc frame-wrapper
       [{:keys [shape] :as props}]
       (let [childs (mapv #(get objects %) (:shapes shape))
-            shape  (geom/transform-shape shape)]
+            shape  (gsh/transform-shape shape)]
         [:> shape-container {:shape shape}
          [:& frame-shape {:shape shape :childs childs}]]))))
 
@@ -78,11 +84,11 @@
     (let [group-wrapper (mf/use-memo (mf/deps objects) #(group-wrapper-factory objects))
           frame-wrapper (mf/use-memo (mf/deps objects) #(frame-wrapper-factory objects))]
       (when (and shape (not (:hidden shape)))
-        (let [shape (geom/transform-shape frame shape)
+        (let [shape (-> (gsh/transform-shape shape)
+                        (gsh/translate-to-frame frame))
               opts #js {:shape shape}]
           [:> shape-container {:shape shape}
            (case (:type shape)
-             :curve  [:> path/path-shape opts]
              :text   [:> text/text-shape opts]
              :rect   [:> rect/rect-shape opts]
              :path   [:> path/path-shape opts]
@@ -92,21 +98,20 @@
              :group  [:> group-wrapper {:shape shape :frame frame}]
              nil)])))))
 
+(defn get-viewbox [{:keys [x y width height] :or {x 0 y 0 width 100 height 100}}]
+  (str/fmt "%s %s %s %s" x y width height))
+
 (mf/defc page-svg
   {::mf/wrap [mf/memo]}
   [{:keys [data width height] :as props}]
   (let [objects (:objects data)
-        vport   {:width width :height height}
-
-        dim     (calculate-dimensions data vport)
         root    (get objects uuid/zero)
         shapes  (->> (:shapes root)
                      (map #(get objects %)))
 
-        vbox    (str (:x dim 0) " "
-                     (:y dim 0) " "
-                     (:width dim 100) " "
-                     (:height dim 100))
+        vport   {:width width :height height}
+        dim     (calculate-dimensions data vport)
+        vbox    (get-viewbox dim)
         background-color (get-in data [:options :background] default-color)
         frame-wrapper
         (mf/use-memo
@@ -138,7 +143,7 @@
 
         frame-id (:id frame)
 
-        modifier-ids (concat [frame-id] (cph/get-children frame-id objects))
+        modifier-ids (concat [frame-id] (cp/get-children frame-id objects))
         update-fn #(assoc-in %1 [%2 :modifiers :displacement] modifier)
         objects (reduce update-fn objects modifier-ids)
         frame (assoc-in frame [:modifiers :displacement] modifier)
@@ -168,7 +173,7 @@
 
         group-id (:id group)
 
-        modifier-ids (concat [group-id] (cph/get-children group-id objects))
+        modifier-ids (concat [group-id] (cp/get-children group-id objects))
         update-fn #(assoc-in %1 [%2 :modifiers :displacement] modifier)
         objects (reduce update-fn objects modifier-ids)
         group (assoc-in group [:modifiers :displacement] modifier)

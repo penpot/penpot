@@ -10,28 +10,16 @@
 (ns app.services.mutations.verify-token
   (:require
    [app.common.exceptions :as ex]
-   [app.common.media :as cm]
    [app.common.spec :as us]
-   [app.common.uuid :as uuid]
-   [app.config :as cfg]
    [app.db :as db]
-   [app.emails :as emails]
    [app.http.session :as session]
-   [app.media :as media]
-   [app.media-storage :as mst]
    [app.services.mutations :as sm]
    [app.services.mutations.teams :as teams]
    [app.services.queries.profile :as profile]
    [app.services.tokens :as tokens]
-   [app.tasks :as tasks]
-   [app.util.blob :as blob]
-   [app.util.storage :as ust]
-   [app.util.time :as dt]
-   [buddy.hashers :as hashers]
-   [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]))
+   [clojure.spec.alpha :as s]))
 
-(defmulti process-token (fn [conn params claims] (:iss claims)))
+(defmulti process-token (fn [_ _ claims] (:iss claims)))
 
 (s/def ::verify-token
   (s/keys :req-un [::token]
@@ -44,18 +32,17 @@
       (process-token conn params claims))))
 
 (defmethod process-token :change-email
-  [conn params {:keys [profile-id email] :as claims}]
-  (let [profile (db/get-by-id conn :profile profile-id {:for-update true})]
-    (when (profile/retrieve-profile-data-by-email conn email)
-      (ex/raise :type :validation
-                :code :email-already-exists))
-    (db/update! conn :profile
-                {:email email}
-                {:id profile-id})
-    claims))
+  [conn _params {:keys [profile-id email] :as claims}]
+  (when (profile/retrieve-profile-data-by-email conn email)
+    (ex/raise :type :validation
+              :code :email-already-exists))
+  (db/update! conn :profile
+              {:email email}
+              {:id profile-id})
+  claims)
 
 (defmethod process-token :verify-email
-  [conn params {:keys [profile-id] :as claims}]
+  [conn _params {:keys [profile-id] :as claims}]
   (let [profile (db/get-by-id conn :profile profile-id {:for-update true})]
     (when (:is-active profile)
       (ex/raise :type :validation
@@ -71,7 +58,7 @@
     claims))
 
 (defmethod process-token :auth
-  [conn params {:keys [profile-id] :as claims}]
+  [conn _params {:keys [profile-id] :as claims}]
   (let [profile (profile/retrieve-profile conn profile-id)]
     (assoc claims :profile profile)))
 
@@ -137,7 +124,7 @@
 ;; --- Default
 
 (defmethod process-token :default
-  [conn params claims]
+  [_ _ _]
   (ex/raise :type :validation
             :code :invalid-token))
 

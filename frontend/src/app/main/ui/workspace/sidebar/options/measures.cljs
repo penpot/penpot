@@ -20,6 +20,7 @@
    [app.common.geom.point :as gpt]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.common :as dwc]
+   [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.common.math :as math]
    [app.util.i18n :refer [t] :as i18n]))
 
@@ -43,11 +44,15 @@
 
         old-shapes (deref (refs/objects-by-id ids))
         frames (map #(deref (refs/object-by-id (:frame-id %))) old-shapes)
-        shapes (map gsh/transform-shape frames old-shapes)
 
-        values (cond-> values
-                 (not= (:x values) :multiple) (assoc :x (:x (:selrect (first shapes))))
-                 (not= (:y values) :multiple) (assoc :y (:y (:selrect (first shapes)))))
+        shapes (as-> old-shapes $
+                 (map gsh/transform-shape $)
+                 (map gsh/translate-to-frame $ frames))
+
+        values (let [{:keys [x y]} (-> shapes first :points gsh/points->selrect)]
+                 (cond-> values
+                   (not= (:x values) :multiple) (assoc :x x)
+                   (not= (:y values) :multiple) (assoc :y y)))
 
         proportion-lock (:proportion-lock values)
 
@@ -55,7 +60,7 @@
         (fn [event attr]
           (let [value (-> (dom/get-target event)
                           (dom/get-value)
-                          (d/parse-integer 0))]
+                          (d/parse-integer 1))]
             (st/emit! (udw/update-dimensions ids attr value))))
 
         on-proportion-lock-change
@@ -65,7 +70,7 @@
 
         do-position-change
         (fn [shape' frame' value attr]
-          (let [from (-> shape' :selrect attr)
+          (let [from (-> shape' :points gsh/points->selrect attr)
                 to (+ value (attr frame'))
                 target (+ (attr shape') (- to from))]
             (st/emit! (udw/update-position (:id shape') {attr target}))))
@@ -114,66 +119,61 @@
       (when (options :size)
         [:div.row-flex
          [:span.element-set-subtitle (t locale "workspace.options.size")]
+         [:div.input-element.width
+          [:> numeric-input {:min "1"
+                             :no-validate true
+                             :placeholder "--"
+                             :on-click select-all
+                             :on-change on-width-change
+                             :value (attr->string :width values)}]]
+
+         [:div.input-element.height
+          [:> numeric-input {:min "1"
+                             :no-validate true
+                             :placeholder "--"
+                             :on-click select-all
+                             :on-change on-height-change
+                             :value (attr->string :height values)}]]
+
          [:div.lock-size {:class (classnames
                                    :selected (true? proportion-lock)
                                    :disabled (= proportion-lock :multiple))
                           :on-click on-proportion-lock-change}
           (if proportion-lock
             i/lock
-            i/unlock)]
-         [:div.input-element.width
-          [:input.input-text {:type "number"
-                              :min "0"
-                              :no-validate true
-                              :placeholder "--"
-                              :on-click select-all
-                              :on-change on-width-change
-                              :value (attr->string :width values)}]]
-
-
-         [:div.input-element.height
-          [:input.input-text {:type "number"
-                              :min "0"
-                              :no-validate true
-                              :placeholder "--"
-                              :on-click select-all
-                              :on-change on-height-change
-                              :value (attr->string :height values)}]]])
+            i/unlock)]])
 
       ;; POSITION
       (when (options :position)
         [:div.row-flex
          [:span.element-set-subtitle (t locale "workspace.options.position")]
          [:div.input-element.Xaxis
-          [:input.input-text {:type "number"
-                              :no-validate true
-                              :placeholder "--"
-                              :on-click select-all
-                              :on-change on-pos-x-change
-                              :value (attr->string :x values)}]]
+          [:> numeric-input {:no-validate true
+                             :placeholder "--"
+                             :on-click select-all
+                             :on-change on-pos-x-change
+                             :value (attr->string :x values)}]]
          [:div.input-element.Yaxis
-          [:input.input-text {:type "number"
-                              :no-validate true
-                              :placeholder "--"
-                              :on-click select-all
-                              :on-change on-pos-y-change
-                              :value (attr->string :y values)}]]])
+          [:> numeric-input {:no-validate true
+                             :placeholder "--"
+                             :on-click select-all
+                             :on-change on-pos-y-change
+                             :value (attr->string :y values)}]]])
 
       ;; ROTATION
       (when (options :rotation)
         [:div.row-flex
          [:span.element-set-subtitle (t locale "workspace.options.rotation")]
          [:div.input-element.degrees
-          [:input.input-text
-           {:type "number"
-            :no-validate true
+          [:> numeric-input
+           {:no-validate true
             :min "0"
             :max "359"
             :placeholder "--"
             :on-click select-all
             :on-change on-rotation-change
             :value (attr->string :rotation values)}]]
-         [:input.slidebar
+         #_[:input.slidebar
           {:type "range"
            :min "0"
            :max "359"
@@ -187,9 +187,9 @@
         [:div.row-flex
          [:span.element-set-subtitle (t locale "workspace.options.radius")]
          [:div.input-element.pixels
-          [:input.input-text
-           {:type "number"
-            :placeholder "--"
+          [:> numeric-input
+           {:placeholder "--"
+            :min "0"
             :on-click select-all
             :on-change on-radius-change
             :value (attr->string :rx values)}]]

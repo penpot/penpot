@@ -5,18 +5,16 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.services.queries.teams
   (:require
-   [clojure.spec.alpha :as s]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.common.uuid :as uuid]
    [app.db :as db]
    [app.services.queries :as sq]
    [app.services.queries.profile :as profile]
-   [app.util.blob :as blob]))
+   [clojure.spec.alpha :as s]))
 
 ;; --- Team Edition Permissions
 
@@ -130,3 +128,85 @@
 (defn retrieve-team-members
   [conn team-id]
   (db/exec! conn [sql:team-members team-id]))
+
+
+;; --- Query: Team Users
+
+(declare retrieve-users)
+(declare retrieve-team-for-file)
+
+(s/def ::file-id ::us/uuid)
+(s/def ::team-users
+  (s/and (s/keys :req-un [::profile-id]
+                 :opt-un [::team-id ::file-id])
+         #(or (:team-id %) (:file-id %))))
+
+(sq/defquery ::team-users
+  [{:keys [profile-id team-id file-id]}]
+  (with-open [conn (db/open)]
+    (if team-id
+      (do
+        (check-edition-permissions! conn profile-id team-id)
+        (retrieve-users conn team-id))
+      (let [{team-id :id} (retrieve-team-for-file conn file-id)]
+        (check-edition-permissions! conn profile-id team-id)
+        (retrieve-users conn team-id)))))
+
+;; This is a similar query to team members but can contain more data
+;; because some user can be explicitly added to project or file (not
+;; implemented in UI)
+
+(def sql:team-users
+  "select pf.id, pf.fullname, pf.photo
+     from profile as pf
+    inner join team_profile_rel as tpr on (tpr.profile_id = pf.id)
+    where tpr.team_id = ?
+    union
+   select pf.id, pf.fullname, pf.photo
+     from profile as pf
+    inner join project_profile_rel as ppr on (ppr.profile_id = pf.id)
+    inner join project as p on (ppr.project_id = p.id)
+    where p.team_id = ?
+   union
+   select pf.id, pf.fullname, pf.photo
+     from profile as pf
+    inner join file_profile_rel as fpr on (fpr.profile_id = pf.id)
+    inner join file as f on (fpr.file_id = f.id)
+    inner join project as p on (f.project_id = p.id)
+    where p.team_id = ?")
+
+(def sql:team-by-file
+  "select p.team_id as id
+     from project as p
+     join file as f on (p.id = f.project_id)
+    where f.id = ?")
+
+(defn retrieve-users
+  [conn team-id]
+  (db/exec! conn [sql:team-users team-id team-id team-id]))
+
+(defn retrieve-team-for-file
+  [conn file-id]
+  (->> [sql:team-by-file file-id]
+       (db/exec-one! conn)))
+
+;; --- Query: Team Stats
+
+(declare retrieve-team-stats)
+
+(s/def ::team-stats
+  (s/keys :req-un [::profile-id ::team-id]))
+
+(sq/defquery ::team-stats
+  [{:keys [profile-id team-id]}]
+  (with-open [conn (db/open)]
+    (check-read-permissions! conn profile-id team-id)
+    (retrieve-team-stats conn team-id)))
+
+(def sql:team-stats
+  "select (select count(*) from project where team_id = ?) as projects,
+          (select count(*) from file as f join project as p on (p.id = f.project_id) where p.team_id = ?) as files")
+
+(defn retrieve-team-stats
+  [conn team-id]
+  (db/exec-one! conn [sql:team-stats team-id team-id]))

@@ -9,15 +9,13 @@
 
 (ns app.services.queries.profile
   (:require
-   [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.db :as db]
-   [app.media :as media]
-   [app.services.queries :as sq]
    [app.common.uuid :as uuid]
-   [app.util.blob :as blob]))
+   [app.db :as db]
+   [app.services.queries :as sq]
+   [clojure.spec.alpha :as s]
+   [cuerdas.core :as str]))
 
 ;; --- Helpers & Specs
 
@@ -25,7 +23,6 @@
 
 (s/def ::email ::us/email)
 (s/def ::fullname ::us/string)
-(s/def ::metadata any?)
 (s/def ::old-password ::us/string)
 (s/def ::password ::us/string)
 (s/def ::path ::us/string)
@@ -75,14 +72,19 @@
     {:default-team-id (:id team)
      :default-project-id (:id project)}))
 
+(defn decode-profile-row
+  [{:keys [props] :as row}]
+  (cond-> row
+    (db/pgobject? props) (assoc :props (db/decode-transit-pgobject props))))
+
 (defn retrieve-profile-data
   [conn id]
-  (db/get-by-id conn :profile id))
+  (-> (db/get-by-id conn :profile id)
+      (decode-profile-row)))
 
 (defn retrieve-profile
   [conn id]
   (let [profile (some-> (retrieve-profile-data conn id)
-                        (media/resolve-urls :photo :photo-uri)
                         (strip-private-attrs)
                         (merge (retrieve-additional-data conn id)))]
     (when (nil? profile)
@@ -100,7 +102,8 @@
 (defn retrieve-profile-data-by-email
   [conn email]
   (let [email (str/lower email)]
-    (db/exec-one! conn [sql:profile-by-email email])))
+    (-> (db/exec-one! conn [sql:profile-by-email email])
+        (decode-profile-row))))
 
 
 ;; --- Attrs Helpers

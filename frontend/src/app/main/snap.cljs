@@ -166,7 +166,7 @@
          (rx/merge-map
           (fn [[frame selrect]]
             (let [areas (->> (gsh/selrect->areas (or (:selrect frame)
-                                                     (gsh/rect->rect-shape @refs/vbox)) selrect)
+                                                     (gsh/rect->selrect @refs/vbox)) selrect)
                              (d/mapm #(select-shapes-area page-id shapes objects %2)))
                   snap-x (search-snap-distance selrect :x (:left areas) (:right areas))
                   snap-y (search-snap-distance selrect :y (:top areas) (:bottom areas))]
@@ -195,7 +195,7 @@
                                  (or (filter-shapes id)
                                      (not (contains? layout :dynamic-alignment)))))
         shape (if (> (count shapes) 1)
-                (->> shapes (map gsh/transform-shape) gsh/selection-rect)
+                (->> shapes (map gsh/transform-shape) gsh/selection-rect (gsh/setup {:type :rect}))
                 (->> shapes (first)))
 
         shapes-points (->> shape

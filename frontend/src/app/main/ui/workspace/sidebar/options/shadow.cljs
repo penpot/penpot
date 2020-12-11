@@ -15,6 +15,7 @@
    [app.main.data.workspace.common :as dwc]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
+   [app.main.ui.components.numeric-input :refer [numeric-input]]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
    [app.util.dom :as dom]
@@ -92,23 +93,20 @@
       [:div.element-set-actions-button
        {:on-click #(reset! open-shadow true)}
        i/actions]
-      
-      [:input.input-text {:type "number"
-                          :ref basic-offset-x-ref
-                          :on-change (update-attr index :offset-x valid-number?)
-                          :on-click (select-text basic-offset-x-ref)
-                          :default-value (:offset-x value)}]
-      [:input.input-text {:type "number"
-                          :ref basic-offset-y-ref
-                          :on-change (update-attr index :offset-y valid-number?)
-                          :on-click (select-text basic-offset-y-ref)
-                          :default-value (:offset-y value)}]
-      [:input.input-text {:type "number"
-                          :ref basic-blur-ref
-                          :on-click (select-text basic-blur-ref)
-                          :on-change (update-attr index :blur valid-number?)
-                          :min 0
-                          :default-value (:blur value)}]            
+
+      [:> numeric-input {:ref basic-offset-x-ref
+                         :on-change (update-attr index :offset-x valid-number?)
+                         :on-click (select-text basic-offset-x-ref)
+                         :default-value (:offset-x value)}]
+      [:> numeric-input {:ref basic-offset-y-ref
+                         :on-change (update-attr index :offset-y valid-number?)
+                         :on-click (select-text basic-offset-y-ref)
+                         :default-value (:offset-y value)}]
+      [:> numeric-input {:ref basic-blur-ref
+                         :on-click (select-text basic-blur-ref)
+                         :on-change (update-attr index :blur valid-number?)
+                         :min 0
+                         :default-value (:blur value)}]           
 
       [:div.element-set-actions
        [:div.element-set-actions-button {:on-click (toggle-visibility index)}
@@ -129,46 +127,42 @@
       
       [:div.row-grid-2
        [:div.input-element
-        [:input.input-text {:type "number"
-                            :ref adv-offset-x-ref
-                            :no-validate true
-                            :placeholder "--"
-                            :on-click (select-text adv-offset-x-ref)
-                            :on-change (update-attr index :offset-x valid-number? basic-offset-x-ref)
-                            :default-value (:offset-x value)}]
+        [:> numeric-input {:ref adv-offset-x-ref
+                           :no-validate true
+                           :placeholder "--"
+                           :on-click (select-text adv-offset-x-ref)
+                           :on-change (update-attr index :offset-x valid-number? basic-offset-x-ref)
+                           :default-value (:offset-x value)}]
         [:span.after (t locale "workspace.options.shadow-options.offsetx")]]
 
        [:div.input-element
-        [:input.input-text {:type "number"
-                            :ref adv-offset-y-ref
-                            :no-validate true
-                            :placeholder "--"
-                            :on-click (select-text adv-offset-y-ref)
-                            :on-change (update-attr index :offset-y valid-number? basic-offset-y-ref)
-                            :default-value (:offset-y value)}]
+        [:> numeric-input {:ref adv-offset-y-ref
+                           :no-validate true
+                           :placeholder "--"
+                           :on-click (select-text adv-offset-y-ref)
+                           :on-change (update-attr index :offset-y valid-number? basic-offset-y-ref)
+                           :default-value (:offset-y value)}]
         [:span.after (t locale "workspace.options.shadow-options.offsety")]]]
 
       [:div.row-grid-2
        [:div.input-element
-        [:input.input-text {:type "number"
-                            :ref adv-blur-ref
-                            :no-validate true
-                            :placeholder "--"
-                            :on-click (select-text adv-blur-ref)
-                            :on-change (update-attr index :blur valid-number? basic-blur-ref)
-                            :min 0
-                            :default-value (:blur value)}]
+        [:> numeric-input {:ref adv-blur-ref
+                           :no-validate true
+                           :placeholder "--"
+                           :on-click (select-text adv-blur-ref)
+                           :on-change (update-attr index :blur valid-number? basic-blur-ref)
+                           :min 0
+                           :default-value (:blur value)}]
         [:span.after (t locale "workspace.options.shadow-options.blur")]]
 
        [:div.input-element
-        [:input.input-text {:type "number"
-                            :ref adv-spread-ref
-                            :no-validate true
-                            :placeholder "--"
-                            :on-click (select-text adv-spread-ref)
-                            :on-change (update-attr index :spread valid-number?)
-                            :min 0
-                            :default-value (:spread value)}]
+        [:> numeric-input {:ref adv-spread-ref
+                           :no-validate true
+                           :placeholder "--"
+                           :on-click (select-text adv-spread-ref)
+                           :on-change (update-attr index :spread valid-number?)
+                           :min 0
+                           :default-value (:spread value)}]
         [:span.after (t locale "workspace.options.shadow-options.spread")]]]
 
       [:div.color-row-wrap
@@ -178,8 +172,8 @@
                                (:color value))
                       :disable-gradient true
                       :on-change (update-color index)
-                      :on-open #(st/emit! dwc/start-undo-transaction)
-                      :on-close #(st/emit! dwc/commit-undo-transaction)}]]]]))
+                      :on-open #(st/emit! (dwc/start-undo-transaction))
+                      :on-close #(st/emit! (dwc/commit-undo-transaction))}]]]]))
 (mf/defc shadow-menu
   [{:keys [ids values] :as props}]
 

@@ -144,38 +144,36 @@
   }
 }
 
-.element-list li.masked {
-  .element-children {
-    li:first-child {
-      position: relative;
+.element-list li.masked > .element-children > li {
+  &:first-child {
+    position: relative;
 
-      &::before {
-        content: " ";
-        border-right: 1px solid $color-gray-40;
-        border-top: 1px solid $color-gray-40;
-        position: absolute;
-        width: 6px;
-        height: 6px;
-        transform: rotate(-45deg);
-        top: -1px;
-        left: -4px;
-      }
+    &::before {
+      content: " ";
+      border-right: 1px solid $color-gray-40;
+      border-top: 1px solid $color-gray-40;
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      transform: rotate(-45deg);
+      top: -1px;
+      left: -4px;
     }
+  }
 
-    li:last-child {
-      border-left: none;
-      position: relative;
+  &:last-child {
+    border-left: none;
+    position: relative;
 
-      &::before {
-        content: " ";
-        border-left: 1px solid $color-gray-40;
-        border-bottom: 1px solid $color-gray-40;
-        height: 1rem;
-        width: 0.3rem;
-        position: absolute;
-        top: 0;
-        left: 0;
-      }
+    &::after {
+      content: " ";
+      border-left: 1px solid $color-gray-40;
+      border-bottom: 1px solid $color-gray-40;
+      height: 1rem;
+      width: 0.3rem;
+      position: absolute;
+      top: 0;
+      left: 0;
     }
   }
 }

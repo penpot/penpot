@@ -13,7 +13,6 @@ Backend accepts a bunch of configuration parameters (detailed above),
 that can be passed in different ways. The preferred one is using
 environment variables.
 
-
 This is a probably incomplete list of available options (with
 respective defaults):
 
@@ -21,20 +20,19 @@ respective defaults):
 - `APP_PUBLIC_URI=http://localhost:3449`
 - `APP_DATABASE_USERNAME=` (default undefined, used from uri)
 - `APP_DATABASE_PASSWORD=` (default undefined, used from uri)
-- `APP_DATABASE_URI=postgresql://127.0.0.1/app`
+- `APP_DATABASE_URI=postgresql://127.0.0.1/penpot`
 - `APP_MEDIA_DIRECTORY=resources/public/media`
 - `APP_MEDIA_URI=http://localhost:6060/media/`
-- `APP_ASSETS_DIRECTORY=resources/public/static`
-- `APP_ASSETS_URI=ehttp://localhost:6060/static/`
-- `APP_SENDMAIL_BACKEND=console`
-- `APP_SENDMAIL_REPLY_TO=no-reply@nodomain.com`
-- `APP_SENDMAIL_FROM=no-reply@nodomain.com`
+- `APP_SMTP_DEFAULT_REPLY_TO=no-reply@example.com`
+- `APP_SMTP_DEFAULT_FROM=no-reply@example.com`
+- `APP_SMTP_ENABLED=`  (default false, prints to console)
 - `APP_SMTP_HOST=`     (default undefined)
 - `APP_SMTP_PORT=`     (default undefined)
 - `APP_SMTP_USER=`     (default undefined)
 - `APP_SMTP_PASSWORD=` (default undefined)
 - `APP_SMTP_SSL=`      (default to `false`)
 - `APP_SMTP_TLS=`      (default to `false`)
+- `APP_REDIS_URI=redis://localhost/0`
 - `APP_REGISTRATION_ENABLED=true`
 - `APP_REGISTRATION_DOMAIN_WHITELIST=""` (comma-separated domains, defaults to `""` which means that all domains are allowed)
 - `APP_DEBUG_HUMANIZE_TRANSIT=true`
@@ -57,6 +55,7 @@ respective defaults):
 - `APP_GITLAB_CLIENT_SECRET=` (default undefined)
 - `APP_GITLAB_BASE_URI=`      (default https://gitlab.com)
 
+
 ## REPL ##
 
 The production environment by default starts a server REPL where you
@@ -64,43 +63,6 @@ can connect and perform diagnosis operations. For this you will need
 `netcat` or `telnet` installed in the server.
 
 ```bash
-$ rlwrap netcat localhost 5555
+$ rlwrap netcat localhost 6062
 user=>
-```
-
-
-## Import collections ##
-
-This is the way we can preload default collections of images and icons to the
-running platform.
-
-First of that, you need to have a configuration file (edn format) like
-this:
-
-```clojure
-{:icons
- [{:name "Generic Icons 1"
-   :path "./icons/my-icons-collection/"
-   :regex #"^.*_48px\.svg$"}
-  ]
- :images
- [{:name "Generic Images 1"
-   :path "./images/my-images-collection/"
-   :regex #"^.*\.(png|jpg|webp)$"}]}
-```
-
-You can found a real example in `sample_media/config.edn` (that also
-has all the material design icon collections).
-
-Then, you need to execute:
-
-```bash
-clojure -Adev -X:fn-media-loader :path ../path/to/config.edn
-```
-
-If you have a REPL access to the running process, you can execute it from there:
-
-```clojure
-(require 'app.cli.media-loader)
-(uxbox.media-loader/run* "/path/to/config.edn")
 ```

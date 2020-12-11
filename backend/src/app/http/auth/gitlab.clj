@@ -11,7 +11,6 @@
   (:require
    [app.common.exceptions :as ex]
    [app.config :as cfg]
-   [app.db :as db]
    [app.http.session :as session]
    [app.services.mutations :as sm]
    [app.services.tokens :as tokens]
@@ -20,7 +19,6 @@
    [clojure.data.json :as json]
    [clojure.tools.logging :as log]
    [lambdaisland.uri :as uri]))
-
 
 (def default-base-gitlab-uri "https://gitlab.com")
 
@@ -100,7 +98,7 @@
         nil))))
 
 (defn auth
-  [req]
+  [_req]
   (let [token  (tokens/generate
                 {:iss :gitlab-oauth
                  :exp (dt/in-future "15m")})
@@ -119,7 +117,7 @@
 (defn callback
   [req]
   (let [token (get-in req [:params :state])
-        tdata (tokens/verify token {:iss :gitlab-oauth})
+        _     (tokens/verify token {:iss :gitlab-oauth})
         info  (some-> (get-in req [:params :code])
                       (get-access-token)
                       (get-user-info))]

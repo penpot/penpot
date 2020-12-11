@@ -9,25 +9,22 @@
 
 (ns app.services.mutations.files
   (:require
-   [clojure.spec.alpha :as s]
-   [datoteka.core :as fs]
-   [promesa.core :as p]
    [app.common.exceptions :as ex]
    [app.common.pages :as cp]
-   [app.common.pages-migrations :as pmg]
+   [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
    [app.redis :as redis]
    [app.services.mutations :as sm]
-   [app.services.queries.projects :as proj]
    [app.services.queries.files :as files]
+   [app.services.queries.projects :as proj]
    [app.tasks :as tasks]
    [app.util.blob :as blob]
-   [app.util.storage :as ust]
+   [app.util.time :as dt]
    [app.util.transit :as t]
-   [app.util.time :as dt]))
+   [clojure.spec.alpha :as s]))
 
 ;; --- Helpers & Specs
 
@@ -62,7 +59,7 @@
                :can-edit true}))
 
 (defn create-file
-  [conn {:keys [id profile-id name project-id is-shared]
+  [conn {:keys [id name project-id is-shared]
          :or {is-shared false}
          :as params}]
   (let [id   (or id (uuid/next))
@@ -162,11 +159,14 @@
     (files/check-edition-permissions! conn profile-id file-id)
     (link-file-to-library conn params)))
 
+(def sql:link-file-to-library
+  "insert into file_library_rel (file_id, library_file_id)
+   values (?, ?)
+       on conflict do nothing;")
+
 (defn- link-file-to-library
   [conn {:keys [file-id library-id] :as params}]
-  (db/insert! conn :file-library-rel
-              {:file-id file-id
-               :library-file-id library-id}))
+  (db/exec-one! conn [sql:link-file-to-library file-id library-id]))
 
 
 ;; --- Mutation: Unlink file from library
@@ -248,7 +248,8 @@
          :add-media :mod-media :del-media
          :add-component :mod-component :del-component
          :add-typography :mod-typography :del-typography} (:type change))
-      (and (= (:type change) :mod-obj)
+      (and (#{:add-obj :mod-obj :del-obj
+              :reg-objects :mov-objects} (:type change))
            (some? (:component-id change)))))
 
 (declare update-file)
@@ -282,7 +283,7 @@
                      (assoc :changes (blob/encode changes)
                             :session-id sid))
 
-        chng     (insert-change conn file)
+        _        (insert-change conn file)
         msg      {:type :file-change
                   :profile-id (:profile-id params)
                   :file-id (:id file)
@@ -315,7 +316,7 @@
                  :data (:data file)}
                 {:id (:id file)})
 
-    (retrieve-lagged-changes conn chng params)))
+    (retrieve-lagged-changes conn params)))
 
 (defn- insert-change
   [conn {:keys [revn data changes session-id] :as file}]
@@ -339,7 +340,7 @@
     order by s.created_at asc")
 
 (defn- retrieve-lagged-changes
-  [conn snapshot params]
+  [conn params]
   (->> (db/exec! conn [sql:lagged-changes (:id params) (:revn params)])
        (mapv files/decode-row)))
 

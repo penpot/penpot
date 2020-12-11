@@ -2,25 +2,28 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2016 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.main.data.media
   (:require
-   [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [beicon.core :as rx]
-   [potok.core :as ptk]
-   [app.common.spec :as us]
    [app.common.data :as d]
    [app.common.media :as cm]
-   [app.main.data.messages :as dm]
-   [app.main.store :as st]
-   [app.main.repo :as rp]
-   [app.util.i18n :refer [tr]]
-   [app.util.router :as rt]
+   [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.main.data.messages :as dm]
+   [app.main.repo :as rp]
+   [app.main.store :as st]
+   [app.util.i18n :refer [tr]]
+   [app.util.router :as r]
+   [app.util.router :as rt]
    [app.util.time :as ts]
-   [app.util.router :as r]))
+   [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
+   [cuerdas.core :as str]
+   [potok.core :as ptk]))
 
 ;; --- Specs
 

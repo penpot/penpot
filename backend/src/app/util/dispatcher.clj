@@ -8,14 +8,11 @@
   "A generic service dispatcher implementation."
   (:refer-clojure :exclude [defmethod])
   (:require
-   [clojure.spec.alpha :as s]
-   [expound.alpha :as expound]
-   [app.common.exceptions :as ex])
+   [app.common.exceptions :as ex]
+   [clojure.spec.alpha :as s])
   (:import
-   clojure.lang.IDeref
-   clojure.lang.MapEntry
-   java.util.Map
-   java.util.HashMap))
+   java.util.HashMap
+   java.util.Map))
 
 (definterface IDispatcher
   (^void add [key f]))

@@ -10,14 +10,13 @@
 (ns app.config
   "A configuration management."
   (:require
+   [app.common.spec :as us]
+   [app.common.version :as v]
+   [app.util.time :as dt]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [cuerdas.core :as str]
    [environ.core :refer [env]]
-   [mount.core :refer [defstate]]
-   [app.common.exceptions :as ex]
-   [app.common.spec :as us]
-   [app.util.time :as dt]))
+   [mount.core :refer [defstate]]))
 
 (def defaults
   {:http-server-port 6060
@@ -41,6 +40,8 @@
    :smtp-default-reply-to "no-reply@example.com"
    :smtp-default-from "no-reply@example.com"
 
+   :host "devenv"
+
    :allow-demo-users true
    :registration-enabled true
    :registration-domain-whitelist ""
@@ -50,7 +51,7 @@
    ;; modification in order to make the file ellegible for
    ;; trimming. The value only supports s(econds) m(inutes) and
    ;; h(ours) as time unit.
-   :file-trimming-max-age "72h"
+   :file-trimming-threshold "72h"
 
    ;; LDAP auth disabled by default. Set ldap-auth-host to enable
    ;:ldap-auth-host "ldap.mysupercompany.com"
@@ -79,6 +80,9 @@
 (s/def ::media-uri ::us/string)
 (s/def ::media-directory ::us/string)
 (s/def ::secret-key ::us/string)
+
+(s/def ::host ::us/string)
+(s/def ::error-report-webhook ::us/string)
 (s/def ::smtp-enabled ::us/boolean)
 (s/def ::smtp-default-reply-to ::us/email)
 (s/def ::smtp-default-from ::us/email)
@@ -94,7 +98,9 @@
 (s/def ::debug-humanize-transit ::us/boolean)
 (s/def ::public-uri ::us/string)
 (s/def ::backend-uri ::us/string)
+
 (s/def ::image-process-max-threads ::us/integer)
+(s/def ::file-trimming-threshold ::dt/duration)
 
 (s/def ::google-client-id ::us/string)
 (s/def ::google-client-secret ::us/string)
@@ -115,7 +121,6 @@
 (s/def ::ldap-auth-email-attribute ::us/string)
 (s/def ::ldap-auth-fullname-attribute ::us/string)
 (s/def ::ldap-auth-avatar-attribute ::us/string)
-(s/def ::file-trimming-threshold ::dt/duration)
 
 (s/def ::config
   (s/keys :opt-un [::http-server-cors
@@ -135,6 +140,7 @@
                    ::assets-uri
                    ::media-directory
                    ::media-uri
+                   ::error-report-webhook
                    ::secret-key
                    ::smtp-default-from
                    ::smtp-default-reply-to
@@ -145,7 +151,8 @@
                    ::smtp-password
                    ::smtp-tls
                    ::smtp-ssl
-                   ::file-trimming-max-age
+                   ::host
+                   ::file-trimming-threshold
                    ::debug-humanize-transit
                    ::allow-demo-users
                    ::registration-enabled
@@ -197,6 +204,9 @@
 
 (def default-deletion-delay
   (dt/duration {:hours 48}))
+
+(def version
+  (delay (v/parse "%version%")))
 
 (defn smtp
   [cfg]

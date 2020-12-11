@@ -49,6 +49,7 @@
 (def grid (icon-xref :grid))
 (def grid-snap (icon-xref :grid-snap))
 (def icon-empty (icon-xref :icon-empty))
+(def icon-list (icon-xref :icon-list))
 (def icon-lock (icon-xref :icon-lock))
 (def icon-set (icon-xref :icon-set))
 (def image (icon-xref :image))
@@ -127,6 +128,16 @@
 (def checkbox-checked (icon-xref :checkbox-checked))
 (def checkbox-unchecked (icon-xref :checkbox-unchecked))
 (def code (icon-xref :code))
+(def nodes-add (icon-xref :nodes-add))
+(def nodes-corner (icon-xref :nodes-corner))
+(def nodes-curve (icon-xref :nodes-curve))
+(def nodes-join (icon-xref :nodes-join))
+(def nodes-merge (icon-xref :nodes-merge))
+(def nodes-remove (icon-xref :nodes-remove))
+(def nodes-separate (icon-xref :nodes-separate))
+(def nodes-snap (icon-xref :nodes-snap))
+(def pen (icon-xref :pen))
+(def pointer-inner (icon-xref :pointer-inner))
 
 (def loader-pencil
   (mf/html

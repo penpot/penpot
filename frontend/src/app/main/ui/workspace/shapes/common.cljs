@@ -9,72 +9,19 @@
 
 (ns app.main.ui.workspace.shapes.common
   (:require
-   [rumext.alpha :as mf]
-   [app.main.data.workspace :as dw]
-   [app.main.refs :as refs]
-   [app.main.store :as st]
-   [app.main.ui.keyboard :as kbd]
-   [app.util.dom :as dom]
-   [app.common.geom.matrix :as gmt]
-   [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as geom]
-   [app.main.ui.shapes.shape :refer [shape-container]]))
-
-(defn- on-mouse-down
-  [event {:keys [id type] :as shape}]
-  (let [selected @refs/selected-shapes
-        selected? (contains? selected id)
-        drawing? @refs/selected-drawing-tool
-        button (.-which (.-nativeEvent event))]
-    (when-not (:blocked shape)
-      (cond
-        (not= 1 button)
-        nil
-
-        drawing?
-        nil
-
-        (= type :frame)
-        (when selected?
-          (dom/stop-propagation event)
-          (st/emit! (dw/start-move-selected)))
-
-        :else
-        (do
-          (dom/stop-propagation event)
-          (if selected?
-            (when (kbd/shift? event)
-              (st/emit! (dw/select-shape id true)))
-            (do
-              (when-not (or (empty? selected) (kbd/shift? event))
-                (st/emit! (dw/deselect-all)))
-              (st/emit! (dw/select-shape id))))
-
-          (st/emit! (dw/start-move-selected)))))))
-
-(defn on-context-menu
-  [event shape]
-  (dom/prevent-default event)
-  (dom/stop-propagation event)
-  (let [position (dom/get-client-position event)]
-    (st/emit! (dw/show-shape-context-menu {:position position :shape shape}))))
+   [app.main.ui.shapes.shape :refer [shape-container]]
+   [app.main.ui.workspace.effects :as we]
+   [rumext.alpha :as mf]))
 
 (defn generic-wrapper-factory
   [component]
   (mf/fnc generic-wrapper
     {::mf/wrap-props false}
     [props]
-    (let [shape (unchecked-get props "shape")
-          on-mouse-down (mf/use-callback
-                         (mf/deps shape)
-                         #(on-mouse-down % shape))
-          on-context-menu (mf/use-callback
-                           (mf/deps shape)
-                           #(on-context-menu % shape))]
-
+    (let [shape (unchecked-get props "shape")]
       [:> shape-container {:shape shape
-                           :on-mouse-down on-mouse-down
-                           :on-context-menu on-context-menu}
+                           :on-mouse-down (we/use-mouse-down shape)
+                           :on-context-menu (we/use-context-menu shape)
+                           :on-pointer-over (we/use-pointer-enter shape)
+                           :on-pointer-out (we/use-pointer-leave shape)}
        [:& component {:shape shape}]])))
-
-
