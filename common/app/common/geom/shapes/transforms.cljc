@@ -270,12 +270,12 @@
         points (->> children (mapcat :points))
 
         ;; Invert to get the points minus the transforms applied to the group
-        base-points (transform-points points shape-center (:transform-inverse group))
+        base-points (transform-points points shape-center (:transform-inverse group (gmt/matrix)))
 
         ;; Defines the new selection rect with its transformations
         new-points (-> (gpr/points->selrect base-points)
                        (gpr/rect->points)
-                       (transform-points shape-center (:transform group)))
+                       (transform-points shape-center (:transform group (gmt/matrix))))
 
         ;; Calculte the new selrect
         new-selrect (gpr/points->selrect base-points)]

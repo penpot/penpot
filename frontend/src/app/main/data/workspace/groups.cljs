@@ -169,7 +169,10 @@
                                 :id (:id group)
                                 :operations [{:type :set
                                               :attr :masked-group?
-                                              :val nil}]})]
+                                              :val nil}]}
+                               {:type :reg-objects
+                                :page-id page-id
+                                :shapes [(:id group)]})]
 
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
                    (dwc/select-shapes (d/ordered-set (:id group))))))))))
