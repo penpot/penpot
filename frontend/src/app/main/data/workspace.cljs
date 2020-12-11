@@ -1220,6 +1220,7 @@
               selected (get-in state [:workspace-local :selected])
               pdata    (reduce (partial collect-object-ids objects) {} selected)
               initial  {:type :copied-shapes
+                        :file-id (:current-file-id state)
                         :selected selected
                         :objects {}
                         :images #{}}]
@@ -1316,16 +1317,16 @@
                            (assoc media :prev-id (:id imgpart))))))
 
           ;; Analyze the rchange and replace staled media and
-          ;; references to the previusly uploased new media-objects.
+          ;; references to the new uploaded media-objects.
           (process-rchange [media-idx item]
             (if (= :image (get-in item [:obj :type]))
               (update-in item [:obj :metadata]
                          (fn [{:keys [id] :as mdata}]
-                           (let [mobj (get media-idx id)]
+                           (if-let [mobj (get media-idx id)]
                              (assoc mdata
                                     :id (:id mobj)
-                                    :path (:path mobj)
-                                    :thumb-path (:thumb-path mobj)))))
+                                    :path (:path mobj))
+                             mdata)))
               item))
 
           ;; Procceed with the standard shape paste procediment.
@@ -1343,7 +1344,7 @@
                   (if (selected-frame? state)
                     [(first page-selected)
                      (get page-objects (first page-selected))]
-                    [(cph/frame-id-by-position page-objects mouse-pos)
+                    [(cp/frame-id-by-position page-objects mouse-pos)
                      (gpt/subtract mouse-pos orig-pos)])
 
                   objects   (d/mapm (fn [_ v] (assoc v :frame-id frame-id :parent-id frame-id)) objects)
@@ -1369,10 +1370,12 @@
       (watch [_ state stream]
         (let [file-id   (:current-file-id state)
               mouse-pos (deref ms/mouse-position)]
-          (->> (rx/from (seq images))
-               (rx/merge-map (partial upload-media file-id))
-               (rx/reduce conj [])
-               (rx/mapcat (partial do-paste state mouse-pos))))))))
+          (if (= file-id (:file-id data))
+            (do-paste state mouse-pos [])
+            (->> (rx/from (seq images))
+                 (rx/merge-map (partial upload-media file-id))
+                 (rx/reduce conj [])
+                 (rx/mapcat (partial do-paste state mouse-pos)))))))))
 
 
 (defn as-content [text]
