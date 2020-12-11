@@ -48,6 +48,17 @@
       (check-macos?)   :macos
       :else            :other)))
 
+(defn- parse-target
+  [global]
+  (if (some? (obj/get global "document"))
+    :browser
+    :webworker))
+
+(defn- parse-version
+  [global]
+  (-> (obj/get global "appVersion")
+      (v/parse)))
+
 ;; --- Globar Config Vars
 
 (def default-theme  "default")
@@ -61,26 +72,27 @@
   (def worker-uri       (obj/get global "appWorkerURI" "/js/worker.js"))
   (def public-uri       (or (obj/get global "appPublicURI")
                             (.-origin ^js js/location)))
-  (def version          (v/parse (obj/get global "appVersion"))))
+  (def media-uri        (str public-uri "/media"))
+  (def version          (delay (parse-version global)))
+  (def target           (delay (parse-target global)))
+  (def browser          (delay (parse-browser)))
+  (def platform         (delay (parse-platform))))
 
 
-(def media-uri (str public-uri "/media"))
-(def browser   (parse-browser))
-(def platform  (parse-platform))
-
-(js/console.log
- (str/format "Welcome to penpot! Version: '%s'" (:full version)))
+(when (= :browser @target)
+  (js/console.log
+   (str/format "Welcome to penpot! Version: '%s'." (:full @version))))
 
 ;; --- Helper Functions
 
 
 (defn ^boolean check-browser? [candidate]
   (us/verify ::browser candidate)
-  (= candidate browser))
+  (= candidate @browser))
 
 (defn ^boolean check-platform? [candidate]
   (us/verify ::platform candidate)
-  (= candidate platform))
+  (= candidate @platform))
 
 (defn resolve-media-path
   [path]
