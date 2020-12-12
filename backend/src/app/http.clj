@@ -37,6 +37,8 @@
                           [middleware/keyword-params]
                           [middleware/cookies]]}
 
+     ["/svg" {:post handlers/parse-svg}]
+
      ["/oauth"
       ["/google" {:post google/auth}]
       ["/google/callback" {:get google/callback}]
@@ -46,12 +48,9 @@
      ["/echo" {:get handlers/echo-handler
                :post handlers/echo-handler}]
 
-     ["/login" {:handler auth/login-handler
-                :method :post}]
-     ["/logout" {:handler auth/logout-handler
-                 :method :post}]
-     ["/login-ldap" {:handler ldap/auth
-                     :method :post}]
+     ["/login" {:post auth/login-handler}]
+     ["/logout" {:post auth/logout-handler}]
+     ["/login-ldap" {:post ldap/auth}]
 
      ["/w" {:middleware [session/middleware]}
       ["/query/:type" {:get handlers/query-handler}]
