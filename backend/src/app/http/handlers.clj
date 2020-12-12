@@ -15,7 +15,8 @@
    [app.http.session :as session]
    [app.services.init]
    [app.services.mutations :as sm]
-   [app.services.queries :as sq]))
+   [app.services.queries :as sq]
+   [app.services.svgparse :as svgp]))
 
 (def unauthorized-services
   #{:create-demo-profile
@@ -74,3 +75,12 @@
           :cookies (:cookies req)
           :headers (:headers req)}})
 
+
+(defn parse-svg
+  [{:keys [headers body] :as request}]
+  (when (not= "image/svg+xml" (get headers "content-type"))
+    (ex/raise :type :validation
+              :code :unsupported-mime-type
+              :mime (get headers "content-type")))
+  {:status 200
+   :body (svgp/parse body)})
