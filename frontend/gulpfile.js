@@ -201,9 +201,3 @@ gulp.task("dist:copy", function() {
   return gulp.src(paths.output + "**/*")
     .pipe(gulp.dest(paths.dist));
 });
-
-gulp.task("dist:gzip", function() {
-  return gulp.src(`${paths.dist}**/!(*.gz|*.br|*.jpg|*.png)`)
-    .pipe(gulpGzip({gzipOptions: {level: 9}}))
-    .pipe(gulp.dest(paths.dist));
-});
