@@ -193,9 +193,10 @@
   [objects]
   (let [root   (get objects uuid/zero)
         loopfn (fn loopfn [ids]
-                 (let [obj (get objects (first ids))]
+                 (let [id (first ids)
+                       obj (get objects id)]
                    (cond
-                     (nil? obj)
+                     (or (nil? id) (nil? obj))
                      nil
 
                      (= :frame (:type obj))
