@@ -26,6 +26,7 @@
   (letfn [(parse-transit [body]
             (let [reader (t/reader body)]
               (t/read! reader)))
+
           (parse-json [body]
             (let [reader (io/reader body)]
               (json/read reader)))
@@ -38,10 +39,12 @@
               (catch Exception e
                 (let [type (if (:debug cfg/config) :json-verbose :json)
                       data {:type :parse
-                            :hint "Unable to parse request body"
+                            :hint "unable to parse request body"
                             :message (ex-message e)}]
                   {:status 400
+                   :headers {"content-type" "application/transit+json"}
                    :body (t/encode-str data {:type type})}))))]
+
     (fn [{:keys [headers body request-method] :as request}]
       (let [ctype (get headers "content-type")]
         (handler
