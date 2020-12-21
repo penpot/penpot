@@ -1,6 +1,7 @@
 (ns app.util.text
   (:require
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [app.common.attrs :refer [get-attrs-multi]]))
 
 (defonce default-text-attrs
   {:typography-ref-file nil
@@ -84,10 +85,19 @@
 
 (defn search-text-attrs
   [node attrs]
-
   (let [rec-fn
         (fn rec-fn [current node]
           (let [current (reduce rec-fn current (:children node []))]
             (merge current
                    (select-keys node attrs))))]
     (rec-fn {} node)))
+
+
+(defn get-text-attrs-multi
+  [node attrs]
+  (let [rec-fn
+        (fn rec-fn [current node]
+          (let [current (reduce rec-fn current (:children node []))]
+            (get-attrs-multi [current node] attrs)))]
+    (rec-fn {} node)))
+
