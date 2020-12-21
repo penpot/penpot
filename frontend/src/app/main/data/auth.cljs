@@ -79,7 +79,7 @@
     (watch [this state s]
       (let [team-id (:default-team-id profile)]
         (rx/of (du/profile-fetched profile)
-               (rt/nav' :dashboard-team {:team-id team-id}))))))
+               (rt/nav' :dashboard-projects {:team-id team-id}))))))
 
 (defn login-with-ldap
   [{:keys [email password] :as data}]
