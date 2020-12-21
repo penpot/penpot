@@ -13,6 +13,8 @@
    [app.config :as cfg]
    [app.metrics :as mtx]
    [app.util.transit :as t]
+   [clojure.data.json :as json]
+   [clojure.java.io :as io]
    [ring.middleware.cookies :refer [wrap-cookies]]
    [ring.middleware.keyword-params :refer [wrap-keyword-params]]
    [ring.middleware.multipart-params :refer [wrap-multipart-params]]
@@ -21,20 +23,42 @@
 
 (defn- wrap-parse-request-body
   [handler]
-  (letfn [(parse-body [body]
+  (letfn [(parse-transit [body]
+            (let [reader (t/reader body)]
+              (t/read! reader)))
+          (parse-json [body]
+            (let [reader (io/reader body)]
+              (json/read reader)))
+
+          (parse [type body]
             (try
-              (let [reader (t/reader body)]
-                (t/read! reader))
+              (case type
+                :json (parse-json body)
+                :transit (parse-transit body))
               (catch Exception e
-                (ex/raise :type :parse
-                          :message "Unable to parse transit from request body."
-                          :cause e))))]
+                (let [type (if (:debug cfg/config) :json-verbose :json)
+                      data {:type :parse
+                            :hint "Unable to parse request body"
+                            :message (ex-message e)}]
+                  {:status 400
+                   :body (t/encode-str data {:type type})}))))]
     (fn [{:keys [headers body request-method] :as request}]
-      (handler
-       (cond-> request
-         (and (= "application/transit+json" (get headers "content-type"))
-              (not= request-method :get))
-         (assoc :body-params (parse-body body)))))))
+      (let [ctype (get headers "content-type")]
+        (handler
+         (case ctype
+           "application/transit+json"
+           (let [params (parse :transit body)]
+             (-> request
+                 (assoc :body-params params)
+                 (update :params merge params)))
+
+           "application/json"
+           (let [params (parse :json body)]
+             (-> request
+                 (assoc :body-params params)
+                 (update :params merge params)))
+
+           request))))))
 
 (def parse-request-body
   {:name ::parse-request-body
@@ -43,9 +67,7 @@
 (defn- impl-format-response-body
   [response]
   (let [body (:body response)
-        type (if (:debug-humanize-transit cfg/config)
-               :json-verbose
-               :json)]
+        type (if (:debug cfg/config) :json-verbose :json)]
     (cond
       (coll? body)
       (-> response

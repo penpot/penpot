@@ -242,11 +242,15 @@
   (st/emit! (rt/nav :login))
   (ts/schedule
    (st/emitf (dm/show {:content "Not authorized to see this content."
-                       :timeout 5000
+                       :timeout 3000
                        :type :error}))))
 
 (defmethod ptk/handle-error :assertion
   [{:keys [data stack message context] :as error}]
+  (ts/schedule
+   (st/emitf (dm/show {:content "Internal assertion error."
+                       :type :error
+                       :timeout 2000})))
   (js/console.group message)
   (js/console.info (str/format "ns: '%s'\nname: '%s'\nfile: '%s:%s'"
                                 (:ns context)
