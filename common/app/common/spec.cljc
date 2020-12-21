@@ -135,24 +135,18 @@
 
 ;; --- Macros
 
-(defn spec-assert
-  [spec x message]
-  (if (s/valid? spec x)
-    x
-    (ex/raise :type :assertion
-              :data (s/explain-data spec x)
-              :message message
-              #?@(:cljs [:stack (.-stack (ex-info message {}))]))))
-
 (defn spec-assert*
   [spec x message context]
   (if (s/valid? spec x)
     x
-    (ex/raise :type :assertion
-              :data (s/explain-data spec x)
-              :context context
-              :message message
-              #?@(:cljs [:stack (.-stack (ex-info message {}))]))))
+    (let [data (s/explain-data spec x)
+          hint (with-out-str (s/explain-out data))]
+      (ex/raise :type :assertion
+                :data data
+                :hint hint
+                :context context
+                :message message
+                #?@(:cljs [:stack (.-stack (ex-info message {}))])))))
 
 
 (defmacro assert
@@ -186,16 +180,13 @@
   [spec data]
   (let [result (s/conform spec data)]
     (when (= result ::s/invalid)
-      (let [edata (s/explain-data spec data)
-            nhint (with-out-str
-                    (s/explain-out edata))
-            vhint (with-out-str
-                    (expound/printer edata))]
+      (let [data (s/explain-data spec data)
+            hint (with-out-str
+                   (s/explain-out data))]
         (throw (ex/error :type :validation
                          :code :spec-validation
                          :data data
-                         :hint nhint
-                         :hint-verbose vhint))))
+                         :hint hint))))
     result))
 
 (defmacro instrument!

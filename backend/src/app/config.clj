@@ -45,7 +45,8 @@
    :allow-demo-users true
    :registration-enabled true
    :registration-domain-whitelist ""
-   :debug-humanize-transit true
+
+   :debug true
 
    ;; This is the time should transcurr after the last page
    ;; modification in order to make the file ellegible for
@@ -95,7 +96,7 @@
 (s/def ::allow-demo-users ::us/boolean)
 (s/def ::registration-enabled ::us/boolean)
 (s/def ::registration-domain-whitelist ::us/string)
-(s/def ::debug-humanize-transit ::us/boolean)
+(s/def ::debug ::us/boolean)
 (s/def ::public-uri ::us/string)
 (s/def ::backend-uri ::us/string)
 
@@ -153,7 +154,7 @@
                    ::smtp-ssl
                    ::host
                    ::file-trimming-threshold
-                   ::debug-humanize-transit
+                   ::debug
                    ::allow-demo-users
                    ::registration-enabled
                    ::registration-domain-whitelist

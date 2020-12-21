@@ -15,6 +15,17 @@
    [cuerdas.core :as str]
    [expound.alpha :as expound]))
 
+
+(defn get-context-string
+  [err request]
+  (str
+   "=| uri:          " (pr-str (:uri request)) "\n"
+   "=| method:       " (pr-str (:request-method request)) "\n"
+   "=| params:       " (pr-str (:params request)) "\n"
+   (when (ex/ex-info? err)
+     (str "=| ex-data:      " (pr-str (ex-data err)) "\n"))
+   "\n"))
+
 (defmulti handle-exception
   (fn [err & _rest]
     (let [edata (ex-data err)]
@@ -29,18 +40,32 @@
 (defmethod handle-exception :validation
   [err req]
   (let [header (get-in req [:headers "accept"])
-        error  (ex-data err)]
+        edata  (ex-data err)]
     (cond
-      (and (str/starts-with? header "text/html")
-           (= :spec-validation (:code error)))
-      {:status 400
-       :headers {"content-type" "text/html"}
-       :body (str "<pre style='font-size:16px'>"
-                  (:hint-verbose error)
-                  "</pre>\n")}
+      (= :spec-validation (:code edata))
+      (if (str/starts-with? header "text/html")
+        {:status 400
+         :headers {"content-type" "text/html"}
+         :body (str "<pre style='font-size:16px'>"
+                    (with-out-str
+                      (expound/printer (:data edata)))
+                    "</pre>\n")}
+        {:status 400
+         :body (assoc edata :explain (with-out-str (expound/printer (:data edata))))})
+
       :else
       {:status 400
-       :body error})))
+       :body edata})))
+
+(defmethod handle-exception :assertion
+  [error request]
+  (let [edata (ex-data error)]
+    (log/errorf error
+                (str "Assertion error\n"
+                     (get-context-string request edata)
+                     (with-out-str (expound/printer (:data edata)))))
+    {:status 500
+     :body (assoc edata :explain (with-out-str (expound/printer (:data edata))))}))
 
 (defmethod handle-exception :not-found
   [err _]
@@ -52,48 +77,16 @@
   [err req]
   (handle-exception (.getCause ^Throwable err) req))
 
-(defmethod handle-exception :parse
-  [err _]
-  {:status 400
-   :body {:type :parse
-          :message (ex-message err)}})
-
-(defn get-context-string
-  [err request]
-  (str
-   "=| uri:          " (pr-str (:uri request)) "\n"
-   "=| method:       " (pr-str (:request-method request)) "\n"
-   "=| path-params:  " (pr-str (:path-params request)) "\n"
-   "=| query-params: " (pr-str (:query-params request)) "\n"
-
-   (when-let [bparams (:body-params request)]
-     (str "=| body-params:  " (pr-str bparams) "\n"))
-
-   (when (ex/ex-info? err)
-     (str "=| ex-data:      " (pr-str (ex-data err)) "\n"))
-
-   "\n"))
-
-
-(defmethod handle-exception :assertion
-  [err request]
-  (let [{:keys [data] :as edata} (ex-data err)]
-    (log/errorf err
-                (str "Assertion error\n"
-                     (get-context-string err request)
-                     (with-out-str (expound/printer data))))
-    {:status 500
-     :body {:type :internal-error
-            :message "Assertion error"
-            :data (ex-data err)}}))
 
 (defmethod handle-exception :default
-  [err request]
-  (log/errorf err (str "Internal Error\n" (get-context-string err request)))
-  {:status 500
-   :body {:type :internal-error
-          :message (ex-message err)
-          :data (ex-data err)}})
+  [error request]
+  (let [edata (ex-data error)]
+    (log/errorf error
+                (str "Internal Error\n"
+                     (get-context-string request edata)))
+
+    {:status 500
+     :body (dissoc edata :data)}))
 
 (defn handle
   [error req]
