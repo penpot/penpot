@@ -190,7 +190,6 @@
     (l/derived selector st/state =)))
 
 
-;; TODO: looks very inneficient access method, revisit the usage of this ref
 (def selected-objects-with-children
   (letfn [(selector [state]
             (let [selected (get-in state [:workspace-local :selected])
