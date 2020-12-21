@@ -41,10 +41,12 @@
 ;; --- Right Sidebar (Component)
 
 (mf/defc right-sidebar
-  [{:keys [local] :as props}]
+  {::mf/wrap-props false
+   ::mf/wrap [mf/memo]}
+  [props]
   (let [drawing-tool (:tool (mf/deref refs/workspace-drawing))]
     [:aside.settings-bar
      [:div.settings-bar-inside
       (if (= drawing-tool :comments)
         [:& comments-sidebar]
-        [:& options-toolbox {:local local}])]]))
+        [:> options-toolbox props])]]))

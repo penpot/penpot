@@ -9,8 +9,6 @@
 
 (ns app.main.ui.workspace.sidebar.options
   (:require
-   [beicon.core :as rx]
-   [rumext.alpha :as mf]
    [app.common.spec :as us]
    [app.main.data.workspace :as udw]
    [app.main.refs :as refs]
@@ -25,14 +23,17 @@
    [app.main.ui.workspace.sidebar.options.group :as group]
    [app.main.ui.workspace.sidebar.options.icon :as icon]
    [app.main.ui.workspace.sidebar.options.image :as image]
-   [app.main.ui.workspace.sidebar.options.text :as text]
-   [app.main.ui.workspace.sidebar.options.page :as page]
-   [app.main.ui.workspace.sidebar.options.multiple :as multiple]
    [app.main.ui.workspace.sidebar.options.interactions :refer [interactions-menu]]
+   [app.main.ui.workspace.sidebar.options.multiple :as multiple]
+   [app.main.ui.workspace.sidebar.options.page :as page]
    [app.main.ui.workspace.sidebar.options.path :as path]
    [app.main.ui.workspace.sidebar.options.rect :as rect]
    [app.main.ui.workspace.sidebar.options.text :as text]
-   [app.util.i18n :as i18n :refer [tr t]]))
+   [app.main.ui.workspace.sidebar.options.text :as text]
+   [app.util.i18n :as i18n :refer [tr t]]
+   [app.util.object :as obj]
+   [beicon.core :as rx]
+   [rumext.alpha :as mf]))
 
 ;; --- Options
 
@@ -88,15 +89,17 @@
 ;; need on multiple selection in majority of cases
 
 (mf/defc options-toolbox
-  {::mf/wrap [mf/memo]}
-  [{:keys [local] :as props}]
-  (let [section              (:options-mode local)
+  {::mf/wrap [mf/memo]
+   ::mf/wrap-props false}
+  [props]
+  (let [section              (obj/get props "section")
+        selected             (obj/get props "selected")
         page-id              (mf/use-ctx ctx/current-page-id)
         file-id              (mf/use-ctx ctx/current-file-id)
         shapes               (mf/deref refs/selected-objects)
         shapes-with-children (mf/deref refs/selected-objects-with-children)]
     [:& options-content {:shapes shapes
-                         :selected (:selected local)
+                         :selected selected
                          :shapes-with-children shapes-with-children
                          :file-id file-id
                          :page-id page-id

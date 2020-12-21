@@ -29,6 +29,7 @@
    [app.main.ui.workspace.rules :refer [horizontal-rule vertical-rule]]
    [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
    [app.main.ui.workspace.viewport :refer [viewport viewport-actions coordinates]]
+   [app.util.object :as obj]
    [app.util.dom :as dom]
    [beicon.core :as rx]
    [cuerdas.core :as str]
@@ -38,49 +39,59 @@
 ;; --- Workspace
 
 (mf/defc workspace-rules
-  {::mf/wrap-props false}
+  {::mf/wrap-props false
+   ::mf/wrap [mf/memo]}
   [props]
-  (let [local (unchecked-get props "local")]
+  (let [zoom  (or (obj/get props "zoom") 1)
+        vbox  (obj/get props "vbox")
+        vport (obj/get props "vport")]
+
     [:*
      [:div.empty-rule-square]
-     [:& horizontal-rule {:zoom (:zoom local)
-                          :vbox (:vbox local)
-                          :vport (:vport local)}]
-     [:& vertical-rule {:zoom (:zoom local 1)
-                        :vbox (:vbox local)
-                        :vport (:vport local)}]
+     [:& horizontal-rule {:zoom zoom
+                          :vbox vbox
+                          :vport vport}]
+     [:& vertical-rule {:zoom zoom
+                        :vbox vbox
+                        :vport vport}]
      [:& coordinates]]))
 
 (mf/defc workspace-content
-  [{:keys [file layout local] :as params}]
-  [:*
-   ;; TODO: left-sidebar option is obsolete because left-sidebar now
-   ;; is always visible.
-   (when (:colorpalette layout)
-     [:& colorpalette {:left-sidebar? true}])
+  {::mf/wrap-props false}
+  [props]
+  (let [local  (mf/deref refs/workspace-local)
+        file   (obj/get props "file")
+        layout (obj/get props "layout")]
+    [:*
+     ;; TODO: left-sidebar option is obsolete because left-sidebar now
+     ;; is always visible.
+     (when (:colorpalette layout)
+       [:& colorpalette {:left-sidebar? true}])
 
-   [:section.workspace-content
-    [:section.workspace-viewport
-     (when (contains? layout :rules)
-       [:& workspace-rules {:local local}])
+     [:section.workspace-content
+      [:section.workspace-viewport
+       (when (contains? layout :rules)
+         [:& workspace-rules {:zoom (:zoom local)
+                              :vbox (:vbox local)
+                              :vport (:vport local)}])
 
-     [:& viewport-actions]
-     [:& viewport {:file file
-                   :local local
-                   :layout layout}]]]
+       [:& viewport-actions]
+       [:& viewport {:file file
+                     :local local
+                     :layout layout}]]]
 
-   [:& left-toolbar {:layout layout}]
+     [:& left-toolbar {:layout layout}]
 
-   ;; Aside
-   [:& left-sidebar {:layout layout}]
-   [:& right-sidebar {:local local}]])
+     ;; Aside
+     [:& left-sidebar {:layout layout}]
+     [:& right-sidebar {:section (:options-mode local)
+                        :selected (:selected local)}]]))
 
 (def trimmed-page-ref (l/derived :trimmed-page st/state =))
 
 (mf/defc workspace-page
   [{:keys [file layout page-id] :as props}]
-  (let [local (mf/deref refs/workspace-local)
-        page  (mf/deref trimmed-page-ref)]
+  (let [page (mf/deref trimmed-page-ref)]
     (mf/use-layout-effect
      (mf/deps page-id)
      (fn []
@@ -90,8 +101,7 @@
     (when page
       [:& workspace-content {:key page-id
                              :file file
-                             :layout layout
-                             :local local}])))
+                             :layout layout}])))
 
 (mf/defc workspace-loader
   []
@@ -99,6 +109,7 @@
    i/loader-pencil])
 
 (mf/defc workspace
+  {::mf/wrap [mf/memo]}
   [{:keys [project-id file-id page-id layout-name] :as props}]
   (mf/use-effect
     (mf/deps layout-name)
