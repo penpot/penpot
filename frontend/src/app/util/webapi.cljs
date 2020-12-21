@@ -58,21 +58,6 @@
   (assert (blob? b) "invalid arguments")
   (js/URL.createObjectURL b))
 
-
-;; (defn get-image-size
-;;   [file]
-;;   (letfn [(on-load [sink img]
-;;             (let [size [(.-width img) (.-height img)]]
-;;               (sink (rx/end size))))
-;;           (on-subscribe [sink]
-;;             (let [img (js/Image.)
-;;                   uri (blob/create-uri file)]
-;;               (set! (.-onload img) (partial on-load sink img))
-;;               (set! (.-src img) uri)
-;;               #(blob/revoke-uri uri)))]
-;;     (rx/create on-subscribe)))
-
-
 (defn write-to-clipboard
   [data]
   (assert (string? data) "`data` should be string")
