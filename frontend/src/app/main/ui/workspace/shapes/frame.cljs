@@ -20,6 +20,7 @@
    [app.main.ui.workspace.effects :as we]
    [app.util.dom :as dom]
    [app.util.timers :as ts]
+   [beicon.core :as rx]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
@@ -102,7 +103,10 @@
     (let [tmp (mf/useState false)
           ^boolean render? (aget tmp 0)
           ^js set-render (aget tmp 1)]
-      (mf/use-layout-effect (fn [] (ts/schedule-on-idle #(set-render true))))
+      (mf/use-layout-effect
+       (fn []
+         (let [sem (ts/schedule-on-idle #(set-render true))]
+           #(rx/dispose! sem))))
       (if (unchecked-get props "ghost?")
         (mf/create-element component props)
         (when render? (mf/create-element component props))))))
