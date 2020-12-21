@@ -38,9 +38,11 @@
     (rx/throw {:type :offline})
 
     :else
-    (rx/throw {:type :server-error
-               :status (:status response)
-               :body (:body response)})))
+    (rx/throw (merge {:type :server-error
+                      :status (:status response)}
+                     (:body response)))))
+
+
 
 (defn send-query!
   [id params]

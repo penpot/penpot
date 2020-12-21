@@ -17,14 +17,15 @@
 
 
 (defn get-context-string
-  [err request]
-  (str
-   "=| uri:          " (pr-str (:uri request)) "\n"
-   "=| method:       " (pr-str (:request-method request)) "\n"
-   "=| params:       " (pr-str (:params request)) "\n"
-   (when (ex/ex-info? err)
-     (str "=| ex-data:      " (pr-str (ex-data err)) "\n"))
-   "\n"))
+  [request edata]
+  (str "=| uri:    " (pr-str (:uri request)) "\n"
+       "=| method: " (pr-str (:request-method request)) "\n"
+       "=| params: " (pr-str (:params request)) "\n"
+
+       (when (map? edata)
+         (str "=| ex-data:      " (pr-str edata) "\n"))
+
+       "\n"))
 
 (defmulti handle-exception
   (fn [err & _rest]
@@ -84,9 +85,12 @@
     (log/errorf error
                 (str "Internal Error\n"
                      (get-context-string request edata)))
-
-    {:status 500
-     :body (dissoc edata :data)}))
+    (if (nil? edata)
+      {:status 500
+       :body {:type :server-error
+              :hint (ex-message error)}}
+      {:status 500
+       :body (dissoc edata :data)})))
 
 (defn handle
   [error req]
