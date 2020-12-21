@@ -11,105 +11,50 @@
 (ns app.main.ui.workspace.sidebar.options.group
   (:require
    [rumext.alpha :as mf]
-   [app.common.attrs :as attrs]
-   [app.common.geom.shapes :as geom]
-   [app.main.refs :as refs]
-   [app.main.data.workspace.texts :as dwt]
-   [app.main.ui.workspace.sidebar.options.multiple :refer [get-shape-attrs extract]]
-   [app.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
+   [app.common.data :as d]
+   [app.main.ui.workspace.sidebar.options.multiple :refer [get-attrs]]
+   [app.main.ui.workspace.sidebar.options.measures :refer [measures-menu]]
    [app.main.ui.workspace.sidebar.options.component :refer [component-attrs component-menu]]
-   [app.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
+   [app.main.ui.workspace.sidebar.options.fill :refer [fill-menu]]
    [app.main.ui.workspace.sidebar.options.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.shadow :refer [shadow-menu]]
-   [app.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]
+   [app.main.ui.workspace.sidebar.options.stroke :refer [stroke-menu]]
    [app.main.ui.workspace.sidebar.options.text :as ot]))
 
 (mf/defc options
-  [{:keys [shape shape-with-children] :as props}]
-  (let [id (:id shape)
-        ids-with-children (map :id shape-with-children)
-        text-ids (map :id (filter #(= (:type %) :text) shape-with-children))
-        other-ids (map :id (filter #(not= (:type %) :text) shape-with-children))
+  {::mf/wrap [mf/memo]
+   ::mf/wrap-props false}
+  [props]
+  (let [shape (unchecked-get props "shape")
+        shape-with-children (unchecked-get props "shape-with-children")
+        objects (->> shape-with-children (group-by :id) (d/mapm (fn [_ v] (first v))))
 
-        type (:type shape) ; always be :group
+        type :group
+        [measure-ids measure-values] (get-attrs [shape] objects :measure)
+        [fill-ids    fill-values]    (get-attrs [shape] objects :fill)
+        [shadow-ids  shadow-values]  (get-attrs [shape] objects :shadow)
+        [blur-ids    blur-values]    (get-attrs [shape] objects :blur)
+        [stroke-ids  stroke-values]  (get-attrs [shape] objects :stroke)
+        [text-ids    text-values]    (get-attrs [shape] objects :text)
+        [comp-ids    comp-values]    [[(:id shape)] (select-keys shape component-attrs)]]
 
-        measure-values
-        (merge
-          ;; All values extracted from the group shape, except
-          ;; border radius, that needs to be looked up from children
-          (attrs/get-attrs-multi (map #(get-shape-attrs
-                                        %
-                                        measure-attrs
-                                        nil
-                                        nil
-                                        nil)
-                                     [shape])
-                                measure-attrs)
-          (attrs/get-attrs-multi (map #(get-shape-attrs
-                                        %
-                                        [:rx :ry]
-                                        nil
-                                        nil
-                                        nil)
-                                     shape-with-children)
-                                [:rx :ry]))
+    [:div.options
+     [:& measures-menu {:type type :ids measure-ids :values measure-values}]
+     [:& component-menu {:ids comp-ids :values comp-values}]
 
-        component-values
-        (select-keys shape component-attrs)
+     (when-not (empty? fill-ids)
+       [:& fill-menu {:type type :ids fill-ids :values fill-values}])
 
-        fill-values
-        (attrs/get-attrs-multi shape-with-children fill-attrs)
+     (when-not (empty? shadow-ids)
+       [:& shadow-menu {:type type :ids shadow-ids :values shadow-values}])
 
-        stroke-values
-        (attrs/get-attrs-multi (map #(get-shape-attrs
-                                      %
-                                      stroke-attrs
-                                      nil
-                                      nil
-                                      nil)
-                                   shape-with-children)
-                              stroke-attrs)
+     (when-not (empty? blur-ids)
+       [:& blur-menu {:type type :ids blur-ids :values blur-values}])
 
-        root-values (extract {:shapes shape-with-children
-                              :text-attrs ot/root-attrs
-                              :extract-fn dwt/current-root-values})
+     (when-not (empty? stroke-ids)
+       [:& stroke-menu {:type type :ids stroke-ids :values stroke-values}])
 
-        paragraph-values (extract {:shapes shape-with-children
-                                   :text-attrs ot/paragraph-attrs
-                                   :extract-fn dwt/current-paragraph-values})
-
-        text-values (extract {:shapes shape-with-children
-                              :text-attrs ot/text-attrs
-                              :extract-fn dwt/current-text-values})]
-    [:*
-     [:& measures-menu {:ids [id]
-                        :ids-with-children ids-with-children
-                        :type type
-                        :values measure-values}]
-     [:& component-menu {:ids [id]
-                         :values component-values}]
-     [:& fill-menu {:ids ids-with-children
-                    :type type
-                    :values fill-values}]
-
-     [:& shadow-menu {:ids [id]
-                      :type type
-                      :values (select-keys shape [:shadow])}]
-
-     [:& blur-menu {:ids [id]
-                    :type type
-                    :values (select-keys shape [:blur])}]
-
-     (when-not (empty? other-ids)
-       [:& stroke-menu {:ids other-ids
-                        :type type
-                        :values stroke-values}])
      (when-not (empty? text-ids)
-       [:& ot/text-menu {:ids text-ids
-                      :type type
-                      :editor nil
-                      :shapes shape-with-children
-                      :values (merge root-values
-                                     paragraph-values
-                                     text-values)}])]))
+       [:& ot/text-menu {:type type :ids text-ids :values text-values}])]))
+
 

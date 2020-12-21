@@ -173,7 +173,9 @@
             (let [selected (get-in state [:workspace-local :selected])
                   page-id  (:current-page-id state)
                   objects  (get-in state [:workspace-data :pages-index page-id :objects])]
-              (mapv #(get objects %) selected)))]
+              (->> selected
+                   (map #(get objects %))
+                   (filterv (comp not nil?)))))]
     (l/derived selector st/state =)))
 
 (def selected-shapes-with-children
@@ -181,7 +183,9 @@
             (let [selected (get-in state [:workspace-local :selected])
                   page-id  (:current-page-id state)
                   objects  (get-in state [:workspace-data :pages-index page-id :objects])
-                  children (mapcat #(cp/get-children % objects) selected)]
+                  children (->> selected
+                                (mapcat #(cp/get-children % objects))
+                                (filterv (comp not nil?)))]
               (into selected children)))]
     (l/derived selector st/state =)))
 
@@ -192,7 +196,9 @@
             (let [selected (get-in state [:workspace-local :selected])
                   page-id  (:current-page-id state)
                   objects  (get-in state [:workspace-data :pages-index page-id :objects])
-                  children (mapcat #(cp/get-children % objects) selected)
+                  children (->> selected
+                                (mapcat #(cp/get-children % objects))
+                                (filterv (comp not nil?)))
                   shapes   (into selected children)]
               (mapv #(get objects %) shapes)))]
     (l/derived selector st/state =)))

@@ -9,10 +9,10 @@
 
 (ns app.main.ui.workspace.sidebar.options.multiple
   (:require
+   [app.common.data :as d]
    [rumext.alpha :as mf]
-   [app.common.geom.shapes :as geom]
    [app.common.attrs :as attrs]
-   [app.main.data.workspace.texts :as dwt]
+   [app.util.text :as ut]
    [app.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
    [app.main.ui.workspace.sidebar.options.shadow :refer [shadow-attrs shadow-menu]]
@@ -20,107 +20,160 @@
    [app.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]
    [app.main.ui.workspace.sidebar.options.text :as ot]))
 
-(defn get-shape-attrs
-  [shape attrs text-attrs convert-attrs extract-fn]
-  (if (not= (:type shape) :text)
-    (when attrs
-      (select-keys shape attrs))
-    (when text-attrs
-      (let [text-values (extract-fn {:editor nil
-                                     :shape shape
-                                     :attrs text-attrs})
+;; We define a map that goes from type to
+;; attribute and how to handle them
+(def type->props
+  {:frame
+   {:measure :shape
+    :fill    :shape
+    :shadow  :children
+    :blur    :children
+    :stroke  :children
+    :text    :children}
 
-            converted-values (if convert-attrs
-                               (zipmap convert-attrs
-                                       (map #(% text-values) text-attrs))
-                               text-values)]
-        converted-values))))
+   :group
+   {:measure :shape
+    :fill    :children
+    :shadow  :shape
+    :blur    :shape
+    :stroke  :children
+    :text    :children}
 
-(defn extract [{:keys [shapes attrs text-attrs convert-attrs extract-fn]}]
-  (let [mapfn
-        (fn [shape]
-          (get-shape-attrs shape
-                           attrs
-                           text-attrs
-                           convert-attrs
-                           extract-fn))]
-    (attrs/get-attrs-multi (map mapfn shapes) (or attrs text-attrs))))
+   :path
+   {:measure :shape
+    :fill    :shape
+    :shadow  :shape
+    :blur    :shape
+    :stroke  :shape
+    :text    :ignore}
+
+   :text
+   {:measure :shape
+    :fill    :text
+    :shadow  :shape
+    :blur    :shape
+    :stroke  :ignore
+    :text    :text}
+
+   :image
+   {:measure :shape
+    :fill    :ignore
+    :shadow  :shape
+    :blur    :shape
+    :stroke  :ignore
+    :text    :ignore}
+
+   :rect
+   {:measure :shape
+    :fill    :shape
+    :shadow  :shape
+    :blur    :shape
+    :stroke  :shape
+    :text    :ignore}
+
+   :circle
+   {:measure :shape
+    :fill    :shape
+    :shadow  :shape
+    :blur    :shape
+    :stroke  :shape
+    :text    :ignore}})
+
+(def props->attrs
+  {:measure measure-attrs
+   :fill    fill-attrs
+   :shadow  shadow-attrs
+   :blur    blur-attrs
+   :stroke  stroke-attrs
+   :text    ot/text-attrs})
+
+(def shadow-keys [:style :color :offset-x :offset-y :blur :spread])
+
+(defn shadow-eq
+  "Function to check if two shadows are equivalent to the multiple selection (ignores their ids)"
+  [s1 s2]
+  (and (= (count s1) (count s2))
+       (->> (map vector s1 s2)
+            (every? (fn [[v1 v2]]
+                      (= (select-keys v1 shadow-keys)
+                         (select-keys v2 shadow-keys)))))))
+
+(defn shadow-sel
+  "Function to select the attributes that interest us for the multiple selections"
+  [v]
+  (mapv #(select-keys % shadow-keys) v))
+
+(def blur-keys [:type :value])
+
+(defn blur-eq
+  "Checks if two blurs are equivalent for the multiple selection"
+  [v1 v2]
+  (= (select-keys v1 blur-keys) (select-keys v2 blur-keys)))
+
+(defn blur-sel
+  "Select interesting keys for multiple selection"
+  [v]
+  (when v (select-keys v blur-keys)))
+
+(defn get-attrs
+  "Given a `type` of options that we want to extract and the shapes to extract them from
+  returns a list of tuples [id, values] with the extracted properties for the shapes that
+  applies (some of them ignore some attributes)"
+  [shapes objects attr-type]
+  (let [attrs (props->attrs attr-type)
+        merge-attrs
+        (fn [v1 v2]
+          (cond
+            (= attr-type :shadow) (attrs/get-attrs-multi [v1 v2] attrs shadow-eq shadow-sel)
+            (= attr-type :blur)   (attrs/get-attrs-multi [v1 v2] attrs blur-eq blur-sel)
+            :else                 (attrs/get-attrs-multi [v1 v2] attrs)))
+
+        extract-attrs
+        (fn [[ids values] {:keys [id type shapes content] :as shape}]
+          (let [conj (fnil conj [])
+                props (get-in type->props [type attr-type])
+                result (case props
+                         :ignore   [ids values]
+                         :shape    [(conj ids id)
+                                    (merge-attrs values (select-keys shape attrs))]
+                         :text     [(conj ids id)
+                                    (merge-attrs values (ut/get-text-attrs-multi content attrs))]
+                         :children (let [children (->> (:shapes shape []) (map #(get objects %)))]
+                                     (get-attrs children objects attr-type)))]
+            result))]
+    (reduce extract-attrs [] shapes)))
 
 (mf/defc options
-  {::mf/wrap [mf/memo]}
-  [{:keys [shapes shapes-with-children] :as props}]
-  (let [ids (map :id shapes)
-        ids-with-children (map :id shapes-with-children)
-        text-ids (map :id (filter #(= (:type %) :text) shapes-with-children))
-        other-ids (map :id (filter #(not= (:type %) :text) shapes-with-children))
+  {::mf/wrap [mf/memo]
+   ::mf/wrap-props false}
+  [props]
+  (let [shapes (unchecked-get props "shapes")
+        shapes-with-children (unchecked-get props "shapes-with-children")
+        objects (->> shapes-with-children (group-by :id) (d/mapm (fn [_ v] (first v))))
 
+        type :multiple
+        [measure-ids measure-values] (get-attrs shapes objects :measure)
+        [fill-ids    fill-values]    (get-attrs shapes objects :fill)
+        [shadow-ids  shadow-values]  (get-attrs shapes objects :shadow)
+        [blur-ids    blur-values]    (get-attrs shapes objects :blur)
+        [stroke-ids  stroke-values]  (get-attrs shapes objects :stroke)
+        [text-ids    text-values]    (get-attrs shapes objects :text)]
 
-        measure-values (attrs/get-attrs-multi shapes measure-attrs)
+    [:div.options
+     (when-not (empty? measure-ids)
+       [:& measures-menu {:type type :ids measure-ids :values measure-values}])
 
-        shadow-values (let [keys [:style :color :offset-x :offset-y :blur :spread]]
-                        (attrs/get-attrs-multi
-                         shapes shadow-attrs
-                         (fn [s1 s2]
-                           (and (= (count s1) (count s2))
-                                (->> (map vector s1 s2)
-                                     (every? (fn [[v1 v2]]
-                                               (= (select-keys v1 keys) (select-keys v2 keys)))))))
-                         (fn [v]
-                           (mapv #(select-keys % keys) v))))
+     (when-not (empty? fill-ids)
+       [:& fill-menu {:type type :ids fill-ids :values fill-values}])
 
-        blur-values (let [keys [:type :value]]
-                      (attrs/get-attrs-multi
-                       shapes blur-attrs
-                       (fn [v1 v2]
-                         (= (select-keys v1 keys) (select-keys v2 keys)))
-                       (fn [v] (select-keys v keys))))
+     (when-not (empty? shadow-ids)
+       [:& shadow-menu {:type type :ids shadow-ids :values shadow-values}])
 
-        fill-values (extract {:shapes shapes-with-children
-                              :attrs fill-attrs
-                              :text-attrs ot/text-fill-attrs
-                              :convert-attrs fill-attrs
-                              :extract-fn dwt/current-text-values})
+     (when-not (empty? blur-ids)
+       [:& blur-menu {:type type :ids blur-ids :values blur-values}])
 
-        stroke-values (extract {:shapes shapes-with-children
-                                :attrs stroke-attrs})
+     (when-not (empty? stroke-ids)
+       [:& stroke-menu {:type type :ids stroke-ids :values stroke-values}])
 
-        root-values (extract {:shapes shapes-with-children
-                              :text-attrs ot/root-attrs
-                              :extract-fn dwt/current-root-values})
-
-        paragraph-values (extract {:shapes shapes-with-children
-                                   :text-attrs ot/paragraph-attrs
-                                   :extract-fn dwt/current-paragraph-values})
-
-        text-values (extract {:shapes shapes-with-children
-                              :text-attrs ot/text-attrs
-                              :extract-fn dwt/current-text-values})]
-    [:*
-     [:& measures-menu {:ids ids
-                        :type :multiple
-                        :values measure-values}]
-     [:& fill-menu {:ids ids-with-children
-                    :type :multiple
-                    :values fill-values}]
-
-     [:& shadow-menu {:ids ids
-                      :type :multiple
-                      :values shadow-values}]
-
-     [:& blur-menu {:ids ids
-                    :type :multiple
-                    :values blur-values}]
-
-     (when-not (empty? other-ids)
-       [:& stroke-menu {:ids other-ids
-                        :type :multiple
-                        :values stroke-values}])
      (when-not (empty? text-ids)
-       [:& ot/text-menu {:ids text-ids
-                         :type :multiple
-                         :editor nil
-                         :shapes shapes-with-children
-                         :values (merge root-values
-                                        paragraph-values
-                                        text-values)}])]))
-
+       [:& ot/text-menu {:type type :ids text-ids :values text-values}])]))

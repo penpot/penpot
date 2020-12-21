@@ -171,11 +171,7 @@
 
 (mf/defc text-menu
   {::mf/wrap [mf/memo]}
-  [{:keys [ids
-           type
-           editor
-           values
-           shapes] :as props}]
+  [{:keys [ids type editor values] :as props}]
 
   (let [locale (mf/deref i18n/locale)
         current-file-id (mf/use-ctx ctx/current-file-id)
@@ -241,7 +237,6 @@
         opts #js {:editor editor
                   :ids ids
                   :values values
-                  :shapes shapes
                   :on-change (fn [attrs]
                                (run! #(emit-update! % attrs) ids))
                   :locale locale}]
@@ -329,5 +324,4 @@
      [:& text-menu {:ids ids
                     :type type
                     :values text-values
-                    :editor editor
-                    :shapes [shape]}]]))
+                    :editor editor}]]))
