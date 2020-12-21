@@ -184,6 +184,33 @@
                            :selected selected
                            :hover hover}])]))
 
+(mf/defc ghost-frames
+  {::mf/wrap-props false}
+  [props]
+  (let [modifiers    (obj/get props "modifiers")
+        selected     (obj/get props "selected")
+
+        sobjects     (mf/deref refs/selected-objects)
+        selrect-orig (gsh/selection-rect sobjects)
+
+        xf           (comp
+                      (map #(assoc % :modifiers modifiers))
+                      (map gsh/transform-shape))
+
+        selrect      (->> (into [] xf sobjects)
+                          (gsh/selection-rect))]
+    [:svg.ghost
+     {:x (:x selrect)
+      :y (:y selrect)
+      :width (:width selrect)
+      :height (:height selrect)
+      :style {:pointer-events "none"}}
+
+     [:g {:transform (str/fmt "translate(%s,%s)" (- (:x selrect-orig)) (- (:y selrect-orig)))}
+      [:& frames
+       {:ids selected
+        :ghost? true}]]]))
+
 (defn format-viewbox [vbox]
   (str/join " " [(+ (:x vbox 0) (:left-offset vbox 0))
                  (:y vbox 0)
@@ -304,7 +331,7 @@
                  alt? (kbd/alt? event)]
              (st/emit! (ms/->MouseEvent :double-click ctrl? shift? alt?))
 
-             (if (not drawing-path?) 
+             (if (not drawing-path?)
                (st/emit! dw/clear-edition-mode)))))
 
         on-key-down
@@ -337,40 +364,42 @@
              (st/emit! (ms/->KeyboardEvent :up key ctrl? shift? alt?)))))
 
         translate-point-to-viewport
-        (fn [pt]
-          (let [viewport (mf/ref-val viewport-ref)
-                vbox  (.. ^js viewport -viewBox -baseVal)
-                brect (.getBoundingClientRect viewport)
-                brect (gpt/point (d/parse-integer (.-left brect))
-                                 (d/parse-integer (.-top brect)))
-                box   (gpt/point (.-x vbox)
-                                 (.-y vbox))
-                ]
-            (-> (gpt/subtract pt brect)
-                (gpt/divide (gpt/point @refs/selected-zoom))
-                (gpt/add box)
-                (gpt/round 0))))
+        (mf/use-callback
+         (fn [pt]
+           (let [viewport (mf/ref-val viewport-ref)
+                 vbox     (.. ^js viewport -viewBox -baseVal)
+                 brect    (.getBoundingClientRect viewport)
+                 brect    (gpt/point (d/parse-integer (.-left brect))
+                                     (d/parse-integer (.-top brect)))
+                 box      (gpt/point (.-x vbox)
+                                     (.-y vbox))
+                 ]
+             (-> (gpt/subtract pt brect)
+                 (gpt/divide (gpt/point @refs/selected-zoom))
+                 (gpt/add box)
+                 (gpt/round 0)))))
 
         on-mouse-move
-        (fn [event]
-          (let [event (.getBrowserEvent ^js event)
-                raw-pt (dom/get-client-position ^js event)
-                pt (translate-point-to-viewport raw-pt)
+        (mf/use-callback
+         (fn [event]
+           (let [event  (.getBrowserEvent ^js event)
+                 raw-pt (dom/get-client-position event)
+                 pt     (translate-point-to-viewport raw-pt)
 
-                ;; We calculate the delta because Safari's MouseEvent.movementX/Y drop
-                ;; events
-                delta (if @last-position
-                        (gpt/subtract raw-pt @last-position)
-                        (gpt/point 0 0))]
-            (reset! last-position raw-pt)
-            (st/emit! (ms/->PointerEvent :delta delta
-                                         (kbd/ctrl? event)
-                                         (kbd/shift? event)
-                                         (kbd/alt? event)))
-            (st/emit! (ms/->PointerEvent :viewport pt
-                                         (kbd/ctrl? event)
-                                         (kbd/shift? event)
-                                         (kbd/alt? event)))))
+                 ;; We calculate the delta because Safari's MouseEvent.movementX/Y drop
+                 ;; events
+                 delta (if @last-position
+                         (gpt/subtract raw-pt @last-position)
+                         (gpt/point 0 0))]
+             (reset! last-position raw-pt)
+             (st/emit! (ms/->PointerEvent :delta delta
+                                          (kbd/ctrl? event)
+                                          (kbd/shift? event)
+                                          (kbd/alt? event)))
+             (st/emit! (ms/->PointerEvent :viewport pt
+                                          (kbd/ctrl? event)
+                                          (kbd/shift? event)
+                                          (kbd/alt? event))))))
 
         on-mouse-wheel
         (mf/use-callback
@@ -398,99 +427,105 @@
                    (st/emit! (dw/update-viewport-position {:y #(+ % delta)}))))))))
 
         on-drag-enter
-        (fn [e]
-          (when (or (dnd/has-type? e "app/shape")
-                    (dnd/has-type? e "app/component")
-                    (dnd/has-type? e "Files")
-                    (dnd/has-type? e "text/uri-list"))
-            (dom/prevent-default e)))
+        (mf/use-callback
+         (fn [e]
+           (when (or (dnd/has-type? e "app/shape")
+                     (dnd/has-type? e "app/component")
+                     (dnd/has-type? e "Files")
+                     (dnd/has-type? e "text/uri-list"))
+             (dom/prevent-default e))))
 
         on-drag-over
-        (fn [e]
-          (when (or (dnd/has-type? e "app/shape")
-                    (dnd/has-type? e "app/component")
-                    (dnd/has-type? e "Files")
-                    (dnd/has-type? e "text/uri-list"))
-            (dom/prevent-default e)))
+        (mf/use-callback
+         (fn [e]
+           (when (or (dnd/has-type? e "app/shape")
+                     (dnd/has-type? e "app/component")
+                     (dnd/has-type? e "Files")
+                     (dnd/has-type? e "text/uri-list"))
+             (dom/prevent-default e))))
 
         ;; TODO: seems duplicated callback is the same as one located
         ;; in left_toolbar
         on-uploaded
-        (fn [{:keys [id name] :as image} {:keys [x y]}]
-          (let [shape {:name name
-                       :width (:width image)
-                       :height (:height image)
-                       :x (- x (/ (:width image) 2))
-                       :y (- y (/ (:height image) 2))
-                       :metadata {:width (:width image)
-                                  :height (:height image)
-                                  :id (:id image)
-                                  :path (:path image)}}
-                aspect-ratio (/ (:width image) (:height image))]
-            (st/emit! (dw/create-and-add-shape :image x y shape))))
+        (mf/use-callback
+         (fn [{:keys [id name] :as image} {:keys [x y]}]
+           (let [shape {:name name
+                        :width (:width image)
+                        :height (:height image)
+                        :x (- x (/ (:width image) 2))
+                        :y (- y (/ (:height image) 2))
+                        :metadata {:width (:width image)
+                                   :height (:height image)
+                                   :id (:id image)
+                                   :path (:path image)}}
+                 aspect-ratio (/ (:width image) (:height image))]
+             (st/emit! (dw/create-and-add-shape :image x y shape)))))
 
         on-drop
-        (fn [event]
-          (dom/prevent-default event)
-          (let [point (gpt/point (.-clientX event) (.-clientY event))
-                viewport-coord (translate-point-to-viewport point)]
-            (cond
-              (dnd/has-type? event "app/shape")
-              (let [shape (dnd/get-data event "app/shape")
-                    final-x (- (:x viewport-coord) (/ (:width shape) 2))
-                    final-y (- (:y viewport-coord) (/ (:height shape) 2))]
-                (st/emit! (dw/add-shape (-> shape
-                                            (assoc :id (uuid/next))
-                                            (assoc :x final-x)
-                                            (assoc :y final-y)))))
+        (mf/use-callback
+         (fn [event]
+           (dom/prevent-default event)
+           (let [point (gpt/point (.-clientX event) (.-clientY event))
+                 viewport-coord (translate-point-to-viewport point)]
+             (cond
+               (dnd/has-type? event "app/shape")
+               (let [shape (dnd/get-data event "app/shape")
+                     final-x (- (:x viewport-coord) (/ (:width shape) 2))
+                     final-y (- (:y viewport-coord) (/ (:height shape) 2))]
+                 (st/emit! (dw/add-shape (-> shape
+                                             (assoc :id (uuid/next))
+                                             (assoc :x final-x)
+                                             (assoc :y final-y)))))
 
-              (dnd/has-type? event "app/component")
-              (let [{:keys [component file-id]} (dnd/get-data event "app/component")
-                    shape (get-in component [:objects (:id component)])
-                    final-x (- (:x viewport-coord) (/ (:width shape) 2))
-                    final-y (- (:y viewport-coord) (/ (:height shape) 2))]
-                (st/emit! (dwl/instantiate-component file-id
-                                                     (:id component)
-                                                     (gpt/point final-x final-y))))
+               (dnd/has-type? event "app/component")
+               (let [{:keys [component file-id]} (dnd/get-data event "app/component")
+                     shape (get-in component [:objects (:id component)])
+                     final-x (- (:x viewport-coord) (/ (:width shape) 2))
+                     final-y (- (:y viewport-coord) (/ (:height shape) 2))]
+                 (st/emit! (dwl/instantiate-component file-id
+                                                      (:id component)
+                                                      (gpt/point final-x final-y))))
 
-              (dnd/has-type? event "text/uri-list")
-              (let [data (dnd/get-data event "text/uri-list")
-                    name (dnd/get-data event "text/asset-name")
-                    lines (str/lines data)
-                    urls (filter #(and (not (str/blank? %))
-                                       (not (str/starts-with? % "#")))
-                                 lines)]
-                (->> urls
-                     (map (fn [uri]
-                            (with-meta {:file-id (:id file)
-                                        :local? true
-                                        :uri uri
-                                        :name name}
-                              {:on-success #(on-uploaded % viewport-coord)})))
-                     (map dw/upload-media-objects)
-                     (apply st/emit!)))
+               (dnd/has-type? event "text/uri-list")
+               (let [data (dnd/get-data event "text/uri-list")
+                     name (dnd/get-data event "text/asset-name")
+                     lines (str/lines data)
+                     urls (filter #(and (not (str/blank? %))
+                                        (not (str/starts-with? % "#")))
+                                  lines)]
+                 (->> urls
+                      (map (fn [uri]
+                             (with-meta {:file-id (:id file)
+                                         :local? true
+                                         :uri uri
+                                         :name name}
+                               {:on-success #(on-uploaded % viewport-coord)})))
+                      (map dw/upload-media-objects)
+                      (apply st/emit!)))
 
-              :else
-              (let [js-files (dnd/get-files event)
-                    params   {:file-id (:id file)
-                              :local? true
-                              :js-files js-files
-                              }]
-                (st/emit! (dw/upload-media-objects
-                           (with-meta params
-                             {:on-success #(on-uploaded % viewport-coord)})))))))
+               :else
+               (let [js-files (dnd/get-files event)
+                     params   {:file-id (:id file)
+                               :local? true
+                               :js-files js-files
+                               }]
+                 (st/emit! (dw/upload-media-objects
+                            (with-meta params
+                              {:on-success #(on-uploaded % viewport-coord)}))))))))
 
         on-paste
-        (fn [event]
-          (st/emit! (dw/paste-from-event event)))
+        (mf/use-callback
+         (fn [event]
+           (st/emit! (dw/paste-from-event event))))
 
         on-resize
-        (fn [event]
-          (let [node (mf/ref-val viewport-ref)
-                prnt (dom/get-parent node)
-                size (dom/get-client-size prnt)]
-            ;; We schedule the event so it fires after `initialize-page` event
-            (timers/schedule #(st/emit! (dw/update-viewport-size size)))))
+        (mf/use-callback
+         (fn [event]
+           (let [node (mf/ref-val viewport-ref)
+                 prnt (dom/get-parent node)
+                 size (dom/get-client-size prnt)]
+             ;; We schedule the event so it fires after `initialize-page` event
+             (timers/schedule #(st/emit! (dw/update-viewport-size size))))))
 
         options (mf/deref refs/workspace-page-options)]
 
@@ -575,19 +610,11 @@
                                      "auto")}}
        [:& frames {:key page-id
                    :hover (:hover local)
-                   :selected (:selected selected)}]
+                   :selected selected}]
 
        (when (= :move (:transform local))
-         [:svg.ghost
-          {:x (:x selrect)
-           :y (:y selrect)
-           :width (:width selrect)
-           :height (:height selrect)
-           :style {:pointer-events "none"}}
-
-          [:g {:transform (str/fmt "translate(%s,%s)" (- (:x selrect-orig)) (- (:y selrect-orig)))}
-           [:& frames {:ids selected
-                       :ghost? true}]]])
+         [:& ghost-frames {:modifiers (:modifiers local)
+                           :selected selected}])
 
        (when (seq selected)
          [:& selection-handlers {:selected selected
