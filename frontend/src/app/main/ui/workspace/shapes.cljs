@@ -31,6 +31,7 @@
    [app.main.ui.workspace.shapes.path :as path]
    [app.main.ui.workspace.shapes.text :as text]
    [app.util.object :as obj]
+   [app.util.debug :refer [debug?]]
    [beicon.core :as rx]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
@@ -44,15 +45,17 @@
 
 (defn- shape-wrapper-memo-equals?
   [np op]
-  (let [n-shape (obj/get np "shape")
-        o-shape (obj/get op "shape")
-        n-frame (obj/get np "frame")
-        o-frame (obj/get op "frame")]
-    ;; (prn "shape-wrapper-memo-equals?" (identical? n-frame o-frame))
+  (let [n-shape (obj/get np "shape")]
     (if (= (:type n-shape) :group)
       false
-      (and (identical? n-shape o-shape)
-           (identical? n-frame o-frame)))))
+      (let [o-shape (obj/get op "shape")
+            n-frame (obj/get np "frame")
+            o-frame (obj/get op "frame")
+            n-ghost (obj/get np "ghost?")
+            o-ghost (obj/get op "ghost?")]
+        (and (identical? n-shape o-shape)
+             (identical? n-frame o-frame)
+             (identical? n-ghost o-ghost))))))
 
 (defn make-is-moving-ref
   [id]
@@ -94,7 +97,9 @@
          ;; Only used when drawing a new frame.
          :frame [:> frame-wrapper {:shape shape}]
          nil)
-       [:& bounding-box {:shape shape :frame frame}]])))
+
+       (when (debug? :bounding-boxes)
+         [:& bounding-box {:shape shape :frame frame}])])))
 
 (def group-wrapper (group/group-wrapper-factory shape-wrapper))
 (def frame-wrapper (frame/frame-wrapper-factory shape-wrapper))

@@ -16,7 +16,11 @@
 (defn debug! [option] (swap! *debug* conj option))
 (defn -debug! [option] (swap! *debug* disj option))
 
-(defn ^:export debug? [option] (@*debug* option))
+(defn ^:export ^boolean debug?
+  [option]
+  (if *assert*
+    (boolean (@*debug* option))
+    false))
 
 (defn ^:export toggle-debug [name] (let [option (keyword name)]
                                      (if (debug? option)
@@ -28,7 +32,7 @@
 (defn ^:export tap
   "Transducer function that can execute a side-effect `effect-fn` per input"
   [effect-fn]
-  
+
   (fn [rf]
     (fn
       ([] (rf))
