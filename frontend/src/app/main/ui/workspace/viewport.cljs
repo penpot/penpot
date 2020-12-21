@@ -167,6 +167,7 @@
         shapes (if ids
                  (->> ids (map #(get objects %)))
                  shapes)]
+
     [:*
      [:g.shapes
       (for [item shapes]

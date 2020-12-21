@@ -44,7 +44,7 @@
                    :fill "transparent"
                    :stroke-width "1px"
                    :stroke-opacity 0.5
-                   :stroke-dasharray 4 
+                   :stroke-dasharray 4
                    :pointer-events "none"}}])
 
 (mf/defc render-rect-points [{:keys [points color]}]
@@ -59,37 +59,36 @@
 (mf/defc bounding-box
   {::mf/wrap-props false}
   [props]
-  (when (debug? :bounding-boxes)
-    (let [shape (-> (unchecked-get props "shape"))
-          frame (unchecked-get props "frame")
-          selrect (gsh/points->selrect (-> shape :points))
-          shape-center (gsh/center-shape shape)
-          line-color (rdcolor #js {:seed (str (:id shape))})
-          zoom (mf/deref refs/selected-zoom)
-          childs-ref (mf/use-memo (mf/deps shape) #(refs/objects-by-id (:shapes shape)))
-          childs     (->> (mf/deref childs-ref)
-                          (map gsh/transform-shape))]
+  (let [shape (-> (unchecked-get props "shape"))
+        frame (unchecked-get props "frame")
+        selrect (gsh/points->selrect (-> shape :points))
+        shape-center (gsh/center-shape shape)
+        line-color (rdcolor #js {:seed (str (:id shape))})
+        zoom (mf/deref refs/selected-zoom)
+        childs-ref (mf/use-memo (mf/deps shape) #(refs/objects-by-id (:shapes shape)))
+        childs     (->> (mf/deref childs-ref)
+                        (map gsh/transform-shape))]
 
-      [:g.bounding-box
-       [:text {:x (:x selrect)
-               :y (- (:y selrect) 5)
-               :font-size 10
-               :fill line-color
-               :stroke "white"
-               :stroke-width 0.1}
-        (str/format "%s - (%s, %s)" (str/slice (str (:id shape)) 0 8) (fixed (:x shape)) (fixed (:y shape)))]
+    [:g.bounding-box
+     [:text {:x (:x selrect)
+             :y (- (:y selrect) 5)
+             :font-size 10
+             :fill line-color
+             :stroke "white"
+             :stroke-width 0.1}
+      (str/format "%s - (%s, %s)" (str/slice (str (:id shape)) 0 8) (fixed (:x shape)) (fixed (:y shape)))]
 
-       [:& cross-point {:point shape-center
+     [:& cross-point {:point shape-center
+                      :zoom zoom
+                      :color line-color}]
+
+     (for [point (:points shape)]
+       [:& cross-point {:point point
                         :zoom zoom
-                        :color line-color}]
+                        :color line-color}])
 
-       (for [point (:points shape)]
-         [:& cross-point {:point point
-                          :zoom zoom
-                          :color line-color}])
+     [:& render-rect-points {:rect selrect
+                             :color line-color}]
 
-       [:& render-rect-points {:rect selrect
-                               :color line-color}]
-
-       [:& render-rect {:rect selrect
-                        :color line-color}]])))
+     [:& render-rect {:rect selrect
+                      :color line-color}]]))

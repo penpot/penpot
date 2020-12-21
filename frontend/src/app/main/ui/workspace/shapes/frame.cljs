@@ -68,10 +68,10 @@
 
 (mf/defc frame-title
   [{:keys [frame]}]
-  (let [zoom (mf/deref refs/selected-zoom)
-        {:keys [width x y]} frame
-        label-pos (gpt/point x (- y (/ 10 zoom)))
-        handle-click (use-select-shape frame)
+  (let [{:keys [width x y]} frame
+        zoom                 (mf/deref refs/selected-zoom)
+        label-pos            (gpt/point x (- y (/ 10 zoom)))
+        handle-click         (use-select-shape frame)
         handle-pointer-enter (we/use-pointer-enter frame)
         handle-pointer-leave (we/use-pointer-leave frame)]
     [:text {:x 0
@@ -92,33 +92,47 @@
                             (contains? (:selected local) id)))]
     (l/derived check-moving refs/workspace-local)))
 
+;; This custom deffered don't deffer rendering when ghost rendering is
+;; used.
+(defn custom-deferred
+  [component]
+  (mf/fnc deferred
+    {::mf/wrap-props false}
+    [props]
+    (let [tmp (mf/useState false)
+          ^boolean render? (aget tmp 0)
+          ^js set-render (aget tmp 1)]
+      (mf/use-layout-effect (fn [] (ts/schedule-on-idle #(set-render true))))
+      (if (unchecked-get props "ghost?")
+        (mf/create-element component props)
+        (when render? (mf/create-element component props))))))
+
 (defn frame-wrapper-factory
   [shape-wrapper]
   (let [frame-shape (frame/frame-shape shape-wrapper)]
     (mf/fnc frame-wrapper
-      {::mf/wrap [#(mf/memo' % frame-wrapper-factory-equals?)
-                  #(mf/deferred % ts/schedule-on-idle)]
+      {::mf/wrap [#(mf/memo' % frame-wrapper-factory-equals?) custom-deferred]
        ::mf/wrap-props false}
       [props]
       (let [shape   (unchecked-get props "shape")
             objects (unchecked-get props "objects")
-            ghost? (unchecked-get props "ghost?")
+            ghost?  (unchecked-get props "ghost?")
 
-            moving-iref (mf/use-memo (mf/deps (:id shape))
-                                     #(make-is-moving-ref (:id shape)))
-            moving? (mf/deref moving-iref)
+            moving-iref   (mf/use-memo (mf/deps (:id shape))
+                                       #(make-is-moving-ref (:id shape)))
+            moving?       (mf/deref moving-iref)
 
             selected-iref (mf/use-memo (mf/deps (:id shape))
                                        #(refs/make-selected-ref (:id shape)))
-            selected? (mf/deref selected-iref)
+            selected?     (mf/deref selected-iref)
 
-            shape (gsh/transform-shape shape)
-            children    (mapv #(get objects %) (:shapes shape))
-            ds-modifier (get-in shape [:modifiers :displacement])
+            shape         (gsh/transform-shape shape)
+            children      (mapv #(get objects %) (:shapes shape))
+            ds-modifier   (get-in shape [:modifiers :displacement])
 
             handle-context-menu (we/use-context-menu shape)
             handle-double-click (use-select-shape shape)
-            handle-mouse-down (we/use-mouse-down shape)]
+            handle-mouse-down   (we/use-mouse-down shape)]
 
         (when (and shape
                    (or ghost? (not moving?))
