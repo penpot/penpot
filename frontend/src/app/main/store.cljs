@@ -21,10 +21,9 @@
 
 (def ^:dynamic *on-error* identity)
 
-(defonce state  (l/atom {}))
 (defonce loader (l/atom false))
-(defonce store  (ptk/store {:resolve ptk/resolve}))
-(defonce stream (ptk/input-stream store))
+(defonce state  (ptk/store {:resolve ptk/resolve}))
+(defonce stream (ptk/input-stream state))
 
 (defn- repr-event
   [event]
@@ -49,15 +48,15 @@
 (defn emit!
   ([] nil)
   ([event]
-   (ptk/emit! store event)
+   (ptk/emit! state event)
    nil)
   ([event & events]
-   (apply ptk/emit! store (cons event events))
+   (apply ptk/emit! state (cons event events))
    nil))
 
 (defn emitf
   [& events]
-  #(apply ptk/emit! store events))
+  #(apply ptk/emit! state events))
 
 (def initial-state
   {:session-id (uuid/next)
@@ -67,8 +66,7 @@
   "Initialize the state materialization."
   ([] (init {}))
   ([props]
-   (emit! #(merge % initial-state props))
-   (rx/to-atom store state)))
+   (emit! #(merge % initial-state props))))
 
 (defn ^:export dump-state []
   (logjs "state" @state))
