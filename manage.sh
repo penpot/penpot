@@ -18,7 +18,7 @@ function build-devenv {
     popd;
 }
 
-function publish-devenv {
+function push-devenv {
     docker push $DEVENV_IMGNAME:latest
 }
 
@@ -226,9 +226,8 @@ case $1 in
         build-devenv ${@:2}
         ;;
 
-
-    publish-devenv)
-        publish-devenv ${@:2}
+    push-devenv)
+        push-devenv ${@:2}
         ;;
 
     start-devenv)
