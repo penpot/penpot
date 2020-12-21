@@ -3,8 +3,8 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV NODE_VERSION=v14.15.1 \
-    CLOJURE_VERSION=1.10.1.739 \
+ENV NODE_VERSION=v14.15.3 \
+    CLOJURE_VERSION=1.10.1.754 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
