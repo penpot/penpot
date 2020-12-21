@@ -42,12 +42,6 @@
       {:status 400
        :body error})))
 
-(defmethod handle-exception :ratelimit
-  [_ _]
-  {:status 429
-   :headers {"retry-after" 1000}
-   :body ""})
-
 (defmethod handle-exception :not-found
   [err _]
   (let [response (ex-data err)]
