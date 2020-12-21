@@ -25,26 +25,14 @@
 (defonce state  (ptk/store {:resolve ptk/resolve}))
 (defonce stream (ptk/input-stream state))
 
-(defn- repr-event
-  [event]
-  (cond
-    (satisfies? ptk/Event event)
-    (str "typ: " (pr-str (ptk/type event)))
-
-    (and (fn? event)
-         (pos? (count (.-name event))))
-    (str "fn: " (demunge (.-name event)))
-
-    :else
-    (str "unk: " (pr-str event))))
-
 (when *assert*
   (defonce debug-subscription
     (->> stream
          (rx/filter ptk/event?)
          (rx/filter (fn [s] (and (debug? :events)
                                  (not (debug-exclude-events (ptk/type s))))))
-         (rx/subs #(println "[stream]: " (repr-event %))))))
+         (rx/subs #(println "[stream]: " (ptk/repr-event %))))))
+
 (defn emit!
   ([] nil)
   ([event]
