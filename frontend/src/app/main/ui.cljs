@@ -266,19 +266,21 @@
 
 (defmethod ptk/handle-error :default
   [error]
-  (js/console.log error)
   (if (instance? ExceptionInfo error)
     (ptk/handle-error (ex-data error))
     (do
-      (js/console.group "Generic Error:")
+      (js/console.group "Generic Error")
+      (js/console.log "hint:" (or (ex-message error)
+                                  (:hint error)
+                                  (:message error)))
       (ex/ignoring
-       (js/console.error (pr-str error))
-       (js/console.error (.-stack error)))
+       (js/console.error "repr: " (pr-str error))
+       (js/console.error "stack:" (.-stack error)))
       (js/console.groupEnd "Generic error")
       (ts/schedule (st/emitf (dm/show
                               {:content "Something wrong has happened."
                                :type :error
-                               :timeout 5000}))))))
+                               :timeout 3000}))))))
 
 (defmethod ptk/handle-error :server-error
   [{:keys [status] :as error}]
