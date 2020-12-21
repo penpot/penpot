@@ -11,18 +11,19 @@
   (:require
    ["slate" :as slate :refer [Editor Node Transforms Text]]
    ["slate-react" :as rslate]
-   [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
-   [clojure.walk :as walk]
-   [goog.object :as gobj]
-   [potok.core :as ptk]
-   [app.common.geom.shapes :as gsh]
    [app.common.attrs :as attrs]
+   [app.common.geom.shapes :as gsh]
+   [app.common.pages :as cp]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.fonts :as fonts]
    [app.util.object :as obj]
-   [app.util.text :as ut]))
+   [app.util.text :as ut]
+   [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
+   [clojure.walk :as walk]
+   [goog.object :as gobj]
+   [potok.core :as ptk]))
 
 (defn create-editor
   []
@@ -179,7 +180,11 @@
     (ptk/reify ::update-attrs
       ptk/WatchEvent
       (watch [_ state stream]
-        (rx/of (dwc/update-shapes [id] #(impl-update-shape-attrs % attrs pred)))))))
+        (let [objects (dwc/lookup-page-objects state)
+              shape (get objects id)
+              ids (cond (= (:type shape) :text)  [id]
+                        (= (:type shape) :group) (cp/get-children id objects))]
+          (rx/of (dwc/update-shapes ids #(impl-update-shape-attrs % attrs pred))))))))
 
 (defn update-text-attrs
   [options]

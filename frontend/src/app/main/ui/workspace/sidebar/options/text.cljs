@@ -222,7 +222,8 @@
                  typography (generate-typography-name typography)]
              (let [id (uuid/next)]
                (st/emit! (dwl/add-typography (assoc typography :id id) false))
-               (run! #(emit-update! % {:typography-ref-id id}) ids)))))
+               (run! #(emit-update! % {:typography-ref-id id
+                                       :typography-ref-file current-file-id}) ids)))))
 
         handle-deattach-typography
         (fn []
