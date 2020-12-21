@@ -123,13 +123,14 @@
 
 (s/def ::safe-integer
   #(and
-    (integer? %)
+    (int? %)
     (>= % min-safe-int)
     (<= % max-safe-int)))
 
 (s/def ::safe-number
   #(and
-    (number? %)
+    (or (int? %)
+        (float? %))
     (>= % min-safe-int)
     (<= % max-safe-int)))
 
