@@ -55,8 +55,8 @@
 
         do-duplicate #(st/emit! dw/duplicate-selected)
         do-delete #(st/emit! dw/delete-selected)
-        do-copy #(st/emit! dw/copy-selected)
-        do-cut #(st/emit! dw/copy-selected dw/delete-selected)
+        do-copy #(st/emit! (dw/copy-selected))
+        do-cut #(st/emit! (dw/copy-selected) dw/delete-selected)
         do-paste #(st/emit! dw/paste)
         do-bring-forward #(st/emit! (dw/vertical-order-selected :up))
         do-bring-to-front #(st/emit! (dw/vertical-order-selected :top))
