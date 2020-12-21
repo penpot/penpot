@@ -13,7 +13,7 @@
   ],
   "scripts": {},
   "devDependencies": {
-    "autoprefixer": "^10.0.1",
+    "autoprefixer": "^10.1.0",
     "gulp": "4.0.2",
     "gulp-concat": "^2.6.1",
     "gulp-gzip": "^1.4.2",
@@ -25,11 +25,11 @@
     "gulp-svg-sprite": "^1.5.0",
     "map-stream": "0.0.7",
     "mkdirp": "^1.0.4",
-    "postcss": "^8.1.7",
+    "postcss": "^8.2.1",
     "postcss-clean": "^1.1.0",
     "rimraf": "^3.0.0",
-    "sass": "^1.26.10",
-    "shadow-cljs": "2.11.5"
+    "sass": "^1.30.0",
+    "shadow-cljs": "2.11.9"
   },
   "dependencies": {
     "date-fns": "^2.15.0",
@@ -37,13 +37,13 @@
     "js-beautify": "^1.13.0",
     "mousetrap": "^1.6.5",
     "randomcolor": "^0.6.2",
-    "react": "17.0.1",
-    "react-dom": "17.0.1",
-    "rxjs": "7.0.0-beta.4",
+    "react": "~17.0.1",
+    "react-dom": "~17.0.1",
+    "rxjs": "~7.0.0-beta.9",
     "slate": "^0.59.0",
     "slate-react": "^0.59.0",
     "source-map-support": "^0.5.16",
     "tdigest": "^0.1.1",
-    "xregexp": "^4.3.0"
+    "xregexp": "^4.4.1"
   }
 }
