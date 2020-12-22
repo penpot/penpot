@@ -293,7 +293,9 @@
   "Function that checks if a number is nil or nan. Will return 0 when not
   valid and the number otherwise."
   [v]
-  (if (or (not v) (mth/nan? v)) 0 v))
+  (if (or (not v)
+          (not (mth/finite? v))
+          (mth/nan? v)) 0 v))
 
 
 (defmacro export

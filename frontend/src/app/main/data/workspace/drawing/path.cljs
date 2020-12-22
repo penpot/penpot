@@ -16,6 +16,7 @@
    [app.common.math :as mth]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.matrix :as gmt]
    [app.util.data :as ud]
    [app.common.data :as cd]
    [app.util.geom.path :as ugp]
@@ -87,12 +88,37 @@
        [:workspace-drawing :object])
      path)))
 
+(defn- points->components [shape content]
+  (let [rotation (:rotation shape 0)
+        center (gsh/center-shape shape)
+        content-rotated (gsh/transform-content content (gmt/rotate-matrix (- rotation) center))
+
+        ;; Calculates the new selrect with points given the old center
+        points (-> (gsh/content->selrect content-rotated)
+                   (gsh/rect->points)
+                   (gsh/transform-points center (:transform shape (gmt/matrix))))
+
+        points-center (gsh/center-points points)
+
+        ;; Points is now the selrect but the center is different so we can create the selrect
+        ;; through points
+        selrect (-> points
+                    (gsh/transform-points points-center (:transform-inverse shape (gmt/matrix)))
+                    (gsh/points->selrect))]
+    [points selrect]))
+
 (defn update-selrect
   "Updates the selrect and points for a path"
   [shape]
-  (let [selrect (gsh/content->selrect (:content shape))
-        points (gsh/rect->points selrect)]
-    (assoc shape :points points :selrect selrect)))
+  (if (= (:rotation shape 0) 0)
+    (let [content (:content shape)
+          selrect (gsh/content->selrect content)
+          points (gsh/rect->points selrect)]
+      (assoc shape :points points :selrect selrect))
+
+    (let [content (:content shape)
+          [points selrect] (points->components shape content)]
+      (assoc shape :points points :selrect selrect))))
 
 (defn closest-angle [angle]
   (cond
@@ -157,13 +183,12 @@
            ;; TODO: Enter now finish path but can finish drawing/editing as well
            (= enter-keycode (:key event)))))
 
-(defn generate-path-changes [page-id shape-id old-content new-content]
+(defn generate-path-changes [page-id shape old-content new-content]
   (us/verify ::content old-content)
   (us/verify ::content new-content)
-  (let [old-selrect (gsh/content->selrect old-content)
-        old-points  (gsh/rect->points old-selrect)
-        new-selrect (gsh/content->selrect new-content)
-        new-points  (gsh/rect->points new-selrect)
+  (let [shape-id (:id shape)
+        [old-points old-selrect] (points->components shape old-content)
+        [new-points new-selrect] (points->components shape new-content)
 
         rch [{:type :mod-obj
               :id shape-id
@@ -393,7 +418,7 @@
             shape (get-in state (get-path state))
             selected-points (get-in state [:workspace-local :edit-path id :selected-points] #{})
             new-content (reduce ugp/make-corner-point (:content shape) selected-points)
-            [rch uch] (generate-path-changes page-id id (:content shape) new-content)]
+            [rch uch] (generate-path-changes page-id shape (:content shape) new-content)]
         (rx/of (dwc/commit-changes rch uch {:commit-local? true}))))))
 
 (defn make-curve []
@@ -405,7 +430,7 @@
             shape (get-in state (get-path state))
             selected-points (get-in state [:workspace-local :edit-path id :selected-points] #{})
             new-content (reduce ugp/make-curve-point (:content shape) selected-points)
-            [rch uch] (generate-path-changes page-id id (:content shape) new-content)]
+            [rch uch] (generate-path-changes page-id shape (:content shape) new-content)]
         (rx/of (dwc/commit-changes rch uch {:commit-local? true}))))))
 
 (defn path-handler-enter [index prefix]
@@ -552,7 +577,7 @@
             shape (get-in state (get-path state))
             content-modifiers (get-in state [:workspace-local :edit-path id :content-modifiers])
             new-content (ugp/apply-content-modifiers (:content shape) content-modifiers)
-            [rch uch] (generate-path-changes page-id (:id shape) (:content shape) new-content)]
+            [rch uch] (generate-path-changes page-id shape (:content shape) new-content)]
 
         (rx/of (dwc/commit-changes rch uch {:commit-local? true})
                (fn [state] (update-in state [:workspace-local :edit-path id] dissoc :content-modifiers)))))))
@@ -573,7 +598,7 @@
             shape (get-in state (get-path state))
             page-id (:current-page-id state)
             old-content (get-in state [:workspace-local :edit-path id :old-content])
-            [rch uch] (generate-path-changes page-id id old-content (:content shape))]
+            [rch uch] (generate-path-changes page-id shape old-content (:content shape))]
         (rx/of (dwc/commit-changes rch uch {:commit-local? true}))))))
 
 (declare start-draw-mode)

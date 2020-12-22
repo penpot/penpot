@@ -1038,9 +1038,12 @@
       (let [page-id (:current-page-id state)
             objects (dwc/lookup-page-objects state page-id)
             shape   (get objects id)
-            cpos    (gpt/point (:x shape) (:y shape))
-            pos     (gpt/point (or (:x position) (:x shape))
-                               (or (:y position) (:y shape)))
+
+            bbox (-> shape :points gsh/points->selrect)
+
+            cpos (gpt/point (:x bbox) (:y bbox))
+            pos  (gpt/point (or (:x position) (:x bbox))
+                            (or (:y position) (:y bbox)))
             displ   (gmt/translate-matrix (gpt/subtract pos cpos))]
         (rx/of (dwt/set-modifiers [id] {:displacement displ})
                (dwt/apply-modifiers [id]))))))
@@ -1544,6 +1547,7 @@
 (d/export dwt/start-move-selected)
 (d/export dwt/move-selected)
 (d/export dwt/set-rotation)
+(d/export dwt/increase-rotation)
 (d/export dwt/set-modifiers)
 (d/export dwt/apply-modifiers)
 (d/export dwt/update-dimensions)

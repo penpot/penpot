@@ -35,11 +35,12 @@
              :stroke-width "1px"
              :stroke-opacity 0.5}]]))
 
-(mf/defc render-rect [{{:keys [x y width height]} :rect :keys [color]}]
+(mf/defc render-rect [{{:keys [x y width height]} :rect :keys [color transform]}]
   [:rect  {:x x
            :y y
            :width width
            :height height
+           :transform (or transform "none")
            :style {:stroke color
                    :fill "transparent"
                    :stroke-width "1px"
@@ -76,7 +77,7 @@
              :fill line-color
              :stroke "white"
              :stroke-width 0.1}
-      (str/format "%s - (%s, %s)" (str/slice (str (:id shape)) 0 8) (fixed (:x shape)) (fixed (:y shape)))]
+      (str/format "%s - (%s, %s)" (str/slice (str (:id shape)) 0 8) (fixed (:x selrect)) (fixed (:y selrect)))]
 
      [:& cross-point {:point shape-center
                       :zoom zoom
@@ -87,7 +88,7 @@
                         :zoom zoom
                         :color line-color}])
 
-     [:& render-rect-points {:rect selrect
+     [:& render-rect-points {:points (:points shape)
                              :color line-color}]
 
      [:& render-rect {:rect selrect
