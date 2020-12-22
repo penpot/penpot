@@ -188,10 +188,6 @@ function publish-latest-images {
 
 function publish-snapshot-images {
     set -x
-    docker tag $ORGANIZATION/frontend:$CURRENT_VERSION $ORGANIZATION/frontend:$CURRENT_BRANCH
-    docker tag $ORGANIZATION/backend:$CURRENT_VERSION $ORGANIZATION/backend:$CURRENT_BRANCH
-    docker tag $ORGANIZATION/exporter:$CURRENT_VERSION $ORGANIZATION/exporter:$CURRENT_BRANCH
-
     docker push $ORGANIZATION/frontend:$CURRENT_BRANCH;
     docker push $ORGANIZATION/backend:$CURRENT_BRANCH;
     docker push $ORGANIZATION/exporter:$CURRENT_BRANCH;
