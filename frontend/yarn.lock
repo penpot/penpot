@@ -1373,9 +1373,9 @@ editorconfig@^0.15.3:
     sigmund "^1.0.1"
 
 electron-to-chromium@^1.3.621:
-  version "1.3.629"
-  resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.3.629.tgz#a08d13b64d90e3c77ec5b9bffa3efbc5b4a00969"
-  integrity sha512-iSPPJtPvHrMAvYOt+9cdbDmTasPqwnwz4lkP8Dn200gDNUBQOLQ96xUsWXBwXslAo5XxdoXAoQQ3RAy4uao9IQ==
+  version "1.3.631"
+  resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.3.631.tgz#b28ebc7bfb348bb0aede2fae8888d775ddb6f5ee"
+  integrity sha512-mPEG/52142po0XK1jQkZtbMmp38MZtQ3JDFItYxV65WXyhxDYEQ54tP4rb93m0RbMlZqQ+4zBw2N7UumSgGfbA==
 
 elliptic@^6.5.3:
   version "6.5.3"
@@ -4416,10 +4416,10 @@ shadow-cljs-jar@1.3.2:
   resolved "https://registry.yarnpkg.com/shadow-cljs-jar/-/shadow-cljs-jar-1.3.2.tgz#97273afe1747b6a2311917c1c88d9e243c81957b"
   integrity sha512-XmeffAZHv8z7451kzeq9oKh8fh278Ak+UIOGGrapyqrFBB773xN8vMQ3O7J7TYLnb9BUwcqadKkmgaq7q6fhZg==
 
-shadow-cljs@2.11.9:
-  version "2.11.9"
-  resolved "https://registry.yarnpkg.com/shadow-cljs/-/shadow-cljs-2.11.9.tgz#28b728e5bae703759a17af2608ea7a577de34811"
-  integrity sha512-hwfB435Xk1SRDns98KjHeU2e0MKhexD7BVgY8ck4PVLlhKvMrhztwJzpfieIN3b6Thd4f3IeJpVcGUFooQ5iLA==
+shadow-cljs@^2.11.9:
+  version "2.11.10"
+  resolved "https://registry.yarnpkg.com/shadow-cljs/-/shadow-cljs-2.11.10.tgz#0d55263a5ad31cac48d07fe9c719821122ec969d"
+  integrity sha512-/QbBjT75Dn+SY5C7ntu0VSYrId9Jj2EjncxpnB9E9OJn7mpdbmK3zs+PIC/6gpPdBr4gUhfagauD6AJEmsI6xg==
   dependencies:
     node-libs-browser "^2.2.1"
     readline-sync "^1.4.7"

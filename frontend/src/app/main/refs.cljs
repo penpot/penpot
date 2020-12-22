@@ -163,7 +163,7 @@
                   objects  (get-in state [:workspace-data :pages-index page-id :objects])
                   selected (get-in state [:workspace-local :selected])
                   children (cp/get-children id objects)]
-              (some selected children)))]
+              (some #(contains? selected %) children)))]
     (l/derived selector st/state)))
 
 

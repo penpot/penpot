@@ -14,7 +14,7 @@
   funcool/beicon {:mvn/version "2020.12.20-1"}
   funcool/cuerdas {:mvn/version "2020.03.26-3"}
   funcool/okulary {:mvn/version "2020.04.14-0"}
-  funcool/potok {:mvn/version "3.1.0"}
+  funcool/potok {:mvn/version "3.2.0"}
   funcool/promesa {:mvn/version "6.0.0"}
   funcool/rumext {:mvn/version "2020.11.27-0"}
 
@@ -35,7 +35,7 @@
     funcool/datoteka {:mvn/version "1.2.0"}
     binaryage/devtools {:mvn/version "RELEASE"}
 
-    thheller/shadow-cljs {:mvn/version "2.11.7"}
+    thheller/shadow-cljs {:mvn/version "2.11.10"}
 
     ;; i18n parsing
     carocad/parcera {:mvn/version "0.11.0"}
