@@ -74,12 +74,6 @@
           (fn [value]
             (emit-changes! #(assoc-in % keys value))))
 
-        handle-change-event
-        (fn [& keys]
-          (fn [event]
-            (let [change-fn (apply handle-change keys)]
-              (-> event dom/get-target dom/get-value parse-integer change-fn))))
-
         handle-change-size
         (fn [size]
           (let [grid (d/deep-merge grid (:changes @state))
@@ -136,10 +130,10 @@
 
       (if (= type :square)
         [:div.input-element.pixels
-         [:> numeric-input {:min "1"
+         [:> numeric-input {:min 1
                             :no-validate true
                             :value (:size params)
-                            :on-change (handle-change-event :params :size)}]]
+                            :on-change (handle-change :params :size)}]]
         [:& editable-select {:value (:size params)
                              :type (when (number? (:size params)) "number" )
                              :class "input-option"

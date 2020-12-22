@@ -49,24 +49,16 @@
                       (udw/update-dimensions [(:id shape)] :height new-height))))
 
         on-size-change
-        (fn [event attr]
-          (let [value (-> (dom/get-target event)
-                          (dom/get-value)
-                          (d/parse-integer 1))]
-            (st/emit! (udw/update-dimensions [(:id shape)] attr value))))
+        (fn [value attr]
+          (st/emit! (udw/update-dimensions [(:id shape)] attr value)))
 
         on-proportion-lock-change
         (fn [event]
           (st/emit! (udw/set-shape-proportion-lock (:id shape) (not (:proportion-lock shape)))))
 
         on-position-change
-        (fn [event attr]
-          (let [cval (-> (dom/get-target event)
-                         (dom/get-value)
-                         (d/parse-integer 0))]
-            ;; TODO: Change so not apply the modifiers until blur
-            (when cval
-              (st/emit! (udw/update-position (:id shape) {attr cval})))))
+        (fn [value attr]
+          (st/emit! (udw/update-position (:id shape) {attr value})))
 
         on-width-change #(on-size-change % :width)
         on-height-change #(on-size-change % :height)
@@ -105,7 +97,7 @@
           i/lock
           i/unlock)]
        [:div.input-element.pixels
-        [:> numeric-input {:min "1"
+        [:> numeric-input {:min 1
                            :on-click select-all
                            :on-change on-width-change
                            :value (-> (:width shape)
@@ -114,7 +106,7 @@
 
 
        [:div.input-element.pixels
-        [:> numeric-input {:min "1"
+        [:> numeric-input {:min 1
                            :on-click select-all
                            :on-change on-height-change
                            :value (-> (:height shape)

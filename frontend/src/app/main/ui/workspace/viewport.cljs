@@ -134,9 +134,11 @@
   (let [objects   (unchecked-get props "objects")
         selected  (or (unchecked-get props "selected") #{})
         hover     (or (unchecked-get props "hover") #{})
+        edition   (unchecked-get props "edition")
         outline?  (set/union selected hover)
         show-outline? (fn [shape] (and (not (:hidden shape))
                                        (not (:blocked shape))
+                                       (not= edition (:id shape))
                                        (outline? (:id shape))))
         shapes    (->> (vals objects) (filter show-outline?))
         transform (mf/deref refs/current-transform)
@@ -158,6 +160,7 @@
         selected (unchecked-get props "selected")
         ids      (unchecked-get props "ids")
         ghost?   (unchecked-get props "ghost?")
+        edition  (unchecked-get props "edition")
         data     (mf/deref refs/workspace-page)
         objects  (:objects data)
         root     (get objects uuid/zero)
@@ -183,7 +186,8 @@
      (when (not ghost?)
        [:& shape-outlines {:objects objects
                            :selected selected
-                           :hover hover}])]))
+                           :hover hover
+                           :edition edition}])]))
 
 (mf/defc ghost-frames
   {::mf/wrap-props false}
@@ -611,7 +615,8 @@
                                      "auto")}}
        [:& frames {:key page-id
                    :hover (:hover local)
-                   :selected selected}]
+                   :selected selected
+                   :edition edition}]
 
        (when (= :move (:transform local))
          [:& ghost-frames {:modifiers (:modifiers local)

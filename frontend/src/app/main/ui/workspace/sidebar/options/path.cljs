@@ -11,6 +11,7 @@
   (:require
    [rumext.alpha :as mf]
    [app.common.data :as d]
+   [app.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
    [app.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]
    [app.main.ui.workspace.sidebar.options.shadow :refer [shadow-menu]]
@@ -20,8 +21,12 @@
   [{:keys [shape] :as props}]
   (let [ids [(:id shape)]
         type (:type shape)
+        measure-values (select-keys shape measure-attrs)
         stroke-values (select-keys shape stroke-attrs)]
     [:*
+     [:& measures-menu {:ids ids
+                        :type type
+                        :values measure-values}]
      [:& fill-menu {:ids ids
                     :type type
                     :values (select-keys shape fill-attrs)}]
