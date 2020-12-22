@@ -29,7 +29,7 @@
     "postcss-clean": "^1.1.0",
     "rimraf": "^3.0.0",
     "sass": "^1.30.0",
-    "shadow-cljs": "^2.11.9"
+    "shadow-cljs": "^2.11.10"
   },
   "dependencies": {
     "date-fns": "^2.15.0",

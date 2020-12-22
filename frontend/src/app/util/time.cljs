@@ -9,14 +9,15 @@
 
 (ns app.util.time
   (:require
-   ["date-fns/format" :as df-format]
-   ["date-fns/formatDistanceToNow" :as df-format-distance]
-   ["date-fns/formatDistanceToNowStrict" :as df-format-distance-strict]
-   ["date-fns/locale/fr" :as df-fr-locale]
-   ["date-fns/locale/en-US" :as df-en-locale]
-   ["date-fns/locale/es" :as df-es-locale]
-   ["date-fns/locale/ru" :as df-ru-locale]
+   ["date-fns/format" :default df-format]
+   ["date-fns/formatDistanceToNow" :default df-format-distance]
+   ["date-fns/formatDistanceToNowStrict" :default df-format-distance-strict]
+   ["date-fns/locale/fr" :default df-fr-locale]
+   ["date-fns/locale/en-US" :default df-en-locale]
+   ["date-fns/locale/es" :default df-es-locale]
+   ["date-fns/locale/ru" :default df-ru-locale]
    [goog.object :as gobj]))
+
 
 (def ^:private locales
   #js {:default df-en-locale
