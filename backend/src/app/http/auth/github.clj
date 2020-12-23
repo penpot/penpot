@@ -32,7 +32,7 @@
 
 (def user-info-url (str (assoc base-api-github-uri :path "/user")))
 
-(def scope "read:user")
+(def scope "user:email")
 
 (defn- build-redirect-url
   []
@@ -40,14 +40,15 @@
     (str (assoc public :path "/api/oauth/github/callback"))))
 
 (defn- get-access-token
-  [code]
+  [code state-token]
   (let [params {:client_id (:github-client-id cfg/config)
                 :client_secret (:github-client-secret cfg/config)
                 :code code
-                :grant_type "authorization_code"
+                :state state-token
                 :redirect_uri (build-redirect-url)}
         req    {:method :post
-                :headers {"content-type" "application/x-www-form-urlencoded"}
+                :headers {"content-type" "application/x-www-form-urlencoded"
+                          "accept" "application/json"}
                 :uri token-url
                 :body (uri/map->query-string params)}
         res    (http/send! req)]
@@ -69,7 +70,7 @@
 (defn- get-user-info
   [token]
   (let [req {:uri user-info-url
-             :headers {"Authorization" (str "Bearer " token)}
+             :headers {"authorization" (str "token " token)}
              :method :get}
         res (http/send! req)]
 
@@ -81,7 +82,6 @@
 
     (try
       (let [data (json/read-str (:body res))]
-        ;; (clojure.pprint/pprint data)
         {:email (get data "email")
          :fullname (get data "name")})
       (catch Throwable e
@@ -90,28 +90,27 @@
 
 (defn auth
   [req]
-  (let [token  (tokens/generate
-                {:iss :github-oauth
-                 :exp (dt/in-future "15m")})
+  (let [state-token (tokens/generate
+                      {:iss :github-oauth
+                       :exp (dt/in-future "10m")})
 
         params {:client_id (:github-client-id cfg/config)
                 :redirect_uri (build-redirect-url)
-                :response_type "code"
-                :state token
+                :state state-token
                 :scope scope}
-        query  (uri/map->query-string params)
-        uri    (-> authorize-uri
-                   (assoc :query query))]
+        query (uri/map->query-string params)
+        uri (-> authorize-uri
+                (assoc :query query))]
     {:status 200
      :body {:redirect-uri (str uri)}}))
 
 (defn callback
   [req]
-  (let [token (get-in req [:params :state])
-        tdata (tokens/verify token {:iss :github-oauth})
-        info  (some-> (get-in req [:params :code])
-                      (get-access-token)
-                      (get-user-info))]
+  (let [state-token (get-in req [:params :state])
+        _tdata (tokens/verify state-token {:iss :github-oauth})
+        info (some-> (get-in req [:params :code])
+                     (get-access-token state-token)
+                     (get-user-info))]
 
     (when-not info
       (ex/raise :type :authentication

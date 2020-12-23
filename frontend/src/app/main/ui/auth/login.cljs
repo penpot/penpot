@@ -150,7 +150,7 @@
        {:on-click login-with-github}
        [:img.logo
         {:src "/images/icons/brand-github.svg"}]
-       (t locale "auth.login-with-github-submit")])
+       (tr "auth.login-with-github-submit")])
 
     [:div.links.demo
      [:div.link-entry
