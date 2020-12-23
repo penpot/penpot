@@ -120,7 +120,8 @@
           (dom/stop-propagation event)
           (if (:blocked item)
             (st/emit! (dw/update-shape-flags id {:blocked false}))
-            (st/emit! (dw/update-shape-flags id {:blocked true}))))
+            (st/emit! (dw/update-shape-flags id {:blocked true})
+                      (dw/select-shape id true))))
 
         toggle-visibility
         (fn [event]
