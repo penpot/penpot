@@ -148,6 +148,7 @@
                         (cond-> s
                           true
                           (assoc :stroke-color (:color color)
+                                 :stroke-opacity (:opacity color)
                                  :stroke-color-gradient (:gradient color)
                                  :stroke-color-ref-id (:id color)
                                  :stroke-color-ref-file (:file-id color))
