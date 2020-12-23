@@ -100,8 +100,7 @@
       }
 
       &:hover {
-        img {display: none;}
-        .update-overlay {opacity: 1};
+        .update-overlay {opacity: 0.8};
       }
     }
   }
