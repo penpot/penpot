@@ -69,13 +69,15 @@
   [props]
   (let [layout            (obj/get props "layout")
         selected-drawtool (mf/deref refs/selected-drawing-tool)
-        select-drawtool   #(st/emit! :interrupt (dw/select-for-drawing %))]
+        select-drawtool   #(st/emit! :interrupt (dw/select-for-drawing %))
+        edition           (mf/deref refs/selected-edition)]
     [:aside.left-toolbar
      [:div.left-toolbar-inside
       [:ul.left-toolbar-options
        [:li.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.move")
-         :class (when (nil? selected-drawtool) "selected")
+         :class (when (and (nil? selected-drawtool)
+                           (not edition)) "selected")
          :on-click (st/emitf :interrupt)}
         i/pointer-inner]
        [:li.tooltip.tooltip-right
