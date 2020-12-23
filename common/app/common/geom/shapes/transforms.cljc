@@ -38,6 +38,18 @@
              (and (not no-flip) flip-y) (gmt/scale (gpt/point 1 -1)))
          (gmt/translate (gpt/negate shape-center))))))
 
+(defn inverse-transform-matrix
+  ([shape]
+   (let [shape-center (or (gco/center-shape shape)
+                          (gpt/point 0 0))]
+     (inverse-transform-matrix shape shape-center)))
+  ([shape center]
+   (let []
+     (-> (gmt/matrix)
+         (gmt/translate center)
+         (gmt/multiply (:transform-inverse shape (gmt/matrix)))
+         (gmt/translate (gpt/negate center))))))
+
 (defn transform-point-center
   "Transform a point around the shape center"
   [point center matrix]
@@ -257,6 +269,30 @@
           apply-transform-rect)]
     (apply-transform-fn shape transform)))
 
+(defn transform-gradients [shape modifiers]
+  (let [angle (d/check-num (get modifiers :rotation))
+        ;; Gradients are represented with unit vectors so its center is 0.5, 0.5
+        center (gpt/point 0.5 0.5)
+        transform (gmt/rotate-matrix angle center)
+        transform-gradient
+        (fn [{:keys [start-x start-y end-x end-y] :as gradient}]
+          (let [start-point (gpt/point start-x start-y)
+                end-point   (gpt/point end-x end-y)
+                {start-x :x start-y :y} (gpt/transform start-point transform)
+                {end-x :x end-y :y}     (gpt/transform end-point transform)]
+
+            (assoc gradient
+                   :start-x start-x
+                   :start-y start-y
+                   :end-x end-x
+                   :end-y end-y)))]
+    (cond-> shape
+      (:fill-color-gradient shape)
+      (update :fill-color-gradient transform-gradient)
+
+      (:stroke-color-gradient shape)
+      (update :stroke-color-gradient transform-gradient))))
+
 (defn set-flip [shape modifiers]
   (let [rx (get-in modifiers [:resize-vector :x])
         ry (get-in modifiers [:resize-vector :y])]
@@ -271,6 +307,7 @@
         (-> shape
             (set-flip (:modifiers shape))
             (apply-transform transform)
+            (transform-gradients (:modifiers shape))
             (dissoc :modifiers)))
       shape)))
 
@@ -296,3 +333,4 @@
         (assoc :selrect new-selrect)
         (assoc :points new-points)
         (apply-transform-rect (gmt/matrix)))))
+

@@ -266,6 +266,7 @@
 (d/export gpr/points->selrect)
 (d/export gtr/transform-shape)
 (d/export gtr/transform-matrix)
+(d/export gtr/inverse-transform-matrix)
 (d/export gtr/transform-point-center)
 (d/export gtr/transform-rect)
 (d/export gtr/update-group-selrect)

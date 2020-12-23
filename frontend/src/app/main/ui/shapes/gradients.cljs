@@ -14,15 +14,21 @@
    [app.util.object :as obj]
    [app.common.uuid :as uuid]
    [app.main.ui.context :as muc]
-   [app.common.geom.point :as gpt]))
+   [app.common.geom.point :as gpt]
+   [app.common.geom.matrix :as gmt]
+   [app.common.geom.shapes :as gsh]))
 
 (mf/defc linear-gradient [{:keys [id gradient shape]}]
-  (let [{:keys [x y width height]} shape]
+  (let [{:keys [x y width height]} (:selrect shape)
+        transform (case (:type shape)
+                    :path (gmt/matrix)
+                    (gsh/inverse-transform-matrix shape (gpt/point 0.5 0.5)))]
     [:linearGradient {:id id
                       :x1 (:start-x gradient)
                       :y1 (:start-y gradient)
                       :x2 (:end-x gradient)
-                      :y2 (:end-y gradient)}
+                      :y2 (:end-y gradient)
+                      :gradient-transform transform}
      (for [{:keys [offset color opacity]} (:stops gradient)]
        [:stop {:key (str id "-stop-" offset)
                :offset (or offset 0)
@@ -30,7 +36,10 @@
                :stop-opacity opacity}])]))
 
 (mf/defc radial-gradient [{:keys [id gradient shape]}]
-  (let [{:keys [x y width height]} shape]
+  (let [{:keys [x y width height]} (:selrect shape)
+        transform (case (:type shape)
+                    :path (gmt/matrix)
+                    (gsh/inverse-transform-matrix shape))]
     (let [[x y] (if (= (:type shape) :frame) [0 0] [x y])
           translate-vec (gpt/point (+ x (* width (:start-x gradient)))
                                    (+ y (* height (:start-y gradient))))
@@ -51,10 +60,10 @@
           scale-vec (gpt/point (* scale-factor-y (/ height 2))
                                (* scale-factor-x (/ width 2)))
 
-          tr-translate (str/fmt "translate(%s, %s)" (:x translate-vec) (:y translate-vec))
-          tr-rotate (str/fmt "rotate(%s)" angle)
-          tr-scale (str/fmt "scale(%s, %s)" (:x scale-vec) (:y scale-vec))
-          transform (str/fmt "%s %s %s" tr-translate tr-rotate tr-scale)]
+          transform (gmt/multiply transform
+                                  (gmt/translate-matrix translate-vec)
+                                  (gmt/rotate-matrix angle)
+                                  (gmt/scale-matrix scale-vec))]
       [:radialGradient {:id id
                         :cx 0
                         :cy 0
