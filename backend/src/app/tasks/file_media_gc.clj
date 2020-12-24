@@ -13,20 +13,49 @@
   after some period of inactivity (the default threshold is 72h)."
   (:require
    [app.common.pages.migrations :as pmg]
+   [app.common.spec :as us]
    [app.config :as cfg]
    [app.db :as db]
    [app.metrics :as mtx]
    [app.tasks :as tasks]
    [app.util.blob :as blob]
    [app.util.time :as dt]
+   [integrant.core :as ig]
+   [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]))
 
-(defn decode-row
+(declare handler)
+(declare retrieve-candidates)
+(declare process-file)
+
+(defmethod ig/pre-init-spec ::handler [_]
+  (s/keys :req-un [::db/pool]))
+
+(defmethod ig/init-key ::handler
+  [_ cfg]
+  (partial handler cfg))
+
+(defn- handler
+  [{:keys [pool]} _]
+  (db/with-atomic [conn pool]
+    (loop []
+      (let [files (retrieve-candidates conn)]
+        (when (seq files)
+          (run! (partial process-file conn) files)
+          (recur))))))
+
+;; (mtx/instrument-with-summary!
+;;  {:var #'handler
+;;   :id "tasks__file_media_gc"
+;;   :help "Timing of task: file_media_gc"})
+
+(defn- decode-row
   [{:keys [data] :as row}]
   (cond-> row
     (bytes? data) (assoc :data (blob/decode data))))
 
-(def sql:retrieve-candidates-chunk
+(def ^:private
+  sql:retrieve-candidates-chunk
   "select f.id,
           f.data,
           extract(epoch from (now() - f.modified_at))::bigint as age
@@ -37,9 +66,7 @@
     limit 10
     for update skip locked")
 
-(defn retrieve-candidates
-  "Retrieves a list of files that are candidates to be garbage
-  collected."
+(defn- retrieve-candidates
   [conn]
   (let [threshold (:file-trimming-threshold cfg/config)
         interval  (db/interval threshold)]
@@ -47,7 +74,8 @@
          (map (fn [{:keys [age] :as row}]
                 (assoc row :age (dt/duration {:seconds age})))))))
 
-(def collect-media-xf
+(def ^:private
+  collect-media-xf
   (comp
    (map :objects)
    (mapcat vals)
@@ -92,19 +120,3 @@
                   {:id id}))
 
     nil))
-
-(defn handler
-  [_task]
-  (db/with-atomic [conn db/pool]
-    (loop []
-      (let [files (retrieve-candidates conn)]
-        (when (seq files)
-          (run! (partial process-file conn) files)
-          (recur))))))
-
-
-(mtx/instrument-with-summary!
- {:var #'handler
-  :id "tasks__file_media_gc"
-  :help "Timing of task: file_media_gc"})
-

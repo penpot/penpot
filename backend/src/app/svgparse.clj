@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.services.svgparse
+(ns app.svgparse
   (:require
    [app.common.exceptions :as ex]
    [clojure.xml :as xml]

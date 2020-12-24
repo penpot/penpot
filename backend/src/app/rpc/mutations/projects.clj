@@ -7,15 +7,15 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.services.mutations.projects
+(ns app.rpc.mutations.projects
   (:require
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
-   [app.services.mutations :as sm]
-   [app.services.queries.projects :as proj]
+   [app.rpc.queries.projects :as proj]
    [app.tasks :as tasks]
+   [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
 
 ;; --- Helpers & Specs
@@ -36,9 +36,9 @@
   (s/keys :req-un [::profile-id ::team-id ::name]
           :opt-un [::id]))
 
-(sm/defmutation ::create-project
-  [params]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::create-project
+  [{:keys [pool] :as cfg} params]
+  (db/with-atomic [conn pool]
     (let [proj   (create-project conn params)
           params (assoc params :project-id (:id proj))]
       (create-project-profile conn params)
@@ -88,9 +88,9 @@
 (s/def ::update-project-pin
   (s/keys :req-un [::profile-id ::id ::team-id ::is-pinned]))
 
-(sm/defmutation ::update-project-pin
-  [{:keys [id profile-id team-id is-pinned] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::update-project-pin
+  [{:keys [pool] :as cfg} {:keys [id profile-id team-id is-pinned] :as params}]
+  (db/with-atomic [conn pool]
     (db/exec-one! conn [sql:update-project-pin team-id id profile-id is-pinned is-pinned])
     nil))
 
@@ -102,9 +102,9 @@
 (s/def ::rename-project
   (s/keys :req-un [::profile-id ::name ::id]))
 
-(sm/defmutation ::rename-project
-  [{:keys [id profile-id name] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::rename-project
+  [{:keys [pool] :as cfg} {:keys [id profile-id name] :as params}]
+  (db/with-atomic [conn pool]
     (proj/check-edition-permissions! conn profile-id id)
     (db/update! conn :project
                 {:name name}
@@ -117,9 +117,9 @@
 (s/def ::delete-project
   (s/keys :req-un [::id ::profile-id]))
 
-(sm/defmutation ::delete-project
-  [{:keys [id profile-id] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::delete-project
+  [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
+  (db/with-atomic [conn pool]
     (proj/check-edition-permissions! conn profile-id id)
 
     ;; Schedule object deletion

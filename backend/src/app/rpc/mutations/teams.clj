@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.services.mutations.teams
+(ns app.rpc.mutations.teams
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
@@ -18,11 +18,10 @@
    [app.emails :as emails]
    [app.media :as media]
    [app.media-storage :as mst]
-   [app.services.mutations :as sm]
-   [app.services.mutations.projects :as projects]
-   [app.services.queries.profile :as profile]
-   [app.services.queries.teams :as teams]
-   [app.services.tokens :as tokens]
+   [app.rpc.mutations.projects :as projects]
+   [app.rpc.queries.profile :as profile]
+   [app.rpc.queries.teams :as teams]
+   [app.util.services :as sv]
    [app.tasks :as tasks]
    [app.util.storage :as ust]
    [app.util.time :as dt]
@@ -48,9 +47,9 @@
   (s/keys :req-un [::profile-id ::name]
           :opt-un [::id]))
 
-(sm/defmutation ::create-team
-  [params]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::create-team
+  [{:keys [pool] :as cfg} params]
+  (db/with-atomic [conn pool]
     (let [team   (create-team conn params)
           params (assoc params :team-id (:id team))]
       (create-team-profile conn params)
@@ -90,9 +89,9 @@
 (s/def ::update-team
   (s/keys :req-un [::profile-id ::name ::id]))
 
-(sm/defmutation ::update-team
-  [{:keys [id name profile-id] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::update-team
+  [{:keys [pool] :as cfg} {:keys [id name profile-id] :as params}]
+  (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id id)
     (db/update! conn :team
                 {:name name}
@@ -105,9 +104,9 @@
 (s/def ::leave-team
   (s/keys :req-un [::profile-id ::id]))
 
-(sm/defmutation ::leave-team
-  [{:keys [id profile-id] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::leave-team
+  [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
+  (db/with-atomic [conn pool]
     (let [perms   (teams/check-read-permissions! conn profile-id id)
           members (teams/retrieve-team-members conn id)]
 
@@ -133,9 +132,9 @@
 (s/def ::delete-team
   (s/keys :req-un [::profile-id ::id]))
 
-(sm/defmutation ::delete-team
-  [{:keys [id profile-id] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::delete-team
+  [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
+  (db/with-atomic [conn pool]
     (let [perms (teams/check-edition-permissions! conn profile-id id)]
       (when-not (:is-owner perms)
         (ex/raise :type :validation
@@ -156,9 +155,9 @@
 (s/def ::update-team-member-role
   (s/keys :req-un [::profile-id ::team-id ::member-id ::role]))
 
-(sm/defmutation ::update-team-member-role
-  [{:keys [team-id profile-id member-id role] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::update-team-member-role
+  [{:keys [pool] :as cfg} {:keys [team-id profile-id member-id role] :as params}]
+  (db/with-atomic [conn pool]
     (let [perms   (teams/check-read-permissions! conn profile-id team-id)
 
           ;; We retrieve all team members instead of query the
@@ -218,9 +217,9 @@
 (s/def ::delete-team-member
   (s/keys :req-un [::profile-id ::team-id ::member-id]))
 
-(sm/defmutation ::delete-team-member
-  [{:keys [team-id profile-id member-id] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::delete-team-member
+  [{:keys [pool] :as cfg} {:keys [team-id profile-id member-id] :as params}]
+  (db/with-atomic [conn pool]
     (let [perms (teams/check-read-permissions! conn profile-id team-id)]
       (when-not (or (:is-owner perms)
                     (:is-admin perms))
@@ -245,15 +244,16 @@
 (s/def ::update-team-photo
   (s/keys :req-un [::profile-id ::team-id ::file]))
 
-(sm/defmutation ::update-team-photo
-  [{:keys [profile-id file team-id] :as params}]
+(sv/defmethod ::update-team-photo
+  [{:keys [pool] :as cfg} {:keys [profile-id file team-id] :as params}]
   (media/validate-media-type (:content-type file))
-  (db/with-atomic [conn db/pool]
+  (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)
     (let [team    (teams/retrieve-team conn profile-id team-id)
           _       (media/run {:cmd :info :input {:path (:tempfile file)
                                                  :mtype (:content-type file)}})
-          photo   (upload-photo conn params)]
+          cfg     (assoc cfg :conn conn)
+          photo   (upload-photo cfg params)]
 
       ;; Schedule deletion of old photo
       (when (and (string? (:photo team))
@@ -268,7 +268,7 @@
       (assoc team :photo (str photo)))))
 
 (defn upload-photo
-  [_conn {:keys [file]}]
+  [{:keys [storage]} {:keys [file]}]
   (let [prefix (-> (bn/random-bytes 8)
                    (bc/bytes->b64u)
                    (bc/bytes->str))
@@ -281,7 +281,7 @@
                   :input {:path (fs/path (:tempfile file))
                           :mtype (:content-type file)}})
         name   (str prefix (cm/format->extension (:format thumb)))]
-    (ust/save! mst/media-storage name (:data thumb))))
+    (ust/save! storage name (:data thumb))))
 
 
 ;; --- Mutation: Invite Member
@@ -290,21 +290,21 @@
 (s/def ::invite-team-member
   (s/keys :req-un [::profile-id ::team-id ::email ::role]))
 
-(sm/defmutation ::invite-team-member
-  [{:keys [profile-id team-id email role] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::invite-team-member
+  [{:keys [pool tokens] :as cfg} {:keys [profile-id team-id email role] :as params}]
+  (db/with-atomic [conn pool]
     (let [perms   (teams/check-edition-permissions! conn profile-id team-id)
           profile (db/get-by-id conn :profile profile-id)
           member  (profile/retrieve-profile-data-by-email conn email)
           team    (db/get-by-id conn :team team-id)
-          token   (tokens/generate
-                   {:iss :team-invitation
-                    :exp (dt/in-future "24h")
-                    :profile-id (:id profile)
-                    :role role
-                    :team-id team-id
-                    :member-email (:email member email)
-                    :member-id (:id member)})]
+          token   (tokens :generate
+                          {:iss :team-invitation
+                           :exp (dt/in-future "24h")
+                           :profile-id (:id profile)
+                           :role role
+                           :team-id team-id
+                           :member-email (:email member email)
+                           :member-id (:id member)})]
 
       (when-not (:is-admin perms)
         (ex/raise :type :validation

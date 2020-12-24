@@ -7,20 +7,23 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.services.mutations.demo
+(ns app.rpc.mutations.demo
   "A demo specific mutations."
   (:require
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
-   [app.services.mutations :as sm]
-   [app.services.mutations.profile :as profile]
+   [app.rpc.mutations.profile :as profile]
    [app.tasks :as tasks]
+   [app.util.services :as sv]
    [buddy.core.codecs :as bc]
-   [buddy.core.nonce :as bn]))
+   [buddy.core.nonce :as bn]
+   [clojure.spec.alpha :as s]))
 
-(sm/defmutation ::create-demo-profile
-  [_]
+(s/def ::create-demo-profile any?)
+
+(sv/defmethod ::create-demo-profile {:auth false}
+  [{:keys [pool] :as cfg} _]
   (let [id       (uuid/next)
         sem      (System/currentTimeMillis)
         email    (str "demo-" sem ".demo@nodomain.com")
@@ -33,7 +36,7 @@
                   :fullname fullname
                   :demo? true
                   :password password}]
-    (db/with-atomic [conn db/pool]
+    (db/with-atomic [conn pool]
       (->> (#'profile/create-profile conn params)
            (#'profile/create-profile-relations conn))
 

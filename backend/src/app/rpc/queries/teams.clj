@@ -7,13 +7,13 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.services.queries.teams
+(ns app.rpc.queries.teams
   (:require
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
-   [app.services.queries :as sq]
-   [app.services.queries.profile :as profile]
+   [app.rpc.queries.profile :as profile]
+   [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
 
 ;; --- Team Edition Permissions
@@ -54,9 +54,9 @@
 (s/def ::teams
   (s/keys :req-un [::profile-id]))
 
-(sq/defquery ::teams
-  [{:keys [profile-id]}]
-  (with-open [conn (db/open)]
+(sv/defmethod ::teams
+  [{:keys [pool] :as cfg} {:keys [profile-id]}]
+  (with-open [conn (db/open pool)]
     (retrieve-teams conn profile-id)))
 
 (def sql:teams
@@ -84,9 +84,9 @@
 (s/def ::team
   (s/keys :req-un [::profile-id ::id]))
 
-(sq/defquery ::team
-  [{:keys [profile-id id]}]
-  (with-open [conn (db/open)]
+(sv/defmethod ::team
+  [{:keys [pool] :as cfg} {:keys [profile-id id]}]
+  (with-open [conn (db/open pool)]
     (retrieve-team conn profile-id id)))
 
 (defn retrieve-team
@@ -108,9 +108,9 @@
 (s/def ::team-members
   (s/keys :req-un [::profile-id ::team-id]))
 
-(sq/defquery ::team-members
-  [{:keys [profile-id team-id]}]
-  (with-open [conn (db/open)]
+(sv/defmethod ::team-members
+  [{:keys [pool] :as cfg} {:keys [profile-id team-id]}]
+  (with-open [conn (db/open pool)]
     (check-edition-permissions! conn profile-id team-id)
     (retrieve-team-members conn team-id)))
 
@@ -141,9 +141,9 @@
                  :opt-un [::team-id ::file-id])
          #(or (:team-id %) (:file-id %))))
 
-(sq/defquery ::team-users
-  [{:keys [profile-id team-id file-id]}]
-  (with-open [conn (db/open)]
+(sv/defmethod ::team-users
+  [{:keys [pool] :as cfg} {:keys [profile-id team-id file-id]}]
+  (with-open [conn (db/open pool)]
     (if team-id
       (do
         (check-edition-permissions! conn profile-id team-id)
@@ -197,9 +197,9 @@
 (s/def ::team-stats
   (s/keys :req-un [::profile-id ::team-id]))
 
-(sq/defquery ::team-stats
-  [{:keys [profile-id team-id]}]
-  (with-open [conn (db/open)]
+(sv/defmethod ::team-stats
+  [{:keys [pool] :as cfg} {:keys [profile-id team-id]}]
+  (with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id team-id)
     (retrieve-team-stats conn team-id)))
 

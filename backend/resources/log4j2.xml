@@ -13,7 +13,7 @@
       <DefaultRolloverStrategy max="9"/>
     </RollingFile>
 
-    <CljFn name="error-reporter" ns="app.error-reporter" fn="enqueue">
+    <CljFn name="error-reporter" ns="app.error-reporter" fn="queue-fn">
       <PatternLayout pattern="[%d{YYYY-MM-dd HH:mm:ss.SSS}] [%t] %level{length=1} %logger{36} - %msg%n"/>
     </CljFn>
   </Appenders>

@@ -33,7 +33,7 @@
 
 (defn- request-page
   [file-id page-id]
-  (let [uri "/api/w/query/page"]
+  (let [uri "/api/rpc/query/page"]
     (p/create
      (fn [resolve reject]
        (->> (http/send! {:uri uri

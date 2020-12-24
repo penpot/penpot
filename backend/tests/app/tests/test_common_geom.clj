@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.tests.test_common_geom
+(ns app.tests.test-common-geom
   (:require
    [clojure.test :as t]
    [app.common.geom.point :as gpt]

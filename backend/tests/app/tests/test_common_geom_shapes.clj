@@ -15,11 +15,12 @@
    [app.common.pages :refer [make-minimal-shape]]
    [clojure.test :as t]))
 
-(def default-path [{:command :move-to :params {:x 0 :y 0}}
-                   {:command :line-to :params {:x 20 :y 20}}
-                   {:command :line-to :params {:x 30 :y 30}}
-                   {:command :curve-to :params {:x 40 :y 40 :c1x 35 :c1y 35 :c2x 45 :c2y 45}}
-                   {:command :close-path}])
+(def default-path
+  [{:command :move-to :params {:x 0 :y 0}}
+   {:command :line-to :params {:x 20 :y 20}}
+   {:command :line-to :params {:x 30 :y 30}}
+   {:command :curve-to :params {:x 40 :y 40 :c1x 35 :c1y 35 :c2x 45 :c2y 45}}
+   {:command :close-path}])
 
 (defn add-path-data [shape]
   (let [content (:content shape default-path)
@@ -55,7 +56,6 @@
           (= shape-before shape-after))
 
       :rect :path))
-  
 
   (t/testing "Transform shape with translation modifiers"
     (t/are [type]
@@ -139,7 +139,7 @@
                    (get-in shape-after  [:selrect :height])))
           (t/is (> (get-in shape-after  [:selrect :height]) 0)))
       :rect :path))
-  
+
   (t/testing "Transform shape with rotation modifiers"
     (t/are [type]
         (let [modifiers {:rotation 30}

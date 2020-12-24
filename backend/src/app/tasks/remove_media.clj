@@ -8,13 +8,14 @@
 ;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.tasks.remove-media
-  "Demo accounts garbage collector."
+  "TODO: pending to be refactored together with the storage
+  subsystem."
   (:require
    [app.common.spec :as us]
    [app.db :as db]
-   [app.media-storage :as mst]
-   [app.metrics :as mtx]
-   [app.util.storage :as ust]
+   ;; [app.media-storage :as mst]
+   ;; [app.metrics :as mtx]
+   ;; [app.util.storage :as ust]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]))
 
@@ -26,21 +27,21 @@
 ;; system. Mainly used for profile photo change; when we really know
 ;; that the previous photo becomes unused.
 
-(s/def ::path ::us/not-empty-string)
-(s/def ::props
-  (s/keys :req-un [::path]))
+;; (s/def ::path ::us/not-empty-string)
+;; (s/def ::props
+;;   (s/keys :req-un [::path]))
 
-(defn handler
-  [{:keys [props] :as task}]
-  (us/verify ::props props)
-  (when (ust/exists? mst/media-storage (:path props))
-    (ust/delete! mst/media-storage (:path props))
-    (log/debug "Media " (:path props) " removed.")))
+;; (defn handler
+;;   [{:keys [props] :as task}]
+;;   (us/verify ::props props)
+;;   (when (ust/exists? mst/media-storage (:path props))
+;;     (ust/delete! mst/media-storage (:path props))
+;;     (log/debug "Media " (:path props) " removed.")))
 
-(mtx/instrument-with-summary!
- {:var #'handler
-  :id "tasks__remove_media"
-  :help "Timing of remove-media task."})
+;; (mtx/instrument-with-summary!
+;;  {:var #'handler
+;;   :id "tasks__remove_media"
+;;   :help "Timing of remove-media task."})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Task: Trim Media Storage
@@ -59,37 +60,35 @@
 ;; task (`remove-deleted-media`) permanently delete the file from the
 ;; filesystem when is executed (by scheduler).
 
-(def ^:private
-  sql:retrieve-peding-to-delete
-  "with items_part as (
-     select i.id
-       from pending_to_delete as i
-      order by i.created_at
-      limit ?
-      for update skip locked
-   )
-   delete from pending_to_delete
-    where id in (select id from items_part)
-   returning *")
+;; (def ^:private
+;;   sql:retrieve-peding-to-delete
+;;   "with items_part as (
+;;      select i.id
+;;        from pending_to_delete as i
+;;       order by i.created_at
+;;       limit ?
+;;       for update skip locked
+;;    )
+;;    delete from pending_to_delete
+;;     where id in (select id from items_part)
+;;    returning *")
 
-(defn trim-media-storage
-  [_task]
-  (letfn [(decode-row [{:keys [data] :as row}]
-            (cond-> row
-              (db/pgobject? data) (assoc :data (db/decode-json-pgobject data))))
-          (retrieve-items [conn]
-            (->> (db/exec! conn [sql:retrieve-peding-to-delete 10])
-                 (map decode-row)
-                 (map :data)))
-          (remove-media [rows]
-            (run! (fn [item]
-                    (let [path (get item "path")]
-                      (ust/delete! mst/media-storage path)))
-                  rows))]
-    (loop []
-      (let [rows (retrieve-items db/pool)]
-        (when-not (empty? rows)
-          (remove-media rows)
-          (recur))))))
-
-
+;; (defn trim-media-storage
+;;   [_task]
+;;   (letfn [(decode-row [{:keys [data] :as row}]
+;;             (cond-> row
+;;               (db/pgobject? data) (assoc :data (db/decode-json-pgobject data))))
+;;           (retrieve-items [conn]
+;;             (->> (db/exec! conn [sql:retrieve-peding-to-delete 10])
+;;                  (map decode-row)
+;;                  (map :data)))
+;;           (remove-media [rows]
+;;             (run! (fn [item]
+;;                     (let [path (get item "path")]
+;;                       (ust/delete! mst/media-storage path)))
+;;                   rows))]
+;;     (loop []
+;;       (let [rows (retrieve-items db/pool)]
+;;         (when-not (empty? rows)
+;;           (remove-media rows)
+;;           (recur))))))

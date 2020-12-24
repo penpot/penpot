@@ -13,8 +13,6 @@
    [datoteka.core :as fs]
    [app.common.uuid :as uuid]
    [app.db :as db]
-   [app.services.mutations :as sm]
-   [app.services.queries :as sq]
    [app.tests.helpers :as th]
    [app.util.storage :as ust]))
 
@@ -22,22 +20,22 @@
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest media-crud
-  (let [prof       (th/create-profile db/pool 1)
+  (let [prof       (th/create-profile th/*pool* 1)
         team-id    (:default-team-id prof)
-        proj       (th/create-project db/pool (:id prof) team-id 1)
-        file       (th/create-file db/pool (:id prof) (:id proj) false 1)
+        proj       (th/create-project th/*pool* (:id prof) team-id 1)
+        file       (th/create-file th/*pool* (:id prof) (:id proj) false 1)
         object-id-1 (uuid/next)
         object-id-2 (uuid/next)]
 
     (t/testing "create media object from url to file"
       (let [url "https://raw.githubusercontent.com/uxbox/uxbox/develop/sample_media/images/unsplash/anna-pelzer.jpg"
-            data {::sm/type :add-media-object-from-url
+            data {::th/type :add-media-object-from-url
                   :id object-id-1
                   :profile-id (:id prof)
                   :file-id (:id file)
                   :is-local true
                   :url url}
-            out (th/try-on! (sm/handle data))]
+            out  (th/mutation! data)]
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
@@ -57,14 +55,14 @@
                      :tempfile (th/tempfile "app/tests/_files/sample.jpg")
                      :content-type "image/jpeg"
                      :size 312043}
-            data {::sm/type :upload-media-object
+            data {::th/type :upload-media-object
                   :id object-id-2
                   :profile-id (:id prof)
                   :file-id (:id file)
                   :is-local true
                   :name "testfile"
                   :content content}
-            out (th/try-on! (sm/handle data))]
+            out  (th/mutation! data)]
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
@@ -78,71 +76,4 @@
         (t/is (string? (get-in out [:result :path])))
         (t/is (string? (get-in out [:result :thumb-path])))))
 
-    #_(t/testing "list media objects by file"
-      (let [data {::sq/type :media-objects
-                  :profile-id (:id prof)
-                  :file-id (:id file)
-                  :is-local true}
-            out (th/try-on! (sq/handle data))]
-        (th/print-result! out)
-
-        ;; Result is ordered by creation date descendent
-        (t/is (= object-id-2 (get-in out [:result 0 :id])))
-        (t/is (= "testfile" (get-in out [:result 0 :name])))
-        (t/is (= "image/jpeg" (get-in out [:result 0 :mtype])))
-        (t/is (= 800 (get-in out [:result 0 :width])))
-        (t/is (= 800 (get-in out [:result 0 :height])))
-
-        (t/is (string? (get-in out [:result 0 :path])))
-        (t/is (string? (get-in out [:result 0 :thumb-path])))))
-
-    #_(t/testing "single media object"
-      (let [data {::sq/type :media-object
-                  :profile-id (:id prof)
-                  :id object-id-2}
-            out (th/try-on! (sq/handle data))]
-        ;; (th/print-result! out)
-
-        (t/is (= object-id-2 (get-in out [:result :id])))
-        (t/is (= "testfile" (get-in out [:result :name])))
-        (t/is (= "image/jpeg" (get-in out [:result :mtype])))
-        (t/is (= 800 (get-in out [:result :width])))
-        (t/is (= 800 (get-in out [:result :height])))
-
-        (t/is (string? (get-in out [:result :path])))))
-
-    #_(t/testing "delete media objects"
-      (let [data {::sm/type :delete-media-object
-                  :profile-id (:id prof)
-                  :id object-id-1}
-            out (th/try-on! (sm/handle data))]
-
-        ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-        (t/is (nil? (:result out)))))
-
-    #_(t/testing "query media object after delete"
-      (let [data {::sq/type :media-object
-                  :profile-id (:id prof)
-                  :id object-id-1}
-            out (th/try-on! (sq/handle data))]
-
-        ;; (th/print-result! out)
-        (let [error (:error out)]
-          (t/is (th/ex-info? error))
-          (t/is (th/ex-of-type? error :service-error)))
-
-        (let [error (ex-cause (:error out))]
-          (t/is (th/ex-info? error))
-          (t/is (th/ex-of-type? error :not-found)))))
-
-    #_(t/testing "query media objects after delete"
-      (let [data {::sq/type :media-objects
-                  :profile-id (:id prof)
-                  :file-id (:id file)
-                  :is-local true}
-            out (th/try-on! (sq/handle data))]
-        ;; (th/print-result! out)
-        (let [result (:result out)]
-          (t/is (= 1 (count result))))))
     ))

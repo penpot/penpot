@@ -10,54 +10,53 @@
 (ns app.http.auth.gitlab
   (:require
    [app.common.exceptions :as ex]
+   [app.common.spec :as us]
+   [app.common.data :as d]
    [app.config :as cfg]
    [app.http.session :as session]
-   [app.services.mutations :as sm]
-   [app.services.tokens :as tokens]
    [app.util.http :as http]
    [app.util.time :as dt]
    [clojure.data.json :as json]
+   [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
+   [integrant.core :as ig]
    [lambdaisland.uri :as uri]))
-
-(def default-base-gitlab-uri "https://gitlab.com")
 
 (def scope "read_user")
 
 (defn- build-redirect-url
-  []
-  (let [public (uri/uri (:public-uri cfg/config))]
+  [cfg]
+  (let [public (uri/uri (:public-uri cfg))]
     (str (assoc public :path "/api/oauth/gitlab/callback"))))
 
 
 (defn- build-oauth-uri
-  []
-  (let [base-uri (uri/uri (:gitlab-base-uri cfg/config default-base-gitlab-uri))]
+  [cfg]
+  (let [base-uri (uri/uri (:base-uri cfg))]
     (assoc base-uri :path "/oauth/authorize")))
 
 
 (defn- build-token-url
-  []
-  (let [base-uri (uri/uri (:gitlab-base-uri cfg/config default-base-gitlab-uri))]
+  [cfg]
+  (let [base-uri (uri/uri (:base-uri cfg))]
     (str (assoc base-uri :path "/oauth/token"))))
 
 
 (defn- build-user-info-url
-  []
-  (let [base-uri (uri/uri (:gitlab-base-uri cfg/config default-base-gitlab-uri))]
+  [cfg]
+  (let [base-uri (uri/uri (:base-uri cfg))]
     (str (assoc base-uri :path "/api/v4/user"))))
 
-
 (defn- get-access-token
-  [code]
-  (let [params {:client_id (:gitlab-client-id cfg/config)
-                :client_secret (:gitlab-client-secret cfg/config)
+  [cfg code]
+  (let [params {:client_id (:client-id cfg)
+                :client_secret (:client-secret cfg)
                 :code code
                 :grant_type "authorization_code"
-                :redirect_uri (build-redirect-url)}
+                :redirect_uri (build-redirect-url cfg)}
         req    {:method :post
                 :headers {"content-type" "application/x-www-form-urlencoded"}
-                :uri (build-token-url)
+                :uri (build-token-url cfg)
                 :body (uri/map->query-string params)}
         res    (http/send! req)]
 
@@ -98,12 +97,11 @@
         nil))))
 
 (defn auth
-  [_req]
-  (let [token  (tokens/generate
-                {:iss :gitlab-oauth
-                 :exp (dt/in-future "15m")})
+  [{:keys [tokens] :as cfg} _request]
+  (let [token  (tokens :generate {:iss :gitlab-oauth
+                                  :exp (dt/in-future "15m")})
 
-        params {:client_id (:gitlab-client-id cfg/config)
+        params {:client_id (:client-id cfg)
                 :redirect_uri (build-redirect-url)
                 :response_type "code"
                 :state token
@@ -115,33 +113,68 @@
      :body {:redirect-uri (str uri)}}))
 
 (defn callback
-  [req]
-  (let [token (get-in req [:params :state])
-        _     (tokens/verify token {:iss :gitlab-oauth})
-        info  (some-> (get-in req [:params :code])
-                      (get-access-token)
-                      (get-user-info))]
+  [{:keys [tokens rpc session] :as cfg} request]
+  (let [token (get-in request [:params :state])
+        _     (tokens :verify {:token token :iss :gitlab-oauth})
+        info  (some->> (get-in request [:params :code])
+                       (get-access-token cfg)
+                       (get-user-info))]
 
     (when-not info
       (ex/raise :type :authentication
                 :code :unable-to-authenticate-with-gitlab))
 
-    (let [profile (sm/handle {::sm/type :login-or-register
-                              :email (:email info)
-                              :fullname (:fullname info)})
-          uagent  (get-in req [:headers "user-agent"])
+    (let [method-fn (get-in rpc [:methods :mutation :login-or-register])
+          profile   (method-fn {:email (:email info)
+                                :fullname (:fullname info)})
+          uagent    (get-in request [:headers "user-agent"])
 
-          token   (tokens/generate
-                   {:iss :auth
-                    :exp (dt/in-future "15m")
-                    :profile-id (:id profile)})
+          token     (tokens :generate {:iss :auth
+                                       :exp (dt/in-future "15m")
+                                       :profile-id (:id profile)})
 
-          uri     (-> (uri/uri (:public-uri cfg/config))
-                      (assoc :path "/#/auth/verify-token")
-                      (assoc :query (uri/map->query-string {:token token})))
-          sid     (session/create (:id profile) uagent)]
+          uri       (-> (uri/uri (:public-uri cfg))
+                        (assoc :path "/#/auth/verify-token")
+                        (assoc :query (uri/map->query-string {:token token})))
 
+          sid       (session/create! session {:profile-id (:id profile)
+                                              :user-agent uagent})]
       {:status 302
        :headers {"location" (str uri)}
-       :cookies (session/cookies sid)
+       :cookies (session/cookies session {:value sid})
        :body ""})))
+
+
+(s/def ::client-id ::us/not-empty-string)
+(s/def ::client-secret ::us/not-empty-string)
+(s/def ::base-uri ::us/not-empty-string)
+(s/def ::public-uri ::us/not-empty-string)
+(s/def ::session map?)
+(s/def ::tokens fn?)
+
+(defmethod ig/pre-init-spec :app.http.auth/gitlab [_]
+  (s/keys :req-un [::public-uri
+                   ::session
+                   ::tokens]
+          :opt-un [::base-uri
+                   ::client-id
+                   ::client-secret]))
+
+
+(defmethod ig/prep-key :app.http.auth/gitlab
+  [_ cfg]
+  (d/merge {:base-uri "https://gitlab.com"}
+           (d/without-nils cfg)))
+
+(defn- default-handler
+  [req]
+  (ex/raise :type :not-found))
+
+(defmethod ig/init-key :app.http.auth/gitlab
+  [_ cfg]
+  (if (and (:client-id cfg)
+           (:client-secret cfg))
+    {:auth-handler #(auth cfg %)
+     :callback-handler #(callback cfg %)}
+    {:auth-handler default-handler
+     :callback-handler default-handler}))

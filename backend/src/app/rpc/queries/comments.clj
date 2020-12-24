@@ -7,13 +7,13 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.services.queries.comments
+(ns app.rpc.queries.comments
   (:require
    [app.common.spec :as us]
    [app.db :as db]
-   [app.services.queries :as sq]
-   [app.services.queries.files :as files]
-   [app.services.queries.teams :as teams]
+   [app.rpc.queries.files :as files]
+   [app.rpc.queries.teams :as teams]
+   [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
 
 (defn decode-row
@@ -34,9 +34,9 @@
                  :opt-un [::file-id ::team-id])
          #(or (:file-id %) (:team-id %))))
 
-(sq/defquery ::comment-threads
-  [{:keys [profile-id file-id] :as params}]
-  (with-open [conn (db/open)]
+(sv/defmethod ::comment-threads
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
+  (with-open [conn (db/open pool)]
     (files/check-read-permissions! conn profile-id file-id)
     (retrieve-comment-threads conn params)))
 
@@ -77,9 +77,9 @@
 (s/def ::unread-comment-threads
   (s/keys :req-un [::profile-id ::team-id]))
 
-(sq/defquery ::unread-comment-threads
-  [{:keys [profile-id team-id] :as params}]
-  (with-open [conn (db/open)]
+(sv/defmethod ::unread-comment-threads
+  [{:keys [pool] :as cfg} {:keys [profile-id team-id] :as params}]
+  (with-open [conn (db/open pool)]
     (teams/check-read-permissions! conn profile-id team-id)
     (retrieve-unread-comment-threads conn params)))
 
@@ -122,9 +122,9 @@
 (s/def ::comment-thread
   (s/keys :req-un [::profile-id ::file-id ::id]))
 
-(sq/defquery ::comment-thread
-  [{:keys [profile-id file-id id] :as params}]
-  (with-open [conn (db/open)]
+(sv/defmethod ::comment-thread
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id id] :as params}]
+  (with-open [conn (db/open pool)]
     (files/check-read-permissions! conn profile-id file-id)
     (let [sql (str "with threads as (" sql:comment-threads ")"
                    "select * from threads where id = ?")]
@@ -141,9 +141,9 @@
 (s/def ::comments
   (s/keys :req-un [::profile-id ::thread-id]))
 
-(sq/defquery ::comments
-  [{:keys [profile-id thread-id] :as params}]
-  (with-open [conn (db/open)]
+(sv/defmethod ::comments
+  [{:keys [pool] :as cfg} {:keys [profile-id thread-id] :as params}]
+  (with-open [conn (db/open pool)]
     (let [thread (db/get-by-id conn :comment-thread thread-id)]
       (files/check-read-permissions! conn profile-id (:file-id thread))
       (retrieve-comments conn thread-id))))

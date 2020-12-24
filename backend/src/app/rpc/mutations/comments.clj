@@ -7,16 +7,16 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.services.mutations.comments
+(ns app.rpc.mutations.comments
   (:require
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
-   [app.services.mutations :as sm]
-   [app.services.queries.comments :as comments]
-   [app.services.queries.files :as files]
+   [app.rpc.queries.comments :as comments]
+   [app.rpc.queries.files :as files]
    [app.util.blob :as blob]
    [app.util.time :as dt]
+   [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
 
 ;; --- Mutation: Create Comment Thread
@@ -34,9 +34,9 @@
 (s/def ::create-comment-thread
   (s/keys :req-un [::profile-id ::file-id ::position ::content ::page-id]))
 
-(sm/defmutation ::create-comment-thread
-  [{:keys [profile-id file-id] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::create-comment-thread
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
+  (db/with-atomic [conn pool]
     (files/check-read-permissions! conn profile-id file-id)
     (create-comment-thread conn params)))
 
@@ -113,9 +113,9 @@
 (s/def ::update-comment-thread-status
   (s/keys :req-un [::profile-id ::id]))
 
-(sm/defmutation ::update-comment-thread-status
-  [{:keys [profile-id id] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::update-comment-thread-status
+  [{:keys [pool] :as cfg} {:keys [profile-id id] :as params}]
+  (db/with-atomic [conn pool]
     (let [cthr (db/get-by-id conn :comment-thread id {:for-update true})]
       (when-not cthr
         (ex/raise :type :not-found))
@@ -141,9 +141,9 @@
 (s/def ::update-comment-thread
   (s/keys :req-un [::profile-id ::id ::is-resolved]))
 
-(sm/defmutation ::update-comment-thread
-  [{:keys [profile-id id is-resolved] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::update-comment-thread
+  [{:keys [pool] :as cfg} {:keys [profile-id id is-resolved] :as params}]
+  (db/with-atomic [conn pool]
     (let [thread (db/get-by-id conn :comment-thread id {:for-update true})]
       (when-not thread
         (ex/raise :type :not-found)
@@ -161,9 +161,9 @@
 (s/def ::add-comment
   (s/keys :req-un [::profile-id ::thread-id ::content]))
 
-(sm/defmutation ::add-comment
-  [{:keys [profile-id thread-id content] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::add-comment
+  [{:keys [pool] :as cfg} {:keys [profile-id thread-id content] :as params}]
+  (db/with-atomic [conn pool]
     (let [thread (-> (db/get-by-id conn :comment-thread thread-id {:for-update true})
                      (comments/decode-row))
           pname  (retrieve-page-name conn thread)]
@@ -218,9 +218,9 @@
 (s/def ::update-comment
   (s/keys :req-un [::profile-id ::id ::content]))
 
-(sm/defmutation ::update-comment
-  [{:keys [profile-id id content] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::update-comment
+  [{:keys [pool] :as cfg} {:keys [profile-id id content] :as params}]
+  (db/with-atomic [conn pool]
     (let [comment (db/get-by-id conn :comment id {:for-update true})
           _       (when-not comment (ex/raise :type :not-found))
           thread  (db/get-by-id conn :comment-thread (:thread-id comment) {:for-update true})
@@ -251,9 +251,9 @@
 (s/def ::delete-comment-thread
   (s/keys :req-un [::profile-id ::id]))
 
-(sm/defmutation ::delete-comment-thread
-  [{:keys [profile-id id] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::delete-comment-thread
+  [{:keys [pool] :as cfg} {:keys [profile-id id] :as params}]
+  (db/with-atomic [conn pool]
     (let [thread (db/get-by-id conn :comment-thread id {:for-update true})]
       (when-not (= (:owner-id thread) profile-id)
         (ex/raise :type :validation
@@ -267,9 +267,9 @@
 (s/def ::delete-comment
   (s/keys :req-un [::profile-id ::id]))
 
-(sm/defmutation ::delete-comment
-  [{:keys [profile-id id] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::delete-comment
+  [{:keys [pool] :as cfg} {:keys [profile-id id] :as params}]
+  (db/with-atomic [conn pool]
     (let [comment (db/get-by-id conn :comment id {:for-update true})]
       (when-not (= (:owner-id comment) profile-id)
         (ex/raise :type :validation

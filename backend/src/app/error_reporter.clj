@@ -16,68 +16,71 @@
    [app.db :as db]
    [app.tasks :as tasks]
    [app.util.async :as aa]
-   [app.worker :as wrk]
-   [app.util.http :as http]
+   [app.util.emails :as emails]
    [clojure.core.async :as a]
    [clojure.data.json :as json]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
    [cuerdas.core :as str]
-   [mount.core :as mount :refer [defstate]]
+   [integrant.core :as ig]
    [promesa.exec :as px]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Public API
+;; Error Reporting
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defonce enqueue identity)
+(declare send-notification!)
+(defonce queue-fn identity)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Implementation
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(s/def ::http-client fn?)
+(s/def ::uri (s/nilable ::us/uri))
 
-(defn- send-to-mattermost!
-  [log-event]
+(defmethod ig/pre-init-spec ::instance [_]
+  (s/keys :req-un [::aa/executor ::uri ::http-client]))
+
+(defmethod ig/init-key ::instance
+  [_ {:keys [executor uri] :as cfg}]
+  (let [out (a/chan (a/sliding-buffer 64))]
+    (log/info "Intializing error reporter.")
+    (if uri
+      (do
+        (alter-var-root #'queue-fn (constantly (fn [x] (a/>!! out (str x)))))
+        (a/go-loop []
+          (let [val (a/<! out)]
+            (if (nil? val)
+              (log/info "Closing error reporting loop.")
+              (do
+                (px/run! executor #(send-notification! cfg val))
+                (recur))))))
+      (log/info "No webhook uri is provided (error reporting becomes noop)."))
+    out))
+
+(defmethod ig/halt-key! ::instance
+  [_ out]
+  (alter-var-root #'queue-fn (constantly identity))
+  (a/close! out))
+
+(defn send-notification!
+  [cfg report]
   (try
-    (let [text  (str/fmt "Unhandled exception: `host='%s'`, `version=%s`.\n@channel ⇊\n```%s\n```"
-                         (:host cfg/config)
-                         (:full @cfg/version)
-                         (str log-event))
-          rsp   (http/send! {:uri (:error-reporter-webhook cfg/config)
-                             :method :post
-                             :headers {"content-type" "application/json"}
-                             :body (json/write-str {:text text})})]
+    (let [send!  (:http-client cfg)
+          uri    (:uri cfg)
+
+
+          prefix (str/<< "Unhandled exception (@channel):\n"
+                         "- host: `~(:host cfg/config)`\n"
+                         "- version: `~(:full cfg/version)`")
+          text   (str prefix "\n```" report "\n```")
+
+          rsp    (send! {:uri uri
+                         :method :post
+                         :headers {"content-type" "application/json"}
+                         :body (json/write-str {:text text})})]
+
       (when (not= (:status rsp) 200)
         (log/warnf "Error reporting webhook replying with unexpected status: %s\n%s"
                    (:status rsp)
                    (pr-str rsp))))
+
     (catch Exception e
       (log/warnf e "Unexpected exception on error reporter."))))
-
-(defn- send!
-  [val]
-  (aa/thread-call wrk/executor (partial send-to-mattermost! val)))
-
-(defn- start
-  []
-  (let [qch (a/chan (a/sliding-buffer 128))]
-    (log/info "Starting error reporter loop.")
-
-    ;; Only enable when a valid URL is provided.
-    (when (:error-reporter-webhook cfg/config)
-      (alter-var-root #'enqueue (constantly #(a/>!! qch %)))
-      (a/go-loop []
-        (let [val (a/<! qch)]
-          (if (nil? val)
-            (do
-              (log/info "Closing error reporting loop.")
-              (alter-var-root #'enqueue (constantly identity)))
-            (do
-              (a/<! (send! val))
-              (recur))))))
-
-    qch))
-
-(defstate reporter
-  :start (start)
-  :stop  (a/close! reporter))

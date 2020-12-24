@@ -9,58 +9,54 @@
 
 (ns app.tests.helpers
   (:require
+   [expound.alpha :as expound]
+   [app.common.pages :as cp]
+   [app.common.uuid :as uuid]
+   [app.config :as cfg]
+   [app.db :as db]
+   [app.main :as main]
+   [app.media-storage]
+   [app.media]
+   [app.migrations]
+   [app.rpc.mutations.files :as files]
+   [app.rpc.mutations.profile :as profile]
+   [app.rpc.mutations.projects :as projects]
+   [app.rpc.mutations.teams :as teams]
+   [app.util.blob :as blob]
+   [app.util.storage :as ust]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
-   [promesa.core :as p]
-   [datoteka.core :as fs]
    [cuerdas.core :as str]
-   [mount.core :as mount]
+   [datoteka.core :as fs]
    [environ.core :refer [env]]
-   [app.common.pages :as cp]
-   [app.services]
-   [app.services.mutations.profile :as profile]
-   [app.services.mutations.projects :as projects]
-   [app.services.mutations.teams :as teams]
-   [app.services.mutations.files :as files]
-   [app.migrations]
-   [app.media]
-   [app.media-storage]
-   [app.db :as db]
-   [app.util.blob :as blob]
-   [app.common.uuid :as uuid]
-   [app.util.storage :as ust]
-   [app.config :as cfg])
+   [integrant.core :as ig]
+   [promesa.core :as p])
   (:import org.postgresql.ds.PGSimpleDataSource))
 
-(defn testing-datasource
-  []
-  (doto (PGSimpleDataSource.)
-    (.setServerName "postgres")
-    (.setDatabaseName "penpot_test")
-    (.setUser "penpot")
-    (.setPassword "penpot")))
+(def ^:dynamic *system* nil)
+(def ^:dynamic *pool* nil)
 
 (defn state-init
   [next]
-  (let [config (cfg/read-test-config env)]
+  (let [config (-> (main/build-system-config @cfg/test-config)
+                   (dissoc :app.srepl/server
+                           :app.http/server
+                           :app.http/router
+                           :app.notifications/handler
+                           :app.http.auth/google
+                           :app.http.auth/gitlab
+                           :app.worker/scheduler
+                           :app.worker/executor
+                           :app.worker/worker))
+        _      (ig/load-namespaces config)
+        system (-> (ig/prep config)
+                   (ig/init))]
     (try
-      (let [pool (testing-datasource)]
-        (-> (mount/only #{#'app.config/config
-                          #'app.db/pool
-                          #'app.redis/client
-                          #'app.redis/conn
-                          #'app.media/semaphore
-                          #'app.services/query-services
-                          #'app.services/mutation-services
-                          #'app.migrations/migrations
-                          #'app.media-storage/assets-storage
-                          #'app.media-storage/media-storage})
-            (mount/swap {#'app.config/config config
-                         #'app.db/pool pool})
-            (mount/start)))
-      (next)
+      (binding [*system* system
+                *pool*   (:app.db/pool system)]
+        (next))
       (finally
-        (mount/stop)))))
+        (ig/halt! system)))))
 
 (defn database-reset
   [next]
@@ -68,7 +64,7 @@
                  "  FROM information_schema.tables "
                  " WHERE table_schema = 'public' "
                  "   AND table_name != 'migrations';")]
-    (db/with-atomic [conn db/pool]
+    (db/with-atomic [conn *pool*]
       (let [result (->> (db/exec! conn [sql])
                         (map :table-name))]
         (db/exec! conn [(str "TRUNCATE "
@@ -77,14 +73,12 @@
   (try
     (next)
     (finally
-      (ust/clear! app.media-storage/media-storage)
-      (ust/clear! app.media-storage/assets-storage))))
+      (ust/clear! (:app.media-storage/storage *system*)))))
 
 (defn mk-uuid
   [prefix & args]
   (uuid/namespaced uuid/zero (apply str prefix args)))
 
-;; --- Profile creation
 
 (defn create-profile
   [conn i]
@@ -157,12 +151,27 @@
        {:error (handle-error e#)
         :result nil})))
 
+
+(defn mutation!
+  [{:keys [::type] :as data}]
+  (let [method-fn (get-in *system* [:app.rpc/rpc :methods :mutation type])]
+    (try-on!
+     (method-fn (dissoc data ::type)))))
+
+(defn query!
+  [{:keys [::type] :as data}]
+  (let [method-fn (get-in *system* [:app.rpc/rpc :methods :query type])]
+    (try-on!
+     (method-fn (dissoc data ::type)))))
+
+;; --- Utils
+
 (defn print-error!
   [error]
   (let [data (ex-data error)]
     (cond
       (= :spec-validation (:code data))
-      (println (:explain data))
+      (expound/printer (:data data))
 
       (= :service-error (:type data))
       (print-error! (.getCause ^Throwable error))

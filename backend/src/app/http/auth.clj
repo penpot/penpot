@@ -9,23 +9,23 @@
 
 (ns app.http.auth
   (:require
-   [app.http.session :as session]
-   [app.services.mutations :as sm]))
+   [app.http.session :as session]))
 
 (defn login-handler
-  [req]
-  (let [data    (:body-params req)
-        uagent  (get-in req [:headers "user-agent"])
-        profile (sm/handle (assoc data ::sm/type :login))
-        id      (session/create (:id profile) uagent)]
+  [{:keys [session rpc] :as cfg} request]
+  (let [data    (:params request)
+        uagent  (get-in request [:headers "user-agent"])
+        method  (get-in rpc [:methods :mutation :login])
+        profile (method data)
+        id      (session/create! session {:profile-id (:id profile)
+                                          :user-agent uagent})]
     {:status 200
-     :cookies (session/cookies id)
+     :cookies (session/cookies session {:value id})
      :body profile}))
 
 (defn logout-handler
-  [req]
-  (some-> (session/extract-auth-token req)
-          (session/delete))
+  [{:keys [session] :as cfg} request]
+  (session/delete! cfg request)
   {:status 200
-   :cookies (session/cookies "" {:max-age -1})
+   :cookies (session/cookies session {:value "" :max-age -1})
    :body ""})

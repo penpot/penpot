@@ -10,28 +10,23 @@
 (ns app.media-storage
   "A media storage impl for app."
   (:require
+   [integrant.core :as ig]
+   [app.common.spec :as us]
+   [clojure.spec.alpha :as s]
    [app.config :refer [config]]
    [app.util.storage :as ust]
    [mount.core :refer [defstate]]))
 
-;; --- State
+(s/def ::media-directory ::us/not-empty-string)
+(s/def ::media-uri ::us/not-empty-string)
 
-(declare assets-storage)
+(defmethod ig/pre-init-spec ::storage [_]
+  (s/keys :req-un [::media-directory
+                   ::media-uri]))
 
-(defstate assets-storage
-  :start (ust/create {:base-path (:assets-directory config)
-                      :base-uri (:assets-uri config)}))
-
-(declare media-storage)
-
-(defstate media-storage
-  :start (ust/create {:base-path (:media-directory config)
-                      :base-uri (:media-uri config)
-                      :xf (comp ust/random-path
-                                ust/slugify-filename)}))
-
-;; --- Public Api
-
-(defn resolve-asset
-  [path]
-  (str (ust/public-uri assets-storage path)))
+(defmethod ig/init-key ::storage
+  [_ cfg]
+  (ust/create {:base-path (:media-directory cfg)
+               :base-uri (:media-uri cfg)
+               :xf (comp ust/random-path
+                         ust/slugify-filename)}))

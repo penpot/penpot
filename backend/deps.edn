@@ -57,13 +57,14 @@
                       :exclusions [commons-codec/commons-codec]}
 
   puppetlabs/clj-ldap {:mvn/version"0.3.0"}
+  integrant/integrant {:mvn/version "0.8.0"}
 
   ;; exception printing
   io.aviso/pretty {:mvn/version "0.1.37"}
 
   mount/mount {:mvn/version "0.1.16"}
   environ/environ {:mvn/version "1.2.0"}}
- :paths ["src" "resources" "../common" "common"]
+ :paths ["dev" "src" "resources" "../common" "common"]
  :aliases
  {:dev
   {:extra-deps
@@ -89,7 +90,7 @@
   {:main-opts ["-m" "clj-kondo.main"]}
 
   :tests
-  {:extra-deps {lambdaisland/kaocha {:mvn/version "0.0-581"}}
+  {:extra-deps {lambdaisland/kaocha {:mvn/version "1.0.732"}}
    :main-opts ["-m" "kaocha.runner"]}
 
   :outdated

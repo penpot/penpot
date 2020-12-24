@@ -7,14 +7,14 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.services.queries.files
+(ns app.rpc.queries.files
   (:require
    [app.common.exceptions :as ex]
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
    [app.db :as db]
-   [app.services.queries :as sq]
-   [app.services.queries.projects :as projects]
+   [app.rpc.queries.projects :as projects]
+   [app.util.services :as sv]
    [app.util.blob :as blob]
    [clojure.spec.alpha :as s]))
 
@@ -127,9 +127,9 @@
 (s/def ::search-files
   (s/keys :req-un [::profile-id ::team-id ::search-term]))
 
-(sq/defquery ::search-files
-  [{:keys [profile-id team-id search-term] :as params}]
-  (let [rows (db/exec! db/pool [sql:search-files
+(sv/defmethod ::search-files
+  [{:keys [pool] :as cfg} {:keys [profile-id team-id search-term] :as params}]
+  (let [rows (db/exec! pool [sql:search-files
                                 profile-id team-id
                                 profile-id team-id
                                 search-term])]
@@ -149,9 +149,9 @@
 (s/def ::files
   (s/keys :req-un [::profile-id ::project-id]))
 
-(sq/defquery ::files
-  [{:keys [profile-id project-id] :as params}]
-  (with-open [conn (db/open)]
+(sv/defmethod ::files
+  [{:keys [pool] :as cfg} {:keys [profile-id project-id] :as params}]
+  (with-open [conn (db/open pool)]
     (projects/check-read-permissions! conn profile-id project-id)
     (into [] decode-row-xf (db/exec! conn [sql:files project-id]))))
 
@@ -167,18 +167,18 @@
 (s/def ::file
   (s/keys :req-un [::profile-id ::id]))
 
-(sq/defquery ::file
-  [{:keys [profile-id id] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::file
+  [{:keys [pool] :as cfg} {:keys [profile-id id] :as params}]
+  (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id id)
     (retrieve-file conn id)))
 
 (s/def ::page
   (s/keys :req-un [::profile-id ::id ::file-id]))
 
-(sq/defquery ::page
-  [{:keys [profile-id file-id id]}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::page
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id id]}]
+  (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id file-id)
     (let [file (retrieve-file conn file-id)]
       (get-in file [:data :pages-index id]))))
@@ -199,9 +199,9 @@
 (s/def ::shared-files
   (s/keys :req-un [::profile-id ::team-id]))
 
-(sq/defquery ::shared-files
-  [{:keys [profile-id team-id] :as params}]
-  (into [] decode-row-xf (db/exec! db/pool [sql:shared-files team-id])))
+(sv/defmethod ::shared-files
+  [{:keys [pool] :as cfg} {:keys [profile-id team-id] :as params}]
+  (into [] decode-row-xf (db/exec! pool [sql:shared-files team-id])))
 
 
 ;; --- Query: File Libraries used by a File
@@ -237,9 +237,9 @@
 (s/def ::file-libraries
   (s/keys :req-un [::profile-id ::file-id]))
 
-(sq/defquery ::file-libraries
-  [{:keys [profile-id file-id] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::file-libraries
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
+  (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id file-id)
     (retrieve-file-libraries conn false file-id)))
 
@@ -263,9 +263,9 @@
 (s/def ::file-library
   (s/keys :req-un [::profile-id ::file-id]))
 
-(sq/defquery ::file-library
-  [{:keys [profile-id file-id] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::file-library
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
+  (db/with-atomic [conn pool]
     (check-edition-permissions! conn profile-id file-id) ;; TODO: this should check read permissions
     (retrieve-file-library conn file-id)))
 

@@ -14,7 +14,22 @@
    [app.db :as db]
    [app.metrics :as mtx]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]))
+   [clojure.tools.logging :as log]
+   [integrant.core :as ig]))
+
+(declare handler)
+
+(defmethod ig/pre-init-spec ::handler [_]
+  (s/keys :req-un [::db/pool ::mtx/metrics]))
+
+(defmethod ig/init-key ::handler
+  [_ {:keys [metrics] :as cfg}]
+  (let [handler #(handler cfg %)]
+    (->> {:registry (:registry metrics)
+          :type :summary
+          :name "task_delete_profile_timing"
+          :help "delete profile task timing"}
+         (mtx/instrument handler))))
 
 (declare delete-profile-data)
 (declare delete-teams)
@@ -26,21 +41,16 @@
   (s/keys :req-un [::profile-id]))
 
 (defn handler
-  [{:keys [props] :as task}]
+  [{:keys [pool]} {:keys [props] :as task}]
   (us/verify ::props props)
-  (db/with-atomic [conn db/pool]
-    (let [id (:profile-id props)
+  (db/with-atomic [conn pool]
+    (let [id      (:profile-id props)
           profile (db/get-by-id conn :profile id {:for-update true})]
       (if (or (:is-demo profile)
               (not (nil? (:deleted-at profile))))
         (delete-profile-data conn (:id profile))
         (log/warn "Profile " (:id profile)
                   "does not match constraints for deletion")))))
-
-(mtx/instrument-with-summary!
- {:var #'handler
-  :id "tasks__delete_profile"
-  :help "Timing of delete-profile task."})
 
 (defn- delete-profile-data
   [conn profile-id]

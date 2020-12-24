@@ -25,14 +25,12 @@
    :database-username "penpot"
    :database-password "penpot"
    :secret-key "default"
+   :enabled-asserts true
 
    :media-directory "resources/public/media"
-   :assets-directory "resources/public/static"
-
    :public-uri "http://localhost:3449/"
    :redis-uri "redis://localhost/0"
    :media-uri "http://localhost:3449/media/"
-   :assets-uri "http://localhost:3449/static/"
 
    :image-process-max-threads 2
 
@@ -76,11 +74,10 @@
 (s/def ::database-password (s/nilable ::us/string))
 (s/def ::database-uri ::us/string)
 (s/def ::redis-uri ::us/string)
-(s/def ::assets-uri ::us/string)
-(s/def ::assets-directory ::us/string)
 (s/def ::media-uri ::us/string)
 (s/def ::media-directory ::us/string)
 (s/def ::secret-key ::us/string)
+(s/def ::enable-asserts ::us/boolean)
 
 (s/def ::host ::us/string)
 (s/def ::error-report-webhook ::us/string)
@@ -132,13 +129,12 @@
                    ::gitlab-client-id
                    ::gitlab-client-secret
                    ::gitlab-base-uri
+                   ::enable-asserts
                    ::redis-uri
                    ::public-uri
                    ::database-username
                    ::database-password
                    ::database-uri
-                   ::assets-directory
-                   ::assets-uri
                    ::media-directory
                    ::media-uri
                    ::error-report-webhook
@@ -200,8 +196,11 @@
          :assets-directory "/tmp/app/static"
          :migrations-verbose false))
 
-(defstate config
-  :start (read-config env))
+(def config
+  (delay (read-config env)))
+
+(def test-config
+  (delay (read-test-config env)))
 
 (def default-deletion-delay
   (dt/duration {:hours 48}))
@@ -209,14 +208,19 @@
 (def version
   (delay (v/parse "%version%")))
 
-(defn smtp
-  [cfg]
-  {:host (:smtp-host cfg "localhost")
-   :port (:smtp-port cfg 25)
-   :default-reply-to (:smtp-default-reply-to cfg)
-   :default-from (:smtp-default-from cfg)
-   :tls (:smtp-tls cfg)
-   :enabled (:smtp-enabled cfg)
-   :username (:smtp-username cfg)
-   :password (:smtp-password cfg)})
+;; (defmethod ig/init-key ::secrets
+;;   [type {:keys [key] :as opts}]
+;;   (when (= key "default")
+;;     (log/warn "Using default SECRET-KEY, system will generate insecure tokens."))
+;;   {:key key
+;;    :factory
+;;    (fn [salt length]
+;;      (let [engine (bk/engine {:key key
+;;                               :salt (name salt)
+;;                               :alg :hkdf
+;;                               :digest :blake2b-512})]
+;;        (bk/get-bytes engine length)))})
 
+(prefer-method print-method
+               clojure.lang.IRecord
+               clojure.lang.IDeref)

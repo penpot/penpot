@@ -9,23 +9,26 @@
 
 (ns user
   (:require
+   [app.config :as cfg]
+   [app.main :as main]
+   [app.util.time :as dt]
+   [app.util.transit :as t]
+   [app.common.exceptions :as ex]
+   [clojure.data.json :as json]
+   [clojure.java.io :as io]
+   [clojure.test :as test]
+   [clojure.pprint :refer [pprint]]
+   [clojure.repl :refer :all]
    [clojure.spec.alpha :as s]
+   [clojure.test :as test]
    [clojure.tools.namespace.repl :as repl]
    [clojure.walk :refer [macroexpand-all]]
-   [clojure.pprint :refer [pprint]]
-   [clojure.test :as test]
-   [clojure.java.io :as io]
-   [app.common.pages :as cp]
-   [clojure.repl :refer :all]
    [criterium.core :refer [quick-bench bench with-progress-reporting]]
-   [clj-kondo.core :as kondo]
-   [app.migrations]
-   [app.db :as db]
-   [app.metrics :as mtx]
-   [app.util.storage :as st]
-   [app.util.time :as tm]
-   [app.util.blob :as blob]
-   [mount.core :as mount]))
+   [integrant.core :as ig]))
+
+(repl/disable-reload! (find-ns 'integrant.core))
+
+(defonce system nil)
 
 ;; --- Benchmarking Tools
 
@@ -47,20 +50,6 @@
 
 ;; --- Development Stuff
 
-(defn- start
-  []
-  (-> #_(mount/except #{#'app.scheduled-jobs/scheduler})
-      (mount/start)))
-
-(defn- stop
-  []
-  (mount/stop))
-
-(defn restart
-  []
-  (stop)
-  (repl/refresh :after 'user/start))
-
 (defn- run-tests
   ([] (run-tests #"^app.tests.*"))
   ([o]
@@ -75,16 +64,28 @@
            (test/test-vars [(resolve o)]))
        (test/test-ns o)))))
 
-(defn lint
-  ([] (lint ""))
-  ([path]
-   (-> (kondo/run!
-        {:lint [(str "src/" path)]
-         :cache false
-         :config {:linters
-                  {:unresolved-symbol
-                   {:exclude ['(app.services.mutations/defmutation)
-                              '(app.services.queries/defquery)
-                              '(app.db/with-atomic)
-                              '(promesa.core/let)]}}}})
-       (kondo/print!))))
+(defn- start
+  []
+  (alter-var-root #'system (fn [sys]
+                             (when sys (ig/halt! sys))
+                             (-> (main/build-system-config @cfg/config)
+                                 (ig/prep)
+                                 (ig/init))))
+  :started)
+
+(defn- stop
+  []
+  (alter-var-root #'system (fn [sys]
+                             (when sys (ig/halt! sys))
+                             nil))
+  :stoped)
+
+(defn restart
+  []
+  (stop)
+  (repl/refresh :after 'user/start))
+
+(defn restart-all
+  []
+  (stop)
+  (repl/refresh-all :after 'user/start))

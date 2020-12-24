@@ -46,13 +46,13 @@
 
 (defn send-query!
   [id params]
-  (let [uri (str cfg/public-uri "/api/w/query/" (name id))]
+  (let [uri (str cfg/public-uri "/api/rpc/query/" (name id))]
     (->> (http/send! {:method :get :uri uri :query params})
          (rx/mapcat handle-response))))
 
 (defn send-mutation!
   [id params]
-  (let [uri (str cfg/public-uri "/api/w/mutation/" (name id))]
+  (let [uri (str cfg/public-uri "/api/rpc/mutation/" (name id))]
     (->> (http/send! {:method :post :uri uri :body params})
          (rx/mapcat handle-response))))
 

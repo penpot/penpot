@@ -210,6 +210,13 @@
       (assoc m key v)
       m)))
 
+(defn domap
+  "A side effect map version."
+  ([f]
+   (map (fn [x] (f x) x)))
+  ([f coll]
+   (map (fn [x] (f x) x) coll)))
+
 (defn merge
   "A faster merge."
   [& maps]

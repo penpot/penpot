@@ -7,41 +7,53 @@
 (ns app.redis
   (:refer-clojure :exclude [run!])
   (:require
+   [app.common.spec :as us]
    [app.config :as cfg]
    [app.util.redis :as redis]
-   [mount.core :as mount :refer [defstate]])
+   [clojure.spec.alpha :as s]
+   [integrant.core :as ig])
   (:import
    java.lang.AutoCloseable))
 
-;; --- Connection Handling & State
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; State
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- create-client
-  [config]
-  (let [uri (:redis-uri config "redis://redis/0")]
-    (redis/client uri)))
+(defmethod ig/pre-init-spec ::redis [_]
+  (s/keys :req-un [::uri]))
 
-(declare client)
+(defmethod ig/init-key ::redis
+  [_ cfg]
+  (let [client (redis/client (:uri cfg "redis://redis/0"))
+        conn   (redis/connect client)]
+    {::client client
+     ::conn conn}))
 
-(defstate client
-  :start (create-client cfg/config)
-  :stop (.close ^AutoCloseable client))
+(defmethod ig/halt-key! ::redis
+  [_ {:keys [::client ::conn]}]
+  (.close ^AutoCloseable conn)
+  (.close ^AutoCloseable client))
 
-(declare conn)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; API
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defstate conn
-  :start (redis/connect client)
-  :stop (.close ^AutoCloseable conn))
-
-;; --- API FORWARD
+(s/def ::client some?)
+(s/def ::conn some?)
+(s/def ::redis (s/keys :req [::client ::conn]))
 
 (defn subscribe
-  [opts]
-  (redis/subscribe client opts))
+  [client opts]
+  (us/assert ::redis client)
+  (redis/subscribe (::client client) opts))
 
 (defn run!
-  [cmd params]
-  (redis/run! conn cmd params))
+  [client cmd params]
+  (us/assert ::redis client)
+  (redis/run! (::conn client) cmd params))
 
 (defn run
-  [cmd params]
-  (redis/run conn cmd params))
+  [client cmd params]
+  (us/assert ::redis client)
+  (redis/run (::conn client) cmd params))
+

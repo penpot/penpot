@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.services.mutations.media
+(ns app.rpc.mutations.media
   (:require
    [app.common.exceptions :as ex]
    [app.common.media :as cm]
@@ -15,10 +15,9 @@
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.media :as media]
-   [app.media-storage :as mst]
-   [app.services.mutations :as sm]
-   [app.services.queries.teams :as teams]
+   [app.rpc.queries.teams :as teams]
    [app.util.storage :as ust]
+   [app.util.services :as sv]
    [clojure.spec.alpha :as s]
    [datoteka.core :as fs]))
 
@@ -53,34 +52,36 @@
   (s/keys :req-un [::profile-id ::file-id ::is-local ::name ::content]
           :opt-un [::id]))
 
-(sm/defmutation ::add-media-object-from-url
-  [{:keys [profile-id file-id url name] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::add-media-object-from-url
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id url name] :as params}]
+  (db/with-atomic [conn pool]
     (let [file (select-file-for-update conn file-id)]
       (teams/check-edition-permissions! conn profile-id (:team-id file))
       (let [content (media/download-media-object url)
+            cfg     (assoc cfg :conn conn)
             params' (merge params {:content content
                                    :name (or name (:filename content))})]
-        (create-media-object conn params')))))
+        (create-media-object cfg params')))))
 
-(sm/defmutation ::upload-media-object
-  [{:keys [profile-id file-id] :as params}]
-  (db/with-atomic [conn db/pool]
-    (let [file (select-file-for-update conn file-id)]
+(sv/defmethod ::upload-media-object
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
+  (db/with-atomic [conn pool]
+    (let [file (select-file-for-update conn file-id)
+          cfg  (assoc cfg :conn conn)]
       (teams/check-edition-permissions! conn profile-id (:team-id file))
-      (create-media-object conn params))))
+      (create-media-object cfg params))))
 
 (defn create-media-object
-  [conn {:keys [id file-id is-local name content]}]
+  [{:keys [conn] :as cfg} {:keys [id file-id is-local name content]}]
   (media/validate-media-type (:content-type content))
   (let [info  (media/run {:cmd :info :input {:path (:tempfile content)
                                              :mtype (:content-type content)}})
-        path  (persist-media-object-on-fs content)
+        path  (persist-media-object-on-fs cfg content)
         opts  (assoc thumbnail-options
                      :input {:mtype (:mtype info)
                              :path path})
         thumb (if-not (= (:mtype info) "image/svg+xml")
-                (persist-media-thumbnail-on-fs opts)
+                (persist-media-thumbnail-on-fs cfg opts)
                 (assoc info
                        :path path
                        :quality 0))
@@ -123,13 +124,13 @@
     row))
 
 (defn persist-media-object-on-fs
-  [{:keys [filename tempfile]}]
+  [{:keys [storage]} {:keys [filename tempfile]}]
   (let [filename (fs/name filename)]
-    (ust/save! mst/media-storage filename tempfile)))
+    (ust/save! storage filename tempfile)))
 
 (defn persist-media-thumbnail-on-fs
-  [{:keys [input] :as params}]
-  (let [path  (ust/lookup mst/media-storage (:path input))
+  [{:keys [storage]} {:keys [input] :as params}]
+  (let [path  (ust/lookup storage (:path input))
         thumb (media/run
                 (-> params
                     (assoc :cmd :generic-thumbnail)
@@ -138,7 +139,7 @@
         name  (str "thumbnail-"
                    (first (fs/split-ext (fs/name (:path input))))
                    (cm/format->extension (:format thumb)))
-        path  (ust/save! mst/media-storage name (:data thumb))]
+        path  (ust/save! storage name (:data thumb))]
 
     (-> thumb
         (dissoc :data :input)

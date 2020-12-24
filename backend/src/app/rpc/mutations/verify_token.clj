@@ -7,16 +7,17 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.services.mutations.verify-token
+;; TODO: session
+
+(ns app.rpc.mutations.verify-token
   (:require
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
    [app.http.session :as session]
-   [app.services.mutations :as sm]
-   [app.services.mutations.teams :as teams]
-   [app.services.queries.profile :as profile]
-   [app.services.tokens :as tokens]
+   [app.rpc.mutations.teams :as teams]
+   [app.rpc.queries.profile :as profile]
+   [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
 
 (defmulti process-token (fn [_ _ claims] (:iss claims)))
@@ -25,14 +26,15 @@
   (s/keys :req-un [::token]
           :opt-un [::profile-id]))
 
-(sm/defmutation ::verify-token
-  [{:keys [token] :as params}]
-  (db/with-atomic [conn db/pool]
-    (let [claims (tokens/verify token)]
-      (process-token conn params claims))))
+(sv/defmethod ::verify-token {:auth false}
+  [{:keys [pool tokens] :as cfg} {:keys [token] :as params}]
+  (db/with-atomic [conn pool]
+    (let [claims (tokens :verify {:token token})
+          cfg    (assoc cfg :conn conn)]
+      (process-token cfg params claims))))
 
 (defmethod process-token :change-email
-  [conn _params {:keys [profile-id email] :as claims}]
+  [{:keys [conn] :as cfg} _params {:keys [profile-id email] :as claims}]
   (when (profile/retrieve-profile-data-by-email conn email)
     (ex/raise :type :validation
               :code :email-already-exists))
@@ -42,7 +44,7 @@
   claims)
 
 (defmethod process-token :verify-email
-  [conn _params {:keys [profile-id] :as claims}]
+  [{:keys [conn] :as cfg} _params {:keys [profile-id] :as claims}]
   (let [profile (db/get-by-id conn :profile profile-id {:for-update true})]
     (when (:is-active profile)
       (ex/raise :type :validation
@@ -58,7 +60,7 @@
     claims))
 
 (defmethod process-token :auth
-  [conn _params {:keys [profile-id] :as claims}]
+  [{:keys [conn] :as cfg} _params {:keys [profile-id] :as claims}]
   (let [profile (profile/retrieve-profile conn profile-id)]
     (assoc claims :profile profile)))
 
@@ -83,7 +85,7 @@
           :opt-un [:internal.tokens.team-invitation/member-id]))
 
 (defmethod process-token :team-invitation
-  [conn {:keys [profile-id token]} {:keys [member-id team-id role] :as claims}]
+  [{:keys [conn session] :as cfg} {:keys [profile-id token]} {:keys [member-id team-id role] :as claims}]
   (us/assert ::team-invitation-claims claims)
   (if (uuid? member-id)
     (let [params (merge {:team-id team-id
@@ -107,9 +109,10 @@
           {:transform-response
            (fn [request response]
              (let [uagent (get-in request [:headers "user-agent"])
-                   id     (session/create member-id uagent)]
+                   id     (session/create! session {:profile-id member-id
+                                                    :user-agent uagent})]
                (assoc response
-                      :cookies (session/cookies id))))})))
+                      :cookies (session/cookies session {:value id}))))})))
 
     ;; In this case, we waint until frontend app redirect user to
     ;; registeration page, the user is correctly registered and the

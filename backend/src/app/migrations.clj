@@ -9,12 +9,12 @@
 
 (ns app.migrations
   (:require
+   [integrant.core :as ig]
    [app.db :as db]
    [app.migrations.migration-0023 :as mg0023]
-   [app.util.migrations :as mg]
-   [mount.core :as mount :refer [defstate]]))
+   [app.util.migrations :as mg]))
 
-(def +migrations+
+(def main-migrations
   {:name "uxbox-main"
    :steps
    [{:name "0001-add-extensions"
@@ -120,15 +120,14 @@
      :fn (mg/resource "app/migrations/sql/0034-mod-profile-table-add-props-field.sql")}
     ]})
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Entry point
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn migrate
-  []
-  (with-open [conn (db/open)]
+(defmethod ig/init-key ::migrations
+  [_ _]
+  (fn [conn]
     (mg/setup! conn)
-    (mg/migrate! conn +migrations+)))
+    (mg/migrate! conn main-migrations)))
 
-(defstate migrations
-  :start (migrate))

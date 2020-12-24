@@ -7,13 +7,13 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.services.queries.profile
+(ns app.rpc.queries.profile
   (:require
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
-   [app.services.queries :as sq]
+   [app.util.services :as sv]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
 
@@ -38,11 +38,10 @@
 (s/def ::profile
   (s/keys :opt-un [::profile-id]))
 
-(sq/defquery ::profile
-  [{:keys [profile-id] :as params}]
+(sv/defmethod ::profile {:auth false}
+  [{:keys [pool] :as cfg} {:keys [profile-id] :as params}]
   (if profile-id
-    (with-open [conn (db/open)]
-      (retrieve-profile conn profile-id))
+    (retrieve-profile pool profile-id)
     {:id uuid/zero
      :fullname "Anonymous User"}))
 

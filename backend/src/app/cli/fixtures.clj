@@ -14,12 +14,12 @@
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
-   [app.migrations]
-   [app.services.mutations.profile :as profile]
+   [app.main :as main]
+   [app.rpc.mutations.profile :as profile]
    [app.util.blob :as blob]
    [buddy.hashers :as hashers]
    [clojure.tools.logging :as log]
-   [mount.core :as mount]))
+   [integrant.core :as ig]))
 
 (defn- mk-uuid
   [prefix & args]
@@ -71,7 +71,7 @@
        (#'profile/create-profile-relations conn)))
 
 (defn impl-run
-  [opts]
+  [pool opts]
   (let [rng (java.util.Random. 1)]
     (letfn [(create-profile [conn index]
               (let [id   (mk-uuid "profile" index)
@@ -206,33 +206,36 @@
               (run! (partial create-draft-file conn profile)
                     (range (:num-draft-files-per-profile opts))))
             ]
-      (db/with-atomic [conn db/pool]
+      (db/with-atomic [conn pool]
         (let [profiles (create-profiles conn)
               teams    (create-teams conn)]
           (assign-teams-and-profiles conn teams (map :id profiles))
           (run! (partial create-draft-files conn) profiles))))))
 
-(defn run*
-  [preset]
-  (let [preset (if (map? preset)
+(defn run-in-system
+  [system preset]
+  (let [pool   (:app.db/pool system)
+        preset (if (map? preset)
                  preset
                  (case preset
                    (nil "small" :small) preset-small
                    ;; "medium" preset-medium
                    ;; "big" preset-big
                    preset-small))]
-    (impl-run preset)))
+    (impl-run pool preset)))
 
 (defn run
-  [{:keys [preset]
-    :or {preset :small}}]
-  (try
-    (-> (mount/only #{#'app.config/config
-                      #'app.db/pool
-                      #'app.migrations/migrations})
-        (mount/start))
-    (run* preset)
-    (catch Exception e
-      (log/errorf e "Unhandled exception."))
-    (finally
-      (mount/stop))))
+  [{:keys [preset] :or {preset :small}}]
+  (let [config (select-keys (main/build-system-config cfg/config)
+                            [:app.db/pool
+                             :app.migrations/migrations
+                             :app.metrics/metrics])
+        _      (ig/load-namespaces config)
+        system (-> (ig/prep config)
+                   (ig/init))]
+    (try
+      (run-in-system system preset)
+      (catch Exception e
+        (log/errorf e "Unhandled exception."))
+      (finally
+        (ig/halt! system)))))

@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.services.mutations.files
+(ns app.rpc.mutations.files
   (:require
    [app.common.exceptions :as ex]
    [app.common.pages :as cp]
@@ -16,12 +16,12 @@
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
-   [app.redis :as redis]
-   [app.services.mutations :as sm]
-   [app.services.queries.files :as files]
-   [app.services.queries.projects :as proj]
+   [app.redis :as rd]
+   [app.rpc.queries.files :as files]
+   [app.rpc.queries.projects :as proj]
    [app.tasks :as tasks]
    [app.util.blob :as blob]
+   [app.util.services :as sv]
    [app.util.time :as dt]
    [app.util.transit :as t]
    [clojure.spec.alpha :as s]))
@@ -43,9 +43,9 @@
   (s/keys :req-un [::profile-id ::name ::project-id]
           :opt-un [::id ::is-shared]))
 
-(sm/defmutation ::create-file
-  [{:keys [profile-id project-id] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::create-file
+  [{:keys [pool] :as cfg} {:keys [profile-id project-id] :as params}]
+  (db/with-atomic [conn pool]
     (proj/check-edition-permissions! conn profile-id project-id)
     (create-file conn params)))
 
@@ -82,9 +82,9 @@
 (s/def ::rename-file
   (s/keys :req-un [::profile-id ::name ::id]))
 
-(sm/defmutation ::rename-file
-  [{:keys [id profile-id] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::rename-file
+  [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
+  (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)
     (rename-file conn params)))
 
@@ -102,9 +102,9 @@
 (s/def ::set-file-shared
   (s/keys :req-un [::profile-id ::id ::is-shared]))
 
-(sm/defmutation ::set-file-shared
-  [{:keys [id profile-id] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::set-file-shared
+  [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
+  (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)
     (set-file-shared conn params)))
 
@@ -122,9 +122,9 @@
 (s/def ::delete-file
   (s/keys :req-un [::id ::profile-id]))
 
-(sm/defmutation ::delete-file
-  [{:keys [id profile-id] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::delete-file
+  [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
+  (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id id)
 
     ;; Schedule object deletion
@@ -149,13 +149,13 @@
 (s/def ::link-file-to-library
   (s/keys :req-un [::profile-id ::file-id ::library-id]))
 
-(sm/defmutation ::link-file-to-library
-  [{:keys [profile-id file-id library-id] :as params}]
+(sv/defmethod ::link-file-to-library
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id library-id] :as params}]
   (when (= file-id library-id)
     (ex/raise :type :validation
               :code :invalid-library
               :hint "A file cannot be linked to itself"))
-  (db/with-atomic [conn db/pool]
+  (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)
     (link-file-to-library conn params)))
 
@@ -176,9 +176,9 @@
 (s/def ::unlink-file-from-library
   (s/keys :req-un [::profile-id ::file-id ::library-id]))
 
-(sm/defmutation ::unlink-file-from-library
-  [{:keys [profile-id file-id library-id] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::unlink-file-from-library
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id library-id] :as params}]
+  (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)
     (unlink-file-from-library conn params)))
 
@@ -196,9 +196,9 @@
 (s/def ::update-sync
   (s/keys :req-un [::profile-id ::file-id ::library-id]))
 
-(sm/defmutation ::update-sync
-  [{:keys [profile-id file-id library-id] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::update-sync
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id library-id] :as params}]
+  (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)
     (update-sync conn params)))
 
@@ -217,9 +217,9 @@
 (s/def ::ignore-sync
   (s/keys :req-un [::profile-id ::file-id ::date]))
 
-(sm/defmutation ::ignore-sync
-  [{:keys [profile-id file-id date] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::ignore-sync
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id date] :as params}]
+  (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)
     (ignore-sync conn params)))
 
@@ -256,15 +256,15 @@
 (declare retrieve-lagged-changes)
 (declare insert-change)
 
-(sm/defmutation ::update-file
-  [{:keys [id profile-id] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::update-file
+  [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
+  (db/with-atomic [conn pool]
     (let [{:keys [id] :as file} (db/get-by-id conn :file id {:for-update true})]
       (files/check-edition-permissions! conn profile-id id)
-      (update-file conn file params))))
+      (update-file (assoc cfg :conn  conn) file params))))
 
 (defn- update-file
-  [conn file params]
+  [{:keys [conn redis]} file params]
   (when (> (:revn params)
            (:revn file))
     (ex/raise :type :validation
@@ -294,8 +294,8 @@
 
         library-changes (filter library-change? changes)]
 
-    @(redis/run! :publish {:channel (str (:id file))
-                           :message (t/encode-str msg)})
+    @(rd/run! redis :publish {:channel (str (:id file))
+                              :message (t/encode-str msg)})
 
     (when (and (:is-shared file) (seq library-changes))
       (let [{:keys [team-id] :as project}
@@ -309,8 +309,8 @@
                  :modified-at (dt/now)
                  :changes library-changes}]
 
-        @(redis/run! :publish {:channel (str team-id)
-                               :message (t/encode-str msg)})))
+        @(rd/run! redis :publish {:channel (str team-id)
+                                  :message (t/encode-str msg)})))
 
     (db/update! conn :file
                 {:revn (:revn file)

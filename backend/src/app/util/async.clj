@@ -6,10 +6,48 @@
 
 (ns app.util.async
   (:require
+   [clojure.spec.alpha :as s]
    [clojure.core.async :as a]
-   [clojure.spec.alpha :as s])
+   [cuerdas.core :as str])
   (:import
-   java.util.concurrent.Executor))
+   java.util.concurrent.Executor
+   java.util.concurrent.ThreadFactory
+   java.util.concurrent.ForkJoinPool
+   java.util.concurrent.ForkJoinPool$ForkJoinWorkerThreadFactory
+   java.util.concurrent.ExecutorService
+   java.util.concurrent.atomic.AtomicLong))
+
+(s/def ::executor #(instance? Executor %))
+
+(defonce processors
+  (delay (.availableProcessors (Runtime/getRuntime))))
+
+;; (defn forkjoin-thread-factory
+;;   [f]
+;;   (reify ForkJoinPool$ForkJoinWorkerThreadFactory
+;;     (newThread [this pool]
+;;       (let [wth (.newThread ForkJoinPool/defaultForkJoinWorkerThreadFactory pool)]
+;;         (f wth)))))
+
+;; (defn forkjoin-named-thread-factory
+;;   [name]
+;;   (reify ForkJoinPool$ForkJoinWorkerThreadFactory
+;;     (newThread [this pool]
+;;       (let [wth (.newThread ForkJoinPool/defaultForkJoinWorkerThreadFactory pool)]
+;;         (.setName wth (str name ":" (.getPoolIndex wth)))
+;;         wth))))
+
+;; (defn forkjoin-pool
+;;   [{:keys [factory async? parallelism]
+;;     :or {async? true}
+;;     :as opts}]
+;;   (let [parallelism (or parallelism @processors)
+;;         factory (cond
+;;                   (fn? factory) (forkjoin-thread-factory factory)
+;;                   (instance? ForkJoinPool$ForkJoinWorkerThreadFactory factory) factory
+;;                   (nil? factory) ForkJoinPool/defaultForkJoinWorkerThreadFactory
+;;                   :else (throw (ex-info "Unexpected thread factory" {:factory factory})))]
+;;     (ForkJoinPool. (or parallelism @processors) factory nil async?)))
 
 (defmacro go-try
   [& body]
@@ -17,13 +55,6 @@
      (try
        ~@body
        (catch Exception e# e#))))
-
-(defmacro <?
-  [ch]
-  `(let [r# (a/<! ~ch)]
-     (if (instance? Exception r#)
-       (throw r#)
-       r#)))
 
 (defmacro thread-try
   [& body]
@@ -33,8 +64,12 @@
        (catch Exception e#
          e#))))
 
-
-(s/def ::executor #(instance? Executor %))
+(defmacro <?
+  [ch]
+  `(let [r# (a/<! ~ch)]
+     (if (instance? Exception r#)
+       (throw r#)
+       r#)))
 
 (defn thread-call
   [^Executor executor f]
@@ -50,6 +85,12 @@
                       (a/close! c)))))
       c
       (catch java.util.concurrent.RejectedExecutionException e
-        (a/offer! c e)
         (a/close! c)
         c))))
+
+
+(defmacro with-thread
+  [executor & body]
+  (if (= executor ::default)
+    `(a/thread-call (^:once fn* [] (try ~@body (catch Exception e# e#))))
+    `(thread-call ~executor (^:once fn* [] ~@body))))

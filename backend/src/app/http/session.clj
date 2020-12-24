@@ -7,60 +7,65 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-;; TODO: move to services.
-
 (ns app.http.session
   (:require
+   [clojure.spec.alpha :as s]
+   [integrant.core :as ig]
    [app.db :as db]
    [buddy.core.codecs :as bc]
    [buddy.core.nonce :as bn]))
 
-(defn next-token
-  [n]
-  (-> (bn/random-nonce n)
-      (bc/bytes->b64u)
-      (bc/bytes->str)))
+(defn next-session-id
+  ([] (next-session-id 96))
+  ([n]
+   (-> (bn/random-nonce n)
+       (bc/bytes->b64u)
+       (bc/bytes->str))))
 
-(defn extract-auth-token
-  [request]
-  (get-in request [:cookies "auth-token" :value]))
+(defn create!
+  [{:keys [conn] :as cfg} {:keys [profile-id user-agent]}]
+  (let [id (next-session-id)]
+    (db/insert! conn :http-session {:id id
+                                    :profile-id profile-id
+                                    :user-agent user-agent})
+    id))
+
+(defn delete!
+  [{:keys [conn cookie-name] :as cfg} request]
+  (when-let [token (get-in request [:cookies cookie-name :value])]
+    (db/delete! conn :http-session {:id token}))
+  nil)
 
 (defn retrieve
-  [conn token]
+  [{:keys [conn] :as cfg} token]
   (when token
     (-> (db/exec-one! conn ["select profile_id from http_session where id = ?" token])
         (:profile-id))))
 
 (defn retrieve-from-request
-  [conn request]
-  (->> (extract-auth-token request)
-       (retrieve conn)))
-
-(defn create
-  [profile-id user-agent]
-  (let [id (next-token 64)]
-    (db/insert! db/pool :http-session {:id id
-                                       :profile-id profile-id
-                                       :user-agent user-agent})
-    id))
-
-(defn delete
-  [token]
-  (db/delete! db/pool :http-session {:id token})
-  nil)
+  [{:keys [cookie-name] :as cfg} request]
+  (->> (get-in request [:cookies cookie-name :value])
+       (retrieve cfg)))
 
 (defn cookies
-  ([id] (cookies id {}))
-  ([id opts]
-   {"auth-token" (merge opts {:value id :path "/" :http-only true})}))
+  [{:keys [cookie-name] :as cfg} vals]
+  {cookie-name (merge vals {:path "/" :http-only true})})
 
-(defn wrap-session
-  [handler]
+(defn middleware
+  [cfg handler]
   (fn [request]
-    (if-let [profile-id (retrieve-from-request db/pool request)]
+    (if-let [profile-id (retrieve-from-request cfg request)]
       (handler (assoc request :profile-id profile-id))
       (handler request))))
 
-(def middleware
-  {:nane ::middleware
-   :compile (constantly wrap-session)})
+(defmethod ig/pre-init-spec ::session [_]
+  (s/keys :req-un [::db/pool]))
+
+(defmethod ig/prep-key ::session
+  [_ cfg]
+  (merge {:cookie-name "auth-token"} cfg))
+
+(defmethod ig/init-key ::session
+  [_ {:keys [pool] :as cfg}]
+  (let [cfg (assoc cfg :conn pool)]
+    (merge cfg {:middleware #(middleware cfg %)})))
