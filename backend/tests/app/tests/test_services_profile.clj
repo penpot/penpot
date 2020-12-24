@@ -15,50 +15,44 @@
    [cuerdas.core :as str]
    [datoteka.core :as fs]
    [app.db :as db]
-   [app.services.mutations :as sm]
-   [app.services.queries :as sq]
-   [app.services.mutations.profile :as profile]
+   ;; [app.services.mutations.profile :as profile]
    [app.tests.helpers :as th]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest profile-login
-  (let [profile (th/create-profile db/pool 1)]
+  (let [profile (th/create-profile th/*pool* 1)]
     (t/testing "failed"
-      (let [event {::sm/type :login
+      (let [data {::th/type :login
                    :email "profile1.test@nodomain.com"
                    :password "foobar"
                    :scope "foobar"}
-            out (th/try-on! (sm/handle event))]
+            out  (th/mutation! data)]
 
-        ;; (th/print-result! out)
+        #_(th/print-result! out)
         (let [error (:error out)]
-          (t/is (th/ex-info? error))
-          (t/is (th/ex-of-type? error :service-error)))
-
-        (let [error (ex-cause (:error out))]
           (t/is (th/ex-info? error))
           (t/is (th/ex-of-type? error :validation))
           (t/is (th/ex-of-code? error :wrong-credentials)))))
 
     (t/testing "success"
-      (let [event {::sm/type :login
+      (let [data {::th/type :login
                    :email "profile1.test@nodomain.com"
                    :password "123123"
                    :scope "foobar"}
-            out (th/try-on! (sm/handle event))]
+            out  (th/mutation! data)]
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
         (t/is (= (:id profile) (get-in out [:result :id])))))))
 
 
 (t/deftest profile-query-and-manipulation
-  (let [profile (th/create-profile db/pool 1)]
+  (let [profile (th/create-profile th/*pool* 1)]
     (t/testing "query profile"
-      (let [data {::sq/type :profile
+      (let [data {::th/type :profile
                   :profile-id (:id profile)}
-            out (th/try-on! (sq/handle data))]
+            out  (th/query! data)]
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
@@ -70,20 +64,21 @@
 
     (t/testing "update profile"
       (let [data (assoc profile
-                        ::sm/type :update-profile
+                        :profile-id (:id profile)
+                        ::th/type :update-profile
                         :fullname "Full Name"
                         :lang "en"
                         :theme "dark")
-            out (th/try-on! (sm/handle data))]
+            out  (th/mutation! data)]
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
         (t/is (nil? (:result out)))))
 
     (t/testing "query profile after update"
-      (let [data {::sq/type :profile
+      (let [data {::th/type :profile
                   :profile-id (:id profile)}
-            out (th/try-on! (sq/handle data))]
+            out  (th/query! data)]
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
@@ -94,25 +89,25 @@
           (t/is (= "dark" (:theme result))))))
 
     (t/testing "update photo"
-      (let [data {::sm/type :update-profile-photo
+      (let [data {::th/type :update-profile-photo
                   :profile-id (:id profile)
                   :file {:filename "sample.jpg"
                          :size 123123
                          :tempfile "tests/app/tests/_files/sample.jpg"
                          :content-type "image/jpeg"}}
-            out (th/try-on! (sm/handle data))]
+            out  (th/mutation! data)]
 
         ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-    ))))
+        (t/is (nil? (:error out)))))
+    ))
 
 
 #_(t/deftest profile-deletion
-  (let [prof (th/create-profile db/pool 1)
+  (let [prof (th/create-profile th/*pool* 1)
         team (:default-team prof)
         proj (:default-project prof)
-        file (th/create-file db/pool (:id prof) (:id proj) 1)
-        page (th/create-page db/pool (:id prof) (:id file) 1)]
+        file (th/create-file th/*pool* (:id prof) (:id proj) 1)
+        page (th/create-page th/*pool* (:id prof) (:id file) 1)]
 
     ;; (t/testing "try to delete profile not marked for deletion"
     ;;   (let [params {:props {:profile-id (:id prof)}}
@@ -198,14 +193,14 @@
     ))
 
 
-(t/deftest registration-domain-whitelist
-  (let [whitelist "gmail.com, hey.com, ya.ru"]
-    (t/testing "allowed email domain"
-      (t/is (true? (profile/email-domain-in-whitelist? whitelist "username@ya.ru")))
-      (t/is (true? (profile/email-domain-in-whitelist? "" "username@somedomain.com"))))
+;; (t/deftest registration-domain-whitelist
+;;   (let [whitelist "gmail.com, hey.com, ya.ru"]
+;;     (t/testing "allowed email domain"
+;;       (t/is (true? (profile/email-domain-in-whitelist? whitelist "username@ya.ru")))
+;;       (t/is (true? (profile/email-domain-in-whitelist? "" "username@somedomain.com"))))
 
-    (t/testing "not allowed email domain"
-      (t/is (false? (profile/email-domain-in-whitelist? whitelist "username@somedomain.com"))))))
+;;     (t/testing "not allowed email domain"
+;;       (t/is (false? (profile/email-domain-in-whitelist? whitelist "username@somedomain.com"))))))
 
 ;; TODO: profile deletion with teams
 ;; TODO: profile deletion with owner teams

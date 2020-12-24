@@ -4,6 +4,7 @@
   (:require
    [clojure.pprint :refer [pprint]]
    [app.db :as db]
+   [app.main :refer [system]]
    [app.common.pages.migrations :as pmg]
    [app.util.blob :as blob]
    [app.common.pages :as cp]))
@@ -11,7 +12,7 @@
 (defn update-file
   ([id f] (update-file id f false))
   ([id f save?]
-   (db/with-atomic [conn db/pool]
+   (db/with-atomic [conn (:app.db/pool system)]
      (let [file (db/get-by-id conn :file id {:for-update true})
            file (-> file
                     (update :data app.util.blob/decode)
@@ -27,7 +28,7 @@
 
 (defn update-file-raw
   [id data]
-  (db/with-atomic [conn db/pool]
+  (db/with-atomic [conn (:app.db/pool system)]
     (db/update! conn :file
                 {:data data}
                 {:id id})))

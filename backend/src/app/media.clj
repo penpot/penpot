@@ -18,8 +18,7 @@
    [clojure.core.async :as a]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
-   [datoteka.core :as fs]
-   [mount.core :refer [defstate]])
+   [datoteka.core :as fs])
   (:import
    java.io.ByteArrayInputStream
    java.util.concurrent.Semaphore
@@ -27,10 +26,7 @@
    org.im4java.core.IMOperation
    org.im4java.core.Info))
 
-(declare semaphore)
-
-(defstate semaphore
-  :start (Semaphore. (:image-process-max-threads cfg/config 1)))
+(def semaphore (Semaphore. (:image-process-max-threads cfg/config 1)))
 
 ;; --- Generic specs
 

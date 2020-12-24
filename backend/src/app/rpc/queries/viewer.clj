@@ -7,14 +7,14 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.services.queries.viewer
+(ns app.rpc.queries.viewer
   (:require
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
-   [app.services.queries :as sq]
-   [app.services.queries.files :as files]
-   [app.services.queries.teams :as teams]
+   [app.rpc.queries.files :as files]
+   [app.rpc.queries.teams :as teams]
+   [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
 
 ;; --- Query: Viewer Bundle (by Page ID)
@@ -42,9 +42,9 @@
   (s/keys :req-un [::file-id ::page-id]
           :opt-un [::profile-id ::token]))
 
-(sq/defquery ::viewer-bundle
-  [{:keys [profile-id file-id page-id token] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::viewer-bundle {:auth false}
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id page-id token] :as params}]
+  (db/with-atomic [conn pool]
     (let [file    (files/retrieve-file conn file-id)
           project (retrieve-project conn (:project-id file))
           page    (get-in file [:data :pages-index page-id])

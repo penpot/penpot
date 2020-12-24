@@ -7,12 +7,12 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.services.mutations.viewer
+(ns app.rpc.mutations.viewer
   (:require
    [app.common.spec :as us]
    [app.db :as db]
-   [app.services.mutations :as sm]
-   [app.services.queries.files :as files]
+   [app.rpc.queries.files :as files]
+   [app.util.services :as sv]
    [buddy.core.codecs :as bc]
    [buddy.core.nonce :as bn]
    [clojure.spec.alpha :as s]))
@@ -24,9 +24,9 @@
 (s/def ::create-file-share-token
   (s/keys :req-un [::profile-id ::file-id ::page-id]))
 
-(sm/defmutation ::create-file-share-token
-  [{:keys [profile-id file-id page-id] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::create-file-share-token
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id page-id] :as params}]
+  (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)
     (let [token (-> (bn/random-bytes 16)
                     (bc/bytes->b64u)
@@ -42,9 +42,9 @@
 (s/def ::delete-file-share-token
   (s/keys :req-un [::profile-id ::file-id ::token]))
 
-(sm/defmutation ::delete-file-share-token
-  [{:keys [profile-id file-id token]}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::delete-file-share-token
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id token]}]
+  (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)
     (db/delete! conn :file-share-token
                 {:file-id file-id

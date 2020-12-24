@@ -9,16 +9,16 @@
 
 (ns app.db
   (:require
+   [app.common.spec :as us]
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
    [app.config :as cfg]
-   [app.metrics :as mtx]
    [app.util.time :as dt]
    [app.util.transit :as t]
    [clojure.data.json :as json]
    [clojure.spec.alpha :as s]
    [clojure.string :as str]
-   [mount.core :as mount :refer [defstate]]
+   [integrant.core :as ig]
    [next.jdbc :as jdbc]
    [next.jdbc.date-time :as jdbc-dt]
    [next.jdbc.optional :as jdbc-opt]
@@ -35,30 +35,65 @@
    org.postgresql.util.PGInterval
    org.postgresql.util.PGobject))
 
+(declare open)
+(declare create-pool)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Initialization
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/def ::uri ::us/not-empty-string)
+(s/def ::name ::us/not-empty-string)
+(s/def ::min-pool-size ::us/integer)
+(s/def ::max-pool-size ::us/integer)
+(s/def ::migrations fn?)
+(s/def ::metrics map?)
+
+(defmethod ig/pre-init-spec ::pool [_]
+  (s/keys :req-un [::uri ::name ::min-pool-size ::max-pool-size ::migrations]))
+
+(defmethod ig/init-key ::pool
+  [_ {:keys [migrations] :as cfg}]
+  (let [pool (create-pool cfg)]
+    (when migrations
+      (with-open [conn (open pool)]
+        (migrations conn)))
+    pool))
+
+(defmethod ig/halt-key! ::pool
+  [_ pool]
+  (.close ^com.zaxxer.hikari.HikariDataSource pool))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; API & Impl
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (def initsql
   (str "SET statement_timeout = 10000;\n"
        "SET idle_in_transaction_session_timeout = 30000;"))
 
+
 (defn- create-datasource-config
-  [cfg]
-  (let [dburi    (:database-uri cfg)
-        username (:database-username cfg)
-        password (:database-password cfg)
-        config (HikariConfig.)
-        mfactory (PrometheusMetricsTrackerFactory. mtx/registry)]
+  [{:keys [metrics] :as cfg}]
+  (let [dburi    (:uri cfg)
+        username (:username cfg)
+        password (:password cfg)
+        config   (HikariConfig.)
+        mtf      (PrometheusMetricsTrackerFactory. (:registry metrics))]
     (doto config
       (.setJdbcUrl (str "jdbc:" dburi))
-      (.setPoolName "main")
+      (.setPoolName (:name cfg "default"))
       (.setAutoCommit true)
       (.setReadOnly false)
       (.setConnectionTimeout 8000)  ;; 8seg
-      (.setValidationTimeout 4000)  ;; 4seg
-      (.setIdleTimeout 300000)      ;; 5min
-      (.setMaxLifetime 900000)      ;; 15min
-      (.setMinimumIdle 0)
-      (.setMaximumPoolSize 15)
+      (.setValidationTimeout 8000)  ;; 8seg
+      (.setIdleTimeout 120000)      ;; 2min
+      (.setMaxLifetime 1800000)     ;; 30min
+      (.setMinimumIdle (:min-pool-size cfg 0))
+      (.setMaximumPoolSize (:max-pool-size cfg 30))
+      (.setMetricsTrackerFactory mtf)
       (.setConnectionInitSql initsql)
-      (.setMetricsTrackerFactory mfactory))
+      (.setInitializationFailTimeout -1))
     (when username (.setUsername config username))
     (when password (.setPassword config password))
     config))
@@ -79,12 +114,6 @@
     (jdbc-dt/read-as-instant)
     (HikariDataSource. dsc)))
 
-(declare pool)
-
-(defstate pool
-  :start (create-pool cfg/config)
-  :stop (.close pool))
-
 (defmacro with-atomic
   [& args]
   `(jdbc/with-transaction ~@args))
@@ -96,7 +125,7 @@
   (jdbc-opt/as-unqualified-modified-maps rs (assoc opts :label-fn kebab-case)))
 
 (defn open
-  []
+  [pool]
   (jdbc/get-connection pool))
 
 (defn exec!
@@ -258,11 +287,3 @@
 (defn pgarray->vector
   [v]
   (vec (.getArray ^PgArray v)))
-
-;; Instrumentation
-
-(mtx/instrument-with-counter!
- {:var [#'jdbc/execute-one!
-        #'jdbc/execute!]
-  :id "database__query_counter"
-  :help "An absolute counter of database queries."})

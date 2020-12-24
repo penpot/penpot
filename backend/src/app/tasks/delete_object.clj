@@ -11,33 +11,42 @@
   "Generic task for permanent deletion of objects."
   (:require
    [app.common.spec :as us]
+   [integrant.core :as ig]
    [app.db :as db]
    [app.metrics :as mtx]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]))
 
-(s/def ::type keyword?)
-(s/def ::id ::us/uuid)
+(declare handler)
+(declare handle-deletion)
 
-(s/def ::props
-  (s/keys :req-un [::id ::type]))
+(defmethod ig/pre-init-spec ::handler [_]
+  (s/keys :req-un [::db/pool ::mtx/metrics]))
+
+(defmethod ig/init-key ::handler
+  [_ {:keys [metrics] :as cfg}]
+  (let [handler #(handler cfg %)]
+    (->> {:registry (:registry metrics)
+          :type :summary
+          :name "task_delete_object_timing"
+          :help "delete object task timing"}
+         (mtx/instrument handler))))
+
+(s/def ::type ::us/keyword)
+(s/def ::id ::us/uuid)
+(s/def ::props (s/keys :req-un [::id ::type]))
+
+(defn- handler
+  [{:keys [pool]} {:keys [props] :as task}]
+  (us/verify ::props props)
+  (db/with-atomic [conn pool]
+    (handle-deletion conn props)))
 
 (defmulti handle-deletion (fn [_ props] (:type props)))
 
 (defmethod handle-deletion :default
   [_conn {:keys [type]}]
   (log/warn "no handler found for" type))
-
-(defn handler
-  [{:keys [props] :as task}]
-  (us/verify ::props props)
-  (db/with-atomic [conn db/pool]
-    (handle-deletion conn props)))
-
-(mtx/instrument-with-summary!
- {:var #'handler
-  :id "tasks__delete_object"
-  :help "Timing of remove-object task."})
 
 (defmethod handle-deletion :file
   [conn {:keys [id] :as props}]

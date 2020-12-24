@@ -27,21 +27,3 @@
     (t/is (contains? result :to))
     #_(t/is (contains? result :reply-to))
     (t/is (vector? (:body result)))))
-
-;; (t/deftest email-sending-and-sendmail-job
-;;   (let [res @(emails/send! emails/register {:to "example@app.io" :name "foo"})]
-;;     (t/is (nil? res)))
-;;   (with-mock mock
-;;     {:target 'app.jobs.sendmail/impl-sendmail
-;;      :return (p/resolved nil)}
-
-;;     (let [res @(app.jobs.sendmail/send-emails {})]
-;;       (t/is (= 1 res))
-;;       (t/is (:called? @mock))
-;;       (t/is (= 1 (:call-count @mock))))
-
-;;     (let [res @(app.jobs.sendmail/send-emails {})]
-;;       (t/is (= 0 res))
-;;       (t/is (:called? @mock))
-;;       (t/is (= 1 (:call-count @mock))))))
-

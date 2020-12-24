@@ -7,13 +7,13 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.services.queries.recent-files
+(ns app.rpc.queries.recent-files
   (:require
    [app.common.spec :as us]
    [app.db :as db]
-   [app.services.queries :as sq]
-   [app.services.queries.files :refer [decode-row-xf]]
-   [app.services.queries.teams :as teams]
+   [app.rpc.queries.files :refer [decode-row-xf]]
+   [app.rpc.queries.teams :as teams]
+   [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
 
 (def sql:recent-files
@@ -35,9 +35,9 @@
 (s/def ::recent-files
   (s/keys :req-un [::profile-id ::team-id]))
 
-(sq/defquery ::recent-files
-  [{:keys [profile-id team-id]}]
-  (with-open [conn (db/open)]
+(sv/defmethod ::recent-files
+  [{:keys [pool] :as cfg} {:keys [profile-id team-id]}]
+  (with-open [conn (db/open pool)]
     (teams/check-read-permissions! conn profile-id team-id)
     (let [files (db/exec! conn [sql:recent-files team-id])]
       (into [] decode-row-xf files))))

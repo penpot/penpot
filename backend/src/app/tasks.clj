@@ -12,7 +12,7 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
-   [app.metrics :as mtx]
+   ;; [app.metrics :as mtx]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]))
@@ -33,20 +33,19 @@
    returning id")
 
 (defn submit!
-  ([opts] (submit! db/pool opts))
-  ([conn {:keys [name delay props queue priority max-retries]
-          :or {delay 0 props {} queue "default" priority 100 max-retries 3}
-          :as options}]
-   (us/verify ::task-options options)
-   (let [duration  (dt/duration delay)
-         interval  (db/interval duration)
-         props     (db/tjson props)
-         id        (uuid/next)]
-     (log/infof "Submit task '%s' to be executed in '%s'." name (str duration))
-     (db/exec-one! conn [sql:insert-new-task id name props queue priority max-retries interval])
-     id)))
+  [conn {:keys [name delay props queue priority max-retries]
+         :or {delay 0 props {} queue "default" priority 100 max-retries 3}
+         :as options}]
+  (us/verify ::task-options options)
+  (let [duration  (dt/duration delay)
+        interval  (db/interval duration)
+        props     (db/tjson props)
+        id        (uuid/next)]
+    (log/infof "Submit task '%s' to be executed in '%s'." name (str duration))
+    (db/exec-one! conn [sql:insert-new-task id name props queue priority max-retries interval])
+    id))
 
-(mtx/instrument-with-counter!
- {:var #'submit!
-  :id "tasks__submit_counter"
-  :help "Absolute task submit counter."})
+;; (mtx/instrument-with-counter!
+;;  {:var #'submit!
+;;   :id "tasks__submit_counter"
+;;   :help "Absolute task submit counter."})

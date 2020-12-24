@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.services.mutations.profile
+(ns app.rpc.mutations.profile
   (:require
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
@@ -17,12 +17,11 @@
    [app.emails :as emails]
    [app.http.session :as session]
    [app.media :as media]
-   [app.services.mutations :as sm]
-   [app.services.mutations.projects :as projects]
-   [app.services.mutations.teams :as teams]
-   [app.services.mutations.verify-token :refer [process-token]]
-   [app.services.queries.profile :as profile]
-   [app.services.tokens :as tokens]
+   [app.rpc.mutations.projects :as projects]
+   [app.rpc.mutations.teams :as teams]
+   [app.rpc.mutations.verify-token :refer [process-token]]
+   [app.rpc.queries.profile :as profile]
+   [app.util.services :as sv]
    [app.tasks :as tasks]
    [app.util.time :as dt]
    [buddy.hashers :as hashers]
@@ -53,8 +52,8 @@
   (s/keys :req-un [::email ::password ::fullname]
           :opt-un [::token]))
 
-(sm/defmutation ::register-profile
-  [{:keys [token] :as params}]
+(sv/defmethod ::register-profile {:auth false}
+  [{:keys [pool tokens session] :as cfg} {:keys [token] :as params}]
   (when-not (:registration-enabled cfg/config)
     (ex/raise :type :restriction
               :code :registration-disabled))
@@ -64,7 +63,7 @@
     (ex/raise :type :validation
               :code :email-domain-is-not-allowed))
 
-  (db/with-atomic [conn db/pool]
+  (db/with-atomic [conn pool]
     (check-profile-existence! conn params)
     (let [profile (->> (create-profile conn params)
                        (create-profile-relations conn))]
@@ -74,7 +73,7 @@
         ;; from team-invitation process; in this case we revalidate
         ;; the token and process the token claims again with the new
         ;; profile data.
-        (let [claims (tokens/verify token {:iss :team-invitation})
+        (let [claims (tokens :verify {:token token :iss :team-invitation})
               claims (assoc claims :member-id  (:id profile))
               params (assoc params :profile-id (:id profile))]
           (process-token conn params claims)
@@ -94,16 +93,17 @@
             {:transform-response
              (fn [request response]
                (let [uagent (get-in request [:headers "user-agent"])
-                     id     (session/create (:id profile) uagent)]
+                     id     (session/create! session {:profile-id (:id profile)
+                                                      :user-agent uagent})]
                  (assoc response
-                        :cookies (session/cookies id))))}))
+                        :cookies (session/cookies session {:value id}))))}))
 
         ;; If no token is provided, send a verification email
-        (let [token (tokens/generate
-                     {:iss :verify-email
-                      :exp (dt/in-future "48h")
-                      :profile-id (:id profile)
-                      :email (:email profile)})]
+        (let [token (tokens :generate
+                            {:iss :verify-email
+                             :exp (dt/in-future "48h")
+                             :profile-id (:id profile)
+                             :email (:email profile)})]
 
           (emails/send! conn emails/register
                         {:to (:email profile)
@@ -198,8 +198,8 @@
   (s/keys :req-un [::email ::password]
           :opt-un [::scope]))
 
-(sm/defmutation ::login
-  [{:keys [email password scope] :as params}]
+(sv/defmethod ::login {:auth false}
+  [{:keys [pool] :as cfg} {:keys [email password scope] :as params}]
   (letfn [(check-password [profile password]
             (when (= (:password profile) "!")
               (ex/raise :type :validation
@@ -218,7 +218,7 @@
                         :code :wrong-credentials))
             profile)]
 
-    (db/with-atomic [conn db/pool]
+    (db/with-atomic [conn pool]
       (let [prof (-> (profile/retrieve-profile-data-by-email conn email)
                      (validate-profile)
                      (profile/strip-private-attrs))
@@ -228,8 +228,8 @@
 
 ;; --- Mutation: Register if not exists
 
-(sm/defmutation ::login-or-register
-  [{:keys [email fullname] :as params}]
+(sv/defmethod ::login-or-register
+  [{:keys [pool] :as cfg} {:keys [email fullname] :as params}]
   (letfn [(populate-additional-data [conn profile]
             (let [data (profile/retrieve-additional-data conn (:id profile))]
               (merge profile data)))
@@ -248,7 +248,7 @@
             (->> (create-profile conn params)
                  (create-profile-relations conn)))]
 
-    (db/with-atomic [conn db/pool]
+    (db/with-atomic [conn pool]
       (let [profile (profile/retrieve-profile-data-by-email conn email)
             profile (if profile
                       (populate-additional-data conn profile)
@@ -269,9 +269,9 @@
 (s/def ::update-profile
   (s/keys :req-un [::id ::fullname ::lang ::theme]))
 
-(sm/defmutation ::update-profile
-  [params]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::update-profile
+  [{:keys [pool] :as cfg} params]
+  (db/with-atomic [conn pool]
     (update-profile conn params)
     nil))
 
@@ -288,9 +288,9 @@
 (s/def ::update-profile-password
   (s/keys :req-un [::profile-id ::password ::old-password]))
 
-(sm/defmutation ::update-profile-password
-  [{:keys [password profile-id] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::update-profile-password
+  [{:keys [pool] :as cfg} {:keys [password profile-id] :as params}]
+  (db/with-atomic [conn pool]
     (validate-password! conn params)
     (db/update! conn :profile
                 {:password (derive-password password)}
@@ -306,14 +306,14 @@
 (s/def ::update-profile-photo
   (s/keys :req-un [::profile-id ::file]))
 
-(sm/defmutation ::update-profile-photo
-  [{:keys [profile-id file] :as params}]
+(sv/defmethod ::update-profile-photo
+  [{:keys [pool] :as cfg} {:keys [profile-id file] :as params}]
   (media/validate-media-type (:content-type file))
-  (db/with-atomic [conn db/pool]
+  (db/with-atomic [conn pool]
     (let [profile (db/get-by-id conn :profile profile-id)
           _       (media/run {:cmd :info :input {:path (:tempfile file)
                                                  :mtype (:content-type file)}})
-          photo   (teams/upload-photo conn params)]
+          photo   (teams/upload-photo cfg params)]
 
       ;; Schedule deletion of old photo
       (when (and (string? (:photo profile))
@@ -335,16 +335,16 @@
 (s/def ::request-email-change
   (s/keys :req-un [::email]))
 
-(sm/defmutation ::request-email-change
-  [{:keys [profile-id email] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::request-email-change
+  [{:keys [pool tokens] :as cfg} {:keys [profile-id email] :as params}]
+  (db/with-atomic [conn pool]
     (let [email   (str/lower email)
           profile (db/get-by-id conn :profile profile-id)
-          token   (tokens/generate
-                   {:iss :change-email
-                    :exp (dt/in-future "15m")
-                    :profile-id profile-id
-                    :email email})]
+          token   (tokens :generate
+                          {:iss :change-email
+                           :exp (dt/in-future "15m")
+                           :profile-id profile-id
+                           :email email})]
 
       (when (not= email (:email profile))
         (check-profile-existence! conn params))
@@ -365,13 +365,13 @@
 (s/def ::request-profile-recovery
   (s/keys :req-un [::email]))
 
-(sm/defmutation ::request-profile-recovery
-  [{:keys [email] :as params}]
+(sv/defmethod ::request-profile-recovery {:auth false}
+  [{:keys [pool tokens] :as cfg} {:keys [email] :as params}]
   (letfn [(create-recovery-token [{:keys [id] :as profile}]
-            (let [token (tokens/generate
-                         {:iss :password-recovery
-                          :exp (dt/in-future "15m")
-                          :profile-id id})]
+            (let [token (tokens :generate
+                                {:iss :password-recovery
+                                 :exp (dt/in-future "15m")
+                                 :profile-id id})]
               (assoc profile :token token)))
 
           (send-email-notification [conn profile]
@@ -380,7 +380,7 @@
                            :token (:token profile)
                            :name (:fullname profile)}))]
 
-    (db/with-atomic [conn db/pool]
+    (db/with-atomic [conn pool]
       (some->> email
                (profile/retrieve-profile-data-by-email conn)
                (create-recovery-token)
@@ -394,17 +394,17 @@
 (s/def ::recover-profile
   (s/keys :req-un [::token ::password]))
 
-(sm/defmutation ::recover-profile
-  [{:keys [token password]}]
+(sv/defmethod ::recover-profile {:auth false}
+  [{:keys [pool tokens] :as cfg} {:keys [token password]}]
   (letfn [(validate-token [token]
-            (let [tdata (tokens/verify token {:iss :password-recovery})]
+            (let [tdata (tokens :verify {:token token :iss :password-recovery})]
               (:profile-id tdata)))
 
           (update-password [conn profile-id]
             (let [pwd (derive-password password)]
               (db/update! conn :profile {:password pwd} {:id profile-id})))]
 
-    (db/with-atomic [conn db/pool]
+    (db/with-atomic [conn pool]
       (->> (validate-token token)
            (update-password conn))
       nil)))
@@ -415,9 +415,9 @@
 (s/def ::update-profile-props
   (s/keys :req-un [::profile-id ::props]))
 
-(sm/defmutation ::update-profile-props
-  [{:keys [profile-id props]}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::update-profile-props
+  [{:keys [pool] :as cfg} {:keys [profile-id props]}]
+  (db/with-atomic [conn pool]
     (let [profile (profile/retrieve-profile-data conn profile-id)
           props   (reduce-kv (fn [props k v]
                                (if (nil? v)
@@ -439,9 +439,9 @@
 (s/def ::delete-profile
   (s/keys :req-un [::profile-id]))
 
-(sm/defmutation ::delete-profile
-  [{:keys [profile-id] :as params}]
-  (db/with-atomic [conn db/pool]
+(sv/defmethod ::delete-profile
+  [{:keys [pool session] :as cfg} {:keys [profile-id] :as params}]
+  (db/with-atomic [conn pool]
     (check-teams-ownership! conn profile-id)
 
     ;; Schedule a complete deletion of profile
@@ -456,10 +456,9 @@
     (with-meta {}
       {:transform-response
        (fn [request response]
-         (some-> (session/extract-auth-token request)
-                 (session/delete))
+         (session/delete! session request)
          (assoc response
-                :cookies (session/cookies "" {:max-age -1})))})))
+                :cookies (session/cookies session {:value "" :max-age -1})))})))
 
 (def ^:private sql:teams-ownership-check
   "with teams as (

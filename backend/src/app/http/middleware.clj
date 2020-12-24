@@ -37,7 +37,7 @@
                 :json (parse-json body)
                 :transit (parse-transit body))
               (catch Exception e
-                (let [type (if (:debug cfg/config) :json-verbose :json)
+                (let [type (if (:debug @cfg/config) :json-verbose :json)
                       data {:type :parse
                             :hint "unable to parse request body"
                             :message (ex-message e)}]
@@ -70,7 +70,7 @@
 (defn- impl-format-response-body
   [response]
   (let [body (:body response)
-        type (if (:debug cfg/config) :json-verbose :json)]
+        type (if (:debug @cfg/config) :json-verbose :json)]
     (cond
       (coll? body)
       (-> response

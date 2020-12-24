@@ -7,13 +7,13 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.services.queries.projects
+(ns app.rpc.queries.projects
   (:require
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
-   [app.services.queries :as sq]
-   [app.services.queries.teams :as teams]
+   [app.rpc.queries.teams :as teams]
+   [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
 
 ;; --- Check Project Permissions
@@ -68,9 +68,9 @@
 (s/def ::projects
   (s/keys :req-un [::profile-id ::team-id]))
 
-(sq/defquery ::projects
-  [{:keys [profile-id team-id]}]
-  (with-open [conn (db/open)]
+(sv/defmethod ::projects
+  [{:keys [pool]} {:keys [profile-id team-id]}]
+  (with-open [conn (db/open pool)]
     (teams/check-read-permissions! conn profile-id team-id)
     (retrieve-projects conn profile-id team-id)))
 
@@ -100,9 +100,9 @@
 (s/def ::project
   (s/keys :req-un [::profile-id ::id]))
 
-(sq/defquery ::project
-  [{:keys [profile-id id]}]
-  (with-open [conn (db/open)]
+(sv/defmethod ::project
+  [{:keys [pool]} {:keys [profile-id id]}]
+  (with-open [conn (db/open pool)]
     (let [project (db/get-by-id conn :project id)]
       (check-read-permissions! conn profile-id id)
       project)))
