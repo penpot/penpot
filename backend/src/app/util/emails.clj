@@ -17,13 +17,13 @@
    [cuerdas.core :as str])
   (:import
    java.util.Properties
-   javax.mail.Message$RecipientType
-   javax.mail.Session
-   javax.mail.Transport
-   javax.mail.internet.InternetAddress
-   javax.mail.internet.MimeBodyPart
-   javax.mail.internet.MimeMessage
-   javax.mail.internet.MimeMultipart))
+   jakarta.mail.Message$RecipientType
+   jakarta.mail.Session
+   jakarta.mail.Transport
+   jakarta.mail.internet.InternetAddress
+   jakarta.mail.internet.MimeBodyPart
+   jakarta.mail.internet.MimeMessage
+   jakarta.mail.internet.MimeMultipart))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Email Building

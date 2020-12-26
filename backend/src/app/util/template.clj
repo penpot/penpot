@@ -8,8 +8,6 @@
 ;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.util.template
-  "A lightweight abstraction over mustache.java template engine.
-  The documentation can be found: http://mustache.github.io/mustache.5.html"
   (:require
    [app.common.exceptions :as ex]
    [selmer.parser :as sp]))
