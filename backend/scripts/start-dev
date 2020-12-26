@@ -8,6 +8,6 @@ if [ ! -e ~/.fixtures-loaded ]; then
     touch ~/.fixtures-loaded
 fi
 
-clojure -M -m app.main
+clojure -A:dev -M -m app.main
 
 

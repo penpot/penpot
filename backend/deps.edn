@@ -10,33 +10,33 @@
 
   ;; Logging
   org.clojure/tools.logging {:mvn/version "1.1.0"}
-  org.apache.logging.log4j/log4j-api {:mvn/version "2.13.3"}
-  org.apache.logging.log4j/log4j-core {:mvn/version "2.13.3"}
-  org.apache.logging.log4j/log4j-web {:mvn/version "2.13.3"}
-  org.apache.logging.log4j/log4j-jul {:mvn/version "2.13.3"}
-  org.apache.logging.log4j/log4j-slf4j-impl {:mvn/version "2.13.3"}
+  org.apache.logging.log4j/log4j-api {:mvn/version "2.14.0"}
+  org.apache.logging.log4j/log4j-core {:mvn/version "2.14.0"}
+  org.apache.logging.log4j/log4j-web {:mvn/version "2.14.0"}
+  org.apache.logging.log4j/log4j-jul {:mvn/version "2.14.0"}
+  org.apache.logging.log4j/log4j-slf4j-impl {:mvn/version "2.14.0"}
   org.slf4j/slf4j-api {:mvn/version "1.7.30"}
 
   io.prometheus/simpleclient {:mvn/version "0.9.0"}
   io.prometheus/simpleclient_hotspot {:mvn/version "0.9.0"}
   io.prometheus/simpleclient_httpserver {:mvn/version "0.9.0"}
 
-  selmer/selmer {:mvn/version "1.12.28"}
-  expound/expound {:mvn/version "0.8.5"}
+  selmer/selmer {:mvn/version "1.12.31"}
+  expound/expound {:mvn/version "0.8.7"}
   com.cognitect/transit-clj {:mvn/version "1.0.324"}
 
   io.lettuce/lettuce-core {:mvn/version "5.2.2.RELEASE"}
   java-http-clj/java-http-clj {:mvn/version "0.4.1"}
 
-  info.sunng/ring-jetty9-adapter {:mvn/version "0.14.0"}
-  seancorfield/next.jdbc {:mvn/version "1.1.588"}
-  metosin/reitit-ring {:mvn/version "0.5.5"}
-  org.postgresql/postgresql {:mvn/version "42.2.16"}
+  info.sunng/ring-jetty9-adapter {:mvn/version "0.14.1"}
+  seancorfield/next.jdbc {:mvn/version "1.1.613"}
+  metosin/reitit-ring {:mvn/version "0.5.10"}
+  org.postgresql/postgresql {:mvn/version "42.2.18"}
   com.zaxxer/HikariCP {:mvn/version "3.4.5"}
 
   funcool/log4j2-clojure {:mvn/version "2020.11.23-1"}
   funcool/datoteka {:mvn/version "1.2.0"}
-  funcool/promesa {:mvn/version "5.1.0"}
+  funcool/promesa {:mvn/version "6.0.0"}
   funcool/cuerdas {:mvn/version "2020.03.26-3"}
 
   buddy/buddy-core {:mvn/version "1.9.0"}
@@ -51,10 +51,8 @@
   org.jsoup/jsoup {:mvn/version "1.13.1"}
   org.im4java/im4java {:mvn/version "1.4.0"}
   org.lz4/lz4-java {:mvn/version "1.7.1"}
-  com.github.spullara.mustache.java/compiler {:mvn/version "0.9.6"}
   commons-io/commons-io {:mvn/version "2.8.0"}
-  com.draines/postal {:mvn/version "2.0.3"
-                      :exclusions [commons-codec/commons-codec]}
+  com.sun.mail/jakarta.mail {:mvn/version "2.0.0"}
 
   puppetlabs/clj-ldap {:mvn/version"0.3.0"}
   integrant/integrant {:mvn/version "0.8.0"}
@@ -69,12 +67,12 @@
  {:dev
   {:extra-deps
    {com.bhauman/rebel-readline {:mvn/version "0.1.4"}
-    org.clojure/tools.namespace {:mvn/version "1.0.0"}
-    org.clojure/test.check {:mvn/version "1.0.0"}
+    org.clojure/tools.namespace {:mvn/version "1.1.0"}
+    org.clojure/test.check {:mvn/version "1.1.0"}
     clj-kondo/clj-kondo {:mvn/version "RELEASE"}
 
-    fipp/fipp {:mvn/version "0.6.21"}
-    criterium/criterium {:mvn/version "0.4.5"}
+    fipp/fipp {:mvn/version "0.6.23"}
+    criterium/criterium {:mvn/version "0.4.6"}
     mockery/mockery {:mvn/version "0.1.4"}}
    :extra-paths ["tests"]}
 
@@ -94,12 +92,8 @@
    :main-opts ["-m" "kaocha.runner"]}
 
   :outdated
-  {:extra-deps {olical/depot {:mvn/version "1.8.4"}}
-   :main-opts ["-m" "depot.outdated.main"]}
-
-  :jar
-  {:extra-deps {seancorfield/depstar {:mvn/version "RELEASE"}}
-   :main-opts ["-m" "hf.depstar.jar" "-S" "target/app.jar"]}
+  {:extra-deps {antq/antq {:mvn/version "RELEASE"}}
+   :main-opts ["-m" "antq.core"]}
 
   :jmx-remote
   {:jvm-opts ["-Dcom.sun.management.jmxremote"
