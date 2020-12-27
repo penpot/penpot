@@ -120,6 +120,12 @@
 (s/def ::ldap-auth-fullname-attribute ::us/string)
 (s/def ::ldap-auth-avatar-attribute ::us/string)
 
+(s/def ::telemetry-enabled ::us/boolean)
+(s/def ::telemetry-url ::us/string)
+(s/def ::telemetry-server-enabled ::us/boolean)
+(s/def ::telemetry-server-port ::us/integer)
+
+
 (s/def ::config
   (s/keys :opt-un [::http-server-cors
                    ::http-server-debug
@@ -150,6 +156,10 @@
                    ::smtp-ssl
                    ::host
                    ::file-trimming-threshold
+                   ::telemetry-enabled
+                   ::telemetry-server-enabled
+                   ::telemetry-url
+                   ::telemetry-server-port
                    ::debug
                    ::allow-demo-users
                    ::registration-enabled
@@ -168,7 +178,7 @@
                    ::ldap-auth-fullname-attribute
                    ::ldap-auth-avatar-attribute]))
 
-(defn env->config
+(defn- env->config
   [env]
   (reduce-kv
    (fn [acc k v]
@@ -181,13 +191,13 @@
    {}
    env))
 
-(defn read-config
+(defn- read-config
   [env]
   (->> (env->config env)
        (merge defaults)
        (us/conform ::config)))
 
-(defn read-test-config
+(defn- read-test-config
   [env]
   (assoc (read-config env)
          :redis-uri "redis://redis/1"
@@ -196,30 +206,12 @@
          :assets-directory "/tmp/app/static"
          :migrations-verbose false))
 
-(def config
-  (delay (read-config env)))
-
-(def test-config
-  (delay (read-test-config env)))
+(def version (v/parse "%version%"))
+(def config (read-config env))
+(def test-config (read-test-config env))
 
 (def default-deletion-delay
   (dt/duration {:hours 48}))
-
-(def version
-  (delay (v/parse "%version%")))
-
-;; (defmethod ig/init-key ::secrets
-;;   [type {:keys [key] :as opts}]
-;;   (when (= key "default")
-;;     (log/warn "Using default SECRET-KEY, system will generate insecure tokens."))
-;;   {:key key
-;;    :factory
-;;    (fn [salt length]
-;;      (let [engine (bk/engine {:key key
-;;                               :salt (name salt)
-;;                               :alg :hkdf
-;;                               :digest :blake2b-512})]
-;;        (bk/get-bytes engine length)))})
 
 (prefer-method print-method
                clojure.lang.IRecord
