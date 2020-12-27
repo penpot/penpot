@@ -13,7 +13,8 @@
    [app.config :as cfg]
    [app.metrics :as mtx]
    [app.util.transit :as t]
-   [clojure.data.json :as json]
+   [app.util.json :as json]
+   ;; [clojure.data.json :as json]
    [clojure.java.io :as io]
    [ring.middleware.cookies :refer [wrap-cookies]]
    [ring.middleware.keyword-params :refer [wrap-keyword-params]]
@@ -21,7 +22,7 @@
    [ring.middleware.params :refer [wrap-params]]
    [ring.middleware.resource :refer [wrap-resource]]))
 
-(defn- wrap-parse-request-body
+(defn wrap-parse-request-body
   [handler]
   (letfn [(parse-transit [body]
             (let [reader (t/reader body)]
@@ -70,7 +71,7 @@
 (defn- impl-format-response-body
   [response]
   (let [body (:body response)
-        type (if (:debug @cfg/config) :json-verbose :json)]
+        type (if (:debug cfg/config) :json-verbose :json)]
     (cond
       (coll? body)
       (-> response
@@ -96,12 +97,12 @@
   {:name ::format-response-body
    :compile (constantly wrap-format-response-body)})
 
-(defn- wrap-errors
+(defn wrap-errors
   [handler on-error]
   (fn [request]
     (try
       (handler request)
-      (catch Throwable e
+      (catch Exception e
         (on-error e request)))))
 
 (def errors
@@ -113,6 +114,7 @@
    :wrap (fn [handler]
            (mtx/wrap-counter handler {:id "http__requests_counter"
                                       :help "Absolute http requests counter."}))})
+
 
 (def cookies
   {:name ::cookies
@@ -129,34 +131,3 @@
 (def keyword-params
   {:name ::keyword-params
    :compile (constantly wrap-keyword-params)})
-
-(defn- wrap-development-cors
-  [handler]
-  (letfn [(add-cors-headers [response]
-            (update response :headers
-                    (fn [headers]
-                      (-> headers
-                          (assoc "access-control-allow-origin" "http://localhost:3449")
-                          (assoc "access-control-allow-methods" "GET,POST,DELETE,OPTIONS,PUT,HEAD,PATCH")
-                          (assoc "access-control-allow-credentials" "true")
-                          (assoc "access-control-expose-headers" "x-requested-with, content-type, cookie")
-                          (assoc "access-control-allow-headers" "content-type")))))]
-    (fn [request]
-      (if (= (:request-method request) :options)
-        (-> {:status 200 :body ""}
-            (add-cors-headers))
-        (let [response (handler request)]
-          (add-cors-headers response))))))
-
-(def development-cors
-  {:name ::development-cors
-   :compile (fn [& _args]
-              (when *assert*
-                wrap-development-cors))})
-
-(def development-resources
-  {:name ::development-resources
-   :compile (fn [& _args]
-              (when *assert*
-                #(wrap-resource % "public")))})
-

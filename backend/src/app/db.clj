@@ -9,13 +9,14 @@
 
 (ns app.db
   (:require
-   [app.common.spec :as us]
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
+   [app.common.spec :as us]
    [app.config :as cfg]
+   [app.util.json :as json]
+   [app.util.migrations :as mg]
    [app.util.time :as dt]
    [app.util.transit :as t]
-   [clojure.data.json :as json]
    [clojure.spec.alpha :as s]
    [clojure.string :as str]
    [integrant.core :as ig]
@@ -46,7 +47,7 @@
 (s/def ::name ::us/not-empty-string)
 (s/def ::min-pool-size ::us/integer)
 (s/def ::max-pool-size ::us/integer)
-(s/def ::migrations fn?)
+(s/def ::migrations map?)
 (s/def ::metrics map?)
 
 (defmethod ig/pre-init-spec ::pool [_]
@@ -55,14 +56,16 @@
 (defmethod ig/init-key ::pool
   [_ {:keys [migrations] :as cfg}]
   (let [pool (create-pool cfg)]
-    (when migrations
+    (when (seq migrations)
       (with-open [conn (open pool)]
-        (migrations conn)))
+        (mg/setup! conn)
+        (doseq [[mname steps] migrations]
+          (mg/migrate! conn {:name (name mname) :steps steps}))))
     pool))
 
 (defmethod ig/halt-key! ::pool
   [_ pool]
-  (.close ^com.zaxxer.hikari.HikariDataSource pool))
+  (.close ^HikariDataSource pool))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API & Impl
@@ -71,7 +74,6 @@
 (def initsql
   (str "SET statement_timeout = 10000;\n"
        "SET idle_in_transaction_session_timeout = 30000;"))
-
 
 (defn- create-datasource-config
   [{:keys [metrics] :as cfg}]
@@ -106,7 +108,7 @@
 
 (defn pool-closed?
   [pool]
-  (.isClosed ^com.zaxxer.hikari.HikariDataSource pool))
+  (.isClosed ^HikariDataSource pool))
 
 (defn- create-pool
   [cfg]
@@ -254,7 +256,7 @@
         val (.getValue o)]
     (if (or (= typ "json")
             (= typ "jsonb"))
-      (json/read-str val :key-fn keyword)
+      (json/decode-str val)
       val)))
 
 (defn decode-transit-pgobject
@@ -278,7 +280,7 @@
   [data]
   (doto (org.postgresql.util.PGobject.)
     (.setType "jsonb")
-    (.setValue (json/write-str data))))
+    (.setValue (json/encode-str data))))
 
 (defn pgarray->set
   [v]

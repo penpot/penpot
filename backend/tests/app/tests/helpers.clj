@@ -38,7 +38,7 @@
 
 (defn state-init
   [next]
-  (let [config (-> (main/build-system-config @cfg/test-config)
+  (let [config (-> (main/build-system-config cfg/test-config)
                    (dissoc :app.srepl/server
                            :app.http/server
                            :app.http/router

@@ -9,15 +9,11 @@
 
 (ns app.http
   (:require
-   [clojure.pprint]
+   [app.common.spec :as us]
    [app.config :as cfg]
    [app.http.auth :as auth]
-   ;; [app.http.auth.gitlab :as gitlab]
-   [app.http.auth.google :as google]
-   ;; [app.http.auth.ldap :as ldap]
    [app.http.errors :as errors]
    [app.http.middleware :as middleware]
-   ;; [app.http.ws :as ws]
    [app.metrics :as mtx]
    [clojure.tools.logging :as log]
    [integrant.core :as ig]
@@ -27,15 +23,25 @@
   (:import
    org.eclipse.jetty.server.handler.ErrorHandler))
 
+(s/def ::handler fn?)
+(s/def ::ws (s/map-of ::us/string fn?))
+(s/def ::port ::cfg/http-server-port)
+
+(defmethod ig/pre-init-spec ::server [_]
+  (s/keys :req-un [::handler ::port]
+          :opt-un [::ws]))
+
 (defmethod ig/init-key ::server
-  [_ {:keys [router ws port] :as opts}]
-  (log/info "Starting http server.")
-  (let [options {:port port
-                 :h2c? true
-                 :join? false
-                 :allow-null-path-info true
-                 :websockets ws}
-        server  (jetty/run-jetty router options)
+  [_ {:keys [handler ws port] :as opts}]
+  (log/infof "Starting http server on port %s." port)
+  (let [options (merge
+                 {:port port
+                  :h2c? true
+                  :join? false
+                  :allow-null-path-info true}
+                 (when (seq ws)
+                   {:websockets ws}))
+        server  (jetty/run-jetty handler options)
         handler (doto (ErrorHandler.)
                   (.setShowStacks true)
                   (.setServer server))]
@@ -45,7 +51,7 @@
 
 (defmethod ig/halt-key! ::server
   [_ server]
-  (log/info "Stoping http server." server)
+  (log/info "Stoping http server.")
   (.stop server))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

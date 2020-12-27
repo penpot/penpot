@@ -31,6 +31,8 @@
   info.sunng/ring-jetty9-adapter {:mvn/version "0.14.1"}
   seancorfield/next.jdbc {:mvn/version "1.1.613"}
   metosin/reitit-ring {:mvn/version "0.5.10"}
+  metosin/jsonista {:mvn/version "0.3.0"}
+
   org.postgresql/postgresql {:mvn/version "42.2.18"}
   com.zaxxer/HikariCP {:mvn/version "3.4.5"}
 
@@ -75,10 +77,6 @@
     criterium/criterium {:mvn/version "0.4.6"}
     mockery/mockery {:mvn/version "0.1.4"}}
    :extra-paths ["tests"]}
-
-  ;; :fn-media-loader
-  ;; {:exec-fn app.cli.media-loader/run
-  ;;  :args {}}
 
   :fn-fixtures
   {:exec-fn app.cli.fixtures/run

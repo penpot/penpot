@@ -293,11 +293,12 @@
 (s/def ::cron dt/cron?)
 (s/def ::props (s/nilable map?))
 
-(s/def ::scheduled-task
+(s/def ::scheduled-task-spec
   (s/keys :req-un [::id ::cron ::fn]
           :opt-un [::props]))
 
-(s/def ::schedule (s/coll-of ::scheduled-task))
+(s/def ::schedule
+  (s/coll-of (s/nilable ::scheduled-task-spec)))
 
 (defmethod ig/pre-init-spec ::scheduler [_]
   (s/keys :req-un [::executor ::db/pool ::schedule]))
@@ -307,7 +308,8 @@
   (let [scheduler (Executors/newScheduledThreadPool (int 1))
         cfg       (assoc cfg :scheduler scheduler)]
     (synchronize-schedule cfg)
-    (run! (partial schedule-task cfg) schedule)
+    (run! (partial schedule-task cfg)
+          (filter some? schedule))
     (reify
       java.lang.AutoCloseable
       (close [_]

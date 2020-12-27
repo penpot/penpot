@@ -20,6 +20,7 @@
    [clojure.pprint :refer [pprint]]
    [clojure.repl :refer :all]
    [clojure.spec.alpha :as s]
+   [clojure.spec.gen.alpha :as sgen]
    [clojure.test :as test]
    [clojure.tools.namespace.repl :as repl]
    [clojure.walk :refer [macroexpand-all]]
@@ -29,6 +30,7 @@
 (repl/disable-reload! (find-ns 'integrant.core))
 
 (defonce system nil)
+
 
 ;; --- Benchmarking Tools
 
@@ -68,7 +70,7 @@
   []
   (alter-var-root #'system (fn [sys]
                              (when sys (ig/halt! sys))
-                             (-> (main/build-system-config @cfg/config)
+                             (-> (main/build-system-config cfg/config)
                                  (ig/prep)
                                  (ig/init))))
   :started)
