@@ -5,11 +5,12 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.http
   (:require
    [app.common.spec :as us]
+   [app.common.data :as d]
    [app.config :as cfg]
    [app.http.auth :as auth]
    [app.http.errors :as errors]
@@ -26,14 +27,20 @@
 (s/def ::handler fn?)
 (s/def ::ws (s/map-of ::us/string fn?))
 (s/def ::port ::cfg/http-server-port)
+(s/def ::name ::us/string)
 
 (defmethod ig/pre-init-spec ::server [_]
   (s/keys :req-un [::handler ::port]
-          :opt-un [::ws]))
+          :opt-un [::ws ::name]))
+
+(defmethod ig/prep-key ::server
+  [_ cfg]
+  (merge {:name "http"}
+         (d/without-nils cfg)))
 
 (defmethod ig/init-key ::server
-  [_ {:keys [handler ws port] :as opts}]
-  (log/infof "Starting http server on port %s." port)
+  [_ {:keys [handler ws port name] :as opts}]
+  (log/infof "Starting %s server on port %s." name port)
   (let [options (merge
                  {:port port
                   :h2c? true
@@ -47,11 +54,12 @@
                   (.setServer server))]
 
     (.setErrorHandler server handler)
-    server))
+
+    (assoc opts :server server)))
 
 (defmethod ig/halt-key! ::server
-  [_ server]
-  (log/info "Stoping http server.")
+  [_ {:keys [server name port] :as opts}]
+  (log/infof "Stoping %s server on port %s." name port)
   (.stop server))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
