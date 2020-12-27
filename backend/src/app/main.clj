@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.main
   (:require
@@ -198,7 +198,8 @@
 
       :app.telemetry/server
       {:port    (:telemetry-server-port config 6063)
-       :handler (ig/ref :app.telemetry/handler)}})))
+       :handler (ig/ref :app.telemetry/handler)
+       :name    "telemetry"}})))
 
 
 (defmethod ig/init-key :default [_ data] data)
