@@ -15,8 +15,7 @@
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
-   [environ.core :refer [env]]
-   [mount.core :refer [defstate]]))
+   [environ.core :refer [env]]))
 
 (def defaults
   {:http-server-port 6060

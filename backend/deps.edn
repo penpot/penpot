@@ -61,8 +61,6 @@
 
   ;; exception printing
   io.aviso/pretty {:mvn/version "0.1.37"}
-
-  mount/mount {:mvn/version "0.1.16"}
   environ/environ {:mvn/version "1.2.0"}}
  :paths ["src" "resources" "../common" "common"]
  :aliases
