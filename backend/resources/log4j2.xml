@@ -29,6 +29,7 @@
 
     <Logger name="app.error-reporter" level="debug" additivity="false">
       <AppenderRef ref="console"/>
+      <AppenderRef ref="main" level="debug" />
     </Logger>
 
     <Logger name="app" level="debug" additivity="false">
