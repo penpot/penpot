@@ -15,10 +15,10 @@
    [app.config :as cfg]
    [app.db :as db]
    [app.tasks :as tasks]
-   [app.util.async :as aa]
-   [app.util.emails :as emails]
+   [app.worker :as wrk]
+   [app.util.json :as json]
+   [app.util.emails :as http]
    [clojure.core.async :as a]
-   [clojure.data.json :as json]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
    [cuerdas.core :as str]
@@ -32,11 +32,10 @@
 (declare send-notification!)
 (defonce queue-fn identity)
 
-(s/def ::http-client fn?)
-(s/def ::uri (s/nilable ::us/uri))
-
+(s/def ::uri ::us/string)
 (defmethod ig/pre-init-spec ::instance [_]
-  (s/keys :req-un [::aa/executor ::uri ::http-client]))
+  (s/keys :req-un [::wrk/executor]
+          :opt-un [::uri]))
 
 (defmethod ig/init-key ::instance
   [_ {:keys [executor uri] :as cfg}]
@@ -63,19 +62,16 @@
 (defn send-notification!
   [cfg report]
   (try
-    (let [send!  (:http-client cfg)
-          uri    (:uri cfg)
-
-
+    (let [uri    (:uri cfg)
           prefix (str/<< "Unhandled exception (@channel):\n"
                          "- host: `~(:host cfg/config)`\n"
                          "- version: `~(:full cfg/version)`")
           text   (str prefix "\n```" report "\n```")
 
-          rsp    (send! {:uri uri
-                         :method :post
-                         :headers {"content-type" "application/json"}
-                         :body (json/write-str {:text text})})]
+          rsp    (http/send! {:uri uri
+                              :method :post
+                              :headers {"content-type" "application/json"}
+                              :body (json/encode-str {:text text})})]
 
       (when (not= (:status rsp) 200)
         (log/warnf "Error reporting webhook replying with unexpected status: %s\n%s"

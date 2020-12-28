@@ -197,7 +197,11 @@
      :uri         (:telemetry-uri cfg/config)}
 
     :app.srepl/server
-    {:port 6062}}
+    {:port 6062}
+
+    :app.error-reporter/instance
+    {:uri (:error-report-webhook cfg/config)
+     :executor (ig/ref :app.worker/executor)}}
 
    (when (:telemetry-server-enabled cfg/config)
      {:app.telemetry/handler
