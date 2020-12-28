@@ -133,18 +133,24 @@
     :app.worker/scheduler
     {:executor   (ig/ref :app.worker/executor)
      :pool       (ig/ref :app.db/pool)
-     :schedule   [;; TODO: pending to refactor
-                  ;; {:id "file-media-gc"
-                  ;;  :cron #app/cron "0 0 0 */1 * ? *" ;; daily
-                  ;;  :fn (ig/ref :app.tasks.file-media-gc/handler)}
+     :schedule
+     [;; TODO: pending to refactor
+      ;; {:id "file-media-gc"
+      ;;  :cron #app/cron "0 0 0 */1 * ? *" ;; daily
+      ;;  :fn (ig/ref :app.tasks.file-media-gc/handler)}
 
-                  {:id "file-xlog-gc"
-                   :cron #app/cron "0 0 0 */1 * ?"  ;; daily
-                   :fn (ig/ref :app.tasks.file-xlog-gc/handler)}
+      {:id "file-xlog-gc"
+       :cron #app/cron "0 0 0 */1 * ?"  ;; daily
+       :fn (ig/ref :app.tasks.file-xlog-gc/handler)}
 
-                  {:id "tasks-gc"
-                   :cron #app/cron "0 0 0 */1 * ?"  ;; daily
-                   :fn (ig/ref :app.tasks.tasks-gc/handler)}]}
+      {:id "tasks-gc"
+       :cron #app/cron "0 0 0 */1 * ?"  ;; daily
+       :fn (ig/ref :app.tasks.tasks-gc/handler)}
+
+      (when (:telemetry-enabled cfg/config)
+        {:id "telemetry"
+         :cron #app/cron "0 0 */3 * * ?" ;; every 3h
+         :fn (ig/ref :app.tasks.telemetry/handler)})]}
 
     :app.tasks/all
     {"sendmail"       (ig/ref :app.tasks.sendmail/handler)
@@ -185,13 +191,15 @@
      :max-age (dt/duration {:hours 12})
      :metrics (ig/ref :app.metrics/metrics)}
 
-    ;; :app.tasks.telemetry/handler
-    ;; {:pool    (ig/ref :app.db/pool)}
+    :app.tasks.telemetry/handler
+    {:pool        (ig/ref :app.db/pool)
+     :version     (:full cfg/version)
+     :uri         (:telemetry-uri cfg/config)}
 
     :app.srepl/server
     {:port 6062}}
 
-   (when (:telemetry-server-enabled cfg/config true)
+   (when (:telemetry-server-enabled cfg/config)
      {:app.telemetry/handler
       {:pool     (ig/ref :app.db/pool)
        :executor (ig/ref :app.worker/executor)}

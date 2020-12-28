@@ -44,6 +44,9 @@
    :registration-enabled true
    :registration-domain-whitelist ""
 
+   :telemetry-enabled true
+   :telemetry-uri "http://localhost:6063/"
+
    :debug true
 
    ;; This is the time should transcurr after the last page
@@ -121,7 +124,7 @@
 (s/def ::ldap-auth-avatar-attribute ::us/string)
 
 (s/def ::telemetry-enabled ::us/boolean)
-(s/def ::telemetry-url ::us/string)
+(s/def ::telemetry-uri ::us/string)
 (s/def ::telemetry-server-enabled ::us/boolean)
 (s/def ::telemetry-server-port ::us/integer)
 
@@ -158,7 +161,7 @@
                    ::file-trimming-threshold
                    ::telemetry-enabled
                    ::telemetry-server-enabled
-                   ::telemetry-url
+                   ::telemetry-uri
                    ::telemetry-server-port
                    ::debug
                    ::allow-demo-users

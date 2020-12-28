@@ -306,10 +306,15 @@
 (defmethod ig/init-key ::scheduler
   [_ {:keys [executor schedule] :as cfg}]
   (let [scheduler (Executors/newScheduledThreadPool (int 1))
-        cfg       (assoc cfg :scheduler scheduler)]
+        schedule  (filter some? schedule)
+        cfg       (assoc cfg
+                         :scheduler scheduler
+                         :schedule schedule)]
+
     (synchronize-schedule cfg)
     (run! (partial schedule-task cfg)
           (filter some? schedule))
+
     (reify
       java.lang.AutoCloseable
       (close [_]
@@ -338,8 +343,6 @@
 
 (def sql:lock-scheduled-task
   "select id from scheduled_task where id=? for update skip locked")
-
-(declare schedule-task)
 
 (defn exception->string
   [error]
