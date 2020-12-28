@@ -14,8 +14,7 @@
    [app.common.spec :as us]
    [clojure.spec.alpha :as s]
    [app.config :refer [config]]
-   [app.util.storage :as ust]
-   [mount.core :refer [defstate]]))
+   [app.util.storage :as ust]))
 
 (s/def ::media-directory ::us/not-empty-string)
 (s/def ::media-uri ::us/not-empty-string)
