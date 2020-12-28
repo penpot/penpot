@@ -24,6 +24,12 @@
 ;; Migrations
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def sql:create-instance-table
+  "CREATE TABLE IF NOT EXISTS telemetry.instance (
+    id uuid PRIMARY KEY,
+    created_at timestamptz NOT NULL DEFAULT now()
+  );")
+
 (def sql:create-info-table
   "CREATE TABLE telemetry.info (
      instance_id uuid,
@@ -37,17 +43,6 @@
 
   ALTER TABLE telemetry.info
     ATTACH PARTITION telemetry.info_default DEFAULT;")
-
-;; Research on this
-;; ALTER TABLE telemetry.instance_info
-;;   SET (autovacuum_freeze_min_age = 0,
-;;        autovacuum_freeze_max_age = 100000);")
-
-(def sql:create-instance-table
-  "CREATE TABLE IF NOT EXISTS telemetry.instance (
-    id uuid PRIMARY KEY,
-    created_at timestamptz NOT NULL DEFAULT now()
-  );")
 
 (def migrations
   [{:name "0001-add-telemetry-schema"
@@ -98,7 +93,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def sql:insert-instance-info
-  "insert into telemetry.instance_info (instance_id, data, created_at)
+  "insert into telemetry.info (instance_id, data, created_at)
    values (?, ?, date_trunc('day', now()))
        on conflict (instance_id, created_at)
        do update set data = ?")
