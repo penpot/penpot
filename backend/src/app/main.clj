@@ -58,6 +58,29 @@
     {:media-directory (:media-directory config)
      :media-uri       (:media-uri config)}
 
+    :app.storage/storage
+    {:pool     (ig/ref :app.db/pool)
+     :backend  (:storage-default-backend cfg/config :s3)
+     :backends {:s3 (ig/ref :app.storage.s3/backend)
+                :fs (ig/ref :app.storage.fs/backend)
+                :db (ig/ref :app.storage.db/backend)}}
+
+    :app.storage/gc-task
+    {:pool     (ig/ref :app.db/pool)
+     :storage  (ig/ref :app.storage/storage)}
+
+    :app.storage.fs/backend
+    {:directory (:storage-fs-directory cfg/config)
+     :uri       (:storage-fs-uri cfg/config)}
+
+    :app.storage.db/backend
+    {:pool (ig/ref :app.db/pool)}
+
+    :app.storage.s3/backend
+    {:region    (:storage-s3-region cfg/config)
+     :bucket    (:storage-s3-bucket cfg/config)}
+
+
     :app.http.session/session
     {:pool        (ig/ref :app.db/pool)
      :cookie-name "auth-token"}
@@ -75,7 +98,8 @@
      :metrics     (ig/ref :app.metrics/metrics)
      :google-auth (ig/ref :app.http.auth/google)
      :gitlab-auth (ig/ref :app.http.auth/gitlab)
-     :ldap-auth   (ig/ref :app.http.auth/ldap)}
+     :ldap-auth   (ig/ref :app.http.auth/ldap)
+     :storage     (ig/ref :app.storage/storage)}
 
     :app.rpc/rpc
     {:pool    (ig/ref :app.db/pool)
@@ -84,7 +108,6 @@
      :metrics (ig/ref :app.metrics/metrics)
      :storage (ig/ref :app.media-storage/storage)
      :redis   (ig/ref :app.redis/redis)}
-
 
     :app.notifications/handler
     {:redis   (ig/ref :app.redis/redis)
@@ -142,6 +165,10 @@
       {:id "file-xlog-gc"
        :cron #app/cron "0 0 0 */1 * ?"  ;; daily
        :fn (ig/ref :app.tasks.file-xlog-gc/handler)}
+
+      {:id "storage-gc"
+       :cron #app/cron "0 0 0 */1 * ?"  ;; daily
+       :fn (ig/ref :app.storage/gc-task)}
 
       {:id "tasks-gc"
        :cron #app/cron "0 0 0 */1 * ?"  ;; daily

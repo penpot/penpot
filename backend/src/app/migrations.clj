@@ -116,6 +116,9 @@
 
    {:name "0034-mod-profile-table-add-props-field"
     :fn (mg/resource "app/migrations/sql/0034-mod-profile-table-add-props-field.sql")}
+
+   {:name "0035-add-storage-tables"
+    :fn (mg/resource "app/migrations/sql/0035-add-storage-tables.sql")}
    ])
 
 

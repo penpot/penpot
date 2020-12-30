@@ -44,11 +44,6 @@
           (run! (partial process-file conn) files)
           (recur))))))
 
-;; (mtx/instrument-with-summary!
-;;  {:var #'handler
-;;   :id "tasks__file_media_gc"
-;;   :help "Timing of task: file_media_gc"})
-
 (defn- decode-row
   [{:keys [data] :as row}]
   (cond-> row

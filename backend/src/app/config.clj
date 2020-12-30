@@ -26,10 +26,12 @@
    :secret-key "default"
    :enabled-asserts true
 
-   :media-directory "resources/public/media"
    :public-uri "http://localhost:3449/"
    :redis-uri "redis://localhost/0"
-   :media-uri "http://localhost:3449/media/"
+
+   :storage-fs-directory "resources/public/media"
+   :storage-fs-uri "http://localhost:3449/media/"
+   :storage-s3-region :eu-central-1
 
    :image-process-max-threads 2
 
@@ -76,6 +78,12 @@
 (s/def ::database-password (s/nilable ::us/string))
 (s/def ::database-uri ::us/string)
 (s/def ::redis-uri ::us/string)
+
+(s/def ::storage-fs-directory ::us/string)
+(s/def ::storage-fs-uri ::us/string)
+(s/def ::storage-s3-region ::us/keyword)
+(s/def ::storage-s3-bucket ::us/string)
+
 (s/def ::media-uri ::us/string)
 (s/def ::media-directory ::us/string)
 (s/def ::secret-key ::us/string)
@@ -143,8 +151,10 @@
                    ::database-username
                    ::database-password
                    ::database-uri
-                   ::media-directory
-                   ::media-uri
+                   ::storage-fs-directory
+                   ::storage-fs-uri
+                   ::storage-s3-bucket
+                   ::storage-s3-region
                    ::error-report-webhook
                    ::secret-key
                    ::smtp-default-from
@@ -204,8 +214,7 @@
   (assoc (read-config env)
          :redis-uri "redis://redis/1"
          :database-uri "postgresql://postgres/penpot_test"
-         :media-directory "/tmp/app/media"
-         :assets-directory "/tmp/app/static"
+         :storage-fs-directory "/tmp/app/storage"
          :migrations-verbose false))
 
 (def version (v/parse "%version%"))

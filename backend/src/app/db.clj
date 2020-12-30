@@ -17,6 +17,7 @@
    [app.util.migrations :as mg]
    [app.util.time :as dt]
    [app.util.transit :as t]
+   [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [clojure.string :as str]
    [integrant.core :as ig]
@@ -31,7 +32,10 @@
    com.zaxxer.hikari.metrics.prometheus.PrometheusMetricsTrackerFactory
    java.sql.Connection
    java.sql.Savepoint
+   org.postgresql.PGConnection
    org.postgresql.geometric.PGpoint
+   org.postgresql.largeobject.LargeObject
+   org.postgresql.largeobject.LargeObjectManager
    org.postgresql.jdbc.PgArray
    org.postgresql.util.PGInterval
    org.postgresql.util.PGobject))
@@ -115,6 +119,48 @@
   (let [dsc (create-datasource-config cfg)]
     (jdbc-dt/read-as-instant)
     (HikariDataSource. dsc)))
+
+(defn unwrap
+  [conn klass]
+  (.unwrap ^Connection conn klass))
+
+(defn lobj-manager
+  [conn]
+  (let [conn (unwrap conn org.postgresql.PGConnection)]
+    (.getLargeObjectAPI ^PGConnection conn)))
+
+(defn lobj-create
+  [manager]
+  (.createLO ^LargeObjectManager manager LargeObjectManager/READWRITE))
+
+(defn lobj-open
+  ([manager oid]
+   (lobj-open manager oid {}))
+  ([manager oid {:keys [mode] :or {mode :rw}}]
+   (let [mode (case mode
+                (:r :read) LargeObjectManager/READ
+                (:w :write) LargeObjectManager/WRITE
+                (:rw :read+write) LargeObjectManager/READWRITE)]
+     (.open ^LargeObjectManager manager (long oid) mode))))
+
+(defn lobj-unlink
+  [manager oid]
+  (.unlink ^LargeObjectManager manager (long oid)))
+
+(extend-type LargeObject
+  io/IOFactory
+  (make-reader [lobj opts]
+    (let [^InputStream is (.getInputStream ^LargeObject lobj)]
+      (io/make-reader is opts)))
+  (make-writer [lobj opts]
+    (let [^OutputStream os (.getOutputStream ^LargeObject lobj)]
+      (io/make-writer os opts)))
+  (make-input-stream [lobj opts]
+    (let [^InputStream is (.getInputStream ^LargeObject lobj)]
+      (io/make-input-stream is opts)))
+  (make-output-stream [lobj opts]
+    (let [^OutputStream os (.getOutputStream ^LargeObject lobj)]
+      (io/make-output-stream os opts))))
 
 (defmacro with-atomic
   [& args]
