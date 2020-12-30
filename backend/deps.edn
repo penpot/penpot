@@ -59,6 +59,8 @@
   puppetlabs/clj-ldap {:mvn/version"0.3.0"}
   integrant/integrant {:mvn/version "0.8.0"}
 
+  software.amazon.awssdk/s3 {:mvn/version "2.15.54"}
+
   ;; exception printing
   io.aviso/pretty {:mvn/version "0.1.37"}
   environ/environ {:mvn/version "1.2.0"}}

@@ -74,9 +74,10 @@
 (s/def ::google-auth map?)
 (s/def ::gitlab-auth map?)
 (s/def ::ldap-auth fn?)
+(s/def ::storage map?)
 
 (defmethod ig/pre-init-spec ::router [_]
-  (s/keys :req-un [::rpc ::session ::metrics ::google-auth ::gitlab-auth]))
+  (s/keys :req-un [::rpc ::session ::metrics ::google-auth ::gitlab-auth ::storage]))
 
 (defmethod ig/init-key ::router
   [_ cfg]
@@ -87,9 +88,10 @@
     (rr/create-default-handler))))
 
 (defn- create-router
-  [{:keys [session rpc google-auth gitlab-auth metrics ldap-auth] :as cfg}]
+  [{:keys [session rpc google-auth gitlab-auth metrics ldap-auth storage] :as cfg}]
   (rr/router
    [["/metrics" {:get (:handler metrics)}]
+    ["/storage/:id" {:get (:handler storage)}]
     ["/api" {:middleware [[middleware/format-response-body]
                           [middleware/parse-request-body]
                           [middleware/errors errors/handle]
