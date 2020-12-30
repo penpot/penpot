@@ -33,7 +33,7 @@
      :migrations (ig/ref :app.migrations/all)
      :name "main"
      :min-pool-size 0
-     :max-pool-size 10}
+     :max-pool-size 20}
 
     :app.metrics/metrics
     {}
