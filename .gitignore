@@ -14,6 +14,7 @@ figwheel_server.log
 node_modules
 /backend/target/
 /backend/resources/public/media
+/backend/resources/public/assets
 /backend/dist/
 /backend/logs/
 /backend/-
