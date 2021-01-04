@@ -5,7 +5,9 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
+
+;; TODO: move to file namespace, there are no media concept separated from file.
 
 (ns app.rpc.mutations.media
   (:require
@@ -18,6 +20,7 @@
    [app.rpc.queries.teams :as teams]
    [app.util.storage :as ust]
    [app.util.services :as sv]
+   [app.storage :as sto]
    [clojure.spec.alpha :as s]
    [datoteka.core :as fs]))
 
@@ -32,81 +35,122 @@
 (s/def ::profile-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
 (s/def ::team-id ::us/uuid)
-(s/def ::url ::us/url)
 
-;; --- Create Media object (Upload and create from url)
+;; --- Create File Media object (upload)
 
-(declare create-media-object)
+(declare create-file-media-object)
 (declare select-file-for-update)
-(declare persist-media-object-on-fs)
-(declare persist-media-thumbnail-on-fs)
 
 (s/def ::content ::media/upload)
 (s/def ::is-local ::us/boolean)
 
-(s/def ::add-media-object-from-url
-  (s/keys :req-un [::profile-id ::file-id ::is-local ::url]
-          :opt-un [::id ::name]))
-
-(s/def ::upload-media-object
+(s/def ::upload-file-media-object
   (s/keys :req-un [::profile-id ::file-id ::is-local ::name ::content]
           :opt-un [::id]))
 
-(sv/defmethod ::add-media-object-from-url
+(sv/defmethod ::upload-file-media-object
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
+  (db/with-atomic [conn pool]
+    (let [file (select-file-for-update conn file-id)]
+      (teams/check-edition-permissions! conn profile-id (:team-id file))
+      (-> (assoc cfg :conn conn)
+          (create-file-media-object params)))))
+
+(defn create-file-media-object
+  [{:keys [conn storage] :as cfg} {:keys [id file-id is-local name content] :as params}]
+  (media/validate-media-type (:content-type content))
+  (let [storage      (assoc storage :conn conn)
+        source-path  (fs/path (:tempfile content))
+        source-mtype (:content-type content)
+
+        source-info  (media/run {:cmd :info :input {:path source-path :mtype source-mtype}})
+        thumb        (when (not= (:mtype source-info) "image/svg+xml")
+                       (media/run (assoc thumbnail-options
+                                         :cmd :generic-thumbnail
+                                         :input {:mtype (:mtype source-info) :path source-path})))
+
+        image        (sto/put-object storage {:content (sto/content source-path)
+                                              :content-type (:mtype source-info)})
+
+        thumb        (when thumb
+                       (sto/put-object storage {:content (sto/content (:data thumb) (:size thumb))
+                                                :content-type (:mtype thumb)}))]
+    (db/insert! conn :file-media-object
+                {:id (uuid/next)
+                 :file-id file-id
+                 :is-local is-local
+                 :name name
+                 :media-id (:id image)
+                 :thumbnail-id (:id thumb)
+                 :width  (:width source-info)
+                 :height (:height source-info)
+                 :mtype  (:mtype source-info)})))
+
+
+;; --- Create File Media Object (from URL)
+
+(s/def ::create-file-media-object-from-url
+  (s/keys :req-un [::profile-id ::file-id ::is-local ::url]
+          :opt-un [::id ::name]))
+
+(sv/defmethod ::create-file-media-object-from-url
   [{:keys [pool] :as cfg} {:keys [profile-id file-id url name] :as params}]
   (db/with-atomic [conn pool]
     (let [file (select-file-for-update conn file-id)]
       (teams/check-edition-permissions! conn profile-id (:team-id file))
       (let [content (media/download-media-object url)
-            cfg     (assoc cfg :conn conn)
             params' (merge params {:content content
                                    :name (or name (:filename content))})]
-        (create-media-object cfg params')))))
 
-(sv/defmethod ::upload-media-object
+        ;; TODO: schedule to delete the tempfile created by media/download-media-object
+        (-> (assoc cfg :conn conn)
+            (create-file-media-object params'))))))
+
+
+;; --- Clone File Media object (Upload and create from url)
+
+(declare clone-file-media-object)
+
+(s/def ::clone-file-media-object
+  (s/keys :req-un [::profile-id ::file-id ::is-local ::id]))
+
+(sv/defmethod ::clone-file-media-object
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
-    (let [file (select-file-for-update conn file-id)
-          cfg  (assoc cfg :conn conn)]
+    (let [file (select-file-for-update conn file-id)]
       (teams/check-edition-permissions! conn profile-id (:team-id file))
-      (create-media-object cfg params))))
 
-(defn create-media-object
-  [{:keys [conn] :as cfg} {:keys [id file-id is-local name content]}]
-  (media/validate-media-type (:content-type content))
-  (let [info  (media/run {:cmd :info :input {:path (:tempfile content)
-                                             :mtype (:content-type content)}})
-        path  (persist-media-object-on-fs cfg content)
-        opts  (assoc thumbnail-options
-                     :input {:mtype (:mtype info)
-                             :path path})
-        thumb (if-not (= (:mtype info) "image/svg+xml")
-                (persist-media-thumbnail-on-fs cfg opts)
-                (assoc info
-                       :path path
-                       :quality 0))
+      (-> (assoc cfg :conn conn)
+          (clone-file-media-object params)))))
 
-        id (or id (uuid/next))
+(defn clone-file-media-object
+  [{:keys [conn storage] :as cfg} {:keys [id file-id is-local]}]
+  (let [mobj    (db/get-by-id conn :file-media-object id)
 
-        media-object (db/insert! conn :media-object
-                                 {:id id
-                                  :file-id file-id
-                                  :is-local is-local
-                                  :name name
-                                  :path (str path)
-                                  :width (:width info)
-                                  :height (:height info)
-                                  :mtype  (:mtype info)})
+        ;; This makes the storage participate in the same transaction.
+        storage (assoc storage :conn conn)
 
-        media-thumbnail (db/insert! conn :media-thumbnail
-                                    {:id (uuid/next)
-                                     :media-object-id id
-                                     :path (str (:path thumb))
-                                     :width (:width thumb)
-                                     :height (:height thumb)
-                                     :quality (:quality thumb)
-                                     :mtype (:mtype thumb)})]
-    (assoc media-object :thumb-path (:path media-thumbnail))))
+        img-obj (sto/get-object storage (:media-id mobj))
+        thm-obj (when (:thumbnail-id mobj)
+                  (sto/get-object storage (:thumbnail-id mobj)))
+
+        image   (sto/clone-object storage img-obj)
+        thumb   (when thm-obj
+                  (sto/clone-object storage thm-obj))]
+
+    (db/insert! conn :file-media-object
+                {:id (uuid/next)
+                 :file-id file-id
+                 :is-local is-local
+                 :name (:name mobj)
+                 :media-id (:id image)
+                 :thumbnail-id (:id thumb)
+                 :width  (:width mobj)
+                 :height (:height mobj)
+                 :mtype  (:mtype mobj)})))
+
+
+;; --- HELPERS
 
 (def ^:private sql:select-file-for-update
   "select file.*,
@@ -122,25 +166,3 @@
     (when-not row
       (ex/raise :type :not-found))
     row))
-
-(defn persist-media-object-on-fs
-  [{:keys [storage]} {:keys [filename tempfile]}]
-  (let [filename (fs/name filename)]
-    (ust/save! storage filename tempfile)))
-
-(defn persist-media-thumbnail-on-fs
-  [{:keys [storage]} {:keys [input] :as params}]
-  (let [path  (ust/lookup storage (:path input))
-        thumb (media/run
-                (-> params
-                    (assoc :cmd :generic-thumbnail)
-                    (update :input assoc :path path)))
-
-        name  (str "thumbnail-"
-                   (first (fs/split-ext (fs/name (:path input))))
-                   (cm/format->extension (:format thumb)))
-        path  (ust/save! storage name (:data thumb))]
-
-    (-> thumb
-        (dissoc :data :input)
-        (assoc :path path))))

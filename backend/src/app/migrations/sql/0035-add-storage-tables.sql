@@ -15,6 +15,19 @@ CREATE TABLE storage_data (
   data bytea NOT NULL
 );
 
+-- Table used for store inflight upload ids, for later recheck and
+-- delete possible staled files that exists on the phisical storage
+-- but does not exists in the 'storage_object' table.
+
+CREATE TABLE storage_pending (
+  id uuid NOT NULL,
+
+  backend text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+
+  PRIMARY KEY (created_at, id)
+);
+
 CREATE INDEX storage_data__id__idx ON storage_data(id);
 CREATE INDEX storage_object__id__deleted_at__idx
     ON storage_object(id, deleted_at)

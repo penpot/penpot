@@ -36,7 +36,7 @@
 
 ;; --- Conformers
 
-(defn- uuid-conformer
+(defn uuid-conformer
   [v]
   (if (uuid? v)
     v

@@ -283,7 +283,7 @@
          [:div.name (:name team)]
          [:div.icon
           [:span.update-overlay {:on-click on-image-click} i/exit]
-          [:img {:src (cfg/resolve-media-path (:photo team))}]
+          [:img {:src (cfg/resolve-team-photo-url team)}]
           [:& file-uploader {:accept "image/jpeg,image/png"
                              :multi false
                              :input-ref finput
@@ -292,7 +292,7 @@
         [:div.block.owner-block
          [:div.label (tr "dashboard.team-members")]
          [:div.owner
-          [:span.icon [:img {:src (cfg/resolve-media-path (:photo owner))}]]
+          [:span.icon [:img {:src (cfg/resolve-profile-photo-url owner)}]]
           [:span.text (str (:name owner) " ("  (tr "labels.owner") ")") ]]
          [:div.summary
           [:span.icon i/user]

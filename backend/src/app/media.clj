@@ -70,7 +70,7 @@
   (let [{:keys [path mtype]} input
         format (or (cm/mtype->format mtype) format)
         ext    (cm/format->extension format)
-        tmp (fs/create-tempfile :suffix ext)]
+        tmp    (fs/create-tempfile :suffix ext)]
 
     (doto (ConvertCmd.)
       (.run operation (into-array (map str [path tmp]))))
@@ -80,6 +80,7 @@
       (assoc params
              :format format
              :mtype  (cm/format->mtype format)
+             :size   (alength thumbnail-data)
              :data   (ByteArrayInputStream. thumbnail-data)))))
 
 (defmulti process :cmd)
@@ -160,24 +161,18 @@
               :code :media-type-not-allowed
               :hint "Seems like you are uploading an invalid media object")))
 
-
-;; TODO: rewrite using jetty http client instead of jvm
-;; builtin (because builtin http client uses a lot of memory for the
-;; same operation.
-
 (defn download-media-object
   [url]
   (let [result (http/get! url {:as :byte-array})
-        data (:body result)
+        data   (:body result)
         content-type (get (:headers result) "content-type")
         format (cm/mtype->format content-type)]
     (if (nil? format)
       (ex/raise :type :validation
                 :code :media-type-not-allowed
                 :hint "Seems like the url points to an invalid media object.")
-      (let [tempfile (fs/create-tempfile)
-            base-filename (first (fs/split-ext (fs/name tempfile)))
-            filename (str base-filename (cm/format->extension format))]
+      (let [tempfile  (fs/create-tempfile)
+            filename  (fs/name tempfile)]
         (with-open [ostream (io/output-stream tempfile)]
           (.write ostream data))
         {:filename filename

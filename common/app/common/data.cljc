@@ -34,6 +34,15 @@
   #?(:cljs (instance? lks/LinkedSet o)
      :clj (instance? LinkedSet o)))
 
+(defn deep-merge
+  ([a b]
+   (if (map? a)
+     (merge-with deep-merge a b)
+     b))
+  ([a b & rest]
+   (reduce deep-merge a (cons b rest))))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Structures Manipulation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

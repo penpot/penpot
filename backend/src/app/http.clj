@@ -15,6 +15,7 @@
    [app.http.auth :as auth]
    [app.http.errors :as errors]
    [app.http.middleware :as middleware]
+   [app.http.assets :as assets]
    [app.metrics :as mtx]
    [clojure.tools.logging :as log]
    [integrant.core :as ig]
@@ -91,7 +92,13 @@
   [{:keys [session rpc google-auth gitlab-auth metrics ldap-auth storage] :as cfg}]
   (rr/router
    [["/metrics" {:get (:handler metrics)}]
-    ["/storage/:id" {:get (:handler storage)}]
+
+    ["/assets" {:middleware [[middleware/format-response-body]
+                             [middleware/errors errors/handle]]}
+     ["/by-id/:id" {:get #(assets/objects-handler storage %)}]
+     ["/by-file-media-id/:id" {:get #(assets/file-objects-handler storage %)}]
+     ["/by-file-media-id/:id/thumbnail" {:get #(assets/file-thumbnails-handler storage %)}]]
+
     ["/api" {:middleware [[middleware/format-response-body]
                           [middleware/parse-request-body]
                           [middleware/errors errors/handle]

@@ -59,9 +59,6 @@
     (update [_ state]
       (assoc state :profile
              (cond-> data
-               (empty? (:photo data))
-               (assoc :photo (avatars/generate {:name fullname}))
-
                (nil? (:lang data))
                (assoc :lang cfg/default-language)
 
@@ -197,7 +194,7 @@
   [{:keys [team-id] :as params}]
   (us/assert ::us/uuid team-id)
   (letfn [(fetched [users state]
-            (->> (map #(avatars/assoc-avatar % :fullname) users)
+            (->> users
                  (d/index-by :id)
                  (assoc state :users)))]
     (ptk/reify ::fetch-team-users

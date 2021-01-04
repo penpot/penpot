@@ -46,6 +46,7 @@
    [app.util.object :as obj]
    [app.util.perf :as perf]
    [app.util.timers :as timers]
+   [app.util.http :as http]
    [beicon.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
@@ -437,7 +438,8 @@
            (when (or (dnd/has-type? e "app/shape")
                      (dnd/has-type? e "app/component")
                      (dnd/has-type? e "Files")
-                     (dnd/has-type? e "text/uri-list"))
+                     (dnd/has-type? e "text/uri-list")
+                     (dnd/has-type? e "text/asset-id"))
              (dom/prevent-default e))))
 
         on-drag-over
@@ -446,24 +448,24 @@
            (when (or (dnd/has-type? e "app/shape")
                      (dnd/has-type? e "app/component")
                      (dnd/has-type? e "Files")
-                     (dnd/has-type? e "text/uri-list"))
+                     (dnd/has-type? e "text/uri-list")
+                     (dnd/has-type? e "text/asset-id"))
              (dom/prevent-default e))))
 
-        ;; TODO: seems duplicated callback is the same as one located
-        ;; in left_toolbar
         on-uploaded
         (mf/use-callback
-         (fn [{:keys [id name] :as image} {:keys [x y]}]
-           (let [shape {:name name
-                        :width (:width image)
-                        :height (:height image)
-                        :x (- x (/ (:width image) 2))
-                        :y (- y (/ (:height image) 2))
-                        :metadata {:width (:width image)
+         (fn [image {:keys [x y]}]
+           (prn "on-uploaded" image x y)
+           (let [shape {:name     (:name image)
+                        :width    (:width image)
+                        :height   (:height image)
+                        :x        (- x (/ (:width image) 2))
+                        :y        (- y (/ (:height image) 2))
+                        :metadata {:width  (:width image)
                                    :height (:height image)
-                                   :id (:id image)
-                                   :path (:path image)}}
-                 aspect-ratio (/ (:width image) (:height image))]
+                                   :name   (:name image)
+                                   :id     (:id image)
+                                   :mtype  (:mtype image)}}]
              (st/emit! (dw/create-and-add-shape :image x y shape)))))
 
         on-drop
@@ -492,28 +494,36 @@
                                                       (gpt/point final-x final-y))))
 
                (dnd/has-type? event "text/uri-list")
-               (let [data (dnd/get-data event "text/uri-list")
-                     name (dnd/get-data event "text/asset-name")
+               (let [data  (dnd/get-data event "text/uri-list")
+                     name  (dnd/get-data event "text/asset-name")
                      lines (str/lines data)
-                     urls (filter #(and (not (str/blank? %))
-                                        (not (str/starts-with? % "#")))
-                                  lines)]
-                 (->> urls
-                      (map (fn [uri]
-                             (with-meta {:file-id (:id file)
-                                         :local? true
-                                         :uri uri
-                                         :name name}
-                               {:on-success #(on-uploaded % viewport-coord)})))
-                      (map dw/upload-media-objects)
-                      (apply st/emit!)))
+                     urls  (filter #(and (not (str/blank? %))
+                                         (not (str/starts-with? % "#")))
+                                   lines)]
+                 (st/emit!
+                  (dw/upload-media-objects
+                   (with-meta {:file-id (:id file)
+                               :local? true
+                               :uris urls
+                               :name name}
+                     {:on-success #(on-uploaded % viewport-coord)}))))
+
+               (dnd/has-type? event "text/asset-id")
+               (let [id     (-> (dnd/get-data event "text/asset-id") uuid/uuid)
+                     name   (dnd/get-data event "text/asset-name")
+                     params {:file-id (:id file)
+                             :local? true
+                             :object-id id
+                             :name name}]
+                 (st/emit! (dw/clone-media-object
+                            (with-meta params
+                              {:on-success #(on-uploaded % viewport-coord)}))))
 
                :else
-               (let [js-files (dnd/get-files event)
-                     params   {:file-id (:id file)
-                               :local? true
-                               :js-files js-files
-                               }]
+               (let [files  (dnd/get-files event)
+                     params {:file-id (:id file)
+                             :local? true
+                             :data (seq files)}]
                  (st/emit! (dw/upload-media-objects
                             (with-meta params
                               {:on-success #(on-uploaded % viewport-coord)}))))))))

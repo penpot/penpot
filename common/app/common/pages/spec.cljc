@@ -318,7 +318,7 @@
                    :internal.shape/blur]))
 
 
-                           ;; shapes-group is handled differently
+;; shapes-group is handled differently
 
 (s/def ::minimal-shape
   (s/keys :req-un [::type ::name]
@@ -348,33 +348,23 @@
                    :internal.color/gradient]))
 
 (s/def :internal.media-object/name ::string)
-(s/def :internal.media-object/path ::string)
 (s/def :internal.media-object/width ::safe-integer)
 (s/def :internal.media-object/height ::safe-integer)
 (s/def :internal.media-object/mtype ::string)
-(s/def :internal.media-object/thumb-path ::string)
-(s/def :internal.media-object/thumb-width ::safe-integer)
-(s/def :internal.media-object/thumb-height ::safe-integer)
-(s/def :internal.media-object/thumb-mtype ::string)
 
 (s/def ::media-object
-  (s/keys :req-un [::id ::name
-                   :internal.media-object/name
-                   :internal.media-object/path
+  (s/keys :req-un [::id
+                   ::name
                    :internal.media-object/width
                    :internal.media-object/height
-                   :internal.media-object/mtype
-                   :internal.media-object/thumb-path]))
+                   :internal.media-object/mtype]))
 
 (s/def ::media-object-update
   (s/keys :req-un  [::id]
           :req-opt [::name
-                    :internal.media-object/name
-                    :internal.media-object/path
                     :internal.media-object/width
                     :internal.media-object/height
-                    :internal.media-object/mtype
-                    :internal.media-object/thumb-path]))
+                    :internal.media-object/mtype]))
 
 (s/def :internal.file/colors
   (s/map-of ::uuid ::color))

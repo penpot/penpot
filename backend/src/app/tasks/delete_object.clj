@@ -57,8 +57,3 @@
   [conn {:keys [id] :as props}]
   (let [sql "delete from project where id=? and deleted_at is not null"]
     (db/exec-one! conn [sql id])))
-
-(defmethod handle-deletion :media-object
-  [conn {:keys [id] :as props}]
-  (let [sql "delete from media_object where id=? and deleted_at is not null"]
-    (db/exec-one! conn [sql id])))

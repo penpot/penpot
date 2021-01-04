@@ -31,25 +31,25 @@
 
         on-uploaded
         (mf/use-callback
-         (fn [{:keys [id name] :as image}]
-           (let [shape {:name name
-                        :width  (:width image)
-                        :height (:height image)
-                        :metadata {:width  (:width image)
-                                   :height (:height image)
-                                   :id     (:id image)
-                                   :path   (:path image)}}
-                 aspect-ratio (/ (:width image) (:height image))]
-             (st/emit! (dw/create-and-add-shape :image 0 0 shape)))))
+         (fn [image]
+           (->> {:name     (:name image)
+                 :width    (:width image)
+                 :height   (:height image)
+                 :metadata {:width  (:width image)
+                            :height (:height image)
+                            :mtype  (:mtype image)
+                            :id     (:id image)}}
+                (dw/create-and-add-shape :image 0 0)
+                (st/emit!))))
 
         on-files-selected
         (mf/use-callback
          (mf/deps file)
-         (fn [js-files]
+         (fn [blobs]
            (st/emit! (dw/upload-media-objects
                       (with-meta {:file-id (:id file)
                                   :local? true
-                                  :js-files js-files}
+                                  :data (seq blobs)}
                         {:on-success on-uploaded})))))]
 
        [:li.tooltip.tooltip-right

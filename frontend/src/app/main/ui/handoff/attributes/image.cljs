@@ -26,7 +26,7 @@
       [:div.attributes-block {:key (str "image-" (:id shape))}
        [:div.attributes-image-row
         [:div.attributes-image
-         [:img {:src (cfg/resolve-media-path (-> shape :metadata :path))}]]]
+         [:img {:src (cfg/resolve-file-media (-> shape :metadata))}]]]
 
        [:div.attributes-unit-row
         [:div.attributes-label (t locale "handoff.attributes.image.width")]
@@ -41,5 +41,5 @@
        (let [filename (last (str/split (-> shape :metadata :path) "/"))]
          [:a.download-button {:target "_blank"
                               :download filename
-                              :href (cfg/resolve-media-path (-> shape :metadata :path))}
+                              :href (cfg/resolve-file-media (-> shape :metadata))}
           (t locale "handoff.attributes.image.download")])])))

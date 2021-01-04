@@ -46,7 +46,7 @@
     (db/insert! conn :storage-data {:id id :data data})
     object))
 
-(defmethod impl/get-object :db
+(defmethod impl/get-object-data :db
   [{:keys [conn] :as backend} {:keys [id] :as object}]
   (let [result (db/exec-one! conn ["select data from storage_data where id=?" id])]
     (ByteArrayInputStream. (:data result))))

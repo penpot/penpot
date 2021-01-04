@@ -10,6 +10,7 @@
 (ns app.storage.s3
   "Storage backends abstraction layer."
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
@@ -23,20 +24,19 @@
    java.io.InputStream
    java.io.OutputStream
    java.nio.file.Path
+   software.amazon.awssdk.core.sync.RequestBody
    software.amazon.awssdk.regions.Region
    software.amazon.awssdk.services.s3.S3Client
    software.amazon.awssdk.services.s3.S3ClientBuilder
-   software.amazon.awssdk.core.sync.RequestBody
-   software.amazon.awssdk.services.s3.model.PutObjectRequest
-   software.amazon.awssdk.services.s3.model.GetObjectRequest
-   software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
-   software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest
-   software.amazon.awssdk.services.s3.presigner.S3Presigner
-   software.amazon.awssdk.services.s3.model.DeleteObjectsRequest
    software.amazon.awssdk.services.s3.model.Delete
+   software.amazon.awssdk.services.s3.model.DeleteObjectsRequest
+   software.amazon.awssdk.services.s3.model.DeleteObjectsResponse
+   software.amazon.awssdk.services.s3.model.GetObjectRequest
    software.amazon.awssdk.services.s3.model.ObjectIdentifier
-   software.amazon.awssdk.services.s3.model.DeleteObjectsResponse))
-
+   software.amazon.awssdk.services.s3.model.PutObjectRequest
+   software.amazon.awssdk.services.s3.presigner.S3Presigner
+   software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
+   software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest))
 
 (declare put-object)
 (declare get-object)
@@ -49,9 +49,14 @@
 
 (s/def ::region #{:eu-central-1})
 (s/def ::bucket ::us/string)
+(s/def ::prefix ::us/string)
 
 (defmethod ig/pre-init-spec ::backend [_]
-  (s/keys :opt-un [::region ::bucket]))
+  (s/keys :opt-un [::region ::bucket ::prefix]))
+
+(defmethod ig/prep-key ::backend
+  [_ cfg]
+  (merge {:prefix ""} (d/without-nils cfg)))
 
 (defmethod ig/init-key ::backend
   [_ cfg]
@@ -70,7 +75,7 @@
 (s/def ::client #(instance? S3Client %))
 (s/def ::presigner #(instance? S3Presigner %))
 (s/def ::backend
-  (s/keys :req-un [::region ::bucket ::client ::type ::presigner]))
+  (s/keys :req-un [::region ::bucket ::client ::type ::presigner ::prefix]))
 
 ;; --- API IMPL
 
@@ -78,7 +83,7 @@
   [backend object content]
   (put-object backend object content))
 
-(defmethod impl/get-object :s3
+(defmethod impl/get-object-data :s3
   [backend object]
   (get-object backend object))
 
@@ -110,8 +115,8 @@
       (build)))
 
 (defn- put-object
-  [{:keys [client bucket]} {:keys [id] :as object} content]
-  (let [path    (impl/id->path id)
+  [{:keys [client bucket prefix]} {:keys [id] :as object} content]
+  (let [path    (str prefix "-" (impl/id->path id))
         mdata   (meta object)
         mtype   (:content-type mdata "application/octet-stream")
         request (.. (PutObjectRequest/builder)
@@ -126,10 +131,10 @@
                 ^RequestBody content)))
 
 (defn- get-object
-  [{:keys [client bucket]} {:keys [id]}]
+  [{:keys [client bucket prefix]} {:keys [id]}]
   (let [gor (.. (GetObjectRequest/builder)
                 (bucket bucket)
-                (key (impl/id->path id))
+                (key (str prefix "-" (impl/id->path id)))
                 (build))
         obj (.getObject ^S3Client client gor)]
     (io/input-stream obj)))
@@ -138,11 +143,11 @@
   (dt/duration {:minutes 10}))
 
 (defn- get-object-url
-  [{:keys [presigner bucket]} {:keys [id]} {:keys [max-age] :or {max-age default-max-age}}]
+  [{:keys [presigner bucket prefix]} {:keys [id]} {:keys [max-age] :or {max-age default-max-age}}]
   (us/assert dt/duration? max-age)
   (let [gor  (.. (GetObjectRequest/builder)
                  (bucket bucket)
-                 (key (impl/id->path id))
+                 (key (str prefix "-" (impl/id->path id)))
                  (build))
         gopr (.. (GetObjectPresignRequest/builder)
                  (signatureDuration max-age)
@@ -152,10 +157,10 @@
     (u/uri (str (.url ^PresignedGetObjectRequest pgor)))))
 
 (defn- del-object-in-bulk
-  [{:keys [bucket client]} ids]
+  [{:keys [bucket client prefix]} ids]
   (let [oids (map (fn [id]
                     (.. (ObjectIdentifier/builder)
-                        (key (impl/id->path id))
+                        (key (str prefix "-" (impl/id->path id)))
                         (build)))
                   ids)
         delc (.. (Delete/builder)

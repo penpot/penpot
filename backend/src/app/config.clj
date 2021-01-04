@@ -24,14 +24,17 @@
    :database-username "penpot"
    :database-password "penpot"
    :secret-key "default"
-   :enabled-asserts true
+   :asserts-enabled true
 
    :public-uri "http://localhost:3449/"
    :redis-uri "redis://localhost/0"
 
-   :storage-fs-directory "resources/public/media"
-   :storage-fs-uri "http://localhost:3449/media/"
+   :storage-fs-old-directory "resources/public/media"
+   :storage-fs-directory "resources/public/assets"
+   :storage-fs-uri "http://localhost:3449/internal/assets/"
    :storage-s3-region :eu-central-1
+
+   :storage-s3-bucket "serenoxyztestbucket"
 
    :image-process-max-threads 2
 
@@ -49,12 +52,6 @@
    :telemetry-uri "http://localhost:6063/"
 
    :debug true
-
-   ;; This is the time should transcurr after the last page
-   ;; modification in order to make the file ellegible for
-   ;; trimming. The value only supports s(econds) m(inutes) and
-   ;; h(ours) as time unit.
-   :file-trimming-threshold "72h"
 
    ;; LDAP auth disabled by default. Set ldap-auth-host to enable
    ;:ldap-auth-host "ldap.mysupercompany.com"
@@ -87,7 +84,7 @@
 (s/def ::media-uri ::us/string)
 (s/def ::media-directory ::us/string)
 (s/def ::secret-key ::us/string)
-(s/def ::enable-asserts ::us/boolean)
+(s/def ::asserts-enabled ::us/boolean)
 
 (s/def ::host ::us/string)
 (s/def ::error-report-webhook ::us/string)
@@ -108,7 +105,6 @@
 (s/def ::backend-uri ::us/string)
 
 (s/def ::image-process-max-threads ::us/integer)
-(s/def ::file-trimming-threshold ::dt/duration)
 
 (s/def ::google-client-id ::us/string)
 (s/def ::google-client-secret ::us/string)
@@ -145,7 +141,7 @@
                    ::gitlab-client-id
                    ::gitlab-client-secret
                    ::gitlab-base-uri
-                   ::enable-asserts
+                   ::asserts-enabled
                    ::redis-uri
                    ::public-uri
                    ::database-username
@@ -167,7 +163,6 @@
                    ::smtp-tls
                    ::smtp-ssl
                    ::host
-                   ::file-trimming-threshold
                    ::telemetry-enabled
                    ::telemetry-server-enabled
                    ::telemetry-uri

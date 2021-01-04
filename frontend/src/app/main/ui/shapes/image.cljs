@@ -24,9 +24,9 @@
 
   (let [shape (unchecked-get props "shape")
         {:keys [id x y width height rotation metadata]} shape
-        uri (cfg/resolve-media-path (:path metadata))
+        uri              (cfg/resolve-file-media metadata)
         embed-resources? (mf/use-ctx muc/embed-ctx)
-        data-uri (mf/use-state (when (not embed-resources?) uri))]
+        data-uri         (mf/use-state (when (not embed-resources?) uri))]
 
     (mf/use-effect
      (mf/deps uri)

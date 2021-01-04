@@ -91,7 +91,7 @@
     (->> (http/send! {:method :post :uri uri})
       (rx/mapcat handle-response))))
 
-(defmethod mutation :upload-media-object
+(defmethod mutation :upload-file-media-object
   [id params]
   (let [form (js/FormData.)]
     (run! (fn [[key val]]
