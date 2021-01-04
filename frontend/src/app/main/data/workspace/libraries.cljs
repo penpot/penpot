@@ -12,6 +12,7 @@
    [app.common.data :as d]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.common.pages :as cp]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
    [app.main.data.messages :as dm]
@@ -109,8 +110,9 @@
   (ptk/reify ::add-media
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [rchg {:type :add-media
-                  :object media}
+      (let [obj  (select-keys media [:id :name :width :height :mtype])
+            rchg {:type :add-media
+                  :object obj}
             uchg {:type :del-media
                   :id id}]
         (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true}))))))
@@ -370,7 +372,7 @@
 
             update-new-shape
             (fn [new-shape original-shape]
-              (let [new-name 
+              (let [new-name
                     (dwc/generate-unique-name @unames (:name new-shape))]
 
                 (swap! unames conj new-name)

@@ -119,6 +119,9 @@
 
    {:name "0035-add-storage-tables"
     :fn (mg/resource "app/migrations/sql/0035-add-storage-tables.sql")}
+
+   {:name "0036-mod-storage-referenced-tables"
+    :fn (mg/resource "app/migrations/sql/0036-mod-storage-referenced-tables.sql")}
    ])
 
 

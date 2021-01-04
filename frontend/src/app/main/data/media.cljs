@@ -25,10 +25,24 @@
    [cuerdas.core :as str]
    [potok.core :as ptk]))
 
+;; --- Predicates
+
+(defn ^boolean file?
+  [o]
+  (instance? js/File o))
+
+(defn ^boolean blob?
+  [o]
+  (instance? js/Blob o))
+
+
 ;; --- Specs
 
-(s/def ::js-file #(instance? js/Blob %))
-(s/def ::js-files (s/coll-of ::js-file))
+(s/def ::blob blob?)
+(s/def ::blobs (s/coll-of ::blob))
+
+(s/def ::file file?)
+(s/def ::files (s/coll-of ::file))
 
 ;; --- Utility functions
 

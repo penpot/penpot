@@ -9,6 +9,7 @@
 
 (ns app.main.ui.settings.profile
   (:require
+   [app.config :as cfg]
    [app.common.spec :as us]
    [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
@@ -91,11 +92,7 @@
   [{:keys [locale] :as props}]
   (let [file-input (mf/use-ref nil)
         profile (mf/deref refs/profile)
-        photo (:photo profile)
-        photo (if (or (str/empty? photo) (nil? photo))
-                "images/avatar.jpg"
-                (cfg/resolve-media-path photo))
-
+        photo   (cfg/resolve-profile-photo-url profile)
         on-image-click #(dom/click (mf/ref-val file-input))
 
         on-file-selected

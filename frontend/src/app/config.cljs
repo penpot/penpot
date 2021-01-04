@@ -15,6 +15,7 @@
    [app.common.version :as v]
    [app.util.object :as obj]
    [app.util.dom :as dom]
+   [app.util.avatars :as avatars]
    [cuerdas.core :as str]))
 
 ;; --- Auxiliar Functions
@@ -72,7 +73,7 @@
   (def worker-uri       (obj/get global "appWorkerURI" "/js/worker.js"))
   (def public-uri       (or (obj/get global "appPublicURI")
                             (.-origin ^js js/location)))
-  (def media-uri        (str public-uri "/media"))
+  (def media-uri        (str public-uri "/assets"))
   (def version          (delay (parse-version global)))
   (def target           (delay (parse-target global)))
   (def browser          (delay (parse-browser)))
@@ -85,7 +86,6 @@
 
 ;; --- Helper Functions
 
-
 (defn ^boolean check-browser? [candidate]
   (us/verify ::browser candidate)
   (= candidate @browser))
@@ -94,9 +94,22 @@
   (us/verify ::platform candidate)
   (= candidate @platform))
 
-(defn resolve-media-path
-  [path]
-  (when path
-    (if (str/starts-with? path "data:")
-      path
-      (str media-uri "/" path))))
+(defn resolve-profile-photo-url
+  [{:keys [photo-id fullname name] :as profile}]
+  (if (nil? photo-id)
+    (avatars/generate {:name (or fullname name)})
+    (str public-uri "/assets/by-id/" photo-id)))
+
+(defn resolve-team-photo-url
+  [{:keys [photo-id name] :as team}]
+  (if (nil? photo-id)
+    (avatars/generate {:name name})
+    (str public-uri "/assets/by-id/" photo-id)))
+
+(defn resolve-file-media
+  ([media]
+   (resolve-file-media media false))
+  ([{:keys [id] :as media} thumnail?]
+   (str public-uri "/assets/by-file-media-id/" id (when thumnail? "/thumbnail"))))
+
+

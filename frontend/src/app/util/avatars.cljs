@@ -13,7 +13,7 @@
    [app.util.object :as obj]
    ["randomcolor" :as rdcolor]))
 
-(defn generate
+(defn generate*
   [{:keys [name color size]
     :or {color "#000000" size 128}}]
   (let [parts   (str/words (str/upper name))
@@ -36,13 +36,5 @@
 
     (.toDataURL canvas)))
 
-(defn assoc-avatar
-  [{:keys [photo] :as object} key]
-  (cond-> object
-    (or (nil? photo) (empty? photo))
-    (assoc :photo (generate {:name (get object key)}))))
-
-(defn assoc-profile-avatar
-  [object]
-  (assoc-avatar object :fullname))
+(def generate (memoize generate*))
 

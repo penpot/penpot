@@ -1184,8 +1184,7 @@
           (prepare-object [objects selected {:keys [type] :as obj}]
             (let [obj (maybe-translate obj objects selected)]
               (if (= type :image)
-                (let [path (get-in obj [:metadata :path])
-                      url  (cfg/resolve-media-path path)]
+                (let [url (cfg/resolve-file-media (:metadata obj))]
                   (->> (http/fetch-as-data-url url)
                        (rx/map #(assoc obj ::data %))
                        (rx/take 1)))
@@ -1313,7 +1312,7 @@
                   (fn [blob]
                     {:name (:name imgpart)
                      :file-id file-id
-                     :content (list blob (:file-name imgpart))
+                     :content blob
                      :is-local true}))
                  (rx/mapcat #(rp/mutation! :upload-media-object %))
                  (rx/map (fn [media]
@@ -1440,7 +1439,7 @@
       (let [file-id (get-in state [:workspace-file :id])
             params  {:file-id file-id
                      :local? true
-                     :js-files [image]}]
+                     :data [image]}]
         (rx/of (dwp/upload-media-objects
                 (with-meta params
                   {:on-success image-uploaded})))))))
@@ -1559,6 +1558,7 @@
 (d/export dwp/link-file-to-library)
 (d/export dwp/unlink-file-from-library)
 (d/export dwp/upload-media-objects)
+(d/export dwp/clone-media-object)
 
 ;; Selection
 

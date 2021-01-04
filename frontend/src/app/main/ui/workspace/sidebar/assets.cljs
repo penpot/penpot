@@ -163,10 +163,10 @@
         on-selected
         (mf/use-callback
          (mf/deps file-id)
-         (fn [js-files]
+         (fn [blobs]
            (let [params (with-meta {:file-id file-id
                                     :local? false
-                                    :js-files js-files}
+                                    :data (seq blobs)}
                           {:on-success on-media-uploaded})]
              (st/emit! (dw/upload-media-objects params)))))
 
@@ -212,8 +212,8 @@
 
         on-drag-start
         (mf/use-callback
-         (fn [path name event]
-           (dnd/set-data! event "text/uri-list" (cfg/resolve-media-path path))
+         (fn [{:keys [name id]} event]
+           (dnd/set-data! event "text/asset-id" (str id))
            (dnd/set-data! event "text/asset-name" name)
            (dnd/set-allowed-effect! event "move")))]
 
@@ -234,8 +234,8 @@
           [:div.grid-cell {:key (:id object)
                            :draggable true
                            :on-context-menu (on-context-menu (:id object))
-                           :on-drag-start (partial on-drag-start (:path object) (:name object))}
-           [:img {:src (cfg/resolve-media-path (:thumb-path object))
+                           :on-drag-start (partial on-drag-start object)}
+           [:img {:src (cfg/resolve-file-media object true)
                   :draggable false}] ;; Also need to add css pointer-events: none
 
            #_[:div.cell-name (:name object)]

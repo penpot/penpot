@@ -31,9 +31,11 @@
   (case format
     :png  "image/png"
     :jpeg "image/jpeg"
+    :jpg  "image/jpeg"
     :webp "image/webp"
     :gif "image/gif"
-    :svg  "image/svg+xml"))
+    :svg  "image/svg+xml"
+    "application/octet-stream"))
 
 (defn mtype->format
   [mtype]

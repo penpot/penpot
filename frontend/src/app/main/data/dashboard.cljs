@@ -74,14 +74,13 @@
       (watch [_ state stream]
         (let [profile (:profile state)]
           (->> (rp/query :team params)
-               (rx/map #(avatars/assoc-avatar % :name))
                (rx/map #(partial fetched %))))))))
 
 (defn fetch-team-members
   [{:keys [id] :as params}]
   (us/assert ::us/uuid id)
   (letfn [(fetched [members state]
-            (->> (map #(avatars/assoc-avatar % :name) members)
+            (->> members
                  (d/index-by :id)
                  (assoc-in state [:team-members id])))]
     (ptk/reify ::fetch-team-members

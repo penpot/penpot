@@ -147,8 +147,7 @@
             (let [session {:id id
                            :fullname (:fullname profile)
                            :updated-at (dt/now)
-                           :photo-uri (or (and (:photo profile) (cfg/resolve-media-path (:photo profile)))
-                                          (avatars/generate {:name (:fullname profile)}))}
+                           :photo-uri (cfg/resolve-profile-photo-url profile)}
                   session (assign-color sessions session)]
               (assoc sessions id session)))
 

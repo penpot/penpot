@@ -14,35 +14,43 @@
   (:require
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
-   [app.config :as cfg]
    [app.db :as db]
    [app.metrics :as mtx]
+   [app.storage :as sto]
    [app.tasks :as tasks]
    [app.util.blob :as blob]
    [app.util.time :as dt]
-   [integrant.core :as ig]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]))
+   [clojure.tools.logging :as log]
+   [integrant.core :as ig]))
 
 (declare handler)
 (declare retrieve-candidates)
 (declare process-file)
 
+(s/def ::storage some?)
+
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::db/pool]))
+  (s/keys :req-un [::db/pool ::storage]))
 
 (defmethod ig/init-key ::handler
-  [_ cfg]
-  (partial handler cfg))
+  [_ {:keys [metrics] :as cfg}]
+  (let [handler #(handler cfg %)]
+    (->> {:registry (:registry metrics)
+          :type :summary
+          :name "task_file_media_gc_timing"
+          :help "file media garbage collection task timing"}
+         (mtx/instrument handler))))
 
 (defn- handler
-  [{:keys [pool]} _]
+  [{:keys [pool] :as cfg} _]
   (db/with-atomic [conn pool]
-    (loop []
-      (let [files (retrieve-candidates conn)]
-        (when (seq files)
-          (run! (partial process-file conn) files)
-          (recur))))))
+    (let [cfg (assoc cfg :conn conn)]
+      (loop []
+        (let [files (retrieve-candidates cfg)]
+          (when files
+            (run! (partial process-file cfg) files)
+            (recur)))))))
 
 (defn- decode-row
   [{:keys [data] :as row}]
@@ -62,12 +70,12 @@
     for update skip locked")
 
 (defn- retrieve-candidates
-  [conn]
-  (let [threshold (:file-trimming-threshold cfg/config)
-        interval  (db/interval threshold)]
+  [{:keys [conn max-age] :as cfg}]
+  (let [interval (db/interval max-age)]
     (->> (db/exec! conn [sql:retrieve-candidates-chunk interval])
          (map (fn [{:keys [age] :as row}]
-                (assoc row :age (dt/duration {:seconds age})))))))
+                (assoc row :age (dt/duration {:seconds age}))))
+         (seq))))
 
 (def ^:private
   collect-media-xf
@@ -86,7 +94,7 @@
       (into (keys (:media data)))))
 
 (defn- process-file
-  [conn {:keys [id data age] :as file}]
+  [{:keys [conn storage] :as cfg} {:keys [id data age] :as file}]
   (let [data    (-> (blob/decode data)
                     (assoc :id id)
                     (pmg/migrate-data))
@@ -103,15 +111,11 @@
                 {:id id})
 
     (doseq [mobj unused]
-      (log/debugf "schduling object deletion: id='%s' path='%s' delay='%s'"
-                  (:id mobj) (:path mobj) cfg/default-deletion-delay)
-      (tasks/submit! conn {:name "delete-object"
-                           :delay cfg/default-deletion-delay
-                           :props {:id id :type :media-object}})
-
+      (log/debugf "deleting media object: id='%s' media-id='%s' thumb-id='%s'"
+                  (:id mobj) (:media-id mobj) (:thumbnail-id mobj))
+      (sto/del-object storage (:media-id mobj))
+      (sto/del-object storage (:thumbnail-id mobj))
       ;; Mark object as deleted
-      (db/update! conn :media-object
-                  {:deleted-at (dt/now)}
-                  {:id id}))
+      (db/delete! conn :media-object {:id (:id mobj)}))
 
     nil))

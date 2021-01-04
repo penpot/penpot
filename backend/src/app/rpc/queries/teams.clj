@@ -119,7 +119,8 @@
           p.id,
           p.email,
           p.fullname as name,
-          p.photo,
+          p.fullname as fullname,
+          p.photo_id,
           p.is_active
      from team_profile_rel as tp
      join profile as p on (p.id = tp.profile_id)

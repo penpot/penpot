@@ -239,14 +239,13 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (let [users (map avatars/assoc-profile-avatar users)]
-        (assoc state
-               :users (d/index-by :id users)
-               :workspace-undo {}
-               :workspace-project project
-               :workspace-file file
-               :workspace-data (:data file)
-               :workspace-libraries (d/index-by :id libraries))))))
+      (assoc state
+             :users (d/index-by :id users)
+             :workspace-undo {}
+             :workspace-project project
+             :workspace-file file
+             :workspace-data (:data file)
+             :workspace-libraries (d/index-by :id libraries)))))
 
 
 ;; --- Set File shared
@@ -339,70 +338,108 @@
       (assoc-in state [:workspace-pages id] page))))
 
 
-;; --- Upload local media objects
+;; --- Upload File Media objects
 
 (s/def ::local? ::us/boolean)
-(s/def ::uri ::us/string)
+(s/def ::data ::di/blobs)
+(s/def ::name ::us/string)
+(s/def ::uri  ::us/string)
+(s/def ::uris (s/coll-of ::uri))
 
-(s/def ::upload-media-objects-params
-  (s/keys :req-un [::file-id ::local?]
-          :opt-un [::uri ::di/js-files]))
+(s/def ::upload-media-objects
+  (s/and
+   (s/keys :req-un [::file-id ::local?]
+           :opt-in [::name ::data ::uris])
+   (fn [props]
+     (or (contains? props :data)
+         (contains? props :uris)))))
 
 (defn upload-media-objects
-  [{:keys [file-id local? js-files uri name] :as params}]
-  (us/assert ::upload-media-objects-params params)
-   (ptk/reify ::upload-media-objects
+  [{:keys [file-id local? data name uris] :as params}]
+  (us/assert ::upload-media-objects params)
+  (ptk/reify ::upload-media-objects
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [{:keys [on-success on-error]
+             :or {on-success identity}} (meta params)
+
+            prepare-file
+            (fn [blob]
+              (let [name (or name (if (di/file? blob) (.-name blob) "blob"))]
+                {:name name
+                 :file-id file-id
+                 :content blob
+                 :is-local local?}))
+
+            prepare-uri
+            (fn [uri]
+              {:file-id file-id
+               :is-local local?
+               :url uri
+               :name name})]
+
+        (rx/concat
+         (rx/of (dm/show {:content (tr "media.loading")
+                          :type :info
+                          :timeout nil
+                          :tag :media-loading}))
+         (->> (if (seq uris)
+                (->> (rx/from uris)
+                     (rx/map prepare-uri)
+                     (rx/mapcat #(rp/mutation! :create-file-media-object-from-url %)))
+                (->> (rx/from data)
+                     (rx/map di/validate-file)
+                     (rx/map prepare-file)
+                     (rx/mapcat #(rp/mutation! :upload-file-media-object %))))
+              (rx/do on-success)
+              (rx/catch (fn [error]
+                          (cond
+                            (= (:code error) :media-type-not-allowed)
+                            (rx/of (dm/error (tr "errors.media-type-not-allowed")))
+
+                            (= (:code error) :media-type-mismatch)
+                            (rx/of (dm/error (tr "errors.media-type-mismatch")))
+
+                            (fn? on-error)
+                            (do
+                              (on-error error)
+                              (rx/empty))
+
+                            :else
+                            (rx/throw error))))
+              (rx/finalize (fn []
+                             (st/emit! (dm/hide-tag :media-loading))))))))))
+
+
+;; --- Upload File Media objects
+
+(s/def ::object-id ::us/uuid)
+
+(s/def ::clone-media-objects-params
+  (s/keys :req-un [::file-id ::local? ::object-id]))
+
+(defn clone-media-object
+  [{:keys [file-id local? object-id] :as params}]
+  (us/assert ::clone-media-objects-params params)
+   (ptk/reify ::clone-media-objects
      ptk/WatchEvent
      (watch [_ state stream]
        (let [{:keys [on-success on-error]
-              :or {on-success identity}} (meta params)
-
-             is-library (not= file-id (:id (:workspace-file state)))
-             prepare-js-file
-             (fn [js-file]
-               {:name (.-name js-file)
-                :file-id file-id
-                :content js-file
-                :is-local local?})
-
-             prepare-uri
-             (fn [uri]
-               {:file-id file-id
-                :is-local local?
-                :url uri
-                :name name})]
+              :or {on-success identity
+                   on-error identity}} (meta params)
+             params {:is-local local?
+                     :file-id file-id
+                     :id object-id}]
 
          (rx/concat
           (rx/of (dm/show {:content (tr "media.loading")
                            :type :info
                            :timeout nil
                            :tag :media-loading}))
-          (->> (if (string? uri)
-                 (->> (rx/of uri)
-                      (rx/map prepare-uri)
-                      (rx/mapcat #(rp/mutation! :add-media-object-from-url %)))
-                 (->> (rx/from js-files)
-                      (rx/map di/validate-file)
-                      (rx/map prepare-js-file)
-                      (rx/mapcat #(rp/mutation! :upload-media-object %))))
+          (->> (rp/mutation! :clone-file-media-object params)
                (rx/do on-success)
-               (rx/catch (fn [error]
-                           (cond
-                             (= (:code error) :media-type-not-allowed)
-                             (rx/of (dm/error (tr "errors.media-type-not-allowed")))
-
-                             (= (:code error) :media-type-mismatch)
-                             (rx/of (dm/error (tr "errors.media-type-mismatch")))
-
-                             (fn? on-error)
-                             (do
-                               (on-error error)
-                               (rx/empty))
-
-                             :else
-                             (rx/throw error))))
-               (rx/finalize (fn []
-                              (st/emit! (dm/hide-tag :media-loading))))))))))
+               (rx/catch on-error)
+               (rx/finalize #(st/emit! (dm/hide-tag :media-loading)))))))))
 
 ;; --- Helpers
 

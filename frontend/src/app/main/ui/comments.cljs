@@ -248,7 +248,7 @@
      [:div.comment
       [:div.author
        [:div.avatar
-        [:img {:src (cfg/resolve-media-path (:photo owner))}]]
+        [:img {:src (cfg/resolve-profile-photo-url owner)}]]
        [:div.name
         [:div.fullname (:fullname owner)]
         [:div.timeago (dt/timeago (:modified-at comment))]]
@@ -366,7 +366,7 @@
                 :unread (pos? (:count-unread-comments item)))}
        (:seqn item)]
       [:div.avatar
-       [:img {:src (cfg/resolve-media-path (:photo owner))}]]
+       [:img {:src (cfg/resolve-profile-photo-url owner)}]]
       [:div.name
        [:div.fullname (:fullname owner) ", "]
        [:div.timeago (dt/timeago (:modified-at item))]]]

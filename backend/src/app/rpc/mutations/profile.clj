@@ -21,8 +21,9 @@
    [app.rpc.mutations.teams :as teams]
    [app.rpc.mutations.verify-token :refer [process-token]]
    [app.rpc.queries.profile :as profile]
-   [app.util.services :as sv]
+   [app.storage :as sto]
    [app.tasks :as tasks]
+   [app.util.services :as sv]
    [app.util.time :as dt]
    [buddy.hashers :as hashers]
    [clojure.spec.alpha :as s]
@@ -166,7 +167,6 @@
                 {:id id
                  :fullname fullname
                  :email (str/lower email)
-                 :photo ""
                  :password password
                  :is-active active?
                  :is-demo demo?})))
@@ -240,7 +240,6 @@
                          :fullname fullname
                          :email (str/lower email)
                          :is-active true
-                         :photo ""
                          :password "!"
                          :is-demo false}))
 
@@ -307,26 +306,26 @@
   (s/keys :req-un [::profile-id ::file]))
 
 (sv/defmethod ::update-profile-photo
-  [{:keys [pool] :as cfg} {:keys [profile-id file] :as params}]
+  [{:keys [pool storage] :as cfg} {:keys [profile-id file] :as params}]
   (media/validate-media-type (:content-type file))
   (db/with-atomic [conn pool]
     (let [profile (db/get-by-id conn :profile profile-id)
           _       (media/run {:cmd :info :input {:path (:tempfile file)
                                                  :mtype (:content-type file)}})
-          photo   (teams/upload-photo cfg params)]
+          photo   (teams/upload-photo cfg params)
+          storage (assoc storage :conn conn)]
 
       ;; Schedule deletion of old photo
-      (when (and (string? (:photo profile))
-                 (not (str/blank? (:photo profile))))
-        (tasks/submit! conn {:name "remove-media"
-                             :props {:path (:photo profile)}}))
+      (when-let [id (:photo-id profile)]
+        (sto/del-object storage id))
+
       ;; Save new photo
       (update-profile-photo conn profile-id photo))))
 
 (defn- update-profile-photo
-  [conn profile-id path]
+  [conn profile-id sobj]
   (db/update! conn :profile
-              {:photo (str path)}
+              {:photo-id (:id sobj)}
               {:id profile-id})
   nil)
 

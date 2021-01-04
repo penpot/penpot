@@ -136,8 +136,6 @@
      (mf/deps (:id team))
      (fn []
        (->> (rp/query! :teams)
-            (rx/map (fn [teams]
-                      (mapv #(avatars/assoc-avatar % :name) teams)))
             (rx/subs #(reset! teams %)))))
 
     [:ul.dropdown.teams-dropdown
@@ -151,7 +149,7 @@
        [:* {:key (:id team)}
         [:li.team-name {:on-click (partial go-projects (:id team))}
          [:span.team-icon
-          [:img {:src (cfg/resolve-media-path (:photo team))}]]
+          [:img {:src (cfg/resolve-team-photo-url team)}]]
          [:span.team-text {:title (:name team)} (:name team)]]])
 
      [:hr]
@@ -329,7 +327,7 @@
           [:span.team-text (t locale "dashboard.default-team-name")]]
          [:div.team-name
           [:span.team-icon
-           [:img {:src (cfg/resolve-media-path (:photo team))}]]
+           [:img {:src (cfg/resolve-team-photo-url team)}]]
           [:span.team-text {:title (:name team)} (:name team)]])
 
        [:span.switch-icon
@@ -427,7 +425,7 @@
 (mf/defc profile-section
   [{:keys [profile locale team] :as props}]
   (let [show  (mf/use-state false)
-        photo (cfg/resolve-media-path (:photo profile))
+        photo (cfg/resolve-profile-photo-url profile)
 
         on-click
         (mf/use-callback

@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.rpc.mutations.teams
   (:require
@@ -17,13 +17,12 @@
    [app.db :as db]
    [app.emails :as emails]
    [app.media :as media]
-   [app.media-storage :as mst]
    [app.rpc.mutations.projects :as projects]
    [app.rpc.queries.profile :as profile]
    [app.rpc.queries.teams :as teams]
-   [app.util.services :as sv]
+   [app.storage :as sto]
    [app.tasks :as tasks]
-   [app.util.storage :as ust]
+   [app.util.services :as sv]
    [app.util.time :as dt]
    [buddy.core.codecs :as bc]
    [buddy.core.nonce :as bn]
@@ -63,7 +62,6 @@
     (db/insert! conn :team
                 {:id id
                  :name name
-                 :photo ""
                  :is-default default?})))
 
 (defn create-team-profile
@@ -245,27 +243,25 @@
   (s/keys :req-un [::profile-id ::team-id ::file]))
 
 (sv/defmethod ::update-team-photo
-  [{:keys [pool] :as cfg} {:keys [profile-id file team-id] :as params}]
+  [{:keys [pool storage] :as cfg} {:keys [profile-id file team-id] :as params}]
   (media/validate-media-type (:content-type file))
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)
     (let [team    (teams/retrieve-team conn profile-id team-id)
           _       (media/run {:cmd :info :input {:path (:tempfile file)
                                                  :mtype (:content-type file)}})
-          cfg     (assoc cfg :conn conn)
           photo   (upload-photo cfg params)]
 
       ;; Schedule deletion of old photo
-      (when (and (string? (:photo team))
-                 (not (str/blank? (:photo team))))
-        (tasks/submit! conn {:name "remove-media"
-                             :props {:path (:photo team)}}))
+      (when-let [id (:photo-id team)]
+        (sto/del-object storage id))
+
       ;; Save new photo
       (db/update! conn :team
-              {:photo (str photo)}
+              {:photo-id (:id photo)}
               {:id team-id})
 
-      (assoc team :photo (str photo)))))
+      (assoc team :photo-id (:id photo)))))
 
 (defn upload-photo
   [{:keys [storage]} {:keys [file]}]
@@ -279,9 +275,12 @@
                   :width 256
                   :height 256
                   :input {:path (fs/path (:tempfile file))
-                          :mtype (:content-type file)}})
-        name   (str prefix (cm/format->extension (:format thumb)))]
-    (ust/save! storage name (:data thumb))))
+                          :mtype (:content-type file)}})]
+
+
+    (sto/put-object storage
+                    {:content (sto/content (:data thumb) (:size thumb))
+                     :content-type (:mtype thumb)})))
 
 
 ;; --- Mutation: Invite Member

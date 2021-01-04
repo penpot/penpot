@@ -116,8 +116,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [objects (:objects page)
-            frames  (extract-frames objects)
-            users   (map #(avatars/assoc-avatar % :fullname) users)]
+            frames  (extract-frames objects)]
         (assoc state
                :viewer-libraries (d/index-by :id libraries)
                :viewer-data {:project project

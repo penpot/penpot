@@ -33,9 +33,9 @@
             :code :invalid-storage-backend
             :context cfg))
 
-(defmulti get-object (fn [cfg _] (:type cfg)))
+(defmulti get-object-data (fn [cfg _] (:type cfg)))
 
-(defmethod get-object :default
+(defmethod get-object-data :default
   [cfg _]
   (ex/raise :type :internal
             :code :invalid-storage-backend
@@ -90,7 +90,7 @@
 
 (defprotocol IContentObject)
 
-(defn- path->content-object
+(defn- path->content
   [path]
   (let [size (Files/size path)]
     (reify
@@ -107,7 +107,7 @@
       clojure.lang.Counted
       (count [_] size))))
 
-(defn string->content-object
+(defn string->content
   [^String v]
   (let [data (.getBytes v "UTF-8")
         bais (ByteArrayInputStream. ^bytes data)]
@@ -127,7 +127,7 @@
       (count [_]
         (alength data)))))
 
-(defn- input-stream->content-object
+(defn- input-stream->content
   [^InputStream is size]
   (reify
     IContentObject
@@ -144,35 +144,35 @@
       clojure.lang.Counted
       (count [_] size)))
 
-(defn content-object
-  ([data] (content-object data nil))
+(defn content
+  ([data] (content data nil))
   ([data size]
    (cond
      (instance? java.nio.file.Path data)
-     (path->content-object data)
+     (path->content data)
 
      (instance? java.io.File data)
-     (path->content-object (.toPath ^java.io.File data))
+     (path->content (.toPath ^java.io.File data))
 
      (instance? String data)
-     (string->content-object data)
+     (string->content data)
 
      (instance? InputStream data)
      (do
        (when-not size
          (throw (UnsupportedOperationException. "size should be provided on InputStream")))
-       (input-stream->content-object data size))
+       (input-stream->content data size))
 
      :else
      (throw (UnsupportedOperationException. "type not supported")))))
 
-(defn content-object?
+(defn content?
   [v]
   (satisfies? IContentObject v))
 
 (defn slurp-bytes
   [content]
-  (us/assert content-object? content)
+  (us/assert content? content)
   (with-open [input  (io/input-stream content)
               output (java.io.ByteArrayOutputStream. (count content))]
     (io/copy input output)
