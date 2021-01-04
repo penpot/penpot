@@ -55,11 +55,6 @@
              (* 100)
              (math/round)))))
 
-(defn string->opacity [opacity-str]
-  (-> opacity-str
-      (d/parse-integer 1)
-      (/ 100)))
-
 (defn remove-multiple [v]
   (if (= v :multiple) nil v))
 
@@ -103,13 +98,8 @@
                                       append-hash
                                       change-value))))
 
-        handle-opacity-change (fn [event]
-                                (let [target (dom/get-target event)]
-                                  (when (dom/valid? target)
-                                    (-> target
-                                        dom/get-value
-                                        string->opacity
-                                        change-opacity))))
+        handle-opacity-change (fn [value]
+                                (change-opacity (/ value 100)))
 
         select-all (fn [event]
                      (dom/select-text! (dom/get-target event)))
@@ -171,6 +161,6 @@
                               :placeholder (tr "settings.multiple")
                               :on-click select-all
                               :on-change handle-opacity-change
-                              :min "0"
-                              :max "100"}]])])]))
+                              :min 0
+                              :max 100}]])])]))
 

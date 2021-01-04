@@ -250,3 +250,6 @@
 
 (defn get-user-agent []
   (.-userAgent js/navigator))
+
+(defn active? [node]
+  (= (.-activeElement js/document) node))

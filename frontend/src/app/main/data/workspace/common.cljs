@@ -538,8 +538,6 @@
             unames   (retrieve-used-names objects)
             name     (generate-unique-name unames (:name shape))
 
-
-
             frame-id (if (= :frame (:type attrs))
                        uuid/zero
                        (or (:frame-id attrs)
@@ -568,3 +566,31 @@
          (when (= :text (:type attrs))
            (->> (rx/of (start-edition-mode id))
                 (rx/observe-on :async))))))))
+
+(defn move-shapes-into-frame [frame-id shapes]
+  (ptk/reify ::move-shapes-into-frame
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id  (:current-page-id state)
+            objects (lookup-page-objects state page-id)
+            to-move-shapes (->> (cp/select-toplevel-shapes objects {:include-frames? false})
+                                (mapv :id)
+                                (d/enumerate)
+                                (filterv (comp shapes second)))
+
+            rchanges [{:type :mov-objects
+                       :parent-id frame-id
+                       :frame-id frame-id
+                       :page-id page-id
+                       :index 0
+                       :shapes (mapv second to-move-shapes)}]
+
+            uchanges (->> to-move-shapes
+                          (mapv (fn [[index shape-id]]
+                                  {:type :mov-objects
+                                   :parent-id uuid/zero
+                                   :frame-id uuid/zero
+                                   :page-id page-id
+                                   :index index
+                                   :shapes [shape-id]})))]
+        (rx/of (commit-changes rchanges uchanges {:commit-local? true}))))))

@@ -431,6 +431,20 @@
          (let [page-id (:current-page-id state)]
            (d/update-in-when state [:workspace-data :pages-index page-id :objects] set-rotation)))))))
 
+(defn increase-rotation [ids rotation]
+  (ptk/reify ::increase-rotation
+    ptk/WatchEvent
+    (watch [_ state stream]
+
+      (let [page-id (:current-page-id state)
+            objects (dwc/lookup-page-objects state page-id)
+            rotate-shape (fn [shape]
+                           (let [delta (- rotation (:rotation shape))]
+                             (set-rotation delta [shape])))]
+        (rx/concat
+         (rx/from (->> ids (map #(get objects %)) (map rotate-shape)))
+         (rx/of (apply-modifiers ids)))))))
+
 (defn apply-modifiers
   [ids]
   (us/verify (s/coll-of uuid?) ids)

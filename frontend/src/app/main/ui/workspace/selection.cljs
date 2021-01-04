@@ -44,16 +44,17 @@
 (def selection-rect-width 1)
 
 (mf/defc selection-rect [{:keys [transform rect zoom color]}]
-  (let [{:keys [x y width height]} rect]
-    [:rect.main
-     {:x x
-      :y y
-      :width width
-      :height height
-      :transform transform
-      :style {:stroke color
-              :stroke-width (/ selection-rect-width zoom)
-              :fill "transparent"}}]))
+  (when rect
+    (let [{:keys [x y width height]} rect]
+      [:rect.main
+       {:x x
+        :y y
+        :width width
+        :height height
+        :transform transform
+        :style {:stroke color
+                :stroke-width (/ selection-rect-width zoom)
+                :fill "transparent"}}])))
 
 (defn- handlers-for-selection [{:keys [x y width height]}]
   [;; TOP-LEFT
@@ -181,9 +182,7 @@
         current-transform (mf/deref refs/current-transform)
 
         selrect (:selrect shape)
-        transform (geom/transform-matrix shape {:no-flip true})
-
-        tr-shape (geom/transform-shape shape)]
+        transform (geom/transform-matrix shape {:no-flip true})]
 
     (when (not (#{:move :rotate} current-transform))
       [:g.controls
@@ -193,7 +192,7 @@
                            :transform transform
                            :zoom zoom
                            :color color}]
-       [:& outline {:shape tr-shape :color color}]
+       [:& outline {:shape shape :color color}]
 
        ;; Handlers
        (for [{:keys [type position props]} (handlers-for-selection selrect)]

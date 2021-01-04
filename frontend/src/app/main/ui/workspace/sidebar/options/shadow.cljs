@@ -70,13 +70,10 @@
            (update-attr index attr valid? nil))
 
           ([index attr valid? update-ref]
-           (fn [event]
-             (let [value (dom/get-value (dom/get-target event))]
-               (when (or (not valid?) (valid? value))
-                 (do
-                   (when update-ref
-                     (dom/set-value! (mf/ref-val update-ref) value))
-                   (st/emit! (dwc/update-shapes ids #(assoc-in % [:shadow index attr] (js/parseInt value 10))))))))))
+           (fn [value]
+             (when (or (not valid?) (valid? value))
+               (do (st/emit! (dwc/update-shapes ids #(assoc-in % [:shadow index attr] value)))
+                   (when update-ref (dom/set-value! (mf/ref-val update-ref) value)))))))
         
         update-color
         (fn [index]
@@ -101,16 +98,16 @@
       [:> numeric-input {:ref basic-offset-x-ref
                          :on-change (update-attr index :offset-x valid-number?)
                          :on-click (select-text basic-offset-x-ref)
-                         :default-value (:offset-x value)}]
+                         :value (:offset-x value)}]
       [:> numeric-input {:ref basic-offset-y-ref
                          :on-change (update-attr index :offset-y valid-number?)
                          :on-click (select-text basic-offset-y-ref)
-                         :default-value (:offset-y value)}]
+                         :value (:offset-y value)}]
       [:> numeric-input {:ref basic-blur-ref
                          :on-click (select-text basic-blur-ref)
                          :on-change (update-attr index :blur valid-number?)
                          :min 0
-                         :default-value (:blur value)}]           
+                         :value (:blur value)}]           
 
       [:div.element-set-actions
        [:div.element-set-actions-button {:on-click (toggle-visibility index)}
@@ -136,7 +133,7 @@
                            :placeholder "--"
                            :on-click (select-text adv-offset-x-ref)
                            :on-change (update-attr index :offset-x valid-number? basic-offset-x-ref)
-                           :default-value (:offset-x value)}]
+                           :value (:offset-x value)}]
         [:span.after (t locale "workspace.options.shadow-options.offsetx")]]
 
        [:div.input-element
@@ -145,7 +142,7 @@
                            :placeholder "--"
                            :on-click (select-text adv-offset-y-ref)
                            :on-change (update-attr index :offset-y valid-number? basic-offset-y-ref)
-                           :default-value (:offset-y value)}]
+                           :value (:offset-y value)}]
         [:span.after (t locale "workspace.options.shadow-options.offsety")]]]
 
       [:div.row-grid-2
@@ -156,7 +153,7 @@
                            :on-click (select-text adv-blur-ref)
                            :on-change (update-attr index :blur valid-number? basic-blur-ref)
                            :min 0
-                           :default-value (:blur value)}]
+                           :value (:blur value)}]
         [:span.after (t locale "workspace.options.shadow-options.blur")]]
 
        [:div.input-element
@@ -166,7 +163,7 @@
                            :on-click (select-text adv-spread-ref)
                            :on-change (update-attr index :spread valid-number?)
                            :min 0
-                           :default-value (:spread value)}]
+                           :value (:spread value)}]
         [:span.after (t locale "workspace.options.shadow-options.spread")]]]
 
       [:div.color-row-wrap

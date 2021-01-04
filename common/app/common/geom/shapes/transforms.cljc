@@ -14,7 +14,13 @@
    [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.path :as gpa]
    [app.common.geom.shapes.rect :as gpr]
-   [app.common.math :as mth]))
+   [app.common.math :as mth]
+   [app.common.data :as d]))
+
+(defn- modif-rotation [shape]
+  (let [cur-rotation (d/check-num (:rotation shape))
+        delta-angle  (d/check-num (get-in shape [:modifiers :rotation]))]
+    (mod (+ cur-rotation delta-angle) 360)))
 
 (defn transform-matrix
   "Returns a transformation matrix without changing the shape properties.
@@ -31,6 +37,18 @@
              (and (not no-flip) flip-x) (gmt/scale (gpt/point -1 1))
              (and (not no-flip) flip-y) (gmt/scale (gpt/point 1 -1)))
          (gmt/translate (gpt/negate shape-center))))))
+
+(defn inverse-transform-matrix
+  ([shape]
+   (let [shape-center (or (gco/center-shape shape)
+                          (gpt/point 0 0))]
+     (inverse-transform-matrix shape shape-center)))
+  ([shape center]
+   (let []
+     (-> (gmt/matrix)
+         (gmt/translate center)
+         (gmt/multiply (:transform-inverse shape (gmt/matrix)))
+         (gmt/translate (gpt/negate center))))))
 
 (defn transform-point-center
   "Transform a point around the shape center"
@@ -191,18 +209,23 @@
 (defn apply-transform-path
   [shape transform]
   (let [content (gpa/transform-content (:content shape) transform)
-        selrect (gpa/content->selrect content)
-        points (gpr/rect->points selrect)
-        ;;rotation (mod (+ (:rotation shape 0)
-        ;;                 (or (get-in shape [:modifiers :rotation]) 0))
-        ;;              360)
-        ]
+
+        ;; Calculate the new selrect by "unrotate" the shape
+        rotation (modif-rotation shape)
+        center (gpt/transform (gco/center-shape shape) transform)
+        content-rotated (gpa/transform-content content (gmt/rotate-matrix (- rotation) center))
+        selrect (gpa/content->selrect content-rotated)
+
+        ;; Transform the points
+        points (-> (:points shape)
+                   (transform-points transform))]
     (assoc shape
            :content content
            :points points
            :selrect selrect
-           ;;:rotation rotation
-           )))
+           :transform (gmt/rotate-matrix rotation)
+           :transform-inverse (gmt/rotate-matrix (- rotation))
+           :rotation rotation)))
 
 (defn apply-transform-rect
   "Given a new set of points transformed, set up the rectangle so it keeps
@@ -246,6 +269,30 @@
           apply-transform-rect)]
     (apply-transform-fn shape transform)))
 
+(defn transform-gradients [shape modifiers]
+  (let [angle (d/check-num (get modifiers :rotation))
+        ;; Gradients are represented with unit vectors so its center is 0.5, 0.5
+        center (gpt/point 0.5 0.5)
+        transform (gmt/rotate-matrix angle center)
+        transform-gradient
+        (fn [{:keys [start-x start-y end-x end-y] :as gradient}]
+          (let [start-point (gpt/point start-x start-y)
+                end-point   (gpt/point end-x end-y)
+                {start-x :x start-y :y} (gpt/transform start-point transform)
+                {end-x :x end-y :y}     (gpt/transform end-point transform)]
+
+            (assoc gradient
+                   :start-x start-x
+                   :start-y start-y
+                   :end-x end-x
+                   :end-y end-y)))]
+    (cond-> shape
+      (:fill-color-gradient shape)
+      (update :fill-color-gradient transform-gradient)
+
+      (:stroke-color-gradient shape)
+      (update :stroke-color-gradient transform-gradient))))
+
 (defn set-flip [shape modifiers]
   (let [rx (get-in modifiers [:resize-vector :x])
         ry (get-in modifiers [:resize-vector :y])]
@@ -260,6 +307,7 @@
         (-> shape
             (set-flip (:modifiers shape))
             (apply-transform transform)
+            (transform-gradients (:modifiers shape))
             (dissoc :modifiers)))
       shape)))
 
@@ -285,3 +333,4 @@
         (assoc :selrect new-selrect)
         (assoc :points new-points)
         (apply-transform-rect (gmt/matrix)))))
+

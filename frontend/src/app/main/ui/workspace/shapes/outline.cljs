@@ -45,7 +45,8 @@
                  :ry (/ height 2)}
 
                 :path
-                {:d (ugp/content->path (:content shape))}
+                {:d (ugp/content->path (:content shape))
+                 :transform nil}
 
                 {:x x
                  :y y

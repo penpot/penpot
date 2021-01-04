@@ -54,57 +54,54 @@
                    (not= (:x values) :multiple) (assoc :x x)
                    (not= (:y values) :multiple) (assoc :y y)))
 
+        values (let [{:keys [width height]} (-> shapes first :selrect)]
+                 (cond-> values
+                   (not= (:width values) :multiple) (assoc :width width)
+                   (not= (:height values) :multiple) (assoc :height height)))
+
         proportion-lock (:proportion-lock values)
 
         on-size-change
-        (fn [event attr]
-          (let [value (-> (dom/get-target event)
-                          (dom/get-value)
-                          (d/parse-integer 1))]
-            (st/emit! (udw/update-dimensions ids attr value))))
+        (mf/use-callback
+         (mf/deps ids)
+         (fn [value attr]
+           (st/emit! (udw/update-dimensions ids attr value))))
 
         on-proportion-lock-change
-        (fn [event]
-          (let [new-lock (if (= proportion-lock :multiple) true (not proportion-lock))]
-            (run! #(st/emit! (udw/set-shape-proportion-lock % new-lock)) ids)))
+        (mf/use-callback
+         (mf/deps ids)
+         (fn [event]
+           (let [new-lock (if (= proportion-lock :multiple) true (not proportion-lock))]
+             (run! #(st/emit! (udw/set-shape-proportion-lock % new-lock)) ids))))
 
         do-position-change
-        (fn [shape' frame' value attr]
-          (let [from (-> shape' :points gsh/points->selrect attr)
-                to (+ value (attr frame'))
-                target (+ (attr shape') (- to from))]
-            (st/emit! (udw/update-position (:id shape') {attr target}))))
+        (mf/use-callback
+         (mf/deps ids)
+         (fn [shape' frame' value attr]
+           (let [to (+ value (attr frame'))]
+             (st/emit! (udw/update-position (:id shape') { attr to })))))
 
         on-position-change
-        (fn [event attr]
-          (let [value (-> (dom/get-target event)
-                          (dom/get-value)
-                          (d/parse-integer 0))]
-            (when value
-              (doall (map #(do-position-change %1 %2 value attr) shapes frames)))))
-
-        do-rotation-change
-        (fn [shape' old-shape' value]
-          (st/emit! (udw/set-rotation (- value (:rotation shape')) [old-shape'])
-                    (udw/apply-modifiers #{(:id shape')})))
+        (mf/use-callback
+         (mf/deps ids)
+         (fn [value attr]
+           (doall (map #(do-position-change %1 %2 value attr) shapes frames))))
 
         on-rotation-change
-        (fn [event]
-          (let [value (-> (dom/get-target event)
-                          (dom/get-value)
-                          (d/parse-integer 0))]
-            (doall (map #(do-rotation-change %1 %2 value) shapes old-shapes))))
+        (mf/use-callback
+         (mf/deps ids)
+         (fn [value]
+           (st/emit! (udw/increase-rotation ids value))))
 
         on-radius-change
-        (fn [event]
-          (let [value (-> (dom/get-target event)
-                          (dom/get-value)
-                          (d/parse-integer 0))]
-            (st/emit! (dwc/update-shapes
-                        ids-with-children
-                        #(if (:rx %)
-                           (assoc % :rx value :ry value)
-                           %)))))
+        (mf/use-callback
+         (mf/deps ids)
+         (fn [value]
+           (let [radius-update
+                 (fn [shape]
+                   (cond-> shape
+                     (:rx shape) (assoc :rx value :ry value)))]
+             (st/emit! (dwc/update-shapes ids-with-children radius-update)))))
 
         on-width-change #(on-size-change % :width)
         on-height-change #(on-size-change % :height)
@@ -120,7 +117,7 @@
         [:div.row-flex
          [:span.element-set-subtitle (t locale "workspace.options.size")]
          [:div.input-element.width
-          [:> numeric-input {:min "1"
+          [:> numeric-input {:min 1
                              :no-validate true
                              :placeholder "--"
                              :on-click select-all
@@ -128,7 +125,7 @@
                              :value (attr->string :width values)}]]
 
          [:div.input-element.height
-          [:> numeric-input {:min "1"
+          [:> numeric-input {:min 1
                              :no-validate true
                              :placeholder "--"
                              :on-click select-all
@@ -167,8 +164,9 @@
          [:div.input-element.degrees
           [:> numeric-input
            {:no-validate true
-            :min "0"
-            :max "359"
+            :min 0
+            :max 359
+            :data-wrap true
             :placeholder "--"
             :on-click select-all
             :on-change on-rotation-change
@@ -189,7 +187,7 @@
          [:div.input-element.pixels
           [:> numeric-input
            {:placeholder "--"
-            :min "0"
+            :min 0
             :on-click select-all
             :on-change on-radius-change
             :value (attr->string :rx values)}]]

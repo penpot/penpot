@@ -13,6 +13,7 @@
    [app.common.geom.point :as gpt]
    [app.common.pages :as cp]
    [app.common.spec :as us]
+   [app.config :as cfg]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.data.workspace.libraries :as dwl]
@@ -146,7 +147,7 @@
             (let [session {:id id
                            :fullname (:fullname profile)
                            :updated-at (dt/now)
-                           :photo-uri (or (:photo-uri profile)
+                           :photo-uri (or (and (:photo profile) (cfg/resolve-media-path (:photo profile)))
                                           (avatars/generate {:name (:fullname profile)}))}
                   session (assign-color sessions session)]
               (assoc sessions id session)))

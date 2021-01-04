@@ -48,7 +48,7 @@
   (us/assert #{:width :height} attr)
   (us/assert number? value)
   (let [{:keys [proportion proportion-lock]} shape
-        size (select-keys shape [:width :height])
+        size (select-keys (:selrect shape) [:width :height])
         new-size (if-not proportion-lock
                    (assoc size attr value)
                    (if (= attr :width)
@@ -260,15 +260,19 @@
 (d/export gco/center-shape)
 (d/export gco/center-selrect)
 (d/export gco/center-rect)
+(d/export gco/center-points)
 (d/export gpr/rect->selrect)
 (d/export gpr/rect->points)
 (d/export gpr/points->selrect)
 (d/export gtr/transform-shape)
 (d/export gtr/transform-matrix)
+(d/export gtr/inverse-transform-matrix)
 (d/export gtr/transform-point-center)
 (d/export gtr/transform-rect)
 (d/export gtr/update-group-selrect)
+(d/export gtr/transform-points)
 
 ;; PATHS
 (d/export gsp/content->points)
 (d/export gsp/content->selrect)
+(d/export gsp/transform-content)

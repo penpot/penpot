@@ -110,10 +110,12 @@
       [:& text/text-shape {:key (str "text-shape" (:id shape))
                            :ref text-ref-cb
                            :shape shape
-                           :selected? selected?}]]
+                           :selected? selected?
+                           :grow-type (:grow-type shape)}]]
      (when edition?
-       [:& editor/text-shape-edit {:key (str "editor" (:id shape))
-                                   :shape shape}])
+       [:g {:pointer-events "none"}
+        [:& editor/text-shape-edit {:key (str "editor" (:id shape))
+                                    :shape shape}]])
 
      (when-not edition?
        [:rect.text-actions

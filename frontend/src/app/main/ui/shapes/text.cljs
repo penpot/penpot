@@ -88,7 +88,7 @@
   [props ref]
   (let [shape     (unchecked-get props "shape")
         selected? (unchecked-get props "selected?")
-        grow-type (:grow-type shape)
+        grow-type (unchecked-get props "grow-type")
         {:keys [id x y width height content]} shape]
     [:foreignObject {:x x
                      :y y
@@ -97,7 +97,6 @@
                      :transform (geom/transform-matrix shape)
                      :width  (if (#{:auto-width} grow-type) 10000 width)
                      :height (if (#{:auto-height :auto-width} grow-type) 10000 height)
-                     :ref ref
-                     :pointer-events "none"}
+                     :ref ref}
      [:& text-content {:shape shape
                        :content (:content shape)}]]))

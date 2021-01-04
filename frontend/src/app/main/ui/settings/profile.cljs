@@ -23,7 +23,8 @@
    [app.util.i18n :as i18n :refer [tr t]]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.alpha :as mf]
+   [app.config :as cfg]))
 
 (s/def ::fullname ::us/not-empty-string)
 (s/def ::email ::us/email)
@@ -90,10 +91,10 @@
   [{:keys [locale] :as props}]
   (let [file-input (mf/use-ref nil)
         profile (mf/deref refs/profile)
-        photo (:photo-uri profile)
+        photo (:photo profile)
         photo (if (or (str/empty? photo) (nil? photo))
                 "images/avatar.jpg"
-                photo)
+                (cfg/resolve-media-path photo))
 
         on-image-click #(dom/click (mf/ref-val file-input))
 

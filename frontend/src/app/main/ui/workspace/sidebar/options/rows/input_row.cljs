@@ -36,16 +36,9 @@
                            :placeholder placeholder
                            :on-change on-change}]
 
-      (let [handle-change
-            (fn [event]
-              (let [value (-> event dom/get-target dom/get-value d/parse-integer)]
-                (when (and (not (nil? on-change))
-                           (or (not min) (>= value min))
-                           (or (not max) (<= value max)))
-                  (on-change value))))]
-        [:> numeric-input {:placeholder placeholder
-                           :min (when min (str min))
-                           :max (when max (str max))
-                           :on-change handle-change
-                           :value (or value "")}]))]])
+      [:> numeric-input {:placeholder placeholder
+                         :min min
+                         :max max
+                         :on-change on-change
+                         :value (or value "")}])]])
 
