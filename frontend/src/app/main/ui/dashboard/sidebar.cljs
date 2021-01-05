@@ -166,7 +166,7 @@
   [{:keys [members profile team accept]}]
   (let [form    (fm/use-form :spec ::leave-modal-form :initial {})
         options (into [{:value "" :label (tr "modals.leave-and-reassign.select-memeber-to-promote")}]
-                      (map #(hash-map :name (:name %) :value (str (:id %))) members))
+                      (map #(hash-map :label (:name %) :value (str (:id %))) members))
 
         on-cancel
         (mf/use-callback (st/emitf (modal/hide)))
