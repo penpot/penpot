@@ -256,7 +256,7 @@
 (defmethod ig/init-key :default [_ data] data)
 (defmethod ig/prep-key :default [_ data] (d/without-nils data))
 
-(defonce system {})
+(def system nil)
 
 (defn start
   []
