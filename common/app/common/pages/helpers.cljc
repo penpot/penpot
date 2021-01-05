@@ -175,11 +175,24 @@
   ([objects {:keys [include-frames?] :or {include-frames? false}}]
    (let [lookup #(get objects %)
          root   (lookup uuid/zero)
-         childs (:shapes root)
-         shapes (->> childs
-                     (mapv lookup))]
-     (cond->> shapes
-       include-frames? (filterv #(not= :frame (:type %)))))))
+         root-children (:shapes root)
+
+         lookup-shapes
+         (fn [result id]
+           (if (nil? id)
+             result
+             (let [obj (lookup id)
+                   typ (:type obj)
+                   children (:shapes obj)]
+
+               (cond-> result
+                 (or (not= :frame typ) include-frames?)
+                 (d/concat [obj])
+
+                 (= :frame typ)
+                 (d/concat (map lookup children))))))]
+
+     (reduce lookup-shapes [] root-children))))
 
 (defn select-frames
   [objects]

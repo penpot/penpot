@@ -574,6 +574,7 @@
       (let [page-id  (:current-page-id state)
             objects (lookup-page-objects state page-id)
             to-move-shapes (->> (cp/select-toplevel-shapes objects {:include-frames? false})
+                                (filterv #(= (:frame-id %) uuid/zero))
                                 (mapv :id)
                                 (d/enumerate)
                                 (filterv (comp shapes second)))
