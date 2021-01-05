@@ -34,7 +34,6 @@
 (s/def ::password ::us/string)
 (s/def ::lang ::us/string)
 (s/def ::theme ::us/string)
-(s/def ::photo ::us/string)
 (s/def ::created-at ::us/inst)
 (s/def ::password-1 ::us/string)
 (s/def ::password-2 ::us/string)
@@ -44,7 +43,6 @@
   (s/keys :req-un [::id]
           :opt-un [::created-at
                    ::fullname
-                   ::photo
                    ::email
                    ::lang
                    ::theme]))
