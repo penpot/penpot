@@ -33,12 +33,10 @@
 (s/def ::created-at ::us/inst)
 (s/def ::modified-at ::us/inst)
 (s/def ::is-pinned ::us/boolean)
-(s/def ::photo ::us/string)
 
 (s/def ::team
   (s/keys :req-un [::id
                    ::name
-                   ::photo
                    ::created-at
                    ::modified-at]))
 
