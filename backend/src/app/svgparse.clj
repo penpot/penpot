@@ -10,9 +10,13 @@
 (ns app.svgparse
   (:require
    [app.common.exceptions :as ex]
-   [clojure.xml :as xml]
+   [app.common.spec :as us]
+   [app.metrics :as mtx]
+   [clojure.java.io :as io]
    [clojure.java.shell :as shell]
-   [clojure.java.io :as io])
+   [clojure.spec.alpha :as s]
+   [clojure.xml :as xml]
+   [integrant.core :as ig])
   (:import
    java.io.InputStream
    org.apache.commons.io.IOUtils))
@@ -35,3 +39,29 @@
   (with-open [istream (io/input-stream input)]
     (-> (clean-svg istream)
         (xml/parse))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Handler
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(declare handler)
+
+(defmethod ig/pre-init-spec ::handler [_]
+  (s/keys :req-un [::mtx/metrics]))
+
+(defmethod ig/init-key ::handler
+  [_ {:keys [metrics] :as cfg}]
+  (->> {:registry (:registry metrics)
+        :type :summary
+        :name "http_handler_svgparse_timing"
+        :help "svg parse timings"}
+       (mtx/instrument handler)))
+
+(defn- handler
+  [{:keys [headers body] :as request}]
+  (when (not= "image/svg+xml" (get headers "content-type"))
+    (ex/raise :type :validation
+              :code :unsupported-mime-type
+              :mime (get headers "content-type")))
+  {:status 200
+   :body (parse body)})
