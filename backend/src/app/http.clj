@@ -88,8 +88,9 @@
     (rr/create-resource-handler {:path "/"})
     (rr/create-default-handler))))
 
+
 (defn- create-router
-  [{:keys [session rpc google-auth gitlab-auth metrics ldap-auth storage] :as cfg}]
+  [{:keys [session rpc google-auth gitlab-auth metrics ldap-auth storage svgparse] :as cfg}]
   (rr/router
    [["/metrics" {:get (:handler metrics)}]
 
@@ -107,7 +108,7 @@
                           [middleware/keyword-params]
                           [middleware/cookies]]}
 
-     ;; ["/svg" {:post handlers/parse-svg}]
+     ["/svg" {:post svgparse}]
 
      ["/oauth"
       ["/google" {:post (:auth-handler google-auth)}]

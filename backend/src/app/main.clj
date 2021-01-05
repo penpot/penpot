@@ -80,7 +80,12 @@
      :google-auth (ig/ref :app.http.auth/google)
      :gitlab-auth (ig/ref :app.http.auth/gitlab)
      :ldap-auth   (ig/ref :app.http.auth/ldap)
+     :svgparse    (ig/ref :app.svgparse/handler)
      :storage     (ig/ref :app.storage/storage)}
+
+    ;; HTTP Handler for SVG parsing
+    :app.svgparse/handler
+    {:metrics (ig/ref :app.metrics/metrics)}
 
     :app.rpc/rpc
     {:pool    (ig/ref :app.db/pool)
