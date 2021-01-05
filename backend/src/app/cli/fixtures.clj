@@ -228,7 +228,9 @@
   [{:keys [preset] :or {preset :small}}]
   (let [config (select-keys (main/build-system-config cfg/config)
                             [:app.db/pool
+                             :app.telemetry/migrations
                              :app.migrations/migrations
+                             :app.migrations/all
                              :app.metrics/metrics])
         _      (ig/load-namespaces config)
         system (-> (ig/prep config)
