@@ -90,7 +90,7 @@
 
 
 (defn- create-router
-  [{:keys [session rpc google-auth gitlab-auth metrics ldap-auth storage svgparse] :as cfg}]
+  [{:keys [session rpc google-auth gitlab-auth github-auth metrics ldap-auth storage svgparse] :as cfg}]
   (rr/router
    [["/metrics" {:get (:handler metrics)}]
 
@@ -115,7 +115,10 @@
       ["/google/callback" {:get (:callback-handler google-auth)}]
 
       ["/gitlab" {:post (:auth-handler gitlab-auth)}]
-      ["/gitlab/callback" {:get (:callback-handler gitlab-auth)}]]
+      ["/gitlab/callback" {:get (:callback-handler gitlab-auth)}]
+
+      ["/github" {:post (:auth-handler github-auth)}]
+      ["/github/callback" {:get (:callback-handler github-auth)}]]
 
      ["/login" {:post #(auth/login-handler cfg %)}]
      ["/logout" {:post #(auth/logout-handler cfg %)}]
@@ -125,4 +128,3 @@
      ["/rpc" {:middleware [(:middleware session)]}
       ["/query/:type" {:get (:query-handler rpc)}]
       ["/mutation/:type" {:post (:mutation-handler rpc)}]]]]))
-

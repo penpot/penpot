@@ -46,6 +46,13 @@
        (rx/subs (fn [{:keys [redirect-uri] :as rsp}]
                   (.replace js/location redirect-uri)))))
 
+(defn- login-with-github
+  [event]
+  (dom/prevent-default event)
+  (->> (rp/mutation! :login-with-github {})
+       (rx/subs (fn [{:keys [redirect-uri] :as rsp}]
+                  (.replace js/location redirect-uri)))))
+
 (mf/defc login-form
   []
   (let [error? (mf/use-state false)
@@ -137,6 +144,13 @@
        [:img.logo
         {:src "/images/icons/brand-gitlab.svg"}]
        (tr "auth.login-with-gitlab-submit")])
+
+    (when cfg/github-client-id
+      [:a.btn-ocean.btn-large.btn-github-auth
+       {:on-click login-with-github}
+       [:img.logo
+        {:src "/images/icons/brand-github.svg"}]
+       (tr "auth.login-with-github-submit")])
 
     [:div.links.demo
      [:div.link-entry

@@ -55,6 +55,8 @@ respective defaults):
 - `APP_GITLAB_CLIENT_SECRET=` (default undefined)
 - `APP_GITLAB_BASE_URI=`      (default https://gitlab.com)
 
+- `APP_GITHUB_CLIENT_ID=`     (default undefined)
+- `APP_GITHUB_CLIENT_SECRET=` (default undefined)
 
 ## REPL ##
 

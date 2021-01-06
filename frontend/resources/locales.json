@@ -134,6 +134,15 @@
       "es" : "Entrar con Gitlab"
     }
   },
+  "auth.login-with-github-submit" : {
+    "used-in" : [ "src/app/main/ui/auth/login.cljs:154" ],
+    "translations" : {
+      "en" : "Login with Github",
+      "fr" : "Se connecter via Github",
+      "ru" : "Вход через Gitnub",
+      "es" : "Entrar con Github"
+    }
+  },
   "auth.login-with-ldap-submit" : {
     "used-in" : [ "src/app/main/ui/auth/login.cljs:105" ],
     "translations" : {
