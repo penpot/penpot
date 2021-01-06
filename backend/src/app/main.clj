@@ -79,6 +79,7 @@
      :metrics     (ig/ref :app.metrics/metrics)
      :google-auth (ig/ref :app.http.auth/google)
      :gitlab-auth (ig/ref :app.http.auth/gitlab)
+     :github-auth (ig/ref :app.http.auth/github)
      :ldap-auth   (ig/ref :app.http.auth/ldap)
      :svgparse    (ig/ref :app.svgparse/handler)
      :storage     (ig/ref :app.storage/storage)}
@@ -107,6 +108,14 @@
      :public-uri    (:public-uri config)
      :client-id     (:google-client-id config)
      :client-secret (:google-client-secret config)}
+
+    :app.http.auth/github
+    {:rpc           (ig/ref :app.rpc/rpc)
+     :session       (ig/ref :app.http.session/session)
+     :tokens        (ig/ref :app.tokens/tokens)
+     :public-uri    (:public-uri config)
+     :client-id     (:github-client-id config)
+     :client-secret (:github-client-secret config)}
 
     :app.http.auth/gitlab
     {:rpc           (ig/ref :app.rpc/rpc)
