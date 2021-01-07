@@ -1282,6 +1282,12 @@
     },
     "unused" : true
   },
+  "handoff.tabs.code.selected.svg-raw" : {
+    "translations" : {
+      "en" : "SVG"
+    },
+    "unused" : true
+  },
   "handoff.tabs.info" : {
     "used-in" : [ "src/app/main/ui/handoff/right_sidebar.cljs:59" ],
     "translations" : {

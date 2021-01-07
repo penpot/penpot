@@ -58,3 +58,12 @@
      :width (- maxx minx)
      :height (- maxy miny)}))
 
+(defn center->rect [center width height]
+  (assert (gpt/point center))
+  (assert (and (number? width) (> width 0)))
+  (assert (and (number? height) (> height 0)))
+
+  {:x (- (:x center) (/ width 2))
+   :y (- (:y center) (/ height 2))
+   :width width
+   :height height})

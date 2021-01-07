@@ -9,12 +9,12 @@
 
 (ns app.main.ui.shapes.filters
   (:require
-   [rumext.alpha :as mf]
-   [cuerdas.core :as str]
-   [app.util.color :as color]
    [app.common.data :as d]
    [app.common.math :as mth]
-   [app.common.uuid :as uuid]))
+   [app.common.uuid :as uuid]
+   [app.util.color :as color]
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
 (defn get-filter-id []
   (str "filter_" (uuid/next)))
@@ -109,37 +109,6 @@
              :in2 filter-in
              :result filter-id}])
 
-(defn filter-bounds [shape filter-entry]
-  (let [{:keys [x y width height]} (:selrect shape)
-        {:keys [offset-x offset-y blur spread] :or {offset-x 0 offset-y 0 blur 0 spread 0}} (:params filter-entry)
-        filter-x (min x (+ x offset-x (- spread) (- blur) -5))
-        filter-y (min y (+ y offset-y (- spread) (- blur) -5))
-        filter-width (+ width (mth/abs offset-x) (* spread 2) (* blur 2) 10)
-        filter-height (+ height (mth/abs offset-x) (* spread 2) (* blur 2) 10)]
-    {:x1 filter-x
-     :y1 filter-y
-     :x2 (+ filter-x filter-width)
-     :y2 (+ filter-y filter-height)}))
-
-(defn get-filters-bounds
-  [shape filters blur-value]
-
-  (let [filter-bounds (->> filters
-                           (filter #(= :drop-shadow (:type %)))
-                           (map (partial filter-bounds shape) ))
-        ;; We add the selrect so the minimum size will be the selrect
-        filter-bounds (conj filter-bounds (:selrect shape))
-        x1 (apply min (map :x1 filter-bounds))
-        y1 (apply min (map :y1 filter-bounds))
-        x2 (apply max (map :x2 filter-bounds))
-        y2 (apply max (map :y2 filter-bounds))
-
-        x1 (- x1 (* blur-value 2))
-        x2 (+ x2 (* blur-value 2))
-        y1 (- y1 (* blur-value 2))
-        y2 (+ y2 (* blur-value 2))]
-    [x1 y1 (- x2 x1) (- y2 y1)]))
-
 (defn blur-filters [type value]
   (->> [value]
        (remove :hidden)
@@ -185,18 +154,11 @@
                  (->> shape :blur   (blur-filters   :layer-blur)))
 
         ;; Adds the previous filter as `filter-in` parameter
-        filters (map #(assoc %1 :filter-in %2) filters (cons nil (map :id filters)))
-
-        [filter-x filter-y filter-width filter-height] (get-filters-bounds shape filters (or (-> shape :blur :value) 0))]
+        filters (map #(assoc %1 :filter-in %2) filters (cons nil (map :id filters)))]
 
     [:*
      (when (> (count filters) 2)
        [:filter {:id filter-id
-                 :x filter-x
-                 :y filter-y
-                 :width filter-width
-                 :height filter-height
-                 :filterUnits "userSpaceOnUse"
                  :color-interpolation-filters "sRGB"}
 
         (for [entry filters]

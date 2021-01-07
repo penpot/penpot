@@ -166,8 +166,9 @@
          (fn [blobs]
            (let [params (with-meta {:file-id file-id
                                     :local? false
-                                    :data (seq blobs)}
-                          {:on-success on-media-uploaded})]
+                                    :data (seq blobs)
+                                    :svg-as-images true}
+                          {:on-image on-media-uploaded})]
              (st/emit! (dw/upload-media-objects params)))))
 
         on-delete
@@ -212,9 +213,10 @@
 
         on-drag-start
         (mf/use-callback
-         (fn [{:keys [name id]} event]
+         (fn [{:keys [name id mtype]} event]
            (dnd/set-data! event "text/asset-id" (str id))
            (dnd/set-data! event "text/asset-name" name)
+           (dnd/set-data! event "text/asset-type" mtype)
            (dnd/set-allowed-effect! event "move")))]
 
     [:div.asset-group

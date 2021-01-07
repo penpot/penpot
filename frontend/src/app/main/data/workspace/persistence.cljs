@@ -9,6 +9,8 @@
 
 (ns app.main.data.workspace.persistence
   (:require
+   [cuerdas.core :as str]
+   [app.util.http :as http]
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.media :as cm]
@@ -345,23 +347,54 @@
 (s/def ::name ::us/string)
 (s/def ::uri  ::us/string)
 (s/def ::uris (s/coll-of ::uri))
+(s/def ::mtype ::us/string)
 
 (s/def ::upload-media-objects
   (s/and
    (s/keys :req-un [::file-id ::local?]
-           :opt-in [::name ::data ::uris])
+           :opt-in [::name ::data ::uris ::mtype])
    (fn [props]
      (or (contains? props :data)
          (contains? props :uris)))))
 
+(defn parse-svg [text]
+  (->> (http/send! {:method :post
+                    :uri "/api/svg"
+                    :headers {"content-type" "image/svg+xml"}
+                    :body text})
+       (rx/map (fn [{:keys [status body]}]
+                 (let [result (t/decode body)]
+                   (if (= status 200)
+                     result
+                     (throw result)))))))
+
+(defn fetch-svg [uri]
+  (->> (http/send! {:method :get :uri uri})
+       (rx/map :body)))
+
 (defn upload-media-objects
-  [{:keys [file-id local? data name uris] :as params}]
+  [{:keys [file-id local? data name uris mtype svg-as-images] :as params}]
   (us/assert ::upload-media-objects params)
   (ptk/reify ::upload-media-objects
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [{:keys [on-success on-error]
-             :or {on-success identity}} (meta params)
+      (let [{:keys [on-image on-svg on-error]
+             :or {on-image identity
+                  on-svg   identity}} (meta params)
+
+            svg? (fn [blob]
+                   (= (.-type blob) "image/svg+xml"))
+
+            svg-url? (fn [url]
+                       (or (and mtype (= mtype "image/svg+xml"))
+                           (str/ends-with? url ".svg")))
+
+            url-name (fn [url]
+                       (let [query-idx (str/last-index-of url "?")
+                             url (if (> query-idx 0) (subs url 0 query-idx) url)
+                             filename (->> (str/split url "/") (last))
+                             ext-idx (str/last-index-of filename ".")]
+                         (if (> ext-idx 0) (subs filename 0 ext-idx) filename)))
 
             prepare-file
             (fn [blob]
@@ -376,22 +409,54 @@
               {:file-id file-id
                :is-local local?
                :url uri
-               :name name})]
+               :name (or name (url-name uri))})
+
+            file-stream
+            (when data
+              (->> (rx/from data)
+                   (rx/map di/validate-file)))
+
+            image-stream
+            (cond
+              (seq uris)
+
+              (rx/merge
+               (->> (rx/from uris)
+                    (rx/filter (comp not svg-url?))
+                    (rx/map prepare-uri)
+                    (rx/mapcat #(rp/mutation! :create-file-media-object-from-url %))
+                    (rx/do on-image))
+
+               (->> (rx/from uris)
+                    (rx/filter svg-url?)
+                    (rx/merge-map fetch-svg)
+                    (rx/merge-map parse-svg)
+                    (rx/with-latest vector uris)
+                    (rx/map #(assoc (first %) :name (or name (url-name (second %)))))
+                    (rx/do on-svg)))
+
+              :else
+              (rx/merge
+               (->> file-stream
+                    (rx/filter #(or svg-as-images (not (svg? %))))
+                    (rx/map prepare-file)
+                    (rx/mapcat #(rp/mutation! :upload-file-media-object %))
+                    (rx/do on-image))
+
+               (->> file-stream
+                    (rx/filter #(and (not svg-as-images) (svg? %)))
+                    (rx/merge-map #(.text %))
+                    (rx/merge-map parse-svg)
+                    (rx/with-latest vector file-stream)
+                    (rx/map #(assoc (first %) :name (.-name (second %))))
+                    (rx/do on-svg))))]
 
         (rx/concat
          (rx/of (dm/show {:content (tr "media.loading")
                           :type :info
                           :timeout nil
                           :tag :media-loading}))
-         (->> (if (seq uris)
-                (->> (rx/from uris)
-                     (rx/map prepare-uri)
-                     (rx/mapcat #(rp/mutation! :create-file-media-object-from-url %)))
-                (->> (rx/from data)
-                     (rx/map di/validate-file)
-                     (rx/map prepare-file)
-                     (rx/mapcat #(rp/mutation! :upload-file-media-object %))))
-              (rx/do on-success)
+         (->> image-stream
               (rx/catch (fn [error]
                           (cond
                             (= (:code error) :media-type-not-allowed)
@@ -399,6 +464,9 @@
 
                             (= (:code error) :media-type-mismatch)
                             (rx/of (dm/error (tr "errors.media-type-mismatch")))
+
+                            (= (:code error) :unable-to-optimize)
+                            (rx/of (dm/error (:hint error)))
 
                             (fn? on-error)
                             (do
@@ -409,7 +477,6 @@
                             (rx/throw error))))
               (rx/finalize (fn []
                              (st/emit! (dm/hide-tag :media-loading))))))))))
-
 
 ;; --- Upload File Media objects
 

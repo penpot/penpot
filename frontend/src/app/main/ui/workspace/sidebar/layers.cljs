@@ -45,6 +45,7 @@
              (if (:masked-group? shape)
                i/mask
                i/folder))
+    :svg-raw i/file-svg
     nil))
 
 ;; --- Layer Name

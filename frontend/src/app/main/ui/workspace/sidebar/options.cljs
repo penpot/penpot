@@ -29,7 +29,7 @@
    [app.main.ui.workspace.sidebar.options.path :as path]
    [app.main.ui.workspace.sidebar.options.rect :as rect]
    [app.main.ui.workspace.sidebar.options.text :as text]
-   [app.main.ui.workspace.sidebar.options.text :as text]
+   [app.main.ui.workspace.sidebar.options.svg-raw :as svg-raw]
    [app.util.i18n :as i18n :refer [tr t]]
    [app.util.object :as obj]
    [beicon.core :as rx]
@@ -42,14 +42,15 @@
   [{:keys [shape shapes-with-children page-id file-id]}]
   [:*
    (case (:type shape)
-     :frame  [:& frame/options {:shape shape}]
-     :group  [:& group/options {:shape shape :shape-with-children shapes-with-children}]
-     :text   [:& text/options {:shape shape}]
-     :rect   [:& rect/options {:shape shape}]
-     :icon   [:& icon/options {:shape shape}]
-     :circle [:& circle/options {:shape shape}]
-     :path   [:& path/options {:shape shape}]
-     :image  [:& image/options {:shape shape}]
+     :frame   [:& frame/options {:shape shape}]
+     :group   [:& group/options {:shape shape :shape-with-children shapes-with-children}]
+     :text    [:& text/options {:shape shape}]
+     :rect    [:& rect/options {:shape shape}]
+     :icon    [:& icon/options {:shape shape}]
+     :circle  [:& circle/options {:shape shape}]
+     :path    [:& path/options {:shape shape}]
+     :image   [:& image/options {:shape shape}]
+     :svg-raw [:& svg-raw/options {:shape shape}]
      nil)
    [:& exports-menu
     {:shape shape
@@ -104,4 +105,5 @@
                          :file-id file-id
                          :page-id page-id
                          :section section}]))
+
 

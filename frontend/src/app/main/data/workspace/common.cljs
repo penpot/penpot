@@ -522,6 +522,27 @@
             (update-in [:workspace-local :hover] disj id)
             (update :workspace-local dissoc :edition))))))
 
+(defn add-shape-changes
+  [page-id attrs]
+  (let [id       (:id attrs)
+        frame-id (:frame-id attrs)
+        shape    (gpr/setup-proportions attrs)
+
+        default-attrs (if (= :frame (:type shape))
+                        cp/default-frame-attrs
+                        cp/default-shape-attrs)
+        shape    (merge default-attrs shape)
+
+        redo-changes  [{:type :add-obj
+                        :id id
+                        :page-id page-id
+                        :frame-id frame-id
+                        :obj shape}]
+        undo-changes  [{:type :del-obj
+                        :page-id page-id
+                        :id id}]]
+
+    [redo-changes undo-changes]))
 
 (defn add-shape
   [attrs]
@@ -532,36 +553,21 @@
       (let [page-id  (:current-page-id state)
             objects  (lookup-page-objects state page-id)
 
-            id       (or (:id attrs) (uuid/next))
-            shape    (gpr/setup-proportions attrs)
-
-            unames   (retrieve-used-names objects)
-            name     (generate-unique-name unames (:name shape))
-
+            id (or (:id attrs) (uuid/next))
+            name (-> objects
+                     (retrieve-used-names)
+                     (generate-unique-name (:name attrs)))
             frame-id (if (= :frame (:type attrs))
                        uuid/zero
                        (or (:frame-id attrs)
                            (cp/frame-id-by-position objects attrs)))
 
-            shape    (merge
-                      (if (= :frame (:type shape))
-                        cp/default-frame-attrs
-                        cp/default-shape-attrs)
-                      (assoc shape
-                             :id id
-                             :name name))
-
-            rchange  {:type :add-obj
-                      :id id
-                      :page-id page-id
-                      :frame-id frame-id
-                      :obj shape}
-            uchange  {:type :del-obj
-                      :page-id page-id
-                      :id id}]
-
+            [rchanges uchanges] (add-shape-changes page-id (assoc attrs
+                                                                  :id id
+                                                                  :frame-id frame-id
+                                                                  :name name))]
         (rx/concat
-         (rx/of (commit-changes [rchange] [uchange] {:commit-local? true})
+         (rx/of (commit-changes rchanges uchanges {:commit-local? true})
                 (select-shapes (d/ordered-set id)))
          (when (= :text (:type attrs))
            (->> (rx/of (start-edition-mode id))
