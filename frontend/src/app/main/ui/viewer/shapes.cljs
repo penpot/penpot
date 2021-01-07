@@ -55,13 +55,12 @@
 
           on-mouse-down (mf/use-callback
                          (mf/deps shape)
-                         #(on-mouse-down % shape))]
+                         #(on-mouse-down % shape))
 
-      (if (and (= :svg-raw (:type shape))
-               (not= :svg (get-in shape [:content :tag])))
-        [:& component {:shape shape
-                       :frame frame
-                       :childs childs}]
+          svg-element? (and (= :svg-raw (:type shape))
+                            (not= :svg (get-in shape [:content :tag])))]
+
+      (if-not svg-element?
         [:> shape-container {:shape shape
                              :on-mouse-down on-mouse-down
                              :cursor (when (seq (:interactions shape)) "pointer")}
@@ -77,7 +76,12 @@
                    :fill "#31EFB8"
                    :stroke "#31EFB8"
                    :stroke-width 1
-                   :fill-opacity 0.2}])]))))
+                   :fill-opacity 0.2}])]
+
+        ;; Don't wrap svg elements inside a <g> otherwise some can break
+        [:& component {:shape shape
+                       :frame frame
+                       :childs childs}]))))
 
 (defn frame-wrapper
   [shape-container show-interactions?]
@@ -187,8 +191,7 @@
               :image   [:> image-wrapper opts]
               :circle  [:> circle-wrapper opts]
               :group   [:> group-container {:shape shape :frame frame}]
-              :svg-raw [:> svg-raw-container {:shape shape :frame frame}]
-              )))))))
+              :svg-raw [:> svg-raw-container {:shape shape :frame frame}])))))))
 
 (mf/defc frame-svg
   {::mf/wrap [mf/memo]}

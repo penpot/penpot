@@ -62,13 +62,11 @@
     [props]
     (let [shape (unchecked-get props "shape")
           childs (unchecked-get props "childs")
-          frame  (unchecked-get props "frame")]
+          frame  (unchecked-get props "frame")
+          svg-element? (and (= :svg-raw (:type shape))
+                            (not= :svg (get-in shape [:content :tag])))]
 
-      (if (and (= :svg-raw (:type shape))
-               (not= :svg (get-in shape [:content :tag])))
-        [:& component {:shape shape
-                       :frame frame
-                       :childs childs}]
+      (if-not svg-element?
         [:> shape-container {:shape shape
                              :on-mouse-enter (handle-hover-shape shape true)
                              :on-mouse-leave (handle-hover-shape shape false)
@@ -76,7 +74,12 @@
          [:& component {:shape shape
                         :frame frame
                         :childs childs
-                        :is-child-selected? true}]]))))
+                        :is-child-selected? true}]]
+
+        ;; Don't wrap svg elements inside a <g> otherwise some can break
+        [:& component {:shape shape
+                       :frame frame
+                       :childs childs}]))))
 
 (defn frame-container-factory
   [objects]

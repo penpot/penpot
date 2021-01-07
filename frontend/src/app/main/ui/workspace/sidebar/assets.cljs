@@ -164,12 +164,9 @@
         (mf/use-callback
          (mf/deps file-id)
          (fn [blobs]
-           (let [params (with-meta {:file-id file-id
-                                    :local? false
-                                    :data (seq blobs)
-                                    :svg-as-images true}
-                          {:on-image on-media-uploaded})]
-             (st/emit! (dw/upload-media-objects params)))))
+           (let [params {:file-id file-id
+                         :data (seq blobs)}]
+             (st/emit! (dw/upload-media-asset params)))))
 
         on-delete
         (mf/use-callback

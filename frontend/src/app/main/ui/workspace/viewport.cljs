@@ -456,12 +456,7 @@
         on-image-uploaded
         (mf/use-callback
          (fn [image {:keys [x y]}]
-           (st/emit! (dw/image-upload image x y))))
-
-        on-svg-uploaded
-        (mf/use-callback
-         (fn [image {:keys [x y]}]
-           (st/emit! (dw/svg-upload image x y))))
+           (st/emit! (dw/image-uploaded image x y))))
 
         on-drop
         (mf/use-callback
@@ -497,31 +492,23 @@
                      lines (str/lines data)
                      urls  (filter #(and (not (str/blank? %))
                                          (not (str/starts-with? % "#")))
-                                   lines)]
-                 (st/emit!
-                  (dw/upload-media-objects
-                   (with-meta {:file-id (:id file)
-                               :local? true
-                               :uris urls}
-                     {:on-image #(on-image-uploaded % viewport-coord)
-                      :on-svg #(on-svg-uploaded % viewport-coord)}))))
+                                   lines)
+                     params {:file-id (:id file)
+                             :uris urls}]
+                 (st/emit! (dw/upload-media-workspace params viewport-coord)))
 
                ;; Will trigger when the user drags an SVG asset from the assets panel
                (and (dnd/has-type? event "text/asset-id") (= asset-type "image/svg+xml"))
-               (let [path (cfg/resolve-file-media {:id asset-id})]
-                 (st/emit!
-                  (dw/upload-media-objects
-                   (with-meta {:file-id (:id file)
-                               :local? true
-                               :uris [path]
-                               :name asset-name
-                               :mtype asset-type}
-                     {:on-svg #(on-svg-uploaded % viewport-coord)}))))
+               (let [path (cfg/resolve-file-media {:id asset-id})
+                     params {:file-id (:id file)
+                             :uris [path]
+                             :name asset-name
+                             :mtype asset-type}]
+                 (st/emit! (dw/upload-media-workspace params viewport-coord)))
 
                ;; Will trigger when the user drags an image from the assets SVG
                (dnd/has-type? event "text/asset-id")
                (let [params {:file-id (:id file)
-                             :local? true
                              :object-id asset-id
                              :name asset-name}]
                  (st/emit! (dw/clone-media-object
@@ -534,12 +521,8 @@
                :else
                (let [files  (dnd/get-files event)
                      params {:file-id (:id file)
-                             :local? true
                              :data (seq files)}]
-                 (st/emit! (dw/upload-media-objects
-                            (with-meta params
-                              {:on-image #(on-image-uploaded % viewport-coord)
-                               :on-svg #(on-svg-uploaded % viewport-coord)}))))))))
+                 (st/emit! (dw/upload-media-workspace params viewport-coord)))))))
 
         on-paste
         (mf/use-callback

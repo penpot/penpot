@@ -99,10 +99,10 @@
       (when (and shape (not (:hidden shape)))
         (let [shape (-> (gsh/transform-shape shape)
                         (gsh/translate-to-frame frame))
-              opts #js {:shape shape}]
-          (if (and (= :svg-raw (:type shape))
-                   (not= :svg (get-in shape [:content :tag])))
-            [:> svg-raw-wrapper {:shape shape :frame frame}]
+              opts #js {:shape shape}
+              svg-element? (and (= :svg-raw (:type shape))
+                                (not= :svg (get-in shape [:content :tag])))]
+          (if-not svg-element?
             [:> shape-container {:shape shape}
              (case (:type shape)
                :text    [:> text/text-shape opts]
@@ -113,7 +113,10 @@
                :frame   [:> frame-wrapper {:shape shape}]
                :group   [:> group-wrapper {:shape shape :frame frame}]
                :svg-raw [:> svg-raw-wrapper {:shape shape :frame frame}]
-               nil)]))))))
+               nil)]
+
+            ;; Don't wrap svg elements inside a <g> otherwise some can break
+            [:> svg-raw-wrapper {:shape shape :frame frame}]))))))
 
 (defn get-viewbox [{:keys [x y width height] :or {x 0 y 0 width 100 height 100}}]
   (str/fmt "%s %s %s %s" x y width height))

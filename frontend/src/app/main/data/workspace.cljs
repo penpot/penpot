@@ -553,32 +553,6 @@
                             (assoc :zoom zoom)
                             (update :vbox merge srect)))))))))))
 
-;; --- Add shape to Workspace
-
-(defn- viewport-center
-  [state]
-  (let [{:keys [x y width height]} (get-in state [:workspace-local :vbox])]
-    [(+ x (/ width 2)) (+ y (/ height 2))]))
-
-(defn create-and-add-shape
-  [type frame-x frame-y data]
-  (ptk/reify ::create-and-add-shape
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [{:keys [width height]} data
-
-            [vbc-x vbc-y] (viewport-center state)
-            x (:x data (- vbc-x (/ width 2)))
-            y (:y data (- vbc-y (/ height 2)))
-            page-id (:current-page-id state)
-            frame-id (-> (dwc/lookup-page-objects state page-id)
-                         (cp/frame-id-by-position {:x frame-x :y frame-y}))
-            shape (-> (cp/make-minimal-shape type)
-                      (merge data)
-                      (merge {:x x :y y})
-                      (assoc :frame-id frame-id)
-                      (gsh/setup-selrect))]
-        (rx/of (dwc/add-shape shape))))))
 
 ;; --- Update Shape Attrs
 
@@ -1414,119 +1388,16 @@
                (dwc/add-shape shape)
                (dwc/commit-undo-transaction))))))
 
-(defn image-upload [image x y]
-  (ptk/reify ::add-image
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [{:keys [name width height id mtype]} image
-            shape {:name name
-                   :width width
-                   :height height
-                   :x (- x (/ width 2))
-                   :y (- y (/ height 2))
-                   :metadata {:width width
-                              :height height
-                              :mtype mtype
-                              :id id}}]
-        (rx/of (create-and-add-shape :image x y shape))))))
-
-
-(defn- svg-dimensions [data]
-  (let [width (get-in data [:attrs :width] 100)
-        height (get-in data [:attrs :height] 100)
-        viewbox (get-in data [:attrs :viewBox] (str "0 0 " width " " height))
-        [_ _ width-str height-str] (str/split viewbox " ")
-        width (d/parse-integer width-str)
-        height (d/parse-integer height-str)]
-    [width height]))
-
-(defn svg-upload [data x y]
-  (ptk/reify ::svg-upload
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [page-id (:current-page-id state)
-            objects (dwc/lookup-page-objects state page-id)
-            frame-id (cp/frame-id-by-position objects {:x x :y y})
-
-            [width height] (svg-dimensions data)
-            x (- x (/ width 2))
-            y (- y (/ height 2))
-
-            create-svg-raw
-            (fn [{:keys [tag] :as data} unames root-id]
-              (let [base (cond (string? tag) tag
-                               (keyword? tag) (name tag)
-                               (nil? tag) "node"
-                               :else (str tag))]
-                (-> {:id (uuid/next)
-                     :type :svg-raw
-                     :name (dwc/generate-unique-name unames (str "svg-" base))
-                     :frame-id frame-id
-                     ;; For svg children we set its coordinates as the root of the svg
-                     :width width
-                     :height height
-                     :x x
-                     :y y
-                     :content data
-                     :root-id root-id}
-                    (gsh/setup-selrect))))
-
-            add-svg-child
-            (fn add-svg-child [parent-id root-id [unames [rchs uchs]] [index {:keys [content] :as data}]]
-              (let [shape (create-svg-raw data unames root-id)
-                    shape-id (:id shape)
-                    [rch1 uch1] (dwc/add-shape-changes page-id shape)
-
-                    ;; Mov-objects won't have undo because we "delete" the object in the undo of the
-                    ;; previous operation
-                    rch2 [{:type :mov-objects
-                           :parent-id parent-id
-                           :frame-id frame-id
-                           :page-id page-id
-                           :index index
-                           :shapes [shape-id]}]
-
-                    ;; Careful! the undo changes are concatenated reversed (we undo in reverse order
-                    changes [(d/concat rchs rch1 rch2) (d/concat uch1 uchs)]
-                    unames (conj unames (:name shape))]
-                (reduce (partial add-svg-child shape-id root-id) [unames changes] (d/enumerate (:content data)))))
-
-            unames (dwc/retrieve-used-names objects)
-
-            svg-name (->> (str/replace (:name data) ".svg" "")
-                          (dwc/generate-unique-name unames))
-
-            root-shape (create-svg-raw data unames nil)
-            root-shape (-> root-shape
-                           (assoc :name svg-name))
-            root-id (:id root-shape)
-
-            changes (dwc/add-shape-changes page-id root-shape)
-
-            [_ [rchanges uchanges]] (reduce (partial add-svg-child root-id root-id) [unames changes] (d/enumerate (:content data)))]
-        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
-               (dwc/select-shapes (d/ordered-set root-id)))
-        ))))
 
 (defn- paste-image
   [image]
   (ptk/reify ::paste-bin-impl
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [response-sb (rx/subject)
-            file-id (get-in state [:workspace-file :id])
+      (let [file-id (get-in state [:workspace-file :id])
             params  {:file-id file-id
-                     :local? true
                      :data [image]}]
-        (rx/concat (rx/of (dwp/upload-media-objects
-                           (with-meta params
-                             {:on-image
-                              #(let [{:keys [x y]} @ms/mouse-position]
-                                 (rx/push! response-sb (image-upload % x y)))
-                              :on-svg
-                              #(let [{:keys [x y]} @ms/mouse-position]
-                                 (rx/push! response-sb (svg-upload % x y)))})))
-                   (rx/take 1 response-sb))))))
+        (rx/of (dwp/upload-media-workspace params @ms/mouse-position))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interactions
@@ -1642,8 +1513,10 @@
 (d/export dwp/fetch-shared-files)
 (d/export dwp/link-file-to-library)
 (d/export dwp/unlink-file-from-library)
-(d/export dwp/upload-media-objects)
+(d/export dwp/upload-media-asset)
+(d/export dwp/upload-media-workspace)
 (d/export dwp/clone-media-object)
+(d/export dwc/image-uploaded)
 
 ;; Selection
 
