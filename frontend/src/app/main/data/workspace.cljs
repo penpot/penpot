@@ -891,7 +891,8 @@
         ;; (println "================ uchanges")
         ;; (cljs.pprint/pprint uchanges)
         (rx/of (dwc/commit-changes rchanges uchanges
-                                   {:commit-local? true}))))))
+                                   {:commit-local? true})
+               (dwc/expand-collapse parent-id))))))
 
 (defn relocate-selected-shapes
   [parent-id to-index]
