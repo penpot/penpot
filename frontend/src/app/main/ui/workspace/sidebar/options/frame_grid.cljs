@@ -99,6 +99,13 @@
         (fn [color]
           (emit-changes! #(-> % (assoc-in [:params :color] color))))
 
+        handle-detach-color
+        (fn []
+          (emit-changes! #(-> % (assoc-in [:params :color]
+                                          (-> (:color params)
+                                              (assoc :id nil)
+                                              (assoc :file-id nil))))))
+
         handle-use-default
         (fn []
           (let [params ((:type grid) default-grid-params)
@@ -212,7 +219,8 @@
 
       [:& color-row {:color (:color params)
                      :disable-gradient true
-                     :on-change handle-change-color}]
+                     :on-change handle-change-color
+                     :on-detach handle-detach-color}]
       [:div.row-flex
        [:button.btn-options {:disabled is-default
                              :on-click handle-use-default} (t locale "workspace.options.grid.params.use-default")]

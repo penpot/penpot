@@ -488,6 +488,8 @@
   }
 
   .color-info {
+    flex: 1 1 0;
+
     input {
       background-color: $color-gray-50;
       border: 1px solid $color-gray-30;
@@ -525,6 +527,11 @@
 
   .number {
     color: $color-gray-60;
+  }
+
+  .element-set-actions-button svg {
+    width: 10px;
+    height: 10px;
   }
 }
 

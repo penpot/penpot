@@ -21,6 +21,7 @@
    [app.main.refs :as refs]
    [app.main.data.modal :as modal]
    [app.main.ui.hooks :as h]
+   [app.main.ui.icons :as i]
    [app.main.ui.context :as ctx]
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.numeric-input :refer [numeric-input]]))
@@ -59,10 +60,11 @@
   (if (= v :multiple) nil v))
 
 (mf/defc color-row
-  [{:keys [color disable-gradient disable-opacity on-change on-open on-close]}]
+  [{:keys [color disable-gradient disable-opacity on-change on-detach on-open on-close]}]
   (let [current-file-id (mf/use-ctx ctx/current-file-id)
         file-colors     (mf/deref refs/workspace-file-colors)
         shared-libs     (mf/deref refs/workspace-libraries)
+        hover-detach    (mf/use-state false)
 
         get-color-name (fn [{:keys [id file-id]}]
                          (let [src-colors (if (= file-id current-file-id)
@@ -132,8 +134,15 @@
      (cond
        ;; Rendering a color with ID
        (:id color)
-       [:div.color-info
-        [:div.color-name (str (get-color-name color))]]
+       [:*
+        [:div.color-info
+         [:div.color-name (str (get-color-name color))]]
+        (when on-detach
+          [:div.element-set-actions-button
+           {:on-mouse-enter #(reset! hover-detach true)
+            :on-mouse-leave #(reset! hover-detach false)
+            :on-click on-detach}
+           (if @hover-detach i/unchain i/chain)])]
 
        ;; Rendering a gradient
        (and (not (uc/multiple? color))

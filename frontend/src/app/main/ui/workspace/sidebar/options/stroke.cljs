@@ -73,9 +73,15 @@
 
         handle-change-stroke-color
         (mf/use-callback
-         (mf/deps ids)
-         (fn [color]
-           (st/emit! (dc/change-stroke ids color))))
+          (mf/deps ids)
+          (fn [color]
+            (st/emit! (dc/change-stroke ids color))))
+
+        handle-detach
+        (mf/use-callback
+          (mf/deps ids)
+          (fn []
+            (st/emit! (dc/change-stroke ids (dissoc current-stroke-color :id :file-id)))))
 
         on-stroke-style-change
         (fn [event]
@@ -134,6 +140,7 @@
         ;; Stroke Color
         [:& color-row {:color current-stroke-color
                        :on-change handle-change-stroke-color
+                       :on-detach handle-detach
                        :on-open on-open-picker
                        :on-close on-close-picker}]
 

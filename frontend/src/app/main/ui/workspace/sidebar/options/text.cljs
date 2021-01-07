@@ -225,7 +225,7 @@
                (run! #(emit-update! % {:typography-ref-id id
                                        :typography-ref-file current-file-id}) ids)))))
 
-        handle-deattach-typography
+        handle-detach-typography
         (fn []
           (run! #(emit-update! % {:typography-ref-file nil
                                   :typography-ref-id nil})
@@ -253,13 +253,13 @@
        [:& typography-entry {:typography typography
                              :read-only? (not= (:typography-ref-file values) current-file-id)
                              :file (get shared-libs (:typography-ref-file values))
-                             :on-deattach handle-deattach-typography
+                             :on-detach handle-detach-typography
                              :on-change handle-change-typography}]
 
        (= (:typography-ref-id values) :multiple)
        [:div.multiple-typography
         [:div.multiple-typography-text (t locale "workspace.libraries.text.multiple-typography")]
-        [:div.multiple-typography-button {:on-click handle-deattach-typography
+        [:div.multiple-typography-button {:on-click handle-detach-typography
                                           :title (t locale "workspace.libraries.text.multiple-typography-tooltip")} i/unchain]]
 
        :else
