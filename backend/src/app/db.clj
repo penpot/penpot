@@ -215,7 +215,8 @@
                 (assoc :suffix "for update"))
          res  (exec-one! ds (jdbc-bld/for-query table params opts) opts)]
      (when (or (:deleted-at res) (not res))
-       (ex/raise :type :not-found))
+       (ex/raise :type :not-found
+                 :hint "database object not found"))
      res)))
 
 (defn get-by-id
