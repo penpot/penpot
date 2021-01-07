@@ -55,8 +55,9 @@
   (s/keys :opt-un [::region ::bucket ::prefix]))
 
 (defmethod ig/prep-key ::backend
-  [_ cfg]
-  (merge {:prefix ""} (d/without-nils cfg)))
+  [_ {:keys [prefix] :as cfg}]
+  (cond-> (d/without-nils cfg)
+    prefix (assoc :prefix prefix)))
 
 (defmethod ig/init-key ::backend
   [_ cfg]
@@ -75,7 +76,8 @@
 (s/def ::client #(instance? S3Client %))
 (s/def ::presigner #(instance? S3Presigner %))
 (s/def ::backend
-  (s/keys :req-un [::region ::bucket ::client ::type ::presigner ::prefix]))
+  (s/keys :req-un [::region ::bucket ::client ::type ::presigner]
+          :opt-un [::prefix]))
 
 ;; --- API IMPL
 
@@ -116,7 +118,7 @@
 
 (defn- put-object
   [{:keys [client bucket prefix]} {:keys [id] :as object} content]
-  (let [path    (str prefix "-" (impl/id->path id))
+  (let [path    (str prefix (impl/id->path id))
         mdata   (meta object)
         mtype   (:content-type mdata "application/octet-stream")
         request (.. (PutObjectRequest/builder)
@@ -134,7 +136,7 @@
   [{:keys [client bucket prefix]} {:keys [id]}]
   (let [gor (.. (GetObjectRequest/builder)
                 (bucket bucket)
-                (key (str prefix "-" (impl/id->path id)))
+                (key (str prefix (impl/id->path id)))
                 (build))
         obj (.getObject ^S3Client client gor)]
     (io/input-stream obj)))
@@ -147,7 +149,7 @@
   (us/assert dt/duration? max-age)
   (let [gor  (.. (GetObjectRequest/builder)
                  (bucket bucket)
-                 (key (str prefix "-" (impl/id->path id)))
+                 (key (str prefix (impl/id->path id)))
                  (build))
         gopr (.. (GetObjectPresignRequest/builder)
                  (signatureDuration max-age)
@@ -160,7 +162,7 @@
   [{:keys [bucket client prefix]} ids]
   (let [oids (map (fn [id]
                     (.. (ObjectIdentifier/builder)
-                        (key (str prefix "-" (impl/id->path id)))
+                        (key (str prefix (impl/id->path id)))
                         (build)))
                   ids)
         delc (.. (Delete/builder)
