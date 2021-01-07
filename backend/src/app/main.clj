@@ -39,7 +39,7 @@
     {}
 
     :app.migrations/all
-    {:uxbox-main (ig/ref :app.migrations/migrations)
+    {:main (ig/ref :app.migrations/migrations)
      :telemetry  (ig/ref :app.telemetry/migrations)}
 
     :app.migrations/migrations
