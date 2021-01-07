@@ -191,7 +191,8 @@
   "auth.notifications.team-invitation-accepted" : {
     "used-in" : [ "src/app/main/ui/auth/verify_token.cljs:55", "src/app/main/ui/auth/register.cljs:50" ],
     "translations" : {
-      "en" : "Joined the team succesfully"
+      "en" : "Joined the team succesfully",
+      "es" : "Te uniste al equipo"
     }
   },
   "auth.password" : {
@@ -321,13 +322,15 @@
   "dashboard.default-team-name" : {
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:329" ],
     "translations" : {
-      "en" : "Your penpot"
+      "en" : "Your Penpot",
+      "es" : "Tu Penpot"
     }
   },
   "dashboard.delete-team" : {
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:313" ],
     "translations" : {
-      "en" : "Delete team"
+      "en" : "Delete team",
+      "es" : "Eliminar equipo"
     }
   },
   "dashboard.draft-title" : {
@@ -358,7 +361,8 @@
   "dashboard.leave-team" : {
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:306", "src/app/main/ui/dashboard/sidebar.cljs:309" ],
     "translations" : {
-      "en" : "Leave team"
+      "en" : "Leave team",
+      "es" : "Abandonar equipo"
     }
   },
   "dashboard.libraries-title" : {
@@ -491,7 +495,8 @@
   "dashboard.no-projects-placeholder" : {
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:424" ],
     "translations" : {
-      "en" : "Pinned projects will appear here"
+      "en" : "Pinned projects will appear here",
+      "es" : "Los proyectos fijados aparecerán aquí"
     }
   },
   "dashboard.notifications.email-changed-successfully" : {
@@ -524,7 +529,8 @@
   "dashboard.num-of-members" : {
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:299" ],
     "translations" : {
-      "en" : "%s members"
+      "en" : "%s members",
+      "es" : "%s integrantes"
     }
   },
   "dashboard.password-change" : {
@@ -548,7 +554,8 @@
   "dashboard.promote-to-owner" : {
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:196" ],
     "translations" : {
-      "en" : "Promote to owner"
+      "en" : "Promote to owner",
+      "es" : "Promover a dueño"
     }
   },
   "dashboard.remove-account" : {
@@ -624,25 +631,29 @@
   "dashboard.switch-team" : {
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:144" ],
     "translations" : {
-      "en" : "Switch Team"
+      "en" : "Switch team",
+      "es" : "Cambiar equipo"
     }
   },
   "dashboard.team-info" : {
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:282" ],
     "translations" : {
-      "en" : "Team info"
+      "en" : "Team info",
+      "es" : "Información del equipo"
     }
   },
   "dashboard.team-members" : {
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:293" ],
     "translations" : {
-      "en" : "Team members"
+      "en" : "Team members",
+      "es" : "Integrantes del equipo"
     }
   },
   "dashboard.team-projects" : {
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:302" ],
     "translations" : {
-      "en" : "Team projects"
+      "en" : "Team projects",
+      "es" : "Proyectos del equipo"
     }
   },
   "dashboard.theme-change" : {
@@ -700,7 +711,8 @@
   "dashboard.your-penpot" : {
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:148" ],
     "translations" : {
-      "en" : "Your penpot"
+      "en" : "Your Penpot",
+      "es" : "Tu Penpot"
     }
   },
   "ds.accept" : {
@@ -931,13 +943,15 @@
   "handoff.attributes.blur" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/blur.cljs:34" ],
     "translations" : {
-      "en" : "Blur"
+      "en" : "Blur",
+      "es" : "Desenfocado"
     }
   },
   "handoff.attributes.blur.value" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/blur.cljs:40" ],
     "translations" : {
-      "en" : "Value"
+      "en" : "Value",
+      "es" : "Valor"
     }
   },
   "handoff.attributes.color.hex" : {
@@ -960,80 +974,93 @@
   },
   "handoff.attributes.content" : {
     "translations" : {
-      "en" : "Content"
+      "en" : "Content",
+      "es" : "Contenido"
     },
     "unused" : true
   },
   "handoff.attributes.fill" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/fill.cljs:57" ],
     "translations" : {
-      "en" : "Fill"
+      "en" : "Fill",
+      "es" : "Relleno"
     }
   },
   "handoff.attributes.image.download" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/image.cljs:45" ],
     "translations" : {
-      "en" : "Dowload source image"
+      "en" : "Dowload source image",
+      "es" : "Descargar imagen original"
     }
   },
   "handoff.attributes.image.height" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/image.cljs:37" ],
     "translations" : {
-      "en" : "Height"
+      "en" : "Height",
+      "es" : "Altura"
     }
   },
   "handoff.attributes.image.width" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/image.cljs:32" ],
     "translations" : {
-      "en" : "Width"
+      "en" : "Width",
+      "es" : "Ancho"
     }
   },
   "handoff.attributes.layout" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/layout.cljs:76" ],
     "translations" : {
-      "en" : "Layout"
+      "en" : "Layout",
+      "es" : "Estructura"
     }
   },
   "handoff.attributes.layout.height" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/layout.cljs:43" ],
     "translations" : {
-      "en" : "Height"
+      "en" : "Height",
+      "es" : "Altura"
     }
   },
   "handoff.attributes.layout.left" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/layout.cljs:49" ],
     "translations" : {
-      "en" : "Left"
+      "en" : "Left",
+      "es" : "Izquierda"
     }
   },
   "handoff.attributes.layout.radius" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/layout.cljs:61" ],
     "translations" : {
-      "en" : "Radius"
+      "en" : "Radius",
+      "es" : "Derecha"
     }
   },
   "handoff.attributes.layout.rotation" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/layout.cljs:67" ],
     "translations" : {
-      "en" : "Rotation"
+      "en" : "Rotation",
+      "es" : "Rotación"
     }
   },
   "handoff.attributes.layout.top" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/layout.cljs:55" ],
     "translations" : {
-      "en" : "Top"
+      "en" : "Top",
+      "es" : "Arriba"
     }
   },
   "handoff.attributes.layout.width" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/layout.cljs:38" ],
     "translations" : {
-      "en" : "Width"
+      "en" : "Width",
+      "es" : "Ancho"
     }
   },
   "handoff.attributes.shadow" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/shadow.cljs:71" ],
     "translations" : {
-      "en" : "Shadow"
+      "en" : "Shadow",
+      "es" : "Sombra"
     }
   },
   "handoff.attributes.shadow.shorthand.blur" : {
@@ -1062,230 +1089,268 @@
   },
   "handoff.attributes.shadow.style.drop-shadow" : {
     "translations" : {
-      "en" : "Drop"
+      "en" : "Drop",
+      "es" : "Arrojar"
     },
     "unused" : true
   },
   "handoff.attributes.shadow.style.inner-shadow" : {
     "translations" : {
-      "en" : "Inner"
+      "en" : "Inner",
+      "es" : "Interna"
     },
     "unused" : true
   },
   "handoff.attributes.stroke" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/stroke.cljs:75" ],
     "translations" : {
-      "en" : "Stroke"
+      "en" : "Stroke",
+      "es" : "Borde"
     }
   },
   "handoff.attributes.stroke.alignment.center" : {
     "translations" : {
-      "en" : "Center"
+      "en" : "Center",
+      "es" : "Centrado"
     },
     "unused" : true
   },
   "handoff.attributes.stroke.alignment.inner" : {
     "translations" : {
-      "en" : "Inner"
+      "en" : "Inner",
+      "es" : "Interno"
     },
     "unused" : true
   },
   "handoff.attributes.stroke.alignment.outer" : {
     "translations" : {
-      "en" : "Outer"
+      "en" : "Outer",
+      "es" : "Externo"
     },
     "unused" : true
   },
   "handoff.attributes.stroke.style.dashed" : {
     "translations" : {
-      "en" : "Dashed"
+      "en" : "Dashed",
+      "es" : "Discontinuo"
     },
     "unused" : true
   },
   "handoff.attributes.stroke.style.dotted" : {
     "translations" : {
-      "en" : "Dotted"
+      "en" : "Dotted",
+      "es" : "Punteado"
     },
     "unused" : true
   },
   "handoff.attributes.stroke.style.mixed" : {
     "translations" : {
-      "en" : "Mixed"
+      "en" : "Mixed",
+      "es" : "Mixto"
     },
     "unused" : true
   },
   "handoff.attributes.stroke.style.none" : {
     "translations" : {
-      "en" : "None"
+      "en" : "None",
+      "es" : "Ninguno"
     },
     "unused" : true
   },
   "handoff.attributes.stroke.style.solid" : {
     "translations" : {
-      "en" : "Solid"
+      "en" : "Solid",
+      "es" : "Sólido"
     },
     "unused" : true
   },
   "handoff.attributes.stroke.width" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/stroke.cljs:63" ],
     "translations" : {
-      "en" : "Width"
+      "en" : "Width",
+      "es" : "Ancho"
     }
   },
   "handoff.attributes.typography" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/text.cljs:190" ],
     "translations" : {
-      "en" : "Typography"
+      "en" : "Typography",
+      "es" : "Tipografía"
     }
   },
   "handoff.attributes.typography.font-family" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/text.cljs:121" ],
     "translations" : {
-      "en" : "Font Family"
+      "en" : "Font Family",
+      "es" : "Familia tipográfica"
     }
   },
   "handoff.attributes.typography.font-size" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/text.cljs:133" ],
     "translations" : {
-      "en" : "Font Size"
+      "en" : "Font Size",
+      "es" : "Tamaño de fuente"
     }
   },
   "handoff.attributes.typography.font-style" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/text.cljs:127" ],
     "translations" : {
-      "en" : "Font Style"
+      "en" : "Font Style",
+      "es" : "Estilo de fuente"
     }
   },
   "handoff.attributes.typography.letter-spacing" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/text.cljs:145" ],
     "translations" : {
-      "en" : "Letter Spacing"
+      "en" : "Letter Spacing",
+      "es" : "Espaciado de letras"
     }
   },
   "handoff.attributes.typography.line-height" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/text.cljs:139" ],
     "translations" : {
-      "en" : "Line Height"
+      "en" : "Line Height",
+      "es" : "Interlineado"
     }
   },
   "handoff.attributes.typography.text-decoration" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/text.cljs:151" ],
     "translations" : {
-      "en" : "Text Decoration"
+      "en" : "Text Decoration",
+      "es" : "Decoración de texto"
     }
   },
   "handoff.attributes.typography.text-decoration.none" : {
     "translations" : {
-      "en" : "None"
+      "en" : "None",
+      "es" : "Ninguna"
     },
     "unused" : true
   },
   "handoff.attributes.typography.text-decoration.strikethrough" : {
     "translations" : {
-      "en" : "Strikethrough"
+      "en" : "Strikethrough",
+      "es" : "Tachar"
     },
     "unused" : true
   },
   "handoff.attributes.typography.text-decoration.underline" : {
     "translations" : {
-      "en" : "Underline"
+      "en" : "Underline",
+      "es" : "Subrayar"
     },
     "unused" : true
   },
   "handoff.attributes.typography.text-transform" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/text.cljs:157" ],
     "translations" : {
-      "en" : "Text Transform"
+      "en" : "Text Transform",
+      "es" : "Transformación de texto"
     }
   },
   "handoff.attributes.typography.text-transform.lowercase" : {
     "translations" : {
-      "en" : "Lower Case"
+      "en" : "Lower Case",
+      "es" : "Minúsculas"
     },
     "unused" : true
   },
   "handoff.attributes.typography.text-transform.none" : {
     "translations" : {
-      "en" : "None"
+      "en" : "None",
+      "es" : "Ninguna"
     },
     "unused" : true
   },
   "handoff.attributes.typography.text-transform.titlecase" : {
     "translations" : {
-      "en" : "Title Case"
+      "en" : "Title Case",
+      "es" : "Primera en mayúscula"
     },
     "unused" : true
   },
   "handoff.attributes.typography.text-transform.uppercase" : {
     "translations" : {
-      "en" : "Upper Case"
+      "en" : "Upper Case",
+      "es" : "Mayúsculas"
     },
     "unused" : true
   },
   "handoff.tabs.code" : {
     "used-in" : [ "src/app/main/ui/handoff/right_sidebar.cljs:65" ],
     "translations" : {
-      "en" : "Code"
+      "en" : "Code",
+      "es" : "Código"
     }
   },
   "handoff.tabs.code.selected.circle" : {
     "translations" : {
-      "en" : "Circle"
+      "en" : "Circle",
+      "es" : "Círculo"
     },
     "unused" : true
   },
   "handoff.tabs.code.selected.curve" : {
     "translations" : {
-      "en" : "Curve"
+      "en" : "Curve",
+      "es" : "Curva"
     },
     "unused" : true
   },
   "handoff.tabs.code.selected.frame" : {
     "translations" : {
-      "en" : "Artboard"
+      "en" : "Artboard",
+      "es" : "Mesa de trabajo"
     },
     "unused" : true
   },
   "handoff.tabs.code.selected.group" : {
     "translations" : {
-      "en" : "Group"
+      "en" : "Group",
+      "es" : "Grupo"
     },
     "unused" : true
   },
   "handoff.tabs.code.selected.image" : {
     "translations" : {
-      "en" : "Image"
+      "en" : "Image",
+      "es" : "Imagen"
     },
     "unused" : true
   },
   "handoff.tabs.code.selected.multiple" : {
     "used-in" : [ "src/app/main/ui/handoff/right_sidebar.cljs:48" ],
     "translations" : {
-      "en" : "%s Selected"
+      "en" : "%s Selected",
+      "es" : "%s Seleccionado"
     }
   },
   "handoff.tabs.code.selected.path" : {
     "translations" : {
-      "en" : "Path"
+      "en" : "Path",
+      "es" : "Trazado"
     },
     "unused" : true
   },
   "handoff.tabs.code.selected.rect" : {
     "translations" : {
-      "en" : "Rectangle"
+      "en" : "Rectangle",
+      "es" : "Rectángulo"
     },
     "unused" : true
   },
   "handoff.tabs.code.selected.text" : {
     "translations" : {
-      "en" : "Text"
+      "en" : "Text",
+      "es" : "Texto"
     },
     "unused" : true
   },
   "handoff.tabs.info" : {
     "used-in" : [ "src/app/main/ui/handoff/right_sidebar.cljs:59" ],
     "translations" : {
-      "en" : "Info"
+      "en" : "Info",
+      "es" : "Información"
     }
   },
   "history.alert-message" : {
@@ -1300,13 +1365,15 @@
   "labels.admin" : {
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:85", "src/app/main/ui/dashboard/team.cljs:174", "src/app/main/ui/dashboard/team.cljs:190" ],
     "translations" : {
-      "en" : "Admin"
+      "en" : "Admin",
+      "es" : "Administración"
     }
   },
   "labels.all" : {
     "used-in" : [ "src/app/main/ui/workspace/comments.cljs:161" ],
     "translations" : {
-      "en" : "All"
+      "en" : "All",
+      "es" : "Todo"
     }
   },
   "labels.cancel" : {
@@ -1321,7 +1388,8 @@
   "labels.comments" : {
     "used-in" : [ "src/app/main/ui/dashboard/comments.cljs:71" ],
     "translations" : {
-      "en" : "Comments"
+      "en" : "Comments",
+      "es" : "Comentarios"
     }
   },
   "labels.confirm-password" : {
@@ -1336,7 +1404,8 @@
   "labels.dashboard" : {
     "used-in" : [ "src/app/main/ui/settings/sidebar.cljs:62" ],
     "translations" : {
-      "en" : "Dashboard"
+      "en" : "Dashboard",
+      "es" : "Panel"
     }
   },
   "labels.delete" : {
@@ -1351,13 +1420,15 @@
   "labels.delete-comment" : {
     "used-in" : [ "src/app/main/ui/comments.cljs:278" ],
     "translations" : {
-      "en" : "Delete comment"
+      "en" : "Delete comment",
+      "es" : "Eliminar comentario"
     }
   },
   "labels.delete-comment-thread" : {
     "used-in" : [ "src/app/main/ui/comments.cljs:277" ],
     "translations" : {
-      "en" : "Delete thread"
+      "en" : "Delete thread",
+      "es" : "Eliminar hilo"
     }
   },
   "labels.drafts" : {
@@ -1372,13 +1443,15 @@
   "labels.edit" : {
     "used-in" : [ "src/app/main/ui/comments.cljs:275" ],
     "translations" : {
-      "en" : "Edit"
+      "en" : "Edit",
+      "es" : "Editar"
     }
   },
   "labels.editor" : {
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:86", "src/app/main/ui/dashboard/team.cljs:177", "src/app/main/ui/dashboard/team.cljs:191" ],
     "translations" : {
-      "en" : "Editor"
+      "en" : "Editor",
+      "es" : "Editor"
     }
   },
   "labels.email" : {
@@ -1393,7 +1466,8 @@
   "labels.hide-resolved-comments" : {
     "used-in" : [ "src/app/main/ui/viewer/header.cljs:175", "src/app/main/ui/workspace/comments.cljs:129" ],
     "translations" : {
-      "en" : "Hide resolved comments"
+      "en" : "Hide resolved comments",
+      "es" : "Ocultar comentarios resueltos"
     }
   },
   "labels.language" : {
@@ -1426,7 +1500,8 @@
   "labels.members" : {
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:299", "src/app/main/ui/dashboard/team.cljs:60", "src/app/main/ui/dashboard/team.cljs:66" ],
     "translations" : {
-      "en" : "Members"
+      "en" : "Members",
+      "es" : "Integrantes"
     }
   },
   "labels.name" : {
@@ -1450,19 +1525,22 @@
   "labels.no-comments-available" : {
     "used-in" : [ "src/app/main/ui/workspace/comments.cljs:186", "src/app/main/ui/dashboard/comments.cljs:96" ],
     "translations" : {
-      "en" : "You have no pending comment notifications"
+      "en" : "You have no pending comment notifications",
+      "es" : "No tienes notificaciones de comentarios pendientes"
     }
   },
   "labels.num-of-files" : {
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:308" ],
     "translations" : {
-      "en" : [ "1 file", "%s files" ]
+      "en" : [ "1 file", "%s files" ],
+      "es" : [ "1 archivo", "%s archivos" ]
     }
   },
   "labels.num-of-projects" : {
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:305" ],
     "translations" : {
-      "en" : [ "1 project", "%s projects" ]
+      "en" : [ "1 project", "%s projects" ],
+      "es" : [ "1 proyecto", "%s proyectos" ]
     }
   },
   "labels.old-password" : {
@@ -1477,7 +1555,8 @@
   "labels.only-yours" : {
     "used-in" : [ "src/app/main/ui/workspace/comments.cljs:162" ],
     "translations" : {
-      "en" : "Only yours"
+      "en" : "Only yours",
+      "es" : ""
     }
   },
   "labels.owner" : {
