@@ -228,6 +228,9 @@
 
 ;; --- Mutation: Register if not exists
 
+(s/def ::login-or-register
+  (s/keys :req-un [::email ::fullname]))
+
 (sv/defmethod ::login-or-register {:auth false}
   [{:keys [pool] :as cfg} {:keys [email fullname] :as params}]
   (letfn [(populate-additional-data [conn profile]
