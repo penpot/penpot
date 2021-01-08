@@ -210,11 +210,11 @@
 
 
 (mf/defc typography-entry
-  [{:keys [typography read-only? on-select on-change on-deattach on-context-menu editting? focus-name? file]}]
+  [{:keys [typography read-only? on-select on-change on-detach on-context-menu editting? focus-name? file]}]
   (let [locale (mf/deref i18n/locale)
         open? (mf/use-state editting?)
         selected (mf/deref refs/selected-shapes)
-        hover-deattach (mf/use-state false)
+        hover-detach (mf/use-state false)
         name-input-ref (mf/use-ref nil)
 
         #_(rt/resolve router :workspace
@@ -254,12 +254,12 @@
         (t locale "workspace.assets.typography.sample")]
        [:div.typography-name (:name typography)]]
       [:div.element-set-actions
-       (when on-deattach
+       (when on-detach
          [:div.element-set-actions-button
-          {:on-mouse-enter #(reset! hover-deattach true)
-           :on-mouse-leave #(reset! hover-deattach false)
-           :on-click on-deattach}
-          (if @hover-deattach i/unchain i/chain)])
+          {:on-mouse-enter #(reset! hover-detach true)
+           :on-mouse-leave #(reset! hover-detach false)
+           :on-click on-detach}
+          (if @hover-detach i/unchain i/chain)])
 
        [:div.element-set-actions-button
         {:on-click #(reset! open? true)}

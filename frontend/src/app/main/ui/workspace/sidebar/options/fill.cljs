@@ -60,34 +60,40 @@
 
         on-add
         (mf/use-callback
-         (mf/deps ids)
-         (fn [event]
-           (st/emit! (dc/change-fill ids {:color cp/default-color
-                                          :opacity 1}))))
+          (mf/deps ids)
+          (fn [event]
+            (st/emit! (dc/change-fill ids {:color cp/default-color
+                                           :opacity 1}))))
 
         on-delete
         (mf/use-callback
-         (mf/deps ids)
-         (fn [event]
-           (st/emit! (dc/change-fill ids nil))))
+          (mf/deps ids)
+          (fn [event]
+            (st/emit! (dc/change-fill ids nil))))
 
         on-change
         (mf/use-callback
-         (mf/deps ids)
-         (fn [color]
-           (st/emit! (dc/change-fill ids color))))
+          (mf/deps ids)
+          (fn [color]
+            (st/emit! (dc/change-fill ids color))))
+
+        on-detach
+        (mf/use-callback
+          (mf/deps ids)
+          (fn []
+            (st/emit! (dc/change-fill ids (dissoc color :id :file-id)))))
 
         on-open-picker
         (mf/use-callback
-         (mf/deps ids)
-         (fn [value opacity id file-id]
-           (st/emit! (dwc/start-undo-transaction))))
+          (mf/deps ids)
+          (fn [value opacity id file-id]
+            (st/emit! (dwc/start-undo-transaction))))
 
         on-close-picker
         (mf/use-callback
-         (mf/deps ids)
-         (fn [value opacity id file-id]
-           (st/emit! (dwc/commit-undo-transaction))))]
+          (mf/deps ids)
+          (fn [value opacity id file-id]
+            (st/emit! (dwc/commit-undo-transaction))))]
 
     (if show?
       [:div.element-set
@@ -98,6 +104,7 @@
        [:div.element-set-content
         [:& color-row {:color color
                        :on-change on-change
+                       :on-detach on-detach
                        :on-open on-open-picker
                        :on-close on-close-picker}]]]
 

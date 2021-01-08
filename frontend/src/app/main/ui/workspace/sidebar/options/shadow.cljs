@@ -74,7 +74,7 @@
              (when (or (not valid?) (valid? value))
                (do (st/emit! (dwc/update-shapes ids #(assoc-in % [:shadow index attr] value)))
                    (when update-ref (dom/set-value! (mf/ref-val update-ref) value)))))))
-        
+
         update-color
         (fn [index]
           (fn [color opacity]
@@ -83,6 +83,15 @@
                        #(-> %
                             (assoc-in [:shadow index :color] color)
                             (assoc-in [:shadow index :opacity] opacity))))))
+
+        detach-color
+        (fn [index]
+          (fn [color opacity]
+            (if-not (string? (:color value))
+              (st/emit! (dwc/update-shapes
+                          ids
+                          #(assoc-in % [:shadow index :color]
+                                     (dissoc (:color value) :id :file-id)))))))
 
         toggle-visibility
         (fn [index]
@@ -125,7 +134,7 @@
                         (st/emit! (dwc/update-shapes ids #(assoc-in % [:shadow index :style] value)))))}
         [:option {:value ":drop-shadow"} (t locale "workspace.options.shadow-options.drop-shadow")]
         [:option {:value ":inner-shadow"} (t locale "workspace.options.shadow-options.inner-shadow")]]]
-      
+
       [:div.row-grid-2
        [:div.input-element
         [:> numeric-input {:ref adv-offset-x-ref
@@ -173,6 +182,7 @@
                                (:color value))
                       :disable-gradient true
                       :on-change (update-color index)
+                      :on-detach (detach-color index)
                       :on-open #(st/emit! (dwc/start-undo-transaction))
                       :on-close #(st/emit! (dwc/commit-undo-transaction))}]]]]))
 (mf/defc shadow-menu
