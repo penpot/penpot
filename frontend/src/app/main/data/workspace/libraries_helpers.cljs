@@ -193,7 +193,7 @@
     (log/debug :msg "Sync page in local file" :page-id (:id container))
     (log/debug :msg "Sync component in local library" :component-id (:id container)))
 
-  (let [has-asset-reference? (has-asset-reference-fn asset-type library-id)
+  (let [has-asset-reference? (has-asset-reference-fn asset-type library-id (cp/page? container))
         linked-shapes (cp/select-objects has-asset-reference? container)]
     (loop [shapes (seq linked-shapes)
            rchanges []
@@ -213,10 +213,11 @@
 (defn- has-asset-reference-fn
   "Gets a function that checks if a shape uses some asset of the given type
   in the given library."
-  [asset-type library-id]
+  [asset-type library-id page?]
   (case asset-type
     :components
     (fn [shape] (and (:component-id shape)
+                     (or (:component-root? shape) (not page?))
                      (= (:component-file shape) library-id)))
 
     :colors
@@ -443,9 +444,9 @@
         both (fn [shape-inst shape-master]
                (let [options (if-not (:component-id shape-inst)
                                options
-                               {:omit-touched? false
+                               {:omit-touched? true
                                 :reset-touched? false
-                                :copy-touched? true})]
+                                :copy-touched? false})]
 
                  (generate-sync-shape-direct-recursive container
                                                        shape-inst
