@@ -90,7 +90,7 @@
                 :include_granted_scopes true
                 :state token
                 :response_type "code"
-                :redirect_uri (build-redirect-url)
+                :redirect_uri (build-redirect-url cfg)
                 :client_id (:client-id cfg)}
         query  (uri/map->query-string params)
         uri    (-> (uri/uri base-goauth-uri)
