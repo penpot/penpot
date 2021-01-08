@@ -17,7 +17,7 @@
    [app.tasks :as tasks]
    [app.worker :as wrk]
    [app.util.json :as json]
-   [app.util.emails :as http]
+   [app.util.http :as http]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
