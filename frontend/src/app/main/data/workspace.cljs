@@ -553,35 +553,6 @@
                             (assoc :zoom zoom)
                             (update :vbox merge srect)))))))))))
 
-;; --- Add shape to Workspace
-
-(defn- viewport-center
-  [state]
-  (let [{:keys [x y width height]} (get-in state [:workspace-local :vbox])]
-    [(+ x (/ width 2)) (+ y (/ height 2))]))
-
-(defn create-and-add-shape
-  [type frame-x frame-y data]
-  (ptk/reify ::create-and-add-shape
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [{:keys [width height]} data
-
-            [vbc-x vbc-y] (viewport-center state)
-
-            x (:x data (- vbc-x (/ width 2)))
-            y (:y data (- vbc-y (/ height 2)))
-
-            page-id (:current-page-id state)
-            frame-id (-> (dwc/lookup-page-objects state page-id)
-                         (cp/frame-id-by-position {:x frame-x :y frame-y}))
-
-            shape (-> (cp/make-minimal-shape type)
-                      (merge data)
-                      (merge {:x x :y y})
-                      (assoc :frame-id frame-id)
-                      (gsh/setup-selrect))]
-        (rx/of (dwc/add-shape shape))))))
 
 ;; --- Update Shape Attrs
 
@@ -1417,20 +1388,6 @@
                (dwc/add-shape shape)
                (dwc/commit-undo-transaction))))))
 
-(defn- image-uploaded
-  [image]
-  (let [{:keys [x y]} @ms/mouse-position
-        {:keys [width height]} image
-        shape {:name (:name image)
-               :width width
-               :height height
-               :x (- x (/ width 2))
-               :y (- y (/ height 2))
-               :metadata {:width width
-                          :height height
-                          :id (:id image)
-                          :path (:path image)}}]
-    (st/emit! (create-and-add-shape :image x y shape))))
 
 (defn- paste-image
   [image]
@@ -1439,11 +1396,8 @@
     (watch [_ state stream]
       (let [file-id (get-in state [:workspace-file :id])
             params  {:file-id file-id
-                     :local? true
                      :data [image]}]
-        (rx/of (dwp/upload-media-objects
-                (with-meta params
-                  {:on-success image-uploaded})))))))
+        (rx/of (dwp/upload-media-workspace params @ms/mouse-position))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interactions
@@ -1536,6 +1490,7 @@
                   :value previus-color}]
                 {:commit-local? true}))))))
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1558,8 +1513,10 @@
 (d/export dwp/fetch-shared-files)
 (d/export dwp/link-file-to-library)
 (d/export dwp/unlink-file-from-library)
-(d/export dwp/upload-media-objects)
+(d/export dwp/upload-media-asset)
+(d/export dwp/upload-media-workspace)
 (d/export dwp/clone-media-object)
+(d/export dwc/image-uploaded)
 
 ;; Selection
 

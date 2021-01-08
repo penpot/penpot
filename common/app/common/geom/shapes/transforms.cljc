@@ -26,17 +26,17 @@
   "Returns a transformation matrix without changing the shape properties.
   The result should be used in a `transform` attribute in svg"
   ([shape] (transform-matrix shape nil))
-  ([{:keys [flip-x flip-y] :as shape} {:keys [no-flip]}]
-   (let [shape-center (or (gco/center-shape shape)
-                          (gpt/point 0 0))]
-     (-> (gmt/matrix)
-         (gmt/translate shape-center)
+  ([shape params] (transform-matrix shape params (or (gco/center-shape shape)
+                                                     (gpt/point 0 0))))
+  ([{:keys [flip-x flip-y] :as shape} {:keys [no-flip]} shape-center]
+   (-> (gmt/matrix)
+       (gmt/translate shape-center)
 
-         (gmt/multiply (:transform shape (gmt/matrix)))
-         (cond->
-             (and (not no-flip) flip-x) (gmt/scale (gpt/point -1 1))
-             (and (not no-flip) flip-y) (gmt/scale (gpt/point 1 -1)))
-         (gmt/translate (gpt/negate shape-center))))))
+       (gmt/multiply (:transform shape (gmt/matrix)))
+       (cond->
+           (and (not no-flip) flip-x) (gmt/scale (gpt/point -1 1))
+           (and (not no-flip) flip-y) (gmt/scale (gpt/point 1 -1)))
+       (gmt/translate (gpt/negate shape-center)))))
 
 (defn inverse-transform-matrix
   ([shape]

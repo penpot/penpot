@@ -125,7 +125,7 @@
         (ex/raise :type :validation
                   :code :media-type-mismatch
                   :hint (str "Seems like you are uploading a file whose content does not match the extension."
-                             "Expected: " mtype "Got: " mtype')))
+                             "Expected: " mtype ". Got: " mtype')))
       {:width  (.getImageWidth instance)
        :height (.getImageHeight instance)
        :mtype  mtype'})))

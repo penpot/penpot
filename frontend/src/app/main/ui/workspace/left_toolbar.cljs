@@ -9,16 +9,17 @@
 
 (ns app.main.ui.workspace.left-toolbar
   (:require
-   [rumext.alpha :as mf]
+   [app.common.geom.point :as gpt]
    [app.common.media :as cm]
-   [app.main.refs :as refs]
    [app.main.data.workspace :as dw]
+   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
-   [app.util.object :as obj]
+   [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.main.ui.icons :as i]))
+   [app.util.object :as obj]
+   [rumext.alpha :as mf]))
 
 (mf/defc image-upload
   {::mf/wrap [mf/memo]}
@@ -29,28 +30,13 @@
         on-click
         (mf/use-callback #(dom/click (mf/ref-val ref)))
 
-        on-uploaded
-        (mf/use-callback
-         (fn [image]
-           (->> {:name     (:name image)
-                 :width    (:width image)
-                 :height   (:height image)
-                 :metadata {:width  (:width image)
-                            :height (:height image)
-                            :mtype  (:mtype image)
-                            :id     (:id image)}}
-                (dw/create-and-add-shape :image 0 0)
-                (st/emit!))))
-
         on-files-selected
         (mf/use-callback
          (mf/deps file)
          (fn [blobs]
-           (st/emit! (dw/upload-media-objects
-                      (with-meta {:file-id (:id file)
-                                  :local? true
-                                  :data (seq blobs)}
-                        {:on-success on-uploaded})))))]
+           (let [params {:file-id (:id file)
+                         :data (seq blobs)}]
+             (st/emit! (dw/upload-media-workspace params (gpt/point 0 0))))))]
 
        [:li.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.image")

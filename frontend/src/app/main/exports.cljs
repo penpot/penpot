@@ -27,6 +27,7 @@
    [app.main.ui.shapes.rect :as rect]
    [app.main.ui.shapes.text :as text]
    [app.main.ui.shapes.group :as group]
+   [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.main.ui.shapes.shape :refer [shape-container]]))
 
 (def ^:private default-color "#E8E9EA") ;; $color-canvas
@@ -77,26 +78,45 @@
                          :is-child-selected? true
                          :childs childs}]))))
 
+(defn svg-raw-wrapper-factory
+  [objects]
+  (let [shape-wrapper (shape-wrapper-factory objects)
+        svg-raw-shape   (svg-raw/svg-raw-shape shape-wrapper)]
+    (mf/fnc svg-raw-wrapper
+      [{:keys [shape frame] :as props}]
+      (let [childs (mapv #(get objects %) (:shapes shape))]
+        [:& svg-raw-shape {:frame frame
+                         :shape shape
+                         :childs childs}]))))
+
 (defn shape-wrapper-factory
   [objects]
   (mf/fnc shape-wrapper
     [{:keys [frame shape] :as props}]
     (let [group-wrapper (mf/use-memo (mf/deps objects) #(group-wrapper-factory objects))
+          svg-raw-wrapper (mf/use-memo (mf/deps objects) #(svg-raw-wrapper-factory objects))
           frame-wrapper (mf/use-memo (mf/deps objects) #(frame-wrapper-factory objects))]
       (when (and shape (not (:hidden shape)))
         (let [shape (-> (gsh/transform-shape shape)
                         (gsh/translate-to-frame frame))
-              opts #js {:shape shape}]
-          [:> shape-container {:shape shape}
-           (case (:type shape)
-             :text   [:> text/text-shape opts]
-             :rect   [:> rect/rect-shape opts]
-             :path   [:> path/path-shape opts]
-             :image  [:> image/image-shape opts]
-             :circle [:> circle/circle-shape opts]
-             :frame  [:> frame-wrapper {:shape shape}]
-             :group  [:> group-wrapper {:shape shape :frame frame}]
-             nil)])))))
+              opts #js {:shape shape}
+              svg-element? (and (= :svg-raw (:type shape))
+                                (not= :svg (get-in shape [:content :tag])))]
+          (if-not svg-element?
+            [:> shape-container {:shape shape}
+             (case (:type shape)
+               :text    [:> text/text-shape opts]
+               :rect    [:> rect/rect-shape opts]
+               :path    [:> path/path-shape opts]
+               :image   [:> image/image-shape opts]
+               :circle  [:> circle/circle-shape opts]
+               :frame   [:> frame-wrapper {:shape shape}]
+               :group   [:> group-wrapper {:shape shape :frame frame}]
+               :svg-raw [:> svg-raw-wrapper {:shape shape :frame frame}]
+               nil)]
+
+            ;; Don't wrap svg elements inside a <g> otherwise some can break
+            [:> svg-raw-wrapper {:shape shape :frame frame}]))))))
 
 (defn get-viewbox [{:keys [x y width height] :or {x 0 y 0 width 100 height 100}}]
   (str/fmt "%s %s %s %s" x y width height))

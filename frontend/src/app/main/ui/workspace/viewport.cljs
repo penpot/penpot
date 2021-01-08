@@ -14,6 +14,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.uuid :as uuid]
+   [app.config :as cfg]
    [app.main.constants :as c]
    [app.main.data.colors :as dwc]
    [app.main.data.fetch :as mdf]
@@ -39,22 +40,22 @@
    [app.main.ui.workspace.shapes :refer [shape-wrapper frame-wrapper]]
    [app.main.ui.workspace.shapes.interactions :refer [interactions]]
    [app.main.ui.workspace.shapes.outline :refer [outline]]
+   [app.main.ui.workspace.shapes.path.actions :refer [path-actions]]
    [app.main.ui.workspace.snap-distances :refer [snap-distances]]
    [app.main.ui.workspace.snap-points :refer [snap-points]]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
+   [app.util.http :as http]
    [app.util.object :as obj]
    [app.util.perf :as perf]
    [app.util.timers :as timers]
-   [app.util.http :as http]
    [beicon.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
    [goog.events :as events]
    [potok.core :as ptk]
    [promesa.core :as p]
-   [rumext.alpha :as mf]
-   [app.main.ui.workspace.shapes.path.actions :refer [path-actions]])
+   [rumext.alpha :as mf])
   (:import goog.events.EventType))
 
 ;; --- Coordinates Widget
@@ -452,28 +453,20 @@
                      (dnd/has-type? e "text/asset-id"))
              (dom/prevent-default e))))
 
-        on-uploaded
+        on-image-uploaded
         (mf/use-callback
          (fn [image {:keys [x y]}]
-           (prn "on-uploaded" image x y)
-           (let [shape {:name     (:name image)
-                        :width    (:width image)
-                        :height   (:height image)
-                        :x        (- x (/ (:width image) 2))
-                        :y        (- y (/ (:height image) 2))
-                        :metadata {:width  (:width image)
-                                   :height (:height image)
-                                   :name   (:name image)
-                                   :id     (:id image)
-                                   :mtype  (:mtype image)}}]
-             (st/emit! (dw/create-and-add-shape :image x y shape)))))
+           (st/emit! (dw/image-uploaded image x y))))
 
         on-drop
         (mf/use-callback
          (fn [event]
            (dom/prevent-default event)
            (let [point (gpt/point (.-clientX event) (.-clientY event))
-                 viewport-coord (translate-point-to-viewport point)]
+                 viewport-coord (translate-point-to-viewport point)
+                 asset-id     (-> (dnd/get-data event "text/asset-id") uuid/uuid)
+                 asset-name   (dnd/get-data event "text/asset-name")
+                 asset-type   (dnd/get-data event "text/asset-type")]
              (cond
                (dnd/has-type? event "app/shape")
                (let [shape (dnd/get-data event "app/shape")
@@ -493,40 +486,43 @@
                                                       (:id component)
                                                       (gpt/point final-x final-y))))
 
+               ;; Will trigger when the user drags an image from a browser to the viewport
                (dnd/has-type? event "text/uri-list")
                (let [data  (dnd/get-data event "text/uri-list")
-                     name  (dnd/get-data event "text/asset-name")
                      lines (str/lines data)
                      urls  (filter #(and (not (str/blank? %))
                                          (not (str/starts-with? % "#")))
-                                   lines)]
-                 (st/emit!
-                  (dw/upload-media-objects
-                   (with-meta {:file-id (:id file)
-                               :local? true
-                               :uris urls
-                               :name name}
-                     {:on-success #(on-uploaded % viewport-coord)}))))
-
-               (dnd/has-type? event "text/asset-id")
-               (let [id     (-> (dnd/get-data event "text/asset-id") uuid/uuid)
-                     name   (dnd/get-data event "text/asset-name")
+                                   lines)
                      params {:file-id (:id file)
-                             :local? true
-                             :object-id id
-                             :name name}]
+                             :uris urls}]
+                 (st/emit! (dw/upload-media-workspace params viewport-coord)))
+
+               ;; Will trigger when the user drags an SVG asset from the assets panel
+               (and (dnd/has-type? event "text/asset-id") (= asset-type "image/svg+xml"))
+               (let [path (cfg/resolve-file-media {:id asset-id})
+                     params {:file-id (:id file)
+                             :uris [path]
+                             :name asset-name
+                             :mtype asset-type}]
+                 (st/emit! (dw/upload-media-workspace params viewport-coord)))
+
+               ;; Will trigger when the user drags an image from the assets SVG
+               (dnd/has-type? event "text/asset-id")
+               (let [params {:file-id (:id file)
+                             :object-id asset-id
+                             :name asset-name}]
                  (st/emit! (dw/clone-media-object
                             (with-meta params
-                              {:on-success #(on-uploaded % viewport-coord)}))))
+                              {:on-success #(on-image-uploaded % viewport-coord)}))))
 
+               ;; Will trigger when the user drags a file from their file explorer into the viewport
+               ;; Or the user pastes an image
+               ;; Or the user uploads an image using the image tool
                :else
                (let [files  (dnd/get-files event)
                      params {:file-id (:id file)
-                             :local? true
                              :data (seq files)}]
-                 (st/emit! (dw/upload-media-objects
-                            (with-meta params
-                              {:on-success #(on-uploaded % viewport-coord)}))))))))
+                 (st/emit! (dw/upload-media-workspace params viewport-coord)))))))
 
         on-paste
         (mf/use-callback
@@ -591,7 +587,9 @@
                            :file-id (:id file)}])
 
      [:svg.viewport
-      {:preserveAspectRatio "xMidYMid meet"
+      {:xmlns      "http://www.w3.org/2000/svg"
+       :xmlnsXlink "http://www.w3.org/1999/xlink"
+       :preserveAspectRatio "xMidYMid meet"
        :key page-id
        :width (:width vport 0)
        :height (:height vport 0)

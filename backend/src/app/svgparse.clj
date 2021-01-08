@@ -11,6 +11,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
+   [cuerdas.core :as str]
    [app.metrics :as mtx]
    [clojure.java.io :as io]
    [clojure.java.shell :as shell]
@@ -25,10 +26,25 @@
   [^String data]
   (IOUtils/toInputStream data "UTF-8"))
 
+(defn- stream->string
+  [input]
+  (with-open [istream (io/input-stream input)]
+    (-> (IOUtils/toString input "UTF-8"))))
+
 (defn- clean-svg
   [^InputStream input]
-  (let [result (shell/sh "svgcleaner" "-c" "-" :in input :out-enc :bytes)]
-    (when (not= 0 (:exit result))
+  (let [result (shell/sh
+                ;; "svgcleaner" "--allow-bigger-file" "-c" "-"
+                "svgo"
+                "--enable=prefixIds,removeDimensions,removeXMLNS,removeScriptElement"
+                "--disable=removeViewBox,moveElemsAttrsToGroup"
+                "-i" "-" "-o" "-"
+
+                :in input :out-enc :bytes)
+        err-str (:err result)]
+    (when (or (not= 0 (:exit result))
+              ;; svgcleaner returns 0 with some errors, we need to check
+              (and (not= err-str "") (not (nil? err-str)) (str/starts-with? err-str "Error")))
       (ex/raise :type :validation
                 :code :unable-to-optimize
                 :hint (:err result)))

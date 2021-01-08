@@ -261,9 +261,13 @@
 (d/export gco/center-selrect)
 (d/export gco/center-rect)
 (d/export gco/center-points)
+
 (d/export gpr/rect->selrect)
 (d/export gpr/rect->points)
 (d/export gpr/points->selrect)
+(d/export gpr/points->rect)
+(d/export gpr/center->rect)
+
 (d/export gtr/transform-shape)
 (d/export gtr/transform-matrix)
 (d/export gtr/inverse-transform-matrix)

@@ -23,15 +23,22 @@
     nil))
 
 (defn add-border-radius [attrs shape]
-  (obj/merge! attrs #js {:rx (:rx shape)
-                         :ry (:ry shape)}))
+  (if (or (:rx shape) (:ry shape))
+    (obj/merge! attrs #js {:rx (:rx shape)
+                           :ry (:ry shape)})
+    attrs))
 
 (defn add-fill [attrs shape render-id]
   (let [fill-color-gradient-id (str "fill-color-gradient_" render-id)]
-    (if (:fill-color-gradient shape)
+    (cond
+      (:fill-color-gradient shape)
       (obj/merge! attrs #js {:fill (str/format "url(#%s)" fill-color-gradient-id)})
+
+      (or (:fill-color shape) (:fill-opacity shape))
       (obj/merge! attrs #js {:fill (or (:fill-color shape) "transparent")
-                             :fillOpacity (:fill-opacity shape nil)}))))
+                             :fillOpacity (:fill-opacity shape nil)})
+
+      :else attrs)))
 
 (defn add-stroke [attrs shape render-id]
   (let [stroke-style (:stroke-style shape :none)

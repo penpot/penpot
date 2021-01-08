@@ -77,6 +77,14 @@
     :shadow  :shape
     :blur    :shape
     :stroke  :shape
+    :text    :ignore}
+
+   :svg-raw
+   {:measure :shape
+    :fill    :shape
+    :shadow  :shape
+    :blur    :shape
+    :stroke  :shape
     :text    :ignore}})
 
 (def props->attrs

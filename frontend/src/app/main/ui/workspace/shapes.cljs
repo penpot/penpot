@@ -28,6 +28,7 @@
    [app.main.ui.workspace.shapes.common :as common]
    [app.main.ui.workspace.shapes.frame :as frame]
    [app.main.ui.workspace.shapes.group :as group]
+   [app.main.ui.workspace.shapes.svg-raw :as svg-raw]
    [app.main.ui.workspace.shapes.path :as path]
    [app.main.ui.workspace.shapes.text :as text]
    [app.util.object :as obj]
@@ -37,6 +38,7 @@
    [rumext.alpha :as mf]))
 
 (declare group-wrapper)
+(declare svg-raw-wrapper)
 (declare frame-wrapper)
 
 (def circle-wrapper (common/generic-wrapper-factory circle/circle-shape))
@@ -80,27 +82,37 @@
         alt?   (hooks/use-rxsub ms/keyboard-alt)
 
         moving-iref (mf/use-memo (mf/deps (:id shape)) (make-is-moving-ref (:id shape)))
-        moving?     (mf/deref moving-iref)]
+        moving?     (mf/deref moving-iref)
+        svg-element? (and (= (:type shape) :svg-raw)
+                          (not= :svg (get-in shape [:content :tag])))]
 
     (when (and shape
                (or ghost? (not moving?))
                (not (:hidden shape)))
-      [:g.shape-wrapper {:style {:cursor (if alt? cur/duplicate nil)}}
-       (case (:type shape)
-         :path [:> path/path-wrapper opts]
-         :text [:> text/text-wrapper opts]
-         :group [:> group-wrapper opts]
-         :rect [:> rect-wrapper opts]
-         :image [:> image-wrapper opts]
-         :circle [:> circle-wrapper opts]
+      [:*
+       (if-not svg-element?
+         [:g.shape-wrapper {:style {:cursor (if alt? cur/duplicate nil)}}
+          (case (:type shape)
+            :path [:> path/path-wrapper opts]
+            :text [:> text/text-wrapper opts]
+            :group [:> group-wrapper opts]
+            :rect [:> rect-wrapper opts]
+            :image [:> image-wrapper opts]
+            :circle [:> circle-wrapper opts]
+            :svg-raw [:> svg-raw-wrapper opts]
 
-         ;; Only used when drawing a new frame.
-         :frame [:> frame-wrapper {:shape shape}]
-         nil)
+            ;; Only used when drawing a new frame.
+            :frame [:> frame-wrapper {:shape shape}]
+
+            nil)]
+
+         ;; Don't wrap svg elements inside a <g> otherwise some can break
+         [:> svg-raw-wrapper opts])
 
        (when (debug? :bounding-boxes)
          [:& bounding-box {:shape shape :frame frame}])])))
 
 (def group-wrapper (group/group-wrapper-factory shape-wrapper))
+(def svg-raw-wrapper (svg-raw/svg-raw-wrapper-factory shape-wrapper))
 (def frame-wrapper (frame/frame-wrapper-factory shape-wrapper))
 

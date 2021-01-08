@@ -21,6 +21,7 @@
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [clojure.set :as set]
+   [cuerdas.core :as str]
    [potok.core :as ptk]))
 
 ;; Change this to :info :debug or :trace to debug this module
@@ -522,6 +523,27 @@
             (update-in [:workspace-local :hover] disj id)
             (update :workspace-local dissoc :edition))))))
 
+(defn add-shape-changes
+  [page-id attrs]
+  (let [id       (:id attrs)
+        frame-id (:frame-id attrs)
+        shape    (gpr/setup-proportions attrs)
+
+        default-attrs (if (= :frame (:type shape))
+                        cp/default-frame-attrs
+                        cp/default-shape-attrs)
+        shape    (merge default-attrs shape)
+
+        redo-changes  [{:type :add-obj
+                        :id id
+                        :page-id page-id
+                        :frame-id frame-id
+                        :obj shape}]
+        undo-changes  [{:type :del-obj
+                        :page-id page-id
+                        :id id}]]
+
+    [redo-changes undo-changes]))
 
 (defn add-shape
   [attrs]
@@ -532,36 +554,21 @@
       (let [page-id  (:current-page-id state)
             objects  (lookup-page-objects state page-id)
 
-            id       (or (:id attrs) (uuid/next))
-            shape    (gpr/setup-proportions attrs)
-
-            unames   (retrieve-used-names objects)
-            name     (generate-unique-name unames (:name shape))
-
+            id (or (:id attrs) (uuid/next))
+            name (-> objects
+                     (retrieve-used-names)
+                     (generate-unique-name (:name attrs)))
             frame-id (if (= :frame (:type attrs))
                        uuid/zero
                        (or (:frame-id attrs)
                            (cp/frame-id-by-position objects attrs)))
 
-            shape    (merge
-                      (if (= :frame (:type shape))
-                        cp/default-frame-attrs
-                        cp/default-shape-attrs)
-                      (assoc shape
-                             :id id
-                             :name name))
-
-            rchange  {:type :add-obj
-                      :id id
-                      :page-id page-id
-                      :frame-id frame-id
-                      :obj shape}
-            uchange  {:type :del-obj
-                      :page-id page-id
-                      :id id}]
-
+            [rchanges uchanges] (add-shape-changes page-id (assoc attrs
+                                                                  :id id
+                                                                  :frame-id frame-id
+                                                                  :name name))]
         (rx/concat
-         (rx/of (commit-changes [rchange] [uchange] {:commit-local? true})
+         (rx/of (commit-changes rchanges uchanges {:commit-local? true})
                 (select-shapes (d/ordered-set id)))
          (when (= :text (:type attrs))
            (->> (rx/of (start-edition-mode id))
@@ -595,3 +602,123 @@
                                    :index index
                                    :shapes [shape-id]})))]
         (rx/of (commit-changes rchanges uchanges {:commit-local? true}))))))
+
+;; --- Add shape to Workspace
+
+(defn- viewport-center
+  [state]
+  (let [{:keys [x y width height]} (get-in state [:workspace-local :vbox])]
+    [(+ x (/ width 2)) (+ y (/ height 2))]))
+
+(defn create-and-add-shape
+  [type frame-x frame-y data]
+  (ptk/reify ::create-and-add-shape
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [{:keys [width height]} data
+
+            [vbc-x vbc-y] (viewport-center state)
+            x (:x data (- vbc-x (/ width 2)))
+            y (:y data (- vbc-y (/ height 2)))
+            page-id (:current-page-id state)
+            frame-id (-> (lookup-page-objects state page-id)
+                         (cp/frame-id-by-position {:x frame-x :y frame-y}))
+            shape (-> (cp/make-minimal-shape type)
+                      (merge data)
+                      (merge {:x x :y y})
+                      (assoc :frame-id frame-id)
+                      (gsh/setup-selrect))]
+        (rx/of (add-shape shape))))))
+
+(defn image-uploaded [image x y]
+  (ptk/reify ::image-uploaded
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [{:keys [name width height id mtype]} image
+            shape {:name name
+                   :width width
+                   :height height
+                   :x (- x (/ width 2))
+                   :y (- y (/ height 2))
+                   :metadata {:width width
+                              :height height
+                              :mtype mtype
+                              :id id}}]
+        (rx/of (create-and-add-shape :image x y shape))))))
+
+
+(defn- svg-dimensions [data]
+  (let [width (get-in data [:attrs :width] 100)
+        height (get-in data [:attrs :height] 100)
+        viewbox (get-in data [:attrs :viewBox] (str "0 0 " width " " height))
+        [_ _ width-str height-str] (str/split viewbox " ")
+        width (d/parse-integer width-str)
+        height (d/parse-integer height-str)]
+    [width height]))
+
+(defn svg-uploaded [data x y]
+  (ptk/reify ::svg-uploaded
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id (:current-page-id state)
+            objects (lookup-page-objects state page-id)
+            frame-id (cp/frame-id-by-position objects {:x x :y y})
+
+            [width height] (svg-dimensions data)
+            x (- x (/ width 2))
+            y (- y (/ height 2))
+
+            create-svg-raw
+            (fn [{:keys [tag] :as data} unames root-id]
+              (let [base (cond (string? tag) tag
+                               (keyword? tag) (name tag)
+                               (nil? tag) "node"
+                               :else (str tag))]
+                (-> {:id (uuid/next)
+                     :type :svg-raw
+                     :name (generate-unique-name unames (str "svg-" base))
+                     :frame-id frame-id
+                     ;; For svg children we set its coordinates as the root of the svg
+                     :width width
+                     :height height
+                     :x x
+                     :y y
+                     :content data
+                     :root-id root-id}
+                    (gsh/setup-selrect))))
+
+            add-svg-child
+            (fn add-svg-child [parent-id root-id [unames [rchs uchs]] [index {:keys [content] :as data}]]
+              (let [shape (create-svg-raw data unames root-id)
+                    shape-id (:id shape)
+                    [rch1 uch1] (add-shape-changes page-id shape)
+
+                    ;; Mov-objects won't have undo because we "delete" the object in the undo of the
+                    ;; previous operation
+                    rch2 [{:type :mov-objects
+                           :parent-id parent-id
+                           :frame-id frame-id
+                           :page-id page-id
+                           :index index
+                           :shapes [shape-id]}]
+
+                    ;; Careful! the undo changes are concatenated reversed (we undo in reverse order
+                    changes [(d/concat rchs rch1 rch2) (d/concat uch1 uchs)]
+                    unames (conj unames (:name shape))]
+                (reduce (partial add-svg-child shape-id root-id) [unames changes] (d/enumerate (:content data)))))
+
+            unames (retrieve-used-names objects)
+
+            svg-name (->> (str/replace (:name data) ".svg" "")
+                          (generate-unique-name unames))
+
+            root-shape (create-svg-raw data unames nil)
+            root-shape (-> root-shape
+                           (assoc :name svg-name))
+            root-id (:id root-shape)
+
+            changes (add-shape-changes page-id root-shape)
+
+            [_ [rchanges uchanges]] (reduce (partial add-svg-child root-id root-id) [unames changes] (d/enumerate (:content data)))]
+        (rx/of (commit-changes rchanges uchanges {:commit-local? true})
+               (select-shapes (d/ordered-set root-id)))))))

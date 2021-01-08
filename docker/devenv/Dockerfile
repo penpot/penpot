@@ -133,7 +133,8 @@ RUN set -ex; \
     mv /tmp/node/node-$NODE_VERSION-linux-x64 /usr/local/nodejs; \
     chown -R root /usr/local/nodejs; \
     /usr/local/nodejs/bin/npm install -g yarn; \
-    rm -rf /tmp/node;
+    /usr/local/nodejs/bin/npm install -g svgo; \
+  rm -rf /tmp/node;
 
 RUN set -ex; \
     cd /tmp; \

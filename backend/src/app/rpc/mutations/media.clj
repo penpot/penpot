@@ -84,7 +84,7 @@
                  :thumbnail-id (:id thumb)
                  :width  (:width source-info)
                  :height (:height source-info)
-                 :mtype  (:mtype source-info)})))
+                 :mtype  source-mtype})))
 
 
 ;; --- Create File Media Object (from URL)

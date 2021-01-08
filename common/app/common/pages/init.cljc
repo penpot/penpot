@@ -31,8 +31,7 @@
    :pages-index {}})
 
 (def default-shape-attrs
-  {:fill-color default-color
-   :fill-opacity 1})
+  {})
 
 (def default-frame-attrs
   {:frame-id uuid/zero
@@ -54,8 +53,6 @@
     :ry 0}
 
    {:type :image}
-
-   {:type :icon}
 
    {:type :circle
     :name "Circle"
@@ -89,7 +86,9 @@
 
    {:type :text
     :name "Text"
-    :content nil}])
+    :content nil}
+
+   {:type :svg-raw}])
 
 (defn make-minimal-shape
   [type]
