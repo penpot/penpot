@@ -120,7 +120,7 @@
       (ex/raise :type :authentication
                 :code :unable-to-authenticate-with-github))
 
-    (let [method-fn (get-in rpc [:method :mutations :login-or-register])
+    (let [method-fn (get-in rpc [:method :mutation :login-or-register])
           profile   (method-fn {:email (:email info)
                                 :fullname (:fullname info)})
           uagent    (get-in request [:headers "user-agent"])
