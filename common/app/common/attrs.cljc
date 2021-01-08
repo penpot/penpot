@@ -70,6 +70,10 @@
                          (if (= value :undefined) nil value))
 
          cleanup (fn [result]
-                   (zipmap attrs (map #(cleanup-value (get result %)) attrs)))]
+                   (->> attrs
+                        (map #(get result %))
+                        (zipmap attrs)
+                        (filter #(not= (second %) :undefined))
+                        (into {})))]
 
      (cleanup combined))))

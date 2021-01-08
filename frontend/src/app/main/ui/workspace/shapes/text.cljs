@@ -106,16 +106,16 @@
     [:> shape-container {:shape shape}
      ;; We keep hidden the shape when we're editing so it keeps track of the size
      ;; and updates the selrect acordingly
-     [:g.text-shape {:opacity (when edition? 0)}
+     [:g.text-shape {:opacity (when edition? 0)
+                     :pointer-events "none"}
       [:& text/text-shape {:key (str "text-shape" (:id shape))
                            :ref text-ref-cb
                            :shape shape
                            :selected? selected?
                            :grow-type (:grow-type shape)}]]
      (when edition?
-       [:g {:pointer-events "none"}
-        [:& editor/text-shape-edit {:key (str "editor" (:id shape))
-                                    :shape shape}]])
+       [:& editor/text-shape-edit {:key (str "editor" (:id shape))
+                                   :shape shape}])
 
      (when-not edition?
        [:rect.text-actions

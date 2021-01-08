@@ -42,6 +42,7 @@
 (def text-decoration-attrs [:text-decoration])
 (def text-transform-attrs [:text-transform])
 
+(def shape-attrs [:grow-type])
 (def root-attrs (d/concat text-valign-attrs
                           text-align-attrs))
 (def paragraph-attrs text-align-attrs)
@@ -51,6 +52,8 @@
                           text-spacing-attrs
                           text-decoration-attrs
                           text-transform-attrs))
+
+(def attrs (d/concat #{} shape-attrs root-attrs paragraph-attrs text-attrs))
 
 (mf/defc text-align-options
   [{:keys [editor ids values locale on-change] :as props}]
@@ -112,9 +115,9 @@
       i/align-bottom]]))
 
 (mf/defc grow-options
-  [{:keys [shapes editor ids values locale on-change] :as props}]
+  [{:keys [editor ids values locale on-change] :as props}]
   (let [to-single-value (fn [coll] (if (> (count coll) 1) nil (first coll)))
-        grow-type (->> shapes (map :grow-type) (remove nil?) (into #{}) to-single-value)
+        grow-type (->> values :grow-type)
         handle-change-grow
         (fn [event grow-type]
           (st/emit! (dwc/update-shapes ids #(assoc % :grow-type grow-type))))]
@@ -299,7 +302,9 @@
                       (:fill fill-values) (assoc :fill-color (:fill fill-values))
                       (:opacity fill-values) (assoc :fill-opacity (:fill fill-values)))
 
+
         text-values (merge
+                     (select-keys shape [:grow-type])
                      (dwt/current-root-values
                       {:editor editor :shape shape
                        :attrs root-attrs})

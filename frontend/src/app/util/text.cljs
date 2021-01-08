@@ -99,5 +99,6 @@
         (fn rec-fn [current node]
           (let [current (reduce rec-fn current (:children node []))]
             (get-attrs-multi [current node] attrs)))]
-    (rec-fn {} node)))
+    (merge (select-keys default-text-attrs attrs)
+           (rec-fn {} node))))
 
