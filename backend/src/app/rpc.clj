@@ -70,7 +70,7 @@
       (when (and (:auth mdata true) (not (uuid? (:profile-id params))))
         (ex/raise :type :authentication
                   :code :authentication-required
-                  :hint "authentication required for this endpoint"
+                  :hint "authentication required for this endpoint"))
       (f cfg (us/conform spec params)))))
 
 (defn- process-method
