@@ -37,74 +37,72 @@
    :separator
    18 12 10 8 6 4 3 2])
 
-(mf/defc grid-options [{:keys [frame grid default-grid-params on-change on-remove on-save-grid]}]
+(mf/defc grid-options
+  [{:keys [grid frame default-grid-params on-change on-remove on-save-grid]}]
   (let [locale (i18n/use-locale)
         size-options (get-size-options locale)
-        state (mf/use-state {:show-advanced-options false
-                             :changes {}})
-        {:keys [type display params] :as grid} (d/deep-merge grid (:changes @state))
+        state (mf/use-state {:show-advanced-options false})
+        {:keys [type display params]} grid
 
-        toggle-advanced-options #(swap! state update :show-advanced-options not)
-
-        emit-changes!
-        (fn [update-fn]
-          (swap! state update :changes update-fn)
-          (when on-change (on-change (d/deep-merge grid (-> @state :changes update-fn)))))
+        toggle-advanced-options
+        #(swap! state update :show-advanced-options not)
 
         handle-toggle-visibility
         (fn [event]
-          (emit-changes! (fn [changes] (update changes :display #(if (nil? %) false (not %))))))
+          (when on-change
+            (on-change (update grid :display #(if (nil? %) false (not %))))))
 
         handle-remove-grid
         (fn [event]
           (when on-remove (on-remove)))
 
         handle-change-type
-        (fn [type]
-          (let [defaults (type default-grid-params)
-                keys (keys defaults)
-                current-changes (-> @state :changes :params (select-keys keys))
-                ;; We give more priority to the current changes
-                params (merge defaults current-changes)
-                to-merge {:type type :params params}]
-            (emit-changes! #(d/deep-merge % to-merge))))
+        (fn [grid-type]
+          (let [defaults (grid-type default-grid-params)]
+            (when on-change
+              (on-change (assoc grid
+                                :type grid-type
+                                :params defaults)))))
 
         handle-change
         (fn [& keys]
           (fn [value]
-            (emit-changes! #(assoc-in % keys value))))
+            (when on-change
+              (on-change (assoc-in grid keys value)))))
 
         handle-change-size
         (fn [size]
-          (let [grid (d/deep-merge grid (:changes @state))
-                {:keys [margin gutter item-length]} (:params grid)
+          (let [{:keys [margin gutter item-length]} (:params grid)
                 frame-length (if (= :column (:type grid)) (:width frame) (:height frame))
                 item-length (if (or (nil? size) (= :auto size))
                               (-> (gg/calculate-default-item-length frame-length margin gutter)
                                   (mth/precision 2))
                               item-length)]
-            (emit-changes! #(-> %
-                                (assoc-in [:params :size] size)
-                                (assoc-in [:params :item-length] item-length)))))
+            (when on-change
+              (on-change (-> grid
+                             (assoc-in [:params :size] size)
+                             (assoc-in [:params :item-length] item-length))))))
 
         handle-change-item-length
         (fn [item-length]
-          (let [{:keys [margin gutter size]} (->> @state :changes :params (d/deep-merge (:params grid)))
+          (let [{:keys [margin gutter size]} (:params grid)
                 size (if (and (nil? item-length) (or (nil? size) (= :auto size))) 12 size)]
-            (emit-changes! #(-> %
-                                (assoc-in [:params :size] size)
-                                (assoc-in [:params :item-length] item-length)))))
+            (when on-change
+              (on-change (-> grid
+                             (assoc-in [:params :size] size)
+                             (assoc-in [:params :item-length] item-length))))))
 
         handle-change-color
         (fn [color]
-          (emit-changes! #(-> % (assoc-in [:params :color] color))))
+          (when on-change
+            (on-change (assoc-in grid [:params :color] color))))
 
         handle-detach-color
         (fn []
-          (emit-changes! #(-> % (assoc-in [:params :color]
-                                          (-> (:color params)
-                                              (assoc :id nil)
-                                              (assoc :file-id nil))))))
+          (when on-change
+            (on-change (-> grid
+                           (d/dissoc-in [:params :color :id])
+                           (d/dissoc-in [:params :color :file-id])))))
 
         handle-use-default
         (fn []
@@ -113,14 +111,15 @@
                 params (-> params
                            (assoc-in [:color :color] color)
                            (update :color dissoc :value))]
-            (emit-changes! #(hash-map :params params))))
+            (when on-change
+              (on-change (assoc grid :params params)))))
 
         handle-set-as-default
         (fn []
-          (let [current-grid (d/deep-merge grid (-> @state :changes))]
-            (on-save-grid current-grid)))
+          (when on-save-grid
+            (on-save-grid grid)))
 
-        is-default (= (->> @state :changes (d/deep-merge grid) :params)
+        is-default (= (->> grid :params)
                       (->> grid :type default-grid-params))]
 
     [:div.grid-option
