@@ -38,6 +38,11 @@
   {:status 403
    :body (ex-data err)})
 
+(defmethod handle-exception :authentication
+  [err _]
+  {:status 401
+   :body (ex-data err)})
+
 (defmethod handle-exception :validation
   [err req]
   (let [header (get-in req [:headers "accept"])
