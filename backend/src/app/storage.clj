@@ -181,14 +181,13 @@
 ;; --- impl
 
 (defn resolve-backend
-  [{:keys [conn] :as storage} backend-id]
-  (us/assert some? conn)
+  [{:keys [conn pool] :as storage} backend-id]
   (let [backend (get-in storage [:backends backend-id])]
     (when-not backend
       (ex/raise :type :internal
                 :code :backend-not-configured
                 :hint (str/fmt "backend '%s' not configured" backend-id)))
-    (assoc backend :conn conn)))
+    (assoc backend :conn (or conn pool))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Garbage Collection Task
