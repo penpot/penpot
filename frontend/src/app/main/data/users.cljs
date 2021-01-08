@@ -165,7 +165,7 @@
 
 (defn update-photo
   [file]
-  (us/verify ::di/js-file file)
+  (us/verify ::di/blob file)
   (ptk/reify ::update-photo
     ptk/WatchEvent
     (watch [_ state stream]
