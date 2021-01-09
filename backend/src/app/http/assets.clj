@@ -22,35 +22,42 @@
 (def ^:private signature-max-age
   (dt/duration {:hours 24 :minutes 15}))
 
-(defn- generic-handler
-  [storage request id]
-  (if-let [obj (sto/get-object storage id)]
-    (let [mdata   (meta obj)
-          backend (sto/resolve-backend storage (:backend obj))]
-      (case (:type backend)
-        :db
-        {:status 200
-         :headers {"content-type" (:content-type mdata)
+(defn- serve-object
+  [storage obj]
+  (let [mdata   (meta obj)
+        backend (sto/resolve-backend storage (:backend obj))]
+    (case (:type backend)
+      :db
+      {:status 200
+       :headers {"content-type" (:content-type mdata)
+                 "cache-control" (str "max-age=" (inst-ms cache-max-age))}
+       :body (sto/get-object-data storage obj)}
+
+      :s3
+      (let [url (sto/get-object-url storage obj {:max-age signature-max-age})]
+        {:status 307
+         :headers {"location" (str url)
+                   "x-host"   (:host url)
                    "cache-control" (str "max-age=" (inst-ms cache-max-age))}
-         :body (sto/get-object-data storage obj)}
+         :body ""})
 
-        :s3
-        (let [url (sto/get-object-url storage obj {:max-age signature-max-age})]
-          {:status 307
-           :headers {"location" (str url)
-                     "x-host"   (:host url)
-                     "cache-control" (str "max-age=" (inst-ms cache-max-age))}
-           :body ""})
+      :fs
+      (let [url (sto/get-object-url storage obj)]
+        {:status 204
+         :headers {"x-accel-redirect" (:path url)
+                   "content-type" (:content-type mdata)
+                   "cache-control" (str "max-age=" (inst-ms cache-max-age))
+                   }
+         :body ""}))))
 
-        :fs
-        (let [url (sto/get-object-url storage obj)]
-          {:status 200
-           :headers {"x-accel-redirect" (:path url)
-                     "content-type" (:content-type mdata)
-                     "cache-control" (str "max-age=" (inst-ms cache-max-age))}
-           :body ""})))
-    {:status 404
-     :body ""}))
+(defn- generic-handler
+  [{:keys [pool] :as storage} request id]
+  (with-open [conn (db/open pool)]
+    (let [storage (assoc storage :conn conn)
+          obj     (sto/get-object storage id)]
+      (if obj
+        (serve-object storage obj)
+        {:status 404 :body ""}))))
 
 (defn coerce-id
   [id]
