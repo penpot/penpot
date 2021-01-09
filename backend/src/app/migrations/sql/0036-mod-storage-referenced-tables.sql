@@ -1,8 +1,3 @@
--- Complete migration consists of:
--- - Move all file_media_objects and file_media_thumbnail to new storage.
--- - Replace the relative paths to the storage id's on all files/pages.
--- - Adapt frontend code to properly resolve url using the ids instead of paths.
-
 -- Profile
 ALTER TABLE profile ADD COLUMN photo_id uuid NULL REFERENCES storage_object(id) ON DELETE SET NULL;
 CREATE INDEX profile__photo_id__idx ON profile(photo_id);
