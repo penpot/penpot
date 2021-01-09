@@ -106,8 +106,6 @@ CREATE TRIGGER file_image__on_delete__tgr
  AFTER DELETE ON file_image
    FOR EACH ROW EXECUTE PROCEDURE handle_delete();
 
-
-
 CREATE TABLE page (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   file_id uuid NOT NULL REFERENCES file(id) ON DELETE CASCADE,

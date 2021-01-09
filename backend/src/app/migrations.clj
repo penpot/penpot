@@ -122,6 +122,15 @@
 
    {:name "0036-mod-storage-referenced-tables"
     :fn (mg/resource "app/migrations/sql/0036-mod-storage-referenced-tables.sql")}
+
+   {:name "0037-del-obsolete-triggers"
+    :fn (mg/resource "app/migrations/sql/0037-del-obsolete-triggers.sql")}
+
+   {:name "0038-add-storage-on-delete-triggers"
+    :fn (mg/resource "app/migrations/sql/0038-add-storage-on-delete-triggers.sql")}
+
+   {:name "0039-fix-some-on-delete-triggers"
+    :fn (mg/resource "app/migrations/sql/0039-fix-some-on-delete-triggers.sql")}
    ])
 
 
