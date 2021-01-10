@@ -17,6 +17,8 @@
   org.apache.logging.log4j/log4j-slf4j-impl {:mvn/version "2.14.0"}
   org.slf4j/slf4j-api {:mvn/version "1.7.30"}
 
+  org.graalvm.js/js {:mvn/version "20.3.0"}
+
   io.prometheus/simpleclient {:mvn/version "0.9.0"}
   io.prometheus/simpleclient_hotspot {:mvn/version "0.9.0"}
   io.prometheus/simpleclient_httpserver {:mvn/version "0.9.0"}
@@ -54,6 +56,7 @@
   org.im4java/im4java {:mvn/version "1.4.0"}
   org.lz4/lz4-java {:mvn/version "1.7.1"}
   commons-io/commons-io {:mvn/version "2.8.0"}
+  org.apache.commons/commons-pool2 {:mvn/version "2.9.0"}
   com.sun.mail/jakarta.mail {:mvn/version "2.0.0"}
 
   puppetlabs/clj-ldap {:mvn/version"0.3.0"}
