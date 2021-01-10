@@ -2,4 +2,4 @@
 set -ex
 
 # clojure -Ojmx-remote -A:dev -e "(set! *warn-on-reflection* true)" -m rebel-readline.main
-clojure -A:jmx-remote:dev -J-Xms256m -J-Xmx256m -M -m rebel-readline.main
+clojure -A:jmx-remote:dev -J-Xms512m -J-Xmx512m -M -m rebel-readline.main

@@ -84,9 +84,14 @@
      :svgparse    (ig/ref :app.svgparse/handler)
      :storage     (ig/ref :app.storage/storage)}
 
+
+    :app.svgparse/svgc
+    {:metrics (ig/ref :app.metrics/metrics)}
+
     ;; HTTP Handler for SVG parsing
     :app.svgparse/handler
-    {:metrics (ig/ref :app.metrics/metrics)}
+    {:metrics (ig/ref :app.metrics/metrics)
+     :svgc    (ig/ref :app.svgparse/svgc)}
 
     :app.rpc/rpc
     {:pool    (ig/ref :app.db/pool)
