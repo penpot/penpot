@@ -25,25 +25,6 @@
    java.util.function.Consumer
    org.apache.commons.io.IOUtils))
 
-;; (defn- clean-svg
-;;   [^InputStream input]
-;;   (let [result (shell/sh
-;;                 ;; "svgcleaner" "--allow-bigger-file" "-c" "-"
-;;                 "svgo"
-;;                 "--enable=prefixIds,removeDimensions,removeXMLNS,removeScriptElement"
-;;                 "--disable=removeViewBox,moveElemsAttrsToGroup"
-;;                 "-i" "-" "-o" "-"
-
-;;                 :in input :out-enc :bytes)
-;;         err-str (:err result)]
-;;     (when (or (not= 0 (:exit result))
-;;               ;; svgcleaner returns 0 with some errors, we need to check
-;;               (and (not= err-str "") (not (nil? err-str)) (str/starts-with? err-str "Error")))
-;;       (ex/raise :type :validation
-;;                 :code :unable-to-optimize
-;;                 :hint (:err result)))
-;;     (io/input-stream (:out result))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SVG Clean
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
