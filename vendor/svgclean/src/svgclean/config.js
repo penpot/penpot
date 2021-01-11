@@ -108,46 +108,57 @@ const builtinPlugins = {
   sortDefsChildren,
 };
 
-const defaultPlugins = {
-  prefixIds: true,
-  cleanupAttrs: true,
-  cleanupEnableBackground: true,
-  cleanupIDs: true,
-  cleanupNumericValues: true,
-  collapseGroups: true,
-  convertColors: true,
-  convertEllipseToCircle: true,
-  convertPathData: true,
-  convertShapeToPath: true,
-  convertStyleToAttrs: true,
-  convertTransform: true,
-  inlineStyles: true,
-  mergePaths: false,
-  minifyStyles: true,
-  moveElemsAttrsToGroup: false,
-  moveGroupAttrsToElems: false,
-  removeComments: true,
-  removeDesc: true,
-  removeDimensions: false,
-  removeDoctype: true,
-  removeEditorsNSData: true,
-  removeEmptyAttrs: true,
-  removeEmptyContainers: true,
-  removeEmptyText: true,
-  removeHiddenElems: true,
-  removeNonInheritableGroupAttrs: true,
-  removeRasterImages: true,
-  removeTitle: true,
-  removeUnknownsAndDefaults: true,
-  removeUnusedNS: true,
-  removeUselessDefs: true,
-  removeUselessStrokeAndFill: true,
-  removeViewBox: false,
-  removeXMLNS: true,
-  removeXMLProcInst: true,
-  sortAttrs: false,
-  sortDefsChildren: true
-};
+const defaultPlugins = [
+  "removeDoctype",
+  "removeXMLProcInst",
+  "removeComments",
+  "removeMetadata",
+  "removeXMLNS",
+  "removeEditorsNSData",
+  "cleanupAttrs",
+  "inlineStyles",
+  "minifyStyles",
+  "convertStyleToAttrs",
+  "cleanupIDs",
+  "prefixIds",
+  "removeRasterImages",
+  "removeUselessDefs",
+  "cleanupNumericValues",
+  "cleanupListOfValues",
+  "convertColors",
+  "removeUnknownsAndDefaults",
+  "removeNonInheritableGroupAttrs",
+  "removeUselessStrokeAndFill",
+  "removeViewBox",
+  "cleanupEnableBackground",
+  "removeHiddenElems",
+  "removeEmptyText",
+  "convertShapeToPath",
+  "convertEllipseToCircle",
+  "moveElemsAttrsToGroup",
+  "moveGroupAttrsToElems",
+  "collapseGroups",
+  "convertPathData",
+  "convertTransform",
+  "removeEmptyAttrs",
+  "removeEmptyContainers",
+  "mergePaths",
+  "removeUnusedNS",
+  "sortAttrs",
+  "sortDefsChildren",
+  "removeTitle",
+  "removeDesc",
+  "removeDimensions",
+  "removeAttrs",
+  "removeAttributesBySelector",
+  "removeElementsByAttr",
+  "addClassesToSVGElement",
+  "removeStyleElement",
+  "removeScriptElement",
+  "addAttributesToSVGElement",
+  "removeOffCanvasPaths",
+  "reusePaths"
+];
 
 function optimizePlugins(plugins) {
   let prev;
@@ -163,27 +174,35 @@ function optimizePlugins(plugins) {
 }
 
 exports.loadPlugins = function(config={}) {
-  let plugins = Object.assign({}, config.plugins || defaultPlugins);
-  let configuredPlugins = [];
+  let configured = [];
 
-  for (let key of Object.keys(plugins)) {
-    let pluginOpt = plugins[key];
-    let plugin = null;
-
-    if (typeof pluginOpt === "object") {
-      plugin = Object.assign({}, builtinPlugins[key]);
-      plugin.params = Object.assign({}, pluginOpt);
-    } else if (pluginOpt === true) {
-      plugin = Object.assign({}, builtinPlugins[key]);
-    } else {
-      continue;
-    }
-
-    plugin.active = true;
-    configuredPlugins.push(plugin);
+  for (let name of defaultPlugins) {
+    const plugin = Object.assign({}, builtinPlugins[name]);
+    plugin.name = name;
+    configured.push(plugin);
   }
 
-  return optimizePlugins(configuredPlugins);
+  for (let item of config.plugins || []) {
+    const name = Object.keys(item)[0];
+    const opts = item[name];
+
+    if (typeof opts === "object") {
+      configured.forEach(function(plugin) {
+        if (plugin.name === name) {
+          plugin.active = true;
+          plugin.params = Object.assign({}, plugin.params, opts);
+        }
+      });
+    } else if (typeof opts === "boolean") {
+      configured.forEach(function(plugin) {
+        if (plugin.name === name) {
+          plugin.active = opts;
+        }
+      });
+    }
+  }
+
+  return optimizePlugins(configured);
 };
 
 exports.executePlugins = function(plugins, data, info) {

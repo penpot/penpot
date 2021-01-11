@@ -1,41 +1,13 @@
-const plugins = {
-  // prefixIds: true,
-  cleanupAttrs: true,
-  // cleanupEnableBackground: true,
-  // cleanupIDs: true,
-  cleanupNumericValues: true,
-  collapseGroups: true,
-  convertColors: true,
-  convertEllipseToCircle: true,
-  convertPathData: true,
-  convertShapeToPath: true,
-  convertStyleToAttrs: true,
-  convertTransform: true,
-  inlineStyles: true,
-  mergePaths: false,
-  minifyStyles: true,
-  removeComments: true,
-  removeDesc: true,
-  removeDimensions: false,
-  removeDoctype: true,
-  removeEditorsNSData: true,
-  removeEmptyAttrs: true,
-  removeEmptyContainers: true,
-  removeEmptyText: true,
-  removeHiddenElems: true,
-  removeNonInheritableGroupAttrs: true,
-  removeRasterImages: true,
-  removeTitle: true,
-  removeUnknownsAndDefaults: true,
-  removeUnusedNS: true,
-  removeUselessDefs: true,
-  removeUselessStrokeAndFill: true,
-  removeXMLNS: true,
-  removeXMLProcInst: true
-};
+const plugins = [
+  {removeDimensions: true},
+  {removeXMLNS: true},
+  {removeScriptElement: true},
+  {removeViewBox: false},
+  {moveElemsAttrsToGroup: false}
+];
 
 const svgc = require("./src/svgclean.js");
-const inst = svgc.configure({plugins});
+const inst = svgc.configure({plugins, multipass: undefined});
 
 exports.optimize = function(data) {
   return svgc.optimize(inst, data)
