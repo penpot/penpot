@@ -403,14 +403,7 @@
              :component (:name component)
              :options options)
 
-  (let [root-inst (if (:component-id shape-inst)
-                    shape-inst
-                    root-inst)
-        root-master (if (:component-id shape-inst)
-                      shape-master
-                      root-master)
-
-        [rchanges uchanges]
+  (let [[rchanges uchanges]
         (concat-changes
           (update-attrs shape-inst
                         shape-master
@@ -428,32 +421,39 @@
         children-master (mapv #(cp/get-shape component %)
                               (:shapes shape-master))
 
-        only-inst (fn [shape-inst]
-                    (remove-shape shape-inst
+        only-inst (fn [child-inst]
+                    (remove-shape child-inst
                                   container
                                   omit-touched?))
 
-        only-master (fn [shape-master]
-                      (add-shape-to-instance shape-master
+        only-master (fn [child-master]
+                      (add-shape-to-instance child-master
                                              component
                                              container
                                              root-inst
                                              root-master
                                              omit-touched?))
 
-        both (fn [shape-inst shape-master]
-               (let [options (if-not (:component-id shape-inst)
+        both (fn [child-inst child-master]
+               (let [sub-root? (and (:component-id shape-inst)
+                                    (not (:component-root? shape-inst)))
+
+                     options (if-not sub-root?
                                options
                                {:omit-touched? true
                                 :reset-touched? false
                                 :copy-touched? false})]
 
                  (generate-sync-shape-direct-recursive container
-                                                       shape-inst
+                                                       child-inst
                                                        component
-                                                       shape-master
-                                                       root-inst
-                                                       root-master
+                                                       child-master
+                                                       (if sub-root?
+                                                         shape-inst
+                                                         root-inst)
+                                                       (if sub-root?
+                                                         shape-master
+                                                         root-master)
                                                        options)))
 
         moved (fn [shape-inst shape-master]
@@ -518,14 +518,7 @@
              :component (:name component)
              :options options)
 
-  (let [root-inst (if (:component-id shape-inst)
-                    shape-inst
-                    root-inst)
-        root-master (if (:component-id shape-inst)
-                      shape-master
-                      root-master)
-
-        component-container (cp/make-container component :component)
+  (let [component-container (cp/make-container component :component)
 
         [rchanges uchanges]
         (concat-changes
@@ -549,31 +542,38 @@
         children-master (mapv #(cp/get-shape component %)
                               (:shapes shape-master))
 
-        only-inst (fn [shape-inst]
-                    (add-shape-to-master shape-inst
+        only-inst (fn [child-inst]
+                    (add-shape-to-master child-inst
                                          component
                                          container
                                          root-inst
                                          root-master))
 
-        only-master (fn [shape-master]
-                      (remove-shape shape-master
+        only-master (fn [child-master]
+                      (remove-shape child-master
                                     component-container
                                     false))
 
-        both (fn [shape-inst shape-master]
-               (let [options (if-not (:component-id shape-inst)
+        both (fn [child-inst child-master]
+               (let [sub-root? (and (:component-id shape-inst)
+                                    (not (:component-root? shape-inst)))
+
+                     options (if-not sub-root?
                                options
                                {:reset-touched? false
                                 :set-touched? false
                                 :copy-touched? true})]
 
                  (generate-sync-shape-inverse-recursive container
-                                                        shape-inst
+                                                        child-inst
                                                         component
-                                                        shape-master
-                                                        root-inst
-                                                        root-master
+                                                        child-master
+                                                        (if sub-root?
+                                                          shape-inst
+                                                          root-inst)
+                                                        (if sub-root?
+                                                          shape-master
+                                                          root-master)
                                                         options)))
 
         moved (fn [shape-inst shape-master]
