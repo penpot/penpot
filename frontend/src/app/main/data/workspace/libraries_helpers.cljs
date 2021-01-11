@@ -995,15 +995,27 @@
                               :else
                               uoperations)
 
+                all-parents (or (cp/get-parents dest-shape (:objects container)) [])
+
                 rchanges [(as-> {:type :mod-obj
                                  :id (:id dest-shape)
                                  :operations roperations} $
+                            (if (cp/page? container)
+                              (assoc $ :page-id (:id container))
+                              (assoc $ :component-id (:id container))))
+                          (as-> {:type :reg-objects
+                                 :shapes all-parents} $
                             (if (cp/page? container)
                               (assoc $ :page-id (:id container))
                               (assoc $ :component-id (:id container))))]
                 uchanges [(as-> {:type :mod-obj
                                  :id (:id dest-shape)
                                  :operations uoperations} $
+                            (if (cp/page? container)
+                              (assoc $ :page-id (:id container))
+                              (assoc $ :component-id (:id container))))
+                          (as-> {:type :reg-objects
+                                 :shapes all-parents} $
                             (if (cp/page? container)
                               (assoc $ :page-id (:id container))
                               (assoc $ :component-id (:id container))))]]
