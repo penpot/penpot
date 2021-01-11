@@ -5,7 +5,11 @@
   "main": "./src/svgo.js",
   "scripts": {
     "test": "set NODE_ENV=test && mocha",
-    "lint": "jshint --show-non-errors ."
+    "lint": "jshint --show-non-errors .",
+    "build": "browserify -r./main.js:svgclean -o bundle.js",
+    "minify": "terser bundle.js -c -m -o bundle.min.js",
+    "dist": "npm run build && npm run minify"
+
   },
   "dependencies": {
     "chalk": "^4.1.0",
@@ -28,7 +32,8 @@
     "mocha": "^8.2.1",
     "mocha-istanbul": "^0.3.0",
     "mock-stdin": "^1.0.0",
-    "should": "~13.2.3"
+    "should": "~13.2.3",
+    "terser": "^5.5.1"
   },
   "license": "MIT"
 }

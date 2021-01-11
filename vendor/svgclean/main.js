@@ -1,8 +1,8 @@
 const plugins = {
-  prefixIds: true,
+  // prefixIds: true,
   cleanupAttrs: true,
-  cleanupEnableBackground: true,
-  cleanupIDs: true,
+  // cleanupEnableBackground: true,
+  // cleanupIDs: true,
   cleanupNumericValues: true,
   collapseGroups: true,
   convertColors: true,
