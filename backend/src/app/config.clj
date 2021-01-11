@@ -34,8 +34,6 @@
    :storage-fs-uri "http://localhost:3449/internal/assets/"
    :storage-s3-region :eu-central-1
 
-   :storage-s3-bucket "serenoxyztestbucket"
-
    :image-process-max-threads 2
 
    :smtp-enabled false
@@ -76,6 +74,7 @@
 (s/def ::database-uri ::us/string)
 (s/def ::redis-uri ::us/string)
 
+(s/def ::storage-backend ::us/keyword)
 (s/def ::storage-fs-directory ::us/string)
 (s/def ::storage-fs-uri ::us/string)
 (s/def ::storage-s3-region ::us/keyword)
@@ -136,59 +135,60 @@
 
 
 (s/def ::config
-  (s/keys :opt-un [::http-server-cors
-                   ::http-server-debug
-                   ::http-server-port
-                   ::google-client-id
-                   ::google-client-secret
-                   ::gitlab-client-id
-                   ::gitlab-client-secret
+  (s/keys :opt-un [::allow-demo-users
+                   ::asserts-enabled
+                   ::database-password
+                   ::database-uri
+                   ::database-username
+                   ::debug
+                   ::error-report-webhook
                    ::github-client-id
                    ::github-client-secret
                    ::gitlab-base-uri
-                   ::asserts-enabled
-                   ::redis-uri
+                   ::gitlab-client-id
+                   ::gitlab-client-secret
+                   ::google-client-id
+                   ::google-client-secret
+                   ::host
+                   ::http-server-debug
+                   ::http-server-port
+                   ::http-server-cors
+                   ::image-process-max-threads
+                   ::ldap-auth-avatar-attribute
+                   ::ldap-auth-base-dn
+                   ::ldap-auth-email-attribute
+                   ::ldap-auth-fullname-attribute
+                   ::ldap-auth-host
+                   ::ldap-auth-port
+                   ::ldap-auth-ssl
+                   ::ldap-auth-starttls
+                   ::ldap-auth-user-query
+                   ::ldap-auth-username-attribute
+                   ::ldap-bind-dn
+                   ::ldap-bind-password
                    ::public-uri
-                   ::database-username
-                   ::database-password
-                   ::database-uri
-                   ::storage-fs-directory
-                   ::storage-fs-uri
-                   ::storage-s3-bucket
-                   ::storage-s3-region
-                   ::error-report-webhook
+                   ::redis-uri
+                   ::registration-domain-whitelist
+                   ::registration-enabled
                    ::secret-key
                    ::smtp-default-from
                    ::smtp-default-reply-to
                    ::smtp-enabled
                    ::smtp-host
-                   ::smtp-port
-                   ::smtp-username
                    ::smtp-password
-                   ::smtp-tls
+                   ::smtp-port
                    ::smtp-ssl
-                   ::host
+                   ::smtp-tls
+                   ::smtp-username
+                   ::storage-backend
+                   ::storage-fs-directory
+                   ::storage-fs-uri
+                   ::storage-s3-bucket
+                   ::storage-s3-region
                    ::telemetry-enabled
                    ::telemetry-server-enabled
-                   ::telemetry-uri
                    ::telemetry-server-port
-                   ::debug
-                   ::allow-demo-users
-                   ::registration-enabled
-                   ::registration-domain-whitelist
-                   ::image-process-max-threads
-                   ::ldap-auth-host
-                   ::ldap-auth-port
-                   ::ldap-bind-dn
-                   ::ldap-bind-password
-                   ::ldap-auth-ssl
-                   ::ldap-auth-starttls
-                   ::ldap-auth-base-dn
-                   ::ldap-auth-user-query
-                   ::ldap-auth-username-attribute
-                   ::ldap-auth-email-attribute
-                   ::ldap-auth-fullname-attribute
-                   ::ldap-auth-avatar-attribute]))
+                   ::telemetry-uri]))
 
 (defn- env->config
   [env]

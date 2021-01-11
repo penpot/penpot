@@ -9,6 +9,7 @@ export CURRENT_USER_ID=$(id -u);
 export CURRENT_VERSION=$(git describe --tags);
 export CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
 export CURRENT_HASH=$(git rev-parse --short HEAD);
+export CURRENT_BUILD=$(date '+%Y%m%d%H%M');
 
 function build-devenv {
     echo "Building development image $DEVENV_IMGNAME:latest..."
@@ -97,12 +98,10 @@ function build-bundle {
     mv ./exporter/target ./bundle/exporter
 
     local version="$CURRENT_VERSION";
-    local name="penpot-$CURRENT_VERSION";
+    local name="penpot-$CURRENT_BRANCH";
 
     if [ $CURRENT_BRANCH != "main" ]; then
-        local ncommits=$(git rev-list --count HEAD);
-        version="$CURRENT_BRANCH-$ncommits-$CURRENT_HASH";
-        name="penpot-$CURRENT_BRANCH";
+        version="$CURRENT_BRANCH-$CURRENT_VERSION";
     fi;
 
     echo $version > ./bundle/version.txt
@@ -126,23 +125,25 @@ function build-bundle {
 
 function build-image {
     local image=$1;
-    local version=$2;
+    local tag=$2;
+    local version=$3;
     local docker_image="$ORGANIZATION/$image";
 
     set -x
     pushd ./docker/images;
-    docker buildx build --platform linux/amd64 -t $docker_image:$version -f Dockerfile.$image .;
+    docker buildx build --platform linux/amd64 -t $docker_image:$tag -f Dockerfile.$image .;
+    docker tag $docker_image:$tag $docker_image:$version;
+
     # docker buildx build --platform linux/arm64 -t $docker_image:$version-arm64 .;
     popd;
 }
 
 function build-images {
     local version="$CURRENT_VERSION";
-    local bundle_file="penpot-$CURRENT_VERSION.tar.xz";
+    local bundle_file="penpot-$CURRENT_BRANCH-$CURRENT_VERSION.tar.xz";
 
     if [ $CURRENT_BRANCH != "main" ]; then
-        version="$CURRENT_BRANCH";
-        bundle_file="penpot-$CURRENT_BRANCH.tar.xz";
+        version="$CURRENT_BRANCH-$CURRENT_VERSION";
     fi;
 
     if [ ! -f $bundle_file ]; then
@@ -160,9 +161,9 @@ function build-images {
     tar xvf $bundle_file_path;
     popd
 
-    build-image "backend" $version;
-    build-image "frontend" $version;
-    build-image "exporter" $version;
+    build-image "backend" $CURRENT_BRANCH $version;
+    build-image "frontend" $CURRENT_BRANCH $version;
+    build-image "exporter" $CURRENT_BRANCH $version;
 }
 
 function publish-latest-images {

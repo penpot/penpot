@@ -258,7 +258,7 @@
     :app.storage.db/backend
     {:pool (ig/ref :app.db/pool)}}
 
-   (let [backend (:storage-default-backend cfg/config :fs)]
+   (let [backend (:storage-backend cfg/config :fs)]
      {:app.storage/storage {:backend backend}})
 
    (when (:telemetry-server-enabled cfg/config)
