@@ -106,7 +106,7 @@
                     objects   (dissoc objects id)]
                 (cond-> objects
                   (and (not= parent-id frame-id)
-                       (= :group (:type parent)))
+                       (#{:group :svg-raw} (:type parent)))
                   (update-in [parent-id :shapes] (fn [s] (filterv #(not= % id) s)))
 
                   (and (:shape-ref parent) (not ignore-touched))

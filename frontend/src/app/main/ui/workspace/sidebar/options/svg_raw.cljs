@@ -41,6 +41,10 @@
 
     ;; TODO CHECK IF IT'S A GRADIENT
 
+    (str/starts-with? color "url")
+    {:color :multiple
+     :opacity :multiple}
+
     :else nil))
 
 

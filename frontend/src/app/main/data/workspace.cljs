@@ -401,16 +401,19 @@
     (update [_ state]
       (update state :workspace-local
               (fn [{:keys [vbox vport left-sidebar? zoom] :as local}]
-                (let [wprop (/ (:width vport) width)
-                      hprop (/ (:height vport) height)
-                      left-offset (if left-sidebar? 0 (/ (* -1 15 16) zoom))]
-                  (-> local                ;; This matches $width-settings-bar
-                      (assoc :vport size)  ;; in frontend/resources/styles/main/partials/sidebar.scss
-                      (update :vbox (fn [vbox]
-                                      (-> vbox
-                                          (update :width #(/ % wprop))
-                                          (update :height #(/ % hprop))
-                                          (assoc :left-offset left-offset)))))))))))
+                (if (or (mth/almost-zero? width) (mth/almost-zero? height))
+                  ;; If we have a resize to zero just keep the old value
+                  local
+                  (let [wprop (/ (:width vport) width)
+                        hprop (/ (:height vport) height)
+                        left-offset (if left-sidebar? 0 (/ (* -1 15 16) zoom))]
+                    (-> local         ;; This matches $width-settings-bar
+                        (assoc :vport size) ;; in frontend/resources/styles/main/partials/sidebar.scss
+                        (update :vbox (fn [vbox]
+                                        (-> vbox
+                                            (update :width #(/ % wprop))
+                                            (update :height #(/ % hprop))
+                                            (assoc :left-offset left-offset))))))))))))
 
 
 (defn start-pan [state]
