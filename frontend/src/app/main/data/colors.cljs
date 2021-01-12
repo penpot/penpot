@@ -112,9 +112,6 @@
        (let [pid (:current-page-id state)
              objects (get-in state [:workspace-data :pages-index pid :objects])
              not-frame (fn [shape-id] (not= (get-in objects [shape-id :type]) :frame))
-             children (->> ids (filter not-frame) (mapcat #(cp/get-children % objects)))
-             ids (into ids children)
-
              is-text? #(= :text (:type (get objects %)))
              text-ids (filter is-text? ids)
              shape-ids (filter (comp not is-text?) ids)
@@ -141,9 +138,6 @@
       (let [pid (:current-page-id state)
             objects (get-in state [:workspace-data :pages-index pid :objects])
             not-frame (fn [shape-id] (not= (get-in objects [shape-id :type]) :frame))
-            children (->> ids (filter not-frame) (mapcat #(cp/get-children % objects)))
-            ids (into ids children)
-
             update-fn (fn [s]
                         (cond-> s
                           true
