@@ -95,22 +95,18 @@
 
     (when (contains? svg-elements tag)
       [:*
-       (cond
-         (= tag :svg)
+       (when (= tag :svg)
          [:*
           [:& measures-menu {:ids ids
                              :type type
-                             :values measure-values}]]
+                             :values measure-values}]])
 
-         :else
-         [:*
-          [:& fill-menu {:ids ids
-                         :type type
-                         :values fill-values}]
-          [:& stroke-menu {:ids ids
-                           :type type
-                           :values stroke-values}]])
-
+       [:& fill-menu {:ids ids
+                      :type type
+                      :values fill-values}]
+       [:& stroke-menu {:ids ids
+                        :type type
+                        :values stroke-values}]
        [:& shadow-menu {:ids ids
                         :values (select-keys shape [:shadow])}]
 

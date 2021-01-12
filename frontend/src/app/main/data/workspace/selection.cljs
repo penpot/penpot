@@ -226,20 +226,20 @@
              objects (dwc/lookup-page-objects state page-id)
              find-shape
              (fn [selection]
-               (when (seq selection)
-                 (let [id (first selection)
-                       shape (get objects id)]
-                   (let [child-id (->> (cp/get-children id objects)
-                                       (map #(get objects %))
-                                       (remove (comp empty :shapes))
-                                       (filter #(geom/has-point? % position))
-                                       (first)
-                                       :id)]
-                     (or child-id id)))))]
+               (let [id (first selection)
+                     shape (get objects id)]
+                 (let [child-id (->> (cp/get-children id objects)
+                                     (map #(get objects %))
+                                     (remove (comp empty :shapes))
+                                     (filter #(geom/has-point? % position))
+                                     (first)
+                                     :id)]
+                   (or child-id id))))]
          (->> (uw/ask! {:cmd :selection/query
                         :page-id page-id
                         :rect (geom/make-centered-rect position 1 1)})
               (rx/first)
+              (rx/filter (comp not empty?))
               (rx/map find-shape)
               (rx/filter #(not (nil? %)))
               (rx/map #(select-shape % false))))))))
