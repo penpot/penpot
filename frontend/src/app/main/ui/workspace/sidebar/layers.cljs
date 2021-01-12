@@ -141,6 +141,9 @@
               nil
 
               (.-shiftKey event)
+              (st/emit! (dw/shift-select-shapes id))
+
+              (.-ctrlKey event)
               (st/emit! (dw/select-shape id true))
 
               (> (count selected) 1)

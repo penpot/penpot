@@ -105,6 +105,20 @@
              objects (dwc/lookup-page-objects state page-id)]
          (rx/of (dwc/expand-all-parents [id] objects)))))))
 
+(defn shift-select-shapes
+  ([id]
+   (ptk/reify ::shift-select-shapes
+     ptk/UpdateEvent
+     (update [_ state]
+       (let [page-id (:current-page-id state)
+             objects (dwc/lookup-page-objects state page-id)
+             selection (-> state
+                           (get-in [:workspace-local :selected] #{})
+                           (conj id))]
+         (-> state
+             (assoc-in [:workspace-local :selected]
+                       (cp/expand-region-selection objects selection))))))))
+
 (defn select-shapes
   [ids]
   (us/verify ::ordered-set-of-uuid ids)
@@ -184,24 +198,51 @@
                  (rx/map select-shapes))))))))
 
 (defn select-inside-group
-  [group-id position]
-  (ptk/reify ::select-inside-group
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [page-id  (:current-page-id state)
-            objects  (dwc/lookup-page-objects state page-id)
-            group    (get objects group-id)
-            children (map #(get objects %) (:shapes group))
+  ([group-id position] (select-inside-group group-id position false))
+  ([group-id position deep-children]
+   (ptk/reify ::select-inside-group
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [page-id  (:current-page-id state)
+             objects  (dwc/lookup-page-objects state page-id)
+             group    (get objects group-id)
+             children (map #(get objects %) (:shapes group))
 
-            ;; We need to reverse the children because if two children
-            ;; overlap we want to select the one that's over (and it's
-            ;; in the later vector position
-            selected (->> children
-                          reverse
-                          (d/seek #(geom/has-point? % position)))]
-        (when selected
-          (rx/of (deselect-all) (select-shape (:id selected))))))))
+             ;; We need to reverse the children because if two children
+             ;; overlap we want to select the one that's over (and it's
+             ;; in the later vector position
+             selected (->> children
+                           reverse
+                           (d/seek #(geom/has-point? % position)))]
+         (when selected
+           (rx/of (deselect-all) (select-shape (:id selected)))))))))
 
+(defn select-last-layer
+  ([position]
+   (ptk/reify ::select-last-layer
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [page-id  (:current-page-id state)
+             objects (dwc/lookup-page-objects state page-id)
+             find-shape
+             (fn [selection]
+               (when (seq selection)
+                 (let [id (first selection)
+                       shape (get objects id)]
+                   (let [child-id (->> (cp/get-children id objects)
+                                       (map #(get objects %))
+                                       (remove (comp empty :shapes))
+                                       (filter #(geom/has-point? % position))
+                                       (first)
+                                       :id)]
+                     (or child-id id)))))]
+         (->> (uw/ask! {:cmd :selection/query
+                        :page-id page-id
+                        :rect (geom/make-centered-rect position 1 1)})
+              (rx/first)
+              (rx/map find-shape)
+              (rx/filter #(not (nil? %)))
+              (rx/map #(select-shape % false))))))))
 
 ;; --- Duplicate Shapes
 (declare prepare-duplicate-change)

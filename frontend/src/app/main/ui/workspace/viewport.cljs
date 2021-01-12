@@ -326,7 +326,9 @@
            (let [ctrl? (kbd/ctrl? event)
                  shift? (kbd/shift? event)
                  alt? (kbd/alt? event)]
-             (st/emit! (ms/->MouseEvent :click ctrl? shift? alt?)))))
+             (if ctrl?
+               (st/emit! (dw/select-last-layer @ms/mouse-position))
+               (st/emit! (ms/->MouseEvent :click ctrl? shift? alt?))))))
 
         on-double-click
         (mf/use-callback

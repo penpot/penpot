@@ -50,10 +50,11 @@
 
             tag (get-in shape [:content :tag])
 
-            handle-mouse-down (we/use-mouse-down shape)
+            handle-mouse-down   (we/use-mouse-down shape)
             handle-context-menu (we/use-context-menu shape)
             handle-pointer-enter (we/use-pointer-enter shape)
             handle-pointer-leave (we/use-pointer-leave shape)
+            handle-double-click  (we/use-double-click shape)
 
             def-ctx? (mf/use-ctx muc/def-ctx)]
 
@@ -74,6 +75,7 @@
                :height height
                :fill "transparent"
                :on-mouse-down handle-mouse-down
+               :on-double-click handle-double-click
                :on-context-menu handle-context-menu
                :on-pointer-over handle-pointer-enter
                :on-pointer-out handle-pointer-leave}])]

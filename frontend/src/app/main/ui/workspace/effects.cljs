@@ -50,13 +50,12 @@
            edition @refs/selected-edition
            selected? (contains? selected id)
            drawing? @refs/selected-drawing-tool
-           button (.-which (.-nativeEvent event))]
+           button (.-which (.-nativeEvent event))
+           shift? (kbd/shift? event)
+           ctrl? (kbd/ctrl? event)]
        (when-not blocked
          (cond
-           (not= 1 button)
-           nil
-
-           drawing?
+           (or (not= 1 button) drawing? ctrl?)
            nil
 
            (= type :frame)
@@ -68,13 +67,34 @@
            :else
            (do
              (dom/stop-propagation event)
-             (if selected?
-               (when (kbd/shift? event)
-                 (st/emit! (dw/select-shape id true)))
-               (do
-                 (when-not (or (empty? selected) (kbd/shift? event))
-                   (st/emit! (dw/deselect-all)))
-                 (st/emit! (dw/select-shape id))))
 
-             (when (not= edition id)
-               (st/emit! (dw/start-move-selected))))))))))
+             (let [toggle-selected? (and selected? shift?)
+                   deselect? (and (not selected?) (not (empty? selected)) (not shift?))]
+               (apply
+                st/emit!
+                (cond-> []
+                  ;; Deselect shapes before doing a selection or click outside
+                  deselect?
+                  (conj (dw/deselect-all))
+
+                  ;; Shift click to add a shape to the selection
+                  toggle-selected?
+                  (conj (dw/select-shape id true))
+
+                  ;; Simple click to select
+                  (not selected?)
+                  (conj (dw/select-shape id))
+
+                  ;; Mouse down to start moving a shape
+                  (not= edition id)
+                  (conj (dw/start-move-selected))))))))))))
+
+(defn use-double-click
+  "This effect will consume the event and stop the propagation so double clicks on shapes
+  will not select the frame"
+  [{:keys [id]}]
+  (mf/use-callback
+   (mf/deps id)
+   (fn [event]
+     (dom/stop-propagation event)
+     (dom/prevent-default event))))
