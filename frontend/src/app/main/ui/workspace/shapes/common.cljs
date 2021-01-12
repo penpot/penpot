@@ -21,6 +21,7 @@
     (let [shape (unchecked-get props "shape")]
       [:> shape-container {:shape shape
                            :on-mouse-down (we/use-mouse-down shape)
+                           :on-double-click (we/use-double-click shape)
                            :on-context-menu (we/use-context-menu shape)
                            :on-pointer-over (we/use-pointer-enter shape)
                            :on-pointer-out (we/use-pointer-leave shape)}

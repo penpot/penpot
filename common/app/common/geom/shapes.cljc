@@ -261,6 +261,7 @@
 (d/export gco/center-selrect)
 (d/export gco/center-rect)
 (d/export gco/center-points)
+(d/export gco/make-centered-rect)
 
 (d/export gpr/rect->selrect)
 (d/export gpr/rect->points)
