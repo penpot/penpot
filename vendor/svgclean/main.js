@@ -1,6 +1,6 @@
 const plugins = [
     {removeDimensions: true},
-    {removeXMLNS: true},
+    // {removeXMLNS: false},
     {removeScriptElement: true},
     {removeViewBox: false},
     {moveElemsAttrsToGroup: false},
@@ -14,9 +14,10 @@ const plugins = [
 ];
 
 const svgc = require("./src/svgclean.js");
-const inst = svgc.configure({plugins, multipass: undefined});
+const inst = svgc.configure({plugins});
 
 exports.optimize = function(data) {
   return svgc.optimize(inst, data)
     .then((result) => result.data);
 };
+
