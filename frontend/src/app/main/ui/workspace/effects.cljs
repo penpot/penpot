@@ -53,6 +53,7 @@
            button (.-which (.-nativeEvent event))
            shift? (kbd/shift? event)
            ctrl? (kbd/ctrl? event)]
+       (dom/prevent-default event)
        (when-not blocked
          (cond
            (or (not= 1 button) drawing? ctrl?)

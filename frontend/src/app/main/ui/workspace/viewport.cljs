@@ -252,6 +252,7 @@
         viewport-ref  (mf/use-ref nil)
         zoom-view-ref (mf/use-ref nil)
         last-position (mf/use-var nil)
+        disable-paste (mf/use-var false)
         drawing       (mf/deref refs/workspace-drawing)
         drawing-tool  (:tool drawing)
         drawing-obj   (:object drawing)
@@ -301,6 +302,10 @@
              (when (= 2 (.-which event))
                (do
                  (dom/prevent-default event)
+
+                 ;; We store this so in Firefox the middle button won't do a paste of the content
+                 (reset! disable-paste true)
+                 (timers/schedule #(reset! disable-paste false))
                  (st/emit! dw/finish-pan
                            ::finish-positioning))))))
 
@@ -529,7 +534,10 @@
         on-paste
         (mf/use-callback
          (fn [event]
-           (st/emit! (dw/paste-from-event event))))
+           ;; We disable the paste just after mouse-up of a middle button so when panning won't
+           ;; paste the content into the workspace
+           (when (not @disable-paste)
+             (st/emit! (dw/paste-from-event event)))))
 
         on-resize
         (mf/use-callback
