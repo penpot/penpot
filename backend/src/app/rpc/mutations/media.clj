@@ -64,6 +64,7 @@
         source-mtype (:content-type content)
 
         source-info  (media/run {:cmd :info :input {:path source-path :mtype source-mtype}})
+
         thumb        (when (not= (:mtype source-info) "image/svg+xml")
                        (media/run (assoc thumbnail-options
                                          :cmd :generic-thumbnail

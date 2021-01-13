@@ -116,9 +116,13 @@
   {:status 200
    :body (process-request cfg body)})
 
+(defn parse
+  [data]
+  (with-open [istream (IOUtils/toInputStream data "UTF-8")]
+    (xml/parse istream)))
+
 (defn process-request
   [{:keys [svgc] :as cfg} body]
   (let [data (slurp body)
         data (svgc data)]
-    (with-open [istream (IOUtils/toInputStream data "UTF-8")]
-      (xml/parse istream))))
+    (parse data)))
