@@ -34,8 +34,8 @@
   (.eval ^Context ctx ^Source source))
 
 (defn ^Value get-bindings
-  [ctx]
-  (.getBindings ^Context ctx))
+  [ctx lang]
+  (.getBindings ^Context ctx ^String lang))
 
 (defn ^Value get-member
   [vobj name]

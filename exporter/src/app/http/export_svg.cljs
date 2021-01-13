@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.common.pages :as cp]
    [app.common.spec :as us]
+   ["./svgclean" :as svgc]
    ["xml-js" :as xml]
    ["child_process" :as chp]
    ["os" :as os]
@@ -114,17 +115,16 @@
                             (-> (write-file! pbmpath stdout)
                                 (p/then (constantly pbmpath)))))
                   (p/then trace-color-mask)
+                  (p/then read-file)
                   (p/then clean-svg)
-                  (p/then (fn [svgpath]
-                            (p/let [data (read-file svgpath)
-                                    data (parse-xml data)
+                  (p/then (fn [data]
+                            (p/let [data (parse-xml data)
                                     data (get-in data ["elements" 0])]
-                              {:svgpath svgpath
-                               :color   color
+                              {:color   color
                                :svgdata data}))))))
 
           (join-color-layers [layers]
-            (log/info :fn :join-color-layers :layers (map :svgpath layers))
+            (log/info :fn :join-color-layers)
             (loop [main   (-> (:svgdata (first layers))
                               (assoc "elements" []))
                    layers (seq layers)]
@@ -142,13 +142,9 @@
             (-> (p/all (map (partial generate-color-mask ppmpath) colors))
                 (p/then join-color-layers)))
 
-          (clean-svg [svgpath]
-            (log/info :fn :clean-svg :svgpath svgpath)
-            (let [basepath (path/dirname svgpath)
-                  basename (path/basename svgpath ".svg")
-                  svgpath' (path/join basepath (str basename "-optimized.svg"))]
-              (-> (run-cmd! (str "svgcleaner " svgpath " " svgpath'))
-                  (p/then (constantly svgpath')))))
+          (clean-svg [data]
+            (log/info :fn :clean-svg)
+            (svgc/optimize data))
 
           (trace-single-node [{:keys [data] :as node}]
             (log/info :fn :trace-single-node)

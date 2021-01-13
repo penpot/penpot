@@ -68,10 +68,13 @@
 
 (defn- do-svg-clean
   [ctx data]
-  (let [res     (promise)
-        cleaner (->> (graal/source "js" "require('svgclean')")
-                     (graal/eval! ctx))
-        resultp (graal/invoke-member cleaner "optimize" data)]
+  (let [res      (promise)
+        bindings (graal/get-bindings ctx "js")
+        optimize (-> (graal/get-bindings ctx "js")
+                     (graal/get-member "svgc")
+                     (graal/get-member "optimize"))
+        resultp (graal/invoke optimize data)]
+
     (graal/invoke-member resultp "then"
                          (reify Consumer
                            (accept [_ val]

@@ -6,9 +6,10 @@
   "scripts": {
     "test": "set NODE_ENV=test && mocha",
     "lint": "jshint --show-non-errors .",
-    "build": "browserify -r./main.js:svgclean -o bundle.js",
+    "build": "browserify -s svgc main.js -o bundle.js",
     "minify": "terser bundle.js -c -m -o bundle.min.js",
-    "dist": "npm run build && npm run minify"
+    "copy": "cp ./bundle.min.js ../../backend/resources/svgclean.js && cp ./bundle.min.js ../../exporter/src/app/http/svgclean.js",
+    "dist": "npm run build && npm run minify && npm run copy"
   },
   "dependencies": {
     "chalk": "^4.1.0",
