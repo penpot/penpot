@@ -33,3 +33,4 @@ node_modules
 /deploy
 /web
 /_dump
+/vendor/svgclean/bundle*.js

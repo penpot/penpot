@@ -21,6 +21,7 @@
    [app.main.data.media :as di]
    [app.main.data.messages :as dm]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.svg-upload :as svg]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -498,7 +499,7 @@
                      {:on-image
                       #(st/emit! (dwc/image-uploaded % x y))
                       :on-svg
-                      #(st/emit! (dwc/svg-uploaded % x y))}))]
+                      #(st/emit! (svg/svg-uploaded % x y))}))]
     (upload-media-objects params)))
 
 
