@@ -100,7 +100,7 @@
                     (pmg/migrate-data))
 
         used    (collect-used-media data)
-        unused  (->> (db/query conn :media-object {:file-id id})
+        unused  (->> (db/query conn :file-media-object {:file-id id})
                      (remove #(contains? used (:id %))))]
 
     (log/infof "processing file: id='%s' age='%s' to-delete=%s" id age (count unused))
@@ -113,9 +113,10 @@
     (doseq [mobj unused]
       (log/debugf "deleting media object: id='%s' media-id='%s' thumb-id='%s'"
                   (:id mobj) (:media-id mobj) (:thumbnail-id mobj))
-      (sto/del-object storage (:media-id mobj))
-      (sto/del-object storage (:thumbnail-id mobj))
-      ;; Mark object as deleted
-      (db/delete! conn :media-object {:id (:id mobj)}))
+      ;; NOTE: deleting the file-media-object in the database
+      ;; automatically marks to be deleted the associated storage
+      ;; objects with the specialized trigger attached
+      ;; to :file-media-object table.
+      (db/delete! conn :file-media-object {:id (:id mobj)}))
 
     nil))
