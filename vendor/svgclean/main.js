@@ -1,9 +1,16 @@
 const plugins = [
-  {removeDimensions: true},
-  {removeXMLNS: true},
-  {removeScriptElement: true},
-  {removeViewBox: false},
-  {moveElemsAttrsToGroup: false}
+    {removeDimensions: true},
+    {removeXMLNS: true},
+    {removeScriptElement: true},
+    {removeViewBox: false},
+    {moveElemsAttrsToGroup: false},
+    {
+      convertPathData: {
+        lineShorthands: false,
+        curveSmoothShorthands: false,
+        forceAbsolutePath: true,
+      },
+    },
 ];
 
 const svgc = require("./src/svgclean.js");

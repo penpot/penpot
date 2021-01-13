@@ -180,6 +180,48 @@
         param-list (command->param-list entry)]
     (str/fmt "%s%s" command-str (str/join " " param-list))))
 
+(defn cmd-pos [{:keys [params]}]
+  (when (and (contains? params :x)
+             (contains? params :y))
+    (gpt/point params)))
+
+(defn simplify-commands
+  "Removes some commands and convert relative to absolute coordinates"
+  [commands]
+
+  (let [simplify-command
+        (fn [[pos result] [command prev]]
+          (let [command
+                (cond-> command
+                  (= :line-to-horizontal (:command command))
+                  (-> (assoc :command :line-to)
+                      (update :params dissoc :value)
+                      (assoc-in [:params :x] (get-in command [:params :value]))
+                      (assoc-in [:params :y] (if (:relative command) 0 (:y pos))))
+
+                  (= :line-to-vertical (:command command))
+                  (-> (assoc :command :line-to)
+                      (update :params dissoc :value)
+                      (assoc-in [:params :y] (get-in command [:params :value]))
+                      (assoc-in [:params :x] (if (:relative command) 0 (:x pos))))
+
+                  (:relative command)
+                  (-> (assoc :relative false)
+                      (cd/update-in-when [:params :x] + (:x pos))
+                      (cd/update-in-when [:params :y] + (:y pos)))
+
+
+                  )]
+            [(cmd-pos command) (conj result command)]))
+
+        start (first commands)
+        start-pos (cmd-pos start)]
+
+    
+    (->> (map vector (rest commands) commands)
+         (reduce simplify-command [start-pos [start]])
+         (second))))
+
 (defn path->content [string]
   (let [clean-string (-> string
                          (str/trim)
@@ -188,7 +230,8 @@
                          ;; Remove all consecutive spaces
                          (str/replace #"\s+" " "))
         commands (re-seq commands-regex clean-string)]
-    (mapcat parse-command commands)))
+    (-> (mapcat parse-command commands)
+        (simplify-commands))))
 
 (defn content->path [content]
   (->> content

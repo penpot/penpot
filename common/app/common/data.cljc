@@ -350,3 +350,7 @@
          ;; (when (:macro m#)
          ;;   (.setMacro (var ~n)))
          ~vr))))
+
+
+(defn any-key? [element & rest]
+  (some #(contains? element %) rest))
