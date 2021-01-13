@@ -136,7 +136,7 @@
   (let [pages           (:pages file)
         deletable?      (> (count pages) 1)
         current-page-id (mf/use-ctx ctx/current-page-id)]
-    [:ul.element-list
+    [:ul.element-list.pages-list
      [:& hooks/sortable-container {}
       (for [[index page-id] (d/enumerate pages)]
         [:& page-item-wrapper
