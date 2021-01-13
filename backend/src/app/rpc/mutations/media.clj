@@ -56,8 +56,19 @@
       (-> (assoc cfg :conn conn)
           (create-file-media-object params)))))
 
+(defn- big-enough-for-thumbnail?
+  "Checks if the provided image info is big enough for
+  create a separate thumbnail storage object."
+  [info]
+  (or (> (:width info) (:width thumbnail-options))
+      (> (:height info) (:height thumbnail-options))))
+
+(defn- svg-image?
+  [info]
+  (= (:mtype info) "image/svg+xml"))
+
 (defn create-file-media-object
-  [{:keys [conn storage] :as cfg} {:keys [id file-id is-local name content] :as params}]
+  [{:keys [conn storage svgc] :as cfg} {:keys [id file-id is-local name content] :as params}]
   (media/validate-media-type (:content-type content))
   (let [storage      (assoc storage :conn conn)
         source-path  (fs/path (:tempfile content))
@@ -65,13 +76,19 @@
 
         source-info  (media/run {:cmd :info :input {:path source-path :mtype source-mtype}})
 
-        thumb        (when (not= (:mtype source-info) "image/svg+xml")
+        thumb        (when (and (not (svg-image? source-info))
+                                (big-enough-for-thumbnail? source-info))
                        (media/run (assoc thumbnail-options
                                          :cmd :generic-thumbnail
-                                         :input {:mtype (:mtype source-info) :path source-path})))
+                                         :input {:mtype (:mtype source-info)
+                                                 :path source-path})))
 
-        image        (sto/put-object storage {:content (sto/content source-path)
-                                              :content-type (:mtype source-info)})
+        image        (if (= (:mtype source-info) "image/svg+xml")
+                       (let [data (svgc (slurp source-path))]
+                         (sto/put-object storage {:content (sto/content data)
+                                                  :content-type (:mtype source-info)}))
+                       (sto/put-object storage {:content (sto/content source-path)
+                                                :content-type (:mtype source-info)}))
 
         thumb        (when thumb
                        (sto/put-object storage {:content (sto/content (:data thumb) (:size thumb))

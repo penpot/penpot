@@ -120,10 +120,11 @@
     (ex/raise :type :validation
               :code :unable-to-parse-svg
               :hint "uploaded svg has invalid content"))
-  (reduce (fn [_ f]
+  (reduce (fn [default f]
             (if-let [res (f attrs)]
               (reduced res)
-              nil))
+              default))
+          {:width 100 :height 100}
           [(fn parse-width-and-height
              [{:keys [width height]}]
              (when (and (string? width)

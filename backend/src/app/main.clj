@@ -99,7 +99,8 @@
      :tokens  (ig/ref :app.tokens/tokens)
      :metrics (ig/ref :app.metrics/metrics)
      :storage (ig/ref :app.storage/storage)
-     :redis   (ig/ref :app.redis/redis)}
+     :redis   (ig/ref :app.redis/redis)
+     :svgc    (ig/ref :app.svgparse/svgc)}
 
     :app.notifications/handler
     {:redis   (ig/ref :app.redis/redis)
