@@ -12,12 +12,15 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.media :as cm]
+   [app.common.data :as d]
    [app.common.spec :as us]
    [app.config :as cfg]
    [app.util.http :as http]
+   [app.svgparse :as svg]
    [clojure.core.async :as a]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
+   [cuerdas.core :as str]
    [datoteka.core :as fs])
   (:import
    java.io.ByteArrayInputStream
@@ -111,24 +114,57 @@
              (.addImage))]
     (generic-process (assoc params :operation op))))
 
+(defn get-basic-info-from-svg
+  [{:keys [tag attrs] :as data}]
+  (when (not= tag :svg)
+    (ex/raise :type :validation
+              :code :unable-to-parse-svg
+              :hint "uploaded svg has invalid content"))
+  (reduce (fn [_ f]
+            (if-let [res (f attrs)]
+              (reduced res)
+              nil))
+          [(fn parse-width-and-height
+             [{:keys [width height]}]
+             (when (and (string? width)
+                        (string? height))
+               (let [width  (d/parse-double width)
+                     height (d/parse-double height)]
+                 (when (and width height)
+                   {:width (int width)
+                    :height (int height)}))))
+           (fn parse-viewbox
+             [{:keys [viewBox]}]
+             (let [[x y width height] (->> (str/split viewBox #"\s+" 4)
+                                           (map d/parse-double))]
+               (when (and x y width height)
+                 {:width (int width)
+                  :height (int height)})))]))
+
 (defmethod process :info
   [{:keys [input] :as params}]
   (us/assert ::input input)
   (let [{:keys [path mtype]} input]
-    (let [instance (Info. (str path))
+    (if (= mtype "image/svg+xml")
+      (let [data (svg/parse (slurp path))
+            info (get-basic-info-from-svg data)]
+        (when-not info
+          (ex/raise :type :validation
+                    :code :unable-to-retrieve-dimensions
+                    :hint "uploaded svg does not provides dimensions"))
+        (assoc info :mtype mtype))
 
-          ;; SVG files are converted to PNG to extract their properties
-          mtype (if (= mtype "image/svg+xml") "image/png" mtype)
-          mtype'   (.getProperty instance "Mime type")]
-      (when (and (string? mtype)
-                 (not= mtype mtype'))
-        (ex/raise :type :validation
-                  :code :media-type-mismatch
-                  :hint (str "Seems like you are uploading a file whose content does not match the extension."
-                             "Expected: " mtype ". Got: " mtype')))
-      {:width  (.getImageWidth instance)
-       :height (.getImageHeight instance)
-       :mtype  mtype'})))
+      (let [instance (Info. (str path))
+            mtype'   (.getProperty instance "Mime type")]
+        (when (and (string? mtype)
+                   (not= mtype mtype'))
+          (ex/raise :type :validation
+                    :code :media-type-mismatch
+                    :hint (str "Seems like you are uploading a file whose content does not match the extension."
+                               "Expected: " mtype ". Got: " mtype')))
+        {:width  (.getImageWidth instance)
+         :height (.getImageHeight instance)
+         :mtype  mtype}))))
 
 (defmethod process :default
   [{:keys [cmd] :as params}]

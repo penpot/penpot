@@ -91,4 +91,4 @@
   [{:keys [pool] :as storage} request]
   (let [id   (get-in request [:path-params :id])
         mobj (get-file-media-object pool id)]
-    (generic-handler storage request (:thumbnail-id mobj))))
+    (generic-handler storage request (or (:thumbnail-id mobj) (:media-id mobj)))))
