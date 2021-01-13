@@ -56,7 +56,7 @@
        (dom/prevent-default event)
        (when-not blocked
          (cond
-           (or (not= 1 button) drawing? ctrl?)
+           (or (not= 1 button) drawing? ctrl? edition)
            nil
 
            (= type :frame)
