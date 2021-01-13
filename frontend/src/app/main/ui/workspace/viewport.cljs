@@ -56,7 +56,8 @@
    [potok.core :as ptk]
    [promesa.core :as p]
    [rumext.alpha :as mf])
-  (:import goog.events.EventType))
+  (:import goog.events.EventType
+           goog.events.WheelEvent))
 
 ;; --- Coordinates Widget
 
@@ -432,7 +433,14 @@
 
                (.contains ^js node target)
                (let [event (.getBrowserEvent ^js event)
-                     delta (.-deltaY ^js event)
+                     delta-mode (.-deltaMode ^js event)
+
+                     unit (cond
+                            (= delta-mode WheelEvent.DeltaMode.PIXEL) 1
+                            (= delta-mode WheelEvent.DeltaMode.LINE) 16
+                            (= delta-mode WheelEvent.DeltaMode.PAGE) 100)
+
+                     delta (* (.-deltaY ^js event) unit)
                      delta (/ delta @refs/selected-zoom)]
                  (dom/prevent-default event)
                  (dom/stop-propagation event)
