@@ -17,6 +17,7 @@ done
 cp ./resources/log4j2-bundle.xml ./target/dist/log4j2.xml
 cp -r ./src ./target/dist/main
 cp -r ./resources/emails ./target/dist/main/
+cp -r ./resources/svgclean.js ./target/dist/main/
 cp -r ../common ./target/dist/common
 
 echo $NEWCP > ./target/dist/classpath;
