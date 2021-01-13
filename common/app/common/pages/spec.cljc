@@ -427,6 +427,8 @@
 (s/def :internal.operations.set/val any?)
 (s/def :internal.operations.set/touched
   (s/nilable (s/every keyword? :kind set?)))
+(s/def :internal.operations.set/remote-synced?
+  (s/nilable boolean?))
 
 (defmethod operation-spec :set [_]
   (s/keys :req-un [:internal.operations.set/attr
@@ -434,6 +436,9 @@
 
 (defmethod operation-spec :set-touched [_]
   (s/keys :req-un [:internal.operations.set/touched]))
+
+(defmethod operation-spec :set-remote-synced [_]
+  (s/keys :req-un [:internal.operations.set/remote-synced?]))
 
 (defmulti change-spec :type)
 

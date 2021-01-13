@@ -77,8 +77,10 @@
                     (cond-> (and (:shape-ref (get-in data [:objects parent-id]))
                                  (not= parent-id frame-id)
                                  (not ignore-touched))
-                      (update-in [:objects parent-id :touched]
-                                 cph/set-touched-group :shapes-group)))
+                      (->
+                        (update-in [:objects parent-id :touched]
+                                   cph/set-touched-group :shapes-group)
+                        (d/dissoc-in [:objects parent-id :remote-synced?]))))
                 data)))]
     (if page-id
       (d/update-in-when data [:pages-index page-id] update-fn)
@@ -110,7 +112,9 @@
                   (update-in [parent-id :shapes] (fn [s] (filterv #(not= % id) s)))
 
                   (and (:shape-ref parent) (not ignore-touched))
-                  (update-in [parent-id :touched] cph/set-touched-group :shapes-group)
+                  (->
+                    (update-in [parent-id :touched] cph/set-touched-group :shapes-group)
+                    (d/dissoc-in [parent-id :remote-synced?]))
 
                   (contains? objects frame-id)
                   (update-in [frame-id :shapes] (fn [s] (filterv #(not= % id) s)))
@@ -185,7 +189,9 @@
               (update :shapes check-insert-items parent index shapes)
 
               (and (:shape-ref parent) (= (:type parent) :group) (not ignore-touched))
-              (update :touched cph/set-touched-group :shapes-group)))
+              (->
+                (update :touched cph/set-touched-group :shapes-group)
+                (dissoc :remote-synced?))))
 
           (remove-from-old-parent [cpindex objects shape-id]
             (let [prev-parent-id (get cpindex shape-id)]
@@ -210,8 +216,10 @@
                         (and (:shape-ref obj)
                              (= (:type obj) :group)
                              (not ignore-touched))
-                        (update-in [pid :touched]
-                                   cph/set-touched-group :shapes-group))))))))
+                        (->
+                          (update-in [pid :touched]
+                                     cph/set-touched-group :shapes-group)
+                          (d/dissoc-in [pid :remote-synced?])))))))))
 
           (update-parent-id [objects id]
             (update objects id assoc :parent-id parent-id))
@@ -392,7 +400,9 @@
            ;;        touched). For the moment we disable geometry touched
            ;;        except width and height that seems to work well.
            (or (not= group :geometry-group) (#{:width :height} attr)))
-      (update :touched cph/set-touched-group group)
+      (->
+        (update :touched cph/set-touched-group group)
+        (dissoc :remote-synced?))
 
       (nil? val)
       (dissoc attr)
@@ -407,6 +417,14 @@
     (if (or (nil? shape-ref) (nil? touched) (empty? touched))
       (dissoc shape :touched)
       (assoc shape :touched touched))))
+
+(defmethod process-operation :set-remote-synced
+  [shape op]
+  (let [remote-synced? (:remote-synced? op)
+        shape-ref (:shape-ref shape)]
+    (if (or (nil? shape-ref) (not remote-synced?))
+      (dissoc shape :remote-synced?)
+      (assoc shape :remote-synced? true))))
 
 (defmethod process-operation :default
   [_ op]
