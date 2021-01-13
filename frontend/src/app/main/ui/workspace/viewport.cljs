@@ -544,8 +544,9 @@
          (fn [event]
            ;; We disable the paste just after mouse-up of a middle button so when panning won't
            ;; paste the content into the workspace
-           (when (not @disable-paste)
-             (st/emit! (dw/paste-from-event event)))))
+           (let [tag-name (-> event dom/get-target dom/get-tag-name)]
+             (when (and (not (#{"INPUT" "TEXTAREA"} tag-name)) (not @disable-paste))
+               (st/emit! (dw/paste-from-event event))))))
 
         on-resize
         (mf/use-callback
