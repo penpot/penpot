@@ -24,8 +24,9 @@
           mask  (unchecked-get props "mask")]
       [:defs
        [:filter {:id (str (:id mask) "-filter")}
-        [:feFlood {:flood-color "white"}]
-        [:feComposite {:in "BackgroundImage"
+        [:feFlood {:flood-color "white"
+                   :result "FloodResult"}]
+        [:feComposite {:in "FloodResult"
                        :in2 "SourceGraphic"
                        :operator "in"
                        :result "comp"}]]
