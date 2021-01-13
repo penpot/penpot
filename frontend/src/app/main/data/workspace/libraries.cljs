@@ -384,7 +384,8 @@
                     (geom/move $ delta)
                     (assoc $ :frame-id frame-id)
                     (assoc $ :parent-id
-                           (or (:parent-id $) (:frame-id $))))
+                           (or (:parent-id $) (:frame-id $)))
+                    (dissoc $ :touched))
 
                   (nil? (:shape-ref original-shape))
                     (assoc :shape-ref (:id original-shape))
@@ -449,6 +450,9 @@
                                            :attr :component-root?
                                            :val nil}
                                           {:type :set
+                                           :attr :remote-synced?
+                                           :val nil}
+                                          {:type :set
                                            :attr :shape-ref
                                            :val nil}
                                           {:type :set
@@ -469,6 +473,9 @@
                                           {:type :set
                                            :attr :component-root?
                                            :val (:component-root? obj)}
+                                          {:type :set
+                                           :attr :remote-synced?
+                                           :val (:remote-synced? obj)}
                                           {:type :set
                                            :attr :shape-ref
                                            :val (:shape-ref obj)}

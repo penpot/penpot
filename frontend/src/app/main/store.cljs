@@ -94,10 +94,14 @@
                                    {:length 20
                                     :type :right})
                           (show-component shape objects))
-                 (when (and show-touched (seq (:touched shape)))
-                   (println (str (str/repeat "  " level)
+                 (when show-touched
+                   (when (seq (:touched shape))
+                     (println (str (str/repeat "  " level)
                                  "    "
                                  (str (:touched shape)))))
+                   (when (:remote-synced? shape)
+                     (println (str (str/repeat "  " level)
+                                 "    (remote-synced)"))))
                  (when (:shapes shape)
                    (dorun (for [shape-id (:shapes shape)]
                             (show-shape shape-id (inc level) objects))))))
