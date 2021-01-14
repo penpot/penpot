@@ -52,6 +52,7 @@
 (declare change-remote-synced)
 (declare update-attrs)
 (declare reposition-shape)
+(declare make-change)
 
 (defn concat-changes
   [[rchanges1 uchanges1] [rchanges2 uchanges2]]
@@ -268,22 +269,20 @@
   [shape container update-node]
   (let [old-content (:content shape)
         new-content (ut/map-node update-node old-content)
-        rchanges [(as-> {:type :mod-obj
-                         :id (:id shape)
-                         :operations [{:type :set
-                                       :attr :content
-                                       :val new-content}]} $
-                    (if (cp/page? container)
-                      (assoc $ :page-id (:id container))
-                      (assoc $ :component-id (:id container))))]
-        uchanges [(as-> {:type :mod-obj
-                         :id (:id shape)
-                         :operations [{:type :set
-                                       :attr :content
-                                       :val old-content}]} $
-                    (if (cp/page? container)
-                      (assoc $ :page-id (:id container))
-                      (assoc $ :component-id (:id container))))]]
+        rchanges [(make-change
+                    container
+                    {:type :mod-obj
+                     :id (:id shape)
+                     :operations [{:type :set
+                                   :attr :content
+                                   :val new-content}]})]
+        uchanges [(make-change
+                    container
+                    {:type :mod-obj
+                     :id (:id shape)
+                     :operations [{:type :set
+                                   :attr :content
+                                   :val old-content}]})]]
 
     (if (= new-content old-content)
       empty-changes
@@ -312,18 +311,16 @@
           (if (nil? attr)
             (if (empty? roperations)
               empty-changes
-              (let [rchanges [(as-> {:type :mod-obj
-                                     :id (:id shape)
-                                     :operations roperations} $
-                                (if (cp/page? container)
-                                  (assoc $ :page-id (:id container))
-                                  (assoc $ :component-id (:id container))))]
-                    uchanges [(as-> {:type :mod-obj
-                                     :id (:id shape)
-                                     :operations uoperations} $
-                                (if (cp/page? container)
-                                  (assoc $ :page-id (:id container))
-                                  (assoc $ :component-id (:id container))))]]
+              (let [rchanges [(make-change
+                                container
+                                {:type :mod-obj
+                                 :id (:id shape)
+                                 :operations roperations})]
+                    uchanges [(make-change
+                                container
+                                {:type :mod-obj
+                                 :id (:id shape)
+                                 :operations uoperations})]]
                 [rchanges uchanges]))
             (if-not (contains? shape attr-ref-id)
               (recur (next attrs)
@@ -793,32 +790,29 @@
 
         rchanges (d/concat
                    (mapv (fn [shape']
-                           (as-> {:type :add-obj
-                                  :id (:id shape')
-                                  :parent-id (:parent-id shape')
-                                  :ignore-touched true
-                                  :obj shape'} $
-                             (cond-> $
-                               (:frame-id shape')
-                               (assoc :frame-id (:frame-id shape')))
-                             (if (cp/page? container)
-                               (assoc $ :page-id (:id container))
-                               (assoc $ :component-id (:id container)))))
+                           (make-change
+                             container
+                             (as-> {:type :add-obj
+                                    :id (:id shape')
+                                    :parent-id (:parent-id shape')
+                                    :ignore-touched true
+                                    :obj shape'} $
+                               (cond-> $
+                                 (:frame-id shape')
+                                 (assoc :frame-id (:frame-id shape'))))))
                          new-shapes)
-                   [(as-> {:type :reg-objects
-                           :shapes all-parents} $
-                      (if (cp/page? container)
-                        (assoc $ :page-id (:id container))
-                        (assoc $ :component-id (:id container))))])
+                   [(make-change
+                      container
+                      {:type :reg-objects
+                       :shapes all-parents})])
 
         uchanges (d/concat
                    (mapv (fn [shape']
-                           (as-> {:type :del-obj
-                                  :id (:id shape')
-                                  :ignore-touched true} $
-                             (if (cp/page? container)
-                               (assoc $ :page-id (:id container))
-                               (assoc $ :component-id (:id container)))))
+                           (make-change
+                             container
+                             {:type :del-obj
+                              :id (:id shape')
+                              :ignore-touched true}))
                          new-shapes))]
 
     (if (and (cp/touched-group? parent-shape :shapes-group) omit-touched?)
@@ -907,36 +901,33 @@
         parent     (first parents)
         children   (cp/get-children (:id shape) objects)
 
-        rchanges [(as-> {:type :del-obj
-                         :id (:id shape)
-                         :ignore-touched true} $
-                    (if (cp/page? container)
-                      (assoc $ :page-id (:id container))
-                      (assoc $ :component-id (:id container))))]
+        rchanges [(make-change
+                    container
+                    {:type :del-obj
+                     :id (:id shape)
+                     :ignore-touched true})]
 
         add-change (fn [id]
                      (let [shape' (get objects id)]
-                       (as-> {:type :add-obj
-                              :id id
-                              :index (cp/position-on-parent id objects)
-                              :parent-id (:parent-id shape')
-                              :ignore-touched true
-                              :obj shape'} $
-                         (cond-> $
-                           (:frame-id shape')
-                           (assoc :frame-id (:frame-id shape')))
-                         (if (cp/page? container)
-                           (assoc $ :page-id (:id container))
-                           (assoc $ :component-id (:id container))))))
+                       (make-change
+                         container
+                         (as-> {:type :add-obj
+                                :id id
+                                :index (cp/position-on-parent id objects)
+                                :parent-id (:parent-id shape')
+                                :ignore-touched true
+                                :obj shape'} $
+                           (cond-> $
+                             (:frame-id shape')
+                             (assoc :frame-id (:frame-id shape')))))))
 
         uchanges (d/concat
                    [(add-change (:id shape))]
                    (map add-change children)
-                   [(as-> {:type :reg-objects
-                           :shapes (vec parents)} $
-                      (if (cp/page? container)
-                        (assoc $ :page-id (:id container))
-                        (assoc $ :component-id (:id container))))])]
+                   [(make-change
+                      container
+                      {:type :reg-objects
+                       :shapes (vec parents)})])]
 
     (if (and (cp/touched-group? parent :shapes-group) omit-touched?)
       empty-changes
@@ -953,22 +944,20 @@
                       index-after))
   (let [parent (cp/get-shape container (:parent-id shape))
 
-        rchanges [(as-> {:type :mov-objects
-                         :parent-id (:parent-id shape)
-                         :shapes [(:id shape)]
-                         :index index-after
-                         :ignore-touched true} $
-                    (if (cp/page? container)
-                      (assoc $ :page-id (:id container))
-                      (assoc $ :component-id (:id container))))]
-        uchanges [(as-> {:type :mov-objects
-                         :parent-id (:parent-id shape)
-                         :shapes [(:id shape)]
-                         :index index-before
-                         :ignore-touched true} $
-                    (if (cp/page? container)
-                      (assoc $ :page-id (:id container))
-                      (assoc $ :component-id (:id container))))]]
+        rchanges [(make-change
+                    container
+                    {:type :mov-objects
+                     :parent-id (:parent-id shape)
+                     :shapes [(:id shape)]
+                     :index index-after
+                     :ignore-touched true})]
+        uchanges [(make-change
+                    container
+                    {:type :mov-objects
+                     :parent-id (:parent-id shape)
+                     :shapes [(:id shape)]
+                     :index index-before
+                     :ignore-touched true})]]
 
     (if (and (cp/touched-group? parent :shapes-group) omit-touched?)
       empty-changes
@@ -985,32 +974,31 @@
                           (if (cp/page? container) "[P] " "[C] ")
                           (:name dest-shape))
                 :options options)
-      (let [rchanges [(as-> {:type :mod-obj
-                             :id (:id dest-shape)
-                             :operations
-                             [{:type :set-touched
-                               :touched
-                               (cond
-                                 reset-touched?
-                                 nil
-                                 copy-touched?
-                                 (if (:remote-synced? origin-shape)
-                                   nil
-                                   (set/union
-                                     (:touched dest-shape)
-                                     (:touched origin-shape))))}]} $
-                        (if (cp/page? container)
-                          (assoc $ :page-id (:id container))
-                          (assoc $ :component-id (:id container))))]
+      (let [new-touched (cond
+                          reset-touched?
+                          nil
+                          copy-touched?
+                          (if (:remote-synced? origin-shape)
+                            nil
+                            (set/union
+                              (:touched dest-shape)
+                              (:touched origin-shape))))
 
-            uchanges [(as-> {:type :mod-obj
-                             :id (:id dest-shape)
-                             :operations
-                             [{:type :set-touched
-                               :touched (:touched dest-shape)}]} $
-                        (if (cp/page? container)
-                          (assoc $ :page-id (:id container))
-                          (assoc $ :component-id (:id container))))]]
+            rchanges [(make-change
+                        container
+                        {:type :mod-obj
+                         :id (:id dest-shape)
+                         :operations
+                         [{:type :set-touched
+                           :touched new-touched}]})]
+
+            uchanges [(make-change
+                        container
+                        {:type :mod-obj
+                         :id (:id dest-shape)
+                         :operations
+                         [{:type :set-touched
+                           :touched (:touched dest-shape)}]})]]
         [rchanges uchanges]))))
 
 (defn- change-remote-synced
@@ -1022,23 +1010,21 @@
                           (if (cp/page? container) "[P] " "[C] ")
                           (:name shape))
                 :remote-synced? remote-synced?)
-      (let [rchanges [(as-> {:type :mod-obj
-                             :id (:id shape)
-                             :operations
-                             [{:type :set-remote-synced
-                               :remote-synced? remote-synced?}]} $
-                        (if (cp/page? container)
-                          (assoc $ :page-id (:id container))
-                          (assoc $ :component-id (:id container))))]
+      (let [rchanges [(make-change
+                        container
+                        {:type :mod-obj
+                         :id (:id shape)
+                         :operations
+                         [{:type :set-remote-synced
+                           :remote-synced? remote-synced?}]})]
 
-            uchanges [(as-> {:type :mod-obj
-                             :id (:id shape)
-                             :operations
-                             [{:type :set-remote-synced
-                               :remote-synced? (:remote-synced? shape)}]} $
-                        (if (cp/page? container)
-                          (assoc $ :page-id (:id container))
-                          (assoc $ :component-id (:id container))))]]
+            uchanges [(make-change
+                        container
+                        {:type :mod-obj
+                         :id (:id shape)
+                         :operations
+                         [{:type :set-remote-synced
+                           :remote-synced? (:remote-synced? shape)}]})]]
         [rchanges uchanges]))))
 
 (defn- set-touched-shapes-group
@@ -1049,25 +1035,23 @@
       (log/info :msg (str "SET-TOUCHED-SHAPES-GROUP "
                           (if (cp/page? container) "[P] " "[C] ")
                           (:name shape)))
-      (let [rchanges [(as-> {:type :mod-obj
-                             :id (:id shape)
-                             :operations
-                             [{:type :set-touched
-                               :touched (cp/set-touched-group
-                                          (:touched shape)
-                                          :shapes-group)}]} $
-                        (if (cp/page? container)
-                          (assoc $ :page-id (:id container))
-                          (assoc $ :component-id (:id container))))]
+      (let [rchanges [(make-change
+                        container
+                        {:type :mod-obj
+                         :id (:id shape)
+                         :operations
+                         [{:type :set-touched
+                           :touched (cp/set-touched-group
+                                      (:touched shape)
+                                      :shapes-group)}]})]
 
-            uchanges [(as-> {:type :mod-obj
-                             :id (:id shape)
-                             :operations
-                             [{:type :set-touched
-                               :touched (:touched shape)}]} $
-                        (if (cp/page? container)
-                          (assoc $ :page-id (:id container))
-                          (assoc $ :component-id (:id container))))]]
+            uchanges [(make-change
+                        container
+                        {:type :mod-obj
+                         :id (:id shape)
+                         :operations
+                         [{:type :set-touched
+                           :touched (:touched shape)}]})]]
         [rchanges uchanges]))))
 
 (defn- update-attrs
@@ -1100,29 +1084,24 @@
         (if (nil? attr)
           (let [all-parents (vec (or (cp/get-parents (:id dest-shape)
                                                      (:objects container)) []))
-
-                rchanges [(as-> {:type :mod-obj
-                                 :id (:id dest-shape)
-                                 :operations roperations} $
-                            (if (cp/page? container)
-                              (assoc $ :page-id (:id container))
-                              (assoc $ :component-id (:id container))))
-                          (as-> {:type :reg-objects
-                                 :shapes all-parents} $
-                            (if (cp/page? container)
-                              (assoc $ :page-id (:id container))
-                              (assoc $ :component-id (:id container))))]
-                uchanges [(as-> {:type :mod-obj
-                                 :id (:id dest-shape)
-                                 :operations uoperations} $
-                            (if (cp/page? container)
-                              (assoc $ :page-id (:id container))
-                              (assoc $ :component-id (:id container))))
-                          (as-> {:type :reg-objects
-                                 :shapes all-parents} $
-                            (if (cp/page? container)
-                              (assoc $ :page-id (:id container))
-                              (assoc $ :component-id (:id container))))]]
+                rchanges [(make-change
+                            container
+                            {:type :mod-obj
+                             :id (:id dest-shape)
+                             :operations roperations})
+                          (make-change
+                            container
+                            {:type :reg-objects
+                             :shapes all-parents})]
+                uchanges [(make-change
+                            container
+                            {:type :mod-obj
+                             :id (:id dest-shape)
+                             :operations uoperations})
+                          (make-change
+                            container
+                            {:type :reg-objects
+                             :shapes all-parents})]]
             (if (seq roperations)
               [rchanges uchanges]
               empty-changes))
@@ -1156,3 +1135,10 @@
         dest-root-pos   (shape-pos dest-root)
         delta           (gpt/subtract dest-root-pos origin-root-pos)]
     (geom/move shape delta)))
+
+(defn- make-change
+  [container change]
+  (if (cp/page? container)
+    (assoc change :page-id (:id container))
+    (assoc change :component-id (:id container))))
+
