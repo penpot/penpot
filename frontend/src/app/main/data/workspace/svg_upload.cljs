@@ -31,6 +31,36 @@
     [width height]))
 
 
+(defn clean-attrs
+  "Transforms attributes to their react equivalent"
+  [attrs]
+  (letfn [(transform-key [key]
+            (-> (name key)
+                (str/replace ":" "-")
+                (str/camel)
+                (keyword)))
+
+          (format-styles [style-str]
+            (->> (str/split style-str ";")
+                 (map str/trim)
+                 (map #(str/split % ":"))
+                 (group-by first)
+                 (map (fn [[key val]]
+                        (vector
+                         (transform-key key)
+                         (second (first val)))))
+                 (into {})))
+
+          (map-fn [[key val]]
+            (cond
+              (= key :class) [:className val]
+              (= key :style) [key (format-styles val)]
+              :else (vector (transform-key key) val)))]
+
+    (->> attrs
+         (map map-fn)
+         (into {}))))
+
 (defn tag-name [{:keys [tag]}]
   (cond (string? tag) tag
         (keyword? tag) (name tag)
@@ -38,9 +68,15 @@
         :else (str tag)))
 
 (defn setup-fill [shape attrs]
-  (-> shape
-      (assoc :fill-color (:fill attrs "#000000"))
-      (assoc :fill-opacity (ud/parse-float (:fill-opacity attrs "1")))))
+  (let [fill-color (or (get-in attrs [:fill])
+                       (get-in attrs [:style :fill])
+                       "#000000")
+        fill-opacity (ud/parse-float (or (get-in attrs [:fill-opacity])
+                                         (get-in attrs [:style :fill-opacity])
+                                         "1"))]
+    (-> shape
+        (assoc :fill-color fill-color)
+        (assoc :fill-opacity fill-opacity))))
 
 (defn setup-stroke [shape attrs]
   (-> shape
@@ -67,7 +103,7 @@
        :height height
        :x x
        :y y
-       :content data}
+       :content (if (map? data) (update data :attrs clean-attrs) data)}
       (gsh/setup-selrect)))
 
 (defn parse-path [name frame-id {:keys [attrs] :as data}]
@@ -78,10 +114,6 @@
          :type :path
          :name name
          :frame-id frame-id
-         ;; :width width
-         ;; :height height
-         ;; :x x
-         ;; :y y
          :content content
          :selrect selrect
          :points points}

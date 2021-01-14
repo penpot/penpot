@@ -23,35 +23,6 @@
 ;; Context to store a re-mapping of the ids
 (def svg-ids-ctx (mf/create-context nil))
 
-(defn clean-attrs
-  "Transforms attributes to their react equivalent"
-  [attrs]
-  (letfn [(transform-key [key]
-            (-> (name key)
-                (str/replace ":" "-")
-                (str/camel)
-                (keyword)))
-
-          (format-styles [style-str]
-            (->> (str/split style-str ";")
-                 (map str/trim)
-                 (map #(str/split % ":"))
-                 (group-by first)
-                 (map (fn [[key val]]
-                        (vector
-                         (transform-key key)
-                         (second (first val)))))
-                 (into {})))
-
-          (map-fn [[key val]]
-            (cond
-              (= key :style) [key (format-styles val)]
-              :else (vector (transform-key key) val)))]
-
-    (->> attrs
-         (map map-fn)
-         (into {}))))
-
 (defn vbox->rect
   "Converts the viewBox into a rectangle"
   [vbox]
@@ -106,18 +77,24 @@
 
                 ;; Replaces the attributes ID's so there are no collisions between shapes
                 replace-ids
-                (fn [key val]
-                  (let [[_ from-id] (re-matches rex val)]
-                    (if (and from-id (contains? ids-mapping from-id))
-                      (str/replace val from-id (get ids-mapping from-id))
-                      val)))
+                (fn replace-ids [key val]
+                  (if (map? val)
+                    (cd/mapm replace-ids val)
+                    (let [[_ from-id] (re-matches rex val)]
+                      (if (and from-id (contains? ids-mapping from-id))
+                        (str/replace val from-id (get ids-mapping from-id))
+                        val))))
 
-                attrs (->> attrs
-                           (cd/mapm replace-ids)
-                           (clean-attrs))
+                attrs (cd/mapm replace-ids attrs)
 
-                attrs  (obj/merge! (clj->js attrs)
-                                   (usa/extract-style-attrs shape))
+                custom-attrs (usa/extract-style-attrs shape)
+
+                style (obj/merge! (clj->js (:style attrs {}))
+                                  (obj/get custom-attrs "style"))
+
+                attrs  (-> (clj->js attrs)
+                           (obj/merge! custom-attrs)
+                           (obj/set! "style" style))
 
                 element-id (get-in content [:attrs :id])]
 

@@ -3,6 +3,7 @@ const plugins = [
     {removeScriptElement: true},
     {removeViewBox: false},
     {moveElemsAttrsToGroup: false},
+    {convertStyleToAttrs: false},
     {convertPathData: {
       lineShorthands: false,
       curveSmoothShorthands: false,

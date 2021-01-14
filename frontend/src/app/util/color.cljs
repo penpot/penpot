@@ -114,3 +114,7 @@
       (= color :multiple)
       (= gradient :multiple)
       (and gradient color)))
+
+(defn parse-color [^string color-str]
+  (let [result (gcolor/parse color-str)]
+    (str (.-hex ^js result))))
