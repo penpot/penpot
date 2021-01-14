@@ -427,9 +427,11 @@
                      pos   @ms/mouse-position]
                  (dom/prevent-default event)
                  (dom/stop-propagation event)
-                 (if (pos? (.-deltaY event))
-                   (st/emit! (dw/decrease-zoom pos))
-                   (st/emit! (dw/increase-zoom pos))))
+                 (let [delta (+ (.-deltaY ^js event)
+                                (.-deltaX ^js event))]
+                   (if (pos? delta)
+                     (st/emit! (dw/decrease-zoom pos))
+                     (st/emit! (dw/increase-zoom pos)))))
 
                (.contains ^js node target)
                (let [event (.getBrowserEvent ^js event)
@@ -440,13 +442,18 @@
                             (= delta-mode WheelEvent.DeltaMode.LINE) 16
                             (= delta-mode WheelEvent.DeltaMode.PAGE) 100)
 
-                     delta (* (.-deltaY ^js event) unit)
-                     delta (/ delta @refs/selected-zoom)]
+                     delta-y (-> (.-deltaY ^js event)
+                                 (* unit)
+                                 (/ @refs/selected-zoom))
+                     delta-x (-> (.-deltaX ^js event)
+                                 (* unit)
+                                 (/ @refs/selected-zoom))]
                  (dom/prevent-default event)
                  (dom/stop-propagation event)
                  (if (kbd/shift? event)
-                   (st/emit! (dw/update-viewport-position {:x #(+ % delta)}))
-                   (st/emit! (dw/update-viewport-position {:y #(+ % delta)}))))))))
+                   (st/emit! (dw/update-viewport-position {:x #(+ % delta-y)}))
+                   (st/emit! (dw/update-viewport-position {:x #(+ % delta-x)
+                                                           :y #(+ % delta-y)}))))))))
 
         on-drag-enter
         (mf/use-callback
@@ -544,8 +551,9 @@
          (fn [event]
            ;; We disable the paste just after mouse-up of a middle button so when panning won't
            ;; paste the content into the workspace
-           (when (not @disable-paste)
-             (st/emit! (dw/paste-from-event event)))))
+           (let [tag-name (-> event dom/get-target dom/get-tag-name)]
+             (when (and (not (#{"INPUT" "TEXTAREA"} tag-name)) (not @disable-paste))
+               (st/emit! (dw/paste-from-event event))))))
 
         on-resize
         (mf/use-callback

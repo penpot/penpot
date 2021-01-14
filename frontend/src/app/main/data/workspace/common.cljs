@@ -16,6 +16,7 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.worker :as uw]
+   [app.main.streams :as ms]
    [app.util.logging :as log]
    [app.util.timers :as ts]
    [beicon.core :as rx]
@@ -558,10 +559,12 @@
             name (-> objects
                      (retrieve-used-names)
                      (generate-unique-name (:name attrs)))
+
+            position @ms/mouse-position
             frame-id (if (= :frame (:type attrs))
                        uuid/zero
                        (or (:frame-id attrs)
-                           (cp/frame-id-by-position objects attrs)))
+                           (cp/frame-id-by-position objects position)))
 
             [rchanges uchanges] (add-shape-changes page-id (assoc attrs
                                                                   :id id

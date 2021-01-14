@@ -34,7 +34,7 @@
       (:fill-color-gradient shape)
       (obj/merge! attrs #js {:fill (str/format "url(#%s)" fill-color-gradient-id)})
 
-      (or (:fill-color shape) (:fill-opacity shape))
+      (not (:fill-color-gradient shape))
       (obj/merge! attrs #js {:fill (or (:fill-color shape) "transparent")
                              :fillOpacity (:fill-opacity shape nil)})
 

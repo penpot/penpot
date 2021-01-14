@@ -19,7 +19,7 @@
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [t]]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -34,8 +34,16 @@
         id          (:id page)
 
         delete-fn   (mf/use-callback (mf/deps id) #(st/emit! (dw/delete-page id)))
-        on-delete   (mf/use-callback (mf/deps id) #(modal/show! :confirm {:on-accept delete-fn}))
         navigate-fn (mf/use-callback (mf/deps id) #(st/emit! (dw/go-to-page id)))
+
+        on-delete
+        (mf/use-callback
+         (mf/deps id)
+         (st/emitf (modal/show
+                    {:type :confirm
+                     :title (tr "modals.delete-page.title")
+                     :message (tr "modals.delete-page.body")
+                     :on-accept delete-fn})))
 
         on-double-click
         (mf/use-callback
@@ -136,7 +144,7 @@
   (let [pages           (:pages file)
         deletable?      (> (count pages) 1)
         current-page-id (mf/use-ctx ctx/current-page-id)]
-    [:ul.element-list
+    [:ul.element-list.pages-list
      [:& hooks/sortable-container {}
       (for [[index page-id] (d/enumerate pages)]
         [:& page-item-wrapper
@@ -151,7 +159,6 @@
 (mf/defc sitemap
   [{:keys [layout] :as props}]
   (let [create      (mf/use-callback #(st/emit! dw/create-empty-page))
-        locale      (mf/deref i18n/locale)
         show-pages? (mf/use-state true)
 
         file        (mf/deref refs/workspace-file)
@@ -161,7 +168,7 @@
 
     [:div.sitemap.tool-window
      [:div.tool-window-bar
-      [:span (t locale "workspace.sidebar.sitemap")]
+      [:span (tr "workspace.sidebar.sitemap")]
       [:div.add-page {:on-click create} i/close]
       [:div.collapse-pages {:on-click toggle-pages} i/arrow-slide]]
 

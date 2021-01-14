@@ -103,9 +103,10 @@
         (mf/use-callback
          (mf/deps max-offset)
          (fn [event]
-           (if (pos? (.. event -nativeEvent -deltaY))
-             (on-right-arrow-click event)
-             (on-left-arrow-click event))))
+           (let [delta (+ (.. event -nativeEvent -deltaY) (.. event -nativeEvent -deltaX))]
+             (if (pos? delta)
+               (on-right-arrow-click event)
+               (on-left-arrow-click event)))))
 
         on-resize
         (mf/use-callback

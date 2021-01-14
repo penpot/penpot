@@ -120,9 +120,13 @@
 
         extremities (mapcat calc-extremities
                             content
-                            (d/concat [nil] content))]
+                            (d/concat [nil] content))
 
-    (gpr/points->selrect extremities)))
+        selrect (gpr/points->selrect extremities)]
+
+    (-> selrect
+        (update :width #(if (mth/almost-zero? %) 1 %))
+        (update :height #(if (mth/almost-zero? %) 1 %)))))
 
 (defn transform-content [content transform]
   (let [set-tr (fn [params px py]

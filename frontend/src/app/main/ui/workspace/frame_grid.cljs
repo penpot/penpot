@@ -10,6 +10,7 @@
 (ns app.main.ui.workspace.frame-grid
   (:require
    [rumext.alpha :as mf]
+   [okulary.core :as l]
    [app.main.refs :as refs]
    [app.common.math :as mth]
    [app.common.pages :as cp]
@@ -81,10 +82,17 @@
             :row    [:> layout-grid props]))))))
 
 
+(def shapes-moving-ref
+  (let [moving-shapes (fn [local]
+                        (when (= :move (:transform local))
+                          (:selected local)))]
+    (l/derived moving-shapes refs/workspace-local)))
+
 (mf/defc frame-grid [{:keys [zoom]}]
-  (let [frames (mf/deref refs/workspace-frames)]
+  (let [frames (mf/deref refs/workspace-frames)
+        shapes-moving (mf/deref shapes-moving-ref)]
     [:g.grid-display {:style {:pointer-events "none"}}
-     (for [frame frames]
+     (for [frame (->> frames (remove #(contains? shapes-moving (:id %))))]
        [:& grid-display-frame {:key (str "grid-" (:id frame))
                                :zoom zoom
                                :frame (gsh/transform-shape frame)}])]))

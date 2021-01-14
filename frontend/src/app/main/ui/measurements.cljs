@@ -148,9 +148,9 @@
                        :else 0)
 
         offset-y (cond (< rect-y (:y bounds)) (- (:y bounds) rect-y)
-                         (> (+ rect-y distance-pill-height) (+ (:y bounds) bounds-height))
-                         (- (+ (:y bounds) bounds-height) (+ rect-y distance-pill-height))
-                         :else 0)]
+                       (> (+ rect-y distance-pill-height) (+ (:y bounds) bounds-height))
+                       (- (+ (:y bounds) bounds-height) (+ rect-y distance-pill-height (/ distance-pill-height 2)))
+                       :else 0)]
     [:g.distance-pill
      [:rect {:x (+ rect-x offset-x)
              :y (+ rect-y offset-y)
@@ -197,7 +197,9 @@
         h-lines (->> (calculate-distance-lines (:x1 from) (:x2 from) (:x1 to) (:x2 to))
                      (map (fn [[start end]] [start fixed-y end fixed-y])))
 
-        lines (d/concat [] v-lines h-lines)]
+        lines (d/concat [] v-lines h-lines)
+
+        distance-line-stroke (/ distance-line-stroke zoom)]
 
     (for [[x1 y1 x2 y2] lines]
       (let [center-x (+ x1 (/ (- x2 x1) 2))
