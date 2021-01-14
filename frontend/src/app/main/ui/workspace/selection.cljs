@@ -42,6 +42,7 @@
 (def selection-rect-color-normal "#1FDEA7")
 (def selection-rect-color-component "#00E0FF")
 (def selection-rect-width 1)
+(def min-selrect-side 10)
 
 (mf/defc selection-rect [{:keys [transform rect zoom color]}]
   (when rect
@@ -57,56 +58,65 @@
                 :fill "transparent"}}])))
 
 (defn- handlers-for-selection [{:keys [x y width height]}]
-  [;; TOP-LEFT
-   {:type :rotation
-    :position :top-left
-    :props {:cx x :cy y}}
+  (->>
+   [ ;; TOP-LEFT
+    {:type :rotation
+     :position :top-left
+     :props {:cx x :cy y}}
 
-   {:type :resize-point
-    :position :top-left
-    :props {:cx x :cy y}}
+    (when (and (> width min-selrect-side) (> height min-selrect-side))
+      {:type :resize-point
+       :position :top-left
+       :props {:cx x :cy y}})
 
-   {:type :rotation
-    :position :top-right
-    :props {:cx (+ x width) :cy y}}
+    {:type :rotation
+     :position :top-right
+     :props {:cx (+ x width) :cy y}}
 
-   {:type :resize-point
-    :position :top-right
-    :props {:cx (+ x width) :cy y}}
+    (when (and (> width min-selrect-side) (> height min-selrect-side))
+      {:type :resize-point
+       :position :top-right
+       :props {:cx (+ x width) :cy y}})
 
-   {:type :rotation
-    :position :bottom-right
-    :props {:cx (+ x width) :cy (+ y height)}}
+    {:type :rotation
+     :position :bottom-right
+     :props {:cx (+ x width) :cy (+ y height)}}
 
-   {:type :resize-point
-    :position :bottom-right
-    :props {:cx (+ x width) :cy (+ y height)}}
+    (when (and (> width min-selrect-side) (> height min-selrect-side))
+      {:type :resize-point
+       :position :bottom-right
+       :props {:cx (+ x width) :cy (+ y height)}})
 
-   {:type :rotation
-    :position :bottom-left
-    :props {:cx x :cy (+ y height)}}
+    {:type :rotation
+     :position :bottom-left
+     :props {:cx x :cy (+ y height)}}
 
-   {:type :resize-point
-    :position :bottom-left
-    :props {:cx x :cy (+ y height)}}
+    (when (and (> width min-selrect-side) (> height min-selrect-side))
+      {:type :resize-point
+       :position :bottom-left
+       :props {:cx x :cy (+ y height)}})
 
-   {:type :resize-side
-    :position :top
-    :props {:x x :y y :length width :angle 0 }}
+    (when (> height min-selrect-side)
+      {:type :resize-side
+       :position :top
+       :props {:x x :y y :length width :angle 0 }})
 
-   {:type :resize-side
-    :position :right
-    :props {:x (+ x width) :y y :length height :angle 90 }}
+    (when (> width min-selrect-side)
+      {:type :resize-side
+       :position :right
+       :props {:x (+ x width) :y y :length height :angle 90 }})
 
-   {:type :resize-side
-    :position :bottom
-    :props {:x (+ x width) :y (+ y height) :length width :angle 180 }}
+    (when (> height min-selrect-side)
+      {:type :resize-side
+       :position :bottom
+       :props {:x (+ x width) :y (+ y height) :length width :angle 180 }})
 
-   {:type :resize-side
-    :position :left
-    :props {:x x :y (+ y height) :length height :angle 270 }}
+    (when (> width min-selrect-side)
+      {:type :resize-side
+       :position :left
+       :props {:x x :y (+ y height) :length height :angle 270 }})]
 
-   ])
+   (filterv (comp not nil?))))
 
 (mf/defc rotation-handler [{:keys [cx cy transform position rotation zoom on-rotate]}]
   (let [size (/ rotation-handler-size zoom)
@@ -171,6 +181,17 @@
                     :cursor (if (#{:left :right} position)
                               (cur/resize-ew rotation)
                               (cur/resize-ns rotation)) }}]))
+
+(defn minimum-selrect [{:keys [x y width height] :as selrect}]
+  (let [final-width (max width min-selrect-side)
+        final-height (max height min-selrect-side)
+        offset-x (/ (- final-width width) 2)
+        offset-y (/ (- final-height height) 2)]
+    {:x (- x offset-x)
+     :y (- y offset-y)
+     :width final-width
+     :height final-height}))
+
 (mf/defc controls
   {::mf/wrap-props false}
   [props]
@@ -181,7 +202,8 @@
         on-rotate (obj/get props "on-rotate")
         current-transform (mf/deref refs/current-transform)
 
-        selrect (:selrect shape)
+        selrect (-> (:selrect shape)
+                    minimum-selrect)
         transform (geom/transform-matrix shape {:no-flip true})]
 
     (when (not (#{:move :rotate} current-transform))
