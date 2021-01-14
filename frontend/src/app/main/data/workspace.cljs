@@ -366,8 +366,8 @@
 
                 :else
                 (assoc local :vbox (assoc size
-                                          :x (- (:x srect) 40)
-                                          :y (- (:y srect) 40))))))
+                                          :x (+ (:x srect) (/ (- (:width srect) width) 2))
+                                          :y (+ (:y srect) (/ (- (:height srect) height) 2)))))))
 
           (setup [state local]
             (if (:vbox local)
