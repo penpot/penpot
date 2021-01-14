@@ -111,11 +111,6 @@
         and (ppr.is_admin = true or
              ppr.is_owner = true or
              ppr.can_edit = true)
-      union
-     select p.*
-       from project as p
-      where p.team_id = uuid_nil()
-        and p.deleted_at is null
    )
    select distinct f.*
      from file as f
