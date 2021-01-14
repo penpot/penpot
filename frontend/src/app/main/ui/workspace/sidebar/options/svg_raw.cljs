@@ -12,6 +12,7 @@
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
    [app.util.data :as d]
+   [app.util.color :as uc]
    [app.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
    [app.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]
@@ -28,29 +29,27 @@
     (str "#" r r g g b b)))
 
 (defn parse-color [color]
-  (cond
-    (or (not color) (= color "none")) nil
+  (try
+    (cond
+      (or (not color) (= color "none")) nil
 
-    (and (str/starts-with? color "#") (= (count color) 4))
-    {:color (shorthex->longhex color)
-     :opacity 1}
+      ;; TODO CHECK IF IT'S A GRADIENT
+      (str/starts-with? color "url")
+      {:color :multiple
+       :opacity :multiple}
 
-    (and (str/starts-with? color "#") (= (count color) 9))
-    {:color (subs color 1 6)
-     :opacity (-> (subs color 7 2) (hex->number))}
+      :else {:color (uc/parse-color color)
+             :opacity 1})
 
-    ;; TODO CHECK IF IT'S A GRADIENT
-
-    (str/starts-with? color "url")
-    {:color :multiple
-     :opacity :multiple}
-
-    :else nil))
+    (catch :default e
+      (.error js/console "Error parsing color" e)
+      nil)))
 
 
 (defn get-fill-values [shape]
   (let [fill-values (or (select-keys shape fill-attrs))
-        color (-> (get-in shape [:content :attrs :fill])
+        color (-> (or (get-in shape [:content :attrs :fill])
+                      (get-in shape [:content :attrs :style :fill]))
                   (parse-color))
 
         fill-values (if (and (empty? fill-values) color)
@@ -61,15 +60,20 @@
 
 (defn get-stroke-values [shape]
   (let [stroke-values (or (select-keys shape stroke-attrs))
-        color (-> (get-in shape [:content :attrs :stroke])
+        color (-> (or (get-in shape [:content :attrs :stroke])
+                      (get-in shape [:content :attrs :style :stroke]))
                   (parse-color))
 
         stroke-color (:color color "#000000")
         stroke-opacity (:opacity color 1)
-        stroke-style (-> (get-in shape [:content :attrs :stroke-style] (if color "solid" "none"))
+        stroke-style (-> (or (get-in shape [:content :attrs :stroke-style])
+                             (get-in shape [:content :attrs :style :stroke-style])
+                             (if color "solid" "none"))
                          keyword)
         stroke-alignment :center
-        stroke-width (-> (get-in shape [:content :attrs :stroke-width] "1")
+        stroke-width (-> (or (get-in shape [:content :attrs :stroke-width])
+                             (get-in shape [:content :attrs :style :stroke-width])
+                             "1")
                          (d/parse-int))
 
         stroke-values (if (empty? stroke-values)

@@ -34,8 +34,14 @@
       (:fill-color-gradient shape)
       (obj/merge! attrs #js {:fill (str/format "url(#%s)" fill-color-gradient-id)})
 
-      (not (:fill-color-gradient shape))
+      (and (not= :svg-raw (:type shape))
+           (not (:fill-color-gradient shape)))
       (obj/merge! attrs #js {:fill (or (:fill-color shape) "transparent")
+                             :fillOpacity (:fill-opacity shape nil)})
+
+      (and (= :svg-raw (:type shape))
+           (or (:fill-opacity shape) (:fill-color shape)))
+      (obj/merge! attrs #js {:fill (:fill-color shape)
                              :fillOpacity (:fill-opacity shape nil)})
 
       :else attrs)))
@@ -58,8 +64,10 @@
 
 (defn extract-style-attrs
   ([shape]
-   (let [render-id (mf/use-ctx muc/render-ctx)]
+   (let [render-id (mf/use-ctx muc/render-ctx)
+         styles (-> (obj/new)
+                    (add-fill shape render-id)
+                    (add-stroke shape render-id))]
      (-> (obj/new)
          (add-border-radius shape)
-         (add-fill shape render-id)
-         (add-stroke shape render-id)))))
+         (obj/set! "style" styles)))))
