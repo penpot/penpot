@@ -127,7 +127,7 @@
       (d/update-in-when data [:pages-index page-id :objects] delete-object id)
       (d/update-in-when data [:components component-id :objects] delete-object id))))
 
-;; reg-objects operation "regenerates" the values for the parent groups
+;; reg-objects operation "regenerates" the geometry and selrect of the parent groups
 (defmethod process-change :reg-objects
   [data {:keys [page-id component-id shapes]}]
   (letfn [(reg-objects [objects]
