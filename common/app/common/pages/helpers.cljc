@@ -299,7 +299,7 @@
   (let [frames (select-frames objects)]
     (or
      (->> frames
-          (d/seek #(gsh/has-point? % position))
+          (d/seek #(and position (gsh/has-point? % position)))
           :id)
      uuid/zero)))
 

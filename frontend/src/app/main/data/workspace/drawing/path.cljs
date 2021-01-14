@@ -24,7 +24,8 @@
    [app.main.store :as st]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing.common :as common]
-   [app.common.geom.shapes.path :as gsp]))
+   [app.common.geom.shapes.path :as gsp]
+   [app.common.pages :as cp]))
 
 ;; SCHEMAS
 
@@ -269,8 +270,7 @@
             fix-angle? shift?
             {:keys [last-point prev-handler]} (get-in state [:workspace-local :edit-path id])
             position (cond-> (gpt/point x y)
-                       fix-angle? (position-fixed-angle last-point))
-            ]
+                       fix-angle? (position-fixed-angle last-point))]
         (if-not (= last-point position)
           (-> state
               (assoc-in  [:workspace-local :edit-path id :last-point] position)
@@ -809,6 +809,18 @@
             (assoc-in [:workspace-local :edit-path id :selected-handlers] #{})
             (assoc-in [:workspace-local :edit-path id :selected-points] #{}))))))
 
+(defn setup-frame-path []
+  (ptk/reify ::setup-frame-path
+    ptk/UpdateEvent
+    (update [_ state]
+
+      (let [objects (dwc/lookup-page-objects state)
+            content (get-in state [:workspace-drawing :object :content] [])
+            position (get-in content [0 :params] nil)
+            frame-id  (cp/frame-id-by-position objects position)]
+        (-> state
+            (assoc-in [:workspace-drawing :object :frame-id] frame-id))))))
+
 (defn handle-new-shape-result [shape-id]
   (ptk/reify ::handle-new-shape-result
     ptk/UpdateEvent
@@ -821,7 +833,8 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (->> (rx/of common/handle-finish-drawing
+      (->> (rx/of (setup-frame-path)
+                  common/handle-finish-drawing
                   (dwc/start-edition-mode shape-id)
                   (start-path-edit shape-id)
                   (change-edit-mode :draw))))))

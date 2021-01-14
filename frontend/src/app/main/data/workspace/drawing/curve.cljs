@@ -16,7 +16,9 @@
    [app.common.geom.shapes.path :as gsp]
    [app.main.streams :as ms]
    [app.util.geom.path :as path]
-   [app.main.data.workspace.drawing.common :as common]))
+   [app.main.data.workspace.drawing.common :as common]
+   [app.main.data.workspace.common :as dwc]
+   [app.common.pages :as cp]))
 
 (def simplify-tolerance 0.3)
 
@@ -27,7 +29,6 @@
   (assoc-in state [:workspace-drawing :object :initialized?] true))
 
 (defn insert-point-segment [state point]
-
   (let [segments (-> state
                      (get-in [:workspace-drawing :object :segments])
                      (or [])
@@ -42,7 +43,17 @@
                    :selrect selrect
                    :points points))))
 
+(defn setup-frame-curve []
+  (ptk/reify ::setup-frame-path
+    ptk/UpdateEvent
+    (update [_ state]
 
+      (let [objects (dwc/lookup-page-objects state)
+            content (get-in state [:workspace-drawing :object :content] [])
+            position (get-in content [0 :params] nil)
+            frame-id  (cp/frame-id-by-position objects position)]
+        (-> state
+            (assoc-in [:workspace-drawing :object :frame-id] frame-id))))))
 
 (defn curve-to-path [{:keys [segments] :as shape}]
   (let [content (gsp/segments->content segments)
@@ -74,5 +85,6 @@
          (->> mouse
               (rx/map (fn [pt] #(insert-point-segment % pt)))
               (rx/take-until stoper))
-         (rx/of finish-drawing-curve
+         (rx/of (setup-frame-curve)
+                finish-drawing-curve
                 common/handle-finish-drawing))))))
