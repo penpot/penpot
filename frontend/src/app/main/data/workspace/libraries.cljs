@@ -35,6 +35,35 @@
 ;; Change this to :info :debug or :trace to debug this module
 (log/set-level! :warn)
 
+(defn- log-changes
+  [changes local-library]
+  (let [extract-change
+        (fn [change]
+          (let [shape (when (:id change)
+                        (cond
+                          (:page-id change)
+                          (get-in local-library [:pages-index
+                                                 (:page-id change)
+                                                 :objects
+                                                 (:id change)])
+                          (:component-id change)
+                          (get-in local-library [:components
+                                                 (:component-id change)
+                                                 :objects
+                                                 (:id change)])
+                          :default nil))
+
+                prefix (if (:component-id change) "[C] " "[P] ")
+
+                extract (cond-> {:type (:type change)
+                                 :change change}
+                          shape
+                          (assoc :shape (str prefix (:name shape)))
+                          (:operations change)
+                          (assoc :operations (:operations change)))]
+            extract))]
+    (map extract-change changes)))
+
 (declare sync-file)
 
 (defn default-color-name [color]
@@ -532,7 +561,9 @@
                                              local-library
                                              libraries
                                              true)]
-        (log/debug :msg "RESET-COMPONENT finished" :js/rchanges rchanges)
+        (log/debug :msg "RESET-COMPONENT finished" :js/rchanges (log-changes
+                                                                  rchanges
+                                                                  local-library))
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 
@@ -546,13 +577,17 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (log/info :msg "UPDATE-COMPONENT of shape" :id (str id))
-      (let [[rchanges uchanges]
+      (let [local-library (dwlh/get-local-library state)
+            libraries     (dwlh/get-libraries state)
+            [rchanges uchanges]
             (dwlh/generate-sync-shape-inverse (get state :current-page-id)
                                               id
-                                              (dwlh/get-local-library state)
-                                              (dwlh/get-libraries state))]
+                                              local-library
+                                              libraries)]
 
-        (log/debug :msg "UPDATE-COMPONENT finished" :js/rchanges rchanges)
+        (log/debug :msg "UPDATE-COMPONENT finished" :js/rchanges (log-changes
+                                                                   rchanges
+                                                                   local-library))
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 
@@ -575,7 +610,8 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (log/info :msg "SYNC-FILE" :file (if (= file-id (:current-file-id state)) "local" (str file-id)))
-      (let [library-changes [(dwlh/generate-sync-library :components file-id state)
+      (let [local-library (dwlh/get-local-library state)
+            library-changes [(dwlh/generate-sync-library :components file-id state)
                              (dwlh/generate-sync-library :colors file-id state)
                              (dwlh/generate-sync-library :typographies file-id state)]
             file-changes    [(dwlh/generate-sync-file :components file-id state)
@@ -587,7 +623,9 @@
             uchanges (d/concat []
                                (->> library-changes (remove nil?) (map second) (flatten))
                                (->> file-changes (remove nil?) (map second) (flatten)))]
-        (log/debug :msg "SYNC-FILE finished" :js/rchanges rchanges)
+        (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
+                                                            rchanges
+                                                            local-library))
         (rx/concat
           (rx/of (dm/hide-tag :sync-dialog))
           (when rchanges
@@ -614,12 +652,15 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (log/info :msg "SYNC-FILE (2nd stage)" :file (if (= file-id (:current-file-id state)) "local" (str file-id)))
-      (let [[rchanges1 uchanges1] (dwlh/generate-sync-file :components file-id state)
+      (let [local-library (dwlh/get-local-library state)
+            [rchanges1 uchanges1] (dwlh/generate-sync-file :components file-id state)
             [rchanges2 uchanges2] (dwlh/generate-sync-library :components file-id state)
             rchanges (d/concat rchanges1 rchanges2)
             uchanges (d/concat uchanges1 uchanges2)]
         (when rchanges
-          (log/debug :msg "SYNC-FILE (2nd stage) finished" :js/rchanges rchanges)
+          (log/debug :msg "SYNC-FILE (2nd stage) finished" :js/rchanges (log-changes
+                                                                          rchanges
+                                                                          local-library))
           (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})))))))
 
 (def ignore-sync
