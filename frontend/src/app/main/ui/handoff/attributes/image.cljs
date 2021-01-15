@@ -20,6 +20,17 @@
 (defn has-image? [shape]
   (and (= (:type shape) :image)))
 
+(defn mtype->extension [mtype]
+  ;; https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types
+  (case mtype
+    "image/apng"    "apng"
+    "image/avif"    "avif"
+    "image/gif"     "gif"
+    "image/jpeg"    "jpg"
+    "image/png"     "png"
+    "image/svg+xml" "svg"
+    "image/webp"    "webp"))
+
 (mf/defc image-panel [{:keys [shapes locale]}]
   (let [shapes (->> shapes (filter has-image?))]
     (for [shape shapes]
@@ -38,8 +49,9 @@
         [:div.attributes-value (-> shape :metadata :height) "px"]
         [:& copy-button {:data (cg/generate-css-props shape :height)}]]
 
-       (let [filename (last (str/split (-> shape :metadata :path) "/"))]
+       (let [mtype (-> shape :metadata :mtype)
+             name (:name shape)]
          [:a.download-button {:target "_blank"
-                              :download filename
+                              :download (str name "." (mtype->extension mtype))
                               :href (cfg/resolve-file-media (-> shape :metadata))}
           (t locale "handoff.attributes.image.download")])])))
