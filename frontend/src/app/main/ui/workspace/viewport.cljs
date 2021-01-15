@@ -254,6 +254,7 @@
         zoom-view-ref (mf/use-ref nil)
         last-position (mf/use-var nil)
         disable-paste (mf/use-var false)
+        in-viewport?  (mf/use-var false)
         drawing       (mf/deref refs/workspace-drawing)
         drawing-tool  (:tool drawing)
         drawing-obj   (:object drawing)
@@ -553,7 +554,7 @@
            ;; paste the content into the workspace
            (let [tag-name (-> event dom/get-target dom/get-tag-name)]
              (when (and (not (#{"INPUT" "TEXTAREA"} tag-name)) (not @disable-paste))
-               (st/emit! (dw/paste-from-event event))))))
+               (st/emit! (dw/paste-from-event event @in-viewport?))))))
 
         on-resize
         (mf/use-callback
@@ -640,6 +641,8 @@
        :on-mouse-up on-mouse-up
        :on-pointer-down on-pointer-down
        :on-pointer-up on-pointer-up
+       :on-pointer-enter #(reset! in-viewport? true)
+       :on-pointer-leave #(reset! in-viewport? false)
        :on-drag-enter on-drag-enter
        :on-drag-over on-drag-over
        :on-drop on-drop}

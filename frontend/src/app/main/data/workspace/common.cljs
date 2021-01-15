@@ -524,22 +524,47 @@
             (update-in [:workspace-local :hover] disj id)
             (update :workspace-local dissoc :edition))))))
 
+(defn get-shape-layer-position
+  [objects selected attrs]
+
+  (cond
+    (= :frame (:type attrs))
+    [uuid/zero uuid/zero nil]
+
+    (empty? selected)
+    (let [position @ms/mouse-position
+          frame-id (:frame-id attrs (cp/frame-id-by-position objects position))]
+      [frame-id frame-id nil])
+
+    :else
+    (let [shape (cp/get-base-shape objects selected)
+          index (cp/position-on-parent (:id shape) objects)
+          {:keys [frame-id parent-id]} shape]
+      [frame-id parent-id (inc index)])))
+
 (defn add-shape-changes
-  [page-id attrs]
-  (let [id       (:id attrs)
-        frame-id (:frame-id attrs)
-        shape    (gpr/setup-proportions attrs)
+  [page-id objects selected attrs]
+  (let [id    (:id attrs)
+        shape (gpr/setup-proportions attrs)
 
         default-attrs (if (= :frame (:type shape))
                         cp/default-frame-attrs
                         cp/default-shape-attrs)
+
         shape    (merge default-attrs shape)
+
+        [frame-id parent-id index] (get-shape-layer-position objects selected attrs)
 
         redo-changes  [{:type :add-obj
                         :id id
                         :page-id page-id
                         :frame-id frame-id
-                        :obj shape}]
+                        :parent-id parent-id
+                        :index index
+                        :obj shape}
+                       {:type :reg-objects
+                        :page-id page-id
+                        :shapes [id]}]
         undo-changes  [{:type :del-obj
                         :page-id page-id
                         :id id}]]
@@ -560,16 +585,15 @@
                      (retrieve-used-names)
                      (generate-unique-name (:name attrs)))
 
-            position @ms/mouse-position
-            frame-id (if (= :frame (:type attrs))
-                       uuid/zero
-                       (or (:frame-id attrs)
-                           (cp/frame-id-by-position objects position)))
+            selected (get-in state [:workspace-local :selected])
 
-            [rchanges uchanges] (add-shape-changes page-id (assoc attrs
-                                                                  :id id
-                                                                  :frame-id frame-id
-                                                                  :name name))]
+            [rchanges uchanges] (add-shape-changes
+                                 page-id
+                                 objects
+                                 selected
+                                 (-> attrs
+                                     (assoc :id id )
+                                     (assoc :name name)))]
         (rx/concat
          (rx/of (commit-changes rchanges uchanges {:commit-local? true})
                 (select-shapes (d/ordered-set id)))

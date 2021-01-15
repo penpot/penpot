@@ -60,8 +60,7 @@
                 (rx/of (dwc/start-undo-transaction))
                 (rx/empty))
 
-              (rx/of (dws/deselect-all)
-                     (dwc/add-shape shape))
+              (rx/of (dwc/add-shape shape))
 
               (if (= :frame (:type shape))
                 (->> (uw/ask! {:cmd :selection/query

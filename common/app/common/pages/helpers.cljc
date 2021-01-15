@@ -311,3 +311,16 @@
   [shape group]
   ((or (:touched shape) #{}) group))
 
+(defn get-base-shape
+  "Selects the shape that will be the base to add the shapes over"
+  [objects selected]
+  (let [;; Gets the tree-index for all the shapes
+        indexed-shapes (indexed-shapes objects)
+
+        ;; Filters the selected and retrieve a list of ids
+        sorted-ids (->> indexed-shapes
+                        (filter (comp selected second))
+                        (map second))]
+
+    ;; The first id will be the top-most
+    (get objects (first sorted-ids))))
