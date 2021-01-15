@@ -46,7 +46,7 @@
    :registration-enabled true
    :registration-domain-whitelist ""
 
-   :telemetry-enabled true
+   :telemetry-enabled false
    :telemetry-uri "http://localhost:6063/"
 
    :debug true

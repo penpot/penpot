@@ -181,7 +181,8 @@
       (when (:telemetry-enabled cfg/config)
         {:id "telemetry"
          :cron #app/cron "0 0 */3 * * ?" ;; every 3h
-         :fn (ig/ref :app.tasks.telemetry/handler)})]}
+         :uri  (:telemetry-uri cfg/config)
+         :fn   (ig/ref :app.tasks.telemetry/handler)})]}
 
     :app.tasks/all
     {"sendmail"       (ig/ref :app.tasks.sendmail/handler)
