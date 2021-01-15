@@ -13,6 +13,7 @@
    [app.common.data :as d]
    [app.common.spec :as us]
    [app.common.version :as v]
+   [app.util.globals :as globals]
    [app.util.object :as obj]
    [app.util.dom :as dom]
    [app.util.avatars :as avatars]
@@ -73,7 +74,7 @@
   (def login-with-ldap  (obj/get global "appLoginWithLDAP" false))
   (def worker-uri       (obj/get global "appWorkerURI" "/js/worker.js"))
   (def public-uri       (or (obj/get global "appPublicURI")
-                            (.-origin ^js js/location)))
+                            (.-origin ^js globals/location)))
   (def media-uri        (str public-uri "/assets"))
   (def version          (delay (parse-version global)))
   (def target           (delay (parse-target global)))

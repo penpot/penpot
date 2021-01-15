@@ -10,7 +10,8 @@
    [beicon.core :as rx]
    [app.main.store :as st]
    [app.main.refs :as refs]
-   [app.common.geom.point :as gpt]))
+   [app.common.geom.point :as gpt]
+   [app.util.globals :as globals]))
 
 ;; --- User Events
 
@@ -103,7 +104,7 @@
 
 
 (defonce window-blur
-  (->> (rx/from-event js/window "blur")
+  (->> (rx/from-event globals/window "blur")
        (rx/share)))
 
 (defonce keyboard-alt
