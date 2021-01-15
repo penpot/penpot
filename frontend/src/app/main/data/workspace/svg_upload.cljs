@@ -143,6 +143,7 @@
       (let [page-id (:current-page-id state)
             objects (dwc/lookup-page-objects state page-id)
             frame-id (cp/frame-id-by-position objects {:x x :y y})
+            selected (get-in state [:workspace-local :selected])
 
             [width height] (svg-dimensions data)
             x (- x (/ width 2))
@@ -152,7 +153,7 @@
             (fn add-svg-child [parent-id root-shape [unames [rchs uchs]] [index {:keys [content] :as data}]]
               (let [shape (parse-svg-element root-shape data unames)
                     shape-id (:id shape)
-                    [rch1 uch1] (dwc/add-shape-changes page-id shape)
+                    [rch1 uch1] (dwc/add-shape-changes page-id objects selected shape)
 
                     ;; Mov-objects won't have undo because we "delete" the object in the undo of the
                     ;; previous operation
@@ -176,7 +177,7 @@
             root-shape (create-raw-svg svg-name frame-id x y width height data)
             root-id (:id root-shape)
 
-            changes (dwc/add-shape-changes page-id root-shape)
+            changes (dwc/add-shape-changes page-id objects selected root-shape)
 
             [_ [rchanges uchanges]] (reduce (partial add-svg-child root-id root-shape) [unames changes] (d/enumerate (:content data)))]
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})

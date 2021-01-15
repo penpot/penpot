@@ -58,6 +58,7 @@
 (d/export helpers/frame-id-by-position)
 (d/export helpers/set-touched-group)
 (d/export helpers/touched-group?)
+(d/export helpers/get-base-shape)
 
 ;; Process changes
 (d/export changes/process-changes)

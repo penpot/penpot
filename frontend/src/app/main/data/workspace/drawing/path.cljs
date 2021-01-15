@@ -548,8 +548,7 @@
             (update-in [:workspace-local :edit-path id :content-modifiers (inc index)] assoc
                        :c1x dx :c1y dy)
             (update-in [:workspace-local :edit-path id :content-modifiers index] assoc
-                       :x dx :y dy :c2x dx :c2y dy)
-            )))))
+                       :x dx :y dy :c2x dx :c2y dy))))))
 
 (defn modify-handler [id index prefix dx dy match-opposite?]
   (ptk/reify ::modify-point

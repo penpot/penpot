@@ -251,6 +251,33 @@
 
 (def ^:private change->name #(get-in % [:obj :name]))
 
+(defn update-indices
+  "Fixes the indices for a set of changes after a duplication. We need to
+  fix the indices to take into the account the movement of indices.
+
+  index-map is a map that goes from parent-id => vector([id index-in-parent])"
+  [changes index-map]
+  (let [inc-indices
+        (fn [[offset result] [id index]]
+          [(inc offset) (conj result [id (+ index offset)])])
+
+        fix-indices
+        (fn [_ entry]
+          (->> entry
+               (sort-by second)
+               (reduce inc-indices [1 []])
+               (second)
+               (into {})))
+
+        objects-indices (->> index-map (d/mapm fix-indices) (vals) (reduce merge))
+
+        update-change
+        (fn [change]
+          (let [index (get objects-indices (:old-id change))]
+            (-> change
+                (assoc :index index))))]
+    (mapv update-change changes)))
+
 (defn prepare-duplicate-changes
   "Prepare objects to paste: generate new id, give them unique names,
   move to the position of mouse pointer, and find in what frame they
@@ -268,6 +295,18 @@
          (next ids)
          (into chgs result)))
       chgs)))
+
+(defn duplicate-changes-update-indices
+  "Parses the change set when duplicating to set-up the appropiate indices"
+  [objects ids changes]
+
+  (let [process-id
+        (fn [index-map id]
+          (let [parent-id    (get-in objects [id :parent-id])
+                parent-index (cp/position-on-parent id objects)]
+            (update index-map parent-id (fnil conj []) [id parent-index])))
+        index-map (reduce process-id {} ids)]
+    (-> changes (update-indices index-map))))
 
 (defn- prepare-duplicate-change
   [objects page-id names id delta]
@@ -347,7 +386,9 @@
             delta    (gpt/point 0 0)
             unames   (dwc/retrieve-used-names objects)
 
-            rchanges (prepare-duplicate-changes objects page-id unames selected delta)
+            rchanges (->> (prepare-duplicate-changes objects page-id unames selected delta)
+                          (duplicate-changes-update-indices objects selected))
+
             uchanges (mapv #(array-map :type :del-obj :page-id page-id :id (:id %))
                            (reverse rchanges))
 
