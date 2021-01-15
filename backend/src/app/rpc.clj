@@ -52,17 +52,15 @@
       (fn? (:transform-response mdata)) ((:transform-response mdata) request))))
 
 (defn- wrap-impl
-  [f mdata cfg]
+  [f mdata cfg prefix]
   (let [mreg  (get-in cfg [:metrics :registry])
         mobj  (mtx/create
-               {:name (-> (str "rpc_" (::sv/name mdata) "_response_millis")
+               {:name (-> (str "rpc_" (name prefix) "_" (::sv/name mdata) "_response_millis")
                           (str/replace "-" "_"))
                 :registry mreg
                 :type :summary
                 :help (str/format "Service '%s' response time in milliseconds." (::sv/name mdata))})
-
         f     (mtx/wrap-summary f mobj)
-
         spec  (or (::sv/spec mdata) (s/spec any?))]
 
     (log/debugf "Registering '%s' command to rpc service." (::sv/name mdata))
@@ -74,10 +72,10 @@
       (f cfg (us/conform spec params)))))
 
 (defn- process-method
-  [cfg vfn]
+  [cfg prefix vfn]
   (let [mdata (meta vfn)]
     [(keyword (::sv/name mdata))
-     (wrap-impl (deref vfn) mdata cfg)]))
+     (wrap-impl (deref vfn) mdata cfg prefix)]))
 
 (defn- resolve-query-methods
   [cfg]
@@ -88,7 +86,7 @@
                    'app.rpc.queries.profile
                    'app.rpc.queries.recent-files
                    'app.rpc.queries.viewer)
-       (map (partial process-method cfg))
+       (map (partial process-method cfg :query))
        (into {})))
 
 (defn- resolve-mutation-methods
@@ -102,7 +100,7 @@
                    'app.rpc.mutations.viewer
                    'app.rpc.mutations.teams
                    'app.rpc.mutations.verify-token)
-       (map (partial process-method cfg))
+       (map (partial process-method cfg :mutation))
        (into {})))
 
 (s/def ::storage some?)
