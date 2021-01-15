@@ -94,7 +94,7 @@
 (defn create-registry
   []
   (let [registry (CollectorRegistry.)]
-    ;; (DefaultExports/register registry)
+    (DefaultExports/register registry)
     registry))
 
 (defmacro with-measure
