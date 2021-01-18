@@ -29,7 +29,8 @@
     "image/jpeg"    "jpg"
     "image/png"     "png"
     "image/svg+xml" "svg"
-    "image/webp"    "webp"))
+    "image/webp"    "webp"
+    nil))
 
 (mf/defc image-panel [{:keys [shapes locale]}]
   (let [shapes (->> shapes (filter has-image?))]
@@ -50,8 +51,11 @@
         [:& copy-button {:data (cg/generate-css-props shape :height)}]]
 
        (let [mtype (-> shape :metadata :mtype)
-             name (:name shape)]
+             name (:name shape)
+             extension (mtype->extension mtype)]
          [:a.download-button {:target "_blank"
-                              :download (str name "." (mtype->extension mtype))
+                              :download (if extension
+                                          (str name "." extension)
+                                          name)
                               :href (cfg/resolve-file-media (-> shape :metadata))}
           (t locale "handoff.attributes.image.download")])])))
