@@ -21,22 +21,20 @@
 goog.provide("app.util.globals");
 
 goog.scope(function() {
-  var win;
-  if (typeof goog.global.window !== "undefined") {
-    win = goog.global.window;
-  } else {
-    win = {};
-  }
+  app.util.globals.window = (function() {
+    if (typeof goog.global.window !== "undefined") {
+      return goog.global.window;
+    } else {
+      return {};
+    }
+  })();
 
-  app.util.globals.window = win;
-
-  var loc;
-  if (typeof goog.global.location !== "undefined") {
-    loc = goog.global.location;
-  } else {
-    loc = {};
-  }
-
-  app.util.globals.location = loc;
+  app.util.globals.location = (function() {
+    if (typeof goog.global.location !== "undefined") {
+      return goog.global.location;
+    } else {
+      return {};
+    }
+  })();
 });
 
