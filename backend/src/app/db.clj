@@ -77,7 +77,7 @@
 
 (def initsql
   (str "SET statement_timeout = 10000;\n"
-       "SET idle_in_transaction_session_timeout = 30000;"))
+       "SET idle_in_transaction_session_timeout = 120000;"))
 
 (defn- create-datasource-config
   [{:keys [metrics] :as cfg}]
