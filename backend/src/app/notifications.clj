@@ -99,6 +99,15 @@
 ;;   (mtx/counter {:id "notificatons__messages_counter"
 ;;                 :help "A total number of messages handled by the notifications service."}))
 
+(defn- ws-send
+  [conn data]
+  (try
+    (when (jetty/connected? conn)
+      (jetty/send! conn data)
+      true)
+    (catch java.lang.NullPointerException e
+      false)))
+
 (defn websocket
   [{:keys [file-id team-id redis] :as cfg}]
   (let [in  (a/chan 32)
@@ -114,8 +123,8 @@
          (a/go-loop []
            (let [val (a/<! out)]
              (when-not (nil? val)
-               (jetty/send! conn (t/encode-str val))
-               (recur))))
+               (when (ws-send conn (t/encode-str val))
+                 (recur)))))
 
          (a/go
            (a/<! (on-connect ws))
