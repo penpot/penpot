@@ -138,14 +138,35 @@
   (ptk/reify ::select-all
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-id (:current-page-id state)
-            objects (dwc/lookup-page-objects state page-id)
+      (let [page-id      (:current-page-id state)
+            objects      (dwc/lookup-page-objects state page-id)
+            new-selected (let [selected-objs
+                               (->> (get-in state [:workspace-local :selected])
+                                    (map #(get objects %)))
+
+                               frame-ids
+                               (reduce #(conj %1 (:frame-id %2))
+                                       #{}
+                                       selected-objs)
+
+                               common-frame-id
+                               (when (= (count frame-ids) 1) (first frame-ids))]
+
+                           (if (and common-frame-id
+                                    (not= (:id common-frame-id) uuid/zero))
+                             (-> (get objects common-frame-id)
+                                 :shapes)
+                             (let [frames (cp/select-frames objects)]
+                               (->> (if (seq frames)
+                                      frames
+                                      (cp/select-toplevel-shapes objects))
+                                    (map :id)))))
+
             is-not-blocked (fn [shape-id] (not (get-in state [:workspace-data
                                                               :pages-index page-id
                                                               :objects shape-id
                                                               :blocked] false)))]
-        (rx/of (->> (cp/select-toplevel-shapes objects)
-                    (map :id)
+        (rx/of (->> new-selected
                     (filter is-not-blocked)
                     (into lks/empty-linked-set)
                     (select-shapes)))))))
