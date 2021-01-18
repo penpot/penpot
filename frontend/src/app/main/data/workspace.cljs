@@ -1360,7 +1360,17 @@
                                  (d/mapm (fn [_ shape]
                                            (-> shape
                                                (assoc :frame-id frame-id)
-                                               (assoc :parent-id parent-id)))))
+                                               (assoc :parent-id parent-id)
+
+                                               (cond->
+                                                   ;; Pasting from another file, we deattach components
+                                                   (not= (:current-file-id state) (:file-id data))
+                                                 (dissoc :component-id
+                                                         :component-file
+                                                         :component-root?
+                                                         :remote-synced?
+                                                         :shape-ref
+                                                         :touched))))))
 
                   page-id   (:current-page-id state)
                   unames    (-> (dwc/lookup-page-objects state page-id)
@@ -1394,7 +1404,7 @@
               mouse-pos (deref ms/mouse-position)]
           (if (= file-id (:file-id data))
             (do-paste state mouse-pos [])
-            (->> (rx/from (seq images))
+            (->> (rx/from images)
                  (rx/merge-map (partial upload-media file-id))
                  (rx/reduce conj [])
                  (rx/mapcat (partial do-paste state mouse-pos)))))))))
