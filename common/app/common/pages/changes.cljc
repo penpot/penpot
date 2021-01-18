@@ -222,7 +222,24 @@
                           (d/dissoc-in [pid :remote-synced?])))))))))
 
           (update-parent-id [objects id]
-            (update objects id assoc :parent-id parent-id))
+            (update objects id
+                    (fn [object]
+                      (let [prev-component-root (cph/get-root-shape object objects)
+                            detach-component (fn [object]
+                                               (let [new-component-root
+                                                     (cph/get-root-shape object objects)]
+                                                 (cond-> object
+                                                   (not= prev-component-root new-component-root)
+                                                   (dissoc object
+                                                           :component-id
+                                                           :component-file
+                                                           :component-root?
+                                                           :remote-synced?
+                                                           :shape-ref
+                                                           :touched))))]
+                        (-> object
+                            (assoc :parent-id parent-id)
+                            detach-component)))))
 
           ;; Updates the frame-id references that might be outdated
           (assign-frame-id [frame-id objects id]
