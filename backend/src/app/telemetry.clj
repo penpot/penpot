@@ -83,7 +83,9 @@
                         :data (dissoc params :instance-id))]
       (px/run! executor (partial process-request cfg)))
     (catch Exception e
-      (log/errorf e "Unexpected error.")))
+      ;; We don't want notify user of a error, just log it for posible
+      ;; future investigation.
+      (log/warnf e "Unexpected error on telemetry.")))
   {:status 200
    :body "OK\n"})
 
