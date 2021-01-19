@@ -23,10 +23,18 @@
      :commit nil}
 
     (string? version)
-    (let [[base build commit] (str/split version #"-" 3)]
-      {:full version
-       :base base
-       :build (d/parse-integer build)
-       :commit commit})
+    (if (re-seq #"^[A-Za-z]+\-" version)
+      (let [[branch base build commit] (str/split version #"-" 4)]
+        {:full version
+         :base base
+         :build (d/parse-integer build)
+         :branch branch
+         :commit commit})
+      (let [[base build commit] (str/split version #"-" 3)]
+        {:full version
+         :base base
+         :build (d/parse-integer build)
+         :branch nil
+         :commit commit}))
 
     :else nil))
