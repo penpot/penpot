@@ -34,8 +34,8 @@
 (s/def ::name ::us/string)
 
 (defmethod ig/pre-init-spec ::server [_]
-  (s/keys :req-un [::handler ::port ::mtx/metrics]
-          :opt-un [::ws ::name]))
+  (s/keys :req-un [::handler ::port]
+          :opt-un [::ws ::name ::mtx/metrics]))
 
 (defmethod ig/prep-key ::server
   [_ cfg]
@@ -48,12 +48,13 @@
   (let [pre-start (fn [^Server server]
                     (let [handler (doto (ErrorHandler.)
                                     (.setShowStacks true)
-                                    (.setServer server))
-                          stats   (new StatisticsHandler)]
-                      (.setHandler ^StatisticsHandler stats (.getHandler server))
-                      (.setHandler server stats)
+                                    (.setServer server))]
                       (.setErrorHandler server ^ErrorHandler handler)
-                      (mtx/instrument-jetty! (:registry metrics) stats)))
+                      (when metrics
+                        (let [stats (new StatisticsHandler)]
+                          (.setHandler ^StatisticsHandler stats (.getHandler server))
+                          (.setHandler server stats)
+                          (mtx/instrument-jetty! (:registry metrics) stats)))))
 
         options   (merge
                    {:port port
