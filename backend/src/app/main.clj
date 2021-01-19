@@ -12,11 +12,12 @@
    [app.config :as cfg]
    [app.common.data :as d]
    [app.util.time :as dt]
+   [clojure.pprint :as pprint]
    [clojure.tools.logging :as log]
    [integrant.core :as ig]))
 
 ;; Set value for all new threads bindings.
-(alter-var-root #'*assert* (constantly (:assets-enabled cfg/config)))
+(alter-var-root #'*assert* (constantly (:asserts-enabled cfg/config)))
 
 (derive :app.telemetry/server :app.http/server)
 
@@ -84,7 +85,6 @@
      :ldap-auth   (ig/ref :app.http.auth/ldap)
      :svgparse    (ig/ref :app.svgparse/handler)
      :storage     (ig/ref :app.storage/storage)}
-
 
     :app.svgparse/svgc
     {:metrics (ig/ref :app.metrics/metrics)}
@@ -298,6 +298,14 @@
   (alter-var-root #'system (fn [sys]
                              (when sys (ig/halt! sys))
                              nil)))
+
+(prefer-method print-method
+               clojure.lang.IRecord
+               clojure.lang.IDeref)
+
+(prefer-method pprint/simple-dispatch
+               clojure.lang.IPersistentMap
+               clojure.lang.IDeref)
 
 (defn -main
   [& _args]

@@ -29,10 +29,12 @@
    :public-uri "http://localhost:3449/"
    :redis-uri "redis://localhost/0"
 
+   :storage-backend :fs
    :storage-fs-old-directory "resources/public/media"
    :storage-fs-directory "resources/public/assets"
    :storage-fs-uri "http://localhost:3449/internal/assets/"
    :storage-s3-region :eu-central-1
+   :storage-s3-bucket "penpot-devenv-assets-pre"
 
    :image-process-max-threads 2
 
@@ -223,7 +225,3 @@
 
 (def default-deletion-delay
   (dt/duration {:hours 48}))
-
-(prefer-method print-method
-               clojure.lang.IRecord
-               clojure.lang.IDeref)
