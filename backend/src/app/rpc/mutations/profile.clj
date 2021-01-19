@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.rpc.mutations.profile
   (:require
@@ -14,6 +14,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
+   [app.db.profile-initial-data :refer [create-profile-initial-data]]
    [app.emails :as emails]
    [app.http.session :as session]
    [app.media :as media]
@@ -54,7 +55,7 @@
           :opt-un [::token]))
 
 (sv/defmethod ::register-profile {:auth false}
-  [{:keys [pool tokens session] :as cfg} {:keys [token] :as params}]
+  [{:keys [pool tokens session storage] :as cfg} {:keys [token] :as params}]
   (when-not (:registration-enabled cfg/config)
     (ex/raise :type :restriction
               :code :registration-disabled))
@@ -68,6 +69,7 @@
     (check-profile-existence! conn params)
     (let [profile (->> (create-profile conn params)
                        (create-profile-relations conn))]
+      (create-profile-initial-data conn storage profile)
 
       (if token
         ;; If token comes in params, this is because the user comes
