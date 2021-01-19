@@ -111,7 +111,7 @@
 (sv/defmethod ::team-members
   [{:keys [pool] :as cfg} {:keys [profile-id team-id]}]
   (with-open [conn (db/open pool)]
-    (check-edition-permissions! conn profile-id team-id)
+    (check-read-permissions! conn profile-id team-id)
     (retrieve-team-members conn team-id)))
 
 (def sql:team-members
