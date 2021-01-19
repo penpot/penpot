@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.notifications
   "A websocket based notifications mechanism."
@@ -36,11 +36,24 @@
 (s/def ::session map?)
 
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::rd/redis ::db/pool ::session]))
+  (s/keys :req-un [::rd/redis ::db/pool ::session ::mtx/metrics]))
 
 (defmethod ig/init-key ::handler
-  [_ {:keys [session] :as cfg}]
-  (let [wrap-session (:middleware session)]
+  [_ {:keys [session metrics] :as cfg}]
+  (let [wrap-session    (:middleware session)
+        mtx-active-conn (mtx/create
+                         {:name "http_ws_notifications_active_connections"
+                          :registry (:registry metrics)
+                          :type :gauge
+                          :help "Active websocket connections on notifications service."})
+        mtx-msg-counter (mtx/create
+                         {:name "http_ws_notifications_message_counter"
+                          :registry (:registry metrics)
+                          :type :counter
+                          :help "Counter of total messages processed on websocket conenction on notifications service."})
+        cfg             (assoc cfg
+                               :mtx-active-conn mtx-active-conn
+                               :mtx-msg-counter mtx-msg-counter)]
     (-> #(handler cfg %)
         (wrap-session)
         (wrap-keyword-params)
@@ -109,12 +122,12 @@
       false)))
 
 (defn websocket
-  [{:keys [file-id team-id redis] :as cfg}]
+  [{:keys [file-id team-id redis mtx-active-conn mtx-msg-counter] :as cfg}]
   (let [in  (a/chan 32)
         out (a/chan 32)]
     {:on-connect
      (fn [conn]
-       ;; (metrics-active-connections :inc)
+       (mtx-active-conn :inc)
        (let [sub (rd/subscribe redis {:xform (map t/decode-str)
                                       :topics [file-id team-id]})
              ws  (WebSocket. conn in out sub nil cfg)]
@@ -137,13 +150,13 @@
 
      :on-close
      (fn [_conn _status _reason]
-       ;; (metrics-active-connections :dec)
+       (mtx-active-conn :dec)
        (a/close! out)
        (a/close! in))
 
      :on-text
      (fn [_ws message]
-       ;; (metrics-message-counter :inc)
+       (mtx-msg-counter :inc)
        (let [message (t/decode-str message)]
          (a/>!! in message)))
 
