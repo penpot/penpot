@@ -9,6 +9,7 @@
 
 (ns app.main.ui.workspace.sidebar.sitemap
   (:require
+   [app.main.ui.components.context-menu :refer [context-menu]]
    [app.common.data :as d]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -33,8 +34,22 @@
         input-ref   (mf/use-ref)
         id          (:id page)
 
+        state (mf/use-state {:menu-open false})
+
         delete-fn   (mf/use-callback (mf/deps id) #(st/emit! (dw/delete-page id)))
         navigate-fn (mf/use-callback (mf/deps id) #(st/emit! (dw/go-to-page id)))
+
+        on-context-menu
+        (mf/use-callback
+         (mf/deps id)
+         (fn [event]
+           (dom/prevent-default event)
+           (dom/stop-propagation event)
+           (let [pos (dom/get-client-position event)]
+             (swap! state assoc
+                    :menu-open true
+                    :top (:y pos)
+                    :left (:x pos)))))
 
         on-delete
         (mf/use-callback
@@ -50,7 +65,8 @@
          (fn [event]
            (dom/prevent-default event)
            (dom/stop-propagation event)
-           (swap! local assoc :edition true)))
+           (swap! local assoc :edition true)
+           (swap! state assoc :menu-open false)))
 
         on-blur
         (mf/use-callback
@@ -77,6 +93,10 @@
            (let [index (if (= :bot side) (inc index) index)]
              (st/emit! (dw/relocate-page id index)))))
 
+        on-duplicate
+        (fn [event]
+          (st/emit! (dw/duplicate-page id)))
+
         [dprops dref]
         (hooks/use-sortable
          :data-type "app/page"
@@ -93,30 +113,46 @@
            (dom/select-text! edit-input))
          nil)))
 
-    [:li {:class (dom/classnames
-                  :selected selected?
-                  :dnd-over-top (= (:over dprops) :top)
-                  :dnd-over-bot (= (:over dprops) :bot))
-          :ref dref}
-     [:div.element-list-body
-      {:class (dom/classnames
-               :selected selected?)
-       :on-click navigate-fn
-       :on-double-click on-double-click}
-      [:div.page-icon i/file-html]
-      (if (:edition @local)
-        [:*
-         [:input.element-name {:type "text"
-                               :ref input-ref
-                               :on-blur on-blur
-                               :on-key-down on-key-down
-                               :auto-focus true
-                               :default-value (:name page "")}]]
-        [:*
-         [:span (:name page)]
-         [:div.page-actions
-          (when deletable?
-            [:a {:on-click on-delete} i/trash])]])]]))
+    [:*
+     [:li {:class (dom/classnames
+                   :selected selected?
+                   :dnd-over-top (= (:over dprops) :top)
+                   :dnd-over-bot (= (:over dprops) :bot))
+           :ref dref}
+      [:div.element-list-body
+       {:class (dom/classnames
+                :selected selected?)
+        :on-click navigate-fn
+        :on-double-click on-double-click
+        :on-context-menu on-context-menu}
+       [:div.page-icon i/file-html]
+       (if (:edition @local)
+         [:*
+          [:input.element-name {:type "text"
+                                :ref input-ref
+                                :on-blur on-blur
+                                :on-key-down on-key-down
+                                :auto-focus true
+                                :default-value (:name page "")}]]
+         [:*
+          [:span (:name page)]
+          [:div.page-actions
+           (when deletable?
+             [:a {:on-click on-delete} i/trash])]])]]
+
+     [:& context-menu
+      {:selectable false
+       :show (:menu-open @state)
+       :on-close #(swap! state assoc :menu-open false)
+       :top (:top @state)
+       :left (:left @state)
+       :options (cond-> []
+                  deletable?
+                  (conj [(tr "workspace.assets.delete") on-delete])
+
+                  :always
+                  (-> (conj [(tr "workspace.assets.rename") on-double-click])
+                      (conj [(tr "workspace.assets.duplicate") on-duplicate])))}]]))
 
 
 ;; --- Page Item Wrapper
