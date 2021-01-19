@@ -66,7 +66,11 @@
    :ldap-auth-username-attribute "uid"
    :ldap-auth-email-attribute "mail"
    :ldap-auth-fullname-attribute "displayName"
-   :ldap-auth-avatar-attribute "jpegPhoto"})
+   :ldap-auth-avatar-attribute "jpegPhoto"
+
+   ;;:initial-data-project-id "5761a890-3b81-11eb-9e7d-556a2f641513"
+   ;;:initial-data-project-name "Penpot Onboarding"
+   })
 
 (s/def ::http-server-port ::us/integer)
 (s/def ::http-server-debug ::us/boolean)
@@ -135,6 +139,8 @@
 (s/def ::telemetry-server-enabled ::us/boolean)
 (s/def ::telemetry-server-port ::us/integer)
 
+(s/def ::initial-data-project-id ::us/uuid)
+(s/def ::initial-data-project-name ::us/string)
 
 (s/def ::config
   (s/keys :opt-un [::allow-demo-users
@@ -190,7 +196,9 @@
                    ::telemetry-enabled
                    ::telemetry-server-enabled
                    ::telemetry-server-port
-                   ::telemetry-uri]))
+                   ::telemetry-uri
+                   ::initial-data-project-id
+                   ::initial-data-project-name]))
 
 (defn- env->config
   [env]

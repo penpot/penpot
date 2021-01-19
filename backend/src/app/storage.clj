@@ -94,16 +94,19 @@
 (def ^:private sql:retrieve-storage-object
   "select * from storage_object where id = ? and deleted_at is null")
 
+(defn row->storage-object [res]
+  (let [mdata (some-> (:metadata res) (db/decode-transit-pgobject))]
+    (StorageObject. (:id res)
+                    (:size res)
+                    (:created-at res)
+                    (keyword (:backend res))
+                    mdata
+                    nil)))
+
 (defn- retrieve-database-object
   [{:keys [conn] :as storage} id]
   (when-let [res (db/exec-one! conn [sql:retrieve-storage-object id])]
-    (let [mdata (some-> (:metadata res) (db/decode-transit-pgobject))]
-      (StorageObject. (:id res)
-                      (:size res)
-                      (:created-at res)
-                      (keyword (:backend res))
-                      mdata
-                      nil))))
+    (row->storage-object res)))
 
 (def sql:delete-storage-object
   "update storage_object set deleted_at=now() where id=? and deleted_at is null")
