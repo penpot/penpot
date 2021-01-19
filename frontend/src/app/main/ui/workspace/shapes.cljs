@@ -21,6 +21,7 @@
    [app.main.streams :as ms]
    [app.main.ui.cursors :as cur]
    [app.main.ui.hooks :as hooks]
+   [app.main.ui.context :as muc]
    [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.image :as image]
    [app.main.ui.shapes.rect :as rect]
@@ -52,12 +53,9 @@
       false
       (let [o-shape (obj/get op "shape")
             n-frame (obj/get np "frame")
-            o-frame (obj/get op "frame")
-            n-ghost (obj/get np "ghost?")
-            o-ghost (obj/get op "ghost?")]
+            o-frame (obj/get op "frame")]
         (and (identical? n-shape o-shape)
-             (identical? n-frame o-frame)
-             (identical? n-ghost o-ghost))))))
+             (identical? n-frame o-frame))))))
 
 (defn make-is-moving-ref
   [id]
@@ -73,7 +71,7 @@
   [props]
   (let [shape  (obj/get props "shape")
         frame  (obj/get props "frame")
-        ghost? (obj/get props "ghost?")
+        ghost? (mf/use-ctx muc/ghost-ctx)
         shape  (-> (geom/transform-shape shape)
                    (geom/translate-to-frame frame))
         opts  #js {:shape shape
@@ -84,14 +82,14 @@
         moving-iref (mf/use-memo (mf/deps (:id shape)) (make-is-moving-ref (:id shape)))
         moving?     (mf/deref moving-iref)
         svg-element? (and (= (:type shape) :svg-raw)
-                          (not= :svg (get-in shape [:content :tag])))]
+                          (not= :svg (get-in shape [:content :tag])))
+        hide-moving? (and (not ghost?) moving?)]
 
-    (when (and shape
-               (or ghost? (not moving?))
-               (not (:hidden shape)))
+    (when (and shape (not (:hidden shape)))
       [:*
        (if-not svg-element?
-         [:g.shape-wrapper {:style {:cursor (if alt? cur/duplicate nil)}}
+         [:g.shape-wrapper {:style {:display (when hide-moving? "none")
+                                    :cursor (if alt? cur/duplicate nil)}}
           (case (:type shape)
             :path [:> path/path-wrapper opts]
             :text [:> text/text-wrapper opts]

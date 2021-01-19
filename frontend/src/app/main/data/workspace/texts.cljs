@@ -11,6 +11,7 @@
   (:require
    ["slate" :as slate :refer [Editor Node Transforms Text]]
    ["slate-react" :as rslate]
+   [app.common.math :as mth]
    [app.common.attrs :as attrs]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
@@ -217,6 +218,9 @@
                (= (-> selected first :type) :text))
           (assoc-in [:workspace-local :edition] (-> selected first :id)))))))
 
+(defn not-changed? [old-dim new-dim]
+  (> (mth/abs (- old-dim new-dim)) 0.1))
+
 (defn resize-text [id new-width new-height]
   (ptk/reify ::resize-text
     ptk/WatchEvent
@@ -238,12 +242,13 @@
               (and (= :fixed grow-type) overflow-text (<= new-height shape-height))
               (conj (update-overflow-text id false))
 
-              (and (or (not= shape-width new-width) (not= shape-height new-height))
+              (and (or (not-changed? shape-width new-width) (not-changed? shape-height new-height))
                    (= grow-type :auto-width))
               (conj (dwt/update-dimensions [id] :width new-width)
                     (dwt/update-dimensions [id] :height new-height))
 
-              (and (not= shape-height new-height) (= grow-type :auto-height))
+              (and (not-changed? shape-height new-height)
+                   (= grow-type :auto-height))
               (conj (dwt/update-dimensions [id] :height new-height)))]
 
         (if (not (empty? events))

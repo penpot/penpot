@@ -49,6 +49,7 @@
   {::mf/wrap-props false}
   [props]
   (let [{:keys [id name x y width height grow-type] :as shape} (unchecked-get props "shape")
+        ghost? (mf/use-ctx muc/ghost-ctx)
         selected-iref (mf/use-memo (mf/deps (:id shape))
                                    #(refs/make-selected-ref (:id shape)))
         selected? (mf/deref selected-iref)
@@ -73,14 +74,15 @@
         (mf/use-callback
          (mf/deps id)
          (fn [entries]
-           (when (seq entries)
+           (when (and (not ghost?) (seq entries))
              ;; RequestAnimationFrame so the "loop limit error" error is not thrown
              ;; https://stackoverflow.com/questions/49384120/resizeobserver-loop-limit-exceeded
              (timers/raf
               #(let [width  (obj/get-in entries [0 "contentRect" "width"])
                      height (obj/get-in entries [0 "contentRect" "height"])]
-                 (log/debug :msg "Resize detected" :shape-id id :width width :height height)
-                 (st/emit! (dwt/resize-text id (mth/ceil width) (mth/ceil height))))))))
+                 (when (and (not (mth/almost-zero? width)) (not (mth/almost-zero? height)))
+                   (do (log/debug :msg "Resize detected" :shape-id id :width width :height height)
+                       (st/emit! (dwt/resize-text id (mth/ceil width) (mth/ceil height))))))))))
 
         text-ref-cb
         (mf/use-callback
@@ -96,11 +98,12 @@
     (mf/use-effect
      (mf/deps @paragraph-ref handle-resize-text grow-type)
      (fn []
-       (when-let [paragraph-node @paragraph-ref]
-         (let [observer (js/ResizeObserver. handle-resize-text)]
-           (log/debug :msg "Attach resize observer" :shape-id id :shape-name name)
-           (.observe observer paragraph-node)
-           #(.disconnect observer)))))
+       (when (not ghost?)
+         (when-let [paragraph-node @paragraph-ref]
+           (let [observer (js/ResizeObserver. handle-resize-text)]
+             (log/debug :msg "Attach resize observer" :shape-id id :shape-name name)
+             (.observe observer paragraph-node)
+             #(.disconnect observer))))))
 
 
     [:> shape-container {:shape shape}
