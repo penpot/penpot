@@ -105,7 +105,8 @@
     :app.notifications/handler
     {:redis   (ig/ref :app.redis/redis)
      :pool    (ig/ref :app.db/pool)
-     :session (ig/ref :app.http.session/session)}
+     :session (ig/ref :app.http.session/session)
+     :metrics (ig/ref :app.metrics/metrics)}
 
     :app.http.auth/google
     {:rpc           (ig/ref :app.rpc/rpc)
