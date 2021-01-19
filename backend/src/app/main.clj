@@ -69,6 +69,7 @@
     :app.http/server
     {:port    (:http-server-port config)
      :handler (ig/ref :app.http/router)
+     :metrics (ig/ref :app.metrics/metrics)
      :ws      {"/ws/notifications" (ig/ref :app.notifications/handler)}}
 
     :app.http/router
