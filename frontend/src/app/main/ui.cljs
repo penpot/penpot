@@ -239,10 +239,9 @@
 
 (defmethod ptk/handle-error :authorization
   [error]
-  (st/emit! (rt/nav :login))
   (ts/schedule
    (st/emitf (dm/show {:content "Not authorized to see this content."
-                       :timeout 3000
+                       :timeout 2000
                        :type :error}))))
 
 (defmethod ptk/handle-error :assertion
