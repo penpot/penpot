@@ -69,10 +69,11 @@
           mdata  (meta object)
           result (db/exec-one! conn [sql:insert-storage-object id
                                      (:size object)
-                                     (name (:backend object))
+                                     (name backend)
                                      (db/tjson mdata)])]
       (assoc object
              :id (:id result)
+             :backend backend
              :created-at (:created-at result)))
     (let [id     (uuid/random)
           mdata  (dissoc object :content)
@@ -129,10 +130,10 @@
       (retrieve-database-object id)))
 
 (defn put-object
-  [{:keys [pool conn backend executor] :as storage} {:keys [content] :as object}]
+  [{:keys [pool conn backend executor] :as storage} {:keys [content] :as params}]
   (us/assert impl/content? content)
   (let [storage (assoc storage :conn (or conn pool))
-        object  (create-database-object storage object)]
+        object  (create-database-object storage params)]
 
     ;; Schedule to execute in background; in an other transaction and
     ;; register the currently created storage object id for a later
@@ -149,13 +150,21 @@
   [{:keys [pool conn executor] :as storage} object]
   (let [storage (assoc storage :conn (or conn pool))
         object* (create-database-object storage object)]
-
-    (with-open [input (-> (resolve-backend storage (:backend object))
-                          (impl/get-object-data object))]
+    (if (= (:backend object) (:backend storage))
+      ;; if the source and destination backends are the same, we
+      ;; proceed to use the fast path with specific copy
+      ;; implementation on backend.
       (-> (resolve-backend storage (:backend storage))
-          (impl/put-object object* (impl/content input (:size object))))
+          (impl/copy-object object object*))
 
-      object*)))
+      ;; if the source and destination backends are different, we just
+      ;; need to obtain the streams and proceed full copy of the data
+      (with-open [input (-> (resolve-backend storage (:backend object))
+                            (impl/get-object-data object))]
+        (-> (resolve-backend storage (:backend storage))
+            (impl/put-object object* (impl/content input (:size object))))))
+
+    object*))
 
 (defn get-object-data
   [{:keys [pool conn] :as storage} object]

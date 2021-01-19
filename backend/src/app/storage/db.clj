@@ -46,6 +46,12 @@
     (db/insert! conn :storage-data {:id id :data data})
     object))
 
+(defmethod impl/copy-object :db
+  [{:keys [conn] :as storage} src-object dst-object]
+  (db/exec-one! conn ["insert into storage_data (id, data) select ? as id, data from storage_data  where id=?"
+                      (:id dst-object)
+                      (:id src-object)]))
+
 (defmethod impl/get-object-data :db
   [{:keys [conn] :as backend} {:keys [id] :as object}]
   (let [result (db/exec-one! conn ["select data from storage_data where id=?" id])]
