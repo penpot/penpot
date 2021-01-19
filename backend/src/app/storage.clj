@@ -26,7 +26,10 @@
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [lambdaisland.uri :as u]
-   [promesa.exec :as px]))
+   [promesa.exec :as px])
+  (:import
+   java.io.InputStream))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Storage Module State
@@ -159,8 +162,9 @@
 
       ;; if the source and destination backends are different, we just
       ;; need to obtain the streams and proceed full copy of the data
-      (with-open [input (-> (resolve-backend storage (:backend object))
-                            (impl/get-object-data object))]
+      (with-open [^InputStream input
+                  (-> (resolve-backend storage (:backend object))
+                      (impl/get-object-data object))]
         (-> (resolve-backend storage (:backend storage))
             (impl/put-object object* (impl/content input (:size object))))))
 
