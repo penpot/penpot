@@ -12,6 +12,7 @@
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
    [app.util.object :as obj]
+   [app.util.globals :as globals]
    [cuerdas.core :as str]
    [goog.dom :as dom]))
 
@@ -130,9 +131,9 @@
 
 (defn create-element
   ([tag]
-   (.createElement js/document tag))
+   (.createElement globals/document tag))
   ([ns tag]
-   (.createElementNS js/document ns tag)))
+   (.createElementNS globals/document ns tag)))
 
 (defn set-html!
   [el html]
@@ -201,11 +202,11 @@
 (defn fullscreen?
   []
   (cond
-    (obj/in? js/document "webkitFullscreenElement")
-    (boolean (.-webkitFullscreenElement js/document))
+    (obj/in? globals/document "webkitFullscreenElement")
+    (boolean (.-webkitFullscreenElement globals/document))
 
-    (obj/in? js/document "fullscreenElement")
-    (boolean (.-fullscreenElement js/document))
+    (obj/in? globals/document "fullscreenElement")
+    (boolean (.-fullscreenElement globals/document))
 
     :else
     (ex/raise :type :not-supported
@@ -242,17 +243,17 @@
   (-> event get-target (.releasePointerCapture (.-pointerId event))))
 
 (defn get-root []
-  (query js/document "#app"))
+  (query globals/document "#app"))
 
 (defn ^boolean class? [node class-name]
   (let [class-list (.-classList ^js node)]
     (.contains ^js class-list class-name)))
 
 (defn get-user-agent []
-  (.-userAgent js/navigator))
+  (.-userAgent globals/navigator))
 
 (defn active? [node]
-  (= (.-activeElement js/document) node))
+  (= (.-activeElement globals/document) node))
 
 (defn get-data [^js node ^string attr]
   (.getAttribute node (str "data-" attr)))
