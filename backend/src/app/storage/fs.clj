@@ -59,6 +59,17 @@
                 ^OutputStream dst (io/output-stream full)]
       (io/copy src dst))))
 
+(defmethod impl/copy-object :fs
+  [backend src-object dst-object]
+  (let [base (fs/path (:directory backend))
+        path (fs/path (impl/id->path (:id dst-object)))
+        full (fs/normalize (fs/join base path))]
+    (when-not (fs/exists? (fs/parent full))
+      (fs/create-dir (fs/parent full)))
+    (with-open [^InputStream src  (impl/get-object-data backend src-object)
+                ^OutputStream dst (io/output-stream full)]
+      (io/copy src dst))))
+
 (defmethod impl/get-object-data :fs
   [backend {:keys [id] :as object}]
   (let [^Path base (fs/path (:directory backend))

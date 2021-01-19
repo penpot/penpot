@@ -33,6 +33,14 @@
             :code :invalid-storage-backend
             :context cfg))
 
+(defmulti copy-object (fn [cfg _ _] (:type cfg)))
+
+(defmethod copy-object :default
+  [cfg _ _]
+  (ex/raise :type :internal
+            :code :invalid-storage-backend
+            :context cfg))
+
 (defmulti get-object-data (fn [cfg _] (:type cfg)))
 
 (defmethod get-object-data :default

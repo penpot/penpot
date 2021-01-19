@@ -29,6 +29,7 @@
    software.amazon.awssdk.services.s3.S3Client
    software.amazon.awssdk.services.s3.S3ClientBuilder
    software.amazon.awssdk.services.s3.model.Delete
+   software.amazon.awssdk.services.s3.model.CopyObjectRequest
    software.amazon.awssdk.services.s3.model.DeleteObjectsRequest
    software.amazon.awssdk.services.s3.model.DeleteObjectsResponse
    software.amazon.awssdk.services.s3.model.GetObjectRequest
@@ -39,6 +40,7 @@
    software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest))
 
 (declare put-object)
+(declare copy-object)
 (declare get-object)
 (declare get-object-url)
 (declare del-object-in-bulk)
@@ -84,6 +86,10 @@
 (defmethod impl/put-object :s3
   [backend object content]
   (put-object backend object content))
+
+(defmethod impl/copy-object :s3
+  [backend src-object dst-object]
+  (copy-object backend src-object dst-object))
 
 (defmethod impl/get-object-data :s3
   [backend object]
@@ -131,6 +137,23 @@
     (.putObject ^S3Client client
                 ^PutObjectRequest request
                 ^RequestBody content)))
+
+(defn- copy-object
+  [{:keys [client bucket prefix]} src-object dst-object]
+  (let [source-path  (str prefix (impl/id->path (:id src-object)))
+        source-mdata (meta src-object)
+        source-mtype (:content-type source-mdata "application/octet-stream")
+        dest-path    (str prefix (impl/id->path (:id dst-object)))
+
+        request      (.. (CopyObjectRequest/builder)
+                         (copySource (u/query-encode (str bucket "/" source-path)))
+                         (destinationBucket bucket)
+                         (destinationKey dest-path)
+                         (contentType source-mtype)
+                         (build))]
+
+    (.copyObject ^S3Client client
+                 ^CopyObjectRequest request)))
 
 (defn- get-object
   [{:keys [client bucket prefix]} {:keys [id]}]
