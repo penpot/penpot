@@ -24,6 +24,8 @@
    java.io.InputStream
    java.io.OutputStream
    java.nio.file.Path
+   java.time.Duration
+   java.util.Collection
    software.amazon.awssdk.core.sync.RequestBody
    software.amazon.awssdk.regions.Region
    software.amazon.awssdk.services.s3.S3Client
@@ -105,7 +107,7 @@
 
 ;; --- HELPERS
 
-(defn- lookup-region
+(defn- ^Region lookup-region
   [region]
   (case region
     :eu-central-1 Region/EU_CENTRAL_1))
@@ -161,7 +163,7 @@
                 (bucket bucket)
                 (key (str prefix (impl/id->path id)))
                 (build))
-        obj (.getObject ^S3Client client gor)]
+        obj (.getObject ^S3Client client ^GetObjectRequest gor)]
     (io/input-stream obj)))
 
 (def default-max-age
@@ -175,10 +177,10 @@
                  (key (str prefix (impl/id->path id)))
                  (build))
         gopr (.. (GetObjectPresignRequest/builder)
-                 (signatureDuration max-age)
-                 (getObjectRequest gor)
+                 (signatureDuration ^Duration max-age)
+                 (getObjectRequest ^GetObjectRequest gor)
                  (build))
-        pgor (.presignGetObject ^S3Presigner presigner gopr)]
+        pgor (.presignGetObject ^S3Presigner presigner ^GetObjectPresignRequest gopr)]
     (u/uri (str (.url ^PresignedGetObjectRequest pgor)))))
 
 (defn- del-object-in-bulk
@@ -189,7 +191,7 @@
                         (build)))
                   ids)
         delc (.. (Delete/builder)
-                 (objects oids)
+                 (objects ^Collection oids)
                  (build))
         dor  (.. (DeleteObjectsRequest/builder)
                  (bucket bucket)
