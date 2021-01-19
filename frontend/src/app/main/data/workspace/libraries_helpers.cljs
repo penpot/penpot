@@ -1115,9 +1115,14 @@
                             :val (get dest-shape attr)
                             :ignore-touched true}
 
-                attr-group (get cp/component-sync-attrs attr)]
+                attr-group (get cp/component-sync-attrs attr)
+
+                root-name? (and (= attr-group :name-group)
+                                (:component-root? dest-shape))]
+
             (if (or (= (get origin-shape attr) (get dest-shape attr))
-                    (and (touched attr-group) omit-touched?))
+                    (and (touched attr-group) omit-touched?)
+                    root-name?)
               (recur (next attrs)
                      roperations
                      uoperations)

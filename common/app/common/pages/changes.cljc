@@ -403,14 +403,17 @@
 
 (defmethod process-operation :set
   [shape op]
-  (let [attr      (:attr op)
-        val       (:val op)
-        ignore    (:ignore-touched op)
-        shape-ref (:shape-ref shape)
-        group     (get component-sync-attrs attr)]
+  (let [attr       (:attr op)
+        val        (:val op)
+        ignore     (:ignore-touched op)
+        shape-ref  (:shape-ref shape)
+        group      (get component-sync-attrs attr)
+        root-name? (and (= group :name-group)
+                        (:component-root? shape))]
 
     (cond-> shape
       (and shape-ref group (not ignore) (not= val (get shape attr))
+           (not root-name?)
            ;; FIXME: it's difficult to tell if the geometry changes affect
            ;;        an individual shape inside the component, or are for
            ;;        the whole component (in which case we shouldn't set
