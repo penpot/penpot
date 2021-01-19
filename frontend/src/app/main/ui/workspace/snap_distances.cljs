@@ -112,51 +112,10 @@
                :x2 x2 :y2 y2
                :style {:stroke line-color :stroke-width (str (/ 1 zoom))}}])]))
 
-(mf/defc shape-distance
-  {::mf/wrap-props false}
-  [props]
-  (let [frame      (unchecked-get props "frame")
-        selrect    (unchecked-get props "selrect")
-        page-id    (unchecked-get props "page-id")
-        zoom       (unchecked-get props "zoom")
-        coord      (unchecked-get props "coord")
-        selected   (unchecked-get props "selected")
-
-        subject    (mf/use-memo #(rx/subject))
-        to-measure (mf/use-state [])
-
-        pair->distance+pair
+(defn calculate-segments [coord selrect lt-shapes gt-shapes]
+  (let [pair->distance+pair
         (fn [[sh1 sh2]]
           [(-> (gsh/distance-shapes sh1 sh2) coord (mth/precision 0)) [sh1 sh2]])
-
-        contains-selected?
-        (fn [selected pairs]
-          (let [has-selected?
-                (fn [[_ [sh1 sh2]]]
-                  (or (selected (:id sh1))
-                      (selected (:id sh2))))]
-            (some has-selected? pairs)))
-
-        query-worker
-        (fn [[selrect selected frame]]
-          (let [lt-side (if (= coord :x) :left :top)
-                gt-side (if (= coord :x) :right :bottom)
-                container-selrec (or (:selrect frame)
-                                     (gsh/rect->selrect @refs/vbox))
-                areas (gsh/selrect->areas container-selrec selrect)
-                query-side (fn [side]
-                             (let [rect (gsh/pad-selrec (areas side))]
-                               (if (and (> (:width rect) 0) (> (:height rect) 0))
-                                 (->> (uw/ask! {:cmd :selection/query
-                                                :page-id page-id
-                                                :frame-id (:id frame)
-                                                :rect rect})
-                                      (rx/map #(set/difference % selected))
-                                      (rx/map #(->> % (map (partial get @refs/workspace-page-objects)))))
-                                 (rx/of nil))))]
-
-            (->> (query-side lt-side)
-                 (rx/combine-latest vector (query-side gt-side)))))
 
         distance-to-selrect
         (fn [shape]
@@ -183,7 +142,6 @@
                (some #(<= (mth/abs (- value %)) 1))))
 
         ;; Left/Top shapes and right/bottom shapes (depends on `coord` parameter
-        [lt-shapes gt-shapes] @to-measure
 
         ;; Gets the distance to the current selection
         lt-distances (->> lt-shapes (map distance-to-selrect) (filter pos?) (into #{}))
@@ -225,6 +183,46 @@
                                 (map #(vector selrect (:selrect %))))
 
         segments-to-display (d/concat #{} other-shapes-segments selection-segments)]
+    segments-to-display))
+
+(mf/defc shape-distance
+  {::mf/wrap-props false}
+  [props]
+  (let [frame      (unchecked-get props "frame")
+        selrect    (unchecked-get props "selrect")
+        page-id    (unchecked-get props "page-id")
+        zoom       (unchecked-get props "zoom")
+        coord      (unchecked-get props "coord")
+        selected   (unchecked-get props "selected")
+
+        subject    (mf/use-memo #(rx/subject))
+        to-measure (mf/use-state [])
+
+        query-worker
+        (fn [[selrect selected frame]]
+          (let [lt-side (if (= coord :x) :left :top)
+                gt-side (if (= coord :x) :right :bottom)
+                container-selrec (or (:selrect frame)
+                                     (gsh/rect->selrect @refs/vbox))
+                areas (gsh/selrect->areas container-selrec selrect)
+                query-side (fn [side]
+                             (let [rect (gsh/pad-selrec (areas side))]
+                               (if (and (> (:width rect) 0) (> (:height rect) 0))
+                                 (->> (uw/ask! {:cmd :selection/query
+                                                :page-id page-id
+                                                :frame-id (:id frame)
+                                                :rect rect})
+                                      (rx/map #(set/difference % selected))
+                                      (rx/map #(->> % (map (partial get @refs/workspace-page-objects)))))
+                                 (rx/of nil))))]
+
+            (->> (query-side lt-side)
+                 (rx/combine-latest vector (query-side gt-side)))))
+
+
+        [lt-shapes gt-shapes] @to-measure
+
+        segments-to-display (calculate-segments coord selrect lt-shapes gt-shapes)]
 
     (mf/use-effect
      (fn []
