@@ -71,7 +71,7 @@
     (when-not (or (some :can-edit rows)
                   (some :is-admin rows)
                   (some :is-owner rows))
-      (ex/raise :type :validation
+      (ex/raise :type :authorization
                 :code :not-authorized))))
 
 
@@ -82,7 +82,7 @@
                              file-id profile-id
                              file-id profile-id])]
     (when-not (seq rows)
-      (ex/raise :type :validation
+      (ex/raise :type :authorization
                 :code :not-authorized))))
 
 

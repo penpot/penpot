@@ -32,7 +32,7 @@
     (when-not (or (:can-edit row)
                   (:is-admin row)
                   (:is-owner row))
-      (ex/raise :type :validation
+      (ex/raise :type :authorization
                 :code :not-authorized))
     row))
 
@@ -41,7 +41,7 @@
   (let [row (db/exec-one! conn [sql:team-permissions profile-id team-id])]
     ;; when row is found this means that read permission is granted.
     (when-not row
-      (ex/raise :type :validation
+      (ex/raise :type :authorization
                 :code :not-authorized))
     row))
 
