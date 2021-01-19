@@ -1,7 +1,7 @@
 {:deps {:aliases [:dev]}
  :http {:port 3448}
  :nrepl {:port 3447}
- :jvm-opts ["-Xmx1g" "-Xms1g"]
+ :jvm-opts ["-Xmx1g" "-Xms512m"]
 
  :builds
  {:main
