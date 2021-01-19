@@ -147,10 +147,10 @@
   (with-open [conn (db/open pool)]
     (if team-id
       (do
-        (check-edition-permissions! conn profile-id team-id)
+        (check-read-permissions! conn profile-id team-id)
         (retrieve-users conn team-id))
       (let [{team-id :id} (retrieve-team-for-file conn file-id)]
-        (check-edition-permissions! conn profile-id team-id)
+        (check-read-permissions! conn profile-id team-id)
         (retrieve-users conn team-id)))))
 
 ;; This is a similar query to team members but can contain more data
