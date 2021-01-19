@@ -16,7 +16,8 @@
 (def root uuid/zero)
 
 (def component-sync-attrs
-  {:fill-color            :fill-group
+  {:name                  :name-group
+   :fill-color            :fill-group
    :fill-opacity          :fill-group
    :fill-color-gradient   :fill-group
    :fill-color-ref-file   :fill-group

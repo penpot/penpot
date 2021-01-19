@@ -401,15 +401,14 @@
 
             update-new-shape
             (fn [new-shape original-shape]
-              (let [new-name
-                    (dwc/generate-unique-name @unames (:name new-shape))]
+              (let [new-name (dwc/generate-unique-name @unames (:name new-shape))]
 
-                (swap! unames conj new-name)
+                (when (nil? (:parent-id original-shape))
+                  (swap! unames conj new-name))
 
                 (cond-> new-shape
                   true
                   (as-> $
-                    (assoc $ :name new-name)
                     (geom/move $ delta)
                     (assoc $ :frame-id frame-id)
                     (assoc $ :parent-id
@@ -417,12 +416,13 @@
                     (dissoc $ :touched))
 
                   (nil? (:shape-ref original-shape))
-                    (assoc :shape-ref (:id original-shape))
+                  (assoc :shape-ref (:id original-shape))
 
                   (nil? (:parent-id original-shape))
                   (assoc :component-id (:id original-shape)
                          :component-file file-id
-                         :component-root? true)
+                         :component-root? true
+                         :name new-name)
 
                   (some? (:parent-id original-shape))
                   (dissoc :component-root?))))
