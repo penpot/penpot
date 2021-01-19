@@ -214,4 +214,17 @@ $width-settings-bar: 16rem;
 
 .element-list.pages-list {
   max-height: 10rem;
+
+  .context-menu {
+    position: fixed;
+  }
+
+  .context-menu-items {
+    border: none;
+    margin: none;
+  }
+
+  .context-menu-action {
+    width: 100%;
+  }
 }

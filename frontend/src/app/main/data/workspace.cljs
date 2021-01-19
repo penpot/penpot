@@ -268,6 +268,24 @@
                      :id id}]
         (rx/of (dwc/commit-changes [rchange] [uchange] {:commit-local? true}))))))
 
+(defn duplicate-page [page-id]
+  (ptk/reify ::duplicate-page
+    ptk/WatchEvent
+    (watch [this state stream]
+      (let [id      (uuid/next)
+            pages   (get-in state [:workspace-data :pages-index])
+            unames  (dwc/retrieve-used-names pages)
+            page    (get-in state [:workspace-data :pages-index page-id])
+            name    (dwc/generate-unique-name unames (:name page))
+
+            page (-> page (assoc :name name :id id))
+
+            rchange {:type :add-page
+                     :page page}
+            uchange {:type :del-page
+                     :id id}]
+        (rx/of (dwc/commit-changes [rchange] [uchange] {:commit-local? true}))))))
+
 (s/def ::rename-page
   (s/keys :req-un [::id ::name]))
 
