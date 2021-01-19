@@ -91,8 +91,8 @@
                ^String charset))
 
 (defn- assign-extra-headers
-  [^MimeMessage mmsg {:keys [headers custom-data] :as params}]
-  (let [headers (assoc headers "X-Sereno-Custom-Data" custom-data)]
+  [^MimeMessage mmsg {:keys [headers extra-data] :as params}]
+  (let [headers (assoc headers "X-Penpot-Data" extra-data)]
     (reduce-kv (fn [^MimeMessage mmsg k v]
                  (doto mmsg
                    (.addHeader (name k) (str v))))
@@ -223,11 +223,11 @@
 (s/def ::from ::us/email)
 (s/def ::reply-to ::us/email)
 (s/def ::lang string?)
-(s/def ::custom-data ::us/string)
+(s/def ::extra-data ::us/string)
 
 (s/def ::context
   (s/keys :req-un [::to]
-          :opt-un [::reply-to ::from ::lang ::priority ::custom-data]))
+          :opt-un [::reply-to ::from ::lang ::priority ::extra-data]))
 
 (defn template-factory
   ([id] (template-factory id {}))
@@ -249,8 +249,8 @@
                    :hint "seems like the template is wrong or does not exists."
                    :context {:id id}))
        (cond-> (assoc email :id (name id))
-         (:custom-data context)
-         (assoc :custom-data (:custom-data context))
+         (:extra-data context)
+         (assoc :extra-data (:extra-data context))
 
          (:from context)
          (assoc :from (:from context))
