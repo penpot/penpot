@@ -29,9 +29,25 @@ goog.scope(function() {
     }
   })();
 
+  app.util.globals.document = (function() {
+    if (typeof goog.global.document !== "undefined") {
+      return goog.global.document;
+    } else {
+      return {};
+    }
+  })();
+
   app.util.globals.location = (function() {
     if (typeof goog.global.location !== "undefined") {
       return goog.global.location;
+    } else {
+      return {};
+    }
+  })();
+
+  app.util.globals.navigator = (function() {
+    if (typeof goog.global.navigator !== "undefined") {
+      return goog.global.navigator;
     } else {
       return {};
     }

@@ -146,6 +146,10 @@
         shapes (remove #(= (:type %) :frame) (vals objects))]
     (some contains-shape-fn shapes)))
 
+(defn get-top-frame
+  [objects]
+  (get objects uuid/zero))
+
 (defn get-parent
   "Retrieve the id of the parent for the shape-id (if exists)"
   [shape-id objects]
