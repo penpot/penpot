@@ -23,7 +23,10 @@
    [reitit.ring :as rr]
    [ring.adapter.jetty9 :as jetty])
   (:import
-   org.eclipse.jetty.server.handler.ErrorHandler))
+   org.eclipse.jetty.server.Server
+   org.eclipse.jetty.server.Handler
+   org.eclipse.jetty.server.handler.ErrorHandler
+   org.eclipse.jetty.server.handler.StatisticsHandler))
 
 (s/def ::handler fn?)
 (s/def ::ws (s/map-of ::us/string fn?))
@@ -31,7 +34,7 @@
 (s/def ::name ::us/string)
 
 (defmethod ig/pre-init-spec ::server [_]
-  (s/keys :req-un [::handler ::port]
+  (s/keys :req-un [::handler ::port ::mtx/metrics]
           :opt-un [::ws ::name]))
 
 (defmethod ig/prep-key ::server
@@ -40,28 +43,34 @@
          (d/without-nils cfg)))
 
 (defmethod ig/init-key ::server
-  [_ {:keys [handler ws port name] :as opts}]
+  [_ {:keys [handler ws port name metrics] :as opts}]
   (log/infof "Starting %s server on port %s." name port)
-  (let [options (merge
-                 {:port port
-                  :h2c? true
-                  :join? false
-                  :allow-null-path-info true}
-                 (when (seq ws)
-                   {:websockets ws}))
-        server  (jetty/run-jetty handler options)
-        handler (doto (ErrorHandler.)
-                  (.setShowStacks true)
-                  (.setServer server))]
+  (let [pre-start (fn [^Server server]
+                    (let [handler (doto (ErrorHandler.)
+                                    (.setShowStacks true)
+                                    (.setServer server))
+                          stats   (new StatisticsHandler)]
+                      (.setHandler ^StatisticsHandler stats (.getHandler server))
+                      (.setHandler server stats)
+                      (.setErrorHandler server ^ErrorHandler handler)
+                      (mtx/instrument-jetty! (:registry metrics) stats)))
 
-    (.setErrorHandler server handler)
+        options   (merge
+                   {:port port
+                    :h2c? true
+                    :join? false
+                    :allow-null-path-info true
+                    :configurator pre-start}
+                   (when (seq ws)
+                     {:websockets ws}))
 
+        server    (jetty/run-jetty handler options)]
     (assoc opts :server server)))
 
 (defmethod ig/halt-key! ::server
   [_ {:keys [server name port] :as opts}]
   (log/infof "Stoping %s server on port %s." name port)
-  (.stop server))
+  (jetty/stop-server server))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Http Main Handler (Router)
