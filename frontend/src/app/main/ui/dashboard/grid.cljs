@@ -152,7 +152,9 @@
          (mf/deps file)
          (fn [event]
            (dom/stop-propagation event)
-           (swap! local assoc :edition true)))
+           (swap! local assoc
+                  :edition true
+                  :menu-open false)))
 
         ]
     [:div.grid-item.project-th {:on-click on-navigate}

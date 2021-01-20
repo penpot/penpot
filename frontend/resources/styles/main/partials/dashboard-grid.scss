@@ -90,25 +90,25 @@
     }
 
     .item-info {
-      bottom: 0;
       display: flex;
       flex-direction: column;
-      left: 0;
       padding: $small;
-      position: absolute;
       text-align: left;
       width: 100%;
 
       h3 {
+        border: 1px solid transparent;
         color: $color-gray-60;
         font-size: $fs15;
         font-weight: 400;
         overflow: hidden;
         padding: 0;
+        height: 27px;
         padding-right: $small;
         text-overflow: ellipsis;
         width: 100%;
         white-space: nowrap;
+        line-height: 27px;
       }
 
       span.date {
@@ -121,31 +121,34 @@
 
       .edit-wrapper {
         .element-title {
-          padding: 3px;
+          padding: 0px;
           height: 25px;
+          color: $color-gray-60;
+          font-size: $fs15;
+          font-weight: 400;
         }
       }
 
     }
 
     .item-badge {
-        background-color: $color-white;
-        border: 1px solid $color-gray-20;
-        border-radius: 4px;
-        position: absolute;
-        top: $x-small;
-        right: $x-small;
-        height: 32px;
-        width: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+      background-color: $color-white;
+      border: 1px solid $color-gray-20;
+      border-radius: 4px;
+      position: absolute;
+      top: $x-small;
+      right: $x-small;
+      height: 32px;
+      width: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
 
-        svg {
-          fill: $color-gray-30;
-          height: 16px;
-          width: 16px;
-        }
+      svg {
+        fill: $color-gray-30;
+        height: 16px;
+        width: 16px;
+      }
     }
 
     &.add-file {
@@ -168,25 +171,25 @@
     // PROJECTS, ELEMENTS & ICONS GRID
     &.project-th {
       background-color: $color-white;
-      // border: 2px solid $color-gray-10;
 
       &:hover {
         border-color: $color-primary;
 
         .project-th-actions {
-          display: flex;
+          opacity: 1;
         }
       }
 
       .project-th-actions {
         align-items: center;
-        bottom: 4px;
-        display: none;
-        left: 0;
-        justify-content: flex-end;
-        padding: $small;
+        bottom: 2px;
+        opacity: 0;
+        display: flex;
+        right: 5px;
+        justify-content: center;
         position: absolute;
-        width: 100%;
+        width: 15px;
+        height: 30px;
 
         svg {
           fill: $color-gray-20;
@@ -206,8 +209,6 @@
 
           &.menu {
             margin-right: 0;
-            width: 2rem;
-            height: 2rem;
             display: flex;
             justify-content: flex-end;
             align-items: flex-end;
