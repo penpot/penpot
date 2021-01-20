@@ -92,7 +92,10 @@
                          :profile-id member-id}
                         (teams/role->params role))
           claims (assoc claims :state :created)]
-      (db/insert! conn :team-profile-rel params)
+
+      (db/insert! conn :team-profile-rel params
+                  {:on-conflict-do-nothing true})
+
       (if (and (uuid? profile-id)
                (= member-id profile-id))
         ;; If the current session is already matches the invited
@@ -114,7 +117,7 @@
                (assoc response
                       :cookies (session/cookies session {:value id}))))})))
 
-    ;; In this case, we waint until frontend app redirect user to
+    ;; In this case, we wait until frontend app redirect user to
     ;; registeration page, the user is correctly registered and the
     ;; register mutation call us again with the same token to finally
     ;; create the corresponding team-profile relation from the first
