@@ -97,20 +97,26 @@
          pending (transient [])
          next id]
     (let [children (get-in objects [next :shapes] [])
-          length (count children)]
-      (loop [i 0]
-        (when (< i length)
-          (let [child (nth children i)]
-            (conj! result child)
-            (conj! pending child)
-            (recur (inc i))))))
+          [result pending]
+          ;; Iterate through children and add them to the result
+          ;; also add them in pending to check for their children
+          (loop [result result
+                 pending pending
+                 current (first children)
+                 children (rest children)]
+            (if current
+              (recur (conj! result current)
+                     (conj! pending current)
+                     (first children)
+                     (rest children))
+              [result pending]))]
 
-    (let [length (count pending)]
-      (if (not= length 0)
-        (let [next (get pending (dec length))]
-          (pop! pending)
-          (recur result pending next))
-        (persistent! result)))))
+      ;; If we have still pending, advance the iterator
+      (let [length (count pending)]
+        (if (pos? length)
+          (let [next (get pending (dec length))]
+            (recur result (pop! pending) next))
+          (persistent! result))))))
 
 (defn get-children-objects
   "Retrieve all children objects recursively for a given object"
