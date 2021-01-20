@@ -112,12 +112,30 @@
                :x2 x2 :y2 y2
                :style {:stroke line-color :stroke-width (str (/ 1 zoom))}}])]))
 
-(defn calculate-segments [coord selrect lt-shapes gt-shapes]
-  (let [pair->distance+pair
-        (fn [[sh1 sh2]]
-          [(-> (gsh/distance-shapes sh1 sh2) coord (mth/precision 0)) [sh1 sh2]])
+(defn add-distance [coord sh1 sh2]
+  (let [sr1 (:selrect sh1)
+        sr2 (:selrect sh2)
+        c1 (if (= coord :x) :x1 :y1)
+        c2 (if (= coord :x) :x2 :y2)
+        dist (mth/precision (- (c1 sr2) (c2 sr1)) 0)]
+    [dist [sh1 sh2]]))
 
-        distance-to-selrect
+(defn overlap? [coord sh1 sh2]
+  (let [sr1 (:selrect sh1)
+        sr2 (:selrect sh2)
+        c1 (if (= coord :x) :y1 :x1)
+        c2 (if (= coord :x) :y2 :x2)
+        s1c1 (c1 sr1)
+        s1c2 (c2 sr1)
+        s2c1 (c1 sr2)
+        s2c2 (c2 sr2)]
+    (or (and (>= s2c1 s1c1) (<= s2c1 s1c2))
+        (and (>= s2c2 s1c1) (<= s2c2 s1c2))
+        (and (>= s1c1 s2c1) (<= s1c1 s2c2))
+        (and (>= s1c2 s2c1) (<= s1c2 s2c2)))))
+
+(defn calculate-segments [coord selrect lt-shapes gt-shapes]
+  (let [distance-to-selrect
         (fn [shape]
           (let [sr (:selrect shape)]
             (-> (if (<= (coord sr) (coord selrect))
@@ -129,11 +147,10 @@
         get-shapes-match
         (fn [pred? shapes]
           (->> shapes
-               (sort-by coord)
-               (d/map-perm vector)
-               (filter (fn [[sh1 sh2]] (gsh/overlap-coord? coord sh1 sh2)))
-               (map pair->distance+pair)
-               (filter (comp pred? first))))
+               (sort-by (comp coord :selrect))
+               (d/map-perm #(add-distance coord %1 %2)
+                           #(overlap? coord %1 %2))
+               (filterv (comp pred? first))))
 
         ;; Checks if the value is in a set of numbers with an error margin
         check-in-set
@@ -144,15 +161,17 @@
         ;; Left/Top shapes and right/bottom shapes (depends on `coord` parameter
 
         ;; Gets the distance to the current selection
-        lt-distances (->> lt-shapes (map distance-to-selrect) (filter pos?) (into #{}))
-        gt-distances (->> gt-shapes (map distance-to-selrect) (filter pos?) (into #{}))
+        distances-xf (comp (map distance-to-selrect) (filter pos?))
+        lt-distances (into #{} distances-xf lt-shapes)
+        gt-distances (into #{} distances-xf gt-shapes)
+        distances (set/union lt-distances gt-distances)
 
         ;; We'll show the distances that match a distance from the selrect
-        show-candidate? #(check-in-set % (set/union lt-distances gt-distances))
+        show-candidate? #(check-in-set % distances)
 
         ;; Checks the distances between elements for distances that match the set of distances
-        distance-coincidences (concat (get-shapes-match show-candidate? lt-shapes)
-                                      (get-shapes-match show-candidate? gt-shapes))
+        distance-coincidences (d/concat (get-shapes-match show-candidate? lt-shapes)
+                                        (get-shapes-match show-candidate? gt-shapes))
 
         ;; Stores the distance candidates to be shown
         distance-candidates (d/concat
@@ -219,14 +238,16 @@
             (->> (query-side lt-side)
                  (rx/combine-latest vector (query-side gt-side)))))
 
-
         [lt-shapes gt-shapes] @to-measure
 
-        segments-to-display (calculate-segments coord selrect lt-shapes gt-shapes)]
+        segments-to-display (mf/use-memo
+                             (mf/deps @to-measure)
+                             #(calculate-segments coord selrect lt-shapes gt-shapes))]
 
     (mf/use-effect
      (fn []
        (let [sub (->> subject
+                      (rx/throttle 100)
                       (rx/switch-map query-worker)
                       (rx/subs #(reset! to-measure %)))]
          ;; On unmount dispose

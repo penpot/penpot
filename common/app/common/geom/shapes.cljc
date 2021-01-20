@@ -218,27 +218,6 @@
 (defn distance-shapes [shape other]
   (distance-selrect (:selrect shape) (:selrect other)))
 
-(defn overlap-coord?
-  "Checks if two shapes overlap in one axis"
-  [coord shape other]
-  (let [[s1c1 s1c2 s2c1 s2c2]
-        ;; If checking if overlaps in x-axis we need to check the y
-        ;; coordinates, and the other way around
-        (if (= coord :x)
-          [(get-in shape [:selrect :y1])
-           (get-in shape [:selrect :y2])
-           (get-in other [:selrect :y1])
-           (get-in other [:selrect :y2])]
-          [(get-in shape [:selrect :x1])
-           (get-in shape [:selrect :x2])
-           (get-in other [:selrect :x1])
-           (get-in other [:selrect :x2])])]
-    (or (and (>= s2c1 s1c1) (<= s2c1 s1c2))
-        (and (>= s2c2 s1c1) (<= s2c2 s1c2))
-        (and (>= s1c1 s2c1) (<= s1c1 s2c2))
-        (and (>= s1c2 s2c1) (<= s1c2 s2c2)))))
-
-
 (defn setup-selrect [shape]
   (let [selrect (gpr/rect->selrect shape)
         points  (gpr/rect->points shape)]
