@@ -58,13 +58,19 @@
             stoper   (rx/filter #(= ::finalize %) stream)
             interval (* 1000 60)]
         (->> (rx/merge
+              ;; Each 60 seconds send a keepalive message for maintain
+              ;; this socket open.
               (->> (rx/timer interval interval)
                    (rx/map #(send-keepalive file-id)))
+
+              ;; Process all incoming messages.
               (->> (ws/-stream wsession)
                    (rx/filter ws/message?)
                    (rx/map (comp t/decode :payload))
                    (rx/filter #(s/valid? ::message %))
                    (rx/map process-message))
+
+              ;; Send back to backend all pointer messages.
               (->> stream
                    (rx/filter ms/pointer-event?)
                    (rx/sample 50)
@@ -130,7 +136,7 @@
     })
 
 (defn handle-presence
-  [{:keys [sessions] :as msg}]
+  [{:keys [sessions] :as message}]
   (letfn [(assign-color [sessions session]
             (if (string? (:color session))
               session
@@ -152,12 +158,12 @@
               (assoc sessions id session)))
 
           (update-sessions [previous profiles]
-            (let [previous    (select-keys previous (map first sessions)) ; Initial clearing
-                  pending     (->> sessions
-                                   (filter #(not (contains? previous (first %))))
-                                   (map (fn [[session-id profile-id]]
-                                          {:id session-id
-                                           :profile (get profiles profile-id)})))]
+            (let [previous (select-keys previous (map first sessions)) ; Initial clearing
+                  pending  (->> sessions
+                                (filter #(not (contains? previous (first %))))
+                                (map (fn [[session-id profile-id]]
+                                       {:id session-id
+                                        :profile (get profiles profile-id)})))]
               (reduce assign-session previous pending)))]
 
     (ptk/reify ::handle-presence
