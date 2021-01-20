@@ -222,24 +222,7 @@
                           (d/dissoc-in [pid :remote-synced?])))))))))
 
           (update-parent-id [objects id]
-            (update objects id
-                    (fn [object]
-                      (let [prev-component-root (cph/get-root-shape object objects)
-                            detach-component (fn [object]
-                                               (let [new-component-root
-                                                     (cph/get-root-shape object objects)]
-                                                 (cond-> object
-                                                   (not= prev-component-root new-component-root)
-                                                   (dissoc object
-                                                           :component-id
-                                                           :component-file
-                                                           :component-root?
-                                                           :remote-synced?
-                                                           :shape-ref
-                                                           :touched))))]
-                        (-> object
-                            (assoc :parent-id parent-id)
-                            detach-component)))))
+            (assoc-in objects [id :parent-id] parent-id))
 
           ;; Updates the frame-id references that might be outdated
           (assign-frame-id [frame-id objects id]
@@ -276,7 +259,7 @@
                   ;; Add the new shapes to the parent object.
                   (update $ parent-id #(add-to-parent % index shapes))
 
-                  ;; Update each individual shapre link to the new parent
+                  ;; Update each individual shape link to the new parent
                   (reduce update-parent-id $ shapes)
 
                   ;; Analyze the old parents and clear the old links

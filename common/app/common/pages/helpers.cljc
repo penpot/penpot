@@ -33,12 +33,23 @@
   (update page :objects
           #(into % (d/index-by :id objects-list))))
 
+(defn get-component-shape
+  "Get the parent shape linked to a component for this shape, if any"
+  [shape objects]
+  (if-not (:shape-ref shape)
+    nil
+    (if (:component-id shape)
+      shape
+      (if-let [parent-id (:parent-id shape)]
+        (get-component-shape (get objects parent-id) objects)
+        nil))))
+
 (defn get-root-shape
   "Get the root shape linked to a component for this shape, if any"
   [shape objects]
   (if-not (:shape-ref shape)
     nil
-    (if (:component-id shape)
+    (if (:component-root? shape)
       shape
       (if-let [parent-id (:parent-id shape)]
         (get-root-shape (get objects parent-id) objects)
