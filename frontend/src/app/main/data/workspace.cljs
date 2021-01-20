@@ -19,6 +19,7 @@
    [app.common.geom.align :as gal]
    [app.common.math :as mth]
    [app.common.pages :as cp]
+   [app.common.pages.helpers :as cph]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
@@ -838,6 +839,33 @@
                     #{}
                     ids)
 
+            [shapes-to-detach shapes-to-deroot shapes-to-reroot]
+            (reduce (fn [[shapes-to-detach shapes-to-deroot shapes-to-reroot] id]
+                      (let [shape          (get objects id)
+                            instance-part? (and (:shape-ref shape)
+                                                (not (:component-id shape)))
+                            instance-root? (:component-root? shape)
+                            sub-instance?  (and (:component-id shape)
+                                                (not (:component-root? shape)))
+
+                            parent                 (get objects parent-id)
+                            component-shape        (cph/get-component-shape shape objects)
+                            component-shape-parent (cph/get-component-shape parent objects)
+
+                            detach? (and instance-part? (not= (:id component-shape)
+                                                              (:id component-shape-parent)))
+                            deroot? (and instance-root? component-shape-parent)
+                            reroot? (and sub-instance? (not component-shape-parent))
+
+                            ids-to-detach (when detach?
+                                            (cons id (cph/get-children id objects)))]
+
+                        [(cond-> shapes-to-detach detach? (into ids-to-detach))
+                         (cond-> shapes-to-deroot deroot? (conj id))
+                         (cond-> shapes-to-reroot reroot? (conj id))]))
+                    [[] [] []]
+                    ids)
+
             rchanges (d/concat
                        [{:type :mov-objects
                          :parent-id parent-id
@@ -854,7 +882,46 @@
                                :operations [{:type :set
                                              :attr :masked-group?
                                              :val false}]})
-                            groups-to-unmask))
+                            groups-to-unmask)
+                       (map (fn [id]
+                              {:type :mod-obj
+                               :page-id page-id
+                               :id id
+                               :operations [{:type :set
+                                             :attr :component-id
+                                             :val nil}
+                                            {:type :set
+                                             :attr :component-file
+                                             :val nil}
+                                            {:type :set
+                                             :attr :component-root?
+                                             :val nil}
+                                            {:type :set
+                                             :attr :remote-synced?
+                                             :val nil}
+                                            {:type :set
+                                             :attr :shape-ref
+                                             :val nil}
+                                            {:type :set
+                                             :attr :touched
+                                             :val nil}]})
+                            shapes-to-detach)
+                       (map (fn [id]
+                              {:type :mod-obj
+                               :page-id page-id
+                               :id id
+                               :operations [{:type :set
+                                             :attr :component-root?
+                                             :val nil}]})
+                            shapes-to-deroot)
+                       (map (fn [id]
+                              {:type :mod-obj
+                               :page-id page-id
+                               :id id
+                               :operations [{:type :set
+                                             :attr :component-root?
+                                             :val true}]})
+                            shapes-to-reroot))
 
             uchanges (d/concat
                        (reduce (fn [res id]
@@ -876,7 +943,47 @@
                                :operations [{:type :set
                                              :attr :masked-group?
                                              :val true}]})
-                            groups-to-unmask))]
+                            groups-to-unmask)
+                       (map (fn [id]
+                              (let [obj (get objects id)]
+                                {:type :mod-obj
+                                 :page-id page-id
+                                 :id id
+                                 :operations [{:type :set
+                                               :attr :component-id
+                                               :val (:component-id obj)}
+                                              {:type :set
+                                               :attr :component-file
+                                               :val (:component-file obj)}
+                                              {:type :set
+                                               :attr :component-root?
+                                               :val (:component-root? obj)}
+                                              {:type :set
+                                               :attr :remote-synced?
+                                               :val (:remote-synced? obj)}
+                                              {:type :set
+                                               :attr :shape-ref
+                                               :val (:shape-ref obj)}
+                                              {:type :set
+                                               :attr :touched
+                                               :val (:touched obj)}]}))
+                            shapes-to-detach)
+                       (map (fn [id]
+                              {:type :mod-obj
+                               :page-id page-id
+                               :id id
+                               :operations [{:type :set
+                                             :attr :component-root?
+                                             :val true}]})
+                            shapes-to-deroot)
+                       (map (fn [id]
+                              {:type :mod-obj
+                               :page-id page-id
+                               :id id
+                               :operations [{:type :set
+                                             :attr :component-root?
+                                             :val nil}]})
+                            shapes-to-reroot))]
 
         ;; (println "================ rchanges")
         ;; (cljs.pprint/pprint rchanges)

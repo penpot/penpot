@@ -29,6 +29,7 @@
 (d/export helpers/walk-pages)
 (d/export helpers/select-objects)
 (d/export helpers/update-object-list)
+(d/export helpers/get-component-shape)
 (d/export helpers/get-root-shape)
 (d/export helpers/make-container)
 (d/export helpers/page?)
