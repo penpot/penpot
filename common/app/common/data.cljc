@@ -177,15 +177,15 @@
     (join [1 2 3] [:a :b]) => ([1 :a] [1 :b] [2 :a] [2 :b] [3 :a] [3 :b])
   You can pass a function to merge the items. By default is `vector`:
     (join [1 2 3] [1 10 100] *) => (1 10 100 2 20 200 3 30 300)"
-  ([col1 col2] (join col1 col2 vector '()))
-  ([col1 col2 join-fn] (join col1 col2 join-fn '()))
+  ([col1 col2] (join col1 col2 vector []))
+  ([col1 col2 join-fn] (join col1 col2 join-fn []))
   ([col1 col2 join-fn acc]
    (cond
      (empty? col1) acc
      (empty? col2) acc
      :else (recur (rest col1) col2 join-fn
-                  (core/concat acc (map (partial join-fn (first col1)) col2))))))
-
+                  (let [other (mapv (partial join-fn (first col1)) col2)]
+                    (concat acc other))))))
 
 (def sentinel
   #?(:clj (Object.)

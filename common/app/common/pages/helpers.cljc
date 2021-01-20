@@ -88,14 +88,35 @@
   [component]
   (get-in component [:objects (:id component)]))
 
+;; Implemented with transient for performance
 (defn get-children
   "Retrieve all children ids recursively for a given object"
   [id objects]
-  ;; TODO: find why does this sometimes come as a list instead of vector
-  (let [shapes (vec (get-in objects [id :shapes]))]
-    (if shapes
-      (d/concat shapes (mapcat #(get-children % objects) shapes))
-      [])))
+
+  (loop [result (transient [])
+         pending (transient [])
+         next id]
+    (let [children (get-in objects [next :shapes] [])
+          [result pending]
+          ;; Iterate through children and add them to the result
+          ;; also add them in pending to check for their children
+          (loop [result result
+                 pending pending
+                 current (first children)
+                 children (rest children)]
+            (if current
+              (recur (conj! result current)
+                     (conj! pending current)
+                     (first children)
+                     (rest children))
+              [result pending]))]
+
+      ;; If we have still pending, advance the iterator
+      (let [length (count pending)]
+        (if (pos? length)
+          (let [next (get pending (dec length))]
+            (recur result (pop! pending) next))
+          (persistent! result))))))
 
 (defn get-children-objects
   "Retrieve all children objects recursively for a given object"

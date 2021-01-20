@@ -22,7 +22,8 @@
    [app.util.timers :as ts]
    [beicon.core :as rx]
    [okulary.core :as l]
-   [rumext.alpha :as mf]))
+   [rumext.alpha :as mf]
+   [app.main.ui.context :as muc]))
 
 (defn- frame-wrapper-factory-equals?
   [np op]
@@ -100,14 +101,15 @@
   (mf/fnc deferred
     {::mf/wrap-props false}
     [props]
-    (let [tmp (mf/useState false)
+    (let [ghost? (mf/use-ctx muc/ghost-ctx)
+          tmp (mf/useState false)
           ^boolean render? (aget tmp 0)
           ^js set-render (aget tmp 1)]
       (mf/use-layout-effect
        (fn []
          (let [sem (ts/schedule-on-idle #(set-render true))]
            #(rx/dispose! sem))))
-      (if (unchecked-get props "ghost?")
+      (if ghost?
         (mf/create-element component props)
         (when render? (mf/create-element component props))))))
 
@@ -120,7 +122,7 @@
       [props]
       (let [shape   (unchecked-get props "shape")
             objects (unchecked-get props "objects")
-            ghost?  (unchecked-get props "ghost?")
+            ghost? (mf/use-ctx muc/ghost-ctx)
 
             moving-iref   (mf/use-memo (mf/deps (:id shape))
                                        #(make-is-moving-ref (:id shape)))
@@ -136,15 +138,16 @@
 
             handle-context-menu (we/use-context-menu shape)
             handle-double-click (use-select-shape shape)
-            handle-mouse-down   (we/use-mouse-down shape)]
+            handle-mouse-down   (we/use-mouse-down shape)
 
-        (when (and shape
-                   (or ghost? (not moving?))
-                   (not (:hidden shape)))
-          [:g {:class (when selected? "selected")
-               :on-context-menu handle-context-menu
-               :on-double-click handle-double-click
-               :on-mouse-down   handle-mouse-down}
+            hide-moving? (and (not ghost?) moving?)]
+
+        (when (and shape (not (:hidden shape)))
+          [:g.frame-wrapper {:class (when selected? "selected")
+                             :style {:display (when hide-moving? "none")}
+                             :on-context-menu handle-context-menu
+                             :on-double-click handle-double-click
+                             :on-mouse-down   handle-mouse-down}
 
            [:& frame-title {:frame shape}]
 

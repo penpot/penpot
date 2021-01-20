@@ -26,6 +26,10 @@
   #?(:cljs (and (not (nil? v)) (js/isFinite v))
      :clj (and (not (nil? v)) (Double/isFinite v))))
 
+(defn finite
+  [v default]
+  (if (finite? v) v default))
+
 (defn abs
   [v]
   #?(:cljs (js/Math.abs v)

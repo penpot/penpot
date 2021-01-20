@@ -162,7 +162,6 @@
   (let [hover    (unchecked-get props "hover")
         selected (unchecked-get props "selected")
         ids      (unchecked-get props "ids")
-        ghost?   (unchecked-get props "ghost?")
         edition  (unchecked-get props "edition")
         data     (mf/deref refs/workspace-page)
         objects  (:objects data)
@@ -180,17 +179,14 @@
         (if (= (:type item) :frame)
           [:& frame-wrapper {:shape item
                              :key (:id item)
-                             :objects objects
-                             :ghost? ghost?}]
+                             :objects objects}]
           [:& shape-wrapper {:shape item
-                             :key (:id item)
-                             :ghost? ghost?}]))]
+                             :key (:id item)}]))]
 
-     (when (not ghost?)
-       [:& shape-outlines {:objects objects
-                           :selected selected
-                           :hover hover
-                           :edition edition}])]))
+     [:& shape-outlines {:objects objects
+                         :selected selected
+                         :hover hover
+                         :edition edition}]]))
 
 (mf/defc ghost-frames
   {::mf/wrap-props false}
@@ -206,18 +202,22 @@
                       (map gsh/transform-shape))
 
         selrect      (->> (into [] xf sobjects)
-                          (gsh/selection-rect))]
-    [:svg.ghost
-     {:x (:x selrect)
-      :y (:y selrect)
-      :width (:width selrect)
-      :height (:height selrect)
-      :style {:pointer-events "none"}}
+                          (gsh/selection-rect))
 
-     [:g {:transform (str/fmt "translate(%s,%s)" (- (:x selrect-orig)) (- (:y selrect-orig)))}
-      [:& frames
-       {:ids selected
-        :ghost? true}]]]))
+        transform (when (and (mth/finite? (:x selrect-orig))
+                             (mth/finite? (:y selrect-orig)))
+                    (str/fmt "translate(%s,%s)" (- (:x selrect-orig)) (- (:y selrect-orig))))]
+    [:& (mf/provider ctx/ghost-ctx) {:value true}
+     [:svg.ghost
+      {:x (mth/finite (:x selrect) 0)
+       :y (mth/finite (:y selrect) 0)
+       :width (mth/finite (:width selrect) 100)
+       :height (mth/finite (:height selrect) 100)
+       :style {:pointer-events "none"}}
+
+      [:g {:transform transform}
+       [:& frames
+        {:ids selected}]]]]))
 
 (defn format-viewbox [vbox]
   (str/join " " [(+ (:x vbox 0) (:left-offset vbox 0))
@@ -655,9 +655,9 @@
                    :selected selected
                    :edition edition}]
 
-       (when (= :move (:transform local))
-         [:& ghost-frames {:modifiers (:modifiers local)
-                           :selected selected}])
+       [:g {:style {:display (when (not= :move (:transform local)) "none")}}
+        [:& ghost-frames {:modifiers (:modifiers local)
+                          :selected selected}]]
 
        (when (seq selected)
          [:& selection-handlers {:selected selected
