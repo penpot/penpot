@@ -92,7 +92,9 @@
         on-success
         (mf/use-callback
          (mf/deps team)
-         (st/emitf (dm/success "Invitation sent successfully")))
+         (st/emitf (dm/success "Invitation sent successfully")
+                   (modal/hide)))
+
 
         on-submit
         (mf/use-callback
