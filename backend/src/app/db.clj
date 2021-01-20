@@ -13,6 +13,7 @@
    [app.common.geom.point :as gpt]
    [app.common.spec :as us]
    [app.config :as cfg]
+   [app.db.sql :as sql]
    [app.util.json :as json]
    [app.util.migrations :as mg]
    [app.util.time :as dt]
@@ -22,10 +23,7 @@
    [clojure.string :as str]
    [integrant.core :as ig]
    [next.jdbc :as jdbc]
-   [next.jdbc.date-time :as jdbc-dt]
-   [next.jdbc.optional :as jdbc-opt]
-   [next.jdbc.sql :as jdbc-sql]
-   [next.jdbc.sql.builder :as jdbc-bld])
+   [next.jdbc.date-time :as jdbc-dt])
   (:import
    com.zaxxer.hikari.HikariConfig
    com.zaxxer.hikari.HikariDataSource
@@ -166,12 +164,6 @@
   [& args]
   `(jdbc/with-transaction ~@args))
 
-(defn- kebab-case [s] (str/replace s #"_" "-"))
-(defn- snake-case [s] (str/replace s #"-" "_"))
-(defn- as-kebab-maps
-  [rs opts]
-  (jdbc-opt/as-unqualified-modified-maps rs (assoc opts :label-fn kebab-case)))
-
 (defn open
   [pool]
   (jdbc/get-connection pool))
@@ -180,40 +172,39 @@
   ([ds sv]
    (exec! ds sv {}))
   ([ds sv opts]
-   (jdbc/execute! ds sv (assoc opts :builder-fn as-kebab-maps))))
+   (jdbc/execute! ds sv (assoc opts :builder-fn sql/as-kebab-maps))))
 
 (defn exec-one!
   ([ds sv] (exec-one! ds sv {}))
   ([ds sv opts]
-   (jdbc/execute-one! ds sv (assoc opts :builder-fn as-kebab-maps))))
-
-(def ^:private default-options
-  {:table-fn snake-case
-   :column-fn snake-case
-   :builder-fn as-kebab-maps})
+   (jdbc/execute-one! ds sv (assoc opts :builder-fn sql/as-kebab-maps))))
 
 (defn insert!
-  [ds table params]
-  (jdbc-sql/insert! ds table params default-options))
+  ([ds table params] (insert! ds table params nil))
+  ([ds table params opts]
+   (exec-one! ds
+              (sql/insert table params opts)
+              (assoc opts :return-keys true))))
 
 (defn update!
-  [ds table params where]
-  (let [opts (assoc default-options :return-keys true)]
-    (jdbc-sql/update! ds table params where opts)))
+  ([ds table params where] (update! ds table params where nil))
+  ([ds table params where opts]
+   (exec-one! ds
+              (sql/update table params where opts)
+              (assoc opts :return-keys true))))
 
 (defn delete!
-  [ds table params]
-  (let [opts (assoc default-options :return-keys true)]
-    (jdbc-sql/delete! ds table params opts)))
+  ([ds table params] (delete! ds table params nil))
+  ([ds table params opts]
+   (exec-one! ds
+              (sql/delete table params opts)
+              (assoc opts :return-keys true))))
 
 (defn get-by-params
   ([ds table params]
    (get-by-params ds table params nil))
   ([ds table params opts]
-   (let [opts (cond-> (merge default-options opts)
-                (:for-update opts)
-                (assoc :suffix "for update"))
-         res  (exec-one! ds (jdbc-bld/for-query table params opts) opts)]
+   (let [res (exec-one! ds (sql/select table params opts))]
      (when (or (:deleted-at res) (not res))
        (ex/raise :type :not-found
                  :hint "database object not found"))
@@ -229,10 +220,7 @@
   ([ds table params]
    (query ds table params nil))
   ([ds table params opts]
-   (let [opts (cond-> (merge default-options opts)
-                (:for-update opts)
-                (assoc :suffix "for update"))]
-     (exec! ds (jdbc-bld/for-query table params opts) opts))))
+   (exec! ds (sql/select table params opts))))
 
 (defn pgobject?
   [v]
