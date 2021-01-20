@@ -162,14 +162,37 @@
 (defn map-perm
   "Maps a function to each pair of values that can be combined inside the
   function without repetition.
+
+  Optional parmeters:
+  `pred?`   A predicate that if not satisfied won't process the pair
+  `target?` A collection that will be used as seed to be stored
+
   Example:
   (map-perm vector [1 2 3 4]) => [[1 2] [1 3] [1 4] [2 3] [2 4] [3 4]]"
-  [mfn coll]
-  (if (empty? coll)
-    []
-    (core/concat
-     (map (partial mfn (first coll)) (rest coll))
-     (map-perm mfn (rest coll)))))
+  ([mfn coll]
+   (map-perm mfn (constantly true) [] coll))
+  ([mfn pred? coll]
+   (map-perm mfn pred? [] coll))
+  ([mfn pred? target coll]
+   (loop [result (transient target)
+          current (first coll)
+          coll (rest coll)]
+     (if (not current)
+       (persistent! result)
+       (let [result
+             (loop [result result
+                    other (first coll)
+                    coll (rest coll)]
+               (if (not other)
+                 result
+                 (recur (cond-> result
+                          (pred? current other)
+                          (conj! (mfn current other)))
+                        (first coll)
+                        (rest coll))))]
+         (recur result
+                (first coll)
+                (rest coll)))))))
 
 (defn join
   "Returns a new collection with the cartesian product of both collections.

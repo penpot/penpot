@@ -96,10 +96,27 @@
     ;; snap-x is the second parameter because is the "source" to combine
     (rx/combine-latest snap->vector snap-y snap-x)))
 
+(defn sr-distance [coord sr1 sr2]
+  (let [c1 (if (= coord :x) :x1 :y1)
+        c2 (if (= coord :x) :x2 :y2)
+        dist (- (c1 sr2) (c2 sr1))]
+    dist))
+
+(defn overlap? [coord sr1 sr2]
+  (let [c1 (if (= coord :x) :y1 :x1)
+        c2 (if (= coord :x) :y2 :x2)
+        s1c1 (c1 sr1)
+        s1c2 (c2 sr1)
+        s2c1 (c1 sr2)
+        s2c2 (c2 sr2)]
+    (or (and (>= s2c1 s1c1) (<= s2c1 s1c2))
+        (and (>= s2c2 s1c1) (<= s2c2 s1c2))
+        (and (>= s1c1 s2c1) (<= s1c1 s2c2))
+        (and (>= s1c2 s2c1) (<= s1c2 s2c2)))))
+
 (defn calculate-snap [coord selrect shapes-lt shapes-gt]
-  (let [dist (fn [[sh1 sh2]] (-> sh1 (gsh/distance-shapes sh2) coord))
-        dist-lt (fn [other] (-> (:selrect other) (gsh/distance-selrect selrect) coord))
-        dist-gt (fn [other] (-> selrect (gsh/distance-selrect (:selrect other)) coord))
+  (let [dist-lt (fn [other] (sr-distance coord (:selrect other) selrect))
+        dist-gt (fn [other] (sr-distance coord selrect (:selrect other)))
 
         ;; Calculates the snap distance when in the middle of two shapes
         between-snap
@@ -114,13 +131,12 @@
 
         ;; Calculates the distance between all the shapes given as argument
         inner-distance
-        (fn [shapes]
-          (->> shapes
+        (fn [selrects]
+          (->> selrects
                (sort-by coord)
-               (d/map-perm vector)
-               (filter (fn [[sh1 sh2]] (gsh/overlap-coord? coord sh1 sh2)))
-               (map dist)
-               (filterv #(> % 0))))
+               (d/map-perm #(sr-distance coord %1 %2)
+                           #(overlap? coord %1 %2)
+                           #{})))
 
         best-snap
         (fn [acc val]
@@ -132,13 +148,13 @@
 
         ;; Distance between the elements in an area, these are the snap
         ;; candidates to either side
-        lt-cand (inner-distance shapes-lt)
-        gt-cand (inner-distance shapes-gt)
+        lt-cand (inner-distance (mapv :selrect shapes-lt))
+        gt-cand (inner-distance (mapv :selrect shapes-gt))
 
         ;; Distance between the elements to either side and the current shape
         ;; this is the distance that will "snap"
-        lt-dist (mapv dist-lt shapes-lt)
-        gt-dist (mapv dist-gt shapes-gt)
+        lt-dist (into #{} (map dist-lt) shapes-lt)
+        gt-dist (into #{} (map dist-gt) shapes-gt)
 
         ;; Calculate the snaps, we need to reverse depending on area
         lt-snap (d/join lt-cand lt-dist -)
@@ -150,6 +166,7 @@
 
         ;; Search the minimum snap
         snap-list (-> [] (d/concat lt-snap) (d/concat gt-snap) (d/concat between-snap))
+
         min-snap (reduce best-snap ##Inf snap-list)]
 
     (if (mth/finite? min-snap) [0 min-snap] nil)))
@@ -214,11 +231,10 @@
                            (sp/shape-snap-points)
                            ;; Move the points in the translation vector
                            (map #(gpt/add % movev)))]
+
     (->> (rx/merge (closest-snap page-id frame-id shapes-points filter-shapes)
                    (when (contains? layout :dynamic-alignment)
                      (closest-distance-snap page-id shapes objects movev)))
          (rx/reduce gpt/min)
-         (rx/map #(or % (gpt/point 0 0)))
-         (rx/map #(gpt/add movev %))
-         (rx/map #(gpt/round % 0)))))
+         (rx/map #(or % (gpt/point 0 0))))))
 
