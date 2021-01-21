@@ -12,6 +12,7 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
+   [app.rpc.permissions :as perms]
    [app.rpc.queries.teams :as teams]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
@@ -34,29 +35,17 @@
     where ppr.project_id = ?
       and ppr.profile_id = ?")
 
-(defn check-edition-permissions!
+(defn- retrieve-project-permissions
   [conn profile-id project-id]
-  (let [rows (db/exec! conn [sql:project-permissions
-                             project-id profile-id
-                             project-id profile-id])]
-    (when (empty? rows)
-      (ex/raise :type :not-found))
-    (when-not (or (some :can-edit rows)
-                  (some :is-admin rows)
-                  (some :is-owner rows))
-      (ex/raise :type :authorization
-                :code :not-authorized))))
+  (db/exec! conn [sql:project-permissions
+                  project-id profile-id
+                  project-id profile-id]))
 
-(defn check-read-permissions!
-  [conn profile-id project-id]
-  (let [rows (db/exec! conn [sql:project-permissions
-                             project-id profile-id
-                             project-id profile-id])]
+(def check-edition-permissions!
+  (perms/make-edition-check-fn retrieve-project-permissions))
 
-    (when-not (seq rows)
-      (ex/raise :type :authorization
-                :code :not-authorized))))
-
+(def check-read-permissions!
+  (perms/make-read-check-fn retrieve-project-permissions))
 
 
 ;; --- Query: Projects

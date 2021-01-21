@@ -12,6 +12,7 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
+   [app.rpc.permissions :as perms]
    [app.rpc.queries.profile :as profile]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
@@ -26,24 +27,15 @@
     where tpr.profile_id = ?
       and tpr.team_id = ?")
 
-(defn check-edition-permissions!
+(defn- retrieve-team-permissions
   [conn profile-id team-id]
-  (let [row (db/exec-one! conn [sql:team-permissions profile-id team-id])]
-    (when-not (or (:can-edit row)
-                  (:is-admin row)
-                  (:is-owner row))
-      (ex/raise :type :authorization
-                :code :not-authorized))
-    row))
+  (db/exec! conn [sql:team-permissions profile-id team-id]))
 
-(defn check-read-permissions!
-  [conn profile-id team-id]
-  (let [row (db/exec-one! conn [sql:team-permissions profile-id team-id])]
-    ;; when row is found this means that read permission is granted.
-    (when-not row
-      (ex/raise :type :authorization
-                :code :not-authorized))
-    row))
+(def check-edition-permissions!
+  (perms/make-edition-check-fn retrieve-team-permissions))
+
+(def check-read-permissions!
+  (perms/make-read-check-fn retrieve-team-permissions))
 
 
 ;; --- Query: Teams
@@ -96,7 +88,7 @@
         result   (db/exec-one! conn [sql (:default-team-id defaults) profile-id team-id])]
     (when-not result
       (ex/raise :type :not-found
-                :code :object-does-not-exists))
+                :code :team-does-not-exist))
     result))
 
 
