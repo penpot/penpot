@@ -11,6 +11,7 @@
   (:require
    [rumext.alpha :as mf]
    [app.common.pages :as cp]
+   [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -54,8 +55,23 @@
         do-update-component #(do
                                (st/emit! (dwc/start-undo-transaction))
                                (st/emit! (dwl/update-component id))
-                               (st/emit! (dwl/sync-file current-file-id))
+                               (st/emit! (dwl/sync-file current-file-id current-file-id))
                                (st/emit! (dwc/commit-undo-transaction)))
+        confirm-update-remote-component #(do
+                                           (st/emit! (dwl/update-component id))
+                                           (st/emit! (dwl/sync-file current-file-id
+                                                                    (:component-file values)))
+                                           (st/emit! (dwl/sync-file (:component-file values)
+                                                                    (:component-file values))))
+        do-update-remote-component (st/emitf (modal/show
+                                                {:type :confirm
+                                                 :message ""
+                                                 :title (t locale "modals.update-remote-component.message")
+                                                 :hint (t locale "modals.update-remote-component.hint")
+                                                 :cancel-label (t locale "modals.update-remote-component.cancel")
+                                                 :accept-label (t locale "modals.update-remote-component.accept")
+                                                 :accept-style :primary
+                                                 :on-accept confirm-update-remote-component}))
         do-show-component #(st/emit! (dw/go-to-layout :assets))
         do-navigate-component-file #(st/emit! (dwl/nav-to-component-file
                                                 (:component-file values)))]
@@ -83,5 +99,6 @@
 
                                        [[(t locale "workspace.shape.menu.detach-instance") do-detach-component]
                                         [(t locale "workspace.shape.menu.reset-overrides") do-reset-component]
-                                        [(t locale "workspace.shape.menu.go-master") do-navigate-component-file]])}]]]]])))
+                                        [(t locale "workspace.shape.menu.go-master") do-navigate-component-file]
+                                        [(t locale "workspace.shape.menu.update-master") do-update-remote-component]])}]]]]])))
 

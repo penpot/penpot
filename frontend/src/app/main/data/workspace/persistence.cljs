@@ -55,6 +55,13 @@
                           (rx/debounce 2000)
                           (rx/merge stoper forcer))
 
+            local-file? #(let [event-file-id (:file-id %)]
+                           (or (nil? event-file-id)
+                               (= event-file-id file-id)))
+            library-file? #(let [event-file-id (:file-id %)]
+                           (and (some? event-file-id)
+                                (not= event-file-id file-id)))
+
             on-dirty
             (fn []
               ;; Enable reload stoper
@@ -70,27 +77,36 @@
               ;; Disable reload stoper
               (obj/set! js/window "onbeforeunload" nil)
               (st/emit! (update-persistence-status {:status :saved})))]
-
         (->> (rx/merge
-              (->> stream
-                   (rx/filter (ptk/type? ::dwc/commit-changes))
-                   (rx/map deref)
-                   (rx/tap on-dirty)
-                   (rx/buffer-until notifier)
-                   (rx/map vec)
-                   (rx/filter (complement empty?))
-                   (rx/map #(persist-changes file-id %))
-                   (rx/tap on-saving)
-                   (rx/take-until (rx/delay 100 stoper)))
-              (->> stream
-                   (rx/filter (ptk/type? ::changes-persisted))
-                   (rx/tap on-saved)
-                   (rx/ignore)
-                   (rx/take-until stoper)))
+               (->> stream
+                    (rx/filter (ptk/type? ::dwc/commit-changes))
+                    (rx/map deref)
+                    (rx/filter local-file?)
+                    (rx/tap on-dirty)
+                    (rx/buffer-until notifier)
+                    (rx/filter (complement empty?))
+                    (rx/map (fn [buf] {:file-id file-id
+                                       :changes (into [] (mapcat :changes) buf)}))
+                    (rx/map persist-changes)
+                    (rx/tap on-saving)
+                    (rx/take-until (rx/delay 100 stoper)))
+               (->> stream
+                    (rx/filter (ptk/type? ::dwc/commit-changes))
+                    (rx/map deref)
+                    (rx/filter library-file?)
+                    (rx/filter (complement #(empty? (:changes %))))
+                    (rx/map persist-changes)
+                    (rx/take-until (rx/delay 100 stoper)))
+               (->> stream
+                    (rx/filter (ptk/type? ::changes-persisted))
+                    (rx/tap on-saved)
+                    (rx/ignore)
+                    (rx/take-until stoper)))
              (rx/subs #(st/emit! %)))))))
 
 (defn persist-changes
-  [file-id changes]
+  [{:keys [file-id changes]}]
+  (us/verify ::us/uuid file-id)
   (ptk/reify ::persist-changes
     ptk/UpdateEvent
     (update [_ state]
@@ -102,10 +118,11 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [sid     (:session-id state)
-            file    (:workspace-file state)
+            file    (if (= file-id (:current-file-id state))
+                      (get state :workspace-file)
+                      (get-in state [:workspace-libraries file-id]))
             queue   (get-in state [:workspace-persistence :queue] [])
-            xf-cat  (comp (mapcat :changes)
-                          (mapcat identity))
+            xf-cat  (comp (mapcat :changes))
             changes (into [] xf-cat queue)
             params  {:id (:id file)
                      :revn (:revn file)
@@ -143,10 +160,9 @@
                       (rx/delay 200)
                       (rx/mapcat #(rx/throw error))))))]
 
-        (when (= file-id (:id file))
-          (->> (rp/mutation :update-file params)
-               (rx/mapcat handle-response)
-               (rx/catch on-error)))))))
+        (->> (rp/mutation :update-file params)
+             (rx/mapcat handle-response)
+             (rx/catch on-error))))))
 
 
 (defn update-persistence-status
@@ -171,14 +187,16 @@
   (ptk/reify ::changes-persisted
     ptk/UpdateEvent
     (update [_ state]
-      (let [sid   (:session-id state)
-            file  (:workspace-file state)]
-        (if (= file-id (:id file))
-          (let [state (update-in state [:workspace-file :revn] #(max % revn))]
-            (-> state
-                (update :workspace-data cp/process-changes changes)
-                (update-in [:workspace-file :data] cp/process-changes changes)))
-          state)))))
+      (if (= file-id (:current-file-id state))
+        (-> state
+            (update-in [:workspace-file :revn] #(max % revn))
+            (update :workspace-data cp/process-changes changes)
+            (update-in [:workspace-file :data] cp/process-changes changes))
+        (-> state
+            (update-in state [:workspace-libraries file-id :revn]
+                       #(max % revn))
+            (update-in [:workspace-libraries file-id :data]
+                       cp/process-changes changes))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

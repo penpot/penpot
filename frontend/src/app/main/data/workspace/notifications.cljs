@@ -218,12 +218,12 @@
                    ::changes]))
 
 (defn handle-library-change
-  [{:keys [file-id modified-at changes] :as msg}]
+  [{:keys [file-id modified-at changes revn] :as msg}]
   (us/assert ::library-change-event msg)
   (ptk/reify ::handle-library-change
     ptk/WatchEvent
     (watch [_ state stream]
       (when (contains? (:workspace-libraries state) file-id)
-        (rx/of (dwl/ext-library-changed file-id modified-at changes)
+        (rx/of (dwl/ext-library-changed file-id modified-at revn changes)
                (dwl/notify-sync-file file-id))))))
 

@@ -66,7 +66,8 @@
   ([changes undo-changes]
    (commit-changes changes undo-changes {}))
   ([changes undo-changes {:keys [save-undo?
-                                 commit-local?]
+                                 commit-local?
+                                 file-id]
                           :or {save-undo? true
                                commit-local? false}
                           :as opts}]
@@ -79,17 +80,25 @@
    (let [error (volatile! nil)]
      (ptk/reify ::commit-changes
        cljs.core/IDeref
-       (-deref [_] changes)
+       (-deref [_] {:file-id file-id :changes changes})
 
        ptk/UpdateEvent
        (update [_ state]
-         (try
-           (let [state (update-in state [:workspace-file :data] cp/process-changes changes)]
-             (cond-> state
-               commit-local? (update :workspace-data cp/process-changes changes)))
-           (catch :default e
-             (vreset! error e)
-             state)))
+         (let [current-file-id (get state :current-file-id)
+               file-id (or file-id current-file-id)
+               path1   (if (= file-id current-file-id)
+                         [:workspace-file :data]
+                         [:workspace-libraries file-id :data])
+               path2   (if (= file-id current-file-id)
+                         [:workspace-data]
+                         [:workspace-libraries file-id :data])]
+           (try
+             (let [state (update-in state path1 cp/process-changes changes)]
+               (cond-> state
+                 commit-local? (update-in path2 cp/process-changes changes)))
+             (catch :default e
+               (vreset! error e)
+               state))))
 
        ptk/WatchEvent
        (watch [_ state stream]

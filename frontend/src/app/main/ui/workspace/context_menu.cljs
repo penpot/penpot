@@ -10,6 +10,7 @@
 (ns app.main.ui.workspace.context-menu
   "A workspace specific context menu (mouse right click)."
   (:require
+   [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.libraries :as dwl]
@@ -76,8 +77,24 @@
         do-update-component #(do
                                (st/emit! (dwc/start-undo-transaction))
                                (st/emit! (dwl/update-component id))
-                               (st/emit! (dwl/sync-file current-file-id))
+                               (st/emit! (dwl/sync-file current-file-id
+                                                        (:component-file shape)))
                                (st/emit! (dwc/commit-undo-transaction)))
+        confirm-update-remote-component #(do
+                                           (st/emit! (dwl/update-component id))
+                                           (st/emit! (dwl/sync-file current-file-id
+                                                                    (:component-file shape)))
+                                           (st/emit! (dwl/sync-file (:component-file shape)
+                                                                    (:component-file shape))))
+        do-update-remote-component (st/emitf (modal/show
+                                                {:type :confirm
+                                                 :message ""
+                                                 :title (t locale "modals.update-remote-component.message")
+                                                 :hint (t locale "modals.update-remote-component.hint")
+                                                 :cancel-label (t locale "modals.update-remote-component.cancel")
+                                                 :accept-label (t locale "modals.update-remote-component.accept")
+                                                 :accept-style :primary
+                                                 :on-accept confirm-update-remote-component}))
         do-show-component #(st/emit! (dw/go-to-layout :assets))
         do-navigate-component-file #(st/emit! (dwl/nav-to-component-file
                                                 (:component-file shape)))]
@@ -175,7 +192,9 @@
           [:& menu-entry {:title (t locale "workspace.shape.menu.reset-overrides")
                           :on-click do-reset-component}]
           [:& menu-entry {:title (t locale "workspace.shape.menu.go-master")
-                          :on-click do-navigate-component-file}]]))
+                          :on-click do-navigate-component-file}]
+          [:& menu-entry {:title (t locale "workspace.shape.menu.update-master")
+                          :on-click do-update-remote-component}]]))
 
      [:& menu-separator]
      [:& menu-entry {:title (t locale "workspace.shape.menu.delete")

@@ -2113,6 +2113,38 @@
       "es" : "Añadir “%s” como Biblioteca Compartida"
     }
   },
+  "modals.update-remote-component.message" : {
+    "translations" : {
+      "en" : "Update a component in a shared library",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Actualizar un componente en librería"
+    }
+  },
+  "modals.update-remote-component.hint" : {
+    "translations" : {
+      "en" : "You are about to update a component in a shared library. This may affect other files that use it.",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Vas a actualizar un componente en una librería compartida. Esto puede afectar a otros archivos que la usen."
+    }
+  },
+  "modals.update-remote-component.accept" : {
+    "translations" : {
+      "en" : "Update component",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Actualizar componente"
+    }
+  },
+  "modals.update-remote-component.cancel" : {
+    "translations" : {
+      "en" : "Cancel",
+      "fr" : "",
+      "ru" : "",
+      "es" : "Cancelar"
+    }
+  },
   "notifications.profile-deletion-not-allowed" : {
     "used-in" : [ "src/app/main/ui/settings/delete_account.cljs:28" ],
     "translations" : {
