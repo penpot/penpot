@@ -345,10 +345,7 @@
            (let [ctrl? (kbd/ctrl? event)
                  shift? (kbd/shift? event)
                  alt? (kbd/alt? event)]
-             (st/emit! (ms/->MouseEvent :double-click ctrl? shift? alt?))
-
-             (if (not drawing-path?)
-               (st/emit! dw/clear-edition-mode)))))
+             (st/emit! (ms/->MouseEvent :double-click ctrl? shift? alt?)))))
 
         on-key-down
         (mf/use-callback

@@ -45,6 +45,7 @@
                   (and (= edit-mode :move) selected?)
                   (st/emit! (drp/deselect-node position))))))
 
+
         on-mouse-down
         (fn [event]
           (when-not last-p?
@@ -60,6 +61,7 @@
 
                   (and (= edit-mode :draw) (not start-path?))
                   (st/emit! (drp/close-path-drag-start position))))))]
+
     [:g.path-point
      [:circle.path-point
       {:cx x
@@ -182,11 +184,18 @@
                 editor-dom (mf/ref-val editor-ref)]
             (when-not (or (.contains editor-dom current)
                           (dom/class? current "viewport-actions-entry"))
-              (st/emit! (drp/deselect-all)))))]
+              (st/emit! (drp/deselect-all)))))
+
+        handle-double-click-outside
+        (fn [event]
+          (when (= edit-mode :move)
+            (st/emit! :interrupt)))]
 
     (mf/use-layout-effect
+     (mf/deps edit-mode)
      (fn []
-       (let [keys [(events/listen js/document EventType.CLICK handle-click-outside)]]
+       (let [keys [(events/listen (dom/get-root) EventType.CLICK handle-click-outside)
+                   (events/listen (dom/get-root) EventType.DBLCLICK handle-double-click-outside)]]
          #(doseq [key keys]
             (events/unlistenByKey key)))))
 

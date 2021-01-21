@@ -253,3 +253,6 @@
 
 (defn active? [node]
   (= (.-activeElement js/document) node))
+
+(defn get-data [^js node ^string attr]
+  (.getAttribute node (str "data-" attr)))

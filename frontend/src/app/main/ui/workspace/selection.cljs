@@ -34,7 +34,7 @@
    [app.main.ui.measurements :as msr]
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]))
 
-(def rotation-handler-size 25)
+(def rotation-handler-size 20)
 (def resize-point-radius 4)
 (def resize-point-circle-radius 10)
 (def resize-point-rect-size 8)
@@ -43,6 +43,7 @@
 (def selection-rect-color-component "#00E0FF")
 (def selection-rect-width 1)
 (def min-selrect-side 10)
+(def small-selrect-side 30)
 
 (mf/defc selection-rect [{:keys [transform rect zoom color]}]
   (when rect
@@ -57,66 +58,78 @@
                 :stroke-width (/ selection-rect-width zoom)
                 :fill "transparent"}}])))
 
-(defn- handlers-for-selection [{:keys [x y width height]}]
-  (->>
-   [ ;; TOP-LEFT
-    {:type :rotation
-     :position :top-left
-     :props {:cx x :cy y}}
+(defn- handlers-for-selection [{:keys [x y width height]} {:keys [type]} zoom]
+  (let [zoom-width (* width zoom)
+        zoom-height (* height zoom)
 
-    (when (and (> width min-selrect-side) (> height min-selrect-side))
-      {:type :resize-point
+        align (when (or (<= zoom-width small-selrect-side)
+                        (<= zoom-height small-selrect-side))
+                :outside)
+        show-resize-point? (or (not= type :path)
+                               (and
+                                (> zoom-width min-selrect-side)
+                                (> zoom-height min-selrect-side)))
+        min-side-top? (or (not= type :path) (> zoom-height min-selrect-side))
+        min-side-side? (or (not= type :path) (> zoom-width min-selrect-side))]
+    (->>
+     [ ;; TOP-LEFT
+      {:type :rotation
        :position :top-left
-       :props {:cx x :cy y}})
+       :props {:cx x :cy y}}
 
-    {:type :rotation
-     :position :top-right
-     :props {:cx (+ x width) :cy y}}
+      (when show-resize-point?
+        {:type :resize-point
+         :position :top-left
+         :props {:cx x :cy y :align align}})
 
-    (when (and (> width min-selrect-side) (> height min-selrect-side))
-      {:type :resize-point
+      {:type :rotation
        :position :top-right
-       :props {:cx (+ x width) :cy y}})
+       :props {:cx (+ x width) :cy y}}
 
-    {:type :rotation
-     :position :bottom-right
-     :props {:cx (+ x width) :cy (+ y height)}}
+      (when show-resize-point?
+        {:type :resize-point
+         :position :top-right
+         :props {:cx (+ x width) :cy y :align align}})
 
-    (when (and (> width min-selrect-side) (> height min-selrect-side))
-      {:type :resize-point
+      {:type :rotation
        :position :bottom-right
-       :props {:cx (+ x width) :cy (+ y height)}})
+       :props {:cx (+ x width) :cy (+ y height)}}
 
-    {:type :rotation
-     :position :bottom-left
-     :props {:cx x :cy (+ y height)}}
+      (when show-resize-point?
+        {:type :resize-point
+         :position :bottom-right
+         :props {:cx (+ x width) :cy (+ y height) :align align}})
 
-    (when (and (> width min-selrect-side) (> height min-selrect-side))
-      {:type :resize-point
+      {:type :rotation
        :position :bottom-left
-       :props {:cx x :cy (+ y height)}})
+       :props {:cx x :cy (+ y height)}}
 
-    (when (> height min-selrect-side)
-      {:type :resize-side
-       :position :top
-       :props {:x x :y y :length width :angle 0 }})
+      (when show-resize-point?
+        {:type :resize-point
+         :position :bottom-left
+         :props {:cx x :cy (+ y height) :align align}})
 
-    (when (> width min-selrect-side)
-      {:type :resize-side
-       :position :right
-       :props {:x (+ x width) :y y :length height :angle 90 }})
+      (when min-side-top?
+        {:type :resize-side
+         :position :top
+         :props {:x x :y y :length width :angle 0 :align align}})
 
-    (when (> height min-selrect-side)
-      {:type :resize-side
-       :position :bottom
-       :props {:x (+ x width) :y (+ y height) :length width :angle 180 }})
+      (when min-side-side?
+        {:type :resize-side
+         :position :right
+         :props {:x (+ x width) :y y :length height :angle 90 :align align}})
 
-    (when (> width min-selrect-side)
-      {:type :resize-side
-       :position :left
-       :props {:x x :y (+ y height) :length height :angle 270 }})]
+      (when min-side-top?
+        {:type :resize-side
+         :position :bottom
+         :props {:x (+ x width) :y (+ y height) :length width :angle 180 :align align}})
 
-   (filterv (comp not nil?))))
+      (when min-side-side?
+        {:type :resize-side
+         :position :left
+         :props {:x x :y (+ y height) :length height :angle 270 :align align}})]
+
+     (filterv (comp not nil?)))))
 
 (mf/defc rotation-handler [{:keys [cx cy transform position rotation zoom on-rotate]}]
   (let [size (/ rotation-handler-size zoom)
@@ -137,13 +150,11 @@
             :on-mouse-down on-rotate}]))
 
 (mf/defc resize-point-handler
-  [{:keys [cx cy zoom position on-resize transform rotation color overflow-text]}]
-  (let [{cx' :x cy' :y} (gpt/transform (gpt/point cx cy) transform)
-        rot-square (case position
-                     :top-left 0
-                     :top-right 90
-                     :bottom-right 180
-                     :bottom-left 270)]
+  [{:keys [cx cy zoom position on-resize transform rotation color overflow-text align]}]
+  (let [cursor (if (#{:top-left :bottom-right} position)
+                 (cur/resize-nesw rotation) (cur/resize-nwse rotation))
+        {cx' :x cy' :y} (gpt/transform (gpt/point cx cy) transform)]
+
     [:g.resize-handler
      [:circle {:r (/ resize-point-radius zoom)
                :style {:fillOpacity "1"
@@ -154,24 +165,53 @@
                :cx cx'
                :cy cy'}]
 
-     [:circle {:on-mouse-down #(on-resize {:x cx' :y cy'} %)
-               :r (/ resize-point-circle-radius zoom)
-               :fill (if (debug? :resize-handler) "red" "transparent")
-               :cx cx'
-               :cy cy'
-               :style {:cursor (if (#{:top-left :bottom-right} position)
-                                 (cur/resize-nesw rotation) (cur/resize-nwse rotation))}}]
-     ]))
+     (if (= align :outside)
+       (let [resize-point-circle-radius (/ resize-point-circle-radius zoom)
+             offset-x (if (#{:top-right :bottom-right} position) 0 (- resize-point-circle-radius))
+             offset-y (if (#{:bottom-left :bottom-right} position) 0 (- resize-point-circle-radius))
+             cx (+ cx offset-x)
+             cy (+ cy offset-y)
+             {cx' :x cy' :y} (gpt/transform (gpt/point cx cy) transform)]
+         [:rect {:x cx'
+                 :y cy'
+                 :width resize-point-circle-radius
+                 :height resize-point-circle-radius
+                 :transform (str/fmt "rotate(%s, %s, %s)" rotation cx' cy')
+                 :style {:fill (if (debug? :resize-handler) "red" "transparent")
+                         :cursor cursor}
+                 :on-mouse-down #(on-resize {:x cx' :y cy'} %)}])
 
-(mf/defc resize-side-handler [{:keys [x y length angle zoom position rotation transform on-resize]}]
+       (let [rot-square (case position
+                          :top-left 0
+                          :top-right 90
+                          :bottom-right 180
+                          :bottom-left 270)]
+         [:circle {:on-mouse-down #(on-resize {:x cx' :y cy'} %)
+                   :r (/ resize-point-circle-radius zoom)
+                   :cx cx'
+                   :cy cy'
+                   :style {:fill (if (debug? :resize-handler) "red" "transparent")
+                           :cursor cursor}}])
+       )]))
+
+(mf/defc resize-side-handler
+  "The side handler is always rendered horizontaly and then rotated"
+  [{:keys [x y length align angle zoom position rotation transform on-resize]}]
   (let [res-point (if (#{:top :bottom} position)
                     {:y y}
                     {:x x})
         target-length (max 0 (- length (/ (* resize-point-rect-size 2) zoom)))
+
         width (if (< target-length 6) length target-length)
-        height (/ resize-side-height zoom)]
-    [:rect {:x (+ x (/ (- length width) 2))
-            :y (- y (/ height 2))
+        height (/ resize-side-height zoom)
+
+        offset-x (/ (- length width) 2)
+        offset-y (if (= align :outside) (- height) (- (/ height 2)))
+
+        target-x (+ x offset-x)
+        target-y (+ y offset-y)]
+    [:rect {:x target-x
+            :y target-y
             :width width
             :height height
             :transform (gmt/multiply transform
@@ -217,7 +257,7 @@
        [:& outline {:shape shape :color color}]
 
        ;; Handlers
-       (for [{:keys [type position props]} (handlers-for-selection selrect)]
+       (for [{:keys [type position props]} (handlers-for-selection selrect shape zoom)]
          (let [common-props {:key (str (name type) "-" (name position))
                              :zoom zoom
                              :position position

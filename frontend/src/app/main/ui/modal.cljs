@@ -50,7 +50,7 @@
     (when (and wrapper
                (not allow-click-outside)
                (not (.contains wrapper current))
-               (not (= type (keyword (.getAttribute current "data-allow-click-modal")))))
+               (not (= type (keyword (dom/get-data current "allow-click-modal")))))
       (dom/stop-propagation event)
       (dom/prevent-default event)
       (st/emit! (dm/hide)))))

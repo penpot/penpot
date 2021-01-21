@@ -167,19 +167,18 @@
 
         on-click-outside
         (fn [event]
-          (let [options (dom/get-element-by-class "element-options")
+          (let [target  (dom/get-target event)
+                options (dom/get-element-by-class "element-options")
                 assets (dom/get-element-by-class "assets-bar")
                 cpicker (dom/get-element-by-class "colorpicker-tooltip")
                 self    (mf/ref-val self-ref)
-                target  (dom/get-target event)
                 selecting? (mf/ref-val selecting-ref)]
+
             (when-not (or (and options (.contains options target))
                           (and assets  (.contains assets target))
                           (and self    (.contains self target))
                           (and cpicker (.contains cpicker target)))
               (do
-                (dom/prevent-default event)
-                (dom/stop-propagation event)
 
                 (if selecting?
                   (mf/set-ref-val! selecting-ref false)
@@ -203,16 +202,16 @@
 
         on-mount
         (fn []
-          (let [lkey1 (events/listen js/document EventType.CLICK on-click-outside)
-                lkey2 (events/listen js/document EventType.KEYUP on-key-up)]
+          (let [keys [(events/listen js/document EventType.CLICK on-click-outside)
+                      (events/listen js/document EventType.KEYUP on-key-up)]]
             (st/emit! (dwt/assign-editor id editor)
                       (dwc/start-undo-transaction))
 
             #(do
                (st/emit! (dwt/assign-editor id nil)
                          (dwc/commit-undo-transaction))
-               (events/unlistenByKey lkey1)
-               (events/unlistenByKey lkey2))))
+               (doseq [key keys]
+                 (events/unlistenByKey key)))))
 
         on-focus
         (fn [event]

@@ -59,7 +59,6 @@
         render-editor (mf/use-state false)
 
         edition?  (= edition id)
-
         embed-resources? (mf/use-ctx muc/embed-ctx)
 
         handle-mouse-down (we/use-mouse-down shape)
@@ -116,7 +115,7 @@
                            :shape shape
                            :selected? selected?
                            :grow-type (:grow-type shape)}]]
-     (when edition?
+     (when (and (not ghost?) edition?)
        [:& editor/text-shape-edit {:key (str "editor" (:id shape))
                                    :shape shape}])
 
