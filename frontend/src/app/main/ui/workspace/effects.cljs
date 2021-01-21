@@ -52,21 +52,24 @@
            drawing? @refs/selected-drawing-tool
            button (.-which (.-nativeEvent event))
            shift? (kbd/shift? event)
-           ctrl? (kbd/ctrl? event)]
-       (dom/prevent-default event)
-       (when-not blocked
+           ctrl? (kbd/ctrl? event)
+
+           allow-click? (and (not blocked)
+                             (not drawing?)
+                             (not ctrl?)
+                             (not edition))]
+
+       (when (and (= button 1) allow-click?)
          (cond
-           (or (not= 1 button) drawing? ctrl? edition)
-           nil
-
-           (= type :frame)
-           (when selected?
-             (do
-               (dom/stop-propagation event)
-               (st/emit! (dw/start-move-selected))))
-
-           :else
+           (and (= type :frame) selected?)
            (do
+             (dom/prevent-default event)
+             (dom/stop-propagation event)
+             (st/emit! (dw/start-move-selected)))
+
+           (not= type :frame)
+           (do
+             (dom/prevent-default event)
              (dom/stop-propagation event)
 
              (let [toggle-selected? (and selected? shift?)

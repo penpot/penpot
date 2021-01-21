@@ -43,20 +43,23 @@
                (recur (first ids) (rest ids))
                false))))))
 
-(defn use-select-shape [{:keys [id]}]
+(defn use-select-shape [{:keys [id]} edition]
   (mf/use-callback
-   (mf/deps id)
+   (mf/deps id edition)
    (fn [event]
-     (let [selected @refs/selected-shapes
-           selected? (contains? selected id)]
-     (dom/prevent-default event)
-     (if selected?
-       (when (kbd/shift? event)
-         (st/emit! (dw/select-shape id true)))
-       (do
-         (when-not (or (empty? selected) (kbd/shift? event))
-           (st/emit! (dw/deselect-all)))
-         (st/emit! (dw/select-shape id))))))))
+     (when (not edition)
+       (let [selected @refs/selected-shapes
+             selected? (contains? selected id)
+             shift? (kbd/shift? event)]
+         (cond
+           (and selected? shift?)
+           (st/emit! (dw/select-shape id true))
+
+           (and (not (empty? selected)) (not shift?))
+           (st/emit! (dw/deselect-all) (dw/select-shape id))
+
+           (not selected?)
+           (st/emit! (dw/select-shape id))))))))
 
 ;; Ensure that the label has always the same font
 ;; size, regardless of zoom
@@ -72,8 +75,9 @@
   [{:keys [frame]}]
   (let [{:keys [width x y]} frame
         zoom                 (mf/deref refs/selected-zoom)
+        edition              (mf/deref refs/selected-edition)
         label-pos            (gpt/point x (- y (/ 10 zoom)))
-        handle-click         (use-select-shape frame)
+        handle-click         (use-select-shape frame edition)
         handle-pointer-enter (we/use-pointer-enter frame)
         handle-pointer-leave (we/use-pointer-leave frame)]
     [:text {:x 0
@@ -123,6 +127,7 @@
       (let [shape   (unchecked-get props "shape")
             objects (unchecked-get props "objects")
             ghost? (mf/use-ctx muc/ghost-ctx)
+            edition       (mf/deref refs/selected-edition)
 
             moving-iref   (mf/use-memo (mf/deps (:id shape))
                                        #(make-is-moving-ref (:id shape)))
@@ -137,7 +142,7 @@
             ds-modifier   (get-in shape [:modifiers :displacement])
 
             handle-context-menu (we/use-context-menu shape)
-            handle-double-click (use-select-shape shape)
+            handle-double-click (use-select-shape shape edition)
             handle-mouse-down   (we/use-mouse-down shape)
 
             hide-moving? (and (not ghost?) moving?)]
