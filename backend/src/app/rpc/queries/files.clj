@@ -13,6 +13,7 @@
    [app.common.pages.migrations :as pmg]
    [app.common.spec :as us]
    [app.db :as db]
+   [app.rpc.permissions :as perms]
    [app.rpc.queries.projects :as projects]
    [app.util.services :as sv]
    [app.util.blob :as blob]
@@ -59,31 +60,18 @@
     where f.id = ?
       and ppr.profile_id = ?")
 
-(defn check-edition-permissions!
+(defn- retrieve-file-permissions
   [conn profile-id file-id]
-  (let [rows (db/exec! conn [sql:file-permissions
-                             file-id profile-id
-                             file-id profile-id
-                             file-id profile-id])]
-    (when (empty? rows)
-      (ex/raise :type :not-found))
+  (db/exec! conn [sql:file-permissions
+                  file-id profile-id
+                  file-id profile-id
+                  file-id profile-id]))
 
-    (when-not (or (some :can-edit rows)
-                  (some :is-admin rows)
-                  (some :is-owner rows))
-      (ex/raise :type :authorization
-                :code :not-authorized))))
+(def check-edition-permissions!
+  (perms/make-edition-check-fn retrieve-file-permissions))
 
-
-(defn check-read-permissions!
-  [conn profile-id file-id]
-  (let [rows (db/exec! conn [sql:file-permissions
-                             file-id profile-id
-                             file-id profile-id
-                             file-id profile-id])]
-    (when-not (seq rows)
-      (ex/raise :type :authorization
-                :code :not-authorized))))
+(def check-read-permissions!
+  (perms/make-read-check-fn retrieve-file-permissions))
 
 
 ;; --- Query: Files search
@@ -155,9 +143,9 @@
 
 (defn retrieve-file
   [conn id]
-  (let [file (db/get-by-id conn :file id)]
-    (-> (decode-row file)
-        (pmg/migrate-file))))
+  (-> (db/get-by-id conn :file id)
+      (decode-row)
+      (pmg/migrate-file)))
 
 (s/def ::file
   (s/keys :req-un [::profile-id ::id]))
