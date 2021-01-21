@@ -126,7 +126,7 @@
   [{:keys [file libraries] :as props}]
   (let [libraries-need-sync (filter #(> (:modified-at %) (:synced-at %))
                                         (vals libraries))
-        update-library #(st/emit! (dwl/sync-file %))]
+        update-library #(st/emit! (dwl/sync-file (:id file) %))]
   [:div.section
    (if (empty? libraries-need-sync)
      [:div.section-list-empty

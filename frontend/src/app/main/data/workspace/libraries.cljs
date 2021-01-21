@@ -36,21 +36,21 @@
 (log/set-level! :warn)
 
 (defn- log-changes
-  [changes local-library]
+  [changes file]
   (let [extract-change
         (fn [change]
           (let [shape (when (:id change)
                         (cond
                           (:page-id change)
-                          (get-in local-library [:pages-index
-                                                 (:page-id change)
-                                                 :objects
-                                                 (:id change)])
+                          (get-in file [:pages-index
+                                        (:page-id change)
+                                        :objects
+                                        (:id change)])
                           (:component-id change)
-                          (get-in local-library [:components
-                                                 (:component-id change)
-                                                 :objects
-                                                 (:id change)])
+                          (get-in file [:components
+                                        (:component-id change)
+                                        :objects
+                                        (:id change)])
                           :default nil))
 
                 prefix (if (:component-id change) "[C] " "[P] ")
@@ -118,7 +118,7 @@
             uchg {:type :mod-color
                   :color prev}]
         (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true})
-               (sync-file file-id))))))
+               (sync-file (:current-file-id state) file-id))))))
 
 (defn delete-color
   [{:keys [id] :as params}]
@@ -208,7 +208,7 @@
             uchg {:type :mod-typography
                   :typography prev}]
         (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true})
-               (sync-file file-id))))))
+               (sync-file (:current-file-id state) file-id))))))
 
 (defn delete-typography
   [id]
@@ -337,7 +337,7 @@
     (watch [_ state stream]
       (let [component      (cp/get-component id
                                              (:current-file-id state)
-                                             (dwlh/get-local-library state)
+                                             (dwlh/get-local-file state)
                                               nil)
             all-components (vals (get-in state [:workspace-data :components]))
             unames         (set (map :name all-components))
@@ -385,7 +385,7 @@
   (ptk/reify ::instantiate-component
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [local-library   (dwlh/get-local-library state)
+      (let [local-library   (dwlh/get-local-file state)
             libraries       (get state :workspace-libraries)
             component       (cp/get-component component-id file-id local-library libraries)
             component-shape (cp/get-shape component component-id)
@@ -529,14 +529,15 @@
         (st/emit! (rt/nav-new-window :workspace pparams qparams))))))
 
 (defn ext-library-changed
-  [file-id modified-at changes]
+  [file-id modified-at revn changes]
   (us/assert ::us/uuid file-id)
   (us/assert ::cp/changes changes)
   (ptk/reify ::ext-library-changed
     ptk/UpdateEvent
     (update [_ state]
       (-> state
-          (assoc-in [:workspace-libraries file-id :modified-at] modified-at)
+          (update-in [:workspace-libraries file-id]
+                     #(assoc % :modified-at modified-at :revn revn))
           (d/update-in-when [:workspace-libraries file-id :data]
                             cp/process-changes changes)))))
 
@@ -550,7 +551,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (log/info :msg "RESET-COMPONENT of shape" :id (str id))
-      (let [local-library (dwlh/get-local-library state)
+      (let [local-library (dwlh/get-local-file state)
             libraries     (dwlh/get-libraries state)
             container     (cp/get-container (get state :current-page-id)
                                             :page
@@ -577,46 +578,84 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (log/info :msg "UPDATE-COMPONENT of shape" :id (str id))
-      (let [local-library (dwlh/get-local-library state)
+      (let [page-id       (get state :current-page-id)
+            local-library (dwlh/get-local-file state)
             libraries     (dwlh/get-libraries state)
+
             [rchanges uchanges]
-            (dwlh/generate-sync-shape-inverse (get state :current-page-id)
+            (dwlh/generate-sync-shape-inverse page-id
                                               id
                                               local-library
-                                              libraries)]
+                                              libraries)
 
-        (log/debug :msg "UPDATE-COMPONENT finished" :js/rchanges (log-changes
-                                                                   rchanges
-                                                                   local-library))
+            container (cp/get-container page-id :page local-library)
+            shape     (cp/get-shape container id)
+            file-id   (:component-file shape)
+            file      (dwlh/get-file state file-id)
 
-        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
+            local-rchanges (->> rchanges
+                               (filter :local-change?)
+                               (map #(dissoc % :local-change?))
+                               vec)
+            local-uchanges (->> uchanges
+                               (filter :local-change?)
+                               (map #(dissoc % :local-change?))
+                               vec)
+            rchanges (->> rchanges
+                         (remove :local-change?)
+                         (map #(dissoc % :local-change?))
+                         vec)
+            uchanges (->> uchanges
+                         (remove :local-change?)
+                         (map #(dissoc % :local-change?))
+                         vec)]
+
+        (log/debug :msg "UPDATE-COMPONENT finished"
+                   :js/local-rchanges (log-changes
+                                        local-rchanges
+                                        local-library)
+                   :js/rchanges (log-changes
+                                  rchanges
+                                  file))
+
+        (rx/of (when (seq local-rchanges)
+                 (dwc/commit-changes local-rchanges local-uchanges
+                                     {:commit-local? true
+                                      :file-id (:id local-library)}))
+               (when (seq rchanges)
+                 (dwc/commit-changes rchanges uchanges
+                                     {:commit-local? true
+                                      :file-id file-id})))))))
 
 (declare sync-file-2nd-stage)
 
 (defn sync-file
-  "Syhchronize the library file with the given id, with the current file.
-  Walk through all shapes in all pages that use some color, typography or
-  component of the library file, and copy the new values to the shapes.
-  Do it also for shapes inside components of the local file library."
-  [file-id]
+  "Syhchronize the given file from ghe given library. Walk through all shapes
+  in all pages in the file that use some color, typography or component of the
+  library, and copy the new values to the shapes. Do it also for shapes inside
+  components of the local file library."
+  [file-id library-id]
   (us/assert ::us/uuid file-id)
+  (us/assert ::us/uuid library-id)
   (ptk/reify ::sync-file
     ptk/UpdateEvent
     (update [_ state]
-      (if (not= file-id (:current-file-id state))
-        (assoc-in state [:workspace-libraries file-id :synced-at] (dt/now))
+      (if (not= library-id (:current-file-id state))
+        (assoc-in state [:workspace-libraries library-id :synced-at] (dt/now))
         state))
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (log/info :msg "SYNC-FILE" :file (if (= file-id (:current-file-id state)) "local" (str file-id)))
-      (let [local-library (dwlh/get-local-library state)
-            library-changes [(dwlh/generate-sync-library :components file-id state)
-                             (dwlh/generate-sync-library :colors file-id state)
-                             (dwlh/generate-sync-library :typographies file-id state)]
-            file-changes    [(dwlh/generate-sync-file :components file-id state)
-                             (dwlh/generate-sync-file :colors file-id state)
-                             (dwlh/generate-sync-file :typographies file-id state)]
+      (log/info :msg "SYNC-FILE"
+                :file (dwlh/pretty-file file-id state)
+                :library (dwlh/pretty-file library-id state))
+      (let [file            (dwlh/get-file state file-id)
+            library-changes [(dwlh/generate-sync-library file-id :components library-id state)
+                             (dwlh/generate-sync-library file-id :colors library-id state)
+                             (dwlh/generate-sync-library file-id :typographies library-id state)]
+            file-changes    [(dwlh/generate-sync-file file-id :components library-id state)
+                             (dwlh/generate-sync-file file-id :colors library-id state)
+                             (dwlh/generate-sync-file file-id :typographies library-id state)]
             rchanges (d/concat []
                                (->> library-changes (remove nil?) (map first) (flatten))
                                (->> file-changes (remove nil?) (map first) (flatten)))
@@ -625,17 +664,22 @@
                                (->> file-changes (remove nil?) (map second) (flatten)))]
         (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
                                                             rchanges
-                                                            local-library))
+                                                            file))
         (rx/concat
           (rx/of (dm/hide-tag :sync-dialog))
           (when rchanges
-            (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})))
-          (when (not= file-id (:current-file-id state))
-            (rp/mutation :update-sync
-                         {:file-id (get-in state [:workspace-file :id])
-                          :library-id file-id}))
+            (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true
+                                                          :file-id file-id})))
+          (when (not= file-id library-id)
+            ;; When we have just updated the library file, give some time for the
+            ;; update to finish, before marking this file as synced.
+            ;; TODO: look for a more precise way of syncing this.
+            (rx/concat (rx/timer 3000)
+                       (rp/mutation :update-sync
+                                    {:file-id file-id
+                                     :library-id library-id})))
           (when (some? library-changes)
-            (rx/of (sync-file-2nd-stage file-id))))))))
+            (rx/of (sync-file-2nd-stage file-id library-id))))))))
 
 (defn sync-file-2nd-stage
   "If some components have been modified, we need to launch another synchronization
@@ -646,22 +690,26 @@
   ;;       recursively. But for this not to cause an infinite loop, we need to
   ;;       implement updated-at at component level, to detect what components have
   ;;       not changed, and then not to apply sync and terminate the loop.
-  [file-id]
+  [file-id library-id]
   (us/assert ::us/uuid file-id)
+  (us/assert ::us/uuid library-id)
   (ptk/reify ::sync-file-2nd-stage
     ptk/WatchEvent
     (watch [_ state stream]
-      (log/info :msg "SYNC-FILE (2nd stage)" :file (if (= file-id (:current-file-id state)) "local" (str file-id)))
-      (let [local-library (dwlh/get-local-library state)
-            [rchanges1 uchanges1] (dwlh/generate-sync-file :components file-id state)
-            [rchanges2 uchanges2] (dwlh/generate-sync-library :components file-id state)
+      (log/info :msg "SYNC-FILE (2nd stage)"
+                :file (dwlh/pretty-file file-id state)
+                :library (dwlh/pretty-file library-id state))
+      (let [file                  (dwlh/get-file state file-id)
+            [rchanges1 uchanges1] (dwlh/generate-sync-file file-id :components library-id state)
+            [rchanges2 uchanges2] (dwlh/generate-sync-library file-id :components library-id state)
             rchanges (d/concat rchanges1 rchanges2)
             uchanges (d/concat uchanges1 uchanges2)]
         (when rchanges
           (log/debug :msg "SYNC-FILE (2nd stage) finished" :js/rchanges (log-changes
                                                                           rchanges
-                                                                          local-library))
-          (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})))))))
+                                                                          file))
+          (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true
+                                                        :file-id file-id})))))))
 
 (def ignore-sync
   (ptk/reify ::ignore-sync
@@ -684,7 +732,8 @@
       (let [libraries-need-sync (filter #(> (:modified-at %) (:synced-at %))
                                         (vals (get state :workspace-libraries)))
             do-update #(do (apply st/emit! (map (fn [library]
-                                                  (sync-file (:id library)))
+                                                  (sync-file (:current-file-id state)
+                                                             (:id library)))
                                                 libraries-need-sync))
                            (st/emit! dm/hide))
             do-dismiss #(do (st/emit! ignore-sync)

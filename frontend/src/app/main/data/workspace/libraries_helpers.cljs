@@ -59,13 +59,25 @@
   [(d/concat rchanges1 rchanges2)
    (d/concat uchanges1 uchanges2)])
 
-(defn get-local-library
+(defn get-local-file
   [state]
   (get state :workspace-data))
+
+(defn get-file
+  [state file-id]
+  (if (= file-id (:current-file-id state))
+    (get state :workspace-data)
+    (get-in state [:workspace-libraries file-id :data])))
 
 (defn get-libraries
   [state]
   (get state :workspace-libraries))
+
+(defn pretty-file
+  [file-id state]
+  (if (= file-id (:current-file-id state))
+    "<local>"
+    (str "<" (get-in state [:workspace-libraries file-id :name]) ">")))
 
 
 ;; ---- Create a new component ----
@@ -124,25 +136,26 @@
 ;; ---- General library synchronization functions ----
 
 (defn generate-sync-file
-  "Generate changes to synchronize all shapes in all pages of the current file,
+  "Generate changes to synchronize all shapes in all pages of the given file,
   that use assets of the given type in the given library."
-  [asset-type library-id state]
+  [file-id asset-type library-id state]
   (s/assert #{:colors :components :typographies} asset-type)
+  (s/assert ::us/uuid file-id)
   (s/assert ::us/uuid library-id)
 
-  (log/info :msg "Sync local file with library"
+  (log/info :msg "Sync file with library"
             :asset-type asset-type
-            :library (str (or library-id "local")))
+            :file (pretty-file file-id state)
+            :library (pretty-file library-id state))
 
-  (let [library-items
-        (if (= library-id (:current-file-id state))
-          (get-in state [:workspace-data asset-type])
-          (get-in state [:workspace-libraries library-id :data asset-type]))]
+  (let [file          (get-file state file-id)
+        library       (get-file state library-id)
+        library-items (get library asset-type)]
 
     (if (empty? library-items)
       empty-changes
 
-      (loop [pages (vals (get-in state [:workspace-data :pages-index]))
+      (loop [pages (vals (get file :pages-index))
              rchanges []
              uchanges []]
         (if-let [page (first pages)]
@@ -157,22 +170,24 @@
           [rchanges uchanges])))))
 
 (defn generate-sync-library
-  "Generate changes to synchronize all shapes in all components of the current
-  file library, that use assets of the given type in the given library."
-  [asset-type library-id state]
+  "Generate changes to synchronize all shapes in all components of the
+  local library of the given file, that use assets of the given type in
+  the given library."
+  [file-id asset-type library-id state]
 
   (log/info :msg "Sync local components with library"
             :asset-type asset-type
-            :library (str library-id))
+            :file (pretty-file file-id state)
+            :library (pretty-file library-id state))
 
-  (let [library-items
-        (if (= library-id (:current-file-id state))
-          (get-in state [:workspace-data asset-type])
-          (get-in state [:workspace-libraries library-id :data asset-type]))]
+  (let [file          (get-file state file-id)
+        library       (get-file state library-id)
+        library-items (get library asset-type)]
+
     (if (empty? library-items)
       empty-changes
 
-      (loop [local-components (seq (vals (get-in state [:workspace-data :components])))
+      (loop [local-components (vals (get file :components))
              rchanges []
              uchanges []]
         (if-let [local-component (first local-components)]
@@ -261,7 +276,7 @@
   [_ library-id state container shape]
   (generate-sync-shape-direct container
                               (:id shape)
-                              (get-local-library state)
+                              (get-local-file state)
                               (get-libraries state)
                               false))
 
@@ -689,7 +704,18 @@
                           only-master
                           both
                           moved
-                          true)]
+                          true)
+
+        ;; The inverse sync may be made on a component that is inside a
+        ;; remote library. We need to separate changes that are from
+        ;; local and remote files.
+        check-local (fn [change]
+                      (cond-> change
+                        (= (:id change) (:id shape-inst))
+                        (assoc :local-change? true)))
+
+        rchanges (vec (map check-local rchanges))
+        uchanges (vec (map check-local uchanges))]
 
     [(d/concat rchanges child-rchanges)
      (d/concat uchanges child-uchanges)]))

@@ -62,7 +62,7 @@
          (mf/deps state)
          (fn []
            (st/emit! (dwl/delete-component {:id (:component-id @state)}))
-           (st/emit! (dwl/sync-file file-id))))
+           (st/emit! (dwl/sync-file file-id file-id))))
 
         on-rename
         (mf/use-callback
