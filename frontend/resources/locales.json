@@ -1496,6 +1496,18 @@
       "es" : "Ocultar comentarios resueltos"
     }
   },
+  "labels.internal-error.desc-message" : {
+    "used-in" : [ "src/app/main/ui/static.cljs:92" ],
+    "translations" : {
+      "en" : "Something bad happended. Please retry the operation and if the problem persists, contact with support."
+    }
+  },
+  "labels.internal-error.main-message" : {
+    "used-in" : [ "src/app/main/ui/static.cljs:91" ],
+    "translations" : {
+      "en" : "Internal Error"
+    }
+  },
   "labels.language" : {
     "used-in" : [ "src/app/main/ui/settings/options.cljs:54" ],
     "translations" : {
@@ -1652,7 +1664,7 @@
     }
   },
   "labels.retry" : {
-    "used-in" : [ "src/app/main/ui/static.cljs:62", "src/app/main/ui/static.cljs:79" ],
+    "used-in" : [ "src/app/main/ui/static.cljs:62", "src/app/main/ui/static.cljs:79", "src/app/main/ui/static.cljs:96" ],
     "translations" : {
       "en" : "Retry"
     }
