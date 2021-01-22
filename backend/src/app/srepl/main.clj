@@ -2,12 +2,13 @@
   "A  main namespace for server repl."
   #_:clj-kondo/ignore
   (:require
-   [clojure.pprint :refer [pprint]]
+   [app.common.pages :as cp]
+   [app.common.pages.migrations :as pmg]
    [app.db :as db]
    [app.main :refer [system]]
-   [app.common.pages.migrations :as pmg]
+   [app.srepl.dev :as dev]
    [app.util.blob :as blob]
-   [app.common.pages :as cp]))
+   [clojure.pprint :refer [pprint]]))
 
 (defn update-file
   ([id f] (update-file id f false))

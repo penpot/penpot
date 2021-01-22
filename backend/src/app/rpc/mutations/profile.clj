@@ -140,7 +140,7 @@
                 :code :email-already-exists))
     params))
 
-(defn- derive-password
+(defn derive-password
   [password]
   (hashers/derive password
                   {:alg :argon2id
@@ -148,7 +148,7 @@
                    :iterations 20
                    :parallelism 2}))
 
-(defn- verify-password
+(defn verify-password
   [attempt password]
   (try
     (hashers/verify attempt password)
