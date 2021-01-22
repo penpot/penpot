@@ -66,7 +66,7 @@
           prefix (str/<< "Unhandled exception (@channel):\n"
                          "- host: `~(:host cfg/config)`\n"
                          "- version: `~(:full cfg/version)`")
-          text   (str prefix "\n```" report "\n```")
+          text   (str prefix "\n```\n" report "\n```")
 
           rsp    (http/send! {:uri uri
                               :method :post
