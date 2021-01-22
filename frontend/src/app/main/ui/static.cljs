@@ -88,8 +88,8 @@
      [:div.exception-content
       [:div.container
        [:div.image i/icon-empty]
-       [:div.main-message "Internal Error"]
-       [:div.desc-message "Something bad happended on backend servers. Please retry the operation and if the problem persists, contact with support."]
+       [:div.main-message (tr "labels.internal-error.main-message")]
+       [:div.desc-message (tr "labels.internal-error.desc-message")]
        [:div.sign-info
         [:a.btn-primary.btn-small
          {:on-click (st/emitf (dm/assign-exception nil))}
@@ -107,8 +107,5 @@
     :service-unavailable
     [:& service-unavailable]
 
-    :server-error
-    [:& internal-error]
-
-    nil))
+    [:& internal-error]))
 

@@ -26,6 +26,6 @@
 (defn logout-handler
   [{:keys [session] :as cfg} request]
   (session/delete! cfg request)
-  {:status 200
+  {:status 204
    :cookies (session/cookies session {:value "" :max-age -1})
    :body ""})

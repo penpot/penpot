@@ -101,7 +101,7 @@
 (mf/defc on-main-error
   [{:keys [error] :as props}]
   (let [data (ex-data error)]
-    (ptk/handle-error error)
+    (mf/use-effect #(ptk/handle-error error))
     [:span "Internal application errror"]))
 
 (mf/defc main-page
@@ -285,21 +285,16 @@
     (ptk/handle-error (ex-data error))
     (do
       (ts/schedule
-       (st/emitf (dm/show
-                  {:content "Something wrong has happened."
-                   :type :error
-                   :timeout 3000})))
+       (st/emitf (dm/assign-exception error)))
 
       (js/console.group "Internal error:")
       (js/console.log "hint:" (or (ex-message error)
                                   (:hint error)
                                   (:message error)))
       (ex/ignoring
-       (js/console.error "repr: " (pr-str error))
-       (js/console.error "data: " (clj->js error))
+       (js/console.error (clj->js error))
        (js/console.error "stack:" (.-stack error)))
       (js/console.groupEnd "Internal error:"))))
-
 
 (defonce uncaught-error-handler
   (letfn [(on-error [event]
