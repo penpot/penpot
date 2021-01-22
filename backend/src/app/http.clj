@@ -92,12 +92,21 @@
 
 (defmethod ig/init-key ::router
   [_ cfg]
-  (rr/ring-handler
-   (create-router cfg)
-   (rr/routes
-    (rr/create-resource-handler {:path "/"})
-    (rr/create-default-handler))))
-
+  (let [handler (rr/ring-handler
+                 (create-router cfg)
+                 (rr/routes
+                  (rr/create-resource-handler {:path "/"})
+                  (rr/create-default-handler)))]
+    (fn [request]
+      (try
+        (handler request)
+        (catch Exception e
+          (log/errorf e
+                      (str "Unhandled exception: " (ex-message e) "\n"
+                           "=| uri:    " (pr-str (:uri request)) "\n"
+                           "=| method: " (pr-str (:request-method request)) "\n"))
+          {:status 500
+           :body "internal server error"})))))
 
 (defn- create-router
   [{:keys [session rpc google-auth gitlab-auth github-auth metrics ldap-auth storage svgparse] :as cfg}]
