@@ -526,7 +526,6 @@
 
 (defn get-shape-layer-position
   [objects selected attrs]
-
   (cond
     (= :frame (:type attrs))
     [uuid/zero uuid/zero nil]
@@ -594,6 +593,7 @@
                                  (-> attrs
                                      (assoc :id id )
                                      (assoc :name name)))]
+
         (rx/concat
          (rx/of (commit-changes rchanges uchanges {:commit-local? true})
                 (select-shapes (d/ordered-set id)))
