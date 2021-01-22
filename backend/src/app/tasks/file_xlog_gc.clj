@@ -36,8 +36,8 @@
 
 (def ^:private
   sql:delete-files-xlog
-  "delete from task_completed
-    where scheduled_at < now() - ?::interval")
+  "delete from file_change
+    where created_at < now() - ?::interval")
 
 (defn- handler
   [{:keys [pool max-age]} _]
@@ -45,5 +45,5 @@
     (let [interval (db/interval max-age)
           result   (db/exec-one! conn [sql:delete-files-xlog interval])
           result   (:next.jdbc/update-count result)]
-      (log/infof "removed %s rows from file_changes table" result)
+      (log/infof "removed %s rows from file_change table" result)
       nil)))
