@@ -23,6 +23,7 @@
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.svg-upload :as svg]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.selection :as dws]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.i18n :as i18n :refer [tr]]
@@ -134,7 +135,13 @@
               (if (or (= :bad-gateway type)
                       (= :service-unavailable type))
                 (rx/of (update-persistence-status {:status :error :reason type}))
-                (rx/throw error)))]
+                (rx/concat
+                 (rx/of update-persistence-queue)
+                 (rx/of (update-persistence-status {:status :error :reason type}))
+                 (rx/of (dws/deselect-all))
+                 (->> (rx/of nil)
+                      (rx/delay 200)
+                      (rx/mapcat #(rx/throw error))))))]
 
         (when (= file-id (:id file))
           (->> (rp/mutation :update-file params)
