@@ -10,15 +10,15 @@
 (ns app.util.router
   (:refer-clojure :exclude [resolve])
   (:require
+   [app.common.data :as d]
+   [app.config :as cfg]
+   [app.util.browser-history :as bhistory]
+   [app.util.timers :as ts]
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [goog.events :as e]
    [potok.core :as ptk]
-   [reitit.core :as r]
-   [app.common.data :as d]
-   [app.config :as cfg]
-   [app.util.browser-history :as bhistory]
-   [app.util.timers :as ts])
+   [reitit.core :as r])
   (:import
    goog.Uri
    goog.Uri.QueryData))
@@ -92,6 +92,10 @@
 ;; --- Navigate (Event)
 
 (deftype Navigate [id params qparams replace]
+  ptk/UpdateEvent
+  (update [_ state]
+    (dissoc state :exception))
+
   ptk/EffectEvent
   (effect [_ state stream]
     (let [router  (:router state)

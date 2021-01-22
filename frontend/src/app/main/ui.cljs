@@ -28,7 +28,7 @@
    [app.main.ui.messages :as msgs]
    [app.main.ui.render :as render]
    [app.main.ui.settings :as settings]
-   [app.main.ui.static :refer [not-found-page not-authorized-page]]
+   [app.main.ui.static :as static]
    [app.main.ui.viewer :refer [viewer-page]]
    [app.main.ui.handoff :refer [handoff]]
    [app.main.ui.workspace :as workspace]
@@ -37,6 +37,7 @@
    [app.util.router :as rt]
    [cuerdas.core :as str]
    [cljs.spec.alpha :as s]
+   [cljs.pprint :refer [pprint]]
    [expound.alpha :as expound]
    [potok.core :as ptk]
    [rumext.alpha :as mf]))
@@ -81,9 +82,6 @@
      :conform {:path-params ::viewer-path-params
                :query-params ::viewer-query-params}}]
 
-   ["/not-found" :not-found]
-   ["/not-authorized" :not-authorized]
-
    (when *assert*
      ["/debug/icons-preview" :debug-icons-preview])
 
@@ -100,19 +98,15 @@
 
    ["/workspace/:project-id/:file-id" :workspace]])
 
-(mf/defc app-error
+(mf/defc on-main-error
   [{:keys [error] :as props}]
   (let [data (ex-data error)]
-    (case (:type data)
-      :not-found [:& not-found-page {:error data}]
-      (do
-        (ptk/handle-error error)
-        [:span "Internal application errror"]))))
+    (ptk/handle-error error)
+    [:span "Internal application errror"]))
 
-(mf/defc app
-  {::mf/wrap [#(mf/catch % {:fallback app-error})]}
+(mf/defc main-page
+  {::mf/wrap [#(mf/catch % {:fallback on-main-error})]}
   [{:keys [route] :as props}]
-
   [:& (mf/provider ctx/current-route) {:value route}
    (case (get-in route [:data :name])
      (:auth-login
@@ -189,67 +183,71 @@
                                 :page-id page-id
                                 :layout-name (keyword layout-name)
                                 :key file-id}])
-
-     :not-authorized
-     [:& not-authorized-page]
-
-     :not-found
-     [:& not-found-page]
-
      nil)])
 
-(mf/defc app-wrapper
+(mf/defc app
   []
-  (let [route (mf/deref refs/route)]
-    [:*
-     [:& msgs/notifications]
-     (when route
-       [:& app {:route route}])]))
+  (let [route (mf/deref refs/route)
+        edata (mf/deref refs/exception)]
+    [:& (mf/provider ctx/current-route) {:value route}
+     (if edata
+       [:& static/exception-page {:data edata}]
+       [:*
+        [:& msgs/notifications]
+        (when route
+          [:& main-page {:route route}])])]))
 
 ;; --- Error Handling
 
+;; That are special case server-errors that should be treated
+;; differently.
+(derive :not-found ::exceptional-state)
+(derive :bad-gateway ::exceptional-state)
+(derive :service-unavailable ::exceptional-state)
+
+(defmethod ptk/handle-error ::exceptional-state
+  [{:keys [status] :as error}]
+  (ts/schedule
+   (st/emitf (dm/assign-exception error))))
+
+;; We receive a explicit authentication error; this explicitly clears
+;; all profile data and redirect the user to the login page.
+(defmethod ptk/handle-error :authentication
+  [error]
+  (ts/schedule (st/emitf (logout))))
+
+;; Error that happens on an active bussines model validation does not
+;; passes an validation (example: profile can't leave a team). From
+;; the user perspective a error flash message should be visualized but
+;; user can continue operate on the application.
 (defmethod ptk/handle-error :validation
   [error]
   (ts/schedule
-   (st/emitf (dm/show {:content "Unexpected validation error (server side)."
-                       :type :error
-                       :timeout 5000})))
-  (when-let [explain (:hint-verbose error)]
-    (js/console.group "Server Error")
-    (js/console.error (if (map? error) (pr-str error) error))
-    (js/console.error explain)
-    (js/console.endGroup "Server Error")))
+   (st/emitf
+    (dm/show {:content "Unexpected validation error (server side)."
+              :type :error
+              :timeout 3000})))
 
-(defmethod ptk/handle-error :spec-validation
-  [error]
-  (ts/schedule
-   (st/emitf (dm/show {:content "Unexpected validation error (server side)."
-                       :type :error
-                       :timeout 5000})))
+  ;; Print to the console some debug info.
+  (js/console.group "Server Error")
+  (js/console.info
+   (with-out-str
+     (pprint (dissoc error :explain))))
   (when-let [explain (:explain error)]
-    (js/console.group "Server Error")
-    (js/console.error (if (map? error) (pr-str error) error))
-    (js/console.error explain)
-    (js/console.endGroup "Server Error")))
+    (js/console.error explain))
+  (js/console.endGroup "Server Error"))
 
-
-(defmethod ptk/handle-error :authentication
-  [error]
-  (ts/schedule 0 #(st/emit! (logout))))
-
-(defmethod ptk/handle-error :authorization
-  [error]
-  (ts/schedule
-   (st/emitf (dm/show {:content "Not authorized to see this content."
-                       :timeout 2000
-                       :type :error}))))
-
+;; This is a pure frontend error that can be caused by an active
+;; assertion (assertion that is preserved on production builds). From
+;; the user perspective this should be treated as internal error.
 (defmethod ptk/handle-error :assertion
   [{:keys [data stack message context] :as error}]
   (ts/schedule
-   (st/emitf (dm/show {:content "Internal assertion error."
+   (st/emitf (dm/show {:content "Internal error: assertion."
                        :type :error
-                       :timeout 2000})))
+                       :timeout 3000})))
+
+  ;; Print to the console some debugging info
   (js/console.group message)
   (js/console.info (str/format "ns: '%s'\nname: '%s'\nfile: '%s:%s'"
                                 (:ns context)
@@ -259,48 +257,49 @@
   (js/console.groupCollapsed "Stack Trace")
   (js/console.info stack)
   (js/console.groupEnd "Stack Trace")
-
   (js/console.error (with-out-str (expound/printer data)))
   (js/console.groupEnd message))
+
+;; This happens when the backed server fails to process the
+;; request. This can be caused by an internal assertion or any other
+;; uncontrolled error.
+(defmethod ptk/handle-error :server-error
+  [{:keys [data] :as error}]
+  (ts/schedule
+   (st/emitf (dm/show
+              {:content "Something wrong has happened (on backend)."
+               :type :error
+               :timeout 3000})))
+  (js/console.group "Internal Server Error:")
+  (js/console.error "hint:" (or (:hint data) (:message data)))
+  (js/console.info
+   (with-out-str
+     (pprint (dissoc data :explain))))
+  (when-let [explain (:explain data)]
+    (js/console.error explain))
+  (js/console.groupEnd "Internal Server Error:"))
 
 (defmethod ptk/handle-error :default
   [error]
   (if (instance? ExceptionInfo error)
     (ptk/handle-error (ex-data error))
     (do
-      (js/console.group "Generic Error")
+      (ts/schedule
+       (st/emitf (dm/show
+                  {:content "Something wrong has happened."
+                   :type :error
+                   :timeout 3000})))
+
+      (js/console.group "Internal error:")
       (js/console.log "hint:" (or (ex-message error)
                                   (:hint error)
                                   (:message error)))
       (ex/ignoring
        (js/console.error "repr: " (pr-str error))
+       (js/console.error "data: " (clj->js error))
        (js/console.error "stack:" (.-stack error)))
-      (js/console.groupEnd "Generic error")
-      (ts/schedule (st/emitf (dm/show
-                              {:content "Something wrong has happened."
-                               :type :error
-                               :timeout 3000}))))))
+      (js/console.groupEnd "Internal error:"))))
 
-(defmethod ptk/handle-error :server-error
-  [{:keys [status] :as error}]
-  (cond
-    (= status 429)
-    (ts/schedule
-     (st/emitf (dm/show {:content "Too many requests, wait a little bit and retry."
-                         :type :error
-                         :timeout 5000})))
-
-    :else
-    (ts/schedule
-     (st/emitf (dm/show {:content "Unable to connect to backend, wait a little bit and refresh."
-                         :type :error})))))
-
-
-(defmethod ptk/handle-error :not-found
-  [{:keys [status] :as error}]
-  (ts/schedule
-   (st/emitf (dm/show {:content "Resource not found."
-                       :type :warning}))))
 
 (defonce uncaught-error-handler
   (letfn [(on-error [event]

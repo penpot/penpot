@@ -108,7 +108,8 @@
     (proj/check-edition-permissions! conn profile-id id)
     (db/update! conn :project
                 {:name name}
-                {:id id})))
+                {:id id})
+    nil))
 
 ;; --- Mutation: Delete Project
 

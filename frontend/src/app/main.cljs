@@ -81,7 +81,7 @@
             (rt/initialize-history on-navigate))
 
   (st/emit! udu/fetch-profile)
-  (mf/mount (mf/element ui/app-wrapper) (dom/get-element "app"))
+  (mf/mount (mf/element ui/app) (dom/get-element "app"))
   (mf/mount (mf/element modal) (dom/get-element "modal")))
 
 (defn ^:export init

@@ -129,3 +129,13 @@
           :actions actions
           :tag tag})))
 
+(defn assign-exception
+  [{:keys [type] :as error}]
+  (us/assert (s/nilable map?) error)
+  (us/assert (s/nilable ::us/keyword) type)
+  (ptk/reify ::assign-exception
+    ptk/UpdateEvent
+    (update [_ state]
+      (if (nil? error)
+        (dissoc state :exception)
+        (assoc state :exception error)))))

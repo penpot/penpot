@@ -1,11 +1,11 @@
-.not-found-layout {
+.exception-layout {
   display: grid;
 
   grid-template-rows: 120px auto;
   grid-template-columns: 1fr;
 }
 
-.not-found-header {
+.exception-header {
   grid-column: 1 / span 1;
   grid-row: 1 / span 1;
 
@@ -20,7 +20,7 @@
 
 }
 
-.not-found-content {
+.exception-content {
   grid-column: 1 / span 1;
   grid-row: 1 / span 2;
   height: 100vh;

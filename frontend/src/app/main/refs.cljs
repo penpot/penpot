@@ -31,6 +31,9 @@
 (def profile
   (l/derived :profile st/state))
 
+(def exception
+  (l/derived :exception st/state))
+
 ;; ---- Dashboard refs
 
 (def dashboard-local

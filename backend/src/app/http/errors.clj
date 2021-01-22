@@ -10,20 +10,25 @@
 (ns app.http.errors
   "A errors handling for the http server."
   (:require
+   [clojure.pprint :refer [pprint]]
    [app.common.exceptions :as ex]
    [clojure.tools.logging :as log]
    [cuerdas.core :as str]
    [expound.alpha :as expound]))
 
-
 (defn get-context-string
   [request edata]
   (str "=| uri:    " (pr-str (:uri request)) "\n"
        "=| method: " (pr-str (:request-method request)) "\n"
-       "=| params: " (pr-str (:params request)) "\n"
+       "=| params: \n"
+       (with-out-str
+         (pprint (:params request)))
+       "\n"
 
        (when (map? edata)
-         (str "=| ex-data:      " (pr-str edata) "\n"))
+         (str "=| ex-data: \n"
+              (with-out-str
+                (pprint edata))))
 
        "\n"))
 
@@ -33,69 +38,60 @@
       (or (:type edata)
           (class err)))))
 
-(defmethod handle-exception :authorization
-  [err _]
-  {:status 403
-   :body (ex-data err)})
-
 (defmethod handle-exception :authentication
   [err _]
-  {:status 401
-   :body (ex-data err)})
+  {:status 401 :body (ex-data err)})
+
+(defn- explain-error
+  [error]
+  (with-out-str
+    (expound/printer (:data error))))
 
 (defmethod handle-exception :validation
   [err req]
   (let [header (get-in req [:headers "accept"])
         edata  (ex-data err)]
-    (cond
-      (= :spec-validation (:code edata))
-      (if (str/starts-with? header "text/html")
-        {:status 400
-         :headers {"content-type" "text/html"}
-         :body (str "<pre style='font-size:16px'>"
-                    (with-out-str
-                      (expound/printer (:data edata)))
-                    "</pre>\n")}
-        {:status 400
-         :body (assoc edata :explain (with-out-str (expound/printer (:data edata))))})
-
-      :else
+    (if (and (= :spec-validation (:code edata))
+             (str/starts-with? header "text/html"))
       {:status 400
-       :body edata})))
+       :headers {"content-type" "text/html"}
+       :body (str "<pre style='font-size:16px'>"
+                  (explain-error edata)
+                  "</pre>\n")}
+      {:status 400
+       :body   (cond-> edata
+                 (map? (:data edata))
+                 (-> (assoc :explain (explain-error edata))
+                     (dissoc :data)))})))
 
 (defmethod handle-exception :assertion
   [error request]
   (let [edata (ex-data error)]
     (log/error error
-               (str "Assertion error\n"
-                    (get-context-string request edata)
-                    (with-out-str (expound/printer (:data edata)))))
+                (str "Internal error: assertion\n"
+                     (get-context-string request edata)
+                     (explain-error edata)))
     {:status 500
-     :body (assoc edata :explain (with-out-str (expound/printer (:data edata))))}))
+     :body {:type :server-error
+            :data (-> edata
+                      (assoc :explain (explain-error edata))
+                      (dissoc :data))}}))
 
 (defmethod handle-exception :not-found
   [err _]
-  (let [response (ex-data err)]
-    {:status 404
-     :body response}))
-
-(defmethod handle-exception :service-error
-  [err req]
-  (handle-exception (.getCause ^Throwable err) req))
-
+  {:status 404 :body (ex-data err)})
 
 (defmethod handle-exception :default
   [error request]
   (let [edata (ex-data error)]
     (log/error error
-               (str "Internal Error\n"
-                    (get-context-string request edata)))
-    (if (nil? edata)
-      {:status 500
-       :body {:type :server-error
-              :hint (ex-message error)}}
-      {:status 500
-       :body (dissoc edata :data)})))
+                (str "Internal Error: "
+                     (ex-message error)
+                     (get-context-string request edata)))
+    {:status 500
+     :body {:type :server-error
+            :hint (ex-message error)
+            :data edata}}))
 
 (defn handle
   [error req]

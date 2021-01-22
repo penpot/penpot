@@ -26,6 +26,12 @@
 (defonce state  (ptk/store {:resolve ptk/resolve}))
 (defonce stream (ptk/input-stream state))
 
+(defn ^boolean is-logged?
+  [pdata]
+  (and (some? pdata)
+       (uuid? (:id pdata))
+       (not= uuid/zero (:id pdata))))
+
 (when *assert*
   (defonce debug-subscription
     (->> stream
