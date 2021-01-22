@@ -130,13 +130,11 @@
                       (rx/map #(shapes-changes-persisted file-id %))))))
 
             on-error
-            (fn [{:keys [type status] :as error}]
-              (if (and (= :server-error type)
-                       (= 502 status))
+            (fn [{:keys [type] :as error}]
+              (if (or (= :bad-gateway type)
+                      (= :service-unavailable type))
                 (rx/of (update-persistence-status {:status :error :reason type}))
-                (rx/of update-persistence-queue
-                       (update-persistence-status {:status :error :reason type}))))]
-
+                (rx/throw error)))]
 
         (when (= file-id (:id file))
           (->> (rp/mutation :update-file params)
@@ -219,18 +217,7 @@
                    (rp/query :project {:id project-id})
                    (rp/query :file-libraries {:file-id file-id}))
            (rx/first)
-           (rx/map (fn [bundle] (apply bundle-fetched bundle)))
-           (rx/catch (fn [{:keys [type code] :as error}]
-                       (cond
-                         (= :not-found type)
-                         (rx/of (rt/nav' :not-found))
-
-                         (and (= :authentication type)
-                              (= :unauthorized code))
-                         (rx/of (rt/nav' :not-authorized))
-
-                         :else
-                         (throw error))))))))
+           (rx/map (fn [bundle] (apply bundle-fetched bundle)))))))
 
 (defn- bundle-fetched
   [file users project libraries]

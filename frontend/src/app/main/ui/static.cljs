@@ -11,27 +11,104 @@
   (:require
    [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]
+   [app.main.ui.context :as ctx]
+   [app.main.data.auth :as da]
+   [app.main.data.messages :as dm]
+   [app.main.store :as st]
+   [app.main.refs :as refs]
+   [cuerdas.core :as str]
+   [app.util.i18n :refer [tr]]
+   [app.util.router :as rt]
    [app.main.ui.icons :as i]))
 
-(mf/defc not-found-page
-  [{:keys [error] :as props}]
-  [:section.not-found-layout
-   [:div.not-found-header i/logo]
-   [:div.not-found-content
-    [:div.message-container
-     [:div.error-img i/icon-empty]
-     [:div.main-message "404"]
-     [:div.desc-message "Oops! Page not found"]
-     [:a.btn-primary.btn-small "Go back"]]]])
+(defn- go-to-dashboard
+  [profile]
+  (let [team-id (:default-team-id profile)]
+    (st/emit! (rt/nav :dashboard-projects {:team-id team-id}))))
 
-(mf/defc not-authorized-page
+(mf/defc not-found
   [{:keys [error] :as props}]
-  [:section.not-found-layout
-   [:div.not-found-header i/logo]
-   [:div.not-found-content
-    [:div.message-container
-     [:div.error-img i/icon-lock]
-     [:div.main-message "403"]
-     [:div.desc-message "Sorry, you are not authorized to access this page."]
-     #_[:a.btn-primary.btn-small "Go back"]]]])
+  (let [profile (mf/deref refs/profile)]
+    [:section.exception-layout
+     [:div.exception-header
+      {:on-click (partial go-to-dashboard profile)}
+      i/logo]
+     [:div.exception-content
+      [:div.container
+       [:div.image i/icon-empty]
+       [:div.main-message (tr "labels.not-found.main-message")]
+       [:div.desc-message (tr "labels.not-found.desc-message")]
+       [:div.sign-info
+        [:span (tr "labels.not-found.auth-info") " " [:b (:email profile)]]
+        [:a.btn-primary.btn-small
+         {:on-click (st/emitf (da/logout))}
+         (tr "labels.sign-out")]]]]]))
+
+(mf/defc bad-gateway
+  [{:keys [error] :as props}]
+  (let [profile (mf/deref refs/profile)]
+    [:section.exception-layout
+     [:div.exception-header
+      {:on-click (partial go-to-dashboard profile)}
+      i/logo]
+     [:div.exception-content
+      [:div.container
+       [:div.image i/icon-empty]
+       [:div.main-message (tr "labels.bad-gateway.main-message")]
+       [:div.desc-message (tr "labels.bad-gateway.desc-message")]
+       [:div.sign-info
+        [:a.btn-primary.btn-small
+         {:on-click (st/emitf #(dissoc % :exception))}
+         (tr "labels.retry")]]]]]))
+
+(mf/defc service-unavailable
+  [{:keys [error] :as props}]
+  (let [profile (mf/deref refs/profile)]
+    [:section.exception-layout
+     [:div.exception-header
+      {:on-click (partial go-to-dashboard profile)}
+      i/logo]
+     [:div.exception-content
+      [:div.container
+       [:div.image i/icon-empty]
+       [:div.main-message (tr "labels.service-unavailable.main-message")]
+       [:div.desc-message (tr "labels.service-unavailable.desc-message")]
+       [:div.sign-info
+        [:a.btn-primary.btn-small
+         {:on-click (st/emitf #(dissoc % :exception))}
+         (tr "labels.retry")]]]]]))
+
+(mf/defc internal-error
+  [props]
+  (let [profile (mf/deref refs/profile)]
+    [:section.exception-layout
+     [:div.exception-header
+      {:on-click (partial go-to-dashboard profile)}
+      i/logo]
+     [:div.exception-content
+      [:div.container
+       [:div.image i/icon-empty]
+       [:div.main-message "Internal Error"]
+       [:div.desc-message "Something bad happended on backend servers. Please retry the operation and if the problem persists, contact with support."]
+       [:div.sign-info
+        [:a.btn-primary.btn-small
+         {:on-click (st/emitf (dm/assign-exception nil))}
+         (tr "labels.retry")]]]]]))
+
+(mf/defc exception-page
+  [{:keys [data] :as props}]
+  (case (:type data)
+    :not-found
+    [:& not-found]
+
+    :bad-gateway
+    [:& bad-gateway]
+
+    :service-unavailable
+    [:& service-unavailable]
+
+    :server-error
+    [:& internal-error]
+
+    nil))
 

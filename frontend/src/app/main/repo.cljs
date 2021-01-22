@@ -15,34 +15,32 @@
    [app.util.http-api :as http]))
 
 (defn- handle-response
-  [response]
+  [{:keys [status body] :as response}]
   (cond
-    (http/success? response)
-    (rx/of (:body response))
+    (= 204 status)
+    (rx/empty)
 
-    (= (:status response) 400)
-    (rx/throw (:body response))
+    (= 502 status)
+    (rx/throw {:type :bad-gateway})
 
-    (= (:status response) 401)
-    (rx/throw {:type :authentication
-               :code :not-authenticated})
-
-    (= (:status response) 403)
-    (rx/throw {:type :authorization
-               :code :not-authorized})
-
-    (= (:status response) 404)
-    (rx/throw (:body response))
+    (= 503 status)
+    (rx/throw {:type :service-unavailable})
 
     (= 0 (:status response))
     (rx/throw {:type :offline})
 
+    (and (= 200 status)
+         (coll? body))
+    (rx/of body)
+
+    (and (>= status 400)
+         (map? body))
+    (rx/throw body)
+
     :else
-    (rx/throw (merge {:type :server-error
-                      :status (:status response)}
-                     (:body response)))))
-
-
+    (rx/throw {:type :unexpected-error
+               :status status
+               :data body})))
 
 (defn send-query!
   [id params]

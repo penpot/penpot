@@ -71,8 +71,8 @@
   [conn file-id page-id token]
   (let [sql "select exists(select 1 from file_share_token where file_id=? and page_id=? and token=?) as exists"]
     (when-not (:exists (db/exec-one! conn [sql file-id page-id token]))
-      (ex/raise :type :authorization
-                :code :unauthorized-token))))
+      (ex/raise :type :not-found
+                :code :object-not-found))))
 
 (defn retrieve-shared-token
   [conn file-id page-id]
