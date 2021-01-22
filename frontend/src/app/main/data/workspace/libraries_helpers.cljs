@@ -476,14 +476,16 @@
         root-inst     shape-inst
         root-master   (cp/get-component-root component)]
 
-    (generate-sync-shape-direct-recursive container
-                                          shape-inst
-                                          component
-                                          shape-master
-                                          root-inst
-                                          root-master
-                                          reset?
-                                          initial-root?)))
+    (if component
+      (generate-sync-shape-direct-recursive container
+                                            shape-inst
+                                            component
+                                            shape-master
+                                            root-inst
+                                            root-master
+                                            reset?
+                                            initial-root?)
+      empty-changes)))
 
 (defn- generate-sync-shape-direct-recursive
   [container shape-inst component shape-master root-inst root-master reset? initial-root?]
@@ -591,13 +593,15 @@
         root-inst     shape-inst
         root-master   (cp/get-component-root component)]
 
-    (generate-sync-shape-inverse-recursive container
-                                           shape-inst
-                                           component
-                                           shape-master
-                                           root-inst
-                                           root-master
-                                           initial-root?)))
+    (if component
+      (generate-sync-shape-inverse-recursive container
+                                             shape-inst
+                                             component
+                                             shape-master
+                                             root-inst
+                                             root-master
+                                             initial-root?)
+      empty-changes)))
 
 (defn- generate-sync-shape-inverse-recursive
   [container shape-inst component shape-master root-inst root-master initial-root?]
