@@ -11,7 +11,9 @@
   "browserslist": [
     "defaults"
   ],
-  "scripts": {},
+  "scripts": {
+    "collect-locales": "clojure -Adev locales.clj collect src/app/main/ resources/locales.json"
+  },
   "devDependencies": {
     "autoprefixer": "^10.1.0",
     "gulp": "4.0.2",
