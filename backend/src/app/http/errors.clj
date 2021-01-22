@@ -66,10 +66,10 @@
 (defmethod handle-exception :assertion
   [error request]
   (let [edata (ex-data error)]
-    (log/errorf error
-                (str "Assertion error\n"
-                     (get-context-string request edata)
-                     (with-out-str (expound/printer (:data edata)))))
+    (log/error error
+               (str "Assertion error\n"
+                    (get-context-string request edata)
+                    (with-out-str (expound/printer (:data edata)))))
     {:status 500
      :body (assoc edata :explain (with-out-str (expound/printer (:data edata))))}))
 
@@ -87,9 +87,9 @@
 (defmethod handle-exception :default
   [error request]
   (let [edata (ex-data error)]
-    (log/errorf error
-                (str "Internal Error\n"
-                     (get-context-string request edata)))
+    (log/error error
+               (str "Internal Error\n"
+                    (get-context-string request edata)))
     (if (nil? edata)
       {:status 500
        :body {:type :server-error
