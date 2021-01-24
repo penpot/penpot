@@ -34,6 +34,15 @@
                 {:data data}
                 {:id id})))
 
+(defn get-file
+  [id]
+  (with-open [conn (db/open (:app.db/pool system))]
+    (let [file (db/get-by-id conn :file id)]
+      (-> file
+          (update :data app.util.blob/decode)
+          (update :data pmg/migrate-data)))))
+
+
 ;; Examples
 ;; (def backup (update-file  #uuid "1586e1f0-3e02-11eb-b1d2-556a2f641513" identity))
 ;; (def x (update-file #uuid "1586e1f0-3e02-11eb-b1d2-556a2f641513" (fn [{:keys [data] :as file}] (update-in data [:pages-index #uuid "878278c0-3ef0-11eb-9d67-8551e7624f43" :objects] dissoc nil))))
