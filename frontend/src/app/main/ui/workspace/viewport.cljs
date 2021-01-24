@@ -63,8 +63,7 @@
 
 (mf/defc coordinates
   []
-  (let [coords (some-> (hooks/use-rxsub ms/mouse-position)
-                       (gpt/round))]
+  (let [coords (hooks/use-rxsub ms/mouse-position)]
     [:ul.coordinates
      [:span {:alt "x"}
       (str "X: " (:x coords "-"))]
