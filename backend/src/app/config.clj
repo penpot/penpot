@@ -26,7 +26,7 @@
    :secret-key "default"
    :asserts-enabled true
 
-   :public-uri "http://localhost:3449/"
+   :public-uri "http://localhost:3449"
    :redis-uri "redis://localhost/0"
 
    :storage-backend :fs

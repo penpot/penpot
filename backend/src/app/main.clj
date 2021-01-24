@@ -84,6 +84,9 @@
      :github-auth (ig/ref :app.http.auth/github)
      :ldap-auth   (ig/ref :app.http.auth/ldap)
      :svgparse    (ig/ref :app.svgparse/handler)
+
+     :error-reporter-handler   (ig/ref :app.error-reporter/handler)
+
      :storage     (ig/ref :app.storage/storage)}
 
     :app.svgparse/svgc
@@ -240,9 +243,13 @@
     :app.srepl/server
     {:port 6062}
 
-    :app.error-reporter/instance
-    {:uri (:error-report-webhook cfg/config)
+    :app.error-reporter/reporter
+    {:uri      (:error-report-webhook cfg/config)
+     :pool     (ig/ref :app.db/pool)
      :executor (ig/ref :app.worker/executor)}
+
+    :app.error-reporter/handler
+    {:pool (ig/ref :app.db/pool)}
 
     :app.storage/storage
     {:pool     (ig/ref :app.db/pool)

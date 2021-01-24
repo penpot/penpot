@@ -12,67 +12,94 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
+   [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
    [app.tasks :as tasks]
    [app.worker :as wrk]
    [app.util.json :as json]
    [app.util.http :as http]
+   [app.util.template :as tmpl]
+   [clojure.pprint :refer [pprint]]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
+   [clojure.java.io :as io]
    [cuerdas.core :as str]
    [integrant.core :as ig]
-   [promesa.exec :as px]))
+   [promesa.exec :as px])
+  (:import
+   org.apache.logging.log4j.core.LogEvent
+   org.apache.logging.log4j.util.ReadOnlyStringMap))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Error Reporting
+;; Error Listener
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declare send-notification!)
-(defonce queue-fn identity)
+(declare handle-event)
+
+(defonce queue (a/chan (a/sliding-buffer 64)))
+(defonce queue-fn (fn [event] (a/>!! queue event)))
 
 (s/def ::uri ::us/string)
-(defmethod ig/pre-init-spec ::instance [_]
-  (s/keys :req-un [::wrk/executor]
+
+(defmethod ig/pre-init-spec ::reporter [_]
+  (s/keys :req-un [::wrk/executor ::db/pool]
           :opt-un [::uri]))
 
-(defmethod ig/init-key ::instance
+(defmethod ig/init-key ::reporter
   [_ {:keys [executor uri] :as cfg}]
-  (let [out (a/chan (a/sliding-buffer 64))]
-    (log/info "Intializing error reporter.")
-    (if uri
-      (do
-        (alter-var-root #'queue-fn (constantly (fn [x] (a/>!! out (str x)))))
-        (a/go-loop []
-          (let [val (a/<! out)]
-            (if (nil? val)
-              (log/info "Closing error reporting loop.")
-              (do
-                (px/run! executor #(send-notification! cfg val))
-                (recur))))))
-      (log/info "No webhook uri is provided (error reporting becomes noop)."))
-    out))
+  (log/info "Intializing error reporter.")
+  (let [close-ch (a/chan 1)]
+    (a/go-loop []
+      (let [[val port] (a/alts! [close-ch queue])]
+        (cond
+          (= port close-ch)
+          (log/info "Stoping error reporting loop.")
 
-(defmethod ig/halt-key! ::instance
-  [_ out]
-  (alter-var-root #'queue-fn (constantly identity))
-  (a/close! out))
+          (nil? val)
+          (log/info "Stoping error reporting loop.")
 
-(defn send-notification!
-  [cfg report]
+          :else
+          (do
+            (px/run! executor #(handle-event cfg val))
+            (recur)))))
+    close-ch))
+
+(defmethod ig/halt-key! ::reporter
+  [_ close-ch]
+  (a/close! close-ch))
+
+(defn- get-context-data
+  [event]
+  (let [^LogEvent levent (deref event)
+        ^ReadOnlyStringMap rosm (.getContextData levent)]
+    (into {:message (str event)}
+          (comp
+           (map (fn [[key val]]
+                  (cond
+                    (= "id" key)         [:id (uuid/uuid val)]
+                    (= "profile-id" key) [:profile-id (uuid/uuid val)]
+                    (str/blank? val)     nil
+                    (string? key)        [(keyword key) val]
+                    :else                [key val])))
+           (filter some?))
+
+          (.toMap rosm))))
+
+(defn- send-mattermost-notification!
+  [cfg {:keys [message host version id] :as cdata}]
   (try
     (let [uri    (:uri cfg)
           prefix (str/<< "Unhandled exception (@channel):\n"
-                         "- host: `~(:host cfg/config)`\n"
-                         "- version: `~(:full cfg/version)`")
-          text   (str prefix "\n```\n" report "\n```")
-
+                         "- detail: ~(:public-uri cfg/config)/dbg/error-by-id/~{id}\n"
+                         "- host: `~{host}`\n"
+                         "- version: `~{version}`\n")
+          text   (str prefix "```\n" message "\n```")
           rsp    (http/send! {:uri uri
                               :method :post
                               :headers {"content-type" "application/json"}
                               :body (json/encode-str {:text text})})]
-
       (when (not= (:status rsp) 200)
         (log/warnf "Error reporting webhook replying with unexpected status: %s\n%s"
                    (:status rsp)
@@ -80,3 +107,54 @@
 
     (catch Exception e
       (log/warnf e "Unexpected exception on error reporter."))))
+
+(defn- persist-on-database!
+  [{:keys [pool] :as cfg} {:keys [id] :as cdata}]
+  (db/with-atomic [conn pool]
+    (db/insert! conn :server-error-report
+                {:id id :content (db/tjson cdata)})))
+
+(defn handle-event
+  [cfg event]
+  (try
+    (let [cdata (get-context-data event)]
+      (when (:uri cfg)
+        (send-mattermost-notification! cfg cdata))
+      (persist-on-database! cfg cdata))
+    (catch Exception e
+      (log/warnf e "Unexpected exception on error reporter."))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Http Handler
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defmethod ig/pre-init-spec ::handler [_]
+  (s/keys :req-un [::db/pool]))
+
+(defmethod ig/init-key ::handler
+  [_ {:keys [pool] :as cfg}]
+  (letfn [(parse-id [request]
+            (let [id (get-in request [:path-params :id])
+                  id (us/uuid-conformer id)]
+              (when (uuid? id)
+                id)))
+          (retrieve-report [id]
+            (ex/ignoring
+             (when-let [{:keys [content] :as row} (db/get-by-id pool :server-error-report id)]
+               (assoc row :content (db/decode-transit-pgobject content)))))
+
+          (render-template [{:keys [content] :as report}]
+            (some-> (io/resource "error-report.tmpl")
+                    (tmpl/render content)))]
+
+
+    (fn [request]
+      (let [result (some-> (parse-id request)
+                           (retrieve-report)
+                           (render-template))]
+        (if result
+          {:status 200
+           :headers {"content-type" "text/html; charset=utf-8"}
+           :body result}
+          {:status 404
+           :body "not found"})))))

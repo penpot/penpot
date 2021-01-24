@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>penpot - error report {{id}}</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono">
+    <style>
+      body {
+        margin: 0px;
+        padding: 0px;
+      }
+      pre {
+        margin: 0px;
+      }
+      * {
+        font-family: "JetBrains Mono", monospace; 
+        font-size: 12px;
+      }
+      .table {
+        display: flex;
+        flex-direction: column;
+        margin: 10px;
+      }
+
+      .table-row {
+        display: flex;
+        /* width: 100%; */
+        /* border: 1px solid red; */
+      }
+
+      .table-key {
+        font-weight: 600;
+        width: 70px;
+        padding: 4px;
+      }
+
+      .table-val {
+        font-weight: 200;
+        color: #333;
+        padding: 4px;
+      }
+
+      .multiline {
+        margin-top: 15px;
+        flex-direction: column;
+      }
+
+      .multiline .table-key {
+        margin-bottom: 10px;
+        border-bottom: 1px dashed #dddddd;
+        /* padding: 4px; */
+        width: unset;
+      }
+
+    </style>
+  </head>
+  <body>
+    <div class="table">
+      <div class="table-row">
+        <div class="table-key">ERID: </div>
+        <div class="table-val">{{id}}</div>
+      </div>
+      <div class="table-row">
+        <div class="table-key">VERS: </div>
+        <div class="table-val">{{version}}</div>
+      </div>
+      <div class="table-row">
+        <div class="table-key">HOST: </div>
+        <div class="table-val">{{host}}</div>
+      </div>
+      {% if type %}
+      <div class="table-row">
+        <div class="table-key">TYPE: </div>
+        <div class="table-val">{{type}}</div>
+      </div>
+      {% endif %}
+      {% if code %}
+      <div class="table-row">
+        <div class="table-key">CODE: </div>
+        <div class="table-val">{{code}}</div>
+      </div>
+      {% endif %}
+      <div class="table-row">
+        <div class="table-key">CLASS: </div>
+        <div class="table-val">{{class}}</div>
+      </div>
+      <div class="table-row">
+        <div class="table-key">HINT: </div>
+        <div class="table-val">{{hint}}</div>
+      </div>
+
+      <div class="table-row">
+        <div class="table-key">PATH: </div>
+        <div class="table-val">{{method|upper}} {{path}}</div>
+      </div>
+
+      {% if params %}
+      <div class="table-row multiline">
+        <div class="table-key">PARAMS: </div>
+        <div class="table-val">
+          <pre>{{params}}</pre>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if explain %}
+      <div class="table-row multiline">
+        <div class="table-key">EXPLAIN: </div>
+        <div class="table-val">
+          <pre>{{explain}}</pre>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if data %}
+      <div class="table-row multiline">
+        <div class="table-key">EDATA: </div>
+        <div class="table-val">
+          <pre>{{data}}</pre>
+        </div>
+      </div>
+      {% endif %}
+
+
+      <div class="table-row multiline">
+        <div class="table-key">TRACE:</div>
+        <div class="table-val">
+          <pre>{{message}}</pre>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+
