@@ -12,6 +12,7 @@
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]
    [app.db :as db]
+   [app.http.errors :refer [update-thread-context!]]
    [buddy.core.codecs :as bc]
    [buddy.core.nonce :as bn]))
 
@@ -55,7 +56,9 @@
   [cfg handler]
   (fn [request]
     (if-let [profile-id (retrieve-from-request cfg request)]
-      (handler (assoc request :profile-id profile-id))
+      (do
+        (update-thread-context! {:profile-id profile-id})
+        (handler (assoc request :profile-id profile-id)))
       (handler request))))
 
 (defmethod ig/pre-init-spec ::session [_]

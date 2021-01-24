@@ -58,9 +58,15 @@
   <body>
     <div class="table">
       <div class="table-row">
-        <div class="table-key">ERID: </div>
+        <div class="table-key" title="Error ID">ERID: </div>
         <div class="table-val">{{id}}</div>
       </div>
+      {% if profile-id %}
+      <div class="table-row">
+        <div class="table-key" title="Profile ID">PFID: </div>
+        <div class="table-val">{{profile-id}}</div>
+      </div>
+      {% endif %}
       <div class="table-row">
         <div class="table-key">VERS: </div>
         <div class="table-val">{{version}}</div>

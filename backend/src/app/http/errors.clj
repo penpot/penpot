@@ -26,7 +26,9 @@
           (ThreadContext/put
            (name key)
            (cond
-             (coll? val) (with-out-str (pprint val))
+             (coll? val)
+             (binding [clojure.pprint/*print-right-margin* 120]
+               (with-out-str (pprint val)))
              (instance? clojure.lang.Named val) (name val)
              :else (str val))))
         data))

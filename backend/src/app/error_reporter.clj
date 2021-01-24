@@ -20,7 +20,6 @@
    [app.util.json :as json]
    [app.util.http :as http]
    [app.util.template :as tmpl]
-   [clojure.pprint :refer [pprint]]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
@@ -74,7 +73,8 @@
   [event]
   (let [^LogEvent levent (deref event)
         ^ReadOnlyStringMap rosm (.getContextData levent)]
-    (into {:message (str event)}
+    (into {:message (str event)
+           :id      (uuid/next)} ; set default uuid for cases when it not comes.
           (comp
            (map (fn [[key val]]
                   (cond
