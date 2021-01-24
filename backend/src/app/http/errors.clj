@@ -10,27 +10,50 @@
 (ns app.http.errors
   "A errors handling for the http server."
   (:require
-   [clojure.pprint :refer [pprint]]
    [app.common.exceptions :as ex]
+   [app.common.uuid :as uuid]
+   [app.config :as cfg]
+   [clojure.pprint :refer [pprint]]
    [clojure.tools.logging :as log]
    [cuerdas.core :as str]
-   [expound.alpha :as expound]))
+   [expound.alpha :as expound])
+  (:import
+   org.apache.logging.log4j.ThreadContext))
 
-(defn get-context-string
-  [request edata]
-  (str "=| uri:    " (pr-str (:uri request)) "\n"
-       "=| method: " (pr-str (:request-method request)) "\n"
-       "=| params: \n"
-       (with-out-str
-         (pprint (:params request)))
-       "\n"
+(defn update-thread-context!
+  [data]
+  (run! (fn [[key val]]
+          (ThreadContext/put
+           (name key)
+           (cond
+             (coll? val) (with-out-str (pprint val))
+             (instance? clojure.lang.Named val) (name val)
+             :else (str val))))
+        data))
 
-       (when (map? edata)
-         (str "=| ex-data: \n"
-              (with-out-str
-                (pprint edata))))
+(defn- explain-error
+  [error]
+  (with-out-str
+    (expound/printer (:data error))))
 
-       "\n"))
+(defn get-error-context
+  [request error]
+  (let [edata (ex-data error)]
+    (merge
+     {:id      (uuid/next)
+      :path    (:uri request)
+      :method  (:request-method request)
+      :params  (:params request)
+      :version (:full cfg/version)
+      :host    (:host cfg/config)
+      :class   (.getCanonicalName ^java.lang.Class (class error))
+      :hint    (ex-message error)}
+
+     (when (map? edata)
+       edata)
+
+     (when (and (map? edata) (:data edata))
+       {:explain (explain-error edata)}))))
 
 (defmulti handle-exception
   (fn [err & _rest]
@@ -41,11 +64,6 @@
 (defmethod handle-exception :authentication
   [err _]
   {:status 401 :body (ex-data err)})
-
-(defn- explain-error
-  [error]
-  (with-out-str
-    (expound/printer (:data error))))
 
 (defmethod handle-exception :validation
   [err req]
@@ -66,11 +84,10 @@
 
 (defmethod handle-exception :assertion
   [error request]
-  (let [edata (ex-data error)]
-    (log/error error
-                (str "Internal error: assertion\n"
-                     (get-context-string request edata)
-                     (explain-error edata)))
+  (let [edata (ex-data error)
+        cdata (get-error-context request error)]
+    (update-thread-context! cdata)
+    (log/errorf error "Internal error: assertion (id: %s)" (str (:id cdata)))
     {:status 500
      :body {:type :server-error
             :data (-> edata
@@ -83,15 +100,15 @@
 
 (defmethod handle-exception :default
   [error request]
-  (let [edata (ex-data error)]
-    (log/error error
-                (str "Internal Error: "
-                     (ex-message error)
-                     (get-context-string request edata)))
+  (let [cdata (get-error-context request error)]
+    (update-thread-context! cdata)
+    (log/errorf error "Internal error: %s (id: %s)"
+                (ex-message error)
+                (str (:id cdata)))
     {:status 500
      :body {:type :server-error
             :hint (ex-message error)
-            :data edata}}))
+            :data (ex-data error)}}))
 
 (defn handle
   [error req]

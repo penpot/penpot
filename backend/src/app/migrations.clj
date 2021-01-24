@@ -131,6 +131,9 @@
 
    {:name "0039-fix-some-on-delete-triggers"
     :fn (mg/resource "app/migrations/sql/0039-fix-some-on-delete-triggers.sql")}
+
+   {:name "0040-add-error-report-tables"
+    :fn (mg/resource "app/migrations/sql/0040-add-error-report-tables.sql")}
    ])
 
 

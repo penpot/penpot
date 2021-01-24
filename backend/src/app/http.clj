@@ -9,17 +9,18 @@
 
 (ns app.http
   (:require
-   [app.common.spec :as us]
    [app.common.data :as d]
+   [app.common.spec :as us]
+   [app.common.uuid :as uuid]
    [app.config :as cfg]
+   [app.http.assets :as assets]
    [app.http.auth :as auth]
    [app.http.errors :as errors]
    [app.http.middleware :as middleware]
-   [app.http.assets :as assets]
    [app.metrics :as mtx]
+   [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
    [integrant.core :as ig]
-   [clojure.spec.alpha :as s]
    [reitit.ring :as rr]
    [ring.adapter.jetty9 :as jetty])
   (:import
@@ -101,12 +102,11 @@
       (try
         (handler request)
         (catch Exception e
-          (log/errorf e
-                      (str "Unhandled exception: " (ex-message e) "\n"
-                           "=| uri:    " (pr-str (:uri request)) "\n"
-                           "=| method: " (pr-str (:request-method request)) "\n"))
-          {:status 500
-           :body "internal server error"})))))
+          (let [cdata (errors/get-error-context request e)]
+            (errors/update-thread-context! cdata)
+            (log/errorf e "Unhandled exception: %s (id: %s)" (ex-message e) (str (:id cdata)))
+            {:status 500
+             :body "internal server error"}))))))
 
 (defn- create-router
   [{:keys [session rpc google-auth gitlab-auth github-auth metrics ldap-auth storage svgparse] :as cfg}]
@@ -119,12 +119,15 @@
      ["/by-file-media-id/:id" {:get #(assets/file-objects-handler storage %)}]
      ["/by-file-media-id/:id/thumbnail" {:get #(assets/file-thumbnails-handler storage %)}]]
 
+    ["/dbg"
+     ["/error-by-id/:id" {:get (:error-reporter-handler cfg)}]]
+
     ["/api" {:middleware [[middleware/format-response-body]
                           [middleware/parse-request-body]
-                          [middleware/errors errors/handle]
                           [middleware/params]
                           [middleware/multipart-params]
                           [middleware/keyword-params]
+                          [middleware/errors errors/handle]
                           [middleware/cookies]]}
 
      ["/svg" {:post svgparse}]
