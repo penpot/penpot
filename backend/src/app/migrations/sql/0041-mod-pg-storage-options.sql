@@ -48,3 +48,10 @@ ALTER TABLE file_share_token
 ALTER TABLE file_media_object
   ALTER COLUMN name SET STORAGE external,
   ALTER COLUMN mtype SET STORAGE external;
+
+ALTER TABLE storage_object
+  ALTER COLUMN backend SET STORAGE external,
+  ALTER COLUMN metadata SET STORAGE external;
+
+ALTER TABLE storage_data
+  ALTER COLUMN data SET STORAGE external;
