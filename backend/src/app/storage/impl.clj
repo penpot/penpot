@@ -165,6 +165,9 @@
      (instance? String data)
      (string->content data)
 
+     (bytes? data)
+     (input-stream->content (ByteArrayInputStream. ^bytes data) (alength data))
+
      (instance? InputStream data)
      (do
        (when-not size
