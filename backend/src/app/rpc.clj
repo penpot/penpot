@@ -53,15 +53,8 @@
       (fn? (:transform-response mdata)) ((:transform-response mdata) request))))
 
 (defn- wrap-with-metrics
-  [cfg f mdata prefix]
-  (let [mreg (get-in cfg [:metrics :registry])
-        mobj (mtx/create
-              {:name (-> (str "rpc_" (name prefix) "_" (::sv/name mdata) "_response_millis")
-                         (str/replace "-" "_"))
-               :registry mreg
-               :type :summary
-               :help (str/fmt "Service '%s' response time in milliseconds." (::sv/name mdata))})]
-    (mtx/wrap-summary f mobj)))
+  [cfg f mdata]
+  (mtx/wrap-summary f (::mobj cfg) [(::sv/name mdata)]))
 
 ;; Wrap the rpc handler with a semaphore if it is specified in the
 ;; metadata asocciated with the handler.
@@ -79,11 +72,10 @@
     f))
 
 (defn- wrap-impl
-  [cfg f mdata prefix]
+  [cfg f mdata]
   (let [f     (wrap-with-rlimits cfg f mdata)
-        f     (wrap-with-metrics cfg f mdata prefix)
-        spec  (or (::sv/spec mdata)
-                  (s/spec any?))]
+        f     (wrap-with-metrics cfg f mdata)
+        spec  (or (::sv/spec mdata) (s/spec any?))]
     (log/debugf "Registering '%s' command to rpc service." (::sv/name mdata))
     (fn [params]
       (when (and (:auth mdata true) (not (uuid? (:profile-id params))))
@@ -93,36 +85,50 @@
       (f cfg (us/conform spec params)))))
 
 (defn- process-method
-  [cfg prefix vfn]
+  [cfg vfn]
   (let [mdata (meta vfn)]
     [(keyword (::sv/name mdata))
-     (wrap-impl cfg (deref vfn) mdata prefix)]))
+     (wrap-impl cfg (deref vfn) mdata)]))
 
 (defn- resolve-query-methods
   [cfg]
-  (->> (sv/scan-ns 'app.rpc.queries.projects
-                   'app.rpc.queries.files
-                   'app.rpc.queries.teams
-                   'app.rpc.queries.comments
-                   'app.rpc.queries.profile
-                   'app.rpc.queries.recent-files
-                   'app.rpc.queries.viewer)
-       (map (partial process-method cfg :query))
-       (into {})))
+  (let [mobj (mtx/create
+              {:name "rpc_query_timing"
+               :labels ["name"]
+               :registry (get-in cfg [:metrics :registry])
+               :type :summary
+               :help "Timing of query services."})
+        cfg  (assoc cfg ::mobj mobj)]
+    (->> (sv/scan-ns 'app.rpc.queries.projects
+                     'app.rpc.queries.files
+                     'app.rpc.queries.teams
+                     'app.rpc.queries.comments
+                     'app.rpc.queries.profile
+                     'app.rpc.queries.recent-files
+                     'app.rpc.queries.viewer)
+         (map (partial process-method cfg))
+         (into {}))))
 
 (defn- resolve-mutation-methods
   [cfg]
-  (->> (sv/scan-ns 'app.rpc.mutations.demo
-                   'app.rpc.mutations.media
-                   'app.rpc.mutations.profile
-                   'app.rpc.mutations.files
-                   'app.rpc.mutations.comments
-                   'app.rpc.mutations.projects
-                   'app.rpc.mutations.viewer
-                   'app.rpc.mutations.teams
-                   'app.rpc.mutations.verify-token)
-       (map (partial process-method cfg :mutation))
-       (into {})))
+  (let [mobj (mtx/create
+              {:name "rpc_mutation_timing"
+               :labels ["name"]
+               :registry (get-in cfg [:metrics :registry])
+               :type :summary
+               :help "Timing of mutation services."})
+        cfg  (assoc cfg ::mobj mobj)]
+    (->> (sv/scan-ns 'app.rpc.mutations.demo
+                     'app.rpc.mutations.media
+                     'app.rpc.mutations.profile
+                     'app.rpc.mutations.files
+                     'app.rpc.mutations.comments
+                     'app.rpc.mutations.projects
+                     'app.rpc.mutations.viewer
+                     'app.rpc.mutations.teams
+                     'app.rpc.mutations.verify-token)
+         (map (partial process-method cfg))
+         (into {}))))
 
 (s/def ::storage some?)
 (s/def ::session map?)
