@@ -10,6 +10,8 @@
 (ns app.common.geom.point
   (:refer-clojure :exclude [divide min max])
   (:require
+   #?(:cljs [cljs.pprint :as pp]
+      :clj  [clojure.pprint :as pp])
    #?(:cljs [cljs.core :as c]
       :clj [clojure.core :as c])
    [app.common.math :as mth]))
@@ -245,3 +247,8 @@
                 (- (* y2 x1))))
         dist (distance line-point2 line-point1)]
     (/ num dist)))
+
+
+;; --- Debug
+
+(defmethod pp/simple-dispatch Point [obj] (pr obj))

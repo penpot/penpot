@@ -9,6 +9,8 @@
 
 (ns app.common.geom.matrix
   (:require
+   #?(:cljs [cljs.pprint :as pp]
+      :clj  [clojure.pprint :as pp])
    [app.common.math :as mth]
    [app.common.geom.point :as gpt]))
 
@@ -130,3 +132,5 @@
          (th-eq m1d m2d)
          (th-eq m1e m2e)
          (th-eq m1f m2f))))
+
+(defmethod pp/simple-dispatch Matrix [obj] (pr obj))
