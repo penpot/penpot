@@ -181,10 +181,6 @@
   [{:keys [team-id] :as params}]
   (us/assert ::us/uuid team-id)
   (ptk/reify ::fetch-recent-files
-    ptk/UpdateEvent
-    (update [_ state]
-      (dissoc state :files :recent-files))
-
     ptk/WatchEvent
     (watch [_ state stream]
       (let [params {:team-id team-id}]
