@@ -83,7 +83,8 @@
            (for [[index child] (d/enumerate children)]
              (let [props (-> (obj/clone props)
                              (obj/set! "node" child)
-                             (obj/set! "index" index))]
+                             (obj/set! "index" index)
+                             (obj/set! "key" index))]
                [:> render-node props]))])))))
 
 (mf/defc text-content

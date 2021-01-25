@@ -221,40 +221,79 @@
 (defn not-changed? [old-dim new-dim]
   (> (mth/abs (- old-dim new-dim)) 0.1))
 
-(defn resize-text [id new-width new-height]
-  (ptk/reify ::resize-text
+
+(defn resize-text-batch [changes]
+  (ptk/reify ::resize-text-batch
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-id (:current-page-id state)
-            shape (get-in state [:workspace-data :pages-index page-id :objects id])
-            {:keys [selrect grow-type overflow-text]} (gsh/transform-shape shape)
-            {shape-width :width shape-height :height} selrect
+      (let [objects (dwc/lookup-page-objects state)
+            change-text-shape
+            (fn [events [id [new-width new-height]]]
+              (let [shape (get objects id)
+                    {:keys [selrect grow-type overflow-text]} (gsh/transform-shape shape)
+                    {shape-width :width shape-height :height} selrect]
+
+                (cond-> events
+                  (and overflow-text (not= :fixed grow-type))
+                  (conj (update-overflow-text id false))
+
+                  (and (= :fixed grow-type) (not overflow-text) (> new-height shape-height))
+                  (conj (update-overflow-text id true))
+
+                  (and (= :fixed grow-type) overflow-text (<= new-height shape-height))
+                  (conj (update-overflow-text id false))
+
+                  (and (or (not-changed? shape-width new-width) (not-changed? shape-height new-height))
+                       (= grow-type :auto-width))
+                  (conj (dwt/update-dimensions [id] :width new-width)
+                        (dwt/update-dimensions [id] :height new-height))
+
+                  (and (not-changed? shape-height new-height)
+                       (= grow-type :auto-height))
+                  (conj (dwt/update-dimensions [id] :height new-height)))))
+
             undo-transaction (get-in state [:workspace-undo :transaction])
+            events (->> changes (reduce change-text-shape []))]
 
-            events
-            (cond-> []
-              (and overflow-text (not= :fixed grow-type))
-              (conj (update-overflow-text id false))
-
-              (and (= :fixed grow-type) (not overflow-text) (> new-height shape-height))
-              (conj (update-overflow-text id true))
-
-              (and (= :fixed grow-type) overflow-text (<= new-height shape-height))
-              (conj (update-overflow-text id false))
-
-              (and (or (not-changed? shape-width new-width) (not-changed? shape-height new-height))
-                   (= grow-type :auto-width))
-              (conj (dwt/update-dimensions [id] :width new-width)
-                    (dwt/update-dimensions [id] :height new-height))
-
-              (and (not-changed? shape-height new-height)
-                   (= grow-type :auto-height))
-              (conj (dwt/update-dimensions [id] :height new-height)))]
-
-        (if (not (empty? events))
+        (if (seq events)
           (rx/concat
            (when (not undo-transaction)
              (rx/of (dwc/start-undo-transaction)))
            (rx/from events)
            (when (not undo-transaction)
-             (rx/of (dwc/discard-undo-transaction)))))))))
+             (rx/of (dwc/discard-undo-transaction))))
+          (rx/empty))))))
+
+;; When a resize-event arrives we start "buffering" for a time
+;; after that time we invoke `resize-text-batch` with all the changes
+;; together. This improves the performance because we only re-render the
+;; resized components once even if there are changes that applies to
+;; lots of texts like changing a font
+(defn resize-text [id new-width new-height]
+  (ptk/reify ::resize-text
+    IDeref
+    (-deref [_]
+      {:id id :width new-width :height new-height})
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [;; This stream aggregates the events of "resizing"
+            resize-events (rx/merge
+                           (->> (rx/of (resize-text id new-width new-height)))
+                           (->> stream (rx/filter (ptk/type? ::resize-text))))
+
+            ;; Stop buffering after time without resizes
+            stop-buffer (->> resize-events (rx/debounce 100))]
+
+        (if-not (::handling-texts state)
+          (->> (rx/concat
+                (rx/of #(assoc % ::handling-texts true))
+                (->> resize-events
+                     (rx/take-until stop-buffer)
+                     (rx/reduce (fn [acc event]
+                                  (assoc acc (:id @event) [(:width @event) (:height @event)]))
+                                {id [new-width new-height]})
+                     (rx/map #(resize-text-batch %)))
+
+                (rx/of #(dissoc % ::handling-texts))))
+          (rx/empty))))))
