@@ -112,7 +112,7 @@
                   :profile profile
                   :section section
                   :search-term search-term}]
-     (when team
+     (when (and team (seq projects))
        [:& dashboard-content {:projects projects
                               :profile profile
                               :project project

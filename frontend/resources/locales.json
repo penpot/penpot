@@ -351,6 +351,13 @@
       "es" : "Todavía no hay ningún archivo aquí"
     }
   },
+  "dashboard.loading-files" : {
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:189" ],
+    "translations" : {
+      "en" : "loading your files ...",
+      "es" : "cargando tus ficheros ..."
+    }
+  },
   "dashboard.invite-profile" : {
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:72" ],
     "translations" : {

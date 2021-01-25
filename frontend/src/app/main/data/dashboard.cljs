@@ -117,25 +117,9 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [profile (:profile state)]
-        (->> (rx/merge (ptk/watch (fetch-team params) state stream)
-                       (ptk/watch (fetch-projects {:team-id id}) state stream)
-                       (ptk/watch (du/fetch-users {:team-id id}) state stream))
-             (rx/catch (fn [{:keys [type code] :as error}]
-                         (cond
-                           (and (= :not-found type)
-                                (not= id (:default-team-id profile)))
-                           (rx/of (rt/nav :dashboard-projects {:team-id (:default-team-id profile)})
-                                  (dm/error "Team does not found"))
-
-                           (and (= :validation type)
-                                (= :not-authorized code)
-                                (not= id (:default-team-id profile)))
-                           (rx/of (rt/nav :dashboard-projects {:team-id (:default-team-id profile)})
-                                  (dm/error "Team does not found"))
-
-                           :else
-                           (rx/throw error)))))))))
-
+        (rx/merge (ptk/watch (fetch-team params) state stream)
+                  (ptk/watch (fetch-projects {:team-id id}) state stream)
+                  (ptk/watch (du/fetch-users {:team-id id}) state stream))))))
 
 ;; --- Search Files
 
@@ -197,23 +181,29 @@
   [{:keys [team-id] :as params}]
   (us/assert ::us/uuid team-id)
   (ptk/reify ::fetch-recent-files
+    ptk/UpdateEvent
+    (update [_ state]
+      (dissoc state :files :recent-files))
+
     ptk/WatchEvent
     (watch [_ state stream]
       (let [params {:team-id team-id}]
         (->> (rp/query :recent-files params)
-             (rx/map recent-files-fetched))))))
+             (rx/map #(recent-files-fetched team-id %)))))))
 
 (defn recent-files-fetched
-  [files]
+  [team-id files]
   (ptk/reify ::recent-files-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (reduce-kv (fn [state project-id files]
-                   (-> state
-                       (update-in [:files project-id] merge (d/index-by :id files))
-                       (assoc-in [:recent-files project-id] (into #{} (map :id) files))))
-                 state
-                 (group-by :project-id files)))))
+      (let [projects (keys (get-in state [:projects team-id]))]
+        (reduce (fn [state project-id]
+                  (let [files (filter #(= project-id (:project-id %)) files)]
+                    (-> state
+                        (update-in [:files project-id] merge (d/index-by :id files))
+                        (assoc-in [:recent-files project-id] (into #{} (map :id) files)))))
+                state
+                projects)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Modification
