@@ -15,35 +15,36 @@
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.geom.shapes :as gsh]
-   [app.util.geom.grid :as gg]))
+   [app.util.geom.grid :as gg]
+   [app.common.uuid :as uuid]))
 
 (mf/defc square-grid [{:keys [frame zoom grid] :as props}]
-  (let [{:keys [color size] :as params} (-> grid :params)
+  (let [grid-id (mf/use-memo #(uuid/next))
+        {:keys [color size] :as params} (-> grid :params)
         {color-value :color color-opacity :opacity} (-> grid :params :color)
         ;; Support for old color format
-        color-value (or color-value (:value (get-in grid [:params :color :value])))
-        {frame-width :width frame-height :height :keys [x y]} frame]
-    (when (> size 0)
-      [:g.grid
-       [:*
-        (for [xs (range size frame-width size)]
-          [:line {:key (str (:id frame) "-y-" xs)
-                  :x1 (mth/round (+ x xs))
-                  :y1 (mth/round y)
-                  :x2 (mth/round (+ x xs))
-                  :y2 (mth/round (+ y frame-height))
-                  :style {:stroke color-value
-                          :stroke-opacity color-opacity
-                          :stroke-width (str (/ 1 zoom))}}])
-        (for [ys (range size frame-height size)]
-          [:line {:key (str (:id frame) "-x-" ys)
-                  :x1 (mth/round x)
-                  :y1 (mth/round (+ y ys))
-                  :x2 (mth/round (+ x frame-width))
-                  :y2 (mth/round (+ y ys))
-                  :style {:stroke color-value
-                          :stroke-opacity color-opacity
-                          :stroke-width (str (/ 1 zoom))}}])]])))
+        color-value (or color-value (:value (get-in grid [:params :color :value])))]
+
+    [:g.grid
+     [:defs
+      [:pattern {:id grid-id
+                 :x (:x frame)
+                 :y (:y frame)
+                 :width size
+                 :height size
+                 :pattern-units "userSpaceOnUse"}
+       [:path {:d (str "M " size " " 0 " "
+                       "L " 0 " " 0 " " 0 " " size " ")
+               :style {:fill "none"
+                       :stroke color-value
+                       :stroke-opacity color-opacity
+                       :stroke-width (str (/ 1 zoom))}}]]]
+
+     [:rect {:x (:x frame)
+             :y (:y frame)
+             :width (:width frame)
+             :height (:height frame)
+             :fill (str "url(#" grid-id ")")}]]))
 
 (mf/defc layout-grid [{:keys [key frame zoom grid]}]
   (let [{color-value :color color-opacity :opacity} (-> grid :params :color)

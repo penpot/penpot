@@ -81,7 +81,7 @@
         (when component
           [:> component (obj/set! props "key" index)
            (for [[index child] (d/enumerate children)]
-             (let [props (-> props
+             (let [props (-> (obj/clone props)
                              (obj/set! "node" child)
                              (obj/set! "index" index))]
                [:> render-node props]))])))))
