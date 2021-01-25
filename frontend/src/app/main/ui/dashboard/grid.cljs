@@ -183,16 +183,25 @@
 
 (mf/defc empty-placeholder
   []
-  (let [locale (mf/deref i18n/locale)]
-    [:div.grid-empty-placeholder
-     [:div.icon i/file-html]
-     [:div.text (t locale "dashboard.empty-files")]]))
+  [:div.grid-empty-placeholder
+   [:div.icon i/file-html]
+   [:div.text (tr "dashboard.empty-files")]])
+
+(mf/defc loading-placeholder
+  []
+  [:div.grid-empty-placeholder
+   [:div.icon i/loader]
+   [:div.text (tr "dashboard.loading-files")]])
 
 (mf/defc grid
   [{:keys [id opts files] :as props}]
   (let [locale (mf/deref i18n/locale)]
     [:section.dashboard-grid
-     (if (pos? (count files))
+     (cond
+       (nil? files)
+       [:& loading-placeholder]
+
+       (seq files)
        [:div.grid-row
         (for [item files]
           [:& grid-item
@@ -200,6 +209,7 @@
             :file item
             :key (:id item)}])]
 
+       :else
        [:& empty-placeholder])]))
 
 (mf/defc line-grid-row
@@ -255,9 +265,15 @@
   [{:keys [project-id opts files on-load-more] :as props}]
   (let [locale (mf/deref i18n/locale)]
     [:section.dashboard-grid
-     (if (pos? (count files))
+     (cond
+       (nil? files)
+       [:& loading-placeholder]
+
+       (seq files)
        [:& line-grid-row {:files files
                           :on-load-more on-load-more
                           :locale locale}]
+
+       :else
        [:& empty-placeholder])]))
 

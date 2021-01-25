@@ -50,10 +50,10 @@
         files-map  (mf/deref files-ref)
         recent-ids (mf/deref recent-ref)
 
-        files      (->> recent-ids
-                        (map #(get files-map %))
-                        (sort-by :modified-at)
-                        (reverse))
+        files      (some->> recent-ids
+                            (map #(get files-map %))
+                            (sort-by :modified-at)
+                            (reverse))
 
         project-id (:id project)
         team-id    (:team-id project)
