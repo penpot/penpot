@@ -76,7 +76,7 @@
              :presigner presigner
              :type :s3))))
 
-(s/def ::type #{:s3})
+(s/def ::type ::us/keyword)
 (s/def ::client #(instance? S3Client %))
 (s/def ::presigner #(instance? S3Presigner %))
 (s/def ::backend

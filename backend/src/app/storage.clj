@@ -36,10 +36,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (s/def ::backend ::us/keyword)
+
+(s/def ::s3 ::ss3/backend)
+(s/def ::fs ::sfs/backend)
+(s/def ::db ::sdb/backend)
+
 (s/def ::backends
-  (s/map-of ::us/keyword (s/or :s3 (s/nilable ::ss3/backend)
-                               :fs (s/nilable ::sfs/backend)
-                               :db (s/nilable ::sdb/backend))))
+  (s/keys :opt-un [::s3 ::fs ::db]))
 
 (defmethod ig/pre-init-spec ::storage [_]
   (s/keys :req-un [::backend ::wrk/executor ::db/pool ::backends]))
@@ -57,7 +60,7 @@
 ;; Database Objects
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defrecord StorageObject [id size created-at backend])
+(defrecord StorageObject [id size created-at expired-at backend])
 
 (def ^:private
   sql:insert-storage-object
@@ -65,40 +68,58 @@
    values (?, ?, ?, ?::jsonb)
    returning *")
 
+(def ^:private
+  sql:insert-storage-object-with-expiration
+  "insert into storage_object (id, size, backend, metadata, deleted_at)
+   values (?, ?, ?, ?::jsonb, ?)
+   returning *")
+
+(defn- insert-object
+  [conn id size backend mdata expiration]
+  (if expiration
+    (db/exec-one! conn [sql:insert-storage-object-with-expiration id size backend mdata expiration])
+    (db/exec-one! conn [sql:insert-storage-object id size backend mdata])))
+
 (defn- create-database-object
   [{:keys [conn backend]} {:keys [content] :as object}]
   (if (instance? StorageObject object)
     (let [id     (uuid/random)
           mdata  (meta object)
-          result (db/exec-one! conn [sql:insert-storage-object id
-                                     (:size object)
-                                     (name backend)
-                                     (db/tjson mdata)])]
+          result (insert-object conn
+                                id
+                                (:size object)
+                                (name backend)
+                                (db/tjson mdata)
+                                (:expired-at object))]
       (assoc object
              :id (:id result)
              :backend backend
              :created-at (:created-at result)))
     (let [id     (uuid/random)
-          mdata  (dissoc object :content)
-          result (db/exec-one! conn [sql:insert-storage-object id
-                                     (count content)
-                                     (name backend)
-                                     (db/tjson mdata)])]
+          mdata  (dissoc object :content :expired-at)
+          result (insert-object conn
+                                id
+                                (count content)
+                                (name backend)
+                                (db/tjson mdata)
+                                (:expired-at object))]
       (StorageObject. (:id result)
                       (:size result)
                       (:created-at result)
+                      (:deleted-at result)
                       backend
                       mdata
                       nil))))
 
 (def ^:private sql:retrieve-storage-object
-  "select * from storage_object where id = ? and deleted_at is null")
+  "select * from storage_object where id = ? and (deleted_at is null or deleted_at > now())")
 
 (defn row->storage-object [res]
   (let [mdata (some-> (:metadata res) (db/decode-transit-pgobject))]
     (StorageObject. (:id res)
                     (:size res)
                     (:created-at res)
+                    (:deleted-at res)
                     (keyword (:backend res))
                     mdata
                     nil)))
@@ -109,7 +130,7 @@
     (row->storage-object res)))
 
 (def sql:delete-storage-object
-  "update storage_object set deleted_at=now() where id=? and deleted_at is null")
+  "update storage_object set deleted_at=now() where id=?")
 
 (defn- delete-database-object
   [{:keys [conn] :as storage} id]
@@ -183,16 +204,28 @@
   ([storage object]
    (get-object-url storage object nil))
   ([{:keys [conn pool] :as storage} object options]
-   ;; As this operation does not need the database connection, the
-   ;; assoc of the conn to backend is ommited.
    (-> (assoc storage :conn (or conn pool))
        (resolve-backend (:backend object))
        (impl/get-object-url object options))))
 
+(defn object->path
+  [{:keys [id] :as obj}]
+  (impl/id->path id))
+
 (defn del-object
-  [{:keys [conn pool] :as storage} id]
+  [{:keys [conn pool] :as storage} id-or-obj]
   (-> (assoc storage :conn (or conn pool))
-      (delete-database-object id)))
+      (delete-database-object (if (uuid? id-or-obj) id-or-obj (:id id-or-obj)))))
+
+(defn put-tmp-object
+  "A special function for create an object explicitly setting the TMP backend
+  and marking the object as deleted."
+  [storage params]
+  (let [storage (assoc storage :backend :fs)
+        params  (assoc params
+                       :expired-at (dt/in-future {:hours 2})
+                       :temporal true)]
+    (put-object storage params)))
 
 ;; --- impl
 
@@ -214,15 +247,19 @@
 
 (declare sql:retrieve-deleted-objects)
 
+(s/def ::min-age ::dt/duration)
+
 (defmethod ig/pre-init-spec ::gc-task [_]
-  (s/keys :req-un [::storage ::db/pool]))
+  (s/keys :req-un [::storage ::db/pool ::min-age]))
 
 (defmethod ig/init-key ::gc-task
-  [_ {:keys [pool storage] :as cfg}]
+  [_ {:keys [pool storage min-age] :as cfg}]
   (letfn [(retrieve-deleted-objects [conn]
-            (when-let [result (seq (db/exec! conn [sql:retrieve-deleted-objects]))]
-              (as-> (group-by (comp keyword :backend) result) $
-                (reduce-kv #(assoc %1 %2 (map :id %3)) $ $))))
+            (let [min-age (db/interval min-age)
+                  result  (db/exec! conn [sql:retrieve-deleted-objects min-age])]
+              (when (seq result)
+                (as-> (group-by (comp keyword :backend) result) $
+                  (reduce-kv #(assoc %1 %2 (map :id %3)) $ $)))))
 
           (delete-in-bulk [conn backend ids]
             (let [backend (resolve-backend storage backend)
@@ -239,8 +276,10 @@
 
 (def sql:retrieve-deleted-objects
   "with items_part as (
-     select s.id from storage_object as s
+     select s.id
+       from storage_object as s
       where s.deleted_at is not null
+        and s.deleted_at < (now() - ?::interval)
       order by s.deleted_at
       limit 500
    )

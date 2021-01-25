@@ -87,9 +87,10 @@
 (s/def ::gitlab-auth map?)
 (s/def ::ldap-auth fn?)
 (s/def ::storage map?)
+(s/def ::assets map?)
 
 (defmethod ig/pre-init-spec ::router [_]
-  (s/keys :req-un [::rpc ::session ::metrics ::google-auth ::gitlab-auth ::storage]))
+  (s/keys :req-un [::rpc ::session ::metrics ::google-auth ::gitlab-auth ::storage ::assets]))
 
 (defmethod ig/init-key ::router
   [_ cfg]
@@ -109,15 +110,15 @@
              :body "internal server error"}))))))
 
 (defn- create-router
-  [{:keys [session rpc google-auth gitlab-auth github-auth metrics ldap-auth storage svgparse] :as cfg}]
+  [{:keys [session rpc google-auth gitlab-auth github-auth metrics ldap-auth storage svgparse assets] :as cfg}]
   (rr/router
    [["/metrics" {:get (:handler metrics)}]
 
     ["/assets" {:middleware [[middleware/format-response-body]
                              [middleware/errors errors/handle]]}
-     ["/by-id/:id" {:get #(assets/objects-handler storage %)}]
-     ["/by-file-media-id/:id" {:get #(assets/file-objects-handler storage %)}]
-     ["/by-file-media-id/:id/thumbnail" {:get #(assets/file-thumbnails-handler storage %)}]]
+     ["/by-id/:id" {:get (:objects-handler assets)}]
+     ["/by-file-media-id/:id" {:get (:file-objects-handler assets)}]
+     ["/by-file-media-id/:id/thumbnail" {:get (:file-thumbnails-handler assets)}]]
 
     ["/dbg"
      ["/error-by-id/:id" {:get (:error-report-handler cfg)}]]
