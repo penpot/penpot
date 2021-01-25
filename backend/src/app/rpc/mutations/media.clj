@@ -7,8 +7,6 @@
 ;;
 ;; Copyright (c) 2020-2021 UXBOX Labs SL
 
-;; TODO: move to file namespace, there are no media concept separated from file.
-
 (ns app.rpc.mutations.media
   (:require
    [app.common.exceptions :as ex]
@@ -18,9 +16,11 @@
    [app.db :as db]
    [app.media :as media]
    [app.rpc.queries.teams :as teams]
-   [app.util.storage :as ust]
-   [app.util.services :as sv]
    [app.storage :as sto]
+   [app.util.http :as http]
+   [app.util.services :as sv]
+   [app.util.storage :as ust]
+   [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [datoteka.core :as fs]))
 
@@ -67,6 +67,27 @@
   [info]
   (= (:mtype info) "image/svg+xml"))
 
+;; TODO: we need to properly delete temporary files.
+(defn- download-media
+  [url]
+  (let [result (http/get! url {:as :byte-array})
+        data   (:body result)
+        content-type (get (:headers result) "content-type")
+        format (cm/mtype->format content-type)]
+    (if (nil? format)
+      (ex/raise :type :validation
+                :code :media-type-not-allowed
+                :hint "Seems like the url points to an invalid media object.")
+      (let [tempfile  (fs/create-tempfile)
+            filename  (fs/name tempfile)]
+        (with-open [ostream (io/output-stream tempfile)]
+          (.write ostream data))
+        {:filename filename
+         :size (count data)
+         :tempfile tempfile
+         :content-type content-type}))))
+
+
 (defn create-file-media-object
   [{:keys [conn storage svgc] :as cfg} {:keys [id file-id is-local name content] :as params}]
   (media/validate-media-type (:content-type content))
@@ -74,14 +95,14 @@
         source-path  (fs/path (:tempfile content))
         source-mtype (:content-type content)
 
-        source-info  (media/run {:cmd :info :input {:path source-path :mtype source-mtype}})
+        source-info  (media/run cfg {:cmd :info :input {:path source-path :mtype source-mtype}})
 
         thumb        (when (and (not (svg-image? source-info))
                                 (big-enough-for-thumbnail? source-info))
-                       (media/run (assoc thumbnail-options
-                                         :cmd :generic-thumbnail
-                                         :input {:mtype (:mtype source-info)
-                                                 :path source-path})))
+                       (media/run cfg (assoc thumbnail-options
+                                             :cmd :generic-thumbnail
+                                             :input {:mtype (:mtype source-info)
+                                                     :path source-path})))
 
         image        (if (= (:mtype source-info) "image/svg+xml")
                        (let [data (svgc (slurp source-path))]
@@ -116,11 +137,10 @@
   (db/with-atomic [conn pool]
     (let [file (select-file-for-update conn file-id)]
       (teams/check-edition-permissions! conn profile-id (:team-id file))
-      (let [content (media/download-media-object url)
+      (let [content (download-media url)
             params' (merge params {:content content
                                    :name (or name (:filename content))})]
 
-        ;; TODO: schedule to delete the tempfile created by media/download-media-object
         (-> (assoc cfg :conn conn)
             (create-file-media-object params'))))))
 

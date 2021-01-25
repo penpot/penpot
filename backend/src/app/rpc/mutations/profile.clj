@@ -54,7 +54,7 @@
   (s/keys :req-un [::email ::password ::fullname]
           :opt-un [::token]))
 
-(sv/defmethod ::register-profile {:auth false}
+(sv/defmethod ::register-profile {:auth false :rlimit :password}
   [{:keys [pool tokens session storage] :as cfg} {:keys [token] :as params}]
   (when-not (:registration-enabled cfg/config)
     (ex/raise :type :restriction
@@ -200,7 +200,7 @@
   (s/keys :req-un [::email ::password]
           :opt-un [::scope]))
 
-(sv/defmethod ::login {:auth false}
+(sv/defmethod ::login {:auth false :rlimit :password}
   [{:keys [pool] :as cfg} {:keys [email password scope] :as params}]
   (letfn [(check-password [profile password]
             (when (= (:password profile) "!")
@@ -292,7 +292,7 @@
 (s/def ::update-profile-password
   (s/keys :req-un [::profile-id ::password ::old-password]))
 
-(sv/defmethod ::update-profile-password
+(sv/defmethod ::update-profile-password {:rlimit :password}
   [{:keys [pool] :as cfg} {:keys [password profile-id] :as params}]
   (db/with-atomic [conn pool]
     (validate-password! conn params)
@@ -315,8 +315,8 @@
   (media/validate-media-type (:content-type file))
   (db/with-atomic [conn pool]
     (let [profile (db/get-by-id conn :profile profile-id)
-          _       (media/run {:cmd :info :input {:path (:tempfile file)
-                                                 :mtype (:content-type file)}})
+          _       (media/run cfg {:cmd :info :input {:path (:tempfile file)
+                                                     :mtype (:content-type file)}})
           photo   (teams/upload-photo cfg params)
           storage (assoc storage :conn conn)]
 
@@ -398,7 +398,7 @@
 (s/def ::recover-profile
   (s/keys :req-un [::token ::password]))
 
-(sv/defmethod ::recover-profile {:auth false}
+(sv/defmethod ::recover-profile {:auth false :rlimit :password}
   [{:keys [pool tokens] :as cfg} {:keys [token password]}]
   (letfn [(validate-token [token]
             (let [tdata (tokens :verify {:token token :iss :password-recovery})]

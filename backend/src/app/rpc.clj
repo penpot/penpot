@@ -9,11 +9,12 @@
 
 (ns app.rpc
   (:require
-   [app.common.exceptions :as ex]
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
    [app.metrics :as mtx]
+   [app.rlimits :as rlm]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
@@ -51,18 +52,38 @@
     (cond->> {:status 200 :body result}
       (fn? (:transform-response mdata)) ((:transform-response mdata) request))))
 
-(defn- wrap-impl
-  [f mdata cfg prefix]
-  (let [mreg  (get-in cfg [:metrics :registry])
-        mobj  (mtx/create
-               {:name (-> (str "rpc_" (name prefix) "_" (::sv/name mdata) "_response_millis")
-                          (str/replace "-" "_"))
-                :registry mreg
-                :type :summary
-                :help (str/format "Service '%s' response time in milliseconds." (::sv/name mdata))})
-        f     (mtx/wrap-summary f mobj)
-        spec  (or (::sv/spec mdata) (s/spec any?))]
+(defn- wrap-with-metrics
+  [cfg f mdata prefix]
+  (let [mreg (get-in cfg [:metrics :registry])
+        mobj (mtx/create
+              {:name (-> (str "rpc_" (name prefix) "_" (::sv/name mdata) "_response_millis")
+                         (str/replace "-" "_"))
+               :registry mreg
+               :type :summary
+               :help (str/fmt "Service '%s' response time in milliseconds." (::sv/name mdata))})]
+    (mtx/wrap-summary f mobj)))
 
+;; Wrap the rpc handler with a semaphore if it is specified in the
+;; metadata asocciated with the handler.
+(defn- wrap-with-rlimits
+  [cfg f mdata]
+  (if-let [key (:rlimit mdata)]
+    (let [rlinst (get-in cfg [:rlimits key])]
+      (when-not rlinst
+        (ex/raise :type :internal
+                  :code :rlimit-not-configured
+                  :hint (str/fmt "%s rlimit not configured" key)))
+      (log/debugf "Adding rlimit to '%s' rpc handler." (::sv/name mdata))
+      (fn [cfg params]
+        (rlm/execute rlinst (f cfg params))))
+    f))
+
+(defn- wrap-impl
+  [cfg f mdata prefix]
+  (let [f     (wrap-with-rlimits cfg f mdata)
+        f     (wrap-with-metrics cfg f mdata prefix)
+        spec  (or (::sv/spec mdata)
+                  (s/spec any?))]
     (log/debugf "Registering '%s' command to rpc service." (::sv/name mdata))
     (fn [params]
       (when (and (:auth mdata true) (not (uuid? (:profile-id params))))
@@ -75,7 +96,7 @@
   [cfg prefix vfn]
   (let [mdata (meta vfn)]
     [(keyword (::sv/name mdata))
-     (wrap-impl (deref vfn) mdata cfg prefix)]))
+     (wrap-impl cfg (deref vfn) mdata prefix)]))
 
 (defn- resolve-query-methods
   [cfg]
@@ -108,7 +129,7 @@
 (s/def ::tokens fn?)
 
 (defmethod ig/pre-init-spec ::rpc [_]
-  (s/keys :req-un [::db/pool ::storage ::session ::tokens ::mtx/metrics]))
+  (s/keys :req-un [::db/pool ::storage ::session ::tokens ::mtx/metrics ::rlm/rlimits]))
 
 (defmethod ig/init-key ::rpc
   [_ cfg]

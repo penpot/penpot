@@ -36,7 +36,8 @@
    :storage-s3-region :eu-central-1
    :storage-s3-bucket "penpot-devenv-assets-pre"
 
-   :image-process-max-threads 2
+   :rlimits-password 10
+   :rlimits-image 2
 
    :smtp-enabled false
    :smtp-default-reply-to "no-reply@example.com"
@@ -109,7 +110,8 @@
 (s/def ::public-uri ::us/string)
 (s/def ::backend-uri ::us/string)
 
-(s/def ::image-process-max-threads ::us/integer)
+(s/def ::rlimits-password ::us/integer)
+(s/def ::rlimits-image ::us/integer)
 
 (s/def ::google-client-id ::us/string)
 (s/def ::google-client-secret ::us/string)
@@ -161,7 +163,6 @@
                    ::http-server-debug
                    ::http-server-port
                    ::http-server-cors
-                   ::image-process-max-threads
                    ::ldap-auth-avatar-attribute
                    ::ldap-auth-base-dn
                    ::ldap-auth-email-attribute
@@ -179,6 +180,8 @@
                    ::registration-domain-whitelist
                    ::registration-enabled
                    ::secret-key
+                   ::rlimits-password
+                   ::rlimits-image
                    ::smtp-default-from
                    ::smtp-default-reply-to
                    ::smtp-enabled
