@@ -97,6 +97,19 @@
     {:metrics (ig/ref :app.metrics/metrics)
      :svgc    (ig/ref :app.svgparse/svgc)}
 
+    ;; RLimit definition for password hashing
+    :app.rlimits/password
+    (:rlimits-password cfg/config)
+
+    ;; RLimit definition for image processing
+    :app.rlimits/image
+    (:rlimits-image cfg/config)
+
+    ;; A collection of rlimits as hash-map.
+    :app.rlimits/all
+    {:password (ig/ref :app.rlimits/password)
+     :image    (ig/ref :app.rlimits/image)}
+
     :app.rpc/rpc
     {:pool    (ig/ref :app.db/pool)
      :session (ig/ref :app.http.session/session)
@@ -104,6 +117,7 @@
      :metrics (ig/ref :app.metrics/metrics)
      :storage (ig/ref :app.storage/storage)
      :redis   (ig/ref :app.redis/redis)
+     :rlimits (ig/ref :app.rlimits/all)
      :svgc    (ig/ref :app.svgparse/svgc)}
 
     :app.notifications/handler
@@ -283,7 +297,11 @@
        :name    "telemetry"}})))
 
 (defmethod ig/init-key :default [_ data] data)
-(defmethod ig/prep-key :default [_ data] (d/without-nils data))
+(defmethod ig/prep-key :default
+  [_ data]
+  (if (map? data)
+    (d/without-nils data)
+    data))
 
 (def system nil)
 

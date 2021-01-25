@@ -10,26 +10,23 @@
 (ns app.media
   "Media postprocessing."
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.media :as cm]
-   [app.common.data :as d]
    [app.common.spec :as us]
    [app.config :as cfg]
-   [app.util.http :as http]
+   [app.rlimits :as rlm]
    [app.svgparse :as svg]
-   [clojure.core.async :as a]
+   [app.util.http :as http]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.core :as fs])
   (:import
    java.io.ByteArrayInputStream
-   java.util.concurrent.Semaphore
    org.im4java.core.ConvertCmd
    org.im4java.core.IMOperation
    org.im4java.core.Info))
-
-(def semaphore (Semaphore. (:image-process-max-threads cfg/config 1)))
 
 ;; --- Generic specs
 
@@ -174,20 +171,14 @@
             :hint (str "No impl found for process cmd:" cmd)))
 
 (defn run
-  [params]
-  (try
-    (.acquire semaphore)
-    (let [res (a/<!! (a/thread
-                       (try
-                         (process params)
-                         (catch Throwable e
-                           e))))]
-      (if (instance? Throwable res)
-        (throw res)
-        res))
-    (finally
-      (.release semaphore))))
-
+  [{:keys [rlimits]} params]
+  (us/assert map? rlimits)
+  (let [rlimit (get rlimits :image)]
+    (when-not rlimit
+      (ex/raise :type :internal
+                :code :rlimit-not-configured
+                :hint ":image rlimit not configured"))
+    (rlm/execute rlimit (process params))))
 
 ;; --- Utility functions
 
@@ -197,23 +188,3 @@
     (ex/raise :type :validation
               :code :media-type-not-allowed
               :hint "Seems like you are uploading an invalid media object")))
-
-(defn download-media-object
-  [url]
-  (let [result (http/get! url {:as :byte-array})
-        data   (:body result)
-        content-type (get (:headers result) "content-type")
-        format (cm/mtype->format content-type)]
-    (if (nil? format)
-      (ex/raise :type :validation
-                :code :media-type-not-allowed
-                :hint "Seems like the url points to an invalid media object.")
-      (let [tempfile  (fs/create-tempfile)
-            filename  (fs/name tempfile)]
-        (with-open [ostream (io/output-stream tempfile)]
-          (.write ostream data))
-        {:filename filename
-         :size (count data)
-         :tempfile tempfile
-         :content-type content-type}))))
-

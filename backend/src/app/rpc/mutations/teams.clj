@@ -249,8 +249,8 @@
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)
     (let [team    (teams/retrieve-team conn profile-id team-id)
-          _       (media/run {:cmd :info :input {:path (:tempfile file)
-                                                 :mtype (:content-type file)}})
+          _       (media/run cfg {:cmd :info :input {:path (:tempfile file)
+                                                     :mtype (:content-type file)}})
           photo   (upload-photo cfg params)]
 
       ;; Schedule deletion of old photo
@@ -265,11 +265,11 @@
       (assoc team :photo-id (:id photo)))))
 
 (defn upload-photo
-  [{:keys [storage]} {:keys [file]}]
+  [{:keys [storage] :as cfg} {:keys [file]}]
   (let [prefix (-> (bn/random-bytes 8)
                    (bc/bytes->b64u)
                    (bc/bytes->str))
-        thumb  (media/run
+        thumb  (media/run cfg
                  {:cmd :profile-thumbnail
                   :format :jpeg
                   :quality 85
