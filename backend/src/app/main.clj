@@ -84,10 +84,8 @@
      :github-auth (ig/ref :app.http.auth/github)
      :ldap-auth   (ig/ref :app.http.auth/ldap)
      :svgparse    (ig/ref :app.svgparse/handler)
-
-     :error-reporter-handler   (ig/ref :app.error-reporter/handler)
-
-     :storage     (ig/ref :app.storage/storage)}
+     :storage     (ig/ref :app.storage/storage)
+     :error-report-handler (ig/ref :app.error-reporter/handler)}
 
     :app.svgparse/svgc
     {:metrics (ig/ref :app.metrics/metrics)}

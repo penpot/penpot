@@ -120,7 +120,7 @@
      ["/by-file-media-id/:id/thumbnail" {:get #(assets/file-thumbnails-handler storage %)}]]
 
     ["/dbg"
-     ["/error-by-id/:id" {:get (:error-reporter-handler cfg)}]]
+     ["/error-by-id/:id" {:get (:error-report-handler cfg)}]]
 
     ["/api" {:middleware [[middleware/format-response-body]
                           [middleware/parse-request-body]
