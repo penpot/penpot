@@ -67,26 +67,18 @@
   [info]
   (= (:mtype info) "image/svg+xml"))
 
-;; TODO: we need to properly delete temporary files.
 (defn- download-media
-  [url]
+  [{:keys [storage] :as cfg} url]
   (let [result (http/get! url {:as :byte-array})
         data   (:body result)
-        content-type (get (:headers result) "content-type")
-        format (cm/mtype->format content-type)]
+        mtype  (get (:headers result) "content-type")
+        format (cm/mtype->format mtype)]
     (if (nil? format)
       (ex/raise :type :validation
                 :code :media-type-not-allowed
                 :hint "Seems like the url points to an invalid media object.")
-      (let [tempfile  (fs/create-tempfile)
-            filename  (fs/name tempfile)]
-        (with-open [ostream (io/output-stream tempfile)]
-          (.write ostream data))
-        {:filename filename
-         :size (count data)
-         :tempfile tempfile
-         :content-type content-type}))))
-
+      (sto/put-tmp-object storage {:content (sto/content data)
+                                   :content-type mtype}))))
 
 (defn create-file-media-object
   [{:keys [conn storage svgc] :as cfg} {:keys [id file-id is-local name content] :as params}]
@@ -133,14 +125,18 @@
           :opt-un [::id ::name]))
 
 (sv/defmethod ::create-file-media-object-from-url
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id url name] :as params}]
+  [{:keys [pool storage] :as cfg} {:keys [profile-id file-id url name] :as params}]
   (db/with-atomic [conn pool]
     (let [file (select-file-for-update conn file-id)]
       (teams/check-edition-permissions! conn profile-id (:team-id file))
-      (let [content (download-media url)
+      (let [mobj    (download-media cfg url)
+            content {:filename "tempfile"
+                     :size (:size mobj)
+                     :tempfile (-> (sto/get-object-url storage mobj)
+                                   (sto/file-url->path))
+                     :content-type (:content-type (meta mobj))}
             params' (merge params {:content content
                                    :name (or name (:filename content))})]
-
         (-> (assoc cfg :conn conn)
             (create-file-media-object params'))))))
 
