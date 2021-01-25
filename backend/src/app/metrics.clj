@@ -109,11 +109,13 @@
          (tdown# (/ (- (System/nanoTime) start#) 1000000))))))
 
 (defn make-counter
-  [{:keys [name help registry reg] :as props}]
+  [{:keys [name help registry reg labels] :as props}]
   (let [registry (or registry reg)
-        instance (doto (Counter/build)
-                   (.name name)
-                   (.help help))
+        instance (.. (Counter/build)
+                     (name name)
+                     (help help))
+        _        (when (seq labels)
+                   (.labelNames instance (into-array String labels)))
         instance (.register instance registry)]
     (reify
       clojure.lang.IDeref
@@ -121,14 +123,21 @@
 
       clojure.lang.IFn
       (invoke [_ cmd]
-        (.inc ^Counter instance)))))
+        (.inc ^Counter instance))
+
+      (invoke [_ cmd labels]
+        (.. ^Counter instance
+            (labels labels)
+            (inc))))))
 
 (defn make-gauge
-  [{:keys [name help registry reg] :as props}]
+  [{:keys [name help registry reg labels] :as props}]
   (let [registry (or registry reg)
-        instance (doto (Gauge/build)
-                   (.name name)
-                   (.help help))
+        instance (.. (Gauge/build)
+                     (name name)
+                     (help help))
+        _        (when (seq labels)
+                   (.labelNames instance (into-array String labels)))
         instance (.register instance registry)]
 
     (reify
@@ -139,17 +148,23 @@
       (invoke [_ cmd]
         (case cmd
           :inc (.inc ^Gauge instance)
-          :dec (.dec ^Gauge instance))))))
+          :dec (.dec ^Gauge instance)))
+
+      (invoke [_ cmd labels]
+        (case cmd
+          :inc (.. ^Gauge instance (labels labels) (inc))
+          :dec (.. ^Gauge instance (labels labels) (dec)))))))
 
 (defn make-summary
-  [{:keys [name help registry reg] :as props}]
+  [{:keys [name help registry reg labels] :as props}]
   (let [registry (or registry reg)
         instance (doto (Summary/build)
                    (.name name)
                    (.help help)
-                   (.quantile 0.5 0.05)
-                   (.quantile 0.9 0.01)
+                   (.quantile 0.75 0.02)
                    (.quantile 0.99 0.001))
+        _        (when (seq labels)
+                   (.labelNames instance (into-array String labels)))
         instance (.register instance registry)]
     (reify
       clojure.lang.IDeref
@@ -157,51 +172,92 @@
 
       clojure.lang.IFn
       (invoke [_ cmd val]
-        (.observe ^Summary instance val)))))
+        (.observe ^Summary instance val))
+
+      (invoke [_ cmd val labels]
+        (.. ^Summary instance
+            (labels labels)
+            (observe val))))))
 
 (defn create
   [{:keys [type name] :as props}]
   (case type
     :counter (make-counter props)
-    :gauge (make-gauge props)
+    :gauge   (make-gauge props)
     :summary (make-summary props)))
 
 (defn wrap-counter
-  [rootf mobj]
-  (let [mdata (meta rootf)
-        origf (::original mdata rootf)]
-    (with-meta
-      (fn
-        ([a]
-         (mobj :inc)
-         (origf a))
-        ([a b]
-         (mobj :inc)
-         (origf a b))
-        ([a b & more]
-         (mobj :inc)
-         (apply origf a b more)))
-      (assoc mdata ::original origf))))
+  ([rootf mobj]
+   (let [mdata (meta rootf)
+         origf (::original mdata rootf)]
+     (with-meta
+       (fn
+         ([a]
+          (mobj :inc)
+          (origf a))
+         ([a b]
+          (mobj :inc)
+          (origf a b))
+         ([a b & more]
+          (mobj :inc)
+          (apply origf a b more)))
+       (assoc mdata ::original origf))))
+  ([rootf mobj labels]
+   (let [mdata  (meta rootf)
+         labels (into-array String labels)
+         origf  (::original mdata rootf)]
+     (with-meta
+       (fn
+         ([a]
+          (mobj :inc)
+          (origf a))
+         ([a b]
+          (mobj :inc)
+          (origf a b))
+         ([a b & more]
+          (mobj :inc)
+          (apply origf a b more)))
+       (assoc mdata ::original origf)))))
 
 (defn wrap-summary
-  [rootf mobj]
-  (let [mdata (meta rootf)
-        origf (::original mdata rootf)]
-    (with-meta
-      (fn
-        ([a]
+  ([rootf mobj]
+   (let [mdata  (meta rootf)
+         origf  (::original mdata rootf)]
+     (with-meta
+       (fn
+         ([a]
          (with-measure
            :expr (origf a)
-           :cb #(mobj :observe %)))
-        ([a b]
+           :cb   #(mobj :observe %)))
+         ([a b]
+          (with-measure
+            :expr (origf a b)
+            :cb   #(mobj :observe %)))
+         ([a b & more]
+          (with-measure
+            :expr (apply origf a b more)
+            :cb   #(mobj :observe %))))
+       (assoc mdata ::original origf))))
+
+  ([rootf mobj labels]
+   (let [mdata  (meta rootf)
+         labels (into-array String labels)
+         origf  (::original mdata rootf)]
+     (with-meta
+       (fn
+         ([a]
          (with-measure
-           :expr (origf a b)
-           :cb #(mobj :observe %)))
-        ([a b & more]
-         (with-measure
-           :expr (apply origf a b more)
-           :cb #(mobj :observe %))))
-      (assoc mdata ::original origf))))
+           :expr (origf a)
+           :cb   #(mobj :observe % labels)))
+         ([a b]
+          (with-measure
+            :expr (origf a b)
+            :cb   #(mobj :observe % labels)))
+         ([a b & more]
+          (with-measure
+            :expr (apply origf a b more)
+            :cb   #(mobj :observe % labels))))
+       (assoc mdata ::original origf)))))
 
 (defn instrument-vars!
   [vars {:keys [wrap] :as props}]
