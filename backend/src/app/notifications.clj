@@ -271,7 +271,7 @@
 
 (defmethod handle-message :connect
   [{:keys [file-id profile-id session-id pool redis] :as ws} _message]
-  (log/debugf "profile '%s' is connected to file '%s'" profile-id file-id)
+  ;; (log/debugf "profile '%s' is connected to file '%s'" profile-id file-id)
   (aa/go-try
    (aa/<? (update-presence pool file-id session-id profile-id))
    (let [members (aa/<? (retrieve-presence pool file-id))]
@@ -279,7 +279,7 @@
 
 (defmethod handle-message :disconnect
   [{:keys [profile-id file-id session-id redis pool] :as ws} _message]
-  (log/debugf "profile '%s' is disconnected from '%s'" profile-id file-id)
+  ;; (log/debugf "profile '%s' is disconnected from '%s'" profile-id file-id)
   (aa/go-try
    (aa/<? (delete-presence pool file-id session-id profile-id))
    (let [members (aa/<? (retrieve-presence pool file-id))]
