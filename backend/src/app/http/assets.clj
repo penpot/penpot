@@ -65,12 +65,7 @@
 
       :fs
       (let [purl (u/uri (:public-uri cfg))
-            path (sto/object->path obj)
-            purl (update purl :path
-                         (fn [existing]
-                           (if (str/ends-with? existing "/")
-                             (str existing path)
-                             (str existing "/" path))))]
+            purl (u/join purl (sto/object->relative-path obj))]
         {:status 204
          :headers {"x-accel-redirect" (:path purl)
                    "content-type" (:content-type mdata)
