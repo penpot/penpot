@@ -98,7 +98,8 @@
                  (create-router cfg)
                  (rr/routes
                   (rr/create-resource-handler {:path "/"})
-                  (rr/create-default-handler)))]
+                  (rr/create-default-handler))
+                 {:middleware [middleware/server-timing]})]
     (fn [request]
       (try
         (handler request)

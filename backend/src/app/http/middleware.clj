@@ -21,6 +21,16 @@
    [ring.middleware.params :refer [wrap-params]]
    [ring.middleware.resource :refer [wrap-resource]]))
 
+(defn wrap-server-timing
+  [handler]
+  (let [seconds-from #(float (/ (- (System/nanoTime) %) 1000000000))]
+    (fn [request]
+      (let [start    (System/nanoTime)
+            response (handler request)]
+        (update response :headers
+                (fn [headers]
+                  (assoc headers "Server-Timing" (str "total;dur=" (seconds-from start)))))))))
+
 (defn wrap-parse-request-body
   [handler]
   (letfn [(parse-transit [body]
@@ -130,3 +140,7 @@
 (def keyword-params
   {:name ::keyword-params
    :compile (constantly wrap-keyword-params)})
+
+(def server-timing
+  {:name ::server-timing
+   :compile (constantly wrap-server-timing)})
