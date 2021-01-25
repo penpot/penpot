@@ -10,11 +10,16 @@
 (ns app.http.assets
   "Assets related handlers."
   (:require
-   [app.common.spec :as us]
    [app.common.exceptions :as ex]
-   [app.storage :as sto]
+   [app.common.spec :as us]
    [app.db :as db]
-   [app.util.time :as dt]))
+   [app.storage :as sto]
+   [app.util.time :as dt]
+   [app.metrics :as mtx]
+   [cuerdas.core :as str]
+   [clojure.spec.alpha :as s]
+   [lambdaisland.uri :as u]
+   [integrant.core :as ig]))
 
 (def ^:private cache-max-age
   (dt/duration {:hours 24}))
@@ -22,8 +27,25 @@
 (def ^:private signature-max-age
   (dt/duration {:hours 24 :minutes 15}))
 
+(defn coerce-id
+  [id]
+  (let [res (us/uuid-conformer id)]
+    (when-not (uuid? res)
+      (ex/raise :type :not-found
+                :hint "object not found"))
+    res))
+
+(defn- get-file-media-object
+  [{:keys [pool] :as storage} id]
+  (let [id   (coerce-id id)
+        mobj (db/exec-one! pool ["select * from file_media_object where id=?" id])]
+    (when-not mobj
+      (ex/raise :type :not-found
+                :hint "object does not found"))
+      mobj))
+
 (defn- serve-object
-  [storage obj]
+  [{:keys [storage] :as cfg} obj]
   (let [mdata   (meta obj)
         backend (sto/resolve-backend storage (:backend obj))]
     (case (:type backend)
@@ -42,53 +64,56 @@
          :body ""})
 
       :fs
-      (let [url (sto/get-object-url storage obj)]
+      (let [purl (u/uri (:public-uri cfg))
+            path (sto/object->path obj)
+            purl (update purl :path
+                         (fn [existing]
+                           (if (str/ends-with? existing "/")
+                             (str existing path)
+                             (str existing "/" path))))]
         {:status 204
-         :headers {"x-accel-redirect" (:path url)
+         :headers {"x-accel-redirect" (:path purl)
                    "content-type" (:content-type mdata)
-                   "cache-control" (str "max-age=" (inst-ms cache-max-age))
-                   }
+                   "cache-control" (str "max-age=" (inst-ms cache-max-age))}
          :body ""}))))
 
 (defn- generic-handler
-  [{:keys [pool] :as storage} request id]
-  (with-open [conn (db/open pool)]
-    (let [storage (assoc storage :conn conn)
-          obj     (sto/get-object storage id)]
-      (if obj
-        (serve-object storage obj)
-        {:status 404 :body ""}))))
-
-(defn coerce-id
-  [id]
-  (let [res (us/uuid-conformer id)]
-    (when-not (uuid? res)
-      (ex/raise :type :not-found
-                :hint "object not found"))
-    res))
-
-(defn- get-file-media-object
-  [conn id]
-  (let [id   (coerce-id id)
-        mobj (db/exec-one! conn ["select * from file_media_object where id=?" id])]
-    (when-not mobj
-      (ex/raise :type :not-found
-                :hint "object does not found"))
-      mobj))
+  [{:keys [storage] :as cfg} request id]
+  (let [obj (sto/get-object storage id)]
+    (if obj
+      (serve-object cfg obj)
+      {:status 404 :body ""})))
 
 (defn objects-handler
-  [storage request]
+  [{:keys [storage] :as cfg} request]
   (let [id (get-in request [:path-params :id])]
-    (generic-handler storage request (coerce-id id))))
+    (generic-handler cfg request (coerce-id id))))
 
 (defn file-objects-handler
-  [{:keys [pool] :as storage} request]
+  [{:keys [storage] :as cfg} request]
   (let [id   (get-in request [:path-params :id])
-        mobj (get-file-media-object pool id)]
-    (generic-handler storage request (:media-id mobj))))
+        mobj (get-file-media-object storage id)]
+    (generic-handler cfg request (:media-id mobj))))
 
 (defn file-thumbnails-handler
-  [{:keys [pool] :as storage} request]
+  [{:keys [storage] :as cfg} request]
   (let [id   (get-in request [:path-params :id])
-        mobj (get-file-media-object pool id)]
-    (generic-handler storage request (or (:thumbnail-id mobj) (:media-id mobj)))))
+        mobj (get-file-media-object storage id)]
+    (generic-handler cfg request (or (:thumbnail-id mobj) (:media-id mobj)))))
+
+
+;; --- Initialization
+
+(s/def ::storage some?)
+(s/def ::public-uri ::us/string)
+(s/def ::cache-max-age ::dt/duration)
+(s/def ::signature-max-age ::dt/duration)
+
+(defmethod ig/pre-init-spec ::handlers [_]
+  (s/keys :req-un [::storage ::mtx/metrics ::public-uri ::cache-max-age ::signature-max-age]))
+
+(defmethod ig/init-key ::handlers
+  [_ cfg]
+  {:objects-handler #(objects-handler cfg %)
+   :file-objects-handler #(file-objects-handler cfg %)
+   :file-thumbnails-handler #(file-thumbnails-handler cfg %)})

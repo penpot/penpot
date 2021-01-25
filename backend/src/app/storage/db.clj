@@ -34,7 +34,7 @@
   [_ cfg]
   (assoc cfg :type :db))
 
-(s/def ::type #{:db})
+(s/def ::type ::us/keyword)
 (s/def ::backend
   (s/keys :req-un [::type ::db/pool]))
 

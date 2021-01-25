@@ -29,22 +29,25 @@
 ;; --- BACKEND INIT
 
 (s/def ::directory ::us/string)
-(s/def ::uri ::us/string)
 
 (defmethod ig/pre-init-spec ::backend [_]
-  (s/keys :opt-un [::directory ::uri]))
+  (s/keys :opt-un [::directory]))
 
 (defmethod ig/init-key ::backend
-  [_ cfg]
+  [key cfg]
   ;; Return a valid backend data structure only if all optional
   ;; parameters are provided.
-  (when (and (string? (:directory cfg))
-             (string? (:uri cfg)))
-    (assoc cfg :type :fs)))
+  (when (string? (:directory cfg))
+    (let [dir (fs/normalize (:directory cfg))]
+      (assoc cfg
+             :type :fs
+             :directory (str dir)
+             :uri (u/uri (str "file://" dir))))))
 
-(s/def ::type #{:fs})
+(s/def ::type ::us/keyword)
+(s/def ::uri #(instance? lambdaisland.uri.URI %))
 (s/def ::backend
-  (s/keys :req-un [::directory ::uri ::type]))
+  (s/keys :req-un [::type ::directory ::uri]))
 
 ;; --- API IMPL
 
@@ -82,13 +85,12 @@
     (io/input-stream full)))
 
 (defmethod impl/get-object-url :fs
-  [backend {:keys [id] :as object} _]
-  (let [uri (u/uri (:uri backend))]
-    (update uri :path
-            (fn [existing]
-              (if (str/ends-with? existing "/")
-                (str existing (impl/id->path id))
-                (str existing "/" (impl/id->path id)))))))
+  [{:keys [uri] :as backend} {:keys [id] :as object} _]
+  (update uri :path
+          (fn [existing]
+            (if (str/ends-with? existing "/")
+              (str existing (impl/id->path id))
+              (str existing "/" (impl/id->path id))))))
 
 (defmethod impl/del-objects-in-bulk :fs
   [backend ids]

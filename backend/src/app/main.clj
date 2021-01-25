@@ -57,7 +57,8 @@
 
     :app.storage/gc-task
     {:pool     (ig/ref :app.db/pool)
-     :storage  (ig/ref :app.storage/storage)}
+     :storage  (ig/ref :app.storage/storage)
+     :min-age  (dt/duration {:hours 2})}
 
     :app.storage/recheck-task
     {:pool     (ig/ref :app.db/pool)
@@ -83,9 +84,17 @@
      :gitlab-auth (ig/ref :app.http.auth/gitlab)
      :github-auth (ig/ref :app.http.auth/github)
      :ldap-auth   (ig/ref :app.http.auth/ldap)
+     :assets      (ig/ref :app.http.assets/handlers)
      :svgparse    (ig/ref :app.svgparse/handler)
      :storage     (ig/ref :app.storage/storage)
      :error-report-handler (ig/ref :app.error-reporter/handler)}
+
+    :app.http.assets/handlers
+    {:metrics    (ig/ref :app.metrics/metrics)
+     :public-uri (:local-assets-uri cfg/config)
+     :storage    (ig/ref :app.storage/storage)
+     :cache-max-age     (dt/duration {:hours 24})
+     :signature-max-age (dt/duration {:hours 24 :minutes 5})}
 
     :app.svgparse/svgc
     {:metrics (ig/ref :app.metrics/metrics)}
@@ -266,9 +275,9 @@
     :app.storage/storage
     {:pool     (ig/ref :app.db/pool)
      :executor (ig/ref :app.worker/executor)
-     :backends {:s3 (ig/ref :app.storage.s3/backend)
-                :fs (ig/ref :app.storage.fs/backend)
-                :db (ig/ref :app.storage.db/backend)}}
+     :backends {:s3  (ig/ref :app.storage.s3/backend)
+                :db  (ig/ref :app.storage.db/backend)
+                :fs  (ig/ref :app.storage.fs/backend)}}
 
     :app.storage.s3/backend
     {:region (:storage-s3-region cfg/config)

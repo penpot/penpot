@@ -30,11 +30,16 @@
    :redis-uri "redis://localhost/0"
 
    :storage-backend :fs
-   :storage-fs-old-directory "resources/public/media"
+
    :storage-fs-directory "resources/public/assets"
-   :storage-fs-uri "http://localhost:3449/internal/assets/"
    :storage-s3-region :eu-central-1
    :storage-s3-bucket "penpot-devenv-assets-pre"
+
+   :local-assets-uri "http://localhost:3449/internal/assets/"
+
+   ;; Special configuration for TMP backend.
+   :storage-tmp-directory "/tmp/penpot"
+   :storage-tmp-uri "file:///tmp/penpot/"
 
    :rlimits-password 10
    :rlimits-image 2
@@ -83,7 +88,7 @@
 
 (s/def ::storage-backend ::us/keyword)
 (s/def ::storage-fs-directory ::us/string)
-(s/def ::storage-fs-uri ::us/string)
+(s/def ::local-assets-uri ::us/string)
 (s/def ::storage-s3-region ::us/keyword)
 (s/def ::storage-s3-bucket ::us/string)
 
@@ -193,7 +198,7 @@
                    ::smtp-username
                    ::storage-backend
                    ::storage-fs-directory
-                   ::storage-fs-uri
+                   ::local-assets-uri
                    ::storage-s3-bucket
                    ::storage-s3-region
                    ::telemetry-enabled
