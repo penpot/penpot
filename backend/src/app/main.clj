@@ -193,11 +193,11 @@
        :fn (ig/ref :app.tasks.file-xlog-gc/handler)}
 
       {:id "storage-gc"
-       :cron #app/cron "0 0 0 */1 * ?"  ;; daily
+       :cron #app/cron "0 0 */6 * * ?"  ;; every 6 hours
        :fn (ig/ref :app.storage/gc-task)}
 
       {:id "storage-recheck"
-       :cron #app/cron "0 0 0 */1 * ?"  ;; daily
+       :cron #app/cron "0 0 */6 * * ?"  ;; every 6 hours
        :fn (ig/ref :app.storage/recheck-task)}
 
       {:id "tasks-gc"
