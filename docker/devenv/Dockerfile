@@ -1,4 +1,4 @@
-FROM debian:buster
+FROM ubuntu:20.04
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
@@ -95,7 +95,7 @@ RUN set -ex; \
     mkdir -p /usr/share/man/man1; \
     mkdir -p /usr/share/man/man7; \
     wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | apt-key add -; \
-    echo "deb https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ buster main" >> /etc/apt/sources.list.d/adoptopenjdk.list; \
+    echo "deb https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ focal main" >> /etc/apt/sources.list.d/adoptopenjdk.list; \
     apt-get -qq update; \
     apt-get -qqy install adoptopenjdk-15-hotspot; \
     rm -rf /var/lib/apt/lists/*; \
@@ -106,16 +106,10 @@ RUN set -ex; \
 
 RUN set -ex; \
     curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -; \
-    echo "deb http://apt.postgresql.org/pub/repos/apt buster-pgdg main" >> /etc/apt/sources.list.d/postgresql.list; \
+    echo "deb http://apt.postgresql.org/pub/repos/apt focal-pgdg main" >> /etc/apt/sources.list.d/postgresql.list; \
     apt-get -qq update; \
     apt-get -qqy install postgresql-client-13; \
     rm -rf /var/lib/apt/lists/*;
-
-RUN set -ex; \
-    wget https://github.com/RazrFalcon/svgcleaner/releases/download/v0.9.5/svgcleaner_linux_x86_64_0.9.5.tar.gz; \
-    tar xvf svgcleaner_linux_x86_64_0.9.5.tar.gz; \
-    mv svgcleaner /usr/local/bin/; \
-    rm -rf svgcleaner_linux_x86_64_0.9.5.tar.gz;
 
 COPY files/phantomjs-mock /usr/bin/phantomjs
 COPY files/bashrc         /root/.bashrc
