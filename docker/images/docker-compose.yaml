@@ -5,18 +5,17 @@ networks:
   penpot:
 
 volumes:
-  postgres_data:
-  user_data:
-  backend_data:
+  penpot_postgres_data:
+  penpot_assets_data:
 
 services:
   penpot-frontend:
     image: "penpotapp/frontend:develop"
     ports:
-      - 8080:80
+      - 9001:80
 
     volumes:
-      - backend_data:/opt/data
+      - penpot_assets_data:/opt/data
 
     depends_on:
       - penpot-backend
@@ -27,7 +26,7 @@ services:
   penpot-backend:
     image: "penpotapp/backend:develop"
     volumes:
-      - backend_data:/opt/data
+      - penpot_assets_data:/opt/data
 
     depends_on:
       - penpot-postgres
@@ -37,8 +36,9 @@ services:
       # Used for creating tokens, important to be true random value
       - PENPOT_SECRET_KEY=provide-here-a-secret-random-key
 
-      # Mainly used in logging, not important setting.
-      - PENPOT_HOST=example.penpot
+      # Should be set to the public domain when penpot is going to be
+      # served.
+      - PENPOT_PUBLIC_URI=http://localhost
 
       # Standard database connection parametes (only postgresql is supported):
       - PENPOT_DATABASE_URI=postgresql://penpot-postgres/penpot
@@ -48,20 +48,27 @@ services:
       # Redis is used for the websockets notifications.
       - PENPOT_REDIS_URI=redis://penpot-redis/0
 
+      # By default files upload by user are stored in local
+      # filesystem. But it can be configured to store in AWS S3 or
+      # completelly in de the database. Storing in the database makes
+      # the backups more easy but will make access to media less
+      # performant.
       - PENPOT_STORAGE_BACKEND=fs
       - PENPOT_STORAGE_FS_DIRECTORY_=/opt/data/assets
       - PENPOT_LOCAL_ASSETS_URI=http://penpot-frontend/internal/assets
 
-      # Enable telemetry Telemetry consists on sending collected
-      # anonymous data to us in order to learn about the use of penpot
-      # and improve the platform based on real scenarios. If yo want
-      # to help us, please leave it enabled. In any case you can see
-      # the source code of the telemetry client and server in the
-      # penpot repository, all is open source.
+      # Telemetry. When enabled, a periodical process will send
+      # annonymous data about this instance. Telemetry data will
+      # enable us to learn on how the application is used based on
+      # real scenarios. If you want to help us, please leave it
+      # enabled. In any case you can see the source code of both
+      # client and server in the penpot repository.
       - PENPOT_TELEMETRY_ENABLED=true
-      - PENPOT_TELEMETRY_URI=https://telemetry.penpot.app
 
-      # Email sending configuration.
+      # Email sending configuration. By default emails are printed in
+      # console, but for production usage is recommeded to setup a
+      # real SMTP provider. Emails are used for confirm user
+      # registration.
       - PENPOT_SMTP_ENABLED=false
       - PENPOT_SMTP_DEFAULT_FROM=no-reply@example.com
       - PENPOT_SMTP_DEFAULT_REPLY_TO=no-reply@example.com
@@ -71,8 +78,6 @@ services:
       # - PENPOT_SMTP_PASSWORD=...
       # - PENPOT_SMTP_TLS=true
       # - PENPOT_SMTP_SSL=false
-      # - PENPOT_GOOGLE_CLIENT_ID=...
-      # - PENPOT_GOOGLE_CLIENT_SECRET=...
 
       - PENPOT_ASSERTS_ENABLED=false
       - PENPOT_DEBUG=false
@@ -83,6 +88,8 @@ services:
   penpot-exporter:
     image: "penpotapp/exporter:develop"
     environment:
+      # Don't touch it; this uses internal docker network to
+      # communicate with the frontend.
       - PENPOT_PUBLIC_URI=http://penpot-frontend
     networks:
       - penpot
@@ -99,7 +106,7 @@ services:
       - POSTGRES_PASSWORD=penpot
 
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - penpot_postgres_data:/var/lib/postgresql/data
 
     networks:
       - penpot
