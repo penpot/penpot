@@ -21,20 +21,11 @@
 ;; this allows them to have gradients, shadows and masks
 (def svg-elements #{:svg :circle :ellipse :image :line :path :polygon :polyline :rect :symbol :text :textPath})
 
-(defn- svg-raw-wrapper-factory-equals?
-  [np op]
-  (let [n-shape (unchecked-get np "shape")
-        o-shape (unchecked-get op "shape")
-        n-frame (unchecked-get np "frame")
-        o-frame (unchecked-get op "frame")]
-    (and (= n-frame o-frame)
-         (= n-shape o-shape))))
-
 (defn svg-raw-wrapper-factory
   [shape-wrapper]
   (let [svg-raw-shape (svg-raw/svg-raw-shape shape-wrapper)]
     (mf/fnc svg-raw-wrapper
-      {::mf/wrap [#(mf/memo' % svg-raw-wrapper-factory-equals?)]
+      {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "frame"]))]
        ::mf/wrap-props false}
       [props]
       (let [shape (unchecked-get props "shape")

@@ -237,40 +237,13 @@
               :objects objects
               :key (:id item)}]))])]))
 
-(defn frame-wrapper-memo-equals?
-  [oprops nprops]
-  (let [new-sel (unchecked-get nprops "selected")
-        old-sel (unchecked-get oprops "selected")
-        new-itm (unchecked-get nprops "item")
-        old-itm (unchecked-get oprops "item")
-        new-idx (unchecked-get nprops "index")
-        old-idx (unchecked-get oprops "index")
-        new-obs (unchecked-get nprops "objects")
-        old-obs (unchecked-get oprops "objects")]
-    (and (= new-itm old-itm)
-         (identical? new-idx old-idx)
-         (let [childs (cp/get-children (:id new-itm) new-obs)
-               childs' (conj childs (:id new-itm))]
-           (and (or (= new-sel old-sel)
-                    (not (or (boolean (some new-sel childs'))
-                             (boolean (some old-sel childs')))))
-                (loop [ids (rest childs)
-                       id (first childs)]
-                  (if (nil? id)
-                    true
-                    (if (= (get new-obs id)
-                           (get old-obs id))
-                      (recur (rest ids)
-                             (first ids))
-                      false))))))))
-
 ;; This components is a piece for sharding equality check between top
 ;; level frames and try to avoid rerender frames that are does not
 ;; affected by the selected set.
 
 (mf/defc frame-wrapper
   {::mf/wrap-props false
-   ::mf/wrap [#(mf/memo' % frame-wrapper-memo-equals?)
+   ::mf/wrap [#(mf/memo' % (mf/check-props ["selected" "item" "index" "objects"]))
               #(mf/deferred % ts/idle-then-raf)]}
   [props]
   [:> layer-item props])

@@ -33,15 +33,6 @@
    :stroke-opacity
    :stroke-color-gradient])
 
-(defn- stroke-menu-props-equals?
-  [np op]
-  (let [new-ids    (obj/get np "ids")
-        old-ids    (obj/get op "ids")
-        new-values (obj/get np "values")
-        old-values (obj/get op "values")]
-    (and (= new-ids old-ids)
-         (every? #(identical? (% new-values) (% old-values)) stroke-attrs))))
-
 (defn- width->string [width]
   (if (= width :multiple)
    ""
@@ -55,7 +46,7 @@
     (pr-str value)))
 
 (mf/defc stroke-menu
-  {::mf/wrap [#(mf/memo' % stroke-menu-props-equals?)]}
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type"]))]}
   [{:keys [ids type values] :as props}]
   (let [locale (i18n/use-locale)
         label (case type

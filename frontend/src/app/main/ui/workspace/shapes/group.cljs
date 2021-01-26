@@ -21,15 +21,6 @@
    [app.common.geom.shapes :as gsh]
    [app.util.debug :refer [debug?]]))
 
-(defn- group-wrapper-factory-equals?
-  [np op]
-  (let [n-shape (unchecked-get np "shape")
-        o-shape (unchecked-get op "shape")
-        n-frame (unchecked-get np "frame")
-        o-frame (unchecked-get op "frame")]
-    (and (= n-frame o-frame)
-         (= n-shape o-shape))))
-
 (defn use-double-click [{:keys [id]}]
   (mf/use-callback
    (mf/deps id)
@@ -42,7 +33,7 @@
   [shape-wrapper]
   (let [group-shape (group/group-shape shape-wrapper)]
     (mf/fnc group-wrapper
-      {::mf/wrap [#(mf/memo' % group-wrapper-factory-equals?)]
+      {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "frame"]))]
        ::mf/wrap-props false}
       [props]
       (let [shape (unchecked-get props "shape")
