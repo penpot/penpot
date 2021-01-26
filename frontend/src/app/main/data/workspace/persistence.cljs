@@ -55,12 +55,12 @@
                           (rx/debounce 2000)
                           (rx/merge stoper forcer))
 
-            local-file? #(let [event-file-id (:file-id %)]
+            local-file? #(as-> (:file-id %) event-file-id
                            (or (nil? event-file-id)
                                (= event-file-id file-id)))
-            library-file? #(let [event-file-id (:file-id %)]
-                           (and (some? event-file-id)
-                                (not= event-file-id file-id)))
+            library-file? #(as-> (:file-id %) event-file-id
+                             (and (some? event-file-id)
+                                  (not= event-file-id file-id)))
 
             on-dirty
             (fn []
@@ -189,12 +189,11 @@
     (update [_ state]
       (if (= file-id (:current-file-id state))
         (-> state
-            (update-in [:workspace-file :revn] #(max % revn))
+            (update-in [:workspace-file :revn] max revn)
             (update :workspace-data cp/process-changes changes)
             (update-in [:workspace-file :data] cp/process-changes changes))
         (-> state
-            (update-in state [:workspace-libraries file-id :revn]
-                       #(max % revn))
+            (update-in state [:workspace-libraries file-id :revn] max revn)
             (update-in [:workspace-libraries file-id :data]
                        cp/process-changes changes))))))
 
