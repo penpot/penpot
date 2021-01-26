@@ -37,10 +37,6 @@
 
    :local-assets-uri "http://localhost:3449/internal/assets/"
 
-   ;; Special configuration for TMP backend.
-   :storage-tmp-directory "/tmp/penpot"
-   :storage-tmp-uri "file:///tmp/penpot/"
-
    :rlimits-password 10
    :rlimits-image 2
 
@@ -48,14 +44,12 @@
    :smtp-default-reply-to "no-reply@example.com"
    :smtp-default-from "no-reply@example.com"
 
-   :host "devenv"
-
    :allow-demo-users true
    :registration-enabled true
    :registration-domain-whitelist ""
 
    :telemetry-enabled false
-   :telemetry-uri "http://localhost:6063/"
+   :telemetry-uri "https://telemetry.penpot.app/"
 
    :debug true
 
@@ -97,7 +91,6 @@
 (s/def ::secret-key ::us/string)
 (s/def ::asserts-enabled ::us/boolean)
 
-(s/def ::host ::us/string)
 (s/def ::error-report-webhook ::us/string)
 (s/def ::smtp-enabled ::us/boolean)
 (s/def ::smtp-default-reply-to ::us/email)
@@ -164,7 +157,6 @@
                    ::gitlab-client-secret
                    ::google-client-id
                    ::google-client-secret
-                   ::host
                    ::http-server-debug
                    ::http-server-port
                    ::http-server-cors

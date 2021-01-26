@@ -47,7 +47,7 @@
       :method  (:request-method request)
       :params  (:params request)
       :version (:full cfg/version)
-      :host    (:host cfg/config)
+      :host    (:public-uri cfg/config)
       :class   (.getCanonicalName ^java.lang.Class (class error))
       :hint    (ex-message error)}
 

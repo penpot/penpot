@@ -8,8 +8,6 @@
 
 (defn reset-passwords
   [system]
-  (when (not= "devenv" (:host cfg/config))
-    (throw (ex-info "Can't proceed, only allowed this operation on devenv" {})))
   (db/with-atomic [conn (:app.db/pool system)]
     (let [password (derive-password "123123")]
       (db/exec! conn ["update profile set password=?" password]))))
