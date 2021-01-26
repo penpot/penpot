@@ -90,7 +90,7 @@
 (defn encode
   [data]
   (try
-    (let [w (t/writer :json {:handlers +write-handlers+})]
+    (let [w (t/writer :json-verbose {:handlers +write-handlers+})]
       (t/write w data))
     (catch :default e
       (throw e))))

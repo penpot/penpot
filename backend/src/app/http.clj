@@ -131,10 +131,10 @@
      ["/error-by-id/:id" {:get (:error-report-handler cfg)}]]
 
     ["/api" {:middleware [[middleware/format-response-body]
-                          [middleware/parse-request-body]
                           [middleware/params]
                           [middleware/multipart-params]
                           [middleware/keyword-params]
+                          [middleware/parse-request-body]
                           [middleware/errors errors/handle]
                           [middleware/cookies]]}
 
