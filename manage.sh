@@ -145,6 +145,7 @@ function build-images {
 
     if [ $CURRENT_BRANCH != "main" ]; then
         version="$CURRENT_BRANCH-$CURRENT_VERSION";
+        bundle_file="penpot-$CURRENT_BRANCH.tar.xz";
     fi;
 
     if [ ! -f $bundle_file ]; then
