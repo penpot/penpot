@@ -23,33 +23,6 @@
 ;; Context to store a re-mapping of the ids
 (def svg-ids-ctx (mf/create-context nil))
 
-(defn vbox->rect
-  "Converts the viewBox into a rectangle"
-  [vbox]
-  (when vbox
-    (let [[x y width height] (map ud/parse-float (str/split vbox " "))]
-      {:x x :y y :width width :height height})))
-
-(defn vbox-center [shape]
-  (let [vbox-rect (-> (get-in shape [:content :attrs :viewBox] "0 0 100 100")
-                      (vbox->rect))]
-    (gsh/center-rect vbox-rect)))
-
-(defn vbox-bounds [shape]
-  (let [vbox-rect (-> (get-in shape [:content :attrs :viewBox] "0 0 100 100")
-                      (vbox->rect))
-        vbox-center (gsh/center-rect vbox-rect)
-        transform (gsh/transform-matrix shape nil vbox-center)]
-    (-> (gsh/rect->points vbox-rect)
-        (gsh/transform-points vbox-center transform)
-        (gsh/points->rect))) )
-
-(defn transform-viewbox [shape]
-  (let [center (vbox-center shape)
-        bounds (vbox-bounds shape)
-        {:keys [x y width height]} (gsh/center->rect center (:width bounds) (:height bounds))]
-    (str x " " y " " width " " height)))
-
 (defn generate-id-mapping [content]
   (letfn [(visit-node [result node]
             (let [element-id (get-in node [:attrs :id])
@@ -58,79 +31,102 @@
               (reduce visit-node result (:content node))))]
     (visit-node {} content)))
 
+
+(defonce replace-regex #"[^#]*#([^)\s]+).*")
+
+(defn replace-attrs-ids
+  "Replaces the ids inside a property"
+  [ids-mapping attrs]
+
+  (letfn [(replace-ids [key val]
+            (if (map? val)
+              (cd/mapm replace-ids val)
+              (let [[_ from-id] (re-matches replace-regex val)]
+                (if (and from-id (contains? ids-mapping from-id))
+                  (str/replace val from-id (get ids-mapping from-id))
+                  val))))]
+    (cd/mapm replace-ids attrs)))
+
+(mf/defc svg-root
+  {::mf/wrap-props false}
+  [props]
+
+  (let [shape    (unchecked-get props "shape")
+        children (unchecked-get props "children")
+
+        {:keys [x y width height]} shape
+        {:keys [tag attrs] :as content} (:content shape)
+
+        ids-mapping (mf/use-memo #(generate-id-mapping content))
+
+        attrs (-> (clj->js attrs)
+                  (obj/set! "x" x)
+                  (obj/set! "y" y)
+                  (obj/set! "width" width)
+                  (obj/set! "height" height)
+                  (obj/set! "preserveAspectRatio" "none"))]
+
+    [:& (mf/provider svg-ids-ctx) {:value ids-mapping}
+     [:g.svg-raw {:transform (gsh/transform-matrix shape)}
+      [:> "svg" attrs children]]]))
+
+(mf/defc svg-element
+  {::mf/wrap-props false}
+  [props]
+  (let [shape    (unchecked-get props "shape")
+        children (unchecked-get props "children")
+
+        {:keys [content]} shape
+        {:keys [attrs tag]} content
+
+        ids-mapping (mf/use-ctx svg-ids-ctx)
+        attrs (mf/use-memo #(replace-attrs-ids ids-mapping attrs))
+        custom-attrs (usa/extract-style-attrs shape)
+
+        element-id (get-in content [:attrs :id])
+
+        style (obj/merge! (clj->js (:style attrs {}))
+                          (obj/get custom-attrs "style"))
+
+        attrs (-> (clj->js attrs)
+                  (obj/merge! custom-attrs)
+                  (obj/set! "style" style))
+
+        attrs (cond-> attrs
+                element-id (obj/set! "id" (get ids-mapping element-id)))
+        ]
+    [:> (name tag) attrs children]))
+
 (defn svg-raw-shape [shape-wrapper]
   (mf/fnc svg-raw-shape
-          {::mf/wrap-props false}
-          [props]
-          (let [frame  (unchecked-get props "frame")
-                shape  (unchecked-get props "shape")
-                childs (unchecked-get props "childs")
+    {::mf/wrap-props false}
+    [props]
 
-                {:keys [tag attrs] :as content} (:content shape)
+    (let [frame  (unchecked-get props "frame")
+          shape  (unchecked-get props "shape")
+          childs (unchecked-get props "childs")
 
-                new-mapping (mf/use-memo #(when (= tag :svg) (generate-id-mapping content)))
-                ids-mapping (if (= tag :svg)
-                              new-mapping
-                              (mf/use-ctx svg-ids-ctx))
+          {:keys [content]} shape
+          {:keys [tag]} content
 
-                rex #"[^#]*#([^)\s]+).*"
+          svg-root? (and (map? content) (= tag :svg))
+          svg-tag?  (map? content)
+          svg-leaf? (string? content)]
 
-                ;; Replaces the attributes ID's so there are no collisions between shapes
-                replace-ids
-                (fn replace-ids [key val]
-                  (if (map? val)
-                    (cd/mapm replace-ids val)
-                    (let [[_ from-id] (re-matches rex val)]
-                      (if (and from-id (contains? ids-mapping from-id))
-                        (str/replace val from-id (get ids-mapping from-id))
-                        val))))
+      (cond
+        svg-root?
+        [:& svg-root {:shape shape}
+         (for [item childs]
+           [:& shape-wrapper {:frame frame :shape item :key (:id item)}])]
 
-                attrs (cd/mapm replace-ids attrs)
+        svg-tag?
+        [:& svg-element {:shape shape}
+         (for [item childs]
+           [:& shape-wrapper {:frame frame :shape item :key (:id item)}])]
 
-                custom-attrs (usa/extract-style-attrs shape)
+        svg-leaf?
+        content
 
-                style (obj/merge! (clj->js (:style attrs {}))
-                                  (obj/get custom-attrs "style"))
-
-                attrs  (-> (clj->js attrs)
-                           (obj/merge! custom-attrs)
-                           (obj/set! "style" style))
-
-                element-id (get-in content [:attrs :id])]
-
-            (cond
-              ;; Root SVG TAG
-              (and (map? content) (= tag :svg))
-              (let [{:keys [x y width height]} shape
-                    attrs (-> attrs
-                              (obj/set! "x" x)
-                              (obj/set! "y" y)
-                              (obj/set! "width" width)
-                              (obj/set! "height" height)
-                              (obj/set! "preserveAspectRatio" "none")
-                              #_(obj/set! "viewBox" (transform-viewbox shape)))]
-
-                [:& (mf/provider svg-ids-ctx) {:value ids-mapping}
-                 [:g.svg-raw {:transform (gsh/transform-matrix shape)}
-                  [:> "svg" attrs
-                   (for [item childs]
-                     [:& shape-wrapper {:frame frame
-                                        :shape item
-                                        :key (:id item)}])]]])
-
-              ;; Other tags different than root
-              (map? content)
-              (let [attrs (cond-> attrs
-                            element-id (obj/set! "id" (get ids-mapping element-id)))]
-                [:> (name tag) attrs
-                 (for [item childs]
-                   [:& shape-wrapper {:frame frame
-                                      :shape item
-                                      :key (:id item)}])])
-
-              ;; String content
-              (string? content) content
-
-              :else nil))))
+        :else nil))))
 
 
