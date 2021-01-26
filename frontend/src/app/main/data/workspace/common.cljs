@@ -13,6 +13,7 @@
    [app.common.geom.proportions :as gpr]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
+   [app.common.pages.spec :as spec]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.main.worker :as uw]
@@ -93,9 +94,10 @@
                          [:workspace-data]
                          [:workspace-libraries file-id :data])]
            (try
-             (let [state (update-in state path1 cp/process-changes changes)]
+             (us/verify ::spec/changes changes)
+             (let [state (update-in state path1 cp/process-changes changes false)]
                (cond-> state
-                 commit-local? (update-in path2 cp/process-changes changes)))
+                 commit-local? (update-in path2 cp/process-changes changes false)))
              (catch :default e
                (vreset! error e)
                state))))

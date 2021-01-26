@@ -29,12 +29,18 @@
 (defmulti process-operation (fn [_ op] (:type op)))
 
 (defn process-changes
-  [data items]
-  (->> (us/verify ::spec/changes items)
-       (reduce #(do
-                  ;; (prn "process-change" (:type %2) (:id %2))
-                  (or (process-change %1 %2) %1))
-               data)))
+  ([data items] (process-changes data items true))
+  ([data items verify?]
+   ;; When verify? false we spec the schema validation. Currently used to make just
+   ;; 1 validation even if the changes are applied twice
+   (when verify?
+     (us/verify ::spec/changes items))
+
+   (reduce #(do
+              #_(prn "process-change" (:type %2) (:id %2))
+              (or (process-change %1 %2) %1))
+           data
+           items)))
 
 (defmethod process-change :set-option
   [data {:keys [page-id option value]}]
@@ -91,7 +97,7 @@
   (let [update-fn (fn [objects]
                     (if-let [obj (get objects id)]
                       (let [result (reduce process-operation obj operations)]
-                        (us/verify ::spec/shape result)
+                        #?(:clj (us/verify ::spec/shape result))
                         (assoc objects id result))
                       objects))]
     (if page-id
