@@ -33,7 +33,7 @@
   io.lettuce/lettuce-core {:mvn/version "5.2.2.RELEASE"}
   java-http-clj/java-http-clj {:mvn/version "0.4.1"}
 
-  info.sunng/ring-jetty9-adapter {:mvn/version "0.14.1"}
+  info.sunng/ring-jetty9-adapter {:mvn/version "0.14.2"}
   seancorfield/next.jdbc {:mvn/version "1.1.613"}
   metosin/reitit-ring {:mvn/version "0.5.10"}
   metosin/jsonista {:mvn/version "0.3.0"}

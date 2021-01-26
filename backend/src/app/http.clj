@@ -10,6 +10,7 @@
 (ns app.http
   (:require
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
@@ -104,11 +105,16 @@
       (try
         (handler request)
         (catch Exception e
-          (let [cdata (errors/get-error-context request e)]
-            (errors/update-thread-context! cdata)
-            (log/errorf e "Unhandled exception: %s (id: %s)" (ex-message e) (str (:id cdata)))
-            {:status 500
-             :body "internal server error"}))))))
+          (try
+            (let [cdata (errors/get-error-context request e)]
+              (errors/update-thread-context! cdata)
+              (log/errorf e "Unhandled exception: %s (id: %s)" (ex-message e) (str (:id cdata)))
+              {:status 500
+               :body "internal server error"})
+            (catch Exception e
+              (log/errorf e "Unhandled exception: %s" (ex-message e))
+              {:status 500
+               :body "internal server error"})))))))
 
 (defn- create-router
   [{:keys [session rpc google-auth gitlab-auth github-auth metrics ldap-auth storage svgparse assets] :as cfg}]
