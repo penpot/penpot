@@ -714,8 +714,8 @@
                         (= (:id change) (:id shape-inst))
                         (assoc :local-change? true)))
 
-        rchanges (vec (map check-local rchanges))
-        uchanges (vec (map check-local uchanges))]
+        rchanges (mapv check-local rchanges)
+        uchanges (mapv check-local uchanges)]
 
     [(d/concat rchanges child-rchanges)
      (d/concat uchanges child-uchanges)]))

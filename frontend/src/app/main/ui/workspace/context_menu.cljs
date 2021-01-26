@@ -54,38 +54,37 @@
 
         current-file-id (mf/use-ctx ctx/current-file-id)
 
-        do-duplicate #(st/emit! dw/duplicate-selected)
-        do-delete #(st/emit! dw/delete-selected)
-        do-copy #(st/emit! (dw/copy-selected))
-        do-cut #(st/emit! (dw/copy-selected) dw/delete-selected)
-        do-paste #(st/emit! dw/paste)
-        do-bring-forward #(st/emit! (dw/vertical-order-selected :up))
-        do-bring-to-front #(st/emit! (dw/vertical-order-selected :top))
-        do-send-backward #(st/emit! (dw/vertical-order-selected :down))
-        do-send-to-back #(st/emit! (dw/vertical-order-selected :bottom))
-        do-show-shape #(st/emit! (dw/update-shape-flags id {:hidden false}))
-        do-hide-shape #(st/emit! (dw/update-shape-flags id {:hidden true}))
-        do-lock-shape #(st/emit! (dw/update-shape-flags id {:blocked true}))
-        do-unlock-shape #(st/emit! (dw/update-shape-flags id {:blocked false}))
-        do-create-group #(st/emit! dw/group-selected)
-        do-remove-group #(st/emit! dw/ungroup-selected)
-        do-mask-group #(st/emit! dw/mask-group)
-        do-unmask-group #(st/emit! dw/unmask-group)
-        do-add-component #(st/emit! dwl/add-component)
-        do-detach-component #(st/emit! (dwl/detach-component id))
-        do-reset-component #(st/emit! (dwl/reset-component id))
-        do-update-component #(do
-                               (st/emit! (dwc/start-undo-transaction))
-                               (st/emit! (dwl/update-component id))
-                               (st/emit! (dwl/sync-file current-file-id
-                                                        (:component-file shape)))
-                               (st/emit! (dwc/commit-undo-transaction)))
-        confirm-update-remote-component #(do
-                                           (st/emit! (dwl/update-component id))
-                                           (st/emit! (dwl/sync-file current-file-id
-                                                                    (:component-file shape)))
-                                           (st/emit! (dwl/sync-file (:component-file shape)
-                                                                    (:component-file shape))))
+        do-duplicate (st/emitf dw/duplicate-selected)
+        do-delete (st/emitf dw/delete-selected)
+        do-copy (st/emitf (dw/copy-selected))
+        do-cut (st/emitf (dw/copy-selected) dw/delete-selected)
+        do-paste (st/emitf dw/paste)
+        do-bring-forward (st/emitf (dw/vertical-order-selected :up))
+        do-bring-to-front (st/emitf (dw/vertical-order-selected :top))
+        do-send-backward (st/emitf (dw/vertical-order-selected :down))
+        do-send-to-back (st/emitf (dw/vertical-order-selected :bottom))
+        do-show-shape (st/emitf (dw/update-shape-flags id {:hidden false}))
+        do-hide-shape (st/emitf (dw/update-shape-flags id {:hidden true}))
+        do-lock-shape (st/emitf (dw/update-shape-flags id {:blocked true}))
+        do-unlock-shape (st/emitf (dw/update-shape-flags id {:blocked false}))
+        do-create-group (st/emitf dw/group-selected)
+        do-remove-group (st/emitf dw/ungroup-selected)
+        do-mask-group (st/emitf dw/mask-group)
+        do-unmask-group (st/emitf dw/unmask-group)
+        do-add-component (st/emitf dwl/add-component)
+        do-detach-component (st/emitf (dwl/detach-component id))
+        do-reset-component (st/emitf (dwl/reset-component id))
+        do-update-component (st/emitf
+                              (dwc/start-undo-transaction)
+                              (dwl/update-component id)
+                              (dwl/sync-file current-file-id (:component-file shape))
+                              (dwc/commit-undo-transaction))
+        confirm-update-remote-component (st/emitf
+                                          (dwl/update-component id)
+                                          (dwl/sync-file current-file-id
+                                                         (:component-file shape))
+                                          (dwl/sync-file (:component-file shape)
+                                                         (:component-file shape)))
         do-update-remote-component (st/emitf (modal/show
                                                 {:type :confirm
                                                  :message ""
@@ -95,9 +94,9 @@
                                                  :accept-label (t locale "modals.update-remote-component.accept")
                                                  :accept-style :primary
                                                  :on-accept confirm-update-remote-component}))
-        do-show-component #(st/emit! (dw/go-to-layout :assets))
-        do-navigate-component-file #(st/emit! (dwl/nav-to-component-file
-                                                (:component-file shape)))]
+        do-show-component (st/emitf (dw/go-to-layout :assets))
+        do-navigate-component-file (st/emitf (dwl/nav-to-component-file
+                                               (:component-file shape)))]
     [:*
      [:& menu-entry {:title (t locale "workspace.shape.menu.copy")
                      :shortcut "Ctrl + c"
@@ -204,7 +203,7 @@
 (mf/defc viewport-context-menu
   [{:keys [mdata] :as props}]
   (let [locale (mf/deref i18n/locale)
-        do-paste #(st/emit! dw/paste)]
+        do-paste (st/emitf dw/paste)]
     [:*
      [:& menu-entry {:title (t locale "workspace.shape.menu.paste")
                      :shortcut "Ctrl + v"
@@ -231,7 +230,7 @@
                (.setAttribute ^js dropdown "style" new-style))))))
 
     [:& dropdown {:show (boolean mdata)
-                  :on-close #(st/emit! dw/hide-context-menu)}
+                  :on-close (st/emitf dw/hide-context-menu)}
      [:ul.workspace-context-menu
       {:ref dropdown-ref
        :style {:top top :left left}

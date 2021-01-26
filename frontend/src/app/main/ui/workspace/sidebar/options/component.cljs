@@ -50,19 +50,19 @@
         on-menu-close (mf/use-callback
                         #(swap! local assoc :menu-open false))
 
-        do-detach-component #(st/emit! (dwl/detach-component id))
-        do-reset-component #(st/emit! (dwl/reset-component id))
-        do-update-component #(do
-                               (st/emit! (dwc/start-undo-transaction))
-                               (st/emit! (dwl/update-component id))
-                               (st/emit! (dwl/sync-file current-file-id current-file-id))
-                               (st/emit! (dwc/commit-undo-transaction)))
-        confirm-update-remote-component #(do
-                                           (st/emit! (dwl/update-component id))
-                                           (st/emit! (dwl/sync-file current-file-id
-                                                                    (:component-file values)))
-                                           (st/emit! (dwl/sync-file (:component-file values)
-                                                                    (:component-file values))))
+        do-detach-component (st/emitf (dwl/detach-component id))
+        do-reset-component (st/emitf (dwl/reset-component id))
+        do-update-component (st/emitf
+                               (dwc/start-undo-transaction)
+                               (dwl/update-component id)
+                               (dwl/sync-file current-file-id current-file-id)
+                               (dwc/commit-undo-transaction))
+        confirm-update-remote-component (st/emitf
+                                          (dwl/update-component id)
+                                          (dwl/sync-file current-file-id
+                                                         (:component-file values))
+                                          (dwl/sync-file (:component-file values)
+                                                         (:component-file values)))
         do-update-remote-component (st/emitf (modal/show
                                                 {:type :confirm
                                                  :message ""
@@ -72,8 +72,8 @@
                                                  :accept-label (t locale "modals.update-remote-component.accept")
                                                  :accept-style :primary
                                                  :on-accept confirm-update-remote-component}))
-        do-show-component #(st/emit! (dw/go-to-layout :assets))
-        do-navigate-component-file #(st/emit! (dwl/nav-to-component-file
+        do-show-component (st/emitf (dw/go-to-layout :assets))
+        do-navigate-component-file (st/emitf (dwl/nav-to-component-file
                                                 (:component-file values)))]
     (when show?
       [:div.element-set

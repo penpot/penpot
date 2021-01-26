@@ -537,7 +537,7 @@
     (update [_ state]
       (-> state
           (update-in [:workspace-libraries file-id]
-                     #(assoc % :modified-at modified-at :revn revn))
+                     assoc :modified-at modified-at :revn revn)
           (d/update-in-when [:workspace-libraries file-id :data]
                             cp/process-changes changes)))))
 
@@ -571,7 +571,10 @@
 (defn update-component
   "Modify the component linked to the shape with the given id, in the current page, so that
   all attributes of its shapes are equal to the shape and its children. Also set all attributes
-  of the shape untouched."
+  of the shape untouched.
+
+  NOTE: It's possible that the component to update is defined in an external library file, so
+  this function may cause to modify a file different of that the one we are currently editing."
   [id]
   (us/assert ::us/uuid id)
   (ptk/reify ::update-component
@@ -593,22 +596,19 @@
             file-id   (:component-file shape)
             file      (dwlh/get-file state file-id)
 
-            local-rchanges (->> rchanges
-                               (filter :local-change?)
-                               (map #(dissoc % :local-change?))
-                               vec)
-            local-uchanges (->> uchanges
-                               (filter :local-change?)
-                               (map #(dissoc % :local-change?))
-                               vec)
-            rchanges (->> rchanges
-                         (remove :local-change?)
-                         (map #(dissoc % :local-change?))
-                         vec)
-            uchanges (->> uchanges
-                         (remove :local-change?)
-                         (map #(dissoc % :local-change?))
-                         vec)]
+            xf-filter (comp
+                        (filter :local-change?)
+                        (map #(dissoc % :local-change?)))
+
+            local-rchanges (into [] xf-filter rchanges)
+            local-uchanges (into [] xf-filter uchanges)
+
+            xf-remove (comp
+                        (remove :local-change?)
+                        (map #(dissoc % :local-change?)))
+
+            rchanges (into [] xf-remove rchanges)
+            uchanges (into [] xf-remove uchanges)]
 
         (log/debug :msg "UPDATE-COMPONENT finished"
                    :js/local-rchanges (log-changes
@@ -656,12 +656,17 @@
             file-changes    [(dwlh/generate-sync-file file-id :components library-id state)
                              (dwlh/generate-sync-file file-id :colors library-id state)
                              (dwlh/generate-sync-file file-id :typographies library-id state)]
+
+            xf-fcat  (comp (remove nil?) (map first) (mapcat identity))
             rchanges (d/concat []
-                               (->> library-changes (remove nil?) (map first) (flatten))
-                               (->> file-changes (remove nil?) (map first) (flatten)))
+                               (sequence xf-fcat library-changes)
+                               (sequence xf-fcat file-changes))
+
+            xf-scat  (comp (remove nil?) (map second) (mapcat identity))
             uchanges (d/concat []
-                               (->> library-changes (remove nil?) (map second) (flatten))
-                               (->> file-changes (remove nil?) (map second) (flatten)))]
+                               (sequence xf-scat library-changes)
+                               (sequence xf-scat file-changes))]
+
         (log/debug :msg "SYNC-FILE finished" :js/rchanges (log-changes
                                                             rchanges
                                                             file))
@@ -674,6 +679,9 @@
             ;; When we have just updated the library file, give some time for the
             ;; update to finish, before marking this file as synced.
             ;; TODO: look for a more precise way of syncing this.
+            ;; Maybe by using the stream (second argument passed to watch)
+            ;; to wait for the corresponding changes-commited and then proced
+            ;; with the :update-sync mutation.
             (rx/concat (rx/timer 3000)
                        (rp/mutation :update-sync
                                     {:file-id file-id
