@@ -104,14 +104,14 @@
     (fn [request]
       (try
         (handler request)
-        (catch Throwable e
+        (catch Error e
           (try
             (let [cdata (errors/get-error-context request e)]
               (errors/update-thread-context! cdata)
               (log/errorf e "Unhandled exception: %s (id: %s)" (ex-message e) (str (:id cdata)))
               {:status 500
                :body "internal server error"})
-            (catch Throwable e
+            (catch Error e
               (log/errorf e "Unhandled exception: %s" (ex-message e))
               {:status 500
                :body "internal server error"})))))))
