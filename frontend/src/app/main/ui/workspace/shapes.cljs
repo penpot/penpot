@@ -66,8 +66,6 @@
         opts  #js {:shape shape
                    :frame frame}
 
-        alt?   (hooks/use-rxsub ms/keyboard-alt)
-
         moving-iref (mf/use-memo (mf/deps (:id shape)) (make-is-moving-ref (:id shape)))
         moving?     (mf/deref moving-iref)
         svg-element? (and (= (:type shape) :svg-raw)
@@ -77,8 +75,7 @@
     (when (and shape (not (:hidden shape)))
       [:*
        (if-not svg-element?
-         [:g.shape-wrapper {:style {:display (when hide-moving? "none")
-                                    :cursor (if alt? cur/duplicate nil)}}
+         [:g.shape-wrapper {:style {:display (when hide-moving? "none")}}
           (case (:type shape)
             :path [:> path/path-wrapper opts]
             :text [:> text/text-wrapper opts]

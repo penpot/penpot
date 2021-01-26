@@ -602,7 +602,7 @@
     ;; This change is in an effect to minimize the sideffects of the cursor chaning
     ;; Changing a cursor will produce a "reflow" so we defer it until the component is rendered
     (mf/use-layout-effect
-     (mf/deps @cursor panning drawing-tool drawing-path?)
+     (mf/deps @cursor @alt? panning drawing-tool drawing-path?)
      (fn []
        (let [new-cursor
              (cond
@@ -614,6 +614,7 @@
                (or (= drawing-tool :path) drawing-path?) cur/pen
                (= drawing-tool :curve) cur/pencil
                drawing-tool cur/create-shape
+               @alt? cur/duplicate
                :else cur/pointer-inner)]
 
          (when (not= @cursor new-cursor)

@@ -36,11 +36,8 @@
    (when verify?
      (us/verify ::spec/changes items))
 
-   (reduce #(do
-              #_(prn "process-change" (:type %2) (:id %2))
-              (or (process-change %1 %2) %1))
-           data
-           items)))
+   (->> items
+        (reduce #(or (process-change %1 %2) %1) data))))
 
 (defmethod process-change :set-option
   [data {:keys [page-id option value]}]
