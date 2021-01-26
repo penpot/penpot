@@ -434,7 +434,7 @@
         width: calc(100% - 12px);
         height: 100%;
         top: auto;
-        color: #b1b2b5;
+        color: $color-white;
       }
     }
 
@@ -466,7 +466,7 @@
 
   .input-text {
     padding-left: 0;
-    color: #b1b2b5;
+    color: $color-white;
     background-color: transparent;
     height: 30px;
   }

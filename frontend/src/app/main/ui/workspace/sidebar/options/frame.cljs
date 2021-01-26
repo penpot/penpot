@@ -91,11 +91,6 @@
       ;; WIDTH & HEIGHT
       [:div.row-flex
        [:span.element-set-subtitle (tr "workspace.options.size")]
-       [:div.lock-size {:class (when (:proportion-lock shape) "selected")
-                        :on-click on-proportion-lock-change}
-        (if (:proportion-lock shape)
-          i/lock
-          i/unlock)]
        [:div.input-element.pixels
         [:> numeric-input {:min 1
                            :on-click select-all
@@ -104,14 +99,19 @@
                                       (math/precision 2)
                                       (d/coalesce-str "1"))}]]
 
-
        [:div.input-element.pixels
         [:> numeric-input {:min 1
                            :on-click select-all
                            :on-change on-height-change
                            :value (-> (:height shape)
                                       (math/precision 2)
-                                      (d/coalesce-str "1"))}]]]
+                                      (d/coalesce-str "1"))}]]
+
+       [:div.lock-size {:class (when (:proportion-lock shape) "selected")
+                        :on-click on-proportion-lock-change}
+        (if (:proportion-lock shape)
+          i/lock
+          i/unlock)]]
 
       ;; POSITION
       [:div.row-flex
