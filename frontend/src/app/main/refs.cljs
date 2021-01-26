@@ -159,51 +159,45 @@
                      ids))
              workspace-page-objects =))
 
+(def selected-data
+  (l/derived #(let [selected (get-in % [:workspace-local :selected])
+                    page-id  (:current-page-id %)
+                    objects  (get-in % [:workspace-data :pages-index page-id :objects])]
+                (hash-map :selected selected
+                          :page-id page-id
+                          :objects objects))
+             st/state =))
+
 (defn is-child-selected?
   [id]
-  (letfn [(selector [state]
-            (let [page-id  (:current-page-id state)
-                  objects  (get-in state [:workspace-data :pages-index page-id :objects])
-                  selected (get-in state [:workspace-local :selected])
-                  children (cp/get-children id objects)]
+  (letfn [(selector [{:keys [selected page-id objects]}]
+            (let [children (cp/get-children id objects)]
               (some #(contains? selected %) children)))]
-    (l/derived selector st/state)))
+    (l/derived selector selected-data =)))
 
-
-;; TODO: can be replaced by objects-by-id
 (def selected-objects
-  (letfn [(selector [state]
-            (let [selected (get-in state [:workspace-local :selected])
-                  page-id  (:current-page-id state)
-                  objects  (get-in state [:workspace-data :pages-index page-id :objects])]
-              (->> selected
-                   (map #(get objects %))
-                   (filterv (comp not nil?)))))]
-    (l/derived selector st/state =)))
+  (letfn [(selector [{:keys [selected page-id objects]}]
+            (->> selected
+                 (map #(get objects %))
+                 (filterv (comp not nil?))))]
+    (l/derived selector selected-data =)))
 
 (def selected-shapes-with-children
-  (letfn [(selector [state]
-            (let [selected (get-in state [:workspace-local :selected])
-                  page-id  (:current-page-id state)
-                  objects  (get-in state [:workspace-data :pages-index page-id :objects])
-                  children (->> selected
+  (letfn [(selector [{:keys [selected page-id objects]}]
+            (let [children (->> selected
                                 (mapcat #(cp/get-children % objects))
                                 (filterv (comp not nil?)))]
               (into selected children)))]
-    (l/derived selector st/state =)))
-
+    (l/derived selector selected-data =)))
 
 (def selected-objects-with-children
-  (letfn [(selector [state]
-            (let [selected (get-in state [:workspace-local :selected])
-                  page-id  (:current-page-id state)
-                  objects  (get-in state [:workspace-data :pages-index page-id :objects])
-                  children (->> selected
+  (letfn [(selector [{:keys [selected page-id objects]}]
+            (let [children (->> selected
                                 (mapcat #(cp/get-children % objects))
                                 (filterv (comp not nil?)))
                   shapes   (into selected children)]
               (mapv #(get objects %) shapes)))]
-    (l/derived selector st/state =)))
+    (l/derived selector selected-data =)))
 
 ;; ---- Viewer refs
 

@@ -267,11 +267,9 @@
 (mf/defc snap-distances
   {::mf/wrap-props false}
   [props]
-  (let [layout          (unchecked-get props "layout")
-        page-id         (unchecked-get props "page-id")
+  (let [page-id         (unchecked-get props "page-id")
         zoom            (unchecked-get props "zoom")
         selected        (unchecked-get props "selected")
-        transform       (unchecked-get props "transform")
         selected-shapes (mf/deref (refs/objects-by-id selected))
         frame-id        (-> selected-shapes first :frame-id)
         frame           (mf/deref (refs/object-by-id frame-id))
@@ -280,23 +278,20 @@
         update-shape (fn [shape] (-> shape
                                      (update :modifiers merge (:modifiers local))
                                      gsh/transform-shape))]
-    (when (and (contains? layout :dynamic-alignment)
-               (= transform :move)
-               (not (empty? selected)))
-      (let [selrect (->> selected-shapes (map  update-shape) gsh/selection-rect)
-            key     (->> selected (map str) (str/join "-"))]
-        [:g.distance
-         [:& shape-distance
-          {:selrect selrect
-           :page-id page-id
-           :frame frame
-           :zoom zoom
-           :coord :x
-           :selected selected}]
-         [:& shape-distance
-          {:selrect selrect
-           :page-id page-id
-           :frame frame
-           :zoom zoom
-           :coord :y
-           :selected selected}]]))))
+    (let [selrect (->> selected-shapes (map  update-shape) gsh/selection-rect)
+          key     (->> selected (map str) (str/join "-"))]
+      [:g.distance
+       [:& shape-distance
+        {:selrect selrect
+         :page-id page-id
+         :frame frame
+         :zoom zoom
+         :coord :x
+         :selected selected}]
+       [:& shape-distance
+        {:selrect selrect
+         :page-id page-id
+         :frame frame
+         :zoom zoom
+         :coord :y
+         :selected selected}]])))

@@ -359,6 +359,7 @@
                             :zoom zoom}])]))
 
 (mf/defc selection-handlers
+  {::mf/wrap [mf/memo]}
   [{:keys [selected edition zoom show-distances] :as props}]
   (let [;; We need remove posible nil values because on shape
         ;; deletion many shape will reamin selected and deleted

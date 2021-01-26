@@ -153,8 +153,15 @@
             result))]
     (reduce extract-attrs [] shapes)))
 
+;; TODO: Remove when added to rumext
+(defn check-props
+  ([props] (check-props props =))
+  ([props eqfn?]
+   (fn [np op]
+     (every? #(eqfn? (unchecked-get np %) (unchecked-get op %)) props))))
+
 (mf/defc options
-  {::mf/wrap [mf/memo]
+  {::mf/wrap [#(mf/memo' % (check-props ["shape" "shapes-with-children"]))]
    ::mf/wrap-props false}
   [props]
   (let [shapes (unchecked-get props "shapes")

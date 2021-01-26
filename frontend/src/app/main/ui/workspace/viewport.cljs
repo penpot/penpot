@@ -188,7 +188,8 @@
                          :edition edition}]]))
 
 (mf/defc ghost-frames
-  {::mf/wrap-props false}
+  {::mf/wrap [mf/memo]
+   ::mf/wrap-props false}
   [props]
   (let [modifiers    (obj/get props "modifiers")
         selected     (obj/get props "selected")
@@ -249,6 +250,7 @@
                               (gsh/selection-rect))
 
         alt?          (mf/use-state false)
+        cursor        (mf/use-state cur/pointer-inner)
         viewport-ref  (mf/use-ref nil)
         zoom-view-ref (mf/use-ref nil)
         last-position (mf/use-var nil)
@@ -259,6 +261,13 @@
         drawing-obj   (:object drawing)
         drawing-path? (and edition (= :draw (get-in edit-path [edition :edit-mode])))
         zoom          (or zoom 1)
+
+        show-grids?          (contains? layout :display-grid)
+        show-snap-points?    (and (contains? layout :dynamic-alignment)
+                                  (or drawing-obj (:transform local)))
+        show-snap-distance?  (and (contains? layout :dynamic-alignment)
+                                  (= (:transform local) :move)
+                                  (not (empty? selected)))
 
         on-mouse-down
         (mf/use-callback
@@ -590,6 +599,27 @@
          ;; We schedule the event so it fires after `initialize-page` event
          (timers/schedule #(st/emit! (dw/initialize-viewport size))))))
 
+    ;; This change is in an effect to minimize the sideffects of the cursor chaning
+    ;; Changing a cursor will produce a "reflow" so we defer it until the component is rendered
+    (mf/use-layout-effect
+     (mf/deps @cursor panning drawing-tool drawing-path?)
+     (fn []
+       (let [new-cursor
+             (cond
+               panning cur/hand
+               (= drawing-tool :comments) cur/comments
+               (= drawing-tool :frame) cur/create-artboard
+               (= drawing-tool :rect) cur/create-rectangle
+               (= drawing-tool :circle) cur/create-ellipse
+               (or (= drawing-tool :path) drawing-path?) cur/pen
+               (= drawing-tool :curve) cur/pencil
+               drawing-tool cur/create-shape
+               :else cur/pointer-inner)]
+
+         (when (not= @cursor new-cursor)
+           (timers/raf
+            #(reset! cursor new-cursor))))))
+
     (mf/use-layout-effect (mf/deps layout) on-resize)
     (hooks/use-stream ms/keyboard-alt #(reset! alt? %))
 
@@ -619,16 +649,7 @@
        :view-box (format-viewbox vbox)
        :ref viewport-ref
        :class (when drawing-tool "drawing")
-       :style {:cursor (cond
-                         panning cur/hand
-                         (= drawing-tool :comments) cur/comments
-                         (= drawing-tool :frame) cur/create-artboard
-                         (= drawing-tool :rect) cur/create-rectangle
-                         (= drawing-tool :circle) cur/create-ellipse
-                         (or (= drawing-tool :path) drawing-path?) cur/pen
-                         (= drawing-tool :curve) cur/pencil
-                         drawing-tool cur/create-shape
-                         :else cur/pointer-inner)
+       :style {:cursor @cursor
                :background-color (get options :background "#E8E9EA")}
        :on-context-menu on-context-menu
        :on-click on-click
@@ -671,22 +692,24 @@
                         :tool drawing-tool
                         :modifiers (:modifiers local)}])
 
-       (when (contains? layout :display-grid)
+       (when show-grids?
          [:& frame-grid {:zoom zoom}])
 
-       [:& snap-points {:layout layout
-                        :transform (:transform local)
-                        :drawing drawing-obj
-                        :zoom zoom
-                        :page-id page-id
-                        :selected selected
-                        :local local}]
+       (when show-snap-points?
+         [:& snap-points {:layout layout
+                          :transform (:transform local)
+                          :drawing drawing-obj
+                          :zoom zoom
+                          :page-id page-id
+                          :selected selected
+                          :local local}])
 
-       [:& snap-distances {:layout layout
-                           :zoom zoom
-                           :transform (:transform local)
-                           :selected selected
-                           :page-id page-id}]
+       (when show-snap-distance?
+         [:& snap-distances {:layout layout
+                             :zoom zoom
+                             :transform (:transform local)
+                             :selected selected
+                             :page-id page-id}])
 
        (when tooltip
          [:& cursor-tooltip {:zoom zoom :tooltip tooltip}])]
@@ -697,7 +720,9 @@
         [:& interactions {:selected selected}])]]))
 
 
-(mf/defc viewport-actions []
+(mf/defc viewport-actions
+  {::mf/wrap [mf/memo]}
+  []
   (let [edition (mf/deref refs/selected-edition)
         selected (mf/deref refs/selected-objects)
         shape (-> selected first)]

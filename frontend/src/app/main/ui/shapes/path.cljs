@@ -24,7 +24,8 @@
   (let [shape (unchecked-get props "shape")
         background? (unchecked-get props "background?")
         {:keys [id x y width height]} (:selrect shape)
-        pdata (ugp/content->path (:content shape))
+        content (:content shape)
+        pdata (mf/use-memo (mf/deps content) #(ugp/content->path content))
         props (-> (attrs/extract-style-attrs shape)
                   (obj/merge!
                    #js {:d pdata}))]
