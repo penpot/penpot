@@ -124,9 +124,6 @@
   [shape {:keys [x y]}]
   (move shape (gpt/point (- x) (- y))))
 
-(defn translate-from-frame
-  [shape {:keys [x y]}]
-  (move shape (gpt/point x y)))
 
 ;; --- Helpers
 

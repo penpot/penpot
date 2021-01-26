@@ -25,24 +25,6 @@
    [rumext.alpha :as mf]
    [app.main.ui.context :as muc]))
 
-(defn- frame-wrapper-factory-equals?
-  [np op]
-  (let [n-shape (aget np "shape")
-        o-shape (aget op "shape")
-        n-objs  (aget np "objects")
-        o-objs  (aget op "objects")
-
-        ids (:shapes n-shape)]
-    (and (identical? n-shape o-shape)
-         (loop [id (first ids)
-                ids (rest ids)]
-           (if (nil? id)
-             true
-             (if (identical? (get n-objs id)
-                             (get o-objs id))
-               (recur (first ids) (rest ids))
-               false))))))
-
 (defn use-select-shape [{:keys [id]} edition]
   (mf/use-callback
    (mf/deps id edition)
@@ -121,7 +103,7 @@
   [shape-wrapper]
   (let [frame-shape (frame/frame-shape shape-wrapper)]
     (mf/fnc frame-wrapper
-      {::mf/wrap [#(mf/memo' % frame-wrapper-factory-equals?) custom-deferred]
+      {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "objects"])) custom-deferred]
        ::mf/wrap-props false}
       [props]
       (let [shape   (unchecked-get props "shape")

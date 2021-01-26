@@ -93,12 +93,31 @@
     (rec-fn {} node)))
 
 
+(defn content->nodes [node]
+  (loop [result (transient [])
+         curr node
+         pending (transient [])]
+
+    (let [result (conj! result curr)]
+      ;; Adds children to the pending list
+      (let [children (:children curr)
+            pending (loop [child (first children)
+                           children (rest children)
+                           pending pending]
+                      (if child
+                        (recur (first children)
+                               (rest children)
+                               (conj! pending child))
+                        pending))]
+
+        (if (= 0 (count pending))
+          (persistent! result)
+          ;; Iterates with the next value in pending
+          (let [next (get pending (dec (count pending)))]
+            (recur result next (pop! pending))))))))
+
 (defn get-text-attrs-multi
   [node attrs]
-  (let [rec-fn
-        (fn rec-fn [current node]
-          (let [current (reduce rec-fn current (:children node []))]
-            (get-attrs-multi [current node] attrs)))]
-    (merge (select-keys default-text-attrs attrs)
-           (rec-fn {} node))))
+  (let [nodes (content->nodes node)]
+    (get-attrs-multi nodes attrs)))
 

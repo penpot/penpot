@@ -154,7 +154,7 @@
     (reduce extract-attrs [] shapes)))
 
 (mf/defc options
-  {::mf/wrap [mf/memo]
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "shapes-with-children"]))]
    ::mf/wrap-props false}
   [props]
   (let [shapes (unchecked-get props "shapes")

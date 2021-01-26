@@ -18,64 +18,90 @@
    [app.util.object :as obj]
    [app.util.color :as uc]
    [app.main.ui.shapes.text.styles :as sts]
-   [app.main.ui.shapes.text.embed :as ste]))
+   [app.main.ui.shapes.text.embed :as ste]
+   [app.util.perf :as perf]))
+
+(mf/defc render-text
+  {::mf/wrap-props false}
+  [props]
+  (let [node (obj/get props "node")
+        text (:text node)
+        style (sts/generate-text-styles props)]
+    [:span {:style style
+            :className (when (:fill-color-gradient node) "gradient")}
+     (if (= text "") "\u00A0" text)]))
+
+(mf/defc render-root
+  {::mf/wrap-props false}
+  [props]
+  (let [node (obj/get props "node")
+        embed-fonts? (obj/get props "embed-fonts?")
+        children (obj/get props "children")
+        style (sts/generate-root-styles props)]
+    [:div.root.rich-text
+     {:style style
+      :xmlns "http://www.w3.org/1999/xhtml"}
+     [:*
+      [:style ".gradient { background: var(--text-color); -webkit-text-fill-color: transparent; -webkit-background-clip: text;"]
+      (when embed-fonts?
+        [ste/embed-fontfaces-style {:node node}])]
+     children]))
+
+(mf/defc render-paragraph-set
+  {::mf/wrap-props false}
+  [props]
+  (let [node (obj/get props "node")
+        children (obj/get props "children")
+        style (sts/generate-paragraph-set-styles props)]
+    [:div.paragraph-set {:style style} children]))
+
+(mf/defc render-paragraph
+  {::mf/wrap-props false}
+  [props]
+  (let [node (obj/get props "node")
+        children (obj/get props "children")
+        style (sts/generate-paragraph-styles props)]
+    [:p.paragraph {:style style} children]))
 
 ;; -- Text nodes
-(mf/defc text-node
-  [{:keys [node index shape] :as props}]
-  (let [embed-resources? (mf/use-ctx muc/embed-ctx)
-        {:keys [type text children]} node
-        props #js {:shape shape}
-        render-node
-        (fn [index node]
-          (mf/element text-node {:index index
-                                 :node node
-                                 :key index
-                                 :shape shape}))]
-
+(mf/defc render-node
+  {::mf/wrap-props false}
+  [props]
+  (let [node (obj/get props "node")
+        index (obj/get props "index")
+        {:keys [type text children]} node]
     (if (string? text)
-      (let [style (sts/generate-text-styles (clj->js node) props)]
-        [:span {:style style
-                :className (when (:fill-color-gradient node) "gradient")}
-         (if (= text "") "\u00A0" text)])
+      [:> render-text props]
 
-      (let [children (map-indexed render-node children)]
-        (case type
-          "root"
-          (let [style (sts/generate-root-styles (clj->js node) props)]
-            [:div.root.rich-text
-             {:key index
-              :style style
-              :xmlns "http://www.w3.org/1999/xhtml"}
-             [:*
-              [:style ".gradient { background: var(--text-color); -webkit-text-fill-color: transparent; -webkit-background-clip: text;"]
-              (when embed-resources?
-                [ste/embed-fontfaces-style {:node node}])]
-             children])
-
-          "paragraph-set"
-          (let [style (sts/generate-paragraph-set-styles (clj->js node) props)]
-            [:div.paragraph-set {:key index :style style} children])
-
-          "paragraph"
-          (let [style (sts/generate-paragraph-styles (clj->js node) props)]
-            [:p.paragraph {:key index :style style} children])
-
-          nil)))))
+      (let [component (case type
+                        "root" render-root
+                        "paragraph-set" render-paragraph-set
+                        "paragraph" render-paragraph
+                        nil)]
+        (when component
+          [:> component (obj/set! props "key" index)
+           (for [[index child] (d/enumerate children)]
+             (let [props (-> (obj/clone props)
+                             (obj/set! "node" child)
+                             (obj/set! "index" index)
+                             (obj/set! "key" index))]
+               [:> render-node props]))])))))
 
 (mf/defc text-content
-  {::mf/wrap-props false
-   ::mf/wrap [mf/memo]}
+  {::mf/wrap-props false}
   [props]
   (let [root (obj/get props "content")
-        shape (obj/get props "shape")]
-    [:& text-node {:index 0
-                   :node root
-                   :shape shape}]))
+        shape (obj/get props "shape")
+        embed-fonts? (obj/get props "embed-fonts?")]
+    [:& render-node {:index 0
+                     :node root
+                     :shape shape
+                     :embed-fonts? embed-fonts?}]))
 
 (defn- retrieve-colors
   [shape]
-  (let [colors (->> shape :content
+  (let [colors (->> shape
+                    :content
                     (tree-seq map? :children)
                     (into #{} (comp (map :fill-color) (filter string?))))]
     (if (empty? colors)
@@ -87,8 +113,8 @@
    ::mf/forward-ref true}
   [props ref]
   (let [shape     (unchecked-get props "shape")
-        selected? (unchecked-get props "selected?")
         grow-type (unchecked-get props "grow-type")
+        embed-fonts? (mf/use-ctx muc/embed-ctx)
         {:keys [id x y width height content]} shape]
     [:foreignObject {:x x
                      :y y
@@ -99,4 +125,5 @@
                      :height (if (#{:auto-height :auto-width} grow-type) 10000 height)
                      :ref ref}
      [:& text-content {:shape shape
-                       :content (:content shape)}]]))
+                       :content (:content shape)
+                       :embed-fonts? embed-fonts?}]]))

@@ -9,71 +9,68 @@
 
 (ns app.common.attrs)
 
+;; Extract some attributes of a list of shapes.
+;; For each attribute, if the value is the same in all shapes,
+;; wll take this value. If there is any shape that is different,
+;; the value of the attribute will be the keyword :multiple.
+;;
+;; If some shape has the value nil in any attribute, it's
+;; considered a different value. If the shape does not contain
+;; the attribute, it's ignored in the final result.
+;;
+;; Example:
+;;   (def shapes [{:stroke-color "#ff0000"
+;;                 :stroke-width 3
+;;                 :fill-color "#0000ff"
+;;                 :x 1000 :y 2000 :rx nil}
+;;                {:stroke-width "#ff0000"
+;;                 :stroke-width 5
+;;                 :x 1500 :y 2000}])
+;;
+;;   (get-attrs-multi shapes [:stroke-color
+;;                            :stroke-width
+;;                            :fill-color
+;;                            :rx
+;;                            :ry])
+;;   >>> {:stroke-color "#ff0000"
+;;        :stroke-width :multiple
+;;        :fill-color "#0000ff"
+;;        :rx nil
+;;        :ry nil}
+;;
+
 (defn get-attrs-multi
-  ([shapes attrs] (get-attrs-multi shapes attrs = identity))
-  ([shapes attrs eq-fn sel-fn]
-   ;; Extract some attributes of a list of shapes.
-   ;; For each attribute, if the value is the same in all shapes,
-   ;; wll take this value. If there is any shape that is different,
-   ;; the value of the attribute will be the keyword :multiple.
-   ;;
-   ;; If some shape has the value nil in any attribute, it's
-   ;; considered a different value. If the shape does not contain
-   ;; the attribute, it's ignored in the final result.
-   ;;
-   ;; Example:
-   ;;   (def shapes [{:stroke-color "#ff0000"
-   ;;                 :stroke-width 3
-   ;;                 :fill-color "#0000ff"
-   ;;                 :x 1000 :y 2000 :rx nil}
-   ;;                {:stroke-width "#ff0000"
-   ;;                 :stroke-width 5
-   ;;                 :x 1500 :y 2000}])
-   ;;
-   ;;   (get-attrs-multi shapes [:stroke-color
-   ;;                            :stroke-width
-   ;;                            :fill-color
-   ;;                            :rx
-   ;;                            :ry])
-   ;;   >>> {:stroke-color "#ff0000"
-   ;;        :stroke-width :multiple
-   ;;        :fill-color "#0000ff"
-   ;;        :rx nil
-   ;;        :ry nil}
-   ;;
-   (let [defined-shapes (filter some? shapes)
+  ([objs attrs]
+   (get-attrs-multi objs attrs = identity))
 
-         combine-value (fn [v1 v2]
-                         (cond
-                           (and (= v1 :undefined) (= v2 :undefined)) :undefined
-                           (= v1 :undefined) (if (= v2 :multiple) :multiple (sel-fn v2))
-                           (= v2 :undefined) (if (= v1 :multiple) :multiple (sel-fn v1))
-                           (or (= v1 :multiple) (= v2 :multiple)) :multiple
-                           (eq-fn v1 v2) (sel-fn v1)
-                           :else :multiple))
+  ([objs attrs eqfn sel]
 
-         combine-values (fn [attrs shape values]
-                          (map #(combine-value (get shape % :undefined)
-                                               (get values % :undefined)) attrs))
+   (loop [attr (first attrs)
+          attrs (rest attrs)
+          result (transient {})]
 
-         select-attrs (fn [shape attrs]
-                        (zipmap attrs (map #(get shape % :undefined) attrs)))
+     (if attr
+       (let [value
+             (loop [curr (first objs)
+                    objs (rest objs)
+                    value ::undefined]
 
-         reducer (fn [result shape]
-                   (zipmap attrs (combine-values attrs shape result)))
+               (if (and curr (not= value :multiple))
+                 ;;
+                 (let [new-val (get curr attr ::undefined)
+                       value (cond
+                               (= new-val ::undefined) value
+                               (= value ::undefined)   (sel new-val)
+                               (eqfn new-val value)    value
+                               :else                   :multiple)]
+                   (recur (first objs) (rest objs) value))
+                 ;;
+                 value))]
+         (recur (first attrs)
+                (rest attrs)
+                (cond-> result
+                  (not= value ::undefined)
+                  (assoc! attr value))))
 
-         combined (reduce reducer
-                          (select-attrs (first defined-shapes) attrs)
-                          (rest defined-shapes))
+       (persistent! result)))))
 
-         cleanup-value (fn [value]
-                         (if (= value :undefined) nil value))
-
-         cleanup (fn [result]
-                   (->> attrs
-                        (map #(get result %))
-                        (zipmap attrs)
-                        (filter #(not= (second %) :undefined))
-                        (into {})))]
-
-     (cleanup combined))))

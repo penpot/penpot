@@ -34,46 +34,33 @@
 
 ;; --- Events
 
-(defn use-double-click [{:keys [id]} selected?]
+(defn use-double-click [{:keys [id]}]
   (mf/use-callback
-   (mf/deps id selected?)
+   (mf/deps id)
    (fn [event]
      (dom/stop-propagation event)
      (dom/prevent-default event)
-     (when selected?
-       (st/emit! (dw/start-edition-mode id))))))
+     (st/emit! (dw/start-edition-mode id)))))
 
 ;; --- Text Wrapper for workspace
 
-(mf/defc text-wrapper
+(mf/defc text-static-content
+  [{:keys [shape]}]
+  [:& text/text-shape {:shape shape
+                       :grow-type (:grow-type shape)}])
+
+(mf/defc text-resize-content
   {::mf/wrap-props false}
   [props]
-  (let [{:keys [id name x y width height grow-type] :as shape} (unchecked-get props "shape")
-        ghost? (mf/use-ctx muc/ghost-ctx)
-        selected-iref (mf/use-memo (mf/deps (:id shape))
-                                   #(refs/make-selected-ref (:id shape)))
-        selected? (mf/deref selected-iref)
-        edition   (mf/deref refs/selected-edition)
-        current-transform (mf/deref refs/current-transform)
-
-        render-editor (mf/use-state false)
-
-        edition?  (= edition id)
-        embed-resources? (mf/use-ctx muc/embed-ctx)
-
-        handle-mouse-down (we/use-mouse-down shape)
-        handle-context-menu (we/use-context-menu shape)
-        handle-pointer-enter (we/use-pointer-enter shape)
-        handle-pointer-leave (we/use-pointer-leave shape)
-        handle-double-click (use-double-click shape selected?)
-
+  (let [shape (obj/get props "shape")
+        {:keys [id name x y grow-type]} shape
         paragraph-ref (mf/use-state nil)
 
         handle-resize-text
         (mf/use-callback
          (mf/deps id)
          (fn [entries]
-           (when (and (not ghost?) (seq entries))
+           (when (seq entries)
              ;; RequestAnimationFrame so the "loop limit error" error is not thrown
              ;; https://stackoverflow.com/questions/49384120/resizeobserver-loop-limit-exceeded
              (timers/raf
@@ -97,24 +84,41 @@
     (mf/use-effect
      (mf/deps @paragraph-ref handle-resize-text grow-type)
      (fn []
-       (when (not ghost?)
-         (when-let [paragraph-node @paragraph-ref]
-           (let [observer (js/ResizeObserver. handle-resize-text)]
-             (log/debug :msg "Attach resize observer" :shape-id id :shape-name name)
-             (.observe observer paragraph-node)
-             #(.disconnect observer))))))
+       (when-let [paragraph-node @paragraph-ref]
+         (let [observer (js/ResizeObserver. handle-resize-text)]
+           (log/debug :msg "Attach resize observer" :shape-id id :shape-name name)
+           (.observe observer paragraph-node)
+           #(.disconnect observer)))))
 
+    [:& text/text-shape {:ref text-ref-cb
+                         :shape shape
+                         :grow-type (:grow-type shape)}]))
+
+(mf/defc text-wrapper
+  {::mf/wrap-props false}
+  [props]
+  (let [{:keys [id x y width height] :as shape} (unchecked-get props "shape")
+        ghost?   (mf/use-ctx muc/ghost-ctx)
+        edition  (mf/deref refs/selected-edition)
+        edition? (= edition id)
+
+        handle-mouse-down (we/use-mouse-down shape)
+        handle-context-menu (we/use-context-menu shape)
+        handle-pointer-enter (we/use-pointer-enter shape)
+        handle-pointer-leave (we/use-pointer-leave shape)
+        handle-double-click (use-double-click shape)]
 
     [:> shape-container {:shape shape}
      ;; We keep hidden the shape when we're editing so it keeps track of the size
      ;; and updates the selrect acordingly
      [:g.text-shape {:opacity (when edition? 0)
                      :pointer-events "none"}
-      [:& text/text-shape {:key (str "text-shape" (:id shape))
-                           :ref text-ref-cb
-                           :shape shape
-                           :selected? selected?
-                           :grow-type (:grow-type shape)}]]
+
+      (if ghost?
+        [:& text-static-content {:shape shape}]
+        [:& text-resize-content {:shape shape}])]
+
+
      (when (and (not ghost?) edition?)
        [:& editor/text-shape-edit {:key (str "editor" (:id shape))
                                    :shape shape}])

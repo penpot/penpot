@@ -46,17 +46,6 @@
 (def image-wrapper (common/generic-wrapper-factory image/image-shape))
 (def rect-wrapper (common/generic-wrapper-factory rect/rect-shape))
 
-(defn- shape-wrapper-memo-equals?
-  [np op]
-  (let [n-shape (obj/get np "shape")]
-    (if (= (:type n-shape) :group)
-      false
-      (let [o-shape (obj/get op "shape")
-            n-frame (obj/get np "frame")
-            o-frame (obj/get op "frame")]
-        (and (identical? n-shape o-shape)
-             (identical? n-frame o-frame))))))
-
 (defn make-is-moving-ref
   [id]
   (fn []
@@ -66,7 +55,7 @@
       (l/derived check-moving refs/workspace-local))))
 
 (mf/defc shape-wrapper
-  {::mf/wrap [#(mf/memo' % shape-wrapper-memo-equals?)]
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "frame"]))]
    ::mf/wrap-props false}
   [props]
   (let [shape  (obj/get props "shape")
@@ -77,8 +66,6 @@
         opts  #js {:shape shape
                    :frame frame}
 
-        alt?   (hooks/use-rxsub ms/keyboard-alt)
-
         moving-iref (mf/use-memo (mf/deps (:id shape)) (make-is-moving-ref (:id shape)))
         moving?     (mf/deref moving-iref)
         svg-element? (and (= (:type shape) :svg-raw)
@@ -88,8 +75,7 @@
     (when (and shape (not (:hidden shape)))
       [:*
        (if-not svg-element?
-         [:g.shape-wrapper {:style {:display (when hide-moving? "none")
-                                    :cursor (if alt? cur/duplicate nil)}}
+         [:g.shape-wrapper {:style {:display (when hide-moving? "none")}}
           (case (:type shape)
             :path [:> path/path-wrapper opts]
             :text [:> text/text-wrapper opts]
