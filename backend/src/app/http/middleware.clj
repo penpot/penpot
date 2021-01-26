@@ -111,7 +111,7 @@
   (fn [request]
     (try
       (handler request)
-      (catch Error e
+      (catch Throwable e
         (on-error e request)))))
 
 (def errors
