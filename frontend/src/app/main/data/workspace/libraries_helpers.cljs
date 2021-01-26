@@ -541,18 +541,24 @@
                               (:shapes shape-master))
 
         only-inst (fn [child-inst]
-                    (remove-shape child-inst
-                                  container
-                                  omit-touched?))
+                    (when-not (and omit-touched?
+                                   (contains? (:touched shape-inst)
+                                              :shapes-group))
+                      (remove-shape child-inst
+                                    container
+                                    omit-touched?)))
 
         only-master (fn [child-master]
-                      (add-shape-to-instance child-master
-                                             component
-                                             container
-                                             root-inst
-                                             root-master
-                                             omit-touched?
-                                             set-remote-synced?))
+                      (when-not (and omit-touched?
+                                     (contains? (:touched shape-inst)
+                                                :shapes-group))
+                        (add-shape-to-instance child-master
+                                               component
+                                               container
+                                               root-inst
+                                               root-master
+                                               omit-touched?
+                                               set-remote-synced?)))
 
         both (fn [child-inst child-master]
                (let [sub-root? (and (:component-id shape-inst)
@@ -935,7 +941,11 @@
                     container
                     {:type :del-obj
                      :id (:id shape)
-                     :ignore-touched true})]
+                     :ignore-touched true})
+                  (make-change
+                    container
+                    {:type :reg-objects
+                     :shapes (vec parents)})]
 
         add-change (fn [id]
                      (let [shape' (get objects id)]
