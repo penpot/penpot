@@ -34,20 +34,37 @@ services:
       - penpot-redis
 
     environment:
-      - PENPOT_ASSERTS_ENABLED=false
-      - PENPOT_DEBUG=false
+      # Used for creating tokens, important to be true random value
+      - PENPOT_SECRET_KEY=provide-here-a-secret-random-key
+
+      # Mainly used in logging, not important setting.
       - PENPOT_HOST=example.penpot
+
+      # Standard database connection parametes (only postgresql is supported):
       - PENPOT_DATABASE_URI=postgresql://penpot-postgres/penpot
       - PENPOT_DATABASE_USERNAME=penpot
       - PENPOT_DATABASE_PASSWORD=penpot
+
+      # Redis is used for the websockets notifications.
       - PENPOT_REDIS_URI=redis://penpot-redis/0
-      - PENPOT_STORAGE_FS_DIRECTORY_=/opt/data/assets
-      - PENPOT_STORAGE_FS_URI=http://penpot-frontend/internal/assets
+
       - PENPOT_STORAGE_BACKEND=fs
+      - PENPOT_STORAGE_FS_DIRECTORY_=/opt/data/assets
+      - PENPOT_LOCAL_ASSETS_URI=http://penpot-frontend/internal/assets
+
+      # Enable telemetry Telemetry consists on sending collected
+      # anonymous data to us in order to learn about the use of penpot
+      # and improve the platform based on real scenarios. If yo want
+      # to help us, please leave it enabled. In any case you can see
+      # the source code of the telemetry client and server in the
+      # penpot repository, all is open source.
+      - PENPOT_TELEMETRY_ENABLED=true
+      - PENPOT_TELEMETRY_URI=https://telemetry.penpot.app
+
+      # Email sending configuration.
       - PENPOT_SMTP_ENABLED=false
       - PENPOT_SMTP_DEFAULT_FROM=no-reply@example.com
       - PENPOT_SMTP_DEFAULT_REPLY_TO=no-reply@example.com
-      - PENPOT_SECRET_KEY=provide-here-a-secret-random-key
       # - PENPOT_SMTP_HOST=...
       # - PENPOT_SMTP_PORT=...
       # - PENPOT_SMTP_USERNAME=...
@@ -56,6 +73,10 @@ services:
       # - PENPOT_SMTP_SSL=false
       # - PENPOT_GOOGLE_CLIENT_ID=...
       # - PENPOT_GOOGLE_CLIENT_SECRET=...
+
+      - PENPOT_ASSERTS_ENABLED=false
+      - PENPOT_DEBUG=false
+
     networks:
       - penpot
 

@@ -1,4 +1,4 @@
-FROM debian:buster-slim
+FROM ubuntu:20.04
 LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ENV LANG='en_US.UTF-8' LC_ALL='en_US.UTF-8'
@@ -11,7 +11,7 @@ RUN set -ex; \
     mkdir -p /usr/share/man/man1; \
     mkdir -p /usr/share/man/man7; \
     wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | apt-key add -; \
-    echo "deb https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ buster main" >> /etc/apt/sources.list.d/adoptopenjdk.list; \
+    echo "deb https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ focal main" >> /etc/apt/sources.list.d/adoptopenjdk.list; \
     apt-get -qq update; \
     apt-get -qqy install adoptopenjdk-15-hotspot; \
     rm -rf /var/lib/apt/lists/*;

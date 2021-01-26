@@ -2,7 +2,6 @@
 
 set -ex
 
-export PATH="/usr/local/node-v12.18.3/bin/:$PATH"
-# yarn install
+export PATH="/usr/local/nodejs/bin/:$PATH"
 
 exec "$@"
