@@ -16,47 +16,47 @@ environment variables.
 This is a probably incomplete list of available options (with
 respective defaults):
 
-- `APP_HTTP_SERVER_PORT=6060`
-- `APP_PUBLIC_URI=http://localhost:3449`
-- `APP_DATABASE_USERNAME=` (default undefined, used from uri)
-- `APP_DATABASE_PASSWORD=` (default undefined, used from uri)
-- `APP_DATABASE_URI=postgresql://127.0.0.1/penpot`
-- `APP_MEDIA_DIRECTORY=resources/public/media`
-- `APP_MEDIA_URI=http://localhost:6060/media/`
-- `APP_SMTP_DEFAULT_REPLY_TO=no-reply@example.com`
-- `APP_SMTP_DEFAULT_FROM=no-reply@example.com`
-- `APP_SMTP_ENABLED=`  (default false, prints to console)
-- `APP_SMTP_HOST=`     (default undefined)
-- `APP_SMTP_PORT=`     (default undefined)
-- `APP_SMTP_USER=`     (default undefined)
-- `APP_SMTP_PASSWORD=` (default undefined)
-- `APP_SMTP_SSL=`      (default to `false`)
-- `APP_SMTP_TLS=`      (default to `false`)
-- `APP_REDIS_URI=redis://localhost/0`
-- `APP_REGISTRATION_ENABLED=true`
-- `APP_REGISTRATION_DOMAIN_WHITELIST=""` (comma-separated domains, defaults to `""` which means that all domains are allowed)
-- `APP_DEBUG_HUMANIZE_TRANSIT=true`
+- `PENPOT_HTTP_SERVER_PORT=6060`
+- `PENPOT_PUBLIC_URI=http://localhost:3449`
+- `PENPOT_DATABASE_USERNAME=<username>`
+- `PENPOT_DATABASE_PASSWORD=<password>`
+- `PENPOT_DATABASE_URI=postgresql://127.0.0.1/penpot`
+- `PENPOT_STORAGE_FS_DIRECTORY=resources/public/assets`
+- `PENPOT_LOCAL_ASSETS_URI=http://localhost:6060/assets/internal`
+- `PENPOT_SMTP_DEFAULT_REPLY_TO=no-reply@example.com`
+- `PENPOT_SMTP_DEFAULT_FROM=no-reply@example.com`
+- `PENPOT_SMTP_ENABLED=`  (default false, prints to console)
+- `PENPOT_SMTP_HOST=`     (default undefined)
+- `PENPOT_SMTP_PORT=`     (default undefined)
+- `PENPOT_SMTP_USER=`     (default undefined)
+- `PENPOT_SMTP_PASSWORD=` (default undefined)
+- `PENPOT_SMTP_SSL=`      (default to `false`)
+- `PENPOT_SMTP_TLS=`      (default to `false`)
+- `PENPOT_REDIS_URI=redis://localhost/0`
+- `PENPOT_REGISTRATION_ENABLED=true`
+- `PENPOT_REGISTRATION_DOMAIN_WHITELIST=""` (comma-separated domains, defaults to `""` which means that all domains are allowed)
+- `PENPOT_DEBUG=true`
 
-- `APP_LDAP_AUTH_HOST=`     (default undefined)
-- `APP_LDAP_AUTH_PORT=`     (default undefined)
-- `APP_LDAP_AUTH_VERSION=3`
-- `APP_LDAP_BIND_DN=`       (default undefined)
-- `APP_LDAP_BIND_PASSWORD=` (default undefined)
-- `APP_LDAP_AUTH_SSL=`      (default `false`)
-- `APP_LDAP_AUTH_STARTTLS=` (default `false`)
-- `APP_LDAP_AUTH_BASE_DN=`  (default undefined)
-- `APP_LDAP_AUTH_USER_QUERY=(|(uid=$username)(mail=$username))`
-- `APP_LDAP_AUTH_USERNAME_ATTRIBUTE=uid`
-- `APP_LDAP_AUTH_EMAIL_ATTRIBUTE=mail`
-- `APP_LDAP_AUTH_FULLNAME_ATTRIBUTE=displayName`
-- `APP_LDAP_AUTH_AVATAR_ATTRIBUTE=jpegPhoto`
+- `PENPOT_LDAP_AUTH_HOST=`     (default undefined)
+- `PENPOT_LDAP_AUTH_PORT=`     (default undefined)
+- `PENPOT_LDAP_AUTH_VERSION=3`
+- `PENPOT_LDAP_BIND_DN=`       (default undefined)
+- `PENPOT_LDAP_BIND_PASSWORD=` (default undefined)
+- `PENPOT_LDAP_AUTH_SSL=`      (default `false`)
+- `PENPOT_LDAP_AUTH_STARTTLS=` (default `false`)
+- `PENPOT_LDAP_AUTH_BASE_DN=`  (default undefined)
+- `PENPOT_LDAP_AUTH_USER_QUERY=(|(uid=$username)(mail=$username))`
+- `PENPOT_LDAP_AUTH_USERNAME_ATTRIBUTE=uid`
+- `PENPOT_LDAP_AUTH_EMAIL_ATTRIBUTE=mail`
+- `PENPOT_LDAP_AUTH_FULLNAME_ATTRIBUTE=displayName`
+- `PENPOT_LDAP_AUTH_AVATAR_ATTRIBUTE=jpegPhoto`
 
-- `APP_GITLAB_CLIENT_ID=`     (default undefined)
-- `APP_GITLAB_CLIENT_SECRET=` (default undefined)
-- `APP_GITLAB_BASE_URI=`      (default https://gitlab.com)
+- `PENPOT_GITLAB_CLIENT_ID=`     (default undefined)
+- `PENPOT_GITLAB_CLIENT_SECRET=` (default undefined)
+- `PENPOT_GITLAB_BASE_URI=`      (default https://gitlab.com)
 
-- `APP_GITHUB_CLIENT_ID=`     (default undefined)
-- `APP_GITHUB_CLIENT_SECRET=` (default undefined)
+- `PENPOT_GITHUB_CLIENT_ID=`     (default undefined)
+- `PENPOT_GITHUB_CLIENT_SECRET=` (default undefined)
 
 ## REPL ##
 

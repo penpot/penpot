@@ -137,7 +137,7 @@ On the REPL you have this helper functions:
 - `(stop)`: stops the environment
 - `(restart)`: stops, reload and start again.
 
-And many other that are defined in the `tests/user.clj` file.
+And many other that are defined in the `dev/user.clj` file.
 
 If some exception is raised when code is reloaded, just use
 `(repl/refresh-all)` in order to finish correctly the code swaping and

@@ -280,23 +280,4 @@ allow the system know when to show the plural:
 ;; => "1 project"
 ```
 
-For React components, you have `app.util.i18n/use-locale` hook
-and the `app.util.i18n/t` function:
-
-```clojure
-(require '[app.util.i18n :as i18n :refer [t]])
-
-(mf/defc my-component
-  [props]
-  (let [locale (i18n/use-locale)]
-    [:div
-     [:span (t locale "auth.email-or-username")]]))
-```
-
-You can use the general purpose function in React component but when
-language is changed the component will not be rerendered
-automatically.
-
-
-
 

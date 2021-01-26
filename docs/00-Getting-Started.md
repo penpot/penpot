@@ -34,7 +34,7 @@ sudo usermod -aG docker $USER
 
 This will make use the docker without `sudo` command all the time.
 
-NOTE: probably you will need to relogin again to make this change
+NOTE: probably you will need to re-login again to make this change
 take effect.
 
 
@@ -52,5 +52,10 @@ wget https://raw.githubusercontent.com/penpot/penpot/develop/docker/images/docke
 And then:
 
 ```bash
-docker-compose -p penpotest -f docker-compose.yaml up
+docker-compose -p penpot -f docker-compose.yaml up
 ```
+
+The docker compose file contains the essential configuration for
+getting the application running, and many essential configurations
+already explained in comments. All other configuration options are
+explained in [management guide](./05-Management-Guide.md).
