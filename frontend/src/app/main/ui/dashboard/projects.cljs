@@ -53,6 +53,7 @@
         files      (some->> recent-ids
                             (map #(get files-map %))
                             (sort-by :modified-at)
+                            (filter some?)
                             (reverse))
 
         project-id (:id project)
