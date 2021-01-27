@@ -38,6 +38,7 @@
    [app.main.store :as st]))
 
 (declare persist-changes)
+(declare persist-sychronous-changes)
 (declare shapes-changes-persisted)
 (declare update-persistence-status)
 
@@ -95,14 +96,17 @@
                     (rx/map deref)
                     (rx/filter library-file?)
                     (rx/filter (complement #(empty? (:changes %))))
-                    (rx/map persist-changes)
+                    (rx/map persist-sychronous-changes)
                     (rx/take-until (rx/delay 100 stoper)))
                (->> stream
                     (rx/filter (ptk/type? ::changes-persisted))
                     (rx/tap on-saved)
                     (rx/ignore)
                     (rx/take-until stoper)))
-             (rx/subs #(st/emit! %)))))))
+             (rx/subs #(st/emit! %)
+                      (constantly nil)
+                      (fn []
+                        (on-saved))))))))
 
 (defn persist-changes
   [{:keys [file-id changes]}]
@@ -118,16 +122,14 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [sid     (:session-id state)
-            file    (if (= file-id (:current-file-id state))
-                      (get state :workspace-file)
-                      (get-in state [:workspace-libraries file-id]))
+            file    (get state :workspace-file)
             queue   (get-in state [:workspace-persistence :queue] [])
+
             xf-cat  (comp (mapcat :changes))
-            changes (into [] xf-cat queue)
             params  {:id (:id file)
                      :revn (:revn file)
                      :session-id sid
-                     :changes changes}
+                     :changes (into [] xf-cat queue)}
 
             ids     (into #{} (map :id) queue)
 
@@ -160,9 +162,28 @@
                       (rx/delay 200)
                       (rx/mapcat #(rx/throw error))))))]
 
-        (->> (rp/mutation :update-file params)
-             (rx/mapcat handle-response)
-             (rx/catch on-error))))))
+        (when (= file-id (:id params))
+          (->> (rp/mutation :update-file params)
+               (rx/mapcat handle-response)
+               (rx/catch on-error)))))))
+
+(defn persist-sychronous-changes
+  [{:keys [file-id changes]}]
+  (us/verify ::us/uuid file-id)
+  (ptk/reify ::persist-synchronous-changes
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [sid     (:session-id state)
+            file    (get-in state [:workspace-libraries file-id])
+
+            params  {:id (:id file)
+                     :revn (:revn file)
+                     :session-id sid
+                     :changes changes}]
+
+        (when (:id params)
+          (->> (rp/mutation :update-file params)
+               (rx/ignore)))))))
 
 
 (defn update-persistence-status
