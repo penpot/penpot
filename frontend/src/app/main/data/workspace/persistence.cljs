@@ -193,7 +193,7 @@
             (update :workspace-data cp/process-changes changes)
             (update-in [:workspace-file :data] cp/process-changes changes))
         (-> state
-            (update-in state [:workspace-libraries file-id :revn] max revn)
+            (update-in [:workspace-libraries file-id :revn] max revn)
             (update-in [:workspace-libraries file-id :data]
                        cp/process-changes changes))))))
 
