@@ -617,9 +617,12 @@
                @alt? cur/duplicate
                :else cur/pointer-inner)]
 
+         ;; Chrome BUG: https://bugs.chromium.org/p/chromium/issues/detail?id=664066
+         ;; Right now this is a performance concern but cannot find a better alternative
          (when (not= @cursor new-cursor)
            (timers/raf
-            #(reset! cursor new-cursor))))))
+            #(dom/set-css-property (dom/get-root) "--cursor" new-cursor))
+           (reset! cursor new-cursor)))))
 
     (mf/use-layout-effect (mf/deps layout) on-resize)
     (hooks/use-stream ms/keyboard-alt #(reset! alt? %))
@@ -650,8 +653,7 @@
        :view-box (format-viewbox vbox)
        :ref viewport-ref
        :class (when drawing-tool "drawing")
-       :style {:cursor @cursor
-               :background-color (get options :background "#E8E9EA")}
+       :style {:background-color (get options :background "#E8E9EA")}
        :on-context-menu on-context-menu
        :on-click on-click
        :on-double-click on-double-click
