@@ -82,7 +82,7 @@
                                             :fullname (str "Profile " index)
                                             :password "123123"
                                             :demo? true
-                                            :email (str "profile" index ".test@penpot.app")})
+                                            :email (str "profile" index "@example.com")})
                     team-id  (:default-team-id prof)
                     owner-id id]
                 (let [project-ids (collect (partial create-project conn team-id owner-id)

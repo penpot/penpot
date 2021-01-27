@@ -40,7 +40,7 @@
 
 (defmethod ig/prep-key ::server
   [_ cfg]
-  (merge {:port 6062 :host "127.0.0.1" :name "main"} cfg))
+  (merge {:name "main"} cfg))
 
 (defmethod ig/init-key ::server
   [_ {:keys [port host name] :as cfg}]

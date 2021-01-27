@@ -64,7 +64,7 @@
          :body ""})
 
       :fs
-      (let [purl (u/uri (:public-uri cfg))
+      (let [purl (u/uri (:assets-path cfg))
             purl (u/join purl (sto/object->relative-path obj))]
         {:status 204
          :headers {"x-accel-redirect" (:path purl)
@@ -100,12 +100,12 @@
 ;; --- Initialization
 
 (s/def ::storage some?)
-(s/def ::public-uri ::us/string)
+(s/def ::assets-path ::us/string)
 (s/def ::cache-max-age ::dt/duration)
 (s/def ::signature-max-age ::dt/duration)
 
 (defmethod ig/pre-init-spec ::handlers [_]
-  (s/keys :req-un [::storage ::mtx/metrics ::public-uri ::cache-max-age ::signature-max-age]))
+  (s/keys :req-un [::storage ::mtx/metrics ::assets-path ::cache-max-age ::signature-max-age]))
 
 (defmethod ig/init-key ::handlers
   [_ cfg]

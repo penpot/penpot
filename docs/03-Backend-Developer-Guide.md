@@ -25,10 +25,10 @@ empty database.
 This by default will create a bunch of users that can be used to login
 in the aplication. All users uses the following pattern:
 
-- Username: `profileN.test@uxbox.io`
+- Username: `profileN@example.com`
 - Password: `123123`
 
-Where `N` is a number from 0 to 49 on the default fixture parameters.
+Where `N` is a number from 0 to 5 on the default fixture parameters.
 
 If you have a REPL access to the running process, you can execute it
 from there:
@@ -42,7 +42,7 @@ To access to the running process repl you usually will execute this
 command:
 
 ```bash
-rlwrap netcat localhost 5555
+rlwrap netcat localhost 6062
 ```
 
 ## Migrations

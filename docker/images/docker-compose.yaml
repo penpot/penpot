@@ -38,7 +38,7 @@ services:
 
       # Should be set to the public domain when penpot is going to be
       # served.
-      - PENPOT_PUBLIC_URI=http://localhost
+      - PENPOT_PUBLIC_URI=http://localhost:9001
 
       # Standard database connection parametes (only postgresql is supported):
       - PENPOT_DATABASE_URI=postgresql://penpot-postgres/penpot
@@ -54,8 +54,7 @@ services:
       # the backups more easy but will make access to media less
       # performant.
       - PENPOT_STORAGE_BACKEND=fs
-      - PENPOT_STORAGE_FS_DIRECTORY_=/opt/data/assets
-      - PENPOT_LOCAL_ASSETS_URI=http://penpot-frontend/internal/assets
+      - PENPOT_STORAGE_FS_DIRECTORY=/opt/data/assets
 
       # Telemetry. When enabled, a periodical process will send
       # annonymous data about this instance. Telemetry data will

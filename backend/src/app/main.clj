@@ -90,9 +90,9 @@
      :error-report-handler (ig/ref :app.error-reporter/handler)}
 
     :app.http.assets/handlers
-    {:metrics    (ig/ref :app.metrics/metrics)
-     :public-uri (:local-assets-uri cfg/config)
-     :storage    (ig/ref :app.storage/storage)
+    {:metrics           (ig/ref :app.metrics/metrics)
+     :assets-path       (:assets-path cfg/config)
+     :storage           (ig/ref :app.storage/storage)
      :cache-max-age     (dt/duration {:hours 24})
      :signature-max-age (dt/duration {:hours 24 :minutes 5})}
 
@@ -262,7 +262,8 @@
      :uri         (:telemetry-uri cfg/config)}
 
     :app.srepl/server
-    {:port 6062}
+    {:port (:srepl-port cfg/config)
+     :host (:srepl-host cfg/config)}
 
     :app.error-reporter/reporter
     {:uri      (:error-report-webhook cfg/config)

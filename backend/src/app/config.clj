@@ -20,6 +20,7 @@
 (def defaults
   {:http-server-port 6060
    :http-server-cors "http://localhost:3449"
+
    :database-uri "postgresql://127.0.0.1/penpot"
    :database-username "penpot"
    :database-password "penpot"
@@ -29,13 +30,16 @@
    :public-uri "http://localhost:3449"
    :redis-uri "redis://localhost/0"
 
+   :srepl-host "127.0.0.1"
+   :srepl-port 6062
+
    :storage-backend :fs
 
    :storage-fs-directory "resources/public/assets"
    :storage-s3-region :eu-central-1
    :storage-s3-bucket "penpot-devenv-assets-pre"
 
-   :local-assets-uri "http://localhost:3449/internal/assets/"
+   :assets-path "/internal/assets/"
 
    :rlimits-password 10
    :rlimits-image 2
@@ -82,7 +86,7 @@
 
 (s/def ::storage-backend ::us/keyword)
 (s/def ::storage-fs-directory ::us/string)
-(s/def ::local-assets-uri ::us/string)
+(s/def ::assets-path ::us/string)
 (s/def ::storage-s3-region ::us/keyword)
 (s/def ::storage-s3-bucket ::us/string)
 
@@ -106,7 +110,9 @@
 (s/def ::registration-domain-whitelist ::us/string)
 (s/def ::debug ::us/boolean)
 (s/def ::public-uri ::us/string)
-(s/def ::backend-uri ::us/string)
+
+(s/def ::srepl-host ::us/string)
+(s/def ::srepl-port ::us/integer)
 
 (s/def ::rlimits-password ::us/integer)
 (s/def ::rlimits-image ::us/integer)
@@ -190,6 +196,8 @@
                    ::smtp-username
                    ::storage-backend
                    ::storage-fs-directory
+                   ::srepl-host
+                   ::srepl-port
                    ::local-assets-uri
                    ::storage-s3-bucket
                    ::storage-s3-region
