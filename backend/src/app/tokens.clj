@@ -24,7 +24,7 @@
 (defn- derive-tokens-secret
   [key]
   (when (= key "default")
-    (log/warn "Using default APP_SECRET_KEY, the system will generate insecure tokens."))
+    (log/warn "Using default PENPOT_SECRET_KEY, the system will generate insecure tokens."))
   (let [engine (bk/engine {:key key
                            :salt "tokens"
                            :alg :hkdf
