@@ -60,6 +60,7 @@
         edition              (mf/deref refs/selected-edition)
         label-pos            (gpt/point x (- y (/ 10 zoom)))
         handle-click         (use-select-shape frame edition)
+        handle-mouse-down    (we/use-mouse-down frame)
         handle-pointer-enter (we/use-pointer-enter frame)
         handle-pointer-leave (we/use-pointer-leave frame)]
     [:text {:x 0
@@ -68,7 +69,8 @@
             :height 20
             :class "workspace-frame-label"
             :transform (text-transform label-pos zoom)
-            :on-mouse-down handle-click
+            :on-click handle-click
+            :on-mouse-down handle-mouse-down
             :on-pointer-over handle-pointer-enter
             :on-pointer-out handle-pointer-leave}
      (:name frame)]))

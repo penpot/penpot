@@ -121,8 +121,8 @@
                      :id (:id shape)
                      :data-colors (retrieve-colors shape)
                      :transform (geom/transform-matrix shape)
-                     :width  (if (#{:auto-width} grow-type) 10000 width)
-                     :height (if (#{:auto-height :auto-width} grow-type) 10000 height)
+                     :width  (if (#{:auto-width} grow-type) 100000 width)
+                     :height (if (#{:auto-height :auto-width} grow-type) 100000 height)
                      :ref ref}
      [:& text-content {:shape shape
                        :content (:content shape)

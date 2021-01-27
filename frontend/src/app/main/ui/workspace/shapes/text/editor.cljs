@@ -269,7 +269,7 @@
         {:keys [x y width height grow-type]} shape]
     [:foreignObject {:transform (gsh/transform-matrix shape)
                      :x x :y y
-                     :width  (if (#{:auto-width} grow-type) 10000 width)
-                     :height (if (#{:auto-height :auto-width} grow-type) 10000 height)}
+                     :width  (if (#{:auto-width} grow-type) 100000 width)
+                     :height (if (#{:auto-height :auto-width} grow-type) 100000 height)}
 
      [:& text-shape-edit-html {:shape shape}]]))

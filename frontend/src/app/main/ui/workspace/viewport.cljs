@@ -242,12 +242,6 @@
         page-id       (mf/use-ctx ctx/current-page-id)
 
         selected-objects (mf/deref refs/selected-objects)
-        selrect-orig     (->> selected-objects
-                              (gsh/selection-rect))
-        selrect          (->> selected-objects
-                              (map #(assoc % :modifiers (:modifiers local)))
-                              (map gsh/transform-shape)
-                              (gsh/selection-rect))
 
         alt?          (mf/use-state false)
         cursor        (mf/use-state cur/pointer-inner)

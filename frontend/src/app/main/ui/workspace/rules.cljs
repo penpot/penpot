@@ -11,7 +11,8 @@
   (:require
    [rumext.alpha :as mf]
    [app.common.math :as mth]
-   [app.util.object :as obj]))
+   [app.util.object :as obj]
+   [app.util.timers :as timers]))
 
 (defn- calculate-step-size
   [zoom]
@@ -34,49 +35,52 @@
 (defn draw-rule!
   [dctx {:keys [zoom size start count type] :or {count 200}}]
   (when start
-      (let [txfm (- (* (- 0 start) zoom) 20)
-            minv (max (mth/round start) -10000)
-            maxv (min (mth/round (+ start (/ size zoom))) 10000)
-            step (calculate-step-size zoom)]
+    (let [txfm (- (* (- 0 start) zoom) 20)
+          step (calculate-step-size zoom)
 
-        (if (= type :horizontal)
-          (.translate dctx txfm 0)
-          (.translate dctx 0 txfm))
+          minv (max (mth/round start) -100000)
+          minv (* (mth/ceil (/ minv step)) step)
 
-        (obj/set! dctx "font" "12px worksans")
-        (obj/set! dctx "fillStyle" "#7B7D85")
-        (obj/set! dctx "strokeStyle" "#7B7D85")
-        (obj/set! dctx "textAlign" "center")
+          maxv (min (mth/round (+ start (/ size zoom))) 100000)
+          maxv (* (mth/floor (/ maxv step)) step)
 
-        (loop [i minv]
-          (when (< i maxv)
-            (let [pos (+ (* i zoom) 0)]
-              (when (= (mod i step) 0)
-                (.save dctx)
-                (if (= type :horizontal)
-                  (do
-                    (.fillText dctx (str i) pos 13))
-                  (do
-                    (.translate dctx 12 pos)
-                    (.rotate dctx (/ (* 270 js/Math.PI) 180))
-                    (.fillText dctx (str i) 0 0)))
-                (.restore dctx))
-              (recur (inc i)))))
+          path (js/Path2D.)]
 
-        (let [path (js/Path2D.)]
-          (loop [i minv]
-            (if (> i maxv)
-              (.stroke dctx path)
-              (let [pos (+ (* i zoom) 0)]
-                (when (= (mod i step) 0)
-                  (if (= type :horizontal)
-                    (do
-                      (.moveTo path pos 17)
-                      (.lineTo path pos 20))
-                    (do
-                      (.moveTo path 17 pos)
-                      (.lineTo path 20 pos))))
-                (recur (inc i)))))))))
+      (if (= type :horizontal)
+        (.translate dctx txfm 0)
+        (.translate dctx 0 txfm))
+
+      (obj/set! dctx "font" "12px worksans")
+      (obj/set! dctx "fillStyle" "#7B7D85")
+      (obj/set! dctx "strokeStyle" "#7B7D85")
+      (obj/set! dctx "textAlign" "center")
+
+      (loop [i minv]
+        (if (<= i maxv)
+          (let [pos (+ (* i zoom) 0)]
+            (.save dctx)
+            (if (= type :horizontal)
+              (do
+                ;; Write the rule numbers
+                (.fillText dctx (str i) pos 13)
+
+                ;; Build the rules lines
+                (.moveTo path pos 17)
+                (.lineTo path pos 20))
+              (do
+                ;; Write the rule numbers
+                (.translate dctx 12 pos)
+                (.rotate dctx (/ (* 270 js/Math.PI) 180))
+                (.fillText dctx (str i) 0 0)
+
+                ;; Build the rules lines
+                (.moveTo path 17 pos)
+                (.lineTo path 20 pos)))
+            (.restore dctx)
+            (recur (+ i step)))
+
+          ;; Put the path in the canvas
+          (.stroke dctx path))))))
 
 
 (mf/defc horizontal-rule
