@@ -55,6 +55,10 @@
                           (rx/debounce 2000)
                           (rx/merge stoper forcer))
 
+            file     (if (= file-id (:current-file-id state))
+                       (get state :workspace-file)
+                       (get-in state [:workspace-libraries file-id]))
+
             local-file? #(as-> (:file-id %) event-file-id
                            (or (nil? event-file-id)
                                (= event-file-id file-id)))
@@ -86,6 +90,7 @@
                     (rx/buffer-until notifier)
                     (rx/filter (complement empty?))
                     (rx/map (fn [buf] {:file-id file-id
+                                       :revn (:revn file)
                                        :changes (into [] (mapcat :changes) buf)}))
                     (rx/map persist-changes)
                     (rx/tap on-saving)
@@ -95,6 +100,8 @@
                     (rx/map deref)
                     (rx/filter library-file?)
                     (rx/filter (complement #(empty? (:changes %))))
+                    (rx/map (fn [buf]
+                              (assoc buf :revn (:revn file))))
                     (rx/map persist-changes)
                     (rx/take-until (rx/delay 100 stoper)))
                (->> stream
@@ -105,7 +112,7 @@
              (rx/subs #(st/emit! %)))))))
 
 (defn persist-changes
-  [{:keys [file-id changes]}]
+  [{:keys [file-id revn changes]}]
   (us/verify ::us/uuid file-id)
   (ptk/reify ::persist-changes
     ptk/UpdateEvent
@@ -118,14 +125,11 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [sid     (:session-id state)
-            file    (if (= file-id (:current-file-id state))
-                      (get state :workspace-file)
-                      (get-in state [:workspace-libraries file-id]))
             queue   (get-in state [:workspace-persistence :queue] [])
             xf-cat  (comp (mapcat :changes))
             changes (into [] xf-cat queue)
-            params  {:id (:id file)
-                     :revn (:revn file)
+            params  {:id file-id
+                     :revn revn
                      :session-id sid
                      :changes changes}
 
