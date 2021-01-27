@@ -138,8 +138,7 @@
 
         extract-attrs
         (fn [[ids values] {:keys [id type shapes content] :as shape}]
-          (let [conj (fnil conj [])
-                props (get-in type->props [type attr-type])
+          (let [props (get-in type->props [type attr-type])
                 result (case props
                          :ignore   [ids values]
                          :shape    [(conj ids id)
@@ -151,7 +150,7 @@
                          :children (let [children (->> (:shapes shape []) (map #(get objects %)))]
                                      (get-attrs children objects attr-type)))]
             result))]
-    (reduce extract-attrs [] shapes)))
+    (reduce extract-attrs [[] []] shapes)))
 
 (mf/defc options
   {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "shapes-with-children"]))]
