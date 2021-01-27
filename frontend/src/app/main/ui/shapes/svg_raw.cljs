@@ -47,6 +47,14 @@
                   val))))]
     (cd/mapm replace-ids attrs)))
 
+(defn set-styles [attrs shape]
+  (let [custom-attrs (usa/extract-style-attrs shape)
+        style (obj/merge! (clj->js (:style attrs {}))
+                          (obj/get custom-attrs "style"))]
+    (-> (clj->js attrs)
+        (obj/merge! custom-attrs)
+        (obj/set! "style" style))))
+
 (mf/defc svg-root
   {::mf/wrap-props false}
   [props]
@@ -59,7 +67,7 @@
 
         ids-mapping (mf/use-memo #(generate-id-mapping content))
 
-        attrs (-> (clj->js attrs)
+        attrs (-> (set-styles attrs shape)
                   (obj/set! "x" x)
                   (obj/set! "y" y)
                   (obj/set! "width" width)
@@ -81,20 +89,10 @@
 
         ids-mapping (mf/use-ctx svg-ids-ctx)
         attrs (mf/use-memo #(replace-attrs-ids ids-mapping attrs))
-        custom-attrs (usa/extract-style-attrs shape)
-
         element-id (get-in content [:attrs :id])
 
-        style (obj/merge! (clj->js (:style attrs {}))
-                          (obj/get custom-attrs "style"))
-
-        attrs (-> (clj->js attrs)
-                  (obj/merge! custom-attrs)
-                  (obj/set! "style" style))
-
-        attrs (cond-> attrs
-                element-id (obj/set! "id" (get ids-mapping element-id)))
-        ]
+        attrs (cond-> (set-styles attrs shape)
+                element-id (obj/set! "id" (get ids-mapping element-id)))]
     [:> (name tag) attrs children]))
 
 (defn svg-raw-shape [shape-wrapper]
