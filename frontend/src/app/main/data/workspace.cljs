@@ -816,6 +816,10 @@
     (watch [_ state stream]
       (let [page-id  (:current-page-id state)
             objects  (dwc/lookup-page-objects state page-id)
+
+            ;; Ignore any shape whose parent is also intented to be moved
+            ids (cp/clean-loops objects ids)
+
             parents  (loop [res #{parent-id}
                             ids (seq ids)]
                        (if (nil? ids)

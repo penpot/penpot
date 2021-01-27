@@ -46,6 +46,7 @@
 (d/export helpers/get-parent)
 (d/export helpers/get-parents)
 (d/export helpers/generate-child-parent-index)
+(d/export helpers/clean-loops)
 (d/export helpers/calculate-invalid-targets)
 (d/export helpers/valid-frame-target)
 (d/export helpers/position-on-parent)

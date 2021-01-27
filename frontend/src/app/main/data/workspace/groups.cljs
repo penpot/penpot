@@ -95,20 +95,6 @@
 ;; GROUPS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn- clean-selected
-  "A helper that cleans selected from circular references."
-  [objects selected]
-  (loop [selected selected
-         id       (first selected)
-         items    (rest selected)]
-    (if-not id
-      selected
-      (recur (cond-> selected
-               (some #(contains? selected %) (cp/get-parents id objects))
-               (disj id))
-             (first items)
-             (rest items)))))
-
 (def group-selected
   (ptk/reify ::group-selected
     ptk/WatchEvent
@@ -116,7 +102,7 @@
       (let [page-id  (:current-page-id state)
             objects  (dwc/lookup-page-objects state page-id)
             selected (get-in state [:workspace-local :selected])
-            selected (clean-selected objects selected)
+            selected (cp/clean-loops objects selected)
             shapes   (shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
           (let [[group rchanges uchanges] (prepare-create-group page-id shapes "Group-" false)]

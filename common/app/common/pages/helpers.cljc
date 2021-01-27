@@ -169,6 +169,20 @@
      (assoc index id (:parent-id obj)))
    {} objects))
 
+(defn clean-loops
+  "Clean a list of ids from circular references."
+  [objects ids]
+  (loop [ids    ids
+         id     (first ids)
+         others (rest ids)]
+    (if-not id
+      ids
+      (recur (cond-> ids
+               (some #(contains? ids %) (get-parents id objects))
+               (disj id))
+             (first others)
+             (rest others)))))
+
 (defn calculate-invalid-targets
   [shape-id objects]
   (let [result #{shape-id}
