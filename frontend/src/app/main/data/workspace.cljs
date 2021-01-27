@@ -227,12 +227,14 @@
   (ptk/reify ::initialize-page
     ptk/UpdateEvent
     (update [_ state]
-      (let [prev-local (get state :workspace-local)
-            local (-> state
-                      (get-in [:workspace-cache page-id] workspace-local-default)
-                      (merge (select-keys prev-local [:vbox :vport :zoom])))
-            page  (-> (get-in state [:workspace-data :pages-index page-id])
-                      (select-keys [:id :name]))]
+      (let [;; we maintain a cache of page state for user convenience
+            ;; with the exception of the selection; when user abandon
+            ;; the current page, the selection is lost
+            local      (-> state
+                           (get-in [:workspace-cache page-id] workspace-local-default)
+                           (assoc :selected (d/ordered-set)))
+            page       (-> (get-in state [:workspace-data :pages-index page-id])
+                           (select-keys [:id :name]))]
         (assoc state
                :current-page-id page-id   ; mainly used by events
                :trimmed-page page
@@ -1224,6 +1226,14 @@
     (watch [_ state stream]
       (rx/of ::dwp/force-persist
              (rt/nav :viewer params {:index 0})))))
+
+(defn go-to-dashboard
+  [{:keys [team-id] :as project}]
+  (ptk/reify ::go-to-viewer
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/of ::dwp/force-persist
+             (rt/nav :dashboard-projects {:team-id team-id})))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Context Menu

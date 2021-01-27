@@ -242,7 +242,7 @@
         go-back
         (mf/use-callback
          (mf/deps project)
-         (st/emitf (rt/nav :dashboard-projects {:team-id team-id})))
+         (st/emitf (dw/go-to-dashboard project)))
 
         go-viewer
         (mf/use-callback
