@@ -13,6 +13,7 @@
    [app.main.constants :as c]
    [app.main.data.history :as udh]
    [app.main.data.workspace :as dw]
+   [app.main.data.messages :as dm]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
@@ -120,6 +121,11 @@
    (fn []
      (st/emit! (dw/initialize-file project-id file-id))
      (st/emitf (dw/finalize-file project-id file-id))))
+
+  (mf/use-effect
+    (fn []
+      ;; Close any non-modal dialog that may be still open
+      (st/emitf dm/hide)))
 
   (hooks/use-shortcuts dw/shortcuts)
 
