@@ -44,16 +44,14 @@
      v
 
      (number? v)
-     (Point. v v)
+     (point v v)
 
      (point-like? v)
-     (Point. (:x v) (:y v))
+     (point (:x v) (:y v))
 
      :else
      (throw (ex-info "Invalid arguments" {:v v}))))
   ([x y]
-   ;;(assert (not (nil? x)))
-   ;;(assert (not (nil? y)))
    (Point. x y)))
 
 (defn angle->point [{:keys [x y]} angle distance]

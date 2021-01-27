@@ -18,8 +18,8 @@
              (mth/finite? y)
              (mth/finite? width)
              (mth/finite? height))
-    (gpt/point (+ x (/ width 2))
-               (+ y (/ height 2)))))
+    (gpt/point (+ x (/ width 2.0))
+               (+ y (/ height 2.0)))))
 
 (defn center-selrect
   "Calculate the center of the shape."
@@ -36,8 +36,8 @@
         miny (reduce min ##Inf pty)
         maxx (reduce max ##-Inf ptx)
         maxy (reduce max ##-Inf pty)]
-    (gpt/point (/ (+ minx maxx) 2)
-               (/ (+ miny maxy) 2))))
+    (gpt/point (/ (+ minx maxx) 2.0)
+               (/ (+ miny maxy) 2.0))))
 
 (defn center-shape
   "Calculate the center of the shape."
@@ -47,7 +47,7 @@
 (defn make-centered-rect
   "Creates a rect given a center and a width and height"
   [center width height]
-  {:x (- (:x center) (/ width 2))
-   :y (- (:y center) (/ height 2))
+  {:x (- (:x center) (/ width 2.0))
+   :y (- (:y center) (/ height 2.0))
    :width width
    :height height})

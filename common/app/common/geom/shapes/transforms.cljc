@@ -62,9 +62,7 @@
 (defn transform-points
   ([points matrix]
    (transform-points points nil matrix))
-
   ([points center matrix]
-
    (let [prev (if center (gmt/translate-matrix center) (gmt/matrix))
          post (if center (gmt/translate-matrix (gpt/negate center)) (gmt/matrix))
 
