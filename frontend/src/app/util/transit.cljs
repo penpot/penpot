@@ -37,6 +37,11 @@
 
 ;; --- Transit adapters
 
+(def bigint-read-handler
+  (t/read-handler
+   (fn [value]
+     (js/parseInt value 10))))
+
 (def point-write-handler
   (t/write-handler
    (constantly "point")
@@ -69,6 +74,7 @@
 
 (def ^:privare +read-handlers+
   {"u" uuid
+   "n" bigint-read-handler
    "ordered-set" ordered-set-read-handler
    "jsonblob" blob-read-handler
    "matrix" matrix-read-handler
