@@ -189,7 +189,7 @@
        :fn (ig/ref :app.tasks.file-media-gc/handler)}
 
       {:id "file-xlog-gc"
-       :cron #app/cron "0 0 */2 * * ?"  ;; every 2 hours
+       :cron #app/cron "0 0 */6 * * ?"  ;; every 2 hours
        :fn (ig/ref :app.tasks.file-xlog-gc/handler)}
 
       {:id "storage-gc"
@@ -253,8 +253,8 @@
 
     :app.tasks.file-xlog-gc/handler
     {:pool    (ig/ref :app.db/pool)
-     :max-age (dt/duration {:hours 6})
-     :metrics (ig/ref :app.metrics/metrics)}
+     :metrics (ig/ref :app.metrics/metrics)
+     :max-age (dt/duration {:hours 24})}
 
     :app.tasks.telemetry/handler
     {:pool        (ig/ref :app.db/pool)

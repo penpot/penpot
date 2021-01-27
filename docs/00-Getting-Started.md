@@ -4,6 +4,7 @@ This documentation intends to explain how to get penpot application and run it l
 
 The simplest approach is using docker and docker-compose. 
 
+
 ## Install Docker ##
 
 Skip this section if you alreasdy have docker installed, up and running.
