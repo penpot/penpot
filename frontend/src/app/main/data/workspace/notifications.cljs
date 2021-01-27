@@ -206,7 +206,7 @@
         (rx/merge
          (rx/of (dwp/shapes-changes-persisted file-id msg))
          (when (seq page-ids)
-           (rx/from (map dwc/update-indices page-ids))))))))
+           (rx/from (map dwc/update-indices page-ids changes))))))))
 
 (s/def ::library-change-event
   (s/keys :req-un [::type
