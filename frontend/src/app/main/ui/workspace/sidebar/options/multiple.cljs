@@ -148,7 +148,8 @@
                                         (merge-attrs (select-keys shape attrs))
                                         (merge-attrs (ut/get-text-attrs-multi content attrs)))]
                          :children (let [children (->> (:shapes shape []) (map #(get objects %)))]
-                                     (get-attrs children objects attr-type)))]
+                                     (get-attrs children objects attr-type))
+                         [])]
             result))]
     (reduce extract-attrs [[] []] shapes)))
 
