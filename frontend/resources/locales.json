@@ -963,19 +963,22 @@
   "handoff.attributes.color.hex" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/common.cljs:70" ],
     "translations" : {
-      "en" : "HEX"
+      "en" : "HEX",
+      "es" : "HEX"
     }
   },
   "handoff.attributes.color.hsla" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/common.cljs:76" ],
     "translations" : {
-      "en" : "HSLA"
+      "en" : "HSLA",
+      "es" : "HSLA"
     }
   },
   "handoff.attributes.color.rgba" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/common.cljs:73" ],
     "translations" : {
-      "en" : "RGBA"
+      "en" : "RGBA",
+      "es" : "RGBA"
     }
   },
   "handoff.attributes.content" : {
@@ -1072,25 +1075,29 @@
   "handoff.attributes.shadow.shorthand.blur" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/shadow.cljs:53" ],
     "translations" : {
-      "en" : "B"
+      "en" : "B",
+      "es" : "B"
     }
   },
   "handoff.attributes.shadow.shorthand.offset-x" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/shadow.cljs:45" ],
     "translations" : {
-      "en" : "X"
+      "en" : "X",
+      "es" : "X"
     }
   },
   "handoff.attributes.shadow.shorthand.offset-y" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/shadow.cljs:49" ],
     "translations" : {
-      "en" : "Y"
+      "en" : "Y",
+      "es" : "Y"
     }
   },
   "handoff.attributes.shadow.shorthand.spread" : {
     "used-in" : [ "src/app/main/ui/handoff/attributes/shadow.cljs:57" ],
     "translations" : {
-      "en" : "S"
+      "en" : "S",
+      "es" : "S"
     }
   },
   "handoff.attributes.shadow.style.drop-shadow" : {
@@ -1347,7 +1354,8 @@
   },
   "handoff.tabs.code.selected.svg-raw" : {
     "translations" : {
-      "en" : "SVG"
+      "en" : "SVG",
+      "es" : "SVG"
     },
     "unused" : true
   },
@@ -1391,13 +1399,15 @@
   "labels.bad-gateway.desc-message" : {
     "used-in" : [ "src/app/main/ui/static.cljs:58" ],
     "translations" : {
-      "en" : "Looks like you need to wait a bit and retry; we are performing small maintenance of our servers."
+      "en" : "Looks like you need to wait a bit and retry; we are performing small maintenance of our servers.",
+      "es" : "Parece que necesitas esperar un poco y volverlo a intentar; estamos realizando operaciones de mantenimiento en nuestros servidores."
     }
   },
   "labels.bad-gateway.main-message" : {
     "used-in" : [ "src/app/main/ui/static.cljs:57" ],
     "translations" : {
-      "en" : "Bad Gateway"
+      "en" : "Bad Gateway",
+      "es" : "Bad Gateway"
     }
   },
   "labels.cancel" : {
@@ -1506,13 +1516,15 @@
   "labels.internal-error.desc-message" : {
     "used-in" : [ "src/app/main/ui/static.cljs:92" ],
     "translations" : {
-      "en" : "Something bad happended. Please retry the operation and if the problem persists, contact with support."
+      "en" : "Something bad happened. Please retry the operation and if the problem persists, contact with support.",
+      "es" : "Ha ocurrido algo extraño. Por favor, reintenta la operación, y si el problema persiste, contacta con el servicio técnico."
     }
   },
   "labels.internal-error.main-message" : {
     "used-in" : [ "src/app/main/ui/static.cljs:91" ],
     "translations" : {
-      "en" : "Internal Error"
+      "en" : "Internal Error",
+      "es" : "Error interno"
     }
   },
   "labels.language" : {
@@ -1568,19 +1580,22 @@
   "labels.not-found.auth-info" : {
     "used-in" : [ "src/app/main/ui/static.cljs:42" ],
     "translations" : {
-      "en" : "You’re signed in as"
+      "en" : "You’re signed in as",
+      "es" : "Estás identificado como"
     }
   },
   "labels.not-found.desc-message" : {
     "used-in" : [ "src/app/main/ui/static.cljs:40" ],
     "translations" : {
-      "en" : "This page might not exist or you don’t have permissions to access to it."
+      "en" : "This page might not exist or you don’t have permissions to access to it.",
+      "es" : "Esta página no existe o no tienes permisos para verla."
     }
   },
   "labels.not-found.main-message" : {
     "used-in" : [ "src/app/main/ui/static.cljs:39" ],
     "translations" : {
-      "en" : "Oops!"
+      "en" : "Oops!",
+      "es" : "¡Huy!"
     }
   },
   "labels.num-of-files" : {
@@ -1673,7 +1688,8 @@
   "labels.retry" : {
     "used-in" : [ "src/app/main/ui/static.cljs:62", "src/app/main/ui/static.cljs:79", "src/app/main/ui/static.cljs:96" ],
     "translations" : {
-      "en" : "Retry"
+      "en" : "Retry",
+      "es" : "Reintentar"
     }
   },
   "labels.role" : {
@@ -1686,13 +1702,15 @@
   "labels.service-unavailable.desc-message" : {
     "used-in" : [ "src/app/main/ui/static.cljs:75" ],
     "translations" : {
-      "en" : "We are in programmed maintenance of our systems."
+      "en" : "We are in programmed maintenance of our systems.",
+      "es" : "Estamos en una operación de mantenimiento programado de nuestros sistemas."
     }
   },
   "labels.service-unavailable.main-message" : {
     "used-in" : [ "src/app/main/ui/static.cljs:74" ],
     "translations" : {
-      "en" : "Service Unavailable"
+      "en" : "Service Unavailable",
+      "es" : "El servicio no está disponible"
     }
   },
   "labels.settings" : {
@@ -1930,13 +1948,15 @@
   "modals.delete-page.body" : {
     "used-in" : [ "src/app/main/ui/workspace/sidebar/sitemap.cljs:60" ],
     "translations" : {
-      "en" : "Are you sure you want to delete this page?"
+      "en" : "Are you sure you want to delete this page?",
+      "es" : "¿Seguro que quieres borrar esta página?"
     }
   },
   "modals.delete-page.title" : {
     "used-in" : [ "src/app/main/ui/workspace/sidebar/sitemap.cljs:59" ],
     "translations" : {
-      "en" : "Delete page"
+      "en" : "Delete page",
+      "es" : "Borrar página"
     }
   },
   "modals.delete-project-confirm.accept" : {
@@ -2551,7 +2571,8 @@
   "workspace.assets.typography" : {
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:491", "src/app/main/ui/workspace/sidebar/assets.cljs:729" ],
     "translations" : {
-      "en" : "Typographies"
+      "en" : "Typographies",
+      "es" : "Tipografías"
     }
   },
   "workspace.assets.typography.font-id" : {
@@ -2599,7 +2620,8 @@
   "workspace.assets.typography.sample" : {
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:254", "src/app/main/ui/handoff/attributes/text.cljs:96", "src/app/main/ui/handoff/attributes/text.cljs:105" ],
     "translations" : {
-      "en" : "Ag"
+      "en" : "Ag",
+      "es" : "Ag"
     }
   },
   "workspace.assets.typography.text-transform" : {
@@ -3454,13 +3476,15 @@
   "workspace.options.shadow-options.offsetx" : {
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:146" ],
     "translations" : {
-      "en" : "X"
+      "en" : "X",
+      "es" : "X"
     }
   },
   "workspace.options.shadow-options.offsety" : {
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:155" ],
     "translations" : {
-      "en" : "Y"
+      "en" : "Y",
+      "es" : "Y"
     }
   },
   "workspace.options.shadow-options.spread" : {
