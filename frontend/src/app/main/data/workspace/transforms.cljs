@@ -140,6 +140,7 @@
               stoper  (rx/filter ms/mouse-up? stream)
               layout  (:workspace-layout state)
               page-id (:current-page-id state)
+              zoom    (get-in state [:workspace-local :zoom] 1)
               objects (dwc/lookup-page-objects state page-id)
               resizing-shapes (map #(get objects %) ids)
               text-shapes-ids (->> resizing-shapes
@@ -151,7 +152,7 @@
                 (rx/with-latest vector ms/mouse-position-shift)
                 (rx/map normalize-proportion-lock)
                 (rx/switch-map (fn [[point :as current]]
-                               (->> (snap/closest-snap-point page-id resizing-shapes layout point)
+                               (->> (snap/closest-snap-point page-id resizing-shapes layout zoom point)
                                     (rx/map #(conj current %)))))
                 (rx/mapcat (partial resize shape initial-position resizing-shapes))
                 (rx/take-until stoper))
@@ -284,6 +285,7 @@
              shapes  (mapv #(get objects %) ids)
              stopper (rx/filter ms/mouse-up? stream)
              layout  (get state :workspace-layout)
+             zoom    (get-in state [:workspace-local :zoom] 1)
 
 
              position (->> ms/mouse-position
@@ -291,7 +293,7 @@
                            (rx/map #(gpt/to-vec from-position %)))
 
              snap-delta (->> position
-                             (rx/switch-map #(snap/closest-snap-move page-id shapes objects layout %)))]
+                             (rx/switch-map #(snap/closest-snap-move page-id shapes objects layout zoom %)))]
          (rx/concat
           (->> snap-delta
                (rx/with-latest vector position)
