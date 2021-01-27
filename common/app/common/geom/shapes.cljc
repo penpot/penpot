@@ -121,8 +121,37 @@
        (gpr/join-selrects)))
 
 (defn translate-to-frame
-  [shape {:keys [x y]}]
-  (move shape (gpt/point (- x) (- y))))
+  [{:keys [type x y] :as shape} {:keys [x y]}]
+  (let [move-point
+        (fn [point]
+          (-> point
+              (update :x - x)
+              (update :y - y)))
+
+        move-segment
+        (fn [segment]
+          (-> segment
+              (d/update-in-when [:params :x] - x)
+              (d/update-in-when [:params :y] - y)
+              (d/update-in-when [:params :c1x] - x)
+              (d/update-in-when [:params :c1y] - y)
+              (d/update-in-when [:params :c2x] - x)
+              (d/update-in-when [:params :c2y] - y)))]
+
+    (-> shape
+        (d/update-when :x - x)
+        (d/update-when :y - y)
+        (update-in [:selrect :x] - x)
+        (update-in [:selrect :y] - y)
+        (update-in [:selrect :x1] - x)
+        (update-in [:selrect :y1] - y)
+        (update-in [:selrect :x2] - x)
+        (update-in [:selrect :y2] - y)
+
+        (d/update-when :points #(map move-point %))
+
+        (cond-> (= :path type)
+          (d/update-when :content #(map move-segment %))))))
 
 
 ;; --- Helpers
