@@ -569,12 +569,14 @@
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
 
 (defn update-component
-  "Modify the component linked to the shape with the given id, in the current page, so that
-  all attributes of its shapes are equal to the shape and its children. Also set all attributes
-  of the shape untouched.
+  "Modify the component linked to the shape with the given id, in the
+  current page, so that all attributes of its shapes are equal to the
+  shape and its children. Also set all attributes of the shape
+  untouched.
 
-  NOTE: It's possible that the component to update is defined in an external library file, so
-  this function may cause to modify a file different of that the one we are currently editing."
+  NOTE: It's possible that the component to update is defined in an
+  external library file, so this function may cause to modify a file
+  different of that the one we are currently editing."
   [id]
   (us/assert ::us/uuid id)
   (ptk/reify ::update-component
@@ -630,10 +632,10 @@
 (declare sync-file-2nd-stage)
 
 (defn sync-file
-  "Syhchronize the given file from ghe given library. Walk through all shapes
-  in all pages in the file that use some color, typography or component of the
-  library, and copy the new values to the shapes. Do it also for shapes inside
-  components of the local file library."
+  "Synchronize the given file from the given library. Walk through all
+  shapes in all pages in the file that use some color, typography or
+  component of the library, and copy the new values to the shapes. Do
+  it also for shapes inside components of the local file library."
   [file-id library-id]
   (us/assert ::us/uuid file-id)
   (us/assert ::us/uuid library-id)
