@@ -227,9 +227,10 @@
 
 (mf/defc viewport
   [{:keys [local layout file] :as props}]
-  (let [{:keys [options-mode
+  (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
+        ;; that the new parameter is sent
+        {:keys [options-mode
                 zoom
-                flags
                 vport
                 vbox
                 edition
@@ -237,7 +238,11 @@
                 tooltip
                 selected
                 panning
-                picking-color?]} local
+                picking-color?
+                transform
+                hover
+                modifiers
+                selrect]} local
 
         page-id       (mf/use-ctx ctx/current-page-id)
 
@@ -258,9 +263,9 @@
 
         show-grids?          (contains? layout :display-grid)
         show-snap-points?    (and (contains? layout :dynamic-alignment)
-                                  (or drawing-obj (:transform local)))
+                                  (or drawing-obj transform))
         show-snap-distance?  (and (contains? layout :dynamic-alignment)
-                                  (= (:transform local) :move)
+                                  (= transform :move)
                                   (not (empty? selected)))
 
         on-mouse-down
@@ -630,9 +635,9 @@
                           :layout layout}])
 
      (when (= drawing-tool :comments)
-       [:& comments-layer {:vbox (:vbox local)
-                           :vport (:vport local)
-                           :zoom (:zoom local)
+       [:& comments-layer {:vbox vbox
+                           :vport vport
+                           :zoom zoom
                            :drawing drawing
                            :page-id page-id
                            :file-id (:id file)}])
@@ -665,19 +670,19 @@
                                      "none"
                                      "auto")}}
        [:& frames {:key page-id
-                   :hover (:hover local)
+                   :hover hover
                    :selected selected
                    :edition edition}]
 
-       [:g {:style {:display (when (not= :move (:transform local)) "none")}}
-        [:& ghost-frames {:modifiers (:modifiers local)
+       [:g {:style {:display (when (not= :move transform) "none")}}
+        [:& ghost-frames {:modifiers modifiers
                           :selected selected}]]
 
        (when (seq selected)
          [:& selection-handlers {:selected selected
                                  :zoom zoom
                                  :edition edition
-                                 :show-distances (and (not (:transform local)) @alt?)}])
+                                 :show-distances (and (not transform) @alt?)}])
 
        (when (= (count selected) 1)
          [:& gradient-handlers {:id (first selected)
@@ -687,24 +692,24 @@
          [:& draw-area {:shape drawing-obj
                         :zoom zoom
                         :tool drawing-tool
-                        :modifiers (:modifiers local)}])
+                        :modifiers modifiers}])
 
        (when show-grids?
          [:& frame-grid {:zoom zoom}])
 
        (when show-snap-points?
          [:& snap-points {:layout layout
-                          :transform (:transform local)
+                          :transform transform
                           :drawing drawing-obj
                           :zoom zoom
                           :page-id page-id
                           :selected selected
-                          :local local}])
+                          :modifiers modifiers}])
 
        (when show-snap-distance?
          [:& snap-distances {:layout layout
                              :zoom zoom
-                             :transform (:transform local)
+                             :transform transform
                              :selected selected
                              :page-id page-id}])
 
@@ -712,7 +717,8 @@
          [:& cursor-tooltip {:zoom zoom :tooltip tooltip}])]
 
       [:& presence/active-cursors {:page-id page-id}]
-      [:& selection-rect {:data (:selrect local)}]
+      [:& selection-rect {:data selrect}]
+
       (when (= options-mode :prototype)
         [:& interactions {:selected selected}])]]))
 

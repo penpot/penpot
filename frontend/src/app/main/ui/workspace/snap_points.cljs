@@ -56,13 +56,13 @@
           :opacity line-opacity}])
 
 (defn get-snap
-  [coord {:keys [shapes page-id filter-shapes local]}]
+  [coord {:keys [shapes page-id filter-shapes modifiers]}]
   (let [shape (if (> (count shapes) 1)
                 (->> shapes (map gsh/transform-shape) gsh/selection-rect (gsh/setup {:type :rect}))
                 (->> shapes (first)))
 
-        shape (if (:modifiers local)
-                (-> shape (assoc :modifiers (:modifiers local)) gsh/transform-shape)
+        shape (if modifiers
+                (-> shape (assoc :modifiers modifiers) gsh/transform-shape)
                 shape)
 
         frame-id (snap/snap-frame-id shapes)]
@@ -108,7 +108,7 @@
                                         (hash-map coord fixedv (flip coord) maxv)]))))
 
 (mf/defc snap-feedback
-  [{:keys [shapes page-id filter-shapes zoom local] :as props}]
+  [{:keys [shapes page-id filter-shapes zoom modifiers] :as props}]
   (let [state (mf/use-state [])
         subject (mf/use-memo #(rx/subject))
 
@@ -134,7 +134,7 @@
          #(rx/dispose! sub))))
 
     (mf/use-effect
-     (mf/deps shapes local)
+     (mf/deps shapes modifiers)
      (fn []
        (rx/push! subject props)))
 
@@ -155,7 +155,7 @@
 
 (mf/defc snap-points
   {::mf/wrap [mf/memo]}
-  [{:keys [layout zoom selected page-id drawing transform local] :as props}]
+  [{:keys [layout zoom selected page-id drawing transform modifiers] :as props}]
   (let [shapes        (mf/deref (refs/objects-by-id selected))
         filter-shapes (mf/deref refs/selected-shapes-with-children)
         filter-shapes (fn [id]
@@ -164,13 +164,11 @@
                               (not (contains? layout :snap-grid)))
                           (or (filter-shapes id)
                               (not (contains? layout :dynamic-alignment)))))
-        ;; current-transform (mf/deref refs/current-transform)
-        ;; snap-data (mf/deref refs/workspace-snap-data)
         shapes    (if drawing [drawing] shapes)]
     (when (or drawing transform)
       [:& snap-feedback {:shapes shapes
                          :page-id page-id
                          :filter-shapes filter-shapes
                          :zoom zoom
-                         :local local}])))
+                         :modifiers modifiers}])))
 
