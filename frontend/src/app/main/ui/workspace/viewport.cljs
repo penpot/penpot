@@ -59,6 +59,25 @@
   (:import goog.events.EventType
            goog.events.WheelEvent))
 
+(defonce css-mouse?
+  (cfg/check-browser? :firefox))
+
+(defn get-cursor [cursor]
+  (if-not css-mouse?
+    (name cursor)
+
+    (case cursor
+      :hand cur/hand
+      :comments cur/comments
+      :create-artboard cur/create-artboard
+      :create-rectangle cur/create-rectangle
+      :create-ellipse cur/create-ellipse
+      :pen cur/pen
+      :pencil cur/pencil
+      :create-shape cur/create-shape
+      :duplicate cur/duplicate
+      cur/pointer-inner)))
+
 ;; --- Coordinates Widget
 
 (mf/defc coordinates
@@ -128,6 +147,65 @@
 
 (declare remote-user-cursors)
 
+(mf/defc render-cursor
+  {::mf/wrap-props false}
+  [props]
+  (let [cursor (unchecked-get props "cursor")
+        viewport-ref (unchecked-get props "viewport")
+
+        visible? (mf/use-state true)
+        in-viewport? (mf/use-state true)
+
+        cursor-ref (mf/use-ref nil)
+        viewport (mf/ref-val viewport-ref)
+
+        node (mf/ref-val cursor-ref)
+
+        on-mouse-move
+        (mf/use-callback
+         (mf/deps node @visible?)
+         (fn [left top event]
+
+           (let [target (dom/get-target event)
+                 style (.getComputedStyle js/window target)
+                 cursor (.getPropertyValue style "cursor")
+
+                 x (- (.-clientX event) left)
+                 y (- (.-clientY event) top)]
+
+             (cond
+               (and (= cursor "none") (not @visible?))
+               (reset! visible? true)
+
+               (and (not= cursor "none") @visible?)
+               (reset! visible? false))
+
+             (timers/raf
+              #(let [style (obj/get node "style")]
+                 (obj/set! style "transform" (str "translate(" x "px, " y "px)")))))))]
+
+    (mf/use-effect
+     (mf/deps viewport on-mouse-move)
+     (fn []
+       (when viewport
+         (let [{:keys [left top]} (dom/get-bounding-rect viewport)
+               keys [(events/listen (dom/get-root) EventType.MOUSEMOVE (partial on-mouse-move left top))
+                     (events/listen viewport EventType.POINTERENTER #(reset! in-viewport? true))
+                     (events/listen viewport EventType.POINTERLEAVE #(reset! in-viewport? false))]]
+
+           (fn []
+             (doseq [key keys]
+               (events/unlistenByKey key)))))))
+
+    [:svg {:ref cursor-ref
+           :width 20
+           :height 20
+           :viewBox "0 0 16 18"
+           :style {:position "absolute"
+                   :pointer-events "none"
+                   :will-change "transform"
+                   :display (when-not (and @in-viewport? @visible?) "none")}}
+     [:use {:xlinkHref (str "#cursor-" cursor)}]]))
 
 ;; TODO: revisit the refs usage (vs props)
 (mf/defc shape-outlines
@@ -249,7 +327,7 @@
         selected-objects (mf/deref refs/selected-objects)
 
         alt?          (mf/use-state false)
-        cursor        (mf/use-state cur/pointer-inner)
+        cursor        (mf/use-state (get-cursor :pointer-inner))
         viewport-ref  (mf/use-ref nil)
         zoom-view-ref (mf/use-ref nil)
         last-position (mf/use-var nil)
@@ -598,29 +676,24 @@
          ;; We schedule the event so it fires after `initialize-page` event
          (timers/schedule #(st/emit! (dw/initialize-viewport size))))))
 
-    ;; This change is in an effect to minimize the sideffects of the cursor chaning
-    ;; Changing a cursor will produce a "reflow" so we defer it until the component is rendered
-    (mf/use-layout-effect
+    (mf/use-effect
      (mf/deps @cursor @alt? panning drawing-tool drawing-path?)
      (fn []
        (let [new-cursor
              (cond
-               panning cur/hand
-               (= drawing-tool :comments) cur/comments
-               (= drawing-tool :frame) cur/create-artboard
-               (= drawing-tool :rect) cur/create-rectangle
-               (= drawing-tool :circle) cur/create-ellipse
-               (or (= drawing-tool :path) drawing-path?) cur/pen
-               (= drawing-tool :curve) cur/pencil
-               drawing-tool cur/create-shape
-               @alt? cur/duplicate
-               :else cur/pointer-inner)]
+               panning                     (get-cursor :hand)
+               (= drawing-tool :comments)  (get-cursor :comments)
+               (= drawing-tool :frame)     (get-cursor :create-artboard)
+               (= drawing-tool :rect)      (get-cursor :create-rectangle)
+               (= drawing-tool :circle)    (get-cursor :create-ellipse)
+               (or (= drawing-tool :path)
+                   drawing-path?)          (get-cursor :pen)
+               (= drawing-tool :curve)     (get-cursor :pencil)
+               drawing-tool                (get-cursor :create-shape)
+               @alt?                       (get-cursor :duplicate)
+               :else                       (get-cursor :pointer-inner))]
 
-         ;; Chrome BUG: https://bugs.chromium.org/p/chromium/issues/detail?id=664066
-         ;; Right now this is a performance concern but cannot find a better alternative
          (when (not= @cursor new-cursor)
-           (timers/raf
-            #(dom/set-css-property (dom/get-root) "--cursor" new-cursor))
            (reset! cursor new-cursor)))))
 
     (mf/use-layout-effect (mf/deps layout) on-resize)
@@ -642,6 +715,10 @@
                            :page-id page-id
                            :file-id (:id file)}])
 
+     (when-not css-mouse?
+       [:& render-cursor {:viewport viewport-ref
+                          :cursor @cursor}])
+
      [:svg.viewport
       {:xmlns      "http://www.w3.org/2000/svg"
        :xmlnsXlink "http://www.w3.org/1999/xlink"
@@ -652,7 +729,8 @@
        :view-box (format-viewbox vbox)
        :ref viewport-ref
        :class (when drawing-tool "drawing")
-       :style {:background-color (get options :background "#E8E9EA")}
+       :style {:cursor (when css-mouse? @cursor)
+               :background-color (get options :background "#E8E9EA")}
        :on-context-menu on-context-menu
        :on-click on-click
        :on-double-click on-double-click
