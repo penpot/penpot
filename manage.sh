@@ -87,15 +87,19 @@ function build-backend {
 }
 
 function build-bundle {
-    build "frontend";
-    build "exporter";
-    build "backend";
+    local build_enabled=${PENPOT_BUNDLE_BUILD:-"true"};
+
+    if [ $build_enabled == "true" ]; then
+        build "frontend";
+        build "exporter";
+        build "backend";
+    fi
 
     rm -rf ./bundle
     mkdir -p ./bundle
-    mv ./frontend/target/dist ./bundle/frontend
-    mv ./backend/target/dist ./bundle/backend
-    mv ./exporter/target ./bundle/exporter
+    cp -r ./frontend/target/dist ./bundle/frontend
+    cp -r ./backend/target/dist ./bundle/backend
+    cp -r ./exporter/target ./bundle/exporter
 
     local version="$CURRENT_VERSION";
     local name="penpot-$CURRENT_BRANCH";
@@ -109,7 +113,7 @@ function build-bundle {
     sed -i -re "s/\%version\%/$version/g" ./bundle/frontend/index.html;
     sed -i -re "s/\%version\%/$version/g" ./bundle/backend/main/app/config.clj;
 
-    local generate_tar=${PENPOT_BUILD_GENERATE_TAR:-"true"};
+    local generate_tar=${PENPOT_BUNDLE_GENERATE_TAR:-"true"};
     if [ $generate_tar == "true" ]; then
         pushd bundle/
         tar -cvf ../$name.tar *;
