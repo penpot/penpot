@@ -17,4 +17,4 @@
              (js/Object.keys env)))))
 
 (defonce config
-  {:public-uri (:app-public-uri env "http://localhost:3449")})
+  {:public-uri (:penpot-public-uri env "http://localhost:3449")})

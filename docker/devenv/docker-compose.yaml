@@ -38,10 +38,10 @@ services:
       - 9090:9090
 
     environment:
-      - APP_DATABASE_URI=postgresql://postgres/penpot
-      - APP_DATABASE_USERNAME=penpot
-      - APP_DATABASE_PASSWORD=penpot
-      - APP_REDIS_URI=redis://redis/0
+      - PENPOT_DATABASE_URI=postgresql://postgres/penpot
+      - PENPOT_DATABASE_USERNAME=penpot
+      - PENPOT_DATABASE_PASSWORD=penpot
+      - PENPOT_REDIS_URI=redis://redis/0
       - EXTERNAL_UID=${CURRENT_USER_ID}
 
   postgres:

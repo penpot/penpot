@@ -145,14 +145,14 @@ application will also require configuration tweaks for make it work.
 
 ##### Goolge
 
-```
+```sh
 PENPOT_GOOGLE_CLIENT_ID=<client-id>
 PENPOT_GOOGLE_CLIENT_SECRET=<client-secret>
 ```
 
 ##### Gitlab
 
-```
+```sh
 PENPOT_GITLAB_BASE_URI=https://gitlab.com
 PENPOT_GITLAB_CLIENT_ID=<client-id>
 PENPOT_GITLAB_CLIENT_SECRET=<client-secret>
@@ -160,22 +160,22 @@ PENPOT_GITLAB_CLIENT_SECRET=<client-secret>
 
 ##### Github
 
-```
+```sh
 PENPOT_GITHUB_CLIENT_ID=<client-id>
 PENPOT_GITHUB_CLIENT_SECRET=<client-secret>
 ```
 
 ##### LDAP
 
-```
-PENPOT_LDAP_AUTH_HOST=     (default undefined)
-PENPOT_LDAP_AUTH_PORT=     (default undefined)
+```sh
+PENPOT_LDAP_AUTH_HOST=
+PENPOT_LDAP_AUTH_PORT=
 PENPOT_LDAP_AUTH_VERSION=3
-PENPOT_LDAP_BIND_DN=       (default undefined)
-PENPOT_LDAP_BIND_PASSWORD= (default undefined)
-PENPOT_LDAP_AUTH_SSL=      (default false)
-PENPOT_LDAP_AUTH_STARTTLS= (default false)
-PENPOT_LDAP_AUTH_BASE_DN=  (default undefined)
+PENPOT_LDAP_BIND_DN=
+PENPOT_LDAP_BIND_PASSWORD=
+PENPOT_LDAP_AUTH_SSL=false
+PENPOT_LDAP_AUTH_STARTTLS=false
+PENPOT_LDAP_AUTH_BASE_DN=
 PENPOT_LDAP_AUTH_USER_QUERY=(|(uid=$username)(mail=$username))
 PENPOT_LDAP_AUTH_USERNAME_ATTRIBUTE=uid
 PENPOT_LDAP_AUTH_EMAIL_ATTRIBUTE=mail
@@ -185,8 +185,42 @@ PENPOT_LDAP_AUTH_AVATAR_ATTRIBUTE=jpegPhoto
 
 ## Frontend ##
 
-TODO
+In comparison with backend frontend only has a few number of runtime
+configuration options and are located in the
+`<dist-root>/js/config.js` file. This file is completly optional; if
+it exists, it is loaded by the main index.html.
+
+The `config.js` consists in a bunch of globar variables that are read
+by the frontend application on the bootstrap.
+
+
+### Auth with 3rd party
+
+If any of the following variables are defined, they will enable the
+corresponding auth button in the login page
+
+```js
+var appGoogleClientID = "<google-client-id-here>";
+var appGitlabClientID = "<google-client-id-here>";
+var appGithubClientID = "<google-client-id-here>";
+var appLoginWithLDAP = <true|false>;
+```
+
+**NOTE:** The configuration should match the backend configuration for
+respective services.
+
 
 ## Exporter ##
 
-TODO
+The exporter application only have a single configuration option and
+it can be provided using environment variables in the same way as
+backend.
+
+
+```sh
+PENPOT_PUBLIC_URI=http://pubic-domain
+```
+
+This environment variable indicates where the exporter can access to
+the public frontend application (because it uses special pages from it
+to render the shapes in the underlying headless web browser).
