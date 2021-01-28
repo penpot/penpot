@@ -1,5 +1,4 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 CREATE FUNCTION update_modified_at()
   RETURNS TRIGGER AS $updt$
