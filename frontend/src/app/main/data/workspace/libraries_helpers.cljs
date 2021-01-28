@@ -16,6 +16,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
    [app.common.pages :as cp]
+   [app.main.data.workspace.groups :as dwg]
    [app.util.logging :as log]
    [app.util.text :as ut]))
 
@@ -121,6 +122,78 @@
                                   (dissoc :component-root?)))]
 
     (cp/clone-object shape nil objects update-new-shape update-original-shape)))
+
+(defn generate-add-component
+  "If there is exactly one id, and it's a group, use it as root. Otherwise,
+  create a group that contains all ids. Then, make a component with it,
+  and link all shapes to their corresponding one in the component."
+  [ids objects page-id file-id]
+  (let [shapes (dwg/shapes-for-grouping objects ids)
+
+        [group rchanges uchanges]
+        (if (and (= (count shapes) 1)
+                 (= (:type (first shapes)) :group))
+          [(first shapes) [] []]
+          (dwg/prepare-create-group page-id shapes "Component-" true))
+
+        [new-shape new-shapes updated-shapes]
+        (make-component-shape group objects file-id)
+
+        rchanges (conj rchanges
+                       {:type :add-component
+                        :id (:id new-shape)
+                        :name (:name new-shape)
+                        :shapes new-shapes})
+
+        rchanges (into rchanges
+                       (map (fn [updated-shape]
+                              {:type :mod-obj
+                               :page-id page-id
+                               :id (:id updated-shape)
+                               :operations [{:type :set
+                                             :attr :component-id
+                                             :val (:component-id updated-shape)}
+                                            {:type :set
+                                             :attr :component-file
+                                             :val (:component-file updated-shape)}
+                                            {:type :set
+                                             :attr :component-root?
+                                             :val (:component-root? updated-shape)}
+                                            {:type :set
+                                             :attr :shape-ref
+                                             :val (:shape-ref updated-shape)}
+                                            {:type :set
+                                             :attr :touched
+                                             :val (:touched updated-shape)}]})
+                            updated-shapes))
+
+        uchanges (conj uchanges
+                       {:type :del-component
+                        :id (:id new-shape)})
+
+        uchanges (into uchanges
+                       (map (fn [updated-shape]
+                              (let [original-shape (get objects (:id updated-shape))]
+                                {:type :mod-obj
+                                 :page-id page-id
+                                 :id (:id updated-shape)
+                                 :operations [{:type :set
+                                               :attr :component-id
+                                               :val (:component-id original-shape)}
+                                              {:type :set
+                                               :attr :component-file
+                                               :val (:component-file original-shape)}
+                                              {:type :set
+                                               :attr :component-root?
+                                               :val (:component-root? original-shape)}
+                                              {:type :set
+                                               :attr :shape-ref
+                                               :val (:shape-ref original-shape)}
+                                              {:type :set
+                                               :attr :touched
+                                               :val (:touched original-shape)}]}))
+                            updated-shapes))]
+    [group rchanges uchanges]))
 
 (defn duplicate-component
   "Clone the root shape of the component and all children. Generate new
