@@ -75,18 +75,25 @@
 (mf/defc sidebar-search
   [{:keys [search-term team-id locale] :as props}]
   (let [search-term (or search-term "")
+        focused?    (mf/use-state false)
         emit!       (mf/use-memo #(f/debounce st/emit! 500))
 
         on-search-focus
         (mf/use-callback
          (mf/deps team-id)
          (fn [event]
+           (reset! focused? true)
            (let [target (dom/get-target event)
                  value (dom/get-value target)]
              (dom/select-text! target)
              (if (empty? value)
                (emit! (rt/nav :dashboard-search {:team-id team-id} {}))
                (emit! (rt/nav :dashboard-search {:team-id team-id} {:search-term value}))))))
+
+        on-search-blur
+        (mf/use-callback
+         (fn [event]
+           (reset! focused? false)))
 
         on-search-change
         (mf/use-callback
@@ -114,11 +121,18 @@
        :default-value search-term
        :auto-complete "off"
        :on-focus on-search-focus
+       :on-blur on-search-blur
        :on-change on-search-change
        :ref #(when % (set! (.-value %) search-term))}]
-     [:div.clear-search
-      {:on-click on-clear-click}
-      i/close]]))
+
+     (if (or @focused? (not (empty? search-term)))
+       [:div.clear-search
+        {:on-click on-clear-click}
+        i/close]
+
+       [:div.search
+        {:on-click on-clear-click}
+        i/search])]))
 
 (mf/defc teams-selector-dropdown
   [{:keys [team profile locale] :as props}]
