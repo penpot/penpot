@@ -18,7 +18,8 @@
   [{:keys [status body] :as response}]
   (cond
     (= 204 status)
-    (rx/empty)
+    ;; We need to send "something" so the streams listening downstream can act
+    (rx/of :empty)
 
     (= 502 status)
     (rx/throw {:type :bad-gateway})
