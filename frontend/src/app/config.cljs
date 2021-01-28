@@ -22,7 +22,7 @@
 ;; --- Auxiliar Functions
 
 (s/def ::platform #{:windows :linux :macos :other})
-(s/def ::browser #{:chrome :mozilla :safari :edge :other})
+(s/def ::browser #{:chrome :firefox :safari :edge :other})
 
 (defn- parse-browser
   []

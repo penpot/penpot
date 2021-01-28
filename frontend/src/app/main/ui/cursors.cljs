@@ -18,7 +18,7 @@
 (def create-artboard (cursor-ref :create-artboard))
 (def create-ellipse (cursor-ref :create-ellipse))
 (def create-polygon (cursor-ref :create-polygon))
-(def create-rectangle (cursor-ref :create-reclangle))
+(def create-rectangle (cursor-ref :create-rectangle))
 (def create-shape (cursor-ref :create-shape))
 (def duplicate (cursor-ref :duplicate 0 0 0))
 (def hand (cursor-ref :hand))

@@ -130,7 +130,7 @@
     grid-template-columns: 20px 1fr;
 
     .viewport {
-      cursor: var(--cursor);
+      cursor: none;
       grid-column: 1 / span 2;
       grid-row: 1 / span 2;
       overflow: hidden;

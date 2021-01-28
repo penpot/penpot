@@ -60,7 +60,8 @@
 (mf/defc workspace-content
   {::mf/wrap-props false}
   [props]
-  (let [local  (mf/deref refs/workspace-local)
+  (let [local  (mf/deref refs/viewport-data)
+        {:keys [zoom vbox vport options-mode selected]} local
         file   (obj/get props "file")
         layout (obj/get props "layout")]
     [:*
@@ -72,9 +73,9 @@
      [:section.workspace-content
       [:section.workspace-viewport
        (when (contains? layout :rules)
-         [:& workspace-rules {:zoom (:zoom local)
-                              :vbox (:vbox local)
-                              :vport (:vport local)}])
+         [:& workspace-rules {:zoom zoom
+                              :vbox vbox
+                              :vport vport}])
 
        [:& viewport-actions]
        [:& viewport {:file file
@@ -85,8 +86,8 @@
 
      ;; Aside
      [:& left-sidebar {:layout layout}]
-     [:& right-sidebar {:section (:options-mode local)
-                        :selected (:selected local)}]]))
+     [:& right-sidebar {:section options-mode
+                        :selected selected}]]))
 
 (def trimmed-page-ref (l/derived :trimmed-page st/state =))
 

@@ -54,6 +54,23 @@
   [id]
   (l/derived #(contains? % id) selected-shapes))
 
+(def viewport-data
+  (l/derived #(select-keys % [:options-mode
+                              :zoom
+                              :vport
+                              :vbox
+                              :edition
+                              :edit-path
+                              :tooltip
+                              :selected
+                              :panning
+                              :picking-color?
+                              :transform
+                              :hover
+                              :modifiers
+                              :selrect])
+             workspace-local =))
+
 (def selected-zoom
   (l/derived :zoom workspace-local))
 
