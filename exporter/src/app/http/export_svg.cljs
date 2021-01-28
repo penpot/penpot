@@ -261,8 +261,8 @@
   (p/let [content (render-object browser params)]
     {:content content
      :filename (or (:filename params)
-                   (str (str/slug (:name params))
-                        (str/trim (:suffix params ""))
+                   (str (:name params)
+                        (:suffix params "")
                         ".svg"))
      :length (alength content)
      :mime-type "image/svg+xml"}))

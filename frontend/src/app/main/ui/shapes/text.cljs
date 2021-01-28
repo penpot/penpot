@@ -115,7 +115,9 @@
   (let [shape     (unchecked-get props "shape")
         grow-type (unchecked-get props "grow-type")
         embed-fonts? (mf/use-ctx muc/embed-ctx)
-        {:keys [id x y width height content]} shape]
+        {:keys [id x y width height content]} shape
+        ;; We add 8px to add a padding for the exporter
+        width (+ width 8)]
     [:foreignObject {:x x
                      :y y
                      :id (:id shape)

@@ -257,3 +257,15 @@
 
 (defn get-data [^js node ^string attr]
   (.getAttribute node (str "data-" attr)))
+
+(defn mtype->extension [mtype]
+  ;; https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types
+  (case mtype
+    "image/apng"    "apng"
+    "image/avif"    "avif"
+    "image/gif"     "gif"
+    "image/jpeg"    "jpg"
+    "image/png"     "png"
+    "image/svg+xml" "svg"
+    "image/webp"    "webp"
+    nil))

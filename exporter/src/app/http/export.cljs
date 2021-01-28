@@ -95,8 +95,8 @@
 (defn- find-filename-candidate
   [params used]
   (loop [index 0]
-    (let [candidate (str (str/slug (:name params))
-                         (str/trim (str/blank? (:suffix params "")))
+    (let [candidate (str (:name params)
+                         (:suffix params "")
                          (when (pos? index)
                            (str "-" (inc index)))
                          (case (:type params)
