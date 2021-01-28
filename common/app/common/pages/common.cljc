@@ -23,6 +23,8 @@
    :fill-color-ref-file   :fill-group
    :fill-color-ref-id     :fill-group
    :content               :content-group
+   :hidden                :visibility-group
+   :blocked               :modifiable-group
    :font-family           :text-font-group
    :font-size             :text-font-group
    :font-style            :text-font-group
