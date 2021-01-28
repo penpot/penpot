@@ -57,10 +57,10 @@
             stoper  (rx/filter stoper? stream)
             initial @ms/mouse-position
 
-
             page-id (:current-page-id state)
             objects (dwc/lookup-page-objects state page-id)
             layout  (get state :workspace-layout)
+            zoom    (get-in state [:workspace-local :zoom] 1)
 
             frames  (cp/select-frames objects)
             fid     (or (->> frames
@@ -80,7 +80,7 @@
          (rx/of #(assoc-in state [:workspace-drawing :object] shape))
 
          ;; Initial SNAP
-         (->> (snap/closest-snap-point page-id [shape] layout initial)
+         (->> (snap/closest-snap-point page-id [shape] layout zoom initial)
               (rx/map move-drawing))
 
          (->> ms/mouse-position
@@ -88,7 +88,7 @@
               (rx/with-latest vector ms/mouse-position-ctrl)
               (rx/switch-map
                (fn [[point :as current]]
-                 (->> (snap/closest-snap-point page-id [shape] layout point)
+                 (->> (snap/closest-snap-point page-id [shape] layout zoom point)
                       (rx/map #(conj current %)))))
               (rx/map
                (fn [[_ ctrl? point]]

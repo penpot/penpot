@@ -130,13 +130,10 @@
     grid-template-columns: 20px 1fr;
 
     .viewport {
+      cursor: var(--cursor);
       grid-column: 1 / span 2;
       grid-row: 1 / span 2;
       overflow: hidden;
-
-      &.drawing {
-        cursor: cell;
-      }
 
       rect.selection-rect {
         fill: rgba(235, 215, 92, 0.1);

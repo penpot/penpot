@@ -7,9 +7,12 @@
 (ns app.worker.impl
   (:require
    [okulary.core :as l]
-   [app.util.transit :as t]))
+   [app.util.transit :as t]
+   [app.common.pages.changes :as ch]))
 
 (enable-console-print!)
+
+(defonce state (l/atom {:pages-index {}}))
 
 ;; --- Handler
 
@@ -24,15 +27,23 @@
   message)
 
 (defmethod handler :initialize-indices
-  [message]
+  [{:keys [data] :as message}]
+
+  (reset! state data)
+
   (handler (-> message
                (assoc :cmd :selection/initialize-index)))
   (handler (-> message
                (assoc :cmd :snaps/initialize-index))))
 
 (defmethod handler :update-page-indices
-  [message]
-  (handler (-> message
-               (assoc :cmd :selection/update-index)))
-  (handler (-> message
-               (assoc :cmd :snaps/update-index))))
+  [{:keys [page-id changes] :as message}]
+
+  (swap! state ch/process-changes changes false)
+
+  (let [objects (get-in @state [:pages-index page-id :objects])
+        message (assoc message :objects objects)]
+    (handler (-> message
+                 (assoc :cmd :selection/update-index)))
+    (handler (-> message
+                 (assoc :cmd :snaps/update-index)))))

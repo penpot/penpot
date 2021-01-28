@@ -108,7 +108,7 @@
            (let [page-id (:current-page-id state)]
              (rx/concat
               (when (some :page-id changes)
-                (rx/of (update-indices page-id)))
+                (rx/of (update-indices page-id changes)))
 
               (when (and save-undo? (seq undo-changes))
                 (let [entry {:undo-changes undo-changes
@@ -174,14 +174,13 @@
              (rx/map (constantly ::index-initialized)))))))
 
 (defn update-indices
-  [page-id]
+  [page-id changes]
   (ptk/reify ::update-indices
     ptk/EffectEvent
     (effect [_ state stream]
-      (let [objects (lookup-page-objects state page-id)]
-        (uw/ask! {:cmd :update-page-indices
-                  :page-id page-id
-                  :objects objects})))))
+      (uw/ask! {:cmd :update-page-indices
+                :page-id page-id
+                :changes changes}))))
 
 ;; --- Common Helpers & Events
 

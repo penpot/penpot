@@ -50,8 +50,8 @@
     (-> rect
         (update :x to-finite 0)
         (update :y to-finite 0)
-        (update :width to-finite 10000)
-        (update :height to-finite 10000))))
+        (update :width to-finite 100000)
+        (update :height to-finite 100000))))
 
 (declare shape-wrapper-factory)
 

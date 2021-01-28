@@ -69,8 +69,9 @@
          (rx/map flatten-to-points))))
 
 (defn- search-snap
-  [page-id frame-id points coord filter-shapes]
-  (let [ranges (->> points
+  [page-id frame-id points coord filter-shapes zoom]
+  (let [snap-accuracy (/ snap-accuracy zoom)
+        ranges (->> points
                     (map coord)
                     (mapv #(vector (- % snap-accuracy)
                                    (+ % snap-accuracy))))]
@@ -90,9 +91,9 @@
       (gpt/to-vec from to))))
 
 (defn- closest-snap
-  [page-id frame-id points filter-shapes]
-  (let [snap-x (search-snap page-id frame-id points :x filter-shapes)
-        snap-y (search-snap page-id frame-id points :y filter-shapes)]
+  [page-id frame-id points filter-shapes zoom]
+  (let [snap-x (search-snap page-id frame-id points :x filter-shapes zoom)
+        snap-y (search-snap page-id frame-id points :y filter-shapes zoom)]
     ;; snap-x is the second parameter because is the "source" to combine
     (rx/combine-latest snap->vector snap-y snap-x)))
 
@@ -114,8 +115,9 @@
         (and (>= s1c1 s2c1) (<= s1c1 s2c2))
         (and (>= s1c2 s2c1) (<= s1c2 s2c2)))))
 
-(defn calculate-snap [coord selrect shapes-lt shapes-gt]
-  (let [dist-lt (fn [other] (sr-distance coord (:selrect other) selrect))
+(defn calculate-snap [coord selrect shapes-lt shapes-gt zoom]
+  (let [snap-distance-accuracy (/ snap-distance-accuracy zoom)
+        dist-lt (fn [other] (sr-distance coord (:selrect other) selrect))
         dist-gt (fn [other] (sr-distance coord selrect (:selrect other)))
 
         ;; Calculates the snap distance when in the middle of two shapes
@@ -142,7 +144,7 @@
         (fn [acc val]
           ;; Using a number is faster than accesing the variable.
           ;; Keep up to date with `snap-distance-accuracy`
-          (if (and (<= val 10) (>= val (- 10)))
+          (if (and (<= val snap-distance-accuracy) (>= val (- snap-distance-accuracy)))
             (min acc val)
             acc))
 
@@ -171,11 +173,11 @@
 
     (if (mth/finite? min-snap) [0 min-snap] nil)))
 
-(defn search-snap-distance [selrect coord shapes-lt shapes-gt]
+(defn search-snap-distance [selrect coord shapes-lt shapes-gt zoom]
   (->> shapes-lt
        (rx/combine-latest vector shapes-gt)
        (rx/map (fn [[shapes-lt shapes-gt]]
-                 (calculate-snap coord selrect shapes-lt shapes-gt)))))
+                 (calculate-snap coord selrect shapes-lt shapes-gt zoom)))))
 
 (defn select-shapes-area
   [page-id shapes objects area-selrect]
@@ -187,7 +189,7 @@
        (rx/map (fn [ids] (map #(get objects %) ids)))))
 
 (defn closest-distance-snap
-  [page-id shapes objects movev]
+  [page-id shapes objects zoom movev]
   (let [frame-id (snap-frame-id shapes)
         frame (get objects frame-id)
         selrect (->> shapes (map #(gsh/move % movev)) gsh/selection-rect)]
@@ -197,12 +199,12 @@
             (let [areas (->> (gsh/selrect->areas (or (:selrect frame)
                                                      (gsh/rect->selrect @refs/vbox)) selrect)
                              (d/mapm #(select-shapes-area page-id shapes objects %2)))
-                  snap-x (search-snap-distance selrect :x (:left areas) (:right areas))
-                  snap-y (search-snap-distance selrect :y (:top areas) (:bottom areas))]
+                  snap-x (search-snap-distance selrect :x (:left areas) (:right areas) zoom)
+                  snap-y (search-snap-distance selrect :y (:top areas) (:bottom areas) zoom)]
               (rx/combine-latest snap->vector snap-y snap-x)))))))
 
 (defn closest-snap-point
-  [page-id shapes layout point]
+  [page-id shapes layout zoom point]
   (let [frame-id (snap-frame-id shapes)
         filter-shapes (into #{} (map :id shapes))
         filter-shapes (fn [id] (if (= id :layout)
@@ -210,12 +212,12 @@
                                      (not (contains? layout :snap-grid)))
                                  (or (filter-shapes id)
                                      (not (contains? layout :dynamic-alignment)))))]
-    (->> (closest-snap page-id frame-id [point] filter-shapes)
+    (->> (closest-snap page-id frame-id [point] filter-shapes zoom)
          (rx/map #(or % (gpt/point 0 0)))
          (rx/map #(gpt/add point %)))))
 
 (defn closest-snap-move
-  [page-id shapes objects layout movev]
+  [page-id shapes objects layout zoom movev]
   (let [frame-id (snap-frame-id shapes)
         filter-shapes (into #{} (map :id shapes))
         filter-shapes (fn [id] (if (= id :layout)
@@ -232,9 +234,9 @@
                            ;; Move the points in the translation vector
                            (map #(gpt/add % movev)))]
 
-    (->> (rx/merge (closest-snap page-id frame-id shapes-points filter-shapes)
+    (->> (rx/merge (closest-snap page-id frame-id shapes-points filter-shapes zoom)
                    (when (contains? layout :dynamic-alignment)
-                     (closest-distance-snap page-id shapes objects movev)))
+                     (closest-distance-snap page-id shapes objects zoom movev)))
          (rx/reduce gpt/min)
          (rx/map #(or % (gpt/point 0 0))))))
 

@@ -131,10 +131,17 @@ gulp.task("scss", function() {
     .pipe(gulp.dest(paths.output + "css/"));
 });
 
-gulp.task("svg:sprite", function() {
+gulp.task("svg:sprite:icons", function() {
   return gulp.src(paths.resources + "images/icons/*.svg")
     .pipe(gulpRename({prefix: "icon-"}))
-    .pipe(svgSprite({mode:{symbol: {inline: true}}}))
+    .pipe(svgSprite({mode:{symbol: {inline: true, sprite: "icons.svg"}}}))
+    .pipe(gulp.dest(paths.output + "images/sprites/"));
+});
+
+gulp.task("svg:sprite:cursors", function() {
+  return gulp.src(paths.resources + "images/cursors/*.svg")
+    .pipe(gulpRename({prefix: "cursor-"}))
+    .pipe(svgSprite({mode:{symbol: {inline: true, sprite: "cursors.svg"}}}))
     .pipe(gulp.dest(paths.output + "images/sprites/"));
 });
 
@@ -143,7 +150,7 @@ gulp.task("template:main", templatePipeline({
   output: paths.output
 }));
 
-gulp.task("templates", gulp.series("svg:sprite", "template:main"));
+gulp.task("templates", gulp.series("svg:sprite:icons", "svg:sprite:cursors", "template:main"));
 
 gulp.task("polyfills", function() {
   return gulp.src(paths.resources + "polyfills/*.js")

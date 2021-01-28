@@ -89,7 +89,9 @@
                           (:selected local)))]
     (l/derived moving-shapes refs/workspace-local)))
 
-(mf/defc frame-grid [{:keys [zoom]}]
+(mf/defc frame-grid
+  {::mf/wrap [mf/memo]}
+  [{:keys [zoom]}]
   (let [frames (mf/deref refs/workspace-frames)
         shapes-moving (mf/deref shapes-moving-ref)]
     [:g.grid-display {:style {:pointer-events "none"}}
