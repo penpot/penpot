@@ -253,7 +253,7 @@
     (assoc backend :conn (or conn pool))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Garbage Collection Task
+;; Garbage Collection: Permanently delete objects
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; A task responsible to permanently delete already marked as deleted
@@ -263,10 +263,10 @@
 
 (s/def ::min-age ::dt/duration)
 
-(defmethod ig/pre-init-spec ::gc-task [_]
+(defmethod ig/pre-init-spec ::gc-deleted-task [_]
   (s/keys :req-un [::storage ::db/pool ::min-age]))
 
-(defmethod ig/init-key ::gc-task
+(defmethod ig/init-key ::gc-deleted-task
   [_ {:keys [pool storage min-age] :as cfg}]
   (letfn [(retrieve-deleted-objects [conn]
             (let [min-age (db/interval min-age)
@@ -301,6 +301,71 @@
     where id in (select id from items_part)
    returning *;")
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Garbage Collection: Analize touched objects
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; This task is part of the garbage collection of storage objects and
+;; is responsible on analizing the touched objects and mark them for deletion
+;; if corresponds.
+;;
+;; When file_media_object is deleted, the depending storage_object are
+;; marked as touched. This means that some files that depend on a
+;; concrete storage_object are no longer exists and maybe this
+;; storage_object is no longer necessary and can be ellegible for
+;; elimination. This task peridically analizes touched objects and
+;; mark them as freeze (means that has other references and the object
+;; is still valid) or deleted (no more references to this object so is
+;; ready to be deleted).
+
+(declare sql:retrieve-touched-objects)
+
+(defmethod ig/pre-init-spec ::gc-touched-task [_]
+  (s/keys :req-un [::db/pool]))
+
+(defmethod ig/init-key ::gc-touched-task
+  [_ {:keys [pool] :as cfg}]
+  (letfn [(retrieve-touched-objects [conn]
+            (seq (db/exec! conn [sql:retrieve-touched-objects])))
+
+          (group-resuls [rows]
+            (let [conj (fnil conj [])]
+              (reduce (fn [acc {:keys [id nrefs]}]
+                        (if (pos? nrefs)
+                          (update acc :to-freeze conj id)
+                          (update acc :to-delete conj id)))
+                      {}
+                      rows)))
+
+          (mark-delete-in-bulk [conn ids]
+            (db/exec-one! conn ["update storage_object set deleted_at=now(), touched_at=null where id = ANY(?)"
+                                (db/create-array conn "uuid" (into-array java.util.UUID ids))]))
+
+          (mark-freeze-in-bulk [conn ids]
+            (db/exec-one! conn ["update storage_object set touched_at=null where id = ANY(?)"
+                                (db/create-array conn "uuid" (into-array java.util.UUID ids))]))]
+
+    (fn [task]
+      (db/with-atomic [conn pool]
+        (loop []
+          (when-let [touched (retrieve-touched-objects conn)]
+            (let [{:keys [to-delete to-freeze]} (group-resuls touched)]
+              (when (seq to-delete)
+                (mark-delete-in-bulk conn to-delete))
+              (when (seq to-freeze)
+                (mark-freeze-in-bulk conn to-freeze))
+              (Thread/sleep 100)
+              (recur))))
+        nil))))
+
+(def sql:retrieve-touched-objects
+  "select so.id,
+          ((select count(*) from file_media_object where media_id = so.id) +
+           (select count(*) from file_media_object where thumbnail_id = so.id)) as nrefs
+     from storage_object as so
+    where so.touched_at is not null
+    order by so.touched_at
+    limit 500;")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Recheck Stalled Task
@@ -351,7 +416,7 @@
 (def sql:retrieve-pending
   "with items_part as (
      select s.id
-      from storage_pending as s
+       from storage_pending as s
       where s.created_at < now() - '1 hour'::interval
       order by s.created_at
       limit 100

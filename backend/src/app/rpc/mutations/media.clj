@@ -158,27 +158,15 @@
           (clone-file-media-object params)))))
 
 (defn clone-file-media-object
-  [{:keys [conn storage] :as cfg} {:keys [id file-id is-local]}]
-  (let [mobj    (db/get-by-id conn :file-media-object id)
-
-        ;; This makes the storage participate in the same transaction.
-        storage (assoc storage :conn conn)
-
-        img-obj (sto/get-object storage (:media-id mobj))
-        thm-obj (when (:thumbnail-id mobj)
-                  (sto/get-object storage (:thumbnail-id mobj)))
-
-        image   (sto/clone-object storage img-obj)
-        thumb   (when thm-obj
-                  (sto/clone-object storage thm-obj))]
-
+  [{:keys [conn] :as cfg} {:keys [id file-id is-local]}]
+  (let [mobj (db/get-by-id conn :file-media-object id)]
     (db/insert! conn :file-media-object
                 {:id (uuid/next)
                  :file-id file-id
                  :is-local is-local
                  :name (:name mobj)
-                 :media-id (:id image)
-                 :thumbnail-id (:id thumb)
+                 :media-id (:media-id mobj)
+                 :thumbnail-id (:thumbnail-id mobj)
                  :width  (:width mobj)
                  :height (:height mobj)
                  :mtype  (:mtype mobj)})))

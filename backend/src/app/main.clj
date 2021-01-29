@@ -55,10 +55,13 @@
     :app.tokens/tokens
     {:sprops (ig/ref :app.sprops/props)}
 
-    :app.storage/gc-task
+    :app.storage/gc-deleted-task
     {:pool     (ig/ref :app.db/pool)
      :storage  (ig/ref :app.storage/storage)
      :min-age  (dt/duration {:hours 2})}
+
+    :app.storage/gc-touched-task
+    {:pool     (ig/ref :app.db/pool)}
 
     :app.storage/recheck-task
     {:pool     (ig/ref :app.db/pool)
@@ -192,9 +195,13 @@
        :cron #app/cron "0 0 */6 * * ?"  ;; every 2 hours
        :fn (ig/ref :app.tasks.file-xlog-gc/handler)}
 
-      {:id "storage-gc"
+      {:id "storage-deleted-gc"
        :cron #app/cron "0 0 */6 * * ?"  ;; every 6 hours
-       :fn (ig/ref :app.storage/gc-task)}
+       :fn (ig/ref :app.storage/gc-deleted-task)}
+
+      {:id "storage-touched-gc"
+       :cron #app/cron "0 30 */6 * * ?"  ;; every 6 hours
+       :fn (ig/ref :app.storage/gc-touched-task)}
 
       {:id "storage-recheck"
        :cron #app/cron "0 0 */6 * * ?"  ;; every 6 hours
