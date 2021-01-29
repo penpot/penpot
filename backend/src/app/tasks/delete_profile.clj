@@ -5,19 +5,23 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.tasks.delete-profile
   "Task for permanent deletion of profiles."
   (:require
    [app.common.spec :as us]
    [app.db :as db]
+   [app.db.sql :as sql]
    [app.metrics :as mtx]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
    [integrant.core :as ig]))
 
+(declare delete-profile-data)
 (declare handler)
+
+;; --- INIT
 
 (defmethod ig/pre-init-spec ::handler [_]
   (s/keys :req-un [::db/pool ::mtx/metrics]))
@@ -31,74 +35,52 @@
           :help "delete profile task timing"}
          (mtx/instrument handler))))
 
-(declare delete-profile-data)
-(declare delete-teams)
-(declare delete-files)
-(declare delete-profile)
+;; This task is responsible to permanently delete a profile with all
+;; the dependent data. As step (1) we delete all owned teams of the
+;; profile (that will cause to delete all underlying projects, files,
+;; file_media and mark to be deleted storage_object's used by team,
+;; profile and files previously deleted. Then, finally as step (2) we
+;; proceed to delete the profile row.
+;;
+;; The storage_objects marked as deleted will be deleted by the
+;; corresponding garbage collector task.
 
 (s/def ::profile-id ::us/uuid)
-(s/def ::props
-  (s/keys :req-un [::profile-id]))
+(s/def ::props (s/keys :req-un [::profile-id]))
 
 (defn handler
   [{:keys [pool]} {:keys [props] :as task}]
   (us/verify ::props props)
   (db/with-atomic [conn pool]
     (let [id      (:profile-id props)
-          profile (db/get-by-id conn :profile id {:for-update true})]
+          profile (db/exec-one! conn (sql/select :profile {:id id} {:for-update true}))]
       (if (or (:is-demo profile)
-              (not (nil? (:deleted-at profile))))
-        (delete-profile-data conn (:id profile))
-        (log/warn "Profile " (:id profile)
-                  "does not match constraints for deletion")))))
+              (:deleted-at profile))
+        (delete-profile-data conn id)
+        (log/warnf "Profile %s does not match constraints for deletion" id)))))
 
-(defn- delete-profile-data
-  [conn profile-id]
-  (log/info "Proceding to delete all data related to profile" profile-id)
-  (delete-teams conn profile-id)
-  (delete-files conn profile-id)
-  (delete-profile conn profile-id))
+;; --- IMPL
 
 (def ^:private sql:remove-owned-teams
-  "with teams as (
-     select distinct
-            tpr.team_id as id
-       from team_profile_rel as tpr
-      where tpr.profile_id = ?
-        and tpr.is_owner is true
-   ), to_delete_teams as (
-     select tpr.team_id as id
-       from team_profile_rel as tpr
-      where tpr.team_id in (select id from teams)
-      group by tpr.team_id
-     having count(tpr.profile_id) = 1
-   )
-   delete from team
-    where id in (select id from to_delete_teams)
-   returning id")
+  "delete from team
+    where id in (
+      select tpr.team_id
+        from team_profile_rel as tpr
+       where tpr.is_owner is true
+         and tpr.profile_id = ?
+    )")
 
 (defn- delete-teams
   [conn profile-id]
   (db/exec-one! conn [sql:remove-owned-teams profile-id]))
 
-(def ^:private sql:remove-owned-files
-  "with files_to_delete as (
-     select distinct
-            fpr.file_id as id
-       from file_profile_rel as fpr
-      inner join file as f on (fpr.file_id = f.id)
-      where fpr.profile_id = ?
-        and fpr.is_owner is true
-        and f.project_id is null
-   )
-   delete from file
-    where id in (select id from files_to_delete)
-   returning id")
-
-(defn- delete-files
-  [conn profile-id]
-  (db/exec-one! conn [sql:remove-owned-files profile-id]))
-
 (defn delete-profile
   [conn profile-id]
   (db/delete! conn :profile {:id profile-id}))
+
+(defn- delete-profile-data
+  [conn profile-id]
+  (log/infof "Proceding to delete all data related to profile id = %s" profile-id)
+  (delete-teams conn profile-id)
+  (delete-profile conn profile-id))
+
