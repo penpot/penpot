@@ -13,28 +13,27 @@
    [app.common.data :as d]
    [cuerdas.core :as str]))
 
+(def version-re #"^(([A-Za-z]+)\-?)?(\d+\.\d+\.\d+)(\-?((alpha|prealpha|beta|rc)(\d+)?))?(\-?(\d+))?(\-?(\w+))$")
+
 (defn parse
-  [version]
+  [data]
   (cond
-    (= version "%version%")
+    (= data "%version%")
     {:full "develop"
      :base "develop"
-     :build 0
-     :commit nil}
+     :branch "develop"
+     :modifier nil
+     :commit nil
+     :commit-hash nil}
 
-    (string? version)
-    (if (re-seq #"^[A-Za-z]+\-" version)
-      (let [[branch base build commit] (str/split version #"-" 4)]
-        {:full version
-         :base base
-         :build (d/parse-integer build)
-         :branch branch
-         :commit commit})
-      (let [[base build commit] (str/split version #"-" 3)]
-        {:full version
-         :base base
-         :build (d/parse-integer build)
-         :branch nil
-         :commit commit}))
+    (string? data)
+    (let [result (re-find version-re data)]
+      {:full data
+       :base (get result 3)
+       :branch (get result 2)
+       :modifier (get result 5)
+       :commit   (get result 9)
+       :commit-hash (get result 11)})
 
     :else nil))
+

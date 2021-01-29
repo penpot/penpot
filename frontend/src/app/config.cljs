@@ -13,7 +13,7 @@
    [app.common.data :as d]
    [app.common.spec :as us]
    [app.common.version :as v]
-   [app.util.globals :as globals]
+   [app.util.globals :refer [global location]]
    [app.util.object :as obj]
    [app.util.dom :as dom]
    [app.util.avatars :as avatars]
@@ -40,10 +40,10 @@
 
 (defn- parse-platform
   []
-  (let [user-agent (-> (dom/get-user-agent) str/lower)
+  (let [user-agent     (str/lower (dom/get-user-agent))
         check-windows? (fn [] (str/includes? user-agent "windows"))
-        check-linux? (fn [] (str/includes? user-agent "linux"))
-        check-macos? (fn [] (str/includes? user-agent "mac os"))]
+        check-linux?   (fn [] (str/includes? user-agent "linux"))
+        check-macos?   (fn [] (str/includes? user-agent "mac os"))]
     (cond
       (check-windows?) :windows
       (check-linux?)   :linux
@@ -58,29 +58,30 @@
 
 (defn- parse-version
   [global]
-  (-> (obj/get global "appVersion")
+  (-> (obj/get global "penpotVersion")
       (v/parse)))
 
 ;; --- Globar Config Vars
 
 (def default-theme  "default")
+(def default-language "en")
 
-(this-as global
-  (def default-language "en")
-  (def demo-warning     (obj/get global "appDemoWarning" false))
-  (def google-client-id (obj/get global "appGoogleClientID" nil))
-  (def gitlab-client-id (obj/get global "appGitlabClientID" nil))
-  (def github-client-id (obj/get global "appGithubClientID" nil))
-  (def login-with-ldap  (obj/get global "appLoginWithLDAP" false))
-  (def worker-uri       (obj/get global "appWorkerURI" "/js/worker.js"))
-  (def public-uri       (or (obj/get global "appPublicURI")
-                            (.-origin ^js globals/location)))
-  (def media-uri        (str public-uri "/assets"))
-  (def version          (delay (parse-version global)))
-  (def target           (delay (parse-target global)))
-  (def browser          (delay (parse-browser)))
-  (def platform         (delay (parse-platform))))
+(def demo-warning     (obj/get global "penpotDemoWarning" false))
+(def allow-demo-users (obj/get global "penpotAllowDemoUsers" true))
+(def google-client-id (obj/get global "penpotGoogleClientID" nil))
+(def gitlab-client-id (obj/get global "penpotGitlabClientID" nil))
+(def github-client-id (obj/get global "penpotGithubClientID" nil))
+(def login-with-ldap  (obj/get global "penpotLoginWithLDAP" false))
+(def worker-uri       (obj/get global "penpotWorkerURI" "/js/worker.js"))
+(def translations     (obj/get global "penpotTranslations"))
+(def themes           (obj/get global "penpotThemes"))
 
+(def public-uri       (or (obj/get global "penpotPublicURI") (.-origin ^js location)))
+
+(def version          (delay (parse-version global)))
+(def target           (delay (parse-target global)))
+(def browser          (delay (parse-browser)))
+(def platform         (delay (parse-platform)))
 
 (when (= :browser @target)
   (js/console.log

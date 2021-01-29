@@ -9,6 +9,7 @@
 
 (ns app.main
   (:require
+   [app.config :as cfg]
    [app.common.uuid :as uuid]
    [app.common.spec :as us]
    [app.main.repo :as rp]
@@ -86,12 +87,10 @@
 
 (defn ^:export init
   []
-  (let [translations (obj/get js/window "appTranslations")
-        themes       (obj/get js/window "appThemes")]
-    (i18n/init! translations)
-    (theme/init! themes)
-    (st/init)
-    (init-ui)))
+  (i18n/init! cfg/translations)
+  (theme/init! cfg/themes)
+  (st/init)
+  (init-ui))
 
 (defn reinit
   []

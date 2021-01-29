@@ -21,6 +21,8 @@
 goog.provide("app.util.globals");
 
 goog.scope(function() {
+  app.util.globals.global = goog.global;
+
   app.util.globals.window = (function() {
     if (typeof goog.global.window !== "undefined") {
       return goog.global.window;
