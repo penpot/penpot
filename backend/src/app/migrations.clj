@@ -137,6 +137,9 @@
 
    {:name "0041-mod-pg-storage-options"
     :fn (mg/resource "app/migrations/sql/0041-mod-pg-storage-options.sql")}
+
+   {:name "0042-add-server-prop-table"
+    :fn (mg/resource "app/migrations/sql/0042-add-server-prop-table.sql")}
    ])
 
 

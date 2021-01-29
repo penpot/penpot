@@ -9,13 +9,13 @@
 
 (ns app.telemetry
   (:require
-   [clojure.tools.logging :as log]
    [app.common.spec :as us]
    [app.db :as db]
    [app.http.middleware :refer [wrap-parse-request-body wrap-errors]]
-   [promesa.exec :as px]
    [clojure.spec.alpha :as s]
+   [clojure.tools.logging :as log]
    [integrant.core :as ig]
+   [promesa.exec :as px]
    [ring.middleware.keyword-params :refer [wrap-keyword-params]]
    [ring.middleware.params :refer [wrap-params]]))
 
@@ -52,10 +52,12 @@
     :fn #(db/exec! % [sql:create-instance-table])}
 
    {:name "0003-add-info-table"
-    :fn #(db/exec! % [sql:create-info-table])}])
+    :fn #(db/exec! % [sql:create-info-table])}
+
+   {:name "0004-del-instance-table"
+    :fn #(db/exec! % ["DROP TABLE telemetry.instance;"])}])
 
 (defmethod ig/init-key ::migrations [_ _] migrations)
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Router Handler
