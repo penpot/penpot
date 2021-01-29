@@ -33,9 +33,6 @@ services:
       - penpot-redis
 
     environment:
-      # Used for creating tokens, important to be true random value
-      - PENPOT_SECRET_KEY=provide-here-a-secret-random-key
-
       # Should be set to the public domain when penpot is going to be
       # served.
       - PENPOT_PUBLIC_URI=http://localhost:9001
@@ -77,9 +74,6 @@ services:
       # - PENPOT_SMTP_PASSWORD=...
       # - PENPOT_SMTP_TLS=true
       # - PENPOT_SMTP_SSL=false
-
-      - PENPOT_ASSERTS_ENABLED=false
-      - PENPOT_DEBUG=false
 
     networks:
       - penpot

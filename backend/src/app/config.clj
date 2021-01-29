@@ -19,12 +19,12 @@
 
 (def defaults
   {:http-server-port 6060
-   :http-server-cors "http://localhost:3449"
 
    :database-uri "postgresql://127.0.0.1/penpot"
    :database-username "penpot"
    :database-password "penpot"
-   :asserts-enabled true
+
+   :asserts-enabled false
 
    :public-uri "http://localhost:3449"
    :redis-uri "redis://localhost/0"
@@ -52,9 +52,8 @@
    :registration-domain-whitelist ""
 
    :telemetry-enabled false
+   :telemetry-with-taiga true
    :telemetry-uri "https://telemetry.penpot.app/"
-
-   :debug true
 
    ;; LDAP auth disabled by default. Set ldap-auth-host to enable
    ;:ldap-auth-host "ldap.mysupercompany.com"
@@ -76,8 +75,6 @@
    })
 
 (s/def ::http-server-port ::us/integer)
-(s/def ::http-server-debug ::us/boolean)
-(s/def ::http-server-cors ::us/string)
 (s/def ::database-username (s/nilable ::us/string))
 (s/def ::database-password (s/nilable ::us/string))
 (s/def ::database-uri ::us/string)
@@ -106,7 +103,6 @@
 (s/def ::allow-demo-users ::us/boolean)
 (s/def ::registration-enabled ::us/boolean)
 (s/def ::registration-domain-whitelist ::us/string)
-(s/def ::debug ::us/boolean)
 (s/def ::public-uri ::us/string)
 
 (s/def ::srepl-host ::us/string)
@@ -153,7 +149,6 @@
                    ::database-password
                    ::database-uri
                    ::database-username
-                   ::debug
                    ::error-report-webhook
                    ::github-client-id
                    ::github-client-secret
@@ -162,9 +157,7 @@
                    ::gitlab-client-secret
                    ::google-client-id
                    ::google-client-secret
-                   ::http-server-debug
                    ::http-server-port
-                   ::http-server-cors
                    ::ldap-auth-avatar-attribute
                    ::ldap-auth-base-dn
                    ::ldap-auth-email-attribute

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+export PENPOT_ASSERTS_ENABLED=true
+
 set -ex
 
 if [ ! -e ~/.fixtures-loaded ]; then
