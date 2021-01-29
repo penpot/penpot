@@ -24,7 +24,6 @@
    :database-uri "postgresql://127.0.0.1/penpot"
    :database-username "penpot"
    :database-password "penpot"
-   :secret-key "default"
    :asserts-enabled true
 
    :public-uri "http://localhost:3449"
@@ -92,7 +91,6 @@
 
 (s/def ::media-uri ::us/string)
 (s/def ::media-directory ::us/string)
-(s/def ::secret-key ::us/string)
 (s/def ::asserts-enabled ::us/boolean)
 
 (s/def ::error-report-webhook ::us/string)
@@ -141,6 +139,7 @@
 (s/def ::ldap-auth-avatar-attribute ::us/string)
 
 (s/def ::telemetry-enabled ::us/boolean)
+(s/def ::telemetry-with-taiga ::us/boolean)
 (s/def ::telemetry-uri ::us/string)
 (s/def ::telemetry-server-enabled ::us/boolean)
 (s/def ::telemetry-server-port ::us/integer)
@@ -182,7 +181,6 @@
                    ::redis-uri
                    ::registration-domain-whitelist
                    ::registration-enabled
-                   ::secret-key
                    ::rlimits-password
                    ::rlimits-image
                    ::smtp-default-from
@@ -202,6 +200,7 @@
                    ::storage-s3-bucket
                    ::storage-s3-region
                    ::telemetry-enabled
+                   ::telemetry-with-taiga
                    ::telemetry-server-enabled
                    ::telemetry-server-port
                    ::telemetry-uri

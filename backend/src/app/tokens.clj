@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.tokens
   "Tokens generation service."
@@ -23,8 +23,6 @@
 
 (defn- derive-tokens-secret
   [key]
-  (when (= key "default")
-    (log/warn "Using default PENPOT_SECRET_KEY, the system will generate insecure tokens."))
   (let [engine (bk/engine {:key key
                            :salt "tokens"
                            :alg :hkdf
@@ -57,14 +55,16 @@
                 :params params))
     claims))
 
-(s/def ::secret-key ::us/not-empty-string)
-
-(defmethod ig/pre-init-spec ::tokens [_]
+(s/def ::secret-key ::us/string)
+(s/def ::sprops
   (s/keys :req-un [::secret-key]))
 
+(defmethod ig/pre-init-spec ::tokens [_]
+  (s/keys :req-un [::sprops]))
+
 (defmethod ig/init-key ::tokens
-  [_ cfg]
-  (let [secret (derive-tokens-secret (:secret-key cfg))
+  [_ {:keys [sprops] :as cfg}]
+  (let [secret (derive-tokens-secret (:secret-key sprops))
         cfg    (assoc cfg ::secret secret)]
     (fn [action params]
       (case action

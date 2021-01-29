@@ -12,6 +12,7 @@
   information about the current instance and send it to the telemetry
   server."
   (:require
+   [app.config :as cfg]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
@@ -29,9 +30,13 @@
 
 (s/def ::version ::us/string)
 (s/def ::uri ::us/string)
+(s/def ::instance-id ::us/uuid)
+(s/def ::sprops
+  (s/keys :req-un [::instance-id]))
+
 
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::db/pool ::version ::uri]))
+  (s/keys :req-un [::db/pool ::version ::uri ::sprops]))
 
 (defmethod ig/init-key ::handler
   [_ {:keys [pool] :as cfg}]
@@ -51,22 +56,11 @@
   [conn]
   (db/exec-one! conn ["select pg_advisory_unlock_all();"]))
 
-(defn- get-or-create-instance-id
-  [{:keys [conn] :as cfg}]
-  (if-let [result (db/exec-one! conn ["select id from telemetry.instance"])]
-    (:id result)
-    (let [result (db/exec-one! conn ["insert into telemetry.instance (id) values (?) returning *"
-                                     (uuid/random)])]
-      (:id result))))
-
-(defonce debug {})
-
 (defn- handler
-  [cfg]
-  (let [instance-id (get-or-create-instance-id cfg)
+  [{:keys [sprops] :as cfg}]
+  (let [instance-id (:instance-id sprops)
         data        (retrieve-stats cfg)
         data        (assoc data :instance-id instance-id)]
-    (alter-var-root #'debug (constantly data))
     (let [response (http/send! {:method :post
                                 :uri (:uri cfg)
                                 :headers {"content-type" "application/json"}
@@ -76,7 +70,6 @@
                   :code :invalid-response-from-google
                   :context {:status (:status response)
                             :body (:body response)})))))
-
 
 (defn retrieve-num-teams
   [conn]
@@ -138,6 +131,7 @@
   [{:keys [conn version]}]
   (merge
    {:version version
+    :with-taiga  (:telemetry-with-taiga cfg/config)
     :total-teams (retrieve-num-teams conn)
     :total-projects (retrieve-num-projects conn)
     :total-files (retrieve-num-files conn)}

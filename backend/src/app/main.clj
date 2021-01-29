@@ -53,7 +53,7 @@
     {:uri (:redis-uri config)}
 
     :app.tokens/tokens
-    {:secret-key (:secret-key config)}
+    {:sprops (ig/ref :app.sprops/props)}
 
     :app.storage/gc-task
     {:pool     (ig/ref :app.db/pool)
@@ -96,43 +96,6 @@
      :cache-max-age     (dt/duration {:hours 24})
      :signature-max-age (dt/duration {:hours 24 :minutes 5})}
 
-    :app.svgparse/svgc
-    {:metrics (ig/ref :app.metrics/metrics)}
-
-    ;; HTTP Handler for SVG parsing
-    :app.svgparse/handler
-    {:metrics (ig/ref :app.metrics/metrics)
-     :svgc    (ig/ref :app.svgparse/svgc)}
-
-    ;; RLimit definition for password hashing
-    :app.rlimits/password
-    (:rlimits-password cfg/config)
-
-    ;; RLimit definition for image processing
-    :app.rlimits/image
-    (:rlimits-image cfg/config)
-
-    ;; A collection of rlimits as hash-map.
-    :app.rlimits/all
-    {:password (ig/ref :app.rlimits/password)
-     :image    (ig/ref :app.rlimits/image)}
-
-    :app.rpc/rpc
-    {:pool    (ig/ref :app.db/pool)
-     :session (ig/ref :app.http.session/session)
-     :tokens  (ig/ref :app.tokens/tokens)
-     :metrics (ig/ref :app.metrics/metrics)
-     :storage (ig/ref :app.storage/storage)
-     :redis   (ig/ref :app.redis/redis)
-     :rlimits (ig/ref :app.rlimits/all)
-     :svgc    (ig/ref :app.svgparse/svgc)}
-
-    :app.notifications/handler
-    {:redis   (ig/ref :app.redis/redis)
-     :pool    (ig/ref :app.db/pool)
-     :session (ig/ref :app.http.session/session)
-     :metrics (ig/ref :app.metrics/metrics)}
-
     :app.http.auth/google
     {:rpc           (ig/ref :app.rpc/rpc)
      :session       (ig/ref :app.http.session/session)
@@ -172,6 +135,43 @@
      :session            (ig/ref :app.http.session/session)
      :rpc                (ig/ref :app.rpc/rpc)}
 
+    :app.svgparse/svgc
+    {:metrics (ig/ref :app.metrics/metrics)}
+
+    ;; HTTP Handler for SVG parsing
+    :app.svgparse/handler
+    {:metrics (ig/ref :app.metrics/metrics)
+     :svgc    (ig/ref :app.svgparse/svgc)}
+
+    ;; RLimit definition for password hashing
+    :app.rlimits/password
+    (:rlimits-password cfg/config)
+
+    ;; RLimit definition for image processing
+    :app.rlimits/image
+    (:rlimits-image cfg/config)
+
+    ;; A collection of rlimits as hash-map.
+    :app.rlimits/all
+    {:password (ig/ref :app.rlimits/password)
+     :image    (ig/ref :app.rlimits/image)}
+
+    :app.rpc/rpc
+    {:pool    (ig/ref :app.db/pool)
+     :session (ig/ref :app.http.session/session)
+     :tokens  (ig/ref :app.tokens/tokens)
+     :metrics (ig/ref :app.metrics/metrics)
+     :storage (ig/ref :app.storage/storage)
+     :redis   (ig/ref :app.redis/redis)
+     :rlimits (ig/ref :app.rlimits/all)
+     :svgc    (ig/ref :app.svgparse/svgc)}
+
+    :app.notifications/handler
+    {:redis   (ig/ref :app.redis/redis)
+     :pool    (ig/ref :app.db/pool)
+     :session (ig/ref :app.http.session/session)
+     :metrics (ig/ref :app.metrics/metrics)}
+
     :app.worker/executor
     {:name "worker"}
 
@@ -205,8 +205,8 @@
        :fn (ig/ref :app.tasks.tasks-gc/handler)}
 
       (when (:telemetry-enabled cfg/config)
-        {:id "telemetry"
-         :cron #app/cron "0 0 */3 * * ?" ;; every 3h
+        {:id   "telemetry"
+         :cron #app/cron "0 0 */6 * * ?" ;; every 6h
          :uri  (:telemetry-uri cfg/config)
          :fn   (ig/ref :app.tasks.telemetry/handler)})]}
 
@@ -259,11 +259,15 @@
     :app.tasks.telemetry/handler
     {:pool        (ig/ref :app.db/pool)
      :version     (:full cfg/version)
-     :uri         (:telemetry-uri cfg/config)}
+     :uri         (:telemetry-uri cfg/config)
+     :sprops      (ig/ref :app.sprops/props)}
 
     :app.srepl/server
     {:port (:srepl-port cfg/config)
      :host (:srepl-host cfg/config)}
+
+    :app.sprops/props
+    {:pool (ig/ref :app.db/pool)}
 
     :app.error-reporter/reporter
     {:uri      (:error-report-webhook cfg/config)
