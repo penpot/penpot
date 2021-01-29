@@ -70,8 +70,8 @@
    :ldap-auth-fullname-attribute "displayName"
    :ldap-auth-avatar-attribute "jpegPhoto"
 
-   ;; :initial-data-project-name "Penpot Onboarding"
-   ;; :initial-data-file "/internal/initial-data.json"
+   ;; :initial-data-file "resources/initial-data.json"
+   ;; :initial-data-project-name "Penpot Oboarding"
    })
 
 (s/def ::http-server-port ::us/integer)
@@ -140,7 +140,7 @@
 (s/def ::telemetry-server-enabled ::us/boolean)
 (s/def ::telemetry-server-port ::us/integer)
 
-(s/def ::initial-data-project-id ::us/uuid)
+(s/def ::initial-data-file ::us/string)
 (s/def ::initial-data-project-name ::us/string)
 
 (s/def ::config
@@ -197,7 +197,7 @@
                    ::telemetry-server-enabled
                    ::telemetry-server-port
                    ::telemetry-uri
-                   ::initial-data-project-id
+                   ::initial-data-file
                    ::initial-data-project-name]))
 
 (defn- env->config

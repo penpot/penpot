@@ -55,7 +55,7 @@
           :opt-un [::token]))
 
 (sv/defmethod ::register-profile {:auth false :rlimit :password}
-  [{:keys [pool tokens session storage] :as cfg} {:keys [token] :as params}]
+  [{:keys [pool tokens session] :as cfg} {:keys [token] :as params}]
   (when-not (:registration-enabled cfg/config)
     (ex/raise :type :restriction
               :code :registration-disabled))
@@ -69,7 +69,7 @@
     (check-profile-existence! conn params)
     (let [profile (->> (create-profile conn params)
                        (create-profile-relations conn))]
-      (create-profile-initial-data conn storage profile)
+      (create-profile-initial-data conn profile)
 
       (if token
         ;; If token comes in params, this is because the user comes
@@ -160,18 +160,21 @@
 (defn- create-profile
   "Create the profile entry on the database with limited input
   filling all the other fields with defaults."
-  [conn {:keys [id fullname email password demo?] :as params}]
+  [conn {:keys [id fullname email password demo? props] :as params}]
   (let [id       (or id (uuid/next))
         demo?    (if (boolean? demo?) demo? false)
         active?  (if demo? true false)
+        props    (db/tjson (or props {}))
         password (derive-password password)]
-    (db/insert! conn :profile
-                {:id id
-                 :fullname fullname
-                 :email (str/lower email)
-                 :password password
-                 :is-active active?
-                 :is-demo demo?})))
+    (-> (db/insert! conn :profile
+                    {:id id
+                     :fullname fullname
+                     :email (str/lower email)
+                     :password password
+                     :props props
+                     :is-active active?
+                     :is-demo demo?})
+        (update :props db/decode-transit-pgobject))))
 
 (defn- create-profile-relations
   [conn profile]
