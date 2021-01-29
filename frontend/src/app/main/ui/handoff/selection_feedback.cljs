@@ -40,7 +40,7 @@
           (let [selected (get-in state [:viewer-local :selected])
                 objects (get-in state [:viewer-data :page :objects])
                 resolve-shape #(get objects %)]
-            (mapv resolve-shape selected)))]
+            (->> selected (map resolve-shape) (filterv (comp not nil?)))))]
     #(l/derived selected->shapes st/state)))
 
 (defn make-hover-shapes-iref

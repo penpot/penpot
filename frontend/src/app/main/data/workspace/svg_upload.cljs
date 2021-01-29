@@ -18,7 +18,7 @@
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [potok.core :as ptk]
-
+   [app.util.svg :as usvg]
    [app.util.geom.path :as ugp]))
 
 (defn- svg-dimensions [data]
@@ -29,37 +29,6 @@
         width (d/parse-integer width-str)
         height (d/parse-integer height-str)]
     [width height]))
-
-
-(defn clean-attrs
-  "Transforms attributes to their react equivalent"
-  [attrs]
-  (letfn [(transform-key [key]
-            (-> (name key)
-                (str/replace ":" "-")
-                (str/camel)
-                (keyword)))
-
-          (format-styles [style-str]
-            (->> (str/split style-str ";")
-                 (map str/trim)
-                 (map #(str/split % ":"))
-                 (group-by first)
-                 (map (fn [[key val]]
-                        (vector
-                         (transform-key key)
-                         (second (first val)))))
-                 (into {})))
-
-          (map-fn [[key val]]
-            (cond
-              (= key :class) [:className val]
-              (= key :style) [key (format-styles val)]
-              :else (vector (transform-key key) val)))]
-
-    (->> attrs
-         (map map-fn)
-         (into {}))))
 
 (defn tag-name [{:keys [tag]}]
   (cond (string? tag) tag
@@ -103,7 +72,7 @@
        :height height
        :x x
        :y y
-       :content (if (map? data) (update data :attrs clean-attrs) data)}
+       :content (if (map? data) (update data :attrs usvg/clean-attrs) data)}
       (gsh/setup-selrect)))
 
 (defn parse-path [name frame-id {:keys [attrs] :as data}]

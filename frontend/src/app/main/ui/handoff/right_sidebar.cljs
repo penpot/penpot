@@ -29,14 +29,14 @@
             (mapv resolve-shape selected)))]
     #(l/derived selected->shapes st/state)))
 
-
 (mf/defc right-sidebar
   [{:keys [frame page-id file-id]}]
   (let [expanded (mf/use-state false)
         locale (mf/deref i18n/locale)
         section (mf/use-state :info #_:code)
         selected-ref (mf/use-memo (make-selected-shapes-iref))
-        shapes (mf/deref selected-ref)]
+        shapes (mf/deref selected-ref)
+        selected-type (-> shapes first (:type :not-found))]
     [:aside.settings-bar.settings-bar-right {:class (when @expanded "expanded")}
      [:div.settings-bar-inside
       (when (seq shapes)
@@ -49,7 +49,7 @@
             [:*
              [:span.tool-window-bar-icon
               [:& element-icon {:shape (-> shapes first)}]]
-             [:span.tool-window-bar-title (->> shapes first :type name (str "handoff.tabs.code.selected.") (t locale))]])
+             [:span.tool-window-bar-title (->> selected-type name (str "handoff.tabs.code.selected.") (t locale))]])
           ]
          [:div.tool-window-content
           [:& tab-container {:on-change-tab #(do
