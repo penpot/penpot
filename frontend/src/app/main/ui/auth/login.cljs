@@ -152,9 +152,10 @@
         {:src "/images/icons/brand-github.svg"}]
        (tr "auth.login-with-github-submit")])
 
-    [:div.links.demo
-     [:div.link-entry
-      [:span (tr "auth.create-demo-profile") " "]
-      [:a {:on-click (st/emitf da/create-demo-profile)
-           :tab-index "6"}
-       (tr "auth.create-demo-account")]]]]])
+    (when cfg/allow-demo-users
+      [:div.links.demo
+       [:div.link-entry
+        [:span (tr "auth.create-demo-profile") " "]
+        [:a {:on-click (st/emitf da/create-demo-profile)
+             :tab-index "6"}
+         (tr "auth.create-demo-account")]]])]])

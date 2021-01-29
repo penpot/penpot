@@ -116,6 +116,7 @@
   [:div.form-container
    [:h1 (t locale "auth.register-title")]
    [:div.subtitle (t locale "auth.register-subtitle")]
+
    (when cfg/demo-warning
      [:& demo-warning])
 
@@ -129,8 +130,9 @@
           :tab-index "4"}
       (t locale "auth.login-here")]]
 
-    [:div.link-entry
-     [:span (t locale "auth.create-demo-profile") " "]
-     [:a {:on-click #(st/emit! da/create-demo-profile)
-          :tab-index "5"}
-      (t locale "auth.create-demo-account")]]]])
+    (when cfg/allow-demo-users
+      [:div.link-entry
+       [:span (t locale "auth.create-demo-profile") " "]
+       [:a {:on-click #(st/emit! da/create-demo-profile)
+            :tab-index "5"}
+        (t locale "auth.create-demo-account")]])]])
