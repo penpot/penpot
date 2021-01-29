@@ -11,6 +11,7 @@
   "A demo specific mutations."
   (:require
    [app.common.uuid :as uuid]
+   [app.common.exceptions :as ex]
    [app.config :as cfg]
    [app.db :as db]
    [app.rpc.mutations.profile :as profile]
@@ -36,6 +37,12 @@
                   :fullname fullname
                   :demo? true
                   :password password}]
+
+    (when-not (:allow-demo-users cfg/config)
+      (ex/raise :type :validation
+                :code :demo-users-not-allowed
+                :hint "Demo users are disabled by config."))
+
     (db/with-atomic [conn pool]
       (->> (#'profile/create-profile conn params)
            (#'profile/create-profile-relations conn))
