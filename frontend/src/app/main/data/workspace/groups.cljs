@@ -25,7 +25,7 @@
                             (= (count shapes) 1)
                             (= (:type (first shapes)) :group))
                      (:name (first shapes))
-                     (name (gensym prefix)))]
+                     (name (gensym prefix)))] ; TODO: we should something like in new shapes
     (-> (cp/make-minimal-group frame-id selrect group-name)
         (gsh/setup selrect)
         (assoc :shapes (mapv :id shapes)))))

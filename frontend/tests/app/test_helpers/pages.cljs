@@ -1,4 +1,4 @@
-(ns app.test-helpers
+(ns app.test-helpers.pages
   (:require [cljs.test :as t :include-macros true]
             [cljs.pprint :refer [pprint]]
             [beicon.core :as rx]
@@ -8,36 +8,9 @@
             [app.common.geom.shapes :as gsh]
             [app.common.pages :as cp]
             [app.common.pages.helpers :as cph]
-            [app.main.data.workspace :as dw]))
-
-
-;; ---- Helpers to manage global events
-
-(defn do-update
-  "Execute an update event and returns the new state."
-  [event state]
-  (ptk/update event state))
-
-(defn do-watch
-  "Execute a watch event and return an observable, that
-   emits once a list with all new events."
-  [event state]
-  (->> (ptk/watch event state nil)
-       (rx/reduce conj [])))
-
-(defn do-watch-update
-  "Execute a watch event and return an observable, that
-  emits once the new state, after all new events applied
-  in sequence (considering they are all update events)."
-  [event state]
-  (->> (do-watch event state)
-       (rx/map (fn [new-events]
-                 (reduce
-                   (fn [new-state new-event]
-                     (do-update new-event new-state))
-                   state
-                   new-events)))))
-
+            [app.main.data.workspace :as dw]
+            [app.main.data.workspace.groups :as dwg]
+            [app.main.data.workspace.libraries-helpers :as dwlh]))
 
 ;; ---- Helpers to manage pages and objects
 
@@ -53,16 +26,32 @@
                     :pages-index {}}
    :workspace-libraries {}})
 
+(def ^:private idmap (atom {}))
+
+(defn reset-idmap! []
+  (reset! idmap {}))
+
 (defn current-page
   [state]
   (let [page-id (:current-page-id state)]
     (get-in state [:workspace-data :pages-index page-id])))
+
+(defn id
+  [label]
+  (get @idmap label))
+
+(defn get-shape
+  [state label]
+  (let [page (current-page state)]
+    (get-in page [:objects (id label)])))
 
 (defn sample-page
   ([state] (sample-page state {}))
   ([state {:keys [id name] :as props
            :or {id (uuid/next)
                 name "page1"}}]
+
+   (swap! idmap assoc :page id)
    (-> state
        (assoc :current-page-id id)
        (update :workspace-data
@@ -72,13 +61,14 @@
                  :name name}]))))
 
 (defn sample-shape
-  ([state type] (sample-shape state type {}))
-  ([state type props]
+  ([state label type] (sample-shape state type {}))
+  ([state label type props]
    (let [page  (current-page state)
          frame (cph/get-top-frame (:objects page))
          shape (-> (cp/make-minimal-shape type)
                    (gsh/setup {:x 0 :y 0 :width 1 :height 1})
                    (merge props))]
+     (swap! idmap assoc label (:id shape))
      (update state :workspace-data
              cp/process-changes
              [{:type :add-obj
@@ -86,4 +76,31 @@
                :page-id (:id page)
                :frame-id (:id frame)
                :obj shape}]))))
+
+(defn group-shapes
+  ([state label ids] (group-shapes state label ids "Group-"))
+  ([state label ids prefix]
+   (let [page  (current-page state)
+         shapes (dwg/shapes-for-grouping (:objects page) ids)
+
+         [group rchanges uchanges]
+         (dwg/prepare-create-group (:id page) shapes prefix true)]
+
+     (swap! idmap assoc label (:id group))
+     (update state :workspace-data
+             cp/process-changes rchanges))))
+
+(defn make-component
+  [state label ids]
+  (let [page (current-page state)
+
+        [group rchanges uchanges]
+        (dwlh/generate-add-component ids
+                                     (:objects page)
+                                     (:id page)
+                                     current-file-id)]
+
+    (swap! idmap assoc label (:id group))
+    (update state :workspace-data
+            cp/process-changes rchanges)))
 

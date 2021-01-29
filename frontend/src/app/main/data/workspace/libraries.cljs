@@ -17,7 +17,6 @@
    [app.common.geom.shapes :as geom]
    [app.main.data.messages :as dm]
    [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.libraries-helpers :as dwlh]
    [app.common.pages :as cp]
    [app.main.repo :as rp]
@@ -224,87 +223,22 @@
         (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true}))))))
 
 (def add-component
-  "Add a new component to current file library, from the currently selected shapes"
+  "Add a new component to current file library, from the currently selected shapes."
   (ptk/reify ::add-component
     ptk/WatchEvent
     (watch [_ state stream]
       (let [file-id  (:current-file-id state)
             page-id  (:current-page-id state)
             objects  (dwc/lookup-page-objects state page-id)
-            selected (get-in state [:workspace-local :selected])
-            shapes   (dwg/shapes-for-grouping objects selected)]
-        (when-not (empty? shapes)
-          (let [;; If the selected shape is a group, we can use it. If not,
-                ;; we need to create a group before creating the component.
-                [group rchanges uchanges]
-                (if (and (= (count shapes) 1)
-                         (= (:type (first shapes)) :group))
-                  [(first shapes) [] []]
-                  (dwg/prepare-create-group page-id shapes "Component-" true))
-
-                [new-shape new-shapes updated-shapes]
-                (dwlh/make-component-shape group objects file-id)
-
-                rchanges (conj rchanges
-                               {:type :add-component
-                                :id (:id new-shape)
-                                :name (:name new-shape)
-                                :shapes new-shapes})
-
-                rchanges (into rchanges
-                               (map (fn [updated-shape]
-                                      {:type :mod-obj
-                                       :page-id page-id
-                                       :id (:id updated-shape)
-                                       :operations [{:type :set
-                                                     :attr :component-id
-                                                     :val (:component-id updated-shape)}
-                                                    {:type :set
-                                                     :attr :component-file
-                                                     :val (:component-file updated-shape)}
-                                                    {:type :set
-                                                     :attr :component-root?
-                                                     :val (:component-root? updated-shape)}
-                                                    {:type :set
-                                                     :attr :shape-ref
-                                                     :val (:shape-ref updated-shape)}
-                                                    {:type :set
-                                                     :attr :touched
-                                                     :val (:touched updated-shape)}]})
-                                    updated-shapes))
-
-                uchanges (conj uchanges
-                               {:type :del-component
-                                :id (:id new-shape)})
-
-                uchanges (into uchanges
-                               (map (fn [updated-shape]
-                                      (let [original-shape (get objects (:id updated-shape))]
-                                        {:type :mod-obj
-                                         :page-id page-id
-                                         :id (:id updated-shape)
-                                         :operations [{:type :set
-                                                       :attr :component-id
-                                                       :val (:component-id original-shape)}
-                                                      {:type :set
-                                                       :attr :component-file
-                                                       :val (:component-file original-shape)}
-                                                      {:type :set
-                                                       :attr :component-root?
-                                                       :val (:component-root? original-shape)}
-                                                      {:type :set
-                                                       :attr :shape-ref
-                                                       :val (:shape-ref original-shape)}
-                                                      {:type :set
-                                                       :attr :touched
-                                                       :val (:touched original-shape)}]}))
-                                    updated-shapes))]
-
-
+            selected (get-in state [:workspace-local :selected])]
+        (let [[group rchanges uchanges]
+              (dwlh/generate-add-component selected objects page-id file-id)]
+          (when-not (empty? rchanges)
             (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
                    (dwc/select-shapes (d/ordered-set (:id group))))))))))
 
 (defn rename-component
+  "Rename the component with the given id, in the current file library."
   [id new-name]
   (us/assert ::us/uuid id)
   (us/assert ::us/string new-name)
