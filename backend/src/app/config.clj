@@ -70,8 +70,8 @@
    :ldap-auth-fullname-attribute "displayName"
    :ldap-auth-avatar-attribute "jpegPhoto"
 
-   ;;:initial-data-project-id "5761a890-3b81-11eb-9e7d-556a2f641513"
-   ;;:initial-data-project-name "Penpot Onboarding"
+   ;; :initial-data-project-name "Penpot Onboarding"
+   ;; :initial-data-file "/internal/initial-data.json"
    })
 
 (s/def ::http-server-port ::us/integer)

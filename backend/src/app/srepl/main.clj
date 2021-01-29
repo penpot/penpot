@@ -5,6 +5,7 @@
    [app.common.pages :as cp]
    [app.common.pages.migrations :as pmg]
    [app.db :as db]
+   [app.db.profile-initial-data :as pid]
    [app.main :refer [system]]
    [app.srepl.dev :as dev]
    [app.util.blob :as blob]
@@ -46,3 +47,12 @@
 ;; Examples
 ;; (def backup (update-file  #uuid "1586e1f0-3e02-11eb-b1d2-556a2f641513" identity))
 ;; (def x (update-file #uuid "1586e1f0-3e02-11eb-b1d2-556a2f641513" (fn [{:keys [data] :as file}] (update-in data [:pages-index #uuid "878278c0-3ef0-11eb-9d67-8551e7624f43" :objects] dissoc nil))))
+
+(defn initial-data-dump
+  ([system file]
+   (let [default-project-id #uuid "5761a890-3b81-11eb-9e7d-556a2f641513"]
+     (initial-data-dump system default-project-id file)))
+
+  ([system project-id file]
+   (db/with-atomic [conn (:app.db/pool system)]
+     (pid/create-initial-data-dump conn  file))))

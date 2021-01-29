@@ -94,21 +94,33 @@
 (declare str->bytes)
 (declare bytes->str)
 
+(defn decode-stream
+  ([input]
+   (decode-stream input nil))
+  ([input opts]
+   (read! (reader input opts))))
+
 (defn decode
   ([data]
    (decode data nil))
   ([data opts]
    (with-open [input (ByteArrayInputStream. ^bytes data)]
-     (read! (reader input opts)))))
+     (decode-stream input opts))))
+
+(defn encode-stream
+  ([data out]
+   (encode-stream data out nil))
+  ([data out opts]
+   (let [w (writer out opts)]
+     (write! w data))))
 
 (defn encode
   ([data]
    (encode data nil))
   ([data opts]
    (with-open [out (ByteArrayOutputStream.)]
-     (let [w (writer out opts)]
-       (write! w data)
-       (.toByteArray out)))))
+     (encode-stream data out opts)
+     (.toByteArray out))))
 
 (defn decode-str
   [message]
