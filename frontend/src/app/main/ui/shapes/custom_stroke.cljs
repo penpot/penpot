@@ -63,15 +63,15 @@
 
       (= stroke-position :outer)
       (let [stroke-mask-id (str "mask-" @stroke-id)
-            stroke-width (.-strokeWidth ^js base-props)
+            stroke-width (or (.-strokeWidth ^js base-props) 0)
             mask-props1 (-> (obj/merge! #js {} base-props)
                             (obj/merge! #js {:stroke "white"
-                                                  :strokeWidth (* stroke-width 2)
-                                                  :strokeOpacity 1
-                                                  :strokeDasharray nil
-                                                  :fill "white"
-                                                  :fillOpacity 1
-                                                  :transform nil}))
+                                             :strokeWidth (* stroke-width 2)
+                                             :strokeOpacity 1
+                                             :strokeDasharray nil
+                                             :fill "white"
+                                             :fillOpacity 1
+                                             :transform nil}))
             mask-props2 (-> (obj/merge! #js {} base-props)
                             (obj/merge! #js {:stroke nil
                                              :strokeWidth nil
