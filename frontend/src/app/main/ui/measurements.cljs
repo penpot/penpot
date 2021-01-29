@@ -205,21 +205,22 @@
       (let [center-x (+ x1 (/ (- x2 x1) 2))
             center-y (+ y1 (/ (- y2 y1) 2))
             distance (gpt/distance (gpt/point x1 y1) (gpt/point x2 y2))]
-        [:g.distance-line {:key (str "line-%s-%s-%s-%s" x1 y1 x2 y2)}
-         [:line
-          {:x1 x1
-           :y1 y1
-           :x2 x2
-           :y2 y2
-           :style {:stroke distance-color
-                   :stroke-width distance-line-stroke}}]
+        (when-not (mth/almost-zero? distance)
+          [:g.distance-line {:key (str "line-%s-%s-%s-%s" x1 y1 x2 y2)}
+           [:line
+            {:x1 x1
+             :y1 y1
+             :x2 x2
+             :y2 y2
+             :style {:stroke distance-color
+                     :stroke-width distance-line-stroke}}]
 
-         [:& distance-display-pill
-          {:x center-x
-           :y center-y
-           :zoom zoom
-           :distance (str (mth/round distance) "px")
-           :bounds bounds}]]))))
+           [:& distance-display-pill
+            {:x center-x
+             :y center-y
+             :zoom zoom
+             :distance (str (mth/round distance) "px")
+             :bounds bounds}]])))))
 
 (mf/defc selection-guides [{:keys [bounds selrect zoom]}]
   [:g.selection-guides
@@ -233,11 +234,12 @@
                      :stroke-dasharray (/ select-guide-dasharray zoom)}}])])
 
 (mf/defc measurement [{:keys [bounds frame selected-shapes hover-shape zoom]}]
-  (let [selected-selrect (gsh/selection-rect selected-shapes)
+  (let [selected-ids (into #{} (map :id) selected-shapes)
+        selected-selrect (gsh/selection-rect selected-shapes)
         hover-selrect    (:selrect hover-shape)
         bounds-selrect   (bound->selrect bounds)]
 
-    (when (seq selected-shapes)
+    (when (and (seq selected-shapes) (not (contains? selected-ids (:id hover-shape))))
       [:g.measurement-feedback {:pointer-events "none"}
        [:& selection-guides {:selrect selected-selrect :bounds bounds :zoom zoom}]
        [:& size-display {:selrect selected-selrect :zoom zoom}]

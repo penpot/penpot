@@ -4092,10 +4092,10 @@
   "workspace.toolbar.path" : {
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:98" ],
     "translations" : {
-      "en" : "Path",
-      "fr" : "Chemin",
-      "ru" : "Линия",
-      "es" : "Ruta"
+      "en" : "Path (P)",
+      "fr" : "Chemin (P)",
+      "ru" : "Линия (P)",
+      "es" : "Ruta (P)"
     }
   },
   "workspace.toolbar.rect" : {

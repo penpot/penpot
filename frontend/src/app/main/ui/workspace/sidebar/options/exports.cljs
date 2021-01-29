@@ -35,11 +35,15 @@
                       :exports exports}}))
 
 (defn- trigger-download
-  [name blob]
+  [filename blob]
   (let [link (dom/create-element "a")
-        uri  (dom/create-uri blob)]
+        uri  (dom/create-uri blob)
+        extension (dom/mtype->extension (.-type ^js blob))
+        filename (if extension
+                   (str filename "." extension)
+                   filename)]
     (obj/set! link "href" uri)
-    (obj/set! link "download" (str/slug name))
+    (obj/set! link "download" filename)
     (obj/set! (.-style ^js link) "display" "none")
     (.appendChild (.-body ^js js/document) link)
     (.click link)
@@ -50,6 +54,11 @@
   (let [locale   (mf/deref i18n/locale)
         exports  (:exports shape [])
         loading? (mf/use-state false)
+
+        filename (cond-> (:name shape)
+                   (and (= (count exports) 1)
+                        (not (empty (:suffix (first exports)))))
+                   (str (:suffix (first exports))))
 
         on-download
         (mf/use-callback
@@ -62,7 +71,7 @@
                  (fn [{:keys [status body] :as response}]
                    (js/console.log status body)
                    (if (= status 200)
-                     (trigger-download (:name shape) body)
+                     (trigger-download filename body)
                      (st/emit! (dm/error (tr "errors.unexpected-error")))))
                  (constantly nil)
                  (fn []

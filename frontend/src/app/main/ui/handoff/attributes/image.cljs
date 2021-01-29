@@ -13,24 +13,13 @@
    [cuerdas.core :as str]
    [app.config :as cfg]
    [app.util.i18n :refer [t]]
+   [app.util.dom :as dom]
    [app.main.ui.icons :as i]
    [app.util.code-gen :as cg]
    [app.main.ui.components.copy-button :refer [copy-button]]))
 
 (defn has-image? [shape]
   (and (= (:type shape) :image)))
-
-(defn mtype->extension [mtype]
-  ;; https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types
-  (case mtype
-    "image/apng"    "apng"
-    "image/avif"    "avif"
-    "image/gif"     "gif"
-    "image/jpeg"    "jpg"
-    "image/png"     "png"
-    "image/svg+xml" "svg"
-    "image/webp"    "webp"
-    nil))
 
 (mf/defc image-panel [{:keys [shapes locale]}]
   (let [shapes (->> shapes (filter has-image?))]
@@ -52,7 +41,7 @@
 
        (let [mtype (-> shape :metadata :mtype)
              name (:name shape)
-             extension (mtype->extension mtype)]
+             extension (dom/mtype->extension mtype)]
          [:a.download-button {:target "_blank"
                               :download (if extension
                                           (str name "." extension)

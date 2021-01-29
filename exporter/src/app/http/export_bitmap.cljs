@@ -62,8 +62,8 @@
   (p/let [content (screenshot-object browser params)]
     {:content content
      :filename (or (:filename params)
-                   (str (str/slug (:name params))
-                        (str/trim (:suffix params ""))
+                   (str (:name params)
+                        (:suffix params "")
                         (case (:type params)
                           :png ".png"
                           :jpeg ".jpg")))
