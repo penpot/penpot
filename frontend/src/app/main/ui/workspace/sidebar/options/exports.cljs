@@ -146,6 +146,7 @@
             [:option {:value "4"} "4x"]
             [:option {:value "6"} "6x"]]
            [:input.input-text {:value (:suffix export)
+                               :placeholder (tr "workspace.options.export.suffix")
                                :on-change (partial on-suffix-change index)}]
            [:select.input-select {:value (name (:type export))
                                   :on-change (partial on-type-change index)}

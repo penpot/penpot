@@ -4410,5 +4410,12 @@
       "es" : "Pulsar para cerrar la ruta"
     },
     "unused" : true
-  }
+  },
+
+    "workspace.options.export.suffix": {
+        "translations" : {
+            "en" : "Suffix",
+            "es" : "Sufijo"
+        }
+    }
 }

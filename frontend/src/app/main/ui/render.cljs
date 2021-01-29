@@ -18,6 +18,7 @@
    [app.common.geom.shapes :as geom]
    [app.common.geom.point :as gpt]
    [app.common.geom.matrix :as gmt]
+   [app.main.ui.context :as muc]
    [app.main.exports :as exports]
    [app.main.repo :as repo]))
 
@@ -65,17 +66,18 @@
          #(exports/shape-wrapper-factory objects))
         ]
 
-    [:svg {:id "screenshot"
-           :view-box vbox
-           :width width
-           :height height
-           :version "1.1"
-           :xmlnsXlink "http://www.w3.org/1999/xlink"
-           :xmlns "http://www.w3.org/2000/svg"}
-     (case (:type object)
-       :frame [:& frame-wrapper {:shape object :view-box vbox}]
-       :group [:& group-wrapper {:shape object}]
-       [:& shape-wrapper {:shape object}])]))
+    [:& (mf/provider muc/embed-ctx) {:value true}
+     [:svg {:id "screenshot"
+            :view-box vbox
+            :width width
+            :height height
+            :version "1.1"
+            :xmlnsXlink "http://www.w3.org/1999/xlink"
+            :xmlns "http://www.w3.org/2000/svg"}
+      (case (:type object)
+        :frame [:& frame-wrapper {:shape object :view-box vbox}]
+        :group [:& group-wrapper {:shape object}]
+        [:& shape-wrapper {:shape object}])]]))
 
 (defn- adapt-root-frame
   [objects object-id]
