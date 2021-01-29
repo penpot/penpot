@@ -10,13 +10,13 @@
     <link rel="icon" href="/images/favicon.png" />
 
     <script>
-      window.appTranslations = JSON.parse({{& translations}});
-      window.appThemes = {{& themes}};
-      window.appVersion = "%version%";
+      window.penpotTranslations = JSON.parse({{& translations}});
+      window.penpotThemes = {{& themes}};
+      window.penpotVersion = "%version%";
     </script>
 
     {{# manifest}}
-    <script>window.appWorkerURI="{{& worker}}"</script>
+    <script>window.penpotWorkerURI="{{& worker}}"</script>
     <script src="{{& config}}"></script>
     <script src="{{& polyfills}}"></script>
     {{/manifest}}
