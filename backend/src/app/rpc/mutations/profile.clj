@@ -437,7 +437,7 @@
 
 ;; --- Mutation: Delete Profile
 
-(declare check-teams-ownership!)
+(declare check-can-delete-profile!)
 (declare mark-profile-as-deleted!)
 
 (s/def ::delete-profile
@@ -446,7 +446,7 @@
 (sv/defmethod ::delete-profile
   [{:keys [pool session] :as cfg} {:keys [profile-id] :as params}]
   (db/with-atomic [conn pool]
-    (check-teams-ownership! conn profile-id)
+    (check-can-delete-profile! conn profile-id)
 
     ;; Schedule a complete deletion of profile
     (tasks/submit! conn {:name "delete-profile"
@@ -464,24 +464,26 @@
          (assoc response
                 :cookies (session/cookies session {:value "" :max-age -1})))})))
 
-(def ^:private sql:teams-ownership-check
-  "with teams as (
-     select tpr.team_id as id
-       from team_profile_rel as tpr
-      where tpr.profile_id = ?
-        and tpr.is_owner is true
+(def sql:owned-teams
+  "with owner_teams as (
+      select tpr.team_id as id
+        from team_profile_rel as tpr
+       where tpr.is_owner is true
+         and tpr.profile_id = ?
    )
    select tpr.team_id,
           count(tpr.profile_id) as num_profiles
      from team_profile_rel as tpr
-    where tpr.team_id in (select id from teams)
-    group by tpr.team_id
-   having count(tpr.profile_id) > 1")
+    where tpr.team_id in (select id from owner_teams)
+    group by 1")
 
-(defn- check-teams-ownership!
+(defn- check-can-delete-profile!
   [conn profile-id]
-  (let [rows (db/exec! conn [sql:teams-ownership-check profile-id])]
-    (when-not (empty? rows)
+  (let [rows (db/exec! conn [sql:owned-teams profile-id])]
+    ;; If we found owned teams with more than one profile we don't
+    ;; allow delete profile until the user properly transfer ownership
+    ;; or explictly removes all participants from the team.
+    (when (some #(> (:num-profiles %) 1) rows)
       (ex/raise :type :validation
                 :code :owner-teams-with-people
                 :hint "The user need to transfer ownership of owned teams."
