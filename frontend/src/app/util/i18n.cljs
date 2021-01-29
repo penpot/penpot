@@ -57,28 +57,37 @@
   [x]
   (C. x))
 
+(defn empty-string?
+  [v]
+  (or (nil? v) (empty? v)))
+
 (defn t
   ([locale code]
-   (let [code (name code)
-         value (gobj/getValueByKeys translations code locale)
-         value (if (nil? value) code value)]
-     (if (array? value)
-       (aget value 0)
-       value)))
+   (let [code  (name code)
+         value (gobj/getValueByKeys translations code locale)]
+     (if (empty-string? value)
+       (if (= cfg/default-language locale)
+         code
+         (t cfg/default-language code))
+       (if (array? value)
+         (aget value 0)
+         value))))
   ([locale code & args]
-   (let [code (name code)
-         value (gobj/getValueByKeys translations code locale)
-         value (if (nil? value) code value)
-         plural (first (filter c? args))
-         value (if (array? value)
-                 (if (= @plural 1) (aget value 0) (aget value 1))
-                 value)]
-     (apply str/format value (map #(if (c? %) @% %) args)))))
+   (let [code   (name code)
+         value  (gobj/getValueByKeys translations code locale)]
+     (if (empty-string? value)
+       (if (= cfg/default-language locale)
+         code
+         (apply t cfg/default-language code args))
+       (let [plural (first (filter c? args))
+             value  (if (array? value)
+                      (if (= @plural 1) (aget value 0) (aget value 1))
+                      value)]
+         (apply str/fmt value (map #(if (c? %) @% %) args)))))))
 
 (defn tr
   ([code] (t @locale code))
   ([code & args] (apply t @locale code args)))
-
 
 ;; DEPRECATED
 (defn use-locale
