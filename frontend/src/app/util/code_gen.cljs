@@ -30,11 +30,13 @@
 
 (defn format-stroke [_ shape]
   (let [width (:stroke-width shape)
-        style (name (:stroke-style shape))
+        style (let [style (:stroke-style shape)]
+                (when (keyword? style) (name style)))
         color {:color (:stroke-color shape)
                :opacity (:stroke-opacity shape)
                :gradient (:stroke-color-gradient shape)}]
-    (str/format "%spx %s %s" width style (uc/color->background color))))
+    (if-not (= :none (:stroke-style shape))
+      (str/format "%spx %s %s" width style (uc/color->background color)))))
 
 (def styles-data
   {:layout {:props   [:width :height :x :y :radius :rx]
@@ -43,9 +45,9 @@
    :fill   {:props [:fill-color :fill-color-gradient]
             :to-prop {:fill-color "background" :fill-color-gradient "background"}
             :format {:fill-color format-fill-color :fill-color-gradient format-fill-color}}
-   :stroke {:props [:stroke-color]
-            :to-prop {:stroke-color "border"}
-            :format {:stroke-color format-stroke}}
+   :stroke {:props [:stroke-style]
+            :to-prop {:stroke-style "border"}
+            :format {:stroke-style format-stroke}}
    :shadow {:props [:shadow]
             :to-prop {:shadow :box-shadow}
             :format {:shadow #(str/join ", " (map shadow->css %1))}}
@@ -95,15 +97,18 @@
          default-format (fn [value] (str (mth/precision value 2) "px"))
          format-property (fn [prop]
                            (let [css-prop (or (prop to-prop) (name prop))
-                                 format-fn (or (prop format) default-format)]
-                             (str
-                              (str/repeat " " tab-size)
-                              (str/fmt "%s: %s;" css-prop (format-fn (prop values) values)))))]
+                                 format-fn (or (prop format) default-format)
+                                 css-val (format-fn (prop values) values)]
+                             (when css-val
+                               (str
+                                (str/repeat " " tab-size)
+                                (str/fmt "%s: %s;" css-prop css-val)))))]
 
      (->> properties
           (remove #(let [value (get values %)]
                      (or (nil? value) (= value 0))))
           (map format-property)
+          (filter (comp not nil?))
           (str/join "\n")))))
 
 (defn shape->properties [shape]
