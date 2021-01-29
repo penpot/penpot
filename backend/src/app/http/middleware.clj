@@ -5,12 +5,11 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.http.middleware
   (:require
    [app.common.exceptions :as ex]
-   [app.config :as cfg]
    [app.metrics :as mtx]
    [app.util.transit :as t]
    [app.util.json :as json]
@@ -47,7 +46,7 @@
                 :json (parse-json body)
                 :transit (parse-transit body))
               (catch Exception e
-                (let [type (if (:debug @cfg/config) :json-verbose :json)
+                (let [type :json-verbose
                       data {:type :parse
                             :hint "unable to parse request body"
                             :message (ex-message e)}]
@@ -80,7 +79,7 @@
 (defn- impl-format-response-body
   [response]
   (let [body (:body response)
-        type (if (:debug cfg/config) :json-verbose :json)]
+        type :json-verbose]
     (cond
       (coll? body)
       (-> response
