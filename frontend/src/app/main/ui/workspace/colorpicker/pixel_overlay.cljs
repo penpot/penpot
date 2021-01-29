@@ -57,13 +57,13 @@
 (mf/defc pixel-overlay
   {::mf/wrap-props false}
   [props]
-  (let [vport        (unchecked-get props "vport")
-        vbox         (unchecked-get props "vbox")
-        viewport-ref (unchecked-get props "viewport-ref")
-        options      (unchecked-get props "options")
-        svg-ref      (mf/use-ref nil)
-        canvas-ref   (mf/use-ref nil)
-        img-ref      (mf/use-ref nil)
+  (let [vport         (unchecked-get props "vport")
+        vbox          (unchecked-get props "vbox")
+        viewport-node (unchecked-get props "viewport")
+        options       (unchecked-get props "options")
+        svg-ref       (mf/use-ref nil)
+        canvas-ref    (mf/use-ref nil)
+        img-ref       (mf/use-ref nil)
 
         update-str (rx/subject)
 
@@ -78,11 +78,10 @@
 
         handle-mouse-move-picker
         (mf/use-callback
-         (mf/deps viewport-ref)
+         (mf/deps viewport-node)
          (fn [event]
            (when-let [zoom-view-node (.getElementById js/document "picker-detail")]
-             (let [viewport-node (mf/ref-val viewport-ref)
-                   canvas-node   (mf/ref-val canvas-ref)
+             (let [canvas-node   (mf/ref-val canvas-ref)
 
                    {brx :left bry :top} (dom/get-bounding-rect viewport-node)
                    x (- (.-clientX event) brx)

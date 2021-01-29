@@ -151,13 +151,12 @@
   {::mf/wrap-props false}
   [props]
   (let [cursor (unchecked-get props "cursor")
-        viewport-ref (unchecked-get props "viewport")
+        viewport (unchecked-get props "viewport")
 
         visible? (mf/use-state true)
         in-viewport? (mf/use-state true)
 
         cursor-ref (mf/use-ref nil)
-        viewport (mf/ref-val viewport-ref)
 
         node (mf/ref-val cursor-ref)
 
@@ -184,8 +183,8 @@
               #(let [style (obj/get node "style")]
                  (obj/set! style "transform" (str "translate(" x "px, " y "px)")))))))]
 
-    (mf/use-effect
-     (mf/deps viewport on-mouse-move)
+    (mf/use-layout-effect
+     (mf/deps on-mouse-move)
      (fn []
        (when viewport
          (let [{:keys [left top]} (dom/get-bounding-rect viewport)
@@ -328,11 +327,15 @@
 
         alt?          (mf/use-state false)
         cursor        (mf/use-state (get-cursor :pointer-inner))
+
         viewport-ref  (mf/use-ref nil)
+        viewport-node (mf/use-state nil)
+
         zoom-view-ref (mf/use-ref nil)
         last-position (mf/use-var nil)
         disable-paste (mf/use-var false)
         in-viewport?  (mf/use-var false)
+
         drawing       (mf/deref refs/workspace-drawing)
         drawing-tool  (:tool drawing)
         drawing-obj   (:object drawing)
@@ -703,7 +706,7 @@
      (when picking-color?
        [:& pixel-overlay {:vport vport
                           :vbox vbox
-                          :viewport-ref viewport-ref
+                          :viewport @viewport-node
                           :options options
                           :layout layout}])
 
@@ -716,7 +719,7 @@
                            :file-id (:id file)}])
 
      (when-not css-mouse?
-       [:& render-cursor {:viewport viewport-ref
+       [:& render-cursor {:viewport @viewport-node
                           :cursor @cursor}])
 
      [:svg.viewport
@@ -727,7 +730,8 @@
        :width (:width vport 0)
        :height (:height vport 0)
        :view-box (format-viewbox vbox)
-       :ref viewport-ref
+       :ref #(do (mf/set-ref-val! viewport-ref %)
+                 (reset! viewport-node %))
        :class (when drawing-tool "drawing")
        :style {:cursor (when css-mouse? @cursor)
                :background-color (get options :background "#E8E9EA")}
