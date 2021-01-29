@@ -9,14 +9,15 @@
 
 (ns app.main.ui.shapes.svg-raw
   (:require
+   [app.common.data :as cd]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.uuid :as uuid]
    [app.main.ui.shapes.attrs :as usa]
    [app.util.data :as ud]
-   [app.common.data :as cd]
-   [app.common.uuid :as uuid]
    [app.util.object :as obj]
+   [app.util.svg :as usvg]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
@@ -49,6 +50,8 @@
 
 (defn set-styles [attrs shape]
   (let [custom-attrs (usa/extract-style-attrs shape)
+        attrs (cond-> attrs
+                (string? (:style attrs)) usvg/clean-attrs)
         style (obj/merge! (clj->js (:style attrs {}))
                           (obj/get custom-attrs "style"))]
     (-> (clj->js attrs)
