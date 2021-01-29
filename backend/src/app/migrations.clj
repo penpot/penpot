@@ -140,6 +140,12 @@
 
    {:name "0042-add-server-prop-table"
     :fn (mg/resource "app/migrations/sql/0042-add-server-prop-table.sql")}
+
+   {:name "0043-drop-old-tables-and-fields"
+    :fn (mg/resource "app/migrations/sql/0043-drop-old-tables-and-fields.sql")}
+
+   {:name "0044-add-storage-refcount"
+    :fn (mg/resource "app/migrations/sql/0044-add-storage-refcount.sql")}
    ])
 
 

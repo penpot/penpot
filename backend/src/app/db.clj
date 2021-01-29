@@ -258,6 +258,11 @@
   [p]
   (PGpoint. (:x p) (:y p)))
 
+(defn create-array
+  [conn type aobjects]
+  (let [^PGConnection conn (unwrap conn org.postgresql.PGConnection)]
+    (.createArrayOf conn ^String type aobjects)))
+
 (defn decode-pgpoint
   [^PGpoint v]
   (gpt/point (.-x v) (.-y v)))
