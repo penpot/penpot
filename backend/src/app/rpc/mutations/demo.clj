@@ -14,6 +14,7 @@
    [app.common.exceptions :as ex]
    [app.config :as cfg]
    [app.db :as db]
+   [app.db.profile-initial-data :refer [create-profile-initial-data]]
    [app.rpc.mutations.profile :as profile]
    [app.tasks :as tasks]
    [app.util.services :as sv]
@@ -27,7 +28,7 @@
   [{:keys [pool] :as cfg} _]
   (let [id       (uuid/next)
         sem      (System/currentTimeMillis)
-        email    (str "demo-" sem ".demo@nodomain.com")
+        email    (str "demo-" sem ".demo@example.com")
         fullname (str "Demo User " sem)
         password (-> (bn/random-bytes 16)
                      (bc/bytes->b64u)
@@ -36,7 +37,8 @@
                   :email email
                   :fullname fullname
                   :demo? true
-                  :password password}]
+                  :password password
+                  :props {:onboarding-viewed true}}]
 
     (when-not (:allow-demo-users cfg/config)
       (ex/raise :type :validation
@@ -45,11 +47,13 @@
 
     (db/with-atomic [conn pool]
       (->> (#'profile/create-profile conn params)
-           (#'profile/create-profile-relations conn))
+           (#'profile/create-profile-relations conn)
+           (create-profile-initial-data conn))
 
       ;; Schedule deletion of the demo profile
       (tasks/submit! conn {:name "delete-profile"
                            :delay cfg/default-deletion-delay
                            :props {:profile-id id}})
+
       {:email email
        :password password})))
