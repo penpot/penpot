@@ -14,8 +14,11 @@
    [app.db :as db]
    [app.rpc.mutations.projects :as projects]
    [app.storage :as storage]
+   [app.util.transit :as tr]
    [clojure.tools.logging :as log]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str])
+  (:import java.io.FileOutputStream
+           java.io.FileInputStream))
 
 (def sql:file
   "select * from file where project_id = ?")
@@ -38,15 +41,6 @@
    select *
      from file_media_thumbnail
      where media_object_id in (select id from media_ids)")
-
-(def sql:storage-object
-  "with file_ids as (select id from file where project_id = ?),
-        media_ids as (select media_id as id from file_media_object where file_id in (select id from file_ids)),
-        thumbs_ids as (select thumbnail_id as id from file_media_object where file_id in (select id from file_ids)),
-        storage_ids as (select id from media_ids union select id from thumbs_ids)
-   select *
-     from storage_object
-     where id in (select id from storage_ids)")
 
 (defn change-ids
   "Given a collection and a map from ID to ID. Changes all the `keys` properties
@@ -71,68 +65,66 @@
 
     [new-map-ids (map (partial change-id new-map-ids) coll)]))
 
-(defn allocate-storage-objects
-  "Copies the storage data to a new object and stores the new id into `map-ids`"
-  [storage map-ids objects]
-  (let [clone-object
-        (fn [map-ids object]
-          (try
-            (let [object (storage/row->storage-object object)
-                  new-obj (storage/clone-object storage object)]
-              (assoc map-ids (:id object) (:id new-obj)))
-            (catch Exception err
-              (log/errorf "Error cloning store object %s" (:id object))
-              map-ids)))]
-    (->> objects
-         (reduce clone-object map-ids))))
+(defn create-initial-data-dump
+  [conn project-id output-file]
+  (let [ ;; Retrieve data from templates
+        file                 (db/exec! conn [sql:file, project-id])
+        file-library-rel     (db/exec! conn [sql:file-library-rel, project-id])
+        file-media-object    (db/exec! conn [sql:file-media-object, project-id])
+        file-media-thumbnail (db/exec! conn [sql:file-media-thumbnail, project-id])
+
+        data {:file file
+              :file-library-rel file-library-rel
+              :file-media-object file-media-object
+              :file-media-thumbnail file-media-thumbnail}]
+
+    (with-open [output (FileOutputStream. output-file)]
+      (tr/encode-stream data output))))
 
 (defn create-profile-initial-data
   [conn storage profile]
 
-  (when-let [sample-project-id (get cfg/config :initial-data-project-id)]
-    (let [sample-project-name (get cfg/config :initial-data-project-name "Penpot Onboarding")
+  (let [initial-data-file (get cfg/config :initial-data-file)
+        initial-data (when initial-data-file
+                       (with-open [input (FileInputStream. initial-data-file)]
+                         (tr/decode-stream input)))]
+    (when initial-data
+      (let [{:keys [file file-library-rel file-media-object file-media-thumbnail]} initial-data
 
-          proj (projects/create-project conn {:profile-id (:id profile)
-                                              :team-id (:default-team-id profile)
-                                              :name sample-project-name})
+            sample-project-name (get cfg/config :initial-data-project-name "Penpot Onboarding")
 
-          _ (projects/create-project-profile conn {:project-id (:id proj)
-                                                   :profile-id (:id profile)})
 
-          _ (projects/create-team-project-profile conn {:team-id (:default-team-id profile)
-                                                        :project-id (:id proj)
-                                                        :profile-id (:id profile)})
+            proj (projects/create-project conn {:profile-id (:id profile)
+                                                :team-id (:default-team-id profile)
+                                                :name sample-project-name})
 
-          ;; Retrieve data from templates
-          file                 (db/exec! conn [sql:file, sample-project-id])
-          file-library-rel     (db/exec! conn [sql:file-library-rel, sample-project-id])
-          file-media-object    (db/exec! conn [sql:file-media-object, sample-project-id])
-          file-media-thumbnail (db/exec! conn [sql:file-media-thumbnail, sample-project-id])
-          storage-object       (db/exec! conn [sql:storage-object, sample-project-id])
+            _ (projects/create-project-profile conn {:project-id (:id proj)
+                                                     :profile-id (:id profile)})
 
-          map-ids {}
+            _ (projects/create-team-project-profile conn {:team-id (:default-team-id profile)
+                                                          :project-id (:id proj)
+                                                          :profile-id (:id profile)})
 
-          ;; Create new ID's and change the references
-          [map-ids file]           (change-ids map-ids file #{:id})
+            map-ids {}
 
-          map-ids                  (allocate-storage-objects storage map-ids storage-object)
+            ;; Create new ID's and change the references
+            [map-ids file]           (change-ids map-ids file #{:id})
 
-          [map-ids file-library-rel]     (change-ids map-ids file-library-rel #{:file-id :library-file-id})
-          [map-ids file-media-object]    (change-ids map-ids file-media-object #{:id :file-id :media-id :thumbnail-id})
-          [map-ids file-media-thumbnail] (change-ids map-ids file-media-thumbnail #{:id :media-object-id})
+            [map-ids file-library-rel]     (change-ids map-ids file-library-rel #{:file-id :library-file-id})
+            [map-ids file-media-object]    (change-ids map-ids file-media-object #{:id :file-id :media-id :thumbnail-id})
+            [map-ids file-media-thumbnail] (change-ids map-ids file-media-thumbnail #{:id :media-object-id})
 
-          file (->> file (map (fn [data] (assoc data :project-id (:id proj)))))
-          file-profile-rel (->> file (map (fn [data]
-                                            (hash-map :file-id (:id data)
-                                                      :profile-id (:id profile)
-                                                      :is-owner true
-                                                      :is-admin true
-                                                      :can-edit true))))]
+            file (->> file (map (fn [data] (assoc data :project-id (:id proj)))))
+            file-profile-rel (->> file (map (fn [data]
+                                              (hash-map :file-id (:id data)
+                                                        :profile-id (:id profile)
+                                                        :is-owner true
+                                                        :is-admin true
+                                                        :can-edit true))))]
 
-      ;; Re-insert into the database
-      (db/insert-multi! conn :file file)
-      (db/insert-multi! conn :file-profile-rel file-profile-rel)
-      (db/insert-multi! conn :file-library-rel file-library-rel)
-      (db/insert-multi! conn :file-media-object file-media-object)
-      (db/insert-multi! conn :file-media-thumbnail file-media-thumbnail))
-    {:result "OK"}))
+        ;; Re-insert into the database
+        (db/insert-multi! conn :file file)
+        (db/insert-multi! conn :file-profile-rel file-profile-rel)
+        (db/insert-multi! conn :file-library-rel file-library-rel)
+        (db/insert-multi! conn :file-media-object file-media-object)
+        (db/insert-multi! conn :file-media-thumbnail file-media-thumbnail)))))
