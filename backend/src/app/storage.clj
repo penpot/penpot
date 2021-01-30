@@ -87,6 +87,8 @@
 (defn- create-database-object
   [{:keys [conn backend]} {:keys [content] :as object}]
   (if (instance? StorageObject object)
+    ;; If we in this condition branch, this means we come from the
+    ;; clone-object, so we just need to clone it with a new backend.
     (let [id     (uuid/random)
           mdata  (meta object)
           result (insert-object conn
@@ -151,6 +153,14 @@
 
 (declare resolve-backend)
 
+(defn object->relative-path
+  [{:keys [id] :as obj}]
+  (impl/id->path id))
+
+(defn file-url->path
+  [url]
+  (fs/path (java.net.URI. (str url))))
+
 (defn content
   ([data] (impl/content data nil))
   ([data size] (impl/content data size)))
@@ -162,6 +172,7 @@
       (retrieve-database-object id)))
 
 (defn put-object
+  "Creates a new object with the provided content."
   [{:keys [pool conn backend executor] :as storage} {:keys [content] :as params}]
   (us/assert ::storage storage)
   (us/assert impl/content? content)
@@ -180,6 +191,8 @@
     object))
 
 (defn clone-object
+  "Creates a clone of the provided object using backend basded efficient
+  method. Always clones objects to the configured default."
   [{:keys [pool conn executor] :as storage} object]
   (us/assert ::storage storage)
   (let [storage (assoc storage :conn (or conn pool))
@@ -217,29 +230,23 @@
        (resolve-backend (:backend object))
        (impl/get-object-url object options))))
 
-(defn object->relative-path
-  [{:keys [id] :as obj}]
-  (impl/id->path id))
-
-(defn file-url->path
-  [url]
-  (fs/path (java.net.URI. (str url))))
+(defn get-object-path
+  "Get the Path to the object. Only works with `:fs` type of
+  storages."
+  [{:keys [backend conn path] :as storage} object]
+  (let [backend (resolve-backend storage (:backend object))]
+    (when (not= :fs (:type backend))
+      (ex/raise :type :internal
+                :code :operation-not-allowed
+                :hint "get-object-path only works with fs type backends"))
+    (-> (impl/get-object-url backend object nil)
+        (file-url->path))))
 
 (defn del-object
   [{:keys [conn pool] :as storage} id-or-obj]
   (us/assert ::storage storage)
   (-> (assoc storage :conn (or conn pool))
       (delete-database-object (if (uuid? id-or-obj) id-or-obj (:id id-or-obj)))))
-
-(defn put-tmp-object
-  "A special function for create an object explicitly setting the TMP backend
-  and marking the object as deleted."
-  [storage params]
-  (let [storage (assoc storage :backend :fs)
-        params  (assoc params
-                       :expired-at (dt/in-future {:minutes 30})
-                       :temporal true)]
-    (put-object storage params)))
 
 ;; --- impl
 

@@ -287,23 +287,24 @@
     :app.storage/storage
     {:pool     (ig/ref :app.db/pool)
      :executor (ig/ref :app.worker/executor)
-     :backends {:s3  (ig/ref :app.storage.s3/backend)
-                :db  (ig/ref :app.storage.db/backend)
-                :fs  (ig/ref :app.storage.fs/backend)}}
+     :backend  (:storage-backend cfg/config :fs)
+     :backends {:s3  (ig/ref [::main :app.storage.s3/backend])
+                :db  (ig/ref [::main :app.storage.db/backend])
+                :fs  (ig/ref [::main :app.storage.fs/backend])
+                :tmp (ig/ref [::tmp  :app.storage.fs/backend])}}
 
-    :app.storage.s3/backend
+    [::main :app.storage.s3/backend]
     {:region (:storage-s3-region cfg/config)
      :bucket (:storage-s3-bucket cfg/config)}
 
-    :app.storage.fs/backend
-    {:directory (:storage-fs-directory cfg/config)
-     :uri       (:storage-fs-uri cfg/config)}
+    [::main :app.storage.fs/backend]
+    {:directory (:storage-fs-directory cfg/config)}
 
-    :app.storage.db/backend
+    [::tmp :app.storage.fs/backend]
+    {:directory "/tmp/penpot"}
+
+    [::main :app.storage.db/backend]
     {:pool (ig/ref :app.db/pool)}}
-
-   (let [backend (:storage-backend cfg/config :fs)]
-     {:app.storage/storage {:backend backend}})
 
    (when (:telemetry-server-enabled cfg/config)
      {:app.telemetry/handler
