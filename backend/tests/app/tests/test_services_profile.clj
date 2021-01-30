@@ -15,7 +15,6 @@
    [cuerdas.core :as str]
    [datoteka.core :as fs]
    [app.db :as db]
-   ;; [app.services.mutations.profile :as profile]
    [app.tests.helpers :as th]))
 
 (t/use-fixtures :once th/state-init)
@@ -64,8 +63,8 @@
 
     (t/testing "update profile"
       (let [data (assoc profile
-                        :profile-id (:id profile)
                         ::th/type :update-profile
+                        :profile-id (:id profile)
                         :fullname "Full Name"
                         :lang "en"
                         :theme "dark")

@@ -15,7 +15,6 @@
    [app.config :as cfg]
    [app.db :as db]
    [app.main :as main]
-   [app.media-storage]
    [app.media]
    [app.migrations]
    [app.rpc.mutations.files :as files]
@@ -23,7 +22,6 @@
    [app.rpc.mutations.projects :as projects]
    [app.rpc.mutations.teams :as teams]
    [app.util.blob :as blob]
-   [app.util.storage :as ust]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
@@ -46,7 +44,6 @@
                            :app.http.auth/google
                            :app.http.auth/gitlab
                            :app.worker/scheduler
-                           :app.worker/executor
                            :app.worker/worker))
         _      (ig/load-namespaces config)
         system (-> (ig/prep config)
@@ -70,10 +67,7 @@
         (db/exec! conn [(str "TRUNCATE "
                              (apply str (interpose ", " result))
                              " CASCADE;")]))))
-  (try
-    (next)
-    (finally
-      (ust/clear! (:app.media-storage/storage *system*)))))
+  (next))
 
 (defn mk-uuid
   [prefix & args]
