@@ -19,7 +19,7 @@
    [app.storage :as sto]
    [app.util.http :as http]
    [app.util.services :as sv]
-   [app.util.storage :as ust]
+   [app.util.time :as dt]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [datoteka.core :as fs]))
@@ -73,12 +73,15 @@
         data   (:body result)
         mtype  (get (:headers result) "content-type")
         format (cm/mtype->format mtype)]
-    (if (nil? format)
+    (when (nil? format)
       (ex/raise :type :validation
                 :code :media-type-not-allowed
-                :hint "Seems like the url points to an invalid media object.")
-      (sto/put-tmp-object storage {:content (sto/content data)
-                                   :content-type mtype}))))
+                :hint "Seems like the url points to an invalid media object."))
+    (-> (assoc storage :backend :tmp)
+        (sto/put-object {:content (sto/content data)
+                         :content-type mtype
+                         :expired-at (dt/in-future {:minutes 30})}))))
+
 
 (defn create-file-media-object
   [{:keys [conn storage svgc] :as cfg} {:keys [id file-id is-local name content] :as params}]
@@ -132,8 +135,7 @@
       (let [mobj    (download-media cfg url)
             content {:filename "tempfile"
                      :size (:size mobj)
-                     :tempfile (-> (sto/get-object-url storage mobj)
-                                   (sto/file-url->path))
+                     :tempfile (sto/get-object-path storage mobj)
                      :content-type (:content-type (meta mobj))}
             params' (merge params {:content content
                                    :name (or name (:filename content))})]
