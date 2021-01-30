@@ -13,8 +13,7 @@
    [datoteka.core :as fs]
    [app.common.uuid :as uuid]
    [app.db :as db]
-   [app.tests.helpers :as th]
-   [app.util.storage :as ust]))
+   [app.tests.helpers :as th]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
