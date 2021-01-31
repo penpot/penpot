@@ -143,7 +143,7 @@ PENPOT_SREPL_PORT=6062
 **NOTE**: a part of setting this configuration on backend, frontend
 application will also require configuration tweaks for make it work.
 
-##### Goolge
+##### Google
 
 ```sh
 PENPOT_GOOGLE_CLIENT_ID=<client-id>
@@ -201,13 +201,27 @@ corresponding auth button in the login page
 
 ```js
 var appGoogleClientID = "<google-client-id-here>";
-var appGitlabClientID = "<google-client-id-here>";
-var appGithubClientID = "<google-client-id-here>";
+var appGitlabClientID = "<gitlab-client-id-here>";
+var appGithubClientID = "<github-client-id-here>";
 var appLoginWithLDAP = <true|false>;
 ```
 
 **NOTE:** The configuration should match the backend configuration for
 respective services.
+
+
+### Demo warning and Demo users
+
+It is possible to display a warning message on a demo environment and
+disable/enable demo users:
+
+```js
+var appDemoWarning = <true|false>;
+var appAllowDemoUsers = <true|false>;
+```
+
+**NOTE:** The configuration for demo users should match the backend
+configuration.
 
 
 ## Exporter ##
