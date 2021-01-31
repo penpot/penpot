@@ -66,7 +66,7 @@
         (ex/raise :type :internal
                   :code :rlimit-not-configured
                   :hint (str/fmt "%s rlimit not configured" key)))
-      (log/debugf "Adding rlimit to '%s' rpc handler." (::sv/name mdata))
+      (log/tracef "Adding rlimit to '%s' rpc handler." (::sv/name mdata))
       (fn [cfg params]
         (rlm/execute rlinst (f cfg params))))
     f))
@@ -76,7 +76,7 @@
   (let [f     (wrap-with-rlimits cfg f mdata)
         f     (wrap-with-metrics cfg f mdata)
         spec  (or (::sv/spec mdata) (s/spec any?))]
-    (log/debugf "Registering '%s' command to rpc service." (::sv/name mdata))
+    (log/tracef "Registering '%s' command to rpc service." (::sv/name mdata))
     (fn [params]
       (when (and (:auth mdata true) (not (uuid? (:profile-id params))))
         (ex/raise :type :authentication
