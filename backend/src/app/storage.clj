@@ -66,6 +66,10 @@
 
 (defrecord StorageObject [id size created-at expired-at backend])
 
+(defn storage-object?
+  [v]
+  (instance? StorageObject v))
+
 (def ^:private
   sql:insert-storage-object
   "insert into storage_object (id, size, backend, metadata)
@@ -217,18 +221,22 @@
 (defn get-object-data
   [{:keys [pool conn] :as storage} object]
   (us/assert ::storage storage)
-  (-> (assoc storage :conn (or conn pool))
-      (resolve-backend (:backend object))
-      (impl/get-object-data object)))
+  (when (or (nil? (:expired-at object))
+            (dt/is-after? (:expired-at object) (dt/now)))
+    (-> (assoc storage :conn (or conn pool))
+        (resolve-backend (:backend object))
+        (impl/get-object-data object))))
 
 (defn get-object-url
   ([storage object]
    (get-object-url storage object nil))
   ([{:keys [conn pool] :as storage} object options]
    (us/assert ::storage storage)
-   (-> (assoc storage :conn (or conn pool))
-       (resolve-backend (:backend object))
-       (impl/get-object-url object options))))
+   (when (or (nil? (:expired-at object))
+             (dt/is-after? (:expired-at object) (dt/now)))
+     (-> (assoc storage :conn (or conn pool))
+         (resolve-backend (:backend object))
+         (impl/get-object-url object options)))))
 
 (defn get-object-path
   "Get the Path to the object. Only works with `:fs` type of
@@ -239,8 +247,10 @@
       (ex/raise :type :internal
                 :code :operation-not-allowed
                 :hint "get-object-path only works with fs type backends"))
-    (-> (impl/get-object-url backend object nil)
-        (file-url->path))))
+    (when (or (nil? (:expired-at object))
+              (dt/is-after? (:expired-at object) (dt/now)))
+      (-> (impl/get-object-url backend object nil)
+          (file-url->path)))))
 
 (defn del-object
   [{:keys [conn pool] :as storage} id-or-obj]
