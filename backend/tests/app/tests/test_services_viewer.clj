@@ -19,12 +19,14 @@
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest retrieve-bundle
-  (let [prof    (th/create-profile th/*pool* 1)
-        prof2   (th/create-profile th/*pool* 2)
+  (let [prof    (th/create-profile* 1 {:is-active true})
+        prof2   (th/create-profile* 2 {:is-active true})
         team-id (:default-team-id prof)
         proj-id (:default-project-id prof)
 
-        file    (th/create-file th/*pool* (:id prof) proj-id false 1)
+        file    (th/create-file* 1 {:profile-id (:id prof)
+                                    :project-id proj-id
+                                    :is-shared false})
         token   (atom nil)]
 
     (t/testing "authenticated with page-id"
@@ -68,8 +70,8 @@
         (let [error (:error out)
               error-data (ex-data error)]
           (t/is (th/ex-info? error))
-          (t/is (= (:type error-data) :validation))
-          (t/is (= (:code error-data) :not-authorized)))))
+          (t/is (= (:type error-data) :not-found))
+          (t/is (= (:code error-data) :object-not-found)))))
 
     ;; (t/testing "authenticated with token & profile"
     ;;   (let [data {::sq/type :viewer-bundle
