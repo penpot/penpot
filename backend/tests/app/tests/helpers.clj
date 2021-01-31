@@ -9,8 +9,9 @@
 
 (ns app.tests.helpers
   (:require
-   [expound.alpha :as expound]
+   [app.common.data :as d]
    [app.common.pages :as cp]
+   [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
@@ -27,6 +28,7 @@
    [cuerdas.core :as str]
    [datoteka.core :as fs]
    [environ.core :refer [env]]
+   [expound.alpha :as expound]
    [integrant.core :as ig]
    [promesa.core :as p])
   (:import org.postgresql.ds.PGSimpleDataSource))
@@ -44,7 +46,9 @@
                            :app.http.auth/google
                            :app.http.auth/gitlab
                            :app.worker/scheduler
-                           :app.worker/worker))
+                           :app.worker/worker)
+                   (d/deep-merge
+                    {:app.storage/storage {:backend :tmp}}))
         _      (ig/load-namespaces config)
         system (-> (ig/prep config)
                    (ig/init))]
@@ -68,6 +72,24 @@
                              (apply str (interpose ", " result))
                              " CASCADE;")]))))
   (next))
+
+(defn clean-storage
+  [next]
+  (fs/delete (fs/path "/tmp/penpot"))
+  (next))
+
+(defn serial
+  [& funcs]
+  (fn [next]
+    (loop [f   (first funcs)
+           fs  (rest funcs)]
+      (when f
+        (let [prm (promise)]
+          (f #(deliver prm true))
+          (deref prm)
+          (recur (first fs)
+                 (rest fs)))))
+    (next)))
 
 (defn mk-uuid
   [prefix & args]
@@ -112,6 +134,61 @@
                              :project-id project-id
                              :is-shared is-shared
                              :name (str "file" i)}))
+
+
+;; --- NEW HELPERS
+
+(defn create-profile*
+  ([i] (create-profile* *pool* i {}))
+  ([i params] (create-profile* *pool* i params))
+  ([conn i params]
+   (let [params (merge {:id (mk-uuid "profile" i)
+                        :fullname (str "Profile " i)
+                        :email (str "profile" i ".test@nodomain.com")
+                        :password "123123"
+                        :demo? false}
+                       params)]
+     (->> (#'profile/create-profile conn params)
+          (#'profile/create-profile-relations conn)))))
+
+(defn create-project*
+  ([i params] (create-project* *pool* i params))
+  ([conn i {:keys [profile-id team-id] :as params}]
+   (us/assert uuid? profile-id)
+   (us/assert uuid? team-id)
+   (->> (merge {:id (mk-uuid "project" i)
+                :name (str "project" i)}
+               params)
+        (#'projects/create-project conn))))
+
+(defn create-file*
+  ([i params]
+   (create-file* *pool* i params))
+  ([conn i {:keys [profile-id project-id] :as params}]
+   (us/assert uuid? profile-id)
+   (us/assert uuid? project-id)
+   (#'files/create-file conn
+                        (merge {:id (mk-uuid "file" i)
+                                :name (str "file" i)}
+                               params))))
+
+
+(defn create-team*
+  ([i params] (create-team* *pool* i params))
+  ([conn i {:keys [profile-id] :as params}]
+   (us/assert uuid? profile-id)
+   (let [id   (mk-uuid "team" i)
+         team (#'teams/create-team conn {:id id
+                                         :profile-id profile-id
+                                         :name (str "team" i)})]
+     (#'teams/create-team-profile conn
+                                  {:team-id id
+                                   :profile-id profile-id
+                                   :is-owner true
+                                   :is-admin true
+                                   :can-edit true})
+     team)))
+
 
 (defn handle-error
   [^Throwable err]
@@ -215,3 +292,7 @@
     (io/copy (io/file rsc)
              (io/file tmp))
     tmp))
+
+(defn sleep
+  [ms]
+  (Thread/sleep ms))

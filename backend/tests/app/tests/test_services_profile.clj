@@ -15,39 +15,55 @@
    [cuerdas.core :as str]
    [datoteka.core :as fs]
    [app.db :as db]
+   [app.rpc.mutations.profile :as profile]
    [app.tests.helpers :as th]))
 
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
-(t/deftest profile-login
-  (let [profile (th/create-profile th/*pool* 1)]
-    (t/testing "failed"
-      (let [data {::th/type :login
-                   :email "profile1.test@nodomain.com"
-                   :password "foobar"
-                   :scope "foobar"}
-            out  (th/mutation! data)]
+;; Test with wrong credentials
+(t/deftest profile-login-failed-1
+  (let [profile (th/create-profile* 1)
+        data    {::th/type :login
+                 :email "profile1.test@nodomain.com"
+                 :password "foobar"
+                 :scope "foobar"}
+        out     (th/mutation! data)]
 
-        #_(th/print-result! out)
-        (let [error (:error out)]
-          (t/is (th/ex-info? error))
-          (t/is (th/ex-of-type? error :validation))
-          (t/is (th/ex-of-code? error :wrong-credentials)))))
+    #_(th/print-result! out)
+    (let [error (:error out)]
+      (t/is (th/ex-info? error))
+      (t/is (th/ex-of-type? error :validation))
+      (t/is (th/ex-of-code? error :wrong-credentials)))))
 
-    (t/testing "success"
-      (let [data {::th/type :login
-                   :email "profile1.test@nodomain.com"
-                   :password "123123"
-                   :scope "foobar"}
-            out  (th/mutation! data)]
-        ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-        (t/is (= (:id profile) (get-in out [:result :id])))))))
+;; Test with good credentials but profile not activated.
+(t/deftest profile-login-failed-2
+  (let [profile (th/create-profile* 1)
+        data    {::th/type :login
+                 :email "profile1.test@nodomain.com"
+                 :password "123123"
+                 :scope "foobar"}
+        out     (th/mutation! data)]
+    ;; (th/print-result! out)
+    (let [error (:error out)]
+      (t/is (th/ex-info? error))
+      (t/is (th/ex-of-type? error :validation))
+      (t/is (th/ex-of-code? error :wrong-credentials)))))
 
+;; Test with good credentials but profile already activated
+(t/deftest profile-login-success
+  (let [profile (th/create-profile* 1 {:is-active true})
+        data    {::th/type :login
+                 :email "profile1.test@nodomain.com"
+                 :password "123123"
+                 :scope "foobar"}
+        out     (th/mutation! data)]
+    ;; (th/print-result! out)
+    (t/is (nil? (:error out)))
+    (t/is (= (:id profile) (get-in out [:result :id])))))
 
 (t/deftest profile-query-and-manipulation
-  (let [profile (th/create-profile th/*pool* 1)]
+  (let [profile (th/create-profile* 1)]
     (t/testing "query profile"
       (let [data {::th/type :profile
                   :profile-id (:id profile)}
@@ -100,106 +116,76 @@
         (t/is (nil? (:error out)))))
     ))
 
+(t/deftest profile-deletion-simple
+  (let [task (:app.tasks.delete-profile/handler th/*system*)
+        prof (th/create-profile* 1)
+        file (th/create-file* 1 {:profile-id (:id prof)
+                                 :project-id (:default-project-id prof)
+                                 :is-shared false})]
 
-#_(t/deftest profile-deletion
-  (let [prof (th/create-profile th/*pool* 1)
-        team (:default-team prof)
-        proj (:default-project prof)
-        file (th/create-file th/*pool* (:id prof) (:id proj) 1)
-        page (th/create-page th/*pool* (:id prof) (:id file) 1)]
+    ;; profile is not deleted because it does not meet all
+    ;; conditions to be deleted.
+    (let [result (task {:props {:profile-id (:id prof)}})]
+      (t/is (nil? result)))
 
-    ;; (t/testing "try to delete profile not marked for deletion"
-    ;;   (let [params {:props {:profile-id (:id prof)}}
-    ;;         out (th/try-on! (app.tasks.delete-profile/handler params))]
+    ;; Request profile to be deleted
+    (with-mocks [mock {:target 'app.tasks/submit! :return nil}]
+      (let [params {::th/type :delete-profile
+                    :profile-id (:id prof)}
+            out    (th/mutation! params)]
+        (t/is (nil? (:error out)))
 
-    ;;     ;; (th/print-result! out)
-    ;;     (t/is (nil? (:error out)))
-    ;;     (t/is (nil? (:result out)))))
+        ;; check the mock
+        (let [mock (deref mock)
+              mock-params (second (:call-args mock))]
+          (t/is (:called? mock))
+          (t/is (= 1 (:call-count mock)))
+          (t/is (= "delete-profile" (:name mock-params)))
+          (t/is (= (:id prof) (get-in mock-params [:props :profile-id]))))))
 
-    ;; (t/testing "query profile after delete"
-    ;;   (let [data {::sq/type :profile
-    ;;               :profile-id (:id prof)}
-    ;;         out (th/try-on! (sq/handle data))]
+    ;; query files after profile soft deletion
+    (let [params {::th/type :files
+                  :project-id (:default-project-id prof)
+                  :profile-id (:id prof)}
+          out    (th/query! params)]
+      ;; (th/print-result! out)
+      (t/is (nil? (:error out)))
+      (t/is (= 1 (count (:result out)))))
 
-    ;;     ;; (th/print-result! out)
-    ;;     (t/is (nil? (:error out)))
+    ;; execute permanent deletion task
+    (let [result (task {:props {:profile-id (:id prof)}})]
+      (t/is (true? result)))
 
-    ;;     (let [result (:result out)]
-    ;;       (t/is (= (:fullname prof) (:fullname result))))))
+    ;; query profile after delete
+    (let [params {::th/type :profile
+                  :profile-id (:id prof)}
+          out    (th/query! params)]
+      ;; (th/print-result! out)
+      (let [error (:error out)
+            error-data (ex-data error)]
+        (t/is (th/ex-info? error))
+        (t/is (= (:type error-data) :not-found))))
 
-    ;; (t/testing "mark profile for deletion"
-    ;;   (with-mocks
-    ;;     [mock {:target 'app.tasks/schedule! :return nil}]
-
-    ;;     (let [data {::sm/type :delete-profile
-    ;;                 :profile-id (:id prof)}
-    ;;           out  (th/try-on! (sm/handle data))]
-    ;;       ;; (th/print-result! out)
-    ;;       (t/is (nil? (:error out)))
-    ;;       (t/is (nil? (:result out))))
-
-    ;;     ;; check the mock
-    ;;     (let [mock (deref mock)
-    ;;           mock-params (second (:call-args mock))]
-    ;;       (t/is (true? (:called? mock)))
-    ;;       (t/is (= 1 (:call-count mock)))
-    ;;       (t/is (= "delete-profile" (:name mock-params)))
-    ;;       (t/is (= (:id prof) (get-in mock-params [:props :profile-id]))))))
-
-    ;; (t/testing "query files after profile soft deletion"
-    ;;   (let [data {::sq/type :files
-    ;;               :project-id (:id proj)
-    ;;               :profile-id (:id prof)}
-    ;;         out  (th/try-on! (sq/handle data))]
-    ;;     ;; (th/print-result! out)
-    ;;     (t/is (nil? (:error out)))
-    ;;     (t/is (= 1 (count (:result out))))))
-
-    ;; (t/testing "try to delete profile marked for deletion"
-    ;;   (let [params {:props {:profile-id (:id prof)}}
-    ;;         out (th/try-on! (app.tasks.delete-profile/handler params))]
-
-    ;;     ;; (th/print-result! out)
-    ;;     (t/is (nil? (:error out)))
-    ;;     (t/is (= (:id prof) (:result out)))))
-
-    ;; (t/testing "query profile after delete"
-    ;;   (let [data {::sq/type :profile
-    ;;               :profile-id (:id prof)}
-    ;;         out (th/try-on! (sq/handle data))]
-
-    ;;     ;; (th/print-result! out)
-
-    ;;     (let [error (:error out)
-    ;;           error-data (ex-data error)]
-    ;;       (t/is (th/ex-info? error))
-    ;;       (t/is (= (:type error-data) :service-error))
-    ;;       (t/is (= (:name error-data) :app.services.queries.profile/profile)))
-
-    ;;     (let [error (ex-cause (:error out))
-    ;;           error-data (ex-data error)]
-    ;;       (t/is (th/ex-info? error))
-    ;;       (t/is (= (:type error-data) :not-found)))))
-
-    ;; (t/testing "query files after profile permanent deletion"
-    ;;   (let [data {::sq/type :files
-    ;;               :project-id (:id proj)
-    ;;               :profile-id (:id prof)}
-    ;;         out  (th/try-on! (sq/handle data))]
-    ;;     ;; (th/print-result! out)
-    ;;     (t/is (nil? (:error out)))
-    ;;     (t/is (= 0 (count (:result out))))))
+    ;; query files after profile soft deletion
+    (let [params {::th/type :files
+                  :project-id (:default-project-id prof)
+                  :profile-id (:id prof)}
+          out    (th/query! params)]
+        ;; (th/print-result! out)
+        (let [error (:error out)
+              error-data (ex-data error)]
+          (t/is (th/ex-info? error))
+          (t/is (= (:type error-data) :not-found))))
     ))
 
+(t/deftest registration-domain-whitelist
+  (let [whitelist "gmail.com, hey.com, ya.ru"]
+    (t/testing "allowed email domain"
+      (t/is (true? (profile/email-domain-in-whitelist? whitelist "username@ya.ru")))
+      (t/is (true? (profile/email-domain-in-whitelist? "" "username@somedomain.com"))))
 
-;; (t/deftest registration-domain-whitelist
-;;   (let [whitelist "gmail.com, hey.com, ya.ru"]
-;;     (t/testing "allowed email domain"
-;;       (t/is (true? (profile/email-domain-in-whitelist? whitelist "username@ya.ru")))
-;;       (t/is (true? (profile/email-domain-in-whitelist? "" "username@somedomain.com"))))
-
-;;     (t/testing "not allowed email domain"
-;;       (t/is (false? (profile/email-domain-in-whitelist? whitelist "username@somedomain.com"))))))
+    (t/testing "not allowed email domain"
+      (t/is (false? (profile/email-domain-in-whitelist? whitelist "username@somedomain.com"))))))
 
 ;; TODO: profile deletion with teams
 ;; TODO: profile deletion with owner teams
