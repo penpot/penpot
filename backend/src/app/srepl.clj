@@ -10,12 +10,12 @@
 (ns app.srepl
   "Server Repl."
   (:require
-   [integrant.core :as ig]
-   [app.srepl.main]
    [app.common.spec :as us]
+   [app.srepl.main]
    [clojure.core.server :as ccs]
+   [clojure.main :as cm]
    [clojure.spec.alpha :as s]
-   [clojure.main :as cm]))
+   [integrant.core :as ig]))
 
 (defn- repl-init
   []

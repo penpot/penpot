@@ -10,11 +10,8 @@
 (ns app.http
   (:require
    [app.common.data :as d]
-   [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.common.uuid :as uuid]
    [app.config :as cfg]
-   [app.http.assets :as assets]
    [app.http.auth :as auth]
    [app.http.errors :as errors]
    [app.http.middleware :as middleware]
@@ -26,7 +23,6 @@
    [ring.adapter.jetty9 :as jetty])
   (:import
    org.eclipse.jetty.server.Server
-   org.eclipse.jetty.server.Handler
    org.eclipse.jetty.server.handler.ErrorHandler
    org.eclipse.jetty.server.handler.StatisticsHandler))
 
@@ -117,7 +113,7 @@
                :body "internal server error"})))))))
 
 (defn- create-router
-  [{:keys [session rpc google-auth gitlab-auth github-auth metrics ldap-auth storage svgparse assets] :as cfg}]
+  [{:keys [session rpc google-auth gitlab-auth github-auth metrics ldap-auth svgparse assets] :as cfg}]
   (rr/router
    [["/metrics" {:get (:handler metrics)}]
 

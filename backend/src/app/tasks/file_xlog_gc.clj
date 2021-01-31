@@ -11,17 +11,17 @@
   "A maintenance task that performs a garbage collection of the file
   change (transaction) log."
   (:require
-   [app.common.spec :as us]
-   [integrant.core :as ig]
    [app.db :as db]
    [app.metrics :as mtx]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]))
+   [clojure.tools.logging :as log]
+   [integrant.core :as ig]))
 
 (declare handler)
 
 (s/def ::max-age ::dt/duration)
+
 (defmethod ig/pre-init-spec ::handler [_]
   (s/keys :req-un [::db/pool ::mtx/metrics ::max-age]))
 

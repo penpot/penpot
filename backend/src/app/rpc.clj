@@ -22,7 +22,7 @@
    [integrant.core :as ig]))
 
 (defn- default-handler
-  [req]
+  [_]
   (ex/raise :type :not-found))
 
 (defn- rpc-query-handler

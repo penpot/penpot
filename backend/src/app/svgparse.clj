@@ -10,18 +10,14 @@
 (ns app.svgparse
   (:require
    [app.common.exceptions :as ex]
-   [app.common.spec :as us]
-   [cuerdas.core :as str]
    [app.metrics :as mtx]
-   [clojure.java.io :as io]
-   [clojure.java.shell :as shell]
-   [clojure.spec.alpha :as s]
-   [clojure.xml :as xml]
    [app.util.graal :as graal]
    [app.util.pool :as pool]
+   [clojure.java.io :as io]
+   [clojure.spec.alpha :as s]
+   [clojure.xml :as xml]
    [integrant.core :as ig])
   (:import
-   java.io.InputStream
    java.util.function.Consumer
    org.apache.commons.io.IOUtils))
 
@@ -36,7 +32,7 @@
   (s/keys :req-un [::mtx/metrics]))
 
 (defmethod ig/init-key ::svgc
-  [_ {:keys [metrics] :as cfg}]
+  [_ _]
   (let [ctx-pool (prepare-context-pool)]
     (with-meta
       (fn [data]
@@ -69,7 +65,6 @@
 (defn- do-svg-clean
   [ctx data]
   (let [res      (promise)
-        bindings (graal/get-bindings ctx "js")
         optimize (-> (graal/get-bindings ctx "js")
                      (graal/get-member "svgc")
                      (graal/get-member "optimize"))

@@ -21,9 +21,6 @@
    }
 
   :unresolved-symbol
-  {:exclude ['(app.services.mutations/defmutation)
-             '(app.services.queries/defquery)
-             '(app.util.dispatcher/defservice)
-             '(mount.core/defstate)
+  {:exclude ['(app.util.services/defmethod)
              ]}}}
 

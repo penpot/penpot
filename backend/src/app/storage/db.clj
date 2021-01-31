@@ -9,21 +9,13 @@
 
 (ns app.storage.db
   (:require
-   [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
    [app.storage.impl :as impl]
-   [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
-   [datoteka.core :as fs]
-   [lambdaisland.uri :as u]
    [integrant.core :as ig])
   (:import
-   org.postgresql.largeobject.LargeObject
-   java.io.ByteArrayInputStream
-   java.io.ByteArrayOutputStream
-   java.io.InputStream
-   java.io.OutputStream))
+   java.io.ByteArrayInputStream))
 
 ;; --- BACKEND INIT
 
@@ -58,11 +50,11 @@
     (ByteArrayInputStream. (:data result))))
 
 (defmethod impl/get-object-url :db
-  [backend {:keys [id] :as object}]
+  [_ _]
   (throw (UnsupportedOperationException. "not supported")))
 
 (defmethod impl/del-objects-in-bulk :db
-  [backend ids]
-  ;; NOOP: because delting the row already deletes the file data from
+  [_ _]
+  ;; NOOP: because deleting the row already deletes the file data from
   ;; the database.
   nil)

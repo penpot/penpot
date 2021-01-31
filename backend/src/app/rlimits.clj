@@ -10,7 +10,6 @@
 (ns app.rlimits
   "Resource usage limits (in other words: semaphores)."
   (:require
-   [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig])

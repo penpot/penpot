@@ -15,15 +15,14 @@
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
-   [app.tasks :as tasks]
-   [app.worker :as wrk]
-   [app.util.json :as json]
    [app.util.http :as http]
+   [app.util.json :as json]
    [app.util.template :as tmpl]
+   [app.worker :as wrk]
    [clojure.core.async :as a]
+   [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
-   [clojure.java.io :as io]
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [promesa.exec :as px])
@@ -47,7 +46,7 @@
           :opt-un [::uri]))
 
 (defmethod ig/init-key ::reporter
-  [_ {:keys [executor uri] :as cfg}]
+  [_ {:keys [executor] :as cfg}]
   (log/info "Intializing error reporter.")
   (let [close-ch (a/chan 1)]
     (a/go-loop []
@@ -91,10 +90,10 @@
   [cfg {:keys [message host version id] :as cdata}]
   (try
     (let [uri    (:uri cfg)
-          prefix (str/<< "Unhandled exception (@channel):\n"
-                         "- detail: ~(:public-uri cfg/config)/dbg/error-by-id/~{id}\n"
-                         "- host: `~{host}`\n"
-                         "- version: `~{version}`\n")
+          prefix (str "Unhandled exception (@channel):\n"
+                      "- detail: " (:public-uri cfg/config) "/dbg/error-by-id/" id "\n"
+                      "- host: `" host "`\n"
+                      "- version: `" version "`\n")
           text   (str prefix "```\n" message "\n```")
           rsp    (http/send! {:uri uri
                               :method :post

@@ -11,7 +11,6 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.config :as cfg]
    [app.http.session :as session]
    [app.util.http :as http]
    [app.util.time :as dt]
@@ -142,7 +141,7 @@
                    ::client-secret]))
 
 (defn- default-handler
-  [req]
+  [_]
   (ex/raise :type :not-found))
 
 (defmethod ig/init-key :app.http.auth/google

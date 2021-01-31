@@ -39,13 +39,10 @@
 
 (defn- impl-migrate-single
   [pool modname {:keys [name] :as migration}]
-  (letfn [(execute []
-            (register! pool modname name)
-            ((:fn migration) pool))]
-    (when-not (registered? pool modname (:name migration))
-      (log/info (str/format "applying migration %s/%s" modname name))
-      (register! pool modname name)
-      ((:fn migration) pool))))
+  (when-not (registered? pool modname (:name migration))
+    (log/info (str/format "applying migration %s/%s" modname name))
+    (register! pool modname name)
+    ((:fn migration) pool)))
 
 (defn- impl-migrate
   [conn migrations _opts]

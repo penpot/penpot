@@ -10,7 +10,6 @@
 (ns app.util.graal
   "Graal Polyglot integration layer."
   (:import
-   java.util.function.Consumer
    org.graalvm.polyglot.Context
    org.graalvm.polyglot.Source
    org.graalvm.polyglot.Value))

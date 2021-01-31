@@ -9,10 +9,9 @@
 
 (ns app.http.auth.gitlab
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.common.data :as d]
-   [app.config :as cfg]
    [app.http.session :as session]
    [app.util.http :as http]
    [app.util.time :as dt]
@@ -75,8 +74,8 @@
 
 
 (defn- get-user-info
-  [token]
-  (let [req {:uri (build-user-info-url)
+  [cfg token]
+  (let [req {:uri (build-user-info-url cfg)
              :headers {"Authorization" (str "Bearer " token)}
              :method :get}
         res (http/send! req)]
@@ -102,12 +101,12 @@
                                   :exp (dt/in-future "15m")})
 
         params {:client_id (:client-id cfg)
-                :redirect_uri (build-redirect-url)
+                :redirect_uri (build-redirect-url cfg)
                 :response_type "code"
                 :state token
                 :scope scope}
         query  (uri/map->query-string params)
-        uri    (-> (build-oauth-uri)
+        uri    (-> (build-oauth-uri cfg)
                    (assoc :query query))]
     {:status 200
      :body {:redirect-uri (str uri)}}))
@@ -118,7 +117,7 @@
         _     (tokens :verify {:token token :iss :gitlab-oauth})
         info  (some->> (get-in request [:params :code])
                        (get-access-token cfg)
-                       (get-user-info))]
+                       (get-user-info cfg))]
 
     (when-not info
       (ex/raise :type :authentication
@@ -167,7 +166,7 @@
            (d/without-nils cfg)))
 
 (defn- default-handler
-  [req]
+  [_]
   (ex/raise :type :not-found))
 
 (defmethod ig/init-key :app.http.auth/gitlab

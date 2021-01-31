@@ -9,16 +9,14 @@
 
 (ns app.http.middleware
   (:require
-   [app.common.exceptions :as ex]
    [app.metrics :as mtx]
-   [app.util.transit :as t]
    [app.util.json :as json]
+   [app.util.transit :as t]
    [clojure.java.io :as io]
    [ring.middleware.cookies :refer [wrap-cookies]]
    [ring.middleware.keyword-params :refer [wrap-keyword-params]]
    [ring.middleware.multipart-params :refer [wrap-multipart-params]]
-   [ring.middleware.params :refer [wrap-params]]
-   [ring.middleware.resource :refer [wrap-resource]]))
+   [ring.middleware.params :refer [wrap-params]]))
 
 (defn wrap-server-timing
   [handler]
@@ -46,15 +44,14 @@
                 :json (parse-json body)
                 :transit (parse-transit body))
               (catch Exception e
-                (let [type :json-verbose
-                      data {:type :parse
+                (let [data {:type :parse
                             :hint "unable to parse request body"
                             :message (ex-message e)}]
                   {:status 400
                    :headers {"content-type" "application/transit+json"}
-                   :body (t/encode-str data {:type type})}))))]
+                   :body (t/encode-str data {:type :json-verbose})}))))]
 
-    (fn [{:keys [headers body request-method] :as request}]
+    (fn [{:keys [headers body] :as request}]
       (let [ctype (get headers "content-type")]
         (handler
          (case ctype

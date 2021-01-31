@@ -13,23 +13,18 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.db :as db]
    [app.storage.impl :as impl]
    [app.util.time :as dt]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
-   [lambdaisland.uri :as u]
-   [integrant.core :as ig])
+   [integrant.core :as ig]
+   [lambdaisland.uri :as u])
   (:import
-   java.io.InputStream
-   java.io.OutputStream
-   java.nio.file.Path
    java.time.Duration
    java.util.Collection
    software.amazon.awssdk.core.sync.RequestBody
    software.amazon.awssdk.regions.Region
    software.amazon.awssdk.services.s3.S3Client
-   software.amazon.awssdk.services.s3.S3ClientBuilder
    software.amazon.awssdk.services.s3.model.Delete
    software.amazon.awssdk.services.s3.model.CopyObjectRequest
    software.amazon.awssdk.services.s3.model.DeleteObjectsRequest
@@ -113,7 +108,7 @@
     :eu-central-1 Region/EU_CENTRAL_1))
 
 (defn- build-s3-client
-  [{:keys [region bucket]}]
+  [{:keys [region]}]
   (.. (S3Client/builder)
       (region (lookup-region region))
       (build)))

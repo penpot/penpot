@@ -12,7 +12,6 @@
   (:require
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
    [app.db :as db]
    [app.util.async :as aa]
    [app.util.time :as dt]
@@ -20,17 +19,13 @@
    [clojure.pprint :refer [pprint]]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
-   [cuerdas.core :as str]
    [integrant.core :as ig]
    [promesa.exec :as px])
   (:import
    org.eclipse.jetty.util.thread.QueuedThreadPool
    java.util.concurrent.ExecutorService
    java.util.concurrent.Executors
-   java.util.concurrent.Executor
-   java.time.Duration
-   java.time.Instant
-   java.util.Date))
+   java.util.concurrent.Executor))
 
 (s/def ::executor #(instance? Executor %))
 
@@ -236,7 +231,7 @@
           {:status :retry :task item :error error})))))
 
 (defn- run-task
-  [{:keys [tasks conn]} item]
+  [{:keys [tasks]} item]
   (try
     (log/debugf "Started task '%s/%s/%s'." (:name item) (:id item) (:retry-num item))
     (handle-task tasks item)
@@ -255,7 +250,7 @@
       for update skip locked")
 
 (defn- event-loop-fn*
-  [{:keys [tasks pool executor batch-size] :as cfg}]
+  [{:keys [pool executor batch-size] :as cfg}]
   (db/with-atomic [conn pool]
     (let [queue (:queue cfg)
           items (->> (db/exec! conn [sql:select-next-tasks queue batch-size])
@@ -304,7 +299,7 @@
   (s/keys :req-un [::executor ::db/pool ::schedule]))
 
 (defmethod ig/init-key ::scheduler
-  [_ {:keys [executor schedule] :as cfg}]
+  [_ {:keys [schedule] :as cfg}]
   (let [scheduler (Executors/newScheduledThreadPool (int 1))
         schedule  (filter some? schedule)
         cfg       (assoc cfg

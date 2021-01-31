@@ -11,7 +11,6 @@
   "A maintenance task that performs a cleanup of already executed tasks
   from the database table."
   (:require
-   [app.common.spec :as us]
    [app.db :as db]
    [app.metrics :as mtx]
    [app.util.time :as dt]

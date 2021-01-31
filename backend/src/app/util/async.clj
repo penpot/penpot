@@ -6,48 +6,15 @@
 
 (ns app.util.async
   (:require
-   [clojure.spec.alpha :as s]
    [clojure.core.async :as a]
-   [cuerdas.core :as str])
+   [clojure.spec.alpha :as s])
   (:import
-   java.util.concurrent.Executor
-   java.util.concurrent.ThreadFactory
-   java.util.concurrent.ForkJoinPool
-   java.util.concurrent.ForkJoinPool$ForkJoinWorkerThreadFactory
-   java.util.concurrent.ExecutorService
-   java.util.concurrent.atomic.AtomicLong))
+   java.util.concurrent.Executor))
 
 (s/def ::executor #(instance? Executor %))
 
 (defonce processors
   (delay (.availableProcessors (Runtime/getRuntime))))
-
-;; (defn forkjoin-thread-factory
-;;   [f]
-;;   (reify ForkJoinPool$ForkJoinWorkerThreadFactory
-;;     (newThread [this pool]
-;;       (let [wth (.newThread ForkJoinPool/defaultForkJoinWorkerThreadFactory pool)]
-;;         (f wth)))))
-
-;; (defn forkjoin-named-thread-factory
-;;   [name]
-;;   (reify ForkJoinPool$ForkJoinWorkerThreadFactory
-;;     (newThread [this pool]
-;;       (let [wth (.newThread ForkJoinPool/defaultForkJoinWorkerThreadFactory pool)]
-;;         (.setName wth (str name ":" (.getPoolIndex wth)))
-;;         wth))))
-
-;; (defn forkjoin-pool
-;;   [{:keys [factory async? parallelism]
-;;     :or {async? true}
-;;     :as opts}]
-;;   (let [parallelism (or parallelism @processors)
-;;         factory (cond
-;;                   (fn? factory) (forkjoin-thread-factory factory)
-;;                   (instance? ForkJoinPool$ForkJoinWorkerThreadFactory factory) factory
-;;                   (nil? factory) ForkJoinPool/defaultForkJoinWorkerThreadFactory
-;;                   :else (throw (ex-info "Unexpected thread factory" {:factory factory})))]
-;;     (ForkJoinPool. (or parallelism @processors) factory nil async?)))
 
 (defmacro go-try
   [& body]
@@ -84,7 +51,7 @@
                     (finally
                       (a/close! c)))))
       c
-      (catch java.util.concurrent.RejectedExecutionException e
+      (catch java.util.concurrent.RejectedExecutionException _e
         (a/close! c)
         c))))
 

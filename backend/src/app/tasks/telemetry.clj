@@ -12,15 +12,13 @@
   information about the current instance and send it to the telemetry
   server."
   (:require
-   [app.config :as cfg]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.common.uuid :as uuid]
+   [app.config :as cfg]
    [app.db :as db]
    [app.util.http :as http]
    [app.util.json :as json]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [integrant.core :as ig]))
 
 (declare handler)
@@ -60,16 +58,16 @@
   [{:keys [sprops] :as cfg}]
   (let [instance-id (:instance-id sprops)
         data        (retrieve-stats cfg)
-        data        (assoc data :instance-id instance-id)]
-    (let [response (http/send! {:method :post
-                                :uri (:uri cfg)
-                                :headers {"content-type" "application/json"}
-                                :body (json/encode-str data)})]
-      (when (not= 200 (:status response))
-        (ex/raise :type :internal
-                  :code :invalid-response-from-google
-                  :context {:status (:status response)
-                            :body (:body response)})))))
+        data        (assoc data :instance-id instance-id)
+        response    (http/send! {:method :post
+                                 :uri (:uri cfg)
+                                 :headers {"content-type" "application/json"}
+                                 :body (json/encode-str data)})]
+    (when (not= 200 (:status response))
+      (ex/raise :type :internal
+                :code :invalid-response-from-google
+                :context {:status (:status response)
+                          :body (:body response)}))))
 
 (defn retrieve-num-teams
   [conn]

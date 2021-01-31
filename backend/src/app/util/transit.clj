@@ -128,9 +128,12 @@
        (decode)))
 
 (defn encode-str
-  [message]
-  (->> (encode message)
-       (bytes->str)))
+  ([message]
+   (->> (encode message)
+        (bytes->str)))
+  ([message opts]
+   (->> (encode message opts)
+        (bytes->str))))
 
 (defn encode-verbose-str
   [message]

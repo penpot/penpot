@@ -9,12 +9,12 @@
 
 (ns app.http.session
   (:require
-   [clojure.spec.alpha :as s]
-   [integrant.core :as ig]
    [app.db :as db]
    [app.http.errors :refer [update-thread-context!]]
    [buddy.core.codecs :as bc]
-   [buddy.core.nonce :as bn]))
+   [buddy.core.nonce :as bn]
+   [clojure.spec.alpha :as s]
+   [integrant.core :as ig]))
 
 (defn next-session-id
   ([] (next-session-id 96))

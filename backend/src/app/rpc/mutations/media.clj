@@ -20,7 +20,6 @@
    [app.util.http :as http]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [datoteka.core :as fs]))
 
@@ -84,7 +83,7 @@
 
 
 (defn create-file-media-object
-  [{:keys [conn storage svgc] :as cfg} {:keys [id file-id is-local name content] :as params}]
+  [{:keys [conn storage svgc] :as cfg} {:keys [file-id is-local name content] :as params}]
   (media/validate-media-type (:content-type content))
   (let [storage      (assoc storage :conn conn)
         source-path  (fs/path (:tempfile content))

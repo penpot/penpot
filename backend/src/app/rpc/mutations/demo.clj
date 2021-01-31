@@ -10,8 +10,8 @@
 (ns app.rpc.mutations.demo
   "A demo specific mutations."
   (:require
-   [app.common.uuid :as uuid]
    [app.common.exceptions :as ex]
+   [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
    [app.db.profile-initial-data :refer [create-profile-initial-data]]

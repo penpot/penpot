@@ -9,17 +9,14 @@
 
 (ns app.cli.migrate-media
   (:require
-   [app.common.pages :as cp]
-   [app.common.uuid :as uuid]
    [app.common.media :as cm]
    [app.config :as cfg]
    [app.db :as db]
-   [datoteka.core :as fs]
    [app.main :as main]
-   [app.util.blob :as blob]
    [app.storage :as sto]
-   [cuerdas.core :as str]
    [clojure.tools.logging :as log]
+   [cuerdas.core :as str]
+   [datoteka.core :as fs]
    [integrant.core :as ig]))
 
 (declare migrate-profiles)

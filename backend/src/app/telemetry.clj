@@ -11,7 +11,7 @@
   (:require
    [app.common.spec :as us]
    [app.db :as db]
-   [app.http.middleware :refer [wrap-parse-request-body wrap-errors]]
+   [app.http.middleware :refer [wrap-parse-request-body]]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
    [integrant.core :as ig]
