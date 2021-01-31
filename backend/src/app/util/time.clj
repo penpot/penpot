@@ -45,6 +45,10 @@
   [d ta]
   (.plus d ^TemporalAmount ta))
 
+(defn minus
+  [d ta]
+  (.minus d ^TemporalAmount ta))
+
 (defn- obj->duration
   [{:keys [days minutes seconds hours nanos millis]}]
   (cond-> (Duration/ofMillis (if (int? millis) ^long millis 0))
@@ -80,6 +84,10 @@
 (defn in-future
   [v]
   (plus (now) (duration v)))
+
+(defn in-past
+  [v]
+  (minus (now) (duration v)))
 
 (defn duration-between
   [t1 t2]
