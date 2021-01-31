@@ -15,7 +15,6 @@
    [app.rpc.mutations.projects :as projects]
    [app.util.transit :as tr]
    [clojure.java.io :as io]
-   [cuerdas.core :as str]
    [datoteka.core :as fs]))
 
 (def sql:file
@@ -79,7 +78,7 @@
 (defn create-profile-initial-data
   [conn profile]
   (when-let [initial-data-path (:initial-data-file cfg/config)]
-    (when-let [{:keys [file file-library-rel file-media-object file-media-thumbnail]} (read-initial-data initial-data-path)]
+    (when-let [{:keys [file file-library-rel file-media-object]} (read-initial-data initial-data-path)]
       (let [sample-project-name (:initial-data-project-name cfg/config "Penpot Onboarding")
             proj (projects/create-project conn {:profile-id (:id profile)
                                                 :team-id (:default-team-id profile)
@@ -90,8 +89,7 @@
             ;; Create new ID's and change the references
             [map-ids file]                 (change-ids map-ids file #{:id})
             [map-ids file-library-rel]     (change-ids map-ids file-library-rel #{:file-id :library-file-id})
-            [map-ids file-media-object]    (change-ids map-ids file-media-object #{:id :file-id :media-id :thumbnail-id})
-            [map-ids file-media-thumbnail] (change-ids map-ids file-media-thumbnail #{:id :media-object-id})
+            [_       file-media-object]    (change-ids map-ids file-media-object #{:id :file-id :media-id :thumbnail-id})
 
             file             (map #(assoc % :project-id (:id proj)) file)
             file-profile-rel (map #(array-map :file-id (:id %)
@@ -112,5 +110,4 @@
         (db/insert-multi! conn :file file)
         (db/insert-multi! conn :file-profile-rel file-profile-rel)
         (db/insert-multi! conn :file-library-rel file-library-rel)
-        (db/insert-multi! conn :file-media-object file-media-object)
-        (db/insert-multi! conn :file-media-thumbnail file-media-thumbnail)))))
+        (db/insert-multi! conn :file-media-object file-media-object)))))
