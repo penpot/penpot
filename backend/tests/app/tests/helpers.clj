@@ -23,6 +23,7 @@
    [app.rpc.mutations.projects :as projects]
    [app.rpc.mutations.teams :as teams]
    [app.util.blob :as blob]
+   [app.util.time :as dt]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
@@ -48,7 +49,8 @@
                            :app.worker/scheduler
                            :app.worker/worker)
                    (d/deep-merge
-                    {:app.storage/storage {:backend :tmp}}))
+                    {:app.storage/storage {:backend :tmp}
+                     :app.tasks.file-media-gc/handler {:max-age (dt/duration 300)}}))
         _      (ig/load-namespaces config)
         system (-> (ig/prep config)
                    (ig/init))]

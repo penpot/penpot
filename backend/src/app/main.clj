@@ -255,8 +255,7 @@
     :app.tasks.file-media-gc/handler
     {:pool    (ig/ref :app.db/pool)
      :metrics (ig/ref :app.metrics/metrics)
-     :storage (ig/ref :app.storage/storage)
-     :max-age (dt/duration {:hours 72})}
+     :max-age (dt/duration {:hours 48})}
 
     :app.tasks.file-xlog-gc/handler
     {:pool    (ig/ref :app.db/pool)

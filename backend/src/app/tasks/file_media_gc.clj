@@ -25,10 +25,10 @@
 (declare process-file)
 (declare retrieve-candidates)
 
-(s/def ::storage some?)
+(s/def ::max-age ::dt/duration)
 
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::db/pool ::storage]))
+  (s/keys :req-un [::db/pool ::mtx/metrics ::max-age]))
 
 (defmethod ig/init-key ::handler
   [_ {:keys [metrics] :as cfg}]
@@ -43,11 +43,15 @@
   [{:keys [pool] :as cfg} _]
   (db/with-atomic [conn pool]
     (let [cfg (assoc cfg :conn conn)]
-      (loop []
+      (loop [n 0]
         (let [files (retrieve-candidates cfg)]
-          (when files
-            (run! (partial process-file cfg) files)
-            (recur)))))))
+          (if (seq files)
+            (do
+              (run! (partial process-file cfg) files)
+              (recur (+ n (count files))))
+            (do
+              (log/infof "finalized with total of %s processed files" n)
+              {:processed n})))))))
 
 (def ^:private
   sql:retrieve-candidates-chunk
@@ -65,9 +69,8 @@
   [{:keys [conn max-age] :as cfg}]
   (let [interval (db/interval max-age)]
     (->> (db/exec! conn [sql:retrieve-candidates-chunk interval])
-         (map (fn [{:keys [age] :as row}]
-                (assoc row :age (dt/duration {:seconds age}))))
-         (seq))))
+         (mapv (fn [{:keys [age] :as row}]
+                 (assoc row :age (dt/duration {:seconds age})))))))
 
 (def ^:private
   collect-media-xf
