@@ -25,33 +25,36 @@
 ;; SVG Clean
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declare do-svg-clean)
+(declare clean-svg)
 (declare prepare-context-pool)
 
 (defmethod ig/pre-init-spec ::svgc [_]
   (s/keys :req-un [::mtx/metrics]))
 
 (defmethod ig/init-key ::svgc
-  [_ _]
-  (let [ctx-pool (prepare-context-pool)]
-    (with-meta
-      (fn [data]
-        (with-open [ctx (pool/acquire ctx-pool)]
-          (do-svg-clean @ctx data)))
-      {::ctx-pool ctx-pool})))
+  [_ {:keys [metrics] :as cfg}]
+  (let [pool    (prepare-context-pool cfg)
+        cfg     (assoc cfg :pool pool)
+        handler #(clean-svg cfg %)
+        handler (->> {:registry (:registry metrics)
+                      :type :summary
+                      :name "svgc_timing"
+                      :help "svg optimization function timing"}
+                     (mtx/instrument handler))]
+    (with-meta handler {::pool pool})))
 
 (defmethod ig/halt-key! ::svgc
   [_ f]
-  (let [{:keys [::ctx-pool]} (meta f)]
-    (pool/clear! ctx-pool)
-    (pool/close! ctx-pool)))
+  (let [{:keys [::pool]} (meta f)]
+    (pool/clear! pool)
+    (pool/close! pool)))
 
 (defn- prepare-context-pool
-  []
+  [cfg]
   (pool/create
-   {:min-idle 0
-    :max-idle 3
-    :max-total 3
+   {:min-idle  (:min-idle cfg 0)
+    :max-idle  (:max-idle cfg 3)
+    :max-total (:max-total cfg 3)
     :create
     (fn []
       (let [ctx (graal/context "js")]
@@ -62,27 +65,29 @@
     (fn [ctx]
       (graal/close! ctx))}))
 
-(defn- do-svg-clean
-  [ctx data]
-  (let [res      (promise)
-        optimize (-> (graal/get-bindings ctx "js")
-                     (graal/get-member "svgc")
-                     (graal/get-member "optimize"))
-        resultp (graal/invoke optimize data)]
+(defn- clean-svg
+  [{:keys [pool]} data]
+  (with-open [ctx (pool/acquire pool)]
+    (let [res      (promise)
+          optimize (-> (graal/get-bindings @ctx "js")
+                       (graal/get-member "svgc")
+                       (graal/get-member "optimize"))
+          resultp (graal/invoke optimize data)]
 
-    (graal/invoke-member resultp "then"
-                         (reify Consumer
-                           (accept [_ val]
-                             (deliver res val))))
-    (graal/invoke-member resultp "catch"
-                         (reify Consumer
-                           (accept [_ err]
-                             (deliver res err))))
+      (graal/invoke-member resultp "then"
+                           (reify Consumer
+                             (accept [_ val]
+                               (deliver res val))))
 
-    (let [result (deref res)]
-      (if (instance? Throwable result)
-        (throw result)
-        result))))
+      (graal/invoke-member resultp "catch"
+                           (reify Consumer
+                             (accept [_ err]
+                               (deliver res err))))
+
+      (let [result (deref res)]
+        (if (instance? Throwable result)
+          (throw result)
+          result)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Handler
