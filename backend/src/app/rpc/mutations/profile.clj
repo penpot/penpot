@@ -160,10 +160,12 @@
 (defn- create-profile
   "Create the profile entry on the database with limited input
   filling all the other fields with defaults."
-  [conn {:keys [id fullname email password demo? props] :as params}]
+  [conn {:keys [id fullname email password demo? props is-active]
+         :or {is-active false}
+         :as params}]
   (let [id       (or id (uuid/next))
         demo?    (if (boolean? demo?) demo? false)
-        active?  (if demo? true false)
+        active?  (if demo? true is-active)
         props    (db/tjson (or props {}))
         password (derive-password password)]
     (-> (db/insert! conn :profile
