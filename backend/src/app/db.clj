@@ -12,7 +12,6 @@
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
    [app.common.spec :as us]
-   [app.config :as cfg]
    [app.db.sql :as sql]
    [app.util.json :as json]
    [app.util.migrations :as mg]
@@ -20,7 +19,6 @@
    [app.util.transit :as t]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
-   [clojure.string :as str]
    [integrant.core :as ig]
    [next.jdbc :as jdbc]
    [next.jdbc.date-time :as jdbc-dt])
@@ -186,17 +184,17 @@
               (sql/insert table params opts)
               (assoc opts :return-keys true))))
 
-(defn- select-values [map ks]
-  (reduce #(conj %1 (map %2)) [] ks))
+;; (defn- select-values [map ks]
+;;   (reduce #(conj %1 (map %2)) [] ks))
 
 (defn insert-multi!
   [ds table param-list]
   (doseq [params param-list]
-      (insert! ds table params))
+    (insert! ds table params))
   ;; FIXME: Won't work
   #_(let [keys (->> param-list first keys (into []))
-        params (->> param-list (mapv #(->> keys (select-values %) (into []))) )]
-    (jdbc-sql/insert-multi! ds table keys params default-options)))
+          params (->> param-list (mapv #(->> keys (select-values %) (into []))) )]
+      (jdbc-sql/insert-multi! ds table keys params default-options)))
 
 (defn update!
   ([ds table params where] (update! ds table params where nil))

@@ -13,14 +13,13 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [clojure.java.io :as io]
-   [buddy.core.codecs :as bc])
+   [buddy.core.codecs :as bc]
+   [clojure.java.io :as io])
   (:import
    java.nio.ByteBuffer
    java.util.UUID
    java.io.ByteArrayInputStream
    java.io.InputStream
-   java.nio.file.Path
    java.nio.file.Files))
 
 ;; --- API Definition

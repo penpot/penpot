@@ -9,8 +9,8 @@
 
 (ns app.main
   (:require
-   [app.config :as cfg]
    [app.common.data :as d]
+   [app.config :as cfg]
    [app.util.time :as dt]
    [clojure.pprint :as pprint]
    [clojure.tools.logging :as log]

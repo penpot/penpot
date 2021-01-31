@@ -13,11 +13,8 @@
   after some period of inactivity (the default threshold is 72h)."
   (:require
    [app.common.pages.migrations :as pmg]
-   [app.common.spec :as us]
    [app.db :as db]
    [app.metrics :as mtx]
-   [app.storage :as sto]
-   [app.tasks :as tasks]
    [app.util.blob :as blob]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
@@ -25,8 +22,8 @@
    [integrant.core :as ig]))
 
 (declare handler)
-(declare retrieve-candidates)
 (declare process-file)
+(declare retrieve-candidates)
 
 (s/def ::storage some?)
 
@@ -51,11 +48,6 @@
           (when files
             (run! (partial process-file cfg) files)
             (recur)))))))
-
-(defn- decode-row
-  [{:keys [data] :as row}]
-  (cond-> row
-    (bytes? data) (assoc :data (blob/decode data))))
 
 (def ^:private
   sql:retrieve-candidates-chunk
@@ -94,14 +86,14 @@
       (into (keys (:media data)))))
 
 (defn- process-file
-  [{:keys [conn storage] :as cfg} {:keys [id data age] :as file}]
-  (let [data    (-> (blob/decode data)
-                    (assoc :id id)
-                    (pmg/migrate-data))
+  [{:keys [conn] :as cfg} {:keys [id data age] :as file}]
+  (let [data   (-> (blob/decode data)
+                   (assoc :id id)
+                   (pmg/migrate-data))
 
-        used    (collect-used-media data)
-        unused  (->> (db/query conn :file-media-object {:file-id id})
-                     (remove #(contains? used (:id %))))]
+        used   (collect-used-media data)
+        unused (->> (db/query conn :file-media-object {:file-id id})
+                    (remove #(contains? used (:id %))))]
 
     (log/infof "processing file: id='%s' age='%s' to-delete=%s" id age (count unused))
 
@@ -114,9 +106,7 @@
       (log/debugf "deleting media object: id='%s' media-id='%s' thumb-id='%s'"
                   (:id mobj) (:media-id mobj) (:thumbnail-id mobj))
       ;; NOTE: deleting the file-media-object in the database
-      ;; automatically marks to be deleted the associated storage
-      ;; objects with the specialized trigger attached
-      ;; to :file-media-object table.
+      ;; automatically marks as toched the referenced storage objects.
       (db/delete! conn :file-media-object {:id (:id mobj)}))
 
     nil))

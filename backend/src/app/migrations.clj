@@ -9,10 +9,9 @@
 
 (ns app.migrations
   (:require
-   [integrant.core :as ig]
-   [app.db :as db]
+   [app.migrations.migration-0023 :as mg0023]
    [app.util.migrations :as mg]
-   [app.migrations.migration-0023 :as mg0023]))
+   [integrant.core :as ig]))
 
 (def migrations
   [{:name "0001-add-extensions"

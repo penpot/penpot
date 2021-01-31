@@ -15,8 +15,8 @@
    [app.db :as db]
    [app.rpc.permissions :as perms]
    [app.rpc.queries.projects :as projects]
-   [app.util.services :as sv]
    [app.util.blob :as blob]
+   [app.util.services :as sv]
    [clojure.spec.alpha :as s]))
 
 (declare decode-row)

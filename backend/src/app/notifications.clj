@@ -123,7 +123,7 @@
     (when (jetty/connected? conn)
       (jetty/send! conn data)
       true)
-    (catch java.lang.NullPointerException e
+    (catch java.lang.NullPointerException _e
       false)))
 
 (defn websocket

@@ -11,7 +11,6 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
-   [app.common.media :as cm]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
@@ -21,13 +20,9 @@
    [app.rpc.queries.profile :as profile]
    [app.rpc.queries.teams :as teams]
    [app.storage :as sto]
-   [app.tasks :as tasks]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [buddy.core.codecs :as bc]
-   [buddy.core.nonce :as bn]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
    [datoteka.core :as fs]))
 
 ;; --- Helpers & Specs
@@ -266,10 +261,7 @@
 
 (defn upload-photo
   [{:keys [storage] :as cfg} {:keys [file]}]
-  (let [prefix (-> (bn/random-bytes 8)
-                   (bc/bytes->b64u)
-                   (bc/bytes->str))
-        thumb  (media/run cfg
+  (let [thumb  (media/run cfg
                  {:cmd :profile-thumbnail
                   :format :jpeg
                   :quality 85

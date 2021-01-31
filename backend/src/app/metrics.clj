@@ -12,9 +12,8 @@
    [app.common.exceptions :as ex]
    [app.util.time :as dt]
    [app.worker]
-   [clojure.tools.logging :as log]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
+   [clojure.tools.logging :as log]
    [integrant.core :as ig]
    [next.jdbc :as jdbc])
   (:import
@@ -67,7 +66,7 @@
                 {::original origf})))}))
 
 (defn- handler
-  [registry request]
+  [registry _request]
   (let [samples  (.metricFamilySamples ^CollectorRegistry registry)
         writer   (StringWriter.)]
     (TextFormat/write004 writer samples)
@@ -75,7 +74,7 @@
      :body (.toString writer)}))
 
 (defmethod ig/init-key ::metrics
-  [_ opts]
+  [_ _cfg]
   (log/infof "Initializing prometheus registry and instrumentation.")
   (let [registry (create-registry)]
     (instrument-workers! registry)
@@ -180,7 +179,7 @@
             (observe val))))))
 
 (defn create
-  [{:keys [type name] :as props}]
+  [{:keys [type] :as props}]
   (case type
     :counter (make-counter props)
     :gauge   (make-gauge props)
@@ -209,13 +208,13 @@
      (with-meta
        (fn
          ([a]
-          (mobj :inc)
+          (mobj :inc labels)
           (origf a))
          ([a b]
-          (mobj :inc)
+          (mobj :inc labels)
           (origf a b))
          ([a b & more]
-          (mobj :inc)
+          (mobj :inc labels)
           (apply origf a b more)))
        (assoc mdata ::original origf)))))
 

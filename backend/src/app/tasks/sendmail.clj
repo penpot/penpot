@@ -9,12 +9,11 @@
 
 (ns app.tasks.sendmail
   (:require
-   [app.common.spec :as us]
    [app.config :as cfg]
    [app.metrics :as mtx]
    [app.util.emails :as emails]
-   [clojure.tools.logging :as log]
    [clojure.spec.alpha :as s]
+   [clojure.tools.logging :as log]
    [integrant.core :as ig]))
 
 (declare handler)

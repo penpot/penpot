@@ -10,7 +10,6 @@
 (ns app.http.errors
   "A errors handling for the http server."
   (:require
-   [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [clojure.pprint :refer [pprint]]

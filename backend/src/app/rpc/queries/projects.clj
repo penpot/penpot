@@ -9,7 +9,6 @@
 
 (ns app.rpc.queries.projects
   (:require
-   [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
    [app.rpc.permissions :as perms]

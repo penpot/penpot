@@ -12,7 +12,6 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.config :as cfg]
-   [app.db :as db]
    [app.http.session :as session]
    [app.util.http :as http]
    [app.util.time :as dt]
@@ -46,7 +45,7 @@
     (str (assoc public :path "/api/oauth/github/callback"))))
 
 (defn- get-access-token
-  [cfg code state]
+  [cfg state code]
   (let [params {:client_id (:client-id cfg)
                 :client_secret (:client-secret cfg)
                 :code code
@@ -93,13 +92,13 @@
         nil))))
 
 (defn auth
-  [{:keys [tokens] :as cfg} request]
+  [{:keys [tokens] :as cfg} _request]
   (let [state  (tokens :generate
                        {:iss :github-oauth
                         :exp (dt/in-future "15m")})
 
         params {:client_id (:client-id cfg/config)
-                :redirect_uri (build-redirect-url)
+                :redirect_uri (build-redirect-url cfg)
                 :state state
                 :scope scope}
         query (u/map->query-string params)
@@ -112,9 +111,9 @@
   [{:keys [tokens rpc session] :as cfg} request]
   (let [state (get-in request [:params :state])
         _     (tokens :verify {:token state :iss :github-oauth})
-        info  (some-> (get-in request [:params :code])
-                      (get-access-token state)
-                      (get-user-info))]
+        info  (some->> (get-in request [:params :code])
+                       (get-access-token cfg state)
+                       (get-user-info))]
 
     (when-not info
       (ex/raise :type :authentication
@@ -158,7 +157,7 @@
                    ::client-secret]))
 
 (defn- default-handler
-  [req]
+  [_]
   (ex/raise :type :not-found))
 
 (defmethod ig/init-key :app.http.auth/github

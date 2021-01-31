@@ -14,11 +14,8 @@
    [app.common.exceptions :as ex]
    [app.common.media :as cm]
    [app.common.spec :as us]
-   [app.config :as cfg]
    [app.rlimits :as rlm]
    [app.svgparse :as svg]
-   [app.util.http :as http]
-   [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.core :as fs])

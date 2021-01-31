@@ -11,11 +11,11 @@
   "Generic task for permanent deletion of objects."
   (:require
    [app.common.spec :as us]
-   [integrant.core :as ig]
    [app.db :as db]
    [app.metrics :as mtx]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]))
+   [clojure.tools.logging :as log]
+   [integrant.core :as ig]))
 
 (declare handler)
 (declare handle-deletion)

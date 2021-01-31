@@ -14,7 +14,6 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
    [app.db :as db]
    [app.storage.db :as sdb]
    [app.storage.fs :as sfs]
@@ -27,7 +26,6 @@
    [cuerdas.core :as str]
    [datoteka.core :as fs]
    [integrant.core :as ig]
-   [lambdaisland.uri :as u]
    [promesa.exec :as px])
   (:import
    java.io.InputStream))
@@ -198,7 +196,7 @@
 (defn clone-object
   "Creates a clone of the provided object using backend basded efficient
   method. Always clones objects to the configured default."
-  [{:keys [pool conn executor] :as storage} object]
+  [{:keys [pool conn] :as storage} object]
   (us/assert ::storage storage)
   (let [storage (assoc storage :conn (or conn pool))
         object* (create-database-object storage object)]
@@ -242,7 +240,7 @@
 (defn get-object-path
   "Get the Path to the object. Only works with `:fs` type of
   storages."
-  [{:keys [backend conn path] :as storage} object]
+  [storage object]
   (let [backend (resolve-backend storage (:backend object))]
     (when (not= :fs (:type backend))
       (ex/raise :type :internal
@@ -304,7 +302,7 @@
                   backend (assoc backend :conn conn)]
               (impl/del-objects-in-bulk backend ids)))]
 
-    (fn [task]
+    (fn [_]
       (db/with-atomic [conn pool]
         (loop [n 0]
           (if-let [[groups total] (retrieve-deleted-objects conn)]
@@ -373,7 +371,7 @@
             (db/exec-one! conn ["update storage_object set touched_at=null where id = ANY(?)"
                                 (db/create-array conn "uuid" (into-array java.util.UUID ids))]))]
 
-    (fn [task]
+    (fn [_]
       (db/with-atomic [conn pool]
         (loop [cntf 0
                cntd 0]
@@ -424,7 +422,7 @@
   [_ {:keys [pool storage] :as cfg}]
   (letfn [(group-results [rows]
             (let [conj (fnil conj [])]
-              (reduce (fn [acc {:keys [id backend exist] :as row}]
+              (reduce (fn [acc {:keys [id exist] :as row}]
                         (cond-> (update acc :all conj id)
                           (false? exist)
                           (update :to-delete conj (dissoc row :exist))))
@@ -451,7 +449,7 @@
             (let [ids (db/create-array conn "uuid" (into-array java.util.UUID ids))]
               (db/exec-one! conn ["delete from storage_pending where id = ANY(?)" ids])))]
 
-    (fn [task]
+    (fn [_]
       (db/with-atomic [conn pool]
         (loop [n 0 d 0]
           (if-let [{:keys [all to-delete]} (retrieve-pending conn)]

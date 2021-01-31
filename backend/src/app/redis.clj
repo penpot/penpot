@@ -8,7 +8,6 @@
   (:refer-clojure :exclude [run!])
   (:require
    [app.common.spec :as us]
-   [app.config :as cfg]
    [app.util.redis :as redis]
    [clojure.spec.alpha :as s]
    [integrant.core :as ig])

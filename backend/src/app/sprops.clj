@@ -10,16 +10,11 @@
 (ns app.sprops
   "Server props module."
   (:require
-   [app.common.exceptions :as ex]
-   [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
    [app.db :as db]
-   [app.util.time :as dt]
    [buddy.core.codecs :as bc]
    [buddy.core.nonce :as bn]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [integrant.core :as ig]))
 
 (declare initialize)

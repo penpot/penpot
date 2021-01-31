@@ -10,9 +10,8 @@
 (ns app.rpc.permissions
   "A permission checking helper factories."
   (:require
-   [app.common.spec :as us]
    [app.common.exceptions :as ex]
-   [clojure.spec.alpha :as s]))
+   [app.common.spec :as us]))
 
 (defn make-edition-check-fn
   "A simple factory for edition permission check functions."

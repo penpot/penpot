@@ -9,17 +9,15 @@
 
 (ns app.storage.fs
   (:require
-   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.db :as db]
    [app.storage.impl :as impl]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
-   [datoteka.core :as fs]
    [cuerdas.core :as str]
-   [lambdaisland.uri :as u]
-   [integrant.core :as ig])
+   [datoteka.core :as fs]
+   [integrant.core :as ig]
+   [lambdaisland.uri :as u])
   (:import
    java.io.InputStream
    java.io.OutputStream
@@ -34,7 +32,7 @@
   (s/keys :opt-un [::directory]))
 
 (defmethod ig/init-key ::backend
-  [key cfg]
+  [_ cfg]
   ;; Return a valid backend data structure only if all optional
   ;; parameters are provided.
   (when (string? (:directory cfg))

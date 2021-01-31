@@ -12,14 +12,12 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [integrant.core :as ig]
-   [app.config :as cfg]
    [app.util.time :as dt]
    [app.util.transit :as t]
    [buddy.core.kdf :as bk]
    [buddy.sign.jwe :as jwe]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]))
+   [integrant.core :as ig]))
 
 (defn- derive-tokens-secret
   [key]

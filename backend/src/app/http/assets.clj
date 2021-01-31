@@ -13,13 +13,12 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
+   [app.metrics :as mtx]
    [app.storage :as sto]
    [app.util.time :as dt]
-   [app.metrics :as mtx]
-   [cuerdas.core :as str]
    [clojure.spec.alpha :as s]
-   [lambdaisland.uri :as u]
-   [integrant.core :as ig]))
+   [integrant.core :as ig]
+   [lambdaisland.uri :as u]))
 
 (def ^:private cache-max-age
   (dt/duration {:hours 24}))
@@ -73,14 +72,14 @@
          :body ""}))))
 
 (defn- generic-handler
-  [{:keys [storage] :as cfg} request id]
+  [{:keys [storage] :as cfg} _request id]
   (let [obj (sto/get-object storage id)]
     (if obj
       (serve-object cfg obj)
       {:status 404 :body ""})))
 
 (defn objects-handler
-  [{:keys [storage] :as cfg} request]
+  [cfg request]
   (let [id (get-in request [:path-params :id])]
     (generic-handler cfg request (coerce-id id))))
 
