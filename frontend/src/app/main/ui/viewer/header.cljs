@@ -11,9 +11,10 @@
   (:require
    [app.common.math :as mth]
    [app.common.uuid :as uuid]
+   [app.main.data.comments :as dcm]
    [app.main.data.messages :as dm]
    [app.main.data.viewer :as dv]
-   [app.main.data.comments :as dcm]
+   [app.main.data.viewer.shortcuts :as sc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -44,15 +45,15 @@
                    :on-close #(reset! show-dropdown? false)}
       [:ul.dropdown.zoom-dropdown
        [:li {:on-click on-increase}
-        "Zoom in" [:span "+"]]
+        "Zoom in" [:span (sc/get-tooltip :increase-zoom)]]
        [:li {:on-click on-decrease}
-        "Zoom out" [:span "-"]]
+        "Zoom out" [:span (sc/get-tooltip :decrease-zoom)]]
        [:li {:on-click on-zoom-to-50}
-        "Zoom to 50%" [:span "Shift + 0"]]
+        "Zoom to 50%" [:span (sc/get-tooltip :zoom-50)]]
        [:li {:on-click on-zoom-to-100}
-        "Zoom to 100%" [:span "Shift + 1"]]
+        "Zoom to 100%" [:span (sc/get-tooltip :reset-zoom)]]
        [:li {:on-click on-zoom-to-200}
-        "Zoom to 200%" [:span "Shift + 2"]]]]]))
+        "Zoom to 200%" [:span (sc/get-tooltip :zoom-200)]]]]]))
 
 (mf/defc share-link
   [{:keys [page token] :as props}]
@@ -272,7 +273,7 @@
         :on-zoom-to-100 (st/emitf dv/reset-zoom)
         :on-zoom-to-200 (st/emitf dv/zoom-to-200)}]
 
-      [:span.btn-icon-dark.btn-small.tooltip.tooltip-bottom
+      [:span.btn-icon-dark.btn-small.tooltip.tooltip-bottom-left
        {:alt (t locale "viewer.header.fullscreen")
         :on-click #(if @fullscreen (fullscreen false) (fullscreen true))}
        (if @fullscreen

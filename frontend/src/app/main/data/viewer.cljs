@@ -415,15 +415,3 @@
     (update [_ state]
       (assoc-in state [:viewer-local :hover] (when hover? id)))))
 
-;; --- Shortcuts
-
-(def shortcuts
-  {"+"       (st/emitf increase-zoom)
-   "-"       (st/emitf decrease-zoom)
-   "ctrl+a"  (st/emitf (select-all))
-   "shift+0" (st/emitf zoom-to-50)
-   "shift+1" (st/emitf reset-zoom)
-   "shift+2" (st/emitf zoom-to-200)
-   "left"    (st/emitf select-prev-frame)
-   "right"   (st/emitf select-next-frame)})
-

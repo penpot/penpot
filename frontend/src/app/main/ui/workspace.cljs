@@ -12,15 +12,16 @@
    [app.common.geom.point :as gpt]
    [app.main.constants :as c]
    [app.main.data.history :as udh]
-   [app.main.data.workspace :as dw]
    [app.main.data.messages :as dm]
+   [app.main.data.workspace :as dw]
+   [app.main.data.workspace.shortcuts :as sc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
+   [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
-   [app.main.ui.context :as ctx]
    [app.main.ui.workspace.colorpalette :refer [colorpalette]]
    [app.main.ui.workspace.colorpicker]
    [app.main.ui.workspace.context-menu :refer [context-menu]]
@@ -30,8 +31,8 @@
    [app.main.ui.workspace.rules :refer [horizontal-rule vertical-rule]]
    [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
    [app.main.ui.workspace.viewport :refer [viewport viewport-actions coordinates]]
-   [app.util.object :as obj]
    [app.util.dom :as dom]
+   [app.util.object :as obj]
    [beicon.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -128,7 +129,7 @@
       ;; Close any non-modal dialog that may be still open
       (st/emitf dm/hide)))
 
-  (hooks/use-shortcuts dw/shortcuts)
+  (hooks/use-shortcuts sc/shortcuts)
 
   (let [file    (mf/deref refs/workspace-file)
         project (mf/deref refs/workspace-project)

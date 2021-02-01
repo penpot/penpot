@@ -13,6 +13,8 @@
    [app.config :as cfg]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.shortcuts :as sc]
+   [app.main.data.workspace.shortcuts :as sc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -73,15 +75,15 @@
                    :on-close #(reset! show-dropdown? false)}
       [:ul.zoom-dropdown
        [:li {:on-click on-increase}
-        "Zoom in" [:span "+"]]
+        "Zoom in" [:span (sc/get-tooltip :increase-zoom)]]
        [:li {:on-click on-decrease}
-        "Zoom out" [:span "-"]]
+        "Zoom out" [:span (sc/get-tooltip :decrease-zoom)]]
        [:li {:on-click on-zoom-reset}
-        "Zoom to 100%" [:span "Shift + 0"]]
+        "Zoom to 100%" [:span (sc/get-tooltip :reset-zoom)]]
        [:li {:on-click on-zoom-fit}
-        "Zoom to fit all" [:span "Shift + 1"]]
+        "Zoom to fit all" [:span (sc/get-tooltip :fit-all)]]
        [:li {:on-click on-zoom-selected}
-        "Zoom to selected" [:span "Shift + 2"]]]]]))
+        "Zoom to selected" [:span (sc/get-tooltip :zoom-selected)]]]]]))
 
 ;; --- Header Users
 
@@ -171,52 +173,53 @@
          (if (contains? layout :rules)
            (tr "workspace.header.menu.hide-rules")
            (tr "workspace.header.menu.show-rules"))]
-        [:span.shortcut "Ctrl+shift+R"]]
+        [:span.shortcut (sc/get-tooltip :toggle-rules)]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :display-grid))}
         [:span
          (if (contains? layout :display-grid)
            (tr "workspace.header.menu.hide-grid")
            (tr "workspace.header.menu.show-grid"))]
-        [:span.shortcut "Ctrl+'"]]
+        [:span.shortcut (sc/get-tooltip :toggle-grid)]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :snap-grid))}
         [:span
          (if (contains? layout :snap-grid)
            (tr "workspace.header.menu.disable-snap-grid")
            (tr "workspace.header.menu.enable-snap-grid"))]
-        [:span.shortcut "Ctrl+Shift+'"]]
+        [:span.shortcut (sc/get-tooltip :toggle-snap-grid)]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :sitemap :layers))}
         [:span
          (if (or (contains? layout :sitemap) (contains? layout :layers))
            (tr "workspace.header.menu.hide-layers")
            (tr "workspace.header.menu.show-layers"))]
-        [:span.shortcut "Ctrl+l"]]
+        [:span.shortcut (sc/get-tooltip :toggle-layers)]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :colorpalette))}
         [:span
          (if (contains? layout :colorpalette)
            (tr "workspace.header.menu.hide-palette")
            (tr "workspace.header.menu.show-palette"))]
-        [:span.shortcut "Ctrl+p"]]
+        [:span.shortcut (sc/get-tooltip :toggle-palette)]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :assets))}
         [:span
          (if (contains? layout :assets)
            (tr "workspace.header.menu.hide-assets")
            (tr "workspace.header.menu.show-assets"))]
-        [:span.shortcut "Ctrl+i"]]
+        [:span.shortcut (sc/get-tooltip :toggle-assets)]]
 
        [:li {:on-click #(st/emit! (dw/select-all))}
         [:span (tr "workspace.header.menu.select-all")]
-        [:span.shortcut "Ctrl+a"]]
+        [:span.shortcut (sc/get-tooltip :select-all)]]
 
        [:li {:on-click #(st/emit! (dw/toggle-layout-flags :dynamic-alignment))}
         [:span
          (if (contains? layout :dynamic-alignment)
            (tr "workspace.header.menu.disable-dynamic-alignment")
-           (tr "workspace.header.menu.enable-dynamic-alignment"))]]
+           (tr "workspace.header.menu.enable-dynamic-alignment"))]
+        [:span.shortcut (sc/get-tooltip :toggle-alignment)]]
 
        (if (:is-shared file)
          [:li {:on-click on-remove-shared}
@@ -272,8 +275,8 @@
         :on-zoom-fit #(st/emit! dw/zoom-to-fit-all)
         :on-zoom-selected #(st/emit! dw/zoom-to-selected-shape)}]
 
-      [:a.btn-icon-dark.btn-small.tooltip.tooltip-bottom
-       {:alt (tr "workspace.header.viewer")
+      [:a.btn-icon-dark.btn-small.tooltip.tooltip-bottom-left
+       {:alt (tr "workspace.header.viewer" (sc/get-tooltip :open-viewer))
         :href (str "#" view-url)
         :on-click go-viewer}
        i/play]]]))

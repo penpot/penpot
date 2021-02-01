@@ -508,7 +508,7 @@
            (let [node (mf/ref-val viewport-ref)
                  target (dom/get-target event)]
              (cond
-               (kbd/ctrl? event)
+               (or (kbd/ctrl? event) (kbd/meta? event))
                (let [event (.getBrowserEvent ^js event)
                      pos   @ms/mouse-position]
                  (dom/prevent-default event)
