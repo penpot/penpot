@@ -32,9 +32,13 @@
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector]]
    [app.main.ui.workspace.colorpicker.color-inputs :refer [color-inputs]]))
 
+(def selected-palette-ref
+  (-> (l/in [:workspace-local :selected-palette-colorpicker])
+      (l/derived st/state)))
+
 (mf/defc libraries [{:keys [current-color on-select-color on-add-library-color
                             disable-gradient disable-opacity]}]
-  (let [selected-library       (mf/use-state "recent")
+  (let [selected-library       (or (mf/deref selected-palette-ref) :recent)
         current-library-colors (mf/use-state [])
 
         shared-libs      (mf/deref refs/workspace-libraries)
@@ -43,10 +47,10 @@
         locale           (mf/deref i18n/locale)
 
         parse-selected
-        (fn [selected]
-          (if (#{"recent" "file"} selected)
-            (keyword selected)
-            (uuid selected)) )
+        (fn [selected-str]
+          (if (#{"recent" "file"} selected-str)
+            (keyword selected-str)
+            (uuid selected-str)))
 
         check-valid-color? (fn [color]
                              (and (or (not disable-gradient) (not (:gradient color)))
@@ -54,37 +58,36 @@
 
     ;; Load library colors when the select is changed
     (mf/use-effect
-     (mf/deps @selected-library)
+     (mf/deps selected-library)
      (fn []
        (let [mapped-colors
              (cond
-               (= @selected-library "recent")
+               (= selected-library :recent)
                ;; The `map?` check is to keep backwards compatibility. We transform from string to map
                (map #(if (map? %) % (hash-map :color %)) (reverse (or recent-colors [])))
 
-               (= @selected-library "file")
+               (= selected-library :file)
                (vals file-colors)
 
                :else ;; Library UUID
-               (->> (get-in shared-libs [(uuid @selected-library) :data :colors])
+               (->> (get-in shared-libs [selected-library :data :colors])
                     (vals)
-                    (map #(merge % {:file-id (uuid @selected-library)}))))]
+                    (map #(merge % {:file-id selected-library}))))]
 
          (reset! current-library-colors (into [] (filter check-valid-color?) mapped-colors)))))
 
     ;; If the file colors change and the file option is selected updates the state
     (mf/use-effect
      (mf/deps file-colors)
-     (fn [] (when (= @selected-library "file")
+     (fn [] (when (= selected-library :file)
               (let [colors (vals file-colors)]
                 (reset! current-library-colors (into [] (filter check-valid-color?) colors))))))
 
-
     [:div.libraries
      [:select {:on-change (fn [e]
-                            (when-let [val (dom/get-target-val e)]
-                              (reset! selected-library val)))
-               :value @selected-library}
+                            (when-let [val (parse-selected (dom/get-target-val e))]
+                              (st/emit! (dc/change-palette-selected-colorpicker val))))
+               :value (name selected-library)}
       [:option {:value "recent"} (t locale "workspace.libraries.colors.recent-colors")]
       [:option {:value "file"} (t locale "workspace.libraries.colors.file-library")]
 
@@ -93,13 +96,13 @@
                   :value id} name])]
 
      [:div.selected-colors
-      (when (= "file" @selected-library)
+      (when (= selected-library :file)
         [:div.color-bullet.button.plus-button {:style {:background-color "white"}
                                                :on-click on-add-library-color}
          i/plus])
 
       [:div.color-bullet.button {:style {:background-color "white"}
-                                 :on-click #(st/emit! (dc/show-palette (parse-selected @selected-library)))}
+                                 :on-click #(st/emit! (dc/show-palette selected-library))}
        i/palette]
 
       (for [[idx color] (map-indexed vector @current-library-colors)]

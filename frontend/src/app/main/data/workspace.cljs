@@ -121,6 +121,7 @@
    :left-sidebar? true
    :right-sidebar? true
    :color-for-rename nil
+   :selected-palette-colorpicker :recent
    :selected-palette :recent
    :selected-palette-size :big
    :picking-color? false
