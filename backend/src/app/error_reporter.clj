@@ -36,6 +36,7 @@
 
 (declare handle-event)
 
+(defonce enabled-mattermost (atom true))
 (defonce queue (a/chan (a/sliding-buffer 64)))
 (defonce queue-fn (fn [event] (a/>!! queue event)))
 
@@ -117,7 +118,7 @@
   [cfg event]
   (try
     (let [cdata (get-context-data event)]
-      (when (:uri cfg)
+      (when (and (:uri cfg) @enabled-mattermost)
         (send-mattermost-notification! cfg cdata))
       (persist-on-database! cfg cdata))
     (catch Exception e
