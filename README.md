@@ -3,6 +3,7 @@
 [uri_license_image]: https://img.shields.io/badge/MPL-2.0-blue.svg
 
 [![License: MPL-2.0][uri_license_image]][uri_license]
+[![Gitter](https://badges.gitter.im/sereno-xyz/community.svg)](https://gitter.im/penpot/community)
 [![Managed with Taiga.io](https://img.shields.io/badge/managed%20with-TAIGA.io-709f14.svg)](https://tree.taiga.io/project/uxbox/ "Managed with Taiga.io")
 
 
@@ -38,6 +39,11 @@ passion and because of this, we'll be glad if you want to participate
 and improve Penpot. All your awesome ideas and code are welcome!
 
 Please refer to the [Contributing Guide](./CONTRIBUTING.md)
+
+
+## Documentation ##
+
+Please refer to [docs/ directory](./docs/).
 
 
 ## License ##
