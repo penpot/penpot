@@ -184,9 +184,9 @@ function publish-latest-images {
     docker tag $ORGANIZATION/backend:$CURRENT_VERSION $ORGANIZATION/backend:latest;
     docker tag $ORGANIZATION/exporter:$CURRENT_VERSION $ORGANIZATION/exporter:latest;
 
-    docker push $ORGANIZATION/frontend:$CURRENT_VERSION;
-    docker push $ORGANIZATION/backend:$CURRENT_VERSION;
-    docker push $ORGANIZATION/exporter:$CURRENT_VERSION;
+    # docker push $ORGANIZATION/frontend:$CURRENT_VERSION;
+    # docker push $ORGANIZATION/backend:$CURRENT_VERSION;
+    # docker push $ORGANIZATION/exporter:$CURRENT_VERSION;
     docker push $ORGANIZATION/frontend:latest;
     docker push $ORGANIZATION/backend:latest;
     docker push $ORGANIZATION/exporter:latest;
