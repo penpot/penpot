@@ -6,6 +6,7 @@
 
 - Add major refactor of internal pubsub/redis code; improves scalability and performance #640
 - Add optional loki integration.
+- Add emailcatcher and ldap test containers to devenv. #506
 - Bounce & Complaint handling.
 - Disable groups interactions when holding "Ctrl" key (deep selection)
 - New action in context menu to "edit" some shapes (binded to key "Enter")
