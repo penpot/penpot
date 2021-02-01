@@ -77,8 +77,10 @@
 
 (defn clean-storage
   [next]
-  (fs/delete (fs/path "/tmp/penpot"))
-  (next))
+  (let [path (fs/path "/tmp/penpot")]
+    (when (fs/exists? path)
+      (fs/delete (fs/path "/tmp/penpot")))
+    (next)))
 
 (defn serial
   [& funcs]

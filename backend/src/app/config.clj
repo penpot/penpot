@@ -221,11 +221,11 @@
 
 (defn- read-test-config
   [env]
-  (assoc (read-config env)
-         :redis-uri "redis://redis/1"
-         :database-uri "postgresql://postgres/penpot_test"
-         :storage-fs-directory "/tmp/app/storage"
-         :migrations-verbose false))
+  (merge {:redis-uri "redis://redis/1"
+          :database-uri "postgresql://postgres/penpot_test"
+          :storage-fs-directory "/tmp/app/storage"
+          :migrations-verbose false}
+         (read-config env)))
 
 (def version (v/parse "%version%"))
 (def config (read-config env))
