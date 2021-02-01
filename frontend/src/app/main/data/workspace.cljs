@@ -124,6 +124,7 @@
    :selected-palette-colorpicker :recent
    :selected-palette :recent
    :selected-palette-size :big
+   :assets-files-open {}
    :picking-color? false
    :picked-color nil
    :picked-color-select false})

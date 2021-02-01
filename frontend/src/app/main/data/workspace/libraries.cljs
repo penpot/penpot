@@ -65,6 +65,13 @@
 
 (declare sync-file)
 
+(defn set-assets-box-open
+  [file-id box open?]
+  (ptk/reify ::set-assets-box-open
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :assets-files-open file-id box] open?))))
+
 (defn default-color-name [color]
   (or (:color color)
       (case (get-in color [:gradient :type])

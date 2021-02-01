@@ -277,7 +277,7 @@
       [:div.row-flex
        [:> grow-options opts]
        [:> text-decoration-options opts]]
-      
+
       ]]))
 
 (mf/defc options
