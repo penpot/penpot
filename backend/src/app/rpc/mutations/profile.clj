@@ -254,8 +254,10 @@
                          :is-demo false}))
 
           (register-profile [conn params]
-            (->> (create-profile conn params)
-                 (create-profile-relations conn)))]
+            (let [profile (->> (create-profile conn params)
+                               (create-profile-relations conn))]
+              (create-profile-initial-data conn profile)
+              profile))]
 
     (db/with-atomic [conn pool]
       (let [profile (profile/retrieve-profile-data-by-email conn email)
