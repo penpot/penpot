@@ -15,6 +15,7 @@
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
+   [app.main.ui.keyboard :as kbd]
    [app.main.ui.workspace.sidebar.layers :refer [element-icon layer-name frame-wrapper]]
    [app.util.dom :as dom]
    [okulary.core :as l]
@@ -52,10 +53,10 @@
           (dom/prevent-default event)
           (let [id (:id item)]
             (cond
-              (.-ctrlKey event)
+              (or (kbd/ctrl? event) (kbd/meta? event))
               (st/emit! (dv/toggle-selection id))
 
-              (.-shiftKey event)
+              (kbd/shift? event)
               (st/emit! (dv/shift-select-to id))
 
               :else

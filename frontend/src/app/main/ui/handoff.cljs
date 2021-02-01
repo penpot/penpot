@@ -11,6 +11,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.main.data.viewer :as dv]
+   [app.main.data.viewer.shortcuts :as sc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.fullscreen :as fs]
@@ -75,7 +76,7 @@
   (let [on-mouse-wheel
         (mf/use-callback
          (fn [event]
-           (when (kbd/ctrl? event)
+           (when (or (kbd/ctrl? event) (kbd/meta? event))
              (dom/prevent-default event)
              (let [event (.getBrowserEvent ^js event)
                    delta (+ (.-deltaY ^js event)
@@ -94,7 +95,7 @@
               (events/unlistenByKey key1))))]
 
     (mf/use-effect on-mount)
-    (hooks/use-shortcuts dv/shortcuts)
+    (hooks/use-shortcuts sc/shortcuts)
 
     [:& fs/fullscreen-wrapper {}
      [:div.handoff-layout

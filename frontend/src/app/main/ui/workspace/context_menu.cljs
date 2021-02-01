@@ -14,11 +14,12 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.shortcuts :as sc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
-   [app.main.ui.context :as ctx]
    [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.hooks :refer [use-rxsub]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -99,52 +100,52 @@
                                                (:component-file shape)))]
     [:*
      [:& menu-entry {:title (t locale "workspace.shape.menu.copy")
-                     :shortcut "Ctrl + c"
+                     :shortcut (sc/get-tooltip :copy)
                      :on-click do-copy}]
      [:& menu-entry {:title (t locale "workspace.shape.menu.cut")
-                     :shortcut "Ctrl + x"
+                     :shortcut (sc/get-tooltip :cut)
                      :on-click do-cut}]
      [:& menu-entry {:title (t locale "workspace.shape.menu.paste")
-                     :shortcut "Ctrl + v"
+                     :shortcut (sc/get-tooltip :paste)
                      :on-click do-paste}]
      [:& menu-entry {:title (t locale "workspace.shape.menu.duplicate")
-                     :shortcut "Ctrl + d"
+                     :shortcut (sc/get-tooltip :duplicate)
                      :on-click do-duplicate}]
      [:& menu-separator]
      [:& menu-entry {:title (t locale "workspace.shape.menu.forward")
-                     :shortcut "Ctrl + ↑"
+                     :shortcut (sc/get-tooltip :bring-forward)
                      :on-click do-bring-forward}]
      [:& menu-entry {:title (t locale "workspace.shape.menu.front")
-                     :shortcut "Ctrl + Shift + ↑"
+                     :shortcut (sc/get-tooltip :bring-front)
                      :on-click do-bring-to-front}]
      [:& menu-entry {:title (t locale "workspace.shape.menu.backward")
-                     :shortcut "Ctrl + ↓"
+                     :shortcut (sc/get-tooltip :bring-backward)
                      :on-click do-send-backward}]
      [:& menu-entry {:title (t locale "workspace.shape.menu.back")
-                     :shortcut "Ctrl + Shift + ↓"
+                     :shortcut (sc/get-tooltip :bring-back)
                      :on-click do-send-to-back}]
      [:& menu-separator]
 
      (when (> (count selected) 1)
        [:*
         [:& menu-entry {:title (t locale "workspace.shape.menu.group")
-                        :shortcut "Ctrl + g"
+                        :shortcut (sc/get-tooltip :group)
                         :on-click do-create-group}]
         [:& menu-entry {:title (t locale "workspace.shape.menu.mask")
-                        :shortcut "Ctrl + M"
+                        :shortcut (sc/get-tooltip :mask)
                         :on-click do-mask-group}]])
 
      (when (and (= (count selected) 1) (= (:type shape) :group))
        [:*
          [:& menu-entry {:title (t locale "workspace.shape.menu.ungroup")
-                         :shortcut "Shift + g"
+                         :shortcut (sc/get-tooltip :ungroup)
                          :on-click do-remove-group}]
          (if (:masked-group? shape)
            [:& menu-entry {:title (t locale "workspace.shape.menu.unmask")
-                           :shortcut "Shift + M"
+                           :shortcut (sc/get-tooltip :unmask)
                            :on-click do-unmask-group}]
-           [:& menu-entry {:title "Mask"
-                           :shortcut "Ctrl + M"
+           [:& menu-entry {:title (t locale "workspace.shape.menu.mask")
+                           :shortcut (sc/get-tooltip :group)
                            :on-click do-mask-group}])])
 
      (if (:hidden shape)
@@ -165,7 +166,7 @@
        [:*
         [:& menu-separator]
         [:& menu-entry {:title (t locale "workspace.shape.menu.create-component")
-                        :shortcut "Ctrl + K"
+                        :shortcut (sc/get-tooltip :create-component)
                         :on-click do-add-component}]])
 
      (when (and (:component-id shape)
@@ -197,7 +198,7 @@
 
      [:& menu-separator]
      [:& menu-entry {:title (t locale "workspace.shape.menu.delete")
-                     :shortcut "Supr"
+                     :shortcut (sc/get-tooltip :delete)
                      :on-click do-delete}]]))
 
 (mf/defc viewport-context-menu
@@ -206,7 +207,7 @@
         do-paste (st/emitf dw/paste)]
     [:*
      [:& menu-entry {:title (t locale "workspace.shape.menu.paste")
-                     :shortcut "Ctrl + v"
+                     :shortcut (sc/get-tooltip :paste)
                      :on-click do-paste}]]))
 
 (mf/defc context-menu

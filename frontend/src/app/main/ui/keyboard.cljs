@@ -13,6 +13,10 @@
   [event]
   (.-ctrlKey event))
 
+(defn ^boolean meta?
+  [event]
+  (.-metaKey event))
+
 (defn ^boolean shift?
   [event]
   (.-shiftKey event))

@@ -19,6 +19,7 @@
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
+   [app.main.ui.keyboard :as kbd]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t]]
    [app.util.object :as obj]
@@ -140,10 +141,10 @@
                   (:hidden item))
               nil
 
-              (.-shiftKey event)
+              (kbd/shift? event)
               (st/emit! (dw/shift-select-shapes id))
 
-              (.-ctrlKey event)
+              (or (kbd/ctrl? event) (kbd/meta? event))
               (st/emit! (dw/select-shape id true))
 
               (> (count selected) 1)

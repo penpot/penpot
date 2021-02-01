@@ -9,14 +9,13 @@
 
 (ns app.main.data.workspace
   (:require
-   [goog.string.path :as path]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.geom.align :as gal]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.geom.shapes :as gsh]
    [app.common.geom.proportions :as gpr]
-   [app.common.geom.align :as gal]
+   [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.pages :as cp]
    [app.common.pages.helpers :as cph]
@@ -27,33 +26,33 @@
    [app.main.data.colors :as mdc]
    [app.main.data.messages :as dm]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.drawing :as dwd]
+   [app.main.data.workspace.drawing.path :as dwdp]
+   [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.notifications :as dwn]
    [app.main.data.workspace.persistence :as dwp]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.transforms :as dwt]
-   [app.main.data.workspace.groups :as dwg]
-   [app.main.data.workspace.drawing :as dwd]
-   [app.main.data.workspace.drawing.path :as dwdp]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.worker :as uw]
+   [app.util.dom :as dom]
+   [app.util.http :as http]
+   [app.util.i18n :refer [tr] :as i18n]
    [app.util.logging :as log]
+   [app.util.object :as obj]
    [app.util.router :as rt]
    [app.util.timers :as ts]
    [app.util.transit :as t]
    [app.util.webapi :as wapi]
-   [app.util.i18n :refer [tr] :as i18n]
-   [app.util.object :as obj]
-   [app.util.dom :as dom]
-   [app.util.http :as http]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [clojure.set :as set]
    [cuerdas.core :as str]
-   ;; [cljs.pprint :refer [pprint]]
+   [goog.string.path :as path]
    [potok.core :as ptk]))
 
 ;; (log/set-level! :trace)
@@ -1223,20 +1222,26 @@
 
 
 (defn go-to-viewer
-  [{:keys [file-id page-id] :as params}]
-  (ptk/reify ::go-to-viewer
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (rx/of ::dwp/force-persist
-             (rt/nav :viewer params {:index 0})))))
+  ([] (go-to-viewer {}))
+  ([{:keys [file-id page-id]}]
+   (ptk/reify ::go-to-viewer
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [{:keys [current-file-id current-page-id]} state
+             params {:file-id (or file-id current-file-id)
+                     :page-id (or page-id current-page-id)}]
+         (rx/of ::dwp/force-persist
+                (rt/nav :viewer params {:index 0})))))))
 
 (defn go-to-dashboard
-  [{:keys [team-id] :as project}]
-  (ptk/reify ::go-to-viewer
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (rx/of ::dwp/force-persist
-             (rt/nav :dashboard-projects {:team-id team-id})))))
+  ([] (go-to-dashboard nil))
+  ([{:keys [team-id]}]
+   (ptk/reify ::go-to-dashboard
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [team-id (or team-id (get-in state [:workspace-project :team-id]))]
+         (rx/of ::dwp/force-persist
+                (rt/nav :dashboard-projects {:team-id team-id})))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Context Menu
@@ -1741,80 +1746,3 @@
 (d/export dwg/unmask-group)
 (d/export dwg/group-selected)
 (d/export dwg/ungroup-selected)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Shortcuts
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; Shortcuts impl https://github.com/ccampbell/mousetrap
-
-(defn esc-pressed []
-  (ptk/reify :esc-pressed
-    ptk/WatchEvent
-    (watch [_ state stream]
-      ;;  Not interrupt when we're editing a path
-      (let [edition-id (or (get-in state [:workspace-drawing :object :id])
-                           (get-in state [:workspace-local :edition]))
-            path-edit-mode (get-in state [:workspace-local :edit-path edition-id :edit-mode])]
-        (if-not (= :draw path-edit-mode)
-          (rx/of :interrupt (deselect-all true))
-          (rx/empty))))))
-
-(defn c-mod
-  "Adds the control/command modifier to a shortcuts depending on the
-  operating system for the user"
-  [shortcut]
-  (if (cfg/check-platform? :macos)
-    (str "command+" shortcut)
-    (str "ctrl+" shortcut)))
-
-(def shortcuts
-  {(c-mod "i") #(st/emit! (toggle-layout-flags :assets))
-   (c-mod "l") #(st/emit! (toggle-layout-flags :sitemap :layers))
-   (c-mod "shift+r") #(st/emit! (toggle-layout-flags :rules))
-   (c-mod "a") #(st/emit! (select-all))
-   (c-mod "p") #(st/emit! (toggle-layout-flags :colorpalette))
-   (c-mod "'") #(st/emit! (toggle-layout-flags :display-grid))
-   (c-mod "shift+'") #(st/emit! (toggle-layout-flags :snap-grid))
-   "+" #(st/emit! (increase-zoom nil))
-   "-" #(st/emit! (decrease-zoom nil))
-   (c-mod "g") #(st/emit! group-selected)
-   "shift+g" #(st/emit! ungroup-selected)
-   (c-mod "m") #(st/emit! mask-group)
-   "shift+m" #(st/emit! unmask-group)
-   (c-mod "k") #(st/emit! dwl/add-component)
-   "shift+0" #(st/emit! reset-zoom)
-   "shift+1" #(st/emit! zoom-to-fit-all)
-   "shift+2" #(st/emit! zoom-to-selected-shape)
-   (c-mod "d") #(st/emit! duplicate-selected)
-   (c-mod "z") #(st/emit! dwc/undo)
-   (c-mod "shift+z") #(st/emit! dwc/redo)
-   (c-mod "y") #(st/emit! dwc/redo)
-   (c-mod "q") #(st/emit! dwc/reinitialize-undo)
-   "a" #(st/emit! (dwd/select-for-drawing :frame))
-   "r" #(st/emit! (dwd/select-for-drawing :rect))
-   "e" #(st/emit! (dwd/select-for-drawing :circle))
-   "t" #(st/emit! dwtxt/start-edit-if-selected
-                  (dwd/select-for-drawing :text))
-   "p" #(st/emit! (dwd/select-for-drawing :path))
-   "k" (fn [event]
-         (let [image-upload (dom/get-element "image-upload")]
-           (dom/click image-upload)))
-   (c-mod "c") #(st/emit! (copy-selected))
-   (c-mod "x") #(st/emit! (copy-selected) delete-selected)
-   "escape" #(st/emit! (esc-pressed))
-   "del" #(st/emit! delete-selected)
-   "backspace" #(st/emit! delete-selected)
-   (c-mod "up") #(st/emit! (vertical-order-selected :up))
-   (c-mod "down") #(st/emit! (vertical-order-selected :down))
-   (c-mod "shift+up") #(st/emit! (vertical-order-selected :top))
-   (c-mod "shift+down") #(st/emit! (vertical-order-selected :bottom))
-   "shift+up" #(st/emit! (dwt/move-selected :up true))
-   "shift+down" #(st/emit! (dwt/move-selected :down true))
-   "shift+right" #(st/emit! (dwt/move-selected :right true))
-   "shift+left" #(st/emit! (dwt/move-selected :left true))
-   "up" #(st/emit! (dwt/move-selected :up false))
-   "down" #(st/emit! (dwt/move-selected :down false))
-   "right" #(st/emit! (dwt/move-selected :right false))
-   "left" #(st/emit! (dwt/move-selected :left false))
-   "i" #(st/emit! (mdc/picker-for-selected-shape ))})

@@ -10,18 +10,22 @@
 (ns app.main.ui.hooks
   "A collection of general purpose react hooks."
   (:require
-   [cljs.spec.alpha :as s]
+   ["mousetrap" :as mousetrap]
    [app.common.spec :as us]
-   [beicon.core :as rx]
-   [goog.events :as events]
-   [rumext.alpha :as mf]
-   [app.util.transit :as t]
+   [app.main.data.shortcuts :refer [bind-shortcuts]]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
-   [app.util.webapi :as wapi]
+   [app.util.logging :as log]
    [app.util.timers :as ts]
-   ["mousetrap" :as mousetrap])
+   [app.util.transit :as t]
+   [app.util.webapi :as wapi]
+   [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
+   [goog.events :as events]
+   [rumext.alpha :as mf])
   (:import goog.events.EventType))
+
+(log/set-level! :warn)
 
 (defn use-rxsub
   [ob]
@@ -33,20 +37,18 @@
      #js [ob])
     state))
 
-(s/def ::shortcuts
-  (s/map-of ::us/string fn?))
-
 (defn use-shortcuts
   [shortcuts]
-  (us/assert ::shortcuts shortcuts)
   (mf/use-effect
    (fn []
-     (->> (seq shortcuts)
-          (run! (fn [[key f]]
-                  (mousetrap/bind key (fn [event]
-                                        (js/console.log "[debug]: shortcut:" key)
-                                        (.preventDefault event)
-                                        (f event))))))
+     (bind-shortcuts
+      shortcuts
+      mousetrap/bind
+      (fn [key cb]
+        (fn [event]
+          (log/debug :msg (str "Shortcut" key))
+          (.preventDefault event)
+          (cb event))))
      (fn [] (mousetrap/reset))))
   nil)
 
