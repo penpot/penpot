@@ -144,7 +144,10 @@
 
 (s/def ::team-id ::us/uuid)
 (s/def ::member-id ::us/uuid)
-(s/def ::role #{:owner :admin :editor :viewer})
+;; Temporarily disabled viewer role
+;; https://tree.taiga.io/project/uxboxproject/issue/1083
+;; (s/def ::role #{:owner :admin :editor :viewer})
+(s/def ::role #{:owner :admin :editor})
 
 (s/def ::update-team-member-role
   (s/keys :req-un [::profile-id ::team-id ::member-id ::role]))

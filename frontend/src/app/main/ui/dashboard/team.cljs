@@ -83,8 +83,10 @@
   [{:keys [team] :as props}]
   (let [roles   [{:value "" :label (tr "labels.role")}
                  {:value "admin" :label (tr "labels.admin")}
-                 {:value "editor" :label (tr "labels.editor")}
-                 {:value "viewer" :label (tr "labels.viewer")}]
+                 {:value "editor" :label (tr "labels.editor")}]
+                 ;; Temporarily disabled viewer role
+                 ;; https://tree.taiga.io/project/uxboxproject/issue/1083
+                 ;; {:value "viewer" :label (tr "labels.viewer")}]
 
         initial (mf/use-memo (mf/deps team) (constantly {:team-id (:id team)}))
         form    (fm/use-form :spec ::invite-member-form
@@ -191,7 +193,9 @@
        [:ul.dropdown.options-dropdown
         [:li {:on-click set-admin} (tr "labels.admin")]
         [:li {:on-click set-editor} (tr "labels.editor")]
-        [:li {:on-click set-viewer} (tr "labels.viewer")]
+        ;; Temporarily disabled viewer role
+        ;; https://tree.taiga.io/project/uxboxproject/issue/1083
+        ;; [:li {:on-click set-viewer} (tr "labels.viewer")]
         (when (:is-owner team)
           [:*
            [:hr]
