@@ -21,7 +21,7 @@ jobs:
 
     environment:
       # Customize the JVM maximum heap limit
-      JVM_OPTS: -Xmx512m
+      JVM_OPTS: -Xmx1g
 
     steps:
       - checkout
@@ -29,20 +29,20 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
          keys:
-           - v1-dependencies-{{ checksum "backend/deps.edn" }}
+           - v1-dependencies-{{ checksum "backend/deps.edn" }}-{{ checksum "frontend/deps.edn"}}
            # fallback to using the latest cache if no exact match is found
            - v1-dependencies-
 
       # run lint
       - run:
           working_directory: "./backend"
-          name: lint
+          name: backend lint
           command: "clj-kondo --lint src/"
 
       # run test
       - run:
           working_directory: "./backend"
-          name: test
+          name: backend test
           command: "clojure -M:dev:tests"
           environment:
             PENPOT_DATABASE_URI: "postgresql://localhost/penpot"
@@ -50,8 +50,17 @@ jobs:
             PENPOT_DATABASE_PASSWORD: penpot_test
             PENPOT_REDIS_URI: "redis://localhost/1"
 
+      - run:
+          working_directory: "./frontend"
+          name: frontend tests
+          command: |
+            yarn install
+            npx shadow-cljs compile tests
+          environment:
+            PATH: /usr/local/nodejs/bin/:/usr/local/bin:/bin:/usr/bin
+
       - save_cache:
          paths:
            - ~/.m2
-         key: v1-dependencies-{{ checksum "backend/deps.edn" }}
+         key: v1-dependencies-{{ checksum "backend/deps.edn" }}-{{ checksum "frontend/deps.edn"}}
 
