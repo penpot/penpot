@@ -135,8 +135,8 @@
                  (filter #(= page-id (:page-id %)))
                  (d/index-by :id)
                  (assoc state :comment-threads)))
-          (on-error [err]
-            (if (= :not-authorized (:code err))
+          (on-error [{:keys [type] :as err}]
+            (if (= :authentication type)
               (rx/empty)
               (rx/throw err)))]
 
