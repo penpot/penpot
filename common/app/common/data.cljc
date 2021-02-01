@@ -328,6 +328,11 @@
       nil
       (apply f args))))
 
+(defn nilv
+  "Returns a default value if the given value is nil"
+  [v default]
+  (if (some? v) v default))
+
 (defn check-num
   "Function that checks if a number is nil or nan. Will return 0 when not
   valid and the number otherwise."

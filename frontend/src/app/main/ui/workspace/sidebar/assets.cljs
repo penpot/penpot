@@ -45,7 +45,7 @@
    [rumext.alpha :as mf]))
 
 (mf/defc components-box
-  [{:keys [file-id local? components open? on-open on-close] :as props}]
+  [{:keys [file-id local? components open?] :as props}]
   (let [state (mf/use-state {:menu-open false
                              :renaming nil
                              :top nil
@@ -106,7 +106,8 @@
 
     [:div.asset-group
      [:div.group-title {:class (when (not open?) "closed")}
-      [:span {:on-click #(if open? (on-close) (on-open))} i/arrow-slide (tr "workspace.assets.components")]
+      [:span {:on-click (st/emitf (dwl/set-assets-box-open file-id :components (not open?)))}
+       i/arrow-slide (tr "workspace.assets.components")]
       [:span (str "\u00A0(") (count components) ")"]] ;; Unicode 00A0 is non-breaking space
      (when open?
        [:div.group-grid.big
@@ -140,7 +141,7 @@
                    [(tr "workspace.assets.delete") on-delete]]}])]))
 
 (mf/defc graphics-box
-  [{:keys [file-id local? objects open? on-open on-close] :as props}]
+  [{:keys [file-id local? objects open?] :as props}]
   (let [input-ref  (mf/use-ref nil)
         state      (mf/use-state {:menu-open false
                                   :renaming nil
@@ -151,7 +152,7 @@
         add-graphic
         (mf/use-callback
          (fn []
-           (on-open)
+           (st/emitf (dwl/set-assets-box-open file-id :graphics true))
            (dom/click (mf/ref-val input-ref))))
 
         on-media-uploaded
@@ -218,7 +219,8 @@
 
     [:div.asset-group
      [:div.group-title {:class (when (not open?) "closed")}
-      [:span {:on-click #(if open? (on-close) (on-open))} i/arrow-slide (tr "workspace.assets.graphics")]
+      [:span {:on-click (st/emitf (dwl/set-assets-box-open file-id :graphics (not open?)))}
+       i/arrow-slide (tr "workspace.assets.graphics")]
       [:span.num-assets (str "\u00A0(") (count objects) ")"] ;; Unicode 00A0 is non-breaking space
       (when local?
         [:div.group-button {:on-click add-graphic}
@@ -375,7 +377,7 @@
                     [(t locale "workspace.assets.delete") delete-color]]}])]))
 
 (mf/defc colors-box
-  [{:keys [file-id local? colors locale open? on-open on-close] :as props}]
+  [{:keys [file-id local? colors locale open?] :as props}]
   (let [add-color
         (mf/use-callback
          (mf/deps file-id)
@@ -386,7 +388,7 @@
         (mf/use-callback
          (mf/deps file-id)
          (fn [event]
-           (on-open)
+           (st/emitf (dwl/set-assets-box-open file-id :colors true))
            (modal/show! :colorpicker
                         {:x (.-clientX event)
                          :y (.-clientY event)
@@ -396,7 +398,8 @@
                          :position :right})))]
     [:div.asset-group
      [:div.group-title {:class (when (not open?) "closed")}
-      [:span {:on-click #(if open? (on-close) (on-open))} i/arrow-slide (t locale "workspace.assets.colors")]
+      [:span {:on-click (st/emitf (dwl/set-assets-box-open file-id :colors (not open?)))}
+       i/arrow-slide (t locale "workspace.assets.colors")]
       [:span.num-assets (str "\u00A0(") (count colors) ")"] ;; Unicode 00A0 is non-breaking space
       (when local?
         [:div.group-button {:on-click add-color-clicked} i/plus])]
@@ -414,7 +417,7 @@
                             :locale locale}]))])]))
 
 (mf/defc typography-box
-  [{:keys [file file-id local? typographies locale open? on-open on-close] :as props}]
+  [{:keys [file file-id local? typographies locale open?] :as props}]
 
   (let [state (mf/use-state {:detail-open? false
                              :menu-open? false
@@ -488,7 +491,8 @@
 
     [:div.asset-group
      [:div.group-title {:class (when (not open?) "closed")}
-      [:span {:on-click #(if open? (on-close) (on-open))} i/arrow-slide (t locale "workspace.assets.typography")]
+      [:span {:on-click (st/emitf (dwl/set-assets-box-open file-id :typography (not open?)))}
+       i/arrow-slide (t locale "workspace.assets.typography")]
       [:span.num-assets (str "\u00A0(") (count typographies) ")"] ;; Unicode 00A0 is non-breaking space
       (when local?
         [:div.group-button {:on-click add-typography} i/plus])]
@@ -553,6 +557,11 @@
                    (vals (get-in state [:workspace-libraries id :data :typographies])))))
              st/state =))
 
+(defn open-file-ref
+  [id]
+  (-> (l/in [:assets-files-open id])
+      (l/derived refs/workspace-local)))
+
 (defn apply-filters
   [coll filters]
   (->> coll
@@ -562,16 +571,18 @@
     (sort-by #(str/lower (:name %)))))
 
 (mf/defc file-library
-  [{:keys [file local? open? filters locale] :as props}]
-  (let [open?          (mf/use-state open?)
+  [{:keys [file local? default-open? filters locale] :as props}]
+  (let [open-file      (mf/deref (open-file-ref (:id file)))
+        open?          (-> open-file
+                           :library
+                           (d/nilv default-open?))
+        open-box?      (fn [box]
+                         (-> open-file
+                             box
+                             (d/nilv true)))
         shared?        (:is-shared file)
         router         (mf/deref refs/router)
-        toggle-open    #(swap! open? not)
-
-        toggles        (mf/use-state #{:components
-                                       :graphics
-                                       :colors
-                                       :typographies})
+        toggle-open    (st/emitf (dwl/set-assets-box-open (:id file) :library (not open?)))
 
         url            (rt/resolve router :workspace
                                    {:project-id (:project-id file)
@@ -594,7 +605,7 @@
      [:div.tool-window-bar.library-bar
       {:on-click toggle-open}
       [:div.collapse-library
-       {:class (dom/classnames :open @open?)}
+       {:class (dom/classnames :open open?)}
        i/arrow-slide]
 
       (if local?
@@ -610,7 +621,7 @@
                 :on-click dom/stop-propagation}
             i/chain]]])]
 
-     (when @open?
+     (when open?
        (let [show-components?   (and (or (= (:box filters) :all)
                                          (= (:box filters) :components))
                                      (or (> (count components) 0)
@@ -632,24 +643,18 @@
             [:& components-box {:file-id (:id file)
                                 :local? local?
                                 :components components
-                                :open? (contains? @toggles :components)
-                                :on-open #(swap! toggles conj :components)
-                                :on-close #(swap! toggles disj :components)}])
+                                :open? (open-box? :components)}])
           (when show-graphics?
             [:& graphics-box {:file-id (:id file)
                               :local? local?
                               :objects media
-                              :open? (contains? @toggles :graphics)
-                              :on-open #(swap! toggles conj :graphics)
-                              :on-close #(swap! toggles disj :graphics)}])
+                              :open? (open-box? :graphics)}])
           (when show-colors?
             [:& colors-box {:file-id (:id file)
                             :local? local?
                             :locale locale
                             :colors colors
-                            :open? (contains? @toggles :colors)
-                            :on-open #(swap! toggles conj :colors)
-                            :on-close #(swap! toggles disj :colors)}])
+                            :open? (open-box? :colors)}])
 
           (when show-typography?
             [:& typography-box {:file file
@@ -657,9 +662,7 @@
                                 :local? local?
                                 :locale locale
                                 :typographies typographies
-                                :open? (contains? @toggles :typographies)
-                                :on-open #(swap! toggles conj :typographies)
-                                :on-close #(swap! toggles disj :typographies)}])
+                                :open? (open-box? :typographies)}])
 
           (when (and (not show-components?) (not show-graphics?) (not show-colors?))
             [:div.asset-group
@@ -733,7 +736,7 @@
        {:file file
         :locale locale
         :local? true
-        :open? true
+        :default-open? true
         :filters @filters}]
 
       (for [file (->> libraries
@@ -743,6 +746,6 @@
           :file file
           :local? false
           :locale locale
-          :open? false
+          :default-open? false
           :filters @filters}])]]))
 
