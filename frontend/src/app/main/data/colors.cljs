@@ -50,7 +50,8 @@
       (-> state
           (update-in [:workspace-file :colors] #(d/replace-by-id % color))))))
 
-(defn change-palette-size [size]
+(defn change-palette-size
+  [size]
   (s/assert #{:big :small} size)
   (ptk/reify ::change-palette-size
     ptk/UpdateEvent
@@ -58,24 +59,27 @@
       (-> state
           (assoc-in [:workspace-local :selected-palette-size] size)))))
 
-(defn change-palette-selected [selected]
+(defn change-palette-selected
   "Change the library used by the general palette tool"
+  [selected]
   (ptk/reify ::change-palette-selected
     ptk/UpdateEvent
     (update [_ state]
       (-> state
           (assoc-in [:workspace-local :selected-palette] selected)))))
 
-(defn change-palette-selected-colorpicker [selected]
+(defn change-palette-selected-colorpicker
   "Change the library used by the color picker"
+  [selected]
   (ptk/reify ::change-palette-selected-colorpicker
     ptk/UpdateEvent
     (update [_ state]
       (-> state
           (assoc-in [:workspace-local :selected-palette-colorpicker] selected)))))
 
-(defn show-palette [selected]
+(defn show-palette
   "Show the palette tool and change the library it uses"
+  [selected]
   (ptk/reify ::change-palette-selected
     ptk/UpdateEvent
     (update [_ state]
@@ -83,14 +87,16 @@
           (update :workspace-layout conj :colorpalette)
           (assoc-in [:workspace-local :selected-palette] selected)))))
 
-(defn start-picker []
+(defn start-picker
+  []
   (ptk/reify ::start-picker
     ptk/UpdateEvent
     (update [_ state]
       (-> state
           (assoc-in [:workspace-local :picking-color?] true)))))
 
-(defn stop-picker []
+(defn stop-picker
+  []
   (ptk/reify ::stop-picker
     ptk/UpdateEvent
     (update [_ state]
@@ -99,14 +105,16 @@
           (update :workspace-local dissoc :picked-shift?)
           (assoc-in [:workspace-local :picking-color?] false)))))
 
-(defn pick-color [rgba]
+(defn pick-color
+  [rgba]
   (ptk/reify ::pick-color
     ptk/UpdateEvent
     (update [_ state]
       (-> state
           (assoc-in [:workspace-local :picked-color] rgba)))))
 
-(defn pick-color-select [value shift?]
+(defn pick-color-select
+  [value shift?]
   (ptk/reify ::pick-color-select
     ptk/UpdateEvent
     (update [_ state]
@@ -141,7 +149,8 @@
                    (map #(dwt/update-text-attrs {:id % :editor (get editors %) :attrs attrs}) text-ids)
                    (dwc/update-shapes shape-ids update-fn))))))))
 
-(defn change-stroke [ids color]
+(defn change-stroke
+  [ids color]
   (ptk/reify ::change-stroke
     ptk/WatchEvent
     (watch [_ state s]
@@ -163,7 +172,8 @@
                                  :stroke-opacity 1)))]
         (rx/of (dwc/update-shapes ids update-fn))))))
 
-(defn picker-for-selected-shape []
+(defn picker-for-selected-shape
+  []
   (let [sub (rx/subject)]
     (ptk/reify ::picker-for-selected-shape
       ptk/WatchEvent
@@ -199,7 +209,8 @@
                                  :props {:on-change handle-change-color}
                                  :allow-click-outside true})))))))
 
-(defn start-gradient [gradient]
+(defn start-gradient
+  [gradient]
   (ptk/reify ::start-gradient
     ptk/UpdateEvent
     (update [_ state]
@@ -208,21 +219,24 @@
             (assoc-in [:workspace-local :current-gradient] gradient)
             (assoc-in [:workspace-local :current-gradient :shape-id] id))))))
 
-(defn stop-gradient []
+(defn stop-gradient
+  []
   (ptk/reify ::stop-gradient
     ptk/UpdateEvent
     (update [_ state]
       (-> state
           (update :workspace-local dissoc :current-gradient)))))
 
-(defn update-gradient [changes]
+(defn update-gradient
+  [changes]
   (ptk/reify ::update-gradient
     ptk/UpdateEvent
     (update [_ state]
       (-> state
           (update-in [:workspace-local :current-gradient] merge changes)))))
 
-(defn select-gradient-stop [spot]
+(defn select-gradient-stop
+  [spot]
   (ptk/reify ::select-gradient-stop
     ptk/UpdateEvent
     (update [_ state]
