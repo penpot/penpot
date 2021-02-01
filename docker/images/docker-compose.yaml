@@ -10,7 +10,7 @@ volumes:
 
 services:
   penpot-frontend:
-    image: "penpotapp/frontend:develop"
+    image: "penpotapp/frontend:latest"
     ports:
       - 9001:80
 
@@ -24,7 +24,7 @@ services:
       - penpot
 
   penpot-backend:
-    image: "penpotapp/backend:develop"
+    image: "penpotapp/backend:latest"
     volumes:
       - penpot_assets_data:/opt/data
 
@@ -79,7 +79,7 @@ services:
       - penpot
 
   penpot-exporter:
-    image: "penpotapp/exporter:develop"
+    image: "penpotapp/exporter:latest"
     environment:
       # Don't touch it; this uses internal docker network to
       # communicate with the frontend.
