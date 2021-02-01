@@ -131,6 +131,7 @@
       (let [page-id  (:current-page-id state)
             objects  (dwc/lookup-page-objects state page-id)
             selected (get-in state [:workspace-local :selected])
+            selected (cp/clean-loops objects selected)
             shapes   (shapes-for-grouping objects selected)]
         (when-not (empty? shapes)
           (let [;; If the selected shape is a group, we can use it. If not,

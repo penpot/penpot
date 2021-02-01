@@ -13,7 +13,8 @@
    [goog.object :as gobj]
    [app.main.ui.components.dropdown :refer [dropdown']]
    [app.common.uuid :as uuid]
-   [app.util.data :refer [classnames]]))
+   [app.util.data :refer [classnames]]
+   [app.util.dom :as dom]))
 
 (mf/defc context-menu
   {::mf/wrap-props false}
@@ -27,14 +28,31 @@
         is-selectable (gobj/get props "selectable")
         selected (gobj/get props "selected")
         top (gobj/get props "top")
-        left (gobj/get props "left")]
+        left (gobj/get props "left")
+
+        offset (mf/use-state 0)
+
+        check-menu-offscreen
+        (mf/use-callback
+         (mf/deps top @offset)
+         (fn [node]
+           (when node
+             (let [{node-height :height}   (dom/get-bounding-rect node)
+                   {window-height :height} (dom/get-window-size)
+                   target-offset (if (> (+ top node-height) window-height)
+                                   (- node-height)
+                                   0)]
+
+               (if (not= target-offset @offset)
+                 (reset! offset target-offset))))))]
+
     (when open?
       [:> dropdown' props
        [:div.context-menu {:class (classnames :is-open open?
                                               :is-selectable is-selectable)
-                           :style {:top top
+                           :style {:top (+ top @offset)
                                    :left left}}
-        [:ul.context-menu-items
+        [:ul.context-menu-items {:ref check-menu-offscreen}
          (for [[action-name action-handler] options]
            [:li.context-menu-item {:class (classnames :is-selected (and selected (= action-name selected)))
                                    :key action-name}

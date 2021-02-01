@@ -280,11 +280,13 @@
         .item-name {
           color: $color-gray-60;
           font-size: $fs14;
+          margin-right: calc(4.5rem + 1rem);
         }
 
         .item-contents {
           color: $color-gray-40;
           font-size: $fs12;
+          margin-right: calc(4.5rem + 1rem);
         }
 
         .item-button {
