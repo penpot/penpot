@@ -19,13 +19,14 @@
   (us/assert fn? qfn)
   (fn [& args]
     (let [rows (apply qfn args)]
-      (when (or (empty? rows)
-                (not (or (some :can-edit rows)
-                         (some :is-admin rows)
-                         (some :is-owner rows))))
+      (if (or (empty? rows)
+              (not (or (some :can-edit rows)
+                       (some :is-admin rows)
+                       (some :is-owner rows))))
         (ex/raise :type :not-found
                   :code :object-not-found
-                  :hint "not found")))))
+                  :hint "not found")
+        rows))))
 
 (defn make-read-check-fn
   "A simple factory for read permission check functions."
@@ -33,8 +34,7 @@
   (us/assert fn? qfn)
   (fn [& args]
     (let [rows (apply qfn args)]
-      (when-not (seq rows)
+      (if-not (seq rows)
         (ex/raise :type :not-found
-                  :code :object-not-found)))))
-
-
+                  :code :object-not-found)
+        rows))))

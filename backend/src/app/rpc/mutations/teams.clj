@@ -103,7 +103,7 @@
     (let [perms   (teams/check-read-permissions! conn profile-id id)
           members (teams/retrieve-team-members conn id)]
 
-      (when (:is-owner perms)
+      (when (some :is-owner perms)
         (ex/raise :type :validation
                   :code :owner-cant-leave-team
                   :hint "reasing owner before leave"))
@@ -129,7 +129,7 @@
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (let [perms (teams/check-edition-permissions! conn profile-id id)]
-      (when-not (:is-owner perms)
+      (when-not (some :is-owner perms)
         (ex/raise :type :validation
                   :code :only-owner-can-delete-team))
 
@@ -298,7 +298,7 @@
                            :member-email (:email member email)
                            :member-id (:id member)})]
 
-      (when-not (:is-admin perms)
+      (when-not (some :is-admin perms)
         (ex/raise :type :validation
                   :code :insufficient-permissions))
 
