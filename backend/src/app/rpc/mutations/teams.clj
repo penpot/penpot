@@ -167,8 +167,8 @@
                   :code :member-does-not-exist))
 
       ;; First check if we have permissions to change roles
-      (when-not (or (:is-owner perms)
-                    (:is-admin perms))
+      (when-not (or (some :is-owner perms)
+                    (some :is-admin perms))
         (ex/raise :type :validation
                   :code :insufficient-permissions))
 
