@@ -51,4 +51,4 @@
                          :stroke "#000000"})]
         [:> "image" (obj/merge!
                      props
-                     #js {:href @data-uri})]))))
+                     #js {:xlinkHref @data-uri})]))))
