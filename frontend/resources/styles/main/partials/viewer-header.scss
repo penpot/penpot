@@ -213,6 +213,20 @@
       overflow: hidden;
 
       .link {
+        &:before {
+          content: '';
+          position: absolute;
+          width: 50%;
+          background: linear-gradient(45deg, transparent, #ffffff);
+          height: 100%;
+          top: 0;
+          left: 0;
+          pointer-events: none;
+          margin-left: 50%;
+        }
+        overflow: hidden;
+        white-space: nowrap;
+        position: relative;
         color: $color-gray-50;
         line-height: 1.5;
         user-select: all;
