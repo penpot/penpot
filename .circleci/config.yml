@@ -1,0 +1,57 @@
+version: 2
+jobs:
+  build:
+    docker:
+      # specify the version you desire here
+      - image: penpotapp/devenv:latest
+
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      # - image: circleci/postgres:9.4
+      - image: circleci/postgres:13.1-ram
+        environment:
+          POSTGRES_USER: penpot_test
+          POSTGRES_PASSWORD: penpot_test
+          POSTGRES_DB: penpot
+
+      - image: circleci/redis:6.0.8
+
+    working_directory: ~/repo
+
+    environment:
+      # Customize the JVM maximum heap limit
+      JVM_OPTS: -Xmx512m
+
+    steps:
+      - checkout
+
+      # Download and cache dependencies
+      - restore_cache:
+         keys:
+           - v1-dependencies-{{ checksum "backend/deps.edn" }}
+           # fallback to using the latest cache if no exact match is found
+           - v1-dependencies-
+
+      # run lint
+      - run:
+          working_directory: "./backend"
+          name: lint
+          command: "clj-kondo --lint src/"
+
+      # run test
+      - run:
+          working_directory: "./backend"
+          name: test
+          command: "clojure -M:dev:tests"
+          environment:
+            PENPOT_DATABASE_URI: "postgresql://localhost/penpot"
+            PENPOT_DATABASE_USERNAME: penpot_test
+            PENPOT_DATABASE_PASSWORD: penpot_test
+            PENPOT_REDIS_URI: "redis://localhost/1"
+
+      - save_cache:
+         paths:
+           - ~/.m2
+         key: v1-dependencies-{{ checksum "backend/deps.edn" }}
+
