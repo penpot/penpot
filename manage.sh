@@ -145,7 +145,7 @@ function build-image {
 
 function build-images {
     local version="$CURRENT_VERSION";
-    local bundle_file="penpot-$CURRENT_BRANCH-$CURRENT_VERSION.tar.xz";
+    local bundle_file="penpot-$CURRENT_BRANCH.tar.xz";
 
     if [ $CURRENT_BRANCH != "main" ]; then
         version="$CURRENT_BRANCH-$CURRENT_VERSION";
