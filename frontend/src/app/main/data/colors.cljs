@@ -59,13 +59,23 @@
           (assoc-in [:workspace-local :selected-palette-size] size)))))
 
 (defn change-palette-selected [selected]
+  "Change the library used by the general palette tool"
   (ptk/reify ::change-palette-selected
     ptk/UpdateEvent
     (update [_ state]
       (-> state
           (assoc-in [:workspace-local :selected-palette] selected)))))
 
+(defn change-palette-selected-colorpicker [selected]
+  "Change the library used by the color picker"
+  (ptk/reify ::change-palette-selected-colorpicker
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:workspace-local :selected-palette-colorpicker] selected)))))
+
 (defn show-palette [selected]
+  "Show the palette tool and change the library it uses"
   (ptk/reify ::change-palette-selected
     ptk/UpdateEvent
     (update [_ state]
