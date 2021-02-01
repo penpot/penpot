@@ -19,6 +19,7 @@
    [app.common.geom.align :as gal]
    [app.common.geom.point :as gpt]
    [app.common.geom.matrix :as gmt]
+   [app.util.timers :as ts]
    [app.main.ui.shapes.filters :as filters]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.circle :as circle]
@@ -185,7 +186,8 @@
      [:& wrapper {:shape frame :view-box vbox}]]))
 
 (mf/defc component-svg
-  {::mf/wrap [mf/memo]}
+  {::mf/wrap [mf/memo
+              #(mf/deferred % ts/idle-then-raf)]}
   [{:keys [objects group zoom] :or {zoom 1} :as props}]
   (let [modifier (-> (gpt/point (:x group) (:y group))
                      (gpt/negate)
