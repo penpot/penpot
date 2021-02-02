@@ -78,8 +78,10 @@
         ;; profile data.
         (let [claims (tokens :verify {:token token :iss :team-invitation})
               claims (assoc claims :member-id  (:id profile))
-              params (assoc params :profile-id (:id profile))]
-          (process-token conn params claims)
+              params (assoc params :profile-id (:id profile))
+              cfg    (assoc cfg :conn conn)]
+
+          (process-token cfg params claims)
 
           ;; Automatically mark the created profile as active because
           ;; we already have the verification of email with the
