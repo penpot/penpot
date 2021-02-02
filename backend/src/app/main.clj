@@ -94,7 +94,7 @@
 
     :app.http.assets/handlers
     {:metrics           (ig/ref :app.metrics/metrics)
-     :assets-path       (:assets-path cfg/config)
+     :assets-path       (:assets-path config)
      :storage           (ig/ref :app.storage/storage)
      :cache-max-age     (dt/duration {:hours 24})
      :signature-max-age (dt/duration {:hours 24 :minutes 5})}
@@ -148,11 +148,11 @@
 
     ;; RLimit definition for password hashing
     :app.rlimits/password
-    (:rlimits-password cfg/config)
+    (:rlimits-password config)
 
     ;; RLimit definition for image processing
     :app.rlimits/image
-    (:rlimits-image cfg/config)
+    (:rlimits-image config)
 
     ;; A collection of rlimits as hash-map.
     :app.rlimits/all
@@ -211,10 +211,10 @@
        :cron #app/cron "0 0 0 */1 * ?"  ;; daily
        :fn (ig/ref :app.tasks.tasks-gc/handler)}
 
-      (when (:telemetry-enabled cfg/config)
+      (when (:telemetry-enabled config)
         {:id   "telemetry"
          :cron #app/cron "0 0 */6 * * ?" ;; every 6h
-         :uri  (:telemetry-uri cfg/config)
+         :uri  (:telemetry-uri config)
          :fn   (ig/ref :app.tasks.telemetry/handler)})]}
 
     :app.tasks/all
@@ -265,18 +265,18 @@
     :app.tasks.telemetry/handler
     {:pool        (ig/ref :app.db/pool)
      :version     (:full cfg/version)
-     :uri         (:telemetry-uri cfg/config)
+     :uri         (:telemetry-uri config)
      :sprops      (ig/ref :app.sprops/props)}
 
     :app.srepl/server
-    {:port (:srepl-port cfg/config)
-     :host (:srepl-host cfg/config)}
+    {:port (:srepl-port config)
+     :host (:srepl-host config)}
 
     :app.sprops/props
     {:pool (ig/ref :app.db/pool)}
 
     :app.error-reporter/reporter
-    {:uri      (:error-report-webhook cfg/config)
+    {:uri      (:error-report-webhook config)
      :pool     (ig/ref :app.db/pool)
      :executor (ig/ref :app.worker/executor)}
 
@@ -286,18 +286,18 @@
     :app.storage/storage
     {:pool     (ig/ref :app.db/pool)
      :executor (ig/ref :app.worker/executor)
-     :backend  (:storage-backend cfg/config :fs)
+     :backend  (:storage-backend config :fs)
      :backends {:s3  (ig/ref [::main :app.storage.s3/backend])
                 :db  (ig/ref [::main :app.storage.db/backend])
                 :fs  (ig/ref [::main :app.storage.fs/backend])
                 :tmp (ig/ref [::tmp  :app.storage.fs/backend])}}
 
     [::main :app.storage.s3/backend]
-    {:region (:storage-s3-region cfg/config)
-     :bucket (:storage-s3-bucket cfg/config)}
+    {:region (:storage-s3-region config)
+     :bucket (:storage-s3-bucket config)}
 
     [::main :app.storage.fs/backend]
-    {:directory (:storage-fs-directory cfg/config)}
+    {:directory (:storage-fs-directory config)}
 
     [::tmp :app.storage.fs/backend]
     {:directory "/tmp/penpot"}
@@ -305,7 +305,7 @@
     [::main :app.storage.db/backend]
     {:pool (ig/ref :app.db/pool)}}
 
-   (when (:telemetry-server-enabled cfg/config)
+   (when (:telemetry-server-enabled config)
      {:app.telemetry/handler
       {:pool     (ig/ref :app.db/pool)
        :executor (ig/ref :app.worker/executor)}
