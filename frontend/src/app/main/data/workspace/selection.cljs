@@ -105,6 +105,14 @@
              objects (dwc/lookup-page-objects state page-id)]
          (rx/of (dwc/expand-all-parents [id] objects)))))))
 
+(defn deselect-shape
+  [id]
+  (us/verify ::us/uuid id)
+  (ptk/reify ::select-shape
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-local :selected] disj id))))
+
 (defn shift-select-shapes
   ([id]
    (ptk/reify ::shift-select-shapes

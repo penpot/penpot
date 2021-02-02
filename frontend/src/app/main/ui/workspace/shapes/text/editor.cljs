@@ -23,6 +23,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.selection :as dws]
    [app.main.ui.cursors :as cur]
    [app.main.ui.shapes.text.styles :as sts])
   (:import
@@ -163,7 +164,8 @@
         (fn []
           (st/emit! dw/clear-edition-mode)
           (when (= 0 (content-size @content-var))
-            (st/emit! (dw/delete-shapes [id]))))
+            (st/emit! (dws/deselect-shape id)
+                      (dw/delete-shapes [id]))))
 
         on-click-outside
         (fn [event]
@@ -202,7 +204,8 @@
 
         on-mount
         (fn []
-          (let [keys [(events/listen js/document EventType.CLICK on-click-outside)
+          (let [keys [(events/listen js/document EventType.MOUSEDOWN on-click-outside)
+                      (events/listen js/document EventType.CLICK on-click-outside)
                       (events/listen js/document EventType.KEYUP on-key-up)]]
             (st/emit! (dwt/assign-editor id editor)
                       (dwc/start-undo-transaction))
