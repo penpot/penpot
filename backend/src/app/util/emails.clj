@@ -29,24 +29,11 @@
 ;; Email Building
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn build-address
-  [v charset]
-  (try
-    (cond
-      (string? v)
-      (InternetAddress. v nil charset)
+(defn- parse-address
+  [v]
+  (InternetAddress/parse ^String v))
 
-      (map? v)
-      (InternetAddress. (:addr v)
-                        (:name v)
-                        (:charset v charset))
-
-      :else
-      (throw (ex-info "Invalid address" {:data v})))
-    (catch Exception e
-      (throw (ex-info "Invalid address" {:data v} e)))))
-
-(defn- resolve-recipient-type
+(defn- ^Message$RecipientType resolve-recipient-type
   [type]
   (case type
     :to  Message$RecipientType/TO
@@ -54,33 +41,33 @@
     :bcc Message$RecipientType/BCC))
 
 (defn- assign-recipient
-  [^MimeMessage mmsg type address charset]
+  [^MimeMessage mmsg type address]
   (if (sequential? address)
-    (reduce #(assign-recipient %1 type %2 charset) mmsg address)
-    (let [address (build-address address charset)
+    (reduce #(assign-recipient %1 type %2) mmsg address)
+    (let [address (parse-address address)
           type    (resolve-recipient-type type)]
-      (.addRecipient mmsg type address)
+      (.addRecipients mmsg type address)
       mmsg)))
 
 (defn- assign-recipients
-  [mmsg {:keys [to cc bcc charset] :or {charset "utf-8"} :as params}]
+  [mmsg {:keys [to cc bcc] :as params}]
   (cond-> mmsg
-    (some? to)  (assign-recipient :to to charset)
-    (some? cc)  (assign-recipient :cc cc charset)
-    (some? bcc) (assign-recipient :bcc bcc charset)))
+    (some? to)  (assign-recipient :to to)
+    (some? cc)  (assign-recipient :cc cc)
+    (some? bcc) (assign-recipient :bcc bcc)))
 
 (defn- assign-from
-  [mmsg {:keys [from charset] :or {charset "utf-8"}}]
-  (when from
-    (let [from (build-address from charset)]
-      (.setFrom ^MimeMessage mmsg ^InternetAddress from))))
+  [mmsg {:keys [default-from]} {:keys [from] :as props}]
+  (let [from (or from default-from)]
+    (when from
+      (let [from (parse-address from)]
+        (.addFrom ^MimeMessage mmsg from)))))
 
 (defn- assign-reply-to
-  [mmsg {:keys [defaut-reply-to]} {:keys [reply-to charset] :or {charset "utf-8"}}]
-  (let [reply-to (or reply-to defaut-reply-to)]
+  [mmsg {:keys [default-reply-to] :as cfg} {:keys [reply-to] :as params}]
+  (let [reply-to (or reply-to default-reply-to)]
     (when reply-to
-      (let [reply-to (build-address reply-to charset)
-            reply-to (into-array InternetAddress [reply-to])]
+      (let [reply-to (parse-address reply-to)]
         (.setReplyTo ^MimeMessage mmsg reply-to)))))
 
 (defn- assign-subject
@@ -136,7 +123,7 @@
   [cfg session params]
   (let [mmsg (MimeMessage. ^Session session)]
     (assign-recipients mmsg params)
-    (assign-from mmsg params)
+    (assign-from mmsg cfg params)
     (assign-reply-to mmsg cfg params)
     (assign-subject mmsg params)
     (assign-extra-headers mmsg params)
@@ -156,12 +143,12 @@
    (Properties.)
    {"mail.user" username
     "mail.host" host
+    "mail.from" default-from
     "mail.smtp.auth" (boolean username)
     "mail.smtp.starttls.enable" tls
     "mail.smtp.starttls.required" tls
     "mail.smtp.host" host
     "mail.smtp.port" port
-    "mail.smtp.from" default-from
     "mail.smtp.user" username
     "mail.smtp.timeout" timeout
     "mail.smtp.connectiontimeout" timeout}))
@@ -183,7 +170,9 @@
 (defn send!
   [cfg message]
   (let [^MimeMessage message (smtp-message cfg message)]
-    (Transport/send message (:username cfg) (:password cfg))
+    (Transport/send message
+                    (:username cfg)
+                    (:password cfg))
     nil))
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

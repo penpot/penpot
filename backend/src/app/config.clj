@@ -44,8 +44,8 @@
    :rlimits-image 2
 
    :smtp-enabled false
-   :smtp-default-reply-to "no-reply@example.com"
-   :smtp-default-from "no-reply@example.com"
+   :smtp-default-reply-to "Penpot <no-reply@example.com>"
+   :smtp-default-from "Penpot <no-reply@example.com>"
 
    :allow-demo-users true
    :registration-enabled true
@@ -92,8 +92,8 @@
 
 (s/def ::error-report-webhook ::us/string)
 (s/def ::smtp-enabled ::us/boolean)
-(s/def ::smtp-default-reply-to ::us/email)
-(s/def ::smtp-default-from ::us/email)
+(s/def ::smtp-default-reply-to ::us/string)
+(s/def ::smtp-default-from ::us/string)
 (s/def ::smtp-host ::us/string)
 (s/def ::smtp-port ::us/integer)
 (s/def ::smtp-username (s/nilable ::us/string))
