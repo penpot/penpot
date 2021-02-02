@@ -4,9 +4,11 @@
   (:require
    [app.common.pages :as cp]
    [app.common.pages.migrations :as pmg]
+   [app.config :as cfg]
    [app.db :as db]
    [app.db.profile-initial-data :as pid]
    [app.main :refer [system]]
+   [app.rpc.queries.profile :as prof]
    [app.srepl.dev :as dev]
    [app.util.blob :as blob]
    [clojure.pprint :refer [pprint]]))
@@ -58,3 +60,15 @@
   ([system project-id path]
    (db/with-atomic [conn (:app.db/pool system)]
      (pid/create-initial-data-dump conn project-id path))))
+
+(defn load-data-into-user
+  ([system user-email]
+   (if-let [file (:initial-data-file cfg/config)]
+     (load-data-into-user system file user-email)
+     (prn "Data file not found in configuration")))
+
+  ([system file user-email]
+   (db/with-atomic [conn (:app.db/pool system)]
+     (let [profile (prof/retrieve-profile-data-by-email conn user-email)
+           profile (merge profile (prof/retrieve-additional-data conn (:id profile)))]
+       (pid/create-profile-initial-data conn file profile)))))
