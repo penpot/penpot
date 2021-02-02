@@ -75,7 +75,7 @@
   (let [rng (java.util.Random. 1)]
     (letfn [(create-profile [conn index]
               (let [id   (mk-uuid "profile" index)
-                    _    (log/info "create profile" id)
+                    _    (log/info "create profile" index id)
 
                     prof (register-profile conn
                                            {:id id
@@ -98,10 +98,9 @@
             (create-team [conn index]
               (let [id (mk-uuid "team" index)
                     name (str "Team" index)]
-                (log/info "create team" id)
+                (log/info "create team" index id)
                 (db/insert! conn :team {:id id
-                                        :name name
-                                        :photo ""})
+                                        :name name})
                 id))
 
             (create-teams [conn]
@@ -113,7 +112,7 @@
               (let [id (mk-uuid "file" project-id index)
                     name (str "file" index)
                     data (cp/make-file-data id)]
-                (log/info "create file" id)
+                (log/info "create file" index id)
                 (db/insert! conn :file
                             {:id id
                              :data (blob/encode data)
@@ -135,7 +134,7 @@
             (create-project [conn team-id owner-id index]
               (let [id (mk-uuid "project" team-id index)
                     name (str "project " index)]
-                (log/info "create project" id)
+                (log/info "create project" index id)
                 (db/insert! conn :project
                             {:id id
                              :team-id team-id
@@ -188,7 +187,7 @@
                     project-id (:default-project-id owner)
                     data       (cp/make-file-data id)]
 
-                (log/info "create draft file" id)
+                (log/info "create draft file" index id)
                 (db/insert! conn :file
                             {:id id
                              :data (blob/encode data)
