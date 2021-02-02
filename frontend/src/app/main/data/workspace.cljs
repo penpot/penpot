@@ -1564,7 +1564,7 @@
     (watch [_ state stream]
       (let [id (uuid/next)
             {:keys [x y]} @ms/mouse-position
-            width (min (* 7 (count text)) 700)
+            width (max 8 (min (* 7 (count text)) 700))
             height 16
             page-id (:current-page-id state)
             frame-id (-> (dwc/lookup-page-objects state page-id)

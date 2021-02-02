@@ -21,12 +21,17 @@
    [app.main.data.workspace.drawing.common :as common]
    [app.common.math :as mth]))
 
+(defn truncate-zero [num default]
+  (if (mth/almost-zero? num) default num))
+
 (defn resize-shape [{:keys [x y width height transform transform-inverse] :as shape} point lock?]
   (let [;; The new shape behaves like a resize on the bottom-right corner
         initial (gpt/point (+ x width) (+ y height))
         shapev  (gpt/point width height)
         deltav  (gpt/to-vec initial point)
-        scalev  (gpt/divide (gpt/add shapev deltav) shapev)
+        scalev  (-> (gpt/divide (gpt/add shapev deltav) shapev)
+                    (update :x truncate-zero 1)
+                    (update :y truncate-zero 1))
         scalev  (if lock?
                   (let [v (max (:x scalev) (:y scalev))]
                     (gpt/point v v))
