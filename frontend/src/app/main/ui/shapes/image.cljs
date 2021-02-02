@@ -13,6 +13,7 @@
    [app.config :as cfg]
    [app.common.geom.shapes :as geom]
    [app.main.ui.shapes.attrs :as attrs]
+   [app.util.dom :as dom]
    [app.util.object :as obj]
    [app.main.ui.context :as muc]
    [app.main.data.fetch :as df]
@@ -43,7 +44,11 @@
                           :transform transform
                           :width width
                           :height height
-                          :preserveAspectRatio "none"}))]
+                          :preserveAspectRatio "none"}))
+          on-drag-start (fn [event]
+                          ;; Prevent browser dragging of the image
+                          (dom/prevent-default event))]
+
       (if (nil? @data-uri)
         [:> "rect" (obj/merge!
                     props
@@ -51,4 +56,5 @@
                          :stroke "#000000"})]
         [:> "image" (obj/merge!
                      props
-                     #js {:xlinkHref @data-uri})]))))
+                     #js {:xlinkHref @data-uri
+                          :onDragStart on-drag-start})]))))
