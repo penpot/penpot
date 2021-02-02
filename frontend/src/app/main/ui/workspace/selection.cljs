@@ -176,7 +176,7 @@
                  :y cy'
                  :width resize-point-circle-radius
                  :height resize-point-circle-radius
-                 :transform (str/fmt "rotate(%s, %s, %s)" rotation cx' cy')
+                 :transform (when rotation (str/fmt "rotate(%s, %s, %s)" rotation cx' cy'))
                  :style {:fill (if (debug? :resize-handler) "red" "transparent")
                          :cursor cursor}
                  :on-mouse-down #(on-resize {:x cx' :y cy'} %)}])
