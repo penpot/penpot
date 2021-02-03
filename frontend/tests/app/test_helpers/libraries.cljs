@@ -57,7 +57,7 @@
   (let [page      (thp/current-page state)
         root-inst (cph/get-shape page root-inst-id)
 
-        file (dwlh/get-local-file state)
+        file      (dwlh/get-local-file state)
         component (cph/get-component
                     (:component-id root-inst)
                     (:id file)
@@ -87,4 +87,26 @@
     (run! master-exists? shapes-inst)
 
     [shapes-inst shapes-master component]))
+
+(defn resolve-component
+  [state component-id]
+  (let [page      (thp/current-page state)
+
+        file      (dwlh/get-local-file state)
+        component (cph/get-component
+                    component-id
+                    (:id file)
+                    file
+                    nil)
+
+        root-master   (cph/get-component-root
+                        component)
+        shapes-master (cph/get-object-with-children
+                        (:id root-master)
+                        (:objects component))]
+
+    ;; Validate that the component tree is well constructed
+    (run! is-noninstance shapes-master)
+
+    [shapes-master component]))
 
