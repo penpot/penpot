@@ -200,10 +200,10 @@ If any of the following variables are defined, they will enable the
 corresponding auth button in the login page
 
 ```js
-var appGoogleClientID = "<google-client-id-here>";
-var appGitlabClientID = "<gitlab-client-id-here>";
-var appGithubClientID = "<github-client-id-here>";
-var appLoginWithLDAP = <true|false>;
+var penpotGoogleClientID = "<google-client-id-here>";
+var penpotGitlabClientID = "<gitlab-client-id-here>";
+var penpotGithubClientID = "<github-client-id-here>";
+var penpotLoginWithLDAP = <true|false>;
 ```
 
 **NOTE:** The configuration should match the backend configuration for
@@ -216,8 +216,8 @@ It is possible to display a warning message on a demo environment and
 disable/enable demo users:
 
 ```js
-var appDemoWarning = <true|false>;
-var appAllowDemoUsers = <true|false>;
+var penpotDemoWarning = <true|false>;
+var penpotAllowDemoUsers = <true|false>;
 ```
 
 **NOTE:** The configuration for demo users should match the backend
