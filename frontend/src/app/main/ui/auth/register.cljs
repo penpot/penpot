@@ -33,41 +33,11 @@
    {:type :warning
     :content (tr "auth.demo-warning")}])
 
-(defn- on-error
-  [form error]
-  (case (:code error)
-    :registration-disabled
-    (st/emit! (dm/error (tr "errors.registration-disabled")))
-
-    :email-already-exists
-    (swap! form assoc-in [:errors :email]
-           {:message "errors.email-already-exists"})
-
-    (st/emit! (dm/error (tr "errors.unexpected-error")))))
-
-(defn- on-success
-  [form data]
-  (if (and (:is-active data) (:claims data))
-    (let [message (tr "auth.notifications.team-invitation-accepted")]
-      (st/emit! (rt/nav :dashboard-projects {:team-id (get-in data [:claims :team-id])})
-                du/fetch-profile
-                (dm/success message)))
-    (let [message (tr "notifications.validation-email-sent" (:email data))]
-      (st/emit! (rt/nav :auth-login)
-                (dm/success message)))))
-
 (defn- validate
   [data]
   (let [password (:password data)]
     (when (> 8 (count password))
       {:password {:message "errors.password-too-short"}})))
-
-(defn- on-submit
-  [form event]
-  (let [data (with-meta (:clean-data @form)
-               {:on-error (partial on-error form)
-                :on-success (partial on-success form)})]
-    (st/emit! (da/register data))))
 
 (s/def ::fullname ::us/not-empty-string)
 (s/def ::password ::us/not-empty-string)
@@ -81,62 +51,106 @@
           :opt-un [::token]))
 
 (mf/defc register-form
-  [{:keys [locale params] :as props}]
+  [{:keys [params] :as props}]
   (let [initial (mf/use-memo (mf/deps params) (constantly params))
         form    (fm/use-form :spec ::register-form
                              :validators [validate]
-                             :initial initial)]
+                             :initial initial)
+        submitted? (mf/use-state false)
+
+        on-error
+        (mf/use-callback
+         (fn [form error]
+           (reset! submitted? false)
+           (case (:code error)
+             :registration-disabled
+             (st/emit! (dm/error (tr "errors.registration-disabled")))
+
+             :email-already-exists
+             (swap! form assoc-in [:errors :email]
+                    {:message "errors.email-already-exists"})
+
+             (st/emit! (dm/error (tr "errors.unexpected-error"))))))
+
+        on-success
+        (mf/use-callback
+         (fn [form data]
+           (reset! submitted? false)
+           (if (and (:is-active data) (:claims data))
+             (let [message (tr "auth.notifications.team-invitation-accepted")]
+               (st/emit! (rt/nav :dashboard-projects {:team-id (get-in data [:claims :team-id])})
+                         du/fetch-profile
+                         (dm/success message)))
+             (st/emit! (rt/nav :auth-register-success {} {:email (:email data)})))))
+
+        on-submit
+        (mf/use-callback
+         (fn [form event]
+           (reset! submitted? true)
+           (let [data (with-meta (:clean-data @form)
+                        {:on-error (partial on-error form)
+                         :on-success (partial on-success form)})]
+             (st/emit! (da/register data)))))]
+
 
     [:& fm/form {:on-submit on-submit
                  :form form}
      [:div.fields-row
       [:& fm/input {:name :fullname
                     :tab-index "1"
-                    :label (t locale "auth.fullname")
+                    :label (tr "auth.fullname")
                     :type "text"}]]
      [:div.fields-row
       [:& fm/input {:type "email"
                     :name :email
                     :tab-index "2"
                     :help-icon i/at
-                    :label (t locale "auth.email")}]]
+                    :label (tr "auth.email")}]]
      [:div.fields-row
       [:& fm/input {:name :password
                     :tab-index "3"
-                    :hint (t locale "auth.password-length-hint")
-                    :label (t locale "auth.password")
+                    :hint (tr "auth.password-length-hint")
+                    :label (tr "auth.password")
                     :type "password"}]]
 
      [:& fm/submit-button
-      {:label (t locale "auth.register-submit")}]]))
+      {:label (tr "auth.register-submit")
+       :disabled @submitted?
+       }]]))
 
 ;; --- Register Page
 
-(mf/defc register-page
-  [{:keys [locale params] :as props}]
+(mf/defc register-success-page
+  [{:keys [params] :as props}]
   [:div.form-container
-   [:h1 (t locale "auth.register-title")]
-   [:div.subtitle (t locale "auth.register-subtitle")]
+   [:div.subtitle (tr "auth.verification-email-sent" (:email params ""))]
+   [:div.subtitle (tr "auth.check-your-email")]])
+
+
+(mf/defc register-page
+  [{:keys [params] :as props}]
+  [:div.form-container
+   [:h1 (tr "auth.register-title")]
+   [:div.subtitle (tr "auth.register-subtitle")]
 
    (when cfg/demo-warning
      [:& demo-warning])
 
-   [:& register-form {:locale locale
-                      :params params}]
+   [:& register-form {:params params}]
 
    [:div.links
     [:div.link-entry
-     [:span (t locale "auth.already-have-account") " "]
+     [:span (tr "auth.already-have-account") " "]
      [:a {:on-click #(st/emit! (rt/nav :auth-login))
           :tab-index "4"}
-      (t locale "auth.login-here")]]
+      (tr "auth.login-here")]]
 
-   (when cfg/allow-demo-users
-     [:div.link-entry
-      [:span (t locale "auth.create-demo-profile") " "]
-      [:a {:on-click #(st/emit! da/create-demo-profile)
-           :tab-index "5"}
-       (t locale "auth.create-demo-account")]])]
+    (when cfg/allow-demo-users
+      [:div.link-entry
+       [:span (tr "auth.create-demo-profile") " "]
+       [:a {:on-click #(st/emit! da/create-demo-profile)
+            :tab-index "5"}
+        (tr "auth.create-demo-account")]])]
 
    (when cfg/google-client-id
      [:a.btn-ocean.btn-large.btn-google-auth

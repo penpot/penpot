@@ -35,6 +35,18 @@
       "es" : "¿Quieres probar?"
     }
   },
+  "auth.verification-email-sent": {
+    "translations": {
+      "en": "We've sent a verification email to %s."
+    }
+  },
+
+  "auth.check-your-email": {
+    "translations": {
+      "en": "Check your email and click on the link to verify and start using Penpot."
+    }
+  },
+
   "auth.demo-warning" : {
     "used-in" : [ "src/app/main/ui/auth/register.cljs:33" ],
     "translations" : {

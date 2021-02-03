@@ -61,6 +61,7 @@
   [["/auth"
     ["/login" :auth-login]
     ["/register" :auth-register]
+    ["/register/success" :auth-register-success]
     ["/recovery/request" :auth-recovery-request]
     ["/recovery" :auth-recovery]
     ["/verify-token" :auth-verify-token]]
@@ -110,6 +111,7 @@
    (case (get-in route [:data :name])
      (:auth-login
       :auth-register
+      :auth-register-success
       :auth-recovery-request
       :auth-recovery)
      [:& auth {:route route}]
