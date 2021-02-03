@@ -18,7 +18,7 @@
    [app.main.ui.auth.login :refer [login-page]]
    [app.main.ui.auth.recovery :refer [recovery-page]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page]]
-   [app.main.ui.auth.register :refer [register-page]]
+   [app.main.ui.auth.register :refer [register-page register-success-page]]
    [app.main.ui.icons :as i]
    [app.util.forms :as fm]
    [app.util.storage :refer [cache]]
@@ -42,8 +42,18 @@
 
      [:section.auth-content
       (case section
-        :auth-register [:& register-page {:locale locale :params params}]
-        :auth-login    [:& login-page {:locale locale :params params}]
-        :auth-recovery-request [:& recovery-request-page {:locale locale}]
-        :auth-recovery [:& recovery-page {:locale locale
-                                          :params (:query-params route)}])]]))
+        :auth-register
+        [:& register-page {:locale locale :params params}]
+
+        :auth-register-success
+        [:& register-success-page {:params params}]
+
+        :auth-login
+        [:& login-page {:locale locale :params params}]
+
+        :auth-recovery-request
+        [:& recovery-request-page {:locale locale}]
+
+        :auth-recovery
+        [:& recovery-page {:locale locale
+                           :params (:query-params route)}])]]))
