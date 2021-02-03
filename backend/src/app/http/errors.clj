@@ -39,6 +39,11 @@
       :hint    (ex-message error)
       :data    edata}
 
+
+     (let [headers (:headers request)]
+       {:user-agent (get headers "user-agent")
+        :frontend-version (get headers "x-frontend-version" "unknown")})
+
      (when (and (map? edata) (:data edata))
        {:explain (explain-error edata)}))))
 
