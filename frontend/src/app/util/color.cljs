@@ -109,10 +109,12 @@
 
       :else "transparent")))
 
-(defn multiple? [{:keys [value color gradient]}]
+(defn multiple? [{:keys [id file-id value color gradient]}]
   (or (= value :multiple)
       (= color :multiple)
       (= gradient :multiple)
+      (= id :multiple)
+      (= file-id :multiple)
       (and gradient color)))
 
 (defn parse-color [^string color-str]

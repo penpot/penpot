@@ -66,7 +66,9 @@
         (mf/use-callback
           (mf/deps ids)
           (fn [color]
-            (st/emit! (dc/change-stroke ids color))))
+            (let [remove-multiple (fn [[key value]] (not= value :multiple))
+                  color (into {} (filter remove-multiple) color)]
+              (st/emit! (dc/change-stroke ids color)))))
 
         handle-detach
         (mf/use-callback
