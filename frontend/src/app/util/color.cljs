@@ -109,12 +109,16 @@
 
       :else "transparent")))
 
-(defn multiple? [{:keys [value color gradient]}]
+(defn multiple? [{:keys [id file-id value color gradient]}]
   (or (= value :multiple)
       (= color :multiple)
       (= gradient :multiple)
-      (and gradient color)))
+      (= id :multiple)
+      (= file-id :multiple)))
 
 (defn parse-color [^string color-str]
   (let [result (gcolor/parse color-str)]
     (str (.-hex ^js result))))
+
+(def empty-color
+  (into {} (map #(vector % nil)) [:color :id :file-id :gradient :opacity]))

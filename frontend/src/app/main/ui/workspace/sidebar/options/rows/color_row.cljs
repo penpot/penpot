@@ -82,10 +82,13 @@
                                                       (dissoc :gradient)))))
 
         change-opacity (fn [new-opacity]
-                         (when on-change (on-change (assoc color :opacity new-opacity))))
+                         (when on-change (on-change (assoc color
+                                                           :opacity new-opacity
+                                                           :id nil
+                                                           :file-id nil))))
 
         handle-pick-color (fn [color]
-                            (when on-change (on-change color)))
+                            (when on-change (on-change (merge uc/empty-color color))))
 
         handle-open (fn [] (when on-open (on-open)))
 
@@ -133,7 +136,7 @@
 
      (cond
        ;; Rendering a color with ID
-       (:id color)
+       (and (:id color) (not (uc/multiple? color)))
        [:*
         [:div.color-info
          [:div.color-name (str (get-color-name color))]]
@@ -146,7 +149,8 @@
 
        ;; Rendering a gradient
        (and (not (uc/multiple? color))
-            (:gradient color) (get-in color [:gradient :type]))
+            (:gradient color)
+            (get-in color [:gradient :type]))
        [:div.color-info
         [:div.color-name (cb/gradient-type->string (get-in color [:gradient :type]))]]
 

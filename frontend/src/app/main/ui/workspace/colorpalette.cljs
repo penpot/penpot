@@ -19,7 +19,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
-   [app.util.color :refer [hex->rgb]]
+   [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t]]
    [app.util.object :as obj]
@@ -55,8 +55,8 @@
         (fn [event]
           (let [ids (get-in @st/state [:workspace-local :selected])]
             (if (kbd/shift? event)
-              (st/emit! (mdc/change-stroke ids color))
-              (st/emit! (mdc/change-fill ids color)))))]
+              (st/emit! (mdc/change-stroke ids (merge uc/empty-color color)))
+              (st/emit! (mdc/change-fill ids (merge uc/empty-color color))))))]
 
     [:div.color-cell {:class (str "cell-"(name size))
                       :on-click select-color}
