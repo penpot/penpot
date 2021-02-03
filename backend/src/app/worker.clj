@@ -10,15 +10,14 @@
 (ns app.worker
   "Async tasks abstraction (impl)."
   (:require
-   [app.config :as cfg]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.config :as cfg]
    [app.db :as db]
    [app.util.async :as aa]
-   [app.util.time :as dt]
    [app.util.log4j :refer [update-thread-context!]]
+   [app.util.time :as dt]
    [clojure.core.async :as a]
-   [clojure.pprint :refer [pprint]]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
    [integrant.core :as ig]
