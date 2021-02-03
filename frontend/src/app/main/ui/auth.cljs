@@ -29,11 +29,6 @@
    [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]))
 
-(mf/defc goodbye-page
-  [{:keys [locale] :as props}]
-  [:div.goodbay
-   [:h1 (t locale "auth.goodbye-title")]])
-
 (mf/defc auth
   [{:keys [route] :as props}]
   (let [section (get-in route [:data :name])
@@ -49,7 +44,6 @@
       (case section
         :auth-register [:& register-page {:locale locale :params params}]
         :auth-login    [:& login-page {:locale locale :params params}]
-        :auth-goodbye  [:& goodbye-page {:locale locale}]
         :auth-recovery-request [:& recovery-request-page {:locale locale}]
         :auth-recovery [:& recovery-page {:locale locale
                                           :params (:query-params route)}])]]))

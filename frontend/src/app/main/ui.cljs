@@ -63,8 +63,7 @@
     ["/register" :auth-register]
     ["/recovery/request" :auth-recovery-request]
     ["/recovery" :auth-recovery]
-    ["/verify-token" :auth-verify-token]
-    ["/goodbye" :auth-goodbye]]
+    ["/verify-token" :auth-verify-token]]
 
    ["/settings"
     ["/profile" :settings-profile]
@@ -111,7 +110,6 @@
    (case (get-in route [:data :name])
      (:auth-login
       :auth-register
-      :auth-goodbye
       :auth-recovery-request
       :auth-recovery)
      [:& auth {:route route}]
