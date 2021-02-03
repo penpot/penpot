@@ -289,7 +289,8 @@
                 (:c2x params) (update-in [index :params :c2x] + (:c2x params))
                 (:c2y params) (update-in [index :params :c2y] + (:c2y params)))
               content))]
-    (reduce apply-to-index content modifiers)))
+    (let [content (if (vector? content) content (into [] content))]
+      (reduce apply-to-index content modifiers))))
 
 (defn command->point [command]
   (when-not (nil? command)

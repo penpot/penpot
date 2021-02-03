@@ -692,8 +692,8 @@
             point (-> content (get (if (= prefix :c1) (dec index) index)) (ugp/command->point))
             handler (-> content (get index) (ugp/get-handler prefix))
 
-            current-distance (gpt/distance (ugp/opposite-handler point handler) opposite-handler)
-            match-opposite? (mth/almost-zero? current-distance)]
+            current-distance (when opposite-handler (gpt/distance (ugp/opposite-handler point handler) opposite-handler))
+            match-opposite? (and opposite-handler (mth/almost-zero? current-distance))]
 
         (drag-stream
          (rx/concat
