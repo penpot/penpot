@@ -11,6 +11,7 @@
   "A http client with rx streams interface."
   (:refer-clojure :exclude [get])
   (:require
+   [app.config :as cfg]
    [app.util.object :as obj]
    [app.util.transit :as t]
    [beicon.core :as rx]
@@ -68,11 +69,15 @@
         (.setQueryData uri dt)))
     (.toString uri)))
 
+(def default-headers
+  {"x-frontend-version" (:full @cfg/version)})
+
 (defn- fetch
   [{:keys [method uri query-string query headers body] :as request}
    {:keys [timeout credentials? response-type]
     :or {timeout 0 credentials? false response-type :text}}]
   (let [uri (create-uri uri query-string query)
+        headers (merge default-headers headers)
         headers (if headers (clj->js headers) #js {})
         method (translate-method method)
         xhr (doto (XhrIo.)
