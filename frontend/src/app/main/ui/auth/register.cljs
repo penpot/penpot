@@ -18,6 +18,7 @@
    [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
    [app.main.ui.messages :as msgs]
+   [app.main.ui.auth.login :as login]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr t]]
    [app.util.router :as rt]
@@ -130,9 +131,29 @@
           :tab-index "4"}
       (t locale "auth.login-here")]]
 
-    (when cfg/allow-demo-users
-      [:div.link-entry
-       [:span (t locale "auth.create-demo-profile") " "]
-       [:a {:on-click #(st/emit! da/create-demo-profile)
-            :tab-index "5"}
-        (t locale "auth.create-demo-account")]])]])
+   (when cfg/allow-demo-users
+     [:div.link-entry
+      [:span (t locale "auth.create-demo-profile") " "]
+      [:a {:on-click #(st/emit! da/create-demo-profile)
+           :tab-index "5"}
+       (t locale "auth.create-demo-account")]])]
+
+   (when cfg/google-client-id
+     [:a.btn-ocean.btn-large.btn-google-auth
+      {:on-click login/login-with-google}
+      "Login with Google"])
+
+   (when cfg/gitlab-client-id
+     [:a.btn-ocean.btn-large.btn-gitlab-auth
+      {:on-click login/login-with-gitlab}
+      [:img.logo
+       {:src "/images/icons/brand-gitlab.svg"}]
+      (tr "auth.login-with-gitlab-submit")])
+
+   (when cfg/github-client-id
+     [:a.btn-ocean.btn-large.btn-github-auth
+      {:on-click login/login-with-github}
+      [:img.logo
+       {:src "/images/icons/brand-github.svg"}]
+      (tr "auth.login-with-github-submit")])])
+
