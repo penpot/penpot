@@ -376,3 +376,25 @@
 
     ;; The first id will be the top-most
     (get objects (first sorted-ids))))
+
+(defn is-parent?
+  "Check if `parent-candidate` is parent of `shape-id`"
+  [objects shape-id parent-candidate]
+
+  (loop [current (get objects parent-candidate)
+         done #{}
+         pending (:shapes current)]
+
+    (cond
+      (contains? done (:id current))
+      (recur (get objects (first pending))
+             done
+             (rest pending))
+
+      (empty? pending) false
+      (and current (contains? (set (:shapes current)) shape-id)) true
+
+      :else
+      (recur (get objects (first pending))
+             (conj done (:id current))
+             (concat (rest pending) (:shapes current))))))
