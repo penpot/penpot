@@ -137,8 +137,7 @@ function build-image {
     set -x
     pushd ./docker/images;
     docker buildx build --platform linux/amd64 -t $docker_image:$tag -f Dockerfile.$image .;
-    docker tag $docker_image:$tag $docker_image:$version;
-
+    # docker tag $docker_image:$tag $docker_image:$version;
     # docker buildx build --platform linux/arm64 -t $docker_image:$version-arm64 .;
     popd;
 }
