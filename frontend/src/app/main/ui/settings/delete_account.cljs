@@ -31,7 +31,7 @@
 
 (defn on-success
   [x]
-  (st/emit! (rt/nav :auth-goodbye)))
+  (st/emit! (rt/nav :auth-login)))
 
 (mf/defc delete-account-modal
   {::mf/register modal/components
