@@ -61,6 +61,7 @@
 (d/export helpers/set-touched-group)
 (d/export helpers/touched-group?)
 (d/export helpers/get-base-shape)
+(d/export helpers/is-parent?)
 
 ;; Process changes
 (d/export changes/process-changes)

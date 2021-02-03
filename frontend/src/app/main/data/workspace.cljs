@@ -822,6 +822,9 @@
             ;; Ignore any shape whose parent is also intented to be moved
             ids (cp/clean-loops objects ids)
 
+            ;; If we try to move a parent into a child we remove it
+            ids (filter #(not (cp/is-parent? objects parent-id %)) ids)
+
             parents  (loop [res #{parent-id}
                             ids (seq ids)]
                        (if (nil? ids)
