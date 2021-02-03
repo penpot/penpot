@@ -10,7 +10,7 @@
 (ns app.http.session
   (:require
    [app.db :as db]
-   [app.http.errors :refer [update-thread-context!]]
+   [app.util.log4j :refer [update-thread-context!]]
    [buddy.core.codecs :as bc]
    [buddy.core.nonce :as bn]
    [clojure.spec.alpha :as s]
