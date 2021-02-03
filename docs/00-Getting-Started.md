@@ -59,4 +59,4 @@ docker-compose -p penpot -f docker-compose.yaml up
 The docker compose file contains the essential configuration for
 getting the application running, and many essential configurations
 already explained in comments. All other configuration options are
-explained in [management guide](./05-Management-Guide.md).
+explained in [configuration guide](./05-Configuration-Guide.md).
