@@ -95,7 +95,14 @@
                   ;; Resize vector
                   scalev (gpt/divide (gpt/add shapev deltav) shapev)
 
-                  scalev (if lock? (let [v (max (:x scalev) (:y scalev))] (gpt/point v v)) scalev)
+                  scalev (if lock?
+                           (let [v (cond
+                                     (#{:right :left} handler) (:x scalev)
+                                     (#{:top :bottom} handler) (:y scalev)
+                                     :else (max (:x scalev) (:y scalev)))]
+                             (gpt/point v v))
+
+                           scalev)
 
                   shape-transform (:transform shape (gmt/matrix))
                   shape-transform-inverse (:transform-inverse shape (gmt/matrix))
@@ -294,18 +301,20 @@
 
              snap-delta (->> position
                              (rx/switch-map #(snap/closest-snap-move page-id shapes objects layout zoom %)))]
-         (rx/concat
-          (->> snap-delta
-               (rx/with-latest vector position)
-               (rx/map (fn [[delta pos]] (-> (gpt/add pos delta) (gpt/round 0))))
-               (rx/map gmt/translate-matrix)
-               (rx/map #(fn [state] (assoc-in state [:workspace-local :modifiers] {:displacement %}))))
+         (if (empty? shapes)
+           (rx/empty)
+           (rx/concat
+            (->> snap-delta
+                 (rx/with-latest vector position)
+                 (rx/map (fn [[delta pos]] (-> (gpt/add pos delta) (gpt/round 0))))
+                 (rx/map gmt/translate-matrix)
+                 (rx/map #(fn [state] (assoc-in state [:workspace-local :modifiers] {:displacement %}))))
 
-          (rx/of (set-modifiers ids)
-                 (apply-modifiers ids)
-                 (calculate-frame-for-move ids)
-                 (fn [state] (update state :workspace-local dissoc :modifiers))
-                 finish-transform)))))))
+            (rx/of (set-modifiers ids)
+                   (apply-modifiers ids)
+                   (calculate-frame-for-move ids)
+                   (fn [state] (update state :workspace-local dissoc :modifiers))
+                   finish-transform))))))))
 
 (defn- get-displacement-with-grid
   "Retrieve the correct displacement delta point for the
