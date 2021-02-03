@@ -22,7 +22,7 @@
 (declare show)
 
 (def default-animation-timeout 600)
-(def default-timeout 2000)
+(def default-timeout 5000)
 
 (s/def ::type #{:success :error :info :warning})
 (s/def ::position #{:fixed :floating :inline})
