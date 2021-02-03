@@ -82,13 +82,10 @@
                                                       (dissoc :gradient)))))
 
         change-opacity (fn [new-opacity]
-                         (when on-change (on-change (assoc color
-                                                           :opacity new-opacity
-                                                           :id nil
-                                                           :file-id nil))))
+                         (when on-change (on-change (assoc color :opacity new-opacity))))
 
         handle-pick-color (fn [color]
-                            (when on-change (on-change (merge {:id nil :file-id nil} color))))
+                            (when on-change (on-change color)))
 
         handle-open (fn [] (when on-open (on-open)))
 
@@ -136,7 +133,7 @@
 
      (cond
        ;; Rendering a color with ID
-       (and (:id color) (not (uc/multiple? color)))
+       (:id color)
        [:*
         [:div.color-info
          [:div.color-name (str (get-color-name color))]]

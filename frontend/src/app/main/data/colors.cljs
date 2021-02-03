@@ -116,21 +116,11 @@
              text-ids (filter is-text? ids)
              shape-ids (filter (comp not is-text?) ids)
 
-             attrs (cond-> {}
-                     (contains? color :color)
-                     (assoc :fill-color (:color color))
-
-                     (contains? color :id)
-                     (assoc :fill-color-ref-id (:id color))
-
-                     (contains? color :file-id)
-                     (assoc :fill-color-ref-file (:file-id color))
-
-                     (contains? color :gradient)
-                     (assoc :fill-color-gradient (:gradient color))
-
-                     (contains? color :opacity)
-                     (assoc :fill-opacity (:opacity color)))
+             attrs {:fill-color (:color color)
+                    :fill-color-ref-id (:id color)
+                    :fill-color-ref-file (:file-id color)
+                    :fill-color-gradient (:gradient color)
+                    :fill-opacity (:opacity color)}
 
              update-fn (fn [shape] (merge shape attrs))
              editors (get-in state [:workspace-local :editors])
@@ -148,30 +138,19 @@
       (let [pid (:current-page-id state)
             objects (get-in state [:workspace-data :pages-index pid :objects])
             not-frame (fn [shape-id] (not= (get-in objects [shape-id :type]) :frame))
+            update-fn (fn [s]
+                        (cond-> s
+                          true
+                          (assoc :stroke-color (:color color)
+                                 :stroke-opacity (:opacity color)
+                                 :stroke-color-gradient (:gradient color)
+                                 :stroke-color-ref-id (:id color)
+                                 :stroke-color-ref-file (:file-id color))
 
-            color-attrs (cond-> {}
-                          (contains? color :color)
-                          (assoc :stroke-color (:color color))
-
-                          (contains? color :id)
-                          (assoc :stroke-color-ref-id (:id color))
-
-                          (contains? color :file-id)
-                          (assoc :stroke-color-ref-file (:file-id color))
-
-                          (contains? color :gradient)
-                          (assoc :stroke-color-gradient (:gradient color))
-
-                          (contains? color :opacity)
-                          (assoc :stroke-opacity (:opacity color)))
-
-            update-fn (fn [shape]
-                        (-> shape
-                            (merge color-attrs)
-                            (cond-> (= (:stroke-style s) :none)
-                              (assoc :stroke-style :solid
-                                     :stroke-width 1
-                                     :stroke-opacity 1))))]
+                          (= (:stroke-style s) :none)
+                          (assoc :stroke-style :solid
+                                 :stroke-width 1
+                                 :stroke-opacity 1)))]
         (rx/of (dwc/update-shapes ids update-fn))))))
 
 (defn picker-for-selected-shape []
