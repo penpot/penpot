@@ -403,11 +403,14 @@
                            :name (:fullname profile)}))]
 
     (db/with-atomic [conn pool]
-      (some->> email
-               (profile/retrieve-profile-data-by-email conn)
-               (create-recovery-token)
-               (send-email-notification conn))
-      nil)))
+      (when-let [profile (profile/retrieve-profile-data-by-email conn email)]
+        (when-not (:is-active profile)
+          (ex/raise :type :validation
+                    :code :profile-not-verified
+                    :hint "the user need to validate profile before recover password"))
+        (->> profile
+             (create-recovery-token)
+             (send-email-notification conn))))))
 
 
 ;; --- Mutation: Recover Profile

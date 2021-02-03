@@ -20,49 +20,69 @@
    [app.util.router :as rt]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
+   [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
 (s/def ::email ::us/email)
 (s/def ::recovery-request-form (s/keys :req-un [::email]))
 
-(defn- on-success
-  []
-  (st/emit! (dm/info (tr "auth.notifications.recovery-token-sent"))
-            (rt/nav :auth-login)))
-
-(defn- on-submit
-  [form event]
-  (let [params (with-meta (:clean-data @form)
-                 {:on-success on-success})]
-    (st/emit! (uda/request-profile-recovery params))))
-
 (mf/defc recovery-form
-  [{:keys [locale] :as props}]
+  []
   (let [form (fm/use-form :spec ::recovery-request-form
-                          :initial {})]
+                          :initial {})
+
+        submitted (mf/use-state false)
+
+        on-error
+        (mf/use-callback
+         (fn [{:keys [code] :as error}]
+           (reset! submitted false)
+           (if (= code :profile-not-verified)
+             (rx/of (dm/error (tr "auth.notifications.profile-not-verified")
+                              {:timeout nil}))
+
+             (rx/throw error))))
+
+        on-success
+        (mf/use-callback
+         (fn []
+           (reset! submitted false)
+           (st/emit! (dm/info (tr "auth.notifications.recovery-token-sent"))
+                     (rt/nav :auth-login))))
+
+        on-submit
+        (mf/use-callback
+         (fn []
+           (reset! submitted true)
+           (->> (with-meta (:clean-data @form)
+                  {:on-success on-success
+                   :on-error on-error})
+                (uda/request-profile-recovery)
+                (st/emit!))))]
+
     [:& fm/form {:on-submit on-submit
                  :form form}
      [:div.fields-row
       [:& fm/input {:name :email
-                    :label (t locale "auth.email")
+                    :label (tr "auth.email")
                     :help-icon i/at
                     :type "text"}]]
 
      [:& fm/submit-button
-      {:label (t locale "auth.recovery-request-submit")}]]))
+      {:label (tr "auth.recovery-request-submit")}]]))
 
 
 ;; --- Recovery Request Page
 
 (mf/defc recovery-request-page
-  [{:keys [locale] :as props}]
+  []
   [:section.generic-form
    [:div.form-container
-    [:h1 (t locale "auth.recovery-request-title")]
-    [:div.subtitle (t locale "auth.recovery-request-subtitle")]
-    [:& recovery-form {:locale locale}]
+    [:h1 (tr "auth.recovery-request-title")]
+    [:div.subtitle (tr "auth.recovery-request-subtitle")]
+    [:& recovery-form]
 
     [:div.links
      [:div.link-entry
       [:a {:on-click #(st/emit! (rt/nav :auth-login))}
-       (t locale "auth.go-back-to-login")]]]]])
+       (tr "auth.go-back-to-login")]]]]])

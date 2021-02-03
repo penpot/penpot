@@ -173,6 +173,12 @@
       "es" : "Introduce la nueva contraseña"
     }
   },
+  "auth.notifications.profile-not-verified": {
+    "translations": {
+      "en": "Profile is not verified, please verify profile before continue.",
+      "es": "El perfil aun no ha sido validado, porfavor valide el perfil antes de continuar."
+    }
+  },
   "auth.notifications.invalid-token-error" : {
     "used-in" : [ "src/app/main/ui/auth/recovery.cljs:47" ],
     "translations" : {
