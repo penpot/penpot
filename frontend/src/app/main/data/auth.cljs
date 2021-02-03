@@ -184,10 +184,7 @@
 
         (->> (rp/mutation :request-profile-recovery data)
              (rx/tap on-success)
-             (rx/catch (fn [err]
-                         (on-error err)
-                         (rx/empty))))))))
-
+             (rx/catch on-error))))))
 
 ;; --- Recovery (Password)
 
