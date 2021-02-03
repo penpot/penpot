@@ -9,8 +9,7 @@
 
 (ns app.util.log4j
   (:require
-   [clojure.pprint :refer [pprint]]
-   [clojure.tools.logging :as log])
+   [clojure.pprint :refer [pprint]])
   (:import
    org.apache.logging.log4j.ThreadContext))
 

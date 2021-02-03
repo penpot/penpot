@@ -13,12 +13,9 @@
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.util.log4j :refer [update-thread-context!]]
-   [clojure.pprint :refer [pprint]]
    [clojure.tools.logging :as log]
    [cuerdas.core :as str]
-   [expound.alpha :as expound])
-  (:import
-   org.apache.logging.log4j.ThreadContext))
+   [expound.alpha :as expound]))
 
 (defn- explain-error
   [error]
@@ -38,7 +35,6 @@
       :class   (.getCanonicalName ^java.lang.Class (class error))
       :hint    (ex-message error)
       :data    edata}
-
 
      (let [headers (:headers request)]
        {:user-agent (get headers "user-agent")
