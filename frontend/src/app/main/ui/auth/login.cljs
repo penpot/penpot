@@ -107,6 +107,7 @@
       [:& fm/submit-button
        {:label (tr "auth.login-submit")
         :on-click on-submit}]
+
       (when cfg/login-with-ldap
         [:& fm/submit-button
          {:label (tr "auth.login-with-ldap-submit")
