@@ -78,11 +78,12 @@
         update-color
         (fn [index]
           (fn [color opacity]
-            (st/emit! (dwc/update-shapes
-                       ids
-                       #(-> %
-                            (assoc-in [:shadow index :color] color)
-                            (assoc-in [:shadow index :opacity] opacity))))))
+            (let [color (d/without-keys color [:id :file-id :gradient])]
+              (st/emit! (dwc/update-shapes
+                         ids
+                         #(-> %
+                              (assoc-in [:shadow index :color] color)
+                              (assoc-in [:shadow index :opacity] opacity)))))))
 
         detach-color
         (fn [index]

@@ -12,6 +12,7 @@
   (:require
    [beicon.core :as rx]
    [okulary.core :as l]
+   [app.common.data :as d]
    [app.common.pages :as cp]
    [app.common.uuid :as uuid]
    [app.main.constants :as c]
@@ -109,7 +110,8 @@
 (def workspace-file-colors
   (l/derived (fn [state]
                (when-let [file (:workspace-file state)]
-                 (get-in file [:data :colors])))
+                 (->> (get-in file [:data :colors])
+                      (d/mapm #(assoc %2 :file-id (:id file))))))
              st/state))
 
 (def workspace-recent-colors

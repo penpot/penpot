@@ -9,17 +9,18 @@
 
 (ns app.main.ui.workspace.sidebar.options.fill
   (:require
-   [rumext.alpha :as mf]
    [app.common.pages :as cp]
+   [app.main.data.colors :as dc]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.texts :as dwt]
-   [app.main.data.colors :as dc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row]]
+   [app.util.color :as uc]
    [app.util.i18n :as i18n :refer [tr t]]
-   [app.util.object :as obj]))
+   [app.util.object :as obj]
+   [rumext.alpha :as mf]))
 
 (def fill-attrs
   [:fill-color
@@ -57,19 +58,24 @@
         (mf/use-callback
           (mf/deps ids)
           (fn [event]
-            (st/emit! (dc/change-fill ids nil))))
+            (st/emit! (dc/change-fill ids (into {} uc/empty-color)))))
 
         on-change
         (mf/use-callback
           (mf/deps ids)
           (fn [color]
-            (st/emit! (dc/change-fill ids color))))
+            (let [remove-multiple (fn [[key value]] (not= value :multiple))
+                  color (into {} (filter remove-multiple) color)]
+              (st/emit! (dc/change-fill ids color)))))
 
         on-detach
         (mf/use-callback
           (mf/deps ids)
           (fn []
-            (st/emit! (dc/change-fill ids (dissoc color :id :file-id)))))
+            (let [remove-multiple (fn [[key value]] (not= value :multiple))
+                  color (-> (into {} (filter remove-multiple) color)
+                            (assoc :id nil :file-id nil))]
+              (st/emit! (dc/change-fill ids color)))))
 
         on-open-picker
         (mf/use-callback
