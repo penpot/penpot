@@ -114,15 +114,13 @@ function build-bundle {
     sed -i -re "s/\%version\%/$version/g" ./bundle/backend/main/app/config.clj;
 
     local generate_tar=${PENPOT_BUNDLE_GENERATE_TAR:-"true"};
+
     if [ $generate_tar == "true" ]; then
         pushd bundle/
-        tar -cvf ../$name.tar *;
+        tar -I lz4 -cvf ../$name.tar.lz4 *;
         popd
-
-        xz -vez1f -T4 $name.tar
-
         echo "##############################################################";
-        echo "# Generated $name.tar.xz";
+        echo "# Generated $name.tar.lz4";
         echo "#   Version $version";
         echo "##############################################################";
     fi
@@ -144,11 +142,11 @@ function build-image {
 
 function build-images {
     local version="$CURRENT_VERSION";
-    local bundle_file="penpot-$CURRENT_BRANCH.tar.xz";
+    local bundle_file="penpot-$CURRENT_BRANCH.tar.lz4";
 
     if [ $CURRENT_BRANCH != "main" ]; then
         version="$CURRENT_BRANCH-$CURRENT_VERSION";
-        bundle_file="penpot-$CURRENT_BRANCH.tar.xz";
+        bundle_file="penpot-$CURRENT_BRANCH.tar.lz4";
     fi;
 
     if [ ! -f $bundle_file ]; then
@@ -163,7 +161,7 @@ function build-images {
     mkdir -p ./docker/images/bundle;
 
     pushd ./docker/images/bundle;
-    tar xvf $bundle_file_path;
+    tar -I lz4 -xvf $bundle_file_path;
     popd
 
     build-image "backend" $CURRENT_BRANCH $version;
@@ -179,9 +177,9 @@ function publish-latest-images {
 
     set -x
 
-    docker tag $ORGANIZATION/frontend:$CURRENT_VERSION $ORGANIZATION/frontend:latest;
-    docker tag $ORGANIZATION/backend:$CURRENT_VERSION $ORGANIZATION/backend:latest;
-    docker tag $ORGANIZATION/exporter:$CURRENT_VERSION $ORGANIZATION/exporter:latest;
+    docker tag $ORGANIZATION/frontend:$CURRENT_BRANCH $ORGANIZATION/frontend:latest;
+    docker tag $ORGANIZATION/backend:$CURRENT_BRANCH $ORGANIZATION/backend:latest;
+    docker tag $ORGANIZATION/exporter:$CURRENT_BRANCH $ORGANIZATION/exporter:latest;
 
     # docker push $ORGANIZATION/frontend:$CURRENT_VERSION;
     # docker push $ORGANIZATION/backend:$CURRENT_VERSION;
