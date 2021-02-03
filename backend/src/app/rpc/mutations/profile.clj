@@ -170,15 +170,24 @@
         active?  (if demo? true is-active)
         props    (db/tjson (or props {}))
         password (derive-password password)]
-    (-> (db/insert! conn :profile
-                    {:id id
-                     :fullname fullname
-                     :email (str/lower email)
-                     :password password
-                     :props props
-                     :is-active active?
-                     :is-demo demo?})
-        (update :props db/decode-transit-pgobject))))
+    (try
+      (-> (db/insert! conn :profile
+                      {:id id
+                       :fullname fullname
+                       :email (str/lower email)
+                       :password password
+                       :props props
+                       :is-active active?
+                       :is-demo demo?})
+          (update :props db/decode-transit-pgobject))
+      (catch org.postgresql.util.PSQLException e
+        (let [state (.getSQLState e)]
+          (if (not= state "23505")
+            (throw e)
+            (ex/raise :type :validation
+                      :code :email-already-exists
+                      :cause e)))))))
+
 
 (defn- create-profile-relations
   [conn profile]
