@@ -536,20 +536,26 @@
 
 (defn get-shape-layer-position
   [objects selected attrs]
-  (cond
-    (= :frame (:type attrs))
+
+  (if (= :frame (:type attrs))
+    ;; Frames are alwasy positioned on the root frame
     [uuid/zero uuid/zero nil]
 
-    (empty? selected)
+    ;; Calculate the frame over which we're drawing
     (let [position @ms/mouse-position
-          frame-id (:frame-id attrs (cp/frame-id-by-position objects position))]
-      [frame-id frame-id nil])
+          frame-id (:frame-id attrs (cp/frame-id-by-position objects position))
+          shape (when-not (empty? selected)
+                  (cp/get-base-shape objects selected))]
 
-    :else
-    (let [shape (cp/get-base-shape objects selected)
-          index (cp/position-on-parent (:id shape) objects)
-          {:keys [frame-id parent-id]} shape]
-      [frame-id parent-id (inc index)])))
+      ;; When no shapes has been selected or we're over a different frame
+      ;; we add it as the latest shape of that frame
+      (if (or (not shape) (not= (:frame-id shape) frame-id))
+        [frame-id frame-id nil]
+
+        ;; Otherwise, we add it to next to the selected shape
+        (let [index (cp/position-on-parent (:id shape) objects)
+              {:keys [frame-id parent-id]} shape]
+          [frame-id parent-id (inc index)])))))
 
 (defn add-shape-changes
   [page-id objects selected attrs]
@@ -561,6 +567,9 @@
                         cp/default-shape-attrs)
 
         shape    (merge default-attrs shape)
+
+        not-frame? #(not (= :frame (get-in objects [% :type])))
+        selected (into #{} (filter not-frame?) selected)
 
         [frame-id parent-id index] (get-shape-layer-position objects selected attrs)
 
