@@ -12,25 +12,13 @@
   (:require
    [app.common.uuid :as uuid]
    [app.config :as cfg]
+   [app.util.log4j :refer [update-thread-context!]]
    [clojure.pprint :refer [pprint]]
    [clojure.tools.logging :as log]
    [cuerdas.core :as str]
    [expound.alpha :as expound])
   (:import
    org.apache.logging.log4j.ThreadContext))
-
-(defn update-thread-context!
-  [data]
-  (run! (fn [[key val]]
-          (ThreadContext/put
-           (name key)
-           (cond
-             (coll? val)
-             (binding [clojure.pprint/*print-right-margin* 120]
-               (with-out-str (pprint val)))
-             (instance? clojure.lang.Named val) (name val)
-             :else (str val))))
-        data))
 
 (defn- explain-error
   [error]
@@ -48,10 +36,8 @@
       :version (:full cfg/version)
       :host    (:public-uri cfg/config)
       :class   (.getCanonicalName ^java.lang.Class (class error))
-      :hint    (ex-message error)}
-
-     (when (map? edata)
-       edata)
+      :hint    (ex-message error)
+      :data    edata}
 
      (when (and (map? edata) (:data edata))
        {:explain (explain-error edata)}))))

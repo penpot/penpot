@@ -16,6 +16,7 @@
    [app.http.errors :as errors]
    [app.http.middleware :as middleware]
    [app.metrics :as mtx]
+   [app.util.log4j :refer [update-thread-context!]]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
    [integrant.core :as ig]
@@ -103,7 +104,7 @@
         (catch Throwable e
           (try
             (let [cdata (errors/get-error-context request e)]
-              (errors/update-thread-context! cdata)
+              (update-thread-context! cdata)
               (log/errorf e "Unhandled exception: %s (id: %s)" (ex-message e) (str (:id cdata)))
               {:status 500
                :body "internal server error"})

@@ -10,11 +10,13 @@
 (ns app.worker
   "Async tasks abstraction (impl)."
   (:require
+   [app.config :as cfg]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.util.async :as aa]
    [app.util.time :as dt]
+   [app.util.log4j :refer [update-thread-context!]]
    [clojure.core.async :as a]
    [clojure.pprint :refer [pprint]]
    [clojure.spec.alpha :as s]
@@ -205,6 +207,17 @@
       (log/warn "no task handler found for" (pr-str name)))
     {:status :completed :task item}))
 
+(defn get-error-context
+  [error item]
+  (let [edata (ex-data error)]
+    {:id      (uuid/next)
+     :version (:full cfg/version)
+     :host    (:public-uri cfg/config)
+     :class   (.getCanonicalName ^java.lang.Class (class error))
+     :hint    (ex-message error)
+     :data    edata
+     :params  item}))
+
 (defn- handle-exception
   [error item]
   (let [edata (ex-data error)]
@@ -218,14 +231,9 @@
         (= ::noop (:strategy edata))
         (assoc :inc-by 0))
 
-      (do
-        (log/errorf error
-                    (str "Unhandled exception.\n"
-                         "=> task:  " (:name item) "\n"
-                         "=> retry: " (:retry-num item) "\n"
-                         "=> props: \n"
-                         (with-out-str
-                           (pprint (:props item)))))
+      (let [cdata (get-error-context error item)]
+        (update-thread-context! cdata)
+        (log/errorf error "Unhandled exception on task (id: %s)" (:id cdata))
         (if (>= (:retry-num item) (:max-retries item))
           {:status :failed :task item :error error}
           {:status :retry :task item :error error})))))
