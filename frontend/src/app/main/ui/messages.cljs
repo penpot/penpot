@@ -58,9 +58,7 @@
                         :position (or (:position message) :fixed)
                         :controls (if (some? (:controls message))
                                     (:controls message)
-                                    (if (some? (:timeout message))
-                                      :none
-                                      :close))
+                                    :close)
                         :on-close on-close)])))
 
 (mf/defc inline-banner
