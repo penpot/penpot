@@ -112,21 +112,22 @@
 (defn bundle-fetched
   [{:keys [project file page share-token token libraries users] :as bundle}]
   (us/verify ::bundle bundle)
-  (ptk/reify ::file-fetched
+  (ptk/reify ::bundle-fetched
     ptk/UpdateEvent
     (update [_ state]
       (let [objects (:objects page)
             frames  (extract-frames objects)]
-        (assoc state
-               :viewer-libraries (d/index-by :id libraries)
-               :viewer-data {:project project
-                             :objects objects
-                             :users (d/index-by :id users)
-                             :file file
-                             :page page
-                             :frames frames
-                             :token token
-                             :share-token share-token})))))
+        (-> state
+            (assoc :viewer-libraries (d/index-by :id libraries))
+            (update :viewer-data assoc
+                    :project project
+                    :objects objects
+                    :users (d/index-by :id users)
+                    :file file
+                    :page page
+                    :frames frames
+                    :token token
+                    :share-token share-token))))))
 
 (defn fetch-comment-threads
   [{:keys [file-id page-id] :as params}]
@@ -346,7 +347,7 @@
 
 
 (defn set-current-frame [frame-id]
-  (ptk/reify ::current-frame
+  (ptk/reify ::set-current-frame
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:viewer-data :current-frame-id] frame-id))))
