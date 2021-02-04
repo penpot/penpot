@@ -378,15 +378,17 @@
               (->> move-events
                    (rx/take-until stopper)
                    (rx/scan #(gpt/add %1 mov-vec) (gpt/point 0 0))
-                   (rx/map #(set-modifiers selected {:displacement (gmt/translate-matrix %)})))
+                   (rx/map gmt/translate-matrix)
+                   (rx/map #(fn [state] (assoc-in state [:workspace-local :modifiers] {:displacement %}))))
               (rx/of (move-selected direction shift?)))
 
-             (rx/of (apply-modifiers selected)
+             (rx/of (set-modifiers selected)
+                    (apply-modifiers selected)
+                    (calculate-frame-for-move selected)
                     (fn [state] (-> state
-                                    (update :workspace-local dissoc :current-move-selected))))
-             (->>
-              (rx/timer 100)
-              (rx/map (fn [] finish-transform)))))
+                                    (update :workspace-local dissoc :modifiers)
+                                    (update :workspace-local dissoc :current-move-selected)))
+                    finish-transform)))
             (rx/empty))))))
 
 
