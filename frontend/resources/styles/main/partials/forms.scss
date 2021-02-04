@@ -61,6 +61,35 @@ textarea {
     margin-bottom: 20px;
   }
 
+  .notification-icon {
+    justify-content: center;
+    display: flex;
+    margin-bottom: 3rem;
+
+    svg {
+      fill: $color-gray-60;
+      height: 40%;
+      width: 40%;
+    }
+  }
+
+  .notification-text {
+    font-size: $fs18;
+    color: $color-gray-60;
+    margin-bottom: 20px;
+  }
+
+  .notification-text-email {
+    background: $color-gray-10;
+    border-radius: $br-small;
+    color: $color-gray-60;
+    font-size: $fs18;
+    font-weight: 500;
+    margin: 1.5rem 0 2.5rem 0;
+    padding: 1rem;
+    text-align: center;
+  }
+
   h2 {
     font-size: $fs24;
     color: $color-gray-60;

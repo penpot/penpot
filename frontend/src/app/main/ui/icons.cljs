@@ -51,6 +51,7 @@
 (def icon-empty (icon-xref :icon-empty))
 (def icon-list (icon-xref :icon-list))
 (def icon-lock (icon-xref :icon-lock))
+(def icon-verify (icon-xref :icon-verify))
 (def icon-set (icon-xref :icon-set))
 (def image (icon-xref :image))
 (def infocard (icon-xref :infocard))

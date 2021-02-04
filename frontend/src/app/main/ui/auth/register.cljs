@@ -123,8 +123,10 @@
 (mf/defc register-success-page
   [{:keys [params] :as props}]
   [:div.form-container
-   [:div.subtitle (tr "auth.verification-email-sent" (:email params ""))]
-   [:div.subtitle (tr "auth.check-your-email")]])
+   [:div.notification-icon i/icon-verify]
+   [:div.notification-text (tr "auth.verification-email-sent")]
+   [:div.notification-text-email (:email params "")]
+   [:div.notification-text (tr "auth.check-your-email")]])
 
 
 (mf/defc register-page
