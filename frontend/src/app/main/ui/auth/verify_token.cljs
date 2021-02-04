@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.main.ui.auth.verify-token
   (:require
@@ -21,9 +21,9 @@
    [app.main.ui.auth.register :refer [register-page]]
    [app.main.ui.icons :as i]
    [app.util.forms :as fm]
-   [app.util.storage :refer [cache]]
    [app.util.i18n :as i18n :refer [tr t]]
    [app.util.router :as rt]
+   [app.util.storage :refer [cache]]
    [app.util.timers :as ts]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
@@ -35,7 +35,7 @@
   [data]
   (let [msg (tr "dashboard.notifications.email-verified-successfully")]
     (ts/schedule 100 #(st/emit! (dm/success msg)))
-    (st/emit! (rt/nav :auth-login))))
+    (st/emit! (da/login-from-token data))))
 
 (defmethod handle-token :change-email
   [data]

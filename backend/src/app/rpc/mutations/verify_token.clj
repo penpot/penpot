@@ -44,20 +44,29 @@
   claims)
 
 (defmethod process-token :verify-email
-  [{:keys [conn] :as cfg} _params {:keys [profile-id] :as claims}]
-  (let [profile (db/get-by-id conn :profile profile-id {:for-update true})]
-    (when (:is-active profile)
-      (ex/raise :type :validation
-                :code :email-already-validated))
-    (when (not= (:email profile)
-                (:email claims))
-      (ex/raise :type :validation
-                :code :invalid-token))
+  [{:keys [conn session] :as cfg} _params {:keys [profile-id] :as claims}]
+  (let [profile (profile/retrieve-profile conn profile-id)
+        claims  (assoc claims :profile profile)]
 
-    (db/update! conn :profile
-                {:is-active true}
-                {:id (:id profile)})
-    claims))
+    (when-not (:is-active profile)
+      (when (not= (:email profile)
+                  (:email claims))
+        (ex/raise :type :validation
+                  :code :invalid-token))
+
+      (db/update! conn :profile
+                  {:is-active true}
+                  {:id (:id profile)}))
+
+    (with-meta claims
+      {:transform-response
+       (fn [request response]
+         (let [uagent (get-in request [:headers "user-agent"])
+               id     (session/create! session {:profile-id profile-id
+                                                :user-agent uagent})]
+           (assoc response
+                  :cookies (session/cookies session {:value id}))))})))
+
 
 (defmethod process-token :auth
   [{:keys [conn] :as cfg} _params {:keys [profile-id] :as claims}]
