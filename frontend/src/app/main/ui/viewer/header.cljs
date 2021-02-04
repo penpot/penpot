@@ -73,7 +73,7 @@
           (wapi/write-to-clipboard link)
           (st/emit! (dm/show {:type :info
                               :content "Link copied successfuly!"
-                              :timeout 2000})))]
+                              :timeout 3000})))]
     [:*
      [:span.btn-primary.btn-small
       {:alt (t locale "viewer.header.share.title")

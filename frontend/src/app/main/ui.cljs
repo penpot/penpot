@@ -225,8 +225,7 @@
   (ts/schedule
    (st/emitf
     (dm/show {:content "Unexpected validation error (server side)."
-              :type :error
-              :timeout 3000})))
+              :type :error})))
 
   ;; Print to the console some debug info.
   (js/console.group "Validation Error")
@@ -245,8 +244,7 @@
   [{:keys [data stack message context] :as error}]
   (ts/schedule
    (st/emitf (dm/show {:content "Internal error: assertion."
-                       :type :error
-                       :timeout 3000})))
+                       :type :error})))
 
   ;; Print to the console some debugging info
   (js/console.group message)
@@ -269,8 +267,8 @@
   (ts/schedule
    (st/emitf (dm/show
               {:content "Something wrong has happened (on backend)."
-               :type :error
-               :timeout 3000})))
+               :type :error})))
+
   (js/console.group "Internal Server Error:")
   (js/console.error "hint:" (or (:hint data) (:message data)))
   (js/console.info
