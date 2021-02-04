@@ -10,6 +10,7 @@
 (ns app.main.ui.workspace.left-toolbar
   (:require
    [app.common.geom.point :as gpt]
+   [app.common.math :as mth]
    [app.common.media :as cm]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.shortcuts :as sc]
@@ -36,8 +37,13 @@
          (mf/deps file)
          (fn [blobs]
            (let [params {:file-id (:id file)
-                         :data (seq blobs)}]
-             (st/emit! (dw/upload-media-workspace params (gpt/point 0 0))))))]
+                         :data (seq blobs)}
+                 ;; We don't want to add a ref because that redraws the component
+                 ;; for everychange. Better direct access on the callback
+                 vbox (get-in @st/state [:workspace-local :vbox])
+                 x (mth/round (+ (:x vbox) (/ (:width vbox) 2)))
+                 y (mth/round (+ (:y vbox) (/ (:height vbox) 2)))]
+             (st/emit! (dw/upload-media-workspace params (gpt/point x y))))))]
 
        [:li.tooltip.tooltip-right
         {:alt (tr "workspace.toolbar.image")
