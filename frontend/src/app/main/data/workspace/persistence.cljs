@@ -9,9 +9,8 @@
 
 (ns app.main.data.workspace.persistence
   (:require
-   [cuerdas.core :as str]
-   [app.util.http :as http]
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
    [app.common.media :as cm]
    [app.common.pages :as cp]
@@ -21,21 +20,22 @@
    [app.main.data.media :as di]
    [app.main.data.messages :as dm]
    [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.svg-upload :as svg]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.svg-upload :as svg]
    [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.util.avatars :as avatars]
+   [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
    [app.util.router :as rt]
    [app.util.time :as dt]
    [app.util.transit :as t]
-   [app.util.avatars :as avatars]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [potok.core :as ptk]
-   [app.main.store :as st]))
+   [cuerdas.core :as str]
+   [potok.core :as ptk]))
 
 (declare persist-changes)
 (declare persist-sychronous-changes)
@@ -417,24 +417,27 @@
 (defn- handle-upload-error [on-error stream]
   (->> stream
        (rx/catch
-           (fn [error]
-             (cond
-               (= (:code error) :media-type-not-allowed)
-               (rx/of (dm/error (tr "errors.media-type-not-allowed")))
+           (fn on-error [error]
+             (if (ex/ex-info? error)
+               (on-error (ex-data error))
+               (cond
+                 (= (:code error) :media-type-not-allowed)
+                 (rx/of (dm/error (tr "errors.media-type-not-allowed")))
 
-               (= (:code error) :media-type-mismatch)
-               (rx/of (dm/error (tr "errors.media-type-mismatch")))
+                 (= (:code error) :media-too-large)
+                 (rx/of (dm/error (tr "errors.media-too-large")))
 
-               (= (:code error) :unable-to-optimize)
-               (rx/of (dm/error (:hint error)))
+                 (= (:code error) :media-type-mismatch)
+                 (rx/of (dm/error (tr "errors.media-type-mismatch")))
 
-               (fn? on-error)
-               (do
+                 (= (:code error) :unable-to-optimize)
+                 (rx/of (dm/error (:hint error)))
+
+                 (fn? on-error)
                  (on-error error)
-                 (rx/empty))
 
-               :else
-               (rx/throw error))))))
+                 :else
+                 (rx/throw error)))))))
 
 (defn- upload-uris [file-id local? name uris mtype on-image on-svg]
   (letfn [(svg-url? [url]
@@ -499,7 +502,6 @@
       (let [{:keys [on-image on-svg on-error]
              :or {on-image identity
                   on-svg   identity}} (meta params)]
-
         (rx/concat
          (rx/of (dm/show {:content (tr "media.loading")
                           :type :info
@@ -515,7 +517,8 @@
               (handle-upload-error on-error)
               (rx/finalize (st/emitf (dm/hide-tag :media-loading)))))))))
 
-(defn upload-media-asset [params]
+(defn upload-media-asset
+  [params]
   (let [params (-> params
                    (assoc :svg-as-images true)
                    (assoc :local? false)
@@ -525,13 +528,12 @@
 (defn upload-media-workspace
   [params position]
   (let [{:keys [x y]} position
-        params (-> params
-                   (assoc :local? true)
-                   (with-meta
-                     {:on-image
-                      #(st/emit! (dwc/image-uploaded % x y))
-                      :on-svg
-                      #(st/emit! (svg/svg-uploaded % x y))}))]
+        mdata  {:on-image #(st/emit! (dwc/image-uploaded % x y))
+                :on-svg   #(st/emit! (svg/svg-uploaded % x y))}
+
+        params (-> (assoc params :local? true)
+                   (with-meta mdata))]
+
     (upload-media-objects params)))
 
 

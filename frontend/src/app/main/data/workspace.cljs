@@ -1284,7 +1284,6 @@
 ;; Clipboard
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
 (defn copy-selected
   []
   (letfn [;; Retrieve all ids of selected shapes with corresponding
@@ -1403,12 +1402,22 @@
         (let [paste-data    (wapi/read-from-paste-event event)
               image-data    (wapi/extract-images paste-data)
               text-data     (wapi/extract-text paste-data)
-              decoded-data  (and (t/transit? text-data) (t/decode text-data))]
+              decoded-data  (and (t/transit? text-data)
+                                 (t/decode text-data))]
           (cond
-            (seq image-data)    (rx/from (map paste-image image-data))
-            decoded-data        (rx/of (paste-shape decoded-data in-viewport?))
-            (string? text-data) (rx/of (paste-text text-data))
-            :else               (rx/empty)))
+            (seq image-data)
+            (rx/from (map paste-image image-data))
+
+            (coll? decoded-data)
+            (->> (rx/of decoded-data)
+                 (rx/filter #(= :copied-shapes (:type %)))
+                 (rx/map #(paste-shape % in-viewport?)))
+
+            (string? text-data)
+            (rx/of (paste-text text-data))
+
+            :else
+            (rx/empty)))
         (catch :default err
           (js/console.error "Clipboard error:" err))))))
 
