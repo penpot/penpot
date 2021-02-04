@@ -211,8 +211,10 @@
 
     width: calc(100% - 1rem);
     min-height: 5rem;
+
     img {
       max-height: 8rem;
+      max-width: 100%;
       width: auto;
     }
   }
