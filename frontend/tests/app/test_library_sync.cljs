@@ -288,6 +288,48 @@
         (println (.-stack e))
         (done)))))
 
+(t/deftest test-delete-component
+  (t/async done
+    (try
+      (let [state (-> thp/initial-state
+                      (thp/sample-page)
+                      (thp/sample-shape :shape1 :rect
+                                        {:name "Rect 1"})
+                      (thp/make-component :instance1
+                                          [(thp/id :shape1)]))
+
+            instance1    (thp/get-shape state :instance1)
+            component-id (:component-id instance1)]
+
+        (->> state
+             (the/do-watch-update (dwl/delete-component
+                                    {:id component-id}))
+             (rx/do
+               (fn [new-state]
+                 (let [[instance1 shape1]
+                       (thl/resolve-instance
+                         new-state
+                         (:id instance1))
+
+                       file      (dwlh/get-local-file new-state)
+                       component (cph/get-component
+                                   (:component-id instance1)
+                                   (:component-file instance1)
+                                   file
+                                   {})]
+
+                   (t/is (nil? component)))))
+
+             (rx/subs
+               done
+               #(do
+                  (println (.-stack %))
+                  (done)))))
+
+      (catch :default e
+        (println (.-stack e))
+        (done)))))
+
 (t/deftest test-instantiate-component
   (t/async done
     (try
@@ -322,10 +364,45 @@
 
                    (t/is (not= (:id instance1) (:id instance2)))
                    (t/is (= (:id component) component-id))
-                   (t/is (= (:name instance2) "Component-7"))
+                   (t/is (= (:name instance2) "Component-8"))
                    (t/is (= (:name shape2) "Rect 1"))
-                   (t/is (= (:name c-instance2) "Component-6"))
+                   (t/is (= (:name c-instance2) "Component-7"))
                    (t/is (= (:name c-shape2) "Rect 1")))))
+
+             (rx/subs
+               done
+               #(do
+                  (println (.-stack %))
+                  (done)))))
+
+      (catch :default e
+        (println (.-stack e))
+        (done)))))
+
+(t/deftest test-detach-component
+  (t/async done
+    (try
+      (let [state (-> thp/initial-state
+                      (thp/sample-page)
+                      (thp/sample-shape :shape1 :rect
+                                        {:name "Rect 1"})
+                      (thp/make-component :instance1
+                                          [(thp/id :shape1)]))
+
+            instance1    (thp/get-shape state :instance1)
+            component-id (:component-id instance1)]
+
+        (->> state
+             (the/do-watch-update (dwl/detach-component
+                                    (:id instance1)))
+             (rx/do
+               (fn [new-state]
+                 (let [[instance1 shape1]
+                       (thl/resolve-noninstance
+                         new-state
+                         (:id instance1))]
+
+                   (t/is (= (:name "Rect 1"))))))
 
              (rx/subs
                done
