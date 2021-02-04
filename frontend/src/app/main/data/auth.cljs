@@ -36,7 +36,7 @@
       (let [team-id (:default-team-id profile)]
         (rx/merge
          (rx/of (du/profile-fetched profile)
-                (rt/nav :dashboard-projects {:team-id team-id}))
+                (rt/nav' :dashboard-projects {:team-id team-id}))
          (when-not (get-in profile [:props :onboarding-viewed])
            (->> (rx/of (modal/show {:type :onboarding}))
                 (rx/delay 1000))))))))
@@ -77,9 +77,7 @@
 
     ptk/WatchEvent
     (watch [this state s]
-      (let [team-id (:default-team-id profile)]
-        (rx/of (du/profile-fetched profile)
-               (rt/nav' :dashboard-projects {:team-id team-id}))))))
+      (rx/of (logged-in profile)))))
 
 (defn login-with-ldap
   [{:keys [email password] :as data}]
