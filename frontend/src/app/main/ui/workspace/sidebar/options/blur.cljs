@@ -47,7 +47,12 @@
 
         handle-change
         (fn [value]
-          (change! #(assoc-in % [:blur :value] value)))
+          (change! #(cond-> %
+                      (not (contains? % :blur))
+                      (assoc :blur (create-blur))
+
+                      :always
+                      (assoc-in [:blur :value] value))))
 
         handle-toggle-visibility
         (fn []
