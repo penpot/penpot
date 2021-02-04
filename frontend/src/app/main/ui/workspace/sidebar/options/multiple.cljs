@@ -123,6 +123,9 @@
   [v]
   (when v (select-keys v blur-keys)))
 
+(defn empty-map [keys]
+  (into {} (map #(hash-map % nil)) keys))
+
 (defn get-attrs
   "Given a `type` of options that we want to extract and the shapes to extract them from
   returns a list of tuples [id, values] with the extracted properties for the shapes that
@@ -142,7 +145,9 @@
                 result (case props
                          :ignore   [ids values]
                          :shape    [(conj ids id)
-                                    (merge-attrs values (select-keys shape attrs))]
+                                    (merge-attrs values (merge
+                                                         (empty-map attrs)
+                                                         (select-keys shape attrs)))]
                          :text     [(conj ids id)
                                     (-> values
                                         (merge-attrs (select-keys shape attrs))
