@@ -493,7 +493,7 @@
           (rx/map #(assoc (first %) :name (.-name (second %))))
           (rx/do on-svg)))))
 
-(defn upload-media-objects
+(defn- upload-media-objects
   [{:keys [file-id local? data name uris mtype svg-as-images] :as params}]
   (us/assert ::upload-media-objects params)
   (ptk/reify ::upload-media-objects
