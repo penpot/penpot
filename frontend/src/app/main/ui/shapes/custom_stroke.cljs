@@ -22,7 +22,7 @@
   (let [shape (unchecked-get props "shape")
         base-props (unchecked-get props "base-props")
         elem-name (unchecked-get props "elem-name")
-        ;; {:keys [x y width height]} (geom/shape->rect-shape shape)
+        base-style (obj/get base-props "style")
         {:keys [x y width height]} (:selrect shape)
         stroke-id (mf/use-var (uuid/next))
         stroke-style (:stroke-style shape :none)
@@ -37,19 +37,25 @@
       (= stroke-position :inner)
       (let [clip-id (str "clip-" @stroke-id)
 
-            clip-props (-> (obj/merge! #js {} base-props)
-                           (obj/merge! #js {:stroke nil
+            clip-props (obj/merge
+                         base-props
+                         #js {:transform nil
+                              :style (obj/merge 
+                                       base-style
+                                       #js {:stroke nil
                                             :strokeWidth nil
                                             :strokeOpacity nil
                                             :strokeDasharray nil
                                             :fill "white"
-                                            :fillOpacity 1
-                                            :transform nil}))
+                                            :fillOpacity 1})})
 
-            stroke-width (obj/get base-props "strokeWidth")
-            shape-props (-> (obj/merge! #js {} base-props)
-                            (obj/merge! #js {:strokeWidth (* stroke-width 2)
-                                              :clipPath (str "url('#" clip-id "')")}))]
+            stroke-width (obj/get base-style "strokeWidth" 0)
+            shape-props (obj/merge
+                          base-props
+                          #js {:clipPath (str "url('#" clip-id "')")
+                               :style (obj/merge
+                                        base-style
+                                        #js {:strokeWidth (* stroke-width 2)})})]
         [:*
          [:> "clipPath" #js {:id clip-id}
           [:> elem-name clip-props]]
@@ -63,34 +69,46 @@
 
       (= stroke-position :outer)
       (let [stroke-mask-id (str "mask-" @stroke-id)
-            stroke-width (or (.-strokeWidth ^js base-props) 0)
-            mask-props1 (-> (obj/merge! #js {} base-props)
-                            (obj/merge! #js {:stroke "white"
+            stroke-width   (obj/get base-style "strokeWidth" 0)
+            mask-props1 (obj/merge
+                          base-props
+                          #js {:transform nil
+                               :style (obj/merge
+                                        base-style
+                                        #js {:stroke "white"
                                              :strokeWidth (* stroke-width 2)
                                              :strokeOpacity 1
                                              :strokeDasharray nil
                                              :fill "white"
-                                             :fillOpacity 1
-                                             :transform nil}))
-            mask-props2 (-> (obj/merge! #js {} base-props)
-                            (obj/merge! #js {:stroke nil
+                                             :fillOpacity 1})})
+            mask-props2 (obj/merge
+                          base-props
+                          #js {:transform nil
+                               :style (obj/merge
+                                        base-style
+                                        #js {:stroke nil
                                              :strokeWidth nil
                                              :strokeOpacity nil
                                              :strokeDasharray nil
                                              :fill "black"
-                                             :fillOpacity 1
-                                             :transform nil}))
+                                             :fillOpacity 1})})
 
-            shape-props1 (-> (obj/merge! #js {} base-props)
-                             (obj/merge! #js {:stroke nil
+            shape-props1 (obj/merge
+                           base-props
+                           #js {:style (obj/merge
+                                         base-style
+                                         #js {:stroke nil
                                               :strokeWidth nil
                                               :strokeOpacity nil
-                                              :strokeDasharray nil}))
-            shape-props2 (-> (obj/merge! #js {} base-props)
-                             (obj/merge! #js {:strokeWidth (* stroke-width 2)
+                                              :strokeDasharray nil})})
+            shape-props2 (obj/merge
+                           base-props
+                           #js {:mask (str "url('#" stroke-mask-id "')")
+                                :style (obj/merge
+                                         base-style
+                                         #js {:strokeWidth (* stroke-width 2)
                                               :fill "none"
-                                              :fillOpacity 0
-                                              :mask (str "url('#" stroke-mask-id "')")}))]
+                                              :fillOpacity 0})})]
         [:*
          [:mask {:id stroke-mask-id}
           [:> elem-name mask-props1]
