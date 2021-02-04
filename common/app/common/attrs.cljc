@@ -59,8 +59,8 @@
                  ;;
                  (let [new-val (get curr attr ::undefined)
                        value (cond
-                               (or (= new-val ::undefined)
-                                   (= new-val :multiple)) value
+                               (= new-val ::undefined) value
+                               (= new-val :multiple)   :multiple
                                (= value ::undefined)   (sel new-val)
                                (eqfn new-val value)    value
                                :else                   :multiple)]
