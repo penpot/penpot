@@ -99,8 +99,14 @@
     position: fixed;
     right: calc(#{$width-settings-bar} + 10px);
     text-align: center;
-    width: 110px;
+    width: 125px;
+    white-space: nowrap;
     padding-bottom: 2px;
+    transition: bottom 0.5s;
+
+    &.color-palette-open {
+      bottom: 5rem;
+    }
 
     span {
       color: $color-white;

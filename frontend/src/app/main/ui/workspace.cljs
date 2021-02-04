@@ -46,7 +46,8 @@
   [props]
   (let [zoom  (or (obj/get props "zoom") 1)
         vbox  (obj/get props "vbox")
-        vport (obj/get props "vport")]
+        vport (obj/get props "vport")
+        colorpalette? (obj/get props "colorpalette?")]
 
     [:*
      [:div.empty-rule-square]
@@ -56,7 +57,7 @@
      [:& vertical-rule {:zoom zoom
                         :vbox vbox
                         :vport vport}]
-     [:& coordinates]]))
+     [:& coordinates {:colorpalette? colorpalette?}]]))
 
 (mf/defc workspace-content
   {::mf/wrap-props false}
@@ -76,7 +77,8 @@
        (when (contains? layout :rules)
          [:& workspace-rules {:zoom zoom
                               :vbox vbox
-                              :vport vport}])
+                              :vport vport
+                              :colorpalette? (contains? layout :colorpalette)}])
 
        [:& viewport-actions]
        [:& viewport {:file file
