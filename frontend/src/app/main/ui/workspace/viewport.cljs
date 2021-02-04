@@ -81,9 +81,9 @@
 ;; --- Coordinates Widget
 
 (mf/defc coordinates
-  []
+  [{:keys [colorpalette?]}]
   (let [coords (hooks/use-rxsub ms/mouse-position)]
-    [:ul.coordinates
+    [:ul.coordinates {:class (when colorpalette? "color-palette-open")}
      [:span {:alt "x"}
       (str "X: " (:x coords "-"))]
      [:span {:alt "y"}
