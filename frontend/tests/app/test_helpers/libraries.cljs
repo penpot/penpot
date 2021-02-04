@@ -52,6 +52,33 @@
   (t/is (= (:component-file shape)
            (:id file))))
 
+(defn resolve-instance
+  [state root-inst-id]
+  (let [page      (thp/current-page state)
+        root-inst (cph/get-shape page root-inst-id)
+        shapes-inst   (cph/get-object-with-children
+                        root-inst-id
+                        (:objects page))]
+
+    ;; Validate that the instance tree is well constructed
+    (t/is (is-instance-root (first shapes-inst)))
+    (run! is-instance-child (rest shapes-inst))
+
+    shapes-inst))
+
+(defn resolve-noninstance
+  [state root-inst-id]
+  (let [page      (thp/current-page state)
+        root-inst (cph/get-shape page root-inst-id)
+        shapes-inst   (cph/get-object-with-children
+                        root-inst-id
+                        (:objects page))]
+
+    ;; Validate that the tree is not an instance
+    (run! is-noninstance shapes-inst)
+
+    shapes-inst))
+
 (defn resolve-instance-and-master
   [state root-inst-id]
   (let [page      (thp/current-page state)
