@@ -9,12 +9,13 @@
 
 (ns app.main
   (:require
-   [app.config :as cfg]
-   [app.common.uuid :as uuid]
    [app.common.spec :as us]
-   [app.main.repo :as rp]
+   [app.common.uuid :as uuid]
+   [app.config :as cfg]
    [app.main.data.auth :refer [logout]]
+   [app.main.data.messages :as dm]
    [app.main.data.users :as udu]
+   [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui :as ui]
    [app.main.ui.confirm]
@@ -22,12 +23,12 @@
    [app.main.worker]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n]
+   [app.util.logging :as log]
    [app.util.object :as obj]
    [app.util.router :as rt]
    [app.util.storage :refer [storage]]
    [app.util.theme :as theme]
    [app.util.timers :as ts]
-   [app.util.logging :as log]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]))
@@ -71,7 +72,7 @@
       (st/emit! (rt/nav :auth-login))
 
       (nil? match)
-      (st/emit! (rt/nav :not-found))
+      (st/emit! (dm/assign-exception {:type :not-found}))
 
       :else
       (st/emit! #(assoc % :route match)))))
