@@ -229,13 +229,14 @@
               :timeout 3000})))
 
   ;; Print to the console some debug info.
-  (js/console.group "Server Error")
-  (js/console.info
-   (with-out-str
-     (pprint (dissoc error :explain))))
-  (when-let [explain (:explain error)]
-    (js/console.error explain))
-  (js/console.endGroup "Server Error"))
+  (js/console.group "Validation Error")
+  (ex/ignoring
+   (js/console.info
+    (with-out-str
+      (pprint (dissoc error :explain))))
+   (when-let [explain (:explain error)]
+     (js/console.error explain)))
+  (js/console.groupEnd "Validation Error"))
 
 ;; This is a pure frontend error that can be caused by an active
 ;; assertion (assertion that is preserved on production builds). From

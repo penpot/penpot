@@ -13,6 +13,7 @@
    [app.common.media :as cm]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.common.exceptions :as ex]
    [app.main.data.messages :as dm]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -50,9 +51,13 @@
   ;; Check that a file obtained with the file javascript API is valid.
   [file]
   (when (> (.-size file) cm/max-file-size)
-    (throw (ex-info (tr "errors.media-too-large") {})))
+    (ex/raise :type :validation
+              :code :media-too-large
+              :hint (str/fmt "media size is large than 5mb (size: %s)" (.-size file))))
   (when-not (contains? cm/valid-media-types (.-type file))
-    (throw (ex-info (tr "errors.media-format-unsupported") {})))
+    (ex/raise :type :validation
+              :code :media-type-not-allowed
+              :hint (str/fmt "media type %s is not supported" (.-type file))))
   file)
 
 (defn notify-start-loading
