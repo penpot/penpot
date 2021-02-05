@@ -22,7 +22,7 @@
 (defonce ^:private default-square-params
   {:size 16
    :color {:color "#59B9E2"
-           :opacity 0.2}})
+           :opacity 0.4}})
 
 (defonce ^:private default-layout-params
   {:size 12

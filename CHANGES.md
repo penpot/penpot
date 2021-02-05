@@ -2,7 +2,12 @@
 
 ## Next
 
-- ...
+### New features
+
+- Add images lock proportions by default
+- Shows a pixel grid when zoom greater than 800%
+
+### Bug fixed
 
 ## 1.1.0-alpha
 
