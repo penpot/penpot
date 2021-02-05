@@ -7,16 +7,16 @@ The simplest approach is using docker and docker-compose.
 
 ## Install Docker ##
 
-Skip this section if you alreasdy have docker installed, up and running.
+Skip this section if you already have docker installed, up and running.
 
 You can install docker and its dependencies from your distribution
-repositores with:
+repository with:
 
 ```bash
 sudo apt-get install docker docker-compose
 ```
 
-Or follow installation instructions from docker.com; (for debian
+Or follow installation instructions from docker.com; (for Debian
 https://docs.docker.com/engine/install/debian/).
 
 Ensure that the docker is started and optionally enable it to start
@@ -33,7 +33,7 @@ And finally, add your user to the docker group:
 sudo usermod -aG docker $USER
 ```
 
-This will make use the docker without `sudo` command all the time.
+This will make use of the docker without `sudo` command all the time.
 
 NOTE: probably you will need to re-login again to make this change
 take effect.
@@ -58,5 +58,5 @@ docker-compose -p penpot -f docker-compose.yaml up
 
 The docker compose file contains the essential configuration for
 getting the application running, and many essential configurations
-already explained in comments. All other configuration options are
+already explained in the comments. All other configuration options are
 explained in [configuration guide](./05-Configuration-Guide.md).
