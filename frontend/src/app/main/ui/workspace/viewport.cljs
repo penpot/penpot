@@ -231,6 +231,27 @@
                       :shape (gsh/transform-shape shape)
                       :color color}])])))
 
+(mf/defc pixel-grid
+  [{:keys [vbox zoom]}]
+  [:g.pixel-grid
+   [:defs
+    [:pattern {:id "pixel-grid"
+               :viewBox "0 0 1 1"
+               :width 1
+               :height 1
+               :pattern-units "userSpaceOnUse"}
+     [:path {:d "M 1 0 L 0 0 0 1"
+             :style {:fill "none"
+                     :stroke "#59B9E2"
+                     :stroke-opacity "0.2"
+                     :stroke-width (str (/ 1 zoom))}}]]]
+   [:rect {:x (:x vbox)
+           :y (:y vbox)
+           :width (:width vbox)
+           :height (:height vbox)
+           :fill (str "url(#pixel-grid)")
+           :style {:pointer-events "none"}}]])
+
 (mf/defc frames
   {::mf/wrap [mf/memo]
    ::mf/wrap-props false}
@@ -778,6 +799,10 @@
 
        (when show-grids?
          [:& frame-grid {:zoom zoom}])
+
+       (when (>= zoom 8)
+         [:& pixel-grid {:vbox vbox
+                         :zoom zoom}])
 
        (when show-snap-points?
          [:& snap-points {:layout layout
