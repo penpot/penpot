@@ -4,7 +4,7 @@
 
 [![License: MPL-2.0][uri_license_image]][uri_license]
 [![Gitter](https://badges.gitter.im/sereno-xyz/community.svg)](https://gitter.im/penpot/community)
-[![Managed with Taiga.io](https://img.shields.io/badge/managed%20with-TAIGA.io-709f14.svg)](https://tree.taiga.io/project/uxboxproject/ "Managed with Taiga.io")
+[![Managed with Taiga.io](https://img.shields.io/badge/managed%20with-TAIGA.io-709f14.svg)](https://tree.taiga.io/project/penpot/ "Managed with Taiga.io")
 
 
 # PENPOT #
