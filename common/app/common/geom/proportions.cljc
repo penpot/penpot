@@ -43,7 +43,7 @@
   (let [{:keys [width height]} metadata]
     (assoc shape
            :proportion (/ width height)
-           :proportion-lock false)))
+           :proportion-lock true)))
 
 (defn setup-proportions-const
   [shape]
