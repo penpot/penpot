@@ -37,16 +37,17 @@
   },
   "auth.verification-email-sent": {
     "translations": {
-      "en": "We've sent a verification email to"
+      "en": "We've sent a verification email to",
+      "fr": "Nous avons envoyé un e-mail de vérification à"
     }
   },
 
   "auth.check-your-email": {
     "translations": {
-      "en": "Check your email and click on the link to verify and start using Penpot."
+      "en": "Check your email and click on the link to verify and start using Penpot.",
+      "fr": "Vérifiez votre email et cliquez sur le lien pour vérifier et commencer à utiliser Penpot."
     }
   },
-
   "auth.demo-warning" : {
     "used-in" : [ "src/app/main/ui/auth/register.cljs:33" ],
     "translations" : {
@@ -176,6 +177,7 @@
   "auth.notifications.profile-not-verified": {
     "translations": {
       "en": "Profile is not verified, please verify profile before continue.",
+      "fr": "Le profil n'est pas vérifié, veuillez vérifier le profil avant de continuer.",
       "es": "El perfil aun no ha sido verificado, por favor valida el perfil antes de continuar."
     }
   },
@@ -210,6 +212,7 @@
     "used-in" : [ "src/app/main/ui/auth/verify_token.cljs:55", "src/app/main/ui/auth/register.cljs:50" ],
     "translations" : {
       "en" : "Joined the team succesfully",
+      "fr" : "Équipe rejoint avec succès",
       "es" : "Te uniste al equipo"
     }
   },
@@ -316,7 +319,7 @@
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:228", "src/app/main/ui/dashboard/grid.cljs:182" ],
     "translations" : {
       "en" : "Add as Shared Library",
-      "fr" : "",
+      "fr" : "Ajouter une Bibliothèque Partagée",
       "ru" : "",
       "es" : "Añadir como Biblioteca Compartida"
     }
@@ -334,6 +337,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:171" ],
     "translations" : {
       "en" : "+ Create new team",
+      "fr" : "+ Créer nouvelle équipe",
       "es" : "+ Crear nuevo equipo"
     }
   },
@@ -341,6 +345,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:341" ],
     "translations" : {
       "en" : "Your Penpot",
+      "fr" : "Votre Penpot",
       "es" : "Tu Penpot"
     }
   },
@@ -348,6 +353,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:325" ],
     "translations" : {
       "en" : "Delete team",
+      "fr" : "Supprimer l'équipe",
       "es" : "Eliminar equipo"
     }
   },
@@ -373,6 +379,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:72" ],
     "translations" : {
       "en" : "Invite to team",
+      "fr" : "Inviter à l'équipe",
       "es" : "Invitar al equipo"
     }
   },
@@ -380,6 +387,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:318", "src/app/main/ui/dashboard/sidebar.cljs:321" ],
     "translations" : {
       "en" : "Leave team",
+      "fr" : "Quitter l'équipe",
       "es" : "Abandonar equipo"
     }
   },
@@ -387,7 +395,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/libraries.cljs:40" ],
     "translations" : {
       "en" : "Shared Libraries",
-      "fr" : "",
+      "fr" : "Bibliothèques Partagées",
       "ru" : "",
       "es" : "Bibliotecas Compartidas"
     }
@@ -422,7 +430,7 @@
   "dashboard.library.add-library.icons" : {
     "translations" : {
       "en" : "+ New icon library",
-      "fr" : "+ Nouvelle librairie d'icônes",
+      "fr" : "+ Nouvelle bibliothèque d'icônes",
       "ru" : "+ Новая библиотека иконок",
       "es" : "+ Nueva biblioteca de iconos"
     },
@@ -431,7 +439,7 @@
   "dashboard.library.add-library.images" : {
     "translations" : {
       "en" : "+ New image library",
-      "fr" : "+ Nouvelle librairie d'image",
+      "fr" : "+ Nouvelle bibliothèque d'image",
       "ru" : "+ Новая библиотека изображений",
       "es" : "+ Nueva biblioteca de imágenes"
     },
@@ -477,6 +485,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:194" ],
     "translations" : {
       "en" : "loading your files ...",
+      "fr" : "chargement de vos fichiers ...",
       "es" : "cargando tus ficheros ..."
     }
   },
@@ -511,6 +520,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:436" ],
     "translations" : {
       "en" : "Pinned projects will appear here",
+      "fr" : "Les projets épinglés apparaîtront ici",
       "es" : "Los proyectos fijados aparecerán aquí"
     }
   },
@@ -545,6 +555,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:305" ],
     "translations" : {
       "en" : "%s members",
+      "fr" : "%s membres",
       "es" : "%s integrantes"
     }
   },
@@ -570,6 +581,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:202" ],
     "translations" : {
       "en" : "Promote to owner",
+      "fr" : "Promouvoir en propriétaire",
       "es" : "Promover a dueño"
     }
   },
@@ -586,7 +598,7 @@
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:226", "src/app/main/ui/dashboard/grid.cljs:181" ],
     "translations" : {
       "en" : "Remove as Shared Library",
-      "fr" : "",
+      "fr" : "Retirer en tant que Bibliothèque Partagée",
       "ru" : "",
       "es" : "Eliminar como Biblioteca Compartida"
     }
@@ -631,6 +643,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:262" ],
     "translations" : {
       "en" : "Show all files",
+      "fr" : "Voir tous les fichiers",
       "es" : "Ver todos los ficheros"
     }
   },
@@ -647,6 +660,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:156" ],
     "translations" : {
       "en" : "Switch team",
+      "fr" : "Changer d'équipe",
       "es" : "Cambiar equipo"
     }
   },
@@ -654,6 +668,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:288" ],
     "translations" : {
       "en" : "Team info",
+      "fr" : "Information de l'équipe",
       "es" : "Información del equipo"
     }
   },
@@ -661,6 +676,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:299" ],
     "translations" : {
       "en" : "Team members",
+      "fr" : "Membres de l'équipe",
       "es" : "Integrantes del equipo"
     }
   },
@@ -668,6 +684,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:308" ],
     "translations" : {
       "en" : "Team projects",
+      "fr" : "Projets de l'équipe",
       "es" : "Proyectos del equipo"
     }
   },
@@ -711,6 +728,7 @@
     "used-in" : [ "src/app/main/ui/settings.cljs:29" ],
     "translations" : {
       "en" : "Your account",
+      "fr" : "Votre compte",
       "es" : "Su cuenta"
     }
   },
@@ -736,6 +754,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:160" ],
     "translations" : {
       "en" : "Your Penpot",
+      "fr" : "Votre Penpot",
       "es" : "Tu Penpot"
     }
   },
@@ -769,7 +788,7 @@
   "ds.button.save" : {
     "translations" : {
       "en" : "Save",
-      "fr" : "Sauvegarder",
+      "fr" : "Enregistrer",
       "ru" : "Сохранить",
       "es" : "Guardar"
     },
@@ -824,7 +843,7 @@
     "used-in" : [ "src/app/main/data/workspace.cljs:1394" ],
     "translations" : {
       "en" : "Your browser cannot do this operation",
-      "fr" : "",
+      "fr" : "Votre navigateur ne peut pas effectuer cette opération",
       "ru" : "",
       "es" : "Tu navegador no puede realizar esta operación"
     }
@@ -887,7 +906,7 @@
     "used-in" : [ "src/app/main/data/media.cljs:78", "src/app/main/data/workspace/persistence.cljs:426" ],
     "translations" : {
       "en" : "Seems that the contents of the image does not match the file extension.",
-      "fr" : "",
+      "fr" : "Il semble que le contenu de l'image ne correspond pas à l'extension de fichier.",
       "ru" : "",
       "es" : "Parece que el contenido de la imagen no coincide con la etensión del archivo."
     }
@@ -896,7 +915,7 @@
     "used-in" : [ "src/app/main/data/media.cljs:75", "src/app/main/data/workspace/persistence.cljs:423" ],
     "translations" : {
       "en" : "Seems that this is not a valid image.",
-      "fr" : "",
+      "fr" : "Il semble que ce n'est pas une image valide.",
       "ru" : "",
       "es" : "Parece que no es una imagen válida."
     }
@@ -950,7 +969,7 @@
     "used-in" : [ "src/app/main/ui/settings/password.cljs:28" ],
     "translations" : {
       "en" : "Old password is incorrect",
-      "fr" : "l'ancien mot de passe est incorrect",
+      "fr" : "L'ancien mot de passe est incorrect",
       "ru" : "Старый пароль неверный",
       "es" : "La contraseña anterior no es correcta"
     }
@@ -959,7 +978,7 @@
     "used-in" : [ "src/app/main/ui/settings/password.cljs:31" ],
     "translations" : {
       "en" : "An error has occurred",
-      "fr" : null,
+      "fr" : "Une erreur c'est produite",
       "ru" : "Произошла ошибка",
       "es" : "Ha ocurrido un error"
     }
@@ -968,6 +987,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/blur.cljs:34" ],
     "translations" : {
       "en" : "Blur",
+      "fr" : "Flou",
       "es" : "Desenfocado"
     }
   },
@@ -975,6 +995,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/blur.cljs:40" ],
     "translations" : {
       "en" : "Value",
+      "fr" : "Valeur",
       "es" : "Valor"
     }
   },
@@ -982,6 +1003,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/common.cljs:70" ],
     "translations" : {
       "en" : "HEX",
+      "fr" : "HEX",
       "es" : "HEX"
     }
   },
@@ -989,6 +1011,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/common.cljs:76" ],
     "translations" : {
       "en" : "HSLA",
+      "fr" : "HSLA",
       "es" : "HSLA"
     }
   },
@@ -996,12 +1019,14 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/common.cljs:73" ],
     "translations" : {
       "en" : "RGBA",
+      "fr" : "RGBA",
       "es" : "RGBA"
     }
   },
   "handoff.attributes.content" : {
     "translations" : {
       "en" : "Content",
+      "fr" : "Contenu",
       "es" : "Contenido"
     },
     "unused" : true
@@ -1010,6 +1035,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/fill.cljs:57" ],
     "translations" : {
       "en" : "Fill",
+      "fr" : "Remplir",
       "es" : "Relleno"
     }
   },
@@ -1017,6 +1043,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/image.cljs:50" ],
     "translations" : {
       "en" : "Dowload source image",
+      "fr" : "Télécharger l'image source",
       "es" : "Descargar imagen original"
     }
   },
@@ -1024,6 +1051,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/image.cljs:38" ],
     "translations" : {
       "en" : "Height",
+      "fr" : "Hauteur",
       "es" : "Altura"
     }
   },
@@ -1031,6 +1059,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/image.cljs:33" ],
     "translations" : {
       "en" : "Width",
+      "fr" : "Largeur",
       "es" : "Ancho"
     }
   },
@@ -1038,6 +1067,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/layout.cljs:76" ],
     "translations" : {
       "en" : "Layout",
+      "fr" : "Disposition",
       "es" : "Estructura"
     }
   },
@@ -1045,6 +1075,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/layout.cljs:43" ],
     "translations" : {
       "en" : "Height",
+      "fr" : "Hauteur",
       "es" : "Altura"
     }
   },
@@ -1052,6 +1083,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/layout.cljs:49" ],
     "translations" : {
       "en" : "Left",
+      "fr" : "Gauche",
       "es" : "Izquierda"
     }
   },
@@ -1059,6 +1091,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/layout.cljs:61" ],
     "translations" : {
       "en" : "Radius",
+      "fr" : "Rayon",
       "es" : "Derecha"
     }
   },
@@ -1066,6 +1099,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/layout.cljs:67" ],
     "translations" : {
       "en" : "Rotation",
+      "fr" : "Rotation",
       "es" : "Rotación"
     }
   },
@@ -1073,6 +1107,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/layout.cljs:55" ],
     "translations" : {
       "en" : "Top",
+      "fr" : "Haut",
       "es" : "Arriba"
     }
   },
@@ -1080,6 +1115,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/layout.cljs:38" ],
     "translations" : {
       "en" : "Width",
+      "fr" : "Largeur",
       "es" : "Ancho"
     }
   },
@@ -1087,6 +1123,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/shadow.cljs:71" ],
     "translations" : {
       "en" : "Shadow",
+      "fr" : "Ombre",
       "es" : "Sombra"
     }
   },
@@ -1094,6 +1131,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/shadow.cljs:53" ],
     "translations" : {
       "en" : "B",
+      "fr" : "B",
       "es" : "B"
     }
   },
@@ -1101,6 +1139,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/shadow.cljs:45" ],
     "translations" : {
       "en" : "X",
+      "fr" : "X",
       "es" : "X"
     }
   },
@@ -1108,6 +1147,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/shadow.cljs:49" ],
     "translations" : {
       "en" : "Y",
+      "fr" : "Y",
       "es" : "Y"
     }
   },
@@ -1115,12 +1155,14 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/shadow.cljs:57" ],
     "translations" : {
       "en" : "S",
+      "fr" : "S",
       "es" : "S"
     }
   },
   "handoff.attributes.shadow.style.drop-shadow" : {
     "translations" : {
       "en" : "Drop",
+      "fr" : "Portée",
       "es" : "Arrojar"
     },
     "unused" : true
@@ -1128,6 +1170,7 @@
   "handoff.attributes.shadow.style.inner-shadow" : {
     "translations" : {
       "en" : "Inner",
+      "fr" : "Interne",
       "es" : "Interna"
     },
     "unused" : true
@@ -1136,12 +1179,14 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/stroke.cljs:75" ],
     "translations" : {
       "en" : "Stroke",
+      "fr" : "Trait",
       "es" : "Borde"
     }
   },
   "handoff.attributes.stroke.alignment.center" : {
     "translations" : {
       "en" : "Center",
+      "fr" : "Centré",
       "es" : "Centrado"
     },
     "unused" : true
@@ -1149,6 +1194,7 @@
   "handoff.attributes.stroke.alignment.inner" : {
     "translations" : {
       "en" : "Inner",
+      "fr" : "Intérieur",
       "es" : "Interno"
     },
     "unused" : true
@@ -1156,6 +1202,7 @@
   "handoff.attributes.stroke.alignment.outer" : {
     "translations" : {
       "en" : "Outer",
+      "fr" : "Extérieur",
       "es" : "Externo"
     },
     "unused" : true
@@ -1163,6 +1210,7 @@
   "handoff.attributes.stroke.style.dashed" : {
     "translations" : {
       "en" : "Dashed",
+      "fr" : "Tiret",
       "es" : "Discontinuo"
     },
     "unused" : true
@@ -1170,6 +1218,7 @@
   "handoff.attributes.stroke.style.dotted" : {
     "translations" : {
       "en" : "Dotted",
+      "fr" : "Pointillé",
       "es" : "Punteado"
     },
     "unused" : true
@@ -1177,6 +1226,7 @@
   "handoff.attributes.stroke.style.mixed" : {
     "translations" : {
       "en" : "Mixed",
+      "fr" : "Mixte",
       "es" : "Mixto"
     },
     "unused" : true
@@ -1184,6 +1234,7 @@
   "handoff.attributes.stroke.style.none" : {
     "translations" : {
       "en" : "None",
+      "fr" : "Aucun",
       "es" : "Ninguno"
     },
     "unused" : true
@@ -1191,6 +1242,7 @@
   "handoff.attributes.stroke.style.solid" : {
     "translations" : {
       "en" : "Solid",
+      "fr" : "Solide",
       "es" : "Sólido"
     },
     "unused" : true
@@ -1199,6 +1251,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/stroke.cljs:63" ],
     "translations" : {
       "en" : "Width",
+      "fr" : "Largeur",
       "es" : "Ancho"
     }
   },
@@ -1206,6 +1259,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/text.cljs:189" ],
     "translations" : {
       "en" : "Typography",
+      "fr" : "Typographie",
       "es" : "Tipografía"
     }
   },
@@ -1213,6 +1267,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/text.cljs:120" ],
     "translations" : {
       "en" : "Font Family",
+      "fr" : "Police de caractères",
       "es" : "Familia tipográfica"
     }
   },
@@ -1220,6 +1275,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/text.cljs:132" ],
     "translations" : {
       "en" : "Font Size",
+      "fr" : "Taille de police",
       "es" : "Tamaño de fuente"
     }
   },
@@ -1227,6 +1283,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/text.cljs:126" ],
     "translations" : {
       "en" : "Font Style",
+      "fr" : "Style de police",
       "es" : "Estilo de fuente"
     }
   },
@@ -1234,6 +1291,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/text.cljs:144" ],
     "translations" : {
       "en" : "Letter Spacing",
+      "fr" : "Espacement des lettres",
       "es" : "Espaciado de letras"
     }
   },
@@ -1241,6 +1299,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/text.cljs:138" ],
     "translations" : {
       "en" : "Line Height",
+      "fr" : "Hauteur de ligne",
       "es" : "Interlineado"
     }
   },
@@ -1248,12 +1307,14 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/text.cljs:150" ],
     "translations" : {
       "en" : "Text Decoration",
+      "fr" : "Décoration de texte",
       "es" : "Decoración de texto"
     }
   },
   "handoff.attributes.typography.text-decoration.none" : {
     "translations" : {
       "en" : "None",
+      "fr" : "Aucune",
       "es" : "Ninguna"
     },
     "unused" : true
@@ -1261,6 +1322,7 @@
   "handoff.attributes.typography.text-decoration.strikethrough" : {
     "translations" : {
       "en" : "Strikethrough",
+      "fr" : "Barré",
       "es" : "Tachar"
     },
     "unused" : true
@@ -1268,6 +1330,7 @@
   "handoff.attributes.typography.text-decoration.underline" : {
     "translations" : {
       "en" : "Underline",
+      "fr" : "Sousligné",
       "es" : "Subrayar"
     },
     "unused" : true
@@ -1276,12 +1339,14 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/text.cljs:156" ],
     "translations" : {
       "en" : "Text Transform",
+      "fr" : "Transformation de texte",
       "es" : "Transformación de texto"
     }
   },
   "handoff.attributes.typography.text-transform.lowercase" : {
     "translations" : {
       "en" : "Lower Case",
+      "fr" : "Minuscule",
       "es" : "Minúsculas"
     },
     "unused" : true
@@ -1289,6 +1354,7 @@
   "handoff.attributes.typography.text-transform.none" : {
     "translations" : {
       "en" : "None",
+      "fr" : "Aucune",
       "es" : "Ninguna"
     },
     "unused" : true
@@ -1296,6 +1362,7 @@
   "handoff.attributes.typography.text-transform.titlecase" : {
     "translations" : {
       "en" : "Title Case",
+      "fr" : "Première lettre en majuscule",
       "es" : "Primera en mayúscula"
     },
     "unused" : true
@@ -1303,6 +1370,7 @@
   "handoff.attributes.typography.text-transform.uppercase" : {
     "translations" : {
       "en" : "Upper Case",
+      "fr" : "Majuscule",
       "es" : "Mayúsculas"
     },
     "unused" : true
@@ -1311,12 +1379,14 @@
     "used-in" : [ "src/app/main/ui/handoff/right_sidebar.cljs:65" ],
     "translations" : {
       "en" : "Code",
+      "fr" : "Code",
       "es" : "Código"
     }
   },
   "handoff.tabs.code.selected.circle" : {
     "translations" : {
       "en" : "Circle",
+      "fr" : "Cercle",
       "es" : "Círculo"
     },
     "unused" : true
@@ -1324,6 +1394,7 @@
   "handoff.tabs.code.selected.curve" : {
     "translations" : {
       "en" : "Curve",
+      "fr" : "Courbe",
       "es" : "Curva"
     },
     "unused" : true
@@ -1331,6 +1402,7 @@
   "handoff.tabs.code.selected.frame" : {
     "translations" : {
       "en" : "Artboard",
+      "fr" : "Plan de travail",
       "es" : "Mesa de trabajo"
     },
     "unused" : true
@@ -1338,6 +1410,7 @@
   "handoff.tabs.code.selected.group" : {
     "translations" : {
       "en" : "Group",
+      "fr" : "Groupe",
       "es" : "Grupo"
     },
     "unused" : true
@@ -1345,6 +1418,7 @@
   "handoff.tabs.code.selected.image" : {
     "translations" : {
       "en" : "Image",
+      "fr" : "Image",
       "es" : "Imagen"
     },
     "unused" : true
@@ -1353,12 +1427,14 @@
     "used-in" : [ "src/app/main/ui/handoff/right_sidebar.cljs:48" ],
     "translations" : {
       "en" : "%s Selected",
+      "fr" : "%s Sélectionné",
       "es" : "%s Seleccionado"
     }
   },
   "handoff.tabs.code.selected.path" : {
     "translations" : {
       "en" : "Path",
+      "fr" : "Chemin",
       "es" : "Trazado"
     },
     "unused" : true
@@ -1366,6 +1442,7 @@
   "handoff.tabs.code.selected.rect" : {
     "translations" : {
       "en" : "Rectangle",
+      "fr" : "Rectangle",
       "es" : "Rectángulo"
     },
     "unused" : true
@@ -1373,6 +1450,7 @@
   "handoff.tabs.code.selected.svg-raw" : {
     "translations" : {
       "en" : "SVG",
+      "fr" : "SVG",
       "es" : "SVG"
     },
     "unused" : true
@@ -1380,6 +1458,7 @@
   "handoff.tabs.code.selected.text" : {
     "translations" : {
       "en" : "Text",
+      "fr" : "Texte",
       "es" : "Texto"
     },
     "unused" : true
@@ -1388,6 +1467,7 @@
     "used-in" : [ "src/app/main/ui/handoff/right_sidebar.cljs:59" ],
     "translations" : {
       "en" : "Info",
+      "fr" : "Information",
       "es" : "Información"
     }
   },
@@ -1404,6 +1484,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:85", "src/app/main/ui/dashboard/team.cljs:178", "src/app/main/ui/dashboard/team.cljs:194" ],
     "translations" : {
       "en" : "Admin",
+      "fr" : "Administration",
       "es" : "Administración"
     }
   },
@@ -1411,6 +1492,7 @@
     "used-in" : [ "src/app/main/ui/workspace/comments.cljs:161" ],
     "translations" : {
       "en" : "All",
+      "fr" : "Tous",
       "es" : "Todo"
     }
   },
@@ -1418,6 +1500,7 @@
     "used-in" : [ "src/app/main/ui/static.cljs:58" ],
     "translations" : {
       "en" : "Looks like you need to wait a bit and retry; we are performing small maintenance of our servers.",
+      "fr" : "Il semble que vous deviez attendre un peu et réessayer; nous effectuons une petite maintenance de nos serveurs.",
       "es" : "Parece que necesitas esperar un poco y volverlo a intentar; estamos realizando operaciones de mantenimiento en nuestros servidores."
     }
   },
@@ -1425,6 +1508,7 @@
     "used-in" : [ "src/app/main/ui/static.cljs:57" ],
     "translations" : {
       "en" : "Bad Gateway",
+      "fr" : "Bad Gateway",
       "es" : "Bad Gateway"
     }
   },
@@ -1441,6 +1525,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/comments.cljs:71" ],
     "translations" : {
       "en" : "Comments",
+      "fr" : "Commentaires",
       "es" : "Comentarios"
     }
   },
@@ -1448,7 +1533,7 @@
     "used-in" : [ "src/app/main/ui/settings/password.cljs:93" ],
     "translations" : {
       "en" : "Confirm password",
-      "fr" : "Confirmez mot de passe",
+      "fr" : "Confirmer mot de passe",
       "ru" : "Подтвердите пароль",
       "es" : "Confirmar contraseña"
     }
@@ -1457,6 +1542,7 @@
     "used-in" : [ "src/app/main/ui/settings/sidebar.cljs:62" ],
     "translations" : {
       "en" : "Dashboard",
+      "fr" : "Tableau de bord",
       "es" : "Panel"
     }
   },
@@ -1473,6 +1559,7 @@
     "used-in" : [ "src/app/main/ui/comments.cljs:278" ],
     "translations" : {
       "en" : "Delete comment",
+      "fr" : "Supprimer commentaire",
       "es" : "Eliminar comentario"
     }
   },
@@ -1480,6 +1567,7 @@
     "used-in" : [ "src/app/main/ui/comments.cljs:277" ],
     "translations" : {
       "en" : "Delete thread",
+      "fr" : "Supprimer le fil",
       "es" : "Eliminar hilo"
     }
   },
@@ -1496,6 +1584,7 @@
     "used-in" : [ "src/app/main/ui/comments.cljs:275" ],
     "translations" : {
       "en" : "Edit",
+      "fr" : "Editer",
       "es" : "Editar"
     }
   },
@@ -1503,6 +1592,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:86", "src/app/main/ui/dashboard/team.cljs:181", "src/app/main/ui/dashboard/team.cljs:195" ],
     "translations" : {
       "en" : "Editor",
+      "fr" : "Editeur",
       "es" : "Editor"
     }
   },
@@ -1528,6 +1618,7 @@
     "used-in" : [ "src/app/main/ui/viewer/header.cljs:176", "src/app/main/ui/workspace/comments.cljs:129" ],
     "translations" : {
       "en" : "Hide resolved comments",
+      "fr" : "Masquer les commentaires résolus",
       "es" : "Ocultar comentarios resueltos"
     }
   },
@@ -1535,6 +1626,7 @@
     "used-in" : [ "src/app/main/ui/static.cljs:92" ],
     "translations" : {
       "en" : "Something bad happened. Please retry the operation and if the problem persists, contact with support.",
+      "fr" : "Quelque chose d'étrange est arrivé. Veuillez réessayer l'opération, et si le problème persiste, contactez le service technique.",
       "es" : "Ha ocurrido algo extraño. Por favor, reintenta la operación, y si el problema persiste, contacta con el servicio técnico."
     }
   },
@@ -1542,6 +1634,7 @@
     "used-in" : [ "src/app/main/ui/static.cljs:91" ],
     "translations" : {
       "en" : "Internal Error",
+      "fr" : "Erreur interne",
       "es" : "Error interno"
     }
   },
@@ -1567,6 +1660,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:311", "src/app/main/ui/dashboard/team.cljs:60", "src/app/main/ui/dashboard/team.cljs:66" ],
     "translations" : {
       "en" : "Members",
+      "fr" : "Membres",
       "es" : "Integrantes"
     }
   },
@@ -1592,6 +1686,7 @@
     "used-in" : [ "src/app/main/ui/workspace/comments.cljs:186", "src/app/main/ui/dashboard/comments.cljs:96" ],
     "translations" : {
       "en" : "You have no pending comment notifications",
+      "fr" : "Vous n'avez aucune notification de commentaire en attente",
       "es" : "No tienes notificaciones de comentarios pendientes"
     }
   },
@@ -1599,6 +1694,7 @@
     "used-in" : [ "src/app/main/ui/static.cljs:42" ],
     "translations" : {
       "en" : "You’re signed in as",
+      "fr" : "Vous êtes connecté en tant que",
       "es" : "Estás identificado como"
     }
   },
@@ -1606,6 +1702,7 @@
     "used-in" : [ "src/app/main/ui/static.cljs:40" ],
     "translations" : {
       "en" : "This page might not exist or you don’t have permissions to access to it.",
+      "fr" : "Cette page n'existe pas ou vous ne disposez pas des permissions nécessaires pour y accéder.",
       "es" : "Esta página no existe o no tienes permisos para verla."
     }
   },
@@ -1613,6 +1710,7 @@
     "used-in" : [ "src/app/main/ui/static.cljs:39" ],
     "translations" : {
       "en" : "Oops!",
+      "fr" : "Oups!",
       "es" : "¡Huy!"
     }
   },
@@ -1620,6 +1718,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:314" ],
     "translations" : {
       "en" : [ "1 file", "%s files" ],
+      "fr" : [ "1 fichier", "%s fichiers" ],
       "es" : [ "1 archivo", "%s archivos" ]
     }
   },
@@ -1627,6 +1726,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:311" ],
     "translations" : {
       "en" : [ "1 project", "%s projects" ],
+      "fr" : [ "1 projet", "%s projets" ],
       "es" : [ "1 proyecto", "%s proyectos" ]
     }
   },
@@ -1643,6 +1743,7 @@
     "used-in" : [ "src/app/main/ui/workspace/comments.cljs:162" ],
     "translations" : {
       "en" : "Only yours",
+      "fr" : "Seulement les votres",
       "es" : "Sólo los tuyos"
     }
   },
@@ -1650,6 +1751,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:175", "src/app/main/ui/dashboard/team.cljs:302" ],
     "translations" : {
       "en" : "Owner",
+      "fr" : "Propriétaire",
       "es" : "Dueño"
     }
   },
@@ -1666,6 +1768,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:222" ],
     "translations" : {
       "en" : "Permissions",
+      "fr" : "Permissions",
       "es" : "Permisos"
     }
   },
@@ -1682,7 +1785,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:412" ],
     "translations" : {
       "en" : "Projects",
-      "fr" : "Projetes",
+      "fr" : "Projets",
       "ru" : "Проекты",
       "es" : "Proyectos"
     }
@@ -1691,7 +1794,7 @@
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:92", "src/app/main/ui/dashboard/team.cljs:208" ],
     "translations" : {
       "en" : "Remove",
-      "fr" : "",
+      "fr" : "Retirer",
       "ru" : "",
       "es" : "Quitar"
     }
@@ -1700,6 +1803,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:314", "src/app/main/ui/dashboard/files.cljs:84", "src/app/main/ui/dashboard/grid.cljs:178" ],
     "translations" : {
       "en" : "Rename",
+      "fr" : "Renommer",
       "es" : "Renombrar"
     }
   },
@@ -1707,6 +1811,7 @@
     "used-in" : [ "src/app/main/ui/static.cljs:62", "src/app/main/ui/static.cljs:79", "src/app/main/ui/static.cljs:96" ],
     "translations" : {
       "en" : "Retry",
+      "fr" : "Réessayer",
       "es" : "Reintentar"
     }
   },
@@ -1714,6 +1819,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:84" ],
     "translations" : {
       "en" : "Role",
+      "fr" : "Rôle",
       "es" : "Cargo"
     }
   },
@@ -1721,6 +1827,7 @@
     "used-in" : [ "src/app/main/ui/static.cljs:75" ],
     "translations" : {
       "en" : "We are in programmed maintenance of our systems.",
+      "fr" : "Nous sommes en maintenance planifiée de nos systèmes.",
       "es" : "Estamos en una operación de mantenimiento programado de nuestros sistemas."
     }
   },
@@ -1728,6 +1835,7 @@
     "used-in" : [ "src/app/main/ui/static.cljs:74" ],
     "translations" : {
       "en" : "Service Unavailable",
+      "fr" : "Service non disponible",
       "es" : "El servicio no está disponible"
     }
   },
@@ -1735,7 +1843,7 @@
     "used-in" : [ "src/app/main/ui/settings/sidebar.cljs:80", "src/app/main/ui/dashboard/sidebar.cljs:312", "src/app/main/ui/dashboard/team.cljs:61", "src/app/main/ui/dashboard/team.cljs:68" ],
     "translations" : {
       "en" : "Settings",
-      "fr" : "Settings",
+      "fr" : "Configuration",
       "ru" : "Параметры",
       "es" : "Configuración"
     }
@@ -1744,7 +1852,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:421" ],
     "translations" : {
       "en" : "Shared Libraries",
-      "fr" : "",
+      "fr" : "Bibliothèques Partagées",
       "ru" : "",
       "es" : "Bibliotecas Compartidas"
     }
@@ -1753,6 +1861,7 @@
     "used-in" : [ "src/app/main/ui/viewer/header.cljs:164", "src/app/main/ui/workspace/comments.cljs:117" ],
     "translations" : {
       "en" : "Show all comments",
+      "fr" : "Afficher tous les commentaires",
       "es" : "Mostrar todos los comentarios"
     }
   },
@@ -1760,6 +1869,7 @@
     "used-in" : [ "src/app/main/ui/viewer/header.cljs:169", "src/app/main/ui/workspace/comments.cljs:122" ],
     "translations" : {
       "en" : "Show only yours comments",
+      "fr" : "Afficher uniquement vos commentaires",
       "es" : "Mostrar sólo tus comentarios"
     }
   },
@@ -1776,7 +1886,7 @@
     "used-in" : [ "src/app/main/ui/settings/profile.cljs:104" ],
     "translations" : {
       "en" : "Update",
-      "fr" : "Mettre a jour",
+      "fr" : "Actualiser",
       "ru" : "Обновить",
       "es" : "Actualizar"
     }
@@ -1785,6 +1895,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:184" ],
     "translations" : {
       "en" : "Viewer",
+      "fr" : "Téléspectateur",
       "es" : "Visualizador"
     }
   },
@@ -1792,6 +1903,7 @@
     "used-in" : [ "src/app/main/ui/comments.cljs:154" ],
     "translations" : {
       "en" : "Write new comment",
+      "fr" : "Écrire un nouveau commentaire",
       "es" : "Escribir un nuevo comentario"
     }
   },
@@ -1800,7 +1912,7 @@
     "translations" : {
       "en" : "Loading image...",
       "fr" : "Chargement de l'image...",
-      "ru" : "Загружаю изображение ...",
+      "ru" : "Загружаю изображение...",
       "es" : "Cargando imagen..."
     }
   },
@@ -1817,7 +1929,7 @@
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:114", "src/app/main/ui/dashboard/grid.cljs:116" ],
     "translations" : {
       "en" : "Add as Shared Library",
-      "fr" : "",
+      "fr" : "Ajouter comme Bibliothèque Partagée",
       "ru" : "",
       "es" : "Añadir como Biblioteca Compartida"
     }
@@ -1826,7 +1938,7 @@
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:112", "src/app/main/ui/dashboard/grid.cljs:114" ],
     "translations" : {
       "en" : "Once added as Shared Library, the assets of this file library will be available to be used among the rest of your files.",
-      "fr" : "",
+      "fr" : "Une fois ajoutés en tant que Bibliothèque Partagée, les ressources de cette bibliothèque de fichiers seront disponibles pour être utilisés parmi le reste de vos fichiers.",
       "ru" : "",
       "es" : "Una vez añadido como Biblioteca Compartida, los recursos de este archivo estarán disponibles para ser usado por el resto de tus archivos."
     }
@@ -1835,7 +1947,7 @@
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:111", "src/app/main/ui/dashboard/grid.cljs:113" ],
     "translations" : {
       "en" : "Add “%s” as Shared Library",
-      "fr" : "",
+      "fr" : "Ajouter “%s” comme Bibliothèque Partagée",
       "ru" : "",
       "es" : "Añadir “%s” como Biblioteca Compartida"
     }
@@ -1925,6 +2037,7 @@
     "used-in" : [ "src/app/main/ui/comments.cljs:227" ],
     "translations" : {
       "en" : "Delete conversation",
+      "fr" : "Supprimer la conversation",
       "es" : "Eliminar conversación"
     }
   },
@@ -1932,6 +2045,7 @@
     "used-in" : [ "src/app/main/ui/comments.cljs:226" ],
     "translations" : {
       "en" : "Are you sure you want to delete this conversation? All comments in this thread will be deleted.",
+      "fr" : "Voulez-vous vraiment supprimer cette conversation? Tous les commentaires de ce fil seront supprimés.",
       "es" : "¿Seguro que quieres eliminar esta conversación? Todos los comentarios en este hilo serán eliminados."
     }
   },
@@ -1939,6 +2053,7 @@
     "used-in" : [ "src/app/main/ui/comments.cljs:225" ],
     "translations" : {
       "en" : "Delete conversation",
+      "fr" : "Supprimer la conversation",
       "es" : "Eliminar conversación"
     }
   },
@@ -1946,6 +2061,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:82" ],
     "translations" : {
       "en" : "Delete file",
+      "fr" : "Supprimer le fichier",
       "es" : "Eliminar archivo"
     }
   },
@@ -1953,6 +2069,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:81" ],
     "translations" : {
       "en" : "Are you sure you want to delete this file?",
+      "fr" : "Êtes-vous sûr de vouloir supprimer ce fichier?",
       "es" : "¿Seguro que quieres eliminar este archivo?"
     }
   },
@@ -1960,6 +2077,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:80" ],
     "translations" : {
       "en" : "Deleting file",
+      "fr" : "Supprimer le fichier",
       "es" : "Eliminando archivo"
     }
   },
@@ -1967,6 +2085,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/sitemap.cljs:60" ],
     "translations" : {
       "en" : "Are you sure you want to delete this page?",
+      "fr" : "Êtes-vous sûr de vouloir supprimer cette page?",
       "es" : "¿Seguro que quieres borrar esta página?"
     }
   },
@@ -1974,6 +2093,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/sitemap.cljs:59" ],
     "translations" : {
       "en" : "Delete page",
+      "fr" : "Supprimer la page",
       "es" : "Borrar página"
     }
   },
@@ -1981,6 +2101,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/files.cljs:58" ],
     "translations" : {
       "en" : "Delete project",
+      "fr" : "Supprimer le projet",
       "es" : "Eliminar proyecto"
     }
   },
@@ -1988,6 +2109,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/files.cljs:57" ],
     "translations" : {
       "en" : "Are you sure you want to delete this project?",
+      "fr" : "Êtes-vous sûr de vouloir supprimer ce projet?",
       "es" : "¿Seguro que quieres eliminar este proyecto?"
     }
   },
@@ -1995,6 +2117,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/files.cljs:56" ],
     "translations" : {
       "en" : "Delete project",
+      "fr" : "Supprimer le projet",
       "es" : "Eliminar proyecto"
     }
   },
@@ -2002,6 +2125,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:301" ],
     "translations" : {
       "en" : "Delete team",
+      "fr" : "Supprimer l'équipe",
       "es" : "Eliminar equipo"
     }
   },
@@ -2009,6 +2133,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:300" ],
     "translations" : {
       "en" : "Are you sure you want to delete this team? All projects and files associated with team will be permanently deleted.",
+      "fr" : "Voulez-vous vraiment supprimer cette équipe? Tous les projets et fichiers associés à l'équipe seront définitivement supprimés.",
       "es" : "¿Seguro que quieres eliminar este equipo? Todos los proyectos y archivos asociados con el equipo serán eliminados permamentemente."
     }
   },
@@ -2016,6 +2141,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:299" ],
     "translations" : {
       "en" : "Deleting team",
+      "fr" : "Suppression de l'équipe",
       "es" : "Eliminando equipo"
     }
   },
@@ -2023,6 +2149,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:164" ],
     "translations" : {
       "en" : "Delete member",
+      "fr" : "Supprimer le membre",
       "es" : "Eliminando miembro"
     }
   },
@@ -2030,6 +2157,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:163" ],
     "translations" : {
       "en" : "Are you sure you want to delete this member from the team?",
+      "fr" : "Voulez-vous vraiment supprimer ce membre de l'équipe?",
       "es" : "¿Seguro que quieres eliminar este integrante del equipo?"
     }
   },
@@ -2037,6 +2165,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:162" ],
     "translations" : {
       "en" : "Delete team member",
+      "fr" : "Supprimer le membre de l'équipe",
       "es" : "Eliminar integrante del equipo"
     }
   },
@@ -2044,6 +2173,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:112" ],
     "translations" : {
       "en" : "Invite to join the team",
+      "fr" : "Inviter à rejoindre l'équipe",
       "es" : "Invitar a unirse al equipo"
     }
   },
@@ -2051,6 +2181,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:204" ],
     "translations" : {
       "en" : "You are %s owner.",
+      "fr" : "Vous êtes le propriétaire de %s.",
       "es" : "Eres %s dueño."
     }
   },
@@ -2058,6 +2189,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:205" ],
     "translations" : {
       "en" : "Select other member to promote before leave",
+      "fr" : "Sélectionnez un autre membre à promouvoir avant de partir",
       "es" : "Promociona otro miembro a dueño antes de abandonar el equipo"
     }
   },
@@ -2065,6 +2197,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:222" ],
     "translations" : {
       "en" : "Promote and leave",
+      "fr" : "Promouvoir et quitter",
       "es" : "Promocionar y abandonar"
     }
   },
@@ -2072,6 +2205,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:182" ],
     "translations" : {
       "en" : "Select a member to promote",
+      "fr" : "Sélectionnez un membre à promouvoir",
       "es" : "Selecciona un miembro a promocionar"
     }
   },
@@ -2079,6 +2213,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:199" ],
     "translations" : {
       "en" : "Select a member to promote",
+      "fr" : "Sélectionnez un membre à promouvoir",
       "es" : "Selecciona un miembro a promocionar"
     }
   },
@@ -2086,6 +2221,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:276" ],
     "translations" : {
       "en" : "Leave team",
+      "fr" : "Quitter l'équipe",
       "es" : "Abandonar el equipo"
     }
   },
@@ -2093,6 +2229,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:275" ],
     "translations" : {
       "en" : "Are you sure you want to leave this team?",
+      "fr" : "Êtes-vous sûr de vouloir quitter cette équipe?",
       "es" : "¿Seguro que quieres abandonar este equipo?"
     }
   },
@@ -2100,6 +2237,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:274" ],
     "translations" : {
       "en" : "Leaving team",
+      "fr" : "Quitter l'équipe",
       "es" : "Abandonando el equipo"
     }
   },
@@ -2107,6 +2245,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:151" ],
     "translations" : {
       "en" : "Promote",
+      "fr" : "Promouvoir",
       "es" : "Promocionar"
     }
   },
@@ -2114,6 +2253,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:150" ],
     "translations" : {
       "en" : "Are you sure you want to promote this user to owner?",
+      "fr" : "Voulez-vous vraiment promouvoir cet utilisateur en propriétaire?",
       "es" : "¿Seguro que quieres promocionar este usuario a dueño?"
     }
   },
@@ -2121,6 +2261,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:149" ],
     "translations" : {
       "en" : "Promote to owner",
+      "fr" : "Promouvoir en propriétaire",
       "es" : "Promocionar a dueño"
     }
   },
@@ -2128,7 +2269,7 @@
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:127", "src/app/main/ui/dashboard/grid.cljs:132" ],
     "translations" : {
       "en" : "Remove as Shared Library",
-      "fr" : "",
+      "fr" : "Supprimer en tant que Bibliothèque Partagée",
       "ru" : "",
       "es" : "Eliminar como Biblioteca Compartida"
     }
@@ -2137,7 +2278,7 @@
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:125", "src/app/main/ui/dashboard/grid.cljs:130" ],
     "translations" : {
       "en" : "Once removed as Shared Library, the File Library of this file will stop being available to be used among the rest of your files.",
-      "fr" : "",
+      "fr" : "Une fois supprimée en tant que Bibliothèque Partagée, la Bibliothèque de ce fichier ne pourra plus être utilisée par le reste de vos fichiers.",
       "ru" : "",
       "es" : "Una vez eliminado como Biblioteca Compartida, la Biblioteca de este archivo dejará de estar disponible para ser usada por el resto de tus archivos."
     }
@@ -2146,7 +2287,7 @@
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:124", "src/app/main/ui/dashboard/grid.cljs:129" ],
     "translations" : {
       "en" : "Remove “%s” as Shared Library",
-      "fr" : "",
+      "fr" : "Retirer “%s” en tant que Bibliothèque Partagée",
       "ru" : "",
       "es" : "Añadir “%s” como Biblioteca Compartida"
     }
@@ -2155,7 +2296,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:95", "src/app/main/ui/workspace/sidebar/options/component.cljs:72" ],
     "translations" : {
       "en" : "Update component",
-      "fr" : "",
+      "fr" : "Actualiser le composant",
       "ru" : "",
       "es" : "Actualizar componente"
     }
@@ -2164,7 +2305,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:94", "src/app/main/ui/workspace/sidebar/options/component.cljs:71" ],
     "translations" : {
       "en" : "Cancel",
-      "fr" : "",
+      "fr" : "Annuler",
       "ru" : "",
       "es" : "Cancelar"
     }
@@ -2173,7 +2314,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:93", "src/app/main/ui/workspace/sidebar/options/component.cljs:70" ],
     "translations" : {
       "en" : "You are about to update a component in a shared library. This may affect other files that use it.",
-      "fr" : "",
+      "fr" : "Vous êtes sur le point de mettre à jour un composant dans une bibliothèque partagée. Cela peut affecter d'autres fichiers qui l'utilisent.",
       "ru" : "",
       "es" : "Vas a actualizar un componente en una librería compartida. Esto puede afectar a otros archivos que la usen."
     }
@@ -2182,7 +2323,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:92", "src/app/main/ui/workspace/sidebar/options/component.cljs:69" ],
     "translations" : {
       "en" : "Update a component in a shared library",
-      "fr" : "",
+      "fr" : "Actualiser un composant dans une bibliothèque",
       "ru" : "",
       "es" : "Actualizar un componente en librería"
     }
@@ -2209,6 +2350,7 @@
     "used-in" : [ "src/app/main/ui/settings/change_email.cljs:56", "src/app/main/ui/auth/register.cljs:54" ],
     "translations" : {
       "en" : "Verification email sent to %s. Check your email!",
+      "fr" : "E-mail de vérification envoyé à %s. Vérifiez votre email!",
       "es" : "Verificación de email enviada a %s. Comprueba tu correo."
     }
   },
@@ -2216,7 +2358,7 @@
     "used-in" : [ "src/app/main/ui/auth/recovery.cljs:95" ],
     "translations" : {
       "en" : "Go to login",
-      "fr" : null,
+      "fr" : "Aller à la connexion",
       "ru" : null,
       "es" : null
     }
@@ -2225,7 +2367,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:213", "src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:161", "src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:170", "src/app/main/ui/workspace/sidebar/options/typography.cljs:99", "src/app/main/ui/workspace/sidebar/options/typography.cljs:149", "src/app/main/ui/workspace/sidebar/options/typography.cljs:162", "src/app/main/ui/workspace/sidebar/options/blur.cljs:79", "src/app/main/ui/workspace/sidebar/options/stroke.cljs:145" ],
     "translations" : {
       "en" : "Mixed",
-      "fr" : null,
+      "fr" : "Divers",
       "ru" : "Смешаный",
       "es" : "Varios"
     }
@@ -2450,7 +2592,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:705" ],
     "translations" : {
       "en" : "Assets",
-      "fr" : "",
+      "fr" : "Ressources",
       "ru" : "",
       "es" : "Recursos"
     }
@@ -2459,7 +2601,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:725" ],
     "translations" : {
       "en" : "All assets",
-      "fr" : "",
+      "fr" : "Toutes",
       "ru" : "",
       "es" : "Todos"
     }
@@ -2467,7 +2609,7 @@
   "workspace.assets.box-filter-colors" : {
     "translations" : {
       "en" : "Colors",
-      "fr" : "",
+      "fr" : "Couleurs",
       "ru" : "",
       "es" : "Colores"
     },
@@ -2476,7 +2618,7 @@
   "workspace.assets.box-filter-graphics" : {
     "translations" : {
       "en" : "Graphics",
-      "fr" : "",
+      "fr" : "Graphiques",
       "ru" : "",
       "es" : "Gráficos"
     },
@@ -2486,7 +2628,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:399", "src/app/main/ui/workspace/sidebar/assets.cljs:728" ],
     "translations" : {
       "en" : "Colors",
-      "fr" : "",
+      "fr" : "Couleurs",
       "ru" : "",
       "es" : "Colores"
     }
@@ -2495,7 +2637,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:109", "src/app/main/ui/workspace/sidebar/assets.cljs:726" ],
     "translations" : {
       "en" : "Components",
-      "fr" : "",
+      "fr" : "Composants",
       "ru" : "",
       "es" : "Componentes"
     }
@@ -2504,7 +2646,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/sitemap.cljs:151", "src/app/main/ui/workspace/sidebar/assets.cljs:140", "src/app/main/ui/workspace/sidebar/assets.cljs:260", "src/app/main/ui/workspace/sidebar/assets.cljs:375", "src/app/main/ui/workspace/sidebar/assets.cljs:504" ],
     "translations" : {
       "en" : "Delete",
-      "fr" : "",
+      "fr" : "Supprimer",
       "ru" : "",
       "es" : "Borrar"
     }
@@ -2513,7 +2655,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/sitemap.cljs:155", "src/app/main/ui/workspace/sidebar/assets.cljs:139" ],
     "translations" : {
       "en" : "Duplicate",
-      "fr" : "",
+      "fr" : "Dupliquer",
       "ru" : "",
       "es" : "Duplicar"
     }
@@ -2522,7 +2664,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:374", "src/app/main/ui/workspace/sidebar/assets.cljs:503" ],
     "translations" : {
       "en" : "Edit",
-      "fr" : "",
+      "fr" : "Éditer",
       "ru" : "",
       "es" : "Editar"
     }
@@ -2531,16 +2673,16 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:602" ],
     "translations" : {
       "en" : "File library",
-      "fr" : "",
+      "fr" : "Bibliothèque du fichier",
       "ru" : "",
-      "es" : "Bilioteca del archivo"
+      "es" : "Biblioteca del archivo"
     }
   },
   "workspace.assets.graphics" : {
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:221", "src/app/main/ui/workspace/sidebar/assets.cljs:727" ],
     "translations" : {
       "en" : "Graphics",
-      "fr" : "",
+      "fr" : "Graphiques",
       "ru" : "",
       "es" : "Gráficos"
     }
@@ -2549,7 +2691,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:708" ],
     "translations" : {
       "en" : "Libraries",
-      "fr" : "",
+      "fr" : "Bibliothèques",
       "ru" : "",
       "es" : "Bibliotecas"
     }
@@ -2558,7 +2700,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:666" ],
     "translations" : {
       "en" : "No assets found",
-      "fr" : "",
+      "fr" : "Aucune ressource trouvée",
       "ru" : "",
       "es" : "No se encontraron recursos"
     }
@@ -2567,7 +2709,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/sitemap.cljs:154", "src/app/main/ui/workspace/sidebar/assets.cljs:138", "src/app/main/ui/workspace/sidebar/assets.cljs:259", "src/app/main/ui/workspace/sidebar/assets.cljs:373", "src/app/main/ui/workspace/sidebar/assets.cljs:502" ],
     "translations" : {
       "en" : "Rename",
-      "fr" : "",
+      "fr" : "Renommer",
       "ru" : "",
       "es" : "Renombrar"
     }
@@ -2576,7 +2718,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:712" ],
     "translations" : {
       "en" : "Search assets",
-      "fr" : "",
+      "fr" : "Chercher des ressources",
       "ru" : "",
       "es" : "Buscar recursos"
     }
@@ -2585,7 +2727,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:604" ],
     "translations" : {
       "en" : "SHARED",
-      "fr" : "",
+      "fr" : "PARTAGÉ",
       "ru" : "",
       "es" : "COMPARTIDA"
     }
@@ -2594,6 +2736,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:491", "src/app/main/ui/workspace/sidebar/assets.cljs:729" ],
     "translations" : {
       "en" : "Typographies",
+      "fr" : "Typographies",
       "es" : "Tipografías"
     }
   },
@@ -2601,6 +2744,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:276" ],
     "translations" : {
       "en" : "Font",
+      "fr" : "Police",
       "es" : "Fuente"
     }
   },
@@ -2608,6 +2752,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:284" ],
     "translations" : {
       "en" : "Size",
+      "fr" : "Taille",
       "es" : "Tamaño"
     }
   },
@@ -2615,6 +2760,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:280" ],
     "translations" : {
       "en" : "Variant",
+      "fr" : "Variante",
       "es" : "Variante"
     }
   },
@@ -2622,6 +2768,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:301" ],
     "translations" : {
       "en" : "Go to style library file to edit",
+      "fr" : "Accéder au fichier de bibliothèque de styles à modifier",
       "es" : "Ir al archivo de la biblioteca del estilo para editar"
     }
   },
@@ -2629,6 +2776,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:292" ],
     "translations" : {
       "en" : "Letter Spacing",
+      "fr" : "Espacement des lettres",
       "es" : "Interletrado"
     }
   },
@@ -2636,6 +2784,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:288" ],
     "translations" : {
       "en" : "Line Height",
+      "fr" : "Hauteur de ligne",
       "es" : "Interlineado"
     }
   },
@@ -2643,6 +2792,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:254", "src/app/main/ui/handoff/attributes/text.cljs:96", "src/app/main/ui/handoff/attributes/text.cljs:105" ],
     "translations" : {
       "en" : "Ag",
+      "fr" : "Ag",
       "es" : "Ag"
     }
   },
@@ -2650,6 +2800,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:296" ],
     "translations" : {
       "en" : "Text Transform",
+      "fr" : "Transformer le texte",
       "es" : "Transformar texto"
     }
   },
@@ -2657,6 +2808,7 @@
     "used-in" : [ "src/app/main/data/workspace/libraries.cljs:71", "src/app/main/ui/components/color_bullet.cljs:31" ],
     "translations" : {
       "en" : "Linear gradient",
+      "fr" : "Dégradé linéaire",
       "es" : "Degradado lineal"
     }
   },
@@ -2664,6 +2816,7 @@
     "used-in" : [ "src/app/main/data/workspace/libraries.cljs:72", "src/app/main/ui/components/color_bullet.cljs:32" ],
     "translations" : {
       "en" : "Radial gradient",
+      "fr" : "Dégradé radial",
       "es" : "Degradado radial"
     }
   },
@@ -2707,7 +2860,7 @@
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:209" ],
     "translations" : {
       "en" : "Hide assets",
-      "fr" : "",
+      "fr" : "Masquer les ressources",
       "ru" : "",
       "es" : "Ocultar recursos"
     }
@@ -2752,7 +2905,7 @@
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:214" ],
     "translations" : {
       "en" : "Select all",
-      "fr" : "",
+      "fr" : "Sélectionner tout",
       "ru" : "",
       "es" : "Seleccionar todo"
     }
@@ -2761,7 +2914,7 @@
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:210" ],
     "translations" : {
       "en" : "Show assets",
-      "fr" : "",
+      "fr" : "Montrer les ressources",
       "ru" : "",
       "es" : "Mostrar recursos"
     }
@@ -2806,6 +2959,7 @@
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:58" ],
     "translations" : {
       "en" : "Error on saving",
+      "fr" : "Erreur d'enregistrement",
       "es" : "Error al guardar"
     }
   },
@@ -2813,6 +2967,7 @@
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:53" ],
     "translations" : {
       "en" : "Saved",
+      "fr" : "Enregistré",
       "es" : "Guardado"
     }
   },
@@ -2820,6 +2975,7 @@
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:48" ],
     "translations" : {
       "en" : "Saving",
+      "fr" : "Enregistrement",
       "es" : "Guardando"
     }
   },
@@ -2827,6 +2983,7 @@
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:43" ],
     "translations" : {
       "en" : "Unsaved changes",
+      "fr" : "Modifications non sauvegardées",
       "es" : "Cambios sin guardar"
     }
   },
@@ -2843,7 +3000,7 @@
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:116" ],
     "translations" : {
       "en" : "Add",
-      "fr" : "",
+      "fr" : "Ajouter",
       "ru" : "",
       "es" : "Añadir"
     }
@@ -2852,7 +3009,7 @@
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:44" ],
     "translations" : {
       "en" : "%s colors",
-      "fr" : "",
+      "fr" : "%s couleurs",
       "ru" : "",
       "es" : "%s colors"
     }
@@ -2861,6 +3018,7 @@
     "used-in" : [ "src/app/main/ui/workspace/colorpalette.cljs:171" ],
     "translations" : {
       "en" : "Big thumbnails",
+      "fr" : "Grandes vignettes",
       "es" : "Miniaturas grandes"
     }
   },
@@ -2868,6 +3026,7 @@
     "used-in" : [ "src/app/main/ui/workspace/colorpicker/libraries.cljs:89", "src/app/main/ui/workspace/colorpalette.cljs:149" ],
     "translations" : {
       "en" : "File library",
+      "fr" : "Bibliothèque du fichier",
       "es" : "Biblioteca del archivo"
     }
   },
@@ -2875,6 +3034,7 @@
     "used-in" : [ "src/app/main/ui/workspace/colorpicker/libraries.cljs:88", "src/app/main/ui/workspace/colorpalette.cljs:159" ],
     "translations" : {
       "en" : "Recent colors",
+      "fr" : "Couleurs récentes",
       "es" : "Colores recientes"
     }
   },
@@ -2882,6 +3042,7 @@
     "used-in" : [ "src/app/main/ui/workspace/colorpicker.cljs:339" ],
     "translations" : {
       "en" : "Save color style",
+      "fr" : "Enregistrer le style de couleur",
       "es" : "Guardar estilo de color"
     }
   },
@@ -2889,6 +3050,7 @@
     "used-in" : [ "src/app/main/ui/workspace/colorpalette.cljs:176" ],
     "translations" : {
       "en" : "Small thumbnails",
+      "fr" : "Petites vignettes",
       "es" : "Miniaturas pequeñas"
     }
   },
@@ -2896,7 +3058,7 @@
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:38" ],
     "translations" : {
       "en" : "%s components",
-      "fr" : "",
+      "fr" : "%s composants",
       "ru" : "",
       "es" : "%s componentes"
     }
@@ -2905,7 +3067,7 @@
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:85" ],
     "translations" : {
       "en" : "File library",
-      "fr" : "",
+      "fr" : "Bibliothèque du fichier",
       "ru" : "",
       "es" : "Biblioteca de este archivo"
     }
@@ -2914,7 +3076,7 @@
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:41" ],
     "translations" : {
       "en" : "%s graphics",
-      "fr" : "",
+      "fr" : "%s graphiques",
       "ru" : "",
       "es" : "%s gráficos"
     }
@@ -2923,7 +3085,7 @@
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:82" ],
     "translations" : {
       "en" : "LIBRARIES IN THIS FILE",
-      "fr" : "",
+      "fr" : "BIBLIOTHÈQUES DANS CE FICHIER",
       "ru" : "",
       "es" : "BIBLIOTECAS EN ESTE ARCHIVO"
     }
@@ -2932,7 +3094,7 @@
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:177" ],
     "translations" : {
       "en" : "LIBRARIES",
-      "fr" : "",
+      "fr" : "BIBLIOTHÈQUES",
       "ru" : "",
       "es" : "BIBLIOTECAS"
     }
@@ -2941,7 +3103,7 @@
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:136" ],
     "translations" : {
       "en" : "LIBRARY",
-      "fr" : "",
+      "fr" : "BIBLIOTHÈQUE",
       "ru" : "",
       "es" : "BIBLIOTECA"
     }
@@ -2950,7 +3112,7 @@
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:134" ],
     "translations" : {
       "en" : "There are no Shared Libraries that need update",
-      "fr" : "",
+      "fr" : "Aucune Bibliothèque Partagée n'a besoin d'être mise à jour",
       "ru" : "",
       "es" : "No hay bibliotecas que necesiten ser actualizadas"
     }
@@ -2968,7 +3130,7 @@
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:121" ],
     "translations" : {
       "en" : "There are no Shared Libraries available",
-      "fr" : "",
+      "fr" : "Aucune bibliothèque partagée disponible",
       "ru" : "",
       "es" : "No hay bibliotecas compartidas disponibles"
     }
@@ -2977,7 +3139,7 @@
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:99" ],
     "translations" : {
       "en" : "Search shared libraries",
-      "fr" : "",
+      "fr" : "Rechercher des bibliothèques partagées",
       "ru" : "",
       "es" : "Buscar bibliotecas compartidas"
     }
@@ -2986,7 +3148,7 @@
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:96" ],
     "translations" : {
       "en" : "SHARED LIBRARIES",
-      "fr" : "",
+      "fr" : "BIBLIOTHÈQUES PARTAGÉES",
       "ru" : "",
       "es" : "BIBLIOTECAS COMPARTIDAS"
     }
@@ -2995,6 +3157,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:264" ],
     "translations" : {
       "en" : "Multiple typographies",
+      "fr" : "Multiple typographies",
       "es" : "Varias tipografías"
     }
   },
@@ -3002,6 +3165,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:266" ],
     "translations" : {
       "en" : "Unlink all typographies",
+      "fr" : "Dissocier toutes les typographies",
       "es" : "Desvincular todas las tipografías"
     }
   },
@@ -3009,6 +3173,7 @@
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:47" ],
     "translations" : {
       "en" : "%s typographies",
+      "fr" : "%s typographies",
       "es" : "%s tipografías"
     }
   },
@@ -3016,7 +3181,7 @@
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:143" ],
     "translations" : {
       "en" : "Update",
-      "fr" : "",
+      "fr" : "Actualiser",
       "ru" : "",
       "es" : "Actualizar"
     }
@@ -3025,7 +3190,7 @@
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:181" ],
     "translations" : {
       "en" : "UPDATES",
-      "fr" : "",
+      "fr" : "MISES À JOUR",
       "ru" : "",
       "es" : "ACTUALIZACIONES"
     }
@@ -3033,7 +3198,7 @@
   "workspace.library.all" : {
     "translations" : {
       "en" : "All libraries",
-      "fr" : "Toutes les librairies",
+      "fr" : "Toutes les bibliothèques",
       "ru" : "Все библиотеки",
       "es" : "Todas"
     },
@@ -3060,7 +3225,7 @@
   "workspace.library.libraries" : {
     "translations" : {
       "en" : "Libraries",
-      "fr" : "Librairies",
+      "fr" : "Bibliothèques",
       "ru" : "Библиотеки",
       "es" : "Bibliotecas"
     },
@@ -3069,7 +3234,7 @@
   "workspace.library.own" : {
     "translations" : {
       "en" : "My libraries",
-      "fr" : "Mes librairies",
+      "fr" : "Mes bibliothèques",
       "ru" : "Мои библиотеки",
       "es" : "Mis bibliotecas"
     },
@@ -3087,6 +3252,7 @@
   "workspace.options.blur-options.background-blur" : {
     "translations" : {
       "en" : "Background",
+      "fr" : "Fond",
       "es" : "Fondo"
     },
     "unused" : true
@@ -3094,6 +3260,7 @@
   "workspace.options.blur-options.layer-blur" : {
     "translations" : {
       "en" : "Layer",
+      "fr" : "Couche",
       "es" : "Capa"
     },
     "unused" : true
@@ -3102,6 +3269,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/blur.cljs:62" ],
     "translations" : {
       "en" : "Blur",
+      "fr" : "Flou",
       "es" : "Desenfoque"
     }
   },
@@ -3109,6 +3277,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/blur.cljs:61" ],
     "translations" : {
       "en" : "Group blur",
+      "fr" : "Flou de groupe",
       "es" : "Desenfoque del grupo"
     }
   },
@@ -3116,6 +3285,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/blur.cljs:60" ],
     "translations" : {
       "en" : "Selection blur",
+      "fr" : "Flou de sélection",
       "es" : "Desenfoque de la selección"
     }
   },
@@ -3132,6 +3302,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/component.cljs:81" ],
     "translations" : {
       "en" : "Component",
+      "fr" : "Composant",
       "es" : "Componente"
     }
   },
@@ -3148,6 +3319,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/exports.cljs:132", "src/app/main/ui/handoff/exports.cljs:96" ],
     "translations" : {
       "en" : "Export",
+      "fr" : "Export",
       "ru" : "Экспорт",
       "es" : "Exprotar"
     }
@@ -3156,6 +3328,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/exports.cljs:166", "src/app/main/ui/handoff/exports.cljs:131" ],
     "translations" : {
       "en" : "Export shape",
+      "fr" : "Exporter la forme",
       "ru" : "Экспорт фигуры",
       "es" : "Exportar forma"
     }
@@ -3164,6 +3337,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/exports.cljs:149" ],
     "translations" : {
       "en" : "Suffix",
+      "fr" : "Suffixe",
       "es" : "Sufijo"
     }
   },
@@ -3171,6 +3345,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/exports.cljs:165", "src/app/main/ui/handoff/exports.cljs:130" ],
     "translations" : {
       "en" : "Exporting...",
+      "fr" : "Export...",
       "ru" : "Экспортирую...",
       "es" : "Exportando"
     }
@@ -3377,7 +3552,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/fill.cljs:40" ],
     "translations" : {
       "en" : "Group fill",
-      "fr" : null,
+      "fr" : "Remplissage de groupe",
       "ru" : "Заливка для группы",
       "es" : "Relleno de grupo"
     }
@@ -3386,7 +3561,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:54" ],
     "translations" : {
       "en" : "Group stroke",
-      "fr" : null,
+      "fr" : "Contour de groupe",
       "ru" : "Обводка для группы",
       "es" : "Borde de grupo"
     }
@@ -3467,7 +3642,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/fill.cljs:39" ],
     "translations" : {
       "en" : "Selection fill",
-      "fr" : null,
+      "fr" : "Remplissage de sélection",
       "ru" : "Заливка выбранного",
       "es" : "Relleno de selección"
     }
@@ -3476,7 +3651,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:53" ],
     "translations" : {
       "en" : "Selection stroke",
-      "fr" : null,
+      "fr" : "Contour de sélection",
       "ru" : "Обводка выбранного",
       "es" : "Borde de selección"
     }
@@ -3485,6 +3660,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:166" ],
     "translations" : {
       "en" : "Blur",
+      "fr" : "Flou",
       "es" : "Desenfoque"
     }
   },
@@ -3492,6 +3668,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:135" ],
     "translations" : {
       "en" : "Drop shadow",
+      "fr" : "Ombre portée",
       "es" : "Sombra arrojada"
     }
   },
@@ -3499,6 +3676,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:136" ],
     "translations" : {
       "en" : "Inner shadow",
+      "fr" : "Ombre intérieure",
       "es" : "Sombra interior"
     }
   },
@@ -3506,6 +3684,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:146" ],
     "translations" : {
       "en" : "X",
+      "fr" : "X",
       "es" : "X"
     }
   },
@@ -3513,6 +3692,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:155" ],
     "translations" : {
       "en" : "Y",
+      "fr" : "Y",
       "es" : "Y"
     }
   },
@@ -3520,6 +3700,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:176" ],
     "translations" : {
       "en" : "Spread",
+      "fr" : "Diffusion",
       "es" : "Difusión"
     }
   },
@@ -3527,6 +3708,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:204" ],
     "translations" : {
       "en" : "Shadow",
+      "fr" : "Ombre",
       "es" : "Sombra"
     }
   },
@@ -3534,6 +3716,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:203" ],
     "translations" : {
       "en" : "Group shadow",
+      "fr" : "Ombre de groupe",
       "es" : "Sombra del grupo"
     }
   },
@@ -3541,6 +3724,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs:202" ],
     "translations" : {
       "en" : "Selection shadows",
+      "fr" : "Ombres de la sélection",
       "es" : "Sombras de la seleccíón"
     }
   },
@@ -3710,6 +3894,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:137" ],
     "translations" : {
       "en" : "Auto height",
+      "fr" : "Hauteur automatique",
       "es" : "Alto automático"
     }
   },
@@ -3717,6 +3902,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:132" ],
     "translations" : {
       "en" : "Auto width",
+      "fr" : "Largeur automatique",
       "es" : "Ancho automático"
     }
   },
@@ -3724,6 +3910,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:127" ],
     "translations" : {
       "en" : "Fixed",
+      "fr" : "Fixe",
       "es" : "Fijo"
     }
   },
@@ -3731,7 +3918,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:154" ],
     "translations" : {
       "en" : "Letter Spacing",
-      "fr" : "Espacement de caractères",
+      "fr" : "Espacement des lettres",
       "ru" : "Межсимвольный интервал",
       "es" : "Espaciado entre letras"
     }
@@ -3794,6 +3981,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:185" ],
     "translations" : {
       "en" : "Group text",
+      "fr" : "Texte de groupe",
       "ru" : "Текст группы",
       "es" : "Texto de grupo"
     }
@@ -3802,6 +3990,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs:184" ],
     "translations" : {
       "en" : "Selection text",
+      "fr" : "Texte de la sélection",
       "ru" : "Выбранный текст",
       "es" : "Texto de selección"
     }
@@ -3855,6 +4044,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:124" ],
     "translations" : {
       "en" : "Send to back",
+      "fr" : "Mettre en arrière plan",
       "es" : "Enviar al fondo"
     }
   },
@@ -3862,6 +4052,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:121" ],
     "translations" : {
       "en" : "Send backward",
+      "fr" : "Reculer",
       "es" : "Enviar atrás"
     }
   },
@@ -3869,6 +4060,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:102" ],
     "translations" : {
       "en" : "Copy",
+      "fr" : "Copier",
       "es" : "Copiar"
     }
   },
@@ -3876,6 +4068,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:168" ],
     "translations" : {
       "en" : "Create component",
+      "fr" : "Créer un composant",
       "es" : "Crear componente"
     }
   },
@@ -3883,6 +4076,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:105" ],
     "translations" : {
       "en" : "Cut",
+      "fr" : "Couper",
       "es" : "Cortar"
     }
   },
@@ -3890,6 +4084,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:200" ],
     "translations" : {
       "en" : "Delete",
+      "fr" : "Supprimer",
       "es" : "Eliminar"
     }
   },
@@ -3897,6 +4092,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:180", "src/app/main/ui/workspace/context_menu.cljs:190", "src/app/main/ui/workspace/sidebar/options/component.cljs:95", "src/app/main/ui/workspace/sidebar/options/component.cljs:100" ],
     "translations" : {
       "en" : "Detach instance",
+      "fr" : "Détacher l'instance",
       "es" : "Desacoplar instancia"
     }
   },
@@ -3904,6 +4100,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:111" ],
     "translations" : {
       "en" : "Duplicate",
+      "fr" : "Dupliquer",
       "es" : "Duplicar"
     }
   },
@@ -3911,6 +4108,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:115" ],
     "translations" : {
       "en" : "Bring forward",
+      "fr" : "Avancer",
       "es" : "Mover hacia delante"
     }
   },
@@ -3918,6 +4116,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:118" ],
     "translations" : {
       "en" : "Bring to front",
+      "fr" : "Mettre au premier plan",
       "es" : "Mover al frente"
     }
   },
@@ -3925,6 +4124,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:194", "src/app/main/ui/workspace/sidebar/options/component.cljs:102" ],
     "translations" : {
       "en" : "Go to master component file",
+      "fr" : "Aller au fichier du composant principal",
       "es" : "Ir al archivo del componente maestro"
     }
   },
@@ -3932,6 +4132,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:131" ],
     "translations" : {
       "en" : "Group",
+      "fr" : "Groupe",
       "es" : "Grupo"
     }
   },
@@ -3939,6 +4140,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:154" ],
     "translations" : {
       "en" : "Hide",
+      "fr" : "Masquer",
       "es" : "Ocultar"
     }
   },
@@ -3946,6 +4148,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:160" ],
     "translations" : {
       "en" : "Lock",
+      "fr" : "Bloquer",
       "es" : "Bloquear"
     }
   },
@@ -3953,6 +4156,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:134", "src/app/main/ui/workspace/context_menu.cljs:147" ],
     "translations" : {
       "en" : "Mask",
+      "fr" : "Masque",
       "es" : "Máscara"
     }
   },
@@ -3960,6 +4164,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:108", "src/app/main/ui/workspace/context_menu.cljs:209" ],
     "translations" : {
       "en" : "Paste",
+      "fr" : "Coller",
       "es" : "Pegar"
     }
   },
@@ -3967,6 +4172,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:182", "src/app/main/ui/workspace/context_menu.cljs:192", "src/app/main/ui/workspace/sidebar/options/component.cljs:96", "src/app/main/ui/workspace/sidebar/options/component.cljs:101" ],
     "translations" : {
       "en" : "Reset overrides",
+      "fr" : "Annuler les modifications",
       "es" : "Deshacer modificaciones"
     }
   },
@@ -3974,6 +4180,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:152" ],
     "translations" : {
       "en" : "Show",
+      "fr" : "Montrer",
       "es" : "Mostrar"
     }
   },
@@ -3981,6 +4188,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:186", "src/app/main/ui/workspace/sidebar/options/component.cljs:98" ],
     "translations" : {
       "en" : "Show master component",
+      "fr" : "Afficher le composant principal",
       "es" : "Ver componente maestro"
     }
   },
@@ -3988,6 +4196,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:140" ],
     "translations" : {
       "en" : "Ungroup",
+      "fr" : "Dégrouper",
       "es" : "Desagrupar"
     }
   },
@@ -3995,6 +4204,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:158" ],
     "translations" : {
       "en" : "Unlock",
+      "fr" : "Débloquer",
       "es" : "Desbloquear"
     }
   },
@@ -4002,6 +4212,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:144" ],
     "translations" : {
       "en" : "Unmask",
+      "fr" : "Supprimer le masque",
       "es" : "Quitar máscara"
     }
   },
@@ -4009,6 +4220,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:184", "src/app/main/ui/workspace/context_menu.cljs:196", "src/app/main/ui/workspace/sidebar/options/component.cljs:97", "src/app/main/ui/workspace/sidebar/options/component.cljs:103" ],
     "translations" : {
       "en" : "Update master component",
+      "fr" : "Actualiser le composant principal",
       "es" : "Actualizar componente maestro"
     }
   },
@@ -4016,7 +4228,8 @@
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:122" ],
     "translations" : {
       "en" : "History (%s)",
-      "en" : "Historial (%s)"
+      "fr" : "Historique (%s)",
+      "es" : "Historial (%s)"
     }
   },
   "workspace.sidebar.icons" : {
@@ -4032,6 +4245,7 @@
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:112" ],
     "translations" : {
       "en" : "Layers (%s)",
+      "fr" : "Couches (%s)",
       "es" : "Capas (%s)"
     }
   },
@@ -4048,7 +4262,7 @@
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:149" ],
     "translations" : {
       "en" : "Sitemap",
-      "fr" : null,
+      "fr" : "Plan du site",
       "ru" : "Карта сайта",
       "es" : "Mapa del sitio"
     }
@@ -4057,7 +4271,7 @@
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:117" ],
     "translations" : {
       "en" : "Assets (%s)",
-      "fr" : "",
+      "fr" : "Ressources (%s)",
       "ru" : "",
       "es" : "Recursos (%s)"
     }
@@ -4075,6 +4289,7 @@
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:105" ],
     "translations" : {
       "en" : "Comments (%s)",
+      "fr" : "Commentaires (%s)",
       "es" : "Comentarios (%s)"
     }
   },
@@ -4091,7 +4306,7 @@
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:81" ],
     "translations" : {
       "en" : "Ellipse (E)",
-      "fr" : "",
+      "fr" : "Ellipse (E)",
       "ru" : "",
       "es" : "Elipse (E)"
     }
@@ -4136,7 +4351,7 @@
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs:76" ],
     "translations" : {
       "en" : "Rectangle (R)",
-      "fr" : "",
+      "fr" : "Rectangle (R)",
       "ru" : "Прямоугольник (R)",
       "es" : "Rectángulo (R)"
     }
@@ -4154,6 +4369,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:293" ],
     "translations" : {
       "en" : "There are no history changes so far",
+      "fr" : "Il n'y a aucun changement dans l'historique",
       "es" : "Todavía no hay cambios en el histórico"
     }
   },
@@ -4161,6 +4377,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:121" ],
     "translations" : {
       "en" : "Deleted %s",
+      "fr" : "Supprimé %s",
       "es" : "%s eliminado"
     }
   },
@@ -4168,6 +4385,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:120" ],
     "translations" : {
       "en" : "Modified %s",
+      "fr" : "Modifié %s",
       "es" : "%s modificado"
     }
   },
@@ -4175,12 +4393,14 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:122" ],
     "translations" : {
       "en" : "Moved objects",
+      "fr" : "Objets déplacés",
       "es" : "Objetos movidos"
     }
   },
   "workspace.undo.entry.multiple.circle" : {
     "translations" : {
       "en" : "circles",
+      "fr" : "cercles",
       "es" : "círculos"
     },
     "unused" : true
@@ -4188,6 +4408,7 @@
   "workspace.undo.entry.multiple.color" : {
     "translations" : {
       "en" : "color assets",
+      "fr" : "couleurs",
       "es" : "colores"
     },
     "unused" : true
@@ -4195,6 +4416,7 @@
   "workspace.undo.entry.multiple.component" : {
     "translations" : {
       "en" : "components",
+      "fr" : "composants",
       "es" : "componentes"
     },
     "unused" : true
@@ -4202,6 +4424,7 @@
   "workspace.undo.entry.multiple.curve" : {
     "translations" : {
       "en" : "curves",
+      "fr" : "courbes",
       "es" : "curvas"
     },
     "unused" : true
@@ -4209,6 +4432,7 @@
   "workspace.undo.entry.multiple.frame" : {
     "translations" : {
       "en" : "artboard",
+      "fr" : "plan de travail",
       "es" : "mesa de trabajo"
     },
     "unused" : true
@@ -4216,6 +4440,7 @@
   "workspace.undo.entry.multiple.group" : {
     "translations" : {
       "en" : "groups",
+      "fr" : "grouprs",
       "es" : "grupos"
     },
     "unused" : true
@@ -4223,6 +4448,7 @@
   "workspace.undo.entry.multiple.image" : {
     "translations" : {
       "en" : "images",
+      "fr" : "images",
       "es" : "imágenes"
     },
     "unused" : true
@@ -4230,6 +4456,7 @@
   "workspace.undo.entry.multiple.media" : {
     "translations" : {
       "en" : "graphic assets",
+      "fr" : "graphiques",
       "es" : "gráficos"
     },
     "unused" : true
@@ -4237,6 +4464,7 @@
   "workspace.undo.entry.multiple.multiple" : {
     "translations" : {
       "en" : "objects",
+      "fr" : "objets",
       "es" : "objetos"
     },
     "unused" : true
@@ -4244,6 +4472,7 @@
   "workspace.undo.entry.multiple.page" : {
     "translations" : {
       "en" : "pages",
+      "fr" : "pages",
       "es" : "páginas"
     },
     "unused" : true
@@ -4251,6 +4480,7 @@
   "workspace.undo.entry.multiple.path" : {
     "translations" : {
       "en" : "paths",
+      "fr" : "chemins",
       "es" : "trazos"
     },
     "unused" : true
@@ -4258,6 +4488,7 @@
   "workspace.undo.entry.multiple.rect" : {
     "translations" : {
       "en" : "rectangles",
+      "fr" : "rectangles",
       "es" : "rectángulos"
     },
     "unused" : true
@@ -4265,6 +4496,7 @@
   "workspace.undo.entry.multiple.shape" : {
     "translations" : {
       "en" : "shapes",
+      "fr" : "formes",
       "es" : "formas"
     },
     "unused" : true
@@ -4272,6 +4504,7 @@
   "workspace.undo.entry.multiple.text" : {
     "translations" : {
       "en" : "texts",
+      "fr" : "textes",
       "es" : "textos"
     },
     "unused" : true
@@ -4279,6 +4512,7 @@
   "workspace.undo.entry.multiple.typography" : {
     "translations" : {
       "en" : "typography assets",
+      "fr" : "typographie",
       "es" : "tipografías"
     },
     "unused" : true
@@ -4287,12 +4521,14 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:119" ],
     "translations" : {
       "en" : "New %s",
+      "fr" : "Nouveau %s",
       "es" : "Nuevo %s"
     }
   },
   "workspace.undo.entry.single.circle" : {
     "translations" : {
       "en" : "circle",
+      "fr" : "cercle",
       "es" : "círculo"
     },
     "unused" : true
@@ -4300,6 +4536,7 @@
   "workspace.undo.entry.single.color" : {
     "translations" : {
       "en" : "color asset",
+      "fr" : "culeur",
       "es" : "color"
     },
     "unused" : true
@@ -4307,6 +4544,7 @@
   "workspace.undo.entry.single.component" : {
     "translations" : {
       "en" : "component",
+      "fr" : "composant",
       "es" : "componente"
     },
     "unused" : true
@@ -4314,13 +4552,15 @@
   "workspace.undo.entry.single.curve" : {
     "translations" : {
       "en" : "curve",
+      "fr" : "courbe",
       "es" : "curva"
     },
     "unused" : true
   },
   "workspace.undo.entry.single.frame" : {
     "translations" : {
-      "en" : "frame",
+      "en" : "artboard",
+      "fr" : "plan de travail",
       "es" : "mesa de trabajo"
     },
     "unused" : true
@@ -4328,6 +4568,7 @@
   "workspace.undo.entry.single.group" : {
     "translations" : {
       "en" : "group",
+      "fr" : "groupe",
       "es" : "grupo"
     },
     "unused" : true
@@ -4335,6 +4576,7 @@
   "workspace.undo.entry.single.image" : {
     "translations" : {
       "en" : "image",
+      "fr" : "image",
       "es" : "imagen"
     },
     "unused" : true
@@ -4342,6 +4584,7 @@
   "workspace.undo.entry.single.media" : {
     "translations" : {
       "en" : "graphic asset",
+      "fr" : "graphique",
       "es" : "gráfico"
     },
     "unused" : true
@@ -4349,6 +4592,7 @@
   "workspace.undo.entry.single.multiple" : {
     "translations" : {
       "en" : "object",
+      "fr" : "objet",
       "es" : "objeto"
     },
     "unused" : true
@@ -4356,6 +4600,7 @@
   "workspace.undo.entry.single.page" : {
     "translations" : {
       "en" : "page",
+      "fr" : "page",
       "es" : "página"
     },
     "unused" : true
@@ -4363,6 +4608,7 @@
   "workspace.undo.entry.single.path" : {
     "translations" : {
       "en" : "path",
+      "fr" : "chemin",
       "es" : "trazo"
     },
     "unused" : true
@@ -4370,6 +4616,7 @@
   "workspace.undo.entry.single.rect" : {
     "translations" : {
       "en" : "rectangle",
+      "fr" : "Rectangle",
       "es" : "rectángulo"
     },
     "unused" : true
@@ -4377,6 +4624,7 @@
   "workspace.undo.entry.single.shape" : {
     "translations" : {
       "en" : "shape",
+      "fr" : "forme",
       "es" : "forma"
     },
     "unused" : true
@@ -4384,6 +4632,7 @@
   "workspace.undo.entry.single.text" : {
     "translations" : {
       "en" : "text",
+      "fr" : "texte",
       "es" : "texto"
     },
     "unused" : true
@@ -4391,6 +4640,7 @@
   "workspace.undo.entry.single.typography" : {
     "translations" : {
       "en" : "typography asset",
+      "fr" : "typographie",
       "es" : "tipografía"
     },
     "unused" : true
@@ -4399,6 +4649,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:123" ],
     "translations" : {
       "en" : "Operation over %s",
+      "fr" : "Opération sur %s",
       "es" : "Operación sobre %s"
     }
   },
@@ -4406,6 +4657,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:289" ],
     "translations" : {
       "en" : "History",
+      "fr" : "Historique",
       "es" : "Histórico"
     }
   },
@@ -4413,7 +4665,7 @@
     "used-in" : [ "src/app/main/data/workspace/libraries.cljs:690" ],
     "translations" : {
       "en" : "Dismiss",
-      "fr" : "",
+      "fr" : "Ignorer",
       "ru" : "",
       "es" : "Ignorar"
     }
@@ -4422,7 +4674,7 @@
     "used-in" : [ "src/app/main/data/workspace/libraries.cljs:686" ],
     "translations" : {
       "en" : "There are updates in shared libraries",
-      "fr" : "",
+      "fr" : "Il y a des mises à jour dans les Bibliothèques Partagées",
       "ru" : "",
       "es" : "Hay actualizaciones en librerías compartidas"
     }
@@ -4431,7 +4683,7 @@
     "used-in" : [ "src/app/main/data/workspace/libraries.cljs:688" ],
     "translations" : {
       "en" : "Update",
-      "fr" : "",
+      "fr" : "Actualiser",
       "ru" : "",
       "es" : "Actualizar"
     }
