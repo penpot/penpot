@@ -30,14 +30,14 @@
           for security reasons.
         </mj-text>
         <mj-text>Enjoy!</mj-text>
-        <mj-text>The UXBOX team.</mj-text>
+        <mj-text>The Penpot team.</mj-text>
       </mj-column>
     </mj-section>
 
     <mj-section padding="24px 0 0 0">
       <mj-column width="425px">
         <mj-text align="center" font-size="14px" color="#64666A">
-          UXBOX is the first Open Source prototyping platform that will be embraced by multidisciplinary teams.
+          Penpot is the first Open Source prototyping platform that will be embraced by multidisciplinary teams.
         </mj-text>
       </mj-column>
     </mj-section>
@@ -57,7 +57,7 @@
     <mj-section padding="0 0 24px 0">
       <mj-column>
         <mj-text align="center" font-size="14px" color="#64666A" line-height="150%">
-          UXBOX © 2020 | Made with &lt;3 and Open Source
+          Penpot © 2020 | Made with &lt;3 and Open Source
         </mj-text>
       </mj-column>
     </mj-section>

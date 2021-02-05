@@ -7,4 +7,4 @@ Accept invitation using this link:
 {{ public-uri }}/#/auth/verify-token?token={{token}}
 
 Enjoy!
-The UXBOX team.
+The Penpot team.
