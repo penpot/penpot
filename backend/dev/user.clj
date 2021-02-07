@@ -14,6 +14,7 @@
    [app.util.time :as dt]
    [app.util.transit :as t]
    [app.common.exceptions :as ex]
+   [taoensso.nippy :as nippy]
    [clojure.data.json :as json]
    [clojure.java.io :as io]
    [clojure.test :as test]
