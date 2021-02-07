@@ -37,22 +37,22 @@
   },
   "auth.verification-email-sent": {
     "translations": {
-      "en": "We've sent a verification email to",
-      "fr": "Nous avons envoyé un e-mail de vérification à"
+      "en" : "We've sent a verification email to",
+      "fr" : "Nous avons envoyé un e-mail de vérification à"
     }
   },
 
   "auth.check-your-email": {
     "translations": {
-      "en": "Check your email and click on the link to verify and start using Penpot.",
-      "fr": "Vérifiez votre email et cliquez sur le lien pour vérifier et commencer à utiliser Penpot."
+      "en" : "Check your email and click on the link to verify and start using Penpot.",
+      "fr" : "Vérifiez votre email et cliquez sur le lien pour vérifier et commencer à utiliser Penpot."
     }
   },
   "auth.demo-warning" : {
     "used-in" : [ "src/app/main/ui/auth/register.cljs:33" ],
     "translations" : {
       "en" : "This is a DEMO service, DO NOT USE for real work, the projects will be periodicaly wiped.",
-      "fr" : "Il s'agit d'un service DEMO, NE PAS UTILISER pour un travail réel, les projets seront périodiquement supprimés.",
+      "fr" : "Il s’agit d’un service DEMO, NE PAS UTILISER pour un travail réel, les projets seront périodiquement supprimés.",
       "ru" : "Это ДЕМОНСТРАЦИЯ, НЕ ИСПОЛЬЗУЙТЕ для работы, проекты будут периодически удаляться.",
       "es" : "Este es un servicio de DEMOSTRACIÓN. NO USAR para trabajo real, los proyectos serán borrados periodicamente."
     }
@@ -61,7 +61,7 @@
     "used-in" : [ "src/app/main/ui/auth/login.cljs:99", "src/app/main/ui/auth/register.cljs:101", "src/app/main/ui/auth/recovery_request.cljs:47" ],
     "translations" : {
       "en" : "Email",
-      "fr" : "Adresse email",
+      "fr" : "Adresse e‑mail",
       "ru" : "Email",
       "es" : "Correo electrónico"
     }
@@ -124,7 +124,7 @@
     "used-in" : [ "src/app/main/ui/auth/login.cljs:120" ],
     "translations" : {
       "en" : "Enter your details below",
-      "fr" : "Entrez vos informations ci-dessous",
+      "fr" : "Entrez vos informations ci‑dessous",
       "ru" : "Введите информацию о себе ниже",
       "es" : "Introduce tus datos aquí"
     }
@@ -176,16 +176,16 @@
   },
   "auth.notifications.profile-not-verified": {
     "translations": {
-      "en": "Profile is not verified, please verify profile before continue.",
-      "fr": "Le profil n'est pas vérifié, veuillez vérifier le profil avant de continuer.",
-      "es": "El perfil aun no ha sido verificado, por favor valida el perfil antes de continuar."
+      "en" : "Profile is not verified, please verify profile before continue.",
+      "fr" : "Le profil n’est pas vérifié, veuillez vérifier le profil avant de continuer.",
+      "es" : "El perfil aun no ha sido verificado, por favor valida el perfil antes de continuar."
     }
   },
   "auth.notifications.invalid-token-error" : {
     "used-in" : [ "src/app/main/ui/auth/recovery.cljs:47" ],
     "translations" : {
       "en" : "The recovery token is invalid.",
-      "fr" : "Le code de récupération n'est pas valide.",
+      "fr" : "Le code de récupération n’est pas valide.",
       "ru" : "Неверный код восстановления.",
       "es" : "El código de recuperación no es válido."
     }
@@ -247,7 +247,7 @@
     "used-in" : [ "src/app/main/ui/auth/recovery_request.cljs:62" ],
     "translations" : {
       "en" : "We'll send you an email with instructions",
-      "fr" : "Nous vous enverrons un e-mail avec des instructions",
+      "fr" : "Nous vous enverrons un e‑mail avec des instructions",
       "ru" : "Письмо с инструкциями отправлено на почту.",
       "es" : "Te enviaremos un correo electrónico con instrucciones"
     }
@@ -292,7 +292,7 @@
     "used-in" : [ "src/app/main/ui/auth/register.cljs:118" ],
     "translations" : {
       "en" : "It's free, it's Open Source",
-      "fr" : "C'est gratuit, c'est Open Source",
+      "fr" : "C’est gratuit, c’est Open Source",
       "ru" : "Это бесплатно, это Open Source",
       "es" : "Es gratis, es Open Source"
     }
@@ -328,7 +328,7 @@
     "used-in" : [ "src/app/main/ui/settings/profile.cljs:79" ],
     "translations" : {
       "en" : "Change email",
-      "fr" : "Changer adresse e-mail",
+      "fr" : "Changer adresse e‑mail",
       "ru" : "Сменить email адрес",
       "es" : "Cambiar correo"
     }
@@ -353,7 +353,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:325" ],
     "translations" : {
       "en" : "Delete team",
-      "fr" : "Supprimer l'équipe",
+      "fr" : "Supprimer l’équipe",
       "es" : "Eliminar equipo"
     }
   },
@@ -370,7 +370,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:188" ],
     "translations" : {
       "en" : "You still have no files here",
-      "fr" : "Vous n'avez encore aucun fichier ici",
+      "fr" : "Vous n’avez encore aucun fichier ici",
       "ru" : "Файлов пока нет",
       "es" : "Todavía no hay ningún archivo aquí"
     }
@@ -379,7 +379,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:72" ],
     "translations" : {
       "en" : "Invite to team",
-      "fr" : "Inviter à l'équipe",
+      "fr" : "Inviter à l’équipe",
       "es" : "Invitar al equipo"
     }
   },
@@ -387,7 +387,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:318", "src/app/main/ui/dashboard/sidebar.cljs:321" ],
     "translations" : {
       "en" : "Leave team",
-      "fr" : "Quitter l'équipe",
+      "fr" : "Quitter l’équipe",
       "es" : "Abandonar equipo"
     }
   },
@@ -430,7 +430,7 @@
   "dashboard.library.add-library.icons" : {
     "translations" : {
       "en" : "+ New icon library",
-      "fr" : "+ Nouvelle bibliothèque d'icônes",
+      "fr" : "+ Nouvelle bibliothèque d’icônes",
       "ru" : "+ Новая библиотека иконок",
       "es" : "+ Nueva biblioteca de iconos"
     },
@@ -439,7 +439,7 @@
   "dashboard.library.add-library.images" : {
     "translations" : {
       "en" : "+ New image library",
-      "fr" : "+ Nouvelle bibliothèque d'image",
+      "fr" : "+ Nouvelle bibliothèque d’image",
       "ru" : "+ Новая библиотека изображений",
       "es" : "+ Nueva biblioteca de imágenes"
     },
@@ -484,9 +484,9 @@
   "dashboard.loading-files" : {
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:194" ],
     "translations" : {
-      "en" : "loading your files ...",
-      "fr" : "chargement de vos fichiers ...",
-      "es" : "cargando tus ficheros ..."
+      "en" : "loading your files …",
+      "fr" : "chargement de vos fichiers…",
+      "es" : "cargando tus ficheros …"
     }
   },
   "dashboard.new-file" : {
@@ -528,7 +528,7 @@
     "used-in" : [ "src/app/main/ui/auth/verify_token.cljs:42" ],
     "translations" : {
       "en" : "Your email address has been updated successfully",
-      "fr" : "Votre adresse e-mail a été mise à jour avec succès",
+      "fr" : "Votre adresse e‑mail a été mise à jour avec succès",
       "ru" : "Ваш email адрес успешно обновлен",
       "es" : "Tu dirección de correo ha sido actualizada"
     }
@@ -537,7 +537,7 @@
     "used-in" : [ "src/app/main/ui/auth/verify_token.cljs:36" ],
     "translations" : {
       "en" : "Your email address has been verified successfully",
-      "fr" : "Votre adresse e-mail a été vérifiée avec succès",
+      "fr" : "Votre adresse e‑mail a été vérifiée avec succès",
       "ru" : "Ваш email адрес успешно подтвержден",
       "es" : "Tu dirección de correo ha sido verificada"
     }
@@ -606,26 +606,26 @@
   "dashboard.search-placeholder" : {
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:120" ],
     "translations" : {
-      "en" : "Search...",
-      "fr" : "Rechercher...",
-      "ru" : "Поиск ...",
-      "es" : "Buscar..."
+      "en" : "Search…",
+      "fr" : "Rechercher…",
+      "ru" : "Поиск …",
+      "es" : "Buscar…"
     }
   },
   "dashboard.searching-for" : {
     "used-in" : [ "src/app/main/ui/dashboard/search.cljs:49" ],
     "translations" : {
-      "en" : "Searching for “%s“...",
-      "fr" : "Recherche de “%s“...",
-      "ru" : "Ищу “%s“...",
-      "es" : "Buscando “%s“..."
+      "en" : "Searching for “%s“…",
+      "fr" : "Recherche de « %s »…",
+      "ru" : "Ищу “%s“…",
+      "es" : "Buscando “%s“…"
     }
   },
   "dashboard.select-ui-language" : {
     "used-in" : [ "src/app/main/ui/settings/options.cljs:61" ],
     "translations" : {
       "en" : "Select UI language",
-      "fr" : "Sélectionner la langue de l'interface",
+      "fr" : "Sélectionner la langue de l’interface",
       "ru" : "Выберите язык интерфейса",
       "es" : "Cambiar el idioma de la interfaz"
     }
@@ -660,7 +660,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:156" ],
     "translations" : {
       "en" : "Switch team",
-      "fr" : "Changer d'équipe",
+      "fr" : "Changer d’équipe",
       "es" : "Cambiar equipo"
     }
   },
@@ -668,7 +668,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:288" ],
     "translations" : {
       "en" : "Team info",
-      "fr" : "Information de l'équipe",
+      "fr" : "Information de l’équipe",
       "es" : "Información del equipo"
     }
   },
@@ -676,7 +676,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:299" ],
     "translations" : {
       "en" : "Team members",
-      "fr" : "Membres de l'équipe",
+      "fr" : "Membres de l’équipe",
       "es" : "Integrantes del equipo"
     }
   },
@@ -684,7 +684,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:308" ],
     "translations" : {
       "en" : "Team projects",
-      "fr" : "Projets de l'équipe",
+      "fr" : "Projets de l’équipe",
       "es" : "Proyectos del equipo"
     }
   },
@@ -692,7 +692,7 @@
     "used-in" : [ "src/app/main/ui/settings/options.cljs:65" ],
     "translations" : {
       "en" : "UI theme",
-      "fr" : "Thème de l'interface",
+      "fr" : "Thème de l’interface",
       "ru" : "Тема интерфейса пользователя",
       "es" : "Tema visual"
     }
@@ -736,7 +736,7 @@
     "used-in" : [ "src/app/main/ui/settings/profile.cljs:74" ],
     "translations" : {
       "en" : "Email",
-      "fr" : "E-mail",
+      "fr" : "E‑mail",
       "ru" : "Email",
       "es" : "Correo"
     }
@@ -816,7 +816,7 @@
     "used-in" : [ "src/app/main/ui/confirm.cljs:38", "src/app/main/ui/confirm.cljs:42" ],
     "translations" : {
       "en" : "Are you sure?",
-      "fr" : "Êtes-vous sûr ?",
+      "fr" : "Êtes‑vous sûr ?",
       "ru" : "Вы уверены?",
       "es" : "¿Seguro?"
     }
@@ -834,7 +834,7 @@
     "used-in" : [ "src/app/main/ui/auth/login.cljs:89" ],
     "translations" : {
       "en" : "Username or password seems to be wrong.",
-      "fr" : "Le nom d'utilisateur ou le mot de passe semble être faux.",
+      "fr" : "Le nom d’utilisateur ou le mot de passe semble être faux.",
       "ru" : "Неверное имя пользователя или пароль.",
       "es" : "El nombre o la contraseña parece incorrecto."
     }
@@ -852,7 +852,7 @@
     "used-in" : [ "src/app/main/ui/settings/change_email.cljs:47", "src/app/main/ui/auth/verify_token.cljs:80" ],
     "translations" : {
       "en" : "Email already used",
-      "fr" : "Adresse e-mail déjà utilisée",
+      "fr" : "Adresse e‑mail déjà utilisée",
       "ru" : "Такой email уже используется",
       "es" : "Este correo ya está en uso"
     }
@@ -861,7 +861,7 @@
     "used-in" : [ "src/app/main/ui/auth/verify_token.cljs:85" ],
     "translations" : {
       "en" : "Email already validated.",
-      "fr" : "Adresse e-mail déjà validé.",
+      "fr" : "Adresse e‑mail déjà validée.",
       "ru" : "Электронная почта уже подтверждена.",
       "es" : "Este correo ya está validado."
     }
@@ -870,7 +870,7 @@
     "used-in" : [ "src/app/main/ui/settings/change_email.cljs:37" ],
     "translations" : {
       "en" : "Confirmation email must match",
-      "fr" : "L'adresse e-mail de confirmation doit correspondre",
+      "fr" : "L’adresse e‑mail de confirmation doit correspondre",
       "ru" : "Email для подтверждения должен совпадать",
       "es" : "El correo de confirmación debe coincidir"
     }
@@ -879,7 +879,7 @@
     "used-in" : [ "src/app/main/ui/settings/options.cljs:32", "src/app/main/ui/settings/profile.cljs:42", "src/app/main/ui/auth/verify_token.cljs:89" ],
     "translations" : {
       "en" : "Something wrong has happened.",
-      "fr" : "Quelque chose c'est mal passé.",
+      "fr" : "Quelque chose s’est mal passé.",
       "ru" : "Что-то пошло не так.",
       "es" : "Ha ocurrido algún error."
     }
@@ -888,7 +888,7 @@
     "used-in" : [ "src/app/main/data/media.cljs:55" ],
     "translations" : {
       "en" : "The image format is not supported (must be svg, jpg or png).",
-      "fr" : "Le format d'image n'est pas supporté (doit être svg, jpg ou png).",
+      "fr" : "Le format d’image n’est pas supporté (doit être svg, jpg ou png).",
       "ru" : "Формат изображения не поддерживается (должен быть svg, jpg или png).",
       "es" : "No se reconoce el formato de imagen (debe ser svg, jpg o png)."
     }
@@ -897,7 +897,7 @@
     "used-in" : [ "src/app/main/data/media.cljs:53" ],
     "translations" : {
       "en" : "The image is too large to be inserted (must be under 5mb).",
-      "fr" : "L'image est trop grande (doit être inférieure à 5 Mo).",
+      "fr" : "L’image est trop grande (doit être inférieure à 5 Mo).",
       "ru" : "Изображение слишком большое для вставки (должно быть меньше 5mb).",
       "es" : "La imagen es demasiado grande (debe tener menos de 5mb)."
     }
@@ -906,7 +906,7 @@
     "used-in" : [ "src/app/main/data/media.cljs:78", "src/app/main/data/workspace/persistence.cljs:426" ],
     "translations" : {
       "en" : "Seems that the contents of the image does not match the file extension.",
-      "fr" : "Il semble que le contenu de l'image ne correspond pas à l'extension de fichier.",
+      "fr" : "Il semble que le contenu de l’image ne correspond pas à l’extension de fichier.",
       "ru" : "",
       "es" : "Parece que el contenido de la imagen no coincide con la etensión del archivo."
     }
@@ -915,7 +915,7 @@
     "used-in" : [ "src/app/main/data/media.cljs:75", "src/app/main/data/workspace/persistence.cljs:423" ],
     "translations" : {
       "en" : "Seems that this is not a valid image.",
-      "fr" : "Il semble que ce n'est pas une image valide.",
+      "fr" : "L’image ne semble pas être valide.",
       "ru" : "",
       "es" : "Parece que no es una imagen válida."
     }
@@ -951,7 +951,7 @@
     "used-in" : [ "src/app/main/ui/auth/register.cljs:39" ],
     "translations" : {
       "en" : "The registration is currently disabled.",
-      "fr" : "L'enregistrement est actuellement désactivé.",
+      "fr" : "L’enregistrement est actuellement désactivé.",
       "ru" : "Регистрация сейчас отключена.",
       "es" : "El registro está actualmente desactivado."
     }
@@ -960,7 +960,7 @@
     "used-in" : [ "src/app/main/data/media.cljs:81", "src/app/main/ui/auth/register.cljs:45", "src/app/main/ui/workspace/sidebar/options/exports.cljs:75", "src/app/main/ui/handoff/exports.cljs:41" ],
     "translations" : {
       "en" : "An unexpected error occurred.",
-      "fr" : "Une erreur inattendue c'est produite",
+      "fr" : "Une erreur inattendue s’est produite",
       "ru" : "Произошла ошибка.",
       "es" : "Ha ocurrido un error inesperado."
     }
@@ -969,7 +969,7 @@
     "used-in" : [ "src/app/main/ui/settings/password.cljs:28" ],
     "translations" : {
       "en" : "Old password is incorrect",
-      "fr" : "L'ancien mot de passe est incorrect",
+      "fr" : "L’ancien mot de passe est incorrect",
       "ru" : "Старый пароль неверный",
       "es" : "La contraseña anterior no es correcta"
     }
@@ -978,7 +978,7 @@
     "used-in" : [ "src/app/main/ui/settings/password.cljs:31" ],
     "translations" : {
       "en" : "An error has occurred",
-      "fr" : "Une erreur c'est produite",
+      "fr" : "Une erreur s’est produite",
       "ru" : "Произошла ошибка",
       "es" : "Ha ocurrido un error"
     }
@@ -1043,7 +1043,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/image.cljs:50" ],
     "translations" : {
       "en" : "Dowload source image",
-      "fr" : "Télécharger l'image source",
+      "fr" : "Télécharger l’image source",
       "es" : "Descargar imagen original"
     }
   },
@@ -1584,7 +1584,7 @@
     "used-in" : [ "src/app/main/ui/comments.cljs:275" ],
     "translations" : {
       "en" : "Edit",
-      "fr" : "Editer",
+      "fr" : "Modifier",
       "es" : "Editar"
     }
   },
@@ -1600,7 +1600,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:116", "src/app/main/ui/dashboard/team.cljs:221" ],
     "translations" : {
       "en" : "Email",
-      "fr" : "Adresse email",
+      "fr" : "Adresse e‑mail",
       "ru" : "Email",
       "es" : "Correo electrónico"
     }
@@ -1626,7 +1626,7 @@
     "used-in" : [ "src/app/main/ui/static.cljs:92" ],
     "translations" : {
       "en" : "Something bad happened. Please retry the operation and if the problem persists, contact with support.",
-      "fr" : "Quelque chose d'étrange est arrivé. Veuillez réessayer l'opération, et si le problème persiste, contactez le service technique.",
+      "fr" : "Quelque chose d’étrange est arrivé. Veuillez réessayer l’opération, et si le problème persiste, contactez le service technique.",
       "es" : "Ha ocurrido algo extraño. Por favor, reintenta la operación, y si el problema persiste, contacta con el servicio técnico."
     }
   },
@@ -1686,7 +1686,7 @@
     "used-in" : [ "src/app/main/ui/workspace/comments.cljs:186", "src/app/main/ui/dashboard/comments.cljs:96" ],
     "translations" : {
       "en" : "You have no pending comment notifications",
-      "fr" : "Vous n'avez aucune notification de commentaire en attente",
+      "fr" : "Vous n’avez aucune notification de commentaire en attente",
       "es" : "No tienes notificaciones de comentarios pendientes"
     }
   },
@@ -1702,7 +1702,7 @@
     "used-in" : [ "src/app/main/ui/static.cljs:40" ],
     "translations" : {
       "en" : "This page might not exist or you don’t have permissions to access to it.",
-      "fr" : "Cette page n'existe pas ou vous ne disposez pas des permissions nécessaires pour y accéder.",
+      "fr" : "Cette page n’existe pas ou vous ne disposez pas des permissions nécessaires pour y accéder.",
       "es" : "Esta página no existe o no tienes permisos para verla."
     }
   },
@@ -1910,10 +1910,10 @@
   "media.loading" : {
     "used-in" : [ "src/app/main/data/media.cljs:60", "src/app/main/data/workspace/persistence.cljs:504", "src/app/main/data/workspace/persistence.cljs:559" ],
     "translations" : {
-      "en" : "Loading image...",
-      "fr" : "Chargement de l'image...",
-      "ru" : "Загружаю изображение...",
-      "es" : "Cargando imagen..."
+      "en" : "Loading image…",
+      "fr" : "Chargement de l’image…",
+      "ru" : "Загружаю изображение…",
+      "es" : "Cargando imagen…"
     }
   },
   "modal.create-color.new-color" : {
@@ -1956,7 +1956,7 @@
     "used-in" : [ "src/app/main/ui/settings/change_email.cljs:103" ],
     "translations" : {
       "en" : "Verify new email",
-      "fr" : "Vérifier la nouvelle adresse e-mail",
+      "fr" : "Vérifier la nouvelle adresse e‑mail",
       "ru" : "Подтвердить новый email адрес",
       "es" : "Verificar el nuevo correo"
     }
@@ -1965,7 +1965,7 @@
     "used-in" : [ "src/app/main/ui/settings/change_email.cljs:93" ],
     "translations" : {
       "en" : "We'll send you an email to your current email “%s” to verify your identity.",
-      "fr" : "Nous vous enverrons un e-mail à votre adresse actuelle “%s” pour vérifier votre identité.",
+      "fr" : "Nous enverrons un e‑mail à votre adresse actuelle “%s” pour vérifier votre identité.",
       "ru" : "Мы отправим письмо для подтверждения подлиности на текущий email адрес “%s”.",
       "es" : "Enviaremos un mensaje a tu correo actual “%s” para verificar tu identidad."
     }
@@ -1974,7 +1974,7 @@
     "used-in" : [ "src/app/main/ui/settings/change_email.cljs:98" ],
     "translations" : {
       "en" : "New email",
-      "fr" : "Nouvel e-mail",
+      "fr" : "Nouvel e‑mail",
       "ru" : "Новый email адрес",
       "es" : "Nuevo correo"
     }
@@ -1983,7 +1983,7 @@
     "used-in" : [ "src/app/main/ui/settings/change_email.cljs:109" ],
     "translations" : {
       "en" : "Change email",
-      "fr" : "Changer adresse e-mail",
+      "fr" : "Changer adresse e‑mail",
       "ru" : "Сменить email адрес",
       "es" : "Cambiar correo"
     }
@@ -1992,7 +1992,7 @@
     "used-in" : [ "src/app/main/ui/settings/change_email.cljs:86" ],
     "translations" : {
       "en" : "Change your email",
-      "fr" : "Changer adresse e-mail",
+      "fr" : "Changer adresse e‑mail",
       "ru" : "Сменить email адрес",
       "es" : "Cambiar tu correo"
     }
@@ -2028,7 +2028,7 @@
     "used-in" : [ "src/app/main/ui/settings/delete_account.cljs:55" ],
     "translations" : {
       "en" : "Are you sure you want to delete your account?",
-      "fr" : "Voulez-vous vraiment supprimer votre compte ?",
+      "fr" : "Voulez‑vous vraiment supprimer votre compte ?",
       "ru" : "Вы уверены, что хотите удалить аккаунт?",
       "es" : "¿Seguro que quieres borrar tu cuenta?"
     }
@@ -2045,7 +2045,7 @@
     "used-in" : [ "src/app/main/ui/comments.cljs:226" ],
     "translations" : {
       "en" : "Are you sure you want to delete this conversation? All comments in this thread will be deleted.",
-      "fr" : "Voulez-vous vraiment supprimer cette conversation ? Tous les commentaires de ce fil seront supprimés.",
+      "fr" : "Voulez‑vous vraiment supprimer cette conversation ? Tous les commentaires de ce fil seront supprimés.",
       "es" : "¿Seguro que quieres eliminar esta conversación? Todos los comentarios en este hilo serán eliminados."
     }
   },
@@ -2069,7 +2069,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:81" ],
     "translations" : {
       "en" : "Are you sure you want to delete this file?",
-      "fr" : "Êtes-vous sûr de vouloir supprimer ce fichier ?",
+      "fr" : "Êtes‑vous sûr de vouloir supprimer ce fichier ?",
       "es" : "¿Seguro que quieres eliminar este archivo?"
     }
   },
@@ -2085,7 +2085,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/sitemap.cljs:60" ],
     "translations" : {
       "en" : "Are you sure you want to delete this page?",
-      "fr" : "Êtes-vous sûr de vouloir supprimer cette page ?",
+      "fr" : "Êtes‑vous sûr de vouloir supprimer cette page ?",
       "es" : "¿Seguro que quieres borrar esta página?"
     }
   },
@@ -2109,7 +2109,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/files.cljs:57" ],
     "translations" : {
       "en" : "Are you sure you want to delete this project?",
-      "fr" : "Êtes-vous sûr de vouloir supprimer ce projet ?",
+      "fr" : "Êtes‑vous sûr de vouloir supprimer ce projet ?",
       "es" : "¿Seguro que quieres eliminar este proyecto?"
     }
   },
@@ -2125,7 +2125,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:301" ],
     "translations" : {
       "en" : "Delete team",
-      "fr" : "Supprimer l'équipe",
+      "fr" : "Supprimer l’équipe",
       "es" : "Eliminar equipo"
     }
   },
@@ -2133,7 +2133,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:300" ],
     "translations" : {
       "en" : "Are you sure you want to delete this team? All projects and files associated with team will be permanently deleted.",
-      "fr" : "Voulez-vous vraiment supprimer cette équipe ? Tous les projets et fichiers associés à l'équipe seront définitivement supprimés.",
+      "fr" : "Voulez‑vous vraiment supprimer cette équipe ? Tous les projets et fichiers associés à l’équipe seront définitivement supprimés.",
       "es" : "¿Seguro que quieres eliminar este equipo? Todos los proyectos y archivos asociados con el equipo serán eliminados permamentemente."
     }
   },
@@ -2141,7 +2141,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:299" ],
     "translations" : {
       "en" : "Deleting team",
-      "fr" : "Suppression de l'équipe",
+      "fr" : "Suppression de l’équipe",
       "es" : "Eliminando equipo"
     }
   },
@@ -2157,7 +2157,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:163" ],
     "translations" : {
       "en" : "Are you sure you want to delete this member from the team?",
-      "fr" : "Voulez-vous vraiment supprimer ce membre de l'équipe ?",
+      "fr" : "Voulez‑vous vraiment supprimer ce membre de l’équipe ?",
       "es" : "¿Seguro que quieres eliminar este integrante del equipo?"
     }
   },
@@ -2165,7 +2165,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:162" ],
     "translations" : {
       "en" : "Delete team member",
-      "fr" : "Supprimer le membre de l'équipe",
+      "fr" : "Supprimer le membre de l’équipe",
       "es" : "Eliminar integrante del equipo"
     }
   },
@@ -2173,7 +2173,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:112" ],
     "translations" : {
       "en" : "Invite to join the team",
-      "fr" : "Inviter à rejoindre l'équipe",
+      "fr" : "Inviter à rejoindre l’équipe",
       "es" : "Invitar a unirse al equipo"
     }
   },
@@ -2221,7 +2221,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:276" ],
     "translations" : {
       "en" : "Leave team",
-      "fr" : "Quitter l'équipe",
+      "fr" : "Quitter l’équipe",
       "es" : "Abandonar el equipo"
     }
   },
@@ -2229,7 +2229,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:275" ],
     "translations" : {
       "en" : "Are you sure you want to leave this team?",
-      "fr" : "Êtes-vous sûr de vouloir quitter cette équipe ?",
+      "fr" : "Êtes‑vous sûr de vouloir quitter cette équipe ?",
       "es" : "¿Seguro que quieres abandonar este equipo?"
     }
   },
@@ -2237,7 +2237,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:274" ],
     "translations" : {
       "en" : "Leaving team",
-      "fr" : "Quitter l'équipe",
+      "fr" : "Quitter l’équipe",
       "es" : "Abandonando el equipo"
     }
   },
@@ -2253,7 +2253,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:150" ],
     "translations" : {
       "en" : "Are you sure you want to promote this user to owner?",
-      "fr" : "Voulez-vous vraiment promouvoir cet utilisateur en propriétaire ?",
+      "fr" : "Voulez‑vous vraiment promouvoir cet utilisateur en propriétaire ?",
       "es" : "¿Seguro que quieres promocionar este usuario a dueño?"
     }
   },
@@ -2314,7 +2314,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:93", "src/app/main/ui/workspace/sidebar/options/component.cljs:70" ],
     "translations" : {
       "en" : "You are about to update a component in a shared library. This may affect other files that use it.",
-      "fr" : "Vous êtes sur le point de mettre à jour un composant dans une bibliothèque partagée. Cela peut affecter d'autres fichiers qui l'utilisent.",
+      "fr" : "Vous êtes sur le point de mettre à jour un composant dans une bibliothèque partagée. Cela peut affecter d’autres fichiers qui l’utilisent.",
       "ru" : "",
       "es" : "Vas a actualizar un componente en una librería compartida. Esto puede afectar a otros archivos que la usen."
     }
@@ -2350,7 +2350,7 @@
     "used-in" : [ "src/app/main/ui/settings/change_email.cljs:56", "src/app/main/ui/auth/register.cljs:54" ],
     "translations" : {
       "en" : "Verification email sent to %s. Check your email!",
-      "fr" : "E-mail de vérification envoyé à %s. Vérifiez votre email !",
+      "fr" : "e‑mail de vérification envoyé à %s. Vérifiez votre email !",
       "es" : "Verificación de email enviada a %s. Comprueba tu correo."
     }
   },
@@ -2421,7 +2421,7 @@
     "used-in" : [ "src/app/main/ui/viewer/header.cljs:266" ],
     "translations" : {
       "en" : "Edit page",
-      "fr" : "Editer la page",
+      "fr" : "Modifier la page",
       "ru" : "Редактировать страницу",
       "es" : "Editar página"
     }
@@ -2529,7 +2529,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/align.cljs:65" ],
     "translations" : {
       "en" : "Distribute horizontal spacing",
-      "fr" : "Répartir l'espacement horizontal",
+      "fr" : "Répartir l’espacement horizontal",
       "ru" : "Распределить горизонтальное пространство",
       "es" : "Distribuir espacio horizontal"
     }
@@ -2574,7 +2574,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/align.cljs:90" ],
     "translations" : {
       "en" : "Distribute vertical spacing",
-      "fr" : "Répartir l'espacement vertical",
+      "fr" : "Répartir l’espacement vertical",
       "ru" : "Распределить вертикальное пространство",
       "es" : "Distribuir espacio vertical"
     }
@@ -2664,7 +2664,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs:374", "src/app/main/ui/workspace/sidebar/assets.cljs:503" ],
     "translations" : {
       "en" : "Edit",
-      "fr" : "Éditer",
+      "fr" : "Modifier",
       "ru" : "",
       "es" : "Editar"
     }
@@ -2776,7 +2776,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:292" ],
     "translations" : {
       "en" : "Letter Spacing",
-      "fr" : "Espacement des lettres",
+      "fr" : "Crénage",
       "es" : "Interletrado"
     }
   },
@@ -2824,7 +2824,7 @@
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:220" ],
     "translations" : {
       "en" : "Disable dynamic alignment",
-      "fr" : "Désactiver l'alignement dynamique",
+      "fr" : "Désactiver l’alignement dynamique",
       "ru" : "Отключить активное выравнивание",
       "es" : "Desactivar alineamiento dinámico"
     }
@@ -2833,7 +2833,7 @@
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:188" ],
     "translations" : {
       "en" : "Disable snap to grid",
-      "fr" : "Désactiver l'alignement sur la grille",
+      "fr" : "Désactiver l’alignement sur la grille",
       "ru" : "Отключить привязку к сетке",
       "es" : "Desactivar alinear a la rejilla"
     }
@@ -2842,7 +2842,7 @@
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:221" ],
     "translations" : {
       "en" : "Enable dynamic aligment",
-      "fr" : "Activer l'alignement dynamique",
+      "fr" : "Activer l’alignement dynamique",
       "ru" : "Включить активное выравнивание",
       "es" : "Activar alineamiento dinámico"
     }
@@ -2959,7 +2959,7 @@
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:58" ],
     "translations" : {
       "en" : "Error on saving",
-      "fr" : "Erreur d'enregistrement",
+      "fr" : "Erreur d’enregistrement",
       "es" : "Error al guardar"
     }
   },
@@ -3112,7 +3112,7 @@
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs:134" ],
     "translations" : {
       "en" : "There are no Shared Libraries that need update",
-      "fr" : "Aucune Bibliothèque Partagée n'a besoin d'être mise à jour",
+      "fr" : "Aucune Bibliothèque Partagée n’a besoin d’être mise à jour",
       "ru" : "",
       "es" : "No hay bibliotecas que necesiten ser actualizadas"
     }
@@ -3344,9 +3344,9 @@
   "workspace.options.exporting-object" : {
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/exports.cljs:165", "src/app/main/ui/handoff/exports.cljs:130" ],
     "translations" : {
-      "en" : "Exporting...",
-      "fr" : "Export...",
-      "ru" : "Экспортирую...",
+      "en" : "Exporting…",
+      "fr" : "Export…",
+      "ru" : "Экспортирую…",
       "es" : "Exportando"
     }
   },
@@ -4035,7 +4035,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/interactions.cljs:55" ],
     "translations" : {
       "en" : "Use the play button at the header to run the prototype view.",
-      "fr" : "Utilisez le bouton de lecture dans l'en-tête pour exécuter la vue du prototype.",
+      "fr" : "Utilisez le bouton de lecture dans l’en‑tête pour exécuter la vue du prototype.",
       "ru" : "Используй кнопку запуск в заголовке чтобы перейти на экран прототипа.",
       "es" : "Usa el botón de play de la cabecera para arrancar la vista de prototipo."
     }
@@ -4092,7 +4092,7 @@
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:180", "src/app/main/ui/workspace/context_menu.cljs:190", "src/app/main/ui/workspace/sidebar/options/component.cljs:95", "src/app/main/ui/workspace/sidebar/options/component.cljs:100" ],
     "translations" : {
       "en" : "Detach instance",
-      "fr" : "Détacher l'instance",
+      "fr" : "Détacher l’instance",
       "es" : "Desacoplar instancia"
     }
   },
@@ -4369,7 +4369,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs:293" ],
     "translations" : {
       "en" : "There are no history changes so far",
-      "fr" : "Il n'y a aucun changement dans l'historique",
+      "fr" : "Il n’y a aucun changement dans l’historique",
       "es" : "Todavía no hay cambios en el histórico"
     }
   },
