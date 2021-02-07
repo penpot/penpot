@@ -1291,7 +1291,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/text.cljs:144" ],
     "translations" : {
       "en" : "Letter Spacing",
-      "fr" : "Espacement des lettres",
+      "fr" : "Crénage",
       "es" : "Espaciado de letras"
     }
   },
@@ -1947,7 +1947,7 @@
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:111", "src/app/main/ui/dashboard/grid.cljs:113" ],
     "translations" : {
       "en" : "Add “%s” as Shared Library",
-      "fr" : "Ajouter “%s” comme Bibliothèque Partagée",
+      "fr" : "Ajouter « %s » comme Bibliothèque Partagée",
       "ru" : "",
       "es" : "Añadir “%s” como Biblioteca Compartida"
     }
@@ -1965,7 +1965,7 @@
     "used-in" : [ "src/app/main/ui/settings/change_email.cljs:93" ],
     "translations" : {
       "en" : "We'll send you an email to your current email “%s” to verify your identity.",
-      "fr" : "Nous enverrons un e‑mail à votre adresse actuelle “%s” pour vérifier votre identité.",
+      "fr" : "Nous enverrons un e‑mail à votre adresse actuelle « %s » pour vérifier votre identité.",
       "ru" : "Мы отправим письмо для подтверждения подлиности на текущий email адрес “%s”.",
       "es" : "Enviaremos un mensaje a tu correo actual “%s” para verificar tu identidad."
     }
@@ -2287,7 +2287,7 @@
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:124", "src/app/main/ui/dashboard/grid.cljs:129" ],
     "translations" : {
       "en" : "Remove “%s” as Shared Library",
-      "fr" : "Retirer “%s” en tant que Bibliothèque Partagée",
+      "fr" : "Retirer « %s » en tant que Bibliothèque Partagée",
       "ru" : "",
       "es" : "Añadir “%s” como Biblioteca Compartida"
     }
@@ -3918,7 +3918,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs:154" ],
     "translations" : {
       "en" : "Letter Spacing",
-      "fr" : "Espacement des lettres",
+      "fr" : "Crénage",
       "ru" : "Межсимвольный интервал",
       "es" : "Espaciado entre letras"
     }
