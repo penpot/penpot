@@ -3,7 +3,7 @@
     "used-in" : [ "src/app/main/ui/auth/register.cljs:128" ],
     "translations" : {
       "en" : "Already have an account?",
-      "fr" : "Vous avez déjà un compte?",
+      "fr" : "Vous avez déjà un compte ?",
       "ru" : "Уже есть аккаунт?",
       "es" : "¿Tienes ya una cuenta?"
     }
@@ -21,7 +21,7 @@
     "used-in" : [ "src/app/main/ui/auth/login.cljs:161", "src/app/main/ui/auth/register.cljs:138" ],
     "translations" : {
       "en" : "Create demo account",
-      "fr" : "Vous voulez juste essayer?",
+      "fr" : "Vous voulez juste essayer ?",
       "ru" : "Хотите попробовать?",
       "es" : "Crear cuanta de prueba"
     }
@@ -30,7 +30,7 @@
     "used-in" : [ "src/app/main/ui/auth/login.cljs:158", "src/app/main/ui/auth/register.cljs:135" ],
     "translations" : {
       "en" : "Just wanna try it?",
-      "fr" : "Vous voulez juste essayer?",
+      "fr" : "Vous voulez juste essayer ?",
       "ru" : "Хотите попробовать?",
       "es" : "¿Quieres probar?"
     }
@@ -70,7 +70,7 @@
     "used-in" : [ "src/app/main/ui/auth/login.cljs:128" ],
     "translations" : {
       "en" : "Forgot password?",
-      "fr" : "Mot de passe oublié?",
+      "fr" : "Mot de passe oublié ?",
       "ru" : "Забыли пароль?",
       "es" : "¿Olvidaste tu contraseña?"
     }
@@ -88,7 +88,7 @@
     "used-in" : [ "src/app/main/ui/auth/recovery_request.cljs:68" ],
     "translations" : {
       "en" : "Go back!",
-      "fr" : "Retour!",
+      "fr" : "Retour !",
       "ru" : "Назад!",
       "es" : "Volver"
     }
@@ -97,7 +97,7 @@
     "used-in" : [ "src/app/main/ui/auth.cljs:35" ],
     "translations" : {
       "en" : "Goodbye!",
-      "fr" : "Au revoir!",
+      "fr" : "Au revoir !",
       "ru" : "Пока!",
       "es" : "¡Adiós!"
     }
@@ -133,7 +133,7 @@
     "used-in" : [ "src/app/main/ui/auth/login.cljs:119" ],
     "translations" : {
       "en" : "Great to see you again!",
-      "fr" : "Ravi de vous revoir!",
+      "fr" : "Ravi de vous revoir !",
       "ru" : "Рады видеть Вас снова!",
       "es" : "Encantados de volverte a ver"
     }
@@ -256,7 +256,7 @@
     "used-in" : [ "src/app/main/ui/auth/recovery_request.cljs:61" ],
     "translations" : {
       "en" : "Forgot password?",
-      "fr" : "Vous avez oublié votre mot de passe?",
+      "fr" : "Vous avez oublié votre mot de passe ?",
       "ru" : "Забыли пароль?",
       "es" : "¿Olvidaste tu contraseña?"
     }
@@ -274,7 +274,7 @@
     "used-in" : [ "src/app/main/ui/auth/login.cljs:131" ],
     "translations" : {
       "en" : "No account yet?",
-      "fr" : "Pas encore de compte?",
+      "fr" : "Pas encore de compte ?",
       "ru" : "Еще нет аккаунта?",
       "es" : "¿No tienes una cuenta?"
     }
@@ -546,7 +546,7 @@
     "used-in" : [ "src/app/main/ui/settings/password.cljs:36" ],
     "translations" : {
       "en" : "Password saved successfully!",
-      "fr" : "Mot de passe enregistré avec succès!",
+      "fr" : "Mot de passe enregistré avec succès !",
       "ru" : "Пароль успешно сохранен!",
       "es" : "¡Contraseña guardada!"
     }
@@ -589,7 +589,7 @@
     "used-in" : [ "src/app/main/ui/settings/profile.cljs:87" ],
     "translations" : {
       "en" : "Want to remove your account?",
-      "fr" : "Vous souhaitez supprimer votre compte?",
+      "fr" : "Vous souhaitez supprimer votre compte ?",
       "ru" : "Хотите удалить свой аккаунт?",
       "es" : "¿Quieres borrar tu cuenta?"
     }
@@ -816,7 +816,7 @@
     "used-in" : [ "src/app/main/ui/confirm.cljs:38", "src/app/main/ui/confirm.cljs:42" ],
     "translations" : {
       "en" : "Are you sure?",
-      "fr" : "Êtes-vous sûr?",
+      "fr" : "Êtes-vous sûr ?",
       "ru" : "Вы уверены?",
       "es" : "¿Seguro?"
     }
@@ -825,7 +825,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:59" ],
     "translations" : {
       "en" : "Updated: %s",
-      "fr" : "Mis à jour: %s",
+      "fr" : "Mis à jour : %s",
       "ru" : "Обновлено: %s",
       "es" : "Actualizado: %s"
     }
@@ -1500,7 +1500,7 @@
     "used-in" : [ "src/app/main/ui/static.cljs:58" ],
     "translations" : {
       "en" : "Looks like you need to wait a bit and retry; we are performing small maintenance of our servers.",
-      "fr" : "Il semble que vous deviez attendre un peu et réessayer; nous effectuons une petite maintenance de nos serveurs.",
+      "fr" : "Il semble que vous deviez attendre un peu et réessayer ; nous effectuons une petite maintenance de nos serveurs.",
       "es" : "Parece que necesitas esperar un poco y volverlo a intentar; estamos realizando operaciones de mantenimiento en nuestros servidores."
     }
   },
@@ -1710,7 +1710,7 @@
     "used-in" : [ "src/app/main/ui/static.cljs:39" ],
     "translations" : {
       "en" : "Oops!",
-      "fr" : "Oups!",
+      "fr" : "Oups !",
       "es" : "¡Huy!"
     }
   },
@@ -2028,7 +2028,7 @@
     "used-in" : [ "src/app/main/ui/settings/delete_account.cljs:55" ],
     "translations" : {
       "en" : "Are you sure you want to delete your account?",
-      "fr" : "Voulez-vous vraiment supprimer votre compte?",
+      "fr" : "Voulez-vous vraiment supprimer votre compte ?",
       "ru" : "Вы уверены, что хотите удалить аккаунт?",
       "es" : "¿Seguro que quieres borrar tu cuenta?"
     }
@@ -2045,7 +2045,7 @@
     "used-in" : [ "src/app/main/ui/comments.cljs:226" ],
     "translations" : {
       "en" : "Are you sure you want to delete this conversation? All comments in this thread will be deleted.",
-      "fr" : "Voulez-vous vraiment supprimer cette conversation? Tous les commentaires de ce fil seront supprimés.",
+      "fr" : "Voulez-vous vraiment supprimer cette conversation ? Tous les commentaires de ce fil seront supprimés.",
       "es" : "¿Seguro que quieres eliminar esta conversación? Todos los comentarios en este hilo serán eliminados."
     }
   },
@@ -2069,7 +2069,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs:81" ],
     "translations" : {
       "en" : "Are you sure you want to delete this file?",
-      "fr" : "Êtes-vous sûr de vouloir supprimer ce fichier?",
+      "fr" : "Êtes-vous sûr de vouloir supprimer ce fichier ?",
       "es" : "¿Seguro que quieres eliminar este archivo?"
     }
   },
@@ -2085,7 +2085,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/sitemap.cljs:60" ],
     "translations" : {
       "en" : "Are you sure you want to delete this page?",
-      "fr" : "Êtes-vous sûr de vouloir supprimer cette page?",
+      "fr" : "Êtes-vous sûr de vouloir supprimer cette page ?",
       "es" : "¿Seguro que quieres borrar esta página?"
     }
   },
@@ -2109,7 +2109,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/files.cljs:57" ],
     "translations" : {
       "en" : "Are you sure you want to delete this project?",
-      "fr" : "Êtes-vous sûr de vouloir supprimer ce projet?",
+      "fr" : "Êtes-vous sûr de vouloir supprimer ce projet ?",
       "es" : "¿Seguro que quieres eliminar este proyecto?"
     }
   },
@@ -2133,7 +2133,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:300" ],
     "translations" : {
       "en" : "Are you sure you want to delete this team? All projects and files associated with team will be permanently deleted.",
-      "fr" : "Voulez-vous vraiment supprimer cette équipe? Tous les projets et fichiers associés à l'équipe seront définitivement supprimés.",
+      "fr" : "Voulez-vous vraiment supprimer cette équipe ? Tous les projets et fichiers associés à l'équipe seront définitivement supprimés.",
       "es" : "¿Seguro que quieres eliminar este equipo? Todos los proyectos y archivos asociados con el equipo serán eliminados permamentemente."
     }
   },
@@ -2157,7 +2157,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:163" ],
     "translations" : {
       "en" : "Are you sure you want to delete this member from the team?",
-      "fr" : "Voulez-vous vraiment supprimer ce membre de l'équipe?",
+      "fr" : "Voulez-vous vraiment supprimer ce membre de l'équipe ?",
       "es" : "¿Seguro que quieres eliminar este integrante del equipo?"
     }
   },
@@ -2229,7 +2229,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:275" ],
     "translations" : {
       "en" : "Are you sure you want to leave this team?",
-      "fr" : "Êtes-vous sûr de vouloir quitter cette équipe?",
+      "fr" : "Êtes-vous sûr de vouloir quitter cette équipe ?",
       "es" : "¿Seguro que quieres abandonar este equipo?"
     }
   },
@@ -2253,7 +2253,7 @@
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs:150" ],
     "translations" : {
       "en" : "Are you sure you want to promote this user to owner?",
-      "fr" : "Voulez-vous vraiment promouvoir cet utilisateur en propriétaire?",
+      "fr" : "Voulez-vous vraiment promouvoir cet utilisateur en propriétaire ?",
       "es" : "¿Seguro que quieres promocionar este usuario a dueño?"
     }
   },
@@ -2341,7 +2341,7 @@
     "used-in" : [ "src/app/main/ui/settings/options.cljs:36", "src/app/main/ui/settings/profile.cljs:38" ],
     "translations" : {
       "en" : "Profile saved successfully!",
-      "fr" : "Profil enregistré avec succès!",
+      "fr" : "Profil enregistré avec succès !",
       "ru" : "Профиль успешно сохранен!",
       "es" : "Perfil guardado correctamente!"
     }
@@ -2350,7 +2350,7 @@
     "used-in" : [ "src/app/main/ui/settings/change_email.cljs:56", "src/app/main/ui/auth/register.cljs:54" ],
     "translations" : {
       "en" : "Verification email sent to %s. Check your email!",
-      "fr" : "E-mail de vérification envoyé à %s. Vérifiez votre email!",
+      "fr" : "E-mail de vérification envoyé à %s. Vérifiez votre email !",
       "es" : "Verificación de email enviada a %s. Comprueba tu correo."
     }
   },
