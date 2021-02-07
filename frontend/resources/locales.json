@@ -45,7 +45,7 @@
   "auth.check-your-email": {
     "translations": {
       "en" : "Check your email and click on the link to verify and start using Penpot.",
-      "fr" : "Vérifiez votre email et cliquez sur le lien pour vérifier et commencer à utiliser Penpot."
+      "fr" : "Vérifiez votre e‑mail et cliquez sur le lien pour vérifier et commencer à utiliser Penpot."
     }
   },
   "auth.demo-warning" : {
@@ -2350,7 +2350,7 @@
     "used-in" : [ "src/app/main/ui/settings/change_email.cljs:56", "src/app/main/ui/auth/register.cljs:54" ],
     "translations" : {
       "en" : "Verification email sent to %s. Check your email!",
-      "fr" : "e‑mail de vérification envoyé à %s. Vérifiez votre email !",
+      "fr" : "e‑mail de vérification envoyé à %s. Vérifiez votre e‑mail !",
       "es" : "Verificación de email enviada a %s. Comprueba tu correo."
     }
   },
