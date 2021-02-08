@@ -879,7 +879,7 @@
     "used-in" : [ "src/app/main/ui/settings/options.cljs:32", "src/app/main/ui/settings/profile.cljs:42", "src/app/main/ui/auth/verify_token.cljs:89" ],
     "translations" : {
       "en" : "Something wrong has happened.",
-      "fr" : "Quelque chose s’est mal passé.",
+      "fr" : "Un problème s’est produit.",
       "ru" : "Что-то пошло не так.",
       "es" : "Ha ocurrido algún error."
     }
