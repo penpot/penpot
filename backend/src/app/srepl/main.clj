@@ -38,7 +38,7 @@
                 {:id id})))
 
 (defn get-file
-  [id]
+  [system id]
   (with-open [conn (db/open (:app.db/pool system))]
     (let [file (db/get-by-id conn :file id)]
       (-> file
