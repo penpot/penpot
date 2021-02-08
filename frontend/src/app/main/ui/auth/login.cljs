@@ -111,7 +111,7 @@
       (when cfg/login-with-ldap
         [:& fm/submit-button
          {:label (tr "auth.login-with-ldap-submit")
-          :on-click on-submit}])]]))
+          :on-click on-submit-ldap}])]]))
 
 (mf/defc login-page
   []
