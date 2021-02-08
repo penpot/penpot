@@ -400,7 +400,8 @@
             (emails/send! conn emails/password-recovery
                           {:to (:email profile)
                            :token (:token profile)
-                           :name (:fullname profile)}))]
+                           :name (:fullname profile)})
+            nil)]
 
     (db/with-atomic [conn pool]
       (when-let [profile (profile/retrieve-profile-data-by-email conn email)]
