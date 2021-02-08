@@ -974,6 +974,78 @@
       "es" : "La contraseña anterior no es correcta"
     }
   },
+  "feedback.chat-start" : {
+    "used-in" : [ "src/app/main/ui/settings/feedback.cljs:112" ],
+    "translations" : {
+      "en" : "Join the chat",
+      "es" : "Unirse al chat"
+    }
+  },
+  "feedback.chat-subtitle" : {
+    "used-in" : [ "src/app/main/ui/settings/feedback.cljs:109" ],
+    "translations" : {
+      "en" : "Feeling like talking? Chat with us at Gitter",
+      "es" : "¿Deseas conversar? Entra al nuestro chat de la comunidad en Gitter"
+    }
+  },
+  "feedback.description" : {
+    "used-in" : [ "src/app/main/ui/settings/feedback.cljs:88" ],
+    "translations" : {
+      "en" : "Description",
+      "es" : "Descripción"
+    }
+  },
+  "feedback.discussions-go-to" : {
+    "used-in" : [ "src/app/main/ui/settings/feedback.cljs:104" ],
+    "translations" : {
+      "en" : "Go to discussions",
+      "es" : "Ir a las discussiones"
+    }
+  },
+  "feedback.discussions-subtitle1" : {
+    "used-in" : [ "src/app/main/ui/settings/feedback.cljs:99" ],
+    "translations" : {
+      "en" : "Join Penpot team collaborative communication forum.",
+      "es" : "Entra al foro colaborativo de Penpot"
+    }
+  },
+  "feedback.discussions-subtitle2" : {
+    "used-in" : [ "src/app/main/ui/settings/feedback.cljs:100" ],
+    "translations" : {
+      "en" : "You can ask and answer questions, have open-ended conversations, and follow along on decisions affecting the project.",
+      "es" : ""
+    }
+  },
+  "feedback.discussions-title" : {
+    "used-in" : [ "src/app/main/ui/settings/feedback.cljs:98" ],
+    "translations" : {
+      "en" : "Team discussions",
+      "es" : ""
+    }
+  },
+  "feedback.subject" : {
+    "used-in" : [ "src/app/main/ui/settings/feedback.cljs:84" ],
+    "translations" : {
+      "en" : "Subject",
+      "es" : "Asunto"
+    }
+  },
+  "feedback.subtitle" : {
+    "used-in" : [ "src/app/main/ui/settings/feedback.cljs:81" ],
+    "translations" : {
+      "en" : "Please describe the reason of your email, specifying if is an issue, an idea or a doubt. A member of our team will respond as soon as possible.",
+      "es" : ""
+    }
+  },
+  "feedback.title" : {
+    "used-in" : [ "src/app/main/ui/settings/feedback.cljs:80" ],
+    "translations" : {
+      "en" : "Email",
+      "fr" : "Adresse email",
+      "ru" : "Email",
+      "es" : "Correo electrónico"
+    }
+  },
   "generic.error" : {
     "used-in" : [ "src/app/main/ui/settings/password.cljs:31" ],
     "translations" : {
@@ -1605,7 +1677,7 @@
       "es" : "Correo electrónico"
     }
   },
-  "labels.feedback" : {
+  "labels.give-feedback" : {
     "used-in" : [ "src/app/main/ui/workspace/header.cljs:231", "src/app/main/ui/dashboard/sidebar.cljs:471" ],
     "translations" : {
       "en" : "Give feedback",
@@ -1823,6 +1895,37 @@
       "es" : "Cargo"
     }
   },
+  "labels.send" : {
+    "used-in" : [ "src/app/main/ui/settings/feedback.cljs:93" ],
+    "translations" : {
+      "en" : "Send",
+      "es" : "Enviar"
+    }
+  },
+  "labels.sending" : {
+    "used-in" : [ "src/app/main/ui/settings/feedback.cljs:93" ],
+    "translations" : {
+      "en" : "Sending...",
+      "es" : "Enviando..."
+    }
+  },
+
+  "labels.feedback-disabled" : {
+    "used-in" : [ "src/app/main/ui/settings/feedback.cljs" ],
+    "translations" : {
+      "en" : "Feedback disabled",
+      "es" : "El modulo de recepción de opiniones esta deshabilitado."
+    }
+  },
+
+  "labels.feedback-sent" : {
+    "used-in" : [ "src/app/main/ui/settings/feedback.cljs" ],
+    "translations" : {
+      "en" : "Feedback sent",
+      "es" : "Opinión enviada"
+    }
+  },
+
   "labels.service-unavailable.desc-message" : {
     "used-in" : [ "src/app/main/ui/static.cljs:75" ],
     "translations" : {

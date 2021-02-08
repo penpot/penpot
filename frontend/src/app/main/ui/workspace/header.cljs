@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.main.ui.workspace.header
   (:require
@@ -227,9 +227,10 @@
          [:li {:on-click on-add-shared}
           [:span (tr "dashboard.add-shared")]])
 
-       [:li.feedback {:on-click #(.open js/window "https://github.com/penpot/penpot/discussions" "_blank")}
-        [:span (tr "labels.feedback")]
-        [:span.primary-badge "ALPHA"]]
+       (when cfg/feedback-enabled
+         [:li.feedback {:on-click (st/emitf (rt/nav :settings-feedback))}
+          [:span (tr "labels.give-feedback")]
+          [:span.primary-badge "ALPHA"]])
        ]]]))
 
 ;; --- Header Component

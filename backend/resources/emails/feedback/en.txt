@@ -1,0 +1,7 @@
+Feedback from: {{profile.fullname}} <{{profile.email}}>
+
+Profile ID: {{profile.id}}
+
+Subject: {{subject}}
+
+{{content}}

@@ -9,6 +9,7 @@
 
 (ns app.util.emails
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.util.template :as tmpl]
@@ -196,15 +197,17 @@
         text (render-email-template-part :txt id context)
         html (render-email-template-part :html id context)]
     (when (or (not subj)
-              (not text)
-              (not html))
+              (and (not text)
+                   (not html)))
       (ex/raise :type :internal
                 :code :missing-email-templates))
     {:subject subj
-     :body [{:type "text/plain"
-             :content text}
-            {:type "text/html"
-             :content html}]}))
+     :body (d/concat
+            [{:type "text/plain"
+              :content text}]
+            (when html
+              [{:type "text/html"
+                :content html}]))}))
 
 (s/def ::priority #{:high :low})
 (s/def ::to (s/or :sigle ::us/email
