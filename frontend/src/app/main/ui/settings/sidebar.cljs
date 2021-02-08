@@ -9,31 +9,20 @@
 
 (ns app.main.ui.settings.sidebar
   (:require
-   [app.common.spec :as us]
-   [app.main.data.auth :as da]
-   [app.main.data.messages :as dm]
-   [app.main.refs :as refs]
+   [app.config :as cfg]
    [app.main.store :as st]
-   [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.components.forms :as fm]
    [app.main.ui.dashboard.sidebar :refer [profile-section]]
    [app.main.ui.icons :as i]
-   [app.util.i18n :as i18n :refer [t tr]]
-   [app.util.object :as obj]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
-   [app.util.time :as dt]
-   [beicon.core :as rx]
-   [cljs.spec.alpha :as s]
-   [cuerdas.core :as str]
-   [goog.functions :as f]
-   [okulary.core :as l]
    [rumext.alpha :as mf]))
 
 (mf/defc sidebar-content
-  [{:keys [locale profile section] :as props}]
+  [{:keys [profile section] :as props}]
   (let [profile?   (= section :settings-profile)
         password?  (= section :settings-password)
         options?   (= section :settings-options)
+        feedback?  (= section :settings-feedback)
 
         go-dashboard
         (mf/use-callback
@@ -44,6 +33,11 @@
         (mf/use-callback
          (mf/deps profile)
          (st/emitf (rt/nav :settings-profile)))
+
+        go-settings-feedback
+        (mf/use-callback
+         (mf/deps profile)
+         (st/emitf (rt/nav :settings-feedback)))
 
         go-settings-password
         (mf/use-callback
@@ -59,7 +53,7 @@
      [:div.sidebar-content-section
       [:div.back-to-dashboard {:on-click go-dashboard}
        [:span.icon i/arrow-down]
-       [:span.text (t locale "labels.dashboard")]]]
+       [:span.text (tr "labels.dashboard")]]]
      [:hr]
 
      [:div.sidebar-content-section
@@ -67,25 +61,30 @@
        [:li {:class (when profile? "current")
              :on-click go-settings-profile}
         i/user
-        [:span.element-title (t locale "labels.profile")]]
+        [:span.element-title (tr "labels.profile")]]
 
        [:li {:class (when password? "current")
              :on-click go-settings-password}
         i/lock
-        [:span.element-title (t locale "labels.password")]]
+        [:span.element-title (tr "labels.password")]]
 
        [:li {:class (when options? "current")
              :on-click go-settings-options}
         i/tree
-        [:span.element-title (t locale "labels.settings")]]]]]))
+        [:span.element-title (tr "labels.settings")]]
+
+       (when cfg/feedback-enabled
+         [:li {:class (when feedback? "current")
+               :on-click go-settings-feedback}
+          i/msg-info
+          [:span.element-title (tr "labels.give-feedback")]])]]]))
 
 (mf/defc sidebar
   {::mf/wrap [mf/memo]}
   [{:keys [profile locale section]}]
   [:div.dashboard-sidebar.settings
    [:div.sidebar-inside
-    [:& sidebar-content {:locale locale
-                         :profile profile
+    [:& sidebar-content {:profile profile
                          :section section}]
     [:& profile-section {:profile profile
                          :locale locale}]]])

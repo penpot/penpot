@@ -102,6 +102,14 @@ textarea {
     text-decoration: underline;
   }
 
+  p {
+    color: $color-gray-60;
+  }
+
+  hr {
+    border-color: $color-gray-20;
+  }
+
   .links {
     display: flex;
     font-size: $fs14;
@@ -131,7 +139,8 @@ textarea {
   flex-direction: column;
   position: relative;
 
-  input {
+  input,
+  textarea {
     background-color: $color-white;
     border-radius: 2px;
     border: 1px solid $color-gray-20;
@@ -141,6 +150,13 @@ textarea {
     margin: 0;
     padding: 15px 15px 0 15px;
     width: 100%;
+  }
+
+  textarea {
+    height: auto;
+    font-size: $fs14;
+    font-family: "worksans", sans-serif;
+    padding-top: 20px;
   }
 
   // Makes the background for autocomplete white

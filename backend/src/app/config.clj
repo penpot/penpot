@@ -38,6 +38,9 @@
    :storage-s3-region :eu-central-1
    :storage-s3-bucket "penpot-devenv-assets-pre"
 
+   :feedback-destination "info@example.com"
+   :feedback-enabled false
+
    :assets-path "/internal/assets/"
 
    :rlimits-password 10
@@ -90,7 +93,11 @@
 (s/def ::media-directory ::us/string)
 (s/def ::asserts-enabled ::us/boolean)
 
+(s/def ::feedback-enabled ::us/boolean)
+(s/def ::feedback-destination ::us/string)
+
 (s/def ::error-report-webhook ::us/string)
+
 (s/def ::smtp-enabled ::us/boolean)
 (s/def ::smtp-default-reply-to ::us/string)
 (s/def ::smtp-default-from ::us/string)
@@ -150,6 +157,8 @@
                    ::database-uri
                    ::database-username
                    ::error-report-webhook
+                   ::feedback-enabled
+                   ::feedback-destination
                    ::github-client-id
                    ::github-client-secret
                    ::gitlab-base-uri

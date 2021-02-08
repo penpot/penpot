@@ -15,7 +15,7 @@
    [app.main.ui.icons :as i]
    [app.util.object :as obj]
    [app.util.forms :as fm]
-   [app.util.i18n :as i18n :refer [t]]
+   [app.util.i18n :as i18n :refer [t tr]]
    ["react" :as react]
    [app.util.dom :as dom]))
 
@@ -28,7 +28,6 @@
 
         type'      (mf/use-state type)
         focus?     (mf/use-state false)
-        locale     (mf/deref i18n/locale)
 
         touched?   (get-in @form [:touched name])
         error      (get-in @form [:errors name])
@@ -94,7 +93,59 @@
          help-icon'])
       (cond
         (and touched? (:message error))
-        [:span.error (t locale (:message error))]
+        [:span.error (tr (:message error))]
+
+        (string? hint)
+        [:span.hint hint])]]))
+
+
+(mf/defc textarea
+  [{:keys [label disabled name form hint trim] :as props}]
+  (let [form     (or form (mf/use-ctx form-ctx))
+
+        type'    (mf/use-state type)
+        focus?   (mf/use-state false)
+
+        touched? (get-in @form [:touched name])
+        error    (get-in @form [:errors name])
+
+        value    (get-in @form [:data name] "")
+
+        klass    (dom/classnames
+                  :focus     @focus?
+                  :valid     (and touched? (not error))
+                  :invalid   (and touched? error)
+                  :disabled  disabled
+                  ;; :empty     (str/empty? value)
+                  )
+
+        on-focus  #(reset! focus? true)
+        on-change (fm/on-input-change form name trim)
+
+        on-blur
+        (fn [event]
+          (reset! focus? false)
+          (when-not (get-in @form [:touched name])
+            (swap! form assoc-in [:touched name] true)))
+
+        props (-> props
+                  (dissoc :help-icon :form :trim)
+                  (assoc :value value
+                         :on-focus on-focus
+                         :on-blur on-blur
+                         ;; :placeholder label
+                         :on-change on-change
+                         :type @type')
+                  (obj/clj->props))]
+
+    [:div.custom-input
+     {:class klass}
+     [:*
+      [:label label]
+      [:> :textarea props]
+      (cond
+        (and touched? (:message error))
+        [:span.error (tr (:message error))]
 
         (string? hint)
         [:span.hint hint])]]))

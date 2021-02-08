@@ -1,5 +1,6 @@
 {:lint-as {potok.core/reify clojure.core/reify
            promesa.core/let clojure.core/let
+           rumext.alpha/defc clojure.core/defn
            app.db/with-atomic clojure.core/with-open}
  :output
  {:exclude-files ["data_readers.clj"]}
