@@ -417,11 +417,14 @@
 (defn- handle-upload-error [on-error stream]
   (->> stream
        (rx/catch
-           (fn on-error [error]
+           (fn on-error* [error]
              (if (ex/ex-info? error)
-               (on-error (ex-data error))
+               (on-error* (ex-data error))
                (cond
                  (= (:code error) :media-type-not-allowed)
+                 (rx/of (dm/error (tr "errors.media-type-not-allowed")))
+
+                 (= (:code error) :invalid-image)
                  (rx/of (dm/error (tr "errors.media-type-not-allowed")))
 
                  (= (:code error) :media-too-large)

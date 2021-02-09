@@ -175,7 +175,12 @@
       (ex/raise :type :internal
                 :code :rlimit-not-configured
                 :hint ":image rlimit not configured"))
-    (rlm/execute rlimit (process params))))
+    (try
+      (rlm/execute rlimit (process params))
+      (catch org.im4java.core.InfoException e
+        (ex/raise :type :validation
+                  :code :invalid-image
+                  :cause e)))))
 
 ;; --- Utility functions
 
