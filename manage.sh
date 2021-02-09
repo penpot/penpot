@@ -86,116 +86,126 @@ function build-backend {
     build "backend";
 }
 
-function build-bundle {
+function build-app-bundle {
     local build_enabled=${PENPOT_BUNDLE_BUILD:-"true"};
+    local version="$CURRENT_VERSION";
+    local name="penpot-app-$CURRENT_BRANCH";
+    local bundle_dir="./bundle-app";
 
     if [ $build_enabled == "true" ]; then
         build "frontend";
-        build "exporter";
         build "backend";
     fi
 
-    rm -rf ./bundle
-    mkdir -p ./bundle
-    cp -r ./frontend/target/dist ./bundle/frontend
-    cp -r ./backend/target/dist ./bundle/backend
-    cp -r ./exporter/target ./bundle/exporter
-
-    local version="$CURRENT_VERSION";
-    local name="penpot-$CURRENT_BRANCH";
+    rm -rf $bundle_dir
+    mkdir -p $bundle_dir;
+    cp -r ./frontend/target/dist $bundle_dir/frontend;
+    cp -r ./backend/target/dist $bundle_dir/backend;
 
     if [ $CURRENT_BRANCH != "main" ]; then
         version="$CURRENT_BRANCH-$CURRENT_VERSION";
     fi;
 
-    echo $version > ./bundle/version.txt
+    echo $version > $bundle_dir/version.txt
 
-    sed -i -re "s/\%version\%/$version/g" ./bundle/frontend/index.html;
-    sed -i -re "s/\%version\%/$version/g" ./bundle/backend/main/app/config.clj;
+    sed -i -re "s/\%version\%/$version/g" $bundle_dir/frontend/index.html;
+    sed -i -re "s/\%version\%/$version/g" $bundle_dir/backend/main/app/config.clj;
+}
 
-    local generate_tar=${PENPOT_BUNDLE_GENERATE_TAR:-"true"};
+function build-exporter-bundle {
+    local build_enabled=${PENPOT_BUNDLE_BUILD:-"true"};
+    local version="$CURRENT_VERSION";
+    local name="penpot-exporter-$CURRENT_BRANCH";
+    local bundle_dir="./bundle-exporter";
 
-    if [ $generate_tar == "true" ]; then
-        pushd bundle/
-        tar -I lz4 -cvf ../$name.tar.lz4 *;
-        popd
-        echo "##############################################################";
-        echo "# Generated $name.tar.lz4";
-        echo "#   Version $version";
-        echo "##############################################################";
+    if [ $build_enabled == "true" ]; then
+        build "exporter";
     fi
+
+    rm -rf $bundle_dir;
+    cp -r ./exporter/target $bundle_dir;
+
+    if [ $CURRENT_BRANCH != "main" ]; then
+        version="$CURRENT_BRANCH-$CURRENT_VERSION";
+    fi;
+
+    echo $version > $bundle_dir/version.txt
 }
 
 function build-image {
     local image=$1;
     local tag=$2;
-    local version=$3;
     local docker_image="$ORGANIZATION/$image";
 
     set -x
     pushd ./docker/images;
     docker buildx build --platform linux/amd64 -t $docker_image:$tag -f Dockerfile.$image .;
-    # docker tag $docker_image:$tag $docker_image:$version;
-    # docker buildx build --platform linux/arm64 -t $docker_image:$version-arm64 .;
     popd;
 }
 
 function build-images {
     local version="$CURRENT_VERSION";
-    local bundle_file="penpot-$CURRENT_BRANCH.tar.lz4";
-
-    if [ $CURRENT_BRANCH != "main" ]; then
-        version="$CURRENT_BRANCH-$CURRENT_VERSION";
-        bundle_file="penpot-$CURRENT_BRANCH.tar.lz4";
-    fi;
+    local bundle_file="penpot-app-$CURRENT_BRANCH.tar.lz4";
+    local bundle_exporter_file="penpot-exporter-$CURRENT_BRANCH.tar.lz4";
 
     if [ ! -f $bundle_file ]; then
         echo "File '$bundle_file' does not exists.";
         exit 1;
     fi
 
+    if [ ! -f $bundle_exporter_file ]; then
+        echo "File '$bundle_exporter_file' does not exists.";
+        exit 1;
+    fi
+
     local bundle_file_path=`readlink -f $bundle_file`;
-    echo "Building docker image from: $bundle_file_path.";
+    local bundle_exporter_file_path=`readlink -f $bundle_exporter_file`;
 
-    rm -rf ./docker/images/bundle;
-    mkdir -p ./docker/images/bundle;
+    rm -rf ./docker/images/bundle-app;
+    rm -rf ./docker/images/bundle-exporter;
 
-    pushd ./docker/images/bundle;
+    mkdir -p ./docker/images/bundle-app;
+    mkdir -p ./docker/images/bundle-exporter;
+
+    pushd ./docker/images/bundle-app;
     tar -I lz4 -xvf $bundle_file_path;
     popd
 
-    build-image "backend" $CURRENT_BRANCH $version;
-    build-image "frontend" $CURRENT_BRANCH $version;
-    build-image "exporter" $CURRENT_BRANCH $version;
+    pushd ./docker/images/bundle-exporter;
+    tar -I lz4 -xvf $bundle_exporter_file_path;
+    popd
+
+    build-image "backend" $CURRENT_BRANCH;
+    build-image "frontend" $CURRENT_BRANCH;
+    build-image "exporter" $CURRENT_BRANCH;
 }
 
-function publish-latest-images {
-    if [ $CURRENT_BRANCH != "main" ]; then
-        echo "Latest image can only be build from main branch.";
-        exit 1;
-    fi;
+# function publish-latest-images {
+#     if [ $CURRENT_BRANCH != "main" ]; then
+#         echo "Latest image can only be build from main branch.";
+#         exit 1;
+#     fi;
 
-    set -x
+#     set -x
 
-    docker tag $ORGANIZATION/frontend:$CURRENT_BRANCH $ORGANIZATION/frontend:latest;
-    docker tag $ORGANIZATION/backend:$CURRENT_BRANCH $ORGANIZATION/backend:latest;
-    docker tag $ORGANIZATION/exporter:$CURRENT_BRANCH $ORGANIZATION/exporter:latest;
+#     docker tag $ORGANIZATION/frontend:$CURRENT_BRANCH $ORGANIZATION/frontend:latest;
+#     docker tag $ORGANIZATION/backend:$CURRENT_BRANCH $ORGANIZATION/backend:latest;
+#     docker tag $ORGANIZATION/exporter:$CURRENT_BRANCH $ORGANIZATION/exporter:latest;
 
-    # docker push $ORGANIZATION/frontend:$CURRENT_VERSION;
-    # docker push $ORGANIZATION/backend:$CURRENT_VERSION;
-    # docker push $ORGANIZATION/exporter:$CURRENT_VERSION;
-    docker push $ORGANIZATION/frontend:latest;
-    docker push $ORGANIZATION/backend:latest;
-    docker push $ORGANIZATION/exporter:latest;
-}
+#     # docker push $ORGANIZATION/frontend:$CURRENT_VERSION;
+#     # docker push $ORGANIZATION/backend:$CURRENT_VERSION;
+#     # docker push $ORGANIZATION/exporter:$CURRENT_VERSION;
+#     docker push $ORGANIZATION/frontend:latest;
+#     docker push $ORGANIZATION/backend:latest;
+#     docker push $ORGANIZATION/exporter:latest;
+# }
 
-
-function publish-snapshot-images {
-    set -x
-    docker push $ORGANIZATION/frontend:$CURRENT_BRANCH;
-    docker push $ORGANIZATION/backend:$CURRENT_BRANCH;
-    docker push $ORGANIZATION/exporter:$CURRENT_BRANCH;
-}
+# function publish-snapshot-images {
+#     set -x
+#     docker push $ORGANIZATION/frontend:$CURRENT_BRANCH;
+#     docker push $ORGANIZATION/backend:$CURRENT_BRANCH;
+#     docker push $ORGANIZATION/exporter:$CURRENT_BRANCH;
+# }
 
 function usage {
     echo "PENPOT build & release manager"
@@ -260,19 +270,23 @@ case $1 in
 
     # production builds
     build-frontend)
-        build-frontend
+        build-frontend;
         ;;
 
     build-backend)
-        build-backend
+        build-backend;
         ;;
 
     build-exporter)
-        build-exporter
+        build-exporter;
         ;;
 
-    build-bundle)
-        build-bundle
+    build-app-bundle)
+        build-app-bundle;
+        ;;
+
+    build-exporter-bundle)
+        build-exporter-bundle;
         ;;
 
     # Docker Image Tasks
@@ -280,13 +294,13 @@ case $1 in
         build-images;
         ;;
 
-    publish-snapshot-images)
-        publish-snapshot-images;
-        ;;
+    # publish-snapshot-images)
+    #     publish-snapshot-images;
+    #     ;;
 
-    publish-latest-images)
-        publish-latest-images;
-        ;;
+    # publish-latest-images)
+    #     publish-latest-images;
+    #     ;;
 
     *)
         usage
