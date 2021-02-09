@@ -121,11 +121,16 @@
 
 (defn parse
   [data]
-  (with-open [istream (IOUtils/toInputStream data "UTF-8")]
-    (xml/parse istream)))
+  (try
+    (with-open [istream (IOUtils/toInputStream data "UTF-8")]
+      (xml/parse istream))
+    (catch org.xml.sax.SAXParseException _e
+      (ex/raise :type :validation
+                :code :invalid-svg-file))))
 
 (defn process-request
   [{:keys [svgc] :as cfg} body]
   (let [data (slurp body)
         data (svgc data)]
     (parse data)))
+
