@@ -35,51 +35,40 @@
 
 (defn- get-access-token
   [cfg code]
-  (let [params {:code code
-                :client_id (:client-id cfg)
-                :client_secret (:client-secret cfg)
-                :redirect_uri (build-redirect-url cfg)
-                :grant_type "authorization_code"}
-        req    {:method :post
-                :headers {"content-type" "application/x-www-form-urlencoded"}
-                :uri "https://oauth2.googleapis.com/token"
-                :body (uri/map->query-string params)}
-        res    (http/send! req)]
+  (try
+    (let [params {:code code
+                  :client_id (:client-id cfg)
+                  :client_secret (:client-secret cfg)
+                  :redirect_uri (build-redirect-url cfg)
+                  :grant_type "authorization_code"}
+          req    {:method :post
+                  :headers {"content-type" "application/x-www-form-urlencoded"}
+                  :uri "https://oauth2.googleapis.com/token"
+                  :body (uri/map->query-string params)}
+          res    (http/send! req)]
 
-    (when (not= 200 (:status res))
-      (ex/raise :type :internal
-                :code :invalid-response-from-google
-                :context {:status (:status res)
-                          :body (:body res)}))
+      (when (= 200 (:status res))
+        (-> (json/read-str (:body res))
+            (get "access_token"))))
 
-    (try
-      (let [data (json/read-str (:body res))]
-        (get data "access_token"))
-      (catch Throwable e
-        (log/error "unexpected error on parsing response body from google access token request" e)
-        nil))))
+    (catch Exception e
+      (log/error e "unexpected error on get-access-token")
+      nil)))
 
 (defn- get-user-info
   [token]
-  (let [req {:uri "https://openidconnect.googleapis.com/v1/userinfo"
-             :headers {"Authorization" (str "Bearer " token)}
-             :method :get}
-        res (http/send! req)]
-
-    (when (not= 200 (:status res))
-      (ex/raise :type :internal
-                :code :invalid-response-from-google
-                :context {:status (:status res)
-                          :body (:body res)}))
-
-    (try
-      (let [data (json/read-str (:body res))]
-        ;; (clojure.pprint/pprint data)
-        {:email (get data "email")
-         :fullname (get data "name")})
-      (catch Throwable e
-        (log/error "unexpected error on parsing response body from google access token request" e)
-        nil))))
+  (try
+    (let [req {:uri "https://openidconnect.googleapis.com/v1/userinfo"
+               :headers {"Authorization" (str "Bearer " token)}
+               :method :get}
+          res (http/send! req)]
+      (when (= 200 (:status res))
+        (let [data (json/read-str (:body res))]
+          {:email (get data "email")
+           :fullname (get data "name")})))
+    (catch Exception e
+      (log/error e "unexpected exception on get-user-info")
+      nil)))
 
 (defn- auth
   [{:keys [tokens] :as cfg} _req]
@@ -99,33 +88,39 @@
 
 (defn- callback
   [{:keys [tokens rpc session] :as cfg} request]
-  (let [token (get-in request [:params :state])
-        _     (tokens :verify {:token token :iss :google-oauth})
-        info  (some->> (get-in request [:params :code])
-                       (get-access-token cfg)
-                       (get-user-info))]
-
-    (when-not info
-      (ex/raise :type :authentication
-                :code :unable-to-authenticate-with-google))
-
-    (let [method-fn (get-in rpc [:methods :mutation :login-or-register])
+  (try
+    (let [token (get-in request [:params :state])
+          _     (tokens :verify {:token token :iss :google-oauth})
+          info  (some->> (get-in request [:params :code])
+                         (get-access-token cfg)
+                         (get-user-info))
+          _     (when-not info
+                  (ex/raise :type :internal
+                            :code :unable-to-auth))
+          method-fn (get-in rpc [:methods :mutation :login-or-register])
           profile   (method-fn {:email (:email info)
                                 :fullname (:fullname info)})
           uagent    (get-in request [:headers "user-agent"])
           token     (tokens :generate {:iss :auth
                                        :exp (dt/in-future "15m")
                                        :profile-id (:id profile)})
-
           uri       (-> (uri/uri (:public-uri cfg))
                         (assoc :path "/#/auth/verify-token")
                         (assoc :query (uri/map->query-string {:token token})))
+
           sid       (session/create! session {:profile-id (:id profile)
                                               :user-agent uagent})]
       {:status 302
        :headers {"location" (str uri)}
        :cookies (session/cookies session {:value sid})
-       :body ""})))
+       :body ""})
+    (catch Exception _e
+      (let [uri (-> (uri/uri (:public-uri cfg))
+                    (assoc :path "/#/auth/login")
+                    (assoc :query (uri/map->query-string {:error "unable-to-auth"})))]
+        {:status 302
+         :headers {"location" (str uri)}
+         :body ""}))))
 
 (s/def ::client-id ::us/not-empty-string)
 (s/def ::client-secret ::us/not-empty-string)
