@@ -137,7 +137,8 @@
                  (d/index-by :id)
                  (assoc state :comment-threads)))
           (on-error [{:keys [type] :as err}]
-            (if (= :authentication type)
+            (if (or (= :authentication type)
+                    (= :not-found type))
               (rx/empty)
               (rx/throw err)))]
 
