@@ -36,8 +36,20 @@
    (when verify?
      (us/verify ::spec/changes items))
 
-   (->> items
-        (reduce #(or (process-change %1 %2) %1) data))))
+   (let [pages (into #{} (map :page-id) items)
+         result (->> items
+                     (reduce #(or (process-change %1 %2) %1) data))]
+
+     ;; Validate result shapes (only on the backend)
+     #?(:clj
+        (doseq [page-id pages]
+          (let [page (get-in result [:pages-index page-id])]
+            (doseq [[id shape] (:objects page)]
+              (if-not (= shape (get-in data [:pages-index page-id :objects id]))
+                ;; If object has change verify is correct
+                (us/verify ::spec/shape shape))))))
+
+     result)))
 
 (defmethod process-change :set-option
   [data {:keys [page-id option value]}]
@@ -94,7 +106,6 @@
   (let [update-fn (fn [objects]
                     (if-let [obj (get objects id)]
                       (let [result (reduce process-operation obj operations)]
-                        #?(:clj (us/verify ::spec/shape result))
                         (assoc objects id result))
                       objects))]
     (if page-id
@@ -142,16 +153,25 @@
                                (map :id)
                                (distinct))
                               shapes)))
+          (set-mask-selrect [group children]
+            (let [mask (first children)]
+              (-> group
+                  (merge (select-keys mask [:selrect :points]))
+                  (assoc :x (-> mask :selrect :x)
+                         :y (-> mask :selrect :y)
+                         :width (-> mask :selrect :width)
+                         :height (-> mask :selrect :height)))))
           (update-group [group objects]
             (let [children (->> group :shapes (map #(get objects %)))]
-              (if (:masked-group? group)
-                (let [mask (first children)]
-                  (-> group
-                      (merge (select-keys mask [:selrect :points]))
-                      (assoc :x (-> mask :selrect :x)
-                             :y (-> mask :selrect :y)
-                             :width (-> mask :selrect :width)
-                             :height (-> mask :selrect :height))))
+              (cond
+                ;; If the group is empty we don't make any changes. Should be removed by a later process
+                (empty? children)
+                group
+
+                (:masked-group? group)
+                (set-mask-selrect group children)
+
+                :else
                 (gsh/update-group-selrect group children))))]
 
     (if page-id
@@ -206,23 +226,17 @@
                        pid prev-parent-id
                        objects objects]
                   (let [obj (get objects pid)]
-                    (if (and (= 1 (count (:shapes obj)))
-                             (= sid (first (:shapes obj)))
-                             (= :group (:type obj)))
-                      (recur pid
-                             (:parent-id obj)
-                             (dissoc objects pid))
-                      (cond-> objects
-                        true
-                        (update-in [pid :shapes] strip-id sid)
+                    (cond-> objects
+                      true
+                      (update-in [pid :shapes] strip-id sid)
 
-                        (and (:shape-ref obj)
-                             (= (:type obj) :group)
-                             (not ignore-touched))
-                        (->
-                          (update-in [pid :touched]
-                                     cph/set-touched-group :shapes-group)
-                          (d/dissoc-in [pid :remote-synced?])))))))))
+                      (and (:shape-ref obj)
+                           (= (:type obj) :group)
+                           (not ignore-touched))
+                      (->
+                       (update-in [pid :touched]
+                                  cph/set-touched-group :shapes-group)
+                       (d/dissoc-in [pid :remote-synced?]))))))))
 
           (update-parent-id [objects id]
             (assoc-in objects [id :parent-id] parent-id))
