@@ -145,6 +145,9 @@
 
    {:name "0044-add-storage-refcount"
     :fn (mg/resource "app/migrations/sql/0044-add-storage-refcount.sql")}
+
+   {:name "0045-add-index-to-file-change-table"
+    :fn (mg/resource "app/migrations/sql/0045-add-index-to-file-change-table.sql")}
    ])
 
 
