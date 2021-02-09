@@ -424,6 +424,9 @@
                  (= (:code error) :media-type-not-allowed)
                  (rx/of (dm/error (tr "errors.media-type-not-allowed")))
 
+                 (= (:code error) :ubable-to-access-to-url)
+                 (rx/of (dm/error (tr "errors.media-type-not-allowed")))
+
                  (= (:code error) :invalid-image)
                  (rx/of (dm/error (tr "errors.media-type-not-allowed")))
 
