@@ -72,3 +72,17 @@
      (let [profile (prof/retrieve-profile-data-by-email conn user-email)
            profile (merge profile (prof/retrieve-additional-data conn (:id profile)))]
        (pid/create-profile-initial-data conn file profile)))))
+
+
+;; Migrate
+
+(defn update-file-data-blob-format
+  [system]
+  (db/with-atomic [conn (:app.db/pool system)]
+    (doseq [id (->> (db/exec! conn ["select id from file;"]) (map :id))]
+      (let [{:keys [data]} (db/get-by-id conn :file id {:columns [:id :data]})]
+        (prn "Updating file:" id)
+        (db/update! conn :file
+                    {:data (-> (blob/decode data)
+                               (blob/encode {:version 2}))}
+                    {:id id})))))
