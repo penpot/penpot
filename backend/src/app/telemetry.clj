@@ -12,6 +12,7 @@
    [app.common.spec :as us]
    [app.db :as db]
    [app.http.middleware :refer [wrap-parse-request-body]]
+   [clojure.pprint :refer [pprint]]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
    [integrant.core :as ig]
@@ -87,7 +88,12 @@
     (catch Exception e
       ;; We don't want notify user of a error, just log it for posible
       ;; future investigation.
-      (log/warnf e "Unexpected error on telemetry.")))
+      (log/warn e (str "Unexpected error on telemetry:\n"
+                       (when-let [edata (ex-data e)]
+                         (str "ex-data: \n"
+                              (with-out-str (pprint edata))))
+                       (str "params: \n"
+                            (with-out-str (pprint params)))))))
   {:status 200
    :body "OK\n"})
 
