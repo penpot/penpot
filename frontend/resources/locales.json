@@ -830,6 +830,12 @@
       "es" : "Actualizado: %s"
     }
   },
+  "errors.google-auth-not-enabled" : {
+    "translations" : {
+      "en" : "Authentication with google disabled on backend",
+      "es" : "Autenticación con google esta dehabilitada en el servidor"
+    }
+  },
   "errors.auth.unauthorized" : {
     "used-in" : [ "src/app/main/ui/auth/login.cljs:89" ],
     "translations" : {
