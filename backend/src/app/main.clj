@@ -192,7 +192,7 @@
        :fn (ig/ref :app.tasks.file-media-gc/handler)}
 
       {:id "file-xlog-gc"
-       :cron #app/cron "0 0 0 */1 * ?"  ;; daily
+       :cron #app/cron "0 0 */1 * * ?"  ;; hourly
        :fn (ig/ref :app.tasks.file-xlog-gc/handler)}
 
       {:id "storage-deleted-gc"
@@ -204,7 +204,7 @@
        :fn (ig/ref :app.storage/gc-touched-task)}
 
       {:id "storage-recheck"
-       :cron #app/cron "0 0 */2 * * ?"  ;; every 2 hours
+       :cron #app/cron "0 0 */1 * * ?"  ;; hourly
        :fn (ig/ref :app.storage/recheck-task)}
 
       {:id "tasks-gc"
@@ -260,7 +260,7 @@
     :app.tasks.file-xlog-gc/handler
     {:pool    (ig/ref :app.db/pool)
      :metrics (ig/ref :app.metrics/metrics)
-     :max-age (dt/duration {:hours 24})}
+     :max-age (dt/duration {:hours 48})}
 
     :app.tasks.telemetry/handler
     {:pool        (ig/ref :app.db/pool)
