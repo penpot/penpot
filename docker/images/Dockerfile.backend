@@ -16,6 +16,6 @@ RUN set -ex; \
     apt-get -qqy install adoptopenjdk-15-hotspot; \
     rm -rf /var/lib/apt/lists/*;
 
-ADD ./bundle/backend/ /opt/bundle/
+ADD ./bundle-app/backend/ /opt/bundle/
 WORKDIR /opt/bundle
 CMD ["/bin/bash", "run.sh"]

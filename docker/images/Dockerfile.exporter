@@ -83,7 +83,7 @@ RUN set -ex; \
 
 WORKDIR /opt/app
 
-ADD ./bundle/exporter/ /opt/app/
+ADD ./bundle-exporter/ /opt/app/
 
 RUN set -ex; \
     export PATH="$PATH:/usr/local/nodejs/bin"; \
