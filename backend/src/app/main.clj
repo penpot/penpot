@@ -192,19 +192,19 @@
        :fn (ig/ref :app.tasks.file-media-gc/handler)}
 
       {:id "file-xlog-gc"
-       :cron #app/cron "0 0 */6 * * ?"  ;; every 2 hours
+       :cron #app/cron "0 0 0 */1 * ?"  ;; daily
        :fn (ig/ref :app.tasks.file-xlog-gc/handler)}
 
       {:id "storage-deleted-gc"
-       :cron #app/cron "0 0 */6 * * ?"  ;; every 6 hours
+       :cron #app/cron "0 0 1 */1 * ?"  ;; daily (1 hour shift)
        :fn (ig/ref :app.storage/gc-deleted-task)}
 
       {:id "storage-touched-gc"
-       :cron #app/cron "0 30 */6 * * ?"  ;; every 6 hours
+       :cron #app/cron "0 0 2 */1 * ?"  ;; daily (2 hour shift)
        :fn (ig/ref :app.storage/gc-touched-task)}
 
       {:id "storage-recheck"
-       :cron #app/cron "0 0 */6 * * ?"  ;; every 6 hours
+       :cron #app/cron "0 0 */2 * * ?"  ;; every 2 hours
        :fn (ig/ref :app.storage/recheck-task)}
 
       {:id "tasks-gc"
