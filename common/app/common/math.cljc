@@ -142,3 +142,10 @@
 
 (defn almost-zero? [num]
   (< (abs num) 1e-8))
+
+(defonce float-equal-precision 0.001)
+
+(defn close?
+  "Equality for float numbers. Check if the difference is within a range"
+  [num1 num2]
+  (<= (abs (- num1 num2)) float-equal-precision))
