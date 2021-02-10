@@ -245,5 +245,5 @@
 (def config (read-config env))
 (def test-config (read-test-config env))
 
-(def default-deletion-delay
-  (dt/duration {:hours 48}))
+(def deletion-delay
+  (dt/duration {:days 7}))

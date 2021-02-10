@@ -52,7 +52,7 @@
 
       ;; Schedule deletion of the demo profile
       (tasks/submit! conn {:name "delete-profile"
-                           :delay cfg/default-deletion-delay
+                           :delay cfg/deletion-delay
                            :props {:profile-id id}})
 
       {:email email

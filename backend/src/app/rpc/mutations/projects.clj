@@ -16,6 +16,7 @@
    [app.rpc.queries.projects :as proj]
    [app.tasks :as tasks]
    [app.util.services :as sv]
+   [app.util.time :as dt]
    [clojure.spec.alpha :as s]))
 
 ;; --- Helpers & Specs
@@ -113,8 +114,6 @@
 
 ;; --- Mutation: Delete Project
 
-(declare mark-project-deleted)
-
 (s/def ::delete-project
   (s/keys :req-un [::id ::profile-id]))
 
@@ -125,18 +124,10 @@
 
     ;; Schedule object deletion
     (tasks/submit! conn {:name "delete-object"
-                         :delay cfg/default-deletion-delay
+                         :delay cfg/deletion-delay
                          :props {:id id :type :project}})
 
-    (mark-project-deleted conn params)))
-
-(def ^:private sql:mark-project-deleted
-  "update project
-      set deleted_at = clock_timestamp()
-    where id = ?
-   returning id")
-
-(defn mark-project-deleted
-  [conn {:keys [id] :as params}]
-  (db/exec! conn [sql:mark-project-deleted id])
-  nil)
+    (db/update! conn :project
+                {:deleted-at (dt/now)}
+                {:id id})
+    nil))

@@ -42,11 +42,12 @@
   (db/with-atomic [conn pool]
     (handle-deletion conn props)))
 
-(defmulti handle-deletion (fn [_ props] (:type props)))
+(defmulti handle-deletion
+  (fn [_ props] (:type props)))
 
 (defmethod handle-deletion :default
   [_conn {:keys [type]}]
-  (log/warn "no handler found for" type))
+  (log/warnf "no handler found for %s" type))
 
 (defmethod handle-deletion :file
   [conn {:keys [id] :as props}]
@@ -56,4 +57,9 @@
 (defmethod handle-deletion :project
   [conn {:keys [id] :as props}]
   (let [sql "delete from project where id=? and deleted_at is not null"]
+    (db/exec-one! conn [sql id])))
+
+(defmethod handle-deletion :team
+  [conn {:keys [id] :as props}]
+  (let [sql "delete from team where id=? and deleted_at is not null"]
     (db/exec-one! conn [sql id])))
