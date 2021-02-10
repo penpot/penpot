@@ -200,13 +200,16 @@
   (ptk/reify ::handle-file-change
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-ids (into #{} (comp (map :page-id)
-                                     (filter identity))
-                           changes)]
+      (let [changes-by-pages (group-by :page-id changes)
+            process-page-changes
+            (fn [[page-id changes]]
+              (dwc/update-indices page-id changes))]
+
         (rx/merge
          (rx/of (dwp/shapes-changes-persisted file-id msg))
-         (when (seq page-ids)
-           (rx/from (map dwc/update-indices page-ids changes))))))))
+
+         (when-not (empty? changes-by-pages)
+           (rx/from (map process-page-changes changes-by-pages))))))))
 
 (s/def ::library-change-event
   (s/keys :req-un [::type
