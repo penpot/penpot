@@ -20,15 +20,13 @@
 
 (mf/defc linear-gradient [{:keys [id gradient shape]}]
   (let [{:keys [x y width height]} (:selrect shape)
-        transform (case (:type shape)
-                    :path (gmt/matrix)
-                    (gsh/inverse-transform-matrix shape (gpt/point 0.5 0.5)))]
+        transform (when (= :path (:type shape)) (gsh/transform-matrix shape nil (gpt/point 0.5 0.5)))]
     [:linearGradient {:id id
                       :x1 (:start-x gradient)
                       :y1 (:start-y gradient)
                       :x2 (:end-x gradient)
                       :y2 (:end-y gradient)
-                      :gradient-transform transform}
+                      :gradientTransform transform}
      (for [{:keys [offset color opacity]} (:stops gradient)]
        [:stop {:key (str id "-stop-" offset)
                :offset (or offset 0)
@@ -37,9 +35,8 @@
 
 (mf/defc radial-gradient [{:keys [id gradient shape]}]
   (let [{:keys [x y width height]} (:selrect shape)
-        transform (case (:type shape)
-                    :path (gmt/matrix)
-                    (gsh/inverse-transform-matrix shape))]
+        center (gsh/center-shape shape)
+        transform (when (= :path (:type shape)) (gsh/transform-matrix shape))]
     (let [[x y] (if (= (:type shape) :frame) [0 0] [x y])
           translate-vec (gpt/point (+ x (* width (:start-x gradient)))
                                    (+ y (* height (:start-y gradient))))
