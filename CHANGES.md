@@ -7,6 +7,7 @@
 - Add images lock proportions by default [#541](https://github.com/penpot/penpot/discussions/541), [#609](https://github.com/penpot/penpot/issues/609)
 - Shows a pixel grid when zoom greater than 800% [#519](https://github.com/penpot/penpot/discussions/519)
 - Increase default deletion delay to 7 days.
+- Flip horizontal/vertical
 - Zstd+nippy based blob storage format
 - Improved component testing
 - Add user feedback form
@@ -15,6 +16,7 @@
 ### Bugs fixed
 
 - Make the team deletion defferred (in the same way other objects).
+- Problems when transforming path shapes
 - Fix 500 when requestion password reset
 - Fix ldap function called on login click
 - Fix issues when moving shapes outside groups
