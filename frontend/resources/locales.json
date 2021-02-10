@@ -1179,7 +1179,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/stroke.cljs:75" ],
     "translations" : {
       "en" : "Stroke",
-      "fr" : "Trait",
+      "fr" : "Contour",
       "es" : "Borde"
     }
   },
@@ -1210,7 +1210,7 @@
   "handoff.attributes.stroke.style.dashed" : {
     "translations" : {
       "en" : "Dashed",
-      "fr" : "Tiret",
+      "fr" : "Tirets",
       "es" : "Discontinuo"
     },
     "unused" : true
@@ -1251,7 +1251,7 @@
     "used-in" : [ "src/app/main/ui/handoff/attributes/stroke.cljs:63" ],
     "translations" : {
       "en" : "Width",
-      "fr" : "Largeur",
+      "fr" : "Épaisseur",
       "es" : "Ancho"
     }
   },
@@ -3768,7 +3768,7 @@
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs:162" ],
     "translations" : {
       "en" : "Dashed",
-      "fr" : "Tiret",
+      "fr" : "Tirets",
       "ru" : "Пунктирный",
       "es" : "Rayado"
     }
