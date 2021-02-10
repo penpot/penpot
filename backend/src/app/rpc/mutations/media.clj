@@ -38,7 +38,7 @@
 ;; --- Create File Media object (upload)
 
 (declare create-file-media-object)
-(declare select-file-for-update)
+(declare select-file)
 
 (s/def ::content ::media/upload)
 (s/def ::is-local ::us/boolean)
@@ -50,7 +50,7 @@
 (sv/defmethod ::upload-file-media-object
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
-    (let [file (select-file-for-update conn file-id)]
+    (let [file (select-file conn file-id)]
       (teams/check-edition-permissions! conn profile-id (:team-id file))
       (-> (assoc cfg :conn conn)
           (create-file-media-object params)))))
@@ -138,7 +138,7 @@
 (sv/defmethod ::create-file-media-object-from-url
   [{:keys [pool storage] :as cfg} {:keys [profile-id file-id url name] :as params}]
   (db/with-atomic [conn pool]
-    (let [file (select-file-for-update conn file-id)]
+    (let [file (select-file conn file-id)]
       (teams/check-edition-permissions! conn profile-id (:team-id file))
       (let [mobj    (download-media cfg url)
             content {:filename "tempfile"
@@ -161,7 +161,7 @@
 (sv/defmethod ::clone-file-media-object
   [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
   (db/with-atomic [conn pool]
-    (let [file (select-file-for-update conn file-id)]
+    (let [file (select-file conn file-id)]
       (teams/check-edition-permissions! conn profile-id (:team-id file))
 
       (-> (assoc cfg :conn conn)
@@ -184,17 +184,17 @@
 
 ;; --- HELPERS
 
-(def ^:private sql:select-file-for-update
+(def ^:private
+  sql:select-file
   "select file.*,
           project.team_id as team_id
      from file
     inner join project on (project.id = file.project_id)
-    where file.id = ?
-      for update of file")
+    where file.id = ?")
 
-(defn- select-file-for-update
+(defn- select-file
   [conn id]
-  (let [row (db/exec-one! conn [sql:select-file-for-update id])]
+  (let [row (db/exec-one! conn [sql:select-file id])]
     (when-not row
       (ex/raise :type :not-found))
     row))
