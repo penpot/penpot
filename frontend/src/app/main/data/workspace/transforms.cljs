@@ -530,3 +530,37 @@
             objects (dwc/lookup-page-objects state page-id)
             ids (d/concat [] ids (mapcat #(cp/get-children % objects) ids))]
         (rx/of (apply-modifiers ids))))))
+
+(defn flip-horizontal-selected []
+  (ptk/reify ::flip-horizontal-selected
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [objects  (dwc/lookup-page-objects state)
+            selected (get-in state [:workspace-local :selected])
+            shapes   (map #(get objects %) selected)
+            selrect  (gsh/selection-rect (->> shapes (map gsh/transform-shape)))
+            origin   (gpt/point (:x selrect) (+ (:y selrect) (/ (:height selrect) 2)))]
+
+        (rx/of (set-modifiers selected
+                              {:resize-vector (gpt/point -1.0 1.0)
+                               :resize-origin origin
+                               :displacement (gmt/translate-matrix (gpt/point (- (:width selrect)) 0))}
+                              false)
+               (apply-modifiers selected))))))
+
+(defn flip-vertical-selected []
+  (ptk/reify ::flip-vertical-selected
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [objects  (dwc/lookup-page-objects state)
+            selected (get-in state [:workspace-local :selected])
+            shapes   (map #(get objects %) selected)
+            selrect  (gsh/selection-rect (->> shapes (map gsh/transform-shape)))
+            origin   (gpt/point (+ (:x selrect) (/ (:width selrect) 2)) (:y selrect))]
+
+        (rx/of (set-modifiers selected
+                              {:resize-vector (gpt/point 1.0 -1.0)
+                               :resize-origin origin
+                               :displacement (gmt/translate-matrix (gpt/point 0 (- (:height selrect))))}
+                              false)
+               (apply-modifiers selected))))))
