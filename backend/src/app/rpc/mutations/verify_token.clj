@@ -7,8 +7,6 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-;; TODO: session
-
 (ns app.rpc.mutations.verify-token
   (:require
    [app.common.exceptions :as ex]

@@ -472,7 +472,7 @@
 
     ;; Schedule a complete deletion of profile
     (tasks/submit! conn {:name "delete-profile"
-                         :delay (dt/duration {:hours 48})
+                         :delay cfg/deletion-delay
                          :props {:profile-id profile-id}})
 
     (db/update! conn :profile
