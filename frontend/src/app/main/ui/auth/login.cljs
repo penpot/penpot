@@ -37,7 +37,9 @@
   (dom/prevent-default event)
   (->> (rp/mutation! :login-with-google {})
        (rx/subs (fn [{:keys [redirect-uri] :as rsp}]
-                  (.replace js/location redirect-uri)))))
+                  (.replace js/location redirect-uri))
+                (fn [{:keys [type] :as error}]
+                  (st/emit! (dm/error (tr "errors.google-auth-not-enabled")))))))
 
 (defn- login-with-gitlab
   [event]

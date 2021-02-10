@@ -63,6 +63,7 @@
                                  :uri (:uri cfg)
                                  :headers {"content-type" "application/json"}
                                  :body (json/encode-str data)})]
+
     (when (not= 200 (:status response))
       (ex/raise :type :internal
                 :code :invalid-response-from-google
@@ -129,7 +130,7 @@
   [{:keys [conn version]}]
   (merge
    {:version version
-    :with-taiga  (:telemetry-with-taiga cfg/config)
+    :with-taiga  (:telemetry-with-taiga cfg/config false)
     :total-teams (retrieve-num-teams conn)
     :total-projects (retrieve-num-projects conn)
     :total-files (retrieve-num-files conn)}

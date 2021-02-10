@@ -31,8 +31,8 @@ in the changelog.**
 ## Pull requests ##
 
 If you want propose a change or bug fix with the Pull-Request system
-firstly you should carefully read the **Contributor License Aggreement**
-section and format your commits accordingly.
+firstly you should carefully read the **DCO** section and format your
+commits accordingly.
 
 If you intend to fix a bug it's fine to submit a pull request right
 away but we still recommend to file an issue detailing what you're
