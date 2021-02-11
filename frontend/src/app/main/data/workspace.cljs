@@ -1481,11 +1481,16 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (try
-        (let [paste-data    (wapi/read-from-paste-event event)
+        (let [objects (dwc/lookup-page-objects state)
+              paste-data    (wapi/read-from-paste-event event)
               image-data    (wapi/extract-images paste-data)
               text-data     (wapi/extract-text paste-data)
               decoded-data  (and (t/transit? text-data)
-                                 (t/decode text-data))]
+                                 (t/decode text-data))
+
+              edit-id (get-in state [:workspace-local :edition])
+              is-editing-text? (and edit-id (= :text (get-in objects [edit-id :type])))]
+
           (cond
             (seq image-data)
             (rx/from (map paste-image image-data))
@@ -1495,7 +1500,9 @@
                  (rx/filter #(= :copied-shapes (:type %)))
                  (rx/map #(paste-shape % in-viewport?)))
 
-            (string? text-data)
+            ;; Some paste events can be fired while we're editing a text
+            ;; we forbid that scenario so the default behaviour is executed
+            (and (string? text-data) (not is-editing-text?))
             (rx/of (paste-text text-data))
 
             :else

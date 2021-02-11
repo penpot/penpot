@@ -26,6 +26,7 @@
 - Fix apply a color to a text selection from color palette was not working
 - Fix logo icon in viewer should go to dashboard
 - Fix text alignment in preview [#594](https://github.com/penpot/penpot/issues/594)
+- Fix problem when pasting URL's copied from the browser url bar
 
 ### Community contributions by (Thank you! :heart:)
 
