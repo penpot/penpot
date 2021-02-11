@@ -19,6 +19,7 @@
    [app.util.transit :as t]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
+   [clojure.tools.logging :as log]
    [integrant.core :as ig]
    [next.jdbc :as jdbc]
    [next.jdbc.date-time :as jdbc-dt])
@@ -55,6 +56,7 @@
 
 (defmethod ig/init-key ::pool
   [_ {:keys [migrations] :as cfg}]
+  (log/debugf "initialize connection pool %s with uri %s" (:name cfg) (:uri cfg))
   (let [pool (create-pool cfg)]
     (when (seq migrations)
       (with-open [conn (open pool)]
