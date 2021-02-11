@@ -9,7 +9,9 @@
 
 (ns app.config
   "A configuration management."
+  (:refer-clojure :exclude [get])
   (:require
+   [clojure.core :as c]
    [app.common.spec :as us]
    [app.common.version :as v]
    [app.util.time :as dt]
@@ -247,3 +249,10 @@
 
 (def deletion-delay
   (dt/duration {:days 7}))
+
+(defn get
+  "A configuration getter. Helps code be more testable."
+  ([key]
+   (c/get config key))
+  ([key default]
+   (c/get config key default)))
