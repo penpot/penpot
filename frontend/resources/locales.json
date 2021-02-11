@@ -4805,5 +4805,19 @@
       "es" : "Pulsar para cerrar la ruta"
     },
     "unused" : true
+  },
+  "workspace.shape.menu.flip-horizontal" : {
+    "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:146" ],
+    "translations" : {
+      "en" : "Flip horizontal",
+      "es" : "Voltear horizontal"
+    }
+  },
+  "workspace.shape.menu.flip-vertical" : {
+    "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs:143" ],
+    "translations" : {
+      "en" : "Flip vertical",
+      "es" : "Voltear vertical"
+    }
   }
 }
