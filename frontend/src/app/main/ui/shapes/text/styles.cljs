@@ -39,11 +39,16 @@
    ;; the property it's known.
    ;; `inline-flex` is similar to flex but `overflows` outside the bounds of the
    ;; parent
-   (let [base #js {:display "inline-flex"
+   (let [shape  (obj/get props "shape")
+         grow-type (:grow-type shape)
+         auto-width? (= grow-type :auto-width)
+         auto-height? (= grow-type :auto-height)
+
+         base #js {:display "inline-flex"
                    :flex-direction "column"
                    :justify-content "inherit"
-                   :min-height "100%"
-                   :min-width "100%"
+                   :min-height (when-not (or auto-width? auto-height?) "100%")
+                   :min-width (when-not auto-width? "100%")
                    :vertical-align "top"}]
      base)))
 
