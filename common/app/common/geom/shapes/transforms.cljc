@@ -43,10 +43,13 @@
    (let [shape-center (or (gco/center-shape shape)
                           (gpt/point 0 0))]
      (inverse-transform-matrix shape shape-center)))
-  ([shape center]
+  ([{:keys [flip-x flip-y] :as shape} center]
    (let []
      (-> (gmt/matrix)
          (gmt/translate center)
+         (cond->
+             flip-x (gmt/scale (gpt/point -1 1))
+             flip-y (gmt/scale (gpt/point 1 -1)))
          (gmt/multiply (:transform-inverse shape (gmt/matrix)))
          (gmt/translate (gpt/negate center))))))
 
@@ -203,29 +206,7 @@
                                    (gmt/rotate (- rotation-angle)))]
     [stretch-matrix stretch-matrix-inverse]))
 
-
-(defn apply-transform-path
-  [shape transform]
-  (let [content (gpa/transform-content (:content shape) transform)
-
-        ;; Calculate the new selrect by "unrotate" the shape
-        rotation (modif-rotation shape)
-        center (gpt/transform (gco/center-shape shape) transform)
-        content-rotated (gpa/transform-content content (gmt/rotate-matrix (- rotation) center))
-        selrect (gpa/content->selrect content-rotated)
-
-        ;; Transform the points
-        points (-> (:points shape)
-                   (transform-points transform))]
-    (assoc shape
-           :content content
-           :points points
-           :selrect selrect
-           :transform (gmt/rotate-matrix rotation)
-           :transform-inverse (gmt/rotate-matrix (- rotation))
-           :rotation rotation)))
-
-(defn apply-transform-rect
+(defn apply-transform
   "Given a new set of points transformed, set up the rectangle so it keeps
   its properties. We adjust de x,y,width,height and create a custom transform"
   [shape transform]
@@ -246,50 +227,27 @@
                                                 (:height points-temp-dim))
         rect-points     (gpr/rect->points rect-shape)
 
-        [matrix matrix-inverse] (calculate-adjust-matrix points-temp rect-points (:flip-x shape) (:flip-y shape))]
+        [matrix matrix-inverse] (calculate-adjust-matrix points-temp rect-points (:flip-x shape) (:flip-y shape))
+
+        shape (cond
+                (= :path (:type shape))
+                (-> shape
+                    (update :content #(gpa/transform-content % transform)))
+
+                :else
+                (-> shape
+                    (merge  rect-shape)
+                    (update :x #(mth/precision % 0))
+                    (update :y #(mth/precision % 0))
+                    (update :width #(mth/precision % 0))
+                    (update :height #(mth/precision % 0))))]
     (as-> shape $
-      (merge  $ rect-shape)
-      (update $ :x #(mth/precision % 0))
-      (update $ :y #(mth/precision % 0))
-      (update $ :width #(mth/precision % 0))
-      (update $ :height #(mth/precision % 0))
       (update $ :transform #(gmt/multiply (or % (gmt/matrix)) matrix))
       (update $ :transform-inverse #(gmt/multiply matrix-inverse (or % (gmt/matrix))))
       (assoc  $ :points (into [] points))
       (assoc  $ :selrect (gpr/rect->selrect rect-shape))
       (update $ :rotation #(mod (+ (or % 0)
                                    (or (get-in $ [:modifiers :rotation]) 0)) 360)))))
-
-(defn apply-transform [shape transform]
-  (let [apply-transform-fn
-        (case (:type shape)
-          :path  apply-transform-path
-          apply-transform-rect)]
-    (apply-transform-fn shape transform)))
-
-(defn transform-gradients [shape modifiers]
-  (let [angle (d/check-num (get modifiers :rotation))
-        ;; Gradients are represented with unit vectors so its center is 0.5, 0.5
-        center (gpt/point 0.5 0.5)
-        transform (gmt/rotate-matrix angle center)
-        transform-gradient
-        (fn [{:keys [start-x start-y end-x end-y] :as gradient}]
-          (let [start-point (gpt/point start-x start-y)
-                end-point   (gpt/point end-x end-y)
-                {start-x :x start-y :y} (gpt/transform start-point transform)
-                {end-x :x end-y :y}     (gpt/transform end-point transform)]
-
-            (assoc gradient
-                   :start-x start-x
-                   :start-y start-y
-                   :end-x end-x
-                   :end-y end-y)))]
-    (cond-> shape
-      (:fill-color-gradient shape)
-      (update :fill-color-gradient transform-gradient)
-
-      (:stroke-color-gradient shape)
-      (update :stroke-color-gradient transform-gradient))))
 
 (defn set-flip [shape modifiers]
   (let [rx (get-in modifiers [:resize-vector :x])
@@ -305,12 +263,13 @@
         (-> shape
             (set-flip (:modifiers shape))
             (apply-transform transform)
-            (transform-gradients (:modifiers shape))
             (dissoc :modifiers)))
       shape)))
 
 (defn update-group-selrect [group children]
   (let [shape-center (gco/center-shape group)
+        transform (:transform group (gmt/matrix))
+        transform-inverse (:transform-inverse group (gmt/matrix))
 
         ;; Points for every shape inside the group
         points (->> children (mapcat :points))
@@ -330,5 +289,10 @@
     (-> group
         (assoc :selrect new-selrect)
         (assoc :points new-points)
-        (apply-transform-rect (gmt/matrix)))))
+
+        ;; We're regenerating the selrect from its children so we
+        ;; need to remove the flip flags
+        (assoc :flip-x false)
+        (assoc :flip-y false)
+        (apply-transform (gmt/matrix)))))
 

@@ -1799,6 +1799,8 @@
 (d/export dwt/set-modifiers)
 (d/export dwt/apply-modifiers)
 (d/export dwt/update-dimensions)
+(d/export dwt/flip-horizontal-selected)
+(d/export dwt/flip-vertical-selected)
 
 ;; Persistence
 

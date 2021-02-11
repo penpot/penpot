@@ -90,12 +90,15 @@
      path)))
 
 (defn- points->components [shape content]
-  (let [rotation (:rotation shape 0)
+  (let [transform (:transform shape)
+        transform-inverse (:transform-inverse shape)
         center (gsh/center-shape shape)
-        content-rotated (gsh/transform-content content (gmt/rotate-matrix (- rotation) center))
+        base-content (gsh/transform-content
+                      content
+                      (gmt/transform-in center transform-inverse))
 
         ;; Calculates the new selrect with points given the old center
-        points (-> (gsh/content->selrect content-rotated)
+        points (-> (gsh/content->selrect base-content)
                    (gsh/rect->points)
                    (gsh/transform-points center (:transform shape (gmt/matrix))))
 
