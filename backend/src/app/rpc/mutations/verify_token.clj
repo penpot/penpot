@@ -5,14 +5,13 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.rpc.mutations.verify-token
   (:require
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.db :as db]
-   [app.http.session :as session]
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
    [app.util.services :as sv]
@@ -57,14 +56,7 @@
                   {:id (:id profile)}))
 
     (with-meta claims
-      {:transform-response
-       (fn [request response]
-         (let [uagent (get-in request [:headers "user-agent"])
-               id     (session/create! session {:profile-id profile-id
-                                                :user-agent uagent})]
-           (assoc response
-                  :cookies (session/cookies session {:value id}))))})))
-
+      {:transform-response ((:create session) profile-id)})))
 
 (defmethod process-token :auth
   [{:keys [conn] :as cfg} _params {:keys [profile-id] :as claims}]
@@ -116,13 +108,7 @@
         ;; the user clicking the link he already has access to the
         ;; email account.
         (with-meta claims
-          {:transform-response
-           (fn [request response]
-             (let [uagent (get-in request [:headers "user-agent"])
-                   id     (session/create! session {:profile-id member-id
-                                                    :user-agent uagent})]
-               (assoc response
-                      :cookies (session/cookies session {:value id}))))})))
+          {:transform-response ((:create session) member-id)})))
 
     ;; In this case, we wait until frontend app redirect user to
     ;; registeration page, the user is correctly registered and the

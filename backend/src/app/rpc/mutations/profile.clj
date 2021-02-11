@@ -16,7 +16,6 @@
    [app.db :as db]
    [app.db.profile-initial-data :refer [create-profile-initial-data]]
    [app.emails :as emails]
-   [app.http.session :as session]
    [app.media :as media]
    [app.rpc.mutations.projects :as projects]
    [app.rpc.mutations.teams :as teams]
@@ -95,13 +94,7 @@
           (with-meta (assoc profile
                             :is-active true
                             :claims claims)
-            {:transform-response
-             (fn [request response]
-               (let [uagent (get-in request [:headers "user-agent"])
-                     id     (session/create! session {:profile-id (:id profile)
-                                                      :user-agent uagent})]
-                 (assoc response
-                        :cookies (session/cookies session {:value id}))))}))
+            {:transform-response ((:create session) (:id profile))}))
 
         ;; If no token is provided, send a verification email
         (let [token (tokens :generate
@@ -217,7 +210,7 @@
           :opt-un [::scope]))
 
 (sv/defmethod ::login {:auth false :rlimit :password}
-  [{:keys [pool] :as cfg} {:keys [email password scope] :as params}]
+  [{:keys [pool session] :as cfg} {:keys [email password scope] :as params}]
   (letfn [(check-password [profile password]
             (when (= (:password profile) "!")
               (ex/raise :type :validation
@@ -240,8 +233,21 @@
       (let [prof (-> (profile/retrieve-profile-data-by-email conn email)
                      (validate-profile)
                      (profile/strip-private-attrs))
-            addt (profile/retrieve-additional-data conn (:id prof))]
-        (merge prof addt)))))
+            addt (profile/retrieve-additional-data conn (:id prof))
+            prof (merge prof addt)]
+        (with-meta prof
+          {:transform-response ((:create session) (:id prof))})))))
+
+
+;; --- Mutation: Logout
+
+(s/def ::logout
+  (s/keys :req-un [::profile-id]))
+
+(sv/defmethod ::logout
+  [{:keys [pool session] :as cfg} {:keys [profile-id] :as params}]
+  (with-meta {}
+    {:transform-response (:delete session)}))
 
 
 ;; --- Mutation: Register if not exists
@@ -480,11 +486,7 @@
                 {:id profile-id})
 
     (with-meta {}
-      {:transform-response
-       (fn [request response]
-         (session/delete! session request)
-         (assoc response
-                :cookies (session/cookies session {:value "" :max-age -1})))})))
+      {:transform-response (:delete session)})))
 
 (def sql:owned-teams
   "with owner_teams as (
