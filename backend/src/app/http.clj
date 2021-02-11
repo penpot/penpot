@@ -126,6 +126,9 @@
     ["/dbg"
      ["/error-by-id/:id" {:get (:error-report-handler cfg)}]]
 
+    ["/webhooks"
+     ["/sns" {:post (:sns-webhook cfg)}]]
+
     ["/api" {:middleware [[middleware/format-response-body]
                           [middleware/params]
                           [middleware/multipart-params]

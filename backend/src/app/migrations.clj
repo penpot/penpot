@@ -148,6 +148,10 @@
 
    {:name "0045-add-index-to-file-change-table"
     :fn (mg/resource "app/migrations/sql/0045-add-index-to-file-change-table.sql")}
+
+   {:name "0046-add-profile-complaint-table"
+    :fn (mg/resource "app/migrations/sql/0046-add-profile-complaint-table.sql")}
+
    ])
 
 

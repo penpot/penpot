@@ -90,10 +90,18 @@
     (let [params (merge {:team-id team-id
                          :profile-id member-id}
                         (teams/role->params role))
-          claims (assoc claims :state :created)]
+          claims (assoc claims :state :created)
+          member (profile/retrieve-profile conn member-id)]
 
       (db/insert! conn :team-profile-rel params
                   {:on-conflict-do-nothing true})
+
+      ;; If profile is not yet verified, mark it as verified because
+      ;; accepting an invitation link serves as verification.
+      (when-not (:is-active member)
+        (db/update! conn :profile
+                    {:is-active true}
+                    {:id member-id}))
 
       (if (and (uuid? profile-id)
                (= member-id profile-id))

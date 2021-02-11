@@ -64,6 +64,7 @@
                                                 :password (:password data)))]
             (let [method-fn (get-in rpc [:methods :mutation :login-or-register])
                   profile   (method-fn {:email (:email info)
+                                        :backend "ldap"
                                         :fullname (:fullname info)})
 
                   sxf       ((:create session) (:id profile))
