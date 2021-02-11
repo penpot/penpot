@@ -626,6 +626,8 @@
                                      (contains? (:touched shape-inst)
                                                 :shapes-group))
                         (add-shape-to-instance child-master
+                                               (d/index-of children-master
+                                                           child-master)
                                                component
                                                container
                                                root-inst
@@ -649,11 +651,11 @@
                                                        reset?
                                                        initial-root?)))
 
-        moved (fn [shape-inst shape-master]
+        moved (fn [child-inst child-master]
                 (move-shape
-                  shape-inst
-                  (d/index-of children-inst shape-inst)
-                  (d/index-of children-master shape-master)
+                  child-inst
+                  (d/index-of children-inst child-inst)
+                  (d/index-of children-master child-master)
                   container
                   omit-touched?))
 
@@ -742,6 +744,8 @@
 
         only-inst (fn [child-inst]
                     (add-shape-to-master child-inst
+                                         (d/index-of children-inst
+                                                     child-inst)
                                          component
                                          container
                                          root-inst
@@ -768,11 +772,11 @@
                                                           root-master)
                                                         initial-root?)))
 
-        moved (fn [shape-inst shape-master]
+        moved (fn [child-inst child-master]
                 (move-shape
-                  shape-master
-                  (d/index-of children-master shape-master)
-                  (d/index-of children-inst shape-inst)
+                  child-master
+                  (d/index-of children-master child-master)
+                  (d/index-of children-inst child-inst)
                   component-container
                   false))
 
@@ -863,7 +867,7 @@
                            (concat-changes (moved-cb child-inst' child-master))))))))))))
 
 (defn- add-shape-to-instance
-  [component-shape component container root-instance root-master omit-touched? set-remote-synced?]
+  [component-shape index component container root-instance root-master omit-touched? set-remote-synced?]
   (log/info :msg (str "ADD [P] " (:name component-shape)))
   (let [component-parent-shape (cp/get-shape component (:parent-id component-shape))
         parent-shape           (d/seek #(cp/is-master-of component-parent-shape %)
@@ -904,6 +908,7 @@
                              (as-> {:type :add-obj
                                     :id (:id shape')
                                     :parent-id (:parent-id shape')
+                                    :index index
                                     :ignore-touched true
                                     :obj shape'} $
                                (cond-> $
@@ -929,7 +934,7 @@
       [rchanges uchanges])))
 
 (defn- add-shape-to-master
-  [shape component page root-instance root-master]
+  [shape index component page root-instance root-master]
   (log/info :msg (str "ADD [C] " (:name shape)))
   (let [parent-shape           (cp/get-shape page (:parent-id shape))
         component-parent-shape (d/seek #(cp/is-master-of % parent-shape)
@@ -963,6 +968,7 @@
                             :id (:id shape')
                             :component-id (:id component)
                             :parent-id (:parent-id shape')
+                            :index index
                             :ignore-touched true
                             :obj shape'})
                          new-shapes)
