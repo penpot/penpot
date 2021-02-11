@@ -249,7 +249,7 @@
                                   (assoc :overflow-text true)
 
                                   (and (= :fixed grow-type) overflow-text (<= new-height shape-height))
-                                  (assoc :overflow-text true)
+                                  (assoc :overflow-text false)
 
                                   (and (not-changed? shape-width new-width) (= grow-type :auto-width))
                                   (-> (assoc :modifiers modifier-width)
