@@ -27,6 +27,7 @@
 - Fix logo icon in viewer should go to dashboard
 - Fix text alignment in preview [#594](https://github.com/penpot/penpot/issues/594)
 - Fix problem when pasting URL's copied from the browser url bar
+- Fix ordering when restoring deleted shapes in sync [Taiga #1163](https://tree.taiga.io/project/penpot/issue/1163)
 
 ### Community contributions by (Thank you! :heart:)
 
