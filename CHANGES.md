@@ -24,6 +24,7 @@
 - Fix 404 when acces shared link [#615](https://github.com/penpot/penpot/issues/615)
 - Fix show correct error when google auth is disabled
 - Fix apply a color to a text selection from color palette was not working
+- Fix logo icon in viewer should go to dashboard
 
 ### Community contributions by (Thank you! :heart:)
 

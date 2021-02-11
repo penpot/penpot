@@ -196,14 +196,9 @@
 
         on-goback
         (mf/use-callback
-         (mf/deps project-id file-id page-id anonymous?)
-         (fn []
-           (if anonymous?
-             (st/emit! (rt/nav :login))
-             (st/emit! (rt/nav :workspace
-                               {:project-id project-id
-                                :file-id file-id}
-                               {:page-id page-id})))))
+         (mf/deps project)
+         (st/emitf (dv/go-to-dashboard project)))
+
         on-edit
         (mf/use-callback
          (mf/deps project-id file-id page-id)
