@@ -4841,5 +4841,11 @@
       "en" : "Flip vertical",
       "es" : "Voltear vertical"
     }
+  },
+  "workspace.shape.menu.edit" : {
+    "translations" : {
+      "en" : "Edit",
+      "es" : "Editar"
+    }
   }
 }

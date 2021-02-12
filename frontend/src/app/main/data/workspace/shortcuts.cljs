@@ -255,7 +255,12 @@
 
    :escape             {:tooltip (ds/esc)
                         :command "escape"
-                        :fn #(st/emit! (esc-pressed))}})
+                        :fn #(st/emit! (esc-pressed))}
+
+   :start-editing      {:tooltip (ds/enter)
+                        :command "enter"
+                        :fn #(st/emit! (dw/start-editing-selected))}
+   })
 
 (defn get-tooltip [shortcut]
   (assert (contains? shortcuts shortcut) (str shortcut))

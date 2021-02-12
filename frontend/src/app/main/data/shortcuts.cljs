@@ -24,6 +24,7 @@
 (def mac-shift   "\u21E7")
 (def mac-control "\u2303")
 (def mac-esc     "\u238B")
+(def mac-enter   "\u23CE")
 
 (def left-arrow  "\u2190")
 (def up-arrow    "\u2191")
@@ -73,3 +74,7 @@
     mac-esc
     "Escape"))
 
+(defn enter []
+  (if (cfg/check-platform? :macos)
+    mac-enter
+    "Enter"))
