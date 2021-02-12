@@ -16,14 +16,12 @@
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
-   [app.redis :as rd]
    [app.rpc.queries.files :as files]
    [app.rpc.queries.projects :as proj]
    [app.tasks :as tasks]
    [app.util.blob :as blob]
    [app.util.services :as sv]
    [app.util.time :as dt]
-   [app.util.transit :as t]
    [clojure.spec.alpha :as s]))
 
 ;; --- Helpers & Specs
@@ -252,19 +250,22 @@
               :reg-objects :mov-objects} (:type change))
            (some? (:component-id change)))))
 
-(declare update-file)
-(declare retrieve-lagged-changes)
 (declare insert-change)
+(declare retrieve-lagged-changes)
+(declare retrieve-team-id)
+(declare send-notifications)
+(declare update-file)
 
 (sv/defmethod ::update-file
   [{:keys [pool] :as cfg} {:keys [id profile-id] :as params}]
   (db/with-atomic [conn pool]
     (let [{:keys [id] :as file} (db/get-by-id conn :file id {:for-update true})]
       (files/check-edition-permissions! conn profile-id id)
-      (update-file (assoc cfg :conn  conn) file params))))
+      (update-file (assoc cfg :conn  conn)
+                   (assoc params :file file)))))
 
 (defn- update-file
-  [{:keys [conn redis]} file params]
+  [{:keys [conn] :as cfg} {:keys [file changes session-id] :as params}]
   (when (> (:revn params)
            (:revn file))
     (ex/raise :type :validation
@@ -272,64 +273,69 @@
               :hint "The incoming revision number is greater that stored version."
               :context {:incoming-revn (:revn params)
                         :stored-revn (:revn file)}))
-  (let [sid      (:session-id params)
-        changes  (:changes params)
-        file     (-> file
-                     (update :data blob/decode)
-                     (update :data assoc :id (:id file))
-                     (update :data pmg/migrate-data)
-                     (update :data cp/process-changes changes)
-                     (update :data blob/encode)
-                     (update :revn inc)
-                     (assoc :changes (blob/encode changes)
-                            :session-id sid))
 
-        _        (insert-change conn file)
-        msg      {:type :file-change
-                  :profile-id (:profile-id params)
-                  :file-id (:id file)
-                  :session-id sid
-                  :revn (:revn file)
-                  :changes changes}
-
-        library-changes (filter library-change? changes)]
-
-    @(rd/run! redis :publish {:channel (str (:id file))
-                              :message (t/encode-str msg)})
-
-    (when (and (:is-shared file) (seq library-changes))
-      (let [{:keys [team-id] :as project}
-            (db/get-by-id conn :project (:project-id file))
-
-            msg {:type :library-change
-                 :profile-id (:profile-id params)
+  (let [file (-> file
+                 (update :revn inc)
+                 (update :data (fn [data]
+                                 (-> data
+                                     (blob/decode)
+                                     (assoc :id (:id file))
+                                     (pmg/migrate-data)
+                                     (cp/process-changes changes)
+                                     (blob/encode)))))]
+    ;; Insert change to the xlog
+    (db/insert! conn :file-change
+                {:id (uuid/next)
+                 :session-id session-id
                  :file-id (:id file)
-                 :session-id sid
                  :revn (:revn file)
-                 :modified-at (dt/now)
-                 :changes library-changes}]
+                 :data (:data file)
+                 :changes (blob/encode changes)})
 
-        @(rd/run! redis :publish {:channel (str team-id)
-                                  :message (t/encode-str msg)})))
-
+    ;; Update file
     (db/update! conn :file
                 {:revn (:revn file)
-                 :data (:data file)}
+                 :data (:data file)
+                 :has-media-trimmed false}
                 {:id (:id file)})
 
-    (retrieve-lagged-changes conn params)))
+    (let [params (assoc params :file file)]
+      ;; Send asynchronous notifications
+      (send-notifications cfg params)
 
-(defn- insert-change
-  [conn {:keys [revn data changes session-id] :as file}]
-  (let [id      (uuid/next)
-        file-id (:id file)]
-    (db/insert! conn :file-change
-                {:id id
-                 :session-id session-id
-                 :file-id file-id
-                 :revn revn
-                 :data data
-                 :changes changes})))
+      ;; Retrieve and return lagged data
+      (retrieve-lagged-changes conn params))))
+
+(defn- send-notifications
+  [{:keys [msgbus conn] :as cfg} {:keys [file changes session-id] :as params}]
+  (let [lchanges (filter library-change? changes)]
+
+    ;; Asynchronously publish message to the msgbus
+    (msgbus :pub {:topic (str (:id file))
+                  :message
+                  {:type :file-change
+                   :profile-id (:profile-id params)
+                   :file-id (:id file)
+                   :session-id (:session-id params)
+                   :revn (:revn file)
+                   :changes changes}})
+
+    (when (and (:is-shared file) (seq lchanges))
+      (let [team-id (retrieve-team-id conn (:project-id file))]
+        ;; Asynchronously publish message to the msgbus
+        (msgbus :pub {:topic (str team-id)
+                      :message
+                      {:type :library-change
+                       :profile-id (:profile-id params)
+                       :file-id (:id file)
+                       :session-id session-id
+                       :revn (:revn file)
+                       :modified-at (dt/now)
+                       :changes lchanges}})))))
+
+(defn- retrieve-team-id
+  [conn project-id]
+  (:team-id (db/get-by-id conn :project project-id {:columns [:team-id]})))
 
 (def ^:private
   sql:lagged-changes

@@ -49,7 +49,7 @@
     :app.telemetry/migrations
     {}
 
-    :app.redis/redis
+    :app.msgbus/msgbus
     {:uri (:redis-uri config)}
 
     :app.tokens/tokens
@@ -170,12 +170,12 @@
      :tokens  (ig/ref :app.tokens/tokens)
      :metrics (ig/ref :app.metrics/metrics)
      :storage (ig/ref :app.storage/storage)
-     :redis   (ig/ref :app.redis/redis)
+     :msgbus  (ig/ref :app.msgbus/msgbus)
      :rlimits (ig/ref :app.rlimits/all)
      :svgc    (ig/ref :app.svgparse/svgc)}
 
     :app.notifications/handler
-    {:redis   (ig/ref :app.redis/redis)
+    {:msgbus  (ig/ref :app.msgbus/msgbus)
      :pool    (ig/ref :app.db/pool)
      :session (ig/ref :app.http.session/session)
      :metrics (ig/ref :app.metrics/metrics)}

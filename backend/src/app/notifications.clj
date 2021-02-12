@@ -13,7 +13,6 @@
    [app.common.spec :as us]
    [app.db :as db]
    [app.metrics :as mtx]
-   [app.redis :as rd]
    [app.util.async :as aa]
    [app.util.transit :as t]
    [clojure.core.async :as a]
@@ -34,9 +33,10 @@
 (declare handler)
 
 (s/def ::session map?)
+(s/def ::msgbus fn?)
 
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::rd/redis ::db/pool ::session ::mtx/metrics]))
+  (s/keys :req-un [::msgbus ::db/pool ::session ::mtx/metrics]))
 
 (defmethod ig/init-key ::handler
   [_ {:keys [session metrics] :as cfg}]
@@ -127,7 +127,7 @@
       false)))
 
 (defn websocket
-  [{:keys [file-id team-id redis] :as cfg}]
+  [{:keys [file-id team-id msgbus] :as cfg}]
   (let [in  (a/chan 32)
         out (a/chan 32)
         mtx-active-connections (:mtx-active-connections cfg)
@@ -138,9 +138,12 @@
 
     (letfn [(on-connect [conn]
               (mtx-active-connections :inc)
-              (let [sub (rd/subscribe redis {:xform (map t/decode-str)
-                                             :topics [file-id team-id]})
+              (let [sub (a/chan)
                     ws  (WebSocket. conn in out sub nil cfg)]
+
+                ;; Subscribe to corresponding topics
+                (a/<!! (msgbus :sub {:topic (str file-id) :chan sub}))
+                (a/<!! (msgbus :sub {:topic (str team-id) :chan sub}))
 
                 ;; message forwarding loop
                 (a/go-loop []
@@ -195,10 +198,6 @@
      (let [timeout (a/timeout 30000)
            [val port] (a/alts! [in sub timeout])]
 
-       ;; (prn "alts" val "from" (cond (= port in)  "input"
-       ;;                              (= port sub) "redis"
-       ;;                              :else "timeout"))
-
        (cond
          ;; Process message coming from connected client
          (and (= port in) (not (nil? val)))
@@ -223,13 +222,6 @@
          nil)))))
 
 ;; Incoming Messages Handling
-
-(defn- publish
-  [redis channel message]
-  (aa/go-try
-   (let [message (t/encode-str message)]
-     (aa/<? (rd/run redis :publish {:channel (str channel)
-                                         :message message})))))
 
 (def ^:private
   sql:retrieve-presence
@@ -270,31 +262,34 @@
 ;; single use token for avoid explicit database query).
 
 (defmethod handle-message :connect
-  [{:keys [file-id profile-id session-id pool redis] :as ws} _message]
+  [{:keys [file-id profile-id session-id pool msgbus] :as ws} _message]
   ;; (log/debugf "profile '%s' is connected to file '%s'" profile-id file-id)
   (aa/go-try
    (aa/<? (update-presence pool file-id session-id profile-id))
    (let [members (aa/<? (retrieve-presence pool file-id))]
-     (aa/<? (publish redis file-id {:type :presence :sessions members})))))
+     (aa/<? (msgbus :pub {:topic file-id
+                          :message {:type :presence :sessions members}})))))
 
 (defmethod handle-message :disconnect
-  [{:keys [profile-id file-id session-id redis pool] :as ws} _message]
+  [{:keys [profile-id file-id session-id pool msgbus] :as ws} _message]
   ;; (log/debugf "profile '%s' is disconnected from '%s'" profile-id file-id)
   (aa/go-try
    (aa/<? (delete-presence pool file-id session-id profile-id))
    (let [members (aa/<? (retrieve-presence pool file-id))]
-     (aa/<? (publish redis file-id {:type :presence :sessions members})))))
+     (aa/<? (msgbus :pub {:topic file-id
+                          :message {:type :presence :sessions members}})))))
 
 (defmethod handle-message :keepalive
   [{:keys [profile-id file-id session-id pool] :as ws} _message]
   (update-presence pool file-id session-id profile-id))
 
 (defmethod handle-message :pointer-update
-  [{:keys [profile-id file-id session-id redis] :as ws} message]
+  [{:keys [profile-id file-id session-id msgbus] :as ws} message]
   (let [message (assoc message
                        :profile-id profile-id
                        :session-id session-id)]
-    (publish redis file-id message)))
+    (msgbus :pub {:topic file-id
+                  :message message})))
 
 (defmethod handle-message :default
   [_ws message]
