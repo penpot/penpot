@@ -82,7 +82,7 @@
   (st/emit! (rt/initialize-router ui/routes)
             (rt/initialize-history on-navigate))
 
-  (st/emit! udu/fetch-profile)
+  (st/emit! (udu/fetch-profile))
   (mf/mount (mf/element ui/app) (dom/get-element "app"))
   (mf/mount (mf/element modal) (dom/get-element "modal")))
 
