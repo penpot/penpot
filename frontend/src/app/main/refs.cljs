@@ -96,6 +96,9 @@
 (def current-hover
   (l/derived :hover workspace-local))
 
+(def editors
+  (l/derived :editors workspace-local))
+
 (def workspace-layout
   (l/derived :workspace-layout st/state))
 

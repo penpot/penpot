@@ -285,8 +285,8 @@
   (let [ids [(:id shape)]
         type (:type shape)
 
-        local (deref refs/workspace-local)
-        editor (get-in local [:editors (:id shape)])
+        editors (mf/deref refs/editors)
+        editor (get editors (:id shape))
 
         measure-values (select-keys shape measure-attrs)
 
