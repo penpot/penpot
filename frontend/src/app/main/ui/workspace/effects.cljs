@@ -52,11 +52,9 @@
            drawing? @refs/selected-drawing-tool
            button (.-which (.-nativeEvent event))
            shift? (kbd/shift? event)
-           ctrl? (or (kbd/ctrl? event) (kbd/meta? event))
 
            allow-click? (and (not blocked)
                              (not drawing?)
-                             (not ctrl?)
                              (not edition))]
 
        (when (and (= button 1) allow-click?)
