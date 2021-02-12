@@ -10,10 +10,16 @@ CREATE TABLE storage_object (
   metadata jsonb NULL DEFAULT NULL
 );
 
+CREATE INDEX storage_object__id__deleted_at__idx
+    ON storage_object(id, deleted_at)
+ WHERE deleted_at IS NOT null;
+
 CREATE TABLE storage_data (
   id uuid PRIMARY KEY REFERENCES storage_object (id) ON DELETE CASCADE,
   data bytea NOT NULL
 );
+
+CREATE INDEX storage_data__id__idx ON storage_data(id);
 
 -- Table used for store inflight upload ids, for later recheck and
 -- delete possible staled files that exists on the phisical storage
@@ -27,9 +33,4 @@ CREATE TABLE storage_pending (
 
   PRIMARY KEY (created_at, id)
 );
-
-CREATE INDEX storage_data__id__idx ON storage_data(id);
-CREATE INDEX storage_object__id__deleted_at__idx
-    ON storage_object(id, deleted_at)
- WHERE deleted_at IS NOT null;
 
