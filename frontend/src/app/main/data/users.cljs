@@ -50,38 +50,43 @@
 ;; --- Profile Fetched
 
 (defn profile-fetched
-  [{:keys [fullname] :as data}]
-  (us/verify ::profile data)
-  (ptk/reify ::profile-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc state :profile
-             (cond-> data
-               (nil? (:lang data))
-               (assoc :lang cfg/default-language)
+  ([data] (profile-fetched nil data))
+  ([on-success {:keys [fullname] :as data}]
+   (us/verify ::profile data)
+   (ptk/reify ::profile-fetched
+     ptk/UpdateEvent
+     (update [_ state]
+       (assoc state :profile
+              (cond-> data
+                (nil? (:lang data))
+                (assoc :lang cfg/default-language)
 
-               (nil? (:theme data))
-               (assoc :theme cfg/default-theme))))
+                (nil? (:theme data))
+                (assoc :theme cfg/default-theme))))
 
-    ptk/EffectEvent
-    (effect [_ state stream]
-      (let [profile (:profile state)]
-        (swap! storage assoc :profile profile)
-        (i18n/set-current-locale! (:lang profile))
-        (theme/set-current-theme! (:theme profile))))))
+     ptk/EffectEvent
+     (effect [_ state stream]
+       (let [profile (:profile state)]
+         (swap! storage assoc :profile profile)
+         (i18n/set-current-locale! (:lang profile))
+         (theme/set-current-theme! (:theme profile))
+         (when on-success
+           (on-success)))))))
 
 ;; --- Fetch Profile
 
-(def fetch-profile
-  (reify
-    ptk/WatchEvent
-    (watch [_ state s]
-      (->> (rp/query! :profile)
-           (rx/map profile-fetched)
-           (rx/catch (fn [error]
-                       (if (= (:type error) :not-found)
-                         (rx/of (rt/nav :auth-login))
-                         (rx/empty))))))))
+(defn fetch-profile
+  ([] (fetch-profile nil))
+  ([on-success]
+   (reify
+     ptk/WatchEvent
+     (watch [_ state s]
+       (->> (rp/query! :profile)
+            (rx/map (partial profile-fetched on-success))
+            (rx/catch (fn [error]
+                        (if (= (:type error) :not-found)
+                          (rx/of (rt/nav :auth-login))
+                          (rx/empty)))))))))
 
 ;; --- Update Profile
 
@@ -97,8 +102,7 @@
             handle-error #(do (on-error (:payload %))
                               (rx/empty))]
         (->> (rp/mutation :update-profile data)
-             (rx/do on-success)
-             (rx/map (constantly fetch-profile))
+             (rx/map (constantly (fetch-profile on-success)))
              (rx/catch rp/client-error? handle-error))))))
 
 ;; --- Request Email Change
@@ -123,7 +127,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (->> (rp/mutation :cancel-email-change {})
-           (rx/map (constantly fetch-profile))))))
+           (rx/map (constantly (fetch-profile)))))))
 
 ;; --- Update Password (Form)
 
@@ -158,7 +162,7 @@
     (watch [_ state stream]
       (let [{:keys [id] :as profile} (:profile state)]
         (->> (rp/mutation :update-profile-props {:props {:onboarding-viewed true}})
-             (rx/map (constantly fetch-profile)))))))
+             (rx/map (constantly (fetch-profile))))))))
 
 
 ;; --- Update Photo
@@ -184,7 +188,7 @@
              (rx/map prepare)
              (rx/mapcat #(rp/mutation :update-profile-photo %))
              (rx/do on-success)
-             (rx/map (constantly fetch-profile))
+             (rx/map (constantly (fetch-profile)))
              (rx/catch on-error))))))
 
 

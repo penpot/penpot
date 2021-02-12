@@ -42,7 +42,7 @@
   (let [msg (tr "dashboard.notifications.email-changed-successfully")]
     (ts/schedule 100 #(st/emit! (dm/success msg)))
     (st/emit! (rt/nav :settings-profile)
-              du/fetch-profile)))
+              (du/fetch-profile))))
 
 (defmethod handle-token :auth
   [tdata]
@@ -53,7 +53,7 @@
   (case (:state tdata)
     :created
     (let [message (tr "auth.notifications.team-invitation-accepted")]
-      (st/emit! du/fetch-profile
+      (st/emit! (du/fetch-profile)
                 (rt/nav :dashboard-projects {:team-id (:team-id tdata)})
                 (dm/success message)))
 

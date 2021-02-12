@@ -84,7 +84,7 @@
            (if (and (:is-active data) (:claims data))
              (let [message (tr "auth.notifications.team-invitation-accepted")]
                (st/emit! (rt/nav :dashboard-projects {:team-id (get-in data [:claims :team-id])})
-                         du/fetch-profile
+                         (du/fetch-profile)
                          (dm/success message)))
              (st/emit! (rt/nav :auth-register-success {} {:email (:email data)})))))
 
