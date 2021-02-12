@@ -7,6 +7,8 @@
 - Bounce & Complaint handling.
 - Disable groups interactions when holding "Ctrl" key (deep selection)
 - New action in context menu to "edit" some shapes (binded to key "Enter")
+- Add major refactor of internal pubsub/redis code; improves
+  scalability and performance #640
 
 ### Bugs fixed
 

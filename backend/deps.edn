@@ -32,7 +32,7 @@
   expound/expound {:mvn/version "0.8.7"}
   com.cognitect/transit-clj {:mvn/version "1.0.324"}
 
-  io.lettuce/lettuce-core {:mvn/version "5.2.2.RELEASE"}
+  io.lettuce/lettuce-core {:mvn/version "6.1.0.M1"}
   java-http-clj/java-http-clj {:mvn/version "0.4.1"}
 
   info.sunng/ring-jetty9-adapter {:mvn/version "0.14.2"}
