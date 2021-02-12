@@ -51,7 +51,7 @@
     (rx/of (dm/error (tr "errors.profile-is-muted")))
 
     :email-has-permanent-bounces
-    (let [email (get @form [:data email])]
+    (let [email (get @form [:data :email-1])]
       (rx/of (dm/error (tr "errors.email-has-permanent-bounces" email))))
 
     (rx/throw error)))

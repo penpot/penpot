@@ -23,6 +23,7 @@
    [app.util.i18n :refer [tr t]]
    [app.util.router :as rt]
    [app.util.timers :as tm]
+   [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
