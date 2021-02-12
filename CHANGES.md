@@ -3,7 +3,15 @@
 ## Next
 
 ### New features
+
+- Bounce & Complaint handling.
+
+
 ### Bugs fixed
+
+- Properly handle errors on github, gitlab and ldap auth backends.
+- Properly mark profile auth backend (on first register/ auth with 3rd party auth provider).
+
 
 
 ## 1.2.0-alpha

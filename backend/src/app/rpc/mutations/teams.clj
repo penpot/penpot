@@ -297,26 +297,48 @@
 (sv/defmethod ::invite-team-member
   [{:keys [pool tokens] :as cfg} {:keys [profile-id team-id email role] :as params}]
   (db/with-atomic [conn pool]
-    (let [perms   (teams/check-edition-permissions! conn profile-id team-id)
-          profile (db/get-by-id conn :profile profile-id)
-          member  (profile/retrieve-profile-data-by-email conn email)
-          team    (db/get-by-id conn :team team-id)
-          token   (tokens :generate
-                          {:iss :team-invitation
-                           :exp (dt/in-future "24h")
-                           :profile-id (:id profile)
-                           :role role
-                           :team-id team-id
-                           :member-email (:email member email)
-                           :member-id (:id member)})]
+    (let [perms    (teams/check-edition-permissions! conn profile-id team-id)
+          profile  (db/get-by-id conn :profile profile-id)
+          member   (profile/retrieve-profile-data-by-email conn email)
+          team     (db/get-by-id conn :team team-id)
+          itoken   (tokens :generate
+                           {:iss :team-invitation
+                            :exp (dt/in-future "24h")
+                            :profile-id (:id profile)
+                            :role role
+                            :team-id team-id
+                            :member-email (:email member email)
+                            :member-id (:id member)})
+          ptoken   (tokens :generate-predefined
+                           {:iss :profile-identity
+                            :profile-id (:id profile)})]
 
       (when-not (some :is-admin perms)
         (ex/raise :type :validation
                   :code :insufficient-permissions))
 
+      ;; First check if the current profile is allowed to send emails.
+      (when-not (emails/allow-send-emails? conn profile)
+        (ex/raise :type :validation
+                  :code :profile-is-muted
+                  :hint "looks like the profile has reported repeatedly as spam or has permanent bounces"))
+
+      (when (and member (not (emails/allow-send-emails? conn member)))
+        (ex/raise :type :validation
+                  :code :member-is-muted
+                  :hint "looks like the profile has reported repeatedly as spam or has permanent bounces"))
+
+      ;; Secondly check if the invited member email is part of the
+      ;; global spam/bounce report.
+      (when (emails/has-bounce-reports? conn email)
+        (ex/raise :type :validation
+                  :code :email-has-permanent-bounces
+                  :hint "looks like the email you invite has been repeatedly reported as spam or permanent bounce"))
+
       (emails/send! conn emails/invite-to-team
                     {:to email
                      :invited-by (:fullname profile)
                      :team (:name team)
-                     :token token})
+                     :token itoken
+                     :extra-data ptoken})
       nil)))

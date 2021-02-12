@@ -60,11 +60,25 @@
 (defmethod ig/pre-init-spec ::tokens [_]
   (s/keys :req-un [::sprops]))
 
+(defn- generate-predefined
+  [cfg {:keys [iss profile-id] :as params}]
+  (case iss
+    :profile-identity
+    (do
+      (us/verify uuid? profile-id)
+      (generate cfg (assoc params
+                           :exp (dt/in-future {:days 30}))))
+
+    (ex/raise :type :internal
+              :code :not-implemented
+              :hint "no predefined token")))
+
 (defmethod ig/init-key ::tokens
   [_ {:keys [sprops] :as cfg}]
   (let [secret (derive-tokens-secret (:secret-key sprops))
         cfg    (assoc cfg ::secret secret)]
     (fn [action params]
       (case action
+        :generate-predefined (generate-predefined cfg params)
         :verify (verify cfg params)
         :generate (generate cfg params)))))

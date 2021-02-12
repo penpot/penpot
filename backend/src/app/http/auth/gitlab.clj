@@ -12,88 +12,75 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.http.session :as session]
    [app.util.http :as http]
    [app.util.time :as dt]
    [clojure.data.json :as json]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
    [integrant.core :as ig]
-   [lambdaisland.uri :as uri]))
+   [lambdaisland.uri :as u]))
 
 (def scope "read_user")
 
 (defn- build-redirect-url
   [cfg]
-  (let [public (uri/uri (:public-uri cfg))]
+  (let [public (u/uri (:public-uri cfg))]
     (str (assoc public :path "/api/oauth/gitlab/callback"))))
-
 
 (defn- build-oauth-uri
   [cfg]
-  (let [base-uri (uri/uri (:base-uri cfg))]
+  (let [base-uri (u/uri (:base-uri cfg))]
     (assoc base-uri :path "/oauth/authorize")))
-
 
 (defn- build-token-url
   [cfg]
-  (let [base-uri (uri/uri (:base-uri cfg))]
+  (let [base-uri (u/uri (:base-uri cfg))]
     (str (assoc base-uri :path "/oauth/token"))))
-
 
 (defn- build-user-info-url
   [cfg]
-  (let [base-uri (uri/uri (:base-uri cfg))]
+  (let [base-uri (u/uri (:base-uri cfg))]
     (str (assoc base-uri :path "/api/v4/user"))))
 
 (defn- get-access-token
   [cfg code]
-  (let [params {:client_id (:client-id cfg)
-                :client_secret (:client-secret cfg)
-                :code code
-                :grant_type "authorization_code"
-                :redirect_uri (build-redirect-url cfg)}
-        req    {:method :post
-                :headers {"content-type" "application/x-www-form-urlencoded"}
-                :uri (build-token-url cfg)
-                :body (uri/map->query-string params)}
+  (try
+    (let [params {:client_id (:client-id cfg)
+                  :client_secret (:client-secret cfg)
+                  :code code
+                  :grant_type "authorization_code"
+                  :redirect_uri (build-redirect-url cfg)}
+          req    {:method :post
+                  :headers {"content-type" "application/x-www-form-urlencoded"}
+                  :uri (build-token-url cfg)
+                  :body (u/map->query-string params)}
         res    (http/send! req)]
 
-    (when (not= 200 (:status res))
-      (ex/raise :type :internal
-                :code :invalid-response-from-gitlab
-                :context {:status (:status res)
-                          :body (:body res)}))
+      (when (= 200 (:status res))
+        (-> (json/read-str (:body res))
+            (get "access_token"))))
 
-    (try
-      (let [data (json/read-str (:body res))]
-        (get data "access_token"))
-      (catch Throwable e
-        (log/error "unexpected error on parsing response body from gitlab access token request" e)
-        nil))))
-
+    (catch Exception e
+      (log/error e "unexpected error on get-access-token")
+      nil)))
 
 (defn- get-user-info
   [cfg token]
-  (let [req {:uri (build-user-info-url cfg)
-             :headers {"Authorization" (str "Bearer " token)}
-             :method :get}
-        res (http/send! req)]
+  (try
+    (let [req {:uri (build-user-info-url cfg)
+               :headers {"Authorization" (str "Bearer " token)}
+               :timeout 6000
+               :method :get}
+          res (http/send! req)]
 
-    (when (not= 200 (:status res))
-      (ex/raise :type :internal
-                :code :invalid-response-from-gitlab
-                :context {:status (:status res)
-                          :body (:body res)}))
+      (when (= 200 (:status res))
+        (let [data (json/read-str (:body res))]
+          {:email (get data "email")
+           :fullname (get data "name")})))
 
-    (try
-      (let [data (json/read-str (:body res))]
-        ;; (clojure.pprint/pprint data)
-        {:email (get data "email")
-         :fullname (get data "name")})
-      (catch Throwable e
-        (log/error "unexpected error on parsing response body from gitlab access token request" e)
-        nil))))
+    (catch Exception e
+      (log/error e "unexpected exception on get-user-info")
+      nil)))
 
 (defn auth
   [{:keys [tokens] :as cfg} _request]
@@ -105,7 +92,7 @@
                 :response_type "code"
                 :state token
                 :scope scope}
-        query  (uri/map->query-string params)
+        query  (u/map->query-string params)
         uri    (-> (build-oauth-uri cfg)
                    (assoc :query query))]
     {:status 200
@@ -113,36 +100,38 @@
 
 (defn callback
   [{:keys [tokens rpc session] :as cfg} request]
-  (let [token (get-in request [:params :state])
-        _     (tokens :verify {:token token :iss :gitlab-oauth})
-        info  (some->> (get-in request [:params :code])
-                       (get-access-token cfg)
-                       (get-user-info cfg))]
+  (try
+    (let [token (get-in request [:params :state])
+          _     (tokens :verify {:token token :iss :gitlab-oauth})
+          info  (some->> (get-in request [:params :code])
+                         (get-access-token cfg)
+                         (get-user-info cfg))
+          _     (when-not info
+                  (ex/raise :type :internal
+                            :code :unable-to-auth))
 
-    (when-not info
-      (ex/raise :type :authentication
-                :code :unable-to-authenticate-with-gitlab))
-
-    (let [method-fn (get-in rpc [:methods :mutation :login-or-register])
+          method-fn (get-in rpc [:methods :mutation :login-or-register])
           profile   (method-fn {:email (:email info)
+                                :backend "gitlab"
                                 :fullname (:fullname info)})
-          uagent    (get-in request [:headers "user-agent"])
-
           token     (tokens :generate {:iss :auth
                                        :exp (dt/in-future "15m")
                                        :profile-id (:id profile)})
 
-          uri       (-> (uri/uri (:public-uri cfg))
+          uri       (-> (u/uri (:public-uri cfg))
                         (assoc :path "/#/auth/verify-token")
-                        (assoc :query (uri/map->query-string {:token token})))
+                        (assoc :query (u/map->query-string {:token token})))
 
-          sid       (session/create! session {:profile-id (:id profile)
-                                              :user-agent uagent})]
-      {:status 302
-       :headers {"location" (str uri)}
-       :cookies (session/cookies session {:value sid})
-       :body ""})))
-
+          sxf       ((:create session) (:id profile))
+          rsp       {:status 302 :headers {"location" (str uri)} :body ""}]
+      (sxf request rsp))
+    (catch Exception _e
+      (let [uri (-> (u/uri (:public-uri cfg))
+                    (assoc :path "/#/auth/login")
+                    (assoc :query (u/map->query-string {:error "unable-to-auth"})))]
+        {:status 302
+         :headers {"location" (str uri)}
+         :body ""}))))
 
 (s/def ::client-id ::us/not-empty-string)
 (s/def ::client-secret ::us/not-empty-string)

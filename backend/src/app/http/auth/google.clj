@@ -11,14 +11,13 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.http.session :as session]
    [app.util.http :as http]
    [app.util.time :as dt]
    [clojure.data.json :as json]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
    [integrant.core :as ig]
-   [lambdaisland.uri :as uri]))
+   [lambdaisland.uri :as u]))
 
 (def base-goauth-uri "https://accounts.google.com/o/oauth2/v2/auth")
 
@@ -30,7 +29,7 @@
 
 (defn- build-redirect-url
   [cfg]
-  (let [public (uri/uri (:public-uri cfg))]
+  (let [public (u/uri (:public-uri cfg))]
     (str (assoc public :path "/api/oauth/google/callback"))))
 
 (defn- get-access-token
@@ -44,7 +43,7 @@
           req    {:method :post
                   :headers {"content-type" "application/x-www-form-urlencoded"}
                   :uri "https://oauth2.googleapis.com/token"
-                  :body (uri/map->query-string params)}
+                  :body (u/map->query-string params)}
           res    (http/send! req)]
 
       (when (= 200 (:status res))
@@ -80,8 +79,8 @@
                 :response_type "code"
                 :redirect_uri (build-redirect-url cfg)
                 :client_id (:client-id cfg)}
-        query  (uri/map->query-string params)
-        uri    (-> (uri/uri base-goauth-uri)
+        query  (u/map->query-string params)
+        uri    (-> (u/uri base-goauth-uri)
                    (assoc :query query))]
     {:status 200
      :body {:redirect-uri (str uri)}}))
@@ -99,25 +98,22 @@
                             :code :unable-to-auth))
           method-fn (get-in rpc [:methods :mutation :login-or-register])
           profile   (method-fn {:email (:email info)
+                                :backend "google"
                                 :fullname (:fullname info)})
-          uagent    (get-in request [:headers "user-agent"])
           token     (tokens :generate {:iss :auth
                                        :exp (dt/in-future "15m")
                                        :profile-id (:id profile)})
-          uri       (-> (uri/uri (:public-uri cfg))
+          uri       (-> (u/uri (:public-uri cfg))
                         (assoc :path "/#/auth/verify-token")
-                        (assoc :query (uri/map->query-string {:token token})))
+                        (assoc :query (u/map->query-string {:token token})))
 
-          sid       (session/create! session {:profile-id (:id profile)
-                                              :user-agent uagent})]
-      {:status 302
-       :headers {"location" (str uri)}
-       :cookies (session/cookies session {:value sid})
-       :body ""})
+          sxf       ((:create session) (:id profile))
+          rsp       {:status 302 :headers {"location" (str uri)} :body ""}]
+      (sxf request rsp))
     (catch Exception _e
-      (let [uri (-> (uri/uri (:public-uri cfg))
+      (let [uri (-> (u/uri (:public-uri cfg))
                     (assoc :path "/#/auth/login")
-                    (assoc :query (uri/map->query-string {:error "unable-to-auth"})))]
+                    (assoc :query (u/map->query-string {:error "unable-to-auth"})))]
         {:status 302
          :headers {"location" (str uri)}
          :body ""}))))

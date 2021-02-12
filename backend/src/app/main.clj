@@ -71,6 +71,10 @@
     {:pool        (ig/ref :app.db/pool)
      :cookie-name "auth-token"}
 
+    :app.http.awsns/handler
+    {:tokens  (ig/ref :app.tokens/tokens)
+     :pool    (ig/ref :app.db/pool)}
+
     :app.http/server
     {:port    (:http-server-port config)
      :handler (ig/ref :app.http/router)
@@ -90,6 +94,7 @@
      :assets      (ig/ref :app.http.assets/handlers)
      :svgparse    (ig/ref :app.svgparse/handler)
      :storage     (ig/ref :app.storage/storage)
+     :sns-webhook (ig/ref :app.http.awsns/handler)
      :error-report-handler (ig/ref :app.error-reporter/handler)}
 
     :app.http.assets/handlers

@@ -63,7 +63,6 @@
 
         on-error
         (fn [form event]
-          (js/console.log error?)
           (reset! error? true))
 
         on-submit
@@ -107,8 +106,7 @@
          :help-icon i/eye
          :label (tr "auth.password")}]]
       [:& fm/submit-button
-       {:label (tr "auth.login-submit")
-        :on-click on-submit}]
+       {:label (tr "auth.login-submit")}]
 
       (when cfg/login-with-ldap
         [:& fm/submit-button

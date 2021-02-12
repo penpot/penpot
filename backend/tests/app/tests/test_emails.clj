@@ -11,7 +11,6 @@
   (:require
    [clojure.test :as t]
    [promesa.core :as p]
-   [mockery.core :refer [with-mock]]
    [app.db :as db]
    [app.emails :as emails]
    [app.tests.helpers :as th]))

@@ -836,6 +836,28 @@
       "es" : "Autenticación con google esta dehabilitada en el servidor"
     }
   },
+
+  "errors.profile-is-muted" : {
+    "translations" : {
+      "en" : "Your profile has emails muted (spam reports or high bounces).",
+      "es" : "Tu perfil tiene los emails silenciados (por reportes de spam o alto indice de rebote)."
+    }
+  },
+
+  "errors.member-is-muted" : {
+    "translations" : {
+      "en" : "The profile you inviting has emails muted (spam reports or high bounces).",
+      "es" : "El perfil que esta invitando tiene los emails silenciados (por reportes de spam o alto indice de rebote)."
+    }
+  },
+
+  "errors.email-has-permanent-bounces" : {
+    "translations" : {
+      "en" : "The email «%s» has many permanent bounce reports.",
+      "es" : "El email «%s» tiene varios reportes de rebote permanente."
+    }
+  },
+
   "errors.auth.unauthorized" : {
     "used-in" : [ "src/app/main/ui/auth/login.cljs:89" ],
     "translations" : {

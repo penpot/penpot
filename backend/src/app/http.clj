@@ -12,7 +12,6 @@
    [app.common.data :as d]
    [app.common.spec :as us]
    [app.config :as cfg]
-   [app.http.auth :as auth]
    [app.http.errors :as errors]
    [app.http.middleware :as middleware]
    [app.metrics :as mtx]
@@ -127,6 +126,9 @@
     ["/dbg"
      ["/error-by-id/:id" {:get (:error-report-handler cfg)}]]
 
+    ["/webhooks"
+     ["/sns" {:post (:sns-webhook cfg)}]]
+
     ["/api" {:middleware [[middleware/format-response-body]
                           [middleware/params]
                           [middleware/multipart-params]
@@ -146,9 +148,6 @@
 
       ["/github" {:post (:auth-handler github-auth)}]
       ["/github/callback" {:get (:callback-handler github-auth)}]]
-
-     ["/login" {:post #(auth/login-handler cfg %)}]
-     ["/logout" {:post #(auth/logout-handler cfg %)}]
 
      ["/login-ldap" {:post ldap-auth}]
 

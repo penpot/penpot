@@ -9,10 +9,12 @@
 
 (ns app.config
   "A configuration management."
+  (:refer-clojure :exclude [get])
   (:require
    [app.common.spec :as us]
    [app.common.version :as v]
    [app.util.time :as dt]
+   [clojure.core :as c]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [environ.core :refer [env]]))
@@ -51,6 +53,12 @@
    :smtp-enabled false
    :smtp-default-reply-to "Penpot <no-reply@example.com>"
    :smtp-default-from "Penpot <no-reply@example.com>"
+
+   :profile-complaint-max-age (dt/duration {:days 7})
+   :profile-complaint-threshold 2
+
+   :profile-bounce-max-age (dt/duration {:days 7})
+   :profile-bounce-threshold 10
 
    :allow-demo-users true
    :registration-enabled true
@@ -97,6 +105,11 @@
 
 (s/def ::feedback-enabled ::us/boolean)
 (s/def ::feedback-destination ::us/string)
+
+(s/def ::profile-complaint-max-age ::dt/duration)
+(s/def ::profile-complaint-threshold ::us/integer)
+(s/def ::profile-bounce-max-age ::dt/duration)
+(s/def ::profile-bounce-threshold ::us/integer)
 
 (s/def ::error-report-webhook ::us/string)
 
@@ -185,6 +198,10 @@
                    ::ldap-bind-dn
                    ::ldap-bind-password
                    ::public-uri
+                   ::profile-complaint-threshold
+                   ::profile-bounce-threshold
+                   ::profile-complaint-max-age
+                   ::profile-bounce-max-age
                    ::redis-uri
                    ::registration-domain-whitelist
                    ::registration-enabled
@@ -247,3 +264,10 @@
 
 (def deletion-delay
   (dt/duration {:days 7}))
+
+(defn get
+  "A configuration getter. Helps code be more testable."
+  ([key]
+   (c/get config key))
+  ([key default]
+   (c/get config key default)))

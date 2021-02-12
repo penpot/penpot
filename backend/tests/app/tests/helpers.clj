@@ -31,15 +31,24 @@
    [environ.core :refer [env]]
    [expound.alpha :as expound]
    [integrant.core :as ig]
+   [mockery.core :as mk]
    [promesa.core :as p])
   (:import org.postgresql.ds.PGSimpleDataSource))
 
 (def ^:dynamic *system* nil)
 (def ^:dynamic *pool* nil)
 
+(def config
+  (merge {:redis-uri "redis://redis/1"
+          :database-uri "postgresql://postgres/penpot_test"
+          :storage-fs-directory "/tmp/app/storage"
+          :migrations-verbose false}
+         cfg/config))
+
+
 (defn state-init
   [next]
-  (let [config (-> (main/build-system-config cfg/test-config)
+  (let [config (-> (main/build-system-config config)
                    (dissoc :app.srepl/server
                            :app.http/server
                            :app.http/router
@@ -300,3 +309,31 @@
 (defn sleep
   [ms]
   (Thread/sleep ms))
+
+(defn mock-config-get-with
+  "Helper for mock app.config/get"
+  [data]
+  (fn
+    ([key] (get (merge config data) key))
+    ([key default] (get (merge config data) key default))))
+
+(defn create-complaint-for
+  [conn {:keys [id created-at type]}]
+  (db/insert! conn :profile-complaint-report
+              {:profile-id id
+               :created-at (or created-at (dt/now))
+               :type (name type)
+               :content (db/tjson {})}))
+
+(defn create-global-complaint-for
+  [conn {:keys [email type created-at]}]
+  (db/insert! conn :global-complaint-report
+              {:email email
+               :type (name type)
+               :created-at (or created-at (dt/now))
+               :content (db/tjson {})}))
+
+
+(defn reset-mock!
+  [m]
+  (reset! m @(mk/make-mock {})))

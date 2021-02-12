@@ -40,14 +40,20 @@
   (s/keys :req-un [::email-1 ::email-2]))
 
 (defn- on-error
-  [form error]
-  (cond
-    (= (:code error) :email-already-exists)
+  [form {:keys [code] :as error}]
+  (case code
+    :email-already-exists
     (swap! form (fn [data]
                   (let [error {:message (tr "errors.email-already-exists")}]
                     (assoc-in data [:errors :email-1] error))))
 
-    :else
+    :profile-is-muted
+    (rx/of (dm/error (tr "errors.profile-is-muted")))
+
+    :email-has-permanent-bounces
+    (let [email (get @form [:data email])]
+      (rx/of (dm/error (tr "errors.email-has-permanent-bounces" email))))
+
     (rx/throw error)))
 
 (defn- on-success

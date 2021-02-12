@@ -97,13 +97,34 @@
          (st/emitf (dm/success "Invitation sent successfully")
                    (modal/hide)))
 
+        on-error
+        (mf/use-callback
+         (mf/deps team)
+         (fn [form {:keys [type code] :as error}]
+           (let [email (get @form [:data :email])]
+             (cond
+               (and (= :validation type)
+                    (= :profile-is-muted code))
+               (dm/error (tr "errors.profile-is-muted"))
+
+               (and (= :validation type)
+                    (= :member-is-muted code))
+               (dm/error (tr "errors.member-is-muted"))
+
+               (and (= :validation type)
+                    (= :email-has-permanent-bounces))
+               (dm/error (tr "errors.email-has-permanent-bounces" email))
+
+               :else
+               (dm/error (tr "errors.generic"))))))
 
         on-submit
         (mf/use-callback
          (mf/deps team)
          (fn [form]
            (let [params (:clean-data @form)
-                 mdata  {:on-success (partial on-success form)}]
+                 mdata  {:on-success (partial on-success form)
+                         :on-error   (partial on-error form)}]
              (st/emit! (dd/invite-team-member (with-meta params mdata))))))]
 
     [:div.modal.dashboard-invite-modal.form-container

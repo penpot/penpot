@@ -11,7 +11,6 @@
   (:require
    [app.common.exceptions :as ex]
    [app.config :as cfg]
-   [app.http.session :as session]
    [clj-ldap.client :as client]
    [clojure.set :as set]
    [clojure.spec.alpha :as s]
@@ -65,13 +64,12 @@
                                                 :password (:password data)))]
             (let [method-fn (get-in rpc [:methods :mutation :login-or-register])
                   profile   (method-fn {:email (:email info)
+                                        :backend "ldap"
                                         :fullname (:fullname info)})
-                  uagent    (get-in request [:headers "user-agent"])
-                  sid       (session/create! session {:profile-id (:id profile)
-                                                      :user-agent uagent})]
-              {:status 200
-               :cookies (session/cookies session {:value sid})
-               :body profile}))))
+
+                  sxf       ((:create session) (:id profile))
+                  rsp       {:status 200 :body profile}]
+              (sxf request rsp)))))
       {::conn conn})))
 
 (defmethod ig/halt-key! ::client

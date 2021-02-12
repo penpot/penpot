@@ -16,14 +16,16 @@
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
-(defn next-session-id
+;; --- IMPL
+
+(defn- next-session-id
   ([] (next-session-id 96))
   ([n]
    (-> (bn/random-nonce n)
        (bc/bytes->b64u)
        (bc/bytes->str))))
 
-(defn create!
+(defn- create
   [{:keys [conn] :as cfg} {:keys [profile-id user-agent]}]
   (let [id (next-session-id)]
     (db/insert! conn :http-session {:id id
@@ -31,28 +33,28 @@
                                     :user-agent user-agent})
     id))
 
-(defn delete!
-  [{:keys [conn cookie-name] :as cfg} request]
-  (when-let [token (get-in request [:cookies cookie-name :value])]
+(defn- delete
+  [{:keys [conn cookie-name] :as cfg} {:keys [cookies] :as request}]
+  (when-let [token (get-in cookies [cookie-name :value])]
     (db/delete! conn :http-session {:id token}))
   nil)
 
-(defn retrieve
+(defn- retrieve
   [{:keys [conn] :as cfg} token]
   (when token
     (-> (db/exec-one! conn ["select profile_id from http_session where id = ?" token])
         (:profile-id))))
 
-(defn retrieve-from-request
-  [{:keys [cookie-name] :as cfg} request]
-  (->> (get-in request [:cookies cookie-name :value])
+(defn- retrieve-from-request
+  [{:keys [cookie-name] :as cfg} {:keys [cookies] :as request}]
+  (->> (get-in cookies [cookie-name :value])
        (retrieve cfg)))
 
-(defn cookies
+(defn- cookies
   [{:keys [cookie-name] :as cfg} vals]
   {cookie-name (merge vals {:path "/" :http-only true})})
 
-(defn middleware
+(defn- middleware
   [cfg handler]
   (fn [request]
     (if-let [profile-id (retrieve-from-request cfg request)]
@@ -60,6 +62,8 @@
         (update-thread-context! {:profile-id profile-id})
         (handler (assoc request :profile-id profile-id)))
       (handler request))))
+
+;; --- STATE INIT
 
 (defmethod ig/pre-init-spec ::session [_]
   (s/keys :req-un [::db/pool]))
@@ -71,4 +75,17 @@
 (defmethod ig/init-key ::session
   [_ {:keys [pool] :as cfg}]
   (let [cfg (assoc cfg :conn pool)]
-    (merge cfg {:middleware #(middleware cfg %)})))
+    (-> cfg
+        (assoc :middleware #(middleware cfg %))
+        (assoc :create (fn [profile-id]
+                         (fn [request response]
+                           (let [uagent (get-in request [:headers "user-agent"])
+                                 value  (create cfg {:profile-id profile-id :user-agent uagent})]
+                             (assoc response :cookies (cookies cfg {:value value}))))))
+        (assoc :delete (fn [request response]
+                         (delete cfg request)
+                         (assoc response
+                                :status 204
+                                :body ""
+                                :cookies (cookies cfg {:value "" :max-age -1})))))))
+
