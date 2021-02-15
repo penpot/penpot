@@ -165,7 +165,7 @@
      (string->content data)
 
      (bytes? data)
-     (input-stream->content (ByteArrayInputStream. ^bytes data) (alength data))
+     (input-stream->content (ByteArrayInputStream. ^bytes data) (alength ^bytes data))
 
      (instance? InputStream data)
      (do

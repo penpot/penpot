@@ -37,7 +37,7 @@
 (defn encode
   ([data] (encode data nil))
   ([data {:keys [version] :or {version default-version}}]
-   (case version
+   (case  (long version)
      1 (encode-v1 data)
      2 (encode-v2 data)
      (throw (ex-info "unsupported version" {:version version})))))
@@ -81,7 +81,7 @@
 (defn- encode-v2
   [data]
   (let [data  (n/fast-freeze data)
-        dlen  (alength data)
+        dlen  (alength ^bytes data)
         mlen  (Zstd/compressBound dlen)
         cdata (byte-array mlen)
         clen  (Zstd/compressByteArray ^bytes cdata 0 mlen
