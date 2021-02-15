@@ -11,42 +11,36 @@
 
 ;; --- Proportions
 
-(declare assign-proportions-path)
-(declare assign-proportions-rect)
-
 (defn assign-proportions
-  [{:keys [type] :as shape}]
-  (case type
-    :path (assign-proportions-path shape)
-    (assign-proportions-rect shape)))
-
-(defn- assign-proportions-rect
-  [{:keys [width height] :as shape}]
-  (assoc shape :proportion (/ width height)))
-
+  [shape]
+  (let [{:keys [width height]} (:selrect shape)]
+    (assoc shape :proportion (/ width height))))
 
 ;; --- Setup Proportions
-
-(declare setup-proportions-const)
-(declare setup-proportions-image)
-
-(defn setup-proportions
-  [shape]
-  (case (:type shape)
-    :icon (setup-proportions-image shape)
-    :image (setup-proportions-image shape)
-    :text shape
-    (setup-proportions-const shape)))
 
 (defn setup-proportions-image
   [{:keys [metadata] :as shape}]
   (let [{:keys [width height]} metadata]
     (assoc shape
            :proportion (/ width height)
-           :proportion-lock false)))
+           :proportion-lock true)))
+
+(defn setup-proportions-svg
+  [{:keys [width height] :as shape}]
+  (assoc shape
+         :proportion (/ width height)
+         :proportion-lock true))
 
 (defn setup-proportions-const
   [shape]
   (assoc shape
          :proportion 1
          :proportion-lock false))
+
+(defn setup-proportions
+  [shape]
+  (case (:type shape)
+    :svg-raw (setup-proportions-svg shape)
+    :image (setup-proportions-image shape)
+    :text shape
+    (setup-proportions-const shape)))

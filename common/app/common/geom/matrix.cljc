@@ -134,3 +134,9 @@
          (th-eq m1f m2f))))
 
 (defmethod pp/simple-dispatch Matrix [obj] (pr obj))
+
+(defn transform-in [pt mtx]
+  (-> (matrix)
+      (translate pt)
+      (multiply mtx)
+      (translate (gpt/negate pt))))

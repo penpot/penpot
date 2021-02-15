@@ -66,9 +66,18 @@
   [info]
   (= (:mtype info) "image/svg+xml"))
 
+(defn- fetch-url
+  [url]
+  (try
+    (http/get! url {:as :byte-array})
+    (catch Exception e
+      (ex/raise :type :validation
+                :code :unable-to-access-to-url
+                :cause e))))
+
 (defn- download-media
   [{:keys [storage] :as cfg} url]
-  (let [result (http/get! url {:as :byte-array})
+  (let [result (fetch-url url)
         data   (:body result)
         mtype  (get (:headers result) "content-type")
         format (cm/mtype->format mtype)]

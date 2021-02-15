@@ -59,17 +59,18 @@
 
 (def routes
   [["/auth"
-    ["/login" :auth-login]
-    ["/register" :auth-register]
+    ["/login"            :auth-login]
+    ["/register"         :auth-register]
     ["/register/success" :auth-register-success]
     ["/recovery/request" :auth-recovery-request]
-    ["/recovery" :auth-recovery]
-    ["/verify-token" :auth-verify-token]]
+    ["/recovery"         :auth-recovery]
+    ["/verify-token"     :auth-verify-token]]
 
    ["/settings"
-    ["/profile" :settings-profile]
+    ["/profile"  :settings-profile]
     ["/password" :settings-password]
-    ["/options" :settings-options]]
+    ["/feedback" :settings-feedback]
+    ["/options"  :settings-options]]
 
    ["/view/:file-id/:page-id"
     {:name :viewer
@@ -89,11 +90,11 @@
    ["/render-object/:file-id/:page-id/:object-id" :render-object]
 
    ["/dashboard/team/:team-id"
-    ["/members" :dashboard-team-members]
-    ["/settings" :dashboard-team-settings]
-    ["/projects" :dashboard-projects]
-    ["/search" :dashboard-search]
-    ["/libraries" :dashboard-libraries]
+    ["/members"              :dashboard-team-members]
+    ["/settings"             :dashboard-team-settings]
+    ["/projects"             :dashboard-projects]
+    ["/search"               :dashboard-search]
+    ["/libraries"            :dashboard-libraries]
     ["/projects/:project-id" :dashboard-files]]
 
    ["/workspace/:project-id/:file-id" :workspace]])
@@ -121,7 +122,8 @@
 
      (:settings-profile
       :settings-password
-      :settings-options)
+      :settings-options
+      :settings-feedback)
      [:& settings/settings {:route route}]
 
      :debug-icons-preview

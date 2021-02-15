@@ -72,6 +72,8 @@
         do-remove-group (st/emitf dw/ungroup-selected)
         do-mask-group (st/emitf dw/mask-group)
         do-unmask-group (st/emitf dw/unmask-group)
+        do-flip-vertical (st/emitf (dw/flip-vertical-selected))
+        do-flip-horizontal (st/emitf (dw/flip-horizontal-selected))
         do-add-component (st/emitf dwl/add-component)
         do-detach-component (st/emitf (dwl/detach-component id))
         do-reset-component (st/emitf (dwl/reset-component id))
@@ -133,7 +135,18 @@
                         :on-click do-create-group}]
         [:& menu-entry {:title (t locale "workspace.shape.menu.mask")
                         :shortcut (sc/get-tooltip :mask)
-                        :on-click do-mask-group}]])
+                        :on-click do-mask-group}]
+        [:& menu-separator]])
+
+     (when (>= (count selected) 1)
+       [:*
+        [:& menu-entry {:title (t locale "workspace.shape.menu.flip-vertical")
+                        :shortcut (sc/get-tooltip :flip-vertical)
+                        :on-click do-flip-vertical}]
+        [:& menu-entry {:title (t locale "workspace.shape.menu.flip-horizontal")
+                        :shortcut (sc/get-tooltip :flip-horizontal)
+                        :on-click do-flip-horizontal}]
+        [:& menu-separator]])
 
      (when (and (= (count selected) 1) (= (:type shape) :group))
        [:*

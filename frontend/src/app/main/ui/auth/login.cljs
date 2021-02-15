@@ -37,7 +37,9 @@
   (dom/prevent-default event)
   (->> (rp/mutation! :login-with-google {})
        (rx/subs (fn [{:keys [redirect-uri] :as rsp}]
-                  (.replace js/location redirect-uri)))))
+                  (.replace js/location redirect-uri))
+                (fn [{:keys [type] :as error}]
+                  (st/emit! (dm/error (tr "errors.google-auth-not-enabled")))))))
 
 (defn- login-with-gitlab
   [event]
@@ -111,7 +113,7 @@
       (when cfg/login-with-ldap
         [:& fm/submit-button
          {:label (tr "auth.login-with-ldap-submit")
-          :on-click on-submit}])]]))
+          :on-click on-submit-ldap}])]]))
 
 (mf/defc login-page
   []

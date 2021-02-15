@@ -13,6 +13,7 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.config :as cfg]
    [app.db :as db]
    [app.emails :as emails]
    [app.media :as media]
@@ -20,6 +21,7 @@
    [app.rpc.queries.profile :as profile]
    [app.rpc.queries.teams :as teams]
    [app.storage :as sto]
+   [app.tasks :as tasks]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
@@ -133,7 +135,14 @@
         (ex/raise :type :validation
                   :code :only-owner-can-delete-team))
 
-      (db/delete! conn :team {:id id})
+      ;; Schedule object deletion
+      (tasks/submit! conn {:name "delete-object"
+                           :delay cfg/deletion-delay
+                           :props {:id id :type :team}})
+
+      (db/update! conn :team
+                  {:deleted-at (dt/now)}
+                  {:id id})
       nil)))
 
 

@@ -15,6 +15,7 @@
    [beicon.core :as rx]
    [okulary.core :as l]
    [app.common.math :as mth]
+   [app.common.geom.shapes :as gsh]
    [app.common.geom.point :as gpt]
    [app.common.geom.matrix :as gmt]
    [app.util.dom :as dom]
@@ -238,16 +239,22 @@
         gradient (mf/deref current-gradient-ref)
         editing-spot (mf/deref editing-spot-ref)
 
+        transform (gsh/transform-matrix shape)
+        transform-inverse (gsh/inverse-transform-matrix shape)
+
         {:keys [x y width height] :as sr} (:selrect shape)
 
         [{start-color :color start-opacity :opacity}
          {end-color :color end-opacity :opacity}] (:stops gradient)
 
-        from-p (gpt/point (+ x (* width (:start-x gradient)))
-                          (+ y (* height (:start-y gradient))))
+        from-p (-> (gpt/point (+ x (* width (:start-x gradient)))
+                              (+ y (* height (:start-y gradient))))
 
-        to-p   (gpt/point (+ x (* width (:end-x gradient)))
-                          (+ y (* height (:end-y gradient))))
+                   (gpt/transform transform))
+
+        to-p   (-> (gpt/point (+ x (* width (:end-x gradient)))
+                              (+ y (* height (:end-y gradient))))
+                   (gpt/transform transform))
 
         gradient-vec (gpt/to-vec from-p to-p)
         gradient-length (gpt/length gradient-vec)
@@ -263,14 +270,16 @@
                   (st/emit! (dc/update-gradient changes)))
 
         on-change-start (fn [point]
-                          (let [start-x (/ (- (:x point) x) width)
+                          (let [point (gpt/transform point transform-inverse)
+                                start-x (/ (- (:x point) x) width)
                                 start-y (/ (- (:y point) y) height)
                                 start-x (mth/precision start-x 2)
                                 start-y (mth/precision start-y 2)]
                             (change! {:start-x start-x :start-y start-y})))
 
         on-change-finish (fn [point]
-                           (let [end-x (/ (- (:x point) x) width)
+                           (let [point (gpt/transform point transform-inverse)
+                                 end-x (/ (- (:x point) x) width)
                                  end-y (/ (- (:y point) y) height)
 
                                  end-x (mth/precision end-x 2)

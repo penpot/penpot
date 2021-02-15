@@ -52,12 +52,39 @@
   (t/is (= (:component-file shape)
            (:id file))))
 
+(defn resolve-instance
+  [state root-inst-id]
+  (let [page      (thp/current-page state)
+        root-inst (cph/get-shape page root-inst-id)
+        shapes-inst   (cph/get-object-with-children
+                        root-inst-id
+                        (:objects page))]
+
+    ;; Validate that the instance tree is well constructed
+    (t/is (is-instance-root (first shapes-inst)))
+    (run! is-instance-child (rest shapes-inst))
+
+    shapes-inst))
+
+(defn resolve-noninstance
+  [state root-inst-id]
+  (let [page      (thp/current-page state)
+        root-inst (cph/get-shape page root-inst-id)
+        shapes-inst   (cph/get-object-with-children
+                        root-inst-id
+                        (:objects page))]
+
+    ;; Validate that the tree is not an instance
+    (run! is-noninstance shapes-inst)
+
+    shapes-inst))
+
 (defn resolve-instance-and-master
   [state root-inst-id]
   (let [page      (thp/current-page state)
         root-inst (cph/get-shape page root-inst-id)
 
-        file (dwlh/get-local-file state)
+        file      (dwlh/get-local-file state)
         component (cph/get-component
                     (:component-id root-inst)
                     (:id file)
@@ -87,4 +114,26 @@
     (run! master-exists? shapes-inst)
 
     [shapes-inst shapes-master component]))
+
+(defn resolve-component
+  [state component-id]
+  (let [page      (thp/current-page state)
+
+        file      (dwlh/get-local-file state)
+        component (cph/get-component
+                    component-id
+                    (:id file)
+                    file
+                    nil)
+
+        root-master   (cph/get-component-root
+                        component)
+        shapes-master (cph/get-object-with-children
+                        (:id root-master)
+                        (:objects component))]
+
+    ;; Validate that the component tree is well constructed
+    (run! is-noninstance shapes-master)
+
+    [shapes-master component]))
 

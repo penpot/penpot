@@ -808,6 +808,168 @@
 
 ;; --- Change Shape Order (D&D Ordering)
 
+(defn relocate-shapes-changes [objects parents parent-id page-id to-index ids groups-to-delete groups-to-unmask shapes-to-detach shapes-to-reroot shapes-to-deroot]
+  (let [;; Changes to the shapes that are being move
+        r-mov-change
+        [{:type :mov-objects
+          :parent-id parent-id
+          :page-id page-id
+          :index to-index
+          :shapes (vec (reverse ids))}]
+
+        u-mov-change
+        (map (fn [id]
+               (let [obj (get objects id)]
+                 {:type :mov-objects
+                  :parent-id (:parent-id obj)
+                  :page-id page-id
+                  :index (cp/position-on-parent id objects)
+                  :shapes [id]}))
+             (reverse ids))
+
+        ;; Changes deleting empty groups
+        r-del-change
+        (map (fn [group-id]
+               {:type :del-obj
+                :page-id page-id
+                :id group-id})
+             groups-to-delete)
+
+        u-del-change
+        (d/concat
+         []
+         ;; Create the groups
+         (map (fn [group-id]
+                (let [group (get objects group-id)]
+                  {:type :add-obj
+                   :page-id page-id
+                   :parent-id parent-id
+                   :frame-id (:frame-id group)
+                   :id group-id
+                   :obj (-> group
+                            (assoc :shapes []))}))
+              groups-to-delete)
+         ;; Creates the hierarchy
+         (map (fn [group-id]
+                (let [group (get objects group-id)]
+                  {:type :mov-objects
+                   :page-id page-id
+                   :parent-id (:id group)
+                   :shapes (:shapes group)}))
+              groups-to-delete))
+
+        ;; Changes removing the masks from the groups without mask shape
+        r-mask-change
+        (map (fn [group-id]
+               {:type :mod-obj
+                :page-id page-id
+                :id group-id
+                :operations [{:type :set
+                              :attr :masked-group?
+                              :val false}]})
+             groups-to-unmask)
+
+        u-mask-change
+        (map (fn [group-id]
+               (let [group (get objects group-id)]
+                 {:type :mod-obj
+                  :page-id page-id
+                  :id group-id
+                  :operations [{:type :set
+                                :attr :masked-group?
+                                :val (:masked-group? group)}]}))
+             groups-to-unmask)
+
+        ;; Changes to the components metadata
+
+        detach-keys [:component-id :component-file :component-root? :remote-synced? :shape-ref :touched]
+
+        r-detach-change
+        (map (fn [id]
+               {:type :mod-obj
+                :page-id page-id
+                :id id
+                :operations (mapv #(hash-map :type :set :attr % :val nil) detach-keys)})
+             shapes-to-detach)
+
+        u-detach-change
+        (map (fn [id]
+               (let [obj (get objects id)]
+                 {:type :mod-obj
+                  :page-id page-id
+                  :id id
+                  :operations (mapv #(hash-map :type :set :attr % :val (get obj %)) detach-keys)}))
+             shapes-to-detach)
+
+        r-deroot-change
+        (map (fn [id]
+               {:type :mod-obj
+                :page-id page-id
+                :id id
+                :operations [{:type :set
+                              :attr :component-root?
+                              :val nil}]})
+             shapes-to-deroot)
+
+        u-deroot-change
+        (map (fn [id]
+               {:type :mod-obj
+                :page-id page-id
+                :id id
+                :operations [{:type :set
+                              :attr :component-root?
+                              :val true}]})
+             shapes-to-deroot)
+
+        r-reroot-change
+        (map (fn [id]
+               {:type :mod-obj
+                :page-id page-id
+                :id id
+                :operations [{:type :set
+                              :attr :component-root?
+                              :val true}]})
+             shapes-to-reroot)
+
+        u-reroot-change
+        (map (fn [id]
+               {:type :mod-obj
+                :page-id page-id
+                :id id
+                :operations [{:type :set
+                              :attr :component-root?
+                              :val nil}]})
+             shapes-to-reroot)
+
+        r-reg-change
+        [{:type :reg-objects
+          :page-id page-id
+          :shapes (vec parents)}]
+
+        u-reg-change
+        [{:type :reg-objects
+          :page-id page-id
+          :shapes (vec parents)}]
+
+        rchanges (d/concat []
+                           r-mov-change
+                           r-del-change
+                           r-mask-change
+                           r-detach-change
+                           r-deroot-change
+                           r-reroot-change
+                           r-reg-change)
+
+        uchanges (d/concat []
+                           u-del-change
+                           u-reroot-change
+                           u-deroot-change
+                           u-detach-change
+                           u-mask-change
+                           u-mov-change
+                           u-reg-change)]
+    [rchanges uchanges]))
+
 (defn relocate-shapes
   [ids parent-id to-index]
   (us/verify (s/coll-of ::us/uuid) ids)
@@ -826,13 +988,37 @@
             ;; If we try to move a parent into a child we remove it
             ids (filter #(not (cp/is-parent? objects parent-id %)) ids)
 
-            parents  (loop [res #{parent-id}
-                            ids (seq ids)]
-                       (if (nil? ids)
-                         (vec res)
-                         (recur
-                          (conj res (cp/get-parent (first ids) objects))
-                          (next ids))))
+            parents (reduce (fn [result id]
+                              (conj result (cp/get-parent id objects)))
+                            #{parent-id} ids)
+
+            groups-to-delete
+            (loop [current-id (first parents)
+                   to-check (rest parents)
+                   removed-id? (set ids)
+                   result #{}]
+
+              (if-not current-id
+                ;; Base case, no next element
+                result
+
+                (let [group (get objects current-id)]
+                  (if (and (not= uuid/zero current-id)
+                           (not= current-id parent-id)
+                           (empty? (remove removed-id? (:shapes group))))
+
+                    ;; Adds group to the remove and check its parent
+                    (let [to-check (d/concat [] to-check [(cp/get-parent current-id objects)]) ]
+                      (recur (first to-check)
+                             (rest to-check)
+                             (conj removed-id? current-id)
+                             (conj result current-id)))
+
+                    ;; otherwise recur
+                    (recur (first to-check)
+                           (rest to-check)
+                           removed-id?
+                           result)))))
 
             groups-to-unmask
             (reduce (fn [group-ids id]
@@ -849,6 +1035,10 @@
                     #{}
                     ids)
 
+            ;; Sets the correct components metadata for the moved shapes
+            ;; `shapes-to-detach` Detach from a component instance a shape that was inside a component and is moved outside
+            ;; `shapes-to-deroot` Removes the root flag from a component instance moved inside another component
+            ;; `shapes-to-reroot` Adds a root flag when a nested component instance is moved outside
             [shapes-to-detach shapes-to-deroot shapes-to-reroot]
             (reduce (fn [[shapes-to-detach shapes-to-deroot shapes-to-reroot] id]
                       (let [shape          (get objects id)
@@ -876,131 +1066,18 @@
                     [[] [] []]
                     ids)
 
-            rchanges (d/concat
-                       [{:type :mov-objects
-                         :parent-id parent-id
-                         :page-id page-id
-                         :index to-index
-                         :shapes (vec (reverse ids))}
-                        {:type :reg-objects
-                         :page-id page-id
-                         :shapes parents}]
-                       (map (fn [group-id]
-                              {:type :mod-obj
-                               :page-id page-id
-                               :id group-id
-                               :operations [{:type :set
-                                             :attr :masked-group?
-                                             :val false}]})
-                            groups-to-unmask)
-                       (map (fn [id]
-                              {:type :mod-obj
-                               :page-id page-id
-                               :id id
-                               :operations [{:type :set
-                                             :attr :component-id
-                                             :val nil}
-                                            {:type :set
-                                             :attr :component-file
-                                             :val nil}
-                                            {:type :set
-                                             :attr :component-root?
-                                             :val nil}
-                                            {:type :set
-                                             :attr :remote-synced?
-                                             :val nil}
-                                            {:type :set
-                                             :attr :shape-ref
-                                             :val nil}
-                                            {:type :set
-                                             :attr :touched
-                                             :val nil}]})
-                            shapes-to-detach)
-                       (map (fn [id]
-                              {:type :mod-obj
-                               :page-id page-id
-                               :id id
-                               :operations [{:type :set
-                                             :attr :component-root?
-                                             :val nil}]})
-                            shapes-to-deroot)
-                       (map (fn [id]
-                              {:type :mod-obj
-                               :page-id page-id
-                               :id id
-                               :operations [{:type :set
-                                             :attr :component-root?
-                                             :val true}]})
-                            shapes-to-reroot))
-
-            uchanges (d/concat
-                       (reduce (fn [res id]
-                                 (let [obj (get objects id)]
-                                   (conj res
-                                         {:type :mov-objects
-                                          :parent-id (:parent-id obj)
-                                          :page-id page-id
-                                          :index (cp/position-on-parent id objects)
-                                          :shapes [id]})))
-                               [] (reverse ids))
-                       [{:type :reg-objects
-                            :page-id page-id
-                            :shapes parents}]
-                       (map (fn [group-id]
-                              {:type :mod-obj
-                               :page-id page-id
-                               :id group-id
-                               :operations [{:type :set
-                                             :attr :masked-group?
-                                             :val true}]})
-                            groups-to-unmask)
-                       (map (fn [id]
-                              (let [obj (get objects id)]
-                                {:type :mod-obj
-                                 :page-id page-id
-                                 :id id
-                                 :operations [{:type :set
-                                               :attr :component-id
-                                               :val (:component-id obj)}
-                                              {:type :set
-                                               :attr :component-file
-                                               :val (:component-file obj)}
-                                              {:type :set
-                                               :attr :component-root?
-                                               :val (:component-root? obj)}
-                                              {:type :set
-                                               :attr :remote-synced?
-                                               :val (:remote-synced? obj)}
-                                              {:type :set
-                                               :attr :shape-ref
-                                               :val (:shape-ref obj)}
-                                              {:type :set
-                                               :attr :touched
-                                               :val (:touched obj)}]}))
-                            shapes-to-detach)
-                       (map (fn [id]
-                              {:type :mod-obj
-                               :page-id page-id
-                               :id id
-                               :operations [{:type :set
-                                             :attr :component-root?
-                                             :val true}]})
-                            shapes-to-deroot)
-                       (map (fn [id]
-                              {:type :mod-obj
-                               :page-id page-id
-                               :id id
-                               :operations [{:type :set
-                                             :attr :component-root?
-                                             :val nil}]})
-                            shapes-to-reroot))]
-
-        ;; (println "================ rchanges")
-        ;; (cljs.pprint/pprint rchanges)
-        ;; (println "================ uchanges")
-        ;; (cljs.pprint/pprint uchanges)
-        (rx/of (dwc/commit-changes rchanges uchanges
-                                   {:commit-local? true})
+            [rchanges uchanges] (relocate-shapes-changes objects
+                                                         parents
+                                                         parent-id
+                                                         page-id
+                                                         to-index
+                                                         ids
+                                                         groups-to-delete
+                                                         groups-to-unmask
+                                                         shapes-to-detach
+                                                         shapes-to-reroot
+                                                         shapes-to-deroot)]
+        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
                (dwc/expand-collapse parent-id))))))
 
 (defn relocate-selected-shapes
@@ -1404,11 +1481,16 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (try
-        (let [paste-data    (wapi/read-from-paste-event event)
+        (let [objects (dwc/lookup-page-objects state)
+              paste-data    (wapi/read-from-paste-event event)
               image-data    (wapi/extract-images paste-data)
               text-data     (wapi/extract-text paste-data)
               decoded-data  (and (t/transit? text-data)
-                                 (t/decode text-data))]
+                                 (t/decode text-data))
+
+              edit-id (get-in state [:workspace-local :edition])
+              is-editing-text? (and edit-id (= :text (get-in objects [edit-id :type])))]
+
           (cond
             (seq image-data)
             (rx/from (map paste-image image-data))
@@ -1418,7 +1500,9 @@
                  (rx/filter #(= :copied-shapes (:type %)))
                  (rx/map #(paste-shape % in-viewport?)))
 
-            (string? text-data)
+            ;; Some paste events can be fired while we're editing a text
+            ;; we forbid that scenario so the default behaviour is executed
+            (and (string? text-data) (not is-editing-text?))
             (rx/of (paste-text text-data))
 
             :else
@@ -1722,6 +1806,8 @@
 (d/export dwt/set-modifiers)
 (d/export dwt/apply-modifiers)
 (d/export dwt/update-dimensions)
+(d/export dwt/flip-horizontal-selected)
+(d/export dwt/flip-vertical-selected)
 
 ;; Persistence
 

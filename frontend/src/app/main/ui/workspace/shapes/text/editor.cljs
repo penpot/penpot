@@ -173,13 +173,15 @@
                 options (dom/get-element-by-class "element-options")
                 assets (dom/get-element-by-class "assets-bar")
                 cpicker (dom/get-element-by-class "colorpicker-tooltip")
+                palette (dom/get-element-by-class "color-palette")
                 self    (mf/ref-val self-ref)
                 selecting? (mf/ref-val selecting-ref)]
 
             (when-not (or (and options (.contains options target))
                           (and assets  (.contains assets target))
                           (and self    (.contains self target))
-                          (and cpicker (.contains cpicker target)))
+                          (and cpicker (.contains cpicker target))
+                          (and palette (.contains palette target)))
               (do
 
                 (if selecting?

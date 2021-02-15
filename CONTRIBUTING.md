@@ -1,8 +1,8 @@
 # Contributing Guide #
 
 Thank you for your interest in contributing to Penpot. This is a
-generic guide that details how to contribute to Penpot in a way that is
-efficient for everyone. If you want a specific documentation for
+generic guide that details how to contribute to Penpot in a way that
+is efficient for everyone. If you want a specific documentation for
 different parts of the platform, please refer to `docs/` directory.
 
 
@@ -19,12 +19,20 @@ If you found a bug, please report it, as far as possible with:
 - a browser and the browser version used
 - a dev tools console exception stack trace (if it is available)
 
+If you found a bug that you consider better discuse in private (for
+example: security bugs), consider first send an email to
+`info@penpot.app`.
+
+**We don't have formal bug bounty program for security reports; this
+is an open source application and your contribution will be recognized
+in the changelog.**
+
 
 ## Pull requests ##
 
 If you want propose a change or bug fix with the Pull-Request system
-firstly you should carefully read the **Contributor License Aggreement**
-section and format your commits accordingly.
+firstly you should carefully read the **DCO** section and format your
+commits accordingly.
 
 If you intend to fix a bug it's fine to submit a pull request right
 away but we still recommend to file an issue detailing what you're
@@ -127,7 +135,7 @@ This Code of Conduct is adapted from the Contributor Covenant, version
 1.1.0, available from http://contributor-covenant.org/version/1/1/0/
 
 
-## Contributor License Agreement ##
+## Developer's Certificate of Origin (DCO) ##
 
 By submitting code you are agree and can certify the below:
 
@@ -157,9 +165,9 @@ By submitting code you are agree and can certify the below:
         maintained indefinitely and may be redistributed consistent with
         this project or the open source license(s) involved.
 
-Then, all your patches should contain a sign-off at the end of the
-patch/commit description body. It can be automatically added on adding
-`-s` parameter to `git commit`.
+Then, all your code patches (**documentation are excluded**) should
+contain a sign-off at the end of the patch/commit description body. It
+can be automatically added on adding `-s` parameter to `git commit`.
 
 This is an example of the aspect of the line:
 

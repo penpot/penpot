@@ -67,6 +67,7 @@
 (def default-language "en")
 
 (def demo-warning     (obj/get global "penpotDemoWarning" false))
+(def feedback-enabled (obj/get global "penpotFeedbackEnabled" false))
 (def allow-demo-users (obj/get global "penpotAllowDemoUsers" true))
 (def google-client-id (obj/get global "penpotGoogleClientID" nil))
 (def gitlab-client-id (obj/get global "penpotGitlabClientID" nil))

@@ -198,7 +198,7 @@
 
 (defn retrieve-used-names
   [objects]
-  (into #{} (map :name) (vals objects)))
+  (into #{} (comp (map :name) (remove nil?)) (vals objects)))
 
 
 (defn generate-unique-name

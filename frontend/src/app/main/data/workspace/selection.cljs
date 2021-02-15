@@ -164,11 +164,10 @@
                                     (not= (:id common-frame-id) uuid/zero))
                              (-> (get objects common-frame-id)
                                  :shapes)
-                             (let [frames (cp/select-frames objects)]
-                               (->> (if (seq frames)
-                                      frames
-                                      (cp/select-toplevel-shapes objects))
-                                    (map :id)))))
+                             (->> (cp/select-toplevel-shapes objects
+                                                             {:include-frames? true
+                                                              :include-frame-children? false})
+                                  (map :id))))
 
             is-not-blocked (fn [shape-id] (not (get-in state [:workspace-data
                                                               :pages-index page-id

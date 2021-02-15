@@ -24,6 +24,8 @@
    :database-username "penpot"
    :database-password "penpot"
 
+   :default-blob-version 1
+
    :asserts-enabled false
 
    :public-uri "http://localhost:3449"
@@ -37,6 +39,9 @@
    :storage-fs-directory "resources/public/assets"
    :storage-s3-region :eu-central-1
    :storage-s3-bucket "penpot-devenv-assets-pre"
+
+   :feedback-destination "info@example.com"
+   :feedback-enabled false
 
    :assets-path "/internal/assets/"
 
@@ -79,6 +84,7 @@
 (s/def ::database-uri ::us/string)
 (s/def ::redis-uri ::us/string)
 
+
 (s/def ::storage-backend ::us/keyword)
 (s/def ::storage-fs-directory ::us/string)
 (s/def ::assets-path ::us/string)
@@ -89,7 +95,11 @@
 (s/def ::media-directory ::us/string)
 (s/def ::asserts-enabled ::us/boolean)
 
+(s/def ::feedback-enabled ::us/boolean)
+(s/def ::feedback-destination ::us/string)
+
 (s/def ::error-report-webhook ::us/string)
+
 (s/def ::smtp-enabled ::us/boolean)
 (s/def ::smtp-default-reply-to ::us/string)
 (s/def ::smtp-default-from ::us/string)
@@ -142,13 +152,18 @@
 (s/def ::initial-data-file ::us/string)
 (s/def ::initial-data-project-name ::us/string)
 
+(s/def ::default-blob-version ::us/integer)
+
 (s/def ::config
   (s/keys :opt-un [::allow-demo-users
                    ::asserts-enabled
                    ::database-password
                    ::database-uri
                    ::database-username
+                   ::default-blob-version
                    ::error-report-webhook
+                   ::feedback-enabled
+                   ::feedback-destination
                    ::github-client-id
                    ::github-client-secret
                    ::gitlab-base-uri
@@ -230,5 +245,5 @@
 (def config (read-config env))
 (def test-config (read-test-config env))
 
-(def default-deletion-delay
-  (dt/duration {:hours 48}))
+(def deletion-delay
+  (dt/duration {:days 7}))

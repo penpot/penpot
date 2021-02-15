@@ -360,7 +360,7 @@
           (t/is (= [rect-a-id rect-e-id rect-d-id]
                    (get-in objects [group-b-id :shapes]))))))
 
-    (t/testing "Move elements and delete the empty group"
+    (t/testing "Move all elements from a group"
       (let [changes [{:type :mov-objects
                       :page-id page-id
                       :parent-id group-a-id
@@ -368,9 +368,9 @@
             res (cp/process-changes data changes)]
 
         (let [objects (get-in res [:pages-index page-id :objects])]
-          (t/is (= [group-a-id rect-e-id]
+          (t/is (= [group-a-id group-b-id rect-e-id]
                    (get-in objects [frame-a-id :shapes])))
-          (t/is (nil? (get-in objects [group-b-id]))))))
+          (t/is (empty? (get-in objects [group-b-id :shapes]))))))
 
     (t/testing "Move elements to a group with different frame"
       (let [changes [{:type :mov-objects
@@ -727,11 +727,11 @@
 
         ;; After
 
-        (t/is (= [shape-2-id shape-1-id shape-3-id shape-4-id]
+        (t/is (= [shape-2-id shape-1-id shape-3-id shape-4-id group-1-id]
                  (get-in res [:pages-index page-id :objects cp/root :shapes])))
 
-        (t/is (= nil
-                 (get-in res [:pages-index page-id :objects group-1-id])))
+        (t/is (not= nil
+                    (get-in res [:pages-index page-id :objects group-1-id])))
 
         ))
 

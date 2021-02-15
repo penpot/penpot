@@ -82,8 +82,6 @@
                   {:keys [rotation]} shape
                   shapev (-> (gpt/point width height))
 
-                  rotation (if (= :path (:type shape)) 0 rotation)
-
                   ;; Vector modifiers depending on the handler
                   handler-modif (let [[x y] (handler-modifiers handler)] (gpt/point x y))
 
@@ -125,15 +123,7 @@
           ;; lock flag that can be activated on element options.
           (normalize-proportion-lock [[point shift?]]
             (let [proportion-lock? (:proportion-lock shape)]
-              [point (or proportion-lock? shift?)]))
-
-          ;; Applies alginment to point if it is currently
-          ;; activated on the current workspace
-          ;; (apply-grid-alignment [point]
-          ;;   (if @refs/selected-alignment
-          ;;     (uwrk/align-point point)
-          ;;     (rx/of point)))
-          ]
+              [point (or proportion-lock? shift?)]))]
     (reify
       ptk/UpdateEvent
       (update [_ state]
@@ -142,8 +132,7 @@
 
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [current-pointer @ms/mouse-position
-              initial-position (merge current-pointer initial)
+        (let [initial-position @ms/mouse-position
               stoper  (rx/filter ms/mouse-up? stream)
               layout  (:workspace-layout state)
               page-id (:current-page-id state)
@@ -541,3 +530,37 @@
             objects (dwc/lookup-page-objects state page-id)
             ids (d/concat [] ids (mapcat #(cp/get-children % objects) ids))]
         (rx/of (apply-modifiers ids))))))
+
+(defn flip-horizontal-selected []
+  (ptk/reify ::flip-horizontal-selected
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [objects  (dwc/lookup-page-objects state)
+            selected (get-in state [:workspace-local :selected])
+            shapes   (map #(get objects %) selected)
+            selrect  (gsh/selection-rect (->> shapes (map gsh/transform-shape)))
+            origin   (gpt/point (:x selrect) (+ (:y selrect) (/ (:height selrect) 2)))]
+
+        (rx/of (set-modifiers selected
+                              {:resize-vector (gpt/point -1.0 1.0)
+                               :resize-origin origin
+                               :displacement (gmt/translate-matrix (gpt/point (- (:width selrect)) 0))}
+                              false)
+               (apply-modifiers selected))))))
+
+(defn flip-vertical-selected []
+  (ptk/reify ::flip-vertical-selected
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [objects  (dwc/lookup-page-objects state)
+            selected (get-in state [:workspace-local :selected])
+            shapes   (map #(get objects %) selected)
+            selrect  (gsh/selection-rect (->> shapes (map gsh/transform-shape)))
+            origin   (gpt/point (+ (:x selrect) (/ (:width selrect) 2)) (:y selrect))]
+
+        (rx/of (set-modifiers selected
+                              {:resize-vector (gpt/point 1.0 -1.0)
+                               :resize-origin origin
+                               :displacement (gmt/translate-matrix (gpt/point 0 (- (:height selrect))))}
+                              false)
+               (apply-modifiers selected))))))

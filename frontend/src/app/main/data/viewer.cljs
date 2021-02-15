@@ -417,3 +417,12 @@
     (update [_ state]
       (assoc-in state [:viewer-local :hover] (when hover? id)))))
 
+
+(defn go-to-dashboard
+  ([] (go-to-dashboard nil))
+  ([{:keys [team-id]}]
+   (ptk/reify ::go-to-dashboard
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [team-id (or team-id (get-in state [:viewer-data :project :team-id]))]
+         (rx/of (rt/nav :dashboard-projects {:team-id team-id})))))))

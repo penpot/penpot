@@ -38,6 +38,10 @@
     width: 18%;
     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
 
+    .grid-item-th {
+      text-align: initial;
+    }
+
     &.placeholder {
       min-width: 115px;
       max-width: 115px;

@@ -108,6 +108,14 @@
                         :command (ds/c-mod "k")
                         :fn #(st/emit! dwl/add-component)}
 
+   :flip-vertical      {:tooltip (ds/shift "V")
+                        :command "shift+v"
+                        :fn #(st/emit! (dw/flip-vertical-selected))}
+
+   :flip-horizontal    {:tooltip (ds/shift "V")
+                        :command "shift+h"
+                        :fn #(st/emit! (dw/flip-horizontal-selected))}
+
    :reset-zoom         {:tooltip (ds/shift "0")
                         :command "shift+0"
                         :fn #(st/emit! dw/reset-zoom)}

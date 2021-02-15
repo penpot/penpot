@@ -319,7 +319,7 @@
 
 (defn instantiate-component
   "Create a new shape in the current page, from the component with the given id
-  in the given file library / current file library."
+  in the given file library. Then selects the newly created instance."
   [file-id component-id position]
   (us/assert ::us/uuid file-id)
   (us/assert ::us/uuid component-id)

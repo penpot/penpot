@@ -43,6 +43,16 @@
 
 ;; --- Emails
 
+(s/def ::subject ::us/string)
+(s/def ::content ::us/string)
+
+(s/def ::feedback
+  (s/keys :req-un [::subject ::content]))
+
+(def feedback
+  "A profile feedback email."
+  (emails/template-factory ::feedback default-context))
+
 (s/def ::name ::us/string)
 (s/def ::register
   (s/keys :req-un [::name]))

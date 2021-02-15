@@ -20,28 +20,36 @@
   ([props] (generate-root-styles (clj->js (obj/get props "node")) props))
   ([data props]
    (let [valign (obj/get data "vertical-align" "top")
-         talign (obj/get data "text-align" "flex-start")
          shape  (obj/get props "shape")
          base   #js {:height (or (:height shape) "100%")
-                     :width (or (:width shape) "100%")
-                     :display "flex"}]
+                     :width (or (:width shape) "100%")}]
      (cond-> base
-       (= valign "top")     (obj/set! "alignItems" "flex-start")
-       (= valign "center")  (obj/set! "alignItems" "center")
-       (= valign "bottom")  (obj/set! "alignItems" "flex-end")
-
-       (= talign "left")    (obj/set! "justifyContent" "flex-start")
-       (= talign "center")  (obj/set! "justifyContent" "center")
-       (= talign "right")   (obj/set! "justifyContent" "flex-end")
-       (= talign "justify") (obj/set! "justifyContent" "stretch")))))
+       (= valign "top")     (obj/set! "justifyContent" "flex-start")
+       (= valign "center")  (obj/set! "justifyContent" "center")
+       (= valign "bottom")  (obj/set! "justifyContent" "flex-end")
+       ))))
 
 (defn generate-paragraph-set-styles
-  ([props] (generate-paragraph-set-styles nil props))
+  ([props] (generate-paragraph-set-styles (clj->js (obj/get props "node")) props))
   ([data props]
-   ;; The position absolute is used so the paragraph is "outside"
-   ;; the normal layout and can grow outside its parent
-   ;; We use this element to measure the size of the text
-   (let [base #js {:display "inline-block"}]
+   ;; This element will control the auto-width/auto-height size for the
+   ;; shape. The properties try to adjust to the shape and "overflow" if
+   ;; the shape is not big enough.
+   ;; We `inherit` the property `justify-content` so it's set by the root where
+   ;; the property it's known.
+   ;; `inline-flex` is similar to flex but `overflows` outside the bounds of the
+   ;; parent
+   (let [shape  (obj/get props "shape")
+         grow-type (:grow-type shape)
+         auto-width? (= grow-type :auto-width)
+         auto-height? (= grow-type :auto-height)
+
+         base #js {:display "inline-flex"
+                   :flexDirection "column"
+                   :justifyContent "inherit"
+                   :minHeight (when-not (or auto-width? auto-height?) "100%")
+                   :minWidth (when-not auto-width? "100%")
+                   :verticalAlign "top"}]
      base)))
 
 (defn generate-paragraph-styles
