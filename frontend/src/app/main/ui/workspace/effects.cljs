@@ -9,13 +9,13 @@
 
 (ns app.main.ui.workspace.effects
   (:require
-   [rumext.alpha :as mf]
-   [app.util.dom :as dom]
-   [app.main.data.workspace.selection :as dws]
-   [app.main.store :as st]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.selection :as dws]
    [app.main.refs :as refs]
-   [app.main.ui.keyboard :as kbd]))
+   [app.main.store :as st]
+   [app.util.dom :as dom]
+   [app.util.keyboard :as kbd]
+   [rumext.alpha :as mf]))
 
 (defn use-pointer-enter
   [{:keys [id]}]

@@ -10,17 +10,17 @@
 (ns app.main.ui.workspace.shapes.interactions
   "Visually show shape interactions in workspace"
   (:require
-   [rumext.alpha :as mf]
-   [cuerdas.core :as str]
-   [app.util.data :as dt]
-   [app.util.dom :as dom]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
-   [app.main.store :as st]
-   [app.main.refs :as refs]
    [app.main.data.workspace :as dw]
-   [app.main.ui.keyboard :as kbd]
-   [app.main.ui.workspace.shapes.outline :refer [outline]]))
+   [app.main.refs :as refs]
+   [app.main.store :as st]
+   [app.main.ui.workspace.shapes.outline :refer [outline]]
+   [app.util.data :as dt]
+   [app.util.dom :as dom]
+   [app.util.keyboard :as kbd]
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
 (defn- get-click-interaction
   [shape]

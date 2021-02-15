@@ -14,10 +14,9 @@
    [app.main.data.viewer :as dv]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
-   [app.main.ui.keyboard :as kbd]
-   [app.main.ui.keyboard :as kbd]
    [app.main.ui.workspace.sidebar.layers :refer [element-icon layer-name frame-wrapper]]
    [app.util.dom :as dom]
+   [app.util.keyboard :as kbd]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 

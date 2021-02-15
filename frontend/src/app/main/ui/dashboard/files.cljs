@@ -16,9 +16,9 @@
    [app.main.ui.dashboard.grid :refer [grid]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.icons :as i]
-   [app.main.ui.keyboard :as kbd]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t]]
+   [app.util.keyboard :as kbd]
    [app.util.router :as rt]
    [okulary.core :as l]
    [rumext.alpha :as mf]))

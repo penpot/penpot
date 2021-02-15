@@ -9,12 +9,12 @@
 
 (ns app.main.ui.components.editable-label
   (:require
-   [rumext.alpha :as mf]
    [app.main.ui.icons :as i]
-   [app.main.ui.keyboard :as kbd]
+   [app.util.data :refer [classnames]]
    [app.util.dom :as dom]
+   [app.util.keyboard :as kbd]
    [app.util.timers :as timers]
-   [app.util.data :refer [classnames]]))
+   [rumext.alpha :as mf]))
 
 (mf/defc editable-label
   [{:keys [value on-change on-cancel editing? disable-dbl-click? class-name]}]

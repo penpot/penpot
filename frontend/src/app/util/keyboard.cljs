@@ -7,8 +7,7 @@
 ;;
 ;; Copyright (c) 2020-2021 UXBOX Labs SL
 
-;; TODO: Move to another namespace
-(ns app.main.ui.keyboard)
+(ns app.util.keyboard)
 
 (defn is-keycode?
   [keycode]
