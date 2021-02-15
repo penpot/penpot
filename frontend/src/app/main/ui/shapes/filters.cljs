@@ -124,33 +124,36 @@
 (defn get-filters-bounds
   [shape filters blur-value]
 
-  (if (and (= :svg-raw (:type shape))
-           (not= :svg (get-in shape [:content :tag])))
+  (let [svg-root? (and (= :svg-raw (:type shape)) (not= :svg (get-in shape [:content :tag])))
+        frame? (= :frame (:type shape))
+        {:keys [x y width height]} (:selrect shape)]
+    (if svg-root?
+      ;; When is a raw-svg but not the root we use the whole svg as bound for the filter. Is the maximum
+      ;; we're allowed to display
+      {:x 0 :y 0 :width width :height height}
 
-    ;; When is a raw-svg but not the root we use the whole svg as bound for the filter. Is the maximum
-    ;; we're allowed to display
-    {:x 0 :y 0 :width (get-in shape [:selrect :width]) :height (get-in shape [:selrect :height])}
+      ;; Otherwise we calculate the bound
+      (let [filter-bounds (->> filters
+                               (filter #(= :drop-shadow (:type %)))
+                               (map (partial filter-bounds shape) ))
+            ;; We add the selrect so the minimum size will be the selrect
+            filter-bounds (conj filter-bounds (:selrect shape))
+            x1 (apply min (map :x1 filter-bounds))
+            y1 (apply min (map :y1 filter-bounds))
+            x2 (apply max (map :x2 filter-bounds))
+            y2 (apply max (map :y2 filter-bounds))
 
-    ;; Otherwise we calculate the bound
-    (let [filter-bounds (->> filters
-                             (filter #(= :drop-shadow (:type %)))
-                             (map (partial filter-bounds shape) ))
-          ;; We add the selrect so the minimum size will be the selrect
-          filter-bounds (conj filter-bounds (:selrect shape))
-          x1 (apply min (map :x1 filter-bounds))
-          y1 (apply min (map :y1 filter-bounds))
-          x2 (apply max (map :x2 filter-bounds))
-          y2 (apply max (map :y2 filter-bounds))
+            x1 (- x1 (* blur-value 2))
+            x2 (+ x2 (* blur-value 2))
+            y1 (- y1 (* blur-value 2))
+            y2 (+ y2 (* blur-value 2))]
 
-          x1 (- x1 (* blur-value 2))
-          x2 (+ x2 (* blur-value 2))
-          y1 (- y1 (* blur-value 2))
-          y2 (+ y2 (* blur-value 2))]
-
-      {:x x1
-       :y y1
-       :width (- x2 x1)
-       :height (- y2 y1)})))
+        ;; We should move the frame filter coordinates because they should be
+        ;; relative with the frame. By default they come as absolute
+        {:x (if frame? (- x1 x) x1)
+         :y (if frame? (- y1 y) y1)
+         :width (- x2 x1)
+         :height (- y2 y1)}))))
 
 (defn blur-filters [type value]
   (->> [value]

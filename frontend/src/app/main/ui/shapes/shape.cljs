@@ -27,14 +27,26 @@
         filter-id (str "filter_" render-id)
         styles    (cond-> (obj/new)
                     (:blocked shape) (obj/set! "pointerEvents" "none"))
+
+        {:keys [x y width height type]} shape
+        frame? (= :frame type)
         group-props (-> (obj/clone props)
                         (obj/without ["shape" "children"])
                         (obj/set! "id" (str "shape-" (:id shape)))
-                        (obj/set! "className" (str "shape " (:type shape)))
                         (obj/set! "filter" (filters/filter-str filter-id shape))
-                        (obj/set! "style" styles))]
+                        (obj/set! "style" styles)
+
+                        (cond-> frame?
+                          (-> (obj/set! "x" x)
+                              (obj/set! "y" y)
+                              (obj/set! "width" width)
+                              (obj/set! "height" height)
+                              (obj/set! "xmlnsXlink" "http://www.w3.org/1999/xlink")
+                              (obj/set! "xmlns" "http://www.w3.org/2000/svg"))))
+
+        wrapper-tag (if frame? "svg" "g")]
     [:& (mf/provider muc/render-ctx) {:value render-id}
-     [:> :g group-props
+     [:> wrapper-tag group-props
       [:defs
        [:& filters/filters {:shape shape :filter-id filter-id}]
        [:& grad/gradient   {:shape shape :attr :fill-color-gradient}]

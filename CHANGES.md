@@ -11,7 +11,7 @@
 
 - Properly handle errors on github, gitlab and ldap auth backends.
 - Properly mark profile auth backend (on first register/ auth with 3rd party auth provider).
-
+- Fix problem width handoff code generation [Taiga #1204](https://tree.taiga.io/project/penpot/issue/1204)
 
 
 ## 1.2.0-alpha
