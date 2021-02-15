@@ -256,12 +256,11 @@
 ;; --- Helpers
 
 (defn decode-row
-  [{:keys [pages data changes] :as row}]
+  [{:keys [data changes] :as row}]
   (when row
     (cond-> row
       changes (assoc :changes (blob/decode changes))
-      data (assoc :data (blob/decode data))
-      pages (assoc :pages (vec (.getArray pages))))))
+      data    (assoc :data (blob/decode data)))))
 
 (def decode-row-xf
   (comp (map decode-row)

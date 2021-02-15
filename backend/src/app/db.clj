@@ -27,6 +27,7 @@
    com.zaxxer.hikari.HikariConfig
    com.zaxxer.hikari.HikariDataSource
    com.zaxxer.hikari.metrics.prometheus.PrometheusMetricsTrackerFactory
+   java.lang.AutoCloseable
    java.sql.Connection
    java.sql.Savepoint
    org.postgresql.PGConnection
@@ -59,7 +60,7 @@
   (log/debugf "initialize connection pool %s with uri %s" (:name cfg) (:uri cfg))
   (let [pool (create-pool cfg)]
     (when (seq migrations)
-      (with-open [conn (open pool)]
+      (with-open [conn ^AutoCloseable (open pool)]
         (mg/setup! conn)
         (doseq [[mname steps] migrations]
           (mg/migrate! conn {:name (name mname) :steps steps}))))
@@ -164,7 +165,7 @@
   [& args]
   `(jdbc/with-transaction ~@args))
 
-(defn open
+(defn ^Connection open
   [pool]
   (jdbc/get-connection pool))
 
@@ -288,7 +289,7 @@
     (pginterval data)
 
     (dt/duration? data)
-    (->> (/ (.toMillis data) 1000.0)
+    (->> (/ (.toMillis ^java.time.Duration data) 1000.0)
          (format "%s seconds")
          (pginterval))
 

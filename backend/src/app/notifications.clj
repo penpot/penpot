@@ -22,7 +22,9 @@
    [ring.adapter.jetty9 :as jetty]
    [ring.middleware.cookies :refer [wrap-cookies]]
    [ring.middleware.keyword-params :refer [wrap-keyword-params]]
-   [ring.middleware.params :refer [wrap-params]]))
+   [ring.middleware.params :refer [wrap-params]])
+  (:import
+   org.eclipse.jetty.websocket.api.WebSocketAdapter))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Http Handler
@@ -187,7 +189,7 @@
       (aa/<? (handle-message ws {:type :disconnect}))
       (catch Throwable err
         (log/errorf err "Unexpected exception on websocket handler.")
-        (let [session (.getSession conn)]
+        (let [session (.getSession ^WebSocketAdapter conn)]
           (when session
             (.disconnect session)))))))
 

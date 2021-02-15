@@ -308,7 +308,7 @@
           (if-let [[groups total] (retrieve-deleted-objects conn)]
             (do
               (run! (partial delete-in-bulk conn) groups)
-              (recur (+ n total)))
+              (recur (+ n ^long total)))
             (do
               (log/infof "gc-deleted: processed %s items" n)
               {:deleted n})))))))
