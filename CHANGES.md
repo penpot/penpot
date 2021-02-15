@@ -4,9 +4,11 @@
 
 ### New features
 
+- Add optional loki integration.
 - Bounce & Complaint handling.
 - Disable groups interactions when holding "Ctrl" key (deep selection)
 - New action in context menu to "edit" some shapes (binded to key "Enter")
+
 
 ### Bugs fixed
 

@@ -16,7 +16,15 @@
   [v]
   (j/write-value-as-string v j/keyword-keys-object-mapper))
 
+(defn encode
+  [v]
+  (j/write-value-as-bytes v j/keyword-keys-object-mapper))
+
 (defn decode-str
+  [v]
+  (j/read-value v j/keyword-keys-object-mapper))
+
+(defn decode
   [v]
   (j/read-value v j/keyword-keys-object-mapper))
 

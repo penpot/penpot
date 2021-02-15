@@ -21,7 +21,8 @@
 
 (def defaults
   {:http-server-port 6060
-
+   :host "devenv"
+   :tenant "dev"
    :database-uri "postgresql://127.0.0.1/penpot"
    :database-username "penpot"
    :database-password "penpot"
@@ -87,11 +88,17 @@
    })
 
 (s/def ::http-server-port ::us/integer)
+
+(s/def ::host ::us/string)
+(s/def ::tenant ::us/string)
+
 (s/def ::database-username (s/nilable ::us/string))
 (s/def ::database-password (s/nilable ::us/string))
 (s/def ::database-uri ::us/string)
 (s/def ::redis-uri ::us/string)
 
+(s/def ::loggers-loki-uri ::us/string)
+(s/def ::loggers-zmq-uri ::us/string)
 
 (s/def ::storage-backend ::us/keyword)
 (s/def ::storage-fs-directory ::us/string)
@@ -185,6 +192,7 @@
                    ::google-client-id
                    ::google-client-secret
                    ::http-server-port
+                   ::host
                    ::ldap-auth-avatar-attribute
                    ::ldap-auth-base-dn
                    ::ldap-auth-email-attribute
@@ -221,6 +229,8 @@
                    ::srepl-host
                    ::srepl-port
                    ::local-assets-uri
+                   ::loggers-loki-uri
+                   ::loggers-zmq-uri
                    ::storage-s3-bucket
                    ::storage-s3-region
                    ::telemetry-enabled
@@ -228,6 +238,7 @@
                    ::telemetry-server-enabled
                    ::telemetry-server-port
                    ::telemetry-uri
+                   ::tenant
                    ::initial-data-file
                    ::initial-data-project-name]))
 

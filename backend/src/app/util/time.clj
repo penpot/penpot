@@ -93,6 +93,10 @@
   [t1 t2]
   (Duration/between t1 t2))
 
+(defn instant
+  [ms]
+  (Instant/ofEpochMilli ms))
+
 (defn parse-duration
   [s]
   (Duration/parse s))

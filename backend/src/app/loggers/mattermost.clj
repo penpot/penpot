@@ -5,9 +5,9 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
-(ns app.error-reporter
+(ns app.loggers.mattermost
   "A mattermost integration for error reporting."
   (:require
    [app.common.exceptions :as ex]
@@ -15,6 +15,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
+   [app.util.async :as aa]
    [app.util.http :as http]
    [app.util.json :as json]
    [app.util.template :as tmpl]
@@ -24,11 +25,7 @@
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
    [cuerdas.core :as str]
-   [integrant.core :as ig]
-   [promesa.exec :as px])
-  (:import
-   org.apache.logging.log4j.core.LogEvent
-   org.apache.logging.log4j.util.ReadOnlyStringMap))
+   [integrant.core :as ig]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Error Listener
@@ -37,76 +34,51 @@
 (declare handle-event)
 
 (defonce enabled-mattermost (atom true))
-(defonce queue (a/chan (a/sliding-buffer 64)))
-(defonce queue-fn (fn [event] (a/>!! queue event)))
 
 (s/def ::uri ::us/string)
 
 (defmethod ig/pre-init-spec ::reporter [_]
-  (s/keys :req-un [::wrk/executor ::db/pool]
+  (s/keys :req-un [::wrk/executor ::db/pool ::receiver]
           :opt-un [::uri]))
 
 (defmethod ig/init-key ::reporter
-  [_ {:keys [executor] :as cfg}]
-  (log/info "Intializing error reporter.")
-  (let [close-ch (a/chan 1)]
+  [_ {:keys [receiver] :as cfg}]
+  (log/info "Intializing mattermost error reporter.")
+  (let [output (a/chan (a/sliding-buffer 128)
+                       (filter #(= (:level %) "error")))]
+    (receiver :sub output)
     (a/go-loop []
-      (let [[val port] (a/alts! [close-ch queue])]
-        (cond
-          (= port close-ch)
+      (let [msg (a/<! output)]
+        (if (nil? msg)
           (log/info "Stoping error reporting loop.")
-
-          (nil? val)
-          (log/info "Stoping error reporting loop.")
-
-          :else
           (do
-            (px/run! executor #(handle-event cfg val))
+            (a/<! (handle-event cfg msg))
             (recur)))))
-    close-ch))
+    output))
 
 (defmethod ig/halt-key! ::reporter
-  [_ close-ch]
-  (a/close! close-ch))
-
-(defn- get-context-data
-  [event]
-  (let [^LogEvent levent (deref event)
-        ^ReadOnlyStringMap rosm (.getContextData levent)]
-    (into {:message (str event)
-           :id      (uuid/next)} ; set default uuid for cases when it not comes.
-          (comp
-           (map (fn [[key val]]
-                  (cond
-                    (= "id" key)         [:id (uuid/uuid val)]
-                    (= "profile-id" key) [:profile-id (uuid/uuid val)]
-                    (str/blank? val)     nil
-                    (string? key)        [(keyword key) val]
-                    :else                [key val])))
-           (filter some?))
-
-          (.toMap rosm))))
+  [_ output]
+  (a/close! output))
 
 (defn- send-mattermost-notification!
-  [cfg {:keys [message host version id] :as cdata}]
+  [cfg {:keys [host version id error] :as cdata}]
   (try
-    (let [uri    (:uri cfg)
-          prefix (str "Unhandled exception (@channel):\n"
-                      "- detail: " (:public-uri cfg/config) "/dbg/error-by-id/" id "\n"
-                      "- host: `" host "`\n"
-                      "- version: `" version "`\n")
-          text   (str prefix "```\n" message "\n```")
+    (let [uri  (:uri cfg)
+          text (str "Unhandled exception (@channel):\n"
+                    "- detail: " (:public-uri cfg/config) "/dbg/error-by-id/" id "\n"
+                    "- host: `" host "`\n"
+                    "- version: `" version "`\n"
+                    (when error
+                      (str "```\n" (:trace error)  "\n```")))
           rsp    (http/send! {:uri uri
                               :method :post
                               :headers {"content-type" "application/json"}
                               :body (json/encode-str {:text text})})]
       (when (not= (:status rsp) 200)
-        (log/warnf "Error reporting webhook replying with unexpected status: %s\n%s"
-                   (:status rsp)
-                   (pr-str rsp))))
+        (log/errorf "Error on sending data to mattermost\n%s" (pr-str rsp))))
 
     (catch Exception e
-      (log/warnf e "Unexpected exception on error reporter."))))
+      (log/error e "Unexpected exception on error reporter."))))
 
 (defn- persist-on-database!
   [{:keys [pool] :as cfg} {:keys [id] :as cdata}]
@@ -114,15 +86,37 @@
     (db/insert! conn :server-error-report
                 {:id id :content (db/tjson cdata)})))
 
+(defn- parse-context
+  [event]
+  (reduce-kv
+   (fn [acc k v]
+     (cond
+       (= k :id)         (assoc acc k (uuid/uuid v))
+       (= k :profile-id) (assoc acc k (uuid/uuid v))
+       (str/blank? v)    acc
+       :else             (assoc acc k v)))
+   {}
+   (:context event)))
+
+(defn- parse-event
+  [event]
+  (-> (parse-context event)
+      (merge (dissoc event :context))
+      (assoc :tenant (cfg/get :tenant))
+      (assoc :host (cfg/get :host))
+      (assoc :public-uri (cfg/get :public-uri))
+      (assoc :version (:full cfg/version))))
+
 (defn handle-event
-  [cfg event]
-  (try
-    (let [cdata (get-context-data event)]
-      (when (and (:uri cfg) @enabled-mattermost)
-        (send-mattermost-notification! cfg cdata))
-      (persist-on-database! cfg cdata))
-    (catch Exception e
-      (log/warnf e "Unexpected exception on error reporter."))))
+  [{:keys [executor] :as cfg} event]
+  (aa/with-thread executor
+    (try
+      (let [cdata (parse-event event)]
+        (when (and (:uri cfg) @enabled-mattermost)
+          (send-mattermost-notification! cfg cdata))
+        (persist-on-database! cfg cdata))
+      (catch Exception e
+        (log/error e "Unexpected exception on error reporter.")))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Http Handler

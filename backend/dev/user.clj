@@ -9,24 +9,24 @@
 
 (ns user
   (:require
+   [app.common.exceptions :as ex]
    [app.config :as cfg]
    [app.main :as main]
    [app.util.time :as dt]
    [app.util.transit :as t]
-   [app.common.exceptions :as ex]
-   [taoensso.nippy :as nippy]
    [clojure.data.json :as json]
    [clojure.java.io :as io]
-   [clojure.test :as test]
    [clojure.pprint :refer [pprint]]
    [clojure.repl :refer :all]
    [clojure.spec.alpha :as s]
    [clojure.spec.gen.alpha :as sgen]
    [clojure.test :as test]
+   [clojure.test :as test]
    [clojure.tools.namespace.repl :as repl]
    [clojure.walk :refer [macroexpand-all]]
    [criterium.core :refer [quick-bench bench with-progress-reporting]]
-   [integrant.core :as ig]))
+   [integrant.core :as ig]
+   [taoensso.nippy :as nippy]))
 
 (repl/disable-reload! (find-ns 'integrant.core))
 

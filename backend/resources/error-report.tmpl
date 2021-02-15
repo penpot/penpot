@@ -31,7 +31,7 @@
 
       .table-key {
         font-weight: 600;
-        width: 70px;
+        width: 60px;
         padding: 4px;
       }
 
@@ -70,27 +70,43 @@
 
       {% if user-agent %}
       <div class="table-row">
-        <div class="table-key">UAGENT: </div>
+        <div class="table-key">UAGT: </div>
         <div class="table-val">{{user-agent}}</div>
       </div>
       {% endif %}
 
       {% if frontend-version %}
       <div class="table-row">
-        <div class="table-key">FVERS: </div>
+        <div class="table-key">FVER: </div>
         <div class="table-val">{{frontend-version}}</div>
       </div>
       {% endif %}
 
       <div class="table-row">
-        <div class="table-key">BVERS: </div>
+        <div class="table-key">BVER: </div>
         <div class="table-val">{{version}}</div>
       </div>
 
+      {% if host %}
       <div class="table-row">
         <div class="table-key">HOST: </div>
         <div class="table-val">{{host}}</div>
       </div>
+      {% endif %}
+
+      {% if tenant %}
+      <div class="table-row">
+        <div class="table-key">ENV: </div>
+        <div class="table-val">{{tenant}}</div>
+      </div>
+      {% endif %}
+
+      {% if public-uri %}
+      <div class="table-row">
+        <div class="table-key">PURI: </div>
+        <div class="table-val">{{public-uri}}</div>
+      </div>
+      {% endif %}
 
       {% if type %}
       <div class="table-row">
@@ -106,15 +122,19 @@
       </div>
       {% endif %}
 
+      {% if error %}
       <div class="table-row">
-        <div class="table-key">CLASS: </div>
-        <div class="table-val">{{class}}</div>
+        <div class="table-key">CLSS: </div>
+        <div class="table-val">{{error.class}}</div>
       </div>
+      {% endif %}
 
+      {% if error %}
       <div class="table-row">
         <div class="table-key">HINT: </div>
-        <div class="table-val">{{hint}}</div>
+        <div class="table-val">{{error.message}}</div>
       </div>
+      {% endif %}
 
       {% if method %}
       <div class="table-row">
@@ -150,12 +170,14 @@
       </div>
       {% endif %}
 
+      {% if error %}
       <div class="table-row multiline">
         <div class="table-key">TRACE:</div>
         <div class="table-val">
-          <pre>{{message}}</pre>
+          <pre>{{error.trace}}</pre>
         </div>
       </div>
+      {% endif %}
     </div>
   </body>
 </html>
