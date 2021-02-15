@@ -57,7 +57,8 @@
    [promesa.core :as p]
    [rumext.alpha :as mf])
   (:import goog.events.EventType
-           goog.events.WheelEvent))
+           goog.events.WheelEvent
+           goog.events.KeyCodes))
 
 (defonce css-mouse?
   (cfg/check-browser? :firefox))
@@ -465,6 +466,7 @@
          (fn [event]
            (let [bevent (.getBrowserEvent ^js event)
                  key    (.-keyCode ^js event)
+                 key    (.normalizeKeyCode KeyCodes key)
                  ctrl?  (kbd/ctrl? event)
                  shift? (kbd/shift? event)
                  alt?   (kbd/alt? event)
@@ -483,6 +485,7 @@
         (mf/use-callback
          (fn [event]
            (let [key    (.-keyCode event)
+                 key    (.normalizeKeyCode KeyCodes key)
                  ctrl?  (kbd/ctrl? event)
                  shift? (kbd/shift? event)
                  alt?   (kbd/alt? event)
