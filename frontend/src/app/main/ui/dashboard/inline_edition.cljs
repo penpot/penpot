@@ -10,8 +10,8 @@
 (ns app.main.ui.dashboard.inline-edition
   (:require
    [app.main.ui.icons :as i]
-   [app.main.ui.keyboard :as kbd]
    [app.util.dom :as dom]
+   [app.util.keyboard :as kbd]
    [rumext.alpha :as mf]))
 
 (mf/defc inline-edition

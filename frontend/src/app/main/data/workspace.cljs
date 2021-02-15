@@ -1089,6 +1089,31 @@
         (rx/of (relocate-shapes selected parent-id to-index))))))
 
 
+(defn start-editing-selected
+  []
+  (ptk/reify ::start-editing-selected
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [selected (get-in state [:workspace-local :selected])]
+        (if-not (= 1 (count selected))
+          (rx/empty)
+
+          (let [objects (dwc/lookup-page-objects state)
+                {:keys [id type shapes]} (get objects (first selected))]
+
+            (case type
+              :text
+              (rx/of (dwc/start-edition-mode id))
+
+              :group
+              (rx/of (dwc/select-shapes (into (d/ordered-set) [(last shapes)])))
+
+              :path
+              (rx/of (dwc/start-edition-mode id)
+                     (dwdp/start-path-edit id))
+              :else (rx/empty))))))))
+
+
 ;; --- Change Page Order (D&D Ordering)
 
 (defn relocate-page

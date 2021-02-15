@@ -9,20 +9,20 @@
 
 (ns app.main.ui.dashboard.grid
   (:require
-   [app.common.uuid :as uuid]
    [app.common.math :as mth]
+   [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.data.dashboard :as dd]
+   [app.main.data.modal :as modal]
    [app.main.fonts :as fonts]
    [app.main.store :as st]
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.icons :as i]
-   [app.main.ui.keyboard :as kbd]
-   [app.main.data.modal :as modal]
    [app.main.worker :as wrk]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t tr]]
+   [app.util.keyboard :as kbd]
    [app.util.router :as rt]
    [app.util.time :as dt]
    [app.util.timers :as ts]

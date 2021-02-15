@@ -14,16 +14,16 @@
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.keyboard :as kbd]
+   [app.main.ui.context :as muc]
    [app.main.ui.shapes.frame :as frame]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.workspace.effects :as we]
    [app.util.dom :as dom]
+   [app.util.keyboard :as kbd]
    [app.util.timers :as ts]
    [beicon.core :as rx]
    [okulary.core :as l]
-   [rumext.alpha :as mf]
-   [app.main.ui.context :as muc]))
+   [rumext.alpha :as mf]))
 
 (defn use-select-shape [{:keys [id]} edition]
   (mf/use-callback

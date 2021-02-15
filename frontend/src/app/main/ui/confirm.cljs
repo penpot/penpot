@@ -8,17 +8,17 @@
 ;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.main.ui.confirm
-  (:import goog.events.EventType)
   (:require
-   [rumext.alpha :as mf]
-   [goog.events :as events]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
-   [app.main.ui.keyboard :as k]
+   [app.util.data :refer [classnames]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr t]]
-   [app.util.data :refer [classnames]]))
+   [app.util.keyboard :as k]
+   [goog.events :as events]
+   [rumext.alpha :as mf])
+  (:import goog.events.EventType))
 
 (mf/defc confirm-dialog
   {::mf/register modal/components

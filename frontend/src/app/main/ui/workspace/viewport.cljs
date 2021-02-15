@@ -29,7 +29,6 @@
    [app.main.ui.cursors :as cur]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
-   [app.main.ui.keyboard :as kbd]
    [app.main.ui.workspace.colorpicker.pixel-overlay :refer [pixel-overlay]]
    [app.main.ui.workspace.comments :refer [comments-layer]]
    [app.main.ui.workspace.drawarea :refer [draw-area]]
@@ -46,6 +45,7 @@
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.http :as http]
+   [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [app.util.perf :as perf]
    [app.util.timers :as timers]
@@ -57,7 +57,8 @@
    [promesa.core :as p]
    [rumext.alpha :as mf])
   (:import goog.events.EventType
-           goog.events.WheelEvent))
+           goog.events.WheelEvent
+           goog.events.KeyCodes))
 
 (defonce css-mouse?
   (cfg/check-browser? :firefox))
@@ -219,11 +220,17 @@
                                        (not (:blocked shape))
                                        (not= edition (:id shape))
                                        (outline? (:id shape))))
-        shapes    (->> (vals objects) (filter show-outline?))
+
+        remove-groups? (mf/use-state false)
+
+        shapes    (cond->> (vals objects)
+                    show-outline?   (filter show-outline?)
+                    @remove-groups? (remove #(= :group (:type %))))
         transform (mf/deref refs/current-transform)
         color (if (or (> (count shapes) 1) (nil? (:shape-ref (first shapes))))
                 "#31EFB8"
                 "#00E0FF")]
+    (hooks/use-stream ms/keyboard-ctrl #(reset! remove-groups? %))
     (when (nil? transform)
       [:g.outlines
        (for [shape shapes]
@@ -424,16 +431,16 @@
         (mf/use-callback
          (fn [event]
            (let [target (dom/get-target event)]
-                                        ; Capture mouse pointer to detect the movements even if cursor
-                                        ; leaves the viewport or the browser itself
-                                        ; https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture
+             ; Capture mouse pointer to detect the movements even if cursor
+             ; leaves the viewport or the browser itself
+             ; https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture
              (.setPointerCapture target (.-pointerId event)))))
 
         on-pointer-up
         (mf/use-callback
          (fn [event]
            (let [target (dom/get-target event)]
-                                        ; Release pointer on mouse up
+             ; Release pointer on mouse up
              (.releasePointerCapture target (.-pointerId event)))))
 
         on-click
@@ -442,9 +449,7 @@
            (let [ctrl? (kbd/ctrl? event)
                  shift? (kbd/shift? event)
                  alt? (kbd/alt? event)]
-             (if ctrl?
-               (st/emit! (dw/select-last-layer @ms/mouse-position))
-               (st/emit! (ms/->MouseEvent :click ctrl? shift? alt?))))))
+             (st/emit! (ms/->MouseEvent :click ctrl? shift? alt?)))))
 
         on-double-click
         (mf/use-callback
@@ -460,14 +465,16 @@
         (mf/use-callback
          (fn [event]
            (let [bevent (.getBrowserEvent ^js event)
-                 key (.-keyCode ^js event)
-                 ctrl? (kbd/ctrl? event)
+                 key    (.-keyCode ^js event)
+                 key    (.normalizeKeyCode KeyCodes key)
+                 ctrl?  (kbd/ctrl? event)
                  shift? (kbd/shift? event)
-                 alt? (kbd/alt? event)
+                 alt?   (kbd/alt? event)
+                 meta?  (kbd/meta? event)
                  target (dom/get-target event)]
 
              (when-not (.-repeat bevent)
-               (st/emit! (ms/->KeyboardEvent :down key ctrl? shift? alt?))
+               (st/emit! (ms/->KeyboardEvent :down key shift? ctrl? alt? meta?))
                (when (and (kbd/space? event)
                           (not= "rich-text" (obj/get target "className"))
                           (not= "INPUT" (obj/get target "tagName"))
@@ -477,13 +484,15 @@
         on-key-up
         (mf/use-callback
          (fn [event]
-           (let [key (.-keyCode event)
-                 ctrl? (kbd/ctrl? event)
+           (let [key    (.-keyCode event)
+                 key    (.normalizeKeyCode KeyCodes key)
+                 ctrl?  (kbd/ctrl? event)
                  shift? (kbd/shift? event)
-                 alt? (kbd/alt? event)]
+                 alt?   (kbd/alt? event)
+                 meta?  (kbd/meta? event)]
              (when (kbd/space? event)
                (st/emit! dw/finish-pan ::finish-positioning))
-             (st/emit! (ms/->KeyboardEvent :up key ctrl? shift? alt?)))))
+             (st/emit! (ms/->KeyboardEvent :up key shift? ctrl? alt? meta?)))))
 
         translate-point-to-viewport
         (mf/use-callback

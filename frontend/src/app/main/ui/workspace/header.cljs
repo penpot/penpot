@@ -19,10 +19,10 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.icons :as i]
-   [app.main.ui.keyboard :as kbd]
    [app.main.ui.workspace.presence :refer [active-sessions]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
    [app.util.router :as rt]
    [okulary.core :as l]
    [rumext.alpha :as mf]))

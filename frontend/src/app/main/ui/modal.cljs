@@ -9,14 +9,14 @@
 
 (ns app.main.ui.modal
   (:require
-   [okulary.core :as l]
-   [goog.events :as events]
-   [rumext.alpha :as mf]
-   [app.main.store :as st]
-   [app.main.ui.keyboard :as k]
    [app.main.data.modal :as dm]
+   [app.main.refs :as refs]
+   [app.main.store :as st]
    [app.util.dom :as dom]
-   [app.main.refs :as refs])
+   [app.util.keyboard :as k]
+   [goog.events :as events]
+   [okulary.core :as l]
+   [rumext.alpha :as mf])
   (:import goog.events.EventType))
 
 (defn- on-esc-clicked

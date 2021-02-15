@@ -10,29 +10,30 @@
 (ns app.main.ui.workspace.selection
   "Selection handlers component."
   (:require
-   [beicon.core :as rx]
-   [cuerdas.core :as str]
-   [potok.core :as ptk]
-   [rumext.alpha :as mf]
-   [rumext.util :refer [map->obj]]
+   [app.common.geom.matrix :as gmt]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as geom]
+   [app.common.math :as mth]
    [app.common.uuid :as uuid]
-   [app.util.data :as d]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.ui.cursors :as cur]
-   [app.common.math :as mth]
+   [app.main.ui.hooks :as hooks]
+   [app.main.ui.measurements :as msr]
+   [app.main.ui.workspace.shapes.outline :refer [outline]]
+   [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]
+   [app.util.data :as d]
+   [app.util.debug :refer [debug?]]
    [app.util.dom :as dom]
    [app.util.object :as obj]
-   [app.common.geom.shapes :as geom]
-   [app.common.geom.point :as gpt]
-   [app.common.geom.matrix :as gmt]
-   [app.util.debug :refer [debug?]]
-   [app.main.ui.workspace.shapes.outline :refer [outline]]
-   [app.main.ui.measurements :as msr]
-   [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]))
+   [beicon.core :as rx]
+   [cuerdas.core :as str]
+   [potok.core :as ptk]
+   [rumext.alpha :as mf]
+   [rumext.util :refer [map->obj]]))
 
 (def rotation-handler-size 20)
 (def resize-point-radius 4)
@@ -235,19 +236,22 @@
 (mf/defc controls
   {::mf/wrap-props false}
   [props]
-  (let [{:keys [overflow-text] :as shape} (obj/get props "shape")
+  (let [{:keys [overflow-text type] :as shape} (obj/get props "shape")
         zoom  (obj/get props "zoom")
         color (obj/get props "color")
         on-resize (obj/get props "on-resize")
         on-rotate (obj/get props "on-rotate")
         current-transform (mf/deref refs/current-transform)
 
+        hide? (mf/use-state false)
         selrect (-> (:selrect shape)
                     minimum-selrect)
         transform (geom/transform-matrix shape {:no-flip true})]
 
+    (hooks/use-stream ms/keyboard-ctrl #(when (= type :group) (reset! hide? %)))
+
     (when (not (#{:move :rotate} current-transform))
-      [:g.controls
+      [:g.controls {:style {:display (when @hide? "none")}}
 
        ;; Selection rect
        [:& selection-rect {:rect selrect

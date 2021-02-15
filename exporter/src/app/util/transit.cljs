@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 app Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.util.transit
   (:require
