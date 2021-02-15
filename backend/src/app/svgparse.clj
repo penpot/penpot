@@ -124,7 +124,7 @@
   (try
     (with-open [istream (IOUtils/toInputStream data "UTF-8")]
       (xml/parse istream))
-    (catch org.xml.sax.SAXParseException _e
+    (catch Exception _e
       (ex/raise :type :validation
                 :code :invalid-svg-file))))
 
