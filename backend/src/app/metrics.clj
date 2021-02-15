@@ -155,11 +155,12 @@
           :dec (.. ^Gauge instance (labels labels) (dec)))))))
 
 (defn make-summary
-  [{:keys [name help registry reg labels] :as props}]
+  [{:keys [name help registry reg labels max-age] :or {max-age 3600} :as props}]
   (let [registry (or registry reg)
         instance (doto (Summary/build)
                    (.name name)
                    (.help help)
+                   (.maxAgeSeconds max-age)
                    (.quantile 0.75 0.02)
                    (.quantile 0.99 0.001))
         _        (when (seq labels)

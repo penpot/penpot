@@ -27,6 +27,7 @@
 - Improve component testing
 - Increase default deletion delay to 7 days
 - Show a pixel grid when zoom greater than 800% [#519](https://github.com/penpot/penpot/discussions/519)
+- Fix behavior of select all command when there are objects outside frames [Taiga #1209](https://tree.taiga.io/project/penpot/issue/1209)
 
 
 ### Bugs fixed
@@ -39,6 +40,7 @@
 - Fix ldap function called on login click
 - Fix logo icon in viewer should go to dashboard [Taiga #1149](https://tree.taiga.io/project/penpot/issue/1149)
 - Fix ordering when restoring deleted shapes in sync [Taiga #1163](https://tree.taiga.io/project/penpot/issue/1163)
+- Fix problem when editing text immediately after creating [Taiga #1207](https://tree.taiga.io/project/penpot/issue/1207)
 - Fix problem when pasting URL's copied from the browser url bar [Taiga #1187](https://tree.taiga.io/project/penpot/issue/1187)
 - Fix problem with multiple selection and groups [Taiga #1128](https://tree.taiga.io/project/penpot/issue/1128)
 - Fix problem with red handler indicator on resize [Taiga #1188](https://tree.taiga.io/project/penpot/issue/1188)
@@ -47,7 +49,6 @@
 - Fix unexpected exception when uploading image [Taiga #1120](https://tree.taiga.io/project/penpot/issue/1120)
 - Fix updates on collaborative editing not updating selection rectangles [Taiga #1127](https://tree.taiga.io/project/penpot/issue/1127)
 - Make the team deletion deferred (in the same way other objects)
-
 
 ### Community contributions by (Thank you! :heart:)
 

@@ -45,11 +45,11 @@
          auto-height? (= grow-type :auto-height)
 
          base #js {:display "inline-flex"
-                   :flex-direction "column"
-                   :justify-content "inherit"
-                   :min-height (when-not (or auto-width? auto-height?) "100%")
-                   :min-width (when-not auto-width? "100%")
-                   :vertical-align "top"}]
+                   :flexDirection "column"
+                   :justifyContent "inherit"
+                   :minHeight (when-not (or auto-width? auto-height?) "100%")
+                   :minWidth (when-not auto-width? "100%")
+                   :verticalAlign "top"}]
      base)))
 
 (defn generate-paragraph-styles

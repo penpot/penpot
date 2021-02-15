@@ -224,7 +224,9 @@
 
 (defn select-toplevel-shapes
   ([objects] (select-toplevel-shapes objects nil))
-  ([objects {:keys [include-frames?] :or {include-frames? false}}]
+  ([objects {:keys [include-frames? include-frame-children?]
+             :or {include-frames? false
+                  include-frame-children? true}}]
    (let [lookup #(get objects %)
          root   (lookup uuid/zero)
          root-children (:shapes root)
@@ -241,7 +243,7 @@
                  (or (not= :frame typ) include-frames?)
                  (d/concat [obj])
 
-                 (= :frame typ)
+                 (and (= :frame typ) include-frame-children?)
                  (d/concat (map lookup children))))))]
 
      (reduce lookup-shapes [] root-children))))
