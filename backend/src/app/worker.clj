@@ -12,7 +12,6 @@
   (:require
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
    [app.db :as db]
    [app.util.async :as aa]
    [app.util.log4j :refer [update-thread-context!]]
@@ -210,10 +209,6 @@
   [error item]
   (let [edata (ex-data error)]
     {:id      (uuid/next)
-     :version (:full cfg/version)
-     :host    (:public-uri cfg/config)
-     :class   (.getCanonicalName ^java.lang.Class (class error))
-     :hint    (ex-message error)
      :data    edata
      :params  item}))
 

@@ -16,6 +16,8 @@
   org.apache.logging.log4j/log4j-jul {:mvn/version "2.14.0"}
   org.apache.logging.log4j/log4j-slf4j-impl {:mvn/version "2.14.0"}
   org.slf4j/slf4j-api {:mvn/version "1.7.30"}
+  org.zeromq/jeromq {:mvn/version "0.5.2"}
+
 
   org.graalvm.js/js {:mvn/version "20.3.0"}
   com.taoensso/nippy {:mvn/version "3.1.1"}
@@ -43,7 +45,6 @@
   org.postgresql/postgresql {:mvn/version "42.2.18"}
   com.zaxxer/HikariCP {:mvn/version "3.4.5"}
 
-  funcool/log4j2-clojure {:mvn/version "2020.11.23-1"}
   funcool/datoteka {:mvn/version "1.2.0"}
   funcool/promesa {:mvn/version "6.0.0"}
   funcool/cuerdas {:mvn/version "2020.03.26-3"}

@@ -13,9 +13,10 @@
       <DefaultRolloverStrategy max="9"/>
     </RollingFile>
 
-    <CljFn name="error-reporter" ns="app.error-reporter" fn="queue-fn">
-      <PatternLayout pattern="[%d{YYYY-MM-dd HH:mm:ss.SSS}] [%t] %level{length=1} %logger{36} - %msg%n"/>
-    </CljFn>
+    <JeroMQ name="zmq">
+      <Property name="endpoint">tcp://localhost:45556</Property>
+      <JsonLayout complete="false" compact="true" includeTimeMillis="true" stacktraceAsString="true" properties="true" />
+    </JeroMQ>
   </Appenders>
 
   <Loggers>
@@ -27,13 +28,19 @@
       <AppenderRef ref="console"/>
     </Logger>
 
-    <Logger name="app.error-reporter" level="debug" additivity="false">
+    <Logger name="app.loggers" level="debug" additivity="false">
       <AppenderRef ref="main" level="debug" />
     </Logger>
 
     <Logger name="app" level="debug" additivity="false">
       <AppenderRef ref="main" level="debug" />
-      <AppenderRef ref="error-reporter" level="error" />
+      <AppenderRef ref="zmq" level="debug" />
+      <!-- <AppenderRef ref="error-reporter" level="error" /> -->
+    </Logger>
+
+    <Logger name="user" level="debug" additivity="false">
+      <AppenderRef ref="main" level="debug" />
+      <AppenderRef ref="zmq" level="debug" />
     </Logger>
 
     <Root level="info">

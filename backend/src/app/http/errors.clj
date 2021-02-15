@@ -11,7 +11,6 @@
   "A errors handling for the http server."
   (:require
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
    [app.util.log4j :refer [update-thread-context!]]
    [clojure.tools.logging :as log]
    [cuerdas.core :as str]
@@ -30,16 +29,10 @@
       :path    (:uri request)
       :method  (:request-method request)
       :params  (:params request)
-      :version (:full cfg/version)
-      :host    (:public-uri cfg/config)
-      :class   (.getCanonicalName ^java.lang.Class (class error))
-      :hint    (ex-message error)
       :data    edata}
-
      (let [headers (:headers request)]
        {:user-agent (get headers "user-agent")
         :frontend-version (get headers "x-frontend-version" "unknown")})
-
      (when (and (map? edata) (:data edata))
        {:explain (explain-error edata)}))))
 
