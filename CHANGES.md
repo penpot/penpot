@@ -3,6 +3,7 @@
 ## Next
 
 ### New features
+
 ### Bugs fixed
 
 
@@ -18,6 +19,7 @@
 - Improve component testing
 - Increase default deletion delay to 7 days
 - Show a pixel grid when zoom greater than 800% [#519](https://github.com/penpot/penpot/discussions/519)
+- Fix behavior of select all command when there are objects outside frames [Taiga #1209](https://tree.taiga.io/project/penpot/issue/1209)
 
 
 ### Bugs fixed
