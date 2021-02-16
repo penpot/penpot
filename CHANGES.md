@@ -7,6 +7,14 @@
 ### Bugs fixed
 
 
+## 1.2.1-alpha
+
+### Bug fixes
+
+- Fix many corner cases on invitation/signup flows.
+- Fix some corner cases on path shape transformations.
+
+
 ## 1.2.0-alpha
 
 ### New features
