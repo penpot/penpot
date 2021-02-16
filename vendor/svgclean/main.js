@@ -4,6 +4,7 @@ const plugins = [
     {removeViewBox: false},
     {moveElemsAttrsToGroup: false},
     {convertStyleToAttrs: false},
+    {removeUselessDefs: false},
     {convertPathData: {
       lineShorthands: false,
       curveSmoothShorthands: false,

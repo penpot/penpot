@@ -57,19 +57,18 @@
              :shape shape
              :childs childs}]
 
-           (when (= tag :svg)
-             [:rect.group-actions
-              {:x x
-               :y y
-               :transform transform
-               :width width
-               :height height
-               :fill "transparent"
-               :on-mouse-down handle-mouse-down
-               :on-double-click handle-double-click
-               :on-context-menu handle-context-menu
-               :on-pointer-over handle-pointer-enter
-               :on-pointer-out handle-pointer-leave}])]
+           [:rect.actions
+            {:x x
+             :y y
+             :transform transform
+             :width width
+             :height height
+             :fill "transparent"
+             :on-mouse-down handle-mouse-down
+             :on-double-click handle-double-click
+             :on-context-menu handle-context-menu
+             :on-pointer-over handle-pointer-enter
+             :on-pointer-out handle-pointer-leave}]]
 
           ;; We cannot wrap inside groups the shapes that go inside the defs tag
           ;; we use the context so we know when we should not render the container

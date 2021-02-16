@@ -99,11 +99,9 @@
 
     (when (contains? svg-elements tag)
       [:*
-       (when (= tag :svg)
-         [:*
-          [:& measures-menu {:ids ids
-                             :type type
-                             :values measure-values}]])
+       [:& measures-menu {:ids ids
+                          :type type
+                          :values measure-values}]
 
        [:& fill-menu {:ids ids
                       :type type

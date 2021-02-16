@@ -9,7 +9,11 @@
 
 (ns app.util.svg
   (:require
+   [app.common.uuid :as uuid]
+   [app.common.data :as cd]
    [cuerdas.core :as str]))
+
+(defonce replace-regex #"[^#]*#([^)\s]+).*")
 
 (defn clean-attrs
   "Transforms attributes to their react equivalent"
@@ -40,3 +44,33 @@
     (->> attrs
          (map map-fn)
          (into {}))))
+
+(defn replace-attrs-ids
+  "Replaces the ids inside a property"
+  [attrs ids-mapping]
+  (if (and ids-mapping (not (empty? ids-mapping)))
+    (letfn [(replace-ids [key val]
+              (cond
+                (map? val)
+                (cd/mapm replace-ids val)
+
+                (and (= key :id) (contains? ids-mapping val))
+                (get ids-mapping val)
+
+                :else
+                (let [[_ from-id] (re-matches replace-regex val)]
+                      (if (and from-id (contains? ids-mapping from-id))
+                        (str/replace val from-id (get ids-mapping from-id))
+                        val))))]
+      (cd/mapm replace-ids attrs))
+
+    ;; Ids-mapping is null
+    attrs))
+
+(defn generate-id-mapping [content]
+  (letfn [(visit-node [result node]
+            (let [element-id (get-in node [:attrs :id])
+                  result (cond-> result
+                           element-id (assoc element-id (str (uuid/next))))]
+              (reduce visit-node result (:content node))))]
+    (visit-node {} content)))

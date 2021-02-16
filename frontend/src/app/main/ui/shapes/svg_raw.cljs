@@ -13,7 +13,6 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.uuid :as uuid]
    [app.main.ui.shapes.attrs :as usa]
    [app.util.data :as ud]
    [app.util.object :as obj]
@@ -21,32 +20,11 @@
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
+;; Graphic tags
+(defonce graphic-element? #{ :circle :ellipse :image :line :path :polygon :polyline :rect :text #_"use"})
+
 ;; Context to store a re-mapping of the ids
 (def svg-ids-ctx (mf/create-context nil))
-
-(defn generate-id-mapping [content]
-  (letfn [(visit-node [result node]
-            (let [element-id (get-in node [:attrs :id])
-                  result (cond-> result
-                           element-id (assoc element-id (str (uuid/next))))]
-              (reduce visit-node result (:content node))))]
-    (visit-node {} content)))
-
-
-(defonce replace-regex #"[^#]*#([^)\s]+).*")
-
-(defn replace-attrs-ids
-  "Replaces the ids inside a property"
-  [ids-mapping attrs]
-
-  (letfn [(replace-ids [key val]
-            (if (map? val)
-              (cd/mapm replace-ids val)
-              (let [[_ from-id] (re-matches replace-regex val)]
-                (if (and from-id (contains? ids-mapping from-id))
-                  (str/replace val from-id (get ids-mapping from-id))
-                  val))))]
-    (cd/mapm replace-ids attrs)))
 
 (defn set-styles [attrs shape]
   (let [custom-attrs (usa/extract-style-attrs shape)
@@ -58,6 +36,20 @@
         (obj/merge! custom-attrs)
         (obj/set! "style" style))))
 
+(defn translate-shape [attrs shape]
+  (let [{svg-width :width svg-height :height :as root-shape} (:root-attrs shape)
+        {:keys [x y width height]} (:selrect shape)
+        transform (->> (:transform attrs "")
+                       (str (gmt/multiply
+                             (gmt/matrix)
+                             (gsh/transform-matrix shape)
+                             (gmt/translate-matrix (gpt/point x y))
+                             (gmt/scale-matrix (gpt/point (/ width svg-width) (/ height svg-height))))
+                            " "))]
+    (cond-> attrs
+      (and root-shape (graphic-element? (-> shape :content :tag)))
+      (assoc :transform transform))))
+
 (mf/defc svg-root
   {::mf/wrap-props false}
   [props]
@@ -68,7 +60,7 @@
         {:keys [x y width height]} shape
         {:keys [tag attrs] :as content} (:content shape)
 
-        ids-mapping (mf/use-memo #(generate-id-mapping content))
+        ids-mapping (mf/use-memo #(usvg/generate-id-mapping content))
 
         attrs (-> (set-styles attrs shape)
                   (obj/set! "x" x)
@@ -91,11 +83,16 @@
         {:keys [attrs tag]} content
 
         ids-mapping (mf/use-ctx svg-ids-ctx)
-        attrs (mf/use-memo #(replace-attrs-ids ids-mapping attrs))
-        element-id (get-in content [:attrs :id])
 
+        attrs (mf/use-memo #(usvg/replace-attrs-ids attrs ids-mapping))
+
+        attrs (translate-shape attrs shape)
+        element-id (get-in content [:attrs :id])
         attrs (cond-> (set-styles attrs shape)
-                element-id (obj/set! "id" (get ids-mapping element-id)))]
+                (and element-id (contains? ids-mapping element-id))
+                (obj/set! "id" (get ids-mapping element-id)))
+
+        {:keys [x y width height]} (:selrect shape)]
     [:> (name tag) attrs children]))
 
 (defn svg-raw-shape [shape-wrapper]
