@@ -83,49 +83,78 @@
                    :internal.tokens.team-invitation/member-email]
           :opt-un [:internal.tokens.team-invitation/member-id]))
 
+(defn- accept-invitation
+  [{:keys [conn] :as cfg} {:keys [member-id team-id role] :as claims}]
+  (let [params (merge {:team-id team-id
+                       :profile-id member-id}
+                      (teams/role->params role))
+        member (profile/retrieve-profile conn member-id)]
+
+    ;; Insert the invited member to the team
+    (db/insert! conn :team-profile-rel params {:on-conflict-do-nothing true})
+
+    ;; If profile is not yet verified, mark it as verified because
+    ;; accepting an invitation link serves as verification.
+    (when-not (:is-active member)
+      (db/update! conn :profile
+                  {:is-active true}
+                  {:id member-id}))
+    (assoc member :is-active true)))
+
 (defmethod process-token :team-invitation
-  [{:keys [conn session] :as cfg} {:keys [profile-id token]} {:keys [member-id team-id role] :as claims}]
+  [{:keys [session] :as cfg} {:keys [profile-id token]} {:keys [member-id] :as claims}]
   (us/assert ::team-invitation-claims claims)
-  (if (uuid? member-id)
-    (let [params (merge {:team-id team-id
-                         :profile-id member-id}
-                        (teams/role->params role))
-          claims (assoc claims :state :created)
-          member (profile/retrieve-profile conn member-id)]
-
-      (db/insert! conn :team-profile-rel params
-                  {:on-conflict-do-nothing true})
-
-      ;; If profile is not yet verified, mark it as verified because
-      ;; accepting an invitation link serves as verification.
-      (when-not (:is-active member)
-        (db/update! conn :profile
-                    {:is-active true}
-                    {:id member-id}))
-
-      (if (and (uuid? profile-id)
-               (= member-id profile-id))
+  (cond
+    ;; This happens when token is filled with member-id and current
+    ;; user is already logged in with some account.
+    (and (uuid? profile-id)
+         (uuid? member-id))
+    (do
+      (accept-invitation cfg claims)
+      (if (= member-id profile-id)
         ;; If the current session is already matches the invited
         ;; member, then just return the token and leave the frontend
         ;; app redirect to correct team.
-        claims
+        (assoc claims :status :created)
 
-        ;; If the session does not matches the invited member id,
-        ;; replace the session with a new one matching the invited
-        ;; member. This techinique should be considered secure because
-        ;; the user clicking the link he already has access to the
-        ;; email account.
-        (with-meta claims
+        ;; If the session does not matches the invited member, replace
+        ;; the session with a new one matching the invited member.
+        ;; This techinique should be considered secure because the
+        ;; user clicking the link he already has access to the email
+        ;; account.
+        (with-meta
+          (assoc claims :status :created)
           {:transform-response ((:create session) member-id)})))
+
+    ;; This happens when member-id is not filled in the invitation but
+    ;; the user already has an account (probably with other mail) and
+    ;; is already logged-in.
+    (and (uuid? profile-id)
+         (nil? member-id))
+    (do
+      (accept-invitation cfg (assoc claims :member-id profile-id))
+      (assoc claims :state :created))
+
+    ;; This happens when member-id is filled but the accessing user is
+    ;; not logged-in. In this case we proceed to accept invitation and
+    ;; leave the user logged-in.
+    (and (nil? profile-id)
+         (uuid? member-id))
+    (do
+      (accept-invitation cfg claims)
+      (with-meta
+        (assoc claims :state :created)
+        {:transform-response ((:create session) member-id)}))
 
     ;; In this case, we wait until frontend app redirect user to
     ;; registeration page, the user is correctly registered and the
     ;; register mutation call us again with the same token to finally
     ;; create the corresponding team-profile relation from the first
     ;; condition of this if.
-    (assoc claims
-           :token token
-           :state :pending)))
+    :else
+    {:invitation-token token
+     :iss :team-invitation
+     :state :pending}))
 
 
 ;; --- Default

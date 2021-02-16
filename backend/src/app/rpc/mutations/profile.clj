@@ -19,7 +19,6 @@
    [app.media :as media]
    [app.rpc.mutations.projects :as projects]
    [app.rpc.mutations.teams :as teams]
-   [app.rpc.mutations.verify-token :refer [process-token]]
    [app.rpc.queries.profile :as profile]
    [app.storage :as sto]
    [app.tasks :as tasks]
@@ -48,13 +47,13 @@
 (declare create-profile-relations)
 (declare email-domain-in-whitelist?)
 
-(s/def ::token ::us/not-empty-string)
+(s/def ::invitation-token ::us/not-empty-string)
 (s/def ::register-profile
   (s/keys :req-un [::email ::password ::fullname]
-          :opt-un [::token]))
+          :opt-un [::invitation-token]))
 
 (sv/defmethod ::register-profile {:auth false :rlimit :password}
-  [{:keys [pool tokens session] :as cfg} {:keys [token] :as params}]
+  [{:keys [pool tokens session] :as cfg} params]
   (when-not (cfg/get :registration-enabled)
     (ex/raise :type :restriction
               :code :registration-disabled))
@@ -69,30 +68,18 @@
                        (create-profile-relations conn))]
       (create-profile-initial-data conn profile)
 
-      (if token
-        ;; If token comes in params, this is because the user comes
-        ;; from team-invitation process; in this case we revalidate
-        ;; the token and process the token claims again with the new
-        ;; profile data.
+      (if-let [token (:invitation-token params)]
+        ;; If invitation token comes in params, this is because the
+        ;; user comes from team-invitation process; in this case,
+        ;; regenerate token and send back to the user a new invitation
+        ;; token (and mark current session as logged).
         (let [claims (tokens :verify {:token token :iss :team-invitation})
-              claims (assoc claims :member-id  (:id profile))
-              params (assoc params :profile-id (:id profile))
-              cfg    (assoc cfg :conn conn)]
-
-          (process-token cfg params claims)
-
-          ;; Automatically mark the created profile as active because
-          ;; we already have the verification of email with the
-          ;; team-invitation token.
-          (db/update! conn :profile
-                      {:is-active true}
-                      {:id (:id profile)})
-
-          ;; Return profile data and create http session for
-          ;; automatically login the profile.
-          (with-meta (assoc profile
-                            :is-active true
-                            :claims claims)
+              claims (assoc claims
+                            :member-id  (:id profile)
+                            :member-email (:email profile))
+              token  (tokens :generate claims)]
+          (with-meta
+            {:invitation-token token}
             {:transform-response ((:create session) (:id profile))}))
 
         ;; If no token is provided, send a verification email
@@ -117,7 +104,6 @@
                          :name (:fullname profile)
                          :token vtoken
                          :extra-data ptoken})
-
           profile)))))
 
 (defn email-domain-in-whitelist?

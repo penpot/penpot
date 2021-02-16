@@ -81,11 +81,8 @@
         (mf/use-callback
          (fn [form data]
            (reset! submitted? false)
-           (if (and (:is-active data) (:claims data))
-             (let [message (tr "auth.notifications.team-invitation-accepted")]
-               (st/emit! (rt/nav :dashboard-projects {:team-id (get-in data [:claims :team-id])})
-                         (du/fetch-profile)
-                         (dm/success message)))
+           (if-let [token (:invitation-token data)]
+             (st/emit! (rt/nav :auth-verify-token {} {:token token}))
              (st/emit! (rt/nav :auth-register-success {} {:email (:email data)})))))
 
         on-submit
@@ -161,19 +158,19 @@
 
    (when cfg/google-client-id
      [:a.btn-ocean.btn-large.btn-google-auth
-      {:on-click login/login-with-google}
+      {:on-click #(login/login-with-google % params)}
       "Login with Google"])
 
    (when cfg/gitlab-client-id
      [:a.btn-ocean.btn-large.btn-gitlab-auth
-      {:on-click login/login-with-gitlab}
+      {:on-click #(login/login-with-gitlab % params)}
       [:img.logo
        {:src "/images/icons/brand-gitlab.svg"}]
       (tr "auth.login-with-gitlab-submit")])
 
    (when cfg/github-client-id
      [:a.btn-ocean.btn-large.btn-github-auth
-      {:on-click login/login-with-github}
+      {:on-click #(login/login-with-github % params)}
       [:img.logo
        {:src "/images/icons/brand-github.svg"}]
       (tr "auth.login-with-github-submit")])])
