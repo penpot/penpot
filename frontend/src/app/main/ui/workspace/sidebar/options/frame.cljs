@@ -133,13 +133,25 @@
 
 (def +size-presets+
   [{:name "APPLE"}
-   {:name "iPhone X"
+   {:name "iPhone 12/12 Pro"
+    :width 390
+    :height 844}
+   {:name "iPhone 12 Mini"
+    :width 360
+    :height 780}
+   {:name "iPhone 12 Pro Max"
+    :width 428
+    :height 926}
+   {:name "iPhone X/XS/11 Pro"
     :width 375
     :height 812}
+   {:name "iPhone XS Max/XR/11/11 Pro Max"
+    :width 414
+    :height 896}
    {:name "iPhone 6/7/8 Plus"
     :width 414
     :height 736}
-   {:name "iPhone 6/7/8"
+   {:name "iPhone 6/7/8/SE2"
     :width 375
     :height 667}
    {:name "iPhone 5/SE"
@@ -154,26 +166,41 @@
    {:name "iPad Pro 12.9in"
     :width 1024
     :height 1366}
+   {:name "Watch 44mm"
+    :width 368
+    :height 448}
    {:name "Watch 42mm"
     :width 312
     :height 390}
+   {:name "Watch 40mm"
+    :width 324
+    :height 394}
    {:name "Watch 38mm"
     :width 272
     :height 340}
 
-   {:name "GOOGLE"}
-   {:name "Android mobile"
+   {:name "ANDROID"}
+   {:name "Mobile"
     :width 360
     :height 640}
-   {:name "Android tablet"
+   {:name "Tablet"
     :width 768
     :height 1024}
+   {:name "Google Pixel 4a/5"
+    :width 393
+    :height 851}
+   {:name "Samsung Galaxy S20+/S21 Ultra"
+    :width 384
+    :height 854}
+   {:name "Samsung Galaxy A71/A51/S20FE/A70S"
+    :width 412
+    :height 914}
 
    {:name "MICROSOFT"}
    {:name "Surface Pro 3"
     :width 1440
     :height 960}
-   {:name "Surface Pro 4"
+   {:name "Surface Pro 4/5/6/7"
     :width 1368
     :height 912}
 
@@ -184,9 +211,88 @@
    {:name "Web 1366"
     :width 1366
     :height 768}
+   {:name "Web 1024"
+    :width 1024
+    :height 768}
    {:name "Web 1920"
     :width 1920
     :height 1080}
+
+   {:name "PRINT (72dpi)"}
+   {:name "A0"
+    :width 2384
+    :height 3370}
+   {:name "A1"
+    :width 1684
+    :height 2384}
+   {:name "A2"
+    :width 1191
+    :height 1684}
+   {:name "A3"
+    :width 842
+    :height 1191}
+   {:name "A4"
+    :width 595
+    :height 842}
+   {:name "A5"
+    :width 420
+    :height 595}
+   {:name "A6"
+    :width 297
+    :height 420}
+   {:name "Letter"
+    :width 612
+    :height 792}
+   {:name "DIN Lang"
+    :width 595
+    :height 281}
+
+   {:name "SOCIAL MEDIA"}
+   {:name "Instagram profile"
+    :width 320
+    :height 320}
+   {:name "Instagram post"
+    :width 1080
+    :height 1080}
+   {:name "Instagram story"
+    :width 1080
+    :height 1920}
+   {:name "Facebook profile"
+    :width 720
+    :height 720}
+   {:name "Facebook cover"
+    :width 820
+    :height 312}
+   {:name "Facebook post"
+    :width 1200
+    :height 630}
+   {:name "LinkedIn profile"
+    :width 400
+    :height 400}
+   {:name "LinkedIn cover"
+    :width 1584
+    :height 396}
+   {:name "LinkedIn post"
+    :width 1200
+    :height 627}
+   {:name "Twitter profile"
+    :width 400
+    :height 400}
+   {:name "Twitter header"
+    :width 1500
+    :height 500}
+   {:name "Twitter post"
+    :width 1024
+    :height 512}
+   {:name "Youtube profile"
+    :width 800
+    :height 800}
+   {:name "Youtube banner"
+    :width 2560
+    :height 1440}
+   {:name "Youtube thumb"
+    :width 1280
+    :height 720}
    ])
 
 (mf/defc options
