@@ -52,8 +52,10 @@
                            :app.http/server
                            :app.http/router
                            :app.notifications/handler
-                           :app.http.auth/google
-                           :app.http.auth/gitlab
+                           :app.http.oauth/google
+                           :app.http.oauth/gitlab
+                           :app.http.oauth/github
+                           :app.http.oauth/all
                            :app.worker/scheduler
                            :app.worker/worker)
                    (d/deep-merge
@@ -152,13 +154,26 @@
          team (#'teams/create-team conn {:id id
                                          :profile-id profile-id
                                          :name (str "team" i)})]
-     (#'teams/create-team-profile conn
-                                  {:team-id id
-                                   :profile-id profile-id
-                                   :is-owner true
-                                   :is-admin true
-                                   :can-edit true})
+     (#'teams/create-team-role conn
+                               {:team-id id
+                                :profile-id profile-id
+                                :role :owner})
      team)))
+
+
+(defn create-file-media-object*
+  ([params] (create-file-media-object* *pool* params))
+  ([conn {:keys [name width height mtype file-id is-local media-id]
+          :or {name "sample" width 100 height 100 mtype "image/svg+xml" is-local true}}]
+   (db/insert! conn :file-media-object
+               {:id (uuid/next)
+                :file-id file-id
+                :is-local is-local
+                :name name
+                :media-id media-id
+                :width  width
+                :height height
+                :mtype  mtype})))
 
 (defn link-file-to-library*
   ([params] (link-file-to-library* *pool* params))
@@ -181,37 +196,39 @@
                :created-at (or created-at (dt/now))
                :content (db/tjson {})}))
 
+(defn create-team-role*
+  ([params] (create-team-role* *pool* params))
+  ([conn {:keys [team-id profile-id role] :or {role :owner}}]
+   (#'teams/create-team-role conn {:team-id team-id
+                                  :profile-id profile-id
+                                  :role role})))
 
-(defn create-team-permission*
-  ([params] (create-team-permission* *pool* params))
-  ([conn {:keys [team-id profile-id is-owner is-admin can-edit]
-          :or {is-owner true is-admin true can-edit true}}]
-   (db/insert! conn :team-profile-rel {:team-id team-id
-                                       :profile-id profile-id
-                                       :is-owner is-owner
-                                       :is-admin is-admin
-                                       :can-edit can-edit})))
+(defn create-project-role*
+  ([params] (create-project-role* *pool* params))
+  ([conn {:keys [project-id profile-id role] :or {role :owner}}]
+   (#'projects/create-project-role conn {:project-id project-id
+                                         :profile-id profile-id
+                                         :role role})))
 
-(defn create-project-permission*
-  ([params] (create-project-permission* *pool* params))
-  ([conn {:keys [project-id profile-id is-owner is-admin can-edit]
-          :or {is-owner true is-admin true can-edit true}}]
-   (db/insert! conn :project-profile-rel {:project-id project-id
-                                          :profile-id profile-id
-                                          :is-owner is-owner
-                                          :is-admin is-admin
-                                          :can-edit can-edit})))
+(defn create-file-role*
+  ([params] (create-file-role* *pool* params))
+  ([conn {:keys [file-id profile-id role] :or {role :owner}}]
+   (#'files/create-file-role conn {:file-id file-id
+                                   :profile-id profile-id
+                                   :role role})))
 
-(defn create-file-permission*
-  ([params] (create-file-permission* *pool* params))
-  ([conn {:keys [file-id profile-id is-owner is-admin can-edit]
-          :or {is-owner true is-admin true can-edit true}}]
-   (db/insert! conn :project-profile-rel {:file-id file-id
-                                          :profile-id profile-id
-                                          :is-owner is-owner
-                                          :is-admin is-admin
-                                          :can-edit can-edit})))
-
+(defn update-file*
+  ([params] (update-file* *pool* params))
+  ([conn {:keys [file-id changes session-id profile-id revn]
+          :or {session-id (uuid/next) revn 0}}]
+   (let [file   (db/get-by-id conn :file file-id)
+         msgbus (:app.msgbus/msgbus *system*)]
+     (#'files/update-file {:conn conn :msgbus msgbus}
+                          {:file file
+                           :revn revn
+                           :changes changes
+                           :session-id session-id
+                           :profile-id profile-id}))))
 
 ;; --- RPC HELPERS
 

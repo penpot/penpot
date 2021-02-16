@@ -105,4 +105,14 @@
       }
     }
   }
+
+  .pin-icon {
+    svg {
+      fill: $color-gray-20;
+    }
+
+    &.active {
+      svg { fill: $color-gray-50; }
+    }
+  }
 }

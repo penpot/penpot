@@ -16,6 +16,7 @@
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.context :as ctx]
    [app.main.ui.dashboard.files :refer [files-section]]
    [app.main.ui.dashboard.libraries :refer [libraries-page]]
    [app.main.ui.dashboard.projects :refer [projects-section]]
@@ -105,18 +106,23 @@
      (mf/deps team-id)
      (st/emitf (dd/fetch-bundle {:id team-id})))
 
-    [:section.dashboard-layout
-     [:& sidebar {:team team
-                  :projects projects
-                  :project project
-                  :profile profile
-                  :section section
-                  :search-term search-term}]
-     (when (and team (seq projects))
-       [:& dashboard-content {:projects projects
-                              :profile profile
-                              :project project
-                              :section section
-                              :search-term search-term
-                              :team team}])]))
+    [:& (mf/provider ctx/current-file-id) {:value nil}
+     [:& (mf/provider ctx/current-team-id) {:value team-id}
+      [:& (mf/provider ctx/current-project-id) {:value project-id}
+       [:& (mf/provider ctx/current-page-id) {:value nil}
+
+        [:section.dashboard-layout
+         [:& sidebar {:team team
+                      :projects projects
+                      :project project
+                      :profile profile
+                      :section section
+                      :search-term search-term}]
+         (when (and team (seq projects))
+           [:& dashboard-content {:projects projects
+                                  :profile profile
+                                  :project project
+                                  :section section
+                                  :search-term search-term
+                                  :team team}])]]]]]))
 

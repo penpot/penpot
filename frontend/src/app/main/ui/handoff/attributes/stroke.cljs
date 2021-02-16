@@ -11,6 +11,8 @@
   (:require
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
+   [app.common.data :as d]
+   [app.common.math :as mth]
    [app.util.i18n :refer [t]]
    [app.util.color :as uc]
    [app.main.ui.icons :as i]
@@ -27,13 +29,15 @@
 
 (defn format-stroke [shape]
   (let [width (:stroke-width shape)
-        style (name (:stroke-style shape))
+        style (d/name (:stroke-style shape))
+        style (if (= style "svg") "solid" style)
         color (-> shape shape->color uc/color->background)]
     (str/format "%spx %s %s" width style color)))
 
-(defn has-stroke? [shape]
-  (and (:stroke-style shape)
-       (not= (:stroke-style shape) :none)))
+(defn has-stroke? [{:keys [stroke-style]}]
+  (and stroke-style
+       (and (not= stroke-style :none)
+            (not= stroke-style :svg))))
 
 (defn copy-stroke-data [shape]
   (cg/generate-css-props
@@ -59,12 +63,15 @@
                     :copy-data (copy-color-data shape)
                     :on-change-format #(reset! color-format %)}]
 
-     [:div.attributes-stroke-row
-      [:div.attributes-label (t locale "handoff.attributes.stroke.width")]
-      [:div.attributes-value (:stroke-width shape) "px"]
-      [:div.attributes-value (->> shape :stroke-style name (str "handoff.attributes.stroke.style.") (t locale))]
-      [:div.attributes-label (->> shape :stroke-alignment name (str "handoff.attributes.stroke.alignment.") (t locale))]
-      [:& copy-button {:data (copy-stroke-data shape)}]]]))
+     (let [{:keys [stroke-style stroke-alignment]} shape
+           stroke-style (if (= stroke-style :svg) :solid stroke-style)
+           stroke-alignment (or stroke-alignment :center)]
+       [:div.attributes-stroke-row
+        [:div.attributes-label (t locale "handoff.attributes.stroke.width")]
+        [:div.attributes-value (mth/precision (:stroke-width shape) 2) "px"]
+        [:div.attributes-value (->> stroke-style d/name (str "handoff.attributes.stroke.style.") (t locale))]
+        [:div.attributes-label (->> stroke-alignment d/name (str "handoff.attributes.stroke.alignment.") (t locale))]
+        [:& copy-button {:data (copy-stroke-data shape)}]])]))
 
 (mf/defc stroke-panel
   [{:keys [shapes locale]}]

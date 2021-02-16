@@ -7,26 +7,32 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.workspace.sidebar.options.circle
+(ns app.main.ui.workspace.sidebar.options.shapes.circle
   (:require
    [rumext.alpha :as mf]
-   [app.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
-   [app.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
-   [app.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]
-   [app.main.ui.workspace.sidebar.options.shadow :refer [shadow-menu]]
-   [app.main.ui.workspace.sidebar.options.blur :refer [blur-menu]]))
+   [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.svg-attrs :refer [svg-attrs-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]))
 
 (mf/defc options
   [{:keys [shape] :as props}]
   (let [ids [(:id shape)]
         type (:type shape)
         measure-values (select-keys shape measure-attrs)
-        stroke-values (select-keys shape stroke-attrs)]
+        stroke-values (select-keys shape stroke-attrs)
+        layer-values (select-keys shape layer-attrs)]
     [:*
      [:& measures-menu {:ids ids
                         :type type
                         :values measure-values
                         :options #{:size :position :rotation}}]
+     [:& layer-menu {:ids ids
+                     :type type
+                     :values layer-values}]
      [:& fill-menu {:ids ids
                     :type type
                     :values (select-keys shape fill-attrs)}]
@@ -36,4 +42,6 @@
      [:& shadow-menu {:ids ids
                       :values (select-keys shape [:shadow])}]
      [:& blur-menu {:ids ids
-                    :values (select-keys shape [:blur])}]]))
+                    :values (select-keys shape [:blur])}]
+     [:& svg-attrs-menu {:ids ids
+                         :values (select-keys shape [:svg-attrs])}]]))

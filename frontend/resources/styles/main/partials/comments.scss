@@ -246,6 +246,7 @@
   pointer-events: auto;
 
   .thread-groups {
+
     hr {
       border: 0;
       height: 1px;
@@ -424,15 +425,17 @@
     }
   }
 
-  .thread-group {
-    .section-title {
-      color: $color-black;
-    }
+  .thread-groups {
+    max-height: calc(30rem - 40px);
+    overflow: auto;
 
-    .threads {
-      max-height: 25rem;
-      overflow: auto;
+    hr {
+      background-color: $color-gray-10;
     }
+  }
+
+  .thread-group .section-title {
+    color: $color-black;
   }
   
   .comment {

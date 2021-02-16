@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.workspace.sidebar.options.fill
+(ns app.main.ui.workspace.sidebar.options.menus.fill
   (:require
    [app.common.pages :as cp]
    [app.main.data.colors :as dc]

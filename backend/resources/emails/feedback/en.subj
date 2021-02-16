@@ -1,1 +1,1 @@
-[PENPOT FEEDBACK]: {{subject|abbreviate:19}} (from {% if profile %}{{ profile.email }}{% else %}{{from}}{% endif %})
+[PENPOT FEEDBACK]: {{subject|abbreviate:19}} (from {{email}})

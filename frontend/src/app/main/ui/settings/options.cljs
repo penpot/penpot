@@ -9,8 +9,8 @@
 
 (ns app.main.ui.settings.options
   (:require
-   [app.common.spec :as us]
    [app.common.data :as d]
+   [app.common.spec :as us]
    [app.main.data.messages :as dm]
    [app.main.data.users :as du]
    [app.main.refs :as refs]
@@ -28,10 +28,6 @@
 (s/def ::options-form
   (s/keys :opt-un [::lang ::theme]))
 
-(defn- on-error
-  [form error]
-  (st/emit! (dm/error (tr "errors.generic"))))
-
 (defn- on-success
   [form]
   (st/emit! (dm/success (tr "notifications.profile-saved"))))
@@ -42,8 +38,7 @@
         data  (cond-> data
                 (empty? (:lang data))
                 (assoc :lang nil))
-        mdata {:on-success (partial on-success form)
-               :on-error (partial on-error form)}]
+        mdata {:on-success (partial on-success form)}]
     (st/emit! (du/update-profile (with-meta data mdata)))))
 
 (mf/defc options-form

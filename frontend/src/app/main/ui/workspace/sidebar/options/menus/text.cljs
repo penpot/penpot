@@ -7,31 +7,24 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.workspace.sidebar.options.text
+(ns app.main.ui.workspace.sidebar.options.menus.text
   (:require
-   [rumext.alpha :as mf]
-   [cuerdas.core :as str]
-   [okulary.core :as l]
-   [app.main.ui.context :as ctx]
-   [app.main.ui.icons :as i]
    [app.common.data :as d]
    [app.common.uuid :as uuid]
-   [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
-   [app.main.data.workspace.texts :as dwt]
    [app.main.data.workspace.libraries :as dwl]
-   [app.main.store :as st]
-   [app.main.refs :as refs]
-   [app.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
-   [app.main.ui.workspace.sidebar.options.fill :refer [fill-menu]]
-   [app.main.ui.workspace.sidebar.options.shadow :refer [shadow-menu]]
-   [app.main.ui.workspace.sidebar.options.typography :refer [typography-entry typography-options]]
-   [app.main.ui.workspace.sidebar.options.blur :refer [blur-menu]]
-   [app.util.dom :as dom]
+   [app.main.data.workspace.texts :as dwt]
    [app.main.fonts :as fonts]
-   [app.util.i18n :as i18n :refer [tr t]]
+   [app.main.refs :as refs]
+   [app.main.store :as st]
+   [app.main.ui.context :as ctx]
+   [app.main.ui.icons :as i]
+   [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry typography-options]]
+   [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.text :as ut]
-   ["slate" :refer [Transforms]]))
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
 (def text-typography-attrs [:typography-ref-id :typography-ref-file])
 (def text-fill-attrs [:fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient :fill :opacity ])
@@ -56,7 +49,7 @@
 (def attrs (d/concat #{} shape-attrs root-attrs paragraph-attrs text-attrs))
 
 (mf/defc text-align-options
-  [{:keys [editor ids values locale on-change] :as props}]
+  [{:keys [editor ids values on-change] :as props}]
   (let [{:keys [text-align]} values
 
         text-align (or text-align "left")
@@ -68,29 +61,29 @@
     ;; --- Align
     [:div.align-icons
      [:span.tooltip.tooltip-bottom
-      {:alt (t locale "workspace.options.text-options.align-left")
+      {:alt (tr "workspace.options.text-options.align-left")
        :class (dom/classnames :current (= "left" text-align))
        :on-click #(handle-change % "left")}
       i/text-align-left]
      [:span.tooltip.tooltip-bottom
-      {:alt (t locale "workspace.options.text-options.align-center")
+      {:alt (tr "workspace.options.text-options.align-center")
        :class (dom/classnames :current (= "center" text-align))
        :on-click #(handle-change % "center")}
       i/text-align-center]
      [:span.tooltip.tooltip-bottom
-      {:alt (t locale "workspace.options.text-options.align-right")
+      {:alt (tr "workspace.options.text-options.align-right")
        :class (dom/classnames :current (= "right" text-align))
        :on-click #(handle-change % "right")}
       i/text-align-right]
      [:span.tooltip.tooltip-bottom
-      {:alt (t locale "workspace.options.text-options.align-justify")
+      {:alt (tr  "workspace.options.text-options.align-justify")
        :class (dom/classnames :current (= "justify" text-align))
        :on-click #(handle-change % "justify")}
       i/text-align-justify]]))
 
 
 (mf/defc vertical-align
-  [{:keys [shapes editor ids values locale on-change] :as props}]
+  [{:keys [shapes editor ids values on-change] :as props}]
   (let [{:keys [vertical-align]} values
         vertical-align (or vertical-align "top")
         handle-change
@@ -99,23 +92,23 @@
 
     [:div.align-icons
      [:span.tooltip.tooltip-bottom
-      {:alt (t locale "workspace.options.text-options.align-top")
+      {:alt (tr "workspace.options.text-options.align-top")
        :class (dom/classnames :current (= "top" vertical-align))
        :on-click #(handle-change % "top")}
       i/align-top]
      [:span.tooltip.tooltip-bottom
-      {:alt (t locale "workspace.options.text-options.align-middle")
+      {:alt (tr "workspace.options.text-options.align-middle")
        :class (dom/classnames :current (= "center" vertical-align))
        :on-click #(handle-change % "center")}
       i/align-middle]
      [:span.tooltip.tooltip-bottom
-      {:alt (t locale "workspace.options.text-options.align-bottom")
+      {:alt (tr "workspace.options.text-options.align-bottom")
        :class (dom/classnames :current (= "bottom" vertical-align))
        :on-click #(handle-change % "bottom")}
       i/align-bottom]]))
 
 (mf/defc grow-options
-  [{:keys [editor ids values locale on-change] :as props}]
+  [{:keys [editor ids values on-change] :as props}]
   (let [to-single-value (fn [coll] (if (> (count coll) 1) nil (first coll)))
         grow-type (->> values :grow-type)
         handle-change-grow
@@ -124,23 +117,23 @@
 
     [:div.align-icons
      [:span.tooltip.tooltip-bottom
-      {:alt (t locale "workspace.options.text-options.grow-fixed")
+      {:alt (tr "workspace.options.text-options.grow-fixed")
        :class (dom/classnames :current (= :fixed grow-type))
        :on-click #(handle-change-grow % :fixed)}
       i/auto-fix]
      [:span.tooltip.tooltip-bottom
-      {:alt (t locale "workspace.options.text-options.grow-auto-width")
+      {:alt (tr "workspace.options.text-options.grow-auto-width")
        :class (dom/classnames :current (= :auto-width grow-type))
        :on-click #(handle-change-grow % :auto-width)}
       i/auto-width]
      [:span.tooltip.tooltip-bottom
-      {:alt (t locale "workspace.options.text-options.grow-auto-height")
+      {:alt (tr "workspace.options.text-options.grow-auto-height")
        :class (dom/classnames :current (= :auto-height grow-type))
        :on-click #(handle-change-grow % :auto-height)}
       i/auto-height]]))
 
 (mf/defc text-decoration-options
-  [{:keys [editor ids values locale on-change] :as props}]
+  [{:keys [editor ids values on-change] :as props}]
   (let [{:keys [text-decoration]} values
 
         text-decoration (or text-decoration "none")
@@ -150,19 +143,19 @@
           (on-change {:text-decoration type}))]
     [:div.align-icons
      [:span.tooltip.tooltip-bottom
-      {:alt (t locale "workspace.options.text-options.none")
+      {:alt (tr "workspace.options.text-options.none")
        :class (dom/classnames :current (= "none" text-decoration))
        :on-click #(handle-change % "none")}
       i/minus]
 
      [:span.tooltip.tooltip-bottom
-      {:alt (t locale "workspace.options.text-options.underline")
+      {:alt (tr "workspace.options.text-options.underline")
        :class (dom/classnames :current (= "underline" text-decoration))
        :on-click #(handle-change % "underline")}
       i/underline]
 
      [:span.tooltip.tooltip-bottom
-      {:alt (t locale "workspace.options.text-options.strikethrough")
+      {:alt (tr "workspace.options.text-options.strikethrough")
        :class (dom/classnames :current (= "line-through" text-decoration))
        :on-click #(handle-change % "line-through")}
       i/strikethrough]]))
@@ -176,14 +169,13 @@
   {::mf/wrap [mf/memo]}
   [{:keys [ids type editor values] :as props}]
 
-  (let [locale (mf/deref i18n/locale)
-        current-file-id (mf/use-ctx ctx/current-file-id)
+  (let [current-file-id (mf/use-ctx ctx/current-file-id)
         typographies (mf/deref refs/workspace-file-typography)
         shared-libs (mf/deref refs/workspace-libraries)
         label (case type
-                :multiple (t locale "workspace.options.text-options.title-selection")
-                :group (t locale "workspace.options.text-options.title-group")
-                (t locale "workspace.options.text-options.title"))
+                :multiple (tr "workspace.options.text-options.title-selection")
+                :group (tr "workspace.options.text-options.title-group")
+                (tr "workspace.options.text-options.title"))
 
         emit-update!
         (fn [id attrs]
@@ -242,8 +234,7 @@
                   :ids ids
                   :values values
                   :on-change (fn [attrs]
-                               (run! #(emit-update! % attrs) ids))
-                  :locale locale}]
+                               (run! #(emit-update! % attrs) ids))}]
 
     [:div.element-set
      [:div.element-set-title
@@ -261,9 +252,9 @@
 
        (= (:typography-ref-id values) :multiple)
        [:div.multiple-typography
-        [:div.multiple-typography-text (t locale "workspace.libraries.text.multiple-typography")]
+        [:div.multiple-typography-text (tr "workspace.libraries.text.multiple-typography")]
         [:div.multiple-typography-button {:on-click handle-detach-typography
-                                          :title (t locale "workspace.libraries.text.multiple-typography-tooltip")} i/unchain]]
+                                          :title (tr "workspace.libraries.text.multiple-typography-tooltip")} i/unchain]]
 
        :else
        [:> typography-options opts])
@@ -276,58 +267,5 @@
 
       [:div.row-flex
        [:> grow-options opts]
-       [:> text-decoration-options opts]]
+       [:> text-decoration-options opts]]]]))
 
-      ]]))
-
-(mf/defc options
-  [{:keys [shape] :as props}]
-  (let [ids [(:id shape)]
-        type (:type shape)
-
-        editors (mf/deref refs/editors)
-        editor (get editors (:id shape))
-
-        measure-values (select-keys shape measure-attrs)
-
-        fill-values (dwt/current-text-values
-                     {:editor editor
-                      :shape shape
-                      :attrs text-fill-attrs})
-
-        fill-values (d/update-in-when fill-values [:fill-color-gradient :type] keyword)
-
-        fill-values (cond-> fill-values
-                      ;; Keep for backwards compatibility
-                      (:fill fill-values) (assoc :fill-color (:fill fill-values))
-                      (:opacity fill-values) (assoc :fill-opacity (:fill fill-values)))
-
-
-        text-values (merge
-                     (select-keys shape [:grow-type])
-                     (dwt/current-root-values
-                      {:editor editor :shape shape
-                       :attrs root-attrs})
-                     (dwt/current-text-values
-                      {:editor editor :shape shape
-                       :attrs paragraph-attrs})
-                     (dwt/current-text-values
-                      {:editor editor :shape shape
-                       :attrs text-attrs}))]
-
-    [:*
-     [:& measures-menu {:ids ids
-                        :type type
-                        :values measure-values}]
-     [:& fill-menu {:ids ids
-                    :type type
-                    :values fill-values
-                    :editor editor}]
-     [:& shadow-menu {:ids ids
-                      :values (select-keys shape [:shadow])}]
-     [:& blur-menu {:ids ids
-                    :values (select-keys shape [:blur])}]
-     [:& text-menu {:ids ids
-                    :type type
-                    :values text-values
-                    :editor editor}]]))

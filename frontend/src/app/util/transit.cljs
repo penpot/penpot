@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.util.transit
   "A lightweight abstraction for transit serialization."
@@ -73,12 +73,12 @@
 ;; --- Transit Handlers
 
 (def ^:privare +read-handlers+
-  {"u" uuid
-   "n" bigint-read-handler
+  {"u"           uuid
+   "n"           bigint-read-handler
    "ordered-set" ordered-set-read-handler
-   "jsonblob" blob-read-handler
-   "matrix" matrix-read-handler
-   "point" point-read-handler})
+   "jsonblob"    blob-read-handler
+   "matrix"      matrix-read-handler
+   "point"       point-read-handler})
 
 (def ^:privare +write-handlers+
   {gmt/Matrix    matrix-write-handler

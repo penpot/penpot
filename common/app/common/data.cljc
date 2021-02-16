@@ -6,7 +6,7 @@
 
 (ns app.common.data
   "Data manipulation and query helper functions."
-  (:refer-clojure :exclude [concat read-string hash-map merge])
+  (:refer-clojure :exclude [concat read-string hash-map merge name])
   #?(:cljs
      (:require-macros [app.common.data]))
   (:require
@@ -132,8 +132,9 @@
   "Return a map without the keys provided
   in the `keys` parameter."
   [data keys]
-  (persistent!
-   (reduce #(dissoc! %1 %2) (transient data) keys)))
+  (when data
+    (persistent!
+     (reduce #(dissoc! %1 %2) (transient data) keys))))
 
 (defn remove-at-index
   [v index]
@@ -302,6 +303,14 @@
        default
        v))))
 
+(defn num-string? [v]
+  ;; https://stackoverflow.com/questions/175739/built-in-way-in-javascript-to-check-if-a-string-is-a-valid-number
+  #?(:cljs (and (string? v)
+               (not (js/isNaN v))
+               (not (js/isNaN (parse-double v))))
+
+     :clj  (not= (parse-double v :nan) :nan)))
+
 (defn read-string
   [v]
   (r/read-string v))
@@ -350,7 +359,7 @@
     ;; Code for ClojureScript
     (let [mdata    (aapi/resolve &env v)
           arglists (second (get-in mdata [:meta :arglists]))
-          sym      (symbol (name v))
+          sym      (symbol (core/name v))
           andsym   (symbol "&")
           procarg  #(if (= % andsym) % (gensym "param"))]
       (if (pos? (count arglists))
@@ -382,3 +391,18 @@
 
 (defn any-key? [element & rest]
   (some #(contains? element %) rest))
+
+(defn name
+  "Improved version of name that won't fail if the input is not a keyword"
+  ([maybe-keyword] (name maybe-keyword nil))
+  ([maybe-keyword default-value]
+   (cond
+     (keyword? maybe-keyword)
+     (core/name maybe-keyword)
+
+     (nil? maybe-keyword) default-value
+
+     :else
+     (or default-value
+         (str maybe-keyword)))))
+

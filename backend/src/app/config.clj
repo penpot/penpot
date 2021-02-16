@@ -70,7 +70,7 @@
    :telemetry-enabled false
    :telemetry-uri "https://telemetry.penpot.app/"
 
-   :ldap-user-query "(|(uid=$username)(mail=$username))"
+   :ldap-user-query "(|(uid=:username)(mail=:username))"
    :ldap-attrs-username "uid"
    :ldap-attrs-email "mail"
    :ldap-attrs-fullname "cn"

@@ -9,8 +9,10 @@
 
 (ns app.main.ui.shapes.group
   (:require
+   [app.util.object :as obj]
    [rumext.alpha :as mf]
-   [app.main.ui.shapes.mask :refer [mask-str mask-factory]]))
+   [app.main.ui.shapes.attrs :as attrs]
+   [app.main.ui.shapes.mask :refer [mask-str clip-str mask-factory]]))
 
 (defn group-shape
   [shape-wrapper]
@@ -28,12 +30,15 @@
 
             show-mask?     (and (:masked-group? shape) (not expand-mask))
             mask           (when show-mask? (first childs))
-            childs         (if show-mask? (rest childs) childs)]
+            childs         (if show-mask? (rest childs) childs)
 
-        [:g.group
-         {:pointer-events pointer-events
-          :mask (when (and mask (not expand-mask)) (mask-str mask))}
+            props (-> (attrs/extract-style-attrs shape)
+                      (obj/merge!
+                       #js {:pointerEvents pointer-events
+                            :clipPath (when (and mask (not expand-mask)) (clip-str mask))
+                            :mask (when (and mask (not expand-mask)) (mask-str mask))}))]
 
+        [:> :g props
          (when mask
            [:> render-mask #js {:frame frame :mask mask}])
 

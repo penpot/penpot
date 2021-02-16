@@ -78,7 +78,8 @@
 (defn ^:export dump-object [name]
   (let [page-id (get @state :current-page-id)]
     (let [objects (get-in @state [:workspace-data :pages-index page-id :objects])
-          target (d/seek (fn [[id shape]] (= name (:name shape))) objects)]
+          target (or (d/seek (fn [[id shape]] (= name (:name shape))) objects)
+                     (get objects (uuid name)))]
       (->> target
            (logjs "state")))))
 

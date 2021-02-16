@@ -131,18 +131,21 @@
 (defn- handle-viewport-positioning
   [viewport-ref]
   (let [node   (mf/ref-val viewport-ref)
-        stoper (rx/filter #(= ::finish-positioning %) st/stream)
+        stoper (rx/filter #(= ::finish-positioning %) st/stream)]
 
-        stream (->> ms/mouse-position-delta
-                    (rx/take-until stoper))]
     (st/emit! dw/start-pan)
-    (rx/subscribe stream
-                  (fn [delta]
+
+    (->> st/stream
+         (rx/filter ms/pointer-event?)
+         (rx/filter #(= :delta (:source %)))
+         (rx/map :pt)
+         (rx/take-until stoper)
+         (rx/subs (fn [delta]
                     (let [zoom (gpt/point @refs/selected-zoom)
                           delta (gpt/divide delta zoom)]
                       (st/emit! (dw/update-viewport-position
                                  {:x #(- % (:x delta))
-                                  :y #(- % (:y delta))})))))))
+                                  :y #(- % (:y delta))}))))))))
 
 ;; --- Viewport
 
@@ -347,7 +350,8 @@
                 transform
                 hover
                 modifiers
-                selrect]} local
+                selrect
+                show-distances?]} local
 
         page-id       (mf/use-ctx ctx/current-page-id)
 
@@ -794,7 +798,7 @@
          [:& selection-handlers {:selected selected
                                  :zoom zoom
                                  :edition edition
-                                 :show-distances (and (not transform) @alt?)
+                                 :show-distances (and (not transform) show-distances?)
                                  :disable-handlers (or drawing-tool edition)}])
 
        (when (= (count selected) 1)

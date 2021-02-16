@@ -190,6 +190,32 @@
     (t/testing "not allowed email domain"
       (t/is (false? (profile/email-domain-in-whitelist? whitelist "username@somedomain.com"))))))
 
+(t/deftest test-register-with-no-terms-and-privacy
+  (let [data  {::th/type :register-profile
+               :email "user@example.com"
+               :password "foobar"
+               :fullname "foobar"
+               :terms-privacy nil}
+        out   (th/mutation! data)
+        error (:error out)
+        edata (ex-data error)]
+    (t/is (th/ex-info? error))
+    (t/is (= (:type edata) :validation))
+    (t/is (= (:code edata) :spec-validation))))
+
+(t/deftest test-register-with-bad-terms-and-privacy
+  (let [data  {::th/type :register-profile
+               :email "user@example.com"
+               :password "foobar"
+               :fullname "foobar"
+               :terms-privacy false}
+        out   (th/mutation! data)
+        error (:error out)
+        edata (ex-data error)]
+    (t/is (th/ex-info? error))
+    (t/is (= (:type edata) :validation))
+    (t/is (= (:code edata) :invalid-terms-and-privacy))))
+
 (t/deftest test-register-when-registration-disabled
   (with-mocks [mock {:target 'app.config/get
                      :return (th/mock-config-get-with
@@ -197,7 +223,8 @@
     (let [data  {::th/type :register-profile
                  :email "user@example.com"
                  :password "foobar"
-                 :fullname "foobar"}
+                 :fullname "foobar"
+                 :terms-privacy true}
           out   (th/mutation! data)
           error (:error out)
           edata (ex-data error)]
@@ -210,7 +237,8 @@
         data    {::th/type :register-profile
                  :email (:email profile)
                  :password "foobar"
-                 :fullname "foobar"}
+                 :fullname "foobar"
+                 :terms-privacy true}
         out     (th/mutation! data)
         error   (:error out)
         edata   (ex-data error)]
@@ -225,7 +253,8 @@
           data  {::th/type :register-profile
                  :email "user@example.com"
                  :password "foobar"
-                 :fullname "foobar"}
+                 :fullname "foobar"
+                 :terms-privacy true}
           out   (th/mutation! data)]
       ;; (th/print-result! out)
       (let [mock          (deref mock)
@@ -250,7 +279,8 @@
           data  {::th/type :register-profile
                  :email "user@example.com"
                  :password "foobar"
-                 :fullname "foobar"}
+                 :fullname "foobar"
+                 :terms-privacy true}
           _     (th/create-global-complaint-for pool {:type :bounce :email "user@example.com"})
           out   (th/mutation! data)]
       ;; (th/print-result! out)
@@ -270,7 +300,8 @@
           data  {::th/type :register-profile
                  :email "user@example.com"
                  :password "foobar"
-                 :fullname "foobar"}
+                 :fullname "foobar"
+                 :terms-privacy true}
           _     (th/create-global-complaint-for pool {:type :complaint :email "user@example.com"})
           out   (th/mutation! data)]
 

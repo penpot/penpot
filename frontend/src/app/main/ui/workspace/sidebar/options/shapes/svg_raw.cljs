@@ -7,21 +7,22 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.workspace.sidebar.options.svg-raw
+(ns app.main.ui.workspace.sidebar.options.shapes.svg-raw
   (:require
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
    [app.util.data :as d]
    [app.util.color :as uc]
-   [app.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
-   [app.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
-   [app.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]
-   [app.main.ui.workspace.sidebar.options.shadow :refer [shadow-menu]]
-   [app.main.ui.workspace.sidebar.options.blur :refer [blur-menu]]))
+   [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.svg-attrs :refer [svg-attrs-menu]]))
 
 ;; This is a list of svg tags that can be grouped in shape-container
 ;; this allows them to have gradients, shadows and masks
-(def svg-elements #{:svg :circle :ellipse :image :line :path :polygon :polyline :rect :symbol :text :textPath})
+(def svg-elements #{:svg :g :circle :ellipse :image :line :path :polygon :polyline :rect :symbol :text :textPath})
 
 (defn hex->number [hex] 1)
 (defn shorthex->longhex [hex]
@@ -99,11 +100,9 @@
 
     (when (contains? svg-elements tag)
       [:*
-       (when (= tag :svg)
-         [:*
-          [:& measures-menu {:ids ids
-                             :type type
-                             :values measure-values}]])
+       [:& measures-menu {:ids ids
+                          :type type
+                          :values measure-values}]
 
        [:& fill-menu {:ids ids
                       :type type
@@ -115,4 +114,7 @@
                         :values (select-keys shape [:shadow])}]
 
        [:& blur-menu {:ids ids
-                      :values (select-keys shape [:blur])}]])))
+                      :values (select-keys shape [:blur])}]
+
+       [:& svg-attrs-menu {:ids ids
+                           :values (select-keys shape [:svg-attrs])}]])))

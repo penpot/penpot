@@ -36,17 +36,23 @@
 
 (defn- validate
   [data]
-  (let [password (:password data)]
-    (when (> 8 (count password))
-      {:password {:message "errors.password-too-short"}})))
+  (let [password (:password data)
+        terms-privacy (:terms-privacy data)]
+    (cond-> {}
+      (> 8 (count password))
+      (assoc :password {:message "errors.password-too-short"})
+
+      (and (not terms-privacy) false)
+      (assoc :terms-privacy {:message "errors.terms-privacy-agreement-invalid"}))))
 
 (s/def ::fullname ::us/not-empty-string)
 (s/def ::password ::us/not-empty-string)
 (s/def ::email ::us/email)
 (s/def ::invitation-token ::us/not-empty-string)
+(s/def ::terms-privacy ::us/boolean)
 
 (s/def ::register-form
-  (s/keys :req-un [::password ::fullname ::email]
+  (s/keys :req-un [::password ::fullname ::email ::terms-privacy]
           :opt-un [::invitation-token]))
 
 (mf/defc register-form
@@ -113,10 +119,16 @@
                     :label (tr "auth.password")
                     :type "password"}]]
 
+     [:div.fields-row
+      [:& fm/input {:name :terms-privacy
+                    :class "check-primary"
+                    :tab-index "4"
+                    :label (tr "auth.terms-privacy-agreement")
+                    :type "checkbox"}]]
+
      [:& fm/submit-button
       {:label (tr "auth.register-submit")
-       :disabled @submitted?
-       }]]))
+       :disabled @submitted?}]]))
 
 ;; --- Register Page
 

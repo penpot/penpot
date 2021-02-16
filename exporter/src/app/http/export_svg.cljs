@@ -29,8 +29,7 @@
   (:import
    goog.Uri))
 
-(def default-svgo-plugins
-  #js [#js {:convertStyleToAttrs false}])
+(log/set-level "app.http.export-svg" :trace)
 
 (defn- create-tmpdir!
   [prefix]
@@ -63,10 +62,10 @@
   [cmd]
   (p/create
    (fn [resolve reject]
-     (log/info :fn :run-cmd :cmd cmd)
+     (log/trace :fn :run-cmd :cmd cmd)
      (chp/exec cmd #js {:encoding "buffer"}
                (fn [error stdout stderr]
-                 ;; (log/info :fn :run-cmd :stdout stdout)
+                 ;; (log/trace :fn :run-cmd :stdout stdout)
                  (if error
                    (reject error)
                    (resolve stdout)))))))
@@ -91,24 +90,15 @@
 
 (defn- render-object
   [browser {:keys [page-id file-id object-id token scale suffix type]}]
-  (letfn [(render-in-page [page {:keys [uri cookie] :as rctx}]
-            (p/do!
-             (bwr/emulate! page {:viewport [1920 1080]
-                                 :scale 4})
-             (bwr/set-cookie! page cookie)
-             (bwr/navigate! page uri)
-             ;; (bwr/eval! page (js* "() => document.body.style.background = 'transparent'"))
-             page))
-
-          (convert-to-ppm [pngpath]
-            (log/info :fn :convert-to-ppm)
+  (letfn [(convert-to-ppm [pngpath]
+            (log/trace :fn :convert-to-ppm)
             (let [basepath (path/dirname pngpath)
                   ppmpath  (path/join basepath "origin.ppm")]
               (-> (run-cmd! (str "convert " pngpath " " ppmpath))
                   (p/then (constantly ppmpath)))))
 
           (trace-color-mask [pbmpath]
-            (log/info :fn :trace-color-mask :pbmpath pbmpath)
+            (log/trace :fn :trace-color-mask :pbmpath pbmpath)
             (let [basepath (path/dirname pbmpath)
                   basename (path/basename pbmpath ".pbm")
                   svgpath  (path/join basepath (str basename ".svg"))]
@@ -116,7 +106,7 @@
                   (p/then (constantly svgpath)))))
 
           (generate-color-mask [ppmpath color]
-            (log/info :fn :generate-color-mask :ppmpath ppmpath :color color)
+            (log/trace :fn :generate-color-mask :ppmpath ppmpath :color color)
             (let [basepath (path/dirname ppmpath)
                   pbmpath  (path/join basepath (str "mask-" (subs color 1) ".pbm"))]
               (-> (run-cmd! (str/format "ppmcolormask \"%s\" %s" color ppmpath))
@@ -133,7 +123,7 @@
                                :svgdata data}))))))
 
           (join-color-layers [layers]
-            (log/info :fn :join-color-layers)
+            (log/trace :fn :join-color-layers)
             (loop [main   (-> (:svgdata (first layers))
                               (assoc "elements" []))
                    layers (seq layers)]
@@ -147,16 +137,16 @@
                          (next layers))))))
 
           (convert-to-svg [colors ppmpath]
-            (log/info :fn :convert-to-svg :ppmpath ppmpath :colors colors)
+            (log/trace :fn :convert-to-svg :ppmpath ppmpath :colors colors)
             (-> (p/all (map (partial generate-color-mask ppmpath) colors))
                 (p/then join-color-layers)))
 
           (clean-svg [data]
-            (log/info :fn :clean-svg)
+            (log/trace :fn :clean-svg)
             (svgc/optimize data))
 
           (trace-single-node [{:keys [data] :as node}]
-            (log/info :fn :trace-single-node)
+            (log/trace :fn :trace-single-node)
             (p/let [tdpath  (create-tmpdir! "svgexport-")
                     pngpath (path/join tdpath "origin.png")
                     _       (write-file! pngpath data)
@@ -183,7 +173,7 @@
                    :colors (.split colors ",")}))
 
           (extract-single-node [node]
-            (log/info :fn :extract-single-node)
+            (log/trace :fn :extract-single-node)
 
             (p/let [attrs (bwr/eval! node extract-element-attrs)
                     shot  (bwr/screenshot node {:omit-background? true :type "png"})]
@@ -207,9 +197,16 @@
                 (p/then clean-temp-data)))
 
           (process-text-nodes [page]
-            (log/info :fn :process-text-nodes)
+            (log/trace :fn :process-text-nodes)
             (-> (bwr/select-all page "#screenshot foreignObject")
-                (p/then #(p/all (map process-single-text-node %)))))
+                (p/then (fn [nodes]
+                          (reduce (fn [res node]
+                                    (p/then res (fn [res]
+                                                  (-> (process-single-text-node node)
+                                                      (p/then (fn [result]
+                                                                (conj res result)))))))
+                                  (p/resolved [])
+                                  nodes)))))
 
           (replace-nodes-on-main [main nodes]
             (let [main  (parse-xml main)
@@ -236,6 +233,17 @@
                     nodes (process-text-nodes page)]
               (replace-nodes-on-main main nodes)))
 
+          (render-in-page [page {:keys [uri cookie] :as rctx}]
+            (p/do!
+             (bwr/emulate! page {:viewport [1920 1080]
+                                 :scale 4})
+             (bwr/set-cookie! page cookie)
+             (bwr/navigate! page uri)
+             ;; (bwr/wait-for page "#screenshot foreignObject" {:visible true})
+             (bwr/sleep page 2000)
+             ;; (bwr/eval! page (js* "() => document.body.style.background = 'transparent'"))
+             page))
+
           (handle [rctx page]
             (p/let [page (render-in-page page rctx)]
               (render-svg page)))]
@@ -248,6 +256,8 @@
                          :key "auth-token"
                          :value token}
                 :uri (.toString uri)}]
+
+      (log/info :uri (.toString uri))
       (bwr/exec! browser (partial handle rctx)))))
 
 (s/def ::name ::us/string)

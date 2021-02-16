@@ -41,7 +41,13 @@
 
 (defn sleep
   [page ms]
-  (.waitFor ^js page ms))
+  (.waitForTimeout ^js page ms))
+
+
+(defn wait-for
+  ([page selector] (wait-for page selector nil))
+  ([page selector {:keys [visible] :or {visible false}}]
+   (.waitForSelector ^js page selector #js {:visible visible})))
 
 (defn screenshot
   ([frame] (screenshot frame nil))

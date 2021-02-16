@@ -3,13 +3,16 @@
   #_:clj-kondo/ignore
   (:require
    [app.common.pages :as cp]
+   [app.common.uuid :as uuid]
    [app.common.pages.migrations :as pmg]
    [app.config :as cfg]
    [app.db :as db]
+   [app.db.sql :as sql]
    [app.main :refer [system]]
    [app.rpc.queries.profile :as prof]
    [app.srepl.dev :as dev]
    [app.util.blob :as blob]
+   [cuerdas.core :as str]
    [clojure.pprint :refer [pprint]]))
 
 (defn update-file
@@ -64,3 +67,17 @@
                     {:data (-> (blob/decode data)
                                (blob/encode {:version 2}))}
                     {:id id})))))
+
+
+(defn duplicate-file
+  "This is a raw version of duplication of file just only for forensic analisys"
+  [system file-id email]
+  (db/with-atomic [conn (:app.db/pool system)]
+    (when-let [profile (some->> (prof/retrieve-profile-data-by-email conn (str/lower email))
+                                (prof/populate-additional-data conn))]
+      (when-let [file (db/exec-one! conn (sql/select :file {:id file-id}))]
+        (let [params (assoc file
+                            :id (uuid/next)
+                            :project-id (:default-project-id profile))]
+          (db/insert! conn :file params)
+          (:id file))))))

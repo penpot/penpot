@@ -18,7 +18,7 @@
    [app.util.dom :as dom]
    [app.main.store :as st]
    [app.main.data.messages :as dm]
-   [app.main.ui.workspace.sidebar.options.exports :as we]))
+   [app.main.ui.workspace.sidebar.options.menus.exports :as we]))
 
 (mf/defc exports
   [{:keys [shape page-id file-id] :as props}]
@@ -114,7 +114,7 @@
            [:input.input-text {:on-change (partial on-suffix-change index)
                                :value (:suffix export)}]
            [:select.input-select {:on-change (partial on-type-change index)
-                                  :value (name (:type export))}
+                                  :value (d/name (:type export))}
             [:option {:value "png"} "PNG"]
             [:option {:value "jpeg"} "JPEG"]
             [:option {:value "svg"} "SVG"]]

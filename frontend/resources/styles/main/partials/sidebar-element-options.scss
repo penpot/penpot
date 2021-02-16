@@ -510,7 +510,15 @@
 
 .presets {
   .custom-select-dropdown {
-    width: 200px;
+    width: 237px;
+
+    li {
+      font-size: $fs12;
+
+      span {
+        font-size: $fs11;
+      }
+    }
   }
 }
 
@@ -709,6 +717,9 @@
 .element-set-content .input-row {
   & .element-set-subtitle {
     width: 5.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
@@ -771,7 +782,6 @@
       min-width: 56px;
       max-height: 10rem;
     }
-
   }
 }
 
@@ -908,13 +918,16 @@
 .element-set-actions {
     display: flex;
     visibility: hidden;
-
 }
 
+.row-flex-removable:hover .element-set-actions,
 .element-set-options-group:hover .element-set-actions {
-    visibility: visible;
+  visibility: visible;
 }
 
+.layer-actions {
+  visibility: visible;
+}
 
 .typography-entry {
     margin: 0.5rem 0.3rem;

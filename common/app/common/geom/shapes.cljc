@@ -148,10 +148,10 @@
         (update-in [:selrect :x2] - x)
         (update-in [:selrect :y2] - y)
 
-        (d/update-when :points #(map move-point %))
+        (d/update-when :points #(mapv move-point %))
 
         (cond-> (= :path type)
-          (d/update-when :content #(map move-segment %))))))
+          (d/update-when :content #(mapv move-segment %))))))
 
 
 ;; --- Helpers
@@ -281,6 +281,7 @@
 (d/export gtr/transform-rect)
 (d/export gtr/update-group-selrect)
 (d/export gtr/transform-points)
+(d/export gtr/calculate-adjust-matrix)
 
 ;; PATHS
 (d/export gsp/content->points)

@@ -249,6 +249,9 @@
   (let [class-list (.-classList ^js node)]
     (.contains ^js class-list class-name)))
 
+(defn child? [node1 node2]
+  (.contains ^js node2 ^js node1))
+
 (defn get-user-agent []
   (.-userAgent globals/navigator))
 

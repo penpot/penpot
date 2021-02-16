@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.workspace.sidebar.options.typography
+(ns app.main.ui.workspace.sidebar.options.menus.typography
   (:require
    [rumext.alpha :as mf]
    [cuerdas.core :as str]

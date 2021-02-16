@@ -181,8 +181,10 @@
        ;; Mark file initialized when indexes are ready
        (->> stream
             (rx/filter #(= ::dwc/index-initialized %))
-            (rx/map (constantly
-                     (file-initialized project-id file-id))))
+            (rx/first)
+            (rx/map (fn []
+                      (file-initialized project-id file-id))))
+
        ))))
 
 (defn- file-initialized
@@ -1723,6 +1725,13 @@
             params  {:file-id file-id
                      :data [image]}]
         (rx/of (dwp/upload-media-workspace params @ms/mouse-position))))))
+
+(defn toggle-distances-display [value]
+  (ptk/reify ::toggle-distances-display
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :show-distances?] value))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interactions

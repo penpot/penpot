@@ -229,7 +229,7 @@
 (s/def :internal.shape/stroke-color-ref-file (s/nilable uuid?))
 (s/def :internal.shape/stroke-color-ref-id (s/nilable uuid?))
 (s/def :internal.shape/stroke-opacity ::safe-number)
-(s/def :internal.shape/stroke-style #{:solid :dotted :dashed :mixed :none})
+(s/def :internal.shape/stroke-style #{:solid :dotted :dashed :mixed :none :svg})
 (s/def :internal.shape/stroke-width ::safe-number)
 (s/def :internal.shape/stroke-alignment #{:center :inner :outer})
 (s/def :internal.shape/text-align #{"left" "right" "center" "justify"})

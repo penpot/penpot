@@ -33,7 +33,7 @@
 (s/def ::email ::us/email)
 (s/def ::password ::us/string)
 (s/def ::lang (s/nilable ::us/string))
-(s/def ::theme ::us/string)
+(s/def ::theme (s/nilable ::us/string))
 (s/def ::created-at ::us/inst)
 (s/def ::password-1 ::us/string)
 (s/def ::password-2 ::us/string)
@@ -55,17 +55,18 @@
   (ptk/reify ::profile-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :profile
-             (cond-> data
-               (nil? (:theme data))
-               (assoc :theme cfg/default-theme))))
+      (-> state
+          (assoc :profile data)
+          ;; Safeguard if the profile is loaded after teams
+          (assoc-in [:profile :teams] (get-in state [:profile :teams]))))
 
     ptk/EffectEvent
     (effect [_ state stream]
       (let [profile (:profile state)]
         (swap! storage assoc :profile profile)
         (i18n/set-locale! (:lang profile))
-        (theme/set-current-theme! (:theme profile))))))
+        (some-> (:theme profile)
+                (theme/set-current-theme!))))))
 
 ;; --- Fetch Profile
 
@@ -91,16 +92,19 @@
     (watch [_ state stream]
       (let [mdata      (meta data)
             on-success (:on-success mdata identity)
-            on-error   (:on-error mdata identity)]
-        (rx/merge
-         (->> (rp/mutation :update-profile data)
-              (rx/map fetch-profile)
-              (rx/catch on-error))
-         (->> stream
-              (rx/filter (ptk/type? ::profile-fetched))
-              (rx/take 1)
-              (rx/tap on-success)
-              (rx/ignore)))))))
+            on-error   (:on-error mdata #(rx/throw %))]
+        (->> (rp/mutation :update-profile data)
+             (rx/catch on-error)
+             (rx/mapcat
+              (fn [_]
+                (rx/merge
+                 (->> stream
+                      (rx/filter (ptk/type? ::profile-fetched))
+                      (rx/take 1)
+                      (rx/tap on-success)
+                      (rx/ignore))
+                 (rx/of (profile-fetched data))))))))))
+
 
 ;; --- Request Email Change
 
@@ -202,4 +206,23 @@
         (->> (rp/query :team-users {:team-id team-id})
              (rx/map #(partial fetched %)))))))
 
+(defn user-teams-fetched [data]
+  (ptk/reify ::user-teams-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [teams (->> data
+                       (group-by :id)
+                       (d/mapm #(first %2)))]
+        (assoc-in state [:profile :teams] teams)))))
+
+(defn fetch-user-teams []
+  (ptk/reify ::fetch-user-teams
+    ptk/WatchEvent
+    (watch [_ state s]
+      (->> (rp/query! :teams)
+           (rx/map user-teams-fetched)
+           (rx/catch (fn [error]
+                       (if (= (:type error) :not-found)
+                         (rx/of (rt/nav :auth-login))
+                         (rx/empty))))))))
 

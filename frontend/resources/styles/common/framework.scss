@@ -449,6 +449,10 @@ ul.slider-dots {
       content: "Y";
     }
   }
+
+  &.large {
+    min-width: 7rem;
+  }
 }
 
 input,
@@ -561,27 +565,28 @@ input.element-name {
 .input-radio,
 .input-checkbox {
   align-items: center;
+  color: $color-gray-40;
   display: flex;
   margin-bottom: 10px;
   margin-top: 10px;
   padding-left: 0px;
 
   label{
-    align-items: center;
     cursor: pointer;
     display: flex;
     margin-right: 15px;
-    font-size: $fs13;
+    font-size: $fs12;
 
     &:before{
       content:"";
       width: 20px;
       height: 20px;
       margin-right: 10px;
-      background-color: $color-gray-50;
-      border: 1px solid $color-gray-60;
-      box-shadow: inset 0 0 0 0 $color-primary ;
+      background-color: $color-gray-10;
+      border: 1px solid $color-gray-30;
+      box-shadow: inset 0 0 0 0 $color-primary;
       box-sizing: border-box;
+      flex-shrink: 0;
     }
 
   }
@@ -676,7 +681,6 @@ input[type=radio]:checked + label:before{
 
   label {
     transition: border 0.2s linear 0s, color 0.2s linear 0s;
-    white-space: nowrap;
     position: relative;
 
     &:before {
@@ -687,11 +691,11 @@ input[type=radio]:checked + label:before{
 
     &::after {
       display: inline-block;
-      width: 16px;
-      height: 16px;
+      width: 20px;
+      height: 20px;
       position: absolute;
       left: 3.2px;
-      top: 0px;
+      top: 0;
       font-size: $fs11;
       transition: border 0.2s linear 0s, color 0.2s linear 0s;
     }
@@ -732,7 +736,7 @@ input[type=radio]:checked + label:before{
 
       &::after {
         content:"✓";
-        color: #000000;
+        color: #ffffff;
         font-size: $fs16;
       }
 

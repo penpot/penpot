@@ -160,7 +160,9 @@
                   (assoc :x (-> mask :selrect :x)
                          :y (-> mask :selrect :y)
                          :width (-> mask :selrect :width)
-                         :height (-> mask :selrect :height)))))
+                         :height (-> mask :selrect :height)
+                         :flip-x (-> mask :flip-x)
+                         :flip-y (-> mask :flip-y)))))
           (update-group [group objects]
             (let [children (->> group :shapes (map #(get objects %)))]
               (cond

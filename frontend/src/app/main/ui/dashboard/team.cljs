@@ -94,7 +94,7 @@
         on-success
         (mf/use-callback
          (mf/deps team)
-         (st/emitf (dm/success "Invitation sent successfully")
+         (st/emitf (dm/success (tr "notifications.invitation-email-sent"))
                    (modal/hide)))
 
         on-error
@@ -139,7 +139,7 @@
                       :options roles}]]
 
       [:div.action-buttons
-       [:& fm/submit-button {:label "Send invitation"}]]]]))
+       [:& fm/submit-button {:label (tr "modals.invite-member-confirm.accept")}]]]]))
 
 
 (mf/defc team-member

@@ -49,8 +49,10 @@
 (declare register-profile)
 
 (s/def ::invitation-token ::us/not-empty-string)
+(s/def ::terms-privacy ::us/boolean)
+
 (s/def ::register-profile
-  (s/keys :req-un [::email ::password ::fullname]
+  (s/keys :req-un [::email ::password ::fullname ::terms-privacy]
           :opt-un [::invitation-token]))
 
 (sv/defmethod ::register-profile {:auth false :rlimit :password}
@@ -62,6 +64,10 @@
   (when-not (email-domain-in-whitelist? (cfg/get :registration-domain-whitelist) (:email params))
     (ex/raise :type :validation
               :code :email-domain-is-not-allowed))
+
+  (when-not (:terms-privacy params)
+    (ex/raise :type :validation
+              :code :invalid-terms-and-privacy))
 
   (db/with-atomic [conn pool]
     (let [cfg     (assoc cfg :conn conn)]
@@ -196,21 +202,25 @@
 
 (defn create-profile-relations
   [conn profile]
-  (let [team (teams/create-team conn {:profile-id (:id profile)
-                                      :name "Default"
-                                      :default? true})
-        proj (projects/create-project conn {:profile-id (:id profile)
-                                            :team-id (:id team)
-                                            :name "Drafts"
-                                            :default? true})]
-    (teams/create-team-profile conn {:team-id (:id team)
-                                     :profile-id (:id profile)})
-    (projects/create-project-profile conn {:project-id (:id proj)
-                                           :profile-id (:id profile)})
+  (let [team    (teams/create-team conn {:profile-id (:id profile)
+                                         :name "Default"
+                                         :is-default true})
+        project (projects/create-project conn {:profile-id (:id profile)
+                                               :team-id (:id team)
+                                               :name "Drafts"
+                                               :is-default true})
+        params  {:team-id (:id team)
+                 :profile-id (:id profile)
+                 :project-id (:id project)
+                 :role :owner}]
 
-    (merge (profile/strip-private-attrs profile)
-           {:default-team-id (:id team)
-            :default-project-id (:id proj)})))
+    (teams/create-team-role conn params)
+    (projects/create-project-role conn params)
+
+    (-> profile
+        (profile/strip-private-attrs)
+        (assoc :default-team-id (:id team))
+        (assoc :default-project-id (:id project)))))
 
 ;; --- Mutation: Login
 
@@ -327,7 +337,8 @@
               {:id id}))
 
 (s/def ::update-profile
-  (s/keys :req-un [::id ::fullname ::lang ::theme]))
+  (s/keys :req-un [::id ::fullname]
+          :opt-un [::lang ::theme]))
 
 (sv/defmethod ::update-profile
   [{:keys [pool] :as cfg} params]

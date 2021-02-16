@@ -45,7 +45,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id (:current-page-id state)
-            data    (get-in state [:workspace-data page-id])
+            data    (get-in state [:workspace-data :pages-index page-id])
             params  (or (get-in data [:options :saved-grids :square])
                         (:square default-grid-params))
             grid    {:type :square

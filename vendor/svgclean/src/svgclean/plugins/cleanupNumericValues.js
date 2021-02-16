@@ -8,7 +8,7 @@ exports.description = 'rounds numeric values to the fixed precision, removes def
 
 exports.params = {
     floatPrecision: 3,
-    leadingZero: true,
+    leadingZero: false,
     defaultPx: true,
     convertToPx: true
 };
@@ -20,7 +20,8 @@ var regNumericValues = /^([\-+]?\d*\.?\d+([eE][\-+]?\d+)?)(px|pt|pc|mm|cm|m|in|f
         mm: 96/25.4,
         in: 96,
         pt: 4/3,
-        pc: 16
+        pc: 16,
+        em: 16
     };
 
 /**
@@ -61,12 +62,8 @@ exports.fn = function(item, params) {
 
                 // convert absolute values to pixels
                 if (params.convertToPx && units && (units in absoluteLengths)) {
-                    var pxNum = +(absoluteLengths[units] * match[1]).toFixed(floatPrecision);
-
-                    if (String(pxNum).length < match[0].length) {
-                        num = pxNum;
-                        units = 'px';
-                    }
+                    num = +(absoluteLengths[units] * match[1]).toFixed(floatPrecision);
+                    units = 'px';
                 }
 
                 // and remove leading zero

@@ -27,11 +27,8 @@
 
 (defmethod ig/init-key ::handler
   [_ {:keys [pool] :as scfg}]
-  (let [ftoken  (cfg/get :feedback-token ::no-token)
-        enabled (cfg/get :feedback-enabled)
-        dest    (cfg/get :feedback-destination)
-        scfg    (assoc scfg :destination dest)]
-
+  (let [ftoken   (cfg/get :feedback-token ::no-token)
+        enabled  (cfg/get :feedback-enabled)]
     (fn [{:keys [profile-id] :as request}]
       (let [token  (get-in request [:headers "x-feedback-token"])
             params (d/merge (:params request)
@@ -47,7 +44,7 @@
           (let [profile (profile/retrieve-profile-data pool profile-id)
                 params  (assoc params :from (:email profile))]
             (when-not (:is-muted profile)
-              (send-feedback scfg profile params)))
+              (send-feedback pool profile params)))
 
           (= token ftoken)
           (send-feedback scfg nil params))
@@ -62,12 +59,14 @@
   (s/keys :req-un [::from ::subject ::content]))
 
 (defn send-feedback
-  [{:keys [pool destination]} profile params]
-  (let [params (us/conform ::feedback params)]
+  [pool profile params]
+  (let [params      (us/conform ::feedback params)
+        destination (cfg/get :feedback-destination)]
     (emails/send! pool emails/feedback
-                  {:to destination
-                   :profile profile
-                   :from (:from params)
-                   :subject (:subject params)
-                   :content (:content params)})
+                  {:to       destination
+                   :profile  profile
+                   :reply-to (:from params)
+                   :email    (:from params)
+                   :subject  (:subject params)
+                   :content  (:content params)})
     nil))

@@ -24,6 +24,7 @@
    [app.main.ui.components.forms :as fm]
    [app.main.ui.dashboard.comments :refer [comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
+   [app.main.ui.dashboard.project-menu :refer [project-menu]]
    [app.main.ui.dashboard.team-form]
    [app.main.ui.icons :as i]
    [app.util.avatars :as avatars]
@@ -42,10 +43,12 @@
 
 (mf/defc sidebar-project
   [{:keys [item selected?] :as props}]
-  (let [dstate    (mf/deref refs/dashboard-local)
-        edit-id   (:project-for-edit dstate)
+  (let [dstate  (mf/deref refs/dashboard-local)
+        edit-id (:project-for-edit dstate)
 
-        edition?  (mf/use-state (= (:id item) edit-id))
+        local   (mf/use-state {:menu-open false
+                               :menu-pos nil
+                               :edition? (= (:id item) edit-id)})
 
         on-click
         (mf/use-callback
@@ -54,23 +57,41 @@
            (st/emit! (rt/nav :dashboard-files {:team-id (:team-id item)
                                                :project-id (:id item)}))))
 
-        on-dbl-click
-        (mf/use-callback #(reset! edition? true))
+        on-menu-click
+        (mf/use-callback (fn [event]
+                           (let [position (dom/get-client-position event)]
+                             (dom/prevent-default event)
+                             (swap! local assoc :menu-open true
+                                                :menu-pos position))))
+
+        on-menu-close
+        (mf/use-callback #(swap! local assoc :menu-open false))
+
+        on-edit-open
+        (mf/use-callback #(swap! local assoc :edition? true))
 
         on-edit
         (mf/use-callback
          (mf/deps item)
          (fn [name]
            (st/emit! (dd/rename-project (assoc item :name name)))
-           (reset! edition? false)))]
+           (swap! local assoc :edition? false)))]
 
-    [:li {:on-click on-click
-          :on-double-click on-dbl-click
-          :class (when selected? "current")}
-     (if @edition?
-       [:& inline-edition {:content (:name item)
-                           :on-end on-edit}]
-       [:span.element-title (:name item)])]))
+    [:*
+     [:li {:on-click on-click
+           :on-double-click on-edit-open
+           :on-context-menu on-menu-click
+           :class (when selected? "current")}
+      (if (:edition? @local)
+        [:& inline-edition {:content (:name item)
+                            :on-end on-edit}]
+        [:span.element-title (:name item)])]
+     [:& project-menu {:project item
+                       :show? (:menu-open @local)
+                       :left (:x (:menu-pos @local))
+                       :top (:y (:menu-pos @local))
+                       :on-edit on-edit-open
+                       :on-menu-close on-menu-close}]]))
 
 (mf/defc sidebar-search
   [{:keys [search-term team-id locale] :as props}]

@@ -31,7 +31,7 @@
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.sidebar.options.typography :refer [typography-entry]]
+   [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry]]
    [app.util.data :refer [matches-search]]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
@@ -491,7 +491,7 @@
 
     [:div.asset-group
      [:div.group-title {:class (when (not open?) "closed")}
-      [:span {:on-click (st/emitf (dwl/set-assets-box-open file-id :typography (not open?)))}
+      [:span {:on-click (st/emitf (dwl/set-assets-box-open file-id :typographies (not open?)))}
        i/arrow-slide (t locale "workspace.assets.typography")]
       [:span.num-assets (str "\u00A0(") (count typographies) ")"] ;; Unicode 00A0 is non-breaking space
       (when local?

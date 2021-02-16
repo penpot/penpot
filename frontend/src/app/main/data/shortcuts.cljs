@@ -39,13 +39,23 @@
     (str "command+" shortcut)
     (str "ctrl+" shortcut)))
 
+(defn a-mod
+  "Adds the alt/option modifier to a shortcuts depending on the
+  operating system for the user"
+  [shortcut]
+  (str "alt+" shortcut))
+
+(defn ca-mod
+  [shortcut]
+  (c-mod (a-mod shortcut)))
+
 (defn bind-shortcuts [shortcuts bind-fn cb-fn]
-  (doseq [[key {:keys [command disabled fn]}] shortcuts]
+  (doseq [[key {:keys [command disabled fn type]}] shortcuts]
     (when-not disabled
       (if (vector? command)
         (doseq [cmd (seq command)]
-          (bind-fn cmd (cb-fn key fn)))
-        (bind-fn command (cb-fn key fn))))))
+          (bind-fn cmd (cb-fn key fn) type))
+        (bind-fn command (cb-fn key fn) type)))))
 
 (defn meta [key]
   (str
@@ -61,8 +71,18 @@
      "Shift+")
    key))
 
+(defn alt [key]
+  (str
+   (if (cfg/check-platform? :macos)
+     mac-option
+     "Alt+")
+   key))
+
 (defn meta-shift [key]
   (-> key meta shift))
+
+(defn meta-alt [key]
+  (-> key meta alt))
 
 (defn supr []
   (if (cfg/check-platform? :macos)
