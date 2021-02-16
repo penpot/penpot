@@ -12,7 +12,7 @@
     "defaults"
   ],
   "scripts": {
-    "collect-locales": "clojure -Adev locales.clj collect src/app/main/ resources/locales.json"
+    "collect-locales": "clojure -M:dev locales.clj collect src/app/main/ resources/locales.json"
   },
   "devDependencies": {
     "autoprefixer": "^10.1.0",
