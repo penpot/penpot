@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.http.auth.google
   (:require
@@ -18,7 +18,7 @@
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
    [integrant.core :as ig]
-   [lambdaisland.uri :as uri]))
+   [lambdaisland.uri :as u]))
 
 (def base-goauth-uri "https://accounts.google.com/o/oauth2/v2/auth")
 
@@ -30,7 +30,7 @@
 
 (defn- build-redirect-url
   [cfg]
-  (let [public (uri/uri (:public-uri cfg))]
+  (let [public (u/uri (:public-uri cfg))]
     (str (assoc public :path "/api/oauth/google/callback"))))
 
 (defn- get-access-token
@@ -44,7 +44,8 @@
           req    {:method :post
                   :headers {"content-type" "application/x-www-form-urlencoded"}
                   :uri "https://oauth2.googleapis.com/token"
-                  :body (uri/map->query-string params)}
+                  :timeout 6000
+                  :body (u/map->query-string params)}
           res    (http/send! req)]
 
       (when (= 200 (:status res))
@@ -70,57 +71,84 @@
       (log/error e "unexpected exception on get-user-info")
       nil)))
 
-(defn- auth
-  [{:keys [tokens] :as cfg} _req]
-  (let [token  (tokens :generate {:iss :google-oauth :exp (dt/in-future "15m")})
-        params {:scope scope
-                :access_type "offline"
-                :include_granted_scopes true
-                :state token
-                :response_type "code"
-                :redirect_uri (build-redirect-url cfg)
-                :client_id (:client-id cfg)}
-        query  (uri/map->query-string params)
-        uri    (-> (uri/uri base-goauth-uri)
-                   (assoc :query query))]
+(defn- retrieve-info
+  [{:keys [tokens] :as cfg} request]
+  (let [token (get-in request [:params :state])
+        state (tokens :verify {:token token :iss :google-oauth})]
+    (let [info (some->> (get-in request [:params :code])
+                        (get-access-token cfg)
+                        (get-user-info))]
+      (when-not info
+        (ex/raise :type :internal
+                  :code :unable-to-auth))
+
+      (cond-> info
+        (some? (:invitation-token state))
+        (assoc :invitation-token (:invitation-token state))))))
+
+(defn- register-profile
+  [{:keys [rpc tokens] :as cfg} request info]
+  (let [method-fn (get-in rpc [:methods :mutation :login-or-register])
+        profile   (method-fn {:email (:email info)
+                              :backend "google"
+                              :fullname (:fullname info)})]
+    (cond-> profile
+      (some? (:invitation-token info))
+      (assoc :invitation-token (:invitation-token info)))))
+
+(defn- generate-redirect-uri
+  [{:keys [tokens] :as cfg} request profile]
+  (let [token (or (:invitation-token profile)
+                  (tokens :generate {:iss :auth
+                                     :exp (dt/in-future "15m")
+                                     :profile-id (:id profile)}))]
+    (-> (u/uri (:public-uri cfg))
+        (assoc :path "/#/auth/verify-token")
+        (assoc :query (u/map->query-string {:token token})))))
+
+(defn- generate-error-redirect-uri
+  [cfg]
+  (-> (u/uri (:public-uri cfg))
+      (assoc :path "/#/auth/login")
+      (assoc :query (u/map->query-string {:error "unable-to-auth"}))))
+
+(defn- redirect-response
+  [uri]
+  {:status 302
+   :headers {"location" (str uri)}
+   :body ""})
+
+(defn- auth-handler
+  [{:keys [tokens] :as cfg} request]
+  (let [invitation (get-in request [:params :invitation-token])
+        state      (tokens :generate
+                           {:iss :google-oauth
+                            :invitation-token invitation
+                            :exp (dt/in-future "15m")})
+        params     {:scope scope
+                    :access_type "offline"
+                    :include_granted_scopes true
+                    :state state
+                    :response_type "code"
+                    :redirect_uri (build-redirect-url cfg)
+                    :client_id (:client-id cfg)}
+        query      (u/map->query-string params)
+        uri        (-> (u/uri base-goauth-uri)
+                       (assoc :query query))]
     {:status 200
      :body {:redirect-uri (str uri)}}))
 
-(defn- callback
-  [{:keys [tokens rpc session] :as cfg} request]
+(defn- callback-handler
+  [{:keys [session] :as cfg} request]
   (try
-    (let [token (get-in request [:params :state])
-          _     (tokens :verify {:token token :iss :google-oauth})
-          info  (some->> (get-in request [:params :code])
-                         (get-access-token cfg)
-                         (get-user-info))
-          _     (when-not info
-                  (ex/raise :type :internal
-                            :code :unable-to-auth))
-          method-fn (get-in rpc [:methods :mutation :login-or-register])
-          profile   (method-fn {:email (:email info)
-                                :fullname (:fullname info)})
-          uagent    (get-in request [:headers "user-agent"])
-          token     (tokens :generate {:iss :auth
-                                       :exp (dt/in-future "15m")
-                                       :profile-id (:id profile)})
-          uri       (-> (uri/uri (:public-uri cfg))
-                        (assoc :path "/#/auth/verify-token")
-                        (assoc :query (uri/map->query-string {:token token})))
-
-          sid       (session/create! session {:profile-id (:id profile)
-                                              :user-agent uagent})]
-      {:status 302
-       :headers {"location" (str uri)}
-       :cookies (session/cookies session {:value sid})
-       :body ""})
-    (catch Exception _e
-      (let [uri (-> (uri/uri (:public-uri cfg))
-                    (assoc :path "/#/auth/login")
-                    (assoc :query (uri/map->query-string {:error "unable-to-auth"})))]
-        {:status 302
-         :headers {"location" (str uri)}
-         :body ""}))))
+    (let [info    (retrieve-info cfg request)
+          profile (register-profile cfg request info)
+          uri     (generate-redirect-uri cfg request profile)
+          sxf     ((:create session) (:id profile))]
+      (sxf request (redirect-response uri)))
+    (catch Exception e
+      (-> (generate-error-redirect-uri cfg)
+          (redirect-response)))))
 
 (s/def ::client-id ::us/not-empty-string)
 (s/def ::client-secret ::us/not-empty-string)
@@ -143,7 +171,7 @@
   [_ cfg]
   (if (and (:client-id cfg)
            (:client-secret cfg))
-    {:auth-handler #(auth cfg %)
-     :callback-handler #(callback cfg %)}
+    {:auth-handler #(auth-handler cfg %)
+     :callback-handler #(callback-handler cfg %)}
     {:auth-handler default-handler
      :callback-handler default-handler}))

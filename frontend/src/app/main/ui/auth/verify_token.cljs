@@ -58,12 +58,14 @@
                 (dm/success message)))
 
     :pending
-    (st/emit! (rt/nav :auth-register {} {:token (:token tdata)}))))
+    (let [token (:invitation-token tdata)]
+      (st/emit! (rt/nav :auth-register {} {:invitation-token token})))))
 
 (defmethod handle-token :default
   [tdata]
-  (js/console.log "Unhandled token:" (pr-str tdata))
-  (st/emit! (rt/nav :auth-login)))
+  (st/emit!
+   (rt/nav :auth-login)
+   (dm/warn (tr "errors.unexpected-token"))))
 
 (mf/defc verify-token
   [{:keys [route] :as props}]

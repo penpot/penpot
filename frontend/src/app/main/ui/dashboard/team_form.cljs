@@ -18,11 +18,10 @@
    [app.main.data.modal :as modal]
    [app.main.repo :as rp]
    [app.main.store :as st]
-   [app.main.ui.components.forms :refer [input submit-button form]]
+   [app.main.ui.components.forms :as fm]
    [app.main.ui.icons :as i]
    [app.main.ui.keyboard :as kbd]
    [app.util.dom :as dom]
-   [app.util.forms :as fm]
    [app.util.i18n :as i18n :refer [t tr]]
    [app.util.object :as obj]
    [app.util.router :as rt]
@@ -90,28 +89,28 @@
 
     [:div.modal-overlay
      [:div.modal-container.team-form-modal
-      [:div.modal-header
-       [:div.modal-header-title
-        (if team
-          [:h2 "Rename team"]
-          [:h2 "Create new team"])]
-       [:div.modal-close-button
-        {:on-click (st/emitf (modal/hide))} i/close]]
+      [:& fm/form {:form form
+                   :on-submit on-submit}
 
-      [:div.modal-content.generic-form
-       [:form
-        [:& input {:type "text"
-                   :form form
-                   :name :name
-                   :label "Enter new team name:"}]]]
+       [:div.modal-header
+        [:div.modal-header-title
+         (if team
+           [:h2 (tr "labels.rename-team")]
+           [:h2 (tr "labels.create-team")])]
+        [:div.modal-close-button
+         {:on-click (st/emitf (modal/hide))} i/close]]
 
-      [:div.modal-footer
-       [:div.action-buttons
-        [:& submit-button
-         {:form form
-          :on-click on-submit
-          :label (if team
-                   "Update team"
-                   "Create team")}]]]]]))
+       [:div.modal-content.generic-form
+        [:& fm/input {:type "text"
+                      :form form
+                      :name :name
+                      :label "Enter new team name:"}]]
+
+       [:div.modal-footer
+        [:div.action-buttons
+         [:& fm/submit-button
+          {:label (if team
+                    (tr "labels.update-team")
+                    (tr "labels.create-team"))}]]]]]]))
 
 

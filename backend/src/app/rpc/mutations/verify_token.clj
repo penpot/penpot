@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.rpc.mutations.verify-token
   (:require
@@ -91,20 +91,35 @@
                    :internal.tokens.team-invitation/member-email]
           :opt-un [:internal.tokens.team-invitation/member-id]))
 
+(defn- accept-invitation
+  [{:keys [conn] :as cfg} {:keys [member-id team-id role] :as claims}]
+  (let [params (merge {:team-id team-id
+                       :profile-id member-id}
+                      (teams/role->params role))
+        member (profile/retrieve-profile conn member-id)]
+
+    ;; Insert the invited member to the team
+    (db/insert! conn :team-profile-rel params {:on-conflict-do-nothing true})
+
+    ;; If profile is not yet verified, mark it as verified because
+    ;; accepting an invitation link serves as verification.
+    (when-not (:is-active member)
+      (db/update! conn :profile
+                  {:is-active true}
+                  {:id member-id}))
+    (assoc member :is-active true)))
+
 (defmethod process-token :team-invitation
   [{:keys [conn session] :as cfg} {:keys [profile-id token]} {:keys [member-id team-id role] :as claims}]
   (us/assert ::team-invitation-claims claims)
-  (if (uuid? member-id)
-    (let [params (merge {:team-id team-id
-                         :profile-id member-id}
-                        (teams/role->params role))
+  (cond
+    ;; This case happens when I, as a user logged-in and the token
+    ;; comes with member-id filled.
+    (and (uuid? profile-id)
+         (uuid? member-id))
+    (let [member (accept-invitation cfg claims)
           claims (assoc claims :state :created)]
-
-      (db/insert! conn :team-profile-rel params
-                  {:on-conflict-do-nothing true})
-
-      (if (and (uuid? profile-id)
-               (= member-id profile-id))
+      (if (= member-id profile-id)
         ;; If the current session is already matches the invited
         ;; member, then just return the token and leave the frontend
         ;; app redirect to correct team.
@@ -124,14 +139,34 @@
                (assoc response
                       :cookies (session/cookies session {:value id}))))})))
 
+    ;; This happens when member-id is not filled in the invitation but
+    ;; the user already has an account (probably with other mail) and
+    ;; is already logged-in.
+    (and (uuid? profile-id)
+         (nil? member-id))
+    (let [profile (profile/retrieve-profile conn profile-id)]
+      ;; If two emails are the same, just proceed as normal
+      (accept-invitation cfg (assoc claims :member-id profile-id))
+      (assoc claims :state :created))
+
+    ;; This happens when member-id is filled but the accessing user
+    ;; is not logged-in. In this case we proceed to accept invitation.
+    (and (nil? profile-id)
+         (uuid? member-id))
+    (let [member (accept-invitation cfg claims)]
+      (with-meta
+        (assoc claims :state :created)
+        {:transform-response ((:create session) member-id)}))
+
     ;; In this case, we wait until frontend app redirect user to
     ;; registeration page, the user is correctly registered and the
     ;; register mutation call us again with the same token to finally
     ;; create the corresponding team-profile relation from the first
     ;; condition of this if.
-    (assoc claims
-           :token token
-           :state :pending)))
+    :else
+    {:invitation-token token
+     :iss :team-invitation
+     :state :pending}))
 
 
 ;; --- Default

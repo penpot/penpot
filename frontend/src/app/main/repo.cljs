@@ -81,19 +81,19 @@
 (defmethod mutation :login-with-google
   [id params]
   (let [uri (str cfg/public-uri "/api/oauth/google")]
-    (->> (http/send! {:method :post :uri uri})
+    (->> (http/send! {:method :post :uri uri :query params})
          (rx/mapcat handle-response))))
 
 (defmethod mutation :login-with-gitlab
   [id params]
   (let [uri (str cfg/public-uri "/api/oauth/gitlab")]
-    (->> (http/send! {:method :post :uri uri})
+    (->> (http/send! {:method :post :uri uri :query params})
       (rx/mapcat handle-response))))
 
 (defmethod mutation :login-with-github
   [id params]
   (let [uri (str cfg/public-uri "/api/oauth/github")]
-    (->> (http/send! {:method :post :uri uri})
+    (->> (http/send! {:method :post :uri uri :query params})
          (rx/mapcat handle-response))))
 
 (defmethod mutation :upload-file-media-object
