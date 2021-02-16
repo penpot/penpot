@@ -130,7 +130,12 @@
   [[p1 _ p3 p4]]
   (let [v1 (gpt/to-vec p3 p4)
         v2 (gpt/to-vec p4 p1)]
-    (- 90 (gpt/angle-with-other v1 v2))))
+    ;; If one of the vectors is zero it's a rectangle with 0 height or width
+    ;; We don't skew these
+    (if (or (gpt/almost-zero? v1)
+            (gpt/almost-zero? v2))
+      0
+      (- 90 (gpt/angle-with-other v1 v2)))))
 
 (defn- calculate-height
   "Calculates the height of a paralelogram given by the points"
@@ -142,7 +147,7 @@
 
 (defn- calculate-rotation
   "Calculates the rotation between two shapes given the resize vector direction"
-  [points-shape1 points-shape2 flip-x flip-y]
+  [center points-shape1 points-shape2 flip-x flip-y]
 
   (let [idx-1 0
         idx-2 (cond (and flip-x       (not flip-y)) 1
@@ -151,8 +156,8 @@
                     :else 0)
         p1 (nth points-shape1 idx-1)
         p2 (nth points-shape2 idx-2)
-        v1 (gpt/to-vec (gco/center-points points-shape1) p1)
-        v2 (gpt/to-vec (gco/center-points points-shape2) p2)
+        v1 (gpt/to-vec center p1)
+        v2 (gpt/to-vec center p2)
 
         rot-angle (gpt/angle-with-other v1 v2)
         rot-sign (if (> (* (:y v1) (:x v2)) (* (:x v1) (:y v2))) -1 1)]
@@ -183,14 +188,15 @@
 
         stretch-matrix (gmt/multiply stretch-matrix (gmt/skew-matrix skew-angle 0))
 
-        h1 (calculate-height points-temp)
-        h2 (calculate-height (transform-points points-rec center stretch-matrix))
+        h1 (max 1 (calculate-height points-temp))
+        h2 (max 1 (calculate-height (transform-points points-rec center stretch-matrix)))
         h3 (if-not (mth/almost-zero? h2) (/ h1 h2) 1)
         h3 (if (mth/nan? h3) 1 h3)
 
         stretch-matrix (gmt/multiply stretch-matrix (gmt/scale-matrix (gpt/point 1 h3)))
 
         rotation-angle (calculate-rotation
+                        center
                         (transform-points points-rec (gco/center-points points-rec) stretch-matrix)
                         points-temp
                         flip-x
@@ -222,9 +228,13 @@
 
         ;; This rectangle is the new data for the current rectangle. We want to change our rectangle
         ;; to have this width, height, x, y
-        rect-shape      (gco/make-centered-rect center
-                                                (:width points-temp-dim)
-                                                (:height points-temp-dim))
+        rect-shape      (-> (gco/make-centered-rect
+                             center
+                             (:width points-temp-dim)
+                             (:height points-temp-dim))
+                            (update :width max 1)
+                            (update :height max 1))
+
         rect-points     (gpr/rect->points rect-shape)
 
         [matrix matrix-inverse] (calculate-adjust-matrix points-temp rect-points (:flip-x shape) (:flip-y shape))
