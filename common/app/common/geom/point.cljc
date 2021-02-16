@@ -246,6 +246,11 @@
         dist (distance line-point2 line-point1)]
     (/ num dist)))
 
+(defn almost-zero? [{:keys [x y] :as p}]
+  (assert (point? p))
+  (and (mth/almost-zero? x)
+       (mth/almost-zero? y)))
+
 
 ;; --- Debug
 
