@@ -830,10 +830,19 @@
       "es" : "Actualizado: %s"
     }
   },
+
+
   "errors.google-auth-not-enabled" : {
     "translations" : {
       "en" : "Authentication with google disabled on backend",
       "es" : "Autenticación con google esta dehabilitada en el servidor"
+    }
+  },
+
+  "errors.unexpected-token" : {
+    "translations" : {
+      "en" : "Unknown token",
+      "es" : "Token desconocido"
     }
   },
 
@@ -1899,6 +1908,26 @@
       "es" : "Quitar"
     }
   },
+  "labels.create-team": {
+    "translations" : {
+      "en" : "Create new team",
+      "es" : "Crea un nuevo equipo"
+    }
+  },
+
+  "labels.update-team": {
+    "translations" : {
+      "en" : "Update team",
+      "es" : "Actualiza el equipo"
+    }
+  },
+  "labels.rename-team": {
+    "translations" : {
+      "en" : "Rename team",
+      "es" : "Renomba el equipo"
+    }
+  },
+
   "labels.rename" : {
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs:314", "src/app/main/ui/dashboard/files.cljs:84", "src/app/main/ui/dashboard/grid.cljs:178" ],
     "translations" : {

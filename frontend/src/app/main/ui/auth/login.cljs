@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.main.ui.auth.login
   (:require
@@ -33,25 +33,25 @@
   (s/keys :req-un [::email ::password]))
 
 (defn- login-with-google
-  [event]
+  [event params]
   (dom/prevent-default event)
-  (->> (rp/mutation! :login-with-google {})
+  (->> (rp/mutation! :login-with-google params)
        (rx/subs (fn [{:keys [redirect-uri] :as rsp}]
                   (.replace js/location redirect-uri))
                 (fn [{:keys [type] :as error}]
                   (st/emit! (dm/error (tr "errors.google-auth-not-enabled")))))))
 
 (defn- login-with-gitlab
-  [event]
+  [event params]
   (dom/prevent-default event)
-  (->> (rp/mutation! :login-with-gitlab {})
+  (->> (rp/mutation! :login-with-gitlab params)
        (rx/subs (fn [{:keys [redirect-uri] :as rsp}]
                   (.replace js/location redirect-uri)))))
 
 (defn- login-with-github
-  [event]
+  [event params]
   (dom/prevent-default event)
-  (->> (rp/mutation! :login-with-github {})
+  (->> (rp/mutation! :login-with-github params)
        (rx/subs (fn [{:keys [redirect-uri] :as rsp}]
                   (.replace js/location redirect-uri)))))
 
