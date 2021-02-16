@@ -63,6 +63,8 @@
 
 ;; --- Changes Handling
 
+(defonce page-change? #{:add-page :mod-page :del-page :mov-page})
+
 (defn commit-changes
   ([changes undo-changes]
    (commit-changes changes undo-changes {}))
@@ -105,10 +107,24 @@
        ptk/WatchEvent
        (watch [_ state stream]
          (when-not @error
-           (let [page-id (:current-page-id state)]
+           (let [;; adds page-id to page changes (that have the `id` field instead)
+                 add-page-id
+                 (fn [{:keys [id type page] :as change}]
+                   (cond-> change
+                     (page-change? type)
+                     (assoc :page-id (or id (:id page)))))
+
+                 changes-by-pages
+                 (->> changes
+                      (map add-page-id)
+                      (remove #(nil? (:page-id %)))
+                      (group-by :page-id))
+
+                 process-page-changes
+                 (fn [[page-id changes]]
+                   (update-indices page-id changes))]
              (rx/concat
-              (when (some :page-id changes)
-                (rx/of (update-indices page-id changes)))
+              (rx/from (map process-page-changes changes-by-pages))
 
               (when (and save-undo? (seq undo-changes))
                 (let [entry {:undo-changes undo-changes

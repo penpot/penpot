@@ -1,30 +1,28 @@
 # CHANGELOG #
 
-## Next
+## :rocket: Next
 
-### New features
+### :sparkles: New features
 
+- Add major refactor of internal pubsub/redis code; improves scalability and performance #640
 - Add optional loki integration.
 - Bounce & Complaint handling.
 - Disable groups interactions when holding "Ctrl" key (deep selection)
 - New action in context menu to "edit" some shapes (binded to key "Enter")
-- Add major refactor of internal pubsub/redis code; improves
-  scalability and performance #640
 
 
-### Bugs fixed
+### :bug: Bugs fixed
 
+- Add some missing database indexes (mainly improves performance on large databases on file-update rpc method, and some background tasks).
+- Fix problem width handoff code generation [Taiga #1204](https://tree.taiga.io/project/penpot/issue/1204)
+- Fix problem with indices refreshing on page changes [#646](https://github.com/penpot/penpot/issues/646)
 - Properly handle errors on github, gitlab and ldap auth backends.
 - Properly mark profile auth backend (on first register/ auth with 3rd party auth provider).
-- Fix problem width handoff code generation [Taiga #1204](https://tree.taiga.io/project/penpot/issue/1204)
-- Add some missing database indexes (mainly improves performance on
-  large databases on file-update rpc method, and some background
-  tasks).
 
 
 ## 1.2.0-alpha
 
-### New features
+### :sparkles: New features
 
 - Add horizontal/vertical flip
 - Add images lock proportions by default [#541](https://github.com/penpot/penpot/discussions/541), [#609](https://github.com/penpot/penpot/issues/609)
@@ -37,7 +35,7 @@
 - Fix behavior of select all command when there are objects outside frames [Taiga #1209](https://tree.taiga.io/project/penpot/issue/1209)
 
 
-### Bugs fixed
+### :bug: Bugs fixed
 
 - Fix 404 when access shared link [#615](https://github.com/penpot/penpot/issues/615)
 - Fix 500 when requestion password reset
@@ -57,7 +55,7 @@
 - Fix updates on collaborative editing not updating selection rectangles [Taiga #1127](https://tree.taiga.io/project/penpot/issue/1127)
 - Make the team deletion deferred (in the same way other objects)
 
-### Community contributions by (Thank you! :heart:)
+### :heart: Community contributions by (Thank you!)
 
 - abtinmo [#538](https://github.com/penpot/penpot/pull/538)
 - kdrag0n [#585](https://github.com/penpot/penpot/pull/585)
