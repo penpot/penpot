@@ -56,7 +56,7 @@
       nil)))
 
 (defn- get-user-info
-  [token]
+  [_ token]
   (try
     (let [req {:uri "https://openidconnect.googleapis.com/v1/userinfo"
                :headers {"Authorization" (str "Bearer " token)}
@@ -65,6 +65,7 @@
       (when (= 200 (:status res))
         (let [data (json/read-str (:body res))]
           {:email (get data "email")
+           :backend "google"
            :fullname (get data "name")})))
     (catch Exception e
       (log/error e "unexpected exception on get-user-info")
@@ -76,7 +77,7 @@
         state (tokens :verify {:token token :iss :google-oauth})
         info  (some->> (get-in request [:params :code])
                        (get-access-token cfg)
-                       (get-user-info))]
+                       (get-user-info cfg))]
     (when-not info
       (ex/raise :type :internal
                 :code :unable-to-auth))
@@ -85,17 +86,17 @@
       (some? (:invitation-token state))
       (assoc :invitation-token (:invitation-token state)))))
 
-(defn- register-profile
+(defn register-profile
   [{:keys [rpc] :as cfg} info]
   (let [method-fn (get-in rpc [:methods :mutation :login-or-register])
         profile   (method-fn {:email (:email info)
-                              :backend "google"
+                              :backend (:backend info)
                               :fullname (:fullname info)})]
     (cond-> profile
       (some? (:invitation-token info))
       (assoc :invitation-token (:invitation-token info)))))
 
-(defn- generate-redirect-uri
+(defn generate-redirect-uri
   [{:keys [tokens] :as cfg} profile]
   (let [token (or (:invitation-token profile)
                   (tokens :generate {:iss :auth
@@ -105,13 +106,13 @@
         (assoc :path "/#/auth/verify-token")
         (assoc :query (u/map->query-string {:token token})))))
 
-(defn- generate-error-redirect-uri
+(defn generate-error-redirect-uri
   [cfg]
   (-> (u/uri (:public-uri cfg))
       (assoc :path "/#/auth/login")
       (assoc :query (u/map->query-string {:error "unable-to-auth"}))))
 
-(defn- redirect-response
+(defn redirect-response
   [uri]
   {:status 302
    :headers {"location" (str uri)}
@@ -145,7 +146,8 @@
           profile (register-profile cfg info)
           uri     (generate-redirect-uri cfg profile)
           sxf     ((:create session) (:id profile))]
-      (sxf request (redirect-response uri)))
+      (->> (redirect-response uri)
+           (sxf request)))
     (catch Exception _e
       (-> (generate-error-redirect-uri cfg)
           (redirect-response)))))
