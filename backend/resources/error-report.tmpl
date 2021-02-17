@@ -143,8 +143,18 @@
       </div>
       {% endif %}
 
+      {% if explain %}
+        <div>(<a href="#explain">go to explain</a>)</div>
+      {% endif %}
+      {% if data %}
+        <div>(<a href="#edata">go to edata</a>)</div>
+      {% endif %}
+      {% if error %}
+        <div>(<a href="#trace">go to trace</a>)</div>
+      {% endif %}
+
       {% if params %}
-      <div class="table-row multiline">
+      <div id="params" class="table-row multiline">
         <div class="table-key">PARAMS: </div>
         <div class="table-val">
           <pre>{{params}}</pre>
@@ -153,7 +163,7 @@
       {% endif %}
 
       {% if explain %}
-      <div class="table-row multiline">
+      <div id="explain" class="table-row multiline">
         <div class="table-key">EXPLAIN: </div>
         <div class="table-val">
           <pre>{{explain}}</pre>
@@ -162,7 +172,7 @@
       {% endif %}
 
       {% if data %}
-      <div class="table-row multiline">
+      <div id="edata" class="table-row multiline">
         <div class="table-key">EDATA: </div>
         <div class="table-val">
           <pre>{{data}}</pre>
@@ -171,7 +181,7 @@
       {% endif %}
 
       {% if error %}
-      <div class="table-row multiline">
+      <div id="trace" class="table-row multiline">
         <div class="table-key">TRACE:</div>
         <div class="table-val">
           <pre>{{error.trace}}</pre>
