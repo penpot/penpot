@@ -3452,7 +3452,7 @@
       "en" : "Export",
       "fr" : "Export",
       "ru" : "Экспорт",
-      "es" : "Exprotar"
+      "es" : "Exportar"
     }
   },
   "workspace.options.export-object" : {
