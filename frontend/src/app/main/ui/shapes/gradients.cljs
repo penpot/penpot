@@ -36,7 +36,9 @@
 (mf/defc radial-gradient [{:keys [id gradient shape]}]
   (let [{:keys [x y width height]} (:selrect shape)
         center (gsh/center-shape shape)
-        transform (when (= :path (:type shape)) (gsh/transform-matrix shape))]
+        transform (if (= :path (:type shape))
+                    (gsh/transform-matrix shape)
+                    (gmt/matrix))]
     (let [[x y] (if (= (:type shape) :frame) [0 0] [x y])
           translate-vec (gpt/point (+ x (* width (:start-x gradient)))
                                    (+ y (* height (:start-y gradient))))
