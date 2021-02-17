@@ -12,6 +12,7 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.config :as cfg]
+   [app.http.auth.google :as gg]
    [app.util.http :as http]
    [app.util.time :as dt]
    [clojure.data.json :as json]
@@ -67,7 +68,7 @@
       nil)))
 
 (defn- get-user-info
-  [token]
+  [_ token]
   (try
     (let [req {:uri (str user-info-url)
                :headers {"authorization" (str "token " token)}
@@ -77,58 +78,56 @@
       (when (= 200 (:status res))
         (let [data (json/read-str (:body res))]
           {:email (get data "email")
+           :backend "github"
            :fullname (get data "name")})))
     (catch Exception e
       (log/error e "unexpected exception on get-user-info")
       nil)))
 
-(defn auth
-  [{:keys [tokens] :as cfg} _request]
-  (let [state  (tokens :generate {:iss :github-oauth :exp (dt/in-future "15m")})
-        params {:client_id (:client-id cfg/config)
-                :redirect_uri (build-redirect-url cfg)
-                :state state
-                :scope scope}
-        query (u/map->query-string params)
-        uri   (-> authorize-uri
-                  (assoc :query query))]
+(defn- retrieve-info
+  [{:keys [tokens] :as cfg} request]
+  (let [token (get-in request [:params :state])
+        state (tokens :verify {:token token :iss :github-oauth})
+        info  (some->> (get-in request [:params :code])
+                       (get-access-token cfg state)
+                       (get-user-info cfg))]
+    (when-not info
+      (ex/raise :type :internal
+                :code :unable-to-auth))
+
+    (cond-> info
+      (some? (:invitation-token state))
+      (assoc :invitation-token (:invitation-token state)))))
+
+(defn auth-handler
+  [{:keys [tokens] :as cfg} request]
+  (let [invitation (get-in request [:params :invitation-token])
+        state      (tokens :generate {:iss :github-oauth
+                                      :invitation-token invitation
+                                      :exp (dt/in-future "15m")})
+        params     {:client_id (:client-id cfg/config)
+                    :redirect_uri (build-redirect-url cfg)
+                    :state state
+                    :scope scope}
+        query      (u/map->query-string params)
+        uri        (-> authorize-uri
+                       (assoc :query query))]
     {:status 200
      :body {:redirect-uri (str uri)}}))
 
-(defn callback
-  [{:keys [tokens rpc session] :as cfg} request]
+(defn- callback-handler
+  [{:keys [session] :as cfg} request]
   (try
-    (let [state (get-in request [:params :state])
-          _     (tokens :verify {:token state :iss :github-oauth})
-          info  (some->> (get-in request [:params :code])
-                         (get-access-token cfg state)
-                         (get-user-info))
-
-          _     (when-not info
-                  (ex/raise :type :internal
-                            :code :unable-to-auth))
-
-          method-fn (get-in rpc [:methods :mutation :login-or-register])
-          profile   (method-fn {:email (:email info)
-                                :backend "github"
-                                :fullname (:fullname info)})
-          token     (tokens :generate
-                            {:iss :auth
-                             :exp (dt/in-future "15m")
-                             :profile-id (:id profile)})
-          uri       (-> (u/uri (:public-uri cfg/config))
-                        (assoc :path "/#/auth/verify-token")
-                        (assoc :query (u/map->query-string {:token token})))
-          sxf       ((:create session) (:id profile))
-          rsp       {:status 302 :headers {"location" (str uri)} :body ""}]
-      (sxf request rsp))
+    (let [info    (retrieve-info cfg request)
+          profile (gg/register-profile cfg info)
+          uri     (gg/generate-redirect-uri cfg profile)
+          sxf     ((:create session) (:id profile))]
+      (->> (gg/redirect-response uri)
+           (sxf request)))
     (catch Exception _e
-      (let [uri (-> (u/uri (:public-uri cfg))
-                    (assoc :path "/#/auth/login")
-                    (assoc :query (u/map->query-string {:error "unable-to-auth"})))]
-        {:status 302
-         :headers {"location" (str uri)}
-         :body ""}))))
+      (-> (gg/generate-error-redirect-uri cfg)
+          (gg/redirect-response)))))
+
 
 ;; --- ENTRY POINT
 
@@ -153,8 +152,8 @@
   [_ cfg]
   (if (and (:client-id cfg)
            (:client-secret cfg))
-    {:auth-handler #(auth cfg %)
-     :callback-handler #(callback cfg %)}
+    {:auth-handler #(auth-handler cfg %)
+     :callback-handler #(callback-handler cfg %)}
     {:auth-handler default-handler
      :callback-handler default-handler}))
 
