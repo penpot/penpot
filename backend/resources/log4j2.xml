@@ -35,7 +35,6 @@
     <Logger name="app" level="debug" additivity="false">
       <AppenderRef ref="main" level="debug" />
       <AppenderRef ref="zmq" level="debug" />
-      <!-- <AppenderRef ref="error-reporter" level="error" /> -->
     </Logger>
 
     <Logger name="user" level="debug" additivity="false">

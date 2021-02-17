@@ -29,6 +29,8 @@
 
    :default-blob-version 1
 
+   :loggers-zmq-uri "tcp://localhost:45556"
+
    :asserts-enabled false
 
    :public-uri "http://localhost:3449"
