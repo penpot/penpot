@@ -37,7 +37,7 @@
 
     [:div.auth
      [:section.auth-sidebar
-      [:a.logo {:href "/#/"} i/logo]
+      [:a.logo {:href "https://penpot.app"} i/logo]
       [:span.tagline (t locale "auth.sidebar-tagline")]]
 
      [:section.auth-content
@@ -56,4 +56,8 @@
 
         :auth-recovery
         [:& recovery-page {:locale locale
-                           :params (:query-params route)}])]]))
+                           :params (:query-params route)}])
+      [:div.terms-login
+       [:a {:href "https://penpot.app/terms.html" :target "_blank"} "Terms of service"]
+       [:span "and"]
+       [:a {:href "https://penpot.app/privacy.html" :target "_blank"} "Privacy policy"]]]]))
