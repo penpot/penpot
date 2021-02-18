@@ -192,7 +192,7 @@
    {:name "Samsung Galaxy S20+/S21 Ultra"
     :width 384
     :height 854}
-   {:name "Samsung Galaxy A71/A51/S20FE/A70S"
+   {:name "Samsung Galaxy A71/A51"
     :width 412
     :height 914}
 
