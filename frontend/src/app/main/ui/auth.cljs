@@ -49,7 +49,7 @@
         [:& register-success-page {:params params}]
 
         :auth-login
-        [:& login-page {:locale locale :params params}]
+        [:& login-page {:params params}]
 
         :auth-recovery-request
         [:& recovery-request-page {:locale locale}]

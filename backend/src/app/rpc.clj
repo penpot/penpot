@@ -127,6 +127,7 @@
                      'app.rpc.mutations.viewer
                      'app.rpc.mutations.teams
                      'app.rpc.mutations.feedback
+                     'app.rpc.mutations.ldap
                      'app.rpc.mutations.verify-token)
          (map (partial process-method cfg))
          (into {}))))

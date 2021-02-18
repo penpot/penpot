@@ -115,7 +115,7 @@
         ;; If the current session is already matches the invited
         ;; member, then just return the token and leave the frontend
         ;; app redirect to correct team.
-        (assoc claims :status :created)
+        (assoc claims :state :created)
 
         ;; If the session does not matches the invited member, replace
         ;; the session with a new one matching the invited member.
@@ -123,7 +123,7 @@
         ;; user clicking the link he already has access to the email
         ;; account.
         (with-meta
-          (assoc claims :status :created)
+          (assoc claims :state :created)
           {:transform-response ((:create session) member-id)})))
 
     ;; This happens when member-id is not filled in the invitation but

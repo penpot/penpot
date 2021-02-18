@@ -80,14 +80,12 @@
 (s/def ::rpc map?)
 (s/def ::session map?)
 (s/def ::metrics map?)
-(s/def ::google-auth map?)
-(s/def ::gitlab-auth map?)
-(s/def ::ldap-auth fn?)
+(s/def ::oauth map?)
 (s/def ::storage map?)
 (s/def ::assets map?)
 
 (defmethod ig/pre-init-spec ::router [_]
-  (s/keys :req-un [::rpc ::session ::metrics ::google-auth ::gitlab-auth ::storage ::assets]))
+  (s/keys :req-un [::rpc ::session ::metrics ::oauth ::storage ::assets]))
 
 (defmethod ig/init-key ::router
   [_ cfg]
@@ -113,7 +111,7 @@
                :body "internal server error"})))))))
 
 (defn- create-router
-  [{:keys [session rpc google-auth gitlab-auth github-auth metrics ldap-auth svgparse assets] :as cfg}]
+  [{:keys [session rpc oauth metrics svgparse assets] :as cfg}]
   (rr/router
    [["/metrics" {:get (:handler metrics)}]
 
@@ -140,16 +138,14 @@
      ["/svg" {:post svgparse}]
 
      ["/oauth"
-      ["/google" {:post (:auth-handler google-auth)}]
-      ["/google/callback" {:get (:callback-handler google-auth)}]
+      ["/google" {:post (get-in oauth [:google :handler])}]
+      ["/google/callback" {:get (get-in oauth [:google :callback-handler])}]
 
-      ["/gitlab" {:post (:auth-handler gitlab-auth)}]
-      ["/gitlab/callback" {:get (:callback-handler gitlab-auth)}]
+      ["/gitlab" {:post (get-in oauth [:gitlab :handler])}]
+      ["/gitlab/callback" {:get (get-in oauth [:gitlab :callback-handler])}]
 
-      ["/github" {:post (:auth-handler github-auth)}]
-      ["/github/callback" {:get (:callback-handler github-auth)}]]
-
-     ["/login-ldap" {:post ldap-auth}]
+      ["/github" {:post (get-in oauth [:github :handler])}]
+      ["/github/callback" {:get (get-in oauth [:github :callback-handler])}]]
 
      ["/rpc" {:middleware [(:middleware session)]}
       ["/query/:type" {:get (:query-handler rpc)}]

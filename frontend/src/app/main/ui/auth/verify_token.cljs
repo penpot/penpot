@@ -52,10 +52,9 @@
   [tdata]
   (case (:state tdata)
     :created
-    (let [message (tr "auth.notifications.team-invitation-accepted")]
-      (st/emit! (du/fetch-profile)
-                (rt/nav :dashboard-projects {:team-id (:team-id tdata)})
-                (dm/success message)))
+    (st/emit! (dm/success (tr "auth.notifications.team-invitation-accepted"))
+              (du/fetch-profile)
+              (rt/nav :dashboard-projects {:team-id (:team-id tdata)}))
 
     :pending
     (let [token (:invitation-token tdata)]

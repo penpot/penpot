@@ -773,7 +773,13 @@
       "es" : "Actualizado: %s"
     }
   },
-  "errors.auth.unauthorized" : {
+  "errors.ldap-disabled" : {
+    "translations" : {
+      "en" : "LDAP authentication is disabled.",
+      "es" : "La autheticacion via LDAP esta deshabilitada."
+    }
+  },
+  "errors.wrong-credentials" : {
     "used-in" : [ "src/app/main/ui/auth/login.cljs" ],
     "translations" : {
       "en" : "Username or password seems to be wrong.",

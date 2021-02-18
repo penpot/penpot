@@ -70,20 +70,11 @@
    :telemetry-enabled false
    :telemetry-uri "https://telemetry.penpot.app/"
 
-   ;; LDAP auth disabled by default. Set ldap-auth-host to enable
-   ;:ldap-auth-host "ldap.mysupercompany.com"
-   ;:ldap-auth-port 389
-   ;:ldap-bind-dn "cn=admin,dc=ldap,dc=mysupercompany,dc=com"
-   ;:ldap-bind-password "verysecure"
-   ;:ldap-auth-ssl false
-   ;:ldap-auth-starttls false
-   ;:ldap-auth-base-dn "ou=People,dc=ldap,dc=mysupercompany,dc=com"
-
-   :ldap-auth-user-query "(|(uid=$username)(mail=$username))"
-   :ldap-auth-username-attribute "uid"
-   :ldap-auth-email-attribute "mail"
-   :ldap-auth-fullname-attribute "displayName"
-   :ldap-auth-avatar-attribute "jpegPhoto"
+   :ldap-user-query "(|(uid=$username)(mail=$username))"
+   :ldap-attrs-username "uid"
+   :ldap-attrs-email "mail"
+   :ldap-attrs-fullname "cn"
+   :ldap-attrs-photo "jpegPhoto"
 
    ;; :initial-data-file "resources/initial-data.json"
    ;; :initial-data-project-name "Penpot Oboarding"
@@ -152,18 +143,18 @@
 (s/def ::github-client-id ::us/string)
 (s/def ::github-client-secret ::us/string)
 
-(s/def ::ldap-auth-host ::us/string)
-(s/def ::ldap-auth-port ::us/integer)
+(s/def ::ldap-host ::us/string)
+(s/def ::ldap-port ::us/integer)
 (s/def ::ldap-bind-dn ::us/string)
 (s/def ::ldap-bind-password ::us/string)
-(s/def ::ldap-auth-ssl ::us/boolean)
-(s/def ::ldap-auth-starttls ::us/boolean)
-(s/def ::ldap-auth-base-dn ::us/string)
-(s/def ::ldap-auth-user-query ::us/string)
-(s/def ::ldap-auth-username-attribute ::us/string)
-(s/def ::ldap-auth-email-attribute ::us/string)
-(s/def ::ldap-auth-fullname-attribute ::us/string)
-(s/def ::ldap-auth-avatar-attribute ::us/string)
+(s/def ::ldap-ssl ::us/boolean)
+(s/def ::ldap-starttls ::us/boolean)
+(s/def ::ldap-base-dn ::us/string)
+(s/def ::ldap-user-query ::us/string)
+(s/def ::ldap-attrs-username ::us/string)
+(s/def ::ldap-attrs-email ::us/string)
+(s/def ::ldap-attrs-fullname ::us/string)
+(s/def ::ldap-attrs-photo ::us/string)
 
 (s/def ::telemetry-enabled ::us/boolean)
 (s/def ::telemetry-with-taiga ::us/boolean)
@@ -195,18 +186,18 @@
                    ::google-client-secret
                    ::http-server-port
                    ::host
-                   ::ldap-auth-avatar-attribute
-                   ::ldap-auth-base-dn
-                   ::ldap-auth-email-attribute
-                   ::ldap-auth-fullname-attribute
-                   ::ldap-auth-host
-                   ::ldap-auth-port
-                   ::ldap-auth-ssl
-                   ::ldap-auth-starttls
-                   ::ldap-auth-user-query
-                   ::ldap-auth-username-attribute
+                   ::ldap-attrs-username
+                   ::ldap-attrs-email
+                   ::ldap-attrs-fullname
+                   ::ldap-attrs-photo
                    ::ldap-bind-dn
                    ::ldap-bind-password
+                   ::ldap-base-dn
+                   ::ldap-host
+                   ::ldap-port
+                   ::ldap-ssl
+                   ::ldap-starttls
+                   ::ldap-user-query
                    ::public-uri
                    ::profile-complaint-threshold
                    ::profile-bounce-threshold
