@@ -119,7 +119,7 @@
     ptk/EffectEvent
     (effect [_ state s]
       (reset! storage {})
-      (i18n/set-default-locale!))))
+      (i18n/reset-locale))))
 
 (defn logout
   []

@@ -10,6 +10,7 @@
 (ns app.main.ui.settings.options
   (:require
    [app.common.spec :as us]
+   [app.common.data :as d]
    [app.main.data.messages :as dm]
    [app.main.data.users :as du]
    [app.main.refs :as refs]
@@ -21,7 +22,7 @@
    [cljs.spec.alpha :as s]
    [rumext.alpha :as mf]))
 
-(s/def ::lang (s/nilable ::us/not-empty-string))
+(s/def ::lang (s/nilable ::us/string))
 (s/def ::theme (s/nilable ::us/not-empty-string))
 
 (s/def ::options-form
@@ -38,6 +39,9 @@
 (defn- on-submit
   [form event]
   (let [data  (:clean-data @form)
+        data  (cond-> data
+                (empty? (:lang data))
+                (assoc :lang nil))
         mdata {:on-success (partial on-success form)
                :on-error (partial on-error form)}]
     (st/emit! (du/update-profile (with-meta data mdata)))))
@@ -54,12 +58,10 @@
      [:h2 (t locale "labels.language")]
 
      [:div.fields-row
-      [:& fm/select {:options [{:label "English" :value "en"}
-                               {:label "Français" :value "fr"}
-                               {:label "Español" :value "es"}
-                               {:label "Русский" :value "ru"}]
+      [:& fm/select {:options (d/concat [{:label "Auto (browser)" :value ""}]
+                                        i18n/supported-locales)
                      :label (t locale "dashboard.select-ui-language")
-                     :default "en"
+                     :default ""
                      :name :lang}]]
 
      [:h2 (t locale "dashboard.theme-change")]
