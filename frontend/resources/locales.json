@@ -5,14 +5,16 @@
       "en" : "Already have an account?",
       "fr" : "Vous avez déjà un compte ?",
       "ru" : "Уже есть аккаунт?",
-      "es" : "¿Tienes ya una cuenta?"
+      "es" : "¿Tienes ya una cuenta?",
+      "zh_cn" : "已经有账号了？"
     }
   },
   "auth.check-your-email" : {
     "used-in" : [ "src/app/main/ui/auth/register.cljs" ],
     "translations" : {
       "en" : "Check your email and click on the link to verify and start using Penpot.",
-      "fr" : "Vérifiez votre e‑mail et cliquez sur le lien pour vérifier et commencer à utiliser Penpot."
+      "fr" : "Vérifiez votre e‑mail et cliquez sur le lien pour vérifier et commencer à utiliser Penpot.",
+      "zh_cn" : "请检查你的电子邮箱，点击邮件中的超链接来验证，然后开始使用Penpot。"
     }
   },
   "auth.confirm-password" : {
@@ -21,7 +23,8 @@
       "en" : "Confirm password",
       "fr" : "Confirmez le mot de passe",
       "ru" : "Подтвердите пароль",
-      "es" : "Confirmar contraseña"
+      "es" : "Confirmar contraseña",
+      "zh_cn" : "确认密码"
     }
   },
   "auth.create-demo-account" : {
@@ -30,7 +33,8 @@
       "en" : "Create demo account",
       "fr" : "Créer un compte de démonstration",
       "ru" : "Хотите попробовать?",
-      "es" : "Crear cuanta de prueba"
+      "es" : "Crear cuanta de prueba",
+      "zh_cn" : "创建演示账号"
     }
   },
   "auth.create-demo-profile" : {
@@ -39,7 +43,8 @@
       "en" : "Just wanna try it?",
       "fr" : "Vous voulez juste essayer ?",
       "ru" : "Хотите попробовать?",
-      "es" : "¿Quieres probar?"
+      "es" : "¿Quieres probar?",
+      "zh_cn" : "只是想试试？"
     }
   },
   "auth.demo-warning" : {
@@ -48,7 +53,8 @@
       "en" : "This is a DEMO service, DO NOT USE for real work, the projects will be periodicaly wiped.",
       "fr" : "Il s’agit d’un service DEMO, NE PAS UTILISER pour un travail réel, les projets seront périodiquement supprimés.",
       "ru" : "Это ДЕМОНСТРАЦИЯ, НЕ ИСПОЛЬЗУЙТЕ для работы, проекты будут периодически удаляться.",
-      "es" : "Este es un servicio de DEMOSTRACIÓN. NO USAR para trabajo real, los proyectos serán borrados periodicamente."
+      "es" : "Este es un servicio de DEMOSTRACIÓN. NO USAR para trabajo real, los proyectos serán borrados periodicamente.",
+      "zh_cn" : "这是一个演示服务，请【不要】用于真实工作，这些项目将被周期性地抹除。"
     }
   },
   "auth.email" : {
@@ -57,7 +63,8 @@
       "en" : "Email",
       "fr" : "Adresse e‑mail",
       "ru" : "Email",
-      "es" : "Correo electrónico"
+      "es" : "Correo electrónico",
+      "zh_cn" : "电子邮件"
     }
   },
   "auth.forgot-password" : {
@@ -66,7 +73,8 @@
       "en" : "Forgot password?",
       "fr" : "Mot de passe oublié ?",
       "ru" : "Забыли пароль?",
-      "es" : "¿Olvidaste tu contraseña?"
+      "es" : "¿Olvidaste tu contraseña?",
+      "zh_cn" : "忘记密码？"
     }
   },
   "auth.fullname" : {
@@ -75,7 +83,8 @@
       "en" : "Full Name",
       "fr" : "Nom complet",
       "ru" : "Полное имя",
-      "es" : "Nombre completo"
+      "es" : "Nombre completo",
+      "zh_cn" : "全名"
     }
   },
   "auth.go-back-to-login" : {
@@ -84,7 +93,8 @@
       "en" : "Go back!",
       "fr" : "Retour !",
       "ru" : "Назад!",
-      "es" : "Volver"
+      "es" : "Volver",
+      "zh_cn" : "返回！"
     }
   },
   "auth.login-here" : {
@@ -93,7 +103,8 @@
       "en" : "Login here",
       "fr" : "Se connecter ici",
       "ru" : "Войти здесь",
-      "es" : "Entra aquí"
+      "es" : "Entra aquí",
+      "zh_cn" : "在这里登录"
     }
   },
   "auth.login-submit" : {
@@ -102,7 +113,8 @@
       "en" : "Sign in",
       "fr" : "Se connecter",
       "ru" : "Вход",
-      "es" : "Entrar"
+      "es" : "Entrar",
+      "zh_cn" : "登录"
     }
   },
   "auth.login-subtitle" : {
@@ -111,7 +123,8 @@
       "en" : "Enter your details below",
       "fr" : "Entrez vos informations ci‑dessous",
       "ru" : "Введите информацию о себе ниже",
-      "es" : "Introduce tus datos aquí"
+      "es" : "Introduce tus datos aquí",
+      "zh_cn" : "请在下面输入你的详细信息"
     }
   },
   "auth.login-title" : {
@@ -120,7 +133,8 @@
       "en" : "Great to see you again!",
       "fr" : "Ravi de vous revoir !",
       "ru" : "Рады видеть Вас снова!",
-      "es" : "Encantados de volverte a ver"
+      "es" : "Encantados de volverte a ver",
+      "zh_cn" : "很高兴又见到你！"
     }
   },
   "auth.login-with-github-submit" : {
@@ -129,7 +143,8 @@
       "en" : "Login with Github",
       "fr" : "Se connecter via Github",
       "ru" : "Вход через Gitnub",
-      "es" : "Entrar con Github"
+      "es" : "Entrar con Github",
+      "zh_cn" : "使用Github登录"
     }
   },
   "auth.login-with-gitlab-submit" : {
@@ -138,7 +153,8 @@
       "en" : "Login with Gitlab",
       "fr" : "Se connecter via Gitlab",
       "ru" : "Вход через Gitlab",
-      "es" : "Entrar con Gitlab"
+      "es" : "Entrar con Gitlab",
+      "zh_cn" : "使用Gitlab登录"
     }
   },
   "auth.login-with-ldap-submit" : {
@@ -147,7 +163,8 @@
       "en" : "Sign in with LDAP",
       "fr" : "Se connecter via LDAP",
       "ru" : "Вход через LDAP",
-      "es" : "Entrar con LDAP"
+      "es" : "Entrar con LDAP",
+      "zh_cn" : "使用LDAP登录"
     }
   },
   "auth.new-password" : {
@@ -156,7 +173,8 @@
       "en" : "Type a new password",
       "fr" : "Saisissez un nouveau mot de passe",
       "ru" : "Введите новый пароль",
-      "es" : "Introduce la nueva contraseña"
+      "es" : "Introduce la nueva contraseña",
+      "zh_cn" : "输入新的密码"
     }
   },
   "auth.notifications.invalid-token-error" : {
@@ -165,7 +183,8 @@
       "en" : "The recovery token is invalid.",
       "fr" : "Le code de récupération n’est pas valide.",
       "ru" : "Неверный код восстановления.",
-      "es" : "El código de recuperación no es válido."
+      "es" : "El código de recuperación no es válido.",
+      "zh_cn" : "恢复令牌无效。"
     }
   },
   "auth.notifications.password-changed-succesfully" : {
@@ -174,7 +193,8 @@
       "en" : "Password successfully changed",
       "fr" : "Mot de passe changé avec succès",
       "ru" : "Пароль изменен успешно",
-      "es" : "La contraseña ha sido cambiada"
+      "es" : "La contraseña ha sido cambiada",
+      "zh_cn" : "密码修改成功"
     }
   },
   "auth.notifications.profile-not-verified" : {
@@ -182,7 +202,8 @@
     "translations" : {
       "en" : "Profile is not verified, please verify profile before continue.",
       "fr" : "Le profil n’est pas vérifié. Veuillez vérifier le profil avant de continuer.",
-      "es" : "El perfil aun no ha sido verificado, por favor valida el perfil antes de continuar."
+      "es" : "El perfil aun no ha sido verificado, por favor valida el perfil antes de continuar.",
+      "zh_cn" : "个人资料未验证，请于验证后继续。"
     }
   },
   "auth.notifications.recovery-token-sent" : {
@@ -191,7 +212,8 @@
       "en" : "Password recovery link sent to your inbox.",
       "fr" : "Lien de récupération de mot de passe envoyé.",
       "ru" : "Ссылка для восстановления пароля отправлена на почту.",
-      "es" : "Hemos enviado a tu buzón un enlace para recuperar tu contraseña."
+      "es" : "Hemos enviado a tu buzón un enlace para recuperar tu contraseña.",
+      "zh_cn" : "找回密码链接已发至你的收件箱。"
     }
   },
   "auth.notifications.team-invitation-accepted" : {
@@ -199,7 +221,8 @@
     "translations" : {
       "en" : "Joined the team succesfully",
       "fr" : "Vous avez rejoint l’équipe avec succès",
-      "es" : "Te uniste al equipo"
+      "es" : "Te uniste al equipo",
+      "zh_cn" : "成功加入团队"
     }
   },
   "auth.password" : {
@@ -208,7 +231,8 @@
       "en" : "Password",
       "fr" : "Mot de passe",
       "ru" : "Пароль",
-      "es" : "Contraseña"
+      "es" : "Contraseña",
+      "zh_cn" : "密码"
     }
   },
   "auth.password-length-hint" : {
@@ -217,7 +241,8 @@
       "en" : "At least 8 characters",
       "fr" : "Au moins 8 caractères",
       "ru" : "Минимум 8 символов",
-      "es" : "8 caracteres como mínimo"
+      "es" : "8 caracteres como mínimo",
+      "zh_cn" : "至少8位字符"
     }
   },
   "auth.recovery-request-submit" : {
@@ -226,7 +251,8 @@
       "en" : "Recover Password",
       "fr" : "Récupérer le mot de passe",
       "ru" : "Восстановить пароль",
-      "es" : "Recuperar contraseña"
+      "es" : "Recuperar contraseña",
+      "zh_cn" : "找回密码"
     }
   },
   "auth.recovery-request-subtitle" : {
@@ -235,7 +261,8 @@
       "en" : "We'll send you an email with instructions",
       "fr" : "Nous vous enverrons un e‑mail avec des instructions",
       "ru" : "Письмо с инструкциями отправлено на почту.",
-      "es" : "Te enviaremos un correo electrónico con instrucciones"
+      "es" : "Te enviaremos un correo electrónico con instrucciones",
+      "zh_cn" : "我们将给你发送一封带有说明的电子邮件"
     }
   },
   "auth.recovery-request-title" : {
@@ -244,7 +271,8 @@
       "en" : "Forgot password?",
       "fr" : "Mot de passe oublié ?",
       "ru" : "Забыли пароль?",
-      "es" : "¿Olvidaste tu contraseña?"
+      "es" : "¿Olvidaste tu contraseña?",
+      "zh_cn" : "忘记密码？"
     }
   },
   "auth.recovery-submit" : {
@@ -253,7 +281,8 @@
       "en" : "Change your password",
       "fr" : "Changez votre mot de passe",
       "ru" : "Изменить пароль",
-      "es" : "Cambiar tu contraseña"
+      "es" : "Cambiar tu contraseña",
+      "zh_cn" : "修改密码"
     }
   },
   "auth.register" : {
@@ -262,7 +291,8 @@
       "en" : "No account yet?",
       "fr" : "Pas encore de compte ?",
       "ru" : "Еще нет аккаунта?",
-      "es" : "¿No tienes una cuenta?"
+      "es" : "¿No tienes una cuenta?",
+      "zh_cn" : "现在还没有账户？"
     }
   },
   "auth.register-submit" : {
@@ -271,7 +301,8 @@
       "en" : "Create an account",
       "fr" : "Créer un compte",
       "ru" : "Создать аккаунт",
-      "es" : "Crear una cuenta"
+      "es" : "Crear una cuenta",
+      "zh_cn" : "创建账户"
     }
   },
   "auth.register-subtitle" : {
