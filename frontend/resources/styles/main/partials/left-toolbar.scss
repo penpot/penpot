@@ -42,14 +42,13 @@ $width-left-toolbar: 48px;
     flex-shrink: 0;
     height: 48px;
     justify-content: center;
-    margin: $x-small 0;
     position: relative;
     width: 48px;
 
     svg {
       fill: $color-gray-20;
-      height: 18px;
-      width: 18px;
+      height: 16px;
+      width: 16px;
     }
 
     &:hover {
