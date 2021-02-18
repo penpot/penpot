@@ -11,6 +11,7 @@
 - Bounce & Complaint handling [#635](https://github.com/penpot/penpot/pull/635)
 - Disable groups interactions when holding "Ctrl" key (deep selection)
 - New action in context menu to "edit" some shapes (binded to key "Enter")
+- Allow to set border radius of each rect corner individually
 
 
 ### :bug: Bugs fixed
