@@ -99,6 +99,10 @@
   (mf/unmount (dom/get-element "modal"))
   (init-ui))
 
+(add-watch i18n/locale "locale" (fn [_ _ o v]
+                                  (when (not= o v)
+                                    (reinit))))
+
 (defn ^:dev/after-load after-load
   []
   (reinit))

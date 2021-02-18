@@ -32,7 +32,7 @@
 (s/def ::fullname ::us/string)
 (s/def ::email ::us/email)
 (s/def ::password ::us/string)
-(s/def ::lang ::us/string)
+(s/def ::lang (s/nilable ::us/string))
 (s/def ::theme ::us/string)
 (s/def ::created-at ::us/inst)
 (s/def ::password-1 ::us/string)
@@ -50,43 +50,36 @@
 ;; --- Profile Fetched
 
 (defn profile-fetched
-  ([data] (profile-fetched nil data))
-  ([on-success {:keys [fullname] :as data}]
-   (us/verify ::profile data)
-   (ptk/reify ::profile-fetched
-     ptk/UpdateEvent
-     (update [_ state]
-       (assoc state :profile
-              (cond-> data
-                (nil? (:lang data))
-                (assoc :lang cfg/default-language)
+  [{:keys [fullname] :as data}]
+  (us/verify ::profile data)
+  (ptk/reify ::profile-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc state :profile
+             (cond-> data
+               (nil? (:theme data))
+               (assoc :theme cfg/default-theme))))
 
-                (nil? (:theme data))
-                (assoc :theme cfg/default-theme))))
-
-     ptk/EffectEvent
-     (effect [_ state stream]
-       (let [profile (:profile state)]
-         (swap! storage assoc :profile profile)
-         (i18n/set-current-locale! (:lang profile))
-         (theme/set-current-theme! (:theme profile))
-         (when on-success
-           (on-success)))))))
+    ptk/EffectEvent
+    (effect [_ state stream]
+      (let [profile (:profile state)]
+        (swap! storage assoc :profile profile)
+        (i18n/set-locale! (:lang profile))
+        (theme/set-current-theme! (:theme profile))))))
 
 ;; --- Fetch Profile
 
 (defn fetch-profile
-  ([] (fetch-profile nil))
-  ([on-success]
-   (reify
-     ptk/WatchEvent
-     (watch [_ state s]
-       (->> (rp/query! :profile)
-            (rx/map (partial profile-fetched on-success))
-            (rx/catch (fn [error]
-                        (if (= (:type error) :not-found)
-                          (rx/of (rt/nav :auth-login))
-                          (rx/empty)))))))))
+  []
+  (reify
+    ptk/WatchEvent
+    (watch [_ state s]
+      (->> (rp/query! :profile)
+           (rx/map profile-fetched)
+           (rx/catch (fn [error]
+                       (if (= (:type error) :not-found)
+                         (rx/of (rt/nav :auth-login))
+                         (rx/empty))))))))
 
 ;; --- Update Profile
 
@@ -95,15 +88,19 @@
   (us/assert ::profile data)
   (ptk/reify ::update-profile
     ptk/WatchEvent
-    (watch [_ state s]
-      (let [mdata (meta data)
+    (watch [_ state stream]
+      (let [mdata      (meta data)
             on-success (:on-success mdata identity)
-            on-error (:on-error mdata identity)
-            handle-error #(do (on-error (:payload %))
-                              (rx/empty))]
-        (->> (rp/mutation :update-profile data)
-             (rx/map (constantly (fetch-profile on-success)))
-             (rx/catch rp/client-error? handle-error))))))
+            on-error   (:on-error mdata identity)]
+        (rx/merge
+         (->> (rp/mutation :update-profile data)
+              (rx/map fetch-profile)
+              (rx/catch on-error))
+         (->> stream
+              (rx/filter (ptk/type? ::profile-fetched))
+              (rx/take 1)
+              (rx/tap on-success)
+              (rx/ignore)))))))
 
 ;; --- Request Email Change
 

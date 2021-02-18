@@ -33,7 +33,7 @@
 
 (s/def ::email ::us/email)
 (s/def ::fullname ::us/not-empty-string)
-(s/def ::lang ::us/not-empty-string)
+(s/def ::lang (s/nilable ::us/not-empty-string))
 (s/def ::path ::us/string)
 (s/def ::profile-id ::us/uuid)
 (s/def ::password ::us/not-empty-string)
