@@ -3640,6 +3640,20 @@
       "es" : "Radio"
     }
   },
+  "workspace.options.radius.all-corners" : {
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/measures.cljs" ],
+    "translations" : {
+      "en" : "All corners",
+      "es" : "Todas las esquinas"
+    }
+  },
+  "workspace.options.radius.single-corners" : {
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/measures.cljs" ],
+    "translations" : {
+      "en" : "Single corners",
+      "es" : "Esquinas individuales"
+    }
+  },
   "workspace.options.rotation" : {
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/measures.cljs" ],
     "translations" : {

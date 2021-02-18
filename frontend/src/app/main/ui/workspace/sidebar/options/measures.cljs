@@ -24,7 +24,13 @@
    [app.common.math :as math]
    [app.util.i18n :refer [t] :as i18n]))
 
-(def measure-attrs [:proportion-lock :width :height :x :y :rotation :rx :ry :selrect])
+(def measure-attrs [:proportion-lock
+                    :width :height
+                    :x :y
+                    :rotation
+                    :rx :ry
+                    :r1 :r2 :r3 :r4
+                    :selrect])
 
 (defn- attr->string [attr values]
   (let [value (attr values)]
@@ -93,20 +99,70 @@
          (fn [value]
            (st/emit! (udw/increase-rotation ids value))))
 
-        on-radius-change
+        on-switch-to-radius-1
         (mf/use-callback
          (mf/deps ids)
          (fn [value]
            (let [radius-update
                  (fn [shape]
                    (cond-> shape
-                     (:rx shape) (assoc :rx value :ry value)))]
+                     (:r1 shape)
+                     (-> (assoc :rx 0 :ry 0)
+                         (dissoc :r1 :r2 :r3 :r4))))]
+             (st/emit! (dwc/update-shapes ids-with-children radius-update)))))
+
+        on-switch-to-radius-4
+        (mf/use-callback
+         (mf/deps ids)
+         (fn [value]
+           (let [radius-update
+                 (fn [shape]
+                   (cond-> shape
+                     (:rx shape)
+                     (-> (assoc :r1 0 :r2 0 :r3 0 :r4 0)
+                         (dissoc :rx :ry))))]
+             (st/emit! (dwc/update-shapes ids-with-children radius-update)))))
+
+        on-radius-1-change
+        (mf/use-callback
+         (mf/deps ids)
+         (fn [value]
+           (let [radius-update
+                 (fn [shape]
+                   (cond-> shape
+                     (:r1 shape)
+                     (-> (dissoc :r1 :r2 :r3 :r4)
+                         (assoc :rx 0 :ry 0))
+
+                     (or (:rx shape) (:r1 shape))
+                     (assoc :rx value :ry value)))]
+
+             (st/emit! (dwc/update-shapes ids-with-children radius-update)))))
+
+        on-radius-4-change
+        (mf/use-callback
+         (mf/deps ids)
+         (fn [value attr]
+           (let [radius-update
+                 (fn [shape]
+                   (cond-> shape
+                     (:rx shape)
+                     (-> (dissoc :rx :rx)
+                         (assoc :r1 0 :r2 0 :r3 0 :r4 0))
+
+                     (attr shape)
+                     (assoc attr value)))]
+
              (st/emit! (dwc/update-shapes ids-with-children radius-update)))))
 
         on-width-change #(on-size-change % :width)
         on-height-change #(on-size-change % :height)
         on-pos-x-change #(on-position-change % :x)
         on-pos-y-change #(on-position-change % :y)
+        on-radius-r1-change #(on-radius-4-change % :r1)
+        on-radius-r2-change #(on-radius-4-change % :r2)
+        on-radius-r3-change #(on-radius-4-change % :r3)
+        on-radius-r4-change #(on-radius-4-change % :r4)
         select-all #(-> % (dom/get-target) (.select))]
 
     [:div.element-set
@@ -181,14 +237,61 @@
            :value (attr->string :rotation values)}]])
 
       ;; RADIUS
-      (when (and (options :radius) (not (nil? (:rx values))))
-        [:div.row-flex
-         [:span.element-set-subtitle (t locale "workspace.options.radius")]
-         [:div.input-element.pixels
-          [:> numeric-input
-           {:placeholder "--"
-            :min 0
-            :on-click select-all
-            :on-change on-radius-change
-            :value (attr->string :rx values)}]]
-         [:div.input-element]])]]))
+      (let [radius-1? (some? (:rx values))
+            radius-4? (some? (:r1 values))]
+        (when (and (options :radius) (or radius-1? radius-4?))
+          [:div.row-flex
+           [:div.radius-options
+             [:div.radius-icon.tooltip.tooltip-bottom
+              {:class (classnames
+                        :selected
+                        (and radius-1? (not radius-4?)))
+               :alt (t locale "workspace.options.radius.all-corners")
+               :on-click on-switch-to-radius-1}
+              i/radius-1]
+             [:div.radius-icon.tooltip.tooltip-bottom
+              {:class (classnames
+                        :selected
+                        (and radius-4? (not radius-1?)))
+               :alt (t locale "workspace.options.radius.single-corners")
+               :on-click on-switch-to-radius-4}
+              i/radius-4]]
+           (if radius-1?
+             [:div.input-element.mini
+              [:> numeric-input
+               {:placeholder "--"
+                :min 0
+                :on-click select-all
+                :on-change on-radius-1-change
+                :value (attr->string :rx values)}]]
+
+             [:*
+               [:div.input-element.mini
+                [:> numeric-input
+                 {:placeholder "--"
+                  :min 0
+                  :on-click select-all
+                  :on-change on-radius-r1-change
+                  :value (attr->string :r1 values)}]]
+               [:div.input-element.mini
+                [:> numeric-input
+                 {:placeholder "--"
+                  :min 0
+                  :on-click select-all
+                  :on-change on-radius-r2-change
+                  :value (attr->string :r2 values)}]]
+               [:div.input-element.mini
+                [:> numeric-input
+                 {:placeholder "--"
+                  :min 0
+                  :on-click select-all
+                  :on-change on-radius-r3-change
+                  :value (attr->string :r3 values)}]]
+               [:div.input-element.mini
+                [:> numeric-input
+                 {:placeholder "--"
+                  :min 0
+                  :on-click select-all
+                  :on-change on-radius-r4-change
+                  :value (attr->string :r4 values)}]]])
+           ]))]]))

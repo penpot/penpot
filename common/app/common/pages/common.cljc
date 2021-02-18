@@ -42,6 +42,10 @@
    :stroke-alignment      :stroke-group
    :rx                    :radius-group
    :ry                    :radius-group
+   :r1                    :radius-group
+   :r2                    :radius-group
+   :r3                    :radius-group
+   :r4                    :radius-group
    :selrect               :geometry-group
    :points                :geometry-group
    :locked                :geometry-group
