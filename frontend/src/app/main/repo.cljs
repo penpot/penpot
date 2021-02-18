@@ -122,11 +122,5 @@
           (seq params))
     (send-mutation! id form)))
 
-(defmethod mutation :login-with-ldap
-  [id params]
-  (let [uri (str cfg/public-uri "/api/login-ldap")]
-    (->> (http/send! {:method :post :uri uri :body params})
-         (rx/mapcat handle-response))))
-
 (def client-error? http/client-error?)
 (def server-error? http/server-error?)

@@ -46,6 +46,11 @@
   [err _]
   {:status 401 :body (ex-data err)})
 
+
+(defmethod handle-exception :restriction
+  [err _]
+  {:status 400 :body (ex-data err)})
+
 (defmethod handle-exception :validation
   [err req]
   (let [header (get-in req [:headers "accept"])

@@ -21,7 +21,7 @@
                      ::spec sname
                      ::name (name sname))
 
-        sym   (symbol (str "service-method-" (name sname)))]
+        sym   (symbol (str "sm$" (name sname)))]
     `(do
        (def ~sym (fn ~args ~@body))
        (reset-meta! (var ~sym) ~mdata))))

@@ -53,6 +53,7 @@ services:
       - PENPOT_SMTP_PASSWORD=
       - PENPOT_SMTP_SSL=false
       - PENPOT_SMTP_TLS=false
+
       # LDAP setup
       - PENPOT_LDAP_HOST=ldap
       - PENPOT_LDAP_PORT=10389
@@ -61,10 +62,10 @@ services:
       - PENPOT_LDAP_BASE_DN=ou=people,dc=planetexpress,dc=com
       - PENPOT_LDAP_BIND_DN=cn=admin,dc=planetexpress,dc=com
       - PENPOT_LDAP_BIND_PASSWORD=GoodNewsEveryone
-      - PENPOT_LDAP_USERNAME_ATTRIBUTE=uid
-      - PENPOT_LDAP_EMAIL_ATTRIBUTE=mail
-      - PENPOT_LDAP_FULLNAME_ATTRIBUTE=displayName
-      - PENPOT_LDAP_AVATAR_ATTRIBUTE=jpegPhoto
+      - PENPOT_LDAP_ATTRS_USERNAME=uid
+      - PENPOT_LDAP_ATTRS_EMAIL=mail
+      - PENPOT_LDAP_ATTRS_FULLNAME=cn
+      - PENPOT_LDAP_ATTRS_PHOTO=jpegPhoto
 
   postgres:
     image: postgres:13
