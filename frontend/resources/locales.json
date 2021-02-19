@@ -5,14 +5,16 @@
       "en" : "Already have an account?",
       "fr" : "Vous avez déjà un compte ?",
       "ru" : "Уже есть аккаунт?",
-      "es" : "¿Tienes ya una cuenta?"
+      "es" : "¿Tienes ya una cuenta?",
+      "ca" : "Ja tens un compte?"
     }
   },
   "auth.check-your-email" : {
     "used-in" : [ "src/app/main/ui/auth/register.cljs" ],
     "translations" : {
       "en" : "Check your email and click on the link to verify and start using Penpot.",
-      "fr" : "Vérifiez votre e‑mail et cliquez sur le lien pour vérifier et commencer à utiliser Penpot."
+      "fr" : "Vérifiez votre e‑mail et cliquez sur le lien pour vérifier et commencer à utiliser Penpot.",
+      "ca" : "Revisa el teu email i fes click al link per verificar i començar a utilitzar Penpot."
     }
   },
   "auth.confirm-password" : {
@@ -21,7 +23,8 @@
       "en" : "Confirm password",
       "fr" : "Confirmez le mot de passe",
       "ru" : "Подтвердите пароль",
-      "es" : "Confirmar contraseña"
+      "es" : "Confirmar contraseña",
+      "ca" : "Confirmar contrasenya"
     }
   },
   "auth.create-demo-account" : {
@@ -30,7 +33,8 @@
       "en" : "Create demo account",
       "fr" : "Créer un compte de démonstration",
       "ru" : "Хотите попробовать?",
-      "es" : "Crear cuanta de prueba"
+      "es" : "Crear cuanta de prueba",
+      "ca" : "Crea un compte de proba"
     }
   },
   "auth.create-demo-profile" : {
@@ -39,7 +43,8 @@
       "en" : "Just wanna try it?",
       "fr" : "Vous voulez juste essayer ?",
       "ru" : "Хотите попробовать?",
-      "es" : "¿Quieres probar?"
+      "es" : "¿Quieres probar?",
+      "ca" : "Vols probar-ho?"
     }
   },
   "auth.demo-warning" : {
@@ -48,7 +53,8 @@
       "en" : "This is a DEMO service, DO NOT USE for real work, the projects will be periodicaly wiped.",
       "fr" : "Il s’agit d’un service DEMO, NE PAS UTILISER pour un travail réel, les projets seront périodiquement supprimés.",
       "ru" : "Это ДЕМОНСТРАЦИЯ, НЕ ИСПОЛЬЗУЙТЕ для работы, проекты будут периодически удаляться.",
-      "es" : "Este es un servicio de DEMOSTRACIÓN. NO USAR para trabajo real, los proyectos serán borrados periodicamente."
+      "es" : "Este es un servicio de DEMOSTRACIÓN. NO USAR para trabajo real, los proyectos serán borrados periodicamente.",
+      "ca" : "Aquest es un servei de PROBA. NO HO UTILITZIS per feina real, els projectes seran esborrats periòdicament"
     }
   },
   "auth.email" : {
@@ -57,7 +63,8 @@
       "en" : "Email",
       "fr" : "Adresse e‑mail",
       "ru" : "Email",
-      "es" : "Correo electrónico"
+      "es" : "Correo electrónico",
+      "ca" : "Correu electrònic"
     }
   },
   "auth.forgot-password" : {
@@ -66,7 +73,8 @@
       "en" : "Forgot password?",
       "fr" : "Mot de passe oublié ?",
       "ru" : "Забыли пароль?",
-      "es" : "¿Olvidaste tu contraseña?"
+      "es" : "¿Olvidaste tu contraseña?",
+      "ca" : "Has oblidat la contrasenya?"
     }
   },
   "auth.fullname" : {
@@ -75,7 +83,8 @@
       "en" : "Full Name",
       "fr" : "Nom complet",
       "ru" : "Полное имя",
-      "es" : "Nombre completo"
+      "es" : "Nombre completo",
+      "ca" : "Nom complet"
     }
   },
   "auth.go-back-to-login" : {
@@ -84,7 +93,8 @@
       "en" : "Go back!",
       "fr" : "Retour !",
       "ru" : "Назад!",
-      "es" : "Volver"
+      "es" : "Volver",
+      "ca" : "Tornar"
     }
   },
   "auth.login-here" : {
@@ -93,7 +103,8 @@
       "en" : "Login here",
       "fr" : "Se connecter ici",
       "ru" : "Войти здесь",
-      "es" : "Entra aquí"
+      "es" : "Entra aquí",
+      "ca" : "Inicia sessió aquí"
     }
   },
   "auth.login-submit" : {
@@ -102,7 +113,8 @@
       "en" : "Sign in",
       "fr" : "Se connecter",
       "ru" : "Вход",
-      "es" : "Entrar"
+      "es" : "Entrar",
+      "ca" : "Accedir"
     }
   },
   "auth.login-subtitle" : {
@@ -111,7 +123,8 @@
       "en" : "Enter your details below",
       "fr" : "Entrez vos informations ci‑dessous",
       "ru" : "Введите информацию о себе ниже",
-      "es" : "Introduce tus datos aquí"
+      "es" : "Introduce tus datos aquí",
+      "ca" : "Introdueix les teves dades aquí"
     }
   },
   "auth.login-title" : {
@@ -120,7 +133,8 @@
       "en" : "Great to see you again!",
       "fr" : "Ravi de vous revoir !",
       "ru" : "Рады видеть Вас снова!",
-      "es" : "Encantados de volverte a ver"
+      "es" : "Encantados de volverte a ver",
+      "ca" : "Encantats de tornar a veure't"
     }
   },
   "auth.login-with-github-submit" : {
@@ -129,7 +143,8 @@
       "en" : "Login with Github",
       "fr" : "Se connecter via Github",
       "ru" : "Вход через Gitnub",
-      "es" : "Entrar con Github"
+      "es" : "Entrar con Github",
+      "ca" : "Accedir amb Github"
     }
   },
   "auth.login-with-gitlab-submit" : {
@@ -138,7 +153,8 @@
       "en" : "Login with Gitlab",
       "fr" : "Se connecter via Gitlab",
       "ru" : "Вход через Gitlab",
-      "es" : "Entrar con Gitlab"
+      "es" : "Entrar con Gitlab",
+      "ca" : "Accedir amb Gitlab"
     }
   },
   "auth.login-with-ldap-submit" : {
@@ -147,7 +163,8 @@
       "en" : "Sign in with LDAP",
       "fr" : "Se connecter via LDAP",
       "ru" : "Вход через LDAP",
-      "es" : "Entrar con LDAP"
+      "es" : "Entrar con LDAP",
+      "ca" : "Accedir amb LDAP"
     }
   },
   "auth.new-password" : {
@@ -156,7 +173,8 @@
       "en" : "Type a new password",
       "fr" : "Saisissez un nouveau mot de passe",
       "ru" : "Введите новый пароль",
-      "es" : "Introduce la nueva contraseña"
+      "es" : "Introduce la nueva contraseña",
+      "ca" : "Introdueix la nova contrasenya"
     }
   },
   "auth.notifications.invalid-token-error" : {
@@ -165,7 +183,8 @@
       "en" : "The recovery token is invalid.",
       "fr" : "Le code de récupération n’est pas valide.",
       "ru" : "Неверный код восстановления.",
-      "es" : "El código de recuperación no es válido."
+      "es" : "El código de recuperación no es válido.",
+      "ca" : "El codi de recuperació no és vàlid"
     }
   },
   "auth.notifications.password-changed-succesfully" : {
@@ -174,7 +193,8 @@
       "en" : "Password successfully changed",
       "fr" : "Mot de passe changé avec succès",
       "ru" : "Пароль изменен успешно",
-      "es" : "La contraseña ha sido cambiada"
+      "es" : "La contraseña ha sido cambiada",
+      "ca" : "La contrasenya s'ha canviat correctament"
     }
   },
   "auth.notifications.profile-not-verified" : {
@@ -182,7 +202,8 @@
     "translations" : {
       "en" : "Profile is not verified, please verify profile before continue.",
       "fr" : "Le profil n’est pas vérifié. Veuillez vérifier le profil avant de continuer.",
-      "es" : "El perfil aun no ha sido verificado, por favor valida el perfil antes de continuar."
+      "es" : "El perfil aun no ha sido verificado, por favor valida el perfil antes de continuar.",
+      "ca" : "El perfil encara no s'ha verificat, si us plau verifica-ho abans de continuar"
     }
   },
   "auth.notifications.recovery-token-sent" : {
@@ -191,7 +212,8 @@
       "en" : "Password recovery link sent to your inbox.",
       "fr" : "Lien de récupération de mot de passe envoyé.",
       "ru" : "Ссылка для восстановления пароля отправлена на почту.",
-      "es" : "Hemos enviado a tu buzón un enlace para recuperar tu contraseña."
+      "es" : "Hemos enviado a tu buzón un enlace para recuperar tu contraseña.",
+      "ca" : "Hem enviat un link de recuperació de contrasenya al teu email"
     }
   },
   "auth.notifications.team-invitation-accepted" : {
@@ -199,7 +221,8 @@
     "translations" : {
       "en" : "Joined the team succesfully",
       "fr" : "Vous avez rejoint l’équipe avec succès",
-      "es" : "Te uniste al equipo"
+      "es" : "Te uniste al equipo",
+      "ca" : "T'has unit al equip"
     }
   },
   "auth.password" : {
@@ -208,7 +231,8 @@
       "en" : "Password",
       "fr" : "Mot de passe",
       "ru" : "Пароль",
-      "es" : "Contraseña"
+      "es" : "Contraseña",
+      "ca" : "Contrasenya"
     }
   },
   "auth.password-length-hint" : {
@@ -217,7 +241,8 @@
       "en" : "At least 8 characters",
       "fr" : "Au moins 8 caractères",
       "ru" : "Минимум 8 символов",
-      "es" : "8 caracteres como mínimo"
+      "es" : "8 caracteres como mínimo",
+      "ca" : "Com a mínim 8 caràcters"
     }
   },
   "auth.recovery-request-submit" : {
@@ -226,7 +251,8 @@
       "en" : "Recover Password",
       "fr" : "Récupérer le mot de passe",
       "ru" : "Восстановить пароль",
-      "es" : "Recuperar contraseña"
+      "es" : "Recuperar contraseña",
+      "ca" : "Recuperar contrasenya"
     }
   },
   "auth.recovery-request-subtitle" : {
@@ -235,7 +261,8 @@
       "en" : "We'll send you an email with instructions",
       "fr" : "Nous vous enverrons un e‑mail avec des instructions",
       "ru" : "Письмо с инструкциями отправлено на почту.",
-      "es" : "Te enviaremos un correo electrónico con instrucciones"
+      "es" : "Te enviaremos un correo electrónico con instrucciones",
+      "ca" : "T'enviarem un correu electrónic amb instruccions"
     }
   },
   "auth.recovery-request-title" : {
@@ -244,7 +271,8 @@
       "en" : "Forgot password?",
       "fr" : "Mot de passe oublié ?",
       "ru" : "Забыли пароль?",
-      "es" : "¿Olvidaste tu contraseña?"
+      "es" : "¿Olvidaste tu contraseña?",
+      "ca" : "Has oblidat la teva contrasenya?"
     }
   },
   "auth.recovery-submit" : {
@@ -253,7 +281,8 @@
       "en" : "Change your password",
       "fr" : "Changez votre mot de passe",
       "ru" : "Изменить пароль",
-      "es" : "Cambiar tu contraseña"
+      "es" : "Cambiar tu contraseña",
+      "ca" : "Canvia la teva contrasenya"
     }
   },
   "auth.register" : {
@@ -262,7 +291,8 @@
       "en" : "No account yet?",
       "fr" : "Pas encore de compte ?",
       "ru" : "Еще нет аккаунта?",
-      "es" : "¿No tienes una cuenta?"
+      "es" : "¿No tienes una cuenta?",
+      "ca" : "Encara no tens compte?"
     }
   },
   "auth.register-submit" : {
@@ -271,7 +301,8 @@
       "en" : "Create an account",
       "fr" : "Créer un compte",
       "ru" : "Создать аккаунт",
-      "es" : "Crear una cuenta"
+      "es" : "Crear una cuenta",
+      "ca" : "Crea un compte"
     }
   },
   "auth.register-subtitle" : {
@@ -280,7 +311,8 @@
       "en" : "It's free, it's Open Source",
       "fr" : "C’est gratuit, c’est Open Source",
       "ru" : "Это бесплатно, это Open Source",
-      "es" : "Es gratis, es Open Source"
+      "es" : "Es gratis, es Open Source",
+      "ca" : "Es gratuit, es Open Source"
     }
   },
   "auth.register-title" : {
@@ -289,7 +321,8 @@
       "en" : "Create an account",
       "fr" : "Créer un compte",
       "ru" : "Создать аккаунт",
-      "es" : "Crear una cuenta"
+      "es" : "Crear una cuenta",
+      "ca" : "Crea un compte"
     }
   },
   "auth.sidebar-tagline" : {
@@ -298,14 +331,16 @@
       "en" : "The open-source solution for design and prototyping.",
       "fr" : "La solution Open Source pour la conception et le prototypage.",
       "ru" : "Open Source решение для дизайна и прототипирования.",
-      "es" : "La solución de código abierto para diseñar y prototipar"
+      "es" : "La solución de código abierto para diseñar y prototipar",
+      "ca" : "La solució de codi obert per disenyar i prototipar"
     }
   },
   "auth.verification-email-sent" : {
     "used-in" : [ "src/app/main/ui/auth/register.cljs" ],
     "translations" : {
       "en" : "We've sent a verification email to",
-      "fr" : "Nous avons envoyé un e-mail de vérification à"
+      "fr" : "Nous avons envoyé un e-mail de vérification à",
+      "ca" : "Em enviat un correu de verificació a"
     }
   },
   "dashboard.add-shared" : {
@@ -314,7 +349,8 @@
       "en" : "Add as Shared Library",
       "fr" : "Ajouter une Bibliothèque Partagée",
       "ru" : "",
-      "es" : "Añadir como Biblioteca Compartida"
+      "es" : "Añadir como Biblioteca Compartida",
+      "ca" : "Afegeix una Biblioteca Compartida"
     }
   },
   "dashboard.change-email" : {
@@ -323,7 +359,8 @@
       "en" : "Change email",
       "fr" : "Changer adresse e‑mail",
       "ru" : "Сменить email адрес",
-      "es" : "Cambiar correo"
+      "es" : "Cambiar correo",
+      "ca" : "Canviar correu"
     }
   },
   "dashboard.create-new-team" : {
@@ -331,7 +368,8 @@
     "translations" : {
       "en" : "+ Create new team",
       "fr" : "+ Créer nouvelle équipe",
-      "es" : "+ Crear nuevo equipo"
+      "es" : "+ Crear nuevo equipo",
+      "ca" : "+ Crear un nou equip"
     }
   },
   "dashboard.default-team-name" : {
@@ -339,7 +377,8 @@
     "translations" : {
       "en" : "Your Penpot",
       "fr" : "Votre Penpot",
-      "es" : "Tu Penpot"
+      "es" : "Tu Penpot",
+      "ca" : "El teu Penpot"
     }
   },
   "dashboard.delete-team" : {
@@ -347,7 +386,8 @@
     "translations" : {
       "en" : "Delete team",
       "fr" : "Supprimer l’équipe",
-      "es" : "Eliminar equipo"
+      "es" : "Eliminar equipo",
+      "ca" : "Suprimir equip"
     }
   },
   "dashboard.draft-title" : {
@@ -356,7 +396,8 @@
       "en" : "Draft",
       "fr" : "Brouillon",
       "ru" : "Черновик",
-      "es" : "Borrador"
+      "es" : "Borrador",
+      "ca" : "Esborrany"
     }
   },
   "dashboard.empty-files" : {
@@ -365,7 +406,8 @@
       "en" : "You still have no files here",
       "fr" : "Vous n’avez encore aucun fichier ici",
       "ru" : "Файлов пока нет",
-      "es" : "Todavía no hay ningún archivo aquí"
+      "es" : "Todavía no hay ningún archivo aquí",
+      "ca" : "Encara no hi ha cap arxiu aquí"
     }
   },
   "dashboard.invite-profile" : {
@@ -373,7 +415,8 @@
     "translations" : {
       "en" : "Invite to team",
       "fr" : "Inviter dans l’équipe",
-      "es" : "Invitar al equipo"
+      "es" : "Invitar al equipo",
+      "ca" : "Convidar a l'equip"
     }
   },
   "dashboard.leave-team" : {
@@ -381,7 +424,8 @@
     "translations" : {
       "en" : "Leave team",
       "fr" : "Quitter l’équipe",
-      "es" : "Abandonar equipo"
+      "es" : "Abandonar equipo",
+      "ca" : "Abandonar l'equip"
     }
   },
   "dashboard.libraries-title" : {
@@ -390,7 +434,8 @@
       "en" : "Shared Libraries",
       "fr" : "Bibliothèques Partagées",
       "ru" : "",
-      "es" : "Bibliotecas Compartidas"
+      "es" : "Bibliotecas Compartidas",
+      "ca" : "Biblioteques Compartides"
     }
   },
   "dashboard.loading-files" : {
@@ -398,7 +443,8 @@
     "translations" : {
       "en" : "loading your files …",
       "fr" : "chargement de vos fichiers…",
-      "es" : "cargando tus ficheros …"
+      "es" : "cargando tus ficheros …",
+      "ca" : "carregan els teus fitxers"
     }
   },
   "dashboard.new-file" : {
@@ -407,7 +453,8 @@
       "en" : "+ New File",
       "fr" : "+ Nouveau fichier",
       "ru" : "+ Новый файл",
-      "es" : "+ Nuevo Archivo"
+      "es" : "+ Nuevo Archivo",
+      "ca" : "+ Nou Arxiu"
     }
   },
   "dashboard.new-project" : {
@@ -416,7 +463,8 @@
       "en" : "+ New project",
       "fr" : "+ Nouveau projet",
       "ru" : "+ Новый проект",
-      "es" : "+ Nuevo proyecto"
+      "es" : "+ Nuevo proyecto",
+      "ca" : "+ Nou projecte"
     }
   },
   "dashboard.no-matches-for" : {
@@ -425,7 +473,8 @@
       "en" : "No matches found for “%s“",
       "fr" : "Aucune correspondance pour « %s »",
       "ru" : "Совпадений для “%s“ не найдено",
-      "es" : "No se encuentra “%s“"
+      "es" : "No se encuentra “%s“",
+      "ca" : "No s'ha trobat cap coincidència amb “%s“"
     }
   },
   "dashboard.no-projects-placeholder" : {
@@ -433,7 +482,8 @@
     "translations" : {
       "en" : "Pinned projects will appear here",
       "fr" : "Les projets épinglés apparaîtront ici",
-      "es" : "Los proyectos fijados aparecerán aquí"
+      "es" : "Los proyectos fijados aparecerán aquí",
+      "ca" : "Els projectes fixats apareixeran aquí"
     }
   },
   "dashboard.notifications.email-changed-successfully" : {
@@ -442,7 +492,8 @@
       "en" : "Your email address has been updated successfully",
       "fr" : "Votre adresse e‑mail a été mise à jour avec succès",
       "ru" : "Ваш email адрес успешно обновлен",
-      "es" : "Tu dirección de correo ha sido actualizada"
+      "es" : "Tu dirección de correo ha sido actualizada",
+      "ca" : "La teva adreça de correu s'ha actualizat"
     }
   },
   "dashboard.notifications.email-verified-successfully" : {
@@ -451,7 +502,8 @@
       "en" : "Your email address has been verified successfully",
       "fr" : "Votre adresse e‑mail a été vérifiée avec succès",
       "ru" : "Ваш email адрес успешно подтвержден",
-      "es" : "Tu dirección de correo ha sido verificada"
+      "es" : "Tu dirección de correo ha sido verificada",
+      "ca" : "La teva adreça de correu ha sigut verificada"
     }
   },
   "dashboard.notifications.password-saved" : {
@@ -460,7 +512,8 @@
       "en" : "Password saved successfully!",
       "fr" : "Mot de passe enregistré avec succès !",
       "ru" : "Пароль успешно сохранен!",
-      "es" : "¡Contraseña guardada!"
+      "es" : "¡Contraseña guardada!",
+      "ca" : "La contrasenya s'ha desat correctament"
     }
   },
   "dashboard.num-of-members" : {
@@ -468,7 +521,8 @@
     "translations" : {
       "en" : "%s members",
       "fr" : "%s membres",
-      "es" : "%s integrantes"
+      "es" : "%s integrantes",
+      "ca" : "%s membres"
     }
   },
   "dashboard.password-change" : {
@@ -477,7 +531,8 @@
       "en" : "Change password",
       "fr" : "Changer le mot de passe",
       "ru" : "Изменить пароль",
-      "es" : "Cambiar contraseña"
+      "es" : "Cambiar contraseña",
+      "ca" : "Canvia la contrasenya"
     }
   },
   "dashboard.projects-title" : {
@@ -486,7 +541,8 @@
       "en" : "Projects",
       "fr" : "Projets",
       "ru" : "Проекты",
-      "es" : "Proyectos"
+      "es" : "Proyectos",
+      "ca" : "Projectes"
     }
   },
   "dashboard.promote-to-owner" : {
@@ -494,7 +550,8 @@
     "translations" : {
       "en" : "Promote to owner",
       "fr" : "Promouvoir propriétaire",
-      "es" : "Promover a dueño"
+      "es" : "Promover a dueño",
+      "ca" : "Promoure a propietari"
     }
   },
   "dashboard.remove-account" : {
@@ -503,7 +560,8 @@
       "en" : "Want to remove your account?",
       "fr" : "Vous souhaitez supprimer votre compte ?",
       "ru" : "Хотите удалить свой аккаунт?",
-      "es" : "¿Quieres borrar tu cuenta?"
+      "es" : "¿Quieres borrar tu cuenta?",
+      "ca" : "Vols esborrar el teu compte?"
     }
   },
   "dashboard.remove-shared" : {
@@ -512,7 +570,8 @@
       "en" : "Remove as Shared Library",
       "fr" : "Retirer en tant que Bibliothèque Partagée",
       "ru" : "",
-      "es" : "Eliminar como Biblioteca Compartida"
+      "es" : "Eliminar como Biblioteca Compartida",
+      "ca" : "Elimina com Biblioteca Compartida"
     }
   },
   "dashboard.search-placeholder" : {
@@ -521,7 +580,8 @@
       "en" : "Search…",
       "fr" : "Rechercher…",
       "ru" : "Поиск …",
-      "es" : "Buscar…"
+      "es" : "Buscar…",
+      "ca" : "Cerca…"
     }
   },
   "dashboard.searching-for" : {
@@ -530,7 +590,8 @@
       "en" : "Searching for “%s“…",
       "fr" : "Recherche de « %s »…",
       "ru" : "Ищу “%s“…",
-      "es" : "Buscando “%s“…"
+      "es" : "Buscando “%s“…",
+      "ca" : "S'está cercant “%s“…"
     }
   },
   "dashboard.select-ui-language" : {
@@ -539,7 +600,8 @@
       "en" : "Select UI language",
       "fr" : "Sélectionnez la langue de l’interface",
       "ru" : "Выберите язык интерфейса",
-      "es" : "Cambiar el idioma de la interfaz"
+      "es" : "Cambiar el idioma de la interfaz",
+      "ca" : "Selecciona la llengua de la interfície"
     }
   },
   "dashboard.select-ui-theme" : {
@@ -548,7 +610,8 @@
       "en" : "Select theme",
       "fr" : "Sélectionnez un thème",
       "ru" : "Выберите тему",
-      "es" : "Selecciona un tema"
+      "es" : "Selecciona un tema",
+      "ca" : "Selecciona un tema"
     }
   },
   "dashboard.show-all-files" : {
@@ -556,7 +619,8 @@
     "translations" : {
       "en" : "Show all files",
       "fr" : "Voir tous les fichiers",
-      "es" : "Ver todos los ficheros"
+      "es" : "Ver todos los ficheros",
+      "ca" : "Veure tots els fitxers"
     }
   },
   "labels.recent" : {
@@ -564,7 +628,8 @@
       "en" : "Recent",
       "fr" : "Récent",
       "ru" : "Недавние",
-      "es" : "Reciente"
+      "es" : "Reciente",
+      "ca" : "Recent"
     },
     "unused" : true
   },
@@ -573,7 +638,8 @@
     "translations" : {
       "en" : "Switch team",
       "fr" : "Changer d’équipe",
-      "es" : "Cambiar equipo"
+      "es" : "Cambiar equipo",
+      "ca" : "Cambiar d'equip"
     }
   },
   "dashboard.team-info" : {
@@ -581,7 +647,8 @@
     "translations" : {
       "en" : "Team info",
       "fr" : "Information de l’équipe",
-      "es" : "Información del equipo"
+      "es" : "Información del equipo",
+      "ca" : "Informació de l'equip"
     }
   },
   "dashboard.team-members" : {
@@ -589,7 +656,8 @@
     "translations" : {
       "en" : "Team members",
       "fr" : "Membres de l’équipe",
-      "es" : "Integrantes del equipo"
+      "es" : "Integrantes del equipo",
+      "ca" : "Membres de l'equip"
     }
   },
   "dashboard.team-projects" : {
@@ -597,7 +665,8 @@
     "translations" : {
       "en" : "Team projects",
       "fr" : "Projets de l’équipe",
-      "es" : "Proyectos del equipo"
+      "es" : "Proyectos del equipo",
+      "ca" : "Projectes de l'equip"
     }
   },
   "dashboard.theme-change" : {
@@ -606,7 +675,8 @@
       "en" : "UI theme",
       "fr" : "Thème de l’interface",
       "ru" : "Тема интерфейса пользователя",
-      "es" : "Tema visual"
+      "es" : "Tema visual",
+      "ca" : "Tema de l'interfície"
     }
   },
   "dashboard.title-search" : {
@@ -615,7 +685,8 @@
       "en" : "Search results",
       "fr" : "Résultats de recherche",
       "ru" : "Результаты поиска",
-      "es" : "Resultados de búsqueda"
+      "es" : "Resultados de búsqueda",
+      "ca" : "Membres de l'equip"
     }
   },
   "dashboard.type-something" : {
@@ -624,7 +695,8 @@
       "en" : "Type to search results",
       "fr" : "Écrivez pour rechercher",
       "ru" : "Введите для поиска",
-      "es" : "Escribe algo para buscar"
+      "es" : "Escribe algo para buscar",
+      "ca" : "Escriu per cercar resultats"
     }
   },
   "dashboard.update-settings" : {
@@ -633,7 +705,8 @@
       "en" : "Update settings",
       "fr" : "Mettre à jour les paramètres",
       "ru" : "Обновить настройки",
-      "es" : "Actualizar opciones"
+      "es" : "Actualizar opciones",
+      "ca" : "Actualitzar opcions"
     }
   },
   "dashboard.your-account-title" : {
@@ -641,7 +714,8 @@
     "translations" : {
       "en" : "Your account",
       "fr" : "Votre compte",
-      "es" : "Su cuenta"
+      "es" : "Tu cuenta",
+      "ca" : "El teu compte"
     }
   },
   "dashboard.your-email" : {
@@ -650,7 +724,8 @@
       "en" : "Email",
       "fr" : "E‑mail",
       "ru" : "Email",
-      "es" : "Correo"
+      "es" : "Correo",
+      "ca" : "Correu electrónic"
     }
   },
   "dashboard.your-name" : {
@@ -659,7 +734,8 @@
       "en" : "Your name",
       "fr" : "Votre nom complet",
       "ru" : "Ваше имя",
-      "es" : "Tu nombre"
+      "es" : "Tu nombre",
+      "ca" : "El teu nom"
     }
   },
   "dashboard.your-penpot" : {
@@ -667,7 +743,8 @@
     "translations" : {
       "en" : "Your Penpot",
       "fr" : "Votre Penpot",
-      "es" : "Tu Penpot"
+      "es" : "Tu Penpot",
+      "ca" : "El teu Penpot"
     }
   },
   "labels.accept" : {
@@ -675,7 +752,8 @@
       "en" : "Accept",
       "fr" : "Accepter",
       "ru" : "Принять",
-      "es" : "Aceptar"
+      "es" : "Aceptar",
+      "ca" : "Acceptar"
     },
     "unused" : true
   },
@@ -684,7 +762,8 @@
       "en" : "Delete",
       "fr" : "Supprimer",
       "ru" : "Удалить",
-      "es" : "Borrar"
+      "es" : "Borrar",
+      "ca" : "Esborrar"
     },
     "unused" : true
   },
@@ -693,7 +772,8 @@
       "en" : "Rename",
       "fr" : "Renommer",
       "ru" : "Переименовать",
-      "es" : "Renombrar"
+      "es" : "Renombrar",
+      "ca" : "Canviar de nom"
     },
     "unused" : true
   },
@@ -702,7 +782,8 @@
       "en" : "Save",
       "fr" : "Enregistrer",
       "ru" : "Сохранить",
-      "es" : "Guardar"
+      "es" : "Guardar",
+      "ca" : "Desa"
     },
     "unused" : true
   },
@@ -712,7 +793,8 @@
       "en" : "Cancel",
       "fr" : "Annuler",
       "ru" : "Отмена",
-      "es" : "Cancelar"
+      "es" : "Cancelar",
+      "ca" : "Cancel·lar"
     }
   },
   "ds.confirm-ok" : {
@@ -721,7 +803,8 @@
       "en" : "Ok",
       "fr" : "Ok",
       "ru" : "Ok",
-      "es" : "Ok"
+      "es" : "Ok",
+      "ca" : "Ok"
     }
   },
   "ds.confirm-title" : {
@@ -730,7 +813,8 @@
       "en" : "Are you sure?",
       "fr" : "Êtes‑vous sûr ?",
       "ru" : "Вы уверены?",
-      "es" : "¿Seguro?"
+      "es" : "¿Seguro?",
+      "ca" : "Estàs segur?"
     }
   },
   "ds.updated-at" : {
@@ -739,7 +823,8 @@
       "en" : "Updated: %s",
       "fr" : "Mise à jour : %s",
       "ru" : "Обновлено: %s",
-      "es" : "Actualizado: %s"
+      "es" : "Actualizado: %s",
+      "ca" : "Actualitzat: %s"
     }
   },
   "errors.auth.unauthorized" : {
