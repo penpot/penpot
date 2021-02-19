@@ -90,8 +90,8 @@
      path)))
 
 (defn- points->components [shape content]
-  (let [transform (:transform shape)
-        transform-inverse (:transform-inverse shape)
+  (let [transform (:transform shape (gmt/matrix))
+        transform-inverse (:transform-inverse shape (gmt/matrix))
         center (gsh/center-shape shape)
         base-content (gsh/transform-content
                       content
