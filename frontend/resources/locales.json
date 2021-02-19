@@ -6,6 +6,7 @@
       "fr" : "Vous avez déjà un compte ?",
       "ru" : "Уже есть аккаунт?",
       "es" : "¿Tienes ya una cuenta?",
+      "ca" : "Ja tens un compte?",
       "zh_cn" : "已经有账号了？"
     }
   },
@@ -14,6 +15,7 @@
     "translations" : {
       "en" : "Check your email and click on the link to verify and start using Penpot.",
       "fr" : "Vérifiez votre e‑mail et cliquez sur le lien pour vérifier et commencer à utiliser Penpot.",
+      "ca" : "Revisa el teu email i fes click al link per verificar i començar a utilitzar Penpot.",
       "zh_cn" : "请检查你的电子邮箱，点击邮件中的超链接来验证，然后开始使用Penpot。"
     }
   },
@@ -24,6 +26,7 @@
       "fr" : "Confirmez le mot de passe",
       "ru" : "Подтвердите пароль",
       "es" : "Confirmar contraseña",
+      "ca" : "Confirmar contrasenya",
       "zh_cn" : "确认密码"
     }
   },
@@ -34,6 +37,7 @@
       "fr" : "Créer un compte de démonstration",
       "ru" : "Хотите попробовать?",
       "es" : "Crear cuanta de prueba",
+      "ca" : "Crea un compte de proba",
       "zh_cn" : "创建演示账号"
     }
   },
@@ -44,6 +48,7 @@
       "fr" : "Vous voulez juste essayer ?",
       "ru" : "Хотите попробовать?",
       "es" : "¿Quieres probar?",
+      "ca" : "Vols probar-ho?",
       "zh_cn" : "只是想试试？"
     }
   },
@@ -54,6 +59,7 @@
       "fr" : "Il s’agit d’un service DEMO, NE PAS UTILISER pour un travail réel, les projets seront périodiquement supprimés.",
       "ru" : "Это ДЕМОНСТРАЦИЯ, НЕ ИСПОЛЬЗУЙТЕ для работы, проекты будут периодически удаляться.",
       "es" : "Este es un servicio de DEMOSTRACIÓN. NO USAR para trabajo real, los proyectos serán borrados periodicamente.",
+      "ca" : "Aquest es un servei de PROBA. NO HO UTILITZIS per feina real, els projectes seran esborrats periòdicament.",
       "zh_cn" : "这是一个演示服务，请【不要】用于真实工作，这些项目将被周期性地抹除。"
     }
   },
@@ -64,6 +70,7 @@
       "fr" : "Adresse e‑mail",
       "ru" : "Email",
       "es" : "Correo electrónico",
+      "ca" : "Correu electrònic",
       "zh_cn" : "电子邮件"
     }
   },
@@ -74,6 +81,7 @@
       "fr" : "Mot de passe oublié ?",
       "ru" : "Забыли пароль?",
       "es" : "¿Olvidaste tu contraseña?",
+      "ca" : "Has oblidat la contrasenya?",
       "zh_cn" : "忘记密码？"
     }
   },
@@ -84,6 +92,7 @@
       "fr" : "Nom complet",
       "ru" : "Полное имя",
       "es" : "Nombre completo",
+      "ca" : "Nom complet",
       "zh_cn" : "全名"
     }
   },
@@ -94,6 +103,7 @@
       "fr" : "Retour !",
       "ru" : "Назад!",
       "es" : "Volver",
+      "ca" : "Tornar",
       "zh_cn" : "返回！"
     }
   },
@@ -104,6 +114,7 @@
       "fr" : "Se connecter ici",
       "ru" : "Войти здесь",
       "es" : "Entra aquí",
+      "ca" : "Inicia sessió aquí",
       "zh_cn" : "在这里登录"
     }
   },
@@ -114,6 +125,7 @@
       "fr" : "Se connecter",
       "ru" : "Вход",
       "es" : "Entrar",
+      "ca" : "Accedir",
       "zh_cn" : "登录"
     }
   },
@@ -124,6 +136,7 @@
       "fr" : "Entrez vos informations ci‑dessous",
       "ru" : "Введите информацию о себе ниже",
       "es" : "Introduce tus datos aquí",
+      "ca" : "Introdueix les teves dades aquí",
       "zh_cn" : "请在下面输入你的详细信息"
     }
   },
@@ -134,6 +147,7 @@
       "fr" : "Ravi de vous revoir !",
       "ru" : "Рады видеть Вас снова!",
       "es" : "Encantados de volverte a ver",
+      "ca" : "Encantats de tornar a veure't",
       "zh_cn" : "很高兴又见到你！"
     }
   },
@@ -144,7 +158,8 @@
       "fr" : "Se connecter via Github",
       "ru" : "Вход через Gitnub",
       "es" : "Entrar con Github",
-      "zh_cn" : "使用Github登录"
+      "zh_cn" : "使用Github登录",
+      "ca" : "Accedir amb Github"
     }
   },
   "auth.login-with-gitlab-submit" : {
@@ -154,7 +169,8 @@
       "fr" : "Se connecter via Gitlab",
       "ru" : "Вход через Gitlab",
       "es" : "Entrar con Gitlab",
-      "zh_cn" : "使用Gitlab登录"
+      "zh_cn" : "使用Gitlab登录",
+      "ca" : "Accedir amb Gitlab"
     }
   },
   "auth.login-with-ldap-submit" : {
@@ -164,7 +180,8 @@
       "fr" : "Se connecter via LDAP",
       "ru" : "Вход через LDAP",
       "es" : "Entrar con LDAP",
-      "zh_cn" : "使用LDAP登录"
+      "zh_cn" : "使用LDAP登录",
+      "ca" : "Accedir amb LDAP"
     }
   },
   "auth.new-password" : {
@@ -174,7 +191,8 @@
       "fr" : "Saisissez un nouveau mot de passe",
       "ru" : "Введите новый пароль",
       "es" : "Introduce la nueva contraseña",
-      "zh_cn" : "输入新的密码"
+      "zh_cn" : "输入新的密码",
+      "ca" : "Introdueix la nova contrasenya"
     }
   },
   "auth.notifications.invalid-token-error" : {
@@ -184,7 +202,8 @@
       "fr" : "Le code de récupération n’est pas valide.",
       "ru" : "Неверный код восстановления.",
       "es" : "El código de recuperación no es válido.",
-      "zh_cn" : "恢复令牌无效。"
+      "zh_cn" : "恢复令牌无效。",
+      "ca" : "El codi de recuperació no és vàlid"
     }
   },
   "auth.notifications.password-changed-succesfully" : {
@@ -194,7 +213,8 @@
       "fr" : "Mot de passe changé avec succès",
       "ru" : "Пароль изменен успешно",
       "es" : "La contraseña ha sido cambiada",
-      "zh_cn" : "密码修改成功"
+      "zh_cn" : "密码修改成功",
+      "ca" : "La contrasenya s'ha canviat correctament"
     }
   },
   "auth.notifications.profile-not-verified" : {
@@ -203,7 +223,8 @@
       "en" : "Profile is not verified, please verify profile before continue.",
       "fr" : "Le profil n’est pas vérifié. Veuillez vérifier le profil avant de continuer.",
       "es" : "El perfil aun no ha sido verificado, por favor valida el perfil antes de continuar.",
-      "zh_cn" : "个人资料未验证，请于验证后继续。"
+      "zh_cn" : "个人资料未验证，请于验证后继续。",
+      "ca" : "El perfil encara no s'ha verificat, si us plau verifica-ho abans de continuar."
     }
   },
   "auth.notifications.recovery-token-sent" : {
@@ -213,7 +234,8 @@
       "fr" : "Lien de récupération de mot de passe envoyé.",
       "ru" : "Ссылка для восстановления пароля отправлена на почту.",
       "es" : "Hemos enviado a tu buzón un enlace para recuperar tu contraseña.",
-      "zh_cn" : "找回密码链接已发至你的收件箱。"
+      "zh_cn" : "找回密码链接已发至你的收件箱。",
+      "ca" : "Hem enviat un link de recuperació de contrasenya al teu email."
     }
   },
   "auth.notifications.team-invitation-accepted" : {
@@ -222,7 +244,8 @@
       "en" : "Joined the team succesfully",
       "fr" : "Vous avez rejoint l’équipe avec succès",
       "es" : "Te uniste al equipo",
-      "zh_cn" : "成功加入团队"
+      "zh_cn" : "成功加入团队",
+      "ca" : "T'has unit al equip"
     }
   },
   "auth.password" : {
@@ -232,7 +255,8 @@
       "fr" : "Mot de passe",
       "ru" : "Пароль",
       "es" : "Contraseña",
-      "zh_cn" : "密码"
+      "zh_cn" : "密码",
+      "ca" : "Contrasenya"
     }
   },
   "auth.password-length-hint" : {
@@ -242,7 +266,8 @@
       "fr" : "Au moins 8 caractères",
       "ru" : "Минимум 8 символов",
       "es" : "8 caracteres como mínimo",
-      "zh_cn" : "至少8位字符"
+      "zh_cn" : "至少8位字符",
+      "ca" : "Com a mínim 8 caràcters"
     }
   },
   "auth.recovery-request-submit" : {
@@ -252,7 +277,8 @@
       "fr" : "Récupérer le mot de passe",
       "ru" : "Восстановить пароль",
       "es" : "Recuperar contraseña",
-      "zh_cn" : "找回密码"
+      "zh_cn" : "找回密码",
+      "ca" : "Recuperar contrasenya"
     }
   },
   "auth.recovery-request-subtitle" : {
@@ -262,7 +288,8 @@
       "fr" : "Nous vous enverrons un e‑mail avec des instructions",
       "ru" : "Письмо с инструкциями отправлено на почту.",
       "es" : "Te enviaremos un correo electrónico con instrucciones",
-      "zh_cn" : "我们将给你发送一封带有说明的电子邮件"
+      "zh_cn" : "我们将给你发送一封带有说明的电子邮件",
+      "ca" : "T'enviarem un correu electrónic amb instruccions"
     }
   },
   "auth.recovery-request-title" : {
@@ -272,7 +299,8 @@
       "fr" : "Mot de passe oublié ?",
       "ru" : "Забыли пароль?",
       "es" : "¿Olvidaste tu contraseña?",
-      "zh_cn" : "忘记密码？"
+      "zh_cn" : "忘记密码？",
+      "ca" : "Has oblidat la teva contrasenya?"
     }
   },
   "auth.recovery-submit" : {
@@ -282,7 +310,8 @@
       "fr" : "Changez votre mot de passe",
       "ru" : "Изменить пароль",
       "es" : "Cambiar tu contraseña",
-      "zh_cn" : "修改密码"
+      "zh_cn" : "修改密码",
+      "ca" : "Canvia la teva contrasenya"
     }
   },
   "auth.register" : {
@@ -292,7 +321,8 @@
       "fr" : "Pas encore de compte ?",
       "ru" : "Еще нет аккаунта?",
       "es" : "¿No tienes una cuenta?",
-      "zh_cn" : "现在还没有账户？"
+      "zh_cn" : "现在还没有账户？",
+      "ca" : "Encara no tens compte?"
     }
   },
   "auth.register-submit" : {
@@ -302,7 +332,8 @@
       "fr" : "Créer un compte",
       "ru" : "Создать аккаунт",
       "es" : "Crear una cuenta",
-      "zh_cn" : "创建账户"
+      "zh_cn" : "创建账户",
+      "ca" : "Crea un compte"
     }
   },
   "auth.register-subtitle" : {
@@ -311,7 +342,8 @@
       "en" : "It's free, it's Open Source",
       "fr" : "C’est gratuit, c’est Open Source",
       "ru" : "Это бесплатно, это Open Source",
-      "es" : "Es gratis, es Open Source"
+      "es" : "Es gratis, es Open Source",
+      "ca" : "Es gratuit, es Open Source"
     }
   },
   "auth.register-title" : {
@@ -320,7 +352,8 @@
       "en" : "Create an account",
       "fr" : "Créer un compte",
       "ru" : "Создать аккаунт",
-      "es" : "Crear una cuenta"
+      "es" : "Crear una cuenta",
+      "ca" : "Crea un compte"
     }
   },
   "auth.sidebar-tagline" : {
@@ -329,14 +362,16 @@
       "en" : "The open-source solution for design and prototyping.",
       "fr" : "La solution Open Source pour la conception et le prototypage.",
       "ru" : "Open Source решение для дизайна и прототипирования.",
-      "es" : "La solución de código abierto para diseñar y prototipar"
+      "es" : "La solución de código abierto para diseñar y prototipar",
+      "ca" : "La solució de codi obert per disenyar i prototipar"
     }
   },
   "auth.verification-email-sent" : {
     "used-in" : [ "src/app/main/ui/auth/register.cljs" ],
     "translations" : {
       "en" : "We've sent a verification email to",
-      "fr" : "Nous avons envoyé un e-mail de vérification à"
+      "fr" : "Nous avons envoyé un e-mail de vérification à",
+      "ca" : "Em enviat un correu de verificació a"
     }
   },
   "dashboard.add-shared" : {
@@ -345,7 +380,8 @@
       "en" : "Add as Shared Library",
       "fr" : "Ajouter une Bibliothèque Partagée",
       "ru" : "",
-      "es" : "Añadir como Biblioteca Compartida"
+      "es" : "Añadir como Biblioteca Compartida",
+      "ca" : "Afegeix una Biblioteca Compartida"
     }
   },
   "dashboard.change-email" : {
@@ -354,7 +390,8 @@
       "en" : "Change email",
       "fr" : "Changer adresse e‑mail",
       "ru" : "Сменить email адрес",
-      "es" : "Cambiar correo"
+      "es" : "Cambiar correo",
+      "ca" : "Canviar correu"
     }
   },
   "dashboard.create-new-team" : {
@@ -362,7 +399,8 @@
     "translations" : {
       "en" : "+ Create new team",
       "fr" : "+ Créer nouvelle équipe",
-      "es" : "+ Crear nuevo equipo"
+      "es" : "+ Crear nuevo equipo",
+      "ca" : "+ Crear un nou equip"
     }
   },
   "dashboard.default-team-name" : {
@@ -370,7 +408,8 @@
     "translations" : {
       "en" : "Your Penpot",
       "fr" : "Votre Penpot",
-      "es" : "Tu Penpot"
+      "es" : "Tu Penpot",
+      "ca" : "El teu Penpot"
     }
   },
   "dashboard.delete-team" : {
@@ -378,7 +417,8 @@
     "translations" : {
       "en" : "Delete team",
       "fr" : "Supprimer l’équipe",
-      "es" : "Eliminar equipo"
+      "es" : "Eliminar equipo",
+      "ca" : "Suprimir equip"
     }
   },
   "dashboard.draft-title" : {
@@ -387,7 +427,8 @@
       "en" : "Draft",
       "fr" : "Brouillon",
       "ru" : "Черновик",
-      "es" : "Borrador"
+      "es" : "Borrador",
+      "ca" : "Esborrany"
     }
   },
   "dashboard.empty-files" : {
@@ -396,7 +437,8 @@
       "en" : "You still have no files here",
       "fr" : "Vous n’avez encore aucun fichier ici",
       "ru" : "Файлов пока нет",
-      "es" : "Todavía no hay ningún archivo aquí"
+      "es" : "Todavía no hay ningún archivo aquí",
+      "ca" : "Encara no hi ha cap arxiu aquí"
     }
   },
   "dashboard.invite-profile" : {
@@ -404,7 +446,8 @@
     "translations" : {
       "en" : "Invite to team",
       "fr" : "Inviter dans l’équipe",
-      "es" : "Invitar al equipo"
+      "es" : "Invitar al equipo",
+      "ca" : "Convidar a l'equip"
     }
   },
   "dashboard.leave-team" : {
@@ -412,7 +455,8 @@
     "translations" : {
       "en" : "Leave team",
       "fr" : "Quitter l’équipe",
-      "es" : "Abandonar equipo"
+      "es" : "Abandonar equipo",
+      "ca" : "Abandonar l'equip"
     }
   },
   "dashboard.libraries-title" : {
@@ -421,7 +465,8 @@
       "en" : "Shared Libraries",
       "fr" : "Bibliothèques Partagées",
       "ru" : "",
-      "es" : "Bibliotecas Compartidas"
+      "es" : "Bibliotecas Compartidas",
+      "ca" : "Biblioteques Compartides"
     }
   },
   "dashboard.loading-files" : {
@@ -429,7 +474,8 @@
     "translations" : {
       "en" : "loading your files …",
       "fr" : "chargement de vos fichiers…",
-      "es" : "cargando tus ficheros …"
+      "es" : "cargando tus ficheros …",
+      "ca" : "carregan els teus fitxers"
     }
   },
   "dashboard.new-file" : {
@@ -438,7 +484,8 @@
       "en" : "+ New File",
       "fr" : "+ Nouveau fichier",
       "ru" : "+ Новый файл",
-      "es" : "+ Nuevo Archivo"
+      "es" : "+ Nuevo Archivo",
+      "ca" : "+ Nou Arxiu"
     }
   },
   "dashboard.new-project" : {
@@ -447,7 +494,8 @@
       "en" : "+ New project",
       "fr" : "+ Nouveau projet",
       "ru" : "+ Новый проект",
-      "es" : "+ Nuevo proyecto"
+      "es" : "+ Nuevo proyecto",
+      "ca" : "+ Nou projecte"
     }
   },
   "dashboard.no-matches-for" : {
@@ -456,7 +504,8 @@
       "en" : "No matches found for “%s“",
       "fr" : "Aucune correspondance pour « %s »",
       "ru" : "Совпадений для “%s“ не найдено",
-      "es" : "No se encuentra “%s“"
+      "es" : "No se encuentra “%s“",
+      "ca" : "No s'ha trobat cap coincidència amb “%s“"
     }
   },
   "dashboard.no-projects-placeholder" : {
@@ -464,7 +513,8 @@
     "translations" : {
       "en" : "Pinned projects will appear here",
       "fr" : "Les projets épinglés apparaîtront ici",
-      "es" : "Los proyectos fijados aparecerán aquí"
+      "es" : "Los proyectos fijados aparecerán aquí",
+      "ca" : "Els projectes fixats apareixeran aquí"
     }
   },
   "dashboard.notifications.email-changed-successfully" : {
@@ -473,7 +523,8 @@
       "en" : "Your email address has been updated successfully",
       "fr" : "Votre adresse e‑mail a été mise à jour avec succès",
       "ru" : "Ваш email адрес успешно обновлен",
-      "es" : "Tu dirección de correo ha sido actualizada"
+      "es" : "Tu dirección de correo ha sido actualizada",
+      "ca" : "La teva adreça de correu s'ha actualizat"
     }
   },
   "dashboard.notifications.email-verified-successfully" : {
@@ -482,7 +533,8 @@
       "en" : "Your email address has been verified successfully",
       "fr" : "Votre adresse e‑mail a été vérifiée avec succès",
       "ru" : "Ваш email адрес успешно подтвержден",
-      "es" : "Tu dirección de correo ha sido verificada"
+      "es" : "Tu dirección de correo ha sido verificada",
+      "ca" : "La teva adreça de correu ha sigut verificada"
     }
   },
   "dashboard.notifications.password-saved" : {
@@ -491,7 +543,8 @@
       "en" : "Password saved successfully!",
       "fr" : "Mot de passe enregistré avec succès !",
       "ru" : "Пароль успешно сохранен!",
-      "es" : "¡Contraseña guardada!"
+      "es" : "¡Contraseña guardada!",
+      "ca" : "La contrasenya s'ha desat correctament"
     }
   },
   "dashboard.num-of-members" : {
@@ -499,7 +552,8 @@
     "translations" : {
       "en" : "%s members",
       "fr" : "%s membres",
-      "es" : "%s integrantes"
+      "es" : "%s integrantes",
+      "ca" : "%s membres"
     }
   },
   "dashboard.password-change" : {
@@ -508,7 +562,8 @@
       "en" : "Change password",
       "fr" : "Changer le mot de passe",
       "ru" : "Изменить пароль",
-      "es" : "Cambiar contraseña"
+      "es" : "Cambiar contraseña",
+      "ca" : "Canvia la contrasenya"
     }
   },
   "dashboard.projects-title" : {
@@ -517,7 +572,8 @@
       "en" : "Projects",
       "fr" : "Projets",
       "ru" : "Проекты",
-      "es" : "Proyectos"
+      "es" : "Proyectos",
+      "ca" : "Projectes"
     }
   },
   "dashboard.promote-to-owner" : {
@@ -525,7 +581,8 @@
     "translations" : {
       "en" : "Promote to owner",
       "fr" : "Promouvoir propriétaire",
-      "es" : "Promover a dueño"
+      "es" : "Promover a dueño",
+      "ca" : "Promoure a propietari"
     }
   },
   "dashboard.remove-account" : {
@@ -534,7 +591,8 @@
       "en" : "Want to remove your account?",
       "fr" : "Vous souhaitez supprimer votre compte ?",
       "ru" : "Хотите удалить свой аккаунт?",
-      "es" : "¿Quieres borrar tu cuenta?"
+      "es" : "¿Quieres borrar tu cuenta?",
+      "ca" : "Vols esborrar el teu compte?"
     }
   },
   "dashboard.remove-shared" : {
@@ -543,7 +601,8 @@
       "en" : "Remove as Shared Library",
       "fr" : "Retirer en tant que Bibliothèque Partagée",
       "ru" : "",
-      "es" : "Eliminar como Biblioteca Compartida"
+      "es" : "Eliminar como Biblioteca Compartida",
+      "ca" : "Elimina com Biblioteca Compartida"
     }
   },
   "dashboard.search-placeholder" : {
@@ -552,7 +611,8 @@
       "en" : "Search…",
       "fr" : "Rechercher…",
       "ru" : "Поиск …",
-      "es" : "Buscar…"
+      "es" : "Buscar…",
+      "ca" : "Cerca…"
     }
   },
   "dashboard.searching-for" : {
@@ -561,7 +621,8 @@
       "en" : "Searching for “%s“…",
       "fr" : "Recherche de « %s »…",
       "ru" : "Ищу “%s“…",
-      "es" : "Buscando “%s“…"
+      "es" : "Buscando “%s“…",
+      "ca" : "S'está cercant “%s“…"
     }
   },
   "dashboard.select-ui-language" : {
@@ -570,7 +631,8 @@
       "en" : "Select UI language",
       "fr" : "Sélectionnez la langue de l’interface",
       "ru" : "Выберите язык интерфейса",
-      "es" : "Cambiar el idioma de la interfaz"
+      "es" : "Cambiar el idioma de la interfaz",
+      "ca" : "Selecciona la llengua de la interfície"
     }
   },
   "dashboard.select-ui-theme" : {
@@ -579,7 +641,8 @@
       "en" : "Select theme",
       "fr" : "Sélectionnez un thème",
       "ru" : "Выберите тему",
-      "es" : "Selecciona un tema"
+      "es" : "Selecciona un tema",
+      "ca" : "Selecciona un tema"
     }
   },
   "dashboard.show-all-files" : {
@@ -587,7 +650,8 @@
     "translations" : {
       "en" : "Show all files",
       "fr" : "Voir tous les fichiers",
-      "es" : "Ver todos los ficheros"
+      "es" : "Ver todos los ficheros",
+      "ca" : "Veure tots els fitxers"
     }
   },
   "labels.recent" : {
@@ -595,7 +659,8 @@
       "en" : "Recent",
       "fr" : "Récent",
       "ru" : "Недавние",
-      "es" : "Reciente"
+      "es" : "Reciente",
+      "ca" : "Recent"
     },
     "unused" : true
   },
@@ -604,7 +669,8 @@
     "translations" : {
       "en" : "Switch team",
       "fr" : "Changer d’équipe",
-      "es" : "Cambiar equipo"
+      "es" : "Cambiar equipo",
+      "ca" : "Cambiar d'equip"
     }
   },
   "dashboard.team-info" : {
@@ -612,7 +678,8 @@
     "translations" : {
       "en" : "Team info",
       "fr" : "Information de l’équipe",
-      "es" : "Información del equipo"
+      "es" : "Información del equipo",
+      "ca" : "Informació de l'equip"
     }
   },
   "dashboard.team-members" : {
@@ -620,7 +687,8 @@
     "translations" : {
       "en" : "Team members",
       "fr" : "Membres de l’équipe",
-      "es" : "Integrantes del equipo"
+      "es" : "Integrantes del equipo",
+      "ca" : "Membres de l'equip"
     }
   },
   "dashboard.team-projects" : {
@@ -628,7 +696,8 @@
     "translations" : {
       "en" : "Team projects",
       "fr" : "Projets de l’équipe",
-      "es" : "Proyectos del equipo"
+      "es" : "Proyectos del equipo",
+      "ca" : "Projectes de l'equip"
     }
   },
   "dashboard.theme-change" : {
@@ -637,7 +706,8 @@
       "en" : "UI theme",
       "fr" : "Thème de l’interface",
       "ru" : "Тема интерфейса пользователя",
-      "es" : "Tema visual"
+      "es" : "Tema visual",
+      "ca" : "Tema de l'interfície"
     }
   },
   "dashboard.title-search" : {
@@ -646,7 +716,8 @@
       "en" : "Search results",
       "fr" : "Résultats de recherche",
       "ru" : "Результаты поиска",
-      "es" : "Resultados de búsqueda"
+      "es" : "Resultados de búsqueda",
+      "ca" : "Membres de l'equip"
     }
   },
   "dashboard.type-something" : {
@@ -655,7 +726,8 @@
       "en" : "Type to search results",
       "fr" : "Écrivez pour rechercher",
       "ru" : "Введите для поиска",
-      "es" : "Escribe algo para buscar"
+      "es" : "Escribe algo para buscar",
+      "ca" : "Escriu per cercar resultats"
     }
   },
   "dashboard.update-settings" : {
@@ -664,7 +736,8 @@
       "en" : "Update settings",
       "fr" : "Mettre à jour les paramètres",
       "ru" : "Обновить настройки",
-      "es" : "Actualizar opciones"
+      "es" : "Actualizar opciones",
+      "ca" : "Actualitzar opcions"
     }
   },
   "dashboard.your-account-title" : {
@@ -672,7 +745,8 @@
     "translations" : {
       "en" : "Your account",
       "fr" : "Votre compte",
-      "es" : "Su cuenta"
+      "es" : "Tu cuenta",
+      "ca" : "El teu compte"
     }
   },
   "dashboard.your-email" : {
@@ -681,7 +755,8 @@
       "en" : "Email",
       "fr" : "E‑mail",
       "ru" : "Email",
-      "es" : "Correo"
+      "es" : "Correo",
+      "ca" : "Correu electrónic"
     }
   },
   "dashboard.your-name" : {
@@ -690,7 +765,8 @@
       "en" : "Your name",
       "fr" : "Votre nom complet",
       "ru" : "Ваше имя",
-      "es" : "Tu nombre"
+      "es" : "Tu nombre",
+      "ca" : "El teu nom"
     }
   },
   "dashboard.your-penpot" : {
@@ -698,7 +774,8 @@
     "translations" : {
       "en" : "Your Penpot",
       "fr" : "Votre Penpot",
-      "es" : "Tu Penpot"
+      "es" : "Tu Penpot",
+      "ca" : "El teu Penpot"
     }
   },
   "labels.accept" : {
@@ -706,7 +783,8 @@
       "en" : "Accept",
       "fr" : "Accepter",
       "ru" : "Принять",
-      "es" : "Aceptar"
+      "es" : "Aceptar",
+      "ca" : "Acceptar"
     },
     "unused" : true
   },
@@ -715,7 +793,8 @@
       "en" : "Delete",
       "fr" : "Supprimer",
       "ru" : "Удалить",
-      "es" : "Borrar"
+      "es" : "Borrar",
+      "ca" : "Esborrar"
     },
     "unused" : true
   },
@@ -724,7 +803,8 @@
       "en" : "Rename",
       "fr" : "Renommer",
       "ru" : "Переименовать",
-      "es" : "Renombrar"
+      "es" : "Renombrar",
+      "ca" : "Canviar de nom"
     },
     "unused" : true
   },
@@ -733,7 +813,8 @@
       "en" : "Save",
       "fr" : "Enregistrer",
       "ru" : "Сохранить",
-      "es" : "Guardar"
+      "es" : "Guardar",
+      "ca" : "Desa"
     },
     "unused" : true
   },
@@ -743,7 +824,8 @@
       "en" : "Cancel",
       "fr" : "Annuler",
       "ru" : "Отмена",
-      "es" : "Cancelar"
+      "es" : "Cancelar",
+      "ca" : "Cancel·lar"
     }
   },
   "ds.confirm-ok" : {
@@ -752,7 +834,8 @@
       "en" : "Ok",
       "fr" : "Ok",
       "ru" : "Ok",
-      "es" : "Ok"
+      "es" : "Ok",
+      "ca" : "Ok"
     }
   },
   "ds.confirm-title" : {
@@ -761,7 +844,8 @@
       "en" : "Are you sure?",
       "fr" : "Êtes‑vous sûr ?",
       "ru" : "Вы уверены?",
-      "es" : "¿Seguro?"
+      "es" : "¿Seguro?",
+      "ca" : "Estàs segur?"
     }
   },
   "ds.updated-at" : {
@@ -770,7 +854,8 @@
       "en" : "Updated: %s",
       "fr" : "Mise à jour : %s",
       "ru" : "Обновлено: %s",
-      "es" : "Actualizado: %s"
+      "es" : "Actualizado: %s",
+      "ca" : "Actualitzat: %s"
     }
   },
   "errors.ldap-disabled" : {
@@ -785,7 +870,8 @@
       "en" : "Username or password seems to be wrong.",
       "fr" : "Le nom d’utilisateur ou le mot de passe semble être faux.",
       "ru" : "Неверное имя пользователя или пароль.",
-      "es" : "El nombre o la contraseña parece incorrecto."
+      "es" : "El nombre o la contraseña parece incorrecto.",
+      "ca" : "El nom d'usuari o la contrasenya sembla incorrecte"
     }
   },
   "errors.clipboard-not-implemented" : {
@@ -794,7 +880,8 @@
       "en" : "Your browser cannot do this operation",
       "fr" : "Votre navigateur ne peut pas effectuer cette opération",
       "ru" : "",
-      "es" : "Tu navegador no puede realizar esta operación"
+      "es" : "Tu navegador no puede realizar esta operación",
+      "ca" : "El teu navegador no pot realitzar aquesta operació"
     }
   },
   "errors.email-already-exists" : {
@@ -803,7 +890,8 @@
       "en" : "Email already used",
       "fr" : "Adresse e‑mail déjà utilisée",
       "ru" : "Такой email уже используется",
-      "es" : "Este correo ya está en uso"
+      "es" : "Este correo ya está en uso",
+      "ca" : "El correu ja està en ús"
     }
   },
   "errors.email-already-validated" : {
@@ -812,14 +900,16 @@
       "en" : "Email already validated.",
       "fr" : "Adresse e‑mail déjà validée.",
       "ru" : "Электронная почта уже подтверждена.",
-      "es" : "Este correo ya está validado."
+      "es" : "Este correo ya está validado.",
+      "ca" : "El correu ja està validat"
     }
   },
   "errors.email-has-permanent-bounces" : {
     "used-in" : [ "src/app/main/ui/auth/register.cljs", "src/app/main/ui/auth/recovery_request.cljs", "src/app/main/ui/settings/change_email.cljs", "src/app/main/ui/dashboard/team.cljs" ],
     "translations" : {
       "en" : "The email «%s» has many permanent bounce reports.",
-      "es" : "El email «%s» tiene varios reportes de rebote permanente."
+      "es" : "El email «%s» tiene varios reportes de rebote permanente.",
+      "ca" : "El correu «%s» té molts informes de rebot permanents"
     }
   },
   "errors.email-invalid-confirmation" : {
@@ -828,7 +918,8 @@
       "en" : "Confirmation email must match",
       "fr" : "L’adresse e‑mail de confirmation doit correspondre",
       "ru" : "Email для подтверждения должен совпадать",
-      "es" : "El correo de confirmación debe coincidir"
+      "es" : "El correo de confirmación debe coincidir",
+      "ca" : "El correu de confirmació ha de coincidir"
     }
   },
   "errors.generic" : {
@@ -837,14 +928,16 @@
       "en" : "Something wrong has happened.",
       "fr" : "Un problème s’est produit.",
       "ru" : "Что-то пошло не так.",
-      "es" : "Ha ocurrido algún error."
+      "es" : "Ha ocurrido algún error.",
+      "ca" : "Alguna cosa ha anat malament"
     }
   },
   "errors.google-auth-not-enabled" : {
     "used-in" : [ "src/app/main/ui/auth/login.cljs" ],
     "translations" : {
       "en" : "Authentication with google disabled on backend",
-      "es" : "Autenticación con google esta dehabilitada en el servidor"
+      "es" : "Autenticación con google esta dehabilitada en el servidor",
+      "ca" : "L'autenticació amb google ha estat desactivada a aquest servidor"
     }
   },
   "errors.media-format-unsupported" : {
@@ -852,7 +945,8 @@
       "en" : "The image format is not supported (must be svg, jpg or png).",
       "fr" : "Le format d’image n’est pas supporté (doit être svg, jpg ou png).",
       "ru" : "Формат изображения не поддерживается (должен быть svg, jpg или png).",
-      "es" : "No se reconoce el formato de imagen (debe ser svg, jpg o png)."
+      "es" : "No se reconoce el formato de imagen (debe ser svg, jpg o png).",
+      "ca" : "El format d'imatge no està suportat (deu ser svg, jpg o png),"
     },
     "unused" : true
   },
@@ -862,7 +956,8 @@
       "en" : "The image is too large to be inserted (must be under 5mb).",
       "fr" : "L’image est trop grande (doit être inférieure à 5 Mo).",
       "ru" : "Изображение слишком большое для вставки (должно быть меньше 5mb).",
-      "es" : "La imagen es demasiado grande (debe tener menos de 5mb)."
+      "es" : "La imagen es demasiado grande (debe tener menos de 5mb).",
+      "ca" : "La imatge es massa gran (ha de tenir menys de 5 mb)."
     }
   },
   "errors.media-type-mismatch" : {
@@ -871,7 +966,8 @@
       "en" : "Seems that the contents of the image does not match the file extension.",
       "fr" : "Il semble que le contenu de l’image ne correspond pas à l’extension de fichier.",
       "ru" : "",
-      "es" : "Parece que el contenido de la imagen no coincide con la etensión del archivo."
+      "es" : "Parece que el contenido de la imagen no coincide con la etensión del archivo.",
+      "ca" : "Sembla que el contingut de la imatge no coincideix amb l'extensió del arxiu"
     }
   },
   "errors.media-type-not-allowed" : {
@@ -880,14 +976,16 @@
       "en" : "Seems that this is not a valid image.",
       "fr" : "L’image ne semble pas être valide.",
       "ru" : "",
-      "es" : "Parece que no es una imagen válida."
+      "es" : "Parece que no es una imagen válida.",
+      "ca" : "La imatge no sembla pas vàlida"
     }
   },
   "errors.member-is-muted" : {
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs" ],
     "translations" : {
       "en" : "The profile you inviting has emails muted (spam reports or high bounces).",
-      "es" : "El perfil que esta invitando tiene los emails silenciados (por reportes de spam o alto indice de rebote)."
+      "es" : "El perfil que esta invitando tiene los emails silenciados (por reportes de spam o alto indice de rebote).",
+      "ca" : "El perfil que estàs invitant té els emails mutejats (per informes de spam o rebots alts"
     }
   },
   "errors.network" : {
@@ -895,7 +993,8 @@
       "en" : "Unable to connect to backend server.",
       "fr" : "Impossible de se connecter au serveur principal.",
       "ru" : "Невозможно подключиться к серверу.",
-      "es" : "Ha sido imposible conectar con el servidor principal."
+      "es" : "Ha sido imposible conectar con el servidor principal.",
+      "ca" : "Impossible connectar amb el servidor principal"
     },
     "unused" : true
   },
@@ -905,7 +1004,8 @@
       "en" : "Confirmation password must match",
       "fr" : "Le mot de passe de confirmation doit correspondre",
       "ru" : "Пароль для подтверждения должен совпадать",
-      "es" : "La contraseña de confirmación debe coincidir"
+      "es" : "La contraseña de confirmación debe coincidir",
+      "ca" : "La contrasenya de confirmació ha de coincidir"
     }
   },
   "errors.password-too-short" : {
@@ -914,14 +1014,16 @@
       "en" : "Password should at least be 8 characters",
       "fr" : "Le mot de passe doit contenir au moins 8 caractères",
       "ru" : "Пароль должен быть минимум 8 символов",
-      "es" : "La contraseña debe tener 8 caracteres como mínimo"
+      "es" : "La contraseña debe tener 8 caracteres como mínimo",
+      "ca" : "La contrasenya ha de tenir 8 com a mínim 8 caràcters"
     }
   },
   "errors.profile-is-muted" : {
     "used-in" : [ "src/app/main/ui/auth/recovery_request.cljs", "src/app/main/ui/settings/change_email.cljs", "src/app/main/ui/dashboard/team.cljs" ],
     "translations" : {
       "en" : "Your profile has emails muted (spam reports or high bounces).",
-      "es" : "Tu perfil tiene los emails silenciados (por reportes de spam o alto indice de rebote)."
+      "es" : "Tu perfil tiene los emails silenciados (por reportes de spam o alto indice de rebote).",
+      "ca" : "El teu perfil te els emails mutejats (per informes de spam o rebots alts)."
     }
   },
   "errors.registration-disabled" : {
@@ -930,7 +1032,8 @@
       "en" : "The registration is currently disabled.",
       "fr" : "L’enregistrement est actuellement désactivé.",
       "ru" : "Регистрация сейчас отключена.",
-      "es" : "El registro está actualmente desactivado."
+      "es" : "El registro está actualmente desactivado.",
+      "ca" : "El registre està desactivat actualment"
     }
   },
   "errors.unexpected-error" : {
@@ -939,14 +1042,16 @@
       "en" : "An unexpected error occurred.",
       "fr" : "Une erreur inattendue s’est produite",
       "ru" : "Произошла ошибка.",
-      "es" : "Ha ocurrido un error inesperado."
+      "es" : "Ha ocurrido un error inesperado.",
+      "ca" : "S'ha produït un error inesperat."
     }
   },
   "errors.unexpected-token" : {
     "used-in" : [ "src/app/main/ui/auth/verify_token.cljs" ],
     "translations" : {
       "en" : "Unknown token",
-      "es" : "Token desconocido"
+      "es" : "Token desconocido",
+      "ca" : "Token desconegut"
     }
   },
   "errors.wrong-old-password" : {
@@ -955,70 +1060,80 @@
       "en" : "Old password is incorrect",
       "fr" : "L’ancien mot de passe est incorrect",
       "ru" : "Старый пароль неверный",
-      "es" : "La contraseña anterior no es correcta"
+      "es" : "La contraseña anterior no es correcta",
+      "ca" : "La contrasenya anterior no és correcte"
     }
   },
   "feedback.chat-start" : {
     "used-in" : [ "src/app/main/ui/settings/feedback.cljs" ],
     "translations" : {
       "en" : "Join the chat",
-      "es" : "Unirse al chat"
+      "es" : "Unirse al chat",
+      "ca" : "Uneix-te al xat."
     }
   },
   "feedback.chat-subtitle" : {
     "used-in" : [ "src/app/main/ui/settings/feedback.cljs" ],
     "translations" : {
       "en" : "Feeling like talking? Chat with us at Gitter",
-      "es" : "¿Deseas conversar? Entra al nuestro chat de la comunidad en Gitter"
+      "es" : "¿Deseas conversar? Entra al nuestro chat de la comunidad en Gitter",
+      "ca" : "Et ve de gust parlar? Xateja amb nosaltres a Gitter"
     }
   },
   "feedback.description" : {
     "used-in" : [ "src/app/main/ui/settings/feedback.cljs" ],
     "translations" : {
       "en" : "Description",
-      "es" : "Descripción"
+      "es" : "Descripción",
+      "ca" : "Descripció"
     }
   },
   "feedback.discussions-go-to" : {
     "used-in" : [ "src/app/main/ui/settings/feedback.cljs" ],
     "translations" : {
       "en" : "Go to discussions",
-      "es" : "Ir a las discussiones"
+      "es" : "Ir a las discusiones",
+      "ca" : ""
     }
   },
   "feedback.discussions-subtitle1" : {
     "used-in" : [ "src/app/main/ui/settings/feedback.cljs" ],
     "translations" : {
       "en" : "Join Penpot team collaborative communication forum.",
-      "es" : "Entra al foro colaborativo de Penpot"
+      "es" : "Entra al foro colaborativo de Penpot",
+      "ca" : "Uneix-te al fòrum colaboratiu de Penpot."
     }
   },
   "feedback.discussions-subtitle2" : {
     "used-in" : [ "src/app/main/ui/settings/feedback.cljs" ],
     "translations" : {
       "en" : "You can ask and answer questions, have open-ended conversations, and follow along on decisions affecting the project.",
-      "es" : ""
+      "es" : "",
+      "ca" : "Pots fer i respondre preguntes, tenir converses obertes i seguir les decisións que afecten al projecte"
     }
   },
   "feedback.discussions-title" : {
     "used-in" : [ "src/app/main/ui/settings/feedback.cljs" ],
     "translations" : {
       "en" : "Team discussions",
-      "es" : ""
+      "es" : "",
+      "ca" : ""
     }
   },
   "feedback.subject" : {
     "used-in" : [ "src/app/main/ui/settings/feedback.cljs" ],
     "translations" : {
       "en" : "Subject",
-      "es" : "Asunto"
+      "es" : "Asunto",
+      "ca" : "Tema"
     }
   },
   "feedback.subtitle" : {
     "used-in" : [ "src/app/main/ui/settings/feedback.cljs" ],
     "translations" : {
       "en" : "Please describe the reason of your email, specifying if is an issue, an idea or a doubt. A member of our team will respond as soon as possible.",
-      "es" : ""
+      "es" : "",
+      "ca" : "Si us plau descriu la raó del teu correu, especificant si es una incidència, una idea o un dubte. Un membre del nostre equip respondrà tan aviat como pugui."
     }
   },
   "feedback.title" : {
@@ -1027,7 +1142,8 @@
       "en" : "Email",
       "fr" : "Adresse email",
       "ru" : "Email",
-      "es" : "Correo electrónico"
+      "es" : "Correo electrónico",
+      "ca" : "Correu electrònic"
     }
   },
   "generic.error" : {
@@ -1036,7 +1152,8 @@
       "en" : "An error has occurred",
       "fr" : "Une erreur s’est produite",
       "ru" : "Произошла ошибка",
-      "es" : "Ha ocurrido un error"
+      "es" : "Ha ocurrido un error",
+      "ca" : "S'ha produït un error"
     }
   },
   "handoff.attributes.blur" : {
