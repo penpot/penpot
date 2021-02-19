@@ -224,7 +224,7 @@
 
         on-composition-start
         (mf/use-callback
-         (fn []
+         (fn [event]
            (.insertText slate/Editor editor "")))
 
         on-change
@@ -269,7 +269,8 @@
                    ;; WARN: monky patch
                    (obj/set! slate/Transforms "deselect" (constantly nil)))
         :on-composition-start on-composition-start
-        :placeholder (when (= :fixed grow-type) "Type some text here...")}]]]))
+        ;; :placeholder (when (= :fixed grow-type) "Type some text here...")
+        }]]]))
 
 (mf/defc text-shape-edit
   {::mf/wrap [mf/memo]
