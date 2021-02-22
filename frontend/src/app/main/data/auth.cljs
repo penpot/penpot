@@ -90,6 +90,7 @@
     ptk/WatchEvent
     (watch [_ state s]
       (->> (rp/mutation :logout)
+           (rx/catch (constantly (rx/empty)))
            (rx/ignore)))
 
     ptk/EffectEvent
