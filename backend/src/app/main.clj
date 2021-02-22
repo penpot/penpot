@@ -37,11 +37,19 @@
      :max-pool-size 20}
 
     :app.metrics/metrics
-    {}
+    {:definitions
+     {:profile-register
+      {:name "actions_profile_register_count"
+       :help "A global counter of user registrations."
+       :type :counter}
+      :profile-activation
+      {:name "actions_profile_activation_count"
+       :help "A global counter of profile activations"
+       :type :counter}}}
 
     :app.migrations/all
-    {:main (ig/ref :app.migrations/migrations)
-     :telemetry  (ig/ref :app.telemetry/migrations)}
+    {:main      (ig/ref :app.migrations/migrations)
+     :telemetry (ig/ref :app.telemetry/migrations)}
 
     :app.migrations/migrations
     {}
