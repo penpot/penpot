@@ -80,7 +80,7 @@
 
 (defn- delete-profile-data
   [conn profile-id]
-  (log/infof "Proceding to delete all data related to profile id = %s" profile-id)
+  (log/debugf "proceding to delete all data related to profile '%s'" profile-id)
   (delete-teams conn profile-id)
   (delete-profile conn profile-id)
   true)

@@ -237,6 +237,6 @@
     (try
       (run-in-system system preset)
       (catch Exception e
-        (log/errorf e "Unhandled exception."))
+        (log/errorf e "unhandled exception"))
       (finally
         (ig/halt! system)))))

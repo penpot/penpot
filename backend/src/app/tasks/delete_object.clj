@@ -47,7 +47,7 @@
 
 (defmethod handle-deletion :default
   [_conn {:keys [type]}]
-  (log/warnf "no handler found for %s" type))
+  (log/warnf "no handler found for '%s'" type))
 
 (defmethod handle-deletion :file
   [conn {:keys [id] :as props}]

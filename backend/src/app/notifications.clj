@@ -188,7 +188,7 @@
       (aa/<? (start-loop! ws))
       (aa/<? (handle-message ws {:type :disconnect}))
       (catch Throwable err
-        (log/errorf err "Unexpected exception on websocket handler.")
+        (log/errorf err "unexpected exception on websocket handler")
         (let [session (.getSession ^WebSocketAdapter conn)]
           (when session
             (.disconnect session)))))))

@@ -143,7 +143,6 @@
   (try
     (hashers/verify attempt password)
     (catch Exception e
-      (log/warnf e "Error on verify password (only informative, nothing affected to user).")
       {:update false
        :valid false})))
 

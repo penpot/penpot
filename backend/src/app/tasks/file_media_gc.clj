@@ -98,7 +98,7 @@
         unused (->> (db/query conn :file-media-object {:file-id id})
                     (remove #(contains? used (:id %))))]
 
-    (log/infof "processing file: id='%s' age='%s' to-delete=%s" id age (count unused))
+    (log/debugf "processing file: id='%s' age='%s' to-delete=%s" id age (count unused))
 
     ;; Mark file as trimmed
     (db/update! conn :file

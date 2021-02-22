@@ -335,7 +335,7 @@
                                (-> system-config
                                    (ig/prep)
                                    (ig/init))))
-    (log/infof "Welcome to penpot! Version: '%s'."
+    (log/infof "welcome to penpot (version: '%s')"
                (:full cfg/version))))
 
 (defn stop
