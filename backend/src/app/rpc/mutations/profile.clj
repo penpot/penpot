@@ -33,7 +33,7 @@
 
 (s/def ::email ::us/email)
 (s/def ::fullname ::us/not-empty-string)
-(s/def ::lang ::us/not-empty-string)
+(s/def ::lang (s/nilable ::us/not-empty-string))
 (s/def ::path ::us/string)
 (s/def ::profile-id ::us/uuid)
 (s/def ::password ::us/not-empty-string)
@@ -204,10 +204,10 @@
 
 (s/def ::login
   (s/keys :req-un [::email ::password]
-          :opt-un [::scope]))
+          :opt-un [::scope ::invitation-token]))
 
 (sv/defmethod ::login {:auth false :rlimit :password}
-  [{:keys [pool session] :as cfg} {:keys [email password scope] :as params}]
+  [{:keys [pool session tokens] :as cfg} {:keys [email password scope] :as params}]
   (letfn [(check-password [profile password]
             (when (= (:password profile) "!")
               (ex/raise :type :validation
@@ -227,14 +227,27 @@
             profile)]
 
     (db/with-atomic [conn pool]
-      (let [prof (-> (profile/retrieve-profile-data-by-email conn email)
-                     (validate-profile)
-                     (profile/strip-private-attrs))
-            addt (profile/retrieve-additional-data conn (:id prof))
-            prof (merge prof addt)]
-        (with-meta prof
-          {:transform-response ((:create session) (:id prof))})))))
+      (let [profile (-> (profile/retrieve-profile-data-by-email conn email)
+                        (validate-profile)
+                        (profile/strip-private-attrs))
+            profile (merge profile (profile/retrieve-additional-data conn (:id profile)))]
+        (if-let [token (:invitation-token params)]
+          ;; If the request comes with an invitation token, this means
+          ;; that user wants to accept it with different user. A very
+          ;; strange case but still can happen. In this case, we
+          ;; proceed in the same way as in register: regenerate the
+          ;; invitation token and return it to the user for proper
+          ;; invitation acceptation.
+          (let [claims (tokens :verify {:token token :iss :team-invitation})
+                claims (assoc claims
+                              :member-id  (:id profile)
+                              :member-email (:email profile))
+                token  (tokens :generate claims)]
+            (with-meta {:invitation-token token}
+              {:transform-response ((:create session) (:id profile))}))
 
+          (with-meta profile
+            {:transform-response ((:create session) (:id profile))}))))))
 
 ;; --- Mutation: Logout
 
@@ -249,12 +262,20 @@
 
 ;; --- Mutation: Register if not exists
 
+(declare login-or-register)
+
 (s/def ::backend ::us/string)
 (s/def ::login-or-register
   (s/keys :req-un [::email ::fullname ::backend]))
 
 (sv/defmethod ::login-or-register {:auth false}
-  [{:keys [pool] :as cfg} {:keys [email backend fullname] :as params}]
+  [{:keys [pool] :as cfg} params]
+  (db/with-atomic [conn pool]
+    (-> (assoc cfg :conn conn)
+        (login-or-register params))))
+
+(defn login-or-register
+  [{:keys [conn] :as cfg} {:keys [email backend] :as params}]
   (letfn [(populate-additional-data [conn profile]
             (let [data (profile/retrieve-additional-data conn (:id profile))]
               (merge profile data)))
@@ -275,12 +296,11 @@
               (create-profile-initial-data conn profile)
               profile))]
 
-    (db/with-atomic [conn pool]
-      (let [profile (profile/retrieve-profile-data-by-email conn email)
-            profile (if profile
-                      (populate-additional-data conn profile)
-                      (register-profile conn params))]
-        (profile/strip-private-attrs profile)))))
+    (let [profile (profile/retrieve-profile-data-by-email conn email)
+          profile (if profile
+                    (populate-additional-data conn profile)
+                    (register-profile conn params))]
+      (profile/strip-private-attrs profile))))
 
 
 ;; --- Mutation: Update Profile (own)

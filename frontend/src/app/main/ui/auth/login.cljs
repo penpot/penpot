@@ -55,21 +55,40 @@
        (rx/subs (fn [{:keys [redirect-uri] :as rsp}]
                   (.replace js/location redirect-uri)))))
 
+(defn- login-with-ldap
+  [event params]
+  (dom/prevent-default event)
+  (dom/stop-propagation event)
+  (let [{:keys [on-error]} (meta params)]
+    (->> (rp/mutation! :login-with-ldap params)
+         (rx/subs (fn [profile]
+                    (if-let [token (:invitation-token profile)]
+                      (st/emit! (rt/nav :auth-verify-token {} {:token token}))
+                      (st/emit! (da/logged-in profile))))
+                  (fn [{:keys [type code] :as error}]
+                    (cond
+                      (and (= type :restriction)
+                           (= code :ldap-disabled))
+                      (st/emit! (dm/error (tr "errors.ldap-disabled")))
+
+                      (fn? on-error)
+                      (on-error error)))))))
+
 (mf/defc login-form
-  []
-  (let [error? (mf/use-state false)
-        form   (fm/use-form :spec ::login-form
-                            :inital {})
+  [{:keys [params] :as props}]
+  (let [error (mf/use-state false)
+        form  (fm/use-form :spec ::login-form
+                           :inital {})
 
         on-error
-        (fn [form event]
-          (reset! error? true))
+        (fn [_]
+          (reset! error (tr "errors.wrong-credentials")))
 
         on-submit
         (mf/use-callback
          (mf/deps form)
          (fn [event]
-           (reset! error? false)
+           (reset! error nil)
            (let [params (with-meta (:clean-data @form)
                           {:on-error on-error})]
              (st/emit! (da/login params)))))
@@ -78,17 +97,15 @@
         (mf/use-callback
          (mf/deps form)
          (fn [event]
-           (reset! error? false)
-           (let [params (with-meta (:clean-data @form)
-                          {:on-error on-error})]
-             (st/emit! (da/login-with-ldap params)))))]
+           (let [params (merge (:clean-data @form) params)]
+             (login-with-ldap event (with-meta params {:on-error on-error})))))]
 
     [:*
-     (when @error?
+     (when-let [message @error]
        [:& msgs/inline-banner
         {:type :warning
-         :content (tr "errors.auth.unauthorized")
-         :on-close #(reset! error? false)}])
+         :content message
+         :on-close #(reset! error nil)}])
 
      [:& fm/form {:on-submit on-submit :form form}
       [:div.fields-row
@@ -114,13 +131,13 @@
           :on-click on-submit-ldap}])]]))
 
 (mf/defc login-page
-  []
+  [{:keys [params] :as props}]
   [:div.generic-form.login-form
    [:div.form-container
     [:h1 (tr "auth.login-title")]
     [:div.subtitle (tr "auth.login-subtitle")]
 
-    [:& login-form {}]
+    [:& login-form {:params params}]
 
     [:div.links
      [:div.link-entry
@@ -130,25 +147,25 @@
 
      [:div.link-entry
       [:span (tr "auth.register") " "]
-      [:a {:on-click #(st/emit! (rt/nav :auth-register))
+      [:a {:on-click #(st/emit! (rt/nav :auth-register {} params))
            :tab-index "6"}
        (tr "auth.register-submit")]]]
 
     (when cfg/google-client-id
       [:a.btn-ocean.btn-large.btn-google-auth
-       {:on-click login-with-google}
+       {:on-click #(login-with-google % params)}
        "Login with Google"])
 
     (when cfg/gitlab-client-id
       [:a.btn-ocean.btn-large.btn-gitlab-auth
-       {:on-click login-with-gitlab}
+       {:on-click #(login-with-gitlab % params)}
        [:img.logo
         {:src "/images/icons/brand-gitlab.svg"}]
        (tr "auth.login-with-gitlab-submit")])
 
     (when cfg/github-client-id
       [:a.btn-ocean.btn-large.btn-github-auth
-       {:on-click login-with-github}
+       {:on-click #(login-with-github % params)}
        [:img.logo
         {:src "/images/icons/brand-github.svg"}]
        (tr "auth.login-with-github-submit")])

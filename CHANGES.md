@@ -15,14 +15,15 @@
 
 ### :bug: Bugs fixed
 
+- Add more improvements to french translation strings [#591](https://github.com/penpot/penpot/pull/591)
 - Add some missing database indexes (mainly improves performance on large databases on file-update rpc method, and some background tasks).
+- Fix corner cases on invitation/signup flows.
 - Fix problem width handoff code generation [Taiga #1204](https://tree.taiga.io/project/penpot/issue/1204)
 - Fix problem with indices refreshing on page changes [#646](https://github.com/penpot/penpot/issues/646)
 - Have language change notification written in the new language [Taiga #1205](https://tree.taiga.io/project/penpot/issue/1205)
 - Properly handle errors on github, gitlab and ldap auth backends.
 - Properly mark profile auth backend (on first register/ auth with 3rd party auth provider).
-- Fix corner cases on invitation/signup flows.
-- Add more improvements to french translation strings [#591](https://github.com/penpot/penpot/pull/591)
+- Refactor LDAP auth backend.
 
 
 ### :heart: Community contributions by (Thank you!)

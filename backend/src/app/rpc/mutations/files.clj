@@ -265,7 +265,7 @@
                    (assoc params :file file)))))
 
 (defn- update-file
-  [{:keys [conn] :as cfg} {:keys [file changes session-id] :as params}]
+  [{:keys [conn] :as cfg} {:keys [file changes session-id profile-id] :as params}]
   (when (> (:revn params)
            (:revn file))
     (ex/raise :type :validation
@@ -287,6 +287,7 @@
     (db/insert! conn :file-change
                 {:id (uuid/next)
                  :session-id session-id
+                 :profile-id profile-id
                  :file-id (:id file)
                  :revn (:revn file)
                  :data (:data file)

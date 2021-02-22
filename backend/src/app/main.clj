@@ -87,10 +87,7 @@
      :tokens      (ig/ref :app.tokens/tokens)
      :public-uri  (:public-uri config)
      :metrics     (ig/ref :app.metrics/metrics)
-     :google-auth (ig/ref :app.http.auth/google)
-     :gitlab-auth (ig/ref :app.http.auth/gitlab)
-     :github-auth (ig/ref :app.http.auth/github)
-     :ldap-auth   (ig/ref :app.http.auth/ldap)
+     :oauth       (ig/ref :app.http.oauth/all)
      :assets      (ig/ref :app.http.assets/handlers)
      :svgparse    (ig/ref :app.svgparse/handler)
      :storage     (ig/ref :app.storage/storage)
@@ -104,7 +101,12 @@
      :cache-max-age     (dt/duration {:hours 24})
      :signature-max-age (dt/duration {:hours 24 :minutes 5})}
 
-    :app.http.auth/google
+    :app.http.oauth/all
+    {:google (ig/ref :app.http.oauth/google)
+     :gitlab (ig/ref :app.http.oauth/gitlab)
+     :github (ig/ref :app.http.oauth/github)}
+
+    :app.http.oauth/google
     {:rpc           (ig/ref :app.rpc/rpc)
      :session       (ig/ref :app.http.session/session)
      :tokens        (ig/ref :app.tokens/tokens)
@@ -112,7 +114,7 @@
      :client-id     (:google-client-id config)
      :client-secret (:google-client-secret config)}
 
-    :app.http.auth/github
+    :app.http.oauth/github
     {:rpc           (ig/ref :app.rpc/rpc)
      :session       (ig/ref :app.http.session/session)
      :tokens        (ig/ref :app.tokens/tokens)
@@ -120,7 +122,7 @@
      :client-id     (:github-client-id config)
      :client-secret (:github-client-secret config)}
 
-    :app.http.auth/gitlab
+    :app.http.oauth/gitlab
     {:rpc           (ig/ref :app.rpc/rpc)
      :session       (ig/ref :app.http.session/session)
      :tokens        (ig/ref :app.tokens/tokens)
@@ -128,20 +130,6 @@
      :base-uri      (:gitlab-base-uri config)
      :client-id     (:gitlab-client-id config)
      :client-secret (:gitlab-client-secret config)}
-
-    :app.http.auth/ldap
-    {:host               (:ldap-auth-host config)
-     :port               (:ldap-auth-port config)
-     :ssl                (:ldap-auth-ssl config)
-     :starttls           (:ldap-auth-starttls config)
-     :user-query         (:ldap-auth-user-query config)
-     :username-attribute (:ldap-auth-username-attribute config)
-     :email-attribute    (:ldap-auth-email-attribute config)
-     :fullname-attribute (:ldap-auth-fullname-attribute config)
-     :avatar-attribute   (:ldap-auth-avatar-attribute config)
-     :base-dn            (:ldap-auth-base-dn config)
-     :session            (ig/ref :app.http.session/session)
-     :rpc                (ig/ref :app.rpc/rpc)}
 
     :app.svgparse/svgc
     {:metrics (ig/ref :app.metrics/metrics)}

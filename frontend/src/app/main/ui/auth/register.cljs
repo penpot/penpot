@@ -43,13 +43,11 @@
 (s/def ::fullname ::us/not-empty-string)
 (s/def ::password ::us/not-empty-string)
 (s/def ::email ::us/email)
-(s/def ::token ::us/not-empty-string)
+(s/def ::invitation-token ::us/not-empty-string)
 
 (s/def ::register-form
-  (s/keys :req-un [::password
-                   ::fullname
-                   ::email]
-          :opt-un [::token]))
+  (s/keys :req-un [::password ::fullname ::email]
+          :opt-un [::invitation-token]))
 
 (mf/defc register-form
   [{:keys [params] :as props}]
@@ -145,7 +143,7 @@
    [:div.links
     [:div.link-entry
      [:span (tr "auth.already-have-account") " "]
-     [:a {:on-click #(st/emit! (rt/nav :auth-login))
+     [:a {:on-click #(st/emit! (rt/nav :auth-login {} params))
           :tab-index "4"}
       (tr "auth.login-here")]]
 

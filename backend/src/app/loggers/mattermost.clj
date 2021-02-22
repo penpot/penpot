@@ -95,7 +95,7 @@
        (= k :profile-id) (assoc acc k (uuid/uuid v))
        (str/blank? v)    acc
        :else             (assoc acc k v)))
-   {}
+   {:id (uuid/next)}
    (:context event)))
 
 (defn- parse-event
