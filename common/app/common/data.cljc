@@ -302,6 +302,14 @@
        default
        v))))
 
+(defn num-string? [v]
+  ;; https://stackoverflow.com/questions/175739/built-in-way-in-javascript-to-check-if-a-string-is-a-valid-number
+  #?(:cljs (and (string? v)
+               (not (js/isNaN v))
+               (not (js/isNaN (parse-double v))))
+
+     :clj  (not= (parse-double v :nan) :nan)))
+
 (defn read-string
   [v]
   (r/read-string v))

@@ -10,16 +10,19 @@
 (ns app.main.data.workspace.svg-upload
   (:require
    [app.common.data :as d]
-   [app.util.data :as ud]
+   [app.common.geom.matrix :as gmt]
+   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.common :as dwc]
+   [app.util.color :as uc]
+   [app.util.data :as ud]
+   [app.util.geom.path :as ugp]
+   [app.util.svg :as usvg]
    [beicon.core :as rx]
    [cuerdas.core :as str]
-   [potok.core :as ptk]
-   [app.util.svg :as usvg]
-   [app.util.geom.path :as ugp]))
+   [potok.core :as ptk]))
 
 (defn- svg-dimensions [data]
   (let [width (get-in data [:attrs :width] 100)
@@ -30,40 +33,75 @@
         height (d/parse-integer height-str)]
     [width height]))
 
-(defn tag-name [tag]
-  (cond (string? tag) tag
-        (keyword? tag) (name tag)
-        (nil? tag) "node"
-        :else (str tag)))
+(defn tag->name
+  "Given a tag returns its layer name"
+  [tag]
+  (str "svg-" (cond (string? tag) tag
+                    (keyword? tag) (name tag)
+                    (nil? tag) "node"
+                    :else (str tag))))
 
-(defn setup-fill [shape attrs]
-  (let [fill-color (or (get-in attrs [:fill])
-                       (get-in attrs [:style :fill])
-                       "#000000")
-        fill-opacity (ud/parse-float (or (get-in attrs [:fill-opacity])
-                                         (get-in attrs [:style :fill-opacity])
-                                         "1"))]
-    (-> shape
-        (assoc :fill-color fill-color)
-        (assoc :fill-opacity fill-opacity))))
+(defn fix-dot-number
+  "Fixes decimal numbers starting in dot but without leading 0"
+  [num-str]
+  (if (str/starts-with? num-str ".")
+    (str "0" num-str)
+    num-str))
 
-(defn setup-stroke [shape attrs]
-  (-> shape
-      (assoc :stroke-color (:stroke attrs "#000000"))
-      (assoc :stroke-opacity (ud/parse-float (:stroke-opacity attrs 1)))
-      (assoc :stroke-style :solid)
-      (assoc :stroke-width (ud/parse-float (:stroke-width attrs "1")))
-      (assoc :stroke-alignment :center)))
-
-(defn add-style-attributes [shape {:keys [attrs]}]
+(defn setup-fill [shape]
   (cond-> shape
-    (d/any-key? attrs :fill :fill-opacity)
-    (setup-fill attrs)
-    
-    (d/any-key? attrs :stroke :stroke-width :stroke-opacity)
-    (setup-stroke attrs)))
+    ;; Color present as attribute
+    (uc/color? (get-in shape [:svg-attrs :fill]))
+    (-> (update :svg-attrs dissoc :fill)
+        (assoc :fill-color (-> (get-in shape [:svg-attrs :fill])
+                               (uc/parse-color))))
 
-(defn create-raw-svg [name frame-id svg-data element-data]
+    ;; Color present as style
+    (uc/color? (get-in shape [:svg-attrs :style :fill]))
+    (-> (update-in [:svg-attrs :style] dissoc :fill)
+        (assoc :fill-color (-> (get-in shape [:svg-attrs :style :fill])
+                               (uc/parse-color))))
+
+    (get-in shape [:svg-attrs :fill-opacity])
+    (-> (update :svg-attrs dissoc :fill-opacity)
+        (assoc :fill-opacity (-> (get-in shape [:svg-attrs :fill-opacity])
+                                 (ud/parse-float))))
+
+    (get-in shape [:svg-attrs :style :fill-opacity])
+    (-> (update :svg-attrs dissoc :fill-opacity)
+        (assoc :fill-opacity (-> (get-in shape [:svg-attrs :style :fill-opacity])
+                                 (ud/parse-float))))))
+
+(defonce default-stroke {:stroke-color "#000000"
+                         :stroke-opacity 1
+                         :stroke-alignment :center
+                         :stroke-style :svg})
+
+(defn setup-stroke [shape]
+  (let [shape
+        (cond-> shape
+          (uc/color? (get-in shape [:svg-attrs :stroke]))
+          (-> (update :svg-attrs dissoc :stroke)
+              (assoc :stroke-color (get-in shape [:svg-attrs :stroke])))
+
+          (uc/color? (get-in shape [:svg-attrs :style :stroke]))
+          (-> (update-in [:svg-attrs :style] dissoc :stroke)
+              (assoc :stroke-color (get-in shape [:svg-attrs :style :stroke])))
+
+          (get-in shape [:svg-attrs :stroke-width])
+          (-> (update :svg-attrs dissoc :stroke-width)
+              (assoc :stroke-width (-> (get-in shape [:svg-attrs :stroke-width])
+                                       (ud/parse-float))))
+
+          (get-in shape [:svg-attrs :style :stroke-width])
+          (-> (update-in [:svg-attrs :style] dissoc :stroke-width)
+              (assoc :stroke-width (-> (get-in shape [:svg-attrs :style :stroke-width])
+                                       (ud/parse-float)))))]
+    (if (d/any-key? shape :stroke-color :stroke-opacity :stroke-width)
+      (merge default-stroke shape)
+      shape)))
+
+(defn create-raw-svg [name frame-id svg-data {:keys [attrs] :as data}]
   (let [{:keys [x y width height]} svg-data]
     (-> {:id (uuid/next)
          :type :svg-raw
@@ -73,9 +111,10 @@
          :height height
          :x x
          :y y
-         :root-attrs (select-keys svg-data [:width :height])
-         :content (cond-> element-data
-                    (map? element-data) (update :attrs usvg/clean-attrs))}
+         :content (cond-> data
+                    (map? data) (update :attrs usvg/clean-attrs))}
+        (assoc :svg-attrs attrs)
+        (assoc :svg-viewbox (select-keys svg-data [0 0 :width :height]))
         (gsh/setup-selrect))))
 
 (defn create-svg-root [frame-id svg-data]
@@ -87,14 +126,20 @@
          :width width
          :height height
          :x x
-         :y y
-         :attrs (-> (get svg-data :attrs) usvg/clean-attrs)
-         ;;:content (if (map? data) (update data :attrs usvg/clean-attrs) data)
-         }
-        (gsh/setup-selrect))))
+         :y y}
+        (gsh/setup-selrect)
+        (assoc :svg-attrs (-> (:attrs svg-data)
+                              (dissoc :viewBox :xmlns))))))
 
-(defn parse-path [name frame-id {:keys [attrs] :as data}]
-  (let [content (ugp/path->content (:d attrs))
+(defn apply-svg-transform [content transform-str]
+  (let [transform (gmt/parse-matrix transform-str)]
+    (gsh/transform-content content transform)))
+
+(defn create-path-shape [name frame-id svg-data {:keys [attrs] :as data}]
+  (let [content (cond-> (ugp/path->content (:d attrs))
+                  (contains? attrs :transform)
+                  (apply-svg-transform (:transform attrs)))
+
         selrect (gsh/content->selrect content)
         points (gsh/rect->points selrect)]
     (-> {:id (uuid/next)
@@ -104,21 +149,42 @@
          :content content
          :selrect selrect
          :points points}
+        (assoc :svg-viewbox (select-keys selrect [:x :y :width :height]))
+        (assoc :svg-attrs (dissoc attrs :d :transform))
+        (gsh/translate-to-frame svg-data))))
 
-        (add-style-attributes data))))
+(defn create-group [name frame-id svg-data {:keys [attrs]}]
+  (let [{:keys [x y width height]} svg-data]
+    (-> {:id (uuid/next)
+         :type :group
+         :name name
+         :frame-id frame-id
+         :x x
+         :y y
+         :width width
+         :height height}
+        (assoc :svg-attrs attrs)
+        (assoc :svg-viewbox (select-keys svg-data [0 0 :width :height]))
+        (gsh/setup-selrect))))
 
 (defn parse-svg-element [frame-id svg-data element-data unames]
-  (let [{:keys [tag]} element-data
-        name (dwc/generate-unique-name unames (str "svg-" (tag-name tag)))]
+  (let [{:keys [tag attrs]} element-data
+        name (dwc/generate-unique-name unames (or (:id attrs) (tag->name tag)) true)
+        att-refs (usvg/find-attr-references attrs)
+        references (usvg/find-def-references (:defs svg-data) att-refs)]
     
-    (case tag
-      ;; :rect (parse-rect data)
-      ;; :path (parse-path name frame-id data)
-      (create-raw-svg name frame-id svg-data element-data))))
+    (-> (case tag
+          :g (create-group name frame-id svg-data element-data)
+          ;; :rect (parse-rect data)
+          :path (create-path-shape name frame-id (gpt/negate (gpt/point svg-data)) element-data)
+          (create-raw-svg name frame-id svg-data element-data))
+
+        (assoc :svg-defs (select-keys (:defs svg-data) references))
+        (setup-fill)
+        (setup-stroke))))
 
 (defn add-svg-child-changes [page-id objects selected frame-id parent-id svg-data ids-mappings result [index data]]
   (let [[unames [rchs uchs]] result
-        data (update data :attrs usvg/replace-attrs-ids ids-mappings)
         shape (parse-svg-element frame-id svg-data data  unames)
         shape-id (:id shape)
         [rch1 uch1] (dwc/add-shape-changes page-id objects selected shape)
@@ -163,6 +229,9 @@
                                 :width width
                                 :height height
                                 :name svg-name))
+
+            [def-nodes svg-data] (usvg/extract-defs svg-data)
+            svg-data (assoc svg-data :defs def-nodes)
 
             root-shape (create-svg-root frame-id svg-data)
             root-id (:id root-shape)

@@ -64,6 +64,7 @@
              :width width
              :height height
              :fill "transparent"
+             :stroke "none"
              :on-mouse-down handle-mouse-down
              :on-double-click handle-double-click
              :on-context-menu handle-context-menu

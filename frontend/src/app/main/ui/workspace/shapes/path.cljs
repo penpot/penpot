@@ -33,7 +33,6 @@
   {::mf/wrap-props false}
   [props]
   (let [shape (unchecked-get props "shape")
-        hover? (or (mf/deref refs/current-hover) #{})
         content-modifiers-ref (pc/make-content-modifiers-ref (:id shape))
         content-modifiers (mf/deref content-modifiers-ref)
         editing-id (mf/deref refs/selected-edition)

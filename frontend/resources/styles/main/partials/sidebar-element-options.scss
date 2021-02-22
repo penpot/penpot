@@ -709,6 +709,8 @@
 .element-set-content .input-row {
   & .element-set-subtitle {
     width: 5.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 
@@ -771,7 +773,6 @@
       min-width: 56px;
       max-height: 10rem;
     }
-
   }
 }
 

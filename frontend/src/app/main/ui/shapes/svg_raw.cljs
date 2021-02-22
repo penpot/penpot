@@ -21,7 +21,7 @@
    [rumext.alpha :as mf]))
 
 ;; Graphic tags
-(defonce graphic-element? #{ :circle :ellipse :image :line :path :polygon :polyline :rect :text #_"use"})
+(defonce graphic-element? #{:circle :ellipse :image :line :path :polygon :polyline :rect :text :use})
 
 ;; Context to store a re-mapping of the ids
 (def svg-ids-ctx (mf/create-context nil))
@@ -37,17 +37,11 @@
         (obj/set! "style" style))))
 
 (defn translate-shape [attrs shape]
-  (let [{svg-width :width svg-height :height :as root-shape} (:root-attrs shape)
-        {:keys [x y width height]} (:selrect shape)
-        transform (->> (:transform attrs "")
-                       (str (gmt/multiply
-                             (gmt/matrix)
-                             (gsh/transform-matrix shape)
-                             (gmt/translate-matrix (gpt/point x y))
-                             (gmt/scale-matrix (gpt/point (/ width svg-width) (/ height svg-height))))
-                            " "))]
+  (let [transform (str (usvg/svg-transform-matrix shape)
+                       " "
+                       (:transform attrs ""))]
     (cond-> attrs
-      (and root-shape (graphic-element? (-> shape :content :tag)))
+      (and (:svg-viewbox shape) (graphic-element? (-> shape :content :tag)))
       (assoc :transform transform))))
 
 (mf/defc svg-root
