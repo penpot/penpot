@@ -105,7 +105,7 @@
               {:name "rpc_query_timing"
                :labels ["name"]
                :registry (get-in cfg [:metrics :registry])
-               :type :summary
+               :type :histogram
                :help "Timing of query services."})
         cfg  (assoc cfg ::mobj mobj)]
     (->> (sv/scan-ns 'app.rpc.queries.projects
@@ -124,7 +124,7 @@
               {:name "rpc_mutation_timing"
                :labels ["name"]
                :registry (get-in cfg [:metrics :registry])
-               :type :summary
+               :type :histogram
                :help "Timing of mutation services."})
         cfg  (assoc cfg ::mobj mobj)]
     (->> (sv/scan-ns 'app.rpc.mutations.demo
