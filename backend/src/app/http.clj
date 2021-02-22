@@ -42,7 +42,7 @@
 
 (defmethod ig/init-key ::server
   [_ {:keys [handler ws port name metrics] :as opts}]
-  (log/infof "Starting %s server on port %s." name port)
+  (log/infof "starting '%s' server on port %s." name port)
   (let [pre-start (fn [^Server server]
                     (let [handler (doto (ErrorHandler.)
                                     (.setShowStacks true)
@@ -68,7 +68,7 @@
 
 (defmethod ig/halt-key! ::server
   [_ {:keys [server name port] :as opts}]
-  (log/infof "Stoping %s server on port %s." name port)
+  (log/infof "stoping '%s' server on port %s." name port)
   (jetty/stop-server server))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -102,11 +102,11 @@
           (try
             (let [cdata (errors/get-error-context request e)]
               (update-thread-context! cdata)
-              (log/errorf e "Unhandled exception: %s (id: %s)" (ex-message e) (str (:id cdata)))
+              (log/errorf e "unhandled exception: %s (id: %s)" (ex-message e) (str (:id cdata)))
               {:status 500
                :body "internal server error"})
             (catch Throwable e
-              (log/errorf e "Unhandled exception: %s" (ex-message e))
+              (log/errorf e "unhandled exception: %s" (ex-message e))
               {:status 500
                :body "internal server error"})))))))
 
