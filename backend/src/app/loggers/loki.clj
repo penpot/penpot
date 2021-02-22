@@ -33,13 +33,13 @@
 (defmethod ig/init-key ::reporter
   [_ {:keys [receiver uri] :as cfg}]
   (when uri
-    (log/info "Intializing loki reporter.")
+    (log/info "intializing loki reporter")
     (let [output (a/chan (a/sliding-buffer 1024))]
       (receiver :sub output)
       (a/go-loop []
         (let [msg (a/<! output)]
           (if (nil? msg)
-            (log/info "Stoping error reporting loop.")
+            (log/info "stoping error reporting loop")
             (do
               (a/<! (handle-event cfg msg))
               (recur)))))
@@ -75,10 +75,10 @@
       (if (= (:status response) 204)
         true
         (do
-          (log/errorf "Error on sending log to loki (try %s).\n%s" i (pr-str response))
+          (log/errorf "error on sending log to loki (try %s)\n%s" i (pr-str response))
           false)))
     (catch Exception e
-      (log/errorf e "Error on sending message to loki (try %s)." i)
+      (log/errorf e "error on sending message to loki (try %s)" i)
       false)))
 
 (defn- handle-event

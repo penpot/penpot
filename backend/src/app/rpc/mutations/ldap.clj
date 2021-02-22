@@ -30,7 +30,7 @@
       (try
         (ldap/connect params)
         (catch Exception e
-          (log/errorf e "Cannot connect to LDAP %s:%s"
+          (log/errorf e "cannot connect to LDAP %s:%s"
                       (get-in params [:host :address])
                       (get-in params [:host :port])))))))
 

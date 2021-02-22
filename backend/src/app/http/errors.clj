@@ -73,7 +73,7 @@
   (let [edata (ex-data error)
         cdata (get-error-context request error)]
     (update-thread-context! cdata)
-    (log/errorf error "Internal error: assertion (id: %s)" (str (:id cdata)))
+    (log/errorf error "internal error: assertion (id: %s)" (str (:id cdata)))
     {:status 500
      :body {:type :server-error
             :data (-> edata
@@ -88,7 +88,7 @@
   [error request]
   (let [cdata (get-error-context request error)]
     (update-thread-context! cdata)
-    (log/errorf error "Internal error: %s (id: %s)"
+    (log/errorf error "internal error: %s (id: %s)"
                 (ex-message error)
                 (str (:id cdata)))
     {:status 500

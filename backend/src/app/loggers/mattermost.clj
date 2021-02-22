@@ -43,14 +43,14 @@
 
 (defmethod ig/init-key ::reporter
   [_ {:keys [receiver] :as cfg}]
-  (log/info "Intializing mattermost error reporter.")
+  (log/info "intializing mattermost error reporter")
   (let [output (a/chan (a/sliding-buffer 128)
                        (filter #(= (:level %) "error")))]
     (receiver :sub output)
     (a/go-loop []
       (let [msg (a/<! output)]
         (if (nil? msg)
-          (log/info "Stoping error reporting loop.")
+          (log/info "stoping error reporting loop")
           (do
             (a/<! (handle-event cfg msg))
             (recur)))))
@@ -75,10 +75,10 @@
                               :headers {"content-type" "application/json"}
                               :body (json/encode-str {:text text})})]
       (when (not= (:status rsp) 200)
-        (log/errorf "Error on sending data to mattermost\n%s" (pr-str rsp))))
+        (log/errorf "error on sending data to mattermost\n%s" (pr-str rsp))))
 
     (catch Exception e
-      (log/error e "Unexpected exception on error reporter."))))
+      (log/error e "unexpected exception on error reporter"))))
 
 (defn- persist-on-database!
   [{:keys [pool] :as cfg} {:keys [id] :as cdata}]
@@ -116,7 +116,7 @@
           (send-mattermost-notification! cfg cdata))
         (persist-on-database! cfg cdata))
       (catch Exception e
-        (log/error e "Unexpected exception on error reporter.")))))
+        (log/error e "unexpected exception on error reporter")))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Http Handler

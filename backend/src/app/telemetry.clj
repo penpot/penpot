@@ -88,7 +88,7 @@
     (catch Exception e
       ;; We don't want notify user of a error, just log it for posible
       ;; future investigation.
-      (log/warn e (str "Unexpected error on telemetry:\n"
+      (log/warn e (str "unexpected error on telemetry:\n"
                        (when-let [edata (ex-data e)]
                          (str "ex-data: \n"
                               (with-out-str (pprint edata))))
@@ -118,4 +118,4 @@
                         data
                         data])))
     (catch Exception e
-      (log/errorf e "Error on procesing request."))))
+      (log/errorf e "error on procesing request"))))

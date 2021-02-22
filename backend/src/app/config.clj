@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.config
   "A configuration management."
@@ -80,92 +80,78 @@
    ;; :initial-data-project-name "Penpot Oboarding"
    })
 
-(s/def ::http-server-port ::us/integer)
-
-(s/def ::host ::us/string)
-(s/def ::tenant ::us/string)
-
-(s/def ::database-username (s/nilable ::us/string))
+(s/def ::allow-demo-users ::us/boolean)
+(s/def ::asserts-enabled ::us/boolean)
+(s/def ::assets-path ::us/string)
 (s/def ::database-password (s/nilable ::us/string))
 (s/def ::database-uri ::us/string)
-(s/def ::redis-uri ::us/string)
-
-(s/def ::loggers-loki-uri ::us/string)
-(s/def ::loggers-zmq-uri ::us/string)
-
-(s/def ::storage-backend ::us/keyword)
-(s/def ::storage-fs-directory ::us/string)
-(s/def ::assets-path ::us/string)
-(s/def ::storage-s3-region ::us/keyword)
-(s/def ::storage-s3-bucket ::us/string)
-
-(s/def ::media-uri ::us/string)
-(s/def ::media-directory ::us/string)
-(s/def ::asserts-enabled ::us/boolean)
-
-(s/def ::feedback-enabled ::us/boolean)
-(s/def ::feedback-destination ::us/string)
-
-(s/def ::profile-complaint-max-age ::dt/duration)
-(s/def ::profile-complaint-threshold ::us/integer)
-(s/def ::profile-bounce-max-age ::dt/duration)
-(s/def ::profile-bounce-threshold ::us/integer)
-
+(s/def ::database-username (s/nilable ::us/string))
+(s/def ::default-blob-version ::us/integer)
 (s/def ::error-report-webhook ::us/string)
-
-(s/def ::smtp-enabled ::us/boolean)
-(s/def ::smtp-default-reply-to ::us/string)
-(s/def ::smtp-default-from ::us/string)
-(s/def ::smtp-host ::us/string)
-(s/def ::smtp-port ::us/integer)
-(s/def ::smtp-username (s/nilable ::us/string))
-(s/def ::smtp-password (s/nilable ::us/string))
-(s/def ::smtp-tls ::us/boolean)
-(s/def ::smtp-ssl ::us/boolean)
-(s/def ::allow-demo-users ::us/boolean)
-(s/def ::registration-enabled ::us/boolean)
-(s/def ::registration-domain-whitelist ::us/string)
-(s/def ::public-uri ::us/string)
-
-(s/def ::srepl-host ::us/string)
-(s/def ::srepl-port ::us/integer)
-
-(s/def ::rlimits-password ::us/integer)
-(s/def ::rlimits-image ::us/integer)
-
-(s/def ::google-client-id ::us/string)
-(s/def ::google-client-secret ::us/string)
-
-(s/def ::gitlab-client-id ::us/string)
-(s/def ::gitlab-client-secret ::us/string)
-(s/def ::gitlab-base-uri ::us/string)
-
+(s/def ::feedback-destination ::us/string)
+(s/def ::feedback-enabled ::us/boolean)
 (s/def ::github-client-id ::us/string)
 (s/def ::github-client-secret ::us/string)
-
-(s/def ::ldap-host ::us/string)
-(s/def ::ldap-port ::us/integer)
-(s/def ::ldap-bind-dn ::us/string)
-(s/def ::ldap-bind-password ::us/string)
-(s/def ::ldap-ssl ::us/boolean)
-(s/def ::ldap-starttls ::us/boolean)
-(s/def ::ldap-base-dn ::us/string)
-(s/def ::ldap-user-query ::us/string)
-(s/def ::ldap-attrs-username ::us/string)
+(s/def ::gitlab-base-uri ::us/string)
+(s/def ::gitlab-client-id ::us/string)
+(s/def ::gitlab-client-secret ::us/string)
+(s/def ::google-client-id ::us/string)
+(s/def ::google-client-secret ::us/string)
+(s/def ::host ::us/string)
+(s/def ::http-server-port ::us/integer)
+(s/def ::http-session-cookie-name ::us/string)
+(s/def ::http-session-idle-max-age ::dt/duration)
+(s/def ::http-session-updater-batch-max-age ::dt/duration)
+(s/def ::http-session-updater-batch-max-size ::us/integer)
+(s/def ::initial-data-file ::us/string)
+(s/def ::initial-data-project-name ::us/string)
 (s/def ::ldap-attrs-email ::us/string)
 (s/def ::ldap-attrs-fullname ::us/string)
 (s/def ::ldap-attrs-photo ::us/string)
-
+(s/def ::ldap-attrs-username ::us/string)
+(s/def ::ldap-base-dn ::us/string)
+(s/def ::ldap-bind-dn ::us/string)
+(s/def ::ldap-bind-password ::us/string)
+(s/def ::ldap-host ::us/string)
+(s/def ::ldap-port ::us/integer)
+(s/def ::ldap-ssl ::us/boolean)
+(s/def ::ldap-starttls ::us/boolean)
+(s/def ::ldap-user-query ::us/string)
+(s/def ::loggers-loki-uri ::us/string)
+(s/def ::loggers-zmq-uri ::us/string)
+(s/def ::media-directory ::us/string)
+(s/def ::media-uri ::us/string)
+(s/def ::profile-bounce-max-age ::dt/duration)
+(s/def ::profile-bounce-threshold ::us/integer)
+(s/def ::profile-complaint-max-age ::dt/duration)
+(s/def ::profile-complaint-threshold ::us/integer)
+(s/def ::public-uri ::us/string)
+(s/def ::redis-uri ::us/string)
+(s/def ::registration-domain-whitelist ::us/string)
+(s/def ::registration-enabled ::us/boolean)
+(s/def ::rlimits-image ::us/integer)
+(s/def ::rlimits-password ::us/integer)
+(s/def ::smtp-default-from ::us/string)
+(s/def ::smtp-default-reply-to ::us/string)
+(s/def ::smtp-enabled ::us/boolean)
+(s/def ::smtp-host ::us/string)
+(s/def ::smtp-password (s/nilable ::us/string))
+(s/def ::smtp-port ::us/integer)
+(s/def ::smtp-ssl ::us/boolean)
+(s/def ::smtp-tls ::us/boolean)
+(s/def ::smtp-username (s/nilable ::us/string))
+(s/def ::srepl-host ::us/string)
+(s/def ::srepl-port ::us/integer)
+(s/def ::storage-backend ::us/keyword)
+(s/def ::storage-fs-directory ::us/string)
+(s/def ::storage-s3-bucket ::us/string)
+(s/def ::storage-s3-region ::us/keyword)
 (s/def ::telemetry-enabled ::us/boolean)
-(s/def ::telemetry-with-taiga ::us/boolean)
-(s/def ::telemetry-uri ::us/string)
 (s/def ::telemetry-server-enabled ::us/boolean)
 (s/def ::telemetry-server-port ::us/integer)
-
-(s/def ::initial-data-file ::us/string)
-(s/def ::initial-data-project-name ::us/string)
-
-(s/def ::default-blob-version ::us/integer)
+(s/def ::telemetry-uri ::us/string)
+(s/def ::telemetry-with-taiga ::us/boolean)
+(s/def ::tenant ::us/string)
 
 (s/def ::config
   (s/keys :opt-un [::allow-demo-users
@@ -185,6 +171,9 @@
                    ::google-client-id
                    ::google-client-secret
                    ::http-server-port
+                   ::http-session-updater-batch-max-age
+                   ::http-session-updater-batch-max-size
+                   ::http-session-idle-max-age
                    ::host
                    ::ldap-attrs-username
                    ::ldap-attrs-email

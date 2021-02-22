@@ -25,6 +25,11 @@
   [_]
   (ex/raise :type :not-found))
 
+(defn- run-hook
+  [hook-fn response]
+  (ex/ignoring (hook-fn))
+  response)
+
 (defn- rpc-query-handler
   [methods {:keys [profile-id] :as request}]
   (let [type   (keyword (get-in request [:path-params :type]))
@@ -50,7 +55,11 @@
         result ((get methods type default-handler) data)
         mdata  (meta result)]
     (cond->> {:status 200 :body result}
-      (fn? (:transform-response mdata)) ((:transform-response mdata) request))))
+      (fn? (:transform-response mdata))
+      ((:transform-response mdata) request)
+
+      (fn? (:before-complete mdata))
+      (run-hook (:before-complete mdata)))))
 
 (defn- wrap-with-metrics
   [cfg f mdata]
@@ -66,7 +75,7 @@
         (ex/raise :type :internal
                   :code :rlimit-not-configured
                   :hint (str/fmt "%s rlimit not configured" key)))
-      (log/tracef "Adding rlimit to '%s' rpc handler." (::sv/name mdata))
+      (log/tracef "adding rlimit to '%s' rpc handler" (::sv/name mdata))
       (fn [cfg params]
         (rlm/execute rlinst (f cfg params))))
     f))
@@ -76,7 +85,7 @@
   (let [f     (wrap-with-rlimits cfg f mdata)
         f     (wrap-with-metrics cfg f mdata)
         spec  (or (::sv/spec mdata) (s/spec any?))]
-    (log/tracef "Registering '%s' command to rpc service." (::sv/name mdata))
+    (log/tracef "registering '%s' command to rpc service" (::sv/name mdata))
     (fn [params]
       (when (and (:auth mdata true) (not (uuid? (:profile-id params))))
         (ex/raise :type :authentication
@@ -96,7 +105,7 @@
               {:name "rpc_query_timing"
                :labels ["name"]
                :registry (get-in cfg [:metrics :registry])
-               :type :summary
+               :type :histogram
                :help "Timing of query services."})
         cfg  (assoc cfg ::mobj mobj)]
     (->> (sv/scan-ns 'app.rpc.queries.projects
@@ -115,7 +124,7 @@
               {:name "rpc_mutation_timing"
                :labels ["name"]
                :registry (get-in cfg [:metrics :registry])
-               :type :summary
+               :type :histogram
                :help "Timing of mutation services."})
         cfg  (assoc cfg ::mobj mobj)]
     (->> (sv/scan-ns 'app.rpc.mutations.demo

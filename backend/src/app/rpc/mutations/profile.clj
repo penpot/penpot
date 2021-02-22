@@ -26,7 +26,6 @@
    [app.util.time :as dt]
    [buddy.hashers :as hashers]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [cuerdas.core :as str]))
 
 ;; --- Helpers & Specs
@@ -42,10 +41,12 @@
 
 ;; --- Mutation: Register Profile
 
+(declare annotate-profile-register)
 (declare check-profile-existence!)
 (declare create-profile)
 (declare create-profile-relations)
 (declare email-domain-in-whitelist?)
+(declare register-profile)
 
 (s/def ::invitation-token ::us/not-empty-string)
 (s/def ::register-profile
@@ -63,48 +64,64 @@
               :code :email-domain-is-not-allowed))
 
   (db/with-atomic [conn pool]
-    (check-profile-existence! conn params)
-    (let [profile (->> (create-profile conn params)
-                       (create-profile-relations conn))]
-      (create-profile-initial-data conn profile)
+    (let [cfg     (assoc cfg :conn conn)]
+      (register-profile cfg params))))
 
-      (if-let [token (:invitation-token params)]
-        ;; If invitation token comes in params, this is because the
-        ;; user comes from team-invitation process; in this case,
-        ;; regenerate token and send back to the user a new invitation
-        ;; token (and mark current session as logged).
-        (let [claims (tokens :verify {:token token :iss :team-invitation})
-              claims (assoc claims
-                            :member-id  (:id profile)
-                            :member-email (:email profile))
-              token  (tokens :generate claims)]
-          (with-meta
-            {:invitation-token token}
-            {:transform-response ((:create session) (:id profile))}))
+(defn- annotate-profile-register
+  "A helper for properly increase the profile-register metric once the
+  transaction is completed."
+  [metrics profile]
+  (fn []
+    (when (::created profile)
+      ((get-in metrics [:definitions :profile-register]) :inc))))
 
-        ;; If no token is provided, send a verification email
-        (let [vtoken (tokens :generate
-                             {:iss :verify-email
-                              :exp (dt/in-future "48h")
-                              :profile-id (:id profile)
-                              :email (:email profile)})
-              ptoken (tokens :generate-predefined
-                             {:iss :profile-identity
-                              :profile-id (:id profile)})]
+(defn- register-profile
+  [{:keys [conn tokens session metrics] :as cfg} params]
+  (check-profile-existence! conn params)
+  (let [profile (->> (create-profile conn params)
+                     (create-profile-relations conn))
+        profile (assoc profile ::created true)]
+    (create-profile-initial-data conn profile)
 
-          ;; Don't allow proceed in register page if the email is
-          ;; already reported as permanent bounced
-          (when (emails/has-bounce-reports? conn (:email profile))
-            (ex/raise :type :validation
-                      :code :email-has-permanent-bounces
-                      :hint "looks like the email has one or many bounces reported"))
+    (if-let [token (:invitation-token params)]
+      ;; If invitation token comes in params, this is because the
+      ;; user comes from team-invitation process; in this case,
+      ;; regenerate token and send back to the user a new invitation
+      ;; token (and mark current session as logged).
+      (let [claims (tokens :verify {:token token :iss :team-invitation})
+            claims (assoc claims
+                          :member-id  (:id profile)
+                          :member-email (:email profile))
+            token  (tokens :generate claims)
+            resp   {:invitation-token token}]
+        (with-meta resp
+          {:transform-response ((:create session) (:id profile))
+           :before-complete (annotate-profile-register metrics profile)}))
 
-          (emails/send! conn emails/register
-                        {:to (:email profile)
-                         :name (:fullname profile)
-                         :token vtoken
-                         :extra-data ptoken})
-          profile)))))
+      ;; If no token is provided, send a verification email
+      (let [vtoken (tokens :generate
+                           {:iss :verify-email
+                            :exp (dt/in-future "48h")
+                            :profile-id (:id profile)
+                            :email (:email profile)})
+            ptoken (tokens :generate-predefined
+                           {:iss :profile-identity
+                            :profile-id (:id profile)})]
+
+        ;; Don't allow proceed in register page if the email is
+        ;; already reported as permanent bounced
+        (when (emails/has-bounce-reports? conn (:email profile))
+          (ex/raise :type :validation
+                    :code :email-has-permanent-bounces
+                    :hint "looks like the email has one or many bounces reported"))
+
+        (emails/send! conn emails/register
+                      {:to (:email profile)
+                       :name (:fullname profile)
+                       :token vtoken
+                       :extra-data ptoken})
+        (with-meta profile
+          {:before-complete (annotate-profile-register metrics profile)})))))
 
 (defn email-domain-in-whitelist?
   "Returns true if email's domain is in the given whitelist or if given
@@ -142,8 +159,7 @@
   [attempt password]
   (try
     (hashers/verify attempt password)
-    (catch Exception e
-      (log/warnf e "Error on verify password (only informative, nothing affected to user).")
+    (catch Exception _e
       {:update false
        :valid false})))
 
@@ -269,10 +285,12 @@
   (s/keys :req-un [::email ::fullname ::backend]))
 
 (sv/defmethod ::login-or-register {:auth false}
-  [{:keys [pool] :as cfg} params]
+  [{:keys [pool metrics] :as cfg} params]
   (db/with-atomic [conn pool]
-    (-> (assoc cfg :conn conn)
-        (login-or-register params))))
+    (let [profile (-> (assoc cfg :conn conn)
+                      (login-or-register params))]
+      (with-meta profile
+        {:before-complete (annotate-profile-register metrics profile)}))))
 
 (defn login-or-register
   [{:keys [conn] :as cfg} {:keys [email backend] :as params}]
@@ -294,7 +312,7 @@
             (let [profile (->> (create-profile conn params)
                                (create-profile-relations conn))]
               (create-profile-initial-data conn profile)
-              profile))]
+              (assoc profile ::created true)))]
 
     (let [profile (profile/retrieve-profile-data-by-email conn email)
           profile (if profile

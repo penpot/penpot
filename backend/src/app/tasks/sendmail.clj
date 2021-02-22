@@ -10,13 +10,12 @@
 (ns app.tasks.sendmail
   (:require
    [app.config :as cfg]
-   [app.metrics :as mtx]
    [app.util.emails :as emails]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
    [integrant.core :as ig]))
 
-(declare handler)
+(declare send-console!)
 
 (s/def ::username ::cfg/smtp-username)
 (s/def ::password ::cfg/smtp-password)
@@ -29,7 +28,7 @@
 (s/def ::enabled ::cfg/smtp-enabled)
 
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::enabled ::mtx/metrics]
+  (s/keys :req-un [::enabled]
           :opt-un [::username
                    ::password
                    ::tls
@@ -40,13 +39,11 @@
                    ::default-reply-to]))
 
 (defmethod ig/init-key ::handler
-  [_ {:keys [metrics] :as cfg}]
-  (let [handler #(handler cfg %)]
-    (->> {:registry (:registry metrics)
-          :type :summary
-          :name "task_sendmail_timing"
-          :help "sendmail task timing"}
-         (mtx/instrument handler))))
+  [_ cfg]
+  (fn [{:keys [props] :as task}]
+    (if (:enabled cfg)
+      (emails/send! cfg props)
+      (send-console! cfg props))))
 
 (defn- send-console!
   [cfg email]
@@ -59,9 +56,3 @@
                 (println (.toString baos))
                 (println "******** end email "(:id email) "**********"))]
       (log/info out))))
-
-(defn handler
-  [cfg {:keys [props] :as task}]
-  (if (:enabled cfg)
-    (emails/send! cfg props)
-    (send-console! cfg props)))

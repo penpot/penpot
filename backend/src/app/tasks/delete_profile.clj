@@ -13,27 +13,16 @@
    [app.common.spec :as us]
    [app.db :as db]
    [app.db.sql :as sql]
-   [app.metrics :as mtx]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
    [integrant.core :as ig]))
 
 (declare delete-profile-data)
-(declare handler)
 
 ;; --- INIT
 
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::db/pool ::mtx/metrics]))
-
-(defmethod ig/init-key ::handler
-  [_ {:keys [metrics] :as cfg}]
-  (let [handler #(handler cfg %)]
-    (->> {:registry (:registry metrics)
-          :type :summary
-          :name "task_delete_profile_timing"
-          :help "delete profile task timing"}
-         (mtx/instrument handler))))
+  (s/keys :req-un [::db/pool]))
 
 ;; This task is responsible to permanently delete a profile with all
 ;; the dependent data. As step (1) we delete all owned teams of the
@@ -48,16 +37,17 @@
 (s/def ::profile-id ::us/uuid)
 (s/def ::props (s/keys :req-un [::profile-id]))
 
-(defn handler
-  [{:keys [pool]} {:keys [props] :as task}]
-  (us/verify ::props props)
-  (db/with-atomic [conn pool]
-    (let [id      (:profile-id props)
-          profile (db/exec-one! conn (sql/select :profile {:id id} {:for-update true}))]
-      (if (or (:is-demo profile)
-              (:deleted-at profile))
-        (delete-profile-data conn id)
-        (log/warnf "Profile %s does not match constraints for deletion" id)))))
+(defmethod ig/init-key ::handler
+  [_ {:keys [pool] :as cfg}]
+  (fn [{:keys [props] :as task}]
+    (us/verify ::props props)
+    (db/with-atomic [conn pool]
+      (let [id      (:profile-id props)
+            profile (db/exec-one! conn (sql/select :profile {:id id} {:for-update true}))]
+        (if (or (:is-demo profile)
+                (:deleted-at profile))
+          (delete-profile-data conn id)
+          (log/warnf "profile '%s' does not match constraints for deletion" id))))))
 
 ;; --- IMPL
 
@@ -80,7 +70,7 @@
 
 (defn- delete-profile-data
   [conn profile-id]
-  (log/infof "Proceding to delete all data related to profile id = %s" profile-id)
+  (log/debugf "proceding to delete all data related to profile '%s'" profile-id)
   (delete-teams conn profile-id)
   (delete-profile conn profile-id)
   true)

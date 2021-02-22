@@ -34,7 +34,7 @@
 
 (defmethod ig/init-key ::receiver
   [_ {:keys [endpoint] :as cfg}]
-  (log/infof "Intializing ZMQ receiver on '%s'." endpoint)
+  (log/infof "intializing ZMQ receiver on '%s'" endpoint)
   (let [buffer (a/chan 1)
         output (a/chan 1 (comp (filter map?)
                                (map prepare)))

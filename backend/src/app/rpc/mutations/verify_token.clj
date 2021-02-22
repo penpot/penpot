@@ -40,8 +40,15 @@
               {:id profile-id})
   claims)
 
+(defn- annotate-profile-activation
+  "A helper for properly increase the profile-activation metric once the
+  transaction is completed."
+  [metrics]
+  (fn []
+    ((get-in metrics [:definitions :profile-activation]) :inc)))
+
 (defmethod process-token :verify-email
-  [{:keys [conn session] :as cfg} _params {:keys [profile-id] :as claims}]
+  [{:keys [conn session metrics] :as cfg} _ {:keys [profile-id] :as claims}]
   (let [profile (profile/retrieve-profile conn profile-id)
         claims  (assoc claims :profile profile)]
 
@@ -56,7 +63,8 @@
                   {:id (:id profile)}))
 
     (with-meta claims
-      {:transform-response ((:create session) profile-id)})))
+      {:transform-response ((:create session) profile-id)
+       :before-complete (annotate-profile-activation metrics)})))
 
 (defmethod process-token :auth
   [{:keys [conn] :as cfg} _params {:keys [profile-id] :as claims}]
