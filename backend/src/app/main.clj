@@ -174,46 +174,56 @@
     :app.worker/worker
     {:executor   (ig/ref :app.worker/executor)
      :pool       (ig/ref :app.db/pool)
-     :tasks      (ig/ref :app.tasks/all)}
+     :tasks      (ig/ref :app.tasks/registry)}
 
     :app.worker/scheduler
     {:executor   (ig/ref :app.worker/executor)
      :pool       (ig/ref :app.db/pool)
+     :tasks      (ig/ref :app.tasks/registry)
      :schedule
      [{:id "file-media-gc"
        :cron #app/cron "0 0 0 */1 * ? *" ;; daily
-       :fn (ig/ref :app.tasks.file-media-gc/handler)}
+       :task :file-media-gc}
 
       {:id "file-xlog-gc"
        :cron #app/cron "0 0 */1 * * ?"  ;; hourly
-       :fn (ig/ref :app.tasks.file-xlog-gc/handler)}
+       :task :file-xlog-gc}
 
       {:id "storage-deleted-gc"
        :cron #app/cron "0 0 1 */1 * ?"  ;; daily (1 hour shift)
-       :fn (ig/ref :app.storage/gc-deleted-task)}
+       :task :storage-deleted-gc}
 
       {:id "storage-touched-gc"
        :cron #app/cron "0 0 2 */1 * ?"  ;; daily (2 hour shift)
-       :fn (ig/ref :app.storage/gc-touched-task)}
+       :task :storage-touched-gc}
 
       {:id "storage-recheck"
        :cron #app/cron "0 0 */1 * * ?"  ;; hourly
-       :fn (ig/ref :app.storage/recheck-task)}
+       :task :storage-recheck}
 
       {:id "tasks-gc"
        :cron #app/cron "0 0 0 */1 * ?"  ;; daily
-       :fn (ig/ref :app.tasks.tasks-gc/handler)}
+       :task :tasks-gc}
 
       (when (:telemetry-enabled config)
         {:id   "telemetry"
          :cron #app/cron "0 0 */6 * * ?" ;; every 6h
          :uri  (:telemetry-uri config)
-         :fn   (ig/ref :app.tasks.telemetry/handler)})]}
+         :task :telemetry})]}
 
-    :app.tasks/all
-    {"sendmail"       (ig/ref :app.tasks.sendmail/handler)
-     "delete-object"  (ig/ref :app.tasks.delete-object/handler)
-     "delete-profile" (ig/ref :app.tasks.delete-profile/handler)}
+    :app.tasks/registry
+    {:metrics (ig/ref :app.metrics/metrics)
+     :tasks
+     {:sendmail           (ig/ref :app.tasks.sendmail/handler)
+      :delete-object      (ig/ref :app.tasks.delete-object/handler)
+      :delete-profile     (ig/ref :app.tasks.delete-profile/handler)
+      :file-media-gc      (ig/ref :app.tasks.file-media-gc/handler)
+      :file-xlog-gc       (ig/ref :app.tasks.file-xlog-gc/handler)
+      :storage-deleted-gc (ig/ref :app.storage/gc-deleted-task)
+      :storage-touched-gc (ig/ref :app.storage/gc-touched-task)
+      :storage-recheck    (ig/ref :app.storage/recheck-task)
+      :tasks-gc           (ig/ref :app.tasks.tasks-gc/handler)
+      :telemetry          (ig/ref :app.tasks.telemetry/handler)}}
 
     :app.tasks.sendmail/handler
     {:host             (:smtp-host config)

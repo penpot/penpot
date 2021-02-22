@@ -13,6 +13,7 @@
    [app.common.geom.point :as gpt]
    [app.common.spec :as us]
    [app.db.sql :as sql]
+   [app.metrics :as mtx]
    [app.util.json :as json]
    [app.util.migrations :as mg]
    [app.util.time :as dt]
@@ -45,19 +46,21 @@
 ;; Initialization
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(declare instrument-jdbc!)
+
 (s/def ::uri ::us/not-empty-string)
 (s/def ::name ::us/not-empty-string)
 (s/def ::min-pool-size ::us/integer)
 (s/def ::max-pool-size ::us/integer)
 (s/def ::migrations map?)
-(s/def ::metrics map?)
 
 (defmethod ig/pre-init-spec ::pool [_]
-  (s/keys :req-un [::uri ::name ::min-pool-size ::max-pool-size ::migrations]))
+  (s/keys :req-un [::uri ::name ::min-pool-size ::max-pool-size ::migrations ::mtx/metrics]))
 
 (defmethod ig/init-key ::pool
-  [_ {:keys [migrations] :as cfg}]
-  (log/debugf "initialize connection pool %s with uri %s" (:name cfg) (:uri cfg))
+  [_ {:keys [migrations metrics] :as cfg}]
+  (log/infof "initialize connection pool '%s' with uri '%s'" (:name cfg) (:uri cfg))
+  (instrument-jdbc! (:registry metrics))
   (let [pool (create-pool cfg)]
     (when (seq migrations)
       (with-open [conn ^AutoCloseable (open pool)]
@@ -69,6 +72,16 @@
 (defmethod ig/halt-key! ::pool
   [_ pool]
   (.close ^HikariDataSource pool))
+
+(defn- instrument-jdbc!
+  [registry]
+  (mtx/instrument-vars!
+   [#'next.jdbc/execute-one!
+    #'next.jdbc/execute!]
+   {:registry registry
+    :type :counter
+    :name "database_query_count"
+    :help "An absolute counter of database queries."}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API & Impl

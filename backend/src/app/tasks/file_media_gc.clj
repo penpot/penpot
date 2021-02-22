@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.tasks.file-media-gc
   "A maintenance task that is responsible to purge the unused media
@@ -14,44 +14,34 @@
   (:require
    [app.common.pages.migrations :as pmg]
    [app.db :as db]
-   [app.metrics :as mtx]
    [app.util.blob :as blob]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
    [integrant.core :as ig]))
 
-(declare handler)
 (declare process-file)
 (declare retrieve-candidates)
 
 (s/def ::max-age ::dt/duration)
 
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::db/pool ::mtx/metrics ::max-age]))
+  (s/keys :req-un [::db/pool ::max-age]))
 
 (defmethod ig/init-key ::handler
-  [_ {:keys [metrics] :as cfg}]
-  (let [handler #(handler cfg %)]
-    (->> {:registry (:registry metrics)
-          :type :summary
-          :name "task_file_media_gc_timing"
-          :help "file media garbage collection task timing"}
-         (mtx/instrument handler))))
-
-(defn- handler
-  [{:keys [pool] :as cfg} _]
-  (db/with-atomic [conn pool]
-    (let [cfg (assoc cfg :conn conn)]
-      (loop [n 0]
-        (let [files (retrieve-candidates cfg)]
-          (if (seq files)
-            (do
-              (run! (partial process-file cfg) files)
-              (recur (+ n (count files))))
-            (do
-              (log/infof "finalized with total of %s processed files" n)
-              {:processed n})))))))
+  [_ {:keys [pool] :as cfg}]
+  (fn [_]
+    (db/with-atomic [conn pool]
+      (let [cfg (assoc cfg :conn conn)]
+        (loop [n 0]
+          (let [files (retrieve-candidates cfg)]
+            (if (seq files)
+              (do
+                (run! (partial process-file cfg) files)
+                (recur (+ n (count files))))
+              (do
+                (log/debugf "finalized with total of %s processed files" n)
+                {:processed n}))))))))
 
 (def ^:private
   sql:retrieve-candidates-chunk

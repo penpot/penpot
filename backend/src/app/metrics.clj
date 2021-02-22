@@ -10,17 +10,15 @@
 (ns app.metrics
   (:require
    [app.common.exceptions :as ex]
-   [app.util.time :as dt]
-   [app.worker]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
-   [integrant.core :as ig]
-   [next.jdbc :as jdbc])
+   [integrant.core :as ig])
   (:import
    io.prometheus.client.CollectorRegistry
    io.prometheus.client.Counter
    io.prometheus.client.Gauge
    io.prometheus.client.Summary
+   io.prometheus.client.Histogram
    io.prometheus.client.exporter.common.TextFormat
    io.prometheus.client.hotspot.DefaultExports
    io.prometheus.client.jetty.JettyStatisticsCollector
@@ -30,40 +28,11 @@
 (declare instrument-vars!)
 (declare instrument)
 (declare create-registry)
-
+(declare create)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Entry Point
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn- instrument-jdbc!
-  [registry]
-  (instrument-vars!
-   [#'next.jdbc/execute-one!
-    #'next.jdbc/execute!]
-   {:registry registry
-    :type :counter
-    :name "database_query_counter"
-    :help "An absolute counter of database queries."}))
-
-(defn- instrument-workers!
-  [registry]
-  (instrument-vars!
-   [#'app.worker/run-task]
-   {:registry registry
-    :type :summary
-    :name "worker_task_checkout_millis"
-    :help "Latency measured between scheduld_at and execution time."
-    :wrap (fn [rootf mobj]
-            (let [mdata (meta rootf)
-                  origf (::original mdata rootf)]
-              (with-meta
-                (fn [tasks item]
-                  (let [now (inst-ms (dt/now))
-                        sat (inst-ms (:scheduled-at item))]
-                    (mobj :observe (- now sat))
-                    (origf tasks item)))
-                {::original origf})))}))
 
 (defn- handler
   [registry _request]
@@ -73,20 +42,30 @@
     {:headers {"content-type" TextFormat/CONTENT_TYPE_004}
      :body (.toString writer)}))
 
+(s/def ::definitions
+  (s/map-of keyword? map?))
+
+(defmethod ig/pre-init-spec ::metrics [_]
+  (s/keys :opt-un [::definitions]))
+
 (defmethod ig/init-key ::metrics
-  [_ _cfg]
+  [_ {:keys [definitions] :as cfg}]
   (log/infof "Initializing prometheus registry and instrumentation.")
-  (let [registry (create-registry)]
-    (instrument-workers! registry)
-    (instrument-jdbc! registry)
+  (let [registry    (create-registry)
+        definitions (reduce-kv (fn [res k v]
+                                 (->> (assoc v :registry registry)
+                                      (create)
+                                      (assoc res k)))
+                               {}
+                               definitions)]
     {:handler (partial handler registry)
+     :definitions definitions
      :registry registry}))
 
 (s/def ::handler fn?)
 (s/def ::registry #(instance? CollectorRegistry %))
 (s/def ::metrics
   (s/keys :req-un [::registry ::handler]))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Implementation
@@ -126,7 +105,7 @@
 
       (invoke [_ cmd labels]
         (.. ^Counter instance
-            (labels labels)
+            (labels (into-array String labels))
             (inc))))))
 
 (defn make-gauge
@@ -150,19 +129,27 @@
           :dec (.dec ^Gauge instance)))
 
       (invoke [_ cmd labels]
-        (case cmd
-          :inc (.. ^Gauge instance (labels labels) (inc))
-          :dec (.. ^Gauge instance (labels labels) (dec)))))))
+        (let [labels (into-array String [labels])]
+          (case cmd
+            :inc (.. ^Gauge instance (labels labels) (inc))
+            :dec (.. ^Gauge instance (labels labels) (dec))))))))
+
+(def default-quantiles
+  [[0.75 0.02]
+   [0.99 0.001]])
 
 (defn make-summary
-  [{:keys [name help registry reg labels max-age] :or {max-age 3600} :as props}]
+  [{:keys [name help registry reg labels max-age quantiles buckets]
+    :or {max-age 3600 buckets 6 quantiles default-quantiles} :as props}]
   (let [registry (or registry reg)
         instance (doto (Summary/build)
                    (.name name)
-                   (.help help)
-                   (.maxAgeSeconds max-age)
-                   (.quantile 0.75 0.02)
-                   (.quantile 0.99 0.001))
+                   (.help help))
+        _        (when (seq quantiles)
+                   (.maxAgeSeconds ^Summary instance max-age)
+                   (.ageBuckets ^Summary instance buckets))
+        _        (doseq [[q e] quantiles]
+                   (.quantile ^Summary instance q e))
         _        (when (seq labels)
                    (.labelNames instance (into-array String labels)))
         instance (.register instance registry)]
@@ -176,7 +163,34 @@
 
       (invoke [_ cmd val labels]
         (.. ^Summary instance
-            (labels labels)
+            (labels (into-array String labels))
+            (observe val))))))
+
+(def default-histogram-buckets
+  [1 5 10 25 50 75 100 250 500 750 1000 2500 5000 7500])
+
+(defn make-histogram
+  [{:keys [name help registry reg labels buckets]
+    :or {buckets default-histogram-buckets}}]
+  (let [registry (or registry reg)
+        instance (doto (Histogram/build)
+                   (.name name)
+                   (.help help)
+                   (.buckets (into-array Double/TYPE buckets)))
+        _        (when (seq labels)
+                   (.labelNames instance (into-array String labels)))
+        instance (.register instance registry)]
+    (reify
+      clojure.lang.IDeref
+      (deref [_] instance)
+
+      clojure.lang.IFn
+      (invoke [_ cmd val]
+        (.observe ^Histogram instance val))
+
+      (invoke [_ cmd val labels]
+        (.. ^Histogram instance
+            (labels (into-array String labels))
             (observe val))))))
 
 (defn create
@@ -184,7 +198,8 @@
   (case type
     :counter (make-counter props)
     :gauge   (make-gauge props)
-    :summary (make-summary props)))
+    :summary (make-summary props)
+    :histogram (make-histogram props)))
 
 (defn wrap-counter
   ([rootf mobj]
@@ -204,7 +219,6 @@
        (assoc mdata ::original origf))))
   ([rootf mobj labels]
    (let [mdata  (meta rootf)
-         labels (into-array String labels)
          origf  (::original mdata rootf)]
      (with-meta
        (fn
@@ -241,7 +255,6 @@
 
   ([rootf mobj labels]
    (let [mdata  (meta rootf)
-         labels (into-array String labels)
          origf  (::original mdata rootf)]
      (with-meta
        (fn
@@ -282,6 +295,9 @@
       ((or wrap wrap-counter) f obj)
 
       (instance? Summary @obj)
+      ((or wrap wrap-summary) f obj)
+
+      (instance? Histogram @obj)
       ((or wrap wrap-summary) f obj)
 
       :else

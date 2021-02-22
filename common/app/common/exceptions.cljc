@@ -52,3 +52,7 @@
 (defn ex-info?
   [v]
   (instance? #?(:clj clojure.lang.ExceptionInfo :cljs cljs.core.ExceptionInfo) v))
+
+(defn exception?
+  [v]
+  (instance? #?(:clj java.lang.Throwable :cljs js/Error) v))

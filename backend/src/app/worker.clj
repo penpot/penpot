@@ -10,6 +10,7 @@
 (ns app.worker
   "Async tasks abstraction (impl)."
   (:require
+   [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
@@ -19,6 +20,7 @@
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
+   [cuerdas.core :as str]
    [integrant.core :as ig]
    [promesa.exec :as px])
   (:import
@@ -72,7 +74,7 @@
 (s/def ::queue ::us/string)
 (s/def ::parallelism ::us/integer)
 (s/def ::batch-size ::us/integer)
-(s/def ::tasks (s/map-of string? ::us/fn))
+(s/def ::tasks (s/map-of string? fn?))
 (s/def ::poll-interval ::dt/duration)
 
 (defmethod ig/pre-init-spec ::worker [_]
@@ -289,21 +291,31 @@
 (s/def ::id ::us/string)
 (s/def ::cron dt/cron?)
 (s/def ::props (s/nilable map?))
+(s/def ::task keyword?)
 
 (s/def ::scheduled-task-spec
-  (s/keys :req-un [::id ::cron ::fn]
+  (s/keys :req-un [::id ::cron ::task]
           :opt-un [::props]))
 
-(s/def ::schedule
-  (s/coll-of (s/nilable ::scheduled-task-spec)))
+(s/def ::schedule (s/coll-of (s/nilable ::scheduled-task-spec)))
 
 (defmethod ig/pre-init-spec ::scheduler [_]
-  (s/keys :req-un [::executor ::db/pool ::schedule]))
+  (s/keys :req-un [::executor ::db/pool ::schedule ::tasks]))
 
 (defmethod ig/init-key ::scheduler
-  [_ {:keys [schedule] :as cfg}]
+  [_ {:keys [schedule tasks] :as cfg}]
   (let [scheduler (Executors/newScheduledThreadPool (int 1))
-        schedule  (filter some? schedule)
+        schedule  (->> schedule
+                       (filter some?)
+                       (map (fn [{:keys [task] :as item}]
+                              (let [f (get tasks (name task))]
+                                (when-not f
+                                  (ex/raise :type :internal
+                                            :code :task-not-found
+                                            :hint (str/fmt "task %s not configured" task)))
+                                (-> item
+                                    (dissoc :task)
+                                    (assoc :fn f))))))
         cfg       (assoc cfg
                          :scheduler scheduler
                          :schedule schedule)]
@@ -351,27 +363,16 @@
   (letfn [(run-task [conn]
             (try
               (when (db/exec-one! conn [sql:lock-scheduled-task id])
-                (log/info "Executing scheduled task" id)
+                (log/debugf "executing scheduled task '%s'" id)
                 ((:fn task) task))
-              (catch Exception e
+              (catch Throwable e
                 e)))
 
-          (handle-task* [conn]
-            (let [result (run-task conn)]
-              (if (instance? Throwable result)
-                (do
-                  (log/warnf result "unhandled exception on scheduled task '%s'" id)
-                  (db/insert! conn :scheduled-task-history
-                              {:id (uuid/next)
-                               :task-id id
-                               :is-error true
-                               :reason (exception->string result)}))
-                (db/insert! conn :scheduled-task-history
-                            {:id (uuid/next)
-                             :task-id id}))))
           (handle-task []
             (db/with-atomic [conn pool]
-              (handle-task* conn)))]
+              (let [result (run-task conn)]
+                (when (ex/exception? result)
+                  (log/errorf result "unhandled exception on scheduled task '%s'" id)))))]
 
     (try
       (px/run! executor handle-task)
