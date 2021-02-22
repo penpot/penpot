@@ -10,6 +10,7 @@
 (ns app.msgbus
   "The msgbus abstraction implemented using redis as underlying backend."
   (:require
+   [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.util.blob :as blob]
    [app.util.time :as dt]
@@ -61,8 +62,8 @@
         snd-conn (.connect ^RedisClient rclient ^RedisCodec codec)
         rcv-conn (.connectPubSub ^RedisClient rclient ^RedisCodec codec)
 
-        pub-buff (a/chan (a/sliding-buffer buffer-size))
-        rcv-buff (a/chan (a/sliding-buffer buffer-size))
+        pub-buff (a/chan (a/dropping-buffer buffer-size))
+        rcv-buff (a/chan (a/dropping-buffer buffer-size))
         sub-buff (a/chan 1)
         cch      (a/chan 1)]
 
@@ -102,15 +103,15 @@
     (a/close! (::rcv-buff mdata))))
 
 (defn- impl-publish-loop
-  [conn rcv-buff cch]
+  [conn pub-buff cch]
   (let [rac (.async ^StatefulRedisConnection conn)]
     (a/go-loop []
-      (let [[val _] (a/alts! [rcv-buff cch])]
+      (let [[val _] (a/alts! [cch pub-buff] :priority true)]
         (when (some? val)
           (let [result (a/<! (impl-redis-pub rac val))]
-            (when (instance? Throwable result)
-              (log/errorf result "unexpected error on publish message to redis"))
-            (recur)))))))
+            (when (ex/exception? result)
+              (log/error result "unexpected error on publish message to redis")))
+          (recur))))))
 
 (defn- impl-subscribe-loop
   [conn rcv-buff sub-buff cch]
@@ -134,12 +135,16 @@
         (= port cch)
         nil
 
+        ;; If we receive a message on sub-buff this means that a new
+        ;; subscription is requested by the notifications module.
         (= port sub-buff)
         (let [topic  (:topic val)
               output (:chan val)
               chans  (update chans topic (fnil conj #{}) output)]
           (when (= 1 (count (get chans topic)))
-            (a/<! (impl-redis-sub conn topic)))
+            (let [result (a/<! (impl-redis-sub conn topic))]
+              (when (ex/exception? result)
+                (log/errorf result "unexpected exception on subscribing to '%s'" topic))))
           (recur chans))
 
         ;; This means we receive data from redis and we need to
@@ -153,9 +158,11 @@
                             (recur (rest chans) pending)
                             (recur (rest chans) (conj pending ch)))
                           pending))
-              chans (update chans topic #(reduce disj % pending))]
+              chans   (update chans topic #(reduce disj % pending))]
           (when (empty? (get chans topic))
-            (a/<! (impl-redis-unsub conn topic)))
+            (let [result (a/<! (impl-redis-unsub conn topic))]
+              (when (ex/exception? result)
+                (log/errorf result "unexpected exception on unsubscribing from '%s'" topic))))
           (recur chans))))))
 
 (defn- impl-redis-pub
