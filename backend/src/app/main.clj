@@ -69,7 +69,19 @@
 
     :app.http.session/session
     {:pool        (ig/ref :app.db/pool)
-     :cookie-name "auth-token"}
+     :cookie-name (:http-session-cookie-name config)}
+
+    :app.http.session/gc-task
+    {:pool        (ig/ref :app.db/pool)
+     :max-age     (:http-session-idle-max-age config)}
+
+    :app.http.session/updater
+    {:pool           (ig/ref :app.db/pool)
+     :metrics        (ig/ref :app.metrics/metrics)
+     :executor       (ig/ref :app.worker/executor)
+     :session        (ig/ref :app.http.session/session)
+     :max-batch-age  (:http-session-updater-batch-max-age config)
+     :max-batch-size (:http-session-updater-batch-max-size config)}
 
     :app.http.awsns/handler
     {:tokens  (ig/ref :app.tokens/tokens)
@@ -197,6 +209,10 @@
        :cron #app/cron "0 0 2 */1 * ?"  ;; daily (2 hour shift)
        :task :storage-touched-gc}
 
+      {:id "session-gc"
+       :cron #app/cron "0 0 3 */1 * ?"  ;; daily (3 hour shift)
+       :task :session-gc}
+
       {:id "storage-recheck"
        :cron #app/cron "0 0 */1 * * ?"  ;; hourly
        :task :storage-recheck}
@@ -223,7 +239,8 @@
       :storage-touched-gc (ig/ref :app.storage/gc-touched-task)
       :storage-recheck    (ig/ref :app.storage/recheck-task)
       :tasks-gc           (ig/ref :app.tasks.tasks-gc/handler)
-      :telemetry          (ig/ref :app.tasks.telemetry/handler)}}
+      :telemetry          (ig/ref :app.tasks.telemetry/handler)
+      :session-gc         (ig/ref :app.http.session/gc-task)}}
 
     :app.tasks.sendmail/handler
     {:host             (:smtp-host config)
