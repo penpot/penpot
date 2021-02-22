@@ -145,11 +145,12 @@
            :tab-index "5"}
        (tr "auth.forgot-password")]]
 
-     [:div.link-entry
-      [:span (tr "auth.register") " "]
-      [:a {:on-click #(st/emit! (rt/nav :auth-register {} params))
-           :tab-index "6"}
-       (tr "auth.register-submit")]]]
+     (when cfg/registration-enabled
+       [:div.link-entry
+        [:span (tr "auth.register") " "]
+        [:a {:on-click #(st/emit! (rt/nav :auth-register {} params))
+             :tab-index "6"}
+         (tr "auth.register-submit")]])]
 
     (when cfg/google-client-id
       [:a.btn-ocean.btn-large.btn-google-auth
