@@ -88,7 +88,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def initsql
-  (str "SET statement_timeout = 60000;\n"
+  (str "SET statement_timeout = 120000;\n"
        "SET idle_in_transaction_session_timeout = 120000;"))
 
 (defn- create-datasource-config
