@@ -64,6 +64,8 @@
         sub-buff (a/chan 1)
         cch      (a/chan 1)]
 
+    (log/debugf "initializing msgbus (uri: '%s')" (str uri))
+
     ;; Start the sending (publishing) loop
     (impl-publish-loop snd-conn snd-buff cch)
 

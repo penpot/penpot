@@ -144,6 +144,7 @@
         ws-send      (mtx/wrap-counter ws-send mtx-messages ["send"])]
 
     (letfn [(on-connect [conn]
+              (log/debugf "on-connect %s" (:session-id cfg))
               (mtx-aconn :inc)
               (let [sub (a/chan)
                     ws  (WebSocket. conn in out sub nil cfg)]
@@ -164,12 +165,14 @@
                   (a/close! sub))))
 
             (on-error [_conn _e]
+              (log/debugf "on-error %s" (:session-id cfg))
               (mtx-aconn :dec)
               (mtx-sessions :observe (/ (inst-ms (dt/duration-between created-at (dt/now))) 1000.0))
               (a/close! out)
               (a/close! in))
 
             (on-close [_conn _status _reason]
+              (log/debugf "on-close %s" (:session-id cfg))
               (mtx-aconn :dec)
               (mtx-sessions :observe (/ (inst-ms (dt/duration-between created-at (dt/now))) 1000.0))
               (a/close! out)
