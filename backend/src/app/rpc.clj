@@ -25,6 +25,11 @@
   [_]
   (ex/raise :type :not-found))
 
+(defn- run-hook
+  [hook-fn response]
+  (ex/ignoring (hook-fn))
+  response)
+
 (defn- rpc-query-handler
   [methods {:keys [profile-id] :as request}]
   (let [type   (keyword (get-in request [:path-params :type]))
@@ -50,7 +55,11 @@
         result ((get methods type default-handler) data)
         mdata  (meta result)]
     (cond->> {:status 200 :body result}
-      (fn? (:transform-response mdata)) ((:transform-response mdata) request))))
+      (fn? (:transform-response mdata))
+      ((:transform-response mdata) request)
+
+      (fn? (:before-complete mdata))
+      (run-hook (:before-complete mdata)))))
 
 (defn- wrap-with-metrics
   [cfg f mdata]
