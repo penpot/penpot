@@ -183,10 +183,11 @@
      :svgc    (ig/ref :app.svgparse/svgc)}
 
     :app.notifications/handler
-    {:msgbus  (ig/ref :app.msgbus/msgbus)
-     :pool    (ig/ref :app.db/pool)
-     :session (ig/ref :app.http.session/session)
-     :metrics (ig/ref :app.metrics/metrics)}
+    {:msgbus   (ig/ref :app.msgbus/msgbus)
+     :pool     (ig/ref :app.db/pool)
+     :session  (ig/ref :app.http.session/session)
+     :metrics  (ig/ref :app.metrics/metrics)
+     :executor (ig/ref :app.worker/executor)}
 
     :app.worker/executor
     {:name "worker"}

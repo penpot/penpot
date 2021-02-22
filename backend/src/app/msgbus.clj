@@ -12,12 +12,14 @@
   (:require
    [app.common.spec :as us]
    [app.util.blob :as blob]
+   [app.util.time :as dt]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
    [integrant.core :as ig]
    [promesa.core :as p])
   (:import
+   java.time.Duration
    io.lettuce.core.RedisClient
    io.lettuce.core.RedisURI
    io.lettuce.core.api.StatefulRedisConnection
@@ -59,15 +61,18 @@
         snd-conn (.connect ^RedisClient rclient ^RedisCodec codec)
         rcv-conn (.connectPubSub ^RedisClient rclient ^RedisCodec codec)
 
-        snd-buff (a/chan (a/sliding-buffer buffer-size))
+        pub-buff (a/chan (a/sliding-buffer buffer-size))
         rcv-buff (a/chan (a/sliding-buffer buffer-size))
         sub-buff (a/chan 1)
         cch      (a/chan 1)]
 
+    (.setTimeout ^StatefulRedisConnection snd-conn ^Duration (dt/duration {:seconds 10}))
+    (.setTimeout ^StatefulRedisPubSubConnection rcv-conn ^Duration (dt/duration {:seconds 10}))
+
     (log/debugf "initializing msgbus (uri: '%s')" (str uri))
 
     ;; Start the sending (publishing) loop
-    (impl-publish-loop snd-conn snd-buff cch)
+    (impl-publish-loop snd-conn pub-buff cch)
 
     ;; Start the receiving (subscribing) loop
     (impl-subscribe-loop rcv-conn rcv-buff sub-buff cch)
@@ -78,13 +83,13 @@
         ([command params]
          (a/go
            (case command
-             :pub (a/>! snd-buff params)
+             :pub (a/>! pub-buff params)
              :sub (a/>! sub-buff params)))))
 
       {::snd-conn snd-conn
        ::rcv-conn rcv-conn
        ::cch cch
-       ::snd-buff snd-buff
+       ::pub-buff pub-buff
        ::rcv-buff rcv-buff})))
 
 (defmethod ig/halt-key! ::msgbus
@@ -93,25 +98,14 @@
     (.close ^StatefulRedisConnection (::snd-conn mdata))
     (.close ^StatefulRedisPubSubConnection (::rcv-conn mdata))
     (a/close! (::cch mdata))
-    (a/close! (::snd-buff mdata))
+    (a/close! (::pub-buff mdata))
     (a/close! (::rcv-buff mdata))))
 
-(defn- impl-redis-pub
-  [rac {:keys [topic message]}]
-  (let [topic   (str topic)
-        message (blob/encode message)
-        res     (a/chan 1)]
-    (-> (.publish ^RedisAsyncCommands rac ^String topic ^bytes message)
-        (p/finally (fn [_ e]
-                     (when e (a/>!! res e))
-                     (a/close! res))))
-    res))
-
 (defn- impl-publish-loop
-  [conn in-buff cch]
+  [conn rcv-buff cch]
   (let [rac (.async ^StatefulRedisConnection conn)]
     (a/go-loop []
-      (let [[val _] (a/alts! [in-buff cch])]
+      (let [[val _] (a/alts! [rcv-buff cch])]
         (when (some? val)
           (let [result (a/<! (impl-redis-pub rac val))]
             (when (instance? Throwable result)
@@ -119,7 +113,7 @@
             (recur)))))))
 
 (defn- impl-subscribe-loop
-  [conn in-buff sub-buff cch]
+  [conn rcv-buff sub-buff cch]
   ;; Add a unique listener to connection
   (.addListener conn (reify RedisPubSubListener
                        (message [it pattern topic message])
@@ -127,14 +121,14 @@
                          ;; There are no back pressure, so we use a slidding
                          ;; buffer for cases when the pubsub broker sends
                          ;; more messages that we can process.
-                         (a/put! in-buff {:topic topic :message (blob/decode message)}))
+                         (a/>!! rcv-buff {:topic topic :message (blob/decode message)}))
                        (psubscribed [it pattern count])
                        (punsubscribed [it pattern count])
                        (subscribed [it topic count])
                        (unsubscribed [it topic count])))
 
   (a/go-loop [chans {}]
-    (let [[val port] (a/alts! [sub-buff cch in-buff] :priority true)]
+    (let [[val port] (a/alts! [sub-buff cch rcv-buff] :priority true)]
       (cond
         ;; Stop condition; just do nothing
         (= port cch)
@@ -150,7 +144,7 @@
 
         ;; This means we receive data from redis and we need to
         ;; forward it to the underlying subscriptions.
-        (= port in-buff)
+        (= port rcv-buff)
         (let [topic   (:topic val)
               pending (loop [chans   (seq (get chans topic))
                              pending #{}]
@@ -164,6 +158,16 @@
             (a/<! (impl-redis-unsub conn topic)))
           (recur chans))))))
 
+(defn- impl-redis-pub
+  [rac {:keys [topic message]}]
+  (let [topic   (str topic)
+        message (blob/encode message)
+        res     (a/chan 1)]
+    (-> (.publish ^RedisAsyncCommands rac ^String topic ^bytes message)
+        (p/finally (fn [_ e]
+                     (when e (a/>!! res e))
+                     (a/close! res))))
+    res))
 
 (defn impl-redis-sub
   [conn topic]
@@ -174,7 +178,6 @@
                      (when e (a/>!! res e))
                      (a/close! res))))
     res))
-
 
 (defn impl-redis-unsub
   [conn topic]

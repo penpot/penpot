@@ -16,6 +16,7 @@
    [app.util.async :as aa]
    [app.util.time :as dt]
    [app.util.transit :as t]
+   [app.worker :as wrk]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
@@ -39,7 +40,7 @@
 (s/def ::msgbus fn?)
 
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::msgbus ::db/pool ::session ::mtx/metrics]))
+  (s/keys :req-un [::msgbus ::db/pool ::session ::mtx/metrics ::wrk/executor]))
 
 (defmethod ig/init-key ::handler
   [_ {:keys [session metrics] :as cfg}]
@@ -132,20 +133,22 @@
       false)))
 
 (defn websocket
-  [{:keys [file-id team-id msgbus] :as cfg}]
-  (let [in           (a/chan 32)
-        out          (a/chan 32)
+  [{:keys [file-id team-id msgbus executor] :as cfg}]
+  (let [in           (a/chan (a/dropping-buffer 64))
+        out          (a/chan (a/dropping-buffer 64))
         mtx-aconn    (:mtx-active-connections cfg)
         mtx-messages (:mtx-messages cfg)
         mtx-sessions (:mtx-sessions cfg)
         created-at   (dt/now)
-
         ws-send      (mtx/wrap-counter ws-send mtx-messages ["send"])]
 
     (letfn [(on-connect [conn]
               (log/debugf "on-connect %s" (:session-id cfg))
               (mtx-aconn :inc)
-              (let [sub (a/chan)
+              ;; A subscription channel should use a lossy buffer
+              ;; because we can't penalize normal clients when one
+              ;; slow client is connected to the room.
+              (let [sub (a/chan (a/dropping-buffer 64))
                     ws  (WebSocket. conn in out sub nil cfg)]
 
                 ;; Subscribe to corresponding topics
@@ -155,8 +158,8 @@
                 ;; message forwarding loop
                 (a/go-loop []
                   (let [val (a/<! out)]
-                    (when-not (nil? val)
-                      (when (ws-send conn (t/encode-str val))
+                    (when (some? val)
+                      (when (a/<! (aa/thread-call executor #(ws-send conn (t/encode-str val))))
                         (recur)))))
 
                 (a/go
@@ -207,7 +210,7 @@
   [{:keys [in out sub session-id] :as ws}]
   (aa/go-try
    (loop []
-     (let [timeout (a/timeout 30000)
+     (let [timeout    (a/timeout 30000)
            [val port] (a/alts! [in sub timeout])]
 
        (cond
@@ -279,8 +282,8 @@
   (aa/go-try
    (aa/<? (update-presence pool file-id session-id profile-id))
    (let [members (aa/<? (retrieve-presence pool file-id))]
-     (aa/<? (msgbus :pub {:topic file-id
-                          :message {:type :presence :sessions members}})))))
+     (a/<! (msgbus :pub {:topic file-id
+                         :message {:type :presence :sessions members}})))))
 
 (defmethod handle-message :disconnect
   [{:keys [profile-id file-id session-id pool msgbus] :as ws} _message]
@@ -288,8 +291,8 @@
   (aa/go-try
    (aa/<? (delete-presence pool file-id session-id profile-id))
    (let [members (aa/<? (retrieve-presence pool file-id))]
-     (aa/<? (msgbus :pub {:topic file-id
-                          :message {:type :presence :sessions members}})))))
+     (a/<! (msgbus :pub {:topic file-id
+                         :message {:type :presence :sessions members}})))))
 
 (defmethod handle-message :keepalive
   [{:keys [profile-id file-id session-id pool] :as ws} _message]
