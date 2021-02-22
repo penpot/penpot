@@ -27,6 +27,7 @@
 - Properly handle errors on github, gitlab and ldap auth backends.
 - Properly mark profile auth backend (on first register/ auth with 3rd party auth provider).
 - Refactor LDAP auth backend.
+- Hide register screen when registration is disabled [#598](https://github.com/penpot/penpot/issues/598)
 
 
 ### :heart: Community contributions by (Thank you!)
