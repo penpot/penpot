@@ -65,14 +65,12 @@
   [path]
   (when (fs/regular-file? path)
     (let [content (json/read-value (io/as-file path))]
-      (into (sorted-map) content))))
-
-(defn- read-edn-file
-  [path]
-  (when (fs/regular-file? path)
-    (let [content (edn/read-string (slurp (io/as-file path)))]
-      (into (sorted-map) content))))
-
+      (reduce-kv (fn [res k v]
+                   (let [v (into (sorted-map) v)
+                         v (update v "translations" #(into (sorted-map) %))]
+                     (assoc res k v)))
+                 (sorted-map)
+                 content))))
 
 (defn- add-translation
   [data {:keys [code file line] :as translation}]
@@ -84,7 +82,7 @@
                             (-> state
                                 (dissoc "unused")
                                 (update "used-in" conj rpath)))))
-      (assoc data code {"translations" {"en" nil "fr" nil "es" nil "ru" nil}
+      (assoc data code {"translations" (sorted-map "en" nil "es" nil)
                         "used-in" [rpath]}))))
 
 (defn- clean-removed-translations
@@ -112,10 +110,10 @@
 
 (defn- synchronize-translations
   [data translations]
-  (loop [data (initial-cleanup data)
+  (loop [data     (initial-cleanup data)
          imported #{}
-         c (first translations)
-         r (rest translations)]
+         c        (first translations)
+         r        (rest translations)]
     (if (nil? c)
       (clean-removed-translations data imported)
       (recur (add-translation data c)
