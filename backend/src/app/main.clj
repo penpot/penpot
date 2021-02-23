@@ -61,7 +61,7 @@
     {:uri (:redis-uri config)}
 
     :app.tokens/tokens
-    {:sprops (ig/ref :app.sprops/props)}
+    {:sprops (ig/ref :app.setup/props)}
 
     :app.storage/gc-deleted-task
     {:pool     (ig/ref :app.db/pool)
@@ -295,13 +295,13 @@
     {:pool        (ig/ref :app.db/pool)
      :version     (:full cfg/version)
      :uri         (:telemetry-uri config)
-     :sprops      (ig/ref :app.sprops/props)}
+     :sprops      (ig/ref :app.setup/props)}
 
     :app.srepl/server
     {:port (:srepl-port config)
      :host (:srepl-host config)}
 
-    :app.sprops/props
+    :app.setup/props
     {:pool (ig/ref :app.db/pool)}
 
     :app.loggers.zmq/receiver

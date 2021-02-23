@@ -81,7 +81,7 @@
                                            {:id id
                                             :fullname (str "Profile " index)
                                             :password "123123"
-                                            :demo? true
+                                            :is-demo true
                                             :email (str "profile" index "@example.com")})
                     team-id  (:default-team-id prof)
                     owner-id id]
