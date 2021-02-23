@@ -112,7 +112,7 @@
                         :command "shift+v"
                         :fn #(st/emit! (dw/flip-vertical-selected))}
 
-   :flip-horizontal    {:tooltip (ds/shift "V")
+   :flip-horizontal    {:tooltip (ds/shift "H")
                         :command "shift+h"
                         :fn #(st/emit! (dw/flip-horizontal-selected))}
 
