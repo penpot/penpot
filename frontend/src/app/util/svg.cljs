@@ -10,7 +10,7 @@
 (ns app.util.svg
   (:require
    [app.common.uuid :as uuid]
-   [app.common.data :as cd]
+   [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -21,6 +21,19 @@
 (defn extract-ids [val]
   (->> (re-seq replace-regex val)
        (mapv second)))
+
+(defn fix-dot-number
+  "Fixes decimal numbers starting in dot but without leading 0"
+  [num-str]
+  (cond
+    (str/starts-with? num-str ".")
+    (str "0" num-str)
+
+    (str/starts-with? num-str "-.")
+    (str "-0" (subs num-str 1))
+
+    :else
+    num-str))
 
 (defn clean-attrs
   "Transforms attributes to their react equivalent"
@@ -59,7 +72,7 @@
   (letfn [(update-ids [key val]
             (cond
               (map? val)
-              (cd/mapm update-ids val)
+              (d/mapm update-ids val)
 
               (= key :id)
               (replace-fn val)
@@ -69,7 +82,7 @@
                     (fn [result it]
                       (str/replace result it (replace-fn it)))]
                 (reduce replace-id val (extract-ids val)))))]
-    (cd/mapm update-ids attrs)))
+    (d/mapm update-ids attrs)))
 
 (defn replace-attrs-ids
   "Replaces the ids inside a property"
@@ -119,7 +132,7 @@
 (defn find-node-references [node]
   (let [current (->> (find-attr-references (:attrs node)) (into #{}))
         children (->> (:content node) (map find-node-references) (flatten) (into #{}))]
-    (-> (cd/concat current children)
+    (-> (d/concat current children)
         (vec))))
 
 (defn find-def-references [defs references]
@@ -141,7 +154,7 @@
       :else
       (let [node (get defs to-check)
             new-refs (find-node-references node)]
-        (recur (cd/concat result new-refs)
+        (recur (d/concat result new-refs)
                (conj checked? to-check)
                (first pending)
                (rest pending))))))
@@ -165,4 +178,63 @@
 
     ;; :else
     (gmt/matrix)))
+
+;; Parse transform attributes to native matrix format so we can transform paths instead of
+;; relying in SVG transformation. This is necessary to import SVG's and not to break path tooling
+;;
+;; Transforms spec:
+;; https://www.w3.org/TR/SVG11/single-page.html#coords-TransformAttribute
+
+(def matrices-regex #"(matrix|translate|scale|rotate|skewX|skewY)\(([^\)]*)\)")
+(def params-regex #"[+-]?\d*(\.\d+)?(e[+-]?\d+)?")
+
+(defn format-translate-params [params]
+  (assert (or (= (count params) 1) (= (count params) 2)))
+  (if (= (count params) 1)
+    [(gpt/point (nth params 0))]
+    [(gpt/point (nth params 0) (nth params 1))]))
+
+(defn format-scale-params [params]
+  (assert (or (= (count params) 1) (= (count params) 2)))
+  (if (= (count params) 1)
+    [(gpt/point (nth params 0))]
+    [(gpt/point (nth params 0) (nth params 1))]))
+
+(defn format-rotate-params [params]
+  (assert (or (= (count params) 1) (= (count params) 3)) (str "??" (count params)))
+  (if (= (count params) 1)
+    [(nth params 0)]
+    [(nth params 0) (gpt/point (nth params 1) (nth params 2))]))
+
+(defn format-skew-x-params [params]
+  (assert (= (count params) 1))
+  [(nth params 0) 0])
+
+(defn format-skew-y-params [params]
+  (assert (= (count params) 1))
+  [0 (nth params 0)])
+
+(defn to-matrix [{:keys [type params]}]
+  (assert (#{"matrix" "translate" "scale" "rotate" "skewX" "skewY"} type))
+  (case type
+    "matrix"    (apply gmt/matrix params)
+    "translate" (apply gmt/translate-matrix (format-translate-params params))
+    "scale"     (apply gmt/scale-matrix (format-scale-params params))
+    "rotate"    (apply gmt/rotate-matrix (format-rotate-params params))
+    "skewX"     (apply gmt/skew-matrix (format-skew-x-params params))
+    "skewY"     (apply gmt/skew-matrix (format-skew-y-params params))))
+
+(defn parse-transform [transform-attr]
+  (when transform-attr
+    (let [process-matrix
+          (fn [[_ type params]]
+            (let [params (->> (re-seq params-regex params)
+                              (filter #(-> % first empty? not))
+                              (map (comp d/parse-double first)))]
+              {:type type :params params}))
+
+          matrices (->> (re-seq matrices-regex transform-attr)
+                        (map process-matrix)
+                        (map to-matrix))]
+      (reduce gmt/multiply (gmt/matrix) matrices))))
 

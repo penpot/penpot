@@ -15,7 +15,16 @@
    [app.util.a2c :refer [a2c]]
    [app.util.data :as d]
    [app.util.geom.path-impl-simplify :as impl-simplify]
+   [app.util.svg :as usvg]
    [cuerdas.core :as str]))
+
+(defn calculate-opposite-handler
+  "Given a point and its handler, gives the symetric handler"
+  [point handler]
+  (let [handler-vector (gpt/to-vec point handler)]
+    (gpt/add point (gpt/negate handler-vector))))
+
+;;;
 
 (defn simplify
   ([points]
@@ -33,11 +42,6 @@
 
 (def flag-regex #"[01]")
 
-(defn fix-dot-number [val]
-  (if (str/starts-with? val ".")
-    (str "0" val)
-    val))
-
 (defn extract-params [cmd-str extract-commands]
   (loop [result []
          extract-idx 0
@@ -51,7 +55,7 @@
           match (re-find regex remain)]
 
       (if match
-        (let [value (-> match first fix-dot-number d/read-string)
+        (let [value (-> match first usvg/fix-dot-number d/read-string)
               remain (str/replace-first remain regex "")
               current (assoc current param value)
               extract-idx (inc extract-idx)
@@ -144,8 +148,8 @@
 
 (defmethod parse-command "S" [cmd]
   (let [relative (str/starts-with? cmd "s")
-        param-list (extract-params cmd [[:c1x :number]
-                                        [:c2y :number]
+        param-list (extract-params cmd [[:cx :number]
+                                        [:cy :number]
                                         [:x  :number]
                                         [:y  :number]])]
     (for [params param-list]
@@ -155,8 +159,8 @@
 
 (defmethod parse-command "Q" [cmd]
   (let [relative (str/starts-with? cmd "s")
-        param-list (extract-params cmd [[:c1x :number]
-                                        [:c1y :number]
+        param-list (extract-params cmd [[:cx :number]
+                                        [:cy :number]
                                         [:x   :number]
                                         [:y   :number]])]
     (for [params param-list]
@@ -203,12 +207,13 @@
         param-list (command->param-list entry)]
     (str/fmt "%s%s" command-str (str/join " " param-list))))
 
-(defn cmd-pos [{:keys [params]}]
-  (when (and (contains? params :x)
-             (contains? params :y))
-    (gpt/point params)))
+(defn cmd-pos [prev-pos {:keys [relative params]}]
+  (let [{:keys [x y] :or {x (:x prev-pos) y (:y prev-pos)}} params]
+    (if relative
+      (-> prev-pos (update :x + x) (update :y + y))
+      (gpt/point x y))))
 
-(defn arc->beziers [prev command]
+(defn arc->beziers [from-p command]
   (let [to-command
         (fn [[_ _ c1x c1y c2x c2y x y]]
           {:command :curve-to
@@ -217,7 +222,7 @@
                     :c2x c2x :c2y c2y
                     :x   x   :y   y}})
 
-        {from-x :x from-y :y} (:params prev)
+        {from-x :x from-y :y} from-p
         {:keys [rx ry x-axis-rotation large-arc-flag sweep-flag x y]} (:params command)
         result (a2c from-x from-y x y large-arc-flag sweep-flag rx ry x-axis-rotation)]
     
@@ -227,35 +232,99 @@
   "Removes some commands and convert relative to absolute coordinates"
   [commands]
 
-  (let [simplify-command
+  (let [smooth->curve (fn [{:keys [params]} pos]
+                        {:c1x (:x pos)
+                         :c1y (:y pos)
+                         :c2x (:cx params)
+                         :c2y (:cy params)})
+
+        quadratic->curve (fn [{:keys [params]} pos]
+                           (let [sp (gpt/point (:x pos) (:y pos)) ;; start point
+                                 ep (gpt/point (:x params) (:y params)) ;; end-point
+                                 cp (gpt/point (:cx params) (:cy params)) ;; control-point
+
+                                 cp1 (-> (gpt/to-vec sp cp)
+                                         (gpt/scale (/ 2 3))
+                                         (gpt/add sp))
+
+                                 cp2 (-> (gpt/to-vec ep cp)
+                                         (gpt/scale (/ 2 3))
+                                         (gpt/add ep))]
+
+                             {:c1x (:x cp1)
+                              :c1y (:y cp1)
+                              :c2x (:x cp2)
+                              :c2y (:y cp2)}))
+
+
+        smooth-quadratic->curve (fn [cmd {:keys [params]} pos]
+                                  (let [point (gpt/point (:x params) (:y params))
+                                        handler (gpt/point (:cx params) (:cy params))
+                                        oh (calculate-opposite-handler point handler)]
+                                    (quadratic->curve (update cmd :params assoc :cx (:x oh) :cy (:y oh)) pos)))
+        
+        simplify-command
         (fn [[pos result] [command prev]]
           (let [command
+                (cond-> command
+                  (:relative command)
+                  (-> (assoc :relative false)
+                      (cd/update-in-when [:params :c1x] + (:x pos))
+                      (cd/update-in-when [:params :c1y] + (:y pos))
+                      
+                      (cd/update-in-when [:params :c2x] + (:x pos))
+                      (cd/update-in-when [:params :c2y] + (:y pos))
+
+                      (cd/update-in-when [:params :cx] + (:x pos))
+                      (cd/update-in-when [:params :cy] + (:y pos))
+                      
+                      (cd/update-in-when [:params :x] + (:x pos))
+                      (cd/update-in-when [:params :y] + (:y pos))
+
+                      (cond->
+                        (= :line-to-horizontal (:command command))
+                        (cd/update-in-when [:params :value] + (:x pos))  
+                        
+                        (= :line-to-vertical (:command command))
+                        (cd/update-in-when [:params :value] + (:y pos)))))
+
+                params (:params command)
+                command
                 (cond-> command
                   (= :line-to-horizontal (:command command))
                   (-> (assoc :command :line-to)
                       (update :params dissoc :value)
-                      (assoc-in [:params :x] (get-in command [:params :value]))
-                      (assoc-in [:params :y] (if (:relative command) 0 (:y pos))))
+                      (assoc-in [:params :x] (:value params))
+                      (assoc-in [:params :y] (:y pos)))
 
                   (= :line-to-vertical (:command command))
                   (-> (assoc :command :line-to)
                       (update :params dissoc :value)
-                      (assoc-in [:params :y] (get-in command [:params :value]))
-                      (assoc-in [:params :x] (if (:relative command) 0 (:x pos))))
+                      (assoc-in [:params :y] (:value params))
+                      (assoc-in [:params :x] (:x pos)))
 
-                  (:relative command)
-                  (-> (assoc :relative false)
-                      (cd/update-in-when [:params :x] + (:x pos))
-                      (cd/update-in-when [:params :y] + (:y pos))))
+                  (= :smooth-curve-to (:command command))
+                  (-> (assoc :command :curve-to)
+                      (update :params dissoc :cx :cy)
+                      (update :params merge (smooth->curve command pos)))
+
+                  (= :quadratic-bezier-curve-to (:command command))
+                  (-> (assoc :command :curve-to)
+                      (update :params dissoc :cx :cy)
+                      (update :params merge (quadratic->curve command pos)))
+
+                  (= :smooth-quadratic-bezier-curve-to (:command command))
+                  (-> (assoc :command :curve-to)
+                      (update :params merge (smooth-quadratic->curve command prev pos))))
                 
                 result #_(conj result command)
                 (if (= :elliptical-arc (:command command))
-                         (cd/concat result (arc->beziers prev command))
-                         (conj result command))]
-            [(cmd-pos command) result]))
+                  (cd/concat result (arc->beziers pos command))
+                  (conj result command))]
+            [(cmd-pos pos command) result]))
 
         start (first commands)
-        start-pos (cmd-pos start)]
+        start-pos (gpt/point (:params start))]
 
     
     (->> (map vector (rest commands) commands)

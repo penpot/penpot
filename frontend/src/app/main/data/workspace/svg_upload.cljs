@@ -41,13 +41,6 @@
                     (nil? tag) "node"
                     :else (str tag))))
 
-(defn fix-dot-number
-  "Fixes decimal numbers starting in dot but without leading 0"
-  [num-str]
-  (if (str/starts-with? num-str ".")
-    (str "0" num-str)
-    num-str))
-
 (defn setup-fill [shape]
   (cond-> shape
     ;; Color present as attribute
@@ -97,7 +90,8 @@
           (-> (update-in [:svg-attrs :style] dissoc :stroke-width)
               (assoc :stroke-width (-> (get-in shape [:svg-attrs :style :stroke-width])
                                        (ud/parse-float)))))]
-    (if (d/any-key? shape :stroke-color :stroke-opacity :stroke-width)
+    shape
+    #_(if (d/any-key? shape :stroke-color :stroke-opacity :stroke-width)
       (merge default-stroke shape)
       shape)))
 
@@ -131,14 +125,13 @@
         (assoc :svg-attrs (-> (:attrs svg-data)
                               (dissoc :viewBox :xmlns))))))
 
-(defn apply-svg-transform [content transform-str]
-  (let [transform (gmt/parse-matrix transform-str)]
-    (gsh/transform-content content transform)))
-
 (defn create-path-shape [name frame-id svg-data {:keys [attrs] :as data}]
-  (let [content (cond-> (ugp/path->content (:d attrs))
-                  (contains? attrs :transform)
-                  (apply-svg-transform (:transform attrs)))
+  (let [svg-transform (usvg/parse-transform (:transform attrs))
+        content (cond-> (ugp/path->content (:d attrs))
+                  svg-transform
+                  (gsh/transform-content svg-transform))
+
+        attrs (d/update-when attrs :transform #(-> (usvg/parse-transform %) str))
 
         selrect (gsh/content->selrect content)
         points (gsh/rect->points selrect)]
@@ -151,7 +144,8 @@
          :points points}
         (assoc :svg-viewbox (select-keys selrect [:x :y :width :height]))
         (assoc :svg-attrs (dissoc attrs :d :transform))
-        #_(gsh/translate-to-frame svg-data))))
+        (assoc :svg-transform svg-transform)
+        (gsh/translate-to-frame svg-data))))
 
 (defn create-group [name frame-id svg-data {:keys [attrs]}]
   (let [{:keys [x y width height]} svg-data]
@@ -208,37 +202,42 @@
   (ptk/reify ::svg-uploaded
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [page-id (:current-page-id state)
-            objects (dwc/lookup-page-objects state page-id)
-            frame-id (cp/frame-id-by-position objects {:x x :y y})
-            selected (get-in state [:workspace-local :selected])
+      (try
+        (let [page-id (:current-page-id state)
+              objects (dwc/lookup-page-objects state page-id)
+              frame-id (cp/frame-id-by-position objects {:x x :y y})
+              selected (get-in state [:workspace-local :selected])
 
-            [width height] (svg-dimensions svg-data)
-            x (- x (/ width 2))
-            y (- y (/ height 2))
+              [width height] (svg-dimensions svg-data)
+              x (- x (/ width 2))
+              y (- y (/ height 2))
 
-            unames (dwc/retrieve-used-names objects)
+              unames (dwc/retrieve-used-names objects)
 
-            svg-name (->> (str/replace (:name svg-data) ".svg" "")
-                          (dwc/generate-unique-name unames))
+              svg-name (->> (str/replace (:name svg-data) ".svg" "")
+                            (dwc/generate-unique-name unames))
 
-            ids-mappings (usvg/generate-id-mapping svg-data)
-            svg-data (-> svg-data
-                         (assoc :x x
-                                :y y
-                                :width width
-                                :height height
-                                :name svg-name))
+              ids-mappings (usvg/generate-id-mapping svg-data)
+              svg-data (-> svg-data
+                           (assoc :x x
+                                  :y y
+                                  :width width
+                                  :height height
+                                  :name svg-name))
 
-            [def-nodes svg-data] (usvg/extract-defs svg-data)
-            svg-data (assoc svg-data :defs def-nodes)
+              [def-nodes svg-data] (usvg/extract-defs svg-data)
+              svg-data (assoc svg-data :defs def-nodes)
 
-            root-shape (create-svg-root frame-id svg-data)
-            root-id (:id root-shape)
+              root-shape (create-svg-root frame-id svg-data)
+              root-id (:id root-shape)
 
-            changes (dwc/add-shape-changes page-id objects selected root-shape)
+              changes (dwc/add-shape-changes page-id objects selected root-shape)
 
-            reducer-fn (partial add-svg-child-changes page-id objects selected frame-id root-id svg-data ids-mappings)
-            [_ [rchanges uchanges]] (reduce reducer-fn [unames changes] (d/enumerate (:content svg-data)))]
-        (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
-               (dwc/select-shapes (d/ordered-set root-id)))))))
+              reducer-fn (partial add-svg-child-changes page-id objects selected frame-id root-id svg-data ids-mappings)
+              [_ [rchanges uchanges]] (reduce reducer-fn [unames changes] (d/enumerate (:content svg-data)))]
+          (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
+                 (dwc/select-shapes (d/ordered-set root-id))))
+
+        (catch :default e
+          (.error js/console e))
+        ))))

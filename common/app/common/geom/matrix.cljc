@@ -23,21 +23,12 @@
   (toString [_]
     (str "matrix(" a "," b "," c "," d "," e "," f ")")))
 
-(defonce matrix-regex #"matrix\((.*),(.*),(.*),(.*),(.*),(.*)\)")
-
 (defn matrix
   "Create a new matrix instance."
   ([]
    (Matrix. 1 0 0 1 0 0))
   ([a b c d e f]
    (Matrix. a b c d e f)))
-
-(defn parse-matrix [mtx]
-  (let [[_ a b c d e f] (re-matches matrix-regex mtx)]
-    (->> [a b c d e f]
-         (map str/trim)
-         (map d/parse-double)
-         (apply matrix))))
 
 (defn multiply
   ([{m1a :a m1b :b m1c :c m1d :d m1e :e m1f :f}
@@ -63,8 +54,6 @@
   "Return true if `v` is Matrix instance."
   [v]
   (instance? Matrix v))
-
-
 
 (def base (matrix))
 
