@@ -25,7 +25,7 @@ const plugins = [
     'inlineStyles',
     'minifyStyles',
     // 'convertStyleToAttrs'
-    'cleanupIDs',
+    // 'cleanupIDs',
     // 'prefixIds',
     // 'removeRasterImages',
     // 'removeUselessDefs',
@@ -43,7 +43,7 @@ const plugins = [
     'convertEllipseToCircle',
     // 'moveElemsAttrsToGroup',
     'moveGroupAttrsToElems',
-    'collapseGroups',
+    // 'collapseGroups',
     {'convertPathData': {
         'lineShorthands': false,
         'curveSmoothShorthands': false,

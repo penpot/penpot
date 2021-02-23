@@ -151,7 +151,7 @@
          :points points}
         (assoc :svg-viewbox (select-keys selrect [:x :y :width :height]))
         (assoc :svg-attrs (dissoc attrs :d :transform))
-        (gsh/translate-to-frame svg-data))))
+        #_(gsh/translate-to-frame svg-data))))
 
 (defn create-group [name frame-id svg-data {:keys [attrs]}]
   (let [{:keys [x y width height]} svg-data]
