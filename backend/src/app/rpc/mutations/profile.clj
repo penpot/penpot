@@ -466,15 +466,15 @@
 
     (db/with-atomic [conn pool]
       (when-let [profile (profile/retrieve-profile-data-by-email conn email)]
-        (when-not (:is-active profile)
-          (ex/raise :type :validation
-                    :code :profile-not-verified
-                    :hint "the user need to validate profile before recover password"))
-
         (when-not (emails/allow-send-emails? conn profile)
           (ex/raise :type :validation
                     :code :profile-is-muted
                     :hint "looks like the profile has reported repeatedly as spam or has permanent bounces."))
+
+        (when-not (:is-active profile)
+          (ex/raise :type :validation
+                    :code :profile-not-verified
+                    :hint "the user need to validate profile before recover password"))
 
         (when (emails/has-bounce-reports? conn (:email profile))
           (ex/raise :type :validation
