@@ -115,7 +115,7 @@
                 :fullname (str "Profile " i)
                 :email (str "profile" i ".test@nodomain.com")
                 :password "123123"
-                :demo? true}]
+                :is-demo true}]
     (->> (#'profile/create-profile conn params)
          (#'profile/create-profile-relations conn))))
 
@@ -159,7 +159,7 @@
                         :fullname (str "Profile " i)
                         :email (str "profile" i ".test@nodomain.com")
                         :password "123123"
-                        :demo? false}
+                        :is-demo false}
                        params)]
      (->> (#'profile/create-profile conn params)
           (#'profile/create-profile-relations conn)))))

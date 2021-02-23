@@ -163,28 +163,26 @@
       {:update false
        :valid false})))
 
-(defn- create-profile
+(defn create-profile
   "Create the profile entry on the database with limited input
   filling all the other fields with defaults."
-  [conn {:keys [id fullname email password demo? props is-active is-muted]
-         :or {is-active false is-muted false}
-         :as params}]
-  (let [id       (or id (uuid/next))
-        demo?    (if (boolean? demo?) demo? false)
-        active?  (if demo? true is-active)
-        props    (db/tjson (or props {}))
-        password (derive-password password)]
+  [conn {:keys [id fullname email password props is-active is-muted is-demo opts]
+         :or {is-active false is-muted false is-demo false}}]
+  (let [id        (or id (uuid/next))
+        is-active (if is-demo true is-active)
+        props     (db/tjson (or props {}))
+        password  (derive-password password)
+        params    {:id id
+                   :fullname fullname
+                   :email (str/lower email)
+                   :auth-backend "penpot"
+                   :password password
+                   :props props
+                   :is-active is-active
+                   :is-muted is-muted
+                   :is-demo is-demo}]
     (try
-      (-> (db/insert! conn :profile
-                      {:id id
-                       :fullname fullname
-                       :email (str/lower email)
-                       :auth-backend "penpot"
-                       :password password
-                       :props props
-                       :is-active active?
-                       :is-muted is-muted
-                       :is-demo demo?})
+      (-> (db/insert! conn :profile params opts)
           (update :props db/decode-transit-pgobject))
       (catch org.postgresql.util.PSQLException e
         (let [state (.getSQLState e)]
@@ -195,7 +193,7 @@
                       :cause e)))))))
 
 
-(defn- create-profile-relations
+(defn create-profile-relations
   [conn profile]
   (let [team (teams/create-team conn {:profile-id (:id profile)
                                       :name "Default"

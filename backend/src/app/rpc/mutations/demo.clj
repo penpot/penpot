@@ -36,7 +36,7 @@
         params   {:id id
                   :email email
                   :fullname fullname
-                  :demo? true
+                  :is-demo true
                   :password password
                   :props {:onboarding-viewed true}}]
 
