@@ -32,9 +32,9 @@
       <AppenderRef ref="main" level="debug" />
     </Logger>
 
-    <Logger name="app" level="debug" additivity="false">
-      <AppenderRef ref="main" level="debug" />
-      <AppenderRef ref="zmq" level="debug" />
+    <Logger name="app" level="trace" additivity="false">
+      <AppenderRef ref="main" level="trace" />
+      <AppenderRef ref="zmq" level="trace" />
     </Logger>
 
     <Logger name="user" level="debug" additivity="false">
