@@ -20,9 +20,10 @@
   </Appenders>
 
   <Loggers>
-    <Logger name="com.zaxxer.hikari" level="error" additivity="false" />
-    <Logger name="org.eclipse.jetty" level="error" additivity="false" />
-    <Logger name="io.lettuce" level="error" additivity="false" />
+    <Logger name="app.http.awsns" level="info" />
+    <Logger name="com.zaxxer.hikari" level="error"/>
+    <Logger name="io.lettuce" level="error" />
+    <Logger name="org.eclipse.jetty" level="error" />
 
     <Logger name="app.cli" level="debug" additivity="false">
       <AppenderRef ref="console"/>
@@ -34,11 +35,11 @@
 
     <Logger name="app" level="trace" additivity="false">
       <AppenderRef ref="main" level="trace" />
-      <AppenderRef ref="zmq" level="trace" />
+      <AppenderRef ref="zmq" level="debug" />
     </Logger>
 
-    <Logger name="user" level="debug" additivity="false">
-      <AppenderRef ref="main" level="debug" />
+    <Logger name="user" level="trace" additivity="false">
+      <AppenderRef ref="main" level="trace" />
       <AppenderRef ref="zmq" level="debug" />
     </Logger>
 
