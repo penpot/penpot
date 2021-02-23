@@ -147,7 +147,7 @@
           (mcnt :inc)
           (if (ex/exception? result)
             (log/error result "updater: unexpected error on update sessions")
-            (log/debugf "updater: updated %s sessions (reason: %s)." result (name reason)))
+            (log/tracef "updater: updated %s sessions (reason: %s)." result (name reason)))
           (recur))))))
 
 (defn- timeout-chan
