@@ -27,8 +27,9 @@
         options (gobj/get props "options")
         is-selectable (gobj/get props "selectable")
         selected (gobj/get props "selected")
-        top (gobj/get props "top")
-        left (gobj/get props "left")
+        top (gobj/get props "top" 0)
+        left (gobj/get props "left" 0)
+        fixed? (gobj/get props "fixed?" false)
 
         offset (mf/use-state 0)
 
@@ -36,7 +37,7 @@
         (mf/use-callback
          (mf/deps top @offset)
          (fn [node]
-           (when node
+           (when (and node (not fixed?))
              (let [{node-height :height}   (dom/get-bounding-rect node)
                    {window-height :height} (dom/get-window-size)
                    target-offset (if (> (+ top node-height) window-height)
@@ -49,6 +50,7 @@
     (when open?
       [:> dropdown' props
        [:div.context-menu {:class (classnames :is-open open?
+                                              :fixed fixed?
                                               :is-selectable is-selectable)
                            :style {:top (+ top @offset)
                                    :left left}}

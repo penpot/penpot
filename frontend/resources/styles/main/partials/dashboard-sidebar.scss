@@ -162,7 +162,7 @@
       overflow: unset;
     }
 
-    li {
+    & > li {
       align-items: center;
       cursor: pointer;
       display: flex;

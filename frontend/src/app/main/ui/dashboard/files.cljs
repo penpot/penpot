@@ -15,6 +15,7 @@
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.dashboard.grid :refer [grid]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
+   [app.main.ui.dashboard.project-menu :refer [project-menu]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t]]
@@ -45,23 +46,6 @@
          (mf/deps project)
          (st/emitf (dd/toggle-project-pin project)))
 
-        delete-fn
-        (mf/use-callback
-         (mf/deps project)
-         (fn [event]
-           (st/emit! (dd/delete-project project)
-                     (rt/nav :dashboard-projects {:team-id (:id team)}))))
-
-        on-delete
-        (mf/use-callback
-         (mf/deps project)
-         (st/emitf (modal/show
-                    {:type :confirm
-                     :title (t locale "modals.delete-project-confirm.title")
-                     :message (t locale "modals.delete-project-confirm.message")
-                     :accept-label (t locale "modals.delete-project-confirm.accept")
-                     :on-accept delete-fn})))
-
         on-create-clicked
         (mf/use-callback
          (mf/deps project)
@@ -81,12 +65,14 @@
                                        (st/emit! (dd/rename-project (assoc project :name name)))
                                        (swap! local assoc :edition false))}]
          [:div.dashboard-title
-          [:h1 (:name project)]
-          [:div.icon {:on-click on-menu-click} i/actions]
-          [:& context-menu {:on-close on-menu-close
-                            :show (:menu-open @local)
-                            :options [[(t locale "labels.rename") on-edit]
-                                      [(t locale "labels.delete") on-delete]]}]
+          [:h1 {:on-double-click on-edit}
+           (:name project)]
+          [:div.icon {:on-click on-menu-click}
+           i/actions]
+          [:& project-menu {:project project
+                            :show? (:menu-open @local)
+                            :on-edit on-edit
+                            :on-menu-close on-menu-close}]
           [:div.icon.pin-icon
            {:class (when (:is-pinned project) "active")
             :on-click toggle-pin}

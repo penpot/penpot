@@ -21,6 +21,10 @@
     visibility: visible;
 }
 
+.context-menu.fixed {
+    position: fixed;
+}
+
 .context-menu-items {
     background: $color-white;
     border-radius: $br-small;

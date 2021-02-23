@@ -65,6 +65,7 @@
          (mf/deps project)
          (st/emitf (rt/nav :dashboard-files {:team-id (:team-id project)
                                              :project-id (:id project)})))
+
         toggle-pin
         (mf/use-callback
          (mf/deps project)
@@ -87,7 +88,6 @@
            (let [mdata  {:on-success on-file-created}
                  params {:project-id (:id project)}]
              (st/emit! (dd/create-file (with-meta params mdata))))))]
-
 
     [:div.dashboard-project-row {:class (when first? "first")}
      [:div.project
