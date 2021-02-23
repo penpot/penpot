@@ -15,6 +15,7 @@
 
 - Add emailcatcher and ldap test containers to devenv. [#506](https://github.com/penpot/penpot/pull/506)
 - Add major refactor of internal pubsub/redis code; improves scalability and performance [#640](https://github.com/penpot/penpot/pull/640)
+- Add more chinese transtions [#687](https://github.com/penpot/penpot/pull/687)
 - Add more presets for artboard [#654](https://github.com/penpot/penpot/pull/654)
 - Add optional loki integration [#645](https://github.com/penpot/penpot/pull/645)
 - Add proper http session lifecycle handling.
