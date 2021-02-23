@@ -40,6 +40,10 @@
         on-edit
         (mf/use-callback #(swap! local assoc :edition true :menu-open false))
 
+        toggle-pin
+        (mf/use-callback
+         (mf/deps project)
+         (st/emitf (dd/toggle-project-pin project)))
 
         delete-fn
         (mf/use-callback
@@ -82,7 +86,11 @@
           [:& context-menu {:on-close on-menu-close
                             :show (:menu-open @local)
                             :options [[(t locale "labels.rename") on-edit]
-                                      [(t locale "labels.delete") on-delete]]}]]))
+                                      [(t locale "labels.delete") on-delete]]}]
+          [:div.icon.pin-icon
+           {:class (when (:is-pinned project) "active")
+            :on-click toggle-pin}
+           i/pin]]))
      [:a.btn-secondary.btn-small {:on-click on-create-clicked}
       (t locale "dashboard.new-file")]]))
 
