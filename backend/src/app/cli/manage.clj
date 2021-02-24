@@ -108,7 +108,8 @@
   ;; An option with a required argument
   [["-u" "--email EMAIL" "Email Address"]
    ["-p" "--password PASSWORD" "Password"]
-   ["-n" "--name FULLNAME" "Full Name"]
+   ["-n" "--name FULLNAME" "Full Name"
+    :id :fullname]
    ["-v" nil "Verbosity level"
     :id :verbosity
     :default 1
