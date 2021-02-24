@@ -32,14 +32,14 @@
 
 (mf/defc font-select-optgroups
   {::mf/wrap [mf/memo]}
-  []
+  [{:keys [locale] :as props}]
   [:*
-   [:optgroup {:label "Local"}
+   [:optgroup {:label (t locale "workspace.options.text-options.preset")}
     (for [font fonts/local-fonts]
       [:option {:value (:id font)
                 :key (:id font)}
        (:name font)])]
-   [:optgroup {:label "Google"}
+   [:optgroup {:label (t locale "workspace.options.text-options.google")}
     (for [font (fonts/resolve-fonts :google)]
       [:option {:value (:id font)
                 :key (:id font)}
@@ -97,7 +97,7 @@
         :on-change on-font-family-change}
        (when (= font-id :multiple)
          [:option {:value ""} (t locale "settings.multiple")])
-       [:& font-select-optgroups]]]
+       [:& font-select-optgroups {:locale locale}]]]
 
      [:div.row-flex
       (let [size-options [8 9 10 11 12 14 18 24 36 48 72]

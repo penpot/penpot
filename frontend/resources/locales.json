@@ -4244,6 +4244,13 @@
     },
     "unused" : true
   },
+  "workspace.options.text-options.google" : {
+    "translations" : {
+      "en" : "Google",
+      "es" : "Google"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
+  },
   "workspace.options.text-options.grow-auto-height" : {
     "translations" : {
       "en" : "Auto height",
@@ -4303,6 +4310,13 @@
       "ru" : "Не задано"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs", "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
+  },
+  "workspace.options.text-options.preset" : {
+    "translations" : {
+      "en" : "Preset",
+      "es" : "Predefinidos"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
   },
   "workspace.options.text-options.strikethrough" : {
     "translations" : {
