@@ -30,7 +30,9 @@
 - Add some missing database indexes (mainly improves performance on large databases on file-update rpc method, and some background tasks).
 - Fix broken bounding box on editing paths [Taiga #1254](https://tree.taiga.io/project/penpot/issue/1254)
 - Fix corner cases on invitation/signup flows.
+- Fix errors on onboarding file [Taiga #1287](https://tree.taiga.io/project/penpot/issue/1287)
 - Fix infinite recursion on logout.
+- Fix issues with frame selection [Taiga #1300](https://tree.taiga.io/project/penpot/issue/1300), [Taiga #1255](https://tree.taiga.io/project/penpot/issue/1255)
 - Fix problem width handoff code generation [Taiga #1204](https://tree.taiga.io/project/penpot/issue/1204)
 - Fix problem with indices refreshing on page changes [#646](https://github.com/penpot/penpot/issues/646)
 - Have language change notification written in the new language [Taiga #1205](https://tree.taiga.io/project/penpot/issue/1205)
