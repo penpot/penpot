@@ -28,6 +28,7 @@
 
 - Add more improvements to french translation strings [#591](https://github.com/penpot/penpot/pull/591)
 - Add some missing database indexes (mainly improves performance on large databases on file-update rpc method, and some background tasks).
+- Drawing tool will have priority over resize/rotate handlers [Taiga #1225](https://tree.taiga.io/project/penpot/issue/1225)
 - Fix broken bounding box on editing paths [Taiga #1254](https://tree.taiga.io/project/penpot/issue/1254)
 - Fix corner cases on invitation/signup flows.
 - Fix errors on onboarding file [Taiga #1287](https://tree.taiga.io/project/penpot/issue/1287)
