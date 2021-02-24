@@ -146,7 +146,7 @@
       nil)))
 
 
-;; --- Mutation: Tean Update Role
+;; --- Mutation: Team Update Role
 
 (declare retrieve-team-member)
 (declare role->params)
@@ -218,7 +218,7 @@
     :viewer {:is-owner false :is-admin false :can-edit false}))
 
 
-;; --- Mutation: Team Update Role
+;; --- Mutation: Delete Team Member
 
 (s/def ::delete-team-member
   (s/keys :req-un [::profile-id ::team-id ::member-id]))
@@ -227,8 +227,8 @@
   [{:keys [pool] :as cfg} {:keys [team-id profile-id member-id] :as params}]
   (db/with-atomic [conn pool]
     (let [perms (teams/check-read-permissions! conn profile-id team-id)]
-      (when-not (or (:is-owner perms)
-                    (:is-admin perms))
+      (when-not (or (some :is-owner perms)
+                    (some :is-admin perms))
         (ex/raise :type :validation
                   :code :insufficient-permissions))
 
