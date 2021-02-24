@@ -76,8 +76,8 @@
    :ldap-attrs-fullname "cn"
    :ldap-attrs-photo "jpegPhoto"
 
-   ;; :initial-data-file "resources/initial-data.json"
-   ;; :initial-data-project-name "Penpot Oboarding"
+   ;; a server prop key where initial project is stored.
+   :initial-project-skey "initial-project"
    })
 
 (s/def ::allow-demo-users ::us/boolean)
@@ -103,8 +103,7 @@
 (s/def ::http-session-idle-max-age ::dt/duration)
 (s/def ::http-session-updater-batch-max-age ::dt/duration)
 (s/def ::http-session-updater-batch-max-size ::us/integer)
-(s/def ::initial-data-file ::us/string)
-(s/def ::initial-data-project-name ::us/string)
+(s/def ::initial-project-skey ::us/string)
 (s/def ::ldap-attrs-email ::us/string)
 (s/def ::ldap-attrs-fullname ::us/string)
 (s/def ::ldap-attrs-photo ::us/string)
@@ -161,8 +160,8 @@
                    ::database-username
                    ::default-blob-version
                    ::error-report-webhook
-                   ::feedback-enabled
                    ::feedback-destination
+                   ::feedback-enabled
                    ::github-client-id
                    ::github-client-secret
                    ::gitlab-base-uri
@@ -170,33 +169,37 @@
                    ::gitlab-client-secret
                    ::google-client-id
                    ::google-client-secret
+                   ::host
                    ::http-server-port
+                   ::http-session-idle-max-age
                    ::http-session-updater-batch-max-age
                    ::http-session-updater-batch-max-size
-                   ::http-session-idle-max-age
-                   ::host
-                   ::ldap-attrs-username
+                   ::initial-project-skey
                    ::ldap-attrs-email
                    ::ldap-attrs-fullname
                    ::ldap-attrs-photo
+                   ::ldap-attrs-username
+                   ::ldap-base-dn
                    ::ldap-bind-dn
                    ::ldap-bind-password
-                   ::ldap-base-dn
                    ::ldap-host
                    ::ldap-port
                    ::ldap-ssl
                    ::ldap-starttls
                    ::ldap-user-query
-                   ::public-uri
-                   ::profile-complaint-threshold
+                   ::local-assets-uri
+                   ::loggers-loki-uri
+                   ::loggers-zmq-uri
+                   ::profile-bounce-max-age
                    ::profile-bounce-threshold
                    ::profile-complaint-max-age
-                   ::profile-bounce-max-age
+                   ::profile-complaint-threshold
+                   ::public-uri
                    ::redis-uri
                    ::registration-domain-whitelist
                    ::registration-enabled
-                   ::rlimits-password
                    ::rlimits-image
+                   ::rlimits-password
                    ::smtp-default-from
                    ::smtp-default-reply-to
                    ::smtp-enabled
@@ -206,23 +209,18 @@
                    ::smtp-ssl
                    ::smtp-tls
                    ::smtp-username
-                   ::storage-backend
-                   ::storage-fs-directory
                    ::srepl-host
                    ::srepl-port
-                   ::local-assets-uri
-                   ::loggers-loki-uri
-                   ::loggers-zmq-uri
+                   ::storage-backend
+                   ::storage-fs-directory
                    ::storage-s3-bucket
                    ::storage-s3-region
                    ::telemetry-enabled
-                   ::telemetry-with-taiga
                    ::telemetry-server-enabled
                    ::telemetry-server-port
                    ::telemetry-uri
-                   ::tenant
-                   ::initial-data-file
-                   ::initial-data-project-name]))
+                   ::telemetry-with-taiga
+                   ::tenant]))
 
 (defn- env->config
   [env]
