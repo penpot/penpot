@@ -1923,7 +1923,6 @@
       "es" : "Ha ocurrido algo extraño. Por favor, reintenta la operación, y si el problema persiste, contacta con el servicio técnico.",
       "fr" : "Un problème s’est produit. Veuillez réessayer l’opération et, si le problème persiste, contacter le service technique.",
       "zh_cn" : "发生了一些不妙的事。请尝试重新操作。如果问题仍然存在，请联系我们以取得支持。"
-      "fr" : "Un problème s’est produit. Veuillez réessayer l’opération et, si le problème persiste, contacter le service technique."
     },
     "used-in" : [ "src/app/main/ui/static.cljs" ]
   },
@@ -2064,7 +2063,6 @@
       "es" : "Dueño",
       "fr" : "Propriétaire",
       "zh_cn" : "所有者"
-      "fr" : "Propriétaire"
     },
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs", "src/app/main/ui/dashboard/team.cljs" ]
   },
@@ -2234,7 +2232,6 @@
       "es" : "Mostrar todos los comentarios",
       "fr" : "Afficher tous les commentaires",
       "zh_cn" : "显示所有评论"
-      "fr" : "Afficher tous les commentaires"
     },
     "used-in" : [ "src/app/main/ui/workspace/comments.cljs", "src/app/main/ui/viewer/header.cljs" ]
   },
