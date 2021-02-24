@@ -1003,7 +1003,7 @@
                 result
 
                 (let [group (get objects current-id)]
-                  (if (and (not= uuid/zero current-id)
+                  (if (and (not= :frame (:type group))
                            (not= current-id parent-id)
                            (empty? (remove removed-id? (:shapes group))))
 
