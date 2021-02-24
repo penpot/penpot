@@ -4,6 +4,15 @@
 
 ### :sparkles: New features
 
+### :bug: Bugs fixed
+
+### :heart: Community contributions by (Thank you!)
+
+
+## 1.3.0-alpha
+
+### :sparkles: New features
+
 - Add major refactor of internal pubsub/redis code; improves scalability and performance [#640](https://github.com/penpot/penpot/pull/640)
 - Add optional loki integration [#645](https://github.com/penpot/penpot/pull/645)
 - Add emailcatcher and ldap test containers to devenv. [#506](https://github.com/penpot/penpot/pull/506)
