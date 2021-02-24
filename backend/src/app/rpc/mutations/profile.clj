@@ -14,12 +14,12 @@
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
-   [app.db.profile-initial-data :refer [create-profile-initial-data]]
    [app.emails :as emails]
    [app.media :as media]
    [app.rpc.mutations.projects :as projects]
    [app.rpc.mutations.teams :as teams]
    [app.rpc.queries.profile :as profile]
+   [app.setup.initial-data :as sid]
    [app.storage :as sto]
    [app.tasks :as tasks]
    [app.util.services :as sv]
@@ -81,7 +81,8 @@
   (let [profile (->> (create-profile conn params)
                      (create-profile-relations conn))
         profile (assoc profile ::created true)]
-    (create-profile-initial-data conn profile)
+
+    (sid/load-initial-project! conn profile)
 
     (if-let [token (:invitation-token params)]
       ;; If invitation token comes in params, this is because the
@@ -309,7 +310,7 @@
           (register-profile [conn params]
             (let [profile (->> (create-profile conn params)
                                (create-profile-relations conn))]
-              (create-profile-initial-data conn profile)
+              (sid/load-initial-project! conn profile)
               (assoc profile ::created true)))]
 
     (let [profile (profile/retrieve-profile-data-by-email conn email)

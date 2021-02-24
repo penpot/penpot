@@ -200,11 +200,6 @@
               (sql/insert table params opts)
               (assoc opts :return-keys true))))
 
-(defn insert-multi!
-  [ds table param-list]
-  (doseq [params param-list]
-    (insert! ds table params)))
-
 (defn update!
   ([ds table params where] (update! ds table params where nil))
   ([ds table params where opts]

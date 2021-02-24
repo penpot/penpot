@@ -37,20 +37,25 @@
   (let [key (-> (bn/random-bytes 64)
                 (bc/bytes->b64u)
                 (bc/bytes->str))]
-    (db/exec-one! conn ["insert into server_prop (id, content)
-                         values ('secret-key', ?) on conflict do nothing"
-                        (db/tjson key)])))
+    (db/insert! conn :server-prop
+                {:id "secret-key"
+                 :preload true
+                 :content (db/tjson key)}
+                {:on-conflict-do-nothing true})))
 
 (defn- initialize-instance-id!
   [{:keys [conn] :as cfg}]
   (let [iid (uuid/random)]
-    (db/exec-one! conn ["insert into server_prop (id, content)
-                         values ('instance-id', ?::jsonb) on conflict do nothing"
-                        (db/tjson iid)])))
+
+    (db/insert! conn :server-prop
+                {:id "instance-id"
+                 :preload true
+                 :content (db/tjson iid)}
+                {:on-conflict-do-nothing true})))
 
 (defn- retrieve-all
   [{:keys [conn] :as cfg}]
   (reduce (fn [acc row]
             (assoc acc (keyword (:id row)) (db/decode-transit-pgobject (:content row))))
           {}
-          (db/exec! conn ["select * from server_prop;"])))
+          (db/query conn :server-prop {:preload true})))
