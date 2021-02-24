@@ -13,6 +13,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.path :as gsp]
    [app.common.geom.matrix :as gmt]
+   [app.common.math :as mth]
    [app.common.uuid :as uuid]
    [app.common.data :as d]))
 
@@ -137,3 +138,31 @@
 
     (update data :pages-index #(d/mapm update-page %))))
 
+(defn fix-line-paths
+  "Fixes issues with selrect/points for shapes with width/height = 0 (line-like paths)"
+  [_ shape]
+  (if (= (:type shape) :path)
+    (let [{:keys [width height]} (gsh/points->rect (:points shape))]
+      (if (or (mth/almost-zero? width) (mth/almost-zero? height))
+        (let [selrect (gsh/content->selrect (:content shape))
+              points (gsh/rect->points selrect)
+              transform (gmt/matrix)
+              transform-inv (gmt/matrix)]
+          (assoc shape
+                 :selrect selrect
+                 :points points
+                 :transform transform
+                 :transform-inverse transform-inv))
+        shape))
+    shape))
+
+
+(defmethod migrate 6
+  [data]
+  (letfn [(update-container [_ container]
+            (-> container
+                (update :objects #(d/mapm fix-line-paths %))))]
+
+    (-> data
+        (update :components  #(d/mapm update-container %))
+        (update :pages-index #(d/mapm update-container %)))))
