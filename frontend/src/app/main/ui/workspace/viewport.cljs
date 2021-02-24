@@ -794,7 +794,8 @@
          [:& selection-handlers {:selected selected
                                  :zoom zoom
                                  :edition edition
-                                 :show-distances (and (not transform) @alt?)}])
+                                 :show-distances (and (not transform) @alt?)
+                                 :disable-handlers (or drawing-tool edition)}])
 
        (when (= (count selected) 1)
          [:& gradient-handlers {:id (first selected)
