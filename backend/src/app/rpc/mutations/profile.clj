@@ -341,12 +341,8 @@
 
 ;; --- Mutation: Update Password
 
-(defn- validate-password!
-  [conn {:keys [profile-id old-password] :as params}]
-  (let [profile (db/get-by-id conn :profile profile-id)]
-    (when-not (:valid (verify-password old-password (:password profile)))
-      (ex/raise :type :validation
-                :code :old-password-not-match))))
+(declare validate-password!)
+(declare update-profile-password!)
 
 (s/def ::update-profile-password
   (s/keys :req-un [::profile-id ::password ::old-password]))
@@ -354,12 +350,23 @@
 (sv/defmethod ::update-profile-password {:rlimit :password}
   [{:keys [pool] :as cfg} {:keys [password profile-id] :as params}]
   (db/with-atomic [conn pool]
-    (validate-password! conn params)
-    (db/update! conn :profile
-                {:password (derive-password password)}
-                {:id profile-id})
-    nil))
+    (let [profile (validate-password! conn params)]
+      (update-profile-password! conn (assoc profile :password password))
+      nil)))
 
+(defn- validate-password!
+  [conn {:keys [profile-id old-password] :as params}]
+  (let [profile (db/get-by-id conn :profile profile-id)]
+    (when-not (:valid (verify-password old-password (:password profile)))
+      (ex/raise :type :validation
+                :code :old-password-not-match))
+    profile))
+
+(defn update-profile-password!
+  [conn {:keys [id password] :as profile}]
+  (db/update! conn :profile
+              {:password (derive-password password)}
+              {:id id}))
 
 ;; --- Mutation: Update Photo
 
@@ -393,45 +400,68 @@
               {:id profile-id})
   nil)
 
+
 ;; --- Mutation: Request Email Change
+
+(declare request-email-change)
+(declare change-email-inmediatelly)
 
 (s/def ::request-email-change
   (s/keys :req-un [::email]))
 
 (sv/defmethod ::request-email-change
-  [{:keys [pool tokens] :as cfg} {:keys [profile-id email] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id email] :as params}]
   (db/with-atomic [conn pool]
-    (let [email   (str/lower email)
-          profile (db/get-by-id conn :profile profile-id)
-          token   (tokens :generate
-                          {:iss :change-email
-                           :exp (dt/in-future "15m")
-                           :profile-id profile-id
-                           :email email})
-          ptoken  (tokens :generate-predefined
-                          {:iss :profile-identity
-                           :profile-id (:id profile)})]
+    (let [profile (db/get-by-id conn :profile profile-id)
+          cfg     (assoc cfg :conn conn)
+          params  (assoc params
+                         :profile profile
+                         :email (str/lower email))]
+      (if (cfg/get :smtp-enabled)
+        (request-email-change cfg params)
+        (change-email-inmediatelly cfg params)))))
 
-      (when (not= email (:email profile))
-        (check-profile-existence! conn params))
+(defn- change-email-inmediatelly
+  [{:keys [conn]} {:keys [profile email] :as params}]
+  (when (not= email (:email profile))
+    (check-profile-existence! conn params))
+  (db/update! conn :profile
+              {:email email}
+              {:id (:id profile)})
+  {:changed true})
 
-      (when-not (emails/allow-send-emails? conn profile)
-        (ex/raise :type :validation
-                  :code :profile-is-muted
-                  :hint "looks like the profile has reported repeatedly as spam or has permanent bounces."))
+(defn- request-email-change
+  [{:keys [conn tokens]} {:keys [profile email] :as params}]
+  (let [token   (tokens :generate
+                        {:iss :change-email
+                         :exp (dt/in-future "15m")
+                         :profile-id (:id profile)
+                         :email email})
+        ptoken  (tokens :generate-predefined
+                        {:iss :profile-identity
+                         :profile-id (:id profile)})]
 
-      (when (emails/has-bounce-reports? conn email)
-        (ex/raise :type :validation
-                  :code :email-has-permanent-bounces
-                  :hint "looks like the email you invite has been repeatedly reported as spam or permanent bounce"))
+    (when (not= email (:email profile))
+      (check-profile-existence! conn params))
 
-      (emails/send! conn emails/change-email
-                    {:to (:email profile)
-                     :name (:fullname profile)
-                     :pending-email email
-                     :token token
-                     :extra-data ptoken})
-      nil)))
+    (when-not (emails/allow-send-emails? conn profile)
+      (ex/raise :type :validation
+                :code :profile-is-muted
+                :hint "looks like the profile has reported repeatedly as spam or has permanent bounces."))
+
+    (when (emails/has-bounce-reports? conn email)
+      (ex/raise :type :validation
+                :code :email-has-permanent-bounces
+                :hint "looks like the email you invite has been repeatedly reported as spam or permanent bounce"))
+
+    (emails/send! conn emails/change-email
+                  {:to (:email profile)
+                   :name (:fullname profile)
+                   :pending-email email
+                   :token token
+                   :extra-data ptoken})
+    nil))
+
 
 (defn select-profile-for-update
   [conn id]

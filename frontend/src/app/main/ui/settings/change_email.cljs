@@ -58,10 +58,13 @@
 
 (defn- on-success
   [form data]
-  (let [email   (get-in @form [:clean-data :email-1])
-        message (tr "notifications.validation-email-sent" email)]
-    (st/emit! (dm/info message)
-              (modal/hide))))
+  (if (:changed data)
+    (st/emit! (du/fetch-profile)
+              (modal/hide))
+    (let [email   (get-in @form [:clean-data :email-1])
+          message (tr "notifications.validation-email-sent" email)]
+      (st/emit! (dm/info message)
+                (modal/hide)))))
 
 (defn- on-submit
   [form event]

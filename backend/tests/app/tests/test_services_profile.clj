@@ -281,18 +281,21 @@
         (t/is (= (:email data) (:email result)))))))
 
 (t/deftest test-email-change-request
-  (with-mocks [mock {:target 'app.emails/send! :return nil}]
+  (with-mocks [email-send-mock {:target 'app.emails/send! :return nil}
+               cfg-get-mock    {:target 'app.config/get
+                                :return (th/mock-config-get-with
+                                         {:smtp-enabled true})}]
     (let [profile (th/create-profile* 1)
-          pool  (:app.db/pool th/*system*)
-          data  {::th/type :request-email-change
-                 :profile-id (:id profile)
-                 :email "user1@example.com"}]
+          pool    (:app.db/pool th/*system*)
+          data    {::th/type :request-email-change
+                   :profile-id (:id profile)
+                   :email "user1@example.com"}]
 
       ;; without complaints
       (let [out (th/mutation! data)]
         ;; (th/print-result! out)
         (t/is (nil? (:result out)))
-        (let [mock (deref mock)]
+        (let [mock (deref email-send-mock)]
           (t/is (= 1 (:call-count mock)))
           (t/is (true? (:called? mock)))))
 
@@ -301,7 +304,7 @@
       (let [out (th/mutation! data)]
         ;; (th/print-result! out)
         (t/is (nil? (:result out)))
-        (t/is (= 2 (:call-count (deref mock)))))
+        (t/is (= 2 (:call-count (deref email-send-mock)))))
 
       ;; with bounces
       (th/create-global-complaint-for pool {:type :bounce :email (:email data)})
@@ -311,7 +314,27 @@
         (t/is (th/ex-info? error))
         (t/is (th/ex-of-type? error :validation))
         (t/is (th/ex-of-code? error :email-has-permanent-bounces))
-        (t/is (= 2 (:call-count (deref mock))))))))
+        (t/is (= 2 (:call-count (deref email-send-mock))))))))
+
+
+(t/deftest test-email-change-request-without-smtp
+  (with-mocks [email-send-mock {:target 'app.emails/send! :return nil}
+               cfg-get-mock    {:target 'app.config/get
+                                :return (th/mock-config-get-with
+                                         {:smtp-enabled false})}]
+    (let [profile (th/create-profile* 1)
+          pool    (:app.db/pool th/*system*)
+          data    {::th/type :request-email-change
+                   :profile-id (:id profile)
+                   :email "user1@example.com"}]
+
+      ;; without complaints
+      (let [out (th/mutation! data)
+            res (:result out)]
+        (t/is (= {:changed true} res))
+        (let [mock (deref email-send-mock)]
+          (t/is (false? (:called? mock))))))))
+
 
 (t/deftest test-request-profile-recovery
   (with-mocks [mock {:target 'app.emails/send! :return nil}]
