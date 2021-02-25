@@ -116,7 +116,6 @@
         (obj/merge! attrs (clj->js stroke-attrs)))
       attrs)))
 
-
 (defn extract-svg-attrs
   [render-id svg-defs svg-attrs]
   (let [replace-id (fn [id]
@@ -124,8 +123,9 @@
                        (str render-id "-" id)
                        id))
         svg-attrs (-> svg-attrs
+                      (usvg/clean-attrs)
                       (usvg/update-attr-ids replace-id)
-                      (usvg/clean-attrs))
+                      )
 
         attrs  (-> svg-attrs (dissoc :style) (clj->js))
         styles (-> svg-attrs (:style {}) (clj->js))]

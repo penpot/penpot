@@ -84,16 +84,18 @@
 
 (mf/defc svg-defs [{:keys [shape render-id]}]
   (let [svg-defs (:svg-defs shape)
-        _ (when (:svg-transform shape) (.log js/console (str (:svg-transform shape))))
+        ;;_ (when (:svg-transform shape)
+        ;;    (.log js/console (:name shape) (:old-transform shape) (str (:svg-transform shape))))
+
         transform (mf/use-memo
                    (mf/deps shape)
                    #(if (= :svg-raw (:type shape))
                       (gmt/matrix)
                       (usvg/svg-transform-matrix shape)))
 
-        ;;transform (gmt/multiply
-        ;;           transform
-        ;;           (:svg-transform shape (gmt/matrix)))
+        transform (gmt/multiply
+                   transform
+                   (or (:svg-transform shape) (gmt/matrix)))
 
         prefix-id
         (fn [id]
