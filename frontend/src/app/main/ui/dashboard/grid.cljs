@@ -126,13 +126,13 @@
       [:div.project-th-icon.menu
        {:ref menu-ref
         :on-click on-menu-click}
-       i/actions]]
-     [:& file-menu {:file file
-                    :show? (:menu-open @local)
-                    :left (:x (:menu-pos @local))
-                    :top (:y (:menu-pos @local))
-                    :on-edit on-edit
-                    :on-menu-close on-menu-close}]]))
+       i/actions
+       [:& file-menu {:file file
+                      :show? (:menu-open @local)
+                      :left (:x (:menu-pos @local))
+                      :top (:y (:menu-pos @local))
+                      :on-edit on-edit
+                      :on-menu-close on-menu-close}]]]]))
 
 (mf/defc empty-placeholder
   []

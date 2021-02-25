@@ -15,6 +15,7 @@
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.router :as rt]
    [rumext.alpha :as mf]))
 
 (mf/defc file-menu
@@ -25,6 +26,15 @@
   (assert (fn? on-menu-close) "missing `on-menu-close` prop")
   (let [top  (or top 0)
         left (or left 0)
+
+        on-new-tab
+        (mf/use-callback
+         (mf/deps file)
+         (fn [event]
+           (let [pparams {:project-id (:project-id file)
+                          :file-id (:id file)}
+                 qparams {:page-id (first (get-in file [:data :pages]))}]
+             (st/emit! (rt/nav-new-window :workspace pparams qparams)))))
 
         delete-fn
         (mf/use-callback
@@ -88,7 +98,8 @@
                       :fixed? (or (not= top 0) (not= left 0))
                       :top top
                       :left left
-                      :options [[(tr "labels.rename") on-edit]
+                      :options [[(tr "dashboard.open-in-new-tab") on-new-tab]
+                                [(tr "labels.rename") on-edit]
                                 [(tr "labels.delete") on-delete]
                                 (if (:is-shared file)
                                   [(tr "dashboard.remove-shared") on-del-shared]

@@ -579,6 +579,13 @@
     },
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs" ]
   },
+  "dashboard.open-in-new-tab" : {
+    "translations" : {
+      "en" : "Open file in a new tab",
+      "es" : "Abrir en una pestaña nueva"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
+  },
   "dashboard.password-change" : {
     "translations" : {
       "ca" : "Canvia la contrasenya",
