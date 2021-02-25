@@ -52,8 +52,10 @@
                            :app.http/server
                            :app.http/router
                            :app.notifications/handler
-                           :app.http.auth/google
-                           :app.http.auth/gitlab
+                           :app.http.oauth/google
+                           :app.http.oauth/gitlab
+                           :app.http.oauth/github
+                           :app.http.oauth/all
                            :app.worker/scheduler
                            :app.worker/worker)
                    (d/deep-merge
@@ -160,6 +162,21 @@
                                    :can-edit true})
      team)))
 
+
+(defn create-file-media-object*
+  ([params] (create-file-media-object* *pool* params))
+  ([conn {:keys [name width height mtype file-id is-local media-id]
+          :or {name "sample" width 100 height 100 mtype "image/svg+xml" is-local true}}]
+   (db/insert! conn :file-media-object
+               {:id (uuid/next)
+                :file-id file-id
+                :is-local is-local
+                :name name
+                :media-id media-id
+                :width  width
+                :height height
+                :mtype  mtype})))
+
 (defn link-file-to-library*
   ([params] (link-file-to-library* *pool* params))
   ([conn {:keys [file-id library-id] :as params}]
@@ -212,6 +229,19 @@
                                           :is-admin is-admin
                                           :can-edit can-edit})))
 
+
+(defn update-file*
+  ([params] (update-file* *pool* params))
+  ([conn {:keys [file-id changes session-id profile-id revn]
+          :or {session-id (uuid/next) revn 0}}]
+   (let [file   (db/get-by-id conn :file file-id)
+         msgbus (:app.msgbus/msgbus *system*)]
+     (#'files/update-file {:conn conn :msgbus msgbus}
+                          {:file file
+                           :revn revn
+                           :changes changes
+                           :session-id session-id
+                           :profile-id profile-id}))))
 
 ;; --- RPC HELPERS
 
