@@ -14,6 +14,7 @@
    [app.config :as cfg]
    [app.db :as db]
    [app.rpc.queries.projects :as proj]
+   [app.rpc.queries.teams :as teams]
    [app.tasks :as tasks]
    [app.util.services :as sv]
    [app.util.time :as dt]
@@ -38,13 +39,14 @@
           :opt-un [::id]))
 
 (sv/defmethod ::create-project
-  [{:keys [pool] :as cfg} params]
+  [{:keys [pool] :as cfg} {:keys [profile-id team-id] :as params}]
   (db/with-atomic [conn pool]
-    (let [proj   (create-project conn params)
-          params (assoc params :project-id (:id proj))]
+    (teams/check-edition-permissions! conn profile-id team-id)
+    (let [project (create-project conn params)
+          params  (assoc params :project-id (:id project))]
       (create-project-profile conn params)
       (create-team-project-profile conn params)
-      (assoc proj :is-pinned true))))
+      (assoc project :is-pinned true))))
 
 (defn create-project
   [conn {:keys [id team-id name default?] :as params}]
@@ -92,6 +94,7 @@
 (sv/defmethod ::update-project-pin
   [{:keys [pool] :as cfg} {:keys [id profile-id team-id is-pinned] :as params}]
   (db/with-atomic [conn pool]
+    (proj/check-edition-permissions! conn profile-id id)
     (db/exec-one! conn [sql:update-project-pin team-id id profile-id is-pinned is-pinned])
     nil))
 

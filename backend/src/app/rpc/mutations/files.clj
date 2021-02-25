@@ -155,6 +155,7 @@
               :hint "A file cannot be linked to itself"))
   (db/with-atomic [conn pool]
     (files/check-edition-permissions! conn profile-id file-id)
+    (files/check-edition-permissions! conn profile-id library-id)
     (link-file-to-library conn params)))
 
 (def sql:link-file-to-library
