@@ -967,7 +967,7 @@
       "es" : "Parece que el contenido de la imagen no coincide con la etensión del archivo.",
       "fr" : "Il semble que le contenu de l’image ne correspond pas à l’extension de fichier.",
       "ru" : "",
-      "zh_cn" : "图片内容好像与文件扩展名不匹配。"
+      "zh_cn" : "图片内容好像与文档扩展名不匹配。"
     },
     "used-in" : [ "src/app/main/data/workspace/persistence.cljs", "src/app/main/data/media.cljs" ]
   },
@@ -1437,7 +1437,7 @@
       "en" : "Typography",
       "es" : "Tipografía",
       "fr" : "Typographie",
-      "zh_cn" : "文字排版"
+      "zh_cn" : "排版"
     },
     "used-in" : [ "src/app/main/ui/handoff/attributes/text.cljs" ]
   },
@@ -1527,7 +1527,7 @@
       "en" : "Text Transform",
       "es" : "Transformación de texto",
       "fr" : "Transformation de texte",
-      "zh_cn" : "文字变换"
+      "zh_cn" : "文本变换"
     },
     "used-in" : [ "src/app/main/ui/handoff/attributes/text.cljs" ]
   },
@@ -2025,7 +2025,7 @@
       "en" : [ "1 file", "%s files" ],
       "es" : [ "1 archivo", "%s archivos" ],
       "fr" : [ "1 fichier", "%s fichiers" ],
-      "zh_cn" : [ "1 个文件", "共 %s 个文件" ]
+      "zh_cn" : [ "1 个文档", "共 %s 个文档" ]
     },
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs" ]
   },
@@ -2316,7 +2316,7 @@
       "es" : "Una vez añadido como Biblioteca Compartida, los recursos de este archivo estarán disponibles para ser usado por el resto de tus archivos.",
       "fr" : "Une fois ajoutées en tant que Bibliothèque Partagée, les ressources de cette bibliothèque de fichiers seront disponibles pour être utilisées parmi le reste de vos fichiers.",
       "ru" : "",
-      "zh_cn" : "一旦添加为共享库，此文件库中的素材就可被用于你的其他文件。"
+      "zh_cn" : "一旦添加为共享库，此文档库中的素材就可被用于你的其他文档中。"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs", "src/app/main/ui/dashboard/grid.cljs" ]
   },
@@ -2405,7 +2405,8 @@
       "en" : "By removing your account you’ll lose all your current projects and archives.",
       "es" : "Si borras tu cuenta perderás todos tus proyectos y archivos.",
       "fr" : "En supprimant votre compte, vous perdrez tous vos projets et archives actuelles.",
-      "ru" : "Удалив аккаунт Вы потеряете все прокты и архивы."
+      "ru" : "Удалив аккаунт Вы потеряете все прокты и архивы.",
+      "zh_cn" : "删除账号后，你会失去所有项目和存档。"
     },
     "used-in" : [ "src/app/main/ui/settings/delete_account.cljs" ]
   },
@@ -2414,7 +2415,8 @@
       "en" : "Are you sure you want to delete your account?",
       "es" : "¿Seguro que quieres borrar tu cuenta?",
       "fr" : "Êtes‑vous sûr de vouloir supprimer votre compte ?",
-      "ru" : "Вы уверены, что хотите удалить аккаунт?"
+      "ru" : "Вы уверены, что хотите удалить аккаунт?",
+      "zh_cn" : "你确定想要删除你的账号？"
     },
     "used-in" : [ "src/app/main/ui/settings/delete_account.cljs" ]
   },
@@ -2422,7 +2424,8 @@
     "translations" : {
       "en" : "Delete conversation",
       "es" : "Eliminar conversación",
-      "fr" : "Supprimer la conversation"
+      "fr" : "Supprimer la conversation",
+      "zh_cn" : "删除对话"
     },
     "used-in" : [ "src/app/main/ui/comments.cljs" ]
   },
@@ -2430,7 +2433,8 @@
     "translations" : {
       "en" : "Are you sure you want to delete this conversation? All comments in this thread will be deleted.",
       "es" : "¿Seguro que quieres eliminar esta conversación? Todos los comentarios en este hilo serán eliminados.",
-      "fr" : "Êtes‑vous sûr de vouloir supprimer cette conversation ? Tous les commentaires de ce fil seront supprimés."
+      "fr" : "Êtes‑vous sûr de vouloir supprimer cette conversation ? Tous les commentaires de ce fil seront supprimés.",
+      "zh_cn" : "你确定想要删除这个对话？该讨论串里的所有评论都会被一同删除。"
     },
     "used-in" : [ "src/app/main/ui/comments.cljs" ]
   },
@@ -2438,7 +2442,8 @@
     "translations" : {
       "en" : "Delete conversation",
       "es" : "Eliminar conversación",
-      "fr" : "Supprimer une conversation"
+      "fr" : "Supprimer une conversation",
+      "zh_cn" : "删除对话"
     },
     "used-in" : [ "src/app/main/ui/comments.cljs" ]
   },
@@ -2446,7 +2451,8 @@
     "translations" : {
       "en" : "Delete file",
       "es" : "Eliminar archivo",
-      "fr" : "Supprimer le fichier"
+      "fr" : "Supprimer le fichier",
+      "zh_cn" : "删除文档"
     },
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs" ]
   },
@@ -2454,7 +2460,8 @@
     "translations" : {
       "en" : "Are you sure you want to delete this file?",
       "es" : "¿Seguro que quieres eliminar este archivo?",
-      "fr" : "Êtes‑vous sûr de vouloir supprimer ce fichier ?"
+      "fr" : "Êtes‑vous sûr de vouloir supprimer ce fichier ?",
+      "zh_cn" : "你确定想要删除这个文档？"
     },
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs" ]
   },
@@ -2462,7 +2469,8 @@
     "translations" : {
       "en" : "Deleting file",
       "es" : "Eliminando archivo",
-      "fr" : "Supprimer un fichier"
+      "fr" : "Supprimer un fichier",
+      "zh_cn" : "正在删除文档"
     },
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs" ]
   },
@@ -2470,7 +2478,8 @@
     "translations" : {
       "en" : "Are you sure you want to delete this page?",
       "es" : "¿Seguro que quieres borrar esta página?",
-      "fr" : "Êtes‑vous sûr de vouloir supprimer cette page ?"
+      "fr" : "Êtes‑vous sûr de vouloir supprimer cette page ?",
+      "zh_cn" : "你确定想要删除这个页面？"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/sitemap.cljs" ]
   },
@@ -2478,7 +2487,8 @@
     "translations" : {
       "en" : "Delete page",
       "es" : "Borrar página",
-      "fr" : "Supprimer une page"
+      "fr" : "Supprimer une page",
+      "zh_cn" : "删除页面"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/sitemap.cljs" ]
   },
@@ -2486,7 +2496,8 @@
     "translations" : {
       "en" : "Delete project",
       "es" : "Eliminar proyecto",
-      "fr" : "Supprimer le projet"
+      "fr" : "Supprimer le projet",
+      "zh_cn" : "删除项目"
     },
     "used-in" : [ "src/app/main/ui/dashboard/files.cljs" ]
   },
@@ -2494,7 +2505,8 @@
     "translations" : {
       "en" : "Are you sure you want to delete this project?",
       "es" : "¿Seguro que quieres eliminar este proyecto?",
-      "fr" : "Êtes‑vous sûr de vouloir supprimer ce projet ?"
+      "fr" : "Êtes‑vous sûr de vouloir supprimer ce projet ?",
+      "zh_cn" : "你确定想要删除这个项目？"
     },
     "used-in" : [ "src/app/main/ui/dashboard/files.cljs" ]
   },
@@ -2502,7 +2514,8 @@
     "translations" : {
       "en" : "Delete project",
       "es" : "Eliminar proyecto",
-      "fr" : "Supprimer un projet"
+      "fr" : "Supprimer un projet",
+      "zh_cn" : "删除项目"
     },
     "used-in" : [ "src/app/main/ui/dashboard/files.cljs" ]
   },
@@ -2510,7 +2523,8 @@
     "translations" : {
       "en" : "Delete team",
       "es" : "Eliminar equipo",
-      "fr" : "Supprimer l’équipe"
+      "fr" : "Supprimer l’équipe",
+      "zh_cn" : "删除团队"
     },
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs" ]
   },
@@ -2518,7 +2532,8 @@
     "translations" : {
       "en" : "Are you sure you want to delete this team? All projects and files associated with team will be permanently deleted.",
       "es" : "¿Seguro que quieres eliminar este equipo? Todos los proyectos y archivos asociados con el equipo serán eliminados permamentemente.",
-      "fr" : "Êtes‑vous sûr de vouloir supprimer cette équipe ? Tous les projets et fichiers associés à l’équipe seront définitivement supprimés."
+      "fr" : "Êtes‑vous sûr de vouloir supprimer cette équipe ? Tous les projets et fichiers associés à l’équipe seront définitivement supprimés.",
+      "zh_cn" : "你确定想要删除这个团队？与该团队关联的所有项目和文档都会被永久删除。"
     },
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs" ]
   },
@@ -2526,7 +2541,8 @@
     "translations" : {
       "en" : "Deleting team",
       "es" : "Eliminando equipo",
-      "fr" : "Suppression d’une équipe"
+      "fr" : "Suppression d’une équipe",
+      "zh_cn" : "正在删除团队"
     },
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs" ]
   },
@@ -2534,7 +2550,8 @@
     "translations" : {
       "en" : "Delete member",
       "es" : "Eliminando miembro",
-      "fr" : "Supprimer le membre"
+      "fr" : "Supprimer le membre",
+      "zh_cn" : "删除成员"
     },
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs" ]
   },
@@ -2542,7 +2559,8 @@
     "translations" : {
       "en" : "Are you sure you want to delete this member from the team?",
       "es" : "¿Seguro que quieres eliminar este integrante del equipo?",
-      "fr" : "Êtes‑vous sûr de vouloir supprimer ce membre de l’équipe ?"
+      "fr" : "Êtes‑vous sûr de vouloir supprimer ce membre de l’équipe ?",
+      "zh_cn" : "你确定想要从团队中删除这个成员？"
     },
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs" ]
   },
@@ -2550,7 +2568,8 @@
     "translations" : {
       "en" : "Delete team member",
       "es" : "Eliminar integrante del equipo",
-      "fr" : "Supprimer un membre d’équipe"
+      "fr" : "Supprimer un membre d’équipe",
+      "zh_cn" : "删除团队成员"
     },
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs" ]
   },
@@ -2558,7 +2577,8 @@
     "translations" : {
       "en" : "Invite to join the team",
       "es" : "Invitar a unirse al equipo",
-      "fr" : "Inviter à rejoindre l’équipe"
+      "fr" : "Inviter à rejoindre l’équipe",
+      "zh_cn" : "邀请加入团队"
     },
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs" ]
   },
@@ -2566,7 +2586,8 @@
     "translations" : {
       "en" : "You are %s owner.",
       "es" : "Eres %s dueño.",
-      "fr" : "Vous êtes le propriétaire de %s."
+      "fr" : "Vous êtes le propriétaire de %s.",
+      "zh_cn" : "你是%s的所有者。"
     },
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs" ]
   },
@@ -2574,6 +2595,8 @@
     "translations" : {
       "en" : "Select other member to promote before leave",
       "es" : "Promociona otro miembro a dueño antes de abandonar el equipo",
+      "fr" : "Sélectionnez un autre membre à promouvoir avant de quitter l’équipe",
+      "zh_cn" : "请在退出前，从其他成员中选择一位晋升。"
       "fr" : "Sélectionnez un autre membre à promouvoir avant de quitter l’équipe"
     },
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs" ]
@@ -2582,7 +2605,8 @@
     "translations" : {
       "en" : "Promote and leave",
       "es" : "Promocionar y abandonar",
-      "fr" : "Promouvoir et quitter"
+      "fr" : "Promouvoir et quitter",
+      "zh_cn" : "晋升并退出"
     },
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs" ]
   },
@@ -2590,7 +2614,8 @@
     "translations" : {
       "en" : "Select a member to promote",
       "es" : "Selecciona un miembro a promocionar",
-      "fr" : "Sélectionnez un membre à promouvoir"
+      "fr" : "Sélectionnez un membre à promouvoir",
+      "zh_cn" : "选择一位成员晋升"
     },
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs" ]
   },
@@ -2598,7 +2623,8 @@
     "translations" : {
       "en" : "Select a member to promote",
       "es" : "Selecciona un miembro a promocionar",
-      "fr" : "Sélectionnez un membre à promouvoir"
+      "fr" : "Sélectionnez un membre à promouvoir",
+      "zh_cn" : "选择一位成员晋升"
     },
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs" ]
   },
@@ -2606,7 +2632,8 @@
     "translations" : {
       "en" : "Leave team",
       "es" : "Abandonar el equipo",
-      "fr" : "Quitter l’équipe"
+      "fr" : "Quitter l’équipe",
+      "zh_cn" : "退出团队"
     },
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs" ]
   },
@@ -2614,7 +2641,8 @@
     "translations" : {
       "en" : "Are you sure you want to leave this team?",
       "es" : "¿Seguro que quieres abandonar este equipo?",
-      "fr" : "Êtes‑vous sûr de vouloir quitter cette équipe ?"
+      "fr" : "Êtes‑vous sûr de vouloir quitter cette équipe ?",
+      "zh_cn" : "选择一位成员晋升"
     },
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs" ]
   },
@@ -2622,7 +2650,8 @@
     "translations" : {
       "en" : "Leaving team",
       "es" : "Abandonando el equipo",
-      "fr" : "Quitter l’équipe"
+      "fr" : "Quitter l’équipe",
+      "zh_cn" : "正在退出团队"
     },
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs" ]
   },
@@ -2630,7 +2659,8 @@
     "translations" : {
       "en" : "Promote",
       "es" : "Promocionar",
-      "fr" : "Promouvoir"
+      "fr" : "Promouvoir",
+      "zh_cn" : "晋升"
     },
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs" ]
   },
@@ -2638,7 +2668,8 @@
     "translations" : {
       "en" : "Are you sure you want to promote this user to owner?",
       "es" : "¿Seguro que quieres promocionar este usuario a dueño?",
-      "fr" : "Êtes‑vous sûr de vouloir promouvoir cette personne propriétaire ?"
+      "fr" : "Êtes‑vous sûr de vouloir promouvoir cette personne propriétaire ?",
+      "zh_cn" : "你确定想要晋升该用户为所有者？"
     },
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs" ]
   },
@@ -2646,7 +2677,8 @@
     "translations" : {
       "en" : "Promote to owner",
       "es" : "Promocionar a dueño",
-      "fr" : "Promouvoir propriétaire"
+      "fr" : "Promouvoir propriétaire",
+      "zh_cn" : "晋升为所有者"
     },
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs" ]
   },
@@ -2655,7 +2687,8 @@
       "en" : "Remove as Shared Library",
       "es" : "Eliminar como Biblioteca Compartida",
       "fr" : "Supprimer en tant que Bibliothèque Partagée",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "不再作为共享库"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs", "src/app/main/ui/dashboard/grid.cljs" ]
   },
@@ -2664,7 +2697,8 @@
       "en" : "Once removed as Shared Library, the File Library of this file will stop being available to be used among the rest of your files.",
       "es" : "Una vez eliminado como Biblioteca Compartida, la Biblioteca de este archivo dejará de estar disponible para ser usada por el resto de tus archivos.",
       "fr" : "Une fois supprimée en tant que Bibliothèque Partagée, la Bibliothèque de ce fichier ne pourra plus être utilisée par le reste de vos fichiers.",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "一旦不再作为共享库，该文档库就不能继续用于你的其他文档中。"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs", "src/app/main/ui/dashboard/grid.cljs" ]
   },
@@ -2673,7 +2707,8 @@
       "en" : "Remove “%s” as Shared Library",
       "es" : "Añadir “%s” como Biblioteca Compartida",
       "fr" : "Retirer « %s » en tant que Bibliothèque Partagée",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "不再将“%s”作为共享库"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs", "src/app/main/ui/dashboard/grid.cljs" ]
   },
@@ -2682,7 +2717,8 @@
       "en" : "Update component",
       "es" : "Actualizar componente",
       "fr" : "Actualiser le composant",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "更新组件"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/component.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -2691,7 +2727,8 @@
       "en" : "Cancel",
       "es" : "Cancelar",
       "fr" : "Annuler",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "取消"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/component.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -2700,7 +2737,8 @@
       "en" : "You are about to update a component in a shared library. This may affect other files that use it.",
       "es" : "Vas a actualizar un componente en una librería compartida. Esto puede afectar a otros archivos que la usen.",
       "fr" : "Vous êtes sur le point de mettre à jour le composant d’une Bibliothèque Partagée. Cela peut affecter d’autres fichiers qui l’utilisent.",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "你即将更新共享库中的一个组件。这可能会对使用该组件的其他文档产生影响。"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/component.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -2709,7 +2747,8 @@
       "en" : "Update a component in a shared library",
       "es" : "Actualizar un componente en librería",
       "fr" : "Actualiser le composant d’une bibliothèque",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "更新共享库中的一个组件"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/component.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -2718,7 +2757,8 @@
       "en" : "You can't delete you profile. Reassign your teams before proceed.",
       "es" : "No puedes borrar tu perfil. Reasigna tus equipos antes de seguir.",
       "fr" : "Vous ne pouvez pas supprimer votre profil. Réassignez vos équipes avant de continuer.",
-      "ru" : "Вы не можете удалить профиль. Сначала смените команду."
+      "ru" : "Вы не можете удалить профиль. Сначала смените команду.",
+      "zh_cn" : "你无法删除你的个人资料。请先转让你的团队。"
     },
     "used-in" : [ "src/app/main/ui/settings/delete_account.cljs" ]
   },
@@ -2727,7 +2767,8 @@
       "en" : "Profile saved successfully!",
       "es" : "Perfil guardado correctamente!",
       "fr" : "Profil enregistré avec succès !",
-      "ru" : "Профиль успешно сохранен!"
+      "ru" : "Профиль успешно сохранен!",
+      "zh_cn" : "个人资料保存成功！"
     },
     "used-in" : [ "src/app/main/ui/settings/profile.cljs", "src/app/main/ui/settings/feedback.cljs", "src/app/main/ui/settings/options.cljs" ]
   },
@@ -2735,7 +2776,8 @@
     "translations" : {
       "en" : "Verification email sent to %s. Check your email!",
       "es" : "Verificación de email enviada a %s. Comprueba tu correo.",
-      "fr" : "E‑mail de vérification envoyé à %s. Vérifiez votre e‑mail !"
+      "fr" : "E‑mail de vérification envoyé à %s. Vérifiez votre e‑mail !",
+      "zh_cn" : "验证邮件已发至%s。请检查邮箱。"
     },
     "used-in" : [ "src/app/main/ui/settings/change_email.cljs" ]
   },
@@ -2744,7 +2786,8 @@
       "en" : "Go to login",
       "es" : null,
       "fr" : "Aller à la page de connexion",
-      "ru" : null
+      "ru" : null,
+      "zh_cn" : "去登录"
     },
     "used-in" : [ "src/app/main/ui/auth/recovery.cljs" ]
   },
@@ -2753,7 +2796,8 @@
       "en" : "Mixed",
       "es" : "Varios",
       "fr" : "Divers",
-      "ru" : "Смешаный"
+      "ru" : "Смешаный",
+      "zh_cn" : "混合"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs", "src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs", "src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs", "src/app/main/ui/workspace/sidebar/options/typography.cljs", "src/app/main/ui/workspace/sidebar/options/typography.cljs", "src/app/main/ui/workspace/sidebar/options/typography.cljs", "src/app/main/ui/workspace/sidebar/options/shadow.cljs", "src/app/main/ui/workspace/sidebar/options/blur.cljs" ]
   },
@@ -2762,7 +2806,8 @@
       "en" : "No frames found on the page.",
       "es" : "No se ha encontrado ningún tablero.",
       "fr" : "Aucun cadre trouvé sur la page.",
-      "ru" : "На странице не найдено ни одного кадра"
+      "ru" : "На странице не найдено ни одного кадра",
+      "zh_cn" : "该页面上未找到任何画框。"
     },
     "used-in" : [ "src/app/main/ui/handoff.cljs", "src/app/main/ui/viewer.cljs" ]
   },
@@ -2771,7 +2816,8 @@
       "en" : "Frame not found.",
       "es" : "No se encuentra el tablero.",
       "fr" : "Cadre introuvable.",
-      "ru" : "Кадры не найдены."
+      "ru" : "Кадры не найдены.",
+      "zh_cn" : "画框未找到。"
     },
     "used-in" : [ "src/app/main/ui/handoff.cljs", "src/app/main/ui/viewer.cljs" ]
   },
@@ -2780,7 +2826,8 @@
       "en" : "Don't show interactions",
       "es" : "No mostrar interacciones",
       "fr" : "Ne pas afficher les interactions",
-      "ru" : "Не показывать взаимодействия"
+      "ru" : "Не показывать взаимодействия",
+      "zh_cn" : "不显示交互"
     },
     "used-in" : [ "src/app/main/ui/viewer/header.cljs" ]
   },
@@ -2789,7 +2836,8 @@
       "en" : "Edit page",
       "es" : "Editar página",
       "fr" : "Modifier la page",
-      "ru" : "Редактировать страницу"
+      "ru" : "Редактировать страницу",
+      "zh_cn" : "编辑页面"
     },
     "used-in" : [ "src/app/main/ui/viewer/header.cljs" ]
   },
@@ -2798,7 +2846,8 @@
       "en" : "Full Screen",
       "es" : "Pantalla completa",
       "fr" : "Plein écran",
-      "ru" : "Полный экран"
+      "ru" : "Полный экран",
+      "zh_cn" : "全屏"
     },
     "used-in" : [ "src/app/main/ui/viewer/header.cljs" ]
   },
@@ -2807,7 +2856,8 @@
       "en" : "Copy link",
       "es" : "Copiar enlace",
       "fr" : "Copier le lien",
-      "ru" : "Копировать ссылку"
+      "ru" : "Копировать ссылку",
+      "zh_cn" : "复制链接"
     },
     "used-in" : [ "src/app/main/ui/viewer/header.cljs" ]
   },
@@ -2816,7 +2866,8 @@
       "en" : "Create link",
       "es" : "Crear enlace",
       "fr" : "Créer le lien",
-      "ru" : "Создать ссылку"
+      "ru" : "Создать ссылку",
+      "zh_cn" : "创建链接"
     },
     "used-in" : [ "src/app/main/ui/viewer/header.cljs" ]
   },
@@ -2825,7 +2876,8 @@
       "en" : "Share link will appear here",
       "es" : "El enlace para compartir aparecerá aquí",
       "fr" : "Le lien de partage apparaîtra ici",
-      "ru" : "Здесь будет ссылка для обмена"
+      "ru" : "Здесь будет ссылка для обмена",
+      "zh_cn" : "分享链接将会显示在这里"
     },
     "used-in" : [ "src/app/main/ui/viewer/header.cljs" ]
   },
@@ -2834,7 +2886,8 @@
       "en" : "Remove link",
       "es" : "Eliminar enlace",
       "fr" : "Supprimer le lien",
-      "ru" : "Удалить ссылку"
+      "ru" : "Удалить ссылку",
+      "zh_cn" : "移除链接"
     },
     "used-in" : [ "src/app/main/ui/viewer/header.cljs" ]
   },
@@ -2843,7 +2896,8 @@
       "en" : "Anyone with the link will have access",
       "es" : "Cualquiera con el enlace podrá acceder",
       "fr" : "Toute personne disposant du lien aura accès",
-      "ru" : "Любой, у кого есть ссылка будет иметь доступ"
+      "ru" : "Любой, у кого есть ссылка будет иметь доступ",
+      "zh_cn" : "任何人都可以通过本链接访问"
     },
     "used-in" : [ "src/app/main/ui/viewer/header.cljs" ]
   },
@@ -2852,7 +2906,8 @@
       "en" : "Share link",
       "es" : "Enlace",
       "fr" : "Lien de partage",
-      "ru" : "Поделиться ссылкой"
+      "ru" : "Поделиться ссылкой",
+      "zh_cn" : "分享链接"
     },
     "used-in" : [ "src/app/main/ui/viewer/header.cljs", "src/app/main/ui/viewer/header.cljs", "src/app/main/ui/viewer/header.cljs" ]
   },
@@ -2861,7 +2916,8 @@
       "en" : "Show interactions",
       "es" : "Mostrar interacciones",
       "fr" : "Afficher les interactions",
-      "ru" : "Показывать взаимодействия"
+      "ru" : "Показывать взаимодействия",
+      "zh_cn" : "显示交互"
     },
     "used-in" : [ "src/app/main/ui/viewer/header.cljs" ]
   },
@@ -2870,7 +2926,8 @@
       "en" : "Show interactions on click",
       "es" : "Mostrar interacciones al hacer click",
       "fr" : "Afficher les interactions au clic",
-      "ru" : "Показывать взаимодействия по клику"
+      "ru" : "Показывать взаимодействия по клику",
+      "zh_cn" : "点击时显示交互"
     },
     "used-in" : [ "src/app/main/ui/viewer/header.cljs" ]
   },
@@ -2879,7 +2936,8 @@
       "en" : "Sitemap",
       "es" : "Mapa del sitio",
       "fr" : "Plan du site",
-      "ru" : "План сайта"
+      "ru" : "План сайта",
+      "zh_cn" : "站点地图"
     },
     "used-in" : [ "src/app/main/ui/viewer/header.cljs" ]
   },
@@ -2888,7 +2946,8 @@
       "en" : "Align horizontal center",
       "es" : "Alinear al centro",
       "fr" : "Aligner horizontalement au centre",
-      "ru" : "Выровнять по горизонтали"
+      "ru" : "Выровнять по горизонтали",
+      "zh_cn" : "水平居中对齐"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/align.cljs" ]
   },
@@ -2897,7 +2956,8 @@
       "en" : "Distribute horizontal spacing",
       "es" : "Distribuir espacio horizontal",
       "fr" : "Répartir l’espacement horizontal",
-      "ru" : "Распределить горизонтальное пространство"
+      "ru" : "Распределить горизонтальное пространство",
+      "zh_cn" : "水平均匀分布"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/align.cljs" ]
   },
@@ -2906,7 +2966,8 @@
       "en" : "Align left",
       "es" : "Alinear a la izquierda",
       "fr" : "Aligner à gauche",
-      "ru" : "Выровнять по левому краю"
+      "ru" : "Выровнять по левому краю",
+      "zh_cn" : "靠左对齐"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/align.cljs" ]
   },
@@ -2915,7 +2976,8 @@
       "en" : "Align right",
       "es" : "Alinear a la derecha",
       "fr" : "Aligner à droite",
-      "ru" : "Выровнять по правому краю"
+      "ru" : "Выровнять по правому краю",
+      "zh_cn" : "靠右对齐"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/align.cljs" ]
   },
@@ -2924,7 +2986,8 @@
       "en" : "Align bottom",
       "es" : "Alinear abajo",
       "fr" : "Aligner en bas",
-      "ru" : "Выровнять по нижнему краю"
+      "ru" : "Выровнять по нижнему краю",
+      "zh_cn" : "底部对齐"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/align.cljs" ]
   },
@@ -2933,7 +2996,8 @@
       "en" : "Align vertical center",
       "es" : "Alinear al centro",
       "fr" : "Aligner verticalement au centre",
-      "ru" : "Выровнять по вертикали"
+      "ru" : "Выровнять по вертикали",
+      "zh_cn" : "垂直居中对齐"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/align.cljs" ]
   },
@@ -2942,7 +3006,8 @@
       "en" : "Distribute vertical spacing",
       "es" : "Distribuir espacio vertical",
       "fr" : "Répartir l’espacement vertical",
-      "ru" : "Распределить вертикальное пространство"
+      "ru" : "Распределить вертикальное пространство",
+      "zh_cn" : "垂直均匀分布"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/align.cljs" ]
   },
@@ -2951,7 +3016,8 @@
       "en" : "Align top",
       "es" : "Alinear arriba",
       "fr" : "Aligner en haut",
-      "ru" : "Выровнять по верхнему краю"
+      "ru" : "Выровнять по верхнему краю",
+      "zh_cn" : "顶部对齐"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/align.cljs" ]
   },
@@ -2960,7 +3026,8 @@
       "en" : "Assets",
       "es" : "Recursos",
       "fr" : "Ressources",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "素材"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs" ]
   },
@@ -2969,7 +3036,8 @@
       "en" : "All assets",
       "es" : "Todos",
       "fr" : "Toutes",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "所有素材"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs" ]
   },
@@ -2978,7 +3046,8 @@
       "en" : "Graphics",
       "es" : "Gráficos",
       "fr" : "Graphiques",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "图形"
     },
     "unused" : true
   },
@@ -2987,7 +3056,8 @@
       "en" : "Colors",
       "es" : "Colores",
       "fr" : "Couleurs",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "颜色"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs", "src/app/main/ui/workspace/sidebar/assets.cljs" ]
   },
@@ -2996,7 +3066,8 @@
       "en" : "Components",
       "es" : "Componentes",
       "fr" : "Composants",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "组件"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs", "src/app/main/ui/workspace/sidebar/assets.cljs" ]
   },
@@ -3005,7 +3076,8 @@
       "en" : "Delete",
       "es" : "Borrar",
       "fr" : "Supprimer",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "删除"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/sitemap.cljs", "src/app/main/ui/workspace/sidebar/assets.cljs", "src/app/main/ui/workspace/sidebar/assets.cljs", "src/app/main/ui/workspace/sidebar/assets.cljs", "src/app/main/ui/workspace/sidebar/assets.cljs" ]
   },
@@ -3014,7 +3086,8 @@
       "en" : "Duplicate",
       "es" : "Duplicar",
       "fr" : "Dupliquer",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "创建副本"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/sitemap.cljs", "src/app/main/ui/workspace/sidebar/assets.cljs" ]
   },
@@ -3023,7 +3096,8 @@
       "en" : "Edit",
       "es" : "Editar",
       "fr" : "Modifier",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "编辑"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs", "src/app/main/ui/workspace/sidebar/assets.cljs" ]
   },
@@ -3032,7 +3106,8 @@
       "en" : "File library",
       "es" : "Biblioteca del archivo",
       "fr" : "Bibliothèque du fichier",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "文档库"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs" ]
   },
@@ -3041,7 +3116,8 @@
       "en" : "Graphics",
       "es" : "Gráficos",
       "fr" : "Graphiques",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "图形"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs", "src/app/main/ui/workspace/sidebar/assets.cljs" ]
   },
@@ -3050,7 +3126,8 @@
       "en" : "Libraries",
       "es" : "Bibliotecas",
       "fr" : "Bibliothèques",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "库"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs" ]
   },
@@ -3059,7 +3136,8 @@
       "en" : "No assets found",
       "es" : "No se encontraron recursos",
       "fr" : "Aucune ressource trouvée",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "未找到素材"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs" ]
   },
@@ -3068,7 +3146,8 @@
       "en" : "Rename",
       "es" : "Renombrar",
       "fr" : "Renommer",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "重命名"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/sitemap.cljs", "src/app/main/ui/workspace/sidebar/assets.cljs", "src/app/main/ui/workspace/sidebar/assets.cljs", "src/app/main/ui/workspace/sidebar/assets.cljs", "src/app/main/ui/workspace/sidebar/assets.cljs" ]
   },
@@ -3077,7 +3156,8 @@
       "en" : "Search assets",
       "es" : "Buscar recursos",
       "fr" : "Chercher des ressources",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "搜索素材"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs" ]
   },
@@ -3086,7 +3166,8 @@
       "en" : "SHARED",
       "es" : "COMPARTIDA",
       "fr" : "PARTAGÉ",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "共享的"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs" ]
   },
@@ -3094,7 +3175,8 @@
     "translations" : {
       "en" : "Typographies",
       "es" : "Tipografías",
-      "fr" : "Typographies"
+      "fr" : "Typographies",
+      "zh_cn" : "排版"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/assets.cljs", "src/app/main/ui/workspace/sidebar/assets.cljs" ]
   },
@@ -3102,7 +3184,8 @@
     "translations" : {
       "en" : "Font",
       "es" : "Fuente",
-      "fr" : "Police"
+      "fr" : "Police",
+      "zh_cn" : "字体"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
   },
@@ -3110,7 +3193,8 @@
     "translations" : {
       "en" : "Size",
       "es" : "Tamaño",
-      "fr" : "Taille"
+      "fr" : "Taille",
+      "zh_cn" : "尺寸"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
   },
@@ -3118,7 +3202,8 @@
     "translations" : {
       "en" : "Variant",
       "es" : "Variante",
-      "fr" : "Variante"
+      "fr" : "Variante",
+      "zh_cn" : "变体"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
   },
@@ -3126,7 +3211,8 @@
     "translations" : {
       "en" : "Go to style library file to edit",
       "es" : "Ir al archivo de la biblioteca del estilo para editar",
-      "fr" : "Accéder au fichier de bibliothèque de styles à modifier"
+      "fr" : "Accéder au fichier de bibliothèque de styles à modifier",
+      "zh_cn" : "前往样式库文件进行编辑"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
   },
@@ -3134,7 +3220,8 @@
     "translations" : {
       "en" : "Letter Spacing",
       "es" : "Interletrado",
-      "fr" : "Interlettrage"
+      "fr" : "Interlettrage",
+      "zh_cn" : "字距"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
   },
@@ -3142,7 +3229,8 @@
     "translations" : {
       "en" : "Line Height",
       "es" : "Interlineado",
-      "fr" : "Interlignage"
+      "fr" : "Interlignage",
+      "zh_cn" : "行高"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
   },
@@ -3150,7 +3238,8 @@
     "translations" : {
       "en" : "Ag",
       "es" : "Ag",
-      "fr" : "Ag"
+      "fr" : "Ag",
+      "zh_cn" : "Ag"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs", "src/app/main/ui/handoff/attributes/text.cljs", "src/app/main/ui/handoff/attributes/text.cljs" ]
   },
@@ -3158,7 +3247,8 @@
     "translations" : {
       "en" : "Text Transform",
       "es" : "Transformar texto",
-      "fr" : "Transformer le texte"
+      "fr" : "Transformer le texte",
+      "zh_cn" : "文本变换"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
   },
@@ -3166,7 +3256,8 @@
     "translations" : {
       "en" : "Linear gradient",
       "es" : "Degradado lineal",
-      "fr" : "Dégradé linéaire"
+      "fr" : "Dégradé linéaire",
+      "zh_cn" : "线性渐变"
     },
     "used-in" : [ "src/app/main/data/workspace/libraries.cljs", "src/app/main/ui/components/color_bullet.cljs" ]
   },
@@ -3174,7 +3265,8 @@
     "translations" : {
       "en" : "Radial gradient",
       "es" : "Degradado radial",
-      "fr" : "Dégradé radial"
+      "fr" : "Dégradé radial",
+      "zh_cn" : "放射渐变"
     },
     "used-in" : [ "src/app/main/data/workspace/libraries.cljs", "src/app/main/ui/components/color_bullet.cljs" ]
   },
@@ -3183,7 +3275,8 @@
       "en" : "Disable dynamic alignment",
       "es" : "Desactivar alineamiento dinámico",
       "fr" : "Désactiver l’alignement dynamique",
-      "ru" : "Отключить активное выравнивание"
+      "ru" : "Отключить активное выравнивание",
+      "zh_cn" : "禁用动态对齐"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs" ]
   },
@@ -3192,7 +3285,8 @@
       "en" : "Disable snap to grid",
       "es" : "Desactivar alinear a la rejilla",
       "fr" : "Désactiver l’alignement sur la grille",
-      "ru" : "Отключить привязку к сетке"
+      "ru" : "Отключить привязку к сетке",
+      "zh_cn" : "禁用吸附到网格"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs" ]
   },
@@ -3201,7 +3295,8 @@
       "en" : "Enable dynamic aligment",
       "es" : "Activar alineamiento dinámico",
       "fr" : "Activer l’alignement dynamique",
-      "ru" : "Включить активное выравнивание"
+      "ru" : "Включить активное выравнивание",
+      "zh_cn" : "启用动态对齐"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs" ]
   },
@@ -3210,7 +3305,8 @@
       "en" : "Snap to grid",
       "es" : "Alinear a la rejilla",
       "fr" : "Aligner sur la grille",
-      "ru" : "Привяка к сетке"
+      "ru" : "Привяка к сетке",
+      "zh_cn" : "吸附到网格"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs" ]
   },
@@ -3219,7 +3315,8 @@
       "en" : "Hide assets",
       "es" : "Ocultar recursos",
       "fr" : "Masquer les ressources",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "隐藏素材"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs" ]
   },
@@ -3228,7 +3325,8 @@
       "en" : "Hide grids",
       "es" : "Ocultar rejillas",
       "fr" : "Masquer la grille",
-      "ru" : "Спрятать сетку"
+      "ru" : "Спрятать сетку",
+      "zh_cn" : "隐藏网格"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs" ]
   },
@@ -3237,7 +3335,8 @@
       "en" : "Hide layers",
       "es" : "Ocultar capas",
       "fr" : "Masquer les calques",
-      "ru" : "Спрятать слои"
+      "ru" : "Спрятать слои",
+      "zh_cn" : "隐藏图层"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs" ]
   },
@@ -3246,7 +3345,8 @@
       "en" : "Hide color palette",
       "es" : "Ocultar paleta de colores",
       "fr" : "Masquer la palette de couleurs",
-      "ru" : "Спрятать палитру цветов"
+      "ru" : "Спрятать палитру цветов",
+      "zh_cn" : "隐藏调色盘"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs" ]
   },
@@ -3255,7 +3355,8 @@
       "en" : "Hide rules",
       "es" : "Ocultar reglas",
       "fr" : "Masquer les règles",
-      "ru" : "Спрятать линейки"
+      "ru" : "Спрятать линейки",
+      "zh_cn" : "隐藏标尺"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs" ]
   },
@@ -3264,7 +3365,8 @@
       "en" : "Select all",
       "es" : "Seleccionar todo",
       "fr" : "Tout sélectionner",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "全选"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs" ]
   },
@@ -3273,7 +3375,8 @@
       "en" : "Show assets",
       "es" : "Mostrar recursos",
       "fr" : "Montrer les ressources",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "显示素材"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs" ]
   },
@@ -3282,7 +3385,8 @@
       "en" : "Show grid",
       "es" : "Mostrar rejilla",
       "fr" : "Montrer la grille",
-      "ru" : "Показать сетку"
+      "ru" : "Показать сетку",
+      "zh_cn" : "显示网格"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs" ]
   },
@@ -3291,7 +3395,8 @@
       "en" : "Show layers",
       "es" : "Mostrar capas",
       "fr" : "Montrer les calques",
-      "ru" : "Показать слои"
+      "ru" : "Показать слои",
+      "zh_cn" : "显示图层"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs" ]
   },
@@ -3300,7 +3405,8 @@
       "en" : "Show color palette",
       "es" : "Mostrar paleta de colores",
       "fr" : "Montrer la palette de couleurs",
-      "ru" : "Показать палитру цветов"
+      "ru" : "Показать палитру цветов",
+      "zh_cn" : "显示调色盘"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs" ]
   },
@@ -3309,7 +3415,8 @@
       "en" : "Show rules",
       "es" : "Mostrar reglas",
       "fr" : "Montrer les règles",
-      "ru" : "Показать линейки"
+      "ru" : "Показать линейки",
+      "zh_cn" : "显示标尺"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs" ]
   },
@@ -3317,7 +3424,8 @@
     "translations" : {
       "en" : "Error on saving",
       "es" : "Error al guardar",
-      "fr" : "Erreur d’enregistrement"
+      "fr" : "Erreur d’enregistrement",
+      "zh_cn" : "保存时发生错误"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs" ]
   },
@@ -3325,7 +3433,8 @@
     "translations" : {
       "en" : "Saved",
       "es" : "Guardado",
-      "fr" : "Enregistré"
+      "fr" : "Enregistré",
+      "zh_cn" : "已保存"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs" ]
   },
@@ -3333,7 +3442,8 @@
     "translations" : {
       "en" : "Saving",
       "es" : "Guardando",
-      "fr" : "Enregistrement"
+      "fr" : "Enregistrement",
+      "zh_cn" : "正在保存"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs" ]
   },
@@ -3341,7 +3451,8 @@
     "translations" : {
       "en" : "Unsaved changes",
       "es" : "Cambios sin guardar",
-      "fr" : "Modifications non sauvegardées"
+      "fr" : "Modifications non sauvegardées",
+      "zh_cn" : "未保存的修改"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs" ]
   },
@@ -3350,7 +3461,8 @@
       "en" : "View mode (%s)",
       "es" : "Modo de visualización (%s)",
       "fr" : "Mode spectateur (%s)",
-      "ru" : "Режим просмотра (%s)"
+      "ru" : "Режим просмотра (%s)",
+      "zh_cn" : "查看模式（%s）"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs" ]
   },
@@ -3359,7 +3471,8 @@
       "en" : "Add",
       "es" : "Añadir",
       "fr" : "Ajouter",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "添加"
     },
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs" ]
   },
@@ -3368,7 +3481,8 @@
       "en" : "%s colors",
       "es" : "%s colors",
       "fr" : "%s couleurs",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "%s种颜色"
     },
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs" ]
   },
@@ -3376,7 +3490,8 @@
     "translations" : {
       "en" : "Big thumbnails",
       "es" : "Miniaturas grandes",
-      "fr" : "Grandes vignettes"
+      "fr" : "Grandes vignettes",
+      "zh_cn" : "大缩略图"
     },
     "used-in" : [ "src/app/main/ui/workspace/colorpalette.cljs" ]
   },
@@ -3384,7 +3499,8 @@
     "translations" : {
       "en" : "File library",
       "es" : "Biblioteca del archivo",
-      "fr" : "Bibliothèque du fichier"
+      "fr" : "Bibliothèque du fichier",
+      "zh_cn" : "文档库"
     },
     "used-in" : [ "src/app/main/ui/workspace/colorpicker/libraries.cljs", "src/app/main/ui/workspace/colorpalette.cljs" ]
   },
@@ -3392,7 +3508,8 @@
     "translations" : {
       "en" : "Recent colors",
       "es" : "Colores recientes",
-      "fr" : "Couleurs récentes"
+      "fr" : "Couleurs récentes",
+      "zh_cn" : "最近使用的颜色"
     },
     "used-in" : [ "src/app/main/ui/workspace/colorpicker/libraries.cljs", "src/app/main/ui/workspace/colorpalette.cljs" ]
   },
@@ -3400,7 +3517,8 @@
     "translations" : {
       "en" : "Save color style",
       "es" : "Guardar estilo de color",
-      "fr" : "Enregistrer le style de couleur"
+      "fr" : "Enregistrer le style de couleur",
+      "zh_cn" : "保存颜色风格"
     },
     "used-in" : [ "src/app/main/ui/workspace/colorpicker.cljs" ]
   },
@@ -3408,7 +3526,8 @@
     "translations" : {
       "en" : "Small thumbnails",
       "es" : "Miniaturas pequeñas",
-      "fr" : "Petites vignettes"
+      "fr" : "Petites vignettes",
+      "zh_cn" : "小缩略图"
     },
     "used-in" : [ "src/app/main/ui/workspace/colorpalette.cljs" ]
   },
@@ -3417,7 +3536,8 @@
       "en" : "%s components",
       "es" : "%s componentes",
       "fr" : "%s composants",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "%s个组件"
     },
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs" ]
   },
@@ -3426,7 +3546,8 @@
       "en" : "File library",
       "es" : "Biblioteca de este archivo",
       "fr" : "Bibliothèque du fichier",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "文档库"
     },
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs" ]
   },
@@ -3435,7 +3556,8 @@
       "en" : "%s graphics",
       "es" : "%s gráficos",
       "fr" : "%s graphiques",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "%s个图形"
     },
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs" ]
   },
@@ -3444,7 +3566,8 @@
       "en" : "LIBRARIES IN THIS FILE",
       "es" : "BIBLIOTECAS EN ESTE ARCHIVO",
       "fr" : "BIBLIOTHÈQUES DANS CE FICHIER",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "本文档中的库"
     },
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs" ]
   },
@@ -3453,7 +3576,8 @@
       "en" : "LIBRARIES",
       "es" : "BIBLIOTECAS",
       "fr" : "BIBLIOTHÈQUES",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "库"
     },
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs" ]
   },
@@ -3462,7 +3586,8 @@
       "en" : "LIBRARY",
       "es" : "BIBLIOTECA",
       "fr" : "BIBLIOTHÈQUE",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "库"
     },
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs" ]
   },
@@ -3471,7 +3596,8 @@
       "en" : "There are no Shared Libraries that need update",
       "es" : "No hay bibliotecas que necesiten ser actualizadas",
       "fr" : "Aucune Bibliothèque Partagée n’a besoin d’être mise à jour",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "没有需要更新的共享库"
     },
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs" ]
   },
@@ -3480,7 +3606,8 @@
       "en" : "No matches found for “%s“",
       "es" : "No se encuentra “%s“",
       "fr" : "Aucune correspondance pour « %s »",
-      "ru" : "Совпадений для “%s“ не найдено"
+      "ru" : "Совпадений для “%s“ не найдено",
+      "zh_cn" : "没有找到“%s”的匹配项"
     },
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs" ]
   },
@@ -3489,7 +3616,8 @@
       "en" : "There are no Shared Libraries available",
       "es" : "No hay bibliotecas compartidas disponibles",
       "fr" : "Aucune Bibliothèque Partagée disponible",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "没有可用的共享库"
     },
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs" ]
   },
@@ -3498,7 +3626,8 @@
       "en" : "Search shared libraries",
       "es" : "Buscar bibliotecas compartidas",
       "fr" : "Rechercher des Bibliothèques Partagées",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "搜索共享库"
     },
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs" ]
   },
@@ -3507,7 +3636,8 @@
       "en" : "SHARED LIBRARIES",
       "es" : "BIBLIOTECAS COMPARTIDAS",
       "fr" : "BIBLIOTHÈQUES PARTAGÉES",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "共享库"
     },
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs" ]
   },
@@ -3515,7 +3645,8 @@
     "translations" : {
       "en" : "Multiple typographies",
       "es" : "Varias tipografías",
-      "fr" : "Multiple typographies"
+      "fr" : "Multiple typographies",
+      "zh_cn" : "复合排版"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
   },
