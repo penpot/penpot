@@ -17,12 +17,13 @@
 
         on-click
         (fn [event]
-          (if ref
-            (let [target (dom/get-target event)
-                  parent (mf/ref-val ref)]
-              (when-not (or (not parent) (.contains parent target))
-                (on-close)))
-            (on-close)))
+          (let [target (dom/get-target event)]
+            (when-not (.-data-no-close ^js target)
+              (if ref
+                (let [parent (mf/ref-val ref)]
+                  (when-not (or (not parent) (.contains parent target))
+                    (on-close)))
+                (on-close)))))
 
         on-keyup
         (fn [event]

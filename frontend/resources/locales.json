@@ -507,6 +507,20 @@
     },
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs" ]
   },
+  "dashboard.move-to" : {
+    "translations" : {
+      "en" : "Move to",
+      "es" : "Mover a"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
+  },
+  "dashboard.move-to-other-team" : {
+    "translations" : {
+      "en" : "Move to other team",
+      "es" : "Mover a otro equipo"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
+  },
   "dashboard.new-file" : {
     "translations" : {
       "ca" : "+ Nou Arxiu",

@@ -24,7 +24,7 @@
         team       (th/create-team* 1 {:profile-id (:id profile)})
         project-id (uuid/next)]
 
-    ;; crate project
+    ;; create project
     (let [data {::th/type :create-project
                 :id project-id
                 :profile-id (:id profile)
@@ -37,7 +37,7 @@
       (let [result (:result out)]
         (t/is (= (:name data) (:name result)))))
 
-    ;; query a list of projects
+    ;; query the list of projects of a team
     (let [data {::th/type :projects
                 :team-id (:id team)
                 :profile-id (:id profile)}

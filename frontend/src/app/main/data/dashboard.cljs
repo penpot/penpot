@@ -523,6 +523,7 @@
 (defn duplicate-file
   [{:keys [id name] :as params}]
   (us/assert ::us/uuid id)
+  (us/assert ::name name)
   (ptk/reify ::duplicate-file
     ptk/WatchEvent
     (watch [_ state stream]
@@ -536,5 +537,23 @@
                                             :name new-name})
              (rx/tap on-success)
              (rx/map file-created)
+             (rx/catch on-error))))))
+
+;; --- Move File
+
+(defn move-file
+  [{:keys [id project-id] :as params}]
+  (us/assert ::us/uuid id)
+  (us/assert ::us/uuid project-id)
+  (ptk/reify ::move-file
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [{:keys [on-success on-error]
+             :or {on-success identity
+                  on-error identity}} (meta params)]
+
+        (->> (rp/mutation! :move-files {:ids #{id}
+                                        :project-id project-id})
+             (rx/tap on-success)
              (rx/catch on-error))))))
 

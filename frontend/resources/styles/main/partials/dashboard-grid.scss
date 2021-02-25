@@ -195,13 +195,6 @@
         width: 15px;
         height: 30px;
 
-        svg {
-          fill: $color-gray-20;
-          height: 18px;
-          margin-right: $x-small;
-          width: 18px;
-        }
-
         span {
           color: $color-black;
         }
@@ -218,13 +211,15 @@
             align-items: flex-end;
             flex-direction: column;
 
-            svg {
+            > svg {
               fill: $color-gray-60;
               margin-right: 0;
+              height: 18px;
+              width: 18px;
             }
 
             &:hover {
-              svg {
+              > svg {
                 fill: $color-primary-dark;
               }
 
@@ -237,7 +232,7 @@
       }
 
       .project-th-actions.force-display {
-        display: flex;
+        opacity: 1;
       }
 
     }
