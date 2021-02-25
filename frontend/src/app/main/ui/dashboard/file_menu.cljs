@@ -36,6 +36,11 @@
                  qparams {:page-id (first (get-in file [:data :pages]))}]
              (st/emit! (rt/nav-new-window :workspace pparams qparams)))))
 
+        on-duplicate
+        (mf/use-callback
+         (mf/deps file)
+         (st/emitf (dd/duplicate-file file)))
+
         delete-fn
         (mf/use-callback
          (mf/deps file)
@@ -100,6 +105,7 @@
                       :left left
                       :options [[(tr "dashboard.open-in-new-tab") on-new-tab]
                                 [(tr "labels.rename") on-edit]
+                                [(tr "dashboard.duplicate") on-duplicate]
                                 [(tr "labels.delete") on-delete]
                                 (if (:is-shared file)
                                   [(tr "dashboard.remove-shared") on-del-shared]

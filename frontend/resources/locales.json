@@ -400,6 +400,13 @@
     },
     "used-in" : [ "src/app/main/ui/settings/profile.cljs" ]
   },
+  "dashboard.copy-suffix" : {
+    "translations" : {
+      "en" : "(copy)",
+      "es" : "(copia)"
+    },
+    "used-in" : [ "src/app/main/data/dashboard.cljs" ]
+  },
   "dashboard.create-new-team" : {
     "translations" : {
       "ca" : "+ Crear un nou equip",
@@ -440,6 +447,13 @@
       "zh_cn" : "草稿"
     },
     "used-in" : [ "src/app/main/ui/dashboard/files.cljs" ]
+  },
+  "dashboard.duplicate" : {
+    "translations" : {
+      "en" : "Duplicate",
+      "es" : "Duplicar"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "dashboard.empty-files" : {
     "translations" : {

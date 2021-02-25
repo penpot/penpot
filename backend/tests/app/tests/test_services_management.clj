@@ -49,7 +49,8 @@
 
     (let [data {::th/type :duplicate-file
                 :profile-id (:id profile)
-                :file-id (:id file1)}
+                :file-id (:id file1)
+                :new-name "file 1 (copy)"}
           out  (th/mutation! data)]
 
       ;; (th/print-result! out)
@@ -58,9 +59,9 @@
       (t/is (nil? (:error out)))
       (let [result (:result out)]
 
-        ;; Check that the returned result is a file but has different
+        ;; Check that the returned result is a file but has different id
         ;; and different name.
-        (t/is (= (:name file1) (:name result)))
+        (t/is (= "file 1 (copy)" (:name result)))
         (t/is (not= (:id file1) (:id result)))
 
         ;; Check that the new file has a correct file library relation
@@ -120,15 +121,16 @@
 
     (let [data {::th/type :duplicate-project
                 :profile-id (:id profile)
-                :project-id (:id project)}
+                :project-id (:id project)
+                :new-name "project 1 (copy)"}
           out  (th/mutation! data)]
 
       ;; Check tha tresult is correct
       (t/is (nil? (:error out)))
 
       (let [result (:result out)]
-        ;; Check that they are the same project but different ids
-        (t/is (= (:name project) (:name result)))
+        ;; Check that they are the same project but different id and name
+        (t/is (= "project 1 (copy)" (:name result)))
         (t/is (not= (:id project) (:id result)))
 
         ;; Check the total number of projects (previously is 2, now is 3)

@@ -26,6 +26,17 @@
   (let [top  (or top 0)
         left (or left 0)
 
+        on-duplicate
+        (mf/use-callback
+         (mf/deps project)
+         #(let [on-success
+                (fn [new-project]
+                  (st/emit! (rt/nav :dashboard-files
+                                    {:team-id (:team-id new-project)
+                                     :project-id (:id new-project)})))]
+            (st/emit! (dd/duplicate-project
+                        (with-meta project {:on-success on-success})))))
+
         delete-fn
         (mf/use-callback
           (mf/deps project)
@@ -49,5 +60,6 @@
                       :top top
                       :left left
                       :options [[(tr "labels.rename") on-edit]
+                                [(tr "dashboard.duplicate") on-duplicate]
                                 [(tr "labels.delete") on-delete]]}]))
 

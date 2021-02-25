@@ -28,6 +28,7 @@
 (s/def ::project-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
 (s/def ::team-id ::us/uuid)
+(s/def ::new-name ::us/string)
 
 (defn- remap-id
   [item index key]
@@ -72,7 +73,7 @@
                   (blob/encode))))))
 
 (defn- duplicate-file
-  [conn {:keys [profile-id file index project-id]} {:keys [reset-shared-flag] :as opts}]
+  [conn {:keys [profile-id file index project-id new-name]} {:keys [reset-shared-flag] :as opts}]
   (let [flibs  (db/query conn :file-library-rel {:file-id (:id file)})
         fmeds  (db/query conn :file-media-object {:file-id (:id file)})
 
@@ -94,12 +95,15 @@
                  (some? project-id)
                  (assoc :project-id project-id)
 
+                 (some? new-name)
+                 (assoc :name new-name)
+
                  (true? reset-shared-flag)
                  (assoc :is-shared false))
 
         file   (-> file
-                   (update :id #(get index %))
-                   (process-file index))]
+                 (update :id #(get index %))
+                 (process-file index))]
 
     (db/insert! conn :file file)
     (db/insert! conn :file-profile-rel
@@ -123,10 +127,11 @@
 (declare duplicate-file)
 
 (s/def ::duplicate-file
-  (s/keys :req-un [::profile-id ::file-id]))
+  (s/keys :req-un [::profile-id ::file-id]
+          :opt-un [::new-name]))
 
 (sv/defmethod ::duplicate-file
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id new-name] :as params}]
   (db/with-atomic [conn pool]
     (let [file   (db/get-by-id conn :file file-id)
           index  {file-id (uuid/next)}
@@ -141,23 +146,29 @@
 (declare duplicate-project)
 
 (s/def ::duplicate-project
-  (s/keys :req-un [::profile-id ::project-id]))
+  (s/keys :req-un [::profile-id ::project-id]
+          :opt-un [::new-name]))
 
 (sv/defmethod ::duplicate-project
-  [{:keys [pool] :as cfg} {:keys [profile-id project-id] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id project-id new-name] :as params}]
   (db/with-atomic [conn pool]
     (let [project (db/get-by-id conn :project project-id)]
       (teams/check-edition-permissions! conn profile-id (:team-id project))
       (duplicate-project conn (assoc params :project project)))))
 
 (defn duplicate-project
-  [conn {:keys [profile-id project] :as params}]
+  [conn {:keys [profile-id project new-name] :as params}]
   (let [files   (db/query conn :file
                           {:project-id (:id project)}
                           {:columns [:id]})
 
         index   (reduce #(assoc %1 (:id %2) (uuid/next)) {} files)
-        project (assoc project :id (uuid/next))
+        project (cond-> project
+                  new-name
+                  (assoc :name new-name)
+
+                  :always
+                  (assoc :id (uuid/next)))
         params  (assoc params
                        :project-id (:id project)
                        :index index)]
@@ -170,7 +181,9 @@
                                            :can-edit true})
     (doseq [{:keys [id]} files]
       (let [file   (db/get-by-id conn :file id)
-            params (assoc params :file file)]
+            params (-> params
+                       (assoc :file file)
+                       (dissoc :new-name))]
         (duplicate-file conn params {:reset-shared-flag false
                                      :remap-libraries true})))
     project))
