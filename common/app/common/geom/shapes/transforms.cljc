@@ -139,11 +139,15 @@
 
 (defn- calculate-height
   "Calculates the height of a paralelogram given by the points"
-  [[p1 _ p3 p4]]
-  (let [v1 (gpt/to-vec p3 p4)
-        v2 (gpt/to-vec p4 p1)
-        angle (gpt/angle-with-other v1 v2)]
-    (* (gpt/length v2) (mth/sin (mth/radians angle)))))
+  [[p1 _ _ p4]]
+  (-> (gpt/to-vec p4 p1)
+      (gpt/length)))
+
+(defn- calculate-width
+  "Calculates the width of a paralelogram given by the points"
+  [[p1 p2 _ _]]
+  (-> (gpt/to-vec p1 p2)
+      (gpt/length)))
 
 (defn- calculate-rotation
   "Calculates the rotation between two shapes given the resize vector direction"
@@ -173,44 +177,49 @@
   "Calculates a matrix that is a series of transformations we have to do to the transformed rectangle so that
   after applying them the end result is the `shape-pathn-temp`.
   This is compose of three transformations: skew, resize and rotation"
-  [points-temp points-rec flip-x flip-y]
-  (let [center (gco/center-points points-temp)
+  ([points-temp points-rec] (calculate-adjust-matrix points-temp points-rec false false))
+  ([points-temp points-rec flip-x flip-y]
+   (let [center (gco/center-points points-temp)
 
-        stretch-matrix (gmt/matrix)
+         stretch-matrix (gmt/matrix)
 
-        skew-angle (calculate-skew-angle points-temp)
+         skew-angle (calculate-skew-angle points-temp)
 
-        ;; When one of the axis is flipped we have to reverse the skew
-        ;; skew-angle (if (neg? (* (:x resize-vector) (:y resize-vector))) (- skew-angle) skew-angle )
-        skew-angle (if (and (or flip-x flip-y)
-                            (not (and flip-x flip-y))) (- skew-angle) skew-angle )
-        skew-angle (if (mth/nan? skew-angle) 0 skew-angle)
+         ;; When one of the axis is flipped we have to reverse the skew
+         ;; skew-angle (if (neg? (* (:x resize-vector) (:y resize-vector))) (- skew-angle) skew-angle )
+         skew-angle (if (and (or flip-x flip-y)
+                             (not (and flip-x flip-y))) (- skew-angle) skew-angle )
+         skew-angle (if (mth/nan? skew-angle) 0 skew-angle)
 
-        stretch-matrix (gmt/multiply stretch-matrix (gmt/skew-matrix skew-angle 0))
+         stretch-matrix (gmt/multiply stretch-matrix (gmt/skew-matrix skew-angle 0))
 
-        h1 (max 1 (calculate-height points-temp))
-        h2 (max 1 (calculate-height (transform-points points-rec center stretch-matrix)))
-        h3 (if-not (mth/almost-zero? h2) (/ h1 h2) 1)
-        h3 (if (mth/nan? h3) 1 h3)
+         h1 (max 1 (calculate-height points-temp))
+         h2 (max 1 (calculate-height (transform-points points-rec center stretch-matrix)))
+         h3 (if-not (mth/almost-zero? h2) (/ h1 h2) 1)
+         h3 (if (mth/nan? h3) 1 h3)
 
-        stretch-matrix (gmt/multiply stretch-matrix (gmt/scale-matrix (gpt/point 1 h3)))
+         w1 (max 1 (calculate-width points-temp))
+         w2 (max 1 (calculate-width (transform-points points-rec center stretch-matrix)))
+         w3 (if-not (mth/almost-zero? w2) (/ w1 w2) 1)
+         w3 (if (mth/nan? w3) 1 w3)
 
-        rotation-angle (calculate-rotation
-                        center
-                        (transform-points points-rec (gco/center-points points-rec) stretch-matrix)
-                        points-temp
-                        flip-x
-                        flip-y)
+         stretch-matrix (gmt/multiply stretch-matrix (gmt/scale-matrix (gpt/point w3 h3)))
 
-        stretch-matrix (gmt/multiply (gmt/rotate-matrix rotation-angle) stretch-matrix)
+         rotation-angle (calculate-rotation
+                         center
+                         (transform-points points-rec (gco/center-points points-rec) stretch-matrix)
+                         points-temp
+                         flip-x
+                         flip-y)
 
+         stretch-matrix (gmt/multiply (gmt/rotate-matrix rotation-angle) stretch-matrix)
 
-        ;; This is the inverse to be able to remove the transformation
-        stretch-matrix-inverse (-> (gmt/matrix)
-                                   (gmt/scale (gpt/point 1 (/ 1 h3)))
-                                   (gmt/skew (- skew-angle) 0)
-                                   (gmt/rotate (- rotation-angle)))]
-    [stretch-matrix stretch-matrix-inverse]))
+         ;; This is the inverse to be able to remove the transformation
+         stretch-matrix-inverse (-> (gmt/matrix)
+                                    (gmt/scale (gpt/point (/ 1 w3) (/ 1 h3)))
+                                    (gmt/skew (- skew-angle) 0)
+                                    (gmt/rotate (- rotation-angle)))]
+     [stretch-matrix stretch-matrix-inverse rotation-angle])))
 
 (defn apply-transform
   "Given a new set of points transformed, set up the rectangle so it keeps

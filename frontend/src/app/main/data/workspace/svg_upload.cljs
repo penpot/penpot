@@ -17,8 +17,8 @@
    [app.common.uuid :as uuid]
    [app.main.data.workspace.common :as dwc]
    [app.util.color :as uc]
-   [app.util.data :as ud]
    [app.util.geom.path :as ugp]
+   [app.util.object :as obj]
    [app.util.svg :as usvg]
    [beicon.core :as rx]
    [cuerdas.core :as str]
@@ -58,12 +58,12 @@
     (get-in shape [:svg-attrs :fill-opacity])
     (-> (update :svg-attrs dissoc :fill-opacity)
         (assoc :fill-opacity (-> (get-in shape [:svg-attrs :fill-opacity])
-                                 (ud/parse-float))))
+                                 (d/parse-double))))
 
     (get-in shape [:svg-attrs :style :fill-opacity])
     (-> (update :svg-attrs dissoc :fill-opacity)
         (assoc :fill-opacity (-> (get-in shape [:svg-attrs :style :fill-opacity])
-                                 (ud/parse-float))))))
+                                 (d/parse-double))))))
 
 (defonce default-stroke {:stroke-color "#000000"
                          :stroke-opacity 1
@@ -84,12 +84,12 @@
           (get-in shape [:svg-attrs :stroke-width])
           (-> (update :svg-attrs dissoc :stroke-width)
               (assoc :stroke-width (-> (get-in shape [:svg-attrs :stroke-width])
-                                       (ud/parse-float))))
+                                       (d/parse-double))))
 
           (get-in shape [:svg-attrs :style :stroke-width])
           (-> (update-in [:svg-attrs :style] dissoc :stroke-width)
               (assoc :stroke-width (-> (get-in shape [:svg-attrs :style :stroke-width])
-                                       (ud/parse-float)))))]
+                                       (d/parse-double)))))]
     shape
     #_(if (d/any-key? shape :stroke-color :stroke-opacity :stroke-width)
       (merge default-stroke shape)
@@ -131,10 +131,12 @@
                   svg-transform
                   (gsh/transform-content svg-transform))
 
-        attrs (d/update-when attrs :transform #(-> (usvg/parse-transform %) str))
+        ;; attrs (d/update-when attrs :transform #(-> (usvg/parse-transform %) str))
 
         selrect (gsh/content->selrect content)
-        points (gsh/rect->points selrect)]
+        points (gsh/rect->points selrect)
+
+        origin (gpt/negate (gpt/point svg-data))]
     (-> {:id (uuid/next)
          :type :path
          :name name
@@ -145,7 +147,78 @@
         (assoc :svg-viewbox (select-keys selrect [:x :y :width :height]))
         (assoc :svg-attrs (dissoc attrs :d :transform))
         (assoc :svg-transform svg-transform)
-        (gsh/translate-to-frame svg-data))))
+        (gsh/translate-to-frame origin))))
+
+
+(defn inverse-matrix [{:keys [a b c d e f]}]
+  (let [dom-matrix (-> (js/DOMMatrix.)
+                       (obj/set! "a" a)
+                       (obj/set! "b" b)
+                       (obj/set! "c" c)
+                       (obj/set! "d" d)
+                       (obj/set! "e" e)
+                       (obj/set! "f" f)
+                       (.inverse))]
+    (gmt/matrix (obj/get dom-matrix "a")
+                (obj/get dom-matrix "b")
+                (obj/get dom-matrix "c")
+                (obj/get dom-matrix "d")
+                (obj/get dom-matrix "e")
+                (obj/get dom-matrix "f"))))
+
+(defn calculate-rect-metadata [rect-data transform]
+  (let [points (-> (gsh/rect->points rect-data)
+                   (gsh/transform-points transform))
+
+        center (gsh/center-points points)
+
+        rect-shape (-> (gsh/make-centered-rect center (:width rect-data) (:height rect-data))
+                       (update :width max 1)
+                       (update :height max 1))
+
+        selrect (gsh/rect->selrect rect-shape)
+
+        rect-points (gsh/rect->points rect-shape)
+
+        [shape-transform shape-transform-inv rotation]
+        (gsh/calculate-adjust-matrix points rect-points)]
+
+    (merge rect-shape
+           {:selrect selrect
+            :points points
+            :rotation rotation
+            :transform shape-transform
+            :transform-inverse shape-transform-inv})))
+
+(def default-rect {:x 0 :y 0 :width 1 :height 1 :rx 0 :ry 0})
+
+(defn create-rect-shape [name frame-id svg-data {:keys [attrs] :as data}]
+  (let [svg-transform (usvg/parse-transform (:transform attrs))
+        transform (->> svg-transform 
+                       (gmt/transform-in (gpt/point svg-data)))
+
+        rect (->> (select-keys attrs [:x :y :width :height])
+                  (d/mapm #(d/parse-double %2)))
+
+        origin (gpt/negate (gpt/point svg-data))
+
+        rect-data (-> (merge default-rect rect)
+                      (update :x - (:x origin))
+                      (update :y - (:y origin)))
+
+        metadata (calculate-rect-metadata rect-data transform)]
+    (-> {:id (uuid/next)
+         :type :rect
+         :name name
+         :frame-id frame-id}
+        (cond->
+            (contains? attrs :rx) (:rx attrs)
+            (contains? attrs :rx) (:rx attrs))
+
+        (merge metadata)
+        (assoc :svg-transform transform)
+        (assoc :svg-viewbox (select-keys rect [:x :y :width :height]))
+        (assoc :svg-attrs (dissoc attrs :x :y :width :height :rx :ry :transform)))))
 
 (defn create-group [name frame-id svg-data {:keys [attrs]}]
   (let [{:keys [x y width height]} svg-data]
@@ -166,12 +239,14 @@
         name (dwc/generate-unique-name unames (or (:id attrs) (tag->name tag)) true)
         att-refs (usvg/find-attr-references attrs)
         references (usvg/find-def-references (:defs svg-data) att-refs)]
-    
+
+    ;; SVG graphic elements
+    ;; :circle :ellipse :image :line :path :polygon :polyline :rect :text :use
     (-> (case tag
-          :g (create-group name frame-id svg-data element-data)
-          ;; :rect (parse-rect data)
-          :path (create-path-shape name frame-id (gpt/negate (gpt/point svg-data)) element-data)
-          (create-raw-svg name frame-id svg-data element-data))
+          :g      (create-group name frame-id svg-data element-data)
+          :rect   (create-rect-shape name frame-id svg-data element-data)
+          :path   (create-path-shape name frame-id svg-data element-data)
+          #_other (create-raw-svg name frame-id svg-data element-data))
 
         (assoc :svg-defs (select-keys (:defs svg-data) references))
         (setup-fill)

@@ -225,7 +225,7 @@
     "skewY"     (apply gmt/skew-matrix (format-skew-y-params params))))
 
 (defn parse-transform [transform-attr]
-  (when transform-attr
+  (if transform-attr
     (let [process-matrix
           (fn [[_ type params]]
             (let [params (->> (re-seq params-regex params)
@@ -236,5 +236,6 @@
           matrices (->> (re-seq matrices-regex transform-attr)
                         (map process-matrix)
                         (map to-matrix))]
-      (reduce gmt/multiply (gmt/matrix) matrices))))
+      (reduce gmt/multiply (gmt/matrix) matrices))
+    (gmt/matrix)))
 

@@ -38,9 +38,6 @@ exports.fn = function(item) {
         !item.isEmpty() &&
         !item.someAttr(function(attr) {
             return ~referencesProps.indexOf(attr.name) && ~attr.value.indexOf('url(');
-        }) &&
-        item.content.every(function(inner) {
-            return inner.isElem(pathElems) && !inner.hasAttr('id');
         })
     ) {
         item.content.forEach(function(inner) {
