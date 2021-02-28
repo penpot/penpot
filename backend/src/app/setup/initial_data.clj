@@ -10,11 +10,15 @@
 (ns app.setup.initial-data
   (:refer-clojure :exclude [load])
   (:require
+   [app.common.data :as d]
+   [app.common.pages.migrations :as pmg]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
    [app.rpc.mutations.projects :as projects]
-   [app.rpc.queries.profile :as profile]))
+   [app.rpc.queries.profile :as profile]
+   [app.util.blob :as blob]
+   [clojure.walk :as walk]))
 
 ;; --- DUMP GENERATION
 
@@ -38,47 +42,76 @@
   ([system project-id {:keys [skey project-name]
                        :or {project-name "Penpot Onboarding"}}]
    (db/with-atomic [conn (:app.db/pool system)]
-     (let [skey              (or skey (cfg/get :initial-project-skey))
-           file              (db/exec! conn [sql:file project-id])
-           file-library-rel  (db/exec! conn [sql:file-library-rel project-id])
-           file-media-object (db/exec! conn [sql:file-media-object project-id])
-           data              {:project-name project-name
-                              :file file
-                              :file-library-rel file-library-rel
-                              :file-media-object file-media-object}]
+     (let [skey  (or skey (cfg/get :initial-project-skey))
+           files (db/exec! conn [sql:file project-id])
+           flibs (db/exec! conn [sql:file-library-rel project-id])
+           fmeds (db/exec! conn [sql:file-media-object project-id])
+           data  {:project-name project-name
+                  :files files
+                  :flibs flibs
+                  :fmeds fmeds}]
 
-       (db/delete! conn :server-prop
-                   {:id skey})
+       (db/delete! conn :server-prop {:id skey})
        (db/insert! conn :server-prop
                    {:id skey
                     :preload false
                     :content (db/tjson data)})
-       nil))))
+       skey))))
 
 
 ;; --- DUMP LOADING
 
-(defn- remap-ids
-  "Given a collection and a map from ID to ID. Changes all the `keys`
-  properties so they point to the new ID existing in `map-ids`"
-  [map-ids coll keys]
-  (let [generate-id
-        (fn [map-ids {:keys [id]}]
-          (assoc map-ids id (uuid/next)))
+(defn- process-file
+  [file index]
+  (letfn [(process-form [form]
+            (cond-> form
+              ;; Relink Components
+              (and (map? form)
+                   (uuid? (:component-file form)))
+              (update :component-file #(get index % %))
 
-        remap-key
-        (fn [obj map-ids key]
-          (cond-> obj
-            (contains? obj key)
-            (assoc key (get map-ids (get obj key) (get obj key)))))
+              ;; Relink Image Shapes
+              (and (map? form)
+                   (map? (:metadata form))
+                   (= :image (:type form)))
+              (update-in [:metadata :id] #(get index % %))))
 
-        change-id
-        (fn [map-ids obj]
-          (reduce #(remap-key %1 map-ids %2) obj keys))
+          ;; A function responsible to analize all file data and
+          ;; replace the old :component-file reference with the new
+          ;; ones, using the provided file-index
+          (relink-shapes [data]
+            (walk/postwalk process-form data))
 
-        new-map-ids (reduce generate-id map-ids coll)]
+          ;; A function responsible of process the :media attr of file
+          ;; data and remap the old ids with the new ones.
+          (relink-media [media]
+            (reduce-kv (fn [res k v]
+                         (let [id (get index k)]
+                           (if (uuid? id)
+                             (-> res
+                                 (assoc id (assoc v :id id))
+                                 (dissoc k))
+                             res)))
+                       media
+                       media))]
 
-    [new-map-ids (map (partial change-id new-map-ids) coll)]))
+    (update file :data
+            (fn [data]
+              (-> data
+                  (blob/decode)
+                  (assoc :id (:id file))
+                  (pmg/migrate-data)
+                  (update :pages-index relink-shapes)
+                  (update :components relink-shapes)
+                  (update :media relink-media)
+                  (d/without-nils)
+                  (blob/encode))))))
+
+(defn- remap-id
+  [item index key]
+  (cond-> item
+    (contains? item key)
+    (assoc key (get index (get item key) (get item key)))))
 
 (defn- retrieve-data
   [conn skey]
@@ -97,19 +130,26 @@
                                                     :team-id (:default-team-id profile)
                                                     :name (:project-name data)})
 
-             map-ids {}
+             index   (as-> {} index
+                       (reduce #(assoc %1 (:id %2) (uuid/next)) index (:files data))
+                       (reduce #(assoc %1 (:id %2) (uuid/next)) index (:fmeds data)))
 
-             [map-ids file]                 (remap-ids map-ids (:file data) #{:id})
-             [map-ids file-library-rel]     (remap-ids map-ids (:file-library-rel data) #{:file-id :library-file-id})
-             [_       file-media-object]    (remap-ids map-ids (:file-media-object data) #{:id :file-id :media-id :thumbnail-id})
+             flibs   (map #(remap-id % index :file-id) (:flibs data))
 
-             file             (map #(assoc % :project-id (:id project)) file)
-             file-profile-rel (map #(array-map :file-id (:id %)
-                                               :profile-id (:id profile)
-                                               :is-owner true
-                                               :is-admin true
-                                               :can-edit true)
-                                   file)]
+             files   (->> (:files data)
+                          (map #(assoc % :id (get index (:id %))))
+                          (map #(assoc % :project-id (:id project)))
+                          (map #(process-file % index)))
+
+             fmeds   (->> (:fmeds data)
+                          (map #(assoc % :id (get index (:id %))))
+                          (map #(remap-id % index :file-id)))
+
+             fprofs  (map #(array-map :file-id (:id %)
+                                      :profile-id (:id profile)
+                                      :is-owner true
+                                      :is-admin true
+                                      :can-edit true) files)]
 
        (projects/create-project-profile conn {:project-id (:id project)
                                               :profile-id (:id profile)})
@@ -119,19 +159,24 @@
                                                    :profile-id (:id profile)})
 
        ;; Re-insert into the database
-       (doseq [params file]
+       (doseq [params files]
          (db/insert! conn :file params))
-       (doseq [params file-profile-rel]
+
+       (doseq [params fprofs]
          (db/insert! conn :file-profile-rel params))
-       (doseq [params file-library-rel]
+
+       (doseq [params flibs]
          (db/insert! conn :file-library-rel params))
-       (doseq [params file-media-object]
+
+       (doseq [params fmeds]
          (db/insert! conn :file-media-object params)))))))
 
 (defn load
   [system {:keys [email] :as opts}]
   (db/with-atomic [conn (:app.db/pool system)]
-    (when-let [profile (profile/retrieve-profile-data-by-email conn email)]
+    (when-let [profile (some->> email
+                                (profile/retrieve-profile-data-by-email conn)
+                                (profile/populate-additional-data conn))]
       (load-initial-project! conn profile opts)
       true)))
 
