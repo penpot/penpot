@@ -71,6 +71,10 @@
     {:default-team-id (:id team)
      :default-project-id (:id project)}))
 
+(defn populate-additional-data
+  [conn profile]
+  (merge profile (retrieve-additional-data conn (:id profile))))
+
 (defn decode-profile-row
   [{:keys [props] :as row}]
   (cond-> row
@@ -83,9 +87,9 @@
 
 (defn retrieve-profile
   [conn id]
-  (let [profile (some-> (retrieve-profile-data conn id)
-                        (strip-private-attrs)
-                        (merge (retrieve-additional-data conn id)))]
+  (let [profile (some->> (retrieve-profile-data conn id)
+                         (strip-private-attrs)
+                         (populate-additional-data conn))]
     (when (nil? profile)
       (ex/raise :type :not-found
                 :hint "Object doest not exists."))

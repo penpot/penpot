@@ -242,10 +242,10 @@
             profile)]
 
     (db/with-atomic [conn pool]
-      (let [profile (-> (profile/retrieve-profile-data-by-email conn email)
-                        (validate-profile)
-                        (profile/strip-private-attrs))
-            profile (merge profile (profile/retrieve-additional-data conn (:id profile)))]
+      (let [profile (->> (profile/retrieve-profile-data-by-email conn email)
+                         (validate-profile)
+                         (profile/strip-private-attrs)
+                         (profile/populate-additional-data conn))]
         (if-let [token (:invitation-token params)]
           ;; If the request comes with an invitation token, this means
           ;; that user wants to accept it with different user. A very
@@ -293,11 +293,7 @@
 
 (defn login-or-register
   [{:keys [conn] :as cfg} {:keys [email backend] :as params}]
-  (letfn [(populate-additional-data [conn profile]
-            (let [data (profile/retrieve-additional-data conn (:id profile))]
-              (merge profile data)))
-
-          (create-profile [conn {:keys [fullname email]}]
+  (letfn [(create-profile [conn {:keys [fullname email]}]
             (db/insert! conn :profile
                         {:id (uuid/next)
                          :fullname fullname
@@ -315,7 +311,7 @@
 
     (let [profile (profile/retrieve-profile-data-by-email conn email)
           profile (if profile
-                    (populate-additional-data conn profile)
+                    (profile/populate-additional-data conn profile)
                     (register-profile conn params))]
       (profile/strip-private-attrs profile))))
 
