@@ -30,7 +30,7 @@ const plugins = [
     { "removeDimensions" : true },
     { "removeStyleElement" : true },
     { "removeScriptElement" : true },
-    { "removeOffCanvasPaths" : true },
+    { "removeOffCanvasPaths" : false },
 ];
 
 

@@ -8,7 +8,8 @@ exports.description = 'moves some group attributes to the content elements';
 
 var collections = require('./_collections.js'),
     pathElems = collections.pathElems.concat(['g', 'text']),
-    referencesProps = collections.referencesProps;
+    referencesProps = collections.referencesProps,
+    inheritableAttrs = collections.inheritableAttrs;
 
 /**
  * Move group attrs to the content elements.
@@ -31,30 +32,33 @@ var collections = require('./_collections.js'),
  */
 exports.fn = function(item) {
 
-    // move group transform attr to content's pathElems
-    if (
-        item.isElem('g') &&
-        item.hasAttr('transform') &&
-        !item.isEmpty() &&
-        !item.someAttr(function(attr) {
-            return ~referencesProps.indexOf(attr.name) && ~attr.value.indexOf('url(');
-        })
-    ) {
-        item.content.forEach(function(inner) {
-            var attr = item.attr('transform');
-            if (inner.hasAttr('transform')) {
-                inner.attr('transform').value = attr.value + ' ' + inner.attr('transform').value;
-            } else {
-                inner.addAttr({
-                    'name': attr.name,
-                    'local': attr.local,
-                    'prefix': attr.prefix,
-                    'value': attr.value
+    if (item.isElem('g') && !item.isEmpty()) {
+
+        inheritableAttrs.forEach(function(currentAttr) {
+
+            if (item.hasAttr(currentAttr)) {
+                var attr = item.attr(currentAttr);
+
+                item.content.forEach(function(inner) {
+
+                    if (currentAttr === 'transform' && inner.hasAttr(currentAttr)) {
+                        // if attr is transform and the inner has transform we concatenate it
+                        inner.attr(currentAttr).value = attr.value + ' ' + inner.attr(currentAttr).value;
+                    } else if (!inner.hasAttr(currentAttr)){
+                        // If the inner has the attr already we don't override it
+                        inner.addAttr({
+                            ...attr
+                        });
+                    }
+
+                    
                 });
+
+                item.removeAttr(currentAttr);
             }
+            
         });
-
-        item.removeAttr('transform');
+        
     }
-
+    
 };
