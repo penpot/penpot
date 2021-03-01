@@ -5,6 +5,7 @@
 [![License: MPL-2.0][uri_license_image]][uri_license]
 [![Gitter](https://badges.gitter.im/sereno-xyz/community.svg)](https://gitter.im/penpot/community)
 [![Managed with Taiga.io](https://img.shields.io/badge/managed%20with-TAIGA.io-709f14.svg)](https://tree.taiga.io/project/penpot/ "Managed with Taiga.io")
+[![Gitpod ready-to-code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/penpot/penpot)
 
 
 # PENPOT #
