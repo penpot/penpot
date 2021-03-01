@@ -14,7 +14,7 @@ ENV CLOJURE_VERSION=1.10.2.774 \
 RUN set -ex; \
     sudo useradd -m -g users -s /bin/bash penpot; \
     sudo passwd penpot -d; \
-    echo "penpot ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+    sudo echo "penpot ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 RUN set -ex; \
     brew install --cask redis; \
@@ -58,7 +58,7 @@ RUN set -ex; \
         libnss3 \
         libgbm1 \
     ; \
-    rm -rf /var/lib/apt/lists/*;
+    sudo rm -rf /var/lib/apt/lists/*;
 
 RUN set -ex; \
     wget "https://download.clojure.org/install/linux-install-$CLOJURE_VERSION.sh"; \
