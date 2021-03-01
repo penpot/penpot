@@ -1,1 +1,1 @@
-[FEEDBACK]: From {{ profile.email }}
+[PENPOT FEEDBACK]: {{subject|abbreviate:19}} (from {{email}})

@@ -38,13 +38,13 @@ If applicable, add screenshots to help explain your problem.
 -   Version (e.g. 22)
 
 **Environment (please complete the following information):**
-Specify if using demo instance or self-hosted instance.
+Specify if using SAAS (https://design.penpot.app) or self-hosted instance.
 
 If self-hosted instance, add OS and runtime information to help explain your problem.
 
 -   OS Version: (e.g. Ubuntu 16.04)
 
-Also provide Docker commands or docker-compose file if possible.
+Also provide Docker commands or docker-compose file if possible and if proceed.x
 
 -   Docker / Docker-compose Version: (e.g. Docker version 18.03.0-ce, build 0520e24)
 -   Image (e.g. alpine)

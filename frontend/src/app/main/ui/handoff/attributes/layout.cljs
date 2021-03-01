@@ -17,13 +17,17 @@
    [app.util.code-gen :as cg]
    [app.main.ui.components.copy-button :refer [copy-button]]))
 
-(def properties [:width :height :x :y :radius :rx])
+(def properties [:width :height :x :y :radius :rx :r1])
+
 (def params
   {:to-prop {:x "left"
              :y "top"
              :rotation "transform"
-             :rx "border-radius"}
-   :format  {:rotation #(str/fmt "rotate(%sdeg)" %)}})
+             :rx "border-radius"
+             :r1 "border-radius"}
+   :format  {:rotation #(str/fmt "rotate(%sdeg)" %)
+             :r1 #(apply str/fmt "%spx, %spx, %spx, %spx" %)}
+   :multi   {:r1 [:r1 :r2 :r3 :r4]}})
 
 (defn copy-data
   ([shape]
@@ -61,6 +65,19 @@
       [:div.attributes-label (t locale "handoff.attributes.layout.radius")]
       [:div.attributes-value (mth/precision (:rx shape) 2) "px"]
       [:& copy-button {:data (copy-data shape :rx)}]])
+
+   (when (and (:r1 shape)
+              (or (not= (:r1 shape) 0)
+                  (not= (:r2 shape) 0)
+                  (not= (:r3 shape) 0)
+                  (not= (:r4 shape) 0)))
+     [:div.attributes-unit-row
+      [:div.attributes-label (t locale "handoff.attributes.layout.radius")]
+      [:div.attributes-value (mth/precision (:r1 shape) 2) ", "
+                             (mth/precision (:r2 shape) 2) ", "
+                             (mth/precision (:r3 shape) 2) ", "
+                             (mth/precision (:r4 shape) 2) "px"]
+      [:& copy-button {:data (copy-data shape :r1)}]])
 
    (when (not= (:rotation shape 0) 0)
      [:div.attributes-unit-row

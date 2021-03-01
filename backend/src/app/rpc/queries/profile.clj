@@ -13,6 +13,7 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.db.sql :as sql]
    [app.util.services :as sv]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]))
@@ -71,6 +72,10 @@
     {:default-team-id (:id team)
      :default-project-id (:id project)}))
 
+(defn populate-additional-data
+  [conn profile]
+  (merge profile (retrieve-additional-data conn (:id profile))))
+
 (defn decode-profile-row
   [{:keys [props] :as row}]
   (cond-> row
@@ -83,27 +88,21 @@
 
 (defn retrieve-profile
   [conn id]
-  (let [profile (some-> (retrieve-profile-data conn id)
-                        (strip-private-attrs)
-                        (merge (retrieve-additional-data conn id)))]
+  (let [profile (some->> (retrieve-profile-data conn id)
+                         (strip-private-attrs)
+                         (populate-additional-data conn))]
     (when (nil? profile)
       (ex/raise :type :not-found
                 :hint "Object doest not exists."))
 
     profile))
 
-
-(def sql:profile-by-email
-  "select * from profile
-    where email=?
-      and deleted_at is null")
-
 (defn retrieve-profile-data-by-email
   [conn email]
-  (let [email (str/lower email)]
-    (-> (db/exec-one! conn [sql:profile-by-email email])
-        (decode-profile-row))))
-
+  (let [sql  (sql/select :profile {:email (str/lower email)})
+        data (db/exec-one! conn sql)]
+    (when (and data (nil? (:deleted-at data)))
+      (decode-profile-row data))))
 
 ;; --- Attrs Helpers
 

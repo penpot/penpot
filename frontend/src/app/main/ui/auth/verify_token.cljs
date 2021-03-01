@@ -42,7 +42,7 @@
   (let [msg (tr "dashboard.notifications.email-changed-successfully")]
     (ts/schedule 100 #(st/emit! (dm/success msg)))
     (st/emit! (rt/nav :settings-profile)
-              du/fetch-profile)))
+              (du/fetch-profile))))
 
 (defmethod handle-token :auth
   [tdata]
@@ -52,18 +52,19 @@
   [tdata]
   (case (:state tdata)
     :created
-    (let [message (tr "auth.notifications.team-invitation-accepted")]
-      (st/emit! du/fetch-profile
-                (rt/nav :dashboard-projects {:team-id (:team-id tdata)})
-                (dm/success message)))
+    (st/emit! (dm/success (tr "auth.notifications.team-invitation-accepted"))
+              (du/fetch-profile)
+              (rt/nav :dashboard-projects {:team-id (:team-id tdata)}))
 
     :pending
-    (st/emit! (rt/nav :auth-register {} {:token (:token tdata)}))))
+    (let [token (:invitation-token tdata)]
+      (st/emit! (rt/nav :auth-register {} {:invitation-token token})))))
 
 (defmethod handle-token :default
   [tdata]
-  (js/console.log "Unhandled token:" (pr-str tdata))
-  (st/emit! (rt/nav :auth-login)))
+  (st/emit!
+   (rt/nav :auth-login)
+   (dm/warn (tr "errors.unexpected-token"))))
 
 (mf/defc verify-token
   [{:keys [route] :as props}]

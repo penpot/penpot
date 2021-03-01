@@ -13,27 +13,33 @@
       <DefaultRolloverStrategy max="9"/>
     </RollingFile>
 
-    <CljFn name="error-reporter" ns="app.error-reporter" fn="queue-fn">
-      <PatternLayout pattern="[%d{YYYY-MM-dd HH:mm:ss.SSS}] [%t] %level{length=1} %logger{36} - %msg%n"/>
-    </CljFn>
+    <JeroMQ name="zmq">
+      <Property name="endpoint">tcp://localhost:45556</Property>
+      <JsonLayout complete="false" compact="true" includeTimeMillis="true" stacktraceAsString="true" properties="true" />
+    </JeroMQ>
   </Appenders>
 
   <Loggers>
-    <Logger name="com.zaxxer.hikari" level="error" additivity="false" />
-    <Logger name="org.eclipse.jetty" level="error" additivity="false" />
-    <Logger name="io.lettuce" level="error" additivity="false" />
+    <Logger name="com.zaxxer.hikari" level="error"/>
+    <Logger name="io.lettuce" level="error" />
+    <Logger name="org.eclipse.jetty" level="error" />
 
     <Logger name="app.cli" level="debug" additivity="false">
       <AppenderRef ref="console"/>
     </Logger>
 
-    <Logger name="app.error-reporter" level="debug" additivity="false">
+    <Logger name="app.loggers" level="debug" additivity="false">
       <AppenderRef ref="main" level="debug" />
     </Logger>
 
     <Logger name="app" level="debug" additivity="false">
-      <AppenderRef ref="main" level="debug" />
-      <AppenderRef ref="error-reporter" level="error" />
+      <AppenderRef ref="main" level="trace" />
+      <AppenderRef ref="zmq" level="debug" />
+    </Logger>
+
+    <Logger name="user" level="trace" additivity="false">
+      <AppenderRef ref="main" level="trace" />
+      <AppenderRef ref="zmq" level="debug" />
     </Logger>
 
     <Root level="info">

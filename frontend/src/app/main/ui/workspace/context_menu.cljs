@@ -24,6 +24,7 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer [t] :as i18n]
+   [app.util.timers :as timers]
    [beicon.core :as rx]
    [okulary.core :as l]
    [potok.core :as ptk]
@@ -53,6 +54,10 @@
         {:keys [id] :as shape} (:shape mdata)
         selected (:selected mdata)
 
+        single? (= (count selected) 1)
+        multiple? (> (count selected) 1)
+        editable-shape? (#{:group :text :path} (:type shape))
+
         current-file-id (mf/use-ctx ctx/current-file-id)
 
         do-duplicate (st/emitf dw/duplicate-selected)
@@ -77,6 +82,9 @@
         do-add-component (st/emitf dwl/add-component)
         do-detach-component (st/emitf (dwl/detach-component id))
         do-reset-component (st/emitf (dwl/reset-component id))
+        do-start-editing (fn []
+                           ;; We defer the execution so the mouse event won't close the editor
+                           (timers/schedule #(st/emit! (dw/start-editing-selected))))
         do-update-component (st/emitf
                               (dwc/start-undo-transaction)
                               (dwl/update-component id)
@@ -99,7 +107,7 @@
                                                  :on-accept confirm-update-remote-component}))
         do-show-component (st/emitf (dw/go-to-layout :assets))
         do-navigate-component-file (st/emitf (dwl/nav-to-component-file
-                                               (:component-file shape)))]
+                                              (:component-file shape)))]
     [:*
      [:& menu-entry {:title (t locale "workspace.shape.menu.copy")
                      :shortcut (sc/get-tooltip :copy)
@@ -128,7 +136,7 @@
                      :on-click do-send-to-back}]
      [:& menu-separator]
 
-     (when (> (count selected) 1)
+     (when multiple?
        [:*
         [:& menu-entry {:title (t locale "workspace.shape.menu.group")
                         :shortcut (sc/get-tooltip :group)
@@ -138,7 +146,7 @@
                         :on-click do-mask-group}]
         [:& menu-separator]])
 
-     (when (>= (count selected) 1)
+     (when (or single? multiple?)
        [:*
         [:& menu-entry {:title (t locale "workspace.shape.menu.flip-vertical")
                         :shortcut (sc/get-tooltip :flip-vertical)
@@ -148,7 +156,7 @@
                         :on-click do-flip-horizontal}]
         [:& menu-separator]])
 
-     (when (and (= (count selected) 1) (= (:type shape) :group))
+     (when (and single? (= (:type shape) :group))
        [:*
          [:& menu-entry {:title (t locale "workspace.shape.menu.ungroup")
                          :shortcut (sc/get-tooltip :ungroup)
@@ -160,6 +168,11 @@
            [:& menu-entry {:title (t locale "workspace.shape.menu.mask")
                            :shortcut (sc/get-tooltip :group)
                            :on-click do-mask-group}])])
+
+     (when (and single? editable-shape?)
+       [:& menu-entry {:title (t locale "workspace.shape.menu.edit")
+                       :shortcut (sc/get-tooltip :start-editing)
+                       :on-click do-start-editing}])
 
      (if (:hidden shape)
        [:& menu-entry {:title (t locale "workspace.shape.menu.show")

@@ -37,11 +37,19 @@
      :max-pool-size 20}
 
     :app.metrics/metrics
-    {}
+    {:definitions
+     {:profile-register
+      {:name "actions_profile_register_count"
+       :help "A global counter of user registrations."
+       :type :counter}
+      :profile-activation
+      {:name "actions_profile_activation_count"
+       :help "A global counter of profile activations"
+       :type :counter}}}
 
     :app.migrations/all
-    {:main (ig/ref :app.migrations/migrations)
-     :telemetry  (ig/ref :app.telemetry/migrations)}
+    {:main      (ig/ref :app.migrations/migrations)
+     :telemetry (ig/ref :app.telemetry/migrations)}
 
     :app.migrations/migrations
     {}
@@ -49,11 +57,11 @@
     :app.telemetry/migrations
     {}
 
-    :app.redis/redis
+    :app.msgbus/msgbus
     {:uri (:redis-uri config)}
 
     :app.tokens/tokens
-    {:sprops (ig/ref :app.sprops/props)}
+    {:sprops (ig/ref :app.setup/props)}
 
     :app.storage/gc-deleted-task
     {:pool     (ig/ref :app.db/pool)
@@ -69,7 +77,23 @@
 
     :app.http.session/session
     {:pool        (ig/ref :app.db/pool)
-     :cookie-name "auth-token"}
+     :cookie-name (:http-session-cookie-name config)}
+
+    :app.http.session/gc-task
+    {:pool        (ig/ref :app.db/pool)
+     :max-age     (:http-session-idle-max-age config)}
+
+    :app.http.session/updater
+    {:pool           (ig/ref :app.db/pool)
+     :metrics        (ig/ref :app.metrics/metrics)
+     :executor       (ig/ref :app.worker/executor)
+     :session        (ig/ref :app.http.session/session)
+     :max-batch-age  (:http-session-updater-batch-max-age config)
+     :max-batch-size (:http-session-updater-batch-max-size config)}
+
+    :app.http.awsns/handler
+    {:tokens  (ig/ref :app.tokens/tokens)
+     :pool    (ig/ref :app.db/pool)}
 
     :app.http/server
     {:port    (:http-server-port config)
@@ -83,14 +107,13 @@
      :tokens      (ig/ref :app.tokens/tokens)
      :public-uri  (:public-uri config)
      :metrics     (ig/ref :app.metrics/metrics)
-     :google-auth (ig/ref :app.http.auth/google)
-     :gitlab-auth (ig/ref :app.http.auth/gitlab)
-     :github-auth (ig/ref :app.http.auth/github)
-     :ldap-auth   (ig/ref :app.http.auth/ldap)
+     :oauth       (ig/ref :app.http.oauth/all)
      :assets      (ig/ref :app.http.assets/handlers)
      :svgparse    (ig/ref :app.svgparse/handler)
      :storage     (ig/ref :app.storage/storage)
-     :error-report-handler (ig/ref :app.error-reporter/handler)}
+     :sns-webhook (ig/ref :app.http.awsns/handler)
+     :feedback    (ig/ref :app.http.feedback/handler)
+     :error-report-handler (ig/ref :app.loggers.mattermost/handler)}
 
     :app.http.assets/handlers
     {:metrics           (ig/ref :app.metrics/metrics)
@@ -99,7 +122,15 @@
      :cache-max-age     (dt/duration {:hours 24})
      :signature-max-age (dt/duration {:hours 24 :minutes 5})}
 
-    :app.http.auth/google
+    :app.http.feedback/handler
+    {:pool (ig/ref :app.db/pool)}
+
+    :app.http.oauth/all
+    {:google (ig/ref :app.http.oauth/google)
+     :gitlab (ig/ref :app.http.oauth/gitlab)
+     :github (ig/ref :app.http.oauth/github)}
+
+    :app.http.oauth/google
     {:rpc           (ig/ref :app.rpc/rpc)
      :session       (ig/ref :app.http.session/session)
      :tokens        (ig/ref :app.tokens/tokens)
@@ -107,7 +138,7 @@
      :client-id     (:google-client-id config)
      :client-secret (:google-client-secret config)}
 
-    :app.http.auth/github
+    :app.http.oauth/github
     {:rpc           (ig/ref :app.rpc/rpc)
      :session       (ig/ref :app.http.session/session)
      :tokens        (ig/ref :app.tokens/tokens)
@@ -115,7 +146,7 @@
      :client-id     (:github-client-id config)
      :client-secret (:github-client-secret config)}
 
-    :app.http.auth/gitlab
+    :app.http.oauth/gitlab
     {:rpc           (ig/ref :app.rpc/rpc)
      :session       (ig/ref :app.http.session/session)
      :tokens        (ig/ref :app.tokens/tokens)
@@ -123,20 +154,6 @@
      :base-uri      (:gitlab-base-uri config)
      :client-id     (:gitlab-client-id config)
      :client-secret (:gitlab-client-secret config)}
-
-    :app.http.auth/ldap
-    {:host               (:ldap-auth-host config)
-     :port               (:ldap-auth-port config)
-     :ssl                (:ldap-auth-ssl config)
-     :starttls           (:ldap-auth-starttls config)
-     :user-query         (:ldap-auth-user-query config)
-     :username-attribute (:ldap-auth-username-attribute config)
-     :email-attribute    (:ldap-auth-email-attribute config)
-     :fullname-attribute (:ldap-auth-fullname-attribute config)
-     :avatar-attribute   (:ldap-auth-avatar-attribute config)
-     :base-dn            (:ldap-auth-base-dn config)
-     :session            (ig/ref :app.http.session/session)
-     :rpc                (ig/ref :app.rpc/rpc)}
 
     :app.svgparse/svgc
     {:metrics (ig/ref :app.metrics/metrics)}
@@ -165,15 +182,16 @@
      :tokens  (ig/ref :app.tokens/tokens)
      :metrics (ig/ref :app.metrics/metrics)
      :storage (ig/ref :app.storage/storage)
-     :redis   (ig/ref :app.redis/redis)
+     :msgbus  (ig/ref :app.msgbus/msgbus)
      :rlimits (ig/ref :app.rlimits/all)
      :svgc    (ig/ref :app.svgparse/svgc)}
 
     :app.notifications/handler
-    {:redis   (ig/ref :app.redis/redis)
-     :pool    (ig/ref :app.db/pool)
-     :session (ig/ref :app.http.session/session)
-     :metrics (ig/ref :app.metrics/metrics)}
+    {:msgbus   (ig/ref :app.msgbus/msgbus)
+     :pool     (ig/ref :app.db/pool)
+     :session  (ig/ref :app.http.session/session)
+     :metrics  (ig/ref :app.metrics/metrics)
+     :executor (ig/ref :app.worker/executor)}
 
     :app.worker/executor
     {:name "worker"}
@@ -181,46 +199,61 @@
     :app.worker/worker
     {:executor   (ig/ref :app.worker/executor)
      :pool       (ig/ref :app.db/pool)
-     :tasks      (ig/ref :app.tasks/all)}
+     :tasks      (ig/ref :app.tasks/registry)}
 
     :app.worker/scheduler
     {:executor   (ig/ref :app.worker/executor)
      :pool       (ig/ref :app.db/pool)
+     :tasks      (ig/ref :app.tasks/registry)
      :schedule
      [{:id "file-media-gc"
        :cron #app/cron "0 0 0 */1 * ? *" ;; daily
-       :fn (ig/ref :app.tasks.file-media-gc/handler)}
+       :task :file-media-gc}
 
       {:id "file-xlog-gc"
        :cron #app/cron "0 0 */1 * * ?"  ;; hourly
-       :fn (ig/ref :app.tasks.file-xlog-gc/handler)}
+       :task :file-xlog-gc}
 
       {:id "storage-deleted-gc"
        :cron #app/cron "0 0 1 */1 * ?"  ;; daily (1 hour shift)
-       :fn (ig/ref :app.storage/gc-deleted-task)}
+       :task :storage-deleted-gc}
 
       {:id "storage-touched-gc"
        :cron #app/cron "0 0 2 */1 * ?"  ;; daily (2 hour shift)
-       :fn (ig/ref :app.storage/gc-touched-task)}
+       :task :storage-touched-gc}
+
+      {:id "session-gc"
+       :cron #app/cron "0 0 3 */1 * ?"  ;; daily (3 hour shift)
+       :task :session-gc}
 
       {:id "storage-recheck"
        :cron #app/cron "0 0 */1 * * ?"  ;; hourly
-       :fn (ig/ref :app.storage/recheck-task)}
+       :task :storage-recheck}
 
       {:id "tasks-gc"
        :cron #app/cron "0 0 0 */1 * ?"  ;; daily
-       :fn (ig/ref :app.tasks.tasks-gc/handler)}
+       :task :tasks-gc}
 
       (when (:telemetry-enabled config)
         {:id   "telemetry"
          :cron #app/cron "0 0 */6 * * ?" ;; every 6h
          :uri  (:telemetry-uri config)
-         :fn   (ig/ref :app.tasks.telemetry/handler)})]}
+         :task :telemetry})]}
 
-    :app.tasks/all
-    {"sendmail"       (ig/ref :app.tasks.sendmail/handler)
-     "delete-object"  (ig/ref :app.tasks.delete-object/handler)
-     "delete-profile" (ig/ref :app.tasks.delete-profile/handler)}
+    :app.tasks/registry
+    {:metrics (ig/ref :app.metrics/metrics)
+     :tasks
+     {:sendmail           (ig/ref :app.tasks.sendmail/handler)
+      :delete-object      (ig/ref :app.tasks.delete-object/handler)
+      :delete-profile     (ig/ref :app.tasks.delete-profile/handler)
+      :file-media-gc      (ig/ref :app.tasks.file-media-gc/handler)
+      :file-xlog-gc       (ig/ref :app.tasks.file-xlog-gc/handler)
+      :storage-deleted-gc (ig/ref :app.storage/gc-deleted-task)
+      :storage-touched-gc (ig/ref :app.storage/gc-touched-task)
+      :storage-recheck    (ig/ref :app.storage/recheck-task)
+      :tasks-gc           (ig/ref :app.tasks.tasks-gc/handler)
+      :telemetry          (ig/ref :app.tasks.telemetry/handler)
+      :session-gc         (ig/ref :app.http.session/gc-task)}}
 
     :app.tasks.sendmail/handler
     {:host             (:smtp-host config)
@@ -266,21 +299,30 @@
     {:pool        (ig/ref :app.db/pool)
      :version     (:full cfg/version)
      :uri         (:telemetry-uri config)
-     :sprops      (ig/ref :app.sprops/props)}
+     :sprops      (ig/ref :app.setup/props)}
 
     :app.srepl/server
     {:port (:srepl-port config)
      :host (:srepl-host config)}
 
-    :app.sprops/props
+    :app.setup/props
     {:pool (ig/ref :app.db/pool)}
 
-    :app.error-reporter/reporter
+    :app.loggers.zmq/receiver
+    {:endpoint (:loggers-zmq-uri config)}
+
+    :app.loggers.loki/reporter
+    {:uri      (:loggers-loki-uri config)
+     :receiver (ig/ref :app.loggers.zmq/receiver)
+     :executor (ig/ref :app.worker/executor)}
+
+    :app.loggers.mattermost/reporter
     {:uri      (:error-report-webhook config)
+     :receiver (ig/ref :app.loggers.zmq/receiver)
      :pool     (ig/ref :app.db/pool)
      :executor (ig/ref :app.worker/executor)}
 
-    :app.error-reporter/handler
+    :app.loggers.mattermost/handler
     {:pool (ig/ref :app.db/pool)}
 
     :app.storage/storage
@@ -333,7 +375,7 @@
                                (-> system-config
                                    (ig/prep)
                                    (ig/init))))
-    (log/infof "Welcome to penpot! Version: '%s'."
+    (log/infof "welcome to penpot (version: '%s')"
                (:full cfg/version))))
 
 (defn stop

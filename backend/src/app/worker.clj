@@ -10,9 +10,9 @@
 (ns app.worker
   "Async tasks abstraction (impl)."
   (:require
+   [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
    [app.db :as db]
    [app.util.async :as aa]
    [app.util.log4j :refer [update-thread-context!]]
@@ -20,6 +20,7 @@
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
+   [cuerdas.core :as str]
    [integrant.core :as ig]
    [promesa.exec :as px])
   (:import
@@ -73,7 +74,7 @@
 (s/def ::queue ::us/string)
 (s/def ::parallelism ::us/integer)
 (s/def ::batch-size ::us/integer)
-(s/def ::tasks (s/map-of string? ::us/fn))
+(s/def ::tasks (s/map-of string? fn?))
 (s/def ::poll-interval ::dt/duration)
 
 (defmethod ig/pre-init-spec ::worker [_]
@@ -95,7 +96,7 @@
 
 (defmethod ig/init-key ::worker
   [_ {:keys [pool poll-interval name queue] :as cfg}]
-  (log/infof "Starting worker '%s' on queue '%s'." name queue)
+  (log/infof "starting worker '%s' on queue '%s'" name queue)
   (let [cch     (a/chan 1)
         poll-ms (inst-ms poll-interval)]
     (a/go-loop []
@@ -104,30 +105,30 @@
           ;; Terminate the loop if close channel is closed or
           ;; event-loop-fn returns nil.
           (or (= port cch) (nil? val))
-          (log/infof "Stop condition found. Shutdown worker: '%s'" name)
+          (log/infof "stop condition found; shutdown worker: '%s'" name)
 
           (db/pool-closed? pool)
           (do
-            (log/info "Worker eventloop is aborted because pool is closed.")
+            (log/info "worker eventloop is aborted because pool is closed")
             (a/close! cch))
 
           (and (instance? java.sql.SQLException val)
                (contains? #{"08003" "08006" "08001" "08004"} (.getSQLState ^java.sql.SQLException val)))
           (do
-            (log/error "Connection error, trying resume in some instants.")
+            (log/error "connection error, trying resume in some instants")
             (a/<! (a/timeout poll-interval))
             (recur))
 
           (and (instance? java.sql.SQLException val)
                (= "40001" (.getSQLState ^java.sql.SQLException val)))
           (do
-            (log/debug "Serialization failure (retrying in some instants).")
+            (log/debug "serialization failure (retrying in some instants)")
             (a/<! (a/timeout poll-ms))
             (recur))
 
           (instance? Exception val)
           (do
-            (log/errorf val "Unexpected error ocurried on polling the database (will resume in some instants).")
+            (log/errorf val "unexpected error ocurried on polling the database (will resume in some instants)")
             (a/<! (a/timeout poll-ms))
             (recur))
 
@@ -203,17 +204,13 @@
   (let [task-fn (get tasks name)]
     (if task-fn
       (task-fn item)
-      (log/warn "no task handler found for" (pr-str name)))
+      (log/warnf "no task handler found for '%s'" (pr-str name)))
     {:status :completed :task item}))
 
 (defn get-error-context
   [error item]
   (let [edata (ex-data error)]
     {:id      (uuid/next)
-     :version (:full cfg/version)
-     :host    (:public-uri cfg/config)
-     :class   (.getCanonicalName ^java.lang.Class (class error))
-     :hint    (ex-message error)
      :data    edata
      :params  item}))
 
@@ -232,7 +229,7 @@
 
       (let [cdata (get-error-context error item)]
         (update-thread-context! cdata)
-        (log/errorf error "Unhandled exception on task (id: %s)" (:id cdata))
+        (log/errorf error "unhandled exception on task (id: '%s')" (:id cdata))
         (if (>= (:retry-num item) (:max-retries item))
           {:status :failed :task item :error error}
           {:status :retry :task item :error error})))))
@@ -240,12 +237,12 @@
 (defn- run-task
   [{:keys [tasks]} item]
   (try
-    (log/debugf "Started task '%s/%s/%s'." (:name item) (:id item) (:retry-num item))
+    (log/debugf "started task '%s/%s/%s'" (:name item) (:id item) (:retry-num item))
     (handle-task tasks item)
     (catch Exception e
       (handle-exception e item))
     (finally
-      (log/debugf "Finished task '%s/%s/%s'." (:name item) (:id item) (:retry-num item)))))
+      (log/debugf "finished task '%s/%s/%s'" (:name item) (:id item) (:retry-num item)))))
 
 (def sql:select-next-tasks
   "select * from task as t
@@ -294,21 +291,31 @@
 (s/def ::id ::us/string)
 (s/def ::cron dt/cron?)
 (s/def ::props (s/nilable map?))
+(s/def ::task keyword?)
 
 (s/def ::scheduled-task-spec
-  (s/keys :req-un [::id ::cron ::fn]
+  (s/keys :req-un [::id ::cron ::task]
           :opt-un [::props]))
 
-(s/def ::schedule
-  (s/coll-of (s/nilable ::scheduled-task-spec)))
+(s/def ::schedule (s/coll-of (s/nilable ::scheduled-task-spec)))
 
 (defmethod ig/pre-init-spec ::scheduler [_]
-  (s/keys :req-un [::executor ::db/pool ::schedule]))
+  (s/keys :req-un [::executor ::db/pool ::schedule ::tasks]))
 
 (defmethod ig/init-key ::scheduler
-  [_ {:keys [schedule] :as cfg}]
+  [_ {:keys [schedule tasks] :as cfg}]
   (let [scheduler (Executors/newScheduledThreadPool (int 1))
-        schedule  (filter some? schedule)
+        schedule  (->> schedule
+                       (filter some?)
+                       (map (fn [{:keys [task] :as item}]
+                              (let [f (get tasks (name task))]
+                                (when-not f
+                                  (ex/raise :type :internal
+                                            :code :task-not-found
+                                            :hint (str/fmt "task %s not configured" task)))
+                                (-> item
+                                    (dissoc :task)
+                                    (assoc :fn f))))))
         cfg       (assoc cfg
                          :scheduler scheduler
                          :schedule schedule)]
@@ -335,7 +342,7 @@
 (defn- synchronize-schedule-item
   [conn {:keys [id cron]}]
   (let [cron (str cron)]
-    (log/debugf "initialize scheduled task '%s' (cron: '%s')." id cron)
+    (log/infof "initialize scheduled task '%s' (cron: '%s')" id cron)
     (db/exec-one! conn [sql:upsert-scheduled-task id cron cron])))
 
 (defn- synchronize-schedule
@@ -356,27 +363,16 @@
   (letfn [(run-task [conn]
             (try
               (when (db/exec-one! conn [sql:lock-scheduled-task id])
-                (log/info "Executing scheduled task" id)
+                (log/debugf "executing scheduled task '%s'" id)
                 ((:fn task) task))
-              (catch Exception e
+              (catch Throwable e
                 e)))
 
-          (handle-task* [conn]
-            (let [result (run-task conn)]
-              (if (instance? Throwable result)
-                (do
-                  (log/warnf result "unhandled exception on scheduled task '%s'" id)
-                  (db/insert! conn :scheduled-task-history
-                              {:id (uuid/next)
-                               :task-id id
-                               :is-error true
-                               :reason (exception->string result)}))
-                (db/insert! conn :scheduled-task-history
-                            {:id (uuid/next)
-                             :task-id id}))))
           (handle-task []
             (db/with-atomic [conn pool]
-              (handle-task* conn)))]
+              (let [result (run-task conn)]
+                (when (ex/exception? result)
+                  (log/errorf result "unhandled exception on scheduled task '%s'" id)))))]
 
     (try
       (px/run! executor handle-task)

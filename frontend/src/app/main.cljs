@@ -82,7 +82,7 @@
   (st/emit! (rt/initialize-router ui/routes)
             (rt/initialize-history on-navigate))
 
-  (st/emit! udu/fetch-profile)
+  (st/emit! (udu/fetch-profile))
   (mf/mount (mf/element ui/app) (dom/get-element "app"))
   (mf/mount (mf/element modal) (dom/get-element "modal")))
 
@@ -98,6 +98,10 @@
   (mf/unmount (dom/get-element "app"))
   (mf/unmount (dom/get-element "modal"))
   (init-ui))
+
+(add-watch i18n/locale "locale" (fn [_ _ o v]
+                                  (when (not= o v)
+                                    (reinit))))
 
 (defn ^:dev/after-load after-load
   []

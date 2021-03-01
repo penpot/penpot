@@ -120,102 +120,209 @@
           (t/is (= 0 (count result))))))
     ))
 
-(defn- create-file-media-object
-  [{:keys [profile-id file-id]}]
-  (let [mfile  {:filename "sample.jpg"
-                :tempfile (th/tempfile "app/tests/_files/sample.jpg")
-                :content-type "image/jpeg"
-                :size 312043}
-        params {::th/type :upload-file-media-object
-                :profile-id profile-id
-                :file-id file-id
-                :is-local true
-                :name "testfile"
-                :content mfile}
-        out    (th/mutation! params)]
-    (t/is (nil? (:error out)))
-    (:result out)))
-
-(defn- update-file
-  [{:keys [profile-id file-id changes revn] :or {revn 0}}]
-  (let [params {::th/type :update-file
-                :id file-id
-                :session-id (uuid/random)
-                :profile-id profile-id
-                :revn revn
-                :changes changes}
-        out    (th/mutation! params)]
-    (t/is (nil? (:error out)))
-    (:result out)))
-
 (t/deftest file-media-gc-task
-  (let [task    (:app.tasks.file-media-gc/handler th/*system*)
-        storage (:app.storage/storage th/*system*)
+  (letfn [(create-file-media-object [{:keys [profile-id file-id]}]
+            (let [mfile  {:filename "sample.jpg"
+                          :tempfile (th/tempfile "app/tests/_files/sample.jpg")
+                          :content-type "image/jpeg"
+                          :size 312043}
+                  params {::th/type :upload-file-media-object
+                          :profile-id profile-id
+                          :file-id file-id
+                          :is-local true
+                          :name "testfile"
+                          :content mfile}
+                  out    (th/mutation! params)]
+              (t/is (nil? (:error out)))
+              (:result out)))
 
-        prof    (th/create-profile* 1)
-        proj    (th/create-project* 1 {:profile-id (:id prof)
-                                       :team-id (:default-team-id prof)})
-        file    (th/create-file* 1 {:profile-id (:id prof)
-                                    :project-id (:default-project-id prof)
-                                    :is-shared false})
+          (update-file [{:keys [profile-id file-id changes revn] :or {revn 0}}]
+            (let [params {::th/type :update-file
+                          :id file-id
+                          :session-id (uuid/random)
+                          :profile-id profile-id
+                          :revn revn
+                          :changes changes}
+                  out    (th/mutation! params)]
+              (t/is (nil? (:error out)))
+              (:result out)))]
 
-        fmo1    (create-file-media-object {:profile-id (:id prof)
-                                           :file-id (:id file)})
-        fmo2    (create-file-media-object {:profile-id (:id prof)
-                                           :file-id (:id file)})
-        shid    (uuid/random)
+    (let [storage (:app.storage/storage th/*system*)
 
-        ures    (update-file
-                 {:file-id (:id file)
-                  :profile-id (:id prof)
-                  :revn 0
-                  :changes
-                  [{:type :add-obj
-                    :page-id (first (get-in file [:data :pages]))
-                    :id shid
-                    :parent-id uuid/zero
-                    :frame-id uuid/zero
-                    :obj {:id shid
-                          :name "image"
-                          :frame-id uuid/zero
-                          :parent-id uuid/zero
-                          :type :image
-                          :metadata {:id (:id fmo1)}}}]})]
+          profile (th/create-profile* 1)
+          file    (th/create-file* 1 {:profile-id (:id profile)
+                                      :project-id (:default-project-id profile)
+                                      :is-shared false})
 
-    ;; run the task inmediatelly
-    (let [res (task {})]
-      (t/is (= 0 (:processed res))))
+          fmo1    (create-file-media-object {:profile-id (:id profile)
+                                             :file-id (:id file)})
+          fmo2    (create-file-media-object {:profile-id (:id profile)
+                                             :file-id (:id file)})
+          shid    (uuid/random)
 
-    ;; make the file ellegible for GC waiting 300ms
-    (th/sleep 300)
+          ures    (update-file
+                   {:file-id (:id file)
+                    :profile-id (:id profile)
+                    :revn 0
+                    :changes
+                    [{:type :add-obj
+                      :page-id (first (get-in file [:data :pages]))
+                      :id shid
+                      :parent-id uuid/zero
+                      :frame-id uuid/zero
+                      :obj {:id shid
+                            :name "image"
+                            :frame-id uuid/zero
+                            :parent-id uuid/zero
+                            :type :image
+                            :metadata {:id (:id fmo1)}}}]})]
 
-    ;; run the task again
-    (let [res (task {})]
-      (t/is (= 1 (:processed res))))
+      ;; run the task inmediatelly
+      (let [task  (:app.tasks.file-media-gc/handler th/*system*)
+            res   (task {})]
+        (t/is (= 0 (:processed res))))
 
-    ;; Retrieve file and check trimmed attribute
-    (let [row (db/exec-one! th/*pool* ["select * from file where id = ?" (:id file)])]
-      (t/is (:has-media-trimmed row)))
+      ;; make the file ellegible for GC waiting 300ms (configured
+      ;; timeout for testing)
+      (th/sleep 300)
 
-    ;; check file media objects
-    (let [fmos (db/exec! th/*pool* ["select * from file_media_object where file_id = ?" (:id file)])]
-      (t/is (= 1 (count fmos))))
+      ;; run the task again
+      (let [task  (:app.tasks.file-media-gc/handler th/*system*)
+            res   (task {})]
+        (t/is (= 1 (:processed res))))
 
-    ;; The underlying storage objects are still available.
-    (t/is (some? (sto/get-object storage (:media-id fmo2))))
-    (t/is (some? (sto/get-object storage (:thumbnail-id fmo2))))
-    (t/is (some? (sto/get-object storage (:media-id fmo1))))
-    (t/is (some? (sto/get-object storage (:thumbnail-id fmo1))))
+      ;; retrieve file and check trimmed attribute
+      (let [row (db/exec-one! th/*pool* ["select * from file where id = ?" (:id file)])]
+        (t/is (true? (:has-media-trimmed row))))
 
-    ;; but if we pass the touched gc task two of them should disappear
-    (let [task (:app.storage/gc-touched-task th/*system*)
-          res  (task {})]
-      (t/is (= 0 (:freeze res)))
-      (t/is (= 2 (:delete res)))
+      ;; check file media objects
+      (let [rows (db/exec! th/*pool* ["select * from file_media_object where file_id = ?" (:id file)])]
+        (t/is (= 1 (count rows))))
 
-      (t/is (nil? (sto/get-object storage (:media-id fmo2))))
-      (t/is (nil? (sto/get-object storage (:thumbnail-id fmo2))))
+      ;; The underlying storage objects are still available.
+      (t/is (some? (sto/get-object storage (:media-id fmo2))))
+      (t/is (some? (sto/get-object storage (:thumbnail-id fmo2))))
       (t/is (some? (sto/get-object storage (:media-id fmo1))))
-      (t/is (some? (sto/get-object storage (:thumbnail-id fmo1)))))
+      (t/is (some? (sto/get-object storage (:thumbnail-id fmo1))))
 
-    ))
+      ;; but if we pass the touched gc task two of them should disappear
+      (let [task (:app.storage/gc-touched-task th/*system*)
+            res  (task {})]
+        (t/is (= 0 (:freeze res)))
+        (t/is (= 2 (:delete res)))
+
+        (t/is (nil? (sto/get-object storage (:media-id fmo2))))
+        (t/is (nil? (sto/get-object storage (:thumbnail-id fmo2))))
+        (t/is (some? (sto/get-object storage (:media-id fmo1))))
+        (t/is (some? (sto/get-object storage (:thumbnail-id fmo1)))))
+
+      )))
+
+(t/deftest permissions-checks-creating-file
+  (let [profile1 (th/create-profile* 1)
+        profile2 (th/create-profile* 2)
+
+        data     {::th/type :create-file
+                  :profile-id (:id profile2)
+                  :project-id (:default-project-id profile1)
+                  :name "foobar"
+                  :is-shared false}
+        out      (th/mutation! data)
+        error    (:error out)]
+
+    ;; (th/print-result! out)
+    (t/is (th/ex-info? error))
+    (t/is (th/ex-of-type? error :not-found))))
+
+(t/deftest permissions-checks-rename-file
+  (let [profile1 (th/create-profile* 1)
+        profile2 (th/create-profile* 2)
+
+        file     (th/create-file* 1 {:project-id (:default-project-id profile1)
+                                     :profile-id (:id profile1)})
+        data     {::th/type :rename-file
+                  :id (:id file)
+                  :profile-id (:id profile2)
+                  :name "foobar"}
+        out      (th/mutation! data)
+        error    (:error out)]
+
+    ;; (th/print-result! out)
+    (t/is (th/ex-info? error))
+    (t/is (th/ex-of-type? error :not-found))))
+
+(t/deftest permissions-checks-delete-file
+  (let [profile1 (th/create-profile* 1)
+        profile2 (th/create-profile* 2)
+
+        file     (th/create-file* 1 {:project-id (:default-project-id profile1)
+                                     :profile-id (:id profile1)})
+        data     {::th/type :delete-file
+                  :profile-id (:id profile2)
+                  :id (:id file)}
+        out      (th/mutation! data)
+        error    (:error out)]
+
+    ;; (th/print-result! out)
+    (t/is (th/ex-info? error))
+    (t/is (th/ex-of-type? error :not-found))))
+
+(t/deftest permissions-checks-set-file-shared
+  (let [profile1 (th/create-profile* 1)
+        profile2 (th/create-profile* 2)
+        file     (th/create-file* 1 {:project-id (:default-project-id profile1)
+                                     :profile-id (:id profile1)})
+        data     {::th/type :set-file-shared
+                  :profile-id (:id profile2)
+                  :id (:id file)
+                  :is-shared true}
+        out      (th/mutation! data)
+        error    (:error out)]
+
+    ;; (th/print-result! out)
+    (t/is (th/ex-info? error))
+    (t/is (th/ex-of-type? error :not-found))))
+
+(t/deftest permissions-checks-link-to-library-1
+  (let [profile1 (th/create-profile* 1)
+        profile2 (th/create-profile* 2)
+        file1    (th/create-file* 1 {:project-id (:default-project-id profile1)
+                                     :profile-id (:id profile1)
+                                     :is-shared true})
+        file2    (th/create-file* 2 {:project-id (:default-project-id profile1)
+                                     :profile-id (:id profile1)})
+
+        data     {::th/type :link-file-to-library
+                  :profile-id (:id profile2)
+                  :file-id (:id file2)
+                  :library-id (:id file1)}
+
+        out      (th/mutation! data)
+        error    (:error out)]
+
+      ;; (th/print-result! out)
+      (t/is (th/ex-info? error))
+      (t/is (th/ex-of-type? error :not-found))))
+
+(t/deftest permissions-checks-link-to-library-2
+  (let [profile1 (th/create-profile* 1)
+        profile2 (th/create-profile* 2)
+        file1    (th/create-file* 1 {:project-id (:default-project-id profile1)
+                                     :profile-id (:id profile1)
+                                     :is-shared true})
+
+        file2    (th/create-file* 2 {:project-id (:default-project-id profile2)
+                                     :profile-id (:id profile2)})
+
+        data     {::th/type :link-file-to-library
+                  :profile-id (:id profile2)
+                  :file-id (:id file2)
+                  :library-id (:id file1)}
+
+        out      (th/mutation! data)
+        error    (:error out)]
+
+      ;; (th/print-result! out)
+      (t/is (th/ex-info? error))
+      (t/is (th/ex-of-type? error :not-found))))
+

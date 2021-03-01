@@ -5,13 +5,15 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.emails
   "Main api for send emails."
   (:require
    [app.common.spec :as us]
    [app.config :as cfg]
+   [app.db :as db]
+   [app.db.sql :as sql]
    [app.tasks :as tasks]
    [app.util.emails :as emails]
    [clojure.spec.alpha :as s]))
@@ -40,6 +42,54 @@
                          :max-retries 1
                          :priority 200
                          :props email})))
+
+
+(def sql:profile-complaint-report
+  "select (select count(*)
+             from profile_complaint_report
+            where type = 'complaint'
+              and profile_id = ?
+              and created_at > now() - ?::interval) as complaints,
+          (select count(*)
+             from profile_complaint_report
+            where type = 'bounce'
+              and profile_id = ?
+              and created_at > now() - ?::interval) as bounces;")
+
+(defn allow-send-emails?
+  [conn profile]
+  (when-not (:is-muted profile false)
+    (let [complaint-threshold (cfg/get :profile-complaint-threshold)
+          complaint-max-age   (cfg/get :profile-complaint-max-age)
+          bounce-threshold    (cfg/get :profile-bounce-threshold)
+          bounce-max-age      (cfg/get :profile-bounce-max-age)
+
+          {:keys [complaints bounces] :as result}
+          (db/exec-one! conn [sql:profile-complaint-report
+                              (:id profile)
+                              (db/interval complaint-max-age)
+                              (:id profile)
+                              (db/interval bounce-max-age)])]
+
+      (and (< complaints complaint-threshold)
+           (< bounces bounce-threshold)))))
+
+(defn has-complaint-reports?
+  ([conn email] (has-complaint-reports? conn email nil))
+  ([conn email {:keys [threshold] :or {threshold 1}}]
+   (let [reports (db/exec! conn (sql/select :global-complaint-report
+                                            {:email email :type "complaint"}
+                                            {:limit 10}))]
+     (>= (count reports) threshold))))
+
+(defn has-bounce-reports?
+  ([conn email] (has-bounce-reports? conn email nil))
+  ([conn email {:keys [threshold] :or {threshold 1}}]
+   (let [reports (db/exec! conn (sql/select :global-complaint-report
+                                            {:email email :type "bounce"}
+                                            {:limit 10}))]
+     (>= (count reports) threshold))))
+
 
 ;; --- Emails
 

@@ -13,12 +13,14 @@
    [app.common.geom.point :as gpt]
    [app.common.spec :as us]
    [app.db.sql :as sql]
+   [app.metrics :as mtx]
    [app.util.json :as json]
    [app.util.migrations :as mg]
    [app.util.time :as dt]
    [app.util.transit :as t]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
+   [clojure.tools.logging :as log]
    [integrant.core :as ig]
    [next.jdbc :as jdbc]
    [next.jdbc.date-time :as jdbc-dt])
@@ -26,6 +28,7 @@
    com.zaxxer.hikari.HikariConfig
    com.zaxxer.hikari.HikariDataSource
    com.zaxxer.hikari.metrics.prometheus.PrometheusMetricsTrackerFactory
+   java.lang.AutoCloseable
    java.sql.Connection
    java.sql.Savepoint
    org.postgresql.PGConnection
@@ -43,21 +46,24 @@
 ;; Initialization
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(declare instrument-jdbc!)
+
 (s/def ::uri ::us/not-empty-string)
 (s/def ::name ::us/not-empty-string)
 (s/def ::min-pool-size ::us/integer)
 (s/def ::max-pool-size ::us/integer)
 (s/def ::migrations map?)
-(s/def ::metrics map?)
 
 (defmethod ig/pre-init-spec ::pool [_]
-  (s/keys :req-un [::uri ::name ::min-pool-size ::max-pool-size ::migrations]))
+  (s/keys :req-un [::uri ::name ::min-pool-size ::max-pool-size ::migrations ::mtx/metrics]))
 
 (defmethod ig/init-key ::pool
-  [_ {:keys [migrations] :as cfg}]
+  [_ {:keys [migrations metrics] :as cfg}]
+  (log/infof "initialize connection pool '%s' with uri '%s'" (:name cfg) (:uri cfg))
+  (instrument-jdbc! (:registry metrics))
   (let [pool (create-pool cfg)]
     (when (seq migrations)
-      (with-open [conn (open pool)]
+      (with-open [conn ^AutoCloseable (open pool)]
         (mg/setup! conn)
         (doseq [[mname steps] migrations]
           (mg/migrate! conn {:name (name mname) :steps steps}))))
@@ -67,12 +73,22 @@
   [_ pool]
   (.close ^HikariDataSource pool))
 
+(defn- instrument-jdbc!
+  [registry]
+  (mtx/instrument-vars!
+   [#'next.jdbc/execute-one!
+    #'next.jdbc/execute!]
+   {:registry registry
+    :type :counter
+    :name "database_query_count"
+    :help "An absolute counter of database queries."}))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; API & Impl
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def initsql
-  (str "SET statement_timeout = 60000;\n"
+  (str "SET statement_timeout = 120000;\n"
        "SET idle_in_transaction_session_timeout = 120000;"))
 
 (defn- create-datasource-config
@@ -162,7 +178,7 @@
   [& args]
   `(jdbc/with-transaction ~@args))
 
-(defn open
+(defn ^Connection open
   [pool]
   (jdbc/get-connection pool))
 
@@ -183,11 +199,6 @@
    (exec-one! ds
               (sql/insert table params opts)
               (assoc opts :return-keys true))))
-
-(defn insert-multi!
-  [ds table param-list]
-  (doseq [params param-list]
-    (insert! ds table params)))
 
 (defn update!
   ([ds table params where] (update! ds table params where nil))
@@ -286,7 +297,7 @@
     (pginterval data)
 
     (dt/duration? data)
-    (->> (/ (.toMillis data) 1000.0)
+    (->> (/ (.toMillis ^java.time.Duration data) 1000.0)
          (format "%s seconds")
          (pginterval))
 

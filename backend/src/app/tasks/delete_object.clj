@@ -12,42 +12,32 @@
   (:require
    [app.common.spec :as us]
    [app.db :as db]
-   [app.metrics :as mtx]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
    [integrant.core :as ig]))
 
-(declare handler)
 (declare handle-deletion)
 
 (defmethod ig/pre-init-spec ::handler [_]
-  (s/keys :req-un [::db/pool ::mtx/metrics]))
+  (s/keys :req-un [::db/pool]))
 
 (defmethod ig/init-key ::handler
-  [_ {:keys [metrics] :as cfg}]
-  (let [handler #(handler cfg %)]
-    (->> {:registry (:registry metrics)
-          :type :summary
-          :name "task_delete_object_timing"
-          :help "delete object task timing"}
-         (mtx/instrument handler))))
+  [_ {:keys [pool] :as cfg}]
+  (fn [{:keys [props] :as task}]
+    (us/verify ::props props)
+    (db/with-atomic [conn pool]
+      (handle-deletion conn props))))
 
 (s/def ::type ::us/keyword)
 (s/def ::id ::us/uuid)
 (s/def ::props (s/keys :req-un [::id ::type]))
-
-(defn- handler
-  [{:keys [pool]} {:keys [props] :as task}]
-  (us/verify ::props props)
-  (db/with-atomic [conn pool]
-    (handle-deletion conn props)))
 
 (defmulti handle-deletion
   (fn [_ props] (:type props)))
 
 (defmethod handle-deletion :default
   [_conn {:keys [type]}]
-  (log/warnf "no handler found for %s" type))
+  (log/warnf "no handler found for '%s'" type))
 
 (defmethod handle-deletion :file
   [conn {:keys [id] :as props}]

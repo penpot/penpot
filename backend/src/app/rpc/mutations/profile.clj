@@ -14,28 +14,25 @@
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
-   [app.db.profile-initial-data :refer [create-profile-initial-data]]
    [app.emails :as emails]
-   [app.http.session :as session]
    [app.media :as media]
    [app.rpc.mutations.projects :as projects]
    [app.rpc.mutations.teams :as teams]
-   [app.rpc.mutations.verify-token :refer [process-token]]
    [app.rpc.queries.profile :as profile]
+   [app.setup.initial-data :as sid]
    [app.storage :as sto]
    [app.tasks :as tasks]
    [app.util.services :as sv]
    [app.util.time :as dt]
    [buddy.hashers :as hashers]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [cuerdas.core :as str]))
 
 ;; --- Helpers & Specs
 
 (s/def ::email ::us/email)
 (s/def ::fullname ::us/not-empty-string)
-(s/def ::lang ::us/not-empty-string)
+(s/def ::lang (s/nilable ::us/not-empty-string))
 (s/def ::path ::us/string)
 (s/def ::profile-id ::us/uuid)
 (s/def ::password ::us/not-empty-string)
@@ -44,79 +41,88 @@
 
 ;; --- Mutation: Register Profile
 
+(declare annotate-profile-register)
 (declare check-profile-existence!)
 (declare create-profile)
 (declare create-profile-relations)
 (declare email-domain-in-whitelist?)
+(declare register-profile)
 
-(s/def ::token ::us/not-empty-string)
+(s/def ::invitation-token ::us/not-empty-string)
 (s/def ::register-profile
   (s/keys :req-un [::email ::password ::fullname]
-          :opt-un [::token]))
+          :opt-un [::invitation-token]))
 
 (sv/defmethod ::register-profile {:auth false :rlimit :password}
-  [{:keys [pool tokens session] :as cfg} {:keys [token] :as params}]
-  (when-not (:registration-enabled cfg/config)
+  [{:keys [pool tokens session] :as cfg} params]
+  (when-not (cfg/get :registration-enabled)
     (ex/raise :type :restriction
               :code :registration-disabled))
 
-  (when-not (email-domain-in-whitelist? (:registration-domain-whitelist cfg/config)
-                                        (:email params))
+  (when-not (email-domain-in-whitelist? (cfg/get :registration-domain-whitelist) (:email params))
     (ex/raise :type :validation
               :code :email-domain-is-not-allowed))
 
   (db/with-atomic [conn pool]
-    (check-profile-existence! conn params)
-    (let [profile (->> (create-profile conn params)
-                       (create-profile-relations conn))]
-      (create-profile-initial-data conn profile)
+    (let [cfg     (assoc cfg :conn conn)]
+      (register-profile cfg params))))
 
-      (if token
-        ;; If token comes in params, this is because the user comes
-        ;; from team-invitation process; in this case we revalidate
-        ;; the token and process the token claims again with the new
-        ;; profile data.
-        (let [claims (tokens :verify {:token token :iss :team-invitation})
-              claims (assoc claims :member-id  (:id profile))
-              params (assoc params :profile-id (:id profile))
-              cfg    (assoc cfg :conn conn)]
+(defn- annotate-profile-register
+  "A helper for properly increase the profile-register metric once the
+  transaction is completed."
+  [metrics profile]
+  (fn []
+    (when (::created profile)
+      ((get-in metrics [:definitions :profile-register]) :inc))))
 
-          (process-token cfg params claims)
+(defn- register-profile
+  [{:keys [conn tokens session metrics] :as cfg} params]
+  (check-profile-existence! conn params)
+  (let [profile (->> (create-profile conn params)
+                     (create-profile-relations conn))
+        profile (assoc profile ::created true)]
 
-          ;; Automatically mark the created profile as active because
-          ;; we already have the verification of email with the
-          ;; team-invitation token.
-          (db/update! conn :profile
-                      {:is-active true}
-                      {:id (:id profile)})
+    (sid/load-initial-project! conn profile)
 
-          ;; Return profile data and create http session for
-          ;; automatically login the profile.
-          (with-meta (assoc profile
-                            :is-active true
-                            :claims claims)
-            {:transform-response
-             (fn [request response]
-               (let [uagent (get-in request [:headers "user-agent"])
-                     id     (session/create! session {:profile-id (:id profile)
-                                                      :user-agent uagent})]
-                 (assoc response
-                        :cookies (session/cookies session {:value id}))))}))
+    (if-let [token (:invitation-token params)]
+      ;; If invitation token comes in params, this is because the
+      ;; user comes from team-invitation process; in this case,
+      ;; regenerate token and send back to the user a new invitation
+      ;; token (and mark current session as logged).
+      (let [claims (tokens :verify {:token token :iss :team-invitation})
+            claims (assoc claims
+                          :member-id  (:id profile)
+                          :member-email (:email profile))
+            token  (tokens :generate claims)
+            resp   {:invitation-token token}]
+        (with-meta resp
+          {:transform-response ((:create session) (:id profile))
+           :before-complete (annotate-profile-register metrics profile)}))
 
-        ;; If no token is provided, send a verification email
-        (let [token (tokens :generate
-                            {:iss :verify-email
-                             :exp (dt/in-future "48h")
-                             :profile-id (:id profile)
-                             :email (:email profile)})]
+      ;; If no token is provided, send a verification email
+      (let [vtoken (tokens :generate
+                           {:iss :verify-email
+                            :exp (dt/in-future "48h")
+                            :profile-id (:id profile)
+                            :email (:email profile)})
+            ptoken (tokens :generate-predefined
+                           {:iss :profile-identity
+                            :profile-id (:id profile)})]
 
-          (emails/send! conn emails/register
-                        {:to (:email profile)
-                         :name (:fullname profile)
-                         :token token})
+        ;; Don't allow proceed in register page if the email is
+        ;; already reported as permanent bounced
+        (when (emails/has-bounce-reports? conn (:email profile))
+          (ex/raise :type :validation
+                    :code :email-has-permanent-bounces
+                    :hint "looks like the email has one or many bounces reported"))
 
-          profile)))))
-
+        (emails/send! conn emails/register
+                      {:to (:email profile)
+                       :name (:fullname profile)
+                       :token vtoken
+                       :extra-data ptoken})
+        (with-meta profile
+          {:before-complete (annotate-profile-register metrics profile)})))))
 
 (defn email-domain-in-whitelist?
   "Returns true if email's domain is in the given whitelist or if given
@@ -154,31 +160,30 @@
   [attempt password]
   (try
     (hashers/verify attempt password)
-    (catch Exception e
-      (log/warnf e "Error on verify password (only informative, nothing affected to user).")
+    (catch Exception _e
       {:update false
        :valid false})))
 
-(defn- create-profile
+(defn create-profile
   "Create the profile entry on the database with limited input
   filling all the other fields with defaults."
-  [conn {:keys [id fullname email password demo? props is-active]
-         :or {is-active false}
-         :as params}]
-  (let [id       (or id (uuid/next))
-        demo?    (if (boolean? demo?) demo? false)
-        active?  (if demo? true is-active)
-        props    (db/tjson (or props {}))
-        password (derive-password password)]
+  [conn {:keys [id fullname email password props is-active is-muted is-demo opts]
+         :or {is-active false is-muted false is-demo false}}]
+  (let [id        (or id (uuid/next))
+        is-active (if is-demo true is-active)
+        props     (db/tjson (or props {}))
+        password  (derive-password password)
+        params    {:id id
+                   :fullname fullname
+                   :email (str/lower email)
+                   :auth-backend "penpot"
+                   :password password
+                   :props props
+                   :is-active is-active
+                   :is-muted is-muted
+                   :is-demo is-demo}]
     (try
-      (-> (db/insert! conn :profile
-                      {:id id
-                       :fullname fullname
-                       :email (str/lower email)
-                       :password password
-                       :props props
-                       :is-active active?
-                       :is-demo demo?})
+      (-> (db/insert! conn :profile params opts)
           (update :props db/decode-transit-pgobject))
       (catch org.postgresql.util.PSQLException e
         (let [state (.getSQLState e)]
@@ -189,7 +194,7 @@
                       :cause e)))))))
 
 
-(defn- create-profile-relations
+(defn create-profile-relations
   [conn profile]
   (let [team (teams/create-team conn {:profile-id (:id profile)
                                       :name "Default"
@@ -214,10 +219,10 @@
 
 (s/def ::login
   (s/keys :req-un [::email ::password]
-          :opt-un [::scope]))
+          :opt-un [::scope ::invitation-token]))
 
 (sv/defmethod ::login {:auth false :rlimit :password}
-  [{:keys [pool] :as cfg} {:keys [email password scope] :as params}]
+  [{:keys [pool session tokens] :as cfg} {:keys [email password scope] :as params}]
   (letfn [(check-password [profile password]
             (when (= (:password profile) "!")
               (ex/raise :type :validation
@@ -237,29 +242,63 @@
             profile)]
 
     (db/with-atomic [conn pool]
-      (let [prof (-> (profile/retrieve-profile-data-by-email conn email)
-                     (validate-profile)
-                     (profile/strip-private-attrs))
-            addt (profile/retrieve-additional-data conn (:id prof))]
-        (merge prof addt)))))
+      (let [profile (->> (profile/retrieve-profile-data-by-email conn email)
+                         (validate-profile)
+                         (profile/strip-private-attrs)
+                         (profile/populate-additional-data conn))]
+        (if-let [token (:invitation-token params)]
+          ;; If the request comes with an invitation token, this means
+          ;; that user wants to accept it with different user. A very
+          ;; strange case but still can happen. In this case, we
+          ;; proceed in the same way as in register: regenerate the
+          ;; invitation token and return it to the user for proper
+          ;; invitation acceptation.
+          (let [claims (tokens :verify {:token token :iss :team-invitation})
+                claims (assoc claims
+                              :member-id  (:id profile)
+                              :member-email (:email profile))
+                token  (tokens :generate claims)]
+            (with-meta {:invitation-token token}
+              {:transform-response ((:create session) (:id profile))}))
+
+          (with-meta profile
+            {:transform-response ((:create session) (:id profile))}))))))
+
+;; --- Mutation: Logout
+
+(s/def ::logout
+  (s/keys :req-un [::profile-id]))
+
+(sv/defmethod ::logout
+  [{:keys [pool session] :as cfg} {:keys [profile-id] :as params}]
+  (with-meta {}
+    {:transform-response (:delete session)}))
 
 
 ;; --- Mutation: Register if not exists
 
+(declare login-or-register)
+
+(s/def ::backend ::us/string)
 (s/def ::login-or-register
-  (s/keys :req-un [::email ::fullname]))
+  (s/keys :req-un [::email ::fullname ::backend]))
 
 (sv/defmethod ::login-or-register {:auth false}
-  [{:keys [pool] :as cfg} {:keys [email fullname] :as params}]
-  (letfn [(populate-additional-data [conn profile]
-            (let [data (profile/retrieve-additional-data conn (:id profile))]
-              (merge profile data)))
+  [{:keys [pool metrics] :as cfg} params]
+  (db/with-atomic [conn pool]
+    (let [profile (-> (assoc cfg :conn conn)
+                      (login-or-register params))]
+      (with-meta profile
+        {:before-complete (annotate-profile-register metrics profile)}))))
 
-          (create-profile [conn {:keys [fullname email]}]
+(defn login-or-register
+  [{:keys [conn] :as cfg} {:keys [email backend] :as params}]
+  (letfn [(create-profile [conn {:keys [fullname email]}]
             (db/insert! conn :profile
                         {:id (uuid/next)
                          :fullname fullname
                          :email (str/lower email)
+                         :auth-backend backend
                          :is-active true
                          :password "!"
                          :is-demo false}))
@@ -267,15 +306,14 @@
           (register-profile [conn params]
             (let [profile (->> (create-profile conn params)
                                (create-profile-relations conn))]
-              (create-profile-initial-data conn profile)
-              profile))]
+              (sid/load-initial-project! conn profile)
+              (assoc profile ::created true)))]
 
-    (db/with-atomic [conn pool]
-      (let [profile (profile/retrieve-profile-data-by-email conn email)
-            profile (if profile
-                      (populate-additional-data conn profile)
-                      (register-profile conn params))]
-        (profile/strip-private-attrs profile)))))
+    (let [profile (profile/retrieve-profile-data-by-email conn email)
+          profile (if profile
+                    (profile/populate-additional-data conn profile)
+                    (register-profile conn params))]
+      (profile/strip-private-attrs profile))))
 
 
 ;; --- Mutation: Update Profile (own)
@@ -300,12 +338,8 @@
 
 ;; --- Mutation: Update Password
 
-(defn- validate-password!
-  [conn {:keys [profile-id old-password] :as params}]
-  (let [profile (db/get-by-id conn :profile profile-id)]
-    (when-not (:valid (verify-password old-password (:password profile)))
-      (ex/raise :type :validation
-                :code :old-password-not-match))))
+(declare validate-password!)
+(declare update-profile-password!)
 
 (s/def ::update-profile-password
   (s/keys :req-un [::profile-id ::password ::old-password]))
@@ -313,12 +347,23 @@
 (sv/defmethod ::update-profile-password {:rlimit :password}
   [{:keys [pool] :as cfg} {:keys [password profile-id] :as params}]
   (db/with-atomic [conn pool]
-    (validate-password! conn params)
-    (db/update! conn :profile
-                {:password (derive-password password)}
-                {:id profile-id})
-    nil))
+    (let [profile (validate-password! conn params)]
+      (update-profile-password! conn (assoc profile :password password))
+      nil)))
 
+(defn- validate-password!
+  [conn {:keys [profile-id old-password] :as params}]
+  (let [profile (db/get-by-id conn :profile profile-id)]
+    (when-not (:valid (verify-password old-password (:password profile)))
+      (ex/raise :type :validation
+                :code :old-password-not-match))
+    profile))
+
+(defn update-profile-password!
+  [conn {:keys [id password] :as profile}]
+  (db/update! conn :profile
+              {:password (derive-password password)}
+              {:id id}))
 
 ;; --- Mutation: Update Photo
 
@@ -352,31 +397,68 @@
               {:id profile-id})
   nil)
 
+
 ;; --- Mutation: Request Email Change
+
+(declare request-email-change)
+(declare change-email-inmediatelly)
 
 (s/def ::request-email-change
   (s/keys :req-un [::email]))
 
 (sv/defmethod ::request-email-change
-  [{:keys [pool tokens] :as cfg} {:keys [profile-id email] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id email] :as params}]
   (db/with-atomic [conn pool]
-    (let [email   (str/lower email)
-          profile (db/get-by-id conn :profile profile-id)
-          token   (tokens :generate
-                          {:iss :change-email
-                           :exp (dt/in-future "15m")
-                           :profile-id profile-id
-                           :email email})]
+    (let [profile (db/get-by-id conn :profile profile-id)
+          cfg     (assoc cfg :conn conn)
+          params  (assoc params
+                         :profile profile
+                         :email (str/lower email))]
+      (if (cfg/get :smtp-enabled)
+        (request-email-change cfg params)
+        (change-email-inmediatelly cfg params)))))
 
-      (when (not= email (:email profile))
-        (check-profile-existence! conn params))
+(defn- change-email-inmediatelly
+  [{:keys [conn]} {:keys [profile email] :as params}]
+  (when (not= email (:email profile))
+    (check-profile-existence! conn params))
+  (db/update! conn :profile
+              {:email email}
+              {:id (:id profile)})
+  {:changed true})
 
-      (emails/send! conn emails/change-email
-                    {:to (:email profile)
-                     :name (:fullname profile)
-                     :pending-email email
-                     :token token})
-      nil)))
+(defn- request-email-change
+  [{:keys [conn tokens]} {:keys [profile email] :as params}]
+  (let [token   (tokens :generate
+                        {:iss :change-email
+                         :exp (dt/in-future "15m")
+                         :profile-id (:id profile)
+                         :email email})
+        ptoken  (tokens :generate-predefined
+                        {:iss :profile-identity
+                         :profile-id (:id profile)})]
+
+    (when (not= email (:email profile))
+      (check-profile-existence! conn params))
+
+    (when-not (emails/allow-send-emails? conn profile)
+      (ex/raise :type :validation
+                :code :profile-is-muted
+                :hint "looks like the profile has reported repeatedly as spam or has permanent bounces."))
+
+    (when (emails/has-bounce-reports? conn email)
+      (ex/raise :type :validation
+                :code :email-has-permanent-bounces
+                :hint "looks like the email you invite has been repeatedly reported as spam or permanent bounce"))
+
+    (emails/send! conn emails/change-email
+                  {:to (:email profile)
+                   :name (:fullname profile)
+                   :pending-email email
+                   :token token
+                   :extra-data ptoken})
+    nil))
+
 
 (defn select-profile-for-update
   [conn id]
@@ -397,18 +479,33 @@
               (assoc profile :token token)))
 
           (send-email-notification [conn profile]
-            (emails/send! conn emails/password-recovery
-                          {:to (:email profile)
-                           :token (:token profile)
-                           :name (:fullname profile)})
-            nil)]
+            (let [ptoken (tokens :generate-predefined
+                                 {:iss :profile-identity
+                                  :profile-id (:id profile)})]
+              (emails/send! conn emails/password-recovery
+                            {:to (:email profile)
+                             :token (:token profile)
+                             :name (:fullname profile)
+                             :extra-data ptoken})
+              nil))]
 
     (db/with-atomic [conn pool]
       (when-let [profile (profile/retrieve-profile-data-by-email conn email)]
+        (when-not (emails/allow-send-emails? conn profile)
+          (ex/raise :type :validation
+                    :code :profile-is-muted
+                    :hint "looks like the profile has reported repeatedly as spam or has permanent bounces."))
+
         (when-not (:is-active profile)
           (ex/raise :type :validation
                     :code :profile-not-verified
                     :hint "the user need to validate profile before recover password"))
+
+        (when (emails/has-bounce-reports? conn (:email profile))
+          (ex/raise :type :validation
+                    :code :email-has-permanent-bounces
+                    :hint "looks like the email you invite has been repeatedly reported as spam or permanent bounce"))
+
         (->> profile
              (create-recovery-token)
              (send-email-notification conn))))))
@@ -480,11 +577,7 @@
                 {:id profile-id})
 
     (with-meta {}
-      {:transform-response
-       (fn [request response]
-         (session/delete! session request)
-         (assoc response
-                :cookies (session/cookies session {:value "" :max-age -1})))})))
+      {:transform-response (:delete session)})))
 
 (def sql:owned-teams
   "with owner_teams as (

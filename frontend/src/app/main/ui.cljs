@@ -60,8 +60,10 @@
 (def routes
   [["/auth"
     ["/login"            :auth-login]
-    ["/register"         :auth-register]
-    ["/register/success" :auth-register-success]
+    (when cfg/registration-enabled
+      ["/register"         :auth-register])
+    (when cfg/registration-enabled
+      ["/register/success" :auth-register-success])
     ["/recovery/request" :auth-recovery-request]
     ["/recovery"         :auth-recovery]
     ["/verify-token"     :auth-verify-token]]

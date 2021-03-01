@@ -81,19 +81,19 @@
 (defmethod mutation :login-with-google
   [id params]
   (let [uri (str cfg/public-uri "/api/oauth/google")]
-    (->> (http/send! {:method :post :uri uri})
+    (->> (http/send! {:method :post :uri uri :query params})
          (rx/mapcat handle-response))))
 
 (defmethod mutation :login-with-gitlab
   [id params]
   (let [uri (str cfg/public-uri "/api/oauth/gitlab")]
-    (->> (http/send! {:method :post :uri uri})
+    (->> (http/send! {:method :post :uri uri :query params})
       (rx/mapcat handle-response))))
 
 (defmethod mutation :login-with-github
   [id params]
   (let [uri (str cfg/public-uri "/api/oauth/github")]
-    (->> (http/send! {:method :post :uri uri})
+    (->> (http/send! {:method :post :uri uri :query params})
          (rx/mapcat handle-response))))
 
 (defmethod mutation :upload-file-media-object
@@ -105,6 +105,12 @@
               (.append form (name key) val)))
           (seq params))
     (send-mutation! id form)))
+
+(defmethod mutation :send-feedback
+  [id params]
+  (let [uri (str cfg/public-uri "/api/feedback")]
+    (->> (http/send! {:method :post :uri uri :body params})
+         (rx/mapcat handle-response))))
 
 (defmethod mutation :update-profile-photo
   [id params]
@@ -121,24 +127,6 @@
             (.append form (name key) val))
           (seq params))
     (send-mutation! id form)))
-
-(defmethod mutation :login
-  [id params]
-  (let [uri (str cfg/public-uri "/api/login")]
-    (->> (http/send! {:method :post :uri uri :body params})
-         (rx/mapcat handle-response))))
-
-(defmethod mutation :logout
-  [id params]
-  (let [uri (str cfg/public-uri "/api/logout")]
-    (->> (http/send! {:method :post :uri uri :body params})
-         (rx/mapcat handle-response))))
-
-(defmethod mutation :login-with-ldap
-  [id params]
-  (let [uri (str cfg/public-uri "/api/login-ldap")]
-    (->> (http/send! {:method :post :uri uri :body params})
-         (rx/mapcat handle-response))))
 
 (def client-error? http/client-error?)
 (def server-error? http/server-error?)

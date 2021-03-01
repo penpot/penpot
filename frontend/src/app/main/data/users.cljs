@@ -32,7 +32,7 @@
 (s/def ::fullname ::us/string)
 (s/def ::email ::us/email)
 (s/def ::password ::us/string)
-(s/def ::lang ::us/string)
+(s/def ::lang (s/nilable ::us/string))
 (s/def ::theme ::us/string)
 (s/def ::created-at ::us/inst)
 (s/def ::password-1 ::us/string)
@@ -57,9 +57,6 @@
     (update [_ state]
       (assoc state :profile
              (cond-> data
-               (nil? (:lang data))
-               (assoc :lang cfg/default-language)
-
                (nil? (:theme data))
                (assoc :theme cfg/default-theme))))
 
@@ -67,12 +64,13 @@
     (effect [_ state stream]
       (let [profile (:profile state)]
         (swap! storage assoc :profile profile)
-        (i18n/set-current-locale! (:lang profile))
+        (i18n/set-locale! (:lang profile))
         (theme/set-current-theme! (:theme profile))))))
 
 ;; --- Fetch Profile
 
-(def fetch-profile
+(defn fetch-profile
+  []
   (reify
     ptk/WatchEvent
     (watch [_ state s]
@@ -90,16 +88,19 @@
   (us/assert ::profile data)
   (ptk/reify ::update-profile
     ptk/WatchEvent
-    (watch [_ state s]
-      (let [mdata (meta data)
+    (watch [_ state stream]
+      (let [mdata      (meta data)
             on-success (:on-success mdata identity)
-            on-error (:on-error mdata identity)
-            handle-error #(do (on-error (:payload %))
-                              (rx/empty))]
-        (->> (rp/mutation :update-profile data)
-             (rx/do on-success)
-             (rx/map (constantly fetch-profile))
-             (rx/catch rp/client-error? handle-error))))))
+            on-error   (:on-error mdata identity)]
+        (rx/merge
+         (->> (rp/mutation :update-profile data)
+              (rx/map fetch-profile)
+              (rx/catch on-error))
+         (->> stream
+              (rx/filter (ptk/type? ::profile-fetched))
+              (rx/take 1)
+              (rx/tap on-success)
+              (rx/ignore)))))))
 
 ;; --- Request Email Change
 
@@ -123,7 +124,7 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (->> (rp/mutation :cancel-email-change {})
-           (rx/map (constantly fetch-profile))))))
+           (rx/map (constantly (fetch-profile)))))))
 
 ;; --- Update Password (Form)
 
@@ -158,7 +159,7 @@
     (watch [_ state stream]
       (let [{:keys [id] :as profile} (:profile state)]
         (->> (rp/mutation :update-profile-props {:props {:onboarding-viewed true}})
-             (rx/map (constantly fetch-profile)))))))
+             (rx/map (constantly (fetch-profile))))))))
 
 
 ;; --- Update Photo
@@ -184,7 +185,7 @@
              (rx/map prepare)
              (rx/mapcat #(rp/mutation :update-profile-photo %))
              (rx/do on-success)
-             (rx/map (constantly fetch-profile))
+             (rx/map (constantly (fetch-profile)))
              (rx/catch on-error))))))
 
 

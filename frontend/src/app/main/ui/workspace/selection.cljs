@@ -10,29 +10,30 @@
 (ns app.main.ui.workspace.selection
   "Selection handlers component."
   (:require
-   [beicon.core :as rx]
-   [cuerdas.core :as str]
-   [potok.core :as ptk]
-   [rumext.alpha :as mf]
-   [rumext.util :refer [map->obj]]
+   [app.common.geom.matrix :as gmt]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as geom]
+   [app.common.math :as mth]
    [app.common.uuid :as uuid]
-   [app.util.data :as d]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.ui.cursors :as cur]
-   [app.common.math :as mth]
+   [app.main.ui.hooks :as hooks]
+   [app.main.ui.measurements :as msr]
+   [app.main.ui.workspace.shapes.outline :refer [outline]]
+   [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]
+   [app.util.data :as d]
+   [app.util.debug :refer [debug?]]
    [app.util.dom :as dom]
    [app.util.object :as obj]
-   [app.common.geom.shapes :as geom]
-   [app.common.geom.point :as gpt]
-   [app.common.geom.matrix :as gmt]
-   [app.util.debug :refer [debug?]]
-   [app.main.ui.workspace.shapes.outline :refer [outline]]
-   [app.main.ui.measurements :as msr]
-   [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]))
+   [beicon.core :as rx]
+   [cuerdas.core :as str]
+   [potok.core :as ptk]
+   [rumext.alpha :as mf]
+   [rumext.util :refer [map->obj]]))
 
 (def rotation-handler-size 20)
 (def resize-point-radius 4)
@@ -235,19 +236,24 @@
 (mf/defc controls
   {::mf/wrap-props false}
   [props]
-  (let [{:keys [overflow-text] :as shape} (obj/get props "shape")
+  (let [{:keys [overflow-text type] :as shape} (obj/get props "shape")
         zoom  (obj/get props "zoom")
         color (obj/get props "color")
         on-resize (obj/get props "on-resize")
         on-rotate (obj/get props "on-rotate")
+        disable-handlers (obj/get props "disable-handlers")
         current-transform (mf/deref refs/current-transform)
 
+        hide? (mf/use-state false)
         selrect (-> (:selrect shape)
                     minimum-selrect)
         transform (geom/transform-matrix shape {:no-flip true})]
 
+    (hooks/use-stream ms/keyboard-ctrl #(when (= type :group) (reset! hide? %)))
+
     (when (not (#{:move :rotate} current-transform))
-      [:g.controls
+      [:g.controls {:style {:display (when @hide? "none")}
+                    :pointer-events (when disable-handlers "none")}
 
        ;; Selection rect
        [:& selection-rect {:rect selrect
@@ -290,7 +296,7 @@
                           :fill "transparent"}}]]))
 
 (mf/defc multiple-selection-handlers
-  [{:keys [shapes selected zoom color show-distances] :as props}]
+  [{:keys [shapes selected zoom color show-distances disable-handlers] :as props}]
   (let [shape (geom/setup {:type :rect} (geom/selection-rect (->> shapes (map geom/transform-shape))))
         shape-center (geom/center-shape shape)
 
@@ -311,6 +317,7 @@
      [:& controls {:shape shape
                    :zoom zoom
                    :color color
+                   :disable-handlers disable-handlers
                    :on-resize on-resize
                    :on-rotate on-rotate}]
 
@@ -324,7 +331,7 @@
        [:circle {:cx (:x shape-center) :cy (:y shape-center) :r 5 :fill "yellow"}])]))
 
 (mf/defc single-selection-handlers
-  [{:keys [shape zoom color show-distances] :as props}]
+  [{:keys [shape zoom color show-distances disable-handlers] :as props}]
   (let [shape-id (:id shape)
         shape (geom/transform-shape shape)
 
@@ -349,7 +356,8 @@
                    :zoom zoom
                    :color color
                    :on-rotate on-rotate
-                   :on-resize on-resize}]
+                   :on-resize on-resize
+                   :disable-handlers disable-handlers}]
 
      (when show-distances
        [:& msr/measurement {:bounds vbox
@@ -360,7 +368,7 @@
 
 (mf/defc selection-handlers
   {::mf/wrap [mf/memo]}
-  [{:keys [selected edition zoom show-distances] :as props}]
+  [{:keys [selected edition zoom show-distances disable-handlers] :as props}]
   (let [;; We need remove posible nil values because on shape
         ;; deletion many shape will reamin selected and deleted
         ;; in the same time for small instant of time
@@ -381,7 +389,8 @@
                                        :selected selected
                                        :zoom zoom
                                        :color color
-                                       :show-distances show-distances}]
+                                       :show-distances show-distances
+                                       :disable-handlers disable-handlers}]
 
       (and (= type :text)
            (= edition (:id shape)))
@@ -398,4 +407,5 @@
       [:& single-selection-handlers {:shape shape
                                      :zoom zoom
                                      :color color
-                                     :show-distances show-distances}])))
+                                     :show-distances show-distances
+                                     :disable-handlers disable-handlers}])))

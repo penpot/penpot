@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.rpc.mutations.demo
   "A demo specific mutations."
@@ -14,8 +14,8 @@
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
-   [app.db.profile-initial-data :refer [create-profile-initial-data]]
    [app.rpc.mutations.profile :as profile]
+   [app.setup.initial-data :as sid]
    [app.tasks :as tasks]
    [app.util.services :as sv]
    [buddy.core.codecs :as bc]
@@ -36,7 +36,7 @@
         params   {:id id
                   :email email
                   :fullname fullname
-                  :demo? true
+                  :is-demo true
                   :password password
                   :props {:onboarding-viewed true}}]
 
@@ -48,7 +48,7 @@
     (db/with-atomic [conn pool]
       (->> (#'profile/create-profile conn params)
            (#'profile/create-profile-relations conn)
-           (create-profile-initial-data conn))
+           (sid/load-initial-project! conn))
 
       ;; Schedule deletion of the demo profile
       (tasks/submit! conn {:name "delete-profile"

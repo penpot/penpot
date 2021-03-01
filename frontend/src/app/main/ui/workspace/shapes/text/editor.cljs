@@ -182,11 +182,9 @@
                           (and self    (.contains self target))
                           (and cpicker (.contains cpicker target))
                           (and palette (.contains palette target)))
-              (do
-
-                (if selecting?
-                  (mf/set-ref-val! selecting-ref false)
-                  (on-close))))))
+              (if selecting?
+                (mf/set-ref-val! selecting-ref false)
+                (on-close)))))
 
         on-mouse-down
         (fn [event]

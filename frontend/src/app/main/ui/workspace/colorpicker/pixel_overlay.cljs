@@ -9,16 +9,7 @@
 
 (ns app.main.ui.workspace.colorpicker.pixel-overlay
   (:require
-   [rumext.alpha :as mf]
-   [cuerdas.core :as str]
-   [okulary.core :as l]
-   [promesa.core :as p]
-   [beicon.core :as rx]
-   [goog.events :as events]
    [app.common.uuid :as uuid]
-   [app.util.timers :as timers]
-   [app.util.dom :as dom]
-   [app.util.object :as obj]
    [app.main.data.colors :as dwc]
    [app.main.data.fetch :as mdf]
    [app.main.data.modal :as modal]
@@ -26,8 +17,17 @@
    [app.main.store :as st]
    [app.main.ui.context :as muc]
    [app.main.ui.cursors :as cur]
-   [app.main.ui.keyboard :as kbd]
-   [app.main.ui.workspace.shapes :refer [shape-wrapper frame-wrapper]])
+   [app.main.ui.workspace.shapes :refer [shape-wrapper frame-wrapper]]
+   [app.util.dom :as dom]
+   [app.util.keyboard :as kbd]
+   [app.util.object :as obj]
+   [app.util.timers :as timers]
+   [beicon.core :as rx]
+   [cuerdas.core :as str]
+   [goog.events :as events]
+   [okulary.core :as l]
+   [promesa.core :as p]
+   [rumext.alpha :as mf])
   (:import goog.events.EventType))
 
 (defn format-viewbox [vbox]

@@ -112,7 +112,7 @@
                         :command "shift+v"
                         :fn #(st/emit! (dw/flip-vertical-selected))}
 
-   :flip-horizontal    {:tooltip (ds/shift "V")
+   :flip-horizontal    {:tooltip (ds/shift "H")
                         :command "shift+h"
                         :fn #(st/emit! (dw/flip-horizontal-selected))}
 
@@ -255,7 +255,12 @@
 
    :escape             {:tooltip (ds/esc)
                         :command "escape"
-                        :fn #(st/emit! (esc-pressed))}})
+                        :fn #(st/emit! (esc-pressed))}
+
+   :start-editing      {:tooltip (ds/enter)
+                        :command "enter"
+                        :fn #(st/emit! (dw/start-editing-selected))}
+   })
 
 (defn get-tooltip [shortcut]
   (assert (contains? shortcuts shortcut) (str shortcut))

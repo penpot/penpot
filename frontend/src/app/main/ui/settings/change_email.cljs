@@ -40,22 +40,31 @@
   (s/keys :req-un [::email-1 ::email-2]))
 
 (defn- on-error
-  [form error]
-  (cond
-    (= (:code error) :email-already-exists)
+  [form {:keys [code] :as error}]
+  (case code
+    :email-already-exists
     (swap! form (fn [data]
                   (let [error {:message (tr "errors.email-already-exists")}]
                     (assoc-in data [:errors :email-1] error))))
 
-    :else
+    :profile-is-muted
+    (rx/of (dm/error (tr "errors.profile-is-muted")))
+
+    :email-has-permanent-bounces
+    (let [email (get @form [:data :email-1])]
+      (rx/of (dm/error (tr "errors.email-has-permanent-bounces" email))))
+
     (rx/throw error)))
 
 (defn- on-success
   [form data]
-  (let [email   (get-in @form [:clean-data :email-1])
-        message (tr "notifications.validation-email-sent" email)]
-    (st/emit! (dm/info message)
-              (modal/hide))))
+  (if (:changed data)
+    (st/emit! (du/fetch-profile)
+              (modal/hide))
+    (let [email   (get-in @form [:clean-data :email-1])
+          message (tr "notifications.validation-email-sent" email)]
+      (st/emit! (dm/info message)
+                (modal/hide)))))
 
 (defn- on-submit
   [form event]

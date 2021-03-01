@@ -23,6 +23,7 @@
    [app.util.i18n :refer [tr t]]
    [app.util.router :as rt]
    [app.util.timers :as tm]
+   [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
@@ -42,13 +43,11 @@
 (s/def ::fullname ::us/not-empty-string)
 (s/def ::password ::us/not-empty-string)
 (s/def ::email ::us/email)
-(s/def ::token ::us/not-empty-string)
+(s/def ::invitation-token ::us/not-empty-string)
 
 (s/def ::register-form
-  (s/keys :req-un [::password
-                   ::fullname
-                   ::email]
-          :opt-un [::token]))
+  (s/keys :req-un [::password ::fullname ::email]
+          :opt-un [::invitation-token]))
 
 (mf/defc register-form
   [{:keys [params] :as props}]
@@ -64,23 +63,24 @@
            (reset! submitted? false)
            (case (:code error)
              :registration-disabled
-             (st/emit! (dm/error (tr "errors.registration-disabled")))
+             (rx/of (dm/error (tr "errors.registration-disabled")))
+
+             :email-has-permanent-bounces
+             (let [email (get @form [:data :email])]
+               (rx/of (dm/error (tr "errors.email-has-permanent-bounces" email))))
 
              :email-already-exists
              (swap! form assoc-in [:errors :email]
                     {:message "errors.email-already-exists"})
 
-             (st/emit! (dm/error (tr "errors.unexpected-error"))))))
+             (rx/throw error))))
 
         on-success
         (mf/use-callback
          (fn [form data]
            (reset! submitted? false)
-           (if (and (:is-active data) (:claims data))
-             (let [message (tr "auth.notifications.team-invitation-accepted")]
-               (st/emit! (rt/nav :dashboard-projects {:team-id (get-in data [:claims :team-id])})
-                         du/fetch-profile
-                         (dm/success message)))
+           (if-let [token (:invitation-token data)]
+             (st/emit! (rt/nav :auth-verify-token {} {:token token}))
              (st/emit! (rt/nav :auth-register-success {} {:email (:email data)})))))
 
         on-submit
@@ -143,7 +143,7 @@
    [:div.links
     [:div.link-entry
      [:span (tr "auth.already-have-account") " "]
-     [:a {:on-click #(st/emit! (rt/nav :auth-login))
+     [:a {:on-click #(st/emit! (rt/nav :auth-login {} params))
           :tab-index "4"}
       (tr "auth.login-here")]]
 
@@ -156,19 +156,19 @@
 
    (when cfg/google-client-id
      [:a.btn-ocean.btn-large.btn-google-auth
-      {:on-click login/login-with-google}
+      {:on-click #(login/login-with-google % params)}
       "Login with Google"])
 
    (when cfg/gitlab-client-id
      [:a.btn-ocean.btn-large.btn-gitlab-auth
-      {:on-click login/login-with-gitlab}
+      {:on-click #(login/login-with-gitlab % params)}
       [:img.logo
        {:src "/images/icons/brand-gitlab.svg"}]
       (tr "auth.login-with-gitlab-submit")])
 
    (when cfg/github-client-id
      [:a.btn-ocean.btn-large.btn-github-auth
-      {:on-click login/login-with-github}
+      {:on-click #(login/login-with-github % params)}
       [:img.logo
        {:src "/images/icons/brand-github.svg"}]
       (tr "auth.login-with-github-submit")])])

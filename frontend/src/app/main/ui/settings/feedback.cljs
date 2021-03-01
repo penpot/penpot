@@ -30,16 +30,7 @@
 (s/def ::feedback-form
   (s/keys :req-un [::subject ::content]))
 
-(defn- on-error
-  [form error]
-  (st/emit! (dm/error (tr "errors.generic"))))
-
-(defn- on-success
-  [form]
-  (st/emit! (dm/success (tr "notifications.profile-saved"))))
-
-
-(mf/defc options-form
+(mf/defc feedback-form
   []
   (let [profile (mf/deref refs/profile)
         form    (fm/use-form :spec ::feedback-form)
@@ -50,6 +41,7 @@
         (mf/use-callback
          (mf/deps profile)
          (fn [event]
+           (reset! loading false)
            (st/emit! (dm/success (tr "labels.feedback-sent")))
            (swap! form assoc :data {} :touched {} :errors {})))
 
@@ -58,7 +50,7 @@
          (mf/deps profile)
          (fn [{:keys [code] :as error}]
            (reset! loading false)
-           (if (= code :feedbck-disabled)
+           (if (= code :feedback-disabled)
              (st/emit! (dm/error (tr "labels.feedback-disabled")))
              (st/emit! (dm/error (tr "errors.generic"))))))
 
@@ -68,9 +60,8 @@
          (fn [form event]
            (reset! loading true)
            (let [data (:clean-data @form)]
-             (prn "on-submit" data)
-             (->> (rp/mutation! :send-profile-feedback data)
-                  (rx/subs on-succes on-error #(reset! loading false))))))]
+             (->> (rp/mutation! :send-feedback data)
+                  (rx/subs on-succes on-error)))))]
 
     [:& fm/form {:class "feedback-form"
                  :on-submit on-submit
@@ -117,4 +108,4 @@
   []
   [:div.dashboard-settings
    [:div.form-container
-    [:& options-form]]])
+    [:& feedback-form]]])

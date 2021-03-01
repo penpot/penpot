@@ -32,5 +32,6 @@
                        :result "comp"}]]
        [:mask {:id (str (:id mask) "-mask")}
         [:g {:filter (str/fmt "url(#%s)" (str (:id mask) "-filter"))}
-         [:& shape-wrapper {:frame frame :shape mask}]]]])))
+         [:& shape-wrapper {:frame frame :shape (-> mask
+                                                    (dissoc :shadow :blur))}]]]])))
 

@@ -2,8 +2,10 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
-;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2020 UXBOX Labs SL
 
 (ns app.util.i18n
   "A i18n foundation."
@@ -17,9 +19,40 @@
    [app.util.storage :refer [storage]]
    [app.util.transit :as t]))
 
-(defonce locale (l/atom (or (get storage ::locale)
-                            cfg/default-language)))
+(def supported-locales
+  [{:label "English" :value "en"}
+   {:label "Español" :value "es"}
+   {:label "Français (community)" :value "fr"}
+   {:label "Русский (community)" :value "ru"}
+   {:label "简体中文 (community)" :value "zh_cn"}])
+
+(defn- parse-locale
+  [locale]
+  (let [locale (-> (.-language js/navigator)
+                   (str/lower)
+                   (str/replace "-" "_"))]
+    (cond-> [locale]
+      (str/includes? locale "_")
+      (conj (subs locale 0 2)))))
+
+(def ^:private browser-locales
+  (delay
+    (-> (.-language js/navigator)
+        (parse-locale))))
+
+(defn- autodetect
+  []
+  (let [supported (into #{} (map :value supported-locales))]
+    (loop [locales (seq @browser-locales)]
+      (if-let [locale (first locales)]
+        (if (contains? supported locale)
+          locale
+          (recur (rest locales)))
+        cfg/default-language))))
+
 (defonce translations #js {})
+(defonce locale (l/atom (or (get storage ::locale)
+                            (autodetect))))
 
 ;; The traslations `data` is a javascript object and should be treated
 ;; with `goog.object` namespace functions instead of a standart
@@ -31,14 +64,21 @@
   [data]
   (set! translations data))
 
-(defn set-current-locale!
-  [v]
-  (swap! storage assoc ::locale v)
-  (reset! locale v))
+(defn set-locale!
+  [lang]
+  (if lang
+    (do
+      (swap! storage assoc ::locale lang)
+      (reset! locale lang))
+    (do
+      (reset! locale (autodetect)))))
 
-(defn set-default-locale!
+(defn reset-locale
+  "Set the current locale to the browser detected one if it is
+  supported or default locale if not."
   []
-  (set-current-locale! cfg/default-language))
+  (swap! storage dissoc ::locale)
+  (reset! locale (autodetect)))
 
 (deftype C [val]
   IDeref

@@ -18,9 +18,9 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr t]]
    [app.util.router :as rt]
+   [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
-   [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
 (s/def ::email ::us/email)
@@ -28,37 +28,41 @@
 
 (mf/defc recovery-form
   []
-  (let [form (fm/use-form :spec ::recovery-request-form
-                          :initial {})
-
+  (let [form      (fm/use-form :spec ::recovery-request-form :initial {})
         submitted (mf/use-state false)
-
-        on-error
-        (mf/use-callback
-         (fn [{:keys [code] :as error}]
-           (reset! submitted false)
-           (if (= code :profile-not-verified)
-             (rx/of (dm/error (tr "auth.notifications.profile-not-verified")
-                              {:timeout nil}))
-
-             (rx/throw error))))
 
         on-success
         (mf/use-callback
-         (fn []
+         (fn [data]
            (reset! submitted false)
            (st/emit! (dm/info (tr "auth.notifications.recovery-token-sent"))
                      (rt/nav :auth-login))))
+
+        on-error
+        (mf/use-callback
+         (fn [data {:keys [code] :as error}]
+           (reset! submitted false)
+           (case code
+             :profile-not-verified
+             (rx/of (dm/error (tr "auth.notifications.profile-not-verified") {:timeout nil}))
+
+             :profile-is-muted
+             (rx/of (dm/error (tr "errors.profile-is-muted")))
+
+             :email-has-permanent-bounces
+             (rx/of (dm/error (tr "errors.email-has-permanent-bounces" (:email data))))
+
+             (rx/throw error))))
 
         on-submit
         (mf/use-callback
          (fn []
            (reset! submitted true)
-           (->> (with-meta (:clean-data @form)
-                  {:on-success on-success
-                   :on-error on-error})
-                (uda/request-profile-recovery)
-                (st/emit!))))]
+           (let [cdata  (:clean-data @form)
+                 params (with-meta cdata
+                          {:on-success #(on-success cdata %)
+                           :on-error #(on-error cdata %)})]
+             (st/emit! (uda/request-profile-recovery params)))))]
 
     [:& fm/form {:on-submit on-submit
                  :form form}

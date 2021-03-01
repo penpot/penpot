@@ -11,11 +11,12 @@
    [app.main.store :as st]
    [app.main.refs :as refs]
    [app.common.geom.point :as gpt]
-   [app.util.globals :as globals]))
+   [app.util.globals :as globals])
+  (:import goog.events.KeyCodes))
 
 ;; --- User Events
 
-(defrecord KeyboardEvent [type key shift ctrl alt])
+(defrecord KeyboardEvent [type key shift ctrl alt meta])
 
 (defn keyboard-event?
   [v]
@@ -112,7 +113,28 @@
         ob  (->> (rx/merge
                   (->> st/stream
                        (rx/filter keyboard-event?)
-                       (rx/map :alt))
+                       (rx/filter #(let [key (:key %)]
+                                     (= key KeyCodes.ALT)))
+                       (rx/map #(= :down (:type %))))
+                  ;; Fix a situation caused by using `ctrl+alt` kind of shortcuts,
+                  ;; that makes keyboard-alt stream registring the key pressed but
+                  ;; on bluring the window (unfocus) the key down is never arrived.
+                  (->> window-blur
+                       (rx/map (constantly false))))
+                 (rx/dedupe))]
+        (rx/subscribe-with ob sub)
+        sub))
+
+(defonce keyboard-ctrl
+  (let [sub (rx/behavior-subject nil)
+        ob  (->> (rx/merge
+                  (->> st/stream
+                       (rx/filter keyboard-event?)
+                       (rx/filter #(let [key (:key %)]
+                                     (or
+                                      (= key KeyCodes.CTRL)
+                                      (= key KeyCodes.META))))
+                       (rx/map #(= :down (:type %))))
                   ;; Fix a situation caused by using `ctrl+alt` kind of shortcuts,
                   ;; that makes keyboard-alt stream registring the key pressed but
                   ;; on bluring the window (unfocus) the key down is never arrived.

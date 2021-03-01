@@ -9,18 +9,18 @@
 
 (ns app.main.ui.workspace.sidebar.sitemap
   (:require
-   [app.main.ui.components.context-menu :refer [context-menu]]
    [app.common.data :as d]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
-   [app.main.ui.keyboard :as kbd]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.keyboard :as kbd]
    [app.util.router :as rt]
    [cuerdas.core :as str]
    [okulary.core :as l]

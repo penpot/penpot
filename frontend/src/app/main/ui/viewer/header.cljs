@@ -11,6 +11,7 @@
   (:require
    [app.common.math :as mth]
    [app.common.uuid :as uuid]
+   [app.config :as cfg]
    [app.main.data.comments :as dcm]
    [app.main.data.messages :as dm]
    [app.main.data.viewer :as dv]
@@ -64,9 +65,13 @@
         create (st/emitf (dv/create-share-link))
         delete (st/emitf (dv/delete-share-link))
 
-        href (.-href js/location)
-        href (subs href 0 (str/index-of href "?"))
-        link (str href "?token=" token "&index=0")
+        router (mf/deref refs/router)
+        route  (mf/deref refs/route)
+        link   (rt/resolve router
+                           :viewer
+                           (:path-params route)
+                           {:token token :index "0"})
+        link   (str cfg/public-uri "/#" link)
 
         copy-link
         (fn [event]

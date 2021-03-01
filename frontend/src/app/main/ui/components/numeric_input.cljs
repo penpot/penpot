@@ -9,12 +9,12 @@
 
 (ns app.main.ui.components.numeric-input
   (:require
-   [rumext.alpha :as mf]
-   [app.main.ui.keyboard :as kbd]
    [app.common.data :as d]
+   [app.common.math :as math]
    [app.util.dom :as dom]
+   [app.util.keyboard :as kbd]
    [app.util.object :as obj]
-   [app.common.math :as math]))
+   [rumext.alpha :as mf]))
 
 (mf/defc numeric-input
   {::mf/wrap-props false

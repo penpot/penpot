@@ -11,7 +11,6 @@
   "A errors handling for the http server."
   (:require
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
    [app.util.log4j :refer [update-thread-context!]]
    [clojure.tools.logging :as log]
    [cuerdas.core :as str]
@@ -30,16 +29,10 @@
       :path    (:uri request)
       :method  (:request-method request)
       :params  (:params request)
-      :version (:full cfg/version)
-      :host    (:public-uri cfg/config)
-      :class   (.getCanonicalName ^java.lang.Class (class error))
-      :hint    (ex-message error)
       :data    edata}
-
      (let [headers (:headers request)]
        {:user-agent (get headers "user-agent")
         :frontend-version (get headers "x-frontend-version" "unknown")})
-
      (when (and (map? edata) (:data edata))
        {:explain (explain-error edata)}))))
 
@@ -52,6 +45,11 @@
 (defmethod handle-exception :authentication
   [err _]
   {:status 401 :body (ex-data err)})
+
+
+(defmethod handle-exception :restriction
+  [err _]
+  {:status 400 :body (ex-data err)})
 
 (defmethod handle-exception :validation
   [err req]
@@ -75,7 +73,7 @@
   (let [edata (ex-data error)
         cdata (get-error-context request error)]
     (update-thread-context! cdata)
-    (log/errorf error "Internal error: assertion (id: %s)" (str (:id cdata)))
+    (log/errorf error "internal error: assertion (id: %s)" (str (:id cdata)))
     {:status 500
      :body {:type :server-error
             :data (-> edata
@@ -90,7 +88,7 @@
   [error request]
   (let [cdata (get-error-context request error)]
     (update-thread-context! cdata)
-    (log/errorf error "Internal error: %s (id: %s)"
+    (log/errorf error "internal error: %s (id: %s)"
                 (ex-message error)
                 (str (:id cdata)))
     {:status 500

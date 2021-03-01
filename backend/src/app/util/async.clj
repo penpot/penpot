@@ -46,8 +46,7 @@
                 (fn []
                   (try
                     (let [ret (try (f) (catch Exception e e))]
-                      (when-not (nil? ret)
-                        (a/>!! c ret)))
+                      (when (some? ret) (a/>!! c ret)))
                     (finally
                       (a/close! c)))))
       c

@@ -181,8 +181,10 @@
        ;; Mark file initialized when indexes are ready
        (->> stream
             (rx/filter #(= ::dwc/index-initialized %))
-            (rx/map (constantly
-                     (file-initialized project-id file-id))))
+            (rx/first)
+            (rx/map (fn []
+                      (file-initialized project-id file-id))))
+
        ))))
 
 (defn- file-initialized
@@ -1003,7 +1005,7 @@
                 result
 
                 (let [group (get objects current-id)]
-                  (if (and (not= uuid/zero current-id)
+                  (if (and (not= :frame (:type group))
                            (not= current-id parent-id)
                            (empty? (remove removed-id? (:shapes group))))
 
@@ -1087,6 +1089,31 @@
     (watch [_ state stream]
       (let [selected (get-in state [:workspace-local :selected])]
         (rx/of (relocate-shapes selected parent-id to-index))))))
+
+
+(defn start-editing-selected
+  []
+  (ptk/reify ::start-editing-selected
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [selected (get-in state [:workspace-local :selected])]
+        (if-not (= 1 (count selected))
+          (rx/empty)
+
+          (let [objects (dwc/lookup-page-objects state)
+                {:keys [id type shapes]} (get objects (first selected))]
+
+            (case type
+              :text
+              (rx/of (dwc/start-edition-mode id))
+
+              :group
+              (rx/of (dwc/select-shapes (into (d/ordered-set) [(last shapes)])))
+
+              :path
+              (rx/of (dwc/start-edition-mode id)
+                     (dwdp/start-path-edit id))
+              :else (rx/empty))))))))
 
 
 ;; --- Change Page Order (D&D Ordering)

@@ -79,6 +79,16 @@ update_login_with_ldap() {
   fi
 }
 
+
+update_registration_enabled() {
+  if [ -n "$PENPOT_REGISTRATION_ENABLED" ]; then
+    log "Updating Registration Enabled: $PENPOT_REGISTRATION_ENABLED"
+    sed -i \
+      -e "s|^//var penpotRegistrationEnabled = .*;|var penpotRegistrationEnabled = $PENPOT_REGISTRATION_ENABLED;|g" \
+      "$1"
+  fi
+}
+
 update_public_uri /var/www/app/js/config.js
 update_demo_warning /var/www/app/js/config.js
 update_allow_demo_users /var/www/app/js/config.js
@@ -86,5 +96,6 @@ update_google_client_id /var/www/app/js/config.js
 update_gitlab_client_id /var/www/app/js/config.js
 update_github_client_id /var/www/app/js/config.js
 update_login_with_ldap /var/www/app/js/config.js
+update_registration_enabled /var/www/app/js/config.js
 
 exec "$@";
