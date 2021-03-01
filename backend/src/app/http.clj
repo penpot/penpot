@@ -83,9 +83,10 @@
 (s/def ::oauth map?)
 (s/def ::storage map?)
 (s/def ::assets map?)
+(s/def ::feedback fn?)
 
 (defmethod ig/pre-init-spec ::router [_]
-  (s/keys :req-un [::rpc ::session ::metrics ::oauth ::storage ::assets]))
+  (s/keys :req-un [::rpc ::session ::metrics ::oauth ::storage ::assets ::feedback]))
 
 (defmethod ig/init-key ::router
   [_ cfg]
