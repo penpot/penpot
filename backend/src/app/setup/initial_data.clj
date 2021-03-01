@@ -134,7 +134,9 @@
                        (reduce #(assoc %1 (:id %2) (uuid/next)) index (:files data))
                        (reduce #(assoc %1 (:id %2) (uuid/next)) index (:fmeds data)))
 
-             flibs   (map #(remap-id % index :file-id) (:flibs data))
+             flibs   (->> (:flibs data)
+                          (map #(remap-id % index :file-id))
+                          (map #(remap-id % index :library-file-id)))
 
              files   (->> (:files data)
                           (map #(assoc % :id (get index (:id %))))
