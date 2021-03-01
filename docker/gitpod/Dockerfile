@@ -12,11 +12,6 @@ ENV CLOJURE_VERSION=1.10.2.774 \
     LC_ALL=en_US.UTF-8
 
 RUN set -ex; \
-    sudo useradd -m -g users -s /bin/bash penpot; \
-    sudo passwd penpot -d; \
-    sudo echo "penpot ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-
-RUN set -ex; \
     brew install --cask redis; \
     brew install imagemagick;
 
