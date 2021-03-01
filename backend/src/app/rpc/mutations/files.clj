@@ -313,7 +313,7 @@
   (let [lchanges (filter library-change? changes)]
 
     ;; Asynchronously publish message to the msgbus
-    (msgbus :pub {:topic (str (:id file))
+    (msgbus :pub {:topic (:id file)
                   :message
                   {:type :file-change
                    :profile-id (:profile-id params)
@@ -325,7 +325,7 @@
     (when (and (:is-shared file) (seq lchanges))
       (let [team-id (retrieve-team-id conn (:project-id file))]
         ;; Asynchronously publish message to the msgbus
-        (msgbus :pub {:topic (str team-id)
+        (msgbus :pub {:topic team-id
                       :message
                       {:type :library-change
                        :profile-id (:profile-id params)

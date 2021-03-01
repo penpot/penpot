@@ -219,7 +219,7 @@
 
 (defn- impl-redis-pub
   [rac {:keys [topic message]}]
-  (let [topic   (str topic)
+  (let [topic   (str (cfg/get :tenant) "." topic)
         message (blob/encode message)
         res     (a/chan 1)]
     (-> (.publish ^RedisAsyncCommands rac ^String topic ^bytes message)
