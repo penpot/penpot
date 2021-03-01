@@ -7,11 +7,12 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.http.auth.gitlab
+(ns app.http.oauth.gitlab
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
+   [app.http.oauth.google :as gg]
    [app.util.http :as http]
    [app.util.time :as dt]
    [clojure.data.json :as json]
@@ -76,62 +77,61 @@
       (when (= 200 (:status res))
         (let [data (json/read-str (:body res))]
           {:email (get data "email")
+           :backend "gitlab"
            :fullname (get data "name")})))
 
     (catch Exception e
       (log/error e "unexpected exception on get-user-info")
       nil)))
 
-(defn auth
-  [{:keys [tokens] :as cfg} _request]
-  (let [token  (tokens :generate {:iss :gitlab-oauth
-                                  :exp (dt/in-future "15m")})
 
-        params {:client_id (:client-id cfg)
-                :redirect_uri (build-redirect-url cfg)
-                :response_type "code"
-                :state token
-                :scope scope}
-        query  (u/map->query-string params)
-        uri    (-> (build-oauth-uri cfg)
-                   (assoc :query query))]
+(defn- retrieve-info
+  [{:keys [tokens] :as cfg} request]
+  (let [token (get-in request [:params :state])
+        state (tokens :verify {:token token :iss :gitlab-oauth})
+        info  (some->> (get-in request [:params :code])
+                       (get-access-token cfg)
+                       (get-user-info cfg))]
+    (when-not info
+      (ex/raise :type :internal
+                :code :unable-to-auth))
+
+    (cond-> info
+      (some? (:invitation-token state))
+      (assoc :invitation-token (:invitation-token state)))))
+
+
+(defn- auth-handler
+  [{:keys [tokens] :as cfg} request]
+  (let [invitation (get-in request [:params :invitation-token])
+        state      (tokens :generate
+                           {:iss :gitlab-oauth
+                            :invitation-token invitation
+                            :exp (dt/in-future "15m")})
+
+        params     {:client_id (:client-id cfg)
+                    :redirect_uri (build-redirect-url cfg)
+                    :response_type "code"
+                    :state state
+                    :scope scope}
+        query      (u/map->query-string params)
+        uri        (-> (build-oauth-uri cfg)
+                       (assoc :query query))]
     {:status 200
      :body {:redirect-uri (str uri)}}))
 
-(defn callback
-  [{:keys [tokens rpc session] :as cfg} request]
+(defn- callback-handler
+  [{:keys [session] :as cfg} request]
   (try
-    (let [token (get-in request [:params :state])
-          _     (tokens :verify {:token token :iss :gitlab-oauth})
-          info  (some->> (get-in request [:params :code])
-                         (get-access-token cfg)
-                         (get-user-info cfg))
-          _     (when-not info
-                  (ex/raise :type :internal
-                            :code :unable-to-auth))
-
-          method-fn (get-in rpc [:methods :mutation :login-or-register])
-          profile   (method-fn {:email (:email info)
-                                :backend "gitlab"
-                                :fullname (:fullname info)})
-          token     (tokens :generate {:iss :auth
-                                       :exp (dt/in-future "15m")
-                                       :profile-id (:id profile)})
-
-          uri       (-> (u/uri (:public-uri cfg))
-                        (assoc :path "/#/auth/verify-token")
-                        (assoc :query (u/map->query-string {:token token})))
-
-          sxf       ((:create session) (:id profile))
-          rsp       {:status 302 :headers {"location" (str uri)} :body ""}]
-      (sxf request rsp))
+    (let [info    (retrieve-info cfg request)
+          profile (gg/register-profile cfg info)
+          uri     (gg/generate-redirect-uri cfg profile)
+          sxf     ((:create session) (:id profile))]
+      (->> (gg/redirect-response uri)
+           (sxf request)))
     (catch Exception _e
-      (let [uri (-> (u/uri (:public-uri cfg))
-                    (assoc :path "/#/auth/login")
-                    (assoc :query (u/map->query-string {:error "unable-to-auth"})))]
-        {:status 302
-         :headers {"location" (str uri)}
-         :body ""}))))
+      (-> (gg/generate-error-redirect-uri cfg)
+          (gg/redirect-response)))))
 
 (s/def ::client-id ::us/not-empty-string)
 (s/def ::client-secret ::us/not-empty-string)
@@ -140,7 +140,7 @@
 (s/def ::session map?)
 (s/def ::tokens fn?)
 
-(defmethod ig/pre-init-spec :app.http.auth/gitlab [_]
+(defmethod ig/pre-init-spec :app.http.oauth/gitlab [_]
   (s/keys :req-un [::public-uri
                    ::session
                    ::tokens]
@@ -148,8 +148,7 @@
                    ::client-id
                    ::client-secret]))
 
-
-(defmethod ig/prep-key :app.http.auth/gitlab
+(defmethod ig/prep-key :app.http.oauth/gitlab
   [_ cfg]
   (d/merge {:base-uri "https://gitlab.com"}
            (d/without-nils cfg)))
@@ -158,11 +157,11 @@
   [_]
   (ex/raise :type :not-found))
 
-(defmethod ig/init-key :app.http.auth/gitlab
+(defmethod ig/init-key :app.http.oauth/gitlab
   [_ cfg]
   (if (and (:client-id cfg)
            (:client-secret cfg))
-    {:auth-handler #(auth cfg %)
-     :callback-handler #(callback cfg %)}
-    {:auth-handler default-handler
+    {:handler #(auth-handler cfg %)
+     :callback-handler #(callback-handler cfg %)}
+    {:handler default-handler
      :callback-handler default-handler}))

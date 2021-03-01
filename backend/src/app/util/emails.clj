@@ -161,7 +161,7 @@
     (.setDebug session debug)
     session))
 
-(defn smtp-message
+(defn ^MimeMessage smtp-message
   [cfg message]
   (let [^Session session (smtp-session cfg)]
     (build-message cfg session message)))

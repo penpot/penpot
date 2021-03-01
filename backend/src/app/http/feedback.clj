@@ -1,0 +1,73 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) 2021 UXBOX Labs SL
+
+(ns app.http.feedback
+  "A general purpose feedback module."
+  (:require
+   [app.common.data :as d]
+   [app.common.exceptions :as ex]
+   [app.common.spec :as us]
+   [app.config :as cfg]
+   [app.db :as db]
+   [app.emails :as emails]
+   [app.rpc.queries.profile :as profile]
+   [clojure.spec.alpha :as s]
+   [integrant.core :as ig]))
+
+(declare send-feedback)
+
+(defmethod ig/pre-init-spec ::handler [_]
+  (s/keys :req-un [::db/pool]))
+
+(defmethod ig/init-key ::handler
+  [_ {:keys [pool] :as scfg}]
+  (let [ftoken  (cfg/get :feedback-token ::no-token)
+        enabled (cfg/get :feedback-enabled)
+        dest    (cfg/get :feedback-destination)
+        scfg    (assoc scfg :destination dest)]
+
+    (fn [{:keys [profile-id] :as request}]
+      (let [token  (get-in request [:headers "x-feedback-token"])
+            params (d/merge (:params request)
+                            (:body-params request))]
+
+        (when-not enabled
+          (ex/raise :type :validation
+                    :code :feedback-disabled
+                    :hint "feedback module is disabled"))
+
+        (cond
+          (uuid? profile-id)
+          (let [profile (profile/retrieve-profile-data pool profile-id)
+                params  (assoc params :from (:email profile))]
+            (when-not (:is-muted profile)
+              (send-feedback scfg profile params)))
+
+          (= token ftoken)
+          (send-feedback scfg nil params))
+
+        {:status 204 :body ""}))))
+
+(s/def ::content ::us/string)
+(s/def ::from    ::us/email)
+(s/def ::subject ::us/string)
+
+(s/def ::feedback
+  (s/keys :req-un [::from ::subject ::content]))
+
+(defn send-feedback
+  [{:keys [pool destination]} profile params]
+  (let [params (us/conform ::feedback params)]
+    (emails/send! pool emails/feedback
+                  {:to destination
+                   :profile profile
+                   :from (:from params)
+                   :subject (:subject params)
+                   :content (:content params)})
+    nil))

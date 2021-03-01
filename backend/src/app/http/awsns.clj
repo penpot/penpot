@@ -42,7 +42,7 @@
         (= mtype "SubscriptionConfirmation")
         (let [surl   (get body "SubscribeURL")
               stopic (get body "TopicArn")]
-          (log/infof "Subscription received (topic=%s, url=%s)" stopic surl)
+          (log/infof "subscription received (topic=%s, url=%s)" stopic surl)
           (http/send! {:uri surl :method :post :timeout 10000}))
 
         (= mtype "Notification")
@@ -52,7 +52,7 @@
             (process-report cfg notification)))
 
         :else
-        (log/warn (str "Unexpected data received.\n"
+        (log/warn (str "unexpected data received\n"
                        (pprint-report body))))
 
       {:status 200 :body ""})))
@@ -184,14 +184,14 @@
 
 (defn- process-report
   [cfg {:keys [type profile-id] :as report}]
-  (log/debug (str "Procesing report:\n" (pprint-report report)))
+  (log/trace (str "procesing report:\n" (pprint-report report)))
   (cond
     ;; In this case we receive a bounce/complaint notification without
     ;; confirmed identity, we just emit a warning but do nothing about
     ;; it because this is not a normal case. All notifications should
     ;; come with profile identity.
     (nil? profile-id)
-    (log/warn (str "A notification without identity recevied from AWS\n"
+    (log/warn (str "a notification without identity recevied from AWS\n"
                    (pprint-report report)))
 
     (= "bounce" type)
@@ -201,7 +201,7 @@
     (register-complaint-for-profile cfg report)
 
     :else
-    (log/warn (str "Unrecognized report received from AWS\n"
+    (log/warn (str "unrecognized report received from AWS\n"
                    (pprint-report report)))))
 
 

@@ -77,7 +77,7 @@
       (assoc params
              :format format
              :mtype  (cm/format->mtype format)
-             :size   (alength thumbnail-data)
+             :size   (alength ^bytes thumbnail-data)
              :data   (ByteArrayInputStream. thumbnail-data)))))
 
 (defmulti process :cmd)
@@ -89,7 +89,7 @@
              (.addImage)
              (.autoOrient)
              (.strip)
-             (.thumbnail (int width) (int height) ">")
+             (.thumbnail ^Integer (int width) ^Integer (int height) ">")
              (.quality (double quality))
              (.addImage))]
     (generic-process (assoc params :operation op))))
@@ -101,7 +101,7 @@
              (.addImage)
              (.autoOrient)
              (.strip)
-             (.thumbnail (int width) (int height) "^")
+             (.thumbnail ^Integer (int width) ^Integer (int height) "^")
              (.gravity "center")
              (.extent (int width) (int height))
              (.quality (double quality))

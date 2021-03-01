@@ -10,14 +10,18 @@
 (ns app.msgbus
   "The msgbus abstraction implemented using redis as underlying backend."
   (:require
+   [app.common.exceptions :as ex]
    [app.common.spec :as us]
+   [app.config :as cfg]
    [app.util.blob :as blob]
+   [app.util.time :as dt]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
    [integrant.core :as ig]
    [promesa.core :as p])
   (:import
+   java.time.Duration
    io.lettuce.core.RedisClient
    io.lettuce.core.RedisURI
    io.lettuce.core.api.StatefulRedisConnection
@@ -59,16 +63,26 @@
         snd-conn (.connect ^RedisClient rclient ^RedisCodec codec)
         rcv-conn (.connectPubSub ^RedisClient rclient ^RedisCodec codec)
 
-        snd-buff (a/chan (a/sliding-buffer buffer-size))
-        rcv-buff (a/chan (a/sliding-buffer buffer-size))
-        sub-buff (a/chan 1)
+        ;; Channel used for receive publications from the application.
+        pub-chan (a/chan (a/dropping-buffer buffer-size))
+
+        ;; Channel used for receive data from redis
+        rcv-chan (a/chan (a/dropping-buffer buffer-size))
+
+        ;; Channel used for receive subscription requests.
+        sub-chan (a/chan)
         cch      (a/chan 1)]
 
+    (.setTimeout ^StatefulRedisConnection snd-conn ^Duration (dt/duration {:seconds 10}))
+    (.setTimeout ^StatefulRedisPubSubConnection rcv-conn ^Duration (dt/duration {:seconds 10}))
+
+    (log/debugf "initializing msgbus (uri: '%s')" (str uri))
+
     ;; Start the sending (publishing) loop
-    (impl-publish-loop snd-conn snd-buff cch)
+    (impl-publish-loop snd-conn pub-chan cch)
 
     ;; Start the receiving (subscribing) loop
-    (impl-subscribe-loop rcv-conn rcv-buff sub-buff cch)
+    (impl-subscribe-loop rcv-conn rcv-chan sub-chan cch)
 
     (with-meta
       (fn run
@@ -76,14 +90,14 @@
         ([command params]
          (a/go
            (case command
-             :pub (a/>! snd-buff params)
-             :sub (a/>! sub-buff params)))))
+             :pub (a/>! pub-chan params)
+             :sub (a/>! sub-chan params)))))
 
       {::snd-conn snd-conn
        ::rcv-conn rcv-conn
        ::cch cch
-       ::snd-buff snd-buff
-       ::rcv-buff rcv-buff})))
+       ::pub-chan pub-chan
+       ::rcv-chan rcv-chan})))
 
 (defmethod ig/halt-key! ::msgbus
   [_ f]
@@ -91,8 +105,117 @@
     (.close ^StatefulRedisConnection (::snd-conn mdata))
     (.close ^StatefulRedisPubSubConnection (::rcv-conn mdata))
     (a/close! (::cch mdata))
-    (a/close! (::snd-buff mdata))
-    (a/close! (::rcv-buff mdata))))
+    (a/close! (::pub-chan mdata))
+    (a/close! (::rcv-chan mdata))))
+
+(defn- impl-publish-loop
+  [conn pub-chan cch]
+  (let [rac (.async ^StatefulRedisConnection conn)]
+    (a/go-loop []
+      (let [[val _] (a/alts! [cch pub-chan] :priority true)]
+        (when (some? val)
+          (let [result (a/<! (impl-redis-pub rac val))]
+            (when (ex/exception? result)
+              (log/error result "unexpected error on publish message to redis")))
+          (recur))))))
+
+(defn- impl-subscribe-loop
+  [conn rcv-chan sub-chan cch]
+  ;; Add a unique listener to connection
+  (.addListener conn (reify RedisPubSubListener
+                       (message [it pattern topic message])
+                       (message [it topic message]
+                         ;; There are no back pressure, so we use a slidding
+                         ;; buffer for cases when the pubsub broker sends
+                         ;; more messages that we can process.
+                         (let [val {:topic topic :message (blob/decode message)}]
+                           (when-not (a/offer! rcv-chan val)
+                             (log/warn "dropping message on subscription loop"))))
+                       (psubscribed [it pattern count])
+                       (punsubscribed [it pattern count])
+                       (subscribed [it topic count])
+                       (unsubscribed [it topic count])))
+
+  (let [chans   (agent {} :error-handler #(log/error % "unexpected error on agent"))
+        tprefix (str (cfg/get :tenant) ".")
+
+        subscribe-to-single-topic
+        (fn [nsubs topic chan]
+          (let [nsubs (if (nil? nsubs) #{chan} (conj nsubs chan))]
+            (when (= 1 (count nsubs))
+              (let [result (a/<!! (impl-redis-sub conn topic))]
+                (log/tracef "opening subscription to %s" topic)
+                (when (ex/exception? result)
+                  (log/errorf result "unexpected exception on subscribing to '%s'" topic))))
+            nsubs))
+
+        subscribe-to-topics
+        (fn [state topics chan]
+          (let [state  (update state :chans assoc chan topics)]
+            (reduce (fn [state topic]
+                      (update-in state [:topics topic] subscribe-to-single-topic topic chan))
+                    state
+                    topics)))
+
+        unsubscribe-from-single-topic
+        (fn [nsubs topic chan]
+          (let [nsubs (disj nsubs chan)]
+            (when (empty? nsubs)
+              (let [result (a/<!! (impl-redis-unsub conn topic))]
+                (log/tracef "closing subscription to %s" topic)
+                (when (ex/exception? result)
+                  (log/errorf result "unexpected exception on unsubscribing from '%s'" topic))))
+            nsubs))
+
+        unsubscribe-channels
+        (fn [state pending]
+          (reduce (fn [state ch]
+                    (let [topics (get-in state [:chans ch])
+                          state  (update state :chans dissoc ch)]
+                      (reduce (fn [state topic]
+                                (update-in state [:topics topic] unsubscribe-from-single-topic topic ch))
+                              state
+                              topics)))
+                  state
+                  pending))]
+
+    ;; Asynchronous subscription loop; terminates when sub-chan is
+    ;; closed.
+    (a/go-loop []
+      (when-let [{:keys [topics chan]} (a/<! sub-chan)]
+        (let [topics (into #{} (map #(str tprefix %)) topics)]
+          (send-off chans subscribe-to-topics topics chan)
+          (recur))))
+
+    (a/go-loop []
+      (let [[val port] (a/alts! [cch rcv-chan])]
+        (cond
+          ;; Stop condition; close all underlying subscriptions and
+          ;; exit. The close operation is performed asynchronously.
+          (= port cch)
+          (send-off chans (fn [state]
+                            (log/tracef "close")
+                            (->> (vals state)
+                                 (mapcat identity)
+                                 (filter some?)
+                                 (run! a/close!))))
+
+          ;; This means we receive data from redis and we need to
+          ;; forward it to the underlying subscriptions.
+          (= port rcv-chan)
+          (let [topic   (:topic val)    ; topic is already string
+                pending (loop [chans   (seq (get-in @chans [:topics topic]))
+                               pending #{}]
+                          (if-let [ch (first chans)]
+                            (if (a/>! ch (:message val))
+                              (recur (rest chans) pending)
+                              (recur (rest chans) (conj pending ch)))
+                            pending))]
+            ;; (log/tracef "received message => pending: %s" (pr-str pending))
+            (some->> (seq pending)
+                     (send-off chans unsubscribe-channels))
+
+            (recur)))))))
 
 (defn- impl-redis-pub
   [rac {:keys [topic message]}]
@@ -105,64 +228,6 @@
                      (a/close! res))))
     res))
 
-(defn- impl-publish-loop
-  [conn in-buff cch]
-  (let [rac (.async ^StatefulRedisConnection conn)]
-    (a/go-loop []
-      (let [[val _] (a/alts! [in-buff cch])]
-        (when (some? val)
-          (let [result (a/<! (impl-redis-pub rac val))]
-            (when (instance? Throwable result)
-              (log/errorf result "unexpected error on publish message to redis"))
-            (recur)))))))
-
-(defn- impl-subscribe-loop
-  [conn in-buff sub-buff cch]
-  ;; Add a unique listener to connection
-  (.addListener conn (reify RedisPubSubListener
-                       (message [it pattern topic message])
-                       (message [it topic message]
-                         ;; There are no back pressure, so we use a slidding
-                         ;; buffer for cases when the pubsub broker sends
-                         ;; more messages that we can process.
-                         (a/put! in-buff {:topic topic :message (blob/decode message)}))
-                       (psubscribed [it pattern count])
-                       (punsubscribed [it pattern count])
-                       (subscribed [it topic count])
-                       (unsubscribed [it topic count])))
-
-  (a/go-loop [chans {}]
-    (let [[val port] (a/alts! [sub-buff cch in-buff] :priority true)]
-      (cond
-        ;; Stop condition; just do nothing
-        (= port cch)
-        nil
-
-        (= port sub-buff)
-        (let [topic  (:topic val)
-              output (:chan val)
-              chans  (update chans topic (fnil conj #{}) output)]
-          (when (= 1 (count (get chans topic)))
-            (a/<! (impl-redis-sub conn topic)))
-          (recur chans))
-
-        ;; This means we receive data from redis and we need to
-        ;; forward it to the underlying subscriptions.
-        (= port in-buff)
-        (let [topic   (:topic val)
-              pending (loop [chans   (seq (get chans topic))
-                             pending #{}]
-                        (if-let [ch (first chans)]
-                          (if (a/>! ch (:message val))
-                            (recur (rest chans) pending)
-                            (recur (rest chans) (conj pending ch)))
-                          pending))
-              chans (update chans topic #(reduce disj % pending))]
-          (when (empty? (get chans topic))
-            (a/<! (impl-redis-unsub conn topic)))
-          (recur chans))))))
-
-
 (defn impl-redis-sub
   [conn topic]
   (let [^RedisPubSubAsyncCommands cmd (.async ^StatefulRedisPubSubConnection conn)
@@ -172,7 +237,6 @@
                      (when e (a/>!! res e))
                      (a/close! res))))
     res))
-
 
 (defn impl-redis-unsub
   [conn topic]

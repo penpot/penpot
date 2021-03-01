@@ -12,7 +12,9 @@
         'java.nio.file.Path
         'java.nio.file.Files
         'java.nio.file.SimpleFileVisitor
-        'java.nio.file.FileVisitResult)
+        'java.nio.file.FileVisitResult
+        'com.fasterxml.jackson.databind.ObjectMapper
+        'com.fasterxml.jackson.databind.SerializationFeature)
 
 (defmulti task first)
 
@@ -62,19 +64,17 @@
 (defn- read-json-file
   [path]
   (when (fs/regular-file? path)
-    (let [content (json/read-value (slurp (io/as-file path)))]
-      (into (sorted-map) content))))
-
-(defn- read-edn-file
-  [path]
-  (when (fs/regular-file? path)
-    (let [content (edn/read-string (slurp (io/as-file path)))]
-      (into (sorted-map) content))))
-
+    (let [content (json/read-value (io/as-file path))]
+      (reduce-kv (fn [res k v]
+                   (let [v (into (sorted-map) v)
+                         v (update v "translations" #(into (sorted-map) %))]
+                     (assoc res k v)))
+                 (sorted-map)
+                 content))))
 
 (defn- add-translation
   [data {:keys [code file line] :as translation}]
-  (let [rpath (str file ":" line)]
+  (let [rpath (str file)]
     (if (contains? data code)
       (update data code (fn [state]
                           (if (get state "permanent")
@@ -82,7 +82,7 @@
                             (-> state
                                 (dissoc "unused")
                                 (update "used-in" conj rpath)))))
-      (assoc data code {"translations" {"en" nil "fr" nil "es" nil "ru" nil}
+      (assoc data code {"translations" (sorted-map "en" nil "es" nil)
                         "used-in" [rpath]}))))
 
 (defn- clean-removed-translations
@@ -110,10 +110,10 @@
 
 (defn- synchronize-translations
   [data translations]
-  (loop [data (initial-cleanup data)
+  (loop [data     (initial-cleanup data)
          imported #{}
-         c (first translations)
-         r (rest translations)]
+         c        (first translations)
+         r        (rest translations)]
     (if (nil? c)
       (clean-removed-translations data imported)
       (recur (add-translation data c)
@@ -121,42 +121,25 @@
              (first r)
              (rest r)))))
 
-(defn- synchronize-legacy-translations
-  [data legacy-data lang]
-  (reduce-kv (fn [data k v]
-               (if (contains? data k)
-                 (update-in data [k "translations"] assoc lang v)
-                 data))
-             data
-             legacy-data))
-
 (defn- write-result!
   [data output-path]
   (binding [*out* (io/writer (fs/path output-path))]
-    (let [mapper (json/object-mapper {:pretty true})]
+    (let [mapper (doto (ObjectMapper.)
+                   (.enable SerializationFeature/ORDER_MAP_ENTRIES_BY_KEYS))
+          mapper (json/object-mapper {:pretty true :mapper mapper})]
       (println (json/write-value-as-string data mapper))
       (flush))))
 
 (defn- update-translations
   [{:keys [find-directory output-path] :as props}]
-  (let [
-        data (read-json-file output-path)
+  (let [data         (read-json-file output-path)
         translations (collect-translations find-directory)
-        data (synchronize-translations data translations)
-        ]
+        data         (synchronize-translations data translations)]
     (write-result! data output-path)))
 
 (defmethod task "collect"
   [[_ in-path out-path]]
   (update-translations {:find-directory in-path
                         :output-path out-path}))
-
-
-(defmethod task "merge-with-legacy"
-  [[_ path lang legacy-path]]
-  (let [ldata (read-edn-file legacy-path)
-        data (read-json-file path)
-        data (synchronize-legacy-translations data ldata lang)]
-    (write-result! data path)))
 
 (task *command-line-args*)

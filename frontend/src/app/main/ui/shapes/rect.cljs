@@ -37,4 +37,7 @@
 
     [:& shape-custom-stroke {:shape shape
                              :base-props props
-                             :elem-name "rect"}]))
+                             :elem-name 
+                             (if (.-d props)
+                               "path"
+                               "rect")}]))

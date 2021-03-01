@@ -373,7 +373,6 @@
 
              (rx/of (set-modifiers selected)
                     (apply-modifiers selected)
-                    (calculate-frame-for-move selected)
                     (fn [state] (-> state
                                     (update :workspace-local dissoc :modifiers)
                                     (update :workspace-local dissoc :current-move-selected)))

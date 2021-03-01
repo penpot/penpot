@@ -39,9 +39,15 @@
       (str/format "%spx %s %s" width style (uc/color->background color)))))
 
 (def styles-data
-  {:layout {:props   [:width :height :x :y :radius :rx]
-            :to-prop {:x "left" :y "top" :rotation "transform" :rx "border-radius"}
-            :format  {:rotation #(str/fmt "rotate(%sdeg)" %)}}
+  {:layout {:props   [:width :height :x :y :radius :rx :r1]
+            :to-prop {:x "left"
+                      :y "top"
+                      :rotation "transform"
+                      :rx "border-radius"
+                      :r1 "border-radius"}
+            :format  {:rotation #(str/fmt "rotate(%sdeg)" %)
+                      :r1 #(apply str/fmt "%spx, %spx, %spx, %spx" %)}
+            :multi   {:r1 [:r1 :r2 :r3 :r4]}}
    :fill   {:props [:fill-color :fill-color-gradient]
             :to-prop {:fill-color "background" :fill-color-gradient "background"}
             :format {:fill-color format-fill-color :fill-color-gradient format-fill-color}}
@@ -74,13 +80,14 @@
              :text-transform name
              :fill-color format-fill-color}})
 
-
 (defn generate-css-props
   ([values properties]
    (generate-css-props values properties nil))
 
   ([values properties params]
-   (let [{:keys [to-prop format tab-size] :or {to-prop {} tab-size 0}} params
+   (let [{:keys [to-prop format tab-size multi]
+          :or {to-prop {} tab-size 0 multi {}}} params
+
          ;; We allow the :format and :to-prop to be a map for different properties
          ;; or just a value for a single property. This code transform a single
          ;; property to a uniform one
@@ -94,19 +101,28 @@
                    (into {} (map #(vector % to-prop) properties))
                    to-prop)
 
+         get-value (fn [prop]
+                     (if-let [props (prop multi)]
+                       (map #(get values %) props)
+                       (get values prop)))
+
+         null? (fn [value]
+                 (if (coll? value)
+                   (every? #(or (nil? %) (= % 0)) value)
+                   (or (nil? value) (= value 0))))
+
          default-format (fn [value] (str (mth/precision value 2) "px"))
          format-property (fn [prop]
                            (let [css-prop (or (prop to-prop) (name prop))
                                  format-fn (or (prop format) default-format)
-                                 css-val (format-fn (prop values) values)]
+                                 css-val (format-fn (get-value prop) values)]
                              (when css-val
                                (str
                                 (str/repeat " " tab-size)
                                 (str/fmt "%s: %s;" css-prop css-val)))))]
 
      (->> properties
-          (remove #(let [value (get values %)]
-                     (or (nil? value) (= value 0))))
+          (remove #(null? (get-value %)))
           (map format-property)
           (filter (comp not nil?))
           (str/join "\n")))))
@@ -114,9 +130,11 @@
 (defn shape->properties [shape]
   (let [props   (->> styles-data vals (mapcat :props))
         to-prop (->> styles-data vals (map :to-prop) (reduce merge))
-        format  (->> styles-data vals (map :format) (reduce merge))]
+        format  (->> styles-data vals (map :format) (reduce merge))
+        multi   (->> styles-data vals (map :multi) (reduce merge))]
     (generate-css-props shape props {:to-prop to-prop
                                      :format format
+                                     :multi multi
                                      :tab-size 2})))
 (defn text->properties [shape]
   (let [text-shape-style (select-keys styles-data [:layout :shadow :blur])
@@ -149,7 +167,7 @@
         properties (if (= :text (:type shape))
                      (text->properties shape)
                      (shape->properties shape))
-        
+
         selector (str/css-selector name)
         selector (if (str/starts-with? selector "-") (subs selector 1) selector)]
     (str/join "\n" [(str/fmt "/* %s */" name)

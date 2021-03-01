@@ -45,12 +45,13 @@
 }
 
 .auth-content {
-  grid-column: 2 / span 1;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
   align-items: center;
   background-color: $color-white;
+  display: flex;
+  grid-column: 2 / span 1;
+  height: 100vh;
+  justify-content: center;
+  position: relative;
 
   .form-container {
     width: 412px;
@@ -90,4 +91,14 @@
         margin-right: 1rem;
       }
     }
+}
+
+.terms-login {
+  bottom: $big;
+  font-size: $fs14;
+  position: absolute;
+
+  span {
+    margin: 0 $small;
+  }
 }

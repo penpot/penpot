@@ -79,30 +79,6 @@
     (watch [this state s]
       (rx/of (logged-in profile)))))
 
-(defn login-with-ldap
-  [{:keys [email password] :as data}]
-  (us/verify ::login-params data)
-  (ptk/reify ::login-with-ldap
-    ptk/UpdateEvent
-    (update [_ state]
-      (merge state (dissoc initial-state :route :router)))
-
-    ptk/WatchEvent
-    (watch [this state s]
-      (let [{:keys [on-error on-success]
-             :or {on-error identity
-                  on-success identity}} (meta data)
-            params {:email email
-                    :password password
-                    :scope "webapp"}]
-        (->> (rx/timer 100)
-          (rx/mapcat #(rp/mutation :login-with-ldap params))
-          (rx/tap on-success)
-          (rx/catch (fn [err]
-                      (on-error err)
-                      (rx/empty)))
-          (rx/map logged-in))))))
-
 ;; --- Logout
 
 (def clear-user-data
@@ -114,12 +90,13 @@
     ptk/WatchEvent
     (watch [_ state s]
       (->> (rp/mutation :logout)
+           (rx/catch (constantly (rx/empty)))
            (rx/ignore)))
 
     ptk/EffectEvent
     (effect [_ state s]
       (reset! storage {})
-      (i18n/set-default-locale!))))
+      (i18n/reset-locale))))
 
 (defn logout
   []
@@ -131,10 +108,11 @@
 
 ;; --- Register
 
+(s/def ::invitation-token ::us/not-empty-string)
+
 (s/def ::register
-  (s/keys :req-un [::fullname
-                   ::password
-                   ::email]))
+  (s/keys :req-un [::fullname ::password ::email]
+          :opt-un [::invitation-token]))
 
 (defn register
   "Create a register event instance."

@@ -7,8 +7,8 @@
 ;;
 ;; Copyright (c) 2020-2021 UXBOX Labs SL
 
-(ns app.sprops
-  "Server props module."
+(ns app.setup
+  "Initial data setup of instance."
   (:require
    [app.common.uuid :as uuid]
    [app.db :as db]
@@ -17,42 +17,45 @@
    [clojure.spec.alpha :as s]
    [integrant.core :as ig]))
 
-(declare initialize)
+(declare initialize-instance-id!)
+(declare initialize-secret-key!)
+(declare retrieve-all)
 
 (defmethod ig/pre-init-spec ::props [_]
   (s/keys :req-un [::db/pool]))
 
 (defmethod ig/init-key ::props
-  [_ cfg]
-  (initialize cfg))
+  [_ {:keys [pool] :as cfg}]
+  (db/with-atomic [conn pool]
+    (let [cfg (assoc cfg :conn conn)]
+      (initialize-secret-key! cfg)
+      (initialize-instance-id! cfg)
+      (retrieve-all cfg))))
 
-(defn- initialize-secret-key
+(defn- initialize-secret-key!
   [{:keys [conn] :as cfg}]
   (let [key (-> (bn/random-bytes 64)
                 (bc/bytes->b64u)
                 (bc/bytes->str))]
-    (db/exec-one! conn ["insert into server_prop (id, content)
-                         values ('secret-key', ?) on conflict do nothing"
-                        (db/tjson key)])))
+    (db/insert! conn :server-prop
+                {:id "secret-key"
+                 :preload true
+                 :content (db/tjson key)}
+                {:on-conflict-do-nothing true})))
 
-(defn- initialize-instance-id
+(defn- initialize-instance-id!
   [{:keys [conn] :as cfg}]
   (let [iid (uuid/random)]
-    (db/exec-one! conn ["insert into server_prop (id, content)
-                         values ('instance-id', ?::jsonb) on conflict do nothing"
-                        (db/tjson iid)])))
+
+    (db/insert! conn :server-prop
+                {:id "instance-id"
+                 :preload true
+                 :content (db/tjson iid)}
+                {:on-conflict-do-nothing true})))
 
 (defn- retrieve-all
   [{:keys [conn] :as cfg}]
   (reduce (fn [acc row]
             (assoc acc (keyword (:id row)) (db/decode-transit-pgobject (:content row))))
           {}
-          (db/exec! conn ["select * from server_prop;"])))
-
-(defn- initialize
-  [{:keys [pool] :as cfg}]
-  (db/with-atomic [conn pool]
-    (let [cfg (assoc cfg :conn conn)]
-      (initialize-secret-key cfg)
-      (initialize-instance-id cfg)
-      (retrieve-all cfg))))
+          (db/query conn :server-prop {:preload true})))

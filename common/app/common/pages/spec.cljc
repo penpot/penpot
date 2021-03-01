@@ -220,6 +220,10 @@
 (s/def :internal.shape/proportion-lock boolean?)
 (s/def :internal.shape/rx ::safe-number)
 (s/def :internal.shape/ry ::safe-number)
+(s/def :internal.shape/r1 ::safe-number)
+(s/def :internal.shape/r2 ::safe-number)
+(s/def :internal.shape/r3 ::safe-number)
+(s/def :internal.shape/r4 ::safe-number)
 (s/def :internal.shape/stroke-color string?)
 (s/def :internal.shape/stroke-color-gradient (s/nilable ::gradient))
 (s/def :internal.shape/stroke-color-ref-file (s/nilable uuid?))
@@ -296,6 +300,10 @@
                    :internal.shape/proportion-lock
                    :internal.shape/rx
                    :internal.shape/ry
+                   :internal.shape/r1
+                   :internal.shape/r2
+                   :internal.shape/r3
+                   :internal.shape/r4
                    :internal.shape/x
                    :internal.shape/y
                    :internal.shape/exports

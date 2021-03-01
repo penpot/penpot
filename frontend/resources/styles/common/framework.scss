@@ -385,6 +385,10 @@ ul.slider-dots {
       right: 6px;
   }
 
+  &.mini {
+    width: 43px;
+  }
+
   // Input amounts
 
   &.pixels {
@@ -1160,7 +1164,10 @@ input[type=range]:focus::-ms-fill-upper {
 
       .icon {
         padding: $small;
-        width: 40px;
+        width: 48px;
+        height: 48px;
+        justify-content: center;
+        align-items: center;
       }
 
       .content {
@@ -1169,6 +1176,7 @@ input[type=range]:focus::-ms-fill-upper {
         font-size: $fs14;
         padding: $small;
         width: 100%;
+        align-items: center;
       }
     }
 
@@ -1227,7 +1235,6 @@ input[type=range]:focus::-ms-fill-upper {
 
   &.inline {
     width: 100%;
-    margin-bottom: $big;
   }
 }
 

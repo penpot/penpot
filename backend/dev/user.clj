@@ -14,7 +14,7 @@
    [app.main :as main]
    [app.util.time :as dt]
    [app.util.transit :as t]
-   [clojure.data.json :as json]
+   [app.util.json :as json]
    [clojure.java.io :as io]
    [clojure.pprint :refer [pprint]]
    [clojure.repl :refer :all]

@@ -81,7 +81,7 @@
                                            {:id id
                                             :fullname (str "Profile " index)
                                             :password "123123"
-                                            :demo? true
+                                            :is-demo true
                                             :email (str "profile" index "@example.com")})
                     team-id  (:default-team-id prof)
                     owner-id id]
@@ -237,6 +237,6 @@
     (try
       (run-in-system system preset)
       (catch Exception e
-        (log/errorf e "Unhandled exception."))
+        (log/errorf e "unhandled exception"))
       (finally
         (ig/halt! system)))))

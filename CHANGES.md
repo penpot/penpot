@@ -4,21 +4,52 @@
 
 ### :sparkles: New features
 
-- Add major refactor of internal pubsub/redis code; improves scalability and performance #640
-- Add optional loki integration.
-- Bounce & Complaint handling.
+### :bug: Bugs fixed
+
+### :heart: Community contributions by (Thank you!)
+
+
+## 1.3.0-alpha
+
+### :sparkles: New features
+
+- Add emailcatcher and ldap test containers to devenv. [#506](https://github.com/penpot/penpot/pull/506)
+- Add major refactor of internal pubsub/redis code; improves scalability and performance [#640](https://github.com/penpot/penpot/pull/640)
+- Add more chinese transtions [#687](https://github.com/penpot/penpot/pull/687)
+- Add more presets for artboard [#654](https://github.com/penpot/penpot/pull/654)
+- Add optional loki integration [#645](https://github.com/penpot/penpot/pull/645)
+- Add proper http session lifecycle handling.
+- Allow to set border radius of each rect corner individually
+- Bounce & Complaint handling [#635](https://github.com/penpot/penpot/pull/635)
 - Disable groups interactions when holding "Ctrl" key (deep selection)
 - New action in context menu to "edit" some shapes (binded to key "Enter")
 
 
 ### :bug: Bugs fixed
 
+- Add more improvements to french translation strings [#591](https://github.com/penpot/penpot/pull/591)
 - Add some missing database indexes (mainly improves performance on large databases on file-update rpc method, and some background tasks).
+- Disables filters in masking elements (problem with Firefox rendering)
+- Drawing tool will have priority over resize/rotate handlers [Taiga #1225](https://tree.taiga.io/project/penpot/issue/1225)
+- Fix broken bounding box on editing paths [Taiga #1254](https://tree.taiga.io/project/penpot/issue/1254)
+- Fix corner cases on invitation/signup flows.
+- Fix errors on onboarding file [Taiga #1287](https://tree.taiga.io/project/penpot/issue/1287)
+- Fix infinite recursion on logout.
+- Fix issues with frame selection [Taiga #1300](https://tree.taiga.io/project/penpot/issue/1300), [Taiga #1255](https://tree.taiga.io/project/penpot/issue/1255)
+- Fix local fonts error [#691](https://github.com/penpot/penpot/issues/691)
 - Fix problem width handoff code generation [Taiga #1204](https://tree.taiga.io/project/penpot/issue/1204)
 - Fix problem with indices refreshing on page changes [#646](https://github.com/penpot/penpot/issues/646)
 - Have language change notification written in the new language [Taiga #1205](https://tree.taiga.io/project/penpot/issue/1205)
+- Hide register screen when registration is disabled [#598](https://github.com/penpot/penpot/issues/598)
 - Properly handle errors on github, gitlab and ldap auth backends.
 - Properly mark profile auth backend (on first register/ auth with 3rd party auth provider).
+- Refactor LDAP auth backend.
+
+
+### :heart: Community contributions by (Thank you!)
+
+- girafic [#538](https://github.com/penpot/penpot/pull/654)
+- arkhi [#591](https://github.com/penpot/penpot/pull/591)
 
 
 ## 1.2.0-alpha

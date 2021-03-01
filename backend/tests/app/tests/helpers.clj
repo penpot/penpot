@@ -45,7 +45,6 @@
           :migrations-verbose false}
          cfg/config))
 
-
 (defn state-init
   [next]
   (let [config (-> (main/build-system-config config)
@@ -108,48 +107,7 @@
   [prefix & args]
   (uuid/namespaced uuid/zero (apply str prefix args)))
 
-
-(defn create-profile
-  [conn i]
-  (let [params {:id (mk-uuid "profile" i)
-                :fullname (str "Profile " i)
-                :email (str "profile" i ".test@nodomain.com")
-                :password "123123"
-                :demo? true}]
-    (->> (#'profile/create-profile conn params)
-         (#'profile/create-profile-relations conn))))
-
-(defn create-team
-  [conn profile-id i]
-  (let [id (mk-uuid "team" i)
-        team (#'teams/create-team conn {:id id
-                                        :profile-id profile-id
-                                        :name (str "team" i)})]
-    (#'teams/create-team-profile conn
-                                 {:team-id id
-                                  :profile-id profile-id
-                                  :is-owner true
-                                  :is-admin true
-                                  :can-edit true})
-    team))
-
-(defn create-project
-  [conn profile-id team-id i]
-  (#'projects/create-project conn {:id (mk-uuid "project" i)
-                                   :profile-id profile-id
-                                   :team-id team-id
-                                   :name (str "project" i)}))
-
-(defn create-file
-  [conn profile-id project-id is-shared i]
-  (#'files/create-file conn {:id (mk-uuid "file" i)
-                             :profile-id profile-id
-                             :project-id project-id
-                             :is-shared is-shared
-                             :name (str "file" i)}))
-
-
-;; --- NEW HELPERS
+;; --- FACTORIES
 
 (defn create-profile*
   ([i] (create-profile* *pool* i {}))
@@ -159,7 +117,7 @@
                         :fullname (str "Profile " i)
                         :email (str "profile" i ".test@nodomain.com")
                         :password "123123"
-                        :demo? false}
+                        :is-demo false}
                        params)]
      (->> (#'profile/create-profile conn params)
           (#'profile/create-profile-relations conn)))))
@@ -202,20 +160,66 @@
                                    :can-edit true})
      team)))
 
+(defn link-file-to-library*
+  ([params] (link-file-to-library* *pool* params))
+  ([conn {:keys [file-id library-id] :as params}]
+   (#'files/link-file-to-library conn {:file-id file-id :library-id library-id})))
+
+(defn create-complaint-for
+  [conn {:keys [id created-at type]}]
+  (db/insert! conn :profile-complaint-report
+              {:profile-id id
+               :created-at (or created-at (dt/now))
+               :type (name type)
+               :content (db/tjson {})}))
+
+(defn create-global-complaint-for
+  [conn {:keys [email type created-at]}]
+  (db/insert! conn :global-complaint-report
+              {:email email
+               :type (name type)
+               :created-at (or created-at (dt/now))
+               :content (db/tjson {})}))
+
+
+(defn create-team-permission*
+  ([params] (create-team-permission* *pool* params))
+  ([conn {:keys [team-id profile-id is-owner is-admin can-edit]
+          :or {is-owner true is-admin true can-edit true}}]
+   (db/insert! conn :team-profile-rel {:team-id team-id
+                                       :profile-id profile-id
+                                       :is-owner is-owner
+                                       :is-admin is-admin
+                                       :can-edit can-edit})))
+
+(defn create-project-permission*
+  ([params] (create-project-permission* *pool* params))
+  ([conn {:keys [project-id profile-id is-owner is-admin can-edit]
+          :or {is-owner true is-admin true can-edit true}}]
+   (db/insert! conn :project-profile-rel {:project-id project-id
+                                          :profile-id profile-id
+                                          :is-owner is-owner
+                                          :is-admin is-admin
+                                          :can-edit can-edit})))
+
+(defn create-file-permission*
+  ([params] (create-file-permission* *pool* params))
+  ([conn {:keys [file-id profile-id is-owner is-admin can-edit]
+          :or {is-owner true is-admin true can-edit true}}]
+   (db/insert! conn :project-profile-rel {:file-id file-id
+                                          :profile-id profile-id
+                                          :is-owner is-owner
+                                          :is-admin is-admin
+                                          :can-edit can-edit})))
+
+
+;; --- RPC HELPERS
 
 (defn handle-error
   [^Throwable err]
   (if (instance? java.util.concurrent.ExecutionException err)
     (handle-error (.getCause err))
     err))
-
-(defmacro try-on
-  [expr]
-  `(try
-     (let [result# (deref ~expr)]
-       [nil result#])
-     (catch Exception e#
-       [(handle-error e#) nil])))
 
 (defmacro try-on!
   [expr]
@@ -225,16 +229,6 @@
      (catch Exception e#
        {:error (handle-error e#)
         :result nil})))
-
-(defmacro try!
-  [expr]
-  `(try
-     {:error nil
-      :result ~expr}
-     (catch Exception e#
-       {:error (handle-error e#)
-        :result nil})))
-
 
 (defn mutation!
   [{:keys [::type] :as data}]
@@ -248,7 +242,7 @@
     (try-on!
      (method-fn (dissoc data ::type)))))
 
-;; --- Utils
+;; --- UTILS
 
 (defn print-error!
   [error]
@@ -316,23 +310,6 @@
   (fn
     ([key] (get (merge config data) key))
     ([key default] (get (merge config data) key default))))
-
-(defn create-complaint-for
-  [conn {:keys [id created-at type]}]
-  (db/insert! conn :profile-complaint-report
-              {:profile-id id
-               :created-at (or created-at (dt/now))
-               :type (name type)
-               :content (db/tjson {})}))
-
-(defn create-global-complaint-for
-  [conn {:keys [email type created-at]}]
-  (db/insert! conn :global-complaint-report
-              {:email email
-               :type (name type)
-               :created-at (or created-at (dt/now))
-               :content (db/tjson {})}))
-
 
 (defn reset-mock!
   [m]

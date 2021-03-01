@@ -5,9 +5,6 @@ CREATE INDEX storage_object__id_touched_at__idx
     ON storage_object (touched_at, id)
  WHERE touched_at IS NOT NULL;
 
--- DROP TRIGGER file_media_object__on_delete__tgr ON file_media_object CASCADE;
--- DROP FUNCTION on_delete_file_media_object () ;
-
 CREATE OR REPLACE FUNCTION on_delete_file_media_object()
   RETURNS TRIGGER AS $func$
   BEGIN

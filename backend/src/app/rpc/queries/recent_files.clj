@@ -41,5 +41,3 @@
     (teams/check-read-permissions! conn profile-id team-id)
     (let [files (db/exec! conn [sql:recent-files team-id])]
       (into [] decode-row-xf files))))
-
-

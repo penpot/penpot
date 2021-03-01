@@ -11,7 +11,7 @@
   (:require
    [app.common.uuid :as uuid]))
 
-(def file-version 5)
+(def file-version 6)
 (def default-color "#b1b2b5") ;; $color-gray-20
 (def root uuid/zero)
 
@@ -42,6 +42,10 @@
    :stroke-alignment      :stroke-group
    :rx                    :radius-group
    :ry                    :radius-group
+   :r1                    :radius-group
+   :r2                    :radius-group
+   :r3                    :radius-group
+   :r4                    :radius-group
    :selrect               :geometry-group
    :points                :geometry-group
    :locked                :geometry-group

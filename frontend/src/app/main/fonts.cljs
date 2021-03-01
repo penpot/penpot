@@ -41,36 +41,6 @@
                {:id "bold" :name "bold" :weight "bold" :style "normal"}
                {:id "bolditalic" :name "bold (italic)" :weight "bold" :style "italic"}
                {:id "black" :name "black" :weight "900" :style "normal"}
-               {:id "blackitalic" :name "black (italic)" :weight "900" :style "italic"}]}
-   {:id "roboto"
-    :family "roboto"
-    :name "Roboto"
-    :variants [{:id "100" :name "100" :weight "100" :style "normal"}
-               {:id "100italic" :name "100 (italic)" :weight "100" :style "italic"}
-               {:id "200" :name "200" :weight "200" :style "normal"}
-               {:id "200italic" :name "200 (italic)" :weight "200" :style "italic"}
-               {:id "regular" :name "regular" :weight "400" :style "normal"}
-               {:id "italic" :name "italic" :weight "400" :style "italic"}
-               {:id "500" :name "500" :weight "500" :style "normal"}
-               {:id "500italic" :name "500 (italic)" :weight "500" :style "italic"}
-               {:id "bold" :name "bold" :weight "bold" :style "normal"}
-               {:id "bolditalic" :name "bold (italic)" :weight "bold" :style "italic"}
-               {:id "black" :name "black" :weight "900" :style "normal"}
-               {:id "blackitalic" :name "black (italic)" :weight "900" :style "italic"}]}
-   {:id "robotocondensed"
-    :family "robotocondensed"
-    :name "Roboto Condensed"
-    :variants [{:id "100" :name "100" :weight "100" :style "normal"}
-               {:id "100italic" :name "100 (italic)" :weight "100" :style "italic"}
-               {:id "200" :name "200" :weight "200" :style "normal"}
-               {:id "200italic" :name "200 (italic)" :weight "200" :style "italic"}
-               {:id "regular" :name "regular" :weight "400" :style "normal"}
-               {:id "italic" :name "italic" :weight "400" :style "italic"}
-               {:id "500" :name "500" :weight "500" :style "normal"}
-               {:id "500italic" :name "500 (italic)" :weight "500" :style "italic"}
-               {:id "bold" :name "bold" :weight "bold" :style "normal"}
-               {:id "bolditalic" :name "bold (italic)" :weight "bold" :style "italic"}
-               {:id "black" :name "black" :weight "900" :style "normal"}
                {:id "blackitalic" :name "black (italic)" :weight "900" :style "italic"}]}])
 
 (defonce fontsdb (l/atom {}))

@@ -158,6 +158,11 @@
    {:name "0048-mod-storage-tables"
     :fn (mg/resource "app/migrations/sql/0048-mod-storage-tables.sql")}
 
+   {:name "0049-mod-http-session-table"
+    :fn (mg/resource "app/migrations/sql/0049-mod-http-session-table.sql")}
+
+   {:name "0050-mod-server-prop-table"
+    :fn (mg/resource "app/migrations/sql/0050-mod-server-prop-table.sql")}
    ])
 
 
