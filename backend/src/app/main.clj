@@ -112,6 +112,7 @@
      :svgparse    (ig/ref :app.svgparse/handler)
      :storage     (ig/ref :app.storage/storage)
      :sns-webhook (ig/ref :app.http.awsns/handler)
+     :feedback    (ig/ref :app.http.feedback/handler)
      :error-report-handler (ig/ref :app.loggers.mattermost/handler)}
 
     :app.http.assets/handlers
@@ -120,6 +121,9 @@
      :storage           (ig/ref :app.storage/storage)
      :cache-max-age     (dt/duration {:hours 24})
      :signature-max-age (dt/duration {:hours 24 :minutes 5})}
+
+    :app.http.feedback/handler
+    {:pool (ig/ref :app.db/pool)}
 
     :app.http.oauth/all
     {:google (ig/ref :app.http.oauth/google)

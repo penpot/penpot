@@ -111,7 +111,7 @@
                :body "internal server error"})))))))
 
 (defn- create-router
-  [{:keys [session rpc oauth metrics svgparse assets] :as cfg}]
+  [{:keys [session rpc oauth metrics svgparse assets feedback] :as cfg}]
   (rr/router
    [["/metrics" {:get (:handler metrics)}]
 
@@ -136,6 +136,8 @@
                           [middleware/cookies]]}
 
      ["/svg" {:post svgparse}]
+     ["/feedback" {:middleware [(:middleware session)]
+                   :post feedback}]
 
      ["/oauth"
       ["/google" {:post (get-in oauth [:google :handler])}]
