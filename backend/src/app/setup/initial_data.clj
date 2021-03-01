@@ -18,6 +18,7 @@
    [app.rpc.mutations.projects :as projects]
    [app.rpc.queries.profile :as profile]
    [app.util.blob :as blob]
+   [app.util.time :as dt]
    [clojure.walk :as walk]))
 
 ;; --- DUMP GENERATION
@@ -130,21 +131,29 @@
                                                     :team-id (:default-team-id profile)
                                                     :name (:project-name data)})
 
+             now     (dt/now)
+             ignore  (dt/plus now (dt/duration {:seconds 5}))
              index   (as-> {} index
                        (reduce #(assoc %1 (:id %2) (uuid/next)) index (:files data))
                        (reduce #(assoc %1 (:id %2) (uuid/next)) index (:fmeds data)))
 
              flibs   (->> (:flibs data)
                           (map #(remap-id % index :file-id))
-                          (map #(remap-id % index :library-file-id)))
+                          (map #(remap-id % index :library-file-id))
+                          (map #(assoc % :synced-at now))
+                          (map #(assoc % :created-at now)))
 
              files   (->> (:files data)
                           (map #(assoc % :id (get index (:id %))))
                           (map #(assoc % :project-id (:id project)))
+                          (map #(assoc % :created-at now))
+                          (map #(assoc % :modified-at now))
+                          (map #(assoc % :ignore-sync-until ignore))
                           (map #(process-file % index)))
 
              fmeds   (->> (:fmeds data)
                           (map #(assoc % :id (get index (:id %))))
+                          (map #(assoc % :created-at now))
                           (map #(remap-id % index :file-id)))
 
              fprofs  (map #(array-map :file-id (:id %)
