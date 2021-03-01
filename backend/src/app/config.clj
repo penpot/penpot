@@ -90,6 +90,7 @@
 (s/def ::error-report-webhook ::us/string)
 (s/def ::feedback-destination ::us/string)
 (s/def ::feedback-enabled ::us/boolean)
+(s/def ::feedback-token ::us/string)
 (s/def ::github-client-id ::us/string)
 (s/def ::github-client-secret ::us/string)
 (s/def ::gitlab-base-uri ::us/string)
@@ -162,6 +163,7 @@
                    ::error-report-webhook
                    ::feedback-destination
                    ::feedback-enabled
+                   ::feedback-token
                    ::github-client-id
                    ::github-client-secret
                    ::gitlab-base-uri

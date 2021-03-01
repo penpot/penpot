@@ -106,6 +106,12 @@
           (seq params))
     (send-mutation! id form)))
 
+(defmethod mutation :send-feedback
+  [id params]
+  (let [uri (str cfg/public-uri "/api/feedback")]
+    (->> (http/send! {:method :post :uri uri :body params})
+         (rx/mapcat handle-response))))
+
 (defmethod mutation :update-profile-photo
   [id params]
   (let [form (js/FormData.)]

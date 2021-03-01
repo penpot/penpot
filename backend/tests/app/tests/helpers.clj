@@ -39,11 +39,11 @@
 (def ^:dynamic *pool* nil)
 
 (def config
-  (merge cfg/config
-         {:redis-uri "redis://redis/1"
+  (merge {:redis-uri "redis://redis/1"
           :database-uri "postgresql://postgres/penpot_test"
           :storage-fs-directory "/tmp/app/storage"
-          :migrations-verbose false}))
+          :migrations-verbose false}
+         cfg/config))
 
 (defn state-init
   [next]
