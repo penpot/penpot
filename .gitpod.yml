@@ -7,6 +7,7 @@ ports:
   - port: 3449
   - port: 6060
   - port: 9090
+  - port: 1080
 
 tasks:
   #- init: ./manage.sh build-devenv
@@ -20,6 +21,7 @@ tasks:
 
   - command: cd exporter/ && ./scripts/wait-and-start.sh
 
-  - command: cd backend/ && ./scripts/start-dev
+  - init: psql -f docker/gitpod/files/postgresql_init.sql
+    command: cd backend/ && ./scripts/start-dev
 
   - command: cd frontend/ && npx gulp --theme=${PENPOT_THEME} watch

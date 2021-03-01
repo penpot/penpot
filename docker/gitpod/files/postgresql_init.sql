@@ -1,0 +1,2 @@
+CREATE DATABASE penpot;
+CREATE USER penpot PASSWORD 'penpot';
