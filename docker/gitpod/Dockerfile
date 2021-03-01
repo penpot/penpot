@@ -12,17 +12,20 @@ ENV CLOJURE_VERSION=1.10.2.774 \
     LC_ALL=en_US.UTF-8
 
 RUN set -ex; \
-    sudo useradd -m -g users -s /bin/bash penpot; \
-    sudo passwd penpot -d
-
-RUN set -ex; \
     brew install redis; \
     brew install imagemagick; \
     brew install mailhog;
 
+USER root
+
 RUN set -ex; \
-    sudo apt-get -qq update; \
-    sudo apt-get -qqy install \
+    useradd -m -g users -s /bin/bash penpot; \
+    passwd penpot -d; \
+    echo "penpot ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+RUN set -ex; \
+    apt-get -qq update; \
+    apt-get -qqy install \
         gconf-service \
         libasound2 \
         libatk1.0-0 \
@@ -58,13 +61,15 @@ RUN set -ex; \
         libnss3 \
         libgbm1 \
     ; \
-    sudo rm -rf /var/lib/apt/lists/*;
+    rm -rf /var/lib/apt/lists/*;
 
 RUN set -ex; \
     wget "https://download.clojure.org/install/linux-install-$CLOJURE_VERSION.sh"; \
     chmod +x "linux-install-$CLOJURE_VERSION.sh"; \
-    sudo "./linux-install-$CLOJURE_VERSION.sh"; \
+    "./linux-install-$CLOJURE_VERSION.sh"; \
     rm -rf "linux-install-$CLOJURE_VERSION.sh"
+
+USER gitpod
 
 ENV PENPOT_SMTP_ENABLED=true \
     PENPOT_SMTP_HOST=localhost \
