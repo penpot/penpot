@@ -38,6 +38,5 @@
                       :values (select-keys shape [:shadow])}]
      [:& blur-menu {:ids ids
                     :values (select-keys shape [:blur])}]
-
      [:& svg-attrs-menu {:ids ids
                          :values (select-keys shape [:svg-attrs])}]]))

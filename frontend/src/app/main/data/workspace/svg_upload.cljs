@@ -28,10 +28,9 @@
   (let [width (get-in data [:attrs :width] 100)
         height (get-in data [:attrs :height] 100)
         viewbox (get-in data [:attrs :viewBox] (str "0 0 " width " " height))
-        [_ _ width-str height-str] (str/split viewbox " ")
-        width (d/parse-integer width-str)
-        height (d/parse-integer height-str)]
-    [width height]))
+        [x y width height] (->> (str/split viewbox " ")
+                                (map d/parse-double))]
+    [x y width height]))
 
 (defn tag->name
   "Given a tag returns its layer name"
@@ -61,14 +60,9 @@
                                  (d/parse-double))))
 
     (get-in shape [:svg-attrs :style :fill-opacity])
-    (-> (update :svg-attrs dissoc :fill-opacity)
+    (-> (update-in [:svg-attrs :style] dissoc :fill-opacity)
         (assoc :fill-opacity (-> (get-in shape [:svg-attrs :style :fill-opacity])
                                  (d/parse-double))))))
-
-(defonce default-stroke {:stroke-color "#000000"
-                         :stroke-opacity 1
-                         :stroke-alignment :center
-                         :stroke-style :svg})
 
 (defn setup-stroke [shape]
   (let [shape
@@ -90,9 +84,8 @@
           (-> (update-in [:svg-attrs :style] dissoc :stroke-width)
               (assoc :stroke-width (-> (get-in shape [:svg-attrs :style :stroke-width])
                                        (d/parse-double)))))]
-    shape
-    #_(if (d/any-key? shape :stroke-color :stroke-opacity :stroke-width)
-      (merge default-stroke shape)
+    (if (d/any-key? shape :stroke-color :stroke-opacity :stroke-width)
+      (merge {:stroke-style :svg} shape)
       shape)))
 
 (defn create-raw-svg [name frame-id svg-data {:keys [attrs] :as data}]
@@ -112,26 +105,38 @@
         (gsh/setup-selrect))))
 
 (defn create-svg-root [frame-id svg-data]
-  (let [{:keys [name x y width height]} svg-data]
+  (let [{:keys [name x y width height offset-x offset-y]} svg-data]
     (-> {:id (uuid/next)
          :type :group
          :name name
          :frame-id frame-id
          :width width
          :height height
-         :x x
-         :y y}
+         :x (+ x offset-x)
+         :y (+ y offset-y)}
         (gsh/setup-selrect)
         (assoc :svg-attrs (-> (:attrs svg-data)
                               (dissoc :viewBox :xmlns))))))
+
+(defn create-group [name frame-id svg-data {:keys [attrs]}]
+  (let [{:keys [x y width height offset-x offset-y]} svg-data]
+    (-> {:id (uuid/next)
+         :type :group
+         :name name
+         :frame-id frame-id
+         :x (+ x offset-x)
+         :y (+ y offset-y)
+         :width width
+         :height height}
+        (assoc :svg-attrs (dissoc attrs :transform))
+        (assoc :svg-viewbox (select-keys svg-data [:x :y :width :height]))
+        (gsh/setup-selrect))))
 
 (defn create-path-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (let [svg-transform (usvg/parse-transform (:transform attrs))
         content (cond-> (ugp/path->content (:d attrs))
                   svg-transform
                   (gsh/transform-content svg-transform))
-
-        ;; attrs (d/update-when attrs :transform #(-> (usvg/parse-transform %) str))
 
         selrect (gsh/content->selrect content)
         points (gsh/rect->points selrect)
@@ -148,7 +153,6 @@
         (assoc :svg-attrs (dissoc attrs :d :transform))
         (assoc :svg-transform svg-transform)
         (gsh/translate-to-frame origin))))
-
 
 (defn inverse-matrix [{:keys [a b c d e f]}]
   (let [dom-matrix (-> (js/DOMMatrix.)
@@ -212,51 +216,108 @@
          :name name
          :frame-id frame-id}
         (cond->
-            (contains? attrs :rx) (:rx attrs)
-            (contains? attrs :rx) (:rx attrs))
+            (contains? attrs :rx) (assoc :rx (d/parse-double (:rx attrs)))
+            (contains? attrs :ry) (assoc :ry (d/parse-double (:ry attrs))))
 
         (merge metadata)
         (assoc :svg-transform transform)
         (assoc :svg-viewbox (select-keys rect [:x :y :width :height]))
         (assoc :svg-attrs (dissoc attrs :x :y :width :height :rx :ry :transform)))))
 
-(defn create-group [name frame-id svg-data {:keys [attrs]}]
-  (let [{:keys [x y width height]} svg-data]
+(def default-circle {:r 0 :cx 0 :cy 0})
+
+(defn create-circle-shape [name frame-id svg-data {:keys [attrs] :as data}]
+  (let [svg-transform (usvg/parse-transform (:transform attrs))
+        transform (->> svg-transform 
+                       (gmt/transform-in (gpt/point svg-data)))
+
+        circle (->> (select-keys attrs [:r :ry :rx :cx :cy])
+                    (d/mapm #(d/parse-double %2)))
+
+        {:keys [cx cy]} circle
+
+        rx (or (:r circle) (:rx circle))
+        ry (or (:r circle) (:ry circle))
+
+        rect {:x (- cx rx)
+              :y (- cy ry)
+              :width (* 2 rx)
+              :height (* 2 ry)}
+
+        origin (gpt/negate (gpt/point svg-data))
+
+        rect-data (-> rect
+                      (update :x - (:x origin))
+                      (update :y - (:y origin)))
+
+        metadata (calculate-rect-metadata rect-data transform)]
     (-> {:id (uuid/next)
-         :type :group
+         :type :circle
          :name name
-         :frame-id frame-id
-         :x x
-         :y y
-         :width width
-         :height height}
-        (assoc :svg-attrs attrs)
-        (assoc :svg-viewbox (select-keys svg-data [0 0 :width :height]))
-        (gsh/setup-selrect))))
+         :frame-id frame-id}
+
+        (merge metadata)
+        (assoc :svg-transform transform)
+        (assoc :svg-viewbox (select-keys rect [:x :y :width :height]))
+        (assoc :svg-attrs (dissoc attrs :cx :cy :r :rx :ry :transform)))))
+
+(defn add-transform [transform node]
+  (letfn [(append-transform [old-transform]
+            (if (or (nil? old-transform) (empty? old-transform))
+              transform
+              (str old-transform " " transform)))]
+
+    (cond-> node
+      transform
+      (update-in [:attrs :transform] append-transform))))
 
 (defn parse-svg-element [frame-id svg-data element-data unames]
   (let [{:keys [tag attrs]} element-data
+        attrs (cond-> attrs (contains? attrs :style) usvg/format-styles)
+        element-data (cond-> element-data (map? element-data) (assoc :attrs attrs))
         name (dwc/generate-unique-name unames (or (:id attrs) (tag->name tag)) true)
         att-refs (usvg/find-attr-references attrs)
-        references (usvg/find-def-references (:defs svg-data) att-refs)]
+        references (usvg/find-def-references (:defs svg-data) att-refs)
 
-    ;; SVG graphic elements
-    ;; :circle :ellipse :image :line :path :polygon :polyline :rect :text :use
-    (-> (case tag
-          :g      (create-group name frame-id svg-data element-data)
-          :rect   (create-rect-shape name frame-id svg-data element-data)
-          :path   (create-path-shape name frame-id svg-data element-data)
-          #_other (create-raw-svg name frame-id svg-data element-data))
+        href-id (-> (or (:href attrs) (:xlink:href attrs) "")
+                    (subs 1))
+        defs (:defs svg-data)
 
-        (assoc :svg-defs (select-keys (:defs svg-data) references))
-        (setup-fill)
-        (setup-stroke))))
+        use-tag? (and (= :use tag) (contains? defs href-id))]
 
-(defn add-svg-child-changes [page-id objects selected frame-id parent-id svg-data ids-mappings result [index data]]
-  (let [[unames [rchs uchs]] result
-        shape (parse-svg-element frame-id svg-data data  unames)
+    (if use-tag?
+      (let [use-data (get defs href-id)
+            translate (gpt/point (:x attrs 0) (:y attrs 0))
+            attrs' (dissoc attrs :x :y :width :height :href :xlink:href)
+            ;; TODO: If the child is a symbol we've to take the width/height into account
+            use-data (update use-data :attrs #(d/deep-merge attrs' %))
+            [shape children] (parse-svg-element frame-id svg-data use-data unames)]
+        [(-> shape (gsh/move translate)) children])
+      
+      ;; SVG graphic elements
+      ;; :circle :ellipse :image :line :path :polygon :polyline :rect :text :use
+      (let [shape (-> (case tag
+                        (:g :a)    (create-group name frame-id svg-data element-data)
+                        :rect      (create-rect-shape name frame-id svg-data element-data)
+                        (:circle
+                         :ellipse) (create-circle-shape name frame-id svg-data element-data)
+                        :path      (create-path-shape name frame-id svg-data element-data)
+                        #_other    (create-raw-svg name frame-id svg-data element-data))
+
+                      (assoc :svg-defs (select-keys (:defs svg-data) references))
+                      (setup-fill)
+                      (setup-stroke))
+
+            children (cond->> (:content element-data)
+                       (= tag :g)
+                       (mapv #(add-transform (:transform attrs) %)))]
+        [shape children]))))
+
+(defn add-svg-child-changes [page-id objects selected frame-id parent-id svg-data [unames [rchs uchs]] [index data]]
+  (let [[shape children] (parse-svg-element frame-id svg-data data unames)
         shape-id (:id shape)
-        [rch1 uch1] (dwc/add-shape-changes page-id objects selected shape)
+
+        [rch1 uch1] (dwc/add-shape-changes page-id objects selected shape false)
 
         ;; Mov-objects won't have undo because we "delete" the object in the undo of the
         ;; previous operation
@@ -270,8 +331,8 @@
         ;; Careful! the undo changes are concatenated reversed (we undo in reverse order
         changes [(d/concat rchs rch1 rch2) (d/concat uch1 uchs)]
         unames (conj unames (:name shape))
-        reducer-fn (partial add-svg-child-changes page-id objects selected frame-id shape-id svg-data ids-mappings)]
-    (reduce reducer-fn [unames changes] (d/enumerate (:content data)))))
+        reducer-fn (partial add-svg-child-changes page-id objects selected frame-id shape-id svg-data)]
+    (reduce reducer-fn [unames changes] (d/enumerate children))))
 
 (defn svg-uploaded [svg-data x y]
   (ptk/reify ::svg-uploaded
@@ -283,21 +344,22 @@
               frame-id (cp/frame-id-by-position objects {:x x :y y})
               selected (get-in state [:workspace-local :selected])
 
-              [width height] (svg-dimensions svg-data)
-              x (- x (/ width 2))
-              y (- y (/ height 2))
+              [vb-x vb-y vb-width vb-height] (svg-dimensions svg-data)
+              x (- x vb-x (/ vb-width 2))
+              y (- y vb-y (/ vb-height 2))
 
               unames (dwc/retrieve-used-names objects)
 
               svg-name (->> (str/replace (:name svg-data) ".svg" "")
                             (dwc/generate-unique-name unames))
 
-              ids-mappings (usvg/generate-id-mapping svg-data)
               svg-data (-> svg-data
                            (assoc :x x
                                   :y y
-                                  :width width
-                                  :height height
+                                  :offset-x vb-x
+                                  :offset-y vb-y
+                                  :width vb-width
+                                  :height vb-height
                                   :name svg-name))
 
               [def-nodes svg-data] (usvg/extract-defs svg-data)
@@ -308,11 +370,17 @@
 
               changes (dwc/add-shape-changes page-id objects selected root-shape)
 
-              reducer-fn (partial add-svg-child-changes page-id objects selected frame-id root-id svg-data ids-mappings)
-              [_ [rchanges uchanges]] (reduce reducer-fn [unames changes] (d/enumerate (:content svg-data)))]
+              reducer-fn (partial add-svg-child-changes page-id objects selected frame-id root-id svg-data)
+              [_ [rchanges uchanges]] (reduce reducer-fn [unames changes] (d/enumerate (:content svg-data)))
+
+              reg-objects-action {:type :reg-objects
+                                  :page-id page-id
+                                  :shapes (->> rchanges (map :id) (remove nil?) (into #{root-id}) vec)}
+
+              rchanges (conj rchanges reg-objects-action)]
+
           (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true})
                  (dwc/select-shapes (d/ordered-set root-id))))
 
         (catch :default e
-          (.error js/console e))
-        ))))
+          (.error js/console "Error upload" e))))))

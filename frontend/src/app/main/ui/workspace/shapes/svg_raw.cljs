@@ -19,7 +19,7 @@
 
 ;; This is a list of svg tags that can be grouped in shape-container
 ;; this allows them to have gradients, shadows and masks
-(def svg-elements #{:svg :circle :ellipse :image :line :path :polygon :polyline :rect :symbol :text :textPath})
+(def svg-elements #{:svg :circle :ellipse :image :line :path :polygon :polyline :rect :symbol :text :textPath :use})
 
 (defn svg-raw-wrapper-factory
   [shape-wrapper]

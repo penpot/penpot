@@ -35,6 +35,22 @@
     :else
     num-str))
 
+(defn format-styles
+  "Transforms attributes to their react equivalent"
+  [attrs]
+  (letfn [(format-styles [style-str]
+            (if (string? style-str)
+              (->> (str/split style-str ";")
+                   (map str/trim)
+                   (map #(str/split % ":"))
+                   (group-by first)
+                   (map (fn [[key val]]
+                          (vector (keyword key) (second (first val)))))
+                   (into {}))
+              style-str))]
+
+    (update attrs :style format-styles)))
+
 (defn clean-attrs
   "Transforms attributes to their react equivalent"
   [attrs]
@@ -60,6 +76,7 @@
               (cond
                 (= key :class) [:className val]
                 (and (= key :style) (string? val)) [key (format-styles val)]
+                (and (= key :style) (map? val)) [key (clean-attrs val)]
                 :else (vector (transform-key key) val))))]
 
     (->> attrs
@@ -100,34 +117,30 @@
               (reduce visit-node result (:content node))))]
     (visit-node {} content)))
 
-(defn extract-defs [{:keys [tag content] :as node}]
-  
+(defn extract-defs [{:keys [tag attrs content] :as node}]
   (if-not (map? node)
     [{} node]
-    (letfn [(def-tag? [{:keys [tag]}] (= tag :defs))
 
-            (assoc-node [result node]
-              (assoc result (-> node :attrs :id) node))
+    (let [remove-node? (fn [{:keys [tag]}] (= tag :defs))
 
-            (node-data [node]
-              (->> (:content node) (reduce assoc-node {})))]
+          rec-result (->> (:content node) (map extract-defs))
+          node (assoc node :content (->> rec-result (map second) (filterv (comp not remove-node?))))
 
-      (let [current-def (->> content
-                             (filterv def-tag?)
-                             (map node-data)
-                             (reduce merge))
-            result      (->> content
-                             (filter (comp not def-tag?))
-                             (map extract-defs))
 
-            current-def (->> result (map first) (reduce merge current-def))
-            content     (->> result (mapv second))]
+          current-node-defs (if (contains? attrs :id)
+                              (hash-map (:id attrs) node)
+                              (hash-map))
 
-        [current-def (assoc node :content content)]))))
+          node-defs (->> rec-result (map first) (reduce merge current-node-defs))]
+
+      [ node-defs node ])))
 
 (defn find-attr-references [attrs]
   (->> attrs
-       (mapcat (fn [[_ attr-value]] (extract-ids attr-value)))))
+       (mapcat (fn [[_ attr-value]]
+                 (if (string? attr-value)
+                   (extract-ids attr-value)
+                   (find-attr-references attr-value))))))
 
 (defn find-node-references [node]
   (let [current (->> (find-attr-references (:attrs node)) (into #{}))

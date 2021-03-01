@@ -9,6 +9,7 @@
 
 (ns app.main.ui.workspace.sidebar.options.svg-attrs
   (:require
+   [cuerdas.core :as str]
    [app.common.data :as d]
    [app.main.data.workspace.common :as dwc]
    [app.main.store :as st]
@@ -22,13 +23,22 @@
         (mf/use-callback
          (mf/deps attr on-change)
          (fn [event]
-           (on-change attr (dom/get-target-val event))))]
+           (on-change attr (dom/get-target-val event))))
+
+        label (->> attr (map name) (str/join "."))]
     [:div.element-set-content
-     [:& input-row {:label (name attr)
-                    :type :text
-                    :class "large"
-                    :value (str value)
-                    :on-change handle-change}]]))
+     (if (string? value)
+       [:& input-row {:label label
+                      :type :text
+                      :class "large"
+                      :value (str value)
+                      :on-change handle-change}]
+
+       (for [[key value] value]
+         [:& attribute-value {:key key
+                              :attr (conj attr key)
+                              :value value
+                              :on-change handle-change}]))]))
 
 (mf/defc svg-attrs-menu [{:keys [ids type values]}]
   (let [handle-change
@@ -36,7 +46,7 @@
          (mf/deps ids)
          (fn [attr value]
            (let [update-fn
-                 (fn [shape] (assoc-in shape [:svg-attrs attr] value))]
+                 (fn [shape] (assoc-in shape (concat [:svg-attrs] attr) value))]
 
              (st/emit! (dwc/update-shapes ids update-fn)))))]
 
@@ -47,7 +57,6 @@
 
        (for [[index [attr-key attr-value]] (d/enumerate (:svg-attrs values))]
          [:& attribute-value {:key attr-key
-                              :ids ids
-                              :attr attr-key
+                              :attr [attr-key]
                               :value attr-value
                               :on-change handle-change}])])))
