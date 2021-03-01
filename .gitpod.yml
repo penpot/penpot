@@ -13,15 +13,17 @@ tasks:
   #- init: ./manage.sh build-devenv
   #  command: ./manage.sh start-devenv
 
-  - init: cd frontend/ && yarn install
-    command: npx shadow-cljs watch main
+  - init: yarn --cwd ./frontend/ install
+    command: cd ./frontend/ && npx -y shadow-cljs watch main
 
-  - init: cd exporter/ && yarn install
-    command: npx shadow-cljs watch main
+  - init: yarn --cwd ./frontend/ install
+    command: cd ./exporter/ && npx -y shadow-cljs watch main
 
-  - command: cd exporter/ && ./scripts/wait-and-start.sh
+  - init: yarn --cwd ./exporter/ install
+    command: cd ./exporter/ && ./scripts/wait-and-start.sh
 
   - init: psql -f docker/gitpod/files/postgresql_init.sql
-    command: cd backend/ && ./scripts/start-dev
+    command: cd ./backend/ && ./scripts/start-dev
 
-  - command: cd frontend/ && npx gulp --theme=${PENPOT_THEME} watch
+  - init: yarn --cwd ./frontend/ install
+    command: cd ./frontend/ && npx -y gulp --theme=${PENPOT_THEME} watch

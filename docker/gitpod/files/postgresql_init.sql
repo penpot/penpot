@@ -1,2 +1,3 @@
 CREATE DATABASE penpot;
 CREATE USER penpot PASSWORD 'penpot';
+ALTER ROLE penpot SUPERUSER;
