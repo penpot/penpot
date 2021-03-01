@@ -12,7 +12,7 @@ ENV CLOJURE_VERSION=1.10.2.774 \
     LC_ALL=en_US.UTF-8
 
 RUN set -ex; \
-    brew install --cask redis; \
+    brew install redis; \
     brew install imagemagick;
 
 RUN set -ex; \
