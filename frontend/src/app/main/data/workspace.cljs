@@ -181,8 +181,10 @@
        ;; Mark file initialized when indexes are ready
        (->> stream
             (rx/filter #(= ::dwc/index-initialized %))
-            (rx/map (constantly
-                     (file-initialized project-id file-id))))
+            (rx/first)
+            (rx/map (fn []
+                      (file-initialized project-id file-id))))
+
        ))))
 
 (defn- file-initialized
