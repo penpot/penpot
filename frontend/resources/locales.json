@@ -15,7 +15,7 @@
       "ca" : "Revisa el teu email i fes click al link per verificar i començar a utilitzar Penpot.",
       "en" : "Check your email and click on the link to verify and start using Penpot.",
       "fr" : "Vérifiez votre e‑mail et cliquez sur le lien pour vérifier et commencer à utiliser Penpot.",
-      "zh_cn" : "请检查你的电子邮箱，点击邮件中的超链接来验证，然后开始使用Penpot。"
+      "zh_cn" : "请检查电子邮箱，点击邮件中的超链接来验证，然后开始使用Penpot。"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs" ]
   },
@@ -396,7 +396,7 @@
       "es" : "Cambiar correo",
       "fr" : "Changer adresse e‑mail",
       "ru" : "Сменить email адрес",
-      "zh_cn" : "修改电子邮箱"
+      "zh_cn" : "修改电子邮件"
     },
     "used-in" : [ "src/app/main/ui/settings/profile.cljs" ]
   },
@@ -1163,7 +1163,7 @@
       "ca" : "Si us plau descriu la raó del teu correu, especificant si es una incidència, una idea o un dubte. Un membre del nostre equip respondrà tan aviat como pugui.",
       "en" : "Please describe the reason of your email, specifying if is an issue, an idea or a doubt. A member of our team will respond as soon as possible.",
       "es" : "",
-      "zh_cn" : "请描述你发来邮件的原因，详细说明这是一个问题反馈，一个点子或者一个疑问。 我们会尽快回复。"
+      "zh_cn" : "请说明你发邮件的原因，详细说明这是一个问题反馈、一个点子还是一个疑问。我们会尽快回复。"
     },
     "used-in" : [ "src/app/main/ui/settings/feedback.cljs" ]
   },
@@ -1302,7 +1302,7 @@
       "en" : "Radius",
       "es" : "Derecha",
       "fr" : "Rayon",
-      "zh_cn" : "圆角半径"
+      "zh_cn" : "圆角"
     },
     "used-in" : [ "src/app/main/ui/handoff/attributes/layout.cljs", "src/app/main/ui/handoff/attributes/layout.cljs" ]
   },
@@ -2366,7 +2366,7 @@
       "es" : "Cambiar correo",
       "fr" : "Changer adresse e‑mail",
       "ru" : "Сменить email адрес",
-      "zh_cn" : "修改点子邮件"
+      "zh_cn" : "修改电子邮件"
     },
     "used-in" : [ "src/app/main/ui/settings/change_email.cljs" ]
   },
@@ -2776,7 +2776,7 @@
       "en" : "Verification email sent to %s. Check your email!",
       "es" : "Verificación de email enviada a %s. Comprueba tu correo.",
       "fr" : "E‑mail de vérification envoyé à %s. Vérifiez votre e‑mail !",
-      "zh_cn" : "验证邮件已发至%s。请检查邮箱。"
+      "zh_cn" : "验证邮件已发至%s。请检查电子邮箱。"
     },
     "used-in" : [ "src/app/main/ui/settings/change_email.cljs" ]
   },
@@ -3461,7 +3461,7 @@
       "es" : "Modo de visualización (%s)",
       "fr" : "Mode spectateur (%s)",
       "ru" : "Режим просмотра (%s)",
-      "zh_cn" : "查看模式（%s）"
+      "zh_cn" : "预览模式（%s）"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs" ]
   },
@@ -3653,7 +3653,8 @@
     "translations" : {
       "en" : "Unlink all typographies",
       "es" : "Desvincular todas las tipografías",
-      "fr" : "Dissocier toutes les typographies"
+      "fr" : "Dissocier toutes les typographies",
+      "zh_cn" : "断开所有排版的链接"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
   },
@@ -3661,7 +3662,8 @@
     "translations" : {
       "en" : "%s typographies",
       "es" : "%s tipografías",
-      "fr" : "%s typographies"
+      "fr" : "%s typographies",
+      "zh_cn" : "%s个排版"
     },
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs" ]
   },
@@ -3670,7 +3672,8 @@
       "en" : "Update",
       "es" : "Actualizar",
       "fr" : "Actualiser",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "更新"
     },
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs" ]
   },
@@ -3679,7 +3682,8 @@
       "en" : "UPDATES",
       "es" : "ACTUALIZACIONES",
       "fr" : "MISES À JOUR",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "更新"
     },
     "used-in" : [ "src/app/main/ui/workspace/libraries.cljs" ]
   },
@@ -3688,7 +3692,8 @@
       "en" : "All libraries",
       "es" : "Todas",
       "fr" : "Toutes les bibliothèques",
-      "ru" : "Все библиотеки"
+      "ru" : "Все библиотеки",
+      "zh_cn" : "所有库"
     },
     "unused" : true
   },
@@ -3697,7 +3702,8 @@
       "en" : "Libraries",
       "es" : "Bibliotecas",
       "fr" : "Bibliothèques",
-      "ru" : "Библиотеки"
+      "ru" : "Библиотеки",
+      "zh_cn" : "库"
     },
     "unused" : true
   },
@@ -3706,7 +3712,8 @@
       "en" : "My libraries",
       "es" : "Mis bibliotecas",
       "fr" : "Mes bibliothèques",
-      "ru" : "Мои библиотеки"
+      "ru" : "Мои библиотеки",
+      "zh_cn" : "我的库"
     },
     "unused" : true
   },
@@ -3715,7 +3722,8 @@
       "en" : "Store libraries",
       "es" : "Predefinidas",
       "fr" : "Prédéfinies",
-      "ru" : "Сохраненные библиотеки"
+      "ru" : "Сохраненные библиотеки",
+      "zh_cn" : "来自商店的库"
     },
     "unused" : true
   },
@@ -3723,7 +3731,8 @@
     "translations" : {
       "en" : "Background",
       "es" : "Fondo",
-      "fr" : "Fond"
+      "fr" : "Fond",
+      "zh_cn" : "背景"
     },
     "unused" : true
   },
@@ -3731,7 +3740,8 @@
     "translations" : {
       "en" : "Layer",
       "es" : "Capa",
-      "fr" : "Calque"
+      "fr" : "Calque",
+      "zh_cn" : "图层"
     },
     "unused" : true
   },
@@ -3739,7 +3749,8 @@
     "translations" : {
       "en" : "Blur",
       "es" : "Desenfoque",
-      "fr" : "Flou"
+      "fr" : "Flou",
+      "zh_cn" : "模糊"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/blur.cljs" ]
   },
@@ -3747,7 +3758,8 @@
     "translations" : {
       "en" : "Group blur",
       "es" : "Desenfoque del grupo",
-      "fr" : "Flou de groupe"
+      "fr" : "Flou de groupe",
+      "zh_cn" : "编组模糊"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/blur.cljs" ]
   },
@@ -3755,16 +3767,19 @@
     "translations" : {
       "en" : "Selection blur",
       "es" : "Desenfoque de la selección",
-      "fr" : "Flou de sélection"
+      "fr" : "Flou de sélection",
+      "zh_cn" : "选项模糊"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/blur.cljs" ]
   },
-  "workspace.options.canvas-background" : {
+  "workspace.options.,
+      "zh_cn" : "断开所有排版的链接"-background" : {
     "translations" : {
       "en" : "Canvas background",
       "es" : "Color de fondo",
       "fr" : "Couleur de fond du canvas",
-      "ru" : "Фон холста"
+      "ru" : "Фон холста",
+      "zh_cn" : "画布背景"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/page.cljs" ]
   },
@@ -3772,7 +3787,8 @@
     "translations" : {
       "en" : "Component",
       "es" : "Componente",
-      "fr" : "Composant"
+      "fr" : "Composant",
+      "zh_cn" : "组件"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/component.cljs" ]
   },
@@ -3781,7 +3797,8 @@
       "en" : "Design",
       "es" : "Diseño",
       "fr" : "Conception",
-      "ru" : "Дизайн"
+      "ru" : "Дизайн",
+      "zh_cn" : "设计"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options.cljs" ]
   },
@@ -3790,7 +3807,8 @@
       "en" : "Export",
       "es" : "Exportar",
       "fr" : "Export",
-      "ru" : "Экспорт"
+      "ru" : "Экспорт",
+      "zh_cn" : "导出"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/exports.cljs", "src/app/main/ui/handoff/exports.cljs" ]
   },
@@ -3799,7 +3817,8 @@
       "en" : "Export shape",
       "es" : "Exportar forma",
       "fr" : "Exporter la forme",
-      "ru" : "Экспорт фигуры"
+      "ru" : "Экспорт фигуры",
+      "zh_cn" : "导出形状"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/exports.cljs", "src/app/main/ui/handoff/exports.cljs" ]
   },
@@ -3807,7 +3826,8 @@
     "translations" : {
       "en" : "Suffix",
       "es" : "Sufijo",
-      "fr" : "Suffixe"
+      "fr" : "Suffixe",
+      "zh_cn" : "后缀"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/exports.cljs" ]
   },
@@ -3816,7 +3836,8 @@
       "en" : "Exporting…",
       "es" : "Exportando",
       "fr" : "Export en cours…",
-      "ru" : "Экспортирую…"
+      "ru" : "Экспортирую…",
+      "zh_cn" : "正在导出…"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/exports.cljs", "src/app/main/ui/handoff/exports.cljs" ]
   },
@@ -3825,7 +3846,8 @@
       "en" : "Fill",
       "es" : "Relleno",
       "fr" : "Remplissage",
-      "ru" : "Заливка"
+      "ru" : "Заливка",
+      "zh_cn" : "填充"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/fill.cljs" ]
   },
@@ -3834,7 +3856,8 @@
       "en" : "Auto",
       "es" : "Automático",
       "fr" : "Automatique",
-      "ru" : "Авто"
+      "ru" : "Авто",
+      "zh_cn" : "自动"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
   },
@@ -3843,7 +3866,8 @@
       "en" : "Columns",
       "es" : "Columnas",
       "fr" : "Colonnes",
-      "ru" : "Колонки"
+      "ru" : "Колонки",
+      "zh_cn" : "列"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
   },
@@ -3852,7 +3876,8 @@
       "en" : "Columns",
       "es" : "Columnas",
       "fr" : "Colonnes",
-      "ru" : "Колонки"
+      "ru" : "Колонки",
+      "zh_cn" : "列"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
   },
@@ -3861,7 +3886,8 @@
       "en" : "Gutter",
       "es" : "Espaciado",
       "fr" : "Gouttière",
-      "ru" : "Желоб"
+      "ru" : "Желоб",
+      "zh_cn" : "栅格间隔"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
   },
@@ -3870,7 +3896,8 @@
       "en" : "Height",
       "es" : "Altura",
       "fr" : "Hauteur",
-      "ru" : "Высота"
+      "ru" : "Высота",
+      "zh_cn" : "高"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
   },
@@ -3879,7 +3906,8 @@
       "en" : "Margin",
       "es" : "Margen",
       "fr" : "Marge",
-      "ru" : "Поле"
+      "ru" : "Поле",
+      "zh_cn" : "外边距"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
   },
@@ -3888,7 +3916,8 @@
       "en" : "Rows",
       "es" : "Filas",
       "fr" : "Lignes",
-      "ru" : "Строки"
+      "ru" : "Строки",
+      "zh_cn" : "行"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
   },
@@ -3897,7 +3926,8 @@
       "en" : "Set as default",
       "es" : "Establecer valor por defecto",
       "fr" : "Définir par défaut",
-      "ru" : "Установить по умолчанию"
+      "ru" : "Установить по умолчанию",
+      "zh_cn" : "设为默认"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
   },
@@ -3906,7 +3936,8 @@
       "en" : "Size",
       "es" : "Tamaño",
       "fr" : "Taille",
-      "ru" : "Размер"
+      "ru" : "Размер",
+      "zh_cn" : "尺寸"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
   },
@@ -3915,7 +3946,8 @@
       "en" : "Type",
       "es" : "Tipo",
       "fr" : "Type",
-      "ru" : "Тип"
+      "ru" : "Тип",
+      "zh_cn" : "类型"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
   },
@@ -3924,7 +3956,8 @@
       "en" : "Bottom",
       "es" : "Abajo",
       "fr" : "Bas",
-      "ru" : "Низ"
+      "ru" : "Низ",
+      "zh_cn" : "底"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
   },
@@ -3933,7 +3966,8 @@
       "en" : "Center",
       "es" : "Centro",
       "fr" : "Centre",
-      "ru" : "Центр"
+      "ru" : "Центр",
+      "zh_cn" : "居中"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
   },
@@ -3942,7 +3976,8 @@
       "en" : "Left",
       "es" : "Izquierda",
       "fr" : "Gauche",
-      "ru" : "Левый"
+      "ru" : "Левый",
+      "zh_cn" : "左"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
   },
@@ -3951,7 +3986,8 @@
       "en" : "Right",
       "es" : "Derecha",
       "fr" : "Droite",
-      "ru" : "Правый"
+      "ru" : "Правый",
+      "zh_cn" : "右"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
   },
@@ -3960,7 +3996,8 @@
       "en" : "Stretch",
       "es" : "Estirar",
       "fr" : "Étirer",
-      "ru" : "Растягивать"
+      "ru" : "Растягивать",
+      "zh_cn" : "拉伸"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
   },
@@ -3969,7 +4006,8 @@
       "en" : "Top",
       "es" : "Arriba",
       "fr" : "Haut",
-      "ru" : "Верх"
+      "ru" : "Верх",
+      "zh_cn" : "顶"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
   },
@@ -3978,7 +4016,8 @@
       "en" : "Use default",
       "es" : "Usar valor por defecto",
       "fr" : "Utiliser la valeur par défaut",
-      "ru" : "Использовать значение по умолчанию"
+      "ru" : "Использовать значение по умолчанию",
+      "zh_cn" : "使用默认"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
   },
@@ -3987,7 +4026,8 @@
       "en" : "Width",
       "es" : "Ancho",
       "fr" : "Largeur",
-      "ru" : "Ширина"
+      "ru" : "Ширина",
+      "zh_cn" : "宽"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
   },
@@ -3996,7 +4036,8 @@
       "en" : "Rows",
       "es" : "Filas",
       "fr" : "Lignes",
-      "ru" : "Строки"
+      "ru" : "Строки",
+      "zh_cn" : "行"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
   },
@@ -4005,7 +4046,8 @@
       "en" : "Square",
       "es" : "Cuadros",
       "fr" : "Carré",
-      "ru" : "Квадрат"
+      "ru" : "Квадрат",
+      "zh_cn" : "正方形"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
   },
@@ -4014,7 +4056,8 @@
       "en" : "Grid & Layouts",
       "es" : "Rejilla & Estructuras",
       "fr" : "Grille & Calques",
-      "ru" : "Сетка и Макеты"
+      "ru" : "Сетка и Макеты",
+      "zh_cn" : "网格与布局"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
   },
@@ -4023,7 +4066,8 @@
       "en" : "Group fill",
       "es" : "Relleno de grupo",
       "fr" : "Remplissage de groupe",
-      "ru" : "Заливка для группы"
+      "ru" : "Заливка для группы",
+      "zh_cn" : "编组填充"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/fill.cljs" ]
   },
@@ -4032,7 +4076,8 @@
       "en" : "Group stroke",
       "es" : "Borde de grupo",
       "fr" : "Contour de groupe",
-      "ru" : "Обводка для группы"
+      "ru" : "Обводка для группы",
+      "zh_cn" : "编组边框"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs" ]
   },
@@ -4041,7 +4086,8 @@
       "en" : "Navigate to",
       "es" : "Navegar a",
       "fr" : "Naviguer vers",
-      "ru" : "Перейти к"
+      "ru" : "Перейти к",
+      "zh_cn" : "导航到"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/interactions.cljs" ]
   },
@@ -4050,7 +4096,8 @@
       "en" : "None",
       "es" : "Ninguno",
       "fr" : "Aucun",
-      "ru" : "Не задано"
+      "ru" : "Не задано",
+      "zh_cn" : "无"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/interactions.cljs" ]
   },
@@ -4059,7 +4106,8 @@
       "en" : "Position",
       "es" : "Posición",
       "fr" : "Position",
-      "ru" : "Позиция"
+      "ru" : "Позиция",
+      "zh_cn" : "位置"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/measures.cljs", "src/app/main/ui/workspace/sidebar/options/frame.cljs" ]
   },
@@ -4068,7 +4116,8 @@
       "en" : "Prototype",
       "es" : "Prototipo",
       "fr" : "Prototype",
-      "ru" : "Прототип"
+      "ru" : "Прототип",
+      "zh_cn" : "原型"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options.cljs" ]
   },
@@ -4077,21 +4126,24 @@
       "en" : "Radius",
       "es" : "Radio",
       "fr" : "Rayon",
-      "ru" : "Радиус"
+      "ru" : "Радиус",
+      "zh_cn" : "圆角"
     },
     "unused" : true
   },
   "workspace.options.radius.all-corners" : {
     "translations" : {
       "en" : "All corners",
-      "es" : "Todas las esquinas"
+      "es" : "Todas las esquinas",
+      "zh_cn" : "所有角"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/measures.cljs" ]
   },
   "workspace.options.radius.single-corners" : {
     "translations" : {
       "en" : "Single corners",
-      "es" : "Esquinas individuales"
+      "es" : "Esquinas individuales",
+      "zh_cn" : "单个角"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/measures.cljs" ]
   },
@@ -4100,7 +4152,8 @@
       "en" : "Rotation",
       "es" : "Rotación",
       "fr" : "Rotation",
-      "ru" : "Вращение"
+      "ru" : "Вращение",
+      "zh_cn" : "旋转"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/measures.cljs" ]
   },
@@ -4109,7 +4162,8 @@
       "en" : "Select a shape, artboard or group to drag a connection to other artboard.",
       "es" : "Selecciona una figura, tablero o grupo para arrastrar una conexión a otro tablero.",
       "fr" : "Sélectionnez une forme, un plan de travail ou un groupe pour faire glisser une connexion vers un autre plan de travail.",
-      "ru" : "Выберите фигуру, рабочую область или группу чтобы перенести связь на другую рабочую область."
+      "ru" : "Выберите фигуру, рабочую область или группу чтобы перенести связь на другую рабочую область.",
+      "zh_cn" : "选择一个形状、画板或编组，拖至另一个画板，以创建关联。"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/interactions.cljs" ]
   },
@@ -4118,7 +4172,8 @@
       "en" : "Select artboard",
       "es" : "Selecciona un tablero",
       "fr" : "Sélectionner un plan de travail",
-      "ru" : "Выберите рабочую область"
+      "ru" : "Выберите рабочую область",
+      "zh_cn" : "选择画板"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/interactions.cljs" ]
   },
@@ -4127,7 +4182,8 @@
       "en" : "Selection fill",
       "es" : "Relleno de selección",
       "fr" : "Remplissage de sélection",
-      "ru" : "Заливка выбранного"
+      "ru" : "Заливка выбранного",
+      "zh_cn" : "选项填充"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/fill.cljs" ]
   },
@@ -4136,7 +4192,8 @@
       "en" : "Selection stroke",
       "es" : "Borde de selección",
       "fr" : "Contour de sélection",
-      "ru" : "Обводка выбранного"
+      "ru" : "Обводка выбранного",
+      "zh_cn" : "选项边框"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs" ]
   },
@@ -4144,7 +4201,8 @@
     "translations" : {
       "en" : "Blur",
       "es" : "Desenfoque",
-      "fr" : "Flou"
+      "fr" : "Flou",
+      "zh_cn" : "模糊"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs" ]
   },
@@ -4152,7 +4210,8 @@
     "translations" : {
       "en" : "Drop shadow",
       "es" : "Sombra arrojada",
-      "fr" : "Ombre portée"
+      "fr" : "Ombre portée",
+      "zh_cn" : "外阴影"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs" ]
   },
@@ -4160,7 +4219,8 @@
     "translations" : {
       "en" : "Inner shadow",
       "es" : "Sombra interior",
-      "fr" : "Ombre intérieure"
+      "fr" : "Ombre intérieure",
+      "zh_cn" : "内阴影"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs" ]
   },
@@ -4168,7 +4228,8 @@
     "translations" : {
       "en" : "X",
       "es" : "X",
-      "fr" : "X"
+      "fr" : "X",
+      "zh_cn" : "X"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs" ]
   },
@@ -4176,7 +4237,8 @@
     "translations" : {
       "en" : "Y",
       "es" : "Y",
-      "fr" : "Y"
+      "fr" : "Y",
+      "zh_cn" : "Y"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs" ]
   },
@@ -4184,7 +4246,8 @@
     "translations" : {
       "en" : "Spread",
       "es" : "Difusión",
-      "fr" : "Diffusion"
+      "fr" : "Diffusion",
+      "zh_cn" : "展开"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs" ]
   },
@@ -4192,7 +4255,8 @@
     "translations" : {
       "en" : "Shadow",
       "es" : "Sombra",
-      "fr" : "Ombre"
+      "fr" : "Ombre",
+      "zh_cn" : "阴影"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs" ]
   },
@@ -4200,7 +4264,8 @@
     "translations" : {
       "en" : "Group shadow",
       "es" : "Sombra del grupo",
-      "fr" : "Ombre de groupe"
+      "fr" : "Ombre de groupe",
+      "zh_cn" : "编组阴影"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs" ]
   },
@@ -4208,7 +4273,8 @@
     "translations" : {
       "en" : "Selection shadows",
       "es" : "Sombras de la seleccíón",
-      "fr" : "Ombres de la sélection"
+      "fr" : "Ombres de la sélection",
+      "zh_cn" : "选项阴影"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs" ]
   },
@@ -4217,7 +4283,8 @@
       "en" : "Size",
       "es" : "Tamaño",
       "fr" : "Taille",
-      "ru" : "Размер"
+      "ru" : "Размер",
+      "zh_cn" : "尺寸"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/measures.cljs", "src/app/main/ui/workspace/sidebar/options/frame.cljs" ]
   },
@@ -4226,7 +4293,8 @@
       "en" : "Size presets",
       "es" : "Tamaños predefinidos",
       "fr" : "Tailles prédéfinies",
-      "ru" : "Предустановки для размеров"
+      "ru" : "Предустановки для размеров",
+      "zh_cn" : "尺寸预设"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame.cljs" ]
   },
@@ -4235,7 +4303,8 @@
       "en" : "Stroke",
       "es" : "Borde",
       "fr" : "Bordure",
-      "ru" : "Обводка"
+      "ru" : "Обводка",
+      "zh_cn" : "边框"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs" ]
   },
@@ -4244,7 +4313,8 @@
       "en" : "Center",
       "es" : "Centro",
       "fr" : "Centre",
-      "ru" : "Центр"
+      "ru" : "Центр",
+      "zh_cn" : "居中"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs" ]
   },
@@ -4253,7 +4323,8 @@
       "en" : "Dashed",
       "es" : "Rayado",
       "fr" : "Tirets",
-      "ru" : "Пунктирный"
+      "ru" : "Пунктирный",
+      "zh_cn" : "长虚线"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs" ]
   },
@@ -4262,7 +4333,8 @@
       "en" : "Dotted",
       "es" : "Punteado",
       "fr" : "Pointillé",
-      "ru" : "Точечный"
+      "ru" : "Точечный",
+      "zh_cn" : "虚线"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs" ]
   },
@@ -4271,7 +4343,8 @@
       "en" : "Inside",
       "es" : "Interior",
       "fr" : "Intérieur",
-      "ru" : "Внутрь"
+      "ru" : "Внутрь",
+      "zh_cn" : "内部"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs" ]
   },
@@ -4280,7 +4353,8 @@
       "en" : "Mixed",
       "es" : "Mezclado",
       "fr" : "Mixte",
-      "ru" : "Смешаный"
+      "ru" : "Смешаный",
+      "zh_cn" : "混合"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs" ]
   },
@@ -4289,7 +4363,8 @@
       "en" : "Outside",
       "es" : "Exterior",
       "fr" : "Extérieur",
-      "ru" : "Наружу"
+      "ru" : "Наружу",
+      "zh_cn" : "外部"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs" ]
   },
@@ -4298,7 +4373,8 @@
       "en" : "Solid",
       "es" : "Sólido",
       "fr" : "Solide",
-      "ru" : "Сплошной"
+      "ru" : "Сплошной",
+      "zh_cn" : "实线"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs" ]
   },
@@ -4307,7 +4383,8 @@
       "en" : "Align bottom",
       "es" : "Alinear abajo",
       "fr" : "Aligner en bas",
-      "ru" : "Выровнять низ"
+      "ru" : "Выровнять низ",
+      "zh_cn" : "底部对齐"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
   },
@@ -4316,7 +4393,8 @@
       "en" : "Align center",
       "es" : "Aliniear al centro",
       "fr" : "Aligner au centre",
-      "ru" : "Выравнивание по центру"
+      "ru" : "Выравнивание по центру",
+      "zh_cn" : "居中对齐"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
   },
@@ -4325,7 +4403,8 @@
       "en" : "Justify",
       "es" : "Justificar",
       "fr" : "Justifier",
-      "ru" : "Выравнивание по ширине"
+      "ru" : "Выравнивание по ширине",
+      "zh_cn" : "整理"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
   },
@@ -4334,7 +4413,8 @@
       "en" : "Align left",
       "es" : "Alinear a la izquierda",
       "fr" : "Aligner à gauche",
-      "ru" : "Выравнивание по левому краю"
+      "ru" : "Выравнивание по левому краю",
+      "zh_cn" : "靠左对齐"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
   },
@@ -4343,7 +4423,8 @@
       "en" : "Align middle",
       "es" : "Alinear al centro",
       "fr" : "Aligner verticalement au milieu",
-      "ru" : "Выравнивание по центру"
+      "ru" : "Выравнивание по центру",
+      "zh_cn" : "中间对齐"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
   },
@@ -4352,7 +4433,8 @@
       "en" : "Align right",
       "es" : "Alinear a la derecha",
       "fr" : "Aligner à droite",
-      "ru" : "Выравнивание по правому краю"
+      "ru" : "Выравнивание по правому краю",
+      "zh_cn" : "靠右对齐"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
   },
@@ -4361,7 +4443,8 @@
       "en" : "Align top",
       "es" : "Alinear arriba",
       "fr" : "Aligner en haut",
-      "ru" : "Выравнивание по верхнему краю"
+      "ru" : "Выравнивание по верхнему краю",
+      "zh_cn" : "顶部对齐"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
   },
@@ -4370,14 +4453,16 @@
       "en" : "Decoration",
       "es" : "Decoración",
       "fr" : "Décoration",
-      "ru" : "Оформление"
+      "ru" : "Оформление",
+      "zh_cn" : "装饰"
     },
     "unused" : true
   },
   "workspace.options.text-options.google" : {
     "translations" : {
       "en" : "Google",
-      "es" : "Google"
+      "es" : "Google",
+      "zh_cn" : "谷歌"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
   },
@@ -4385,7 +4470,8 @@
     "translations" : {
       "en" : "Auto height",
       "es" : "Alto automático",
-      "fr" : "Hauteur automatique"
+      "fr" : "Hauteur automatique",
+      "zh_cn" : "自动高度"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
   },
@@ -4393,7 +4479,8 @@
     "translations" : {
       "en" : "Auto width",
       "es" : "Ancho automático",
-      "fr" : "Largeur automatique"
+      "fr" : "Largeur automatique",
+      "zh_cn" : "自动宽度"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
   },
@@ -4401,7 +4488,8 @@
     "translations" : {
       "en" : "Fixed",
       "es" : "Fijo",
-      "fr" : "Fixe"
+      "fr" : "Fixe",
+      "zh_cn" : "固定"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
   },
@@ -4410,7 +4498,8 @@
       "en" : "Letter Spacing",
       "es" : "Espaciado entre letras",
       "fr" : "Interlettrage",
-      "ru" : "Межсимвольный интервал"
+      "ru" : "Межсимвольный интервал",
+      "zh_cn" : "字距"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
   },
@@ -4419,7 +4508,8 @@
       "en" : "Line height",
       "es" : "Altura de línea",
       "fr" : "Interlignage",
-      "ru" : "Высота строки"
+      "ru" : "Высота строки",
+      "zh_cn" : "行高"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
   },
@@ -4428,7 +4518,8 @@
       "en" : "Lowercase",
       "es" : "Minúsculas",
       "fr" : "Minuscule",
-      "ru" : "Нижний регистр"
+      "ru" : "Нижний регистр",
+      "zh_cn" : "小写"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
   },
@@ -4437,14 +4528,16 @@
       "en" : "None",
       "es" : "Nada",
       "fr" : "Aucune",
-      "ru" : "Не задано"
+      "ru" : "Не задано",
+      "zh_cn" : "无"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs", "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
   },
   "workspace.options.text-options.preset" : {
     "translations" : {
       "en" : "Preset",
-      "es" : "Predefinidos"
+      "es" : "Predefinidos",
+      "zh_cn" : "预设"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
   },
@@ -4453,7 +4546,8 @@
       "en" : "Strikethrough",
       "es" : "Tachado",
       "fr" : "Barré",
-      "ru" : "Перечеркнутый"
+      "ru" : "Перечеркнутый",
+      "zh_cn" : "删除线"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
   },
@@ -4462,7 +4556,8 @@
       "en" : "Case",
       "es" : "Mayús/minús",
       "fr" : "Casse",
-      "ru" : "Регистр"
+      "ru" : "Регистр",
+      "zh_cn" : "大小写模式"
     },
     "unused" : true
   },
@@ -4471,7 +4566,8 @@
       "en" : "Text",
       "es" : "Texto",
       "fr" : "Texte",
-      "ru" : "Текст"
+      "ru" : "Текст",
+      "zh_cn" : "文本"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
   },
@@ -4480,7 +4576,8 @@
       "en" : "Group text",
       "es" : "Texto de grupo",
       "fr" : "Texte de groupe",
-      "ru" : "Текст группы"
+      "ru" : "Текст группы",
+      "zh_cn" : "编组文本"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
   },
@@ -4489,7 +4586,8 @@
       "en" : "Selection text",
       "es" : "Texto de selección",
       "fr" : "Texte de la sélection",
-      "ru" : "Выбранный текст"
+      "ru" : "Выбранный текст",
+      "zh_cn" : "选项文本"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
   },
@@ -4498,7 +4596,8 @@
       "en" : "Title Case",
       "es" : "Título",
       "fr" : "Premières Lettres en Capitales",
-      "ru" : "Каждое слово с заглавной буквы"
+      "ru" : "Каждое слово с заглавной буквы",
+      "zh_cn" : "首字母大写"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
   },
@@ -4507,7 +4606,8 @@
       "en" : "Underline",
       "es" : "Subrayado",
       "fr" : "Soulignage",
-      "ru" : "Подчеркнутый"
+      "ru" : "Подчеркнутый",
+      "zh_cn" : "下划线"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
   },
@@ -4516,7 +4616,8 @@
       "en" : "Uppercase",
       "es" : "Mayúsculas",
       "fr" : "Majuscule",
-      "ru" : "Верхний регистр"
+      "ru" : "Верхний регистр",
+      "zh_cn" : "大写"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
   },
@@ -4525,7 +4626,8 @@
       "en" : "Vertical align",
       "es" : "Alineación vertical",
       "fr" : "Alignement vertical",
-      "ru" : "Вертикальное выравнивание"
+      "ru" : "Вертикальное выравнивание",
+      "zh_cn" : "垂直对齐"
     },
     "unused" : true
   },
@@ -4534,7 +4636,8 @@
       "en" : "Use the play button at the header to run the prototype view.",
       "es" : "Usa el botón de play de la cabecera para arrancar la vista de prototipo.",
       "fr" : "Utilisez le bouton de lecture dans l’en‑tête pour exécuter la vue du prototype.",
-      "ru" : "Используй кнопку запуск в заголовке чтобы перейти на экран прототипа."
+      "ru" : "Используй кнопку запуск в заголовке чтобы перейти на экран прототипа.",
+      "zh_cn" : "点击页面顶端的播放按钮预览原型。"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/interactions.cljs" ]
   },
@@ -4542,7 +4645,8 @@
     "translations" : {
       "en" : "Send to back",
       "es" : "Enviar al fondo",
-      "fr" : "Envoyer au fond"
+      "fr" : "Envoyer au fond",
+      "zh_cn" : "移至底层"
     },
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -4550,7 +4654,8 @@
     "translations" : {
       "en" : "Send backward",
       "es" : "Enviar atrás",
-      "fr" : "Éloigner"
+      "fr" : "Éloigner",
+      "zh_cn" : "向下移动一层"
     },
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -4558,7 +4663,8 @@
     "translations" : {
       "en" : "Copy",
       "es" : "Copiar",
-      "fr" : "Copier"
+      "fr" : "Copier",
+      "zh_cn" : "复制"
     },
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -4566,7 +4672,8 @@
     "translations" : {
       "en" : "Create component",
       "es" : "Crear componente",
-      "fr" : "Créer un composant"
+      "fr" : "Créer un composant",
+      "zh_cn" : "创建组件"
     },
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -4574,7 +4681,8 @@
     "translations" : {
       "en" : "Cut",
       "es" : "Cortar",
-      "fr" : "Couper"
+      "fr" : "Couper",
+      "zh_cn" : "剪切"
     },
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -4582,7 +4690,8 @@
     "translations" : {
       "en" : "Delete",
       "es" : "Eliminar",
-      "fr" : "Supprimer"
+      "fr" : "Supprimer",
+      "zh_cn" : "删除"
     },
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -4590,7 +4699,8 @@
     "translations" : {
       "en" : "Detach instance",
       "es" : "Desacoplar instancia",
-      "fr" : "Détacher l’instance"
+      "fr" : "Détacher l’instance",
+      "zh_cn" : "解绑实例"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/component.cljs", "src/app/main/ui/workspace/sidebar/options/component.cljs", "src/app/main/ui/workspace/context_menu.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -4598,28 +4708,32 @@
     "translations" : {
       "en" : "Duplicate",
       "es" : "Duplicar",
-      "fr" : "Dupliquer"
+      "fr" : "Dupliquer",
+      "zh_cn" : "创建副本"
     },
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs" ]
   },
   "workspace.shape.menu.edit" : {
     "translations" : {
       "en" : "Edit",
-      "es" : "Editar"
+      "es" : "Editar",
+      "zh_cn" : "编辑"
     },
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs" ]
   },
   "workspace.shape.menu.flip-horizontal" : {
     "translations" : {
       "en" : "Flip horizontal",
-      "es" : "Voltear horizontal"
+      "es" : "Voltear horizontal",
+      "zh_cn" : "水平翻转"
     },
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs" ]
   },
   "workspace.shape.menu.flip-vertical" : {
     "translations" : {
       "en" : "Flip vertical",
-      "es" : "Voltear vertical"
+      "es" : "Voltear vertical",
+      "zh_cn" : "垂直翻转"
     },
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -4627,7 +4741,8 @@
     "translations" : {
       "en" : "Bring forward",
       "es" : "Mover hacia delante",
-      "fr" : "Avancer"
+      "fr" : "Avancer",
+      "zh_cn" : "向上移动一层"
     },
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -4635,7 +4750,8 @@
     "translations" : {
       "en" : "Bring to front",
       "es" : "Mover al frente",
-      "fr" : "Amener au premier plan"
+      "fr" : "Amener au premier plan",
+      "zh_cn" : "移至顶层"
     },
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -4643,7 +4759,8 @@
     "translations" : {
       "en" : "Go to master component file",
       "es" : "Ir al archivo del componente maestro",
-      "fr" : "Aller au fichier du composant principal"
+      "fr" : "Aller au fichier du composant principal",
+      "zh_cn" : "前往主组件文档"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/component.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -4651,7 +4768,8 @@
     "translations" : {
       "en" : "Group",
       "es" : "Grupo",
-      "fr" : "Groupe"
+      "fr" : "Groupe",
+      "zh_cn" : "编组"
     },
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -4659,7 +4777,8 @@
     "translations" : {
       "en" : "Hide",
       "es" : "Ocultar",
-      "fr" : "Masquer"
+      "fr" : "Masquer",
+      "zh_cn" : "隐藏"
     },
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -4667,7 +4786,8 @@
     "translations" : {
       "en" : "Lock",
       "es" : "Bloquear",
-      "fr" : "Bloquer"
+      "fr" : "Bloquer",
+      "zh_cn" : "锁定"
     },
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -4675,7 +4795,8 @@
     "translations" : {
       "en" : "Mask",
       "es" : "Máscara",
-      "fr" : "Masque"
+      "fr" : "Masque",
+      "zh_cn" : "蒙板"
     },
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -4683,7 +4804,8 @@
     "translations" : {
       "en" : "Paste",
       "es" : "Pegar",
-      "fr" : "Coller"
+      "fr" : "Coller",
+      "zh_cn" : "粘贴"
     },
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -4691,7 +4813,8 @@
     "translations" : {
       "en" : "Reset overrides",
       "es" : "Deshacer modificaciones",
-      "fr" : "Annuler les modifications"
+      "fr" : "Annuler les modifications",
+      "zh_cn" : "还原自定义选项"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/component.cljs", "src/app/main/ui/workspace/sidebar/options/component.cljs", "src/app/main/ui/workspace/context_menu.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -4699,7 +4822,8 @@
     "translations" : {
       "en" : "Show",
       "es" : "Mostrar",
-      "fr" : "Montrer"
+      "fr" : "Montrer",
+      "zh_cn" : "显示"
     },
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -4707,7 +4831,8 @@
     "translations" : {
       "en" : "Show master component",
       "es" : "Ver componente maestro",
-      "fr" : "Afficher le composant principal"
+      "fr" : "Afficher le composant principal",
+      "zh_cn" : "显示主组件"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/component.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -4715,7 +4840,8 @@
     "translations" : {
       "en" : "Ungroup",
       "es" : "Desagrupar",
-      "fr" : "Dégrouper"
+      "fr" : "Dégrouper",
+      "zh_cn" : "取消编组"
     },
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -4723,7 +4849,8 @@
     "translations" : {
       "en" : "Unlock",
       "es" : "Desbloquear",
-      "fr" : "Débloquer"
+      "fr" : "Débloquer",
+      "zh_cn" : "取消锁定"
     },
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -4731,7 +4858,8 @@
     "translations" : {
       "en" : "Unmask",
       "es" : "Quitar máscara",
-      "fr" : "Supprimer le masque"
+      "fr" : "Supprimer le masque",
+      "zh_cn" : "取消蒙版"
     },
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -4739,7 +4867,8 @@
     "translations" : {
       "en" : "Update master component",
       "es" : "Actualizar componente maestro",
-      "fr" : "Actualiser le composant principal"
+      "fr" : "Actualiser le composant principal",
+      "zh_cn" : "更新主组件"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/component.cljs", "src/app/main/ui/workspace/sidebar/options/component.cljs", "src/app/main/ui/workspace/context_menu.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
   },
@@ -4747,7 +4876,8 @@
     "translations" : {
       "en" : "History (%s)",
       "es" : "Historial (%s)",
-      "fr" : "Historique (%s)"
+      "fr" : "Historique (%s)",
+      "zh_cn" : "历史（%s）"
     },
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs" ]
   },
@@ -4755,7 +4885,8 @@
     "translations" : {
       "en" : "Layers (%s)",
       "es" : "Capas (%s)",
-      "fr" : "Calques (%s)"
+      "fr" : "Calques (%s)",
+      "zh_cn" : "图层（%s）"
     },
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs" ]
   },
@@ -4764,7 +4895,8 @@
       "en" : "Pages",
       "es" : "Páginas",
       "fr" : "Pages",
-      "ru" : "Страницы"
+      "ru" : "Страницы",
+      "zh_cn" : "页面"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/sitemap.cljs" ]
   },
@@ -4773,7 +4905,8 @@
       "en" : "Sitemap",
       "es" : "Mapa del sitio",
       "fr" : "Plan du site",
-      "ru" : "Карта сайта"
+      "ru" : "Карта сайта",
+      "zh_cn" : "站点地图"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs" ]
   },
@@ -4782,7 +4915,8 @@
       "en" : "Assets (%s)",
       "es" : "Recursos (%s)",
       "fr" : "Ressources (%s)",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "素材（%s）"
     },
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs" ]
   },
@@ -4791,7 +4925,8 @@
       "en" : "Color Palette (%s)",
       "es" : "Paleta de colores (%s)",
       "fr" : "Palette de couleurs (%s)",
-      "ru" : "Палитра цветов (%s)"
+      "ru" : "Палитра цветов (%s)",
+      "zh_cn" : "调色盘（%s）"
     },
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs" ]
   },
@@ -4799,7 +4934,8 @@
     "translations" : {
       "en" : "Comments (%s)",
       "es" : "Comentarios (%s)",
-      "fr" : "Commentaires (%s)"
+      "fr" : "Commentaires (%s)",
+      "zh_cn" : "评论（%s）"
     },
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs" ]
   },
@@ -4808,7 +4944,8 @@
       "en" : "Curve (%s)",
       "es" : "Curva (%s)",
       "fr" : "Courbe (%s)",
-      "ru" : "Кривая (%s)"
+      "ru" : "Кривая (%s)",
+      "zh_cn" : "曲线（%s）"
     },
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs" ]
   },
@@ -4817,7 +4954,8 @@
       "en" : "Ellipse (E)",
       "es" : "Elipse (E)",
       "fr" : "Ellipse (E)",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "椭圆（E）"
     },
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs" ]
   },
@@ -4826,7 +4964,8 @@
       "en" : "Artboard (A)",
       "es" : "Tablero (A)",
       "fr" : "Plan de travail (A)",
-      "ru" : "Рабочая область (A)"
+      "ru" : "Рабочая область (A)",
+      "zh_cn" : "画板（A）"
     },
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs" ]
   },
@@ -4835,7 +4974,8 @@
       "en" : "Image (K)",
       "es" : "Imagen (K)",
       "fr" : "Image (K)",
-      "ru" : "Изображение (K)"
+      "ru" : "Изображение (K)",
+      "zh_cn" : "图片（K）"
     },
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs" ]
   },
@@ -4844,7 +4984,8 @@
       "en" : "Move",
       "es" : "Mover",
       "fr" : "Déplacer",
-      "ru" : "Вытеснить"
+      "ru" : "Вытеснить",
+      "zh_cn" : "移动"
     },
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs" ]
   },
@@ -4853,7 +4994,8 @@
       "en" : "Path (P)",
       "es" : "Ruta (P)",
       "fr" : "Chemin (P)",
-      "ru" : "Линия (P)"
+      "ru" : "Линия (P)",
+      "zh_cn" : "路径（P）"
     },
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs" ]
   },
@@ -4862,7 +5004,8 @@
       "en" : "Rectangle (R)",
       "es" : "Rectángulo (R)",
       "fr" : "Rectangle (R)",
-      "ru" : "Прямоугольник (R)"
+      "ru" : "Прямоугольник (R)",
+      "zh_cn" : "矩形（R）"
     },
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs" ]
   },
@@ -4871,7 +5014,8 @@
       "en" : "Text (T)",
       "es" : "Texto (T)",
       "fr" : "Texte (T)",
-      "ru" : "Текст (T)"
+      "ru" : "Текст (T)",
+      "zh_cn" : "文本（T）"
     },
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs" ]
   },
@@ -4879,7 +5023,8 @@
     "translations" : {
       "en" : "There are no history changes so far",
       "es" : "Todavía no hay cambios en el histórico",
-      "fr" : "Il n’y a aucun changement dans l’historique pour l’instant"
+      "fr" : "Il n’y a aucun changement dans l’historique pour l’instant",
+      "zh_cn" : "目前没有历史修改"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs" ]
   },
@@ -4887,7 +5032,8 @@
     "translations" : {
       "en" : "Deleted %s",
       "es" : "%s eliminado",
-      "fr" : "Supprimé %s"
+      "fr" : "Supprimé %s",
+      "zh_cn" : "%s已删除"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs" ]
   },
@@ -4895,7 +5041,8 @@
     "translations" : {
       "en" : "Modified %s",
       "es" : "%s modificado",
-      "fr" : "Modifié %s"
+      "fr" : "Modifié %s",
+      "zh_cn" : "%s已修改"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs" ]
   },
@@ -4903,7 +5050,8 @@
     "translations" : {
       "en" : "Moved objects",
       "es" : "Objetos movidos",
-      "fr" : "Objets déplacés"
+      "fr" : "Objets déplacés",
+      "zh_cn" : "对象已移动"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs" ]
   },
@@ -4911,7 +5059,8 @@
     "translations" : {
       "en" : "circles",
       "es" : "círculos",
-      "fr" : "cercles"
+      "fr" : "cercles",
+      "zh_cn" : "圆"
     },
     "unused" : true
   },
@@ -4919,7 +5068,8 @@
     "translations" : {
       "en" : "color assets",
       "es" : "colores",
-      "fr" : "couleurs"
+      "fr" : "couleurs",
+      "zh_cn" : "颜色素材"
     },
     "unused" : true
   },
@@ -4927,7 +5077,8 @@
     "translations" : {
       "en" : "components",
       "es" : "componentes",
-      "fr" : "composants"
+      "fr" : "composants",
+      "zh_cn" : "组件"
     },
     "unused" : true
   },
@@ -4935,7 +5086,8 @@
     "translations" : {
       "en" : "curves",
       "es" : "curvas",
-      "fr" : "courbes"
+      "fr" : "courbes",
+      "zh_cn" : "曲线"
     },
     "unused" : true
   },
@@ -4943,7 +5095,8 @@
     "translations" : {
       "en" : "artboard",
       "es" : "mesa de trabajo",
-      "fr" : "plan de travail"
+      "fr" : "plan de travail",
+      "zh_cn" : "画板"
     },
     "unused" : true
   },
@@ -4951,7 +5104,8 @@
     "translations" : {
       "en" : "groups",
       "es" : "grupos",
-      "fr" : "groupes"
+      "fr" : "groupes",
+      "zh_cn" : "编组"
     },
     "unused" : true
   },
@@ -4959,7 +5113,8 @@
     "translations" : {
       "en" : "graphic assets",
       "es" : "gráficos",
-      "fr" : "graphiques"
+      "fr" : "graphiques",
+      "zh_cn" : "图形素材"
     },
     "unused" : true
   },
@@ -4967,7 +5122,8 @@
     "translations" : {
       "en" : "objects",
       "es" : "objetos",
-      "fr" : "objets"
+      "fr" : "objets",
+      "zh_cn" : "对象"
     },
     "unused" : true
   },
@@ -4975,7 +5131,8 @@
     "translations" : {
       "en" : "pages",
       "es" : "páginas",
-      "fr" : "pages"
+      "fr" : "pages",
+      "zh_cn" : "页面"
     },
     "unused" : true
   },
@@ -4983,7 +5140,8 @@
     "translations" : {
       "en" : "paths",
       "es" : "trazos",
-      "fr" : "chemins"
+      "fr" : "chemins",
+      "zh_cn" : "路径"
     },
     "unused" : true
   },
@@ -4991,7 +5149,8 @@
     "translations" : {
       "en" : "rectangles",
       "es" : "rectángulos",
-      "fr" : "rectangles"
+      "fr" : "rectangles",
+      "zh_cn" : "矩形"
     },
     "unused" : true
   },
@@ -4999,7 +5158,8 @@
     "translations" : {
       "en" : "shapes",
       "es" : "formas",
-      "fr" : "formes"
+      "fr" : "formes",
+      "zh_cn" : "形状"
     },
     "unused" : true
   },
@@ -5007,7 +5167,8 @@
     "translations" : {
       "en" : "texts",
       "es" : "textos",
-      "fr" : "textes"
+      "fr" : "textes",
+      "zh_cn" : "文本"
     },
     "unused" : true
   },
@@ -5015,7 +5176,8 @@
     "translations" : {
       "en" : "typography assets",
       "es" : "tipografías",
-      "fr" : "typographie"
+      "fr" : "typographie",
+      "zh_cn" : "排版素材"
     },
     "unused" : true
   },
@@ -5023,7 +5185,8 @@
     "translations" : {
       "en" : "New %s",
       "es" : "Nuevo %s",
-      "fr" : "Nouveau %s"
+      "fr" : "Nouveau %s",
+      "zh_cn" : "新建%s"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs" ]
   },
@@ -5031,7 +5194,8 @@
     "translations" : {
       "en" : "circle",
       "es" : "círculo",
-      "fr" : "cercle"
+      "fr" : "cercle",
+      "zh_cn" : "圆"
     },
     "unused" : true
   },
@@ -5039,7 +5203,8 @@
     "translations" : {
       "en" : "color asset",
       "es" : "color",
-      "fr" : "couleur"
+      "fr" : "couleur",
+      "zh_cn" : "颜色素材"
     },
     "unused" : true
   },
@@ -5047,7 +5212,8 @@
     "translations" : {
       "en" : "component",
       "es" : "componente",
-      "fr" : "composant"
+      "fr" : "composant",
+      "zh_cn" : "组件"
     },
     "unused" : true
   },
@@ -5055,7 +5221,8 @@
     "translations" : {
       "en" : "curve",
       "es" : "curva",
-      "fr" : "courbe"
+      "fr" : "courbe",
+      "zh_cn" : "曲线"
     },
     "unused" : true
   },
@@ -5063,7 +5230,8 @@
     "translations" : {
       "en" : "artboard",
       "es" : "mesa de trabajo",
-      "fr" : "plan de travail"
+      "fr" : "plan de travail",
+      "zh_cn" : "画板"
     },
     "unused" : true
   },
@@ -5071,7 +5239,8 @@
     "translations" : {
       "en" : "group",
       "es" : "grupo",
-      "fr" : "groupe"
+      "fr" : "groupe",
+      "zh_cn" : "编组"
     },
     "unused" : true
   },
@@ -5079,7 +5248,8 @@
     "translations" : {
       "en" : "image",
       "es" : "imagen",
-      "fr" : "image"
+      "fr" : "image",
+      "zh_cn" : "图片"
     },
     "unused" : true
   },
@@ -5087,7 +5257,8 @@
     "translations" : {
       "en" : "graphic asset",
       "es" : "gráfico",
-      "fr" : "graphique"
+      "fr" : "graphique",
+      "zh_cn" : "图形素材"
     },
     "unused" : true
   },
@@ -5095,7 +5266,8 @@
     "translations" : {
       "en" : "object",
       "es" : "objeto",
-      "fr" : "objet"
+      "fr" : "objet",
+      "zh_cn" : "对象"
     },
     "unused" : true
   },
@@ -5103,7 +5275,8 @@
     "translations" : {
       "en" : "page",
       "es" : "página",
-      "fr" : "page"
+      "fr" : "page",
+      "zh_cn" : "页面"
     },
     "unused" : true
   },
@@ -5111,7 +5284,8 @@
     "translations" : {
       "en" : "path",
       "es" : "trazo",
-      "fr" : "chemin"
+      "fr" : "chemin",
+      "zh_cn" : "路径"
     },
     "unused" : true
   },
@@ -5119,7 +5293,8 @@
     "translations" : {
       "en" : "rectangle",
       "es" : "rectángulo",
-      "fr" : "rectangle"
+      "fr" : "rectangle",
+      "zh_cn" : "矩形"
     },
     "unused" : true
   },
@@ -5127,7 +5302,8 @@
     "translations" : {
       "en" : "shape",
       "es" : "forma",
-      "fr" : "forme"
+      "fr" : "forme",
+      "zh_cn" : "形状"
     },
     "unused" : true
   },
@@ -5135,7 +5311,8 @@
     "translations" : {
       "en" : "text",
       "es" : "texto",
-      "fr" : "texte"
+      "fr" : "texte",
+      "zh_cn" : "文本"
     },
     "unused" : true
   },
@@ -5143,7 +5320,8 @@
     "translations" : {
       "en" : "typography asset",
       "es" : "tipografía",
-      "fr" : "typographie"
+      "fr" : "typographie",
+      "zh_cn" : "排版素材"
     },
     "unused" : true
   },
@@ -5151,7 +5329,8 @@
     "translations" : {
       "en" : "Operation over %s",
       "es" : "Operación sobre %s",
-      "fr" : "Opération sur %s"
+      "fr" : "Opération sur %s",
+      "zh_cn" : "操作覆盖%s"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs" ]
   },
@@ -5159,7 +5338,8 @@
     "translations" : {
       "en" : "History",
       "es" : "Histórico",
-      "fr" : "Historique"
+      "fr" : "Historique",
+      "zh_cn" : "历史"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/history.cljs" ]
   },
@@ -5168,7 +5348,8 @@
       "en" : "Dismiss",
       "es" : "Ignorar",
       "fr" : "Ignorer",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "忽略"
     },
     "used-in" : [ "src/app/main/data/workspace/libraries.cljs" ]
   },
@@ -5177,7 +5358,8 @@
       "en" : "There are updates in shared libraries",
       "es" : "Hay actualizaciones en librerías compartidas",
       "fr" : "Il y a des mises à jour dans les Bibliothèques Partagées",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "共享库有更新"
     },
     "used-in" : [ "src/app/main/data/workspace/libraries.cljs" ]
   },
@@ -5186,7 +5368,8 @@
       "en" : "Update",
       "es" : "Actualizar",
       "fr" : "Actualiser",
-      "ru" : ""
+      "ru" : "",
+      "zh_cn" : "更新"
     },
     "used-in" : [ "src/app/main/data/workspace/libraries.cljs" ]
   },
@@ -5195,7 +5378,8 @@
       "en" : "Click to close the path",
       "es" : "Pulsar para cerrar la ruta",
       "fr" : "Cliquez pour fermer le chemin",
-      "ru" : "Кликни чтобы закончить фигуру"
+      "ru" : "Кликни чтобы закончить фигуру",
+      "zh_cn" : "单击以闭合路径"
     },
     "unused" : true
   }
