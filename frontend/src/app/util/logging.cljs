@@ -39,7 +39,6 @@
 
 (def root (get-logger :root))
 
-
 (def levels
   {:off     Level/OFF
    :shout   Level/SHOUT
