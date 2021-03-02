@@ -55,6 +55,9 @@
                                    (every? d/num-string? [(:x attrs "0") (:y attrs "0") (:width attrs "0") (:height attrs "0")])
                                    (= "userSpaceOnUse" (get attrs :patternUnits "userSpaceOnUse")))
 
+          transform-clippath? (and (= :clipPath tag)
+                                   (= "userSpaceOnUse" (get attrs :clipPathUnits "userSpaceOnUse")))
+
           transform-filter?   (and (= #{:filter
                                         ;; Filter primitives. We need to remap subregions
                                         :feBlend :feColorMatrix :feComponentTransfer :feComposite :feConvolveMatrix
@@ -70,6 +73,7 @@
                     (cond->
                         transform-gradient? (add-matrix :gradientTransform transform)
                         transform-pattern?  (add-matrix :patternTransform transform)
+                        transform-clippath? (add-matrix :transform transform)
                         transform-filter?   (transform-region transform)))
 
           [wrapper wrapper-props] (if (= tag :mask)
@@ -93,9 +97,10 @@
                       (gmt/matrix)
                       (usvg/svg-transform-matrix shape)))
 
-        transform (gmt/multiply
-                   transform
-                   (or (:svg-transform shape) (gmt/matrix)))
+        ;; Paths doesn't have transform so we have to transform its gradients
+        transform (if (and (= :path (:type shape)) (contains? shape :svg-transform))
+                    (gmt/multiply transform (or (:svg-transform shape) (gmt/matrix)))
+                    transform)
 
         prefix-id
         (fn [id]

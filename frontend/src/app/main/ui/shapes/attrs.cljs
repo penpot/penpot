@@ -107,9 +107,13 @@
               (:stroke-color-gradient shape)
               (assoc :stroke (str/format "url(#%s)" stroke-color-gradient-id))
 
-              (not (:stroke-color-gradient shape))
-              (assoc :stroke (:stroke-color shape nil)
-                     :strokeOpacity (:stroke-opacity shape nil))
+              (and (not (:stroke-color-gradient shape))
+                   (:stroke-color shape nil))
+              (assoc :stroke (:stroke-color shape nil))
+
+              (and (not (:stroke-color-gradient shape))
+                   (:stroke-opacity shape nil))
+              (assoc :strokeOpacity (:stroke-opacity shape nil))
 
               (not= stroke-style :svg)
               (assoc :strokeDasharray (stroke-type->dasharray stroke-style)))]
@@ -124,8 +128,7 @@
                        id))
         svg-attrs (-> svg-attrs
                       (usvg/clean-attrs)
-                      (usvg/update-attr-ids replace-id)
-                      )
+                      (usvg/update-attr-ids replace-id))
 
         attrs  (-> svg-attrs (dissoc :style) (clj->js))
         styles (-> svg-attrs (:style {}) (clj->js))]

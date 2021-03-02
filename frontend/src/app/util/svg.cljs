@@ -49,7 +49,9 @@
                    (into {}))
               style-str))]
 
-    (update attrs :style format-styles)))
+    (cond-> attrs
+      (contains? attrs :style)
+      (update :style format-styles))))
 
 (defn clean-attrs
   "Transforms attributes to their react equivalent"
@@ -166,7 +168,8 @@
 
       :else
       (let [node (get defs to-check)
-            new-refs (find-node-references node)]
+            new-refs (find-node-references node)
+            pending (concat pending new-refs)]
         (recur (d/concat result new-refs)
                (conj checked? to-check)
                (first pending)
@@ -185,7 +188,12 @@
       
       (gmt/multiply
        (gmt/matrix)
-       (gsh/transform-matrix shape)
+
+       ;; Paths doesn't have transform so we have to transform its gradients
+       (if (= :path (:type shape))
+         (gsh/transform-matrix shape)
+         (gmt/matrix))
+
        (gmt/translate-matrix (gpt/point (- x (* scale-x svg-x)) (- y (* scale-y svg-y))))
        (gmt/scale-matrix (gpt/point scale-x scale-y))))
 
@@ -204,7 +212,7 @@
 (defn format-translate-params [params]
   (assert (or (= (count params) 1) (= (count params) 2)))
   (if (= (count params) 1)
-    [(gpt/point (nth params 0))]
+    [(gpt/point (nth params 0) 0)]
     [(gpt/point (nth params 0) (nth params 1))]))
 
 (defn format-scale-params [params]
@@ -252,3 +260,34 @@
       (reduce gmt/multiply (gmt/matrix) matrices))
     (gmt/matrix)))
 
+(def points-regex #"[^\s\,]+")
+
+(defn format-move [[x y]] (str "M" x " " y))
+(defn format-line [[x y]] (str "L" x " " y))
+
+(defn points->path [points-str]
+  (let [points (->> points-str
+                    (re-seq points-regex)
+                    (mapv d/parse-double)
+                    (partition 2))
+
+        head (first points)
+        other (rest points)]
+
+    (str (format-move head)
+         (->> other (map format-line) (str/join " ")))))
+
+(defn polyline->path [{:keys [attrs tag] :as node}]
+  (let [tag :path
+        attrs (-> attrs
+                  (dissoc :points)
+                  (assoc :d (points->path (:points attrs))))]
+
+    (assoc node :attrs attrs :tag tag)))
+
+(defn polygon->path [{:keys [attrs tag] :as node}]
+  (let [tag :path
+        attrs (-> attrs
+                  (dissoc :points)
+                  (assoc :d (str (points->path (:points attrs)) "Z")))]
+    (assoc node :attrs attrs :tag tag)))

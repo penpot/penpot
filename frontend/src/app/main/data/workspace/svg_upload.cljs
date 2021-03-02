@@ -273,7 +273,7 @@
 
 (defn parse-svg-element [frame-id svg-data element-data unames]
   (let [{:keys [tag attrs]} element-data
-        attrs (cond-> attrs (contains? attrs :style) usvg/format-styles)
+        attrs (usvg/format-styles attrs)
         element-data (cond-> element-data (map? element-data) (assoc :attrs attrs))
         name (dwc/generate-unique-name unames (or (:id attrs) (tag->name tag)) true)
         att-refs (usvg/find-attr-references attrs)
@@ -290,7 +290,8 @@
             translate (gpt/point (:x attrs 0) (:y attrs 0))
             attrs' (dissoc attrs :x :y :width :height :href :xlink:href)
             ;; TODO: If the child is a symbol we've to take the width/height into account
-            use-data (update use-data :attrs #(d/deep-merge attrs' %))
+            use-data (update use-data :attrs #(let [attrs (usvg/format-styles %)]
+                                                (d/deep-merge attrs' attrs)))
             [shape children] (parse-svg-element frame-id svg-data use-data unames)]
         [(-> shape (gsh/move translate)) children])
       
@@ -302,6 +303,8 @@
                         (:circle
                          :ellipse) (create-circle-shape name frame-id svg-data element-data)
                         :path      (create-path-shape name frame-id svg-data element-data)
+                        :polyline  (create-path-shape name frame-id svg-data (-> element-data usvg/polyline->path))
+                        :polygon    (create-path-shape name frame-id svg-data (-> element-data usvg/polygon->path))
                         #_other    (create-raw-svg name frame-id svg-data element-data))
 
                       (assoc :svg-defs (select-keys (:defs svg-data) references))
