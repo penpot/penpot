@@ -365,7 +365,7 @@
               new-name (str name " " (tr "dashboard.copy-suffix"))]
 
           (->> (rp/mutation! :duplicate-project {:project-id id
-                                                 :new-name new-name})
+                                                 :name new-name})
                (rx/tap on-success)
                (rx/map #(partial duplicated %))
                (rx/catch on-error)))))))
@@ -533,7 +533,7 @@
             new-name (str name " " (tr "dashboard.copy-suffix"))]
 
         (->> (rp/mutation! :duplicate-file {:file-id id
-                                            :new-name new-name})
+                                            :name new-name})
              (rx/tap on-success)
              (rx/map file-created)
              (rx/catch on-error))))))

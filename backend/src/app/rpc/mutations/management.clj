@@ -16,10 +16,12 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
+   [app.rpc.mutations.projects :refer [create-project-role create-project]]
    [app.rpc.queries.projects :as proj]
    [app.rpc.queries.teams :as teams]
    [app.util.blob :as blob]
    [app.util.services :as sv]
+   [app.util.time :as dt]
    [clojure.spec.alpha :as s]
    [clojure.walk :as walk]))
 
@@ -28,7 +30,7 @@
 (s/def ::project-id ::us/uuid)
 (s/def ::file-id ::us/uuid)
 (s/def ::team-id ::us/uuid)
-(s/def ::new-name ::us/string)
+(s/def ::name ::us/string)
 
 (defn- remap-id
   [item index key]
@@ -38,15 +40,24 @@
 
 (defn- process-file
   [file index]
-  (letfn [;; A function responsible to analize all file data and
+  (letfn [(process-form [form]
+            (cond-> form
+              ;; Relink Components
+              (and (map? form)
+                   (uuid? (:component-file form)))
+              (update :component-file #(get index % %))
+
+              ;; Relink Image Shapes
+              (and (map? form)
+                   (map? (:metadata form))
+                   (= :image (:type form)))
+              (update-in [:metadata :id] #(get index % %))))
+
+          ;; A function responsible to analize all file data and
           ;; replace the old :component-file reference with the new
           ;; ones, using the provided file-index
-          (relink-components [data]
-            (walk/postwalk (fn [form]
-                             (cond-> form
-                               (and (map? form) (uuid? (:component-file form)))
-                               (update :component-file #(get index % %))))
-                           data))
+          (relink-shapes [data]
+            (walk/postwalk process-form data))
 
           ;; A function responsible of process the :media attr of file
           ;; data and remap the old ids with the new ones.
@@ -65,45 +76,59 @@
             (fn [data]
               (-> data
                   (blob/decode)
+                  (assoc :id (:id file))
                   (pmg/migrate-data)
-                  (update :pages-index relink-components)
-                  (update :components relink-components)
+                  (update :pages-index relink-shapes)
+                  (update :components relink-shapes)
                   (update :media relink-media)
                   (d/without-nils)
                   (blob/encode))))))
 
-(defn- duplicate-file
-  [conn {:keys [profile-id file index project-id new-name]} {:keys [reset-shared-flag] :as opts}]
-  (let [flibs  (db/query conn :file-library-rel {:file-id (:id file)})
-        fmeds  (db/query conn :file-media-object {:file-id (:id file)})
+(defn duplicate-file
+  [conn {:keys [profile-id file index project-id name]} {:keys [reset-shared-flag] :as opts}]
+  (let [flibs    (db/query conn :file-library-rel {:file-id (:id file)})
+        fmeds    (db/query conn :file-media-object {:file-id (:id file)})
 
-        ;; Remap all file-librar-rel rows to the new file id
-        flibs  (map #(remap-id % index :file-id) flibs)
+        ;; memo uniform creation/modification date
+        now      (dt/now)
+        ignore   (dt/plus now (dt/duration {:seconds 5}))
 
-        ;; Add to the index all non-local file media objects
-        index  (reduce #(assoc %1 (:id %2) (uuid/next))
-                       index
-                       (remove :is-local fmeds))
+        ;; add to the index all file media objects.
+        index  (reduce #(assoc %1 (:id %2) (uuid/next)) index fmeds)
 
-        ;; Remap all file-media-object rows and assing correct new id
-        ;; to each row
-        fmeds  (->> fmeds
-                    (map #(assoc % :id (or (get index (:id %)) (uuid/next))))
-                    (map #(remap-id % index :file-id)))
+        flibs-xf (comp
+                  (map #(remap-id % index :file-id))
+                  (map #(remap-id % index :library-file-id))
+                  (map #(assoc % :synced-at now))
+                  (map #(assoc % :created-at now)))
 
-        file   (cond-> file
-                 (some? project-id)
-                 (assoc :project-id project-id)
+        ;; remap all file-library-rel row
+        flibs    (sequence flibs-xf flibs)
 
-                 (some? new-name)
-                 (assoc :name new-name)
+        fmeds-xf (comp
+                  (map #(assoc % :id (get index (:id %))))
+                  (map #(assoc % :created-at now))
+                  (map #(remap-id % index :file-id)))
 
-                 (true? reset-shared-flag)
-                 (assoc :is-shared false))
+        ;; remap all file-media-object rows
+        fmeds   (sequence fmeds-xf fmeds)
 
-        file   (-> file
-                 (update :id #(get index %))
-                 (process-file index))]
+        file    (cond-> file
+                  (some? project-id)
+                  (assoc :project-id project-id)
+
+                  (some? name)
+                  (assoc :name name)
+
+                  (true? reset-shared-flag)
+                  (assoc :is-shared false))
+
+        file    (-> file
+                    (assoc :created-at now)
+                    (assoc :modified-at now)
+                    (assoc :ignore-sync-until ignore)
+                    (update :id #(get index %))
+                    (process-file index))]
 
     (db/insert! conn :file file)
     (db/insert! conn :file-profile-rel
@@ -128,15 +153,16 @@
 
 (s/def ::duplicate-file
   (s/keys :req-un [::profile-id ::file-id]
-          :opt-un [::new-name]))
+          :opt-un [::name]))
 
 (sv/defmethod ::duplicate-file
-  [{:keys [pool] :as cfg} {:keys [profile-id file-id new-name] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id file-id name] :as params}]
   (db/with-atomic [conn pool]
     (let [file   (db/get-by-id conn :file file-id)
           index  {file-id (uuid/next)}
           params (assoc params :index index :file file)]
       (proj/check-edition-permissions! conn profile-id (:project-id file))
+
       (-> (duplicate-file conn params {:reset-shared-flag true})
           (update :data blob/decode)))))
 
@@ -147,53 +173,73 @@
 
 (s/def ::duplicate-project
   (s/keys :req-un [::profile-id ::project-id]
-          :opt-un [::new-name]))
+          :opt-un [::name]))
 
 (sv/defmethod ::duplicate-project
-  [{:keys [pool] :as cfg} {:keys [profile-id project-id new-name] :as params}]
+  [{:keys [pool] :as cfg} {:keys [profile-id project-id name] :as params}]
   (db/with-atomic [conn pool]
     (let [project (db/get-by-id conn :project project-id)]
       (teams/check-edition-permissions! conn profile-id (:team-id project))
       (duplicate-project conn (assoc params :project project)))))
 
 (defn duplicate-project
-  [conn {:keys [profile-id project new-name] :as params}]
+  [conn {:keys [profile-id project name] :as params}]
   (let [files   (db/query conn :file
                           {:project-id (:id project)}
                           {:columns [:id]})
 
-        index   (reduce #(assoc %1 (:id %2) (uuid/next)) {} files)
         project (cond-> project
-                  new-name
-                  (assoc :name new-name)
+                  (string? name)
+                  (assoc :name name)
 
                   :always
-                  (assoc :id (uuid/next)))
-        params  (assoc params
-                       :project-id (:id project)
-                       :index index)]
+                  (assoc :id (uuid/next)))]
 
-    (db/insert! conn :project project)
-    (db/insert! conn :project-profile-rel {:project-id (:id project)
-                                           :profile-id profile-id
-                                           :is-owner true
-                                           :is-admin true
-                                           :can-edit true})
-    (doseq [{:keys [id]} files]
-      (let [file   (db/get-by-id conn :file id)
-            params (-> params
-                       (assoc :file file)
-                       (dissoc :new-name))]
-        (duplicate-file conn params {:reset-shared-flag false
-                                     :remap-libraries true})))
+    ;; create the duplicated project and assign the current profile as
+    ;; a project owner
+    (create-project conn project)
+    (create-project-role conn {:project-id (:id project)
+                               :profile-id profile-id
+                               :role :owner})
+
+    ;; duplicate all files
+    (let [index  (reduce #(assoc %1 (:id %2) (uuid/next)) {} files)
+          params (-> params
+                     (dissoc :name)
+                     (assoc :project-id (:id project))
+                     (assoc :index index))]
+      (doseq [{:keys [id]} files]
+        (let [file   (db/get-by-id conn :file id)
+              params (assoc params :file file)
+              opts   {:reset-shared-flag false}]
+          (duplicate-file conn params opts))))
+
+    ;; return the created project
     project))
 
 
 ;; --- MUTATION: Move file
 
-(declare sql:retrieve-files)
-(declare sql:move-files)
-(declare sql:delete-broken-relations)
+(def sql:retrieve-files
+  "select id, project_id from file where id = ANY(?)")
+
+(def sql:move-files
+  "update file set project_id = ? where id = ANY(?)")
+
+(def sql:delete-broken-relations
+  "with broken as (
+     (select * from file_library_rel as flr
+       inner join file as f on (flr.file_id = f.id)
+       inner join project as p on (f.project_id = p.id)
+       inner join file as lf on (flr.library_file_id = lf.id)
+       inner join project as lp on (lf.project_id = lp.id)
+       where p.id = ANY(?)
+         and lp.team_id != p.team_id)
+   )
+   delete from file_library_rel as rel
+    using broken as br
+    where rel.file_id = br.file_id
+      and rel.library_file_id = br.library_file_id")
 
 (s/def ::ids (s/every ::us/uuid :kind set?))
 (s/def ::move-files
@@ -227,27 +273,6 @@
       (db/exec-one! conn [sql:delete-broken-relations pids])
 
       nil)))
-
-(def sql:retrieve-files
-  "select id, project_id from file where id = ANY(?)")
-
-(def sql:move-files
-  "update file set project_id = ? where id = ANY(?)")
-
-(def sql:delete-broken-relations
-  "with broken as (
-     (select * from file_library_rel as flr
-       inner join file as f on (flr.file_id = f.id)
-       inner join project as p on (f.project_id = p.id)
-       inner join file as lf on (flr.library_file_id = lf.id)
-       inner join project as lp on (lf.project_id = lp.id)
-       where p.id = ANY(?)
-         and lp.team_id != p.team_id)
-   )
-   delete from file_library_rel as rel
-    using broken as br
-    where rel.file_id = br.file_id
-      and rel.library_file_id = br.library_file_id")
 
 
 ;; --- MUTATION: Move project

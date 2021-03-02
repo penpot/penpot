@@ -50,7 +50,21 @@
         (t/is project-id (get-in result [0 :id]))
         (t/is (= "test project" (get-in result [0 :name])))))
 
-    ;; rename project"
+    ;; query all projects of a user
+    (let [data {::th/type :all-projects
+                :profile-id (:id profile)}
+          out  (th/query! data)]
+      ;; (th/print-result! out)
+
+      (t/is (nil? (:error out)))
+      (let [result (:result out)]
+        (t/is (= 2 (count result)))
+        (t/is (not= project-id (get-in result [0 :id])))
+        (t/is (= "Drafts" (get-in result [0 :name])))
+        (t/is project-id (get-in result [1 :id]))
+        (t/is (= "test project" (get-in result [1 :name])))))
+
+    ;; rename project
     (let [data {::th/type :rename-project
                 :id project-id
                 :name "renamed project"

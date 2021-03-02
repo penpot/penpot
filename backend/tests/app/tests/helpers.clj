@@ -154,12 +154,10 @@
          team (#'teams/create-team conn {:id id
                                          :profile-id profile-id
                                          :name (str "team" i)})]
-     (#'teams/create-team-profile conn
-                                  {:team-id id
-                                   :profile-id profile-id
-                                   :is-owner true
-                                   :is-admin true
-                                   :can-edit true})
+     (#'teams/create-team-role conn
+                               {:team-id id
+                                :profile-id profile-id
+                                :role :owner})
      team)))
 
 
@@ -198,37 +196,26 @@
                :created-at (or created-at (dt/now))
                :content (db/tjson {})}))
 
+(defn create-team-role*
+  ([params] (create-team-role* *pool* params))
+  ([conn {:keys [team-id profile-id role] :or {role :owner}}]
+   (#'teams/create-team-role conn {:team-id team-id
+                                  :profile-id profile-id
+                                  :role role})))
 
-(defn create-team-permission*
-  ([params] (create-team-permission* *pool* params))
-  ([conn {:keys [team-id profile-id is-owner is-admin can-edit]
-          :or {is-owner true is-admin true can-edit true}}]
-   (db/insert! conn :team-profile-rel {:team-id team-id
-                                       :profile-id profile-id
-                                       :is-owner is-owner
-                                       :is-admin is-admin
-                                       :can-edit can-edit})))
+(defn create-project-role*
+  ([params] (create-project-role* *pool* params))
+  ([conn {:keys [project-id profile-id role] :or {role :owner}}]
+   (#'projects/create-project-role conn {:project-id project-id
+                                         :profile-id profile-id
+                                         :role role})))
 
-(defn create-project-permission*
-  ([params] (create-project-permission* *pool* params))
-  ([conn {:keys [project-id profile-id is-owner is-admin can-edit]
-          :or {is-owner true is-admin true can-edit true}}]
-   (db/insert! conn :project-profile-rel {:project-id project-id
-                                          :profile-id profile-id
-                                          :is-owner is-owner
-                                          :is-admin is-admin
-                                          :can-edit can-edit})))
-
-(defn create-file-permission*
-  ([params] (create-file-permission* *pool* params))
-  ([conn {:keys [file-id profile-id is-owner is-admin can-edit]
-          :or {is-owner true is-admin true can-edit true}}]
-   (db/insert! conn :project-profile-rel {:file-id file-id
-                                          :profile-id profile-id
-                                          :is-owner is-owner
-                                          :is-admin is-admin
-                                          :can-edit can-edit})))
-
+(defn create-file-role*
+  ([params] (create-file-role* *pool* params))
+  ([conn {:keys [file-id profile-id role] :or {role :owner}}]
+   (#'files/create-file-role conn {:file-id file-id
+                                   :profile-id profile-id
+                                   :role role})))
 
 (defn update-file*
   ([params] (update-file* *pool* params))

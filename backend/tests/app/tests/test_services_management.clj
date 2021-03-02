@@ -50,7 +50,7 @@
     (let [data {::th/type :duplicate-file
                 :profile-id (:id profile)
                 :file-id (:id file1)
-                :new-name "file 1 (copy)"}
+                :name "file 1 (copy)"}
           out  (th/mutation! data)]
 
       ;; (th/print-result! out)
@@ -122,7 +122,7 @@
     (let [data {::th/type :duplicate-project
                 :profile-id (:id profile)
                 :project-id (:id project)
-                :new-name "project 1 (copy)"}
+                :name "project 1 (copy)"}
           out  (th/mutation! data)]
 
       ;; Check tha tresult is correct
@@ -157,8 +157,8 @@
                                        (:data fb)))))
 
             (when (= (:id fa) (:id file2))
-              (t/is (true? (b/equals? (:data fa)
-                                      (:data fb))))))
+              (t/is (false? (b/equals? (:data fa)
+                                       (:data fb))))))
 
           )))))
 

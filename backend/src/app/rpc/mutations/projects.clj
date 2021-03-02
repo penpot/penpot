@@ -13,6 +13,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
+   [app.rpc.permissions :as perms]
    [app.rpc.queries.projects :as proj]
    [app.rpc.queries.teams :as teams]
    [app.tasks :as tasks]
@@ -30,7 +31,7 @@
 ;; --- Mutation: Create Project
 
 (declare create-project)
-(declare create-project-profile)
+(declare create-project-role)
 (declare create-team-project-profile)
 
 (s/def ::team-id ::us/uuid)
@@ -43,30 +44,31 @@
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)
     (let [project (create-project conn params)
-          params  (assoc params :project-id (:id project))]
-      (create-project-profile conn params)
+          params  (assoc params
+                         :project-id (:id project)
+                         :role :owner)]
+      (create-project-role conn params)
       (create-team-project-profile conn params)
       (assoc project :is-pinned true))))
 
 (defn create-project
-  [conn {:keys [id team-id name default?] :as params}]
-  (let [id (or id (uuid/next))
-        default? (if (boolean? default?) default? false)]
+  [conn {:keys [id team-id name is-default] :as params}]
+  (let [id         (or id (uuid/next))
+        is-default (if (boolean? is-default) is-default false)]
     (db/insert! conn :project
                 {:id id
-                 :team-id team-id
                  :name name
-                 :is-default default?})))
+                 :team-id team-id
+                 :is-default is-default})))
 
-(defn create-project-profile
-  [conn {:keys [project-id profile-id] :as params}]
-  (db/insert! conn :project-profile-rel
-              {:project-id project-id
-               :profile-id profile-id
-               :is-owner true
-               :is-admin true
-               :can-edit true}))
+(defn create-project-role
+  [conn {:keys [project-id profile-id role]}]
+  (let [params {:project-id project-id
+                :profile-id profile-id}]
+    (->> (perms/assign-role-flags params role)
+         (db/insert! conn :project-profile-rel))))
 
+;; TODO: pending to be refactored
 (defn create-team-project-profile
   [conn {:keys [team-id project-id profile-id] :as params}]
   (db/insert! conn :team-project-profile-rel

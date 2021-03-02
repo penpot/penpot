@@ -18,6 +18,7 @@
    [app.emails :as emails]
    [app.media :as media]
    [app.rpc.mutations.projects :as projects]
+   [app.rpc.permissions :as perms]
    [app.rpc.queries.profile :as profile]
    [app.rpc.queries.teams :as teams]
    [app.storage :as sto]
@@ -36,7 +37,7 @@
 ;; --- Mutation: Create Team
 
 (declare create-team)
-(declare create-team-profile)
+(declare create-team-role)
 (declare create-team-default-project)
 
 (s/def ::create-team
@@ -47,37 +48,39 @@
   [{:keys [pool] :as cfg} params]
   (db/with-atomic [conn pool]
     (let [team   (create-team conn params)
-          params (assoc params :team-id (:id team))]
-      (create-team-profile conn params)
+          params (assoc params
+                        :team-id (:id team)
+                        :role :owner)]
+      (create-team-role conn params)
       (create-team-default-project conn params)
       team)))
 
 (defn create-team
-  [conn {:keys [id name default?] :as params}]
-  (let [id (or id (uuid/next))
-        default? (if (boolean? default?) default? false)]
+  [conn {:keys [id name is-default] :as params}]
+  (let [id         (or id (uuid/next))
+        is-default (if (boolean? is-default) is-default false)]
     (db/insert! conn :team
                 {:id id
                  :name name
-                 :is-default default?})))
+                 :is-default is-default})))
 
-(defn create-team-profile
-  [conn {:keys [team-id profile-id] :as params}]
-  (db/insert! conn :team-profile-rel
-              {:team-id team-id
-               :profile-id profile-id
-               :is-owner true
-               :is-admin true
-               :can-edit true}))
+(defn create-team-role
+  [conn {:keys [team-id profile-id role] :as params}]
+  (let [params {:team-id team-id
+                :profile-id profile-id}]
+    (->> (perms/assign-role-flags params role)
+         (db/insert! conn :team-profile-rel))))
 
 (defn create-team-default-project
   [conn {:keys [team-id profile-id] :as params}]
-  (let [proj (projects/create-project conn {:team-id team-id
-                                            :name "Drafts"
-                                            :default? true})]
-    (projects/create-project-profile conn {:project-id (:id proj)
-                                           :profile-id profile-id})))
-
+  (let [project {:id (uuid/next)
+                 :team-id team-id
+                 :name "Drafts"
+                 :is-default true}]
+    (projects/create-project conn project)
+    (projects/create-project-role conn {:project-id (:id project)
+                                        :profile-id profile-id
+                                        :role :owner})))
 
 ;; --- Mutation: Update Team
 

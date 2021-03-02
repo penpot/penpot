@@ -16,6 +16,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
+   [app.rpc.permissions :as perms]
    [app.rpc.queries.files :as files]
    [app.rpc.queries.projects :as proj]
    [app.tasks :as tasks]
@@ -47,14 +48,13 @@
     (proj/check-edition-permissions! conn profile-id project-id)
     (create-file conn params)))
 
-(defn- create-file-profile
-  [conn {:keys [profile-id file-id] :as params}]
-  (db/insert! conn :file-profile-rel
-              {:profile-id profile-id
-               :file-id file-id
-               :is-owner true
-               :is-admin true
-               :can-edit true}))
+
+(defn create-file-role
+  [conn {:keys [file-id profile-id role]}]
+  (let [params {:file-id file-id
+                :profile-id profile-id}]
+    (->> (perms/assign-role-flags params role)
+         (db/insert! conn :file-profile-rel))))
 
 (defn create-file
   [conn {:keys [id name project-id is-shared]
@@ -68,8 +68,8 @@
                           :name name
                           :is-shared is-shared
                           :data (blob/encode data)})]
-    (->> (assoc params :file-id id)
-         (create-file-profile conn))
+    (->> (assoc params :file-id id :role :owner)
+         (create-file-role conn))
     (assoc file :data data)))
 
 
