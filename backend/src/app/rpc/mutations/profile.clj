@@ -49,8 +49,10 @@
 (declare register-profile)
 
 (s/def ::invitation-token ::us/not-empty-string)
+(s/def ::terms-privacy ::us/boolean)
+
 (s/def ::register-profile
-  (s/keys :req-un [::email ::password ::fullname]
+  (s/keys :req-un [::email ::password ::fullname ::terms-privacy]
           :opt-un [::invitation-token]))
 
 (sv/defmethod ::register-profile {:auth false :rlimit :password}
@@ -62,6 +64,10 @@
   (when-not (email-domain-in-whitelist? (cfg/get :registration-domain-whitelist) (:email params))
     (ex/raise :type :validation
               :code :email-domain-is-not-allowed))
+
+  (when-not (:terms-privacy params)
+    (ex/raise :type :validation
+              :code :invalid-terms-and-privacy))
 
   (db/with-atomic [conn pool]
     (let [cfg     (assoc cfg :conn conn)]

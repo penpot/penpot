@@ -369,6 +369,13 @@
     },
     "used-in" : [ "src/app/main/ui/auth.cljs" ]
   },
+  "auth.terms-privacy-agreement" : {
+    "translations" : {
+      "en" : "When creating a new account, you agree to our terms of service and privacy policy.",
+      "es" : "Al crear una nueva cuenta, aceptas nuestros términos de servicio y política de privacidad."
+    },
+    "used-in" : [ "src/app/main/ui/auth/register.cljs" ]
+  },
   "auth.verification-email-sent" : {
     "translations" : {
       "ca" : "Em enviat un correu de verificació a",
@@ -856,6 +863,13 @@
       "zh_cn" : "更新了：%s"
     },
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs" ]
+  },
+  "errors.terms-privacy-agreement-invalid" : {
+    "translations" : {
+      "en" : "You must accept our terms of service and privacy policy.",
+      "es" : "Debes aceptar nuestros términos de servicio y política de privacidad."
+    },
+    "used-in" : [ "src/app/main/ui/auth/register.cljs" ]
   },
   "errors.clipboard-not-implemented" : {
     "translations" : {
