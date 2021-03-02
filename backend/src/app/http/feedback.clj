@@ -61,8 +61,7 @@
 (defn send-feedback
   [pool profile params]
   (let [params      (us/conform ::feedback params)
-        destination (cfg/get :feedback-destination)
-        reply-to    (cfg/get :feedback-reply-to)]
+        destination (cfg/get :feedback-destination)]
     (emails/send! pool emails/feedback
                   {:to       destination
                    :profile  profile
