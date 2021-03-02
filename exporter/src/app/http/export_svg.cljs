@@ -199,7 +199,14 @@
           (process-text-nodes [page]
             (log/trace :fn :process-text-nodes)
             (-> (bwr/select-all page "#screenshot foreignObject")
-                (p/then #(p/all (map process-single-text-node %)))))
+                (p/then (fn [nodes]
+                          (reduce (fn [res node]
+                                    (p/then res (fn [res]
+                                                  (-> (process-single-text-node node)
+                                                      (p/then (fn [result]
+                                                                (conj res result)))))))
+                                  (p/resolved [])
+                                  nodes)))))
 
           (replace-nodes-on-main [main nodes]
             (let [main  (parse-xml main)
@@ -232,8 +239,8 @@
                                  :scale 4})
              (bwr/set-cookie! page cookie)
              (bwr/navigate! page uri)
-             ;; (bwr/sleep page 5000)
-             ;; (bwr/wait-for page "#screenshot foreignObject" {:visible true})
+             (bwr/wait-for page "#screenshot foreignObject" {:visible true})
+             (bwr/sleep page 2000)
              ;; (bwr/eval! page (js* "() => document.body.style.background = 'transparent'"))
              page))
 
