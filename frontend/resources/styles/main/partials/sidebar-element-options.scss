@@ -510,7 +510,15 @@
 
 .presets {
   .custom-select-dropdown {
-    width: 200px;
+    width: 237px;
+
+    li {
+      font-size: $fs12;
+
+      span {
+        font-size: $fs11;
+      }
+    }
   }
 }
 

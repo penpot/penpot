@@ -146,7 +146,7 @@
    {:name "iPhone X/XS/11 Pro"
     :width 375
     :height 812}
-   {:name "iPhone XS Max/XR/11/11 Pro Max"
+   {:name "iPhone XS Max/XR/11"
     :width 414
     :height 896}
    {:name "iPhone 6/7/8 Plus"
@@ -190,7 +190,7 @@
    {:name "Google Pixel 4a/5"
     :width 393
     :height 851}
-   {:name "Samsung Galaxy S20+/S21 Ultra"
+   {:name "Samsung Galaxy S20+"
     :width 384
     :height 854}
    {:name "Samsung Galaxy A71/A51"
