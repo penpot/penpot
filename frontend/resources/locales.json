@@ -3772,8 +3772,7 @@
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/blur.cljs" ]
   },
-  "workspace.options.,
-      "zh_cn" : "断开所有排版的链接"-background" : {
+  "workspace.options.canvas-background" : {
     "translations" : {
       "en" : "Canvas background",
       "es" : "Color de fondo",
