@@ -8,22 +8,30 @@ ports:
   - port: 6060
   - port: 9090
   - port: 1080
+    onOpen: notify
+  - port: 5432
+    onOpen: ignore
+  - port: 389
+    onOpen: ignore
 
 tasks:
   #- init: ./manage.sh build-devenv
   #  command: ./manage.sh start-devenv
 
-  - init: yarn --cwd ./frontend/ install
+  - init: yarn --cwd ./frontend/ install && yarn --cwd ./exporter/ install
+
+  - name: shadow watch
     command: cd ./frontend/ && npx -y shadow-cljs watch main
 
-  - init: yarn --cwd ./frontend/ install
+  - name: exporter
     command: cd ./exporter/ && npx -y shadow-cljs watch main
 
-  - init: yarn --cwd ./exporter/ install
+  - openMode: split-right
     command: cd ./exporter/ && ./scripts/wait-and-start.sh
 
   - init: psql -f docker/gitpod/files/postgresql_init.sql
+    name: backend
     command: cd ./backend/ && ./scripts/start-dev
 
-  - init: yarn --cwd ./frontend/ install
+  - name: gulp
     command: cd ./frontend/ && npx -y gulp --theme=${PENPOT_THEME} watch
