@@ -2,15 +2,37 @@ image:
   file: docker/gitpod/Dockerfile
 
 ports:
+  # frontend nREPL
   - port: 3447
+    onOpen: ignore
+    visibility: private
+  # frontend shadow server
   - port: 3448
+    onOpen: notify
+    visibility: private
   - port: 3449
   - port: 6060
   - port: 9090
+  # exporter shadow server
+  - port: 9630
+    onOpen: notify
+    visibility: private
+  # exporter http server
+  - port: 6061
+    onOpen: ignore
+  # mailhog web interface
   - port: 1080
     onOpen: notify
+  # mailhog postfix
+  - port: 1025
+    onOpen: ignore
+  # postgres
   - port: 5432
     onOpen: ignore
+  # redis
+  - port: 6379
+    onOpen: ignore
+  # openldap
   - port: 389
     onOpen: ignore
 
@@ -19,6 +41,8 @@ tasks:
   #  command: ./manage.sh start-devenv
 
   - init: yarn --cwd ./frontend/ install && yarn --cwd ./exporter/ install
+    name: redis
+    command: redis-server
 
   - name: shadow watch
     command: cd ./frontend/ && npx -y shadow-cljs watch main
