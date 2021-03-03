@@ -239,7 +239,7 @@
                                  :scale 4})
              (bwr/set-cookie! page cookie)
              (bwr/navigate! page uri)
-             (bwr/wait-for page "#screenshot foreignObject" {:visible true})
+             ;; (bwr/wait-for page "#screenshot foreignObject" {:visible true})
              (bwr/sleep page 2000)
              ;; (bwr/eval! page (js* "() => document.body.style.background = 'transparent'"))
              page))
