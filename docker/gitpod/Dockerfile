@@ -14,7 +14,7 @@ ENV CLOJURE_VERSION=1.10.2.774 \
 RUN set -ex; \
     brew install redis; \
     brew install imagemagick; \
-    brew install mailhog; \
+    go get github.com/mailhog/MailHog; \
     brew install openldap;
 
 USER root
@@ -78,4 +78,15 @@ ENV PENPOT_SMTP_ENABLED=true \
     PENPOT_SMTP_USER= \
     PENPOT_SMTP_PASSWORD= \
     PENPOT_SMTP_SSL=false \
+    PENPOT_SMTP_TLS=false \
+    PENPOT_SMTP_DEFAULT_REPLY_TO=no-reply@example.com \
+    PENPOT_SMTP_DEFAULT_FROM=no-reply@example.com \
+    PENPOT_SMTP_ENABLED=true \
+    PENPOT_SMTP_HOST=localhost \
+    PENPOT_SMTP_PORT=1025 \
+    PENPOT_SMTP_USER= \
+    PENPOT_SMTP_PASSWORD= \
+    PENPOT_SMTP_SSL=false \
     PENPOT_SMTP_TLS=false
+
+# TODO Retrieve OpenLDAP from rroemhild/docker-test-openldap

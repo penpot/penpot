@@ -21,7 +21,7 @@ ports:
   - port: 6061
     onOpen: ignore
   # mailhog web interface
-  - port: 1080
+  - port: 8025
     onOpen: notify
   # mailhog postfix
   - port: 1025
@@ -40,17 +40,22 @@ tasks:
   #- init: ./manage.sh build-devenv
   #  command: ./manage.sh start-devenv
 
-  - init: yarn --cwd ./frontend/ install && yarn --cwd ./exporter/ install
-    name: redis
+  - name: redis
     command: redis-server
 
-  - name: shadow watch
+  - name: mailhog
+    command: MailHog
+
+  - before: yarn --cwd ./frontend/ install
+    name: frontend shadow watch
     command: cd ./frontend/ && npx -y shadow-cljs watch main
 
-  - name: exporter
+  - before: yarn --cwd ./exporter/ install
+    name: exporter shadow watch
     command: cd ./exporter/ && npx -y shadow-cljs watch main
 
-  - openMode: split-right
+  - name: exporter web server
+    openMode: split-right
     command: cd ./exporter/ && ./scripts/wait-and-start.sh
 
   - init: psql -f docker/gitpod/files/postgresql_init.sql
