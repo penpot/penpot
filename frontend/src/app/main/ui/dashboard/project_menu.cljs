@@ -10,6 +10,7 @@
 (ns app.main.ui.dashboard.project-menu
   (:require
    [app.main.data.dashboard :as dd]
+   [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -37,7 +38,8 @@
          (mf/deps project)
          #(let [on-success
                 (fn [new-project]
-                  (st/emit! (rt/nav :dashboard-files
+                  (st/emit! (dm/success (tr "dashboard.success-duplicate-project"))
+                            (rt/nav :dashboard-files
                                     {:team-id (:team-id new-project)
                                      :project-id (:id new-project)})))]
             (st/emit! (dd/duplicate-project
@@ -59,13 +61,15 @@
                         (st/emitf (rt/nav :dashboard-projects
                                           {:team-id team-id}))}]
 
-            (st/emitf (dd/move-project (with-meta data mdata))))))
+            (st/emitf (dm/success (tr "dashboard.success-move-project"))
+                      (dd/move-project (with-meta data mdata))))))
 
         delete-fn
         (mf/use-callback
           (mf/deps project)
           (fn [event]
-            (st/emit! (dd/delete-project project)
+            (st/emit! (dm/success (tr "dashboard.success-delete-project"))
+                      (dd/delete-project project)
                       (rt/nav :dashboard-projects {:team-id (:team-id project)}))))
 
         on-delete

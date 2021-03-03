@@ -10,6 +10,7 @@
 (ns app.main.ui.dashboard.file-menu
   (:require
    [app.main.data.dashboard :as dd]
+   [app.main.data.messages :as dm]
    [app.main.data.modal :as modal]
    [app.main.repo :as rp]
    [app.main.store :as st]
@@ -48,12 +49,14 @@
         on-duplicate
         (mf/use-callback
          (mf/deps file)
-         (st/emitf (dd/duplicate-file file)))
+         (st/emitf (dm/success (tr "dashboard.success-duplicate-file"))
+                   (dd/duplicate-file file)))
 
         delete-fn
         (mf/use-callback
          (mf/deps file)
-         (st/emitf (dd/delete-file file)))
+         (st/emitf (dm/success (tr "dashboard.success-delete-file"))
+                   (dd/delete-file file)))
 
         on-delete
         (mf/use-callback
@@ -75,7 +78,8 @@
                         :project-id project-id}
 
                  mdata {:on-success
-                        (st/emitf (rt/nav :dashboard-files
+                        (st/emitf (dm/success (tr "dashboard.success-move-file"))
+                                  (rt/nav :dashboard-files
                                           {:team-id team-id
                                            :project-id project-id}))}]
 
