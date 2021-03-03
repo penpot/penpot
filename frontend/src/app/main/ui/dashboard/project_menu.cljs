@@ -11,10 +11,13 @@
   (:require
    [app.main.data.dashboard :as dd]
    [app.main.data.modal :as modal]
+   [app.main.repo :as rp]
    [app.main.store :as st]
+   [app.main.ui.context :as ctx]
    [app.main.ui.components.context-menu :refer [context-menu]]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
+   [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
 (mf/defc project-menu
@@ -26,6 +29,9 @@
   (let [top  (or top 0)
         left (or left 0)
 
+        current-team-id (mf/use-ctx ctx/current-team-id)
+        teams           (mf/use-state nil)
+
         on-duplicate
         (mf/use-callback
          (mf/deps project)
@@ -36,6 +42,24 @@
                                      :project-id (:id new-project)})))]
             (st/emit! (dd/duplicate-project
                         (with-meta project {:on-success on-success})))))
+
+        toggle-pin
+        (mf/use-callback
+          (mf/deps project)
+          (st/emitf (dd/toggle-project-pin project)))
+
+        on-move
+        (mf/use-callback
+         (mf/deps project)
+         (fn [team-id]
+           (let [data  {:id (:id project)
+                        :team-id team-id}
+
+                 mdata {:on-success
+                        (st/emitf (rt/nav :dashboard-projects
+                                          {:team-id team-id}))}]
+
+            (st/emitf (dd/move-project (with-meta data mdata))))))
 
         delete-fn
         (mf/use-callback
@@ -54,12 +78,26 @@
                        :accept-label (tr "modals.delete-project-confirm.accept")
                        :on-accept delete-fn})))]
 
-    [:& context-menu {:on-close on-menu-close
-                      :show show?
-                      :fixed? (or (not= top 0) (not= left 0))
-                      :top top
-                      :left left
-                      :options [[(tr "labels.rename") on-edit]
-                                [(tr "dashboard.duplicate") on-duplicate]
-                                [(tr "labels.delete") on-delete]]}]))
+    (mf/use-layout-effect
+      (mf/deps show?)
+      (fn []
+        (if show?
+          (->> (rp/query! :teams)
+               (rx/subs #(reset! teams %)))
+          (reset! teams []))))
+
+    (when (seq @teams)
+      [:& context-menu {:on-close on-menu-close
+                        :show show?
+                        :fixed? (or (not= top 0) (not= left 0))
+                        :top top
+                        :left left
+                        :options [[(tr "labels.rename") on-edit]
+                                  [(tr "dashboard.duplicate") on-duplicate]
+                                  [(tr "dashboard.pin-unpin") toggle-pin]
+                                  [(tr "dashboard.move-to") nil
+                                   (for [team @teams]
+                                     [(:name team) (on-move (:id team))])]
+                                  [:separator]
+                                  [(tr "labels.delete") on-delete]]}])))
 

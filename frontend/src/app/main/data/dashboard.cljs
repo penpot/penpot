@@ -353,8 +353,7 @@
   (us/assert ::us/uuid id)
   (letfn [(duplicated [project state]
             (-> state
-                (assoc-in [:projects (:team-id project) (:id project)] project)
-                (assoc-in [:dashboard-local :project-for-edit] (:id project))))]
+                (assoc-in [:projects (:team-id project) (:id project)] project)))]
     (ptk/reify ::duplicate-project
       ptk/WatchEvent
       (watch [_ state stream]
@@ -369,6 +368,22 @@
                (rx/tap on-success)
                (rx/map #(partial duplicated %))
                (rx/catch on-error)))))))
+
+(defn move-project
+  [{:keys [id team-id] :as params}]
+  (us/assert ::us/uuid id)
+  (us/assert ::us/uuid team-id)
+  (ptk/reify ::move-project
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [{:keys [on-success on-error]
+             :or {on-success identity
+                  on-error identity}} (meta params)]
+
+        (->> (rp/mutation! :move-project {:project-id id
+                                          :team-id team-id})
+             (rx/tap on-success)
+             (rx/catch on-error))))))
 
 (def clear-project-for-edit
   (ptk/reify ::clear-project-for-edit

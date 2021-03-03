@@ -625,6 +625,13 @@
     },
     "used-in" : [ "src/app/main/ui/settings/password.cljs" ]
   },
+  "dashboard.pin-unpin" : {
+    "translations" : {
+      "en" : "Pin/Unpin",
+      "es" : "Fijar/Desfijar"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/project_menu.cljs" ]
+  },
   "dashboard.projects-title" : {
     "translations" : {
       "ca" : "Projectes",
