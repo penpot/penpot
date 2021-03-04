@@ -39,6 +39,11 @@
         current-projects (remove #(= (:id %) (:project-id file))
                                  (:projects current-team))
 
+        project-name (fn [project]
+                       (if (:is-default project)
+                         (tr "labels.drafts")
+                         (:name project)))
+
         on-new-tab
         (mf/use-callback
          (mf/deps file)
@@ -159,15 +164,17 @@
                                   (when (or (seq current-projects) (seq other-teams))
                                     [(tr "dashboard.move-to") nil
                                      (conj (vec (for [project current-projects]
-                                                  [(:name project) (on-move (:id current-team)
+                                                  [(project-name project)
+                                                   (on-move (:id current-team)
                                                                             (:id project))]))
                                            (when (seq other-teams)
                                              [(tr "dashboard.move-to-other-team") nil
                                               (for [team other-teams]
                                                 [(:name team) nil
                                                  (for [sub-project (:projects team)]
-                                                   [(:name sub-project) (on-move (:id team)
-                                                                                 (:id sub-project))])])]))])
+                                                   [(project-name sub-project)
+                                                    (on-move (:id team)
+                                                             (:id sub-project))])])]))])
                                   (if (:is-shared file)
                                     [(tr "dashboard.remove-shared") on-del-shared]
                                     [(tr "dashboard.add-shared") on-add-shared])
