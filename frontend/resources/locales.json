@@ -1091,6 +1091,7 @@
       "ca" : "Uneix-te al xat.",
       "en" : "Join the chat",
       "es" : "Unirse al chat",
+      "fr" : "Rejoindre le chat",
       "zh_cn" : "加入聊天"
     },
     "used-in" : [ "src/app/main/ui/settings/feedback.cljs" ]
@@ -1100,6 +1101,7 @@
       "ca" : "Et ve de gust parlar? Xateja amb nosaltres a Gitter",
       "en" : "Feeling like talking? Chat with us at Gitter",
       "es" : "¿Deseas conversar? Entra al nuestro chat de la comunidad en Gitter",
+      "fr" : "Envie de parler? Discutez avec nous sur Gitter",
       "zh_cn" : "想说两句？来Gitter和我们聊聊"
     },
     "used-in" : [ "src/app/main/ui/settings/feedback.cljs" ]
@@ -1109,6 +1111,7 @@
       "ca" : "Descripció",
       "en" : "Description",
       "es" : "Descripción",
+      "fr" : "Description",
       "zh_cn" : "描述"
     },
     "used-in" : [ "src/app/main/ui/settings/feedback.cljs" ]
@@ -1118,6 +1121,7 @@
       "ca" : "",
       "en" : "Go to discussions",
       "es" : "Ir a las discusiones",
+      "fr" : "Aller aux discussions",
       "zh_cn" : "前往讨论"
     },
     "used-in" : [ "src/app/main/ui/settings/feedback.cljs" ]
@@ -1127,6 +1131,7 @@
       "ca" : "Uneix-te al fòrum colaboratiu de Penpot.",
       "en" : "Join Penpot team collaborative communication forum.",
       "es" : "Entra al foro colaborativo de Penpot",
+      "fr" : "Rejoignez le forum de communication collaborative de l'équipe Penpot.",
       "zh_cn" : "加入Penpot团队协作交流论坛。"
     },
     "used-in" : [ "src/app/main/ui/settings/feedback.cljs" ]
@@ -1136,6 +1141,7 @@
       "ca" : "Pots fer i respondre preguntes, tenir converses obertes i seguir les decisións que afecten al projecte",
       "en" : "You can ask and answer questions, have open-ended conversations, and follow along on decisions affecting the project.",
       "es" : "",
+      "fr" : "Vous pouvez poser des questions et y répondre, avoir des conversations ouvertes et suivre les décisions affectant le projet.",
       "zh_cn" : "你可以提问、回答问题，来一场开放的对话，并对影响项目的决策保持关注。"
     },
     "used-in" : [ "src/app/main/ui/settings/feedback.cljs" ]
@@ -1145,6 +1151,7 @@
       "ca" : "",
       "en" : "Team discussions",
       "es" : "",
+      "fr" : "Discussions en équipe",
       "zh_cn" : "团队讨论"
     },
     "used-in" : [ "src/app/main/ui/settings/feedback.cljs" ]
@@ -1154,6 +1161,7 @@
       "ca" : "Tema",
       "en" : "Subject",
       "es" : "Asunto",
+      "fr" : "Sujet",
       "zh_cn" : "话题"
     },
     "used-in" : [ "src/app/main/ui/settings/feedback.cljs" ]
@@ -1163,6 +1171,7 @@
       "ca" : "Si us plau descriu la raó del teu correu, especificant si es una incidència, una idea o un dubte. Un membre del nostre equip respondrà tan aviat como pugui.",
       "en" : "Please describe the reason of your email, specifying if is an issue, an idea or a doubt. A member of our team will respond as soon as possible.",
       "es" : "",
+      "fr" : "Veuillez décrire la raison de votre e-mail, en précisant s'il s'agit d'un problème, d'une idée ou d'un doute. Un membre de notre équipe vous répondra dans les plus brefs délais.",
       "zh_cn" : "请描述你发来邮件的原因，详细说明这是一个问题反馈，一个点子或者一个疑问。 我们会尽快回复。"
     },
     "used-in" : [ "src/app/main/ui/settings/feedback.cljs" ]
@@ -1172,7 +1181,7 @@
       "ca" : "Correu electrònic",
       "en" : "Email",
       "es" : "Correo electrónico",
-      "fr" : "Adresse email",
+      "fr" : "Email",
       "ru" : "Email",
       "zh_cn" : "电子邮件"
     },
@@ -1783,6 +1792,7 @@
     "translations" : {
       "en" : "Create new team",
       "es" : "Crea un nuevo equipo",
+      "fr" : "Créer nouvelle équipe",
       "zh_cn" : "创建新团队"
     },
     "used-in" : [ "src/app/main/ui/dashboard/team_form.cljs", "src/app/main/ui/dashboard/team_form.cljs" ]
@@ -2582,6 +2592,14 @@
     },
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs" ]
   },
+  "modals.invite-member-confirm.accept" : {
+    "translations" : {
+      "en" : "Send invitation",
+      "es" : "Enviar invitacion",
+      "fr" : "Envoyer l'invitation"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/team.cljs" ]
+  },
   "modals.leave-and-reassign.hint1" : {
     "translations" : {
       "en" : "You are %s owner.",
@@ -2779,6 +2797,14 @@
       "zh_cn" : "验证邮件已发至%s。请检查邮箱。"
     },
     "used-in" : [ "src/app/main/ui/settings/change_email.cljs" ]
+  },
+  "notifications.invitation-email-sent" : {
+    "translations" : {
+      "en" : "Invitation sent successfully",
+      "es" : "Invitación enviada con éxito",
+      "fr" : "E‑mail d'invitation envoyé!"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/team.cljs" ]
   },
   "profile.recovery.go-to-login" : {
     "translations" : {
