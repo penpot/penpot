@@ -132,8 +132,9 @@
   "Return a map without the keys provided
   in the `keys` parameter."
   [data keys]
-  (persistent!
-   (reduce #(dissoc! %1 %2) (transient data) keys)))
+  (when data
+    (persistent!
+     (reduce #(dissoc! %1 %2) (transient data) keys))))
 
 (defn remove-at-index
   [v index]

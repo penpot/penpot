@@ -15,6 +15,7 @@ const plugins = [
     { "convertShapeToPath" : false },
     { "convertEllipseToCircle" : false },
     { "moveElemsAttrsToGroup" : false },
+    { "moveGroupAttrsToElems" : false },
     { "collapseGroups" : false },
     {
         "convertPathData" : {
@@ -28,9 +29,10 @@ const plugins = [
     { "mergePaths" : false },
     { "sortDefsChildren" : false },
     { "removeDimensions" : true },
-    { "removeStyleElement" : true },
+    { "removeStyleElement" : false },
     { "removeScriptElement" : true },
     { "removeOffCanvasPaths" : false },
+    { "cleanupNumericValues": true}
 ];
 
 

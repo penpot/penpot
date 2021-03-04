@@ -34,8 +34,7 @@
 
             props (-> (attrs/extract-style-attrs shape)
                       (obj/merge!
-                       #js {:className "group"
-                            :pointerEvents pointer-events
+                       #js {:pointerEvents pointer-events
                             :mask (when (and mask (not expand-mask)) (mask-str mask))}))]
 
         [:> :g props

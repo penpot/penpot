@@ -14,6 +14,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
    [cuerdas.core :as str]))
 
 (defonce replace-regex #"#([^\W]+)")
@@ -99,7 +100,8 @@
               :else
               (let [replace-id
                     (fn [result it]
-                      (str/replace result it (replace-fn it)))]
+                      (let [to-replace (replace-fn it)]
+                        (str/replace result (str "#" it) (str "#" to-replace))))]
                 (reduce replace-id val (extract-ids val)))))]
     (d/mapm update-ids attrs)))
 
@@ -119,11 +121,13 @@
               (reduce visit-node result (:content node))))]
     (visit-node {} content)))
 
+(def remove-tags #{:defs :linearGradient})
+
 (defn extract-defs [{:keys [tag attrs content] :as node}]
   (if-not (map? node)
     [{} node]
 
-    (let [remove-node? (fn [{:keys [tag]}] (= tag :defs))
+    (let [remove-node? (fn [{:keys [tag]}] (contains? remove-tags tag))
 
           rec-result (->> (:content node) (map extract-defs))
           node (assoc node :content (->> rec-result (map second) (filterv (comp not remove-node?))))
@@ -218,13 +222,13 @@
 (defn format-scale-params [params]
   (assert (or (= (count params) 1) (= (count params) 2)))
   (if (= (count params) 1)
-    [(gpt/point (nth params 0))]
+    [(gpt/point (mth/abs (nth params 0)))]
     [(gpt/point (nth params 0) (nth params 1))]))
 
 (defn format-rotate-params [params]
   (assert (or (= (count params) 1) (= (count params) 3)) (str "??" (count params)))
   (if (= (count params) 1)
-    [(nth params 0)]
+    [(nth params 0) (gpt/point 0 0)]
     [(nth params 0) (gpt/point (nth params 1) (nth params 2))]))
 
 (defn format-skew-x-params [params]
@@ -291,3 +295,207 @@
                   (dissoc :points)
                   (assoc :d (str (points->path (:points attrs)) "Z")))]
     (assoc node :attrs attrs :tag tag)))
+
+(defn line->path [{:keys [attrs tag] :as node}]
+  (let [tag :path
+        {:keys [x1 y1 x2 y2]} attrs
+        attrs (-> attrs
+                  (dissoc :x1 :x2 :y1 :y2)
+                  (assoc :d (str "M" x1 "," y1 " L" x2 "," y2)))]
+
+    (assoc node :attrs attrs :tag tag)))
+
+(defn add-transform [attrs transform]
+  (letfn [(append-transform [old-transform]
+            (if (or (nil? old-transform) (empty? old-transform))
+              transform
+              (str transform " " old-transform)))]
+
+    (cond-> attrs
+      transform
+      (update :transform append-transform))))
+
+(defonce inheritable-props
+  [:clip-rule
+   :color
+   :color-interpolation
+   :color-interpolation-filters
+   :color-profile
+   :color-rendering
+   :cursor
+   :direction
+   :dominant-baseline
+   :fill
+   :fill-opacity
+   :fill-rule
+   :font
+   :font-family
+   :font-size
+   :font-size-adjust
+   :font-stretch
+   :font-style
+   :font-variant
+   :font-weight
+   :glyph-orientation-horizontal
+   :glyph-orientation-vertical
+   :image-rendering
+   :letter-spacing
+   :marker
+   :marker-end
+   :marker-mid
+   :marker-start
+   :paint-order
+   :pointer-events
+   :shape-rendering
+   :stroke
+   :stroke-dasharray
+   :stroke-dashoffset
+   :stroke-linecap
+   :stroke-linejoin
+   :stroke-miterlimit
+   :stroke-opacity
+   :stroke-width
+   :text-anchor
+   :text-rendering
+   :transform
+   :visibility
+   :word-spacing
+   :writing-mode])
+
+(defonce gradient-tags
+  #{:linearGradient
+    :radialGradient})
+
+(defonce filter-tags
+  #{:filter
+    :feBlend
+    :feColorMatrix
+    :feComponentTransfer
+    :feComposite
+    :feConvolveMatrix
+    :feDiffuseLighting
+    :feDisplacementMap
+    :feFlood
+    :feGaussianBlur
+    :feImage
+    :feMerge
+    :feMorphology
+    :feOffset
+    :feSpecularLighting
+    :feTile
+    :feTurbulence})
+
+(defn inherit-attributes [group-attrs {:keys [attrs] :as node}]
+  (if (map? node)
+    (let [attrs (-> (format-styles attrs)
+                    (add-transform (:transform group-attrs)))
+          attrs (d/deep-merge (select-keys group-attrs inheritable-props) attrs)]
+      (assoc node :attrs attrs))
+    node))
+
+(defn map-nodes [mapfn node]
+  (let [update-content
+        (fn [content] (cond->> content
+                        (vector? content)
+                        (mapv (partial map-nodes mapfn))))]
+
+    (cond-> node
+      (map? node)
+      (-> (mapfn)
+          (d/update-when :content update-content)))))
+
+;; Defaults for some tags per spec https://www.w3.org/TR/SVG11/single-page.html
+;; they are basicaly the defaults that can be percents and we need to replace because
+;; otherwise won't work as expected in the workspace
+(defonce svg-tag-defaults
+  (let [filter-default {:units :filterUnits
+                        :default "objectBoundingBox"
+                        "objectBoundingBox" {}
+                        "userSpaceOnUse" {:x "-10%" :y "-10%" :width "120%" :height "120%"}}
+        filter-values (->> filter-tags
+                           (reduce #(merge %1 (hash-map %2 filter-default)) {}))]
+
+    (merge {:linearGradient {:units :gradientUnits
+                             :default "objectBoundingBox"
+                             "objectBoundingBox" {}
+                             "userSpaceOnUse"    {:x1 "0%" :y1 "0%" :x2 "100%" :y2 "0%"}}
+            :radialGradient {:units :gradientUnits
+                             :default "objectBoundingBox"
+                             "objectBoundingBox" {}
+                             "userSpaceOnUse"    {:cx "50%" :cy "50%" :r "50%"}}
+            :mask {:units :maskUnits
+                   :default "userSpaceOnUse"
+                   "objectBoundingBox" {}
+                   "userSpaceOnUse"    {:x "-10%" :y "-10%" :width "120%" :height "120%"}}}
+           filter-values)))
+
+(defn fix-default-values
+  "Gives values to some SVG elements which defaults won't work when imported into the platform"
+  [svg-data]
+  (let [add-defaults
+        (fn [{:keys [tag attrs] :as node}]
+          (let [prop (get-in svg-tag-defaults [tag :units])
+                default-units (get-in svg-tag-defaults [tag :default])
+                units (get attrs prop default-units)
+                tag-default (get-in svg-tag-defaults [tag units])]
+            (d/update-when node :attrs #(merge tag-default %))))
+
+        fix-node-defaults
+        (fn [node]
+          (cond-> node
+            (contains? svg-tag-defaults (:tag node))
+            (add-defaults)))]
+
+    (->> svg-data (map-nodes fix-node-defaults))))
+
+(defn calculate-ratio
+  ;;  sqrt((actual-width)**2 + (actual-height)**2)/sqrt(2).
+  [width height]
+  (/ (mth/sqrt (+ (mth/pow width 2)
+                  (mth/pow height 2)))
+     (mth/sqrt 2)))
+
+(defn fix-percents
+  "Changes percents to a value according to the size of the svg imported"
+  [svg-data]
+  ;; https://www.w3.org/TR/SVG11/single-page.html#coords-Units
+  (let [viewbox {:x (:offset-x svg-data)
+                 :y (:offset-y svg-data)
+                 :width (:width svg-data)
+                 :height (:height svg-data)
+                 :ratio (calculate-ratio (:width svg-data) (:height svg-data))}]
+    (letfn [(fix-length [prop-length val]
+              (* (get viewbox prop-length) (/ val 100.)))
+            
+            (fix-coord [prop-coord prop-length val]
+              (+ (get viewbox prop-coord)
+                 (fix-length prop-length val)))
+
+            (fix-percent-attr [attr-key attr-val]
+              (let [is-percent? (str/ends-with? attr-val "%")
+                    is-x? #{:x :x1 :x2 :cx}
+                    is-y? #{:y :y1 :y2 :cy}
+                    is-width? #{:width}
+                    is-height? #{:height}
+                    is-other? #{:r :stroke-width}]
+
+                (if is-percent?
+                  ;; JS parseFloat removes the % symbol
+                  (let [attr-num (d/parse-double attr-val)]
+                    (str (cond
+                           (is-x? attr-key)      (fix-coord  :x :width attr-num)
+                           (is-y? attr-key)      (fix-coord  :y :height attr-num)
+                           (is-width? attr-key)  (fix-length :width attr-num)
+                           (is-height? attr-key) (fix-length :height attr-num)
+                           (is-other? attr-key)  (fix-length :ratio attr-num)
+                           :else (do (.warn js/console "Percent property not converted!" (str attr-key) (str attr-val))
+                                     attr-val))))
+                  attr-val)))
+
+            (fix-percent-attrs [attrs]
+              (d/mapm fix-percent-attr attrs))
+
+            (fix-percent-values [node]
+              (update node :attrs fix-percent-attrs))]
+
+      (->> svg-data (map-nodes fix-percent-values)))))

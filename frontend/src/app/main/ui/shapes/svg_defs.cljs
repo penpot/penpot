@@ -48,23 +48,17 @@
     :else
     (let [{:keys [tag attrs content]} node
 
-          transform-gradient? (and (#{:linearGradient :radialGradient} tag)
-                                   (= "userSpaceOnUse" (get attrs :gradientUnits "userSpaceOnUse")))
+          transform-gradient? (and (contains? usvg/gradient-tags tag)
+                                   (= "userSpaceOnUse" (get attrs :gradientUnits "objectBoundingBox")))
 
           transform-pattern?  (and (= :pattern tag)
-                                   (every? d/num-string? [(:x attrs "0") (:y attrs "0") (:width attrs "0") (:height attrs "0")])
                                    (= "userSpaceOnUse" (get attrs :patternUnits "userSpaceOnUse")))
 
           transform-clippath? (and (= :clipPath tag)
                                    (= "userSpaceOnUse" (get attrs :clipPathUnits "userSpaceOnUse")))
 
-          transform-filter?   (and (= #{:filter
-                                        ;; Filter primitives. We need to remap subregions
-                                        :feBlend :feColorMatrix :feComponentTransfer :feComposite :feConvolveMatrix
-                                        :feDiffuseLighting :feDisplacementMap :feFlood :feGaussianBlur
-                                        :feImage :feMerge :feMorphology :feOffset
-                                        :feSpecularLighting :feTile :feTurbulence} tag)
-                                   (= "userSpaceOnUse" (get attrs :filterUnits "userSpaceOnUse")))
+          transform-filter?   (and (contains? usvg/filter-tags tag)
+                                   (= "userSpaceOnUse" (get attrs :filterUnits "objectBoundingBox")))
 
           attrs (-> attrs
                     (usvg/update-attr-ids prefix-id)
@@ -88,8 +82,6 @@
 
 (mf/defc svg-defs [{:keys [shape render-id]}]
   (let [svg-defs (:svg-defs shape)
-        ;;_ (when (:svg-transform shape)
-        ;;    (.log js/console (:name shape) (:old-transform shape) (str (:svg-transform shape))))
 
         transform (mf/use-memo
                    (mf/deps shape)
@@ -98,7 +90,7 @@
                       (usvg/svg-transform-matrix shape)))
 
         ;; Paths doesn't have transform so we have to transform its gradients
-        transform (if (and (= :path (:type shape)) (contains? shape :svg-transform))
+        transform (if (contains? shape :svg-transform)
                     (gmt/multiply transform (or (:svg-transform shape) (gmt/matrix)))
                     transform)
 

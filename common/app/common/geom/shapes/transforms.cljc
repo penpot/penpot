@@ -285,6 +285,24 @@
             (dissoc :modifiers)))
       shape)))
 
+(defn update-group-viewbox
+  "Updates the viewbox for groups imported from SVG's"
+  [{:keys [selrect svg-viewbox] :as group} new-selrect]
+  (let [;; Gets deltas for the selrect to update the svg-viewbox (for svg-imports)
+        deltas {:x      (- (:x new-selrect)      (:x selrect))
+                :y      (- (:y new-selrect)      (:y selrect))
+                :width  (- (:width new-selrect)  (:width selrect))
+                :height (- (:height new-selrect) (:height selrect))}]
+    
+    (cond-> group
+      svg-viewbox
+      (update :svg-viewbox
+              #(-> %
+                   (update :x + (:x deltas))
+                   (update :y + (:y deltas))
+                   (update :width + (:width deltas))
+                   (update :height + (:height deltas)))))))
+
 (defn update-group-selrect [group children]
   (let [shape-center (gco/center-shape group)
         transform (:transform group (gmt/matrix))
@@ -306,6 +324,7 @@
 
     ;; Updates the shape and the applytransform-rect will update the other properties
     (-> group
+        (update-group-viewbox new-selrect)
         (assoc :selrect new-selrect)
         (assoc :points new-points)
 
