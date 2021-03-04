@@ -139,7 +139,7 @@
                       :options roles}]]
 
       [:div.action-buttons
-       [:& fm/submit-button {:label (tr "modals.invite-member-confirm.accept")]]]]))
+       [:& fm/submit-button {:label (tr "modals.invite-member-confirm.accept")}]]]]))
 
 
 (mf/defc team-member
