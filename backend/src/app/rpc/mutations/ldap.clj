@@ -84,7 +84,7 @@
 (defn- get-ldap-user
   [cpool {:keys [email] :as params}]
   (let [query   (-> (cfg/get :ldap-user-query)
-                    (replace-several "$username" email))
+                    (replace-several ":username" email))
 
         attrs   [(cfg/get :ldap-attrs-username)
                  (cfg/get :ldap-attrs-email)
