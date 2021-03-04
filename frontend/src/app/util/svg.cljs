@@ -17,10 +17,15 @@
    [app.common.math :as mth]
    [cuerdas.core :as str]))
 
-(defonce replace-regex #"#([^\W]+)")
+;; Regex for XML ids per Spec
+;; https://www.w3.org/TR/2008/REC-xml-20081126/#sec-common-syn
+(defonce xml-id-regex #"#([:A-Z_a-z\xC0-\xD6\xD8-\xF6\xF8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD\u10000-\uEFFFF][\.\-\:0-9\xB7A-Z_a-z\xC0-\xD6\xD8-\xF6\xF8-\u02FF\u0300-\u036F\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u203F-\u2040\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD\u10000-\uEFFFF]*)")
+
+(defonce matrices-regex #"(matrix|translate|scale|rotate|skewX|skewY)\(([^\)]*)\)")
+(defonce number-regex #"[+-]?\d*(\.\d+)?(e[+-]?\d+)?")
 
 (defn extract-ids [val]
-  (->> (re-seq replace-regex val)
+  (->> (re-seq xml-id-regex val)
        (mapv second)))
 
 (defn fix-dot-number
@@ -210,8 +215,6 @@
 ;; Transforms spec:
 ;; https://www.w3.org/TR/SVG11/single-page.html#coords-TransformAttribute
 
-(def matrices-regex #"(matrix|translate|scale|rotate|skewX|skewY)\(([^\)]*)\)")
-(def params-regex #"[+-]?\d*(\.\d+)?(e[+-]?\d+)?")
 
 (defn format-translate-params [params]
   (assert (or (= (count params) 1) (= (count params) 2)))
@@ -222,7 +225,7 @@
 (defn format-scale-params [params]
   (assert (or (= (count params) 1) (= (count params) 2)))
   (if (= (count params) 1)
-    [(gpt/point (mth/abs (nth params 0)))]
+    [(gpt/point (nth params 0))]
     [(gpt/point (nth params 0) (nth params 1))]))
 
 (defn format-rotate-params [params]
@@ -253,7 +256,7 @@
   (if transform-attr
     (let [process-matrix
           (fn [[_ type params]]
-            (let [params (->> (re-seq params-regex params)
+            (let [params (->> (re-seq number-regex params)
                               (filter #(-> % first empty? not))
                               (map (comp d/parse-double first)))]
               {:type type :params params}))
@@ -264,15 +267,16 @@
       (reduce gmt/multiply (gmt/matrix) matrices))
     (gmt/matrix)))
 
-(def points-regex #"[^\s\,]+")
+
 
 (defn format-move [[x y]] (str "M" x " " y))
 (defn format-line [[x y]] (str "L" x " " y))
 
 (defn points->path [points-str]
   (let [points (->> points-str
-                    (re-seq points-regex)
-                    (mapv d/parse-double)
+                    (re-seq number-regex)
+                    (filter (comp not empty? first))
+                    (mapv (comp d/parse-double first))
                     (partition 2))
 
         head (first points)
@@ -404,6 +408,23 @@
       (-> (mapfn)
           (d/update-when :content update-content)))))
 
+(defn reduce-nodes [redfn value node]
+  (let [reduce-content
+        (fn [value content]
+          (loop [current (first content)
+                 content (rest content)
+                 value value]
+            (if (nil? current)
+              value
+              (recur (first content)
+                     (rest content)
+                     (reduce-nodes redfn value current)))))]
+
+    (if (map? node)
+      (-> (redfn value node)
+          (reduce-content (:content node)))
+      value)))
+
 ;; Defaults for some tags per spec https://www.w3.org/TR/SVG11/single-page.html
 ;; they are basicaly the defaults that can be percents and we need to replace because
 ;; otherwise won't work as expected in the workspace
@@ -471,7 +492,7 @@
               (+ (get viewbox prop-coord)
                  (fix-length prop-length val)))
 
-            (fix-percent-attr [attr-key attr-val]
+            (fix-percent-attr-viewbox [attr-key attr-val]
               (let [is-percent? (str/ends-with? attr-val "%")
                     is-x? #{:x :x1 :x2 :cx}
                     is-y? #{:y :y1 :y2 :cy}
@@ -488,14 +509,39 @@
                            (is-width? attr-key)  (fix-length :width attr-num)
                            (is-height? attr-key) (fix-length :height attr-num)
                            (is-other? attr-key)  (fix-length :ratio attr-num)
-                           :else (do (.warn js/console "Percent property not converted!" (str attr-key) (str attr-val))
-                                     attr-val))))
+                           :else attr-val)))
                   attr-val)))
 
-            (fix-percent-attrs [attrs]
-              (d/mapm fix-percent-attr attrs))
+            (fix-percent-attrs-viewbox [attrs]
+              (d/mapm fix-percent-attr-viewbox attrs))
+
+            (fix-percent-attr-numeric [attr-key attr-val]
+              (let [is-percent? (str/ends-with? attr-val "%")]
+                (if is-percent?
+                  (str (let [attr-num (d/parse-double attr-val)]
+                         (/ attr-num 100)))
+                  attr-val)))
+
+            (fix-percent-attrs-numeric [attrs]
+              (d/mapm fix-percent-attr-numeric attrs))
 
             (fix-percent-values [node]
-              (update node :attrs fix-percent-attrs))]
+              (let [units (or (get-in node [:attrs :filterUnits])
+                              (get-in node [:attrs :gradientUnits])
+                              (get-in node [:attrs :patternUnits])
+                              (get-in node [:attrs :clipUnits]))]
+                (cond-> node
+                  (= "objectBoundingBox" units)
+                  (update :attrs fix-percent-attrs-numeric)
+
+                  (not= "objectBoundingBox" units)
+                  (update :attrs fix-percent-attrs-viewbox))))]
 
       (->> svg-data (map-nodes fix-percent-values)))))
+
+(defn collect-images [svg-data]
+  (let [redfn (fn [acc {:keys [tag attrs]}]
+                (cond-> acc
+                  (= :image tag)
+                  (conj (:xlink:href attrs))))]
+    (reduce-nodes redfn [] svg-data )))

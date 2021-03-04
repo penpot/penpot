@@ -13,16 +13,20 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
+   [app.common.geom.proportions :as gpr]
    [app.common.pages :as cp]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.common :as dwc]
+   [app.main.repo :as rp]
    [app.util.color :as uc]
    [app.util.geom.path :as ugp]
    [app.util.object :as obj]
    [app.util.svg :as usvg]
+   [app.util.uri :as uu]
    [beicon.core :as rx]
    [cuerdas.core :as str]
-   [potok.core :as ptk]))
+   [potok.core :as ptk]
+   [promesa.core :as p]))
 
 (defn- svg-dimensions [data]
   (let [width (get-in data [:attrs :width] 100)
@@ -138,7 +142,8 @@
 
 (defn create-path-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (let [svg-transform (usvg/parse-transform (:transform attrs))
-        content (cond-> (ugp/path->content (:d attrs))
+        path-content (ugp/path->content (:d attrs))
+        content (cond-> path-content
                   svg-transform
                   (gsh/transform-content svg-transform))
 
@@ -189,7 +194,7 @@
         rect-points (gsh/rect->points rect-shape)
 
         [shape-transform shape-transform-inv rotation]
-        (gsh/calculate-adjust-matrix points rect-points)]
+        (gsh/calculate-adjust-matrix points rect-points (neg? (:a transform)) (neg? (:d transform)))]
 
     (merge rect-shape
            {:selrect selrect
@@ -265,6 +270,37 @@
         (assoc :svg-viewbox (select-keys rect [:x :y :width :height]))
         (assoc :svg-attrs (dissoc attrs :cx :cy :r :rx :ry :transform)))))
 
+(defn create-image-shape [name frame-id svg-data {:keys [attrs] :as data}]
+  (let [svg-transform (usvg/parse-transform (:transform attrs))
+        transform (->> svg-transform 
+                       (gmt/transform-in (gpt/point svg-data)))
+
+        image-url (:xlink:href attrs)
+        image-data (get-in svg-data [:image-data image-url])
+
+        rect (->> (select-keys attrs [:x :y :width :height])
+                  (d/mapm #(d/parse-double %2)))
+
+        origin (gpt/negate (gpt/point svg-data))
+
+        rect-data (-> (merge {:x 0 :y 0 :width (:width image-data) :height (:height image-data)} rect)
+                      (update :x - (:x origin))
+                      (update :y - (:y origin)))
+
+        rect-metadata (calculate-rect-metadata rect-data transform)]
+    (-> {:id (uuid/next)
+         :type :image
+         :name name
+         :frame-id frame-id
+         :metadata {:width (:width image-data)
+                    :height (:height image-data)
+                    :mtype (:mtype image-data)
+                    :id (:id image-data)}}
+
+        (merge rect-metadata)
+        (assoc :svg-viewbox (select-keys rect [:x :y :width :height]))
+        (assoc :svg-attrs (dissoc attrs :x :y :width :height :xlink:href)))))
+
 (defn parse-svg-element [frame-id svg-data element-data unames]
   (let [{:keys [tag attrs]} element-data
         attrs (usvg/format-styles attrs)
@@ -301,14 +337,14 @@
                          :ellipse) (create-circle-shape name frame-id svg-data element-data)
                         :path      (create-path-shape name frame-id svg-data element-data)
                         :polyline  (create-path-shape name frame-id svg-data (-> element-data usvg/polyline->path))
-                        :polygo    (create-path-shape name frame-id svg-data (-> element-data usvg/polygon->path))
+                        :polygon   (create-path-shape name frame-id svg-data (-> element-data usvg/polygon->path))
                         :line      (create-path-shape name frame-id svg-data (-> element-data usvg/line->path))
+                        :image     (create-image-shape name frame-id svg-data element-data)
                         #_other    (create-raw-svg name frame-id svg-data element-data))
 
                       (assoc :svg-defs (select-keys (:defs svg-data) references))
                       (setup-fill)
                       (setup-stroke))
-
             children (cond->> (:content element-data)
                        (= tag :g)
                        (mapv #(usvg/inherit-attributes attrs %)))]
@@ -335,8 +371,38 @@
         reducer-fn (partial add-svg-child-changes page-id objects selected frame-id shape-id svg-data)]
     (reduce reducer-fn [unames changes] (d/enumerate children))))
 
-(defn svg-uploaded [svg-data x y]
+(declare create-svg-shapes)
+
+(defn svg-uploaded [svg-data file-id x y]
   (ptk/reify ::svg-uploaded
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [images-to-upload (-> svg-data (usvg/collect-images))
+
+            prepare-uri
+            (fn [uri]
+              (merge
+               {:file-id file-id
+                :is-local true
+                :url uri}
+
+               (if (str/starts-with? uri "data:")
+                 {:name "image"
+                  :content (uu/data-uri->blob uri)}
+                 {:name (uu/uri-name uri)})))]
+
+        (->> (rx/from images-to-upload)
+             (rx/map prepare-uri)
+             (rx/mapcat (fn [uri-data]
+                          (->> (rp/mutation! (if (contains? uri-data :content)
+                                               :upload-file-media-object
+                                               :create-file-media-object-from-url) uri-data)
+                               (rx/map #(vector (:url uri-data) %)))))
+             (rx/reduce (fn [acc [url image]] (assoc acc url image)) {})
+             (rx/map #(create-svg-shapes (assoc svg-data :image-data %) x y)))))))
+
+(defn create-svg-shapes [svg-data x y]
+  (ptk/reify ::create-svg-shapes
     ptk/WatchEvent
     (watch [_ state stream]
       (try
@@ -373,10 +439,14 @@
               root-shape (create-svg-root frame-id svg-data)
               root-id (:id root-shape)
 
+              ;; Creates the root shape
               changes (dwc/add-shape-changes page-id objects selected root-shape false)
 
-              reducer-fn (partial add-svg-child-changes page-id objects selected frame-id root-id svg-data)
-              [_ [rchanges uchanges]] (reduce reducer-fn [unames changes] (d/enumerate (:content svg-data)))
+              ;; Reduces the children to create the changes to add the children shapes
+              [_ [rchanges uchanges]]
+              (reduce (partial add-svg-child-changes page-id objects selected frame-id root-id svg-data)
+                      [unames changes]
+                      (d/enumerate (:content svg-data)))
 
               reg-objects-action {:type :reg-objects
                                   :page-id page-id

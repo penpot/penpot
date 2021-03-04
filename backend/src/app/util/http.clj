@@ -14,7 +14,9 @@
    [promesa.exec :as px]))
 
 (def default-client
-  (delay (http/build-client {:executor @px/default-executor})))
+  (delay (http/build-client {:executor @px/default-executor
+                             :connect-timeout 10000 ;; 10s
+                             :follow-redirects :always})))
 
 (defn get!
   [url opts]

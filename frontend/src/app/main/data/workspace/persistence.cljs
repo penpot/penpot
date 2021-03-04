@@ -32,6 +32,7 @@
    [app.util.router :as rt]
    [app.util.time :as dt]
    [app.util.transit :as t]
+   [app.util.uri :as uu]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
@@ -404,17 +405,10 @@
                      (assoc result :name name)
                      (throw result)))))))
 
-(defn url-name [url]
-  (let [query-idx (str/last-index-of url "?")
-        url (if (> query-idx 0) (subs url 0 query-idx) url)
-        filename (->> (str/split url "/") (last))
-        ext-idx (str/last-index-of filename ".")]
-    (if (> ext-idx 0) (subs filename 0 ext-idx) filename)))
-
 (defn fetch-svg [name uri]
   (->> (http/send! {:method :get :uri uri})
        (rx/map #(vector
-                 (or name (url-name uri))
+                 (or name (uu/uri-name uri))
                  (:body %)))))
 
 (defn- handle-upload-error [on-error stream]
@@ -459,7 +453,7 @@
           (prepare-uri [uri]
             {:file-id file-id
              :is-local local?
-             :name (or name (url-name uri))
+             :name (or name (uu/uri-name uri))
              :url uri})]
     (rx/merge
      (->> (rx/from uris)
@@ -543,7 +537,7 @@
   [params position]
   (let [{:keys [x y]} position
         mdata  {:on-image #(st/emit! (dwc/image-uploaded % x y))
-                :on-svg   #(st/emit! (svg/svg-uploaded % x y))}
+                :on-svg   #(st/emit! (svg/svg-uploaded % (:file-id params) x y))}
 
         params (-> (assoc params :local? true)
                    (with-meta mdata))]
