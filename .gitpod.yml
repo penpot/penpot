@@ -43,7 +43,8 @@ tasks:
   - name: redis
     command: redis-server
 
-  - name: mailhog
+  - before: go get github.com/mailhog/MailHog
+    name: mailhog
     command: MailHog
 
   - before: yarn --cwd ./frontend/ install

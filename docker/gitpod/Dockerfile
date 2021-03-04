@@ -14,7 +14,7 @@ ENV CLOJURE_VERSION=1.10.2.774 \
 RUN set -ex; \
     brew install redis; \
     brew install imagemagick; \
-    sudo go get github.com/mailhog/MailHog; \
+    brew install mailhog; \
     brew install openldap;
 
 USER root
