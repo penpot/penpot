@@ -28,6 +28,10 @@
    [potok.core :as ptk]
    [promesa.core :as p]))
 
+(defonce default-rect {:x 0 :y 0 :width 1 :height 1 :rx 0 :ry 0})
+(defonce default-circle {:r 0 :cx 0 :cy 0})
+(defonce default-image {:x 0 :y 0 :width 1 :height 1})
+
 (defn- svg-dimensions [data]
   (let [width (get-in data [:attrs :width] 100)
         height (get-in data [:attrs :height] 100)
@@ -163,22 +167,6 @@
         (assoc :svg-transform svg-transform)
         (gsh/translate-to-frame origin))))
 
-(defn inverse-matrix [{:keys [a b c d e f]}]
-  (let [dom-matrix (-> (js/DOMMatrix.)
-                       (obj/set! "a" a)
-                       (obj/set! "b" b)
-                       (obj/set! "c" c)
-                       (obj/set! "d" d)
-                       (obj/set! "e" e)
-                       (obj/set! "f" f)
-                       (.inverse))]
-    (gmt/matrix (obj/get dom-matrix "a")
-                (obj/get dom-matrix "b")
-                (obj/get dom-matrix "c")
-                (obj/get dom-matrix "d")
-                (obj/get dom-matrix "e")
-                (obj/get dom-matrix "f"))))
-
 (defn calculate-rect-metadata [rect-data transform]
   (let [points (-> (gsh/rect->points rect-data)
                    (gsh/transform-points transform))
@@ -203,7 +191,6 @@
             :transform shape-transform
             :transform-inverse shape-transform-inv})))
 
-(def default-rect {:x 0 :y 0 :width 1 :height 1 :rx 0 :ry 0})
 
 (defn create-rect-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (let [svg-transform (usvg/parse-transform (:transform attrs))
@@ -229,11 +216,9 @@
             (contains? attrs :ry) (assoc :ry (d/parse-double (:ry attrs))))
 
         (merge metadata)
-        #_(assoc :svg-transform transform)
         (assoc :svg-viewbox (select-keys rect [:x :y :width :height]))
         (assoc :svg-attrs (dissoc attrs :x :y :width :height :rx :ry :transform)))))
 
-(def default-circle {:r 0 :cx 0 :cy 0})
 
 (defn create-circle-shape [name frame-id svg-data {:keys [attrs] :as data}]
   (let [svg-transform (usvg/parse-transform (:transform attrs))
@@ -266,7 +251,6 @@
          :frame-id frame-id}
 
         (merge metadata)
-        #_(assoc :svg-transform transform)
         (assoc :svg-viewbox (select-keys rect [:x :y :width :height]))
         (assoc :svg-attrs (dissoc attrs :cx :cy :r :rx :ry :transform)))))
 
@@ -283,7 +267,7 @@
 
         origin (gpt/negate (gpt/point svg-data))
 
-        rect-data (-> (merge {:x 0 :y 0 :width (:width image-data) :height (:height image-data)} rect)
+        rect-data (-> (merge default-image rect)
                       (update :x - (:x origin))
                       (update :y - (:y origin)))
 
@@ -316,7 +300,6 @@
         use-tag? (and (= :use tag) (contains? defs href-id))]
 
     (if use-tag?
-      ;; TODO: If the child is a symbol we've to take the width/height into account
       (let [use-data (get defs href-id)
 
             displacement (gpt/point (d/parse-double (:x attrs "0")) (d/parse-double (:y attrs "0")))

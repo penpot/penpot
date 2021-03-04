@@ -25,7 +25,6 @@
   (let [[mtype b64-data] (str/split data-uri ";base64,")
 
         mtype (subs mtype (inc (str/index-of mtype ":")))
-        _ (prn "mtype" mtype)
 
         decoded (.atob js/window b64-data)
         size (.-length decoded)
