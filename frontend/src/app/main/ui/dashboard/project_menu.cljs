@@ -87,10 +87,12 @@
       (fn []
         (if show?
           (->> (rp/query! :teams)
+               (rx/map (fn [teams]
+                         (remove #(= (:id %) current-team-id) teams)))
                (rx/subs #(reset! teams %)))
           (reset! teams []))))
 
-    (when (seq @teams)
+    (when @teams
       [:& context-menu {:on-close on-menu-close
                         :show show?
                         :fixed? (or (not= top 0) (not= left 0))
@@ -99,9 +101,10 @@
                         :options [[(tr "labels.rename") on-edit]
                                   [(tr "dashboard.duplicate") on-duplicate]
                                   [(tr "dashboard.pin-unpin") toggle-pin]
-                                  [(tr "dashboard.move-to") nil
-                                   (for [team @teams]
-                                     [(:name team) (on-move (:id team))])]
+                                  (when (seq @teams)
+                                    [(tr "dashboard.move-to") nil
+                                     (for [team @teams]
+                                       [(:name team) (on-move (:id team))])])
                                   [:separator]
                                   [(tr "labels.delete") on-delete]]}])))
 

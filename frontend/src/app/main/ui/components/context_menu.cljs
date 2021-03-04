@@ -35,8 +35,7 @@
         fixed? (gobj/get props "fixed?" false)
 
         local (mf/use-state {:offset 0
-                             :levels [{:parent-option nil
-                                       :options options}]})
+                             :levels nil})
 
         on-local-close
         (mf/use-callback
@@ -77,7 +76,12 @@
 
         props (obj/merge props #js {:on-close on-local-close})]
 
-    (when open?
+    (mf/use-effect
+      (mf/deps options)
+      #(swap! local assoc :levels [{:parent-option nil
+                                    :options options}]))
+
+    (when (and open? (some? (:levels @local)))
       [:> dropdown' props
        [:div.context-menu {:class (classnames :is-open open?
                                               :fixed fixed?
@@ -96,18 +100,18 @@
                 parent-option]]
               [:li.separator]])
            (for [[option-name option-handler sub-options] (:options level)]
-             (if (= option-name :separator)
-               [:li.separator]
-               [:li.context-menu-item
-                {:class (classnames :is-selected (and selected
-                                                      (= option-name selected)))
-                 :key option-name}
-                (if-not sub-options
-                  [:a.context-menu-action {:on-click option-handler}
-                   option-name]
-                  [:a.context-menu-action.submenu
-                   {:data-no-close true
-                    :on-click (enter-submenu option-name sub-options)}
-                   option-name
-                   [:span i/arrow-slide]])
-                ]))])]])))
+             (when option-name
+               (if (= option-name :separator)
+                 [:li.separator]
+                 [:li.context-menu-item
+                  {:class (classnames :is-selected (and selected
+                                                        (= option-name selected)))
+                   :key option-name}
+                  (if-not sub-options
+                    [:a.context-menu-action {:on-click option-handler}
+                     option-name]
+                    [:a.context-menu-action.submenu
+                     {:data-no-close true
+                      :on-click (enter-submenu option-name sub-options)}
+                     option-name
+                     [:span i/arrow-slide]])])))])]])))

@@ -31,11 +31,13 @@
   (let [top   (or top 0)
         left  (or left 0)
 
-        current-team-id (mf/use-ctx ctx/current-team-id)
-        teams           (mf/use-state nil)
-        current-team    (get @teams current-team-id)
-        other-teams     (remove #(= (:id %) current-team-id)
+        current-team-id  (mf/use-ctx ctx/current-team-id)
+        teams            (mf/use-state nil)
+        current-team     (get @teams current-team-id)
+        other-teams      (remove #(= (:id %) current-team-id)
                                 (vals @teams))
+        current-projects (remove #(= (:id %) (:project-id file))
+                                 (:projects current-team))
 
         on-new-tab
         (mf/use-callback
@@ -154,16 +156,18 @@
                         :options [[(tr "dashboard.open-in-new-tab") on-new-tab]
                                   [(tr "labels.rename") on-edit]
                                   [(tr "dashboard.duplicate") on-duplicate]
-                                  [(tr "dashboard.move-to") nil
-                                   (conj (vec (for [project (:projects current-team)]
-                                                [(:name project) (on-move (:id current-team)
-                                                                          (:id project))]))
-                                         [(tr "dashboard.move-to-other-team") nil
-                                          (for [team other-teams]
-                                            [(:name team) nil
-                                             (for [sub-project (:projects team)]
-                                               [(:name sub-project) (on-move (:id team)
-                                                                             (:id sub-project))])])])]
+                                  (when (or (seq current-projects) (seq other-teams))
+                                    [(tr "dashboard.move-to") nil
+                                     (conj (vec (for [project current-projects]
+                                                  [(:name project) (on-move (:id current-team)
+                                                                            (:id project))]))
+                                           (when (seq other-teams)
+                                             [(tr "dashboard.move-to-other-team") nil
+                                              (for [team other-teams]
+                                                [(:name team) nil
+                                                 (for [sub-project (:projects team)]
+                                                   [(:name sub-project) (on-move (:id team)
+                                                                                 (:id sub-project))])])]))])
                                   (if (:is-shared file)
                                     [(tr "dashboard.remove-shared") on-del-shared]
                                     [(tr "dashboard.add-shared") on-add-shared])
