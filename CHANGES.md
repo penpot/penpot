@@ -4,6 +4,10 @@
 
 ### :sparkles: New features
 
+- Add more chinese translations [#726](https://github.com/penpot/penpot/pull/726)
+- Improve french translations [#731](https://github.com/penpot/penpot/pull/731)
+
+
 ### :bug: Bugs fixed
 
 ### :heart: Community contributions by (Thank you!)
