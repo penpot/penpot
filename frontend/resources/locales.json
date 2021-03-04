@@ -400,6 +400,13 @@
     },
     "used-in" : [ "src/app/main/ui/settings/profile.cljs" ]
   },
+  "dashboard.copy-suffix" : {
+    "translations" : {
+      "en" : "(copy)",
+      "es" : "(copia)"
+    },
+    "used-in" : [ "src/app/main/data/dashboard.cljs" ]
+  },
   "dashboard.create-new-team" : {
     "translations" : {
       "ca" : "+ Crear un nou equip",
@@ -440,6 +447,13 @@
       "zh_cn" : "草稿"
     },
     "used-in" : [ "src/app/main/ui/dashboard/files.cljs" ]
+  },
+  "dashboard.duplicate" : {
+    "translations" : {
+      "en" : "Duplicate",
+      "es" : "Duplicar"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "dashboard.empty-files" : {
     "translations" : {
@@ -492,6 +506,20 @@
       "zh_cn" : "正在加载文档…"
     },
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs" ]
+  },
+  "dashboard.move-to" : {
+    "translations" : {
+      "en" : "Move to",
+      "es" : "Mover a"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
+  },
+  "dashboard.move-to-other-team" : {
+    "translations" : {
+      "en" : "Move to other team",
+      "es" : "Mover a otro equipo"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "dashboard.new-file" : {
     "translations" : {
@@ -579,6 +607,13 @@
     },
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs" ]
   },
+  "dashboard.open-in-new-tab" : {
+    "translations" : {
+      "en" : "Open file in a new tab",
+      "es" : "Abrir en una pestaña nueva"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
+  },
   "dashboard.password-change" : {
     "translations" : {
       "ca" : "Canvia la contrasenya",
@@ -589,6 +624,13 @@
       "zh_cn" : "修改密码"
     },
     "used-in" : [ "src/app/main/ui/settings/password.cljs" ]
+  },
+  "dashboard.pin-unpin" : {
+    "translations" : {
+      "en" : "Pin/Unpin",
+      "es" : "Fijar/Desfijar"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/project_menu.cljs" ]
   },
   "dashboard.projects-title" : {
     "translations" : {
@@ -686,6 +728,48 @@
       "zh_cn" : "显示全部文档"
     },
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs" ]
+  },
+  "dashboard.success-delete-project" : {
+    "translations" : {
+      "en" : "Your project has been deleted successfully",
+      "es" : "Tu proyecto ha sido borrado con éxito"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/project_menu.cljs" ]
+  },
+  "dashboard.success-delete-file" : {
+    "translations" : {
+      "en" : "Your file has been deleted successfully",
+      "es" : "Tu archivo ha sido borrado con éxito"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
+  },
+  "dashboard.success-duplicate-project" : {
+    "translations" : {
+      "en" : "Your project has been duplicated successfully",
+      "es" : "Tu proyecto ha sido duplicado con éxito"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/project_menu.cljs" ]
+  },
+  "dashboard.success-duplicate-file" : {
+    "translations" : {
+      "en" : "Your file has been duplicated successfully",
+      "es" : "Tu archivo ha sido duplicado con éxito"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
+  },
+  "dashboard.success-move-project" : {
+    "translations" : {
+      "en" : "Your project has been moved successfully",
+      "es" : "Tu proyecto ha sido movido con éxito"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/project_menu.cljs" ]
+  },
+  "dashboard.success-move-file" : {
+    "translations" : {
+      "en" : "Your file has been moved successfully",
+      "es" : "Tu archivo ha sido movido con éxito"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "dashboard.switch-team" : {
     "translations" : {
@@ -964,7 +1048,7 @@
     "translations" : {
       "ca" : "Sembla que el contingut de la imatge no coincideix amb l'extensió del arxiu",
       "en" : "Seems that the contents of the image does not match the file extension.",
-      "es" : "Parece que el contenido de la imagen no coincide con la etensión del archivo.",
+      "es" : "Parece que el contenido de la imagen no coincide con la extensión del archivo.",
       "fr" : "Il semble que le contenu de l’image ne correspond pas à l’extension de fichier.",
       "ru" : "",
       "zh_cn" : "图片内容好像与文档扩展名不匹配。"

@@ -17,6 +17,7 @@
    [app.main.fonts :as fonts]
    [app.main.store :as st]
    [app.main.ui.components.context-menu :refer [context-menu]]
+   [app.main.ui.dashboard.file-menu :refer [file-menu]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.icons :as i]
    [app.main.worker :as wrk]
@@ -61,84 +62,36 @@
 (mf/defc grid-item
   {:wrap [mf/memo]}
   [{:keys [id file] :as props}]
-  (let [local    (mf/use-state {:menu-open false :edition false})
+  (let [local    (mf/use-state {:menu-open false
+                                :menu-pos nil
+                                :edition false})
         locale   (mf/deref i18n/locale)
-        on-close (mf/use-callback #(swap! local assoc :menu-open false))
+        menu-ref (mf/use-ref)
 
-        delete-fn
+        on-menu-close
         (mf/use-callback
-         (mf/deps file)
-         (st/emitf (dd/delete-file file)))
-
-        on-delete
-        (mf/use-callback
-         (mf/deps file)
-         (fn [event]
-           (dom/stop-propagation event)
-           (st/emit! (modal/show
-                      {:type :confirm
-                       :title (t locale "modals.delete-file-confirm.title")
-                       :message (t locale "modals.delete-file-confirm.message")
-                       :accept-label (t locale "modals.delete-file-confirm.accept")
-                       :on-accept delete-fn}))))
+          #(swap! local assoc :menu-open false))
 
         on-navigate
         (mf/use-callback
          (mf/deps id)
-         (fn []
-           (let [pparams {:project-id (:project-id file)
-                          :file-id (:id file)}
-                 qparams {:page-id (first (get-in file [:data :pages]))}]
-             (st/emit! (rt/nav :workspace pparams qparams)))))
-
-
-        add-shared
-        (mf/use-callback
-         (mf/deps file)
-         (st/emitf (dd/set-file-shared (assoc file :is-shared true))))
-
-        del-shared
-        (mf/use-callback
-         (mf/deps file)
-         (st/emitf (dd/set-file-shared (assoc file :is-shared false))))
-
-        on-add-shared
-        (mf/use-callback
-         (mf/deps file)
          (fn [event]
-           (dom/stop-propagation event)
-           (st/emit! (modal/show
-                      {:type :confirm
-                       :message ""
-                       :title (t locale "modals.add-shared-confirm.message" (:name file))
-                       :hint (t locale "modals.add-shared-confirm.hint")
-                       :cancel-label :omit
-                       :accept-label (t locale "modals.add-shared-confirm.accept")
-                       :accept-style :primary
-                       :on-accept add-shared}))))
-
-        on-del-shared
-        (mf/use-callback
-         (mf/deps file)
-         (fn [event]
-           (dom/prevent-default event)
-           (dom/stop-propagation event)
-           (st/emit! (modal/show
-                      {:type :confirm
-                       :message ""
-                       :title (t locale "modals.remove-shared-confirm.message" (:name file))
-                       :hint (t locale "modals.remove-shared-confirm.hint")
-                       :cancel-label :omit
-                       :accept-label (t locale "modals.remove-shared-confirm.accept")
-                       :on-accept del-shared}))))
+           (let [menu-icon (mf/ref-val menu-ref)
+                 target    (dom/get-target event)]
+             (when-not (dom/child? target menu-icon)
+               (let [pparams {:project-id (:project-id file)
+                              :file-id (:id file)}
+                     qparams {:page-id (first (get-in file [:data :pages]))}]
+                 (st/emit! (rt/nav :workspace pparams qparams)))))))
 
         on-menu-click
         (mf/use-callback
          (mf/deps file)
          (fn [event]
            (dom/prevent-default event)
-           (dom/stop-propagation event)
-           (swap! local assoc :menu-open true)))
+           (let [position (dom/get-client-position event)]
+             (swap! local assoc :menu-open true
+                                :menu-pos position))))
 
         edit
         (mf/use-callback
@@ -154,10 +107,10 @@
            (dom/stop-propagation event)
            (swap! local assoc
                   :edition true
-                  :menu-open false)))
+                  :menu-open false)))]
 
-        ]
-    [:div.grid-item.project-th {:on-click on-navigate}
+    [:div.grid-item.project-th {:on-click on-navigate
+                                :on-context-menu on-menu-click}
      [:div.overlay]
      [:& grid-item-thumbnail {:file file}]
      (when (:is-shared file)
@@ -171,15 +124,15 @@
      [:div.project-th-actions {:class (dom/classnames
                                        :force-display (:menu-open @local))}
       [:div.project-th-icon.menu
-       {:on-click on-menu-click}
-       i/actions]
-      [:& context-menu {:on-close on-close
-                        :show (:menu-open @local)
-                        :options [[(t locale "labels.rename") on-edit]
-                                  [(t locale "labels.delete") on-delete]
-                                  (if (:is-shared file)
-                                     [(t locale "dashboard.remove-shared") on-del-shared]
-                                     [(t locale "dashboard.add-shared") on-add-shared])]}]]]))
+       {:ref menu-ref
+        :on-click on-menu-click}
+       i/actions
+       [:& file-menu {:file file
+                      :show? (:menu-open @local)
+                      :left (:x (:menu-pos @local))
+                      :top (:y (:menu-pos @local))
+                      :on-edit on-edit
+                      :on-menu-close on-menu-close}]]]]))
 
 (mf/defc empty-placeholder
   []
