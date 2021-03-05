@@ -94,6 +94,10 @@
 
     .attributes-label,
     .attributes-value {
+      margin-right: 0.5rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
       width: 50%;
     }
     .copy-button {

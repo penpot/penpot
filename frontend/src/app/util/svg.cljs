@@ -63,7 +63,7 @@
   "Transforms attributes to their react equivalent"
   [attrs]
   (letfn [(transform-key [key]
-            (-> (name key)
+            (-> (d/name key)
                 (str/replace ":" "-")
                 (str/camel)
                 (keyword)))

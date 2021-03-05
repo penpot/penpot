@@ -32,7 +32,7 @@
          (fn []
            (on-delete attr)))
 
-        label (->> attr last name)]
+        label (->> attr last d/name)]
     [:div.element-set-content
      (if (string? value)
        [:div.row-flex.row-flex-removable
@@ -48,7 +48,7 @@
        [:*
         [:div.element-set-title
          {:style {:border-bottom "1px solid #444" :margin-bottom "0.5rem"}}
-         [:span (str (name (last attr)))]]
+         [:span (str (d/name (last attr)))]]
 
         (for [[key value] value]
           [:& attribute-value {:key key

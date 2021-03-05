@@ -44,7 +44,7 @@
   "Given a tag returns its layer name"
   [tag]
   (str "svg-" (cond (string? tag) tag
-                    (keyword? tag) (name tag)
+                    (keyword? tag) (d/name tag)
                     (nil? tag) "node"
                     :else (str tag))))
 

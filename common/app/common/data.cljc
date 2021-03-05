@@ -6,7 +6,7 @@
 
 (ns app.common.data
   "Data manipulation and query helper functions."
-  (:refer-clojure :exclude [concat read-string hash-map merge])
+  (:refer-clojure :exclude [concat read-string hash-map merge name])
   #?(:cljs
      (:require-macros [app.common.data]))
   (:require
@@ -359,7 +359,7 @@
     ;; Code for ClojureScript
     (let [mdata    (aapi/resolve &env v)
           arglists (second (get-in mdata [:meta :arglists]))
-          sym      (symbol (name v))
+          sym      (symbol (core/name v))
           andsym   (symbol "&")
           procarg  #(if (= % andsym) % (gensym "param"))]
       (if (pos? (count arglists))
@@ -391,3 +391,16 @@
 
 (defn any-key? [element & rest]
   (some #(contains? element %) rest))
+
+(defn name
+  "Improved version of name that won't fail if the input is not a keyword"
+  [maybe-keyword]
+  (cond
+    (keyword? maybe-keyword)
+    (core/name maybe-keyword)
+
+    (nil? maybe-keyword) nil
+
+    :else
+    (str maybe-keyword)))
+

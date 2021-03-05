@@ -11,6 +11,7 @@
   (:require
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
+   [app.common.data :as d]
    [app.util.i18n :refer [t]]
    [app.util.code-gen :as cg]
    [app.main.ui.icons :as i]
@@ -40,7 +41,7 @@
         copy-data (shadow-copy-data shadow)]
     [:div.attributes-shadow-block
      [:div.attributes-shadow-row
-      [:div.attributes-label (->> shadow :style name (str "handoff.attributes.shadow.style.") (t locale))]
+      [:div.attributes-label (->> shadow :style d/name (str "handoff.attributes.shadow.style.") (t locale))]
       [:div.attributes-shadow
        [:div.attributes-label (t locale "handoff.attributes.shadow.shorthand.offset-x")]
        [:div.attributes-value (str (:offset-x shadow))]]
