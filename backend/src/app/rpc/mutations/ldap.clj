@@ -16,9 +16,7 @@
    [app.util.services :as sv]
    [clj-ldap.client :as ldap]
    [clojure.spec.alpha :as s]
-   [clojure.string]
-   [clojure.tools.logging :as log]))
-
+   [clojure.string]))
 
 (defn ^java.lang.AutoCloseable connect
   []
