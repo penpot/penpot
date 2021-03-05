@@ -5,16 +5,14 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.util.time
   (:require
    [app.common.exceptions :as ex]
-   [clojure.spec.alpha :as s]
-   [cognitect.transit :as t])
+   [clojure.spec.alpha :as s])
   (:import
    java.time.Instant
-   java.time.OffsetDateTime
    java.time.Duration
    java.util.Date
    java.time.temporal.TemporalAmount
@@ -250,30 +248,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Serialization
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(declare from-string)
-
-(def ^:private instant-write-handler
-  (t/write-handler
-   (constantly "m")
-   (fn [v] (str (.toEpochMilli ^Instant v)))))
-
-(def ^:private offset-datetime-write-handler
-  (t/write-handler
-   (constantly "m")
-   (fn [v] (str (.toEpochMilli (.toInstant ^OffsetDateTime v))))))
-
-(def ^:private read-handler
-  (t/read-handler
-   (fn [v] (-> (Long/parseLong v)
-               (Instant/ofEpochMilli)))))
-
-(def +read-handlers+
-  {"m" read-handler})
-
-(def +write-handlers+
-  {Instant instant-write-handler
-   OffsetDateTime offset-datetime-write-handler})
 
 (defmethod print-method Instant
   [mv ^java.io.Writer writer]
