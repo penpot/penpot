@@ -5,49 +5,51 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) 2015-2021 Andrey Antukh <niwi@niwi.nz>
 
 (ns app.util.time
   (:require
-   ["date-fns/format" :default df-format]
-   ["date-fns/formatDistanceToNow" :default df-format-distance]
-   ["date-fns/formatDistanceToNowStrict" :default df-format-distance-strict]
-   ["date-fns/locale/fr" :default df-fr-locale]
-   ["date-fns/locale/en-US" :default df-en-locale]
-   ["date-fns/locale/es" :default df-es-locale]
-   ["date-fns/locale/ru" :default df-ru-locale]
-   [goog.object :as gobj]))
-
+   ["date-fns/parseISO" :as dateFnsParseISO]
+   ["date-fns/formatISO" :as dateFnsFormatISO]
+   ["date-fns/format" :as dateFnsFormat]
+   ["date-fns/formatDistanceToNowStrict" :as dateFnsFormatDistanceToNowStrict]
+   ["date-fns/locale/fr" :as dateFnsLocalesFr]
+   ["date-fns/locale/en-US" :as dateFnsLocalesEnUs]
+   ["date-fns/locale/zh-CN" :as dateFnsLocalesZhCn]
+   ["date-fns/locale/es" :as dateFnsLocalesEs]
+   ["date-fns/locale/ru" :as dateFnsLocalesRu]
+   [app.util.object :as obj]))
 
 (def ^:private locales
-  #js {:default df-en-locale
-       :en df-en-locale
-       :en_US df-en-locale
-       :fr df-fr-locale
-       :fr_FR df-fr-locale
-       :es df-es-locale
-       :es_ES df-es-locale
-       :ru df-ru-locale
-       :ru_RU df-ru-locale})
+  #js {:en dateFnsLocalesEnUs
+       :fr dateFnsLocalesFr
+       :es dateFnsLocalesEs
+       :ru dateFnsLocalesRu
+       :zh_cn dateFnsLocalesZhCn})
 
 (defn now
   "Return the current Instant."
   []
   (js/Date.))
 
+(defn parse
+  [v]
+  (^js dateFnsParseISO v))
+
+(defn format-iso
+  [v]
+  (^js dateFnsFormatISO v))
+
 (defn format
   ([v fmt] (format v fmt nil))
-  ([v fmt {:keys [locale]
-           :or {locale "default"}}]
-   (df-format v fmt #js {:locale (gobj/get locales locale)})))
+  ([v fmt {:keys [locale] :or {locale "en"}}]
+   (dateFnsFormat v fmt #js {:locale (obj/get locales locale)})))
 
 (defn timeago
   ([v] (timeago v nil))
-  ([v {:keys [seconds? locale]
-       :or {seconds? true
-            locale "default"}}]
+  ([v {:keys [locale] :or {locale "en"}}]
    (when v
-     (df-format-distance-strict v
-                         #js {:includeSeconds seconds?
-                              :addSuffix true
-                              :locale (gobj/get locales locale)}))))
+     (->> #js {:includeSeconds true
+               :addSuffix true
+               :locale (obj/get locales locale)}
+          (dateFnsFormatDistanceToNowStrict v)))))
