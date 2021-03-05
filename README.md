@@ -9,7 +9,10 @@
 
 # PENPOT #
 
-The open-source solution for design and prototyping. 
+Penpot is the first Open Source design and prototyping platform meant
+for cross-domain teams. Non dependent on operating systems, Penpot is
+web based and works with open web standards (SVG). For all and
+empowered by the community.
 
 ![PENPOT](https://penpot.app/images/workspace-ui.jpg)
 
