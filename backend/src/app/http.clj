@@ -128,7 +128,8 @@
     ["/webhooks"
      ["/sns" {:post (:sns-webhook cfg)}]]
 
-    ["/api" {:middleware [[middleware/format-response-body]
+    ["/api" {:middleware [[middleware/etag]
+                          [middleware/format-response-body]
                           [middleware/params]
                           [middleware/multipart-params]
                           [middleware/keyword-params]
