@@ -711,6 +711,7 @@
     width: 5.5rem;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
@@ -912,6 +913,7 @@
 
 }
 
+.row-flex-removable:hover .element-set-actions,
 .element-set-options-group:hover .element-set-actions {
     visibility: visible;
 }
