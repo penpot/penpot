@@ -19,20 +19,22 @@
    [clojure.string]
    [clojure.tools.logging :as log]))
 
-(def cpool
-  (delay
-    (let [params {:ssl?      (cfg/get :ldap-ssl)
-                  :startTLS? (cfg/get :ldap-starttls)
-                  :bind-dn   (cfg/get :ldap-bind-dn)
-                  :password  (cfg/get :ldap-bind-password)
-                  :host      {:address (cfg/get :ldap-host)
-                              :port    (cfg/get :ldap-port)}}]
-      (try
-        (ldap/connect params)
-        (catch Exception e
-          (log/errorf e "cannot connect to LDAP %s:%s"
-                      (get-in params [:host :address])
-                      (get-in params [:host :port])))))))
+
+(defn ^java.lang.AutoCloseable connect
+  []
+  (let [params {:ssl?      (cfg/get :ldap-ssl)
+                :startTLS? (cfg/get :ldap-starttls)
+                :bind-dn   (cfg/get :ldap-bind-dn)
+                :password  (cfg/get :ldap-bind-password)
+                :host      {:address (cfg/get :ldap-host)
+                            :port    (cfg/get :ldap-port)}}]
+    (try
+      (#'ldap/create-connection params)
+      (catch Exception e
+        (ex/raise :type :restriction
+                  :code :ldap-disabled
+                  :hint "ldap disabled or unable to connect"
+                  :cause e)))))
 
 ;; --- Mutation: login-with-ldap
 
@@ -48,12 +50,7 @@
 
 (sv/defmethod ::login-with-ldap {:auth false :rlimit :password}
   [{:keys [pool session tokens] :as cfg} {:keys [email password invitation-token] :as params}]
-  (when-not @cpool
-    (ex/raise :type :restriction
-              :code :ldap-disabled
-              :hint "ldap disabled or unable to connect"))
-
-  (let [info (authenticate @cpool params)
+  (let [info (authenticate params)
         cfg  (assoc cfg :conn pool)]
     (when-not info
       (ex/raise :type :validation
@@ -96,10 +93,11 @@
     (first (ldap/search cpool base-dn params))))
 
 (defn- authenticate
-  [cpool {:keys [password] :as params}]
-  (when-let [{:keys [dn] :as luser} (get-ldap-user cpool params)]
-    (when (ldap/bind? cpool dn password)
-      {:photo    (get luser (keyword (cfg/get :ldap-attrs-photo)))
-       :fullname (get luser (keyword (cfg/get :ldap-attrs-fullname)))
-       :email    (get luser (keyword (cfg/get :ldap-attrs-email)))
-       :backend  "ldap"})))
+  [{:keys [password] :as params}]
+  (with-open [conn (connect)]
+    (when-let [{:keys [dn] :as luser} (get-ldap-user conn params)]
+      (when (ldap/bind? conn dn password)
+        {:photo    (get luser (keyword (cfg/get :ldap-attrs-photo)))
+         :fullname (get luser (keyword (cfg/get :ldap-attrs-fullname)))
+         :email    (get luser (keyword (cfg/get :ldap-attrs-email)))
+         :backend  "ldap"}))))
