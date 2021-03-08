@@ -11,6 +11,9 @@
 
 ### :bug: Bugs fixed
 
+- Fix broken profile and profile options form.
+
+
 ### :heart: Community contributions by (Thank you!)
 
 
