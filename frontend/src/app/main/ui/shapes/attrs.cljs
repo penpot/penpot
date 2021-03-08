@@ -11,6 +11,7 @@
   (:require
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
+   [app.common.data :as d]
    [app.util.object :as obj]
    [app.main.ui.context :as muc]
    [app.util.svg :as usvg]))
@@ -121,15 +122,12 @@
       attrs)))
 
 (defn add-layer-props [attrs shape]
-  (let [layer-attrs
-        (cond-> {}
-          (:opacity shape)
-          (assoc :opacity (:opacity shape))
+  (cond-> attrs
+    (:opacity shape)
+    (obj/set! "opacity" (:opacity shape))
 
-          (and (:blend-mode shape) (not= (:blend-mode shape) :normal))
-          (assoc :mixBlendMode (:blend-mode shape)))]
-
-    (obj/merge! attrs (clj->js layer-attrs))))
+    (and (:blend-mode shape) (not= (:blend-mode shape) :normal))
+    (obj/set! "mixBlendMode" (d/name (:blend-mode shape)))))
 
 (defn extract-svg-attrs
   [render-id svg-defs svg-attrs]
