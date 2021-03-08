@@ -28,8 +28,10 @@
 
 (declare decode-v1)
 (declare decode-v2)
+(declare decode-v3)
 (declare encode-v1)
 (declare encode-v2)
+(declare encode-v3)
 
 (def default-version
   (:default-blob-version cfg/config 1))
@@ -40,6 +42,7 @@
    (case  (long version)
      1 (encode-v1 data)
      2 (encode-v2 data)
+     3 (encode-v3 data)
      (throw (ex-info "unsupported version" {:version version})))))
 
 (defn decode
@@ -52,6 +55,7 @@
       (case version
         1 (decode-v1 data ulen)
         2 (decode-v2 data ulen)
+        3 (decode-v3 data ulen)
         (throw (ex-info "unsupported version" {:version version}))))))
 
 ;; --- IMPL
@@ -100,3 +104,26 @@
     (Zstd/decompressByteArray ^bytes udata 0 ulen
                               ^bytes cdata 6 (- (alength cdata) 6))
     (n/fast-thaw udata)))
+
+(defn- encode-v3
+  [data]
+  (let [data  (t/encode data {:type :json})
+        dlen  (alength ^bytes data)
+        mlen  (Zstd/compressBound dlen)
+        cdata (byte-array mlen)
+        clen  (Zstd/compressByteArray ^bytes cdata 0 mlen
+                                      ^bytes data 0 dlen
+                                      4)]
+    (with-open [^ByteArrayOutputStream baos (ByteArrayOutputStream. (+ (alength cdata) 2 4))
+                ^DataOutputStream dos (DataOutputStream. baos)]
+      (.writeShort dos (short 3)) ;; version number
+      (.writeInt dos (int dlen))
+      (.write dos ^bytes cdata (int 0) clen)
+      (.toByteArray baos))))
+
+(defn- decode-v3
+  [^bytes cdata ^long ulen]
+  (let [udata (byte-array ulen)]
+    (Zstd/decompressByteArray ^bytes udata 0 ulen
+                              ^bytes cdata 6 (- (alength cdata) 6))
+    (t/decode udata {:type :json})))
