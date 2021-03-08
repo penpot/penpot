@@ -7,24 +7,26 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.workspace.sidebar.options.multiple
+(ns app.main.ui.workspace.sidebar.options.shapes.multiple
   (:require
    [app.common.data :as d]
    [rumext.alpha :as mf]
    [app.common.attrs :as attrs]
    [app.util.text :as ut]
-   [app.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
-   [app.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
-   [app.main.ui.workspace.sidebar.options.shadow :refer [shadow-attrs shadow-menu]]
-   [app.main.ui.workspace.sidebar.options.blur :refer [blur-attrs blur-menu]]
-   [app.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]
-   [app.main.ui.workspace.sidebar.options.text :as ot]))
+   [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-attrs shadow-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.text :as ot]
+   [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]))
 
 ;; We define a map that goes from type to
 ;; attribute and how to handle them
 (def type->props
   {:frame
    {:measure :shape
+    :layer   :shape
     :fill    :shape
     :shadow  :children
     :blur    :children
@@ -33,6 +35,7 @@
 
    :group
    {:measure :shape
+    :layer   :shape
     :fill    :children
     :shadow  :shape
     :blur    :shape
@@ -41,6 +44,7 @@
 
    :path
    {:measure :shape
+    :layer   :shape
     :fill    :shape
     :shadow  :shape
     :blur    :shape
@@ -49,6 +53,7 @@
 
    :text
    {:measure :shape
+    :layer   :shape
     :fill    :text
     :shadow  :shape
     :blur    :shape
@@ -57,6 +62,7 @@
 
    :image
    {:measure :shape
+    :layer   :shape
     :fill    :ignore
     :shadow  :shape
     :blur    :shape
@@ -65,6 +71,7 @@
 
    :rect
    {:measure :shape
+    :layer   :shape
     :fill    :shape
     :shadow  :shape
     :blur    :shape
@@ -73,6 +80,7 @@
 
    :circle
    {:measure :shape
+    :layer   :shape
     :fill    :shape
     :shadow  :shape
     :blur    :shape
@@ -81,6 +89,7 @@
 
    :svg-raw
    {:measure :shape
+    :layer   :shape
     :fill    :shape
     :shadow  :shape
     :blur    :shape
@@ -89,6 +98,7 @@
 
 (def props->attrs
   {:measure measure-attrs
+   :layer   layer-attrs
    :fill    fill-attrs
    :shadow  shadow-attrs
    :blur    blur-attrs
@@ -169,6 +179,7 @@
 
         type :multiple
         [measure-ids measure-values] (get-attrs shapes objects :measure)
+        [layer-ids   layer-values]   (get-attrs shapes objects :layer)
         [fill-ids    fill-values]    (get-attrs shapes objects :fill)
         [shadow-ids  shadow-values]  (get-attrs shapes objects :shadow)
         [blur-ids    blur-values]    (get-attrs shapes objects :blur)
@@ -178,6 +189,9 @@
     [:div.options
      (when-not (empty? measure-ids)
        [:& measures-menu {:type type :ids measure-ids :values measure-values}])
+
+     (when-not (empty? layer-ids)
+       [:& layer-menu {:type type :ids layer-ids :values layer-values}])
 
      (when-not (empty? fill-ids)
        [:& fill-menu {:type type :ids fill-ids :values fill-values}])

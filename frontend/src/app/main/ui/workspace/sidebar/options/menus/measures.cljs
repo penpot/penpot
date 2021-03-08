@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.workspace.sidebar.options.measures
+(ns app.main.ui.workspace.sidebar.options.menus.measures
   (:require
    [rumext.alpha :as mf]
    [app.main.ui.icons :as i]

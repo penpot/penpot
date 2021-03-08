@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.workspace.sidebar.options.stroke
+(ns app.main.ui.workspace.sidebar.options.menus.stroke
   (:require
    [cuerdas.core :as str]
    [rumext.alpha :as mf]

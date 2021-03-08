@@ -7,22 +7,27 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.workspace.sidebar.options.image
+(ns app.main.ui.workspace.sidebar.options.shapes.image
   (:require
    [rumext.alpha :as mf]
-   [app.main.ui.workspace.sidebar.options.measures :refer [measure-attrs measures-menu]]
-   [app.main.ui.workspace.sidebar.options.shadow :refer [shadow-menu]]
-   [app.main.ui.workspace.sidebar.options.blur :refer [blur-menu]]))
+   [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]))
 
 (mf/defc options
   [{:keys [shape] :as props}]
   (let [ids [(:id shape)]
         type (:type shape)
-        measure-values (select-keys shape measure-attrs)]
+        measure-values (select-keys shape measure-attrs)
+        layer-values (select-keys shape layer-attrs)]
     [:*
      [:& measures-menu {:ids ids
                         :type type
                         :values measure-values}]
+     [:& layer-menu {:ids ids
+                     :type type
+                     :values layer-values}]
      [:& shadow-menu {:ids ids
                       :values (select-keys shape [:shadow])}]
 

@@ -8,7 +8,7 @@
 ;; Copyright (c) 2015-2020 Andrey Antukh <niwi@niwi.nz>
 ;; Copyright (c) 2015-2020 Juan de la Cruz <delacruzgarciajuan@gmail.com>
 
-(ns app.main.ui.workspace.sidebar.options.frame
+(ns app.main.ui.workspace.sidebar.options.shapes.frame
   (:require
    [rumext.alpha :as mf]
    [app.common.data :as d]
@@ -21,11 +21,12 @@
    [app.main.ui.icons :as i]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.numeric-input :refer [numeric-input]]
-   [app.main.ui.workspace.sidebar.options.fill :refer [fill-attrs fill-menu]]
-   [app.main.ui.workspace.sidebar.options.stroke :refer [stroke-attrs stroke-menu]]
-   [app.main.ui.workspace.sidebar.options.frame-grid :refer [frame-grid]]
-   [app.main.ui.workspace.sidebar.options.shadow :refer [shadow-menu]]
-   [app.main.ui.workspace.sidebar.options.blur :refer [blur-menu]]))
+   [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid]]
+   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]))
 
 (declare +size-presets+)
 
@@ -299,9 +300,13 @@
   [{:keys [shape] :as props}]
   (let [ids [(:id shape)]
         type (:type shape)
-        stroke-values (select-keys shape stroke-attrs)]
+        stroke-values (select-keys shape stroke-attrs)
+        layer-values (select-keys shape layer-attrs)]
     [:*
      [:& measures-menu {:shape shape}]
+     [:& layer-menu {:ids ids
+                     :type type
+                     :values layer-values}]
      [:& fill-menu {:ids ids
                     :type type
                     :values (select-keys shape fill-attrs)}]
