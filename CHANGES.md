@@ -5,6 +5,7 @@
 ### :sparkles: New features
 
 - Add more chinese translations [#726](https://github.com/penpot/penpot/pull/726)
+- Add blob-encoding v3 (uses ZSTD+transit) [#738](https://github.com/penpot/penpot/pull/738)
 - Duplicate and move files and projects [Taiga #267](https://tree.taiga.io/project/penpot/us/267)
 - Import SVG will create Penpot's shapes
 - Improve french translations [#731](https://github.com/penpot/penpot/pull/731)
