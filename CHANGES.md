@@ -9,6 +9,7 @@
 - Duplicate and move files and projects [Taiga #267](https://tree.taiga.io/project/penpot/us/267)
 - Import SVG will create Penpot's shapes
 - Improve french translations [#731](https://github.com/penpot/penpot/pull/731)
+- Add layer opacity and blend mode to shapes
 
 ### :bug: Bugs fixed
 
