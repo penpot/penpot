@@ -170,7 +170,7 @@
   (let [input-name (get props :name)
 
         form      (or form (mf/use-ctx form-ctx))
-        value     (get-in @form [:data input-name] default)
+        value     (or (get-in @form [:data input-name]) default)
         cvalue    (d/seek #(= value (:value %)) options)
         on-change (fm/on-input-change form input-name)]
 
