@@ -11,6 +11,7 @@
   (:require
    [rumext.alpha :as mf]
    [cuerdas.core :as str]
+   [app.common.data :as d]
    [app.util.object :as obj]
    [app.main.ui.context :as muc]
    [app.util.svg :as usvg]))
@@ -86,7 +87,7 @@
                      ;; If contains svg-attrs the origin is svg. If it's not svg origin
                      ;; we setup the default fill as transparent (instead of black)
                      (and (not (contains? shape :svg-attrs))
-                          (not (= :svg-raw (:type shape))))
+                          (not (#{ :svg-raw :group } (:type shape))))
                      {:fill "transparent"}
 
                      :else
@@ -120,6 +121,14 @@
         (obj/merge! attrs (clj->js stroke-attrs)))
       attrs)))
 
+(defn add-layer-props [attrs shape]
+  (cond-> attrs
+    (:opacity shape)
+    (obj/set! "opacity" (:opacity shape))
+
+    (and (:blend-mode shape) (not= (:blend-mode shape) :normal))
+    (obj/set! "mixBlendMode" (d/name (:blend-mode shape)))))
+
 (defn extract-svg-attrs
   [render-id svg-defs svg-attrs]
   (let [replace-id (fn [id]
@@ -147,7 +156,8 @@
          styles (-> (obj/new)
                     (obj/merge! svg-styles)
                     (add-fill shape render-id)
-                    (add-stroke shape render-id))]
+                    (add-stroke shape render-id)
+                    (add-layer-props shape))]
 
      (-> (obj/new)
          (obj/merge! svg-attrs)

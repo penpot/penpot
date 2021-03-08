@@ -910,14 +910,16 @@
 .element-set-actions {
     display: flex;
     visibility: hidden;
-
 }
 
 .row-flex-removable:hover .element-set-actions,
 .element-set-options-group:hover .element-set-actions {
-    visibility: visible;
+  visibility: visible;
 }
 
+.layer-actions {
+  visibility: visible;
+}
 
 .typography-entry {
     margin: 0.5rem 0.3rem;

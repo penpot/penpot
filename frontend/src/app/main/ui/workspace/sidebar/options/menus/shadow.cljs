@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.workspace.sidebar.options.shadow
+(ns app.main.ui.workspace.sidebar.options.menus.shadow
   (:require
    [rumext.alpha :as mf]
    [app.common.data :as d]

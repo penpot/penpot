@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.workspace.sidebar.options.exports
+(ns app.main.ui.workspace.sidebar.options.menus.exports
   (:require
    [cuerdas.core :as str]
    [beicon.core :as rx]

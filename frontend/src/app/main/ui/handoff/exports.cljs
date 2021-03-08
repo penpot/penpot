@@ -18,7 +18,7 @@
    [app.util.dom :as dom]
    [app.main.store :as st]
    [app.main.data.messages :as dm]
-   [app.main.ui.workspace.sidebar.options.exports :as we]))
+   [app.main.ui.workspace.sidebar.options.menus.exports :as we]))
 
 (mf/defc exports
   [{:keys [shape page-id file-id] :as props}]

@@ -96,6 +96,25 @@
       (merge {:stroke-style :svg} shape)
       shape)))
 
+(defn setup-opacity [shape]
+  (cond-> shape
+    (get-in shape [:svg-attrs :opacity])
+    (-> (update :svg-attrs dissoc :opacity)
+        (assoc :opacity (get-in shape [:svg-attrs :opacity])))
+
+    (get-in shape [:svg-attrs :style :opacity])
+    (-> (update-in [:svg-attrs :style] dissoc :opacity)
+        (assoc :opacity (get-in shape [:svg-attrs :style :opacity])))
+
+
+    (get-in shape [:svg-attrs :mix-blend-mode])
+    (-> (update :svg-attrs dissoc :mix-blend-mode)
+        (assoc :blend-mode (-> (get-in shape [:svg-attrs :mix-blend-mode]) keyword)))
+
+    (get-in shape [:svg-attrs :style :mix-blend-mode])
+    (-> (update-in [:svg-attrs :style] dissoc :mix-blend-mode)
+        (assoc :blend-mode (-> (get-in shape [:svg-attrs :style :mix-blend-mode]) keyword)))))
+
 (defn create-raw-svg [name frame-id svg-data {:keys [attrs] :as data}]
   (let [{:keys [x y width height offset-x offset-y]} svg-data]
     (-> {:id (uuid/next)

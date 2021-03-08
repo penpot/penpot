@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.workspace.sidebar.options.svg-attrs
+(ns app.main.ui.workspace.sidebar.options.menus.svg-attrs
   (:require
    [cuerdas.core :as str]
    [app.common.data :as d]

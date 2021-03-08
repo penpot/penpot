@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.workspace.sidebar.options.interactions
+(ns app.main.ui.workspace.sidebar.options.menus.interactions
   (:require
    [rumext.alpha :as mf]
    [app.common.data :as d]

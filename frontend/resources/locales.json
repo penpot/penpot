@@ -5545,5 +5545,140 @@
       "zh_cn" : "居中"
     },
     "permanent": true
+  },
+
+  "workspace.options.layer-options.blend-mode.color" : {
+    "translations" : {
+      "en" : "Color",
+      "es" : "Color"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+
+  "workspace.options.layer-options.blend-mode.color-burn" : {
+    "translations" : {
+      "en" : "Color burn",
+      "es" : "Color más oscuro"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.color-dodge" : {
+    "translations" : {
+      "en" : "Color dodge",
+      "es" : "Color más suave"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.darken" : {
+    "translations" : {
+      "en" : "Darken",
+      "es" : "Oscurecer"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.difference" : {
+    "translations" : {
+      "en" : "Difference",
+      "es" : "Diferencia"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.exclusion" : {
+    "translations" : {
+      "en" : "Exclusion",
+      "en" : "Exclusión"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.hard-light" : {
+    "translations" : {
+      "en" : "Hard light",
+      "es" : "Luz fuerte"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.hue" : {
+    "translations" : {
+      "en" : "Hue",
+      "es" : "Tono"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.lighten" : {
+    "translations" : {
+      "en" : "Lighten",
+      "es" : "Aclarar"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.luminosity" : {
+    "translations" : {
+      "en" : "Luminosity",
+      "es" : "Luminosidad"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.multiply" : {
+    "translations" : {
+      "en" : "Multiply",
+      "es" : "Multiplicar"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.normal" : {
+    "translations" : {
+      "en" : "Normal",
+      "es" : "Normal"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.overlay" : {
+    "translations" : {
+      "en" : "Overlay",
+      "en" : "Superponer"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.saturation" : {
+    "translations" : {
+      "en" : "Saturation",
+      "es" : "Saturación"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.screen" : {
+    "translations" : {
+      "en" : "Screen",
+      "en" : "Trama"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.soft-light" : {
+    "translations" : {
+      "en" : "Soft light",
+      "es" : "Luz suave"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.title" : {
+    "translations" : {
+      "en" : "Layer",
+      "es" : "Capa"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.title.group" : {
+    "translations" : {
+      "en" : "Group layers",
+      "es" : "Capas de grupo"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.title.multiple" : {
+    "translations" : {
+      "en" : "Selected layers",
+      "es" : "Capas seleccionadas"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
   }
 }
