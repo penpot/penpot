@@ -4,12 +4,14 @@
 
 ### :sparkles: New features
 
-- Add more chinese translations [#726](https://github.com/penpot/penpot/pull/726)
 - Add blob-encoding v3 (uses ZSTD+transit) [#738](https://github.com/penpot/penpot/pull/738)
+- Add http caching layer on top of Query RPC.
+- Add layer opacity and blend mode to shapes
+- Add more chinese translations [#726](https://github.com/penpot/penpot/pull/726)
+- Add thumbnail in memory caching mechanism.
 - Duplicate and move files and projects [Taiga #267](https://tree.taiga.io/project/penpot/us/267)
 - Import SVG will create Penpot's shapes
 - Improve french translations [#731](https://github.com/penpot/penpot/pull/731)
-- Add layer opacity and blend mode to shapes
 
 ### :bug: Bugs fixed
 
