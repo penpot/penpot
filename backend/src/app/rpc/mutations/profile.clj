@@ -333,7 +333,8 @@
               {:id id}))
 
 (s/def ::update-profile
-  (s/keys :req-un [::id ::fullname ::lang ::theme]))
+  (s/keys :req-un [::id ::fullname]
+          :opt-un [::lang ::theme]))
 
 (sv/defmethod ::update-profile
   [{:keys [pool] :as cfg} params]
