@@ -77,6 +77,8 @@
                       :team-id (:default-team-id profile)
                       :name (:project-name data)}]
 
+         (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
+
          (create-project conn project)
          (create-project-role conn {:project-id (:id project)
                                     :profile-id (:id profile)

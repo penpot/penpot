@@ -163,6 +163,9 @@
 
    {:name "0050-mod-server-prop-table"
     :fn (mg/resource "app/migrations/sql/0050-mod-server-prop-table.sql")}
+
+   {:name "0051-mod-file-library-rel-table"
+    :fn (mg/resource "app/migrations/sql/0051-mod-file-library-rel-table.sql")}
    ])
 
 
