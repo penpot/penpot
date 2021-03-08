@@ -9,15 +9,14 @@
 
 (ns app.main.ui.components.forms
   (:require
-   [rumext.alpha :as mf]
-   [cuerdas.core :as str]
    [app.common.data :as d]
    [app.main.ui.icons :as i]
-   [app.util.object :as obj]
+   [app.util.dom :as dom]
    [app.util.forms :as fm]
-   [app.util.i18n :as i18n :refer [t tr]]
-   ["react" :as react]
-   [app.util.dom :as dom]))
+   [app.util.i18n :as i18n :refer [tr]]
+   [app.util.object :as obj]
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
 (def form-ctx (mf/create-context nil))
 (def use-form fm/use-form)
@@ -32,6 +31,7 @@
 
         type'        (mf/use-state input-type)
         focus?       (mf/use-state false)
+
         is-checkbox? (= @type' "checkbox")
         is-radio?    (= @type' "radio")
         is-text?     (or (= @type' "password")
@@ -64,8 +64,8 @@
                      :empty          (and is-text? (str/empty? value))
                      :with-icon      (not (nil? help-icon'))
                      :custom-input   is-text?
-                     :input-radio    (= @type' "radio")
-                     :input-checkbox (= @type' "checkbox")))
+                     :input-radio    is-radio?
+                     :input-checkbox is-checkbox?))
 
         swap-text-password
         (fn []
@@ -78,7 +78,7 @@
         on-change (fm/on-input-change form input-name trim)
 
         on-blur
-        (fn [event]
+        (fn [_]
           (reset! focus? false)
           (when-not (get-in @form [:touched input-name])
             (swap! form assoc-in [:touched input-name] true)))
@@ -138,7 +138,7 @@
         on-change (fm/on-input-change form input-name trim)
 
         on-blur
-        (fn [event]
+        (fn [_]
           (reset! focus? false)
           (when-not (get-in @form [:touched input-name])
             (swap! form assoc-in [:touched input-name] true)))
