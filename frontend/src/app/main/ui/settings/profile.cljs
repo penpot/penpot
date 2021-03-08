@@ -31,23 +31,17 @@
 (s/def ::email ::us/email)
 
 (s/def ::profile-form
-  (s/keys :req-un [::fullname ::lang ::theme ::email]))
+  (s/keys :req-un [::fullname ::email]))
 
 (defn- on-success
   [form]
   (st/emit! (dm/success (tr "notifications.profile-saved"))))
 
-(defn- on-error
-  [form error]
-  (st/emit! (dm/error (tr "errors.generic"))))
-
 (defn- on-submit
   [form event]
   (let [data  (:clean-data @form)
-        mdata {:on-success (partial on-success form)
-               :on-error (partial on-error form)}]
+        mdata {:on-success (partial on-success form)}]
     (st/emit! (du/update-profile (with-meta data mdata)))))
-
 
 ;; --- Profile Form
 

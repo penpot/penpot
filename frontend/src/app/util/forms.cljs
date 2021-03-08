@@ -89,7 +89,6 @@
       (mf/set-ref-val! state-ref new-value)
       (render inc))
 
-
     ISwap
     (-swap! [self f]
       (let [f (wrap-update-fn f opts)]
@@ -119,7 +118,10 @@
   ([form field trim?]
   (fn [event]
     (let [target (dom/get-target event)
-          value  (dom/get-value target)]
+          value  (if (or (= (.-type target) "checkbox")
+                         (= (.-type target) "radio"))
+                   (.-checked target)
+                   (dom/get-value target))]
       (swap! form (fn [state]
                     (-> state
                         (assoc-in [:data field] (if trim? (str/trim value) value))
