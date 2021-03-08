@@ -5,6 +5,7 @@
 ### :sparkles: New features
 
 - Add more chinese translations [#726](https://github.com/penpot/penpot/pull/726)
+- Duplicate and move files and projects [Taiga #267](https://tree.taiga.io/project/penpot/us/267)
 - Improve french translations [#731](https://github.com/penpot/penpot/pull/731)
 
 
