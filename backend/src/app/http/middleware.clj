@@ -12,6 +12,8 @@
    [app.metrics :as mtx]
    [app.util.json :as json]
    [app.util.transit :as t]
+   [buddy.core.codecs :as bc]
+   [buddy.core.hash :as bh]
    [clojure.java.io :as io]
    [ring.middleware.cookies :refer [wrap-cookies]]
    [ring.middleware.keyword-params :refer [wrap-keyword-params]]
@@ -119,8 +121,6 @@
    :wrap (fn [handler]
            (mtx/wrap-counter handler {:id "http__requests_counter"
                                       :help "Absolute http requests counter."}))})
-
-
 (def cookies
   {:name ::cookies
    :compile (constantly wrap-cookies)})
@@ -140,3 +140,28 @@
 (def server-timing
   {:name ::server-timing
    :compile (constantly wrap-server-timing)})
+
+(defn wrap-etag
+  [handler]
+  (letfn [(generate-etag [{:keys [body] :as response}]
+            (str "W/\"" (-> body bh/blake2b-128 bc/bytes->hex) "\""))
+          (get-match [{:keys [headers] :as request}]
+            (get headers "if-none-match"))]
+    (fn [request]
+      (let [response (handler request)]
+        (if (= :get (:request-method request))
+          (let [etag     (generate-etag response)
+                match    (get-match request)
+                response (update response :headers #(assoc % "ETag" etag))]
+            (cond-> response
+              (and (string? match)
+                   (= :get (:request-method request))
+                   (= etag match))
+              (-> response
+                  (assoc :body "")
+                  (assoc :status 304))))
+          response)))))
+
+(def etag
+  {:name ::etag
+   :compile (constantly wrap-etag)})

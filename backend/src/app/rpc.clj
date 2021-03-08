@@ -41,7 +41,8 @@
         mdata  (meta result)]
 
     (cond->> {:status 200 :body result}
-      (fn? (:transform-response mdata)) ((:transform-response mdata) request))))
+      (fn? (:transform-response mdata))
+      ((:transform-response mdata) request))))
 
 (defn- rpc-mutation-handler
   [methods {:keys [profile-id] :as request}]

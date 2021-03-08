@@ -166,7 +166,6 @@
     (let [file (retrieve-file conn file-id)]
       (get-in file [:data :pages-index id]))))
 
-
 ;; --- Query: Shared Library Files
 
 (def ^:private sql:shared-files

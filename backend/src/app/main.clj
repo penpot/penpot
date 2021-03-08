@@ -58,7 +58,9 @@
     {}
 
     :app.msgbus/msgbus
-    {:uri (:redis-uri config)}
+    {:backend   (:msgbus-backend config :redis)
+     :pool      (ig/ref :app.db/pool)
+     :redis-uri (:redis-uri config)}
 
     :app.tokens/tokens
     {:sprops (ig/ref :app.setup/props)}
