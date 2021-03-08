@@ -394,13 +394,15 @@
 
 (defn name
   "Improved version of name that won't fail if the input is not a keyword"
-  [maybe-keyword]
-  (cond
-    (keyword? maybe-keyword)
-    (core/name maybe-keyword)
+  ([maybe-keyword] (name maybe-keyword nil))
+  ([maybe-keyword default-value]
+   (cond
+     (keyword? maybe-keyword)
+     (core/name maybe-keyword)
 
-    (nil? maybe-keyword) nil
+     (nil? maybe-keyword) default-value
 
-    :else
-    (str maybe-keyword)))
+     :else
+     (or default-value
+         (str maybe-keyword)))))
 

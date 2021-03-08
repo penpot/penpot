@@ -120,6 +120,17 @@
         (obj/merge! attrs (clj->js stroke-attrs)))
       attrs)))
 
+(defn add-layer-props [attrs shape]
+  (let [layer-attrs
+        (cond-> {}
+          (:opacity shape)
+          (assoc :opacity (:opacity shape))
+
+          (and (:blend-mode shape) (not= (:blend-mode shape) :normal))
+          (assoc :mixBlendMode (:blend-mode shape)))]
+
+    (obj/merge! attrs (clj->js layer-attrs))))
+
 (defn extract-svg-attrs
   [render-id svg-defs svg-attrs]
   (let [replace-id (fn [id]
@@ -147,7 +158,8 @@
          styles (-> (obj/new)
                     (obj/merge! svg-styles)
                     (add-fill shape render-id)
-                    (add-stroke shape render-id))]
+                    (add-stroke shape render-id)
+                    (add-layer-props shape))]
 
      (-> (obj/new)
          (obj/merge! svg-attrs)
