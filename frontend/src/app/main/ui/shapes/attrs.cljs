@@ -86,7 +86,7 @@
                      ;; If contains svg-attrs the origin is svg. If it's not svg origin
                      ;; we setup the default fill as transparent (instead of black)
                      (and (not (contains? shape :svg-attrs))
-                          (not (= :svg-raw (:type shape))))
+                          (not (#{ :svg-raw :group } (:type shape))))
                      {:fill "transparent"}
 
                      :else
