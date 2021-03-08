@@ -219,15 +219,19 @@
 
 (defn generate-unique-name
   "A unique name generator"
-  [used basename]
-  (s/assert ::set-of-string used)
-  (s/assert ::us/string basename)
-  (let [[prefix initial] (extract-numeric-suffix basename)]
-    (loop [counter initial]
-      (let [candidate (str prefix "-" counter)]
-        (if (contains? used candidate)
-          (recur (inc counter))
-          candidate)))))
+  ([used basename]
+   (generate-unique-name used basename false))
+  ([used basename prefix-first?]
+   (s/assert ::set-of-string used)
+   (s/assert ::us/string basename)
+   (let [[prefix initial] (extract-numeric-suffix basename)]
+     (loop [counter initial]
+       (let [candidate (if (and (= 1 counter) prefix-first?)
+                         (str prefix)
+                         (str prefix "-" counter))]
+         (if (contains? used candidate)
+           (recur (inc counter))
+           candidate))))))
 
 ;; --- Shape attrs (Layers Sidebar)
 
@@ -574,36 +578,39 @@
           [frame-id parent-id (inc index)])))))
 
 (defn add-shape-changes
-  [page-id objects selected attrs]
-  (let [id    (:id attrs)
-        shape (gpr/setup-proportions attrs)
+  ([page-id objects selected attrs]
+   (add-shape-changes page-id objects selected attrs true))
+  ([page-id objects selected attrs reg-object?]
+   (let [id    (:id attrs)
+         shape (gpr/setup-proportions attrs)
 
-        default-attrs (if (= :frame (:type shape))
-                        cp/default-frame-attrs
-                        cp/default-shape-attrs)
+         default-attrs (if (= :frame (:type shape))
+                         cp/default-frame-attrs
+                         cp/default-shape-attrs)
 
-        shape    (merge default-attrs shape)
+         shape    (merge default-attrs shape)
 
-        not-frame? #(not (= :frame (get-in objects [% :type])))
-        selected (into #{} (filter not-frame?) selected)
+         not-frame? #(not (= :frame (get-in objects [% :type])))
+         selected (into #{} (filter not-frame?) selected)
 
-        [frame-id parent-id index] (get-shape-layer-position objects selected attrs)
+         [frame-id parent-id index] (get-shape-layer-position objects selected attrs)
 
-        redo-changes  [{:type :add-obj
-                        :id id
-                        :page-id page-id
-                        :frame-id frame-id
-                        :parent-id parent-id
-                        :index index
-                        :obj shape}
-                       {:type :reg-objects
-                        :page-id page-id
-                        :shapes [id]}]
-        undo-changes  [{:type :del-obj
-                        :page-id page-id
-                        :id id}]]
+         redo-changes  (cond-> [{:type :add-obj
+                                 :id id
+                                 :page-id page-id
+                                 :frame-id frame-id
+                                 :parent-id parent-id
+                                 :index index
+                                 :obj shape}]
+                         reg-object?
+                         (conj {:type :reg-objects
+                                :page-id page-id
+                                :shapes [id]}))
+         undo-changes  [{:type :del-obj
+                         :page-id page-id
+                         :id id}]]
 
-    [redo-changes undo-changes]))
+     [redo-changes undo-changes])))
 
 (defn add-shape
   [attrs]

@@ -19,7 +19,8 @@
    [app.main.ui.workspace.sidebar.options.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.shadow :refer [shadow-menu]]
    [app.main.ui.workspace.sidebar.options.stroke :refer [stroke-menu]]
-   [app.main.ui.workspace.sidebar.options.text :as ot]))
+   [app.main.ui.workspace.sidebar.options.text :as ot]
+   [app.main.ui.workspace.sidebar.options.svg-attrs :refer [svg-attrs-menu]]))
 
 (mf/defc options
   {::mf/wrap [mf/memo]
@@ -36,6 +37,7 @@
         [blur-ids    blur-values]    (get-attrs [shape] objects :blur)
         [stroke-ids  stroke-values]  (get-attrs [shape] objects :stroke)
         [text-ids    text-values]    (get-attrs [shape] objects :text)
+        [svg-ids     svg-values]     [[(:id shape)] (select-keys shape [:svg-attrs])]
         [comp-ids    comp-values]    [[(:id shape)] (select-keys shape component-attrs)]]
 
     [:div.options
@@ -55,6 +57,10 @@
        [:& stroke-menu {:type type :ids stroke-ids :values stroke-values}])
 
      (when-not (empty? text-ids)
-       [:& ot/text-menu {:type type :ids text-ids :values text-values}])]))
+       [:& ot/text-menu {:type type :ids text-ids :values text-values}])
+
+     (when-not (empty? svg-values)
+       [:& svg-attrs-menu {:ids svg-ids
+                           :values svg-values}])]))
 
 

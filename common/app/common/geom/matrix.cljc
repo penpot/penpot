@@ -11,6 +11,8 @@
   (:require
    #?(:cljs [cljs.pprint :as pp]
       :clj  [clojure.pprint :as pp])
+   [cuerdas.core :as str]
+   [app.common.data :as d]
    [app.common.math :as mth]
    [app.common.geom.point :as gpt]))
 
@@ -20,6 +22,13 @@
   Object
   (toString [_]
     (str "matrix(" a "," b "," c "," d "," e "," f ")")))
+
+(defn matrix
+  "Create a new matrix instance."
+  ([]
+   (Matrix. 1 0 0 1 0 0))
+  ([a b c d e f]
+   (Matrix. a b c d e f)))
 
 (defn multiply
   ([{m1a :a m1b :b m1c :c m1d :d m1e :e m1f :f}
@@ -45,13 +54,6 @@
   "Return true if `v` is Matrix instance."
   [v]
   (instance? Matrix v))
-
-(defn matrix
-  "Create a new matrix instance."
-  ([]
-   (Matrix. 1 0 0 1 0 0))
-  ([a b c d e f]
-   (Matrix. a b c d e f)))
 
 (def base (matrix))
 

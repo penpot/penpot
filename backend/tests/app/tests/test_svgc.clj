@@ -21,4 +21,4 @@
         data (slurp (io/resource "app/tests/_files/sample1.svg"))
         res  (svgc data)]
     (t/is (string? res))
-    (t/is (= 2533 (count res)))))
+    (t/is (= 2609 (count res)))))

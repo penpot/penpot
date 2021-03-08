@@ -19,16 +19,17 @@
    [app.main.ui.handoff.attributes.shadow :refer [shadow-panel]]
    [app.main.ui.handoff.attributes.blur :refer [blur-panel]]
    [app.main.ui.handoff.attributes.image :refer [image-panel]]
-   [app.main.ui.handoff.attributes.text :refer [text-panel]]))
+   [app.main.ui.handoff.attributes.text :refer [text-panel]]
+   [app.main.ui.handoff.attributes.svg :refer [svg-panel]]))
 
 (def type->options
   {:multiple [:fill :stroke :image :text :shadow :blur]
    :frame    [:layout :fill]
-   :group    [:layout]
-   :rect     [:layout :fill :stroke :shadow :blur]
-   :circle   [:layout :fill :stroke :shadow :blur]
-   :path     [:layout :fill :stroke :shadow :blur]
-   :image    [:image :layout :shadow :blur]
+   :group    [:layout :svg]
+   :rect     [:layout :fill :stroke :shadow :blur :svg]
+   :circle   [:layout :fill :stroke :shadow :blur :svg]
+   :path     [:layout :fill :stroke :shadow :blur :svg]
+   :image    [:image :layout :shadow :blur :svg]
    :text     [:layout :text :shadow :blur]})
 
 (mf/defc attributes
@@ -46,7 +47,8 @@
              :shadow shadow-panel
              :blur   blur-panel
              :image  image-panel
-             :text   text-panel)
+             :text   text-panel
+             :svg    svg-panel)
         {:shapes shapes
          :frame frame
          :locale locale}])

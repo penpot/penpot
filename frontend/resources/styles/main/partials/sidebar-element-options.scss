@@ -709,6 +709,9 @@
 .element-set-content .input-row {
   & .element-set-subtitle {
     width: 5.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
@@ -771,7 +774,6 @@
       min-width: 56px;
       max-height: 10rem;
     }
-
   }
 }
 
@@ -911,6 +913,7 @@
 
 }
 
+.row-flex-removable:hover .element-set-actions,
 .element-set-options-group:hover .element-set-actions {
     visibility: visible;
 }

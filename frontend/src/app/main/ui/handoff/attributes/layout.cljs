@@ -37,53 +37,55 @@
 
 (mf/defc layout-block
   [{:keys [shape locale]}]
-  [:*
-   [:div.attributes-unit-row
-    [:div.attributes-label (t locale "handoff.attributes.layout.width")]
-    [:div.attributes-value (mth/precision (:width shape) 2) "px"]
-    [:& copy-button {:data (copy-data shape :width)}]]
-
-   [:div.attributes-unit-row
-    [:div.attributes-label (t locale "handoff.attributes.layout.height")]
-    [:div.attributes-value (mth/precision (:height shape) 2) "px"]
-    [:& copy-button {:data (copy-data shape :height)}]]
-
-   (when (not= (:x shape) 0)
+  (let [selrect (:selrect shape)
+        {:keys [width height x y]} selrect]
+    [:*
      [:div.attributes-unit-row
-      [:div.attributes-label (t locale "handoff.attributes.layout.left")]
-      [:div.attributes-value (mth/precision (:x shape) 2) "px"]
-      [:& copy-button {:data (copy-data shape :x)}]])
+      [:div.attributes-label (t locale "handoff.attributes.layout.width")]
+      [:div.attributes-value (mth/precision width 2) "px"]
+      [:& copy-button {:data (copy-data selrect :width)}]]
 
-   (when (not= (:y shape) 0)
      [:div.attributes-unit-row
-      [:div.attributes-label (t locale "handoff.attributes.layout.top")]
-      [:div.attributes-value (mth/precision (:y shape) 2) "px"]
-      [:& copy-button {:data (copy-data shape :y)}]])
+      [:div.attributes-label (t locale "handoff.attributes.layout.height")]
+      [:div.attributes-value (mth/precision height 2) "px"]
+      [:& copy-button {:data (copy-data selrect :height)}]]
 
-   (when (and (:rx shape) (not= (:rx shape) 0))
-     [:div.attributes-unit-row
-      [:div.attributes-label (t locale "handoff.attributes.layout.radius")]
-      [:div.attributes-value (mth/precision (:rx shape) 2) "px"]
-      [:& copy-button {:data (copy-data shape :rx)}]])
+     (when (not= (:x shape) 0)
+       [:div.attributes-unit-row
+        [:div.attributes-label (t locale "handoff.attributes.layout.left")]
+        [:div.attributes-value (mth/precision x 2) "px"]
+        [:& copy-button {:data (copy-data selrect :x)}]])
 
-   (when (and (:r1 shape)
-              (or (not= (:r1 shape) 0)
-                  (not= (:r2 shape) 0)
-                  (not= (:r3 shape) 0)
-                  (not= (:r4 shape) 0)))
-     [:div.attributes-unit-row
-      [:div.attributes-label (t locale "handoff.attributes.layout.radius")]
-      [:div.attributes-value (mth/precision (:r1 shape) 2) ", "
-                             (mth/precision (:r2 shape) 2) ", "
-                             (mth/precision (:r3 shape) 2) ", "
-                             (mth/precision (:r4 shape) 2) "px"]
-      [:& copy-button {:data (copy-data shape :r1)}]])
+     (when (not= (:y shape) 0)
+       [:div.attributes-unit-row
+        [:div.attributes-label (t locale "handoff.attributes.layout.top")]
+        [:div.attributes-value (mth/precision y 2) "px"]
+        [:& copy-button {:data (copy-data selrect :y)}]])
 
-   (when (not= (:rotation shape 0) 0)
-     [:div.attributes-unit-row
-      [:div.attributes-label (t locale "handoff.attributes.layout.rotation")]
-      [:div.attributes-value (mth/precision (:rotation shape) 2) "deg"]
-      [:& copy-button {:data (copy-data shape :rotation)}]])])
+     (when (and (:rx shape) (not= (:rx shape) 0))
+       [:div.attributes-unit-row
+        [:div.attributes-label (t locale "handoff.attributes.layout.radius")]
+        [:div.attributes-value (mth/precision (:rx shape) 2) "px"]
+        [:& copy-button {:data (copy-data shape :rx)}]])
+
+     (when (and (:r1 shape)
+                (or (not= (:r1 shape) 0)
+                    (not= (:r2 shape) 0)
+                    (not= (:r3 shape) 0)
+                    (not= (:r4 shape) 0)))
+       [:div.attributes-unit-row
+        [:div.attributes-label (t locale "handoff.attributes.layout.radius")]
+        [:div.attributes-value (mth/precision (:r1 shape) 2) ", "
+         (mth/precision (:r2 shape) 2) ", "
+         (mth/precision (:r3 shape) 2) ", "
+         (mth/precision (:r4 shape) 2) "px"]
+        [:& copy-button {:data (copy-data shape :r1)}]])
+
+     (when (not= (:rotation shape 0) 0)
+       [:div.attributes-unit-row
+        [:div.attributes-label (t locale "handoff.attributes.layout.rotation")]
+        [:div.attributes-value (mth/precision (:rotation shape) 2) "deg"]
+        [:& copy-button {:data (copy-data shape :rotation)}]])]))
 
 
 (mf/defc layout-panel

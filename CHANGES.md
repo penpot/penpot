@@ -6,8 +6,8 @@
 
 - Add more chinese translations [#726](https://github.com/penpot/penpot/pull/726)
 - Duplicate and move files and projects [Taiga #267](https://tree.taiga.io/project/penpot/us/267)
+- Import SVG will create Penpot's shapes
 - Improve french translations [#731](https://github.com/penpot/penpot/pull/731)
-
 
 ### :bug: Bugs fixed
 
@@ -16,6 +16,7 @@
 
 ### :heart: Community contributions by (Thank you!)
 
+-  iblueer [#731](https://github.com/penpot/penpot/pull/731)
 
 ## 1.3.0-alpha
 

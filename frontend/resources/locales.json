@@ -5505,5 +5505,45 @@
       "zh_cn" : "单击以闭合路径"
     },
     "unused" : true
+  },
+
+  "workspace.sidebar.options.svg-attrs.title": {
+    "translations": {
+      "en": "Imported SVG Attributes",
+      "es": "Atributos del SVG Importado"
+    }
+  },
+
+  "handoff.attributes.stroke.alignment.inner" : {
+    "translations" : {
+      "en" : "Inside",
+      "es" : "Interior",
+      "fr" : "Intérieur",
+      "ru" : "Внутрь",
+      "zh_cn" : "内部"
+    },
+    "permanent": true
+  },
+
+  "handoff.attributes.stroke.alignment.outer" : {
+    "translations" : {
+      "en" : "Outside",
+      "es" : "Exterior",
+      "fr" : "Extérieur",
+      "ru" : "Наружу",
+      "zh_cn" : "外部"
+    },
+    "permanent": true
+  },
+
+  "handoff.attributes.stroke.alignment.center" : {
+    "translations" : {
+      "en" : "Center",
+      "es" : "Centro",
+      "fr" : "Centre",
+      "ru" : "Центр",
+      "zh_cn" : "居中"
+    },
+    "permanent": true
   }
 }

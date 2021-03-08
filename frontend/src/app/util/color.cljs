@@ -116,6 +116,11 @@
       (= id :multiple)
       (= file-id :multiple)))
 
+(defn color? [^string color-str]
+  (and (not (nil? color-str))
+       (not (empty? color-str))
+       (gcolor/isValidColor color-str)))
+
 (defn parse-color [^string color-str]
   (let [result (gcolor/parse color-str)]
     (str (.-hex ^js result))))

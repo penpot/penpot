@@ -36,6 +36,11 @@
                            :placeholder placeholder
                            :on-change on-change}]
 
+      :text
+      [:input {:value value
+               :class "input-text"
+               :on-change on-change} ]
+
       [:> numeric-input {:placeholder placeholder
                          :min min
                          :max max
