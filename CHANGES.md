@@ -17,7 +17,7 @@
 
 - Fix broken profile and profile options form.
 - Fix problem with mask and flip [#715](https://github.com/penpot/penpot/issues/715)
-
+- Fix problem with rotated blur [Taiga #1370](https://tree.taiga.io/project/penpot/issue/1370)
 
 ### :heart: Community contributions by (Thank you!)
 
