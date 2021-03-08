@@ -14,6 +14,7 @@
 ### :bug: Bugs fixed
 
 - Fix broken profile and profile options form.
+- Fix problem with mask and flip [#715](https://github.com/penpot/penpot/issues/715)
 
 
 ### :heart: Community contributions by (Thank you!)
