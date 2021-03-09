@@ -22,6 +22,7 @@
 - Fix issue when undo after changing the artboard of a shape [Taiga #1304](https://tree.taiga.io/project/penpot/issue/1304)
 - Fix problem with system shortcuts and application [#737](https://github.com/penpot/penpot/issues/737)
 - Fix issue with typographies panel cannot be collapsed [#707](https://github.com/penpot/penpot/issues/707)
+- Fix problem with middle mouse button press moving the canvas when not moving mouse [#717](https://github.com/penpot/penpot/issues/717)
 
 ### :heart: Community contributions by (Thank you!)
 
