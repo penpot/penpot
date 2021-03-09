@@ -156,6 +156,7 @@
       [:& context-menu {:on-close on-menu-close
                         :show show?
                         :fixed? (or (not= top 0) (not= left 0))
+                        :min-width? true
                         :top top
                         :left left
                         :options [[(tr "dashboard.open-in-new-tab") on-new-tab]

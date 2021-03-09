@@ -12,7 +12,6 @@
    [app.main.data.dashboard :as dd]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
-   [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.dashboard.grid :refer [grid]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.project-menu :refer [project-menu]]
