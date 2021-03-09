@@ -1726,6 +1726,13 @@
                      :data [image]}]
         (rx/of (dwp/upload-media-workspace params @ms/mouse-position))))))
 
+(defn toggle-distances-display [value]
+  (ptk/reify ::toggle-distances-display
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :show-distances?] value))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Interactions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

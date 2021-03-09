@@ -69,7 +69,8 @@
                               :transform
                               :hover
                               :modifiers
-                              :selrect])
+                              :selrect
+                              :show-distances?])
              workspace-local =))
 
 (def selected-zoom

@@ -50,12 +50,12 @@
   (c-mod (a-mod shortcut)))
 
 (defn bind-shortcuts [shortcuts bind-fn cb-fn]
-  (doseq [[key {:keys [command disabled fn]}] shortcuts]
+  (doseq [[key {:keys [command disabled fn type]}] shortcuts]
     (when-not disabled
       (if (vector? command)
         (doseq [cmd (seq command)]
-          (bind-fn cmd (cb-fn key fn)))
-        (bind-fn command (cb-fn key fn))))))
+          (bind-fn cmd (cb-fn key fn) type))
+        (bind-fn command (cb-fn key fn) type)))))
 
 (defn meta [key]
   (str

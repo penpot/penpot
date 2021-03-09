@@ -260,6 +260,16 @@
    :start-editing      {:tooltip (ds/enter)
                         :command "enter"
                         :fn #(st/emit! (dw/start-editing-selected))}
+
+   :start-measure      {:tooltip (ds/alt "")
+                        :command ["alt" "."]
+                        :type "keydown"
+                        :fn #(st/emit! (dw/toggle-distances-display true))}
+
+   :stop-measure       {:tooltip (ds/alt "")
+                        :command ["alt" "."]
+                        :type "keyup"
+                        :fn #(st/emit! (dw/toggle-distances-display false))}
    })
 
 (defn get-tooltip [shortcut]

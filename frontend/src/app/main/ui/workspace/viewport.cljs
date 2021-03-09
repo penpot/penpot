@@ -350,7 +350,8 @@
                 transform
                 hover
                 modifiers
-                selrect]} local
+                selrect
+                show-distances?]} local
 
         page-id       (mf/use-ctx ctx/current-page-id)
 
@@ -797,7 +798,7 @@
          [:& selection-handlers {:selected selected
                                  :zoom zoom
                                  :edition edition
-                                 :show-distances (and (not transform) @alt?)
+                                 :show-distances (and (not transform) show-distances?)
                                  :disable-handlers (or drawing-tool edition)}])
 
        (when (= (count selected) 1)
