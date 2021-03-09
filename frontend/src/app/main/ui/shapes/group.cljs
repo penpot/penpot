@@ -12,7 +12,7 @@
    [app.util.object :as obj]
    [rumext.alpha :as mf]
    [app.main.ui.shapes.attrs :as attrs]
-   [app.main.ui.shapes.mask :refer [mask-str mask-factory]]))
+   [app.main.ui.shapes.mask :refer [mask-str clip-str mask-factory]]))
 
 (defn group-shape
   [shape-wrapper]
@@ -35,6 +35,7 @@
             props (-> (attrs/extract-style-attrs shape)
                       (obj/merge!
                        #js {:pointerEvents pointer-events
+                            :clipPath (when (and mask (not expand-mask)) (clip-str mask))
                             :mask (when (and mask (not expand-mask)) (mask-str mask))}))]
 
         [:> :g props
