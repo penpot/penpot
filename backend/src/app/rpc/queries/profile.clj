@@ -13,10 +13,8 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.db :as db]
-   [app.db.sql :as sql]
    [app.util.services :as sv]
-   [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]))
+   [clojure.spec.alpha :as s]))
 
 ;; --- Helpers & Specs
 
@@ -97,12 +95,16 @@
 
     profile))
 
+(def sql:retrieve-profile-by-email
+  "select p.* from profile as p
+    where p.email = lower(?)
+      and p.deleted_at is null")
+
 (defn retrieve-profile-data-by-email
   [conn email]
-  (let [sql  (sql/select :profile {:email (str/lower email)})
-        data (db/exec-one! conn sql)]
-    (when (and data (nil? (:deleted-at data)))
-      (decode-profile-row data))))
+  (let [sql  [sql:retrieve-profile-by-email email]]
+    (some-> (db/exec-one! conn sql)
+            (decode-profile-row))))
 
 ;; --- Attrs Helpers
 
