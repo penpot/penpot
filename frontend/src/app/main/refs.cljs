@@ -40,6 +40,16 @@
 (def dashboard-local
   (l/derived :dashboard-local st/state))
 
+(def dashboard-selected-files
+  (l/derived (fn [state]
+               (get-in state [:dashboard-local :selected-files] #{}))
+             st/state))
+
+(def dashboard-selected-project
+  (l/derived (fn [state]
+               (get-in state [:dashboard-local :selected-project]))
+             st/state))
+
 ;; ---- Workspace refs
 
 (def workspace-local

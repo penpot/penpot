@@ -29,6 +29,7 @@
    [app.main.ui.icons :as i]
    [app.util.avatars :as avatars]
    [app.util.dom :as dom]
+   [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [t tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
@@ -42,13 +43,16 @@
    [rumext.alpha :as mf]))
 
 (mf/defc sidebar-project
-  [{:keys [item selected?] :as props}]
-  (let [dstate  (mf/deref refs/dashboard-local)
-        edit-id (:project-for-edit dstate)
+  [{:keys [item team-id selected?] :as props}]
+  (let [dstate           (mf/deref refs/dashboard-local)
+        selected-files   (:selected-files dstate)
+        selected-project (:selected-project dstate)
+        edit-id          (:project-for-edit dstate)
 
         local   (mf/use-state {:menu-open false
                                :menu-pos nil
-                               :edition? (= (:id item) edit-id)})
+                               :edition? (= (:id item) edit-id)
+                               :dragging? false})
 
         on-click
         (mf/use-callback
@@ -75,13 +79,56 @@
          (mf/deps item)
          (fn [name]
            (st/emit! (dd/rename-project (assoc item :name name)))
-           (swap! local assoc :edition? false)))]
+           (swap! local assoc :edition? false)))
+
+        on-drag-enter
+        (mf/use-callback
+          (mf/deps selected-project)
+          (fn [e]
+            (when (dnd/has-type? e "penpot/files")
+              (dom/prevent-default e)
+              (when-not (dnd/from-child? e)
+                (when (not= selected-project (:id item))
+                  (swap! local assoc :dragging? true))))))
+
+        on-drag-over
+        (mf/use-callback
+          (fn [e]
+            (when (dnd/has-type? e "penpot/files")
+              (dom/prevent-default e))))
+
+        on-drag-leave
+        (mf/use-callback
+          (fn [e]
+            (when-not (dnd/from-child? e)
+              (swap! local assoc :dragging? false))))
+
+        on-drop
+        (mf/use-callback
+          (mf/deps item selected-files)
+          (fn [e]
+            (swap! local assoc :dragging? false)
+            (when (not= selected-project (:id item))
+              (let [data  {:ids selected-files
+                           :project-id (:id item)}
+
+                    mdata {:on-success
+                           (st/emitf (dm/success (tr "dashboard.success-move-file"))
+                                     (rt/nav :dashboard-files
+                                             {:team-id team-id
+                                              :project-id (:id item)}))}]
+                (st/emit! (dd/move-files (with-meta data mdata)))))))]
 
     [:*
-     [:li {:on-click on-click
+     [:li {:class (if selected? "current"
+                    (when (:dragging? @local) "dragging"))
+           :on-click on-click
            :on-double-click on-edit-open
            :on-context-menu on-menu-click
-           :class (when selected? "current")}
+           :on-drag-enter on-drag-enter
+           :on-drag-over on-drag-over
+           :on-drag-leave on-drag-leave
+           :on-drop on-drop}
       (if (:edition? @local)
         [:& inline-edition {:content (:name item)
                             :on-end on-edit}]
@@ -451,6 +498,7 @@
             {:item item
              :key (:id item)
              :id (:id item)
+             :team-id (:id team)
              :selected? (= (:id item) (:id project))}])]
         [:div.sidebar-empty-placeholder
          [:span.icon i/pin]

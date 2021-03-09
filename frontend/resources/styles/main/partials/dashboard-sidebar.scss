@@ -249,6 +249,10 @@
           background-color: $color-primary;
         }
       }
+
+      &.dragging {
+        background-color: $color-primary-lighter;
+      }
     }
   }
 

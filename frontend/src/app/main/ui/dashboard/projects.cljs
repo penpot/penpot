@@ -148,6 +148,7 @@
 
      [:& line-grid
       {:project-id (:id project)
+       :team-id team-id
        :on-load-more on-nav
        :files files}]]))
 

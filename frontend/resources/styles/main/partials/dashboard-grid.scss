@@ -177,11 +177,15 @@
       background-color: $color-white;
 
       &:hover {
-        border-color: $color-primary;
+        border: 2px solid $color-primary;
 
         .project-th-actions {
           opacity: 1;
         }
+      }
+
+      &.selected {
+        border: 2px solid $color-primary;
       }
 
       .project-th-actions {
@@ -234,7 +238,6 @@
       .project-th-actions.force-display {
         opacity: 1;
       }
-
     }
 
     // IMAGES SECTION
@@ -273,6 +276,21 @@
     .color-data {
       color: $color-gray-30;
       margin-top: 15px;
+    }
+
+    .drag-counter {
+      position: absolute;
+      top: 5px;
+      left: 4px;
+      width: 32px;
+      height: 32px;
+      background-color: $color-primary;
+      border-radius: 50%;
+      color: $color-black;
+      font-size: $fs18;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
   }
