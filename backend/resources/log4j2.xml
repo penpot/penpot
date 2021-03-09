@@ -23,6 +23,7 @@
     <Logger name="com.zaxxer.hikari" level="error"/>
     <Logger name="io.lettuce" level="error" />
     <Logger name="org.eclipse.jetty" level="error" />
+    <Logger name="org.postgresql" level="error" />
 
     <Logger name="app.cli" level="debug" additivity="false">
       <AppenderRef ref="console"/>
@@ -32,7 +33,7 @@
       <AppenderRef ref="main" level="debug" />
     </Logger>
 
-    <Logger name="app" level="debug" additivity="false">
+    <Logger name="app" level="all" additivity="false">
       <AppenderRef ref="main" level="trace" />
       <AppenderRef ref="zmq" level="debug" />
     </Logger>
