@@ -25,6 +25,7 @@
 - Fix problem with middle mouse button press moving the canvas when not moving mouse [#717](https://github.com/penpot/penpot/issues/717)
 - Fix problem with masks interactions outside bounds [#718](https://github.com/penpot/penpot/issues/718)
 - Fix issues with Alt key in distance measurement [#672](https://github.com/penpot/penpot/issues/672)
+- Fix problem with rotation degree input [#741](https://github.com/penpot/penpot/issues/741)
 
 ### :heart: Community contributions by (Thank you!)
 
