@@ -41,6 +41,10 @@
       padding: 0px;
       margin: 2px;
     }
+
+    &.min-width {
+      min-width: 13rem;
+    }
 }
 
 .context-menu-action {
@@ -72,8 +76,9 @@
     }
 
     &.submenu-back {
-      color: $color-gray-30;
+      color: $color-black;
       display: flex;
+      font-weight: bold;
       align-items: center;
 
       & svg {
