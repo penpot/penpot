@@ -401,3 +401,12 @@
       (recur (get objects (first pending))
              (conj done (:id current))
              (concat (rest pending) (:shapes current))))))
+
+(defn get-index-in-parent
+  "Retrieves the index in the parent"
+  [objects shape-id]
+  (let [shape (get objects shape-id)
+        parent (get objects (:parent-id shape))
+        [parent-idx _] (d/seek (fn [[idx child-id]] (= child-id shape-id))
+                               (d/enumerate (:shapes parent)))]
+    parent-idx))

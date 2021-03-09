@@ -249,14 +249,15 @@
                   :parent-id frame-id
                   :shapes (mapv :id moving-shapes)}]
 
-            moving-shapes-by-frame-id (group-by :frame-id moving-shapes)
 
-            uch (->> moving-shapes-by-frame-id
-                     (mapv (fn [[frame-id shapes]]
+            uch (->> moving-shapes
+                     (reverse)
+                     (mapv (fn [shape]
                              {:type :mov-objects
                               :page-id page-id
-                              :parent-id frame-id
-                              :shapes (mapv :id shapes)})))]
+                              :parent-id (:parent-id shape)
+                              :index (cp/get-index-in-parent objects (:id shape))
+                              :shapes [(:id shape)]})))]
 
         (when-not (empty? rch)
           (rx/of dwc/pop-undo-into-transaction

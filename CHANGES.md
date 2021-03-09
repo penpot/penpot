@@ -19,6 +19,7 @@
 - Fix problem with mask and flip [#715](https://github.com/penpot/penpot/issues/715)
 - Fix problem with rotated blur [Taiga #1370](https://tree.taiga.io/project/penpot/issue/1370)
 - Disables buttons in view mode for users without permissions [Taiga #1328](https://tree.taiga.io/project/penpot/issue/1328)
+- Fix issue when undo after changing the artboard of a shape [Taiga #1304](https://tree.taiga.io/project/penpot/issue/1304)
 
 ### :heart: Community contributions by (Thank you!)
 
