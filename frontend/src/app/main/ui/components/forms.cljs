@@ -23,7 +23,7 @@
 
 (mf/defc input
   [{:keys [label help-icon disabled form hint trim] :as props}]
-  (let [input-type   (get props :type)
+  (let [input-type   (get props :type "text")
         input-name   (get props :name)
         more-classes (get props :class)
 
