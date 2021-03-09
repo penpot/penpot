@@ -491,7 +491,7 @@
 
     [:div.asset-group
      [:div.group-title {:class (when (not open?) "closed")}
-      [:span {:on-click (st/emitf (dwl/set-assets-box-open file-id :typography (not open?)))}
+      [:span {:on-click (st/emitf (dwl/set-assets-box-open file-id :typographies (not open?)))}
        i/arrow-slide (t locale "workspace.assets.typography")]
       [:span.num-assets (str "\u00A0(") (count typographies) ")"] ;; Unicode 00A0 is non-breaking space
       (when local?
