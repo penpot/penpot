@@ -9,12 +9,13 @@
 
 (ns app.main.ui.shapes.filters
   (:require
-   [rumext.alpha :as mf]
-   [cuerdas.core :as str]
-   [app.util.color :as color]
    [app.common.data :as d]
+   [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.uuid :as uuid]))
+   [app.common.uuid :as uuid]
+   [app.util.color :as color]
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
 (defn get-filter-id []
   (str "filter_" (uuid/next)))
@@ -137,7 +138,7 @@
                                (filter #(= :drop-shadow (:type %)))
                                (map (partial filter-bounds shape) ))
             ;; We add the selrect so the minimum size will be the selrect
-            filter-bounds (conj filter-bounds (:selrect shape))
+            filter-bounds (conj filter-bounds (-> shape :points gsh/points->selrect))
             x1 (apply min (map :x1 filter-bounds))
             y1 (apply min (map :y1 filter-bounds))
             x2 (apply max (map :x2 filter-bounds))

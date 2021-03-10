@@ -55,7 +55,10 @@
   (ptk/reify ::profile-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :profile data))
+      (-> state
+          (assoc :profile data)
+          ;; Safeguard if the profile is loaded after teams
+          (assoc-in [:profile :teams] (get-in state [:profile :teams]))))
 
     ptk/EffectEvent
     (effect [_ state stream]
@@ -203,4 +206,23 @@
         (->> (rp/query :team-users {:team-id team-id})
              (rx/map #(partial fetched %)))))))
 
+(defn user-teams-fetched [data]
+  (ptk/reify ::user-teams-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [teams (->> data
+                       (group-by :id)
+                       (d/mapm #(first %2)))]
+        (assoc-in state [:profile :teams] teams)))))
+
+(defn fetch-user-teams []
+  (ptk/reify ::fetch-user-teams
+    ptk/WatchEvent
+    (watch [_ state s]
+      (->> (rp/query! :teams)
+           (rx/map user-teams-fetched)
+           (rx/catch (fn [error]
+                       (if (= (:type error) :not-found)
+                         (rx/of (rt/nav :auth-login))
+                         (rx/empty))))))))
 

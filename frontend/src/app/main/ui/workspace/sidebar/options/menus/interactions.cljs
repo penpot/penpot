@@ -37,7 +37,8 @@
         show-frames-dropdown? (mf/use-state false)
 
         on-set-blur #(reset! show-frames-dropdown? false)
-        on-navigate #(st/emit! (dw/select-shapes (d/ordered-set (:id destination))))
+        on-navigate #(when destination
+                       (st/emit! (dw/select-shapes (d/ordered-set (:id destination)))))
 
         on-select-destination
         (fn [dest]
@@ -77,4 +78,5 @@
                  [:li {:key (:id frame)
                        :on-click #(on-select-destination (:id frame))}
                   (:name frame)]))]]]
-         [:span.navigate-icon {on-click on-navigate} i/navigate]]]])))
+         [:span.navigate-icon {:style {:visibility (when (not destination) "hidden")}
+                               :on-click on-navigate} i/navigate]]]])))

@@ -78,10 +78,10 @@
                    (dom/set-value! (dom/get-target event) new-value))
 
                  (and wrap-value? (num? max-val) (num? min-val) (= value max-val) up?)
-                 (dom/set-value! (dom/get-target event) min-val)
+                 (dom/set-value! (dom/get-target event) (dec min-val))
 
                  (and wrap-value? (num? min-val) (num? max-val) (= value min-val) down?)
-                 (dom/set-value! (dom/get-target event) max-val))))))
+                 (dom/set-value! (dom/get-target event) (inc max-val)))))))
 
         handle-key-down
         (mf/use-callback

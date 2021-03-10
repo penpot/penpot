@@ -17,7 +17,19 @@
 
 - Fix broken profile and profile options form.
 - Fix problem with mask and flip [#715](https://github.com/penpot/penpot/issues/715)
-
+- Fix problem with rotated blur [Taiga #1370](https://tree.taiga.io/project/penpot/issue/1370)
+- Disables buttons in view mode for users without permissions [Taiga #1328](https://tree.taiga.io/project/penpot/issue/1328)
+- Fix issue when undo after changing the artboard of a shape [Taiga #1304](https://tree.taiga.io/project/penpot/issue/1304)
+- Fix problem with system shortcuts and application [#737](https://github.com/penpot/penpot/issues/737)
+- Fix issue with typographies panel cannot be collapsed [#707](https://github.com/penpot/penpot/issues/707)
+- Fix problem with middle mouse button press moving the canvas when not moving mouse [#717](https://github.com/penpot/penpot/issues/717)
+- Fix problem with masks interactions outside bounds [#718](https://github.com/penpot/penpot/issues/718)
+- Fix issues with Alt key in distance measurement [#672](https://github.com/penpot/penpot/issues/672)
+- Fix problem with rotation degree input [#741](https://github.com/penpot/penpot/issues/741)
+- Fix problem with resolved comments [Taiga #1406](https://tree.taiga.io/project/penpot/issue/1406)
+- Fix problem with comments styles on dashboard [Taiga #1405](https://tree.taiga.io/project/penpot/issue/1405)
+- Fix problem with default square grid [Taiga #1344](https://tree.taiga.io/project/penpot/issue/1344)
+- Fix error with the "Navigate to" button on prototypes [Taiga #1268](https://tree.taiga.io/project/penpot/issue/1268)
 
 ### :heart: Community contributions by (Thank you!)
 
