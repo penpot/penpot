@@ -26,6 +26,8 @@
 - Fix problem with masks interactions outside bounds [#718](https://github.com/penpot/penpot/issues/718)
 - Fix issues with Alt key in distance measurement [#672](https://github.com/penpot/penpot/issues/672)
 - Fix problem with rotation degree input [#741](https://github.com/penpot/penpot/issues/741)
+- Fix problem with resolved comments [Taiga #1406](https://tree.taiga.io/project/penpot/issue/1406)
+- Fix problem with comments styles on dashboard [Taiga #1405](https://tree.taiga.io/project/penpot/issue/1405)
 
 ### :heart: Community contributions by (Thank you!)
 

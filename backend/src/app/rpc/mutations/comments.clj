@@ -146,14 +146,14 @@
   (db/with-atomic [conn pool]
     (let [thread (db/get-by-id conn :comment-thread id {:for-update true})]
       (when-not thread
-        (ex/raise :type :not-found)
+        (ex/raise :type :not-found))
 
       (files/check-read-permissions! conn profile-id (:file-id thread))
 
       (db/update! conn :comment-thread
                   {:is-resolved is-resolved}
                   {:id id})
-      nil))))
+      nil)))
 
 
 ;; --- Mutation: Add Comment
