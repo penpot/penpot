@@ -28,6 +28,7 @@
 - Fix problem with rotation degree input [#741](https://github.com/penpot/penpot/issues/741)
 - Fix problem with resolved comments [Taiga #1406](https://tree.taiga.io/project/penpot/issue/1406)
 - Fix problem with comments styles on dashboard [Taiga #1405](https://tree.taiga.io/project/penpot/issue/1405)
+- Fix problem with default square grid [Taiga #1344](https://tree.taiga.io/project/penpot/issue/1344)
 
 ### :heart: Community contributions by (Thank you!)
 
