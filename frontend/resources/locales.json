@@ -6051,7 +6051,7 @@
       "fr" : "Il y a des mises à jour dans les Bibliothèques Partagées",
       "ru" : "",
       "zh_cn" : "共享库有更新",
-      "de" : "Es gibt Updates in Shared Libraries"
+      "de" : "Es gibt Updates in gemeinsam genutzten Bibliotheken"
     },
     "used-in" : [ "src/app/main/data/workspace/libraries.cljs" ]
   },
@@ -6081,7 +6081,8 @@
   "workspace.sidebar.options.svg-attrs.title": {
     "translations": {
       "en": "Imported SVG Attributes",
-      "es": "Atributos del SVG Importado"
+      "es": "Atributos del SVG Importado",
+      "de": "Importierte SVG-Attribute"
     }
   },
 
@@ -6091,7 +6092,8 @@
       "es" : "Interior",
       "fr" : "Intérieur",
       "ru" : "Внутрь",
-      "zh_cn" : "内部"
+      "zh_cn" : "内部",
+      "de" : "Innen"
     },
     "permanent": true
   },
@@ -6102,7 +6104,8 @@
       "es" : "Exterior",
       "fr" : "Extérieur",
       "ru" : "Наружу",
-      "zh_cn" : "外部"
+      "zh_cn" : "外部",
+      "de" : "Außen"
     },
     "permanent": true
   },
@@ -6113,7 +6116,8 @@
       "es" : "Centro",
       "fr" : "Centre",
       "ru" : "Центр",
-      "zh_cn" : "居中"
+      "zh_cn" : "居中",
+      "de" : "Zentriert"
     },
     "permanent": true
   },
@@ -6121,7 +6125,8 @@
   "workspace.options.layer-options.blend-mode.color" : {
     "translations" : {
       "en" : "Color",
-      "es" : "Color"
+      "es" : "Color",
+      "de" : "Farbe"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
   },
@@ -6129,126 +6134,144 @@
   "workspace.options.layer-options.blend-mode.color-burn" : {
     "translations" : {
       "en" : "Color burn",
-      "es" : "Color más oscuro"
+      "es" : "Color más oscuro",
+      "de" : "Farbig nachbelichten"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
   },
   "workspace.options.layer-options.blend-mode.color-dodge" : {
     "translations" : {
       "en" : "Color dodge",
-      "es" : "Color más suave"
+      "es" : "Color más suave",
+      "de" : "Farbig abwedeln"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
   },
   "workspace.options.layer-options.blend-mode.darken" : {
     "translations" : {
       "en" : "Darken",
-      "es" : "Oscurecer"
+      "es" : "Oscurecer",
+      "de" : "Abdunkeln"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
   },
   "workspace.options.layer-options.blend-mode.difference" : {
     "translations" : {
       "en" : "Difference",
-      "es" : "Diferencia"
+      "es" : "Diferencia",
+      "de" : "Differenz"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
   },
   "workspace.options.layer-options.blend-mode.exclusion" : {
     "translations" : {
       "en" : "Exclusion",
-      "en" : "Exclusión"
+      "es" : "Exclusión",
+      "de" : "Ausschluss"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
   },
   "workspace.options.layer-options.blend-mode.hard-light" : {
     "translations" : {
       "en" : "Hard light",
-      "es" : "Luz fuerte"
+      "es" : "Luz fuerte",
+      "de" : "Hartes Licht"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
   },
   "workspace.options.layer-options.blend-mode.hue" : {
     "translations" : {
       "en" : "Hue",
-      "es" : "Tono"
+      "es" : "Tono",
+      "de" : "Farbton"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
   },
   "workspace.options.layer-options.blend-mode.lighten" : {
     "translations" : {
       "en" : "Lighten",
-      "es" : "Aclarar"
+      "es" : "Aclarar",
+      "de" : "Aufhellen"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
   },
   "workspace.options.layer-options.blend-mode.luminosity" : {
     "translations" : {
       "en" : "Luminosity",
-      "es" : "Luminosidad"
+      "es" : "Luminosidad",
+      "de" : "Luminanz"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
   },
   "workspace.options.layer-options.blend-mode.multiply" : {
     "translations" : {
       "en" : "Multiply",
-      "es" : "Multiplicar"
+      "es" : "Multiplicar",
+      "de" : "Multiplizieren"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
   },
   "workspace.options.layer-options.blend-mode.normal" : {
     "translations" : {
       "en" : "Normal",
-      "es" : "Normal"
+      "es" : "Normal",
+      "de" : "Normal"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
   },
   "workspace.options.layer-options.blend-mode.overlay" : {
     "translations" : {
       "en" : "Overlay",
-      "en" : "Superponer"
+      "es" : "Superponer",
+      "de" : "Ineinanderkopieren"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
   },
   "workspace.options.layer-options.blend-mode.saturation" : {
     "translations" : {
       "en" : "Saturation",
-      "es" : "Saturación"
+      "es" : "Saturación",
+      "de" : "Sättigung"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
   },
   "workspace.options.layer-options.blend-mode.screen" : {
     "translations" : {
       "en" : "Screen",
-      "en" : "Trama"
+      "es" : "Trama",
+      "de" : "Negativ multiplizieren"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
   },
   "workspace.options.layer-options.blend-mode.soft-light" : {
     "translations" : {
       "en" : "Soft light",
-      "es" : "Luz suave"
+      "es" : "Luz suave",
+      "de" : "Weiches Licht"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
   },
   "workspace.options.layer-options.title" : {
     "translations" : {
       "en" : "Layer",
-      "es" : "Capa"
+      "es" : "Capa",
+      "de" : "Ebene"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
   },
   "workspace.options.layer-options.title.group" : {
     "translations" : {
       "en" : "Group layers",
-      "es" : "Capas de grupo"
+      "es" : "Capas de grupo",
+      "de" : "Ebenen gruppieren"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
   },
   "workspace.options.layer-options.title.multiple" : {
     "translations" : {
       "en" : "Selected layers",
-      "es" : "Capas seleccionadas"
+      "es" : "Capas seleccionadas",
+      "de" : "Ausgewählte Ebenen"
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
   }
