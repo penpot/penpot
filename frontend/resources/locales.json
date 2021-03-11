@@ -2,6 +2,7 @@
   "auth.already-have-account" : {
     "translations" : {
       "ca" : "Ja tens un compte?",
+      "de" : "Sie haben schon ein Konto?",
       "en" : "Already have an account?",
       "es" : "¿Tienes ya una cuenta?",
       "fr" : "Vous avez déjà un compte ?",
@@ -13,6 +14,7 @@
   "auth.check-your-email" : {
     "translations" : {
       "ca" : "Revisa el teu email i fes click al link per verificar i començar a utilitzar Penpot.",
+      "de" : "Überprüfen Sie Ihre E-Mail, klicken Sie auf den Link um sich zu verifizieren und Penpot zu nutzen.",
       "en" : "Check your email and click on the link to verify and start using Penpot.",
       "fr" : "Vérifiez votre e‑mail et cliquez sur le lien pour vérifier et commencer à utiliser Penpot.",
       "zh_cn" : "请检查电子邮箱，点击邮件中的超链接来验证，然后开始使用Penpot。"
@@ -22,6 +24,7 @@
   "auth.confirm-password" : {
     "translations" : {
       "ca" : "Confirmar contrasenya",
+      "de" : "Passwort bestätigen",
       "en" : "Confirm password",
       "es" : "Confirmar contraseña",
       "fr" : "Confirmez le mot de passe",
@@ -33,6 +36,7 @@
   "auth.create-demo-account" : {
     "translations" : {
       "ca" : "Crea un compte de proba",
+      "de" : "Ein Demo-Konto erstellen",
       "en" : "Create demo account",
       "es" : "Crear cuenta de prueba",
       "fr" : "Créer un compte de démonstration",
@@ -44,6 +48,7 @@
   "auth.create-demo-profile" : {
     "translations" : {
       "ca" : "Vols probar-ho?",
+      "de" : "Einfach testen?",
       "en" : "Just wanna try it?",
       "es" : "¿Quieres probar?",
       "fr" : "Vous voulez juste essayer ?",
@@ -55,6 +60,7 @@
   "auth.demo-warning" : {
     "translations" : {
       "ca" : "Aquest es un servei de PROBA. NO HO UTILITZIS per feina real, els projectes seran esborrats periòdicament.",
+      "de" : "Das ist eine DEMO-VERSION, verwenden Sie es NICHT zum Arbeiten, die Projekte werden regelmäßig gelöscht.",
       "en" : "This is a DEMO service, DO NOT USE for real work, the projects will be periodicaly wiped.",
       "es" : "Este es un servicio de DEMOSTRACIÓN. NO USAR para trabajo real, los proyectos serán borrados periodicamente.",
       "fr" : "Il s’agit d’un service DEMO, NE PAS UTILISER pour un travail réel, les projets seront périodiquement supprimés.",
@@ -66,6 +72,7 @@
   "auth.email" : {
     "translations" : {
       "ca" : "Correu electrònic",
+      "de" : "E-Mail",
       "en" : "Email",
       "es" : "Correo electrónico",
       "fr" : "Adresse e‑mail",
@@ -77,6 +84,7 @@
   "auth.forgot-password" : {
     "translations" : {
       "ca" : "Has oblidat la contrasenya?",
+      "de" : "Passwort vergessen?",
       "en" : "Forgot password?",
       "es" : "¿Olvidaste tu contraseña?",
       "fr" : "Mot de passe oublié ?",
@@ -88,6 +96,7 @@
   "auth.fullname" : {
     "translations" : {
       "ca" : "Nom complet",
+      "de" : "Vollständiger Name",
       "en" : "Full Name",
       "es" : "Nombre completo",
       "fr" : "Nom complet",
@@ -99,6 +108,7 @@
   "auth.go-back-to-login" : {
     "translations" : {
       "ca" : "Tornar",
+      "de" : "Zurück!",
       "en" : "Go back!",
       "es" : "Volver",
       "fr" : "Retour !",
@@ -110,6 +120,7 @@
   "auth.login-here" : {
     "translations" : {
       "ca" : "Inicia sessió aquí",
+      "de" : "Hier einloggen",
       "en" : "Login here",
       "es" : "Entra aquí",
       "fr" : "Se connecter ici",
@@ -121,6 +132,7 @@
   "auth.login-submit" : {
     "translations" : {
       "ca" : "Accedir",
+      "de" : "Anmelden",
       "en" : "Sign in",
       "es" : "Entrar",
       "fr" : "Se connecter",
@@ -132,6 +144,7 @@
   "auth.login-subtitle" : {
     "translations" : {
       "ca" : "Introdueix les teves dades aquí",
+      "de" : "Geben Sie unten Ihre Daten ein",
       "en" : "Enter your details below",
       "es" : "Introduce tus datos aquí",
       "fr" : "Entrez vos informations ci‑dessous",
@@ -143,6 +156,7 @@
   "auth.login-title" : {
     "translations" : {
       "ca" : "Encantats de tornar a veure't",
+      "de" : "Schön, Sie wiederzusehen!",
       "en" : "Great to see you again!",
       "es" : "Encantados de volverte a ver",
       "fr" : "Ravi de vous revoir !",
@@ -154,6 +168,7 @@
   "auth.login-with-github-submit" : {
     "translations" : {
       "ca" : "Accedir amb Github",
+      "de" : "Einloggen mit Github",
       "en" : "Login with Github",
       "es" : "Entrar con Github",
       "fr" : "Se connecter via Github",
@@ -165,6 +180,7 @@
   "auth.login-with-gitlab-submit" : {
     "translations" : {
       "ca" : "Accedir amb Gitlab",
+      "de" : "Einloggen mit Gitlab",
       "en" : "Login with Gitlab",
       "es" : "Entrar con Gitlab",
       "fr" : "Se connecter via Gitlab",
@@ -176,6 +192,7 @@
   "auth.login-with-ldap-submit" : {
     "translations" : {
       "ca" : "Accedir amb LDAP",
+      "de" : "Anmelden mit LDAP",
       "en" : "Sign in with LDAP",
       "es" : "Entrar con LDAP",
       "fr" : "Se connecter via LDAP",
@@ -187,6 +204,7 @@
   "auth.new-password" : {
     "translations" : {
       "ca" : "Introdueix la nova contrasenya",
+      "de" : "Geben Sie ein neues Passwort ein",
       "en" : "Type a new password",
       "es" : "Introduce la nueva contraseña",
       "fr" : "Saisissez un nouveau mot de passe",
@@ -198,6 +216,7 @@
   "auth.notifications.invalid-token-error" : {
     "translations" : {
       "ca" : "El codi de recuperació no és vàlid",
+      "de" : "Der Wiederherstellungscode ist ungültig.",
       "en" : "The recovery token is invalid.",
       "es" : "El código de recuperación no es válido.",
       "fr" : "Le code de récupération n’est pas valide.",
@@ -209,6 +228,7 @@
   "auth.notifications.password-changed-succesfully" : {
     "translations" : {
       "ca" : "La contrasenya s'ha canviat correctament",
+      "de" : "Passwort erfolgreich geändert",
       "en" : "Password successfully changed",
       "es" : "La contraseña ha sido cambiada",
       "fr" : "Mot de passe changé avec succès",
@@ -220,6 +240,7 @@
   "auth.notifications.profile-not-verified" : {
     "translations" : {
       "ca" : "El perfil encara no s'ha verificat, si us plau verifica-ho abans de continuar.",
+      "de" : "Profil ist nicht verifiziert. Bevor Sie fortfahren, verifizieren Sie bitte das Profil.",
       "en" : "Profile is not verified, please verify profile before continue.",
       "es" : "El perfil aun no ha sido verificado, por favor valida el perfil antes de continuar.",
       "fr" : "Le profil n’est pas vérifié. Veuillez vérifier le profil avant de continuer.",
@@ -230,6 +251,7 @@
   "auth.notifications.recovery-token-sent" : {
     "translations" : {
       "ca" : "Hem enviat un link de recuperació de contrasenya al teu email.",
+      "de" : "Der Link zur Wiederherstellung des Passworts wurde an Ihre E-Mail gesendet.",
       "en" : "Password recovery link sent to your inbox.",
       "es" : "Hemos enviado a tu buzón un enlace para recuperar tu contraseña.",
       "fr" : "Lien de récupération de mot de passe envoyé.",
@@ -241,6 +263,7 @@
   "auth.notifications.team-invitation-accepted" : {
     "translations" : {
       "ca" : "T'has unit al equip",
+      "de" : "Sie sind dem Team beigetreten",
       "en" : "Joined the team succesfully",
       "es" : "Te uniste al equipo",
       "fr" : "Vous avez rejoint l’équipe avec succès",
@@ -251,6 +274,7 @@
   "auth.password" : {
     "translations" : {
       "ca" : "Contrasenya",
+      "de" : "Passwort",
       "en" : "Password",
       "es" : "Contraseña",
       "fr" : "Mot de passe",
@@ -262,6 +286,7 @@
   "auth.password-length-hint" : {
     "translations" : {
       "ca" : "Com a mínim 8 caràcters",
+      "de" : "Mindestens 8 Zeichen",
       "en" : "At least 8 characters",
       "es" : "8 caracteres como mínimo",
       "fr" : "Au moins 8 caractères",
@@ -273,6 +298,7 @@
   "auth.recovery-request-submit" : {
     "translations" : {
       "ca" : "Recuperar contrasenya",
+      "de" : "Passwort wiederherstellen",
       "en" : "Recover Password",
       "es" : "Recuperar contraseña",
       "fr" : "Récupérer le mot de passe",
@@ -284,6 +310,7 @@
   "auth.recovery-request-subtitle" : {
     "translations" : {
       "ca" : "T'enviarem un correu electrónic amb instruccions",
+      "de" : "Wir senden Ihnen eine E-Mail mit Anweisungen zu",
       "en" : "We'll send you an email with instructions",
       "es" : "Te enviaremos un correo electrónico con instrucciones",
       "fr" : "Nous vous enverrons un e‑mail avec des instructions",
@@ -295,6 +322,7 @@
   "auth.recovery-request-title" : {
     "translations" : {
       "ca" : "Has oblidat la teva contrasenya?",
+      "de" : "Passwort vergessen?",
       "en" : "Forgot password?",
       "es" : "¿Olvidaste tu contraseña?",
       "fr" : "Mot de passe oublié ?",
@@ -306,6 +334,7 @@
   "auth.recovery-submit" : {
     "translations" : {
       "ca" : "Canvia la teva contrasenya",
+      "de" : "Passwort ändern",
       "en" : "Change your password",
       "es" : "Cambiar tu contraseña",
       "fr" : "Changez votre mot de passe",
@@ -317,6 +346,7 @@
   "auth.register" : {
     "translations" : {
       "ca" : "Encara no tens compte?",
+      "de" : "Noch kein Konto?",
       "en" : "No account yet?",
       "es" : "¿No tienes una cuenta?",
       "fr" : "Pas encore de compte ?",
@@ -328,6 +358,7 @@
   "auth.register-submit" : {
     "translations" : {
       "ca" : "Crea un compte",
+      "de" : "Konto erstellen",
       "en" : "Create an account",
       "es" : "Crear una cuenta",
       "fr" : "Créer un compte",
@@ -339,6 +370,7 @@
   "auth.register-subtitle" : {
     "translations" : {
       "ca" : "Es gratuit, es Open Source",
+      "de" : "Kostenlos, es ist Open Source",
       "en" : "It's free, it's Open Source",
       "es" : "Es gratis, es Open Source",
       "fr" : "C’est gratuit, c’est Open Source",
@@ -350,6 +382,7 @@
   "auth.register-title" : {
     "translations" : {
       "ca" : "Crea un compte",
+      "de" : "Konto erstellen",
       "en" : "Create an account",
       "es" : "Crear una cuenta",
       "fr" : "Créer un compte",
@@ -361,6 +394,7 @@
   "auth.sidebar-tagline" : {
     "translations" : {
       "ca" : "La solució de codi obert per disenyar i prototipar",
+      "de" : "Die Open-Source-Lösung für Design und Prototyping.",
       "en" : "The open-source solution for design and prototyping.",
       "es" : "La solución de código abierto para diseñar y prototipar",
       "fr" : "La solution Open Source pour la conception et le prototypage.",
@@ -379,6 +413,7 @@
   "auth.verification-email-sent" : {
     "translations" : {
       "ca" : "Em enviat un correu de verificació a",
+      "de" : "Wir haben eine Bestätigungs-E-Mail gesendet an",
       "en" : "We've sent a verification email to",
       "fr" : "Nous avons envoyé un e-mail de vérification à",
       "zh_cn" : "我们已经发送了一封验证邮件到"
@@ -388,17 +423,19 @@
   "dashboard.add-shared" : {
     "translations" : {
       "ca" : "Afegeix una Biblioteca Compartida",
+      "de" : "Hinzufügen als gemeinsam genutzte Bibliothek",
       "en" : "Add as Shared Library",
       "es" : "Añadir como Biblioteca Compartida",
       "fr" : "Ajouter une Bibliothèque Partagée",
       "ru" : "",
       "zh_cn" : "添加为共享库"
     },
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs", "src/app/main/ui/dashboard/grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "dashboard.change-email" : {
     "translations" : {
       "ca" : "Canviar correu",
+      "de" : "E-Mail-Adresse ändern",
       "en" : "Change email",
       "es" : "Cambiar correo",
       "fr" : "Changer adresse e‑mail",
@@ -409,14 +446,16 @@
   },
   "dashboard.copy-suffix" : {
     "translations" : {
+      "de" : "(Kopie)",
       "en" : "(copy)",
       "es" : "(copia)"
     },
-    "used-in" : [ "src/app/main/data/dashboard.cljs" ]
+    "used-in" : [ "src/app/main/data/dashboard.cljs", "src/app/main/data/dashboard.cljs" ]
   },
   "dashboard.create-new-team" : {
     "translations" : {
       "ca" : "+ Crear un nou equip",
+      "de" : "+ Neues Team erstellen",
       "en" : "+ Create new team",
       "es" : "+ Crear nuevo equipo",
       "fr" : "+ Créer nouvelle équipe",
@@ -427,6 +466,7 @@
   "dashboard.default-team-name" : {
     "translations" : {
       "ca" : "El teu Penpot",
+      "de" : "Ihr Penpot",
       "en" : "Your Penpot",
       "es" : "Tu Penpot",
       "fr" : "Votre Penpot",
@@ -437,6 +477,7 @@
   "dashboard.delete-team" : {
     "translations" : {
       "ca" : "Suprimir equip",
+      "de" : "Team löschen",
       "en" : "Delete team",
       "es" : "Eliminar equipo",
       "fr" : "Supprimer l’équipe",
@@ -444,16 +485,30 @@
     },
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs" ]
   },
+  "dashboard.draft-title" : {
+    "translations" : {
+      "ca" : "Esborrany",
+      "de" : "Entwurf",
+      "en" : "Draft",
+      "es" : "Borrador",
+      "fr" : "Brouillon",
+      "ru" : "Черновик",
+      "zh_cn" : "草稿"
+    },
+    "unused" : true
+  },
   "dashboard.duplicate" : {
     "translations" : {
+      "de" : "Duplizieren",
       "en" : "Duplicate",
       "es" : "Duplicar"
     },
-    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
+    "used-in" : [ "src/app/main/ui/dashboard/project_menu.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "dashboard.empty-files" : {
     "translations" : {
       "ca" : "Encara no hi ha cap arxiu aquí",
+      "de" : "Sie haben hier noch keine Dateien",
       "en" : "You still have no files here",
       "es" : "Todavía no hay ningún archivo aquí",
       "fr" : "Vous n’avez encore aucun fichier ici",
@@ -465,6 +520,7 @@
   "dashboard.invite-profile" : {
     "translations" : {
       "ca" : "Convidar a l'equip",
+      "de" : "Zum Team einladen",
       "en" : "Invite to team",
       "es" : "Invitar al equipo",
       "fr" : "Inviter dans l’équipe",
@@ -475,6 +531,7 @@
   "dashboard.leave-team" : {
     "translations" : {
       "ca" : "Abandonar l'equip",
+      "de" : "Team verlassen",
       "en" : "Leave team",
       "es" : "Abandonar equipo",
       "fr" : "Quitter l’équipe",
@@ -485,6 +542,7 @@
   "dashboard.libraries-title" : {
     "translations" : {
       "ca" : "Biblioteques Compartides",
+      "de" : "Gemeinsam genutzte Bibliotheken",
       "en" : "Shared Libraries",
       "es" : "Bibliotecas Compartidas",
       "fr" : "Bibliothèques Partagées",
@@ -496,6 +554,7 @@
   "dashboard.loading-files" : {
     "translations" : {
       "ca" : "carregan els teus fitxers",
+      "de" : "laden Ihrer Dateien …",
       "en" : "loading your files …",
       "es" : "cargando tus ficheros …",
       "fr" : "chargement de vos fichiers…",
@@ -505,13 +564,15 @@
   },
   "dashboard.move-to" : {
     "translations" : {
+      "de" : "Verschieben nach",
       "en" : "Move to",
       "es" : "Mover a"
     },
-    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
+    "used-in" : [ "src/app/main/ui/dashboard/project_menu.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "dashboard.move-to-other-team" : {
     "translations" : {
+      "de" : "Zu anderem Team verschieben",
       "en" : "Move to other team",
       "es" : "Mover a otro equipo"
     },
@@ -520,6 +581,7 @@
   "dashboard.new-file" : {
     "translations" : {
       "ca" : "+ Nou Arxiu",
+      "de" : "+ Neue Datei",
       "en" : "+ New File",
       "es" : "+ Nuevo Archivo",
       "fr" : "+ Nouveau fichier",
@@ -531,6 +593,7 @@
   "dashboard.new-project" : {
     "translations" : {
       "ca" : "+ Nou projecte",
+      "de" : "+ Neues Projekt",
       "en" : "+ New project",
       "es" : "+ Nuevo proyecto",
       "fr" : "+ Nouveau projet",
@@ -542,6 +605,7 @@
   "dashboard.no-matches-for" : {
     "translations" : {
       "ca" : "No s'ha trobat cap coincidència amb “%s“",
+      "de" : "Keine Übereinstimmungen für “%s“ gefunden",
       "en" : "No matches found for “%s“",
       "es" : "No se encuentra “%s“",
       "fr" : "Aucune correspondance pour « %s »",
@@ -553,6 +617,7 @@
   "dashboard.no-projects-placeholder" : {
     "translations" : {
       "ca" : "Els projectes fixats apareixeran aquí",
+      "de" : "Angeheftete Projekte werden hier angezeigt",
       "en" : "Pinned projects will appear here",
       "es" : "Los proyectos fijados aparecerán aquí",
       "fr" : "Les projets épinglés apparaîtront ici",
@@ -563,6 +628,7 @@
   "dashboard.notifications.email-changed-successfully" : {
     "translations" : {
       "ca" : "La teva adreça de correu s'ha actualizat",
+      "de" : "Ihre E-Mail-Adresse wurde erfolgreich aktualisiert",
       "en" : "Your email address has been updated successfully",
       "es" : "Tu dirección de correo ha sido actualizada",
       "fr" : "Votre adresse e‑mail a été mise à jour avec succès",
@@ -574,6 +640,7 @@
   "dashboard.notifications.email-verified-successfully" : {
     "translations" : {
       "ca" : "La teva adreça de correu ha sigut verificada",
+      "de" : "Ihre E-Mail-Adresse wurde erfolgreich verifiziert",
       "en" : "Your email address has been verified successfully",
       "es" : "Tu dirección de correo ha sido verificada",
       "fr" : "Votre adresse e‑mail a été vérifiée avec succès",
@@ -585,6 +652,7 @@
   "dashboard.notifications.password-saved" : {
     "translations" : {
       "ca" : "La contrasenya s'ha desat correctament",
+      "de" : "Passwort wurde erfolgreich gespeichert!",
       "en" : "Password saved successfully!",
       "es" : "¡Contraseña guardada!",
       "fr" : "Mot de passe enregistré avec succès !",
@@ -596,6 +664,7 @@
   "dashboard.num-of-members" : {
     "translations" : {
       "ca" : "%s membres",
+      "de" : "%s Mitglieder",
       "en" : "%s members",
       "es" : "%s integrantes",
       "fr" : "%s membres",
@@ -605,6 +674,7 @@
   },
   "dashboard.open-in-new-tab" : {
     "translations" : {
+      "de" : "Datei in neuem Tab öffnen",
       "en" : "Open file in a new tab",
       "es" : "Abrir en una pestaña nueva"
     },
@@ -613,6 +683,7 @@
   "dashboard.password-change" : {
     "translations" : {
       "ca" : "Canvia la contrasenya",
+      "de" : "Passwort ändern",
       "en" : "Change password",
       "es" : "Cambiar contraseña",
       "fr" : "Changer le mot de passe",
@@ -623,6 +694,7 @@
   },
   "dashboard.pin-unpin" : {
     "translations" : {
+      "de" : "Anheften/Lösen",
       "en" : "Pin/Unpin",
       "es" : "Fijar/Desfijar"
     },
@@ -631,6 +703,7 @@
   "dashboard.projects-title" : {
     "translations" : {
       "ca" : "Projectes",
+      "de" : "Projekte",
       "en" : "Projects",
       "es" : "Proyectos",
       "fr" : "Projets",
@@ -642,6 +715,7 @@
   "dashboard.promote-to-owner" : {
     "translations" : {
       "ca" : "Promoure a propietari",
+      "de" : "Zum Eigentümer befördern",
       "en" : "Promote to owner",
       "es" : "Promover a dueño",
       "fr" : "Promouvoir propriétaire",
@@ -652,6 +726,7 @@
   "dashboard.remove-account" : {
     "translations" : {
       "ca" : "Vols esborrar el teu compte?",
+      "de" : "Möchten Sie Ihr Konto entfernen?",
       "en" : "Want to remove your account?",
       "es" : "¿Quieres borrar tu cuenta?",
       "fr" : "Vous souhaitez supprimer votre compte ?",
@@ -663,17 +738,19 @@
   "dashboard.remove-shared" : {
     "translations" : {
       "ca" : "Elimina com Biblioteca Compartida",
+      "de" : "Als gemeinsam genutzte Bibliothek entfernen",
       "en" : "Remove as Shared Library",
       "es" : "Eliminar como Biblioteca Compartida",
       "fr" : "Retirer en tant que Bibliothèque Partagée",
       "ru" : "",
       "zh_cn" : "不再作为共享库"
     },
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs", "src/app/main/ui/dashboard/grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "dashboard.search-placeholder" : {
     "translations" : {
       "ca" : "Cerca…",
+      "de" : "Suchen…",
       "en" : "Search…",
       "es" : "Buscar…",
       "fr" : "Rechercher…",
@@ -685,6 +762,7 @@
   "dashboard.searching-for" : {
     "translations" : {
       "ca" : "S'está cercant “%s“…",
+      "de" : "Suche nach “%s“…",
       "en" : "Searching for “%s“…",
       "es" : "Buscando “%s“…",
       "fr" : "Recherche de « %s »…",
@@ -696,6 +774,7 @@
   "dashboard.select-ui-language" : {
     "translations" : {
       "ca" : "Selecciona la llengua de la interfície",
+      "de" : "Sprache der Benutzeroberfläche auswählen",
       "en" : "Select UI language",
       "es" : "Cambiar el idioma de la interfaz",
       "fr" : "Sélectionnez la langue de l’interface",
@@ -707,6 +786,7 @@
   "dashboard.select-ui-theme" : {
     "translations" : {
       "ca" : "Selecciona un tema",
+      "de" : "Theme auswählen",
       "en" : "Select theme",
       "es" : "Selecciona un tema",
       "fr" : "Sélectionnez un thème",
@@ -718,6 +798,7 @@
   "dashboard.show-all-files" : {
     "translations" : {
       "ca" : "Veure tots els fitxers",
+      "de" : "Alle Dateien anzeigen",
       "en" : "Show all files",
       "es" : "Ver todos los ficheros",
       "fr" : "Voir tous les fichiers",
@@ -725,51 +806,58 @@
     },
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs" ]
   },
-  "dashboard.success-delete-project" : {
-    "translations" : {
-      "en" : "Your project has been deleted successfully",
-      "es" : "Tu proyecto ha sido borrado con éxito"
-    },
-    "used-in" : [ "src/app/main/ui/dashboard/project_menu.cljs" ]
-  },
   "dashboard.success-delete-file" : {
     "translations" : {
+      "de" : "Ihre Datei wurde erfolgreich gelöscht",
       "en" : "Your file has been deleted successfully",
       "es" : "Tu archivo ha sido borrado con éxito"
     },
     "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
-  "dashboard.success-duplicate-project" : {
+  "dashboard.success-delete-project" : {
     "translations" : {
-      "en" : "Your project has been duplicated successfully",
-      "es" : "Tu proyecto ha sido duplicado con éxito"
+      "de" : "Ihr Projekt wurde erfolgreich gelöscht",
+      "en" : "Your project has been deleted successfully",
+      "es" : "Tu proyecto ha sido borrado con éxito"
     },
     "used-in" : [ "src/app/main/ui/dashboard/project_menu.cljs" ]
   },
   "dashboard.success-duplicate-file" : {
     "translations" : {
+      "de" : "Ihre Datei wurde erfolgreich dupliziert",
       "en" : "Your file has been duplicated successfully",
       "es" : "Tu archivo ha sido duplicado con éxito"
     },
     "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
-  "dashboard.success-move-project" : {
+  "dashboard.success-duplicate-project" : {
     "translations" : {
-      "en" : "Your project has been moved successfully",
-      "es" : "Tu proyecto ha sido movido con éxito"
+      "de" : "Ihr Projekt wurde erfolgreich dupliziert",
+      "en" : "Your project has been duplicated successfully",
+      "es" : "Tu proyecto ha sido duplicado con éxito"
     },
     "used-in" : [ "src/app/main/ui/dashboard/project_menu.cljs" ]
   },
   "dashboard.success-move-file" : {
     "translations" : {
+      "de" : "Ihre Datei wurde erfolgreich verschoben",
       "en" : "Your file has been moved successfully",
       "es" : "Tu archivo ha sido movido con éxito"
     },
-    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
+    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs", "src/app/main/ui/dashboard/sidebar.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
+  },
+  "dashboard.success-move-project" : {
+    "translations" : {
+      "de" : "Ihr Projekt wurde erfolgreich verschoben",
+      "en" : "Your project has been moved successfully",
+      "es" : "Tu proyecto ha sido movido con éxito"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/project_menu.cljs" ]
   },
   "dashboard.switch-team" : {
     "translations" : {
       "ca" : "Cambiar d'equip",
+      "de" : "Team wechseln",
       "en" : "Switch team",
       "es" : "Cambiar equipo",
       "fr" : "Changer d’équipe",
@@ -780,6 +868,7 @@
   "dashboard.team-info" : {
     "translations" : {
       "ca" : "Informació de l'equip",
+      "de" : "Teaminformationen",
       "en" : "Team info",
       "es" : "Información del equipo",
       "fr" : "Information de l’équipe",
@@ -790,6 +879,7 @@
   "dashboard.team-members" : {
     "translations" : {
       "ca" : "Membres de l'equip",
+      "de" : "Teammitglieder",
       "en" : "Team members",
       "es" : "Integrantes del equipo",
       "fr" : "Membres de l’équipe",
@@ -800,6 +890,7 @@
   "dashboard.team-projects" : {
     "translations" : {
       "ca" : "Projectes de l'equip",
+      "de" : "Teamprojekte",
       "en" : "Team projects",
       "es" : "Proyectos del equipo",
       "fr" : "Projets de l’équipe",
@@ -810,6 +901,7 @@
   "dashboard.theme-change" : {
     "translations" : {
       "ca" : "Tema de l'interfície",
+      "de" : "UI-Theme",
       "en" : "UI theme",
       "es" : "Tema visual",
       "fr" : "Thème de l’interface",
@@ -821,6 +913,7 @@
   "dashboard.title-search" : {
     "translations" : {
       "ca" : "Membres de l'equip",
+      "de" : "Suchergebnisse",
       "en" : "Search results",
       "es" : "Resultados de búsqueda",
       "fr" : "Résultats de recherche",
@@ -832,6 +925,7 @@
   "dashboard.type-something" : {
     "translations" : {
       "ca" : "Escriu per cercar resultats",
+      "de" : "Zum Suchen etwas eingeben",
       "en" : "Type to search results",
       "es" : "Escribe algo para buscar",
       "fr" : "Écrivez pour rechercher",
@@ -843,6 +937,7 @@
   "dashboard.update-settings" : {
     "translations" : {
       "ca" : "Actualitzar opcions",
+      "de" : "Einstellungen aktualisieren",
       "en" : "Update settings",
       "es" : "Actualizar opciones",
       "fr" : "Mettre à jour les paramètres",
@@ -854,6 +949,7 @@
   "dashboard.your-account-title" : {
     "translations" : {
       "ca" : "El teu compte",
+      "de" : "Ihr Konto",
       "en" : "Your account",
       "es" : "Tu cuenta",
       "fr" : "Votre compte",
@@ -864,6 +960,7 @@
   "dashboard.your-email" : {
     "translations" : {
       "ca" : "Correu electrónic",
+      "de" : "E-Mail",
       "en" : "Email",
       "es" : "Correo",
       "fr" : "E‑mail",
@@ -875,6 +972,7 @@
   "dashboard.your-name" : {
     "translations" : {
       "ca" : "El teu nom",
+      "de" : "Ihr Name",
       "en" : "Your name",
       "es" : "Tu nombre",
       "fr" : "Votre nom complet",
@@ -886,16 +984,18 @@
   "dashboard.your-penpot" : {
     "translations" : {
       "ca" : "El teu Penpot",
+      "de" : "Ihr Penpot",
       "en" : "Your Penpot",
       "es" : "Tu Penpot",
       "fr" : "Votre Penpot",
       "zh_cn" : "你的Penpot"
     },
-    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs" ]
+    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "ds.confirm-cancel" : {
     "translations" : {
       "ca" : "Cancel·lar",
+      "de" : "Abbrechen",
       "en" : "Cancel",
       "es" : "Cancelar",
       "fr" : "Annuler",
@@ -907,6 +1007,7 @@
   "ds.confirm-ok" : {
     "translations" : {
       "ca" : "Ok",
+      "de" : "Ok",
       "en" : "Ok",
       "es" : "Ok",
       "fr" : "Ok",
@@ -918,6 +1019,7 @@
   "ds.confirm-title" : {
     "translations" : {
       "ca" : "Estàs segur?",
+      "de" : "Sind Sie sicher?",
       "en" : "Are you sure?",
       "es" : "¿Seguro?",
       "fr" : "Êtes‑vous sûr ?",
@@ -929,6 +1031,7 @@
   "ds.updated-at" : {
     "translations" : {
       "ca" : "Actualitzat: %s",
+      "de" : "Aktualisiert: %s",
       "en" : "Updated: %s",
       "es" : "Actualizado: %s",
       "fr" : "Mise à jour : %s",
@@ -937,16 +1040,10 @@
     },
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs" ]
   },
-  "errors.terms-privacy-agreement-invalid" : {
-    "translations" : {
-      "en" : "You must accept our terms of service and privacy policy.",
-      "es" : "Debes aceptar nuestros términos de servicio y política de privacidad."
-    },
-    "used-in" : [ "src/app/main/ui/auth/register.cljs" ]
-  },
   "errors.clipboard-not-implemented" : {
     "translations" : {
       "ca" : "El teu navegador no pot realitzar aquesta operació",
+      "de" : "Ihr Browser kann diese Funktion nicht ausführen",
       "en" : "Your browser cannot do this operation",
       "es" : "Tu navegador no puede realizar esta operación",
       "fr" : "Votre navigateur ne peut pas effectuer cette opération",
@@ -958,6 +1055,7 @@
   "errors.email-already-exists" : {
     "translations" : {
       "ca" : "El correu ja està en ús",
+      "de" : "E-Mail-Adresse wird bereits verwendet",
       "en" : "Email already used",
       "es" : "Este correo ya está en uso",
       "fr" : "Adresse e‑mail déjà utilisée",
@@ -969,6 +1067,7 @@
   "errors.email-already-validated" : {
     "translations" : {
       "ca" : "El correu ja està validat",
+      "de" : "E-Mail-Adresse wurde bereits validiert.",
       "en" : "Email already validated.",
       "es" : "Este correo ya está validado.",
       "fr" : "Adresse e‑mail déjà validée.",
@@ -980,6 +1079,7 @@
   "errors.email-has-permanent-bounces" : {
     "translations" : {
       "ca" : "El correu «%s» té molts informes de rebot permanents",
+      "de" : "Die E-Mail-Adresse «%s» hat viele permanente Unzustellbarkeitsberichte.",
       "en" : "The email «%s» has many permanent bounce reports.",
       "es" : "El email «%s» tiene varios reportes de rebote permanente.",
       "zh_cn" : "电子邮件“%s”收到了非常多的永久退信报告"
@@ -989,6 +1089,7 @@
   "errors.email-invalid-confirmation" : {
     "translations" : {
       "ca" : "El correu de confirmació ha de coincidir",
+      "de" : "Bestätigungs-E-Mail muss übereinstimmen",
       "en" : "Confirmation email must match",
       "es" : "El correo de confirmación debe coincidir",
       "fr" : "L’adresse e‑mail de confirmation doit correspondre",
@@ -1000,17 +1101,19 @@
   "errors.generic" : {
     "translations" : {
       "ca" : "Alguna cosa ha anat malament",
+      "de" : "Etwas ist schief gelaufen.",
       "en" : "Something wrong has happened.",
       "es" : "Ha ocurrido algún error.",
       "fr" : "Un problème s’est produit.",
       "ru" : "Что-то пошло не так.",
       "zh_cn" : "发生了某种错误。"
     },
-    "used-in" : [ "src/app/main/ui/auth/verify_token.cljs", "src/app/main/ui/settings/profile.cljs", "src/app/main/ui/settings/feedback.cljs", "src/app/main/ui/settings/options.cljs", "src/app/main/ui/dashboard/team.cljs" ]
+    "used-in" : [ "src/app/main/ui/auth/verify_token.cljs", "src/app/main/ui/settings/feedback.cljs", "src/app/main/ui/dashboard/team.cljs" ]
   },
   "errors.google-auth-not-enabled" : {
     "translations" : {
       "ca" : "L'autenticació amb google ha estat desactivada a aquest servidor",
+      "de" : "Die Authentifizierung mit Google ist im Backend deaktiviert",
       "en" : "Authentication with google disabled on backend",
       "es" : "Autenticación con google esta dehabilitada en el servidor",
       "zh_cn" : "后端禁用了Google授权"
@@ -1019,6 +1122,7 @@
   },
   "errors.ldap-disabled" : {
     "translations" : {
+      "de" : "Die LDAP-Authentifizierung ist deaktiviert.",
       "en" : "LDAP authentication is disabled.",
       "es" : "La autheticacion via LDAP esta deshabilitada.",
       "zh_cn" : "仅用了LDAP授权。"
@@ -1028,6 +1132,7 @@
   "errors.media-format-unsupported" : {
     "translations" : {
       "ca" : "El format d'imatge no està suportat (deu ser svg, jpg o png),",
+      "de" : "Das Bildformat wird nicht unterstützt (es muss ein SVG, JPG oder PNG sein).",
       "en" : "The image format is not supported (must be svg, jpg or png).",
       "es" : "No se reconoce el formato de imagen (debe ser svg, jpg o png).",
       "fr" : "Le format d’image n’est pas supporté (doit être svg, jpg ou png).",
@@ -1039,6 +1144,7 @@
   "errors.media-too-large" : {
     "translations" : {
       "ca" : "La imatge es massa gran (ha de tenir menys de 5 mb).",
+      "de" : "Das Bild ist zu groß, um eingefügt zu werden (es muss unter 5MB sein).",
       "en" : "The image is too large to be inserted (must be under 5mb).",
       "es" : "La imagen es demasiado grande (debe tener menos de 5mb).",
       "fr" : "L’image est trop grande (doit être inférieure à 5 Mo).",
@@ -1050,6 +1156,7 @@
   "errors.media-type-mismatch" : {
     "translations" : {
       "ca" : "Sembla que el contingut de la imatge no coincideix amb l'extensió del arxiu",
+      "de" : "Es scheint, dass der Bildinhalt nicht mit der Dateierweiterung übereinstimmt.",
       "en" : "Seems that the contents of the image does not match the file extension.",
       "es" : "Parece que el contenido de la imagen no coincide con la extensión del archivo.",
       "fr" : "Il semble que le contenu de l’image ne correspond pas à l’extension de fichier.",
@@ -1061,6 +1168,7 @@
   "errors.media-type-not-allowed" : {
     "translations" : {
       "ca" : "La imatge no sembla pas vàlida",
+      "de" : "Es scheint, dass dies kein gültiges Bild ist.",
       "en" : "Seems that this is not a valid image.",
       "es" : "Parece que no es una imagen válida.",
       "fr" : "L’image ne semble pas être valide.",
@@ -1072,6 +1180,7 @@
   "errors.member-is-muted" : {
     "translations" : {
       "ca" : "El perfil que estàs invitant té els emails mutejats (per informes de spam o rebots alts",
+      "de" : "In dem von Ihnen eingeladenen Profil sind E-Mails stummgeschaltet (Spam-Berichte oder hohe Unzustellbarkeitsberichte).",
       "en" : "The profile you inviting has emails muted (spam reports or high bounces).",
       "es" : "El perfil que esta invitando tiene los emails silenciados (por reportes de spam o alto indice de rebote).",
       "zh_cn" : "你邀请的人设置了邮件免打扰（报告垃圾邮件或者多次退信）。"
@@ -1081,6 +1190,7 @@
   "errors.network" : {
     "translations" : {
       "ca" : "Impossible connectar amb el servidor principal",
+      "de" : "Es kann keine Verbindung zum Server hergestellt werden.",
       "en" : "Unable to connect to backend server.",
       "es" : "Ha sido imposible conectar con el servidor principal.",
       "fr" : "Impossible de se connecter au serveur principal.",
@@ -1092,6 +1202,7 @@
   "errors.password-invalid-confirmation" : {
     "translations" : {
       "ca" : "La contrasenya de confirmació ha de coincidir",
+      "de" : "Bestätigungspasswort muss übereinstimmen",
       "en" : "Confirmation password must match",
       "es" : "La contraseña de confirmación debe coincidir",
       "fr" : "Le mot de passe de confirmation doit correspondre",
@@ -1103,6 +1214,7 @@
   "errors.password-too-short" : {
     "translations" : {
       "ca" : "La contrasenya ha de tenir 8 com a mínim 8 caràcters",
+      "de" : "Das Passwort sollte mindestens 8 Zeichen lang sein",
       "en" : "Password should at least be 8 characters",
       "es" : "La contraseña debe tener 8 caracteres como mínimo",
       "fr" : "Le mot de passe doit contenir au moins 8 caractères",
@@ -1114,6 +1226,7 @@
   "errors.profile-is-muted" : {
     "translations" : {
       "ca" : "El teu perfil te els emails mutejats (per informes de spam o rebots alts).",
+      "de" : "Ihr Profil hat stummgeschaltete E-Mails (Spam-Berichte oder hohe Unzustellbarkeitsberichte).",
       "en" : "Your profile has emails muted (spam reports or high bounces).",
       "es" : "Tu perfil tiene los emails silenciados (por reportes de spam o alto indice de rebote).",
       "zh_cn" : "你设置了邮件免打扰（报告垃圾邮件或者多次退信）。"
@@ -1123,6 +1236,7 @@
   "errors.registration-disabled" : {
     "translations" : {
       "ca" : "El registre està desactivat actualment",
+      "de" : "Die Registrierung ist derzeit deaktiviert.",
       "en" : "The registration is currently disabled.",
       "es" : "El registro está actualmente desactivado.",
       "fr" : "L’enregistrement est actuellement désactivé.",
@@ -1131,20 +1245,29 @@
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs" ]
   },
+  "errors.terms-privacy-agreement-invalid" : {
+    "translations" : {
+      "en" : "You must accept our terms of service and privacy policy.",
+      "es" : "Debes aceptar nuestros términos de servicio y política de privacidad."
+    },
+    "unused" : true
+  },
   "errors.unexpected-error" : {
     "translations" : {
       "ca" : "S'ha produït un error inesperat.",
+      "de" : "Ein unerwarteter Fehler ist aufgetreten.",
       "en" : "An unexpected error occurred.",
       "es" : "Ha ocurrido un error inesperado.",
       "fr" : "Une erreur inattendue s’est produite",
       "ru" : "Произошла ошибка.",
       "zh_cn" : "发生了意料之外的错误。"
     },
-    "used-in" : [ "src/app/main/data/media.cljs", "src/app/main/ui/workspace/sidebar/options/exports.cljs", "src/app/main/ui/handoff/exports.cljs" ]
+    "used-in" : [ "src/app/main/data/media.cljs", "src/app/main/ui/workspace/sidebar/options/menus/exports.cljs", "src/app/main/ui/handoff/exports.cljs" ]
   },
   "errors.unexpected-token" : {
     "translations" : {
       "ca" : "Token desconegut",
+      "de" : "Unbekannter Token",
       "en" : "Unknown token",
       "es" : "Token desconocido",
       "zh_cn" : "未知的TOKEN。"
@@ -1154,6 +1277,7 @@
   "errors.wrong-credentials" : {
     "translations" : {
       "ca" : "El nom d'usuari o la contrasenya sembla incorrecte",
+      "de" : "Der Benutzername oder das Passwort ist falsch.",
       "en" : "Username or password seems to be wrong.",
       "es" : "El nombre o la contraseña parece incorrecto.",
       "fr" : "Le nom d’utilisateur ou le mot de passe semble être faux.",
@@ -1165,6 +1289,7 @@
   "errors.wrong-old-password" : {
     "translations" : {
       "ca" : "La contrasenya anterior no és correcte",
+      "de" : "Altes Passwort ist falsch",
       "en" : "Old password is incorrect",
       "es" : "La contraseña anterior no es correcta",
       "fr" : "L’ancien mot de passe est incorrect",
@@ -1176,6 +1301,7 @@
   "feedback.chat-start" : {
     "translations" : {
       "ca" : "Uneix-te al xat.",
+      "de" : "Dem Chat beitreten",
       "en" : "Join the chat",
       "es" : "Unirse al chat",
       "fr" : "Rejoindre le chat",
@@ -1186,6 +1312,7 @@
   "feedback.chat-subtitle" : {
     "translations" : {
       "ca" : "Et ve de gust parlar? Xateja amb nosaltres a Gitter",
+      "de" : "Möchten Sie sprechen? Chatten Sie mit uns bei Gitter",
       "en" : "Feeling like talking? Chat with us at Gitter",
       "es" : "¿Deseas conversar? Entra al nuestro chat de la comunidad en Gitter",
       "fr" : "Envie de parler? Discutez avec nous sur Gitter",
@@ -1196,6 +1323,7 @@
   "feedback.description" : {
     "translations" : {
       "ca" : "Descripció",
+      "de" : "Beschreibung",
       "en" : "Description",
       "es" : "Descripción",
       "fr" : "Description",
@@ -1206,6 +1334,7 @@
   "feedback.discussions-go-to" : {
     "translations" : {
       "ca" : "",
+      "de" : "Zur Diskussion",
       "en" : "Go to discussions",
       "es" : "Ir a las discusiones",
       "fr" : "Aller aux discussions",
@@ -1216,6 +1345,7 @@
   "feedback.discussions-subtitle1" : {
     "translations" : {
       "ca" : "Uneix-te al fòrum colaboratiu de Penpot.",
+      "de" : "Treten Sie dem kollaborativen Kommunikationsforum des Penpot-Teams bei.",
       "en" : "Join Penpot team collaborative communication forum.",
       "es" : "Entra al foro colaborativo de Penpot",
       "fr" : "Rejoignez le forum de communication collaborative de l'équipe Penpot.",
@@ -1226,6 +1356,7 @@
   "feedback.discussions-subtitle2" : {
     "translations" : {
       "ca" : "Pots fer i respondre preguntes, tenir converses obertes i seguir les decisións que afecten al projecte",
+      "de" : "Sie können Fragen stellen und beantworten, offene Gespräche führen und Entscheidungen verfolgen, die das Projekt betreffen.",
       "en" : "You can ask and answer questions, have open-ended conversations, and follow along on decisions affecting the project.",
       "es" : "",
       "fr" : "Vous pouvez poser des questions et y répondre, avoir des conversations ouvertes et suivre les décisions affectant le projet.",
@@ -1236,6 +1367,7 @@
   "feedback.discussions-title" : {
     "translations" : {
       "ca" : "",
+      "de" : "Teambesprechungen",
       "en" : "Team discussions",
       "es" : "",
       "fr" : "Discussions en équipe",
@@ -1246,6 +1378,7 @@
   "feedback.subject" : {
     "translations" : {
       "ca" : "Tema",
+      "de" : "Betreff",
       "en" : "Subject",
       "es" : "Asunto",
       "fr" : "Sujet",
@@ -1256,6 +1389,7 @@
   "feedback.subtitle" : {
     "translations" : {
       "ca" : "Si us plau descriu la raó del teu correu, especificant si es una incidència, una idea o un dubte. Un membre del nostre equip respondrà tan aviat como pugui.",
+      "de" : "Bitte beschreiben Sie den Grund Ihrer E-Mail und geben Sie an, ob es sich um ein Problem, eine Idee oder einem Bedenken handelt. Ein Mitglied unseres Teams wird Ihnen so schnell wie möglich antworten.",
       "en" : "Please describe the reason of your email, specifying if is an issue, an idea or a doubt. A member of our team will respond as soon as possible.",
       "es" : "",
       "fr" : "Veuillez décrire la raison de votre e-mail, en précisant s'il s'agit d'un problème, d'une idée ou d'un doute. Un membre de notre équipe vous répondra dans les plus brefs délais.",
@@ -1266,6 +1400,7 @@
   "feedback.title" : {
     "translations" : {
       "ca" : "Correu electrònic",
+      "de" : "E-Mail",
       "en" : "Email",
       "es" : "Correo electrónico",
       "fr" : "Email",
@@ -1277,6 +1412,7 @@
   "generic.error" : {
     "translations" : {
       "ca" : "S'ha produït un error",
+      "de" : "Ein Fehler ist aufgetreten",
       "en" : "An error has occurred",
       "es" : "Ha ocurrido un error",
       "fr" : "Une erreur s’est produite",
@@ -1287,6 +1423,7 @@
   },
   "handoff.attributes.blur" : {
     "translations" : {
+      "de" : "Weichzeichnen",
       "en" : "Blur",
       "es" : "Desenfocado",
       "fr" : "Flou",
@@ -1296,6 +1433,7 @@
   },
   "handoff.attributes.blur.value" : {
     "translations" : {
+      "de" : "Wert",
       "en" : "Value",
       "es" : "Valor",
       "fr" : "Valeur",
@@ -1305,6 +1443,7 @@
   },
   "handoff.attributes.color.hex" : {
     "translations" : {
+      "de" : "HEX",
       "en" : "HEX",
       "es" : "HEX",
       "fr" : "HEX",
@@ -1314,6 +1453,7 @@
   },
   "handoff.attributes.color.hsla" : {
     "translations" : {
+      "de" : "HSLA",
       "en" : "HSLA",
       "es" : "HSLA",
       "fr" : "HSLA",
@@ -1323,6 +1463,7 @@
   },
   "handoff.attributes.color.rgba" : {
     "translations" : {
+      "de" : "RGBA",
       "en" : "RGBA",
       "es" : "RGBA",
       "fr" : "RGBA",
@@ -1332,6 +1473,7 @@
   },
   "handoff.attributes.fill" : {
     "translations" : {
+      "de" : "Fläche",
       "en" : "Fill",
       "es" : "Relleno",
       "fr" : "Remplir",
@@ -1341,6 +1483,7 @@
   },
   "handoff.attributes.image.download" : {
     "translations" : {
+      "de" : "Originalbild herunterladen",
       "en" : "Download source image",
       "es" : "Descargar imagen original",
       "fr" : "Télécharger l’image source",
@@ -1350,6 +1493,7 @@
   },
   "handoff.attributes.image.height" : {
     "translations" : {
+      "de" : "Höhe",
       "en" : "Height",
       "es" : "Altura",
       "fr" : "Hauteur",
@@ -1359,6 +1503,7 @@
   },
   "handoff.attributes.image.width" : {
     "translations" : {
+      "de" : "Breite",
       "en" : "Width",
       "es" : "Ancho",
       "fr" : "Largeur",
@@ -1368,6 +1513,7 @@
   },
   "handoff.attributes.layout" : {
     "translations" : {
+      "de" : "Layout",
       "en" : "Layout",
       "es" : "Estructura",
       "fr" : "Mise en page",
@@ -1377,6 +1523,7 @@
   },
   "handoff.attributes.layout.height" : {
     "translations" : {
+      "de" : "Höhe",
       "en" : "Height",
       "es" : "Altura",
       "fr" : "Hauteur",
@@ -1386,6 +1533,7 @@
   },
   "handoff.attributes.layout.left" : {
     "translations" : {
+      "de" : "Links",
       "en" : "Left",
       "es" : "Izquierda",
       "fr" : "Gauche",
@@ -1395,6 +1543,7 @@
   },
   "handoff.attributes.layout.radius" : {
     "translations" : {
+      "de" : "Radius",
       "en" : "Radius",
       "es" : "Derecha",
       "fr" : "Rayon",
@@ -1404,6 +1553,7 @@
   },
   "handoff.attributes.layout.rotation" : {
     "translations" : {
+      "de" : "Drehung",
       "en" : "Rotation",
       "es" : "Rotación",
       "fr" : "Rotation",
@@ -1413,6 +1563,7 @@
   },
   "handoff.attributes.layout.top" : {
     "translations" : {
+      "de" : "Oben",
       "en" : "Top",
       "es" : "Arriba",
       "fr" : "Haut",
@@ -1422,6 +1573,7 @@
   },
   "handoff.attributes.layout.width" : {
     "translations" : {
+      "de" : "Breite",
       "en" : "Width",
       "es" : "Ancho",
       "fr" : "Largeur",
@@ -1431,6 +1583,7 @@
   },
   "handoff.attributes.shadow" : {
     "translations" : {
+      "de" : "Schatten",
       "en" : "Shadow",
       "es" : "Sombra",
       "fr" : "Ombre",
@@ -1440,6 +1593,7 @@
   },
   "handoff.attributes.shadow.shorthand.blur" : {
     "translations" : {
+      "de" : "B",
       "en" : "B",
       "es" : "B",
       "fr" : "B",
@@ -1449,6 +1603,7 @@
   },
   "handoff.attributes.shadow.shorthand.offset-x" : {
     "translations" : {
+      "de" : "X",
       "en" : "X",
       "es" : "X",
       "fr" : "X",
@@ -1458,6 +1613,7 @@
   },
   "handoff.attributes.shadow.shorthand.offset-y" : {
     "translations" : {
+      "de" : "Y",
       "en" : "Y",
       "es" : "Y",
       "fr" : "Y",
@@ -1467,6 +1623,7 @@
   },
   "handoff.attributes.shadow.shorthand.spread" : {
     "translations" : {
+      "de" : "S",
       "en" : "S",
       "es" : "S",
       "fr" : "S",
@@ -1476,6 +1633,7 @@
   },
   "handoff.attributes.stroke" : {
     "translations" : {
+      "de" : "Rahmen",
       "en" : "Stroke",
       "es" : "Borde",
       "fr" : "Contour",
@@ -1483,8 +1641,45 @@
     },
     "used-in" : [ "src/app/main/ui/handoff/attributes/stroke.cljs" ]
   },
+  "handoff.attributes.stroke.alignment.center" : {
+    "permanent" : true,
+    "translations" : {
+      "de" : "Zentriert",
+      "en" : "Center",
+      "es" : "Centro",
+      "fr" : "Centre",
+      "ru" : "Центр",
+      "zh_cn" : "居中"
+    },
+    "used-in" : [ ]
+  },
+  "handoff.attributes.stroke.alignment.inner" : {
+    "permanent" : true,
+    "translations" : {
+      "de" : "Innen",
+      "en" : "Inside",
+      "es" : "Interior",
+      "fr" : "Intérieur",
+      "ru" : "Внутрь",
+      "zh_cn" : "内部"
+    },
+    "used-in" : [ ]
+  },
+  "handoff.attributes.stroke.alignment.outer" : {
+    "permanent" : true,
+    "translations" : {
+      "de" : "Außen",
+      "en" : "Outside",
+      "es" : "Exterior",
+      "fr" : "Extérieur",
+      "ru" : "Наружу",
+      "zh_cn" : "外部"
+    },
+    "used-in" : [ ]
+  },
   "handoff.attributes.stroke.style.dotted" : {
     "translations" : {
+      "de" : "Gepunktet",
       "en" : "Dotted",
       "es" : "Punteado",
       "fr" : "Pointillé",
@@ -1494,6 +1689,7 @@
   },
   "handoff.attributes.stroke.style.mixed" : {
     "translations" : {
+      "de" : "Mehrere",
       "en" : "Mixed",
       "es" : "Mixto",
       "fr" : "Mixte",
@@ -1503,6 +1699,7 @@
   },
   "handoff.attributes.stroke.style.none" : {
     "translations" : {
+      "de" : "Keine",
       "en" : "None",
       "es" : "Ninguno",
       "fr" : "Aucun",
@@ -1512,6 +1709,7 @@
   },
   "handoff.attributes.stroke.style.solid" : {
     "translations" : {
+      "de" : "Solid",
       "en" : "Solid",
       "es" : "Sólido",
       "fr" : "Solide",
@@ -1521,6 +1719,7 @@
   },
   "handoff.attributes.stroke.width" : {
     "translations" : {
+      "de" : "Breite",
       "en" : "Width",
       "es" : "Ancho",
       "fr" : "Épaisseur",
@@ -1530,6 +1729,7 @@
   },
   "handoff.attributes.typography" : {
     "translations" : {
+      "de" : "Typografie",
       "en" : "Typography",
       "es" : "Tipografía",
       "fr" : "Typographie",
@@ -1539,6 +1739,7 @@
   },
   "handoff.attributes.typography.font-family" : {
     "translations" : {
+      "de" : "Schriftart",
       "en" : "Font Family",
       "es" : "Familia tipográfica",
       "fr" : "Police de caractères",
@@ -1548,6 +1749,7 @@
   },
   "handoff.attributes.typography.font-size" : {
     "translations" : {
+      "de" : "Schriftgröße",
       "en" : "Font Size",
       "es" : "Tamaño de fuente",
       "fr" : "Taille de police",
@@ -1557,6 +1759,7 @@
   },
   "handoff.attributes.typography.font-style" : {
     "translations" : {
+      "de" : "Schriftstil",
       "en" : "Font Style",
       "es" : "Estilo de fuente",
       "fr" : "Style de police",
@@ -1566,6 +1769,7 @@
   },
   "handoff.attributes.typography.letter-spacing" : {
     "translations" : {
+      "de" : "Zeichenabstand",
       "en" : "Letter Spacing",
       "es" : "Espaciado de letras",
       "fr" : "Interlettrage",
@@ -1575,6 +1779,7 @@
   },
   "handoff.attributes.typography.line-height" : {
     "translations" : {
+      "de" : "Zeilenabstand",
       "en" : "Line Height",
       "es" : "Interlineado",
       "fr" : "Interlignage",
@@ -1584,6 +1789,7 @@
   },
   "handoff.attributes.typography.text-decoration" : {
     "translations" : {
+      "de" : "Textdekoration",
       "en" : "Text Decoration",
       "es" : "Decoración de texto",
       "fr" : "Décoration de texte",
@@ -1593,6 +1799,7 @@
   },
   "handoff.attributes.typography.text-decoration.none" : {
     "translations" : {
+      "de" : "Keine",
       "en" : "None",
       "es" : "Ninguna",
       "fr" : "Aucune",
@@ -1602,6 +1809,7 @@
   },
   "handoff.attributes.typography.text-decoration.strikethrough" : {
     "translations" : {
+      "de" : "Durchgestrichen",
       "en" : "Strikethrough",
       "es" : "Tachar",
       "fr" : "Barré",
@@ -1611,6 +1819,7 @@
   },
   "handoff.attributes.typography.text-decoration.underline" : {
     "translations" : {
+      "de" : "Unterstrichen",
       "en" : "Underline",
       "es" : "Subrayar",
       "fr" : "Soulignage",
@@ -1620,6 +1829,7 @@
   },
   "handoff.attributes.typography.text-transform" : {
     "translations" : {
+      "de" : "Texttransformation",
       "en" : "Text Transform",
       "es" : "Transformación de texto",
       "fr" : "Transformation de texte",
@@ -1629,6 +1839,7 @@
   },
   "handoff.attributes.typography.text-transform.lowercase" : {
     "translations" : {
+      "de" : "Kleinbuchstaben",
       "en" : "Lower Case",
       "es" : "Minúsculas",
       "fr" : "Minuscule",
@@ -1638,6 +1849,7 @@
   },
   "handoff.attributes.typography.text-transform.none" : {
     "translations" : {
+      "de" : "Keine",
       "en" : "None",
       "es" : "Ninguna",
       "fr" : "Aucune",
@@ -1647,6 +1859,7 @@
   },
   "handoff.attributes.typography.text-transform.titlecase" : {
     "translations" : {
+      "de" : "Kapitälchen",
       "en" : "Title Case",
       "es" : "Primera en mayúscula",
       "fr" : "Premières Lettres en Capitales",
@@ -1656,6 +1869,7 @@
   },
   "handoff.attributes.typography.text-transform.uppercase" : {
     "translations" : {
+      "de" : "Großbuchstaben",
       "en" : "Upper Case",
       "es" : "Mayúsculas",
       "fr" : "Capitales",
@@ -1665,6 +1879,7 @@
   },
   "handoff.tabs.code" : {
     "translations" : {
+      "de" : "Code",
       "en" : "Code",
       "es" : "Código",
       "fr" : "Code",
@@ -1674,6 +1889,7 @@
   },
   "handoff.tabs.code.selected.circle" : {
     "translations" : {
+      "de" : "Kreis",
       "en" : "Circle",
       "es" : "Círculo",
       "fr" : "Cercle",
@@ -1683,6 +1899,7 @@
   },
   "handoff.tabs.code.selected.curve" : {
     "translations" : {
+      "de" : "Kurve",
       "en" : "Curve",
       "es" : "Curva",
       "fr" : "Courbe",
@@ -1692,6 +1909,7 @@
   },
   "handoff.tabs.code.selected.frame" : {
     "translations" : {
+      "de" : "Zeichenfläche",
       "en" : "Artboard",
       "es" : "Mesa de trabajo",
       "fr" : "Plan de travail",
@@ -1701,6 +1919,7 @@
   },
   "handoff.tabs.code.selected.group" : {
     "translations" : {
+      "de" : "Gruppe",
       "en" : "Group",
       "es" : "Grupo",
       "fr" : "Groupe",
@@ -1710,6 +1929,7 @@
   },
   "handoff.tabs.code.selected.image" : {
     "translations" : {
+      "de" : "Bild",
       "en" : "Image",
       "es" : "Imagen",
       "fr" : "Image",
@@ -1719,6 +1939,7 @@
   },
   "handoff.tabs.code.selected.multiple" : {
     "translations" : {
+      "de" : "%s Ausgewählt(e)",
       "en" : "%s Selected",
       "es" : "%s Seleccionado",
       "fr" : "%s Sélectionné",
@@ -1728,6 +1949,7 @@
   },
   "handoff.tabs.code.selected.path" : {
     "translations" : {
+      "de" : "Pfad",
       "en" : "Path",
       "es" : "Trazado",
       "fr" : "Chemin",
@@ -1737,6 +1959,7 @@
   },
   "handoff.tabs.code.selected.rect" : {
     "translations" : {
+      "de" : "Rechteck",
       "en" : "Rectangle",
       "es" : "Rectángulo",
       "fr" : "Rectangle",
@@ -1746,6 +1969,7 @@
   },
   "handoff.tabs.code.selected.svg-raw" : {
     "translations" : {
+      "de" : "SVG",
       "en" : "SVG",
       "es" : "SVG",
       "fr" : "SVG",
@@ -1755,6 +1979,7 @@
   },
   "handoff.tabs.code.selected.text" : {
     "translations" : {
+      "de" : "Text",
       "en" : "Text",
       "es" : "Texto",
       "fr" : "Texte",
@@ -1764,6 +1989,7 @@
   },
   "handoff.tabs.info" : {
     "translations" : {
+      "de" : "Info",
       "en" : "Info",
       "es" : "Información",
       "fr" : "Information",
@@ -1773,6 +1999,7 @@
   },
   "history.alert-message" : {
     "translations" : {
+      "de" : "Sie sehen Version %s",
       "en" : "You are seeing version %s",
       "es" : "Estás viendo la versión %s",
       "fr" : "Vous voyez la version %s",
@@ -1784,6 +2011,7 @@
   "labels.accept" : {
     "translations" : {
       "ca" : "Acceptar",
+      "de" : "Akzeptieren",
       "en" : "Accept",
       "es" : "Aceptar",
       "fr" : "Accepter",
@@ -1794,6 +2022,7 @@
   },
   "labels.admin" : {
     "translations" : {
+      "de" : "Admin",
       "en" : "Admin",
       "es" : "Administración",
       "fr" : "Administration",
@@ -1803,6 +2032,7 @@
   },
   "labels.all" : {
     "translations" : {
+      "de" : "Alles",
       "en" : "All",
       "es" : "Todo",
       "fr" : "Tous",
@@ -1812,6 +2042,7 @@
   },
   "labels.bad-gateway.desc-message" : {
     "translations" : {
+      "de" : "Sie müssen ein wenig warten und es erneut versuchen. Wir führen eine kurze Wartung an unseren Servern durch.",
       "en" : "Looks like you need to wait a bit and retry; we are performing small maintenance of our servers.",
       "es" : "Parece que necesitas esperar un poco y volverlo a intentar; estamos realizando operaciones de mantenimiento en nuestros servidores.",
       "fr" : "Il semble que vous deviez attendre un peu et réessayer ; nous effectuons une petite maintenance de nos serveurs.",
@@ -1821,6 +2052,7 @@
   },
   "labels.bad-gateway.main-message" : {
     "translations" : {
+      "de" : "Bad Gateway",
       "en" : "Bad Gateway",
       "es" : "Bad Gateway",
       "fr" : "Bad Gateway",
@@ -1830,6 +2062,7 @@
   },
   "labels.cancel" : {
     "translations" : {
+      "de" : "Abbrechen",
       "en" : "Cancel",
       "es" : "Cancelar",
       "fr" : "Annuler",
@@ -1840,6 +2073,7 @@
   },
   "labels.centered" : {
     "translations" : {
+      "de" : "Zentriert",
       "en" : "Center",
       "es" : "Centrado",
       "fr" : "Centré",
@@ -1849,6 +2083,7 @@
   },
   "labels.comments" : {
     "translations" : {
+      "de" : "Kommentare",
       "en" : "Comments",
       "es" : "Comentarios",
       "fr" : "Commentaires",
@@ -1858,6 +2093,7 @@
   },
   "labels.confirm-password" : {
     "translations" : {
+      "de" : "Passwort bestätigen",
       "en" : "Confirm password",
       "es" : "Confirmar contraseña",
       "fr" : "Confirmer le mot de passe",
@@ -1868,6 +2104,7 @@
   },
   "labels.content" : {
     "translations" : {
+      "de" : "Inhalt",
       "en" : "Content",
       "es" : "Contenido",
       "fr" : "Contenu",
@@ -1877,6 +2114,7 @@
   },
   "labels.create-team" : {
     "translations" : {
+      "de" : "Neues Team erstellen",
       "en" : "Create new team",
       "es" : "Crea un nuevo equipo",
       "fr" : "Créer nouvelle équipe",
@@ -1886,6 +2124,7 @@
   },
   "labels.dashboard" : {
     "translations" : {
+      "de" : "Dashboard",
       "en" : "Dashboard",
       "es" : "Panel",
       "fr" : "Tableau de bord",
@@ -1895,16 +2134,18 @@
   },
   "labels.delete" : {
     "translations" : {
+      "de" : "Löschen",
       "en" : "Delete",
       "es" : "Borrar",
       "fr" : "Supprimer",
       "ru" : "Удалить",
       "zh_cn" : "删除"
     },
-    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs", "src/app/main/ui/dashboard/files.cljs" ]
+    "used-in" : [ "src/app/main/ui/dashboard/project_menu.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "labels.delete-comment" : {
     "translations" : {
+      "de" : "Kommentar löschen",
       "en" : "Delete comment",
       "es" : "Eliminar comentario",
       "fr" : "Supprimer le commentaire",
@@ -1914,6 +2155,7 @@
   },
   "labels.delete-comment-thread" : {
     "translations" : {
+      "de" : "Thread löschen",
       "en" : "Delete thread",
       "es" : "Eliminar hilo",
       "fr" : "Supprimer le fil",
@@ -1923,16 +2165,18 @@
   },
   "labels.drafts" : {
     "translations" : {
+      "de" : "Entwürfe",
       "en" : "Drafts",
       "es" : "Borradores",
       "fr" : "Brouillons",
       "ru" : "Черновики",
       "zh_cn" : "草稿"
     },
-    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs" ]
+    "used-in" : [ "src/app/main/ui/dashboard/projects.cljs", "src/app/main/ui/dashboard/sidebar.cljs", "src/app/main/ui/dashboard/files.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "labels.edit" : {
     "translations" : {
+      "de" : "Bearbeiten",
       "en" : "Edit",
       "es" : "Editar",
       "fr" : "Modifier",
@@ -1942,6 +2186,7 @@
   },
   "labels.editor" : {
     "translations" : {
+      "de" : "Editor",
       "en" : "Editor",
       "es" : "Editor",
       "fr" : "Éditeur",
@@ -1951,6 +2196,7 @@
   },
   "labels.email" : {
     "translations" : {
+      "de" : "E-Mail",
       "en" : "Email",
       "es" : "Correo electrónico",
       "fr" : "Adresse e‑mail",
@@ -1961,6 +2207,7 @@
   },
   "labels.feedback-disabled" : {
     "translations" : {
+      "de" : "Feedback deaktiviert",
       "en" : "Feedback disabled",
       "es" : "El modulo de recepción de opiniones esta deshabilitado.",
       "zh_cn" : "反馈被禁止"
@@ -1969,6 +2216,7 @@
   },
   "labels.feedback-sent" : {
     "translations" : {
+      "de" : "Feedback gesendet",
       "en" : "Feedback sent",
       "es" : "Opinión enviada",
       "zh_cn" : "反馈已发出"
@@ -1977,6 +2225,7 @@
   },
   "labels.give-feedback" : {
     "translations" : {
+      "de" : "Feedback geben",
       "en" : "Give feedback",
       "es" : "Danos tu opinión",
       "fr" : "Donnez votre avis",
@@ -1987,6 +2236,7 @@
   },
   "labels.hide-resolved-comments" : {
     "translations" : {
+      "de" : "Erledigte Kommentare ausblenden",
       "en" : "Hide resolved comments",
       "es" : "Ocultar comentarios resueltos",
       "fr" : "Masquer les commentaires résolus",
@@ -1996,6 +2246,7 @@
   },
   "labels.icons" : {
     "translations" : {
+      "de" : "Icons",
       "en" : "Icons",
       "es" : "Iconos",
       "fr" : "Icônes",
@@ -2006,6 +2257,7 @@
   },
   "labels.images" : {
     "translations" : {
+      "de" : "Bilder",
       "en" : "Images",
       "es" : "Imágenes",
       "fr" : "Images",
@@ -2016,6 +2268,7 @@
   },
   "labels.internal-error.desc-message" : {
     "translations" : {
+      "de" : "Etwas ist schiefgegangen. Bitte versuchen Sie den Vorgang erneut und wenn das Problem weiterhin besteht, kontaktieren Sie den Support.",
       "en" : "Something bad happened. Please retry the operation and if the problem persists, contact with support.",
       "es" : "Ha ocurrido algo extraño. Por favor, reintenta la operación, y si el problema persiste, contacta con el servicio técnico.",
       "fr" : "Un problème s’est produit. Veuillez réessayer l’opération et, si le problème persiste, contacter le service technique.",
@@ -2025,6 +2278,7 @@
   },
   "labels.internal-error.main-message" : {
     "translations" : {
+      "de" : "Interner Fehler",
       "en" : "Internal Error",
       "es" : "Error interno",
       "fr" : "Erreur interne",
@@ -2034,6 +2288,7 @@
   },
   "labels.language" : {
     "translations" : {
+      "de" : "Sprache",
       "en" : "Language",
       "es" : "Idioma",
       "fr" : "Langue",
@@ -2044,6 +2299,7 @@
   },
   "labels.logout" : {
     "translations" : {
+      "de" : "Abmelden",
       "en" : "Logout",
       "es" : "Salir",
       "fr" : "Se déconnecter",
@@ -2054,6 +2310,7 @@
   },
   "labels.members" : {
     "translations" : {
+      "de" : "Mitglieder",
       "en" : "Members",
       "es" : "Integrantes",
       "fr" : "Membres",
@@ -2063,6 +2320,7 @@
   },
   "labels.name" : {
     "translations" : {
+      "de" : "Name",
       "en" : "Name",
       "es" : "Nombre",
       "fr" : "Nom",
@@ -2073,6 +2331,7 @@
   },
   "labels.new-password" : {
     "translations" : {
+      "de" : "Neues Passwort",
       "en" : "New password",
       "es" : "Nueva contraseña",
       "fr" : "Nouveau mot de passe",
@@ -2083,6 +2342,7 @@
   },
   "labels.no-comments-available" : {
     "translations" : {
+      "de" : "Sie haben keine ausstehenden Kommentarbenachrichtigungen",
       "en" : "You have no pending comment notifications",
       "es" : "No tienes notificaciones de comentarios pendientes",
       "fr" : "Vous n’avez aucune notification de commentaire en attente",
@@ -2092,6 +2352,7 @@
   },
   "labels.not-found.auth-info" : {
     "translations" : {
+      "de" : "Sie sind angemeldet als",
       "en" : "You’re signed in as",
       "es" : "Estás identificado como",
       "fr" : "Vous êtes connecté en tant que",
@@ -2101,6 +2362,7 @@
   },
   "labels.not-found.desc-message" : {
     "translations" : {
+      "de" : "Möglicherweise existiert diese Seite nicht oder Sie haben keine Zugriffsrechte darauf.",
       "en" : "This page might not exist or you don’t have permissions to access to it.",
       "es" : "Esta página no existe o no tienes permisos para verla.",
       "fr" : "Cette page n’existe pas ou vous ne disposez pas des permissions nécessaires pour y accéder.",
@@ -2110,6 +2372,7 @@
   },
   "labels.not-found.main-message" : {
     "translations" : {
+      "de" : "Ups!",
       "en" : "Oops!",
       "es" : "¡Huy!",
       "fr" : "Oups !",
@@ -2119,6 +2382,7 @@
   },
   "labels.num-of-files" : {
     "translations" : {
+      "de" : [ "1 Datei", "%s Dateien" ],
       "en" : [ "1 file", "%s files" ],
       "es" : [ "1 archivo", "%s archivos" ],
       "fr" : [ "1 fichier", "%s fichiers" ],
@@ -2128,6 +2392,7 @@
   },
   "labels.num-of-projects" : {
     "translations" : {
+      "de" : [ "1 Projekt", "%s Projekte" ],
       "en" : [ "1 project", "%s projects" ],
       "es" : [ "1 proyecto", "%s proyectos" ],
       "fr" : [ "1 projet", "%s projets" ],
@@ -2137,6 +2402,7 @@
   },
   "labels.old-password" : {
     "translations" : {
+      "de" : "Altes Passwort",
       "en" : "Old password",
       "es" : "Contraseña anterior",
       "fr" : "Ancien mot de passe",
@@ -2147,6 +2413,7 @@
   },
   "labels.only-yours" : {
     "translations" : {
+      "de" : "Nur Ihre",
       "en" : "Only yours",
       "es" : "Sólo los tuyos",
       "fr" : "Seulement les vôtres",
@@ -2156,6 +2423,7 @@
   },
   "labels.owner" : {
     "translations" : {
+      "de" : "Eigentümer",
       "en" : "Owner",
       "es" : "Dueño",
       "fr" : "Propriétaire",
@@ -2165,6 +2433,7 @@
   },
   "labels.password" : {
     "translations" : {
+      "de" : "Passwort",
       "en" : "Password",
       "es" : "Contraseña",
       "fr" : "Mot de passe",
@@ -2175,6 +2444,7 @@
   },
   "labels.permissions" : {
     "translations" : {
+      "de" : "Berechtigungen",
       "en" : "Permissions",
       "es" : "Permisos",
       "fr" : "Permissions",
@@ -2184,6 +2454,7 @@
   },
   "labels.profile" : {
     "translations" : {
+      "de" : "Profil",
       "en" : "Profile",
       "es" : "Perfil",
       "fr" : "Profil",
@@ -2194,6 +2465,7 @@
   },
   "labels.projects" : {
     "translations" : {
+      "de" : "Projekte",
       "en" : "Projects",
       "es" : "Proyectos",
       "fr" : "Projets",
@@ -2205,6 +2477,7 @@
   "labels.recent" : {
     "translations" : {
       "ca" : "Recent",
+      "de" : "Zuletzt",
       "en" : "Recent",
       "es" : "Reciente",
       "fr" : "Récent",
@@ -2215,6 +2488,7 @@
   },
   "labels.remove" : {
     "translations" : {
+      "de" : "Entfernen",
       "en" : "Remove",
       "es" : "Quitar",
       "fr" : "Retirer",
@@ -2225,15 +2499,17 @@
   },
   "labels.rename" : {
     "translations" : {
+      "de" : "Umbenennen",
       "en" : "Rename",
       "es" : "Renombrar",
       "fr" : "Renommer",
       "zh_cn" : "重命名"
     },
-    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs", "src/app/main/ui/dashboard/sidebar.cljs", "src/app/main/ui/dashboard/files.cljs" ]
+    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs", "src/app/main/ui/dashboard/project_menu.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "labels.rename-team" : {
     "translations" : {
+      "de" : "Team umbenennen",
       "en" : "Rename team",
       "es" : "Renomba el equipo",
       "zh_cn" : "重命名团队"
@@ -2242,6 +2518,7 @@
   },
   "labels.retry" : {
     "translations" : {
+      "de" : "Wiederholen",
       "en" : "Retry",
       "es" : "Reintentar",
       "fr" : "Réessayer",
@@ -2251,6 +2528,7 @@
   },
   "labels.role" : {
     "translations" : {
+      "de" : "Rolle",
       "en" : "Role",
       "es" : "Cargo",
       "fr" : "Rôle",
@@ -2261,6 +2539,7 @@
   "labels.save" : {
     "translations" : {
       "ca" : "Desa",
+      "de" : "Speichern",
       "en" : "Save",
       "es" : "Guardar",
       "fr" : "Enregistrer",
@@ -2271,6 +2550,7 @@
   },
   "labels.send" : {
     "translations" : {
+      "de" : "Senden",
       "en" : "Send",
       "es" : "Enviar",
       "zh_cn" : "发送"
@@ -2279,6 +2559,7 @@
   },
   "labels.sending" : {
     "translations" : {
+      "de" : "Senden…",
       "en" : "Sending...",
       "es" : "Enviando...",
       "zh_cn" : "正在发送…"
@@ -2287,6 +2568,7 @@
   },
   "labels.service-unavailable.desc-message" : {
     "translations" : {
+      "de" : "Wir befinden uns in der planmäßigen Wartung unserer Systeme.",
       "en" : "We are in programmed maintenance of our systems.",
       "es" : "Estamos en una operación de mantenimiento programado de nuestros sistemas.",
       "fr" : "Nous sommes en maintenance planifiée de nos systèmes.",
@@ -2296,6 +2578,7 @@
   },
   "labels.service-unavailable.main-message" : {
     "translations" : {
+      "de" : "Service nicht verfügbar",
       "en" : "Service Unavailable",
       "es" : "El servicio no está disponible",
       "fr" : "Service non disponible",
@@ -2305,6 +2588,7 @@
   },
   "labels.settings" : {
     "translations" : {
+      "de" : "Einstellungen",
       "en" : "Settings",
       "es" : "Configuración",
       "fr" : "Configuration",
@@ -2315,6 +2599,7 @@
   },
   "labels.shared-libraries" : {
     "translations" : {
+      "de" : "Gemeinsam genutzte Bibliotheken",
       "en" : "Shared Libraries",
       "es" : "Bibliotecas Compartidas",
       "fr" : "Bibliothèques Partagées",
@@ -2325,6 +2610,7 @@
   },
   "labels.show-all-comments" : {
     "translations" : {
+      "de" : "Alle Kommentare anzeigen",
       "en" : "Show all comments",
       "es" : "Mostrar todos los comentarios",
       "fr" : "Afficher tous les commentaires",
@@ -2334,6 +2620,7 @@
   },
   "labels.show-your-comments" : {
     "translations" : {
+      "de" : "Nur eigene Kommentare anzeigen",
       "en" : "Show only yours comments",
       "es" : "Mostrar sólo tus comentarios",
       "fr" : "Afficher uniquement vos commentaires",
@@ -2343,6 +2630,7 @@
   },
   "labels.sign-out" : {
     "translations" : {
+      "de" : "Abmelden",
       "en" : "Sign out",
       "es" : "Salir",
       "fr" : "Se déconnecter",
@@ -2353,6 +2641,7 @@
   },
   "labels.update" : {
     "translations" : {
+      "de" : "Aktualisieren",
       "en" : "Update",
       "es" : "Actualizar",
       "fr" : "Actualiser",
@@ -2363,6 +2652,7 @@
   },
   "labels.update-team" : {
     "translations" : {
+      "de" : "Team aktualisieren",
       "en" : "Update team",
       "es" : "Actualiza el equipo",
       "zh_cn" : "更新团队"
@@ -2371,6 +2661,7 @@
   },
   "labels.viewer" : {
     "translations" : {
+      "de" : "Zuschauer",
       "en" : "Viewer",
       "es" : "Visualizador",
       "fr" : "Spectateur",
@@ -2380,6 +2671,7 @@
   },
   "labels.write-new-comment" : {
     "translations" : {
+      "de" : "Neuen Kommentar schreiben",
       "en" : "Write new comment",
       "es" : "Escribir un nuevo comentario",
       "fr" : "Écrire un nouveau commentaire",
@@ -2389,6 +2681,7 @@
   },
   "media.loading" : {
     "translations" : {
+      "de" : "Bild laden…",
       "en" : "Loading image…",
       "es" : "Cargando imagen…",
       "fr" : "Chargement de l’image…",
@@ -2399,36 +2692,40 @@
   },
   "modals.add-shared-confirm.accept" : {
     "translations" : {
+      "de" : "Hinzufügen als gemeinsam genutzte Bibliothek",
       "en" : "Add as Shared Library",
       "es" : "Añadir como Biblioteca Compartida",
       "fr" : "Ajouter comme Bibliothèque Partagée",
       "ru" : "",
       "zh_cn" : "添加为共享库"
     },
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs", "src/app/main/ui/dashboard/grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "modals.add-shared-confirm.hint" : {
     "translations" : {
+      "de" : "Sobald es als gemeinsam genutzte Bibliothek hinzugefügt wurde, können die Assets dieser Dateibibliothek von den anderen Dateien verwendet werden.",
       "en" : "Once added as Shared Library, the assets of this file library will be available to be used among the rest of your files.",
       "es" : "Una vez añadido como Biblioteca Compartida, los recursos de este archivo estarán disponibles para ser usado por el resto de tus archivos.",
       "fr" : "Une fois ajoutées en tant que Bibliothèque Partagée, les ressources de cette bibliothèque de fichiers seront disponibles pour être utilisées parmi le reste de vos fichiers.",
       "ru" : "",
       "zh_cn" : "一旦添加为共享库，此文档库中的素材就可被用于你的其他文档中。"
     },
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs", "src/app/main/ui/dashboard/grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "modals.add-shared-confirm.message" : {
     "translations" : {
+      "de" : "Hinzufügen von “%s” als gemeinsam genutzte Bibliothek",
       "en" : "Add “%s” as Shared Library",
       "es" : "Añadir “%s” como Biblioteca Compartida",
       "fr" : "Ajouter « %s » comme Bibliothèque Partagée",
       "ru" : "",
       "zh_cn" : "将“%s”添加为共享库"
     },
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs", "src/app/main/ui/dashboard/grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "modals.change-email.confirm-email" : {
     "translations" : {
+      "de" : "Neue E-Mail-Adresse verifizieren",
       "en" : "Verify new email",
       "es" : "Verificar el nuevo correo",
       "fr" : "Vérifier la nouvelle adresse e‑mail",
@@ -2439,6 +2736,7 @@
   },
   "modals.change-email.info" : {
     "translations" : {
+      "de" : "Wir senden Ihnen eine Nachricht an Ihre aktuelle E-Mail-Adresse “%s”, um Ihre Identität zu überprüfen.",
       "en" : "We'll send you an email to your current email “%s” to verify your identity.",
       "es" : "Enviaremos un mensaje a tu correo actual “%s” para verificar tu identidad.",
       "fr" : "Nous enverrons un e‑mail à votre adresse actuelle « %s » pour vérifier votre identité.",
@@ -2449,6 +2747,7 @@
   },
   "modals.change-email.new-email" : {
     "translations" : {
+      "de" : "Neue E-Mail-Adresse",
       "en" : "New email",
       "es" : "Nuevo correo",
       "fr" : "Nouvel e‑mail",
@@ -2459,6 +2758,7 @@
   },
   "modals.change-email.submit" : {
     "translations" : {
+      "de" : "E-Mail-Adresse ändern",
       "en" : "Change email",
       "es" : "Cambiar correo",
       "fr" : "Changer adresse e‑mail",
@@ -2469,6 +2769,7 @@
   },
   "modals.change-email.title" : {
     "translations" : {
+      "de" : "Ihre E-Mail-Adresse ändern",
       "en" : "Change your email",
       "es" : "Cambiar tu correo",
       "fr" : "Changez votre adresse e‑mail",
@@ -2479,6 +2780,7 @@
   },
   "modals.delete-account.cancel" : {
     "translations" : {
+      "de" : "Abbrechen und mein Konto behalten",
       "en" : "Cancel and keep my account",
       "es" : "Cancelar y mantener mi cuenta",
       "fr" : "Annuler et conserver mon compte",
@@ -2489,6 +2791,7 @@
   },
   "modals.delete-account.confirm" : {
     "translations" : {
+      "de" : "Ja, mein Konto löschen",
       "en" : "Yes, delete my account",
       "es" : "Si, borrar mi cuenta",
       "fr" : "Oui, supprimer mon compte",
@@ -2499,6 +2802,7 @@
   },
   "modals.delete-account.info" : {
     "translations" : {
+      "de" : "Wenn Sie Ihr Konto löschen, verlieren Sie alle Ihre aktuellen Projekte und Archive.",
       "en" : "By removing your account you’ll lose all your current projects and archives.",
       "es" : "Si borras tu cuenta perderás todos tus proyectos y archivos.",
       "fr" : "En supprimant votre compte, vous perdrez tous vos projets et archives actuelles.",
@@ -2509,6 +2813,7 @@
   },
   "modals.delete-account.title" : {
     "translations" : {
+      "de" : "Sind Sie sicher, dass Sie Ihr Konto löschen möchten?",
       "en" : "Are you sure you want to delete your account?",
       "es" : "¿Seguro que quieres borrar tu cuenta?",
       "fr" : "Êtes‑vous sûr de vouloir supprimer votre compte ?",
@@ -2519,6 +2824,7 @@
   },
   "modals.delete-comment-thread.accept" : {
     "translations" : {
+      "de" : "Konversation löschen",
       "en" : "Delete conversation",
       "es" : "Eliminar conversación",
       "fr" : "Supprimer la conversation",
@@ -2528,6 +2834,7 @@
   },
   "modals.delete-comment-thread.message" : {
     "translations" : {
+      "de" : "Sind Sie sicher, dass Sie diese Konversation löschen möchten? Alle Kommentare in diesem Thread werden gelöscht.",
       "en" : "Are you sure you want to delete this conversation? All comments in this thread will be deleted.",
       "es" : "¿Seguro que quieres eliminar esta conversación? Todos los comentarios en este hilo serán eliminados.",
       "fr" : "Êtes‑vous sûr de vouloir supprimer cette conversation ? Tous les commentaires de ce fil seront supprimés.",
@@ -2537,6 +2844,7 @@
   },
   "modals.delete-comment-thread.title" : {
     "translations" : {
+      "de" : "Konversation löschen",
       "en" : "Delete conversation",
       "es" : "Eliminar conversación",
       "fr" : "Supprimer une conversation",
@@ -2546,33 +2854,37 @@
   },
   "modals.delete-file-confirm.accept" : {
     "translations" : {
+      "de" : "Datei löschen",
       "en" : "Delete file",
       "es" : "Eliminar archivo",
       "fr" : "Supprimer le fichier",
       "zh_cn" : "删除文档"
     },
-    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "modals.delete-file-confirm.message" : {
     "translations" : {
+      "de" : "Sind Sie sicher, dass Sie diese Datei löschen wollen?",
       "en" : "Are you sure you want to delete this file?",
       "es" : "¿Seguro que quieres eliminar este archivo?",
       "fr" : "Êtes‑vous sûr de vouloir supprimer ce fichier ?",
       "zh_cn" : "你确定想要删除这个文档？"
     },
-    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "modals.delete-file-confirm.title" : {
     "translations" : {
+      "de" : "Datei löschen",
       "en" : "Deleting file",
       "es" : "Eliminando archivo",
       "fr" : "Supprimer un fichier",
       "zh_cn" : "正在删除文档"
     },
-    "used-in" : [ "src/app/main/ui/dashboard/grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "modals.delete-page.body" : {
     "translations" : {
+      "de" : "Sind Sie sicher, dass Sie diese Seite löschen wollen?",
       "en" : "Are you sure you want to delete this page?",
       "es" : "¿Seguro que quieres borrar esta página?",
       "fr" : "Êtes‑vous sûr de vouloir supprimer cette page ?",
@@ -2582,6 +2894,7 @@
   },
   "modals.delete-page.title" : {
     "translations" : {
+      "de" : "Seite löschen",
       "en" : "Delete page",
       "es" : "Borrar página",
       "fr" : "Supprimer une page",
@@ -2591,33 +2904,37 @@
   },
   "modals.delete-project-confirm.accept" : {
     "translations" : {
+      "de" : "Projekt löschen",
       "en" : "Delete project",
       "es" : "Eliminar proyecto",
       "fr" : "Supprimer le projet",
       "zh_cn" : "删除项目"
     },
-    "used-in" : [ "src/app/main/ui/dashboard/files.cljs" ]
+    "used-in" : [ "src/app/main/ui/dashboard/project_menu.cljs" ]
   },
   "modals.delete-project-confirm.message" : {
     "translations" : {
+      "de" : "Sind Sie sicher, dass Sie dieses Projekt löschen möchten?",
       "en" : "Are you sure you want to delete this project?",
       "es" : "¿Seguro que quieres eliminar este proyecto?",
       "fr" : "Êtes‑vous sûr de vouloir supprimer ce projet ?",
       "zh_cn" : "你确定想要删除这个项目？"
     },
-    "used-in" : [ "src/app/main/ui/dashboard/files.cljs" ]
+    "used-in" : [ "src/app/main/ui/dashboard/project_menu.cljs" ]
   },
   "modals.delete-project-confirm.title" : {
     "translations" : {
+      "de" : "Projekt löschen",
       "en" : "Delete project",
       "es" : "Eliminar proyecto",
       "fr" : "Supprimer un projet",
       "zh_cn" : "删除项目"
     },
-    "used-in" : [ "src/app/main/ui/dashboard/files.cljs" ]
+    "used-in" : [ "src/app/main/ui/dashboard/project_menu.cljs" ]
   },
   "modals.delete-team-confirm.accept" : {
     "translations" : {
+      "de" : "Team löschen",
       "en" : "Delete team",
       "es" : "Eliminar equipo",
       "fr" : "Supprimer l’équipe",
@@ -2627,6 +2944,7 @@
   },
   "modals.delete-team-confirm.message" : {
     "translations" : {
+      "de" : "Sind Sie sicher, dass Sie dieses Team löschen möchten? Alle Projekte und Dateien, die mit dem Team verbunden sind, werden dauerhaft gelöscht.",
       "en" : "Are you sure you want to delete this team? All projects and files associated with team will be permanently deleted.",
       "es" : "¿Seguro que quieres eliminar este equipo? Todos los proyectos y archivos asociados con el equipo serán eliminados permamentemente.",
       "fr" : "Êtes‑vous sûr de vouloir supprimer cette équipe ? Tous les projets et fichiers associés à l’équipe seront définitivement supprimés.",
@@ -2636,6 +2954,7 @@
   },
   "modals.delete-team-confirm.title" : {
     "translations" : {
+      "de" : "Team löschen",
       "en" : "Deleting team",
       "es" : "Eliminando equipo",
       "fr" : "Suppression d’une équipe",
@@ -2645,6 +2964,7 @@
   },
   "modals.delete-team-member-confirm.accept" : {
     "translations" : {
+      "de" : "Mitglied löschen",
       "en" : "Delete member",
       "es" : "Eliminando miembro",
       "fr" : "Supprimer le membre",
@@ -2654,6 +2974,7 @@
   },
   "modals.delete-team-member-confirm.message" : {
     "translations" : {
+      "de" : "Sind Sie sicher, dass Sie dieses Mitglied aus dem Team löschen möchten?",
       "en" : "Are you sure you want to delete this member from the team?",
       "es" : "¿Seguro que quieres eliminar este integrante del equipo?",
       "fr" : "Êtes‑vous sûr de vouloir supprimer ce membre de l’équipe ?",
@@ -2663,6 +2984,7 @@
   },
   "modals.delete-team-member-confirm.title" : {
     "translations" : {
+      "de" : "Teammitglied löschen",
       "en" : "Delete team member",
       "es" : "Eliminar integrante del equipo",
       "fr" : "Supprimer un membre d’équipe",
@@ -2672,6 +2994,7 @@
   },
   "modals.invite-member-confirm.accept" : {
     "translations" : {
+      "de" : "Einladung senden",
       "en" : "Send invitation",
       "es" : "Enviar invitacion",
       "fr" : "Envoyer l'invitation"
@@ -2680,6 +3003,7 @@
   },
   "modals.invite-member.title" : {
     "translations" : {
+      "de" : "Einladen, dem Team beizutreten",
       "en" : "Invite to join the team",
       "es" : "Invitar a unirse al equipo",
       "fr" : "Inviter à rejoindre l’équipe",
@@ -2689,6 +3013,7 @@
   },
   "modals.leave-and-reassign.hint1" : {
     "translations" : {
+      "de" : "Sie sind der Eigentümer von %s.",
       "en" : "You are %s owner.",
       "es" : "Eres %s dueño.",
       "fr" : "Vous êtes le propriétaire de %s.",
@@ -2698,6 +3023,7 @@
   },
   "modals.leave-and-reassign.hint2" : {
     "translations" : {
+      "de" : "Befördern Sie ein anderes Mitglied zum Eigentümer, bevor Sie das Team verlassen",
       "en" : "Select other member to promote before leave",
       "es" : "Promociona otro miembro a dueño antes de abandonar el equipo",
       "fr" : "Sélectionnez un autre membre à promouvoir avant de quitter l’équipe",
@@ -2707,6 +3033,7 @@
   },
   "modals.leave-and-reassign.promote-and-leave" : {
     "translations" : {
+      "de" : "Befördern und verlassen",
       "en" : "Promote and leave",
       "es" : "Promocionar y abandonar",
       "fr" : "Promouvoir et quitter",
@@ -2716,6 +3043,7 @@
   },
   "modals.leave-and-reassign.select-memeber-to-promote" : {
     "translations" : {
+      "de" : "Wählen Sie ein Mitglied aus, das befördert werden soll",
       "en" : "Select a member to promote",
       "es" : "Selecciona un miembro a promocionar",
       "fr" : "Sélectionnez un membre à promouvoir",
@@ -2725,6 +3053,7 @@
   },
   "modals.leave-and-reassign.title" : {
     "translations" : {
+      "de" : "Wählen Sie ein Mitglied aus, das befördert werden soll",
       "en" : "Select a member to promote",
       "es" : "Selecciona un miembro a promocionar",
       "fr" : "Sélectionnez un membre à promouvoir",
@@ -2734,6 +3063,7 @@
   },
   "modals.leave-confirm.accept" : {
     "translations" : {
+      "de" : "Team verlassen",
       "en" : "Leave team",
       "es" : "Abandonar el equipo",
       "fr" : "Quitter l’équipe",
@@ -2743,6 +3073,7 @@
   },
   "modals.leave-confirm.message" : {
     "translations" : {
+      "de" : "Sind Sie sicher, dass Sie dieses Team verlassen wollen?",
       "en" : "Are you sure you want to leave this team?",
       "es" : "¿Seguro que quieres abandonar este equipo?",
       "fr" : "Êtes‑vous sûr de vouloir quitter cette équipe ?",
@@ -2752,6 +3083,7 @@
   },
   "modals.leave-confirm.title" : {
     "translations" : {
+      "de" : "Team verlassen",
       "en" : "Leaving team",
       "es" : "Abandonando el equipo",
       "fr" : "Quitter l’équipe",
@@ -2761,6 +3093,7 @@
   },
   "modals.promote-owner-confirm.accept" : {
     "translations" : {
+      "de" : "Befördern",
       "en" : "Promote",
       "es" : "Promocionar",
       "fr" : "Promouvoir",
@@ -2770,6 +3103,7 @@
   },
   "modals.promote-owner-confirm.message" : {
     "translations" : {
+      "de" : "Sind Sie sicher, dass Sie diesen Benutzer zum Eigentümer befördern wollen?",
       "en" : "Are you sure you want to promote this user to owner?",
       "es" : "¿Seguro que quieres promocionar este usuario a dueño?",
       "fr" : "Êtes‑vous sûr de vouloir promouvoir cette personne propriétaire ?",
@@ -2779,6 +3113,7 @@
   },
   "modals.promote-owner-confirm.title" : {
     "translations" : {
+      "de" : "Zum Eigentümer befördern",
       "en" : "Promote to owner",
       "es" : "Promocionar a dueño",
       "fr" : "Promouvoir propriétaire",
@@ -2788,76 +3123,84 @@
   },
   "modals.remove-shared-confirm.accept" : {
     "translations" : {
+      "de" : "Als gemeinsam genutzte Bibliothek entfernen",
       "en" : "Remove as Shared Library",
       "es" : "Eliminar como Biblioteca Compartida",
       "fr" : "Supprimer en tant que Bibliothèque Partagée",
       "ru" : "",
       "zh_cn" : "不再作为共享库"
     },
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs", "src/app/main/ui/dashboard/grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "modals.remove-shared-confirm.hint" : {
     "translations" : {
+      "de" : "Nach dem Entfernen als gemeinsam genutzte Bibliothek steht die Bibliothek dieser Datei nicht mehr für den Rest Ihrer Dateien zur Verfügung.",
       "en" : "Once removed as Shared Library, the File Library of this file will stop being available to be used among the rest of your files.",
       "es" : "Una vez eliminado como Biblioteca Compartida, la Biblioteca de este archivo dejará de estar disponible para ser usada por el resto de tus archivos.",
       "fr" : "Une fois supprimée en tant que Bibliothèque Partagée, la Bibliothèque de ce fichier ne pourra plus être utilisée par le reste de vos fichiers.",
       "ru" : "",
       "zh_cn" : "一旦不再作为共享库，该文档库就不能继续用于你的其他文档中。"
     },
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs", "src/app/main/ui/dashboard/grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "modals.remove-shared-confirm.message" : {
     "translations" : {
+      "de" : "Entfernen Sie “%s” als gemeinsam genutzte Bibliothek",
       "en" : "Remove “%s” as Shared Library",
       "es" : "Añadir “%s” como Biblioteca Compartida",
       "fr" : "Retirer « %s » en tant que Bibliothèque Partagée",
       "ru" : "",
       "zh_cn" : "不再将“%s”作为共享库"
     },
-    "used-in" : [ "src/app/main/ui/workspace/header.cljs", "src/app/main/ui/dashboard/grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/header.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "modals.update-remote-component.accept" : {
     "translations" : {
+      "de" : "Komponente aktualisieren",
       "en" : "Update component",
       "es" : "Actualizar componente",
       "fr" : "Actualiser le composant",
       "ru" : "",
       "zh_cn" : "更新组件"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/component.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/component.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
   },
   "modals.update-remote-component.cancel" : {
     "translations" : {
+      "de" : "Abbrechen",
       "en" : "Cancel",
       "es" : "Cancelar",
       "fr" : "Annuler",
       "ru" : "",
       "zh_cn" : "取消"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/component.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/component.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
   },
   "modals.update-remote-component.hint" : {
     "translations" : {
+      "de" : "Sie sind dabei, eine Komponente in einer gemeinsam genutzten Bibliothek zu aktualisieren. Dies kann sich auf andere Dateien auswirken, die es verwenden.",
       "en" : "You are about to update a component in a shared library. This may affect other files that use it.",
       "es" : "Vas a actualizar un componente en una librería compartida. Esto puede afectar a otros archivos que la usen.",
       "fr" : "Vous êtes sur le point de mettre à jour le composant d’une Bibliothèque Partagée. Cela peut affecter d’autres fichiers qui l’utilisent.",
       "ru" : "",
       "zh_cn" : "你即将更新共享库中的一个组件。这可能会对使用该组件的其他文档产生影响。"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/component.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/component.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
   },
   "modals.update-remote-component.message" : {
     "translations" : {
+      "de" : "Aktualisieren einer Komponente in einer gemeinsam genutzten Bibliothek",
       "en" : "Update a component in a shared library",
       "es" : "Actualizar un componente en librería",
       "fr" : "Actualiser le composant d’une bibliothèque",
       "ru" : "",
       "zh_cn" : "更新共享库中的一个组件"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/component.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/component.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
   },
   "notifications.invitation-email-sent" : {
     "translations" : {
+      "de" : "Einladung erfolgreich gesendet",
       "en" : "Invitation sent successfully",
       "es" : "Invitación enviada con éxito",
       "fr" : "E‑mail d'invitation envoyé!"
@@ -2866,6 +3209,7 @@
   },
   "notifications.profile-deletion-not-allowed" : {
     "translations" : {
+      "de" : "Sie können Ihr Profil nicht löschen. Weisen Sie Ihre Teams neu zu, bevor Sie fortfahren.",
       "en" : "You can't delete you profile. Reassign your teams before proceed.",
       "es" : "No puedes borrar tu perfil. Reasigna tus equipos antes de seguir.",
       "fr" : "Vous ne pouvez pas supprimer votre profil. Réassignez vos équipes avant de continuer.",
@@ -2876,6 +3220,7 @@
   },
   "notifications.profile-saved" : {
     "translations" : {
+      "de" : "Profil erfolgreich gespeichert!",
       "en" : "Profile saved successfully!",
       "es" : "Perfil guardado correctamente!",
       "fr" : "Profil enregistré avec succès !",
@@ -2886,6 +3231,7 @@
   },
   "notifications.validation-email-sent" : {
     "translations" : {
+      "de" : "Verifizierungs-E-Mail an %s gesendet. Prüfen Sie Ihren Posteingang!",
       "en" : "Verification email sent to %s. Check your email!",
       "es" : "Verificación de email enviada a %s. Comprueba tu correo.",
       "fr" : "E‑mail de vérification envoyé à %s. Vérifiez votre e‑mail !",
@@ -2895,6 +3241,7 @@
   },
   "profile.recovery.go-to-login" : {
     "translations" : {
+      "de" : "Zur Anmeldung",
       "en" : "Go to login",
       "es" : null,
       "fr" : "Aller à la page de connexion",
@@ -2905,16 +3252,18 @@
   },
   "settings.multiple" : {
     "translations" : {
+      "de" : "Mehrere",
       "en" : "Mixed",
       "es" : "Varios",
       "fr" : "Divers",
       "ru" : "Смешаный",
       "zh_cn" : "混合"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs", "src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs", "src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs", "src/app/main/ui/workspace/sidebar/options/typography.cljs", "src/app/main/ui/workspace/sidebar/options/typography.cljs", "src/app/main/ui/workspace/sidebar/options/typography.cljs", "src/app/main/ui/workspace/sidebar/options/shadow.cljs", "src/app/main/ui/workspace/sidebar/options/blur.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs", "src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs", "src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs", "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs", "src/app/main/ui/workspace/sidebar/options/menus/typography.cljs", "src/app/main/ui/workspace/sidebar/options/menus/typography.cljs", "src/app/main/ui/workspace/sidebar/options/menus/typography.cljs", "src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs", "src/app/main/ui/workspace/sidebar/options/menus/blur.cljs" ]
   },
   "viewer.empty-state" : {
     "translations" : {
+      "de" : "Keine Zeichenflächen auf der Seite gefunden.",
       "en" : "No frames found on the page.",
       "es" : "No se ha encontrado ningún tablero.",
       "fr" : "Aucun cadre trouvé sur la page.",
@@ -2925,6 +3274,7 @@
   },
   "viewer.frame-not-found" : {
     "translations" : {
+      "de" : "Keine Zeichenfläche gefunden.",
       "en" : "Frame not found.",
       "es" : "No se encuentra el tablero.",
       "fr" : "Cadre introuvable.",
@@ -2935,6 +3285,7 @@
   },
   "viewer.header.dont-show-interactions" : {
     "translations" : {
+      "de" : "Interaktionen nicht anzeigen",
       "en" : "Don't show interactions",
       "es" : "No mostrar interacciones",
       "fr" : "Ne pas afficher les interactions",
@@ -2945,6 +3296,7 @@
   },
   "viewer.header.edit-page" : {
     "translations" : {
+      "de" : "Seite bearbeiten",
       "en" : "Edit page",
       "es" : "Editar página",
       "fr" : "Modifier la page",
@@ -2955,6 +3307,7 @@
   },
   "viewer.header.fullscreen" : {
     "translations" : {
+      "de" : "Vollbildmodus",
       "en" : "Full Screen",
       "es" : "Pantalla completa",
       "fr" : "Plein écran",
@@ -2965,6 +3318,7 @@
   },
   "viewer.header.share.copy-link" : {
     "translations" : {
+      "de" : "Link kopieren",
       "en" : "Copy link",
       "es" : "Copiar enlace",
       "fr" : "Copier le lien",
@@ -2975,6 +3329,7 @@
   },
   "viewer.header.share.create-link" : {
     "translations" : {
+      "de" : "Link erstellen",
       "en" : "Create link",
       "es" : "Crear enlace",
       "fr" : "Créer le lien",
@@ -2985,6 +3340,7 @@
   },
   "viewer.header.share.placeholder" : {
     "translations" : {
+      "de" : "Der Link fürs Teilen wird hier angezeigt",
       "en" : "Share link will appear here",
       "es" : "El enlace para compartir aparecerá aquí",
       "fr" : "Le lien de partage apparaîtra ici",
@@ -2995,6 +3351,7 @@
   },
   "viewer.header.share.remove-link" : {
     "translations" : {
+      "de" : "Link entfernen",
       "en" : "Remove link",
       "es" : "Eliminar enlace",
       "fr" : "Supprimer le lien",
@@ -3005,6 +3362,7 @@
   },
   "viewer.header.share.subtitle" : {
     "translations" : {
+      "de" : "Jeder mit dem Link hat Zugriff",
       "en" : "Anyone with the link will have access",
       "es" : "Cualquiera con el enlace podrá acceder",
       "fr" : "Toute personne disposant du lien aura accès",
@@ -3015,6 +3373,7 @@
   },
   "viewer.header.share.title" : {
     "translations" : {
+      "de" : "Link teilen",
       "en" : "Share link",
       "es" : "Enlace",
       "fr" : "Lien de partage",
@@ -3025,6 +3384,7 @@
   },
   "viewer.header.show-interactions" : {
     "translations" : {
+      "de" : "Interaktionen anzeigen",
       "en" : "Show interactions",
       "es" : "Mostrar interacciones",
       "fr" : "Afficher les interactions",
@@ -3035,6 +3395,7 @@
   },
   "viewer.header.show-interactions-on-click" : {
     "translations" : {
+      "de" : "Interaktionen beim Klicken anzeigen",
       "en" : "Show interactions on click",
       "es" : "Mostrar interacciones al hacer click",
       "fr" : "Afficher les interactions au clic",
@@ -3045,6 +3406,7 @@
   },
   "viewer.header.sitemap" : {
     "translations" : {
+      "de" : "Sitemap",
       "en" : "Sitemap",
       "es" : "Mapa del sitio",
       "fr" : "Plan du site",
@@ -3055,6 +3417,7 @@
   },
   "workspace.align.hcenter" : {
     "translations" : {
+      "de" : "Zentrieren (horizontal)",
       "en" : "Align horizontal center",
       "es" : "Alinear al centro",
       "fr" : "Aligner horizontalement au centre",
@@ -3065,6 +3428,7 @@
   },
   "workspace.align.hdistribute" : {
     "translations" : {
+      "de" : "Horizontal verteilen",
       "en" : "Distribute horizontal spacing",
       "es" : "Distribuir espacio horizontal",
       "fr" : "Répartir l’espacement horizontal",
@@ -3075,6 +3439,7 @@
   },
   "workspace.align.hleft" : {
     "translations" : {
+      "de" : "Linksbündig ausrichten",
       "en" : "Align left",
       "es" : "Alinear a la izquierda",
       "fr" : "Aligner à gauche",
@@ -3085,6 +3450,7 @@
   },
   "workspace.align.hright" : {
     "translations" : {
+      "de" : "Rechtsbündig ausrichten",
       "en" : "Align right",
       "es" : "Alinear a la derecha",
       "fr" : "Aligner à droite",
@@ -3095,6 +3461,7 @@
   },
   "workspace.align.vbottom" : {
     "translations" : {
+      "de" : "Unten ausrichten",
       "en" : "Align bottom",
       "es" : "Alinear abajo",
       "fr" : "Aligner en bas",
@@ -3105,6 +3472,7 @@
   },
   "workspace.align.vcenter" : {
     "translations" : {
+      "de" : "Mittig ausrichten (vertikal)",
       "en" : "Align vertical center",
       "es" : "Alinear al centro",
       "fr" : "Aligner verticalement au centre",
@@ -3115,6 +3483,7 @@
   },
   "workspace.align.vdistribute" : {
     "translations" : {
+      "de" : "Vertikal verteilen",
       "en" : "Distribute vertical spacing",
       "es" : "Distribuir espacio vertical",
       "fr" : "Répartir l’espacement vertical",
@@ -3125,6 +3494,7 @@
   },
   "workspace.align.vtop" : {
     "translations" : {
+      "de" : "Oben ausrichten",
       "en" : "Align top",
       "es" : "Alinear arriba",
       "fr" : "Aligner en haut",
@@ -3135,6 +3505,7 @@
   },
   "workspace.assets.assets" : {
     "translations" : {
+      "de" : "Assets",
       "en" : "Assets",
       "es" : "Recursos",
       "fr" : "Ressources",
@@ -3145,6 +3516,7 @@
   },
   "workspace.assets.box-filter-all" : {
     "translations" : {
+      "de" : "Alle Assets",
       "en" : "All assets",
       "es" : "Todos",
       "fr" : "Toutes",
@@ -3155,6 +3527,7 @@
   },
   "workspace.assets.box-filter-graphics" : {
     "translations" : {
+      "de" : "Grafiken",
       "en" : "Graphics",
       "es" : "Gráficos",
       "fr" : "Graphiques",
@@ -3165,6 +3538,7 @@
   },
   "workspace.assets.colors" : {
     "translations" : {
+      "de" : "Farben",
       "en" : "Colors",
       "es" : "Colores",
       "fr" : "Couleurs",
@@ -3175,6 +3549,7 @@
   },
   "workspace.assets.components" : {
     "translations" : {
+      "de" : "Komponente",
       "en" : "Components",
       "es" : "Componentes",
       "fr" : "Composants",
@@ -3185,6 +3560,7 @@
   },
   "workspace.assets.delete" : {
     "translations" : {
+      "de" : "Löschen",
       "en" : "Delete",
       "es" : "Borrar",
       "fr" : "Supprimer",
@@ -3195,6 +3571,7 @@
   },
   "workspace.assets.duplicate" : {
     "translations" : {
+      "de" : "Duplizieren",
       "en" : "Duplicate",
       "es" : "Duplicar",
       "fr" : "Dupliquer",
@@ -3205,6 +3582,7 @@
   },
   "workspace.assets.edit" : {
     "translations" : {
+      "de" : "Bearbeiten",
       "en" : "Edit",
       "es" : "Editar",
       "fr" : "Modifier",
@@ -3215,6 +3593,7 @@
   },
   "workspace.assets.file-library" : {
     "translations" : {
+      "de" : "Dateibibliothek",
       "en" : "File library",
       "es" : "Biblioteca del archivo",
       "fr" : "Bibliothèque du fichier",
@@ -3225,6 +3604,7 @@
   },
   "workspace.assets.graphics" : {
     "translations" : {
+      "de" : "Grafiken",
       "en" : "Graphics",
       "es" : "Gráficos",
       "fr" : "Graphiques",
@@ -3235,6 +3615,7 @@
   },
   "workspace.assets.libraries" : {
     "translations" : {
+      "de" : "Bibliotheken",
       "en" : "Libraries",
       "es" : "Bibliotecas",
       "fr" : "Bibliothèques",
@@ -3245,6 +3626,7 @@
   },
   "workspace.assets.not-found" : {
     "translations" : {
+      "de" : "Keine Assets gefunden",
       "en" : "No assets found",
       "es" : "No se encontraron recursos",
       "fr" : "Aucune ressource trouvée",
@@ -3255,6 +3637,7 @@
   },
   "workspace.assets.rename" : {
     "translations" : {
+      "de" : "Umbenennen",
       "en" : "Rename",
       "es" : "Renombrar",
       "fr" : "Renommer",
@@ -3265,6 +3648,7 @@
   },
   "workspace.assets.search" : {
     "translations" : {
+      "de" : "Assets suchen",
       "en" : "Search assets",
       "es" : "Buscar recursos",
       "fr" : "Chercher des ressources",
@@ -3275,6 +3659,7 @@
   },
   "workspace.assets.shared" : {
     "translations" : {
+      "de" : "GETEILT",
       "en" : "SHARED",
       "es" : "COMPARTIDA",
       "fr" : "PARTAGÉ",
@@ -3285,6 +3670,7 @@
   },
   "workspace.assets.typography" : {
     "translations" : {
+      "de" : "Typografien",
       "en" : "Typographies",
       "es" : "Tipografías",
       "fr" : "Typographies",
@@ -3294,78 +3680,87 @@
   },
   "workspace.assets.typography.font-id" : {
     "translations" : {
+      "de" : "Schriftart",
       "en" : "Font",
       "es" : "Fuente",
       "fr" : "Police",
       "zh_cn" : "字体"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/typography.cljs" ]
   },
   "workspace.assets.typography.font-size" : {
     "translations" : {
+      "de" : "Größe",
       "en" : "Size",
       "es" : "Tamaño",
       "fr" : "Taille",
       "zh_cn" : "尺寸"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/typography.cljs" ]
   },
   "workspace.assets.typography.font-variant-id" : {
     "translations" : {
+      "de" : "Variante",
       "en" : "Variant",
       "es" : "Variante",
       "fr" : "Variante",
       "zh_cn" : "变体"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/typography.cljs" ]
   },
   "workspace.assets.typography.go-to-edit" : {
     "translations" : {
+      "de" : "Wechseln Sie zur Stilbibliotheksdatei, um sie zu bearbeiten",
       "en" : "Go to style library file to edit",
       "es" : "Ir al archivo de la biblioteca del estilo para editar",
       "fr" : "Accéder au fichier de bibliothèque de styles à modifier",
       "zh_cn" : "前往样式库文件进行编辑"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/typography.cljs" ]
   },
   "workspace.assets.typography.letter-spacing" : {
     "translations" : {
+      "de" : "Zeichenabstand",
       "en" : "Letter Spacing",
       "es" : "Interletrado",
       "fr" : "Interlettrage",
       "zh_cn" : "字距"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/typography.cljs" ]
   },
   "workspace.assets.typography.line-height" : {
     "translations" : {
+      "de" : "Zeilenabstand",
       "en" : "Line Height",
       "es" : "Interlineado",
       "fr" : "Interlignage",
       "zh_cn" : "行高"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/typography.cljs" ]
   },
   "workspace.assets.typography.sample" : {
     "translations" : {
+      "de" : "Ag",
       "en" : "Ag",
       "es" : "Ag",
       "fr" : "Ag",
       "zh_cn" : "Ag"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs", "src/app/main/ui/handoff/attributes/text.cljs", "src/app/main/ui/handoff/attributes/text.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/typography.cljs", "src/app/main/ui/handoff/attributes/text.cljs", "src/app/main/ui/handoff/attributes/text.cljs" ]
   },
   "workspace.assets.typography.text-transform" : {
     "translations" : {
+      "de" : "Texttransformation",
       "en" : "Text Transform",
       "es" : "Transformar texto",
       "fr" : "Transformer le texte",
       "zh_cn" : "文本变换"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/typography.cljs" ]
   },
   "workspace.gradients.linear" : {
     "translations" : {
+      "de" : "Linearer Farbverlauf",
       "en" : "Linear gradient",
       "es" : "Degradado lineal",
       "fr" : "Dégradé linéaire",
@@ -3375,6 +3770,7 @@
   },
   "workspace.gradients.radial" : {
     "translations" : {
+      "de" : "Radialer Farbverlauf",
       "en" : "Radial gradient",
       "es" : "Degradado radial",
       "fr" : "Dégradé radial",
@@ -3384,6 +3780,7 @@
   },
   "workspace.header.menu.disable-dynamic-alignment" : {
     "translations" : {
+      "de" : "Dynamische Ausrichtung deaktivieren",
       "en" : "Disable dynamic alignment",
       "es" : "Desactivar alineamiento dinámico",
       "fr" : "Désactiver l’alignement dynamique",
@@ -3394,6 +3791,7 @@
   },
   "workspace.header.menu.disable-snap-grid" : {
     "translations" : {
+      "de" : "Am Raster ausrichten deaktivieren",
       "en" : "Disable snap to grid",
       "es" : "Desactivar alinear a la rejilla",
       "fr" : "Désactiver l’alignement sur la grille",
@@ -3404,6 +3802,7 @@
   },
   "workspace.header.menu.enable-dynamic-alignment" : {
     "translations" : {
+      "de" : "Dynamische Ausrichtung aktivieren",
       "en" : "Enable dynamic aligment",
       "es" : "Activar alineamiento dinámico",
       "fr" : "Activer l’alignement dynamique",
@@ -3414,6 +3813,7 @@
   },
   "workspace.header.menu.enable-snap-grid" : {
     "translations" : {
+      "de" : "Am Raster ausrichten",
       "en" : "Snap to grid",
       "es" : "Alinear a la rejilla",
       "fr" : "Aligner sur la grille",
@@ -3424,6 +3824,7 @@
   },
   "workspace.header.menu.hide-assets" : {
     "translations" : {
+      "de" : "Assets ausblenden",
       "en" : "Hide assets",
       "es" : "Ocultar recursos",
       "fr" : "Masquer les ressources",
@@ -3434,6 +3835,7 @@
   },
   "workspace.header.menu.hide-grid" : {
     "translations" : {
+      "de" : "Raster ausblenden",
       "en" : "Hide grids",
       "es" : "Ocultar rejillas",
       "fr" : "Masquer la grille",
@@ -3444,6 +3846,7 @@
   },
   "workspace.header.menu.hide-layers" : {
     "translations" : {
+      "de" : "Ebenen ausblenden",
       "en" : "Hide layers",
       "es" : "Ocultar capas",
       "fr" : "Masquer les calques",
@@ -3454,6 +3857,7 @@
   },
   "workspace.header.menu.hide-palette" : {
     "translations" : {
+      "de" : "Farbpalette ausblenden",
       "en" : "Hide color palette",
       "es" : "Ocultar paleta de colores",
       "fr" : "Masquer la palette de couleurs",
@@ -3464,6 +3868,7 @@
   },
   "workspace.header.menu.hide-rules" : {
     "translations" : {
+      "de" : "Lineale ausblenden",
       "en" : "Hide rules",
       "es" : "Ocultar reglas",
       "fr" : "Masquer les règles",
@@ -3474,6 +3879,7 @@
   },
   "workspace.header.menu.select-all" : {
     "translations" : {
+      "de" : "Alles auswählen",
       "en" : "Select all",
       "es" : "Seleccionar todo",
       "fr" : "Tout sélectionner",
@@ -3484,6 +3890,7 @@
   },
   "workspace.header.menu.show-assets" : {
     "translations" : {
+      "de" : "Assets einblenden",
       "en" : "Show assets",
       "es" : "Mostrar recursos",
       "fr" : "Montrer les ressources",
@@ -3494,6 +3901,7 @@
   },
   "workspace.header.menu.show-grid" : {
     "translations" : {
+      "de" : "Raster einblenden",
       "en" : "Show grid",
       "es" : "Mostrar rejilla",
       "fr" : "Montrer la grille",
@@ -3504,6 +3912,7 @@
   },
   "workspace.header.menu.show-layers" : {
     "translations" : {
+      "de" : "Ebenen einblenden",
       "en" : "Show layers",
       "es" : "Mostrar capas",
       "fr" : "Montrer les calques",
@@ -3514,6 +3923,7 @@
   },
   "workspace.header.menu.show-palette" : {
     "translations" : {
+      "de" : "Farbpalette einblenden",
       "en" : "Show color palette",
       "es" : "Mostrar paleta de colores",
       "fr" : "Montrer la palette de couleurs",
@@ -3524,6 +3934,7 @@
   },
   "workspace.header.menu.show-rules" : {
     "translations" : {
+      "de" : "Lineale einblenden",
       "en" : "Show rules",
       "es" : "Mostrar reglas",
       "fr" : "Montrer les règles",
@@ -3534,6 +3945,7 @@
   },
   "workspace.header.save-error" : {
     "translations" : {
+      "de" : "Fehler beim Speichern",
       "en" : "Error on saving",
       "es" : "Error al guardar",
       "fr" : "Erreur d’enregistrement",
@@ -3543,6 +3955,7 @@
   },
   "workspace.header.saved" : {
     "translations" : {
+      "de" : "Gespeichert",
       "en" : "Saved",
       "es" : "Guardado",
       "fr" : "Enregistré",
@@ -3552,6 +3965,7 @@
   },
   "workspace.header.saving" : {
     "translations" : {
+      "de" : "Speichern",
       "en" : "Saving",
       "es" : "Guardando",
       "fr" : "Enregistrement",
@@ -3561,6 +3975,7 @@
   },
   "workspace.header.unsaved" : {
     "translations" : {
+      "de" : "Ungespeicherte Änderungen",
       "en" : "Unsaved changes",
       "es" : "Cambios sin guardar",
       "fr" : "Modifications non sauvegardées",
@@ -3570,6 +3985,7 @@
   },
   "workspace.header.viewer" : {
     "translations" : {
+      "de" : "Ansichtsmodus (%s)",
       "en" : "View mode (%s)",
       "es" : "Modo de visualización (%s)",
       "fr" : "Mode spectateur (%s)",
@@ -3580,6 +3996,7 @@
   },
   "workspace.libraries.add" : {
     "translations" : {
+      "de" : "Hinzufügen",
       "en" : "Add",
       "es" : "Añadir",
       "fr" : "Ajouter",
@@ -3590,6 +4007,7 @@
   },
   "workspace.libraries.colors" : {
     "translations" : {
+      "de" : "%s Farben",
       "en" : "%s colors",
       "es" : "%s colors",
       "fr" : "%s couleurs",
@@ -3600,6 +4018,7 @@
   },
   "workspace.libraries.colors.big-thumbnails" : {
     "translations" : {
+      "de" : "Große Miniaturen",
       "en" : "Big thumbnails",
       "es" : "Miniaturas grandes",
       "fr" : "Grandes vignettes",
@@ -3609,6 +4028,7 @@
   },
   "workspace.libraries.colors.file-library" : {
     "translations" : {
+      "de" : "Dateibibliothek",
       "en" : "File library",
       "es" : "Biblioteca del archivo",
       "fr" : "Bibliothèque du fichier",
@@ -3618,6 +4038,7 @@
   },
   "workspace.libraries.colors.recent-colors" : {
     "translations" : {
+      "de" : "Aktuelle Farben",
       "en" : "Recent colors",
       "es" : "Colores recientes",
       "fr" : "Couleurs récentes",
@@ -3627,6 +4048,7 @@
   },
   "workspace.libraries.colors.save-color" : {
     "translations" : {
+      "de" : "Farbstil speichern",
       "en" : "Save color style",
       "es" : "Guardar estilo de color",
       "fr" : "Enregistrer le style de couleur",
@@ -3636,6 +4058,7 @@
   },
   "workspace.libraries.colors.small-thumbnails" : {
     "translations" : {
+      "de" : "Kleine Miniaturen",
       "en" : "Small thumbnails",
       "es" : "Miniaturas pequeñas",
       "fr" : "Petites vignettes",
@@ -3645,6 +4068,7 @@
   },
   "workspace.libraries.components" : {
     "translations" : {
+      "de" : "%s Komponenten",
       "en" : "%s components",
       "es" : "%s componentes",
       "fr" : "%s composants",
@@ -3655,6 +4079,7 @@
   },
   "workspace.libraries.file-library" : {
     "translations" : {
+      "de" : "Dateibibliothek",
       "en" : "File library",
       "es" : "Biblioteca de este archivo",
       "fr" : "Bibliothèque du fichier",
@@ -3665,6 +4090,7 @@
   },
   "workspace.libraries.graphics" : {
     "translations" : {
+      "de" : "%s Grafik(en)",
       "en" : "%s graphics",
       "es" : "%s gráficos",
       "fr" : "%s graphiques",
@@ -3675,6 +4101,7 @@
   },
   "workspace.libraries.in-this-file" : {
     "translations" : {
+      "de" : "BIBLIOTHEKEN IN DIESER DATEI",
       "en" : "LIBRARIES IN THIS FILE",
       "es" : "BIBLIOTECAS EN ESTE ARCHIVO",
       "fr" : "BIBLIOTHÈQUES DANS CE FICHIER",
@@ -3685,6 +4112,7 @@
   },
   "workspace.libraries.libraries" : {
     "translations" : {
+      "de" : "BIBLIOTHEKEN",
       "en" : "LIBRARIES",
       "es" : "BIBLIOTECAS",
       "fr" : "BIBLIOTHÈQUES",
@@ -3695,6 +4123,7 @@
   },
   "workspace.libraries.library" : {
     "translations" : {
+      "de" : "BIBLIOTHEK",
       "en" : "LIBRARY",
       "es" : "BIBLIOTECA",
       "fr" : "BIBLIOTHÈQUE",
@@ -3705,6 +4134,7 @@
   },
   "workspace.libraries.no-libraries-need-sync" : {
     "translations" : {
+      "de" : "Es gibt keine gemeinsam genutzte Bibliotheken, die aktualisiert werden müssen",
       "en" : "There are no Shared Libraries that need update",
       "es" : "No hay bibliotecas que necesiten ser actualizadas",
       "fr" : "Aucune Bibliothèque Partagée n’a besoin d’être mise à jour",
@@ -3715,6 +4145,7 @@
   },
   "workspace.libraries.no-matches-for" : {
     "translations" : {
+      "de" : "Keine Übereinstimmungen für “%s“ gefunden",
       "en" : "No matches found for “%s“",
       "es" : "No se encuentra “%s“",
       "fr" : "Aucune correspondance pour « %s »",
@@ -3725,6 +4156,7 @@
   },
   "workspace.libraries.no-shared-libraries-available" : {
     "translations" : {
+      "de" : "Es sind keine gemeinsam genutzte Bibliotheken verfügbar",
       "en" : "There are no Shared Libraries available",
       "es" : "No hay bibliotecas compartidas disponibles",
       "fr" : "Aucune Bibliothèque Partagée disponible",
@@ -3735,6 +4167,7 @@
   },
   "workspace.libraries.search-shared-libraries" : {
     "translations" : {
+      "de" : "Suche nach gemeinsam genutzten Bibliotheken",
       "en" : "Search shared libraries",
       "es" : "Buscar bibliotecas compartidas",
       "fr" : "Rechercher des Bibliothèques Partagées",
@@ -3745,6 +4178,7 @@
   },
   "workspace.libraries.shared-libraries" : {
     "translations" : {
+      "de" : "GEMEINSAM GENUTZTE BIBLIOTHEKEN",
       "en" : "SHARED LIBRARIES",
       "es" : "BIBLIOTECAS COMPARTIDAS",
       "fr" : "BIBLIOTHÈQUES PARTAGÉES",
@@ -3755,24 +4189,27 @@
   },
   "workspace.libraries.text.multiple-typography" : {
     "translations" : {
+      "de" : "Mehrere Typografien",
       "en" : "Multiple typographies",
       "es" : "Varias tipografías",
       "fr" : "Multiple typographies",
       "zh_cn" : "复合排版"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/text.cljs" ]
   },
   "workspace.libraries.text.multiple-typography-tooltip" : {
     "translations" : {
+      "de" : "Verknüpfung aller Typografien aufheben",
       "en" : "Unlink all typographies",
       "es" : "Desvincular todas las tipografías",
       "fr" : "Dissocier toutes les typographies",
       "zh_cn" : "断开所有排版的链接"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/text.cljs" ]
   },
   "workspace.libraries.typography" : {
     "translations" : {
+      "de" : "%s Typografien",
       "en" : "%s typographies",
       "es" : "%s tipografías",
       "fr" : "%s typographies",
@@ -3782,6 +4219,7 @@
   },
   "workspace.libraries.update" : {
     "translations" : {
+      "de" : "Aktualisieren",
       "en" : "Update",
       "es" : "Actualizar",
       "fr" : "Actualiser",
@@ -3792,6 +4230,7 @@
   },
   "workspace.libraries.updates" : {
     "translations" : {
+      "de" : "AKTUALISIERUNG",
       "en" : "UPDATES",
       "es" : "ACTUALIZACIONES",
       "fr" : "MISES À JOUR",
@@ -3802,6 +4241,7 @@
   },
   "workspace.library.all" : {
     "translations" : {
+      "de" : "Alle Bibliotheken",
       "en" : "All libraries",
       "es" : "Todas",
       "fr" : "Toutes les bibliothèques",
@@ -3812,6 +4252,7 @@
   },
   "workspace.library.libraries" : {
     "translations" : {
+      "de" : "Bibliotheken",
       "en" : "Libraries",
       "es" : "Bibliotecas",
       "fr" : "Bibliothèques",
@@ -3822,6 +4263,7 @@
   },
   "workspace.library.own" : {
     "translations" : {
+      "de" : "Meine Bibliotheken",
       "en" : "My libraries",
       "es" : "Mis bibliotecas",
       "fr" : "Mes bibliothèques",
@@ -3832,6 +4274,7 @@
   },
   "workspace.library.store" : {
     "translations" : {
+      "de" : "Gespeicherte Bibliotheken",
       "en" : "Store libraries",
       "es" : "Predefinidas",
       "fr" : "Prédéfinies",
@@ -3842,6 +4285,7 @@
   },
   "workspace.options.blur-options.background-blur" : {
     "translations" : {
+      "de" : "Hintergrund",
       "en" : "Background",
       "es" : "Fondo",
       "fr" : "Fond",
@@ -3851,6 +4295,7 @@
   },
   "workspace.options.blur-options.layer-blur" : {
     "translations" : {
+      "de" : "Ebene",
       "en" : "Layer",
       "es" : "Capa",
       "fr" : "Calque",
@@ -3860,33 +4305,37 @@
   },
   "workspace.options.blur-options.title" : {
     "translations" : {
+      "de" : "Weichzeichnen",
       "en" : "Blur",
       "es" : "Desenfoque",
       "fr" : "Flou",
       "zh_cn" : "模糊"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/blur.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/blur.cljs" ]
   },
   "workspace.options.blur-options.title.group" : {
     "translations" : {
+      "de" : "Gruppe weichzeichnen",
       "en" : "Group blur",
       "es" : "Desenfoque del grupo",
       "fr" : "Flou de groupe",
       "zh_cn" : "编组模糊"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/blur.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/blur.cljs" ]
   },
   "workspace.options.blur-options.title.multiple" : {
     "translations" : {
+      "de" : "Auswahl weichzeichnen",
       "en" : "Selection blur",
       "es" : "Desenfoque de la selección",
       "fr" : "Flou de sélection",
       "zh_cn" : "选项模糊"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/blur.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/blur.cljs" ]
   },
   "workspace.options.canvas-background" : {
     "translations" : {
+      "de" : "Hintergrundfarbe",
       "en" : "Canvas background",
       "es" : "Color de fondo",
       "fr" : "Couleur de fond du canvas",
@@ -3897,15 +4346,17 @@
   },
   "workspace.options.component" : {
     "translations" : {
+      "de" : "Komponente",
       "en" : "Component",
       "es" : "Componente",
       "fr" : "Composant",
       "zh_cn" : "组件"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/component.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/component.cljs" ]
   },
   "workspace.options.design" : {
     "translations" : {
+      "de" : "Design",
       "en" : "Design",
       "es" : "Diseño",
       "fr" : "Conception",
@@ -3916,315 +4367,499 @@
   },
   "workspace.options.export" : {
     "translations" : {
+      "de" : "Exportieren",
       "en" : "Export",
       "es" : "Exportar",
       "fr" : "Export",
       "ru" : "Экспорт",
       "zh_cn" : "导出"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/exports.cljs", "src/app/main/ui/handoff/exports.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/exports.cljs", "src/app/main/ui/handoff/exports.cljs" ]
   },
   "workspace.options.export-object" : {
     "translations" : {
+      "de" : "Form exportieren",
       "en" : "Export shape",
       "es" : "Exportar forma",
       "fr" : "Exporter la forme",
       "ru" : "Экспорт фигуры",
       "zh_cn" : "导出形状"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/exports.cljs", "src/app/main/ui/handoff/exports.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/exports.cljs", "src/app/main/ui/handoff/exports.cljs" ]
   },
   "workspace.options.export.suffix" : {
     "translations" : {
+      "de" : "Suffix",
       "en" : "Suffix",
       "es" : "Sufijo",
       "fr" : "Suffixe",
       "zh_cn" : "后缀"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/exports.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/exports.cljs" ]
   },
   "workspace.options.exporting-object" : {
     "translations" : {
+      "de" : "Exportiere…",
       "en" : "Exporting…",
       "es" : "Exportando",
       "fr" : "Export en cours…",
       "ru" : "Экспортирую…",
       "zh_cn" : "正在导出…"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/exports.cljs", "src/app/main/ui/handoff/exports.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/exports.cljs", "src/app/main/ui/handoff/exports.cljs" ]
   },
   "workspace.options.fill" : {
     "translations" : {
+      "de" : "Fläche",
       "en" : "Fill",
       "es" : "Relleno",
       "fr" : "Remplissage",
       "ru" : "Заливка",
       "zh_cn" : "填充"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/fill.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/fill.cljs" ]
   },
   "workspace.options.grid.auto" : {
     "translations" : {
+      "de" : "Automatisch",
       "en" : "Auto",
       "es" : "Automático",
       "fr" : "Automatique",
       "ru" : "Авто",
       "zh_cn" : "自动"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs" ]
   },
   "workspace.options.grid.column" : {
     "translations" : {
+      "de" : "Spalten",
       "en" : "Columns",
       "es" : "Columnas",
       "fr" : "Colonnes",
       "ru" : "Колонки",
       "zh_cn" : "列"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs" ]
   },
   "workspace.options.grid.params.columns" : {
     "translations" : {
+      "de" : "Spalten",
       "en" : "Columns",
       "es" : "Columnas",
       "fr" : "Colonnes",
       "ru" : "Колонки",
       "zh_cn" : "列"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs" ]
   },
   "workspace.options.grid.params.gutter" : {
     "translations" : {
+      "de" : "Zwischenräume",
       "en" : "Gutter",
       "es" : "Espaciado",
       "fr" : "Gouttière",
       "ru" : "Желоб",
       "zh_cn" : "栅格间隔"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs" ]
   },
   "workspace.options.grid.params.height" : {
     "translations" : {
+      "de" : "Höhe",
       "en" : "Height",
       "es" : "Altura",
       "fr" : "Hauteur",
       "ru" : "Высота",
       "zh_cn" : "高"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs" ]
   },
   "workspace.options.grid.params.margin" : {
     "translations" : {
+      "de" : "Rand",
       "en" : "Margin",
       "es" : "Margen",
       "fr" : "Marge",
       "ru" : "Поле",
       "zh_cn" : "外边距"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs" ]
   },
   "workspace.options.grid.params.rows" : {
     "translations" : {
+      "de" : "Zeilen",
       "en" : "Rows",
       "es" : "Filas",
       "fr" : "Lignes",
       "ru" : "Строки",
       "zh_cn" : "行"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs" ]
   },
   "workspace.options.grid.params.set-default" : {
     "translations" : {
+      "de" : "Als Standard festlegen",
       "en" : "Set as default",
       "es" : "Establecer valor por defecto",
       "fr" : "Définir par défaut",
       "ru" : "Установить по умолчанию",
       "zh_cn" : "设为默认"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs" ]
   },
   "workspace.options.grid.params.size" : {
     "translations" : {
+      "de" : "Größe",
       "en" : "Size",
       "es" : "Tamaño",
       "fr" : "Taille",
       "ru" : "Размер",
       "zh_cn" : "尺寸"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs" ]
   },
   "workspace.options.grid.params.type" : {
     "translations" : {
+      "de" : "Art",
       "en" : "Type",
       "es" : "Tipo",
       "fr" : "Type",
       "ru" : "Тип",
       "zh_cn" : "类型"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs" ]
   },
   "workspace.options.grid.params.type.bottom" : {
     "translations" : {
+      "de" : "Unten",
       "en" : "Bottom",
       "es" : "Abajo",
       "fr" : "Bas",
       "ru" : "Низ",
       "zh_cn" : "底"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs" ]
   },
   "workspace.options.grid.params.type.center" : {
     "translations" : {
+      "de" : "Zentriert",
       "en" : "Center",
       "es" : "Centro",
       "fr" : "Centre",
       "ru" : "Центр",
       "zh_cn" : "居中"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs" ]
   },
   "workspace.options.grid.params.type.left" : {
     "translations" : {
+      "de" : "Links",
       "en" : "Left",
       "es" : "Izquierda",
       "fr" : "Gauche",
       "ru" : "Левый",
       "zh_cn" : "左"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs" ]
   },
   "workspace.options.grid.params.type.right" : {
     "translations" : {
+      "de" : "Rechts",
       "en" : "Right",
       "es" : "Derecha",
       "fr" : "Droite",
       "ru" : "Правый",
       "zh_cn" : "右"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs" ]
   },
   "workspace.options.grid.params.type.stretch" : {
     "translations" : {
+      "de" : "Gestreckt",
       "en" : "Stretch",
       "es" : "Estirar",
       "fr" : "Étirer",
       "ru" : "Растягивать",
       "zh_cn" : "拉伸"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs" ]
   },
   "workspace.options.grid.params.type.top" : {
     "translations" : {
+      "de" : "Oben",
       "en" : "Top",
       "es" : "Arriba",
       "fr" : "Haut",
       "ru" : "Верх",
       "zh_cn" : "顶"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs" ]
   },
   "workspace.options.grid.params.use-default" : {
     "translations" : {
+      "de" : "Standardwerte verwenden",
       "en" : "Use default",
       "es" : "Usar valor por defecto",
       "fr" : "Utiliser la valeur par défaut",
       "ru" : "Использовать значение по умолчанию",
       "zh_cn" : "使用默认"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs" ]
   },
   "workspace.options.grid.params.width" : {
     "translations" : {
+      "de" : "Breite",
       "en" : "Width",
       "es" : "Ancho",
       "fr" : "Largeur",
       "ru" : "Ширина",
       "zh_cn" : "宽"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs" ]
   },
   "workspace.options.grid.row" : {
     "translations" : {
+      "de" : "Zeile",
       "en" : "Rows",
       "es" : "Filas",
       "fr" : "Lignes",
       "ru" : "Строки",
       "zh_cn" : "行"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs" ]
   },
   "workspace.options.grid.square" : {
     "translations" : {
+      "de" : "Quadrat",
       "en" : "Square",
       "es" : "Cuadros",
       "fr" : "Carré",
       "ru" : "Квадрат",
       "zh_cn" : "正方形"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs" ]
   },
   "workspace.options.grid.title" : {
     "translations" : {
+      "de" : "Raster & Layouts",
       "en" : "Grid & Layouts",
       "es" : "Rejilla & Estructuras",
       "fr" : "Grille & Calques",
       "ru" : "Сетка и Макеты",
       "zh_cn" : "网格与布局"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame_grid.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs" ]
   },
   "workspace.options.group-fill" : {
     "translations" : {
+      "de" : "Gruppe füllen",
       "en" : "Group fill",
       "es" : "Relleno de grupo",
       "fr" : "Remplissage de groupe",
       "ru" : "Заливка для группы",
       "zh_cn" : "编组填充"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/fill.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/fill.cljs" ]
   },
   "workspace.options.group-stroke" : {
     "translations" : {
+      "de" : "Gruppe einrahmen",
       "en" : "Group stroke",
       "es" : "Borde de grupo",
       "fr" : "Contour de groupe",
       "ru" : "Обводка для группы",
       "zh_cn" : "编组边框"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.color" : {
+    "translations" : {
+      "de" : "Farbe",
+      "en" : "Color",
+      "es" : "Color"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.color-burn" : {
+    "translations" : {
+      "de" : "Farbig nachbelichten",
+      "en" : "Color burn",
+      "es" : "Color más oscuro"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.color-dodge" : {
+    "translations" : {
+      "de" : "Farbig abwedeln",
+      "en" : "Color dodge",
+      "es" : "Color más suave"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.darken" : {
+    "translations" : {
+      "de" : "Abdunkeln",
+      "en" : "Darken",
+      "es" : "Oscurecer"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.difference" : {
+    "translations" : {
+      "de" : "Differenz",
+      "en" : "Difference",
+      "es" : "Diferencia"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.exclusion" : {
+    "translations" : {
+      "de" : "Ausschluss",
+      "en" : "Exclusion",
+      "es" : "Exclusión"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.hard-light" : {
+    "translations" : {
+      "de" : "Hartes Licht",
+      "en" : "Hard light",
+      "es" : "Luz fuerte"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.hue" : {
+    "translations" : {
+      "de" : "Farbton",
+      "en" : "Hue",
+      "es" : "Tono"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.lighten" : {
+    "translations" : {
+      "de" : "Aufhellen",
+      "en" : "Lighten",
+      "es" : "Aclarar"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.luminosity" : {
+    "translations" : {
+      "de" : "Luminanz",
+      "en" : "Luminosity",
+      "es" : "Luminosidad"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.multiply" : {
+    "translations" : {
+      "de" : "Multiplizieren",
+      "en" : "Multiply",
+      "es" : "Multiplicar"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.normal" : {
+    "translations" : {
+      "de" : "Normal",
+      "en" : "Normal",
+      "es" : "Normal"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.overlay" : {
+    "translations" : {
+      "de" : "Ineinanderkopieren",
+      "en" : "Overlay",
+      "es" : "Superponer"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.saturation" : {
+    "translations" : {
+      "de" : "Sättigung",
+      "en" : "Saturation",
+      "es" : "Saturación"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.screen" : {
+    "translations" : {
+      "de" : "Negativ multiplizieren",
+      "en" : "Screen",
+      "es" : "Trama"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.blend-mode.soft-light" : {
+    "translations" : {
+      "de" : "Weiches Licht",
+      "en" : "Soft light",
+      "es" : "Luz suave"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.title" : {
+    "translations" : {
+      "de" : "Ebene",
+      "en" : "Layer",
+      "es" : "Capa"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.title.group" : {
+    "translations" : {
+      "de" : "Ebenen gruppieren",
+      "en" : "Group layers",
+      "es" : "Capas de grupo"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
+  },
+  "workspace.options.layer-options.title.multiple" : {
+    "translations" : {
+      "de" : "Ausgewählte Ebenen",
+      "en" : "Selected layers",
+      "es" : "Capas seleccionadas"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
   },
   "workspace.options.navigate-to" : {
     "translations" : {
+      "de" : "Navigiere zu",
       "en" : "Navigate to",
       "es" : "Navegar a",
       "fr" : "Naviguer vers",
       "ru" : "Перейти к",
       "zh_cn" : "导航到"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/interactions.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs" ]
   },
   "workspace.options.none" : {
     "translations" : {
+      "de" : "Keine",
       "en" : "None",
       "es" : "Ninguno",
       "fr" : "Aucun",
       "ru" : "Не задано",
       "zh_cn" : "无"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/interactions.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs" ]
   },
   "workspace.options.position" : {
     "translations" : {
+      "de" : "Position",
       "en" : "Position",
       "es" : "Posición",
       "fr" : "Position",
       "ru" : "Позиция",
       "zh_cn" : "位置"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/measures.cljs", "src/app/main/ui/workspace/sidebar/options/frame.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs", "src/app/main/ui/workspace/sidebar/options/menus/measures.cljs" ]
   },
   "workspace.options.prototype" : {
     "translations" : {
+      "de" : "Prototyp",
       "en" : "Prototype",
       "es" : "Prototipo",
       "fr" : "Prototype",
@@ -4235,6 +4870,7 @@
   },
   "workspace.options.radius" : {
     "translations" : {
+      "de" : "Radius",
       "en" : "Radius",
       "es" : "Radio",
       "fr" : "Rayon",
@@ -4245,323 +4881,357 @@
   },
   "workspace.options.radius.all-corners" : {
     "translations" : {
+      "de" : "Alle Ecken",
       "en" : "All corners",
       "es" : "Todas las esquinas",
       "zh_cn" : "所有角"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/measures.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/measures.cljs" ]
   },
   "workspace.options.radius.single-corners" : {
     "translations" : {
+      "de" : "Einzelne Ecken",
       "en" : "Single corners",
       "es" : "Esquinas individuales",
       "zh_cn" : "单个角"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/measures.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/measures.cljs" ]
   },
   "workspace.options.rotation" : {
     "translations" : {
+      "de" : "Drehung",
       "en" : "Rotation",
       "es" : "Rotación",
       "fr" : "Rotation",
       "ru" : "Вращение",
       "zh_cn" : "旋转"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/measures.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/measures.cljs" ]
   },
   "workspace.options.select-a-shape" : {
     "translations" : {
+      "de" : "Wählen Sie eine Form, Zeichenfläche oder Gruppe aus, um eine Verbindung zu einer anderen Zeichenfläche herzustellen.",
       "en" : "Select a shape, artboard or group to drag a connection to other artboard.",
       "es" : "Selecciona una figura, tablero o grupo para arrastrar una conexión a otro tablero.",
       "fr" : "Sélectionnez une forme, un plan de travail ou un groupe pour faire glisser une connexion vers un autre plan de travail.",
       "ru" : "Выберите фигуру, рабочую область или группу чтобы перенести связь на другую рабочую область.",
       "zh_cn" : "选择一个形状、画板或编组，拖至另一个画板，以创建关联。"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/interactions.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs" ]
   },
   "workspace.options.select-artboard" : {
     "translations" : {
+      "de" : "Wählen Sie eine Zeichenfläche aus",
       "en" : "Select artboard",
       "es" : "Selecciona un tablero",
       "fr" : "Sélectionner un plan de travail",
       "ru" : "Выберите рабочую область",
       "zh_cn" : "选择画板"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/interactions.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs" ]
   },
   "workspace.options.selection-fill" : {
     "translations" : {
+      "de" : "Auswahl füllen",
       "en" : "Selection fill",
       "es" : "Relleno de selección",
       "fr" : "Remplissage de sélection",
       "ru" : "Заливка выбранного",
       "zh_cn" : "选项填充"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/fill.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/fill.cljs" ]
   },
   "workspace.options.selection-stroke" : {
     "translations" : {
+      "de" : "Auswahl einrahmen",
       "en" : "Selection stroke",
       "es" : "Borde de selección",
       "fr" : "Contour de sélection",
       "ru" : "Обводка выбранного",
       "zh_cn" : "选项边框"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs" ]
   },
   "workspace.options.shadow-options.blur" : {
     "translations" : {
+      "de" : "Weichzeichnen",
       "en" : "Blur",
       "es" : "Desenfoque",
       "fr" : "Flou",
       "zh_cn" : "模糊"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs" ]
   },
   "workspace.options.shadow-options.drop-shadow" : {
     "translations" : {
+      "de" : "Schlagschatten",
       "en" : "Drop shadow",
       "es" : "Sombra arrojada",
       "fr" : "Ombre portée",
       "zh_cn" : "外阴影"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs" ]
   },
   "workspace.options.shadow-options.inner-shadow" : {
     "translations" : {
+      "de" : "Schatten nach innen",
       "en" : "Inner shadow",
       "es" : "Sombra interior",
       "fr" : "Ombre intérieure",
       "zh_cn" : "内阴影"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs" ]
   },
   "workspace.options.shadow-options.offsetx" : {
     "translations" : {
+      "de" : "X",
       "en" : "X",
       "es" : "X",
       "fr" : "X",
       "zh_cn" : "X"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs" ]
   },
   "workspace.options.shadow-options.offsety" : {
     "translations" : {
+      "de" : "Y",
       "en" : "Y",
       "es" : "Y",
       "fr" : "Y",
       "zh_cn" : "Y"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs" ]
   },
   "workspace.options.shadow-options.spread" : {
     "translations" : {
+      "de" : "Streuung",
       "en" : "Spread",
       "es" : "Difusión",
       "fr" : "Diffusion",
       "zh_cn" : "展开"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs" ]
   },
   "workspace.options.shadow-options.title" : {
     "translations" : {
+      "de" : "Schatten",
       "en" : "Shadow",
       "es" : "Sombra",
       "fr" : "Ombre",
       "zh_cn" : "阴影"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs" ]
   },
   "workspace.options.shadow-options.title.group" : {
     "translations" : {
+      "de" : "Gruppe schattieren",
       "en" : "Group shadow",
       "es" : "Sombra del grupo",
       "fr" : "Ombre de groupe",
       "zh_cn" : "编组阴影"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs" ]
   },
   "workspace.options.shadow-options.title.multiple" : {
     "translations" : {
+      "de" : "Auswahl schattieren",
       "en" : "Selection shadows",
       "es" : "Sombras de la seleccíón",
       "fr" : "Ombres de la sélection",
       "zh_cn" : "选项阴影"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shadow.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs" ]
   },
   "workspace.options.size" : {
     "translations" : {
+      "de" : "Größe",
       "en" : "Size",
       "es" : "Tamaño",
       "fr" : "Taille",
       "ru" : "Размер",
       "zh_cn" : "尺寸"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/measures.cljs", "src/app/main/ui/workspace/sidebar/options/frame.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs", "src/app/main/ui/workspace/sidebar/options/menus/measures.cljs" ]
   },
   "workspace.options.size-presets" : {
     "translations" : {
+      "de" : "Größenvoreinstellungen",
       "en" : "Size presets",
       "es" : "Tamaños predefinidos",
       "fr" : "Tailles prédéfinies",
       "ru" : "Предустановки для размеров",
       "zh_cn" : "尺寸预设"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/frame.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/shapes/frame.cljs" ]
   },
   "workspace.options.stroke" : {
     "translations" : {
+      "de" : "Rahmen",
       "en" : "Stroke",
       "es" : "Borde",
       "fr" : "Bordure",
       "ru" : "Обводка",
       "zh_cn" : "边框"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs" ]
   },
   "workspace.options.stroke.center" : {
     "translations" : {
+      "de" : "Zentriert",
       "en" : "Center",
       "es" : "Centro",
       "fr" : "Centre",
       "ru" : "Центр",
       "zh_cn" : "居中"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs" ]
   },
   "workspace.options.stroke.dashed" : {
     "translations" : {
+      "de" : "Gestrichelt",
       "en" : "Dashed",
       "es" : "Rayado",
       "fr" : "Tirets",
       "ru" : "Пунктирный",
       "zh_cn" : "长虚线"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs" ]
   },
   "workspace.options.stroke.dotted" : {
     "translations" : {
+      "de" : "Gepunktet",
       "en" : "Dotted",
       "es" : "Punteado",
       "fr" : "Pointillé",
       "ru" : "Точечный",
       "zh_cn" : "虚线"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs" ]
   },
   "workspace.options.stroke.inner" : {
     "translations" : {
+      "de" : "Innen",
       "en" : "Inside",
       "es" : "Interior",
       "fr" : "Intérieur",
       "ru" : "Внутрь",
       "zh_cn" : "内部"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs" ]
   },
   "workspace.options.stroke.mixed" : {
     "translations" : {
+      "de" : "Mehrere",
       "en" : "Mixed",
       "es" : "Mezclado",
       "fr" : "Mixte",
       "ru" : "Смешаный",
       "zh_cn" : "混合"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs" ]
   },
   "workspace.options.stroke.outer" : {
     "translations" : {
+      "de" : "Außen",
       "en" : "Outside",
       "es" : "Exterior",
       "fr" : "Extérieur",
       "ru" : "Наружу",
       "zh_cn" : "外部"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs" ]
   },
   "workspace.options.stroke.solid" : {
     "translations" : {
+      "de" : "Solid",
       "en" : "Solid",
       "es" : "Sólido",
       "fr" : "Solide",
       "ru" : "Сплошной",
       "zh_cn" : "实线"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/stroke.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs" ]
   },
   "workspace.options.text-options.align-bottom" : {
     "translations" : {
+      "de" : "Unten ausrichten",
       "en" : "Align bottom",
       "es" : "Alinear abajo",
       "fr" : "Aligner en bas",
       "ru" : "Выровнять низ",
       "zh_cn" : "底部对齐"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/text.cljs" ]
   },
   "workspace.options.text-options.align-center" : {
     "translations" : {
+      "de" : "Zentrieren",
       "en" : "Align center",
       "es" : "Aliniear al centro",
       "fr" : "Aligner au centre",
       "ru" : "Выравнивание по центру",
       "zh_cn" : "居中对齐"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/text.cljs" ]
   },
   "workspace.options.text-options.align-justify" : {
     "translations" : {
+      "de" : "Ausrichtung in der Breite",
       "en" : "Justify",
       "es" : "Justificar",
       "fr" : "Justifier",
       "ru" : "Выравнивание по ширине",
       "zh_cn" : "整理"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/text.cljs" ]
   },
   "workspace.options.text-options.align-left" : {
     "translations" : {
+      "de" : "Linksbündig ausrichten",
       "en" : "Align left",
       "es" : "Alinear a la izquierda",
       "fr" : "Aligner à gauche",
       "ru" : "Выравнивание по левому краю",
       "zh_cn" : "靠左对齐"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/text.cljs" ]
   },
   "workspace.options.text-options.align-middle" : {
     "translations" : {
+      "de" : "An Mitte ausrichten",
       "en" : "Align middle",
       "es" : "Alinear al centro",
       "fr" : "Aligner verticalement au milieu",
       "ru" : "Выравнивание по центру",
       "zh_cn" : "中间对齐"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/text.cljs" ]
   },
   "workspace.options.text-options.align-right" : {
     "translations" : {
+      "de" : "Rechtsbündig ausrichten",
       "en" : "Align right",
       "es" : "Alinear a la derecha",
       "fr" : "Aligner à droite",
       "ru" : "Выравнивание по правому краю",
       "zh_cn" : "靠右对齐"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/text.cljs" ]
   },
   "workspace.options.text-options.align-top" : {
     "translations" : {
+      "de" : "Oben ausrichten",
       "en" : "Align top",
       "es" : "Alinear arriba",
       "fr" : "Aligner en haut",
       "ru" : "Выравнивание по верхнему краю",
       "zh_cn" : "顶部对齐"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/text.cljs" ]
   },
   "workspace.options.text-options.decoration" : {
     "translations" : {
+      "de" : "Textdekoration",
       "en" : "Decoration",
       "es" : "Decoración",
       "fr" : "Décoration",
@@ -4572,99 +5242,110 @@
   },
   "workspace.options.text-options.google" : {
     "translations" : {
+      "de" : "Google",
       "en" : "Google",
       "es" : "Google",
       "zh_cn" : "谷歌"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/typography.cljs" ]
   },
   "workspace.options.text-options.grow-auto-height" : {
     "translations" : {
+      "de" : "Automatische Höhe",
       "en" : "Auto height",
       "es" : "Alto automático",
       "fr" : "Hauteur automatique",
       "zh_cn" : "自动高度"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/text.cljs" ]
   },
   "workspace.options.text-options.grow-auto-width" : {
     "translations" : {
+      "de" : "Automatische Breite",
       "en" : "Auto width",
       "es" : "Ancho automático",
       "fr" : "Largeur automatique",
       "zh_cn" : "自动宽度"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/text.cljs" ]
   },
   "workspace.options.text-options.grow-fixed" : {
     "translations" : {
+      "de" : "Feste Größe",
       "en" : "Fixed",
       "es" : "Fijo",
       "fr" : "Fixe",
       "zh_cn" : "固定"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/text.cljs" ]
   },
   "workspace.options.text-options.letter-spacing" : {
     "translations" : {
+      "de" : "Zeichenabstand",
       "en" : "Letter Spacing",
       "es" : "Espaciado entre letras",
       "fr" : "Interlettrage",
       "ru" : "Межсимвольный интервал",
       "zh_cn" : "字距"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/typography.cljs" ]
   },
   "workspace.options.text-options.line-height" : {
     "translations" : {
+      "de" : "Zeilenabstand",
       "en" : "Line height",
       "es" : "Altura de línea",
       "fr" : "Interlignage",
       "ru" : "Высота строки",
       "zh_cn" : "行高"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/typography.cljs" ]
   },
   "workspace.options.text-options.lowercase" : {
     "translations" : {
+      "de" : "Kleinbuchstaben",
       "en" : "Lowercase",
       "es" : "Minúsculas",
       "fr" : "Minuscule",
       "ru" : "Нижний регистр",
       "zh_cn" : "小写"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/typography.cljs" ]
   },
   "workspace.options.text-options.none" : {
     "translations" : {
+      "de" : "Keine",
       "en" : "None",
       "es" : "Nada",
       "fr" : "Aucune",
       "ru" : "Не задано",
       "zh_cn" : "无"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs", "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/text.cljs", "src/app/main/ui/workspace/sidebar/options/menus/typography.cljs" ]
   },
   "workspace.options.text-options.preset" : {
     "translations" : {
+      "de" : "Vordefiniert",
       "en" : "Preset",
       "es" : "Predefinidos",
       "zh_cn" : "预设"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/typography.cljs" ]
   },
   "workspace.options.text-options.strikethrough" : {
     "translations" : {
+      "de" : "Durchgestrichen",
       "en" : "Strikethrough",
       "es" : "Tachado",
       "fr" : "Barré",
       "ru" : "Перечеркнутый",
       "zh_cn" : "删除线"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/text.cljs" ]
   },
   "workspace.options.text-options.text-case" : {
     "translations" : {
+      "de" : "Schriftauszeichnung",
       "en" : "Case",
       "es" : "Mayús/minús",
       "fr" : "Casse",
@@ -4675,66 +5356,73 @@
   },
   "workspace.options.text-options.title" : {
     "translations" : {
+      "de" : "Text",
       "en" : "Text",
       "es" : "Texto",
       "fr" : "Texte",
       "ru" : "Текст",
       "zh_cn" : "文本"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/text.cljs" ]
   },
   "workspace.options.text-options.title-group" : {
     "translations" : {
+      "de" : "Gruppe Text",
       "en" : "Group text",
       "es" : "Texto de grupo",
       "fr" : "Texte de groupe",
       "ru" : "Текст группы",
       "zh_cn" : "编组文本"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/text.cljs" ]
   },
   "workspace.options.text-options.title-selection" : {
     "translations" : {
+      "de" : "Ausgewählter Text",
       "en" : "Selection text",
       "es" : "Texto de selección",
       "fr" : "Texte de la sélection",
       "ru" : "Выбранный текст",
       "zh_cn" : "选项文本"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/text.cljs" ]
   },
   "workspace.options.text-options.titlecase" : {
     "translations" : {
+      "de" : "Kapitälchen",
       "en" : "Title Case",
       "es" : "Título",
       "fr" : "Premières Lettres en Capitales",
       "ru" : "Каждое слово с заглавной буквы",
       "zh_cn" : "首字母大写"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/typography.cljs" ]
   },
   "workspace.options.text-options.underline" : {
     "translations" : {
+      "de" : "Unterstrichen",
       "en" : "Underline",
       "es" : "Subrayado",
       "fr" : "Soulignage",
       "ru" : "Подчеркнутый",
       "zh_cn" : "下划线"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/text.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/text.cljs" ]
   },
   "workspace.options.text-options.uppercase" : {
     "translations" : {
+      "de" : "Großbuchstaben",
       "en" : "Uppercase",
       "es" : "Mayúsculas",
       "fr" : "Majuscule",
       "ru" : "Верхний регистр",
       "zh_cn" : "大写"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/typography.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/typography.cljs" ]
   },
   "workspace.options.text-options.vertical-align" : {
     "translations" : {
+      "de" : "Vertikal ausrichten",
       "en" : "Vertical align",
       "es" : "Alineación vertical",
       "fr" : "Alignement vertical",
@@ -4745,16 +5433,18 @@
   },
   "workspace.options.use-play-button" : {
     "translations" : {
+      "de" : "Verwenden Sie die Wiedergabetaste in der Kopfzeile, um die Prototypansicht zu wechseln.",
       "en" : "Use the play button at the header to run the prototype view.",
       "es" : "Usa el botón de play de la cabecera para arrancar la vista de prototipo.",
       "fr" : "Utilisez le bouton de lecture dans l’en‑tête pour exécuter la vue du prototype.",
       "ru" : "Используй кнопку запуск в заголовке чтобы перейти на экран прототипа.",
       "zh_cn" : "点击页面顶端的播放按钮预览原型。"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/interactions.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs" ]
   },
   "workspace.shape.menu.back" : {
     "translations" : {
+      "de" : "In den Hintergrund",
       "en" : "Send to back",
       "es" : "Enviar al fondo",
       "fr" : "Envoyer au fond",
@@ -4764,6 +5454,7 @@
   },
   "workspace.shape.menu.backward" : {
     "translations" : {
+      "de" : "Eins nach hinten",
       "en" : "Send backward",
       "es" : "Enviar atrás",
       "fr" : "Éloigner",
@@ -4773,6 +5464,7 @@
   },
   "workspace.shape.menu.copy" : {
     "translations" : {
+      "de" : "Kopieren",
       "en" : "Copy",
       "es" : "Copiar",
       "fr" : "Copier",
@@ -4782,6 +5474,7 @@
   },
   "workspace.shape.menu.create-component" : {
     "translations" : {
+      "de" : "Komponente erstellen",
       "en" : "Create component",
       "es" : "Crear componente",
       "fr" : "Créer un composant",
@@ -4791,6 +5484,7 @@
   },
   "workspace.shape.menu.cut" : {
     "translations" : {
+      "de" : "Ausschneiden",
       "en" : "Cut",
       "es" : "Cortar",
       "fr" : "Couper",
@@ -4800,6 +5494,7 @@
   },
   "workspace.shape.menu.delete" : {
     "translations" : {
+      "de" : "Löschen",
       "en" : "Delete",
       "es" : "Eliminar",
       "fr" : "Supprimer",
@@ -4809,15 +5504,17 @@
   },
   "workspace.shape.menu.detach-instance" : {
     "translations" : {
+      "de" : "Instanz trennen",
       "en" : "Detach instance",
       "es" : "Desacoplar instancia",
       "fr" : "Détacher l’instance",
       "zh_cn" : "解绑实例"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/component.cljs", "src/app/main/ui/workspace/sidebar/options/component.cljs", "src/app/main/ui/workspace/context_menu.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/component.cljs", "src/app/main/ui/workspace/sidebar/options/menus/component.cljs", "src/app/main/ui/workspace/context_menu.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
   },
   "workspace.shape.menu.duplicate" : {
     "translations" : {
+      "de" : "Duplizieren",
       "en" : "Duplicate",
       "es" : "Duplicar",
       "fr" : "Dupliquer",
@@ -4827,6 +5524,7 @@
   },
   "workspace.shape.menu.edit" : {
     "translations" : {
+      "de" : "Bearbeiten",
       "en" : "Edit",
       "es" : "Editar",
       "zh_cn" : "编辑"
@@ -4835,6 +5533,7 @@
   },
   "workspace.shape.menu.flip-horizontal" : {
     "translations" : {
+      "de" : "Horizontal spiegeln",
       "en" : "Flip horizontal",
       "es" : "Voltear horizontal",
       "zh_cn" : "水平翻转"
@@ -4843,6 +5542,7 @@
   },
   "workspace.shape.menu.flip-vertical" : {
     "translations" : {
+      "de" : "Vertikal spiegeln",
       "en" : "Flip vertical",
       "es" : "Voltear vertical",
       "zh_cn" : "垂直翻转"
@@ -4851,6 +5551,7 @@
   },
   "workspace.shape.menu.forward" : {
     "translations" : {
+      "de" : "Eins nach vorne",
       "en" : "Bring forward",
       "es" : "Mover hacia delante",
       "fr" : "Avancer",
@@ -4860,6 +5561,7 @@
   },
   "workspace.shape.menu.front" : {
     "translations" : {
+      "de" : "In den Vordergrund",
       "en" : "Bring to front",
       "es" : "Mover al frente",
       "fr" : "Amener au premier plan",
@@ -4869,15 +5571,17 @@
   },
   "workspace.shape.menu.go-master" : {
     "translations" : {
+      "de" : "Zur Hauptkomponentendatei wechseln",
       "en" : "Go to master component file",
       "es" : "Ir al archivo del componente maestro",
       "fr" : "Aller au fichier du composant principal",
       "zh_cn" : "前往主组件文档"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/component.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/component.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
   },
   "workspace.shape.menu.group" : {
     "translations" : {
+      "de" : "Gruppieren",
       "en" : "Group",
       "es" : "Grupo",
       "fr" : "Groupe",
@@ -4887,6 +5591,7 @@
   },
   "workspace.shape.menu.hide" : {
     "translations" : {
+      "de" : "Ausblenden",
       "en" : "Hide",
       "es" : "Ocultar",
       "fr" : "Masquer",
@@ -4896,6 +5601,7 @@
   },
   "workspace.shape.menu.lock" : {
     "translations" : {
+      "de" : "Sperren",
       "en" : "Lock",
       "es" : "Bloquear",
       "fr" : "Bloquer",
@@ -4905,6 +5611,7 @@
   },
   "workspace.shape.menu.mask" : {
     "translations" : {
+      "de" : "Maskieren",
       "en" : "Mask",
       "es" : "Máscara",
       "fr" : "Masque",
@@ -4914,6 +5621,7 @@
   },
   "workspace.shape.menu.paste" : {
     "translations" : {
+      "de" : "Einfügen",
       "en" : "Paste",
       "es" : "Pegar",
       "fr" : "Coller",
@@ -4923,15 +5631,17 @@
   },
   "workspace.shape.menu.reset-overrides" : {
     "translations" : {
+      "de" : "Änderungen zurücksetzen",
       "en" : "Reset overrides",
       "es" : "Deshacer modificaciones",
       "fr" : "Annuler les modifications",
       "zh_cn" : "还原自定义选项"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/component.cljs", "src/app/main/ui/workspace/sidebar/options/component.cljs", "src/app/main/ui/workspace/context_menu.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/component.cljs", "src/app/main/ui/workspace/sidebar/options/menus/component.cljs", "src/app/main/ui/workspace/context_menu.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
   },
   "workspace.shape.menu.show" : {
     "translations" : {
+      "de" : "Anzeigen",
       "en" : "Show",
       "es" : "Mostrar",
       "fr" : "Montrer",
@@ -4941,15 +5651,17 @@
   },
   "workspace.shape.menu.show-master" : {
     "translations" : {
+      "de" : "Hauptkomponente anzeigen",
       "en" : "Show master component",
       "es" : "Ver componente maestro",
       "fr" : "Afficher le composant principal",
       "zh_cn" : "显示主组件"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/component.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/component.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
   },
   "workspace.shape.menu.ungroup" : {
     "translations" : {
+      "de" : "Gruppierung aufheben",
       "en" : "Ungroup",
       "es" : "Desagrupar",
       "fr" : "Dégrouper",
@@ -4959,6 +5671,7 @@
   },
   "workspace.shape.menu.unlock" : {
     "translations" : {
+      "de" : "Entsperren",
       "en" : "Unlock",
       "es" : "Desbloquear",
       "fr" : "Débloquer",
@@ -4968,6 +5681,7 @@
   },
   "workspace.shape.menu.unmask" : {
     "translations" : {
+      "de" : "Maske entfernen",
       "en" : "Unmask",
       "es" : "Quitar máscara",
       "fr" : "Supprimer le masque",
@@ -4977,15 +5691,17 @@
   },
   "workspace.shape.menu.update-master" : {
     "translations" : {
+      "de" : "Hauptkomponente aktualisieren",
       "en" : "Update master component",
       "es" : "Actualizar componente maestro",
       "fr" : "Actualiser le composant principal",
       "zh_cn" : "更新主组件"
     },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/component.cljs", "src/app/main/ui/workspace/sidebar/options/component.cljs", "src/app/main/ui/workspace/context_menu.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/component.cljs", "src/app/main/ui/workspace/sidebar/options/menus/component.cljs", "src/app/main/ui/workspace/context_menu.cljs", "src/app/main/ui/workspace/context_menu.cljs" ]
   },
   "workspace.sidebar.history" : {
     "translations" : {
+      "de" : "Verlauf (%s)",
       "en" : "History (%s)",
       "es" : "Historial (%s)",
       "fr" : "Historique (%s)",
@@ -4995,6 +5711,7 @@
   },
   "workspace.sidebar.layers" : {
     "translations" : {
+      "de" : "Ebenen (%s)",
       "en" : "Layers (%s)",
       "es" : "Capas (%s)",
       "fr" : "Calques (%s)",
@@ -5002,8 +5719,17 @@
     },
     "used-in" : [ "src/app/main/ui/workspace/left_toolbar.cljs" ]
   },
+  "workspace.sidebar.options.svg-attrs.title" : {
+    "translations" : {
+      "de" : "Importierte SVG-Attribute",
+      "en" : "Imported SVG Attributes",
+      "es" : "Atributos del SVG Importado"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs", "src/app/main/ui/handoff/attributes/svg.cljs" ]
+  },
   "workspace.sidebar.sitemap" : {
     "translations" : {
+      "de" : "Seiten",
       "en" : "Pages",
       "es" : "Páginas",
       "fr" : "Pages",
@@ -5014,6 +5740,7 @@
   },
   "workspace.sitemap" : {
     "translations" : {
+      "de" : "Sitemap",
       "en" : "Sitemap",
       "es" : "Mapa del sitio",
       "fr" : "Plan du site",
@@ -5024,6 +5751,7 @@
   },
   "workspace.toolbar.assets" : {
     "translations" : {
+      "de" : "Assets (%s)",
       "en" : "Assets (%s)",
       "es" : "Recursos (%s)",
       "fr" : "Ressources (%s)",
@@ -5034,6 +5762,7 @@
   },
   "workspace.toolbar.color-palette" : {
     "translations" : {
+      "de" : "Farbpalette (%s)",
       "en" : "Color Palette (%s)",
       "es" : "Paleta de colores (%s)",
       "fr" : "Palette de couleurs (%s)",
@@ -5044,6 +5773,7 @@
   },
   "workspace.toolbar.comments" : {
     "translations" : {
+      "de" : "Kommentare (%s)",
       "en" : "Comments (%s)",
       "es" : "Comentarios (%s)",
       "fr" : "Commentaires (%s)",
@@ -5053,6 +5783,7 @@
   },
   "workspace.toolbar.curve" : {
     "translations" : {
+      "de" : "Stift (%s)",
       "en" : "Curve (%s)",
       "es" : "Curva (%s)",
       "fr" : "Courbe (%s)",
@@ -5063,6 +5794,7 @@
   },
   "workspace.toolbar.ellipse" : {
     "translations" : {
+      "de" : "Ellipse (E)",
       "en" : "Ellipse (E)",
       "es" : "Elipse (E)",
       "fr" : "Ellipse (E)",
@@ -5073,6 +5805,7 @@
   },
   "workspace.toolbar.frame" : {
     "translations" : {
+      "de" : "Zeichenfläche (A)",
       "en" : "Artboard (A)",
       "es" : "Tablero (A)",
       "fr" : "Plan de travail (A)",
@@ -5083,6 +5816,7 @@
   },
   "workspace.toolbar.image" : {
     "translations" : {
+      "de" : "Bild (K)",
       "en" : "Image (K)",
       "es" : "Imagen (K)",
       "fr" : "Image (K)",
@@ -5093,6 +5827,7 @@
   },
   "workspace.toolbar.move" : {
     "translations" : {
+      "de" : "Verschieben",
       "en" : "Move",
       "es" : "Mover",
       "fr" : "Déplacer",
@@ -5103,6 +5838,7 @@
   },
   "workspace.toolbar.path" : {
     "translations" : {
+      "de" : "Pfad (P)",
       "en" : "Path (P)",
       "es" : "Ruta (P)",
       "fr" : "Chemin (P)",
@@ -5113,6 +5849,7 @@
   },
   "workspace.toolbar.rect" : {
     "translations" : {
+      "de" : "Rechteck (R)",
       "en" : "Rectangle (R)",
       "es" : "Rectángulo (R)",
       "fr" : "Rectangle (R)",
@@ -5123,6 +5860,7 @@
   },
   "workspace.toolbar.text" : {
     "translations" : {
+      "de" : "Text (T)",
       "en" : "Text (T)",
       "es" : "Texto (T)",
       "fr" : "Texte (T)",
@@ -5133,6 +5871,7 @@
   },
   "workspace.undo.empty" : {
     "translations" : {
+      "de" : "Es gibt bisher keine Änderungen im Verlauf",
       "en" : "There are no history changes so far",
       "es" : "Todavía no hay cambios en el histórico",
       "fr" : "Il n’y a aucun changement dans l’historique pour l’instant",
@@ -5142,6 +5881,7 @@
   },
   "workspace.undo.entry.delete" : {
     "translations" : {
+      "de" : "%s gelöscht",
       "en" : "Deleted %s",
       "es" : "%s eliminado",
       "fr" : "Supprimé %s",
@@ -5151,6 +5891,7 @@
   },
   "workspace.undo.entry.modify" : {
     "translations" : {
+      "de" : "%s verändert",
       "en" : "Modified %s",
       "es" : "%s modificado",
       "fr" : "Modifié %s",
@@ -5160,6 +5901,7 @@
   },
   "workspace.undo.entry.move" : {
     "translations" : {
+      "de" : "Verschobene Objekte",
       "en" : "Moved objects",
       "es" : "Objetos movidos",
       "fr" : "Objets déplacés",
@@ -5169,6 +5911,7 @@
   },
   "workspace.undo.entry.multiple.circle" : {
     "translations" : {
+      "de" : "Kreise",
       "en" : "circles",
       "es" : "círculos",
       "fr" : "cercles",
@@ -5178,6 +5921,7 @@
   },
   "workspace.undo.entry.multiple.color" : {
     "translations" : {
+      "de" : "Farben",
       "en" : "color assets",
       "es" : "colores",
       "fr" : "couleurs",
@@ -5187,6 +5931,7 @@
   },
   "workspace.undo.entry.multiple.component" : {
     "translations" : {
+      "de" : "Komponenten",
       "en" : "components",
       "es" : "componentes",
       "fr" : "composants",
@@ -5196,6 +5941,7 @@
   },
   "workspace.undo.entry.multiple.curve" : {
     "translations" : {
+      "de" : "Kurven",
       "en" : "curves",
       "es" : "curvas",
       "fr" : "courbes",
@@ -5205,6 +5951,7 @@
   },
   "workspace.undo.entry.multiple.frame" : {
     "translations" : {
+      "de" : "Zeichenfläche",
       "en" : "artboard",
       "es" : "mesa de trabajo",
       "fr" : "plan de travail",
@@ -5214,6 +5961,7 @@
   },
   "workspace.undo.entry.multiple.group" : {
     "translations" : {
+      "de" : "Gruppen",
       "en" : "groups",
       "es" : "grupos",
       "fr" : "groupes",
@@ -5223,6 +5971,7 @@
   },
   "workspace.undo.entry.multiple.media" : {
     "translations" : {
+      "de" : "Grafiken",
       "en" : "graphic assets",
       "es" : "gráficos",
       "fr" : "graphiques",
@@ -5232,6 +5981,7 @@
   },
   "workspace.undo.entry.multiple.multiple" : {
     "translations" : {
+      "de" : "Objekte",
       "en" : "objects",
       "es" : "objetos",
       "fr" : "objets",
@@ -5241,6 +5991,7 @@
   },
   "workspace.undo.entry.multiple.page" : {
     "translations" : {
+      "de" : "Seiten",
       "en" : "pages",
       "es" : "páginas",
       "fr" : "pages",
@@ -5250,6 +6001,7 @@
   },
   "workspace.undo.entry.multiple.path" : {
     "translations" : {
+      "de" : "Pfade",
       "en" : "paths",
       "es" : "trazos",
       "fr" : "chemins",
@@ -5259,6 +6011,7 @@
   },
   "workspace.undo.entry.multiple.rect" : {
     "translations" : {
+      "de" : "Rechtecke",
       "en" : "rectangles",
       "es" : "rectángulos",
       "fr" : "rectangles",
@@ -5268,6 +6021,7 @@
   },
   "workspace.undo.entry.multiple.shape" : {
     "translations" : {
+      "de" : "Formen",
       "en" : "shapes",
       "es" : "formas",
       "fr" : "formes",
@@ -5277,6 +6031,7 @@
   },
   "workspace.undo.entry.multiple.text" : {
     "translations" : {
+      "de" : "Texte",
       "en" : "texts",
       "es" : "textos",
       "fr" : "textes",
@@ -5286,6 +6041,7 @@
   },
   "workspace.undo.entry.multiple.typography" : {
     "translations" : {
+      "de" : "Typografie",
       "en" : "typography assets",
       "es" : "tipografías",
       "fr" : "typographie",
@@ -5295,6 +6051,7 @@
   },
   "workspace.undo.entry.new" : {
     "translations" : {
+      "de" : "Neu: %s",
       "en" : "New %s",
       "es" : "Nuevo %s",
       "fr" : "Nouveau %s",
@@ -5304,6 +6061,7 @@
   },
   "workspace.undo.entry.single.circle" : {
     "translations" : {
+      "de" : "Kreis",
       "en" : "circle",
       "es" : "círculo",
       "fr" : "cercle",
@@ -5313,6 +6071,7 @@
   },
   "workspace.undo.entry.single.color" : {
     "translations" : {
+      "de" : "Farben",
       "en" : "color asset",
       "es" : "color",
       "fr" : "couleur",
@@ -5322,6 +6081,7 @@
   },
   "workspace.undo.entry.single.component" : {
     "translations" : {
+      "de" : "Komponente",
       "en" : "component",
       "es" : "componente",
       "fr" : "composant",
@@ -5331,6 +6091,7 @@
   },
   "workspace.undo.entry.single.curve" : {
     "translations" : {
+      "de" : "Kurve",
       "en" : "curve",
       "es" : "curva",
       "fr" : "courbe",
@@ -5340,6 +6101,7 @@
   },
   "workspace.undo.entry.single.frame" : {
     "translations" : {
+      "de" : "Zeichenfläche",
       "en" : "artboard",
       "es" : "mesa de trabajo",
       "fr" : "plan de travail",
@@ -5349,6 +6111,7 @@
   },
   "workspace.undo.entry.single.group" : {
     "translations" : {
+      "de" : "Gruppe",
       "en" : "group",
       "es" : "grupo",
       "fr" : "groupe",
@@ -5358,6 +6121,7 @@
   },
   "workspace.undo.entry.single.image" : {
     "translations" : {
+      "de" : "Bild",
       "en" : "image",
       "es" : "imagen",
       "fr" : "image",
@@ -5367,6 +6131,7 @@
   },
   "workspace.undo.entry.single.media" : {
     "translations" : {
+      "de" : "Grafik",
       "en" : "graphic asset",
       "es" : "gráfico",
       "fr" : "graphique",
@@ -5376,6 +6141,7 @@
   },
   "workspace.undo.entry.single.multiple" : {
     "translations" : {
+      "de" : "Objekt",
       "en" : "object",
       "es" : "objeto",
       "fr" : "objet",
@@ -5385,6 +6151,7 @@
   },
   "workspace.undo.entry.single.page" : {
     "translations" : {
+      "de" : "Seite",
       "en" : "page",
       "es" : "página",
       "fr" : "page",
@@ -5394,6 +6161,7 @@
   },
   "workspace.undo.entry.single.path" : {
     "translations" : {
+      "de" : "Pfad",
       "en" : "path",
       "es" : "trazo",
       "fr" : "chemin",
@@ -5403,6 +6171,7 @@
   },
   "workspace.undo.entry.single.rect" : {
     "translations" : {
+      "de" : "Rechteck",
       "en" : "rectangle",
       "es" : "rectángulo",
       "fr" : "rectangle",
@@ -5412,6 +6181,7 @@
   },
   "workspace.undo.entry.single.shape" : {
     "translations" : {
+      "de" : "Form",
       "en" : "shape",
       "es" : "forma",
       "fr" : "forme",
@@ -5421,6 +6191,7 @@
   },
   "workspace.undo.entry.single.text" : {
     "translations" : {
+      "de" : "Text",
       "en" : "text",
       "es" : "texto",
       "fr" : "texte",
@@ -5430,6 +6201,7 @@
   },
   "workspace.undo.entry.single.typography" : {
     "translations" : {
+      "de" : "Typografie",
       "en" : "typography asset",
       "es" : "tipografía",
       "fr" : "typographie",
@@ -5439,6 +6211,7 @@
   },
   "workspace.undo.entry.unknown" : {
     "translations" : {
+      "de" : "Vorgang über %s",
       "en" : "Operation over %s",
       "es" : "Operación sobre %s",
       "fr" : "Opération sur %s",
@@ -5448,6 +6221,7 @@
   },
   "workspace.undo.title" : {
     "translations" : {
+      "de" : "Verlauf",
       "en" : "History",
       "es" : "Histórico",
       "fr" : "Historique",
@@ -5457,6 +6231,7 @@
   },
   "workspace.updates.dismiss" : {
     "translations" : {
+      "de" : "Ignorieren",
       "en" : "Dismiss",
       "es" : "Ignorar",
       "fr" : "Ignorer",
@@ -5467,6 +6242,7 @@
   },
   "workspace.updates.there-are-updates" : {
     "translations" : {
+      "de" : "Es gibt Updates in gemeinsam genutzten Bibliotheken",
       "en" : "There are updates in shared libraries",
       "es" : "Hay actualizaciones en librerías compartidas",
       "fr" : "Il y a des mises à jour dans les Bibliothèques Partagées",
@@ -5477,6 +6253,7 @@
   },
   "workspace.updates.update" : {
     "translations" : {
+      "de" : "Aktualisieren",
       "en" : "Update",
       "es" : "Actualizar",
       "fr" : "Actualiser",
@@ -5487,6 +6264,7 @@
   },
   "workspace.viewport.click-to-close-path" : {
     "translations" : {
+      "de" : "Klicken Sie, um den Pfad zu schließen",
       "en" : "Click to close the path",
       "es" : "Pulsar para cerrar la ruta",
       "fr" : "Cliquez pour fermer le chemin",
@@ -5494,180 +6272,5 @@
       "zh_cn" : "单击以闭合路径"
     },
     "unused" : true
-  },
-
-  "workspace.sidebar.options.svg-attrs.title": {
-    "translations": {
-      "en": "Imported SVG Attributes",
-      "es": "Atributos del SVG Importado"
-    }
-  },
-
-  "handoff.attributes.stroke.alignment.inner" : {
-    "translations" : {
-      "en" : "Inside",
-      "es" : "Interior",
-      "fr" : "Intérieur",
-      "ru" : "Внутрь",
-      "zh_cn" : "内部"
-    },
-    "permanent": true
-  },
-
-  "handoff.attributes.stroke.alignment.outer" : {
-    "translations" : {
-      "en" : "Outside",
-      "es" : "Exterior",
-      "fr" : "Extérieur",
-      "ru" : "Наружу",
-      "zh_cn" : "外部"
-    },
-    "permanent": true
-  },
-
-  "handoff.attributes.stroke.alignment.center" : {
-    "translations" : {
-      "en" : "Center",
-      "es" : "Centro",
-      "fr" : "Centre",
-      "ru" : "Центр",
-      "zh_cn" : "居中"
-    },
-    "permanent": true
-  },
-
-  "workspace.options.layer-options.blend-mode.color" : {
-    "translations" : {
-      "en" : "Color",
-      "es" : "Color"
-    },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
-  },
-
-  "workspace.options.layer-options.blend-mode.color-burn" : {
-    "translations" : {
-      "en" : "Color burn",
-      "es" : "Color más oscuro"
-    },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
-  },
-  "workspace.options.layer-options.blend-mode.color-dodge" : {
-    "translations" : {
-      "en" : "Color dodge",
-      "es" : "Color más suave"
-    },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
-  },
-  "workspace.options.layer-options.blend-mode.darken" : {
-    "translations" : {
-      "en" : "Darken",
-      "es" : "Oscurecer"
-    },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
-  },
-  "workspace.options.layer-options.blend-mode.difference" : {
-    "translations" : {
-      "en" : "Difference",
-      "es" : "Diferencia"
-    },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
-  },
-  "workspace.options.layer-options.blend-mode.exclusion" : {
-    "translations" : {
-      "en" : "Exclusion",
-      "en" : "Exclusión"
-    },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
-  },
-  "workspace.options.layer-options.blend-mode.hard-light" : {
-    "translations" : {
-      "en" : "Hard light",
-      "es" : "Luz fuerte"
-    },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
-  },
-  "workspace.options.layer-options.blend-mode.hue" : {
-    "translations" : {
-      "en" : "Hue",
-      "es" : "Tono"
-    },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
-  },
-  "workspace.options.layer-options.blend-mode.lighten" : {
-    "translations" : {
-      "en" : "Lighten",
-      "es" : "Aclarar"
-    },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
-  },
-  "workspace.options.layer-options.blend-mode.luminosity" : {
-    "translations" : {
-      "en" : "Luminosity",
-      "es" : "Luminosidad"
-    },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
-  },
-  "workspace.options.layer-options.blend-mode.multiply" : {
-    "translations" : {
-      "en" : "Multiply",
-      "es" : "Multiplicar"
-    },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
-  },
-  "workspace.options.layer-options.blend-mode.normal" : {
-    "translations" : {
-      "en" : "Normal",
-      "es" : "Normal"
-    },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
-  },
-  "workspace.options.layer-options.blend-mode.overlay" : {
-    "translations" : {
-      "en" : "Overlay",
-      "en" : "Superponer"
-    },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
-  },
-  "workspace.options.layer-options.blend-mode.saturation" : {
-    "translations" : {
-      "en" : "Saturation",
-      "es" : "Saturación"
-    },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
-  },
-  "workspace.options.layer-options.blend-mode.screen" : {
-    "translations" : {
-      "en" : "Screen",
-      "en" : "Trama"
-    },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
-  },
-  "workspace.options.layer-options.blend-mode.soft-light" : {
-    "translations" : {
-      "en" : "Soft light",
-      "es" : "Luz suave"
-    },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
-  },
-  "workspace.options.layer-options.title" : {
-    "translations" : {
-      "en" : "Layer",
-      "es" : "Capa"
-    },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
-  },
-  "workspace.options.layer-options.title.group" : {
-    "translations" : {
-      "en" : "Group layers",
-      "es" : "Capas de grupo"
-    },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
-  },
-  "workspace.options.layer-options.title.multiple" : {
-    "translations" : {
-      "en" : "Selected layers",
-      "es" : "Capas seleccionadas"
-    },
-    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs" ]
   }
 }
