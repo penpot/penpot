@@ -86,12 +86,14 @@
                         :project-id project-id}
 
                  mdata {:on-success
-                        (st/emitf (dm/success (tr "dashboard.success-move-file"))
-                                  (if navigate?
-                                    (rt/nav :dashboard-files
-                                            {:team-id team-id
-                                             :project-id project-id})
-                                    (dd/fetch-recent-files {:team-id team-id})))}]
+                        #(do
+                           (st/emit! (dm/success (tr "dashboard.success-move-file")))
+                           (if navigate?
+                             (st/emit! (rt/nav :dashboard-files
+                                               {:team-id team-id
+                                                :project-id project-id}))
+                             (st/emit! (dd/fetch-recent-files {:team-id team-id})
+                                       (dd/clear-selected-files))))}]
 
             (st/emitf (dd/move-files (with-meta data mdata))))))
 

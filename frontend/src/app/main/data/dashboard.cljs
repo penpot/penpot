@@ -60,7 +60,6 @@
 (s/def ::set-of-uuid
   (s/every ::us/uuid :kind set?))
 
-(declare clear-selected-files)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Fetching
@@ -149,10 +148,8 @@
 
       ptk/WatchEvent
       (watch [_ state stream]
-        (rx/concat
-          (->> (rp/query :search-files params)
-               (rx/map #(partial fetched %)))
-          (rx/of (clear-selected-files)))))))
+        (->> (rp/query :search-files params)
+             (rx/map #(partial fetched %)))))))
 
 ;; --- Fetch Files
 
@@ -164,10 +161,8 @@
     (ptk/reify ::fetch-files
       ptk/WatchEvent
       (watch [_ state stream]
-        (rx/concat
-          (->> (rp/query :files params)
-               (rx/map #(partial fetched %)))
-          (rx/of (clear-selected-files)))))))
+        (->> (rp/query :files params)
+             (rx/map #(partial fetched %)))))))
 
 ;; --- Fetch Shared Files
 
@@ -179,10 +174,8 @@
     (ptk/reify ::fetch-shared-files
       ptk/WatchEvent
       (watch [_ state stream]
-        (rx/concat
-          (->> (rp/query :shared-files {:team-id team-id})
-               (rx/map #(partial fetched %)))
-          (rx/of (clear-selected-files)))))))
+        (->> (rp/query :shared-files {:team-id team-id})
+             (rx/map #(partial fetched %)))))))
 
 ;; --- Fetch recent files
 
@@ -195,10 +188,8 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [params {:team-id team-id}]
-        (rx/concat
-          (->> (rp/query :recent-files params)
-               (rx/map #(recent-files-fetched team-id %)))
-          (rx/of (clear-selected-files)))))))
+        (->> (rp/query :recent-files params)
+             (rx/map #(recent-files-fetched team-id %)))))))
 
 (defn recent-files-fetched
   [team-id files]

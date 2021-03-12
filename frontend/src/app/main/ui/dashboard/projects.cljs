@@ -162,7 +162,8 @@
     (mf/use-effect
      (mf/deps team)
      (fn []
-       (st/emit! (dd/fetch-recent-files {:team-id (:id team)}))))
+       (st/emit! (dd/fetch-recent-files {:team-id (:id team)})
+                 (dd/clear-selected-files))))
 
     (when (seq projects)
       [:*

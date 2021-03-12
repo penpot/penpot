@@ -32,7 +32,8 @@
                        (reverse))]
     (mf/use-effect
      (mf/deps team)
-     #(st/emit! (dd/fetch-shared-files {:team-id (:id team)})))
+     #(st/emit! (dd/fetch-shared-files {:team-id (:id team)})
+                (dd/clear-selected-files)))
 
     [:*
      [:header.dashboard-header

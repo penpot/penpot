@@ -321,7 +321,8 @@
 
                     mdata {:on-success
                            (st/emitf (dm/success (tr "dashboard.success-move-file"))
-                                     (dd/fetch-recent-files {:team-id team-id}))}]
+                                     (dd/fetch-recent-files {:team-id team-id})
+                                     (dd/clear-selected-files))}]
                 (st/emit! (dd/move-files (with-meta data mdata)))))))]
 
     [:section.dashboard-grid {:on-drag-enter on-drag-enter
