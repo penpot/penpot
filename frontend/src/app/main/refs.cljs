@@ -180,6 +180,12 @@
 (def workspace-frames
   (l/derived cp/select-frames workspace-page-objects))
 
+(def workspace-editor
+  (l/derived :workspace-editor st/state))
+
+(def workspace-editor-state
+  (l/derived :workspace-editor-state st/state))
+
 (defn object-by-id
   [id]
   (l/derived #(get % id) workspace-page-objects))

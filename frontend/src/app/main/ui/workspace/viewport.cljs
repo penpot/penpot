@@ -434,11 +434,13 @@
         on-pointer-down
         (mf/use-callback
          (fn [event]
-           (let [target (dom/get-target event)]
-             ; Capture mouse pointer to detect the movements even if cursor
-             ; leaves the viewport or the browser itself
-             ; https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture
-             (.setPointerCapture target (.-pointerId event)))))
+           (let [target  (dom/get-target event)
+                 closest (.closest target ".public-DraftStyleDefault-block")]
+             (when-not closest
+               ;; Capture mouse pointer to detect the movements even if cursor
+               ;; leaves the viewport or the browser itself
+               ;; https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture
+               (.setPointerCapture target (.-pointerId event))))))
 
         on-pointer-up
         (mf/use-callback

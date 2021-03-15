@@ -5,20 +5,20 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.main.data.workspace.libraries-helpers
   (:require
-   [cljs.spec.alpha :as s]
-   [clojure.set :as set]
-   [app.common.spec :as us]
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
    [app.common.pages :as cp]
+   [app.common.spec :as us]
+   [app.common.text :as txt]
    [app.main.data.workspace.groups :as dwg]
    [app.util.logging :as log]
-   [app.util.text :as ut]))
+   [cljs.spec.alpha :as s]
+   [clojure.set :as set]))
 
 ;; Change this to :info :debug or :trace to debug this module
 (log/set-level! :warn)
@@ -317,11 +317,11 @@
         (->> shape
              :content
              ;; Check if any node in the content has a reference for the library
-             (ut/some-node
-               #(or (and (some? (:stroke-color-ref-id %))
-                         (= library-id (:stroke-color-ref-file %)))
-                    (and (some? (:fill-color-ref-id %))
-                         (= library-id (:fill-color-ref-file %))))))
+             (txt/node-seq
+              #(or (and (some? (:stroke-color-ref-id %))
+                        (= library-id (:stroke-color-ref-file %)))
+                   (and (some? (:fill-color-ref-id %))
+                        (= library-id (:fill-color-ref-file %))))))
         (some
           #(let [attr (name %)
                  attr-ref-id (keyword (str attr "-ref-id"))
@@ -336,9 +336,9 @@
            (->> shape
                 :content
                 ;; Check if any node in the content has a reference for the library
-                (ut/some-node
-                  #(and (some? (:typography-ref-id %))
-                        (= library-id (:typography-ref-file %)))))))))
+                (txt/node-seq
+                 #(and (some? (:typography-ref-id %))
+                       (= library-id (:typography-ref-file %)))))))))
 
 (defmulti generate-sync-shape
   "Generate changes to synchronize one shape with all assets of the given type
@@ -356,7 +356,7 @@
 (defn- generate-sync-text-shape
   [shape container update-node]
   (let [old-content (:content shape)
-        new-content (ut/map-node update-node old-content)
+        new-content (txt/transform-nodes update-node old-content)
         rchanges [(make-change
                     container
                     {:type :mod-obj

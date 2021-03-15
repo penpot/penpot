@@ -5,135 +5,120 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.main.ui.shapes.text.styles
   (:require
-   [cuerdas.core :as str]
-   [app.main.fonts :as fonts]
    [app.common.data :as d]
-   [app.util.object :as obj]
+   [app.common.text :as txt]
+   [app.main.fonts :as fonts]
    [app.util.color :as uc]
-   [app.util.text :as ut]))
+   [app.util.object :as obj]
+   [cuerdas.core :as str]))
 
 (defn generate-root-styles
-  ([props] (generate-root-styles (clj->js (obj/get props "node")) props))
-  ([data props]
-   (let [valign (obj/get data "vertical-align" "top")
-         shape  (obj/get props "shape")
-         base   #js {:height (or (:height shape) "100%")
-                     :width (or (:width shape) "100%")}]
-     (cond-> base
-       (= valign "top")     (obj/set! "justifyContent" "flex-start")
-       (= valign "center")  (obj/set! "justifyContent" "center")
-       (= valign "bottom")  (obj/set! "justifyContent" "flex-end")
-       ))))
+  [shape node]
+  (let [valign (or (:vertical-align node "top"))
+        base   #js {:height (or (:height shape) "100%")
+                    :width  (or (:width shape) "100%")}]
+    (cond-> base
+      (= valign "top")     (obj/set! "justifyContent" "flex-start")
+      (= valign "center")  (obj/set! "justifyContent" "center")
+      (= valign "bottom")  (obj/set! "justifyContent" "flex-end"))))
 
 (defn generate-paragraph-set-styles
-  ([props] (generate-paragraph-set-styles (clj->js (obj/get props "node")) props))
-  ([data props]
-   ;; This element will control the auto-width/auto-height size for the
-   ;; shape. The properties try to adjust to the shape and "overflow" if
-   ;; the shape is not big enough.
-   ;; We `inherit` the property `justify-content` so it's set by the root where
-   ;; the property it's known.
-   ;; `inline-flex` is similar to flex but `overflows` outside the bounds of the
-   ;; parent
-   (let [shape  (obj/get props "shape")
-         grow-type (:grow-type shape)
-         auto-width? (= grow-type :auto-width)
-         auto-height? (= grow-type :auto-height)
-
-         base #js {:display "inline-flex"
-                   :flexDirection "column"
-                   :justifyContent "inherit"
-                   :minHeight (when-not (or auto-width? auto-height?) "100%")
-                   :minWidth (when-not auto-width? "100%")
-                   :verticalAlign "top"}]
-     base)))
+  [{:keys [grow-type] :as shape}]
+  ;; This element will control the auto-width/auto-height size for the
+  ;; shape. The properties try to adjust to the shape and "overflow" if
+  ;; the shape is not big enough.
+  ;; We `inherit` the property `justify-content` so it's set by the root where
+  ;; the property it's known.
+  ;; `inline-flex` is similar to flex but `overflows` outside the bounds of the
+  ;; parent
+  (let [auto-width?  (= grow-type :auto-width)
+        auto-height? (= grow-type :auto-height)]
+    #js {:display "inline-flex"
+         :flexDirection "column"
+         :justifyContent "inherit"
+         :minHeight (when-not (or auto-width? auto-height?) "100%")
+         :minWidth (when-not auto-width? "100%")
+         :verticalAlign "top"}))
 
 (defn generate-paragraph-styles
-  ([props] (generate-paragraph-styles (clj->js (obj/get props "node")) props))
-  ([data props]
-   (let [shape  (obj/get props "shape")
-         grow-type (:grow-type shape)
-         base #js {:fontSize "14px"
-                   :margin "inherit"
-                   :lineHeight "1.2"}
-         lh (obj/get data "line-height")
-         ta (obj/get data "text-align")]
-     (cond-> base
-       ta (obj/set! "textAlign" ta)
-       lh (obj/set! "lineHeight" lh)
-       (= grow-type :auto-width) (obj/set! "whiteSpace" "pre")))))
+  [shape data]
+  (let [line-height (:line-height data)
+        text-align  (:text-align data)
+        grow-type   (:grow-type shape)
+
+        base        #js {:fontSize (str (:font-size txt/default-text-attrs) "px")
+                         :lineHeight (:line-height txt/default-text-attrs)
+                         :margin "inherit"}]
+    (cond-> base
+      (some? line-height)       (obj/set! "lineHeight" line-height)
+      (some? text-align)        (obj/set! "textAlign" text-align)
+      (= grow-type :auto-width) (obj/set! "whiteSpace" "pre"))))
 
 (defn generate-text-styles
-  ([props] (generate-text-styles (clj->js (obj/get props "node")) props))
-  ([data props]
-   (let [letter-spacing (obj/get data "letter-spacing")
-         text-decoration (obj/get data "text-decoration")
-         text-transform (obj/get data "text-transform")
-         line-height (obj/get data "line-height")
+  [data]
+  (let [letter-spacing  (:letter-spacing data)
+        text-decoration (:text-decoration data)
+        text-transform  (:text-transform data)
+        line-height     (:line-height data)
 
-         font-id (obj/get data "font-id" (:font-id ut/default-text-attrs))
-         font-variant-id (obj/get data "font-variant-id")
+        font-id         (:font-id data (:font-id txt/default-text-attrs))
+        font-variant-id (:font-variant-id data)
 
-         font-family (obj/get data "font-family")
-         font-size  (obj/get data "font-size")
+        font-family     (:font-family data)
+        font-size       (:font-size data)
 
-         ;; Old properties for backwards compatibility
-         fill (obj/get data "fill")
-         opacity (obj/get data "opacity" 1)
+        fill-color      (:fill-color data)
+        fill-opacity    (:fill-opacity data)
 
-         fill-color (obj/get data "fill-color" fill)
-         fill-opacity (obj/get data "fill-opacity" opacity)
-         fill-color-gradient (obj/get data "fill-color-gradient" nil)
-         fill-color-gradient (when fill-color-gradient
-                               (-> (js->clj fill-color-gradient :keywordize-keys true)
-                                   (update :type keyword)))
+        ;; Uncomment this to allow to remove text colors. This could break the texts that already exist
+        ;;[r g b a] (if (nil? fill-color)
+        ;;            [0 0 0 0] ;; Transparent color
+        ;;            (uc/hex->rgba fill-color fill-opacity))
 
-         ;; Uncomment this to allow to remove text colors. This could break the texts that already exist
-         ;;[r g b a] (if (nil? fill-color)
-         ;;            [0 0 0 0] ;; Transparent color
-         ;;            (uc/hex->rgba fill-color fill-opacity))
+        [r g b a]       (uc/hex->rgba fill-color fill-opacity)
+        text-color      (str/format "rgba(%s, %s, %s, %s)" r g b a)
+        fontsdb         (deref fonts/fontsdb)
 
-         [r g b a] (uc/hex->rgba fill-color fill-opacity)
+        base            #js {:textDecoration text-decoration
+                             :textTransform text-transform
+                             :lineHeight (or line-height "inherit")
+                             :color text-color}]
 
-         text-color (if fill-color-gradient
-                      (uc/gradient->css (js->clj fill-color-gradient))
-                      (str/format "rgba(%s, %s, %s, %s)" r g b a))
+    (when-let [gradient (:fill-color-gradient data)]
+      (let [text-color (-> (update gradient :type keyword)
+                           (uc/gradient->css))]
+        (-> base
+            (obj/set! "background" "var(--text-color)")
+            (obj/set! "WebkitTextFillColor" "transparent")
+            (obj/set! "WebkitBackgroundClip" "text")
+            (obj/set! "--text-color" text-color))))
 
-         fontsdb (deref fonts/fontsdb)
+    (when (and (string? letter-spacing)
+               (pos? (alength letter-spacing)))
+      (obj/set! base "letterSpacing" (str letter-spacing "px")))
 
-         base #js {:textDecoration text-decoration
-                   :textTransform text-transform
-                   :lineHeight (or line-height "inherit")
-                   :color text-color
-                   "--text-color" text-color}]
+    (when (and (string? font-size)
+               (pos? (alength font-size)))
+      (obj/set! base "fontSize" (str font-size "px")))
 
-     (when (and (string? letter-spacing)
-                (pos? (alength letter-spacing)))
-       (obj/set! base "letterSpacing" (str letter-spacing "px")))
+    (when (and (string? font-id)
+               (pos? (alength font-id)))
+      (fonts/ensure-loaded! font-id)
+      (let [font (get fontsdb font-id)]
+        (let [font-family (or (:family font)
+                              (obj/get data "fontFamily"))
+              font-variant (d/seek #(= font-variant-id (:id %))
+                                   (:variants font))
+              font-style  (or (:style font-variant)
+                              (obj/get data "fontStyle"))
+              font-weight (or (:weight font-variant)
+                              (obj/get data "fontWeight"))]
+          (obj/set! base "fontFamily" font-family)
+          (obj/set! base "fontStyle" font-style)
+          (obj/set! base "fontWeight" font-weight))))
 
-     (when (and (string? font-size)
-                (pos? (alength font-size)))
-       (obj/set! base "fontSize" (str font-size "px")))
-
-     (when (and (string? font-id)
-                (pos? (alength font-id)))
-       (fonts/ensure-loaded! font-id)
-       (let [font (get fontsdb font-id)]
-         (let [font-family (or (:family font)
-                               (obj/get data "fontFamily"))
-               font-variant (d/seek #(= font-variant-id (:id %))
-                                    (:variants font))
-               font-style  (or (:style font-variant)
-                               (obj/get data "fontStyle"))
-               font-weight (or (:weight font-variant)
-                               (obj/get data "fontWeight"))]
-           (obj/set! base "fontFamily" font-family)
-           (obj/set! base "fontStyle" font-style)
-           (obj/set! base "fontWeight" font-weight))))
-
-
-     base)))
+    base))

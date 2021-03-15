@@ -30,8 +30,8 @@
    :fill-color-gradient])
 
 (mf/defc fill-menu
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "editor" "values"]))]}
-  [{:keys [ids type values editor] :as props}]
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values"]))]}
+  [{:keys [ids type values] :as props}]
   (let [locale    (mf/deref i18n/locale)
         show?     (or (not (nil? (:fill-color values)))
                       (not (nil? (:fill-color-gradient values))))

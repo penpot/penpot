@@ -5,199 +5,188 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.main.data.workspace.texts
   (:require
-   ["slate" :as slate :refer [Editor Node Transforms Text]]
-   ["slate-react" :as rslate]
    [app.common.math :as mth]
    [app.common.attrs :as attrs]
+   [app.common.text :as txt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
+   [app.common.data :as d]
+   [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.fonts :as fonts]
    [app.util.object :as obj]
-   [app.util.text :as ut]
+   [app.util.text-editor :as ted]
+   [app.util.timers :as ts]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
-   [clojure.walk :as walk]
    [goog.object :as gobj]
+   [cuerdas.core :as str]
    [potok.core :as ptk]))
 
-(defn create-editor
-  []
-  (rslate/withReact (slate/createEditor)))
-
-(defn assign-editor
-  [id editor]
-  (ptk/reify ::assign-editor
+(defn update-editor
+  [editor]
+  (ptk/reify ::update-editor
     ptk/UpdateEvent
     (update [_ state]
-      (-> state
-          (assoc-in [:workspace-local :editors id] editor)
-          (update-in [:workspace-local :editor-n] (fnil inc 0))))))
+      (if (some? editor)
+        (assoc state :workspace-editor editor)
+        (dissoc state :workspace-editor)))))
+
+(defn focus-editor
+  []
+  (ptk/reify ::focus-editor
+    ptk/EffectEvent
+    (effect [_ state stream]
+      (when-let [editor (:workspace-editor state)]
+        (ts/schedule #(.focus ^js editor))))))
+
+(defn update-editor-state
+  [{:keys [id] :as shape} editor-state]
+  (ptk/reify ::update-editor-state
+    ptk/UpdateEvent
+    (update [_ state]
+      (if (some? editor-state)
+        (update state :workspace-editor-state assoc id editor-state)
+        (update state :workspace-editor-state dissoc id)))))
+
+(defn initialize-editor-state
+  [{:keys [id content] :as shape}]
+  (ptk/reify ::initialize-editor-state
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-editor-state id]
+                 (fn [_]
+                   (ted/create-editor-state
+                    (some->> content ted/import-content)))))))
+
+(defn finalize-editor-state
+  [{:keys [id] :as shape}]
+  (ptk/reify ::finalize-editor-state
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [content (-> (get-in state [:workspace-editor-state id])
+                        (ted/get-editor-current-content))]
+        (if (ted/content-has-text? content)
+          (let [content (d/merge (ted/export-content content)
+                                 (dissoc (:content shape) :children))]
+            (rx/merge
+             (rx/of (update-editor-state shape nil))
+             (when (not= content (:content shape))
+               (rx/of (dwc/update-shapes [id] #(assoc % :content content))))))
+          (rx/of (dws/deselect-shape id)
+                 (dwc/delete-shapes [id])))))))
+
+(defn select-all
+  "Select all content of the current editor. When not editor found this
+  event is noop."
+  [{:keys [id] :as shape}]
+  (ptk/reify ::editor-select-all
+    ptk/UpdateEvent
+    (update [_ state]
+      (d/update-in-when state [:workspace-editor-state id] ted/editor-select-all))))
 
 ;; --- Helpers
-
-(defn- calculate-full-selection
-  [editor]
-  (let [children   (obj/get editor "children")
-        paragraphs (obj/get-in children [0 "children" 0 "children"])
-        lastp      (aget paragraphs (dec (alength paragraphs)))
-        lastptxt   (.string Node lastp)]
-    #js {:anchor #js {:path #js [0 0 0]
-                      :offset 0}
-         :focus #js {:path #js [0 0 (dec (alength paragraphs))]
-                     :offset (alength lastptxt)}}))
-
-(defn- editor-select-all!
-  [editor]
-  (let [children   (obj/get editor "children")
-        paragraphs (obj/get-in children [0 "children" 0 "children"])
-        range      (calculate-full-selection editor)]
-    (.select Transforms editor range)))
-
-(defn- editor-set!
-  ([editor props]
-   (editor-set! editor props #js {}))
-  ([editor props options]
-   (.setNodes Transforms editor props options)
-   editor))
-
-(defn- transform-nodes
-  [pred transform data]
-  (walk/postwalk
-   (fn [item]
-     (if (and (map? item) (pred item))
-       (transform item)
-       item))
-   data))
-
-;; --- Editor Related Helpers
-
-(defn- ^boolean is-text-node?
-  [node]
-  (cond
-    (object? node) (.isText Text node)
-    (map? node) (string? (:text node))
-    (nil? node) false
-    :else (throw (ex-info "unexpected type" {:node node}))))
-
-(defn- ^boolean is-paragraph-node?
-  [node]
-  (cond
-    (object? node) (= (.-type node) "paragraph")
-    (map? node) (= "paragraph" (:type node))
-    (nil? node) false
-    :else (throw (ex-info "unexpected type" {:node node}))))
-
-(defn- ^boolean is-root-node?
-  [node]
-  (cond
-    (object? node) (= (.-type node) "root")
-    (map? node) (= "root" (:type node))
-    (nil? node) false
-    :else (throw (ex-info "unexpected type" {:node node}))))
-
-(defn- editor-current-values
-  [editor pred attrs universal?]
-  (let [options #js {:match pred :universal universal?}
-        _ (when (nil? (obj/get editor "selection"))
-            (obj/set! options "at" (calculate-full-selection editor)))
-        result (.nodes Editor editor options)
-        match  (ffirst (es6-iterator-seq result))]
-    (when (object? match)
-      (let [attrs  (clj->js attrs)
-            result (areduce attrs i ret #js {}
-                            (let [val (obj/get match (aget attrs i))]
-                              (if val
-                                (obj/set! ret (aget attrs i) val)
-                                ret)))]
-        (js->clj result :keywordize-keys true)))))
-
-(defn nodes-seq
-  [match? node]
-  (->> (tree-seq map? :children node)
-       (filter match?)))
 
 (defn- shape-current-values
   [shape pred attrs]
   (let [root  (:content shape)
-        nodes (->> (nodes-seq pred root)
-                   (map #(if (is-text-node? %)
-                           (merge ut/default-text-attrs %)
+        nodes (->> (txt/node-seq pred root)
+                   (map #(if (txt/is-text-node? %)
+                           (merge txt/default-text-attrs %)
                            %)))]
     (attrs/get-attrs-multi nodes attrs)))
 
-(defn current-text-values
-  [{:keys [editor default attrs shape]}]
-  (if editor
-    (editor-current-values editor is-text-node? attrs true)
-    (shape-current-values shape is-text-node? attrs)))
-
 (defn current-paragraph-values
-  [{:keys [editor attrs shape]}]
-  (if editor
-    (editor-current-values editor is-paragraph-node? attrs false)
-    (shape-current-values shape is-paragraph-node? attrs)))
+  [{:keys [editor-state attrs shape]}]
+  (if editor-state
+    (-> (ted/get-editor-current-block-data editor-state)
+        (select-keys attrs))
+    (shape-current-values shape txt/is-paragraph-node? attrs)))
 
-(defn current-root-values
-  [{:keys [editor attrs shape]}]
-  (if editor
-    (editor-current-values editor is-root-node? attrs false)
-    (shape-current-values shape is-root-node? attrs)))
+(defn current-text-values
+  [{:keys [editor-state attrs shape]}]
+  (if editor-state
+    (-> (ted/get-editor-current-inline-styles editor-state)
+        (select-keys attrs))
+    (shape-current-values shape txt/is-text-node? attrs)))
 
-(defn- merge-attrs
-  [node attrs]
-  (reduce-kv (fn [node k v]
-               (if (nil? v)
-                 (dissoc node k)
-                 (assoc node k v)))
-             node
-             attrs))
 
-(defn impl-update-shape-attrs
-  ([shape attrs]
-   ;; NOTE: this arity is used in workspace for properly update the
-   ;; fill color using colorpalette, then the predicate should be
-   ;; defined.
-   (impl-update-shape-attrs shape attrs is-text-node?))
-  ([{:keys [type content] :as shape} attrs pred]
-   (assert (= :text type) "should be shape type")
-   (let [merge-attrs #(merge-attrs % attrs)]
-     (update shape :content #(transform-nodes pred merge-attrs %)))))
+;; --- TEXT EDITION IMPL
 
-(defn update-attrs
-  [{:keys [id editor attrs pred split]
-    :or {pred is-text-node?}}]
-  (if editor
-    (ptk/reify ::update-attrs
-      ptk/EffectEvent
-      (effect [_ state stream]
-        (editor-set! editor (clj->js attrs) #js {:match pred :split split})))
-
-    (ptk/reify ::update-attrs
-      ptk/WatchEvent
-      (watch [_ state stream]
-        (let [objects (dwc/lookup-page-objects state)
-              shape (get objects id)
-              ids (cond (= (:type shape) :text)  [id]
-                        (= (:type shape) :group) (cp/get-children id objects))]
-          (rx/of (dwc/update-shapes ids #(impl-update-shape-attrs % attrs pred))))))))
-
-(defn update-text-attrs
-  [options]
-  (update-attrs (assoc options :pred is-text-node? :split true)))
-
-(defn update-paragraph-attrs
-  [options]
-  (update-attrs (assoc options :pred is-paragraph-node? :split false)))
+(defn- update-shape
+  [shape pred-fn attrs]
+  (let [merge-attrs #(attrs/merge % attrs)
+        transform   #(txt/transform-nodes pred-fn merge-attrs %)]
+    (update shape :content transform)))
 
 (defn update-root-attrs
-  [options]
-  (update-attrs (assoc options :pred is-root-node? :split false)))
+  [{:keys [id attrs]}]
+  (ptk/reify ::update-root-attrs
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [objects   (dwc/lookup-page-objects state)
+            shape     (get objects id)
+
+            update-fn #(update-shape % txt/is-root-node? attrs)
+            shape-ids (cond (= (:type shape) :text)  [id]
+                            (= (:type shape) :group) (cp/get-children id objects))]
+
+        (rx/of (dwc/update-shapes shape-ids update-fn)
+               (focus-editor))))))
+
+(defn update-paragraph-attrs
+  [{:keys [id attrs]}]
+  (let [attrs (d/without-nils attrs)]
+    (ptk/reify ::update-paragraph-attrs
+      ptk/UpdateEvent
+      (update [_ state]
+        (d/update-in-when state [:workspace-editor-state id] ted/update-editor-current-block-data attrs))
+
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (cond
+          (some? (get-in state [:workspace-editor-state id]))
+          (rx/of (focus-editor))
+
+          :else
+          (let [objects   (dwc/lookup-page-objects state)
+                shape     (get objects id)
+
+                update-fn #(update-shape % txt/is-paragraph-node? attrs)
+                shape-ids (cond (= (:type shape) :text)  [id]
+                                (= (:type shape) :group) (cp/get-children id objects))]
+
+            (rx/of (dwc/update-shapes shape-ids update-fn))))))))
+
+(defn update-text-attrs
+  [{:keys [id attrs]}]
+  (let [attrs (d/without-nils attrs)]
+    (ptk/reify ::update-text-attrs
+      ptk/UpdateEvent
+      (update [_ state]
+        (d/update-in-when state [:workspace-editor-state id] ted/update-editor-current-inline-styles attrs))
+
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (cond
+          (some? (get-in state [:workspace-editor-state id]))
+          (rx/of (focus-editor))
+
+          :else
+          (let [objects   (dwc/lookup-page-objects state)
+                shape     (get objects id)
+
+                update-fn #(update-shape % txt/is-text-node? attrs)
+                shape-ids (cond (= (:type shape) :text)  [id]
+                                (= (:type shape) :group) (cp/get-children id objects))]
+            (rx/of (dwc/update-shapes shape-ids update-fn))))))))
+
+;; --- RESIZE UTILS
 
 (defn update-overflow-text [id value]
   (ptk/reify ::update-overflow-text
@@ -211,7 +200,7 @@
   (ptk/reify ::start-edit-if-selected
     ptk/UpdateEvent
     (update [_ state]
-      (let [objects (dwc/lookup-page-objects state)
+      (let [objects  (dwc/lookup-page-objects state)
             selected (->> state :workspace-local :selected (map #(get objects %)))]
         (cond-> state
           (and (= 1 (count selected))
@@ -284,7 +273,8 @@
 ;; together. This improves the performance because we only re-render the
 ;; resized components once even if there are changes that applies to
 ;; lots of texts like changing a font
-(defn resize-text [id new-width new-height]
+(defn resize-text
+  [id new-width new-height]
   (ptk/reify ::resize-text
     IDeref
     (-deref [_]

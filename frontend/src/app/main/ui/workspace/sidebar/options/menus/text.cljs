@@ -11,6 +11,7 @@
   (:require
    [app.common.data :as d]
    [app.common.uuid :as uuid]
+   [app.common.text :as txt]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
@@ -22,7 +23,6 @@
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry typography-options]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.text :as ut]
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
@@ -49,7 +49,7 @@
 (def attrs (d/concat #{} shape-attrs root-attrs paragraph-attrs text-attrs))
 
 (mf/defc text-align-options
-  [{:keys [editor ids values on-change] :as props}]
+  [{:keys [ids values on-change] :as props}]
   (let [{:keys [text-align]} values
 
         text-align (or text-align "left")
@@ -83,7 +83,7 @@
 
 
 (mf/defc vertical-align
-  [{:keys [shapes editor ids values on-change] :as props}]
+  [{:keys [shapes ids values on-change] :as props}]
   (let [{:keys [vertical-align]} values
         vertical-align (or vertical-align "top")
         handle-change
@@ -108,7 +108,7 @@
       i/align-bottom]]))
 
 (mf/defc grow-options
-  [{:keys [editor ids values on-change] :as props}]
+  [{:keys [ids values on-change] :as props}]
   (let [to-single-value (fn [coll] (if (> (count coll) 1) nil (first coll)))
         grow-type (->> values :grow-type)
         handle-change-grow
@@ -133,7 +133,7 @@
       i/auto-height]]))
 
 (mf/defc text-decoration-options
-  [{:keys [editor ids values on-change] :as props}]
+  [{:keys [ids values on-change] :as props}]
   (let [{:keys [text-decoration]} values
 
         text-decoration (or text-decoration "none")
@@ -160,14 +160,14 @@
        :on-click #(handle-change % "line-through")}
       i/strikethrough]]))
 
-(defn generate-typography-name [{:keys [font-id font-variant-id] :as typography}]
+(defn generate-typography-name
+  [{:keys [font-id font-variant-id] :as typography}]
   (let [{:keys [name]} (fonts/get-font-data font-id)]
-    (-> typography
-        (assoc :name (str name " " (str/title font-variant-id))))) )
+    (assoc typography :name (str name " " (str/title font-variant-id)))))
 
 (mf/defc text-menu
   {::mf/wrap [mf/memo]}
-  [{:keys [ids type editor values] :as props}]
+  [{:keys [ids type values] :as props}]
 
   (let [current-file-id (mf/use-ctx ctx/current-file-id)
         typographies (mf/deref refs/workspace-file-typography)
@@ -181,15 +181,15 @@
         (fn [id attrs]
           (let [attrs (select-keys attrs root-attrs)]
             (when-not (empty? attrs)
-              (st/emit! (dwt/update-root-attrs {:id id :editor editor :attrs attrs}))))
+              (st/emit! (dwt/update-root-attrs {:id id :attrs attrs}))))
 
           (let [attrs (select-keys attrs paragraph-attrs)]
             (when-not (empty? attrs)
-              (st/emit! (dwt/update-paragraph-attrs {:id id :editor editor :attrs attrs}))))
+              (st/emit! (dwt/update-paragraph-attrs {:id id :attrs attrs}))))
 
           (let [attrs (select-keys attrs text-attrs)]
             (when-not (empty? attrs)
-              (st/emit! (dwt/update-text-attrs {:id id :editor editor :attrs attrs})))))
+              (st/emit! (dwt/update-text-attrs {:id id :attrs attrs})))))
 
         typography (cond
                      (and (:typography-ref-id values)
@@ -213,7 +213,7 @@
                                     (d/concat text-font-attrs
                                               text-spacing-attrs
                                               text-transform-attrs)))
-                 typography (merge ut/default-typography setted-values)
+                 typography (merge txt/default-typography setted-values)
                  typography (generate-typography-name typography)]
              (let [id (uuid/next)]
                (st/emit! (dwl/add-typography (assoc typography :id id) false))
@@ -230,8 +230,7 @@
         (fn [changes]
           (st/emit! (dwl/update-typography (merge typography changes) current-file-id)))
 
-        opts #js {:editor editor
-                  :ids ids
+        opts #js {:ids ids
                   :values values
                   :on-change (fn [attrs]
                                (run! #(emit-update! % attrs) ids))}]

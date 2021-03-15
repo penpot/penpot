@@ -395,7 +395,6 @@
 ;; Shapes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
 (defn expand-all-parents
   [ids objects]
   (ptk/reify ::expand-all-parents
@@ -671,6 +670,114 @@
                                    :index index
                                    :shapes [shape-id]})))]
         (rx/of (commit-changes rchanges uchanges {:commit-local? true}))))))
+
+
+(defn delete-shapes
+  [ids]
+  (us/assert (s/coll-of ::us/uuid) ids)
+  (ptk/reify ::delete-shapes
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [page-id (:current-page-id state)
+            objects (lookup-page-objects state page-id)
+
+            get-empty-parents
+            (fn [parents]
+              (->> parents
+                   (map (fn [id]
+                          (let [obj (get objects id)]
+                            (when (and (= :group (:type obj))
+                                       (= 1 (count (:shapes obj))))
+                              obj))))
+                   (take-while (complement nil?))
+                   (map :id)))
+
+            groups-to-unmask
+            (reduce (fn [group-ids id]
+                      ;; When the shape to delete is the mask of a masked group,
+                      ;; the mask condition must be removed, and it must be
+                      ;; converted to a normal group.
+                      (let [obj (get objects id)
+                            parent (get objects (:parent-id obj))]
+                        (if (and (:masked-group? parent)
+                                 (= id (first (:shapes parent))))
+                          (conj group-ids (:id parent))
+                          group-ids)))
+                    #{}
+                    ids)
+
+            rchanges
+            (d/concat
+              (reduce (fn [res id]
+                        (let [children (cp/get-children id objects)
+                              parents  (cp/get-parents id objects)
+                              del-change #(array-map
+                                            :type :del-obj
+                                            :page-id page-id
+                                            :id %)]
+                              (d/concat res
+                                        (map del-change (reverse children))
+                                        [(del-change id)]
+                                        (map del-change (get-empty-parents parents))
+                                        [{:type :reg-objects
+                                          :page-id page-id
+                                          :shapes (vec parents)}])))
+                      []
+                      ids)
+              (map #(array-map
+                      :type :mod-obj
+                      :page-id page-id
+                      :id %
+                      :operations [{:type :set
+                                    :attr :masked-group?
+                                    :val false}])
+                   groups-to-unmask))
+
+            uchanges
+            (d/concat
+              (reduce (fn [res id]
+                        (let [children    (cp/get-children id objects)
+                              parents     (cp/get-parents id objects)
+                              parent      (get objects (first parents))
+                              add-change  (fn [id]
+                                            (let [item (get objects id)]
+                                              {:type :add-obj
+                                               :id (:id item)
+                                               :page-id page-id
+                                               :index (cp/position-on-parent id objects)
+                                               :frame-id (:frame-id item)
+                                               :parent-id (:parent-id item)
+                                               :obj item}))]
+                          (d/concat res
+                                    (map add-change (reverse (get-empty-parents parents)))
+                                    [(add-change id)]
+                                    (map add-change children)
+                                    [{:type :reg-objects
+                                      :page-id page-id
+                                      :shapes (vec parents)}]
+                                    (when (some? parent)
+                                      [{:type :mod-obj
+                                        :page-id page-id
+                                        :id (:id parent)
+                                        :operations [{:type :set-touched
+                                                      :touched (:touched parent)}]}]))))
+                      []
+                      ids)
+              (map #(array-map
+                      :type :mod-obj
+                      :page-id page-id
+                      :id %
+                      :operations [{:type :set
+                                    :attr :masked-group?
+                                    :val true}])
+                   groups-to-unmask))]
+
+        ;; (println "================ rchanges")
+        ;; (cljs.pprint/pprint rchanges)
+        ;; (println "================ uchanges")
+        ;; (cljs.pprint/pprint uchanges)
+        (rx/of (commit-changes rchanges uchanges {:commit-local? true}))))))
+
 
 ;; --- Add shape to Workspace
 
