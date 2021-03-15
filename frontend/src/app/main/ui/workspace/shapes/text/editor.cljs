@@ -89,15 +89,13 @@
                 assets     (dom/get-element-by-class "assets-bar")
                 cpicker    (dom/get-element-by-class "colorpicker-tooltip")
                 palette    (dom/get-element-by-class "color-palette")
-
                 self       (mf/ref-val self-ref)]
-            (if (or (and options (.contains options target))
-                    (and assets  (.contains assets target))
-                    (and self    (.contains self target))
-                    (and cpicker (.contains cpicker target))
-                    (and palette (.contains palette target))
-                    (= "foreignObject" (.-tagName ^js target)))
-              (dom/stop-propagation event)
+            (when-not (or (and options (.contains options target))
+                          (and assets  (.contains assets target))
+                          (and self    (.contains self target))
+                          (and cpicker (.contains cpicker target))
+                          (and palette (.contains palette target))
+                          (= "foreignObject" (.-tagName ^js target)))
               (st/emit! dw/clear-edition-mode))))
 
         on-key-up
@@ -152,7 +150,6 @@
              ;; leaves the viewport or the browser itself
              ;; https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture
              (when closest
-               (dom/stop-propagation event)
                (.setPointerCapture closest (.-pointerId event))))))
         ]
 
