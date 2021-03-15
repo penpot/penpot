@@ -181,7 +181,7 @@
             (st/emit! (dwc/toggle-collapse (:id item)))))
 
         [dprops dref] (hooks/use-sortable
-                       :data-type "app/layer"
+                       :data-type "penpot/layer"
                        :on-drop on-drop
                        :on-drag on-drag
                        :on-hold on-hold

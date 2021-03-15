@@ -100,8 +100,8 @@
         on-drag-start
         (mf/use-callback
          (fn [component event]
-           (dnd/set-data! event "app/component" {:file-id file-id
-                                                 :component component})
+           (dnd/set-data! event "penpot/component" {:file-id file-id
+                                                    :component component})
            (dnd/set-allowed-effect! event "move")))]
 
     [:div.asset-group
