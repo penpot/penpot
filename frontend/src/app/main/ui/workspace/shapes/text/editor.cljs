@@ -147,6 +147,7 @@
     (mf/use-layout-effect on-mount)
 
     [:div.text-editor {:ref self-ref
+                       :style {:cursor cur/text}
                        :class (dom/classnames
                                :align-top    (= (:vertical-align content "top") "top")
                                :align-center (= (:vertical-align content) "center")
