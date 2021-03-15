@@ -105,11 +105,14 @@
                   (assoc :text (subs text start end)))))
 
           (split-texts [text styles]
-            (->> (parse-draft-styles styles)
-                 (build-style-index text)
-                 (d/enumerate)
-                 (partition-by second)
-                 (mapv #(build-text text %))))
+            (let [children (->> (parse-draft-styles styles)
+                                (build-style-index text)
+                                (d/enumerate)
+                                (partition-by second)
+                                (mapv #(build-text text %)))]
+              (cond-> children
+                (empty? children)
+                (conj {:text ""}))))
 
           (build-paragraph [block]
             (let [key    (obj/get block "key")
