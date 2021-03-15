@@ -37,15 +37,18 @@ ports:
     onOpen: ignore
 
 tasks:
-  #- init: ./manage.sh build-devenv
-  #  command: ./manage.sh start-devenv
-
-  - name: redis
-    command: redis-server
-
-  - before: go get github.com/mailhog/MailHog
-    name: mailhog
-    command: MailHog
+  # https://github.com/gitpod-io/gitpod/issues/666#issuecomment-534347856
+  - before: >
+      [[ ! -z ${GNUGPG}  ]] &&
+      cd ~ &&
+      rm -rf .gnupg &&
+      echo ${GNUGPG} | base64 -d | tar --no-same-owner -xzvf -
+    name: signed terminal
+    init: >
+      [[ ! -z ${GNUGPG_KEY}  ]] &&
+      git config --global commit.gpgsign true &&
+      git config --global user.signingkey ${GNUGPG_KEY}
+    command: cd -
 
   - before: yarn --cwd ./frontend/ install
     name: frontend shadow watch
@@ -65,3 +68,10 @@ tasks:
 
   - name: gulp
     command: cd ./frontend/ && npx -y gulp --theme=${PENPOT_THEME} watch
+
+  - name: redis
+    command: redis-server
+
+  - before: go get github.com/mailhog/MailHog
+    name: mailhog
+    command: MailHog
