@@ -69,7 +69,7 @@
   org.apache.commons/commons-pool2 {:mvn/version "2.9.0"}
   com.sun.mail/jakarta.mail {:mvn/version "2.0.0"}
 
-  puppetlabs/clj-ldap {:mvn/version"0.3.0"}
+  org.clojars.pntblnk/clj-ldap {:mvn/version "0.0.17"}
   integrant/integrant {:mvn/version "0.8.0"}
 
   software.amazon.awssdk/s3 {:mvn/version "2.16.19"}
