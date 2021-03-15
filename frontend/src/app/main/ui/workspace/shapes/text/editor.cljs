@@ -156,6 +156,7 @@
       {:on-change on-change
        :on-blur on-blur
        :handle-return handle-return
+       :strip-pasted-styles true
        :custom-style-fn (fn [styles _]
                           (-> (ted/styles-to-attrs styles)
                               (sts/generate-text-styles)))
