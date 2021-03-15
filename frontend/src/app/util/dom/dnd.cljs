@@ -98,6 +98,14 @@
         related (.-relatedTarget e)]
     (.contains target related)))
 
+(defn broken-event?
+  [e]
+  ;; WebKit browsers (Safari & Epiphany) do not send the relatedEvent
+  ;; property (https://bugs.webkit.org/show_bug.cgi?id=66547) so
+  ;; there is no decent way of discriminating redundant enter/leave
+  ;; events.
+  (nil? (.-relatedTarget e)))
+
 (defn get-data
   ([e]
    (get-data e "penpot/data"))

@@ -294,7 +294,8 @@
           (fn [e]
             (when (dnd/has-type? e "penpot/files")
               (dom/prevent-default e)
-              (when-not (dnd/from-child? e)
+              (when-not (or (dnd/from-child? e)
+                            (dnd/broken-event? e))
                 (when (not= selected-project project-id)
                   (reset! dragging? true))))))
 
