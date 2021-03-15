@@ -578,8 +578,8 @@
         on-drag-enter
         (mf/use-callback
          (fn [e]
-           (when (or (dnd/has-type? e "app/shape")
-                     (dnd/has-type? e "app/component")
+           (when (or (dnd/has-type? e "penpot/shape")
+                     (dnd/has-type? e "penpot/component")
                      (dnd/has-type? e "Files")
                      (dnd/has-type? e "text/uri-list")
                      (dnd/has-type? e "text/asset-id"))
@@ -588,8 +588,8 @@
         on-drag-over
         (mf/use-callback
          (fn [e]
-           (when (or (dnd/has-type? e "app/shape")
-                     (dnd/has-type? e "app/component")
+           (when (or (dnd/has-type? e "penpot/shape")
+                     (dnd/has-type? e "penpot/component")
                      (dnd/has-type? e "Files")
                      (dnd/has-type? e "text/uri-list")
                      (dnd/has-type? e "text/asset-id"))
@@ -610,8 +610,8 @@
                  asset-name   (dnd/get-data event "text/asset-name")
                  asset-type   (dnd/get-data event "text/asset-type")]
              (cond
-               (dnd/has-type? event "app/shape")
-               (let [shape (dnd/get-data event "app/shape")
+               (dnd/has-type? event "penpot/shape")
+               (let [shape (dnd/get-data event "penpot/shape")
                      final-x (- (:x viewport-coord) (/ (:width shape) 2))
                      final-y (- (:y viewport-coord) (/ (:height shape) 2))]
                  (st/emit! (dw/add-shape (-> shape
@@ -619,8 +619,8 @@
                                              (assoc :x final-x)
                                              (assoc :y final-y)))))
 
-               (dnd/has-type? event "app/component")
-               (let [{:keys [component file-id]} (dnd/get-data event "app/component")
+               (dnd/has-type? event "penpot/component")
+               (let [{:keys [component file-id]} (dnd/get-data event "penpot/component")
                      shape (get-in component [:objects (:id component)])
                      final-x (- (:x viewport-coord) (/ (:width shape) 2))
                      final-y (- (:y viewport-coord) (/ (:height shape) 2))]
