@@ -142,16 +142,30 @@
          (fn [event state]
            (st/emit! (dwt/update-editor-state shape (ted/editor-split-block state)))
            "handled"))
+
+        on-pointer-down
+        (mf/use-callback
+         (fn [event]
+           (let [target  (dom/get-target event)
+                 closest (.closest ^js target "foreignObject")]
+             ;; Capture mouse pointer to detect the movements even if cursor
+             ;; leaves the viewport or the browser itself
+             ;; https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture
+             (when closest
+               (dom/stop-propagation event)
+               (.setPointerCapture closest (.-pointerId event))))))
         ]
 
     (mf/use-layout-effect on-mount)
 
-    [:div.text-editor {:ref self-ref
-                       :style {:cursor cur/text}
-                       :class (dom/classnames
-                               :align-top    (= (:vertical-align content "top") "top")
-                               :align-center (= (:vertical-align content) "center")
-                               :align-bottom (= (:vertical-align content) "bottom"))}
+    [:div.text-editor
+     {:ref self-ref
+      :style {:cursor cur/text}
+      :on-pointer-down on-pointer-down
+      :class (dom/classnames
+              :align-top    (= (:vertical-align content "top") "top")
+              :align-center (= (:vertical-align content) "center")
+              :align-bottom (= (:vertical-align content) "bottom"))}
      [:> draft/Editor
       {:on-change on-change
        :on-blur on-blur
