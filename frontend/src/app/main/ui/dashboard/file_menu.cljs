@@ -23,11 +23,12 @@
    [rumext.alpha :as mf]))
 
 (mf/defc file-menu
-  [{:keys [file show? on-edit on-menu-close top left] :as props}]
+  [{:keys [file show? on-edit on-menu-close top left navigate?] :as props}]
   (assert (some? file) "missing `file` prop")
   (assert (boolean? show?) "missing `show?` prop")
   (assert (fn? on-edit) "missing `on-edit` prop")
   (assert (fn? on-menu-close) "missing `on-menu-close` prop")
+  (assert (boolean? navigate?) "missing `navigate?` prop")
   (let [top   (or top 0)
         left  (or left 0)
 
@@ -81,16 +82,20 @@
         (mf/use-callback
          (mf/deps file)
          (fn [team-id project-id]
-           (let [data  {:id (:id file)
+           (let [data  {:ids #{(:id file)}
                         :project-id project-id}
 
                  mdata {:on-success
-                        (st/emitf (dm/success (tr "dashboard.success-move-file"))
-                                  (rt/nav :dashboard-files
-                                          {:team-id team-id
-                                           :project-id project-id}))}]
+                        #(do
+                           (st/emit! (dm/success (tr "dashboard.success-move-file")))
+                           (if navigate?
+                             (st/emit! (rt/nav :dashboard-files
+                                               {:team-id team-id
+                                                :project-id project-id}))
+                             (st/emit! (dd/fetch-recent-files {:team-id team-id})
+                                       (dd/clear-selected-files))))}]
 
-            (st/emitf (dd/move-file (with-meta data mdata))))))
+            (st/emitf (dd/move-files (with-meta data mdata))))))
 
         add-shared
         (mf/use-callback

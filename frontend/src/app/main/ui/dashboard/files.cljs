@@ -94,7 +94,8 @@
     (mf/use-effect
      (mf/deps (:id project))
      (fn []
-       (st/emit! (dd/fetch-files {:project-id (:id project)}))))
+       (st/emit! (dd/fetch-files {:project-id (:id project)})
+                 (dd/clear-selected-files))))
 
     [:*
      [:& header {:team team :project project}]

@@ -30,7 +30,6 @@
   [e]
   (.-target e))
 
-
 (defn classnames
   [& params]
   (assert (even? (count params)))
@@ -232,6 +231,12 @@
   [b]
   {:pre [(blob? b)]}
   (js/URL.createObjectURL b))
+
+(defn set-property! [node property value]
+  (.setAttribute node property value))
+
+(defn set-text! [node text]
+  (set! (.-textContent node) text))
 
 (defn set-css-property [node property value]
   (.setProperty (.-style ^js node) property value))

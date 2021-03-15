@@ -29,7 +29,8 @@
     (mf/use-effect
      (mf/deps team search-term)
      (st/emitf (dd/search-files {:team-id (:id team)
-                                 :search-term search-term})))
+                                 :search-term search-term})
+               (dd/clear-selected-files)))
 
     [:*
      [:header.dashboard-header
