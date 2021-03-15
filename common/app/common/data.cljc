@@ -42,7 +42,6 @@
   ([a b & rest]
    (reduce deep-merge a (cons b rest))))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Structures Manipulation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -70,14 +69,14 @@
 (defn enumerate
   ([items] (enumerate items 0))
   ([items start]
-   (loop [idx start
+   (loop [idx   start
           items items
-          res []]
+          res   (transient [])]
      (if (empty? items)
-       res
+       (persistent! res)
        (recur (inc idx)
               (rest items)
-              (conj res [idx (first items)]))))))
+              (conj! res [idx (first items)]))))))
 
 (defn seek
   ([pred coll]
