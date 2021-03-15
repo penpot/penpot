@@ -3,8 +3,9 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV NODE_VERSION=v14.15.3 \
-    CLOJURE_VERSION=1.10.2.774 \
+ENV NODE_VERSION=v14.16.0 \
+    CLOJURE_VERSION=1.10.3.810 \
+    CLJKONDO_VERSION=2021.03.03 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
@@ -82,6 +83,7 @@ RUN set -ex; \
         libxi6 \
         libxrandr2 \
         libxrender1 \
+        libxshmfence1 \
         libxss1 \
         libxtst6 \
         fonts-liberation \
@@ -132,10 +134,10 @@ RUN set -ex; \
 
 RUN set -ex; \
     cd /tmp; \
-    wget https://github.com/borkdude/clj-kondo/releases/download/v2021.01.20/clj-kondo-2021.01.20-linux-amd64.zip; \
-    unzip clj-kondo-2021.01.20-linux-amd64.zip; \
+    wget https://github.com/borkdude/clj-kondo/releases/download/v$CLJKONDO_VERSION/clj-kondo-$CLJKONDO_VERSION-linux-amd64.zip; \
+    unzip clj-kondo-$CLJKONDO_VERSION-linux-amd64.zip; \
     mv clj-kondo /usr/local/bin/; \
-    rm clj-kondo-2021.01.20-linux-amd64.zip;
+    rm clj-kondo-$CLJKONDO_VERSION-linux-amd64.zip;
 
 EXPOSE 3447
 EXPOSE 3448
