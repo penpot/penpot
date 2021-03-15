@@ -251,7 +251,7 @@
       }
 
       &.dragging {
-        background-color: $color-primary-lighter;
+        background-color: color.adjust($color-primary, $alpha: -0.69);
       }
     }
   }
