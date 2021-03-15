@@ -146,8 +146,10 @@
 
 (defn mapm
   "Map over the values of a map"
-  [mfn coll]
-  (into {} (map (fn [[key val]] [key (mfn key val)]) coll)))
+  ([mfn]
+   (map (fn [[key val]] [key (mfn key val)])))
+  ([mfn coll]
+   (into {} (mapm mfn) coll)))
 
 (defn filterm
   "Filter values of a map that satisfy a predicate"
