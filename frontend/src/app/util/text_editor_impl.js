@@ -42,7 +42,7 @@ export function createDecorator(type, component) {
   };
 
   return new CompositeDecorator([
-    {strategy, component}
+    {"strategy": strategy, "component": component}
   ]);
 }
 
@@ -75,9 +75,9 @@ function modifySelectedBlocks(contentState, selectionState, operation) {
   }).concat(Map([[endKey, blockMap.get(endKey)]])).map(operation);
 
   return contentState.merge({
-    blockMap: blockMap.merge(newBlocks),
-    selectionBefore: selectionState,
-    selectionAfter: selectionState
+    "blockMap": blockMap.merge(newBlocks),
+    "selectionBefore": selectionState,
+    "selectionAfter": selectionState
   });
 }
 
@@ -205,6 +205,6 @@ export function removeInlineStylePrefix(contentState, selectionState, stylePrefi
       sliceStart++;
     }
 
-    return block.set('characterList', chars);
+    return block.set("characterList", chars);
   });
 }
