@@ -77,7 +77,8 @@
                                  (dissoc (:content shape) :children))]
             (rx/merge
              (rx/of (update-editor-state shape nil))
-             (when (not= content (:content shape))
+             (when (and (not= content (:content shape))
+                        (some? (:current-page-id state)))
                (rx/of (dwc/update-shapes [id] #(assoc % :content content))))))
           (rx/of (dws/deselect-shape id)
                  (dwc/delete-shapes [id])))))))
