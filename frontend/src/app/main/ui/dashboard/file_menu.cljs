@@ -93,7 +93,7 @@
                  mdata {:on-success
                         #(do
                            (st/emit! (dm/success (tr "dashboard.success-move-file")))
-                           (if navigate?
+                           (if (or navigate? (not= team-id current-team-id))
                              (st/emit! (rt/nav :dashboard-files
                                                {:team-id team-id
                                                 :project-id project-id}))
@@ -178,7 +178,7 @@
                                      (conj (vec (for [project current-projects]
                                                   [(project-name project)
                                                    (on-move (:id current-team)
-                                                                            (:id project))]))
+                                                            (:id project))]))
                                            (when (seq other-teams)
                                              [(tr "dashboard.move-to-other-team") nil
                                               (for [team other-teams]
