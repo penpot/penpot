@@ -9,17 +9,17 @@
 
 (ns app.main.ui.workspace.sidebar.options.shapes.multiple
   (:require
-   [app.common.data :as d]
-   [rumext.alpha :as mf]
    [app.common.attrs :as attrs]
-   [app.util.text :as ut]
-   [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-attrs shadow-menu]]
+   [app.common.data :as d]
+   [app.common.text :as txt]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-attrs fill-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-attrs shadow-menu]]
    [app.main.ui.workspace.sidebar.options.menus.stroke :refer [stroke-attrs stroke-menu]]
    [app.main.ui.workspace.sidebar.options.menus.text :as ot]
-   [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]))
+   [rumext.alpha :as mf]))
 
 ;; We define a map that goes from type to
 ;; attribute and how to handle them
@@ -161,7 +161,7 @@
                          :text     [(conj ids id)
                                     (-> values
                                         (merge-attrs (select-keys shape attrs))
-                                        (merge-attrs (ut/get-text-attrs-multi content attrs)))]
+                                        (merge-attrs (attrs/get-attrs-multi (txt/node-seq content) attrs)))]
                          :children (let [children (->> (:shapes shape []) (map #(get objects %)))
                                          [new-ids new-values] (get-attrs children objects attr-type)]
                                      [(d/concat ids new-ids) (merge-attrs values new-values)])

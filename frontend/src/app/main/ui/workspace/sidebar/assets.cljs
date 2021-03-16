@@ -14,6 +14,7 @@
    [app.common.geom.shapes :as geom]
    [app.common.media :as cm]
    [app.common.pages :as cp]
+   [app.common.text :as txt]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.data.colors :as dc]
@@ -38,7 +39,6 @@
    [app.util.i18n :as i18n :refer [tr t]]
    [app.util.keyboard :as kbd]
    [app.util.router :as rt]
-   [app.util.text :as ut]
    [app.util.timers :as timers]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -431,7 +431,7 @@
         (mf/use-callback
          (mf/deps file-id)
          (fn [value opacity]
-           (st/emit! (dwl/add-typography ut/default-typography))))
+           (st/emit! (dwl/add-typography txt/default-typography))))
 
         handle-change
         (mf/use-callback

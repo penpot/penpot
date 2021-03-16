@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.main.ui.workspace.shapes.text
   (:require
@@ -26,6 +26,7 @@
    [app.util.logging :as log]
    [app.util.object :as obj]
    [app.util.timers :as timers]
+   [app.util.text-editor :as ted]
    [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
@@ -52,8 +53,17 @@
 (mf/defc text-resize-content
   {::mf/wrap-props false}
   [props]
-  (let [shape (obj/get props "shape")
-        {:keys [id name x y grow-type]} shape
+  (let [{:keys [id name x y grow-type] :as shape} (obj/get props "shape")
+
+        state-map     (mf/deref refs/workspace-editor-state)
+        editor-state  (get state-map id)
+
+        shape         (cond-> shape
+                        (some? editor-state)
+                        (assoc :content (-> editor-state
+                                            (ted/get-editor-current-content)
+                                            (ted/export-content))))
+
         paragraph-ref (mf/use-state nil)
 
         handle-resize-text
@@ -91,8 +101,7 @@
            #(.disconnect observer)))))
 
     [:& text/text-shape {:ref text-ref-cb
-                         :shape shape
-                         :grow-type (:grow-type shape)}]))
+                         :shape shape}]))
 
 (mf/defc text-wrapper
   {::mf/wrap-props false}
@@ -118,7 +127,6 @@
         [:& text-static-content {:shape shape}]
         [:& text-resize-content {:shape shape}])]
 
-
      (when (and (not ghost?) edition?)
        [:& editor/text-shape-edit {:key (str "editor" (:id shape))
                                    :shape shape}])
@@ -136,4 +144,3 @@
          :on-pointer-out handle-pointer-leave
          :on-double-click handle-double-click
          :transform (gsh/transform-matrix shape)}])]))
-

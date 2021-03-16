@@ -434,11 +434,16 @@
         on-pointer-down
         (mf/use-callback
          (fn [event]
-           (let [target (dom/get-target event)]
-             ; Capture mouse pointer to detect the movements even if cursor
-             ; leaves the viewport or the browser itself
-             ; https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture
-             (.setPointerCapture target (.-pointerId event)))))
+           ;; We need to handle editor related stuff here because
+           ;; handling on editor dom node does not works properly.
+           (let [target  (dom/get-target event)
+                 editor (.closest ^js target ".public-DraftEditor-content")]
+             ;; Capture mouse pointer to detect the movements even if cursor
+             ;; leaves the viewport or the browser itself
+             ;; https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture
+             (if editor
+               (.setPointerCapture editor (.-pointerId event))
+               (.setPointerCapture target (.-pointerId event))))))
 
         on-pointer-up
         (mf/use-callback

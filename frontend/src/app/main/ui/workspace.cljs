@@ -141,7 +141,6 @@
      [:& (mf/provider ctx/current-team-id) {:value (:team-id project)}
       [:& (mf/provider ctx/current-project-id) {:value (:id project)}
        [:& (mf/provider ctx/current-page-id) {:value page-id}
-
         [:section#workspace
          [:& header {:file file
                      :page-id page-id
