@@ -4,7 +4,7 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 ARG DEBIAN_FRONTEND=noninteractive
 
 ENV NODE_VERSION=v14.16.0 \
-    CLOJURE_VERSION=1.10.3.810 \
+    CLOJURE_VERSION=1.10.3.814 \
     CLJKONDO_VERSION=2021.03.03 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
