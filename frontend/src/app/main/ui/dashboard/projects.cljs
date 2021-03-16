@@ -129,7 +129,9 @@
                             :on-end on-edit}]
         [:h2 {:on-click on-nav
               :on-context-menu on-menu-click}
-         (:name project)])
+         (if (:is-default project)
+           (tr "labels.drafts")
+           (:name project))])
       [:& project-menu {:project project
                         :show? (:menu-open @local)
                         :left (:x (:menu-pos @local))
