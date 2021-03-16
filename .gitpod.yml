@@ -56,18 +56,18 @@ tasks:
 
   - before: yarn --cwd ./exporter/ install
     name: exporter shadow watch
-    command: cd ./exporter/ && npx -y shadow-cljs watch main
+    command: gp await-port 3448 && cd ./exporter/ && npx -y shadow-cljs watch main
 
   - name: exporter web server
     openMode: split-right
-    command: cd ./exporter/ && ./scripts/wait-and-start.sh
+    command: gp await-port 9630 && cd ./exporter/ && ./scripts/wait-and-start.sh
 
-  - init: psql -f docker/gitpod/files/postgresql_init.sql
+  - init: gp await-port 5432 && psql -f docker/gitpod/files/postgresql_init.sql
     name: backend
     command: cd ./backend/ && ./scripts/start-dev
 
   - name: gulp
-    command: cd ./frontend/ && npx -y gulp --theme=${PENPOT_THEME} watch
+    command: gp await-port 3448 && cd ./frontend/ && npx -y gulp --theme=${PENPOT_THEME} watch
 
   - name: redis
     command: redis-server
