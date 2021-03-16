@@ -47,7 +47,7 @@
 (defn generate-paragraph-styles
   [shape data]
   (let [line-height (:line-height data)
-        text-align  (:text-align data)
+        text-align  (:text-align data "start")
         grow-type   (:grow-type shape)
 
         base        #js {:fontSize (str (:font-size txt/default-text-attrs) "px")

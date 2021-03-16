@@ -454,7 +454,6 @@
                       (if (empty? rch-operations) rch (conj rch rchg))
                       (if (empty? uch-operations) uch (conj uch uchg)))))))))))
 
-
 (defn update-shapes-recursive
   [ids f]
   (us/assert ::coll-of-uuid ids)

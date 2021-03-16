@@ -11,7 +11,7 @@
   "Draft related abstraction functions."
   (:require
    ["draft-js" :as draft]
-   ["./draft_helpers.js" :as helpers]
+   ["./text_editor_impl.js" :as impl]
    [app.common.attrs :as attrs]
    [app.common.text :as txt]
    [app.common.data :as d]
@@ -206,27 +206,15 @@
 
 (defn create-editor-state
   ([]
-   (.createEmpty ^js draft/EditorState))
+   (impl/createEditorState nil nil))
   ([content]
-   (.createWithContent ^js draft/EditorState content))
+   (impl/createEditorState content nil))
   ([content decorator]
-   (if (some? content)
-     (.createWithContent ^js draft/EditorState content decorator)
-     (.createEmpty ^js draft/EditorState decorator))))
+   (impl/createEditorState content decorator)))
 
 (defn create-decorator
   [type component]
-  (letfn [(find-entity [block callback content]
-            (.findEntityRanges ^js block
-                               (fn [cmeta]
-                                 (let [ekey (.getEntity ^js cmeta)]
-                                   (boolean
-                                    (and (some? ekey)
-                                         (= type (.. ^js content (getEntity ekey) (getType)))))))
-                               callback))]
-  (draft/CompositeDecorator.
-   #js [#js {:strategy find-entity
-             :component component}])))
+  (impl/createDecorator type component))
 
 (defn import-content
   [content]
@@ -248,18 +236,7 @@
 
 (defn editor-select-all
   [state]
-  (let [content   (get-editor-current-content state)
-        fblock    (.. ^js content getBlockMap first)
-        lblock    (.. ^js content getBlockMap last)
-        fbk       (.getKey ^js fblock)
-        lbk       (.getKey ^js lblock)
-        lbl       (.getLength ^js lblock)
-        params    #js {:anchorKey fbk
-                       :anchorOffset 0
-                       :focusKey lbk
-                       :focusOffset lbl}
-        selection (draft/SelectionState. params)]
-    (.forceSelection ^js draft/EditorState state selection)))
+  (impl/selectAll state))
 
 (defn get-editor-block-data
   [block]
@@ -272,9 +249,7 @@
 
 (defn get-editor-current-block-data
   [state]
-  (let [content (.getCurrentContent ^js state)
-        key     (.. ^js state getSelection getStartKey)
-        block   (.getBlockForKey ^js content key)]
+  (let [block (impl/getCurrentBlock state)]
     (get-editor-block-data block)))
 
 (defn get-editor-current-inline-styles
@@ -284,103 +259,20 @@
 
 (defn update-editor-current-block-data
   [state attrs]
-  (loop [selection (.getSelection ^js state)
-         start-key (.getStartKey ^js selection)
-         end-key   (.getEndKey ^js selection)
-         content   (.getCurrentContent ^js state)
-         target    selection]
-    (if (and (not= start-key end-key)
-             (zero? (.getEndOffset ^js selection)))
-      (let [before-block (.getBlockBefore ^js content end-key)]
-        (recur selection
-               start-key
-               (.getKey ^js before-block)
-               content
-               (.merge ^js target
-                       #js {:anchorKey start-key
-                            :anchorOffset (.getStartOffset ^js selection)
-                            :focusKey end-key
-                            :focusOffset (.getLength ^js before-block)
-                            :isBackward false})))
-      (.push ^js draft/EditorState
-             state
-             (.mergeBlockData ^js draft/Modifier content target (clj->js attrs))
-             "change-block-data"))))
-
-(defn get-editor-current-entity-key
-  [state]
-  (let [content      (.getCurrentContent ^js state)
-        selection    (.getSelection ^js state)
-        start-key    (.getStartKey ^js selection)
-        start-offset (.getStartOffset ^js selection)
-        block        (.getBlockForKey ^js content start-key)]
-    (.getEntityAt ^js block start-offset)))
+  (impl/updateCurrentBlockData state (clj->js attrs)))
 
 (defn update-editor-current-inline-styles
   [state attrs]
-  (let [selection (.getSelection ^js state)
-        styles    (attrs-to-styles attrs)]
-    (reduce (fn [state style]
-              (let [[sk sv]  (decode-style style)
-                    prefix   (encode-style-prefix sk)
-
-                    content  (.getCurrentContent ^js state)
-                    content  (helpers/removeInlineStylePrefix content
-                                                              selection
-                                                              prefix)
-
-                    content  (.applyInlineStyle ^js draft/Modifier
-                                                content
-                                                selection
-                                                style)]
-                (.push ^js draft/EditorState state content "change-inline-style")))
-            state
-            styles)))
+  (impl/applyInlineStyle state (attrs-to-styles attrs)))
 
 (defn editor-split-block
   [state]
-  (let [content    (.getCurrentContent ^js state)
-        selection  (.getSelection ^js state)
-        content    (.splitBlock ^js draft/Modifier content selection)
-        block-data (.. ^js content -blockMap (get (.. content -selectionBefore getStartKey)) getData)
-        block-key  (.. ^js content -selectionAfter getStartKey)
-        block-map  (.. ^js content -blockMap (update block-key (fn [block] (.set ^js block "data" block-data))))]
-    (.push ^js draft/EditorState state (.set ^js content "blockMap" block-map) "split-block")))
+  (impl/splitBlockPreservingData state))
 
 (defn add-editor-blur-selection
   [state]
-  (let [content   (.getCurrentContent ^js state)
-        selection (.getSelection ^js state)
-        content   (.createEntity ^js content "PENPOT_SELECTION" "MUTABLE")
-        ekey      (.getLastCreatedEntityKey ^js content)
-        content   (.applyEntity draft/Modifier
-                                content
-                                selection
-                                ekey)]
-    (.push draft/EditorState state content "apply-entity")))
-
+  (impl/addBlurSelectionEntity state))
 
 (defn remove-editor-blur-selection
   [state]
-  (let [content   (get-editor-current-content state)
-        fblock    (.. ^js content getBlockMap first)
-        lblock    (.. ^js content getBlockMap last)
-        fbk       (.getKey ^js fblock)
-        lbk       (.getKey ^js lblock)
-        lbl       (.getLength ^js lblock)
-        params    #js {:anchorKey fbk
-                       :anchorOffset 0
-                       :focusKey lbk
-                       :focusOffset lbl}
-
-        prev-selection (.getSelection state)
-
-        selection (draft/SelectionState. params)
-        content   (.applyEntity draft/Modifier
-                                content
-                                selection
-                                nil)]
-    (as-> state $
-      (.push draft/EditorState $ content "apply-entity")
-      (.forceSelection ^js draft/EditorState $ prev-selection))))
-
+  (impl/removeBlurSelectionEntity state))

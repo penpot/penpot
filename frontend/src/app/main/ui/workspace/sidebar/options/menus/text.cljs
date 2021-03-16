@@ -26,34 +26,62 @@
    [cuerdas.core :as str]
    [rumext.alpha :as mf]))
 
-(def text-typography-attrs [:typography-ref-id :typography-ref-file])
-(def text-fill-attrs [:fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient :fill :opacity ])
-(def text-font-attrs [:font-id :font-family :font-variant-id :font-size :font-weight :font-style])
-(def text-align-attrs [:text-align])
-(def text-spacing-attrs [:line-height :letter-spacing])
-(def text-valign-attrs [:vertical-align])
-(def text-decoration-attrs [:text-decoration])
-(def text-transform-attrs [:text-transform])
+(def text-typography-attrs
+  [:typography-ref-id
+   :typography-ref-file])
 
-(def shape-attrs [:grow-type])
-(def root-attrs (d/concat text-valign-attrs
-                          text-align-attrs))
-(def paragraph-attrs text-align-attrs)
-(def text-attrs (d/concat text-typography-attrs
-                          text-font-attrs
-                          text-align-attrs
-                          text-spacing-attrs
-                          text-decoration-attrs
-                          text-transform-attrs))
+(def text-fill-attrs
+  [:fill-color
+   :fill-opacity
+   :fill-color-ref-id
+   :fill-color-ref-file
+   :fill-color-gradient])
+
+(def text-font-attrs
+  [:font-id
+   :font-family
+   :font-variant-id
+   :font-size
+   :font-weight
+   :font-style])
+
+(def text-align-attrs
+  [:text-align])
+
+(def text-spacing-attrs
+  [:line-height
+   :letter-spacing])
+
+(def text-valign-attrs
+  [:vertical-align])
+
+(def text-decoration-attrs
+  [:text-decoration])
+
+(def text-transform-attrs
+  [:text-transform])
+
+(def shape-attrs
+  [:grow-type])
+
+(def root-attrs
+  (d/concat text-valign-attrs text-align-attrs))
+
+(def paragraph-attrs
+  text-align-attrs)
+
+(def text-attrs
+  (d/concat text-typography-attrs
+            text-font-attrs
+            text-spacing-attrs
+            text-decoration-attrs
+            text-transform-attrs))
 
 (def attrs (d/concat #{} shape-attrs root-attrs paragraph-attrs text-attrs))
 
 (mf/defc text-align-options
   [{:keys [ids values on-change] :as props}]
   (let [{:keys [text-align]} values
-
-        text-align (or text-align "left")
-
         handle-change
         (fn [event new-align]
           (on-change {:text-align new-align}))]
@@ -169,13 +197,13 @@
   {::mf/wrap [mf/memo]}
   [{:keys [ids type values] :as props}]
 
-  (let [current-file-id (mf/use-ctx ctx/current-file-id)
+  (let [file-id      (mf/use-ctx ctx/current-file-id)
         typographies (mf/deref refs/workspace-file-typography)
-        shared-libs (mf/deref refs/workspace-libraries)
-        label (case type
-                :multiple (tr "workspace.options.text-options.title-selection")
-                :group (tr "workspace.options.text-options.title-group")
-                (tr "workspace.options.text-options.title"))
+        shared-libs  (mf/deref refs/workspace-libraries)
+        label        (case type
+                       :multiple (tr "workspace.options.text-options.title-selection")
+                       :group (tr "workspace.options.text-options.title-group")
+                       (tr "workspace.options.text-options.title"))
 
         emit-update!
         (fn [id attrs]
@@ -194,14 +222,14 @@
         typography (cond
                      (and (:typography-ref-id values)
                           (not= (:typography-ref-id values) :multiple)
-                          (not= (:typography-ref-file values) current-file-id))
+                          (not= (:typography-ref-file values) file-id))
                      (-> shared-libs
                          (get-in [(:typography-ref-file values) :data :typographies (:typography-ref-id values)])
                          (assoc :file-id (:typography-ref-file values)))
 
                      (and (:typography-ref-id values)
                           (not= (:typography-ref-id values) :multiple)
-                          (= (:typography-ref-file values) current-file-id))
+                          (= (:typography-ref-file values) file-id))
                      (get typographies (:typography-ref-id values)))
 
         on-convert-to-typography
@@ -218,7 +246,7 @@
              (let [id (uuid/next)]
                (st/emit! (dwl/add-typography (assoc typography :id id) false))
                (run! #(emit-update! % {:typography-ref-id id
-                                       :typography-ref-file current-file-id}) ids)))))
+                                       :typography-ref-file file-id}) ids)))))
 
         handle-detach-typography
         (fn []
@@ -228,7 +256,7 @@
 
         handle-change-typography
         (fn [changes]
-          (st/emit! (dwl/update-typography (merge typography changes) current-file-id)))
+          (st/emit! (dwl/update-typography (merge typography changes) file-id)))
 
         opts #js {:ids ids
                   :values values
@@ -244,7 +272,7 @@
      (cond
        typography
        [:& typography-entry {:typography typography
-                             :read-only? (not= (:typography-ref-file values) current-file-id)
+                             :read-only? (not= (:typography-ref-file values) file-id)
                              :file (get shared-libs (:typography-ref-file values))
                              :on-detach handle-detach-typography
                              :on-change handle-change-typography}]

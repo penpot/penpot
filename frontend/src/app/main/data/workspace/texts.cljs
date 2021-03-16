@@ -121,8 +121,8 @@
 ;; --- TEXT EDITION IMPL
 
 (defn- update-shape
-  [shape pred-fn attrs]
-  (let [merge-attrs #(attrs/merge % attrs)
+  [shape pred-fn merge-fn attrs]
+  (let [merge-attrs #(merge-fn % attrs)
         transform   #(txt/transform-nodes pred-fn merge-attrs %)]
     (update shape :content transform)))
 
@@ -134,7 +134,7 @@
       (let [objects   (dwc/lookup-page-objects state)
             shape     (get objects id)
 
-            update-fn #(update-shape % txt/is-root-node? attrs)
+            update-fn #(update-shape % txt/is-root-node? attrs/merge attrs)
             shape-ids (cond (= (:type shape) :text)  [id]
                             (= (:type shape) :group) (cp/get-children id objects))]
 
@@ -154,7 +154,15 @@
           (let [objects   (dwc/lookup-page-objects state)
                 shape     (get objects id)
 
-                update-fn #(update-shape % txt/is-paragraph-node? attrs)
+                merge-fn  (fn [node attrs]
+                            (reduce-kv (fn [node k v]
+                                         (if (= (get node k) v)
+                                           (dissoc node k)
+                                           (assoc node k v)))
+                                       node
+                                       attrs))
+
+                update-fn #(update-shape % txt/is-paragraph-node? merge-fn attrs)
                 shape-ids (cond (= (:type shape) :text)  [id]
                                 (= (:type shape) :group) (cp/get-children id objects))]
 
@@ -174,7 +182,7 @@
           (let [objects   (dwc/lookup-page-objects state)
                 shape     (get objects id)
 
-                update-fn #(update-shape % txt/is-text-node? attrs)
+                update-fn #(update-shape % txt/is-text-node? attrs/merge attrs)
                 shape-ids (cond (= (:type shape) :text)  [id]
                                 (= (:type shape) :group) (cp/get-children id objects))]
             (rx/of (dwc/update-shapes shape-ids update-fn))))))))
