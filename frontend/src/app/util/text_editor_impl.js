@@ -106,8 +106,6 @@ export function updateCurrentBlockData(state, attrs) {
 
 export function applyInlineStyle(state, styles) {
   const selection = state.getSelection();
-
-  let state = state;
   let content = null;
 
   for (let style of styles) {
