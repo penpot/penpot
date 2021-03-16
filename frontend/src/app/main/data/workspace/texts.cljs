@@ -79,7 +79,9 @@
              (rx/of (update-editor-state shape nil))
              (when (and (not= content (:content shape))
                         (some? (:current-page-id state)))
-               (rx/of (dwc/update-shapes [id] #(assoc % :content content))))))
+               (rx/of
+                (dwc/update-shapes [id] #(assoc % :content content))
+                (dwc/commit-undo-transaction)))))
           (rx/of (dws/deselect-shape id)
                  (dwc/delete-shapes [id])))))))
 
