@@ -30,7 +30,7 @@
     (number? v)  (str "n:" v)
     (keyword? v) (str "k:" (name v))
     (map? v)     (str "m:" (t/encode v))
-
+    (nil? v)     (str "z:null")
     :else (str "o:" v)))
 
 (defn decode-style-value
@@ -41,6 +41,7 @@
       "n:" (js/Number (subs v 2))
       "k:" (keyword (subs v 2))
       "m:" (t/decode (subs v 2))
+      "z:" nil
       "o:" (subs v 2)
       v)))
 
