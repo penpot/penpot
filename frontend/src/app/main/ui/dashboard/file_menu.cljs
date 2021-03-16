@@ -45,6 +45,11 @@
                          (tr "labels.drafts")
                          (:name project)))
 
+        team-name (fn [team]
+                    (if (:is-default team)
+                      (tr "dashboard.your-penpot")
+                      (:name team)))
+
         on-new-tab
         (mf/use-callback
          (mf/deps file)
@@ -147,6 +152,7 @@
                                           #(if (nil? %)
                                              {:id (:team-id project)
                                               :name (:team-name project)
+                                              :is-default (:default-team project)
                                               :projects [project]}
                                              (update % :projects conj project))))
                                 {}
@@ -176,7 +182,7 @@
                                            (when (seq other-teams)
                                              [(tr "dashboard.move-to-other-team") nil
                                               (for [team other-teams]
-                                                [(:name team) nil
+                                                [(team-name team) nil
                                                  (for [sub-project (:projects team)]
                                                    [(project-name sub-project)
                                                     (on-move (:id team)
