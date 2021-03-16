@@ -11,6 +11,7 @@
   "Draft related abstraction functions."
   (:require
    ["draft-js" :as draft]
+   ["./draft_helpers.js" :as helpers]
    [app.common.attrs :as attrs]
    [app.common.text :as txt]
    [app.common.data :as d]
@@ -49,6 +50,16 @@
         v (encode-style-value val)]
     (str "PENPOT$$$" k "$$$" v)))
 
+(defn encode-style-prefix
+  [key]
+  (let [k (d/name key)]
+    (str "PENPOT$$$" k "$$$")))
+
+(defn decode-style
+  [style]
+  (let [[_ k v] (str/split style "$$$" 3)]
+    [(keyword k) (decode-style-value v)]))
+
 (defn attrs-to-styles
   [attrs]
   (reduce-kv (fn [res k v]
@@ -60,8 +71,12 @@
   [styles]
   (persistent!
    (reduce (fn [result style]
-             (let [[_ k v] (str/split style "$$$" 3)]
-               (assoc! result (keyword k) (decode-style-value v))))
+             (if (str/starts-with? style "PENPOT")
+               (if (= style "PENPOT_SELECTION")
+                 (assoc! result :penpot-selection true)
+                 (let [[_ k v] (str/split style "$$$" 3)]
+                   (assoc! result (keyword k) (decode-style-value v))))
+               result))
            (transient {})
            (seq styles))))
 
@@ -71,14 +86,15 @@
   "Parses draft-js style ranges, converting encoded style name into a
   key/val pair of data."
   [styles]
-  (map (fn [item]
-         (let [[_ k v] (-> (obj/get item "style")
-                           (str/split "$$$" 3))]
-           {:key (keyword k)
-            :val (decode-style-value v)
-            :offset (obj/get item "offset")
-            :length (obj/get item "length")}))
-       styles))
+  (->> styles
+       (filter #(str/starts-with? (obj/get % "style") "PENPOT$$$"))
+       (map (fn [item]
+              (let [[_ k v] (-> (obj/get item "style")
+                                (str/split "$$$" 3))]
+                {:key (keyword k)
+                 :val (decode-style-value v)
+                 :offset (obj/get item "offset")
+                 :length (obj/get item "length")})))))
 
 (defn- build-style-index
   "Generates a character based index with associated styles map."
@@ -123,7 +139,6 @@
                   (assoc :key key)
                   (assoc :type "paragraph")
                   (assoc :children (split-texts text styles)))))]
-
     {:type "root"
      :children
      [{:type "paragraph-set"
@@ -193,9 +208,25 @@
   ([]
    (.createEmpty ^js draft/EditorState))
   ([content]
+   (.createWithContent ^js draft/EditorState content))
+  ([content decorator]
    (if (some? content)
-     (.createWithContent ^js draft/EditorState content)
-     (.createEmpty ^js draft/EditorState))))
+     (.createWithContent ^js draft/EditorState content decorator)
+     (.createEmpty ^js draft/EditorState decorator))))
+
+(defn create-decorator
+  [type component]
+  (letfn [(find-entity [block callback content]
+            (.findEntityRanges ^js block
+                               (fn [cmeta]
+                                 (let [ekey (.getEntity ^js cmeta)]
+                                   (boolean
+                                    (and (some? ekey)
+                                         (= type (.. ^js content (getEntity ekey) (getType)))))))
+                               callback))]
+  (draft/CompositeDecorator.
+   #js [#js {:strategy find-entity
+             :component component}])))
 
 (defn import-content
   [content]
@@ -276,17 +307,33 @@
              (.mergeBlockData ^js draft/Modifier content target (clj->js attrs))
              "change-block-data"))))
 
+(defn get-editor-current-entity-key
+  [state]
+  (let [content      (.getCurrentContent ^js state)
+        selection    (.getSelection ^js state)
+        start-key    (.getStartKey ^js selection)
+        start-offset (.getStartOffset ^js selection)
+        block        (.getBlockForKey ^js content start-key)]
+    (.getEntityAt ^js block start-offset)))
+
 (defn update-editor-current-inline-styles
   [state attrs]
   (let [selection (.getSelection ^js state)
-        content   (.getCurrentContent ^js state)
         styles    (attrs-to-styles attrs)]
     (reduce (fn [state style]
-              (let [modifier (.applyInlineStyle draft/Modifier
-                                                (.getCurrentContent ^js state)
+              (let [[sk sv]  (decode-style style)
+                    prefix   (encode-style-prefix sk)
+
+                    content  (.getCurrentContent ^js state)
+                    content  (helpers/removeInlineStylePrefix content
+                                                              selection
+                                                              prefix)
+
+                    content  (.applyInlineStyle ^js draft/Modifier
+                                                content
                                                 selection
                                                 style)]
-                (.push draft/EditorState state modifier "change-inline-style")))
+                (.push ^js draft/EditorState state content "change-inline-style")))
             state
             styles)))
 
@@ -299,3 +346,41 @@
         block-key  (.. ^js content -selectionAfter getStartKey)
         block-map  (.. ^js content -blockMap (update block-key (fn [block] (.set ^js block "data" block-data))))]
     (.push ^js draft/EditorState state (.set ^js content "blockMap" block-map) "split-block")))
+
+(defn add-editor-blur-selection
+  [state]
+  (let [content   (.getCurrentContent ^js state)
+        selection (.getSelection ^js state)
+        content   (.createEntity ^js content "PENPOT_SELECTION" "MUTABLE")
+        ekey      (.getLastCreatedEntityKey ^js content)
+        content   (.applyEntity draft/Modifier
+                                content
+                                selection
+                                ekey)]
+    (.push draft/EditorState state content "apply-entity")))
+
+
+(defn remove-editor-blur-selection
+  [state]
+  (let [content   (get-editor-current-content state)
+        fblock    (.. ^js content getBlockMap first)
+        lblock    (.. ^js content getBlockMap last)
+        fbk       (.getKey ^js fblock)
+        lbk       (.getKey ^js lblock)
+        lbl       (.getLength ^js lblock)
+        params    #js {:anchorKey fbk
+                       :anchorOffset 0
+                       :focusKey lbk
+                       :focusOffset lbl}
+
+        prev-selection (.getSelection state)
+
+        selection (draft/SelectionState. params)
+        content   (.applyEntity draft/Modifier
+                                content
+                                selection
+                                nil)]
+    (as-> state $
+      (.push draft/EditorState $ content "apply-entity")
+      (.forceSelection ^js draft/EditorState $ prev-selection))))
+

@@ -55,14 +55,15 @@
         (update state :workspace-editor-state dissoc id)))))
 
 (defn initialize-editor-state
-  [{:keys [id content] :as shape}]
+  [{:keys [id content] :as shape} decorator]
   (ptk/reify ::initialize-editor-state
     ptk/UpdateEvent
     (update [_ state]
       (update-in state [:workspace-editor-state id]
                  (fn [_]
                    (ted/create-editor-state
-                    (some->> content ted/import-content)))))))
+                    (some->> content ted/import-content)
+                    decorator))))))
 
 (defn finalize-editor-state
   [{:keys [id] :as shape}]
@@ -136,8 +137,7 @@
             shape-ids (cond (= (:type shape) :text)  [id]
                             (= (:type shape) :group) (cp/get-children id objects))]
 
-        (rx/of (dwc/update-shapes shape-ids update-fn)
-               (focus-editor))))))
+        (rx/of (dwc/update-shapes shape-ids update-fn))))))
 
 (defn update-paragraph-attrs
   [{:keys [id attrs]}]
@@ -149,11 +149,7 @@
 
       ptk/WatchEvent
       (watch [_ state stream]
-        (cond
-          (some? (get-in state [:workspace-editor-state id]))
-          (rx/of (focus-editor))
-
-          :else
+        (when-not (some? (get-in state [:workspace-editor-state id]))
           (let [objects   (dwc/lookup-page-objects state)
                 shape     (get objects id)
 
@@ -173,11 +169,7 @@
 
       ptk/WatchEvent
       (watch [_ state stream]
-        (cond
-          (some? (get-in state [:workspace-editor-state id]))
-          (rx/of (focus-editor))
-
-          :else
+        (when-not (some? (get-in state [:workspace-editor-state id]))
           (let [objects   (dwc/lookup-page-objects state)
                 shape     (get objects id)
 

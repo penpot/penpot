@@ -55,6 +55,12 @@
     [:div {:style style :dir "auto"}
      [:> draft/EditorBlock props]]))
 
+(mf/defc selection-component
+  {::mf/wrap-props false}
+  [props]
+  (let [children (obj/get props "children")]
+    [:span {:style {:background "#ccc" :display "inline-block"}} children]))
+
 (defn render-block
   [block shape]
   (let [type (ted/get-editor-block-type block)]
@@ -66,8 +72,11 @@
                        :shape shape}}
       nil)))
 
+(def default-decorator
+  (ted/create-decorator "PENPOT_SELECTION" selection-component))
+
 (def empty-editor-state
-  (ted/create-editor-state))
+  (ted/create-editor-state nil default-decorator))
 
 (mf/defc text-shape-edit-html
   {::mf/wrap [mf/memo]
@@ -79,8 +88,9 @@
         zoom          (mf/deref refs/selected-zoom)
         state-map     (mf/deref refs/workspace-editor-state)
         state         (get state-map id empty-editor-state)
-
         self-ref      (mf/use-ref)
+
+        blured        (mf/use-var false)
 
         on-click-outside
         (fn [event]
@@ -111,7 +121,7 @@
           (let [keys [(events/listen js/document EventType.MOUSEDOWN on-click-outside)
                       (events/listen js/document EventType.CLICK on-click-outside)
                       (events/listen js/document EventType.KEYUP on-key-up)]]
-            (st/emit! (dwt/initialize-editor-state shape)
+            (st/emit! (dwt/initialize-editor-state shape default-decorator)
                       (dwt/select-all shape))
             #(do
                (st/emit! (dwt/finalize-editor-state shape))
@@ -119,14 +129,26 @@
                  (events/unlistenByKey key)))))
 
         on-blur
-        (fn [event]
-          (dom/stop-propagation event)
-          (dom/prevent-default event))
+        (mf/use-callback
+         (mf/deps shape state)
+         (fn [event]
+           (dom/stop-propagation event)
+           (dom/prevent-default event)
+           (reset! blured true)))
+
+        on-focus
+        (mf/use-callback
+         (mf/deps shape state)
+         (fn [event]
+           (reset! blured false)))
 
         on-change
         (mf/use-callback
          (fn [val]
-           (st/emit! (dwt/update-editor-state shape val))))
+           (let [val (if (true? @blured)
+                       (ted/add-editor-blur-selection val)
+                       (ted/remove-editor-blur-selection val))]
+             (st/emit! (dwt/update-editor-state shape val)))))
 
         on-editor
         (mf/use-callback
@@ -140,17 +162,6 @@
          (fn [event state]
            (st/emit! (dwt/update-editor-state shape (ted/editor-split-block state)))
            "handled"))
-
-        on-pointer-down
-        (mf/use-callback
-         (fn [event]
-           (let [target  (dom/get-target event)
-                 closest (.closest ^js target "foreignObject")]
-             ;; Capture mouse pointer to detect the movements even if cursor
-             ;; leaves the viewport or the browser itself
-             ;; https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture
-             (when closest
-               (.setPointerCapture closest (.-pointerId event))))))
         ]
 
     (mf/use-layout-effect on-mount)
@@ -158,7 +169,6 @@
     [:div.text-editor
      {:ref self-ref
       :style {:cursor cur/text}
-      :on-pointer-down on-pointer-down
       :class (dom/classnames
               :align-top    (= (:vertical-align content "top") "top")
               :align-center (= (:vertical-align content) "center")
@@ -166,6 +176,7 @@
      [:> draft/Editor
       {:on-change on-change
        :on-blur on-blur
+       :on-focus on-focus
        :handle-return handle-return
        :strip-pasted-styles true
        :custom-style-fn (fn [styles _]
