@@ -152,7 +152,7 @@
                                           #(if (nil? %)
                                              {:id (:team-id project)
                                               :name (:team-name project)
-                                              :is-default (:default-team project)
+                                              :is-default (:is-default-team project)
                                               :projects [project]}
                                              (update % :projects conj project))))
                                 {}
