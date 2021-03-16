@@ -56,7 +56,7 @@
     [:header.dashboard-header
      (if (:is-default project)
        [:div.dashboard-title
-        [:h1 (t locale "dashboard.draft-title")]]
+        [:h1 (t locale "labels.drafts")]]
 
        (if (:edition @local)
          [:& inline-edition {:content (:name project)

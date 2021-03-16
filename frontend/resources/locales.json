@@ -444,17 +444,6 @@
     },
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs" ]
   },
-  "dashboard.draft-title" : {
-    "translations" : {
-      "ca" : "Esborrany",
-      "en" : "Draft",
-      "es" : "Borrador",
-      "fr" : "Brouillon",
-      "ru" : "Черновик",
-      "zh_cn" : "草稿"
-    },
-    "used-in" : [ "src/app/main/ui/dashboard/files.cljs" ]
-  },
   "dashboard.duplicate" : {
     "translations" : {
       "en" : "Duplicate",

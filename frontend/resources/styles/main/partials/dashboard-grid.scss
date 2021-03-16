@@ -23,7 +23,7 @@
 
   .grid-item {
     align-items: center;
-    border: 1px solid lighten($color-gray-20, 13%);
+    border: 2px solid lighten($color-gray-20, 13%);
     border-radius: $br-small;
     cursor: pointer;
     display: flex;
@@ -177,8 +177,6 @@
       background-color: $color-white;
 
       &:hover {
-        border: 2px solid $color-primary;
-
         .project-th-actions {
           opacity: 1;
         }
