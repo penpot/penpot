@@ -14,7 +14,7 @@ for item in $(echo $CLASSPATH | tr ":" "\n"); do
     fi
 done
 
-cp ./resources/log4j2-bundle.xml ./target/dist/log4j2.xml
+cp ./resources/log4j2.xml ./target/dist/log4j2.xml
 cp -r ./src ./target/dist/main
 cp -r ./resources/emails ./target/dist/main/
 cp -r ./resources/svgclean.js ./target/dist/main/
@@ -45,7 +45,7 @@ if [ -f ./environ ]; then
 fi
 
 set -x
-exec \$JAVA_CMD \$JVM_OPTS -classpath \$CP -Dlog4j.configurationFile=./log4j2.xml "\$@" clojure.main -m app.main
+exec \$JAVA_CMD \$JVM_OPTS -classpath \$CP -Dlog4j2.configurationFile=./log4j2.xml "\$@" clojure.main -m app.main
 EOF
 
 tee -a ./target/dist/manage.sh  >> /dev/null <<EOF
@@ -69,9 +69,8 @@ if [ -f ./environ ]; then
    source ./environ
 fi
 
-exec \$JAVA_CMD \$JVM_OPTS -classpath \$CP -Dlog4j.configurationFile=./log4j2.xml clojure.main -m app.cli.manage "\$@"
+exec \$JAVA_CMD \$JVM_OPTS -classpath \$CP -Dlog4j2.configurationFile=./log4j2.xml clojure.main -m app.cli.manage "\$@"
 EOF
 
 chmod +x ./target/dist/run.sh
 chmod +x ./target/dist/manage.sh
-
