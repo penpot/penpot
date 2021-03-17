@@ -8,6 +8,7 @@
       "fr" : "Vous avez déjà un compte ?",
       "ru" : "Уже есть аккаунт?",
       "zh_cn" : "已经有账号了？"
+      "tr" : "Zaten hesabın var mı?"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs" ]
   },
@@ -18,6 +19,7 @@
       "en" : "Check your email and click on the link to verify and start using Penpot.",
       "fr" : "Vérifiez votre e‑mail et cliquez sur le lien pour vérifier et commencer à utiliser Penpot.",
       "zh_cn" : "请检查电子邮箱，点击邮件中的超链接来验证，然后开始使用Penpot。"
+      "tr" : "Penpot hesabını onaylamak ve kullanmaya başlamak için e-posta adresini kontrol et ve gönderilen linke tıkla."
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs" ]
   },
@@ -30,6 +32,7 @@
       "fr" : "Confirmez le mot de passe",
       "ru" : "Подтвердите пароль",
       "zh_cn" : "确认密码"
+      "tr" : "Parolayı onayla"
     },
     "used-in" : [ "src/app/main/ui/auth/recovery.cljs" ]
   },
@@ -42,6 +45,7 @@
       "fr" : "Créer un compte de démonstration",
       "ru" : "Хотите попробовать?",
       "zh_cn" : "创建演示账号"
+      "tr" : "Demo hesabı oluştur"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs", "src/app/main/ui/auth/login.cljs" ]
   },
@@ -54,6 +58,7 @@
       "fr" : "Vous voulez juste essayer ?",
       "ru" : "Хотите попробовать?",
       "zh_cn" : "只是想试试？"
+      "tr" : "Sadece denemek mi istiyorsun?"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs", "src/app/main/ui/auth/login.cljs" ]
   },
@@ -66,6 +71,7 @@
       "fr" : "Il s’agit d’un service DEMO, NE PAS UTILISER pour un travail réel, les projets seront périodiquement supprimés.",
       "ru" : "Это ДЕМОНСТРАЦИЯ, НЕ ИСПОЛЬЗУЙТЕ для работы, проекты будут периодически удаляться.",
       "zh_cn" : "这是一个演示服务，请【不要】用于真实工作，这些项目将被周期性地抹除。"
+      "tr" : "Bu bir DEMO servis, gerçek işlerin için KULLANMA, projeler periyodik olarak silinir."
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs" ]
   },
@@ -78,6 +84,7 @@
       "fr" : "Adresse e‑mail",
       "ru" : "Email",
       "zh_cn" : "电子邮件"
+      "tr" : "E-posta"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs", "src/app/main/ui/auth/recovery_request.cljs", "src/app/main/ui/auth/login.cljs" ]
   },
@@ -90,6 +97,7 @@
       "fr" : "Mot de passe oublié ?",
       "ru" : "Забыли пароль?",
       "zh_cn" : "忘记密码？"
+      "tr" : "Parolanı mı unuttun?"
     },
     "used-in" : [ "src/app/main/ui/auth/login.cljs" ]
   },
@@ -102,6 +110,7 @@
       "fr" : "Nom complet",
       "ru" : "Полное имя",
       "zh_cn" : "全名"
+      "tr" : "Tam Adın"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs" ]
   },
@@ -114,6 +123,7 @@
       "fr" : "Retour !",
       "ru" : "Назад!",
       "zh_cn" : "返回！"
+      "tr" : "Geri dön!"
     },
     "used-in" : [ "src/app/main/ui/auth/recovery_request.cljs" ]
   },
@@ -126,6 +136,7 @@
       "fr" : "Se connecter ici",
       "ru" : "Войти здесь",
       "zh_cn" : "在这里登录"
+      "tr" : "Buradan giriş yap"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs" ]
   },
@@ -138,6 +149,7 @@
       "fr" : "Se connecter",
       "ru" : "Вход",
       "zh_cn" : "登录"
+      "tr" : "Giriş yap"
     },
     "used-in" : [ "src/app/main/ui/auth/login.cljs" ]
   },
@@ -150,6 +162,7 @@
       "fr" : "Entrez vos informations ci‑dessous",
       "ru" : "Введите информацию о себе ниже",
       "zh_cn" : "请在下面输入你的详细信息"
+      "tr" : "Bilgilerini aşağıdaki alana gir"
     },
     "used-in" : [ "src/app/main/ui/auth/login.cljs" ]
   },
@@ -162,6 +175,7 @@
       "fr" : "Ravi de vous revoir !",
       "ru" : "Рады видеть Вас снова!",
       "zh_cn" : "很高兴又见到你！"
+      "tr" : "Seni tekrar görmek süper!"
     },
     "used-in" : [ "src/app/main/ui/auth/login.cljs" ]
   },
@@ -174,6 +188,7 @@
       "fr" : "Se connecter via Github",
       "ru" : "Вход через Gitnub",
       "zh_cn" : "使用Github登录"
+      "tr" : "Github ile giriş yap"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs", "src/app/main/ui/auth/login.cljs" ]
   },
@@ -186,6 +201,7 @@
       "fr" : "Se connecter via Gitlab",
       "ru" : "Вход через Gitlab",
       "zh_cn" : "使用Gitlab登录"
+      "tr" : "Gitlab ile giriş yap"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs", "src/app/main/ui/auth/login.cljs" ]
   },
@@ -198,6 +214,7 @@
       "fr" : "Se connecter via LDAP",
       "ru" : "Вход через LDAP",
       "zh_cn" : "使用LDAP登录"
+      "tr" : "LDAP ile giriş yap"
     },
     "used-in" : [ "src/app/main/ui/auth/login.cljs" ]
   },
@@ -210,6 +227,7 @@
       "fr" : "Saisissez un nouveau mot de passe",
       "ru" : "Введите новый пароль",
       "zh_cn" : "输入新的密码"
+      "tr" : "Yeni bir parola gir"
     },
     "used-in" : [ "src/app/main/ui/auth/recovery.cljs" ]
   },
