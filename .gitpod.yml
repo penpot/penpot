@@ -51,24 +51,24 @@ tasks:
       git config --global user.signingkey ${GNUGPG_KEY}
     command: cd $GITPOD_REPO_ROOT
 
-  - before: yarn --cwd ./frontend/ install
+  - init: yarn --cwd $GITPOD_REPO_ROOT/frontend/ install
     name: frontend shadow watch
-    command: cd ./frontend/ && npx -y shadow-cljs watch main
+    command: cd $GITPOD_REPO_ROOT/frontend/ && npx -y shadow-cljs watch main
 
-  - before: yarn --cwd ./exporter/ install
+  - init: yarn --cwd $GITPOD_REPO_ROOT/exporter/ install
     name: exporter shadow watch
-    command: gp await-port 3448 && cd ./exporter/ && npx -y shadow-cljs watch main
+    command: gp await-port 3448 && cd $GITPOD_REPO_ROOT/exporter/ && npx -y shadow-cljs watch main
 
   - name: exporter web server
     openMode: split-right
-    command: gp await-port 9630 && cd ./exporter/ && ./scripts/wait-and-start.sh
+    command: gp await-port 9630 && cd $GITPOD_REPO_ROOT/exporter/ && ./scripts/wait-and-start.sh
 
-  - init: gp await-port 5432 && psql -f docker/gitpod/files/postgresql_init.sql
+  - init: gp await-port 5432 && psql -f $GITPOD_REPO_ROOT/docker/gitpod/files/postgresql_init.sql
     name: backend
-    command: cd ./backend/ && ./scripts/start-dev
+    command: cd $GITPOD_REPO_ROOT/backend/ && ./scripts/start-dev
 
   - name: gulp
-    command: gp await-port 3448 && cd ./frontend/ && npx -y gulp --theme=${PENPOT_THEME} watch
+    command: gp await-port 3448 && cd $GITPOD_REPO_ROOT/frontend/ && npx -y gulp --theme=${PENPOT_THEME} watch
 
   - name: redis
     command: redis-server
