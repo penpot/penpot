@@ -6,11 +6,6 @@ FROM gitpod/workspace-postgres
 #
 # More information: https://www.gitpod.io/docs/config-docker/
 
-ENV CLOJURE_VERSION=1.10.3.814 \
-    CLJKONDO_VERSION=2021.03.03 \
-    LANG=en_US.UTF-8 \
-    LC_ALL=en_US.UTF-8
-
 RUN set -ex; \
     brew install redis; \
     brew install imagemagick; \
@@ -18,6 +13,11 @@ RUN set -ex; \
     brew install openldap;
 
 COPY docker/gitpod/files/nginx.conf /etc/nginx/nginx.conf
+
+ENV CLOJURE_VERSION=1.10.3.814 \
+    CLJKONDO_VERSION=2021.03.03 \
+    LANG=en_US.UTF-8 \
+    LC_ALL=en_US.UTF-8
 
 USER root
 
