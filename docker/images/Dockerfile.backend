@@ -3,19 +3,43 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ENV LANG='en_US.UTF-8' LC_ALL='en_US.UTF-8'
 
+WORKDIR /root
+
 RUN set -ex; \
     apt-get -qq update; \
-    apt-get -qqy --no-install-recommends install wget locales ca-certificates imagemagick webp gnupg2; \
+    apt-get -qqy --no-install-recommends install curl tzdata locales ca-certificates imagemagick webp fontconfig; \
     echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
     locale-gen; \
-    mkdir -p /usr/share/man/man1; \
-    mkdir -p /usr/share/man/man7; \
-    wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | apt-key add -; \
-    echo "deb https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ focal main" >> /etc/apt/sources.list.d/adoptopenjdk.list; \
-    apt-get -qq update; \
-    apt-get -qqy install adoptopenjdk-15-hotspot; \
     rm -rf /var/lib/apt/lists/*;
 
+RUN set -eux; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         ESUM='7217a9f9be3b0c8dfc78538f95fd2deb493eb651152d975062920566492b2574'; \
+         BINARY_URL='https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16%2B36/OpenJDK16-jdk_aarch64_linux_hotspot_16_36.tar.gz'; \
+         ;; \
+       armhf|armv7l) \
+         ESUM='f1d32ba01a40c98889f31368c0e987d6bbda65a7c50b8c088623b48e3a90104a'; \
+         BINARY_URL='https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16%2B36/OpenJDK16-jdk_arm_linux_hotspot_16_36.tar.gz'; \
+         ;; \
+       amd64|x86_64) \
+         ESUM='2e031cf37018161c9e59b45fa4b98ff2ce4ce9297b824c512989d579a70f8422'; \
+         BINARY_URL='https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16%2B36/OpenJDK16-jdk_x64_linux_hotspot_16_36.tar.gz'; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; \
+         exit 1; \
+         ;; \
+    esac; \
+    curl -LfsSo /tmp/openjdk.tar.gz ${BINARY_URL}; \
+    echo "${ESUM} */tmp/openjdk.tar.gz" | sha256sum -c -; \
+    mkdir -p /usr/lib/jvm/openjdk16; \
+    cd /usr/lib/jvm/openjdk16; \
+    tar -xf /tmp/openjdk.tar.gz --strip-components=1; \
+    rm -rf /tmp/openjdk.tar.gz;
+
+ENV JAVA_HOME=/usr/lib/jvm/openjdk16 PATH="/usr/lib/jvm/openjdk16/bin:$PATH"
 ADD ./bundle-app/backend/ /opt/bundle/
 WORKDIR /opt/bundle
 CMD ["/bin/bash", "run.sh"]
