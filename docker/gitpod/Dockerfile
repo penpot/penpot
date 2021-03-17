@@ -14,12 +14,12 @@ RUN set -ex; \
 
 COPY docker/gitpod/files/nginx.conf /etc/nginx/nginx.conf
 
+USER root
+
 ENV CLOJURE_VERSION=1.10.3.814 \
     CLJKONDO_VERSION=2021.03.03 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
-
-USER root
 
 RUN set -ex; \
     useradd -m -g users -s /bin/bash penpot; \
