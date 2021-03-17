@@ -55,7 +55,7 @@
 
         mtx-messages
         (mtx/create
-         {:name "websocket_message_count"
+         {:name "websocket_message_total"
           :registry (:registry metrics)
           :labels ["op"]
           :type :counter

@@ -54,8 +54,8 @@
    {:registry registry
     :type :counter
     :labels ["name"]
-    :name "tasks_submit_counter"
-    :help "An absolute counter of task submissions."
+    :name "tasks_submit_total"
+    :help "A counter of task submissions."
     :wrap (fn [rootf mobj]
             (let [mdata (meta rootf)
                   origf (::original mdata rootf)]

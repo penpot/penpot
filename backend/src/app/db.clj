@@ -80,7 +80,7 @@
     #'next.jdbc/execute!]
    {:registry registry
     :type :counter
-    :name "database_query_count"
+    :name "database_query_total"
     :help "An absolute counter of database queries."}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
