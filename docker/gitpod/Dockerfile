@@ -6,8 +6,8 @@ FROM gitpod/workspace-postgres
 #
 # More information: https://www.gitpod.io/docs/config-docker/
 
-ENV CLOJURE_VERSION=1.10.2.774 \
-    CLJ_KONDO_VERSION=2021.01.20 \
+ENV CLOJURE_VERSION=1.10.3.814 \
+    CLJKONDO_VERSION=2021.03.03 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
@@ -69,6 +69,13 @@ RUN set -ex; \
     chmod +x "linux-install-$CLOJURE_VERSION.sh"; \
     "./linux-install-$CLOJURE_VERSION.sh"; \
     rm -rf "linux-install-$CLOJURE_VERSION.sh"
+
+RUN set -ex; \
+    cd /tmp; \
+    wget "https://github.com/borkdude/clj-kondo/releases/download/v${CLJKONDO_VERSION}/clj-kondo-${CLJKONDO_VERSION}-linux-amd64.zip"; \
+    unzip "clj-kondo-${CLJKONDO_VERSION}-linux-amd64.zip"; \
+    sudo mv clj-kondo /usr/local/bin/; \
+    rm "clj-kondo-${CLJKONDO_VERSION}-linux-amd64.zip";
 
 USER gitpod
 
