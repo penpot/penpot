@@ -26,7 +26,7 @@ node_modules
 /frontend/resources/public/*
 /exporter/target
 /exporter/.shadow-cljs
-/docker/images/bundle
+/docker/images/bundle*
 /.clj-kondo/.cache
 /bundle*
 /media
