@@ -17,6 +17,8 @@ RUN set -ex; \
     brew install mailhog; \
     brew install openldap;
 
+COPY docker/gitpod/files/nginx.conf /etc/nginx/nginx.conf
+
 USER root
 
 RUN set -ex; \

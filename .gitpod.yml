@@ -2,6 +2,9 @@ image:
   file: docker/gitpod/Dockerfile
 
 ports:
+  # nginx
+  - port: 3449
+    onOpen: open-preview
   # frontend nREPL
   - port: 3447
     onOpen: ignore
@@ -10,8 +13,6 @@ ports:
   - port: 3448
     onOpen: notify
     visibility: private
-  - port: 3449
-    onOpen: open-preview
   - port: 6060
   - port: 9090
   # exporter shadow server
