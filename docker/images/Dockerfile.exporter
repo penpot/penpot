@@ -5,24 +5,13 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
-    NODE_VERSION=v14.15.1
+    NODE_VERSION=v14.16.0
 
 RUN set -ex; \
     mkdir -p /etc/resolvconf/resolv.conf.d; \
     echo "nameserver 8.8.8.8" > /etc/resolvconf/resolv.conf.d/tail; \
     apt-get -qq update; \
-    apt-get -qqy install --no-install-recommends \
-        locales \
-        gnupg2 \
-        ca-certificates \
-        wget \
-        sudo \
-        vim \
-        curl \
-        bash \
-        xz-utils \
-        rlwrap \
-    ; \
+    apt-get -qqy --no-install-recommends install curl tzdata locales ca-certificates fontconfig xz-utils; \
     echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
     locale-gen; \
     rm -rf /var/lib/apt/lists/*;
@@ -72,22 +61,37 @@ RUN set -ex; \
     ; \
     rm -rf /var/lib/apt/lists/*;
 
-RUN set -ex; \
-    mkdir -p /tmp/node; \
-    cd /tmp/node; \
-    export PATH="$PATH:/usr/local/nodejs/bin"; \
-    wget https://nodejs.org/dist/$NODE_VERSION/node-$NODE_VERSION-linux-x64.tar.xz; \
-    tar xvf node-$NODE_VERSION-linux-x64.tar.xz; \
-    mv /tmp/node/node-$NODE_VERSION-linux-x64 /usr/local/nodejs; \
+ENV PATH="/usr/local/nodejs/bin:$PATH"
+
+RUN set -eux; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "${ARCH}" in \
+       aarch64|arm64) \
+         BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-arm64.tar.xz"; \
+         ;; \
+       armhf|armv7l) \
+         BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-armv7l.tar.xz"; \
+         ;; \
+       amd64|x86_64) \
+         BINARY_URL="https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.xz"; \
+         ;; \
+       *) \
+         echo "Unsupported arch: ${ARCH}"; \
+         exit 1; \
+         ;; \
+    esac; \
+    curl -LfsSo /tmp/nodejs.tar.xz ${BINARY_URL}; \
+    mkdir -p /usr/local/nodejs; \
+    cd /usr/local/nodejs; \
+    tar -xf /tmp/nodejs.tar.xz --strip-components=1; \
+    chown -R root /usr/local/nodejs; \
     /usr/local/nodejs/bin/npm install -g yarn; \
-    rm -rf /tmp/node;
+    rm -rf /tmp/nodejs.tar.xz;
 
 WORKDIR /opt/app
 
 ADD ./bundle-exporter/ /opt/app/
 
-RUN set -ex; \
-    export PATH="$PATH:/usr/local/nodejs/bin"; \
-    yarn install;
+RUN set -ex; yarn install;
 
 CMD ["/usr/local/nodejs/bin/node", "app.js"]
