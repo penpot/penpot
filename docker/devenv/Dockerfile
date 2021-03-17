@@ -134,10 +134,10 @@ RUN set -ex; \
 
 RUN set -ex; \
     cd /tmp; \
-    wget "https://github.com/borkdude/clj-kondo/releases/download/v$CLJKONDO_VERSION/clj-kondo-$CLJKONDO_VERSION-linux-amd64.zip"; \
-    unzip "clj-kondo-$CLJKONDO_VERSION-linux-amd64.zip"; \
+    wget "https://github.com/borkdude/clj-kondo/releases/download/v${CLJKONDO_VERSION}/clj-kondo-${CLJKONDO_VERSION}-linux-amd64.zip"; \
+    unzip "clj-kondo-${CLJKONDO_VERSION}-linux-amd64.zip"; \
     mv clj-kondo /usr/local/bin/; \
-    rm "clj-kondo-$CLJKONDO_VERSION-linux-amd64.zip";
+    rm "clj-kondo-${CLJKONDO_VERSION}-linux-amd64.zip";
 
 EXPOSE 3447
 EXPOSE 3448
