@@ -23,14 +23,18 @@
    [rumext.alpha :as mf]))
 
 (mf/defc file-menu
-  [{:keys [file show? on-edit on-menu-close top left navigate?] :as props}]
-  (assert (some? file) "missing `file` prop")
+  [{:keys [files show? on-edit on-menu-close top left navigate?] :as props}]
+  (assert (seq files) "missing `files` prop")
   (assert (boolean? show?) "missing `show?` prop")
   (assert (fn? on-edit) "missing `on-edit` prop")
   (assert (fn? on-menu-close) "missing `on-menu-close` prop")
   (assert (boolean? navigate?) "missing `navigate?` prop")
   (let [top   (or top 0)
         left  (or left 0)
+
+        file             (first files)
+        file-count       (count files)
+        multi?           (> file-count 1)
 
         current-team-id  (mf/use-ctx ctx/current-team-id)
         teams            (mf/use-state nil)
@@ -61,38 +65,49 @@
 
         on-duplicate
         (mf/use-callback
-         (mf/deps file)
-         (st/emitf (dm/success (tr "dashboard.success-duplicate-file"))
-                   (dd/duplicate-file file)))
+         (mf/deps files)
+         (fn [event]
+           (apply st/emit! (map dd/duplicate-file files))
+           (st/emit! (dm/success (tr "dashboard.success-duplicate-file")))))
 
         delete-fn
         (mf/use-callback
-         (mf/deps file)
-         (st/emitf (dm/success (tr "dashboard.success-delete-file"))
-                   (dd/delete-file file)))
+         (mf/deps files)
+         (fn [event]
+           (apply st/emit! (map dd/delete-file files))
+           (st/emit! (dm/success (tr "dashboard.success-delete-file")))))
 
         on-delete
         (mf/use-callback
-         (mf/deps file)
+         (mf/deps files)
          (fn [event]
            (dom/stop-propagation event)
-           (st/emit! (modal/show
-                      {:type :confirm
-                       :title (tr "modals.delete-file-confirm.title")
-                       :message (tr "modals.delete-file-confirm.message")
-                       :accept-label (tr "modals.delete-file-confirm.accept")
-                       :on-accept delete-fn}))))
+           (if multi?
+             (st/emit! (modal/show
+                         {:type :confirm
+                          :title (tr "modals.delete-file-multi-confirm.title" file-count)
+                          :message (tr "modals.delete-file-multi-confirm.message" file-count)
+                          :accept-label (tr "modals.delete-file-multi-confirm.accept" file-count)
+                          :on-accept delete-fn}))
+             (st/emit! (modal/show
+                         {:type :confirm
+                          :title (tr "modals.delete-file-confirm.title")
+                          :message (tr "modals.delete-file-confirm.message")
+                          :accept-label (tr "modals.delete-file-confirm.accept")
+                          :on-accept delete-fn})))))
 
         on-move
         (mf/use-callback
          (mf/deps file)
          (fn [team-id project-id]
-           (let [data  {:ids #{(:id file)}
+           (let [data  {:ids (set (map :id files))
                         :project-id project-id}
 
                  mdata {:on-success
                         #(do
-                           (st/emit! (dm/success (tr "dashboard.success-move-file")))
+                           (if multi?
+                             (st/emit! (dm/success (tr "dashboard.success-move-files")))
+                             (st/emit! (dm/success (tr "dashboard.success-move-file"))))
                            (if (or navigate? (not= team-id current-team-id))
                              (st/emit! (rt/nav :dashboard-files
                                                {:team-id team-id
@@ -164,32 +179,42 @@
             (reset! teams [])))))
 
     (when current-team
-      [:& context-menu {:on-close on-menu-close
-                        :show show?
-                        :fixed? (or (not= top 0) (not= left 0))
-                        :min-width? true
-                        :top top
-                        :left left
-                        :options [[(tr "dashboard.open-in-new-tab") on-new-tab]
-                                  [(tr "labels.rename") on-edit]
-                                  [(tr "dashboard.duplicate") on-duplicate]
-                                  (when (or (seq current-projects) (seq other-teams))
-                                    [(tr "dashboard.move-to") nil
-                                     (conj (vec (for [project current-projects]
-                                                  [(project-name project)
-                                                   (on-move (:id current-team)
-                                                            (:id project))]))
-                                           (when (seq other-teams)
-                                             [(tr "dashboard.move-to-other-team") nil
-                                              (for [team other-teams]
-                                                [(team-name team) nil
-                                                 (for [sub-project (:projects team)]
-                                                   [(project-name sub-project)
-                                                    (on-move (:id team)
-                                                             (:id sub-project))])])]))])
-                                  (if (:is-shared file)
-                                    [(tr "dashboard.remove-shared") on-del-shared]
-                                    [(tr "dashboard.add-shared") on-add-shared])
-                                  [:separator]
-                                  [(tr "labels.delete") on-delete]]}])))
+      (let [sub-options (conj (vec (for [project current-projects]
+                                     [(project-name project)
+                                      (on-move (:id current-team)
+                                               (:id project))]))
+                              (when (seq other-teams)
+                                [(tr "dashboard.move-to-other-team") nil
+                                 (for [team other-teams]
+                                   [(team-name team) nil
+                                    (for [sub-project (:projects team)]
+                                      [(project-name sub-project)
+                                       (on-move (:id team)
+                                                (:id sub-project))])])]))
+
+            options (if multi?
+                      [[(tr "dashboard.duplicate-multi" file-count) on-duplicate]
+                       (when (or (seq current-projects) (seq other-teams))
+                         [(tr "dashboard.move-to-multi" file-count) nil sub-options])
+                       [:separator]
+                       [(tr "labels.delete-multi-files" file-count) on-delete]]
+
+                      [[(tr "dashboard.open-in-new-tab") on-new-tab]
+                       [(tr "labels.rename") on-edit]
+                       [(tr "dashboard.duplicate") on-duplicate]
+                       (when (or (seq current-projects) (seq other-teams))
+                           [(tr "dashboard.move-to") nil sub-options])
+                       (if (:is-shared file)
+                         [(tr "dashboard.remove-shared") on-del-shared]
+                         [(tr "dashboard.add-shared") on-add-shared])
+                       [:separator]
+                       [(tr "labels.delete") on-delete]])]
+
+          [:& context-menu {:on-close on-menu-close
+                            :show show?
+                            :fixed? (or (not= top 0) (not= left 0))
+                            :min-width? true
+                            :top top
+                            :left left
+                            :options options}]))))
 

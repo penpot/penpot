@@ -505,6 +505,13 @@
     },
     "used-in" : [ "src/app/main/ui/dashboard/project_menu.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
+  "dashboard.duplicate-multi" : {
+    "translations" : {
+      "en" : "Duplicate %s files",
+      "es" : "Duplicar %s archivos"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
+  },
   "dashboard.empty-files" : {
     "translations" : {
       "ca" : "Encara no hi ha cap arxiu aquí",
@@ -569,6 +576,13 @@
       "es" : "Mover a"
     },
     "used-in" : [ "src/app/main/ui/dashboard/project_menu.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
+  },
+  "dashboard.move-to-multi" : {
+    "translations" : {
+      "en" : "Move %s files to",
+      "es" : "Mover %s archivos a"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "dashboard.move-to-other-team" : {
     "translations" : {
@@ -853,6 +867,13 @@
       "es" : "Tu proyecto ha sido movido con éxito"
     },
     "used-in" : [ "src/app/main/ui/dashboard/project_menu.cljs" ]
+  },
+  "dashboard.success-move-files" : {
+    "translations" : {
+      "en" : "Your files has been moved successfully",
+      "es" : "Tus archivos han sido movidos con éxito"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "dashboard.switch-team" : {
     "translations" : {
@@ -2163,6 +2184,13 @@
     },
     "used-in" : [ "src/app/main/ui/comments.cljs" ]
   },
+  "labels.delete-multi-files" : {
+    "translations" : {
+      "en" : "Delete %s files",
+      "es" : "Borrar %s archivos"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/file-menu.cljs" ]
+  },
   "labels.drafts" : {
     "translations" : {
       "de" : "Entwürfe",
@@ -2879,6 +2907,27 @@
       "es" : "Eliminando archivo",
       "fr" : "Supprimer un fichier",
       "zh_cn" : "正在删除文档"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
+  },
+  "modals.delete-file-multi-confirm.accept" : {
+    "translations" : {
+      "en" : "Delete files",
+      "es" : "Eliminar archivos"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
+  },
+  "modals.delete-file-multi-confirm.message" : {
+    "translations" : {
+      "en" : "Are you sure you want to delete %s files?",
+      "es" : "¿Seguro que quieres eliminar %s archivos?"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
+  },
+  "modals.delete-file-multi-confirm.title" : {
+    "translations" : {
+      "en" : "Deleting %s files",
+      "es" : "Eliminando %s archivos"
     },
     "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
