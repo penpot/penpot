@@ -72,20 +72,25 @@
         menu-ref  (mf/use-ref)
         selected? (contains? selected-files id)
 
+        selected-file-objs
+        (deref refs/dashboard-selected-file-objs)
+          ;; not needed to subscribe and repaint if changed
+
         on-menu-close
         (mf/use-callback
           #(swap! local assoc :menu-open false))
 
         on-select
         (mf/use-callback
-          (mf/deps id)
+          (mf/deps id selected? selected-files @local)
           (fn [event]
-            (dom/prevent-default event)
-            (dom/stop-propagation event)
-            (let [shift? (kbd/shift? event)]
-              (when-not shift?
-                (st/emit! (dd/clear-selected-files)))
-              (st/emit! (dd/toggle-file-select {:file file})))))
+            (when (and (or (not selected?) (> (count selected-files) 1))
+                       (not (:menu-open @local)))
+              (dom/stop-propagation event)
+              (let [shift? (kbd/shift? event)]
+                (when-not shift?
+                  (st/emit! (dd/clear-selected-files)))
+                (st/emit! (dd/toggle-file-select {:file file}))))))
 
         on-navigate
         (mf/use-callback
@@ -138,9 +143,14 @@
 
         on-menu-click
         (mf/use-callback
-         (mf/deps file)
+         (mf/deps file selected?)
          (fn [event]
            (dom/prevent-default event)
+           (when-not selected?
+             (let [shift? (kbd/shift? event)]
+               (when-not shift?
+                 (st/emit! (dd/clear-selected-files)))
+               (st/emit! (dd/toggle-file-select {:file file}))))
            (let [position (dom/get-client-position event)]
              (swap! local assoc :menu-open true
                                 :menu-pos position))))
@@ -185,13 +195,14 @@
        {:ref menu-ref
         :on-click on-menu-click}
        i/actions
-       [:& file-menu {:file file
-                      :show? (:menu-open @local)
-                      :left (:x (:menu-pos @local))
-                      :top (:y (:menu-pos @local))
-                      :navigate? navigate?
-                      :on-edit on-edit
-                      :on-menu-close on-menu-close}]]]]))
+       (when selected?
+         [:& file-menu {:files selected-file-objs
+                        :show? (:menu-open @local)
+                        :left (:x (:menu-pos @local))
+                        :top (:y (:menu-pos @local))
+                        :navigate? navigate?
+                        :on-edit on-edit
+                        :on-menu-close on-menu-close}])]]]))
 
 (mf/defc empty-placeholder
   [{:keys [dragging?] :as props}]
