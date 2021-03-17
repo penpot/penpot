@@ -137,7 +137,7 @@
              (str (:max-batch-size cfg)))
   (let [input (batch-events cfg (::events-ch session))
         mcnt  (mtx/create
-               {:name "http_session_updater_count"
+               {:name "http_session_update_total"
                 :help "A counter of session update batch events."
                 :registry (:registry metrics)
                 :type :counter})]
