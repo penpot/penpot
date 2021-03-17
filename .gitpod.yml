@@ -11,6 +11,7 @@ ports:
     onOpen: notify
     visibility: private
   - port: 3449
+    onOpen: open-preview
   - port: 6060
   - port: 9090
   # exporter shadow server
@@ -48,7 +49,7 @@ tasks:
       [[ ! -z ${GNUGPG_KEY}  ]] &&
       git config --global commit.gpgsign true &&
       git config --global user.signingkey ${GNUGPG_KEY}
-    command: cd -
+    command: cd $GITPOD_REPO_ROOT
 
   - before: yarn --cwd ./frontend/ install
     name: frontend shadow watch
