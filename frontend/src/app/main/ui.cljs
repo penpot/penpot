@@ -20,6 +20,7 @@
    [app.main.store :as st]
    [app.main.ui.auth :refer [auth]]
    [app.main.ui.auth.verify-token :refer [verify-token]]
+   [app.main.ui.components.fullscreen :as fs]
    [app.main.ui.context :as ctx]
    [app.main.ui.cursors :as c]
    [app.main.ui.dashboard :refer [dashboard]]
@@ -79,11 +80,6 @@
      :conform
      {:path-params ::viewer-path-params
       :query-params ::viewer-query-params}}]
-
-   ["/handoff/:file-id/:page-id"
-    {:name :handoff
-     :conform {:path-params ::viewer-path-params
-               :query-params ::viewer-query-params}}]
 
    (when *assert*
      ["/debug/icons-preview" :debug-icons-preview])
@@ -151,22 +147,17 @@
            section (get-in route [:query-params :section] :interactions)
            file-id (get-in route [:path-params :file-id])
            page-id (get-in route [:path-params :page-id])]
-       [:& viewer-page {:page-id page-id
-                        :file-id file-id
-                        :section section
-                        :index index
-                        :token token}])
-
-     :handoff
-     (let [file-id (get-in route [:path-params :file-id])
-           page-id (get-in route [:path-params :page-id])
-           index   (get-in route [:query-params :index])
-           token   (get-in route [:query-params :token])]
-
-       [:& handoff {:page-id page-id
-                    :file-id file-id
-                    :index index
-                    :token token}])
+       [:& fs/fullscreen-wrapper {}
+        (if (= section :handoff)
+          [:& handoff {:page-id page-id
+                       :file-id file-id
+                       :index index
+                       :token token}]
+          [:& viewer-page {:page-id page-id
+                           :file-id file-id
+                           :section section
+                           :index index
+                           :token token}])])
 
      :render-object
      (do
