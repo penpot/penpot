@@ -194,6 +194,7 @@
 
 ;; --- CONNECTION INIT
 
+(declare send-presence)
 (declare handle-message)
 (declare start-loop!)
 
@@ -211,7 +212,7 @@
             (.disconnect session)))))))
 
 (defn- start-loop!
-  [{:keys [rcv-ch out-ch sub-ch session-id] :as cfg}]
+  [{:keys [rcv-ch out-ch sub-ch session-id profile-id] :as cfg}]
   (aa/go-try
    (loop []
      (let [timeout    (a/timeout 30000)
@@ -224,11 +225,17 @@
            (aa/<? (handle-message cfg val))
            (recur))
 
-         ;; If message comes from subscription channel; we just need
-         ;; to foreward it to the output channel.
+
+         ;; Process message coming from pubsub.
          (and (= port sub-ch) (some? val))
          (do
            (when-not (= (:session-id val) session-id)
+             ;; If we receive a connect message of other user, we need
+             ;; to send an update presence to all participants.
+             (when (= :connect (:type val))
+               (a/<! (send-presence cfg)))
+
+             ;; Then, just forward the message
              (a/>! out-ch val))
            (recur))
 
@@ -243,51 +250,14 @@
          :else
          nil)))))
 
-;; --- PRESENCE HANDLING API
-
-(def ^:private
-  sql:retrieve-presence
-  "select * from presence
-    where file_id=?
-      and (clock_timestamp() - updated_at) < '5 min'::interval")
-
-(def ^:private
-  sql:update-presence
-  "insert into presence (file_id, session_id, profile_id, updated_at)
-   values (?, ?, ?, clock_timestamp())
-       on conflict (file_id, session_id, profile_id)
-       do update set updated_at=clock_timestamp()")
-
-(defn- retrieve-presence
-  [{:keys [pool file-id] :as cfg}]
-  (let [rows (db/exec! pool [sql:retrieve-presence file-id])]
-    (mapv (juxt :session-id :profile-id) rows)))
-
-(defn- retrieve-presence*
-  [{:keys [executor] :as cfg}]
-  (aa/with-thread executor
-    (retrieve-presence cfg)))
-
-(defn- update-presence
-  [{:keys [pool file-id session-id profile-id] :as cfg}]
-  (let [sql [sql:update-presence file-id session-id profile-id]]
-    (db/exec-one! pool sql)))
-
-(defn- update-presence*
-  [{:keys [executor] :as cfg}]
-  (aa/with-thread executor
-    (update-presence cfg)))
-
-(defn- delete-presence
-  [{:keys [pool file-id session-id profile-id] :as cfg}]
-  (db/delete! pool :presence {:file-id file-id
-                              :profile-id profile-id
-                              :session-id session-id}))
-
-(defn- delete-presence*
-  [{:keys [executor] :as cfg}]
-  (aa/with-thread executor
-    (delete-presence cfg)))
+(defn send-presence
+  ([cfg] (send-presence cfg :presence))
+  ([{:keys [msgbus session-id profile-id file-id]} type]
+   (a/go
+     (a/<! (msgbus :pub {:topic file-id
+                         :message {:type type
+                                   :session-id session-id
+                                   :profile-id profile-id}})))))
 
 ;; --- INCOMING MSG PROCESSING
 
@@ -297,24 +267,16 @@
 (defmethod handle-message :connect
   [{:keys [file-id msgbus] :as cfg} _message]
   ;; (log/debugf "profile '%s' is connected to file '%s'" profile-id file-id)
-  (aa/go-try
-   (aa/<? (update-presence* cfg))
-   (let [members (aa/<? (retrieve-presence* cfg))
-         val     {:topic file-id :message {:type :presence :sessions members}}]
-     (a/<! (msgbus :pub val)))))
+  (send-presence cfg :connect))
 
 (defmethod handle-message :disconnect
   [{:keys [file-id msgbus] :as cfg} _message]
   ;; (log/debugf "profile '%s' is disconnected from '%s'" profile-id file-id)
-  (aa/go-try
-   (aa/<? (delete-presence* cfg))
-   (let [members (aa/<? (retrieve-presence* cfg))
-         val     {:topic file-id :message {:type :presence :sessions members}}]
-     (a/<! (msgbus :pub val)))))
+  (send-presence cfg :disconnect))
 
 (defmethod handle-message :keepalive
   [cfg _message]
-  (update-presence* cfg))
+  (a/go (do :nothing)))
 
 (defmethod handle-message :pointer-update
   [{:keys [profile-id file-id session-id msgbus] :as cfg} message]
