@@ -77,3 +77,8 @@ tasks:
   - before: go get github.com/mailhog/MailHog
     name: mailhog
     command: MailHog
+
+  - name: Nginx
+    command: >
+      nginx &&
+      multitail /var/log/nginx/access.log -I /var/log/nginx/error.log
