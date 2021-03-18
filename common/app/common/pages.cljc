@@ -37,7 +37,7 @@
 (d/export helpers/get-container)
 (d/export helpers/get-shape)
 (d/export helpers/get-component)
-(d/export helpers/is-master-of)
+(d/export helpers/is-main-of)
 (d/export helpers/get-component-root)
 (d/export helpers/get-children)
 (d/export helpers/get-children-objects)

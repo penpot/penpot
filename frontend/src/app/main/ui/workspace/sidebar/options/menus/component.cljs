@@ -94,11 +94,11 @@
                             :options (if (= (:component-file values) current-file-id)
                                        [[(t locale "workspace.shape.menu.detach-instance") do-detach-component]
                                         [(t locale "workspace.shape.menu.reset-overrides") do-reset-component]
-                                        [(t locale "workspace.shape.menu.update-master") do-update-component]
-                                        [(t locale "workspace.shape.menu.show-master") do-show-component]]
+                                        [(t locale "workspace.shape.menu.update-main") do-update-component]
+                                        [(t locale "workspace.shape.menu.show-main") do-show-component]]
 
                                        [[(t locale "workspace.shape.menu.detach-instance") do-detach-component]
                                         [(t locale "workspace.shape.menu.reset-overrides") do-reset-component]
-                                        [(t locale "workspace.shape.menu.go-master") do-navigate-component-file]
-                                        [(t locale "workspace.shape.menu.update-master") do-update-remote-component]])}]]]]])))
+                                        [(t locale "workspace.shape.menu.go-main") do-navigate-component-file]
+                                        [(t locale "workspace.shape.menu.update-main") do-update-remote-component]])}]]]]])))
 
