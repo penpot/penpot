@@ -21,7 +21,6 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.comments :as cmt]
-   [app.main.ui.components.fullscreen :as fs]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.viewer.header :refer [header]]
@@ -243,23 +242,22 @@
     (mf/use-effect on-mount)
     (hooks/use-shortcuts sc/shortcuts)
 
-    [:& fs/fullscreen-wrapper {}
-     [:div.viewer-layout
-      [:& header
-       {:data data
-        :state state
-        :section section
-        :index index}]
+    [:div.viewer-layout
+     [:& header
+      {:data data
+       :state state
+       :section section
+       :index index}]
 
-      [:div.viewer-content {:on-click on-click}
-       (when (:show-thumbnails state)
-         [:& thumbnails-panel {:screen :viewer
-                               :index index
-                               :data data}])
-       [:& main-panel {:data data
-                       :section section
-                       :state state
-                       :index index}]]]]))
+     [:div.viewer-content {:on-click on-click}
+      (when (:show-thumbnails state)
+        [:& thumbnails-panel {:screen :viewer
+                              :index index
+                              :data data}])
+      [:& main-panel {:data data
+                      :section section
+                      :state state
+                      :index index}]]]))
 
 
 ;; --- Component: Viewer Page
