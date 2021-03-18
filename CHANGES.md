@@ -6,12 +6,13 @@
 
 - Add blob-encoding v3 (uses ZSTD+transit) [#738](https://github.com/penpot/penpot/pull/738)
 - Add http caching layer on top of Query RPC.
-- Add layer opacity and blend mode to shapes
+- Add layer opacity and blend mode to shapes [Taiga #937](https://tree.taiga.io/project/penpot/us/937)
 - Add more chinese translations [#726](https://github.com/penpot/penpot/pull/726)
 - Add thumbnail in memory caching mechanism.
 - Duplicate and move files and projects [Taiga #267](https://tree.taiga.io/project/penpot/us/267)
-- Import SVG will create Penpot's shapes
+- Import SVG will create Penpot's shapes [Taiga #1006](https://tree.taiga.io/project/penpot/us/1066)
 - Improve french translations [#731](https://github.com/penpot/penpot/pull/731)
+- Reimplement workspace presence (remove database state).
 - Replace Slate-Editor with DraftJS [Taiga #1346](https://tree.taiga.io/project/penpot/us/1346)
 
 
@@ -33,9 +34,17 @@
 - Fix problem with default square grid [Taiga #1344](https://tree.taiga.io/project/penpot/issue/1344)
 - Fix error with the "Navigate to" button on prototypes [Taiga #1268](https://tree.taiga.io/project/penpot/issue/1268)
 
+
+### :arrow_up: Deps updates
+
+- Update backend to JDK16.
+- Update exporter nodejs to v14.16.0
+
+
 ### :heart: Community contributions by (Thank you!)
 
--  iblueer [#731](https://github.com/penpot/penpot/pull/731)
+-  iblueer [#726](https://github.com/penpot/penpot/pull/726)
+
 
 ## 1.3.0-alpha
 
