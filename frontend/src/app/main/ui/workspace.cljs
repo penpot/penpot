@@ -29,7 +29,8 @@
    [app.main.ui.workspace.libraries]
    [app.main.ui.workspace.rules :refer [horizontal-rule vertical-rule]]
    [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
-   [app.main.ui.workspace.viewport :refer [viewport viewport-actions coordinates]]
+   [app.main.ui.workspace.viewport :refer [viewport]]
+   [app.main.ui.workspace.coordinates :as coordinates]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
@@ -57,7 +58,7 @@
      [:& vertical-rule {:zoom zoom
                         :vbox vbox
                         :vport vport}]
-     [:& coordinates {:colorpalette? colorpalette?}]]))
+     [:& coordinates/coordinates {:colorpalette? colorpalette?}]]))
 
 (mf/defc workspace-content
   {::mf/wrap-props false}
@@ -80,7 +81,6 @@
                               :vport vport
                               :colorpalette? (contains? layout :colorpalette)}])
 
-       [:& viewport-actions]
        [:& viewport {:file file
                      :local local
                      :layout layout}]]]

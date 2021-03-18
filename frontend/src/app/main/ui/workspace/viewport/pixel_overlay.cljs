@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.workspace.colorpicker.pixel-overlay
+(ns app.main.ui.workspace.viewport.pixel-overlay
   (:require
    [app.common.uuid :as uuid]
    [app.main.data.colors :as dwc]
@@ -59,7 +59,8 @@
   [props]
   (let [vport         (unchecked-get props "vport")
         vbox          (unchecked-get props "vbox")
-        viewport-node (unchecked-get props "viewport")
+        viewport-ref  (unchecked-get props "viewport-ref")
+        viewport-node (mf/ref-val viewport-ref)
         options       (unchecked-get props "options")
         svg-ref       (mf/use-ref nil)
         canvas-ref    (mf/use-ref nil)
@@ -133,7 +134,7 @@
          (mf/deps img-ref)
          (fn []
            (let [img-node (mf/ref-val img-ref)
-                 svg-node (mf/ref-val svg-ref)
+                 svg-node #_(mf/ref-val svg-ref) (dom/get-element "render")
                  xml  (-> (js/XMLSerializer.)
                           (.serializeToString svg-node)
                           js/encodeURIComponent
@@ -160,30 +161,26 @@
          #(rx/dispose! sub))))
 
     (mf/use-effect
-     (mf/deps svg-ref)
+     #_(mf/deps svg-ref)
      (fn []
-       (when svg-ref
-         (let [config #js {:attributes true
-                           :childList true
-                           :subtree true
-                           :characterData true}
-               svg-node (mf/ref-val svg-ref)
-               observer (js/MutationObserver. handle-svg-change)]
-           (.observe observer svg-node config)
-           (handle-svg-change)
+       (let [config #js {:attributes true
+                         :childList true
+                         :subtree true
+                         :characterData true}
+             svg-node #_(mf/ref-val svg-ref) (dom/get-element "render")
+             observer (js/MutationObserver. handle-svg-change)
+             ]
+         (.observe observer svg-node config)
+         (handle-svg-change)
 
-           ;; Disconnect on unmount
-           #(.disconnect observer)))))
+         ;; Disconnect on unmount
+         #(.disconnect observer)
+         )))
 
     [:*
-     [:div.overlay
+     [:div.pixel-overlay
       {:tab-index 0
-       :style {:position "absolute"
-               :top 0
-               :left 0
-               :width "100%"
-               :height "100%"
-               :cursor cur/picker}
+       :style {:cursor cur/picker}
        :on-mouse-down handle-mouse-down-picker
        :on-mouse-up handle-mouse-up-picker
        :on-mouse-move handle-mouse-move-picker}
@@ -200,7 +197,7 @@
                          :width "100%"
                          :height "100%"}}]
 
-       [:& (mf/provider muc/embed-ctx) {:value true}
+       #_[:& (mf/provider muc/embed-ctx) {:value true}
         [:svg.viewport
          {:ref svg-ref
           :preserveAspectRatio "xMidYMid meet"

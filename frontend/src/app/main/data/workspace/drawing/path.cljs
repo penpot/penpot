@@ -9,23 +9,22 @@
 
 (ns app.main.data.workspace.drawing.path
   (:require
-   [clojure.spec.alpha :as s]
-   [app.common.spec :as us]
-   [beicon.core :as rx]
-   [potok.core :as ptk]
-   [app.common.math :as mth]
+   [app.common.data :as d]
+   [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.geom.matrix :as gmt]
-   [app.util.data :as ud]
-   [app.common.data :as cd]
-   [app.util.geom.path :as ugp]
-   [app.main.streams :as ms]
-   [app.main.store :as st]
+   [app.common.geom.shapes.path :as gsp]
+   [app.common.math :as mth]
+   [app.common.pages :as cp]
+   [app.common.spec :as us]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing.common :as common]
-   [app.common.geom.shapes.path :as gsp]
-   [app.common.pages :as cp]))
+   [app.main.store :as st]
+   [app.main.streams :as ms]
+   [app.util.geom.path :as ugp]
+   [beicon.core :as rx]
+   [clojure.spec.alpha :as s]
+   [potok.core :as ptk]))
 
 ;; SCHEMAS
 
@@ -83,7 +82,7 @@
   [state & path]
   (let [edit-id (get-in state [:workspace-local :edition])
         page-id (:current-page-id state)]
-    (cd/concat
+    (d/concat
      (if edit-id
        [:workspace-data :pages-index page-id :objects edit-id]
        [:workspace-drawing :object])
@@ -515,31 +514,7 @@
                    mousedown-events)
          (rx/of (finish-path "after-events")))))))
 
-(defn stop-path-edit []
-  (ptk/reify ::stop-path-edit
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [id (get-in state [:workspace-local :edition])]
-        (update state :workspace-local dissoc :edit-path id)))))
 
-(defn start-path-edit
-  [id]
-  (ptk/reify ::start-path-edit
-    ptk/UpdateEvent
-    (update [_ state]
-      ;; Only edit if the object has been created
-      (if-let [id (get-in state [:workspace-local :edition])]
-        (assoc-in state [:workspace-local :edit-path id] {:edit-mode :move
-                                                          :selected #{}
-                                                          :snap-toggled true})
-        state))
-
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (->> stream
-           (rx/filter #(= % :interrupt))
-           (rx/take 1)
-           (rx/map #(stop-path-edit))))))
 
 (defn modify-point [index prefix dx dy]
   (ptk/reify ::modify-point
@@ -635,7 +610,7 @@
                                 (let [point (ugp/command->point command)]
                                   (= point start-point)))
 
-            point-indices (->> (cd/enumerate content)
+            point-indices (->> (d/enumerate content)
                                (filter command-for-point)
                                (map first))
 
@@ -646,8 +621,8 @@
                                 (assoc-in [index :y] dy)))
 
             handler-reducer (fn [modifiers [index prefix]]
-                              (let [cx (ud/prefix-keyword prefix :x)
-                                    cy (ud/prefix-keyword prefix :y)]
+                              (let [cx (d/prefix-keyword prefix :x)
+                                    cy (d/prefix-keyword prefix :y)]
                                 (-> modifiers
                                     (assoc-in [index cx] dx)
                                     (assoc-in [index cy] dy))))
@@ -680,8 +655,8 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [id (get-in state [:workspace-local :edition])
-            cx (ud/prefix-keyword prefix :x)
-            cy (ud/prefix-keyword prefix :y)
+            cx (d/prefix-keyword prefix :x)
+            cy (d/prefix-keyword prefix :y)
             start-point @ms/mouse-position
             modifiers (get-in state [:workspace-local :edit-path id :content-modifiers])
             start-delta-x (get-in modifiers [index cx] 0)
@@ -838,7 +813,6 @@
       (->> (rx/of (setup-frame-path)
                   common/handle-finish-drawing
                   (dwc/start-edition-mode shape-id)
-                  (start-path-edit shape-id)
                   (change-edit-mode :draw))))))
 
 (defn handle-new-shape

@@ -14,7 +14,6 @@
 (def embed-ctx (mf/create-context false))
 (def render-ctx (mf/create-context nil))
 (def def-ctx (mf/create-context false))
-(def ghost-ctx (mf/create-context false))
 
 (def current-route (mf/create-context nil))
 (def current-team-id (mf/create-context nil))

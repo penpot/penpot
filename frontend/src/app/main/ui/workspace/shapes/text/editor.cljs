@@ -31,17 +31,6 @@
    goog.events.EventType
    goog.events.KeyCodes))
 
-;; --- Data functions
-
-;; TODO: why we need this?
-;; (defn- fix-gradients
-;;   "Fix for the gradient types that need to be keywords"
-;;   [content]
-;;   (let [fix-node
-;;         (fn [node]
-;;           (d/update-in-when node [:fill-color-gradient :type] keyword))]
-;;     (txt/map-node fix-node content)))
-
 ;; --- Text Editor Rendering
 
 (mf/defc block-component
@@ -95,22 +84,6 @@
 
         blured        (mf/use-var false)
 
-        on-click-outside
-        (fn [event]
-          (let [target     (dom/get-target event)
-                options    (dom/get-element-by-class "element-options")
-                assets     (dom/get-element-by-class "assets-bar")
-                cpicker    (dom/get-element-by-class "colorpicker-tooltip")
-                palette    (dom/get-element-by-class "color-palette")
-                self       (mf/ref-val self-ref)]
-            (when-not (or (and options (.contains options target))
-                          (and assets  (.contains assets target))
-                          (and self    (.contains self target))
-                          (and cpicker (.contains cpicker target))
-                          (and palette (.contains palette target))
-                          (= "foreignObject" (.-tagName ^js target)))
-              (st/emit! dw/clear-edition-mode))))
-
         on-key-up
         (fn [event]
           (dom/stop-propagation event)
@@ -121,9 +94,7 @@
 
         on-mount
         (fn []
-          (let [keys [(events/listen js/document EventType.MOUSEDOWN on-click-outside)
-                      (events/listen js/document EventType.CLICK on-click-outside)
-                      (events/listen js/document EventType.KEYUP on-key-up)]]
+          (let [keys [(events/listen js/document EventType.KEYUP on-key-up)]]
             (st/emit! (dwt/initialize-editor-state shape default-decorator)
                       (dwt/select-all shape))
             #(do

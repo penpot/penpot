@@ -9,12 +9,12 @@
 
 (ns app.main.ui.workspace.shapes.path.editor
   (:require
+   [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.main.data.workspace.drawing.path :as drp]
    [app.main.store :as st]
    [app.main.ui.cursors :as cur]
    [app.main.ui.workspace.shapes.path.common :as pc]
-   [app.util.data :as d]
    [app.util.dom :as dom]
    [app.util.geom.path :as ugp]
    [goog.events :as events]
@@ -35,32 +35,32 @@
         on-click
         (fn [event]
           (when-not last-p?
-            (do (dom/stop-propagation event)
-                (dom/prevent-default event)
+            (dom/stop-propagation event)
+            (dom/prevent-default event)
 
-                (cond
-                  (and (= edit-mode :move) (not selected?))
-                  (st/emit! (drp/select-node position))
+            (cond
+              (and (= edit-mode :move) (not selected?))
+              (st/emit! (drp/select-node position))
 
-                  (and (= edit-mode :move) selected?)
-                  (st/emit! (drp/deselect-node position))))))
+              (and (= edit-mode :move) selected?)
+              (st/emit! (drp/deselect-node position)))))
 
 
         on-mouse-down
         (fn [event]
           (when-not last-p?
-            (do (dom/stop-propagation event)
-                (dom/prevent-default event)
+            (dom/stop-propagation event)
+            (dom/prevent-default event)
 
-                (cond
-                  (= edit-mode :move)
-                  (st/emit! (drp/start-move-path-point position))
+            (cond
+              (= edit-mode :move)
+              (st/emit! (drp/start-move-path-point position))
 
-                  (and (= edit-mode :draw) start-path?)
-                  (st/emit! (drp/start-path-from-point position))
+              (and (= edit-mode :draw) start-path?)
+              (st/emit! (drp/start-path-from-point position))
 
-                  (and (= edit-mode :draw) (not start-path?))
-                  (st/emit! (drp/close-path-drag-start position))))))]
+              (and (= edit-mode :draw) (not start-path?))
+              (st/emit! (drp/close-path-drag-start position)))))]
 
     [:g.path-point
      [:circle.path-point
@@ -170,7 +170,9 @@
                 selected-handlers
                 selected-points
                 hover-handlers
-                hover-points]} (mf/deref edit-path-ref)
+                hover-points]
+         :as edit-path} (mf/deref edit-path-ref)
+
         {:keys [content]} shape
         content (ugp/apply-content-modifiers content content-modifiers)
         points (->> content ugp/content->points (into #{}))

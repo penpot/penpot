@@ -9,87 +9,19 @@
 
 (ns app.main.ui.workspace.comments
   (:require
-   [app.config :as cfg]
+   [app.main.data.comments :as dcm]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.comments :as dwcm]
-   [app.main.data.comments :as dcm]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.context :as ctx]
-   [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.icons :as i]
    [app.main.ui.comments :as cmt]
-   [app.util.time :as dt]
-   [app.util.timers :as tm]
+   [app.main.ui.components.dropdown :refer [dropdown]]
+   [app.main.ui.context :as ctx]
+   [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t tr]]
-   [cuerdas.core :as str]
-   [okulary.core :as l]
+   [app.util.timers :as tm]
    [rumext.alpha :as mf]))
-
-(def threads-ref
-  (l/derived :comment-threads st/state))
-
-(mf/defc comments-layer
-  [{:keys [vbox vport zoom file-id page-id drawing] :as props}]
-  (let [pos-x       (* (- (:x vbox)) zoom)
-        pos-y       (* (- (:y vbox)) zoom)
-
-        profile     (mf/deref refs/profile)
-        users       (mf/deref refs/users)
-        local       (mf/deref refs/comments-local)
-        threads-map (mf/deref threads-ref)
-
-        threads     (->> (vals threads-map)
-                         (filter #(= (:page-id %) page-id))
-                         (dcm/apply-filters local profile))
-
-        on-bubble-click
-        (fn [{:keys [id] :as thread}]
-          (if (= (:open local) id)
-            (st/emit! (dcm/close-thread))
-            (st/emit! (dcm/open-thread thread))))
-
-        on-draft-cancel
-        (mf/use-callback
-         (st/emitf :interrupt))
-
-        on-draft-submit
-        (mf/use-callback
-         (fn [draft]
-           (st/emit! (dcm/create-thread draft))))]
-
-    (mf/use-effect
-     (mf/deps file-id)
-     (fn []
-       (st/emit! (dwcm/initialize-comments file-id))
-       (fn []
-         (st/emit! ::dwcm/finalize))))
-
-    [:div.comments-section
-     [:div.workspace-comments-container
-      {:style {:width (str (:width vport) "px")
-               :height (str (:height vport) "px")}}
-      [:div.threads {:style {:transform (str/format "translate(%spx, %spx)" pos-x pos-y)}}
-       (for [item threads]
-         [:& cmt/thread-bubble {:thread item
-                                :zoom zoom
-                                :on-click on-bubble-click
-                                :open? (= (:id item) (:open local))
-                                :key (:seqn item)}])
-
-       (when-let [id (:open local)]
-         (when-let [thread (get threads-map id)]
-           [:& cmt/thread-comments {:thread thread
-                                    :users users
-                                    :zoom zoom}]))
-
-       (when-let [draft (:comment drawing)]
-         [:& cmt/draft-thread {:draft draft
-                               :on-cancel on-draft-cancel
-                               :on-submit on-draft-submit
-                               :zoom zoom}])]]]))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Sidebar
@@ -130,7 +62,7 @@
 
 (mf/defc comments-sidebar
   []
-  (let [threads-map (mf/deref threads-ref)
+  (let [threads-map (mf/deref refs/threads-ref)
         profile     (mf/deref refs/profile)
         users       (mf/deref refs/users)
         local       (mf/deref refs/comments-local)
@@ -184,5 +116,3 @@
        [:div.thread-groups-placeholder
         i/chat
         (tr "labels.no-comments-available")])]))
-
-

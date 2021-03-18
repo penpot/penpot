@@ -518,6 +518,31 @@
          (rx/of (expand-all-parents ids objects))))))
 
 ;; --- Start shape "edition mode"
+(defn stop-path-edit []
+  (ptk/reify ::stop-path-edit
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [id (get-in state [:workspace-local :edition])]
+        (update state :workspace-local dissoc :edit-path id)))))
+
+(defn start-path-edit
+  [id]
+  (ptk/reify ::start-path-edit
+    ptk/UpdateEvent
+    (update [_ state]
+      ;; Only edit if the object has been created
+      (if-let [id (get-in state [:workspace-local :edition])]
+        (assoc-in state [:workspace-local :edit-path id] {:edit-mode :move
+                                                          :selected #{}
+                                                          :snap-toggled true})
+        state))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> stream
+           (rx/filter #(= % :interrupt))
+           (rx/take 1)
+           (rx/map #(stop-path-edit))))))
 
 (declare clear-edition-mode)
 
@@ -527,8 +552,7 @@
   (ptk/reify ::start-edition-mode
     ptk/UpdateEvent
     (update [_ state]
-      (let [page-id (:current-page-id state)
-            objects (get-in state [:workspace-data :pages-index page-id :objects])]
+      (let [objects (lookup-page-objects state)]
         ;; Can only edit objects that exist
         (if (contains? objects id)
           (-> state
@@ -538,10 +562,15 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-      (->> stream
-           (rx/filter interrupt?)
-           (rx/take 1)
-           (rx/map (constantly clear-edition-mode))))))
+      (let [objects (lookup-page-objects state)
+            path? (= :path (get-in objects [id :type]))]
+        (rx/merge
+         (when path?
+           (rx/of (start-path-edit id)))
+         (->> stream
+              (rx/filter interrupt?)
+              (rx/take 1)
+              (rx/map (constantly clear-edition-mode))))))))
 
 (def clear-edition-mode
   (ptk/reify ::clear-edition-mode

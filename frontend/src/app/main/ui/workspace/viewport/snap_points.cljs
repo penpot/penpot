@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.workspace.snap-points
+(ns app.main.ui.workspace.viewport.snap-points
   (:require
    [app.common.math :as mth]
    [app.common.data :as d]

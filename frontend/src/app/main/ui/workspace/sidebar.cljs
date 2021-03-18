@@ -50,3 +50,4 @@
       (if (= drawing-tool :comments)
         [:& comments-sidebar]
         [:> options-toolbox props])]]))
+
