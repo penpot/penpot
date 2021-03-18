@@ -11,8 +11,8 @@ RUN set -ex; \
     brew install imagemagick; \
     brew install mailhog; \
     brew install openldap; \
-    mkdir -p /var/log/nginx; \
-    chown gitpod:gitpod /var/log/nginx
+    sudo mkdir -p /var/log/nginx; \
+    sudo chown gitpod:gitpod /var/log/nginx
 
 COPY docker/gitpod/files/nginx.conf /etc/nginx/nginx.conf
 
