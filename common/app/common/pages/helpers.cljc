@@ -89,11 +89,11 @@
                (get-in libraries [library-id :data]))]
     (get-in file [:components component-id])))
 
-(defn is-master-of
-  [shape-master shape-inst]
+(defn is-main-of
+  [shape-main shape-inst]
   (and (:shape-ref shape-inst)
-       (or (= (:shape-ref shape-inst) (:id shape-master))
-           (= (:shape-ref shape-inst) (:shape-ref shape-master)))))
+       (or (= (:shape-ref shape-inst) (:id shape-main))
+           (= (:shape-ref shape-inst) (:shape-ref shape-main)))))
 
 (defn get-component-root
   [component]

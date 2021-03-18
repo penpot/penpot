@@ -33,7 +33,7 @@
                  (let [shape1 (thp/get-shape new-state :shape1)
 
                        [[group shape1] [c-group c-shape1] component]
-                       (thl/resolve-instance-and-master
+                       (thl/resolve-instance-and-main
                          new-state
                          (:parent-id shape1))
 
@@ -79,7 +79,7 @@
                        [[group shape1 shape2]
                         [c-group c-shape1 c-shape2]
                         component]
-                       (thl/resolve-instance-and-master
+                       (thl/resolve-instance-and-main
                          new-state
                          (:parent-id shape1))
 
@@ -129,7 +129,7 @@
                  (let [[[group shape1 shape2]
                         [c-group c-shape1 c-shape2]
                         component]
-                       (thl/resolve-instance-and-master
+                       (thl/resolve-instance-and-main
                          new-state
                          (thp/id :group1))
 
@@ -221,7 +221,7 @@
                        [[instance1 shape1]
                         [c-instance1 c-shape1]
                         component1]
-                       (thl/resolve-instance-and-master
+                       (thl/resolve-instance-and-main
                          new-state
                          (:id instance1))
 
@@ -314,7 +314,7 @@
                        [[instance2 shape2]
                         [c-instance2 c-shape2]
                         component]
-                       (thl/resolve-instance-and-master
+                       (thl/resolve-instance-and-main
                          new-state
                          new-instance-id)]
 

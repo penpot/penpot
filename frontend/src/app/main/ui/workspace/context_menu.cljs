@@ -207,9 +207,9 @@
                           :on-click do-detach-component}]
           [:& menu-entry {:title (t locale "workspace.shape.menu.reset-overrides")
                           :on-click do-reset-component}]
-          [:& menu-entry {:title (t locale "workspace.shape.menu.update-master")
+          [:& menu-entry {:title (t locale "workspace.shape.menu.update-main")
                           :on-click do-update-component}]
-          [:& menu-entry {:title (t locale "workspace.shape.menu.show-master")
+          [:& menu-entry {:title (t locale "workspace.shape.menu.show-main")
                           :on-click do-show-component}]]
          [:*
           [:& menu-separator]
@@ -217,9 +217,9 @@
                           :on-click do-detach-component}]
           [:& menu-entry {:title (t locale "workspace.shape.menu.reset-overrides")
                           :on-click do-reset-component}]
-          [:& menu-entry {:title (t locale "workspace.shape.menu.go-master")
+          [:& menu-entry {:title (t locale "workspace.shape.menu.go-main")
                           :on-click do-navigate-component-file}]
-          [:& menu-entry {:title (t locale "workspace.shape.menu.update-master")
+          [:& menu-entry {:title (t locale "workspace.shape.menu.update-main")
                           :on-click do-update-remote-component}]]))
 
      [:& menu-separator]

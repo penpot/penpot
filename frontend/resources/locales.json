@@ -5569,11 +5569,11 @@
     },
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs" ]
   },
-  "workspace.shape.menu.go-master" : {
+  "workspace.shape.menu.go-main" : {
     "translations" : {
       "de" : "Zur Hauptkomponentendatei wechseln",
-      "en" : "Go to master component file",
-      "es" : "Ir al archivo del componente maestro",
+      "en" : "Go to main component file",
+      "es" : "Ir al archivo del componente principal",
       "fr" : "Aller au fichier du composant principal",
       "zh_cn" : "前往主组件文档"
     },
@@ -5649,11 +5649,11 @@
     },
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs" ]
   },
-  "workspace.shape.menu.show-master" : {
+  "workspace.shape.menu.show-main" : {
     "translations" : {
       "de" : "Hauptkomponente anzeigen",
-      "en" : "Show master component",
-      "es" : "Ver componente maestro",
+      "en" : "Show main component",
+      "es" : "Ver componente principal",
       "fr" : "Afficher le composant principal",
       "zh_cn" : "显示主组件"
     },
@@ -5689,11 +5689,11 @@
     },
     "used-in" : [ "src/app/main/ui/workspace/context_menu.cljs" ]
   },
-  "workspace.shape.menu.update-master" : {
+  "workspace.shape.menu.update-main" : {
     "translations" : {
       "de" : "Hauptkomponente aktualisieren",
-      "en" : "Update master component",
-      "es" : "Actualizar componente maestro",
+      "en" : "Update main component",
+      "es" : "Actualizar componente principal",
       "fr" : "Actualiser le composant principal",
       "zh_cn" : "更新主组件"
     },
