@@ -50,12 +50,13 @@
 ;; --- Profile Fetched
 
 (defn profile-fetched
-  [{:keys [fullname] :as data}]
+  [{:keys [fullname id] :as data}]
   (us/verify ::profile data)
   (ptk/reify ::profile-fetched
     ptk/UpdateEvent
     (update [_ state]
       (-> state
+          (assoc :profile-id id)
           (assoc :profile data)
           ;; Safeguard if the profile is loaded after teams
           (assoc-in [:profile :teams] (get-in state [:profile :teams]))))
