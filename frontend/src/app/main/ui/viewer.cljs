@@ -271,6 +271,13 @@
 
   (let [data  (mf/deref refs/viewer-data)
         state (mf/deref refs/viewer-local)]
+
+    (mf/use-effect
+      (mf/deps (:file data))
+      #(when (:file data)
+         (dom/set-html-title (tr "title.viewer"
+                                 (get-in data [:file :name])))))
+
     (when (and data state)
       [:& viewer-content
        {:index index

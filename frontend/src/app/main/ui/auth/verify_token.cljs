@@ -20,8 +20,9 @@
    [app.main.ui.auth.recovery-request :refer [recovery-request-page]]
    [app.main.ui.auth.register :refer [register-page]]
    [app.main.ui.icons :as i]
+   [app.util.dom :as dom]
    [app.util.forms :as fm]
-   [app.util.i18n :as i18n :refer [tr t]]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.storage :refer [cache]]
    [app.util.timers :as ts]
@@ -71,6 +72,7 @@
   (let [token (get-in route [:query-params :token])]
     (mf/use-effect
      (fn []
+       (dom/set-html-title (tr "title.default"))
        (->> (rp/mutation :verify-token {:token token})
             (rx/subs
              (fn [tdata]
