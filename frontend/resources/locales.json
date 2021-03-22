@@ -5201,6 +5201,21 @@
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs" ]
   },
+
+  "workspace.options.text-options.direction-rtl" : {
+    "translations" : {
+      "en" : "RTL",
+      "es" : "RTL"
+    }
+  },
+
+  "workspace.options.text-options.direction-ltr" : {
+    "translations" : {
+      "en" : "LTR",
+      "es" : "LTR"
+    }
+  },
+
   "workspace.options.text-options.align-bottom" : {
     "translations" : {
       "de" : "Unten ausrichten",
