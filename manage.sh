@@ -9,7 +9,6 @@ export CURRENT_USER_ID=$(id -u);
 export CURRENT_VERSION=$(git describe --tags);
 export CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
 export CURRENT_HASH=$(git rev-parse --short HEAD);
-export CURRENT_BUILD=$(date '+%Y%m%d%H%M');
 
 function build-devenv {
     echo "Building development image $DEVENV_IMGNAME:latest..."
