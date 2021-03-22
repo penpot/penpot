@@ -3310,6 +3310,124 @@
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs", "src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs", "src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs", "src/app/main/ui/workspace/sidebar/options/menus/layer.cljs", "src/app/main/ui/workspace/sidebar/options/menus/typography.cljs", "src/app/main/ui/workspace/sidebar/options/menus/typography.cljs", "src/app/main/ui/workspace/sidebar/options/menus/typography.cljs", "src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs", "src/app/main/ui/workspace/sidebar/options/menus/blur.cljs" ]
   },
+  "title.dashboard.files" : {
+    "translations" : {
+      "en" : "%s - Penpot"
+    }
+  },
+  "title.dashboard.projects" : {
+    "translations" : {
+      "ca" : "Projectes - %s - Penpot",
+      "de" : "Projekte - %s - Penpot",
+      "en" : "Projects - %s - Penpot",
+      "es" : "Proyectos - %s - Penpot",
+      "fr" : "Projets - %s - Penpot",
+      "ru" : "Проекты - %s - Penpot",
+      "zh_cn" : "项目 - %s - Penpot"
+    }
+  },
+  "title.dashboard.search" : {
+    "translations" : {
+      "ca" : "Cerca - %s - Penpot",
+      "de" : "Suchen - %s - Penpot",
+      "en" : "Search - %s - Penpot",
+      "es" : "Buscar - %s - Penpot",
+      "fr" : "Rechercher - %s - Penpot",
+      "ru" : "Поиск - %s - Penpot",
+      "zh_cn" : "搜索 - %s - Penpot"
+    }
+  },
+  "title.dashboard.shared-libraries" : {
+    "translations" : {
+      "de" : "Gemeinsam genutzte Bibliotheken - %s - Penpot",
+      "en" : "Shared Libraries - %s - Penpot",
+      "es" : "Bibliotecas Compartidas - %s - Penpot",
+      "fr" : "Bibliothèques Partagées - %s - Penpot",
+      "ru" : "",
+      "zh_cn" : "共享库 - %s - Penpot"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs" ]
+  },
+  "title.default" : {
+    "translations" : {
+      "en" : "Penpot - Design Freedom for Teams",
+      "es" : "Penpot - Diseño Libre para Equipos"
+    }
+  },
+  "title.settings.feedback" : {
+    "translations" : {
+      "de" : "Feedback geben - Penpot",
+      "en" : "Give feedback - Penpot",
+      "es" : "Danos tu opinión - Penpot",
+      "fr" : "Donnez votre avis - Penpot",
+      "ru" : "Дать обратную связь - Penpot",
+      "zh_cn" : "提交反馈 - Penpot"
+    }
+  },
+  "title.settings.options" : {
+    "translations" : {
+      "de" : "Einstellungen - Penpot",
+      "en" : "Settings - Penpot",
+      "es" : "Configuración - Penpot",
+      "fr" : "Configuration - Penpot",
+      "ru" : "Параметры - Penpot",
+      "zh_cn" : "设置 - Penpot"
+    }
+  },
+  "title.settings.password" : {
+    "translations" : {
+      "de" : "Passwort - Penpot",
+      "en" : "Password - Penpot",
+      "es" : "Contraseña - Penpot",
+      "fr" : "Mot de passe - Penpot",
+      "ru" : "Пароль - Penpot",
+      "zh_cn" : "密码 - Penpot"
+    }
+  },
+  "title.settings.profile" : {
+    "translations" : {
+      "de" : "Profil - Penpot",
+      "en" : "Profile - Penpot",
+      "es" : "Perfil - Penpot",
+      "fr" : "Profil - Penpot",
+      "ru" : "Профиль - Penpot",
+      "zh_cn" : "个人资料 - Penpot"
+    }
+  },
+  "title.team-members" : {
+    "translations" : {
+      "de" : "Mitglieder - %s - Penpot",
+      "en" : "Members - %s - Penpot",
+      "es" : "Integrantes - %s - Penpot",
+      "fr" : "Membres - %s - Penpot",
+      "zh_cn" : "成员 - %s - Penpot"
+   }
+  },
+  "title.team-settings" : {
+    "translations" : {
+      "de" : "Einstellungen - %s - Penpot",
+      "en" : "Settings - %s - Penpot",
+      "es" : "Configuración - %s - Penpot",
+      "fr" : "Configuration - %s - Penpot",
+      "ru" : "Параметры - %s - Penpot",
+      "zh_cn" : "设置 - %s - Penpot"
+    }
+  },
+  "title.workspace" : {
+    "translations" : {
+      "en": "%s - Penpot"
+    }
+  },
+  "title.viewer" : {
+    "translations" : {
+      "de" : "%s - Ansichtsmodus - Penpot",
+      "en" : "%s - View mode - Penpot",
+      "es" : "%s - Modo de visualización - Penpot",
+      "fr" : "%s - Mode spectateur - Penpot",
+      "ru" : "%s - Режим просмотра - Penpot",
+      "zh_cn" : "%s - 预览模式）- Penpot"
+    }
+  },
   "viewer.empty-state" : {
     "translations" : {
       "de" : "Keine Zeichenflächen auf der Seite gefunden.",

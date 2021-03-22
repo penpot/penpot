@@ -43,6 +43,10 @@
 
 ;; --- New methods
 
+(defn set-html-title
+  [title]
+  (set! (.-title globals/document) title))
+
 (defn get-element-by-class
   ([classname]
    (dom/getElementByClass classname))

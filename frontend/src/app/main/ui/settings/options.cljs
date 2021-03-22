@@ -72,6 +72,9 @@
 
 (mf/defc options-page
   [{:keys [locale]}]
+  (mf/use-effect
+    #(dom/set-html-title (tr "title.settings.options")))
+
   [:div.dashboard-settings
    [:div.form-container
     [:& options-form {:locale locale}]]])

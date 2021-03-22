@@ -20,9 +20,10 @@
    [app.main.ui.auth.recovery-request :refer [recovery-request-page]]
    [app.main.ui.auth.register :refer [register-page register-success-page]]
    [app.main.ui.icons :as i]
+   [app.util.dom :as dom]
    [app.util.forms :as fm]
    [app.util.storage :refer [cache]]
-   [app.util.i18n :as i18n :refer [tr t]]
+   [app.util.i18n :as i18n :refer [t]]
    [app.util.router :as rt]
    [app.util.timers :as ts]
    [beicon.core :as rx]
@@ -34,6 +35,9 @@
   (let [section (get-in route [:data :name])
         locale  (mf/deref i18n/locale)
         params  (:query-params route)]
+
+    (mf/use-effect
+      #(dom/set-html-title (t locale "title.default")))
 
     [:div.auth
      [:section.auth-sidebar

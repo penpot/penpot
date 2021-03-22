@@ -99,6 +99,9 @@
 
 (mf/defc password-page
   [{:keys [locale]}]
+  (mf/use-effect
+    #(dom/set-html-title (tr "title.settings.password")))
+
   [:section.dashboard-settings.form-container
    [:div.form-container
     [:& password-form {:locale locale}]]])

@@ -106,6 +106,9 @@
 
 (mf/defc feedback-page
   []
+  (mf/use-effect
+    #(dom/set-html-title (tr "title.settings.feedback")))
+
   [:div.dashboard-settings
    [:div.form-container
     [:& feedback-form]]])

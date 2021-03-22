@@ -32,6 +32,7 @@
    [app.main.ui.workspace.viewport :refer [viewport]]
    [app.main.ui.workspace.coordinates :as coordinates]
    [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [beicon.core :as rx]
@@ -136,6 +137,10 @@
   (let [file    (mf/deref refs/workspace-file)
         project (mf/deref refs/workspace-project)
         layout  (mf/deref refs/workspace-layout)]
+
+    (mf/use-effect
+      (mf/deps file)
+      #(dom/set-html-title (tr "title.workspace" (:name file))))
 
     [:& (mf/provider ctx/current-file-id) {:value (:id file)}
      [:& (mf/provider ctx/current-team-id) {:value (:team-id project)}
