@@ -8,6 +8,7 @@
 - Add http caching layer on top of Query RPC.
 - Add layer opacity and blend mode to shapes [Taiga #937](https://tree.taiga.io/project/penpot/us/937)
 - Add more chinese translations [#726](https://github.com/penpot/penpot/pull/726)
+- Add native support for text-direction (RTL, LTR & auto).
 - Add thumbnail in memory caching mechanism.
 - Duplicate and move files and projects [Taiga #267](https://tree.taiga.io/project/penpot/us/267)
 - Import SVG will create Penpot's shapes [Taiga #1006](https://tree.taiga.io/project/penpot/us/1066)
