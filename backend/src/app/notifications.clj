@@ -24,9 +24,7 @@
    [ring.adapter.jetty9 :as jetty]
    [ring.middleware.cookies :refer [wrap-cookies]]
    [ring.middleware.keyword-params :refer [wrap-keyword-params]]
-   [ring.middleware.params :refer [wrap-params]])
-  (:import
-   org.eclipse.jetty.websocket.api.WebSocketAdapter))
+   [ring.middleware.params :refer [wrap-params]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Http Handler
@@ -199,56 +197,44 @@
 (declare start-loop!)
 
 (defn- handle-connect
-  [{:keys [conn] :as cfg}]
+  [cfg]
   (a/go
-    (try
-      (aa/<? (handle-message cfg {:type :connect}))
-      (aa/<? (start-loop! cfg))
-      (aa/<? (handle-message cfg {:type :disconnect}))
-      (catch Throwable err
-        (log/errorf err "unexpected exception on websocket handler")
-        (let [session (.getSession ^WebSocketAdapter conn)]
-          (when session
-            (.disconnect session)))))))
+    (a/<! (handle-message cfg {:type :connect}))
+    (a/<! (start-loop! cfg))
+    (a/<! (handle-message cfg {:type :disconnect}))))
 
 (defn- start-loop!
-  [{:keys [rcv-ch out-ch sub-ch session-id profile-id] :as cfg}]
-  (aa/go-try
-   (loop []
-     (let [timeout    (a/timeout 30000)
-           [val port] (a/alts! [rcv-ch sub-ch timeout])]
+  [{:keys [rcv-ch out-ch sub-ch session-id] :as cfg}]
+  (a/go-loop []
+    (let [timeout    (a/timeout 30000)
+          [val port] (a/alts! [rcv-ch sub-ch timeout])]
+      (cond
+        ;; Process message coming from connected client
+        (and (= port rcv-ch) (some? val))
+        (do
+          (a/<! (handle-message cfg val))
+          (recur))
 
-       (cond
-         ;; Process message coming from connected client
-         (and (= port rcv-ch) (some? val))
-         (do
-           (aa/<? (handle-message cfg val))
-           (recur))
+        ;; Process message coming from pubsub.
+        (and (= port sub-ch) (some? val))
+        (do
+          (when-not (= (:session-id val) session-id)
+            ;; If we receive a connect message of other user, we need
+            ;; to send an update presence to all participants.
+            (when (= :connect (:type val))
+              (a/<! (send-presence cfg :presence)))
 
+            ;; Then, just forward the message
+            (a/>! out-ch val))
+          (recur))
 
-         ;; Process message coming from pubsub.
-         (and (= port sub-ch) (some? val))
-         (do
-           (when-not (= (:session-id val) session-id)
-             ;; If we receive a connect message of other user, we need
-             ;; to send an update presence to all participants.
-             (when (= :connect (:type val))
-               (a/<! (send-presence cfg)))
-
-             ;; Then, just forward the message
-             (a/>! out-ch val))
-           (recur))
-
-         ;; When timeout channel is signaled, we need to send a ping
-         ;; message to the output channel. TODO: we need to make this
-         ;; more smart.
-         (= port timeout)
-         (do
-           (a/>! out-ch {:type :ping})
-           (recur))
-
-         :else
-         nil)))))
+        ;; When timeout channel is signaled, we need to send a ping
+        ;; message to the output channel. TODO: we need to make this
+        ;; more smart.
+        (= port timeout)
+        (do
+          (a/>! out-ch {:type :ping})
+          (recur))))))
 
 (defn send-presence
   ([cfg] (send-presence cfg :presence))
@@ -265,18 +251,18 @@
   (fn [_ message] (:type message)))
 
 (defmethod handle-message :connect
-  [{:keys [file-id msgbus] :as cfg} _message]
+  [cfg _]
   ;; (log/debugf "profile '%s' is connected to file '%s'" profile-id file-id)
   (send-presence cfg :connect))
 
 (defmethod handle-message :disconnect
-  [{:keys [file-id msgbus] :as cfg} _message]
+  [cfg _]
   ;; (log/debugf "profile '%s' is disconnected from '%s'" profile-id file-id)
   (send-presence cfg :disconnect))
 
 (defmethod handle-message :keepalive
-  [cfg _message]
-  (a/go (do :nothing)))
+  [_ _]
+  (a/go :nothing))
 
 (defmethod handle-message :pointer-update
   [{:keys [profile-id file-id session-id msgbus] :as cfg} message]
