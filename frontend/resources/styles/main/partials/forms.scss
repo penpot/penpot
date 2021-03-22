@@ -113,6 +113,7 @@ textarea {
   .links {
     display: flex;
     font-size: $fs14;
+    flex-direction: column;
     justify-content: space-between;
     margin-bottom: $medium;
 
