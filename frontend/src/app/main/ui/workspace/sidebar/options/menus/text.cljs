@@ -48,6 +48,9 @@
 (def text-align-attrs
   [:text-align])
 
+(def text-direction-attrs
+  [:text-direction])
+
 (def text-spacing-attrs
   [:line-height
    :letter-spacing])
@@ -68,7 +71,8 @@
   (d/concat text-valign-attrs text-align-attrs))
 
 (def paragraph-attrs
-  text-align-attrs)
+  (d/concat text-align-attrs
+            text-direction-attrs))
 
 (def text-attrs
   (d/concat text-typography-attrs
@@ -108,6 +112,24 @@
        :class (dom/classnames :current (= "justify" text-align))
        :on-click #(handle-change % "justify")}
       i/text-align-justify]]))
+
+(mf/defc text-direction-options
+  [{:keys [ids values on-change] :as props}]
+  (let [direction     (:text-direction values)
+        handle-change (fn [event val]
+                        (on-change {:text-direction val}))]
+    ;; --- Align
+    [:div.align-icons
+     [:span.tooltip.tooltip-bottom
+      {:alt (tr "workspace.options.text-options.direction-ltr")
+       :class (dom/classnames :current (= "ltr" direction))
+       :on-click #(handle-change % "ltr")}
+      i/text-direction-ltr]
+     [:span.tooltip.tooltip-bottom
+      {:alt (tr "workspace.options.text-options.direction-rtl")
+       :class (dom/classnames :current (= "rtl" direction))
+       :on-click #(handle-change % "rtl")}
+      i/text-direction-rtl]]))
 
 
 (mf/defc vertical-align
@@ -293,6 +315,11 @@
        [:> vertical-align opts]]
 
       [:div.row-flex
+       [:> text-decoration-options opts]
+       [:> text-direction-options opts]]
+
+      [:div.row-flex
        [:> grow-options opts]
-       [:> text-decoration-options opts]]]]))
+       [:div.align-icons]]]]))
+
 
