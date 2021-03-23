@@ -50,45 +50,66 @@
 
 ;; --- Layer Name
 
+(def shape-for-rename-ref
+  (l/derived (l/in [:workspace-local :shape-for-rename]) st/state))
+
 (mf/defc layer-name
   [{:keys [shape] :as props}]
-  (let [local (mf/use-state {})
-        edit-input-ref (mf/use-ref)
-        on-blur (fn [event]
-                  (let [target (dom/event->target event)
-                        parent (.-parentNode target)
-                        parent (.-parentNode parent)
-                        name (dom/get-value target)]
-                    (set! (.-draggable parent) true)
-                    (st/emit! (dw/update-shape (:id shape) {:name name}))
-                    (swap! local assoc :edition false)))
+  (let [local            (mf/use-state {})
+        shape-for-rename (mf/deref shape-for-rename-ref)
+        name-ref         (mf/use-ref)
+
+        set-draggable (fn [value]
+                        (let [parent (.. (mf/ref-val name-ref)
+                                         -parentNode
+                                         -parentNode)]
+                          (set! (.-draggable parent) value)))
+
+        start-edit (fn []
+                     (set-draggable false)
+                     (swap! local assoc :edition true))
+
+        accept-edit (fn []
+                      (let [name-input (mf/ref-val name-ref)
+                            name       (dom/get-value name-input)]
+                        (set-draggable true)
+                        (swap! local assoc :edition false)
+                        (st/emit! (dw/end-rename-shape)
+                                  (dw/update-shape (:id shape) {:name name}))))
+
+        cancel-edit (fn []
+                      (set-draggable true)
+                      (swap! local assoc :edition false)
+                      (st/emit! (dw/end-rename-shape)))
+
         on-key-down (fn [event]
-                      (when (kbd/enter? event)
-                        (on-blur event)))
-        on-click (fn [event]
-                   (dom/prevent-default event)
-                   (let [parent (.-parentNode (.-target event))
-                         parent (.-parentNode parent)]
-                     (set! (.-draggable parent) false))
-                   (swap! local assoc :edition true))]
+                      (when (kbd/enter? event) (accept-edit))
+                      (when (kbd/esc? event) (cancel-edit)))]
+
+    (mf/use-effect
+      (mf/deps shape-for-rename)
+      #(when (and (= shape-for-rename (:id shape))
+                  (not (:edition @local)))
+         (start-edit)))
 
     (mf/use-effect
       (mf/deps (:edition @local))
       #(when (:edition @local)
-         (let [edit-input (mf/ref-val edit-input-ref)]
-           (dom/select-text! edit-input))
+         (let [name-input (mf/ref-val name-ref)]
+           (dom/select-text! name-input))
          nil))
 
     (if (:edition @local)
       [:input.element-name
        {:type "text"
-        :ref edit-input-ref
-        :on-blur on-blur
+        :ref name-ref
+        :on-blur accept-edit
         :on-key-down on-key-down
         :auto-focus true
         :default-value (:name shape "")}]
       [:span.element-name
-       {:on-double-click on-click}
+       {:ref name-ref
+        :on-double-click start-edit}
        (:name shape "")
        (when (seq (:touched shape)) " *")])))
 

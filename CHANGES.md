@@ -27,6 +27,7 @@
 - Improve french translations [#731](https://github.com/penpot/penpot/pull/731)
 - Reimplement workspace presence (remove database state).
 - Remember last visited team when you re-enter the application [Taiga #1376](https://tree.taiga.io/project/penpot/us/1376)
+- Rename artboard with double click on the title [Taiga #1392](https://tree.taiga.io/project/penpot/us/1392)
 - Replace Slate-Editor with DraftJS [Taiga #1346](https://tree.taiga.io/project/penpot/us/1346)
 - Set proper page title [Taiga #1377](https://tree.taiga.io/project/penpot/us/1377)
 - Several enhancements in shape selection [Taiga #1195](https://tree.taiga.io/project/penpot/us/1195)
