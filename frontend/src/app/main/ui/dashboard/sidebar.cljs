@@ -211,8 +211,11 @@
         (mf/use-callback
          (st/emitf (modal/show :team-form {})))
 
-        go-projects
-        (mf/use-callback #(st/emit! (rt/nav :dashboard-projects {:team-id %})))]
+        team-selected
+        (mf/use-callback
+          (fn [team-id]
+            (da/set-current-team! team-id)
+            (st/emit! (rt/nav :dashboard-projects {:team-id team-id}))))]
 
     (mf/use-layout-effect
      (mf/deps (:id team))
@@ -223,13 +226,13 @@
     [:ul.dropdown.teams-dropdown
      [:li.title (t locale "dashboard.switch-team")]
      [:hr]
-     [:li.team-name {:on-click (partial go-projects (:default-team-id profile))}
+     [:li.team-name {:on-click (partial team-selected (:default-team-id profile))}
       [:span.team-icon i/logo-icon]
       [:span.team-text (t locale "dashboard.your-penpot")]]
 
      (for [team (remove :is-default @teams)]
        [:* {:key (:id team)}
-        [:li.team-name {:on-click (partial go-projects (:id team))}
+        [:li.team-name {:on-click (partial team-selected (:id team))}
          [:span.team-icon
           [:img {:src (cfg/resolve-team-photo-url team)}]]
          [:span.team-text {:title (:name team)} (:name team)]]])
@@ -305,9 +308,6 @@
          (mf/deps team)
          (st/emitf (rt/nav :dashboard-team-settings {:team-id (:id team)})))
 
-        go-projects
-        (mf/use-callback #(st/emit! (rt/nav :dashboard-projects {:team-id %})))
-
         on-create-clicked
         (mf/use-callback
          (st/emitf (modal/show :team-form {})))
@@ -320,7 +320,9 @@
         on-leaved-success
         (mf/use-callback
          (mf/deps team profile)
-         (st/emitf (rt/nav :dashboard-projects {:team-id (:default-team-id profile)})))
+         (let [team-id (:default-team-id profile)]
+           (da/set-current-team! team-id)
+           (st/emit! (rt/nav :dashboard-projects {:team-id team-id}))))
 
         leave-fn
         (mf/use-callback
