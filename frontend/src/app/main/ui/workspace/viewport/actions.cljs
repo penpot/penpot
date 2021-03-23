@@ -76,18 +76,19 @@
                          (dw/start-move-selected))))))))))
 
 (defn on-move-selected
-  [hover selected]
+  [hover hover-ids selected]
   (mf/use-callback
-   (mf/deps @hover selected)
+   (mf/deps @hover @hover-ids selected)
    (fn [bevent]
      (let [event (.-nativeEvent bevent)
            shift? (kbd/shift? event)
            left-click?   (= 1 (.-which event))]
+
        (when (and left-click?
                   (not shift?)
                   (or (not @hover)
-                      (contains? selected (:id @hover))
-                      (contains? selected (:frame-id @hover))))
+                      (= :frame (:type @hover))
+                      (some #(contains? selected %) @hover-ids)))
          (dom/prevent-default bevent)
          (dom/stop-propagation bevent)
          (st/emit! (dw/start-move-selected)))))))
@@ -117,13 +118,21 @@
      (reset! frame-hover nil))))
 
 (defn on-click
-  []
+  [hover selected]
   (mf/use-callback
+   (mf/deps @hover selected)
    (fn [event]
      (let [ctrl? (kbd/ctrl? event)
            shift? (kbd/shift? event)
-           alt? (kbd/alt? event)]
-       (st/emit! (ms/->MouseEvent :click ctrl? shift? alt?))))))
+           alt? (kbd/alt? event)
+
+           hovering? (some? @hover)
+           frame? (= :frame (:type @hover))
+           selected? (contains? selected (:id @hover))]
+       (st/emit! (ms/->MouseEvent :click ctrl? shift? alt?))
+
+       (when (and hovering? (not shift?) (not frame?) (not selected?))
+         (st/emit! (dw/select-shape (:id @hover))))))))
 
 (defn on-double-click
   [hover hover-ids objects]
@@ -163,14 +172,19 @@
 
 (defn on-context-menu
   [hover]
-  (let [{:keys [id]} @hover]
-    (mf/use-callback
-     (mf/deps id)
-     (fn [event]
-       (dom/prevent-default event)
-       (let [position (dom/get-client-position event)]
-         (st/emit! (dw/show-context-menu {:position position
-                                          :shape @hover})))))))
+  (mf/use-callback
+   (mf/deps @hover)
+   (fn [event]
+     (dom/prevent-default event)
+
+     (let [position (dom/get-client-position event)]
+       ;; Delayed callback because we need to wait to the previous context menu to be closed
+       (timers/schedule
+        #(st/emit!
+          (if (some? @hover)
+            (dw/show-shape-context-menu {:position position
+                                         :shape @hover})
+            (dw/show-context-menu {:position position}))))))))
 
 (defn on-mouse-up
   [disable-paste]
@@ -231,18 +245,20 @@
 (defn on-key-down []
  (mf/use-callback
   (fn [event]
-    (let [bevent (.getBrowserEvent ^js event)
-          key    (.-keyCode ^js event)
-          key    (.normalizeKeyCode KeyCodes key)
-          ctrl?  (kbd/ctrl? event)
-          shift? (kbd/shift? event)
-          alt?   (kbd/alt? event)
-          meta?  (kbd/meta? event)
-          target (dom/get-target event)]
+    (let [bevent  (.getBrowserEvent ^js event)
+          key     (.-keyCode ^js event)
+          key     (.normalizeKeyCode KeyCodes key)
+          ctrl?   (kbd/ctrl? event)
+          shift?  (kbd/shift? event)
+          alt?    (kbd/alt? event)
+          meta?   (kbd/meta? event)
+          target  (dom/get-target event)
+          editor? (some? (.closest ^js target ".public-DraftEditor-content"))]
 
       (when-not (.-repeat bevent)
         (st/emit! (ms/->KeyboardEvent :down key shift? ctrl? alt? meta?))
         (when (and (kbd/space? event)
+                   (not editor?)
                    (not= "rich-text" (obj/get target "className"))
                    (not= "INPUT" (obj/get target "tagName"))
                    (not= "TEXTAREA" (obj/get target "tagName")))

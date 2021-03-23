@@ -89,7 +89,7 @@
         drawing-path?     (and edition (= :draw (get-in edit-path [edition :edit-mode])))
         text-editing?     (and edition (= :text (get-in objects [edition :type])))
 
-        on-click          (actions/on-click)
+        on-click          (actions/on-click hover selected)
         on-context-menu   (actions/on-context-menu hover)
         on-double-click   (actions/on-double-click hover hover-ids objects)
         on-drag-enter     (actions/on-drag-enter)
@@ -102,7 +102,7 @@
         on-pointer-leave  (actions/on-pointer-leave in-viewport?)
         on-pointer-move   (actions/on-pointer-move viewport-ref zoom move-stream)
         on-pointer-up     (actions/on-pointer-up)
-        on-move-selected  (actions/on-move-selected hover selected)
+        on-move-selected  (actions/on-move-selected hover hover-ids selected)
 
         on-frame-enter    (actions/on-frame-enter frame-hover)
         on-frame-leave    (actions/on-frame-leave frame-hover)
