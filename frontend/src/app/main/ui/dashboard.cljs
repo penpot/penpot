@@ -26,7 +26,6 @@
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [t]]
    [app.util.router :as rt]
-   [app.util.storage :refer [storage]]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]))

@@ -26,6 +26,17 @@
 (s/def ::password string?)
 (s/def ::fullname string?)
 
+;; --- Current team for a profile
+
+(defn current-team-id
+  [profile]
+  (let [team-id (:current-team-id storage)]
+    (or team-id (:default-team-id profile))))
+
+(defn set-current-team!
+  [team-id]
+  (swap! storage assoc :current-team-id team-id))
+
 ;; --- Logged In
 
 (defn logged-in
@@ -33,7 +44,7 @@
   (ptk/reify ::logged-in
     ptk/WatchEvent
     (watch [this state stream]
-      (let [team-id (:default-team-id profile)]
+      (let [team-id (current-team-id profile)]
         (rx/merge
          (rx/of (du/profile-fetched profile)
                 (rt/nav' :dashboard-projects {:team-id team-id}))
