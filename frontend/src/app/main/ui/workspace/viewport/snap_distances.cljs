@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.workspace.snap-distances
+(ns app.main.ui.workspace.viewport.snap-distances
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
@@ -230,6 +230,7 @@
                                  (->> (uw/ask! {:cmd :selection/query
                                                 :page-id page-id
                                                 :frame-id (:id frame)
+                                                :include-frames? true
                                                 :rect rect})
                                       (rx/map #(set/difference % selected))
                                       (rx/map #(->> % (map (partial get @refs/workspace-page-objects)))))

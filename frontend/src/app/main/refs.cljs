@@ -35,6 +35,9 @@
 (def exception
   (l/derived :exception st/state))
 
+(def threads-ref
+  (l/derived :comment-threads st/state))
+
 ;; ---- Dashboard refs
 
 (def dashboard-local

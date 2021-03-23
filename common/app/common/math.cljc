@@ -70,6 +70,11 @@
   [v]
   (- v))
 
+(defn sq
+  "Calculates the square of a number"
+  [v]
+  (* v v))
+
 (defn sqrt
   "Returns the square root of a number."
   [v]

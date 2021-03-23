@@ -9,11 +9,9 @@
 
 (ns app.util.geom.path
   (:require
-   [app.common.data :as cd]
-   [app.common.data :as cd]
+   [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.util.a2c :refer [a2c]]
-   [app.util.data :as d]
    [app.util.geom.path-impl-simplify :as impl-simplify]
    [app.util.svg :as usvg]
    [cuerdas.core :as str]))
@@ -262,24 +260,24 @@
                 (cond-> command
                   (:relative command)
                   (-> (assoc :relative false)
-                      (cd/update-in-when [:params :c1x] + (:x pos))
-                      (cd/update-in-when [:params :c1y] + (:y pos))
+                      (d/update-in-when [:params :c1x] + (:x pos))
+                      (d/update-in-when [:params :c1y] + (:y pos))
                       
-                      (cd/update-in-when [:params :c2x] + (:x pos))
-                      (cd/update-in-when [:params :c2y] + (:y pos))
+                      (d/update-in-when [:params :c2x] + (:x pos))
+                      (d/update-in-when [:params :c2y] + (:y pos))
 
-                      (cd/update-in-when [:params :cx] + (:x pos))
-                      (cd/update-in-when [:params :cy] + (:y pos))
+                      (d/update-in-when [:params :cx] + (:x pos))
+                      (d/update-in-when [:params :cy] + (:y pos))
                       
-                      (cd/update-in-when [:params :x] + (:x pos))
-                      (cd/update-in-when [:params :y] + (:y pos))
+                      (d/update-in-when [:params :x] + (:x pos))
+                      (d/update-in-when [:params :y] + (:y pos))
 
                       (cond->
                           (= :line-to-horizontal (:command command))
-                        (cd/update-in-when [:params :value] + (:x pos))  
+                        (d/update-in-when [:params :value] + (:x pos))  
                         
                         (= :line-to-vertical (:command command))
-                        (cd/update-in-when [:params :value] + (:y pos)))))
+                        (d/update-in-when [:params :value] + (:y pos)))))
 
                 params (:params command)
                 orig-command command
@@ -313,7 +311,7 @@
                       (update :params merge (quadratic->curve pos (gpt/point params) (calculate-opposite-handler pos prev-qc)))))
                 
                 result (if (= :elliptical-arc (:command command))
-                         (cd/concat result (arc->beziers pos command))
+                         (d/concat result (arc->beziers pos command))
                          (conj result command))
 
                 prev-cc (case (:command orig-command)
@@ -453,7 +451,7 @@
                    [])))
 
        (group-by first)
-       (cd/mapm #(mapv second %2))))
+       (d/mapm #(mapv second %2))))
 
 (defn opposite-index
   "Calculate sthe opposite index given a prefix and an index"
@@ -552,10 +550,10 @@
                         handler (gpt/add point handler-vector)
                         handler-opposite (gpt/add point (gpt/negate handler-vector))]
                     (-> content
-                        (cd/update-when index make-curve prev)
-                        (cd/update-when index update-handler :c2 handler)
-                        (cd/update-when (inc index) make-curve command)
-                        (cd/update-when (inc index) update-handler :c1 handler-opposite)))
+                        (d/update-when index make-curve prev)
+                        (d/update-when index update-handler :c2 handler)
+                        (d/update-when (inc index) make-curve command)
+                        (d/update-when (inc index) update-handler :c1 handler-opposite)))
 
                   content))]
     (as-> content $

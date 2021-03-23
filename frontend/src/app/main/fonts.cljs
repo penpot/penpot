@@ -5,21 +5,21 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.fonts
   "Fonts management and loading logic."
   (:require-macros [app.main.fonts :refer [preload-gfonts]])
   (:require
-   [beicon.core :as rx]
-   [promesa.core :as p]
-   [okulary.core :as l]
-   [cuerdas.core :as str]
-   [app.util.dom :as dom]
-   [app.util.timers :as ts]
    [app.common.data :as d]
+   [app.util.dom :as dom]
+   [app.util.object :as obj]
+   [app.util.timers :as ts]
+   [beicon.core :as rx]
    [clojure.set :as set]
-   [app.util.object :as obj]))
+   [cuerdas.core :as str]
+   [okulary.core :as l]
+   [promesa.core :as p]))
 
 (def google-fonts
   (preload-gfonts "fonts/gfonts.2020.04.23.json"))
@@ -28,20 +28,17 @@
   [{:id "sourcesanspro"
     :name "Source Sans Pro"
     :family "sourcesanspro"
-    :variants [{:id "100" :name "100" :weight "100" :style "normal"}
-               {:id "100italic" :name "100 (italic)" :weight "100" :style "italic"}
-               {:id "200" :name "200" :weight "200" :style "normal"}
-               {:id "200italic" :name "200 (italic)" :weight "200" :style "italic"}
-               {:id "300" :name "300" :weight "300" :style "normal"}
-               {:id "300italic" :name "300 (italic)"  :weight "300" :style "italic"}
-               {:id "regular" :name "regular" :weight "400" :style "normal"}
-               {:id "italic" :name "italic" :weight "400" :style "italic"}
-               {:id "500" :name "500" :weight "500" :style "normal"}
-               {:id "500italic" :name "500 (italic)" :weight "500" :style "italic"}
-               {:id "bold" :name "bold" :weight "bold" :style "normal"}
-               {:id "bolditalic" :name "bold (italic)" :weight "bold" :style "italic"}
-               {:id "black" :name "black" :weight "900" :style "normal"}
-               {:id "blackitalic" :name "black (italic)" :weight "900" :style "italic"}]}])
+    :variants
+    [{:id "200" :name "200" :weight "200" :style "normal" :suffix "extralight"}
+     {:id "200italic" :name "200 (italic)" :weight "200" :style "italic" :suffix "extralightitalic"}
+     {:id "300" :name "300" :weight "300" :style "normal" :suffix "light"}
+     {:id "300italic" :name "300 (italic)"  :weight "300" :style "italic" :suffix "lightitalic"}
+     {:id "regular" :name "regular" :weight "400" :style "normal"}
+     {:id "italic" :name "italic" :weight "400" :style "italic"}
+     {:id "bold" :name "bold" :weight "bold" :style "normal"}
+     {:id "bolditalic" :name "bold (italic)" :weight "bold" :style "italic"}
+     {:id "black" :name "black" :weight "900" :style "normal"}
+     {:id "blackitalic" :name "black (italic)" :weight "900" :style "italic"}]}])
 
 (defonce fontsdb (l/atom {}))
 (defonce fontsview (l/atom {}))
@@ -75,7 +72,6 @@
   [backend]
   (get @fontsview backend))
 
-
 ;; --- Fonts Loader
 
 (defonce loaded (l/atom #{}))
@@ -92,12 +88,6 @@
   (let [base (str "https://fonts.googleapis.com/css?family=" family)
         variants (str/join "," (map :id variants))]
     (str base ":" variants "&display=block")))
-
-(defn font-url [font-id font-variant-id]
-  (let [{:keys [backend family] :as entry} (get @fontsdb font-id)]
-    (case backend
-      :google (gfont-url family {:id font-variant-id})
-      (str "/fonts/" family "-" (or font-variant-id "regular") ".woff"))))
 
 (defmulti ^:private load-font :backend)
 
@@ -140,8 +130,3 @@
   (or
    (d/seek #(or (= (:id %) "regular") (= (:name %) "regular")) variants)
    (first variants)))
-
-(defn fetch-font [font-id font-variant-id]
-  (let [font-url (font-url font-id font-variant-id)]
-    (-> (js/fetch font-url)
-        (p/then (fn [res] (.text res))))))

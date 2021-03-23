@@ -15,6 +15,7 @@
 - Improve french translations [#731](https://github.com/penpot/penpot/pull/731)
 - Reimplement workspace presence (remove database state).
 - Replace Slate-Editor with DraftJS [Taiga #1346](https://tree.taiga.io/project/penpot/us/1346)
+- Several enhancements in shape selection [Taiga #1195](https://tree.taiga.io/project/penpot/us/1195)
 
 
 ### :bug: Bugs fixed

@@ -10,7 +10,6 @@
 (ns app.main.ui.workspace.shapes.common
   (:require
    [app.main.ui.shapes.shape :refer [shape-container]]
-   [app.main.ui.workspace.effects :as we]
    [rumext.alpha :as mf]))
 
 (defn generic-wrapper-factory
@@ -19,10 +18,5 @@
     {::mf/wrap-props false}
     [props]
     (let [shape (unchecked-get props "shape")]
-      [:> shape-container {:shape shape
-                           :on-mouse-down (we/use-mouse-down shape)
-                           :on-double-click (we/use-double-click shape)
-                           :on-context-menu (we/use-context-menu shape)
-                           :on-pointer-over (we/use-pointer-enter shape)
-                           :on-pointer-out (we/use-pointer-leave shape)}
+      [:> shape-container {:shape shape}
        [:& component {:shape shape}]])))

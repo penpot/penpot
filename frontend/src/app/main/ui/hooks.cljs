@@ -212,10 +212,14 @@
 
 (defn use-stream
   "Wraps the subscription to a strem into a `use-effect` call"
-  [stream on-subscribe]
-  (mf/use-effect (fn []
-                   (let [sub (->> stream (rx/subs on-subscribe))]
-                     #(rx/dispose! sub)))))
+  ([stream on-subscribe]
+   (use-stream stream (mf/deps) on-subscribe))
+  ([stream deps on-subscribe]
+   (mf/use-effect
+    deps
+    (fn []
+      (let [sub (->> stream (rx/subs on-subscribe))]
+        #(rx/dispose! sub))))))
 
 ;; https://reactjs.org/docs/hooks-faq.html#how-to-get-the-previous-props-or-state
 (defn use-previous

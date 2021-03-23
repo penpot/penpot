@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.workspace.selection
+(ns app.main.ui.workspace.viewport.selection
   "Selection handlers component."
   (:require
    [app.common.geom.matrix :as gmt]
@@ -46,7 +46,7 @@
 (def min-selrect-side 10)
 (def small-selrect-side 30)
 
-(mf/defc selection-rect [{:keys [transform rect zoom color]}]
+(mf/defc selection-rect [{:keys [transform rect zoom color on-move-selected]}]
   (when rect
     (let [{:keys [x y width height]} rect]
       [:rect.main
@@ -55,6 +55,7 @@
         :width width
         :height height
         :transform transform
+        :on-mouse-down on-move-selected
         :style {:stroke color
                 :stroke-width (/ selection-rect-width zoom)
                 :fill "transparent"}}])))
@@ -237,29 +238,27 @@
   {::mf/wrap-props false}
   [props]
   (let [{:keys [overflow-text type] :as shape} (obj/get props "shape")
-        zoom  (obj/get props "zoom")
-        color (obj/get props "color")
-        on-resize (obj/get props "on-resize")
-        on-rotate (obj/get props "on-rotate")
-        disable-handlers (obj/get props "disable-handlers")
+        zoom              (obj/get props "zoom")
+        color             (obj/get props "color")
+        on-move-selected  (obj/get props "on-move-selected")
+        on-resize         (obj/get props "on-resize")
+        on-rotate         (obj/get props "on-rotate")
+        disable-handlers  (obj/get props "disable-handlers")
         current-transform (mf/deref refs/current-transform)
 
-        hide? (mf/use-state false)
         selrect (-> (:selrect shape)
                     minimum-selrect)
         transform (geom/transform-matrix shape {:no-flip true})]
 
-    (hooks/use-stream ms/keyboard-ctrl #(when (= type :group) (reset! hide? %)))
-
     (when (not (#{:move :rotate} current-transform))
-      [:g.controls {:style {:display (when @hide? "none")}
-                    :pointer-events (when disable-handlers "none")}
+      [:g.controls {:pointer-events (when disable-handlers "none")}
 
        ;; Selection rect
        [:& selection-rect {:rect selrect
                            :transform transform
                            :zoom zoom
-                           :color color}]
+                           :color color
+                           :on-move-selected on-move-selected}]
        [:& outline {:shape shape :color color}]
 
        ;; Handlers
@@ -296,7 +295,7 @@
                           :fill "transparent"}}]]))
 
 (mf/defc multiple-selection-handlers
-  [{:keys [shapes selected zoom color show-distances disable-handlers] :as props}]
+  [{:keys [shapes selected zoom color show-distances disable-handlers on-move-selected] :as props}]
   (let [shape (geom/setup {:type :rect} (geom/selection-rect (->> shapes (map geom/transform-shape))))
         shape-center (geom/center-shape shape)
 
@@ -318,6 +317,7 @@
                    :zoom zoom
                    :color color
                    :disable-handlers disable-handlers
+                   :on-move-selected on-move-selected
                    :on-resize on-resize
                    :on-rotate on-rotate}]
 
@@ -331,7 +331,7 @@
        [:circle {:cx (:x shape-center) :cy (:y shape-center) :r 5 :fill "yellow"}])]))
 
 (mf/defc single-selection-handlers
-  [{:keys [shape zoom color show-distances disable-handlers] :as props}]
+  [{:keys [shape zoom color show-distances disable-handlers on-move-selected] :as props}]
   (let [shape-id (:id shape)
         shape (geom/transform-shape shape)
 
@@ -357,7 +357,8 @@
                    :color color
                    :on-rotate on-rotate
                    :on-resize on-resize
-                   :disable-handlers disable-handlers}]
+                   :disable-handlers disable-handlers
+                   :on-move-selected on-move-selected}]
 
      (when show-distances
        [:& msr/measurement {:bounds vbox
@@ -368,7 +369,7 @@
 
 (mf/defc selection-handlers
   {::mf/wrap [mf/memo]}
-  [{:keys [selected edition zoom show-distances disable-handlers] :as props}]
+  [{:keys [selected edition zoom show-distances disable-handlers on-move-selected] :as props}]
   (let [;; We need remove posible nil values because on shape
         ;; deletion many shape will reamin selected and deleted
         ;; in the same time for small instant of time
@@ -390,7 +391,8 @@
                                        :zoom zoom
                                        :color color
                                        :show-distances show-distances
-                                       :disable-handlers disable-handlers}]
+                                       :disable-handlers disable-handlers
+                                       :on-move-selected on-move-selected}]
 
       (and (= type :text)
            (= edition (:id shape)))
@@ -408,4 +410,5 @@
                                      :zoom zoom
                                      :color color
                                      :show-distances show-distances
-                                     :disable-handlers disable-handlers}])))
+                                     :disable-handlers disable-handlers
+                                     :on-move-selected on-move-selected}])))

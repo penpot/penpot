@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) 2015-2019 Andrey Antukh <niwi@niwi.nz>
 
-(ns app.main.ui.workspace.drawarea
+(ns app.main.ui.workspace.viewport.drawarea
   "Drawing components."
   (:require
    [rumext.alpha :as mf]

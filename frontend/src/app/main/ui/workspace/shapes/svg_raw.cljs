@@ -12,7 +12,6 @@
    [app.main.refs :as refs]
    [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.main.ui.shapes.shape :refer [shape-container]]
-   [app.main.ui.workspace.effects :as we]
    [rumext.alpha :as mf]
    [app.common.geom.shapes :as gsh]
    [app.main.ui.context :as muc]))
@@ -41,12 +40,6 @@
 
             tag (get-in shape [:content :tag])
 
-            handle-mouse-down   (we/use-mouse-down shape)
-            handle-context-menu (we/use-context-menu shape)
-            handle-pointer-enter (we/use-pointer-enter shape)
-            handle-pointer-leave (we/use-pointer-leave shape)
-            handle-double-click  (we/use-double-click shape)
-
             def-ctx? (mf/use-ctx muc/def-ctx)]
 
         (cond
@@ -64,12 +57,7 @@
              :width width
              :height height
              :fill "transparent"
-             :stroke "none"
-             :on-mouse-down handle-mouse-down
-             :on-double-click handle-double-click
-             :on-context-menu handle-context-menu
-             :on-pointer-over handle-pointer-enter
-             :on-pointer-out handle-pointer-leave}]]
+             :stroke "none"}]]
 
           ;; We cannot wrap inside groups the shapes that go inside the defs tag
           ;; we use the context so we know when we should not render the container

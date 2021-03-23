@@ -19,9 +19,7 @@
    [app.main.ui.context :as muc]
    [app.main.ui.shapes.shape :refer [shape-container]]
    [app.main.ui.shapes.text :as text]
-   [app.main.ui.workspace.effects :as we]
    [app.main.ui.workspace.shapes.common :as common]
-   [app.main.ui.workspace.shapes.text.editor :as editor]
    [app.util.dom :as dom]
    [app.util.logging :as log]
    [app.util.object :as obj]
@@ -32,16 +30,6 @@
 
 ;; Change this to :info :debug or :trace to debug this module
 (log/set-level! :warn)
-
-;; --- Events
-
-(defn use-double-click [{:keys [id]}]
-  (mf/use-callback
-   (mf/deps id)
-   (fn [event]
-     (dom/stop-propagation event)
-     (dom/prevent-default event)
-     (st/emit! (dw/start-edition-mode id)))))
 
 ;; --- Text Wrapper for workspace
 
@@ -107,15 +95,8 @@
   {::mf/wrap-props false}
   [props]
   (let [{:keys [id x y width height] :as shape} (unchecked-get props "shape")
-        ghost?   (mf/use-ctx muc/ghost-ctx)
         edition  (mf/deref refs/selected-edition)
-        edition? (= edition id)
-
-        handle-mouse-down (we/use-mouse-down shape)
-        handle-context-menu (we/use-context-menu shape)
-        handle-pointer-enter (we/use-pointer-enter shape)
-        handle-pointer-leave (we/use-pointer-leave shape)
-        handle-double-click (use-double-click shape)]
+        edition? (= edition id)]
 
     [:> shape-container {:shape shape}
      ;; We keep hidden the shape when we're editing so it keeps track of the size
@@ -123,24 +104,4 @@
      [:g.text-shape {:opacity (when edition? 0)
                      :pointer-events "none"}
 
-      (if ghost?
-        [:& text-static-content {:shape shape}]
-        [:& text-resize-content {:shape shape}])]
-
-     (when (and (not ghost?) edition?)
-       [:& editor/text-shape-edit {:key (str "editor" (:id shape))
-                                   :shape shape}])
-
-     (when-not edition?
-       [:rect.text-actions
-        {:x x
-         :y y
-         :width width
-         :height height
-         :style {:fill "transparent"}
-         :on-mouse-down handle-mouse-down
-         :on-context-menu handle-context-menu
-         :on-pointer-over handle-pointer-enter
-         :on-pointer-out handle-pointer-leave
-         :on-double-click handle-double-click
-         :transform (gsh/transform-matrix shape)}])]))
+      [:& text-resize-content {:shape shape}]]]))

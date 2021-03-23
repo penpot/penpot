@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.workspace.gradients
+(ns app.main.ui.workspace.viewport.gradients
   "Gradients handlers and renders"
   (:require
    [rumext.alpha :as mf]

@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020-2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.shapes.text.embed
   (:require
@@ -26,7 +26,7 @@
   font-style: %(style)s;
   font-weight: %(weight)s;
   font-display: block;
-  src: url(/fonts/%(family)s-%(style)s.woff) format('woff');
+  src: url(/fonts/%(family)s-%(suffix)s.woff) format('woff');
 }
 ")
 
@@ -42,9 +42,18 @@
 (defn get-local-font-css
   [font-id font-variant-id]
   (let [{:keys [family variants] :as font}      (get @fonts/fontsdb font-id)
-        {:keys [name weight style] :as variant} (d/seek #(= (:id %) font-variant-id) variants)]
-    (-> (str/format font-face-template {:family family :style style :width weight})
+        {:keys [name weight style suffix] :as variant} (d/seek #(= (:id %) font-variant-id) variants)]
+    (-> (str/format font-face-template {:family family :suffix (or suffix font-variant-id) :width weight})
         (p/resolved))))
+
+(defn fetch-font-css
+  [font-id font-variant-id]
+  (let [{:keys [backend family] :as entry} (get @fonts/fontsdb font-id)]
+    (if (= :google backend)
+      (-> (fonts/gfont-url family [{:id font-variant-id}])
+          (js/fetch)
+          (p/then (fn [res] (.text res)))))
+    (get-local-font-css font-id font-variant-id)))
 
 (defn get-text-font-data [text]
   (->> text
@@ -54,11 +63,9 @@
        (p/all)))
 
 (defn embed-font [{:keys [font-id font-variant-id] :or {font-variant-id "regular"}}]
-  (let [{:keys [backend]} (get @fonts/fontsdb font-id)]
-    (p/let [font-text (case backend
-                        :google (fonts/fetch-font font-id font-variant-id)
-                        (get-local-font-css font-id font-variant-id))
-            url-to-data (get-text-font-data font-text)
+  (let [{:keys [backend family]} (get @fonts/fontsdb font-id)]
+    (p/let [font-text    (fetch-font-css font-id font-variant-id)
+            url-to-data  (get-text-font-data font-text)
             replace-text (fn [text [url data]] (str/replace text url data))]
       (reduce replace-text font-text url-to-data))))
 

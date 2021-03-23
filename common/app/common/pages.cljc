@@ -63,6 +63,8 @@
 (d/export helpers/get-base-shape)
 (d/export helpers/is-parent?)
 (d/export helpers/get-index-in-parent)
+(d/export helpers/calculate-z-index)
+(d/export helpers/generate-child-all-parents-index)
 
 ;; Process changes
 (d/export changes/process-changes)

@@ -184,6 +184,7 @@
   (->> (uw/ask! {:cmd :selection/query
                  :page-id page-id
                  :frame-id (->> shapes first :frame-id)
+                 :include-frames? true
                  :rect area-selrect})
        (rx/map #(set/difference % (into #{} (map :id shapes))))
        (rx/map (fn [ids] (map #(get objects %) ids)))))

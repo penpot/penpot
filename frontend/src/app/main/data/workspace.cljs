@@ -439,13 +439,33 @@
                                             (assoc :left-offset left-offset))))))))))))
 
 
-(defn start-pan [state]
-  (-> state
-      (assoc-in [:workspace-local :panning] true)))
+(defn start-panning []
+  (ptk/reify ::start-panning
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (assoc-in [:workspace-local :panning] true)))
 
-(defn finish-pan [state]
-  (-> state
-      (update :workspace-local dissoc :panning)))
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [stopper (->> stream (rx/filter (ptk/type? ::finish-panning)))
+            zoom (-> (get-in state [:workspace-local :zoom]) gpt/point)]
+        (->> stream
+             (rx/filter ms/pointer-event?)
+             (rx/filter #(= :delta (:source %)))
+             (rx/map :pt)
+             (rx/take-until stopper)
+             (rx/map (fn [delta]
+                       (let [delta (gpt/divide delta zoom)]
+                         (update-viewport-position {:x #(- % (:x delta))
+                                                    :y #(- % (:y delta))})))))))))
+
+(defn finish-panning []
+  (ptk/reify ::finish-panning
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update :workspace-local dissoc :panning)))))
 
 
 ;; --- Toggle layout flag
@@ -981,15 +1001,12 @@
                 {:keys [id type shapes]} (get objects (first selected))]
 
             (case type
-              :text
+              (:text :path)
               (rx/of (dwc/start-edition-mode id))
 
               :group
               (rx/of (dwc/select-shapes (into (d/ordered-set) [(last shapes)])))
 
-              :path
-              (rx/of (dwc/start-edition-mode id)
-                     (dwdp/start-path-edit id))
               :else (rx/empty))))))))
 
 
@@ -1255,8 +1272,7 @@
       (let [selected (get-in state [:workspace-local :selected])]
         (rx/concat
           (when-not (selected (:id shape))
-            (rx/of (dws/deselect-all)
-                   (dws/select-shape (:id shape))))
+            (rx/of (dws/select-shape (:id shape))))
           (rx/of (show-context-menu params)))))))
 
 (def hide-context-menu
@@ -1734,6 +1750,7 @@
 ;; Selection
 
 (d/export dws/select-shape)
+(d/export dws/deselect-shape)
 (d/export dws/select-all)
 (d/export dws/deselect-all)
 (d/export dwc/select-shapes)
@@ -1741,12 +1758,12 @@
 (d/export dws/duplicate-selected)
 (d/export dws/handle-selection)
 (d/export dws/select-inside-group)
-(d/export dws/select-last-layer)
+;;(d/export dws/select-last-layer)
 (d/export dwd/select-for-drawing)
 (d/export dwc/clear-edition-mode)
 (d/export dwc/add-shape)
 (d/export dwc/start-edition-mode)
-(d/export dwdp/start-path-edit)
+#_(d/export dwc/start-path-edit)
 
 ;; Groups
 

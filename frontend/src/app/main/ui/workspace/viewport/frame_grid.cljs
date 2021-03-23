@@ -7,7 +7,7 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.workspace.frame-grid
+(ns app.main.ui.workspace.viewport.frame-grid
   (:require
    [rumext.alpha :as mf]
    [okulary.core :as l]
