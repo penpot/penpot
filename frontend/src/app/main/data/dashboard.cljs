@@ -423,13 +423,6 @@
              (rx/tap on-success)
              (rx/catch on-error))))))
 
-(def clear-project-for-edit
-  (ptk/reify ::clear-project-for-edit
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:dashboard-local :project-for-edit] nil))))
-
-
 (defn toggle-project-pin
   [{:keys [id is-pinned team-id] :as params}]
   (us/assert ::project params)

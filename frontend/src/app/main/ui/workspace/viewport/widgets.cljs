@@ -12,7 +12,9 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
+   [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
+   [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.shapes.outline :refer [outline]]
@@ -124,6 +126,12 @@
            (dom/stop-propagation event)
            (on-frame-select event (:id frame))))
 
+        on-double-click
+        (mf/use-callback
+          (mf/deps (:id frame))
+          (st/emitf (dw/go-to-layout :layers)
+                    (dw/start-rename-shape (:id frame))))
+
         on-pointer-enter
         (mf/use-callback
          (mf/deps (:id frame) on-frame-enter)
@@ -146,6 +154,7 @@
                             (text-transform label-pos zoom))
             :style {:fill (when selected? "#28c295")}
             :on-mouse-down on-mouse-down
+            :on-double-click on-double-click
             :on-pointer-enter on-pointer-enter
             :on-pointer-leave on-pointer-leave}
      (:name frame)]))

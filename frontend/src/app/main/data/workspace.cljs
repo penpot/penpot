@@ -599,7 +599,6 @@
                             (assoc :zoom zoom)
                             (update :vbox merge srect)))))))))))
 
-
 ;; --- Update Shape Attrs
 
 (defn update-shape
@@ -610,6 +609,21 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (rx/of (dwc/update-shapes [id] #(merge % attrs))))))
+
+(defn start-rename-shape
+  [id]
+  (us/verify ::us/uuid id)
+  (ptk/reify ::start-rename-shape
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :shape-for-rename] id))))
+
+(defn end-rename-shape
+  []
+  (ptk/reify ::end-rename-shape
+    ptk/UpdateEvent
+    (update [_ state]
+      (update-in state [:workspace-local] dissoc :shape-for-rename))))
 
 ;; --- Update Selected Shapes attrs
 
