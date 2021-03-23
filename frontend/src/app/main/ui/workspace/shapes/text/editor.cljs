@@ -143,6 +143,7 @@
     [:div.text-editor
      {:ref self-ref
       :style {:cursor cur/text}
+      :on-click (st/emitf (dwt/focus-editor))
       :class (dom/classnames
               :align-top    (= (:vertical-align content "top") "top")
               :align-center (= (:vertical-align content) "center")
