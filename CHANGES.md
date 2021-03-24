@@ -49,7 +49,7 @@
 - Fix issue with rotated blur [Taiga #1370](https://tree.taiga.io/project/penpot/issue/1370)
 - Fix issue with rotation degree input [#741](https://github.com/penpot/penpot/issues/741)
 - Fix issue with system shortcuts and application [#737](https://github.com/penpot/penpot/issues/737)
-
+- Fix problem with enter key shortcut [#775](https://github.com/penpot/penpot/issues/775)
 
 ### :arrow_up: Deps updates
 

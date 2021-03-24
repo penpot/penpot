@@ -1021,7 +1021,7 @@
               :group
               (rx/of (dwc/select-shapes (into (d/ordered-set) [(last shapes)])))
 
-              :else (rx/empty))))))))
+              (rx/empty))))))))
 
 
 ;; --- Change Page Order (D&D Ordering)
