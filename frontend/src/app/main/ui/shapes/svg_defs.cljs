@@ -60,15 +60,19 @@
           transform-filter?   (and (contains? usvg/filter-tags tag)
                                    (= "userSpaceOnUse" (get attrs :filterUnits "objectBoundingBox")))
 
+          transform-mask?     (and (= :mask tag)
+                                   (= "userSpaceOnUse" (get attrs :maskUnits "objectBoundingBox")))
+
           attrs (-> attrs
                     (usvg/update-attr-ids prefix-id)
                     (usvg/clean-attrs)
 
                     (cond->
-                        transform-gradient? (add-matrix :gradientTransform transform)
-                        transform-pattern?  (add-matrix :patternTransform transform)
-                        transform-clippath? (add-matrix :transform transform)
-                        transform-filter?   (transform-region transform)))
+                        transform-gradient?   (add-matrix :gradientTransform transform)
+                        transform-pattern?    (add-matrix :patternTransform transform)
+                        transform-clippath?   (add-matrix :transform transform)
+                        (or transform-filter?
+                            transform-mask?)  (transform-region transform)))
 
           [wrapper wrapper-props] (if (= tag :mask)
                                     ["g" #js {:transform (str transform)}]
