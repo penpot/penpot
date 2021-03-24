@@ -14,6 +14,7 @@
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
    [app.main.ui.workspace.sidebar.options.menus.text :refer [text-menu text-fill-attrs root-attrs paragraph-attrs text-attrs]]
@@ -26,6 +27,8 @@
 
         state-map    (mf/deref refs/workspace-editor-state)
         editor-state (get state-map (:id shape))
+
+        layer-values (select-keys shape layer-attrs)
 
         fill-values  (dwt/current-text-values
                       {:editor-state editor-state
@@ -60,6 +63,10 @@
       {:ids ids
        :type type
        :values (select-keys shape measure-attrs)}]
+
+     [:& layer-menu {:ids ids
+                     :type type
+                     :values layer-values}]
 
      [:& fill-menu
       {:ids ids

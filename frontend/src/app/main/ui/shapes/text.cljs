@@ -12,6 +12,7 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as geom]
    [app.main.ui.context :as muc]
+   [app.main.ui.shapes.attrs :as attrs]
    [app.main.ui.shapes.text.embed :as ste]
    [app.main.ui.shapes.text.styles :as sts]
    [app.util.color :as uc]
@@ -108,6 +109,7 @@
                      :transform (geom/transform-matrix shape)
                      :width  (if (#{:auto-width} grow-type) 100000 width)
                      :height (if (#{:auto-height :auto-width} grow-type) 100000 height)
+                     :style (-> (obj/new) (attrs/add-layer-props shape))
                      :ref ref}
      [:& render-node {:index 0
                       :shape shape
