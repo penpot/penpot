@@ -242,7 +242,8 @@
     (mf/use-effect on-mount)
     (hooks/use-shortcuts sc/shortcuts)
 
-    [:div.viewer-layout
+    [:div.viewer-layout {:class (dom/classnames :force-visible
+                                                (:show-thumbnails state))}
      [:& header
       {:data data
        :state state

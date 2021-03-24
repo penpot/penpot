@@ -96,7 +96,8 @@
     (mf/use-effect on-mount)
     (hooks/use-shortcuts sc/shortcuts)
 
-    [:div.handoff-layout
+    [:div.handoff-layout {:class (dom/classnames :force-visible
+                                                 (:show-thumbnails state))}
      [:& header
       {:data data
        :state state
