@@ -232,6 +232,7 @@
                                                 :frame-id (:id frame)
                                                 :include-frames? true
                                                 :rect rect})
+                                      (rx/map #(cp/clean-loops @refs/workspace-page-objects %))
                                       (rx/map #(set/difference % selected))
                                       (rx/map #(->> % (map (partial get @refs/workspace-page-objects)))))
                                  (rx/of nil))))]

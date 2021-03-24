@@ -101,8 +101,13 @@
                        :rect rect
                        :include-frames? true}))))
 
+        ;; We use ref so we don't recreate the stream on a change
+        transform-ref (mf/use-ref nil)
+
         over-shapes-stream
         (->> move-stream
+             ;; When transforming shapes we stop querying the worker
+             (rx/filter #(not (some? (mf/ref-val transform-ref))))
              (rx/switch-map query-point))
 
         roots (mf/use-memo
@@ -111,9 +116,13 @@
                  (let [roots-ids (cp/clean-loops objects selected)]
                    (->> roots-ids (mapv #(get objects %))))))]
 
+    (mf/use-effect
+     (mf/deps transform)
+     #(mf/set-ref-val! transform-ref transform))
+
     (hooks/use-stream
      over-shapes-stream
-     (mf/deps page-id objects transform selected @ctrl?)
+     (mf/deps page-id objects selected @ctrl?)
      (fn [ids]
        (let [remove-id? (into #{} (mapcat #(cp/get-parents % objects)) selected)
              remove-id? (if @ctrl?
@@ -122,9 +131,8 @@
                                          (filterv #(= :group (get-in objects [% :type])))))
                           remove-id?)
              ids (->> ids (filterv (comp not remove-id?)))]
-         (when (not transform)
-           (reset! hover (get objects (first ids)))
-           (reset! hover-ids ids)))))))
+         (reset! hover (get objects (first ids)))
+         (reset! hover-ids ids))))))
 
 (defn setup-viewport-modifiers [modifiers selected objects render-ref]
   (let [roots (mf/use-memo
