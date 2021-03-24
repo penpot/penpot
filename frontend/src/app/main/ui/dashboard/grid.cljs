@@ -171,6 +171,12 @@
                   :edition true
                   :menu-open false)))]
 
+    (mf/use-effect
+      (mf/deps selected? local)
+      (fn []
+        (when (and (not selected?) (:menu-open @local))
+          (swap! local assoc :menu-open false))))
+
     [:div.grid-item.project-th {:class (dom/classnames
                                          :selected selected?)
                                 :ref item-ref

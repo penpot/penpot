@@ -17,7 +17,7 @@ $width-settings-bar: 16rem;
   }
 }
 
-.fullscreen .handoff-layout {
+.fullscreen .handoff-layout:not(.force-visible) {
   .viewer-header {
     width: 100%;
     position: fixed;

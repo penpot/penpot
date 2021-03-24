@@ -35,9 +35,8 @@
           (let [keys [(events/listen js/document EventType.CLICK on-click)
                       (events/listen js/document EventType.CONTEXTMENU on-click)
                       (events/listen js/document EventType.KEYUP on-keyup)]]
-            #(do (on-close)
-                 (doseq [key keys]
-                   (events/unlistenByKey key)))))]
+            #(doseq [key keys]
+               (events/unlistenByKey key))))]
 
     (mf/use-effect on-mount)
     children))
