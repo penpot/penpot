@@ -369,7 +369,7 @@
   background-color: $color-white;
   box-shadow: 0 10px 10px rgba(0,0,0,.2);
   display: flex;
-  height: 350px;
+  min-height: 370px;
   flex-direction: row;
   font-family: "sourcesanspro", sans-serif;
   min-width: 620px;
@@ -383,6 +383,7 @@
     display: flex;
     flex-shrink: 0;
     justify-content: center;
+    overflow: hidden;
     padding: $x-big;
     width: 230px;
   }
@@ -476,6 +477,8 @@
       img {
         border-top-left-radius: 5px;
         border-bottom-left-radius: 5px;
+        height: 100%;
+        width: 106%;
       }
     }
   }

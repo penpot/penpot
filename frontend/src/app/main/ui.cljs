@@ -5,10 +5,11 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui
   (:require
+   [app.config :as cf]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
@@ -139,7 +140,10 @@
       :dashboard-libraries
       :dashboard-team-members
       :dashboard-team-settings)
-     [:& dashboard {:route route}]
+     [:*
+      #_[:div.modal-wrapper
+         [:& app.main.ui.onboarding/release-notes-modal {:version "1.4"}]]
+      [:& dashboard {:route route}]]
 
      :viewer
      (let [index   (get-in route [:query-params :index])
