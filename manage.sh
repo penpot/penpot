@@ -73,18 +73,6 @@ function build {
            $DEVENV_IMGNAME:latest sudo -EH -u penpot ./scripts/build.sh
 }
 
-function build-frontend {
-    build "frontend";
-}
-
-function build-exporter {
-    build "exporter";
-}
-
-function build-backend {
-    build "backend";
-}
-
 function build-app-bundle {
     local version="$CURRENT_VERSION";
     local bundle_dir="./bundle-app";
