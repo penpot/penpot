@@ -48,6 +48,8 @@ $title-lh-sm: 1.15;
 @include font-face("worksans","WorkSans-LightItalic", "300", italic);
 @include font-face("worksans","WorkSans-Regular", normal);
 @include font-face("worksans","WorkSans-Italic", normal, italic);
+@include font-face("worksans","WorkSans-Medium", "500");
+@include font-face("worksans","WorkSans-MediumItalic", "500", italic);
 @include font-face("worksans","WorkSans-SemiBold", "600");
 @include font-face("worksans","WorkSans-SemiBoldItalic", "600", italic);
 @include font-face("worksans","WorkSans-Bold", bold);
