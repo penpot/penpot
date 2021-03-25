@@ -24,6 +24,12 @@
         shape (unchecked-get props "shape")
         color (unchecked-get props "color")
         transform (gsh/transform-matrix shape)
+        path? (= :path (:type shape))
+        path-data
+        (mf/use-memo
+         (mf/deps shape)
+         #(when path? (ugp/content->path (:content shape))))
+
         {:keys [id x y width height]} shape
 
         outline-type (case (:type shape)
@@ -45,7 +51,7 @@
                  :ry (/ height 2)}
 
                 :path
-                {:d (ugp/content->path (:content shape))
+                {:d path-data
                  :transform nil}
 
                 {:x x

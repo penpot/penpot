@@ -17,7 +17,6 @@ done
 cp ./resources/log4j2.xml ./target/dist/log4j2.xml
 cp -r ./src ./target/dist/main
 cp -r ./resources/emails ./target/dist/main/
-cp -r ./resources/svgclean.js ./target/dist/main/
 cp -r ./resources/error-report.tmpl ./target/dist/main/
 cp -r ../common ./target/dist/common
 

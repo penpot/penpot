@@ -24,6 +24,472 @@
 (defonce matrices-regex #"(matrix|translate|scale|rotate|skewX|skewY)\(([^\)]*)\)")
 (defonce number-regex #"[+-]?\d*(\.\d+)?(e[+-]?\d+)?")
 
+(defonce tags-to-remove #{:defs :linearGradient :radialGradient :metadata :mask :clipPath :filter :title})
+
+;; https://www.w3.org/TR/SVG11/eltindex.html
+(defonce svg-tags-list
+  #{:a
+    :altGlyph
+    :altGlyphDef
+    :altGlyphItem
+    :animate
+    :animateColor
+    :animateMotion
+    :animateTransform
+    :circle
+    :clipPath
+    :color-profile
+    :cursor
+    :defs
+    :desc
+    :ellipse
+    :feBlend
+    :feColorMatrix
+    :feComponentTransfer
+    :feComposite
+    :feConvolveMatrix
+    :feDiffuseLighting
+    :feDisplacementMap
+    :feDistantLight
+    :feFlood
+    :feFuncA
+    :feFuncB
+    :feFuncG
+    :feFuncR
+    :feGaussianBlur
+    :feImage
+    :feMerge
+    :feMergeNode
+    :feMorphology
+    :feOffset
+    :fePointLight
+    :feSpecularLighting
+    :feSpotLight
+    :feTile
+    :feTurbulence
+    :filter
+    :font
+    :font-face
+    :font-face-format
+    :font-face-name
+    :font-face-src
+    :font-face-uri
+    :foreignObject
+    :g
+    :glyph
+    :glyphRef
+    :hkern
+    :image
+    :line
+    :linearGradient
+    :marker
+    :mask
+    :metadata
+    :missing-glyph
+    :mpath
+    :path
+    :pattern
+    :polygon
+    :polyline
+    :radialGradient
+    :rect
+    :script
+    :set
+    :stop
+    :style
+    :svg
+    :switch
+    :symbol
+    :text
+    :textPath
+    :title
+    :tref
+    :tspan
+    :use
+    :view
+    :vkern
+    })
+
+;; https://www.w3.org/TR/SVG11/attindex.html
+(defonce svg-attr-list
+  #{:accent-height
+    :accumulate
+    :additive
+    :alphabetic
+    :amplitude
+    :arabic-form
+    :ascent
+    :attributeName
+    :attributeType
+    :azimuth
+    :baseFrequency
+    :baseProfile
+    :bbox
+    :begin
+    :bias
+    :by
+    :calcMode
+    :cap-height
+    :class
+    :clipPathUnits
+    :contentScriptType
+    :contentStyleType
+    :cx
+    :cy
+    :d
+    :descent
+    :diffuseConstant
+    :divisor
+    :dur
+    :dx
+    :dy
+    :edgeMode
+    :elevation
+    :end
+    :exponent
+    :externalResourcesRequired
+    :fill
+    :filterRes
+    :filterUnits
+    :font-family
+    :font-size
+    :font-stretch
+    :font-style
+    :font-variant
+    :font-weight
+    :format
+    :from
+    :fx
+    :fy
+    :g1
+    :g2
+    :glyph-name
+    :glyphRef
+    :gradientTransform
+    :gradientUnits
+    :hanging
+    :height
+    :horiz-adv-x
+    :horiz-origin-x
+    :horiz-origin-y
+    :id
+    :ideographic
+    :in
+    :in2
+    :intercept
+    :k
+    :k1
+    :k2
+    :k3
+    :k4
+    :kernelMatrix
+    :kernelUnitLength
+    :keyPoints
+    :keySplines
+    :keyTimes
+    :lang
+    :lengthAdjust
+    :limitingConeAngle
+    :local
+    :markerHeight
+    :markerUnits
+    :markerWidth
+    :maskContentUnits
+    :maskUnits
+    :mathematical
+    :max
+    :media
+    :method
+    :min
+    :mode
+    :name
+    :numOctaves
+    :offset
+    ;; We don't support events
+    ;;:onabort
+    ;;:onactivate
+    ;;:onbegin
+    ;;:onclick
+    ;;:onend
+    ;;:onerror
+    ;;:onfocusin
+    ;;:onfocusout
+    ;;:onload
+    ;;:onmousedown
+    ;;:onmousemove
+    ;;:onmouseout
+    ;;:onmouseover
+    ;;:onmouseup
+    ;;:onrepeat
+    ;;:onresize
+    ;;:onscroll
+    ;;:onunload
+    ;;:onzoom
+    :operator
+    :order
+    :orient
+    :orientation
+    :origin
+    :overline-position
+    :overline-thickness
+    :panose-1
+    :path
+    :pathLength
+    :patternContentUnits
+    :patternTransform
+    :patternUnits
+    :points
+    :pointsAtX
+    :pointsAtY
+    :pointsAtZ
+    :preserveAlpha
+    :preserveAspectRatio
+    :primitiveUnits
+    :r
+    :radius
+    :refX
+    :refY
+    :rendering-intent
+    :repeatCount
+    :repeatDur
+    :requiredExtensions
+    :requiredFeatures
+    :restart
+    :result
+    :rotate
+    :rx
+    :ry
+    :scale
+    :seed
+    :slope
+    :spacing
+    :specularConstant
+    :specularExponent
+    :spreadMethod
+    :startOffset
+    :stdDeviation
+    :stemh
+    :stemv
+    :stitchTiles
+    :strikethrough-position
+    :strikethrough-thickness
+    :string
+    :style
+    :surfaceScale
+    :systemLanguage
+    :tableValues
+    :target
+    :targetX
+    :targetY
+    :textLength
+    :title
+    :to
+    :transform
+    :type
+    :u1
+    :u2
+    :underline-position
+    :underline-thickness
+    :unicode
+    :unicode-range
+    :units-per-em
+    :v-alphabetic
+    :v-hanging
+    :v-ideographic
+    :v-mathematical
+    :values
+    :version
+    :vert-adv-y
+    :vert-origin-x
+    :vert-origin-y
+    :viewBox
+    :viewTarget
+    :width
+    :widths
+    :x
+    :x-height
+    :x1
+    :x2
+    :xChannelSelector
+    :xmlns:xlink
+    :xlink:actuate
+    :xlink:arcrole
+    :xlink:href
+    :xlink:role
+    :xlink:show
+    :xlink:title
+    :xlink:type
+    :xml:base
+    :xml:lang
+    :xml:space
+    :y
+    :y1
+    :y2
+    :yChannelSelector
+    :z
+    :zoomAndPan})
+
+(defonce svg-present-list
+  #{:alignment-baseline
+    :baseline-shift
+    :clip-path
+    :clip-rule
+    :clip
+    :color-interpolation-filters
+    :color-interpolation
+    :color-profile
+    :color-rendering
+    :color
+    :cursor
+    :direction
+    :display
+    :dominant-baseline
+    :enable-background
+    :fill-opacity
+    :fill-rule
+    :fill
+    :filter
+    :flood-color
+    :flood-opacity
+    :font-family
+    :font-size-adjust
+    :font-size
+    :font-stretch
+    :font-style
+    :font-variant
+    :font-weight
+    :glyph-orientation-horizontal
+    :glyph-orientation-vertical
+    :image-rendering
+    :kerning
+    :letter-spacing
+    :lighting-color
+    :marker-end
+    :marker-mid
+    :marker-start
+    :mask
+    :opacity
+    :overflow
+    :pointer-events
+    :shape-rendering
+    :stop-color
+    :stop-opacity
+    :stroke-dasharray
+    :stroke-dashoffset
+    :stroke-linecap
+    :stroke-linejoin
+    :stroke-miterlimit
+    :stroke-opacity
+    :stroke-width
+    :stroke
+    :text-anchor
+    :text-decoration
+    :text-rendering
+    :unicode-bidi
+    :visibility
+    :word-spacing
+    :writing-mode
+    :mask-type})
+
+(defonce inheritable-props
+  [:clip-rule
+   :color
+   :color-interpolation
+   :color-interpolation-filters
+   :color-profile
+   :color-rendering
+   :cursor
+   :direction
+   :dominant-baseline
+   :fill
+   :fill-opacity
+   :fill-rule
+   :font
+   :font-family
+   :font-size
+   :font-size-adjust
+   :font-stretch
+   :font-style
+   :font-variant
+   :font-weight
+   :glyph-orientation-horizontal
+   :glyph-orientation-vertical
+   :image-rendering
+   :letter-spacing
+   :marker
+   :marker-end
+   :marker-mid
+   :marker-start
+   :paint-order
+   :pointer-events
+   :shape-rendering
+   :stroke
+   :stroke-dasharray
+   :stroke-dashoffset
+   :stroke-linecap
+   :stroke-linejoin
+   :stroke-miterlimit
+   :stroke-opacity
+   :stroke-width
+   :text-anchor
+   :text-rendering
+   :transform
+   :visibility
+   :word-spacing
+   :writing-mode])
+
+(defonce gradient-tags
+  #{:linearGradient
+    :radialGradient})
+
+(defonce filter-tags
+  #{:filter
+    :feBlend
+    :feColorMatrix
+    :feComponentTransfer
+    :feComposite
+    :feConvolveMatrix
+    :feDiffuseLighting
+    :feDisplacementMap
+    :feFlood
+    :feGaussianBlur
+    :feImage
+    :feMerge
+    :feMorphology
+    :feOffset
+    :feSpecularLighting
+    :feTile
+    :feTurbulence})
+
+;; Props not supported by react we need to keep them lowercase
+(defonce non-react-props
+  #{:mask-type})
+
+;; Defaults for some tags per spec https://www.w3.org/TR/SVG11/single-page.html
+;; they are basicaly the defaults that can be percents and we need to replace because
+;; otherwise won't work as expected in the workspace
+(defonce svg-tag-defaults
+  (let [filter-default {:units :filterUnits
+                        :default "objectBoundingBox"
+                        "objectBoundingBox" {}
+                        "userSpaceOnUse" {:x "-10%" :y "-10%" :width "120%" :height "120%"}}
+        filter-values (->> filter-tags
+                           (reduce #(merge %1 (hash-map %2 filter-default)) {}))]
+
+    (merge {:linearGradient {:units :gradientUnits
+                             :default "objectBoundingBox"
+                             "objectBoundingBox" {}
+                             "userSpaceOnUse"    {:x1 "0%" :y1 "0%" :x2 "100%" :y2 "0%"}}
+            :radialGradient {:units :gradientUnits
+                             :default "objectBoundingBox"
+                             "objectBoundingBox" {}
+                             "userSpaceOnUse"    {:cx "50%" :cy "50%" :r "50%"}}
+            :mask {:units :maskUnits
+                   :default "userSpaceOnUse"
+                   "objectBoundingBox" {}
+                   "userSpaceOnUse"    {:x "-10%" :y "-10%" :width "120%" :height "120%"}}}
+           filter-values)))
+
 (defn extract-ids [val]
   (->> (re-seq xml-id-regex val)
        (mapv second)))
@@ -61,35 +527,52 @@
 
 (defn clean-attrs
   "Transforms attributes to their react equivalent"
-  [attrs]
-  (letfn [(transform-key [key]
-            (-> (d/name key)
-                (str/replace ":" "-")
-                (str/camel)
-                (keyword)))
+  ([attrs] (clean-attrs attrs true))
+  ([attrs whitelist?]
+   (letfn [(known-property? [[key _]]
+             (or (not whitelist?)
+                 (contains? svg-attr-list key )
+                 (contains? svg-present-list key )))
 
-          (format-styles [style-str]
-            (->> (str/split style-str ";")
-                 (map str/trim)
-                 (map #(str/split % ":"))
-                 (group-by first)
-                 (map (fn [[key val]]
-                        (vector
-                         (transform-key key)
-                         (second (first val)))))
-                 (into {})))
+           (transform-key [key]
+             (if (contains? non-react-props key)
+               key
+               (-> (d/name key)
+                   (str/replace ":" "-")
+                   (str/camel)
+                   (keyword))))
 
-          (map-fn [[key val]]
-            (let [key (keyword key)]
-              (cond
-                (= key :class) [:className val]
-                (and (= key :style) (string? val)) [key (format-styles val)]
-                (and (= key :style) (map? val)) [key (clean-attrs val)]
-                :else (vector (transform-key key) val))))]
+           (lowercase-key [key]
+             (-> (d/name key)
+                 (str/lower)
+                 (keyword)))
 
-    (->> attrs
-         (map map-fn)
-         (into {}))))
+           (format-styles [style-str]
+             (->> (str/split style-str ";")
+                  (map str/trim)
+                  (map #(str/split % ":"))
+                  (group-by first)
+                  (map (fn [[key val]]
+                         (vector
+                          (transform-key key)
+                          (second (first val)))))
+                  (into {})))
+
+           (map-fn [[key val]]
+             (let [key (keyword key)]
+               (cond
+                 (= key :class) [:className val]
+                 (and (= key :style) (string? val)) [key (format-styles val)]
+                 (and (= key :style) (map? val)) [key (clean-attrs val false)]
+                 :else (vector (transform-key key) val))))
+
+           ]
+
+     (let [filtered-props (->> attrs (remove known-property?) (map first))]
+       (when (seq filtered-props)
+         (.warn js/console "Unknown properties: " (str/join ", " filtered-props  ))))
+
+     (into {} (comp (filter known-property?) (map map-fn)) attrs))))
 
 (defn update-attr-ids
   "Replaces the ids inside a property"
@@ -126,17 +609,15 @@
               (reduce visit-node result (:content node))))]
     (visit-node {} content)))
 
-(def remove-tags #{:defs :linearGradient})
-
 (defn extract-defs [{:keys [tag attrs content] :as node}]
   (if-not (map? node)
     [{} node]
 
-    (let [remove-node? (fn [{:keys [tag]}] (contains? remove-tags tag))
-
+    (let [remove-node? (fn [{:keys [tag]}] (and (some? tag)
+                                                (or (contains? tags-to-remove tag)
+                                                    (not (contains? svg-tags-list tag)))))
           rec-result (->> (:content node) (map extract-defs))
           node (assoc node :content (->> rec-result (map second) (filterv (comp not remove-node?))))
-
 
           current-node-defs (if (contains? attrs :id)
                               (hash-map (:id attrs) node)
@@ -319,76 +800,6 @@
       transform
       (update :transform append-transform))))
 
-(defonce inheritable-props
-  [:clip-rule
-   :color
-   :color-interpolation
-   :color-interpolation-filters
-   :color-profile
-   :color-rendering
-   :cursor
-   :direction
-   :dominant-baseline
-   :fill
-   :fill-opacity
-   :fill-rule
-   :font
-   :font-family
-   :font-size
-   :font-size-adjust
-   :font-stretch
-   :font-style
-   :font-variant
-   :font-weight
-   :glyph-orientation-horizontal
-   :glyph-orientation-vertical
-   :image-rendering
-   :letter-spacing
-   :marker
-   :marker-end
-   :marker-mid
-   :marker-start
-   :paint-order
-   :pointer-events
-   :shape-rendering
-   :stroke
-   :stroke-dasharray
-   :stroke-dashoffset
-   :stroke-linecap
-   :stroke-linejoin
-   :stroke-miterlimit
-   :stroke-opacity
-   :stroke-width
-   :text-anchor
-   :text-rendering
-   :transform
-   :visibility
-   :word-spacing
-   :writing-mode])
-
-(defonce gradient-tags
-  #{:linearGradient
-    :radialGradient})
-
-(defonce filter-tags
-  #{:filter
-    :feBlend
-    :feColorMatrix
-    :feComponentTransfer
-    :feComposite
-    :feConvolveMatrix
-    :feDiffuseLighting
-    :feDisplacementMap
-    :feFlood
-    :feGaussianBlur
-    :feImage
-    :feMerge
-    :feMorphology
-    :feOffset
-    :feSpecularLighting
-    :feTile
-    :feTurbulence})
-
 (defn inherit-attributes [group-attrs {:keys [attrs] :as node}]
   (if (map? node)
     (let [attrs (-> (format-styles attrs)
@@ -424,31 +835,6 @@
       (-> (redfn value node)
           (reduce-content (:content node)))
       value)))
-
-;; Defaults for some tags per spec https://www.w3.org/TR/SVG11/single-page.html
-;; they are basicaly the defaults that can be percents and we need to replace because
-;; otherwise won't work as expected in the workspace
-(defonce svg-tag-defaults
-  (let [filter-default {:units :filterUnits
-                        :default "objectBoundingBox"
-                        "objectBoundingBox" {}
-                        "userSpaceOnUse" {:x "-10%" :y "-10%" :width "120%" :height "120%"}}
-        filter-values (->> filter-tags
-                           (reduce #(merge %1 (hash-map %2 filter-default)) {}))]
-
-    (merge {:linearGradient {:units :gradientUnits
-                             :default "objectBoundingBox"
-                             "objectBoundingBox" {}
-                             "userSpaceOnUse"    {:x1 "0%" :y1 "0%" :x2 "100%" :y2 "0%"}}
-            :radialGradient {:units :gradientUnits
-                             :default "objectBoundingBox"
-                             "objectBoundingBox" {}
-                             "userSpaceOnUse"    {:cx "50%" :cy "50%" :r "50%"}}
-            :mask {:units :maskUnits
-                   :default "userSpaceOnUse"
-                   "objectBoundingBox" {}
-                   "userSpaceOnUse"    {:x "-10%" :y "-10%" :width "120%" :height "120%"}}}
-           filter-values)))
 
 (defn fix-default-values
   "Gives values to some SVG elements which defaults won't work when imported into the platform"

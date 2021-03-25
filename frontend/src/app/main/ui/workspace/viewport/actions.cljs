@@ -385,6 +385,7 @@
 (defn on-drop [file viewport-ref zoom]
   (let [on-image-uploaded (on-image-uploaded)]
     (mf/use-callback
+     (mf/deps zoom)
      (fn [event]
        (dom/prevent-default event)
        (let [point (gpt/point (.-clientX event) (.-clientY event))

@@ -20,7 +20,6 @@
    [app.common.data :as d]
    [app.common.pages :as cp]
    [app.common.spec :as us]
-   ["./svgclean" :as svgc]
    ["xml-js" :as xml]
    ["child_process" :as chp]
    ["os" :as os]
@@ -115,7 +114,6 @@
                                 (p/then (constantly pbmpath)))))
                   (p/then trace-color-mask)
                   (p/then read-file)
-                  (p/then clean-svg)
                   (p/then (fn [data]
                             (p/let [data (parse-xml data)
                                     data (get-in data ["elements" 0])]
@@ -140,10 +138,6 @@
             (log/trace :fn :convert-to-svg :ppmpath ppmpath :colors colors)
             (-> (p/all (map (partial generate-color-mask ppmpath) colors))
                 (p/then join-color-layers)))
-
-          (clean-svg [data]
-            (log/trace :fn :clean-svg)
-            (svgc/optimize data))
 
           (trace-single-node [{:keys [data] :as node}]
             (log/trace :fn :trace-single-node)
