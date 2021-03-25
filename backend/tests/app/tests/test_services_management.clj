@@ -73,7 +73,7 @@
         (let [[item :as rows] (db/query th/*pool* :file-media-object {:file-id (:id result)})]
           (t/is (= 1 (count rows)))
 
-          ;; Checj that bot items have different ids
+          ;; Check that both items have different ids
           (t/is (not= (:id item) (:id mobj)))
 
           ;; check that both file-media-objects points to the same storage object.
@@ -85,6 +85,67 @@
 
           ;; And does not contains the old one
           (t/is (not (contains? (get-in result [:data :media]) (:id mobj)))))
+
+        ;; Check the total number of files
+        (let [rows (db/query th/*pool* :file {:project-id (:id project)})]
+          (t/is (= 3 (count rows))))
+
+        ))))
+
+(t/deftest duplicate-file-with-deleted-rels
+  (let [storage (:app.storage/storage th/*system*)
+        sobject (sto/put-object storage {:content (sto/content "content")
+                                         :content-type "text/plain"
+                                         :other "data"})
+        profile (th/create-profile* 1 {:is-active true})
+        project (th/create-project* 1 {:team-id (:default-team-id profile)
+                                       :profile-id (:id profile)})
+        file1   (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:id project)})
+        file2   (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:id project)
+                                    :is-shared true})
+
+        libl    (th/link-file-to-library* {:file-id (:id file1)
+                                           :library-id (:id file2)})
+
+        mobj    (th/create-file-media-object* {:file-id (:id file1)
+                                               :is-local false
+                                               :media-id (:id sobject)})
+
+        _       (th/mark-file-deleted* {:id (:id file2)})
+        _       (sto/del-object storage (:id sobject))]
+
+    (th/update-file*
+     {:file-id (:id file1)
+      :profile-id (:id profile)
+      :changes [{:type :add-media
+                 :object (select-keys mobj [:id :width :height :mtype :name])}]})
+
+    (let [data {::th/type :duplicate-file
+                :profile-id (:id profile)
+                :file-id (:id file1)
+                :name "file 1 (copy)"}
+          out  (th/mutation! data)]
+
+      ;; (th/print-result! out)
+
+      ;; Check tha tresult is correct
+      (t/is (nil? (:error out)))
+      (let [result (:result out)]
+
+        ;; Check that the returned result is a file but has different id
+        ;; and different name.
+        (t/is (= "file 1 (copy)" (:name result)))
+        (t/is (not= (:id file1) (:id result)))
+
+        ;; Check that the deleted library is not duplicated
+        (let [[item :as rows] (db/query th/*pool* :file-library-rel {:file-id (:id result)})]
+          (t/is (= 0 (count rows))))
+
+        ;; Check that the new file has no media objects
+        (let [[item :as rows] (db/query th/*pool* :file-media-object {:file-id (:id result)})]
+          (t/is (= 0 (count rows))))
 
         ;; Check the total number of files
         (let [rows (db/query th/*pool* :file {:project-id (:id project)})]
@@ -149,6 +210,77 @@
 
           ;; check that the both files are equivalent
           (doseq [[fa fb] (map vector p1-files p2-files)]
+            (t/is (not= (:id fa) (:id fb)))
+            (t/is (= (:name fa) (:name fb)))
+
+            (when (= (:id fa) (:id file1))
+              (t/is (false? (b/equals? (:data fa)
+                                       (:data fb)))))
+
+            (when (= (:id fa) (:id file2))
+              (t/is (false? (b/equals? (:data fa)
+                                       (:data fb))))))
+
+          )))))
+
+(t/deftest duplicate-project-with-deleted-files
+  (let [storage (:app.storage/storage th/*system*)
+        sobject (sto/put-object storage {:content (sto/content "content")
+                                         :content-type "text/plain"
+                                         :other "data"})
+        profile (th/create-profile* 1 {:is-active true})
+        project (th/create-project* 1 {:team-id (:default-team-id profile)
+                                       :profile-id (:id profile)})
+        file1   (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:id project)})
+        file2   (th/create-file* 2 {:profile-id (:id profile)
+                                    :project-id (:id project)
+                                    :is-shared true})
+
+        libl    (th/link-file-to-library* {:file-id (:id file1)
+                                           :library-id (:id file2)})
+        mobj    (th/create-file-media-object* {:file-id (:id file1)
+                                               :is-local false
+                                               :media-id (:id sobject)})]
+
+    (th/update-file*
+     {:file-id (:id file1)
+      :profile-id (:id profile)
+      :changes [{:type :add-media
+                 :object (select-keys mobj [:id :width :height :mtype :name])}]})
+
+    (th/mark-file-deleted* {:id (:id file1)})
+
+    (let [data {::th/type :duplicate-project
+                :profile-id (:id profile)
+                :project-id (:id project)
+                :name "project 1 (copy)"}
+          out  (th/mutation! data)]
+
+      ;; Check tha tresult is correct
+      (t/is (nil? (:error out)))
+
+      (let [result (:result out)]
+        ;; Check that they are the same project but different id and name
+        (t/is (= "project 1 (copy)" (:name result)))
+        (t/is (not= (:id project) (:id result)))
+
+        ;; Check the total number of projects (previously is 2, now is 3)
+        (let [rows (db/query th/*pool* :project {:team-id (:default-team-id profile)})]
+          (t/is (= 3 (count rows))))
+
+        ;; Check that the new project has only the second file
+        (let [p1-files (db/query th/*pool* :file
+                                 {:project-id (:id project)}
+                                 {:order-by [:name]})
+              p2-files (db/query th/*pool* :file
+                                 {:project-id (:id result)}
+                                 {:order-by [:name]})]
+          (t/is (= (count (rest p1-files))
+                   (count p2-files)))
+
+          ;; check that the both files are equivalent
+          (doseq [[fa fb] (map vector (rest p1-files) p2-files)]
             (t/is (not= (:id fa) (:id fb)))
             (t/is (= (:name fa) (:name fb)))
 

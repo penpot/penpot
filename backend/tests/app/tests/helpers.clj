@@ -145,6 +145,10 @@
                                 :name (str "file" i)}
                                params))))
 
+(defn mark-file-deleted*
+  ([params] (mark-file-deleted* *pool* params))
+  ([conn {:keys [id] :as params}]
+   (#'files/mark-file-deleted conn {:id id})))
 
 (defn create-team*
   ([i params] (create-team* *pool* i params))
@@ -159,7 +163,6 @@
                                 :profile-id profile-id
                                 :role :owner})
      team)))
-
 
 (defn create-file-media-object*
   ([params] (create-file-media-object* *pool* params))
