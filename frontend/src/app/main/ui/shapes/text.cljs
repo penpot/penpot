@@ -88,10 +88,8 @@
   [shape]
   (let [colors (->> (:content shape)
                     (tree-seq map? :children)
-                    (into #{} (comp (map :fill-color) (filter string?))))]
-    (if (empty? colors)
-      "#000000"
-      (apply str (interpose "," colors)))))
+                    (into #{"#000000"} (comp (map :fill-color) (filter string?))))]
+    (apply str (interpose "," colors))))
 
 (mf/defc text-shape
   {::mf/wrap-props false
