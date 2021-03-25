@@ -5,20 +5,16 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.svgparse
   (:require
    [app.common.exceptions :as ex]
    [app.metrics :as mtx]
-   [app.util.graal :as graal]
-   [app.util.pool :as pool]
-   [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [clojure.xml :as xml]
    [integrant.core :as ig])
   (:import
-   java.util.function.Consumer
    org.apache.commons.io.IOUtils))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -41,7 +37,7 @@
          (mtx/instrument handler))))
 
 (defn- handler
-  [cfg {:keys [headers body] :as request}]
+  [_ {:keys [headers body] :as request}]
   (when (not= "image/svg+xml" (get headers "content-type"))
     (ex/raise :type :validation
               :code :unsupported-mime-type
