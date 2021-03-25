@@ -25,6 +25,7 @@
    [app.util.object :as obj]
    [app.util.timers :as timers]
    [app.util.text-editor :as ted]
+   [okulary.core :as l]
    [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
@@ -38,19 +39,31 @@
   [:& text/text-shape {:shape shape
                        :grow-type (:grow-type shape)}])
 
+(defn- update-with-current-editor-state
+  [{:keys [id] :as shape}]
+  (let [editor-state-ref (mf/use-memo (mf/deps id) #(l/derived (l/key id) refs/workspace-editor-state))
+        editor-state     (mf/deref editor-state-ref)]
+    (cond-> shape
+      (some? editor-state)
+      (assoc :content (-> editor-state
+                          (ted/get-editor-current-content)
+                          (ted/export-content))))))
+
 (mf/defc text-resize-content
   {::mf/wrap-props false}
   [props]
   (let [{:keys [id name x y grow-type] :as shape} (obj/get props "shape")
 
-        state-map     (mf/deref refs/workspace-editor-state)
-        editor-state  (get state-map id)
-
-        shape         (cond-> shape
-                        (some? editor-state)
-                        (assoc :content (-> editor-state
-                                            (ted/get-editor-current-content)
-                                            (ted/export-content))))
+        ;; NOTE: this breaks the hooks rule of "no hooks inside
+        ;; conditional code"; but we ensure that this component will
+        ;; not reused if edition flag is changed with `:key` prop.
+        ;; Without the `:key` prop combining the shape-id and the
+        ;; edition flag, this will result in a react error. This is
+        ;; done for performance reason; with this change only the
+        ;; shape with edition flag is watching the editor state ref.
+        shape (cond-> shape
+                (true? (obj/get props "edition?"))
+                (update-with-current-editor-state))
 
         paragraph-ref (mf/use-state nil)
 
@@ -88,15 +101,14 @@
            (.observe observer paragraph-node)
            #(.disconnect observer)))))
 
-    [:& text/text-shape {:ref text-ref-cb
-                         :shape shape}]))
+    [:& text/text-shape {:ref text-ref-cb :shape shape}]))
 
 (mf/defc text-wrapper
   {::mf/wrap-props false}
   [props]
   (let [{:keys [id x y width height] :as shape} (unchecked-get props "shape")
-        edition  (mf/deref refs/selected-edition)
-        edition? (= edition id)]
+        edition-ref (mf/use-memo (mf/deps id) #(l/derived (fn [o] (= id (:edition o))) refs/workspace-local))
+        edition?    (mf/deref edition-ref)]
 
     [:> shape-container {:shape shape}
      ;; We keep hidden the shape when we're editing so it keeps track of the size
@@ -104,4 +116,9 @@
      [:g.text-shape {:opacity (when edition? 0)
                      :pointer-events "none"}
 
-      [:& text-resize-content {:shape shape}]]]))
+      ;; The `:key` prop here is mandatory because the
+      ;; text-resize-content breaks a hooks rule and we can't reuse
+      ;; the component if the edition flag changes.
+      [:& text-resize-content {:shape shape
+                               :edition? edition?
+                               :key (str (:id shape) edition?)}]]]))
