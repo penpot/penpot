@@ -146,6 +146,7 @@ COPY files/phantomjs-mock /usr/bin/phantomjs
 COPY files/bashrc         /root/.bashrc
 COPY files/vimrc          /root/.vimrc
 COPY files/tmux.conf      /root/.tmux.conf
+COPY files/sudoers        /etc/sudoers
 
 COPY files/start-tmux.sh  /home/start-tmux.sh
 COPY files/entrypoint.sh  /home/entrypoint.sh
