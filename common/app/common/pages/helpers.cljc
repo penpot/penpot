@@ -187,16 +187,18 @@
 (defn clean-loops
   "Clean a list of ids from circular references."
   [objects ids]
-  (loop [ids    ids
-         id     (first ids)
-         others (rest ids)]
-    (if-not id
-      ids
-      (recur (cond-> ids
-               (some #(contains? ids %) (get-parents id objects))
-               (disj id))
-             (first others)
-             (rest others)))))
+  (let [parent-selected?
+        (fn [id]
+          (let [parents (get-parents id objects)]
+            (some ids parents)))
+
+        add-element
+        (fn [result id]
+          (cond-> result
+            (not (parent-selected? id))
+            (conj id)))]
+
+    (reduce add-element (d/ordered-set) ids)))
 
 (defn calculate-invalid-targets
   [shape-id objects]

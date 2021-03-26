@@ -20,8 +20,8 @@
 (mf/defc outline
   {::mf/wrap-props false}
   [props]
-  (let [zoom (mf/deref refs/selected-zoom)
-        shape (unchecked-get props "shape")
+  (let [shape (unchecked-get props "shape")
+        zoom (unchecked-get props "zoom")
         color (unchecked-get props "color")
         transform (gsh/transform-matrix shape)
         path? (= :path (:type shape))

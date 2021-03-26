@@ -296,7 +296,13 @@
 
 (mf/defc multiple-selection-handlers
   [{:keys [shapes selected zoom color show-distances disable-handlers on-move-selected] :as props}]
-  (let [shape (geom/setup {:type :rect} (geom/selection-rect (->> shapes (map geom/transform-shape))))
+  (let [shape (mf/use-memo
+               (mf/deps shapes)
+               #(->> shapes
+                     (map geom/transform-shape)
+                     (geom/selection-rect)
+                     (geom/setup {:type :rect})))
+
         shape-center (geom/center-shape shape)
 
         hover-id (-> (mf/deref refs/current-hover) first)
