@@ -41,8 +41,8 @@
 
             props (-> (attrs/extract-style-attrs shape))]
 
-        [:> mask-wrapper mask-props
-         [:> :g (attrs/extract-style-attrs shape)
+        [:> :g (attrs/extract-style-attrs shape)
+         [:> mask-wrapper mask-props
           (when mask
             [:> render-mask #js {:frame frame :mask mask}])
 
