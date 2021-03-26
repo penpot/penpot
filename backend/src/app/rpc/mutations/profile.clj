@@ -382,8 +382,8 @@
 
 (sv/defmethod ::update-profile-photo
   [{:keys [pool storage] :as cfg} {:keys [profile-id file] :as params}]
-  (media/validate-media-type (:content-type file))
   (db/with-atomic [conn pool]
+    (media/validate-media-type (:content-type file) #{"image/jpeg" "image/png" "image/webp"})
     (let [profile (db/get-by-id conn :profile profile-id)
           _       (media/run cfg {:cmd :info :input {:path (:tempfile file)
                                                      :mtype (:content-type file)}})

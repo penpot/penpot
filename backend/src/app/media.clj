@@ -185,8 +185,9 @@
 ;; --- Utility functions
 
 (defn validate-media-type
-  [media-type]
-  (when-not (cm/valid-media-types media-type)
-    (ex/raise :type :validation
-              :code :media-type-not-allowed
-              :hint "Seems like you are uploading an invalid media object")))
+  ([mtype] (validate-media-type mtype cm/valid-media-types))
+  ([mtype allowed]
+   (when-not (contains? allowed mtype)
+     (ex/raise :type :validation
+               :code :media-type-not-allowed
+               :hint "Seems like you are uploading an invalid media object"))))

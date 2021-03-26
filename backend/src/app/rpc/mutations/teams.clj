@@ -252,9 +252,10 @@
 
 (sv/defmethod ::update-team-photo
   [{:keys [pool storage] :as cfg} {:keys [profile-id file team-id] :as params}]
-  (media/validate-media-type (:content-type file))
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)
+    (media/validate-media-type (:content-type file) #{"image/jpeg" "image/png" "image/webp"})
+
     (let [team    (teams/retrieve-team conn profile-id team-id)
           _       (media/run cfg {:cmd :info :input {:path (:tempfile file)
                                                      :mtype (:content-type file)}})
