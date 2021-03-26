@@ -54,6 +54,7 @@
 - Fix problem with team management in dashboard [Taiga #1475](https://tree.taiga.io/project/penpot/issue/1475)
 - Fix problem with blending modes in masks [Taiga #1476](https://tree.taiga.io/project/penpot/issue/1476)
 - Fix text selection in comments [#745](https://github.com/penpot/penpot/issues/745)
+- Fix problem with blocked shapes [Taiga #1480](https://tree.taiga.io/project/penpot/issue/1480)
 
 ### :arrow_up: Deps updates
 
