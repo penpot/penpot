@@ -95,7 +95,8 @@
   {::mf/wrap-props false
    ::mf/forward-ref true}
   [props ref]
-  (let [{:keys [id x y width height content grow-type] :as shape} (obj/get props "shape")
+  (let [{:keys [id x y width height content] :as shape} (obj/get props "shape")
+        grow-type (obj/get props "grow-type") ;; This is only needed in workspace
         embed-fonts? (mf/use-ctx muc/embed-ctx)
         ;; We add 8px to add a padding for the exporter
         ;; width (+ width 8)
