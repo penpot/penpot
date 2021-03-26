@@ -36,6 +36,7 @@
 
 - Disables buttons in view mode for users without permissions [Taiga #1328](https://tree.taiga.io/project/penpot/issue/1328)
 - Fix broken profile and profile options form.
+- Fix calculate size of some animated gifs [Taiga #1487](https://tree.taiga.io/project/penpot/issue/1487)
 - Fix error with the "Navigate to" button on prototypes [Taiga #1268](https://tree.taiga.io/project/penpot/issue/1268)
 - Fix issue when undo after changing the artboard of a shape [Taiga #1304](https://tree.taiga.io/project/penpot/issue/1304)
 - Fix issue with typographies panel cannot be collapsed [#707](https://github.com/penpot/penpot/issues/707)
