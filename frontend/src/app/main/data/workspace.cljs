@@ -1113,7 +1113,8 @@
               :path
               (rx/of (dwc/start-edition-mode id)
                      (dwdp/start-path-edit id))
-              :else (rx/empty))))))))
+
+              (rx/empty))))))))
 
 
 ;; --- Change Page Order (D&D Ordering)
