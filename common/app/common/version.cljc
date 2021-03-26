@@ -13,27 +13,42 @@
    [app.common.data :as d]
    [cuerdas.core :as str]))
 
-(def version-re #"^(([A-Za-z]+)\-?)?(\d+\.\d+\.\d+)(\-?((alpha|prealpha|beta|rc)(\d+)?))?(\-?(\d+))?(\-?(\w+))$")
+(def version-re #"^(([A-Za-z]+)\-?)?((\d+)\.(\d+)\.(\d+))(\-?((alpha|prealpha|beta|rc|dev)(\d+)?))?(\-?(\d+))?(\-?g(\w+))$")
 
 (defn parse
   [data]
   (cond
     (= data "%version%")
     {:full "develop"
-     :base "develop"
      :branch "develop"
+     :base "0.0.0"
+     :main "0.0"
+     :major "0"
+     :minor "0"
+     :patch "0"
      :modifier nil
      :commit nil
      :commit-hash nil}
 
     (string? data)
-    (let [result (re-find version-re data)]
+    (let [result (re-find version-re data)
+          major  (get result 4)
+          minor  (get result 5)
+          patch  (get result 6)
+          base   (get result 3)
+          main   (str/fmt "%s.%s" major minor)
+          branch (get result 2)]
+
       {:full data
-       :base (get result 3)
-       :branch (get result 2)
-       :modifier (get result 5)
-       :commit   (get result 9)
-       :commit-hash (get result 11)})
+       :base base
+       :main main
+       :major major
+       :minor minor
+       :patch patch
+       :branch branch
+       :modifier (get result 8)
+       :commit   (get result 12)
+       :commit-hash (get result 14)})
 
     :else nil))
 
