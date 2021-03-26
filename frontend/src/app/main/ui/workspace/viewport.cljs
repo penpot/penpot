@@ -202,7 +202,8 @@
            :selected selected
            :hover (when (not= :frame (:type @hover))
                     #{(or @frame-hover (:id @hover))})
-           :edition edition}])
+           :edition edition
+           :zoom zoom}])
 
        (when show-selection-handlers?
          [:& selection/selection-handlers

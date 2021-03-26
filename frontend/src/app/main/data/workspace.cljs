@@ -1352,7 +1352,8 @@
       ptk/WatchEvent
       (watch [_ state stream]
         (let [objects  (dwc/lookup-page-objects state)
-              selected (get-in state [:workspace-local :selected])
+              selected (->> (get-in state [:workspace-local :selected])
+                            (cp/clean-loops objects))
               pdata    (reduce (partial collect-object-ids objects) {} selected)
               initial  {:type :copied-shapes
                         :file-id (:current-file-id state)
