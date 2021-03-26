@@ -22,6 +22,7 @@
    [app.main.ui.workspace.viewport.gradients :as gradients]
    [app.main.ui.workspace.viewport.hooks :as hooks]
    [app.main.ui.workspace.viewport.interactions :as interactions]
+   [app.main.ui.workspace.viewport.outline :as outline]
    [app.main.ui.workspace.viewport.pixel-overlay :as pixel-overlay]
    [app.main.ui.workspace.viewport.presence :as presence]
    [app.main.ui.workspace.viewport.selection :as selection]
@@ -197,7 +198,7 @@
       [:g {:style {:pointer-events (if disable-events? "none" "auto")}}
 
        (when show-outlines?
-         [:& widgets/shape-outlines
+         [:& outline/shape-outlines
           {:objects objects
            :selected selected
            :hover (when (not= :frame (:type @hover))

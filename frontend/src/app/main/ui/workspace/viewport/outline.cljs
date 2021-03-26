@@ -7,15 +7,16 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.main.ui.workspace.shapes.outline
+(ns app.main.ui.workspace.viewport.outline
   (:require
-   [rumext.alpha :as mf]
    [app.common.geom.shapes :as gsh]
-   [app.util.object :as obj]
-   [rumext.util :refer [map->obj]]
+   [app.common.pages :as cp]
    [app.main.refs :as refs]
-   [app.util.geom.path :as ugp]))
-
+   [app.util.geom.path :as ugp]
+   [app.util.object :as obj]
+   [clojure.set :as set]
+   [rumext.alpha :as mf]
+   [rumext.util :refer [map->obj]]))
 
 (mf/defc outline
   {::mf/wrap-props false}
@@ -60,3 +61,43 @@
                  :height height})]
 
     [:> outline-type (map->obj (merge common props))]))
+
+(mf/defc shape-outlines-render
+  {::mf/wrap-props false
+   ::mf/wrap [#(mf/memo' % (mf/check-props ["shapes" "zoom"]))]}
+  [props]
+  (let [shapes (obj/get props "shapes")
+        zoom (obj/get props "zoom")
+        color (if (or (> (count shapes) 1) (nil? (:shape-ref (first shapes))))
+                "#31EFB8" "#00E0FF")]
+    (for [shape shapes]
+      [:& outline {:key (str "outline-" (:id shape))
+                   :shape (gsh/transform-shape shape)
+                   :zoom zoom
+                   :color color}])))
+
+(mf/defc shape-outlines
+  {::mf/wrap-props false}
+  [props]
+  (let [selected  (or (obj/get props "selected") #{})
+        hover     (or (obj/get props "hover") #{})
+        objects   (obj/get props "objects")
+        edition   (obj/get props "edition")
+        zoom      (obj/get props "zoom")
+
+        transform (mf/deref refs/current-transform)
+
+        outlines-ids  (->> (set/union selected hover)
+                           (cp/clean-loops objects))
+
+        show-outline? (fn [shape] (and (not (:hidden shape))
+                                       (not (:blocked shape))))
+
+        shapes (->> outlines-ids
+                    (filter #(not= edition %))
+                    (map #(get objects %))
+                    (filterv show-outline?))]
+
+    [:g.outlines {:display (when (some? transform) "none")}
+     [:& shape-outlines-render {:shapes shapes
+                                :zoom zoom}]]))
