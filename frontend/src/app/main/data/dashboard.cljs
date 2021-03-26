@@ -235,7 +235,7 @@
 
 (defn update-team-photo
   [{:keys [file team-id] :as params}]
-  (us/assert ::di/js-file file)
+  (us/assert ::di/file file)
   (us/assert ::us/uuid team-id)
   (ptk/reify ::update-team-photo
     ptk/WatchEvent
