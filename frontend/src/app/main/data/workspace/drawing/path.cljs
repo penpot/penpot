@@ -180,11 +180,7 @@
   (or (= (ptk/type event) ::finish-path)
       (= (ptk/type event) :esc-pressed)
       (= event :interrupt) ;; ESC
-      (and (ms/mouse-double-click? event))
-      (and (ms/keyboard-event? event)
-           (= type :down)
-           ;; TODO: Enter now finish path but can finish drawing/editing as well
-           (= enter-keycode (:key event)))))
+      (and (ms/mouse-double-click? event))))
 
 (defn generate-path-changes [page-id shape old-content new-content]
   (us/verify ::content old-content)
@@ -572,11 +568,13 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [id (get-in state [:workspace-local :edition])
-            shape (get-in state (get-path state))
-            page-id (:current-page-id state)
-            old-content (get-in state [:workspace-local :edit-path id :old-content])
-            [rch uch] (generate-path-changes page-id shape old-content (:content shape))]
-        (rx/of (dwc/commit-changes rch uch {:commit-local? true}))))))
+            old-content (get-in state [:workspace-local :edit-path id :old-content])]
+        (if (some? old-content)
+          (let [shape (get-in state (get-path state))
+                page-id (:current-page-id state)
+                [rch uch] (generate-path-changes page-id shape old-content (:content shape))]
+            (rx/of (dwc/commit-changes rch uch {:commit-local? true})))
+          (rx/empty))))))
 
 (declare start-draw-mode)
 (defn check-changed-content []
@@ -829,3 +827,37 @@
               (rx/take 1)
               (rx/observe-on :async)
               (rx/map #(handle-new-shape-result shape-id))))))))
+
+(defn stop-path-edit []
+  (ptk/reify ::stop-path-edit
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [id (get-in state [:workspace-local :edition])]
+        (update state :workspace-local dissoc :edit-path id)))))
+
+(defn start-path-edit
+  [id]
+  (ptk/reify ::start-path-edit
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [edit-path (get-in state [:workspace-local :edit-path id])]
+
+        (cond-> state
+          (or (not edit-path) (= :draw (:edit-mode edit-path)))
+          (assoc-in [:workspace-local :edit-path id] {:edit-mode :move
+                                                      :selected #{}
+                                                      :snap-toggled true})
+
+          (and (some? edit-path) (= :move (:edit-mode edit-path)))
+          (assoc-in [:workspace-local :edit-path id :edit-mode] :draw))))
+
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [mode (get-in state [:workspace-local :edit-path id :edit-mode])]
+        (rx/concat
+         (rx/of (change-edit-mode mode))
+         (->> stream
+              (rx/take-until (->> stream (rx/filter (ptk/type? ::start-path-edit))))
+              (rx/filter #(= % :interrupt))
+              (rx/take 1)
+              (rx/map #(stop-path-edit))))))))

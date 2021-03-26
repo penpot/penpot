@@ -135,9 +135,9 @@
          (st/emit! (dw/select-shape (:id @hover))))))))
 
 (defn on-double-click
-  [hover hover-ids objects]
+  [hover hover-ids drawing-path? objects]
   (mf/use-callback
-   (mf/deps @hover @hover-ids)
+   (mf/deps @hover @hover-ids drawing-path?)
    (fn [event]
      (dom/stop-propagation event)
      (let [ctrl? (kbd/ctrl? event)
@@ -153,7 +153,7 @@
 
        (st/emit! (ms/->MouseEvent :double-click ctrl? shift? alt?))
 
-       (when shape
+       (when (and (not drawing-path?) shape)
          (cond frame?
                (st/emit! (dw/select-shape id shift?))
 
@@ -164,7 +164,8 @@
                  (st/emit! (dw/select-shape (:id selected))))
 
                (or text? path?)
-               (st/emit! (dw/start-edition-mode id))
+               (st/emit! (dw/select-shape id)
+                         (dw/start-editing-selected))
 
                :else
                ;; Do nothing
