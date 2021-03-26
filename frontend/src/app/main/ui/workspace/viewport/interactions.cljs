@@ -15,12 +15,13 @@
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.workspace.shapes.outline :refer [outline]]
+   [app.main.ui.workspace.viewport.outline :refer [outline]]
    [app.util.data :as dt]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [cuerdas.core :as str]
-   [rumext.alpha :as mf]))
+   [rumext.alpha :as mf]
+   ))
 
 (defn- get-click-interaction
   [shape]

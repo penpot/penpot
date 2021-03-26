@@ -23,7 +23,7 @@
    [app.main.ui.cursors :as cur]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.measurements :as msr]
-   [app.main.ui.workspace.shapes.outline :refer [outline]]
+   [app.main.ui.workspace.viewport.outline :refer [outline]]
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]
    [app.util.data :as d]
    [app.util.debug :refer [debug?]]
