@@ -51,6 +51,7 @@
 - Fix issue with system shortcuts and application [#737](https://github.com/penpot/penpot/issues/737)
 - Fix problem with enter key shortcut [#775](https://github.com/penpot/penpot/issues/775)
 - Updates worksans font [#744](https://github.com/penpot/penpot/issues/744)
+- Fix problem with team management in dashboard [Taiga #1475](https://tree.taiga.io/project/penpot/issue/1475)
 
 ### :arrow_up: Deps updates
 

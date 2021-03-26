@@ -320,9 +320,10 @@
         on-leaved-success
         (mf/use-callback
          (mf/deps team profile)
-         (let [team-id (:default-team-id profile)]
-           (da/set-current-team! team-id)
-           (st/emit! (rt/nav :dashboard-projects {:team-id team-id}))))
+         (fn []
+           (let [team-id (:default-team-id profile)]
+             (da/set-current-team! team-id)
+             (st/emit! (rt/nav :dashboard-projects {:team-id team-id})))))
 
         leave-fn
         (mf/use-callback
