@@ -7,8 +7,8 @@
       "es" : "¿Tienes ya una cuenta?",
       "fr" : "Vous avez déjà un compte ?",
       "ru" : "Уже есть аккаунт?",
-      "zh_cn" : "已经有账号了？",
-      "tr" : "Zaten hesabın var mı?"
+      "tr" : "Zaten hesabın var mı?",
+      "zh_cn" : "已经有账号了？"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs" ]
   },
@@ -18,8 +18,8 @@
       "de" : "Überprüfen Sie Ihre E-Mail, klicken Sie auf den Link um sich zu verifizieren und Penpot zu nutzen.",
       "en" : "Check your email and click on the link to verify and start using Penpot.",
       "fr" : "Vérifiez votre e‑mail et cliquez sur le lien pour vérifier et commencer à utiliser Penpot.",
-      "zh_cn" : "请检查电子邮箱，点击邮件中的超链接来验证，然后开始使用Penpot。",
-      "tr" : "Penpot hesabını onaylamak ve kullanmaya başlamak için e-posta adresini kontrol et ve gönderilen linke tıkla."
+      "tr" : "Penpot hesabını onaylamak ve kullanmaya başlamak için e-postanı kontrol et ve gönderilen bağlantıya tıkla.",
+      "zh_cn" : "请检查电子邮箱，点击邮件中的超链接来验证，然后开始使用Penpot。"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs" ]
   },
@@ -31,8 +31,8 @@
       "es" : "Confirmar contraseña",
       "fr" : "Confirmez le mot de passe",
       "ru" : "Подтвердите пароль",
-      "zh_cn" : "确认密码",
-      "tr" : "Parolayı onayla"
+      "tr" : "Parolayı onayla",
+      "zh_cn" : "确认密码"
     },
     "used-in" : [ "src/app/main/ui/auth/recovery.cljs" ]
   },
@@ -44,8 +44,8 @@
       "es" : "Crear cuenta de prueba",
       "fr" : "Créer un compte de démonstration",
       "ru" : "Хотите попробовать?",
-      "zh_cn" : "创建演示账号",
-      "tr" : "Demo hesabı oluştur"
+      "tr" : "Demo hesabı oluştur",
+      "zh_cn" : "创建演示账号"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs", "src/app/main/ui/auth/login.cljs" ]
   },
@@ -57,8 +57,8 @@
       "es" : "¿Quieres probar?",
       "fr" : "Vous voulez juste essayer ?",
       "ru" : "Хотите попробовать?",
-      "zh_cn" : "只是想试试？",
-      "tr" : "Sadece denemek mi istiyorsun?"
+      "tr" : "Sadece denemek mi istiyorsun?",
+      "zh_cn" : "只是想试试？"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs", "src/app/main/ui/auth/login.cljs" ]
   },
@@ -70,8 +70,8 @@
       "es" : "Este es un servicio de DEMOSTRACIÓN. NO USAR para trabajo real, los proyectos serán borrados periodicamente.",
       "fr" : "Il s’agit d’un service DEMO, NE PAS UTILISER pour un travail réel, les projets seront périodiquement supprimés.",
       "ru" : "Это ДЕМОНСТРАЦИЯ, НЕ ИСПОЛЬЗУЙТЕ для работы, проекты будут периодически удаляться.",
-      "zh_cn" : "这是一个演示服务，请【不要】用于真实工作，这些项目将被周期性地抹除。",
-      "tr" : "Bu bir DEMO servis, gerçek işlerin için KULLANMA, projeler periyodik olarak silinir."
+      "tr" : "Bu bir DEMO servis, gerçek işleriniz için KULLANMAYIN, projeler periyodik olarak silinecektir.",
+      "zh_cn" : "这是一个演示服务，请【不要】用于真实工作，这些项目将被周期性地抹除。"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs" ]
   },
@@ -83,8 +83,8 @@
       "es" : "Correo electrónico",
       "fr" : "Adresse e‑mail",
       "ru" : "Email",
-      "zh_cn" : "电子邮件",
-      "tr" : "E-posta"
+      "tr" : "E-posta",
+      "zh_cn" : "电子邮件"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs", "src/app/main/ui/auth/recovery_request.cljs", "src/app/main/ui/auth/login.cljs" ]
   },
@@ -96,8 +96,8 @@
       "es" : "¿Olvidaste tu contraseña?",
       "fr" : "Mot de passe oublié ?",
       "ru" : "Забыли пароль?",
-      "zh_cn" : "忘记密码？",
-      "tr" : "Parolanı mı unuttun?"
+      "tr" : "Parolanı mı unuttun?",
+      "zh_cn" : "忘记密码？"
     },
     "used-in" : [ "src/app/main/ui/auth/login.cljs" ]
   },
@@ -109,8 +109,8 @@
       "es" : "Nombre completo",
       "fr" : "Nom complet",
       "ru" : "Полное имя",
-      "zh_cn" : "全名",
-      "tr" : "Tam Adın"
+      "tr" : "Tam Adın",
+      "zh_cn" : "全名"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs" ]
   },
@@ -122,8 +122,8 @@
       "es" : "Volver",
       "fr" : "Retour !",
       "ru" : "Назад!",
-      "zh_cn" : "返回！",
-      "tr" : "Geri dön!"
+      "tr" : "Geri dön!",
+      "zh_cn" : "返回！"
     },
     "used-in" : [ "src/app/main/ui/auth/recovery_request.cljs" ]
   },
@@ -135,8 +135,8 @@
       "es" : "Entra aquí",
       "fr" : "Se connecter ici",
       "ru" : "Войти здесь",
-      "zh_cn" : "在这里登录",
-      "tr" : "Buradan giriş yap"
+      "tr" : "Buradan giriş yap",
+      "zh_cn" : "在这里登录"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs" ]
   },
@@ -148,8 +148,8 @@
       "es" : "Entrar",
       "fr" : "Se connecter",
       "ru" : "Вход",
-      "zh_cn" : "登录",
-      "tr" : "Giriş yap"
+      "tr" : "Giriş yap",
+      "zh_cn" : "登录"
     },
     "used-in" : [ "src/app/main/ui/auth/login.cljs" ]
   },
@@ -161,8 +161,8 @@
       "es" : "Introduce tus datos aquí",
       "fr" : "Entrez vos informations ci‑dessous",
       "ru" : "Введите информацию о себе ниже",
-      "zh_cn" : "请在下面输入你的详细信息",
-      "tr" : "Bilgilerini aşağıdaki alana gir"
+      "tr" : "Bilgilerini aşağıdaki alana gir",
+      "zh_cn" : "请在下面输入你的详细信息"
     },
     "used-in" : [ "src/app/main/ui/auth/login.cljs" ]
   },
@@ -174,8 +174,8 @@
       "es" : "Encantados de volverte a ver",
       "fr" : "Ravi de vous revoir !",
       "ru" : "Рады видеть Вас снова!",
-      "zh_cn" : "很高兴又见到你！",
-      "tr" : "Seni tekrar görmek süper!"
+      "tr" : "Seni tekrar görmek süper!",
+      "zh_cn" : "很高兴又见到你！"
     },
     "used-in" : [ "src/app/main/ui/auth/login.cljs" ]
   },
@@ -187,8 +187,8 @@
       "es" : "Entrar con Github",
       "fr" : "Se connecter via Github",
       "ru" : "Вход через Gitnub",
-      "zh_cn" : "使用Github登录",
-      "tr" : "Github ile giriş yap"
+      "tr" : "Github ile giriş yap",
+      "zh_cn" : "使用Github登录"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs", "src/app/main/ui/auth/login.cljs" ]
   },
@@ -200,8 +200,8 @@
       "es" : "Entrar con Gitlab",
       "fr" : "Se connecter via Gitlab",
       "ru" : "Вход через Gitlab",
-      "zh_cn" : "使用Gitlab登录",
-      "tr" : "Gitlab ile giriş yap"
+      "tr" : "Gitlab ile giriş yap",
+      "zh_cn" : "使用Gitlab登录"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs", "src/app/main/ui/auth/login.cljs" ]
   },
@@ -213,8 +213,8 @@
       "es" : "Entrar con LDAP",
       "fr" : "Se connecter via LDAP",
       "ru" : "Вход через LDAP",
-      "zh_cn" : "使用LDAP登录",
-      "tr" : "LDAP ile giriş yap"
+      "tr" : "LDAP ile giriş yap",
+      "zh_cn" : "使用LDAP登录"
     },
     "used-in" : [ "src/app/main/ui/auth/login.cljs" ]
   },
@@ -226,8 +226,8 @@
       "es" : "Introduce la nueva contraseña",
       "fr" : "Saisissez un nouveau mot de passe",
       "ru" : "Введите новый пароль",
-      "zh_cn" : "输入新的密码",
-      "tr" : "Yeni bir parola gir"
+      "tr" : "Yeni bir parola gir",
+      "zh_cn" : "输入新的密码"
     },
     "used-in" : [ "src/app/main/ui/auth/recovery.cljs" ]
   },
@@ -239,6 +239,7 @@
       "es" : "El código de recuperación no es válido.",
       "fr" : "Le code de récupération n’est pas valide.",
       "ru" : "Неверный код восстановления.",
+      "tr" : "Kurtarma bağlantısı geçerli değil",
       "zh_cn" : "恢复令牌无效。"
     },
     "used-in" : [ "src/app/main/ui/auth/recovery.cljs" ]
@@ -251,6 +252,7 @@
       "es" : "La contraseña ha sido cambiada",
       "fr" : "Mot de passe changé avec succès",
       "ru" : "Пароль изменен успешно",
+      "tr" : "Parola başarıyla değiştirldi",
       "zh_cn" : "密码修改成功"
     },
     "used-in" : [ "src/app/main/ui/auth/recovery.cljs" ]
@@ -262,6 +264,7 @@
       "en" : "Profile is not verified, please verify profile before continue.",
       "es" : "El perfil aun no ha sido verificado, por favor valida el perfil antes de continuar.",
       "fr" : "Le profil n’est pas vérifié. Veuillez vérifier le profil avant de continuer.",
+      "tr" : "Profil onaylanmamış, devam etmeden önce profili onaylayın.",
       "zh_cn" : "个人资料未验证，请于验证后继续。"
     },
     "used-in" : [ "src/app/main/ui/auth/recovery_request.cljs" ]
@@ -274,6 +277,7 @@
       "es" : "Hemos enviado a tu buzón un enlace para recuperar tu contraseña.",
       "fr" : "Lien de récupération de mot de passe envoyé.",
       "ru" : "Ссылка для восстановления пароля отправлена на почту.",
+      "tr" : "Parola kurtarma bağlantısı e-posta kutuna gönderildi.",
       "zh_cn" : "找回密码链接已发至你的收件箱。"
     },
     "used-in" : [ "src/app/main/ui/auth/recovery_request.cljs" ]
@@ -285,6 +289,7 @@
       "en" : "Joined the team succesfully",
       "es" : "Te uniste al equipo",
       "fr" : "Vous avez rejoint l’équipe avec succès",
+      "tr" : "Takıma başarıyla katıldın",
       "zh_cn" : "成功加入团队"
     },
     "used-in" : [ "src/app/main/ui/auth/verify_token.cljs" ]
@@ -297,6 +302,7 @@
       "es" : "Contraseña",
       "fr" : "Mot de passe",
       "ru" : "Пароль",
+      "tr" : "Parola",
       "zh_cn" : "密码"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs", "src/app/main/ui/auth/login.cljs" ]
@@ -309,6 +315,7 @@
       "es" : "8 caracteres como mínimo",
       "fr" : "Au moins 8 caractères",
       "ru" : "Минимум 8 символов",
+      "tr" : "En az 8 karakter",
       "zh_cn" : "至少8位字符"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs" ]
@@ -321,6 +328,7 @@
       "es" : "Recuperar contraseña",
       "fr" : "Récupérer le mot de passe",
       "ru" : "Восстановить пароль",
+      "tr" : "Parolayı kurtar",
       "zh_cn" : "找回密码"
     },
     "used-in" : [ "src/app/main/ui/auth/recovery_request.cljs" ]
@@ -333,6 +341,7 @@
       "es" : "Te enviaremos un correo electrónico con instrucciones",
       "fr" : "Nous vous enverrons un e‑mail avec des instructions",
       "ru" : "Письмо с инструкциями отправлено на почту.",
+      "tr" : "Detayları sana e-posta ile göndereceğiz",
       "zh_cn" : "我们将给你发送一封带有说明的电子邮件"
     },
     "used-in" : [ "src/app/main/ui/auth/recovery_request.cljs" ]
@@ -345,6 +354,7 @@
       "es" : "¿Olvidaste tu contraseña?",
       "fr" : "Mot de passe oublié ?",
       "ru" : "Забыли пароль?",
+      "tr" : "Parolanı mı unuttun?",
       "zh_cn" : "忘记密码？"
     },
     "used-in" : [ "src/app/main/ui/auth/recovery_request.cljs" ]
@@ -357,6 +367,7 @@
       "es" : "Cambiar tu contraseña",
       "fr" : "Changez votre mot de passe",
       "ru" : "Изменить пароль",
+      "tr" : "Parolanı değiştir",
       "zh_cn" : "修改密码"
     },
     "used-in" : [ "src/app/main/ui/auth/recovery.cljs" ]
@@ -369,6 +380,7 @@
       "es" : "¿No tienes una cuenta?",
       "fr" : "Pas encore de compte ?",
       "ru" : "Еще нет аккаунта?",
+      "tr" : "Henüz hesabın yok mu?",
       "zh_cn" : "现在还没有账号？"
     },
     "used-in" : [ "src/app/main/ui/auth/login.cljs" ]
@@ -381,6 +393,7 @@
       "es" : "Crear una cuenta",
       "fr" : "Créer un compte",
       "ru" : "Создать аккаунт",
+      "tr" : "Bir hesap oluştur",
       "zh_cn" : "创建账号"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs", "src/app/main/ui/auth/login.cljs" ]
@@ -393,6 +406,7 @@
       "es" : "Es gratis, es Open Source",
       "fr" : "C’est gratuit, c’est Open Source",
       "ru" : "Это бесплатно, это Open Source",
+      "tr" : "Ücretsiz ve Açık Kaynak",
       "zh_cn" : "它免费，它开源"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs" ]
@@ -405,6 +419,7 @@
       "es" : "Crear una cuenta",
       "fr" : "Créer un compte",
       "ru" : "Создать аккаунт",
+      "tr" : "Bir hesap oluştur",
       "zh_cn" : "创建账号"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs" ]
@@ -417,6 +432,7 @@
       "es" : "La solución de código abierto para diseñar y prototipar",
       "fr" : "La solution Open Source pour la conception et le prototypage.",
       "ru" : "Open Source решение для дизайна и прототипирования.",
+      "tr" : "Tasarım ve prototipleme için açık-kaynak çözüm.",
       "zh_cn" : "设计与原型的开源解决方案"
     },
     "used-in" : [ "src/app/main/ui/auth.cljs" ]
@@ -424,7 +440,8 @@
   "auth.terms-privacy-agreement" : {
     "translations" : {
       "en" : "When creating a new account, you agree to our terms of service and privacy policy.",
-      "es" : "Al crear una nueva cuenta, aceptas nuestros términos de servicio y política de privacidad."
+      "es" : "Al crear una nueva cuenta, aceptas nuestros términos de servicio y política de privacidad.",
+      "tr" : "Bir hesap oluştururken, koşullarımızı ve gizlilik politikamızı kabul etmiş sayılırsınız."
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs" ]
   },
@@ -434,6 +451,7 @@
       "de" : "Wir haben eine Bestätigungs-E-Mail gesendet an",
       "en" : "We've sent a verification email to",
       "fr" : "Nous avons envoyé un e-mail de vérification à",
+      "tr" : "Onay e-postanı şu adrese gönderdik",
       "zh_cn" : "我们已经发送了一封验证邮件到"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs" ]
@@ -446,6 +464,7 @@
       "es" : "Añadir como Biblioteca Compartida",
       "fr" : "Ajouter une Bibliothèque Partagée",
       "ru" : "",
+      "tr" : "Paylaşılan Kitaplık olarak ekle",
       "zh_cn" : "添加为共享库"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
@@ -458,6 +477,7 @@
       "es" : "Cambiar correo",
       "fr" : "Changer adresse e‑mail",
       "ru" : "Сменить email адрес",
+      "tr" : "E-posta adresini değiştir",
       "zh_cn" : "修改电子邮件"
     },
     "used-in" : [ "src/app/main/ui/settings/profile.cljs" ]
@@ -466,7 +486,8 @@
     "translations" : {
       "de" : "(Kopie)",
       "en" : "(copy)",
-      "es" : "(copia)"
+      "es" : "(copia)",
+      "tr" : "(kopya)"
     },
     "used-in" : [ "src/app/main/data/dashboard.cljs", "src/app/main/data/dashboard.cljs" ]
   },
@@ -477,6 +498,7 @@
       "en" : "+ Create new team",
       "es" : "+ Crear nuevo equipo",
       "fr" : "+ Créer nouvelle équipe",
+      "tr" : "Yeni takım oluştur",
       "zh_cn" : "+ 创建新团队"
     },
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs" ]
@@ -488,6 +510,7 @@
       "en" : "Your Penpot",
       "es" : "Tu Penpot",
       "fr" : "Votre Penpot",
+      "tr" : "Penpot'un",
       "zh_cn" : "你的Penpot"
     },
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs" ]
@@ -499,6 +522,7 @@
       "en" : "Delete team",
       "es" : "Eliminar equipo",
       "fr" : "Supprimer l’équipe",
+      "tr" : "Takımı sil",
       "zh_cn" : "删除团队"
     },
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs" ]
@@ -511,6 +535,7 @@
       "es" : "Borrador",
       "fr" : "Brouillon",
       "ru" : "Черновик",
+      "tr" : "Taslak",
       "zh_cn" : "草稿"
     },
     "unused" : true
@@ -519,14 +544,16 @@
     "translations" : {
       "de" : "Duplizieren",
       "en" : "Duplicate",
-      "es" : "Duplicar"
+      "es" : "Duplicar",
+      "tr" : "Kopyasını oluştur"
     },
     "used-in" : [ "src/app/main/ui/dashboard/project_menu.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "dashboard.duplicate-multi" : {
     "translations" : {
       "en" : "Duplicate %s files",
-      "es" : "Duplicar %s archivos"
+      "es" : "Duplicar %s archivos",
+      "tr" : "%s dosyanın kopyasını oluştur"
     },
     "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
@@ -538,6 +565,7 @@
       "es" : "Todavía no hay ningún archivo aquí",
       "fr" : "Vous n’avez encore aucun fichier ici",
       "ru" : "Файлов пока нет",
+      "tr" : "Burada hiç dosyan yok",
       "zh_cn" : "暂无文档"
     },
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs" ]
@@ -549,6 +577,7 @@
       "en" : "Invite to team",
       "es" : "Invitar al equipo",
       "fr" : "Inviter dans l’équipe",
+      "tr" : "Takıma davet et",
       "zh_cn" : "邀请加入团队"
     },
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs" ]
@@ -560,6 +589,7 @@
       "en" : "Leave team",
       "es" : "Abandonar equipo",
       "fr" : "Quitter l’équipe",
+      "tr" : "Takımdan ayrıl",
       "zh_cn" : "退出团队"
     },
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs", "src/app/main/ui/dashboard/sidebar.cljs" ]
@@ -572,6 +602,7 @@
       "es" : "Bibliotecas Compartidas",
       "fr" : "Bibliothèques Partagées",
       "ru" : "",
+      "tr" : "Paylaşılan Kitaplıklar",
       "zh_cn" : "共享库"
     },
     "used-in" : [ "src/app/main/ui/dashboard/libraries.cljs" ]
@@ -583,6 +614,7 @@
       "en" : "loading your files …",
       "es" : "cargando tus ficheros …",
       "fr" : "chargement de vos fichiers…",
+      "tr" : "dosyalarınız yükleniyor …",
       "zh_cn" : "正在加载文档…"
     },
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs" ]
@@ -591,14 +623,16 @@
     "translations" : {
       "de" : "Verschieben nach",
       "en" : "Move to",
-      "es" : "Mover a"
+      "es" : "Mover a",
+      "tr" : "Şuraya taşı"
     },
     "used-in" : [ "src/app/main/ui/dashboard/project_menu.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "dashboard.move-to-multi" : {
     "translations" : {
       "en" : "Move %s files to",
-      "es" : "Mover %s archivos a"
+      "es" : "Mover %s archivos a",
+      "tr" : "%s dosyayı şuraya taşı"
     },
     "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
@@ -606,7 +640,8 @@
     "translations" : {
       "de" : "Zu anderem Team verschieben",
       "en" : "Move to other team",
-      "es" : "Mover a otro equipo"
+      "es" : "Mover a otro equipo",
+      "tr" : "Başkta takıma taşı"
     },
     "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
@@ -618,6 +653,7 @@
       "es" : "+ Nuevo Archivo",
       "fr" : "+ Nouveau fichier",
       "ru" : "+ Новый файл",
+      "tr" : "Yeni Dosya",
       "zh_cn" : "+ 新文档"
     },
     "used-in" : [ "src/app/main/ui/dashboard/projects.cljs", "src/app/main/ui/dashboard/files.cljs" ]
@@ -630,6 +666,7 @@
       "es" : "+ Nuevo proyecto",
       "fr" : "+ Nouveau projet",
       "ru" : "+ Новый проект",
+      "tr" : "Yeni Proje",
       "zh_cn" : "+ 新项目"
     },
     "used-in" : [ "src/app/main/ui/dashboard/projects.cljs" ]
@@ -642,6 +679,7 @@
       "es" : "No se encuentra “%s“",
       "fr" : "Aucune correspondance pour « %s »",
       "ru" : "Совпадений для “%s“ не найдено",
+      "tr" : "%s için hiç sonuç bulunamadı",
       "zh_cn" : "没有找到“%s”的匹配项"
     },
     "used-in" : [ "src/app/main/ui/dashboard/search.cljs" ]
@@ -653,6 +691,7 @@
       "en" : "Pinned projects will appear here",
       "es" : "Los proyectos fijados aparecerán aquí",
       "fr" : "Les projets épinglés apparaîtront ici",
+      "tr" : "Sabitlenmiş projeler burada görünür",
       "zh_cn" : "被钉住的项目会显示在这儿"
     },
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs" ]
@@ -665,6 +704,7 @@
       "es" : "Tu dirección de correo ha sido actualizada",
       "fr" : "Votre adresse e‑mail a été mise à jour avec succès",
       "ru" : "Ваш email адрес успешно обновлен",
+      "tr" : "E-posta adresiniz başarıyla güncellendi",
       "zh_cn" : "已经成功更新你的电子邮件"
     },
     "used-in" : [ "src/app/main/ui/auth/verify_token.cljs" ]
@@ -677,6 +717,7 @@
       "es" : "Tu dirección de correo ha sido verificada",
       "fr" : "Votre adresse e‑mail a été vérifiée avec succès",
       "ru" : "Ваш email адрес успешно подтвержден",
+      "tr" : "E-posta adresin başarıyla doğrulandı",
       "zh_cn" : "已经成功验证你的电子邮件"
     },
     "used-in" : [ "src/app/main/ui/auth/verify_token.cljs" ]
@@ -689,6 +730,7 @@
       "es" : "¡Contraseña guardada!",
       "fr" : "Mot de passe enregistré avec succès !",
       "ru" : "Пароль успешно сохранен!",
+      "tr" : "Parola kaydedildi",
       "zh_cn" : "已经成功保存密码！"
     },
     "used-in" : [ "src/app/main/ui/settings/password.cljs" ]
@@ -700,6 +742,7 @@
       "en" : "%s members",
       "es" : "%s integrantes",
       "fr" : "%s membres",
+      "tr" : "%s üye",
       "zh_cn" : "成员%s人"
     },
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs" ]
@@ -708,7 +751,8 @@
     "translations" : {
       "de" : "Datei in neuem Tab öffnen",
       "en" : "Open file in a new tab",
-      "es" : "Abrir en una pestaña nueva"
+      "es" : "Abrir en una pestaña nueva",
+      "tr" : "Dosyayı yeni sekmede aç"
     },
     "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
@@ -720,6 +764,7 @@
       "es" : "Cambiar contraseña",
       "fr" : "Changer le mot de passe",
       "ru" : "Изменить пароль",
+      "tr" : "Parola değiştir",
       "zh_cn" : "修改密码"
     },
     "used-in" : [ "src/app/main/ui/settings/password.cljs" ]
@@ -728,7 +773,8 @@
     "translations" : {
       "de" : "Anheften/Lösen",
       "en" : "Pin/Unpin",
-      "es" : "Fijar/Desfijar"
+      "es" : "Fijar/Desfijar",
+      "tr" : "Sabitle/Sabitleme"
     },
     "used-in" : [ "src/app/main/ui/dashboard/project_menu.cljs" ]
   },
@@ -740,6 +786,7 @@
       "es" : "Proyectos",
       "fr" : "Projets",
       "ru" : "Проекты",
+      "tr" : "Projeler",
       "zh_cn" : "项目"
     },
     "used-in" : [ "src/app/main/ui/dashboard/projects.cljs" ]
@@ -751,6 +798,7 @@
       "en" : "Promote to owner",
       "es" : "Promover a dueño",
       "fr" : "Promouvoir propriétaire",
+      "tr" : "Sahibi olarak belirle",
       "zh_cn" : "晋级为所有者"
     },
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs" ]
@@ -763,6 +811,7 @@
       "es" : "¿Quieres borrar tu cuenta?",
       "fr" : "Vous souhaitez supprimer votre compte ?",
       "ru" : "Хотите удалить свой аккаунт?",
+      "tr" : "Hesabını silmek istediğinden emin misin?",
       "zh_cn" : "希望注销您的账号？"
     },
     "used-in" : [ "src/app/main/ui/settings/profile.cljs" ]
@@ -775,6 +824,7 @@
       "es" : "Eliminar como Biblioteca Compartida",
       "fr" : "Retirer en tant que Bibliothèque Partagée",
       "ru" : "",
+      "tr" : "Paylaşılan Kitaplık olarak sil",
       "zh_cn" : "不再作为共享库"
     },
     "used-in" : [ "src/app/main/ui/workspace/header.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
@@ -786,7 +836,8 @@
       "en" : "Search…",
       "es" : "Buscar…",
       "fr" : "Rechercher…",
-      "ru" : "Поиск …",
+      "ru" : "Поиск ",
+      "tr" : "Ara…",
       "zh_cn" : "搜索…"
     },
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs" ]
@@ -799,6 +850,7 @@
       "es" : "Buscando “%s“…",
       "fr" : "Recherche de « %s »…",
       "ru" : "Ищу “%s“…",
+      "tr" : "%s aranıyor",
       "zh_cn" : "正在搜索“%s”"
     },
     "used-in" : [ "src/app/main/ui/dashboard/search.cljs" ]
@@ -811,6 +863,7 @@
       "es" : "Cambiar el idioma de la interfaz",
       "fr" : "Sélectionnez la langue de l’interface",
       "ru" : "Выберите язык интерфейса",
+      "tr" : "Arayüz dilini seç",
       "zh_cn" : "选择界面语言"
     },
     "used-in" : [ "src/app/main/ui/settings/options.cljs" ]
@@ -823,6 +876,7 @@
       "es" : "Selecciona un tema",
       "fr" : "Sélectionnez un thème",
       "ru" : "Выберите тему",
+      "tr" : "Tema seç",
       "zh_cn" : "选择界面主题"
     },
     "used-in" : [ "src/app/main/ui/settings/options.cljs" ]
@@ -834,6 +888,7 @@
       "en" : "Show all files",
       "es" : "Ver todos los ficheros",
       "fr" : "Voir tous les fichiers",
+      "tr" : "Tüm dosyaları göster",
       "zh_cn" : "显示全部文档"
     },
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs" ]
@@ -842,7 +897,8 @@
     "translations" : {
       "de" : "Ihre Datei wurde erfolgreich gelöscht",
       "en" : "Your file has been deleted successfully",
-      "es" : "Tu archivo ha sido borrado con éxito"
+      "es" : "Tu archivo ha sido borrado con éxito",
+      "tr" : "Dosyan başarıyla silindi"
     },
     "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
@@ -850,7 +906,8 @@
     "translations" : {
       "de" : "Ihr Projekt wurde erfolgreich gelöscht",
       "en" : "Your project has been deleted successfully",
-      "es" : "Tu proyecto ha sido borrado con éxito"
+      "es" : "Tu proyecto ha sido borrado con éxito",
+      "tr" : "Projen başarıyla silindi"
     },
     "used-in" : [ "src/app/main/ui/dashboard/project_menu.cljs" ]
   },
@@ -858,7 +915,8 @@
     "translations" : {
       "de" : "Ihre Datei wurde erfolgreich dupliziert",
       "en" : "Your file has been duplicated successfully",
-      "es" : "Tu archivo ha sido duplicado con éxito"
+      "es" : "Tu archivo ha sido duplicado con éxito",
+      "tr" : "Dosyanın kopyası başarıyla oluşturuldu"
     },
     "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
@@ -866,7 +924,8 @@
     "translations" : {
       "de" : "Ihr Projekt wurde erfolgreich dupliziert",
       "en" : "Your project has been duplicated successfully",
-      "es" : "Tu proyecto ha sido duplicado con éxito"
+      "es" : "Tu proyecto ha sido duplicado con éxito",
+      "tr" : "Projenin kopyası başarıyla oluşturuldu"
     },
     "used-in" : [ "src/app/main/ui/dashboard/project_menu.cljs" ]
   },
@@ -874,24 +933,27 @@
     "translations" : {
       "de" : "Ihre Datei wurde erfolgreich verschoben",
       "en" : "Your file has been moved successfully",
-      "es" : "Tu archivo ha sido movido con éxito"
+      "es" : "Tu archivo ha sido movido con éxito",
+      "tr" : "Dosyan başarıyla taşındı"
     },
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs", "src/app/main/ui/dashboard/sidebar.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
+  },
+  "dashboard.success-move-files" : {
+    "translations" : {
+      "en" : "Your files has been moved successfully",
+      "es" : "Tus archivos han sido movidos con éxito",
+      "tr" : "Dosyaların başarıyla taşındı"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "dashboard.success-move-project" : {
     "translations" : {
       "de" : "Ihr Projekt wurde erfolgreich verschoben",
       "en" : "Your project has been moved successfully",
-      "es" : "Tu proyecto ha sido movido con éxito"
+      "es" : "Tu proyecto ha sido movido con éxito",
+      "tr" : "Projen başarıyla taşındı"
     },
     "used-in" : [ "src/app/main/ui/dashboard/project_menu.cljs" ]
-  },
-  "dashboard.success-move-files" : {
-    "translations" : {
-      "en" : "Your files has been moved successfully",
-      "es" : "Tus archivos han sido movidos con éxito"
-    },
-    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "dashboard.switch-team" : {
     "translations" : {
@@ -900,6 +962,7 @@
       "en" : "Switch team",
       "es" : "Cambiar equipo",
       "fr" : "Changer d’équipe",
+      "tr" : "Takım değiştir",
       "zh_cn" : "切换团队"
     },
     "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs" ]
@@ -911,6 +974,7 @@
       "en" : "Team info",
       "es" : "Información del equipo",
       "fr" : "Information de l’équipe",
+      "tr" : "Takım bilgisi",
       "zh_cn" : "团队信息"
     },
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs" ]
@@ -922,6 +986,7 @@
       "en" : "Team members",
       "es" : "Integrantes del equipo",
       "fr" : "Membres de l’équipe",
+      "tr" : "Takım üyeleri",
       "zh_cn" : "团队成员"
     },
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs" ]
@@ -933,6 +998,7 @@
       "en" : "Team projects",
       "es" : "Proyectos del equipo",
       "fr" : "Projets de l’équipe",
+      "tr" : "Takım projeleri",
       "zh_cn" : "团队项目"
     },
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs" ]
@@ -945,6 +1011,7 @@
       "es" : "Tema visual",
       "fr" : "Thème de l’interface",
       "ru" : "Тема интерфейса пользователя",
+      "tr" : "Önyüz teması",
       "zh_cn" : "界面主题"
     },
     "used-in" : [ "src/app/main/ui/settings/options.cljs" ]
@@ -957,6 +1024,7 @@
       "es" : "Resultados de búsqueda",
       "fr" : "Résultats de recherche",
       "ru" : "Результаты поиска",
+      "tr" : "Arama sonuçları",
       "zh_cn" : "搜索结果"
     },
     "used-in" : [ "src/app/main/ui/dashboard/search.cljs" ]
@@ -969,6 +1037,7 @@
       "es" : "Escribe algo para buscar",
       "fr" : "Écrivez pour rechercher",
       "ru" : "Введите для поиска",
+      "tr" : "Aramak için yazın",
       "zh_cn" : "输入关键词进行搜索"
     },
     "used-in" : [ "src/app/main/ui/dashboard/search.cljs" ]
@@ -981,6 +1050,7 @@
       "es" : "Actualizar opciones",
       "fr" : "Mettre à jour les paramètres",
       "ru" : "Обновить настройки",
+      "tr" : "Ayarları güncelle",
       "zh_cn" : "保存设置"
     },
     "used-in" : [ "src/app/main/ui/settings/profile.cljs", "src/app/main/ui/settings/password.cljs", "src/app/main/ui/settings/options.cljs" ]
@@ -992,6 +1062,7 @@
       "en" : "Your account",
       "es" : "Tu cuenta",
       "fr" : "Votre compte",
+      "tr" : "Hesabın",
       "zh_cn" : "你的账号"
     },
     "used-in" : [ "src/app/main/ui/settings.cljs" ]
@@ -1004,6 +1075,7 @@
       "es" : "Correo",
       "fr" : "E‑mail",
       "ru" : "Email",
+      "tr" : "E-posta",
       "zh_cn" : "电子邮件"
     },
     "used-in" : [ "src/app/main/ui/settings/profile.cljs" ]
@@ -1016,6 +1088,7 @@
       "es" : "Tu nombre",
       "fr" : "Votre nom complet",
       "ru" : "Ваше имя",
+      "tr" : "Adın",
       "zh_cn" : "你的姓名"
     },
     "used-in" : [ "src/app/main/ui/settings/profile.cljs" ]
@@ -1027,9 +1100,10 @@
       "en" : "Your Penpot",
       "es" : "Tu Penpot",
       "fr" : "Votre Penpot",
+      "tr" : "Penpot'un",
       "zh_cn" : "你的Penpot"
     },
-    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
+    "used-in" : [ "src/app/main/ui/dashboard/search.cljs", "src/app/main/ui/dashboard/team.cljs", "src/app/main/ui/dashboard/team.cljs", "src/app/main/ui/dashboard/libraries.cljs", "src/app/main/ui/dashboard/projects.cljs", "src/app/main/ui/dashboard/sidebar.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "ds.confirm-cancel" : {
     "translations" : {
@@ -1039,6 +1113,7 @@
       "es" : "Cancelar",
       "fr" : "Annuler",
       "ru" : "Отмена",
+      "tr" : "Vazgeç",
       "zh_cn" : "取消"
     },
     "used-in" : [ "src/app/main/ui/confirm.cljs" ]
@@ -1051,6 +1126,7 @@
       "es" : "Ok",
       "fr" : "Ok",
       "ru" : "Ok",
+      "tr" : "Tamam",
       "zh_cn" : "OK"
     },
     "used-in" : [ "src/app/main/ui/confirm.cljs" ]
@@ -1063,6 +1139,7 @@
       "es" : "¿Seguro?",
       "fr" : "Êtes‑vous sûr ?",
       "ru" : "Вы уверены?",
+      "tr" : "Emin misin?",
       "zh_cn" : "你确定？"
     },
     "used-in" : [ "src/app/main/ui/confirm.cljs", "src/app/main/ui/confirm.cljs" ]
@@ -1075,6 +1152,7 @@
       "es" : "Actualizado: %s",
       "fr" : "Mise à jour : %s",
       "ru" : "Обновлено: %s",
+      "tr" : "Güncellendi: %s",
       "zh_cn" : "更新了：%s"
     },
     "used-in" : [ "src/app/main/ui/dashboard/grid.cljs" ]
@@ -1087,6 +1165,7 @@
       "es" : "Tu navegador no puede realizar esta operación",
       "fr" : "Votre navigateur ne peut pas effectuer cette opération",
       "ru" : "",
+      "tr" : "Tarayıcın bu işlemi gerçekleştiremiyor",
       "zh_cn" : "你的浏览器不支持该操作"
     },
     "used-in" : [ "src/app/main/data/workspace.cljs" ]
@@ -1099,6 +1178,7 @@
       "es" : "Este correo ya está en uso",
       "fr" : "Adresse e‑mail déjà utilisée",
       "ru" : "Такой email уже используется",
+      "tr" : "E-posta zaten kullanımda",
       "zh_cn" : "电子邮件已被占用"
     },
     "used-in" : [ "src/app/main/ui/auth/verify_token.cljs", "src/app/main/ui/settings/change_email.cljs" ]
@@ -1111,6 +1191,7 @@
       "es" : "Este correo ya está validado.",
       "fr" : "Adresse e‑mail déjà validée.",
       "ru" : "Электронная почта уже подтверждена.",
+      "tr" : "E-posta zaten doğrulandı",
       "zh_cn" : "电子邮件已经验证通过"
     },
     "used-in" : [ "src/app/main/ui/auth/verify_token.cljs" ]
@@ -1121,6 +1202,7 @@
       "de" : "Die E-Mail-Adresse «%s» hat viele permanente Unzustellbarkeitsberichte.",
       "en" : "The email «%s» has many permanent bounce reports.",
       "es" : "El email «%s» tiene varios reportes de rebote permanente.",
+      "tr" : "«%s» adresi için çok fazla geri dönme raporu var.",
       "zh_cn" : "电子邮件“%s”收到了非常多的永久退信报告"
     },
     "used-in" : [ "src/app/main/ui/auth/register.cljs", "src/app/main/ui/auth/recovery_request.cljs", "src/app/main/ui/settings/change_email.cljs", "src/app/main/ui/dashboard/team.cljs" ]
@@ -1133,6 +1215,7 @@
       "es" : "El correo de confirmación debe coincidir",
       "fr" : "L’adresse e‑mail de confirmation doit correspondre",
       "ru" : "Email для подтверждения должен совпадать",
+      "tr" : "Doğrulama e-postası eşleşmiyor",
       "zh_cn" : "确认电子邮件必须保持一致"
     },
     "used-in" : [ "src/app/main/ui/settings/change_email.cljs" ]
@@ -1145,6 +1228,7 @@
       "es" : "Ha ocurrido algún error.",
       "fr" : "Un problème s’est produit.",
       "ru" : "Что-то пошло не так.",
+      "tr" : "Bir şeyler ters gitti.",
       "zh_cn" : "发生了某种错误。"
     },
     "used-in" : [ "src/app/main/ui/auth/verify_token.cljs", "src/app/main/ui/settings/feedback.cljs", "src/app/main/ui/dashboard/team.cljs" ]
@@ -1155,6 +1239,7 @@
       "de" : "Die Authentifizierung mit Google ist im Backend deaktiviert",
       "en" : "Authentication with google disabled on backend",
       "es" : "Autenticación con google esta dehabilitada en el servidor",
+      "tr" : "Google ile oturum açma devre dışı bırakıldı",
       "zh_cn" : "后端禁用了Google授权"
     },
     "used-in" : [ "src/app/main/ui/auth/login.cljs" ]
@@ -1164,6 +1249,7 @@
       "de" : "Die LDAP-Authentifizierung ist deaktiviert.",
       "en" : "LDAP authentication is disabled.",
       "es" : "La autheticacion via LDAP esta deshabilitada.",
+      "tr" : "LDAP ile oturum açma devre dışı bırakıldı.",
       "zh_cn" : "仅用了LDAP授权。"
     },
     "used-in" : [ "src/app/main/ui/auth/login.cljs" ]
@@ -1176,6 +1262,7 @@
       "es" : "No se reconoce el formato de imagen (debe ser svg, jpg o png).",
       "fr" : "Le format d’image n’est pas supporté (doit être svg, jpg ou png).",
       "ru" : "Формат изображения не поддерживается (должен быть svg, jpg или png).",
+      "tr" : "Görsel formatı desteklenmiyor (svg, jpg veya png olmalı).",
       "zh_cn" : "不支持该图片格式（只能是svg、jpg或png）。"
     },
     "unused" : true
@@ -1188,6 +1275,7 @@
       "es" : "La imagen es demasiado grande (debe tener menos de 5mb).",
       "fr" : "L’image est trop grande (doit être inférieure à 5 Mo).",
       "ru" : "Изображение слишком большое для вставки (должно быть меньше 5mb).",
+      "tr" : "Bu görsel eklemek için çok büyük (5MB altında olmalı)",
       "zh_cn" : "图片尺寸过大，故无法插入（不能超过5MB）。"
     },
     "used-in" : [ "src/app/main/data/workspace/persistence.cljs" ]
@@ -1200,6 +1288,7 @@
       "es" : "Parece que el contenido de la imagen no coincide con la extensión del archivo.",
       "fr" : "Il semble que le contenu de l’image ne correspond pas à l’extension de fichier.",
       "ru" : "",
+      "tr" : "Dosya içeriği, uzantısı ile eşleşmiyor gibi görünüyor.",
       "zh_cn" : "图片内容好像与文档扩展名不匹配。"
     },
     "used-in" : [ "src/app/main/data/workspace/persistence.cljs", "src/app/main/data/media.cljs" ]
@@ -1212,6 +1301,7 @@
       "es" : "Parece que no es una imagen válida.",
       "fr" : "L’image ne semble pas être valide.",
       "ru" : "",
+      "tr" : "Geçerli bir görsel gibi görünmüyor.",
       "zh_cn" : "该图片好像不可用。"
     },
     "used-in" : [ "src/app/main/data/workspace/persistence.cljs", "src/app/main/data/workspace/persistence.cljs", "src/app/main/data/workspace/persistence.cljs", "src/app/main/data/workspace/persistence.cljs", "src/app/main/data/media.cljs" ]
@@ -1222,6 +1312,7 @@
       "de" : "In dem von Ihnen eingeladenen Profil sind E-Mails stummgeschaltet (Spam-Berichte oder hohe Unzustellbarkeitsberichte).",
       "en" : "The profile you inviting has emails muted (spam reports or high bounces).",
       "es" : "El perfil que esta invitando tiene los emails silenciados (por reportes de spam o alto indice de rebote).",
+      "tr" : "Davet ettiğiniz profilin e-posta adresine ait çok fazla geri dönme raporu var veya spam olarak bildirilmiş.",
       "zh_cn" : "你邀请的人设置了邮件免打扰（报告垃圾邮件或者多次退信）。"
     },
     "used-in" : [ "src/app/main/ui/dashboard/team.cljs" ]
@@ -1234,6 +1325,7 @@
       "es" : "Ha sido imposible conectar con el servidor principal.",
       "fr" : "Impossible de se connecter au serveur principal.",
       "ru" : "Невозможно подключиться к серверу.",
+      "tr" : "Sunucuya bağlanılamıyor",
       "zh_cn" : "无法连接到后端服务器。"
     },
     "unused" : true
@@ -1246,6 +1338,7 @@
       "es" : "La contraseña de confirmación debe coincidir",
       "fr" : "Le mot de passe de confirmation doit correspondre",
       "ru" : "Пароль для подтверждения должен совпадать",
+      "tr" : "Parolalar eşleşmedi",
       "zh_cn" : "确认密码必须保持一致。"
     },
     "used-in" : [ "src/app/main/ui/settings/password.cljs" ]
@@ -1258,6 +1351,7 @@
       "es" : "La contraseña debe tener 8 caracteres como mínimo",
       "fr" : "Le mot de passe doit contenir au moins 8 caractères",
       "ru" : "Пароль должен быть минимум 8 символов",
+      "tr" : "Parola en az 8 karakterden oluşmalı",
       "zh_cn" : "密码最少需要8位字符。"
     },
     "used-in" : [ "src/app/main/ui/settings/password.cljs" ]
@@ -2207,7 +2301,7 @@
       "en" : "Delete %s files",
       "es" : "Borrar %s archivos"
     },
-    "used-in" : [ "src/app/main/ui/dashboard/file-menu.cljs" ]
+    "used-in" : [ "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "labels.drafts" : {
     "translations" : {
@@ -2218,7 +2312,7 @@
       "ru" : "Черновики",
       "zh_cn" : "草稿"
     },
-    "used-in" : [ "src/app/main/ui/dashboard/projects.cljs", "src/app/main/ui/dashboard/sidebar.cljs", "src/app/main/ui/dashboard/files.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
+    "used-in" : [ "src/app/main/ui/dashboard/projects.cljs", "src/app/main/ui/dashboard/sidebar.cljs", "src/app/main/ui/dashboard/files.cljs", "src/app/main/ui/dashboard/files.cljs", "src/app/main/ui/dashboard/file_menu.cljs" ]
   },
   "labels.edit" : {
     "translations" : {
@@ -3331,7 +3425,8 @@
   "title.dashboard.files" : {
     "translations" : {
       "en" : "%s - Penpot"
-    }
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/files.cljs" ]
   },
   "title.dashboard.projects" : {
     "translations" : {
@@ -3342,7 +3437,8 @@
       "fr" : "Projets - %s - Penpot",
       "ru" : "Проекты - %s - Penpot",
       "zh_cn" : "项目 - %s - Penpot"
-    }
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/projects.cljs" ]
   },
   "title.dashboard.search" : {
     "translations" : {
@@ -3353,7 +3449,8 @@
       "fr" : "Rechercher - %s - Penpot",
       "ru" : "Поиск - %s - Penpot",
       "zh_cn" : "搜索 - %s - Penpot"
-    }
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/search.cljs" ]
   },
   "title.dashboard.shared-libraries" : {
     "translations" : {
@@ -3364,13 +3461,14 @@
       "ru" : "",
       "zh_cn" : "共享库 - %s - Penpot"
     },
-    "used-in" : [ "src/app/main/ui/dashboard/sidebar.cljs" ]
+    "used-in" : [ "src/app/main/ui/dashboard/libraries.cljs" ]
   },
   "title.default" : {
     "translations" : {
       "en" : "Penpot - Design Freedom for Teams",
       "es" : "Penpot - Diseño Libre para Equipos"
-    }
+    },
+    "used-in" : [ "src/app/main/ui/auth/verify_token.cljs", "src/app/main/ui/auth.cljs" ]
   },
   "title.settings.feedback" : {
     "translations" : {
@@ -3380,7 +3478,8 @@
       "fr" : "Donnez votre avis - Penpot",
       "ru" : "Дать обратную связь - Penpot",
       "zh_cn" : "提交反馈 - Penpot"
-    }
+    },
+    "used-in" : [ "src/app/main/ui/settings/feedback.cljs" ]
   },
   "title.settings.options" : {
     "translations" : {
@@ -3390,7 +3489,8 @@
       "fr" : "Configuration - Penpot",
       "ru" : "Параметры - Penpot",
       "zh_cn" : "设置 - Penpot"
-    }
+    },
+    "used-in" : [ "src/app/main/ui/settings/options.cljs" ]
   },
   "title.settings.password" : {
     "translations" : {
@@ -3400,7 +3500,8 @@
       "fr" : "Mot de passe - Penpot",
       "ru" : "Пароль - Penpot",
       "zh_cn" : "密码 - Penpot"
-    }
+    },
+    "used-in" : [ "src/app/main/ui/settings/password.cljs" ]
   },
   "title.settings.profile" : {
     "translations" : {
@@ -3410,7 +3511,8 @@
       "fr" : "Profil - Penpot",
       "ru" : "Профиль - Penpot",
       "zh_cn" : "个人资料 - Penpot"
-    }
+    },
+    "used-in" : [ "src/app/main/ui/settings/profile.cljs" ]
   },
   "title.team-members" : {
     "translations" : {
@@ -3419,7 +3521,8 @@
       "es" : "Integrantes - %s - Penpot",
       "fr" : "Membres - %s - Penpot",
       "zh_cn" : "成员 - %s - Penpot"
-   }
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/team.cljs" ]
   },
   "title.team-settings" : {
     "translations" : {
@@ -3429,12 +3532,8 @@
       "fr" : "Configuration - %s - Penpot",
       "ru" : "Параметры - %s - Penpot",
       "zh_cn" : "设置 - %s - Penpot"
-    }
-  },
-  "title.workspace" : {
-    "translations" : {
-      "en": "%s - Penpot"
-    }
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/team.cljs" ]
   },
   "title.viewer" : {
     "translations" : {
@@ -3444,7 +3543,14 @@
       "fr" : "%s - Mode spectateur - Penpot",
       "ru" : "%s - Режим просмотра - Penpot",
       "zh_cn" : "%s - 预览模式）- Penpot"
-    }
+    },
+    "used-in" : [ "src/app/main/ui/handoff.cljs", "src/app/main/ui/viewer.cljs" ]
+  },
+  "title.workspace" : {
+    "translations" : {
+      "en" : "%s - Penpot"
+    },
+    "used-in" : [ "src/app/main/ui/workspace.cljs" ]
   },
   "viewer.empty-state" : {
     "translations" : {
@@ -5337,21 +5443,6 @@
     },
     "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs" ]
   },
-
-  "workspace.options.text-options.direction-rtl" : {
-    "translations" : {
-      "en" : "RTL",
-      "es" : "RTL"
-    }
-  },
-
-  "workspace.options.text-options.direction-ltr" : {
-    "translations" : {
-      "en" : "LTR",
-      "es" : "LTR"
-    }
-  },
-
   "workspace.options.text-options.align-bottom" : {
     "translations" : {
       "de" : "Unten ausrichten",
@@ -5439,6 +5530,20 @@
       "zh_cn" : "装饰"
     },
     "unused" : true
+  },
+  "workspace.options.text-options.direction-ltr" : {
+    "translations" : {
+      "en" : "LTR",
+      "es" : "LTR"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/text.cljs" ]
+  },
+  "workspace.options.text-options.direction-rtl" : {
+    "translations" : {
+      "en" : "RTL",
+      "es" : "RTL"
+    },
+    "used-in" : [ "src/app/main/ui/workspace/sidebar/options/menus/text.cljs" ]
   },
   "workspace.options.text-options.google" : {
     "translations" : {
