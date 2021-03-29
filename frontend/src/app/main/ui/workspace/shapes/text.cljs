@@ -101,7 +101,7 @@
            (.observe observer paragraph-node)
            #(.disconnect observer)))))
 
-    [:& text/text-shape {:ref text-ref-cb :shape shape}]))
+    [:& text/text-shape {:ref text-ref-cb :shape shape :grow-type (:grow-type shape)}]))
 
 (mf/defc text-wrapper
   {::mf/wrap-props false}

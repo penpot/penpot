@@ -36,6 +36,26 @@
   [data]
   (xml/js2xml (clj->js data)))
 
+(defn ^boolean element?
+  [item]
+  (and (map? item)
+       (= "element" (get item "type"))))
+
+(defn ^boolean group-element?
+  [item]
+  (and (element? item)
+       (= "g" (get item "name"))))
+
+(defn ^boolean shape-element?
+  [item]
+  (and (element? item)
+       (str/starts-with? (get-in item ["attributes" "id"]) "shape-")))
+
+(defn ^boolean foreign-object-element?
+  [item]
+  (and (element? item)
+       (= "foreignObject" (get item "name"))))
+
 (defn ^boolean empty-defs-element?
   [item]
   (and (= (get item "name") "defs")
@@ -50,10 +70,6 @@
              (nil? d)
              (str/empty? d)))))
 
-(defn ^boolean foreign-object-element?
-  [item]
-  (and (map? item)
-       (= "foreignObject" (get item "name"))))
 
 (defn flatten-toplevel-svg-elements
   "Flattens XML data structure if two nested top-side SVG elements found."
@@ -78,8 +94,14 @@
 
           (process-element [item xform]
             (let [item (d/update-when item "elements" #(into [] xform %))]
-              (if (str/starts-with? (get-in item ["attributes" "id"]) "shape-")
-                (assoc item "elements" (get-in item ["elements" 0 "elements"]))
+              (if (shape-element? item)
+                (update item "elements"
+                        (fn [elements]
+                          ;; flatten content of a shape element
+                          (into [] (mapcat (fn [item]
+                                             (if (group-element? item)
+                                               (get item "elements")
+                                               [item]))) elements)))
                 item)))]
 
     (let [xform (comp (remove empty-defs-element?)
@@ -90,9 +112,7 @@
            (flatten-toplevel-svg-elements)
            (walk/prewalk (fn [item]
                            (cond-> item
-                             (and (map? item)
-                                  (string? (get item "name"))
-                                  (= "element" (get item "type")))
+                             (element? item)
                              (process-element xform))))
            (clj->xml)))))
 
@@ -234,8 +254,14 @@
             (p/let [dom     (bwr/select page "#screenshot")
                     xmldata (bwr/eval! dom (fn [elem] (.-outerHTML ^js elem)))
                     nodes   (process-text-nodes page)
-                    nodes   (d/index-by :id nodes)]
-              (replace-text-nodes xmldata nodes)))
+                    nodes   (d/index-by :id nodes)
+                    result  (replace-text-nodes xmldata nodes)]
+              ;; (println "------- ORIGIN:")
+              ;; (cljs.pprint/pprint (xml->clj xmldata))
+              ;; (println "------- RESULT:")
+              ;; (cljs.pprint/pprint (xml->clj result))
+              ;; (println "-------")
+              result))
 
           (render-in-page [page {:keys [uri cookie] :as rctx}]
             (p/do!

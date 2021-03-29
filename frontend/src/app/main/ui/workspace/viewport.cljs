@@ -92,7 +92,7 @@
 
         on-click          (actions/on-click hover selected)
         on-context-menu   (actions/on-context-menu hover)
-        on-double-click   (actions/on-double-click hover hover-ids objects)
+        on-double-click   (actions/on-double-click hover hover-ids drawing-path? objects)
         on-drag-enter     (actions/on-drag-enter)
         on-drag-over      (actions/on-drag-over)
         on-drop           (actions/on-drop file viewport-ref zoom)

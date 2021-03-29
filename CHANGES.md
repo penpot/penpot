@@ -20,7 +20,9 @@
 - Add layer opacity and blend mode to shapes [Taiga #937](https://tree.taiga.io/project/penpot/us/937)
 - Add more chinese translations [#726](https://github.com/penpot/penpot/pull/726)
 - Add native support for text-direction (RTL, LTR & auto).
+- Add several enhancements in shape selection [Taiga #1195](https://tree.taiga.io/project/penpot/us/1195)
 - Add thumbnail in memory caching mechanism.
+- Add turkish translation strings [#759](https://github.com/penpot/penpot/pull/759), [#794](https://github.com/penpot/penpot/pull/794)
 - Duplicate and move files and projects [Taiga #267](https://tree.taiga.io/project/penpot/us/267)
 - Hide viewer navbar on fullscreen [Taiga 1375](https://tree.taiga.io/project/penpot/us/1375)
 - Import SVG will create Penpot's shapes [Taiga #1006](https://tree.taiga.io/project/penpot/us/1066)
@@ -30,18 +32,22 @@
 - Rename artboard with double click on the title [Taiga #1392](https://tree.taiga.io/project/penpot/us/1392)
 - Replace Slate-Editor with DraftJS [Taiga #1346](https://tree.taiga.io/project/penpot/us/1346)
 - Set proper page title [Taiga #1377](https://tree.taiga.io/project/penpot/us/1377)
-- Several enhancements in shape selection [Taiga #1195](https://tree.taiga.io/project/penpot/us/1195)
+
 
 ### :bug: Bugs fixed
 
-- Disables buttons in view mode for users without permissions [Taiga #1328](https://tree.taiga.io/project/penpot/issue/1328)
+- Disable buttons in view mode for users without permissions [Taiga #1328](https://tree.taiga.io/project/penpot/issue/1328)
 - Fix broken profile and profile options form.
+- Fix calculate size of some animated gifs [Taiga #1487](https://tree.taiga.io/project/penpot/issue/1487)
 - Fix error with the "Navigate to" button on prototypes [Taiga #1268](https://tree.taiga.io/project/penpot/issue/1268)
 - Fix issue when undo after changing the artboard of a shape [Taiga #1304](https://tree.taiga.io/project/penpot/issue/1304)
-- Fix issue with typographies panel cannot be collapsed [#707](https://github.com/penpot/penpot/issues/707)
 - Fix issue with Alt key in distance measurement [#672](https://github.com/penpot/penpot/issues/672)
+- Fix issue with blending modes in masks [Taiga #1476](https://tree.taiga.io/project/penpot/issue/1476)
+- Fix issue with blocked shapes [Taiga #1480](https://tree.taiga.io/project/penpot/issue/1480)
 - Fix issue with comments styles on dashboard [Taiga #1405](https://tree.taiga.io/project/penpot/issue/1405)
 - Fix issue with default square grid [Taiga #1344](https://tree.taiga.io/project/penpot/issue/1344)
+- Fix issue with enter key shortcut [#775](https://github.com/penpot/penpot/issues/775)
+- Fix issue with enter to edit paths [Taiga #1481](https://tree.taiga.io/project/penpot/issue/1481)
 - Fix issue with mask and flip [#715](https://github.com/penpot/penpot/issues/715)
 - Fix issue with masks interactions outside bounds [#718](https://github.com/penpot/penpot/issues/718)
 - Fix issue with middle mouse button press moving the canvas when not moving mouse [#717](https://github.com/penpot/penpot/issues/717)
@@ -49,12 +55,12 @@
 - Fix issue with rotated blur [Taiga #1370](https://tree.taiga.io/project/penpot/issue/1370)
 - Fix issue with rotation degree input [#741](https://github.com/penpot/penpot/issues/741)
 - Fix issue with system shortcuts and application [#737](https://github.com/penpot/penpot/issues/737)
-- Fix problem with enter key shortcut [#775](https://github.com/penpot/penpot/issues/775)
-- Updates worksans font [#744](https://github.com/penpot/penpot/issues/744)
-- Fix problem with team management in dashboard [Taiga #1475](https://tree.taiga.io/project/penpot/issue/1475)
-- Fix problem with blending modes in masks [Taiga #1476](https://tree.taiga.io/project/penpot/issue/1476)
+- Fix issue with team management in dashboard [Taiga #1475](https://tree.taiga.io/project/penpot/issue/1475)
+- Fix issue with typographies panel cannot be collapsed [#707](https://github.com/penpot/penpot/issues/707)
 - Fix text selection in comments [#745](https://github.com/penpot/penpot/issues/745)
-- Fix problem with blocked shapes [Taiga #1480](https://tree.taiga.io/project/penpot/issue/1480)
+- Update Work-Sans font [#744](https://github.com/penpot/penpot/issues/744)
+
+>>>>>>> origin/staging
 
 ### :arrow_up: Deps updates
 
@@ -66,7 +72,8 @@
 
 - iblueer [#726](https://github.com/penpot/penpot/pull/726)
 - gizembln [#759](https://github.com/penpot/penpot/pull/759)
-- girafic [#759](https://github.com/penpot/penpot/pull/748)
+- girafic [#748](https://github.com/penpot/penpot/pull/748)
+- mbrksntrk [#794](https://github.com/penpot/penpot/pull/794)
 
 
 ## 1.3.0-alpha

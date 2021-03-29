@@ -1015,8 +1015,12 @@
                 {:keys [id type shapes]} (get objects (first selected))]
 
             (case type
-              (:text :path)
+              :text
               (rx/of (dwc/start-edition-mode id))
+
+              :path
+              (rx/of (dwc/start-edition-mode id)
+                     (dwdp/start-path-edit id))
 
               :group
               (rx/of (dwc/select-shapes (into (d/ordered-set) [(last shapes)])))
