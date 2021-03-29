@@ -6,9 +6,18 @@ export DEVENV_IMGNAME="$ORGANIZATION/devenv";
 export DEVENV_PNAME="penpotdev";
 
 export CURRENT_USER_ID=$(id -u);
-export CURRENT_VERSION=$(git describe --tags);
+export CURRENT_VERSION=$(cat ./version.txt);
 export CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
 export CURRENT_HASH=$(git rev-parse --short HEAD);
+export CURRENT_COMMITS=$(git rev-list --count HEAD)
+
+function print-current-version {
+    if [ $CURRENT_BRANCH != "main" ]; then
+        echo -n "$CURRENT_BRANCH-$CURRENT_VERSION-$CURRENT_COMMITS-g$CURRENT_HASH"
+    else
+        echo -n "$CURRENT_VERSION-$CURRENT_COMMITS-g$CURRENT_HASH"
+    fi
+}
 
 function build-devenv {
     echo "Building development image $DEVENV_IMGNAME:latest..."
@@ -74,7 +83,7 @@ function build {
 }
 
 function build-app-bundle {
-    local version="$CURRENT_VERSION";
+    local version=$(print-current-version);
     local bundle_dir="./bundle-app";
 
     build "frontend";
@@ -85,10 +94,6 @@ function build-app-bundle {
     cp -r ./frontend/target/dist $bundle_dir/frontend;
     cp -r ./backend/target/dist $bundle_dir/backend;
 
-    if [ $CURRENT_BRANCH != "main" ]; then
-        version="$CURRENT_BRANCH-$CURRENT_VERSION";
-    fi;
-
     echo $version > $bundle_dir/version.txt
 
     sed -i -re "s/\%version\%/$version/g" $bundle_dir/frontend/index.html;
@@ -96,17 +101,13 @@ function build-app-bundle {
 }
 
 function build-exporter-bundle {
-    local version="$CURRENT_VERSION";
+    local version=$(print-current-version);
     local bundle_dir="./bundle-exporter";
 
     build "exporter";
 
     rm -rf $bundle_dir;
     cp -r ./exporter/target $bundle_dir;
-
-    if [ $CURRENT_BRANCH != "main" ]; then
-        version="$CURRENT_BRANCH-$CURRENT_VERSION";
-    fi;
 
     echo $version > $bundle_dir/version.txt
 }

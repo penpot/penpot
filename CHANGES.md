@@ -59,6 +59,8 @@
 - Fix issue with typographies panel cannot be collapsed [#707](https://github.com/penpot/penpot/issues/707)
 - Fix text selection in comments [#745](https://github.com/penpot/penpot/issues/745)
 - Update Work-Sans font [#744](https://github.com/penpot/penpot/issues/744)
+- Fix issue with recent files not showing [Taiga #1493](https://tree.taiga.io/project/penpot/issue/1493)
+- Fix issue when promoting to owner [Taiga #1494](https://tree.taiga.io/project/penpot/issue/1494)
 
 >>>>>>> origin/staging
 
