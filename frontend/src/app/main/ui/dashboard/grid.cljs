@@ -256,14 +256,17 @@
         itemsize       290
         ratio          (if (some? @width) (/ @width itemsize) 0)
         nitems         (mth/floor ratio)
-        limit          (if (and (some? @width)
-                                (> (* itemsize (count files)) @width)
-                                (< (- ratio nitems) 0.51))
-                         (dec nitems) ;; Leave space for the "show all" block
-                         nitems)
+        limit          (min 10 ;; Configuration in backend to return recent files
+                            (if (and (some? @width)
+                                     (> (* itemsize (count files)) @width)
+                                     (< (- ratio nitems) 0.51))
+                              (dec nitems) ;; Leave space for the "show all" block
+                              nitems))
+
         limit          (if dragging?
                          (dec limit)
                          limit)
+
         limit          (max 1 limit)]
 
     (mf/use-effect
