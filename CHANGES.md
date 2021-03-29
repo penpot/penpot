@@ -67,6 +67,7 @@
 - Fix drag-select when renaming layer text [Taiga #1307](https://tree.taiga.io/project/penpot/issue/1307)
 - Fix layout problem for editable selects [Taiga #1488](https://tree.taiga.io/project/penpot/issue/1488)
 - Fix artboard title wasn't move when resizing [Taiga #1479](https://tree.taiga.io/project/penpot/issue/1479)
+- Fix titles in viewer thumbnails too long [Taiga #1474](https://tree.taiga.io/project/penpot/issue/1474)
 
 
 ### :arrow_up: Deps updates
