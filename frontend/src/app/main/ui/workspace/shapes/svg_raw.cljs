@@ -16,10 +16,6 @@
    [app.common.geom.shapes :as gsh]
    [app.main.ui.context :as muc]))
 
-;; This is a list of svg tags that can be grouped in shape-container
-;; this allows them to have gradients, shadows and masks
-(def svg-elements #{:svg :circle :ellipse :image :line :path :polygon :polyline :rect :symbol :text :textPath :use})
-
 (defn svg-raw-wrapper-factory
   [shape-wrapper]
   (let [svg-raw-shape (svg-raw/svg-raw-shape shape-wrapper)]
@@ -43,21 +39,12 @@
             def-ctx? (mf/use-ctx muc/def-ctx)]
 
         (cond
-          (and (contains? svg-elements tag) (not def-ctx?))
+          (and (svg-raw/graphic-element? tag) (not def-ctx?))
           [:> shape-container { :shape shape }
            [:& svg-raw-shape
             {:frame frame
              :shape shape
-             :childs childs}]
-
-           [:rect.actions
-            {:x x
-             :y y
-             :transform transform
-             :width width
-             :height height
-             :fill "transparent"
-             :stroke "none"}]]
+             :childs childs}]]
 
           ;; We cannot wrap inside groups the shapes that go inside the defs tag
           ;; we use the context so we know when we should not render the container
