@@ -20,6 +20,7 @@
 - Add layer opacity and blend mode to shapes [Taiga #937](https://tree.taiga.io/project/penpot/us/937)
 - Add more chinese translations [#726](https://github.com/penpot/penpot/pull/726)
 - Add native support for text-direction (RTL, LTR & auto).
+- Add several enhancements in shape selection [Taiga #1195](https://tree.taiga.io/project/penpot/us/1195)
 - Add thumbnail in memory caching mechanism.
 - Add turkish translation strings [#759](https://github.com/penpot/penpot/pull/759), [#794](https://github.com/penpot/penpot/pull/794)
 - Duplicate and move files and projects [Taiga #267](https://tree.taiga.io/project/penpot/us/267)
@@ -31,12 +32,11 @@
 - Rename artboard with double click on the title [Taiga #1392](https://tree.taiga.io/project/penpot/us/1392)
 - Replace Slate-Editor with DraftJS [Taiga #1346](https://tree.taiga.io/project/penpot/us/1346)
 - Set proper page title [Taiga #1377](https://tree.taiga.io/project/penpot/us/1377)
-- Several enhancements in shape selection [Taiga #1195](https://tree.taiga.io/project/penpot/us/1195)
 
 
 ### :bug: Bugs fixed
 
-- Disables buttons in view mode for users without permissions [Taiga #1328](https://tree.taiga.io/project/penpot/issue/1328)
+- Disable buttons in view mode for users without permissions [Taiga #1328](https://tree.taiga.io/project/penpot/issue/1328)
 - Fix broken profile and profile options form.
 - Fix calculate size of some animated gifs [Taiga #1487](https://tree.taiga.io/project/penpot/issue/1487)
 - Fix error with the "Navigate to" button on prototypes [Taiga #1268](https://tree.taiga.io/project/penpot/issue/1268)
@@ -58,7 +58,7 @@
 - Fix issue with team management in dashboard [Taiga #1475](https://tree.taiga.io/project/penpot/issue/1475)
 - Fix issue with typographies panel cannot be collapsed [#707](https://github.com/penpot/penpot/issues/707)
 - Fix text selection in comments [#745](https://github.com/penpot/penpot/issues/745)
-- Updates Work-Sans font [#744](https://github.com/penpot/penpot/issues/744)
+- Update Work-Sans font [#744](https://github.com/penpot/penpot/issues/744)
 
 
 ### :arrow_up: Deps updates
