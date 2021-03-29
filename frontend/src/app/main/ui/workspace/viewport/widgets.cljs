@@ -17,38 +17,10 @@
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.workspace.shapes.outline :refer [outline]]
    [app.main.ui.workspace.shapes.path.actions :refer [path-actions]]
    [app.util.dom :as dom]
-   [clojure.set :as set]
+   [app.util.object :as obj]
    [rumext.alpha :as mf]))
-
-(mf/defc shape-outlines
-  {::mf/wrap-props false}
-  [props]
-  (let [objects   (unchecked-get props "objects")
-        selected  (or (unchecked-get props "selected") #{})
-        hover     (or (unchecked-get props "hover") #{})
-        edition   (unchecked-get props "edition")
-        outline?  (set/union selected hover)
-        show-outline? (fn [shape] (and (not (:hidden shape))
-                                       (not (:blocked shape))
-                                       (not= edition (:id shape))
-                                       (outline? (:id shape))))
-
-        shapes    (cond->> (vals objects)
-                    show-outline?   (filter show-outline?))
-
-        transform (mf/deref refs/current-transform)
-        color (if (or (> (count shapes) 1) (nil? (:shape-ref (first shapes))))
-                "#31EFB8" "#00E0FF")]
-    (when (nil? transform)
-      [:g.outlines
-       (for [shape shapes]
-         [:& outline {:key (str "outline-" (:id shape))
-                      :shape (gsh/transform-shape shape)
-                      :color color}])])))
-
 
 (mf/defc pixel-grid
   [{:keys [vbox zoom]}]

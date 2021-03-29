@@ -43,6 +43,7 @@
 - Fix issue when undo after changing the artboard of a shape [Taiga #1304](https://tree.taiga.io/project/penpot/issue/1304)
 - Fix issue with Alt key in distance measurement [#672](https://github.com/penpot/penpot/issues/672)
 - Fix issue with blending modes in masks [Taiga #1476](https://tree.taiga.io/project/penpot/issue/1476)
+- Fix issue with blocked shapes [Taiga #1480](https://tree.taiga.io/project/penpot/issue/1480)
 - Fix issue with comments styles on dashboard [Taiga #1405](https://tree.taiga.io/project/penpot/issue/1405)
 - Fix issue with default square grid [Taiga #1344](https://tree.taiga.io/project/penpot/issue/1344)
 - Fix issue with enter key shortcut [#775](https://github.com/penpot/penpot/issues/775)
@@ -56,6 +57,7 @@
 - Fix issue with system shortcuts and application [#737](https://github.com/penpot/penpot/issues/737)
 - Fix issue with team management in dashboard [Taiga #1475](https://tree.taiga.io/project/penpot/issue/1475)
 - Fix issue with typographies panel cannot be collapsed [#707](https://github.com/penpot/penpot/issues/707)
+- Fix text selection in comments [#745](https://github.com/penpot/penpot/issues/745)
 - Updates Work-Sans font [#744](https://github.com/penpot/penpot/issues/744)
 
 

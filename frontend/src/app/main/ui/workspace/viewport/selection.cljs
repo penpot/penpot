@@ -23,7 +23,7 @@
    [app.main.ui.cursors :as cur]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.measurements :as msr]
-   [app.main.ui.workspace.shapes.outline :refer [outline]]
+   [app.main.ui.workspace.viewport.outline :refer [outline]]
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]
    [app.util.data :as d]
    [app.util.debug :refer [debug?]]
@@ -296,7 +296,13 @@
 
 (mf/defc multiple-selection-handlers
   [{:keys [shapes selected zoom color show-distances disable-handlers on-move-selected] :as props}]
-  (let [shape (geom/setup {:type :rect} (geom/selection-rect (->> shapes (map geom/transform-shape))))
+  (let [shape (mf/use-memo
+               (mf/deps shapes)
+               #(->> shapes
+                     (map geom/transform-shape)
+                     (geom/selection-rect)
+                     (geom/setup {:type :rect})))
+
         shape-center (geom/center-shape shape)
 
         hover-id (-> (mf/deref refs/current-hover) first)
