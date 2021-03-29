@@ -77,11 +77,7 @@
     ptk/WatchEvent
     (watch [_ state s]
       (->> (rp/query! :profile)
-           (rx/map profile-fetched)
-           (rx/catch (fn [error]
-                       (if (= (:type error) :not-found)
-                         (rx/of (rt/nav :auth-login))
-                         (rx/empty))))))))
+           (rx/map profile-fetched)))))
 
 ;; --- Update Profile
 
