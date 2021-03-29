@@ -87,7 +87,7 @@
 
 (mf/defc frame-title
   [{:keys [frame modifiers selected? zoom on-frame-enter on-frame-leave on-frame-select]}]
-  (let [{:keys [width x y]} frame
+  (let [{:keys [width x y]} (gsh/transform-shape frame)
         label-pos  (gpt/point x (- y (/ 10 zoom)))
 
         on-mouse-down
