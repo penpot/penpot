@@ -61,6 +61,7 @@
 - Update Work-Sans font [#744](https://github.com/penpot/penpot/issues/744)
 - Fix issue with recent files not showing [Taiga #1493](https://tree.taiga.io/project/penpot/issue/1493)
 - Fix issue when promoting to owner [Taiga #1494](https://tree.taiga.io/project/penpot/issue/1494)
+- Fix cannot click on blocked elements in viewer [Taiga #1430](https://tree.taiga.io/project/penpot/issue/1430)
 
 
 ### :arrow_up: Deps updates
