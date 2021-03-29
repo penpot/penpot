@@ -9,18 +9,21 @@
 
 (ns app.main.ui.render
   (:require
-   [cljs.spec.alpha :as s]
-   [beicon.core :as rx]
-   [rumext.alpha :as mf]
-   [app.common.uuid :as uuid]
-   [app.common.pages :as cp]
-   [app.common.math :as mth]
-   [app.common.geom.shapes :as geom]
-   [app.common.geom.point :as gpt]
    [app.common.geom.matrix :as gmt]
-   [app.main.ui.context :as muc]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
+   [app.common.pages :as cp]
+   [app.common.uuid :as uuid]
    [app.main.exports :as exports]
-   [app.main.repo :as repo]))
+   [app.main.repo :as repo]
+   [app.main.ui.context :as muc]
+   [app.main.ui.shapes.filters :as filters]
+   [app.main.ui.shapes.shape :refer [shape-container]]
+   [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
 (mf/defc object-svg
   {::mf/wrap [mf/memo]}
@@ -37,18 +40,23 @@
         mod-ids  (cons frame-id (cp/get-children frame-id objects))
         updt-fn  #(-> %1
                       (assoc-in [%2 :modifiers :displacement] modifier)
-                      (update %2 geom/transform-shape))
+                      (update %2 gsh/transform-shape))
 
         objects  (reduce updt-fn objects mod-ids)
         object   (get objects object-id)
 
-        width    (* (get-in object [:selrect :width]) zoom)
-        height   (* (get-in object [:selrect :height]) zoom)
 
-        vbox     (str (get-in object [:selrect :x]) " "
-                      (get-in object [:selrect :y]) " "
-                      (get-in object [:selrect :width]) " "
-                      (get-in object [:selrect :height]))
+        {:keys [width height]} (gsh/points->selrect (:points object))
+
+        ;; We need to get the shadows/blurs paddings to create the viewbox properly
+        {:keys [x y width height]} (filters/get-filters-bounds object)
+
+        x        (* x zoom)
+        y        (* y zoom)
+        width    (* width zoom)
+        height   (* height zoom)
+
+        vbox     (str/join " " [x y width height])
 
         frame-wrapper
         (mf/use-memo
@@ -76,7 +84,8 @@
             :xmlns "http://www.w3.org/2000/svg"}
       (case (:type object)
         :frame [:& frame-wrapper {:shape object :view-box vbox}]
-        :group [:& group-wrapper {:shape object}]
+        :group [:> shape-container {:shape object}
+                [:& group-wrapper {:shape object}]]
         [:& shape-wrapper {:shape object}])]]))
 
 (defn- adapt-root-frame
@@ -84,9 +93,9 @@
   (if (uuid/zero? object-id)
     (let [object   (get objects object-id)
           shapes   (cp/select-toplevel-shapes objects {:include-frames? true})
-          srect    (geom/selection-rect shapes)
+          srect    (gsh/selection-rect shapes)
           object   (merge object (select-keys srect [:x :y :width :height]))
-          object   (geom/transform-shape object)
+          object   (gsh/transform-shape object)
           object   (assoc object :fill-color "#f0f0f0")]
       (assoc objects (:id object) object))
     objects))

@@ -63,6 +63,7 @@
 - Fix issue when promoting to owner [Taiga #1494](https://tree.taiga.io/project/penpot/issue/1494)
 - Fix cannot click on blocked elements in viewer [Taiga #1430](https://tree.taiga.io/project/penpot/issue/1430)
 - Fix SVG not showing properties at code [Taiga #1437](https://tree.taiga.io/project/penpot/issue/1437)
+- Fix shadows when exporting groups [Taiga #1495](https://tree.taiga.io/project/penpot/issue/1495)
 
 
 ### :arrow_up: Deps updates
