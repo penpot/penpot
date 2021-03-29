@@ -165,6 +165,10 @@
 
   .thumbnail-info {
     padding: 0.5rem 0;
+    width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 
     span {
       font-size: $fs13;
