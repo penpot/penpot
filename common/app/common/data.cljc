@@ -401,6 +401,9 @@
      (keyword? maybe-keyword)
      (core/name maybe-keyword)
 
+     (string? maybe-keyword)
+     maybe-keyword
+
      (nil? maybe-keyword) default-value
 
      :else

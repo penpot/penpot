@@ -65,7 +65,7 @@
   (try
     (let [uri  (:uri cfg)
           text (str "Unhandled exception (@channel):\n"
-                    "- detail: " (:public-uri cfg/config) "/dbg/error-by-id/" id "\n"
+                    "- detail: " (cfg/get :public-uri) "/dbg/error-by-id/" id "\n"
                     "- host: `" host "`\n"
                     "- version: `" version "`\n"
                     (when error

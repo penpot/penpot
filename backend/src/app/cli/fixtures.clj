@@ -12,7 +12,6 @@
   (:require
    [app.common.pages :as cp]
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
    [app.db :as db]
    [app.main :as main]
    [app.rpc.mutations.profile :as profile]
@@ -233,7 +232,7 @@
 
 (defn run
   [{:keys [preset] :or {preset :small}}]
-  (let [config (select-keys (main/build-system-config cfg/config)
+  (let [config (select-keys main/system-config
                             [:app.db/pool
                              :app.telemetry/migrations
                              :app.migrations/migrations

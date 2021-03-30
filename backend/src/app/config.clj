@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020-2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.config
   "A configuration management."
@@ -15,9 +15,18 @@
    [app.common.version :as v]
    [app.util.time :as dt]
    [clojure.core :as c]
+   [clojure.pprint :as pprint]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [environ.core :refer [env]]))
+
+(prefer-method print-method
+               clojure.lang.IRecord
+               clojure.lang.IDeref)
+
+(prefer-method pprint/simple-dispatch
+               clojure.lang.IPersistentMap
+               clojure.lang.IDeref)
 
 (def defaults
   {:http-server-port 6060
@@ -221,39 +230,31 @@
                    ::telemetry-server-enabled
                    ::telemetry-server-port
                    ::telemetry-uri
+                   ::telemetry-referer
                    ::telemetry-with-taiga
                    ::tenant]))
 
-(defn- env->config
-  [env]
-  (reduce-kv
-   (fn [acc k v]
-     (cond-> acc
-       (str/starts-with? (name k) "penpot-")
-       (assoc (keyword (subs (name k) 7)) v)
+(defn read-env
+  [prefix]
+  (let [prefix (str prefix "-")
+        len    (count prefix)]
+    (reduce-kv
+     (fn [acc k v]
+       (cond-> acc
+         (str/starts-with? (name k) prefix)
+         (assoc (keyword (subs (name k) len)) v)))
+     {}
+     env)))
 
-       (str/starts-with? (name k) "app-")
-       (assoc (keyword (subs (name k) 4)) v)))
-   {}
-   env))
 
 (defn- read-config
-  [env]
-  (->> (env->config env)
+  []
+  (->> (read-env "penpot")
        (merge defaults)
        (us/conform ::config)))
 
-(defn- read-test-config
-  [env]
-  (merge {:redis-uri "redis://redis/1"
-          :database-uri "postgresql://postgres/penpot_test"
-          :storage-fs-directory "/tmp/app/storage"
-          :migrations-verbose false}
-         (read-config env)))
-
 (def version (v/parse "%version%"))
-(def config (read-config env))
-(def test-config (read-test-config env))
+(def config  (atom (read-config)))
 
 (def deletion-delay
   (dt/duration {:days 7}))
@@ -261,6 +262,9 @@
 (defn get
   "A configuration getter. Helps code be more testable."
   ([key]
-   (c/get config key))
+   (c/get @config key))
   ([key default]
-   (c/get config key default)))
+   (c/get @config key default)))
+
+;; Set value for all new threads bindings.
+(alter-var-root #'*assert* (constantly (get :asserts-enabled)))
