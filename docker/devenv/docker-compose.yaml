@@ -38,10 +38,6 @@ services:
       - 9090:9090
 
     environment:
-      - PENPOT_DATABASE_URI=postgresql://postgres/penpot
-      - PENPOT_DATABASE_USERNAME=penpot
-      - PENPOT_DATABASE_PASSWORD=penpot
-      - PENPOT_REDIS_URI=redis://redis/0
       - EXTERNAL_UID=${CURRENT_USER_ID}
       # STMP setup
       - PENPOT_SMTP_ENABLED=true
