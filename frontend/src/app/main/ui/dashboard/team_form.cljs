@@ -97,7 +97,7 @@
                       :auto-focus true
                       :form form
                       :name :name
-                      :label "Enter new team name:"}]]
+                      :label (tr "labels.create-team.placeholder")}]]
 
        [:div.modal-footer
         [:div.action-buttons

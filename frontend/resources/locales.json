@@ -6577,5 +6577,10 @@
       "zh_cn" : "单击以闭合路径"
     },
     "unused" : true
+  },
+  "labels.create-team.placeholder": {
+    "translations" : {
+      "en": "Enter new team name"
+    }
   }
 }
