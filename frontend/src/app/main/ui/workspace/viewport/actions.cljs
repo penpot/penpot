@@ -34,46 +34,47 @@
   (mf/use-callback
    (mf/deps id blocked hidden type drawing-tool text-editing? edition selected)
    (fn [bevent]
-     (dom/stop-propagation bevent)
+     (when (dom/class? (dom/get-target bevent) "viewport-controls")
+       (dom/stop-propagation bevent)
 
-     (let [event  (.-nativeEvent bevent)
-           ctrl?  (kbd/ctrl? event)
-           shift? (kbd/shift? event)
-           alt?   (kbd/alt? event)
+       (let [event  (.-nativeEvent bevent)
+             ctrl?  (kbd/ctrl? event)
+             shift? (kbd/shift? event)
+             alt?   (kbd/alt? event)
 
-           left-click?   (= 1 (.-which event))
-           middle-click? (= 2 (.-which event))
-           
-           frame? (= :frame type)
-           selected? (contains? selected id)]
+             left-click?   (= 1 (.-which event))
+             middle-click? (= 2 (.-which event))
 
-       (when middle-click?
-         (dom/prevent-default bevent)
-         (st/emit! (dw/start-panning)))
+             frame? (= :frame type)
+             selected? (contains? selected id)]
 
-       (when left-click?
-         (st/emit! (ms/->MouseEvent :down ctrl? shift? alt?))
+         (when middle-click?
+           (dom/prevent-default bevent)
+           (st/emit! (dw/start-panning)))
 
-         (when (and (not= edition id) text-editing?)
-           (st/emit! dw/clear-edition-mode))
+         (when left-click?
+           (st/emit! (ms/->MouseEvent :down ctrl? shift? alt?))
 
-         (when (and (or (not edition) (not= edition id)) (not blocked) (not hidden))
-           (cond
-             (and drawing-tool (not (#{:comments :path} drawing-tool)))
-             (st/emit! (dd/start-drawing drawing-tool))
+           (when (and (not= edition id) text-editing?)
+             (st/emit! dw/clear-edition-mode))
 
-             edit-path
-             ;; Handle node select-drawing. NOP at the moment
-             nil
+           (when (and (or (not edition) (not= edition id)) (not blocked) (not hidden))
+             (cond
+               (and drawing-tool (not (#{:comments :path} drawing-tool)))
+               (st/emit! (dd/start-drawing drawing-tool))
 
-             (or (not id) (and frame? (not selected?)))
-             (st/emit! (dw/handle-selection shift?))
+               edit-path
+               ;; Handle node select-drawing. NOP at the moment
+               nil
 
-             :else
-             (st/emit! (when (or shift? (not selected?))
-                         (dw/select-shape id shift?))
-                       (when (not shift?)
-                         (dw/start-move-selected))))))))))
+               (or (not id) (and frame? (not selected?)))
+               (st/emit! (dw/handle-selection shift?))
+
+               :else
+               (st/emit! (when (or shift? (not selected?))
+                           (dw/select-shape id shift?))
+                         (when (not shift?)
+                           (dw/start-move-selected)))))))))))
 
 (defn on-move-selected
   [hover hover-ids selected]
@@ -122,17 +123,18 @@
   (mf/use-callback
    (mf/deps @hover selected)
    (fn [event]
-     (let [ctrl? (kbd/ctrl? event)
-           shift? (kbd/shift? event)
-           alt? (kbd/alt? event)
+     (when (dom/class? (dom/get-target event) "viewport-controls")
+       (let [ctrl? (kbd/ctrl? event)
+             shift? (kbd/shift? event)
+             alt? (kbd/alt? event)
 
-           hovering? (some? @hover)
-           frame? (= :frame (:type @hover))
-           selected? (contains? selected (:id @hover))]
-       (st/emit! (ms/->MouseEvent :click ctrl? shift? alt?))
+             hovering? (some? @hover)
+             frame? (= :frame (:type @hover))
+             selected? (contains? selected (:id @hover))]
+         (st/emit! (ms/->MouseEvent :click ctrl? shift? alt?))
 
-       (when (and hovering? (not shift?) (not frame?) (not selected?))
-         (st/emit! (dw/select-shape (:id @hover))))))))
+         (when (and hovering? (not shift?) (not frame?) (not selected?))
+           (st/emit! (dw/select-shape (:id @hover)))))))))
 
 (defn on-double-click
   [hover hover-ids drawing-path? objects]
@@ -176,16 +178,17 @@
   (mf/use-callback
    (mf/deps @hover)
    (fn [event]
-     (dom/prevent-default event)
+     (when (dom/class? (dom/get-target event) "viewport-controls")
+       (dom/prevent-default event)
 
-     (let [position (dom/get-client-position event)]
-       ;; Delayed callback because we need to wait to the previous context menu to be closed
-       (timers/schedule
-        #(st/emit!
-          (if (some? @hover)
-            (dw/show-shape-context-menu {:position position
-                                         :shape @hover})
-            (dw/show-context-menu {:position position}))))))))
+       (let [position (dom/get-client-position event)]
+         ;; Delayed callback because we need to wait to the previous context menu to be closed
+         (timers/schedule
+          #(st/emit!
+            (if (some? @hover)
+              (dw/show-shape-context-menu {:position position
+                                           :shape @hover})
+              (dw/show-context-menu {:position position})))))))))
 
 (defn on-mouse-up
   [disable-paste]

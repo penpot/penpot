@@ -54,31 +54,25 @@
   (l/derived (l/in [:workspace-local :shape-for-rename]) st/state))
 
 (mf/defc layer-name
-  [{:keys [shape] :as props}]
+  [{:keys [shape on-start-edit on-stop-edit] :as props}]
   (let [local            (mf/use-state {})
         shape-for-rename (mf/deref shape-for-rename-ref)
         name-ref         (mf/use-ref)
 
-        set-draggable (fn [value]
-                        (let [parent (.. (mf/ref-val name-ref)
-                                         -parentNode
-                                         -parentNode)]
-                          (set! (.-draggable parent) value)))
-
         start-edit (fn []
-                     (set-draggable false)
+                     (on-start-edit)
                      (swap! local assoc :edition true))
 
         accept-edit (fn []
                       (let [name-input (mf/ref-val name-ref)
                             name       (dom/get-value name-input)]
-                        (set-draggable true)
+                        (on-stop-edit)
                         (swap! local assoc :edition false)
                         (st/emit! (dw/end-rename-shape)
                                   (dw/update-shape (:id shape) {:name name}))))
 
         cancel-edit (fn []
-                      (set-draggable true)
+                      (on-stop-edit)
                       (swap! local assoc :edition false)
                       (st/emit! (dw/end-rename-shape)))
 
@@ -123,6 +117,8 @@
   (let [id        (:id item)
         selected? (contains? selected id)
         container? (or (= (:type item) :frame) (= (:type item) :group))
+
+        disable-drag (mf/use-state false)
 
         expanded-iref (mf/use-memo
                         (mf/deps id)
@@ -203,6 +199,7 @@
                        :on-drop on-drop
                        :on-drag on-drag
                        :on-hold on-hold
+                       :disabled @disable-drag
                        :detect-center? container?
                        :data {:id (:id item)
                               :index index
@@ -229,7 +226,9 @@
                               :on-click select-shape
                               :on-double-click #(dom/stop-propagation %)}
       [:& element-icon {:shape item}]
-      [:& layer-name {:shape item}]
+      [:& layer-name {:shape item
+                      :on-start-edit #(reset! disable-drag true)
+                      :on-stop-edit #(reset! disable-drag false)}]
 
       [:div.element-actions
        [:div.toggle-element {:class (when (:hidden item) "selected")
