@@ -15,7 +15,9 @@
    [app.util.dom :as dom]
    [app.util.geom.path :as ugp]
    [goog.events :as events]
-   [rumext.alpha :as mf])
+   [rumext.alpha :as mf]
+
+   [app.util.keyboard :as kbd])
   (:import goog.events.EventType))
 
 (mf/defc path-point [{:keys [position zoom edit-mode hover? selected? preview? start-path? last-p?]}]
@@ -35,12 +37,13 @@
             (dom/stop-propagation event)
             (dom/prevent-default event)
 
-            (cond
-              (and (= edit-mode :move) (not selected?))
-              (st/emit! (drp/select-node position))
+            (let [shift? (kbd/shift? event)]
+              (cond
+                (and (= edit-mode :move) (not selected?))
+                (st/emit! (drp/select-node position shift?))
 
-              (and (= edit-mode :move) selected?)
-              (st/emit! (drp/deselect-node position)))))
+                (and (= edit-mode :move) selected?)
+                (st/emit! (drp/deselect-node position shift?))))))
 
 
         on-mouse-down
@@ -177,23 +180,24 @@
         last-p (->> content last ugp/command->point)
         handlers (ugp/content->handlers content)
 
-        handle-click-outside
-        (fn [event]
-          (let [current (dom/get-target event)
-                editor-dom (mf/ref-val editor-ref)]
-            (when-not (or (.contains editor-dom current)
-                          (dom/class? current "viewport-actions-entry"))
-              (st/emit! (drp/deselect-all)))))
+        ;;handle-click-outside
+        ;;(fn [event]
+        ;;  (let [current (dom/get-target event)
+        ;;        editor-dom (mf/ref-val editor-ref)]
+        ;;    (when-not (or (.contains editor-dom current)
+        ;;                  (dom/class? current "viewport-actions-entry"))
+        ;;      (st/emit! (drp/deselect-all)))))
 
         handle-double-click-outside
         (fn [event]
           (when (= edit-mode :move)
-            (st/emit! :interrupt)))]
+            (st/emit! :interrupt)))
+        ]
 
     (mf/use-layout-effect
      (mf/deps edit-mode)
      (fn []
-       (let [keys [(events/listen (dom/get-root) EventType.CLICK handle-click-outside)
+       (let [keys [;;(events/listen (dom/get-root) EventType.CLICK handle-click-outside)
                    (events/listen (dom/get-root) EventType.DBLCLICK handle-double-click-outside)]]
          #(doseq [key keys]
             (events/unlistenByKey key)))))

@@ -732,7 +732,23 @@
         (-> state
             (update-in [:workspace-local :edit-path id :selected-handlers] (fnil conj #{}) [index type]))))))
 
-(defn select-node [position]
+(defn select-node-area [shift?]
+  (ptk/reify ::select-node-area
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [selrect (get-in state [:workspace-local :selrect])
+            id (get-in state [:workspace-local :edition])
+            content (get-in state (get-path state :content))
+            selected-point? (fn [point]
+                              (gsh/has-point-rect? selrect point))
+            positions (into #{}
+                            (comp (map (comp gpt/point :params))
+                                  (filter selected-point?))
+                            content)]
+        (-> state
+            (assoc-in [:workspace-local :edit-path id :selected-points] positions))))))
+
+(defn select-node [position shift?]
   (ptk/reify ::select-node
     ptk/UpdateEvent
     (update [_ state]
@@ -740,7 +756,7 @@
         (-> state
             (assoc-in [:workspace-local :edit-path id :selected-points] #{position}))))))
 
-(defn deselect-node [position]
+(defn deselect-node [position shift?]
   (ptk/reify ::deselect-node
     ptk/UpdateEvent
     (update [_ state]
@@ -858,3 +874,54 @@
               (rx/filter #(= % :interrupt))
               (rx/take 1)
               (rx/map #(stop-path-edit))))))))
+
+
+(defn update-area-selection
+  [selrect]
+  (ptk/reify ::update-area-selection
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :selrect] selrect))))
+
+(defn clear-area-selection
+  []
+  (ptk/reify ::clear-area-selection
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-local dissoc :selrect))))
+
+(defn handle-selection
+  [shift?]
+  (letfn [(data->selrect [data]
+            (let [start (:start data)
+                  stop (:stop data)
+                  start-x (min (:x start) (:x stop))
+                  start-y (min (:y start) (:y stop))
+                  end-x (max (:x start) (:x stop))
+                  end-y (max (:y start) (:y stop))]
+              {:x start-x
+               :y start-y
+               :width (mth/abs (- end-x start-x))
+               :height (mth/abs (- end-y start-y))}))]
+    (ptk/reify ::handle-selection
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (let [stop? (fn [event] (or (dwc/interrupt? event) (ms/mouse-up? event)))
+              stoper (->> stream (rx/filter stop?))]
+          (rx/concat
+           #_(when-not preserve?
+               (rx/of (deselect-all)))
+           (->> ms/mouse-position
+                (rx/scan (fn [data pos]
+                           (if data
+                             (assoc data :stop pos)
+                             {:start pos :stop pos}))
+                         nil)
+                (rx/map data->selrect)
+                (rx/filter #(or (> (:width %) 10)
+                                (> (:height %) 10)))
+                (rx/map update-area-selection)
+                (rx/take-until stoper))
+           (rx/of (select-node-area shift?)
+                  (clear-area-selection))
+           #_(rx/of (select-shapes-by-current-selrect preserve?))))))))

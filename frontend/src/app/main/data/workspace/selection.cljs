@@ -60,9 +60,8 @@
     (ptk/reify ::handle-selection
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [stoper (rx/filter #(or (dwc/interrupt? %)
-                                     (ms/mouse-up? %))
-                                stream)]
+        (let [stop? (fn [event] (or (dwc/interrupt? event) (ms/mouse-up? event)))
+              stoper (->> stream (rx/filter stop?))]
           (rx/concat
             (when-not preserve?
               (rx/of (deselect-all)))
