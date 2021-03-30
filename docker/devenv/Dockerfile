@@ -5,7 +5,8 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 ENV NODE_VERSION=v14.16.0 \
     CLOJURE_VERSION=1.10.3.814 \
-    CLJKONDO_VERSION=2021.03.03 \
+    CLJKONDO_VERSION=2021.03.22 \
+    BABASHKA_VERSION=0.3.0 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
@@ -26,6 +27,7 @@ RUN set -ex; \
         git \
         rlwrap \
         unzip \
+        fakeroot \
     ; \
     echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
     locale-gen; \
@@ -115,8 +117,6 @@ RUN set -ex; \
     apt-get -qqy install postgresql-client-13; \
     rm -rf /var/lib/apt/lists/*;
 
-WORKDIR /home
-
 RUN set -ex; \
     curl -LfsSo /tmp/nodejs.tar.xz https://nodejs.org/dist/$NODE_VERSION/node-$NODE_VERSION-linux-x64.tar.xz; \
     mkdir -p /usr/local/nodejs; \
@@ -128,12 +128,22 @@ RUN set -ex; \
     /usr/local/nodejs/bin/npm install -g svgo; \
     rm -rf /tmp/nodejs.tar.xz;
 
+# Install clj-kondo
+RUN set -ex; \
+    curl -LfsSo /tmp/clj-kondo.zip https://github.com/borkdude/clj-kondo/releases/download/v$CLJKONDO_VERSION/clj-kondo-$CLJKONDO_VERSION-linux-amd64.zip; \
+    cd /usr/local/bin; \
+    unzip /tmp/clj-kondo.zip; \
+    rm /tmp/clj-kondo.zip;
+
+# Install babashka
 RUN set -ex; \
     cd /tmp; \
-    wget https://github.com/borkdude/clj-kondo/releases/download/v$CLJKONDO_VERSION/clj-kondo-$CLJKONDO_VERSION-linux-amd64.zip; \
-    unzip clj-kondo-$CLJKONDO_VERSION-linux-amd64.zip; \
-    mv clj-kondo /usr/local/bin/; \
-    rm clj-kondo-$CLJKONDO_VERSION-linux-amd64.zip;
+    curl -LfsSo /tmp/babashka.tar.gz https://github.com/babashka/babashka/releases/download/v$BABASHKA_VERSION/babashka-$BABASHKA_VERSION-linux-amd64.tar.gz; \
+    cd /usr/local/bin; \
+    tar -xf /tmp/babashka.tar.gz; \
+    rm -rf /tmp/babashka.tar.gz;
+
+WORKDIR /home
 
 EXPOSE 3447
 EXPOSE 3448
