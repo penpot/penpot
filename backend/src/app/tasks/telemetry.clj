@@ -5,13 +5,14 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.tasks.telemetry
   "A task that is reponsible to collect anonymous statistical
   information about the current instance and send it to the telemetry
   server."
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.config :as cfg]
@@ -31,7 +32,6 @@
 (s/def ::instance-id ::us/uuid)
 (s/def ::sprops
   (s/keys :req-un [::instance-id]))
-
 
 (defmethod ig/pre-init-spec ::handler [_]
   (s/keys :req-un [::db/pool ::version ::uri ::sprops]))
@@ -128,11 +128,16 @@
 
 (defn- retrieve-stats
   [{:keys [conn version]}]
-  (merge
-   {:version version
-    :with-taiga  (:telemetry-with-taiga cfg/config false)
-    :total-teams (retrieve-num-teams conn)
-    :total-projects (retrieve-num-projects conn)
-    :total-files (retrieve-num-files conn)}
-   (retrieve-team-averages conn)
-   (retrieve-jvm-stats)))
+  (let [referer (if (cfg/get :telemetry-with-taiga)
+                  "taiga"
+                  (cfg/get :telemetry-referer))]
+    (-> {:version        version
+         :referer        referer
+         :total-teams    (retrieve-num-teams conn)
+         :total-projects (retrieve-num-projects conn)
+         :total-files    (retrieve-num-files conn)}
+        (d/merge
+         (retrieve-team-averages conn)
+         (retrieve-jvm-stats))
+        (d/without-nils))))
+

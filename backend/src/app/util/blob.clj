@@ -5,13 +5,13 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2016-2020 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.util.blob
-  "A generic blob storage encoding. Mainly used for
-  page data, page options and txlog payload storage."
+  "A generic blob storage encoding. Mainly used for page data, page
+  options and txlog payload storage."
   (:require
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.util.transit :as t]
    [taoensso.nippy :as n])
   (:import
@@ -33,17 +33,15 @@
 (declare encode-v2)
 (declare encode-v3)
 
-(def default-version
-  (:default-blob-version cfg/config 1))
-
 (defn encode
   ([data] (encode data nil))
-  ([data {:keys [version] :or {version default-version}}]
-   (case  (long version)
-     1 (encode-v1 data)
-     2 (encode-v2 data)
-     3 (encode-v3 data)
-     (throw (ex-info "unsupported version" {:version version})))))
+  ([data {:keys [version]}]
+   (let [version (or version (cf/get :default-blob-version 1))]
+     (case (long version)
+       1 (encode-v1 data)
+       2 (encode-v2 data)
+       3 (encode-v3 data)
+       (throw (ex-info "unsupported version" {:version version}))))))
 
 (defn decode
   "A function used for decode persisted blobs in the database."

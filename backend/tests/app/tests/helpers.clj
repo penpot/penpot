@@ -13,7 +13,7 @@
    [app.common.pages :as cp]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.db :as db]
    [app.main :as main]
    [app.media]
@@ -38,16 +38,12 @@
 (def ^:dynamic *system* nil)
 (def ^:dynamic *pool* nil)
 
-(def config
-  (merge {:redis-uri "redis://redis/1"
-          :database-uri "postgresql://postgres/penpot_test"
-          :storage-fs-directory "/tmp/app/storage"
-          :migrations-verbose false}
-         cfg/config))
-
 (defn state-init
   [next]
-  (let [config (-> (main/build-system-config config)
+  (let [config (-> main/system-config
+                   (assoc-in [:app.msgbus/msgbus :redis-uri] "redis://redis/1")
+                   (assoc-in [:app.db/pool :uri] "postgresql://postgres/penpot_test")
+                   (assoc-in [[:app.main/main :app.storage.fs/backend] :directory] "/tmp/app/storage")
                    (dissoc :app.srepl/server
                            :app.http/server
                            :app.http/router
@@ -328,8 +324,10 @@
   "Helper for mock app.config/get"
   [data]
   (fn
-    ([key] (get (merge config data) key))
-    ([key default] (get (merge config data) key default))))
+    ([key]
+     (get data key (cf/get key)))
+    ([key default]
+     (get data key (cf/get key default)))))
 
 (defn reset-mock!
   [m]

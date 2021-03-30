@@ -16,9 +16,9 @@
    [app.rpc.permissions :as perms]
    [app.rpc.queries.projects :as proj]
    [app.rpc.queries.teams :as teams]
-   [app.tasks :as tasks]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [app.worker :as wrk]
    [clojure.spec.alpha :as s]))
 
 ;; --- Helpers & Specs
@@ -128,9 +128,11 @@
     (proj/check-edition-permissions! conn profile-id id)
 
     ;; Schedule object deletion
-    (tasks/submit! conn {:name "delete-object"
-                         :delay cfg/deletion-delay
-                         :props {:id id :type :project}})
+    (wrk/submit! {::wrk/task :delete-object
+                  ::wrk/delay cfg/deletion-delay
+                  ::wrk/conn conn
+                  :id id
+                  :type :project})
 
     (db/update! conn :project
                 {:deleted-at (dt/now)}

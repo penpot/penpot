@@ -5,13 +5,12 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020-2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.http.oauth.github
   (:require
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.config :as cfg]
    [app.http.oauth.google :as gg]
    [app.util.http :as http]
    [app.util.time :as dt]
@@ -105,7 +104,7 @@
         state      (tokens :generate {:iss :github-oauth
                                       :invitation-token invitation
                                       :exp (dt/in-future "15m")})
-        params     {:client_id (:client-id cfg/config)
+        params     {:client_id (:client-id cfg)
                     :redirect_uri (build-redirect-url cfg)
                     :state state
                     :scope scope}
