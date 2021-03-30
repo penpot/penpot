@@ -17,39 +17,58 @@
 (declare handle-response)
 (defrecord Worker [instance stream])
 
-(defn ask!
-  [w message]
-  (let [sender-id (uuid/next)
-        data (t/encode {:payload message :sender-id sender-id})
-        instance (:instance w)]
+(defn- send-message! [worker {sender-id :sender-id :as message}]
+  (let [data (t/encode message)
+        instance (:instance worker)]
     (.postMessage instance data)
-    (->> (:stream w)
+    (->> (:stream worker)
          (rx/filter #(= (:reply-to %) sender-id))
-         (rx/map handle-response)
-         (rx/first))))
+         (rx/take 1)
+         (rx/map handle-response))))
+
+(defn ask!
+  [worker message]
+  (send-message!
+   worker
+   {:sender-id (uuid/next)
+    :payload message}))
+
+(defn ask-buffered!
+  [worker message]
+  (send-message!
+   worker
+   {:sender-id (uuid/next)
+    :payload message
+    :buffer? true}))
 
 (defn init
   "Return a initialized webworker instance."
   [path on-error]
-  (let [ins (js/Worker. path)
-        bus (rx/subject)
-        wrk (Worker. ins bus)]
-    (.addEventListener ins "message"
-                       (fn [event]
-                         (let [data (.-data event)
-                               data (t/decode data)]
-                           (if (:error data)
-                             (on-error (:error data))
-                             (rx/push! bus data)))))
-    (.addEventListener ins "error"
-                       (fn [error]
-                         (on-error wrk (.-data error))))
+  (let [instance (js/Worker. path)
+        bus     (rx/subject)
+        worker  (Worker. instance bus)
 
-    wrk))
+        handle-message
+        (fn [event]
+          (let [data (.-data event)
+                data (t/decode data)]
+            (if (:error data)
+              (on-error (:error data))
+              (rx/push! bus data))))
+
+        handle-error
+        (fn [error]
+          (on-error worker (.-data error)))]
+    
+    (.addEventListener instance "message" handle-message)
+    (.addEventListener instance "error" handle-error)
+
+    worker))
 
 (defn- handle-response
-  [{:keys [payload error] :as response}]
-  (if-let [{:keys [data message]} error]
-    (throw (ex-info message data))
-    payload))
+  [{:keys [payload error dropped] :as response}]
+  (when-not dropped
+    (if-let [{:keys [data message]} error]
+      (throw (ex-info message data))
+      payload)))
 
