@@ -18,6 +18,7 @@ node_modules
 /backend/dist/
 /backend/logs/
 /backend/-
+/telemetry/
 /frontend/npm-debug.log
 /frontend/target/
 /frontend/dist/
