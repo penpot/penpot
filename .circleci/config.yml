@@ -13,7 +13,7 @@ jobs:
         environment:
           POSTGRES_USER: penpot_test
           POSTGRES_PASSWORD: penpot_test
-          POSTGRES_DB: penpot
+          POSTGRES_DB: penpot_test
 
       - image: circleci/redis:6.0.8
 
@@ -45,10 +45,10 @@ jobs:
           name: backend test
           command: "clojure -M:dev:tests"
           environment:
-            PENPOT_DATABASE_URI: "postgresql://localhost/penpot"
-            PENPOT_DATABASE_USERNAME: penpot_test
-            PENPOT_DATABASE_PASSWORD: penpot_test
-            PENPOT_REDIS_URI: "redis://localhost/1"
+            PENPOT_TEST_DATABASE_URI: "postgresql://localhost/penpot_test"
+            PENPOT_TEST_DATABASE_USERNAME: penpot_test
+            PENPOT_TEST_DATABASE_PASSWORD: penpot_test
+            PENPOT_TEST_REDIS_URI: "redis://localhost/1"
 
       - run:
           working_directory: "./frontend"
