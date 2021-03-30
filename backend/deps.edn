@@ -15,8 +15,8 @@
   org.apache.logging.log4j/log4j-core {:mvn/version "2.14.1"}
   org.apache.logging.log4j/log4j-web {:mvn/version "2.14.1"}
   org.apache.logging.log4j/log4j-jul {:mvn/version "2.14.1"}
-  org.apache.logging.log4j/log4j-slf4j-impl {:mvn/version "2.14.1"}
-  org.slf4j/slf4j-api {:mvn/version "1.7.30"}
+  org.apache.logging.log4j/log4j-slf4j18-impl {:mvn/version "2.14.1"}
+  org.slf4j/slf4j-api {:mvn/version "2.0.0-alpha1"}
   org.zeromq/jeromq {:mvn/version "0.5.2"}
 
   com.taoensso/nippy {:mvn/version "3.1.1"}
