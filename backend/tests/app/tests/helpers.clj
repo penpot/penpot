@@ -38,11 +38,22 @@
 (def ^:dynamic *system* nil)
 (def ^:dynamic *pool* nil)
 
+(def defaults
+  {:database-uri "postgresql://postgres/penpot_test"
+   :redis-uri "redis://redis/1"})
+
+(def config
+  (->> (cf/read-env "penpot-test")
+       (merge cf/defaults defaults)
+       (us/conform ::cf/config)))
+
 (defn state-init
   [next]
   (let [config (-> main/system-config
-                   (assoc-in [:app.msgbus/msgbus :redis-uri] "redis://redis/1")
-                   (assoc-in [:app.db/pool :uri] "postgresql://postgres/penpot_test")
+                   (assoc-in [:app.msgbus/msgbus :redis-uri] (:redis-uri config))
+                   (assoc-in [:app.db/pool :uri] (:database-uri config))
+                   (assoc-in [:app.db/pool :username] (:database-username config))
+                   (assoc-in [:app.db/pool :password] (:database-password config))
                    (assoc-in [[:app.main/main :app.storage.fs/backend] :directory] "/tmp/app/storage")
                    (dissoc :app.srepl/server
                            :app.http/server
@@ -325,9 +336,9 @@
   [data]
   (fn
     ([key]
-     (get data key (cf/get key)))
+     (get data key (get @cf/config key)))
     ([key default]
-     (get data key (cf/get key default)))))
+     (get data key (get @cf/config key default)))))
 
 (defn reset-mock!
   [m]
