@@ -71,6 +71,9 @@ function run-devenv {
 }
 
 function build {
+    echo ">> build start: $1"
+    local version=$(print-current-version);
+
     pull-devenv-if-not-exists;
     docker volume create ${DEVENV_PNAME}_user_data;
     docker run -t --rm \
@@ -79,10 +82,28 @@ function build {
            -e EXTERNAL_UID=$CURRENT_USER_ID \
            -e SHADOWCLJS_EXTRA_PARAMS=$SHADOWCLJS_EXTRA_PARAMS \
            -w /home/penpot/penpot/$1 \
-           $DEVENV_IMGNAME:latest sudo -EH -u penpot ./scripts/build.sh
+           $DEVENV_IMGNAME:latest sudo -EH -u penpot ./scripts/build $version
+
+    echo ">> build end: $1"
+}
+
+function put-license-file {
+    local target=$1;
+    tee -a $target/LICENSE  >> /dev/null <<EOF
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+This Source Code Form is "Incompatible With Secondary Licenses", as
+defined by the Mozilla Public License, v. 2.0.
+
+Copyright (c) UXBOX Labs SL
+EOF
 }
 
 function build-app-bundle {
+    echo ">> bundle app start";
+
     local version=$(print-current-version);
     local bundle_dir="./bundle-app";
 
@@ -91,25 +112,28 @@ function build-app-bundle {
 
     rm -rf $bundle_dir
     mkdir -p $bundle_dir;
-    cp -r ./frontend/target/dist $bundle_dir/frontend;
-    cp -r ./backend/target/dist $bundle_dir/backend;
+    mv ./frontend/target/dist $bundle_dir/frontend;
+    mv ./backend/target/dist $bundle_dir/backend;
 
     echo $version > $bundle_dir/version.txt
-
-    sed -i -re "s/\%version\%/$version/g" $bundle_dir/frontend/index.html;
-    sed -i -re "s/\%version\%/$version/g" $bundle_dir/backend/main/app/config.clj;
+    put-license-file $bundle_dir;
+    echo ">> bundle app end";
 }
 
 function build-exporter-bundle {
+    echo ">> bundle exporter start";
     local version=$(print-current-version);
     local bundle_dir="./bundle-exporter";
 
     build "exporter";
 
     rm -rf $bundle_dir;
-    cp -r ./exporter/target $bundle_dir;
+    mv ./exporter/target $bundle_dir;
 
     echo $version > $bundle_dir/version.txt
+    put-license-file $bundle_dir;
+
+    echo ">> bundle exporter end";
 }
 
 function usage {
