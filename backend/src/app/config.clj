@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020-2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.config
   "A configuration management."
@@ -15,6 +15,7 @@
    [app.common.version :as v]
    [app.util.time :as dt]
    [clojure.core :as c]
+   [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [environ.core :refer [env]]))
@@ -251,7 +252,10 @@
           :migrations-verbose false}
          (read-config env)))
 
-(def version (v/parse "%version%"))
+(def version (v/parse (or (some-> (io/resource "version.txt")
+                                  (slurp)
+                                  (str/trim))
+                          "%version%")))
 (def config (read-config env))
 (def test-config (read-test-config env))
 

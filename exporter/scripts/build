@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-source ~/.bashrc
 set -ex
 
 yarn install

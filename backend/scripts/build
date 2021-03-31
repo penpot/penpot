@@ -1,0 +1,81 @@
+#!/usr/bin/env bb
+
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; This Source Code Form is "Incompatible With Secondary Licenses", as
+;; defined by the Mozilla Public License, v. 2.0.
+;;
+;; Copyright (c) UXBOX Labs SL
+
+(ns build
+  (:require
+   [clojure.string :as str]
+   [clojure.java.io :as io]
+   [clojure.pprint :refer [pprint]]
+   [babashka.fs :as fs]
+   [babashka.process :refer [$ check]]))
+
+(defn split-cp
+  [data]
+  (str/split data #":"))
+
+(def classpath
+  (->> ($ clojure -Spath)
+       (check)
+       (:out)
+       (slurp)
+       (split-cp)
+       (map str/trim)))
+
+(def classpath-jars
+  (let [xfm (filter #(str/ends-with? % ".jar"))]
+    (into #{} xfm classpath)))
+
+(def classpath-paths
+  (let [xfm (comp (remove #(str/ends-with? % ".jar"))
+                  (filter #(.isDirectory (io/file %))))]
+    (into #{} xfm classpath)))
+
+(def version
+  (or (first *command-line-args*) "%version%"))
+
+;; Clean previous dist
+(-> ($ rm -rf "./target/dist") check)
+
+;; Create a new dist
+(-> ($ mkdir -p "./target/dist/deps") check)
+
+;; Copy all jar deps into dist
+(run! (fn [item] (-> ($ cp ~item "./target/dist/deps/") check)) classpath-jars)
+
+;; Create the application jar
+(spit "./target/dist/version.txt" version)
+(-> ($ jar cvf "./target/dist/deps/app.jar" -C ~(first classpath-paths) ".") check)
+(-> ($ jar uvf "./target/dist/deps/app.jar" -C "./target/dist" "version.txt") check)
+(run! (fn [item]
+        (-> ($ jar uvf "./target/dist/deps/app.jar" -C ~item ".")  check))
+      (rest classpath-paths))
+
+;; Copy logging configuration
+(-> ($ cp "./resources/log4j2.xml" "./target/dist/") check)
+
+;; Create classpath file
+(let [jars (->> (into ["app.jar"] classpath-jars)
+                (map fs/file-name)
+                (map #(fs/path "deps" %))
+                (map str))]
+  (spit "./target/dist/classpath" (str/join ":" jars)))
+
+;; Copy run script template
+(-> ($ cp "./scripts/run.template.sh" "./target/dist/run.sh") check)
+
+;; Copy run script template
+(-> ($ cp "./scripts/manage.template.sh" "./target/dist/manage.sh") check)
+
+;; Add exec permisions to scripts.
+(-> ($ chmod +x "./target/dist/run.sh") check)
+(-> ($ chmod +x "./target/dist/manage.sh") check)
+
+nil
