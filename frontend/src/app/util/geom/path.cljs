@@ -468,7 +468,6 @@
   [content]
   (->> (d/with-prev content)
        (d/enumerate)
-
        (mapcat (fn [[index [cur-cmd pre-cmd]]]
                  (if (and pre-cmd (= :curve-to (:command cur-cmd)))
                    (let [cur-pos (command->point cur-cmd)
@@ -479,6 +478,25 @@
 
        (group-by first)
        (d/mapm #(mapv second %2))))
+
+(defn point-indices
+  [content point]
+  (->> (d/enumerate content)
+       (filter (fn [[_ cmd]] (= point (command->point cmd))))
+       (mapv (fn [[index _]] index))))
+
+(defn handler-indices
+  [content point]
+  (->> (d/with-prev content)
+       (d/enumerate)
+       (mapcat (fn [[index [cur-cmd pre-cmd]]]
+                 (if (and (some? pre-cmd) (= :curve-to (:command cur-cmd)))
+                   (let [cur-pos (command->point cur-cmd)
+                         pre-pos (command->point pre-cmd)]
+                     (cond-> []
+                       (= pre-pos point) (conj [index :c1])
+                       (= cur-pos point) (conj [index :c2])))
+                   [])))))
 
 (defn opposite-index
   "Calculate sthe opposite index given a prefix and an index"

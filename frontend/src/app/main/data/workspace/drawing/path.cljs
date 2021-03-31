@@ -589,44 +589,43 @@
           (= mode :draw) (rx/of :interrupt)
           :else (rx/of (finish-path "changed-content")))))))
 
-(defn move-path-point [start-point end-point]
-  (ptk/reify ::move-point
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [id (get-path-id state)
-            content (get-in state (get-path state :content))
+(defn move-selected-path-point [from-point to-point]
+  (letfn [(modify-content-point [content {dx :x dy :y} modifiers point]
+            (let [point-indices (ugp/point-indices content point) ;; [indices]
+                  handler-indices (ugp/handler-indices content point) ;; [[index prefix]]
 
-            {dx :x dy :y} (gpt/subtract end-point start-point)
+                  modify-point
+                  (fn [modifiers index]
+                    (-> modifiers
+                        (update index assoc :x dx :y dy)))
 
-            handler-indices (-> (ugp/content->handlers content)
-                                (get start-point))
+                  modify-handler
+                  (fn [modifiers [index prefix]]
+                    (let [cx (d/prefix-keyword prefix :x)
+                          cy (d/prefix-keyword prefix :y)]
+                      (-> modifiers
+                          (update index assoc cx dx cy dy))))]
 
-            command-for-point (fn [[index command]]
-                                (let [point (ugp/command->point command)]
-                                  (= point start-point)))
+              (as-> modifiers $
+                (reduce modify-point   $ point-indices)
+                (reduce modify-handler $ handler-indices))))]
 
-            point-indices (->> (d/enumerate content)
-                               (filter command-for-point)
-                               (map first))
+    (ptk/reify ::move-point
+      ptk/UpdateEvent
+      (update [_ state]
+        (let [id (get-path-id state)
+              content (get-in state (get-path state :content))
+              delta (gpt/subtract to-point from-point)
 
+              modifiers-reducer (partial modify-content-point content delta)
 
-            point-reducer (fn [modifiers index]
-                            (-> modifiers
-                                (assoc-in [index :x] dx)
-                                (assoc-in [index :y] dy)))
+              points (get-in state [:workspace-local :edit-path id :selected-points] #{})
 
-            handler-reducer (fn [modifiers [index prefix]]
-                              (let [cx (d/prefix-keyword prefix :x)
-                                    cy (d/prefix-keyword prefix :y)]
-                                (-> modifiers
-                                    (assoc-in [index cx] dx)
-                                    (assoc-in [index cy] dy))))
+              modifiers (get-in state [:workspace-local :edit-path id :content-modifiers] {})
+              modifiers (->> points
+                             (reduce modifiers-reducer {}))]
 
-            modifiers (as-> (get-in state [:workspace-local :edit-path id :content-modifiers] {}) $
-                        (reduce point-reducer $ point-indices)
-                        (reduce handler-reducer $ handler-indices))]
-
-        (assoc-in state [:workspace-local :edit-path id :content-modifiers] modifiers)))))
+          (assoc-in state [:workspace-local :edit-path id :content-modifiers] modifiers))))))
 
 (defn start-move-path-point
   [position]
@@ -641,7 +640,7 @@
          (rx/concat
           (->> ms/mouse-position
                (rx/take-until stopper)
-               (rx/map #(move-path-point position %)))
+               (rx/map #(move-selected-path-point start-position %)))
           (rx/of (apply-content-modifiers))))))))
 
 (defn start-move-handler

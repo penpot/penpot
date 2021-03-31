@@ -33,34 +33,32 @@
 
         on-click
         (fn [event]
-          (when-not last-p?
-            (dom/stop-propagation event)
-            (dom/prevent-default event)
+          (dom/stop-propagation event)
+          (dom/prevent-default event)
 
-            (let [shift? (kbd/shift? event)]
-              (cond
-                (and (= edit-mode :move) (not selected?))
-                (st/emit! (drp/select-node position shift?))
+          (let [shift? (kbd/shift? event)]
+            (cond
+              (and (= edit-mode :move) (not selected?))
+              (st/emit! (drp/select-node position shift?))
 
-                (and (= edit-mode :move) selected?)
-                (st/emit! (drp/deselect-node position shift?))))))
+              (and (= edit-mode :move) selected?)
+              (st/emit! (drp/deselect-node position shift?)))))
 
 
         on-mouse-down
         (fn [event]
-          (when-not last-p?
-            (dom/stop-propagation event)
-            (dom/prevent-default event)
+          (dom/stop-propagation event)
+          (dom/prevent-default event)
 
-            (cond
-              (= edit-mode :move)
-              (st/emit! (drp/start-move-path-point position))
+          (cond
+            (= edit-mode :move)
+            (st/emit! (drp/start-move-path-point position))
 
-              (and (= edit-mode :draw) start-path?)
-              (st/emit! (drp/start-path-from-point position))
+            (and (= edit-mode :draw) start-path?)
+            (st/emit! (drp/start-path-from-point position))
 
-              (and (= edit-mode :draw) (not start-path?))
-              (st/emit! (drp/close-path-drag-start position)))))]
+            (and (= edit-mode :draw) (not start-path?))
+            (st/emit! (drp/close-path-drag-start position))))]
 
     [:g.path-point
      [:circle.path-point
@@ -80,8 +78,9 @@
                :on-mouse-down on-mouse-down
                :on-mouse-enter on-enter
                :on-mouse-leave on-leave
-               :style {:cursor (cond
-                                 (and (not last-p?) (= edit-mode :draw)) cur/pen-node
+               :style {:pointer-events (when last-p? "none")
+                       :cursor (cond
+                                 (= edit-mode :draw) cur/pen-node
                                  (= edit-mode :move) cur/pointer-node)
                        :fill "transparent"}}]]))
 

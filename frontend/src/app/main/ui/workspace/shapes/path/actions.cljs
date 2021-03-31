@@ -23,11 +23,11 @@
       [:div.viewport-actions-entry {:class (when (= edit-mode :move) "is-toggled")
                                     :on-click #(st/emit! (drp/change-edit-mode :move))} i/pointer-inner]]
      
-     #_[:div.viewport-actions-group
+     [:div.viewport-actions-group
       [:div.viewport-actions-entry {:class "is-disabled"} i/nodes-add]
       [:div.viewport-actions-entry {:class "is-disabled"} i/nodes-remove]]
 
-     #_[:div.viewport-actions-group
+     [:div.viewport-actions-group
       [:div.viewport-actions-entry {:class "is-disabled"} i/nodes-merge]
       [:div.viewport-actions-entry {:class "is-disabled"} i/nodes-join]
       [:div.viewport-actions-entry {:class "is-disabled"} i/nodes-separate]]
@@ -40,5 +40,5 @@
                                     :on-click #(when-not (empty? selected-points)
                                                  (st/emit! (drp/make-curve)))} i/nodes-curve]]
 
-     #_[:div.viewport-actions-group
+     [:div.viewport-actions-group
       [:div.viewport-actions-entry {:class (when snap-toggled "is-toggled")} i/nodes-snap]]]))
