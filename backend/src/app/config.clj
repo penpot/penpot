@@ -15,8 +15,8 @@
    [app.common.version :as v]
    [app.util.time :as dt]
    [clojure.core :as c]
-   [clojure.pprint :as pprint]
    [clojure.java.io :as io]
+   [clojure.pprint :as pprint]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [environ.core :refer [env]]))

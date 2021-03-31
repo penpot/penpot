@@ -4,11 +4,16 @@
 
 ### :sparkles: New features
 
+- Add integration with gitpod.io (an online IDE) [#807](https://github.com/penpot/penpot/pull/807)
+
+
 ### :bug: Bugs fixed
 
 ### :arrow_up: Deps updates
 
 ### :heart: Community contributions by (Thank you!)
+
+- madmath03 (by [Monogramm](https://github.com/Monogramm)) [#807](https://github.com/penpot/penpot/pull/807)
 
 
 ## 1.4.0-alpha
