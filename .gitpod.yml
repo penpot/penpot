@@ -5,71 +5,92 @@ ports:
   # nginx
   - port: 3449
     onOpen: open-preview
+
   # frontend nREPL
   - port: 3447
     onOpen: ignore
     visibility: private
+
   # frontend shadow server
   - port: 3448
-    onOpen: notify
+    onOpen: ignore
     visibility: private
+
+  # backend
   - port: 6060
-  - port: 9090
+    onOpen: ignore
+
   # exporter shadow server
   - port: 9630
-    onOpen: notify
+    onOpen: ignore
     visibility: private
+
   # exporter http server
   - port: 6061
     onOpen: ignore
+
   # mailhog web interface
   - port: 8025
-    onOpen: notify
+    onOpen: ignore
+
   # mailhog postfix
   - port: 1025
     onOpen: ignore
+
   # postgres
   - port: 5432
     onOpen: ignore
+
   # redis
   - port: 6379
     onOpen: ignore
+
   # openldap
   - port: 389
     onOpen: ignore
 
 tasks:
   # https://github.com/gitpod-io/gitpod/issues/666#issuecomment-534347856
-  - before: >
+  - name: gulp
+    command: >
+      cd $GITPOD_REPO_ROOT/frontend/;
+      yarn && gp sync-done 'frontend-yarn';
+      npx gulp --theme=${PENPOT_THEME} watch
+
+  - name: frontend shadow watch
+    command: >
+      cd $GITPOD_REPO_ROOT/frontend/;
+      gp sync-await 'frontend-yarn';
+      npx shadow-cljs watch main
+
+  - init: gp await-port 5432 && psql -f $GITPOD_REPO_ROOT/docker/gitpod/files/postgresql_init.sql
+    name: backend
+    command: >
+      cd $GITPOD_REPO_ROOT/backend/;
+      ./scripts/start-dev
+
+  - name: exporter shadow watch
+    command:
+      cd $GITPOD_REPO_ROOT/exporter/;
+      gp sync-await 'frontend-yarn';
+      yarn && npx shadow-cljs watch main
+
+  - name: exporter web server
+    command: >
+      cd $GITPOD_REPO_ROOT/exporter/;
+      ./scripts/wait-and-start.sh
+
+  - name: signed terminal
+    before: >
       [[ ! -z ${GNUGPG}  ]] &&
       cd ~ &&
       rm -rf .gnupg &&
       echo ${GNUGPG} | base64 -d | tar --no-same-owner -xzvf -
-    name: signed terminal
     init: >
       [[ ! -z ${GNUGPG_KEY}  ]] &&
       git config --global commit.gpgsign true &&
       git config --global user.signingkey ${GNUGPG_KEY}
     command: cd $GITPOD_REPO_ROOT
-
-  - init: yarn --cwd $GITPOD_REPO_ROOT/frontend/ install
-    name: frontend shadow watch
-    command: cd $GITPOD_REPO_ROOT/frontend/ && npx -y shadow-cljs watch main
-
-  - init: yarn --cwd $GITPOD_REPO_ROOT/exporter/ install
-    name: exporter shadow watch
-    command: gp await-port 3448 && cd $GITPOD_REPO_ROOT/exporter/ && npx -y shadow-cljs watch main
-
-  - name: exporter web server
-    openMode: split-right
-    command: gp await-port 9630 && cd $GITPOD_REPO_ROOT/exporter/ && ./scripts/wait-and-start.sh
-
-  - init: gp await-port 5432 && psql -f $GITPOD_REPO_ROOT/docker/gitpod/files/postgresql_init.sql
-    name: backend
-    command: cd $GITPOD_REPO_ROOT/backend/ && ./scripts/start-dev
-
-  - name: gulp
-    command: gp await-port 3448 && cd $GITPOD_REPO_ROOT/frontend/ && npx -y gulp --theme=${PENPOT_THEME} watch
 
   - name: redis
     command: redis-server

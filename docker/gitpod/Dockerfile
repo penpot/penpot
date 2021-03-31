@@ -19,7 +19,8 @@ COPY docker/gitpod/files/nginx.conf /etc/nginx/nginx.conf
 USER root
 
 ENV CLOJURE_VERSION=1.10.3.814 \
-    CLJKONDO_VERSION=2021.03.03 \
+    CLJKONDO_VERSION=2021.03.22 \
+    BABASHKA_VERSION=0.3.1 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
@@ -59,6 +60,7 @@ RUN set -ex; \
         libxi6 \
         libxrandr2 \
         libxrender1 \
+        libxshmfence1 \
         libxss1 \
         libxtst6 \
         fonts-liberation \
@@ -69,21 +71,39 @@ RUN set -ex; \
     rm -rf /var/lib/apt/lists/*;
 
 RUN set -ex; \
-    wget "https://download.clojure.org/install/linux-install-$CLOJURE_VERSION.sh"; \
-    chmod +x "linux-install-$CLOJURE_VERSION.sh"; \
-    "./linux-install-$CLOJURE_VERSION.sh"; \
-    rm -rf "linux-install-$CLOJURE_VERSION.sh"
+    curl -LfsSo /tmp/openjdk.tar.gz https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16%2B36/OpenJDK16-jdk_x64_linux_hotspot_16_36.tar.gz; \
+    mkdir -p /usr/lib/jvm/openjdk16; \
+    cd /usr/lib/jvm/openjdk16; \
+    tar -xf /tmp/openjdk.tar.gz --strip-components=1; \
+    rm -rf /tmp/openjdk.tar.gz;
 
+# Install clojure cli
+RUN set -ex; \
+    curl -LfsSo /tmp/clojure.sh https://download.clojure.org/install/linux-install-$CLOJURE_VERSION.sh; \
+    chmod +x /tmp/clojure.sh; \
+    /tmp/clojure.sh; \
+    rm -rf /tmp/clojure.sh;
+
+# Install clj-kondo
+RUN set -ex; \
+    curl -LfsSo /tmp/clj-kondo.zip https://github.com/borkdude/clj-kondo/releases/download/v$CLJKONDO_VERSION/clj-kondo-$CLJKONDO_VERSION-linux-amd64.zip; \
+    cd /usr/local/bin; \
+    unzip /tmp/clj-kondo.zip; \
+    rm /tmp/clj-kondo.zip;
+
+# Install babashka
 RUN set -ex; \
     cd /tmp; \
-    wget "https://github.com/borkdude/clj-kondo/releases/download/v${CLJKONDO_VERSION}/clj-kondo-${CLJKONDO_VERSION}-linux-amd64.zip"; \
-    unzip "clj-kondo-${CLJKONDO_VERSION}-linux-amd64.zip"; \
-    sudo mv clj-kondo /usr/local/bin/; \
-    rm "clj-kondo-${CLJKONDO_VERSION}-linux-amd64.zip";
+    curl -LfsSo /tmp/babashka.tar.gz https://github.com/babashka/babashka/releases/download/v$BABASHKA_VERSION/babashka-$BABASHKA_VERSION-linux-amd64.tar.gz; \
+    cd /usr/local/bin; \
+    tar -xf /tmp/babashka.tar.gz; \
+    rm -rf /tmp/babashka.tar.gz;
 
 USER gitpod
 
-ENV PENPOT_SMTP_ENABLED=true \
+ENV PATH="/usr/lib/jvm/openjdk16/bin:/usr/local/nodejs/bin:$PATH" \
+    JAVA_HOME=/usr/lib/jvm/openjdk16 \
+    PENPOT_SMTP_ENABLED=true \
     PENPOT_SMTP_HOST=localhost \
     PENPOT_SMTP_PORT=1025 \
     PENPOT_SMTP_USER= \
@@ -92,12 +112,6 @@ ENV PENPOT_SMTP_ENABLED=true \
     PENPOT_SMTP_TLS=false \
     PENPOT_SMTP_DEFAULT_REPLY_TO=no-reply@example.com \
     PENPOT_SMTP_DEFAULT_FROM=no-reply@example.com \
-    PENPOT_SMTP_ENABLED=true \
-    PENPOT_SMTP_HOST=localhost \
-    PENPOT_SMTP_PORT=1025 \
-    PENPOT_SMTP_USER= \
-    PENPOT_SMTP_PASSWORD= \
-    PENPOT_SMTP_SSL=false \
-    PENPOT_SMTP_TLS=false
+    PENPOT_DATABASE_URI="postgresql://localhost/penpot"
 
 # TODO Retrieve OpenLDAP from rroemhild/docker-test-openldap
