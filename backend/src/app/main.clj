@@ -222,7 +222,6 @@
 
      (when (cf/get :telemetry-enabled)
        {:cron #app/cron "0 0 */6 * * ?" ;; every 6h
-        :uri  (cf/get :telemetry-uri)
         :task :telemetry})]}
 
    :app.worker/registry
