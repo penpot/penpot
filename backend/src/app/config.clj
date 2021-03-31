@@ -42,7 +42,7 @@
 
    :storage-backend :fs
 
-   :storage-fs-directory "resources/public/assets"
+   :storage-fs-directory "assets"
    :storage-s3-region :eu-central-1
    :storage-s3-bucket "penpot-devenv-assets-pre"
 
