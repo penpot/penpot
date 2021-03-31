@@ -6,7 +6,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 ENV NODE_VERSION=v14.16.0 \
     CLOJURE_VERSION=1.10.3.814 \
     CLJKONDO_VERSION=2021.03.22 \
-    BABASHKA_VERSION=0.3.0 \
+    BABASHKA_VERSION=0.3.1 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
@@ -151,6 +151,7 @@ EXPOSE 3449
 EXPOSE 6060
 EXPOSE 9090
 
+COPY files/nginx.conf /etc/nginx/nginx.conf
 COPY files/phantomjs-mock /usr/bin/phantomjs
 
 COPY files/bashrc         /root/.bashrc

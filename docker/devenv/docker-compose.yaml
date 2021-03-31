@@ -27,7 +27,6 @@ services:
     volumes:
       - "user_data:/home/penpot/"
       - "${PWD}:/home/penpot/penpot"
-      - ./files/nginx.conf:/etc/nginx/nginx.conf
 
     ports:
       - 3447:3447

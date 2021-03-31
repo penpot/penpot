@@ -16,6 +16,7 @@
    [app.util.time :as dt]
    [clojure.core :as c]
    [clojure.pprint :as pprint]
+   [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [environ.core :refer [env]]))
@@ -50,7 +51,7 @@
 
    :storage-backend :fs
 
-   :storage-fs-directory "resources/public/assets"
+   :storage-fs-directory "assets"
    :storage-s3-region :eu-central-1
    :storage-s3-bucket "penpot-devenv-assets-pre"
 
@@ -246,15 +247,17 @@
      {}
      env)))
 
-
 (defn- read-config
   []
   (->> (read-env "penpot")
        (merge defaults)
        (us/conform ::config)))
 
-(def version (v/parse "%version%"))
-(def config  (atom (read-config)))
+(def version (v/parse (or (some-> (io/resource "version.txt")
+                                  (slurp)
+                                  (str/trim))
+                          "%version%")))
+(def config (atom (read-config)))
 
 (def deletion-delay
   (dt/duration {:days 7}))

@@ -96,10 +96,11 @@
          (mf/deps page-id)
          (fn [point]
            (let [rect (gsh/center->rect point 8 8)]
-             (uw/ask! {:cmd :selection/query
-                       :page-id page-id
-                       :rect rect
-                       :include-frames? true}))))
+             (uw/ask-buffered!
+              {:cmd :selection/query
+               :page-id page-id
+               :rect rect
+               :include-frames? true}))))
 
         ;; We use ref so we don't recreate the stream on a change
         transform-ref (mf/use-ref nil)
