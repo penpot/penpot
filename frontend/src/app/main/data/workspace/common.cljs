@@ -360,25 +360,30 @@
   (ptk/reify ::undo
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [undo  (:workspace-undo state)
-            items (:items undo)
-            index (or (:index undo) (dec (count items)))]
-        (when-not (or (empty? items) (= index -1))
-          (let [changes (get-in items [index :undo-changes])]
-            (rx/of (materialize-undo changes (dec index))
-                   (commit-changes changes [] {:save-undo? false}))))))))
+      (let [edition (get-in state [:workspace-local :edition])]
+        ;; Editors handle their own undo's
+        (when-not (some? edition)
+          (let [undo  (:workspace-undo state)
+                items (:items undo)
+                index (or (:index undo) (dec (count items)))]
+            (when-not (or (empty? items) (= index -1))
+              (let [changes (get-in items [index :undo-changes])]
+                (rx/of (materialize-undo changes (dec index))
+                       (commit-changes changes [] {:save-undo? false}))))))))))
 
 (def redo
   (ptk/reify ::redo
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [undo  (:workspace-undo state)
-            items (:items undo)
-            index (or (:index undo) (dec (count items)))]
-        (when-not (or (empty? items) (= index (dec (count items))))
-          (let [changes (get-in items [(inc index) :redo-changes])]
-            (rx/of (materialize-undo changes (inc index))
-                   (commit-changes changes [] {:save-undo? false}))))))))
+      (let [edition (get-in state [:workspace-local :edition])]
+        (when-not (some? edition)
+          (let [undo  (:workspace-undo state)
+                items (:items undo)
+                index (or (:index undo) (dec (count items)))]
+            (when-not (or (empty? items) (= index (dec (count items))))
+              (let [changes (get-in items [(inc index) :redo-changes])]
+                (rx/of (materialize-undo changes (inc index))
+                       (commit-changes changes [] {:save-undo? false}))))))))))
 
 (def reinitialize-undo
   (ptk/reify ::reset-undo

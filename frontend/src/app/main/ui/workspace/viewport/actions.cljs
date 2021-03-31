@@ -15,7 +15,7 @@
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.ui.workspace.viewport.utils :as utils]
-   [app.main.data.workspace.drawing.path :as dwdp]
+   [app.main.data.workspace.path :as dwdp]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.keyboard :as kbd]

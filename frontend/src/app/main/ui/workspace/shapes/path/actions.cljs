@@ -6,7 +6,7 @@
 
 (ns app.main.ui.workspace.shapes.path.actions
   (:require
-   [app.main.data.workspace.drawing.path :as drp]
+   [app.main.data.workspace.path :as drp]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
