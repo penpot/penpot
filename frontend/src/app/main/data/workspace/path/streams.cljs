@@ -14,7 +14,8 @@
    [app.main.store :as st]
    [app.main.streams :as ms]
    [beicon.core :as rx]
-   [potok.core :as ptk]))
+   [potok.core :as ptk]
+   [app.common.math :as mth]))
 
 (defonce drag-threshold 5)
 
@@ -48,7 +49,15 @@
       (->> position-stream
            (rx/merge-map (fn [] to-stream)))))))
 
+(defn to-dec [num]
+  (let [k 50]
+    (* (mth/floor (/ num k)) k)))
+
 (defn position-stream []
   (->> ms/mouse-position
+       ;; TODO: Prueba para el snap
+       #_(rx/map #(-> %
+                    (update :x to-dec)
+                    (update :y to-dec)))
        (rx/with-latest merge (->> ms/mouse-position-shift (rx/map #(hash-map :shift? %))))
        (rx/with-latest merge (->> ms/mouse-position-alt (rx/map #(hash-map :alt? %))))))

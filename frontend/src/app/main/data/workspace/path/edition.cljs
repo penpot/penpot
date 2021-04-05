@@ -126,7 +126,7 @@
                (rx/of (selection/select-node position shift?)))
 
              ;; This stream checks the consecutive mouse positions to do the draging
-             (->> ms/mouse-position
+             (->> (streams/position-stream)
                   (rx/take-until stopper)
                   (rx/map #(move-selected-path-point start-position %)))
              (rx/of (apply-content-modifiers)))
@@ -135,8 +135,7 @@
             mouse-click-stream
             (rx/of (selection/select-node position shift?))]
 
-        (streams/drag-stream mouse-drag-stream
-                     mouse-click-stream)))))
+        (streams/drag-stream mouse-drag-stream mouse-click-stream)))))
 
 (defn start-move-handler
   [index prefix]

@@ -604,3 +604,47 @@
     (as-> content $
       (reduce redfn $ content-next)
       (remove-line-curves $))))
+
+(defn get-segments
+  "Given a content and a set of points return all the segments in the path
+  that uses the points"
+  [content points]
+  (let [point-set (set points)]
+
+    (loop [segments []
+           prev-point nil
+           start-point nil
+           cur-cmd (first content)
+           content (rest content)]
+
+      (let [;; Close-path makes a segment from the last point to the initial path point
+            cur-point (if (= :close-path (:command cur-cmd))
+                        start-point
+                        (command->point cur-cmd))
+
+            ;; If there is a move-to we don't have a segment
+            prev-point (if (= :move-to (:command cur-cmd))
+                         nil
+                         prev-point)
+
+            ;; We update the start point
+            start-point (if (= :move-to (:command cur-cmd))
+                          cur-point
+                          start-point)
+
+            is-segment? (and (some? prev-point)
+                             (contains? point-set prev-point)
+                             (contains? point-set cur-point))
+
+            segments (cond-> segments
+                       is-segment?
+                       (conj [prev-point cur-point]))]
+
+        (if (some? cur-cmd)
+          (recur segments
+                 cur-point
+                 start-point
+                 (first content)
+                 (rest content))
+
+          segments)))))

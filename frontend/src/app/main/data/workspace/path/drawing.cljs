@@ -163,7 +163,7 @@
             zoom (get-in state [:workspace-local :zoom])
             mouse-up    (->> stream (rx/filter #(or (helpers/end-path-event? %)
                                                     (ms/mouse-up? %))))
-            drag-events (->> ms/mouse-position
+            drag-events (->> (streams/position-stream)
                              (rx/take-until mouse-up)
                              (rx/map #(drag-handler %)))]
 

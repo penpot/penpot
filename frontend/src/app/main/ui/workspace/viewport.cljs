@@ -27,6 +27,7 @@
    [app.main.ui.workspace.viewport.selection :as selection]
    [app.main.ui.workspace.viewport.snap-distances :as snap-distances]
    [app.main.ui.workspace.viewport.snap-points :as snap-points]
+   [app.main.ui.workspace.viewport.snap-path :as snap-path]
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [beicon.core :as rx]
@@ -282,11 +283,15 @@
            :selected selected
            :page-id page-id}])
 
+       [:& snap-path/snap-path
+        {:zoom zoom
+         :edition edition
+         :edit-path edit-path}]
+
        (when show-cursor-tooltip?
          [:& widgets/cursor-tooltip
           {:zoom zoom
            :tooltip tooltip}])
-
 
        (when show-presence?
          [:& presence/active-cursors

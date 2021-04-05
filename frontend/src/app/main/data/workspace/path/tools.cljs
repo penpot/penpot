@@ -40,3 +40,25 @@
             new-content (reduce ugp/make-curve-point (:content shape) selected-points)
             [rch uch] (changes/generate-path-changes page-id shape (:content shape) new-content)]
         (rx/of (dwc/commit-changes rch uch {:commit-local? true}))))))
+
+(defn add-node []
+  (ptk/reify ::add-node))
+
+(defn remove-node []
+  (ptk/reify ::remove-node))
+
+(defn merge-nodes []
+  (ptk/reify ::merge-nodes))
+
+(defn join-nodes []
+  (ptk/reify ::join-nodes))
+
+(defn separate-nodes []
+  (ptk/reify ::separate-nodes))
+
+(defn toggle-snap []
+  (ptk/reify ::toggle-snap
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [id (st/get-path-id state)]
+        (update-in state [:workspace-local :edit-path id :snap-toggled] not)))))

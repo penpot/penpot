@@ -37,3 +37,10 @@
 ;; Path tools
 (d/export tools/make-curve)
 (d/export tools/make-corner)
+(d/export tools/add-node)
+(d/export tools/remove-node)
+(d/export tools/merge-nodes)
+(d/export tools/join-nodes)
+(d/export tools/separate-nodes)
+(d/export tools/toggle-snap)
+

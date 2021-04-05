@@ -187,7 +187,7 @@
        (let [point-selected? (contains? selected-points position)
              point-hover? (contains? hover-points position)
              last-p? (= last-point position)
-             start-p? (some? last-point)]
+             start-p? (not (some? last-point))]
          [:g.path-node
           [:g.point-handlers {:pointer-events (when (= edit-mode :draw) "none")}
            (for [[index prefix] (get handlers position)]
