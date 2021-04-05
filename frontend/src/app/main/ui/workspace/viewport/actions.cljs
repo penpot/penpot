@@ -32,7 +32,7 @@
 (defn on-mouse-down
   [{:keys [id blocked hidden type]} drawing-tool text-editing? edition edit-path selected]
   (mf/use-callback
-   (mf/deps id blocked hidden type drawing-tool text-editing? edition selected)
+   (mf/deps id blocked hidden type drawing-tool text-editing? edition edit-path selected)
    (fn [bevent]
      (when (dom/class? (dom/get-target bevent) "viewport-controls")
        (dom/stop-propagation bevent)
@@ -63,14 +63,14 @@
                (and drawing-tool (not (#{:comments :path} drawing-tool)))
                (st/emit! (dd/start-drawing drawing-tool))
 
-               edit-path
+               (and edit-path (contains? edit-path edition))
                ;; Handle node select-drawing. NOP at the moment
                nil
 
                (or (not id) (and frame? (not selected?)))
                (st/emit! (dw/handle-selection shift?))
 
-               :else
+               (not drawing-tool)
                (st/emit! (when (or shift? (not selected?))
                            (dw/select-shape id shift?))
                          (when (not shift?)
@@ -119,9 +119,9 @@
      (reset! frame-hover nil))))
 
 (defn on-click
-  [hover selected]
+  [hover selected edition drawing-path?]
   (mf/use-callback
-   (mf/deps @hover selected)
+   (mf/deps @hover selected edition drawing-path?)
    (fn [event]
      (when (dom/class? (dom/get-target event) "viewport-controls")
        (let [ctrl? (kbd/ctrl? event)
@@ -133,7 +133,7 @@
              selected? (contains? selected (:id @hover))]
          (st/emit! (ms/->MouseEvent :click ctrl? shift? alt?))
 
-         (when (and hovering? (not shift?) (not frame?) (not selected?))
+         (when (and hovering? (not shift?) (not frame?) (not selected?) (not edition) (not drawing-path?))
            (st/emit! (dw/select-shape (:id @hover)))))))))
 
 (defn on-double-click

@@ -547,8 +547,8 @@
     (update [_ state]
       (let [id (get-in state [:workspace-local :edition])]
         (-> state
-            (update-in [:workspace-local :hover] disj id)
-            (update :workspace-local dissoc :edition))))))
+            (update :workspace-local dissoc :edition)
+            (cond-> (some? id) (update-in [:workspace-local :edit-path] dissoc id)))))))
 
 (defn get-shape-layer-position
   [objects selected attrs]

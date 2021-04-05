@@ -87,10 +87,11 @@
         drawing-tool      (:tool drawing)
         drawing-obj       (:object drawing)
 
-        drawing-path?     (and edition (= :draw (get-in edit-path [edition :edit-mode])))
+        drawing-path?     (or (and edition (= :draw (get-in edit-path [edition :edit-mode])))
+                              (and (some? drawing-obj) (= :path (:type drawing-obj))))
         text-editing?     (and edition (= :text (get-in objects [edition :type])))
 
-        on-click          (actions/on-click hover selected)
+        on-click          (actions/on-click hover selected edition drawing-path?)
         on-context-menu   (actions/on-context-menu hover)
         on-double-click   (actions/on-double-click hover hover-ids drawing-path? objects)
         on-drag-enter     (actions/on-drag-enter)
@@ -115,7 +116,7 @@
         show-draw-area?          drawing-obj
         show-gradient-handlers?  (= (count selected) 1)
         show-grids?              (contains? layout :display-grid)
-        show-outlines?           (and (nil? transform) (not edit-path))
+        show-outlines?           (and (nil? transform) (not edition) (not drawing-obj))
         show-pixel-grid?         (>= zoom 8)
         show-presence?           page-id
         show-prototypes?         (= options-mode :prototype)
