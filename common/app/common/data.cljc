@@ -346,10 +346,12 @@
 (defn check-num
   "Function that checks if a number is nil or nan. Will return 0 when not
   valid and the number otherwise."
-  [v]
-  (if (or (not v)
-          (not (mth/finite? v))
-          (mth/nan? v)) 0 v))
+  ([v]
+   (check-num v 0))
+  ([v default]
+   (if (or (not v)
+           (not (mth/finite? v))
+           (mth/nan? v)) default v)))
 
 
 (defmacro export

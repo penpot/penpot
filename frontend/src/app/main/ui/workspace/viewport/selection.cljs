@@ -49,7 +49,7 @@
 (mf/defc selection-rect [{:keys [transform rect zoom color on-move-selected]}]
   (when rect
     (let [{:keys [x y width height]} rect]
-      [:rect.main
+      [:rect.main.viewport-selrect
        {:x x
         :y y
         :width width

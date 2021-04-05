@@ -178,7 +178,8 @@
   (mf/use-callback
    (mf/deps @hover)
    (fn [event]
-     (when (dom/class? (dom/get-target event) "viewport-controls")
+     (when (or (dom/class? (dom/get-target event) "viewport-controls")
+               (dom/class? (dom/get-target event) "viewport-selrect"))
        (dom/prevent-default event)
 
        (let [position (dom/get-client-position event)]

@@ -9,6 +9,7 @@
 
 (ns app.main.ui.workspace.viewport
   (:require
+   [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.main.refs :as refs]
    [app.main.ui.context :as ctx]
@@ -83,7 +84,7 @@
         ;; STREAMS
         move-stream       (mf/use-memo #(rx/subject))
 
-        zoom              (or zoom 1)
+        zoom              (d/check-num zoom 1)
         drawing-tool      (:tool drawing)
         drawing-obj       (:object drawing)
 
