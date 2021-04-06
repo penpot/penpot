@@ -140,8 +140,6 @@ function usage {
     echo "PENPOT build & release manager"
     echo "USAGE: $0 OPTION"
     echo "Options:"
-    # echo "- clean                            Stop and clean up docker containers"
-    # echo ""
     echo "- pull-devenv                      Pulls docker development oriented image"
     echo "- build-devenv                     Build docker development oriented image"
     echo "- start-devenv                     Start the development oriented docker-compose service."
@@ -150,9 +148,6 @@ function usage {
     echo "- run-devenv                       Attaches to the running devenv container and starts development environment"
     echo "                                   based on tmux (frontend at localhost:3449, backend at localhost:6060)."
     echo ""
-    # echo "- run-all-tests                    Execute unit tests for both backend and frontend."
-    # echo "- run-frontend-tests               Execute unit tests for frontend only."
-    # echo "- run-backend-tests                Execute unit tests for backend only."
 }
 
 case $1 in
@@ -185,31 +180,7 @@ case $1 in
         log-devenv ${@:2}
         ;;
 
-    ## testin related commands
-
-    # run-all-tests)
-    #     run-all-tests ${@:2}
-    #     ;;
-    # run-frontend-tests)
-    #     run-frontend-tests ${@:2}
-    #     ;;
-    # run-backend-tests)
-    #     run-backend-tests ${@:2}
-    #     ;;
-
     # production builds
-    build-frontend)
-        build-frontend;
-        ;;
-
-    build-backend)
-        build-backend;
-        ;;
-
-    build-exporter)
-        build-exporter;
-        ;;
-
     build-app-bundle)
         build-app-bundle;
         ;;
@@ -219,18 +190,6 @@ case $1 in
         ;;
 
     # Docker Image Tasks
-    build-images)
-        build-images;
-        ;;
-
-    # publish-snapshot-images)
-    #     publish-snapshot-images;
-    #     ;;
-
-    # publish-latest-images)
-    #     publish-latest-images;
-    #     ;;
-
     *)
         usage
         ;;
