@@ -42,19 +42,22 @@
             [rch uch] (changes/generate-path-changes page-id shape (:content shape) new-content)]
         (rx/of (dwc/commit-changes rch uch {:commit-local? true}))))))
 
-(defn split-segments [[start end cmd]]
-  (case (:command cmd)
-    :line-to [cmd (ugp/split-line-to start cmd 0.5)]
-    :curve-to [cmd (ugp/split-curve-to start cmd 0.5)]
-    :close-path [cmd [(ugp/make-line-to (gpt/line-val start end 0.5))
-                      cmd]]
-    nil))
-
 (defn add-node []
   (ptk/reify ::add-node
     ptk/WatchEvent
     (watch [_ state stream]
+      (let [id (st/get-path-id state)
+            page-id (:current-page-id state)
+            shape (get-in state (st/get-path state))
+            selected-points (get-in state [:workspace-local :edit-path id :selected-points] #{})
+            new-content (ugp/split-segments (:content shape) selected-points 0.5)
+            [rch uch] (changes/generate-path-changes page-id shape (:content shape) new-content)]
+        (rx/of (dwc/commit-changes rch uch {:commit-local? true}))))))
 
+(defn remove-node []
+  (ptk/reify ::remove-node
+    ptk/WatchEvent
+    (watch [_ state stream]
       (let [id (st/get-path-id state)
             page-id (:current-page-id state)
             shape (get-in state (st/get-path state))
@@ -62,23 +65,16 @@
             content (:content shape)
 
 
-            cmd-changes (->> (ugp/get-segments content selected-points)
-                             (into {}
-                                   (comp (map split-segments)
-                                         (filter (comp not nil?)))))
+            
+            
 
-            process-segments (fn [command]
-                               (if (contains? cmd-changes command)
-                                 (get cmd-changes command)
-                                 [command]))
-
-            new-content (into [] (mapcat process-segments) content)
+            new-content (->> content
+                             (filterv #(not (contains? selected-points (ugp/command->point %)))))
 
             [rch uch] (changes/generate-path-changes page-id shape (:content shape) new-content)]
-        (rx/of (dwc/commit-changes rch uch {:commit-local? true}))))))
+        (rx/of (dwc/commit-changes rch uch {:commit-local? true}))))
 
-(defn remove-node []
-  (ptk/reify ::remove-node))
+    ))
 
 (defn merge-nodes []
   (ptk/reify ::merge-nodes))

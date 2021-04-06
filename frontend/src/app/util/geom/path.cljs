@@ -675,3 +675,25 @@
                  (rest content))
 
           segments)))))
+
+(defn split-segments [content points value]
+  (let [split-command
+        (fn [[start end cmd]]
+          (case (:command cmd)
+            :line-to [cmd (split-line-to start cmd value)]
+            :curve-to [cmd (split-curve-to start cmd value)]
+            :close-path [cmd [(make-line-to (gpt/line-val start end value)) cmd]]
+            nil))
+
+        cmd-changes
+        (->> (get-segments content points)
+             (into {} (comp (map split-command)
+                            (filter (comp not nil?)))))
+
+        process-segments
+        (fn [command]
+          (if (contains? cmd-changes command)
+            (get cmd-changes command)
+            [command]))]
+
+    (into [] (mapcat process-segments) content)))
