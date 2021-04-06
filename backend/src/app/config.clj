@@ -24,7 +24,7 @@
   {:http-server-port 6060
    :host "devenv"
    :tenant "dev"
-   :database-uri "postgresql://127.0.0.1/penpot"
+   :database-uri "postgresql://postgres/penpot"
    :database-username "penpot"
    :database-password "penpot"
 
