@@ -9,7 +9,7 @@
 
 (ns app.main.data.users
   (:require
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.common.data :as d]
    [app.common.spec :as us]
    [app.main.data.media :as di]
@@ -154,14 +154,17 @@
 
 
 (defn mark-onboarding-as-viewed
-  []
-  (ptk/reify ::mark-oboarding-as-viewed
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [{:keys [id] :as profile} (:profile state)]
-        (->> (rp/mutation :update-profile-props {:props {:onboarding-viewed true}})
-             (rx/map (constantly (fetch-profile))))))))
-
+  ([] (mark-onboarding-as-viewed nil))
+  ([{:keys [version]}]
+   (ptk/reify ::mark-oboarding-as-viewed
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [version (or version (:main @cf/version))
+             props   (-> (get-in state [:profile :props])
+                         (assoc :onboarding-viewed true)
+                         (assoc :release-notes-viewed version))]
+         (->> (rp/mutation :update-profile-props {:props props})
+              (rx/map (constantly (fetch-profile)))))))))
 
 ;; --- Update Photo
 
@@ -180,7 +183,6 @@
               {:file file})]
 
         (di/notify-start-loading)
-
         (->> (rx/of file)
              (rx/map di/validate-file)
              (rx/map prepare)

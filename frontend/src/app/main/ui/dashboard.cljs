@@ -5,13 +5,14 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.dashboard
   (:require
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.dashboard :as dd]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
@@ -26,6 +27,8 @@
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [t]]
    [app.util.router :as rt]
+   [app.util.timers :as tm]
+   [beicon.core :as rx]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
@@ -104,6 +107,16 @@
     (mf/use-effect
      (mf/deps team-id)
      (st/emitf (dd/fetch-bundle {:id team-id})))
+
+    (mf/use-effect
+     (mf/deps)
+     (fn []
+       (let [props   (:props profile)
+             version (:release-notes-viewed props)]
+         (when (and (:onboarding-viewed props)
+                    (not= version (:main @cf/version))
+                    (not= "0.0" (:main @cf/version)))
+           (tm/schedule 1000 #(st/emit! (modal/show {:type :release-notes :version (:main @cf/version)})))))))
 
     [:& (mf/provider ctx/current-file-id) {:value nil}
      [:& (mf/provider ctx/current-team-id) {:value team-id}

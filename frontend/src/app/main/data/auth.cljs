@@ -5,22 +5,23 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.data.auth
   (:require
-   [cljs.spec.alpha :as s]
-   [beicon.core :as rx]
-   [potok.core :as ptk]
    [app.common.spec :as us]
+   [app.config :as cf]
+   [app.main.data.messages :as dm]
+   [app.main.data.modal :as modal]
+   [app.main.data.users :as du]
    [app.main.repo :as rp]
    [app.main.store :refer [initial-state]]
-   [app.main.data.users :as du]
-   [app.main.data.modal :as modal]
-   [app.main.data.messages :as dm]
-   [app.util.router :as rt]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.storage :refer [storage]]))
+   [app.util.router :as rt]
+   [app.util.storage :refer [storage]]
+   [beicon.core :as rx]
+   [cljs.spec.alpha :as s]
+   [potok.core :as ptk]))
 
 (s/def ::email ::us/email)
 (s/def ::password string?)
@@ -44,11 +45,13 @@
   (ptk/reify ::logged-in
     ptk/WatchEvent
     (watch [this state stream]
-      (let [team-id (current-team-id profile)]
+      (let [team-id (current-team-id profile)
+            props   (:props profile)]
         (rx/merge
          (rx/of (du/profile-fetched profile)
                 (rt/nav' :dashboard-projects {:team-id team-id}))
-         (when-not (get-in profile [:props :onboarding-viewed])
+
+         (when-not (:onboarding-viewed props)
            (->> (rx/of (modal/show {:type :onboarding}))
                 (rx/delay 1000))))))))
 

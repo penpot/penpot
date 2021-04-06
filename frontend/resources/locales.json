@@ -2255,6 +2255,12 @@
     },
     "used-in" : [ "src/app/main/ui/dashboard/team_form.cljs", "src/app/main/ui/dashboard/team_form.cljs" ]
   },
+  "labels.create-team.placeholder" : {
+    "translations" : {
+      "en" : "Enter new team name"
+    },
+    "used-in" : [ "src/app/main/ui/dashboard/team_form.cljs" ]
+  },
   "labels.dashboard" : {
     "translations" : {
       "de" : "Dashboard",
@@ -2625,6 +2631,17 @@
       "zh_cn" : "最近"
     },
     "unused" : true
+  },
+  "labels.release-notes" : {
+    "translations" : {
+      "de" : "Versionshinweise",
+      "en" : "Release notes",
+      "es" : "Notas de versión",
+      "fr" : "Notes de version",
+      "ru" : "примечания к выпуску",
+      "zh_cn" : "發行說明"
+    },
+    "used-in" : [ "src/app/main/ui/settings/sidebar.cljs" ]
   },
   "labels.remove" : {
     "translations" : {
@@ -6577,10 +6594,5 @@
       "zh_cn" : "单击以闭合路径"
     },
     "unused" : true
-  },
-  "labels.create-team.placeholder": {
-    "translations" : {
-      "en": "Enter new team name"
-    }
   }
 }
