@@ -12,6 +12,7 @@
    [app.common.exceptions :as ex]
    [app.metrics :as mtx]
    [clojure.spec.alpha :as s]
+   [clojure.tools.logging :as log]
    [clojure.xml :as xml]
    [integrant.core :as ig])
   (:import
@@ -45,14 +46,24 @@
   {:status 200
    :body (process-request body)})
 
+(defn secure-factory
+  [s ch]
+  (.. (doto (javax.xml.parsers.SAXParserFactory/newInstance)
+        (.setFeature javax.xml.XMLConstants/FEATURE_SECURE_PROCESSING true)
+        (.setFeature "http://apache.org/xml/features/disallow-doctype-decl" true))
+      (newSAXParser)
+      (parse s ch)))
+
 (defn parse
   [data]
   (try
     (with-open [istream (IOUtils/toInputStream data "UTF-8")]
-      (xml/parse istream))
-    (catch Exception _e
+      (xml/parse istream secure-factory))
+    (catch Exception e
+      (log/warnf "error on processing svg: %s" (ex-message e))
       (ex/raise :type :validation
-                :code :invalid-svg-file))))
+                :code :invalid-svg-file
+                :cause e))))
 
 (defn process-request
   [body]

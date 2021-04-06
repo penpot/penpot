@@ -137,7 +137,7 @@
                           [middleware/errors errors/handle]
                           [middleware/cookies]]}
 
-     ["/svg" {:post svgparse}]
+     ["/svg/parse" {:post svgparse}]
      ["/feedback" {:middleware [(:middleware session)]
                    :post feedback}]
 
