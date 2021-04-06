@@ -34,7 +34,8 @@
   (mf/use-callback
    (mf/deps id blocked hidden type drawing-tool text-editing? edition edit-path selected)
    (fn [bevent]
-     (when (dom/class? (dom/get-target bevent) "viewport-controls")
+     (when (or (dom/class? (dom/get-target bevent) "viewport-controls")
+               (dom/class? (dom/get-target bevent) "viewport-selrect"))
        (dom/stop-propagation bevent)
 
        (let [event  (.-nativeEvent bevent)
@@ -58,9 +59,9 @@
            (when (and (not= edition id) text-editing?)
              (st/emit! dw/clear-edition-mode))
 
-           (when (and (or (not edition) (not= edition id)) (not blocked) (not hidden))
+           (when (and (or (not edition) (not= edition id)) (not blocked) (not hidden) (not (#{:comments :path} drawing-tool)))
              (cond
-               (and drawing-tool (not (#{:comments :path} drawing-tool)))
+               drawing-tool
                (st/emit! (dd/start-drawing drawing-tool))
 
                (and edit-path (contains? edit-path edition))
@@ -119,11 +120,12 @@
      (reset! frame-hover nil))))
 
 (defn on-click
-  [hover selected edition drawing-path?]
+  [hover selected edition drawing-path? drawing-tool]
   (mf/use-callback
-   (mf/deps @hover selected edition drawing-path?)
+   (mf/deps @hover selected edition drawing-path? drawing-tool)
    (fn [event]
-     (when (dom/class? (dom/get-target event) "viewport-controls")
+     (when (or (dom/class? (dom/get-target event) "viewport-controls")
+               (dom/class? (dom/get-target event) "viewport-selrect"))
        (let [ctrl? (kbd/ctrl? event)
              shift? (kbd/shift? event)
              alt? (kbd/alt? event)
@@ -133,7 +135,13 @@
              selected? (contains? selected (:id @hover))]
          (st/emit! (ms/->MouseEvent :click ctrl? shift? alt?))
 
-         (when (and hovering? (not shift?) (not frame?) (not selected?) (not edition) (not drawing-path?))
+         (when (and hovering?
+                    (not shift?)
+                    (not frame?)
+                    (not selected?)
+                    (not edition)
+                    (not drawing-path?)
+                    (not (#{:comments :path} drawing-tool)))
            (st/emit! (dw/select-shape (:id @hover)))))))))
 
 (defn on-double-click
