@@ -15,13 +15,13 @@
    [app.db :as db]
    [app.db.sql :as sql]
    [app.util.emails :as emails]
+   [app.util.logging :as l]
    [app.worker :as wrk]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [integrant.core :as ig]))
 
-
 ;; --- PUBLIC API
+
 (defn render
   [email-factory context]
   (email-factory context))
@@ -181,5 +181,5 @@
                 (println "******** start email" (:id email) "**********")
                 (println (.toString baos))
                 (println "******** end email "(:id email) "**********"))]
-      (log/info out))))
+      (l/info :email out))))
 

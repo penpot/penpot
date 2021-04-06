@@ -18,12 +18,12 @@
    [app.util.async :as aa]
    [app.util.http :as http]
    [app.util.json :as json]
+   [app.util.logging :as l]
    [app.util.template :as tmpl]
    [app.worker :as wrk]
    [clojure.core.async :as a]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [cuerdas.core :as str]
    [integrant.core :as ig]))
 
@@ -43,14 +43,14 @@
 
 (defmethod ig/init-key ::reporter
   [_ {:keys [receiver] :as cfg}]
-  (log/info "intializing mattermost error reporter")
+  (l/info :msg "intializing mattermost error reporter")
   (let [output (a/chan (a/sliding-buffer 128)
                        (filter #(= (:level %) "error")))]
     (receiver :sub output)
     (a/go-loop []
       (let [msg (a/<! output)]
         (if (nil? msg)
-          (log/info "stoping error reporting loop")
+          (l/info :msg "stoping error reporting loop")
           (do
             (a/<! (handle-event cfg msg))
             (recur)))))
@@ -75,10 +75,12 @@
                               :headers {"content-type" "application/json"}
                               :body (json/encode-str {:text text})})]
       (when (not= (:status rsp) 200)
-        (log/errorf "error on sending data to mattermost\n%s" (pr-str rsp))))
+        (l/error :hint "error on sending data to mattermost"
+                 :response (pr-str rsp))))
 
     (catch Exception e
-      (log/error e "unexpected exception on error reporter"))))
+      (l/error :hint "unexpected exception on error reporter"
+               :cause e))))
 
 (defn- persist-on-database!
   [{:keys [pool] :as cfg} {:keys [id] :as cdata}]
@@ -116,7 +118,8 @@
           (send-mattermost-notification! cfg cdata))
         (persist-on-database! cfg cdata))
       (catch Exception e
-        (log/error e "unexpected exception on error reporter")))))
+        (l/error :hint "unexpected exception on error reporter"
+                 :cause e)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Http Handler

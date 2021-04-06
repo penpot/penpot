@@ -14,9 +14,9 @@
    [app.db :as db]
    [app.db.sql :as sql]
    [app.util.http :as http]
+   [app.util.logging :as l]
    [clojure.pprint :refer [pprint]]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [jsonista.core :as j]))
@@ -24,11 +24,6 @@
 (declare parse-json)
 (declare parse-notification)
 (declare process-report)
-
-(defn- pprint-report
-  [message]
-  (binding [clojure.pprint/*print-right-margin* 120]
-    (with-out-str (pprint message))))
 
 (defmethod ig/pre-init-spec ::handler [_]
   (s/keys :req-un [::db/pool]))
@@ -42,19 +37,17 @@
         (= mtype "SubscriptionConfirmation")
         (let [surl   (get body "SubscribeURL")
               stopic (get body "TopicArn")]
-          (log/infof "subscription received (topic=%s, url=%s)" stopic surl)
+          (l/info :action "subscription received" :topic stopic :url surl)
           (http/send! {:uri surl :method :post :timeout 10000}))
 
         (= mtype "Notification")
         (when-let [message (parse-json (get body "Message"))]
-          ;; (log/infof "Received: %s" (pr-str message))
           (let [notification (parse-notification cfg message)]
             (process-report cfg notification)))
 
         :else
-        (log/warn (str "unexpected data received\n"
-                       (pprint-report body))))
-
+        (l/warn :hint "unexpected data received"
+                :report (pr-str body)))
       {:status 200 :body ""})))
 
 (defn- parse-bounce
@@ -184,15 +177,15 @@
 
 (defn- process-report
   [cfg {:keys [type profile-id] :as report}]
-  (log/trace (str "procesing report:\n" (pprint-report report)))
+  (l/trace :action "procesing report" :report (pr-str report))
   (cond
     ;; In this case we receive a bounce/complaint notification without
     ;; confirmed identity, we just emit a warning but do nothing about
     ;; it because this is not a normal case. All notifications should
     ;; come with profile identity.
     (nil? profile-id)
-    (log/warn (str "a notification without identity recevied from AWS\n"
-                   (pprint-report report)))
+    (l/warn :msg "a notification without identity recevied from AWS"
+            :report (pr-str report))
 
     (= "bounce" type)
     (register-bounce-for-profile cfg report)
@@ -201,7 +194,7 @@
     (register-complaint-for-profile cfg report)
 
     :else
-    (log/warn (str "unrecognized report received from AWS\n"
-                   (pprint-report report)))))
+    (l/warn :msg "unrecognized report received from AWS"
+            :report (pr-str report))))
 
 

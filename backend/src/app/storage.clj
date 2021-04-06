@@ -19,10 +19,10 @@
    [app.storage.fs :as sfs]
    [app.storage.impl :as impl]
    [app.storage.s3 :as ss3]
+   [app.util.logging :as l]
    [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [cuerdas.core :as str]
    [datoteka.core :as fs]
    [integrant.core :as ig]
@@ -310,7 +310,9 @@
               (run! (partial delete-in-bulk conn) groups)
               (recur (+ n ^long total)))
             (do
-              (log/infof "gc-deleted: processed %s items" n)
+              (l/info :task "gc-deleted"
+                      :action "permanently delete items"
+                      :count n)
               {:deleted n})))))))
 
 (def sql:retrieve-deleted-objects
@@ -382,7 +384,12 @@
               (recur (+ cntf (count to-freeze))
                      (+ cntd (count to-delete))))
             (do
-              (log/infof "gc-touched: %s objects marked as freeze and %s marked to be deleted" cntf cntd)
+              (l/info :task "gc-touched"
+                      :action "mark freeze"
+                      :count cntf)
+              (l/info :task "gc-touched"
+                      :action "mark for deletion"
+                      :count cntd)
               {:freeze cntf :delete cntd})))))))
 
 (def sql:retrieve-touched-objects
@@ -459,7 +466,10 @@
               (recur (+ n (count all))
                      (+ d (count to-delete))))
             (do
-              (log/infof "recheck: processed %s items, %s deleted" n d)
+              (l/info :task "recheck"
+                      :action "recheck items"
+                      :processed n
+                      :deleted n)
               {:processed n :deleted d})))))))
 
 (def sql:retrieve-pending-to-recheck

@@ -5,15 +5,16 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.tasks.delete-object
   "Generic task for permanent deletion of objects."
   (:require
+   [app.common.data :as d]
    [app.common.spec :as us]
    [app.db :as db]
+   [app.util.logging :as l]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [integrant.core :as ig]))
 
 (declare handle-deletion)
@@ -37,7 +38,8 @@
 
 (defmethod handle-deletion :default
   [_conn {:keys [type]}]
-  (log/warnf "no handler found for '%s'" type))
+  (l/warn :hint "no handler found"
+          :type (d/name type)))
 
 (defmethod handle-deletion :file
   [conn {:keys [id] :as props}]

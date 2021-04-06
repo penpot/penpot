@@ -17,11 +17,10 @@
    [app.db :as db]
    [app.metrics :as mtx]
    [app.util.async :as aa]
-   [app.util.log4j :refer [update-thread-context!]]
+   [app.util.logging :as l]
    [app.util.time :as dt]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [promesa.exec :as px])
@@ -91,7 +90,10 @@
 
 (defmethod ig/init-key ::worker
   [_ {:keys [pool poll-interval name queue] :as cfg}]
-  (log/infof "starting worker '%s' on queue '%s'" (d/name name) (d/name queue))
+  (l/log :level :info
+         :msg "start"
+         :name (d/name name)
+         :queue (d/name queue))
   (let [close-ch (a/chan 1)
         poll-ms  (inst-ms poll-interval)]
     (a/go-loop []
@@ -100,30 +102,32 @@
           ;; Terminate the loop if close channel is closed or
           ;; event-loop-fn returns nil.
           (or (= port close-ch) (nil? val))
-          (log/infof "stop condition found; shutdown worker: '%s'" (d/name name))
+          (l/log :level :debug :msg "stop condition found")
 
           (db/pool-closed? pool)
           (do
-            (log/info "worker eventloop is aborted because pool is closed")
+            (l/log :level :debug :msg "eventloop aboirted because pool is closed")
             (a/close! close-ch))
 
           (and (instance? java.sql.SQLException val)
                (contains? #{"08003" "08006" "08001" "08004"} (.getSQLState ^java.sql.SQLException val)))
           (do
-            (log/error "connection error, trying resume in some instants")
+            (l/log :level :error :hint "connection error, trying resume in some instants")
             (a/<! (a/timeout poll-interval))
             (recur))
 
           (and (instance? java.sql.SQLException val)
                (= "40001" (.getSQLState ^java.sql.SQLException val)))
           (do
-            (log/debug "serialization failure (retrying in some instants)")
+            (l/log :level :debug :msg "serialization failure (retrying in some instants)")
             (a/<! (a/timeout poll-ms))
             (recur))
 
           (instance? Exception val)
           (do
-            (log/errorf val "unexpected error ocurried on polling the database (will resume in some instants)")
+            (l/log :level :error
+                   :cause val
+                   :hint "unexpected error ocurried on polling the database (will resume in some instants)")
             (a/<! (a/timeout poll-ms))
             (recur))
 
@@ -181,7 +185,10 @@
         interval  (db/interval duration)
         props     (-> options extract-props db/tjson)
         id        (uuid/next)]
-    (log/debugf "submit task '%s' to be executed in '%s'" (d/name task) (str duration))
+    (l/log :level :debug
+           :action "submit task"
+           :name (d/name task)
+           :in duration)
     (db/exec-one! conn [sql:insert-new-task id (d/name task) props (d/name queue) priority max-retries interval])
     id))
 
@@ -242,7 +249,9 @@
   (let [task-fn (get tasks name)]
     (if task-fn
       (task-fn item)
-      (log/warnf "no task handler found for '%s'" (d/name name)))
+      (l/log :level :warn
+             :msg "no task handler found"
+             :name (d/name name)))
     {:status :completed :task item}))
 
 (defn get-error-context
@@ -266,8 +275,12 @@
         (assoc :inc-by 0))
 
       (let [cdata (get-error-context error item)]
-        (update-thread-context! cdata)
-        (log/errorf error "unhandled exception on task (id: '%s')" (:id cdata))
+        (l/update-thread-context! cdata)
+        (l/log :level :error
+               :cause error
+               :hint "unhandled exception on task"
+               :id (:id cdata))
+
         (if (>= (:retry-num item) (:max-retries item))
           {:status :failed :task item :error error}
           {:status :retry :task item :error error})))))
@@ -276,12 +289,21 @@
   [{:keys [tasks]} item]
   (let [name (d/name (:name item))]
     (try
-      (log/debugf "started task '%s/%s/%s'" name (:id item) (:retry-num item))
+      (l/log :level :debug
+             :action "start task"
+             :name name
+             :id (:id item)
+             :retry (:retry-num item))
+
       (handle-task tasks item)
       (catch Exception e
         (handle-exception e item))
       (finally
-        (log/debugf "finished task '%s/%s/%s'" name (:id item) (:retry-num item))))))
+        (l/log :level :debug
+               :action "start task"
+               :name name
+               :id (:id item)
+               :retry (:retry-num item))))))
 
 (def sql:select-next-tasks
   "select * from task as t
@@ -349,8 +371,8 @@
                        ;; If id is not defined, use the task as id.
                        (map (fn [{:keys [id task] :as item}]
                               (if (some? id)
-                                item
-                                (assoc item :id task))))
+                                (assoc item :id (d/name id))
+                                (assoc item :id (d/name task)))))
                        (map (fn [{:keys [task] :as item}]
                               (let [f (get tasks task)]
                                 (when-not f
@@ -387,7 +409,10 @@
   [conn {:keys [id cron]}]
   (let [cron (str cron)
         id   (name id)]
-    (log/infof "initialize scheduled task '%s' (cron: '%s')" id cron)
+    (l/log :level :debug
+           :action "initialize scheduled task"
+           :id id
+           :cron cron)
     (db/exec-one! conn [sql:upsert-scheduled-task id cron cron])))
 
 (defn- synchronize-schedule
@@ -407,8 +432,10 @@
   [{:keys [executor pool] :as cfg} {:keys [id] :as task}]
   (letfn [(run-task [conn]
             (try
-              (when (db/exec-one! conn [sql:lock-scheduled-task id])
-                (log/debugf "executing scheduled task '%s'" id)
+              (when (db/exec-one! conn [sql:lock-scheduled-task (d/name id)])
+                (l/log :level :debug
+                       :action "execute scheduled task"
+                       :id id)
                 ((:fn task) task))
               (catch Throwable e
                 e)))
@@ -417,7 +444,10 @@
             (db/with-atomic [conn pool]
               (let [result (run-task conn)]
                 (when (ex/exception? result)
-                  (log/errorf result "unhandled exception on scheduled task '%s'" id)))))]
+                  (l/log :level :error
+                         :cause result
+                         :hint "unhandled exception on scheduled task"
+                         :id id)))))]
 
     (try
       (px/run! executor handle-task)
@@ -490,7 +520,9 @@
                :help "Background task execution timing."})]
     (reduce-kv (fn [res k v]
                  (let [tname (name k)]
-                   (log/debugf "registring task '%s'" tname)
+                   (l/log :level :debug
+                          :action "register task"
+                          :name tname)
                    (assoc res k (mtx/wrap-summary v mobj [tname]))))
                {}
                tasks)))

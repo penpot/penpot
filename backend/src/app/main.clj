@@ -11,8 +11,8 @@
   (:require
    [app.common.data :as d]
    [app.config :as cf]
+   [app.util.logging :as l]
    [app.util.time :as dt]
-   [clojure.tools.logging :as log]
    [integrant.core :as ig]))
 
 (def system-config
@@ -348,8 +348,8 @@
                              (-> system-config
                                  (ig/prep)
                                  (ig/init))))
-  (log/infof "welcome to penpot (version: '%s')"
-             (:full cf/version)))
+  (l/info :msg "welcome to penpot"
+          :version (:full cf/version)))
 
 (defn stop
   []
