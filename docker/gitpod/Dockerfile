@@ -18,9 +18,9 @@ COPY docker/gitpod/files/nginx.conf /etc/nginx/nginx.conf
 
 USER root
 
-ENV CLOJURE_VERSION=1.10.3.814 \
-    CLJKONDO_VERSION=2021.03.22 \
-    BABASHKA_VERSION=0.3.1 \
+ENV CLOJURE_VERSION=1.10.3.822 \
+    CLJKONDO_VERSION=2021.03.31 \
+    BABASHKA_VERSION=0.3.2 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
