@@ -35,7 +35,7 @@
    :asserts-enabled false
 
    :public-uri "http://localhost:3449"
-   :redis-uri "redis://localhost/0"
+   :redis-uri "redis://redis/0"
 
    :srepl-host "127.0.0.1"
    :srepl-port 6062
