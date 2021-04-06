@@ -26,7 +26,8 @@
   [{:keys [shape zoom tool] :as props}]
 
   [:g.draw-area
-   [:& shapes/shape-wrapper {:shape shape}]
+   [:g {:style {:pointer-events "none"}}
+    [:& shapes/shape-wrapper {:shape shape}]]
 
    (case tool
      :path      [:& path-editor {:shape shape :zoom zoom}]

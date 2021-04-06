@@ -76,8 +76,7 @@
         shape  (-> (geom/transform-shape shape)
                    (geom/translate-to-frame frame))
         opts  #js {:shape shape
-                   :frame frame
-                   :pointer-events (when (:blocked shape) "none")}
+                   :frame frame}
 
         svg-element? (and (= (:type shape) :svg-raw)
                           (not= :svg (get-in shape [:content :tag])))]
