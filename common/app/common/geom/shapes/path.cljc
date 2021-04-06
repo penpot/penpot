@@ -41,6 +41,20 @@
 
     (gpt/point (coord-v :x) (coord-v :y))))
 
+(defn curve-split
+  "Splits a curve into two at the given parametric value `t`.
+  Calculates the Casteljau's algorithm intermediate points"
+  [start end h1 h2 t]
+
+  (let [p1 (gpt/line-val start h1 t)
+        p2 (gpt/line-val h1 h2 t)
+        p3 (gpt/line-val h2 end t)
+        p4 (gpt/line-val p1 p2 t)
+        p5 (gpt/line-val p2 p3 t)
+        sp (gpt/line-val p4 p5 t)]
+    [[start sp  p1 p4]
+     [sp    end p5 p3]]))
+
 ;; https://pomax.github.io/bezierinfo/#extremities
 (defn curve-extremities
   "Given a cubic bezier cube finds its roots in t. This are the extremities

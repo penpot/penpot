@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes.path :as gshp]
    [app.util.a2c :refer [a2c]]
    [app.util.geom.path-impl-simplify :as impl-simplify]
    [app.util.svg :as usvg]
@@ -63,6 +64,11 @@
                  remain))
         (cond-> result
           (not (empty? current)) (conj current))))))
+
+(defn command->point [command]
+  (when-not (nil? command)
+    (let [{{:keys [x y]} :params} command]
+      (gpt/point x y))))
 
 (defn command->param-list [command]
   (let [params (:params command)]
@@ -387,6 +393,12 @@
        (mapv command->string)
        (str/join "")))
 
+(defn make-line-to [to]
+  {:command :line-to
+   :relative false
+   :params {:x (:x to)
+            :y (:y to)}})
+
 (defn make-curve-params
   ([point]
    (make-curve-params point point point))
@@ -400,6 +412,26 @@
     :c1y (:y h1)
     :c2x (:x h2)
     :c2y (:y h2)}))
+
+(defn make-curve-to [to h1 h2]
+  {:command :curve-to
+   :relative false
+   :params (make-curve-params to h1 h2)})
+
+(defn split-line-to [from-p cmd val]
+  (let [to-p (command->point cmd)
+        sp (gpt/line-val from-p to-p val)]
+    [(make-line-to sp) cmd]))
+
+(defn split-curve-to [from-p cmd val]
+  (let [params (:params cmd)
+        end (gpt/point (:x params) (:y params))
+        h1 (gpt/point (:c1x params) (:c1y params))
+        h2 (gpt/point (:c2x params) (:c2y params))
+        [[_ to1 h11 h21]
+         [_ to2 h12 h22]] (gshp/curve-split from-p end h1 h2 val)]
+    [(make-curve-to to1 h11 h21)
+     (make-curve-to to2 h12 h22)]))
 
 (defn opposite-handler
   "Calculates the coordinates of the opposite handler"
@@ -440,11 +472,6 @@
               content))]
     (let [content (if (vector? content) content (into [] content))]
       (reduce apply-to-index content modifiers))))
-
-(defn command->point [command]
-  (when-not (nil? command)
-    (let [{{:keys [x y]} :params} command]
-      (gpt/point x y))))
 
 (defn content->points [content]
   (->> content
@@ -638,7 +665,7 @@
 
             segments (cond-> segments
                        is-segment?
-                       (conj [prev-point cur-point]))]
+                       (conj [prev-point cur-point cur-cmd]))]
 
         (if (some? cur-cmd)
           (recur segments
