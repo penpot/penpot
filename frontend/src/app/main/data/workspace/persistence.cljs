@@ -396,7 +396,7 @@
 
 (defn parse-svg [[name text]]
   (->> (http/send! {:method :post
-                    :uri "/api/svg"
+                    :uri "/api/svg/parse"
                     :headers {"content-type" "image/svg+xml"}
                     :body text})
        (rx/map (fn [{:keys [status body]}]
