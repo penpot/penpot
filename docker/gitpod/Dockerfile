@@ -113,5 +113,6 @@ ENV PATH="/usr/lib/jvm/openjdk16/bin:/usr/local/nodejs/bin:$PATH" \
     PENPOT_SMTP_DEFAULT_REPLY_TO=no-reply@example.com \
     PENPOT_SMTP_DEFAULT_FROM=no-reply@example.com \
     PENPOT_DATABASE_URI="postgresql://localhost/penpot"
+    PENPOT_REDIS_URI="redis://localhost/0"
 
 # TODO Retrieve OpenLDAP from rroemhild/docker-test-openldap
