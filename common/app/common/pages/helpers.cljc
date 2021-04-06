@@ -9,7 +9,8 @@
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
    [app.common.spec :as us]
-   [app.common.uuid :as uuid]))
+   [app.common.uuid :as uuid]
+   [cuerdas.core :as str]))
 
 (defn walk-pages
   "Go through all pages of a file and apply a function to each one"
@@ -332,7 +333,6 @@
             (d/concat new-children new-child-objects)
             (d/concat updated-children updated-child-objects))))))))
 
-
 (defn indexed-shapes
   "Retrieves a list with the indexes for each element in the layer tree.
    This will be used for shift+selection."
@@ -459,3 +459,44 @@
         [parent-idx _] (d/seek (fn [[idx child-id]] (= child-id shape-id))
                                (d/enumerate (:shapes parent)))]
     parent-idx))
+
+(defn parse-path-name
+  "Parse a string in the form 'group / subgroup / name'.
+  Retrieve the path and the name in separated values, normalizing spaces."
+  [path-name]
+  (let [path-name-split (->> (str/split path-name "/")
+                             (map str/trim)
+                             (remove str/empty?))
+        path (str/join " / " (butlast path-name-split))
+        name (last path-name-split)]
+    [path name]))
+
+(defn merge-path-item
+  "Put the item at the end of the path."
+  [path name]
+  (if-not (empty? path)
+    (str path " / " name)
+    name))
+
+(defn compact-path
+  "Separate last component of the path, and truncate the others if too long:
+    'one'                          ->  ['' 'one' false]
+    'one / two / three'            ->  ['one / two' 'three' false]
+    'one / two / three / four'     ->  ['one / two / ...' 'four' true]
+    'one-item-but-very-long / two' ->  ['...' 'two' true] "
+  [path max-length]
+  (let [path-split (->> (str/split path "/")
+                        (map str/trim))
+        last-item  (last path-split)]
+    (loop [other-items (seq (butlast path-split))
+           other-path  ""]
+      (if-let [item (first other-items)]
+        (let [full-path (-> other-path
+                            (merge-path-item item)
+                            (merge-path-item last-item))]
+          (if (> (count full-path) max-length)
+            [(merge-path-item other-path "...") last-item true]
+            (recur (next other-items)
+                   (merge-path-item other-path item))))
+        [other-path last-item false]))))
+

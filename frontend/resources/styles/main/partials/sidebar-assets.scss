@@ -118,7 +118,7 @@
     cursor: pointer;
   }
 
-  .asset-group {
+  .asset-section {
     background-color: $color-gray-60;
     border-top: 1px solid $color-gray-50;
     padding: $small;
@@ -126,33 +126,58 @@
     color: $color-gray-20;
     /* TODO: see if this is useful, or is better to leave only
              one scroll bar in the whole sidebar
-             (also see .group-list) */
+             (also see .asset-list) */
     // max-height: 30rem;
     // overflow-y: scroll;
 
-    .group-title {
-        display: flex;
-        cursor: pointer;
+    .asset-title {
+      display: flex;
+      cursor: pointer;
 
       & .num-assets {
         color: $color-gray-30;
       }
 
       & svg {
-          height: 8px;
-          width: 8px;
-          fill: $color-gray-30;
-          margin-right: 4px;
-          transform: rotate(90deg);
+        height: 8px;
+        width: 8px;
+        fill: $color-gray-30;
+        margin-right: 4px;
+        transform: rotate(90deg);
       }
 
       &.closed svg {
-          transform: rotate(0deg);
-          transition: transform 0.3s;
+        transform: rotate(0deg);
+        transition: transform 0.3s;
       }
     }
 
-    .group-button {
+    .group-title {
+      display: flex;
+      cursor: pointer;
+      margin-top: $small;
+      margin-bottom: $x-small;
+      color: $color-white;
+
+      & svg {
+        height: 8px;
+        width: 8px;
+        fill: $color-white;
+        margin-right: 4px;
+        transform: rotate(90deg);
+      }
+
+      &.closed svg {
+        transform: rotate(0deg);
+        transition: transform 0.3s;
+      }
+
+      & .dim {
+        color: $color-gray-40;
+      }
+    }
+
+    .assets-button {
       margin-left: auto;
       cursor: pointer;
 
@@ -167,8 +192,11 @@
       }
     }
 
-    .group-grid {
-      margin-top: $medium;
+    .asset-title + .asset-grid {
+      margin-top: $small;
+    }
+
+    .asset-grid {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr 1fr;
       grid-auto-rows: 6vh;
@@ -192,6 +220,7 @@
     .grid-cell {
       background-color: $color-canvas;
       border-radius: 4px;
+      border: 2px solid transparent;
       overflow: hidden;
       display: flex;
       align-items: center;
@@ -242,26 +271,30 @@
     }
 
     .grid-cell:hover {
-      border: 1px solid $color-primary;
+      border: 2px solid $color-primary;
 
       & .cell-name {
         display: block;
       }
     }
 
+    .grid-cell.selected {
+      border: 2px solid $color-primary;
+    }
+
     /* TODO: see if this is useful, or is better to leave only
              one scroll bar in the whole sidebar
-             (also see .asset-group) */
-    // .group-list {
+             (also see .asset-section) */
+    // .asset-list {
     //   max-height: 30rem;
     //   overflow-y: scroll;
     // }
 
-    .group-list {
+    .asset-list {
       margin-top: $medium;
     }
 
-    .group-list-item {
+    .asset-list-item {
       display: flex;
       align-items: center;
       margin-top: $small;

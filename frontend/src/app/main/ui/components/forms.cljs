@@ -23,6 +23,7 @@
   (let [input-type   (get props :type "text")
         input-name   (get props :name)
         more-classes (get props :class)
+        auto-focus?  (get props :auto-focus? false)
 
         form         (or form (mf/use-ctx form-ctx))
 
@@ -84,6 +85,7 @@
                   (dissoc :help-icon :form :trim)
                   (assoc :id (name input-name)
                          :value value
+                         :auto-focus auto-focus?
                          :on-focus on-focus
                          :on-blur on-blur
                          :placeholder label

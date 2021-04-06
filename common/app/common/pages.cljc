@@ -62,6 +62,9 @@
 (d/export helpers/get-index-in-parent)
 (d/export helpers/calculate-z-index)
 (d/export helpers/generate-child-all-parents-index)
+(d/export helpers/parse-path-name)
+(d/export helpers/merge-path-item)
+(d/export helpers/compact-path)
 
 ;; Process changes
 (d/export changes/process-changes)
