@@ -172,13 +172,11 @@
                   (a/close! sub-ch))))
 
             (on-error [_conn e]
-              (mtx-sessions :observe (/ (inst-ms (dt/duration-between created-at (dt/now))) 1000.0))
               (log/tracef "on-error %s (%s)" (:session-id cfg) (ex-message e))
               (a/close! out-ch)
               (a/close! rcv-ch))
 
             (on-close [_conn _status _reason]
-              (mtx-sessions :observe (/ (inst-ms (dt/duration-between created-at (dt/now))) 1000.0))
               (log/tracef "on-close %s" (:session-id cfg))
               (a/close! out-ch)
               (a/close! rcv-ch))
