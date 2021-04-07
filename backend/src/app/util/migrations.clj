@@ -12,7 +12,6 @@
    [app.util.logging :as l]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
-   [cuerdas.core :as str]
    [next.jdbc :as jdbc]))
 
 (s/def ::name string?)

@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.db
   (:require
@@ -16,8 +16,8 @@
    [app.db.sql :as sql]
    [app.metrics :as mtx]
    [app.util.json :as json]
-   [app.util.migrations :as mg]
    [app.util.logging :as l]
+   [app.util.migrations :as mg]
    [app.util.time :as dt]
    [app.util.transit :as t]
    [clojure.java.io :as io]

@@ -178,6 +178,6 @@
                 ::l/logger logger
                 :ip-addr ip-addr
                 :profile-id profile-id
-                :uri (str (:uri request) (if qstring (str "?" qstring)))
+                :uri (str (:uri request) (when qstring (str "?" qstring)))
                 :method (name (:request-method request)))
         (handler request)))))

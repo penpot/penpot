@@ -149,9 +149,7 @@
                                   :out-ch out-ch
                                   :sub-ch sub-ch)]
 
-                (l/log :level :trace
-                       :action "connect"
-                       :session (:session-id cfg))
+                (l/trace :event "connect" :session (:session-id cfg))
 
                 ;; Forward all messages from out-ch to the websocket
                 ;; connection
@@ -173,18 +171,14 @@
                   ;; close subscription
                   (a/close! sub-ch))))
 
-            (on-error [_conn e]
-              (l/log :level :trace
-                     :action "error"
-                     :session (:session-id cfg))
+            (on-error [_conn _e]
+              (l/trace :event "error" :session (:session-id cfg))
 
               (a/close! out-ch)
               (a/close! rcv-ch))
 
             (on-close [_conn _status _reason]
-              (l/log :level :trace
-                     :action "close"
-                     :session (:session-id cfg))
+              (l/trace :event "close" :session (:session-id cfg))
 
               (a/close! out-ch)
               (a/close! rcv-ch))
@@ -192,8 +186,7 @@
             (on-message [_ws message]
               (let [message (t/decode-str message)]
                 (when-not (a/offer! rcv-ch message)
-                  (l/log :level :warn
-                         :msg "drop messages"))))]
+                  (l/warn :msg "drop messages"))))]
 
       {:on-connect on-connect
        :on-error on-error

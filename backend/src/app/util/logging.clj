@@ -9,10 +9,8 @@
 
 (ns app.util.logging
   (:require
-   [linked.core :as lk]
    [clojure.pprint :refer [pprint]])
   (:import
-   java.util.Map
    org.apache.logging.log4j.Level
    org.apache.logging.log4j.LogManager
    org.apache.logging.log4j.Logger
@@ -65,7 +63,7 @@
           ^Object msg)))
 
 (defmacro log
-  [& {:keys [level cause msg ::logger ::async] :as props}]
+  [& {:keys [level cause ::logger ::async] :as props}]
   (let [props      (dissoc props :level :cause ::logger ::async)
         logger     (or logger (str *ns*))
         logger-sym (gensym "log")

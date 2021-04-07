@@ -17,7 +17,6 @@
    [app.metrics :as mtx]
    [app.util.logging :as l]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [integrant.core :as ig]
    [reitit.ring :as rr]
    [ring.adapter.jetty9 :as jetty])
