@@ -11,6 +11,7 @@
   (:require
    [app.metrics :as mtx]
    [app.util.json :as json]
+   [app.util.logging :as l]
    [app.util.transit :as t]
    [buddy.core.codecs :as bc]
    [buddy.core.hash :as bh]
@@ -165,3 +166,18 @@
 (def etag
   {:name ::etag
    :compile (constantly wrap-etag)})
+
+(defn activity-logger
+  [handler]
+  (let [logger "penpot.profile-activity"]
+    (fn [{:keys [headers] :as request}]
+      (let [ip-addr    (get headers "x-forwarded-for")
+            profile-id (:profile-id request)
+            qstring    (:query-string request)]
+        (l/info ::l/async true
+                ::l/logger logger
+                :ip-addr ip-addr
+                :profile-id profile-id
+                :uri (str (:uri request) (if qstring (str "?" qstring)))
+                :method (name (:request-method request)))
+        (handler request)))))

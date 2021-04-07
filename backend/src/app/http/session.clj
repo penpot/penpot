@@ -65,8 +65,8 @@
   [cfg handler]
   (fn [request]
     (if-let [{:keys [id profile-id] :as session} (retrieve-from-request cfg request)]
-      (let [ech (::events-ch cfg)]
-        (a/>!! ech id)
+      (let [events-ch (::events-ch cfg)]
+        (a/>!! events-ch id)
         (l/update-thread-context! {:profile-id profile-id})
         (handler (assoc request :profile-id profile-id)))
       (handler request))))
@@ -109,6 +109,7 @@
   [_ data]
   (a/close! (::events-ch data)))
 
+
 ;; --- STATE INIT: SESSION UPDATER
 
 (declare batch-events)
@@ -145,10 +146,10 @@
         (let [result (a/<! (update-sessions cfg batch))]
           (mcnt :inc)
           (if (ex/exception? result)
-            (l/error :mod "updater"
+            (l/error :task "updater"
                      :hint "unexpected error on update sessions"
                      :cause result)
-            (l/debug :mod "updater"
+            (l/debug :task "updater"
                      :action "update sessions"
                      :reason (name reason)
                      :count result))
@@ -213,7 +214,7 @@
       (let [interval (db/interval max-age)
             result   (db/exec-one! conn [sql:delete-expired interval])
             result   (:next.jdbc/update-count result)]
-        (l/debug :mod "gc-task"
+        (l/debug :task "gc"
                  :action "clean http sessions"
                  :count result)
         result))))

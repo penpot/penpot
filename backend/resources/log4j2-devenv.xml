@@ -32,6 +32,10 @@
       <AppenderRef ref="main" level="trace" />
     </Logger>
 
+    <Logger name="penpot" level="fatal" additivity="false">
+      <AppenderRef ref="main" level="fatal" />
+    </Logger>
+
     <Logger name="user" level="trace" additivity="false">
       <AppenderRef ref="main" level="trace" />
     </Logger>

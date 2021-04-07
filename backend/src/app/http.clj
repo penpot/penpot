@@ -127,7 +127,10 @@
   (rr/router
    [["/metrics" {:get (:handler metrics)}]
     ["/assets" {:middleware [[middleware/format-response-body]
-                             [middleware/errors errors/handle]]}
+                             [middleware/errors errors/handle]
+                             [middleware/cookies]
+                             (:middleware session)
+                             middleware/activity-logger]}
      ["/by-id/:id" {:get (:objects-handler assets)}]
      ["/by-file-media-id/:id" {:get (:file-objects-handler assets)}]
      ["/by-file-media-id/:id/thumbnail" {:get (:file-thumbnails-handler assets)}]]
@@ -161,6 +164,8 @@
       ["/github" {:post (get-in oauth [:github :handler])}]
       ["/github/callback" {:get (get-in oauth [:github :callback-handler])}]]
 
-     ["/rpc" {:middleware [(:middleware session)]}
+     ["/rpc" {:middleware [(:middleware session)
+                           middleware/activity-logger]}
+
       ["/query/:type" {:get (:query-handler rpc)}]
       ["/mutation/:type" {:post (:mutation-handler rpc)}]]]]))
