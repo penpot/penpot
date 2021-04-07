@@ -28,7 +28,7 @@
      :add-node segments-selected?
      :remove-node points-selected?
      :merge-nodes segments-selected?
-     :join-nodes segments-selected?
+     :join-nodes points-selected?
      :separate-nodes segments-selected?}))
 
 (mf/defc path-actions [{:keys [shape]}]

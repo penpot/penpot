@@ -12,7 +12,9 @@
    [app.util.a2c :refer [a2c]]
    [app.util.geom.path-impl-simplify :as impl-simplify]
    [app.util.svg :as usvg]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [clojure.set :as set]
+   [app.common.math :as mth]))
 
 (defn calculate-opposite-handler
   "Given a point and its handler, gives the symetric handler"
@@ -393,6 +395,12 @@
        (mapv command->string)
        (str/join "")))
 
+(defn make-move-to [to]
+  {:command :move-to
+   :relative false
+   :params {:x (:x to)
+            :y (:y to)}})
+
 (defn make-line-to [to]
   {:command :line-to
    :relative false
@@ -769,4 +777,141 @@
                  cur-handler
                  (first content)
                  (rest content)))))))
+
+(defn join-nodes
+  "Creates new segments between points that weren't previously"
+  [content points]
+
+  (let [segments-set (into #{}
+                           (map (fn [[p1 p2 _]] [p1 p2]))
+                           (get-segments content points))
+
+        create-line-command (fn [point other]
+                              [(make-move-to point)
+                               (make-line-to other)])
+
+        not-segment? (fn [point other] (and (not (contains? segments-set [point other]))
+                                            (not (contains? segments-set [other point]))))
+
+        new-content (->> (d/map-perm create-line-command not-segment? points)
+                         (flatten)
+                         (into []))]
+
+    (d/concat content new-content)))
+
+
+(defn separate-nodes
+  "Removes the segments between the points given"
+  [content points]
+
+  (let [content (d/with-prev content)]
+    (loop [result []
+           [cur-cmd prev-cmd] (first content)
+           content (rest content)]
+
+      (if (nil? cur-cmd)
+        (->> result
+             (filter #(> (count %) 1))
+             (flatten)
+             (into []))
+
+        (let [prev-point (command->point prev-cmd)
+              cur-point (command->point cur-cmd)
+
+              cur-cmd (cond-> cur-cmd
+                        (and (contains? points prev-point)
+                             (contains? points cur-point))
+
+                        (assoc :command :move-to
+                               :params (select-keys (:params cur-cmd) [:x :y])))
+
+              move? (= :move-to (:command cur-cmd))
+
+              result (if move? (conj result []) result)
+              head-idx (dec (count result))
+
+              result (-> result
+                         (update head-idx conj cur-cmd))]
+          (recur result
+                 (first content)
+                 (rest content)))))))
+
+
+(defn- add-to-set
+  "Given a list of sets adds the value to the target set"
+  [set-list target value]
+  (->> set-list
+       (mapv (fn [it]
+               (cond-> it
+                 (= it target) (conj value))))))
+
+(defn- join-sets
+  "Given a list of sets join two sets in the list into a new one"
+  [set-list target other]
+  (conj (->> set-list
+             (filterv #(and (not= % target)
+                            (not= % other))))
+        (set/union target other)))
+
+(defn group-segments [segments]
+  (loop [result []
+         [point-a point-b :as segment] (first segments)
+         segments (rest segments)]
+
+    (if (nil? segment)
+      result
+
+      (let [set-a (d/seek #(contains? % point-a) result)
+            set-b (d/seek #(contains? % point-b) result)
+
+            result (cond-> result
+                     (and (nil? set-a) (nil? set-b))
+                     (conj #{point-a point-b})
+                     
+                     (and (some? set-a) (nil? set-b))
+                     (add-to-set set-a point-b)
+
+                     (and (nil? set-a) (some? set-b))
+                     (add-to-set set-b point-a)
+
+                     (and (some? set-a) (some? set-b) (not= set-a set-b))
+                     (join-sets set-a set-b))]
+        (recur result
+               (first segments)
+               (rest segments))))))
+
+(defn calculate-merge-points [group-segments points]
+  (let [index-merge-point (fn [group] (vector group (-> (gpt/center-points group)
+                                                        (update :x mth/round)
+                                                        (update :y mth/round))))
+        index-group (fn [point] (vector point (d/seek #(contains? % point) group-segments)))
+
+        group->merge-point (into {} (map index-merge-point) group-segments)
+        point->group (into {} (map index-group) points)]
+    (d/mapm #(group->merge-point %2) point->group)))
+
+;; TODO: Improve the replace for curves
+(defn replace-points
+  "Replaces the points in a path for its merge-point"
+  [content point->merge-point]
+  (let [replace-command
+        (fn [cmd]
+          (let [point (command->point cmd)]
+            (if (contains? point->merge-point point)
+              (let [merge-point (get point->merge-point point)]
+                (-> cmd (update :params assoc :x (:x merge-point) :y (:y merge-point))))
+              cmd)))]
+    (->> content
+         (mapv replace-command))))
+
+(defn merge-nodes
+  "Reduces the continguous segments in points to a single point"
+  [content points]
+  (let [point->merge-point (-> content
+                               (get-segments points)
+                               (group-segments)
+                               (calculate-merge-points points))]
+    (-> content
+        (separate-nodes points)
+        (replace-points point->merge-point))))
 
