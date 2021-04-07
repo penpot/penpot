@@ -163,17 +163,21 @@
                   ;; Subscribe to corresponding topics
                   (a/<! (msgbus :sub {:topics [file-id team-id] :chan sub-ch}))
                   (a/<! (handle-connect cfg))
+
+                  ;; when connection is closed
+                  (mtx-aconn :dec)
+                  (mtx-sessions :observe (/ (inst-ms (dt/duration-between created-at (dt/now))) 1000.0))
+
+                  ;; close subscription
                   (a/close! sub-ch))))
 
             (on-error [_conn e]
-              (mtx-aconn :dec)
               (mtx-sessions :observe (/ (inst-ms (dt/duration-between created-at (dt/now))) 1000.0))
               (log/tracef "on-error %s (%s)" (:session-id cfg) (ex-message e))
               (a/close! out-ch)
               (a/close! rcv-ch))
 
             (on-close [_conn _status _reason]
-              (mtx-aconn :dec)
               (mtx-sessions :observe (/ (inst-ms (dt/duration-between created-at (dt/now))) 1000.0))
               (log/tracef "on-close %s" (:session-id cfg))
               (a/close! out-ch)
