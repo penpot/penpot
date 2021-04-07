@@ -14,6 +14,7 @@
   flex: 1 0 0;
   margin-right: $medium;
   overflow-y: auto;
+  user-select: none;
 
   &.search {
     margin-top: 10px;
@@ -46,6 +47,10 @@
       line-height: 1rem;
       font-weight: unset;
       color: $color-black;
+      margin-right: $medium;
+    }
+
+    .edit-wrapper {
       margin-right: $medium;
     }
 

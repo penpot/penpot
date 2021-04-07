@@ -9,16 +9,17 @@
 
 (ns app.main.snap
   (:require
-   [clojure.set :as set]
-   [beicon.core :as rx]
-   [app.common.uuid :refer [zero]]
-   [app.common.math :as mth]
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.main.worker :as uw]
+   [app.common.math :as mth]
+   [app.common.pages :as cp]
+   [app.common.uuid :refer [zero]]
    [app.main.refs :as refs]
-   [app.util.geom.snap-points :as sp]))
+   [app.main.worker :as uw]
+   [app.util.geom.snap-points :as sp]
+   [beicon.core :as rx]
+   [clojure.set :as set]))
 
 (defonce ^:private snap-accuracy 5)
 (defonce ^:private snap-distance-accuracy 10)
@@ -184,7 +185,9 @@
   (->> (uw/ask! {:cmd :selection/query
                  :page-id page-id
                  :frame-id (->> shapes first :frame-id)
+                 :include-frames? true
                  :rect area-selrect})
+       (rx/map #(cp/clean-loops objects %))
        (rx/map #(set/difference % (into #{} (map :id shapes))))
        (rx/map (fn [ids] (map #(get objects %) ids)))))
 

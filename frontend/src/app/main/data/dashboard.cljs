@@ -12,6 +12,7 @@
    [app.common.uuid :as uuid]
    [app.main.repo :as rp]
    [app.main.data.users :as du]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.router :as rt]
    [app.util.time :as dt]
    [app.util.timers :as ts]
@@ -55,6 +56,9 @@
                    ::created-at
                    ::modified-at
                    ::project-id]))
+
+(s/def ::set-of-uuid
+  (s/every ::us/uuid :kind set?))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -200,6 +204,41 @@
                         (assoc-in [:recent-files project-id] (into #{} (map :id) files)))))
                 state
                 projects)))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Data Selection
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn clear-selected-files
+  []
+  (ptk/reify ::clear-file-select
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :dashboard-local
+              assoc :selected-files #{}
+                    :selected-project nil))))
+
+(defn toggle-file-select
+  [{:keys [file] :as params}]
+  (ptk/reify ::toggle-file-select
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [file-id          (:id file)
+            selected-project (get-in state [:dashboard-local
+                                            :selected-project])]
+        (if (or (nil? selected-project)
+                (= selected-project (:project-id file)))
+          (update state :dashboard-local
+                  (fn [local]
+                    (-> local
+                        (update :selected-files
+                                #(if (contains? % file-id)
+                                   (disj % file-id)
+                                   (conj % file-id)))
+                        (assoc :selected-project
+                               (:project-id file)))))
+          state)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Modification
@@ -347,12 +386,42 @@
                (rx/map #(partial created %))
                (rx/catch on-error)))))))
 
-(def clear-project-for-edit
-  (ptk/reify ::clear-project-for-edit
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:dashboard-local :project-for-edit] nil))))
+(defn duplicate-project
+  [{:keys [id name] :as params}]
+  (us/assert ::us/uuid id)
+  (letfn [(duplicated [project state]
+            (-> state
+                (assoc-in [:projects (:team-id project) (:id project)] project)))]
+    (ptk/reify ::duplicate-project
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (let [{:keys [on-success on-error]
+               :or {on-success identity
+                    on-error identity}} (meta params)
 
+              new-name (str name " " (tr "dashboard.copy-suffix"))]
+
+          (->> (rp/mutation! :duplicate-project {:project-id id
+                                                 :name new-name})
+               (rx/tap on-success)
+               (rx/map #(partial duplicated %))
+               (rx/catch on-error)))))))
+
+(defn move-project
+  [{:keys [id team-id] :as params}]
+  (us/assert ::us/uuid id)
+  (us/assert ::us/uuid team-id)
+  (ptk/reify ::move-project
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [{:keys [on-success on-error]
+             :or {on-success identity
+                  on-error identity}} (meta params)]
+
+        (->> (rp/mutation! :move-project {:project-id id
+                                          :team-id team-id})
+             (rx/tap on-success)
+             (rx/catch on-error))))))
 
 (defn toggle-project-pin
   [{:keys [id is-pinned team-id] :as params}]
@@ -494,3 +563,43 @@
       (-> state
           (assoc-in [:files project-id id] file)
           (update-in [:recent-files project-id] (fnil conj #{}) id)))))
+
+;; --- Duplicate File
+
+(defn duplicate-file
+  [{:keys [id name] :as params}]
+  (us/assert ::us/uuid id)
+  (us/assert ::name name)
+  (ptk/reify ::duplicate-file
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [{:keys [on-success on-error]
+             :or {on-success identity
+                  on-error identity}} (meta params)
+
+            new-name (str name " " (tr "dashboard.copy-suffix"))]
+
+        (->> (rp/mutation! :duplicate-file {:file-id id
+                                            :name new-name})
+             (rx/tap on-success)
+             (rx/map file-created)
+             (rx/catch on-error))))))
+
+;; --- Move File
+
+(defn move-files
+  [{:keys [ids project-id] :as params}]
+  (us/assert ::set-of-uuid ids)
+  (us/assert ::us/uuid project-id)
+  (ptk/reify ::move-files
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [{:keys [on-success on-error]
+             :or {on-success identity
+                  on-error identity}} (meta params)]
+
+        (->> (rp/mutation! :move-files {:ids ids
+                                        :project-id project-id})
+             (rx/tap on-success)
+             (rx/catch on-error))))))
+

@@ -449,6 +449,10 @@ ul.slider-dots {
       content: "Y";
     }
   }
+
+  &.large {
+    min-width: 7rem;
+  }
 }
 
 input,

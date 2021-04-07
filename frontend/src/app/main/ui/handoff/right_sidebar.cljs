@@ -12,6 +12,7 @@
    [rumext.alpha :as mf]
    [okulary.core :as l]
    [app.util.i18n :refer [t] :as i18n]
+   [app.common.data :as d]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
@@ -49,7 +50,7 @@
             [:*
              [:span.tool-window-bar-icon
               [:& element-icon {:shape (-> shapes first)}]]
-             [:span.tool-window-bar-title (->> selected-type name (str "handoff.tabs.code.selected.") (t locale))]])
+             [:span.tool-window-bar-title (->> selected-type d/name (str "handoff.tabs.code.selected.") (t locale))]])
           ]
          [:div.tool-window-content
           [:& tab-container {:on-change-tab #(do

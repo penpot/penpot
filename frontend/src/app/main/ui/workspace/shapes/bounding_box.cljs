@@ -44,8 +44,6 @@
            :style {:stroke color
                    :fill "transparent"
                    :stroke-width "1px"
-                   :stroke-opacity 0.5
-                   :stroke-dasharray 4
                    :pointer-events "none"}}])
 
 (mf/defc render-rect-points [{:keys [points color]}]
@@ -62,7 +60,7 @@
   [props]
   (let [shape (-> (unchecked-get props "shape"))
         frame (unchecked-get props "frame")
-        selrect (gsh/points->selrect (-> shape :points))
+        bounding-box (gsh/points->selrect (-> shape :points))
         shape-center (gsh/center-shape shape)
         line-color (rdcolor #js {:seed (str (:id shape))})
         zoom (mf/deref refs/selected-zoom)
@@ -71,25 +69,30 @@
                         (map gsh/transform-shape))]
 
     [:g.bounding-box
-     [:text {:x (:x selrect)
-             :y (- (:y selrect) 5)
+     [:text {:x (:x bounding-box)
+             :y (- (:y bounding-box) 5)
              :font-size 10
              :fill line-color
              :stroke "white"
              :stroke-width 0.1}
-      (str/format "%s - (%s, %s)" (str/slice (str (:id shape)) 0 8) (fixed (:x selrect)) (fixed (:y selrect)))]
+      (str/format "%s - (%s, %s)" (str/slice (str (:id shape)) 0 8) (fixed (:x bounding-box)) (fixed (:y bounding-box)))]
 
-     [:& cross-point {:point shape-center
-                      :zoom zoom
-                      :color line-color}]
+     [:g.center
+      [:& cross-point {:point shape-center
+                       :zoom zoom
+                       :color line-color}]]
+     
+     [:g.points
+      (for [point (:points shape)]
+        [:& cross-point {:point point
+                         :zoom zoom
+                         :color line-color}])
+      #_[:& render-rect-points {:points (:points shape)
+                                :color line-color}]]
 
-     (for [point (:points shape)]
-       [:& cross-point {:point point
-                        :zoom zoom
-                        :color line-color}])
-
-     [:& render-rect-points {:points (:points shape)
-                             :color line-color}]
-
-     [:& render-rect {:rect selrect
-                      :color line-color}]]))
+     [:g.selrect
+      [:& render-rect {:rect (:selrect shape)
+                       ;; :transform (gsh/transform-matrix shape)
+                       :color line-color}]
+      #_[:& render-rect {:rect bounding-box
+                         :color line-color}]]]))

@@ -99,7 +99,7 @@
 
         [dprops dref]
         (hooks/use-sortable
-         :data-type "app/page"
+         :data-type "penpot/page"
          :on-drop on-drop
          :data {:id id
                 :index index

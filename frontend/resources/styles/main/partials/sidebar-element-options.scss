@@ -420,6 +420,10 @@
       position: absolute;
       right: 0;
       padding-right: 4px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+
     }
 
     &.input-option {
@@ -438,6 +442,11 @@
       }
     }
 
+    .custom-select-dropdown {
+      top: unset;
+      margin-bottom: 0;
+    }
+
     &:hover {
       border: 1px solid $color-gray-40;
     }
@@ -449,10 +458,10 @@
     height: 2rem;
   }
   .editable-select svg {
-      fill: $color-gray-40;
+    fill: $color-gray-40;
   }
   .dropdown-button {
-      top: 4px;
+    top: 4px;
   }
   .editable-select.input-option .input-text {
     padding: 0;
@@ -510,7 +519,15 @@
 
 .presets {
   .custom-select-dropdown {
-    width: 200px;
+    width: 237px;
+
+    li {
+      font-size: $fs12;
+
+      span {
+        font-size: $fs11;
+      }
+    }
   }
 }
 
@@ -709,6 +726,9 @@
 .element-set-content .input-row {
   & .element-set-subtitle {
     width: 5.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
@@ -734,7 +754,7 @@
   &:hover {
     background: $color-gray-60;
 
-    
+
     .custom-select,
     .editable-select,
     input {
@@ -767,11 +787,10 @@
     margin-left: 0.5rem;
 
     & .custom-select-dropdown {
-      width: 56px;
-      min-width: 56px;
+      width: 5rem;
+      min-width: 5rem;
       max-height: 10rem;
     }
-
   }
 }
 
@@ -908,13 +927,16 @@
 .element-set-actions {
     display: flex;
     visibility: hidden;
-
 }
 
+.row-flex-removable:hover .element-set-actions,
 .element-set-options-group:hover .element-set-actions {
-    visibility: visible;
+  visibility: visible;
 }
 
+.layer-actions {
+  visibility: visible;
+}
 
 .typography-entry {
     margin: 0.5rem 0.3rem;
@@ -991,7 +1013,6 @@
     cursor: pointer;
     max-height: 16rem;
     min-width: 6rem;
-    margin-top: 25px;
     left: initial;
     top: 0;
 }
@@ -1003,7 +1024,7 @@
     .typography-name {
         font-size: 14px;
     }
-    
+
     .row-flex {
         padding: 0.5rem 0;
     }

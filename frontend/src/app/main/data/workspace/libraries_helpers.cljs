@@ -5,20 +5,20 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.main.data.workspace.libraries-helpers
   (:require
-   [cljs.spec.alpha :as s]
-   [clojure.set :as set]
-   [app.common.spec :as us]
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as geom]
    [app.common.pages :as cp]
+   [app.common.spec :as us]
+   [app.common.text :as txt]
    [app.main.data.workspace.groups :as dwg]
    [app.util.logging :as log]
-   [app.util.text :as ut]))
+   [cljs.spec.alpha :as s]
+   [clojure.set :as set]))
 
 ;; Change this to :info :debug or :trace to debug this module
 (log/set-level! :warn)
@@ -46,7 +46,7 @@
 
 (declare compare-children)
 (declare add-shape-to-instance)
-(declare add-shape-to-master)
+(declare add-shape-to-main)
 (declare remove-shape)
 (declare move-shape)
 (declare change-touched)
@@ -317,11 +317,11 @@
         (->> shape
              :content
              ;; Check if any node in the content has a reference for the library
-             (ut/some-node
-               #(or (and (some? (:stroke-color-ref-id %))
-                         (= library-id (:stroke-color-ref-file %)))
-                    (and (some? (:fill-color-ref-id %))
-                         (= library-id (:fill-color-ref-file %))))))
+             (txt/node-seq
+              #(or (and (some? (:stroke-color-ref-id %))
+                        (= library-id (:stroke-color-ref-file %)))
+                   (and (some? (:fill-color-ref-id %))
+                        (= library-id (:fill-color-ref-file %))))))
         (some
           #(let [attr (name %)
                  attr-ref-id (keyword (str attr "-ref-id"))
@@ -336,9 +336,9 @@
            (->> shape
                 :content
                 ;; Check if any node in the content has a reference for the library
-                (ut/some-node
-                  #(and (some? (:typography-ref-id %))
-                        (= library-id (:typography-ref-file %)))))))))
+                (txt/node-seq
+                 #(and (some? (:typography-ref-id %))
+                       (= library-id (:typography-ref-file %)))))))))
 
 (defmulti generate-sync-shape
   "Generate changes to synchronize one shape with all assets of the given type
@@ -356,7 +356,7 @@
 (defn- generate-sync-text-shape
   [shape container update-node]
   (let [old-content (:content shape)
-        new-content (ut/map-node update-node old-content)
+        new-content (txt/transform-nodes update-node old-content)
         rchanges [(make-change
                     container
                     {:type :mod-obj
@@ -498,7 +498,7 @@
 ;;      Subcomponent-2-2 @--> Component-1
 ;;        Shape-2-2-1     -->   Shape-1-1
 ;;
-;;   * A SUBINSTANCE ACTUALLY HAS TWO MASTERS. For example IShape-2-2-1
+;;   * A SUBINSTANCE ACTUALLY HAS TWO MAINS. For example IShape-2-2-1
 ;;     depends on Shape-2-2-1 (in the "near" component) but also on
 ;;     Shape-1-1-1 (in the "remote" component). The "shape-ref" attribute
 ;;     always refer to the remote shape, and it's guaranteed that it's
@@ -557,26 +557,26 @@
                                         (:component-file shape-inst)
                                         local-library
                                         libraries)
-        shape-master  (cp/get-shape component (:shape-ref shape-inst))
+        shape-main    (cp/get-shape component (:shape-ref shape-inst))
 
         initial-root? (:component-root? shape-inst)
 
         root-inst     shape-inst
-        root-master   (cp/get-component-root component)]
+        root-main     (cp/get-component-root component)]
 
     (if component
       (generate-sync-shape-direct-recursive container
                                             shape-inst
                                             component
-                                            shape-master
+                                            shape-main
                                             root-inst
-                                            root-master
+                                            root-main
                                             reset?
                                             initial-root?)
       empty-changes)))
 
 (defn- generate-sync-shape-direct-recursive
-  [container shape-inst component shape-master root-inst root-master reset? initial-root?]
+  [container shape-inst component shape-main root-inst root-main reset? initial-root?]
   (log/debug :msg "Sync shape direct recursive"
              :shape (str (:name shape-inst))
              :component (:name component))
@@ -588,15 +588,15 @@
         [rchanges uchanges]
         (concat-changes
           (update-attrs shape-inst
-                        shape-master
+                        shape-main
                         root-inst
-                        root-master
+                        root-main
                         container
                         omit-touched?)
           (concat-changes
             (if reset?
               (change-touched shape-inst
-                              shape-master
+                              shape-main
                               container
                               {:reset-touched? true})
               empty-changes)
@@ -610,8 +610,8 @@
 
         children-inst   (mapv #(cp/get-shape container %)
                               (:shapes shape-inst))
-        children-master (mapv #(cp/get-shape component %)
-                              (:shapes shape-master))
+        children-main   (mapv #(cp/get-shape component %)
+                              (:shapes shape-main))
 
         only-inst (fn [child-inst]
                     (when-not (and omit-touched?
@@ -621,49 +621,49 @@
                                     container
                                     omit-touched?)))
 
-        only-master (fn [child-master]
-                      (when-not (and omit-touched?
-                                     (contains? (:touched shape-inst)
-                                                :shapes-group))
-                        (add-shape-to-instance child-master
-                                               (d/index-of children-master
-                                                           child-master)
-                                               component
-                                               container
-                                               root-inst
-                                               root-master
-                                               omit-touched?
-                                               set-remote-synced?)))
+        only-main (fn [child-main]
+                    (when-not (and omit-touched?
+                                   (contains? (:touched shape-inst)
+                                              :shapes-group))
+                      (add-shape-to-instance child-main
+                                             (d/index-of children-main
+                                                         child-main)
+                                             component
+                                             container
+                                             root-inst
+                                             root-main
+                                             omit-touched?
+                                             set-remote-synced?)))
 
-        both (fn [child-inst child-master]
+        both (fn [child-inst child-main]
                (let [sub-root? (and (:component-id shape-inst)
                                     (not (:component-root? shape-inst)))]
                  (generate-sync-shape-direct-recursive container
                                                        child-inst
                                                        component
-                                                       child-master
+                                                       child-main
                                                        (if sub-root?
                                                          shape-inst
                                                          root-inst)
                                                        (if sub-root?
-                                                         shape-master
-                                                         root-master)
+                                                         shape-main
+                                                         root-main)
                                                        reset?
                                                        initial-root?)))
 
-        moved (fn [child-inst child-master]
+        moved (fn [child-inst child-main]
                 (move-shape
                   child-inst
                   (d/index-of children-inst child-inst)
-                  (d/index-of children-master child-master)
+                  (d/index-of children-main child-main)
                   container
                   omit-touched?))
 
         [child-rchanges child-uchanges]
         (compare-children children-inst
-                          children-master
+                          children-main
                           only-inst
-                          only-master
+                          only-main
                           both
                           moved
                           false)]
@@ -682,25 +682,25 @@
                                         (:component-file shape-inst)
                                         local-library
                                         libraries)
-        shape-master  (cp/get-shape component (:shape-ref shape-inst))
+        shape-main    (cp/get-shape component (:shape-ref shape-inst))
 
         initial-root? (:component-root? shape-inst)
 
         root-inst     shape-inst
-        root-master   (cp/get-component-root component)]
+        root-main     (cp/get-component-root component)]
 
     (if component
       (generate-sync-shape-inverse-recursive container
                                              shape-inst
                                              component
-                                             shape-master
+                                             shape-main
                                              root-inst
-                                             root-master
+                                             root-main
                                              initial-root?)
       empty-changes)))
 
 (defn- generate-sync-shape-inverse-recursive
-  [container shape-inst component shape-master root-inst root-master initial-root?]
+  [container shape-inst component shape-main root-inst root-main initial-root?]
   (log/trace :msg "Sync shape inverse recursive"
              :shape (str (:name shape-inst))
              :component (:name component))
@@ -713,19 +713,19 @@
 
         [rchanges uchanges]
         (concat-changes
-          (update-attrs shape-master
+          (update-attrs shape-main
                         shape-inst
-                        root-master
+                        root-main
                         root-inst
                         component-container
                         omit-touched?)
           (concat-changes
             (change-touched shape-inst
-                            shape-master
+                            shape-main
                             container
                             {:reset-touched? true})
             (concat-changes
-              (change-touched shape-master
+              (change-touched shape-main
                               shape-inst
                               component-container
                               {:copy-touched? true})
@@ -739,52 +739,52 @@
 
         children-inst   (mapv #(cp/get-shape container %)
                               (:shapes shape-inst))
-        children-master (mapv #(cp/get-shape component %)
-                              (:shapes shape-master))
+        children-main   (mapv #(cp/get-shape component %)
+                              (:shapes shape-main))
 
         only-inst (fn [child-inst]
-                    (add-shape-to-master child-inst
-                                         (d/index-of children-inst
-                                                     child-inst)
-                                         component
-                                         container
-                                         root-inst
-                                         root-master))
+                    (add-shape-to-main child-inst
+                                       (d/index-of children-inst
+                                                   child-inst)
+                                       component
+                                       container
+                                       root-inst
+                                       root-main))
 
-        only-master (fn [child-master]
-                      (remove-shape child-master
-                                    component-container
-                                    false))
+        only-main (fn [child-main]
+                    (remove-shape child-main
+                                  component-container
+                                  false))
 
-        both (fn [child-inst child-master]
+        both (fn [child-inst child-main]
                (let [sub-root? (and (:component-id shape-inst)
                                     (not (:component-root? shape-inst)))]
 
                  (generate-sync-shape-inverse-recursive container
                                                         child-inst
                                                         component
-                                                        child-master
+                                                        child-main
                                                         (if sub-root?
                                                           shape-inst
                                                           root-inst)
                                                         (if sub-root?
-                                                          shape-master
-                                                          root-master)
+                                                          shape-main
+                                                          root-main)
                                                         initial-root?)))
 
-        moved (fn [child-inst child-master]
+        moved (fn [child-inst child-main]
                 (move-shape
-                  child-master
-                  (d/index-of children-master child-master)
+                  child-main
+                  (d/index-of children-main child-main)
                   (d/index-of children-inst child-inst)
                   component-container
                   false))
 
         [child-rchanges child-uchanges]
         (compare-children children-inst
-                          children-master
+                          children-main
                           only-inst
-                          only-master
+                          only-main
                           both
                           moved
                           true)
@@ -807,70 +807,70 @@
 ; ---- Operation generation helpers ----
 
 (defn- compare-children
-  [children-inst children-master only-inst-cb only-master-cb both-cb moved-cb inverse?]
+  [children-inst children-main only-inst-cb only-main-cb both-cb moved-cb inverse?]
   (loop [children-inst (seq (or children-inst []))
-         children-master (seq (or children-master []))
+         children-main (seq (or children-main []))
          [rchanges uchanges] [[] []]]
     (let [child-inst (first children-inst)
-          child-master (first children-master)]
+          child-main (first children-main)]
       (cond
-        (and (nil? child-inst) (nil? child-master))
+        (and (nil? child-inst) (nil? child-main))
         [rchanges uchanges]
 
         (nil? child-inst)
         (reduce (fn [changes child]
-                  (concat-changes changes (only-master-cb child)))
+                  (concat-changes changes (only-main-cb child)))
                 [rchanges uchanges]
-                children-master)
+                children-main)
 
-        (nil? child-master)
+        (nil? child-main)
         (reduce (fn [changes child]
                   (concat-changes changes (only-inst-cb child)))
                 [rchanges uchanges]
                 children-inst)
 
         :else
-        (if (cp/is-master-of child-master child-inst)
+        (if (cp/is-main-of child-main child-inst)
           (recur (next children-inst)
-                 (next children-master)
+                 (next children-main)
                  (concat-changes [rchanges uchanges]
-                                 (both-cb child-inst child-master)))
+                                 (both-cb child-inst child-main)))
 
-          (let [child-inst'   (d/seek #(cp/is-master-of child-master %)
+          (let [child-inst' (d/seek #(cp/is-main-of child-main %)
                                       children-inst)
-                child-master' (d/seek #(cp/is-master-of % child-inst)
-                                      children-master)]
+                child-main' (d/seek #(cp/is-main-of % child-inst)
+                                      children-main)]
             (cond
               (nil? child-inst')
               (recur children-inst
-                     (next children-master)
+                     (next children-main)
                      (concat-changes [rchanges uchanges]
-                                     (only-master-cb child-master)))
+                                     (only-main-cb child-main)))
 
-              (nil? child-master')
+              (nil? child-main')
               (recur (next children-inst)
-                     children-master
+                     children-main
                      (concat-changes [rchanges uchanges]
                                      (only-inst-cb child-inst)))
 
               :else
               (if inverse?
                 (recur (next children-inst)
-                       (remove #(= (:id %) (:id child-master')) children-master)
+                       (remove #(= (:id %) (:id child-main')) children-main)
                        (-> [rchanges uchanges]
-                           (concat-changes (both-cb child-inst' child-master))
-                           (concat-changes (moved-cb child-inst child-master'))))
+                           (concat-changes (both-cb child-inst' child-main))
+                           (concat-changes (moved-cb child-inst child-main'))))
                 (recur (remove #(= (:id %) (:id child-inst')) children-inst)
-                       (next children-master)
+                       (next children-main)
                        (-> [rchanges uchanges]
-                           (concat-changes (both-cb child-inst child-master'))
-                           (concat-changes (moved-cb child-inst' child-master))))))))))))
+                           (concat-changes (both-cb child-inst child-main'))
+                           (concat-changes (moved-cb child-inst' child-main))))))))))))
 
 (defn- add-shape-to-instance
-  [component-shape index component container root-instance root-master omit-touched? set-remote-synced?]
+  [component-shape index component container root-instance root-main omit-touched? set-remote-synced?]
   (log/info :msg (str "ADD [P] " (:name component-shape)))
   (let [component-parent-shape (cp/get-shape component (:parent-id component-shape))
-        parent-shape           (d/seek #(cp/is-master-of component-parent-shape %)
+        parent-shape           (d/seek #(cp/is-main-of component-parent-shape %)
                                        (cp/get-object-with-children (:id root-instance)
                                                                     (:objects container)))
         all-parents  (vec (cons (:id parent-shape)
@@ -879,7 +879,7 @@
 
         update-new-shape (fn [new-shape original-shape]
                            (let [new-shape (reposition-shape new-shape
-                                                             root-master
+                                                             root-main
                                                              root-instance)]
                              (cond-> new-shape
                                true
@@ -933,12 +933,12 @@
       empty-changes
       [rchanges uchanges])))
 
-(defn- add-shape-to-master
-  [shape index component page root-instance root-master]
+(defn- add-shape-to-main
+  [shape index component page root-instance root-main]
   (log/info :msg (str "ADD [C] " (:name shape)))
   (let [parent-shape           (cp/get-shape page (:parent-id shape))
-        component-parent-shape (d/seek #(cp/is-master-of % parent-shape)
-                                       (cp/get-object-with-children (:id root-master)
+        component-parent-shape (d/seek #(cp/is-main-of % parent-shape)
+                                       (cp/get-object-with-children (:id root-main)
                                                                     (:objects component)))
         all-parents  (vec (cons (:id component-parent-shape)
                                 (cp/get-parents (:id component-parent-shape)
@@ -947,7 +947,7 @@
         update-new-shape (fn [new-shape original-shape]
                            (reposition-shape new-shape
                                              root-instance
-                                             root-master))
+                                             root-main))
 
         update-original-shape (fn [original-shape new-shape]
                                 (if-not (:shape-ref original-shape)

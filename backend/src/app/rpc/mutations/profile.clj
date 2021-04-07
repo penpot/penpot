@@ -202,21 +202,25 @@
 
 (defn create-profile-relations
   [conn profile]
-  (let [team (teams/create-team conn {:profile-id (:id profile)
-                                      :name "Default"
-                                      :default? true})
-        proj (projects/create-project conn {:profile-id (:id profile)
-                                            :team-id (:id team)
-                                            :name "Drafts"
-                                            :default? true})]
-    (teams/create-team-profile conn {:team-id (:id team)
-                                     :profile-id (:id profile)})
-    (projects/create-project-profile conn {:project-id (:id proj)
-                                           :profile-id (:id profile)})
+  (let [team    (teams/create-team conn {:profile-id (:id profile)
+                                         :name "Default"
+                                         :is-default true})
+        project (projects/create-project conn {:profile-id (:id profile)
+                                               :team-id (:id team)
+                                               :name "Drafts"
+                                               :is-default true})
+        params  {:team-id (:id team)
+                 :profile-id (:id profile)
+                 :project-id (:id project)
+                 :role :owner}]
 
-    (merge (profile/strip-private-attrs profile)
-           {:default-team-id (:id team)
-            :default-project-id (:id proj)})))
+    (teams/create-team-role conn params)
+    (projects/create-project-role conn params)
+
+    (-> profile
+        (profile/strip-private-attrs)
+        (assoc :default-team-id (:id team))
+        (assoc :default-project-id (:id project)))))
 
 ;; --- Mutation: Login
 

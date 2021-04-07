@@ -197,6 +197,8 @@
 
 (declare start-move)
 (declare start-move-duplicate)
+(declare start-local-displacement)
+(declare clear-local-transform)
 
 (defn start-move-selected
   []
@@ -249,14 +251,15 @@
                   :parent-id frame-id
                   :shapes (mapv :id moving-shapes)}]
 
-            moving-shapes-by-frame-id (group-by :frame-id moving-shapes)
 
-            uch (->> moving-shapes-by-frame-id
-                     (mapv (fn [[frame-id shapes]]
+            uch (->> moving-shapes
+                     (reverse)
+                     (mapv (fn [shape]
                              {:type :mov-objects
                               :page-id page-id
-                              :parent-id frame-id
-                              :shapes (mapv :id shapes)})))]
+                              :parent-id (:parent-id shape)
+                              :index (cp/get-index-in-parent objects (:id shape))
+                              :shapes [(:id shape)]})))]
 
         (when-not (empty? rch)
           (rx/of dwc/pop-undo-into-transaction
@@ -296,13 +299,11 @@
             (->> snap-delta
                  (rx/with-latest vector position)
                  (rx/map (fn [[delta pos]] (-> (gpt/add pos delta) (gpt/round 0))))
-                 (rx/map gmt/translate-matrix)
-                 (rx/map #(fn [state] (assoc-in state [:workspace-local :modifiers] {:displacement %}))))
+                 (rx/map start-local-displacement))
 
             (rx/of (set-modifiers ids)
                    (apply-modifiers ids)
                    (calculate-frame-for-move ids)
-                   (fn [state] (update state :workspace-local dissoc :modifiers))
                    finish-transform))))))))
 
 (defn- get-displacement-with-grid
@@ -367,15 +368,11 @@
               (->> move-events
                    (rx/take-until stopper)
                    (rx/scan #(gpt/add %1 mov-vec) (gpt/point 0 0))
-                   (rx/map gmt/translate-matrix)
-                   (rx/map #(fn [state] (assoc-in state [:workspace-local :modifiers] {:displacement %}))))
+                   (rx/map start-local-displacement))
               (rx/of (move-selected direction shift?)))
 
              (rx/of (set-modifiers selected)
                     (apply-modifiers selected)
-                    (fn [state] (-> state
-                                    (update :workspace-local dissoc :modifiers)
-                                    (update :workspace-local dissoc :current-move-selected)))
                     finish-transform)))
             (rx/empty))))))
 
@@ -485,6 +482,7 @@
 
         (rx/of (dwc/start-undo-transaction)
                (dwc/commit-changes rchanges uchanges {:commit-local? true})
+               (clear-local-transform)
                (dwc/commit-undo-transaction))))))
 
 ;; --- Update Dimensions
@@ -563,3 +561,18 @@
                                :displacement (gmt/translate-matrix (gpt/point 0 (- (:height selrect))))}
                               false)
                (apply-modifiers selected))))))
+
+(defn start-local-displacement [point]
+  (ptk/reify ::start-local-displacement
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [mtx (gmt/translate-matrix point)]
+        (-> state
+            (assoc-in [:workspace-local :modifiers] {:displacement mtx}))))))
+
+(defn clear-local-transform []
+  (ptk/reify ::clear-local-transform
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update :workspace-local dissoc :modifiers :current-move-selected)))))

@@ -3,27 +3,28 @@
   "clojars" {:url "https://clojars.org/repo"}
   "jcenter" {:url "https://jcenter.bintray.com/"}}
  :deps
- {org.clojure/clojure {:mvn/version "1.10.2"}
+ {org.clojure/clojure {:mvn/version "1.10.3"}
   org.clojure/clojurescript {:mvn/version "1.10.773"}
-  org.clojure/data.json {:mvn/version "1.0.0"}
+  org.clojure/data.json {:mvn/version "1.1.0"}
   org.clojure/core.async {:mvn/version "1.3.610"}
-  org.clojure/tools.cli {:mvn/version "1.0.194"}
+  org.clojure/tools.cli {:mvn/version "1.0.206"}
 
   ;; Logging
   org.clojure/tools.logging {:mvn/version "1.1.0"}
-  org.apache.logging.log4j/log4j-api {:mvn/version "2.14.0"}
-  org.apache.logging.log4j/log4j-core {:mvn/version "2.14.0"}
-  org.apache.logging.log4j/log4j-web {:mvn/version "2.14.0"}
-  org.apache.logging.log4j/log4j-jul {:mvn/version "2.14.0"}
-  org.apache.logging.log4j/log4j-slf4j-impl {:mvn/version "2.14.0"}
+  org.apache.logging.log4j/log4j-api {:mvn/version "2.14.1"}
+  org.apache.logging.log4j/log4j-core {:mvn/version "2.14.1"}
+  org.apache.logging.log4j/log4j-web {:mvn/version "2.14.1"}
+  org.apache.logging.log4j/log4j-jul {:mvn/version "2.14.1"}
+  org.apache.logging.log4j/log4j-slf4j-impl {:mvn/version "2.14.1"}
   org.slf4j/slf4j-api {:mvn/version "1.7.30"}
   org.zeromq/jeromq {:mvn/version "0.5.2"}
 
-
-  org.graalvm.js/js {:mvn/version "20.3.0"}
   com.taoensso/nippy {:mvn/version "3.1.1"}
-  com.github.luben/zstd-jni {:mvn/version "1.4.8-3"}
+  com.github.luben/zstd-jni {:mvn/version "1.4.9-1"}
 
+  ;; NOTE: don't upgrade to latest version, breaking change is
+  ;; introduced on 0.10.0 that suffixes counters with _total if they
+  ;; are not already has this suffix.
   io.prometheus/simpleclient {:mvn/version "0.9.0"}
   io.prometheus/simpleclient_hotspot {:mvn/version "0.9.0"}
   io.prometheus/simpleclient_jetty {:mvn/version "0.9.0"
@@ -32,19 +33,19 @@
   io.prometheus/simpleclient_httpserver {:mvn/version "0.9.0"}
 
   selmer/selmer {:mvn/version "1.12.33"}
-  expound/expound {:mvn/version "0.8.7"}
+  expound/expound {:mvn/version "0.8.9"}
   com.cognitect/transit-clj {:mvn/version "1.0.324"}
 
   io.lettuce/lettuce-core {:mvn/version "6.0.2.RELEASE"}
-  java-http-clj/java-http-clj {:mvn/version "0.4.1"}
+  java-http-clj/java-http-clj {:mvn/version "0.4.2"}
 
-  info.sunng/ring-jetty9-adapter {:mvn/version "0.14.2"}
-  seancorfield/next.jdbc {:mvn/version "1.1.613"}
-  metosin/reitit-ring {:mvn/version "0.5.11"}
+  info.sunng/ring-jetty9-adapter {:mvn/version "0.15.0"}
+  com.github.seancorfield/next.jdbc {:mvn/version "1.1.646"}
+  metosin/reitit-ring {:mvn/version "0.5.12"}
   metosin/jsonista {:mvn/version "0.3.1"}
 
-  org.postgresql/postgresql {:mvn/version "42.2.18"}
-  com.zaxxer/HikariCP {:mvn/version "3.4.5"}
+  org.postgresql/postgresql {:mvn/version "42.2.19"}
+  com.zaxxer/HikariCP {:mvn/version "4.0.3"}
 
   funcool/datoteka {:mvn/version "1.2.0"}
   funcool/promesa {:mvn/version "6.0.0"}
@@ -63,13 +64,12 @@
   org.im4java/im4java {:mvn/version "1.4.0"}
   org.lz4/lz4-java {:mvn/version "1.7.1"}
   commons-io/commons-io {:mvn/version "2.8.0"}
-  org.apache.commons/commons-pool2 {:mvn/version "2.9.0"}
   com.sun.mail/jakarta.mail {:mvn/version "2.0.0"}
 
-  puppetlabs/clj-ldap {:mvn/version"0.3.0"}
+  org.clojars.pntblnk/clj-ldap {:mvn/version "0.0.17"}
   integrant/integrant {:mvn/version "0.8.0"}
 
-  software.amazon.awssdk/s3 {:mvn/version "2.15.73"}
+  software.amazon.awssdk/s3 {:mvn/version "2.16.19"}
 
   ;; exception printing
   io.aviso/pretty {:mvn/version "0.1.37"}
@@ -92,11 +92,11 @@
    :args {}}
 
   :tests
-  {:extra-deps {lambdaisland/kaocha {:mvn/version "1.0.732"}}
+  {:extra-deps {lambdaisland/kaocha {:mvn/version "1.0.829"}}
    :main-opts ["-m" "kaocha.runner"]}
 
   :outdated
-  {:extra-deps {antq/antq {:mvn/version "RELEASE"}}
+  {:extra-deps {com.github.liquidz/antq {:mvn/version "0.12.0"}}
    :main-opts ["-m" "antq.core"]}
 
   :jmx-remote

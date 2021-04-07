@@ -44,20 +44,20 @@
           (rx/empty))))))
 
 (def shortcuts
-  {:toggle-layers     {:tooltip (ds/meta "L")
-                       :command (ds/c-mod "l")
+  {:toggle-layers     {:tooltip (ds/alt "L")
+                       :command (ds/a-mod "l")
                        :fn #(st/emit! (dw/go-to-layout :layers))}
 
-   :toggle-assets     {:tooltip (ds/meta "I")
-                       :command (ds/c-mod "i")
+   :toggle-assets     {:tooltip (ds/alt "I")
+                       :command (ds/a-mod "i")
                        :fn #(st/emit! (dw/go-to-layout :assets))}
    
-   :toggle-history    {:tooltip (ds/meta "H")
-                       :command (ds/c-mod "h")
+   :toggle-history    {:tooltip (ds/alt "H")
+                       :command (ds/a-mod "h")
                        :fn #(st/emit! (dw/go-to-layout :document-history))}
 
-   :toggle-palette    {:tooltip (ds/meta "P")
-                       :command (ds/c-mod "p")
+   :toggle-palette    {:tooltip (ds/alt "P")
+                       :command (ds/a-mod "p")
                        :fn #(st/emit! (dw/toggle-layout-flags :colorpalette))}
 
    :toggle-rules      {:tooltip (ds/meta-shift "R")
@@ -260,6 +260,16 @@
    :start-editing      {:tooltip (ds/enter)
                         :command "enter"
                         :fn #(st/emit! (dw/start-editing-selected))}
+
+   :start-measure      {:tooltip (ds/alt "")
+                        :command ["alt" "."]
+                        :type "keydown"
+                        :fn #(st/emit! (dw/toggle-distances-display true))}
+
+   :stop-measure       {:tooltip (ds/alt "")
+                        :command ["alt" "."]
+                        :type "keyup"
+                        :fn #(st/emit! (dw/toggle-distances-display false))}
    })
 
 (defn get-tooltip [shortcut]

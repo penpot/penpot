@@ -79,7 +79,7 @@
 
     shapes-inst))
 
-(defn resolve-instance-and-master
+(defn resolve-instance-and-main
   [state root-inst-id]
   (let [page      (thp/current-page state)
         root-inst (cph/get-shape page root-inst-id)
@@ -94,26 +94,26 @@
         shapes-inst   (cph/get-object-with-children
                         root-inst-id
                         (:objects page))
-        shapes-master (cph/get-object-with-children
+        shapes-main   (cph/get-object-with-children
                         (:shape-ref root-inst)
                         (:objects component))
 
         unique-refs (into #{} (map :shape-ref shapes-inst))
 
-        master-exists? (fn [shape]
-                         (t/is (some #(= (:id %) (:shape-ref shape))
-                                     shapes-master)))]
+        main-exists? (fn [shape]
+                       (t/is (some #(= (:id %) (:shape-ref shape))
+                                   shapes-main)))]
 
     ;; Validate that the instance tree is well constructed
     (t/is (is-instance-root (first shapes-inst)))
     (run! is-instance-child (rest shapes-inst))
-    (run! is-noninstance shapes-master)
+    (run! is-noninstance shapes-main)
     (t/is (= (count shapes-inst)
-             (count shapes-master)
+             (count shapes-main)
              (count unique-refs)))
-    (run! master-exists? shapes-inst)
+    (run! main-exists? shapes-inst)
 
-    [shapes-inst shapes-master component]))
+    [shapes-inst shapes-main component]))
 
 (defn resolve-component
   [state component-id]
@@ -126,14 +126,14 @@
                     file
                     nil)
 
-        root-master   (cph/get-component-root
-                        component)
-        shapes-master (cph/get-object-with-children
-                        (:id root-master)
-                        (:objects component))]
+        root-main   (cph/get-component-root
+                      component)
+        shapes-main (cph/get-object-with-children
+                      (:id root-main)
+                      (:objects component))]
 
     ;; Validate that the component tree is well constructed
-    (run! is-noninstance shapes-master)
+    (run! is-noninstance shapes-main)
 
-    [shapes-master component]))
+    [shapes-main component]))
 

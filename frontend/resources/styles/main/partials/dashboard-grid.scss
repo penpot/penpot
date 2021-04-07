@@ -23,7 +23,7 @@
 
   .grid-item {
     align-items: center;
-    border: 1px solid lighten($color-gray-20, 13%);
+    border: 2px solid lighten($color-gray-20, 13%);
     border-radius: $br-small;
     cursor: pointer;
     display: flex;
@@ -177,11 +177,13 @@
       background-color: $color-white;
 
       &:hover {
-        border-color: $color-primary;
-
         .project-th-actions {
           opacity: 1;
         }
+      }
+
+      &.selected {
+        border: 2px solid $color-primary;
       }
 
       .project-th-actions {
@@ -194,13 +196,6 @@
         position: absolute;
         width: 15px;
         height: 30px;
-
-        svg {
-          fill: $color-gray-20;
-          height: 18px;
-          margin-right: $x-small;
-          width: 18px;
-        }
 
         span {
           color: $color-black;
@@ -218,13 +213,15 @@
             align-items: flex-end;
             flex-direction: column;
 
-            svg {
+            > svg {
               fill: $color-gray-60;
               margin-right: 0;
+              height: 18px;
+              width: 18px;
             }
 
             &:hover {
-              svg {
+              > svg {
                 fill: $color-primary-dark;
               }
 
@@ -237,9 +234,8 @@
       }
 
       .project-th-actions.force-display {
-        display: flex;
+        opacity: 1;
       }
-
     }
 
     // IMAGES SECTION
@@ -278,6 +274,21 @@
     .color-data {
       color: $color-gray-30;
       margin-top: 15px;
+    }
+
+    .drag-counter {
+      position: absolute;
+      top: 5px;
+      left: 4px;
+      width: 32px;
+      height: 32px;
+      background-color: $color-primary;
+      border-radius: 50%;
+      color: $color-black;
+      font-size: $fs18;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
   }

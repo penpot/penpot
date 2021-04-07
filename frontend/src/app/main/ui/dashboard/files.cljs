@@ -12,12 +12,12 @@
    [app.main.data.dashboard :as dd]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
-   [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.dashboard.grid :refer [grid]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
+   [app.main.ui.dashboard.project-menu :refer [project-menu]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [t]]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.router :as rt]
    [okulary.core :as l]
@@ -27,7 +27,6 @@
   [{:keys [team project] :as props}]
   (let [local      (mf/use-state {:menu-open false
                                   :edition false})
-        locale     (mf/deref i18n/locale)
         project-id (:id project)
         team-id    (:id team)
 
@@ -40,23 +39,10 @@
         on-edit
         (mf/use-callback #(swap! local assoc :edition true :menu-open false))
 
-
-        delete-fn
+        toggle-pin
         (mf/use-callback
          (mf/deps project)
-         (fn [event]
-           (st/emit! (dd/delete-project project)
-                     (rt/nav :dashboard-projects {:team-id (:id team)}))))
-
-        on-delete
-        (mf/use-callback
-         (mf/deps project)
-         (st/emitf (modal/show
-                    {:type :confirm
-                     :title (t locale "modals.delete-project-confirm.title")
-                     :message (t locale "modals.delete-project-confirm.message")
-                     :accept-label (t locale "modals.delete-project-confirm.accept")
-                     :on-accept delete-fn})))
+         (st/emitf (dd/toggle-project-pin project)))
 
         on-create-clicked
         (mf/use-callback
@@ -69,7 +55,7 @@
     [:header.dashboard-header
      (if (:is-default project)
        [:div.dashboard-title
-        [:h1 (t locale "dashboard.draft-title")]]
+        [:h1 (tr "labels.drafts")]]
 
        (if (:edition @local)
          [:& inline-edition {:content (:name project)
@@ -77,14 +63,20 @@
                                        (st/emit! (dd/rename-project (assoc project :name name)))
                                        (swap! local assoc :edition false))}]
          [:div.dashboard-title
-          [:h1 (:name project)]
-          [:div.icon {:on-click on-menu-click} i/actions]
-          [:& context-menu {:on-close on-menu-close
-                            :show (:menu-open @local)
-                            :options [[(t locale "labels.rename") on-edit]
-                                      [(t locale "labels.delete") on-delete]]}]]))
+          [:h1 {:on-double-click on-edit}
+           (:name project)]
+          [:div.icon {:on-click on-menu-click}
+           i/actions]
+          [:& project-menu {:project project
+                            :show? (:menu-open @local)
+                            :on-edit on-edit
+                            :on-menu-close on-menu-close}]
+          [:div.icon.pin-icon
+           {:class (when (:is-pinned project) "active")
+            :on-click toggle-pin}
+           i/pin]]))
      [:a.btn-secondary.btn-small {:on-click on-create-clicked}
-      (t locale "dashboard.new-file")]]))
+      (tr "dashboard.new-file")]]))
 
 (defn files-ref
   [project-id]
@@ -101,7 +93,12 @@
     (mf/use-effect
      (mf/deps (:id project))
      (fn []
-       (st/emit! (dd/fetch-files {:project-id (:id project)}))))
+       (dom/set-html-title (tr "title.dashboard.files"
+                              (if (:is-default project)
+                                (tr "labels.drafts")
+                                (:name project))))
+       (st/emit! (dd/fetch-files {:project-id (:id project)})
+                 (dd/clear-selected-files))))
 
     [:*
      [:& header {:team team :project project}]

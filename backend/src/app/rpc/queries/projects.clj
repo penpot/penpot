@@ -82,6 +82,50 @@
   (db/exec! conn [sql:projects profile-id team-id]))
 
 
+;; --- Query: All projects
+
+(declare retrieve-all-projects)
+
+(s/def ::profile-id ::us/uuid)
+(s/def ::all-projects
+  (s/keys :req-un [::profile-id]))
+
+(sv/defmethod ::all-projects
+  [{:keys [pool]} {:keys [profile-id]}]
+  (with-open [conn (db/open pool)]
+    (retrieve-all-projects conn profile-id)))
+
+(def sql:all-projects
+  "select p1.*, t.name as team_name, t.is_default as is_default_team
+     from project as p1
+    inner join team as t
+            on t.id = p1.team_id
+    where t.id in (select team_id
+                     from team_profile_rel as tpr
+                    where tpr.profile_id = ?
+                      and (tpr.can_edit = true or
+                           tpr.is_owner = true or
+                           tpr.is_admin = true))
+      and p1.deleted_at is null
+   union
+   select p2.*, t.name as team_name, t.is_default as is_default_team
+     from project as p2
+    inner join team as t
+              on t.id = p2.team_id
+    where p2.id in (select project_id
+                     from project_profile_rel as ppr
+                    where ppr.profile_id = ?
+                      and (ppr.can_edit = true or
+                           ppr.is_owner = true or
+                           ppr.is_admin = true))
+      and p2.deleted_at is null
+    order by team_name, name;")
+
+(defn retrieve-all-projects
+  [conn profile-id]
+  (db/exec! conn [sql:all-projects profile-id profile-id]))
+
+
 ;; --- Query: Project
 
 (s/def ::id ::us/uuid)
@@ -94,3 +138,4 @@
     (let [project (db/get-by-id conn :project id)]
       (check-read-permissions! conn profile-id id)
       project)))
+

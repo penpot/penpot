@@ -58,7 +58,8 @@
     {}
 
     :app.msgbus/msgbus
-    {:uri (:redis-uri config)}
+    {:backend   (:msgbus-backend config :redis)
+     :redis-uri (:redis-uri config)}
 
     :app.tokens/tokens
     {:sprops (ig/ref :app.setup/props)}
@@ -155,13 +156,9 @@
      :client-id     (:gitlab-client-id config)
      :client-secret (:gitlab-client-secret config)}
 
-    :app.svgparse/svgc
-    {:metrics (ig/ref :app.metrics/metrics)}
-
     ;; HTTP Handler for SVG parsing
     :app.svgparse/handler
-    {:metrics (ig/ref :app.metrics/metrics)
-     :svgc    (ig/ref :app.svgparse/svgc)}
+    {:metrics (ig/ref :app.metrics/metrics)}
 
     ;; RLimit definition for password hashing
     :app.rlimits/password
@@ -183,8 +180,7 @@
      :metrics (ig/ref :app.metrics/metrics)
      :storage (ig/ref :app.storage/storage)
      :msgbus  (ig/ref :app.msgbus/msgbus)
-     :rlimits (ig/ref :app.rlimits/all)
-     :svgc    (ig/ref :app.svgparse/svgc)}
+     :rlimits (ig/ref :app.rlimits/all)}
 
     :app.notifications/handler
     {:msgbus   (ig/ref :app.msgbus/msgbus)

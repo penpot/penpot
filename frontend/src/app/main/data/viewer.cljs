@@ -342,9 +342,7 @@
             pparams (:path-params route)
             qparams (:query-params route)]
         (rx/of
-         (if (= :handoff section)
-           (rt/nav :handoff pparams qparams)
-           (rt/nav :viewer pparams (assoc qparams :section section))))))))
+          (rt/nav :viewer pparams (assoc qparams :section section)))))))
 
 
 (defn set-current-frame [frame-id]

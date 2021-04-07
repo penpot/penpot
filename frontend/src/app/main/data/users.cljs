@@ -9,7 +9,7 @@
 
 (ns app.main.data.users
   (:require
-   [app.config :as cfg]
+   [app.config :as cf]
    [app.common.data :as d]
    [app.common.spec :as us]
    [app.main.data.media :as di]
@@ -50,12 +50,16 @@
 ;; --- Profile Fetched
 
 (defn profile-fetched
-  [{:keys [fullname] :as data}]
+  [{:keys [fullname id] :as data}]
   (us/verify ::profile data)
   (ptk/reify ::profile-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :profile data))
+      (-> state
+          (assoc :profile-id id)
+          (assoc :profile data)
+          ;; Safeguard if the profile is loaded after teams
+          (assoc-in [:profile :teams] (get-in state [:profile :teams]))))
 
     ptk/EffectEvent
     (effect [_ state stream]
@@ -73,11 +77,7 @@
     ptk/WatchEvent
     (watch [_ state s]
       (->> (rp/query! :profile)
-           (rx/map profile-fetched)
-           (rx/catch (fn [error]
-                       (if (= (:type error) :not-found)
-                         (rx/of (rt/nav :auth-login))
-                         (rx/empty))))))))
+           (rx/map profile-fetched)))))
 
 ;; --- Update Profile
 
@@ -154,14 +154,17 @@
 
 
 (defn mark-onboarding-as-viewed
-  []
-  (ptk/reify ::mark-oboarding-as-viewed
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [{:keys [id] :as profile} (:profile state)]
-        (->> (rp/mutation :update-profile-props {:props {:onboarding-viewed true}})
-             (rx/map (constantly (fetch-profile))))))))
-
+  ([] (mark-onboarding-as-viewed nil))
+  ([{:keys [version]}]
+   (ptk/reify ::mark-oboarding-as-viewed
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [version (or version (:main @cf/version))
+             props   (-> (get-in state [:profile :props])
+                         (assoc :onboarding-viewed true)
+                         (assoc :release-notes-viewed version))]
+         (->> (rp/mutation :update-profile-props {:props props})
+              (rx/map (constantly (fetch-profile)))))))))
 
 ;; --- Update Photo
 
@@ -180,7 +183,6 @@
               {:file file})]
 
         (di/notify-start-loading)
-
         (->> (rx/of file)
              (rx/map di/validate-file)
              (rx/map prepare)
@@ -203,4 +205,23 @@
         (->> (rp/query :team-users {:team-id team-id})
              (rx/map #(partial fetched %)))))))
 
+(defn user-teams-fetched [data]
+  (ptk/reify ::user-teams-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [teams (->> data
+                       (group-by :id)
+                       (d/mapm #(first %2)))]
+        (assoc-in state [:profile :teams] teams)))))
+
+(defn fetch-user-teams []
+  (ptk/reify ::fetch-user-teams
+    ptk/WatchEvent
+    (watch [_ state s]
+      (->> (rp/query! :teams)
+           (rx/map user-teams-fetched)
+           (rx/catch (fn [error]
+                       (if (= (:type error) :not-found)
+                         (rx/of (rt/nav :auth-login))
+                         (rx/empty))))))))
 

@@ -23,7 +23,7 @@
 
 (defn- go-to-dashboard
   [profile]
-  (let [team-id (:default-team-id profile)]
+  (let [team-id (da/current-team-id profile)]
     (st/emit! (rt/nav :dashboard-projects {:team-id team-id}))))
 
 (mf/defc not-found

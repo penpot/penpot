@@ -27,7 +27,7 @@
      window w as (partition by f.project_id order by f.modified_at desc)
       order by f.modified_at desc
    )
-   select * from recent_files where row_num <= 6;")
+   select * from recent_files where row_num <= 10;")
 
 (s/def ::team-id ::us/uuid)
 (s/def ::profile-id ::us/uuid)

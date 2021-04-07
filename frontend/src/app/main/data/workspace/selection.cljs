@@ -85,7 +85,9 @@
 ;; --- Toggle shape's selection status (selected or deselected)
 
 (defn select-shape
-  ([id] (select-shape id false))
+  ([id]
+   (select-shape id false))
+
   ([id toggle?]
    (us/verify ::us/uuid id)
    (ptk/reify ::select-shape
@@ -94,7 +96,7 @@
        (update-in state [:workspace-local :selected]
                   (fn [selected]
                     (if-not toggle?
-                      (conj selected id)
+                      (conj (d/ordered-set) id)
                       (if (contains? selected id)
                         (disj selected id)
                         (conj selected id))))))
@@ -137,8 +139,7 @@
 
     ptk/WatchEvent
     (watch [_ state stream]
-       (let [page-id (:current-page-id state)
-             objects (dwc/lookup-page-objects state page-id)]
+       (let [objects (dwc/lookup-page-objects state)]
         (rx/of (dwc/expand-all-parents ids objects))))))
 
 (defn select-all
@@ -207,22 +208,21 @@
     ptk/WatchEvent
     (watch [_ state stream]
       (let [page-id (:current-page-id state)
+            objects (dwc/lookup-page-objects state)
             selected (get-in state [:workspace-local :selected])
             initial-set (if preserve?
                           selected
                           lks/empty-linked-set)
             selrect (get-in state [:workspace-local :selrect])
-            is-not-blocked (fn [shape-id] (not (get-in state [:workspace-data
-                                                              :pages-index page-id
-                                                              :objects shape-id
-                                                              :blocked] false)))]
+            blocked? (fn [id] (get-in objects [id :blocked] false))]
         (rx/merge
           (rx/of (update-selrect nil))
           (when selrect
             (->> (uw/ask! {:cmd :selection/query
                            :page-id page-id
                            :rect selrect})
-                 (rx/map #(into initial-set (filter is-not-blocked) %))
+                 (rx/map #(cp/clean-loops objects %))
+                 (rx/map #(into initial-set (filter (comp not blocked?)) %))
                  (rx/map select-shapes))))))))
 
 (defn select-inside-group
@@ -243,34 +243,8 @@
                            reverse
                            (d/seek #(geom/has-point? % position)))]
          (when selected
-           (rx/of (deselect-all) (select-shape (:id selected)))))))))
+           (rx/of (select-shape (:id selected)))))))))
 
-(defn select-last-layer
-  ([position]
-   (ptk/reify ::select-last-layer
-     ptk/WatchEvent
-     (watch [_ state stream]
-       (let [page-id  (:current-page-id state)
-             objects (dwc/lookup-page-objects state page-id)
-             find-shape
-             (fn [selection]
-               (let [id (first selection)
-                     shape (get objects id)]
-                 (let [child-id (->> (cp/get-children id objects)
-                                     (map #(get objects %))
-                                     (remove (comp empty :shapes))
-                                     (filter #(geom/has-point? % position))
-                                     (first)
-                                     :id)]
-                   (or child-id id))))]
-         (->> (uw/ask! {:cmd :selection/query
-                        :page-id page-id
-                        :rect (geom/make-centered-rect position 1 1)})
-              (rx/first)
-              (rx/filter (comp not empty?))
-              (rx/map find-shape)
-              (rx/filter #(not (nil? %)))
-              (rx/map #(select-shape % false))))))))
 
 ;; --- Duplicate Shapes
 (declare prepare-duplicate-change)

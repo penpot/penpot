@@ -21,6 +21,10 @@
     visibility: visible;
 }
 
+.context-menu.fixed {
+    position: fixed;
+}
+
 .context-menu-items {
     background: $color-white;
     border-radius: $br-small;
@@ -31,6 +35,16 @@
     overflow: auto;
     position: absolute;
     top: $size-3;
+
+    & .separator {
+      border-top: 1px solid $color-gray-10;
+      padding: 0px;
+      margin: 2px;
+    }
+
+    &.min-width {
+      min-width: 13rem;
+    }
 }
 
 .context-menu-action {
@@ -44,6 +58,35 @@
     &:hover {
         color: $color-black;
         background-color: $color-primary-lighter;
+    }
+
+    &.submenu {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+
+      & span {
+        margin-left: 0.5rem;
+      }
+
+      & svg {
+        height: 10px;
+        width: 10px;
+      }
+    }
+
+    &.submenu-back {
+      color: $color-black;
+      display: flex;
+      font-weight: bold;
+      align-items: center;
+
+      & svg {
+        height: 10px;
+        width: 10px;
+        transform: rotate(180deg);
+        margin-right: $small;
+      }
     }
 }
 

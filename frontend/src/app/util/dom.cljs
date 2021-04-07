@@ -30,7 +30,6 @@
   [e]
   (.-target e))
 
-
 (defn classnames
   [& params]
   (assert (even? (count params)))
@@ -43,6 +42,10 @@
 
 
 ;; --- New methods
+
+(defn set-html-title
+  [title]
+  (set! (.-title globals/document) title))
 
 (defn get-element-by-class
   ([classname]
@@ -233,6 +236,12 @@
   {:pre [(blob? b)]}
   (js/URL.createObjectURL b))
 
+(defn set-property! [node property value]
+  (.setAttribute node property value))
+
+(defn set-text! [node text]
+  (set! (.-textContent node) text))
+
 (defn set-css-property [node property value]
   (.setProperty (.-style ^js node) property value))
 
@@ -248,6 +257,9 @@
 (defn ^boolean class? [node class-name]
   (let [class-list (.-classList ^js node)]
     (.contains ^js class-list class-name)))
+
+(defn child? [node1 node2]
+  (.contains ^js node2 ^js node1))
 
 (defn get-user-agent []
   (.-userAgent globals/navigator))
@@ -269,3 +281,9 @@
     "image/svg+xml" "svg"
     "image/webp"    "webp"
     nil))
+
+(defn set-attribute [^js node ^string attr value]
+  (.setAttribute node attr value))
+
+(defn remove-attribute [^js node ^string attr]
+  (.removeAttribute node attr))

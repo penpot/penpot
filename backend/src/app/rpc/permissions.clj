@@ -11,7 +11,34 @@
   "A permission checking helper factories."
   (:require
    [app.common.exceptions :as ex]
-   [app.common.spec :as us]))
+   [app.common.spec :as us]
+   [clojure.spec.alpha :as s]))
+
+(s/def ::role #{:admin :owner :editor :viewer})
+
+(defn assign-role-flags
+  [params role]
+  (us/verify ::role role)
+  (cond-> params
+    (= role :owner)
+    (assoc :is-owner true
+           :is-admin true
+           :can-edit true)
+
+    (= role :admin)
+    (assoc :is-owner false
+           :is-admin true
+           :can-edit true)
+
+    (= role :editor)
+    (assoc :is-owner false
+           :is-admin false
+           :can-edit true)
+
+    (= role :viewer)
+    (assoc :is-owner false
+           :is-admin false
+           :can-edit false)))
 
 (defn make-edition-check-fn
   "A simple factory for edition permission check functions."

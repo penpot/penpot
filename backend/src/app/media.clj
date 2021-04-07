@@ -157,8 +157,11 @@
                     :code :media-type-mismatch
                     :hint (str "Seems like you are uploading a file whose content does not match the extension."
                                "Expected: " mtype ". Got: " mtype')))
-        {:width  (.getImageWidth instance)
-         :height (.getImageHeight instance)
+        ;; For an animated GIF, getImageWidth/Height returns the delta size of one frame (if no frame given
+        ;; it returns size of the last one), whereas getPageWidth/Height always return the full size of
+        ;; any frame.
+        {:width  (.getPageWidth instance)
+         :height (.getPageHeight instance)
          :mtype  mtype}))))
 
 (defmethod process :default

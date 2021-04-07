@@ -10,6 +10,7 @@
 (ns app.http.errors
   "A errors handling for the http server."
   (:require
+   [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
    [app.util.log4j :refer [update-thread-context!]]
    [clojure.tools.logging :as log]
@@ -86,15 +87,54 @@
 
 (defmethod handle-exception :default
   [error request]
-  (let [cdata (get-error-context request error)]
+  (let [edata (ex-data error)]
+    ;; NOTE: this is a special case for the idle-in-transaction error;
+    ;; when it happens, the connection is automatically closed and
+    ;; next-jdbc combines the two errors in a single ex-info. We only
+    ;; need the :handling error, because the :rollback error will be
+    ;; always "connection closed".
+    (if (and (ex/exception? (:rollback edata))
+             (ex/exception? (:handling edata)))
+      (handle-exception (:handling edata) request)
+      (let [cdata (get-error-context request error)]
+        (update-thread-context! cdata)
+        (log/errorf error "internal error: %s (id: %s)"
+                    (ex-message error)
+                    (str (:id cdata)))
+        {:status 500
+         :body {:type :server-error
+                :hint (ex-message error)
+                :data edata}}))))
+
+(defmethod handle-exception org.postgresql.util.PSQLException
+  [error request]
+  (let [cdata (get-error-context request error)
+        state (.getSQLState ^java.sql.SQLException error)]
+
     (update-thread-context! cdata)
-    (log/errorf error "internal error: %s (id: %s)"
+    (log/errorf error "PSQL Exception: %s (id: %s, state: %s)"
                 (ex-message error)
-                (str (:id cdata)))
-    {:status 500
-     :body {:type :server-error
-            :hint (ex-message error)
-            :data (ex-data error)}}))
+                (str (:id cdata))
+                state)
+
+    (cond
+      (= state "57014")
+      {:status 504
+       :body {:type :server-timeout
+              :code :statement-timeout
+              :hint (ex-message error)}}
+
+      (= state "25P03")
+      {:status 504
+       :body {:type :server-timeout
+              :code :idle-in-transaction-timeout
+              :hint (ex-message error)}}
+
+      :else
+      {:status 500
+       :body {:type :server-timeout
+              :hint (ex-message error)
+              :state state}})))
 
 (defn handle
   [error req]

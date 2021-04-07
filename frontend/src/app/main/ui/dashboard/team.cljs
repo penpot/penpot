@@ -94,7 +94,7 @@
         on-success
         (mf/use-callback
          (mf/deps team)
-         (st/emitf (dm/success "Invitation sent successfully")
+         (st/emitf (dm/success (tr "notifications.invitation-email-sent"))
                    (modal/hide)))
 
         on-error
@@ -139,7 +139,7 @@
                       :options roles}]]
 
       [:div.action-buttons
-       [:& fm/submit-button {:label "Send invitation"}]]]]))
+       [:& fm/submit-button {:label (tr "modals.invite-member-confirm.accept")}]]]]))
 
 
 (mf/defc team-member
@@ -257,7 +257,12 @@
 
     (mf/use-effect
      (mf/deps team)
-     (st/emitf (dd/fetch-team-members team)))
+     (fn []
+       (dom/set-html-title (tr "title.team-members"
+                               (if (:is-default team)
+                                 (tr "dashboard.your-penpot")
+                                 (:name team))))
+       (st/emit! (dd/fetch-team-members team))))
 
     [:*
      [:& header {:section :dashboard-team-members
@@ -295,9 +300,14 @@
                                             :team-id (:id team)}))))]
 
     (mf/use-effect
-     (mf/deps team)
-     (st/emitf (dd/fetch-team-members team)
-               (dd/fetch-team-stats team)))
+      (mf/deps team)
+      (fn []
+        (dom/set-html-title (tr "title.team-settings"
+                                (if (:is-default team)
+                                  (tr "dashboard.your-penpot")
+                                  (:name team))))
+        (st/emitf (dd/fetch-team-members team)
+                  (dd/fetch-team-stats team))))
 
     [:*
      [:& header {:section :dashboard-team-settings

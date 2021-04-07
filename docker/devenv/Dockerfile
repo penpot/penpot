@@ -3,8 +3,10 @@ LABEL maintainer="Andrey Antukh <niwi@niwi.nz>"
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-ENV NODE_VERSION=v14.15.3 \
-    CLOJURE_VERSION=1.10.2.774 \
+ENV NODE_VERSION=v14.16.0 \
+    CLOJURE_VERSION=1.10.3.822 \
+    CLJKONDO_VERSION=2021.03.31 \
+    BABASHKA_VERSION=0.3.2 \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
@@ -25,6 +27,7 @@ RUN set -ex; \
         git \
         rlwrap \
         unzip \
+        fakeroot \
     ; \
     echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen; \
     locale-gen; \
@@ -41,7 +44,6 @@ RUN set -ex; \
         python \
         build-essential \
         imagemagick \
-        librsvg2-bin \
         netpbm \
         potrace \
         webp \
@@ -82,6 +84,7 @@ RUN set -ex; \
         libxi6 \
         libxrandr2 \
         libxrender1 \
+        libxshmfence1 \
         libxss1 \
         libxtst6 \
         fonts-liberation \
@@ -92,17 +95,20 @@ RUN set -ex; \
     rm -rf /var/lib/apt/lists/*;
 
 RUN set -ex; \
-    mkdir -p /usr/share/man/man1; \
-    mkdir -p /usr/share/man/man7; \
-    wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | apt-key add -; \
-    echo "deb https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ focal main" >> /etc/apt/sources.list.d/adoptopenjdk.list; \
-    apt-get -qq update; \
-    apt-get -qqy install adoptopenjdk-15-hotspot; \
-    rm -rf /var/lib/apt/lists/*; \
-    wget "https://download.clojure.org/install/linux-install-$CLOJURE_VERSION.sh"; \
-    chmod +x "linux-install-$CLOJURE_VERSION.sh"; \
-    "./linux-install-$CLOJURE_VERSION.sh"; \
-    rm -rf "linux-install-$CLOJURE_VERSION.sh"
+    curl -LfsSo /tmp/openjdk.tar.gz https://github.com/AdoptOpenJDK/openjdk16-binaries/releases/download/jdk-16%2B36/OpenJDK16-jdk_x64_linux_hotspot_16_36.tar.gz; \
+    mkdir -p /usr/lib/jvm/openjdk16; \
+    cd /usr/lib/jvm/openjdk16; \
+    tar -xf /tmp/openjdk.tar.gz --strip-components=1; \
+    rm -rf /tmp/openjdk.tar.gz;
+
+ENV PATH="/usr/lib/jvm/openjdk16/bin:/usr/local/nodejs/bin:$PATH" \
+    JAVA_HOME=/usr/lib/jvm/openjdk16
+
+RUN set -ex; \
+    curl -LfsSo /tmp/clojure.sh https://download.clojure.org/install/linux-install-$CLOJURE_VERSION.sh; \
+    chmod +x /tmp/clojure.sh; \
+    /tmp/clojure.sh; \
+    rm -rf /tmp/clojure.sh;
 
 RUN set -ex; \
     curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -; \
@@ -111,31 +117,33 @@ RUN set -ex; \
     apt-get -qqy install postgresql-client-13; \
     rm -rf /var/lib/apt/lists/*;
 
-COPY files/phantomjs-mock /usr/bin/phantomjs
-COPY files/bashrc         /root/.bashrc
-COPY files/vimrc          /root/.vimrc
-COPY files/tmux.conf      /root/.tmux.conf
-
-WORKDIR /home
-
 RUN set -ex; \
-    mkdir -p /tmp/node; \
-    cd /tmp/node; \
-    export PATH="$PATH:/usr/local/nodejs/bin"; \
-    wget https://nodejs.org/dist/$NODE_VERSION/node-$NODE_VERSION-linux-x64.tar.xz; \
-    tar xvf node-$NODE_VERSION-linux-x64.tar.xz; \
-    mv /tmp/node/node-$NODE_VERSION-linux-x64 /usr/local/nodejs; \
+    curl -LfsSo /tmp/nodejs.tar.xz https://nodejs.org/dist/$NODE_VERSION/node-$NODE_VERSION-linux-x64.tar.xz; \
+    mkdir -p /usr/local/nodejs; \
+    cd /usr/local/nodejs; \
+    tar -xf /tmp/nodejs.tar.xz --strip-components=1; \
     chown -R root /usr/local/nodejs; \
+    PATH="$PATH:/usr/local/nodejs/bin"; \
     /usr/local/nodejs/bin/npm install -g yarn; \
     /usr/local/nodejs/bin/npm install -g svgo; \
-  rm -rf /tmp/node;
+    rm -rf /tmp/nodejs.tar.xz;
 
+# Install clj-kondo
+RUN set -ex; \
+    curl -LfsSo /tmp/clj-kondo.zip https://github.com/borkdude/clj-kondo/releases/download/v$CLJKONDO_VERSION/clj-kondo-$CLJKONDO_VERSION-linux-amd64.zip; \
+    cd /usr/local/bin; \
+    unzip /tmp/clj-kondo.zip; \
+    rm /tmp/clj-kondo.zip;
+
+# Install babashka
 RUN set -ex; \
     cd /tmp; \
-    wget https://github.com/borkdude/clj-kondo/releases/download/v2021.01.20/clj-kondo-2021.01.20-linux-amd64.zip; \
-    unzip clj-kondo-2021.01.20-linux-amd64.zip; \
-    mv clj-kondo /usr/local/bin/; \
-    rm clj-kondo-2021.01.20-linux-amd64.zip;
+    curl -LfsSo /tmp/babashka.tar.gz https://github.com/babashka/babashka/releases/download/v$BABASHKA_VERSION/babashka-$BABASHKA_VERSION-linux-amd64.tar.gz; \
+    cd /usr/local/bin; \
+    tar -xf /tmp/babashka.tar.gz; \
+    rm -rf /tmp/babashka.tar.gz;
+
+WORKDIR /home
 
 EXPOSE 3447
 EXPOSE 3448
@@ -143,10 +151,17 @@ EXPOSE 3449
 EXPOSE 6060
 EXPOSE 9090
 
+COPY files/nginx.conf /etc/nginx/nginx.conf
+COPY files/phantomjs-mock /usr/bin/phantomjs
+
+COPY files/bashrc         /root/.bashrc
+COPY files/vimrc          /root/.vimrc
+COPY files/tmux.conf      /root/.tmux.conf
+COPY files/sudoers        /etc/sudoers
+
 COPY files/start-tmux.sh  /home/start-tmux.sh
 COPY files/entrypoint.sh  /home/entrypoint.sh
 COPY files/init.sh        /home/init.sh
-COPY files/bashrc         /home/penpot/.bashrc
 
 ENTRYPOINT ["/home/entrypoint.sh"]
 CMD ["/home/init.sh"]

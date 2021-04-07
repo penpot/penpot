@@ -15,6 +15,8 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [line-grid]]
+   [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
+   [app.main.ui.dashboard.project-menu :refer [project-menu]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t tr]]
@@ -60,15 +62,42 @@
         team-id    (:team-id project)
         file-count (or (:count project) 0)
 
+        dstate  (mf/deref refs/dashboard-local)
+        edit-id (:project-for-edit dstate)
+        local (mf/use-state {:menu-open false
+                             :menu-pos nil
+                             :edition? (= (:id project) edit-id)})
+
         on-nav
         (mf/use-callback
          (mf/deps project)
          (st/emitf (rt/nav :dashboard-files {:team-id (:team-id project)
                                              :project-id (:id project)})))
+
         toggle-pin
         (mf/use-callback
          (mf/deps project)
          (st/emitf (dd/toggle-project-pin project)))
+
+        on-menu-click
+        (mf/use-callback (fn [event]
+                           (let [position (dom/get-client-position event)]
+                             (dom/prevent-default event)
+                             (swap! local assoc :menu-open true
+                                                :menu-pos position))))
+
+        on-menu-close
+        (mf/use-callback #(swap! local assoc :menu-open false))
+
+        on-edit-open
+        (mf/use-callback #(swap! local assoc :edition? true))
+
+        on-edit
+        (mf/use-callback
+         (mf/deps project)
+         (fn [name]
+           (st/emit! (dd/rename-project (assoc project :name name)))
+           (swap! local assoc :edition? false)))
 
         on-file-created
         (mf/use-callback
@@ -88,7 +117,6 @@
                  params {:project-id (:id project)}]
              (st/emit! (dd/create-file (with-meta params mdata))))))]
 
-
     [:div.dashboard-project-row {:class (when first? "first")}
      [:div.project
       (when-not (:is-default project)
@@ -96,7 +124,20 @@
          {:class (when (:is-pinned project) "active")
           :on-click toggle-pin}
          i/pin])
-      [:h2 {:on-click on-nav} (:name project)]
+      (if (:edition? @local)
+        [:& inline-edition {:content (:name project)
+                            :on-end on-edit}]
+        [:h2 {:on-click on-nav
+              :on-context-menu on-menu-click}
+         (if (:is-default project)
+           (tr "labels.drafts")
+           (:name project))])
+      [:& project-menu {:project project
+                        :show? (:menu-open @local)
+                        :left (:x (:menu-pos @local))
+                        :top (:y (:menu-pos @local))
+                        :on-edit on-edit-open
+                        :on-menu-close on-menu-close}]
       [:span.info (str file-count " files")]
       (when (> file-count 0)
         (let [time (-> (:modified-at project)
@@ -109,6 +150,7 @@
 
      [:& line-grid
       {:project-id (:id project)
+       :team-id team-id
        :on-load-more on-nav
        :files files}]]))
 
@@ -122,7 +164,12 @@
     (mf/use-effect
      (mf/deps team)
      (fn []
-       (st/emit! (dd/fetch-recent-files {:team-id (:id team)}))))
+       (dom/set-html-title (tr "title.dashboard.projects"
+                              (if (:is-default team)
+                                (tr "dashboard.your-penpot")
+                                (:name team))))
+       (st/emit! (dd/fetch-recent-files {:team-id (:id team)})
+                 (dd/clear-selected-files))))
 
     (when (seq projects)
       [:*

@@ -45,13 +45,22 @@
                      (fn [error]
                        (reject error))))))))
 
+(defonce cache (atom {}))
+
+(defn render-page
+  [data ckey]
+  (let [prev (get @cache ckey)]
+    (if (= (:data prev) data)
+      (:result prev)
+      (let [elem   (mf/element exports/page-svg #js {:data data :width "290" :height "150"})
+            result (rds/renderToStaticMarkup elem)]
+        (swap! cache assoc ckey {:data data :result result})
+        result))))
+
 (defmethod impl/handler :thumbnails/generate
   [{:keys [file-id page-id] :as message}]
   (p/then
    (request-page file-id page-id)
    (fn [data]
-     (let [elem (mf/element exports/page-svg #js {:data data
-                                                  :width "290"
-                                                  :height "150"})]
-       {:svg (rds/renderToStaticMarkup elem)
-        :fonts @fonts/loaded}))))
+     {:svg (render-page data #{file-id page-id})
+      :fonts @fonts/loaded})))

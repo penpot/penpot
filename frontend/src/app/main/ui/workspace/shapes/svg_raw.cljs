@@ -12,14 +12,9 @@
    [app.main.refs :as refs]
    [app.main.ui.shapes.svg-raw :as svg-raw]
    [app.main.ui.shapes.shape :refer [shape-container]]
-   [app.main.ui.workspace.effects :as we]
    [rumext.alpha :as mf]
    [app.common.geom.shapes :as gsh]
    [app.main.ui.context :as muc]))
-
-;; This is a list of svg tags that can be grouped in shape-container
-;; this allows them to have gradients, shadows and masks
-(def svg-elements #{:svg :circle :ellipse :image :line :path :polygon :polyline :rect :symbol :text :textPath})
 
 (defn svg-raw-wrapper-factory
   [shape-wrapper]
@@ -41,35 +36,15 @@
 
             tag (get-in shape [:content :tag])
 
-            handle-mouse-down   (we/use-mouse-down shape)
-            handle-context-menu (we/use-context-menu shape)
-            handle-pointer-enter (we/use-pointer-enter shape)
-            handle-pointer-leave (we/use-pointer-leave shape)
-            handle-double-click  (we/use-double-click shape)
-
             def-ctx? (mf/use-ctx muc/def-ctx)]
 
         (cond
-          (and (contains? svg-elements tag) (not def-ctx?))
+          (and (svg-raw/graphic-element? tag) (not def-ctx?))
           [:> shape-container { :shape shape }
            [:& svg-raw-shape
             {:frame frame
              :shape shape
-             :childs childs}]
-
-           (when (= tag :svg)
-             [:rect.group-actions
-              {:x x
-               :y y
-               :transform transform
-               :width width
-               :height height
-               :fill "transparent"
-               :on-mouse-down handle-mouse-down
-               :on-double-click handle-double-click
-               :on-context-menu handle-context-menu
-               :on-pointer-over handle-pointer-enter
-               :on-pointer-out handle-pointer-leave}])]
+             :childs childs}]]
 
           ;; We cannot wrap inside groups the shapes that go inside the defs tag
           ;; we use the context so we know when we should not render the container

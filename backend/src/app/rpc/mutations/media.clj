@@ -92,7 +92,7 @@
 
 
 (defn create-file-media-object
-  [{:keys [conn storage svgc] :as cfg} {:keys [file-id is-local name content] :as params}]
+  [{:keys [conn storage] :as cfg} {:keys [file-id is-local name content] :as params}]
   (media/validate-media-type (:content-type content))
   (let [storage      (assoc storage :conn conn)
         source-path  (fs/path (:tempfile content))
@@ -108,7 +108,7 @@
                                                      :path source-path})))
 
         image        (if (= (:mtype source-info) "image/svg+xml")
-                       (let [data (svgc (slurp source-path))]
+                       (let [data (slurp source-path)]
                          (sto/put-object storage {:content (sto/content data)
                                                   :content-type (:mtype source-info)}))
                        (sto/put-object storage {:content (sto/content source-path)

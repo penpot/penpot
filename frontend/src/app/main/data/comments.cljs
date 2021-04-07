@@ -327,9 +327,7 @@
   (let [{:keys [show mode open]} cstate]
     (cond->> threads
       (= :pending show)
-      (filter (fn [item]
-                (or (not (:is-resolved item))
-                    (= (:id item) open))))
+      (filter (comp not :is-resolved))
 
       (= :yours mode)
       (filter #(contains? (:participants %) (:id profile))))))

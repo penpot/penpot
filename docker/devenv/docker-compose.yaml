@@ -27,7 +27,6 @@ services:
     volumes:
       - "user_data:/home/penpot/"
       - "${PWD}:/home/penpot/penpot"
-      - ./files/nginx.conf:/etc/nginx/nginx.conf
 
     ports:
       - 3447:3447
@@ -38,10 +37,6 @@ services:
       - 9090:9090
 
     environment:
-      - PENPOT_DATABASE_URI=postgresql://postgres/penpot
-      - PENPOT_DATABASE_USERNAME=penpot
-      - PENPOT_DATABASE_PASSWORD=penpot
-      - PENPOT_REDIS_URI=redis://redis/0
       - EXTERNAL_UID=${CURRENT_USER_ID}
       # STMP setup
       - PENPOT_SMTP_ENABLED=true
@@ -70,7 +65,6 @@ services:
   postgres:
     image: postgres:13
     command: postgres -c config_file=/etc/postgresql.conf
-    container_name: "penpot-devenv-postgres"
     restart: always
     stop_signal: SIGINT
     environment:
@@ -91,8 +85,6 @@ services:
 
   mailer:
     image: sj26/mailcatcher:latest
-    hostname: mautic-mailer
-    container_name: mautic-mailer
     restart: always
     expose:
       - '1025'
@@ -101,8 +93,6 @@ services:
 
   ldap:
     image: rroemhild/test-openldap:2.1
-    container_name: mautic-ldap
-    hostname: mautic-ldap
     expose:
       - '10389'
       - '10636'

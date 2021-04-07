@@ -10,16 +10,12 @@
 (ns app.setup.initial-data
   (:refer-clojure :exclude [load])
   (:require
-   [app.common.data :as d]
-   [app.common.pages.migrations :as pmg]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
-   [app.rpc.mutations.projects :as projects]
-   [app.rpc.queries.profile :as profile]
-   [app.util.blob :as blob]
-   [app.util.time :as dt]
-   [clojure.walk :as walk]))
+   [app.rpc.mutations.management :refer [duplicate-file]]
+   [app.rpc.mutations.projects :refer [create-project create-project-role]]
+   [app.rpc.queries.profile :as profile]))
 
 ;; --- DUMP GENERATION
 
@@ -62,58 +58,6 @@
 
 ;; --- DUMP LOADING
 
-(defn- process-file
-  [file index]
-  (letfn [(process-form [form]
-            (cond-> form
-              ;; Relink Components
-              (and (map? form)
-                   (uuid? (:component-file form)))
-              (update :component-file #(get index % %))
-
-              ;; Relink Image Shapes
-              (and (map? form)
-                   (map? (:metadata form))
-                   (= :image (:type form)))
-              (update-in [:metadata :id] #(get index % %))))
-
-          ;; A function responsible to analize all file data and
-          ;; replace the old :component-file reference with the new
-          ;; ones, using the provided file-index
-          (relink-shapes [data]
-            (walk/postwalk process-form data))
-
-          ;; A function responsible of process the :media attr of file
-          ;; data and remap the old ids with the new ones.
-          (relink-media [media]
-            (reduce-kv (fn [res k v]
-                         (let [id (get index k)]
-                           (if (uuid? id)
-                             (-> res
-                                 (assoc id (assoc v :id id))
-                                 (dissoc k))
-                             res)))
-                       media
-                       media))]
-
-    (update file :data
-            (fn [data]
-              (-> data
-                  (blob/decode)
-                  (assoc :id (:id file))
-                  (pmg/migrate-data)
-                  (update :pages-index relink-shapes)
-                  (update :components relink-shapes)
-                  (update :media relink-media)
-                  (d/without-nils)
-                  (blob/encode))))))
-
-(defn- remap-id
-  [item index key]
-  (cond-> item
-    (contains? item key)
-    (assoc key (get index (get item key) (get item key)))))
-
 (defn- retrieve-data
   [conn skey]
   (when-let [row (db/exec-one! conn ["select content from server_prop where id = ?" skey])]
@@ -127,60 +71,26 @@
    (let [skey (or (:skey opts) (cfg/get :initial-project-skey))
          data (retrieve-data conn skey)]
      (when data
-       (let [project (projects/create-project conn {:profile-id (:id profile)
-                                                    :team-id (:default-team-id profile)
-                                                    :name (:project-name data)})
+       (let [index   (reduce #(assoc %1 (:id %2) (uuid/next)) {} (:files data))
+             project {:id (uuid/next)
+                      :profile-id (:id profile)
+                      :team-id (:default-team-id profile)
+                      :name (:project-name data)}]
 
-             now     (dt/now)
-             ignore  (dt/plus now (dt/duration {:seconds 5}))
-             index   (as-> {} index
-                       (reduce #(assoc %1 (:id %2) (uuid/next)) index (:files data))
-                       (reduce #(assoc %1 (:id %2) (uuid/next)) index (:fmeds data)))
+         (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
 
-             flibs   (->> (:flibs data)
-                          (map #(remap-id % index :file-id))
-                          (map #(remap-id % index :library-file-id))
-                          (map #(assoc % :synced-at now))
-                          (map #(assoc % :created-at now)))
+         (create-project conn project)
+         (create-project-role conn {:project-id (:id project)
+                                    :profile-id (:id profile)
+                                    :role :owner})
 
-             files   (->> (:files data)
-                          (map #(assoc % :id (get index (:id %))))
-                          (map #(assoc % :project-id (:id project)))
-                          (map #(assoc % :created-at now))
-                          (map #(assoc % :modified-at now))
-                          (map #(assoc % :ignore-sync-until ignore))
-                          (map #(process-file % index)))
-
-             fmeds   (->> (:fmeds data)
-                          (map #(assoc % :id (get index (:id %))))
-                          (map #(assoc % :created-at now))
-                          (map #(remap-id % index :file-id)))
-
-             fprofs  (map #(array-map :file-id (:id %)
-                                      :profile-id (:id profile)
-                                      :is-owner true
-                                      :is-admin true
-                                      :can-edit true) files)]
-
-       (projects/create-project-profile conn {:project-id (:id project)
-                                              :profile-id (:id profile)})
-
-       (projects/create-team-project-profile conn {:team-id (:default-team-id profile)
-                                                   :project-id (:id project)
-                                                   :profile-id (:id profile)})
-
-       ;; Re-insert into the database
-       (doseq [params files]
-         (db/insert! conn :file params))
-
-       (doseq [params fprofs]
-         (db/insert! conn :file-profile-rel params))
-
-       (doseq [params flibs]
-         (db/insert! conn :file-library-rel params))
-
-       (doseq [params fmeds]
-         (db/insert! conn :file-media-object params)))))))
+         (doseq [file (:files data)]
+           (let [params {:profile-id (:id profile)
+                         :project-id (:id project)
+                         :file file
+                         :index index}
+                 opts   {:reset-shared-flag false}]
+             (duplicate-file conn params opts))))))))
 
 (defn load
   [system {:keys [email] :as opts}]

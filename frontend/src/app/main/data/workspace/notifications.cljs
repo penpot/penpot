@@ -70,6 +70,10 @@
                    (rx/filter #(s/valid? ::message %))
                    (rx/map process-message))
 
+              (rx/of (handle-presence {:type :connect
+                                       :session-id (:session-id state)
+                                       :profile-id (:profile-id state)}))
+
               ;; Send back to backend all pointer messages.
               (->> stream
                    (rx/filter ms/pointer-event?)
@@ -80,9 +84,11 @@
 (defn- process-message
   [{:keys [type] :as msg}]
   (case type
-    :presence (handle-presence msg)
+    :connect        (handle-presence msg)
+    :presence       (handle-presence msg)
+    :disconnect     (handle-presence msg)
     :pointer-update (handle-pointer-update msg)
-    :file-change (handle-file-change msg)
+    :file-change    (handle-file-change msg)
     :library-change (handle-library-change msg)
     ::unknown))
 
@@ -136,41 +142,41 @@
     })
 
 (defn handle-presence
-  [{:keys [sessions] :as message}]
-  (letfn [(assign-color [sessions session]
-            (if (string? (:color session))
-              session
-              (let [used (into #{}
-                               (comp (map second)
-                                     (map :color)
-                                     (remove nil?))
-                               sessions)
-                    avail (set/difference presence-palette used)
-                    color (or (first avail) "#000000")]
-                (assoc session :color color))))
+  [{:keys [type session-id profile-id] :as message}]
+  (letfn [(get-next-color [presence]
+            (let [xfm   (comp (map second)
+                              (map :color)
+                              (remove nil?))
+                  used  (into #{} xfm presence)
+                  avail (set/difference presence-palette used)]
+              (or (first avail) "#000000")))
 
-          (assign-session [sessions {:keys [id profile]}]
-            (let [session {:id id
-                           :fullname (:fullname profile)
-                           :updated-at (dt/now)
-                           :photo-uri (cfg/resolve-profile-photo-url profile)}
-                  session (assign-color sessions session)]
-              (assoc sessions id session)))
+          (update-color [color presence]
+            (if (some? color)
+              color
+              (get-next-color presence)))
 
-          (update-sessions [previous profiles]
-            (let [previous (select-keys previous (map first sessions)) ; Initial clearing
-                  pending  (->> sessions
-                                (filter #(not (contains? previous (first %))))
-                                (map (fn [[session-id profile-id]]
-                                       {:id session-id
-                                        :profile (get profiles profile-id)})))]
-              (reduce assign-session previous pending)))]
+          (update-sesion [session presence]
+            (-> session
+                (assoc :id session-id)
+                (assoc :profile-id profile-id)
+                (assoc :updated-at (dt/now))
+                (update :color update-color presence)))
+
+          (update-presence [presence]
+            (-> presence
+                (update session-id update-sesion presence)
+                (d/without-nils)))
+
+          ]
 
     (ptk/reify ::handle-presence
       ptk/UpdateEvent
       (update [_ state]
-        (let [profiles (:users state)]
-          (update state :workspace-presence update-sessions profiles))))))
+        ;; (let [profiles (:users state)]
+        (if (= :disconnect type)
+          (update state :workspace-presence dissoc session-id)
+          (update state :workspace-presence update-presence))))))
 
 (defn handle-pointer-update
   [{:keys [page-id profile-id session-id x y] :as msg}]

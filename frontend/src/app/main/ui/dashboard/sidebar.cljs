@@ -24,10 +24,12 @@
    [app.main.ui.components.forms :as fm]
    [app.main.ui.dashboard.comments :refer [comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
+   [app.main.ui.dashboard.project-menu :refer [project-menu]]
    [app.main.ui.dashboard.team-form]
    [app.main.ui.icons :as i]
    [app.util.avatars :as avatars]
    [app.util.dom :as dom]
+   [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [t tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
@@ -41,11 +43,16 @@
    [rumext.alpha :as mf]))
 
 (mf/defc sidebar-project
-  [{:keys [item selected?] :as props}]
-  (let [dstate    (mf/deref refs/dashboard-local)
-        edit-id   (:project-for-edit dstate)
+  [{:keys [item team-id selected?] :as props}]
+  (let [dstate           (mf/deref refs/dashboard-local)
+        selected-files   (:selected-files dstate)
+        selected-project (:selected-project dstate)
+        edit-id          (:project-for-edit dstate)
 
-        edition?  (mf/use-state (= (:id item) edit-id))
+        local   (mf/use-state {:menu-open false
+                               :menu-pos nil
+                               :edition? (= (:id item) edit-id)
+                               :dragging? false})
 
         on-click
         (mf/use-callback
@@ -54,23 +61,84 @@
            (st/emit! (rt/nav :dashboard-files {:team-id (:team-id item)
                                                :project-id (:id item)}))))
 
-        on-dbl-click
-        (mf/use-callback #(reset! edition? true))
+        on-menu-click
+        (mf/use-callback (fn [event]
+                           (let [position (dom/get-client-position event)]
+                             (dom/prevent-default event)
+                             (swap! local assoc :menu-open true
+                                                :menu-pos position))))
+
+        on-menu-close
+        (mf/use-callback #(swap! local assoc :menu-open false))
+
+        on-edit-open
+        (mf/use-callback #(swap! local assoc :edition? true))
 
         on-edit
         (mf/use-callback
          (mf/deps item)
          (fn [name]
            (st/emit! (dd/rename-project (assoc item :name name)))
-           (reset! edition? false)))]
+           (swap! local assoc :edition? false)))
 
-    [:li {:on-click on-click
-          :on-double-click on-dbl-click
-          :class (when selected? "current")}
-     (if @edition?
-       [:& inline-edition {:content (:name item)
-                           :on-end on-edit}]
-       [:span.element-title (:name item)])]))
+        on-drag-enter
+        (mf/use-callback
+          (mf/deps selected-project)
+          (fn [e]
+            (when (dnd/has-type? e "penpot/files")
+              (dom/prevent-default e)
+              (when-not (dnd/from-child? e)
+                (when (not= selected-project (:id item))
+                  (swap! local assoc :dragging? true))))))
+
+        on-drag-over
+        (mf/use-callback
+          (fn [e]
+            (when (dnd/has-type? e "penpot/files")
+              (dom/prevent-default e))))
+
+        on-drag-leave
+        (mf/use-callback
+          (fn [e]
+            (when-not (dnd/from-child? e)
+              (swap! local assoc :dragging? false))))
+
+        on-drop
+        (mf/use-callback
+          (mf/deps item selected-files)
+          (fn [e]
+            (swap! local assoc :dragging? false)
+            (when (not= selected-project (:id item))
+              (let [data  {:ids selected-files
+                           :project-id (:id item)}
+
+                    mdata {:on-success
+                           (st/emitf (dm/success (tr "dashboard.success-move-file"))
+                                     (rt/nav :dashboard-files
+                                             {:team-id team-id
+                                              :project-id (:id item)}))}]
+                (st/emit! (dd/move-files (with-meta data mdata)))))))]
+
+    [:*
+     [:li {:class (if selected? "current"
+                    (when (:dragging? @local) "dragging"))
+           :on-click on-click
+           :on-double-click on-edit-open
+           :on-context-menu on-menu-click
+           :on-drag-enter on-drag-enter
+           :on-drag-over on-drag-over
+           :on-drag-leave on-drag-leave
+           :on-drop on-drop}
+      (if (:edition? @local)
+        [:& inline-edition {:content (:name item)
+                            :on-end on-edit}]
+        [:span.element-title (:name item)])]
+     [:& project-menu {:project item
+                       :show? (:menu-open @local)
+                       :left (:x (:menu-pos @local))
+                       :top (:y (:menu-pos @local))
+                       :on-edit on-edit-open
+                       :on-menu-close on-menu-close}]]))
 
 (mf/defc sidebar-search
   [{:keys [search-term team-id locale] :as props}]
@@ -143,8 +211,11 @@
         (mf/use-callback
          (st/emitf (modal/show :team-form {})))
 
-        go-projects
-        (mf/use-callback #(st/emit! (rt/nav :dashboard-projects {:team-id %})))]
+        team-selected
+        (mf/use-callback
+          (fn [team-id]
+            (da/set-current-team! team-id)
+            (st/emit! (rt/nav :dashboard-projects {:team-id team-id}))))]
 
     (mf/use-layout-effect
      (mf/deps (:id team))
@@ -155,13 +226,13 @@
     [:ul.dropdown.teams-dropdown
      [:li.title (t locale "dashboard.switch-team")]
      [:hr]
-     [:li.team-name {:on-click (partial go-projects (:default-team-id profile))}
+     [:li.team-name {:on-click (partial team-selected (:default-team-id profile))}
       [:span.team-icon i/logo-icon]
       [:span.team-text (t locale "dashboard.your-penpot")]]
 
      (for [team (remove :is-default @teams)]
        [:* {:key (:id team)}
-        [:li.team-name {:on-click (partial go-projects (:id team))}
+        [:li.team-name {:on-click (partial team-selected (:id team))}
          [:span.team-icon
           [:img {:src (cfg/resolve-team-photo-url team)}]]
          [:span.team-text {:title (:name team)} (:name team)]]])
@@ -237,9 +308,6 @@
          (mf/deps team)
          (st/emitf (rt/nav :dashboard-team-settings {:team-id (:id team)})))
 
-        go-projects
-        (mf/use-callback #(st/emit! (rt/nav :dashboard-projects {:team-id %})))
-
         on-create-clicked
         (mf/use-callback
          (st/emitf (modal/show :team-form {})))
@@ -252,7 +320,10 @@
         on-leaved-success
         (mf/use-callback
          (mf/deps team profile)
-         (st/emitf (rt/nav :dashboard-projects {:team-id (:default-team-id profile)})))
+         (fn []
+           (let [team-id (:default-team-id profile)]
+             (da/set-current-team! team-id)
+             (st/emit! (rt/nav :dashboard-projects {:team-id team-id})))))
 
         leave-fn
         (mf/use-callback
@@ -430,6 +501,7 @@
             {:item item
              :key (:id item)
              :id (:id item)
+             :team-id (:id team)
              :selected? (= (:id item) (:id project))}])]
         [:div.sidebar-empty-placeholder
          [:span.icon i/pin]

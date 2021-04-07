@@ -41,7 +41,8 @@
         mdata  (meta result)]
 
     (cond->> {:status 200 :body result}
-      (fn? (:transform-response mdata)) ((:transform-response mdata) request))))
+      (fn? (:transform-response mdata))
+      ((:transform-response mdata) request))))
 
 (defn- rpc-mutation-handler
   [methods {:keys [profile-id] :as request}]
@@ -135,6 +136,7 @@
                      'app.rpc.mutations.projects
                      'app.rpc.mutations.viewer
                      'app.rpc.mutations.teams
+                     'app.rpc.mutations.management
                      'app.rpc.mutations.ldap
                      'app.rpc.mutations.verify-token)
          (map (partial process-method cfg))

@@ -13,7 +13,7 @@
    [okulary.core :as l]
    [app.common.data :as d]
    [app.common.exceptions :as ex]
-   [app.common.geom.shapes :as geom]
+   [app.common.geom.shapes :as gsh]
    [app.common.pages :as cp]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
@@ -44,39 +44,88 @@
     nil))
 
 (defmethod impl/handler :selection/query
-  [{:keys [page-id rect frame-id] :as message}]
+  [{:keys [page-id rect frame-id include-frames? include-groups? disabled-masks] :or {include-groups? true
+                                                                                      disabled-masks #{}} :as message}]
   (when-let [index (get @state page-id)]
     (let [result (-> (qdt/search index (clj->js rect))
                      (es6-iterator-seq))
-          matches? (fn [shape]
-                     (and
-                      ;; When not frame-id is passed, we filter the frames
-                      (or (and (not frame-id) (not= :frame (:type shape)))
-                          ;;  If we pass a frame-id only get the area for shapes inside that frame
-                          (= frame-id (:frame-id shape)))
-                      (geom/overlaps? shape rect)))]
+
+          ;; Check if the shape matches the filter criteria
+          match-criteria?
+          (fn [shape]
+            (and (not (:hidden shape))
+                 (not (:blocked shape))
+                 (or (not frame-id) (= frame-id (:frame-id shape)))
+                 (case (:type shape)
+                   :frame   include-frames?
+                   :group   include-groups?
+                   true)))
+
+          overlaps?
+          (fn [shape]
+            (gsh/overlaps? shape rect))
+
+          overlaps-masks?
+          (fn [masks]
+            (->> masks
+                 (some (comp not overlaps?))
+                 not))
+
+          ;; Shapes after filters of overlapping and criteria
+          matching-shapes
+          (into []
+                (comp (map #(unchecked-get % "data"))
+                      (filter match-criteria?)
+                      (filter (comp overlaps? :frame))
+                      (filter (comp overlaps-masks? :masks))
+                      (filter overlaps?))
+                result)]
 
       (into (d/ordered-set)
-            (comp (map #(unchecked-get % "data"))
-                  (filter matches?)
-                  (map :id))
-            result))))
+            (->> matching-shapes
+                 (sort-by (comp - :z))
+                 (map :id))))))
+
+(defn create-mask-index
+  "Retrieves the mask information for an object"
+  [objects parents-index]
+  (let [retrieve-masks
+        (fn [id parents]
+          (->> parents
+               (map #(get objects %))
+               (filter #(:masked-group? %))
+               ;; Retrieve the masking element
+               (mapv #(get objects (->> % :shapes first)))))]
+    (->> parents-index
+         (d/mapm retrieve-masks))))
 
 (defn- create-index
   [objects]
-  (let [shapes (cp/select-toplevel-shapes objects {:include-frames? true})
-        bounds (geom/selection-rect shapes)
+  (let [shapes        (-> objects (dissoc uuid/zero) (vals))
+        z-index       (cp/calculate-z-index objects)
+        parents-index (cp/generate-child-all-parents-index objects)
+        masks-index   (create-mask-index objects parents-index)
+        bounds        (gsh/selection-rect shapes)
         bounds #js {:x (:x bounds)
                     :y (:y bounds)
                     :width (:width bounds)
                     :height (:height bounds)}]
-    (reduce index-object
+
+    (reduce (partial index-object objects z-index parents-index masks-index)
             (qdt/create bounds)
             shapes)))
 
 (defn- index-object
-  [index obj]
-  (let [{:keys [id x y width height]} (:selrect obj)
-        rect #js {:x x :y y :width width :height height}]
-    (qdt/insert index rect obj)))
+  [objects z-index parents-index masks-index index obj]
+  (let [{:keys [x y width height]} (:selrect obj)
+        shape-bound #js {:x x :y y :width width :height height}
+        parents (get parents-index (:id obj))
+        masks   (get masks-index (:id obj))
+        z       (get z-index (:id obj))
+        frame   (when (and (not= :frame (:type obj))
+                           (not= (:frame-id obj) uuid/zero))
+                  (get objects (:frame-id obj)))]
+    (qdt/insert index
+                shape-bound
+                (assoc obj :frame frame :masks masks :parents parents :z z))))
 

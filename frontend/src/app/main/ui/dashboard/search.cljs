@@ -13,6 +13,7 @@
    [app.main.store :as st]
    [app.main.ui.dashboard.grid :refer [grid]]
    [app.main.ui.icons :as i]
+   [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t]]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
@@ -28,8 +29,14 @@
 
     (mf/use-effect
      (mf/deps team search-term)
-     (st/emitf (dd/search-files {:team-id (:id team)
-                                 :search-term search-term})))
+     (fn []
+       (dom/set-html-title (t locale "title.dashboard.search"
+                              (if (:is-default team)
+                                (t locale "dashboard.your-penpot")
+                                (:name team))))
+       (st/emit! (dd/search-files {:team-id (:id team)
+                                   :search-term search-term})
+                 (dd/clear-selected-files))))
 
     [:*
      [:header.dashboard-header

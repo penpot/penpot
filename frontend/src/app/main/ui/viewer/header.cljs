@@ -21,7 +21,6 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.fullscreen :as fs]
    [app.main.ui.icons :as i]
-   [app.util.data :refer [classnames]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t]]
    [app.util.router :as rt]
@@ -191,6 +190,11 @@
         profile    (mf/deref refs/profile)
         anonymous? (= uuid/zero (:id profile))
 
+        team-id    (get-in data [:project :team-id])
+
+        has-permission? (and (not anonymous?)
+                             (contains? (:teams profile) team-id))
+
         project-id (get-in data [:project :id])
         file-id    (get-in data [:file :id])
         page-id    (get-in data [:page :id])
@@ -219,7 +223,9 @@
 
     [:header.viewer-header
      [:div.main-icon
-      [:a {:on-click on-goback} i/logo-icon]]
+      [:a {:on-click on-goback
+           ;; If the user doesn't have permission we disable the link
+           :style {:pointer-events (when-not has-permission? "none")}} i/logo-icon]]
 
      [:div.sitemap-zone {:alt (t locale "viewer.header.sitemap")
                          :on-click on-click}
@@ -238,7 +244,7 @@
         :alt "View mode"}
        i/play]
 
-      (when-not anonymous?
+      (when has-permission?
         [:button.mode-zone-button.tooltip.tooltip-bottom
          {:on-click #(navigate :comments)
           :class (dom/classnames :active (= section :comments))
@@ -257,11 +263,11 @@
         :comments [:& comments-menu {:locale locale}]
         nil)
 
-      (when-not anonymous?
+      (when has-permission?
         [:& share-link {:token (:token data)
                         :page  (:page data)}])
 
-      (when-not anonymous?
+      (when has-permission?
         [:a.btn-text-basic.btn-small {:on-click on-edit}
          (t locale "viewer.header.edit-page")])
 

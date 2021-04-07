@@ -24,7 +24,7 @@
         team       (th/create-team* 1 {:profile-id (:id profile)})
         project-id (uuid/next)]
 
-    ;; crate project
+    ;; create project
     (let [data {::th/type :create-project
                 :id project-id
                 :profile-id (:id profile)
@@ -37,7 +37,7 @@
       (let [result (:result out)]
         (t/is (= (:name data) (:name result)))))
 
-    ;; query a list of projects
+    ;; query the list of projects of a team
     (let [data {::th/type :projects
                 :team-id (:id team)
                 :profile-id (:id profile)}
@@ -50,7 +50,25 @@
         (t/is project-id (get-in result [0 :id]))
         (t/is (= "test project" (get-in result [0 :name])))))
 
-    ;; rename project"
+    ;; query all projects of a user
+    (let [data {::th/type :all-projects
+                :profile-id (:id profile)}
+          out  (th/query! data)]
+      ;; (th/print-result! out)
+
+      (t/is (nil? (:error out)))
+      (let [result (:result out)]
+        (t/is (= 2 (count result)))
+        (t/is (not= project-id (get-in result [0 :id])))
+        (t/is (= "Drafts" (get-in result [0 :name])))
+        (t/is (= "Default" (get-in result [0 :team-name])))
+        (t/is (= true (get-in result [0 :is-default-team])))
+        (t/is project-id (get-in result [1 :id]))
+        (t/is (= "test project" (get-in result [1 :name])))
+        (t/is (= "team1" (get-in result [1 :team-name])))
+        (t/is (= false (get-in result [1 :is-default-team])))))
+
+    ;; rename project
     (let [data {::th/type :rename-project
                 :id project-id
                 :name "renamed project"

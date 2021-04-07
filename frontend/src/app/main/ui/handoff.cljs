@@ -14,7 +14,6 @@
    [app.main.data.viewer.shortcuts :as sc]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.fullscreen :as fs]
    [app.main.ui.handoff.left-sidebar :refer [left-sidebar]]
    [app.main.ui.handoff.render :refer [render-frame-svg]]
    [app.main.ui.handoff.right-sidebar :refer [right-sidebar]]
@@ -97,23 +96,23 @@
     (mf/use-effect on-mount)
     (hooks/use-shortcuts sc/shortcuts)
 
-    [:& fs/fullscreen-wrapper {}
-     [:div.handoff-layout
-      [:& header
-       {:data data
-        :state state
-        :index index
-        :section :handoff}]
-      [:div.viewer-content
-       (when (:show-thumbnails state)
-         [:& thumbnails-panel {:index index
-                               :data data
-                               :screen :handoff}])
-       [:& render-panel {:data data
-                         :state state
-                         :index index
-                         :page-id page-id
-                         :file-id file-id}]]]]))
+    [:div.handoff-layout {:class (dom/classnames :force-visible
+                                                 (:show-thumbnails state))}
+     [:& header
+      {:data data
+       :state state
+       :index index
+       :section :handoff}]
+     [:div.viewer-content
+      (when (:show-thumbnails state)
+        [:& thumbnails-panel {:index index
+                              :data data
+                              :screen :handoff}])
+      [:& render-panel {:data data
+                        :state state
+                        :index index
+                        :page-id page-id
+                        :file-id file-id}]]]))
 
 (mf/defc handoff
   [{:keys [file-id page-id index token] :as props}]
@@ -125,6 +124,12 @@
 
   (let [data  (mf/deref refs/viewer-data)
         state (mf/deref refs/viewer-local)]
+
+    (mf/use-effect
+      (mf/deps (:file data))
+      #(when (:file data)
+         (dom/set-html-title (tr "title.viewer"
+                                 (get-in data [:file :name])))))
 
     (when (and data state)
       [:& handoff-content

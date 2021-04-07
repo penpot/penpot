@@ -5,14 +5,15 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.util.code-gen
   (:require
-   [cuerdas.core :as str]
+   [app.common.data :as d]
    [app.common.math :as mth]
-   [app.util.text :as ut]
-   [app.util.color :as uc]))
+   [app.common.text :as txt]
+   [app.util.color :as uc]
+   [cuerdas.core :as str]))
 
 (defn shadow->css [shadow]
   (let [{:keys [style offset-x offset-y blur spread]} shadow
@@ -136,17 +137,55 @@
                                      :format format
                                      :multi multi
                                      :tab-size 2})))
+
+(defn search-text-attrs
+  [node attrs]
+  (->> (txt/node-seq node)
+       (map #(select-keys % attrs))
+       (reduce d/merge)))
+
+
+;; TODO: used on handoff
+(defn parse-style-text-blocks
+  [node attrs]
+  (letfn
+      [(rec-style-text-map [acc node style]
+         (let [node-style (merge style (select-keys node attrs))
+               head (or (-> acc first) [{} ""])
+               [head-style head-text] head
+
+               new-acc
+               (cond
+                 (:children node)
+                 (reduce #(rec-style-text-map %1 %2 node-style) acc (:children node))
+
+                 (not= head-style node-style)
+                 (cons [node-style (:text node "")] acc)
+
+                 :else
+                 (cons [node-style (str head-text "" (:text node))] (rest acc)))
+
+               ;; We add an end-of-line when finish a paragraph
+               new-acc
+               (if (= (:type node) "paragraph")
+                 (let [[hs ht] (first new-acc)]
+                   (cons [hs (str ht "\n")] (rest new-acc)))
+                 new-acc)]
+           new-acc))]
+
+    (-> (rec-style-text-map [] node {})
+        reverse)))
+
 (defn text->properties [shape]
   (let [text-shape-style (select-keys styles-data [:layout :shadow :blur])
 
-        shape-props (->> text-shape-style vals (mapcat :props))
-        shape-to-prop (->> text-shape-style vals (map :to-prop) (reduce merge))
-        shape-format  (->> text-shape-style vals (map :format) (reduce merge))
+        shape-props      (->> text-shape-style vals (mapcat :props))
+        shape-to-prop    (->> text-shape-style vals (map :to-prop) (reduce merge))
+        shape-format     (->> text-shape-style vals (map :format) (reduce merge))
 
 
-        text-values (->> (ut/search-text-attrs (:content shape) (conj (:props style-text) :fill-color-gradient))
-                         (merge ut/default-text-attrs))]
-
+        text-values      (->> (search-text-attrs (:content shape) (conj (:props style-text) :fill-color-gradient))
+                              (d/merge txt/default-text-attrs))]
     (str/join
      "\n"
      [(generate-css-props shape

@@ -32,7 +32,13 @@
                        (reverse))]
     (mf/use-effect
      (mf/deps team)
-     #(st/emit! (dd/fetch-shared-files {:team-id (:id team)})))
+     (fn []
+       (dom/set-html-title (tr "title.dashboard.shared-libraries"
+                               (if (:is-default team)
+                                 (tr "dashboard.your-penpot")
+                                 (:name team))))
+       (st/emit! (dd/fetch-shared-files {:team-id (:id team)})
+                 (dd/clear-selected-files))))
 
     [:*
      [:header.dashboard-header

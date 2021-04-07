@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020-2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.config
   "A configuration management."
@@ -15,6 +15,7 @@
    [app.common.version :as v]
    [app.util.time :as dt]
    [clojure.core :as c]
+   [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [environ.core :refer [env]]))
@@ -23,7 +24,7 @@
   {:http-server-port 6060
    :host "devenv"
    :tenant "dev"
-   :database-uri "postgresql://127.0.0.1/penpot"
+   :database-uri "postgresql://postgres/penpot"
    :database-username "penpot"
    :database-password "penpot"
 
@@ -34,14 +35,14 @@
    :asserts-enabled false
 
    :public-uri "http://localhost:3449"
-   :redis-uri "redis://localhost/0"
+   :redis-uri "redis://redis/0"
 
    :srepl-host "127.0.0.1"
    :srepl-port 6062
 
    :storage-backend :fs
 
-   :storage-fs-directory "resources/public/assets"
+   :storage-fs-directory "assets"
    :storage-s3-region :eu-central-1
    :storage-s3-bucket "penpot-devenv-assets-pre"
 
@@ -70,7 +71,7 @@
    :telemetry-enabled false
    :telemetry-uri "https://telemetry.penpot.app/"
 
-   :ldap-user-query "(|(uid=$username)(mail=$username))"
+   :ldap-user-query "(|(uid=:username)(mail=:username))"
    :ldap-attrs-username "uid"
    :ldap-attrs-email "mail"
    :ldap-attrs-fullname "cn"
@@ -251,7 +252,10 @@
           :migrations-verbose false}
          (read-config env)))
 
-(def version (v/parse "%version%"))
+(def version (v/parse (or (some-> (io/resource "version.txt")
+                                  (slurp)
+                                  (str/trim))
+                          "%version%")))
 (def config (read-config env))
 (def test-config (read-test-config env))
 

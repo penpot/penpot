@@ -14,6 +14,7 @@
    [app.common.geom.shapes :as geom]
    [app.common.media :as cm]
    [app.common.pages :as cp]
+   [app.common.text :as txt]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.data.colors :as dc]
@@ -31,14 +32,13 @@
    [app.main.ui.components.tab-container :refer [tab-container tab-element]]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.sidebar.options.typography :refer [typography-entry]]
+   [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry]]
    [app.util.data :refer [matches-search]]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr t]]
    [app.util.keyboard :as kbd]
    [app.util.router :as rt]
-   [app.util.text :as ut]
    [app.util.timers :as timers]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -100,8 +100,8 @@
         on-drag-start
         (mf/use-callback
          (fn [component event]
-           (dnd/set-data! event "app/component" {:file-id file-id
-                                                 :component component})
+           (dnd/set-data! event "penpot/component" {:file-id file-id
+                                                    :component component})
            (dnd/set-allowed-effect! event "move")))]
 
     [:div.asset-group
@@ -431,7 +431,7 @@
         (mf/use-callback
          (mf/deps file-id)
          (fn [value opacity]
-           (st/emit! (dwl/add-typography ut/default-typography))))
+           (st/emit! (dwl/add-typography txt/default-typography))))
 
         handle-change
         (mf/use-callback
@@ -491,7 +491,7 @@
 
     [:div.asset-group
      [:div.group-title {:class (when (not open?) "closed")}
-      [:span {:on-click (st/emitf (dwl/set-assets-box-open file-id :typography (not open?)))}
+      [:span {:on-click (st/emitf (dwl/set-assets-box-open file-id :typographies (not open?)))}
        i/arrow-slide (t locale "workspace.assets.typography")]
       [:span.num-assets (str "\u00A0(") (count typographies) ")"] ;; Unicode 00A0 is non-breaking space
       (when local?

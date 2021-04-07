@@ -32,10 +32,12 @@
    [app.util.router :as rt]
    [app.util.time :as dt]
    [app.util.transit :as t]
+   [app.util.uri :as uu]
    [beicon.core :as rx]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
-   [potok.core :as ptk]))
+   [potok.core :as ptk]
+   [promesa.core :as p]))
 
 (declare persist-changes)
 (declare persist-sychronous-changes)
@@ -392,27 +394,22 @@
      (or (contains? props :data)
          (contains? props :uris)))))
 
-(defn parse-svg [text]
+(defn parse-svg [[name text]]
   (->> (http/send! {:method :post
-                    :uri "/api/svg"
+                    :uri "/api/svg/parse"
                     :headers {"content-type" "image/svg+xml"}
                     :body text})
        (rx/map (fn [{:keys [status body]}]
                  (let [result (t/decode body)]
                    (if (= status 200)
-                     result
+                     (assoc result :name name)
                      (throw result)))))))
 
-(defn fetch-svg [uri]
+(defn fetch-svg [name uri]
   (->> (http/send! {:method :get :uri uri})
-       (rx/map :body)))
-
-(defn url-name [url]
-  (let [query-idx (str/last-index-of url "?")
-        url (if (> query-idx 0) (subs url 0 query-idx) url)
-        filename (->> (str/split url "/") (last))
-        ext-idx (str/last-index-of filename ".")]
-    (if (> ext-idx 0) (subs filename 0 ext-idx) filename)))
+       (rx/map #(vector
+                 (or name (uu/uri-name uri))
+                 (:body %)))))
 
 (defn- handle-upload-error [on-error stream]
   (->> stream
@@ -456,7 +453,7 @@
           (prepare-uri [uri]
             {:file-id file-id
              :is-local local?
-             :name (or name (url-name uri))
+             :name (or name (uu/uri-name uri))
              :url uri})]
     (rx/merge
      (->> (rx/from uris)
@@ -467,10 +464,8 @@
 
      (->> (rx/from uris)
           (rx/filter svg-url?)
-          (rx/merge-map fetch-svg)
+          (rx/merge-map (partial fetch-svg name))
           (rx/merge-map parse-svg)
-          (rx/with-latest vector uris)
-          (rx/map #(assoc (first %) :name (or name (url-name (second %)))))
           (rx/do on-svg)))))
 
 (defn- upload-data [file-id local? name data force-media on-image on-svg]
@@ -485,6 +480,12 @@
              :is-local local?
              :content blob}))
 
+        extract-content
+        (fn [blob]
+          (let [name (or name (.-name blob))]
+            (-> (.text blob)
+                (p/then #(vector name %)))))
+
         file-stream (->> (rx/from data)
                          (rx/map di/validate-file))]
     (rx/merge
@@ -496,10 +497,8 @@
 
      (->> file-stream
           (rx/filter svg-blob?)
-          (rx/merge-map #(.text %))
+          (rx/merge-map extract-content)
           (rx/merge-map parse-svg)
-          (rx/with-latest vector file-stream)
-          (rx/map #(assoc (first %) :name (.-name (second %))))
           (rx/do on-svg)))))
 
 (defn- upload-media-objects
@@ -538,7 +537,7 @@
   [params position]
   (let [{:keys [x y]} position
         mdata  {:on-image #(st/emit! (dwc/image-uploaded % x y))
-                :on-svg   #(st/emit! (svg/svg-uploaded % x y))}
+                :on-svg   #(st/emit! (svg/svg-uploaded % (:file-id params) x y))}
 
         params (-> (assoc params :local? true)
                    (with-meta mdata))]

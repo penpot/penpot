@@ -204,6 +204,11 @@
 (defn to-vec [p1 p2]
   (subtract p2 p1))
 
+(defn scale [v scalar]
+  (-> v
+      (update :x * scalar)
+      (update :y * scalar)))
+
 (defn dot [{x1 :x y1 :y} {x2 :x y2 :y}]
   (+ (* x1 x2) (* y1 y2)))
 

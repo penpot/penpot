@@ -35,10 +35,32 @@
 (def exception
   (l/derived :exception st/state))
 
+(def threads-ref
+  (l/derived :comment-threads st/state))
+
 ;; ---- Dashboard refs
 
 (def dashboard-local
   (l/derived :dashboard-local st/state))
+
+(def dashboard-selected-project
+  (l/derived (fn [state]
+               (get-in state [:dashboard-local :selected-project]))
+             st/state))
+
+(def dashboard-selected-files
+  (l/derived (fn [state]
+               (get-in state [:dashboard-local :selected-files] #{}))
+             st/state))
+
+(def dashboard-selected-file-objs
+  (l/derived (fn [state]
+               (let [dashboard-local  (get state :dashboard-local)
+                     selected-project (get dashboard-local :selected-project)
+                     selected-files   (get dashboard-local :selected-files #{})]
+                 (map #(get-in state [:files selected-project %])
+                      selected-files)))
+             st/state))
 
 ;; ---- Workspace refs
 
@@ -69,7 +91,8 @@
                               :transform
                               :hover
                               :modifiers
-                              :selrect])
+                              :selrect
+                              :show-distances?])
              workspace-local =))
 
 (def selected-zoom
@@ -168,6 +191,12 @@
 
 (def workspace-frames
   (l/derived cp/select-frames workspace-page-objects))
+
+(def workspace-editor
+  (l/derived :workspace-editor st/state))
+
+(def workspace-editor-state
+  (l/derived :workspace-editor-state st/state))
 
 (defn object-by-id
   [id]

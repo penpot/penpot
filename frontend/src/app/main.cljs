@@ -12,7 +12,7 @@
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cfg]
-   [app.main.data.auth :refer [logout]]
+   [app.main.data.auth :as da]
    [app.main.data.messages :as dm]
    [app.main.data.users :as udu]
    [app.main.repo :as rp]
@@ -65,7 +65,7 @@
       (->> (rp/query! :profile)
            (rx/subs (fn [profile]
                       (if (not= uuid/zero profile)
-                        (st/emit! (rt/nav :dashboard-projects {:team-id (:default-team-id profile)}))
+                        (st/emit! (rt/nav :dashboard-projects {:team-id (da/current-team-id profile)}))
                         (st/emit! (rt/nav :auth-login))))))
 
       (and (not authed?) (nil? match))
@@ -82,7 +82,8 @@
   (st/emit! (rt/initialize-router ui/routes)
             (rt/initialize-history on-navigate))
 
-  (st/emit! (udu/fetch-profile))
+  (st/emit! (udu/fetch-profile)
+            (udu/fetch-user-teams))
   (mf/mount (mf/element ui/app) (dom/get-element "app"))
   (mf/mount (mf/element modal) (dom/get-element "modal")))
 

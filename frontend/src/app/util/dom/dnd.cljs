@@ -55,11 +55,11 @@
 
 (defn set-data!
   ([e data]
-   (set-data! e "app/data" data))
+   (set-data! e "penpot/data" data))
   ([e data-type data]
    (let [dt (.-dataTransfer e)]
      (if (or (str/starts-with? data-type "application")
-             (str/starts-with? data-type "app"))
+             (str/starts-with? data-type "penpot"))
        (.setData dt data-type (t/encode data))
        (.setData dt data-type data))
      e)))
@@ -98,12 +98,20 @@
         related (.-relatedTarget e)]
     (.contains target related)))
 
+(defn broken-event?
+  [e]
+  ;; WebKit browsers (Safari & Epiphany) do not send the relatedEvent
+  ;; property (https://bugs.webkit.org/show_bug.cgi?id=66547) so
+  ;; there is no decent way of discriminating redundant enter/leave
+  ;; events.
+  (nil? (.-relatedTarget e)))
+
 (defn get-data
   ([e]
-   (get-data e "app/data"))
+   (get-data e "penpot/data"))
   ([e data-type]
    (let [dt (.-dataTransfer e)]
-     (if (or (str/starts-with? data-type "app")
+     (if (or (str/starts-with? data-type "penpot")
              (= data-type "application/json"))
        (t/decode (.getData dt data-type))
        (.getData dt data-type)))))
