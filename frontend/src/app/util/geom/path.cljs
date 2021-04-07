@@ -676,7 +676,9 @@
 
           segments)))))
 
-(defn split-segments [content points value]
+(defn split-segments
+  "Given a content creates splits commands between points with new segments"
+  [content points value]
   (let [split-command
         (fn [[start end cmd]]
           (case (:command cmd)
@@ -697,3 +699,74 @@
             [command]))]
 
     (into [] (mapcat process-segments) content)))
+
+(defn remove-nodes
+  "Removes from content the points given. Will try to reconstruct the paths
+  to keep everything consistent"
+  [content points]
+
+  (let [content (d/with-prev content)]
+
+    (loop [result []
+           last-handler nil
+           [cur-cmd prev-cmd] (first content)
+           content (rest content)]
+
+      (if (nil? cur-cmd)
+        ;; The result with be an array of arrays were every entry is a subpath
+        (->> result
+             ;; remove empty and only 1 node subpaths
+             (filter #(> (count %) 1))
+             ;; flatten array-of-arrays plain array
+             (flatten)
+             (into []))
+
+        (let [move? (= :move-to (:command cur-cmd))
+              curve? (= :curve-to (:command cur-cmd))
+
+              ;; When the old command was a move we start a subpath
+              result (if move? (conj result []) result)
+
+              subpath (peek result)
+
+              point (command->point cur-cmd)
+              
+              old-prev-point (command->point prev-cmd)
+              new-prev-point (command->point (peek subpath))
+
+              remove? (contains? points point)
+
+              
+              ;; We store the first handler for the first curve to be removed to
+              ;; use it for the first handler of the regenerated path
+              cur-handler (cond
+                            (and (not last-handler) remove? curve?)
+                            (select-keys (:params cur-cmd) [:c1x :c1y])
+
+                            (not remove?)
+                            nil
+
+                            :else
+                            last-handler)
+
+              cur-cmd (cond-> cur-cmd
+                        ;; If we're starting a subpath and it's not a move make it a move
+                        (and (not move?) (empty? subpath))
+                        (assoc :command :move-to
+                               :params (select-keys (:params cur-cmd) [:x :y]))
+
+                        ;; If have a curve the first handler will be relative to the previous
+                        ;; point. We change the handler to the new previous point
+                        (and curve? (not (empty? subpath)) (not= old-prev-point new-prev-point))
+                        (update :params merge last-handler))
+
+              head-idx (dec (count result))
+
+              result (cond-> result
+                       (not remove?)
+                       (update head-idx conj cur-cmd))]
+          (recur result
+                 cur-handler
+                 (first content)
+                 (rest content)))))))
+

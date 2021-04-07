@@ -63,14 +63,7 @@
             shape (get-in state (st/get-path state))
             selected-points (get-in state [:workspace-local :edit-path id :selected-points] #{})
             content (:content shape)
-
-
-            
-            
-
-            new-content (->> content
-                             (filterv #(not (contains? selected-points (ugp/command->point %)))))
-
+            new-content (ugp/remove-nodes content selected-points)
             [rch uch] (changes/generate-path-changes page-id shape (:content shape) new-content)]
         (rx/of (dwc/commit-changes rch uch {:commit-local? true}))))
 
