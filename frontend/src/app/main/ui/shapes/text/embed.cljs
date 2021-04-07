@@ -52,8 +52,8 @@
     (if (= :google backend)
       (-> (fonts/gfont-url family [{:id font-variant-id}])
           (js/fetch)
-          (p/then (fn [res] (.text res)))))
-    (get-local-font-css font-id font-variant-id)))
+          (p/then (fn [res] (.text res))))
+      (get-local-font-css font-id font-variant-id))))
 
 (defn get-text-font-data [text]
   (->> text
