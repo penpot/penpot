@@ -87,7 +87,7 @@
        [:hr]
 
        [:li {:on-click show-release-notes}
-        i/msg-info
+        i/pencil
         [:span.element-title (tr "labels.release-notes")]]
 
        (when cf/feedback-enabled
