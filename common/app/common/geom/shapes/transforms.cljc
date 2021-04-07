@@ -289,13 +289,13 @@
   "Updates the viewbox for groups imported from SVG's"
   [{:keys [selrect svg-viewbox] :as group} new-selrect]
   (let [;; Gets deltas for the selrect to update the svg-viewbox (for svg-imports)
-        deltas {:x      (- (:x new-selrect)      (:x selrect))
-                :y      (- (:y new-selrect)      (:y selrect))
-                :width  (- (:width new-selrect)  (:width selrect))
-                :height (- (:height new-selrect) (:height selrect))}]
+        deltas {:x      (- (:x new-selrect 0)      (:x selrect 0))
+                :y      (- (:y new-selrect 0)      (:y selrect 0))
+                :width  (- (:width new-selrect 1)  (:width selrect 1))
+                :height (- (:height new-selrect 1) (:height selrect 1))}]
     
     (cond-> group
-      svg-viewbox
+      (and (some? svg-viewbox) (some? selrect) (some? new-selrect))
       (update :svg-viewbox
               #(-> %
                    (update :x + (:x deltas))
