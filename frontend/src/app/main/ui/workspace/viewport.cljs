@@ -1,857 +1,289 @@
-; This Source Code Form is subject to the terms of the Mozilla Public
+;; This Source Code Form is subject to the terms of the Mozilla Public
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.main.ui.workspace.viewport
   (:require
    [app.common.data :as d]
-   [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
-   [app.common.math :as mth]
-   [app.common.uuid :as uuid]
-   [app.config :as cfg]
-   [app.main.constants :as c]
-   [app.main.data.colors :as dwc]
-   [app.main.data.fetch :as mdf]
-   [app.main.data.modal :as modal]
-   [app.main.data.workspace :as dw]
-   [app.main.data.workspace.drawing :as dd]
-   [app.main.data.workspace.libraries :as dwl]
    [app.main.refs :as refs]
-   [app.main.store :as st]
-   [app.main.streams :as ms]
    [app.main.ui.context :as ctx]
-   [app.main.ui.cursors :as cur]
-   [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as i]
-   [app.main.ui.workspace.colorpicker.pixel-overlay :refer [pixel-overlay]]
-   [app.main.ui.workspace.comments :refer [comments-layer]]
-   [app.main.ui.workspace.drawarea :refer [draw-area]]
-   [app.main.ui.workspace.frame-grid :refer [frame-grid]]
-   [app.main.ui.workspace.gradients :refer [gradient-handlers]]
-   [app.main.ui.workspace.presence :as presence]
-   [app.main.ui.workspace.selection :refer [selection-handlers]]
-   [app.main.ui.workspace.shapes :refer [shape-wrapper frame-wrapper]]
-   [app.main.ui.workspace.shapes.interactions :refer [interactions]]
-   [app.main.ui.workspace.shapes.outline :refer [outline]]
-   [app.main.ui.workspace.shapes.path.actions :refer [path-actions]]
-   [app.main.ui.workspace.snap-distances :refer [snap-distances]]
-   [app.main.ui.workspace.snap-points :refer [snap-points]]
-   [app.util.dom :as dom]
-   [app.util.dom.dnd :as dnd]
-   [app.util.http :as http]
-   [app.util.keyboard :as kbd]
-   [app.util.object :as obj]
-   [app.util.perf :as perf]
-   [app.util.timers :as timers]
+   [app.main.ui.context :as muc]
+   [app.main.ui.workspace.shapes :as shapes]
+   [app.main.ui.workspace.shapes.text.editor :as editor]
+   [app.main.ui.workspace.viewport.actions :as actions]
+   [app.main.ui.workspace.viewport.comments :as comments]
+   [app.main.ui.workspace.viewport.drawarea :as drawarea]
+   [app.main.ui.workspace.viewport.frame-grid :as frame-grid]
+   [app.main.ui.workspace.viewport.gradients :as gradients]
+   [app.main.ui.workspace.viewport.hooks :as hooks]
+   [app.main.ui.workspace.viewport.interactions :as interactions]
+   [app.main.ui.workspace.viewport.outline :as outline]
+   [app.main.ui.workspace.viewport.pixel-overlay :as pixel-overlay]
+   [app.main.ui.workspace.viewport.presence :as presence]
+   [app.main.ui.workspace.viewport.selection :as selection]
+   [app.main.ui.workspace.viewport.snap-distances :as snap-distances]
+   [app.main.ui.workspace.viewport.snap-points :as snap-points]
+   [app.main.ui.workspace.viewport.utils :as utils]
+   [app.main.ui.workspace.viewport.widgets :as widgets]
    [beicon.core :as rx]
-   [clojure.set :as set]
-   [cuerdas.core :as str]
-   [goog.events :as events]
-   [potok.core :as ptk]
-   [promesa.core :as p]
-   [rumext.alpha :as mf])
-  (:import goog.events.EventType
-           goog.events.WheelEvent
-           goog.events.KeyCodes))
-
-(defonce css-mouse?
-  (cfg/check-browser? :firefox))
-
-(defn get-cursor [cursor]
-  (if-not css-mouse?
-    (name cursor)
-
-    (case cursor
-      :hand cur/hand
-      :comments cur/comments
-      :create-artboard cur/create-artboard
-      :create-rectangle cur/create-rectangle
-      :create-ellipse cur/create-ellipse
-      :pen cur/pen
-      :pencil cur/pencil
-      :create-shape cur/create-shape
-      :duplicate cur/duplicate
-      cur/pointer-inner)))
-
-;; --- Coordinates Widget
-
-(mf/defc coordinates
-  [{:keys [colorpalette?]}]
-  (let [coords (hooks/use-rxsub ms/mouse-position)]
-    [:ul.coordinates {:class (when colorpalette? "color-palette-open")}
-     [:span {:alt "x"}
-      (str "X: " (:x coords "-"))]
-     [:span {:alt "y"}
-      (str "Y: " (:y coords "-"))]]))
-
-(mf/defc cursor-tooltip
-  [{:keys [zoom tooltip] :as props}]
-  (let [coords (some-> (hooks/use-rxsub ms/mouse-position)
-                       (gpt/divide (gpt/point zoom zoom)))
-        pos-x (- (:x coords) 100)
-        pos-y (+ (:y coords) 30)]
-    [:g {:transform (str "translate(" pos-x "," pos-y ")")}
-     [:foreignObject {:width 200 :height 100 :style {:text-align "center"}}
-      [:span tooltip]]]))
-
-;; --- Cursor tooltip
-
-(defn- get-shape-tooltip
-  "Return the shape tooltip text"
-  [shape]
-  (case (:type shape)
-    :icon "Click to place the Icon"
-    :image "Click to place the Image"
-    :rect "Drag to draw a Box"
-    :text "Drag to draw a Text Box"
-    :path "Click to draw a Path"
-    :circle "Drag to draw a Circle"
-    nil))
-
-;; --- Selection Rect
-
-(mf/defc selection-rect
-  {:wrap [mf/memo]}
-  [{:keys [data] :as props}]
-  (when data
-    [:rect.selection-rect
-     {:x (:x data)
-      :y (:y data)
-      :width (:width data)
-      :height (:height data)}]))
-
-;; --- Viewport Positioning
-
-(defn- handle-viewport-positioning
-  [viewport-ref]
-  (let [node   (mf/ref-val viewport-ref)
-        stoper (rx/filter #(= ::finish-positioning %) st/stream)]
-
-    (st/emit! dw/start-pan)
-
-    (->> st/stream
-         (rx/filter ms/pointer-event?)
-         (rx/filter #(= :delta (:source %)))
-         (rx/map :pt)
-         (rx/take-until stoper)
-         (rx/subs (fn [delta]
-                    (let [zoom (gpt/point @refs/selected-zoom)
-                          delta (gpt/divide delta zoom)]
-                      (st/emit! (dw/update-viewport-position
-                                 {:x #(- % (:x delta))
-                                  :y #(- % (:y delta))}))))))))
+   [rumext.alpha :as mf]))
 
 ;; --- Viewport
-
-(declare remote-user-cursors)
-
-(mf/defc render-cursor
-  {::mf/wrap-props false}
-  [props]
-  (let [cursor (unchecked-get props "cursor")
-        viewport (unchecked-get props "viewport")
-
-        visible? (mf/use-state true)
-        in-viewport? (mf/use-state true)
-
-        cursor-ref (mf/use-ref nil)
-
-        node (mf/ref-val cursor-ref)
-
-        on-mouse-move
-        (mf/use-callback
-         (mf/deps node @visible?)
-         (fn [left top event]
-
-           (let [target (dom/get-target event)
-                 style (.getComputedStyle js/window target)
-                 cursor (.getPropertyValue style "cursor")
-
-                 x (- (.-clientX event) left)
-                 y (- (.-clientY event) top)]
-
-             (cond
-               (and (= cursor "none") (not @visible?))
-               (reset! visible? true)
-
-               (and (not= cursor "none") @visible?)
-               (reset! visible? false))
-
-             (timers/raf
-              #(let [style (obj/get node "style")]
-                 (obj/set! style "transform" (str "translate(" x "px, " y "px)")))))))]
-
-    (mf/use-layout-effect
-     (mf/deps on-mouse-move)
-     (fn []
-       (when viewport
-         (let [{:keys [left top]} (dom/get-bounding-rect viewport)
-               keys [(events/listen (dom/get-root) EventType.MOUSEMOVE (partial on-mouse-move left top))
-                     (events/listen viewport EventType.POINTERENTER #(reset! in-viewport? true))
-                     (events/listen viewport EventType.POINTERLEAVE #(reset! in-viewport? false))]]
-
-           (fn []
-             (doseq [key keys]
-               (events/unlistenByKey key)))))))
-
-    [:svg {:ref cursor-ref
-           :width 20
-           :height 20
-           :viewBox "0 0 16 18"
-           :style {:position "absolute"
-                   :pointer-events "none"
-                   :will-change "transform"
-                   :display (when-not (and @in-viewport? @visible?) "none")}}
-     [:use {:xlinkHref (str "#cursor-" cursor)}]]))
-
-;; TODO: revisit the refs usage (vs props)
-(mf/defc shape-outlines
-  {::mf/wrap-props false}
-  [props]
-  (let [objects   (unchecked-get props "objects")
-        selected  (or (unchecked-get props "selected") #{})
-        hover     (or (unchecked-get props "hover") #{})
-        edition   (unchecked-get props "edition")
-        outline?  (set/union selected hover)
-        show-outline? (fn [shape] (and (not (:hidden shape))
-                                       (not (:blocked shape))
-                                       (not= edition (:id shape))
-                                       (outline? (:id shape))))
-
-        remove-groups? (mf/use-state false)
-
-        shapes    (cond->> (vals objects)
-                    show-outline?   (filter show-outline?)
-                    @remove-groups? (remove #(= :group (:type %))))
-        transform (mf/deref refs/current-transform)
-        color (if (or (> (count shapes) 1) (nil? (:shape-ref (first shapes))))
-                "#31EFB8"
-                "#00E0FF")]
-    (hooks/use-stream ms/keyboard-ctrl #(reset! remove-groups? %))
-    (when (nil? transform)
-      [:g.outlines
-       (for [shape shapes]
-         [:& outline {:key (str "outline-" (:id shape))
-                      :shape (gsh/transform-shape shape)
-                      :color color}])])))
-
-(mf/defc pixel-grid
-  [{:keys [vbox zoom]}]
-  [:g.pixel-grid
-   [:defs
-    [:pattern {:id "pixel-grid"
-               :viewBox "0 0 1 1"
-               :width 1
-               :height 1
-               :pattern-units "userSpaceOnUse"}
-     [:path {:d "M 1 0 L 0 0 0 1"
-             :style {:fill "none"
-                     :stroke "#59B9E2"
-                     :stroke-opacity "0.2"
-                     :stroke-width (str (/ 1 zoom))}}]]]
-   [:rect {:x (:x vbox)
-           :y (:y vbox)
-           :width (:width vbox)
-           :height (:height vbox)
-           :fill (str "url(#pixel-grid)")
-           :style {:pointer-events "none"}}]])
-
-(mf/defc frames
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
-  [props]
-  (let [hover    (unchecked-get props "hover")
-        selected (unchecked-get props "selected")
-        ids      (unchecked-get props "ids")
-        edition  (unchecked-get props "edition")
-        data     (mf/deref refs/workspace-page)
-        objects  (:objects data)
-        root     (get objects uuid/zero)
-        shapes   (->> (:shapes root)
-                      (map #(get objects %)))
-
-        shapes (if ids
-                 (->> ids (map #(get objects %)))
-                 shapes)]
-
-    [:*
-     [:g.shapes
-      (for [item shapes]
-        (if (= (:type item) :frame)
-          [:& frame-wrapper {:shape item
-                             :key (:id item)
-                             :objects objects}]
-          [:& shape-wrapper {:shape item
-                             :key (:id item)}]))]
-
-     [:& shape-outlines {:objects objects
-                         :selected selected
-                         :hover hover
-                         :edition edition}]]))
-
-(mf/defc ghost-frames
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
-  [props]
-  (let [modifiers    (obj/get props "modifiers")
-        selected     (obj/get props "selected")
-
-        sobjects     (mf/deref refs/selected-objects)
-        selrect-orig (gsh/selection-rect sobjects)
-
-        xf           (comp
-                      (map #(assoc % :modifiers modifiers))
-                      (map gsh/transform-shape))
-
-        selrect      (->> (into [] xf sobjects)
-                          (gsh/selection-rect))
-
-        transform (when (and (mth/finite? (:x selrect-orig))
-                             (mth/finite? (:y selrect-orig)))
-                    (str/fmt "translate(%s,%s)" (- (:x selrect-orig)) (- (:y selrect-orig))))]
-    [:& (mf/provider ctx/ghost-ctx) {:value true}
-     [:svg.ghost
-      {:x (mth/finite (:x selrect) 0)
-       :y (mth/finite (:y selrect) 0)
-       :width (mth/finite (:width selrect) 100)
-       :height (mth/finite (:height selrect) 100)
-       :style {:pointer-events "none"}}
-
-      [:g {:transform transform}
-       [:& frames
-        {:ids selected}]]]]))
-
-(defn format-viewbox [vbox]
-  (str/join " " [(+ (:x vbox 0) (:left-offset vbox 0))
-                 (:y vbox 0)
-                 (:width vbox 0)
-                 (:height vbox 0)]))
 
 (mf/defc viewport
   [{:keys [local layout file] :as props}]
   (let [;; When adding data from workspace-local revisit `app.main.ui.workspace` to check
         ;; that the new parameter is sent
-        {:keys [options-mode
-                zoom
-                vport
-                vbox
+        {:keys [edit-path
                 edition
-                edit-path
-                tooltip
-                selected
+                modifiers
+                options-mode
                 panning
                 picking-color?
-                transform
-                hover
-                modifiers
+                selected
                 selrect
-                show-distances?]} local
+                show-distances?
+                tooltip
+                transform
+                vbox
+                vport
+                zoom]} local
 
-        page-id       (mf/use-ctx ctx/current-page-id)
 
-        selected-objects (mf/deref refs/selected-objects)
+        ;; CONTEXT
+        page-id           (mf/use-ctx ctx/current-page-id)
 
-        alt?          (mf/use-state false)
-        cursor        (mf/use-state (get-cursor :pointer-inner))
+        ;; DEREFS
+        drawing           (mf/deref refs/workspace-drawing)
+        options           (mf/deref refs/workspace-page-options)
+        objects           (mf/deref refs/workspace-page-objects)
 
-        viewport-ref  (mf/use-ref nil)
-        viewport-node (mf/use-state nil)
+        ;; STATE
+        alt?              (mf/use-state false)
+        ctrl?             (mf/use-state false)
+        cursor            (mf/use-state (utils/get-cursor :pointer-inner))
+        hover-ids         (mf/use-state nil)
+        hover             (mf/use-state nil)
+        frame-hover       (mf/use-state nil)
 
-        zoom-view-ref (mf/use-ref nil)
-        last-position (mf/use-var nil)
-        disable-paste (mf/use-var false)
-        in-viewport?  (mf/use-var false)
+        ;; REFS
+        viewport-ref      (mf/use-ref nil)
+        zoom-view-ref     (mf/use-ref nil)
+        render-ref        (mf/use-ref nil)
 
-        drawing       (mf/deref refs/workspace-drawing)
-        drawing-tool  (:tool drawing)
-        drawing-obj   (:object drawing)
-        drawing-path? (and edition (= :draw (get-in edit-path [edition :edit-mode])))
-        zoom          (or zoom 1)
+        ;; VARS
+        disable-paste     (mf/use-var false)
+        in-viewport?      (mf/use-var false)
 
-        show-grids?          (contains? layout :display-grid)
-        show-snap-points?    (and (contains? layout :dynamic-alignment)
-                                  (or drawing-obj transform))
-        show-snap-distance?  (and (contains? layout :dynamic-alignment)
-                                  (= transform :move)
-                                  (not (empty? selected)))
+        ;; STREAMS
+        move-stream       (mf/use-memo #(rx/subject))
 
-        on-mouse-down
-        (mf/use-callback
-         (mf/deps drawing-tool edition)
-         (fn [event]
-           (dom/stop-propagation event)
-           (let [event (.-nativeEvent event)
-                 ctrl? (kbd/ctrl? event)
-                 shift? (kbd/shift? event)
-                 alt? (kbd/alt? event)]
-             (when (= 1 (.-which event))
-               (st/emit! (ms/->MouseEvent :down ctrl? shift? alt?)))
+        zoom              (d/check-num zoom 1)
+        drawing-tool      (:tool drawing)
+        drawing-obj       (:object drawing)
 
-             (cond
-               (and (= 1 (.-which event)) (not edition))
-               (if drawing-tool
-                 (when (not (#{:comments :path} drawing-tool))
-                   (st/emit! (dd/start-drawing drawing-tool)))
-                 (st/emit! (dw/handle-selection shift?)))
+        drawing-path?     (or (and edition (= :draw (get-in edit-path [edition :edit-mode])))
+                              (and (some? drawing-obj) (= :path (:type drawing-obj))))
+        text-editing?     (and edition (= :text (get-in objects [edition :type])))
 
-               (and (= 2 (.-which event)))
-               (handle-viewport-positioning viewport-ref)))))
+        on-click          (actions/on-click hover selected edition drawing-path? drawing-tool)
+        on-context-menu   (actions/on-context-menu hover)
+        on-double-click   (actions/on-double-click hover hover-ids drawing-path? objects)
+        on-drag-enter     (actions/on-drag-enter)
+        on-drag-over      (actions/on-drag-over)
+        on-drop           (actions/on-drop file viewport-ref zoom)
+        on-mouse-down     (actions/on-mouse-down @hover drawing-tool text-editing? edition edit-path selected)
+        on-mouse-up       (actions/on-mouse-up disable-paste)
+        on-pointer-down   (actions/on-pointer-down)
+        on-pointer-enter  (actions/on-pointer-enter in-viewport?)
+        on-pointer-leave  (actions/on-pointer-leave in-viewport?)
+        on-pointer-move   (actions/on-pointer-move viewport-ref zoom move-stream)
+        on-pointer-up     (actions/on-pointer-up)
+        on-move-selected  (actions/on-move-selected hover hover-ids selected)
 
-        on-context-menu
-        (mf/use-callback
-         (fn [event]
-           (dom/prevent-default event)
-           (let [position (dom/get-client-position event)]
-             (st/emit! (dw/show-context-menu {:position position})))))
+        on-frame-enter    (actions/on-frame-enter frame-hover)
+        on-frame-leave    (actions/on-frame-leave frame-hover)
+        on-frame-select   (actions/on-frame-select selected)
 
-        on-mouse-up
-        (mf/use-callback
-         (fn [event]
-           (dom/stop-propagation event)
-           (let [event (.-nativeEvent event)
-                 ctrl? (kbd/ctrl? event)
-                 shift? (kbd/shift? event)
-                 alt? (kbd/alt? event)]
-             (when (= 1 (.-which event))
-               (st/emit! (ms/->MouseEvent :up ctrl? shift? alt?)))
+        disable-events?          (contains? layout :comments)
+        show-comments?           (= drawing-tool :comments)
+        show-cursor-tooltip?     tooltip
+        show-draw-area?          drawing-obj
+        show-gradient-handlers?  (= (count selected) 1)
+        show-grids?              (contains? layout :display-grid)
+        show-outlines?           (and (nil? transform) (not edition) (not drawing-obj) (not (#{:comments :path} drawing-tool)))
+        show-pixel-grid?         (>= zoom 8)
+        show-presence?           page-id
+        show-prototypes?         (= options-mode :prototype)
+        show-selection-handlers? (seq selected)
+        show-snap-distance?      (and (contains? layout :dynamic-alignment) (= transform :move) (not (empty? selected)))
+        show-snap-points?        (and (contains? layout :dynamic-alignment) (or drawing-obj transform))
+        show-selrect?            (and selrect (empty? drawing))
+        ]
 
-             (when (= 2 (.-which event))
-               (do
-                 (dom/prevent-default event)
+    (hooks/setup-dom-events viewport-ref zoom disable-paste in-viewport?)
+    (hooks/setup-viewport-size viewport-ref)
+    (hooks/setup-cursor cursor alt? panning drawing-tool drawing-path?)
+    (hooks/setup-resize layout viewport-ref)
+    (hooks/setup-keyboard alt? ctrl?)
+    (hooks/setup-hover-shapes page-id move-stream selected objects transform selected ctrl? hover hover-ids)
+    (hooks/setup-viewport-modifiers modifiers selected objects render-ref)
 
-                 ;; We store this so in Firefox the middle button won't do a paste of the content
-                 (reset! disable-paste true)
-                 (timers/schedule #(reset! disable-paste false))
-                 (st/emit! dw/finish-pan
-                           ::finish-positioning))))))
+    [:div.viewport
+     [:div.viewport-overlays
+      (when show-comments?
+        [:& comments/comments-layer {:vbox vbox
+                                     :vport vport
+                                     :zoom zoom
+                                     :drawing drawing
+                                     :page-id page-id
+                                     :file-id (:id file)}])
 
-        on-pointer-down
-        (mf/use-callback
-         (fn [event]
-           (let [target (dom/get-target event)]
-             ; Capture mouse pointer to detect the movements even if cursor
-             ; leaves the viewport or the browser itself
-             ; https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture
-             (.setPointerCapture target (.-pointerId event)))))
+      (when picking-color?
+        [:& pixel-overlay/pixel-overlay {:vport vport
+                                         :vbox vbox
+                                         :options options
+                                         :layout layout
+                                         :viewport-ref viewport-ref}])
 
-        on-pointer-up
-        (mf/use-callback
-         (fn [event]
-           (let [target (dom/get-target event)]
-             ; Release pointer on mouse up
-             (.releasePointerCapture target (.-pointerId event)))))
-
-        on-click
-        (mf/use-callback
-         (fn [event]
-           (let [ctrl? (kbd/ctrl? event)
-                 shift? (kbd/shift? event)
-                 alt? (kbd/alt? event)]
-             (st/emit! (ms/->MouseEvent :click ctrl? shift? alt?)))))
-
-        on-double-click
-        (mf/use-callback
-         (mf/deps drawing-path?)
-         (fn [event]
-           (dom/stop-propagation event)
-           (let [ctrl? (kbd/ctrl? event)
-                 shift? (kbd/shift? event)
-                 alt? (kbd/alt? event)]
-             (st/emit! (ms/->MouseEvent :double-click ctrl? shift? alt?)))))
-
-        on-key-down
-        (mf/use-callback
-         (fn [event]
-           (let [bevent (.getBrowserEvent ^js event)
-                 key    (.-keyCode ^js event)
-                 key    (.normalizeKeyCode KeyCodes key)
-                 ctrl?  (kbd/ctrl? event)
-                 shift? (kbd/shift? event)
-                 alt?   (kbd/alt? event)
-                 meta?  (kbd/meta? event)
-                 target (dom/get-target event)]
-
-             (when-not (.-repeat bevent)
-               (st/emit! (ms/->KeyboardEvent :down key shift? ctrl? alt? meta?))
-               (when (and (kbd/space? event)
-                          (not= "rich-text" (obj/get target "className"))
-                          (not= "INPUT" (obj/get target "tagName"))
-                          (not= "TEXTAREA" (obj/get target "tagName")))
-                 (handle-viewport-positioning viewport-ref))))))
-
-        on-key-up
-        (mf/use-callback
-         (fn [event]
-           (let [key    (.-keyCode event)
-                 key    (.normalizeKeyCode KeyCodes key)
-                 ctrl?  (kbd/ctrl? event)
-                 shift? (kbd/shift? event)
-                 alt?   (kbd/alt? event)
-                 meta?  (kbd/meta? event)]
-             (when (kbd/space? event)
-               (st/emit! dw/finish-pan ::finish-positioning))
-             (st/emit! (ms/->KeyboardEvent :up key shift? ctrl? alt? meta?)))))
-
-        translate-point-to-viewport
-        (mf/use-callback
-         (fn [pt]
-           (let [viewport (mf/ref-val viewport-ref)
-                 vbox     (.. ^js viewport -viewBox -baseVal)
-                 brect    (.getBoundingClientRect viewport)
-                 brect    (gpt/point (d/parse-integer (.-left brect))
-                                     (d/parse-integer (.-top brect)))
-                 box      (gpt/point (.-x vbox)
-                                     (.-y vbox))
-                 ]
-             (-> (gpt/subtract pt brect)
-                 (gpt/divide (gpt/point @refs/selected-zoom))
-                 (gpt/add box)
-                 (gpt/round 0)))))
-
-        on-mouse-move
-        (mf/use-callback
-         (fn [event]
-           (let [event  (.getBrowserEvent ^js event)
-                 raw-pt (dom/get-client-position event)
-                 pt     (translate-point-to-viewport raw-pt)
-
-                 ;; We calculate the delta because Safari's MouseEvent.movementX/Y drop
-                 ;; events
-                 delta (if @last-position
-                         (gpt/subtract raw-pt @last-position)
-                         (gpt/point 0 0))]
-             (reset! last-position raw-pt)
-             (st/emit! (ms/->PointerEvent :delta delta
-                                          (kbd/ctrl? event)
-                                          (kbd/shift? event)
-                                          (kbd/alt? event)))
-             (st/emit! (ms/->PointerEvent :viewport pt
-                                          (kbd/ctrl? event)
-                                          (kbd/shift? event)
-                                          (kbd/alt? event))))))
-
-        on-mouse-wheel
-        (mf/use-callback
-         (fn [event]
-           (let [node (mf/ref-val viewport-ref)
-                 target (dom/get-target event)]
-             (cond
-               (or (kbd/ctrl? event) (kbd/meta? event))
-               (let [event (.getBrowserEvent ^js event)
-                     pos   @ms/mouse-position]
-                 (dom/prevent-default event)
-                 (dom/stop-propagation event)
-                 (let [delta (+ (.-deltaY ^js event)
-                                (.-deltaX ^js event))]
-                   (if (pos? delta)
-                     (st/emit! (dw/decrease-zoom pos))
-                     (st/emit! (dw/increase-zoom pos)))))
-
-               (.contains ^js node target)
-               (let [event (.getBrowserEvent ^js event)
-                     delta-mode (.-deltaMode ^js event)
-
-                     unit (cond
-                            (= delta-mode WheelEvent.DeltaMode.PIXEL) 1
-                            (= delta-mode WheelEvent.DeltaMode.LINE) 16
-                            (= delta-mode WheelEvent.DeltaMode.PAGE) 100)
-
-                     delta-y (-> (.-deltaY ^js event)
-                                 (* unit)
-                                 (/ @refs/selected-zoom))
-                     delta-x (-> (.-deltaX ^js event)
-                                 (* unit)
-                                 (/ @refs/selected-zoom))]
-                 (dom/prevent-default event)
-                 (dom/stop-propagation event)
-                 (if (kbd/shift? event)
-                   (st/emit! (dw/update-viewport-position {:x #(+ % delta-y)}))
-                   (st/emit! (dw/update-viewport-position {:x #(+ % delta-x)
-                                                           :y #(+ % delta-y)}))))))))
-
-        on-drag-enter
-        (mf/use-callback
-         (fn [e]
-           (when (or (dnd/has-type? e "app/shape")
-                     (dnd/has-type? e "app/component")
-                     (dnd/has-type? e "Files")
-                     (dnd/has-type? e "text/uri-list")
-                     (dnd/has-type? e "text/asset-id"))
-             (dom/prevent-default e))))
-
-        on-drag-over
-        (mf/use-callback
-         (fn [e]
-           (when (or (dnd/has-type? e "app/shape")
-                     (dnd/has-type? e "app/component")
-                     (dnd/has-type? e "Files")
-                     (dnd/has-type? e "text/uri-list")
-                     (dnd/has-type? e "text/asset-id"))
-             (dom/prevent-default e))))
-
-        on-image-uploaded
-        (mf/use-callback
-         (fn [image {:keys [x y]}]
-           (st/emit! (dw/image-uploaded image x y))))
-
-        on-drop
-        (mf/use-callback
-         (fn [event]
-           (dom/prevent-default event)
-           (let [point (gpt/point (.-clientX event) (.-clientY event))
-                 viewport-coord (translate-point-to-viewport point)
-                 asset-id     (-> (dnd/get-data event "text/asset-id") uuid/uuid)
-                 asset-name   (dnd/get-data event "text/asset-name")
-                 asset-type   (dnd/get-data event "text/asset-type")]
-             (cond
-               (dnd/has-type? event "app/shape")
-               (let [shape (dnd/get-data event "app/shape")
-                     final-x (- (:x viewport-coord) (/ (:width shape) 2))
-                     final-y (- (:y viewport-coord) (/ (:height shape) 2))]
-                 (st/emit! (dw/add-shape (-> shape
-                                             (assoc :id (uuid/next))
-                                             (assoc :x final-x)
-                                             (assoc :y final-y)))))
-
-               (dnd/has-type? event "app/component")
-               (let [{:keys [component file-id]} (dnd/get-data event "app/component")
-                     shape (get-in component [:objects (:id component)])
-                     final-x (- (:x viewport-coord) (/ (:width shape) 2))
-                     final-y (- (:y viewport-coord) (/ (:height shape) 2))]
-                 (st/emit! (dwl/instantiate-component file-id
-                                                      (:id component)
-                                                      (gpt/point final-x final-y))))
-
-               ;; Will trigger when the user drags an image from a browser to the viewport
-               (dnd/has-type? event "text/uri-list")
-               (let [data  (dnd/get-data event "text/uri-list")
-                     lines (str/lines data)
-                     urls  (filter #(and (not (str/blank? %))
-                                         (not (str/starts-with? % "#")))
-                                   lines)
-                     params {:file-id (:id file)
-                             :uris urls}]
-                 (st/emit! (dw/upload-media-workspace params viewport-coord)))
-
-               ;; Will trigger when the user drags an SVG asset from the assets panel
-               (and (dnd/has-type? event "text/asset-id") (= asset-type "image/svg+xml"))
-               (let [path (cfg/resolve-file-media {:id asset-id})
-                     params {:file-id (:id file)
-                             :uris [path]
-                             :name asset-name
-                             :mtype asset-type}]
-                 (st/emit! (dw/upload-media-workspace params viewport-coord)))
-
-               ;; Will trigger when the user drags an image from the assets SVG
-               (dnd/has-type? event "text/asset-id")
-               (let [params {:file-id (:id file)
-                             :object-id asset-id
-                             :name asset-name}]
-                 (st/emit! (dw/clone-media-object
-                            (with-meta params
-                              {:on-success #(on-image-uploaded % viewport-coord)}))))
-
-               ;; Will trigger when the user drags a file from their file explorer into the viewport
-               ;; Or the user pastes an image
-               ;; Or the user uploads an image using the image tool
-               :else
-               (let [files  (dnd/get-files event)
-                     params {:file-id (:id file)
-                             :data (seq files)}]
-                 (st/emit! (dw/upload-media-workspace params viewport-coord)))))))
-
-        on-paste
-        (mf/use-callback
-         (fn [event]
-           ;; We disable the paste just after mouse-up of a middle button so when panning won't
-           ;; paste the content into the workspace
-           (let [tag-name (-> event dom/get-target dom/get-tag-name)]
-             (when (and (not (#{"INPUT" "TEXTAREA"} tag-name)) (not @disable-paste))
-               (st/emit! (dw/paste-from-event event @in-viewport?))))))
-
-        on-resize
-        (mf/use-callback
-         (fn [event]
-           (let [node (mf/ref-val viewport-ref)
-                 prnt (dom/get-parent node)
-                 size (dom/get-client-size prnt)]
-             ;; We schedule the event so it fires after `initialize-page` event
-             (timers/schedule #(st/emit! (dw/update-viewport-size size))))))
-
-        options (mf/deref refs/workspace-page-options)]
-
-    (mf/use-layout-effect
-     (fn []
-       (let [node (mf/ref-val viewport-ref)
-             prnt (dom/get-parent node)
-
-             keys [(events/listen js/document EventType.KEYDOWN on-key-down)
-                   (events/listen js/document EventType.KEYUP on-key-up)
-                   (events/listen node EventType.MOUSEMOVE on-mouse-move)
-                   ;; bind with passive=false to allow the event to be cancelled
-                   ;; https://stackoverflow.com/a/57582286/3219895
-                   (events/listen js/window EventType.WHEEL on-mouse-wheel #js {:passive false})
-                   (events/listen js/window EventType.RESIZE on-resize)
-                   (events/listen js/window EventType.PASTE on-paste)]]
-
-         (fn []
-           (doseq [key keys]
-             (events/unlistenByKey key))))))
-
-    (mf/use-layout-effect
-     (fn []
-       (mf/deps page-id)
-       (let [node (mf/ref-val viewport-ref)
-             prnt (dom/get-parent node)
-             size (dom/get-client-size prnt)]
-         ;; We schedule the event so it fires after `initialize-page` event
-         (timers/schedule #(st/emit! (dw/initialize-viewport size))))))
-
-    (mf/use-effect
-     (mf/deps @cursor @alt? panning drawing-tool drawing-path?)
-     (fn []
-       (let [new-cursor
-             (cond
-               panning                     (get-cursor :hand)
-               (= drawing-tool :comments)  (get-cursor :comments)
-               (= drawing-tool :frame)     (get-cursor :create-artboard)
-               (= drawing-tool :rect)      (get-cursor :create-rectangle)
-               (= drawing-tool :circle)    (get-cursor :create-ellipse)
-               (or (= drawing-tool :path)
-                   drawing-path?)          (get-cursor :pen)
-               (= drawing-tool :curve)     (get-cursor :pencil)
-               drawing-tool                (get-cursor :create-shape)
-               @alt?                       (get-cursor :duplicate)
-               :else                       (get-cursor :pointer-inner))]
-
-         (when (not= @cursor new-cursor)
-           (reset! cursor new-cursor)))))
-
-    (mf/use-layout-effect (mf/deps layout) on-resize)
-    (hooks/use-stream ms/keyboard-alt #(reset! alt? %))
-
-    [:*
-     (when picking-color?
-       [:& pixel-overlay {:vport vport
-                          :vbox vbox
-                          :viewport @viewport-node
-                          :options options
-                          :layout layout}])
-
-     (when (= drawing-tool :comments)
-       [:& comments-layer {:vbox vbox
-                           :vport vport
-                           :zoom zoom
-                           :drawing drawing
-                           :page-id page-id
-                           :file-id (:id file)}])
-
-     (when-not css-mouse?
-       [:& render-cursor {:viewport @viewport-node
-                          :cursor @cursor}])
-
-     [:svg.viewport
-      {:xmlns      "http://www.w3.org/2000/svg"
+      [:& widgets/viewport-actions]]
+     [:svg.render-shapes
+      {:id "render"
+       :ref render-ref
+       :xmlns "http://www.w3.org/2000/svg"
        :xmlnsXlink "http://www.w3.org/1999/xlink"
        :preserveAspectRatio "xMidYMid meet"
-       :key page-id
+       :key (str "render" page-id)
        :width (:width vport 0)
        :height (:height vport 0)
-       :view-box (format-viewbox vbox)
-       :ref #(do (mf/set-ref-val! viewport-ref %)
-                 (reset! viewport-node %))
+       :view-box (utils/format-viewbox vbox)
+       :style {:background-color (get options :background "#E8E9EA")}}
+
+      [:& (mf/provider muc/embed-ctx) {:value true}
+       ;; Render root shape
+       [:& shapes/root-shape {:key page-id
+                              :objects objects}]]]
+
+     [:svg.viewport-controls
+      {:xmlns "http://www.w3.org/2000/svg"
+       :xmlnsXlink "http://www.w3.org/1999/xlink"
+       :preserveAspectRatio "xMidYMid meet"
+       :key (str "viewport" page-id)
+       :width (:width vport 0)
+       :height (:height vport 0)
+       :view-box (utils/format-viewbox vbox)
+       :ref viewport-ref
        :class (when drawing-tool "drawing")
-       :style {:cursor (when css-mouse? @cursor)
-               :background-color (get options :background "#E8E9EA")}
-       :on-context-menu on-context-menu
-       :on-click on-click
-       :on-double-click on-double-click
-       :on-mouse-down on-mouse-down
-       :on-mouse-up on-mouse-up
-       :on-pointer-down on-pointer-down
-       :on-pointer-up on-pointer-up
-       :on-pointer-enter #(reset! in-viewport? true)
-       :on-pointer-leave #(reset! in-viewport? false)
-       :on-drag-enter on-drag-enter
-       :on-drag-over on-drag-over
-       :on-drop on-drop}
+       :style {:cursor @cursor}
 
-      [:g {:style {:pointer-events (if (contains? layout :comments)
-                                     "none"
-                                     "auto")}}
-       [:& frames {:key page-id
-                   :hover hover
-                   :selected selected
-                   :edition edition}]
+       :on-click         on-click
+       :on-context-menu  on-context-menu
+       :on-double-click  on-double-click
+       :on-drag-enter    on-drag-enter
+       :on-drag-over     on-drag-over
+       :on-drop          on-drop
+       :on-mouse-down    on-mouse-down
+       :on-mouse-up      on-mouse-up
+       :on-pointer-down  on-pointer-down
+       :on-pointer-enter on-pointer-enter
+       :on-pointer-leave on-pointer-leave
+       :on-pointer-move  on-pointer-move
+       :on-pointer-up    on-pointer-up
+       }
 
-       [:g {:style {:display (when (not= :move transform) "none")}}
-        [:& ghost-frames {:modifiers modifiers
-                          :selected selected}]]
+      [:g {:style {:pointer-events (if disable-events? "none" "auto")}}
 
-       (when (seq selected)
-         [:& selection-handlers {:selected selected
-                                 :zoom zoom
-                                 :edition edition
-                                 :show-distances (and (not transform) show-distances?)
-                                 :disable-handlers (or drawing-tool edition)}])
+       (when show-outlines?
+         [:& outline/shape-outlines
+          {:objects objects
+           :selected selected
+           :hover (when (not= :frame (:type @hover))
+                    #{(or @frame-hover (:id @hover))})
+           :edition edition
+           :zoom zoom}])
 
-       (when (= (count selected) 1)
-         [:& gradient-handlers {:id (first selected)
-                                :zoom zoom}])
+       (when show-selection-handlers?
+         [:& selection/selection-handlers
+          {:selected selected
+           :zoom zoom
+           :edition edition
+           :show-distances (and (not transform) show-distances?)
+           :disable-handlers (or drawing-tool edition)
+           :on-move-selected on-move-selected}])
 
-       (when drawing-obj
-         [:& draw-area {:shape drawing-obj
-                        :zoom zoom
-                        :tool drawing-tool
-                        :modifiers modifiers}])
+       (when text-editing?
+         [:& editor/text-shape-edit {:shape (get objects edition)}])
+
+       [:& widgets/frame-titles
+        {:objects objects
+         :selected selected
+         :zoom zoom
+         :modifiers modifiers
+         :on-frame-enter on-frame-enter
+         :on-frame-leave on-frame-leave
+         :on-frame-select on-frame-select}]
+
+       (when show-gradient-handlers?
+         [:& gradients/gradient-handlers
+          {:id (first selected)
+           :zoom zoom}])
+
+       (when show-draw-area?
+         [:& drawarea/draw-area
+          {:shape drawing-obj
+           :zoom zoom
+           :tool drawing-tool
+           :modifiers modifiers}])
 
        (when show-grids?
-         [:& frame-grid {:zoom zoom}])
+         [:& frame-grid/frame-grid
+          {:zoom zoom}])
 
-       (when (>= zoom 8)
-         [:& pixel-grid {:vbox vbox
-                         :zoom zoom}])
+       (when show-pixel-grid?
+         [:& widgets/pixel-grid
+          {:vbox vbox
+           :zoom zoom}])
 
        (when show-snap-points?
-         [:& snap-points {:layout layout
-                          :transform transform
-                          :drawing drawing-obj
-                          :zoom zoom
-                          :page-id page-id
-                          :selected selected
-                          :modifiers modifiers}])
+         [:& snap-points/snap-points
+          {:layout layout
+           :transform transform
+           :drawing drawing-obj
+           :zoom zoom
+           :page-id page-id
+           :selected selected
+           :modifiers modifiers}])
 
        (when show-snap-distance?
-         [:& snap-distances {:layout layout
-                             :zoom zoom
-                             :transform transform
-                             :selected selected
-                             :page-id page-id}])
+         [:& snap-distances/snap-distances
+          {:layout layout
+           :zoom zoom
+           :transform transform
+           :selected selected
+           :page-id page-id}])
 
-       (when tooltip
-         [:& cursor-tooltip {:zoom zoom :tooltip tooltip}])]
-
-      [:& presence/active-cursors {:page-id page-id}]
-      [:& selection-rect {:data selrect}]
-
-      (when (= options-mode :prototype)
-        [:& interactions {:selected selected}])]]))
+       (when show-cursor-tooltip?
+         [:& widgets/cursor-tooltip
+          {:zoom zoom
+           :tooltip tooltip}])
 
 
-(mf/defc viewport-actions
-  {::mf/wrap [mf/memo]}
-  []
-  (let [edition (mf/deref refs/selected-edition)
-        selected (mf/deref refs/selected-objects)
-        shape (-> selected first)]
-    (when (and (= (count selected) 1)
-               (= (:id shape) edition)
-               (= :path (:type shape)))
-      [:div.viewport-actions
-       [:& path-actions {:shape shape}]])))
+       (when show-presence?
+         [:& presence/active-cursors
+          {:page-id page-id}])
+
+       [:& widgets/viewport-actions]
+       
+       (when show-prototypes?
+         [:& interactions/interactions
+          {:selected selected}])
+
+       (when show-selrect?
+         [:& widgets/selection-rect {:data selrect}])]]]))
+

@@ -44,7 +44,7 @@
                  (let [shape1 (thp/get-shape new-state :shape1)
 
                        [[group shape1] [c-group c-shape1] component]
-                       (thl/resolve-instance-and-master
+                       (thl/resolve-instance-and-main
                          new-state
                          (:id instance1))
 
@@ -98,7 +98,7 @@
                  (let [shape1 (thp/get-shape new-state :shape1)
 
                        [[group shape1] [c-group c-shape1] component]
-                       (thl/resolve-instance-and-master
+                       (thl/resolve-instance-and-main
                          new-state
                          (:id instance1))
 

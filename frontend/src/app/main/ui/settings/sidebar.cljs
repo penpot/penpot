@@ -5,11 +5,13 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.settings.sidebar
   (:require
-   [app.config :as cfg]
+   [app.config :as cf]
+   [app.main.data.auth :as da]
+   [app.main.data.modal :as modal]
    [app.main.store :as st]
    [app.main.ui.dashboard.sidebar :refer [profile-section]]
    [app.main.ui.icons :as i]
@@ -27,7 +29,7 @@
         go-dashboard
         (mf/use-callback
          (mf/deps profile)
-         (st/emitf (rt/nav :dashboard-projects {:team-id (:default-team-id profile)})))
+         (st/emitf (rt/nav :dashboard-projects {:team-id (da/current-team-id profile)})))
 
         go-settings-profile
         (mf/use-callback
@@ -47,7 +49,16 @@
         go-settings-options
         (mf/use-callback
          (mf/deps profile)
-         (st/emitf (rt/nav :settings-options)))]
+         (st/emitf (rt/nav :settings-options)))
+
+        show-release-notes
+        (mf/use-callback
+         (fn [event]
+           (let [version (:main @cf/version)]
+             (if (and (.-ctrlKey ^js event)
+                      (.-altKey ^js event))
+               (st/emit! (modal/show {:type :onboarding}))
+               (st/emit! (modal/show {:type :release-notes :version version}))))))]
 
     [:div.sidebar-content
      [:div.sidebar-content-section
@@ -73,7 +84,13 @@
         i/tree
         [:span.element-title (tr "labels.settings")]]
 
-       (when cfg/feedback-enabled
+       [:hr]
+
+       [:li {:on-click show-release-notes}
+        i/pencil
+        [:span.element-title (tr "labels.release-notes")]]
+
+       (when cf/feedback-enabled
          [:li {:class (when feedback? "current")
                :on-click go-settings-feedback}
           i/msg-info

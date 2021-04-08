@@ -4,19 +4,6 @@
   grid-template-columns: 1fr;
   user-select: none;
 
-  &.fullscreen {
-    .viewer-header {
-      opacity: 0;
-      &:hover {
-        opacity: 1;
-      }
-    }
-
-    .viewer-content {
-      grid-row: 1 / span 2;
-    }
-  }
-
   .viewer-header {
     grid-column: 1 / span 1;
     grid-row: 1 / span 1;
@@ -25,5 +12,24 @@
   .viewer-content {
     grid-column: 1 / span 1;
     grid-row: 2 / span 1;
+  }
+}
+
+.fullscreen .viewer-layout:not(.force-visible) {
+  & .viewer-header {
+    width: 100%;
+    position: fixed;
+    top: -39px;
+    left: 0;
+    transition: top 400ms ease 300ms;
+  }
+
+  & .viewer-header:hover {
+    top: 0;
+    transition: top 200ms;
+  }
+
+  & .viewer-content {
+    grid-row: 1 / span 2;
   }
 }

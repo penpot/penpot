@@ -2,8 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
-// Copyright (c) 2015-2016 Andrey Antukh <niwi@niwi.nz>
-// Copyright (c) 2015-2016 Juan de la Cruz <delacruzgarciajuan@gmail.com>
+// Copyright (c) UXBOX Labs SL
 
 // Font sizes
 $fs8: 0.5rem;
@@ -41,71 +40,33 @@ $title-lh: 1.25;
 $title-lh-sm: 1.15;
 
 // Work Sans
-@include font-face("worksans","WorkSans-ExtraLight", "100");
-@include font-face("worksans","WorkSans-ExtraLightitalic","100",italic);
-@include font-face("worksans","WorkSans-Light","200");
-@include font-face("worksans","WorkSans-LightItalic","200",italic);
-@include font-face("worksans","WorkSans-Regular",normal);
-@include font-face("worksans","WorkSans-Italic",normal,italic);
-@include font-face("worksans","WorkSans-SemiBold","500");
-@include font-face("worksans","WorkSans-SemiBoldItalic","500",italic);
-@include font-face("worksans","WorkSans-Bold",bold);
-@include font-face("worksans","WorkSans-BoldItalic",bold,italic);
-@include font-face("worksans","WorkSans-Black","900");
-@include font-face("worksans","WorkSans-BlackItalic","900",italic);
+@include font-face("worksans","WorkSans-Thin", "100");
+@include font-face("worksans","WorkSans-ThinItalic", "100", italic);
+@include font-face("worksans","WorkSans-ExtraLight", "200");
+@include font-face("worksans","WorkSans-ExtraLightitalic", "200", italic);
+@include font-face("worksans","WorkSans-Light", "300");
+@include font-face("worksans","WorkSans-LightItalic", "300", italic);
+@include font-face("worksans","WorkSans-Regular", normal);
+@include font-face("worksans","WorkSans-Italic", normal, italic);
+@include font-face("worksans","WorkSans-Medium", "500");
+@include font-face("worksans","WorkSans-MediumItalic", "500", italic);
+@include font-face("worksans","WorkSans-SemiBold", "600");
+@include font-face("worksans","WorkSans-SemiBoldItalic", "600", italic);
+@include font-face("worksans","WorkSans-Bold", bold);
+@include font-face("worksans","WorkSans-BoldItalic", bold, italic);
+@include font-face("worksans","WorkSans-Black", "900");
+@include font-face("worksans","WorkSans-BlackItalic","900", italic);
 
 // Source Sans Pro
-@include font-face("sourcesanspro","sourcesanspro-extralight", "100");
-@include font-face("sourcesanspro","sourcesanspro-extralightitalic","100",italic);
-@include font-face("sourcesanspro","sourcesanspro-light","200");
-@include font-face("sourcesanspro","sourcesanspro-lightitalic","200",italic);
-@include font-face("sourcesanspro","sourcesanspro-regular",normal);
-@include font-face("sourcesanspro","sourcesanspro-italic",normal,italic);
-@include font-face("sourcesanspro","sourcesanspro-semibold","500");
-@include font-face("sourcesanspro","sourcesanspro-semibolditalic","500",italic);
-@include font-face("sourcesanspro","sourcesanspro-bold",bold);
-@include font-face("sourcesanspro","sourcesanspro-bolditalic",bold,italic);
-@include font-face("sourcesanspro","sourcesanspro-black","900");
-@include font-face("sourcesanspro","sourcesanspro-blackitalic","900",italic);
-
-// Open Sans
-@include font-face("opensans","opensans-extralight","100");
-@include font-face("opensans","opensans-extralightitalic","100",italic);
-@include font-face("opensans","opensans-light","200");
-@include font-face("opensans","opensans-lightitalic","200",italic);
-@include font-face("opensans","opensans-regular",normal);
-@include font-face("opensans","opensans-italic",normal,italic);
-@include font-face("opensans","opensans-semibold","500");
-@include font-face("opensans","opensans-semibolditalic","500",italic);
-@include font-face("opensans","opensans-bold",bold);
-@include font-face("opensans","opensans-bolditalic",bold,italic);
-@include font-face("opensans","opensans-black","900");
-@include font-face("opensans","opensans-blackitalic","900",italic);
-
-// Roboto
-@include font-face("roboto","roboto-thin","100");
-@include font-face("roboto","roboto-thinitalic","100",italic);
-@include font-face("roboto","roboto-light","200");
-@include font-face("roboto","roboto-lightitalic","200",italic);
-@include font-face("roboto","roboto-regular",normal);
-@include font-face("roboto","roboto-italic",normal,italic);
-@include font-face("roboto","roboto-semibold","500");
-@include font-face("roboto","roboto-semibolditalic","500",italic);
-@include font-face("roboto","roboto-bold",bold);
-@include font-face("roboto","roboto-bolditalic",bold,italic);
-@include font-face("roboto","roboto-black","900");
-@include font-face("roboto","roboto-blackitalic","900",italic);
-
-// Roboto Condensed
-@include font-face("robotocondensed","robotocondensed-thin","100");
-@include font-face("robotocondensed","robotocondensed-thinitalic","100",italic);
-@include font-face("robotocondensed","robotocondensed-light","200");
-@include font-face("robotocondensed","robotocondensed-lightitalic","200",italic);
-@include font-face("robotocondensed","robotocondensed-regular",normal);
-@include font-face("robotocondensed","robotocondensed-italic",normal,italic);
-@include font-face("robotocondensed","robotocondensed-semibold","500");
-@include font-face("robotocondensed","robotocondensed-semibolditalic","500",italic);
-@include font-face("robotocondensed","robotocondensed-bold",bold);
-@include font-face("robotocondensed","robotocondensed-bolditalic",bold,italic);
-@include font-face("robotocondensed","robotocondensed-black","900");
-@include font-face("robotocondensed","robotocondensed-blackitalic","900",italic);
+@include font-face("sourcesanspro","sourcesanspro-extralight", "200");
+@include font-face("sourcesanspro","sourcesanspro-extralightitalic", "200", italic);
+@include font-face("sourcesanspro","sourcesanspro-light", "300");
+@include font-face("sourcesanspro","sourcesanspro-lightitalic", "300", italic);
+@include font-face("sourcesanspro","sourcesanspro-regular", normal);
+@include font-face("sourcesanspro","sourcesanspro-italic", normal, italic);
+@include font-face("sourcesanspro","sourcesanspro-semibold", "600");
+@include font-face("sourcesanspro","sourcesanspro-semibolditalic", "600", italic);
+@include font-face("sourcesanspro","sourcesanspro-bold", bold);
+@include font-face("sourcesanspro","sourcesanspro-bolditalic", bold, italic);
+@include font-face("sourcesanspro","sourcesanspro-black", "900");
+@include font-face("sourcesanspro","sourcesanspro-blackitalic", "900", italic);

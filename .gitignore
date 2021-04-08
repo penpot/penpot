@@ -15,9 +15,11 @@ node_modules
 /backend/target/
 /backend/resources/public/media
 /backend/resources/public/assets
+/backend/assets/
 /backend/dist/
 /backend/logs/
 /backend/-
+/telemetry/
 /frontend/npm-debug.log
 /frontend/target/
 /frontend/dist/
@@ -26,7 +28,7 @@ node_modules
 /frontend/resources/public/*
 /exporter/target
 /exporter/.shadow-cljs
-/docker/images/bundle
+/docker/images/bundle*
 /.clj-kondo/.cache
 /bundle*
 /media

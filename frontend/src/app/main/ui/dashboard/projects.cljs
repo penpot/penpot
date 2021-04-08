@@ -129,7 +129,9 @@
                             :on-end on-edit}]
         [:h2 {:on-click on-nav
               :on-context-menu on-menu-click}
-         (:name project)])
+         (if (:is-default project)
+           (tr "labels.drafts")
+           (:name project))])
       [:& project-menu {:project project
                         :show? (:menu-open @local)
                         :left (:x (:menu-pos @local))
@@ -148,6 +150,7 @@
 
      [:& line-grid
       {:project-id (:id project)
+       :team-id team-id
        :on-load-more on-nav
        :files files}]]))
 
@@ -161,7 +164,12 @@
     (mf/use-effect
      (mf/deps team)
      (fn []
-       (st/emit! (dd/fetch-recent-files {:team-id (:id team)}))))
+       (dom/set-html-title (tr "title.dashboard.projects"
+                              (if (:is-default team)
+                                (tr "dashboard.your-penpot")
+                                (:name team))))
+       (st/emit! (dd/fetch-recent-files {:team-id (:id team)})
+                 (dd/clear-selected-files))))
 
     (when (seq projects)
       [:*

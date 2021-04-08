@@ -29,8 +29,10 @@
    [app.main.ui.workspace.libraries]
    [app.main.ui.workspace.rules :refer [horizontal-rule vertical-rule]]
    [app.main.ui.workspace.sidebar :refer [left-sidebar right-sidebar]]
-   [app.main.ui.workspace.viewport :refer [viewport viewport-actions coordinates]]
+   [app.main.ui.workspace.viewport :refer [viewport]]
+   [app.main.ui.workspace.coordinates :as coordinates]
    [app.util.dom :as dom]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
    [beicon.core :as rx]
@@ -57,7 +59,7 @@
      [:& vertical-rule {:zoom zoom
                         :vbox vbox
                         :vport vport}]
-     [:& coordinates {:colorpalette? colorpalette?}]]))
+     [:& coordinates/coordinates {:colorpalette? colorpalette?}]]))
 
 (mf/defc workspace-content
   {::mf/wrap-props false}
@@ -80,7 +82,6 @@
                               :vport vport
                               :colorpalette? (contains? layout :colorpalette)}])
 
-       [:& viewport-actions]
        [:& viewport {:file file
                      :local local
                      :layout layout}]]]
@@ -137,11 +138,14 @@
         project (mf/deref refs/workspace-project)
         layout  (mf/deref refs/workspace-layout)]
 
+    (mf/use-effect
+      (mf/deps file)
+      #(dom/set-html-title (tr "title.workspace" (:name file))))
+
     [:& (mf/provider ctx/current-file-id) {:value (:id file)}
      [:& (mf/provider ctx/current-team-id) {:value (:team-id project)}
       [:& (mf/provider ctx/current-project-id) {:value (:id project)}
        [:& (mf/provider ctx/current-page-id) {:value page-id}
-
         [:section#workspace
          [:& header {:file file
                      :page-id page-id

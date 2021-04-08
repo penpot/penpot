@@ -5,13 +5,13 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020-2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.http
   (:require
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.spec :as us]
-   [app.config :as cfg]
    [app.http.errors :as errors]
    [app.http.middleware :as middleware]
    [app.metrics :as mtx]
@@ -26,22 +26,24 @@
    org.eclipse.jetty.server.handler.ErrorHandler
    org.eclipse.jetty.server.handler.StatisticsHandler))
 
+(declare router-handler)
+
 (s/def ::handler fn?)
+(s/def ::router some?)
 (s/def ::ws (s/map-of ::us/string fn?))
-(s/def ::port ::cfg/http-server-port)
+(s/def ::port ::us/integer)
 (s/def ::name ::us/string)
 
 (defmethod ig/pre-init-spec ::server [_]
-  (s/keys :req-un [::handler ::port]
-          :opt-un [::ws ::name ::mtx/metrics]))
+  (s/keys :req-un [::port]
+          :opt-un [::ws ::name ::mtx/metrics ::router ::handler]))
 
 (defmethod ig/prep-key ::server
   [_ cfg]
-  (merge {:name "http"}
-         (d/without-nils cfg)))
+  (merge {:name "http"} (d/without-nils cfg)))
 
 (defmethod ig/init-key ::server
-  [_ {:keys [handler ws port name metrics] :as opts}]
+  [_ {:keys [handler router ws port name metrics] :as opts}]
   (log/infof "starting '%s' server on port %s." name port)
   (let [pre-start (fn [^Server server]
                     (let [handler (doto (ErrorHandler.)
@@ -49,7 +51,7 @@
                                     (.setServer server))]
                       (.setErrorHandler server ^ErrorHandler handler)
                       (when metrics
-                        (let [stats (new StatisticsHandler)]
+                        (let [stats (StatisticsHandler.)]
                           (.setHandler ^StatisticsHandler stats (.getHandler server))
                           (.setHandler server stats)
                           (mtx/instrument-jetty! (:registry metrics) stats)))))
@@ -63,6 +65,13 @@
                    (when (seq ws)
                      {:websockets ws}))
 
+        handler   (cond
+                    (fn? handler)  handler
+                    (some? router) (router-handler router)
+                    :else (ex/raise :type :internal
+                                    :code :invalid-argument
+                                    :hint "Missing `handler` or `router` option."))
+
         server    (jetty/run-jetty handler options)]
     (assoc opts :server server)))
 
@@ -71,31 +80,13 @@
   (log/infof "stoping '%s' server on port %s." name port)
   (jetty/stop-server server))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Http Main Handler (Router)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(declare create-router)
-
-(s/def ::rpc map?)
-(s/def ::session map?)
-(s/def ::metrics map?)
-(s/def ::oauth map?)
-(s/def ::storage map?)
-(s/def ::assets map?)
-(s/def ::feedback fn?)
-
-(defmethod ig/pre-init-spec ::router [_]
-  (s/keys :req-un [::rpc ::session ::metrics ::oauth ::storage ::assets ::feedback]))
-
-(defmethod ig/init-key ::router
-  [_ cfg]
-  (let [handler (rr/ring-handler
-                 (create-router cfg)
-                 (rr/routes
-                  (rr/create-resource-handler {:path "/"})
-                  (rr/create-default-handler))
-                 {:middleware [middleware/server-timing]})]
+(defn- router-handler
+  [router]
+  (let [handler (rr/ring-handler router
+                                 (rr/routes
+                                  (rr/create-resource-handler {:path "/"})
+                                  (rr/create-default-handler))
+                                 {:middleware [middleware/server-timing]})]
     (fn [request]
       (try
         (handler request)
@@ -104,18 +95,30 @@
             (let [cdata (errors/get-error-context request e)]
               (update-thread-context! cdata)
               (log/errorf e "unhandled exception: %s (id: %s)" (ex-message e) (str (:id cdata)))
-              {:status 500
-               :body "internal server error"})
+              {:status 500 :body "internal server error"})
             (catch Throwable e
               (log/errorf e "unhandled exception: %s" (ex-message e))
-              {:status 500
-               :body "internal server error"})))))))
+              {:status 500 :body "internal server error"})))))))
 
-(defn- create-router
-  [{:keys [session rpc oauth metrics svgparse assets feedback] :as cfg}]
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Http Main Handler (Router)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(s/def ::rpc map?)
+(s/def ::session map?)
+(s/def ::oauth map?)
+(s/def ::storage map?)
+(s/def ::assets map?)
+(s/def ::feedback fn?)
+
+(defmethod ig/pre-init-spec ::router [_]
+  (s/keys :req-un [::rpc ::session ::mtx/metrics ::oauth ::storage ::assets ::feedback]))
+
+(defmethod ig/init-key ::router
+  [_ {:keys [session rpc oauth metrics svgparse assets feedback] :as cfg}]
   (rr/router
    [["/metrics" {:get (:handler metrics)}]
-
     ["/assets" {:middleware [[middleware/format-response-body]
                              [middleware/errors errors/handle]]}
      ["/by-id/:id" {:get (:objects-handler assets)}]
@@ -137,7 +140,7 @@
                           [middleware/errors errors/handle]
                           [middleware/cookies]]}
 
-     ["/svg" {:post svgparse}]
+     ["/svg/parse" {:post svgparse}]
      ["/feedback" {:middleware [(:middleware session)]
                    :post feedback}]
 

@@ -18,27 +18,28 @@
   height: 100vh;
 
   display: flex;
-  padding-top: 100px;
+  padding-top: 7vh;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  background-color:#2C233E;
-  background-image: url("/images/penpot-login.jpg");
-  background-size: cover;
+  background-color:#FEECFD;
+  background-image: url("/images/login-pink.svg");
   background-position: center;
+  background-size: 96%;
+  background-repeat: no-repeat;
 
   .tagline {
     text-align: center;
     width: 280px;
     font-size: $fs18;
-    margin-top: 25px;
+    margin-top: 2vh;
     color: #2C233E;
   }
 
   .logo {
     svg {
       fill: #2C233E;
-      width: 200px;
+      max-width: 11vw;
       height: 80px;
     }
   }

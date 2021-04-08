@@ -32,20 +32,24 @@
             mask           (when show-mask? (first childs))
             childs         (if show-mask? (rest childs) childs)
 
-            props (-> (attrs/extract-style-attrs shape)
-                      (obj/merge!
-                       #js {:pointerEvents pointer-events
-                            :clipPath (when (and mask (not expand-mask)) (clip-str mask))
-                            :mask (when (and mask (not expand-mask)) (mask-str mask))}))]
+            mask-props (when (and mask (not expand-mask))
+                         #js {:clipPath (clip-str mask)
+                              :mask     (mask-str mask)})
+            mask-wrapper (if (and mask (not expand-mask))
+                           "g"
+                           mf/Fragment)
 
-        [:> :g props
-         (when mask
-           [:> render-mask #js {:frame frame :mask mask}])
+            props (-> (attrs/extract-style-attrs shape))]
 
-         (for [item childs]
-           [:& shape-wrapper {:frame frame
-                              :shape item
-                              :key (:id item)}])]))))
+        [:> :g (attrs/extract-style-attrs shape)
+         [:> mask-wrapper mask-props
+          (when mask
+            [:> render-mask #js {:frame frame :mask mask}])
+
+          (for [item childs]
+            [:& shape-wrapper {:frame frame
+                               :shape item
+                               :key (:id item)}])]]))))
 
 
 

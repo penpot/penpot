@@ -12,13 +12,12 @@
    [app.main.data.dashboard :as dd]
    [app.main.data.modal :as modal]
    [app.main.store :as st]
-   [app.main.ui.components.context-menu :refer [context-menu]]
    [app.main.ui.dashboard.grid :refer [grid]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.project-menu :refer [project-menu]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [t]]
+   [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.router :as rt]
    [okulary.core :as l]
@@ -28,7 +27,6 @@
   [{:keys [team project] :as props}]
   (let [local      (mf/use-state {:menu-open false
                                   :edition false})
-        locale     (mf/deref i18n/locale)
         project-id (:id project)
         team-id    (:id team)
 
@@ -57,7 +55,7 @@
     [:header.dashboard-header
      (if (:is-default project)
        [:div.dashboard-title
-        [:h1 (t locale "dashboard.draft-title")]]
+        [:h1 (tr "labels.drafts")]]
 
        (if (:edition @local)
          [:& inline-edition {:content (:name project)
@@ -78,7 +76,7 @@
             :on-click toggle-pin}
            i/pin]]))
      [:a.btn-secondary.btn-small {:on-click on-create-clicked}
-      (t locale "dashboard.new-file")]]))
+      (tr "dashboard.new-file")]]))
 
 (defn files-ref
   [project-id]
@@ -95,7 +93,12 @@
     (mf/use-effect
      (mf/deps (:id project))
      (fn []
-       (st/emit! (dd/fetch-files {:project-id (:id project)}))))
+       (dom/set-html-title (tr "title.dashboard.files"
+                              (if (:is-default project)
+                                (tr "labels.drafts")
+                                (:name project))))
+       (st/emit! (dd/fetch-files {:project-id (:id project)})
+                 (dd/clear-selected-files))))
 
     [:*
      [:& header {:team team :project project}]

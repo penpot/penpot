@@ -58,4 +58,3 @@
   ([table where-params opts]
    (let [opts (merge default-opts opts)]
      (sql/for-delete table where-params opts))))
-

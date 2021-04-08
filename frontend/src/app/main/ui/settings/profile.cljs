@@ -106,6 +106,10 @@
 
 (mf/defc profile-page
   [{:keys [locale]}]
+
+  (mf/use-effect
+    #(dom/set-html-title (tr "title.settings.profile")))
+
   [:div.dashboard-settings
    [:div.form-container.two-columns
     [:& profile-photo-form {:locale locale}]

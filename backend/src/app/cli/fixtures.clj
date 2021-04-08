@@ -12,7 +12,6 @@
   (:require
    [app.common.pages :as cp]
    [app.common.uuid :as uuid]
-   [app.config :as cfg]
    [app.db :as db]
    [app.main :as main]
    [app.rpc.mutations.profile :as profile]
@@ -132,12 +131,18 @@
                     (range (:num-files-per-project opts))))
 
             (create-project [conn team-id owner-id index]
-              (let [id (mk-uuid "project" team-id index)
-                    name (str "project " index)]
+              (let [id        (if index
+                                (mk-uuid "project" team-id index)
+                                (mk-uuid "project" team-id))
+                    name      (if index
+                                (str "project " index)
+                                "Drafts")
+                    is-default (nil? index)]
                 (log/info "create project" index id)
                 (db/insert! conn :project
                             {:id id
                              :team-id team-id
+                             :is-default is-default
                              :name name})
                 (db/insert! conn :project-profile-rel
                             {:project-id id
@@ -150,8 +155,10 @@
             (create-projects [conn team-id profile-ids]
               (log/info "create projects")
               (let [owner-id (rng-nth rng profile-ids)
-                    project-ids (collect (partial create-project conn team-id owner-id)
-                                         (range (:num-projects-per-team opts)))]
+                    project-ids (conj
+                                  (collect (partial create-project conn team-id owner-id)
+                                         (range (:num-projects-per-team opts)))
+                                  (create-project conn team-id owner-id nil))]
                 (run! (partial create-files conn owner-id) project-ids)))
 
             (assign-profile-to-team [conn team-id owner? profile-id]
@@ -225,7 +232,7 @@
 
 (defn run
   [{:keys [preset] :or {preset :small}}]
-  (let [config (select-keys (main/build-system-config cfg/config)
+  (let [config (select-keys main/system-config
                             [:app.db/pool
                              :app.telemetry/migrations
                              :app.migrations/migrations

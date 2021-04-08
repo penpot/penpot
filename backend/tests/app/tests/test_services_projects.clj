@@ -61,8 +61,12 @@
         (t/is (= 2 (count result)))
         (t/is (not= project-id (get-in result [0 :id])))
         (t/is (= "Drafts" (get-in result [0 :name])))
+        (t/is (= "Default" (get-in result [0 :team-name])))
+        (t/is (= true (get-in result [0 :is-default-team])))
         (t/is project-id (get-in result [1 :id]))
-        (t/is (= "test project" (get-in result [1 :name])))))
+        (t/is (= "test project" (get-in result [1 :name])))
+        (t/is (= "team1" (get-in result [1 :team-name])))
+        (t/is (= false (get-in result [1 :is-default-team])))))
 
     ;; rename project
     (let [data {::th/type :rename-project

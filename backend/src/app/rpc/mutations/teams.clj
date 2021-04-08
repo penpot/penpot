@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020-2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.rpc.mutations.teams
   (:require
@@ -15,16 +15,16 @@
    [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.db :as db]
-   [app.emails :as emails]
+   [app.emails :as eml]
    [app.media :as media]
    [app.rpc.mutations.projects :as projects]
    [app.rpc.permissions :as perms]
    [app.rpc.queries.profile :as profile]
    [app.rpc.queries.teams :as teams]
    [app.storage :as sto]
-   [app.tasks :as tasks]
    [app.util.services :as sv]
    [app.util.time :as dt]
+   [app.worker :as wrk]
    [clojure.spec.alpha :as s]
    [datoteka.core :as fs]))
 
@@ -139,9 +139,11 @@
                   :code :only-owner-can-delete-team))
 
       ;; Schedule object deletion
-      (tasks/submit! conn {:name "delete-object"
-                           :delay cfg/deletion-delay
-                           :props {:id id :type :team}})
+      (wrk/submit! {::wrk/task :delete-object
+                    ::wrk/delay cfg/deletion-delay
+                    ::wrk/conn conn
+                    :id id
+                    :type :team})
 
       (db/update! conn :team
                   {:deleted-at (dt/now)}
@@ -174,7 +176,10 @@
           ;; convenience, if this bocomes a bottleneck or problematic,
           ;; we will change it to more efficient fetch mechanims.
           members (teams/retrieve-team-members conn team-id)
-          member  (d/seek #(= member-id (:id %)) members)]
+          member  (d/seek #(= member-id (:id %)) members)
+
+          is-owner? (some :is-owner perms)
+          is-admin? (some :is-admin perms)]
 
       ;; If no member is found, just 404
       (when-not member
@@ -182,8 +187,7 @@
                   :code :member-does-not-exist))
 
       ;; First check if we have permissions to change roles
-      (when-not (or (some :is-owner perms)
-                    (some :is-admin perms))
+      (when-not (or is-owner? is-admin?)
         (ex/raise :type :validation
                   :code :insufficient-permissions))
 
@@ -193,21 +197,20 @@
                   :code :cant-change-role-to-owner))
 
       ;; Don't allow promote to owner to admin users.
-      (when (and (= role :owner)
-                 (not (:is-owner perms)))
+      (when (and (not is-owner?) (= role :owner))
         (ex/raise :type :validation
                   :code :cant-promote-to-owner))
 
       (let [params (role->params role)]
         ;; Only allow single owner on team
-        (when (and (= role :owner)
-                   (:is-owner perms))
+        (when (= role :owner)
           (db/update! conn :team-profile-rel
                       {:is-owner false}
                       {:team-id team-id
                        :profile-id profile-id}))
 
-        (db/update! conn :team-profile-rel params
+        (db/update! conn :team-profile-rel
+                    params
                     {:team-id team-id
                      :profile-id member-id})
         nil))))
@@ -255,9 +258,10 @@
 
 (sv/defmethod ::update-team-photo
   [{:keys [pool storage] :as cfg} {:keys [profile-id file team-id] :as params}]
-  (media/validate-media-type (:content-type file))
   (db/with-atomic [conn pool]
     (teams/check-edition-permissions! conn profile-id team-id)
+    (media/validate-media-type (:content-type file) #{"image/jpeg" "image/png" "image/webp"})
+
     (let [team    (teams/retrieve-team conn profile-id team-id)
           _       (media/run cfg {:cmd :info :input {:path (:tempfile file)
                                                      :mtype (:content-type file)}})
@@ -321,27 +325,29 @@
                   :code :insufficient-permissions))
 
       ;; First check if the current profile is allowed to send emails.
-      (when-not (emails/allow-send-emails? conn profile)
+      (when-not (eml/allow-send-emails? conn profile)
         (ex/raise :type :validation
                   :code :profile-is-muted
                   :hint "looks like the profile has reported repeatedly as spam or has permanent bounces"))
 
-      (when (and member (not (emails/allow-send-emails? conn member)))
+      (when (and member (not (eml/allow-send-emails? conn member)))
         (ex/raise :type :validation
                   :code :member-is-muted
                   :hint "looks like the profile has reported repeatedly as spam or has permanent bounces"))
 
       ;; Secondly check if the invited member email is part of the
       ;; global spam/bounce report.
-      (when (emails/has-bounce-reports? conn email)
+      (when (eml/has-bounce-reports? conn email)
         (ex/raise :type :validation
                   :code :email-has-permanent-bounces
                   :hint "looks like the email you invite has been repeatedly reported as spam or permanent bounce"))
 
-      (emails/send! conn emails/invite-to-team
-                    {:to email
-                     :invited-by (:fullname profile)
-                     :team (:name team)
-                     :token itoken
-                     :extra-data ptoken})
+      (eml/send! {::eml/conn conn
+                  ::eml/factory eml/invite-to-team
+                  :public-uri (:public-uri cfg)
+                  :to email
+                  :invited-by (:fullname profile)
+                  :team (:name team)
+                  :token itoken
+                  :extra-data ptoken})
       nil)))

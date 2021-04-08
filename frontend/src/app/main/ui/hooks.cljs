@@ -14,6 +14,7 @@
    [app.common.spec :as us]
    [app.main.data.shortcuts :refer [bind-shortcuts]]
    [app.util.dom :as dom]
+   [app.util.object :as obj]
    [app.util.dom.dnd :as dnd]
    [app.util.logging :as log]
    [app.util.timers :as ts]
@@ -97,7 +98,7 @@
 ;; things go weird.
 
 (defn use-sortable
-  [& {:keys [data-type data on-drop on-drag on-hold detect-center?] :as opts}]
+  [& {:keys [data-type data on-drop on-drag on-hold disabled detect-center?] :as opts}]
   (let [ref   (mf/use-ref)
         state (mf/use-state {:over nil
                              :timer nil
@@ -125,13 +126,16 @@
 
         on-drag-start
         (fn [event]
-          (dom/stop-propagation event)
-          ;; (dnd/trace event data "drag-start")
-          (dnd/set-data! event data-type data)
-          (dnd/set-drag-image! event (invisible-image))
-          (dnd/set-allowed-effect! event "move")
-          (when (fn? on-drag)
-            (on-drag data)))
+          (if disabled
+            (dom/prevent-default event)
+            (let [target (dom/get-target event)]
+              (dom/stop-propagation event)
+              ;; (dnd/trace event data "drag-start")
+              (dnd/set-data! event data-type data)
+              (dnd/set-drag-image! event (invisible-image))
+              (dnd/set-allowed-effect! event "move")
+              (when (fn? on-drag)
+                (on-drag data)))))
 
         on-drag-enter
         (fn [event]
@@ -212,14 +216,21 @@
 
 (defn use-stream
   "Wraps the subscription to a strem into a `use-effect` call"
-  [stream on-subscribe]
-  (mf/use-effect (fn []
-                   (let [sub (->> stream (rx/subs on-subscribe))]
-                     #(rx/dispose! sub)))))
+  ([stream on-subscribe]
+   (use-stream stream (mf/deps) on-subscribe))
+  ([stream deps on-subscribe]
+   (mf/use-effect
+    deps
+    (fn []
+      (let [sub (->> stream (rx/subs on-subscribe))]
+        #(rx/dispose! sub))))))
 
 ;; https://reactjs.org/docs/hooks-faq.html#how-to-get-the-previous-props-or-state
-(defn use-previous [value]
-  (let [ref (mf/use-ref)]
+(defn use-previous
+  [value]
+  (let [ref (mf/use-ref value)]
     (mf/use-effect
-     #(mf/set-ref-val! ref value))
+     (mf/deps value)
+     (fn []
+       (mf/set-ref-val! ref value)))
     (mf/ref-val ref)))

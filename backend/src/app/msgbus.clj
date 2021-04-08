@@ -13,7 +13,6 @@
    [app.common.exceptions :as ex]
    [app.common.spec :as us]
    [app.config :as cfg]
-   [app.db :as db]
    [app.util.blob :as blob]
    [app.util.time :as dt]
    [clojure.core.async :as a]
@@ -34,6 +33,16 @@
    io.lettuce.core.pubsub.StatefulRedisPubSubConnection
    io.lettuce.core.pubsub.api.async.RedisPubSubAsyncCommands))
 
+(def ^:private prefix (cfg/get :tenant))
+
+(defn- prefix-topic
+  [topic]
+  (str prefix "." topic))
+
+(def xform-prefix (map prefix-topic))
+(def xform-topics (map (fn [m] (update m :topics #(into #{} xform-prefix %)))))
+(def xform-topic  (map (fn [m] (update m :topic prefix-topic))))
+
 (s/def ::redis-uri ::us/string)
 (s/def ::buffer-size ::us/integer)
 
@@ -43,8 +52,7 @@
 (defmulti init-sub-loop :backend)
 
 (defmethod ig/pre-init-spec ::msgbus [_]
-  (s/keys :req-un [::db/pool]
-          :opt-un [::buffer-size ::redis-uri]))
+  (s/keys :opt-un [::buffer-size ::redis-uri]))
 
 (defmethod ig/prep-key ::msgbus
   [_ cfg]
@@ -53,17 +61,21 @@
 (defmethod ig/init-key ::msgbus
   [_ {:keys [backend buffer-size] :as cfg}]
   (log/debugf "initializing msgbus (backend=%s)" (name backend))
-
-  (let [backend (init-backend cfg)
+  (let [cfg     (init-backend cfg)
 
         ;; Channel used for receive publications from the application.
-        pub-ch  (a/chan (a/dropping-buffer buffer-size))
+        pub-ch  (-> (a/dropping-buffer buffer-size)
+                    (a/chan xform-topic))
 
         ;; Channel used for receive subscription requests.
-        sub-ch  (a/chan)]
+        sub-ch  (a/chan 1 xform-topics)
 
-    (init-pub-loop (assoc backend :ch pub-ch))
-    (init-sub-loop (assoc backend :ch sub-ch))
+        cfg     (-> cfg
+                    (assoc ::pub-ch pub-ch)
+                    (assoc ::sub-ch sub-ch))]
+
+    (init-pub-loop cfg)
+    (init-sub-loop cfg)
 
     (with-meta
       (fn run
@@ -73,14 +85,50 @@
            (case command
              :pub (a/>! pub-ch params)
              :sub (a/>! sub-ch params)))))
-
-      {::backend backend})))
+      cfg)))
 
 (defmethod ig/halt-key! ::msgbus
   [_ f]
   (let [mdata (meta f)]
-    (stop-backend (::backend mdata))))
+    (stop-backend mdata)
+    (a/close! (::pub-ch mdata))
+    (a/close! (::sub-ch mdata))))
 
+;; --- IN-MEMORY BACKEND IMPL
+
+(defmethod init-backend :memory [cfg] cfg)
+(defmethod stop-backend :memory [_])
+(defmethod init-pub-loop :memory [_])
+
+(defmethod init-sub-loop :memory
+  [{:keys [::sub-ch ::pub-ch]}]
+  (a/go-loop [state {}]
+    (let [[val port] (a/alts! [pub-ch sub-ch])]
+      (cond
+        (and (= port sub-ch) (some? val))
+        (let [{:keys [topics chan]} val]
+          (recur (reduce #(update %1 %2 (fnil conj #{}) chan) state topics)))
+
+        (and (= port pub-ch) (some? val))
+        (let [topic   (:topic val)
+              message (:message val)
+              state   (loop [state state
+                             chans (get state topic)]
+                        (if-let [c (first chans)]
+                          (if (a/>! c message)
+                            (recur state (rest chans))
+                            (recur (update state topic disj c)
+                                   (rest chans)))
+                          state))]
+          (recur state))
+
+        :else
+        (->> (vals state)
+             (mapcat identity)
+             (run! a/close!))))))
+
+
+;; Add a unique listener to connection
 
 ;; --- REDIS BACKEND IMPL
 
@@ -102,32 +150,28 @@
     (.setTimeout ^StatefulRedisPubSubConnection sub-conn ^Duration (dt/duration {:seconds 10}))
 
     (-> cfg
-        (assoc :pub-conn pub-conn)
-        (assoc :sub-conn sub-conn)
-        (assoc :close-ch (a/chan 1)))))
+        (assoc ::pub-conn pub-conn)
+        (assoc ::sub-conn sub-conn))))
 
 (defmethod stop-backend :redis
-  [{:keys [pub-conn sub-conn close-ch] :as cfg}]
+  [{:keys [::pub-conn ::sub-conn] :as cfg}]
   (.close ^StatefulRedisConnection pub-conn)
-  (.close ^StatefulRedisPubSubConnection sub-conn)
-  (a/close! close-ch))
+  (.close ^StatefulRedisPubSubConnection sub-conn))
 
 (defmethod init-pub-loop :redis
-  [{:keys [pub-conn ch close-ch]}]
+  [{:keys [::pub-conn ::pub-ch]}]
   (let [rac (.async ^StatefulRedisConnection pub-conn)]
     (a/go-loop []
-      (let [[val _] (a/alts! [close-ch ch] :priority true)]
-        (when (some? val)
-          (let [result (a/<! (impl-redis-pub rac val))]
-            (when (ex/exception? result)
-              (log/error result "unexpected error on publish message to redis")))
-          (recur))))))
+      (when-let [val (a/<! pub-ch)]
+        (let [result (a/<! (impl-redis-pub rac val))]
+          (when (ex/exception? result)
+            (log/error result "unexpected error on publish message to redis")))
+        (recur)))))
 
 (defmethod init-sub-loop :redis
-  [{:keys [sub-conn ch close-ch buffer-size]}]
+  [{:keys [::sub-conn ::sub-ch buffer-size]}]
   (let [rcv-ch  (a/chan (a/dropping-buffer buffer-size))
         chans   (agent {} :error-handler #(log/error % "unexpected error on agent"))
-        tprefix (str (cfg/get :tenant) ".")
         rac     (.async ^StatefulRedisPubSubConnection sub-conn)]
 
     ;; Add a unique listener to connection
@@ -184,46 +228,42 @@
 
       ;; Asynchronous subscription loop;
       (a/go-loop []
-        (let [[val _] (a/alts! [close-ch ch])]
-          (when-let [{:keys [topics chan]} val]
-            (let [topics (into #{} (map #(str tprefix %)) topics)]
-              (send-off chans subscribe-to-topics topics chan)
-              (recur)))))
+        (if-let [{:keys [topics chan]} (a/<! sub-ch)]
+          (do
+            (send-off chans subscribe-to-topics topics chan)
+            (recur))
+          (a/close! rcv-ch)))
 
+      ;; Asyncrhonous message processing loop;x
       (a/go-loop []
-        (let [[val port] (a/alts! [close-ch rcv-ch])]
-          (cond
-            ;; Stop condition; close all underlying subscriptions and
-            ;; exit. The close operation is performed asynchronously.
-            (= port close-ch)
-            (send-off chans (fn [state]
-                              (log/tracef "close")
-                              (->> (vals state)
-                                   (mapcat identity)
-                                   (filter some?)
-                                   (run! a/close!))))
+        (if-let [{:keys [topic message]} (a/<! rcv-ch)]
+          ;; This means we receive data from redis and we need to
+          ;; forward it to the underlying subscriptions.
+          (let [pending (loop [chans   (seq (get-in @chans [:topics topic]))
+                               pending #{}]
+                          (if-let [ch (first chans)]
+                            (if (a/>! ch message)
+                              (recur (rest chans) pending)
+                              (recur (rest chans) (conj pending ch)))
+                            pending))]
+            ;; (log/tracef "received message => pending: %s" (pr-str pending))
+            (some->> (seq pending)
+                     (send-off chans unsubscribe-channels))
 
-            ;; This means we receive data from redis and we need to
-            ;; forward it to the underlying subscriptions.
-            (= port rcv-ch)
-            (let [topic   (:topic val)    ; topic is already string
-                  pending (loop [chans   (seq (get-in @chans [:topics topic]))
-                                 pending #{}]
-                            (if-let [ch (first chans)]
-                              (if (a/>! ch (:message val))
-                                (recur (rest chans) pending)
-                                (recur (rest chans) (conj pending ch)))
-                              pending))]
-              ;; (log/tracef "received message => pending: %s" (pr-str pending))
-              (some->> (seq pending)
-                       (send-off chans unsubscribe-channels))
+            (recur))
 
-              (recur))))))))
+          ;; Stop condition; close all underlying subscriptions and
+          ;; exit. The close operation is performed asynchronously.
+          (send-off chans (fn [state]
+                            (->> (vals state)
+                                 (mapcat identity)
+                                 (filter some?)
+                                 (run! a/close!)))))))))
+
 
 (defn- impl-redis-pub
   [^RedisAsyncCommands rac {:keys [topic message]}]
-  (let [topic   (str (cfg/get :tenant) "." topic)
-        message (blob/encode message)
+  (let [message (blob/encode message)
         res     (a/chan 1)]
     (-> (.publish rac ^String topic ^bytes message)
         (p/finally (fn [_ e]

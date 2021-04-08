@@ -63,10 +63,10 @@
     (let [shape (unchecked-get props "shape")
           childs (unchecked-get props "childs")
           frame  (unchecked-get props "frame")
-          svg-element? (and (= :svg-raw (:type shape))
-                            (not= :svg (get-in shape [:content :tag])))]
+          render-wrapper? (or (not= :svg-raw (:type shape))
+                              (svg-raw/graphic-element? (get-in shape [:content :tag])))]
 
-      (if-not svg-element?
+      (if render-wrapper?
         [:> shape-container {:shape shape
                              :on-mouse-enter (handle-hover-shape shape true)
                              :on-mouse-leave (handle-hover-shape shape false)

@@ -91,7 +91,7 @@
     {:class (classnames :selected selected?)}
     [:& exports/frame-svg {:frame frame :objects objects}]]
    [:div.thumbnail-info
-    [:span.name (:name frame)]]])
+    [:span.name {:title (:name frame)} (:name frame)]]])
 
 (mf/defc thumbnails-panel
   [{:keys [data index screen] :as props}]

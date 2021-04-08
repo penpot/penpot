@@ -27,7 +27,7 @@
                 :host      {:address (cfg/get :ldap-host)
                             :port    (cfg/get :ldap-port)}}]
     (try
-      (#'ldap/create-connection params)
+      (ldap/connect params)
       (catch Exception e
         (ex/raise :type :restriction
                   :code :ldap-disabled

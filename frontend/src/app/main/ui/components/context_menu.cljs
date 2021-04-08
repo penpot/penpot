@@ -33,6 +33,7 @@
         top (gobj/get props "top" 0)
         left (gobj/get props "left" 0)
         fixed? (gobj/get props "fixed?" false)
+        min-width? (gobj/get props "min-width?" false)
 
         local (mf/use-state {:offset 0
                              :levels nil})
@@ -89,7 +90,8 @@
                            :style {:top (+ top (:offset @local))
                                    :left left}}
         (let [level (-> @local :levels peek)]
-          [:ul.context-menu-items {:ref check-menu-offscreen}
+          [:ul.context-menu-items {:class (classnames :min-width min-width?)
+                                   :ref check-menu-offscreen}
            (when-let [parent-option (:parent-option level)]
              [:*
               [:li.context-menu-item

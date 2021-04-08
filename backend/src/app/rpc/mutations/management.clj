@@ -84,10 +84,24 @@
                   (d/without-nils)
                   (blob/encode))))))
 
+(def sql:retrieve-used-libraries
+  "select flr.*
+     from file_library_rel as flr
+    inner join file as l on (flr.library_file_id = l.id)
+    where flr.file_id = ?
+      and l.deleted_at is null")
+
+(def sql:retrieve-used-media-objects
+  "select fmo.*
+     from file_media_object as fmo
+    inner join storage_object as o on (fmo.media_id = o.id)
+    where fmo.file_id = ?
+      and o.deleted_at is null")
+
 (defn duplicate-file
   [conn {:keys [profile-id file index project-id name]} {:keys [reset-shared-flag] :as opts}]
-  (let [flibs    (db/query conn :file-library-rel {:file-id (:id file)})
-        fmeds    (db/query conn :file-media-object {:file-id (:id file)})
+  (let [flibs    (db/exec! conn [sql:retrieve-used-libraries (:id file)])
+        fmeds    (db/exec! conn [sql:retrieve-used-media-objects (:id file)])
 
         ;; memo uniform creation/modification date
         now      (dt/now)
@@ -185,7 +199,8 @@
 (defn duplicate-project
   [conn {:keys [profile-id project name] :as params}]
   (let [files   (db/query conn :file
-                          {:project-id (:id project)}
+                          {:project-id (:id project)
+                           :deleted-at nil}
                           {:columns [:id]})
 
         project (cond-> project

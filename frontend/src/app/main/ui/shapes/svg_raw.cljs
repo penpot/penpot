@@ -21,7 +21,8 @@
    [rumext.alpha :as mf]))
 
 ;; Graphic tags
-(defonce graphic-element? #{:circle :ellipse :image :line :path :polygon :polyline :rect :text :use})
+(defonce graphic-element?
+  #{:svg :circle :ellipse :image :line :path :polygon :polyline :rect :symbol :text :textPath :use})
 
 ;; Context to store a re-mapping of the ids
 (def svg-ids-ctx (mf/create-context nil))

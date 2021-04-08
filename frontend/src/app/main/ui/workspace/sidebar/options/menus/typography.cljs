@@ -5,25 +5,25 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) 2020-2021 UXBOX Labs SL
 
 (ns app.main.ui.workspace.sidebar.options.menus.typography
   (:require
-   [rumext.alpha :as mf]
-   [cuerdas.core :as str]
-   [app.main.ui.icons :as i]
+   [app.common.data :as d]
+   [app.common.text :as txt]
+   [app.main.data.workspace.texts :as dwt]
+   [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.common.data :as d]
-   [app.main.data.workspace.texts :as dwt]
    [app.main.ui.components.editable-select :refer [editable-select]]
+   [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
-   [app.main.fonts :as fonts]
    [app.util.dom :as dom]
-   [app.util.text :as ut]
-   [app.util.timers :as ts]
    [app.util.i18n :as i18n :refer [t]]
-   [app.util.router :as rt]))
+   [app.util.router :as rt]
+   [app.util.timers :as ts]
+   [cuerdas.core :as str]
+   [rumext.alpha :as mf]))
 
 (defn- attr->string [value]
   (if (= value :multiple)
@@ -51,9 +51,9 @@
                 font-size
                 font-variant-id]} values
 
-        font-id (or font-id (:font-id ut/default-text-attrs))
-        font-size (or font-size (:font-size ut/default-text-attrs))
-        font-variant-id (or font-variant-id (:font-variant-id ut/default-text-attrs))
+        font-id (or font-id (:font-id txt/default-text-attrs))
+        font-size (or font-size (:font-size txt/default-text-attrs))
+        font-variant-id (or font-variant-id (:font-variant-id txt/default-text-attrs))
 
         fonts     (mf/deref fonts/fontsdb)
         font      (get fonts font-id)

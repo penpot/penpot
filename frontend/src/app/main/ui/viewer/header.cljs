@@ -21,7 +21,6 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.fullscreen :as fs]
    [app.main.ui.icons :as i]
-   [app.util.data :refer [classnames]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [t]]
    [app.util.router :as rt]

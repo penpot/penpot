@@ -161,3 +161,56 @@
 
                (when closed?
                  [{:command :close-path}])))))
+
+(defonce num-segments 10)
+
+(defn curve->lines
+  "Transform the bezier curve given by the parameters into a series of straight lines
+  defined by the constant num-segments"
+  [start end h1 h2]
+  (let [offset (/ 1 num-segments)
+        tp (fn [t] (curve-values start end h1 h2 t))]
+    (loop [from 0
+           result []]
+
+      (let [to (min 1 (+ from offset))
+            line [(tp from) (tp to)]
+            result (conj result line)]
+
+        (if (>= to 1)
+          result
+          (recur to result))))))
+
+(defn path->lines
+  "Given a path returns a list of lines that approximate the path"
+  [shape]
+  (loop [command (first (:content shape))
+         pending (rest (:content shape))
+         result []
+         last-start nil
+         prev-point nil]
+
+    (if-let [{:keys [command params]} command]
+      (let [point (if (= :close-path command)
+                    last-start
+                    (gpt/point params))
+
+            result (case command
+                     :line-to  (conj result [prev-point point])
+                     :curve-to (let [h1 (gpt/point (:c1x params) (:c1y params))
+                                     h2 (gpt/point (:c2x params) (:c2y params))]
+                                 (into result (curve->lines prev-point point h1 h2)))
+                     :move-to  (cond-> result
+                                 last-start (conj [prev-point last-start]))
+                     result)
+            last-start (if (= :move-to command)
+                         point
+                         last-start)
+            ]
+        (recur (first pending)
+               (rest pending)
+               result
+               last-start
+               point))
+
+      (conj result [prev-point last-start]))))

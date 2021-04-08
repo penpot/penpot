@@ -14,6 +14,7 @@
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measure-attrs measures-menu]]
    [app.main.ui.workspace.sidebar.options.menus.shadow :refer [shadow-menu]]
    [app.main.ui.workspace.sidebar.options.menus.text :refer [text-menu text-fill-attrs root-attrs paragraph-attrs text-attrs]]
@@ -21,18 +22,18 @@
 
 (mf/defc options
   [{:keys [shape] :as props}]
-  (let [ids [(:id shape)]
-        type (:type shape)
+  (let [ids    [(:id shape)]
+        type   (:type shape)
 
-        editors (mf/deref refs/editors)
-        editor (get editors (:id shape))
+        state-map    (mf/deref refs/workspace-editor-state)
+        editor-state (get state-map (:id shape))
 
-        measure-values (select-keys shape measure-attrs)
+        layer-values (select-keys shape layer-attrs)
 
-        fill-values (dwt/current-text-values
-                     {:editor editor
-                      :shape shape
-                      :attrs text-fill-attrs})
+        fill-values  (dwt/current-text-values
+                      {:editor-state editor-state
+                       :shape shape
+                       :attrs text-fill-attrs})
 
         fill-values (d/update-in-when fill-values [:fill-color-gradient :type] keyword)
 
@@ -41,32 +42,46 @@
                       (:fill fill-values) (assoc :fill-color (:fill fill-values))
                       (:opacity fill-values) (assoc :fill-opacity (:fill fill-values)))
 
-
         text-values (merge
-                     (select-keys shape [:grow-type])
-                     (dwt/current-root-values
-                      {:editor editor :shape shape
-                       :attrs root-attrs})
-                     (dwt/current-text-values
-                      {:editor editor :shape shape
+                     (select-keys shape [:grow-type :vertical-align :text-align])
+                     #_(dwt/current-root-values
+                        {:editor-state editor-state
+                         :shape shape
+                         :attrs root-attrs})
+                     (dwt/current-paragraph-values
+                      {:editor-state editor-state
+                       :shape shape
                        :attrs paragraph-attrs})
                      (dwt/current-text-values
-                      {:editor editor :shape shape
+                      {:editor-state editor-state
+                       :shape shape
                        :attrs text-attrs}))]
 
     [:*
-     [:& measures-menu {:ids ids
-                        :type type
-                        :values measure-values}]
-     [:& fill-menu {:ids ids
-                    :type type
-                    :values fill-values
-                    :editor editor}]
-     [:& shadow-menu {:ids ids
-                      :values (select-keys shape [:shadow])}]
-     [:& blur-menu {:ids ids
-                    :values (select-keys shape [:blur])}]
-     [:& text-menu {:ids ids
-                    :type type
-                    :values text-values
-                    :editor editor}]]))
+
+     [:& measures-menu
+      {:ids ids
+       :type type
+       :values (select-keys shape measure-attrs)}]
+
+     [:& layer-menu {:ids ids
+                     :type type
+                     :values layer-values}]
+
+     [:& fill-menu
+      {:ids ids
+       :type type
+       :values fill-values}]
+
+     [:& shadow-menu
+      {:ids ids
+       :values (select-keys shape [:shadow])}]
+
+     [:& blur-menu
+      {:ids ids
+       :values (select-keys shape [:blur])}]
+
+     [:& text-menu
+      {:ids ids
+       :type type
+       :values text-values}]]))

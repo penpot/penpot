@@ -1,16 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
-
-wait_file() {
-  local file="$1"; shift
-  local wait_seconds="${1:-10}"; shift # 10 seconds as default timeout
-
-  until test $((wait_seconds--)) -eq 0 -o -f "$file" ; do sleep 1; done
-
-  ((++wait_seconds))
-}
-
-wait_file "target/app.js" 120 && {
-  node target/app.js
-}
+bb -i '(babashka.wait/wait-for-port "localhost" 9630)';
+bb -i '(babashka.wait/wait-for-path "target/app.js")';
+sleep 2;
+node target/app.js

@@ -164,27 +164,28 @@
         (gsh/setup-selrect))))
 
 (defn create-path-shape [name frame-id svg-data {:keys [attrs] :as data}]
-  (let [svg-transform (usvg/parse-transform (:transform attrs))
-        path-content (ugp/path->content (:d attrs))
-        content (cond-> path-content
-                  svg-transform
-                  (gsh/transform-content svg-transform))
+  (when (and (contains? attrs :d) (not (empty? (:d attrs)) ))
+    (let [svg-transform (usvg/parse-transform (:transform attrs))
+          path-content (ugp/path->content (:d attrs))
+          content (cond-> path-content
+                    svg-transform
+                    (gsh/transform-content svg-transform))
 
-        selrect (gsh/content->selrect content)
-        points (gsh/rect->points selrect)
+          selrect (gsh/content->selrect content)
+          points (gsh/rect->points selrect)
 
-        origin (gpt/negate (gpt/point svg-data))]
-    (-> {:id (uuid/next)
-         :type :path
-         :name name
-         :frame-id frame-id
-         :content content
-         :selrect selrect
-         :points points}
-        (assoc :svg-viewbox (select-keys selrect [:x :y :width :height]))
-        (assoc :svg-attrs (dissoc attrs :d :transform))
-        (assoc :svg-transform svg-transform)
-        (gsh/translate-to-frame origin))))
+          origin (gpt/negate (gpt/point svg-data))]
+      (-> {:id (uuid/next)
+           :type :path
+           :name name
+           :frame-id frame-id
+           :content content
+           :selrect selrect
+           :points points}
+          (assoc :svg-viewbox (select-keys selrect [:x :y :width :height]))
+          (assoc :svg-attrs (dissoc attrs :d :transform))
+          (assoc :svg-transform svg-transform)
+          (gsh/translate-to-frame origin)))))
 
 (defn calculate-rect-metadata [rect-data transform]
   (let [points (-> (gsh/rect->points rect-data)
@@ -333,7 +334,7 @@
       ;; SVG graphic elements
       ;; :circle :ellipse :image :line :path :polygon :polyline :rect :text :use
       (let [shape (-> (case tag
-                        (:g :a)    (create-group name frame-id svg-data element-data)
+                        (:g :a :svg)    (create-group name frame-id svg-data element-data)
                         :rect      (create-rect-shape name frame-id svg-data element-data)
                         (:circle
                          :ellipse) (create-circle-shape name frame-id svg-data element-data)
@@ -344,34 +345,42 @@
                         :image     (create-image-shape name frame-id svg-data element-data)
                         #_other    (create-raw-svg name frame-id svg-data element-data))
 
-                      (assoc :svg-defs (select-keys (:defs svg-data) references))
-                      (setup-fill)
-                      (setup-stroke))
+                      )
+            shape (when (some? shape)
+                    (-> shape
+                        (assoc :svg-defs (select-keys (:defs svg-data) references))
+                        (setup-fill)
+                        (setup-stroke)))
+
             children (cond->> (:content element-data)
                        (= tag :g)
                        (mapv #(usvg/inherit-attributes attrs %)))]
         [shape children]))))
 
 (defn add-svg-child-changes [page-id objects selected frame-id parent-id svg-data [unames [rchs uchs]] [index data]]
-  (let [[shape children] (parse-svg-element frame-id svg-data data unames)
-        shape-id (:id shape)
+  (let [[shape children] (parse-svg-element frame-id svg-data data unames)]
+    (if (some? shape)
+      (let [shape-id (:id shape)
 
-        [rch1 uch1] (dwc/add-shape-changes page-id objects selected shape false)
+            [rch1 uch1] (dwc/add-shape-changes page-id objects selected shape false)
 
-        ;; Mov-objects won't have undo because we "delete" the object in the undo of the
-        ;; previous operation
-        rch2 [{:type :mov-objects
-               :parent-id parent-id
-               :frame-id frame-id
-               :page-id page-id
-               :index index
-               :shapes [shape-id]}]
+            ;; Mov-objects won't have undo because we "delete" the object in the undo of the
+            ;; previous operation
+            rch2 [{:type :mov-objects
+                   :parent-id parent-id
+                   :frame-id frame-id
+                   :page-id page-id
+                   :index index
+                   :shapes [shape-id]}]
 
-        ;; Careful! the undo changes are concatenated reversed (we undo in reverse order
-        changes [(d/concat rchs rch1 rch2) (d/concat uch1 uchs)]
-        unames (conj unames (:name shape))
-        reducer-fn (partial add-svg-child-changes page-id objects selected frame-id shape-id svg-data)]
-    (reduce reducer-fn [unames changes] (d/enumerate children))))
+            ;; Careful! the undo changes are concatenated reversed (we undo in reverse order
+            changes [(d/concat rchs rch1 rch2) (d/concat uch1 uchs)]
+            unames (conj unames (:name shape))
+            reducer-fn (partial add-svg-child-changes page-id objects selected frame-id shape-id svg-data)]
+        (reduce reducer-fn [unames changes] (d/enumerate children)))
+
+      ;; Cannot create the data from curren tags
+      [unames [rchs uchs]])))
 
 (declare create-svg-shapes)
 

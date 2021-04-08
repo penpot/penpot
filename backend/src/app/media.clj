@@ -157,8 +157,11 @@
                     :code :media-type-mismatch
                     :hint (str "Seems like you are uploading a file whose content does not match the extension."
                                "Expected: " mtype ". Got: " mtype')))
-        {:width  (.getImageWidth instance)
-         :height (.getImageHeight instance)
+        ;; For an animated GIF, getImageWidth/Height returns the delta size of one frame (if no frame given
+        ;; it returns size of the last one), whereas getPageWidth/Height always return the full size of
+        ;; any frame.
+        {:width  (.getPageWidth instance)
+         :height (.getPageHeight instance)
          :mtype  mtype}))))
 
 (defmethod process :default
@@ -185,8 +188,9 @@
 ;; --- Utility functions
 
 (defn validate-media-type
-  [media-type]
-  (when-not (cm/valid-media-types media-type)
-    (ex/raise :type :validation
-              :code :media-type-not-allowed
-              :hint "Seems like you are uploading an invalid media object")))
+  ([mtype] (validate-media-type mtype cm/valid-media-types))
+  ([mtype allowed]
+   (when-not (contains? allowed mtype)
+     (ex/raise :type :validation
+               :code :media-type-not-allowed
+               :hint "Seems like you are uploading an invalid media object"))))

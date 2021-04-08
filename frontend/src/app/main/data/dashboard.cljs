@@ -57,6 +57,9 @@
                    ::modified-at
                    ::project-id]))
 
+(s/def ::set-of-uuid
+  (s/every ::us/uuid :kind set?))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Fetching
@@ -202,6 +205,41 @@
                 state
                 projects)))))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Data Selection
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn clear-selected-files
+  []
+  (ptk/reify ::clear-file-select
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :dashboard-local
+              assoc :selected-files #{}
+                    :selected-project nil))))
+
+(defn toggle-file-select
+  [{:keys [file] :as params}]
+  (ptk/reify ::toggle-file-select
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [file-id          (:id file)
+            selected-project (get-in state [:dashboard-local
+                                            :selected-project])]
+        (if (or (nil? selected-project)
+                (= selected-project (:project-id file)))
+          (update state :dashboard-local
+                  (fn [local]
+                    (-> local
+                        (update :selected-files
+                                #(if (contains? % file-id)
+                                   (disj % file-id)
+                                   (conj % file-id)))
+                        (assoc :selected-project
+                               (:project-id file)))))
+          state)))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Modification
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -236,7 +274,7 @@
 
 (defn update-team-photo
   [{:keys [file team-id] :as params}]
-  (us/assert ::di/js-file file)
+  (us/assert ::di/file file)
   (us/assert ::us/uuid team-id)
   (ptk/reify ::update-team-photo
     ptk/WatchEvent
@@ -384,13 +422,6 @@
                                           :team-id team-id})
              (rx/tap on-success)
              (rx/catch on-error))))))
-
-(def clear-project-for-edit
-  (ptk/reify ::clear-project-for-edit
-    ptk/UpdateEvent
-    (update [_ state]
-      (assoc-in state [:dashboard-local :project-for-edit] nil))))
-
 
 (defn toggle-project-pin
   [{:keys [id is-pinned team-id] :as params}]
@@ -556,18 +587,18 @@
 
 ;; --- Move File
 
-(defn move-file
-  [{:keys [id project-id] :as params}]
-  (us/assert ::us/uuid id)
+(defn move-files
+  [{:keys [ids project-id] :as params}]
+  (us/assert ::set-of-uuid ids)
   (us/assert ::us/uuid project-id)
-  (ptk/reify ::move-file
+  (ptk/reify ::move-files
     ptk/WatchEvent
     (watch [_ state stream]
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error identity}} (meta params)]
 
-        (->> (rp/mutation! :move-files {:ids #{id}
+        (->> (rp/mutation! :move-files {:ids ids
                                         :project-id project-id})
              (rx/tap on-success)
              (rx/catch on-error))))))

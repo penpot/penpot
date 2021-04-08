@@ -60,7 +60,6 @@
   [t1 t2]
   (Duration/between t1 t2))
 
-
 (letfn [(conformer [v]
           (cond
             (duration? v) v

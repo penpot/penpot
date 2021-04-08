@@ -7,7 +7,8 @@
 ;;
 ;; Copyright (c) 2020 UXBOX Labs SL
 
-(ns app.common.attrs)
+(ns app.common.attrs
+  (:refer-clojure :exclude [merge]))
 
 ;; Extract some attributes of a list of shapes.
 ;; For each attribute, if the value is the same in all shapes,
@@ -48,7 +49,6 @@
    (loop [attr (first attrs)
           attrs (rest attrs)
           result (transient {})]
-
      (if attr
        (let [value
              (loop [curr (first objs)
@@ -75,3 +75,12 @@
 
        (persistent! result)))))
 
+(defn merge
+  "Attrs specific merge function."
+  [obj attrs]
+  (reduce-kv (fn [obj k v]
+               (if (nil? v)
+                 (dissoc obj k)
+                 (assoc obj k v)))
+             obj
+             attrs))

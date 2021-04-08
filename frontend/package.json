@@ -34,10 +34,10 @@
     "shadow-cljs": "^2.11.20"
   },
   "dependencies": {
-    "humanize-duration": "~3.25.0",
-    "luxon": "~1.25.0",
     "date-fns": "^2.19.0",
+    "draft-js": "^0.11.7",
     "highlight.js": "^10.6.0",
+    "humanize-duration": "~3.25.0",
     "js-beautify": "^1.13.5",
     "mousetrap": "^1.6.5",
     "randomcolor": "^0.6.2",

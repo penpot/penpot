@@ -1,0 +1,8 @@
+Defaults        env_reset
+Defaults        mail_badpass
+#Defaults        secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
+root    ALL=(ALL:ALL) ALL
+penpot ALL=(ALL) NOPASSWD:ALL
+
+%admin ALL=(ALL) ALL
+%sudo   ALL=(ALL:ALL) ALL

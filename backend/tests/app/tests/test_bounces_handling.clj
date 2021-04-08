@@ -21,10 +21,6 @@
 (t/use-fixtures :once th/state-init)
 (t/use-fixtures :each th/database-reset)
 
-;; (with-mocks [mock {:target 'app.tasks/submit! :return nil}]
-;; Right now we have many different scenarios what can cause a
-;; bounce/complain report.
-
 (defn- decode-row
   [{:keys [content] :as row}]
   (cond-> row

@@ -257,7 +257,12 @@
 
     (mf/use-effect
      (mf/deps team)
-     (st/emitf (dd/fetch-team-members team)))
+     (fn []
+       (dom/set-html-title (tr "title.team-members"
+                               (if (:is-default team)
+                                 (tr "dashboard.your-penpot")
+                                 (:name team))))
+       (st/emit! (dd/fetch-team-members team))))
 
     [:*
      [:& header {:section :dashboard-team-members
@@ -295,9 +300,14 @@
                                             :team-id (:id team)}))))]
 
     (mf/use-effect
-     (mf/deps team)
-     (st/emitf (dd/fetch-team-members team)
-               (dd/fetch-team-stats team)))
+      (mf/deps team)
+      (fn []
+        (dom/set-html-title (tr "title.team-settings"
+                                (if (:is-default team)
+                                  (tr "dashboard.your-penpot")
+                                  (:name team))))
+        (st/emitf (dd/fetch-team-members team)
+                  (dd/fetch-team-stats team))))
 
     [:*
      [:& header {:section :dashboard-team-settings

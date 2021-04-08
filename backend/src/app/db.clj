@@ -9,6 +9,7 @@
 
 (ns app.db
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
    [app.common.spec :as us]
@@ -48,8 +49,8 @@
 
 (declare instrument-jdbc!)
 
+(s/def ::name keyword?)
 (s/def ::uri ::us/not-empty-string)
-(s/def ::name ::us/not-empty-string)
 (s/def ::min-pool-size ::us/integer)
 (s/def ::max-pool-size ::us/integer)
 (s/def ::migrations map?)
@@ -59,14 +60,14 @@
 
 (defmethod ig/init-key ::pool
   [_ {:keys [migrations metrics] :as cfg}]
-  (log/infof "initialize connection pool '%s' with uri '%s'" (:name cfg) (:uri cfg))
+  (log/infof "initialize connection pool '%s' with uri '%s'" (name (:name cfg)) (:uri cfg))
   (instrument-jdbc! (:registry metrics))
   (let [pool (create-pool cfg)]
     (when (seq migrations)
       (with-open [conn ^AutoCloseable (open pool)]
         (mg/setup! conn)
-        (doseq [[mname steps] migrations]
-          (mg/migrate! conn {:name (name mname) :steps steps}))))
+        (doseq [[name steps] migrations]
+          (mg/migrate! conn {:name (d/name name) :steps steps}))))
     pool))
 
 (defmethod ig/halt-key! ::pool
@@ -80,7 +81,7 @@
     #'next.jdbc/execute!]
    {:registry registry
     :type :counter
-    :name "database_query_count"
+    :name "database_query_total"
     :help "An absolute counter of database queries."}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -100,7 +101,7 @@
         mtf      (PrometheusMetricsTrackerFactory. (:registry metrics))]
     (doto config
       (.setJdbcUrl (str "jdbc:" dburi))
-      (.setPoolName (:name cfg "default"))
+      (.setPoolName (d/name (:name cfg)))
       (.setAutoCommit true)
       (.setReadOnly false)
       (.setConnectionTimeout 8000)  ;; 8seg

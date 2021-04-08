@@ -16,12 +16,8 @@
   common."
   (:require
    [app.common.geom.shapes :as geom]
+   [app.common.uuid :as uuid]
    [app.main.refs :as refs]
-   [app.main.store :as st]
-   [app.main.streams :as ms]
-   [app.main.ui.cursors :as cur]
-   [app.main.ui.hooks :as hooks]
-   [app.main.ui.context :as muc]
    [app.main.ui.shapes.circle :as circle]
    [app.main.ui.shapes.image :as image]
    [app.main.ui.shapes.rect :as rect]
@@ -29,15 +25,15 @@
    [app.main.ui.workspace.shapes.common :as common]
    [app.main.ui.workspace.shapes.frame :as frame]
    [app.main.ui.workspace.shapes.group :as group]
-   [app.main.ui.workspace.shapes.svg-raw :as svg-raw]
    [app.main.ui.workspace.shapes.path :as path]
+   [app.main.ui.workspace.shapes.svg-raw :as svg-raw]
    [app.main.ui.workspace.shapes.text :as text]
-   [app.util.object :as obj]
    [app.util.debug :refer [debug?]]
-   [beicon.core :as rx]
+   [app.util.object :as obj]
    [okulary.core :as l]
    [rumext.alpha :as mf]))
 
+(declare shape-wrapper)
 (declare group-wrapper)
 (declare svg-raw-wrapper)
 (declare frame-wrapper)
@@ -54,28 +50,41 @@
                               (contains? (:selected local) id)))]
       (l/derived check-moving refs/workspace-local))))
 
+(mf/defc root-shape
+  "Draws the root shape of the viewport and recursively all the shapes"
+  {::mf/wrap-props false}
+  [props]
+  (let [objects     (obj/get props "objects")
+        root-shapes (get-in objects [uuid/zero :shapes])
+        shapes      (->> root-shapes (mapv #(get objects %)))]
+
+    (for [item shapes]
+      (if (= (:type item) :frame)
+        [:& frame-wrapper {:shape item
+                           :key (:id item)
+                           :objects objects}]
+
+        [:& shape-wrapper {:shape item
+                           :key (:id item)}]))))
+
 (mf/defc shape-wrapper
   {::mf/wrap [#(mf/memo' % (mf/check-props ["shape" "frame"]))]
    ::mf/wrap-props false}
   [props]
   (let [shape  (obj/get props "shape")
         frame  (obj/get props "frame")
-        ghost? (mf/use-ctx muc/ghost-ctx)
         shape  (-> (geom/transform-shape shape)
                    (geom/translate-to-frame frame))
         opts  #js {:shape shape
                    :frame frame}
 
-        moving-iref (mf/use-memo (mf/deps (:id shape)) (make-is-moving-ref (:id shape)))
-        moving?     (mf/deref moving-iref)
         svg-element? (and (= (:type shape) :svg-raw)
-                          (not= :svg (get-in shape [:content :tag])))
-        hide-moving? (and (not ghost?) moving?)]
+                          (not= :svg (get-in shape [:content :tag])))]
 
     (when (and shape (not (:hidden shape)))
       [:*
        (if-not svg-element?
-         [:g.shape-wrapper {:style {:display (when hide-moving? "none")}}
+         [:g.shape-wrapper
           (case (:type shape)
             :path [:> path/path-wrapper opts]
             :text [:> text/text-wrapper opts]

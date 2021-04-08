@@ -20,12 +20,13 @@
 (mf/defc shape-container
   {::mf/wrap-props false}
   [props]
-  (let [shape     (obj/get props "shape")
-        children  (obj/get props "children")
-        render-id (mf/use-memo #(str (uuid/next)))
-        filter-id (str "filter_" render-id)
-        styles    (cond-> (obj/new)
-                    (:blocked shape) (obj/set! "pointerEvents" "none"))
+  (let [shape          (obj/get props "shape")
+        children       (obj/get props "children")
+        pointer-events (obj/get props "pointer-events")
+        render-id      (mf/use-memo #(str (uuid/next)))
+        filter-id      (str "filter_" render-id)
+        styles         (-> (obj/new)
+                           (obj/set! "pointerEvents" pointer-events))
 
         {:keys [x y width height type]} shape
         frame? (= :frame type)

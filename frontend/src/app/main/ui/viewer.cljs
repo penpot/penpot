@@ -21,7 +21,6 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.comments :as cmt]
-   [app.main.ui.components.fullscreen :as fs]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.viewer.header :refer [header]]
@@ -243,23 +242,23 @@
     (mf/use-effect on-mount)
     (hooks/use-shortcuts sc/shortcuts)
 
-    [:& fs/fullscreen-wrapper {}
-     [:div.viewer-layout
-      [:& header
-       {:data data
-        :state state
-        :section section
-        :index index}]
+    [:div.viewer-layout {:class (dom/classnames :force-visible
+                                                (:show-thumbnails state))}
+     [:& header
+      {:data data
+       :state state
+       :section section
+       :index index}]
 
-      [:div.viewer-content {:on-click on-click}
-       (when (:show-thumbnails state)
-         [:& thumbnails-panel {:screen :viewer
-                               :index index
-                               :data data}])
-       [:& main-panel {:data data
-                       :section section
-                       :state state
-                       :index index}]]]]))
+     [:div.viewer-content {:on-click on-click}
+      (when (:show-thumbnails state)
+        [:& thumbnails-panel {:screen :viewer
+                              :index index
+                              :data data}])
+      [:& main-panel {:data data
+                      :section section
+                      :state state
+                      :index index}]]]))
 
 
 ;; --- Component: Viewer Page
@@ -273,6 +272,13 @@
 
   (let [data  (mf/deref refs/viewer-data)
         state (mf/deref refs/viewer-local)]
+
+    (mf/use-effect
+      (mf/deps (:file data))
+      #(when (:file data)
+         (dom/set-html-title (tr "title.viewer"
+                                 (get-in data [:file :name])))))
+
     (when (and data state)
       [:& viewer-content
        {:index index

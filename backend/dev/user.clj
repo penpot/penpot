@@ -70,7 +70,7 @@
   []
   (alter-var-root #'system (fn [sys]
                              (when sys (ig/halt! sys))
-                             (-> (main/build-system-config cfg/config)
+                             (-> main/system-config
                                  (ig/prep)
                                  (ig/init))))
   :started)

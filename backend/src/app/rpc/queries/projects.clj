@@ -96,7 +96,7 @@
     (retrieve-all-projects conn profile-id)))
 
 (def sql:all-projects
-  "select p1.*, t.name as team_name
+  "select p1.*, t.name as team_name, t.is_default as is_default_team
      from project as p1
     inner join team as t
             on t.id = p1.team_id
@@ -108,7 +108,7 @@
                            tpr.is_admin = true))
       and p1.deleted_at is null
    union
-   select p2.*, t.name as team_name
+   select p2.*, t.name as team_name, t.is_default as is_default_team
      from project as p2
     inner join team as t
               on t.id = p2.team_id

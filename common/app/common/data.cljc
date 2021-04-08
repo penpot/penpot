@@ -42,7 +42,6 @@
   ([a b & rest]
    (reduce deep-merge a (cons b rest))))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Structures Manipulation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -70,14 +69,14 @@
 (defn enumerate
   ([items] (enumerate items 0))
   ([items start]
-   (loop [idx start
+   (loop [idx   start
           items items
-          res []]
+          res   (transient [])]
      (if (empty? items)
-       res
+       (persistent! res)
        (recur (inc idx)
               (rest items)
-              (conj res [idx (first items)]))))))
+              (conj! res [idx (first items)]))))))
 
 (defn seek
   ([pred coll]
@@ -147,8 +146,10 @@
 
 (defn mapm
   "Map over the values of a map"
-  [mfn coll]
-  (into {} (map (fn [[key val]] [key (mfn key val)]) coll)))
+  ([mfn]
+   (map (fn [[key val]] [key (mfn key val)])))
+  ([mfn coll]
+   (into {} (mapm mfn) coll)))
 
 (defn filterm
   "Filter values of a map that satisfy a predicate"
@@ -345,10 +346,12 @@
 (defn check-num
   "Function that checks if a number is nil or nan. Will return 0 when not
   valid and the number otherwise."
-  [v]
-  (if (or (not v)
-          (not (mth/finite? v))
-          (mth/nan? v)) 0 v))
+  ([v]
+   (check-num v 0))
+  ([v default]
+   (if (or (not v)
+           (not (mth/finite? v))
+           (mth/nan? v)) default v)))
 
 
 (defmacro export
@@ -400,9 +403,48 @@
      (keyword? maybe-keyword)
      (core/name maybe-keyword)
 
+     (string? maybe-keyword)
+     maybe-keyword
+
      (nil? maybe-keyword) default-value
 
      :else
      (or default-value
          (str maybe-keyword)))))
+
+(defn with-next
+  "Given a collectin will return a new collection where each element
+  is paried with the next item in the collection
+  (with-next (range 5)) => [[0 1] [1 2] [2 3] [3 4] [4 nil]"
+  [coll]
+  (map vector
+       coll
+       (concat [] (rest coll) [nil])))
+
+(defn with-prev
+  "Given a collectin will return a new collection where each element
+  is paried with the previous item in the collection
+  (with-prev (range 5)) => [[0 nil] [1 0] [2 1] [3 2] [4 3]"
+  [coll]
+  (map vector
+       coll
+       (concat [nil] coll)))
+
+(defn with-prev-next
+  "Given a collection will return a new collection where every item is paired
+  with the previous and the next item of a collection
+  (with-prev-next (range 5)) => [[0 nil 1] [1 0 2] [2 1 3] [3 2 4] [4 3 nil]"
+  [coll]
+  (map vector
+       coll
+       (concat [nil] coll)
+       (concat [] (rest coll) [nil])))
+
+(defn prefix-keyword
+  "Given a keyword and a prefix will return a new keyword with the prefix attached
+  (prefix-keyword \"prefix\" :test) => :prefix-test"
+  [prefix kw]
+  (let [prefix (if (keyword? prefix) (name prefix) prefix)
+        kw     (if (keyword? kw) (name kw) kw)]
+    (keyword (str prefix kw))))
 
