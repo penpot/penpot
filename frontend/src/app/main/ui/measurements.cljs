@@ -234,17 +234,18 @@
                      :stroke-dasharray (/ select-guide-dasharray zoom)}}])])
 
 (mf/defc measurement [{:keys [bounds frame selected-shapes hover-shape zoom]}]
-  (let [selected-ids (into #{} (map :id) selected-shapes)
-        selected-selrect (gsh/selection-rect selected-shapes)
-        hover-selrect    (:selrect hover-shape)
-        bounds-selrect   (bound->selrect bounds)]
+  (let [selected-ids          (into #{} (map :id) selected-shapes)
+        selected-selrect      (gsh/selection-rect selected-shapes)
+        hover-selrect         (:selrect hover-shape)
+        bounds-selrect        (bound->selrect bounds)
+        hover-selected-shape? (not (contains? selected-ids (:id hover-shape)))]
 
-    (when (and (seq selected-shapes) (not (contains? selected-ids (:id hover-shape))))
+    (when (seq selected-shapes)
       [:g.measurement-feedback {:pointer-events "none"}
        [:& selection-guides {:selrect selected-selrect :bounds bounds :zoom zoom}]
        [:& size-display {:selrect selected-selrect :zoom zoom}]
        
-       (if (not hover-shape)
+       (if (or (not hover-shape) (not hover-selected-shape?))
          (when frame
            [:g.hover-shapes
             [:& distance-display {:from (:selrect frame)
