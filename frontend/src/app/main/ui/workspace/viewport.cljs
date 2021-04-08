@@ -171,7 +171,8 @@
        :width (:width vport 0)
        :height (:height vport 0)
        :view-box (utils/format-viewbox vbox)
-       :style {:background-color (get options :background "#E8E9EA")}}
+       :style {:background-color (get options :background "#E8E9EA")
+               :pointer-events "none"}}
 
       [:& (mf/provider muc/embed-ctx) {:value true}
        ;; Render root shape

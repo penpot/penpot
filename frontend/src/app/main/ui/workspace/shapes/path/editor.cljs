@@ -8,16 +8,19 @@
   (:require
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
+   [app.common.geom.shapes.path :as gshp]
    [app.main.data.workspace.path :as drp]
+   [app.main.snap :as snap]
    [app.main.store :as st]
+   [app.main.streams :as ms]
    [app.main.ui.cursors :as cur]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.shapes.path.common :as pc]
    [app.util.dom :as dom]
    [app.util.geom.path :as ugp]
+   [app.util.keyboard :as kbd]
    [goog.events :as events]
-   [rumext.alpha :as mf]
-
-   [app.util.keyboard :as kbd])
+   [rumext.alpha :as mf])
   (:import goog.events.EventType))
 
 (mf/defc path-point [{:keys [position zoom edit-mode hover? selected? preview? start-path? last-p?]}]
@@ -131,8 +134,9 @@
   [:g.preview {:style {:pointer-events "none"}}
    (when (not= :move-to (:command command))
      [:path {:style {:fill "transparent"
-                     :stroke pc/secondary-color
-                     :stroke-width (/ 1 zoom)}
+                     :stroke pc/black-color
+                     :stroke-width (/ 1 zoom)
+                     :stroke-dasharray (/ 4 zoom)}
              :d (ugp/content->path [{:command :move-to
                                      :params {:x (:x from)
                                               :y (:y from)}}
@@ -141,11 +145,23 @@
                    :preview? true
                    :zoom zoom}]])
 
+(mf/defc snap-path-points [{:keys [snaps zoom]}]
+  [:g.snap-paths
+   (for [[from to] snaps]
+     [:line {:x1 (:x from)
+             :y1 (:y from)
+             :x2 (:x to)
+             :y2 (:y to)
+             :style {:stroke pc/secondary-color
+                     :stroke-width (/ 1 zoom)}}])])
+
 (mf/defc path-editor
   [{:keys [shape zoom]}]
 
   (let [editor-ref (mf/use-ref nil)
         edit-path-ref (pc/make-edit-path-ref (:id shape))
+        hover-point (mf/use-state nil)
+
         {:keys [edit-mode
                 drag-handler
                 prev-handler
@@ -158,9 +174,9 @@
                 hover-points]
          :as edit-path} (mf/deref edit-path-ref)
 
-        {:keys [content]} shape
-        content (ugp/apply-content-modifiers content content-modifiers)
-        points (->> content ugp/content->points (into #{}))
+        {base-content :content} shape
+        content (ugp/apply-content-modifiers base-content content-modifiers)
+        points (mf/use-memo (mf/deps content) #(->> content ugp/content->points (into #{})))
         last-command (last content)
         last-p (->> content last ugp/command->point)
         handlers (ugp/content->handlers content)
@@ -177,11 +193,33 @@
          #(doseq [key keys]
             (events/unlistenByKey key)))))
 
+    #_(hooks/use-stream
+     ms/mouse-position
+     (mf/deps shape)
+     (fn [position]
+       (reset! hover-point (gshp/path-closest-point shape position))))
+
+    (hooks/use-stream
+     (mf/use-memo
+      (mf/deps base-content selected-points zoom)
+      #(snap/path-snap ms/mouse-position points selected-points zoom))
+
+     (fn [result]
+       (prn "??" result)))
+
     [:g.path-editor {:ref editor-ref}
+     #_[:& snap-points {}]
+
+     
      (when (and preview (not drag-handler))
        [:& path-preview {:command preview
                          :from last-p
                          :zoom zoom}])
+
+     (when @hover-point
+       [:g.hover-point
+        [:& path-point {:position @hover-point
+                        :zoom zoom}]])
 
      (for [position points]
        (let [point-selected? (contains? selected-points position)

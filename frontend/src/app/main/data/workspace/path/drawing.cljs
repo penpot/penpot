@@ -133,8 +133,11 @@
             (->> stream (rx/filter #(or (helpers/end-path-event? %)
                                         (ms/mouse-up? %))))
 
+            content (get-in state (st/get-path state :content))
+            points (ugp/content->points content)
+            
             drag-events-stream
-            (->> (streams/position-stream)
+            (->> (streams/position-stream points)
                  (rx/take-until stop-stream)
                  (rx/map #(drag-handler %)))]
 
@@ -163,7 +166,10 @@
             zoom (get-in state [:workspace-local :zoom])
             mouse-up    (->> stream (rx/filter #(or (helpers/end-path-event? %)
                                                     (ms/mouse-up? %))))
-            drag-events (->> (streams/position-stream)
+            content (get-in state (st/get-path state :content))
+            points (ugp/content->points content)
+
+            drag-events (->> (streams/position-stream points)
                              (rx/take-until mouse-up)
                              (rx/map #(drag-handler %)))]
 
@@ -183,10 +189,10 @@
        (rx/merge-map #(rx/empty))))
 
 (defn make-drag-stream
-  [stream down-event zoom]
+  [stream down-event zoom points]
   (let [mouse-up    (->> stream (rx/filter #(or (helpers/end-path-event? %)
                                                 (ms/mouse-up? %))))
-        drag-events (->> (streams/position-stream)
+        drag-events (->> (streams/position-stream points)
                          (rx/take-until mouse-up)
                          (rx/map #(drag-handler %)))]
 
@@ -213,9 +219,12 @@
             mouse-down      (->> stream (rx/filter ms/mouse-down?))
             end-path-events (->> stream (rx/filter helpers/end-path-event?))
 
+            content (get-in state (st/get-path state :content))
+            points (ugp/content->points content)
+
             ;; Mouse move preview
             mousemove-events
-            (->> (streams/position-stream)
+            (->> (streams/position-stream points)
                  (rx/take-until end-path-events)
                  (rx/map #(preview-next-point %)))
 
@@ -223,12 +232,12 @@
             mousedown-events
             (->> mouse-down
                  (rx/take-until end-path-events)
-                 (rx/with-latest merge (streams/position-stream))
+                 (rx/with-latest merge (streams/position-stream points))
 
                  ;; We change to the stream that emits the first event
                  (rx/switch-map
                   #(rx/race (make-node-events-stream stream)
-                            (make-drag-stream stream % zoom))))]
+                            (make-drag-stream stream % zoom points))))]
 
         (rx/concat
          (rx/of (common/init-path))
@@ -269,6 +278,12 @@
   "Creates a new path shape"
   []
   (ptk/reify ::handle-new-shape
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [id (st/get-path-id state)]
+        (-> state
+            (assoc-in [:workspace-local :edit-path id :snap-toggled] true))))
+
     ptk/WatchEvent
     (watch [_ state stream]
       (let [shape-id (get-in state [:workspace-drawing :object :id])]

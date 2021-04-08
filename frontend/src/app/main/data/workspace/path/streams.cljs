@@ -15,7 +15,8 @@
    [app.main.streams :as ms]
    [beicon.core :as rx]
    [potok.core :as ptk]
-   [app.common.math :as mth]))
+   [app.common.math :as mth]
+   [app.main.snap :as snap]))
 
 (defonce drag-threshold 5)
 
@@ -53,11 +54,17 @@
   (let [k 50]
     (* (mth/floor (/ num k)) k)))
 
-(defn position-stream []
-  (->> ms/mouse-position
-       ;; TODO: Prueba para el snap
-       #_(rx/map #(-> %
-                    (update :x to-dec)
-                    (update :y to-dec)))
-       (rx/with-latest merge (->> ms/mouse-position-shift (rx/map #(hash-map :shift? %))))
-       (rx/with-latest merge (->> ms/mouse-position-alt (rx/map #(hash-map :alt? %))))))
+(defn position-stream
+  ([points]
+   (position-stream points #{}))
+
+  ([points selected-points]
+   (let [zoom (get-in @st/state [:workspace-local :zoom] 1)]
+     (->> (snap/path-snap ms/mouse-position points selected-points zoom)
+          (rx/with-latest vector ms/mouse-position)
+          (rx/map (fn [[{[x] :x [y] :y} position]]
+                    (cond-> position
+                      (some? x) (assoc :x x)
+                      (some? y) (assoc :y y))))
+          (rx/with-latest merge (->> ms/mouse-position-shift (rx/map #(hash-map :shift? %))))
+          (rx/with-latest merge (->> ms/mouse-position-alt (rx/map #(hash-map :alt? %))))))))

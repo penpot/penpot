@@ -118,6 +118,9 @@
             selected-points (get-in state [:workspace-local :edit-path id :selected-points] #{})
             selected? (contains? selected-points position)
 
+            content (get-in state (st/get-path state :content))
+            points (ugp/content->points content)
+
             mouse-drag-stream
             (rx/concat
              ;; If we're dragging a selected item we don't change the selection
@@ -126,7 +129,7 @@
                (rx/of (selection/select-node position shift?)))
 
              ;; This stream checks the consecutive mouse positions to do the draging
-             (->> (streams/position-stream)
+             (->> (streams/position-stream points)
                   (rx/take-until stopper)
                   (rx/map #(move-selected-path-point start-position %)))
              (rx/of (apply-content-modifiers)))
@@ -151,6 +154,8 @@
             start-delta-y (get-in modifiers [index cy] 0)
 
             content (get-in state (st/get-path state :content))
+            points (ugp/content->points content)
+
             opposite-index   (ugp/opposite-index content index prefix)
             opposite-prefix  (if (= prefix :c1) :c2 :c1)
             opposite-handler (-> content (get opposite-index) (ugp/get-handler opposite-prefix))
@@ -163,7 +168,7 @@
 
         (streams/drag-stream
          (rx/concat
-          (->> (streams/position-stream)
+          (->> (streams/position-stream points)
                (rx/take-until (->> stream (rx/filter ms/mouse-up?)))
                (rx/map
                 (fn [{:keys [x y alt? shift?]}]

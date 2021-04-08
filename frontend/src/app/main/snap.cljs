@@ -15,6 +15,7 @@
    [app.main.refs :as refs]
    [app.main.worker :as uw]
    [app.util.geom.snap-points :as sp]
+   [app.util.range-tree :as rt]
    [beicon.core :as rx]
    [clojure.set :as set]))
 
@@ -240,3 +241,32 @@
          (rx/reduce gpt/min)
          (rx/map #(or % (gpt/point 0 0))))))
 
+(defn path-snap [position-stream points selected-points zoom]
+  (let [selected-points (or selected-points #{})
+        into-tree (fn [coord]
+                    (fn [tree point]
+                      (rt/insert tree (get point coord) point)))
+
+        ranges-x (->> points
+                      (filter (comp not selected-points))
+                      (reduce (into-tree :x) (rt/make-tree)))
+
+        ranges-y (->> points
+                      (filter (comp not selected-points))
+                      (reduce (into-tree :y) (rt/make-tree)))
+
+        min-match (fn [matches]
+                    (->> matches
+                         (reduce (fn [[cur-val :as current] [other-val :as other]]
+                                   (if (< cur-val other-val)
+                                     current
+                                     other)))))]
+
+    (->> position-stream
+         (rx/map
+          (fn [{:keys [x y]}]
+            (let [d-pos (/ snap-accuracy zoom)
+                  x-match (rt/range-query ranges-x (- x d-pos) (+ x d-pos))
+                  y-match (rt/range-query ranges-y (- y d-pos) (+ y d-pos))]
+              {:x (min-match x-match)
+               :y (min-match y-match)}))))))
