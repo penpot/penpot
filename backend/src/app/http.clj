@@ -165,6 +165,5 @@
 
      ["/rpc" {:middleware [(:middleware session)
                            middleware/activity-logger]}
-
       ["/query/:type" {:get (:query-handler rpc)}]
       ["/mutation/:type" {:post (:mutation-handler rpc)}]]]]))

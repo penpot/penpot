@@ -15,7 +15,7 @@
    [app.main.fonts :as fonts]
    [app.main.exports :as exports]
    [app.worker.impl :as impl]
-   [app.util.http-api :as http]
+   [app.util.http :as http]
    ["react-dom/server" :as rds]))
 
 (defn- handle-response
@@ -39,6 +39,7 @@
        (->> (http/send! {:uri uri
                          :query {:file-id file-id :id page-id}
                          :method :get})
+            (rx/map http/conditional-decode-transit)
             (rx/mapcat handle-response)
             (rx/subs (fn [body]
                        (resolve body))

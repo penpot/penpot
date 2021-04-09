@@ -10,9 +10,11 @@
 (ns app.main.repo
   (:require
    [beicon.core :as rx]
+   [lambdaisland.uri :as u]
    [cuerdas.core :as str]
    [app.config :as cfg]
-   [app.util.http-api :as http]))
+   [app.util.transit :as t]
+   [app.util.http :as http]))
 
 (defn- handle-response
   [{:keys [status body] :as response}]
@@ -30,8 +32,7 @@
     (= 0 (:status response))
     (rx/throw {:type :offline})
 
-    (and (= 200 status)
-         (coll? body))
+    (= 200 status)
     (rx/of body)
 
     (and (>= status 400)
@@ -43,21 +44,29 @@
                :status status
                :data body})))
 
-(defn send-query!
-  [id params]
-  (let [uri (str cfg/public-uri "/api/rpc/query/" (name id))]
-    (->> (http/send! {:method :get :uri uri :query params})
-         (rx/mapcat handle-response))))
+(def ^:private base-uri (u/uri cfg/public-uri))
 
-(defn send-mutation!
+(defn- send-query!
+  "A simple helper for send and receive transit data on the penpot
+  query api."
   [id params]
-  (let [uri (str cfg/public-uri "/api/rpc/mutation/" (name id))]
-    (->> (http/send! {:method :post :uri uri :body params})
-         (rx/mapcat handle-response))))
+  (->> (http/send! {:method :get
+                    :uri (u/join base-uri "api/rpc/query/" (name id))
+                    :query params})
+       (rx/map http/conditional-decode-transit)
+       (rx/mapcat handle-response)))
 
-(defn- dispatch
-  [& args]
-  (first args))
+(defn- send-mutation!
+  "A simple helper for a common case of sending and receiving transit
+  data to the penpot mutation api."
+  [id params]
+  (->> (http/send! {:method :post
+                    :uri (u/join base-uri "api/rpc/mutation/" (name id))
+                    :body (http/transit-data params)})
+       (rx/map http/conditional-decode-transit)
+       (rx/mapcat handle-response)))
+
+(defn- dispatch [& args] (first args))
 
 (defmulti query dispatch)
 (defmulti mutation dispatch)
@@ -80,53 +89,59 @@
 
 (defmethod mutation :login-with-google
   [id params]
-  (let [uri (str cfg/public-uri "/api/oauth/google")]
+  (let [uri (u/join base-uri "api/oauth/google")]
     (->> (http/send! {:method :post :uri uri :query params})
+         (rx/map http/conditional-decode-transit)
          (rx/mapcat handle-response))))
 
 (defmethod mutation :login-with-gitlab
   [id params]
-  (let [uri (str cfg/public-uri "/api/oauth/gitlab")]
+  (let [uri (u/join base-uri "api/oauth/gitlab")]
     (->> (http/send! {:method :post :uri uri :query params})
-      (rx/mapcat handle-response))))
+         (rx/map http/conditional-decode-transit)
+         (rx/mapcat handle-response))))
 
 (defmethod mutation :login-with-github
   [id params]
-  (let [uri (str cfg/public-uri "/api/oauth/github")]
+  (let [uri (u/join base-uri "api/oauth/github")]
     (->> (http/send! {:method :post :uri uri :query params})
+         (rx/map http/conditional-decode-transit)
          (rx/mapcat handle-response))))
-
-(defmethod mutation :upload-file-media-object
-  [id params]
-  (let [form (js/FormData.)]
-    (run! (fn [[key val]]
-            (if (list? val)
-              (.append form (name key) (first val) (second val))
-              (.append form (name key) val)))
-          (seq params))
-    (send-mutation! id form)))
 
 (defmethod mutation :send-feedback
   [id params]
-  (let [uri (str cfg/public-uri "/api/feedback")]
-    (->> (http/send! {:method :post :uri uri :body params})
-         (rx/mapcat handle-response))))
+  (->> (http/send! {:method :post
+                    :uri (u/join base-uri "api/feedback")
+                    :body (http/transit-data params)})
+       (rx/map http/conditional-decode-transit)
+       (rx/mapcat handle-response)))
 
-(defmethod mutation :update-profile-photo
+(defmethod query :export
   [id params]
-  (let [form (js/FormData.)]
-    (run! (fn [[key val]]
-            (.append form (name key) val))
-          (seq params))
-    (send-mutation! id form)))
+  (->> (http/send! {:method :post
+                    :uri (u/join base-uri "export")
+                    :body (http/transit-data params)
+                    :response-type :blob})
+       (rx/mapcat handle-response)))
 
-(defmethod mutation :update-team-photo
+(defmethod query :parse-svg
+  [id {:keys [data] :as params}]
+  (->> (http/send! {:method :post
+                    :uri (u/join base-uri "api/svg/parse")
+                    :headers {"content-type" "image/svg+xml"}
+                    :body data
+                    :response-type :text})
+       (rx/map http/conditional-decode-transit)
+       (rx/mapcat handle-response)))
+
+(derive :upload-file-media-object ::multipart-upload)
+(derive :update-profile-photo ::multipart-upload)
+(derive :update-team-photo ::multipart-upload)
+
+(defmethod mutation ::multipart-upload
   [id params]
-  (let [form (js/FormData.)]
-    (run! (fn [[key val]]
-            (.append form (name key) val))
-          (seq params))
-    (send-mutation! id form)))
-
-(def client-error? http/client-error?)
-(def server-error? http/server-error?)
+  (->> (http/send! {:method :post
+                    :uri  (u/join base-uri "/api/rpc/mutation/" (name id))
+                    :body (http/form-data params)})
+       (rx/map http/conditional-decode-transit)
+       (rx/mapcat handle-response)))

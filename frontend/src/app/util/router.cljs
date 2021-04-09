@@ -147,8 +147,8 @@
             history (:history state)
             router  (:router state)]
         (ts/schedule #(on-change router (.getToken ^js history)))
-        (->> (rx/create (fn [sink]
-                           (let [key (e/listen history "navigate" (fn [o] (sink (.-token ^js o))))]
+        (->> (rx/create (fn [subs]
+                           (let [key (e/listen history "navigate" (fn [o] (rx/push! subs (.-token ^js o))))]
                              (fn []
                                (bhistory/disable! history)
                                (e/unlistenByKey key)))))
