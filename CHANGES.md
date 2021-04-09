@@ -70,6 +70,12 @@
 - Fix titles in viewer thumbnails too long [Taiga #1474](https://tree.taiga.io/project/penpot/issue/1474)
 - Fix when right click on a selected text shows artboard contextual menu [Taiga #1226](https://tree.taiga.io/project/penpot/issue/1226)
 
+### :boom: Breaking changes
+
+- The LDAP configuration variables interpolation starts using `:`
+  (example `:username`) instead of `$`. The main reason is avoid
+  unnecesary conflict with bash interpolation.
+
 
 ### :arrow_up: Deps updates
 
