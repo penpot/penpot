@@ -67,8 +67,7 @@
 (def shape-attrs
   [:grow-type])
 
-(def root-attrs
-  (d/concat text-valign-attrs text-align-attrs))
+(def root-attrs text-valign-attrs)
 
 (def paragraph-attrs
   (d/concat text-align-attrs
