@@ -394,19 +394,13 @@
      (or (contains? props :data)
          (contains? props :uris)))))
 
-(defn parse-svg [[name text]]
-  (->> (http/send! {:method :post
-                    :uri "/api/svg/parse"
-                    :headers {"content-type" "image/svg+xml"}
-                    :body text})
-       (rx/map (fn [{:keys [status body]}]
-                 (let [result (t/decode body)]
-                   (if (= status 200)
-                     (assoc result :name name)
-                     (throw result)))))))
+(defn parse-svg
+  [[name text]]
+  (->> (rp/query! :parse-svg {:data text})
+       (rx/map #(assoc % :name name))))
 
 (defn fetch-svg [name uri]
-  (->> (http/send! {:method :get :uri uri})
+  (->> (http/send! {:method :get :uri uri :mode :no-cors})
        (rx/map #(vector
                  (or name (uu/uri-name uri))
                  (:body %)))))

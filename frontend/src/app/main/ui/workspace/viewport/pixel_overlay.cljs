@@ -5,13 +5,12 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.main.ui.workspace.viewport.pixel-overlay
   (:require
    [app.common.uuid :as uuid]
    [app.main.data.colors :as dwc]
-   [app.main.data.fetch :as mdf]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]

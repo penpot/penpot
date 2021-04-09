@@ -11,12 +11,14 @@
   (:require
    [app.common.data :as d]
    [app.common.text :as txt]
-   [app.main.data.fetch :as df]
    [app.main.fonts :as fonts]
+   [app.util.http :as http]
+   [app.util.webapi :as wapi]
    [app.util.object :as obj]
    [clojure.set :as set]
    [cuerdas.core :as str]
    [promesa.core :as p]
+   [beicon.core :as rx]
    [rumext.alpha :as mf]))
 
 (def font-face-template "
@@ -44,10 +46,12 @@
   "Given a font and the variant-id, retrieves the style CSS for it."
   [{:keys [id backend family variants] :as font} font-variant-id]
   (if (= :google backend)
-    (-> (fonts/gfont-url family [{:id font-variant-id}])
-        (js/fetch)
-        (p/then (fn [res] (.text res))))
-
+    (->> (http/send! {:method :get
+                      :mode :no-cors
+                      :uri (fonts/gfont-url family [{:id font-variant-id}])
+                      :response-type :text})
+         (rx/map :body)
+         (http/as-promise))
     (let [{:keys [name weight style suffix] :as variant} (d/seek #(= (:id %) font-variant-id) variants)
           result (str/fmt font-face-template {:family family
                                               :style style
@@ -55,14 +59,26 @@
                                               :weight weight})]
       (p/resolved result))))
 
+(defn- to-promise
+  [observable]
+  (p/create (fn [resolve reject]
+              (->> (rx/take 1 observable)
+                   (rx/subs resolve reject)))))
+
 (defn get-font-data
   "Parses the CSS and retrieves the font data as DataURI."
   [^string css]
-  (->> css
-       (re-seq #"url\(([^)]+)\)")
-       (map second)
-       (map df/fetch-as-data-uri)
-       (p/all)))
+  (let [uris (->> (re-seq #"url\(([^)]+)\)" css)
+                  (map second))]
+    (->> (rx/from (seq uris))
+         (rx/mapcat (fn [uri]
+                      (http/send! {:method :get
+                                   :uri uri
+                                   :response-type :blob})))
+         (rx/map :body)
+         (rx/mapcat wapi/read-file-as-data-url)
+         (rx/reduce conj [])
+         (http/as-promise))))
 
 (defn embed-font
   "Given a font-id and font-variant-id, retrieves the CSS for it and
