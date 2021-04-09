@@ -441,24 +441,22 @@
 
 (defn start-panning []
   (ptk/reify ::start-panning
-    ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (assoc-in [:workspace-local :panning] true)))
-
     ptk/WatchEvent
     (watch [_ state stream]
       (let [stopper (->> stream (rx/filter (ptk/type? ::finish-panning)))
             zoom (-> (get-in state [:workspace-local :zoom]) gpt/point)]
-        (->> stream
-             (rx/filter ms/pointer-event?)
-             (rx/filter #(= :delta (:source %)))
-             (rx/map :pt)
-             (rx/take-until stopper)
-             (rx/map (fn [delta]
-                       (let [delta (gpt/divide delta zoom)]
-                         (update-viewport-position {:x #(- % (:x delta))
-                                                    :y #(- % (:y delta))})))))))))
+        (when-not (get-in state [:workspace-local :panning])
+          (rx/concat
+           (rx/of #(-> % (assoc-in [:workspace-local :panning] true)))
+           (->> stream
+                (rx/filter ms/pointer-event?)
+                (rx/filter #(= :delta (:source %)))
+                (rx/map :pt)
+                (rx/take-until stopper)
+                (rx/map (fn [delta]
+                          (let [delta (gpt/divide delta zoom)]
+                            (update-viewport-position {:x #(- % (:x delta))
+                                                       :y #(- % (:y delta))})))))))))))
 
 (defn finish-panning []
   (ptk/reify ::finish-panning
