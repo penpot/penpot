@@ -165,13 +165,24 @@
         on-duplicate
         (mf/use-callback
          (mf/deps state)
-         (st/emitf (dwl/duplicate-component {:id (:component-id @state)})))
+         (fn []
+           (if (empty? selected)
+             (st/emit! (dwl/duplicate-component {:id (:component-id @state)}))
+             (do
+               (st/emit! (dwc/start-undo-transaction))
+               (apply st/emit! (map #(dwl/duplicate-component {:id %}) selected))
+               (st/emit! (dwc/commit-undo-transaction))))))
 
         on-delete
         (mf/use-callback
          (mf/deps state)
          (fn []
-           (st/emit! (dwl/delete-component {:id (:component-id @state)}))
+           (if (empty? selected)
+             (st/emit! (dwl/delete-component {:id (:component-id @state)}))
+             (do
+               (st/emit! (dwc/start-undo-transaction))
+               (apply st/emit! (map #(dwl/delete-component {:id %}) selected))
+               (st/emit! (dwc/commit-undo-transaction))))
            (st/emit! (dwl/sync-file file-id file-id))))
 
         on-rename
@@ -362,8 +373,12 @@
         (mf/use-callback
          (mf/deps state)
          (fn []
-           (let [params {:id (:object-id @state)}]
-             (st/emit! (dwl/delete-media params)))))
+           (if (empty? selected)
+             (st/emit! (dwl/delete-media {:id (:object-id @state)}))
+             (do
+               (st/emit! (dwc/start-undo-transaction))
+               (apply st/emit! (map #(dwl/delete-media {:id %}) selected))
+               (st/emit! (dwc/commit-undo-transaction))))))
 
         on-rename
         (mf/use-callback

@@ -318,6 +318,7 @@
             uchanges [{:type :add-component
                        :id id
                        :name (:name component)
+                       :path (:path component)
                        :shapes (vals (:objects component))}]]
 
         (rx/of (dwc/commit-changes rchanges uchanges {:commit-local? true}))))))
