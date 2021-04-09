@@ -14,6 +14,7 @@
 ### :heart: Community contributions by (Thank you!)
 
 - madmath03 (by [Monogramm](https://github.com/Monogramm)) [#807](https://github.com/penpot/penpot/pull/807)
+- zzkt [#814](https://github.com/penpot/penpot/pull/814)
 
 
 ## 1.4.0-alpha
