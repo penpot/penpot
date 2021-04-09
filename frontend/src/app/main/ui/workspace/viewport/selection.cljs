@@ -22,7 +22,6 @@
    [app.main.streams :as ms]
    [app.main.ui.cursors :as cur]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.measurements :as msr]
    [app.main.ui.workspace.viewport.outline :refer [outline]]
    [app.main.ui.workspace.shapes.path.editor :refer [path-editor]]
    [app.util.data :as d]
@@ -295,7 +294,7 @@
                           :fill "transparent"}}]]))
 
 (mf/defc multiple-selection-handlers
-  [{:keys [shapes selected zoom color show-distances disable-handlers on-move-selected] :as props}]
+  [{:keys [shapes selected zoom color disable-handlers on-move-selected] :as props}]
   (let [shape (mf/use-memo
                (mf/deps shapes)
                #(->> shapes
@@ -327,17 +326,11 @@
                    :on-resize on-resize
                    :on-rotate on-rotate}]
 
-     (when show-distances
-       [:& msr/measurement {:bounds vbox
-                            :selected-shapes shapes
-                            :hover-shape hover-shape
-                            :zoom zoom}])
-
      (when (debug? :selection-center)
        [:circle {:cx (:x shape-center) :cy (:y shape-center) :r 5 :fill "yellow"}])]))
 
 (mf/defc single-selection-handlers
-  [{:keys [shape zoom color show-distances disable-handlers on-move-selected] :as props}]
+  [{:keys [shape zoom color disable-handlers on-move-selected] :as props}]
   (let [shape-id (:id shape)
         shape (geom/transform-shape shape)
 
@@ -357,25 +350,17 @@
         on-rotate
         #(do (dom/stop-propagation %)
              (st/emit! (dw/start-rotate [shape])))]
-    [:*
-     [:& controls {:shape shape'
-                   :zoom zoom
-                   :color color
-                   :on-rotate on-rotate
-                   :on-resize on-resize
-                   :disable-handlers disable-handlers
-                   :on-move-selected on-move-selected}]
-
-     (when show-distances
-       [:& msr/measurement {:bounds vbox
-                            :frame frame
-                            :selected-shapes [shape]
-                            :hover-shape hover-shape
-                            :zoom zoom}])]))
+    [:& controls {:shape shape'
+                  :zoom zoom
+                  :color color
+                  :on-rotate on-rotate
+                  :on-resize on-resize
+                  :disable-handlers disable-handlers
+                  :on-move-selected on-move-selected}]))
 
 (mf/defc selection-handlers
   {::mf/wrap [mf/memo]}
-  [{:keys [selected edition zoom show-distances disable-handlers on-move-selected] :as props}]
+  [{:keys [selected edition zoom disable-handlers on-move-selected] :as props}]
   (let [;; We need remove posible nil values because on shape
         ;; deletion many shape will reamin selected and deleted
         ;; in the same time for small instant of time
@@ -396,7 +381,6 @@
                                        :selected selected
                                        :zoom zoom
                                        :color color
-                                       :show-distances show-distances
                                        :disable-handlers disable-handlers
                                        :on-move-selected on-move-selected}]
 
@@ -415,6 +399,5 @@
       [:& single-selection-handlers {:shape shape
                                      :zoom zoom
                                      :color color
-                                     :show-distances show-distances
                                      :disable-handlers disable-handlers
                                      :on-move-selected on-move-selected}])))

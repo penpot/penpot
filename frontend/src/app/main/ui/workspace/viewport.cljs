@@ -14,6 +14,7 @@
    [app.main.refs :as refs]
    [app.main.ui.context :as ctx]
    [app.main.ui.context :as muc]
+   [app.main.ui.measurements :as msr]
    [app.main.ui.workspace.shapes :as shapes]
    [app.main.ui.workspace.shapes.text.editor :as editor]
    [app.main.ui.workspace.viewport.actions :as actions]
@@ -87,6 +88,11 @@
         zoom              (d/check-num zoom 1)
         drawing-tool      (:tool drawing)
         drawing-obj       (:object drawing)
+        selected-shapes   (->> selected (mapv #(get objects %)))
+        selected-frames   (into #{} (map :frame-id) selected-shapes)
+
+        ;; Only when we have all the selected shapes in one frame
+        selected-frame    (when (= (count selected-frames) 1) (get objects (first selected-frames)))
 
         drawing-path?     (or (and edition (= :draw (get-in edit-path [edition :edit-mode])))
                               (and (some? drawing-obj) (= :path (:type drawing-obj))))
@@ -213,9 +219,16 @@
           {:selected selected
            :zoom zoom
            :edition edition
-           :show-distances (and (not transform) show-distances?)
            :disable-handlers (or drawing-tool edition)
            :on-move-selected on-move-selected}])
+
+       (when (and (not transform) show-distances?)
+         [:& msr/measurement
+          {:bounds vbox
+           :selected-shapes selected-shapes
+           :frame selected-frame
+           :hover-shape @hover
+           :zoom zoom}])
 
        (when text-editing?
          [:& editor/text-shape-edit {:shape (get objects edition)}])

@@ -105,6 +105,10 @@
                            %)))]
     (attrs/get-attrs-multi nodes attrs)))
 
+(defn current-root-values
+  [{:keys [attrs shape]}]
+  (shape-current-values shape txt/is-root-node? attrs))
+
 (defn current-paragraph-values
   [{:keys [editor-state attrs shape]}]
   (if editor-state

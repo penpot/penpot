@@ -42,12 +42,11 @@
                       (:fill fill-values) (assoc :fill-color (:fill fill-values))
                       (:opacity fill-values) (assoc :fill-opacity (:fill fill-values)))
 
-        text-values (merge
-                     (select-keys shape [:grow-type :vertical-align :text-align])
-                     #_(dwt/current-root-values
-                        {:editor-state editor-state
-                         :shape shape
-                         :attrs root-attrs})
+        text-values (d/merge
+                     (select-keys shape [:grow-type])
+                     (dwt/current-root-values
+                      {:shape shape
+                       :attrs root-attrs})
                      (dwt/current-paragraph-values
                       {:editor-state editor-state
                        :shape shape

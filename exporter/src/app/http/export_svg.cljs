@@ -65,7 +65,7 @@
 (defn ^boolean empty-path-element?
   [item]
   (and (= (get item "name") "path")
-       (let [d (get item ["attributes" "d"])]
+       (let [d (get-in item ["attributes" "d"])]
          (or (str/blank? d)
              (nil? d)
              (str/empty? d)))))
@@ -93,16 +93,7 @@
               item))
 
           (process-element [item xform]
-            (let [item (d/update-when item "elements" #(into [] xform %))]
-              (if (shape-element? item)
-                (update item "elements"
-                        (fn [elements]
-                          ;; flatten content of a shape element
-                          (into [] (mapcat (fn [item]
-                                             (if (group-element? item)
-                                               (get item "elements")
-                                               [item]))) elements)))
-                item)))]
+            (d/update-when item "elements" #(into [] xform %)))]
 
     (let [xform (comp (remove empty-defs-element?)
                       (remove empty-path-element?)
