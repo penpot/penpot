@@ -9,6 +9,8 @@
 
 ### :bug: Bugs fixed
 
+- Fixes problem with pan and space [#811](https://github.com/penpot/penpot/issues/811)
+
 ### :arrow_up: Deps updates
 
 ### :heart: Community contributions by (Thank you!)
