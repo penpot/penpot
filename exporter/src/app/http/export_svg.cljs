@@ -19,7 +19,6 @@
    [app.config :as cfg]
    [app.util.shell :as sh]
    [cljs.spec.alpha :as s]
-   [clojure.walk :as walk]
    [cuerdas.core :as str]
    [lambdaisland.glogi :as log]
    [promesa.core :as p])
@@ -90,19 +89,7 @@
                 (if node
                   (:svgdata node)
                   item))
-              item))
-
-          (process-element [item xform]
-            (let [item (d/update-when item "elements" #(into [] xform %))]
-              (if (shape-element? item)
-                (update item "elements"
-                        (fn [elements]
-                          ;; flatten content of a shape element
-                          (into [] (mapcat (fn [item]
-                                             (if (group-element? item)
-                                               (get item "elements")
-                                               [item]))) elements)))
-                item)))]
+              item))]
 
     (let [xform (comp (remove empty-defs-element?)
                       (remove empty-path-element?)
@@ -110,10 +97,6 @@
       (->> xmldata
            (xml->clj)
            (flatten-toplevel-svg-elements)
-           (walk/prewalk (fn [item]
-                           (cond-> item
-                             (element? item)
-                             (process-element xform))))
            (clj->xml)))))
 
 (defn parse-viewbox
