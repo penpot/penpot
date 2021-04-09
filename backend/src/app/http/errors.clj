@@ -12,8 +12,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
-   [app.util.log4j :refer [update-thread-context!]]
-   [clojure.tools.logging :as log]
+   [app.util.logging :as l]
    [cuerdas.core :as str]
    [expound.alpha :as expound]))
 
@@ -73,8 +72,11 @@
   [error request]
   (let [edata (ex-data error)
         cdata (get-error-context request error)]
-    (update-thread-context! cdata)
-    (log/errorf error "internal error: assertion (id: %s)" (str (:id cdata)))
+    (l/update-thread-context! cdata)
+    (l/error :hint "internal error: assertion"
+             :error-id (str (:id cdata))
+             :cause error)
+
     {:status 500
      :body {:type :server-error
             :data (-> edata
@@ -97,10 +99,11 @@
              (ex/exception? (:handling edata)))
       (handle-exception (:handling edata) request)
       (let [cdata (get-error-context request error)]
-        (update-thread-context! cdata)
-        (log/errorf error "internal error: %s (id: %s)"
-                    (ex-message error)
-                    (str (:id cdata)))
+        (l/update-thread-context! cdata)
+        (l/error :hint "internal error"
+                 :error-message (ex-message error)
+                 :error-id (str (:id cdata))
+                 :cause error)
         {:status 500
          :body {:type :server-error
                 :hint (ex-message error)
@@ -111,11 +114,11 @@
   (let [cdata (get-error-context request error)
         state (.getSQLState ^java.sql.SQLException error)]
 
-    (update-thread-context! cdata)
-    (log/errorf error "PSQL Exception: %s (id: %s, state: %s)"
-                (ex-message error)
-                (str (:id cdata))
-                state)
+    (l/update-thread-context! cdata)
+    (l/error :hint "psql exception"
+             :error-message (ex-message error)
+             :error-id (str (:id cdata))
+             :sql-state state)
 
     (cond
       (= state "57014")

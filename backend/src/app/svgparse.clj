@@ -11,8 +11,8 @@
   (:require
    [app.common.exceptions :as ex]
    [app.metrics :as mtx]
+   [app.util.logging :as l]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [clojure.xml :as xml]
    [integrant.core :as ig])
   (:import
@@ -60,7 +60,8 @@
     (with-open [istream (IOUtils/toInputStream data "UTF-8")]
       (xml/parse istream secure-factory))
     (catch Exception e
-      (log/warnf "error on processing svg: %s" (ex-message e))
+      (l/warn :hint "error on processing svg"
+              :message (ex-message e))
       (ex/raise :type :validation
                 :code :invalid-svg-file
                 :cause e))))

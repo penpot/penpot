@@ -5,7 +5,7 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.db
   (:require
@@ -16,12 +16,12 @@
    [app.db.sql :as sql]
    [app.metrics :as mtx]
    [app.util.json :as json]
+   [app.util.logging :as l]
    [app.util.migrations :as mg]
    [app.util.time :as dt]
    [app.util.transit :as t]
    [clojure.java.io :as io]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [integrant.core :as ig]
    [next.jdbc :as jdbc]
    [next.jdbc.date-time :as jdbc-dt])
@@ -60,7 +60,9 @@
 
 (defmethod ig/init-key ::pool
   [_ {:keys [migrations metrics] :as cfg}]
-  (log/infof "initialize connection pool '%s' with uri '%s'" (name (:name cfg)) (:uri cfg))
+  (l/info :action "initialize connection pool"
+          :name (d/name (:name cfg))
+          :uri (:uri cfg))
   (instrument-jdbc! (:registry metrics))
   (let [pool (create-pool cfg)]
     (when (seq migrations)

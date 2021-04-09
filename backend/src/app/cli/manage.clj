@@ -14,9 +14,9 @@
    [app.main :as main]
    [app.rpc.mutations.profile :as profile]
    [app.rpc.queries.profile :refer [retrieve-profile-data-by-email]]
+   [app.util.logging :as l]
    [clojure.string :as str]
    [clojure.tools.cli :refer [parse-opts]]
-   [clojure.tools.logging :as log]
    [integrant.core :as ig])
   (:import
    java.io.Console))
@@ -34,7 +34,7 @@
   [{:keys [label type] :or {type :text}}]
   (let [^Console console (System/console)]
     (when-not console
-      (log/error "no console found, can proceed")
+      (l/error :hint "no console found, can proceed")
       (System/exit 1))
 
     (binding [*out* (.writer console)]

@@ -14,6 +14,10 @@
       <AppenderRef ref="console" />
     </Logger>
 
+    <Logger name="penpot" level="fatal" additivity="false">
+      <AppenderRef ref="console" />
+    </Logger>
+
     <Root level="info">
       <AppenderRef ref="console" />
     </Root>

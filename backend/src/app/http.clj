@@ -15,9 +15,8 @@
    [app.http.errors :as errors]
    [app.http.middleware :as middleware]
    [app.metrics :as mtx]
-   [app.util.log4j :refer [update-thread-context!]]
+   [app.util.logging :as l]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [integrant.core :as ig]
    [reitit.ring :as rr]
    [ring.adapter.jetty9 :as jetty])
@@ -44,7 +43,7 @@
 
 (defmethod ig/init-key ::server
   [_ {:keys [handler router ws port name metrics] :as opts}]
-  (log/infof "starting '%s' server on port %s." name port)
+  (l/info :msg "starting http server" :port port :name name)
   (let [pre-start (fn [^Server server]
                     (let [handler (doto (ErrorHandler.)
                                     (.setShowStacks true)
@@ -77,7 +76,9 @@
 
 (defmethod ig/halt-key! ::server
   [_ {:keys [server name port] :as opts}]
-  (log/infof "stoping '%s' server on port %s." name port)
+  (l/info :msg "stoping http server"
+          :name name
+          :port port)
   (jetty/stop-server server))
 
 (defn- router-handler
@@ -93,11 +94,16 @@
         (catch Throwable e
           (try
             (let [cdata (errors/get-error-context request e)]
-              (update-thread-context! cdata)
-              (log/errorf e "unhandled exception: %s (id: %s)" (ex-message e) (str (:id cdata)))
-              {:status 500 :body "internal server error"})
+              (l/update-thread-context! cdata)
+              (l/error :hint "unhandled exception"
+                       :message (ex-message e)
+                       :error-id (str (:id cdata))
+                       :cause e))
+            {:status 500 :body "internal server error"}
             (catch Throwable e
-              (log/errorf e "unhandled exception: %s" (ex-message e))
+              (l/error :hint "unhandled exception"
+                       :message (ex-message e)
+                       :cause e)
               {:status 500 :body "internal server error"})))))))
 
 
@@ -120,7 +126,10 @@
   (rr/router
    [["/metrics" {:get (:handler metrics)}]
     ["/assets" {:middleware [[middleware/format-response-body]
-                             [middleware/errors errors/handle]]}
+                             [middleware/errors errors/handle]
+                             [middleware/cookies]
+                             (:middleware session)
+                             middleware/activity-logger]}
      ["/by-id/:id" {:get (:objects-handler assets)}]
      ["/by-file-media-id/:id" {:get (:file-objects-handler assets)}]
      ["/by-file-media-id/:id/thumbnail" {:get (:file-thumbnails-handler assets)}]]
@@ -154,6 +163,8 @@
       ["/github" {:post (get-in oauth [:github :handler])}]
       ["/github/callback" {:get (get-in oauth [:github :callback-handler])}]]
 
-     ["/rpc" {:middleware [(:middleware session)]}
+     ["/rpc" {:middleware [(:middleware session)
+                           middleware/activity-logger]}
+
       ["/query/:type" {:get (:query-handler rpc)}]
       ["/mutation/:type" {:post (:mutation-handler rpc)}]]]]))

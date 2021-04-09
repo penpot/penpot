@@ -16,8 +16,8 @@
    [app.main :as main]
    [app.rpc.mutations.profile :as profile]
    [app.util.blob :as blob]
+   [app.util.logging :as l]
    [buddy.hashers :as hashers]
-   [clojure.tools.logging :as log]
    [integrant.core :as ig]))
 
 (defn- mk-uuid
@@ -74,7 +74,9 @@
   (let [rng (java.util.Random. 1)]
     (letfn [(create-profile [conn index]
               (let [id   (mk-uuid "profile" index)
-                    _    (log/info "create profile" index id)
+                    _    (l/info :action "create profile"
+                                 :index index
+                                 :id id)
 
                     prof (register-profile conn
                                            {:id id
@@ -90,20 +92,22 @@
                 prof))
 
             (create-profiles [conn]
-              (log/info "create profiles")
+              (l/info :action "create profiles")
               (collect (partial create-profile conn)
                        (range (:num-profiles opts))))
 
             (create-team [conn index]
               (let [id (mk-uuid "team" index)
                     name (str "Team" index)]
-                (log/info "create team" index id)
+                (l/info :action "create team"
+                        :index index
+                        :id id)
                 (db/insert! conn :team {:id id
                                         :name name})
                 id))
 
             (create-teams [conn]
-              (log/info "create teams")
+              (l/info :action "create teams")
               (collect (partial create-team conn)
                        (range (:num-teams opts))))
 
@@ -111,7 +115,9 @@
               (let [id (mk-uuid "file" project-id index)
                     name (str "file" index)
                     data (cp/make-file-data id)]
-                (log/info "create file" index id)
+                (l/info :action "create file"
+                        :index index
+                        :id id)
                 (db/insert! conn :file
                             {:id id
                              :data (blob/encode data)
@@ -126,7 +132,7 @@
                 id))
 
             (create-files [conn owner-id project-id]
-              (log/info "create files")
+              (l/info :action "create files")
               (run! (partial create-file conn owner-id project-id)
                     (range (:num-files-per-project opts))))
 
@@ -138,7 +144,9 @@
                                 (str "project " index)
                                 "Drafts")
                     is-default (nil? index)]
-                (log/info "create project" index id)
+                (l/info :action "create project"
+                        :index index
+                        :id id)
                 (db/insert! conn :project
                             {:id id
                              :team-id team-id
@@ -153,7 +161,7 @@
                 id))
 
             (create-projects [conn team-id profile-ids]
-              (log/info "create projects")
+              (l/info :action "create projects")
               (let [owner-id (rng-nth rng profile-ids)
                     project-ids (conj
                                   (collect (partial create-project conn team-id owner-id)
@@ -170,14 +178,16 @@
                            :can-edit true}))
 
             (setup-team [conn team-id profile-ids]
-              (log/info "setup team" team-id profile-ids)
+              (l/info :action "setup team"
+                      :team-id team-id
+                      :profile-ids (pr-str profile-ids))
               (assign-profile-to-team conn team-id true (first profile-ids))
               (run! (partial assign-profile-to-team conn team-id false)
                     (rest profile-ids))
               (create-projects conn team-id profile-ids))
 
             (assign-teams-and-profiles [conn teams profiles]
-              (log/info "assign teams and profiles")
+              (l/info :action "assign teams and profiles")
               (loop [team-id (first teams)
                      teams (rest teams)]
                 (when-not (nil? team-id)
@@ -194,7 +204,9 @@
                     project-id (:default-project-id owner)
                     data       (cp/make-file-data id)]
 
-                (log/info "create draft file" index id)
+                (l/info :action "create draft file"
+                        :index index
+                        :id id)
                 (db/insert! conn :file
                             {:id id
                              :data (blob/encode data)
@@ -244,6 +256,6 @@
     (try
       (run-in-system system preset)
       (catch Exception e
-        (log/errorf e "unhandled exception"))
+        (l/error :hint "unhandled exception" :cause e))
       (finally
         (ig/halt! system)))))

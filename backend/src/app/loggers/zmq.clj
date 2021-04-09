@@ -13,10 +13,10 @@
    [app.common.data :as d]
    [app.common.spec :as us]
    [app.util.json :as json]
+   [app.util.logging :as l]
    [app.util.time :as dt]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [cuerdas.core :as str]
    [integrant.core :as ig])
   (:import
@@ -34,7 +34,7 @@
 
 (defmethod ig/init-key ::receiver
   [_ {:keys [endpoint] :as cfg}]
-  (log/infof "intializing ZMQ receiver on '%s'" endpoint)
+  (l/info :msg "intializing ZMQ receiver" :bind endpoint)
   (let [buffer (a/chan 1)
         output (a/chan 1 (comp (filter map?)
                                (map prepare)))

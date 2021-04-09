@@ -5,16 +5,16 @@
 ;; This Source Code Form is "Incompatible With Secondary Licenses", as
 ;; defined by the Mozilla Public License, v. 2.0.
 ;;
-;; Copyright (c) 2020-2021 UXBOX Labs SL
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.tasks.file-xlog-gc
   "A maintenance task that performs a garbage collection of the file
   change (transaction) log."
   (:require
    [app.db :as db]
+   [app.util.logging :as l]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [integrant.core :as ig]))
 
 (declare sql:delete-files-xlog)
@@ -31,7 +31,7 @@
       (let [interval (db/interval max-age)
             result   (db/exec-one! conn [sql:delete-files-xlog interval])
             result   (:next.jdbc/update-count result)]
-        (log/debugf "removed %s rows from file-change table" result)
+        (l/debug :action "trim file-change table" :removed result)
         result))))
 
 (def ^:private

@@ -15,9 +15,9 @@
    [app.common.pages.migrations :as pmg]
    [app.db :as db]
    [app.util.blob :as blob]
+   [app.util.logging :as l]
    [app.util.time :as dt]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [integrant.core :as ig]))
 
 (declare process-file)
@@ -40,7 +40,7 @@
                 (run! (partial process-file cfg) files)
                 (recur (+ n (count files))))
               (do
-                (log/debugf "finalized with total of %s processed files" n)
+                (l/debug :msg "finished processing files" :processed n)
                 {:processed n}))))))))
 
 (def ^:private
@@ -88,7 +88,10 @@
         unused (->> (db/query conn :file-media-object {:file-id id})
                     (remove #(contains? used (:id %))))]
 
-    (log/debugf "processing file: id='%s' age='%s' to-delete=%s" id age (count unused))
+    (l/debug :action "processing file"
+             :id id
+             :age age
+             :to-delete (count unused))
 
     ;; Mark file as trimmed
     (db/update! conn :file
@@ -96,8 +99,10 @@
                 {:id id})
 
     (doseq [mobj unused]
-      (log/debugf "deleting media object: id='%s' media-id='%s' thumb-id='%s'"
-                  (:id mobj) (:media-id mobj) (:thumbnail-id mobj))
+      (l/debug :action "deleting media object"
+               :id (:id mobj)
+               :media-id (:media-id mobj)
+               :thumbnail-id (:thumbnail-id mobj))
       ;; NOTE: deleting the file-media-object in the database
       ;; automatically marks as toched the referenced storage objects.
       (db/delete! conn :file-media-object {:id (:id mobj)}))

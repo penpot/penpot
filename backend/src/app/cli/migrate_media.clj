@@ -14,7 +14,7 @@
    [app.db :as db]
    [app.main :as main]
    [app.storage :as sto]
-   [clojure.tools.logging :as log]
+   [app.util.logging :as l]
    [cuerdas.core :as str]
    [datoteka.core :as fs]
    [integrant.core :as ig]))
@@ -49,7 +49,7 @@
           (run-in-system)
           (ig/halt!))
       (catch Exception e
-        (log/errorf e "Unhandled exception.")))))
+        (l/error :hint "unhandled exception" :cause e)))))
 
 
 ;; --- IMPL

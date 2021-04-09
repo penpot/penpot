@@ -15,14 +15,13 @@
    [app.db :as db]
    [app.metrics :as mtx]
    [app.util.async :as aa]
-   [app.util.log4j :refer [update-thread-context!]]
+   [app.util.logging :as l]
    [app.util.time :as dt]
    [app.worker :as wrk]
    [buddy.core.codecs :as bc]
    [buddy.core.nonce :as bn]
    [clojure.core.async :as a]
    [clojure.spec.alpha :as s]
-   [clojure.tools.logging :as log]
    [integrant.core :as ig]))
 
 ;; --- IMPL
@@ -66,9 +65,9 @@
   [cfg handler]
   (fn [request]
     (if-let [{:keys [id profile-id] :as session} (retrieve-from-request cfg request)]
-      (let [ech (::events-ch cfg)]
-        (a/>!! ech id)
-        (update-thread-context! {:profile-id profile-id})
+      (let [events-ch (::events-ch cfg)]
+        (a/>!! events-ch id)
+        (l/update-thread-context! {:profile-id profile-id})
         (handler (assoc request :profile-id profile-id)))
       (handler request))))
 
@@ -110,6 +109,7 @@
   [_ data]
   (a/close! (::events-ch data)))
 
+
 ;; --- STATE INIT: SESSION UPDATER
 
 (declare batch-events)
@@ -132,9 +132,9 @@
 
 (defmethod ig/init-key ::updater
   [_ {:keys [session metrics] :as cfg}]
-  (log/infof "initialize session updater (max-batch-age=%s, max-batch-size=%s)"
-             (str (:max-batch-age cfg))
-             (str (:max-batch-size cfg)))
+  (l/info :action "initialize session updater"
+          :max-batch-age (str (:max-batch-age cfg))
+          :max-batch-size (str (:max-batch-size cfg)))
   (let [input (batch-events cfg (::events-ch session))
         mcnt  (mtx/create
                {:name "http_session_update_total"
@@ -146,8 +146,13 @@
         (let [result (a/<! (update-sessions cfg batch))]
           (mcnt :inc)
           (if (ex/exception? result)
-            (log/error result "updater: unexpected error on update sessions")
-            (log/debugf "updater: updated %s sessions (reason: %s)." result (name reason)))
+            (l/error :task "updater"
+                     :hint "unexpected error on update sessions"
+                     :cause result)
+            (l/debug :task "updater"
+                     :action "update sessions"
+                     :reason (name reason)
+                     :count result))
           (recur))))))
 
 (defn- timeout-chan
@@ -209,7 +214,9 @@
       (let [interval (db/interval max-age)
             result   (db/exec-one! conn [sql:delete-expired interval])
             result   (:next.jdbc/update-count result)]
-        (log/debugf "gc-task: removed %s rows from http-session table" result)
+        (l/debug :task "gc"
+                 :action "clean http sessions"
+                 :count result)
         result))))
 
 (def ^:private
