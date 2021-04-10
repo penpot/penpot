@@ -2,10 +2,7 @@
 ;; License, v. 2.0. If a copy of the MPL was not distributed with this
 ;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ;;
-;; This Source Code Form is "Incompatible With Secondary Licenses", as
-;; defined by the Mozilla Public License, v. 2.0.
-;;
-;; Copyright (c) 2016-2017 Andrey Antukh <niwi@niwi.nz>
+;; Copyright (c) UXBOX Labs SL
 
 (ns app.util.geom.path
   (:require
@@ -242,7 +239,7 @@
         {from-x :x from-y :y} from-p
         {:keys [rx ry x-axis-rotation large-arc-flag sweep-flag x y]} (:params command)
         result (a2c from-x from-y x y large-arc-flag sweep-flag rx ry x-axis-rotation)]
-    
+
     (mapv to-command result)))
 
 (defn smooth->curve
@@ -285,20 +282,20 @@
                   (-> (assoc :relative false)
                       (d/update-in-when [:params :c1x] + (:x prev-pos))
                       (d/update-in-when [:params :c1y] + (:y prev-pos))
-                      
+
                       (d/update-in-when [:params :c2x] + (:x prev-pos))
                       (d/update-in-when [:params :c2y] + (:y prev-pos))
 
                       (d/update-in-when [:params :cx] + (:x prev-pos))
                       (d/update-in-when [:params :cy] + (:y prev-pos))
-                      
+
                       (d/update-in-when [:params :x] + (:x prev-pos))
                       (d/update-in-when [:params :y] + (:y prev-pos))
 
                       (cond->
                           (= :line-to-horizontal (:command command))
                         (d/update-in-when [:params :value] + (:x prev-pos))
-                        
+
                         (= :line-to-vertical (:command command))
                         (d/update-in-when [:params :value] + (:y prev-pos)))))
 
@@ -332,7 +329,7 @@
                   (= :smooth-quadratic-bezier-curve-to (:command command))
                   (-> (assoc :command :curve-to)
                       (update :params merge (quadratic->curve prev-pos (gpt/point params) (calculate-opposite-handler prev-pos prev-qc)))))
-                
+
                 result (if (= :elliptical-arc (:command command))
                          (d/concat result (arc->beziers prev-pos command))
                          (conj result command))
@@ -340,7 +337,7 @@
                 next-cc (case (:command orig-command)
                           :smooth-curve-to
                           (gpt/point (get-in orig-command [:params :cx]) (get-in orig-command [:params :cy]))
-                          
+
                           :curve-to
                           (gpt/point (get-in orig-command [:params :c2x]) (get-in orig-command [:params :c2y]))
 
@@ -352,10 +349,10 @@
                 next-qc (case (:command orig-command)
                           :quadratic-bezier-curve-to
                           (gpt/point (get-in orig-command [:params :cx]) (get-in orig-command [:params :cy]))
-                          
+
                           :smooth-quadratic-bezier-curve-to
                           (calculate-opposite-handler prev-pos prev-qc)
-                          
+
                           (gpt/point (get-in orig-command [:params :x]) (get-in orig-command [:params :y])))
 
                 next-pos (if (= :close-path (:command command))
