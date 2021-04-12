@@ -16,6 +16,7 @@
 (mf/defc editable-label
   [{:keys [value on-change on-cancel editing? disable-dbl-click? class-name] :as props}]
   (let [display-value (get props :display-value value)
+        tooltip (get props :tooltip)
         input (mf/use-ref nil)
         state (mf/use-state (:editing false))
         is-editing (:editing @state)
@@ -54,4 +55,5 @@
                                      :on-blur cancel-editing}]
        [:span.editable-label-close {:on-click cancel-editing} i/close]]
       [:span.editable-label {:class class-name
+                             :title tooltip
                              :on-double-click on-dbl-click} display-value])))

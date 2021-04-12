@@ -305,6 +305,56 @@
       border: 2px solid $color-primary;
     }
 
+    .asset-title + .asset-enum {
+      margin-top: $small;
+    }
+
+    .asset-enum {
+      .enum-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: $small;
+        cursor: pointer;
+
+        & > svg,
+        & > img {
+          background-color: $color-canvas;
+          border-radius: 4px;
+          border: 2px solid transparent;
+          height: 24px;
+          width: 24px;
+          margin-right: $small;
+        }
+
+        .item-name {
+          width: calc(100% - 24px - #{$small});
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          display: block;
+
+          &.editing {
+            display: flex;
+            align-items: center;
+
+            .editable-label-input {
+              height: 24px;
+            }
+
+            .editable-label-close {
+              display: none;
+            }
+          }
+        }
+      }
+
+      .enum-item:hover,
+      .enum-item.selected,
+      {
+        color: $color-primary;
+      }
+    }
+
     /* TODO: see if this is useful, or is better to leave only
              one scroll bar in the whole sidebar
              (also see .asset-section) */

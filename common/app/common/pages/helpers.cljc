@@ -460,13 +460,19 @@
                                (d/enumerate (:shapes parent)))]
     parent-idx))
 
+(defn split-path
+  [path]
+  "Decompose a string in the form 'one / two / three' into
+  an array of strings, normalizing spaces."
+  (->> (str/split path "/")
+       (map str/trim)
+       (remove str/empty?)))
+
 (defn parse-path-name
   "Parse a string in the form 'group / subgroup / name'.
   Retrieve the path and the name in separated values, normalizing spaces."
   [path-name]
-  (let [path-name-split (->> (str/split path-name "/")
-                             (map str/trim)
-                             (remove str/empty?))
+  (let [path-name-split (split-path path-name)
         path (str/join " / " (butlast path-name-split))
         name (last path-name-split)]
     [path name]))
@@ -479,14 +485,13 @@
     name))
 
 (defn compact-path
-  "Separate last component of the path, and truncate the others if too long:
+  "Separate last item of the path, and truncate the others if too long:
     'one'                          ->  ['' 'one' false]
     'one / two / three'            ->  ['one / two' 'three' false]
     'one / two / three / four'     ->  ['one / two / ...' 'four' true]
     'one-item-but-very-long / two' ->  ['...' 'two' true] "
   [path max-length]
-  (let [path-split (->> (str/split path "/")
-                        (map str/trim))
+  (let [path-split (split-path path)
         last-item  (last path-split)]
     (loop [other-items (seq (butlast path-split))
            other-path  ""]
@@ -499,4 +504,10 @@
             (recur (next other-items)
                    (merge-path-item other-path item))))
         [other-path last-item false]))))
+
+(defn compact-name
+  "Append the first item of the path and the name."
+  [path name]
+  (let [path-split (split-path path)]
+    (merge-path-item (first path-split) name)))
 

@@ -65,6 +65,7 @@
 (d/export helpers/parse-path-name)
 (d/export helpers/merge-path-item)
 (d/export helpers/compact-path)
+(d/export helpers/compact-name)
 
 ;; Process changes
 (d/export changes/process-changes)

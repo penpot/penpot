@@ -149,7 +149,7 @@
 ;; ---- Components box ----
 
 (mf/defc components-box
-  [{:keys [file-id local? components open?] :as props}]
+  [{:keys [file-id local? components listing-thumbs? open?] :as props}]
   (let [state (mf/use-state {:menu-open false
                              :renaming nil
                              :top nil
@@ -301,24 +301,34 @@
                  [:span {:title (when truncated path)}
                   last-path]]))
             (when group-open?
-              [:div.asset-grid.big
+              [:div {:class-name (dom/classnames
+                                   :asset-grid @listing-thumbs?
+                                   :big @listing-thumbs?
+                                   :asset-enum (not @listing-thumbs?))}
                (for [component components]
                  (let [renaming? (= (:renaming @state)(:id component))]
-                   [:div.grid-cell {:key (:id component)
-                                    :class-name (dom/classnames
-                                                  :selected (contains? selected (:id component)))
-                                    :draggable true
-                                    :on-click (on-select (:id component))
-                                    :on-context-menu (on-context-menu (:id component))
-                                    :on-drag-start (partial on-drag-start component)}
+                   [:div {:key (:id component)
+                          :class-name (dom/classnames
+                                        :selected (contains? selected (:id component))
+                                        :grid-cell @listing-thumbs?
+                                        :enum-item (not @listing-thumbs?))
+                          :draggable true
+                          :on-click (on-select (:id component))
+                          :on-context-menu (on-context-menu (:id component))
+                          :on-drag-start (partial on-drag-start component)}
                     [:& exports/component-svg {:group (get-in component [:objects (:id component)])
                                                :objects (:objects component)}]
                     [:& editable-label
                      {:class-name (dom/classnames
-                                    :cell-name true
+                                    :cell-name @listing-thumbs?
+                                    :item-name (not @listing-thumbs?)
                                     :editing renaming?)
                       :value (cp/merge-path-item (:path component) (:name component))
-                      :display-value (:name component)
+                      :tooltip (cp/merge-path-item (:path component) (:name component))
+                      :display-value (if @listing-thumbs?
+                                       (:name component)
+                                       (cp/compact-name (:path component)
+                                                        (:name component)))
                       :editing? renaming?
                       :disable-dbl-click? true
                       :on-change do-rename
@@ -341,7 +351,7 @@
 ;; ---- Graphics box ----
 
 (mf/defc graphics-box
-  [{:keys [file-id local? objects open?] :as props}]
+  [{:keys [file-id local? objects listing-thumbs? open?] :as props}]
   (let [input-ref  (mf/use-ref nil)
         state      (mf/use-state {:menu-open false
                                   :renaming nil
@@ -504,26 +514,34 @@
                  [:span {:title (when truncated path)}
                   last-path]]))
             (when group-open?
-              [:div.asset-grid
+              [:div {:class-name (dom/classnames
+                                   :asset-grid @listing-thumbs?
+                                   :asset-enum (not @listing-thumbs?))}
                (for [object objects]
-                 [:div.grid-cell {:key (:id object)
-                                  :class-name (dom/classnames
-                                                :selected (contains? selected (:id object)))
-                                  :draggable true
-                                  :on-click (on-select (:id object))
-                                  :on-context-menu (on-context-menu (:id object))
-                                  :on-drag-start (partial on-drag-start object)}
+                 [:div {:key (:id object)
+                        :class-name (dom/classnames
+                                      :selected (contains? selected (:id object))
+                                      :grid-cell @listing-thumbs?
+                                      :enum-item (not @listing-thumbs?))
+                        :draggable true
+                        :on-click (on-select (:id object))
+                        :on-context-menu (on-context-menu (:id object))
+                        :on-drag-start (partial on-drag-start object)}
                   [:img {:src (cfg/resolve-file-media object true)
                          :draggable false}] ;; Also need to add css pointer-events: none
 
-                  #_[:div.cell-name (:name object)]
                   (let [renaming? (= (:renaming @state) (:id object))]
                     [:& editable-label
                      {:class-name (dom/classnames
-                                    :cell-name true
+                                    :cell-name @listing-thumbs?
+                                    :item-name (not @listing-thumbs?)
                                     :editing renaming?)
                       :value (cp/merge-path-item (:path object) (:name object))
-                      :display-value (:name object)
+                      :tooltip (cp/merge-path-item (:path object) (:name object))
+                      :display-value (if @listing-thumbs?
+                                       (:name object)
+                                       (cp/compact-name (:path object)
+                                                        (:name object)))
                       :editing? renaming?
                       :disable-dbl-click? true
                       :on-change do-rename
@@ -861,43 +879,49 @@
          (sort-by #(str/lower (:name %)) comp-fn))))
 
 (mf/defc file-library
-  [{:keys [file local? default-open? filters locale] :as props}]
-  (let [open-file      (mf/deref (open-file-ref (:id file)))
-        open?          (-> open-file
-                           :library
-                           (d/nilv default-open?))
-        open-box?      (fn [box]
-                         (-> open-file
-                             box
-                             (d/nilv true)))
-        shared?        (:is-shared file)
-        router         (mf/deref refs/router)
+  [{:keys [file local?  default-open? filters locale] :as props}]
+  (let [open-file       (mf/deref (open-file-ref (:id file)))
+        open?           (-> open-file
+                            :library
+                            (d/nilv default-open?))
+        open-box?       (fn [box]
+                          (-> open-file
+                              box
+                              (d/nilv true)))
+        shared?         (:is-shared file)
+        router          (mf/deref refs/router)
 
-        reverse-sort?  (mf/use-state false)
+        reverse-sort?   (mf/use-state false)
+        listing-thumbs? (mf/use-state true)
 
-        toggle-open    (st/emitf (dwl/set-assets-box-open (:id file) :library (not open?)))
+        toggle-open     (st/emitf (dwl/set-assets-box-open (:id file) :library (not open?)))
 
-        url            (rt/resolve router :workspace
-                                   {:project-id (:project-id file)
-                                    :file-id (:id file)}
-                                   {:page-id (get-in file [:data :pages 0])})
+        url             (rt/resolve router :workspace
+                                    {:project-id (:project-id file)
+                                     :file-id (:id file)}
+                                    {:page-id (get-in file [:data :pages 0])})
 
-        colors-ref     (mf/use-memo (mf/deps (:id file)) #(file-colors-ref (:id file)))
-        colors         (apply-filters (mf/deref colors-ref) filters @reverse-sort?)
+        colors-ref      (mf/use-memo (mf/deps (:id file)) #(file-colors-ref (:id file)))
+        colors          (apply-filters (mf/deref colors-ref) filters @reverse-sort?)
 
-        typography-ref (mf/use-memo (mf/deps (:id file)) #(file-typography-ref (:id file)))
-        typographies   (apply-filters (mf/deref typography-ref) filters @reverse-sort?)
+        typography-ref  (mf/use-memo (mf/deps (:id file)) #(file-typography-ref (:id file)))
+        typographies    (apply-filters (mf/deref typography-ref) filters @reverse-sort?)
 
-        media-ref      (mf/use-memo (mf/deps (:id file)) #(file-media-ref (:id file)))
-        media          (apply-filters (mf/deref media-ref) filters @reverse-sort?)
+        media-ref       (mf/use-memo (mf/deps (:id file)) #(file-media-ref (:id file)))
+        media           (apply-filters (mf/deref media-ref) filters @reverse-sort?)
 
-        components-ref (mf/use-memo (mf/deps (:id file)) #(file-components-ref (:id file)))
-        components     (apply-filters (mf/deref components-ref) filters @reverse-sort?)
+        components-ref  (mf/use-memo (mf/deps (:id file)) #(file-components-ref (:id file)))
+        components      (apply-filters (mf/deref components-ref) filters @reverse-sort?)
 
         toggle-sort
         (mf/use-callback
           (fn [event]
-            (swap! reverse-sort? not)))]
+            (swap! reverse-sort? not)))
+
+        toggle-listing
+        (mf/use-callback
+          (fn [event]
+            (swap! listing-thumbs? not)))]
 
     [:div.tool-window
      [:div.tool-window-bar.library-bar
@@ -942,16 +966,21 @@
             (if @reverse-sort?
               i/sort-descending
               i/sort-ascending)]
-           [:div.listing-option-btn i/listing-thumbs]]
+           [:div.listing-option-btn {:on-click toggle-listing}
+            (if @listing-thumbs?
+              i/listing-thumbs
+              i/listing-thumbs)]]
           (when show-components?
             [:& components-box {:file-id (:id file)
                                 :local? local?
                                 :components components
+                                :listing-thumbs? listing-thumbs?
                                 :open? (open-box? :components)}])
           (when show-graphics?
             [:& graphics-box {:file-id (:id file)
                               :local? local?
                               :objects media
+                              :listing-thumbs? listing-thumbs?
                               :open? (open-box? :graphics)}])
           (when show-colors?
             [:& colors-box {:file-id (:id file)
