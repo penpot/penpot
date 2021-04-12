@@ -16,6 +16,7 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.2.4",
+    "gettext-parser": "^4.0.4",
     "gulp": "4.0.2",
     "gulp-concat": "^2.6.1",
     "gulp-gzip": "^1.4.2",
