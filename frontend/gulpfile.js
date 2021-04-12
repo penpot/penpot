@@ -16,6 +16,7 @@ const clean = require("postcss-clean");
 const mkdirp = require("mkdirp");
 const rimraf = require("rimraf");
 const sass = require("sass");
+const gettext = require("gettext-parser");
 
 const mapStream = require("map-stream");
 const paths = {};
@@ -31,16 +32,30 @@ paths.dist = "./target/dist/";
 // Templates
 
 function readLocales() {
-  const path = __dirname + "/resources/locales.json";
-  const content = JSON.parse(fs.readFileSync(path, {encoding: "utf8"}));
+  const langs = ["ca", "gr", "en", "es", "fr", "tr", "ru", "zh_cn"];
+  const result = {};
 
-  let result = {};
-  for (let key of Object.keys(content)) {
-    const item = content[key];
-    if (l.isString(item)) {
-      result[key] = {"en": item};
-    } else if (l.isPlainObject(item) && l.isPlainObject(item.translations)) {
-      result[key] = item.translations;
+  for (let lang of langs) {
+    const content = fs.readFileSync(`./translations/${lang}.po`);
+
+    lang = lang.toLowerCase();
+
+    const data = gettext.po.parse(content, "utf-8");
+    const trdata = data.translations[""];
+
+    for (let key of Object.keys(trdata)) {
+      if (key === "") continue;
+
+      if (l.isNil(result[key])) {
+        result[key] = {};
+      }
+
+      const msgstr = trdata[key].msgstr;
+      if (msgstr.length === 1) {
+        result[key][lang] = msgstr[0];
+      } else {
+        result[key][lang] = msgstr;
+      }
     }
   }
 
@@ -189,7 +204,7 @@ gulp.task("watch:main", function() {
   gulp.watch(paths.resources + "images/**/*", gulp.series("copy:assets:images"));
 
   gulp.watch([paths.resources + "templates/*.mustache",
-              paths.resources + "locales.json"],
+              "translations/*.po"],
              gulp.series("templates"));
 });
 
