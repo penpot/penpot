@@ -145,15 +145,19 @@
                    :preview? true
                    :zoom zoom}]])
 
-(mf/defc snap-path-points [{:keys [snaps zoom]}]
-  [:g.snap-paths
-   (for [[from to] snaps]
-     [:line {:x1 (:x from)
-             :y1 (:y from)
-             :x2 (:x to)
-             :y2 (:y to)
-             :style {:stroke pc/secondary-color
-                     :stroke-width (/ 1 zoom)}}])])
+(mf/defc snap-points [{:keys [selected points zoom]}]
+  (let [ranges (mf/use-memo (mf/deps selected points) #(snap/create-ranges points selected))
+        snap-matches (snap/get-snap-delta-match selected ranges (/ 1 zoom))
+        matches (d/concat [] (second (:x snap-matches)) (second (:y snap-matches)))]
+
+    [:g.snap-paths
+     (for [[from to] matches]
+       [:line {:x1 (:x from)
+               :y1 (:y from)
+               :x2 (:x to)
+               :y2 (:y to)
+               :style {:stroke pc/secondary-color
+                       :stroke-width (/ 1 zoom)}}])]))
 
 (mf/defc path-editor
   [{:keys [shape zoom]}]
@@ -193,28 +197,16 @@
          #(doseq [key keys]
             (events/unlistenByKey key)))))
 
-    #_(hooks/use-stream
-     ms/mouse-position
-     (mf/deps shape)
-     (fn [position]
-       (reset! hover-point (gshp/path-closest-point shape position))))
-
-    #_(hooks/use-stream
-     (mf/use-memo
-      (mf/deps base-content selected-points zoom)
-      #(snap/path-snap ms/mouse-position points selected-points zoom))
-
-     (fn [result]
-       (prn "??" result)))
-
     [:g.path-editor {:ref editor-ref}
-     #_[:& snap-points {}]
-
-     
      (when (and preview (not drag-handler))
-       [:& path-preview {:command preview
-                         :from last-p
-                         :zoom zoom}])
+       [:*
+        [:& snap-points {:selected #{(ugp/command->point preview)}
+                         :points points
+                         :zoom zoom}]
+
+        [:& path-preview {:command preview
+                          :from last-p
+                          :zoom zoom}]])
 
      (when @hover-point
        [:g.hover-point
