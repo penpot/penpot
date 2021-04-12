@@ -11,6 +11,8 @@ const gulpRename = require("gulp-rename");
 const gulpSass = require("gulp-sass");
 const svgSprite = require("gulp-svg-sprite");
 
+const merge = require('gulp-merge-json');
+
 const autoprefixer = require("autoprefixer")
 const clean = require("postcss-clean");
 const mkdirp = require("mkdirp");
@@ -156,6 +158,67 @@ gulp.task("polyfills", function() {
   return gulp.src(paths.resources + "polyfills/*.js")
     .pipe(gulpConcat("polyfills.js"))
     .pipe(gulp.dest(paths.output + "js/"));
+});
+
+gulp.task("split", function(done) {
+  const data = __dirname + "/resources/locales.json";
+  const content = JSON.parse(fs.readFileSync(data, {encoding: "utf8"}));
+  const languages = ["en", "ca", "de", "es", "fr", "ru", "tr", "zh_cn"];
+  let result = {};
+  languages.forEach(lang => {
+      for (let key of Object.keys(content)) {
+          const item = content[key];
+
+          if (l.isPlainObject(item) && l.isPlainObject(item.translations)) {
+              let tr = item.translations[lang]
+
+              if (l.isEmpty(tr) && !l.isArray(tr)) {
+                if ((process.argv.slice(2)[1]) === "--forTranslation") {
+                  tr = "MISSING TRANSLATION"
+                } else {
+                  tr = ""
+                }
+              }  
+
+              if ((process.argv.slice(2)[2]) === "--withEn") {
+                result[key] = { "translations": {
+                                      "en": item.translations["en"],
+                                      [lang]: tr 
+                                  },
+                                  "used-in": item['used-in'],
+                                  "unused": item.unused
+                              };
+              } else {
+                result[key] = { "translations": {
+                                      [lang]: tr 
+                                  },
+                                  "used-in": item['used-in'],
+                                  "unused": item.unused
+                              };
+              }
+              
+          }
+      }
+      fs.writeFileSync(__dirname + "/resources/translation/" + lang + ".json", JSON.stringify(result, null, 2));
+  });
+  done();
+});
+
+gulp.task("merge", function(done) {
+  gulp.src(__dirname + "/resources/translation/*.json")
+  .pipe(merge({
+  fileName: 'locales.json',
+      jsonSpace: '  ',
+      jsonReplacer: (key, value) => {
+          if (value === 'MISSING TRANSLATION') {
+            return "";
+          }
+
+          return value;
+        }
+  }))
+  .pipe(gulp.dest(__dirname + "/resources/"));
+  done();
 });
 
 /***********************************************
