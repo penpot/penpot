@@ -193,7 +193,7 @@
        ptk/WatchEvent
        (watch [_ state s]
          (let [rchg {:type :add-typography
-                     :typography (assoc typography :ts (.now js/Date))}
+                     :typography typography}
                uchg {:type :del-typography
                      :id (:id typography)}]
            (rx/of (dwc/commit-changes [rchg] [uchg] {:commit-local? true})

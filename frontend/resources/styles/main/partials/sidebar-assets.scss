@@ -118,9 +118,27 @@
     cursor: pointer;
   }
 
+  .listing-options {
+    background-color: $color-gray-60;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: $medium $small 0 $small;
+
+    .listing-option-btn {
+      cursor: pointer;
+      margin-left: $small;
+
+      svg {
+        fill: $color-gray-20;
+        height: 16px;
+        width: 16px;
+      }
+    }
+  }
+
   .asset-section {
     background-color: $color-gray-60;
-    border-top: 1px solid $color-gray-50;
     padding: $small;
     font-size: $fs12;
     color: $color-gray-20;
@@ -129,6 +147,11 @@
              (also see .asset-list) */
     // max-height: 30rem;
     // overflow-y: scroll;
+
+    // First child is the listing options buttons
+    &:not(:nth-child(2)) {
+      border-top: 1px solid $color-gray-50;
+    }
 
     .asset-title {
       display: flex;

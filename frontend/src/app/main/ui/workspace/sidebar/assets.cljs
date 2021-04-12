@@ -794,7 +794,7 @@
                  [(t locale "workspace.assets.delete") handle-delete-typography]]}]
      (when open?
        [:div.asset-list
-        (for [typography (sort-by :ts typographies)]
+        (for [typography typographies]
           [:& typography-entry
            {:key (:id typography)
             :typography typography
@@ -852,12 +852,13 @@
       (l/derived refs/workspace-local)))
 
 (defn apply-filters
-  [coll filters]
-  (->> coll
-    (filter (fn [item]
-              (or (matches-search (:name item "!$!") (:term filters))
-                  (matches-search (:value item "!$!") (:term filters)))))
-    (sort-by #(str/lower (:name %)))))
+  [coll filters reverse-sort?]
+  (let [comp-fn (if reverse-sort? > <)]
+    (->> coll
+         (filter (fn [item]
+                   (or (matches-search (:name item "!$!") (:term filters))
+                       (matches-search (:value item "!$!") (:term filters)))))
+         (sort-by #(str/lower (:name %)) comp-fn))))
 
 (mf/defc file-library
   [{:keys [file local? default-open? filters locale] :as props}]
@@ -871,6 +872,9 @@
                              (d/nilv true)))
         shared?        (:is-shared file)
         router         (mf/deref refs/router)
+
+        reverse-sort?  (mf/use-state false)
+
         toggle-open    (st/emitf (dwl/set-assets-box-open (:id file) :library (not open?)))
 
         url            (rt/resolve router :workspace
@@ -879,16 +883,21 @@
                                    {:page-id (get-in file [:data :pages 0])})
 
         colors-ref     (mf/use-memo (mf/deps (:id file)) #(file-colors-ref (:id file)))
-        colors         (apply-filters (mf/deref colors-ref) filters)
+        colors         (apply-filters (mf/deref colors-ref) filters @reverse-sort?)
 
         typography-ref (mf/use-memo (mf/deps (:id file)) #(file-typography-ref (:id file)))
-        typographies   (apply-filters (mf/deref typography-ref) filters)
+        typographies   (apply-filters (mf/deref typography-ref) filters @reverse-sort?)
 
         media-ref      (mf/use-memo (mf/deps (:id file)) #(file-media-ref (:id file)))
-        media          (apply-filters (mf/deref media-ref) filters)
+        media          (apply-filters (mf/deref media-ref) filters @reverse-sort?)
 
         components-ref (mf/use-memo (mf/deps (:id file)) #(file-components-ref (:id file)))
-        components     (apply-filters (mf/deref components-ref) filters)]
+        components     (apply-filters (mf/deref components-ref) filters @reverse-sort?)
+
+        toggle-sort
+        (mf/use-callback
+          (fn [event]
+            (swap! reverse-sort? not)))]
 
     [:div.tool-window
      [:div.tool-window-bar.library-bar
@@ -928,6 +937,12 @@
                                      (or (> (count typographies) 0)
                                          (str/empty? (:term filters))))]
          [:div.tool-window-content
+          [:div.listing-options
+           [:div.listing-option-btn {:on-click toggle-sort}
+            (if @reverse-sort?
+              i/sort-descending
+              i/sort-ascending)]
+           [:div.listing-option-btn i/listing-thumbs]]
           (when show-components?
             [:& components-box {:file-id (:id file)
                                 :local? local?
