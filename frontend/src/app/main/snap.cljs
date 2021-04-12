@@ -241,7 +241,118 @@
          (rx/reduce gpt/min)
          (rx/map #(or % (gpt/point 0 0))))))
 
-(defn path-snap [position-stream points selected-points zoom]
+
+;;; PATH SNAP
+
+(defn create-ranges
+  ([points]
+   (create-ranges points #{}))
+
+  ([points selected-points]
+   (let [selected-points (or selected-points #{})
+
+         into-tree
+         (fn [coord]
+           (fn [tree point]
+             (rt/insert tree (get point coord) point)))
+
+         make-ranges
+         (fn [coord]
+           (->> points
+                (filter (comp not selected-points))
+                (reduce (into-tree coord) (rt/make-tree))))]
+
+     {:x (make-ranges :x)
+      :y (make-ranges :y)})))
+
+(defn query-delta-point [ranges point precision]
+  (let [query-coord
+        (fn [coord]
+          (let [pval (get point coord)]
+            #_(prn "..." (rt/range-query (get ranges coord) (- pval precision) (+ pval precision)))
+            
+            (->> (rt/range-query (get ranges coord) (- pval precision) (+ pval precision))
+
+                 ;; We save the distance to the point and add the matching point to the points
+                 (mapv (fn [[value points]]
+                         #_(prn "!! " value [(mth/abs (- value pval))
+                                           (->> points (mapv #(vector point %)))])
+                         [(mth/abs (- value pval))
+                          (->> points (mapv #(vector point %)))])))))]
+
+    {:x (query-coord :x)
+     :y (query-coord :y)}))
+
+(defn merge-matches [matches other]
+  (let [merge-coord
+        (fn [matches other]
+          (prn "merge-coord" matches other)
+          (into {}
+                (map (fn [key] [key (d/concat [] (get matches key) (get other key))]))
+                (set/union (keys matches) (keys other))))]
+
+    (-> matches
+        (update :x merge-matches (:x other))
+        (update :y merge-matches (:y other)))))
+
+(defn min-match
+  [default matches]
+  (let [get-min
+        (fn [[cur-val :as current] [other-val :as other]]
+          (if (< cur-val other-val)
+            current
+            other))
+        
+        min-match-coord
+        (fn [matches]
+          (if (and (seq matches) (not (empty? matches)))
+            (->> matches (reduce get-min))
+            default))]
+
+    (-> matches
+        (update :x min-match-coord)
+        (update :y min-match-coord))))
+
+(defn get-snap-delta-match
+  [points ranges accuracy]
+  (assert vector? points)
+
+  (->> points
+       (mapv #(query-delta-point ranges % accuracy))
+       (reduce merge-matches)
+       (min-match [0 nil])))
+
+(defn get-snap-delta
+  [points ranges accuracy]
+  (-> (get-snap-delta-match points ranges accuracy)
+      (update :x first)
+      (update :y first)
+      (gpt/point)))
+
+#_(defn path-snap-points-delta [points-stream selected-points points zoom]
+
+  (let [ranges (create-ranges points selected-points)
+        d-pos (/ snap-accuracy zoom)]
+
+    (->> points-stream
+         (rx/map (fn [points]
+                   (get-snap-delta points ranges d-pos)))))
+  
+
+  )
+
+#_(defn path-snap [position-stream points selected-points zoom]
+  (let [ranges (create-ranges points selected-points)
+        d-pos (/ snap-accuracy zoom)]
+
+    (->> position-stream
+         (rx/map (fn [position]
+                   (gpt/add
+                    position
+                    (get-snap-delta position ranges d-pos)))))))
+
+
+#_(defn path-snap [position-stream points selected-points zoom]
   (let [selected-points (or selected-points #{})
         into-tree (fn [coord]
                     (fn [tree point]

@@ -199,7 +199,7 @@
      (fn [position]
        (reset! hover-point (gshp/path-closest-point shape position))))
 
-    (hooks/use-stream
+    #_(hooks/use-stream
      (mf/use-memo
       (mf/deps base-content selected-points zoom)
       #(snap/path-snap ms/mouse-position points selected-points zoom))

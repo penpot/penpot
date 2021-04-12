@@ -10,13 +10,16 @@
 (ns app.main.data.workspace.path.streams
   (:require
    [app.main.data.workspace.path.helpers :as helpers]
+   [app.main.data.workspace.path.state :as state]
    [app.common.geom.point :as gpt]
    [app.main.store :as st]
    [app.main.streams :as ms]
    [beicon.core :as rx]
    [potok.core :as ptk]
    [app.common.math :as mth]
-   [app.main.snap :as snap]))
+   [app.main.snap :as snap]
+   [okulary.core :as l]
+   [app.util.geom.path :as ugp]))
 
 (defonce drag-threshold 5)
 
@@ -54,17 +57,55 @@
   (let [k 50]
     (* (mth/floor (/ num k)) k)))
 
-(defn position-stream
-  ([points]
-   (position-stream points #{}))
+(defn move-points-stream
+  [start-point selected-points points]
 
-  ([points selected-points]
-   (let [zoom (get-in @st/state [:workspace-local :zoom] 1)]
-     (->> (snap/path-snap ms/mouse-position points selected-points zoom)
-          (rx/with-latest vector ms/mouse-position)
-          (rx/map (fn [[{[x] :x [y] :y} position]]
-                    (cond-> position
-                      (some? x) (assoc :x x)
-                      (some? y) (assoc :y y))))
-          (rx/with-latest merge (->> ms/mouse-position-shift (rx/map #(hash-map :shift? %))))
-          (rx/with-latest merge (->> ms/mouse-position-alt (rx/map #(hash-map :alt? %))))))))
+  (let [zoom (get-in @st/state [:workspace-local :zoom] 1)
+        ranges (snap/create-ranges selected-points points)
+        d-pos (/ snap/snap-accuracy zoom)]
+    (->> ms/mouse-position
+         (rx/map (fn [position]
+                   (let [delta (gpt/subtract position start-point)
+                         moved-points (->> selected-points (mapv #(gpt/add % delta)))]
+                     (gpt/add
+                      position
+                      (snap/get-snap-delta moved-points ranges d-pos)))))))
+  )
+
+(defn move-handler-stream
+  [start-point handler points]
+
+  (let [zoom (get-in @st/state [:workspace-local :zoom] 1)
+        ranges (snap/create-ranges points)
+        d-pos (/ snap/snap-accuracy zoom)]
+    (->> ms/mouse-position
+         (rx/map (fn [position]
+                   (let [delta (gpt/subtract position start-point)
+                         handler-position (gpt/add handler delta)]
+                     (gpt/add
+                      position
+                      (snap/get-snap-delta [handler-position] ranges d-pos))))))))
+
+(defn position-stream
+  [points]
+  (let [zoom (get-in @st/state [:workspace-local :zoom] 1)
+        ranges (snap/create-ranges points)
+        d-pos (/ snap/snap-accuracy zoom)
+        get-content (fn [state] (get-in state (state/get-path state :content)))
+
+        content-stream (-> (l/derived get-content st/state)
+                           (rx/from-atom))
+        ]
+
+    (->> content-stream
+         (rx/map ugp/content->points)
+         (rx/subs #(prn "????" %)))
+
+
+    (->> ms/mouse-position
+         (rx/tap #(prn "pos" %))
+         (rx/map #(let [snap (snap/get-snap-delta [%] ranges d-pos)]
+                    (prn ">>>" snap)
+                    (gpt/add % snap)))
+         (rx/with-latest merge (->> ms/mouse-position-shift (rx/map #(hash-map :shift? %))))
+         (rx/with-latest merge (->> ms/mouse-position-alt (rx/map #(hash-map :alt? %)))))))

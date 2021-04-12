@@ -129,7 +129,8 @@
                (rx/of (selection/select-node position shift?)))
 
              ;; This stream checks the consecutive mouse positions to do the draging
-             (->> (streams/position-stream points)
+             (->> points
+                  (streams/move-points-stream start-position selected-points)
                   (rx/take-until stopper)
                   (rx/map #(move-selected-path-point start-position %)))
              (rx/of (apply-content-modifiers)))
@@ -168,7 +169,7 @@
 
         (streams/drag-stream
          (rx/concat
-          (->> (streams/position-stream points)
+          (->> (streams/move-handler-stream start-point handler points)
                (rx/take-until (->> stream (rx/filter ms/mouse-up?)))
                (rx/map
                 (fn [{:keys [x y alt? shift?]}]
