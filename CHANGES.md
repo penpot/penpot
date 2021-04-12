@@ -5,6 +5,7 @@
 ### :sparkles: New features
 
 - Add integration with gitpod.io (an online IDE) [#807](https://github.com/penpot/penpot/pull/807)
+- Internal: refactor of http client, replace internal xhr usage with more modern Fetch API.
 
 
 ### :bug: Bugs fixed
@@ -13,6 +14,12 @@
 - Fixes issue when parsing exponential numbers in paths
 
 ### :arrow_up: Deps updates
+
+### :boom: Breaking changes
+
+- Translations refactor: now penpot uses gettext instead of a custom
+  JSON, and each locale has its own separated file. All translations
+  should be contributed via the weblate.org service.
 
 ### :heart: Community contributions by (Thank you!)
 
