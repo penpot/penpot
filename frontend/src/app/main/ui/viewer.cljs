@@ -271,7 +271,6 @@
     (mf/use-effect
      (mf/deps file-id page-id token)
      (fn []
-       (prn "viewer-page$use-effect")
        (st/emit! (dv/initialize props))))
 
     (mf/use-effect

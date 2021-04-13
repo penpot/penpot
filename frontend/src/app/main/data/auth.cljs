@@ -47,10 +47,10 @@
     (watch [this state stream]
       (let [team-id (current-team-id profile)
             props   (:props profile)]
-        (rx/merge
-         (rx/of (du/profile-fetched profile)
-                (rt/nav' :dashboard-projects {:team-id team-id}))
-
+        (rx/concat
+         (rx/of (du/profile-fetched profile))
+         (rx/of (du/fetch-teams))
+         (rx/of (rt/nav' :dashboard-projects {:team-id team-id}))
          (when-not (:onboarding-viewed props)
            (->> (rx/of (modal/show {:type :onboarding}))
                 (rx/delay 1000))))))))

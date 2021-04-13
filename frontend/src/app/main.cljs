@@ -14,7 +14,7 @@
    [app.config :as cfg]
    [app.main.data.auth :as da]
    [app.main.data.messages :as dm]
-   [app.main.data.users :as udu]
+   [app.main.data.users :as du]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.ui :as ui]
@@ -91,8 +91,7 @@
 
   (st/emit! (rt/initialize-router ui/routes)
             (rt/initialize-history on-navigate)
-            (udu/fetch-profile)
-            (udu/fetch-user-teams)))
+            (du/fetch-profile-and-teams)))
 
 (defn reinit
   []
