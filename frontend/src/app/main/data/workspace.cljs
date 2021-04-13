@@ -31,6 +31,7 @@
    [app.main.data.workspace.persistence :as dwp]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.transforms :as dwt]
+   [app.main.data.workspace.svg-upload :as svg]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.streams :as ms]
@@ -1372,6 +1373,7 @@
 (declare paste-shape)
 (declare paste-text)
 (declare paste-image)
+(declare paste-svg)
 
 (def paste
   (ptk/reify ::paste
@@ -1428,6 +1430,10 @@
               is-editing-text? (and edit-id (= :text (get-in objects [edit-id :type])))]
 
           (cond
+            (and (string? text-data)
+                 (str/includes? text-data "<svg"))
+            (rx/of (paste-svg text-data))
+
             (seq image-data)
             (rx/from (map paste-image image-data))
 
@@ -1599,7 +1605,8 @@
     {:type "root"
      :children [{:type "paragraph-set" :children paragraphs}]}))
 
-(defn paste-text [text]
+(defn paste-text
+  [text]
   (s/assert string? text)
   (ptk/reify ::paste-text
     ptk/WatchEvent
@@ -1627,6 +1634,16 @@
                (dwc/add-shape shape)
                (dwc/commit-undo-transaction))))))
 
+(defn- paste-svg
+  [text]
+  (s/assert string? text)
+  (ptk/reify ::paste-svg
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [position (deref ms/mouse-position)
+            file-id  (:current-file-id state)]
+        (->> (dwp/parse-svg ["svg" text])
+             (rx/map #(svg/svg-uploaded % file-id position)))))))
 
 (defn- paste-image
   [image]
@@ -1635,8 +1652,9 @@
     (watch [_ state stream]
       (let [file-id (get-in state [:workspace-file :id])
             params  {:file-id file-id
-                     :data [image]}]
-        (rx/of (dwp/upload-media-workspace params @ms/mouse-position))))))
+                     :blobs [image]
+                     :position @ms/mouse-position}]
+        (rx/of (dwp/upload-media-workspace params))))))
 
 (defn toggle-distances-display [value]
   (ptk/reify ::toggle-distances-display

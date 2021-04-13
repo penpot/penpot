@@ -152,18 +152,12 @@
            (st/emitf (dwl/set-assets-box-open file-id :graphics true))
            (dom/click (mf/ref-val input-ref))))
 
-        on-media-uploaded
-        (mf/use-callback
-         (mf/deps file-id)
-         (fn [data]
-           (st/emit! (dwl/add-media data))))
-
         on-selected
         (mf/use-callback
          (mf/deps file-id)
          (fn [blobs]
            (let [params {:file-id file-id
-                         :data (seq blobs)}]
+                         :blobs (seq blobs)}]
              (st/emit! (dw/upload-media-asset params)))))
 
         on-delete
