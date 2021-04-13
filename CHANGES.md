@@ -10,6 +10,7 @@
 ### :bug: Bugs fixed
 
 - Fixes problem with pan and space [#811](https://github.com/penpot/penpot/issues/811)
+- Fixes issue when parsing exponential numbers in paths
 
 ### :arrow_up: Deps updates
 
