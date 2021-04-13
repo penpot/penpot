@@ -30,10 +30,15 @@
 (defn- rpc-query-handler
   [methods {:keys [profile-id] :as request}]
   (let [type   (keyword (get-in request [:path-params :type]))
-        data   (assoc (:params request) ::type type)
+
+        data   (d/merge (:params request)
+                        (:body-params request)
+                        (:uploads request))
+
         data   (if profile-id
                  (assoc data :profile-id profile-id)
                  (dissoc data :profile-id))
+
         result ((get methods type default-handler) data)
         mdata  (meta result)]
 
@@ -114,7 +119,8 @@
                      'app.rpc.queries.comments
                      'app.rpc.queries.profile
                      'app.rpc.queries.recent-files
-                     'app.rpc.queries.viewer)
+                     'app.rpc.queries.viewer
+                     'app.rpc.queries.svg)
          (map (partial process-method cfg))
          (into {}))))
 

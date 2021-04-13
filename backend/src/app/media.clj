@@ -12,7 +12,7 @@
    [app.common.media :as cm]
    [app.common.spec :as us]
    [app.rlimits :as rlm]
-   [app.svgparse :as svg]
+   [app.rpc.queries.svg :as svg]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [datoteka.core :as fs])

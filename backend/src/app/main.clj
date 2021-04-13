@@ -94,7 +94,6 @@
     :metrics     (ig/ref :app.metrics/metrics)
     :oauth       (ig/ref :app.http.oauth/all)
     :assets      (ig/ref :app.http.assets/handlers)
-    :svgparse    (ig/ref :app.svgparse/handler)
     :storage     (ig/ref :app.storage/storage)
     :sns-webhook (ig/ref :app.http.awsns/handler)
     :feedback    (ig/ref :app.http.feedback/handler)
@@ -140,14 +139,6 @@
     :client-id     (cf/get :gitlab-client-id)
     :client-secret (cf/get :gitlab-client-secret)}
 
-   :app.svgparse/svgc
-   {:metrics (ig/ref :app.metrics/metrics)}
-
-   ;; HTTP Handler for SVG parsing
-   :app.svgparse/handler
-   {:metrics (ig/ref :app.metrics/metrics)
-    :svgc    (ig/ref :app.svgparse/svgc)}
-
    ;; RLimit definition for password hashing
    :app.rlimits/password
    (cf/get :rlimits-password)
@@ -169,7 +160,6 @@
     :storage    (ig/ref :app.storage/storage)
     :msgbus     (ig/ref :app.msgbus/msgbus)
     :rlimits    (ig/ref :app.rlimits/all)
-    :svgc       (ig/ref :app.svgparse/svgc)
     :public-uri (cf/get :public-uri)}
 
    :app.notifications/handler

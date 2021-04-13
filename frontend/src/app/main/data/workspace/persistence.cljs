@@ -378,7 +378,7 @@
 
 (defn parse-svg
   [[name text]]
-  (->> (rp/query! :parse-svg {:data text})
+  (->> (rp/query! :parsed-svg {:data text})
        (rx/map #(assoc % :name name))))
 
 (defn fetch-svg [name uri]
