@@ -69,6 +69,7 @@
 (def google-client-id     (obj/get global "penpotGoogleClientID" nil))
 (def gitlab-client-id     (obj/get global "penpotGitlabClientID" nil))
 (def github-client-id     (obj/get global "penpotGithubClientID" nil))
+(def oidc-client-id       (obj/get global "penpotOIDCClientID" nil))
 (def login-with-ldap      (obj/get global "penpotLoginWithLDAP" false))
 (def registration-enabled (obj/get global "penpotRegistrationEnabled" true))
 (def worker-uri           (obj/get global "penpotWorkerURI" "/js/worker.js"))

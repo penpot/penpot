@@ -8,7 +8,8 @@
 - Allow to group assets (components and graphics) [Taiga #1289](https://tree.taiga.io/project/penpot/us/1289)
 - Internal: refactor of http client, replace internal xhr usage with more modern Fetch API.
 - New features for paths: snap points on edition, add/remove nodes, merge/join/split nodes. [Taiga #907](https://tree.taiga.io/project/penpot/us/907)
-
+- Add OpenID-Connect support.
+- Reimplement social auth providers on top of the generic openid impl.
 
 ### :bug: Bugs fixed
 
